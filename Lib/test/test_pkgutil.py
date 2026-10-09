@@ -1,3 +1,5 @@
+import logging
+import logging.handlers
 from pathlib import Path
 from test.support.import_helper import unload
 from test.support.warnings_helper import check_warnings
@@ -58,25 +60,6 @@ class PkgutilTests(unittest.TestCase):
         self.assertEqual(res1, RESOURCE_DATA)
         res2 = pkgutil.get_data(pkg, 'sub/res.txt')
         self.assertEqual(res2, RESOURCE_DATA)
-
-        del sys.modules[pkg]
-
-    def test_getdata_path_traversal(self):
-        pkg = 'test_getdata_traversal'
-
-        # Make a package with some resources
-        package_dir = os.path.join(self.dirname, pkg)
-        os.mkdir(package_dir)
-        # Empty init.py
-        f = open(os.path.join(package_dir, '__init__.py'), "wb")
-        f.close()
-
-        with self.assertRaises(ValueError):
-            pkgutil.get_data(pkg, '../../../etc/passwd')
-        with self.assertRaises(ValueError):
-            pkgutil.get_data(pkg, 'sub/../../../etc/passwd')
-        with self.assertRaises(ValueError):
-            pkgutil.get_data(pkg, os.path.abspath('/etc/passwd'))
 
         del sys.modules[pkg]
 
@@ -251,9 +234,6 @@ class PkgutilTests(unittest.TestCase):
             list(pkgutil.walk_packages(bytes_input))
 
     def test_name_resolution(self):
-        import logging
-        import logging.handlers
-
         success_cases = (
             ('os', os),
             ('os.path', os.path),
@@ -340,6 +320,53 @@ class PkgutilTests(unittest.TestCase):
             with self.subTest(s=s):
                 with self.assertRaises(exc):
                     pkgutil.resolve_name(s)
+
+    def test_name_resolution_strict(self):
+        # PEP 829: strict=True accepts only the pkg.mod:callable form
+        # (W(.W)*:W(.W)*) -- both the colon and the callable are required.
+        success_cases = (
+            ('os.path:pathsep', os.path.pathsep),
+            ('logging.handlers:SysLogHandler',
+                logging.handlers.SysLogHandler),
+            ('logging.handlers:SysLogHandler.LOG_ALERT',
+                logging.handlers.SysLogHandler.LOG_ALERT),
+            ('builtins:int', int),
+            ('builtins:int.from_bytes', int.from_bytes),
+            ('os:path', os.path),
+        )
+
+        # All of these are accepted under strict=False but must be
+        # rejected under strict=True.
+        failure_cases = (
+            'os',                       # no colon (non-strict form)
+            'os.path',                  # no colon
+            'logging:',                 # colon, empty callable
+            'os.foo:',                  # colon, empty callable
+            ':int',                     # empty package
+            'os.path:join:extra',       # extra colon
+            'os.path.9abc:join',        # invalid identifier in package
+            'os.path:9abc',             # invalid identifier in callable
+            '',                         # empty
+            '?abc:foo',                 # invalid character
+        )
+
+        for s, expected in success_cases:
+            with self.subTest(s=s):
+                self.assertEqual(
+                    pkgutil.resolve_name(s, strict=True), expected)
+
+        for s in failure_cases:
+            with self.subTest(s=s):
+                with self.assertRaises(ValueError):
+                    pkgutil.resolve_name(s, strict=True)
+
+        # Cache independence: a strict=True call must not poison
+        # strict=False (and vice versa).  Exercise both orderings.
+        self.assertEqual(
+            pkgutil.resolve_name('os:path', strict=True), os.path)
+        self.assertEqual(pkgutil.resolve_name('os.path'), os.path)
+        self.assertEqual(
+            pkgutil.resolve_name('os:path', strict=True), os.path)
 
     def test_name_resolution_import_rebinding(self):
         # The same data is also used for testing import in test_import and

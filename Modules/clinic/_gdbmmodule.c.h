@@ -2,11 +2,9 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_runtime.h"     // _Py_SINGLETON()
-#endif
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(_gdbm_gdbm_get__doc__,
 "get($self, key, default=None, /)\n"
@@ -138,9 +136,9 @@ PyDoc_STRVAR(_gdbm_gdbm_firstkey__doc__,
 "\n"
 "Return the starting key for the traversal.\n"
 "\n"
-"It\'s possible to loop over every key in the database using this method\n"
-"and the nextkey() method.  The traversal is ordered by GDBM\'s internal\n"
-"hash values, and won\'t be sorted by the key values.");
+"It\'s possible to loop over every key in the database using this\n"
+"method and the nextkey() method.  The traversal is ordered by GDBM\'s\n"
+"internal hash values, and won\'t be sorted by the key values.");
 
 #define _GDBM_GDBM_FIRSTKEY_METHODDEF    \
     {"firstkey", _PyCFunction_CAST(_gdbm_gdbm_firstkey), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_firstkey__doc__},
@@ -171,8 +169,8 @@ PyDoc_STRVAR(_gdbm_gdbm_nextkey__doc__,
 "\n"
 "Returns the key that follows key in the traversal.\n"
 "\n"
-"The following code prints every key in the database db, without having\n"
-"to create a list in memory that contains them all:\n"
+"The following code prints every key in the database db, without\n"
+"having to create a list in memory that contains them all:\n"
 "\n"
 "      k = db.firstkey()\n"
 "      while k is not None:\n"
@@ -190,23 +188,13 @@ static PyObject *
 _gdbm_gdbm_nextkey(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .format = "s#:nextkey",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
     const char *key;
     Py_ssize_t key_length;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+    if (!_PyArg_NoKwnames("nextkey", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_ParseStack(args, nargs, "s#:nextkey",
         &key, &key_length)) {
         goto exit;
     }
@@ -226,9 +214,9 @@ PyDoc_STRVAR(_gdbm_gdbm_reorganize__doc__,
 "\n"
 "If you have carried out a lot of deletions and would like to shrink\n"
 "the space used by the GDBM file, this routine will reorganize the\n"
-"database.  GDBM will not shorten the length of a database file except\n"
-"by using this reorganization; otherwise, deleted file space will be\n"
-"kept and reused as new (key,value) pairs are added.");
+"database.  GDBM will not shorten the length of a database file\n"
+"except by using this reorganization; otherwise, deleted file space\n"
+"will be kept and reused as new (key,value) pairs are added.");
 
 #define _GDBM_GDBM_REORGANIZE_METHODDEF    \
     {"reorganize", _PyCFunction_CAST(_gdbm_gdbm_reorganize), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_reorganize__doc__},
@@ -314,6 +302,35 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_gdbm_gdbm___exit____doc__,
+"__exit__($self, /, *exc_info)\n"
+"--\n"
+"\n"
+"Close the database.");
+
+#define _GDBM_GDBM___EXIT___METHODDEF    \
+    {"__exit__", _PyCFunction_CAST(_gdbm_gdbm___exit__), METH_FASTCALL, _gdbm_gdbm___exit____doc__},
+
+static PyObject *
+_gdbm_gdbm___exit___impl(gdbmobject *self, PyObject * const *exc_info,
+                         Py_ssize_t exc_info_length);
+
+static PyObject *
+_gdbm_gdbm___exit__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject * const *exc_info;
+    Py_ssize_t exc_info_length;
+
+    exc_info = args;
+    exc_info_length = nargs;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _gdbm_gdbm___exit___impl((gdbmobject *)self, exc_info, exc_info_length);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(dbmopen__doc__,
 "open($module, filename, flags=\'r\', mode=0o666, /)\n"
 "--\n"
@@ -367,13 +384,8 @@ dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("open", "argument 2", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t flags_length;
-    flags = PyUnicode_AsUTF8AndSize(args[1], &flags_length);
+    flags = _PyUnicode_AsUTF8NoNUL(args[1]);
     if (flags == NULL) {
-        goto exit;
-    }
-    if (strlen(flags) != (size_t)flags_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (nargs < 3) {
@@ -389,4 +401,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8bca34ce9d4493dd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a3249cf7b6c4fae9 input=a9049054013a1b77]*/

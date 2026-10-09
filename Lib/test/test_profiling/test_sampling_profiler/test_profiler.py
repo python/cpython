@@ -1,20 +1,23 @@
 """Tests for sampling profiler core functionality."""
 
+import contextlib
 import io
 import re
+import types
 from unittest import mock
 import unittest
 
 try:
     import _remote_debugging  # noqa: F401
-    from profiling.sampling.sample import SampleProfiler
+    from profiling.sampling.constants import PROFILING_MODE_ALL, PROFILING_MODE_WALL
+    from profiling.sampling.sample import SampleProfiler, dump_stack
     from profiling.sampling.pstats_collector import PstatsCollector
 except ImportError:
     raise unittest.SkipTest(
         "Test only runs when _remote_debugging is available"
     )
 
-from test.support import force_not_colorized_test_class
+from test.support import force_colorized, force_not_colorized_test_class
 
 
 def print_sampled_stats(stats, sort=-1, limit=None, show_summary=True, sample_interval_usec=100):
@@ -63,6 +66,92 @@ class TestSampleProfiler(unittest.TestCase):
             self.assertEqual(profiler.sample_interval_usec, 5000)
             self.assertEqual(profiler.all_threads, True)
 
+    @staticmethod
+    @contextlib.contextmanager
+    def _patched_unwinder():
+        """Yield a namespace exposing the mock unwinder ``instance`` and ``cls``."""
+        instance = mock.MagicMock()
+        with mock.patch(
+            "_remote_debugging.RemoteUnwinder", return_value=instance
+        ) as cls:
+            yield types.SimpleNamespace(instance=instance, cls=cls)
+
+    def test_dump_stack_uses_single_unwinder_snapshot(self):
+        stack_frames = [mock.sentinel.stack_frames]
+        with self._patched_unwinder() as u:
+            u.instance.get_stack_trace.return_value = stack_frames
+            result = dump_stack(12345)
+
+        self.assertIs(result, stack_frames)
+        self.assertEqual(u.cls.call_args.kwargs["mode"], PROFILING_MODE_ALL)
+        u.instance.get_stack_trace.assert_called_once_with()
+
+    def test_dump_stack_returns_empty_async_snapshot(self):
+        with self._patched_unwinder() as u:
+            u.instance.get_async_stack_trace.return_value = []
+            result = dump_stack(12345, async_aware="running")
+
+        self.assertEqual(result, [])
+        u.instance.get_async_stack_trace.assert_called_once_with()
+        u.instance.get_stack_trace.assert_not_called()
+
+    def test_dump_stack_async_all_uses_all_awaited_by(self):
+        stack_frames = [mock.sentinel.awaited_info]
+        with self._patched_unwinder() as u:
+            u.instance.get_all_awaited_by.return_value = stack_frames
+            result = dump_stack(12345, async_aware="all")
+
+        self.assertIs(result, stack_frames)
+        u.instance.get_all_awaited_by.assert_called_once_with()
+        u.instance.get_stack_trace.assert_not_called()
+        u.instance.get_async_stack_trace.assert_not_called()
+
+    def test_dump_stack_passes_unwinder_options(self):
+        with self._patched_unwinder() as u:
+            u.instance.get_stack_trace.return_value = []
+            dump_stack(
+                12345,
+                all_threads=True,
+                native=True,
+                gc=False,
+                opcodes=True,
+            )
+
+        call_kwargs = u.cls.call_args.kwargs
+        self.assertTrue(call_kwargs["all_threads"])
+        self.assertEqual(call_kwargs["mode"], PROFILING_MODE_ALL)
+        self.assertTrue(call_kwargs["native"])
+        self.assertFalse(call_kwargs["gc"])
+        self.assertTrue(call_kwargs["opcodes"])
+        self.assertFalse(call_kwargs["skip_non_matching_threads"])
+        self.assertTrue(call_kwargs["cache_frames"])
+
+    def test_dump_stack_wall_mode_skips_non_matching_threads(self):
+        with self._patched_unwinder() as u:
+            u.instance.get_stack_trace.return_value = []
+            dump_stack(12345, mode=PROFILING_MODE_WALL)
+
+        self.assertTrue(u.cls.call_args.kwargs["skip_non_matching_threads"])
+
+    def test_dump_stack_blocking_pauses_and_resumes_threads(self):
+        stack_frames = [mock.sentinel.stack_frames]
+        with self._patched_unwinder() as u:
+            u.instance.get_stack_trace.return_value = stack_frames
+            result = dump_stack(12345, blocking=True)
+
+        self.assertIs(result, stack_frames)
+        u.instance.pause_threads.assert_called_once_with()
+        u.instance.resume_threads.assert_called_once_with()
+
+    def test_dump_stack_blocking_resumes_threads_after_failure(self):
+        with self._patched_unwinder() as u:
+            u.instance.get_stack_trace.side_effect = RuntimeError("boom")
+            with self.assertRaises(RuntimeError):
+                dump_stack(12345, blocking=True)
+
+        u.instance.pause_threads.assert_called_once_with()
+        u.instance.resume_threads.assert_called_once_with()
+
     def test_sample_profiler_sample_method_timing(self):
         """Test that the sample method respects duration and handles timing correctly."""
 
@@ -109,8 +198,83 @@ class TestSampleProfiler(unittest.TestCase):
             self.assertIn("samples", result)
 
             # Verify collector was called multiple times
-            self.assertGreaterEqual(mock_collector.collect.call_count, 5)
-            self.assertLessEqual(mock_collector.collect.call_count, 11)
+            total_weight = sum(
+                len(c.kwargs.get("timestamps_us") or [None])
+                for c in mock_collector.collect.call_args_list
+            )
+            self.assertGreaterEqual(total_weight, 5)
+            self.assertLessEqual(total_weight, 11)
+
+    def test_sample_profiler_does_not_buffer_non_aggregating_collectors(self):
+        """Test that non-aggregating collectors get each sample immediately."""
+
+        stack_frames = [mock.sentinel.stack_frames]
+        mock_collector = mock.MagicMock()
+        mock_collector.aggregating = False
+
+        with self._patched_unwinder() as u:
+            u.instance.get_stack_trace.return_value = stack_frames
+
+            manager = mock.Mock()
+            manager.attach_mock(u.instance.get_stack_trace, "unwind")
+            manager.attach_mock(mock_collector.collect, "collect")
+
+            profiler = SampleProfiler(
+                pid=12345, sample_interval_usec=10000, all_threads=False
+            )
+
+            times = [0.0, 0.01, 0.011, 0.02, 0.03]
+            with mock.patch("time.perf_counter", side_effect=times):
+                with io.StringIO() as output:
+                    with mock.patch("sys.stdout", output):
+                        profiler.sample(mock_collector, duration_sec=0.025)
+
+        self.assertEqual(
+            manager.mock_calls,
+            [
+                mock.call.unwind(),
+                mock.call.collect(stack_frames),
+                mock.call.unwind(),
+                mock.call.collect(stack_frames),
+            ],
+        )
+
+    def test_sample_profiler_flushes_aggregated_batches_at_limit(self):
+        """Test that aggregating collectors flush after MAX_PENDING_SAMPLES samples."""
+
+        stack_frames = [mock.sentinel.stack_frames]
+        mock_collector = mock.MagicMock()
+        mock_collector.aggregating = True
+
+        with self._patched_unwinder() as u:
+            u.instance.get_stack_trace.return_value = stack_frames
+
+            profiler = SampleProfiler(
+                pid=12345, sample_interval_usec=10000, all_threads=False
+            )
+
+            times = [
+                0.0,
+                0.01, 0.011,
+                0.02, 0.021,
+                0.03, 0.031,
+                0.04, 0.041,
+                0.05, 0.051,
+            ]
+            with mock.patch("profiling.sampling.sample.MAX_PENDING_SAMPLES", 2):
+                with mock.patch("time.perf_counter", side_effect=times):
+                    with io.StringIO() as output:
+                        with mock.patch("sys.stdout", output):
+                            profiler.sample(mock_collector, duration_sec=0.045)
+
+        batches = [
+            (c.args[0], len(c.kwargs["timestamps_us"]))
+            for c in mock_collector.collect.call_args_list
+        ]
+        self.assertEqual(
+            batches,
+            [(stack_frames, 2), (stack_frames, 2), (stack_frames, 1)],
+        )
 
     def test_sample_profiler_error_handling(self):
         """Test that the sample method handles errors gracefully."""
@@ -320,6 +484,15 @@ class TestPrintSampledStats(unittest.TestCase):
         self.assertIn("func1", result)
         self.assertIn("func2", result)
         self.assertIn("func3", result)
+        self.assertNotIn("\x1b[", result)
+
+    @force_colorized
+    def test_print_sampled_stats_colorized(self):
+        with io.StringIO() as output, mock.patch("sys.stdout", output):
+            print_sampled_stats(self.mock_stats)
+            result = output.getvalue()
+
+        self.assertIn("\x1b[1;34mProfile Stats:", result)
 
     def test_print_sampled_stats_sorting(self):
         """Test different sorting options."""
@@ -587,6 +760,7 @@ class TestPrintSampledStats(unittest.TestCase):
                 and not "calls" in line  # Skip summary lines
                 and not "total time" in line  # Skip summary lines
                 and not "cumulative time" in line
+                and not "filename:lineno(function)" in line  # Skip header line
             ):  # Skip summary lines
                 data_lines.append(line)
 

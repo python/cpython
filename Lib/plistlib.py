@@ -2,7 +2,7 @@ r"""plistlib.py -- a tool to generate and parse MacOSX .plist files.
 
 The property list (.plist) file format is a simple XML pickle supporting
 basic object types, like dictionaries, lists, numbers and strings.
-Usually the top level object is a dictionary.
+Usually the top level object is a dictionary or a frozen dictionary.
 
 To write out a plist file, use the dump(value, file)
 function. 'value' is the top level object, 'file' is
@@ -158,6 +158,25 @@ def _date_to_string(d, aware_datetime):
         d.year, d.month, d.day,
         d.hour, d.minute, d.second
     )
+
+def _dict_items(d, sort_keys, skipkeys):
+    """Return the (key, value) pairs of a dict, sorted if needed.
+
+    Sorting fails for keys of different types, so non-string keys are
+    removed or reported before sorting.
+    """
+    items = d.items()
+    if sort_keys:
+        if skipkeys:
+            items = [item for item in items if isinstance(item[0], str)]
+            items.sort()
+        else:
+            for key in d:
+                if not isinstance(key, str):
+                    raise TypeError("keys must be strings")
+            items = sorted(items)
+    return items
+
 
 def _escape(text):
     m = _controlCharPat.search(text)
@@ -357,7 +376,7 @@ class _PlistWriter(_DumbXMLWriter):
         elif isinstance(value, float):
             self.simple_element("real", repr(value))
 
-        elif isinstance(value, dict):
+        elif isinstance(value, (dict, frozendict)):
             self.write_dict(value)
 
         elif isinstance(value, (bytes, bytearray)):
@@ -388,11 +407,7 @@ class _PlistWriter(_DumbXMLWriter):
     def write_dict(self, d):
         if d:
             self.begin_element("dict")
-            if self._sort_keys:
-                items = sorted(d.items())
-            else:
-                items = d.items()
-
+            items = _dict_items(d, self._sort_keys, self._skipkeys)
             for key, value in items:
                 if not isinstance(key, str):
                     if self._skipkeys:
@@ -715,13 +730,10 @@ class _BinaryPlistWriter (object):
             self._objidtable[id(value)] = refnum
 
         # And finally recurse into containers
-        if isinstance(value, dict):
+        if isinstance(value, (dict, frozendict)):
             keys = []
             values = []
-            items = value.items()
-            if self._sort_keys:
-                items = sorted(items)
-
+            items = _dict_items(value, self._sort_keys, self._skipkeys)
             for k, v in items:
                 if not isinstance(k, str):
                     if self._skipkeys:
@@ -836,14 +848,10 @@ class _BinaryPlistWriter (object):
             self._write_size(0xA0, s)
             self._fp.write(struct.pack('>' + self._ref_format * s, *refs))
 
-        elif isinstance(value, dict):
+        elif isinstance(value, (dict, frozendict)):
             keyRefs, valRefs = [], []
 
-            if self._sort_keys:
-                rootItems = sorted(value.items())
-            else:
-                rootItems = value.items()
-
+            rootItems = _dict_items(value, self._sort_keys, self._skipkeys)
             for k, v in rootItems:
                 if not isinstance(k, str):
                     if self._skipkeys:
@@ -869,18 +877,18 @@ def _is_fmt_binary(header):
 # Generic bits
 #
 
-_FORMATS={
-    FMT_XML: dict(
+_FORMATS=frozendict({
+    FMT_XML: frozendict(
         detect=_is_fmt_xml,
         parser=_PlistParser,
         writer=_PlistWriter,
     ),
-    FMT_BINARY: dict(
+    FMT_BINARY: frozendict(
         detect=_is_fmt_binary,
         parser=_BinaryPlistParser,
         writer=_BinaryPlistWriter,
     )
-}
+})
 
 
 def load(fp, *, fmt=None, dict_type=dict, aware_datetime=False):

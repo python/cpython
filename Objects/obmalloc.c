@@ -14,6 +14,7 @@
 #include <stdlib.h>               // malloc()
 #include <stdbool.h>
 #include <stdio.h>                // fopen(), fgets(), sscanf()
+#include <errno.h>                // errno
 #ifdef WITH_MIMALLOC
 // Forward declarations of functions used in our mimalloc modifications
 static void _PyMem_mi_page_clear_qsbr(mi_page_t *page);
@@ -362,7 +363,10 @@ _PyObject_MiRealloc(void *ctx, void *ptr, size_t nbytes)
         _mi_memcpy((char*)newp + offset, (char*)ptr + offset, copy_size - offset);
     }
     else {
-        _mi_memcpy(newp, ptr, copy_size);
+        // memcpy(dst, NULL, 0) is undefined behavior. See gh-151297.
+        if mi_likely(ptr) {
+            _mi_memcpy(newp, ptr, copy_size);
+        }
     }
     mi_free(ptr);
     return newp;
@@ -429,6 +433,12 @@ void* _PyObject_Realloc(void *ctx, void *ptr, size_t size);
 #  define PYRAW_ALLOC MIMALLOC_RAWALLOC
 #  define PYMEM_ALLOC MIMALLOC_ALLOC
 #  define PYOBJ_ALLOC MIMALLOC_OBJALLOC
+#elif defined(_Py_ADDRESS_SANITIZER) || defined(_Py_MEMORY_SANITIZER)
+// ASan and MSan do not track pymalloc blocks, so use malloc by default.
+// pymalloc can still be selected at runtime.
+#  define PYRAW_ALLOC MALLOC_ALLOC
+#  define PYMEM_ALLOC MALLOC_ALLOC
+#  define PYOBJ_ALLOC MALLOC_ALLOC
 #elif defined(WITH_PYMALLOC)
 #  define PYRAW_ALLOC MALLOC_ALLOC
 #  define PYMEM_ALLOC PYMALLOC_ALLOC
@@ -572,6 +582,49 @@ _pymalloc_system_hugepage_size(void)
 }
 #endif
 
+#if (defined(MS_WINDOWS) && defined(PYMALLOC_USE_HUGEPAGES)) || \
+    (defined(PYMALLOC_USE_HUGEPAGES) && defined(ARENAS_USE_MMAP) && defined(MAP_HUGETLB))
+static size_t
+_pymalloc_round_up_to_multiple(size_t size, size_t multiple)
+{
+    if (multiple == 0 || size == 0) {
+        return size;
+    }
+
+    size_t remainder = size % multiple;
+    if (remainder == 0) {
+        return size;
+    }
+
+    size_t padding = multiple - remainder;
+    if (size > SIZE_MAX - padding) {
+        return 0;
+    }
+    return size + padding;
+}
+#endif
+
+static size_t
+_pymalloc_virtual_alloc_size(size_t size)
+{
+#if defined(MS_WINDOWS) && defined(PYMALLOC_USE_HUGEPAGES)
+    if (_PyRuntime.allocators.use_hugepages) {
+        SIZE_T large_page_size = GetLargePageMinimum();
+        if (large_page_size > 0) {
+            return _pymalloc_round_up_to_multiple(size, (size_t)large_page_size);
+        }
+    }
+#elif defined(PYMALLOC_USE_HUGEPAGES) && defined(ARENAS_USE_MMAP) && defined(MAP_HUGETLB)
+    if (_PyRuntime.allocators.use_hugepages) {
+        size_t hp_size = _pymalloc_system_hugepage_size();
+        if (hp_size > 0) {
+            return _pymalloc_round_up_to_multiple(size, hp_size);
+        }
+    }
+#endif
+    return size;
+}
+
 void *
 _PyMem_ArenaAlloc(void *Py_UNUSED(ctx), size_t size)
 {
@@ -621,6 +674,9 @@ _PyMem_ArenaAlloc(void *Py_UNUSED(ctx), size_t size)
     if (ptr == MAP_FAILED)
         return NULL;
     assert(ptr != NULL);
+#ifdef MADV_HUGEPAGE
+    (void)madvise(ptr, size, MADV_HUGEPAGE);
+#endif
     (void)_PyAnnotateMemoryMap(ptr, size, "cpython:pymalloc");
     return ptr;
 #else
@@ -648,7 +704,11 @@ _PyMem_ArenaFree(void *Py_UNUSED(ctx), void *ptr,
     if (ptr == NULL) {
         return;
     }
-    munmap(ptr, size);
+    if (munmap(ptr, size) < 0) {
+        _Py_FatalErrorFormat(__func__,
+                             "munmap(%p, %zu) failed with errno %d",
+                             ptr, size, errno);
+    }
 #else
     free(ptr);
 #endif
@@ -1128,13 +1188,19 @@ PyObject_SetArenaAllocator(PyObjectArenaAllocator *allocator)
 void *
 _PyObject_VirtualAlloc(size_t size)
 {
-    return _PyObject_Arena.alloc(_PyObject_Arena.ctx, size);
+    size_t alloc_size = _pymalloc_virtual_alloc_size(size);
+    if (alloc_size == 0 && size != 0) {
+        return NULL;
+    }
+    return _PyObject_Arena.alloc(_PyObject_Arena.ctx, alloc_size);
 }
 
 void
 _PyObject_VirtualFree(void *obj, size_t size)
 {
-    _PyObject_Arena.free(_PyObject_Arena.ctx, obj, size);
+    size_t alloc_size = _pymalloc_virtual_alloc_size(size);
+    assert(alloc_size != 0 || size == 0);
+    _PyObject_Arena.free(_PyObject_Arena.ctx, obj, alloc_size);
 }
 
 
@@ -3195,10 +3261,10 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
     }
     else {
         size_t i = original_nbytes - ERASED_SIZE;
-        memcpy(data, save, Py_MIN(nbytes, ERASED_SIZE));
+        memcpy(data, save, Py_MIN(nbytes, (size_t)ERASED_SIZE));
         if (nbytes > i) {
             memcpy(data + i, &save[ERASED_SIZE],
-                   Py_MIN(nbytes - i, ERASED_SIZE));
+                   Py_MIN(nbytes - i, (size_t)ERASED_SIZE));
         }
     }
 #endif

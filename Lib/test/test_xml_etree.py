@@ -381,6 +381,19 @@ class ElementTreeTest(unittest.TestCase):
         self.serialize_check(element,
                 '<tag key="value"><subtag /><subtag /></tag>')
 
+    def test_positional_only_parameter(self):
+        # Test Element positional-only parameters (gh-144846).
+
+        # 'tag' is positional-only
+        with self.assertRaises(TypeError):
+            ET.Element(tag='fail')
+
+        # 'tag' and 'attrib' as kwarg/attribute names
+        e = ET.Element('e', attrib={'attrib': 'foo'}, tag='bar')
+        self.assertEqual(e.tag, 'e')
+        self.assertEqual(e.get('attrib'), 'foo')
+        self.assertEqual(e.get('tag'), 'bar')
+
     def test_cdata(self):
         # Test CDATA handling (etc).
 
@@ -483,6 +496,28 @@ class ElementTreeTest(unittest.TestCase):
         elem.set('d', '\n\n\r\r\t\t  ')
         self.assertEqual(ET.tostring(elem),
                 b'<test a="&#13;" b="&#13;&#10;" c="&#09;&#10;&#13; " d="&#10;&#10;&#13;&#13;&#09;&#09;  " />')
+
+    def test_subelement_positional_only_parameter(self):
+        # Test SubElement positional-only parameters (gh-144270).
+        parent = ET.Element('parent')
+
+        # 'parent' and 'tag' are positional-only
+        with self.assertRaises(TypeError):
+            ET.SubElement(parent=parent, tag='fail')
+        with self.assertRaises(TypeError):
+            ET.SubElement(parent, tag='fail')
+
+        # 'attrib' can be passed as keyword
+        sub1 = ET.SubElement(parent, 'sub1', attrib={'key': 'value'})
+        self.assertEqual(sub1.get('key'), 'value')
+
+        # 'tag' and 'parent' as kwargs become XML attributes, not func params
+        sub2 = ET.SubElement(parent, 'sub2', attrib={'attrib': 'foo'},
+                             tag='bar', parent='baz')
+        self.assertEqual(sub2.tag, 'sub2')
+        self.assertEqual(sub2.get('attrib'), 'foo')
+        self.assertEqual(sub2.get('tag'), 'bar')
+        self.assertEqual(sub2.get('parent'), 'baz')
 
     def test_makeelement(self):
         # Test makeelement handling.
@@ -738,9 +773,10 @@ class ElementTreeTest(unittest.TestCase):
         ET.indent(elem)
         self.assertEqual(ET.tostring(elem), b'<html>\n  <body>text</body>\n</html>')
 
+        # an element with mixed content is not indented
         elem = ET.XML("<html><body>text</body>tail</html>")
         ET.indent(elem)
-        self.assertEqual(ET.tostring(elem), b'<html>\n  <body>text</body>tail</html>')
+        self.assertEqual(ET.tostring(elem), b'<html><body>text</body>tail</html>')
 
         elem = ET.XML("<html><body><p>par</p>\n<p>text</p>\t<p><br/></p></body></html>")
         ET.indent(elem)
@@ -810,6 +846,45 @@ class ElementTreeTest(unittest.TestCase):
             len({id(el.tail) for el in elem.iter()}),
         )
 
+    def test_indent_non_xml_whitespace(self):
+        # only " \t\r\n" are whitespace in XML (see XML 1.0, 2.3)
+        elem = ET.XML('<html>\xa0<body><p>text</p>\xa0</body></html>')
+        ET.indent(elem)
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html>&#160;<body><p>text</p>&#160;</body></html>'
+        )
+
+    def test_indent_preserve(self):
+        # xml:space="preserve" applies to the whole subtree
+        elem = ET.XML('<html xml:space="preserve"> <body><p>text</p></body> </html>')
+        ET.indent(elem)
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html xml:space="preserve"> <body><p>text</p></body> </html>'
+        )
+        # other values do not preserve whitespace
+        elem = ET.XML('<html xml:space="default"><body><p>text</p></body></html>')
+        ET.indent(elem)
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html xml:space="default">\n'
+            b'  <body>\n'
+            b'    <p>text</p>\n'
+            b'  </body>\n'
+            b'</html>'
+        )
+
+    def test_indent_mixed_content(self):
+        # whitespace in an element which contains text is significant
+        elem = ET.XML('<p>hello <b>x</b> <i>y</i></p>')
+        ET.indent(elem)
+        self.assertEqual(ET.tostring(elem), b'<p>hello <b>x</b> <i>y</i></p>')
+        # the subtree of such element is not indented either
+        elem = ET.XML('<p>hello <b><i>y</i></b></p>')
+        ET.indent(elem)
+        self.assertEqual(ET.tostring(elem), b'<p>hello <b><i>y</i></b></p>')
+
     def test_indent_level(self):
         elem = ET.XML("<html><body><p>pre<br/>post</p><p>text</p></body></html>")
         with self.assertRaises(ValueError):
@@ -866,6 +941,70 @@ class ElementTreeTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, EXPECTED_MSG):
             ET.tostring(elem, encoding='unicode', default_namespace='foobar')
 
+    def test_tostring_default_namespace_attributes(self):
+        # gh-61290: the default namespace does not apply to attribute names
+        elem = ET.XML('<body xmlns="http://effbot.org/ns" attr="value">'
+                      '<tag attr="value" /></body>')
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode',
+                        default_namespace='http://effbot.org/ns'),
+            '<body xmlns="http://effbot.org/ns" attr="value">'
+            '<tag attr="value" /></body>'
+        )
+
+    def test_tostring_default_namespace_qualified_attributes(self):
+        # a qualified attribute name always needs a prefix, even if it is
+        # in the default namespace
+        elem = ET.Element('{http://effbot.org/ns}body',
+                          {'{http://effbot.org/ns}attr': 'value'})
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode',
+                        default_namespace='http://effbot.org/ns'),
+            '<body xmlns="http://effbot.org/ns" '
+            'xmlns:ns1="http://effbot.org/ns" ns1:attr="value" />'
+        )
+        # an attribute in another namespace uses the prefix of that namespace
+        elem = ET.Element('{http://effbot.org/ns}body',
+                          {'{foobar}attr': 'value', 'plain': 'value'})
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode',
+                        default_namespace='http://effbot.org/ns'),
+            '<body xmlns="http://effbot.org/ns" xmlns:ns1="foobar" '
+            'ns1:attr="value" plain="value" />'
+        )
+
+    def test_tostring_default_namespace_attributes_round_trip(self):
+        xml = ('<body xmlns="http://effbot.org/ns" xmlns:ns1="foobar" '
+               'attr="1"><tag ns1:attr="2" /></body>')
+        elem = ET.XML(xml)
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode',
+                        default_namespace='http://effbot.org/ns'),
+            xml
+        )
+        self.assertEqual(
+            [sorted(e.attrib.items()) for e in ET.XML(xml).iter()],
+            [sorted(e.attrib.items()) for e in elem.iter()]
+        )
+
+    def test_tostring_default_namespace_registered_empty_prefix(self):
+        # gh-118416: the empty prefix is registered for other namespace,
+        # so it cannot be used for the default namespace
+        nsmap = ET.register_namespace._namespace_map
+        self.addCleanup(nsmap.pop, 'default', None)
+        ET.register_namespace('', 'default')
+        elem = ET.Element('{default}elem')
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode',
+                        default_namespace='otherdefault'),
+            '<ns1:elem xmlns="otherdefault" xmlns:ns1="default" />'
+        )
+        # without the option the registered prefix is used
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode'),
+            '<elem xmlns="default" />'
+        )
+
     def test_tostring_no_xml_declaration(self):
         elem = ET.XML('<body><tag/></body>')
         self.assertEqual(
@@ -898,6 +1037,7 @@ class ElementTreeTest(unittest.TestCase):
             (b"<?xml version='1.0' encoding='ISO-8859-1'?>\n"
              b"<body><tag>\xf8</tag></body>", 'ISO-8859-1', None),
             ('<body><tag>ø</tag></body>', 'unicode', None),
+            (b"\xef\xbb\xbf<body><tag>\xc3\xb8</tag></body>", 'utf-8-sig', None),
 
             # ... xml_declaration = False
             (b"<body><tag>&#248;</tag></body>", None, False),
@@ -905,6 +1045,7 @@ class ElementTreeTest(unittest.TestCase):
             (b"<body><tag>&#248;</tag></body>", 'US-ASCII', False),
             (b"<body><tag>\xf8</tag></body>", 'ISO-8859-1', False),
             ("<body><tag>ø</tag></body>", 'unicode', False),
+            (b"\xef\xbb\xbf<body><tag>\xc3\xb8</tag></body>", 'utf-8-sig', False),
 
             # ... xml_declaration = True
             (b"<?xml version='1.0' encoding='us-ascii'?>\n"
@@ -917,6 +1058,8 @@ class ElementTreeTest(unittest.TestCase):
              b"<body><tag>\xf8</tag></body>", 'ISO-8859-1', True),
             ("<?xml version='1.0' encoding='utf-8'?>\n"
              "<body><tag>ø</tag></body>", 'unicode', True),
+            (b"\xef\xbb\xbf<?xml version='1.0' encoding='utf-8'?>\n"
+             b"<body><tag>\xc3\xb8</tag></body>", 'utf-8-sig', True),
 
         ]
         for expected_retval, encoding, xml_declaration in TESTCASES:
@@ -930,6 +1073,96 @@ class ElementTreeTest(unittest.TestCase):
                     ),
                     expected_retval
                 )
+
+    def test_tostring_default_namespace_attributes_html(self):
+        elem = ET.XML('<body xmlns="http://effbot.org/ns" attr="value" />')
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode', method='html',
+                        default_namespace='http://effbot.org/ns'),
+            '<body xmlns="http://effbot.org/ns" attr="value"></body>'
+        )
+
+    def test_tostring_standalone(self):
+        elem = ET.XML('<body><tag/></body>')
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode', standalone=True),
+            "<?xml version='1.0' encoding='utf-8' standalone='yes'?>\n"
+            "<body><tag /></body>"
+        )
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode', standalone=False),
+            "<?xml version='1.0' encoding='utf-8' standalone='no'?>\n"
+            "<body><tag /></body>"
+        )
+        # the XML declaration is written even if it would be omitted
+        self.assertEqual(
+            ET.tostring(elem, standalone=True),
+            b"<?xml version='1.0' encoding='us-ascii' standalone='yes'?>\n"
+            b"<body><tag /></body>"
+        )
+        self.assertEqual(
+            ET.tostring(elem, encoding='UTF-8', standalone=False),
+            b"<?xml version='1.0' encoding='UTF-8' standalone='no'?>\n"
+            b"<body><tag /></body>"
+        )
+
+    def test_tostring_standalone_none(self):
+        elem = ET.XML('<body><tag/></body>')
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode', standalone=None),
+            '<body><tag /></body>'
+        )
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode', xml_declaration=True,
+                        standalone=None),
+            "<?xml version='1.0' encoding='utf-8'?>\n<body><tag /></body>"
+        )
+
+    def test_tostring_standalone_without_xml_declaration(self):
+        elem = ET.XML('<body><tag/></body>')
+        for standalone in True, False:
+            for xml_declaration in False, 0, '':
+                with self.subTest(standalone=standalone,
+                                  xml_declaration=xml_declaration):
+                    with self.assertRaises(ValueError):
+                        ET.tostring(elem, xml_declaration=xml_declaration,
+                                    standalone=standalone)
+
+    def test_tostring_standalone_text_method(self):
+        elem = ET.XML('<body><tag>text</tag></body>')
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode', method='text',
+                        standalone=True),
+            'text'
+        )
+
+    def test_tostringlist_standalone(self):
+        elem = ET.XML('<body><tag/></body>')
+        self.assertEqual(
+            b''.join(ET.tostringlist(elem, standalone=True)),
+            b"<?xml version='1.0' encoding='us-ascii' standalone='yes'?>\n"
+            b"<body><tag /></body>"
+        )
+        with self.assertRaises(ValueError):
+            ET.tostringlist(elem, xml_declaration=False, standalone=False)
+
+    def test_write_standalone(self):
+        elem = ET.XML('<body><tag/></body>')
+        tree = ET.ElementTree(elem)
+        for standalone, expected in [
+                (True, "standalone='yes'"), (False, "standalone='no'")]:
+            with self.subTest(standalone=standalone):
+                file = io.StringIO()
+                tree.write(file, encoding='unicode', standalone=standalone)
+                self.assertEqual(
+                    file.getvalue(),
+                    "<?xml version='1.0' encoding='utf-8' %s?>\n"
+                    "<body><tag /></body>" % expected
+                )
+        file = io.StringIO()
+        with self.assertRaises(ValueError):
+            tree.write(file, encoding='unicode', xml_declaration=False,
+                       standalone=True)
 
     def test_tostringlist_default_namespace(self):
         elem = ET.XML('<body xmlns="http://effbot.org/ns"><tag/></body>')
@@ -973,13 +1206,15 @@ class ElementTreeTest(unittest.TestCase):
         check("iso-8859-15", '\u20ac')
         check("cp437", '\u221a')
         check("mac-roman", '\u02da')
+        check('shift-jis-2004', '\u203e\u3406\uff66')
+        check('euc-jis-2004', '\u3406\uff66')
 
-        def xml(encoding):
-            return "<?xml version='1.0' encoding='%s'?><xml />" % encoding
-        def bxml(encoding):
-            return xml(encoding).encode(encoding)
+        def xml(encoding, body=''):
+            return "<?xml version='1.0' encoding='%s'?><xml>%s</xml>" % (encoding, body)
+        def bxml(encoding, body=''):
+            return xml(encoding, body).encode(encoding)
         supported_encodings = [
-            'ascii', 'utf-8', 'utf-8-sig', 'utf-16', 'utf-16be', 'utf-16le',
+            'utf-8', 'utf-16', 'utf-16be', 'utf-16le',
             'iso8859-1', 'iso8859-2', 'iso8859-3', 'iso8859-4', 'iso8859-5',
             'iso8859-6', 'iso8859-7', 'iso8859-8', 'iso8859-9', 'iso8859-10',
             'iso8859-13', 'iso8859-14', 'iso8859-15', 'iso8859-16',
@@ -990,35 +1225,116 @@ class ElementTreeTest(unittest.TestCase):
             'cp1256', 'cp1257', 'cp1258',
             'mac-cyrillic', 'mac-greek', 'mac-iceland', 'mac-latin2',
             'mac-roman', 'mac-turkish',
-            'iso2022-jp', 'iso2022-jp-1', 'iso2022-jp-2', 'iso2022-jp-2004',
-            'iso2022-jp-3', 'iso2022-jp-ext',
-            'koi8-r', 'koi8-t', 'koi8-u', 'kz1048',
-            'hz', 'ptcp154',
-        ]
-        for encoding in supported_encodings:
-            self.assertEqual(ET.tostring(ET.XML(bxml(encoding))), b'<xml />')
-
-        unsupported_ascii_compatible_encodings = [
+            'koi8-r', 'koi8-t', 'koi8-u', 'kz1048', 'ptcp154',
             'big5', 'big5hkscs',
             'cp932', 'cp949', 'cp950',
-            'euc-jp', 'euc-jis-2004', 'euc-jisx0213', 'euc-kr',
-            'gb2312', 'gbk', 'gb18030',
-            'iso2022-kr', 'johab',
+            'euc-jp', 'euc-jis-2004', 'euc-jisx0213',
+            'gb2312', 'gbk', 'johab',
             'shift-jis', 'shift-jis-2004', 'shift-jisx0213',
+            'utf-8-sig', 'utf8',
+        ]
+        for encoding in supported_encodings:
+            with self.subTest(encoding=encoding):
+                self.assertEqual(ET.tostring(ET.XML(bxml(encoding))), b'<xml />')
+                c = 'éπя\u05d0\u060c€'.encode(encoding, 'ignore').decode(encoding)[0]
+                self.assertEqual(ET.tostring(ET.XML(bxml(encoding, c))),
+                                 ('<xml>&#%d;</xml>' % ord(c)).encode())
+
+        unsupported_ascii_compatible_encodings = [
+            'euc-kr', 'gb18030',
+            'iso2022-jp', 'iso2022-jp-1', 'iso2022-jp-2', 'iso2022-jp-2004',
+            'iso2022-jp-3', 'iso2022-jp-ext',
+            'iso2022-kr', 'hz',
             'utf-7',
         ]
         for encoding in unsupported_ascii_compatible_encodings:
-            self.assertRaises(ValueError, ET.XML, bxml(encoding))
+            with self.subTest(encoding=encoding):
+                self.assertRaises(ValueError, ET.XML, bxml(encoding))
 
         unsupported_ascii_incompatible_encodings = [
             'cp037', 'cp424', 'cp500', 'cp864', 'cp875', 'cp1026', 'cp1140',
             'utf_32', 'utf_32_be', 'utf_32_le',
         ]
         for encoding in unsupported_ascii_incompatible_encodings:
-            self.assertRaises(ET.ParseError, ET.XML, bxml(encoding))
+            with self.subTest(encoding=encoding):
+                self.assertRaises(ET.ParseError, ET.XML, bxml(encoding))
 
         self.assertRaises(ValueError, ET.XML, xml('undefined').encode('ascii'))
         self.assertRaises(LookupError, ET.XML, xml('xxx').encode('ascii'))
+
+    def test_parse_text_source(self):
+        # gh-99064: The encoding declared in the document does not apply
+        # to a source which is already decoded.
+        def check(encoding, body):
+            xml = (f"<?xml version='1.0' encoding='{encoding}'?>"
+                   f"<xml>{body}</xml>")
+            with self.subTest(encoding=encoding):
+                self.assertEqual(ET.parse(io.StringIO(xml)).getroot().text,
+                                 body)
+                # the same with an explicitly created parser
+                self.assertEqual(
+                    ET.parse(io.StringIO(xml), ET.XMLParser()).getroot().text,
+                    body)
+        check("ascii", 'a')
+        check("iso-8859-1", '\xbd')
+        check("iso-8859-15", '\u20ac')
+        check("cp437", '\u221a')
+        check("utf-8", '\u4e2d')
+        # not ASCII compatible, unsupported for a bytes source
+        check("utf-16", '\u4e2d')
+        check("utf-32", '\u4e2d')
+
+    def test_parse_text_source_multiple_chunks(self):
+        # the encoding is overridden before the first chunk is parsed
+        body = '\xe4' * 100_000
+        xml = "<?xml version='1.0' encoding='ISO-8859-1'?><xml>%s</xml>" % body
+        self.assertEqual(ET.parse(io.StringIO(xml)).getroot().text, body)
+
+    def test_parse_input_larger_than_chunk(self):
+        # gh-83895: the C implementation feeds Expat in chunks of 1 MiB
+        size = 3 * (1 << 20)
+        xml = '<r><a>%s</a><b/></r>' % ('x' * size)
+        for source in xml, xml.encode():
+            with self.subTest(type=type(source).__name__):
+                root = ET.fromstring(source)
+                self.assertEqual(len(root[0].text), size)
+                self.assertEqual(root[1].tag, 'b')
+
+    # gh-83895: input larger than INT_MAX is fed to Expat in chunks.
+    # memuse is 3 for the Python implementation, which joins the collected
+    # data, 2 would be enough for the C implementation.
+    @support.bigmemtest(size=support._2G + 100, memuse=3, dry_run=False)
+    def test_large_input(self, size):
+        data = b'<r>' + b'x' * size + b'</r>'
+        root = None
+        try:
+            parser = ET.XMLParser()
+            parser.feed(data)
+            data = None
+            root = parser.close()
+            self.assertEqual(len(root.text), size)
+        finally:
+            data = None
+            root = None
+
+    def test_parse_error_after_chunk_boundary(self):
+        # the reported position accounts for the preceding chunks
+        size = 2 * (1 << 20)
+        with self.assertRaises(ET.ParseError) as cm:
+            ET.fromstring('<r>%s<</r>' % ('x' * size))
+        self.assertEqual(cm.exception.position, (1, size + 4))
+
+
+    @support.subTests('sample,exception', [
+        (b'<x> \xa1</x>', UnicodeDecodeError),  # crashed
+        (b'<x> \xa1</x', UnicodeDecodeError),  # crashed
+        (b'<x> \xa1', None), # ET.ParseError
+    ])
+    def test_multibyte_encoding_errors(self, sample, exception):
+        exception = exception or ET.ParseError
+        data = b'<?xml version="1.0" encoding="EUC-JP"?>\n' + sample
+        with self.assertRaises(exception):
+            ET.XML(data)
 
     def test_methods(self):
         # Test serialization methods.
@@ -1243,7 +1559,15 @@ class ElementTreeTest(unittest.TestCase):
               {'': 'http://www.w3.org/2001/XMLSchema',
                'ns': 'http://www.w3.org/2001/XMLSchema'})
 
-    def test_processinginstruction(self):
+    def test_comment_serialization(self):
+        comm = ET.Comment('<spam> & ham')
+        # comments are not escaped
+        self.assertEqual(ET.tostring(comm), b'<!--<spam> & ham-->')
+        self.assertEqual(ET.tostring(comm, method='html'), b'<!--<spam> & ham-->')
+        # no comments in text serialization
+        self.assertEqual(ET.tostring(comm, method='text'), b'')
+
+    def test_processinginstruction_serialization(self):
         # Test ProcessingInstruction directly
 
         self.assertEqual(ET.tostring(ET.ProcessingInstruction('test', 'instruction')),
@@ -1252,12 +1576,32 @@ class ElementTreeTest(unittest.TestCase):
                 b'<?test instruction?>')
 
         # Issue #2746
-
+        # processing instructions are not escaped
         self.assertEqual(ET.tostring(ET.PI('test', '<testing&>')),
                 b'<?test <testing&>?>')
         self.assertEqual(ET.tostring(ET.PI('test', '<testing&>\xe3'), 'latin-1'),
                 b"<?xml version='1.0' encoding='latin-1'?>\n"
                 b"<?test <testing&>\xe3?>")
+        pi = ET.PI('test', 'ham & eggs < spam')
+        self.assertEqual(ET.tostring(pi), b'<?test ham & eggs < spam?>')
+        self.assertEqual(ET.tostring(pi, method='html'), b'<?test ham & eggs < spam?>')
+        # no processing instructions in text serialization
+        self.assertEqual(ET.tostring(pi, method='text'), b'')
+
+    def test_empty_attribute_serialization(self):
+        # empty attrs only work in html
+        elem = ET.Element('tag', attrib={'attr': None})
+        self.assertRaises(TypeError, ET.tostring, elem)
+        self.assertEqual(ET.tostring(elem, method='html'), b'<tag attr></tag>')
+
+    @support.subTests('tag', ("script", "style", "xmp", "iframe", "noembed", "noframes"))
+    def test_html_cdata_elems_serialization(self, tag):
+        # content of raw text elements is not escaped in html
+        tag = tag.title()
+        elem = ET.Element(tag)
+        elem.text = '<spam>&ham'
+        self.assertEqual(ET.tostring(elem, method='html'),
+                         ('<%s><spam>&ham</%s>' % (tag, tag)).encode())
 
     def test_html_empty_elems_serialization(self):
         # issue 15970
@@ -1272,6 +1616,14 @@ class ElementTreeTest(unittest.TestCase):
                 serialized = serialize(ET.XML('<%s></%s>' % (elem,elem)),
                                        method='html')
                 self.assertEqual(serialized, expected)
+
+    def test_html_plaintext_serialization(self):
+        # content of plaintext is not escaped in html
+        # no end tag for plaintext
+        elem = ET.Element('PlainText')
+        elem.text = '<spam>&ham'
+        self.assertEqual(ET.tostring(elem, method='html'),
+                         b'<PlainText><spam>&ham')
 
     def test_dump_attribute_order(self):
         # See BPO 34160
@@ -1406,6 +1758,43 @@ class IterparseTest(unittest.TestCase):
             self.assertEqual(str(cm.exception), "unknown event 'bogus'")
             del cm
             gc_collect()
+
+    class Target:
+        # a target which does not build a tree
+        def start(self, tag, attrib):
+            return tag
+        def end(self, tag):
+            return tag
+        def data(self, data):
+            pass
+
+    def test_target(self):
+        # gh-63102: a custom target reports its own objects
+        with open(SIMPLE_XMLFILE, 'rb') as f:
+            it = ET.iterparse(f, events=('start', 'end'), target=self.Target())
+            self.assertEqual(list(it), [
+                ('start', 'root'),
+                ('start', 'element'),
+                ('end', 'element'),
+                ('start', 'element'),
+                ('end', 'element'),
+                ('start', 'empty-element'),
+                ('end', 'empty-element'),
+                ('end', 'root'),
+            ])
+            self.assertIsNone(it.root)
+
+    def test_parser_with_target(self):
+        with open(SIMPLE_XMLFILE, 'rb') as f:
+            parser = ET.XMLParser(target=self.Target())
+            it = ET.iterparse(f, events=('start',), parser=parser)
+            self.assertEqual(next(it), ('start', 'root'))
+
+    def test_target_and_parser(self):
+        with self.assertRaisesRegex(ValueError,
+                                    "can't specify both parser and target"):
+            ET.iterparse(SIMPLE_XMLFILE, parser=ET.XMLParser(),
+                         target=self.Target())
 
     def test_non_utf8(self):
         source = io.BytesIO(
@@ -1817,6 +2206,76 @@ class XMLPullParserTest(unittest.TestCase):
         parser = ET.XMLPullParser(events=DummyIter())
         self._feed(parser, "<foo>bar</foo>")
         self.assert_event_tags(parser, [('start', 'foo'), ('end', 'foo')])
+
+    # gh-63102: the pull parser reports events from any target
+    class SimpleTarget:
+        def start(self, tag, attrib):
+            return ('start', tag)
+        def end(self, tag):
+            return ('end', tag)
+        def data(self, data):
+            pass
+        def comment(self, text):
+            return ('comment', text)
+        def pi(self, target, data=None):
+            return ('pi', target)
+        def close(self):
+            return 'closed'
+
+    def test_custom_target(self):
+        parser = ET.XMLPullParser(events=('start', 'end'),
+                                  target=self.SimpleTarget())
+        self._feed(parser, "<root><element/></root>")
+        self.assert_event_tuples(parser, [
+            ('start', ('start', 'root')),
+            ('start', ('start', 'element')),
+            ('end', ('end', 'element')),
+            ('end', ('end', 'root')),
+        ])
+
+    def test_custom_target_comment_pi(self):
+        parser = ET.XMLPullParser(events=('comment', 'pi'),
+                                  target=self.SimpleTarget())
+        self._feed(parser, "<root><!-- text --><?pitarget data?></root>")
+        self.assert_event_tuples(parser, [
+            ('comment', ('comment', ' text ')),
+            ('pi', ('pi', 'pitarget')),
+        ])
+
+    def test_custom_target_without_method(self):
+        class Target:
+            def close(self):
+                pass
+        for event in ('start', 'end', 'comment', 'pi'):
+            with self.subTest(event=event):
+                with self.assertRaisesRegex(TypeError,
+                        "the target does not support %r events" % event):
+                    ET.XMLPullParser(events=(event,), target=Target())
+        # the namespace events do not need methods of the target
+        parser = ET.XMLPullParser(events=('start-ns', 'end-ns'),
+                                  target=Target())
+        self._feed(parser, "<root xmlns='namespace' />")
+        self.assert_event_tuples(parser, [
+            ('start-ns', ('', 'namespace')),
+            ('end-ns', None),
+        ])
+
+    def test_custom_target_ns_events(self):
+        # the target does not implement start_ns()/end_ns(),
+        # so the prefix and the uri are reported
+        parser = ET.XMLPullParser(events=('start-ns', 'end-ns'),
+                                  target=self.SimpleTarget())
+        self._feed(parser, "<root xmlns='namespace' />")
+        self.assert_event_tuples(parser, [
+            ('start-ns', ('', 'namespace')),
+            ('end-ns', None),
+        ])
+
+    def test_custom_target_close(self):
+        parser = ET.XMLPullParser(events=('end',), target=self.SimpleTarget())
+        self._feed(parser, "<root/>")
+        parser.close()
+        self.assert_event_tuples(parser, [('end', ('end', 'root'))])
 
     def test_unknown_event(self):
         with self.assertRaises(ValueError):
@@ -3155,6 +3614,19 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         self.assertEqual([c.tag for c in children[3:]],
                          [a.tag, b.tag, a.tag, b.tag])
 
+    @support.run_with_limited_c_stack(500_000)
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
+    def test_deeply_nested_deepcopy(self):
+        # This should raise a RecursionError and not crash.
+        # See https://github.com/python/cpython/issues/148801.
+        root = cur = ET.Element('s')
+        for _ in range(500_000):
+            cur = ET.SubElement(cur, 'u')
+        with support.infinite_recursion():
+            with self.assertRaises(RecursionError):
+                copy.deepcopy(root)
+
 
 class MutationDeleteElementPath(str):
     def __new__(cls, elem, *args):
@@ -3222,6 +3694,16 @@ class BadElementPathTest(ElementTestCase, unittest.TestCase):
                 e = ET.Element('foo')
                 e.extend([ET.Element('bar')])
                 e.findtext(cls(e, 'x'))
+
+    def test_findtext_with_mutating_non_none_text(self):
+        for cls in [MutationDeleteElementPath, MutationClearElementPath]:
+            with self.subTest(cls):
+                e = ET.Element('foo')
+                child = ET.Element('bar')
+                child.text = str(object())
+                e.append(child)
+                del child
+                repr(e.findtext(cls(e, 'x')))
 
     def test_findtext_with_error(self):
         e = ET.Element('foo')
@@ -3362,6 +3844,37 @@ class ElementFindTest(unittest.TestCase):
         self.assertRaisesRegex(SyntaxError, 'XPath', e.find, './tag[-1]')
         self.assertRaisesRegex(SyntaxError, 'XPath', e.find, './tag[last()-0]')
         self.assertRaisesRegex(SyntaxError, 'XPath', e.find, './tag[last()+1]')
+
+    def test_find_xpath_index_no_quadratic_complexity(self):
+        class CountingElement(ET.Element):
+            findall_calls = 0
+            def findall(self, *args, **kwargs):
+                type(self).findall_calls += 1
+                return super().findall(*args, **kwargs)
+
+        def work(n, pattern):
+            root = CountingElement("root")
+            for _ in range(n):
+                ET.SubElement(root, "a")
+            CountingElement.findall_calls = 0
+            root.findall(pattern)
+            return CountingElement.findall_calls
+
+        for pattern in [".//a[1]", ".//a[last()]"]:
+            w1 = work(1024, pattern)
+            w2 = work(2048, pattern)
+            w3 = work(4096, pattern)
+
+            self.assertGreater(w1, 0)
+            r1 = w2 / w1
+            r2 = w3 / w2
+            # Doubling N must not ~double the parent.findall calls.
+            # Linear-in-N call counts indicate the cache is missing.
+            self.assertLess(
+                max(r1, r2), 1.5,
+                msg=f"Possible quadratic behavior on {pattern!r}: "
+                    f"calls={w1, w2, w3} ratios={r1, r2}",
+            )
 
     def test_findall(self):
         e = ET.XML(SAMPLE_XML)
@@ -3595,6 +4108,32 @@ class ElementIterTest(unittest.TestCase):
         # Issue #16913
         doc = ET.XML("<root>a&amp;<sub>b&amp;</sub>c&amp;</root>")
         self.assertEqual(''.join(doc.itertext()), 'a&b&c&')
+
+    def test_comment(self):
+        e = ET.Element('root')
+        e.text = 'before'
+        comment = ET.Comment('comment')
+        self.assertEqual(comment.text, 'comment')
+        comment.tail = 'after'
+        e.append(comment)
+        self.assertEqual(''.join(e.itertext()), 'beforeafter')
+        self.assertEqual(list(e.iter()), [e, comment])
+        self.assertEqual(list(e.iter('root')), [e])
+        self.assertEqual(''.join(comment.itertext()), '')
+        self.assertEqual(list(comment.iter()), [comment])
+
+    def test_processinginstruction(self):
+        e = ET.Element('root')
+        e.text = 'before'
+        pi = ET.PI('test', 'instruction')
+        self.assertEqual(pi.text, 'test instruction')
+        pi.tail = 'after'
+        e.append(pi)
+        self.assertEqual(''.join(e.itertext()), 'beforeafter')
+        self.assertEqual(list(e.iter()), [e, pi])
+        self.assertEqual(list(e.iter('root')), [e])
+        self.assertEqual(''.join(pi.itertext()), '')
+        self.assertEqual(list(pi.iter()), [pi])
 
     def test_corners(self):
         # single root, no subelements
@@ -3881,6 +4420,21 @@ class TreeBuilderTest(unittest.TestCase):
         self.assertEqual(parser.close(),
             ('html', '-//W3C//DTD XHTML 1.0 Transitional//EN',
              'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'))
+
+        for doctype, expected in [
+            ('<!DOCTYPE html>', ('html', None, None)),
+            ('<!DOCTYPE html [<!ENTITY e "v">]>', ('html', None, None)),
+            ('<!DOCTYPE html SYSTEM "a.dtd">', ('html', None, 'a.dtd')),
+            ('<!DOCTYPE html SYSTEM "a.dtd" [<!ENTITY e "v">]>',
+             ('html', None, 'a.dtd')),
+            ('<!DOCTYPE html PUBLIC "-//P" "a.dtd">', ('html', '-//P', 'a.dtd')),
+            ("<!DOCTYPE\nhtml\nPUBLIC\n'-//P'\n'a.dtd'\n>",
+             ('html', '-//P', 'a.dtd')),
+        ]:
+            with self.subTest(doctype=doctype):
+                parser = ET.XMLParser(target=DoctypeParser())
+                parser.feed(doctype + '<html/>')
+                self.assertEqual(parser.close(), expected)
 
     def test_builder_lookup_errors(self):
         class RaisingBuilder:
@@ -4579,6 +5133,11 @@ class C14NTest(unittest.TestCase):
         self.assertEqual(c14n_roundtrip(xml), xml)
         xml = '<X xmlns="http://nps/a"><Y xmlns:b="http://nsp/b" b:targets="abc,xyz"></Y></X>'
         self.assertEqual(c14n_roundtrip(xml), xml)
+
+    def test_c14n_strip_non_xml_whitespace(self):
+        # only " \t\r\n" are whitespace in XML (see XML 1.0, 2.3)
+        self.assertEqual(c14n_roundtrip("<a> \xa0x\xa0 </a>", strip_text=True),
+                         "<a>\xa0x\xa0</a>")
 
     def test_c14n_exclusion(self):
         xml = textwrap.dedent("""\

@@ -1,0 +1,2 @@
+Fix IDLE hanging after Restart Shell while receiving a large output from the
+user process.

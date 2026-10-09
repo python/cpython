@@ -19,6 +19,7 @@ EXPECTED_SCREEN_DISTANCE_OR_EMPTY_ERRMSG = '(bad|expected) screen distance (or "
 class PackTest(AbstractWidgetTest, unittest.TestCase):
 
     test_keys = None
+    test_options_in_docstring = None
 
     def create2(self):
         pack = tkinter.Toplevel(self.root, name='pack')
@@ -289,10 +290,30 @@ class PackTest(AbstractWidgetTest, unittest.TestCase):
         b.pack_configure()
         self.assertEqual(pack.pack_slaves(), [a, b])
 
+    def test_pack_short_aliases(self):
+        # slaves, content and propagate are aliases of the pack_* methods
+        # (Misc precedes Pack, Place and Grid in the method resolution order).
+        pack, a, b, c, d = self.create2()
+        self.assertEqual(pack.slaves, pack.pack_slaves)
+        self.assertEqual(pack.content, pack.pack_content)
+        self.assertEqual(pack.propagate, pack.pack_propagate)
+
+        self.assertEqual(pack.slaves(), [])
+        a.pack_configure()
+        self.assertEqual(pack.slaves(), [a])
+        self.assertEqual(pack.content(), [a])
+
+        pack.configure(width=300, height=200)
+        pack.propagate(False)
+        self.root.update()
+        self.assertEqual(pack.winfo_reqwidth(), 300)
+        self.assertEqual(pack.winfo_reqheight(), 200)
+
 
 class PlaceTest(AbstractWidgetTest, unittest.TestCase):
 
     test_keys = None
+    test_options_in_docstring = None
 
     def create2(self):
         t = tkinter.Toplevel(self.root, width=300, height=200, bd=0)
@@ -503,10 +524,23 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
         with self.assertRaises(TypeError):
             foo.place_slaves(0)
 
+    def test_place_method_aliases(self):
+        # The Place manager defines configure, info, forget, slaves and
+        # content as aliases of its place_* methods.  On a real widget the
+        # short names are provided by Misc and Pack (earlier in the method
+        # resolution order), so the aliases are checked on the class itself.
+        self.assertIs(tkinter.Place.configure, tkinter.Place.place_configure)
+        self.assertIs(tkinter.Place.config, tkinter.Place.place_configure)
+        self.assertIs(tkinter.Place.info, tkinter.Place.place_info)
+        self.assertIs(tkinter.Place.forget, tkinter.Place.place_forget)
+        self.assertIs(tkinter.Place.slaves, tkinter.Misc.place_slaves)
+        self.assertIs(tkinter.Place.content, tkinter.Misc.place_content)
+
 
 class GridTest(AbstractWidgetTest, unittest.TestCase):
 
     test_keys = None
+    test_options_in_docstring = None
 
     def tearDown(self):
         cols, rows = self.root.grid_size()
@@ -937,6 +971,30 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(self.root.grid_slaves(column=0), [b])
         self.assertEqual(self.root.grid_slaves(column=1), [d, c, a])
         self.assertEqual(self.root.grid_slaves(row=1, column=1), [d, c])
+
+    def test_grid_short_aliases(self):
+        # columnconfigure, rowconfigure, size, anchor and bbox are aliases of
+        # the corresponding grid_* methods (Misc precedes Pack, Place and Grid
+        # in the method resolution order).
+        root = self.root
+        self.assertEqual(root.columnconfigure, root.grid_columnconfigure)
+        self.assertEqual(root.rowconfigure, root.grid_rowconfigure)
+        self.assertEqual(root.size, root.grid_size)
+        self.assertEqual(root.anchor, root.grid_anchor)
+        self.assertEqual(root.bbox, root.grid_bbox)
+
+        self.assertEqual(root.size(), (0, 0))
+        b = tkinter.Button(root)
+        b.grid_configure(column=2, row=3)
+        self.assertEqual(root.size(), (3, 4))
+
+        root.columnconfigure(0, weight=2)
+        self.assertEqual(root.grid_columnconfigure(0, 'weight'), 2)
+        root.rowconfigure(0, weight=3)
+        self.assertEqual(root.grid_rowconfigure(0, 'weight'), 3)
+
+        root.anchor('se')
+        self.assertEqual(root.tk.call('grid', 'anchor', root), 'se')
 
 
 if __name__ == '__main__':

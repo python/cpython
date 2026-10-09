@@ -1,11 +1,7 @@
-from __future__ import annotations
-
 import os
 import sys
 
-# types
-if False:
-    from typing import IO
+lazy from typing import IO
 
 
 trace_file: IO[str] | None = None
@@ -32,3 +28,9 @@ else:
             line = line.format(*k, **kw)
         trace_file.write(line + "\n")
         trace_file.flush()
+
+
+def trace_text(text: str, limit: int = 60) -> str:
+    if len(text) > limit:
+        text = text[:limit] + "..."
+    return repr(text)

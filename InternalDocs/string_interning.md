@@ -16,8 +16,8 @@ dynamic interning.
 
 The 256 possible one-character latin-1 strings, which can be retrieved with
 `_Py_LATIN1_CHR(c)`, are stored in statically allocated arrays,
-`_PyRuntime.static_objects.strings.ascii` and
-`_PyRuntime.static_objects.strings.latin1`.
+`_PyRuntime.static_objects.singletons.strings.ascii` and
+`_PyRuntime.static_objects.singletons.strings.latin1`.
 
 Longer singleton strings are marked in C source with `_Py_ID` (if the string
 is a valid C identifier fragment) or `_Py_STR` (if it needs a separate

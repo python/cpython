@@ -28,12 +28,25 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.util.typing import ExtensionMetadata
 
-ROLE_TO_OBJECT_TYPE = {
-    "func": "function",
-    "macro": "macro",
-    "member": "member",
-    "type": "type",
-    "data": "var",
+ABI_KIND_TO_OBJECT_TYPES = {
+    "function": ["function"],
+    "member": ["member"],
+    "struct": ["type"],
+    "data": ["var"],
+    "const": ["macro"],
+    "typedef": ["type"],
+    # Some macros are documented as functions
+    "macro": ["macro", "function"],
+}
+
+ABI_KIND_TO_ROLE = {
+    'function': 'func',
+    "member": 'member',
+    'data': 'data',
+    'struct': 'type',
+    'macro': 'macro',
+    'const': 'macro',
+    'typedef': 'type',
 }
 
 
@@ -61,11 +74,11 @@ class ThreadSafetyEntry:
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class StableABIEntry:
-    # Role of the object.
-    # Source: Each [item_kind] in stable_abi.toml is mapped to a C Domain role.
-    role: str
+    # Kind of the object.
+    # Source: [<kind>.<name>] in stable_abi.toml.
+    kind: str
     # Name of the object.
-    # Source: [<item_kind>.*] in stable_abi.toml.
+    # Source: [<kind>.<name>] in stable_abi.toml.
     name: str
     # Version when the object was added to the stable ABI.
     # (Source: [<item_kind>.*.added] in stable_abi.toml.
@@ -177,10 +190,11 @@ def add_annotations(app: Sphinx, doctree: nodes.document) -> None:
 
         # Stable ABI annotation.
         if record := stable_abi_data.get(name):
-            if ROLE_TO_OBJECT_TYPE[record.role] != objtype:
+            record_object_types = ABI_KIND_TO_OBJECT_TYPES[record.kind]
+            if objtype not in record_object_types:
                 msg = (
                     f"Object type mismatch in limited API annotation for {name}: "
-                    f"{ROLE_TO_OBJECT_TYPE[record.role]!r} != {objtype!r}"
+                    f"{objtype!r} not in {record_object_types!r}"
                 )
                 raise ValueError(msg)
             annotation = _stable_abi_annotation(record)
@@ -238,10 +252,14 @@ def _stable_abi_annotation(
         emph_node += nodes.Text(" ")
         emph_node += nodes.literal(record.name, record.name)
         message = sphinx_gettext("is part of the")
-        emph_node += nodes.Text(" " + message + " ")
+    elif record.kind == "macro":
+        # Macros are not part of the ABI
+        message = sphinx_gettext(
+            "This macro is available when compiling for the"
+        )
     else:
         message = sphinx_gettext("Part of the")
-        emph_node += nodes.Text(" " + message + " ")
+    emph_node += nodes.Text(" " + message + " ")
     ref_node = addnodes.pending_xref(
         "Stable ABI",
         refdomain="std",
@@ -249,18 +267,17 @@ def _stable_abi_annotation(
         reftype="ref",
         refexplicit="False",
     )
-    struct_abi_kind = record.struct_abi_kind
-    if struct_abi_kind in {"opaque", "members"}:
-        ref_node += nodes.Text(sphinx_gettext("Limited API"))
-    else:
-        ref_node += nodes.Text(sphinx_gettext("Stable ABI"))
+    ref_node += nodes.Text(sphinx_gettext("Stable ABI"))
     emph_node += ref_node
+    struct_abi_kind = record.struct_abi_kind
     if struct_abi_kind == "opaque":
         emph_node += nodes.Text(" " + sphinx_gettext("(as an opaque struct)"))
     elif struct_abi_kind == "full-abi":
         emph_node += nodes.Text(
             " " + sphinx_gettext("(including all members)")
         )
+    elif struct_abi_kind in {"members", "abi3t-opaque"}:
+        emph_node += nodes.Text(" " + sphinx_gettext("(see below)"))
     if record.ifdef_note:
         emph_node += nodes.Text(f" {record.ifdef_note}")
     if stable_added == "3.2":
@@ -271,11 +288,7 @@ def _stable_abi_annotation(
             " " + sphinx_gettext("since version %s") % stable_added
         )
     emph_node += nodes.Text(".")
-    if struct_abi_kind == "members":
-        msg = " " + sphinx_gettext(
-            "(Only some members are part of the stable ABI.)"
-        )
-        emph_node += nodes.Text(msg)
+
     return emph_node
 
 
@@ -370,9 +383,36 @@ class LimitedAPIList(SphinxDirective):
     def run(self) -> list[nodes.Node]:
         state = self.env.domaindata["c_annotations"]
         content = [
-            f"* :c:{record.role}:`{record.name}`"
+            f"* :c:{ABI_KIND_TO_ROLE[record.kind]}:`{record.name}`"
             for record in state["stable_abi_data"].values()
         ]
+        node = nodes.paragraph()
+        self.state.nested_parse(StringList(content), 0, node)
+        return [node]
+
+
+class VersionHexCheatsheet(SphinxDirective):
+    """Show results of Py_PACK_VERSION(3, x) for a few relevant Python versions
+
+    This is useful for defining version before Python.h is included.
+    It should auto-update with the version being documented, so it must be an
+    extension.
+    """
+
+    has_content = False
+    required_arguments = 0
+    optional_arguments = 0
+    final_argument_whitespace = True
+
+    def run(self) -> list[nodes.Node]:
+        content = [
+            ".. code-block:: c",
+            "",
+        ]
+        current_minor = int(self.config.version.removeprefix('3.'))
+        for minor in range(current_minor - 5, current_minor + 1):
+            value = (3 << 24) | (minor << 16)
+            content.append(f'    {value:#x}  /* Py_PACK_VERSION(3,{minor}) */')
         node = nodes.paragraph()
         self.state.nested_parse(StringList(content), 0, node)
         return [node]
@@ -443,6 +483,7 @@ def setup(app: Sphinx) -> ExtensionMetadata:
     app.add_config_value("stable_abi_file", "", "env", types={str})
     app.add_config_value("threadsafety_file", "", "env", types={str})
     app.add_directive("limited-api-list", LimitedAPIList)
+    app.add_directive("version-hex-cheatsheet", VersionHexCheatsheet)
     app.add_directive("corresponding-type-slot", CorrespondingTypeSlot)
     app.connect("builder-inited", init_annotations)
     app.connect("doctree-read", add_annotations)

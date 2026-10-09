@@ -88,11 +88,11 @@ Functions and classes provided:
    the exception has been handled, and execution will resume with the statement
    immediately following the :keyword:`!with` statement.
 
-   :func:`contextmanager` uses :class:`ContextDecorator` so the context managers
+   :deco:`contextmanager` uses :class:`ContextDecorator` so the context managers
    it creates can be used as decorators as well as in :keyword:`with` statements.
    When used as a decorator, a new generator instance is implicitly created on
    each function call (this allows the otherwise "one-shot" context managers
-   created by :func:`contextmanager` to meet the requirement that context
+   created by :deco:`contextmanager` to meet the requirement that context
    managers support multiple invocations in order to be used as decorators).
 
    .. versionchanged:: 3.2
@@ -101,7 +101,7 @@ Functions and classes provided:
 
 .. decorator:: asynccontextmanager
 
-   Similar to :func:`~contextlib.contextmanager`, but creates an
+   Similar to :deco:`~contextlib.contextmanager`, but creates an
    :ref:`asynchronous context manager <async-context-managers>`.
 
    This function is a :term:`decorator` that can be used to define a factory
@@ -128,7 +128,7 @@ Functions and classes provided:
 
    .. versionadded:: 3.7
 
-   Context managers defined with :func:`asynccontextmanager` can be used
+   Context managers defined with :deco:`asynccontextmanager` can be used
    either as decorators or with :keyword:`async with` statements::
 
      import time
@@ -148,11 +148,11 @@ Functions and classes provided:
 
    When used as a decorator, a new generator instance is implicitly created on
    each function call. This allows the otherwise "one-shot" context managers
-   created by :func:`asynccontextmanager` to meet the requirement that context
+   created by :deco:`asynccontextmanager` to meet the requirement that context
    managers support multiple invocations in order to be used as decorators.
 
    .. versionchanged:: 3.10
-      Async context managers created with :func:`asynccontextmanager` can
+      Async context managers created with :deco:`asynccontextmanager` can
       be used as decorators.
 
 
@@ -400,7 +400,7 @@ Functions and classes provided:
    ``__exit__`` retains its optional
    exception handling even when used as a decorator.
 
-   ``ContextDecorator`` is used by :func:`contextmanager`, so you get this
+   ``ContextDecorator`` is used by :deco:`contextmanager`, so you get this
    functionality automatically.
 
    Example of ``ContextDecorator``::
@@ -467,12 +467,40 @@ Functions and classes provided:
       statements. If this is not the case, then the original construct with the
       explicit :keyword:`!with` statement inside the function should be used.
 
+   When the decorated callable is a generator function, coroutine function, or
+   asynchronous generator function, the returned wrapper is of the same kind
+   and keeps the context manager open for the lifetime of the iteration or
+   await rather than only for the call that creates the generator or coroutine
+   object.  Wrapped generators and asynchronous generators are explicitly
+   closed when iteration ends, as if by :func:`closing` or :func:`aclosing`.
+
+   .. note::
+      For asynchronous generators the wrapper re-yields each value with
+      ``async for``; values sent with :meth:`~agen.asend` and exceptions
+      thrown with :meth:`~agen.athrow` are not forwarded to the wrapped
+      generator.
+
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.15
+      Decorating a generator function, coroutine function, or asynchronous
+      generator function now keeps the context manager open across iteration
+      or await.  Previously the context manager exited as soon as the
+      generator or coroutine object was created.
 
 
 .. class:: AsyncContextDecorator
 
-   Similar to :class:`ContextDecorator` but only for asynchronous functions.
+   Similar to :class:`ContextDecorator`, but the context manager is entered
+   and exited with :keyword:`async with`.  Decorate coroutine functions and
+   asynchronous generator functions with this class; the returned wrapper is
+   of the same kind.
+
+   .. note::
+      Synchronous functions and generators are accepted, but the wrapper is
+      always asynchronous, so the decorated callable must then be awaited or
+      iterated with ``async for``.  If that change of calling convention is
+      not intended, use :class:`ContextDecorator` instead.
 
    Example of ``AsyncContextDecorator``::
 
@@ -509,6 +537,13 @@ Functions and classes provided:
       Finishing
 
    .. versionadded:: 3.10
+
+   .. versionchanged:: 3.15
+      Decorating an asynchronous generator function now keeps the context
+      manager open across iteration.  Previously the context manager exited
+      as soon as the generator object was created.  Synchronous functions
+      and synchronous generator functions are also now accepted, with an
+      asynchronous wrapper returned.
 
 
 .. class:: ExitStack()
@@ -667,7 +702,7 @@ Functions and classes provided:
 
       Similar to :meth:`ExitStack.close` but properly handles awaitables.
 
-   Continuing the example for :func:`asynccontextmanager`::
+   Continuing the example for :deco:`asynccontextmanager`::
 
       async with AsyncExitStack() as stack:
           connections = [await stack.enter_async_context(get_connection())
@@ -925,7 +960,7 @@ Files are an example of effectively single use context managers, since
 the first :keyword:`with` statement will close the file, preventing any
 further IO operations using that file object.
 
-Context managers created using :func:`contextmanager` are also single use
+Context managers created using :deco:`contextmanager` are also single use
 context managers, and will complain about the underlying generator failing
 to yield if an attempt is made to use them a second time::
 

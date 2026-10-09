@@ -12,6 +12,11 @@ extern "C" {
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_stats.h"
 
+/* Flags that determine the C calling convention. */
+#define _Py_METH_CALL_FLAGS \
+    (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O | \
+     METH_KEYWORDS | METH_METHOD)
+
 /* Suggested size (number of positional arguments) for arrays of PyObject*
    allocated on a C stack to avoid allocating memory on the heap memory. Such
    array is used to pass positional arguments to call functions of the
@@ -51,12 +56,6 @@ extern PyObject* _PyObject_Call(
     PyObject *callable,
     PyObject *args,
     PyObject *kwargs);
-
-extern PyObject * _PyObject_CallMethodFormat(
-    PyThreadState *tstate,
-    PyObject *callable,
-    const char *format,
-    ...);
 
 // Export for 'array' shared extension
 PyAPI_FUNC(PyObject*) _PyObject_CallMethod(
@@ -166,7 +165,8 @@ _PyStack_UnpackDict(PyThreadState *tstate,
     PyObject *const *args, Py_ssize_t nargs,
     PyObject *kwargs, PyObject **p_kwnames);
 
-extern void _PyStack_UnpackDict_Free(
+// Exported for external JIT support
+PyAPI_FUNC(void) _PyStack_UnpackDict_Free(
     PyObject *const *stack,
     Py_ssize_t nargs,
     PyObject *kwnames);

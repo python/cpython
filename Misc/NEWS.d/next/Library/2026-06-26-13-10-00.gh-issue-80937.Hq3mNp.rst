@@ -1,0 +1,4 @@
+Fix a memory leak in :mod:`tkinter` when a Tcl command created with
+``createcommand`` was not explicitly removed before the interpreter was
+deleted.  The command no longer keeps the interpreter alive through a
+reference cycle.

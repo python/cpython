@@ -119,7 +119,7 @@ _opcode_has_const_impl(PyObject *module, int opcode)
 }
 
 /*[clinic input]
-
+@permit_long_summary
 _opcode.has_name -> bool
 
   opcode: int
@@ -129,7 +129,7 @@ Return True if the opcode accesses an attribute by name, False otherwise.
 
 static int
 _opcode_has_name_impl(PyObject *module, int opcode)
-/*[clinic end generated code: output=b49a83555c2fa517 input=448aa5e4bcc947ba]*/
+/*[clinic end generated code: output=b49a83555c2fa517 input=8faf669024d97fad]*/
 {
     return IS_VALID_OPCODE(opcode) && OPCODE_HAS_NAME(opcode);
 }

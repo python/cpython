@@ -29,6 +29,7 @@ __all__ = ['get_ident', 'active_count', 'Condition', 'current_thread',
            'Barrier', 'BrokenBarrierError', 'Timer', 'ThreadError',
            'setprofile', 'settrace', 'local', 'stack_size',
            'excepthook', 'ExceptHookArgs', 'gettrace', 'getprofile',
+           'serialize_iterator', 'synchronized_iterator', 'concurrent_tee',
            'setprofile_all_threads','settrace_all_threads']
 
 # Rename some stuff so "from threading import *" is safe
@@ -840,6 +841,148 @@ class Barrier:
 # exception raised by the Barrier class
 class BrokenBarrierError(RuntimeError):
     pass
+
+
+## Synchronization tools for iterators #####################
+
+class serialize_iterator:
+    """Wrap a non-concurrent iterator with a lock to enforce sequential access.
+
+    Applies a non-reentrant lock around calls to __next__.  If the
+    wrapped iterator also defines send(), throw(), or close(), those
+    calls are serialized as well.
+
+    Allows iterator and generator instances to be shared by multiple consumer
+    threads.
+
+    For example, itertools.count does not make thread-safe instances,
+    but that is easily fixed with:
+
+        atomic_counter = serialize_iterator(itertools.count())
+
+    """
+
+    __slots__ = ('_iterator', '_lock')
+
+    def __init__(self, iterable):
+        self._iterator = iter(iterable)
+        self._lock = Lock()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        with self._lock:
+            return next(self._iterator)
+
+    def send(self, value, /):
+        """Send a value to a generator.
+
+        Raises AttributeError if not a generator.
+        """
+        with self._lock:
+            return self._iterator.send(value)
+
+    def throw(self, *args):
+        """Call throw() on a generator.
+
+        Raises AttributeError if not a generator.
+        """
+        with self._lock:
+            return self._iterator.throw(*args)
+
+    def close(self):
+        """Call close() on a generator.
+
+        Raises AttributeError if not a generator.
+        """
+        with self._lock:
+            return self._iterator.close()
+
+
+def synchronized_iterator(func):
+    """Wrap an iterator-returning callable to make its iterators thread-safe.
+
+    Existing itertools and more-itertools can be wrapped so that their
+    iterator instances are serialized.
+
+    For example, itertools.count does not make thread-safe instances,
+    but that is easily fixed with:
+
+        atomic_counter = synchronized_iterator(itertools.count)
+
+    Can also be used as a decorator for generator function definitions
+    so that the generator instances are serialized::
+
+        import time
+
+        @synchronized_iterator
+        def enumerate_and_timestamp(iterable):
+            for count, value in enumerate(iterable):
+                yield count, time.time_ns(), value
+
+    """
+
+    from functools import wraps
+
+    @wraps(func)
+    def inner(*args, **kwargs):
+        iterator = func(*args, **kwargs)
+        return serialize_iterator(iterator)
+
+    return inner
+
+
+def concurrent_tee(iterable, n=2):
+    """Variant of itertools.tee() but with guaranteed threading semantics.
+
+    Takes a non-threadsafe iterator as an input and creates concurrent
+    tee objects for other threads to have reliable independent copies of
+    the data stream.
+
+    The new iterators are only thread-safe if consumed within a single thread.
+    To share just one of the new iterators across multiple threads, wrap it
+    with threading.serialize_iterator().
+    """
+
+    if n < 0:
+        raise ValueError("n must be a non-negative integer")
+    if n == 0:
+        return ()
+    iterator = _concurrent_tee(iterable)
+    result = [iterator]
+    for _ in range(n - 1):
+        result.append(_concurrent_tee(iterator))
+    return tuple(result)
+
+
+class _concurrent_tee:
+    __slots__ = ('iterator', 'link', 'lock')
+
+    def __init__(self, iterable):
+        if isinstance(iterable, _concurrent_tee):
+            self.iterator = iterable.iterator
+            self.link = iterable.link
+            self.lock = iterable.lock
+        else:
+            self.iterator = iter(iterable)
+            self.link = [None, None]
+            self.lock = Lock()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        link = self.link
+        if link[1] is None:
+            with self.lock:
+                if link[1] is None:
+                    link[0] = next(self.iterator)
+                    link[1] = [None, None]
+        value, self.link = link
+        return value
+
+############################################################
 
 
 # Helper to generate new thread names

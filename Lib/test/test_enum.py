@@ -4080,6 +4080,39 @@ class OldTestFlag(unittest.TestCase):
         self.assertFalse(NeverEnum.__dict__.get('_test1', False))
         self.assertFalse(NeverEnum.__dict__.get('_test2', False))
 
+    def test_mixin_operator_override(self):
+        # a mixin's own bitwise-operator overrides must not be clobbered
+        # by Flag's default __or__/__and__/__xor__/__invert__ -- gh-121291
+        class OperatorMixin:
+            def __or__(self, other):
+                return 'mixin-or'
+            def __ror__(self, other):
+                return 'mixin-ror'
+            def __invert__(self):
+                return 'mixin-invert'
+        class MixedFlag(OperatorMixin, Flag):
+            A = 1
+            B = 2
+        self.assertIs(MixedFlag.__or__, OperatorMixin.__or__)
+        self.assertIs(MixedFlag.__ror__, OperatorMixin.__ror__)
+        self.assertIs(MixedFlag.__invert__, OperatorMixin.__invert__)
+        self.assertEqual(MixedFlag.A | MixedFlag.B, 'mixin-or')
+        self.assertEqual(1 | MixedFlag.A, 'mixin-ror')
+        self.assertEqual(~MixedFlag.A, 'mixin-invert')
+        # dunders the mixin didn't override still get Flag's own
+        self.assertIs(MixedFlag.__and__, Flag.__and__)
+        self.assertIs(MixedFlag.__xor__, Flag.__xor__)
+        self.assertIs(MixedFlag.__rand__, Flag.__rand__)
+        self.assertIs(MixedFlag.__rxor__, Flag.__rxor__)
+        self.assertEqual(MixedFlag.A & MixedFlag.B, MixedFlag(0))
+        #
+        # a plain (non-mixin) Flag subclass is unaffected
+        class PlainFlag(Flag):
+            A = 1
+            B = 2
+        self.assertIs(PlainFlag.__or__, Flag.__or__)
+        self.assertEqual(PlainFlag.A | PlainFlag.B, PlainFlag(3))
+
 
 class OldTestIntFlag(unittest.TestCase):
     """Tests of the IntFlags."""
@@ -4564,6 +4597,26 @@ class OldTestIntFlag(unittest.TestCase):
                 'at least one thread failed while creating composite members')
         self.assertEqual(256, len(seen), 'too many composite members created')
 
+    def test_mixin_operator_override(self):
+        # IntFlag's own mixed-in `int` also defines these operators, so the
+        # fix for gh-121291 must still override `int`'s raw operators with
+        # Flag's (returning IntFlag instances, not plain ints), while still
+        # respecting a genuine, separate mixin's override.
+        Color = self.Color
+        combined = Color.RED | Color.BLUE
+        self.assertIs(type(combined), Color)
+        self.assertEqual(combined, Color.PURPLE)
+        self.assertEqual(repr(combined), '<Color.PURPLE: 5>')
+        #
+        class OperatorMixin:
+            def __or__(self, other):
+                return 'mixin-or'
+        class MixedIntFlag(OperatorMixin, IntFlag):
+            A = 1
+            B = 2
+        self.assertIs(MixedIntFlag.__or__, OperatorMixin.__or__)
+        self.assertEqual(MixedIntFlag.A | MixedIntFlag.B, 'mixin-or')
+
 
 class TestEmptyAndNonLatinStrings(unittest.TestCase):
 
@@ -5021,8 +5074,8 @@ class Color(enum.Enum)
  |  __members__
  |      Returns a mapping of member name->value.
  |
- |      This mapping lists all enum members, including aliases. Note that this
- |      is a read-only view of the internal mapping."""
+ |      This mapping lists all enum members, including aliases.  Note that
+ |      this is a read-only view of the internal mapping."""
 
 expected_help_output_without_docs = """\
 Help on class Color in module %s:
@@ -5105,6 +5158,8 @@ class TestStdLib(unittest.TestCase):
                 ('__qualname__', 'TestStdLib.Color'),
                 ('__init_subclass__', getattr(self.Color, '__init_subclass__')),
                 ('__iter__', self.Color.__iter__),
+                ('_missing_', self.Color._missing_),
+                ('_generate_next_value_', self.Color._generate_next_value_),
                 ))
         result = dict(inspect.getmembers(self.Color))
         self.assertEqual(set(values.keys()), set(result.keys()))
@@ -5147,6 +5202,10 @@ class TestStdLib(unittest.TestCase):
                     defining_class=self.Color, object='Color'),
                 Attribute(name='__qualname__', kind='data',
                     defining_class=self.Color, object='TestStdLib.Color'),
+                Attribute(name='_missing_', kind='class method',
+                    defining_class=Enum, object=Enum.__dict__['_missing_']),
+                Attribute(name='_generate_next_value_', kind='static method',
+                    defining_class=self.Color, object=self.Color.__dict__['_generate_next_value_']),
                 Attribute(name='YELLOW', kind='data',
                     defining_class=self.Color, object=self.Color.YELLOW),
                 Attribute(name='MAGENTA', kind='data',
@@ -5178,11 +5237,13 @@ class TestStdLib(unittest.TestCase):
                 # __doc__ is too big to check exactly, so treat the same as __init_subclass__
                 for name in ('name','kind','defining_class'):
                     if getattr(v, name) != getattr(r, name):
-                        print('\n%s\n%s\n%s\n%s\n' % ('=' * 75, r, v, '=' * 75), sep='')
+                        print('\n%s\nexpected: %s\nactual:   %s\n%s\n' % ('=' * 75, r, v, '=' * 75), sep='')
                         failed = True
+                        # breakpoint()
             elif r != v:
-                print('\n%s\n%s\n%s\n%s\n' % ('=' * 75, r, v, '=' * 75), sep='')
+                print('\n%s\nexpected: %s\nactual:   %s\n%s\n' % ('=' * 75, r, v, '=' * 75), sep='')
                 failed = True
+                # breakpoint()
         if failed:
             self.fail("result does not equal expected, see print above")
 
@@ -5537,6 +5598,7 @@ def enum_dir(cls):
             '__class__', '__contains__', '__doc__', '__getitem__',
             '__iter__', '__len__', '__members__', '__module__',
             '__name__', '__qualname__',
+            '_generate_next_value_', '_missing_',
             ]
             + members
             )
@@ -5552,7 +5614,8 @@ def enum_dir(cls):
 
 def member_dir(member):
     if member.__class__._member_type_ is object:
-        allowed = set(['__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'value'])
+        allowed = set(['__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'value',
+                       '_generate_next_value_', '_missing_', '_add_alias_', '_add_value_alias_'])
     else:
         allowed = set(dir(member))
     for cls in member.__class__.mro():

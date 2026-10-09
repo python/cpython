@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(delta_new__doc__,
 "timedelta(days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0,\n"
@@ -214,8 +215,8 @@ PyDoc_STRVAR(datetime_date_fromtimestamp__doc__,
 "\n"
 "Create a date from a POSIX timestamp.\n"
 "\n"
-"The timestamp is a number, e.g. created via time.time(), that is interpreted\n"
-"as local time.");
+"The timestamp is a number, e.g. created via time.time(), that is\n"
+"interpreted as local time.");
 
 #define DATETIME_DATE_FROMTIMESTAMP_METHODDEF    \
     {"fromtimestamp", (PyCFunction)datetime_date_fromtimestamp, METH_O|METH_CLASS, datetime_date_fromtimestamp__doc__},
@@ -897,8 +898,8 @@ PyDoc_STRVAR(datetime_time_isoformat__doc__,
 "\n"
 "Return the time formatted according to ISO.\n"
 "\n"
-"The full format is \'HH:MM:SS.mmmmmm+zz:zz\'. By default, the fractional\n"
-"part is omitted if self.microsecond == 0.\n"
+"The full format is \'HH:MM:SS.mmmmmm+zz:zz\'. By default, the\n"
+"fractional part is omitted if self.microsecond == 0.\n"
 "\n"
 "The optional argument timespec specifies the number of additional\n"
 "terms of the time to include. Valid options are \'auto\', \'hours\',\n"
@@ -957,13 +958,8 @@ datetime_time_isoformat(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
         _PyArg_BadArgument("isoformat", "argument 'timespec'", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t timespec_length;
-    timespec = PyUnicode_AsUTF8AndSize(args[0], &timespec_length);
+    timespec = _PyUnicode_AsUTF8NoNUL(args[0]);
     if (timespec == NULL) {
-        goto exit;
-    }
-    if (strlen(timespec) != (size_t)timespec_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_pos:
@@ -979,7 +975,8 @@ PyDoc_STRVAR(datetime_time_strftime__doc__,
 "\n"
 "Format using strftime().\n"
 "\n"
-"The date part of the timestamp passed to underlying strftime should not be used.\n"
+"The date part of the timestamp passed to underlying strftime should\n"
+"not be used.\n"
 "\n"
 "For a list of supported format codes, see the documentation:\n"
 "    https://docs.python.org/3/library/datetime.html#format-codes");
@@ -1269,8 +1266,8 @@ PyDoc_STRVAR(datetime_datetime__doc__,
 "\n"
 "A combination of a date and a time.\n"
 "\n"
-"The year, month and day arguments are required. tzinfo may be None, or an\n"
-"instance of a tzinfo subclass. The remaining arguments may be ints.");
+"The year, month and day arguments are required. tzinfo may be None, or\n"
+"an instance of a tzinfo subclass. The remaining arguments may be ints.");
 
 static PyObject *
 datetime_datetime_impl(PyTypeObject *type, int year, int month, int day,
@@ -1491,8 +1488,8 @@ PyDoc_STRVAR(datetime_datetime_fromtimestamp__doc__,
 "\n"
 "Create a datetime from a POSIX timestamp.\n"
 "\n"
-"The timestamp is a number, e.g. created via time.time(), that is interpreted\n"
-"as local time.");
+"The timestamp is a number, e.g. created via time.time(), that is\n"
+"interpreted as local time.");
 
 #define DATETIME_DATETIME_FROMTIMESTAMP_METHODDEF    \
     {"fromtimestamp", _PyCFunction_CAST(datetime_datetime_fromtimestamp), METH_FASTCALL|METH_KEYWORDS|METH_CLASS, datetime_datetime_fromtimestamp__doc__},
@@ -1815,13 +1812,8 @@ datetime_datetime_isoformat(PyObject *self, PyObject *const *args, Py_ssize_t na
         _PyArg_BadArgument("isoformat", "argument 'timespec'", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t timespec_length;
-    timespec = PyUnicode_AsUTF8AndSize(args[1], &timespec_length);
+    timespec = _PyUnicode_AsUTF8NoNUL(args[1]);
     if (timespec == NULL) {
-        goto exit;
-    }
-    if (strlen(timespec) != (size_t)timespec_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_pos:
@@ -2090,4 +2082,4 @@ datetime_datetime___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return datetime_datetime___reduce___impl((PyDateTime_DateTime *)self);
 }
-/*[clinic end generated code: output=69658acff6a43ac4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7bdfdfbd568c63ed input=a9049054013a1b77]*/
