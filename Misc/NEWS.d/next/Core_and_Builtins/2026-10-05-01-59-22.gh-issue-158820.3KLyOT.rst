@@ -1,0 +1,2 @@
+Fix a crash when a :ref:`lazy import <lazy-imports>` is declared or resolved
+by a finalizer running during interpreter shutdown.
