@@ -1602,10 +1602,10 @@ def set_environment_altered(reason):
 
 
 def reap_children():
-    """Use this function at the end of test_main() whenever sub-processes
-    are started.  This will help ensure that no extra children (zombies)
-    stick around to hog resources and create problems when looking
-    for refleaks.
+    """Call this from a test's setUp(), tearDown(), or tearDownModule()
+    when the test starts subprocesses.  This will help ensure that no extra
+    children (zombies) stick around to hog resources and create problems when
+    looking for refleaks.
     """
     # Need os.waitpid(-1, os.WNOHANG): Windows is not supported
     if not (hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG')):
