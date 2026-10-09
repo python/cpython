@@ -1,0 +1,2 @@
+Fix a use-after-free in :mod:`asyncio` task bookkeeping when a finalizer
+creates a task while its thread state is being cleared.
