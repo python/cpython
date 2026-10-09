@@ -1,2 +1,0 @@
-Fix :c:func:`PyBytesWriter_Format` error handling: restore the writer to its
-previous state on error. Patch by Victor Stinner.

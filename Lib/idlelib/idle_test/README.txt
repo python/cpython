@@ -33,9 +33,9 @@ insert the import and main lines before the htest lines.
 
 if __name__ == "__main__":
     from unittest import main
-    main('idlelib.idle_test.test_abc', verbosity=2, exit=False)
+    main('idlelib.idle_test.test_abc', verbosity=2)
 
-The ', exit=False' is only needed if an htest follows.
+Add ', exit=False' to the main call if and only if an htest follows.
 
 
 

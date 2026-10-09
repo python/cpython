@@ -418,7 +418,7 @@ StreamWriter
       .. versionchanged:: 3.12
          Added the *ssl_shutdown_timeout* parameter.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Raises a ``ValueError`` if ``sslcontext.check_hostname`` is ``True``
          and ``server_hostname`` is not supplied.
 
