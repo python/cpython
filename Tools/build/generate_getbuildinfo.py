@@ -36,6 +36,15 @@ CLANG_VERSION_REGEX = re.compile(
     r'([0-9]+\.[0-9a-z.+]+)'             # version
 )
 
+# Parse 'Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36260 for ARM64'
+CL_VERSION_REGEX = re.compile(r'Compiler Version ([0-9]+).([0-9]+).[0-9]+ for (.*)')
+CL_VERSION_SUFFIX = {
+    'x86': "32 bit (Intel)",
+    'x64': "64 bit (AMD64)",
+    'ARM': "32 bit (ARM)",
+    'ARM64': "64 bit (ARM64)",
+}
+
 
 def log(msg):
     print(f"{SCRIPT_NAME}: {msg}")
@@ -127,16 +136,23 @@ def parse_args():
     parser.add_argument('--git-tag', type=str)
     parser.add_argument('--git-branch', type=str)
     parser.add_argument('--getcompiler-program', type=str)
+    parser.add_argument('--c-compiler', type=str)
     parser.add_argument('--compiler', type=str)
     parser.add_argument('--free-threading', type=int)
     return parser.parse_args()
 
 
-def run_command(cmd, *, check=True):
+def run_command(cmd, *, check=True, stderr=False):
     cmd_str = shlex.join(cmd)
     log(f"+ {cmd_str}")
+    kwargs = {}
+    if stderr:
+        kwargs['stderr'] = subprocess.STDOUT
     try:
-        proc = subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
+        proc = subprocess.run(cmd,
+                              stdout=subprocess.PIPE,
+                              text=True,
+                              **kwargs)
     except OSError as exc:
         error = f'with: {exc!r}'
     else:
@@ -157,7 +173,45 @@ def run_command(cmd, *, check=True):
     return proc.stdout.rstrip()
 
 
-def _get_compiler(getcompiler=None):
+def get_c_compiler_version_windows(c_compiler):
+    cmd = [c_compiler]
+    output = run_command(cmd, check=False, stderr=True)
+    if not output:
+        return None
+
+    # Get the first line
+    line = output.splitlines()[0]
+    match = CL_VERSION_REGEX.search(line)
+    if not match:
+        exit_error(f"Unable to parse cl.exe version: {output!r}")
+
+    major = match.group(1)
+    minor = match.group(2)
+    platform = match.group(3)
+    suffix = CL_VERSION_SUFFIX.get(platform)
+    if not suffix:
+        exit_error(f"Unknown cl.exe platform: {platform!r}")
+
+    return f"MSC v.{major}{minor} {suffix}"
+
+
+def get_c_compiler_version_unix(c_compiler=None):
+    CC = get_makefile_cc()
+    if not CC:
+        exit_error(f"ERROR: Unable to locate CC in Makefile")
+
+    cmd = shlex.split(CC)
+    cmd = [*cmd, '--version']
+
+    output = run_command(cmd, check=False)
+    if output:
+        # Get the first line
+        return output.splitlines()[0]
+
+    return None
+
+
+def _get_compiler(getcompiler=None, c_compiler=None):
     # Run _getcompiler program
     if not getcompiler:
         getcompiler = os.path.join('Programs', '_getcompiler')
@@ -174,21 +228,13 @@ def _get_compiler(getcompiler=None):
     if compiler:
         return compiler
 
+    # Running _getcompiler failed, get the C compiler version
     if MS_WINDOWS:
+        if c_compiler:
+            return get_c_compiler_version_windows(c_compiler)
         return None
-
-    # Running _getcompiler failed, run the compiler with --version
-    CC = get_makefile_cc()
-    if not CC:
-        exit_error(f"ERROR: Unable to locate CC in Makefile")
-
-    cmd = shlex.split(CC)
-    output = run_command([*cmd, '--version'], check=False)
-    if output:
-        # Get the first line
-        return output.splitlines()[0]
-
-    return None
+    else:
+        return get_c_compiler_version_unix()
 
 
 def compact_compiler(compiler):
@@ -215,9 +261,9 @@ def compact_compiler(compiler):
     return compiler
 
 
-def get_compiler(compiler, getcompiler_program=None):
+def get_compiler(compiler, getcompiler=None, c_compiler=None):
     if not compiler:
-        compiler = _get_compiler(getcompiler_program)
+        compiler = _get_compiler(getcompiler, c_compiler)
     if not compiler:
         # Default compiler name when everything else failed
         # (see Programs/_getcompiler.c)
@@ -263,7 +309,7 @@ def main():
     if not platform:
         platform = "unknown"
 
-    compiler = get_compiler(args.compiler, args.getcompiler_program)
+    compiler = get_compiler(args.compiler, args.getcompiler_program, args.c_compiler)
 
     build_info, git_id = get_build_info(git_tag, git_branch, git_version)
 

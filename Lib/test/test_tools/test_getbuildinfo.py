@@ -1,5 +1,6 @@
 """Test Tools/build/generate_getbuildinfo.py."""
 
+import contextlib
 import locale
 import os
 import subprocess
@@ -22,6 +23,23 @@ SCRIPT_NAME = 'generate_getbuildinfo.py'
 
 
 class TestGetBuildInfo(unittest.TestCase):
+    @contextlib.contextmanager
+    def check_log(self, log):
+        try:
+            with support.captured_stdout() as stdout:
+                yield
+        finally:
+            self.assertEqual(stdout.getvalue(),
+                             f'{SCRIPT_NAME}: {log}\n')
+
+    @contextlib.contextmanager
+    def check_exit_fail(self, errmsg):
+        with self.check_log(errmsg):
+            try:
+                yield
+            except SystemExit as exc:
+                self.assertEqual(exc.code, 1)
+
     def test_get_py_version(self):
         with os_helper.change_cwd(SRC_DIR):
             PY_VERSION = generate_getbuildinfo.get_py_version()
@@ -151,12 +169,63 @@ class TestGetBuildInfo(unittest.TestCase):
         check_unchanged('MSC v.1951 64 bit (AMD64)')
         check_unchanged('MSC v.1951 32 bit (Intel)')
 
-        with support.captured_stdout() as stdout:
+        log = ("Truncate compiler string 'Clang 21.0.0 "
+               "(clang-2100.1.1.101)' to 'Clang 21.0.0'")
+        with self.check_log(log):
             compiler = get_compiler('Clang 21.0.0 (clang-2100.1.1.101)')
             self.assertEqual(compiler, '[Clang 21.0.0]')
-        self.assertEqual(stdout.getvalue(),
-            f"{SCRIPT_NAME}: Truncate compiler string 'Clang 21.0.0 "
-            "(clang-2100.1.1.101)' to 'Clang 21.0.0'\n")
+
+    def test_get_c_compiler_version_windows(self):
+        get_compiler_version = generate_getbuildinfo.get_c_compiler_version_windows
+        C_COMPILER = 'CL.EXE'
+
+        tests = []
+
+        # Test a full output
+        output = textwrap.dedent('''
+            Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36260 for ARM64
+            Copyright (C) Microsoft Corporation.  All rights reserved.
+
+            usage: cl [ option... ] filename... [ /link linkoption... ]
+        ''').strip()
+        tests.append((output, 'MSC v.1951 64 bit (ARM64)'))
+
+        output = 'Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36260 for x64'
+        tests.append((output, 'MSC v.1951 64 bit (AMD64)'))
+
+        output = 'Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36260 for x86'
+        tests.append((output, 'MSC v.1951 32 bit (Intel)'))
+
+        output = 'Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36260 for ARM'
+        tests.append((output, 'MSC v.1951 32 bit (ARM)'))
+
+        def check_version(output, expected):
+            with mock.patch.object(generate_getbuildinfo,
+                                   'run_command') as mock_run_command:
+                mock_run_command.return_value = output
+                version = get_compiler_version(C_COMPILER)
+            self.assertEqual(version, expected)
+            mock_run_command.assert_called_once_with([C_COMPILER],
+                                                     check=False, stderr=True)
+
+        for output, expected in tests:
+            with self.subTest(output=output, expected=expected):
+                check_version(output, expected)
+
+        def check_error(output, errmsg):
+            with mock.patch.object(generate_getbuildinfo,
+                                   'run_command') as mock_run_command:
+                mock_run_command.return_value = output
+                with self.check_exit_fail(errmsg):
+                    get_compiler_version(C_COMPILER)
+
+        output = 'xxx'
+        check_error(output, f'Unable to parse cl.exe version: {output!r}')
+
+        platform = 'PLATFORM'
+        output = ('Microsoft (R) C/C++ Optimizing Compiler '
+                  f'Version 19.51.36260 for {platform}')
+        check_error(output, f'Unknown cl.exe platform: {platform!r}')
 
     def test_functional(self):
         old_locale = locale.setlocale(locale.LC_ALL)
@@ -179,9 +248,8 @@ class TestGetBuildInfo(unittest.TestCase):
         with support.swap_attr(sys, 'argv', argv):
             with os_helper.EnvironmentVarGuard() as env:
                 env['SOURCE_DATE_EPOCH'] = str(1791419852)
-                with support.captured_stdout() as stdout:
+                with self.check_log(f'{filename} updated'):
                     generate_getbuildinfo.main()
-                self.assertEqual(stdout.getvalue(), f'{SCRIPT_NAME}: {filename} updated\n')
 
         with open(filename) as fp:
             output = fp.read()

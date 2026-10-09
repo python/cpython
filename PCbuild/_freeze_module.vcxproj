@@ -466,7 +466,10 @@
     <Message Text="Updated files: @(_UpdatedGetPath->'%(Filename)%(Extension)',', ')"
              Condition="'@(_UpdatedGetPath)' != ''" Importance="high" />
   </Target>
-  <Target Name="_GetBuildInfoHeader" BeforeTargets="PrepareForBuild"
+  <!-- Use AfterTargets to get ClCompilerPath variable -->
+  <Target Name="_GetBuildInfoHeader"
+          BeforeTargets="PrepareForBuild"
+          AfterTargets="ClCompile"
           Inputs="Tools\build\generate_getbuildinfo.py"
           Outputs="Modules\getbuildinfo.h"
           DependsOnTargets="FindPythonForBuild">
@@ -480,7 +483,7 @@
     </PropertyGroup>
 
     <Message Text="Run generate_getbuildinfo.py" Importance="high" />
-    <Exec Command='$(PythonForBuild) Tools\build\generate_getbuildinfo.py --platform=win32 --git-program="$(_GIT)" --getcompiler-program="$(GetCompilerExe)" --free-threading=$(FreeThreading)'
+    <Exec Command='$(PythonForBuild) Tools\build\generate_getbuildinfo.py --platform=win32 --git-program="$(_GIT)" --c-compiler="$(ClCompilerPath)" --getcompiler-program="$(GetCompilerExe)" --free-threading=$(FreeThreading)'
           WorkingDirectory="$(PySourcePath)" />
   </Target>
   <Target Name="_RebuildFrozen" AfterTargets="AfterBuild" Condition="$(Configuration) != 'PGUpdate'">

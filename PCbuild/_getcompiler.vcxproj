@@ -112,4 +112,13 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+
+  <Target Name="_DebugGetCompiler" AfterTargets="ClCompile" BeforeTargets="PrepareForBuild">
+    <Message Text="MSBuildToolsPath: $(MSBuildToolsPath)" Importance="high" />
+    <Message Text="CLToolExe: $(CLToolExe)" Importance="high" />
+    <Message Text="CLToolPath: $(CLToolPath)" Importance="high" />
+    <Message Text="ClCompilerPath: $(ClCompilerPath)" Importance="high" />
+    <Message Text="VCINSTALLDIR: %VCINSTALLDIR%" Importance="high" />
+  </Target>
+
 </Project>
