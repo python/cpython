@@ -238,9 +238,14 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
                 file.close()
 
     def close(self):
-        if (self._entity_stack or self._parser is None or
-            isinstance(self._parser, _ClosedParser)):
-            # If we are completing an external entity, do nothing here
+        if self._parser is None or isinstance(self._parser, _ClosedParser):
+            return
+        if self._entity_stack:
+            # We are completing an external entity.  Finalize its parser so
+            # that errors which are only detectable at the end of the input,
+            # such as an unclosed element, are reported, but do not end the
+            # document: the enclosing parse is still in progress.
+            self.feed(b"", isFinal=True)
             return
         try:
             self.feed(b"", isFinal=True)
