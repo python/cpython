@@ -599,6 +599,32 @@ refresh_generation_caches_for_interpreter(
 }
 
 static int
+iterate_unwinder_interpreters(
+    RemoteUnwinderObject *self,
+    unwinder_interpreter_func func,
+    void *context)
+{
+    uintptr_t interp = self->interpreter_addr;
+    for (size_t count = 0; interp != 0 && count < MAX_INTERPRETERS; count++) {
+        if (refresh_generation_caches_for_interpreter(self, interp) < 0) {
+            return -1;
+        }
+        if (func(self, interp, context) < 0) {
+            return -1;
+        }
+        if (_Py_RemoteDebug_PagedReadRemoteMemory(
+                &self->handle,
+                interp + (uintptr_t)self->debug_offsets.interpreter_state.next,
+                sizeof(void*),
+                &interp) < 0) {
+            set_exception_cause(self, PyExc_RuntimeError, "Failed to read next interpreter address");
+            return -1;
+        }
+    }
+    return 0;
+}
+
+static int
 read_interp_state_and_maybe_thread_frame(
     RemoteUnwinderObject *unwinder,
     uintptr_t interpreter_addr,
@@ -903,6 +929,35 @@ exit:
     return result;
 }
 
+static int
+process_interpreter_for_awaited_by(
+    RemoteUnwinderObject *self,
+    uintptr_t interpreter_addr,
+    void *context)
+{
+    PyObject *result = (PyObject *)context;
+
+    // Process all threads
+    if (iterate_threads(self, interpreter_addr, process_thread_for_awaited_by, result) < 0) {
+        return -1;
+    }
+
+    uintptr_t head_addr = interpreter_addr
+        + (uintptr_t)self->async_debug_offsets.asyncio_interpreter_state.asyncio_tasks_head;
+
+    // On top of a per-thread task lists used by default by asyncio to avoid
+    // contention, there is also a fallback per-interpreter list of tasks;
+    // any tasks still pending when a thread is destroyed will be moved to the
+    // per-interpreter task list.  It's unlikely we'll find anything here, but
+    // interesting for debugging.
+    if (append_awaited_by(self, 0, head_addr, result))
+    {
+        set_exception_cause(self, PyExc_RuntimeError, "Failed to append interpreter awaited_by in get_all_awaited_by");
+        return -1;
+    }
+    return 0;
+}
+
 /*[clinic input]
 @permit_long_docstring_body
 @critical_section
@@ -966,39 +1021,9 @@ _remote_debugging_RemoteUnwinder_get_all_awaited_by_impl(RemoteUnwinderObject *s
     }
 
     // gh-158880: Tasks live in every interpreter, not only the one at the list head
-    uintptr_t interp = self->interpreter_addr;
-    while (interp != 0) {
-        if (refresh_generation_caches_for_interpreter(self, interp) < 0) {
-            goto result_err;
-        }
-
-        // Process all threads
-        if (iterate_threads(self, interp, process_thread_for_awaited_by, result) < 0) {
-            goto result_err;
-        }
-
-        uintptr_t head_addr = interp
-            + (uintptr_t)self->async_debug_offsets.asyncio_interpreter_state.asyncio_tasks_head;
-
-        // On top of a per-thread task lists used by default by asyncio to avoid
-        // contention, there is also a fallback per-interpreter list of tasks;
-        // any tasks still pending when a thread is destroyed will be moved to
-        // the per-interpreter task list.  It's unlikely we'll find anything
-        // here, but interesting for debugging.
-        if (append_awaited_by(self, 0, head_addr, result))
-        {
-            set_exception_cause(self, PyExc_RuntimeError, "Failed to append interpreter awaited_by in get_all_awaited_by");
-            goto result_err;
-        }
-
-        if (_Py_RemoteDebug_PagedReadRemoteMemory(
-                &self->handle,
-                interp + (uintptr_t)self->debug_offsets.interpreter_state.next,
-                sizeof(void*),
-                &interp) < 0) {
-            set_exception_cause(self, PyExc_RuntimeError, "Failed to read next interpreter address");
-            goto result_err;
-        }
+    if (iterate_unwinder_interpreters(self, process_interpreter_for_awaited_by,
+                                      result) < 0) {
+        goto result_err;
     }
 
     _Py_RemoteDebug_ClearCache(&self->handle);

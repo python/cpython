@@ -456,7 +456,6 @@ int
 clear_last_profiled_frames(RemoteUnwinderObject *unwinder)
 {
     uintptr_t current_interp = unwinder->interpreter_addr;
-    const size_t MAX_INTERPRETERS = 256;
     size_t interp_count = 0;
 
     while (current_interp != 0 && interp_count < MAX_INTERPRETERS) {
