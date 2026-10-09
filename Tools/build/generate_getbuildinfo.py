@@ -10,7 +10,6 @@ import sys
 import sysconfig
 import time
 
-
 MS_WINDOWS = (sys.platform == 'win32')
 SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 SCRIPT_NAME = os.path.basename(__file__)
