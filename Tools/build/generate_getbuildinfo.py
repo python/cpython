@@ -158,7 +158,7 @@ def run_command(cmd, *, check=True):
     return proc.stdout.rstrip()
 
 
-def _get_compiler(getcompiler):
+def _get_compiler(getcompiler=None):
     # Run _getcompiler program
     if not getcompiler:
         getcompiler = os.path.join('Programs', '_getcompiler')
@@ -216,7 +216,7 @@ def compact_compiler(compiler):
     return compiler
 
 
-def get_compiler(compiler, getcompiler_program):
+def get_compiler(compiler, getcompiler_program=None):
     if not compiler:
         compiler = _get_compiler(getcompiler_program)
     if not compiler:
