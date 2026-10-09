@@ -3457,7 +3457,7 @@ bytes_resize_inplace(PyObject **pv, Py_ssize_t newsize)
 }
 
 
-/* The following function breaks the notion that bytes are immutable:
+/* The _PyBytes_Resize function breaks the notion that bytes are immutable:
    it changes the size of a bytes object.  You can think of it
    as creating a new bytes object and destroying the old one, only
    more efficiently.
@@ -3467,7 +3467,38 @@ bytes_resize_inplace(PyObject **pv, Py_ssize_t newsize)
    returned, and the value in *pv may or may not be the same as on input.
    As always, an extra byte is allocated for a trailing \0 byte (newsize
    does *not* include that), and a trailing \0 byte is stored.
+
+   The result is always of the exact bytes type.
+   If the input is "fresh" (_PyBytes_IsMutable is true), the result will
+   be empty or "fresh".
 */
+
+// Return a copy. Called when the existing object cannot be reused.
+static int
+bytes_resize_newobject(PyObject **pv, Py_ssize_t newsize)
+{
+    PyObject *v = *pv;
+    if (newsize == 0) {
+        *pv = bytes_get_empty();
+        assert(*pv != NULL);
+    }
+    else {
+        Py_ssize_t oldsize = PyBytes_GET_SIZE(v);
+        // Allocate and then copy so we don't get a shared immortal
+        // one-character singleton!
+        PyObject *result = bytes_alloc(newsize);
+        if (!result) {
+            return -1;
+        }
+
+        memcpy(PyBytes_AS_STRING(result), PyBytes_AS_STRING(v),
+                Py_MIN(oldsize, newsize));
+        *pv = result;
+        assert(_PyBytes_IsMutable(*pv));
+    }
+    Py_DECREF(v);
+    return 0;
+}
 
 // Similar to _PyBytes_Resize(), but leaves the object unchanged on error.
 int
@@ -3478,6 +3509,10 @@ _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize)
     if (!PyBytes_Check(v) || newsize < 0) {
         PyErr_BadInternalCall();
         return -1;
+    }
+
+    if (!PyBytes_CheckExact(v)) {
+        return bytes_resize_newobject(pv, newsize);
     }
 
     Py_ssize_t oldsize = PyBytes_GET_SIZE(v);
@@ -3501,7 +3536,8 @@ _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize)
     }
 
     if (newsize == 0) {
-        *pv = bytes_get_empty();  // cannot fail
+        *pv = bytes_get_empty();
+        assert(*pv != NULL);
         Py_DECREF(v);
         return 0;
     }
@@ -3510,19 +3546,7 @@ _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize)
         // Return a copy if the hash value was already computed
         || get_ob_shash((PyBytesObject *)v) != -1)
     {
-        // Allocate and then copy so we don't get a shared immortal
-        // one-character singleton!
-        PyObject *result = bytes_alloc(newsize);
-        if (!result) {
-            return -1;
-        }
-
-        memcpy(PyBytes_AS_STRING(result), PyBytes_AS_STRING(v),
-               Py_MIN(oldsize, newsize));
-        *pv = result;
-        Py_DECREF(v);
-        assert(_PyBytes_IsMutable(*pv));
-        return 0;
+        return bytes_resize_newobject(pv, newsize);
     }
 
     return bytes_resize_inplace(pv, newsize);
@@ -3534,9 +3558,7 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
 {
     int res = _PyBytes_ResizeKeepOnError(pv, newsize);
     if (res < 0) {
-        PyObject *v = *pv;
-        *pv = NULL;
-        Py_DECREF(v);
+        Py_CLEAR(*pv);
     }
     return res;
 }
