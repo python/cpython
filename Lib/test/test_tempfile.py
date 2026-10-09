@@ -1862,6 +1862,9 @@ class TestTemporaryDirectory(BaseTestCase):
                                             'emscripten-core/emscripten#27761')
     @unittest.skipUnless(shutil.rmtree.avoids_symlink_attacks,
                          'requires the fd based implementation of rmtree()')
+    @unittest.skipIf(
+        sys.platform == "android",
+        "On Android, os.chmod doesn't support dir_fd until API level 23")
     def test_cleanup_with_symlink_race(self):
         # cleanup() should not operate on files outside of the temporary
         # directory when a directory is replaced with a symlink while it
