@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(delta_new__doc__,
 "timedelta(days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0,\n"
@@ -957,13 +958,8 @@ datetime_time_isoformat(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
         _PyArg_BadArgument("isoformat", "argument 'timespec'", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t timespec_length;
-    timespec = PyUnicode_AsUTF8AndSize(args[0], &timespec_length);
+    timespec = _PyUnicode_AsUTF8NoNUL(args[0]);
     if (timespec == NULL) {
-        goto exit;
-    }
-    if (strlen(timespec) != (size_t)timespec_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_pos:
@@ -1816,13 +1812,8 @@ datetime_datetime_isoformat(PyObject *self, PyObject *const *args, Py_ssize_t na
         _PyArg_BadArgument("isoformat", "argument 'timespec'", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t timespec_length;
-    timespec = PyUnicode_AsUTF8AndSize(args[1], &timespec_length);
+    timespec = _PyUnicode_AsUTF8NoNUL(args[1]);
     if (timespec == NULL) {
-        goto exit;
-    }
-    if (strlen(timespec) != (size_t)timespec_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_pos:
@@ -2091,4 +2082,4 @@ datetime_datetime___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return datetime_datetime___reduce___impl((PyDateTime_DateTime *)self);
 }
-/*[clinic end generated code: output=8f63509398651723 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7bdfdfbd568c63ed input=a9049054013a1b77]*/
