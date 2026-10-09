@@ -221,7 +221,7 @@ def unpack_deps(host, prefix_dir, cache_dir):
     for name_ver in [
         "bzip2-1.0.8-3",
         "libffi-3.4.4-3",
-        "openssl-3.5.8-0",
+        "openssl-3.5.9-0",
         "sqlite-3.53.4-0",
         "xz-5.4.6-1"
     ]:
@@ -658,7 +658,8 @@ async def gradle_task(context):
             # Randomization is disabled because order-dependent failures are
             # much less likely to pass on a rerun in single-process mode.
             "-m", "test",
-            f"--{context.ci_mode}-ci", "--single-process", "--no-randomize"
+            f"--{context.ci_mode}-ci", "--single-process", "--no-randomize",
+            "--pythoninfo",
         ]
 
     if not any(arg in context.args for arg in ["-c", "-m"]):

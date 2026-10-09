@@ -1,2 +1,0 @@
-Fix two race conditions involving concurrent imports that could lead to
-spurious failures with :exc:`ModuleNotFoundError`.
