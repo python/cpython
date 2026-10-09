@@ -1,0 +1,3 @@
+Fixed error in :mod:`email` new policies where header folding failed to
+detect the need to re-quote text obtained from encoded words in certain
+cases.
