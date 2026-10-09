@@ -1,0 +1,1 @@
+Speed up ``x in list``, :meth:`list.index`, :meth:`list.count`, :meth:`list.remove` and equality comparisons for lists of integers, floats and strings by specializing the per-item equality check.
