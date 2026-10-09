@@ -1,0 +1,2 @@
+Fix the :file:`Modules/Setup` entry for the :mod:`!_zstd` module by adding
+missing source files.
