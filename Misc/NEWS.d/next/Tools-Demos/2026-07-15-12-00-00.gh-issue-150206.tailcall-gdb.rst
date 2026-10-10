@@ -1,0 +1,3 @@
+Fix the ``py-bt``, ``py-bt-full``, ``py-list``, ``py-locals`` and
+``py-print`` gdb commands losing the innermost Python frames when debugging an
+interpreter built with the tail-call interpreter (``--with-tail-call-interp``).
