@@ -603,8 +603,7 @@ class KqueueSelectorTestCase(BaseSelectorTestCase, ScalableSelectorMixIn,
 
 @unittest.skipUnless(hasattr(selectors, 'DevpollSelector'),
                      "Test needs selectors.DevpollSelector")
-class DevpollSelectorTestCase(BaseSelectorTestCase, ScalableSelectorMixIn,
-                              unittest.TestCase):
+class DevpollSelectorTestCase(BaseSelectorTestCase, unittest.TestCase):
 
     SELECTOR = getattr(selectors, 'DevpollSelector', None)
 
