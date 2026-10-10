@@ -123,9 +123,9 @@ WIN32 is still required for the locale module.
  * on macro arguments, and doesn't evaluate macros passed *as* arguments.
  */
 #define _Py_PASTE_VERSION(SUFFIX) \
-        ("[MSC v." _Py_STRINGIZE(_MSC_VER) " " SUFFIX "]")
+        ("MSC v." _Py_STRINGIZE(_MSC_VER) " " SUFFIX "")
 /* e.g., this produces, after compile-time string catenation,
- *      ("[MSC v.1900 64 bit (Intel)]")
+ *      ("MSC v.1900 64 bit (Intel)")
  *
  * _Py_STRINGIZE(_MSC_VER) expands to
  * _Py_STRINGIZE1(_MSC_VER) and this second macro call is scanned
@@ -150,9 +150,9 @@ WIN32 is still required for the locale module.
 
 #ifdef __clang__
 #define _Py_CLANG_COMPILER(platform) ( \
-   "[Clang " _Py_STRINGIZE(__clang_major__) "." _Py_STRINGIZE(__clang_minor__) \
+   "Clang " _Py_STRINGIZE(__clang_major__) "." _Py_STRINGIZE(__clang_minor__) \
    "." _Py_STRINGIZE(__clang_patchlevel__) " " platform \
-   " with MSC v." _Py_STRINGIZE(_MSC_VER) " CRT]")
+   " with MSC v." _Py_STRINGIZE(_MSC_VER) " CRT")
 #endif
 
 /* set the _Py_COMPILER and support tier
@@ -168,7 +168,7 @@ WIN32 is still required for the locale module.
 #define _Py_COMPILER _Py_CLANG_COMPILER("64 bit (AMD64)")
 #define PY_SUPPORT_TIER 0
 #elif defined(__INTEL_COMPILER)
-#define _Py_COMPILER ("[ICC v." _Py_STRINGIZE(__INTEL_COMPILER) " 64 bit (amd64) with MSC v." _Py_STRINGIZE(_MSC_VER) " CRT]")
+#define _Py_COMPILER ("ICC v." _Py_STRINGIZE(__INTEL_COMPILER) " 64 bit (amd64) with MSC v." _Py_STRINGIZE(_MSC_VER) " CRT")
 #define PY_SUPPORT_TIER 0
 #else
 #define _Py_COMPILER _Py_PASTE_VERSION("64 bit (AMD64)")
@@ -235,7 +235,7 @@ typedef _W64 int Py_ssize_t;
 #define _Py_COMPILER _Py_CLANG_COMPILER("32 bit (Intel)")
 #define PY_SUPPORT_TIER 0
 #elif defined(__INTEL_COMPILER)
-#define _Py_COMPILER ("[ICC v." _Py_STRINGIZE(__INTEL_COMPILER) " 32 bit (Intel) with MSC v." _Py_STRINGIZE(_MSC_VER) " CRT]")
+#define _Py_COMPILER ("ICC v." _Py_STRINGIZE(__INTEL_COMPILER) " 32 bit (Intel) with MSC v." _Py_STRINGIZE(_MSC_VER) " CRT")
 #define PY_SUPPORT_TIER 0
 #else
 #define _Py_COMPILER _Py_PASTE_VERSION("32 bit (Intel)")
@@ -285,7 +285,7 @@ typedef int pid_t;
 #warning "Please use an up-to-date version of gcc! (>2.91 recommended)"
 #endif
 
-#define _Py_COMPILER "[gcc]"
+#define _Py_COMPILER "gcc"
 #define PY_LONG_LONG long long
 #define PY_LLONG_MIN LLONG_MIN
 #define PY_LLONG_MAX LLONG_MAX
@@ -298,7 +298,7 @@ typedef int pid_t;
 /* XXX These defines are likely incomplete, but should be easy to fix.
    They should be complete enough to build extension modules. */
 
-#define _Py_COMPILER "[lcc-win32]"
+#define _Py_COMPILER "lcc-win32"
 typedef int pid_t;
 /* __declspec() is supported here too - do nothing to get the defaults */
 

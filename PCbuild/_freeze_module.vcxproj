@@ -222,11 +222,7 @@
     <ClCompile Include="..\Python\gc_gil.c" />
     <ClCompile Include="..\Python\gc_free_threading.c" />
     <ClCompile Include="..\Python\getargs.c" />
-    <ClCompile Include="..\Python\getcompiler.c" />
-    <ClCompile Include="..\Python\getcopyright.c" />
     <ClCompile Include="..\Python\getopt.c" />
-    <ClCompile Include="..\Python\getplatform.c" />
-    <ClCompile Include="..\Python\getversion.c" />
     <ClCompile Include="..\Python\ceval_gil.c" />
     <ClCompile Include="..\Python\hamt.c" />
     <ClCompile Include="..\Python\hashtable.c" />
@@ -469,6 +465,26 @@
 
     <Message Text="Updated files: @(_UpdatedGetPath->'%(Filename)%(Extension)',', ')"
              Condition="'@(_UpdatedGetPath)' != ''" Importance="high" />
+  </Target>
+  <!-- Use AfterTargets to get ClCompilerPath variable -->
+  <Target Name="_GetBuildInfoHeader"
+          BeforeTargets="PrepareForBuild"
+          AfterTargets="ClCompile"
+          Inputs="Tools\build\generate_getbuildinfo.py"
+          Outputs="Modules\getbuildinfo.h"
+          DependsOnTargets="FindPythonForBuild">
+    <PropertyGroup>
+      <GIT Condition="$(GIT) == ''">git</GIT>
+      <_GIT>$(GIT)</_GIT>
+    </PropertyGroup>
+    <PropertyGroup>
+      <FreeThreading Condition="$(DisableGil) == 'true'">1</FreeThreading>
+      <FreeThreading Condition="$(DisableGil) != 'true'">0</FreeThreading>
+    </PropertyGroup>
+
+    <Message Text="Run generate_getbuildinfo.py" Importance="high" />
+    <Exec Command='$(PythonForBuild) Tools\build\generate_getbuildinfo.py --platform=win32 --git-program="$(_GIT)" --c-compiler="$(ClCompilerPath)" --getcompiler-program="$(GetCompilerExe)" --free-threading=$(FreeThreading)'
+          WorkingDirectory="$(PySourcePath)" />
   </Target>
   <Target Name="_RebuildFrozen" AfterTargets="AfterBuild" Condition="$(Configuration) != 'PGUpdate'">
     <Exec Command='"$(TargetPath)" "%(None.ModName)" "%(None.FullPath)" "%(None.IntFile)"' />

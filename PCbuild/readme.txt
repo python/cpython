@@ -143,6 +143,9 @@ pythonw
 _testembed
     _testembed.exe, a small program that embeds Python for testing
     purposes, used by test_capi.py
+_getcompiler
+    _getcompiler.exe, a small program that writes the compiler name and version
+    to stdout. Used to build Modules\getbuildinfo.h.
 
 These are miscellaneous sub-projects that don't really fit the other
 categories:
