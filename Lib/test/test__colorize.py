@@ -187,6 +187,11 @@ class TestColorizeFunction(unittest.TestCase):
                 file.isatty.return_value = False
                 self.assertEqual(_colorize.can_colorize(file=file), False)
 
+            # gh-157581: A closed file raises ValueError from fileno().
+            file = unittest.mock.Mock()
+            file.fileno.side_effect = ValueError
+            self.assertFalse(_colorize.can_colorize(file=file))
+
 
 if __name__ == "__main__":
     unittest.main()
