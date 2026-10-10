@@ -62,7 +62,11 @@ class MinidomTest(unittest.TestCase):
     def testDocumentAsyncAttr(self):
         doc = Document()
         self.assertFalse(doc.async_)
-        self.assertFalse(Document.async_)
+        doc.async_ = False
+        self.assertFalse(doc.async_)
+        with self.assertRaises(xml.dom.NotSupportedErr):
+            doc.async_ = True
+        self.assertFalse(doc.async_)
 
     def testParseFromBinaryFile(self):
         with open(tstfile, 'rb') as file:
