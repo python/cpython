@@ -46,6 +46,7 @@ TRANSIENT_ERRORS = (OSError, RuntimeError, UnicodeDecodeError)
 
 try:
     from concurrent import interpreters
+    from concurrent.futures import InterpreterPoolExecutor
 except ImportError:
     interpreters = None
 
@@ -468,6 +469,17 @@ sock.connect(('localhost', {port}))
         }
 
 
+def _running_task_in_subinterpreter(ready, release):
+    """Keep an asyncio task running in a subinterpreter until released."""
+    import asyncio
+
+    async def sub_worker():
+        ready.put(None)
+        release.get()
+
+    asyncio.run(sub_worker())
+
+
 # ============================================================================
 # Test classes
 # ============================================================================
@@ -507,6 +519,34 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
             ]
 
         self.assertEqual(asyncio.run(rec(3)), ["rec"] * 4)
+
+    @skip_if_not_supported
+    @requires_subinterpreters
+    def test_async_stack_trace_covers_every_interpreter(self):
+        # gh-158968
+        ready = interpreters.create_queue()
+        release = interpreters.create_queue()
+
+        async def main():
+            with InterpreterPoolExecutor() as pool:
+                try:
+                    asyncio.get_running_loop().run_in_executor(
+                        pool, _running_task_in_subinterpreter, ready, release)
+                    ready.get(timeout=SHORT_TIMEOUT)
+                    return [
+                        frame.funcname.rpartition(".")[2]
+                        for info in RemoteUnwinder(
+                            os.getpid()).get_async_stack_trace()
+                        for task in info.awaited_by
+                        for coro in task.coroutine_stack
+                        for frame in coro.call_stack
+                    ]
+                finally:
+                    release.put(None)
+
+        names = asyncio.run(main())
+        self.assertIn("sub_worker", names)
+        self.assertIn("main", names)
 
     @skip_if_not_supported
     @unittest.skipIf(

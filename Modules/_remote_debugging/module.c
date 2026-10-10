@@ -599,6 +599,32 @@ refresh_generation_caches_for_interpreter(
 }
 
 static int
+iterate_unwinder_interpreters(
+    RemoteUnwinderObject *self,
+    unwinder_interpreter_func func,
+    void *context)
+{
+    uintptr_t interp = self->interpreter_addr;
+    for (size_t count = 0; interp != 0 && count < MAX_INTERPRETERS; count++) {
+        if (refresh_generation_caches_for_interpreter(self, interp) < 0) {
+            return -1;
+        }
+        if (func(self, interp, context) < 0) {
+            return -1;
+        }
+        if (_Py_RemoteDebug_PagedReadRemoteMemory(
+                &self->handle,
+                interp + (uintptr_t)self->debug_offsets.interpreter_state.next,
+                sizeof(void*),
+                &interp) < 0) {
+            set_exception_cause(self, PyExc_RuntimeError, "Failed to read next interpreter address");
+            return -1;
+        }
+    }
+    return 0;
+}
+
+static int
 read_interp_state_and_maybe_thread_frame(
     RemoteUnwinderObject *unwinder,
     uintptr_t interpreter_addr,
@@ -969,7 +995,8 @@ _remote_debugging_RemoteUnwinder_get_all_awaited_by_impl(RemoteUnwinderObject *s
     }
 
     // Process all threads
-    if (iterate_threads(self, process_thread_for_awaited_by, result) < 0) {
+    if (iterate_threads(self, self->interpreter_addr,
+                        process_thread_for_awaited_by, result) < 0) {
         goto result_err;
     }
 
@@ -994,6 +1021,17 @@ result_err:
     _Py_RemoteDebug_ClearCache(&self->handle);
     Py_XDECREF(result);
     return NULL;
+}
+
+static int
+process_interpreter_for_async_stack_trace(
+    RemoteUnwinderObject *self,
+    uintptr_t interpreter_addr,
+    void *context)
+{
+    // Process all threads
+    return iterate_threads(self, interpreter_addr,
+                           process_thread_for_async_stack_trace, context);
 }
 
 /*[clinic input]
@@ -1053,9 +1091,6 @@ _remote_debugging_RemoteUnwinder_get_async_stack_trace_impl(RemoteUnwinderObject
     if (ensure_async_debug_offsets(self) < 0) {
         return NULL;
     }
-    if (refresh_generation_caches_for_interpreter(self, self->interpreter_addr) < 0) {
-        return NULL;
-    }
 
     PyObject *result = PyList_New(0);
     if (result == NULL) {
@@ -1063,8 +1098,9 @@ _remote_debugging_RemoteUnwinder_get_async_stack_trace_impl(RemoteUnwinderObject
         return NULL;
     }
 
-    // Process all threads
-    if (iterate_threads(self, process_thread_for_async_stack_trace, result) < 0) {
+    // gh-158968: Running tasks live in every interpreter, not only the one at the list head
+    if (iterate_unwinder_interpreters(self, process_interpreter_for_async_stack_trace,
+                                      result) < 0) {
         goto result_err;
     }
 
