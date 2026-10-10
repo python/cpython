@@ -62,6 +62,13 @@ computed exactly and are integers.
       :trim:
 
 
+.. function:: isqrt_rem(n, /)
+
+    For a nonnegative integer *n*, return the pair of integers ``(s, t)``
+    such that ``s = isqrt(n)`` and ``t = n - s*s``.
+    The remainder *t* is zero, if *n* is a perfect square.
+
+
 .. function:: lcm(*integers)
 
    Return the least common multiple of the specified integer arguments.
