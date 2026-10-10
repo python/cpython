@@ -3598,6 +3598,8 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
+
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
     # resources get picked up before their $srcdir counterparts.
@@ -21166,6 +21168,50 @@ then :
   printf "%s\n" "#define HAVE_WRITEV 1" >>confdefs.h
 
 fi
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for strerror_r" >&5
+printf %s "checking for strerror_r... " >&6; }
+if test ${ac_cv_func_strerror_r+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <string.h>
+int
+main (void)
+{
+void *x=strerror_r
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_strerror_r=yes
+else case e in #(
+  e) ac_cv_func_strerror_r=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_strerror_r" >&5
+printf "%s\n" "$ac_cv_func_strerror_r" >&6; }
+  if test "x$ac_cv_func_strerror_r" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_STRERROR_R 1" >>confdefs.h
+
+fi
+
+
+
+
 
 
 # os.statx uses Linux's statx function.  AIX also has a function named statx,
