@@ -1,0 +1,1 @@
+Fix issue where PyREPL would overflow with errors when assigning a string-representable object to ``sys.ps1``.
