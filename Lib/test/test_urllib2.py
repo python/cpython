@@ -1949,6 +1949,149 @@ class HandlerTests(unittest.TestCase):
         self.assertTrue(conn.fakesock.closed, "Connection not closed")
 
 
+class FakeGzipResponse:
+    # Minimal stand-in for the http.client.HTTPResponse that a response
+    # processor sees: headers plus a readable, closable body.
+    def __init__(self, data, headers, code=200):
+        self._file = io.BytesIO(data)
+        self.headers = headers
+        self.code = code
+        self.msg = "OK"
+        self.url = "http://example.com/"
+        self.closed = False
+
+    def read(self, amt=-1):
+        return self._file.read(amt)
+
+    def close(self):
+        self.closed = True
+        self._file.close()
+
+
+class HTTPGzipHandlerTests(unittest.TestCase):
+
+    body = b"The quick brown fox jumps over the lazy dog.\n" * 200
+
+    def make_response(self, data, content_encoding="gzip", content_length=True):
+        import email.message
+        headers = email.message.Message()
+        if content_encoding is not None:
+            headers["Content-Encoding"] = content_encoding
+        if content_length:
+            headers["Content-Length"] = str(len(data))
+        headers["Content-Type"] = "text/plain"
+        return FakeGzipResponse(data, headers)
+
+    def gzip_bytes(self, data):
+        import gzip
+        return gzip.compress(data)
+
+    def opened_request(self, **kwargs):
+        h = urllib.request.HTTPGzipHandler()
+        req = Request("http://example.com/", **kwargs)
+        h.http_request(req)
+        return h, req
+
+    def test_not_installed_by_default(self):
+        # Opt-in: build_opener() does not install it, but accepts it explicitly.
+        o = urllib.request.build_opener()
+        self.assertFalse(any(isinstance(h, urllib.request.HTTPGzipHandler)
+                             for h in o.handlers))
+        o = urllib.request.build_opener(urllib.request.HTTPGzipHandler)
+        self.assertTrue(any(isinstance(h, urllib.request.HTTPGzipHandler)
+                            for h in o.handlers))
+
+    def test_request_adds_accept_encoding(self):
+        h, req = self.opened_request()
+        self.assertEqual(req.get_header("Accept-encoding"), "gzip")
+
+    def test_request_keeps_user_accept_encoding(self):
+        h, req = self.opened_request(headers={"Accept-Encoding": "identity"})
+        self.assertEqual(req.get_header("Accept-encoding"), "identity")
+
+    def test_response_is_decoded(self):
+        h, req = self.opened_request()
+        response = self.make_response(self.gzip_bytes(self.body))
+        with h.http_response(req, response) as result:
+            self.assertEqual(result.read(), self.body)
+
+    def test_response_headers_stripped(self):
+        h, req = self.opened_request()
+        response = self.make_response(self.gzip_bytes(self.body))
+        result = h.http_response(req, response)
+        info = result.info()
+        self.assertIsNone(info.get("Content-Encoding"))
+        self.assertIsNone(info.get("Content-Length"))
+        self.assertEqual(info.get("Content-Type"), "text/plain")
+        self.assertEqual(result.status, 200)
+        result.close()
+
+    def test_response_streamed_in_chunks(self):
+        h, req = self.opened_request()
+        response = self.make_response(self.gzip_bytes(self.body))
+        result = h.http_response(req, response)
+        chunks = []
+        while chunk := result.read(64):
+            self.assertLessEqual(len(chunk), 64)
+            chunks.append(chunk)
+        self.assertEqual(b"".join(chunks), self.body)
+        result.close()
+
+    def test_multiple_gzip_members_decoded(self):
+        # A response may be several concatenated gzip members; all of them
+        # must be decoded, not just the first.
+        h, req = self.opened_request()
+        comp = self.gzip_bytes(b"AAA") + self.gzip_bytes(b"BBB")
+        response = self.make_response(comp)
+        with h.http_response(req, response) as result:
+            self.assertEqual(result.read(), b"AAABBB")
+
+    def test_trailing_junk_after_member_ignored(self):
+        # Bytes after the final member that are not another gzip member are
+        # tolerated: the body decodes without error and is not corrupted.
+        h, req = self.opened_request()
+        comp = self.gzip_bytes(self.body) + b"trailing garbage"
+        response = self.make_response(comp)
+        with h.http_response(req, response) as result:
+            self.assertEqual(result.read(), self.body)
+
+    def test_user_accept_encoding_passes_through(self):
+        # A caller-supplied Accept-Encoding is left to the caller to decode:
+        # the gzipped response is returned untouched.
+        h, req = self.opened_request(headers={"Accept-Encoding": "gzip"})
+        response = self.make_response(self.gzip_bytes(self.body))
+        result = h.http_response(req, response)
+        self.assertIs(result, response)
+        self.assertEqual(result.headers.get("Content-Encoding"), "gzip")
+
+    def test_non_gzip_response_passes_through(self):
+        h, req = self.opened_request()
+        response = self.make_response(self.body, content_encoding=None)
+        result = h.http_response(req, response)
+        self.assertIs(result, response)
+
+    def test_truncated_stream_raises(self):
+        h, req = self.opened_request()
+        comp = self.gzip_bytes(self.body)
+        response = self.make_response(comp[:len(comp) // 2])
+        result = h.http_response(req, response)
+        with self.assertRaises(EOFError):
+            result.read()
+        result.close()
+
+    def test_close_propagates(self):
+        h, req = self.opened_request()
+        response = self.make_response(self.gzip_bytes(self.body))
+        result = h.http_response(req, response)
+        result.close()
+        self.assertTrue(response.closed)
+
+    def test_requires_zlib(self):
+        with mock.patch.object(urllib.request, "zlib", None):
+            with self.assertRaises(ImportError):
+                urllib.request.HTTPGzipHandler()
+
+
 class MiscTests(unittest.TestCase):
 
     def opener_has_handler(self, opener, handler_class):
