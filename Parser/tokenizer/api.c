@@ -4,6 +4,7 @@
 
 #include "tokenizer.h"
 #include "reader.h"
+#include "reader_internal.h"
 #include "../lexer/state.h"
 
 _PyTokenizer_Info
@@ -21,10 +22,10 @@ _PyTokenizer_GetInfo(const struct tok_state *tok)
         .delimiter_loc = {-1, -1},
         .in_formatted_string = tok->ftstring_depth != 0,
         .is_interactive = _PyTok_ReaderIsInteractive(tok),
-        .is_file = tok->fp != NULL && tok->fp != stdin,
+        .is_file = tok->reader->fp != NULL && tok->reader->fp != stdin,
         .filename = tok->filename,
         .module = tok->module,
-        .encoding = tok->encoding,
+        .encoding = tok->reader->encoding,
     };
     if (tok->level > 0) {
         int level = tok->level - 1;
@@ -45,14 +46,14 @@ _PyToken_TextView(const struct tok_state *tok, const struct token *token,
         *length = 0;
         return "";
     }
-    return _PyLexer_BufferSpanView(tok, token->span, length);
+    return _PyTok_SourceSpanView(&tok->source, token->span, length);
 }
 
 const char *
 _PyTokenizer_SpanView(const struct tok_state *tok, _PyTok_Span span,
                       Py_ssize_t *length)
 {
-    return _PyLexer_BufferSpanView(tok, span, length);
+    return _PyTok_SourceSpanView(&tok->source, span, length);
 }
 
 void
@@ -60,19 +61,13 @@ _PyToken_GetView(const struct tok_state *tok, const struct token *token,
                  _PyToken_View *view)
 {
     assert(view != NULL);
-    assert((token->span.start == -1 && token->span.end == -1) ||
-           _PyTok_SpanIsValid(token->span));
-    if (token->span.start >= 0) {
-        (void)_PyLexer_BufferPointer(tok, token->span.end);
-    }
-    view->text = token->span.start < 0
-        ? NULL : _PyLexer_BufferPointer(tok, token->span.start);
-    view->length = token->span.end - token->span.start;
-    view->end_line = _PyLexer_BufferPointer(tok, tok->line_start);
-    view->line = ISSTRINGLIT(token->type)
-        ? view->text - token->start_loc.byte_col : view->end_line;
-    view->line_length = tok->inp - tok->line_start +
-        (view->end_line - view->line);
+    view->text = _PyToken_TextView(tok, token, &view->length);
+    view->end_line_start = tok->line_start;
+    view->line_span = (_PyTok_Span){
+        ISSTRINGLIT(token->type)
+            ? token->span.start - token->start_loc.byte_col : tok->line_start,
+        tok->inp,
+    };
     view->implicit_newline = tok->implicit_newline;
     view->at_eof = tok->done == E_EOF;
 }
@@ -111,22 +106,28 @@ _PyTokenizer_ImplyDedents(struct tok_state *tok)
 int
 _PyTokenizer_HasTrailingStatement(const struct tok_state *tok)
 {
-    const char *cur = _PyLexer_BufferPointer(tok, tok->cur);
-    char c = *cur;
-    for (;;) {
-        while (c == ' ' || c == '\t' || c == '\n' || c == '\014') {
-            c = *++cur;
-        }
-        if (!c) {
+    _PyTok_Off cur = tok->cur;
+    _PyTok_Off end = tok->source.base_offset + tok->source.len;
+    while (cur < end) {
+        int c = _PyTok_SourceByte(&tok->source, cur++);
+        if (c == '\0') {
             return 0;
+        }
+        if (c == ' ' || c == '\t' || c == '\n' || c == '\014') {
+            continue;
         }
         if (c != '#') {
             return 1;
         }
-        while (c && c != '\n') {
-            c = *++cur;
+        while (cur < end) {
+            c = _PyTok_SourceByte(&tok->source, cur);
+            if (c == '\0' || c == '\n') {
+                break;
+            }
+            cur++;
         }
     }
+    return 0;
 }
 
 int

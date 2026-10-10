@@ -80,7 +80,6 @@ struct tok_state {
     _PyTok_SourceText source;
     int done;           /* E_OK normally, E_EOF at EOF, otherwise error code */
     /* NB If done != E_OK, cur must be == inp!!! */
-    FILE *fp;           /* Rest of input; NULL if tokenizing a string */
     lexer_layout_state layout;
     int lineno;         /* Current line number */
     _PyTok_Loc start_loc;
@@ -92,9 +91,6 @@ struct tok_state {
     int parencolstack[MAXLEVEL];
     PyObject *filename;
     PyObject *module;
-    /* Stuff for PEP 0263 */
-    char *encoding;         /* Source encoding. */
-
     struct _PyTok_Reader *reader;
 
     int type_comments;      /* Whether to look for type comments */
@@ -133,33 +129,6 @@ _PyLexer_FTStringBracketDepth(const struct tok_state *tok,
                               const ftstring_state *state)
 {
     return tok->level - state->paren_level;
-}
-
-static inline _PyTok_Off
-_PyLexer_BufferOffset(const struct tok_state *tok, const char *position)
-{
-    const char *base = _PyTok_SourceData(&tok->source);
-    assert(position >= base && position <= base + tok->source.len);
-    return tok->source.base_offset + (position - base);
-}
-
-static inline const char *
-_PyLexer_BufferPointer(const struct tok_state *tok, _PyTok_Off offset)
-{
-    assert(offset >= tok->source.base_offset);
-    assert(offset - tok->source.base_offset <= tok->source.len);
-    return _PyTok_SourceData(&tok->source) + (offset - tok->source.base_offset);
-}
-
-static inline const char *
-_PyLexer_BufferSpanView(const struct tok_state *tok, _PyTok_Span span,
-                        Py_ssize_t *length)
-{
-    assert(length != NULL);
-    assert(_PyTok_SpanIsValid(span));
-    *length = span.end - span.start;
-    (void)_PyLexer_BufferPointer(tok, span.end);
-    return _PyLexer_BufferPointer(tok, span.start);
 }
 
 static inline int
