@@ -578,7 +578,7 @@ since it is impossible to detect the termination of alien threads.
 
    .. method:: run()
 
-      Method representing the thread's activity.
+      Method representing the thread's activity. Use Thread.start() to start a thread's execution
 
       You may override this method in a subclass.  The standard :meth:`run`
       method invokes the callable object passed to the object's constructor as
