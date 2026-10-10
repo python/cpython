@@ -1,0 +1,2 @@
+Fix PyREPL crash on an empty DELETE_WORD_BACKWARDS (^W) followed by
+CLEAR_TO_START (^K).
