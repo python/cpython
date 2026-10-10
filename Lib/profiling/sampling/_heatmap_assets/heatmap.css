@@ -813,6 +813,10 @@
 }
 
 /* Scrollbar Styling */
+.line-content {
+  scrollbar-color: var(--border) var(--bg-secondary);
+}
+
 .line-content::-webkit-scrollbar {
   height: 6px;
 }
