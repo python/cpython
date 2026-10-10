@@ -1,0 +1,1 @@
+Improve IDLE Find, Replace and Find in Files dialogs.
