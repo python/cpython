@@ -162,6 +162,15 @@ class AST_Tests(unittest.TestCase):
             self.assertRaises(TypeError, ast.parse, ast.Constant(42),
                               optimize=optval)
 
+    def test_parse_ast_func_type(self):
+        # see gh-156689
+        tree = ast.parse('(int, str) -> bool', mode='func_type')
+        self.assertEqual(ast.dump(ast.parse(tree, mode='func_type')),
+                         ast.dump(tree))
+        self.assertRaises(TypeError, ast.parse, ast.Constant(42),
+                          mode='func_type')
+        self.assertRaises(TypeError, ast.parse, tree, mode='exec')
+
     def test_optimization_levels__debug__(self):
         cases = [(-1, '__debug__'), (0, '__debug__'), (1, False), (2, False)]
         for (optval, expected) in cases:
@@ -1047,7 +1056,8 @@ class AST_Tests(unittest.TestCase):
         enum._test_simple_enum(_Precedence, _ast_unparse._Precedence)
 
     @support.cpython_only
-    @support.skip_if_huge_c_stack(100_000 if sys.platform == "android" else 500_000)
+    @support.run_with_limited_c_stack(
+        100_000 if sys.platform == "android" else 500_000)
     @skip_wasi_stack_overflow()
     @skip_emscripten_stack_overflow()
     def test_ast_recursion_limit(self):
