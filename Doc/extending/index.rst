@@ -16,9 +16,10 @@ underlying operating system supports this feature.
 
 This document assumes basic knowledge about C and Python.  For an informal
 introduction to Python, see :ref:`tutorial-index`.  :ref:`reference-index`
-gives a more formal definition of the language.  :ref:`library-index` documents
-the existing object types, functions and modules (both built-in and written in
-Python) that give the language its wide application range.
+gives a more formal definition of the language.  :ref:`builtins-index` documents
+the built-in functions and object types, and :ref:`library-index` documents the
+modules (both built-in and written in Python) that give the language its wide
+application range.
 
 For a detailed description of the whole Python/C API, see the separate
 :ref:`c-api-index`.

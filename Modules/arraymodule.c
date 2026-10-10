@@ -1661,7 +1661,7 @@ array_array_byteswap_impl(arrayobject *self)
         break;
     case 16:
         assert(strcmp(self->ob_descr->typecode, "Zd") == 0);
-        for (p = self->ob_item, i = Py_SIZE(self); --i >= 0; p += 8) {
+        for (p = self->ob_item, i = Py_SIZE(self); --i >= 0; p += 16) {
             char t0 = p[0];
             char t1 = p[1];
             char t2 = p[2];
