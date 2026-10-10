@@ -386,9 +386,7 @@ class _Target(typing.Generic[_S, _R]):
         )
 
 
-class _COFF(
-    _Target[_schema.COFFSection, _schema.COFFRelocation]
-):  # pylint: disable = too-few-public-methods
+class _COFF(_Target[_schema.COFFSection, _schema.COFFRelocation]):  # pylint: disable = too-few-public-methods
     def _shim_compile_args(self) -> list[str]:
         # The shim is part of pythoncore, not a shared extension.
         # On Windows, Py_BUILD_CORE_MODULE makes public APIs import from
@@ -501,9 +499,7 @@ class _COFF64(_COFF):
         return [runtime, *self.args]
 
 
-class _ELF(
-    _Target[_schema.ELFSection, _schema.ELFRelocation]
-):  # pylint: disable = too-few-public-methods
+class _ELF(_Target[_schema.ELFSection, _schema.ELFRelocation]):  # pylint: disable = too-few-public-methods
     label_prefix = ".L"
     symbol_prefix = ""
     re_global = re.compile(r'\s*\.globl\s+(?P<label>[\w."$?@]+)(\s+.*)?')
@@ -605,9 +601,7 @@ class _ELF(
         return _stencils.Hole(offset, kind, value, symbol, addend)
 
 
-class _MachO(
-    _Target[_schema.MachOSection, _schema.MachORelocation]
-):  # pylint: disable = too-few-public-methods
+class _MachO(_Target[_schema.MachOSection, _schema.MachORelocation]):  # pylint: disable = too-few-public-methods
     label_prefix = "L"
     symbol_prefix = "_"
     re_global = re.compile(r'\s*\.globl\s+(?P<label>[\w."$?@]+)(\s+.*)?')
