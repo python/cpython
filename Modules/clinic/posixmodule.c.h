@@ -2632,7 +2632,7 @@ static PyObject *
 os__path_splitroot_ex(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    path_t path = PATH_T_INITIALIZE("_path_splitroot_ex", "path", 0, 1, 1, 0, 0);
+    path_t path = PATH_T_INITIALIZE("_path_splitroot_ex", "path", 0, 1, 1, 1, 0);
 
     if (!path_converter(arg, &path)) {
         goto exit;
@@ -2690,7 +2690,7 @@ os__path_normpath(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    path_t path = PATH_T_INITIALIZE("_path_normpath", "path", 0, 1, 1, 0, 0);
+    path_t path = PATH_T_INITIALIZE("_path_normpath", "path", 0, 1, 1, 1, 0);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
