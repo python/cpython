@@ -177,7 +177,7 @@ FTP objects
 
       :param timeout:
          A timeout in seconds for the connection attempt
-         (default: the global default timeout setting).
+         (default: the *timeout* passed to the :class:`FTP` constructor).
       :type timeout: float | None
 
       :param source_address:
