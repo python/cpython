@@ -1,0 +1,4 @@
+Validate cookie key characters during parsing in
+:meth:`http.cookies.BaseCookie.load` so that an illegal key raises
+:exc:`~http.cookies.CookieError` before any cookies are applied.  Patch by
+tonghuaroot.
