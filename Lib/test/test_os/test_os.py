@@ -38,6 +38,7 @@ from test.support import requires_root_user
 from test.support import requires_non_root_user
 from test.support import threading_helper
 from test.support import warnings_helper
+from test.support import import_helper
 from platform import win32_is_iot
 from .utils import create_file
 
@@ -1692,6 +1693,17 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         self.assertEqual(os.environ, {})
 
         self.assertRaises(TypeError, os.environ.clear, None)
+
+    @requires_os_func('_clearenv')
+    def test_clearenv_environ_not_null(self):
+        ctypes = import_helper.import_module('ctypes')
+
+        os.environ.clear()
+        c_environ = ctypes.c_void_p.in_dll(ctypes.CDLL(None), "environ")
+        self.assertIsNotNone(
+            c_environ.value,
+            "os.environ.clear() set the C 'environ' pointer to NULL"
+        )
 
 
 class WalkTests(unittest.TestCase):

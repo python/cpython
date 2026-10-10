@@ -13888,6 +13888,8 @@ os_unsetenv_impl(PyObject *module, PyObject *name)
 
 
 #ifdef HAVE_CLEARENV
+static char *empty_environ[] = { NULL };
+
 /*[clinic input]
 os._clearenv
 [clinic start generated code]*/
@@ -13905,6 +13907,12 @@ os__clearenv_impl(PyObject *module)
     if (err) {
         return posix_error();
     }
+
+    /* glibc's clearenv() sets 'environ' to NULL. Point it to a static empty
+       array to prevent crashes in third-party C libraries (e.g. Tcl/Tk)
+       that access 'environ' without a NULL check. */
+    environ = empty_environ;
+
     Py_RETURN_NONE;
 }
 #endif
