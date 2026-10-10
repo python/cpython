@@ -86,6 +86,7 @@ class Regrtest:
 
         # Select tests
         self.match_tests: TestFilter = ns.match_tests
+        self.match_labels: TestFilter = ns.match_labels
         self.exclude: bool = ns.exclude
         self.fromfile: StrPath | None = ns.fromfile
         self.starting_test: TestName | None = ns.start
@@ -505,6 +506,7 @@ class Regrtest:
             fail_fast=self.fail_fast,
             fail_env_changed=self.fail_env_changed,
             match_tests=self.match_tests,
+            match_labels=self.match_labels,
             match_tests_dict=None,
             rerun=False,
             forever=self.forever,
@@ -808,6 +810,7 @@ class Regrtest:
         elif self.want_list_cases:
             list_cases(selected,
                        match_tests=self.match_tests,
+                       match_labels=self.match_labels,
                        test_dir=self.test_dir)
         else:
             exitcode = self.run_tests(selected, tests)
