@@ -1349,7 +1349,9 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
         /* RESUME and INSTRUMENTED_RESUME are needed for the operation of
             * instrumentation, so must never be hidden by an INSTRUMENTED_LINE.
             */
-        if (prev_opcode != RESUME && prev_opcode != INSTRUMENTED_RESUME) {
+        if (_PyOpcode_Deopt[prev_opcode] != RESUME &&
+            prev_opcode != INSTRUMENTED_RESUME)
+        {
             goto done;
         }
     }
