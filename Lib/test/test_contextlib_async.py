@@ -904,6 +904,32 @@ class TestAsyncExitStack(TestBaseExitStack, unittest.TestCase):
         self.assertIsInstance(inner_exc.__context__, ZeroDivisionError)
 
     @_async_test
+    async def test_async_exit_exception_chaining_no_active_exception(self):
+        # gh-102201: AsyncExitStack must reproduce the __context__ chain of
+        # equivalent nested `async with` statements even when the body
+        # completes normally (no active exception).
+        async def raise_exc(exc_type):
+            raise exc_type()
+
+        def context_types(exc):
+            types = []
+            while exc is not None:
+                types.append(type(exc))
+                exc = exc.__context__
+            return types
+
+        try:
+            async with self.exit_stack() as stack:
+                stack.push_async_callback(raise_exc, IndexError)
+                stack.push_async_callback(raise_exc, KeyError)
+                stack.push_async_callback(raise_exc, AttributeError)
+        except BaseException as exc:
+            self.assertEqual(context_types(exc),
+                             [IndexError, KeyError, AttributeError])
+        else:
+            self.fail("Expected an exception to propagate")
+
+    @_async_test
     async def test_async_exit_exception_explicit_none_context(self):
         # Ensure AsyncExitStack chaining matches actual nested `with` statements
         # regarding explicit __context__ = None.
