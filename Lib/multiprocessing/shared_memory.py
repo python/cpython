@@ -11,7 +11,6 @@ __all__ = [ 'SharedMemory', 'ShareableList' ]
 from functools import partial
 import mmap
 import os
-import errno
 import struct
 import secrets
 import types
@@ -143,10 +142,8 @@ class SharedMemory:
                         if last_error_code == _winapi.ERROR_ALREADY_EXISTS:
                             if name is not None:
                                 raise FileExistsError(
-                                    errno.EEXIST,
-                                    os.strerror(errno.EEXIST),
-                                    name,
-                                    _winapi.ERROR_ALREADY_EXISTS
+                                    filename=name,
+                                    winerror=_winapi.ERROR_ALREADY_EXISTS
                                 )
                             else:
                                 continue
