@@ -78,6 +78,21 @@ def match_paren(text, depth=0):
         raise ValueError(f'could not find matching parens for {text!r}')
 
 
+def skip_static_assert(srcinfo):
+    m = re.match(r'^\s*(?:_Static_assert|static_assert)\b', srcinfo.text)
+    if not m:
+        return False
+    text = srcinfo.text[m.end():]
+    try:
+        end = match_paren(text)
+    except ValueError:
+        return True
+    remainder = text[end:].lstrip()
+    if remainder.startswith(';'):
+        srcinfo.advance(remainder[1:])
+    return True
+
+
 VAR_DECL = set_capture_groups(_VAR_DECL, (
     'STORAGE',
     'TYPE_QUAL',
