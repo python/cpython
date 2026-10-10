@@ -2769,7 +2769,12 @@ _asyncio_Task_get_name_impl(TaskObj *self)
 {
     if (self->task_name) {
         if (PyLong_CheckExact(self->task_name)) {
-            PyObject *name = PyUnicode_FromFormat("Task-%S", self->task_name);
+            // Formatting can run arbitrary code (e.g. a GC finalizer that logs
+            // and re-enters get_name()), which may replace self->task_name.
+            // Hold a strong reference to the counter while formatting it.
+            PyObject *counter = Py_NewRef(self->task_name);
+            PyObject *name = PyUnicode_FromFormat("Task-%S", counter);
+            Py_DECREF(counter);
             if (name == NULL) {
                 return NULL;
             }
