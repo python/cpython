@@ -27,18 +27,27 @@ typedef struct _PyLegacyEventHandler {
  *   arg: The arg (a PyObject *)
  */
 
+/* Return the top frame (borrowed) if it's running `code`, else NULL. */
+static PyFrameObject *
+get_top_frame_if_running_code(PyObject *code)
+{
+    PyFrameObject *frame = PyEval_GetFrame();
+    if (frame == NULL || (PyObject *)_PyFrame_GetCode(frame->f_frame) != code) {
+        return NULL;
+    }
+    return frame;
+}
+
 static PyObject *
-call_profile_func(_PyLegacyEventHandler *self, PyObject *arg)
+call_profile_func(_PyLegacyEventHandler *self, PyObject *code, PyObject *arg)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     if (tstate->c_profilefunc == NULL) {
         Py_RETURN_NONE;
     }
-    PyFrameObject *frame = PyEval_GetFrame();
+    PyFrameObject *frame = get_top_frame_if_running_code(code);
     if (frame == NULL) {
-        PyErr_SetString(PyExc_SystemError,
-                        "Missing frame when calling profile function.");
-        return NULL;
+        Py_RETURN_NONE;
     }
     Py_INCREF(frame);
     int err = tstate->c_profilefunc(tstate->c_profileobj, frame, self->event, arg);
@@ -57,7 +66,7 @@ sys_profile_start(
     _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(callable);
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 2);
-    return call_profile_func(self, Py_None);
+    return call_profile_func(self, args[0], Py_None);
 }
 
 static PyObject *
@@ -68,7 +77,7 @@ sys_profile_throw(
     _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(callable);
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 3);
-    return call_profile_func(self, Py_None);
+    return call_profile_func(self, args[0], Py_None);
 }
 
 static PyObject *
@@ -79,7 +88,7 @@ sys_profile_return(
     _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(callable);
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 3);
-    return call_profile_func(self, args[2]);
+    return call_profile_func(self, args[0], args[2]);
 }
 
 static PyObject *
@@ -90,7 +99,7 @@ sys_profile_unwind(
      _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(callable);
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 3);
-   return call_profile_func(self, NULL);
+   return call_profile_func(self, args[0], NULL);
 }
 
 static PyObject *
@@ -100,10 +109,15 @@ sys_profile_call_or_return(
 ) {
     _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(op);
     assert(kwnames == NULL);
-    assert(PyVectorcall_NARGS(nargsf) == 4);
+    if (PyVectorcall_NARGS(nargsf) != 4) {
+        // PyMonitoring_FireCReturnEvent and PyMonitoring_FireCRaiseEvent
+        // don't provide the callable.
+        assert(PyVectorcall_NARGS(nargsf) == 3);
+        Py_RETURN_NONE;
+    }
     PyObject *callable = args[2];
     if (PyCFunction_Check(callable)) {
-        return call_profile_func(self, callable);
+        return call_profile_func(self, args[0], callable);
     }
     if (Py_TYPE(callable) == &PyMethodDescr_Type) {
         PyObject *self_arg = args[3];
@@ -119,7 +133,7 @@ sys_profile_call_or_return(
         if (meth == NULL) {
             return NULL;
         }
-        PyObject *res =  call_profile_func(self, meth);
+        PyObject *res =  call_profile_func(self, args[0], meth);
         Py_DECREF(meth);
         return res;
     }
@@ -175,17 +189,15 @@ _PyEval_SetOpcodeTrace(PyFrameObject *frame, bool enable)
 }
 
 static PyObject *
-call_trace_func(_PyLegacyEventHandler *self, PyObject *arg)
+call_trace_func(_PyLegacyEventHandler *self, PyObject *code, PyObject *arg)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     if (tstate->c_tracefunc == NULL) {
         Py_RETURN_NONE;
     }
-    PyFrameObject *frame = PyEval_GetFrame();
+    PyFrameObject *frame = get_top_frame_if_running_code(code);
     if (frame == NULL) {
-        PyErr_SetString(PyExc_SystemError,
-                        "Missing frame when calling trace function.");
-        return NULL;
+        Py_RETURN_NONE;
     }
     if (frame->f_trace_opcodes) {
         if (_PyEval_SetOpcodeTrace(frame, true) != 0) {
@@ -223,7 +235,7 @@ sys_trace_exception_func(
     if (tuple == NULL) {
         return NULL;
     }
-    PyObject *res = call_trace_func(self, tuple);
+    PyObject *res = call_trace_func(self, args[0], tuple);
     Py_DECREF(tuple);
     return res;
 }
@@ -236,7 +248,7 @@ sys_trace_start(
     _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(callable);
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 2);
-    return call_trace_func(self, Py_None);
+    return call_trace_func(self, args[0], Py_None);
 }
 
 static PyObject *
@@ -247,7 +259,7 @@ sys_trace_throw(
     _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(callable);
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 3);
-    return call_trace_func(self, Py_None);
+    return call_trace_func(self, args[0], Py_None);
 }
 
 static PyObject *
@@ -258,7 +270,7 @@ sys_trace_unwind(
     _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(callable);
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 3);
-    return call_trace_func(self, NULL);
+    return call_trace_func(self, args[0], NULL);
 }
 
 static PyObject *
@@ -270,9 +282,8 @@ sys_trace_return(
     assert(!PyErr_Occurred());
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 3);
-    assert(PyCode_Check(args[0]));
     PyObject *val = args[2];
-    PyObject *res = call_trace_func(self, val);
+    PyObject *res = call_trace_func(self, args[0], val);
     return res;
 }
 
@@ -284,7 +295,7 @@ sys_trace_yield(
     _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(callable);
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 3);
-    return call_trace_func(self, args[2]);
+    return call_trace_func(self, args[0], args[2]);
 }
 
 static PyObject *
@@ -354,13 +365,10 @@ sys_trace_line_func(
     assert(PyVectorcall_NARGS(nargsf) == 2);
     int line = PyLong_AsInt(args[1]);
     assert(line >= 0);
-    PyFrameObject *frame = PyEval_GetFrame();
+    PyFrameObject *frame = get_top_frame_if_running_code(args[0]);
     if (frame == NULL) {
-        PyErr_SetString(PyExc_SystemError,
-                        "Missing frame when calling trace function.");
-        return NULL;
+        Py_RETURN_NONE;
     }
-    assert(args[0] == (PyObject *)_PyFrame_GetCode(frame->f_frame));
     return trace_line(tstate, self, frame, line);
 }
 
@@ -379,6 +387,10 @@ sys_trace_jump_func(
         Py_RETURN_NONE;
     }
     assert(PyVectorcall_NARGS(nargsf) == 3);
+    PyFrameObject *frame = get_top_frame_if_running_code(args[0]);
+    if (frame == NULL) {
+        Py_RETURN_NONE;
+    }
     int from = PyLong_AsInt(args[1])/sizeof(_Py_CODEUNIT);
     assert(from >= 0);
     int to = PyLong_AsInt(args[2])/sizeof(_Py_CODEUNIT);
@@ -396,12 +408,6 @@ sys_trace_jump_func(
     if (to_line != from_line) {
         /* Will be handled by target INSTRUMENTED_LINE */
         return &_PyInstrumentation_DISABLE;
-    }
-    PyFrameObject *frame = PyEval_GetFrame();
-    if (frame == NULL) {
-        PyErr_SetString(PyExc_SystemError,
-                        "Missing frame when calling trace function.");
-        return NULL;
     }
     if (!frame->f_trace_lines) {
         Py_RETURN_NONE;
