@@ -1,0 +1,5 @@
+Fix :func:`pprint.isreadable` to return ``False`` for non-finite :class:`float`
+and :class:`complex` values (``inf``, ``-inf``, ``nan`` and complex numbers with
+non-finite components). Their string representations are not valid Python
+expressions and cannot be reconstructed via :func:`eval`, violating the
+documented contract of :func:`~pprint.isreadable`.
