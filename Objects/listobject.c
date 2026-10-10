@@ -725,23 +725,27 @@ static inline int
 list_item_eq(PyObject *item, PyObject *value, PyTypeObject *fast_type)
 {
     if (fast_type != NULL && Py_TYPE(item) == fast_type) {
+        int res;
         if (item == value) {
             return 1;
         }
         if (fast_type == &PyLong_Type) {
             PyLongObject *v = (PyLongObject *)item;
             PyLongObject *w = (PyLongObject *)value;
-            if (_PyLong_BothAreCompact(v, w)) {
-                return _PyLong_CompactValue(v) == _PyLong_CompactValue(w);
+            if (!_PyLong_BothAreCompact(v, w)) {
+                return PyObject_RichCompareBool(item, value, Py_EQ);
             }
+            res = _PyLong_CompactValue(v) == _PyLong_CompactValue(w);
         }
         else if (fast_type == &PyFloat_Type) {
-            return PyFloat_AS_DOUBLE(item) == PyFloat_AS_DOUBLE(value);
+            res = PyFloat_AS_DOUBLE(item) == PyFloat_AS_DOUBLE(value);
         }
         else {
             assert(fast_type == &PyUnicode_Type);
-            return _PyUnicode_Equal(item, value);
+            res = _PyUnicode_Equal(item, value);
         }
+        assert(res == PyObject_RichCompareBool(item, value, Py_EQ));
+        return res;
     }
     return PyObject_RichCompareBool(item, value, Py_EQ);
 }
