@@ -244,6 +244,9 @@ class CAPITest(unittest.TestCase):
         """Test _PyBytes_Resize()"""
         _resize = _testcapi.bytes_resize
 
+        class BytesSubclass(bytes):
+            pass
+
         def assert_is_fresh_copy(result, refcnt, is_new_obj):
             self.assertEqual(refcnt, 1)
             self.assertTrue(is_new_obj)
@@ -274,6 +277,20 @@ class CAPITest(unittest.TestCase):
                 # not. 'is_new_obj' cannot be tested.
                 self.assertEqual(refcnt, 1)
                 self.assertFalse(sys._is_immortal(result))
+
+            if not new:
+                # Given a subclass of bytes, _resize always returns a new copy
+                # or empty singleton
+                sub = BytesSubclass(obj)
+                sub_result, refcnt, is_new_obj = _resize(
+                    sub, size, new, compute_hash=compute_hash)
+
+                if size == 0:
+                    self.assertIs(sub_result, b'')
+                    self.assertTrue(sys._is_immortal(sub_result))
+                    self.assertTrue(is_new_obj)
+                else:
+                    assert_is_fresh_copy(sub_result, refcnt, is_new_obj)
 
             return result
 
