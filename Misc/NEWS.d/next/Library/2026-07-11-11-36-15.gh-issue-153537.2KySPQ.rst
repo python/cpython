@@ -1,0 +1,3 @@
+Re-initializing an :class:`xml.etree.ElementTree.Element` in the C accelerator
+now discards the previous children and attributes instead of leaking them,
+matching the pure-Python implementation. Patch by tonghuaroot.
