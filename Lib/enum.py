@@ -316,8 +316,12 @@ class _proto_member:
             # This may fail if value is not hashable. We can't add the value
             # to the map, and by-value lookups for this value will be
             # linear.
-            enum_class._value2member_map_.setdefault(value, enum_member)
-            if value not in enum_class._hashable_values_:
+            value2member_map = enum_class._value2member_map_
+            size = len(value2member_map)
+            value2member_map.setdefault(value, enum_member)
+            # A new key can't already be in the list, so skip the linear scan.
+            if (len(value2member_map) != size
+                    or value not in enum_class._hashable_values_):
                 enum_class._hashable_values_.append(value)
         except TypeError:
             # keep track of the value in a list so containment checks are quick
