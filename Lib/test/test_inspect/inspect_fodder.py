@@ -118,3 +118,6 @@ class WhichComments:
 # a closing parenthesis with the opening paren being in another line
 (
 ); after_closing = lambda: 1
+
+# What is their airspeed?
+type Sparrow = African | European
