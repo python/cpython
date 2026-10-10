@@ -1,4 +1,0 @@
-Speed up the garbage collector by keeping the objects that survive a
-collection in their original order. They were left in the order in which the
-collector reached them, which made every later walk of the generation miss the
-CPU cache.
