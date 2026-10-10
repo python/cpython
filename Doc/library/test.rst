@@ -1693,22 +1693,111 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
 
 .. versionadded:: 3.10
 
+Creating Module Objects
+-----------------------
 
-.. function:: forget(module_name)
+.. function:: create_module(name, loader=None, *, ispkg=False)
 
-   Remove the module named *module_name* from ``sys.modules`` and delete any
+   Create a new, empty :term:`module` or :term:`package` and return it.
+
+   *name*, *loader* and *ispkg* (as ``is_package``) are passed to
+   :class:`importlib.machinery.ModuleSpec`.
+
+
+.. function:: add_module(spec, *, parents=True)
+
+   Create a :term:`module` from a name or spec and add it to :data:`sys.modules`.
+
+   If *parents* is ``True`` then also create any missing parent modules.
+
+   Return the new module.
+
+
+.. function:: add_package(spec, *, parents=True)
+
+   Create a :term:`package` from a name and add it to :data:`sys.modules`.
+
+   If *parents* is ``True`` then also create any missing parent modules.
+
+   Return the new package.
+
+
+Manipulating sys.modules
+------------------------
+
+
+.. function:: unload(name)
+
+   Remove the module named *name* from :data:`sys.modules`.
+
+
+.. function:: forget(modname)
+
+   Remove the module named *modname* from :data:`sys.modules` and delete any
    byte-compiled files of the module.
 
 
-.. function:: import_fresh_module(name, fresh=(), blocked=(), deprecated=False)
+.. function:: modules_setup()
+
+   Return a copy of :data:`sys.modules`.
+
+
+.. function:: modules_cleanup(oldmodules)
+
+   Remove modules except for *oldmodules* and ``encodings`` from :data:`sys.modules`
+   in order to preserve internal cache.
+
+
+.. function:: isolated_modules()
+
+   A context manager that makes a copy of :data:`sys.modules` on entry and restores
+   it on exit.
+
+
+.. class:: CleanImport(*module_names, usefrozen=False)
+
+   A context manager to force import to return a new module reference.  This
+   is useful for testing module-level behaviors, such as the emission of a
+   :exc:`DeprecationWarning` on import.
+
+   When created, this makes a copy of :data:`sys.modules` and removes names from
+   *module_names* from the original. On exit, the original module references are
+   restored.
+
+   If *usefrozen* is False (the default) then the frozen importer is
+   disabled (except for essential modules like ``importlib._bootstrap``).
+
+   Example usage::
+
+      with CleanImport('foo'):
+            importlib.import_module('foo')  # New reference.
+
+
+Special importers
+-----------------
+
+.. function:: import_module(name, deprecated=False, *, required_on=())
+
+   This function imports and returns the named module. Unlike a normal
+   import, this function raises :exc:`unittest.SkipTest` if the module
+   cannot be imported.
+
+   Module and package deprecation messages are suppressed during this import
+   if *deprecated* is ``True``.  If a module is required on a platform but
+   optional for others, set *required_on* to an iterable of platform prefixes
+   which will be compared against :data:`sys.platform`.
+
+   .. versionadded:: 3.1
+
+.. function:: import_fresh_module(name, fresh=(), blocked=(), *, deprecated=False, usefrozen=False)
 
    This function imports and returns a fresh copy of the named Python module
-   by removing the named module from ``sys.modules`` before doing the import.
+   by removing the named module from :data:`sys.modules` before doing the import.
    Note that unlike :func:`reload`, the original module is not affected by
    this operation.
 
    *fresh* is an iterable of additional module names that are also removed
-   from the ``sys.modules`` cache before doing the import.
+   from the :data:`sys.modules` cache before doing the import.
 
    *blocked* is an iterable of module names that are replaced with ``None``
    in the module cache during the import to ensure that attempts to import
@@ -1716,10 +1805,13 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
 
    The named module and any modules named in the *fresh* and *blocked*
    parameters are saved before starting the import and then reinserted into
-   ``sys.modules`` when the fresh import is complete.
+   :data:`sys.modules` when the fresh import is complete.
 
    Module and package deprecation messages are suppressed during this import
    if *deprecated* is ``True``.
+
+   If *usefrozen* is False (the default) then the frozen importer is
+   disabled (except for essential modules like ``importlib._bootstrap``).
 
    This function will raise :exc:`ImportError` if the named module cannot be
    imported.
@@ -1736,53 +1828,20 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
    .. versionadded:: 3.1
 
 
-.. function:: import_module(name, deprecated=False, *, required_on=())
+.. function:: ensure_module_imported(name, *, clearnone=True)
 
-   This function imports and returns the named module. Unlike a normal
-   import, this function raises :exc:`unittest.SkipTest` if the module
-   cannot be imported.
+   Import and return the named module.
 
-   Module and package deprecation messages are suppressed during this import
-   if *deprecated* is ``True``.  If a module is required on a platform but
-   optional for others, set *required_on* to an iterable of platform prefixes
-   which will be compared against :data:`sys.platform`.
+   If the module is already imported, this is returned. Otherwise, import
+   the module and return it. If the module is not found a new, empty module
+   will be created.
 
-   .. versionadded:: 3.1
+   If *clearnone* is ``True``, this will first remove any ``None`` values that
+   would block the import.
 
 
-.. function:: modules_setup()
-
-   Return a copy of :data:`sys.modules`.
-
-
-.. function:: modules_cleanup(oldmodules)
-
-   Remove modules except for *oldmodules* and ``encodings`` in order to
-   preserve internal cache.
-
-
-.. function:: unload(name)
-
-   Delete *name* from ``sys.modules``.
-
-
-.. function:: make_legacy_pyc(source)
-
-   Move a :pep:`3147`/:pep:`488` pyc file to its legacy pyc location and return the file
-   system path to the legacy pyc file.  The *source* value is the file system
-   path to the source file.  It does not need to exist, however the PEP
-   3147/488 pyc file must exist.
-
-
-.. class:: CleanImport(*module_names)
-
-   A context manager to force import to return a new module reference.  This
-   is useful for testing module-level behaviors, such as the emission of a
-   :exc:`DeprecationWarning` on import.  Example usage::
-
-      with CleanImport('foo'):
-          importlib.import_module('foo')  # New reference.
-
+Manipulating sys.path
+---------------------
 
 .. class:: DirsOnSysPath(*paths)
 
@@ -1795,6 +1854,61 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
    Note that *all* :data:`sys.path` modifications in the body of the
    context manager, including replacement of the object,
    will be reverted at the end of the block.
+
+
+.. function:: ready_to_import(name=None, source="")
+
+   A context manager that will create a new python module *name* with *source*
+   source code in a temporary directory and inserts this directory at the start
+   of :data:`sys.path`.
+
+   If the name matches an existing module, this will be cleared from :data:`sys.modules`
+   on entry and restored on exit.
+
+   Yields (name, path_to_script)
+
+
+Manipulating internals
+----------------------
+
+.. function:: make_legacy_pyc(source, allow_compile=False)
+
+   Move a :pep:`3147`/:pep:`488` pyc file to its legacy pyc location and return the file
+   system path to the legacy pyc file.  The *source* value is the file system
+   path to the source file.  It does not need to exist, however the PEP
+   3147/488 pyc file must exist or *allow_compile* must be set.
+
+   *allow_compile* will create a .pyc file if it does not exist.
+
+
+.. function:: frozen_modules(enabled=True)
+
+   A context manager that forces frozen modules to be used or excluded.
+
+   This only applies to modules that have not yet been imported. Some essential
+   modules will always be imported frozen.
+
+
+.. function:: multi_interp_extensions_check(enabled=True)
+
+   A context manager that forces (if ``True``) or prevents legacy (single-phase init)
+   modules from being allowed in subinterpreters.
+
+   This only applies to modules that haven't been imported yet.
+   It overrides the ``PyInterpreterConfig.check_multi_interp_extensions``
+   setting.
+
+
+Lazy imports
+------------
+
+.. function:: ensure_lazy_imports(imported_module, modules_to_block, *, additional_code=None)
+
+   Test that when *imported_module* is imported, none of the modules named in *modules_to_block*
+   are imported as a side effect.
+
+   *additional_code* if given should be additional python source code to execute before
+   checking that the blocked modules still haven't been imported.
 
 
 :mod:`!test.support.warnings_helper` --- Utilities for warnings tests
