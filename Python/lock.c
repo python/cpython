@@ -120,7 +120,7 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
             // thread state (_PY_LOCK_PYTHONLOCK), the finalization thread is
             // running this code, and no other thread can unlock.
             // Raise rather than hang. (_PY_LOCK_PYTHONLOCK allows raising
-            // exceptons.)
+            // exceptions.)
             PyErr_SetString(PyExc_PythonFinalizationError,
                             "cannot acquire lock at interpreter finalization");
             return PY_LOCK_FAILURE;

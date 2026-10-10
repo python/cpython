@@ -612,7 +612,7 @@ optimize_uops(
         this_instr = &trace[i];
         if (ctx->done) {
             // Don't do any more optimization, but
-            // we still need to reach a terminator for corrctness.
+            // we still need to reach a terminator for correctness.
             *(ctx->out_buffer.next++) = *this_instr;
             if (is_terminator_uop(this_instr)) {
                 break;

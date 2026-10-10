@@ -504,7 +504,7 @@ static inline int check_interpreter_whence(long);
    For subinterpreters we memcpy() the main interpreter in
    PyInterpreterState_New(), leaving it in the same mostly-initialized
    state.  The only difference is that the interpreter has some
-   self-referential state that is statically initializexd to the
+   self-referential state that is statically initialized to the
    main interpreter.  We fix those fields here, in addition
    to the other dynamically initialized fields.
   */
@@ -566,7 +566,7 @@ init_interpreter(PyInterpreterState *interp,
     interp->threads.preallocated = &interp->_initial_thread;
 
     // We would call _PyObject_InitState() at this point
-    // if interp->feature_flags were alredy set.
+    // if interp->feature_flags were already set.
 
     _PyEval_InitState(interp);
     _PyGC_InitState(&interp->gc);
