@@ -3739,6 +3739,23 @@ class ClinicExternalTest(TestCase):
         # if the content does not change
         self.assertEqual(pre_mtime, post_mtime)
 
+    def test_warning_is_failure(self):
+        code = dedent("""
+            /*[clinic input]
+            @permit_long_summary
+            fn
+
+            Short summary.
+            [clinic start generated code]*/
+        """)
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write(code)
+            out, err = self.expect_failure(fn)
+        self.assertIn("Remove the @permit_long_summary decorator from 'fn'!", out)
+        self.assertEqual(err, "1 warning emitted\n")
+
     TOUCH_CODE = dedent("""
         /*[clinic input]
         module m
