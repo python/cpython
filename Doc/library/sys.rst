@@ -1485,11 +1485,24 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 .. data:: lazy_modules
 
    A :class:`set` of fully qualified module name strings that have been lazily
-   imported in the current interpreter but not yet loaded.  When a
-   lazily imported module is accessed for the first time, its name is removed
-   from this set.
+   imported in the current interpreter but not yet loaded.
+   When a lazily imported module is accessed for the first time, its name is
+   typically removed from this set.
 
-   This attribute is intended for debugging and introspection.
+   The set may contain some additional strings.
+   It is intended for debugging and introspection, and consumers are expected
+   to verify each entry's status.
+
+   .. impl-detail::
+
+      Currently, :data:`!lazy_modules` may also contain:
+
+      * names of *attributes* (non-modules), such as ``"pathlib.Path"`` after
+        running ``lazy from pathlib import Path``, and
+      * names of items than have already been accessed.
+
+      In future versions of Python, these may be removed, and/or additional
+      extras may be added.
 
    See also :func:`set_lazy_imports` and :pep:`810`.
 
@@ -1941,7 +1954,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       The interpreter is about to execute a new line of code or re-execute the
       condition of a loop.  The local trace function is called; *arg* is
       ``None``; the return value specifies the new local trace function.  See
-      :file:`Objects/lnotab_notes.txt` for a detailed explanation of how this
+      :source:`InternalDocs/code_objects.md` for a detailed explanation of how this
       works.
       Per-line events may be disabled for a frame by setting
       :attr:`~frame.f_trace_lines` to :const:`False` on that
@@ -2097,7 +2110,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    See :ref:`remote-debugging` for more information about the remote debugging
    mechanism.
 
-   .. audit-event:: sys.remote_exec pid script_path
+   .. audit-event:: sys.remote_exec pid,script_path
 
       When the code is executed in the remote process, an
       :ref:`auditing event <auditing>` ``sys.remote_exec`` is raised with

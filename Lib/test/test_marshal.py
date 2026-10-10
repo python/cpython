@@ -116,6 +116,14 @@ class StringTestCase(unittest.TestCase, HelperMixin):
         for s in [b"", b"Andr\xe8 Previn", b"abc", b" "*10000]:
             self.helper(s)
 
+    @support.cpython_only
+    def test_bytes_singleton(self):
+        for version in range(marshal.version + 1):
+            for sample in [b"", b"x"]:
+                new = marshal.loads(marshal.dumps(sample, version))
+                self.assertIs(new, sample)
+
+
 class ExceptionTestCase(unittest.TestCase):
     def test_exceptions(self):
         new = marshal.loads(marshal.dumps(StopIteration))
@@ -385,6 +393,16 @@ class BugsTestCase(unittest.TestCase):
         a[None].append(a)
         for v in range(marshal.version + 1):
             self.assertRaises(ValueError, marshal.dumps, a, v)
+
+    def test_shared_reference_frozendict(self):
+        # A frozendict referenced more than once must round-trip with the
+        # shared identity preserved, like frozenset.
+        fd = frozendict({'a': 1, 'b': 2})
+        out = marshal.loads(marshal.dumps([fd, fd]))
+        self.assertEqual(out[0], fd)
+        self.assertIs(out[0], out[1])
+        nested = marshal.loads(marshal.dumps(frozendict({'x': fd, 'y': fd})))
+        self.assertIs(nested['x'], nested['y'])
 
     def test_loads_reference_loop_list(self):
         data = b'\xdb\x01\x00\x00\x00r\x00\x00\x00\x00' # [<R>]

@@ -723,19 +723,33 @@ class TestPlistlib(unittest.TestCase):
         }
 
         for fmt in ALL_FORMATS:
+            for sort_keys in (False, True):
+                with self.subTest(fmt=fmt, sort_keys=sort_keys):
+                    data = plistlib.dumps(
+                        pl, fmt=fmt, skipkeys=True, sort_keys=sort_keys)
+
+                    pl2 = plistlib.loads(data)
+                    self.assertEqual(pl2, {'snake': 'aWord'})
+
+                    fp = BytesIO()
+                    plistlib.dump(
+                        pl, fp, fmt=fmt, skipkeys=True, sort_keys=sort_keys)
+                    data = fp.getvalue()
+                    pl2 = plistlib.loads(fp.getvalue())
+                    self.assertEqual(pl2, {'snake': 'aWord'})
+
+    def test_skipkeys_with_sort_keys_mixed_types(self):
+        # gh-145856: skipkeys=True + sort_keys=True with mixed key types
+        # used to raise TypeError because the sort ran before the filter.
+        pl = {1: 'a', 'z': 'b', 'a': 'c'}
+
+        for fmt in ALL_FORMATS:
             with self.subTest(fmt=fmt):
                 data = plistlib.dumps(
-                    pl, fmt=fmt, skipkeys=True, sort_keys=False)
-
-                pl2 = plistlib.loads(data)
-                self.assertEqual(pl2, {'snake': 'aWord'})
-
-                fp = BytesIO()
-                plistlib.dump(
-                    pl, fp, fmt=fmt, skipkeys=True, sort_keys=False)
-                data = fp.getvalue()
-                pl2 = plistlib.loads(fp.getvalue())
-                self.assertEqual(pl2, {'snake': 'aWord'})
+                    pl, fmt=fmt, skipkeys=True, sort_keys=True)
+                pl2 = plistlib.loads(data, dict_type=collections.OrderedDict)
+                self.assertEqual(dict(pl2), {'z': 'b', 'a': 'c'})
+                self.assertEqual(list(pl2.keys()), ['a', 'z'])
 
     def test_tuple_members(self):
         pl = {

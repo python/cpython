@@ -1367,6 +1367,37 @@ class GNUReadTest(LongnameTest, ReadTest, unittest.TestCase):
     def test_sparse_file_10(self):
         self._test_sparse_file("gnu/sparse-1.0")
 
+    def test_sparse_file_10_pax_size(self):
+        # gh-83869: when the pax header replaces the size field, the offset
+        # of the next header must be computed from the size of the data in
+        # the archive, not from the apparent size of the sparse file.
+        data = b"payload!" * 4
+        realsize = 1 << 20
+        smap = b"1\n%d\n%d\n" % (realsize - len(data), len(data))
+        smap += b"\0" * (-len(smap) % tarfile.BLOCKSIZE)
+
+        sparse = tarfile.TarInfo("sparse")
+        sparse.size = len(smap) + len(data)
+        sparse.pax_headers = {
+            "GNU.sparse.major": "1",
+            "GNU.sparse.minor": "0",
+            "GNU.sparse.name": "sparse",
+            "GNU.sparse.realsize": str(realsize),
+            "size": str(sparse.size),
+        }
+        buf = sparse.tobuf(tarfile.PAX_FORMAT)
+        buf += smap + data + b"\0" * (-len(data) % tarfile.BLOCKSIZE)
+
+        last = tarfile.TarInfo("last")
+        last.size = len(data)
+        buf += last.tobuf(tarfile.PAX_FORMAT)
+        buf += data + b"\0" * (-len(data) % tarfile.BLOCKSIZE)
+        buf += b"\0" * (tarfile.BLOCKSIZE * 2)
+
+        with tarfile.open(fileobj=io.BytesIO(buf)) as tar:
+            self.assertEqual(tar.getnames(), ["sparse", "last"])
+            self.assertEqual(tar.extractfile("last").read(), data)
+
     @staticmethod
     def _fs_supports_holes():
         # Return True if the platform knows the st_blocks stat attribute and
@@ -1418,6 +1449,31 @@ class PaxReadTest(LongnameTest, ReadTest, unittest.TestCase):
                              "\xc4\xd6\xdc\xe4\xf6\xfc\xdf")
         finally:
             tar.close()
+
+    def test_offset_after_global_header(self):
+        # gh-83869: a global header is a member of its own, the member which
+        # follows it keeps the offset of its own header.
+        rec = b"30 comment=global header here\n"
+        glob = tarfile.TarInfo("././@PaxHeader")
+        glob.type = tarfile.XGLTYPE
+        glob.size = len(rec)
+        buf = glob.tobuf(tarfile.USTAR_FORMAT)
+        buf += rec + b"\0" * (-len(rec) % tarfile.BLOCKSIZE)
+
+        member = tarfile.TarInfo("member")
+        data = b"hello\n"
+        member.size = len(data)
+        offset = len(buf)
+        buf += member.tobuf(tarfile.USTAR_FORMAT)
+        buf += data + b"\0" * (-len(data) % tarfile.BLOCKSIZE)
+        buf += b"\0" * (tarfile.BLOCKSIZE * 2)
+
+        with tarfile.open(fileobj=io.BytesIO(buf)) as tar:
+            tarinfo = tar.getmember("member")
+            self.assertEqual(tarinfo.offset, offset)
+            self.assertEqual(tarinfo.pax_headers.get("comment"),
+                             "global header here")
+            self.assertEqual(tar.extractfile(tarinfo).read(), data)
 
     def test_pax_number_fields(self):
         # All following number fields are read from the pax header.
@@ -3968,6 +4024,20 @@ class TestExtractionFilters(unittest.TestCase):
                         tarfile.AbsolutePathError,
                         """['"].*escaped.evil['"] has an absolute path""")
 
+    def test_parent_dir_out_and_back(self):
+        # Test a member that leaves the destination and comes back.
+        # The containment check looks at the resolved path, which stays
+        # inside, but the intermediate directories are created from the
+        # name as given, which does not.
+        with ArchiveMaker() as arc:
+            arc.add(f'../escaped.evil/../{self.destdir.name}/sub/file',
+                    content='content')
+
+        for filter in 'tar', 'data':
+            with self.subTest(filter):
+                with self.check_context(arc.open(), filter):
+                    self.expect_file('sub/file', content='content')
+
     @symlink_test
     def test_parent_symlink(self):
         # Test interplaying symlinks
@@ -4437,9 +4507,15 @@ class TestExtractionFilters(unittest.TestCase):
         for filter in 'tar', 'fully_trusted':
             with self.subTest(filter), self.check_context(arc.open(), filter):
                 if not os_helper.can_symlink():
-                    self.expect_file("a/t/dummy")
-                    self.expect_file("b/")
-                    self.expect_file("c/")
+                    if filter == 'fully_trusted' or sys.platform == "win32":
+                        self.expect_file("a/t/dummy")
+                        self.expect_file("b/")
+                        self.expect_file("c/")
+                    else:
+                        self.expect_exception(
+                            tarfile.LinkFallbackError,
+                            "link 'boom' would be extracted as a copy of "
+                            + "'c/escape', which was rejected")
                 else:
                     self.expect_file("a/t/dummy")
                     self.expect_file("b/")
@@ -4617,6 +4693,25 @@ class TestExtractionFilters(unittest.TestCase):
             path = tempdir / 'link'
             if os_helper.can_chmod():
                 self.assertFalse(path.stat().st_mode & stat.S_IWUSR)
+
+    @symlink_test
+    def test_extract_filters_target_none(self):
+        # Test that when extract() falls back to extracting (rather than
+        # linking) a hardlink target, the member is skipped if the filter
+        # returns None.
+        with ArchiveMaker() as arc:
+            arc.add('a/b/s', symlink_to='../escape')
+            arc.add('q', hardlink_to='a/b/s')
+        def filter_unsafe_members(member, path):
+            try:
+                return tarfile.data_filter(member, path)
+            except tarfile.FilterError as error:
+                return None
+        with self.check_context(arc.open(), filter_unsafe_members):
+            if os_helper.can_symlink():
+                self.expect_file('a/b/s', symlink_to='../escape')
+            else:
+                self.expect_file('a/b/')  # symlink is not extracted
 
     def test_link_fallback_normalizes(self):
         # Make sure hardlink fallbacks work for non-normalized paths for all

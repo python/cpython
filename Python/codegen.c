@@ -1178,7 +1178,7 @@ codegen_function_annotations(compiler *c, location loc,
         RETURN_IF_ERROR_IN_SCOPE(
             c, codegen_annotations_in_scope(c, loc, args, returns, &annotations_len)
         );
-        ADDOP_I(c, loc, BUILD_MAP, annotations_len);
+        ADDOP_I_IN_SCOPE(c, loc, BUILD_MAP, annotations_len);
         RETURN_IF_ERROR(codegen_leave_annotations_scope(c, loc));
         return MAKE_FUNCTION_ANNOTATE;
     }
@@ -1608,7 +1608,7 @@ codegen_class_body(compiler *c, stmt_ty s, int firstlineno)
         ADDOP_N_IN_SCOPE(c, loc, STORE_DEREF, &_Py_ID(__classdict__), cellvars);
     }
     if (SYMTABLE_ENTRY(c)->ste_has_conditional_annotations) {
-        ADDOP_I(c, loc, BUILD_SET, 0);
+        ADDOP_I_IN_SCOPE(c, loc, BUILD_SET, 0);
         ADDOP_N_IN_SCOPE(c, loc, STORE_DEREF, &_Py_ID(__conditional_annotations__), cellvars);
     }
     /* compile the body proper */

@@ -1271,6 +1271,13 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
 
     PyMutex_Lock(&self->mutex);
 
+    /* A previous flush() already reached the end of the stream and freed the
+       decompression state, so there is nothing left to process. */
+    if (!self->is_initialised) {
+        PyMutex_Unlock(&self->mutex);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    }
+
     if (PyObject_GetBuffer(self->unconsumed_tail, &data, PyBUF_SIMPLE) == -1) {
         PyMutex_Unlock(&self->mutex);
         return NULL;
@@ -1327,6 +1334,10 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
             zlib_error(state, self->zst, err, "while finishing decompression");
             goto abort;
         }
+    }
+    else if (err != Z_OK && err != Z_BUF_ERROR) {
+        zlib_error(state, self->zst, err, "while decompressing data");
+        goto abort;
     }
 
     return_value = OutputBuffer_WindowFinish(&buffer, &window, self->zst.avail_out);
@@ -1948,7 +1959,10 @@ zlib_adler32_combine_impl(PyObject *module, unsigned int adler1,
 #else
     z_off_t len = convert_to_z_off_t(len2);
 #endif
-    if (PyErr_Occurred()) {
+    if (len < 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ValueError, "len2 must be non-negative");
+        }
         return (unsigned int)-1;
     }
     return adler32_combine(adler1, adler2, len);
@@ -2033,7 +2047,10 @@ zlib_crc32_combine_impl(PyObject *module, unsigned int crc1,
 #else
     z_off_t len = convert_to_z_off_t(len2);
 #endif
-    if (PyErr_Occurred()) {
+    if (len < 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ValueError, "len2 must be non-negative");
+        }
         return (unsigned int)-1;
     }
     return crc32_combine(crc1, crc2, len);

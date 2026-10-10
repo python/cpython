@@ -94,8 +94,7 @@ Dependencies to build optional modules are:
      -
      - :mod:`curses`
    * - `OpenSSL <https://openssl-library.org/>`_
-     - | 3.0.18 recommended
-       | (1.1.1 minimum)
+     - [6]_
      - :mod:`ssl`, :mod:`hashlib` [5]_
    * - `SQLite <https://sqlite.org/>`_
      - 3.15.2
@@ -124,6 +123,14 @@ Dependencies to build optional modules are:
 .. [5] If OpenSSL is not available, the :mod:`hashlib` module will use
    bundled implementations of several hash functions.
    See :option:`--with-builtin-hashlib-hashes` for *forcing* usage of OpenSSL.
+.. [6] OpenSSL 1.1.1 is the minimum possible version to build against,
+   but the series is end-of-life and no longer receives public security
+   fixes.  Use the latest patch release of a currently supported LTS
+   release series (see the `OpenSSL Roadmap
+   <https://openssl-library.org/roadmap/index.html>`__), or the package
+   provided by your operating system if available.  Other libraries that
+   offer an API compatible with OpenSSL 1.1.1 or later may work, but are
+   not officially supported.
 
 Note that the table does not include all optional modules; in particular,
 platform-specific modules like :mod:`winreg` are not listed here.
@@ -1269,7 +1276,7 @@ See :source:`Mac/README.rst`.
 iOS Options
 -----------
 
-See :source:`iOS/README.rst`.
+See :source:`Platforms/Apple/iOS/README.md`.
 
 .. option:: --enable-framework=INSTALLDIR
 
