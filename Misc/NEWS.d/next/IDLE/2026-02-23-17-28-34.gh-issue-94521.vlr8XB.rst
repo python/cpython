@@ -1,0 +1,1 @@
+Copy or cut current line while no selection. Patch by Shixian Li.
