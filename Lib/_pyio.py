@@ -1208,7 +1208,8 @@ class BufferedReader(_BufferedIOMixin):
             while written < len(buf):
 
                 # First try to read from internal buffer
-                avail = min(len(self._read_buf) - self._read_pos, len(buf))
+                avail = min(len(self._read_buf) - self._read_pos,
+                            len(buf) - written)
                 if avail:
                     buf[written:written+avail] = \
                         self._read_buf[self._read_pos:self._read_pos+avail]
