@@ -1,0 +1,5 @@
+The log functions in the :mod:`logging` module and the
+:class:`logging.Logger` class now normalize falsy ``exc_info`` arguments to
+``None`` before passing them to :meth:`logging.Logger.makeRecord` and
+subsequently to :class:`logging.LogRecord`. This aligns
+``logging.LogRecord.exc_info`` with the documentation.
