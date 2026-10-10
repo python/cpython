@@ -65,14 +65,17 @@ def extract_module_name(filename, path_info):
     except (ValueError, OSError):
         return (str(filename), 'other')
 
-    # Check if it's in stdlib
-    if path_info['stdlib'] and file_path.is_relative_to(path_info['stdlib']):
-        return (_path_to_module(file_path.relative_to(path_info['stdlib'])), 'stdlib')
-
-    # Check site-packages
-    for site_pkg in path_info['site_packages']:
-        if file_path.is_relative_to(site_pkg):
-            return (_path_to_module(file_path.relative_to(site_pkg)), 'site-packages')
+    # Check stdlib and site-packages, preferring the most specific directory
+    # because site-packages is usually located inside the stdlib directory
+    bases = [(path_info['stdlib'], 'stdlib')]
+    bases.extend((site_pkg, 'site-packages')
+                 for site_pkg in path_info['site_packages'])
+    matches = [(base, module_type) for base, module_type in bases
+               if base and file_path.is_relative_to(base)]
+    if matches:
+        # max() returns the first of equal candidates, so stdlib wins ties
+        base, module_type = max(matches, key=lambda m: len(m[0].parts))
+        return (_path_to_module(file_path.relative_to(base)), module_type)
 
     # Check other sys.path entries (project files)
     if not str(file_path).startswith(('<', '[')):  # Skip special files
