@@ -1,0 +1,5 @@
+The ``idna`` codec now raises :exc:`TypeError` when asked to decode an object
+that is not bytes-like, instead of silently coercing it with ``bytes()``.
+Previously ``codecs.decode(5, "idna")`` returned ``'\x00\x00\x00\x00\x00'``
+and ``codecs.decode([65, 66], "idna")`` returned ``'AB'``. Bytes-like objects
+such as :class:`bytearray` and :class:`memoryview` are still accepted.
