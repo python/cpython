@@ -66,9 +66,15 @@ EBADF = getattr(errno, 'EBADF', 9)
 EAGAIN = getattr(errno, 'EAGAIN', 11)
 EWOULDBLOCK = getattr(errno, 'EWOULDBLOCK', 11)
 
+# gh-158285: libkcapi's own values, never defined by mainline Linux.
+_deprecated_names = {name: globals().pop(name)
+                     for name in ('ALG_SET_PUBKEY', 'ALG_OP_SIGN', 'ALG_OP_VERIFY')
+                     if name in globals()}
+
 __all__ = ["fromfd", "getfqdn", "create_connection", "create_server",
            "has_dualstack_ipv6", "AddressFamily", "SocketKind"]
-__all__.extend(os._get_exports_list(_socket))
+__all__.extend(name for name in os._get_exports_list(_socket)
+               if name not in _deprecated_names)
 
 # Set up the socket.AF_* socket.SOCK_* constants as members of IntEnums for
 # nicer string representations.
@@ -1012,3 +1018,13 @@ def getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
                          _intenum_converter(socktype, SocketKind),
                          proto, canonname, sa))
     return addrlist
+
+
+def __getattr__(name):
+    try:
+        value = _deprecated_names[name]
+    except KeyError:
+        raise AttributeError(f"module 'socket' has no attribute {name!r}") from None
+    import warnings
+    warnings._deprecated(f"socket.{name}", remove=(3, 21))
+    return value

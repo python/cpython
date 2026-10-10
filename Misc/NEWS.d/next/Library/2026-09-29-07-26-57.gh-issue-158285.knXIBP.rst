@@ -1,0 +1,4 @@
+Deprecate :mod:`socket` constants ``ALG_SET_PUBKEY``, ``ALG_OP_SIGN`` and
+``ALG_OP_VERIFY``. They are libkcapi's own values and were never defined by the
+Linux kernel, which uses the value of ``ALG_SET_PUBKEY`` for
+``ALG_SET_DRBG_ENTROPY``.

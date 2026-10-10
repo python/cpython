@@ -18,6 +18,11 @@ Pending removal in Python 3.21
   * The ``dims`` property of ``ast.Tuple`` will be removed in Python 3.21. Use
     the ``ast.Tuple.elts`` property instead.
 
+* :mod:`socket`:
+
+  * ``ALG_SET_PUBKEY``, ``ALG_OP_SIGN`` and ``ALG_OP_VERIFY`` will be removed
+    in Python 3.21.  They were never defined by the Linux kernel.
+
 * :mod:`struct`:
 
   * Soft-deprecated since Python 3.15, using ``'F'`` and ``'D'`` type codes are now
