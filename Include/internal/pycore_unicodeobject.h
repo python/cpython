@@ -11,6 +11,7 @@ extern "C" {
 #include "pycore_fileutils.h"     // _Py_error_handler
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include "pycore_runtime.h"       // _Py_LATIN1_CHR()
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR_ACQUIRE
 
 
 // Maximum code point of Unicode 6.0: 0x10ffff (1,114,111).
@@ -108,6 +109,21 @@ _PyUnicode_EnsureUnicode(PyObject *obj)
     return 0;
 }
 
+static inline char*
+_PyUnicode_UTF8(PyObject *op)
+{
+    return FT_ATOMIC_LOAD_PTR_ACQUIRE(_PyCompactUnicodeObject_CAST(op)->utf8);
+}
+
+/* true if the Unicode object has an allocated UTF-8 memory block
+   (not shared with other data) */
+static inline int _PyUnicode_HAS_UTF8_MEMORY(PyObject *op)
+{
+    return (!PyUnicode_IS_COMPACT_ASCII(op)
+            && _PyUnicode_UTF8(op) != NULL
+            && _PyUnicode_UTF8(op) != PyUnicode_DATA(op));
+}
+
 #ifndef NDEBUG
 static inline int
 _PyUnicodeWriter_CanWrite(_PyUnicodeWriter *writer)
@@ -125,6 +141,7 @@ _PyUnicodeWriter_CanWrite(_PyUnicodeWriter *writer)
     assert(PyUnstable_Unicode_GET_CACHED_HASH(buffer) == -1);
     assert(!PyUnicode_CHECK_INTERNED(buffer));
     assert(!_Py_IsImmortal(buffer));
+    assert(!_PyUnicode_HAS_UTF8_MEMORY(buffer));
     return 1;
 }
 #endif
@@ -440,6 +457,10 @@ extern int _PyUnicode_WideCharString_Opt_Converter(PyObject *, void *);
 
 // Export for test_peg_generator
 PyAPI_FUNC(Py_ssize_t) _PyUnicode_ScanIdentifier(PyObject *);
+
+#ifdef Py_DEBUG
+PyAPI_FUNC(void) _PyUnicode_Dump(PyObject *op);
+#endif
 
 /* --- Runtime lifecycle -------------------------------------------------- */
 
