@@ -326,6 +326,11 @@ process_frame_chain(
         }
         assert(frame_count <= MAX_FRAME_CHAIN_DEPTH);
 
+        if (frame_addr == ctx->base_frame_addr
+                && !(unwinder->gc && frame_addr == ctx->gc_frame)) {
+            break;
+        }
+
         if (ctx->chunks && ctx->chunks->count > 0) {
             parse_result = parse_frame_from_chunks(
                 unwinder, &frame, frame_addr, &next_frame_addr, &stackpointer, ctx->chunks);
