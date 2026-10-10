@@ -2964,6 +2964,7 @@ class Test_Pep523AllowSpecialization(unittest.TestCase):
 
 
 @unittest.skipUnless(support.Py_GIL_DISABLED, 'need Py_GIL_DISABLED')
+@threading_helper.requires_working_threading()
 class TestPyThreadId(unittest.TestCase):
     def test_py_thread_id(self):
         # gh-112535: Test _Py_ThreadId(): make sure that thread identifiers
