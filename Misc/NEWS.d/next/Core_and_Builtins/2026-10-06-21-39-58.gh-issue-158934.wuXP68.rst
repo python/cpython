@@ -1,0 +1,3 @@
+Fix specialization of attribute loads that find a class attribute because the
+instance has not set its own value, when the class sets that attribute on
+``self`` elsewhere. These loads previously missed on every execution.

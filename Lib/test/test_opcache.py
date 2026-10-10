@@ -1762,6 +1762,33 @@ class TestSpecializer(TestBase):
 
     @cpython_only
     @requires_specialization
+    def test_load_attr_class_default_not_set_on_instance(self):
+        class C:
+            timeout = 30
+
+            def set_timeout(self, value):
+                self.timeout = value  # puts "timeout" in C's shared keys
+
+        c = C()  # never sets timeout, so c.timeout is the class default
+
+        @reset_code
+        def get_timeout(n):
+            for _ in range(n):
+                value = c.timeout
+            return value
+
+        self.assertEqual(get_timeout(_testinternalcapi.SPECIALIZATION_THRESHOLD), 30)
+        # Must load the class attribute, not specialize as an instance
+        # attribute load that misses on every execution.
+        self.assert_specialized(get_timeout, "LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES")
+        self.assert_no_opcode(get_timeout, "LOAD_ATTR_INSTANCE_VALUE")
+
+        # Setting the attribute on the instance must be seen.
+        c.set_timeout(5)
+        self.assertEqual(get_timeout(1), 5)
+
+    @cpython_only
+    @requires_specialization
     def test_to_bool(self):
         def to_bool_bool():
             true_cnt, false_cnt = 0, 0

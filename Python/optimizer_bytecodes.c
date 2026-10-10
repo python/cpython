@@ -1028,6 +1028,12 @@ dummy_func(void) {
                            _POP_TOP, _NOP);
     }
 
+    op(_GUARD_SHADOWING_SLOT_EMPTY, (slot_offset/1, owner -- owner)) {
+        if (slot_offset == 0) {
+            ADD_OP(_NOP, 0, 0);
+        }
+    }
+
     op(_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES, (descr/4, owner -- attr)) {
         (void)descr;
         PyTypeObject *type = sym_get_type(owner);
