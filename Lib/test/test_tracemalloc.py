@@ -1056,8 +1056,8 @@ class TestCAPI(unittest.TestCase):
         self.check_track(False)
 
     def test_track_without_gil(self):
-        # check that calling _PyTraceMalloc_Track() without holding the GIL
-        # works too
+        # check that calling PyTraceMalloc_Track() without the GIL
+        # (detached thread state) still captures the Python traceback
         self.check_track(True)
 
     def test_track_already_tracked(self):

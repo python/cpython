@@ -48,6 +48,28 @@ find_thread_state(struct _brc_bucket *bucket, uintptr_t thread_id)
     return NULL;
 }
 
+// Merge the refcounts of all objects in `stack`, keeping the queue's reference.
+static void
+merge_queued_refcounts(_PyObjectStack *stack)
+{
+    for (_PyObjectStackChunk *buf = stack->head; buf != NULL; buf = buf->prev) {
+        for (Py_ssize_t i = 0; i < buf->n; i++) {
+            _Py_ExplicitMergeRefcount(buf->objs[i], 0);
+        }
+    }
+}
+
+// Release the queue's reference to each merged object. This may run
+// destructors, so the bucket mutex must not be held.
+static void
+decref_merged_objects(_PyObjectStack *stack)
+{
+    PyObject *ob;
+    while ((ob = _PyObjectStack_Pop(stack)) != NULL) {
+        Py_DECREF(ob);
+    }
+}
+
 // Enqueue an object to be merged by the owning thread. This steals a
 // reference to the object.
 void
@@ -90,6 +112,22 @@ _Py_brc_queue_object(PyObject *ob)
         if (refcount == 0) {
             _Py_Dealloc(ob);
         }
+        return;
+    }
+
+    if (_PyThreadState_TrySuspendDetached(&tstate->base)) {
+        // The owning thread is detached (e.g. blocked on a lock or in a
+        // system call) and may not run Python code again for a long time,
+        // so merge its queue on its behalf instead of waiting for it. While
+        // it is held in the "suspended" state it cannot attach and therefore
+        // cannot touch ob_ref_local or ob_tid.
+        _PyObjectStack merged = {0};
+        _PyObjectStack_Merge(&merged, &tstate->brc.objects_to_merge);
+        merge_queued_refcounts(&merged);
+        _PyThreadState_ResumeDetached(&tstate->base);
+        PyMutex_Unlock(&bucket->mutex);
+
+        decref_merged_objects(&merged);
         return;
     }
 

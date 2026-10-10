@@ -218,7 +218,7 @@ bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
         size_t len = (len_expr); \
         s = PyBytesWriter_GrowAndUpdatePointer(writer, len, s); \
         if (s == NULL) { \
-            goto error; \
+            return NULL; \
         } \
         memcpy(s, (str), len); \
         s += len; \
@@ -272,7 +272,7 @@ bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
                 PyErr_SetString(PyExc_OverflowError,
                                 "PyBytes_FromFormatV(): %c format "
                                 "expects an integer in range [0; 255]");
-                goto error;
+                return NULL;
             }
             *s++ = (unsigned char)c;
             break;
@@ -365,9 +365,6 @@ bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
 #undef WRITE_BYTES_LEN
 
     return s;
-
- error:
-    return NULL;
 }
 
 
@@ -3368,14 +3365,12 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
         return 0;
     }
     if (!_PyObject_IsUniquelyReferenced(v)) {
-        if (oldsize < newsize) {
-            *pv = _PyBytes_FromSize(newsize, 0);
-            if (*pv) {
-                memcpy(PyBytes_AS_STRING(*pv), PyBytes_AS_STRING(v), oldsize);
-            }
-        }
-        else {
-            *pv = PyBytes_FromStringAndSize(PyBytes_AS_STRING(v), newsize);
+        // Allocate and then copy so we don't get a shared immortal
+        // one-character singleton!
+        *pv = _PyBytes_FromSize(newsize, 0);
+        if (*pv) {
+            memcpy(PyBytes_AS_STRING(*pv), PyBytes_AS_STRING(v),
+                   Py_MIN(oldsize, newsize));
         }
         Py_DECREF(v);
         return (*pv == NULL) ? -1 : 0;
@@ -3629,7 +3624,7 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int resize)
         return 0;
     }
 
-    if (resize & writer->overallocate) {
+    if (resize && writer->overallocate) {
         if (size <= (PY_SSIZE_T_MAX - size / OVERALLOCATE_FACTOR)) {
             size += size / OVERALLOCATE_FACTOR;
         }
@@ -3748,7 +3743,7 @@ PyObject*
 PyBytesWriter_FinishWithSize(PyBytesWriter *writer, Py_ssize_t size)
 {
     PyObject *result;
-    if (size == 0) {
+    if (size == 0 && !writer->use_bytearray) {
         result = bytes_get_empty();
     }
     else if (writer->obj != NULL) {
@@ -3912,6 +3907,7 @@ int
 PyBytesWriter_Format(PyBytesWriter *writer, const char *format, ...)
 {
     Py_ssize_t pos = writer->size;
+    Py_ssize_t old_pos = pos;
     if (PyBytesWriter_Grow(writer, strlen(format)) < 0) {
         return -1;
     }
@@ -3920,6 +3916,12 @@ PyBytesWriter_Format(PyBytesWriter *writer, const char *format, ...)
     va_start(vargs, format);
     char *buf = bytes_fromformat(writer, pos, format, vargs);
     va_end(vargs);
+
+    if (buf == NULL) {
+        // On error, reset the writer to its previous state (undo any write)
+        writer->size = old_pos;
+        return -1;
+    }
 
     Py_ssize_t size = buf - byteswriter_data(writer);
     return PyBytesWriter_Resize(writer, size);
