@@ -1,0 +1,5 @@
+:func:`pprint.pp`, :func:`pprint.pprint` and
+:meth:`pprint.PrettyPrinter.pprint` no longer fail with
+:exc:`UnicodeEncodeError` if the output contains characters unencodable in the
+encoding of the output stream.  Such characters are now escaped with
+backslashes.
