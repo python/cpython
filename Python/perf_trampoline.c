@@ -408,12 +408,29 @@ free_code_arenas(void)
     }
 }
 
+
+/* Return the aligned size that one trampoline occupies in an arena.
+ *
+ * This value must be used consistently in three places:
+ *   1. code_arena_new_code()  advances current_addr / subtracts size_left
+ *   2. compile_trampoline()    decides whether a new arena is needed
+ *   3. write_state()           reports code_size to the profiler
+ * If any of them computes it independently the values drift apart.
+ *
+ * The caller must ensure perf_code_arena is not NULL.
+ */
+static inline size_t
+trampoline_chunk_size(void)
+{
+    size_t unaligned = perf_code_arena->code_size + trampoline_api.code_padding;
+    return round_up(unaligned, trampoline_api.code_alignment);
+}
+
 static inline py_trampoline
 code_arena_new_code(code_arena_t *code_arena)
 {
     py_trampoline trampoline = (py_trampoline)code_arena->current_addr;
-    size_t total_code_size = round_up(code_arena->code_size + trampoline_api.code_padding,
-                                  trampoline_api.code_alignment);
+    size_t total_code_size = trampoline_chunk_size();
     assert(total_code_size % trampoline_api.code_alignment == 0);
     code_arena->size_left -= total_code_size;
     code_arena->current_addr += total_code_size;
@@ -423,9 +440,17 @@ code_arena_new_code(code_arena_t *code_arena)
 static inline py_trampoline
 compile_trampoline(void)
 {
-    size_t total_code_size = round_up(perf_code_arena->code_size + trampoline_api.code_padding, 16);
-    if ((perf_code_arena == NULL) ||
-        (perf_code_arena->size_left <= total_code_size)) {
+    /* Handle the "no arena yet" case first so we never dereference NULL. */
+    if (perf_code_arena == NULL) {
+        if (new_code_arena() < 0) {
+            return NULL;
+        }
+    }
+
+    /* trampoline_chunk_size() reads perf_code_arena, so call it only
+     * after new_code_arena() above. */
+    size_t total_code_size = trampoline_chunk_size();
+    if (perf_code_arena->size_left < total_code_size) {
         if (new_code_arena() < 0) {
             return NULL;
         }
@@ -453,8 +478,9 @@ py_trampoline_evaluator(PyThreadState *ts, _PyInterpreterFrame *frame,
         if (new_trampoline == NULL) {
             goto default_eval;
         }
+        size_t new_code_size = trampoline_chunk_size();
         trampoline_api.write_state(trampoline_api.state, new_trampoline,
-                                   perf_code_arena->code_size, co);
+                                   new_code_size, co);
         _PyCode_SetExtra((PyObject *)co, extra_code_index,
                          (void *)new_trampoline);
         trampoline_refcount++;
@@ -482,8 +508,9 @@ int PyUnstable_PerfTrampoline_CompileCode(PyCodeObject *co)
         if (new_trampoline == NULL) {
             return 0;
         }
+        size_t new_code_size = trampoline_chunk_size();
         trampoline_api.write_state(trampoline_api.state, new_trampoline,
-                                   perf_code_arena->code_size, co);
+                                   new_code_size, co);
         trampoline_refcount++;
         return _PyCode_SetExtra((PyObject *)co, extra_code_index,
                          (void *)new_trampoline);
