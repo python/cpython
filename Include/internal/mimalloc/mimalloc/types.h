@@ -22,7 +22,7 @@ terms of the MIT license. A copy of the license can be found in the file
 // --------------------------------------------------------------------------
 
 
-#include <mimalloc-stats.h>
+#include "../mimalloc-stats.h"
 #include <stddef.h>   // ptrdiff_t
 #include <stdint.h>   // uintptr_t, uint16_t, etc
 #include <stdbool.h>  // bool

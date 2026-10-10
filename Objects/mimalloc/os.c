@@ -276,7 +276,7 @@ static void* mi_os_prim_alloc_aligned(size_t size, size_t alignment, bool commit
   else {
     // if not aligned, free it, overallocate, and unmap around it
     #if !MI_TRACK_ASAN
-    _mi_warning_message("unable to allocate aligned OS memory directly, fall back to over-allocation (size: 0x%zx bytes, address: %p, alignment: 0x%zx, commit: %d)\n", size, p, alignment, commit);
+    _mi_verbose_message("unable to allocate aligned OS memory directly, fall back to over-allocation (size: 0x%zx bytes, address: %p, alignment: 0x%zx, commit: %d)\n", size, p, alignment, commit);
     #endif
     if (p != NULL) { mi_os_prim_free(p, size, (commit ? size : 0)); }
     if (size >= (SIZE_MAX - alignment)) return NULL; // overflow
