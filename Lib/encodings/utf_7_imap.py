@@ -54,7 +54,7 @@ def utf_7_imap_encode(input, errors='strict'):
     flush(len(input))
     return res.take_bytes(), len(input)
 
-def utf_7_imap_decode(input, errors='strict'):
+def utf_7_imap_decode(input, errors='strict', final=True):
     if errors != 'strict':
         raise UnicodeError(f"Unsupported error handling: {errors}")
     input = bytes(input)
@@ -71,6 +71,8 @@ def utf_7_imap_decode(input, errors='strict'):
             flush(i)
             j = input.find(b'-', i + 1)
             if j < 0:
+                if not final:
+                    return ''.join(res), i
                 raise UnicodeDecodeError('utf-7-imap', input, i, n,
                                          'unterminated shift sequence')
             if j == i + 1:          # '&-'
@@ -106,15 +108,16 @@ class IncrementalEncoder(codecs.IncrementalEncoder):
     def encode(self, input, final=False):
         return utf_7_imap_encode(input, self.errors)[0]
 
-class IncrementalDecoder(codecs.IncrementalDecoder):
-    def decode(self, input, final=False):
-        return utf_7_imap_decode(input, self.errors)[0]
+class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
+    def _buffer_decode(self, input, errors, final):
+        return utf_7_imap_decode(input, errors, final)
 
 class StreamWriter(Codec, codecs.StreamWriter):
     pass
 
 class StreamReader(Codec, codecs.StreamReader):
-    pass
+    def decode(self, input, errors='strict'):
+        return utf_7_imap_decode(input, errors, False)
 
 ### encodings module API
 
