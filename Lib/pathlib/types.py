@@ -406,10 +406,11 @@ class _WritablePath(_JoinablePath):
     __slots__ = ()
 
     @abstractmethod
-    def symlink_to(self, target, target_is_directory=False):
+    def symlink_to(self, target, target_is_directory=False, overwrite=False):
         """
         Make this path a symlink pointing to the target path.
         Note the order of arguments (link, target) is the reverse of os.symlink.
+        Raise an error if this path already exists and *overwrite* is False.
         """
         raise NotImplementedError
 
