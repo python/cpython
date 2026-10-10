@@ -471,6 +471,8 @@ class BasicInterpolation(Interpolation):
                 except KeyError:
                     raise InterpolationMissingOptionError(
                         option, section, rawval, var) from None
+                if v is None:
+                    continue
                 if "%" in v:
                     self._interpolate_some(parser, option, accum, v,
                                            section, map, depth + 1)
