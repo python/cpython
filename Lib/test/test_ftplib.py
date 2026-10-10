@@ -972,6 +972,107 @@ class TestTLS_FTPClass(TestCase):
                              LIST_DATA.encode(self.client.encoding))
         self.assertEqual(self.client.voidresp(), "226 transfer complete")
 
+    def _unreliable_data_connection(self, exc):
+        """Make unwrap() on the *client* data connection raise *exc*.
+
+        transfercmd() is wrapped so that unwrap() on the socket it returns
+        raises *exc* instead of performing the TLS shutdown.  Only the data
+        connection of the client is touched: the control connection and the
+        server side keep working normally, which is exactly the situation
+        reported in the bugs (the peer aborts or half-closes the ephemeral
+        data connection once the transfer is over).
+        """
+        original = self.client.transfercmd
+
+        def transfercmd(*args, **kwargs):
+            sock = original(*args, **kwargs)
+            real_unwrap = sock.unwrap
+
+            def unwrap():
+                # Shut the TLS layer down before reporting the error.  A
+                # peer that fails the shutdown has still received (or sent)
+                # the whole payload, but closing the data connection without
+                # the close_notify handshake lets the dummy server below
+                # mistake a partial TLS read for end-of-stream and drop the
+                # tail of the transfer.
+                try:
+                    real_unwrap()
+                except OSError:
+                    pass
+                raise exc
+
+            sock.unwrap = unwrap
+            return sock
+
+        return mock.patch.object(self.client, 'transfercmd', transfercmd)
+
+    def test_data_shutdown_error_is_ignored(self):
+        # gh-77303, gh-103443, gh-124850: the payload has been fully sent
+        # or received by the time the data connection is shut down, so a
+        # failure there must not turn a completed transfer into an error.
+        self.client.auth()
+        self.client.prot_p()
+        payload = RETR_DATA.encode(self.client.encoding)
+        errors = (
+            ConnectionResetError('connection reset by peer'),
+            ssl.SSLEOFError('EOF occurred in violation of protocol'),
+            ssl.SSLError('shutdown while in init'),
+            OSError(errno.ECONNRESET, 'Connection reset by peer'),
+            ValueError('No SSL wrapper around socket'),
+        )
+        for exc in errors:
+            with self.subTest(exc=exc):
+                with self._unreliable_data_connection(exc):
+                    received = []
+                    self.client.retrbinary('retr', received.append)
+                    self.assertEqual(b''.join(received), payload)
+
+                    self.client.storbinary('stor', io.BytesIO(payload))
+                    self.assertEqual(
+                        bytes(self.server.handler_instance.last_received_data),
+                        RETR_DATA.encode(self.server.encoding))
+
+    def test_data_shutdown_timeout_is_ignored(self):
+        # gh-78738: a peer which never answers close_notify makes an
+        # unconditional unwrap() block forever on a socket whose whole
+        # purpose is over.  The shutdown has to be time-limited, and the
+        # resulting TimeoutError has to be swallowed.
+        self.client.auth()
+        self.client.prot_p()
+        payload = RETR_DATA.encode(self.client.encoding)
+
+        original = self.client.transfercmd
+
+        def transfercmd(*args, **kwargs):
+            sock = original(*args, **kwargs)
+            original_timeout = sock.gettimeout()
+
+            def unwrap():
+                shutdown_timeout = sock.gettimeout()
+                if shutdown_timeout == original_timeout:
+                    raise AssertionError(
+                        'data connection shutdown is unbounded: unwrap() is '
+                        'called without lowering the socket timeout first')
+                # Emulate what _ssl does when the peer stays silent.
+                time.sleep(shutdown_timeout)
+                raise TimeoutError('the handshake operation timed out')
+
+            sock.unwrap = unwrap
+            return sock
+
+        with mock.patch.object(ftplib, '_DATA_SHUTDOWN_TIMEOUT', 0.1,
+                               create=True):
+            with mock.patch.object(self.client, 'transfercmd', transfercmd):
+                start = time.monotonic()
+                received = []
+                self.client.retrbinary('retr', received.append)
+                self.assertEqual(b''.join(received), payload)
+
+                self.client.storbinary('stor', io.BytesIO(payload))
+                self.assertEqual(
+                    bytes(self.server.handler_instance.last_received_data),
+                    RETR_DATA.encode(self.server.encoding))
+                self.assertLess(time.monotonic() - start, TIMEOUT)
     def test_login(self):
         # login() is supposed to implicitly secure the control connection
         self.assertNotIsInstance(self.client.sock, ssl.SSLSocket)
