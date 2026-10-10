@@ -401,18 +401,7 @@ _PyUnicodeWriter_WriteASCIIString(_PyUnicodeWriter *writer,
         return 0;
     }
 
-    assert(ucs1lib_find_max_char((const Py_UCS1*)ascii, (const Py_UCS1*)ascii + len) < 128);
-
-    if (writer->buffer == NULL && !writer->overallocate) {
-        PyObject *str;
-
-        str = _PyUnicode_FromASCII(ascii, len);
-        if (str == NULL)
-            return -1;
-
-        _PyUnicodeWriter_SetReadOnly(writer, str, len);
-        return 0;
-    }
+    assert(ucs1lib_find_max_char((const Py_UCS1*)ascii, (const Py_UCS1*)ascii + len) <= 127);
 
     if (_PyUnicodeWriter_Prepare(writer, len, 127) == -1) {
         return -1;
