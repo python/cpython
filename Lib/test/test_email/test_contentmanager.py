@@ -131,6 +131,20 @@ class TestContentManager(TestEmailBase):
         self.assertEqual(m['To'], 'test')
         self.assertIsNone(m.get_payload())
 
+    def test_set_content_base_exception_preserves_content(self):
+        def handler(msg, obj):
+            msg['X-New'] = 'new'
+            msg.set_payload(obj)
+            raise KeyboardInterrupt
+        cm = ContentManager()
+        cm.add_set_handler(str, handler)
+        m = self._make_message()
+        m.set_content('original')
+        original = m.as_bytes()
+        with self.assertRaises(KeyboardInterrupt):
+            m.set_content('replacement', content_manager=cm)
+        self.assertEqual(m.as_bytes(), original)
+
 
 @parameterize
 class TestRawDataManager(TestEmailBase):
@@ -144,6 +158,31 @@ class TestRawDataManager(TestEmailBase):
     policy = policy.default.clone(max_line_length=60,
                                   content_manager=raw_data_manager)
     message = EmailMessage
+
+    content_failure_params = {
+        'unknown_charset': ('replacement',
+                            {'charset': 'does-not-exist'}, LookupError),
+        'ascii_charset': ('\N{LATIN SMALL LETTER E WITH ACUTE}',
+                          {'charset': 'ascii'}, UnicodeEncodeError),
+        'text_cte': ('replacement', {'cte': 'unknown'}, ValueError),
+        'bytes_7bit': (b'\xff', {'maintype': 'application',
+                                'subtype': 'octet-stream', 'cte': '7bit'},
+                       UnicodeDecodeError),
+        'header': ('replacement', {'headers': ['Subject: duplicate']},
+                   ValueError),
+        'cid': ('replacement', {'cid': 'bad\nvalue'}, ValueError),
+    }
+
+    def content_failure_as_set_content_preserves_content(self, content, kw,
+                                                        error):
+        m = self._make_message()
+        m['Subject'] = 'original subject'
+        m.set_content('original')
+        original = m.as_bytes()
+        with self.assertRaises(error):
+            m.set_content(content, **kw)
+        self.assertEqual(m.as_bytes(), original)
+        self.assertFalse(m.is_multipart())
 
     def test_get_text_plain(self):
         m = self._str_msg(textwrap.dedent("""\
@@ -724,6 +763,17 @@ class TestRawDataManager(TestEmailBase):
             b'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\n')
         self.assertEqual(m.get_payload(decode=True), content)
         self.assertEqual(m.get_content(), content)
+
+    def test_set_bytes_unknown_cte_raises(self):
+        m = self._make_message()
+        m.set_content('original')
+        original = bytes(m)
+        with self.assertRaisesRegex(
+                ValueError,
+                'Unknown content transfer encoding not-a-transfer-encoding'):
+            m.set_content(b'abc', 'application', 'octet-stream',
+                          cte='not-a-transfer-encoding')
+        self.assertEqual(bytes(m), original)
 
     def test_set_headers_from_header_objects(self):
         m = self._make_message()
