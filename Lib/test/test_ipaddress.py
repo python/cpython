@@ -13,6 +13,7 @@ import pickle
 import ipaddress
 import weakref
 from collections.abc import Iterator
+from functools import total_ordering
 from test.support import LARGEST, SMALLEST
 
 
@@ -912,11 +913,22 @@ class ComparisonTests(unittest.TestCase):
     v6intf_scoped = ipaddress.IPv6Interface('::1%scope')
 
     v4_addresses = [v4addr, v4intf]
-    v4_objects = v4_addresses + [v4net]
+    v4_networks = [v4net]
+    v4_objects = v4_addresses + v4_networks
+
     v6_addresses = [v6addr, v6intf]
-    v6_objects = v6_addresses + [v6net]
+    v6_networks = [v6net]
+    v6_objects = v6_addresses + v6_networks
+
     v6_scoped_addresses = [v6addr_scoped, v6intf_scoped]
-    v6_scoped_objects = v6_scoped_addresses + [v6net_scoped]
+    v6_scoped_networks = [v6net_scoped]
+    v6_scoped_objects = v6_scoped_addresses + v6_scoped_networks
+
+    addresses = v4_addresses + v6_addresses
+    addresses_with_scoped = addresses + v6_scoped_addresses
+
+    networks = v4_networks + v6_networks
+    networks_with_scoped = networks + v6_scoped_networks
 
     objects = v4_objects + v6_objects
     objects_with_scoped = objects + v6_scoped_objects
@@ -935,10 +947,14 @@ class ComparisonTests(unittest.TestCase):
         # __eq__ should never raise TypeError directly
         other = object()
         for obj in self.objects_with_scoped:
-            self.assertNotEqual(obj, other)
-            self.assertFalse(obj == other)
-            self.assertEqual(obj.__eq__(other), NotImplemented)
-            self.assertEqual(obj.__ne__(other), NotImplemented)
+            with self.subTest(obj=obj):
+                self.assertNotEqual(obj, other)
+
+                self.assertFalse(obj == other)
+                self.assertIs(obj.__eq__(other), NotImplemented)
+
+                self.assertTrue(obj != other)
+                self.assertIs(obj.__ne__(other), NotImplemented)
 
     def test_mixed_type_equality(self):
         # Ensure none of the internal objects accidentally
@@ -1006,30 +1022,54 @@ class ComparisonTests(unittest.TestCase):
             for rhs in self.objects_with_scoped:
                 if isinstance(lhs, type(rhs)) or isinstance(rhs, type(lhs)):
                     continue
-                self.assertRaises(TypeError, lambda: lhs < rhs)
-                self.assertRaises(TypeError, lambda: lhs > rhs)
-                self.assertRaises(TypeError, lambda: lhs <= rhs)
-                self.assertRaises(TypeError, lambda: lhs >= rhs)
+
+                for dunder in ["__lt__", "__le__", "__ge__", "__gt__"]:
+                    with self.subTest(dunder, lhs=lhs, rhs=rhs):
+                        func = getattr(operator, dunder)
+                        # dunders raise a TypeError or return NotImplemented
+                        lhs_method = getattr(lhs, dunder)
+                        try:
+                            self.assertIs(lhs_method(rhs), NotImplemented)
+                        except TypeError as exc:
+                            self.assertIn("version", str(exc))
+                        rhs_method = getattr(rhs, dunder)
+                        try:
+                            self.assertIs(rhs_method(lhs), NotImplemented)
+                        except TypeError as exc:
+                            self.assertIn("version", str(exc))
+                        # Using the comparison operator directly must
+                        # raise a TypeError, either because we returned
+                        # NotImplemented or because of incompatible versions.
+                        self.assertRaises(TypeError, func, lhs, rhs)
 
     def test_foreign_type_ordering(self):
         other = object()
         for obj in self.objects_with_scoped:
-            with self.assertRaises(TypeError):
-                obj < other
-            with self.assertRaises(TypeError):
-                obj > other
-            with self.assertRaises(TypeError):
-                obj <= other
-            with self.assertRaises(TypeError):
-                obj >= other
-            self.assertTrue(obj < LARGEST)
-            self.assertFalse(obj > LARGEST)
-            self.assertTrue(obj <= LARGEST)
-            self.assertFalse(obj >= LARGEST)
-            self.assertFalse(obj < SMALLEST)
-            self.assertTrue(obj > SMALLEST)
-            self.assertFalse(obj <= SMALLEST)
-            self.assertTrue(obj >= SMALLEST)
+            with self.subTest(obj=obj):
+                for dunder in ["__lt__", "__le__", "__ge__", "__gt__"]:
+                    with self.subTest(dunder):
+                        via_meth = getattr(obj, dunder)
+                        self.assertIs(via_meth(other), NotImplemented)
+                        via_op = getattr(operator, dunder)
+                        self.assertRaises(TypeError, via_op, obj, other)
+
+                self.assertIs(obj.__lt__(LARGEST), NotImplemented)
+                self.assertTrue(obj < LARGEST)
+                self.assertIs(obj.__le__(LARGEST), NotImplemented)
+                self.assertTrue(obj <= LARGEST)
+                self.assertIs(obj.__ge__(LARGEST), NotImplemented)
+                self.assertFalse(obj >= LARGEST)
+                self.assertIs(obj.__gt__(LARGEST), NotImplemented)
+                self.assertFalse(obj > LARGEST)
+
+                self.assertIs(obj.__lt__(SMALLEST), NotImplemented)
+                self.assertFalse(obj < SMALLEST)
+                self.assertIs(obj.__le__(SMALLEST), NotImplemented)
+                self.assertFalse(obj <= SMALLEST)
+                self.assertIs(obj.__ge__(SMALLEST), NotImplemented)
+                self.assertTrue(obj >= SMALLEST)
+                self.assertIs(obj.__gt__(SMALLEST), NotImplemented)
+                self.assertTrue(obj > SMALLEST)
 
     def test_mixed_type_key(self):
         # with get_mixed_type_key, you can sort addresses and network.
@@ -1078,6 +1118,33 @@ class ComparisonTests(unittest.TestCase):
         self.assertRaises(TypeError, v6addr_scoped.__gt__, v4addr)
         self.assertRaises(TypeError, v6net_scoped.__lt__, v4net)
         self.assertRaises(TypeError, v6net_scoped.__gt__, v4net)
+
+    def test_object_compare_with_always_equal(self):
+        # Check that __eq__/__lt__ for IP objects work for non-IP
+        # objects that share the same attributes as IP objects.
+        class AlwaysEqual:
+            version = None
+            def __eq__(self, other):
+                return True
+
+        same_object = AlwaysEqual()
+        for obj in self.objects_with_scoped:
+            with self.subTest(obj=obj):
+                self.assertEqual(obj, same_object)
+
+    def test_object_compare_with_always_smallest(self):
+        @total_ordering
+        class Smallest:
+            version = None
+            def __lt__(self, other):
+                return True
+
+        smallest = Smallest()
+        for obj in self.objects_with_scoped:
+            with self.subTest(obj=obj):
+                # ensure that we dispatch to Smallest.__lt__ instead.
+                self.assertIs(obj.__lt__(smallest), NotImplemented)
+                self.assertLess(smallest, obj)
 
 
 class IpaddrUnitTest(unittest.TestCase):
