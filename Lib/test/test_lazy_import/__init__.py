@@ -168,6 +168,19 @@ class LazyImportTests(LazyImportTestCase):
         """)
         assert_python_ok("-c", code)
 
+    @support.requires_subprocess()
+    def test_module_getattr_does_not_shadow_own_lazy_import(self):
+        """Module __getattr__ should not shadow the module's own lazy imports."""
+        code = textwrap.dedent("""
+            import types
+            import test.test_lazy_import.data.module_with_lazy_import_and_getattr as mod
+            assert mod.basic2.__name__ == "test.test_lazy_import.data.basic2"
+            assert mod.f is mod.basic2.f
+            assert not isinstance(vars(mod)["basic2"], types.LazyImportType)
+            assert mod.missing == "from_getattr:missing"
+        """)
+        assert_python_ok("-c", code)
+
 
 class GlobalLazyImportModeTests(LazyImportTestCase):
     """Tests for sys.set_lazy_imports() global mode control."""
