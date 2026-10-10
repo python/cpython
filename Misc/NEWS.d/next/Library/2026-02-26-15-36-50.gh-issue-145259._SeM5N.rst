@@ -1,0 +1,4 @@
+Fix :class:`xml.dom.pulldom.DOMEventStream` silently dropping SAX events
+produced by ``parser.close()`` at end-of-stream. When ``bufsize`` caused the
+final tag to be split across reads, ``END_ELEMENT`` and other trailing events
+were lost.
