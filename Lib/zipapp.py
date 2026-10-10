@@ -69,7 +69,7 @@ def _copy_archive(archive, new_archive, interpreter=None):
             dst.write(first_2)
             shutil.copyfileobj(src, dst)
 
-    if interpreter and isinstance(new_archive, str):
+    if interpreter and isinstance(new_archive, (str, os.PathLike)):
         os.chmod(new_archive, os.stat(new_archive).st_mode | stat.S_IEXEC)
 
 
