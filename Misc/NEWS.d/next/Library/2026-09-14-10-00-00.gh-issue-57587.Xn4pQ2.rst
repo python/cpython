@@ -1,0 +1,5 @@
+Add the *namespaces* parameter to :func:`~xml.etree.ElementTree.tostring`,
+:func:`~xml.etree.ElementTree.tostringlist` and
+:meth:`~xml.etree.ElementTree.ElementTree.write`: a mapping from namespace
+prefixes to URIs which chooses the prefixes for this serialization instead of
+the global registry of :func:`~xml.etree.ElementTree.register_namespace`.
