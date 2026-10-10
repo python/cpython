@@ -516,6 +516,28 @@ try:
     from nt import _getfullpathname
 
 except ImportError: # not running on Windows - mock up something sensible
+    def _strip_dots_and_spaces(path):
+        # Imitate the trailing dot and space stripping performed by the
+        # Windows path normalization.  This is a best effort, not a
+        # specification.
+        if isinstance(path, bytes):
+            sep = b'\\'
+            dot = b'.'
+            dots_and_spaces = b'. '
+        else:
+            sep = '\\'
+            dot = '.'
+            dots_and_spaces = '. '
+        drive, root, tail = splitroot(path)
+        if not tail:
+            return path
+        comps = tail.split(sep)
+        for i, comp in enumerate(comps[:-1]):
+            if len(comp) > 1 and comp.endswith(dot) and not comp.endswith(dot*2):
+                comps[i] = comp[:-1]
+        comps[-1] = comps[-1].rstrip(dots_and_spaces)
+        return drive + root + sep.join(comps)
+
     def abspath(path):
         """Return the absolute version of a path."""
         path = os.fspath(path)
@@ -525,7 +547,7 @@ except ImportError: # not running on Windows - mock up something sensible
             else:
                 cwd = os.getcwd()
             path = join(cwd, path)
-        return normpath(path)
+        return _strip_dots_and_spaces(normpath(path))
 
 else:  # use native Windows method on Windows
     def abspath(path):
