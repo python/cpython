@@ -1,0 +1,2 @@
+Speed up iteration over exact :class:`bytes` objects by inlining item
+retrieval in the bytecode interpreter.
