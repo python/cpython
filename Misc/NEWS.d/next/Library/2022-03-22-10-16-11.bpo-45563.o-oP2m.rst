@@ -1,0 +1,4 @@
+:func:`inspect.getframeinfo` no longer raises :exc:`TypeError` for a frame
+stopped on an instruction that carries no line number, such as while tracing
+opcodes.  ``lineno``, ``code_context`` and ``index`` are reported as ``None``
+instead.
