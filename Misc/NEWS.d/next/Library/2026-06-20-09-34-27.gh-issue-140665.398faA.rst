@@ -1,0 +1,5 @@
+Fix runtime substitution of :pep:`696` type parameter defaults that reference
+earlier type parameters.  Parameterizing, for example, ``class C[T, S = T]``
+as ``C[int]`` now yields ``C[int, int]`` (and ``S = list[T]`` yields
+``list[int]``) instead of leaving the default unsubstituted.  Patch by Olayinka
+Vaughan.
