@@ -707,8 +707,19 @@ class BaseEventLoop(events.AbstractEventLoop):
             # is no need to log the "destroy pending task" message
             future._log_destroy_pending = False
 
-        future.add_done_callback(_run_until_complete_cb)
+        # gh-158406: A queued callback can outlive this call. Only let
+        # it stop the loop while this call is running.
+        running = True
+
+        def done_cb(fut):
+            if running:
+                _run_until_complete_cb(fut)
+            elif not fut.cancelled():
+                # Still mark the exception as retrieved.
+                fut.exception()
+
         try:
+            future.add_done_callback(done_cb)
             self.run_forever()
         except:
             if new_task and future.done() and not future.cancelled():
@@ -718,7 +729,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                 future.exception()
             raise
         finally:
-            future.remove_done_callback(_run_until_complete_cb)
+            running = False
+            future.remove_done_callback(done_cb)
         if not future.done():
             raise RuntimeError('Event loop stopped before Future completed.')
 
