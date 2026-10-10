@@ -388,6 +388,39 @@ Creating futures and tasks
    or be scheduled later. If *eager_start* is not passed the mode set
    by :meth:`loop.set_task_factory` will be used.
 
+   .. important::
+
+      Save a reference to the result of this function, to avoid
+      a task disappearing mid-execution. The event loop only keeps
+      weak references to tasks. A task that isn't referenced elsewhere
+      may get garbage collected at any time, even before it's done.
+      For reliable "fire-and-forget" background tasks, gather them in
+      a collection::
+
+          background_tasks = set()
+
+          for i in range(10):
+              task = loop.create_task(some_coro(param=i))
+
+              # Add task to the set. This creates a strong reference.
+              background_tasks.add(task)
+
+              # To prevent keeping references to finished tasks forever,
+              # make each task remove its own reference from the set after
+              # completion:
+              task.add_done_callback(background_tasks.discard)
+
+      Note that this approach never awaits the tasks, so if a task
+      fails, its exception is never retrieved and asyncio logs a
+      "Task exception was never retrieved" message when the task is
+      garbage collected.  To avoid this, use :class:`asyncio.TaskGroup`
+      which keeps a strong reference to each task, awaits them and
+      propagates their exceptions::
+
+          async with asyncio.TaskGroup() as tg:
+              for i in range(10):
+                  tg.create_task(some_coro(param=i))
+
    .. versionchanged:: 3.8
       Added the *name* parameter.
 
