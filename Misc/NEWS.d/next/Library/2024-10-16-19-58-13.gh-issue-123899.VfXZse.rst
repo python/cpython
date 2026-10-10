@@ -1,0 +1,2 @@
+Add timeout argument for notify_all/notify method in Condition class in
+threading/multiprocessing module
