@@ -1861,15 +1861,53 @@ set_intersection_update_multi_impl(PySetObject *so, PyObject * const *others,
                                    Py_ssize_t others_length)
 /*[clinic end generated code: output=d768b5584675b48d input=782e422fc370e4fc]*/
 {
-    PyObject *tmp;
+    Py_ssize_t i;
+    PyObject *other;
+    PyObject *result;
 
-    tmp = set_intersection_multi_impl(so, others, others_length);
-    if (tmp == NULL)
+    if (others_length == 0) {
+        Py_RETURN_NONE;
+    }
+
+    other = others[0];
+    Py_BEGIN_CRITICAL_SECTION2(so, other);
+    result = set_intersection(so, other);
+    if (result != NULL) {
+        for (i = 1; i < others_length; i++) {
+            PyObject *newresult;
+
+            other = others[i];
+            Py_BEGIN_CRITICAL_SECTION(other);
+            newresult = set_intersection((PySetObject *)result, other);
+            Py_END_CRITICAL_SECTION();
+            if (newresult == NULL) {
+                Py_CLEAR(result);
+                break;
+            }
+            Py_SETREF(result, newresult);
+        }
+        if (result != NULL) {
+            if (others_length == 1) {
+                set_swap_bodies(so, (PySetObject *)result);
+            }
+            else {
+                /* A later operand's critical section may have suspended
+                   so's lock. Preserve concurrent removals by intersecting
+                   the result with so's current contents. */
+                PyObject *updated = set_intersection_update(so, result);
+                if (updated == NULL) {
+                    Py_CLEAR(result);
+                }
+                Py_XDECREF(updated);
+            }
+        }
+    }
+    Py_END_CRITICAL_SECTION2();
+
+    if (result == NULL) {
         return NULL;
-    Py_BEGIN_CRITICAL_SECTION(so);
-    set_swap_bodies(so, (PySetObject *)tmp);
-    Py_END_CRITICAL_SECTION();
-    Py_DECREF(tmp);
+    }
+    Py_DECREF(result);
     Py_RETURN_NONE;
 }
 
