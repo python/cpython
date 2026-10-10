@@ -698,8 +698,8 @@ character ``'$'``.
      values ``Lu``, ``Lt``, ``Lm``, ``Nd``, ``Nl``, ``No``, ``Zs``, ``Zl``,
      ``Zp``, ``Cc``, ``Cf``, ``Cs``, ``Co`` and ``Cn``.
    * The binary properties ``XID_Start``, ``XID_Continue``, ``Alphabetic``,
-     ``Lowercase``, ``Uppercase``, ``Numeric``, ``Printable``, ``Cased`` and
-     ``Case_Ignorable``.  A binary property may also be spelled
+     ``Lowercase``, ``Uppercase``, ``Numeric``, ``Printable``, ``White_Space``,
+     ``Cased`` and ``Case_Ignorable``.  A binary property may also be spelled
      ``\p{name=yes}`` or ``\p{name=no}``.
    * The POSIX compatibility classes ``alpha``, ``alnum``, ``blank``,
      ``cntrl``, ``digit``, ``graph``, ``lower``, ``print``, ``space``,
@@ -711,9 +711,14 @@ character ``'$'``.
 
    Where a supported property corresponds to a :mod:`unicodedata` accessor or
    :class:`str` method, the set of characters it matches is exactly the one
-   they report.  For consistency with these, ``space`` follows
-   :py:meth:`str.isspace` (like ``\s``) and ``xdigit`` matches only the ASCII
-   hexadecimal digits.
+   they report.  For consistency with these, ``space`` and ``White_Space``
+   follow :py:meth:`str.isspace` (like ``\s``) and ``xdigit`` matches only the
+   ASCII hexadecimal digits.
+
+   ``Nd``, ``digit``, ``word``, ``space`` and ``White_Space`` are matched with
+   the same categories as ``\d``, ``\w`` and ``\s``, so the
+   :py:const:`~re.ASCII` flag restricts them to ASCII.  The other properties
+   are not affected by the flags.
 
    This is only recognized in Unicode (str) patterns.
    In bytes patterns it is an error.
@@ -811,8 +816,9 @@ Flags
 .. data:: A
           ASCII
 
-   Make ``\w``, ``\W``, ``\b``, ``\B``, ``\d``, ``\D``, ``\s`` and ``\S``
-   perform ASCII-only matching instead of full Unicode matching.  This is only
+   Make ``\w``, ``\W``, ``\b``, ``\B``, ``\d``, ``\D``, ``\s`` and ``\S``,
+   and the ``\p{...}`` properties matched with the same categories, perform
+   ASCII-only matching instead of full Unicode matching.  This is only
    meaningful for Unicode (str) patterns, and is ignored for bytes patterns.
 
    Corresponds to the inline flag ``(?a)``.
