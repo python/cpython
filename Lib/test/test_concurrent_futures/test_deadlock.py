@@ -2,6 +2,7 @@ import contextlib
 import queue
 import signal
 import sys
+import threading
 import time
 import unittest
 import unittest.mock
@@ -327,6 +328,50 @@ class ExecutorDeadlockTest:
                 finally:
                     signal.alarm(0)
                     signal.signal(signal.SIGALRM, old_handler)
+
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_should_not_deadlock_if_result_pipe_full(self):
+        # Workers must not write to the result queue on shutdown: the
+        # executor manager thread does not read it while it joins them.
+        # Fill the pipe once the executor manager thread stops reading
+        # results, right before the workers are told to exit.
+        self.executor.shutdown(wait=True)
+
+        data = b"a" * support.PIPE_MAX_SIZE
+        join_executor_internals = (
+            futures.process._ExecutorManagerThread._join_executor_internals)
+        def mock_join_executor_internals(self, broken=False):
+            # The put() blocks holding the result queue's write lock until
+            # the pipe is drained, so any worker writing to the result queue
+            # on exit blocks behind it.
+            filler = threading.Thread(target=self.result_queue.put,
+                                      args=(data,))
+            filler.start()
+            wlock = self.result_queue._wlock
+            if wlock is not None:
+                # Wait for the filler to hold the write lock.
+                while wlock.acquire(block=False):
+                    wlock.release()
+                    time.sleep(0.001)
+            join_executor_internals(self, broken)
+            # Unblock the filler.
+            self.result_queue.get()
+            filler.join()
+
+        executor = self.executor_type(max_workers=2,
+                                      mp_context=self.get_context())
+        self.executor = executor  # Allow clean up in fail_on_deadlock
+        with unittest.mock.patch.object(futures.process._ExecutorManagerThread,
+                                        '_join_executor_internals',
+                                        mock_join_executor_internals):
+            self.assertEqual(list(executor.map(int, range(10))),
+                             list(range(10)))
+            shutdown = threading.Thread(target=executor.shutdown)
+            shutdown.start()
+            shutdown.join(self.TIMEOUT)
+            if shutdown.is_alive():
+                self._fail_on_deadlock(executor)
 
 
 create_executor_tests(globals(), ExecutorDeadlockTest,

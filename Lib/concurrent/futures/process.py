@@ -249,8 +249,6 @@ def _process_worker(call_queue, result_queue, initializer, initargs, max_tasks=N
     while True:
         call_item = call_queue.get(block=True)
         if call_item is None:
-            # Wake up queue management thread
-            result_queue.put(os.getpid())
             return
 
         if max_tasks is not None:
@@ -531,9 +529,6 @@ class _ExecutorManagerThread(threading.Thread):
         return result_item, is_broken, cause
 
     def process_result_item(self, result_item):
-        # Process the received a result_item. This can be either the PID of a
-        # worker that exited gracefully or a _ResultItem
-
         # Received a _ResultItem so mark the future as completed.
         work_item = self.pending_work_items.pop(result_item.work_id, None)
         # work_item can be None if another process terminated (see above)
