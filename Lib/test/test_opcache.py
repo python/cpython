@@ -1538,6 +1538,44 @@ class TestSpecializer(TestBase):
 
     @cpython_only
     @requires_specialization
+    def test_binary_op_small_power(self):
+        def small_power():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = 7
+                self.assertEqual(a ** 2, 49)
+                b = -9
+                self.assertEqual(b ** 3, -729)
+                c = 2 ** 20 - 1  # largest base accepted by the exponent-3 bound
+                self.assertEqual(c ** 3, (2 ** 20 - 1) ** 3)
+                z = 0  # result is the immortal cached 0
+                self.assertEqual(z ** 2, 0)
+
+        small_power()
+        self.assert_specialized(small_power, "BINARY_OP_EXTEND")
+        self.assert_no_opcode(small_power, "BINARY_OP")
+
+        def small_power_inplace():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = 7
+                a **= 2
+                self.assertEqual(a, 49)
+
+        small_power_inplace()
+        self.assert_specialized(small_power_inplace, "BINARY_OP_EXTEND")
+
+        def power_not_extended(x):
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                self.assertEqual(x ** 4, 2401)
+                self.assertEqual((x + 2 ** 20) ** 3, (7 + 2 ** 20) ** 3)
+                self.assertEqual((x + (1 << 40)) ** 2, (7 + (1 << 40)) ** 2)
+                self.assertEqual(bool(x) ** 2, True)
+                self.assertEqual(float(x) ** 3, 343.0)
+
+        power_not_extended(7)
+        self.assert_no_opcode(power_not_extended, "BINARY_OP_EXTEND")
+
+    @cpython_only
+    @requires_specialization
     def test_load_super_attr(self):
         """Ensure that LOAD_SUPER_ATTR is specialized as expected."""
 
