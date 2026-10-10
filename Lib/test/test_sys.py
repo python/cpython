@@ -425,6 +425,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(v[2], v.build)
         self.assertEqual(v[3], v.platform)
         self.assertEqual(v[4], v.service_pack)
+        support.check_immutable_type(self, type(v))
 
         # This is how platform.py calls it. Make sure tuple
         #  still has 5 elements
@@ -562,6 +563,38 @@ class SysModuleTest(unittest.TestCase):
             leave_g.set()
             t.join()
 
+    @support.cpython_only
+    @requires_subinterpreters
+    @threading_helper.requires_working_threading()
+    def test_current_frames_other_interpreters(self):
+        # gh-158364: sys._current_frames() would access frames of another
+        # interpreter and crash
+        import threading
+
+        entered = threading.Event()
+        left = threading.Event()
+
+        def park():
+            entered.set()
+            left.wait()
+
+        t = threading.Thread(target=park)
+        with threading_helper.start_threads([t], unlock=left.set):
+            entered.wait()
+            interp = interpreters.create()
+            try:
+                interp.exec(f"""if True:
+                    import sys
+                    import threading
+
+                    frames = sys._current_frames()
+                    assert threading.get_ident() in frames, frames
+                    assert frames[threading.get_ident()].f_globals is globals()
+                    assert {t.ident} not in frames, frames
+                    """)
+            finally:
+                interp.close()
+
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
     def test_current_exceptions(self):
@@ -628,6 +661,39 @@ class SysModuleTest(unittest.TestCase):
             leave_g.set()
             t.join()
 
+    @support.cpython_only
+    @requires_subinterpreters
+    @threading_helper.requires_working_threading()
+    def test_current_exceptions_other_interpreters(self):
+        # gh-158364: sys._current_exceptions() would hand out exceptions of
+        # another interpreter and crash
+        import threading
+
+        entered = threading.Event()
+        left = threading.Event()
+
+        def hold():
+            # The thread has to be handling an exception, otherwise
+            # sys._current_exceptions() has nothing to report for it.
+            try:
+                raise ValueError
+            except ValueError:
+                entered.set()
+                left.wait()
+
+        t = threading.Thread(target=hold)
+        with threading_helper.start_threads([t], unlock=left.set):
+            entered.wait()
+            interp = interpreters.create()
+            try:
+                interp.exec(f"""if True:
+                    import sys
+
+                    assert {t.ident} not in sys._current_exceptions()
+                    """)
+            finally:
+                interp.close()
+
     def test_attributes(self):
         self.assertIsInstance(sys.api_version, int)
         self.assertIsInstance(sys.argv, list)
@@ -690,6 +756,7 @@ class SysModuleTest(unittest.TestCase):
             self.assertEqual(algo, 0)
         self.assertGreaterEqual(sys.hash_info.cutoff, 0)
         self.assertLess(sys.hash_info.cutoff, 8)
+        support.check_immutable_type(self, type(sys.hash_info))
 
         self.assertIsInstance(sys.maxsize, int)
         self.assertIsInstance(sys.maxunicode, int)
@@ -893,11 +960,13 @@ class SysModuleTest(unittest.TestCase):
         # sys.flags, sys.version_info, and sys.getwindowsversion.
         support.check_disallow_instantiation(self, type(sys_attr), sys_attr)
 
-    def test_sys_flags_no_instantiation(self):
+    def test_sys_flags_type(self):
         self.assert_raise_on_new_sys_type(sys.flags)
+        support.check_immutable_type(self, type(sys.flags))
 
-    def test_sys_version_info_no_instantiation(self):
+    def test_sys_version_info_type(self):
         self.assert_raise_on_new_sys_type(sys.version_info)
+        support.check_immutable_type(self, type(sys.version_info))
 
     def test_sys_getwindowsversion_no_instantiation(self):
         # Skip if not being run on Windows.
@@ -1125,8 +1194,10 @@ class SysModuleTest(unittest.TestCase):
         # The sysconfig vars are not available on Windows.
         if sys.platform != "win32":
             with_pymalloc = sysconfig.get_config_var("WITH_PYMALLOC")
+            with_sanitizer = support.check_sanitizer(address=True, memory=True)
             self.assertIn(b"free PyDictObjects", err)
-            if with_pymalloc:
+            # ASan and MSan builds default to malloc, even with pymalloc.
+            if with_pymalloc and not with_sanitizer:
                 self.assertIn(b'Small block threshold', err)
 
         # The function has no parameter
@@ -1369,6 +1440,37 @@ class SysModuleTest(unittest.TestCase):
             sys.set_int_max_str_digits(-2)
         with self.assertRaises(TypeError):
             sys.set_int_max_str_digits(2_048.0)
+
+    @test.support.cpython_only
+    def test_is_immortal(self):
+        is_immortal = sys._is_immortal
+
+        # Singletons
+        self.assertTrue(is_immortal(None))
+        self.assertTrue(is_immortal(False))
+        self.assertTrue(is_immortal(True))
+        self.assertTrue(is_immortal(0))
+        self.assertTrue(is_immortal(b''))
+        self.assertTrue(is_immortal(''))
+        self.assertTrue(is_immortal(b'x'))
+        self.assertTrue(is_immortal('x'))
+        self.assertTrue(is_immortal(()))
+
+        # Static types
+        self.assertTrue(is_immortal(int))
+        self.assertTrue(is_immortal(dict))
+
+        # Test some mortal objects
+        class PythonType:
+            pass
+        self.assertFalse(is_immortal([1, 2, 3]))
+        self.assertFalse(is_immortal({'key': 5}))
+        self.assertFalse(is_immortal(object()))
+        self.assertFalse(is_immortal(PythonType))
+        self.assertFalse(is_immortal(2 ** 100))
+        # Use encode/decode to get a fresh object
+        self.assertFalse(is_immortal(b'abc'.decode()))
+        self.assertFalse(is_immortal('abc'.encode()))
 
 
 @test.support.cpython_only
@@ -1722,7 +1824,7 @@ class SizeofTest(unittest.TestCase):
         check(iter('abc'), size('lP'))
         # callable-iterator
         import re
-        check(re.finditer('',''), size('2P'))
+        check(re.finditer('',''), size('3P'))
         # list
         check(list([]), vsize('Pn'))
         check(list([1]), vsize('Pn') + 2*self.P)
@@ -1809,7 +1911,7 @@ class SizeofTest(unittest.TestCase):
         check((1,2,3), vsize('') + self.P + 3*self.P)
         # type
         # static type: PyTypeObject
-        fmt = 'P2nPI13Pl4Pn9Pn12PI2Pc'
+        fmt = 'P2nPI13Pl4Pn9Pn12PI2PcP'
         s = vsize(fmt)
         check(int, s)
         typeid = 'n' if support.Py_GIL_DISABLED else ''
@@ -1954,6 +2056,7 @@ class SizeofTest(unittest.TestCase):
         cur = sys.get_asyncgen_hooks()
         self.assertIsNone(cur.firstiter)
         self.assertIsNone(cur.finalizer)
+        support.check_immutable_type(self, type(cur))
 
         # gh-118473
         with self.assertRaises(TypeError):
@@ -1996,6 +2099,7 @@ class SizeofTest(unittest.TestCase):
         rc, out, err = assert_python_failure('-c', code)
         self.assertEqual(out, b"")
         self.assertEqual(err, b"")
+
 
 @test.support.support_remote_exec_only
 @test.support.cpython_only

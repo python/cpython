@@ -154,6 +154,11 @@ module documentation.  This section lists the differences between the API and
    .. versionchanged:: 3.9
       The *standalone* parameter was added.
 
+   .. versionchanged:: next
+      Namespace declarations missing for the serialized element
+      and its attributes are now written.
+      It now works for :class:`!DocumentFragment` nodes.
+
 .. method:: Node.toxml(encoding=None, standalone=None)
 
    Return a string or byte string containing the XML represented by
@@ -175,6 +180,9 @@ module documentation.  This section lists the differences between the API and
    .. versionchanged:: 3.9
       The *standalone* parameter was added.
 
+   .. versionchanged:: next
+      It now works for :class:`!DocumentFragment` nodes.
+
 .. method:: Node.toprettyxml(indent="\t", newl="\n", encoding=None, \
                              standalone=None)
 
@@ -187,12 +195,23 @@ module documentation.  This section lists the differences between the API and
 
    The *standalone* argument behaves exactly as in :meth:`writexml`.
 
+   No indentation is added inside an element
+   which is marked with ``xml:space="preserve"``,
+   which is declared in the DTD as not having element content,
+   or, in absence of such declaration, which contains text,
+   because this would change its content.
+
    .. versionchanged:: 3.8
       The :meth:`toprettyxml` method now preserves the attribute order specified
       by the user.
 
    .. versionchanged:: 3.9
       The *standalone* parameter was added.
+
+   .. versionchanged:: next
+      Whitespace is no longer added inside an element with mixed content
+      or marked with ``xml:space="preserve"``.
+      It now works for :class:`!DocumentFragment` nodes.
 
 .. _dom-example:
 
@@ -245,20 +264,50 @@ rules apply:
   Instead, :mod:`!xml.dom.minidom` uses standard Python exceptions such as
   :exc:`TypeError` and :exc:`AttributeError`.
 
-* :class:`NodeList` objects are implemented using Python's built-in list type.
-  These objects provide the interface defined in the DOM specification, but with
-  earlier versions of Python they do not support the official API.  They are,
-  however, much more "Pythonic" than the interface defined in the W3C
-  recommendations.
+* Each of the :class:`~xml.dom.NodeList` and :class:`~xml.dom.NamedNodeMap`
+  interfaces has two implementations, which provide additional methods and
+  operations.
+
+  :attr:`~xml.dom.Node.childNodes` is a subclass of :class:`list`, or, for
+  nodes which cannot have children, a subclass of :class:`tuple`.
+  It supports iteration, concatenation, indexing and slicing.
+
+  :attr:`~xml.dom.Node.attributes` supports ``len()``, the :keyword:`in`
+  operator, subscription by a name or by a ``(namespaceURI, localName)``
+  tuple, assignment and deletion, and the methods :meth:`!get`, :meth:`!keys`,
+  :meth:`!keysNS`, :meth:`!values`, :meth:`!items` and :meth:`!itemsNS`.
+  :attr:`~xml.dom.DocumentType.entities` and
+  :attr:`~xml.dom.DocumentType.notations` are read-only and support only
+  ``len()`` and subscription by a name.
+
+* :attr:`~xml.dom.Document.strictErrorChecking` is always ``False``.
+
+  .. versionchanged:: next
+     Previously, :attr:`~xml.dom.Attr.specified` was always ``False``.
+
+* The constraints of the DOM are now enforced,
+  and the corresponding exceptions are raised.
+
+  .. versionchanged:: next
+     Previously, many invalid operations silently succeeded
+     and produced an invalid document,
+     but removing an absent attribute raised :exc:`~xml.dom.NotFoundErr`.
+
+  .. versionchanged:: next
+     Namespaces are now validated in the factory methods and when setting
+     :attr:`~xml.dom.Node.prefix` of an attribute.
 
 The following interfaces have no implementation in :mod:`!xml.dom.minidom`:
 
 * :class:`DOMTimeStamp`
 
-* :class:`EntityReference`
-
-Most of these reflect information in the XML document that is not of general
+This reflects information in the XML document that is not of general
 utility to most DOM users.
+
+.. versionchanged:: next
+   :class:`~xml.dom.EntityReference` is now implemented.
+   Note that the parser expands entity references,
+   so they only occur in a document if created explicitly.
 
 .. rubric:: Footnotes
 

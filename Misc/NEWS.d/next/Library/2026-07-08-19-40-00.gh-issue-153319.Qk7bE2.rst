@@ -1,0 +1,2 @@
+The :mod:`turtledemo` viewer now reads each demo script as UTF-8 instead of
+the locale encoding.

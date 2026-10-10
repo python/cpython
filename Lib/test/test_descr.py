@@ -3405,7 +3405,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         from _io import FileIO
         def check(descr, what):
             self.assertEqual(descr.__doc__, what)
-        check(FileIO.closed, "True if the file is closed") # getset descriptor
+        check(FileIO.closed, "True if the file is closed.") # getset descriptor
         check(complex.real, "the real part of a complex number") # member descriptor
 
     def test_doc_descriptor(self):
@@ -3774,6 +3774,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                            encoding='latin1', errors='replace')
         self.assertEqual(ba, b'abc\xbd?')
 
+    @support.skip_if_huge_c_stack()
     @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
     def test_recursive_call(self):
@@ -5122,6 +5123,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                 # CALL_METHOD_DESCRIPTOR_O
                 deque.append(thing, thing)
 
+    @support.skip_if_huge_c_stack()
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_repr_as_str(self):

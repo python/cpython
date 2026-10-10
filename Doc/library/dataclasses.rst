@@ -262,8 +262,8 @@ Module contents
      c = C()
      c.mylist += [1, 2, 3]
 
-   As shown above, the :const:`MISSING` value is a sentinel object used to
-   detect if some parameters are provided by the user. This sentinel is
+   As shown above, the :const:`MISSING` value is a :class:`sentinel` object
+   used to detect if some parameters are provided by the user. This sentinel is
    used because ``None`` is a valid value for some parameters with
    a distinct meaning.  No code should directly use the :const:`MISSING` value.
 
@@ -528,11 +528,14 @@ Module contents
 
 .. data:: MISSING
 
-   A sentinel value signifying a missing default or default_factory.
+   A :class:`sentinel` object signifying a missing default or *default_factory*.
+
+   .. versionchanged:: 3.15
+      :const:`!MISSING` is now a :class:`sentinel` object.
 
 .. data:: KW_ONLY
 
-   A sentinel value used as a type annotation.  Any fields after a
+   A :class:`sentinel` object used as a type annotation.  Any fields after a
    pseudo-field with the type of :const:`!KW_ONLY` are marked as
    keyword-only fields.  Note that a pseudo-field of type
    :const:`!KW_ONLY` is otherwise completely ignored.  This includes the
@@ -556,6 +559,9 @@ Module contents
    field whose type is :const:`!KW_ONLY`.
 
    .. versionadded:: 3.10
+
+   .. versionchanged:: 3.15
+      :const:`!KW_ONLY` is now a :class:`sentinel` object.
 
 .. exception:: FrozenInstanceError
 

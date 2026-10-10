@@ -1,0 +1,2 @@
+Fix ``_remote_debugging`` stack traces for code objects with large line
+tables.

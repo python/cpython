@@ -1,0 +1,2 @@
+Speed up :func:`inspect.signature` for Python functions by skipping
+redundant validation when creating :class:`inspect.Parameter` objects.

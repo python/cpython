@@ -642,7 +642,6 @@ ac_includes_default="\
 #endif"
 
 ac_header_c_list=
-ac_func_c_list=
 ac_subst_vars='LTLIBOBJS
 MODULE_BLOCK
 JIT_SHIM_BUILD_O
@@ -1102,6 +1101,7 @@ enable_framework
 with_app_store_compliance
 enable_wasm_dynamic_linking
 enable_wasm_pthreads
+enable_emscripten_syscalls
 with_suffix
 enable_shared
 with_static_libpython
@@ -1122,6 +1122,7 @@ with_frame_pointers
 enable_experimental_jit
 with_dsymutil
 with_address_sanitizer
+with_hwaddress_sanitizer
 with_memory_sanitizer
 with_undefined_behavior_sanitizer
 with_thread_sanitizer
@@ -1141,12 +1142,15 @@ with_c_locale_coercion
 with_valgrind
 with_dtrace
 enable_epoll
+with_zlib
+with_bzip2
 with_libm
 with_libc
 enable_big_digits
 with_platlibdir
 with_wheel_pkg_dir
 with_readline
+with_curses
 with_computed_gotos
 with_tail_call_interp
 with_remote_debug
@@ -1171,6 +1175,7 @@ LDFLAGS
 LIBS
 CPPFLAGS
 CPP
+CXX
 PROFILE_TASK
 BOLT_COMMON_FLAGS
 BOLT_INSTRUMENT_FLAGS
@@ -1842,6 +1847,10 @@ Optional Features:
                           loader to handle imports
   --enable-wasm-pthreads  Enable pthread emulation for WebAssembly (default is
                           no)
+  --disable-emscripten-syscalls
+                          Disable the Emscripten syscall overrides in
+                          Python/emscripten_syscalls.c (default is enabled for
+                          Emscripten)
   --enable-shared         enable building a shared Python library (default is
                           no)
   --enable-static-libpython-for-interpreter
@@ -1923,6 +1932,9 @@ Optional Packages:
   --with-address-sanitizer
                           enable AddressSanitizer memory error detector,
                           'asan' (default is no)
+  --with-hwaddress-sanitizer
+                          enable HWAddressSanitizer memory error detector,
+                          'hwasan' (default is no)
   --with-memory-sanitizer enable MemorySanitizer allocation error detector,
                           'msan' (default is no)
   --with-undefined-behavior-sanitizer
@@ -1958,6 +1970,12 @@ Optional Packages:
                           (default is yes)
   --with-valgrind         enable Valgrind support (default is no)
   --with-dtrace           enable DTrace support (default is no)
+  --with(out)-zlib[=zlib|zlib-ng|zlib-rs|no]
+                          select the zlib implementation to link against, or
+                          disable zlib support (default: auto)
+  --with(out)-bzip2[=bzip2|bzip2-rs|no]
+                          select the bzip2 implementation to link against, or
+                          disable bzip2 support (default: auto)
   --with-libm=STRING      override libm math library to STRING (default is
                           system-dependent)
   --with-libc=STRING      override libc C library to STRING (default is
@@ -1969,6 +1987,10 @@ Optional Packages:
                           (default: none)
   --with(out)-readline[=editline|readline|no]
                           use libedit for backend or disable readline module
+  --with(out)-curses[=ncursesw|ncurses|curses|no]
+                          select the curses backend for the curses and
+                          _curses_panel modules, or disable them (default:
+                          auto)
   --with-computed-gotos   enable computed gotos in evaluation loop (enabled by
                           default on supported compilers)
   --with-tail-call-interp enable tail-calling interpreter in evaluation loop
@@ -2012,6 +2034,7 @@ Some influential environment variables:
   CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> if
               you have headers in a nonstandard directory <include dir>
   CPP         C preprocessor
+  CXX         C++ compiler command
   PROFILE_TASK
               Python args for PGO generation task
   BOLT_COMMON_FLAGS
@@ -3422,13 +3445,6 @@ as_fn_append ac_header_c_list " sys/types.h sys_types_h HAVE_SYS_TYPES_H"
 as_fn_append ac_header_c_list " unistd.h unistd_h HAVE_UNISTD_H"
 as_fn_append ac_header_c_list " wchar.h wchar_h HAVE_WCHAR_H"
 as_fn_append ac_header_c_list " minix/config.h minix_config_h HAVE_MINIX_CONFIG_H"
-as_fn_append ac_func_c_list " acospi HAVE_ACOSPI"
-as_fn_append ac_func_c_list " asinpi HAVE_ASINPI"
-as_fn_append ac_func_c_list " atanpi HAVE_ATANPI"
-as_fn_append ac_func_c_list " atan2pi HAVE_ATAN2PI"
-as_fn_append ac_func_c_list " cospi HAVE_COSPI"
-as_fn_append ac_func_c_list " sinpi HAVE_SINPI"
-as_fn_append ac_func_c_list " tanpi HAVE_TANPI"
 
 # Auxiliary files required by this configure script.
 ac_aux_files="install-sh config.guess config.sub"
@@ -3595,6 +3611,8 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
 
 
 
@@ -4423,29 +4441,25 @@ then :
 
 	case $enableval in
 	no)
-		case $ac_sys_system in
-			iOS) as_fn_error $? "iOS builds must use --enable-framework" "$LINENO" 5 ;;
-			*)
-				PYTHONFRAMEWORK=
-				PYTHONFRAMEWORKDIR=no-framework
-				PYTHONFRAMEWORKPREFIX=
-				PYTHONFRAMEWORKINSTALLDIR=
-				PYTHONFRAMEWORKINSTALLNAMEPREFIX=
-				RESSRCDIR=
-				FRAMEWORKINSTALLFIRST=
-				FRAMEWORKINSTALLLAST=
-				FRAMEWORKALTINSTALLFIRST=
-				FRAMEWORKALTINSTALLLAST=
-				FRAMEWORKPYTHONW=
-				INSTALLTARGETS="commoninstall bininstall maninstall"
+		PYTHONFRAMEWORK=
+		PYTHONFRAMEWORKDIR=no-framework
+		PYTHONFRAMEWORKPREFIX=
+		PYTHONFRAMEWORKINSTALLDIR=
+		PYTHONFRAMEWORKINSTALLNAMEPREFIX=
+		RESSRCDIR=
+		FRAMEWORKINSTALLFIRST=
+		FRAMEWORKINSTALLLAST=
+		FRAMEWORKALTINSTALLFIRST=
+		FRAMEWORKALTINSTALLLAST=
+		FRAMEWORKPYTHONW=
+		INSTALLTARGETS="commoninstall bininstall maninstall"
 
-				if test "x${prefix}" = "xNONE"; then
-					FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
-				else
-					FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
-				fi
-				enable_framework=
-		esac
+		if test "x${prefix}" = "xNONE"; then
+			FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
+		else
+			FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
+		fi
+		enable_framework=
 		;;
 	*)
 		PYTHONFRAMEWORKPREFIX="${enableval}"
@@ -4540,28 +4554,24 @@ then :
 
 else case e in #(
   e)
-	case $ac_sys_system in
-		iOS) as_fn_error $? "iOS builds must use --enable-framework" "$LINENO" 5 ;;
-		*)
-			PYTHONFRAMEWORK=
-			PYTHONFRAMEWORKDIR=no-framework
-			PYTHONFRAMEWORKPREFIX=
-			PYTHONFRAMEWORKINSTALLDIR=
-			PYTHONFRAMEWORKINSTALLNAMEPREFIX=
-			RESSRCDIR=
-			FRAMEWORKINSTALLFIRST=
-			FRAMEWORKINSTALLLAST=
-			FRAMEWORKALTINSTALLFIRST=
-			FRAMEWORKALTINSTALLLAST=
-			FRAMEWORKPYTHONW=
-			INSTALLTARGETS="commoninstall bininstall maninstall"
-			if test "x${prefix}" = "xNONE" ; then
-				FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
-			else
-				FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
-			fi
-			enable_framework=
-	esac
+	PYTHONFRAMEWORK=
+	PYTHONFRAMEWORKDIR=no-framework
+	PYTHONFRAMEWORKPREFIX=
+	PYTHONFRAMEWORKINSTALLDIR=
+	PYTHONFRAMEWORKINSTALLNAMEPREFIX=
+	RESSRCDIR=
+	FRAMEWORKINSTALLFIRST=
+	FRAMEWORKINSTALLLAST=
+	FRAMEWORKALTINSTALLFIRST=
+	FRAMEWORKALTINSTALLLAST=
+	FRAMEWORKPYTHONW=
+	INSTALLTARGETS="commoninstall bininstall maninstall"
+	if test "x${prefix}" = "xNONE" ; then
+		FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
+	else
+		FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
+	fi
+	enable_framework=
  ;;
 esac
 fi
@@ -4737,11 +4747,8 @@ printf "%s\n" "#define _BSD_SOURCE 1" >>confdefs.h
   # Marc Recht
   NetBSD/1.5 | NetBSD/1.5.* | NetBSD/1.6 | NetBSD/1.6.* | NetBSD/1.6[A-S])
     define_xopen_source=no;;
-  # From the perspective of Solaris, _XOPEN_SOURCE is not so much a
-  # request to enable features supported by the standard as a request
-  # to disable features not supported by the standard.  The best way
-  # for Python to use Solaris is simply to leave _XOPEN_SOURCE out
-  # entirely and define __EXTENSIONS__ instead.
+  # On Solaris, _XOPEN_SOURCE=800 hides platform specific features.
+  # A lower level is defined below.
   SunOS/*)
     define_xopen_source=no;;
   # On UnixWare 7, u_long is never defined with _XOPEN_SOURCE,
@@ -4804,6 +4811,22 @@ printf "%s\n" "#define _XOPEN_SOURCE_EXTENDED 1" >>confdefs.h
 
 printf "%s\n" "#define _POSIX_C_SOURCE 202405L" >>confdefs.h
 
+
+  # Defining _POSIX_C_SOURCE and _XOPEN_SOURCE hides C23 library
+  # declarations on FreeBSD (e.g. sinpi() in math.h) when compiling
+  # with -std=c11.  Defining _ISOC23_SOURCE makes them visible again.
+
+printf "%s\n" "#define _ISOC23_SOURCE 1" >>confdefs.h
+
+elif test "$ac_sys_system" = "SunOS"
+then
+  # On illumos the socket ancillary-data API (CMSG_*, sendmsg(), recvmsg())
+  # is declared only with _XOPEN_SOURCE >= 600; Solaris declares it anyway.
+  # __EXTENSIONS__ keeps the platform specific features which _XOPEN_SOURCE
+  # would otherwise hide.  See gh-57208.
+
+printf "%s\n" "#define _XOPEN_SOURCE 600" >>confdefs.h
+
 fi
 
 # On HP-UX mbstate_t requires _INCLUDE__STDC_A1_SOURCE
@@ -4864,8 +4887,13 @@ case $host in #(
      ;;
 esac
 
-case $ac_sys_system in #(
-  iOS) :
+case $host in #(
+  *-apple-ios*-simulator) :
+
+    as_fn_append CFLAGS " -mios-simulator-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"
+    as_fn_append LDFLAGS " -mios-simulator-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"
+   ;; #(
+  *-apple-ios*) :
 
     as_fn_append CFLAGS " -mios-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"
     as_fn_append LDFLAGS " -mios-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"
@@ -6390,6 +6418,8 @@ else case e in #(
 cat > conftest.c <<EOF
 #if defined(__EMSCRIPTEN__)
   emcc
+#elif defined(__INTEL_CLANG_COMPILER) || defined(__INTEL_LLVM_COMPILER)
+  icx
 #elif defined(__INTEL_COMPILER) || defined(__ICC)
   icc
 #elif defined(__ibmxl__) || defined(__xlc__) || defined(__xlC__)
@@ -6859,7 +6889,7 @@ else
   CXX="$ac_cv_path_CXX"
 fi
  ;;
-        clang)             if test -n "$ac_tool_prefix"; then
+        clang)  if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}clang++", so it can be a program name with args.
 set dummy ${ac_tool_prefix}clang++; ac_word=$2
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -6969,7 +6999,117 @@ else
   CXX="$ac_cv_path_CXX"
 fi
  ;;
-        icc)               if test -n "$ac_tool_prefix"; then
+        icx)    if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}icpx", so it can be a program name with args.
+set dummy ${ac_tool_prefix}icpx; ac_word=$2
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+printf %s "checking for $ac_word... " >&6; }
+if test ${ac_cv_path_CXX+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) case $CXX in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CXX="$CXX" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  case $as_dir in #(((
+    '') as_dir=./ ;;
+    */) ;;
+    *) as_dir=$as_dir/ ;;
+  esac
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
+    ac_cv_path_CXX="$as_dir$ac_word$ac_exec_ext"
+    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac ;;
+esac
+fi
+CXX=$ac_cv_path_CXX
+if test -n "$CXX"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $CXX" >&5
+printf "%s\n" "$CXX" >&6; }
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_path_CXX"; then
+  ac_pt_CXX=$CXX
+  # Extract the first word of "icpx", so it can be a program name with args.
+set dummy icpx; ac_word=$2
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+printf %s "checking for $ac_word... " >&6; }
+if test ${ac_cv_path_ac_pt_CXX+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) case $ac_pt_CXX in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_CXX="$ac_pt_CXX" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  case $as_dir in #(((
+    '') as_dir=./ ;;
+    */) ;;
+    *) as_dir=$as_dir/ ;;
+  esac
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
+    ac_cv_path_ac_pt_CXX="$as_dir$ac_word$ac_exec_ext"
+    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac ;;
+esac
+fi
+ac_pt_CXX=$ac_cv_path_ac_pt_CXX
+if test -n "$ac_pt_CXX"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_pt_CXX" >&5
+printf "%s\n" "$ac_pt_CXX" >&6; }
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+  if test "x$ac_pt_CXX" = x; then
+    CXX="notfound"
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+printf "%s\n" "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    CXX=$ac_pt_CXX
+  fi
+else
+  CXX="$ac_cv_path_CXX"
+fi
+ ;;
+        icc)    if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}icpc", so it can be a program name with args.
 set dummy ${ac_tool_prefix}icpc; ac_word=$2
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -7241,6 +7381,8 @@ case $ac_sys_system in #(
     MULTIARCH="" ;; #(
   FreeBSD*) :
     MULTIARCH="" ;; #(
+  OpenBSD*) :
+    MULTIARCH="" ;; #(
   *) :
     MULTIARCH=$($CC --print-multiarch 2>/dev/null)
  ;;
@@ -7266,6 +7408,12 @@ case $ac_sys_system in #(
  ;;
 esac
 
+if test x$SOABI_PLATFORM != x; then
+
+printf "%s\n" "#define SOABI_PLATFORM \"${SOABI_PLATFORM}\"" >>confdefs.h
+
+fi
+
 if test x$MULTIARCH != x; then
   MULTIARCH_CPPFLAGS="-DMULTIARCH=\\\"$MULTIARCH\\\""
 fi
@@ -7288,33 +7436,37 @@ printf %s "checking for PEP 11 support tier... " >&6; }
 case $host/$ac_cv_cc_name in #(
   x86_64-*-linux-gnu/gcc) :
     PY_SUPPORT_TIER=1 ;; #(
-    x86_64-apple-darwin*/clang) :
-    PY_SUPPORT_TIER=1 ;; #(
     aarch64-apple-darwin*/clang) :
+    PY_SUPPORT_TIER=1 ;; #(
+    aarch64-*-linux-gnu/gcc) :
     PY_SUPPORT_TIER=1 ;; #(
     i686-pc-windows-msvc/msvc) :
     PY_SUPPORT_TIER=1 ;; #(
     x86_64-pc-windows-msvc/msvc) :
     PY_SUPPORT_TIER=1 ;; #(
 
-  aarch64-*-linux-gnu/gcc) :
+  aarch64-*-linux-gnu/clang) :
     PY_SUPPORT_TIER=2 ;; #(
-    aarch64-*-linux-gnu/clang) :
-    PY_SUPPORT_TIER=2 ;; #(
-  powerpc64le-*-linux-gnu/gcc) :
+    aarch64-pc-windows-msvc/msvc) :
     PY_SUPPORT_TIER=2 ;; #(
     wasm32-unknown-wasip1/clang) :
+    PY_SUPPORT_TIER=2 ;; #(
+    x86_64-apple-darwin*/clang) :
     PY_SUPPORT_TIER=2 ;; #(
     x86_64-*-linux-gnu/clang) :
     PY_SUPPORT_TIER=2 ;; #(
 
-  aarch64-pc-windows-msvc/msvc) :
+  armv7l-*-linux-gnueabihf/gcc) :
     PY_SUPPORT_TIER=3 ;; #(
-    armv7l-*-linux-gnueabihf/gcc) :
+    powerpc64le-*-linux-gnu/gcc) :
     PY_SUPPORT_TIER=3 ;; #(
     powerpc64le-*-linux-gnu/clang) :
     PY_SUPPORT_TIER=3 ;; #(
-    s390x-*-linux-gnu/gcc) :
+    riscv64-*-linux-gnu/gcc) :
+    PY_SUPPORT_TIER=3 ;; #(
+    riscv64-*-linux-gnu/clang) :
+    PY_SUPPORT_TIER=3 ;; #(
+  s390x-*-linux-gnu/gcc) :
     PY_SUPPORT_TIER=3 ;; #(
     x86_64-*-freebsd*/clang) :
     PY_SUPPORT_TIER=3 ;; #(
@@ -7495,6 +7647,30 @@ fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_wasm_pthreads" >&5
 printf "%s\n" "$enable_wasm_pthreads" >&6; }
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-emscripten-syscalls" >&5
+printf %s "checking for --enable-emscripten-syscalls... " >&6; }
+# Check whether --enable-emscripten-syscalls was given.
+if test ${enable_emscripten_syscalls+y}
+then :
+  enableval=$enable_emscripten_syscalls;
+  case $ac_sys_system in #(
+  Emscripten) :
+     ;; #(
+  *) :
+    as_fn_error $? "--enable-emscripten-syscalls only applies to Emscripten" "$LINENO" 5
+   ;;
+esac
+
+else case e in #(
+  e)
+  enable_emscripten_syscalls=yes
+ ;;
+esac
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_emscripten_syscalls" >&5
+printf "%s\n" "$enable_emscripten_syscalls" >&6; }
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-suffix" >&5
 printf %s "checking for --with-suffix... " >&6; }
@@ -7843,6 +8019,9 @@ printf "%s\n" "#define Py_ENABLE_SHARED 1" >>confdefs.h
       RUNSHARED=DYLD_LIBRARY_PATH=`pwd`${DYLD_LIBRARY_PATH:+:${DYLD_LIBRARY_PATH}}
       ;;
     iOS)
+      if test -z "$PYTHONFRAMEWORK"; then
+        as_fn_error $? "iOS shared builds must use --enable-framework; an iOS app can only load a signed framework, never a bare dylib" "$LINENO" 5
+      fi
       LDLIBRARY='libpython$(LDVERSION).dylib'
       ;;
     AIX*)
@@ -9117,7 +9296,7 @@ fi
 LLVM_PROF_ERR=no
 
 case "$ac_cv_cc_name" in
-  clang)
+  clang|icx)
     # Any changes made here should be reflected in the GCC+Darwin case below
     PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
     PGO_PROF_USE_FLAG="-fprofile-instr-use=\"\$(shell pwd)/code.profclangd\""
@@ -9795,14 +9974,11 @@ fi
 
         as_fn_append LINKFORSHARED " -sALLOW_MEMORY_GROWTH -sINITIAL_MEMORY=20971520"
 
-        as_fn_append LDFLAGS_NODIST " -sWASM_BIGINT"
-
         as_fn_append LINKFORSHARED " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
     as_fn_append LINKFORSHARED " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY,ERRNO_CODES"
-    as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,_PyGILState_GetThisThreadState,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"
+    as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,_PyGILState_GetThisThreadState"
     as_fn_append LINKFORSHARED " -sSTACK_SIZE=5MB"
         as_fn_append LINKFORSHARED " -sTEXTDECODER=2"
-        as_fn_append LINKFORSHARED " -sGROWABLE_ARRAYBUFFERS=0"
 
     if test "x$enable_wasm_dynamic_linking" = xyes
 then :
@@ -11403,6 +11579,10 @@ fi
 case "$ac_cv_cc_name" in
 mpicc)
     CFLAGS_NODIST="$CFLAGS_NODIST"
+    ;;
+icx)
+    # ICX needs fp-model=precise (the default in clang) or floats behave badly
+    CFLAGS_NODIST="$CFLAGS_NODIST -ffp-model=precise"
     ;;
 icc)
     # ICC needs -fp-model strict or floats behave badly
@@ -13973,8 +14153,80 @@ then :
 printf "%s\n" "$withval" >&6; }
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=address $LDFLAGS"
-# ASan works by controlling memory allocation, our own malloc interferes.
-with_pymalloc="no"
+
+else case e in #(
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; } ;;
+esac
+fi
+
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-hwaddress-sanitizer" >&5
+printf %s "checking for --with-hwaddress-sanitizer... " >&6; }
+
+# Check whether --with-hwaddress_sanitizer was given.
+if test ${with_hwaddress_sanitizer+y}
+then :
+  withval=$with_hwaddress_sanitizer;
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
+printf "%s\n" "$withval" >&6; }
+hwasan_flags="-fsanitize=hwaddress"
+# x86-64 lacks address tagging, so HWASan needs the page aliasing mode there.
+# See gh-156049 and
+# https://clang.llvm.org/docs/HardwareAssistedAddressSanitizerDesign.html#supported-architectures
+case $host_cpu in #(
+  x86_64|amd64) :
+    hwasan_flags="$hwasan_flags -fsanitize-hwaddress-experimental-aliasing"
+ ;; #(
+  *) :
+     ;;
+esac
+as_CACHEVAR=`printf "%s\n" "ax_cv_check_cflags__$hwasan_flags" | sed "$as_sed_sh"`
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts $hwasan_flags" >&5
+printf %s "checking whether C compiler accepts $hwasan_flags... " >&6; }
+if eval test \${$as_CACHEVAR+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  $hwasan_flags"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  eval "$as_CACHEVAR=yes"
+else case e in #(
+  e) eval "$as_CACHEVAR=no" ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags ;;
+esac
+fi
+eval ac_res=\$$as_CACHEVAR
+	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+printf "%s\n" "$ac_res" >&6; }
+if eval test \"x\$"$as_CACHEVAR"\" = x"yes"
+then :
+
+BASECFLAGS="$hwasan_flags -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="$hwasan_flags $LDFLAGS"
+
+else case e in #(
+  e) as_fn_error $? "The selected compiler doesn't support hardware address sanitizer" "$LINENO" 5 ;;
+esac
+fi
+
 
 else case e in #(
   e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -14036,8 +14288,6 @@ else case e in #(
 esac
 fi
 
-# MSan works by controlling memory allocation, our own malloc interferes.
-with_pymalloc="no"
 
 else case e in #(
   e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -14353,7 +14603,11 @@ printf "%s\n" "#define THREAD_STACK_SIZE 0x$stack_size" >>confdefs.h
 			fi
 			LINKFORSHARED="$LINKFORSHARED"
 		elif test $ac_sys_system = "iOS"; then
-			LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)'
+			LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED"
+
+			if test "$enable_framework"; then
+				LINKFORSHARED="$LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)'
+			fi
 		fi
 		;;
 	OpenUNIX*|UnixWare*) LINKFORSHARED="-Wl,-Bexport";;
@@ -14729,7 +14983,7 @@ fi
 printf "%s\n" "$ac_cv_have_iconv" >&6; }
   if test "$ac_cv_have_iconv" != no; then
 
-printf "%s\n" "#define HAVE_ICONV 1" >>confdefs.h
+printf "%s\n" "#define _Py_HAVE_ICONV 1" >>confdefs.h
 
     if test "$ac_cv_have_iconv" = -liconv; then
       LIBS="-liconv $LIBS"
@@ -15283,9 +15537,10 @@ then :
 
 fi
 
-# gh-124228: While the libuuid library is available on NetBSD, it supports only UUID version 4.
+# gh-124228: While the libuuid library is available on NetBSD and OpenBSD,
+# it supports only UUID version 4.
 # This restriction inhibits the proper generation of time-based UUIDs.
-if test "$ac_sys_system" = "NetBSD"; then
+if test "$ac_sys_system" = "NetBSD" || test "$ac_sys_system" = "OpenBSD"; then
   have_uuid=missing
   printf "%s\n" "#define HAVE_UUID_H 0" >>confdefs.h
 
@@ -16501,7 +16756,7 @@ int main(void)
     {
         return 2;
     }
-    ffi_arg rc;
+    ffi_arg rc = 0;
     ffi_call(&cif, FFI_FN(z_is_expected), &rc, values);
     return !rc;
 }
@@ -16533,6 +16788,67 @@ printf "%s\n" "$ac_cv_ffi_complex_double_supported" >&6; }
 if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
 
 printf "%s\n" "#define _Py_FFI_SUPPORT_C_COMPLEX 1" >>confdefs.h
+
+fi
+
+# Check for native half-float type (_Float16).
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for _Float16 support" >&5
+printf %s "checking for _Float16 support... " >&6; }
+if test ${ac_cv_float16_supported+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+CFLAGS="$CFLAGS -O0"
+if test "$cross_compiling" = yes
+then :
+  ac_cv_float16_supported=no
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <math.h>
+int main(void)
+{
+    _Float16 val = 1.0f16;
+    int test = isinf(val) || isnan(val); /* basic support from libm */
+    double d = 3.14;
+    val = d;
+    return test;
+}
+
+_ACEOF
+if ac_fn_c_try_run "$LINENO"
+then :
+  ac_cv_float16_supported=yes
+else case e in #(
+  e) ac_cv_float16_supported=no ;;
+esac
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
+esac
+fi
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+ ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_float16_supported" >&5
+printf "%s\n" "$ac_cv_float16_supported" >&6; }
+if test "x$ac_cv_float16_supported" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_FLOAT16 1" >>confdefs.h
 
 fi
 
@@ -18206,6 +18522,34 @@ esac
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $have_ndbm ($dbm_ndbm)" >&5
 printf "%s\n" "$have_ndbm ($dbm_ndbm)" >&6; }
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether ndbm.h is provided by gdbm" >&5
+printf %s "checking whether ndbm.h is provided by gdbm... " >&6; }
+if test ${ac_cv_ndbm_h_is_gdbm+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+                 #include <ndbm.h>
+                 #ifndef _GDBM_H_
+                 #error "not gdbm"
+                 #endif
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_ndbm_h_is_gdbm=yes
+else case e in #(
+  e) ac_cv_ndbm_h_is_gdbm=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_ndbm_h_is_gdbm" >&5
+printf "%s\n" "$ac_cv_ndbm_h_is_gdbm" >&6; }
+
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gdbm/ndbm.h" >&5
 printf %s "checking for gdbm/ndbm.h... " >&6; }
 if test ${ac_cv_header_gdbm_slash_ndbm_h+y}
@@ -18481,6 +18825,10 @@ for db in $with_dbmliborder; do
       if test "$have_ndbm" = yes; then
         DBM_CFLAGS="-DUSE_NDBM"
         DBM_LIBS="$dbm_ndbm"
+        if test "x$ac_cv_ndbm_h_is_gdbm" = xyes
+then :
+  DBM_LIBS="$DBM_LIBS $GDBM_LIBS"
+fi
         have_dbm=yes
         break
       fi
@@ -18488,7 +18836,7 @@ for db in $with_dbmliborder; do
     gdbm)
       if test "$have_gdbm_compat" = yes; then
         DBM_CFLAGS="-DUSE_GDBM_COMPAT"
-        DBM_LIBS="-lgdbm_compat"
+        DBM_LIBS="-lgdbm_compat $GDBM_LIBS"
         have_dbm=yes
         break
       fi
@@ -20031,8 +20379,21 @@ PLATFORM_OBJS=
 case $ac_sys_system in #(
   Emscripten) :
 
-    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_trampoline_wasm.o Python/emscripten_syscalls.o'
-    as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'
+    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/wasm_trampoline.o'
+    as_fn_append CFLAGS_NODIST " -mgc"
+
+    if test "x$enable_emscripten_syscalls" = xyes
+then :
+
+      as_fn_append PLATFORM_OBJS ' Python/emscripten_syscalls.o'
+
+fi
+    as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_signal.h'
+   ;; #(
+  WASI) :
+
+    as_fn_append PLATFORM_OBJS ' Python/wasm_trampoline.o'
+    as_fn_append CFLAGS_NODIST " -mgc"
    ;; #(
   *) :
      ;;
@@ -20050,6 +20411,15 @@ ac_fn_c_check_func "$LINENO" "dlopen" "ac_cv_func_dlopen"
 if test "x$ac_cv_func_dlopen" = xyes
 then :
   printf "%s\n" "#define HAVE_DLOPEN 1" >>confdefs.h
+
+fi
+
+
+# Used by ctypes.util.dllist().
+ac_fn_c_check_func "$LINENO" "dl_iterate_phdr" "ac_cv_func_dl_iterate_phdr"
+if test "x$ac_cv_func_dl_iterate_phdr" = xyes
+then :
+  printf "%s\n" "#define HAVE_DL_ITERATE_PHDR 1" >>confdefs.h
 
 fi
 
@@ -20102,14 +20472,9 @@ printf "%s\n" "$MACHDEP_OBJS" >&6; }
 fi
 
 if test "$ac_sys_system" = "Linux-android"; then
-  # When these functions are used in an unprivileged process, they crash rather
-  # than returning an error.
-  blocked_funcs="chroot initgroups setegid seteuid setgid sethostname
-    setregid setresgid setresuid setreuid setuid"
-
   # These functions are unimplemented and always return an error
   # (https://android.googlesource.com/platform/system/sepolicy/+/refs/heads/android13-release/public/domain.te#1044)
-  blocked_funcs="$blocked_funcs sem_open sem_unlink"
+  blocked_funcs="sem_open sem_unlink"
 
   # Before API level 23, when fchmodat is called with the unimplemented flag
   # AT_SYMLINK_NOFOLLOW, instead of returning ENOTSUP as it should, it actually
@@ -20337,6 +20702,12 @@ then :
   printf "%s\n" "#define HAVE_GAI_STRERROR 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "getdents64" "ac_cv_func_getdents64"
+if test "x$ac_cv_func_getdents64" = xyes
+then :
+  printf "%s\n" "#define HAVE_GETDENTS64 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "getegid" "ac_cv_func_getegid"
 if test "x$ac_cv_func_getegid" = xyes
 then :
@@ -20511,6 +20882,12 @@ then :
   printf "%s\n" "#define HAVE_GETSPNAM 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "gettid" "ac_cv_func_gettid"
+if test "x$ac_cv_func_gettid" = xyes
+then :
+  printf "%s\n" "#define HAVE_GETTID 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "getuid" "ac_cv_func_getuid"
 if test "x$ac_cv_func_getuid" = xyes
 then :
@@ -20529,10 +20906,22 @@ then :
   printf "%s\n" "#define HAVE_GRANTPT 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "if_indextoname" "ac_cv_func_if_indextoname"
+if test "x$ac_cv_func_if_indextoname" = xyes
+then :
+  printf "%s\n" "#define HAVE_IF_INDEXTONAME 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "if_nameindex" "ac_cv_func_if_nameindex"
 if test "x$ac_cv_func_if_nameindex" = xyes
 then :
   printf "%s\n" "#define HAVE_IF_NAMEINDEX 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "if_nametoindex" "ac_cv_func_if_nametoindex"
+if test "x$ac_cv_func_if_nametoindex" = xyes
+then :
+  printf "%s\n" "#define HAVE_IF_NAMETOINDEX 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "initgroups" "ac_cv_func_initgroups"
@@ -20677,6 +21066,24 @@ ac_fn_c_check_func "$LINENO" "pause" "ac_cv_func_pause"
 if test "x$ac_cv_func_pause" = xyes
 then :
   printf "%s\n" "#define HAVE_PAUSE 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "pidfd_open" "ac_cv_func_pidfd_open"
+if test "x$ac_cv_func_pidfd_open" = xyes
+then :
+  printf "%s\n" "#define HAVE_PIDFD_OPEN 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "pidfd_getfd" "ac_cv_func_pidfd_getfd"
+if test "x$ac_cv_func_pidfd_getfd" = xyes
+then :
+  printf "%s\n" "#define HAVE_PIDFD_GETFD 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "pidfd_send_signal" "ac_cv_func_pidfd_send_signal"
+if test "x$ac_cv_func_pidfd_send_signal" = xyes
+then :
+  printf "%s\n" "#define HAVE_PIDFD_SEND_SIGNAL 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "pipe" "ac_cv_func_pipe"
@@ -21321,6 +21728,50 @@ then :
   printf "%s\n" "#define HAVE_WRITEV 1" >>confdefs.h
 
 fi
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for strerror_r" >&5
+printf %s "checking for strerror_r... " >&6; }
+if test ${ac_cv_func_strerror_r+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <string.h>
+int
+main (void)
+{
+void *x=strerror_r
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_strerror_r=yes
+else case e in #(
+  e) ac_cv_func_strerror_r=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_strerror_r" >&5
+printf "%s\n" "$ac_cv_func_strerror_r" >&6; }
+  if test "x$ac_cv_func_strerror_r" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_STRERROR_R 1" >>confdefs.h
+
+fi
+
+
+
+
 
 
 # os.statx uses Linux's statx function.  AIX also has a function named statx,
@@ -22621,6 +23072,30 @@ fi
 
 
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-zlib" >&5
+printf %s "checking for --with-zlib... " >&6; }
+
+# Check whether --with-zlib was given.
+if test ${with_zlib+y}
+then :
+  withval=$with_zlib; case $with_zlib in #(
+  yes|auto) :
+    with_zlib=auto ;; #(
+  zlib|zlib-ng|zlib-rs|no) :
+     ;; #(
+  *) :
+    as_fn_error $? "proper usage is --with(out)-zlib[=zlib|zlib-ng|zlib-rs|no]" "$LINENO" 5 ;;
+esac
+else case e in #(
+  e) with_zlib=auto ;;
+esac
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_zlib" >&5
+printf "%s\n" "$with_zlib" >&6; }
+
+case $with_zlib in #(
+  auto|zlib) :
 
 
 
@@ -22633,23 +23108,47 @@ then :
 fi
 
 
+ ;; #(
+  *) :
+     ;;
+esac
 
+if test "x$with_zlib" = xzlib-rs
+then :
 
+  zlib_name="libz_rs"
+  zlib_version="0.6.0"
+  zlib_libname="z_rs"
+
+else case e in #(
+  e)
+  zlib_name="zlib"
+  zlib_version="1.2.2.1"
+  zlib_libname="z"
+ ;;
+esac
+fi
+
+if test "x$with_zlib" = xno
+then :
+  have_zlib=no
+else case e in #(
+  e)
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for zlib >= 1.2.2.1" >&5
-printf %s "checking for zlib >= 1.2.2.1... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $zlib_name >= $zlib_version" >&5
+printf %s "checking for $zlib_name >= $zlib_version... " >&6; }
 
 if test -n "$ZLIB_CFLAGS"; then
     pkg_cv_ZLIB_CFLAGS="$ZLIB_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"zlib >= 1.2.2.1\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "zlib >= 1.2.2.1") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"\$zlib_name >= \$zlib_version\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "$zlib_name >= $zlib_version") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_ZLIB_CFLAGS=`$PKG_CONFIG --cflags "zlib >= 1.2.2.1" 2>/dev/null`
+  pkg_cv_ZLIB_CFLAGS=`$PKG_CONFIG --cflags "$zlib_name >= $zlib_version" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -22661,12 +23160,12 @@ if test -n "$ZLIB_LIBS"; then
     pkg_cv_ZLIB_LIBS="$ZLIB_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"zlib >= 1.2.2.1\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "zlib >= 1.2.2.1") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"\$zlib_name >= \$zlib_version\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "$zlib_name >= $zlib_version") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_ZLIB_LIBS=`$PKG_CONFIG --libs "zlib >= 1.2.2.1" 2>/dev/null`
+  pkg_cv_ZLIB_LIBS=`$PKG_CONFIG --libs "$zlib_name >= $zlib_version" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -22687,9 +23186,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-                ZLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "zlib >= 1.2.2.1" 2>&1`
+                ZLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "$zlib_name >= $zlib_version" 2>&1`
         else
-                ZLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "zlib >= 1.2.2.1" 2>&1`
+                ZLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "$zlib_name >= $zlib_version" 2>&1`
         fi
         # Put the nasty error message in config.log where it belongs
         echo "$ZLIB_PKG_ERRORS" >&5
@@ -22711,14 +23210,15 @@ then :
   printf "%s\n" "#define HAVE_ZLIB_H 1" >>confdefs.h
 
       py_check_lib_save_LIBS=$LIBS
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
-printf %s "checking for gzread in -lz... " >&6; }
-if test ${ac_cv_lib_z_gzread+y}
+as_ac_Lib=`printf "%s\n" "ac_cv_lib_$zlib_libname""_gzread" | sed "$as_sed_sh"`
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gzread in -l$zlib_libname" >&5
+printf %s "checking for gzread in -l$zlib_libname... " >&6; }
+if eval test \${$as_ac_Lib+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-lz  $LIBS"
+LIBS="-l$zlib_libname  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -22742,9 +23242,9 @@ return gzread ();
 _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
-  ac_cv_lib_z_gzread=yes
+  eval "$as_ac_Lib=yes"
 else case e in #(
-  e) ac_cv_lib_z_gzread=no ;;
+  e) eval "$as_ac_Lib=no" ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
@@ -22752,9 +23252,10 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
 LIBS=$ac_check_lib_save_LIBS ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_gzread" >&5
-printf "%s\n" "$ac_cv_lib_z_gzread" >&6; }
-if test "x$ac_cv_lib_z_gzread" = xyes
+eval ac_res=\$$as_ac_Lib
+	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+printf "%s\n" "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"
 then :
   have_zlib=yes
 else case e in #(
@@ -22775,16 +23276,17 @@ done
 then :
 
       ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
-      ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
+      ZLIB_LIBS=${ZLIB_LIBS-"-l$zlib_libname"}
       py_check_lib_save_LIBS=$LIBS
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
-printf %s "checking for inflateCopy in -lz... " >&6; }
-if test ${ac_cv_lib_z_inflateCopy+y}
+as_ac_Lib=`printf "%s\n" "ac_cv_lib_$zlib_libname""_inflateCopy" | sed "$as_sed_sh"`
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -l$zlib_libname" >&5
+printf %s "checking for inflateCopy in -l$zlib_libname... " >&6; }
+if eval test \${$as_ac_Lib+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-lz  $LIBS"
+LIBS="-l$zlib_libname  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -22808,9 +23310,9 @@ return inflateCopy ();
 _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
-  ac_cv_lib_z_inflateCopy=yes
+  eval "$as_ac_Lib=yes"
 else case e in #(
-  e) ac_cv_lib_z_inflateCopy=no ;;
+  e) eval "$as_ac_Lib=no" ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
@@ -22818,9 +23320,10 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
 LIBS=$ac_check_lib_save_LIBS ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_inflateCopy" >&5
-printf "%s\n" "$ac_cv_lib_z_inflateCopy" >&6; }
-if test "x$ac_cv_lib_z_inflateCopy" = xyes
+eval ac_res=\$$as_ac_Lib
+	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+printf "%s\n" "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"
 then :
   printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
 
@@ -22858,14 +23361,15 @@ then :
   printf "%s\n" "#define HAVE_ZLIB_H 1" >>confdefs.h
 
       py_check_lib_save_LIBS=$LIBS
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
-printf %s "checking for gzread in -lz... " >&6; }
-if test ${ac_cv_lib_z_gzread+y}
+as_ac_Lib=`printf "%s\n" "ac_cv_lib_$zlib_libname""_gzread" | sed "$as_sed_sh"`
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gzread in -l$zlib_libname" >&5
+printf %s "checking for gzread in -l$zlib_libname... " >&6; }
+if eval test \${$as_ac_Lib+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-lz  $LIBS"
+LIBS="-l$zlib_libname  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -22889,9 +23393,9 @@ return gzread ();
 _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
-  ac_cv_lib_z_gzread=yes
+  eval "$as_ac_Lib=yes"
 else case e in #(
-  e) ac_cv_lib_z_gzread=no ;;
+  e) eval "$as_ac_Lib=no" ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
@@ -22899,9 +23403,10 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
 LIBS=$ac_check_lib_save_LIBS ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_gzread" >&5
-printf "%s\n" "$ac_cv_lib_z_gzread" >&6; }
-if test "x$ac_cv_lib_z_gzread" = xyes
+eval ac_res=\$$as_ac_Lib
+	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+printf "%s\n" "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"
 then :
   have_zlib=yes
 else case e in #(
@@ -22922,16 +23427,17 @@ done
 then :
 
       ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
-      ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
+      ZLIB_LIBS=${ZLIB_LIBS-"-l$zlib_libname"}
       py_check_lib_save_LIBS=$LIBS
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
-printf %s "checking for inflateCopy in -lz... " >&6; }
-if test ${ac_cv_lib_z_inflateCopy+y}
+as_ac_Lib=`printf "%s\n" "ac_cv_lib_$zlib_libname""_inflateCopy" | sed "$as_sed_sh"`
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -l$zlib_libname" >&5
+printf %s "checking for inflateCopy in -l$zlib_libname... " >&6; }
+if eval test \${$as_ac_Lib+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-lz  $LIBS"
+LIBS="-l$zlib_libname  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -22955,9 +23461,9 @@ return inflateCopy ();
 _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
-  ac_cv_lib_z_inflateCopy=yes
+  eval "$as_ac_Lib=yes"
 else case e in #(
-  e) ac_cv_lib_z_inflateCopy=no ;;
+  e) eval "$as_ac_Lib=no" ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
@@ -22965,9 +23471,10 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
 LIBS=$ac_check_lib_save_LIBS ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_inflateCopy" >&5
-printf "%s\n" "$ac_cv_lib_z_inflateCopy" >&6; }
-if test "x$ac_cv_lib_z_inflateCopy" = xyes
+eval ac_res=\$$as_ac_Lib
+	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+printf "%s\n" "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"
 then :
   printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
 
@@ -22996,6 +23503,51 @@ printf "%s\n" "yes" >&6; }
 
 
 fi
+ ;;
+esac
+fi
+
+if test "x$with_zlib" = xzlib-ng
+then :
+  if test "x$have_zlib" = xyes
+then :
+
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
+    ac_fn_check_decl "$LINENO" "ZLIBNG_VERSION" "ac_cv_have_decl_ZLIBNG_VERSION" "#include <zlib.h>
+" "$ac_c_undeclared_builtin_options" "CFLAGS"
+if test "x$ac_cv_have_decl_ZLIBNG_VERSION" = xyes
+then :
+
+else case e in #(
+  e) as_fn_error $? "--with-zlib=zlib-ng: the detected zlib library is not zlib-ng" "$LINENO" 5 ;;
+esac
+fi
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
+fi
+fi
+
+case $with_zlib in #(
+  auto|no) :
+     ;; #(
+  *) :
+    if test "x$have_zlib" = xno
+then :
+  as_fn_error $? "--with-zlib=$with_zlib requested but $zlib_name was not found" "$LINENO" 5
+fi ;;
+esac
 
 if test "x$have_zlib" = xyes
 then :
@@ -23005,6 +23557,30 @@ then :
 
 fi
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-bzip2" >&5
+printf %s "checking for --with-bzip2... " >&6; }
+
+# Check whether --with-bzip2 was given.
+if test ${with_bzip2+y}
+then :
+  withval=$with_bzip2; case $with_bzip2 in #(
+  yes|auto) :
+    with_bzip2=auto ;; #(
+  bzip2|bzip2-rs|no) :
+     ;; #(
+  *) :
+    as_fn_error $? "proper usage is --with(out)-bzip2[=bzip2|bzip2-rs|no]" "$LINENO" 5 ;;
+esac
+else case e in #(
+  e) with_bzip2=auto ;;
+esac
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_bzip2" >&5
+printf "%s\n" "$with_bzip2" >&6; }
+
+case $with_bzip2 in #(
+  auto|bzip2) :
 
 
 
@@ -23017,23 +23593,45 @@ then :
 fi
 
 
+ ;; #(
+  *) :
+     ;;
+esac
 
+if test "x$with_bzip2" = xbzip2-rs
+then :
 
+  bzip2_name="libbz2_rs"
+  bzip2_libname="bz2_rs"
+
+else case e in #(
+  e)
+  bzip2_name="bzip2"
+  bzip2_libname="bz2"
+ ;;
+esac
+fi
+
+if test "x$with_bzip2" = xno
+then :
+  have_bzip2=no
+else case e in #(
+  e)
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for bzip2" >&5
-printf %s "checking for bzip2... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $bzip2_name" >&5
+printf %s "checking for $bzip2_name... " >&6; }
 
 if test -n "$BZIP2_CFLAGS"; then
     pkg_cv_BZIP2_CFLAGS="$BZIP2_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"bzip2\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "bzip2") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"\$bzip2_name\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "$bzip2_name") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_BZIP2_CFLAGS=`$PKG_CONFIG --cflags "bzip2" 2>/dev/null`
+  pkg_cv_BZIP2_CFLAGS=`$PKG_CONFIG --cflags "$bzip2_name" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -23045,12 +23643,12 @@ if test -n "$BZIP2_LIBS"; then
     pkg_cv_BZIP2_LIBS="$BZIP2_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"bzip2\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "bzip2") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"\$bzip2_name\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "$bzip2_name") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_BZIP2_LIBS=`$PKG_CONFIG --libs "bzip2" 2>/dev/null`
+  pkg_cv_BZIP2_LIBS=`$PKG_CONFIG --libs "$bzip2_name" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -23071,9 +23669,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-                BZIP2_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "bzip2" 2>&1`
+                BZIP2_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "$bzip2_name" 2>&1`
         else
-                BZIP2_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "bzip2" 2>&1`
+                BZIP2_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "$bzip2_name" 2>&1`
         fi
         # Put the nasty error message in config.log where it belongs
         echo "$BZIP2_PKG_ERRORS" >&5
@@ -23094,14 +23692,15 @@ if test "x$ac_cv_header_bzlib_h" = xyes
 then :
   printf "%s\n" "#define HAVE_BZLIB_H 1" >>confdefs.h
 
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for BZ2_bzCompress in -lbz2" >&5
-printf %s "checking for BZ2_bzCompress in -lbz2... " >&6; }
-if test ${ac_cv_lib_bz2_BZ2_bzCompress+y}
+      as_ac_Lib=`printf "%s\n" "ac_cv_lib_$bzip2_libname""_BZ2_bzCompress" | sed "$as_sed_sh"`
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for BZ2_bzCompress in -l$bzip2_libname" >&5
+printf %s "checking for BZ2_bzCompress in -l$bzip2_libname... " >&6; }
+if eval test \${$as_ac_Lib+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-lbz2  $LIBS"
+LIBS="-l$bzip2_libname  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -23125,9 +23724,9 @@ return BZ2_bzCompress ();
 _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
-  ac_cv_lib_bz2_BZ2_bzCompress=yes
+  eval "$as_ac_Lib=yes"
 else case e in #(
-  e) ac_cv_lib_bz2_BZ2_bzCompress=no ;;
+  e) eval "$as_ac_Lib=no" ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
@@ -23135,9 +23734,10 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
 LIBS=$ac_check_lib_save_LIBS ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_bz2_BZ2_bzCompress" >&5
-printf "%s\n" "$ac_cv_lib_bz2_BZ2_bzCompress" >&6; }
-if test "x$ac_cv_lib_bz2_BZ2_bzCompress" = xyes
+eval ac_res=\$$as_ac_Lib
+	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+printf "%s\n" "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"
 then :
   have_bzip2=yes
 else case e in #(
@@ -23156,7 +23756,7 @@ done
 then :
 
       BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
-      BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
+      BZIP2_LIBS=${BZIP2_LIBS-"-l$bzip2_libname"}
 
 fi
 
@@ -23186,14 +23786,15 @@ if test "x$ac_cv_header_bzlib_h" = xyes
 then :
   printf "%s\n" "#define HAVE_BZLIB_H 1" >>confdefs.h
 
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for BZ2_bzCompress in -lbz2" >&5
-printf %s "checking for BZ2_bzCompress in -lbz2... " >&6; }
-if test ${ac_cv_lib_bz2_BZ2_bzCompress+y}
+      as_ac_Lib=`printf "%s\n" "ac_cv_lib_$bzip2_libname""_BZ2_bzCompress" | sed "$as_sed_sh"`
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for BZ2_bzCompress in -l$bzip2_libname" >&5
+printf %s "checking for BZ2_bzCompress in -l$bzip2_libname... " >&6; }
+if eval test \${$as_ac_Lib+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-lbz2  $LIBS"
+LIBS="-l$bzip2_libname  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -23217,9 +23818,9 @@ return BZ2_bzCompress ();
 _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
-  ac_cv_lib_bz2_BZ2_bzCompress=yes
+  eval "$as_ac_Lib=yes"
 else case e in #(
-  e) ac_cv_lib_bz2_BZ2_bzCompress=no ;;
+  e) eval "$as_ac_Lib=no" ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
@@ -23227,9 +23828,10 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
 LIBS=$ac_check_lib_save_LIBS ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_bz2_BZ2_bzCompress" >&5
-printf "%s\n" "$ac_cv_lib_bz2_BZ2_bzCompress" >&6; }
-if test "x$ac_cv_lib_bz2_BZ2_bzCompress" = xyes
+eval ac_res=\$$as_ac_Lib
+	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+printf "%s\n" "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"
 then :
   have_bzip2=yes
 else case e in #(
@@ -23248,7 +23850,7 @@ done
 then :
 
       BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
-      BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
+      BZIP2_LIBS=${BZIP2_LIBS-"-l$bzip2_libname"}
 
 fi
 
@@ -23266,6 +23868,19 @@ else
 printf "%s\n" "yes" >&6; }
         have_bzip2=yes
 fi
+ ;;
+esac
+fi
+
+case $with_bzip2 in #(
+  auto|no) :
+     ;; #(
+  *) :
+    if test "x$have_bzip2" = xno
+then :
+  as_fn_error $? "--with-bzip2=$with_bzip2 requested but $bzip2_name was not found" "$LINENO" 5
+fi ;;
+esac
 
 
 pkg_failed=no
@@ -26938,8 +27553,8 @@ esac
 # rounding precision of 64 bits.  For gcc/x86, we can fix this by
 # using inline assembler to get and set the x87 FPU control word.
 
-# This inline assembler syntax may also work for suncc and icc,
-# so we try it on all platforms.
+# This inline assembler syntax works for icx and may also work for
+# suncc and icc, so we try it on all platforms.
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether we can use gcc inline assembler to get and set x87 control word" >&5
 printf %s "checking whether we can use gcc inline assembler to get and set x87 control word... " >&6; }
@@ -27127,22 +27742,296 @@ fi
 
 done
 
-ac_func=
-for ac_item in $ac_func_c_list
-do
-  if test $ac_func; then
-    ac_fn_c_check_func "$LINENO" $ac_func ac_cv_func_$ac_func
-    if eval test \"x\$ac_cv_func_$ac_func\" = xyes; then
-      echo "#define $ac_item 1" >> confdefs.h
-    fi
-    ac_func=
-  else
-    ac_func=$ac_item
-  fi
-done
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for acospi" >&5
+printf %s "checking for acospi... " >&6; }
+if test ${ac_cv_func_acospi+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <math.h>
+int
+main (void)
+{
+void *x=acospi
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_acospi=yes
+else case e in #(
+  e) ac_cv_func_acospi=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_acospi" >&5
+printf "%s\n" "$ac_cv_func_acospi" >&6; }
+  if test "x$ac_cv_func_acospi" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_ACOSPI 1" >>confdefs.h
+
+fi
 
 
 
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for asinpi" >&5
+printf %s "checking for asinpi... " >&6; }
+if test ${ac_cv_func_asinpi+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <math.h>
+int
+main (void)
+{
+void *x=asinpi
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_asinpi=yes
+else case e in #(
+  e) ac_cv_func_asinpi=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_asinpi" >&5
+printf "%s\n" "$ac_cv_func_asinpi" >&6; }
+  if test "x$ac_cv_func_asinpi" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_ASINPI 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for atanpi" >&5
+printf %s "checking for atanpi... " >&6; }
+if test ${ac_cv_func_atanpi+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <math.h>
+int
+main (void)
+{
+void *x=atanpi
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_atanpi=yes
+else case e in #(
+  e) ac_cv_func_atanpi=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_atanpi" >&5
+printf "%s\n" "$ac_cv_func_atanpi" >&6; }
+  if test "x$ac_cv_func_atanpi" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_ATANPI 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for atan2pi" >&5
+printf %s "checking for atan2pi... " >&6; }
+if test ${ac_cv_func_atan2pi+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <math.h>
+int
+main (void)
+{
+void *x=atan2pi
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_atan2pi=yes
+else case e in #(
+  e) ac_cv_func_atan2pi=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_atan2pi" >&5
+printf "%s\n" "$ac_cv_func_atan2pi" >&6; }
+  if test "x$ac_cv_func_atan2pi" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_ATAN2PI 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for cospi" >&5
+printf %s "checking for cospi... " >&6; }
+if test ${ac_cv_func_cospi+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <math.h>
+int
+main (void)
+{
+void *x=cospi
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_cospi=yes
+else case e in #(
+  e) ac_cv_func_cospi=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_cospi" >&5
+printf "%s\n" "$ac_cv_func_cospi" >&6; }
+  if test "x$ac_cv_func_cospi" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_COSPI 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for sinpi" >&5
+printf %s "checking for sinpi... " >&6; }
+if test ${ac_cv_func_sinpi+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <math.h>
+int
+main (void)
+{
+void *x=sinpi
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_sinpi=yes
+else case e in #(
+  e) ac_cv_func_sinpi=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_sinpi" >&5
+printf "%s\n" "$ac_cv_func_sinpi" >&6; }
+  if test "x$ac_cv_func_sinpi" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_SINPI 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for tanpi" >&5
+printf %s "checking for tanpi... " >&6; }
+if test ${ac_cv_func_tanpi+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <math.h>
+int
+main (void)
+{
+void *x=tanpi
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_tanpi=yes
+else case e in #(
+  e) ac_cv_func_tanpi=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_tanpi" >&5
+printf "%s\n" "$ac_cv_func_tanpi" >&6; }
+  if test "x$ac_cv_func_tanpi" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_TANPI 1" >>confdefs.h
+
+fi
 
 
 
@@ -27806,22 +28695,25 @@ LDVERSION='$(VERSION)$(ABIFLAGS)'
 printf "%s\n" "$LDVERSION" >&6; }
 
 # Configure the flags and dependencies used when compiling shared modules.
-# Do not rename LIBPYTHON - it's accessed via sysconfig by package build
-# systems (e.g. Meson) to decide whether to link extension modules against
-# libpython.
 
 
 MODULE_DEPS_SHARED='$(MODULE_DEPS_STATIC) $(EXPORTSYMS)'
+
+# On most platforms, extension modules aren't linked against libpython, so
+# LIBPYTHON must be empty.
 LIBPYTHON=''
 
 # On Android and Cygwin the shared libraries must be linked with libpython.
+# LIBPYTHON is used by python-config, python3.pc, the commands for building the
+# stdlib's own extension modules, and external package build systems via
+# sysconfig, so its value must be suitable for all those contexts.
 if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MACHDEP" = "cygwin"); then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(LDLIBRARY)"
-  LIBPYTHON="\$(BLDLIBRARY)"
+  LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
 fi
 
-# On iOS the shared libraries must be linked with the Python framework
-if test "$ac_sys_system" = "iOS"; then
+# On iOS the shared libraries must be linked with the framework, when built
+if test "$ac_sys_system" = "iOS" && test "$enable_framework"; then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(PYTHONFRAMEWORKDIR)/\$(PYTHONFRAMEWORK)"
 fi
 
@@ -29281,9 +30173,36 @@ fi
 have_curses=no
 have_panel=no
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-curses" >&5
+printf %s "checking for --with-curses... " >&6; }
+
+# Check whether --with-curses was given.
+if test ${with_curses+y}
+then :
+  withval=$with_curses; case $with_curses in #(
+  yes|auto) :
+    with_curses=auto ;; #(
+  ncursesw|ncurses|curses|no) :
+     ;; #(
+  *) :
+    as_fn_error $? "proper usage is --with(out)-curses[=ncursesw|ncurses|curses|no]" "$LINENO" 5 ;;
+esac
+else case e in #(
+  e) with_curses=auto ;;
+esac
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_curses" >&5
+printf "%s\n" "$with_curses" >&6; }
 
 
-# Check for ncursesw/panelw first. If that fails, try ncurses/panel.
+
+# Detect the selected backend.  ncursesw/ncurses are found via pkg-config;
+# native curses has no .pc file and is left to the header/link probes below.
+# curses_libs/panel_libs drive the AC_SEARCH_LIBS fallback; for "no" they are
+# empty so nothing links and have_curses stays "no".
+case $with_curses in #(
+  ncursesw) :
 
 
 
@@ -29418,11 +30337,151 @@ fi
         # Put the nasty error message in config.log where it belongs
         echo "$PANEL_PKG_ERRORS" >&5
 
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gnupanel" >&5
+printf %s "checking for gnupanel... " >&6; }
+
+if test -n "$PANEL_CFLAGS"; then
+    pkg_cv_PANEL_CFLAGS="$PANEL_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gnupanel\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gnupanel") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PANEL_CFLAGS=`$PKG_CONFIG --cflags "gnupanel" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$PANEL_LIBS"; then
+    pkg_cv_PANEL_LIBS="$PANEL_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gnupanel\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gnupanel") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PANEL_LIBS=`$PKG_CONFIG --libs "gnupanel" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+                PANEL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "gnupanel" 2>&1`
+        else
+                PANEL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "gnupanel" 2>&1`
+        fi
+        # Put the nasty error message in config.log where it belongs
+        echo "$PANEL_PKG_ERRORS" >&5
+
         have_panel=no
 elif test $pkg_failed = untried; then
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
         have_panel=no
+else
+        PANEL_CFLAGS=$pkg_cv_PANEL_CFLAGS
+        PANEL_LIBS=$pkg_cv_PANEL_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+        have_panel=yes
+fi
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gnupanel" >&5
+printf %s "checking for gnupanel... " >&6; }
+
+if test -n "$PANEL_CFLAGS"; then
+    pkg_cv_PANEL_CFLAGS="$PANEL_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gnupanel\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gnupanel") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PANEL_CFLAGS=`$PKG_CONFIG --cflags "gnupanel" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$PANEL_LIBS"; then
+    pkg_cv_PANEL_LIBS="$PANEL_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gnupanel\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gnupanel") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PANEL_LIBS=`$PKG_CONFIG --libs "gnupanel" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+                PANEL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "gnupanel" 2>&1`
+        else
+                PANEL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "gnupanel" 2>&1`
+        fi
+        # Put the nasty error message in config.log where it belongs
+        echo "$PANEL_PKG_ERRORS" >&5
+
+        have_panel=no
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+        have_panel=no
+else
+        PANEL_CFLAGS=$pkg_cv_PANEL_CFLAGS
+        PANEL_LIBS=$pkg_cv_PANEL_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+        have_panel=yes
+fi
 else
         PANEL_CFLAGS=$pkg_cv_PANEL_CFLAGS
         PANEL_LIBS=$pkg_cv_PANEL_LIBS
@@ -29436,7 +30495,599 @@ fi
 fi
 
 
-if test "x$have_curses" = xno
+               curses_libs="ncursesw"; panel_libs="panelw gnupanel" ;; #(
+  ncurses) :
+
+
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for ncurses" >&5
+printf %s "checking for ncurses... " >&6; }
+
+if test -n "$CURSES_CFLAGS"; then
+    pkg_cv_CURSES_CFLAGS="$CURSES_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncurses\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ncurses") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CURSES_CFLAGS=`$PKG_CONFIG --cflags "ncurses" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$CURSES_LIBS"; then
+    pkg_cv_CURSES_LIBS="$CURSES_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncurses\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ncurses") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CURSES_LIBS=`$PKG_CONFIG --libs "ncurses" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+                CURSES_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "ncurses" 2>&1`
+        else
+                CURSES_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "ncurses" 2>&1`
+        fi
+        # Put the nasty error message in config.log where it belongs
+        echo "$CURSES_PKG_ERRORS" >&5
+
+        have_curses=no
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+        have_curses=no
+else
+        CURSES_CFLAGS=$pkg_cv_CURSES_CFLAGS
+        CURSES_LIBS=$pkg_cv_CURSES_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+printf "%s\n" "#define HAVE_NCURSES 1" >>confdefs.h
+
+   have_curses=yes
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for panel" >&5
+printf %s "checking for panel... " >&6; }
+
+if test -n "$PANEL_CFLAGS"; then
+    pkg_cv_PANEL_CFLAGS="$PANEL_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"panel\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "panel") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PANEL_CFLAGS=`$PKG_CONFIG --cflags "panel" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$PANEL_LIBS"; then
+    pkg_cv_PANEL_LIBS="$PANEL_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"panel\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "panel") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PANEL_LIBS=`$PKG_CONFIG --libs "panel" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+                PANEL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "panel" 2>&1`
+        else
+                PANEL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "panel" 2>&1`
+        fi
+        # Put the nasty error message in config.log where it belongs
+        echo "$PANEL_PKG_ERRORS" >&5
+
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gnupanel" >&5
+printf %s "checking for gnupanel... " >&6; }
+
+if test -n "$PANEL_CFLAGS"; then
+    pkg_cv_PANEL_CFLAGS="$PANEL_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gnupanel\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gnupanel") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PANEL_CFLAGS=`$PKG_CONFIG --cflags "gnupanel" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$PANEL_LIBS"; then
+    pkg_cv_PANEL_LIBS="$PANEL_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gnupanel\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gnupanel") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PANEL_LIBS=`$PKG_CONFIG --libs "gnupanel" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+                PANEL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "gnupanel" 2>&1`
+        else
+                PANEL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "gnupanel" 2>&1`
+        fi
+        # Put the nasty error message in config.log where it belongs
+        echo "$PANEL_PKG_ERRORS" >&5
+
+        have_panel=no
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+        have_panel=no
+else
+        PANEL_CFLAGS=$pkg_cv_PANEL_CFLAGS
+        PANEL_LIBS=$pkg_cv_PANEL_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+        have_panel=yes
+fi
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gnupanel" >&5
+printf %s "checking for gnupanel... " >&6; }
+
+if test -n "$PANEL_CFLAGS"; then
+    pkg_cv_PANEL_CFLAGS="$PANEL_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gnupanel\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gnupanel") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PANEL_CFLAGS=`$PKG_CONFIG --cflags "gnupanel" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$PANEL_LIBS"; then
+    pkg_cv_PANEL_LIBS="$PANEL_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gnupanel\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gnupanel") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PANEL_LIBS=`$PKG_CONFIG --libs "gnupanel" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+                PANEL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "gnupanel" 2>&1`
+        else
+                PANEL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "gnupanel" 2>&1`
+        fi
+        # Put the nasty error message in config.log where it belongs
+        echo "$PANEL_PKG_ERRORS" >&5
+
+        have_panel=no
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+        have_panel=no
+else
+        PANEL_CFLAGS=$pkg_cv_PANEL_CFLAGS
+        PANEL_LIBS=$pkg_cv_PANEL_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+        have_panel=yes
+fi
+else
+        PANEL_CFLAGS=$pkg_cv_PANEL_CFLAGS
+        PANEL_LIBS=$pkg_cv_PANEL_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+printf "%s\n" "#define HAVE_PANEL 1" >>confdefs.h
+
+     have_panel=yes
+fi
+fi
+
+
+               curses_libs="ncurses"; panel_libs="panel gnupanel" ;; #(
+  curses) :
+    curses_libs="curses"; panel_libs="panel" ;; #(
+  no) :
+    curses_libs=""; panel_libs="" ;; #(
+  *) :
+
+
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for ncursesw" >&5
+printf %s "checking for ncursesw... " >&6; }
+
+if test -n "$CURSES_CFLAGS"; then
+    pkg_cv_CURSES_CFLAGS="$CURSES_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncursesw\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ncursesw") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CURSES_CFLAGS=`$PKG_CONFIG --cflags "ncursesw" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$CURSES_LIBS"; then
+    pkg_cv_CURSES_LIBS="$CURSES_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncursesw\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ncursesw") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CURSES_LIBS=`$PKG_CONFIG --libs "ncursesw" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+                CURSES_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "ncursesw" 2>&1`
+        else
+                CURSES_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "ncursesw" 2>&1`
+        fi
+        # Put the nasty error message in config.log where it belongs
+        echo "$CURSES_PKG_ERRORS" >&5
+
+        have_curses=no
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+        have_curses=no
+else
+        CURSES_CFLAGS=$pkg_cv_CURSES_CFLAGS
+        CURSES_LIBS=$pkg_cv_CURSES_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+printf "%s\n" "#define HAVE_NCURSESW 1" >>confdefs.h
+
+   have_curses=yes
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for panelw" >&5
+printf %s "checking for panelw... " >&6; }
+
+if test -n "$PANEL_CFLAGS"; then
+    pkg_cv_PANEL_CFLAGS="$PANEL_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"panelw\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "panelw") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PANEL_CFLAGS=`$PKG_CONFIG --cflags "panelw" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$PANEL_LIBS"; then
+    pkg_cv_PANEL_LIBS="$PANEL_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"panelw\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "panelw") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PANEL_LIBS=`$PKG_CONFIG --libs "panelw" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+                PANEL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "panelw" 2>&1`
+        else
+                PANEL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "panelw" 2>&1`
+        fi
+        # Put the nasty error message in config.log where it belongs
+        echo "$PANEL_PKG_ERRORS" >&5
+
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gnupanel" >&5
+printf %s "checking for gnupanel... " >&6; }
+
+if test -n "$PANEL_CFLAGS"; then
+    pkg_cv_PANEL_CFLAGS="$PANEL_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gnupanel\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gnupanel") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PANEL_CFLAGS=`$PKG_CONFIG --cflags "gnupanel" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$PANEL_LIBS"; then
+    pkg_cv_PANEL_LIBS="$PANEL_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gnupanel\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gnupanel") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PANEL_LIBS=`$PKG_CONFIG --libs "gnupanel" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+                PANEL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "gnupanel" 2>&1`
+        else
+                PANEL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "gnupanel" 2>&1`
+        fi
+        # Put the nasty error message in config.log where it belongs
+        echo "$PANEL_PKG_ERRORS" >&5
+
+        have_panel=no
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+        have_panel=no
+else
+        PANEL_CFLAGS=$pkg_cv_PANEL_CFLAGS
+        PANEL_LIBS=$pkg_cv_PANEL_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+        have_panel=yes
+fi
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gnupanel" >&5
+printf %s "checking for gnupanel... " >&6; }
+
+if test -n "$PANEL_CFLAGS"; then
+    pkg_cv_PANEL_CFLAGS="$PANEL_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gnupanel\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gnupanel") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PANEL_CFLAGS=`$PKG_CONFIG --cflags "gnupanel" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$PANEL_LIBS"; then
+    pkg_cv_PANEL_LIBS="$PANEL_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gnupanel\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gnupanel") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PANEL_LIBS=`$PKG_CONFIG --libs "gnupanel" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+                PANEL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "gnupanel" 2>&1`
+        else
+                PANEL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "gnupanel" 2>&1`
+        fi
+        # Put the nasty error message in config.log where it belongs
+        echo "$PANEL_PKG_ERRORS" >&5
+
+        have_panel=no
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+        have_panel=no
+else
+        PANEL_CFLAGS=$pkg_cv_PANEL_CFLAGS
+        PANEL_LIBS=$pkg_cv_PANEL_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+        have_panel=yes
+fi
+else
+        PANEL_CFLAGS=$pkg_cv_PANEL_CFLAGS
+        PANEL_LIBS=$pkg_cv_PANEL_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+printf "%s\n" "#define HAVE_PANELW 1" >>confdefs.h
+
+     have_panel=yes
+fi
+fi
+
+
+   if test "x$have_curses" = xno
 then :
 
 
@@ -29572,11 +31223,151 @@ fi
         # Put the nasty error message in config.log where it belongs
         echo "$PANEL_PKG_ERRORS" >&5
 
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gnupanel" >&5
+printf %s "checking for gnupanel... " >&6; }
+
+if test -n "$PANEL_CFLAGS"; then
+    pkg_cv_PANEL_CFLAGS="$PANEL_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gnupanel\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gnupanel") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PANEL_CFLAGS=`$PKG_CONFIG --cflags "gnupanel" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$PANEL_LIBS"; then
+    pkg_cv_PANEL_LIBS="$PANEL_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gnupanel\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gnupanel") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PANEL_LIBS=`$PKG_CONFIG --libs "gnupanel" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+                PANEL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "gnupanel" 2>&1`
+        else
+                PANEL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "gnupanel" 2>&1`
+        fi
+        # Put the nasty error message in config.log where it belongs
+        echo "$PANEL_PKG_ERRORS" >&5
+
         have_panel=no
 elif test $pkg_failed = untried; then
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
         have_panel=no
+else
+        PANEL_CFLAGS=$pkg_cv_PANEL_CFLAGS
+        PANEL_LIBS=$pkg_cv_PANEL_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+        have_panel=yes
+fi
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gnupanel" >&5
+printf %s "checking for gnupanel... " >&6; }
+
+if test -n "$PANEL_CFLAGS"; then
+    pkg_cv_PANEL_CFLAGS="$PANEL_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gnupanel\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gnupanel") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PANEL_CFLAGS=`$PKG_CONFIG --cflags "gnupanel" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$PANEL_LIBS"; then
+    pkg_cv_PANEL_LIBS="$PANEL_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gnupanel\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gnupanel") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PANEL_LIBS=`$PKG_CONFIG --libs "gnupanel" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+                PANEL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "gnupanel" 2>&1`
+        else
+                PANEL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "gnupanel" 2>&1`
+        fi
+        # Put the nasty error message in config.log where it belongs
+        echo "$PANEL_PKG_ERRORS" >&5
+
+        have_panel=no
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+        have_panel=no
+else
+        PANEL_CFLAGS=$pkg_cv_PANEL_CFLAGS
+        PANEL_LIBS=$pkg_cv_PANEL_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+        have_panel=yes
+fi
 else
         PANEL_CFLAGS=$pkg_cv_PANEL_CFLAGS
         PANEL_LIBS=$pkg_cv_PANEL_LIBS
@@ -29591,6 +31382,8 @@ fi
 
 
 fi
+   curses_libs="ncursesw ncurses"; panel_libs="panelw panel gnupanel" ;;
+esac
 
 save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
@@ -29598,9 +31391,28 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-  # Make sure we've got the header defines.
+  # Make sure we've got the header defines.  For the native "curses" backend,
+  # probe only the plain headers: a system may also have ncurses headers (e.g.
+  # ncurses/curses.h), and picking those while linking the native library mixes
+  # incompatible declarations (e.g. tparm()) with the native <term.h>.
   as_fn_append CPPFLAGS " $CURSES_CFLAGS $PANEL_CFLAGS"
-  ac_fn_c_check_header_compile "$LINENO" "ncursesw/curses.h" "ac_cv_header_ncursesw_curses_h" "$ac_includes_default"
+  if test "x$with_curses" = xcurses
+then :
+  ac_fn_c_check_header_compile "$LINENO" "curses.h" "ac_cv_header_curses_h" "$ac_includes_default"
+if test "x$ac_cv_header_curses_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_CURSES_H 1" >>confdefs.h
+
+fi
+ac_fn_c_check_header_compile "$LINENO" "panel.h" "ac_cv_header_panel_h" "$ac_includes_default"
+if test "x$ac_cv_header_panel_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_PANEL_H 1" >>confdefs.h
+
+fi
+
+else case e in #(
+  e) ac_fn_c_check_header_compile "$LINENO" "ncursesw/curses.h" "ac_cv_header_ncursesw_curses_h" "$ac_includes_default"
 if test "x$ac_cv_header_ncursesw_curses_h" = xyes
 then :
   printf "%s\n" "#define HAVE_NCURSESW_CURSES_H 1" >>confdefs.h
@@ -29654,11 +31466,14 @@ then :
   printf "%s\n" "#define HAVE_PANEL_H 1" >>confdefs.h
 
 fi
-
+ ;;
+esac
+fi
 
   # Check that we're able to link with crucial curses/panel functions. This
-  # also serves as a fallback in case pkg-config failed.
-  as_fn_append LIBS " $CURSES_LIBS $PANEL_LIBS"
+  # also serves as a fallback in case pkg-config failed. Extension modules are
+  # not linked with LIBS, so exclude it to get the required libraries.
+  LIBS="$CURSES_LIBS $PANEL_LIBS"
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing initscr" >&5
 printf %s "checking for library containing initscr... " >&6; }
 if test ${ac_cv_search_initscr+y}
@@ -29687,7 +31502,7 @@ return initscr ();
   return 0;
 }
 _ACEOF
-for ac_lib in '' ncursesw ncurses
+for ac_lib in '' $curses_libs
 do
   if test -z "$ac_lib"; then
     ac_res="none required"
@@ -29761,7 +31576,7 @@ return update_panels ();
   return 0;
 }
 _ACEOF
-for ac_lib in '' panelw panel
+for ac_lib in '' $panel_libs
 do
   if test -z "$ac_lib"; then
     ac_res="none required"
@@ -29810,7 +31625,7 @@ fi
 
 
 
-if test "have_curses" != "no"
+if test "$have_curses" != "no"
 then :
 
 CURSES_CFLAGS=$(echo $CURSES_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
@@ -29824,6 +31639,71 @@ then :
 fi
 
 PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
+
+case $with_curses in #(
+  ncursesw|no) :
+     ;; #(
+  *) :
+
+          save_curses_cppflags=$CPPFLAGS
+  as_fn_append CPPFLAGS " $CURSES_CFLAGS"
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether curses supports wide characters" >&5
+printf %s "checking whether curses supports wide characters... " >&6; }
+if test ${ac_cv_curses_wide+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        cchar_t wcval;
+        setcchar(&wcval, L"x", A_NORMAL, 0, NULL);
+        add_wch(&wcval);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_curses_wide=yes
+else case e in #(
+  e) ac_cv_curses_wide=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_curses_wide" >&5
+printf "%s\n" "$ac_cv_curses_wide" >&6; }
+  CPPFLAGS=$save_curses_cppflags
+      if test "x$ac_cv_curses_wide" = xyes
+then :
+  printf "%s\n" "#define HAVE_NCURSESW 1" >>confdefs.h
+
+fi
+ ;;
+esac
 
 # On Solaris, term.h requires curses.h
 ac_fn_c_check_header_compile "$LINENO" "term.h" "ac_cv_header_term_h" "
@@ -29997,21 +31877,22 @@ main (void)
 {
 
         #ifndef is_pad
-        void *x=is_pad
+        void * volatile x = (void *)is_pad; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_is_pad=yes
 else case e in #(
   e) ac_cv_lib_curses_is_pad=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -30057,21 +31938,22 @@ main (void)
 {
 
         #ifndef is_term_resized
-        void *x=is_term_resized
+        void * volatile x = (void *)is_term_resized; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_is_term_resized=yes
 else case e in #(
   e) ac_cv_lib_curses_is_term_resized=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -30117,21 +31999,22 @@ main (void)
 {
 
         #ifndef resize_term
-        void *x=resize_term
+        void * volatile x = (void *)resize_term; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_resize_term=yes
 else case e in #(
   e) ac_cv_lib_curses_resize_term=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -30177,21 +32060,22 @@ main (void)
 {
 
         #ifndef resizeterm
-        void *x=resizeterm
+        void * volatile x = (void *)resizeterm; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_resizeterm=yes
 else case e in #(
   e) ac_cv_lib_curses_resizeterm=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -30237,21 +32121,22 @@ main (void)
 {
 
         #ifndef immedok
-        void *x=immedok
+        void * volatile x = (void *)immedok; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_immedok=yes
 else case e in #(
   e) ac_cv_lib_curses_immedok=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -30297,21 +32182,22 @@ main (void)
 {
 
         #ifndef syncok
-        void *x=syncok
+        void * volatile x = (void *)syncok; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_syncok=yes
 else case e in #(
   e) ac_cv_lib_curses_syncok=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -30357,21 +32243,22 @@ main (void)
 {
 
         #ifndef wchgat
-        void *x=wchgat
+        void * volatile x = (void *)wchgat; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_wchgat=yes
 else case e in #(
   e) ac_cv_lib_curses_wchgat=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -30417,21 +32304,22 @@ main (void)
 {
 
         #ifndef filter
-        void *x=filter
+        void * volatile x = (void *)filter; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_filter=yes
 else case e in #(
   e) ac_cv_lib_curses_filter=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -30477,21 +32365,22 @@ main (void)
 {
 
         #ifndef nofilter
-        void *x=nofilter
+        void * volatile x = (void *)nofilter; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_nofilter=yes
 else case e in #(
   e) ac_cv_lib_curses_nofilter=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -30537,21 +32426,22 @@ main (void)
 {
 
         #ifndef has_key
-        void *x=has_key
+        void * volatile x = (void *)has_key; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_has_key=yes
 else case e in #(
   e) ac_cv_lib_curses_has_key=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -30597,21 +32487,22 @@ main (void)
 {
 
         #ifndef has_mouse
-        void *x=has_mouse
+        void * volatile x = (void *)has_mouse; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_has_mouse=yes
 else case e in #(
   e) ac_cv_lib_curses_has_mouse=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -30657,21 +32548,22 @@ main (void)
 {
 
         #ifndef is_keypad
-        void *x=is_keypad
+        void * volatile x = (void *)is_keypad; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_is_keypad=yes
 else case e in #(
   e) ac_cv_lib_curses_is_keypad=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -30717,21 +32609,22 @@ main (void)
 {
 
         #ifndef is_leaveok
-        void *x=is_leaveok
+        void * volatile x = (void *)is_leaveok; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_is_leaveok=yes
 else case e in #(
   e) ac_cv_lib_curses_is_leaveok=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -30777,21 +32670,22 @@ main (void)
 {
 
         #ifndef typeahead
-        void *x=typeahead
+        void * volatile x = (void *)typeahead; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_typeahead=yes
 else case e in #(
   e) ac_cv_lib_curses_typeahead=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -30837,21 +32731,22 @@ main (void)
 {
 
         #ifndef use_env
-        void *x=use_env
+        void * volatile x = (void *)use_env; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_use_env=yes
 else case e in #(
   e) ac_cv_lib_curses_use_env=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -30897,21 +32792,22 @@ main (void)
 {
 
         #ifndef new_prescr
-        void *x=new_prescr
+        void * volatile x = (void *)new_prescr; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_new_prescr=yes
 else case e in #(
   e) ac_cv_lib_curses_new_prescr=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -30957,21 +32853,22 @@ main (void)
 {
 
         #ifndef use_screen
-        void *x=use_screen
+        void * volatile x = (void *)use_screen; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_use_screen=yes
 else case e in #(
   e) ac_cv_lib_curses_use_screen=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -31017,21 +32914,22 @@ main (void)
 {
 
         #ifndef use_window
-        void *x=use_window
+        void * volatile x = (void *)use_window; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_use_window=yes
 else case e in #(
   e) ac_cv_lib_curses_use_window=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -31077,21 +32975,22 @@ main (void)
 {
 
         #ifndef key_defined
-        void *x=key_defined
+        void * volatile x = (void *)key_defined; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_key_defined=yes
 else case e in #(
   e) ac_cv_lib_curses_key_defined=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -31137,21 +33036,22 @@ main (void)
 {
 
         #ifndef term_attrs
-        void *x=term_attrs
+        void * volatile x = (void *)term_attrs; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_term_attrs=yes
 else case e in #(
   e) ac_cv_lib_curses_term_attrs=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -31197,21 +33097,22 @@ main (void)
 {
 
         #ifndef define_key
-        void *x=define_key
+        void * volatile x = (void *)define_key; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_define_key=yes
 else case e in #(
   e) ac_cv_lib_curses_define_key=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -31257,21 +33158,22 @@ main (void)
 {
 
         #ifndef keyok
-        void *x=keyok
+        void * volatile x = (void *)keyok; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_keyok=yes
 else case e in #(
   e) ac_cv_lib_curses_keyok=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -31317,21 +33219,22 @@ main (void)
 {
 
         #ifndef set_escdelay
-        void *x=set_escdelay
+        void * volatile x = (void *)set_escdelay; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_set_escdelay=yes
 else case e in #(
   e) ac_cv_lib_curses_set_escdelay=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -31377,21 +33280,22 @@ main (void)
 {
 
         #ifndef set_tabsize
-        void *x=set_tabsize
+        void * volatile x = (void *)set_tabsize; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_set_tabsize=yes
 else case e in #(
   e) ac_cv_lib_curses_set_tabsize=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -31401,6 +33305,555 @@ printf "%s\n" "$ac_cv_lib_curses_set_tabsize" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_CURSES_SET_TABSIZE 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function wattr_get" >&5
+printf %s "checking for curses function wattr_get... " >&6; }
+if test ${ac_cv_lib_curses_wattr_get+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef wattr_get
+        void * volatile x = (void *)wattr_get; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_wattr_get=yes
+else case e in #(
+  e) ac_cv_lib_curses_wattr_get=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_wattr_get" >&5
+printf "%s\n" "$ac_cv_lib_curses_wattr_get" >&6; }
+  if test "x$ac_cv_lib_curses_wattr_get" = xyes
+then :
+
+printf "%s\n" "#define HAVE_CURSES_WATTR_GET 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function wattr_set" >&5
+printf %s "checking for curses function wattr_set... " >&6; }
+if test ${ac_cv_lib_curses_wattr_set+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef wattr_set
+        void * volatile x = (void *)wattr_set; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_wattr_set=yes
+else case e in #(
+  e) ac_cv_lib_curses_wattr_set=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_wattr_set" >&5
+printf "%s\n" "$ac_cv_lib_curses_wattr_set" >&6; }
+  if test "x$ac_cv_lib_curses_wattr_set" = xyes
+then :
+
+printf "%s\n" "#define HAVE_CURSES_WATTR_SET 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function wattr_on" >&5
+printf %s "checking for curses function wattr_on... " >&6; }
+if test ${ac_cv_lib_curses_wattr_on+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef wattr_on
+        void * volatile x = (void *)wattr_on; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_wattr_on=yes
+else case e in #(
+  e) ac_cv_lib_curses_wattr_on=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_wattr_on" >&5
+printf "%s\n" "$ac_cv_lib_curses_wattr_on" >&6; }
+  if test "x$ac_cv_lib_curses_wattr_on" = xyes
+then :
+
+printf "%s\n" "#define HAVE_CURSES_WATTR_ON 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function wattr_off" >&5
+printf %s "checking for curses function wattr_off... " >&6; }
+if test ${ac_cv_lib_curses_wattr_off+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef wattr_off
+        void * volatile x = (void *)wattr_off; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_wattr_off=yes
+else case e in #(
+  e) ac_cv_lib_curses_wattr_off=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_wattr_off" >&5
+printf "%s\n" "$ac_cv_lib_curses_wattr_off" >&6; }
+  if test "x$ac_cv_lib_curses_wattr_off" = xyes
+then :
+
+printf "%s\n" "#define HAVE_CURSES_WATTR_OFF 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function wcolor_set" >&5
+printf %s "checking for curses function wcolor_set... " >&6; }
+if test ${ac_cv_lib_curses_wcolor_set+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef wcolor_set
+        void * volatile x = (void *)wcolor_set; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_wcolor_set=yes
+else case e in #(
+  e) ac_cv_lib_curses_wcolor_set=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_wcolor_set" >&5
+printf "%s\n" "$ac_cv_lib_curses_wcolor_set" >&6; }
+  if test "x$ac_cv_lib_curses_wcolor_set" = xyes
+then :
+
+printf "%s\n" "#define HAVE_CURSES_WCOLOR_SET 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function slk_attr_on" >&5
+printf %s "checking for curses function slk_attr_on... " >&6; }
+if test ${ac_cv_lib_curses_slk_attr_on+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef slk_attr_on
+        void * volatile x = (void *)slk_attr_on; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_slk_attr_on=yes
+else case e in #(
+  e) ac_cv_lib_curses_slk_attr_on=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_slk_attr_on" >&5
+printf "%s\n" "$ac_cv_lib_curses_slk_attr_on" >&6; }
+  if test "x$ac_cv_lib_curses_slk_attr_on" = xyes
+then :
+
+printf "%s\n" "#define HAVE_CURSES_SLK_ATTR_ON 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function slk_attr_off" >&5
+printf %s "checking for curses function slk_attr_off... " >&6; }
+if test ${ac_cv_lib_curses_slk_attr_off+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef slk_attr_off
+        void * volatile x = (void *)slk_attr_off; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_slk_attr_off=yes
+else case e in #(
+  e) ac_cv_lib_curses_slk_attr_off=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_slk_attr_off" >&5
+printf "%s\n" "$ac_cv_lib_curses_slk_attr_off" >&6; }
+  if test "x$ac_cv_lib_curses_slk_attr_off" = xyes
+then :
+
+printf "%s\n" "#define HAVE_CURSES_SLK_ATTR_OFF 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function slk_attr_set" >&5
+printf %s "checking for curses function slk_attr_set... " >&6; }
+if test ${ac_cv_lib_curses_slk_attr_set+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef slk_attr_set
+        void * volatile x = (void *)slk_attr_set; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_slk_attr_set=yes
+else case e in #(
+  e) ac_cv_lib_curses_slk_attr_set=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_slk_attr_set" >&5
+printf "%s\n" "$ac_cv_lib_curses_slk_attr_set" >&6; }
+  if test "x$ac_cv_lib_curses_slk_attr_set" = xyes
+then :
+
+printf "%s\n" "#define HAVE_CURSES_SLK_ATTR_SET 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function slk_color" >&5
+printf %s "checking for curses function slk_color... " >&6; }
+if test ${ac_cv_lib_curses_slk_color+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef slk_color
+        void * volatile x = (void *)slk_color; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_slk_color=yes
+else case e in #(
+  e) ac_cv_lib_curses_slk_color=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_slk_color" >&5
+printf "%s\n" "$ac_cv_lib_curses_slk_color" >&6; }
+  if test "x$ac_cv_lib_curses_slk_color" = xyes
+then :
+
+printf "%s\n" "#define HAVE_CURSES_SLK_COLOR 1" >>confdefs.h
 
 fi
 
@@ -31605,21 +34058,22 @@ main (void)
 {
 
         #ifndef scr_dump
-        void *x=scr_dump
+        void * volatile x = (void *)scr_dump; (void)x;
         #endif
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_lib_curses_scr_dump=yes
 else case e in #(
   e) ac_cv_lib_curses_scr_dump=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    ;;
 esac
 fi
@@ -31629,6 +34083,67 @@ printf "%s\n" "$ac_cv_lib_curses_scr_dump" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_CURSES_SCR_DUMP 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function scr_set" >&5
+printf %s "checking for curses function scr_set... " >&6; }
+if test ${ac_cv_lib_curses_scr_set+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef scr_set
+        void * volatile x = (void *)scr_set; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_scr_set=yes
+else case e in #(
+  e) ac_cv_lib_curses_scr_set=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_scr_set" >&5
+printf "%s\n" "$ac_cv_lib_curses_scr_set" >&6; }
+  if test "x$ac_cv_lib_curses_scr_set" = xyes
+then :
+
+printf "%s\n" "#define HAVE_CURSES_SCR_SET 1" >>confdefs.h
 
 fi
 
@@ -32283,7 +34798,11 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
     #include <stddef.h>
     #include <unistd.h>
     #include <sys/syscall.h>
-    #include <linux/random.h>
+    #include <linux/random.h>  // GRND_NONBLOCK
+
+    #if !defined(SYS_getrandom) && defined(__NR_getrandom)
+    #  define SYS_getrandom __NR_getrandom
+    #endif
 
     int main(void) {
         char buffer[1];
@@ -33055,6 +35574,13 @@ fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $TEST_MODULES" >&5
 printf "%s\n" "$TEST_MODULES" >&6; }
+if test "$ac_sys_system" = "iOS" && test -z "$PYTHONFRAMEWORK"
+then :
+  if test "$TEST_MODULES" != "no"
+then :
+  as_fn_error $? "iOS non-framework builds must use --disable-test-modules" "$LINENO" 5
+fi
+fi
 
 
 # Check for --with-build-details-suffix
@@ -33344,6 +35870,14 @@ case $host_cpu in #(
  ;;
 esac
 
+
+if test "$ac_sys_system" = "iOS" && test -z "$PYTHONFRAMEWORK"
+then :
+  if test "$MODULE_BUILDTYPE" != "static"
+then :
+  as_fn_error $? "iOS non-framework builds must use MODULE_BUILDTYPE=static" "$LINENO" 5
+fi
+fi
 
 
 MODULE_BLOCK=

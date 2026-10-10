@@ -180,6 +180,9 @@ You can run tests with more detail (higher verbosity) by passing in the -v flag:
 
    python -m unittest -v test_module
 
+Repeat it for even more detail: ``-vv`` reports also the individual examples
+of a :mod:`doctest`.
+
 When executed without arguments :ref:`unittest-test-discovery` is started::
 
    python -m unittest
@@ -291,7 +294,11 @@ The ``discover`` sub-command has the following options:
 
 .. option:: -v, --verbose
 
-   Verbose output
+   Verbose output.  May be repeated: ``-vv`` reports also the individual
+   examples of a :mod:`doctest`.
+
+   .. versionchanged:: next
+      The option can be repeated.
 
 .. option:: -s, --start-directory directory
 
@@ -2148,6 +2155,15 @@ Loading and running tests
       If set to true then local variables will be shown in tracebacks.
 
       .. versionadded:: 3.5
+
+   .. attribute:: verbosity
+
+      The level of details which the test runner reports: ``0`` -- quiet,
+      ``1`` -- progress dots, ``2`` -- test names, ``3`` -- also the
+      individual examples of a :mod:`doctest`.  A test runner is expected to
+      set it to its own verbosity.
+
+      .. versionadded:: next
 
    .. method:: wasSuccessful()
 

@@ -1,0 +1,4 @@
+:func:`msvcrt.putch` and :func:`msvcrt.putwch` now check the return value of
+the underlying ``_putch()`` and ``_putwch()`` C functions and raise
+:exc:`OSError` on failure, for example when the process has no console
+attached, instead of silently ignoring the error.

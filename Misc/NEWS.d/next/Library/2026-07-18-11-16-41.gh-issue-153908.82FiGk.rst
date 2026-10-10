@@ -1,0 +1,1 @@
+Fix data race when calling :func:`repr` on :class:`itertools.count` under the :term:`free-threaded build`.

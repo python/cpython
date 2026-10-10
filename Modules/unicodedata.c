@@ -1776,9 +1776,7 @@ enum ExtPictState {
 
 enum InCBState {
     InCBState_Init,
-    // \p{InCB=Consonant} \p{InCB=Extend}*
-    InCBState_Started,
-    // ... \p{InCB=Linker} [ \p{InCB=Extend} \p{InCB=Linker} ]*
+    // \p{InCB=Linker} \p{InCB=Extend}*
     InCBState_Linker,
     // ... \p{InCB=Consonant}
     InCBState_Matched,
@@ -1815,15 +1813,15 @@ update_ext_pict_state(enum ExtPictState state, int gcb, bool ext_pict)
 static inline enum InCBState
 update_incb_state(enum InCBState state, int incb)
 {
-    if (incb == InCB_Consonant) {
-        return (state == InCBState_Linker) ? InCBState_Matched : InCBState_Started;
+    if (incb == InCB_Linker) {
+        return InCBState_Linker;
     }
-    if (state != InCBState_Init) {
+    if (state == InCBState_Linker) {
         if (incb == InCB_Extend) {
-            return (state == InCBState_Linker) ? InCBState_Linker : InCBState_Started;
-        }
-        if (incb == InCB_Linker) {
             return InCBState_Linker;
+        }
+        if (incb == InCB_Consonant) {
+            return InCBState_Matched;
         }
     }
     return InCBState_Init;

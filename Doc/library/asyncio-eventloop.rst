@@ -581,6 +581,10 @@ Opening network connections
    .. versionchanged:: 3.12
       *all_errors* was added.
 
+   .. versionchanged:: next
+      Raises a ``ValueError`` if ``ssl.check_hostname`` is ``True``
+      and ``server_hostname`` is not supplied.
+
    .. seealso::
 
       The :func:`open_connection` function is a high-level alternative
@@ -838,7 +842,7 @@ Creating network servers
                  *, sock=None, backlog=100, ssl=None, \
                  ssl_handshake_timeout=None, \
                  ssl_shutdown_timeout=None, \
-                 start_serving=True, cleanup_socket=True)
+                 start_serving=True, cleanup_socket=True, mode=None)
    :async:
 
    Similar to :meth:`loop.create_server` but works with the
@@ -852,6 +856,13 @@ Creating network servers
    If *cleanup_socket* is true then the Unix socket will automatically
    be removed from the filesystem when the server is closed, unless the
    socket has been replaced after the server has been created.
+
+   If *mode* is not ``None``, the permissions of the socket file created
+   for *path* are changed to *mode* (as accepted by :func:`os.chmod`)
+   right after binding, before the server starts accepting connections,
+   so a connection can never be accepted while the default,
+   umask-derived permissions are still in effect.  *mode* cannot be
+   combined with *sock* and is not supported for abstract Unix sockets.
 
    See the documentation of the :meth:`loop.create_server` method
    for information about arguments to this method.
@@ -870,6 +881,10 @@ Creating network servers
    .. versionchanged:: 3.13
 
       Added the *cleanup_socket* parameter.
+
+   .. versionchanged:: 3.16
+
+      Added the *mode* parameter.
 
 
 .. method:: loop.connect_accepted_socket(protocol_factory, \
@@ -1872,6 +1887,12 @@ Do not instantiate the :class:`Server` class directly.
 
       Wait until the :meth:`close` method completes and all active
       connections have finished.
+
+      .. versionchanged:: 3.12
+         ``wait_closed()`` now waits until the server is closed and
+         all active connections have finished.  Previously, it returned
+         immediately if the server was already closed, even if
+         connections were still active.
 
    .. attribute:: sockets
 

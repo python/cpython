@@ -326,9 +326,13 @@ class ThreadTests(BaseTestCase):
     @cpython_only
     def test_PyThreadState_SetAsyncExc(self):
         ctypes = import_module("ctypes")
+        import ctypes.util  # noqa: F811
 
-        set_async_exc = ctypes.pythonapi.PyThreadState_SetAsyncExc
-        set_async_exc.argtypes = (ctypes.c_ulong, ctypes.py_object)
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def PyThreadState_SetAsyncExc(id: ctypes.c_ulong,
+                                      exc: ctypes.py_object) -> ctypes.c_int:
+            pass
+        set_async_exc = PyThreadState_SetAsyncExc
 
         class AsyncExc(Exception):
             pass
@@ -485,7 +489,17 @@ class ThreadTests(BaseTestCase):
         import_module("ctypes")
 
         rc, out, err = assert_python_failure("-c", """if 1:
-            import ctypes, sys, time, _thread
+            import ctypes.util, sys, time, _thread
+
+            PyGILState_STATE = ctypes.c_int  # enum
+
+            @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+            def PyGILState_Ensure() -> PyGILState_STATE:
+                pass
+
+            @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+            def PyGILState_Release(oldstate: PyGILState_STATE) -> None:
+                pass
 
             # This lock is used as a simple event variable.
             ready = _thread.allocate_lock()
@@ -494,8 +508,8 @@ class ThreadTests(BaseTestCase):
             # Module globals are cleared before __del__ is run
             # So we save the functions in class dict
             class C:
-                ensure = ctypes.pythonapi.PyGILState_Ensure
-                release = ctypes.pythonapi.PyGILState_Release
+                ensure = PyGILState_Ensure
+                release = PyGILState_Release
                 def __del__(self):
                     state = self.ensure()
                     self.release(state)

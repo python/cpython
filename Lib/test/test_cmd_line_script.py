@@ -9,6 +9,7 @@ import sys
 import os
 import os.path
 import py_compile
+import select
 import subprocess
 import io
 
@@ -167,6 +168,24 @@ class CmdLineTest(unittest.TestCase):
             out = kill_python(p)
         expected = repr(importlib.machinery.BuiltinImporter).encode("utf-8")
         self.assertIn(expected, out)
+
+    @unittest.skipIf(sys.platform == "win32", "select() cannot wait for pipes")
+    def test_stdin_syntax_error_does_not_read_ahead(self):
+        process = spawn_python()
+        try:
+            process.stdin.write(b")\n")
+            process.stdin.flush()
+            output = b""
+            while b"SyntaxError" not in output:
+                ready, _, _ = select.select(
+                    [process.stdout], [], [], support.SHORT_TIMEOUT
+                )
+                self.assertTrue(ready, output)
+                data = os.read(process.stdout.fileno(), 4096)
+                self.assertTrue(data, output)
+                output += data
+        finally:
+            kill_python(process)
 
     @contextlib.contextmanager
     def interactive_python(self, separate_stderr=False):
