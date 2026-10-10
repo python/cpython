@@ -1183,7 +1183,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                             ', '.join(str(exc) for exc in exceptions)))
                     else:
                         # No exceptions were collected, raise a timeout error
-                        raise TimeoutError('create_connection failed')
+                        raise TimeoutError(errno.ETIMEDOUT,
+                                           'create_connection failed')
                 finally:
                     exceptions = None
 

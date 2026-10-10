@@ -1,3 +1,5 @@
+import errno
+import os
 import struct
 
 
@@ -12,7 +14,8 @@ def load_tzdata(key):
         path = resources.files(package_name).joinpath(resource_name)
         # gh-85702: Prevent PermissionError on Windows
         if path.is_dir():
-            raise IsADirectoryError
+            raise IsADirectoryError(errno.EISDIR,
+                                    os.strerror(errno.EISDIR))
         return path.open("rb")
     except (ImportError, FileNotFoundError, UnicodeEncodeError, IsADirectoryError):
         # There are four types of exception that can be raised that all amount
