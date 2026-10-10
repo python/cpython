@@ -621,8 +621,12 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
                 uintptr_t next_refs = next->_gc_prev;
                 _PyTuple_MaybeUntrack(op);
                 next->_gc_prev = next_refs;
+                if (_PyObject_GC_IS_TRACKED(op)) {
+                    prev = gc;
+                    reachable++;
+                }
             }
-            if (_PyObject_GC_IS_TRACKED(op)) {
+            else {
                 prev = gc;
                 reachable++;
             }
