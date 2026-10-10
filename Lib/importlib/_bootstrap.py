@@ -890,8 +890,14 @@ def _exec(spec, module):
             sys.modules[spec.name] = module
     return module
 
-def _load_unlocked(spec):
+def _load_unlocked(spec, finish_load=None):
     # A helper for direct use by the import system.
+    #
+    # If given, finish_load() is called with the loaded module just before
+    # spec._initializing is cleared.  Other threads may use a module whose
+    # spec is no longer initializing without taking the import lock, so
+    # anything that has to be in place by then (such as binding the module
+    # on its parent package) belongs in finish_load().
     module = module_from_spec(spec)
 
     # This must be done before putting the module in sys.modules
@@ -920,6 +926,8 @@ def _load_unlocked(spec):
         module = sys.modules.pop(spec.name)
         sys.modules[spec.name] = module
         _verbose_message('import {!r} # {!r}', spec.name, spec.loader)
+        if finish_load is not None:
+            finish_load(module)
     finally:
         spec._initializing = False
 
@@ -1295,29 +1303,35 @@ def _find_and_load_unlocked(name, import_, *, lazy_submodule=False):
             return None
         raise ModuleNotFoundError(f'{_ERR_MSG_PREFIX}{name!r}', name=name)
     else:
+        def finish_load(module):
+            # Called by _load_unlocked() while spec._initializing is still
+            # true, so that no thread can see the module as fully imported
+            # before it is reachable as an attribute of its parent.
+            if parent:
+                # Set the module as an attribute on its parent.
+                parent_module = sys.modules[parent]
+                try:
+                    setattr(parent_module, child, module)
+                except AttributeError:
+                    msg = (f"Cannot set an attribute on {parent!r} "
+                           f"for child module {child!r}")
+                    _warnings.warn(msg, ImportWarning)
+            # Set attributes to lazy submodules on the module.
+            try:
+                _imp._set_lazy_attributes(module, name)
+            except Exception as e:
+                msg = f"Cannot set lazy attributes on {name!r}: {e!r}"
+                _warnings.warn(msg, ImportWarning)
+
         if parent_spec:
             # Temporarily add child we are currently importing to parent's
             # _uninitialized_submodules for circular import tracking.
             parent_spec._uninitialized_submodules.append(child)
         try:
-            module = _load_unlocked(spec)
+            module = _load_unlocked(spec, finish_load)
         finally:
             if parent_spec:
                 parent_spec._uninitialized_submodules.pop()
-    if parent:
-        # Set the module as an attribute on its parent.
-        parent_module = sys.modules[parent]
-        try:
-            setattr(parent_module, child, module)
-        except AttributeError:
-            msg = f"Cannot set an attribute on {parent!r} for child module {child!r}"
-            _warnings.warn(msg, ImportWarning)
-    # Set attributes to lazy submodules on the module.
-    try:
-        _imp._set_lazy_attributes(module, name)
-    except Exception as e:
-        msg = f"Cannot set lazy attributes on {name!r}: {e!r}"
-        _warnings.warn(msg, ImportWarning)
     return module
 
 
