@@ -251,7 +251,8 @@ extern "C" {
 #define SETUP_CLEANUP                          263
 #define SETUP_FINALLY                          264
 #define SETUP_WITH                             265
-#define STORE_FAST_MAYBE_NULL                  266
+#define STORE_CLOSURE                          266
+#define STORE_FAST_MAYBE_NULL                  267
 
 #define HAVE_ARGUMENT                           41
 #define MIN_SPECIALIZED_OPCODE                 129

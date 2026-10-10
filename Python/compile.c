@@ -596,7 +596,11 @@ dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
 }
 
 static int
-add_cell_names_from_symbols(PyObject *symbols, PyObject *names)
+compiler_should_reuse_enclosing_free(PySTEntryObject *enclosing, PyObject *name);
+
+static int
+add_cell_names_from_symbols(PyObject *symbols, PyObject *names,
+                            PySTEntryObject *skip_if_free)
 {
     Py_ssize_t pos = 0;
     PyObject *k, *v;
@@ -605,17 +609,28 @@ add_cell_names_from_symbols(PyObject *symbols, PyObject *names)
         if (flags == -1 && PyErr_Occurred()) {
             return ERROR;
         }
-        if (SYMBOL_TO_SCOPE(flags) == CELL) {
-            if (PySet_Add(names, k) < 0) {
-                return ERROR;
+        if (SYMBOL_TO_SCOPE(flags) != CELL) {
+            continue;
+        }
+        /* Inlined cells that collide with an enclosing free reuse that
+         * slot instead of adding a second same-named localsplus entry. */
+        if (skip_if_free != NULL) {
+            int reuse = compiler_should_reuse_enclosing_free(skip_if_free, k);
+            RETURN_IF_ERROR(reuse);
+            if (reuse) {
+                continue;
             }
+        }
+        if (PySet_Add(names, k) < 0) {
+            return ERROR;
         }
     }
     return SUCCESS;
 }
 
 static int
-add_inlined_comprehension_cell_names(PySTEntryObject *ste, PyObject *names)
+add_inlined_comprehension_cell_names(PySTEntryObject *unit,
+                                     PySTEntryObject *ste, PyObject *names)
 {
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(ste->ste_children); i++) {
         PySTEntryObject *child =
@@ -623,10 +638,10 @@ add_inlined_comprehension_cell_names(PySTEntryObject *ste, PyObject *names)
         if (child->ste_type != InlinedComprehensionBlock) {
             continue;
         }
-        if (add_cell_names_from_symbols(child->ste_symbols, names) < 0) {
+        if (add_cell_names_from_symbols(child->ste_symbols, names, unit) < 0) {
             return ERROR;
         }
-        if (add_inlined_comprehension_cell_names(child, names) < 0) {
+        if (add_inlined_comprehension_cell_names(unit, child, names) < 0) {
             return ERROR;
         }
     }
@@ -642,11 +657,11 @@ compiler_cellvars(PySTEntryObject *ste)
     if (names == NULL) {
         return NULL;
     }
-    if (add_cell_names_from_symbols(ste->ste_symbols, names) < 0) {
+    if (add_cell_names_from_symbols(ste->ste_symbols, names, NULL) < 0) {
         Py_DECREF(names);
         return NULL;
     }
-    if (add_inlined_comprehension_cell_names(ste, names) < 0) {
+    if (add_inlined_comprehension_cell_names(ste, ste, names) < 0) {
         Py_DECREF(names);
         return NULL;
     }
@@ -979,12 +994,49 @@ finally:
     return co;
 }
 
+static PySTEntryObject *
+enclosing_non_inlined_ste(PySTEntryObject *ste)
+{
+    while (ste != NULL && ste->ste_type == InlinedComprehensionBlock) {
+        ste = ste->ste_parent;
+    }
+    return ste;
+}
+
+/* True if an inlined LOCAL/CELL should reuse enclosing's freevars slot.
+ * Class-closure names are excluded: zero-arg super() and class-cell
+ * bookkeeping depend on the real free cell. DEF_FREE_CLASS counts as a
+ * free slot even though _PyST_GetScope() returns LOCAL. */
+static int
+compiler_should_reuse_enclosing_free(PySTEntryObject *enclosing, PyObject *name)
+{
+    if (_PyST_IsClassClosureName(name)) {
+        return 0;
+    }
+    PyObject *v = PyDict_GetItemWithError(enclosing->ste_symbols, name);
+    if (v == NULL) {
+        return PyErr_Occurred() ? ERROR : 0;
+    }
+    long flags = PyLong_AsLong(v);
+    if (flags == -1 && PyErr_Occurred()) {
+        return ERROR;
+    }
+    if (SYMBOL_TO_SCOPE(flags) == FREE || (flags & DEF_FREE_CLASS)) {
+        return 1;
+    }
+    return 0;
+}
+
 /* Inlined comprehensions are compiled in the enclosing unit. If a name is
  * FREE in the comprehension, or is absent from its table (scope 0), resolve
  * it in enclosing tables until it is bound. Stop if the next table is a class:
  * nested scopes (including inlined comprehensions) do not see class locals, so
  * the name stays FREE. __class__ and friends are not allowed to be free
  * through a class; treat those loads as implicit globals.
+ *
+ * A LOCAL or CELL on the inlined table that collides with an enclosing free
+ * (or DEF_FREE_CLASS) reuses that free slot, so the compilation unit does not
+ * grow a second same-named localsplus entry.
  *
  * Names with no entry (scope 0) include loads synthesized by codegen, such as
  * the implicit receiver for zero-arg super(). */
@@ -1006,6 +1058,22 @@ compiler_resolve_inlined_free(PySTEntryObject **ste, PyObject *name)
         *ste = parent;
         scope = _PyST_GetScope(*ste, name);
         RETURN_IF_ERROR(scope);
+    }
+    /* After the walk we may be on an inlined LOCAL/CELL that collides
+     * with an enclosing free. Reuse that free slot (including when a
+     * nested inlined load walked here). */
+    if ((*ste)->ste_type == InlinedComprehensionBlock &&
+        (scope == LOCAL || scope == CELL))
+    {
+        PySTEntryObject *enclosing = enclosing_non_inlined_ste(*ste);
+        if (enclosing != NULL) {
+            int reuse = compiler_should_reuse_enclosing_free(enclosing, name);
+            RETURN_IF_ERROR(reuse);
+            if (reuse) {
+                *ste = enclosing;
+                return FREE;
+            }
+        }
     }
     return scope;
 }

@@ -376,6 +376,12 @@ _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg);
 bool
 _PyFrame_HasHiddenLocals(_PyInterpreterFrame *frame);
 
+/* True when localsplus[oparg] is a free cell that currently differs from
+ * the function's func_closure cell — i.e. an inlined comprehension has
+ * temporarily replaced it. */
+PyAPI_FUNC(bool)
+_PyFrame_IsInlinedCompTempFree(_PyInterpreterFrame *frame, int oparg);
+
 PyObject *
 _PyFrame_GetLocals(_PyInterpreterFrame *frame);
 
