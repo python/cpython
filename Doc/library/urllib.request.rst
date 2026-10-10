@@ -554,6 +554,13 @@ request.
 
    The entity body for the request, or ``None`` if not specified.
 
+   If *data* is a file-like object and the request may be sent more than once
+   (for example when an :class:`HTTPBasicAuthHandler` or
+   :class:`HTTPDigestAuthHandler` retries after a ``401`` response), *data* must
+   be seekable. If a non-seekable body is retried during HTTP
+   authentication, :exc:`ValueError` is raised.
+
+
    .. versionchanged:: 3.4
       Changing value of :attr:`Request.data` now deletes "Content-Length"
       header if it was previously set or calculated.
