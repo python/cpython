@@ -206,7 +206,7 @@ def _process_chunk(fn, chunk):
         try:
             result = (fn(*args), None)
         except BaseException as exc:
-            result = (None, exc)
+            result = (None, _ExceptionWithTraceback(exc, exc.__traceback__))
         results.append(result)
     return results
 

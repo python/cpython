@@ -14,7 +14,7 @@ from test import support
 from test.support import hashlib_helper, threading_helper, warnings_helper
 from test.test_importlib.metadata.fixtures import parameterize
 
-from .executor import ExecutorTest, mul
+from .executor import ExecutorTest, mul, raiser
 from .util import (
     ProcessPoolForkMixin, ProcessPoolForkserverMixin, ProcessPoolSpawnMixin,
     create_executor_tests, setup_module)
@@ -140,6 +140,16 @@ class ProcessPoolExecutorTest(ExecutorTest):
                 sys.excepthook(*sys.exc_info())
         self.assertIn('raise RuntimeError(123) # some comment',
                       f1.getvalue())
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_map_traceback(self):
+        # The traceback from the child process is also kept for map().
+        i = self.executor.map(raiser, [RuntimeError])
+        with self.assertRaises(RuntimeError) as cm:
+            next(i)
+        cause = cm.exception.__cause__
+        self.assertIs(type(cause), futures.process._RemoteTraceback)
+        self.assertIn('raise exception(msg)', cause.tb)
 
     def test_traceback_when_child_process_terminates_abruptly(self):
         # gh-139462 enhancement - BrokenProcessPool exceptions
