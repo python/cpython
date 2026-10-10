@@ -417,6 +417,9 @@ class partial:
            (namespace is not None and not isinstance(namespace, dict))):
             raise TypeError("invalid partial state")
 
+        if kwds is not None and any(not isinstance(k, str) for k in kwds):
+            raise TypeError("keywords must be strings")
+
         if args and args[-1] is Placeholder:
             raise TypeError("trailing Placeholders are not allowed")
         phcount, merger = _partial_prepare_merger(args)
