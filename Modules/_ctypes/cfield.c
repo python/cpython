@@ -492,23 +492,50 @@ Py_ssize_t NUM_BITS(Py_ssize_t bitsize) {
     return bitsize >> 16;
 }
 
-/* Doesn't work if NUM_BITS(size) == 0, but it never happens in SET() call. */
-#define BIT_MASK(type, size) (((((type)1 << (NUM_BITS(size) - 1)) - 1) << 1) + 1)
+/* Bit fields are manipulated as uint64_t -- the widest type the accessors
+   below support -- and converted back to the field's own type at the end.
+   Doing the arithmetic in the field's type would be undefined behaviour
+   whenever that type is signed: shifting a negative value left, and shifting
+   a one into the sign bit, are both UB. */
 
-/* This macro CHANGES the first parameter IN PLACE. For proper sign handling,
-   we must first shift left, then right.
-*/
-#define GET_BITFIELD(v, size)                                           \
-    if (NUM_BITS(size)) {                                               \
-        v <<= (sizeof(v)*8 - LOW_BIT(size) - NUM_BITS(size));           \
-        v >>= (sizeof(v)*8 - NUM_BITS(size));                           \
-    }
+/* A mask with the low `num_bits` bits set.
+   Doesn't work if num_bits == 0, but that never happens here. */
+static inline
+uint64_t LOW_BITS_MASK(Py_ssize_t num_bits) {
+    assert(0 < num_bits);
+    assert(num_bits <= 64);
+    return (~(uint64_t)0) >> (64 - num_bits);
+}
 
-/* This macro RETURNS the first parameter with the bit field CHANGED. */
+/* True if `type` is signed. Spelled so that neither comparison is the
+   `unsigned < 0` pattern that compilers warn about. */
+#define IS_SIGNED_TYPE(type) (!((type)0 < (type)-1))
+
+/* This macro CHANGES the `v` parameter IN PLACE. */
+#define GET_BITFIELD(type, v, size)                                           \
+    do {                                                                      \
+        if (NUM_BITS(size)) {                                                 \
+            uint64_t bitfield_bits = ((uint64_t)(v) >> LOW_BIT(size))         \
+                                     & LOW_BITS_MASK(NUM_BITS(size));         \
+            if (IS_SIGNED_TYPE(type)) {                                       \
+                /* Sign-extend: flipping the field's sign bit and then        \
+                   subtracting it leaves the low bits alone and fills the     \
+                   high bits with copies of that sign bit. */                 \
+                uint64_t sign_bit = (uint64_t)1 << (NUM_BITS(size) - 1);      \
+                bitfield_bits = (bitfield_bits ^ sign_bit) - sign_bit;        \
+            }                                                                 \
+            (v) = (type)bitfield_bits;                                        \
+        }                                                                     \
+    } while (0)
+
+/* This macro RETURNS the `x` parameter with the bit field CHANGED. */
 #define SET(type, x, v, size)                                                 \
-    (NUM_BITS(size) ?                                                   \
-     ( ( (type)(x) & ~(BIT_MASK(type, size) << LOW_BIT(size)) ) | ( ((type)(v) & BIT_MASK(type, size)) << LOW_BIT(size) ) ) \
-     : (type)(v))
+    ((type)(NUM_BITS(size)                                                    \
+            ? (((uint64_t)(x)                                                 \
+                & ~(LOW_BITS_MASK(NUM_BITS(size)) << LOW_BIT(size)))          \
+               | (((uint64_t)(v) & LOW_BITS_MASK(NUM_BITS(size)))             \
+                  << LOW_BIT(size)))                                          \
+            : (uint64_t)(v)))
 
 /*****************************************************************
  * The setter methods return an object which must be kept alive, to keep the
@@ -571,7 +598,7 @@ Py_ssize_t NUM_BITS(Py_ssize_t bitsize) {
         assert(NUM_BITS(size_arg) || (size_arg == (NBITS) / 8));              \
         CTYPE val;                                                            \
         memcpy(&val, ptr, sizeof(val));                                       \
-        GET_BITFIELD(val, size_arg);                                          \
+        GET_BITFIELD(CTYPE, val, size_arg);                                   \
         return PYAPI_FROMFUNC(val);                                           \
     }                                                                         \
     ///////////////////////////////////////////////////////////////////////////
@@ -604,7 +631,7 @@ Py_ssize_t NUM_BITS(Py_ssize_t bitsize) {
         CTYPE val;                                                            \
         memcpy(&val, ptr, sizeof(val));                                       \
         val = PY_SWAPFUNC(val);                                               \
-        GET_BITFIELD(val, size_arg);                                          \
+        GET_BITFIELD(CTYPE, val, size_arg);                                   \
         return PYAPI_FROMFUNC(val);                                           \
     }                                                                         \
     ///////////////////////////////////////////////////////////////////////////
