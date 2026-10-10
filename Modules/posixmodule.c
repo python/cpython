@@ -3669,6 +3669,9 @@ os_statx_impl(PyObject *module, path_t *path, unsigned int mask, int flags,
                      "use dir_fd kwarg instead of AT_EMPTY_PATH flag");
         return NULL;
     }
+    if (!follow_symlinks) {
+        flags |= AT_SYMLINK_NOFOLLOW;
+    }
 
     /* Future bits may refer to members beyond the current size of struct
        statx, so we need to mask them off to prevent memory corruption. */
