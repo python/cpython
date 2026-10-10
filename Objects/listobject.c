@@ -16,6 +16,7 @@
 #include "pycore_stackref.h"      // _Py_TryIncrefCompareStackRef()
 #include "pycore_tuple.h"         // _PyTuple_FromArraySteal()
 #include "pycore_typeobject.h"    // _Py_TYPE_VERSION_LIST
+#include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 #include <stddef.h>
 
 /*[clinic input]
@@ -707,17 +708,42 @@ list_length(PyObject *a)
     return PyList_GET_SIZE(a);
 }
 
+static inline int
+list_item_eq(PyObject *item, PyObject *value, PyTypeObject *value_type)
+{
+    /* Identity implies equality, as in PyObject_RichCompareBool(). */
+    if (item == value) {
+        return 1;
+    }
+    if (Py_TYPE(item) == value_type) {
+        if (value_type == &PyLong_Type) {
+            PyLongObject *v = (PyLongObject *)item;
+            PyLongObject *w = (PyLongObject *)value;
+            if (_PyLong_BothAreCompact(v, w)) {
+                return _PyLong_CompactValue(v) == _PyLong_CompactValue(w);
+            }
+        }
+        else if (value_type == &PyFloat_Type) {
+            return PyFloat_AS_DOUBLE(item) == PyFloat_AS_DOUBLE(value);
+        }
+        else if (value_type == &PyUnicode_Type) {
+            return _PyUnicode_Equal(item, value);
+        }
+    }
+    return PyObject_RichCompareBool(item, value, Py_EQ);
+}
+
 static int
 list_contains(PyObject *aa, PyObject *el)
 {
-
+    PyTypeObject *el_type = (el != NULL) ? Py_TYPE(el) : NULL;
     for (Py_ssize_t i = 0; ; i++) {
         PyObject *item = list_get_item_ref((PyListObject *)aa, i);
         if (item == NULL) {
             // out-of-bounds
             return 0;
         }
-        int cmp = PyObject_RichCompareBool(item, el, Py_EQ);
+        int cmp = list_item_eq(item, el, el_type);
         Py_DECREF(item);
         if (cmp != 0) {
             return cmp;
@@ -3391,13 +3417,14 @@ list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
         if (stop < 0)
             stop = 0;
     }
+    PyTypeObject *value_type = Py_TYPE(value);
     for (Py_ssize_t i = start; i < stop; i++) {
         PyObject *obj = list_get_item_ref(self, i);
         if (obj == NULL) {
             // out-of-bounds
             break;
         }
-        int cmp = PyObject_RichCompareBool(obj, value, Py_EQ);
+        int cmp = list_item_eq(obj, value, value_type);
         Py_DECREF(obj);
         if (cmp > 0)
             return PyLong_FromSsize_t(i);
@@ -3422,6 +3449,7 @@ list_count_impl(PyListObject *self, PyObject *value)
 /*[clinic end generated code: output=eff66f14aef2df86 input=3bdc3a5e6f749565]*/
 {
     Py_ssize_t count = 0;
+    PyTypeObject *value_type = Py_TYPE(value);
     for (Py_ssize_t i = 0; ; i++) {
         PyObject *obj = list_get_item_ref(self, i);
         if (obj == NULL) {
@@ -3433,7 +3461,7 @@ list_count_impl(PyListObject *self, PyObject *value)
            Py_DECREF(obj);
            continue;
         }
-        int cmp = PyObject_RichCompareBool(obj, value, Py_EQ);
+        int cmp = list_item_eq(obj, value, value_type);
         Py_DECREF(obj);
         if (cmp > 0)
             count++;
@@ -3460,11 +3488,12 @@ list_remove_impl(PyListObject *self, PyObject *value)
 /*[clinic end generated code: output=b9b76a6633b18778 input=26c813dbb95aa93b]*/
 {
     Py_ssize_t i;
+    PyTypeObject *value_type = Py_TYPE(value);
 
     for (i = 0; i < Py_SIZE(self); i++) {
         PyObject *obj = self->ob_item[i];
         Py_INCREF(obj);
-        int cmp = PyObject_RichCompareBool(obj, value, Py_EQ);
+        int cmp = list_item_eq(obj, value, value_type);
         Py_DECREF(obj);
         if (cmp > 0) {
             if (list_ass_slice_lock_held(self, i, i+1, NULL) == 0)
@@ -3522,7 +3551,7 @@ list_richcompare_impl(PyObject *v, PyObject *w, int op)
 
         Py_INCREF(vitem);
         Py_INCREF(witem);
-        int k = PyObject_RichCompareBool(vitem, witem, Py_EQ);
+        int k = list_item_eq(vitem, witem, Py_TYPE(witem));
         if (k < 0) {
             Py_DECREF(vitem);
             Py_DECREF(witem);
