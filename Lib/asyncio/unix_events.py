@@ -1,6 +1,7 @@
 """Selector event loop for Unix with signal handling."""
 
 import errno
+import functools
 import io
 import itertools
 import os
@@ -201,10 +202,35 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                                          extra=None, **kwargs):
         watcher = self._watcher
         waiter = self.create_future()
+
+        # subprocess.Popen() blocks the calling thread until the child
+        # has called execve(); spawn it in the default executor so a
+        # slow-to-start child (large binary, contended disk, etc.)
+        # doesn't stall the event loop. See gh-146181.
+        spawn_fut = self.run_in_executor(
+            None, functools.partial(_spawn_subprocess, args, shell, stdin,
+                                    stdout, stderr, bufsize, **kwargs))
+        try:
+            proc = await tasks.shield(spawn_fut)
+        except exceptions.CancelledError:
+            # The worker thread can't be interrupted -- Popen() keeps
+            # running to completion regardless of our cancellation.
+            # Wait for it, then kill and reap whatever it started, and
+            # close the pipe ends Popen opened for us, so a cancelled
+            # spawn never leaves an orphaned process or leaked fds
+            # behind (no transport exists yet to do this for us).
+            proc = await spawn_fut
+            proc.kill()
+            proc.wait()
+            for pipe in (proc.stdin, proc.stdout, proc.stderr):
+                if pipe is not None:
+                    pipe.close()
+            raise
+
         transp = _UnixSubprocessTransport(self, protocol, args, shell,
                                         stdin, stdout, stderr, bufsize,
                                         waiter=waiter, extra=extra,
-                                        **kwargs)
+                                        _proc=proc, **kwargs)
         watcher.add_child_handler(transp.get_pid(),
                                 self._child_watcher_callback, transp)
         try:
@@ -863,29 +889,41 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
             self._loop = None
 
 
+def _spawn_subprocess(args, shell, stdin, stdout, stderr, bufsize, **kwargs):
+    # Split out of _UnixSubprocessTransport._start so it can also be
+    # called from a worker thread (see _UnixSelectorEventLoop.
+    # _make_subprocess_transport): subprocess.Popen() blocks until the
+    # child has called execve(), which can take a long time (page-table
+    # setup, image loading), and doing that on the event loop thread
+    # stalls every other task. See gh-146181.
+    stdin_w = None
+    if (stdin == subprocess.PIPE
+        and (sys.platform.startswith('aix') or sys.platform == 'cygwin')):
+        # Use a socket pair for stdin on AIX, since it does not
+        # support selecting read events on the write end of a
+        # socket (which we use in order to detect closing of the
+        # other end).
+        stdin, stdin_w = socket.socketpair()
+    try:
+        proc = subprocess.Popen(
+            args, shell=shell, stdin=stdin, stdout=stdout, stderr=stderr,
+            universal_newlines=False, bufsize=bufsize, **kwargs)
+        if stdin_w is not None:
+            stdin.close()
+            proc.stdin = open(stdin_w.detach(), 'wb', buffering=bufsize)
+            stdin_w = None
+    finally:
+        if stdin_w is not None:
+            stdin.close()
+            stdin_w.close()
+    return proc
+
+
 class _UnixSubprocessTransport(base_subprocess.BaseSubprocessTransport):
 
     def _start(self, args, shell, stdin, stdout, stderr, bufsize, **kwargs):
-        stdin_w = None
-        if (stdin == subprocess.PIPE
-            and (sys.platform.startswith('aix') or sys.platform == 'cygwin')):
-            # Use a socket pair for stdin on AIX, since it does not
-            # support selecting read events on the write end of a
-            # socket (which we use in order to detect closing of the
-            # other end).
-            stdin, stdin_w = socket.socketpair()
-        try:
-            self._proc = subprocess.Popen(
-                args, shell=shell, stdin=stdin, stdout=stdout, stderr=stderr,
-                universal_newlines=False, bufsize=bufsize, **kwargs)
-            if stdin_w is not None:
-                stdin.close()
-                self._proc.stdin = open(stdin_w.detach(), 'wb', buffering=bufsize)
-                stdin_w = None
-        finally:
-            if stdin_w is not None:
-                stdin.close()
-                stdin_w.close()
+        self._proc = _spawn_subprocess(
+            args, shell, stdin, stdout, stderr, bufsize, **kwargs)
 
 
 class _PidfdChildWatcher:
