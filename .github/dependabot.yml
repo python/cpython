@@ -92,18 +92,6 @@ updates:
     cooldown:
       default-days: 14
 
-  - package-ecosystem: "github-actions"
-    target-branch: "3.10"
-    directory: "/"
-    schedule:
-      interval: "quarterly"
-    labels: ["skip issue", "skip news"]
-    groups:
-      actions:
-        patterns: ["*"]
-    cooldown:
-      default-days: 14
-
   # Only bump bugfix branches for pip. Remove
   # the entry when branch goes security-only.
   - package-ecosystem: "pip"
