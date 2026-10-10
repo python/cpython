@@ -1,0 +1,3 @@
+Fix :func:`multiprocessing.connection.wait` on Windows when waiting on more
+than 60 objects: an object that was already ready could be reported more than
+once, and other ready objects could be left out of the result.
