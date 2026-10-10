@@ -1869,7 +1869,7 @@ class TestClassesAndFunctions(unittest.TestCase):
 
 class TestFormatAnnotation(unittest.TestCase):
     def test_typing_replacement(self):
-        from test.typinganndata.ann_module9 import A, ann, ann1
+        from test.typinganndata.ann_module9 import A, ann, ann1, T
         self.assertEqual(inspect.formatannotation(ann), 'List[str] | int')
         self.assertEqual(inspect.formatannotation(ann1), 'List[testModule.typing.A] | int')
 
@@ -1879,13 +1879,14 @@ class TestFormatAnnotation(unittest.TestCase):
             inspect.formatannotation(ann1, 'testModule.typing'),
             'List[testModule.typing.A] | int',
         )
+        self.assertEqual(inspect.formatannotation(T), 'test.typinganndata.ann_module9.T')
 
     def test_forwardref(self):
         fwdref = ForwardRef('fwdref')
         self.assertEqual(inspect.formatannotation(fwdref), 'fwdref')
 
     def test_formatannotationrelativeto(self):
-        from test.typinganndata.ann_module9 import A, ann1
+        from test.typinganndata.ann_module9 import A, ann1, C, T
 
         # Builtin types:
         self.assertEqual(
@@ -1916,6 +1917,16 @@ class TestFormatAnnotation(unittest.TestCase):
         self.assertEqual(
             inspect.formatannotationrelativeto(A)(ann1),
             'List[testModule.typing.A] | int',
+        )
+
+        # Type alias
+        self.assertEqual(
+            inspect.formatannotationrelativeto(object)(T),
+            'test.typinganndata.ann_module9.T',
+        )
+        self.assertEqual(
+            inspect.formatannotationrelativeto(C)(T),
+            'T',
         )
 
 
