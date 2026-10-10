@@ -505,7 +505,7 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #  define HAVE_UNLINKAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
 #  define HAVE_OPENAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
 #  define HAVE_READLINKAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
-#  define HAVE_FREADLINK_RUNTIME __builtin_available(macOS 13.0, *)
+#  define HAVE_FREADLINK_RUNTIME __builtin_available(macOS 13.0, iOS 16.0, *)
 #  define HAVE_SYMLINKAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
 #  define HAVE_FUTIMENS_RUNTIME __builtin_available(macOS 10.13, iOS 11.0, tvOS 11.0, watchOS 4.0, *)
 #  define HAVE_UTIMENSAT_RUNTIME __builtin_available(macOS 10.13, iOS 11.0, tvOS 11.0, watchOS 4.0, *)
@@ -11009,22 +11009,13 @@ that directory.
 dir_fd may not be implemented on your platform.  If it is unavailable,
 using it will raise a NotImplementedError.
 
-On Linux, Android and macOS, path may be a file descriptor referring to
-a symlink. If it is, dir_fd must be None, and the return value will be a
-string object. (File descriptors for symlinks can be obtained with
-
-    os.open(..., os.O_RDONLY | os.O_PATH | os.O_NOFOLLOW)
-
-on Linux and Android, and:
-
-    os.open(..., os.O_RDONLY | os.O_SYMLINK)
-
-on macOS.)
+On Linux, Android, macOS and iOS, path may be a file descriptor
+referring to a symlink. If it is, dir_fd must be None.
 [clinic start generated code]*/
 
 static PyObject *
 os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
-/*[clinic end generated code: output=d21b732a2e814030 input=14546747b3db62f6]*/
+/*[clinic end generated code: output=d21b732a2e814030 input=d90bddfeee86f673]*/
 {
 #if defined(HAVE_READLINK)
     char buffer[MAXPATHLEN+1];
@@ -11079,10 +11070,12 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
     }
     buffer[length] = '\0';
 
-    if (path->is_fd || PyUnicode_Check(path->object))
+    if (path->is_fd || PyUnicode_Check(path->object)) {
         return PyUnicode_DecodeFSDefaultAndSize(buffer, length);
-    else
+    }
+    else {
         return PyBytes_FromStringAndSize(buffer, length);
+    }
 #elif defined(MS_WINDOWS)
     DWORD n_bytes_returned;
     DWORD io_result = 0;

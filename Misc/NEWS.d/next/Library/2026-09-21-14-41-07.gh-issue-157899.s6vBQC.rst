@@ -1,2 +1,2 @@
 :func:`os.readlink` now accepts a file descriptor referring to a
-symlink on Linux, Android and macOS.
+symlink on Linux, Android, macOS and iOS.

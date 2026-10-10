@@ -2802,11 +2802,11 @@ features:
    This function can also support :ref:`paths relative to directory descriptors
    <dir_fd>`.
 
-   On Linux, Android and macOS, *path* can also be a file descriptor referring
+   On Linux, Android, macOS and iOS, *path* can also be a file descriptor referring
    to a symbolic link. In that case, *dir_fd* must be ``None``.
    (On Linux and Android, such a file descriptor must be obtained through
    :func:`os.open` with ``os.O_RDONLY | os.O_PATH | os.O_NOFOLLOW``.
-   On macOS, :func:`os.open` must be called with
+   On macOS and iOS, :func:`os.open` must be called with
    ``os.O_RDONLY | os.O_SYMLINK``.)
    On other operating systems, a ``NotImplementedError`` is raised if *path*
    is an integer.
@@ -2840,7 +2840,7 @@ features:
 
    .. versionchanged:: next
       Accepts file descriptors pointing to symbolic links as *path* on
-      Linux, Android and macOS.
+      Linux, Android, macOS and iOS.
 
 .. function:: remove(path, *, dir_fd=None)
 

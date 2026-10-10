@@ -1882,19 +1882,16 @@ class TestPosixDirFd(unittest.TestCase):
             self.assertEqual(posix.readlink(name, dir_fd=dir_fd), 'symlink')
 
 
-    _support_readlink_with_fd = hasattr(os, 'readlink') and (
-        "HAVE_FREADLINK" in posix._have_functions  # macOS
-        or (
-            os.readlink in os.supports_dir_fd
-            and sys.platform in ["linux", "android"]
-        )
+    _support_readlink_with_fd = (
+        hasattr(os, 'readlink') \
+        and os.readlink in os.supports_fd
     )
 
     def _open_symlink_as_fd(self, path):
         open_flags = os.O_RDONLY
-        if hasattr(os, "O_SYMLINK"):  # macOS
+        if hasattr(os, "O_SYMLINK"):  # macOS/iOS
             open_flags |= os.O_SYMLINK
-        elif hasattr(os, "O_NOFOLLOW") and hasattr(os, "O_PATH"):  # Linux
+        elif hasattr(os, "O_NOFOLLOW") and hasattr(os, "O_PATH"):  # Linux/Android
             open_flags |= os.O_NOFOLLOW | os.O_PATH
         else:
             self.fail("lacking open flags for this test")
@@ -1947,9 +1944,10 @@ class TestPosixDirFd(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             os.readlink(fd)
 
-    @unittest.skipUnless(hasattr(os, "readlink"), "needs os.readlink")
-    def test_readlink_is_in_supports_fd_on_supported_platforms(self):
-        self.assertEqual(os.readlink in os.supports_fd, self._support_readlink_with_fd)
+    @unittest.skipUnless(sys.platform in ["linux", "android", "darwin", "ios"],
+                         "feature not supported on this platform")
+    def test_readlink_is_marked_as_supports_fd(self):
+        self.assertIn(os.readlink, os.supports_fd)
 
     @unittest.skipUnless(os.rename in os.supports_dir_fd, "test needs dir_fd support in os.rename()")
     def test_rename_dir_fd(self):
