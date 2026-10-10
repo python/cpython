@@ -371,6 +371,14 @@ request.  (E.g., using the :func:`shift_path_info` function from
       :pep:`3333`.
 
 
+   .. method:: WSGIRequestHandler.get_stdin()
+
+      Return the object that should be used as the ``wsgi.input`` stream. If the
+      request provides a ``Content-Length`` header, the default implementation returns
+      a wrapper around :attr:`rfile` that limits reads to that many bytes. Otherwise,
+      :attr:`rfile` is returned unchanged.
+
+
    .. method:: WSGIRequestHandler.get_stderr()
 
       Return the object that should be used as the ``wsgi.errors`` stream. The default
