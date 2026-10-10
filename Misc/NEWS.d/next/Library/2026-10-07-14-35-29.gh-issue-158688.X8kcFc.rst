@@ -1,0 +1,2 @@
+Fix a crash in the sampling profiler when dumping a program with a deep
+chain of awaiting tasks. Patch by Timofei Ivankov.
