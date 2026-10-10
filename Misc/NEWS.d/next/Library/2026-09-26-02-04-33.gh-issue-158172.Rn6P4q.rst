@@ -1,0 +1,2 @@
+Fix :mod:`struct` functions to raise :exc:`struct.error` instead of
+:exc:`UnicodeEncodeError` for non-ASCII bytes format strings.
