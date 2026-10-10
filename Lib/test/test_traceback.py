@@ -4355,6 +4355,43 @@ class DelattrSuggestionTests(BaseSuggestionTests):
     attr_function = delattr
 
 
+class SetattrSuggestionTests(SuggestionFormattingTestMixin):
+    def get_suggestion(self, obj, attr_name=None):
+        if attr_name is not None:
+            def callable():
+                setattr(obj, attr_name, None)
+        else:
+            callable = obj
+        result_lines = self.get_exception(callable, slice_start=-1, slice_end=None)
+        return result_lines[0]
+
+    def test_property_no_setter_suggests_similar(self):
+        class A:
+            @property
+            def computed_a(self):
+                return 1
+
+            @property
+            def computed_b(self):
+                return 2
+
+            @computed_b.setter
+            def computed_b(self, val):
+                pass
+
+        actual = self.get_suggestion(A(), 'computed_a')
+        self.assertIn("Did you mean '.computed_b'", actual)
+
+    def test_property_no_setter_no_false_suggestion(self):
+        class A:
+            @property
+            def computed_a(self):
+                return 1
+
+        actual = self.get_suggestion(A(), 'computed_a')
+        self.assertNotIn("Did you mean", actual)
+
+
 class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
     def test_attribute_error_with_failing_dict(self):
         class T:
@@ -5177,6 +5214,30 @@ class CPythonDelattrSuggestionFormattingTests(
     Same set of tests (for attribute deletion) as above but with Python's
     internal traceback printing.
     """
+
+
+class PurePythonSetattrSuggestionFormattingTests(
+    PurePythonExceptionFormattingMixin,
+    SetattrSuggestionTests,
+    unittest.TestCase,
+):
+    """
+    Tests for "Did you mean" suggestions when setting a read-only property,
+    using the pure Python traceback implementation.
+    """
+
+
+@cpython_only
+class CPythonSetattrSuggestionFormattingTests(
+    CAPIExceptionFormattingMixin,
+    SetattrSuggestionTests,
+    unittest.TestCase,
+):
+    """
+    Same set of tests (for attribute setting) but with Python's internal
+    traceback printing.
+    """
+
 
 class MiscTest(unittest.TestCase):
 
