@@ -1563,6 +1563,22 @@ ghi\0jkl
         with self.assertRaisesRegex(csv.Error, "Could not determine delimiter"):
             sniffer.sniff(sample)
 
+    def test_sniff_truncated_sample(self):
+        sniffer = csv.Sniffer()
+        # A single row without a line terminator is complete enough to sniff.
+        self.assertEqual(sniffer.sniff("a,b").delimiter, ",")
+
+        # The last row may have been cut off in the middle of the sample.
+        for lineterminator in ("\n", "\r\n"):
+            with self.subTest(lineterminator=lineterminator):
+                sample = lineterminator.join((
+                    "a,b,c",
+                    "d,e,f",
+                    "g,h,i",
+                    "j,k",
+                ))
+                self.assertEqual(sniffer.sniff(sample).delimiter, ",")
+
 
     def test_sniff_regex_backtracking(self):
         # gh-109638: this artificial sample used to take minutes.
