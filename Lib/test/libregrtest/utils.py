@@ -3,6 +3,7 @@ import faulthandler
 import locale
 import math
 import os.path
+import pathlib
 import platform
 import random
 import re
@@ -13,6 +14,7 @@ import sysconfig
 import tempfile
 import textwrap
 import types
+from _colorize import decolor  # type: ignore[import-not-found]
 from collections.abc import Callable
 _winapi: types.ModuleType | None
 try:
@@ -138,6 +140,60 @@ def print_warning(msg: str) -> None:
 
 
 orig_unraisablehook: Callable[..., None] | None = None
+
+
+# Stdlib directory: Lib/ in a source checkout or an installed lib/python3.X/
+STDLIB_DIR = pathlib.Path(os.__file__).parent
+# Stdlib directory relative to the repository
+REPOSITORY_LIB_DIR = pathlib.Path("Lib")
+
+
+def repository_path(filename: str) -> str:
+    """Path of a stdlib file relative to the repository.
+
+    Map STDLIB_DIR to Lib/. Return other paths unchanged.
+    """
+    path = pathlib.Path(filename)
+    if not path.is_relative_to(STDLIB_DIR):
+        return filename
+    return (REPOSITORY_LIB_DIR / path.relative_to(STDLIB_DIR)).as_posix()
+
+
+# Escape the data and the properties of GitHub Actions workflow commands
+GITHUB_ESCAPE_DATA = str.maketrans({"%": "%25", "\r": "%0D", "\n": "%0A"})
+GITHUB_ESCAPE_PROPERTY = GITHUB_ESCAPE_DATA | str.maketrans({":": "%3A",
+                                                             ",": "%2C"})
+
+
+def print_github_annotation(title: str, message: str, filename: str | None,
+                            file=None) -> None:
+    """Print a GitHub Actions error annotation, if run in GitHub Actions.
+
+    message is a traceback or a failure description. Only keep the exception
+    which ends the traceback: the job log has the full traceback. Locate the
+    annotation in filename, the test file, at the last frame of the traceback
+    in this file, if any.
+    """
+    if not os.environ.get("GITHUB_STEP_SUMMARY"):
+        return
+    if not filename:
+        raise ValueError(f"missing test file of annotation {title!r}")
+    message = decolor(message)
+    props = {"file": repository_path(filename)}
+    # Line of the last traceback frame ('  File "filename", line 123') or
+    # failed doctest example (same, but not indented) in filename
+    if lines := re.findall(rf'^ *File "{re.escape(filename)}", line (\d+)',
+                           message, re.MULTILINE):
+        props["line"] = lines[-1]
+    props["title"] = title
+    # Only keep the exception: strip the traceback frames, each one a
+    # '  File' line followed by its indented source lines
+    message = re.split(r'^  File .*\n(?:    .*\n)*', message,
+                       flags=re.MULTILINE)[-1].strip()
+    props_text = ",".join(f"{key}={value.translate(GITHUB_ESCAPE_PROPERTY)}"
+                          for key, value in props.items())
+    print(f"::error {props_text}::{message.translate(GITHUB_ESCAPE_DATA)}",
+          file=file, flush=True)
 
 
 def regrtest_unraisable_hook(unraisable) -> None:

@@ -624,6 +624,8 @@ class RunWorkers:
             stdout = mp_result.worker_stdout
             if stdout:
                 print(stdout, flush=True)
+        # Annotate after the output: env changed warnings, crash traceback
+        result.print_github_annotation(self.runtests)
 
         return result
 

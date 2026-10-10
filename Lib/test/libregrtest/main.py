@@ -1,3 +1,4 @@
+import html
 import os
 import random
 import re
@@ -6,7 +7,7 @@ import sys
 import sysconfig
 import time
 import trace
-from _colorize import get_colors  # type: ignore[import-not-found]
+from _colorize import decolor, get_colors  # type: ignore[import-not-found]
 from typing import NoReturn
 
 from test.support import os_helper, MS_WINDOWS, flush_std_streams
@@ -395,6 +396,7 @@ class Regrtest:
             result = run_single_test(test_name, runtests)
 
         self.results.accumulate_result(result, runtests)
+        result.print_github_annotation(runtests)
 
         return result
 
@@ -479,6 +481,42 @@ class Regrtest:
 
         if self.junit_filename:
             self.results.write_junit(self.junit_filename)
+
+        self.write_github_summary()
+
+    def write_github_summary(self) -> None:
+        filename = os.environ.get("GITHUB_STEP_SUMMARY")
+        # Tests which failed in the last run (the re-run, if any)
+        failed = self.results.rerun_results
+        # Only write a summary on failure: a CI run has many test jobs
+        exitcode = self.results.get_exitcode(self.fail_env_changed,
+                                             self.fail_rerun)
+        if not filename or not failed or not exitcode:
+            return
+        cases = [(result.errors or []) + (result.failures or [])
+                 for result in failed]
+        ncases = sum(map(len, cases))
+        with open(filename, "a", encoding="utf-8") as fp:
+            def write(text: str) -> None:
+                # Separate Markdown blocks with an empty line
+                print(text, end="\n\n", file=fp)
+
+            write(f"## {decolor(self.get_state())}: "
+                  f"{count(len(failed), 'test file')} and "
+                  f"{count(ncases, 'test case')} failed")
+            for result, result_cases in zip(failed, cases):
+                write(f"### {decolor(str(result))}")
+                if result.env_changed_reasons:
+                    write("\n".join(f"- {reason}"
+                                    for reason in result.env_changed_reasons))
+                for name, traceback in result_cases:
+                    # Expand the tracebacks if they fit on a screen: up to 5
+                    # test cases with a traceback of less than 30 lines
+                    is_open = ncases <= 5 and traceback.count("\n") < 30
+                    write(f"<details{' open' if is_open else ''}>"
+                          f"<summary>{html.escape(name)}</summary>")
+                    write(f"```pytb\n{decolor(traceback).rstrip()}\n```")
+                    write("</details>")
 
     def display_summary(self) -> None:
         if self.first_runtests is None:
@@ -579,10 +617,16 @@ class Regrtest:
         if use_load_tracker:
             self.logger.start_load_tracker()
         try:
-            if self.num_workers:
-                self._run_tests_mp(runtests, self.num_workers)
-            else:
-                self.run_tests_sequentially(runtests)
+            with os_helper.EnvironmentVarGuard() as env:
+                # In GitHub Actions, only annotate failures of the last run:
+                # not the first run if failed tests will be re-run (with
+                # --python, they are not: see rerun_failed_tests())
+                if self.want_rerun and not self.python_cmd:
+                    env.unset("GITHUB_STEP_SUMMARY")
+                if self.num_workers:
+                    self._run_tests_mp(runtests, self.num_workers)
+                else:
+                    self.run_tests_sequentially(runtests)
 
             coverage = self.results.get_coverage_results()
             self.display_result(runtests)

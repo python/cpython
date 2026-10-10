@@ -513,6 +513,11 @@ class MathTests(unittest.TestCase):
 
     def testFloor(self):
         self.assertRaises(TypeError, math.floor)
+        if sys.platform == "linux":
+            # XXX: Intentional failure to test GitHub Actions annotations
+            for x in (0.5, 1.5):
+                with self.subTest(x=x):
+                    self.assertEqual(math.floor(x), x)
         self.assertEqual(int, type(math.floor(0.5)))
         self.assertEqual(math.floor(0.5), 0)
         self.assertEqual(math.floor(1.0), 1)

@@ -1,11 +1,15 @@
 import dataclasses
 import json
+import os
 from _colorize import get_colors  # type: ignore[import-not-found]
 from typing import Any
 
+from .findtests import findtestdir
+from .runtests import RunTests
 from .utils import (
     StrJSON, TestName, FilterTuple,
-    format_duration, normalize_test_name, print_warning)
+    format_duration, normalize_test_name, print_warning,
+    print_github_annotation)
 
 
 @dataclasses.dataclass(slots=True)
@@ -177,6 +181,25 @@ class TestResult:
 
     def has_meaningful_duration(self):
         return State.has_meaningful_duration(self.state)
+
+    def print_github_annotation(self, runtests: RunTests) -> None:
+        """Annotate a failed test without test case failures.
+
+        For example: crash, timeout, env changed. Locate the annotation in the
+        test file. Test case failures are annotated by the test runner, where
+        they are reported (see RegressionTestResult.printErrorList()).
+        """
+        if (self.is_failed(runtests.fail_env_changed)
+                and not self.errors and not self.failures):
+            message = "\n".join([str(self), *(self.env_changed_reasons or ())])
+            # Test file: "test_x" is test_x.py or test_x/__init__.py,
+            # "test.test_x.test_y" is test_x/test_y.py
+            name = self.test_name.removeprefix("test.")
+            path = os.path.join(findtestdir(runtests.test_dir), *name.split("."))
+            filename = path + ".py"
+            if not os.path.exists(filename):
+                filename = os.path.join(path, "__init__.py")
+            print_github_annotation(self.test_name, message, filename)
 
     def set_env_changed(self, *reasons):
         if self.state is None or self.state == State.PASSED:

@@ -113,8 +113,8 @@ def setup_tests(runtests: RunTests) -> None:
     set_match_tests(runtests.match_tests)
 
     if runtests.use_junit:
-        support.junit_xml_list = []
         from .testresult import RegressionTestResult
+        support.junit_xml_list = []
         RegressionTestResult.USE_XML = True
     else:
         support.junit_xml_list = None
