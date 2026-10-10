@@ -139,8 +139,11 @@ SHUTDOWN_TIMEOUT = support.SHORT_TIMEOUT
 
 WAIT_ACTIVE_CHILDREN_TIMEOUT = 5.0
 
-HAVE_GETVALUE = not getattr(_multiprocessing,
-                            'HAVE_BROKEN_SEM_GETVALUE', False)
+try:
+    HAVE_GETVALUE = not getattr(_multiprocessing,'flags') \
+                            .get('HAVE_BROKEN_SEM_GETVALUE', False)
+except:
+    HAVE_GETVALUE = True
 
 WIN32 = (sys.platform == "win32")
 
@@ -1754,9 +1757,9 @@ class _TestSemaphore(BaseTestCase):
         sem = self.BoundedSemaphore(2)
         self._test_semaphore(sem)
         # Currently fails on OS/X
-        #if HAVE_GETVALUE:
-        #    self.assertRaises(ValueError, sem.release)
-        #    self.assertReturnsIfImplemented(2, get_value, sem)
+        if HAVE_GETVALUE:
+            self.assertRaises(ValueError, sem.release)
+            self.assertReturnsIfImplemented(2, get_value, sem)
 
     def test_timeout(self):
         if self.TYPE != 'processes':
