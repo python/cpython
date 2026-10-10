@@ -517,7 +517,11 @@ The following types can be pickled:
 * classes accessible from the top level of a module;
 
 * instances of such classes for which the result of calling :meth:`~object.__getstate__`
-  is picklable  (see section :ref:`pickle-inst` for details).
+  is picklable  (see section :ref:`pickle-inst` for details);
+
+* weak references and the weak containers from the :mod:`weakref` module,
+  provided that the weakly referenced objects are strongly referenced
+  elsewhere in the same pickle (see :class:`weakref.ref`).
 
 Attempts to pickle unpicklable objects will raise the :exc:`PicklingError`
 exception; when this happens, an unspecified number of bytes may have already
