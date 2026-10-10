@@ -395,9 +395,19 @@ _Py_string_to_number_with_underscores(
 
   error:
     PyMem_Free(dup);
+    if (obj == NULL) {
+        obj = PyBytes_FromStringAndSize(s, orig_len);
+        if (obj == NULL) {
+            return NULL;
+        }
+    }
+    else {
+        Py_INCREF(obj);
+    }
     PyErr_Format(PyExc_ValueError,
                  "could not convert string to %s: "
                  "%R", what, obj);
+    Py_DECREF(obj);
     return NULL;
 }
 
