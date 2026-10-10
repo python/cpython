@@ -99,6 +99,15 @@ Other language changes
   (Contributed by Łukasz Langa in :gh:`102960`.)
 
 
+Default interactive shell
+=========================
+
+* The :term:`REPL` now displays error messages when editing commands cannot be
+  performed, such as when tab completion finds no matches or a history search
+  fails.
+  (Contributed by Bartosz Sławecki in :gh:`148228`.)
+
+
 New modules
 ===========
 
