@@ -1,5 +1,6 @@
 import calendar
 import unittest
+from unittest import mock
 
 from test import support
 from test.support.script_helper import assert_python_ok, assert_python_failure
@@ -1334,6 +1335,124 @@ class TestSubClassingCase(unittest.TestCase):
     def test_format_year_head(self):
         self.assertIn('<tr><th colspan="%d" class="%s">%s</th></tr>' % (
             3, self.cal.cssclass_year_head, 2017), self.cal.formatyear(2017))
+
+
+class CommandLineTest(unittest.TestCase):
+    def run_calendar(self, *args):
+        rc, out, err = assert_python_ok('-m', 'calendar', *args)
+        self.assertEqual(err, b'')
+        return out.decode('utf-8', errors='replace')
+
+    def test_default_year(self):
+        out = self.run_calendar()
+        year = str(datetime.date.today().year)
+        self.assertIn(year, out)
+        for month in calendar.month_name[1:]:
+            self.assertIn(month, out)
+
+    def test_year(self):
+        out = self.run_calendar('2024')
+        self.assertIn('2024', out)
+        for month in calendar.month_name[1:]:
+            self.assertIn(month, out)
+
+    def test_year_month(self):
+        out = self.run_calendar('2024', '2')
+        self.assertIn('February 2024', out)
+        self.assertIn('29', out)
+
+        out_nonleap = self.run_calendar('2023', '2')
+        self.assertIn('February 2023', out_nonleap)
+        self.assertIn('28', out_nonleap)
+        self.assertNotIn('29', out_nonleap.split())
+
+    def test_first_weekday(self):
+        for flag in ('-f', '--first-weekday'):
+            with self.subTest(flag=flag):
+                out = self.run_calendar(flag, '6', '2024', '2')
+                self.assertIn('Su Mo Tu We Th Fr Sa', out)
+                out = self.run_calendar(flag, '0', '2024', '2')
+                self.assertIn('Mo Tu We Th Fr Sa Su', out)
+
+    def test_text_options(self):
+        # -w / --width
+        out_w2 = self.run_calendar('-w', '2', '2024', '2')
+        out_w4 = self.run_calendar('--width', '4', '2024', '2')
+        self.assertGreater(len(out_w4.splitlines()[1]), len(out_w2.splitlines()[1]))
+
+        # -l / --lines
+        out_l1 = self.run_calendar('-l', '1', '2024', '2')
+        out_l2 = self.run_calendar('--lines', '2', '2024', '2')
+        self.assertGreater(len(out_l2.splitlines()), len(out_l1.splitlines()))
+
+        # -m / --months
+        out_m2 = self.run_calendar('-m', '2', '2024')
+        out_m4 = self.run_calendar('--months', '4', '2024')
+        self.assertNotEqual(out_m2, out_m4)
+
+        # -s / --spacing
+        out_s4 = self.run_calendar('-s', '4', '2024')
+        out_s10 = self.run_calendar('--spacing', '10', '2024')
+        self.assertNotEqual(out_s4, out_s10)
+
+    def test_html(self):
+        for flag in ('-t', '--type'):
+            with self.subTest(flag=flag):
+                out = self.run_calendar(flag, 'html', '2024')
+                self.assertIn('<!DOCTYPE html>', out)
+                self.assertIn('<title>Calendar for 2024</title>', out)
+                self.assertIn('calendar.css', out)
+
+                out_month = self.run_calendar(flag, 'html', '2024', '2')
+                self.assertIn('<!DOCTYPE html>', out_month)
+                self.assertIn('February 2024', out_month)
+
+    def test_html_custom_css(self):
+        for flag in ('-c', '--css'):
+            with self.subTest(flag=flag):
+                out = self.run_calendar('-t', 'html', flag, 'mycal.css', '2024')
+                self.assertIn('mycal.css', out)
+
+    def test_encoding(self):
+        for flag in ('-e', '--encoding'):
+            with self.subTest(flag=flag):
+                out = self.run_calendar(flag, 'utf-8', '2024', '2')
+                self.assertIn('February 2024', out)
+
+    def test_invalid_month(self):
+        rc, out, err = assert_python_failure('-m', 'calendar', '2024', '13')
+        self.assertNotEqual(rc, 0)
+        self.assertIn(b'IllegalMonthError', err)
+
+    def test_locale_without_encoding_error(self):
+        for flag in ('-L', '--locale'):
+            with self.subTest(flag=flag):
+                rc, out, err = assert_python_failure('-m', 'calendar', flag, 'en_US', '2024')
+                self.assertEqual(rc, 2)
+                self.assertIn(b'if --locale is specified --encoding is required', err)
+
+    def test_help(self):
+        for flag in ('-h', '--help'):
+            with self.subTest(flag=flag):
+                rc, out, err = assert_python_ok('-m', 'calendar', flag)
+                self.assertEqual(rc, 0)
+                self.assertIn(b'usage: ', out)
+                self.assertIn(b'show this help message and exit', out)
+
+    def test_invalid_option(self):
+        rc, out, err = assert_python_failure('-m', 'calendar', '--invalid-option')
+        self.assertEqual(rc, 2)
+        self.assertIn(b'usage: ', err)
+
+    def test_main_in_process(self):
+        with support.captured_stdout() as stdout:
+            calendar.main(['2024', '5'])
+        self.assertIn('May 2024', stdout.getvalue())
+
+        with support.captured_stdout() as stdout, mock.patch('sys.argv', ['calendar', '2024', '5']):
+            calendar.main()
+        self.assertIn('May 2024', stdout.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()
