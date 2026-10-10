@@ -4329,6 +4329,9 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
     PyUnstable_Module_SetGIL(sysmod, Py_MOD_GIL_NOT_USED);
 #endif
 
+    PyModule_AddIntMacro(sysmod, EXIT_SUCCESS);
+    PyModule_AddIntMacro(sysmod, EXIT_FAILURE);
+
     PyObject *sysdict = PyModule_GetDict(sysmod);
     if (sysdict == NULL) {
         goto error;

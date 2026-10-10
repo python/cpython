@@ -2409,6 +2409,26 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    .. versionadded:: 3.2
 
 
+.. data:: EXIT_SUCCESS
+
+    An int you can use to indicate your program ended gracefully.
+
+    .. code-block:: python
+
+        sys.exit(sys.EXIT_SUCCESS)
+
+    .. versionadded:: 3.16
+
+.. data:: EXIT_FAILURE
+
+    An int you can use to indicate your program encountered an error.
+
+    .. code-block:: python
+
+        sys.exit(sys.EXIT_FAILURE)
+
+    .. versionadded:: 3.16
+
 .. rubric:: Citations
 
 .. [C99] ISO/IEC 9899:1999.  "Programming languages -- C."  A public draft of this standard is available at https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf\ .
