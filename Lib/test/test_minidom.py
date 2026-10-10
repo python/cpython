@@ -1605,6 +1605,21 @@ class MinidomTest(unittest.TestCase):
                 , "testNormalizeDeleteAndCombine -- result")
         doc.unlink()
 
+    def testNormalizeManyTextNodes(self):
+        # Ensure that normalize() is fast with many adjacent text nodes.
+        N = 100_000
+        doc = parseString("<doc/>")
+        root = doc.documentElement
+        for i in range(N):
+            root.appendChild(doc.createTextNode("x" * 16))
+            if i % 3 == 0:
+                root.appendChild(doc.createTextNode(""))
+        doc.normalize()
+        self.assertEqual(len(root.childNodes), 1)
+        self.assertEqual(root.firstChild.data, "x" * 16 * N)
+        self.assertIsNone(root.firstChild.nextSibling)
+        doc.unlink()
+
     def testNormalizeRecursion(self):
         doc = parseString("<doc>"
                             "<o>"
