@@ -162,6 +162,9 @@ def loads(s: str, /, *, parse_float: ParseFloat = float) -> dict[str, Any]:
     pos = 0
     out = Output()
     header: Key = ()
+    # Resolve the section once; per-key work is then relative to it.
+    header_flags = out.flags.resolve(header)
+    header_nest = out.data.get_or_create_nest(header)
     parse_float = make_safe_parse_float(parse_float)
 
     # Parse one statement at a time
@@ -186,7 +189,9 @@ def loads(s: str, /, *, parse_float: ParseFloat = float) -> dict[str, Any]:
             pos += 1
             continue
         if char in KEY_INITIAL_CHARS:
-            pos = key_value_rule(src, pos, out, header, parse_float)
+            pos = key_value_rule(
+                src, pos, out, header, header_flags, header_nest, parse_float
+            )
             pos = skip_chars(src, pos, TOML_WS)
         elif char == "[":
             try:
@@ -198,6 +203,8 @@ def loads(s: str, /, *, parse_float: ParseFloat = float) -> dict[str, Any]:
                 pos, header = create_list_rule(src, pos, out)
             else:
                 pos, header = create_dict_rule(src, pos, out)
+            header_flags = out.flags.resolve(header)
+            header_nest = out.data.get_or_create_nest(header)
             pos = skip_chars(src, pos, TOML_WS)
         elif char != "#":
             raise TOMLDecodeError("Invalid statement", src, pos)
@@ -259,10 +266,24 @@ class Flags:
             cont[key_stem] = {"flags": set(), "recursive_flags": set(), "nested": {}}
         cont[key_stem]["recursive_flags" if recursive else "flags"].add(flag)
 
-    def is_(self, key: Key, flag: int) -> bool:
+    def is_(
+        self,
+        key: Key,
+        flag: int,
+        *,
+        start: tuple[dict[Any, Any], dict[Any, Any] | None] | None = None,
+    ) -> bool:
+        # `key` is relative to the section anchor `start`; the section is never
+        # frozen when resolve() runs, so this matches a walk from the root.
+        if start is None:
+            cont: dict[Any, Any] = self._flags
+            inner: dict[Any, Any] | None = None
+        else:
+            cont, inner = start
         if not key:
-            return False  # document root has no flags
-        cont = self._flags
+            if inner is None:
+                return False  # document root has no flags
+            return flag in inner["flags"] or flag in inner["recursive_flags"]
         for k in key[:-1]:
             if k not in cont:
                 return False
@@ -276,6 +297,16 @@ class Flags:
             return flag in inner_cont["flags"] or flag in inner_cont["recursive_flags"]
         return False
 
+    def resolve(
+        self, header: Key
+    ) -> tuple[dict[Any, Any], dict[Any, Any] | None]:
+        inner: dict[Any, Any] | None = None
+        cont = self._flags
+        for k in header:
+            inner = cont[k]
+            cont = inner["nested"]
+        return cont, inner
+
 
 class NestedDict:
     def __init__(self) -> None:
@@ -287,8 +318,10 @@ class NestedDict:
         key: Key,
         *,
         access_lists: bool = True,
+        start: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        cont: Any = self.dict
+        # `start` anchors the walk so `key` is relative to the section's nest.
+        cont: Any = self.dict if start is None else start
         for k in key:
             if k not in cont:
                 cont[k] = {}
@@ -413,28 +446,35 @@ def create_list_rule(src: str, pos: Pos, out: Output) -> tuple[Pos, Key]:
 
 
 def key_value_rule(
-    src: str, pos: Pos, out: Output, header: Key, parse_float: ParseFloat
+    src: str,
+    pos: Pos,
+    out: Output,
+    header: Key,
+    header_flags: tuple[dict[Any, Any], dict[Any, Any] | None],
+    header_nest: dict[str, Any],
+    parse_float: ParseFloat,
 ) -> Pos:
     pos, key, value = parse_key_value_pair(src, pos, parse_float)
     key_parent, key_stem = key[:-1], key[-1]
-    abs_key_parent = header + key_parent
 
-    relative_path_cont_keys = (header + key[:i] for i in range(1, len(key)))
-    for cont_key in relative_path_cont_keys:
+    for i in range(1, len(key)):
+        rel = key[:i]
         # Check that dotted key syntax does not redefine an existing table
-        if out.flags.is_(cont_key, Flags.EXPLICIT_NEST):
+        if out.flags.is_(rel, Flags.EXPLICIT_NEST, start=header_flags):
+            cont_key = header + rel
             raise TOMLDecodeError(f"Cannot redefine namespace {cont_key}", src, pos)
         # Containers in the relative path can't be opened with the table syntax or
         # dotted key/value syntax in following table sections.
-        out.flags.add_pending(cont_key, Flags.EXPLICIT_NEST)
+        out.flags.add_pending(header + rel, Flags.EXPLICIT_NEST)
 
-    if out.flags.is_(abs_key_parent, Flags.FROZEN):
+    if out.flags.is_(key_parent, Flags.FROZEN, start=header_flags):
+        abs_key_parent = header + key_parent
         raise TOMLDecodeError(
             f"Cannot mutate immutable namespace {abs_key_parent}", src, pos
         )
 
     try:
-        nest = out.data.get_or_create_nest(abs_key_parent)
+        nest = out.data.get_or_create_nest(key_parent, start=header_nest)
     except KeyError:
         raise TOMLDecodeError("Cannot overwrite a value", src, pos) from None
     if key_stem in nest:
