@@ -1,0 +1,2 @@
+Fix crash when calling :func:`syslog.syslog` while a subinterpreter in
+another thread calls :func:`syslog.openlog` or :func:`syslog.closelog`.
