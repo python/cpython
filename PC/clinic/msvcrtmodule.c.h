@@ -236,7 +236,9 @@ PyDoc_STRVAR(msvcrt_getch__doc__,
 "Nothing is echoed to the console. This call will block if a keypress is\n"
 "not already available, but will not wait for Enter to be pressed. If the\n"
 "pressed key was a special function key, this will return \'\\000\' or\n"
-"\'\\xe0\'; the next call will return the keycode.");
+"\'\\xe0\'; the next call will return the keycode.\n"
+"When pressed while this function is waiting for input, Control-C can be\n"
+"read as b\'\\x03\' without invoking the signal.SIGINT handler.");
 
 #define MSVCRT_GETCH_METHODDEF    \
     {"getch", (PyCFunction)msvcrt_getch, METH_NOARGS, msvcrt_getch__doc__},
@@ -742,4 +744,4 @@ exit:
 #ifndef MSVCRT_GETERRORMODE_METHODDEF
     #define MSVCRT_GETERRORMODE_METHODDEF
 #endif /* !defined(MSVCRT_GETERRORMODE_METHODDEF) */
-/*[clinic end generated code: output=3fe5cf89f3e93d10 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=db004ea2187c98cc input=a9049054013a1b77]*/
