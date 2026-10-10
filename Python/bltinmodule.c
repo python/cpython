@@ -927,7 +927,7 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                 _PyArena_Free(arena);
                 goto error;
             }
-            int syntax_check_only = ((flags & PyCF_OPTIMIZED_AST) == PyCF_ONLY_AST); /* unoptiomized AST */
+            int syntax_check_only = ((flags & PyCF_OPTIMIZED_AST) == PyCF_ONLY_AST); /* unoptimized AST */
             if (_PyCompile_AstPreprocess(mod, filename, &cf, optimize, arena,
                                          syntax_check_only, modname) < 0)
             {

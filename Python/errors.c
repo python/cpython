@@ -262,7 +262,7 @@ _PyErr_SetKeyError(PyObject *arg)
 
     // PyObject_CallOneArg() must not be called with an exception set,
     // otherwise _Py_CheckFunctionResult() can fail if the function returned
-    // a result with an excception set.
+    // a result with an exception set.
     _PyErr_Clear(tstate);
 
     PyObject *exc = PyObject_CallOneArg(PyExc_KeyError, arg);

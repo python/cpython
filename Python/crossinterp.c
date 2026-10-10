@@ -814,7 +814,7 @@ _PyPickle_GetXIData(PyThreadState *tstate, PyObject *obj, _PyXIData_t *xidata)
         return -1;
     }
 
-    // If we had an "unwrapper" mechnanism, we could call
+    // If we had an "unwrapper" mechanism, we could call
     // _PyObject_GetXIData() on the bytes object directly and add
     // a simple unwrapper to call pickle.loads() on the bytes.
     size_t size = sizeof(struct _shared_pickle_data);

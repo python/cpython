@@ -25,7 +25,7 @@ int __syscall_getuid32(void) {
 
 // Emscripten's syscall layer tracks the umask in SYSCALLS.currentUmask and
 // applies it itself when creating files and directories. We mount the real
-// filesystem via NODEFS, which applies proces.umask() to everything as well. To
+// filesystem via NODEFS, which applies process.umask() to everything as well. To
 // avoid masking the mode twice, read and zero out process umask at startup,
 // and store it as emscripten's umask.
 EM_JS(void, __syscall_init_umask_js, (void), {
