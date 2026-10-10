@@ -8,7 +8,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #ifndef MIMALLOC_STATS_H
 #define MIMALLOC_STATS_H
 
-#include <mimalloc.h>
+#include "mimalloc.h"
 #include <stdint.h>
 
 #define MI_STAT_VERSION   4  // increased on every backward incompatible change
