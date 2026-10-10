@@ -5086,6 +5086,19 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         with self.assertRaises(AttributeError):
             getattr(obj, EqChangesClass("missing"))
 
+        class KeyChangesClass(str):
+            def __hash__(self):
+                return hash("missing")
+            def __eq__(self, other):
+                obj.__class__ = Replacement
+                gc.collect()
+                return False
+
+        obj = make_obj()
+        obj.__dict__[KeyChangesClass("pad")] = None
+        with self.assertRaises(AttributeError):
+            obj.missing()
+
     def test_type___getattribute__(self):
         self.assertRaises(TypeError, type.__getattribute__, list, type)
 
