@@ -4522,7 +4522,9 @@
                 if (sym_is_not_null(self_or_null)) {
                     total_args++;
                 }
-                if (total_args == 1 && PyCFunction_GET_FLAGS(callable_o) == METH_O) {
+                if (total_args == 1 &&
+                    (PyCFunction_GET_FLAGS(callable_o) &
+                        _Py_METH_CALL_FLAGS) == METH_O) {
                     ADD_OP(_NOP, 0, 0);
                 }
             }
@@ -4568,7 +4570,8 @@
             callable = stack_pointer[-2 - oparg];
             PyObject *callable_o = sym_get_const(ctx, callable);
             if (callable_o && sym_matches_type(callable, &PyCFunction_Type)) {
-                if (PyCFunction_GET_FLAGS(callable_o) == METH_FASTCALL) {
+                if ((PyCFunction_GET_FLAGS(callable_o) & _Py_METH_CALL_FLAGS) ==
+                    METH_FASTCALL) {
                     ADD_OP(_NOP, 0, 0);
                 }
             }
@@ -4591,7 +4594,8 @@
             callable = stack_pointer[-2 - oparg];
             PyObject *callable_o = sym_get_const(ctx, callable);
             if (callable_o && sym_matches_type(callable, &PyCFunction_Type)) {
-                if (PyCFunction_GET_FLAGS(callable_o) == (METH_FASTCALL | METH_KEYWORDS)) {
+                if ((PyCFunction_GET_FLAGS(callable_o) & _Py_METH_CALL_FLAGS) ==
+                    (METH_FASTCALL | METH_KEYWORDS)) {
                     ADD_OP(_NOP, 0, 0);
                 }
             }
@@ -4776,9 +4780,10 @@
                 else {
                     self_type = sym_get_type(args[0]);
                 }
-                PyTypeObject *d_type = ((PyMethodDescrObject *)callable_o)->d_common.d_type;
+                PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
+                PyTypeObject *d_type = method->d_common.d_type;
                 if (total_args == 2 &&
-                    ((PyMethodDescrObject *)callable_o)->d_method->ml_flags == METH_O &&
+                    (method->d_method->ml_flags & _Py_METH_CALL_FLAGS) == METH_O &&
                     self_type == d_type) {
                     ADD_OP(_NOP, 0, 0);
                 }
@@ -4876,9 +4881,11 @@
                 else {
                     self_type = sym_get_type(args[0]);
                 }
-                PyTypeObject *d_type = ((PyMethodDescrObject *)callable_o)->d_common.d_type;
+                PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
+                PyTypeObject *d_type = method->d_common.d_type;
                 if (total_args != 0 &&
-                    ((PyMethodDescrObject *)callable_o)->d_method->ml_flags == (METH_FASTCALL|METH_KEYWORDS) &&
+                    (method->d_method->ml_flags & _Py_METH_CALL_FLAGS) ==
+                    (METH_FASTCALL | METH_KEYWORDS) &&
                     self_type == d_type) {
                     ADD_OP(_NOP, 0, 0);
                 }
@@ -4931,9 +4938,11 @@
                 else {
                     self_type = sym_get_type(args[0]);
                 }
-                PyTypeObject *d_type = ((PyMethodDescrObject *)callable_o)->d_common.d_type;
+                PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
+                PyTypeObject *d_type = method->d_common.d_type;
                 if (total_args == 1 &&
-                    ((PyMethodDescrObject *)callable_o)->d_method->ml_flags == METH_NOARGS &&
+                    (method->d_method->ml_flags & _Py_METH_CALL_FLAGS) ==
+                    METH_NOARGS &&
                     self_type == d_type) {
                     ADD_OP(_NOP, 0, 0);
                 }
@@ -5019,9 +5028,11 @@
                 else {
                     self_type = sym_get_type(args[0]);
                 }
-                PyTypeObject *d_type = ((PyMethodDescrObject *)callable_o)->d_common.d_type;
+                PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
+                PyTypeObject *d_type = method->d_common.d_type;
                 if (total_args != 0 &&
-                    ((PyMethodDescrObject *)callable_o)->d_method->ml_flags == METH_FASTCALL &&
+                    (method->d_method->ml_flags & _Py_METH_CALL_FLAGS) ==
+                    METH_FASTCALL &&
                     self_type == d_type) {
                     ADD_OP(_NOP, 0, 0);
                 }
