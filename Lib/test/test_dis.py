@@ -181,8 +181,8 @@ dis_bug708901 = """\
 
 %3d           JUMP_BACKWARD            5 (to L1)
 
-%3d   L2:     END_FOR
-              POP_ITER
+%3d           END_FOR
+      L2:     POP_ITER
               LOAD_COMMON_CONSTANT     7 (None)
               RETURN_VALUE
 """ % (bug708901.__code__.co_firstlineno,
@@ -850,8 +850,8 @@ Disassembly of <code object foo at 0x..., file "%s", line %d>:
        L1:     FOR_ITER                 3 (to L2)
                LIST_APPEND              3
                JUMP_BACKWARD            5 (to L1)
-       L2:     END_FOR
-               POP_ITER
+               END_FOR
+       L2:     POP_ITER
                RETURN_VALUE
        L3:     PUSH_NULL
                LOAD_FAST_BORROW         0 (x)
@@ -894,8 +894,8 @@ Disassembly of <code object <genexpr> at 0x..., file "%s", line %d>:
                RESUME                   9
                POP_TOP
                JUMP_BACKWARD           17 (to L2)
-       L3:     END_FOR
-               POP_ITER
+               END_FOR
+       L3:     POP_ITER
                LOAD_COMMON_CONSTANT     7 (None)
                RETURN_VALUE
 
@@ -948,8 +948,8 @@ dis_loop_test_quickened_code = """\
               POP_TOP
               JUMP_BACKWARD_{: <6}    16 (to L1)
 
-%3d   L2:     END_FOR
-              POP_ITER
+%3d           END_FOR
+      L2:     POP_ITER
               LOAD_COMMON_CONSTANT     7 (None)
               RETURN_VALUE
 """ % (loop_test.__code__.co_firstlineno,
@@ -1890,7 +1890,7 @@ expected_opinfo_jumpy = [
   make_inst(opname='LOAD_SMALL_INT', arg=10, argval=10, argrepr='', offset=14, start_offset=14, starts_line=False, line_number=3),
   make_inst(opname='CALL', arg=1, argval=1, argrepr='', offset=16, start_offset=16, starts_line=False, line_number=3, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
   make_inst(opname='GET_ITER', arg=0, argval=0, argrepr='', offset=24, start_offset=24, starts_line=False, line_number=3, cache_info=[('counter', 1, b'\x00\x00')]),
-  make_inst(opname='FOR_ITER', arg=33, argval=98, argrepr='to L4', offset=28, start_offset=28, starts_line=False, line_number=3, label=1, cache_info=[('counter', 1, b'\x00\x00')]),
+  make_inst(opname='FOR_ITER', arg=33, argval=100, argrepr='to L4', offset=28, start_offset=28, starts_line=False, line_number=3, label=1, cache_info=[('counter', 1, b'\x00\x00')]),
   make_inst(opname='STORE_FAST', arg=0, argval='i', argrepr='i', offset=32, start_offset=32, starts_line=False, line_number=3),
   make_inst(opname='LOAD_GLOBAL', arg=3, argval='print', argrepr='print + NULL', offset=34, start_offset=34, starts_line=True, line_number=4, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
   make_inst(opname='LOAD_FAST_BORROW', arg=0, argval='i', argrepr='i', offset=44, start_offset=44, starts_line=False, line_number=4),
@@ -1911,8 +1911,8 @@ expected_opinfo_jumpy = [
   make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=92, start_offset=92, starts_line=True, line_number=8, label=3),
   make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=94, start_offset=94, starts_line=False, line_number=8),
   make_inst(opname='JUMP_FORWARD', arg=13, argval=124, argrepr='to L5', offset=96, start_offset=96, starts_line=False, line_number=8),
-  make_inst(opname='END_FOR', arg=None, argval=None, argrepr='', offset=98, start_offset=98, starts_line=True, line_number=3, label=4),
-  make_inst(opname='POP_ITER', arg=None, argval=None, argrepr='', offset=100, start_offset=100, starts_line=False, line_number=3),
+  make_inst(opname='END_FOR', arg=None, argval=None, argrepr='', offset=98, start_offset=98, starts_line=True, line_number=3),
+  make_inst(opname='POP_ITER', arg=None, argval=None, argrepr='', offset=100, start_offset=100, starts_line=False, line_number=3, label=4),
   make_inst(opname='LOAD_GLOBAL', arg=3, argval='print', argrepr='print + NULL', offset=102, start_offset=102, starts_line=True, line_number=10, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
   make_inst(opname='LOAD_CONST', arg=1, argval='I can haz else clause?', argrepr="'I can haz else clause?'", offset=112, start_offset=112, starts_line=False, line_number=10),
   make_inst(opname='CALL', arg=1, argval=1, argrepr='', offset=114, start_offset=114, starts_line=False, line_number=10, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
@@ -2231,6 +2231,13 @@ class InstructionTests(InstructionTestCase):
                                   argrepr='', offset=10, start_offset=10, starts_line=True, line_number=1, label=None,
                                   positions=None)
         self.assertEqual(10 + 2 + 1*2 + 100*2, instruction.jump_target)
+
+        # FOR_ITER uses JUMPBY(oparg + 1) at runtime, skipping END_FOR to land
+        # on POP_ITER; the reported target must reflect the extra +2 bytes.
+        instruction = make_inst(opname="FOR_ITER", arg=delta, argval=delta,
+                                  argrepr='', offset=10, start_offset=10, starts_line=True, line_number=1, label=None,
+                                  positions=None)
+        self.assertEqual(10 + 2 + 1*2 + 100*2 + 2, instruction.jump_target)
 
     def test_argval_argrepr(self):
         def f(opcode, oparg, offset, *init_args):
