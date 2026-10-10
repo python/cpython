@@ -52,8 +52,8 @@ import types
 from test.support import (
     captured_stderr, cpython_only, requires_docstrings, import_helper, run_code,
     subTests, EqualToForwardRef,
-    exceeds_recursion_limit, skip_if_huge_c_stack, skip_wasi_stack_overflow,
-    skip_emscripten_stack_overflow,
+    exceeds_recursion_limit, run_with_limited_c_stack,
+    skip_wasi_stack_overflow, skip_emscripten_stack_overflow,
 )
 from test.typinganndata import (
     ann_module695, mod_generics_cache, _typed_dict_helper,
@@ -5097,7 +5097,7 @@ class GenericTests(BaseTestCase):
         self.assertEqual(MM2.__bases__, (collections.abc.MutableMapping, Generic))
 
     @cpython_only
-    @skip_if_huge_c_stack()
+    @run_with_limited_c_stack()
     @skip_wasi_stack_overflow()
     @skip_emscripten_stack_overflow()
     def test_parameters_deep_recursion(self):
@@ -6052,6 +6052,22 @@ class GenericTests(BaseTestCase):
                     a = c[[s], s]
                     with self.assertRaises(TypeError):
                         a[int]
+
+    def test_parameter_added_after_parameters_cached(self):
+        # gh-155752: GenericAlias parameters are cached before substitution, so
+        # an argument can gain __typing_subst__ after the tuple is calculated.
+        class Parameter:
+            pass
+
+        first = Parameter()
+        first.__typing_subst__ = lambda value: value
+        late = Parameter()
+        alias = types.GenericAlias(dict, (first, late))
+        self.assertEqual(alias.__parameters__, (first,))
+        late.__typing_subst__ = lambda value: value
+
+        with self.assertRaisesRegex(TypeError, "not found in __parameters__"):
+            alias[0]
 
     def test_return_non_tuple_while_unpacking(self):
         # GH-138497: GenericAlias objects didn't ensure that __typing_subst__ actually
@@ -10268,6 +10284,17 @@ class ParamSpecTests(BaseTestCase):
         self.assertNotEqual(P.args, P_2.kwargs)
         self.assertEqual(repr(P.args), "P.args")
         self.assertEqual(repr(P.kwargs), "P.kwargs")
+
+    def test_args_kwargs_weakrefs(self):
+        P = ParamSpec('P')
+        for attr_name in ('args', 'kwargs'):
+            with self.subTest(attr_name=attr_name):
+                callback_fired = []
+                attr = getattr(P, attr_name)
+                ref = weakref.ref(attr, lambda _: callback_fired.append(True))
+                del attr
+                self.assertEqual(callback_fired, [True])
+                self.assertIsNone(ref())
 
     def test_stringized(self):
         P = ParamSpec('P')

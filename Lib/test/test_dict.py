@@ -678,7 +678,7 @@ class DictTest(unittest.TestCase):
         d = {1: BadRepr()}
         self.assertRaises(Exc, repr, d)
 
-    @support.skip_if_huge_c_stack()
+    @support.run_with_limited_c_stack()
     @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
     def test_repr_deep(self):
@@ -1423,6 +1423,31 @@ class DictTest(unittest.TestCase):
 
         for it in iterators:
             self.assertEqual(list(it), [])
+
+    def test_reversed_dict_keys_changed_during_iteration(self):
+        d = dict.fromkeys(range(10))
+        for i in range(7):
+            del d[i]
+
+        iterators = (
+            reversed(d),
+            reversed(d.keys()),
+            reversed(d.values()),
+            reversed(d.items()),
+        )
+        for it in iterators:
+            next(it)
+
+        # Same size as before, but with different keys below
+        # the iterators' current position.
+        d.clear()
+        d.update(dict.fromkeys(range(10)))
+        for i in range(3, 10):
+            del d[i]
+
+        for it in iterators:
+            with self.assertRaisesRegex(RuntimeError, 'keys changed'):
+                list(it)
 
     def test_dict_copy_order(self):
         # bpo-34320
