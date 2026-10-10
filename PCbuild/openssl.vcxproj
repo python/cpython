@@ -67,7 +67,7 @@
 set VCINSTALLDIR=$(VCInstallDir)
 if not exist "$(IntDir.TrimEnd('\'))" mkdir "$(IntDir.TrimEnd('\'))"
 cd /D "$(IntDir.TrimEnd('\'))"
-$(Perl) "$(opensslDir)\configure" $(OpenSSLPlatform) no-asm no-uplink
+$(Perl) "$(opensslDir)\configure" $(OpenSSLPlatform) no-asm no-uplink "LDFLAGS=/nologo /debug /DELAYLOAD:user32.dll" LDLIBS=delayimp.lib
 nmake
 </NMakeBuildCommandLine>
   </PropertyGroup>
