@@ -1,0 +1,3 @@
+Fix :mod:`xml.dom.minidom` to not write a duplicate ``xmlns`` attribute
+when an element has an explicit ``xmlns`` attribute set with
+:meth:`~xml.dom.Element.setAttribute`.
