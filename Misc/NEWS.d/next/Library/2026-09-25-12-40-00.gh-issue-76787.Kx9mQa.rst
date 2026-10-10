@@ -1,0 +1,5 @@
+:class:`email.header.Header` now rejects an embedded header whose name is
+separated from the colon by spaces or tabs.  Receivers accept that form, so a
+value such as ``"addr@example.com\ncc : injected@example.com"`` reached them
+as two headers while the check that was meant to catch it only looked for a
+colon immediately after the name.
