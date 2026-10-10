@@ -259,6 +259,27 @@ class TestConsole(TestCase):
         _os_write.assert_any_call(ANY, b"2")
         con.restore()
 
+    def test_insert_char_only_for_midline_insert(self, _os_write):
+        insert_char = b"<insert-char>"
+        events = itertools.chain(
+            code_to_events("1"),
+            [Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))],
+            code_to_events("2"),
+        )
+        _, con = handle_all_events(
+            events,
+            prepare_console=partial(unix_console, ich1=insert_char),
+        )
+        relevant_writes = []
+        for write in _os_write.call_args_list:
+            output = write.args[1]
+            if insert_char in output:
+                relevant_writes.append(insert_char)
+            elif output in {b"1", b"2"}:
+                relevant_writes.append(output)
+        self.assertEqual(relevant_writes, [b"1", insert_char, b"2"])
+        con.restore()
+
     def test_multiline_function_move_up_short_terminal(self, _os_write):
         # fmt: off
         code = (
