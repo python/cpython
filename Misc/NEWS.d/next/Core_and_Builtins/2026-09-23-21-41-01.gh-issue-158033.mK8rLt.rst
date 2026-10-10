@@ -1,0 +1,3 @@
+Fix a use-after-free in the two-argument form of :func:`aiter` when comparing
+the sentinel. A reentrant equality comparison could exhaust the iterator and
+free the sentinel while the comparison was still using it.
