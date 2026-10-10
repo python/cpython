@@ -1,0 +1,1 @@
+Fixed an issue that prevented creation of an :class:`enum.Enum` that inherits from a subclass :class:`typing.Protocol`.
