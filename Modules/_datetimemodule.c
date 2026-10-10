@@ -117,6 +117,7 @@ typedef struct {
 #define CONST_SEC_PER_DAY(st) st->seconds_per_day
 #define CONST_EPOCH(st) st->epoch
 #define CONST_UTC(st) ((PyObject *)&utc_timezone)
+#define STRFTIME_NF_DIGITS 6
 
 static datetime_state *
 get_module_state(PyObject *module)
@@ -1861,15 +1862,20 @@ make_Zreplacement(PyObject *object, PyObject *tzinfoarg)
 }
 
 static PyObject *
-make_freplacement(PyObject *object)
+make_freplacement(PyObject *object, size_t digits)
 {
     char freplacement[64];
+
+    assert(digits <= 6);
+
     if (PyTime_Check(object))
         sprintf(freplacement, "%06d", TIME_GET_MICROSECOND(object));
     else if (PyDateTime_Check(object))
         sprintf(freplacement, "%06d", DATE_GET_MICROSECOND(object));
     else
         sprintf(freplacement, "%06d", 0);
+
+    freplacement[digits] = '\0';
 
     return PyUnicode_FromString(freplacement);
 }
@@ -1890,7 +1896,8 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     PyObject *zreplacement = NULL;      /* py string, replacement for %z */
     PyObject *colonzreplacement = NULL; /* py string, replacement for %:z */
     PyObject *Zreplacement = NULL;      /* py string, replacement for %Z */
-    PyObject *freplacement = NULL;      /* py string, replacement for %f */
+    /* py string, replacements for "%Nf" where 1 <= N <= 6 */
+    PyObject *freplacements[STRFTIME_NF_DIGITS] = {NULL};
 
     assert(object && format && timetuple);
     assert(PyUnicode_Check(format));
@@ -1960,12 +1967,41 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             }
             replacement = Zreplacement;
         }
-        else if (ch == 'f') {
-            /* format microseconds */
+        else if (ch == 'f' ||
+                (ch >= '0' && ch <= '9' && i < flen && PyUnicode_READ_CHAR(format, i) == 'f')
+        ) {
+            /* format microseconds ("%f" or "%Nf" where 1 <= N <= 6) */
+            size_t microsec_digits = 6;
+            if (ch != 'f') {
+                /* ch denotes N */
+                assert(ch >= '0' && ch <= '9');
+                microsec_digits = (size_t)(ch - '0');
+
+                /* prevent unsupported lengths from falling through and hitting libc where they
+                 * will become "optional minimum field widths". With Glibc, even though 'f' isn't supported,
+                 * an input of "%7f" produces a result of "    %7f".
+                 *
+                 * Note: a code with 2- or more digit-long "minimum field width" will still fall through.
+                 * This is "ok" because N is defined as a digit, not a number.
+                 */
+                if (microsec_digits == 0 || microsec_digits > 6) {
+                    PyErr_Format(PyExc_ValueError,
+                                 "%%Nf format code requires 1 <= N <= 6, got %zu",
+                                 microsec_digits);
+                    goto Error;
+                }
+
+                i++;
+            }
+
+            assert(microsec_digits >= 1 && microsec_digits <= 6);
+
+            PyObject *freplacement = freplacements[microsec_digits - 1];
             if (freplacement == NULL) {
-                freplacement = make_freplacement(object);
+                freplacement = make_freplacement(object, microsec_digits);
                 if (freplacement == NULL)
                     goto Error;
+                freplacements[microsec_digits - 1] = freplacement;
             }
             replacement = freplacement;
         }
@@ -2056,7 +2092,9 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     Py_DECREF(newformat);
 
  Done:
-    Py_XDECREF(freplacement);
+    for (size_t i = 0; i < STRFTIME_NF_DIGITS; ++i) {
+        Py_XDECREF(freplacements[i]);
+    }
     Py_XDECREF(zreplacement);
     Py_XDECREF(colonzreplacement);
     Py_XDECREF(Zreplacement);
