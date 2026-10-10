@@ -26,6 +26,7 @@ from collections import deque
 
 import json
 
+from . import process
 from . import spawn
 from . import util
 
@@ -203,16 +204,16 @@ class ResourceTracker(object):
             # os.waitstatus_to_exitcode may raise an exception for invalid values
             self._exitcode = None
 
-    def getfd(self):
-        self.ensure_running()
+    def getfd(self, *, env=None):
+        self.ensure_running(env=env)
         return self._fd
 
-    def ensure_running(self):
+    def ensure_running(self, *, env=None):
         '''Make sure that resource tracker process is running.
 
         This can be run from any process.  Usually a child process will use
         the resource created by its parent.'''
-        return self._ensure_running_and_write()
+        return self._ensure_running_and_write(env=env)
 
     def _teardown_dead_process(self):
         os.close(self._fd)
@@ -233,7 +234,11 @@ class ResourceTracker(object):
         warnings.warn('resource_tracker: process died unexpectedly, '
                       'relaunching.  Some resources might leak.')
 
-    def _launch(self):
+    def _launch(self, env=None):
+        # Prefer this launch's explicit environment, then the launching
+        # process's snapshot.  None preserves normal environment inheritance.
+        if env is None:
+            env = getattr(process.current_process(), '_env', None)
         fds_to_pass = []
         try:
             fds_to_pass.append(sys.stderr.fileno())
@@ -260,7 +265,8 @@ class ResourceTracker(object):
             try:
                 if _HAVE_SIGMASK:
                     prev_sigmask = signal.pthread_sigmask(signal.SIG_BLOCK, _IGNORED_SIGNALS)
-                pid = util.spawnv_passfds(exe, args, fds_to_pass)
+                pid = util.spawnv_passfds(exe, args, fds_to_pass,
+                                         env=env)
             finally:
                 if prev_sigmask is not None:
                     signal.pthread_sigmask(signal.SIG_SETMASK, prev_sigmask)
@@ -286,7 +292,7 @@ class ResourceTracker(object):
             + "\n"
         ).encode("ascii")
 
-    def _ensure_running_and_write(self, msg=None):
+    def _ensure_running_and_write(self, msg=None, *, env=None):
         with self._lock:
             if self._lock._recursion_count() > 1:
                 # The code below is certainly not reentrant-safe, so bail out
@@ -304,11 +310,11 @@ class ResourceTracker(object):
                     self._write(to_send)
                 except OSError:
                     self._teardown_dead_process()
-                    self._launch()
+                    self._launch(env)
 
                 msg = None  # message was sent in probe
             else:
-                self._launch()
+                self._launch(env)
 
         while True:
             try:
