@@ -330,6 +330,24 @@ class ClinicWholeFileTest(TestCase):
         """
         self.expect_failure(block, err, lineno=8)
 
+    def test_ambiguous_group_and_optional_parameters(self):
+        err = ("Function 'my_test_func' has an ambiguous group configuration: "
+               "a call with 2 argument(s) can be parsed in more than one way.")
+        block = """
+            /*[clinic input]
+            my_test_func
+
+                [
+                a: object
+                b: object
+                ]
+                c: object = None
+                d: object = None
+                /
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err)
+
     def test_star_after_vararg(self):
         err = "'my_test_func' uses '*' more than once."
         block = """
@@ -774,6 +792,102 @@ class ClinicWholeFileTest(TestCase):
                 [{dsl} start generated code]*/
             """)
             self.clinic.parse(raw)
+
+    def test_getset_in_ifdef(self):
+        block = """
+            /*[clinic input]
+            output everything block
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            #ifdef CONDITION
+            /*[clinic input]
+            @getter
+            Foo.property
+            [clinic start generated code]*/
+            /*[clinic input]
+            @setter
+            Foo.property
+            [clinic start generated code]*/
+            #endif
+        """
+        generated = self.clinic.parse(dedent(block))
+        self.assertIn("#if defined(CONDITION)", generated)
+        # The getset is undefined if the condition is false.
+        self.assertIn("#ifndef FOO_PROPERTY_GETSETDEF\n"
+                      "    #define FOO_PROPERTY_GETSETDEF\n"
+                      "#endif /* !defined(FOO_PROPERTY_GETSETDEF) */",
+                      generated)
+
+    def test_getset_duplicate(self):
+        for annotation in "@getter", "@setter":
+            with self.subTest(annotation=annotation):
+                self.clinic = _make_clinic(filename="test.c")
+                block = f"""
+                    /*[clinic input]
+                    class Foo "FooObject *" "&Foo_Type"
+                    [clinic start generated code]*/
+                    /*[clinic input]
+                    {annotation}
+                    Foo.property
+                    [clinic start generated code]*/
+                    /*[clinic input]
+                    {annotation}
+                    Foo.property
+                    [clinic start generated code]*/
+                """
+                kind = 'setter' if annotation == '@setter' else 'getter'
+                err = f"Cannot apply @{kind} to 'Foo.property' twice"
+                self.expect_failure(block, err, lineno=10)
+
+    def test_getset_different_c_basename(self):
+        block = """
+            /*[clinic input]
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            /*[clinic input]
+            @getter
+            Foo.property as foo_get
+            [clinic start generated code]*/
+            /*[clinic input]
+            @setter
+            Foo.property as foo_set
+            [clinic start generated code]*/
+        """
+        err = "The accessors of 'Foo.property' must have the same C basename"
+        self.expect_failure(block, err, lineno=10)
+
+    def test_setter_deletion_check(self):
+        block = """
+            /*[clinic input]
+            output everything block
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            /*[clinic input]
+            @setter
+            Foo.property
+            [clinic start generated code]*/
+        """
+        generated = self.clinic.parse(dedent(block))
+        self.assertIn("if (value == NULL) {", generated)
+        self.assertIn("\"attribute 'property' of '%.100s' objects "
+                      "cannot be deleted\"", generated)
+
+    def test_deleter(self):
+        # @deleter means that the setter is called with NULL to delete
+        # the attribute, so it checks the value itself.
+        block = """
+            /*[clinic input]
+            output everything block
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            /*[clinic input]
+            @setter
+            @deleter
+            Foo.property
+            [clinic start generated code]*/
+        """
+        generated = self.clinic.parse(dedent(block))
+        self.assertNotIn("if (value == NULL) {", generated)
 
     def test_var_keyword_non_dict(self):
         err = "'var_keyword_object' is not a valid converter"
@@ -2599,7 +2713,7 @@ class ClinicParserTest(TestCase):
                     {annotation}
                     Foo.property -> int
                 """
-                expected_error = f"{annotation} method cannot define a return type"
+                expected_error = "@getter and @setter methods cannot define a return type"
                 self.expect_failure(block, expected_error, lineno=3)
 
                 block = f"""
@@ -2610,7 +2724,7 @@ class ClinicParserTest(TestCase):
                        obj: int
                        /
                 """
-                expected_error = f"{annotation} methods cannot define parameters"
+                expected_error = "@getter and @setter methods cannot define parameters"
                 self.expect_failure(block, expected_error)
 
     def test_setter_docstring(self):
@@ -2653,8 +2767,50 @@ class ClinicParserTest(TestCase):
                     {dup[1]}
                     Foo.property -> int
                 """
-                expected_error = "Cannot apply both @getter and @setter to the same function!"
+                expected_error = (f"Can't set {dup[1]}, "
+                                  f"function is not a normal callable")
                 self.expect_failure(block, expected_error, lineno=3)
+
+    def test_deleter_without_setter(self):
+        block = """
+            module foo
+            class Foo "" ""
+            @deleter
+            Foo.property
+        """
+        expected_error = "Can't set @deleter, @setter is not applied"
+        self.expect_failure(block, expected_error, lineno=2)
+
+        block = """
+            module foo
+            class Foo "" ""
+            @deleter
+            @setter
+            Foo.property
+        """
+        self.expect_failure(block, expected_error, lineno=2)
+
+    def test_deleter_twice(self):
+        block = """
+            module foo
+            class Foo "" ""
+            @setter
+            @deleter
+            @deleter
+            Foo.property
+        """
+        expected_error = "Cannot apply @deleter twice to the same function!"
+        self.expect_failure(block, expected_error, lineno=4)
+
+    def test_setter_and_deleter(self):
+        function = self.parse_function("""
+            module foo
+            class Foo "" ""
+            @setter
+            @deleter
+            Foo.property
+        """, signatures_in_block=3, function_index=2)
+        self.assertEqual(function.kind, FunctionKind.SETTER_AND_DELETER)
 
     def test_getset_no_class(self):
         for annotation in "@getter", "@setter":
@@ -3864,6 +4020,27 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(fn(1, a=2), ((1,), 2, False, False))
         self.assertEqual(fn(1, a=2, b=3), ((1,), 2, 3, False))
         self.assertEqual(fn(1, a=2, b=3, c=4), ((1,), 2, 3, 4))
+
+    def test_group_and_opt(self):
+        # fn([a, b,] c=None)
+        fn = ac_tester.group_and_opt
+        self.assertEqual(fn(), (False, None, None, None))
+        self.assertEqual(fn(1), (False, None, None, 1))
+        self.assertEqual(fn(1, 2), (True, 1, 2, None))
+        self.assertEqual(fn(1, 2, 3), (True, 1, 2, 3))
+        self.assertRaises(TypeError, fn, 1, 2, 3, 4)
+        self.assertRaises(TypeError, fn, c=1)
+
+    def test_group_and_two_opt(self):
+        # fn([a, b, c,] d=None, e=None)
+        fn = ac_tester.group_and_two_opt
+        self.assertEqual(fn(), (False, None, None, None, None, None))
+        self.assertEqual(fn(1), (False, None, None, None, 1, None))
+        self.assertEqual(fn(1, 2), (False, None, None, None, 1, 2))
+        self.assertEqual(fn(1, 2, 3), (True, 1, 2, 3, None, None))
+        self.assertEqual(fn(1, 2, 3, 4), (True, 1, 2, 3, 4, None))
+        self.assertEqual(fn(1, 2, 3, 4, 5), (True, 1, 2, 3, 4, 5))
+        self.assertRaises(TypeError, fn, 1, 2, 3, 4, 5, 6)
 
     def test_gh_32092_oob(self):
         ac_tester.gh_32092_oob(1, 2, 3, 4, kw1=5, kw2=6)
