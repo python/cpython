@@ -1,0 +1,7 @@
+Reading the :attr:`~module.__name__` and :attr:`~module.__file__` attributes
+of a module created by :class:`importlib.util.LazyLoader` no longer triggers
+the load.  While the module remains unloaded these attributes are aliases for
+its :attr:`~module.__spec__`, and assigning to them updates the spec.  This
+prevents introspection tools such as :func:`inspect.getframeinfo`, via
+:func:`inspect.getmodule`, from forcing every lazily-loaded module in
+:data:`sys.modules` to be imported.
