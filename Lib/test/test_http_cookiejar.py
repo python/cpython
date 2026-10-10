@@ -16,7 +16,7 @@ from http.cookiejar import (time2isoz, http2time, iso2time, time2netscape,
      CookieJar, DefaultCookiePolicy, LWPCookieJar, MozillaCookieJar,
      LoadError, lwp_cookie_str, DEFAULT_HTTP_PORT, escape_path,
      reach, is_HDN, domain_match, user_domain_match, request_path,
-     request_port, request_host)
+     request_port, request_host, NETSCAPE_HEADER_TEXT)
 
 mswindows = (sys.platform == "win32")
 
@@ -2047,6 +2047,34 @@ class LWPCookieTests(unittest.TestCase):
         self.assertEqual(counter["session_after"], 0)
             # we didn't have session cookies in the first place
         self.assertNotEqual(counter["session_before"], 0)
+
+    def test_load_session_cookies(self):
+        # curl and Wget write 0 in the expires field for session cookies,
+        # while we write an empty field.  Both should be read (gh-61366).
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+        expires = int(time.time() + 3600)
+        with open(filename, "w") as f:
+            f.write(NETSCAPE_HEADER_TEXT)
+            f.write("www.foo.com\tFALSE\t/\tFALSE\t%u\tperm\tbar\n" % expires)
+            f.write("www.foo.com\tFALSE\t/\tFALSE\t0\tcurl_session\tbar\n")
+            f.write("www.foo.com\tFALSE\t/\tFALSE\t\tour_session\tbar\n")
+
+        c = MozillaCookieJar()
+        c.revert(filename)
+        self.assertEqual([cookie.name for cookie in c], ["perm"])
+
+        c = MozillaCookieJar()
+        c.revert(filename, ignore_discard=True)
+        self.assertEqual(sorted(cookie.name for cookie in c),
+                         ["curl_session", "our_session", "perm"])
+        for cookie in c:
+            if cookie.name == "perm":
+                self.assertEqual(cookie.expires, expires)
+                self.assertFalse(cookie.discard)
+            else:
+                self.assertIsNone(cookie.expires)
+                self.assertTrue(cookie.discard)
 
 
 if __name__ == "__main__":
