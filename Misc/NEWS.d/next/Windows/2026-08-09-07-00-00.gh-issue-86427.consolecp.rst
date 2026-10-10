@@ -1,0 +1,3 @@
+Fix the encoding of the standard streams in the legacy Windows stdio mode
+(:envvar:`PYTHONLEGACYWINDOWSSTDIO`).  It is now the code page of the
+console, as in Python 3.7, not the ANSI code page.
