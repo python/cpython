@@ -1,0 +1,2 @@
+:class:`logging.handlers.SocketHandler` now loses fewer log records when the
+connection to the server is closed, for example after an idle timeout.
