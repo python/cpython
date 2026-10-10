@@ -764,6 +764,14 @@ Retrieving source code
    class, or function.
 
 
+.. function:: getabsfile(object)
+
+   Return an absolute, normalized path to the (text or binary) file in
+   which an object was defined.  This uses :func:`getsourcefile` and falls
+   back to :func:`getfile` if no source file can be found.  The idea is for
+   each object to have a unique origin.
+
+
 .. function:: getmodule(object)
 
    Try to guess which module an object was defined in. Return ``None``
@@ -777,6 +785,27 @@ Retrieving source code
    raised if the source code cannot be retrieved.
    This will fail with a :exc:`TypeError` if the object is a built-in module,
    class, or function.
+
+
+.. function:: findsource(object)
+
+   Return the list of source lines for the entire file containing the given
+   object, together with the line number in that list where the object's
+   own source starts.  The argument may be a module, class, method,
+   function, traceback, frame, or code object.  An :exc:`OSError` is raised
+   if the source code cannot be retrieved.
+
+   Unlike :func:`getsourcelines`, this does not call :func:`unwrap` on the
+   object first, so it will report the location of a decorator-wrapped
+   callable's wrapper rather than the wrapped function.
+
+
+.. function:: getblock(lines)
+
+   Extract and return the block of code at the top of the given list of
+   source *lines*, using the :mod:`tokenize` module to detect where the
+   block ends.  This is used together with :func:`findsource` to implement
+   :func:`getsourcelines`.
 
 
 .. function:: getsourcelines(object)
@@ -826,6 +855,12 @@ Retrieving source code
 
    .. versionchanged:: next
       Added the *dedent* parameter.
+
+
+.. function:: indentsize(line)
+
+   Return the indentation size, in number of spaces, at the start of a line
+   of text, expanding tabs using :meth:`str.expandtabs`.
 
 
 .. _inspect-signature-object:
@@ -1257,6 +1292,21 @@ function.
 Classes and functions
 ---------------------
 
+.. function:: classify_class_attrs(cls)
+
+   Return a list of :term:`named tuples <named tuple>`
+   ``Attribute(name, kind, defining_class, object)`` for each attribute
+   reported by ``dir(cls)``.  *kind* is one of
+   ``'class method'``, ``'static method'``, ``'property'``, ``'method'`` or
+   ``'data'``, and *defining_class* is the class in *cls*'s :term:`MRO` (or
+   its metaclass's MRO) that defines the attribute.  *object* is the
+   attribute value, retrieved with :func:`getattr` where possible, falling
+   back to a lookup in the defining class's ``__dict__``.
+
+   This is used internally by :mod:`pydoc` to build the class documentation
+   shown by :func:`help`.
+
+
 .. function:: getclasstree(classes, unique=False)
 
    Arrange the given list of classes into a hierarchy of nested lists. Where a
@@ -1266,6 +1316,29 @@ Classes and functions
    appears in the returned structure for each class in the given list.  Otherwise,
    classes using multiple inheritance and their descendants will appear multiple
    times.
+
+
+.. function:: walktree(classes, children, parent)
+
+   Recursive helper function used by :func:`getclasstree` to build its
+   nested list structure.  *children* maps each class to a list of its
+   direct subclasses, as accumulated by :func:`getclasstree`, and *parent*
+   is the common parent of *classes* at the current level of recursion (or
+   ``None`` at the top level).
+
+
+.. function:: getargs(co)
+
+   Get information about the arguments accepted by a code object *co*.
+   Return an ``Arguments(args, varargs, varkw)`` :term:`named tuple`, where
+   *args* is a list of argument names (with any keyword-only arguments
+   appended at the end), and *varargs* and *varkw* are the names of the
+   ``*`` and ``**`` arguments, or ``None`` if they are not accepted.
+
+   Note that :func:`getfullargspec` provides additional information (such
+   as default values and annotations) and is the recommended way to inspect
+   a callable's parameters.  This function is retained primarily for use in
+   code that already works directly with code objects.
 
 
 .. function:: getfullargspec(func, *, annotation_format=Format.VALUE)
@@ -1337,6 +1410,31 @@ Classes and functions
 
    .. note::
       This function was inadvertently marked as deprecated in Python 3.5.
+
+
+.. function:: formatannotation(annotation, base_module=None, *, quote_annotation_strings=True)
+
+   Format *annotation* for pretty-printing, as used internally when
+   rendering :class:`Signature` and :class:`Parameter` objects as strings.
+
+   If *annotation* is a :class:`type` whose ``__module__`` is ``'builtins'``
+   or equal to *base_module*, only its :attr:`~definition.__qualname__` is
+   returned; otherwise the module name is included as a prefix.  ``typing``
+   module prefixes are always stripped from the ``repr`` of *annotation*,
+   and a :class:`~typing.ForwardRef` is rendered as its forward-referenced
+   argument string.
+
+   If *quote_annotation_strings* is false, an *annotation* that is already
+   a :class:`str` is returned unchanged instead of being re-quoted, to avoid
+   double-quoting stringified annotations.
+
+
+.. function:: formatannotationrelativeto(object)
+
+   Return a version of :func:`formatannotation` that uses the
+   ``__module__`` of *object* as the *base_module*, so annotations
+   referring to classes defined in the same module as *object* are
+   formatted without a module prefix.
 
 
 .. function:: formatargvalues(args[, varargs, varkw, locals, formatarg, formatvarargs, formatvarkw, formatvalue])
@@ -1569,6 +1667,15 @@ line.
 
    .. versionchanged:: 3.11
       A :class:`Traceback` object is returned instead of a named tuple.
+
+
+.. function:: getlineno(frame)
+
+   Get the current line number of *frame* from its :attr:`~frame.f_lineno`
+   attribute.  This function exists as a separate entry point so that how
+   the line number is obtained can be optimized independently of its
+   callers; currently it returns ``frame.f_lineno`` directly.
+
 
 .. function:: getouterframes(frame, context=1)
 
