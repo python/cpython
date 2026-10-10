@@ -1,0 +1,2 @@
+Fix a crash in heap-allocated PyStructSequence types when the writable
+n_fields attribute is modified before constructing a new instance.
