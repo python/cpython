@@ -972,7 +972,12 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
                     slen = struct.unpack(">L", chunk)[0]
                     chunk = self.connection.recv(slen)
                     while len(chunk) < slen:
-                        chunk = chunk + conn.recv(slen - len(chunk))
+                        data = conn.recv(slen - len(chunk))
+                        if not data:
+                            # The peer closed before sending the whole
+                            # configuration, so there is nothing to apply.
+                            return
+                        chunk = chunk + data
                     if self.server.verify is not None:
                         chunk = self.server.verify(chunk)
                     if chunk is not None:   # verified, can process
