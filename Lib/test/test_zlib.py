@@ -182,6 +182,9 @@ class ChecksumCombineMixin:
             self.assertNotEqual(invalid_res, checksum)
 
         self.assertRaises(TypeError, self.combine, 0, 0, "len")
+        self.assertRaises(ValueError, self.combine, 0, 0, -1)
+        self.assertRaises(OverflowError, self.combine, 0, 0, 2**1000)
+        self.assertRaises(OverflowError, self.combine, 0, 0, -2**1000)
 
     def test_combine_with_iv(self):
         for _ in range(self.N):
@@ -1090,7 +1093,7 @@ class ZlibDecompressorTest(unittest.TestCase):
         self.assertRaises(EOFError, zlibd.decompress, b"")
 
     @support.skip_if_pgo_task
-    @bigmemtest(size=_4G + 100, memuse=3.3)
+    @bigmemtest(size=_4G + 100, memuse=4.5)
     def testDecompress4G(self, size):
         # "Test zlib._ZlibDecompressor.decompress() with >4GiB input"
         blocksize = min(10 * 1024 * 1024, size)

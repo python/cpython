@@ -7345,6 +7345,9 @@ class TestProgName(TestCase):
         basename = 'module' + os_helper.FS_NONASCII
         modulename = f'{self.dirname}.{basename}'
         self.make_script(self.dirname, basename)
+        # The filesystem encoding may be non-UTF-8,
+        # but the runner runs in UTF-8 mode
+        modulename = os.fsencode(modulename).decode("utf-8", "surrogateescape")
         runner_source = textwrap.dedent(f'''\
             import runpy
             runpy._run_module_as_main({modulename!r}, alter_argv=False)

@@ -166,21 +166,20 @@ class ParseArgsTestCase(unittest.TestCase):
                 ns = self.parse_args([opt])
                 self.assertTrue(ns.randomize)
 
-        with os_helper.EnvironmentVarGuard() as env:
-            # with SOURCE_DATE_EPOCH
-            env['SOURCE_DATE_EPOCH'] = '1697839080'
-            ns = self.parse_args(['--randomize'])
-            regrtest = main.Regrtest(ns)
-            self.assertFalse(regrtest.randomize)
-            self.assertIsInstance(regrtest.random_seed, str)
-            self.assertEqual(regrtest.random_seed, '1697839080')
+    @os_helper.with_source_date_epoch(epoch=1697839080)
+    def test_randomize_with_source_date_epoch(self):
+        ns = self.parse_args(['--randomize'])
+        regrtest = main.Regrtest(ns)
+        self.assertFalse(regrtest.randomize)
+        self.assertIsInstance(regrtest.random_seed, str)
+        self.assertEqual(regrtest.random_seed, '1697839080')
 
-            # without SOURCE_DATE_EPOCH
-            del env['SOURCE_DATE_EPOCH']
-            ns = self.parse_args(['--randomize'])
-            regrtest = main.Regrtest(ns)
-            self.assertTrue(regrtest.randomize)
-            self.assertIsInstance(regrtest.random_seed, int)
+    @os_helper.without_source_date_epoch
+    def test_randomize_without_source_date_epoch(self):
+        ns = self.parse_args(['--randomize'])
+        regrtest = main.Regrtest(ns)
+        self.assertTrue(regrtest.randomize)
+        self.assertIsInstance(regrtest.random_seed, int)
 
     def test_no_randomize(self):
         ns = self.parse_args([])
@@ -712,9 +711,13 @@ class BaseTestCase(unittest.TestCase):
             self.check_line(output, regex)
 
         if env_changed:
-            regex = list_regex(r'%s test%s altered the execution environment '
-                               r'\(env changed\)',
-                               env_changed)
+            # Every test is listed on a separate line, followed by the
+            # reasons why the environment was altered, one per line.
+            count = len(env_changed)
+            regex = (r'%s test%s altered the execution environment '
+                     r'\(env changed\):\n' % (count, plural(count)))
+            regex += ''.join(r'    %s:?\n(?:        .*\n)*' % re.escape(name)
+                             for name in sorted(env_changed))
             self.check_line(output, regex)
 
         if omitted:
@@ -803,7 +806,8 @@ class BaseTestCase(unittest.TestCase):
         state = ', '.join(state)
         if rerun is not None:
             new_state = 'SUCCESS' if rerun.success else 'FAILURE'
-            state = f'{state} then {new_state}'
+            if new_state != state:
+                state = f'{state} then {new_state}'
         self.check_line(output, f'Result: {state}', full=True)
 
     def parse_random_seed(self, output: str) -> str:
@@ -1279,29 +1283,47 @@ class ArgsTestCase(BaseTestCase):
                                   forever=True)
 
     @support.requires_jit_disabled
-    def check_leak(self, code, what, *, run_workers=False):
-        test = self.create_test('huntrleaks', code=code)
+    def check_leak(self, code, what, *, run_workers=False,
+                   name='huntrleaks', deltas=(1, 1, 1)):
+        test = self.create_test(name, code=code)
 
+        leak = all(delta >= 1 for delta in deltas)
         filename = 'reflog.txt'
         self.addCleanup(os_helper.unlink, filename)
         cmd = ['--huntrleaks', '3:3:']
         if run_workers:
             cmd.append('-j1')
         cmd.append(test)
-        output = self.run_tests(*cmd,
-                                exitcode=EXITCODE_BAD_TEST,
-                                stderr=subprocess.STDOUT)
-        self.check_executed_tests(output, [test], failed=test, stats=1)
+        if leak:
+            exitcode = EXITCODE_BAD_TEST
+            kwargs = dict(failed=test)
+        else:
+            exitcode = 0
+            kwargs = {}
 
-        line = r'beginning 6 repetitions. .*\n123:456\n[.0-9X]{3} 111\n'
+        try:
+            os_helper.unlink(filename)
+        except FileNotFoundError:
+            pass
+        output = self.run_tests(*cmd,
+                                exitcode=exitcode,
+                                stderr=subprocess.STDOUT)
+        self.check_executed_tests(output, [test], stats=1, **kwargs)
+
+        digits = ''.join('1' if delta >= 1 else '.' for delta in deltas)
+        line = r'beginning 6 repetitions. .*\n123:456\n[.0-9X]{3} %s\n' % digits
         self.check_line(output, line)
 
-        line2 = '%s leaked [1, 1, 1] %s, sum=3\n' % (test, what)
-        self.assertIn(line2, output)
+        if leak:
+            line2 = f'{test} leaked {repr(list(deltas))} {what}, sum=3\n'
+            self.assertIn(line2, output)
 
-        with open(filename) as fp:
-            reflog = fp.read()
-            self.assertIn(line2, reflog)
+        if leak:
+            with open(filename) as fp:
+                reflog = fp.read()
+                self.assertIn(line2, reflog)
+        else:
+            self.assertFalse(os.path.exists(filename))
 
     @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
     def check_huntrleaks(self, *, run_workers: bool):
@@ -1377,6 +1399,31 @@ class ArgsTestCase(BaseTestCase):
                     # bug: never close the file descriptor
         """)
         self.check_leak(code, 'file descriptors')
+
+        # Ignore false positive: deltas [1, -1, 0]
+        code = textwrap.dedent("""
+            import os
+            import unittest
+
+            RUN = 0
+            FD = None
+
+            class FDLeakTest(unittest.TestCase):
+                def test_leak(self):
+                    global RUN, FD
+                    RUN += 1
+                    if RUN == 4:
+                        # Create a fd without closing it: leak! (delta=1)
+                        FD = os.open(__file__, os.O_RDONLY)
+                    elif RUN == 5:
+                        # Close fd created in previous run (delta=-1)
+                        os.close(FD)
+                    else:
+                        # Do nothing at the warmup (steps 1-3) and step 6 (delta=0)
+                        pass
+        """)
+        self.check_leak(code, 'file descriptors',
+                        name='no_fd_leak', deltas=(1, -1, 0))
 
     def test_list_tests(self):
         # test --list-tests

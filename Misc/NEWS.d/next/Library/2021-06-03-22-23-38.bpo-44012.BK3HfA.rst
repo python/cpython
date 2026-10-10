@@ -1,0 +1,5 @@
+The ``exploded`` attribute of :class:`ipaddress.IPv6Address` and
+:class:`ipaddress.IPv6Interface` now supports addresses with a scope ID
+(link-local addresses).
+Previously the former raised :exc:`~ipaddress.AddressValueError`
+and the latter omitted the scope ID.
