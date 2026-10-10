@@ -1,0 +1,1 @@
+Use tk text print when running tk 9.0+.  Patch by Terry J. Reedy.
