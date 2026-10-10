@@ -1,0 +1,3 @@
+The argument of :func:`sys.unraisablehook` is now tracked by the garbage
+collector, so that a reference cycle through it (for example via the
+traceback) can be collected.
