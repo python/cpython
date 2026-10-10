@@ -664,16 +664,16 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         current_stats = self._aggregate_path_samples(self._root)
         baseline_stats = self._aggregate_path_samples(self._baseline_collector._root)
 
-        # Scale baseline values to make them comparable, accounting for both
-        # sample count differences and sample interval differences.
+        # Express baseline samples in units of the current sample interval.
+        # Do not normalize by total profile duration: doing so makes unchanged
+        # functions appear different when another function becomes faster or
+        # slower.
         baseline_total = self._baseline_collector._total_samples
-        if baseline_total > 0 and self._total_samples > 0:
-            current_time = self._total_samples * self.sample_interval_usec
-            baseline_time = baseline_total * self._baseline_collector.sample_interval_usec
-            scale = current_time / baseline_time
-        elif baseline_total > 0:
-            # Current profile is empty - use interval-based scale for elided display
-            scale = self.sample_interval_usec / self._baseline_collector.sample_interval_usec
+        if baseline_total > 0:
+            scale = (
+                self._baseline_collector.sample_interval_usec
+                / self.sample_interval_usec
+            )
         else:
             scale = 1.0
 
@@ -889,6 +889,10 @@ class DiffFlamegraphCollector(FlamegraphCollector):
             node["diff_pct"] = -100.0
         else:
             node["diff_pct"] = 0.0
+
+        # Scale geometry after computing metadata from raw baseline counts.
+        node["value"] = node.get("value", 0) * scale
+        node["self"] = node.get("self", 0) * scale
 
         if "children" in node and node["children"]:
             for child in node["children"]:
