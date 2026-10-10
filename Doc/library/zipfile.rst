@@ -1047,6 +1047,13 @@ Instances have the following methods and attributes:
    Size of the uncompressed file.
 
 
+:class:`ZipInfo` objects support :func:`copy.replace`,
+which returns a copy of the object with the specified attributes replaced.
+
+.. versionchanged:: next
+   Added support for :func:`copy.replace`.
+
+
 .. _zipfile-commandline:
 .. program:: zipfile
 
