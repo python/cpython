@@ -142,6 +142,44 @@ class GenopsTests(unittest.TestCase):
                 'not enough data in stream to read int4'):
             next(it)
 
+    def test_check_frames(self):
+        # Valid framed pickles are disassembled the same way regardless of
+        # whether frame boundaries are checked.
+        valid = pickle.dumps([1, 2, 3], 4)
+        for check in (False, True):
+            with self.subTest(check_frames=check):
+                ops = [op.name for op, arg, pos in
+                       pickletools.genops(valid, check_frames=check)]
+                self.assertIn('FRAME', ops)
+                self.assertEqual(ops[-1], 'STOP')
+
+    def test_check_frames_straddle(self):
+        # An opcode argument that straddles a frame boundary is ignored by
+        # default, but rejected when check_frames is true.  See gh-154848.
+        # FRAME 3; SHORT_BINBYTES argument straddles the frame.
+        data = b'\x80\x04\x95\x03\x00\x00\x00\x00\x00\x00\x00C\x0ahelloworld.'
+        self.assertEqual(list(pickletools.genops(data))[-1][0].name, 'STOP')
+        with self.assertRaisesRegex(ValueError,
+                'expected 10 bytes in a bytes1, but only 1 remain'):
+            list(pickletools.genops(data, check_frames=True))
+
+        # FRAME 6; UNICODE argument (read by readline) straddles the frame.
+        data = b'\x80\x04\x95\x06\x00\x00\x00\x00\x00\x00\x00Vhelloworld\n.'
+        self.assertEqual(list(pickletools.genops(data))[-1][0].name, 'STOP')
+        with self.assertRaisesRegex(ValueError,
+                'no newline found when trying to read unicodestringnl'):
+            list(pickletools.genops(data, check_frames=True))
+
+    def test_check_frames_nested(self):
+        # A new frame beginning before the current one ends is rejected only
+        # when check_frames is true.
+        data = (b'\x80\x04\x95\x0c\x00\x00\x00\x00\x00\x00\x00'
+                b'N\x95\x00\x00\x00\x00\x00\x00\x00\x00NN.')
+        self.assertEqual(list(pickletools.genops(data))[-1][0].name, 'STOP')
+        with self.assertRaisesRegex(ValueError,
+                'beginning of a new frame before end of current frame'):
+            list(pickletools.genops(data, check_frames=True))
+
     def test_unknown_opcode(self):
         it = pickletools.genops(b'N\xff')
         item = next(it)
