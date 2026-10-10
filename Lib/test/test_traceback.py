@@ -5375,6 +5375,38 @@ class MiscTest(unittest.TestCase):
         hint = f'Although a module with this name was found for a different Python version ({incompatible_module}).'
         self.assertIn(hint, stderr.decode())
 
+    def _module_not_found_blocked_by_sys_modules(self):
+        sys.modules['pkg'] = None
+        self.addCleanup(sys.modules.pop, 'pkg', None)
+        with self.assertRaises(ModuleNotFoundError) as cm:
+            from pkg.mod import name  # noqa: F401
+        return cm.exception
+
+    def test_module_not_found_blocked_parent_traceback_exception(self):
+        # gh-151631: TracebackException must not re-raise when the parent
+        # package is blocked via sys.modules[parent]=None.
+        exc = self._module_not_found_blocked_by_sys_modules()
+        self.assertIsNone(
+            traceback._find_incompatible_extension_module('pkg.mod'))
+        te = traceback.TracebackException(
+            type(exc), exc, exc.__traceback__)
+        formatted = ''.join(te.format())
+        self.assertIn("No module named 'pkg.mod'", formatted)
+
+    def test_module_not_found_blocked_parent_format_exception(self):
+        # gh-151631
+        exc = self._module_not_found_blocked_by_sys_modules()
+        formatted = ''.join(traceback.format_exception(exc))
+        self.assertIn("No module named 'pkg.mod'", formatted)
+
+    def test_module_not_found_blocked_parent_logging_exception(self):
+        # gh-151631
+        import logging
+        exc = self._module_not_found_blocked_by_sys_modules()
+        with self.assertLogs('test_traceback', level='ERROR') as cm_logs:
+            logging.getLogger('test_traceback').exception('fail', exc_info=exc)
+        self.assertIn("No module named 'pkg.mod'", cm_logs.output[0])
+
 
 class TestColorizedTraceback(unittest.TestCase):
     maxDiff = None
