@@ -1480,6 +1480,82 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 
         self.assertEqual(mac, 0x1234567890ab)
 
+    # gh-157848: macOS 27 reports 02:00:00:00:00:00 instead of the hardware
+    # address of every interface.
+    ifconfig_placeholder_data = '''\
+lo0: flags=8049<UP,LOOPBACK,RUNNING,MULTICAST> mtu 16384
+        inet 127.0.0.1 netmask 0xff000000
+en0: flags=8863<UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST> mtu 1500
+        ether 02:00:00:00:00:00
+        inet 192.168.1.10 netmask 0xffffff00 broadcast 192.168.1.255
+en1: flags=8963<UP,BROADCAST,SMART,RUNNING,PROMISC,SIMPLEX,MULTICAST> mtu 1500
+        ether 02:00:00:00:00:00
+'''
+
+    def test_find_mac_near_keyword_skips_placeholder(self):
+        def find_mac(data):
+            stdout = mock_get_command_stdout(data)
+            with mock.patch.multiple(self.uuid,
+                                     _MAC_DELIM=b':',
+                                     _MAC_OMITS_LEADING_ZEROES=False,
+                                     _get_command_stdout=stdout):
+                return self.uuid._find_mac_near_keyword(
+                    command='ifconfig',
+                    args='',
+                    keywords=[b'ether'],
+                    get_word_index=lambda x: x + 1,
+                )
+
+        data = self.ifconfig_placeholder_data
+        self.assertIsNone(find_mac(data))
+
+        data += '''\
+en2: flags=8863<UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST> mtu 1500
+        ether 12:34:56:78:90:ab
+'''
+        self.assertEqual(find_mac(data), 0x1234567890ab)
+
+    def test_find_under_heading_skips_placeholder(self):
+        def find_mac(data):
+            stdout = mock_get_command_stdout(data)
+            with mock.patch.multiple(self.uuid,
+                                     _MAC_DELIM=b':',
+                                     _MAC_OMITS_LEADING_ZEROES=False,
+                                     _get_command_stdout=stdout):
+                return self.uuid._find_mac_under_heading(
+                    command='netstat',
+                    args='-ian',
+                    heading=b'Address',
+                )
+
+        data = '''\
+Name       Mtu   Network       Address            Ipkts Ierrs    Opkts Oerrs  Coll
+lo0        16384 <Link#1>                          1234     0     1234     0     0
+lo0        16384 127           127.0.0.1           1234     -     1234     -     -
+en0        1500  <Link#12>   02:00:00:00:00:00     5678     0     4321     0     0
+en0        1500  192.168.1     192.168.1.10        5678     -     4321     -     -
+en1        1500  <Link#13>   02:00:00:00:00:00        0     0        0     0     0
+'''
+        self.assertIsNone(find_mac(data))
+
+        data += '''\
+en2        1500  <Link#14>   12:34:56:78:90:ab        0     0        0     0     0
+'''
+        self.assertEqual(find_mac(data), 0x1234567890ab)
+
+    def test_getnode_ignores_placeholder(self):
+        data = self.ifconfig_placeholder_data
+        with mock.patch.multiple(self.uuid,
+                                 _node=None,
+                                 _GETTERS=[self.uuid._ifconfig_getnode],
+                                 _MAC_DELIM=b':',
+                                 _MAC_OMITS_LEADING_ZEROES=False,
+                                 _get_command_stdout=mock_get_command_stdout(data)):
+            node = self.uuid.getnode()
+        self.assertNotEqual(node, 0x020000000000)
+        # Falls back to a random node, which has the multicast bit set.
+        self.assertTrue(node & (1 << 40), '%012x' % node)
+
     def check_node(self, node, requires=None):
         if requires and node is None:
             self.skipTest('requires ' + requires)
