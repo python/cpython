@@ -266,6 +266,7 @@ class Expression(Node):
 class CacheEffect(Node):
     name: str
     size: int
+    pretagged: bool = False
 
 
 @dataclass
@@ -449,7 +450,9 @@ class Parser(PLexer):
 
     @contextual
     def cache_effect(self) -> CacheEffect | None:
-        # IDENTIFIER '/' NUMBER
+        # IDENTIFIER '/' NUMBER ['^']
+        # The optional '^' marks the slot's bits as a pre-tagged _PyStackRef
+        # (see _PyPreTaggedRef in pycore_stackref.h).
         if tkn := self.expect(lx.IDENTIFIER):
             if self.expect(lx.DIVIDE):
                 num = self.require(lx.NUMBER).text
@@ -457,8 +460,8 @@ class Parser(PLexer):
                     size = int(num)
                 except ValueError:
                     raise self.make_syntax_error(f"Expected integer, got {num!r}")
-                else:
-                    return CacheEffect(tkn.text, size)
+                pretagged = bool(self.expect(lx.XOR))
+                return CacheEffect(tkn.text, size, pretagged)
         return None
 
     @contextual

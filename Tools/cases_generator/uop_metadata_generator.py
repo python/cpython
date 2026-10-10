@@ -69,6 +69,7 @@ def generate_names_and_flags(analysis: Analysis, out: CWriter) -> None:
     out.emit("extern const ReplicationRange _PyUop_Replication[MAX_UOP_ID+1];\n")
     out.emit("extern const char * const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1];\n\n")
     out.emit("extern int _PyUop_num_popped(int opcode, int oparg);\n")
+    out.emit("extern uint64_t _PyUop_PrepareOperand0(int opcode, uint64_t operand0);\n")
     out.emit(CACHING_INFO_DECL)
     out.emit(f"extern const uint16_t _PyUop_SpillsAndReloads[{MAX_CACHED_REGISTER+1}][{MAX_CACHED_REGISTER+1}];\n")
     out.emit("extern const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1];\n\n")
@@ -131,6 +132,17 @@ def generate_names_and_flags(analysis: Analysis, out: CWriter) -> None:
             out.emit(f"    return {popped};\n")
     out.emit("default:\n")
     out.emit("    return -1;\n")
+    out.emit("}\n")
+    out.emit("}\n\n")
+    out.emit("uint64_t _PyUop_PrepareOperand0(int opcode, uint64_t operand0)\n{\n")
+    out.emit("switch(opcode) {\n")
+    for uop in analysis.uops.values():
+        if uop.is_viable() and uop.properties.tier != 1 and not uop.is_super():
+            if any(cache.pretagged for cache in uop.caches):
+                out.emit(f"case {uop.name}:\n")
+                out.emit(f"    return PyStackRef_TagBorrow((PyObject *)operand0);\n")
+    out.emit("default:\n")
+    out.emit("    return operand0;\n")
     out.emit("}\n")
     out.emit("}\n\n")
     out.emit("#endif // NEED_OPCODE_METADATA\n\n")
