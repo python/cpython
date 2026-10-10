@@ -1,0 +1,3 @@
+Add tests for the :mod:`profile` module's command-line interface, covering
+``--help``, ``-s``/``--sort``, ``-o``/``--outfile``, ``-m`` (module mode),
+no-argument usage, and profiling a script file directly.
