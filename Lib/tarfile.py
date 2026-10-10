@@ -833,6 +833,13 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
         # For example, 'C:/foo' on Windows.
         raise AbsolutePathError(member)
     # Ensure we stay in the destination
+    if '..' in name.replace(os.sep, '/').split('/'):
+        # Directories are created from the name as given, so a name that
+        # leaves the destination part-way through would create them
+        # outside it even if the resolved path stays inside.
+        normalized = os.path.normpath(name)
+        if normalized != name:
+            name = new_attrs['name'] = normalized
     target_path = os.path.realpath(os.path.join(dest_path, name),
                                    strict=os.path.ALLOW_MISSING)
     if os.path.commonpath([target_path, dest_path]) != dest_path:
@@ -2833,9 +2840,11 @@ class TarFile(object):
                     "makelink_with_filter: if filter_function is not None, "
                     + "extraction_root must also not be None")
             try:
-                filter_function(
+                filtered = filter_function(
                     unfiltered.replace(name=tarinfo.name, deep=False),
                     extraction_root)
+                if filtered is None:
+                    return
                 filtered = filter_function(unfiltered, extraction_root)
             except _FILTER_ERRORS as cause:
                 raise LinkFallbackError(tarinfo, unfiltered.name) from cause

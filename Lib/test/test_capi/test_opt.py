@@ -5,13 +5,14 @@ import textwrap
 import unittest
 import gc
 import os
+import subprocess
 import types
 
 import _opcode
 
 from test.support import (script_helper, requires_specialization,
                           import_helper, Py_GIL_DISABLED, requires_jit_enabled,
-                          reset_code)
+                          reset_code, SHORT_TIMEOUT)
 
 _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
@@ -6199,6 +6200,31 @@ class TestUopsOptimization(unittest.TestCase):
             for _ in range({TIER2_THRESHOLD + 5}):
                 f1()
         """), PYTHON_JIT="1")
+
+    def test_for_iter_side_exit_does_not_self_link(self):
+        subprocess.run([sys.executable, "-c", textwrap.dedent("""
+            from _testinternalcapi import TIER2_THRESHOLD
+
+            def exhaust(iterator):
+                for _ in iterator:
+                    pass
+
+            values = range(TIER2_THRESHOLD)
+            # After the initial trace, MAX_CHAIN_DEPTH side exits cause the final
+            # executor to be installed at FOR_ITER.
+            warmup_iterators = (
+                iter(set(values)),
+                iter(dict.fromkeys(values)),
+                iter(values),
+                enumerate(values),
+                zip(values, values),
+            )
+            for iterator in warmup_iterators:
+                exhaust(iterator)
+
+            # A different iterator type must not link that executor to itself.
+            exhaust(map(bool, values))
+        """)], check=True, timeout=SHORT_TIMEOUT)
 
 def global_identity(x):
     return x
