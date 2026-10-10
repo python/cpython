@@ -47,6 +47,7 @@ static const char copyright[] =
 #include "pycore_tuple.h"            // _PyTuple_FromPairSteal
 #include "pycore_unicodeobject.h"    // _PyUnicode_Copy
 #include "pycore_unicodectype.h"     // _PyUnicode_IsXidStart()
+#include "pycore_unicodedata_re.h"   // _PyUnicode_RE_CAPI
 #include "pycore_weakref.h"          // FT_CLEAR_WEAKREFS()
 
 #include "sre.h"                     // SRE_CODE
@@ -222,6 +223,29 @@ static unsigned int sre_lower_unicode(unsigned int ch)
 static unsigned int sre_upper_unicode(unsigned int ch)
 {
     return (unsigned int) Py_UNICODE_TOUPPER(ch);
+}
+
+/* Match a character against a unicodedata property via the capsule (see
+   pycore_unicodedata_re.h).  The operand packs the negate flag (bit 24),
+   the property selector (bits 16..23) and the value index (bits 0..15).
+   Compiling \p{...} imports unicodedata, so the capsule import here always
+   succeeds; the pointer is cached statically. */
+static int
+sre_category_ucd(SRE_CODE packed, Py_UCS4 ch)
+{
+    static _PyUnicode_RE_CAPI *capi = NULL;
+    if (capi == NULL) {
+        capi = (_PyUnicode_RE_CAPI *)PyCapsule_Import(
+                                        PyUnicodeData_RE_CAPSULE_NAME, 0);
+        if (capi == NULL) {
+            PyErr_Clear();
+            return 0;
+        }
+    }
+    int negate = (packed >> 24) & 1;
+    int prop = (packed >> 16) & 0xFF;
+    int value = (int)(packed & 0xFFFF);
+    return (capi->property(prop, ch) == value) ^ negate;
 }
 
 LOCAL(int)
@@ -2117,6 +2141,13 @@ _validate_charset(SRE_CODE *code, SRE_CODE *end)
             if (!_validate_category(arg)) {
                 FAIL;
             }
+            break;
+
+        case SRE_OP_CATEGORY_UCD:
+            /* <CATEGORY_UCD> <packed> */
+            /* Any operand is memory-safe: an unknown property simply does
+               not match (see sre_category_ucd). */
+            GET_ARG;
             break;
 
         default:
