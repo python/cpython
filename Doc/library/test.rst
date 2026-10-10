@@ -836,6 +836,28 @@ The :mod:`!test.support` module defines the following functions:
    the trace function.
 
 
+.. decorator:: exclusive(resource)
+
+   Run no other test using the machine-wide *resource* while the decorated test
+   runs.
+   It can decorate a test method or a :class:`~unittest.TestCase` subclass.
+
+   Tests using different resources still run in parallel.
+   A test run outside the test runner, or not in parallel, simply runs.
+
+
+.. function:: requires_exclusive(resource)
+
+   Run no other test using the machine-wide *resource* until this process ends.
+
+   For a resource which the whole test file needs, call it next to
+   :func:`requires`.
+
+   :func:`requires` and :func:`requires_resource` call it themselves for the
+   resources which are machine-wide, such as ``'gui'`` and ``'audio'``, so most
+   tests need neither this function nor :func:`exclusive`.
+
+
 .. decorator:: bigmemtest(size, memuse, dry_run=True)
 
    Decorator for bigmem tests.
