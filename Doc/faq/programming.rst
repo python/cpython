@@ -854,7 +854,7 @@ a :exc:`SyntaxError` because the period is seen as a decimal point::
    >>> 1.__class__
      File "<stdin>", line 1
      1.__class__
-      ^
+       ^
    SyntaxError: invalid decimal literal
 
 The solution is to separate the literal from the period
