@@ -1584,7 +1584,13 @@ class Message(email.message.Message):
         elif isinstance(message, io.TextIOWrapper):
             self._become_message(email.message_from_file(message))
         elif hasattr(message, "read"):
-            self._become_message(email.message_from_binary_file(message))
+            # Keep mailbox's universal-newline behavior for binary files.
+            fp = io.TextIOWrapper(message, encoding='ascii',
+                                 errors='surrogateescape')
+            try:
+                self._become_message(email.message_from_file(fp))
+            finally:
+                fp.detach()
         elif message is None:
             email.message.Message.__init__(self)
         else:
