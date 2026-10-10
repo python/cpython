@@ -573,6 +573,11 @@ init_interpreter(PyInterpreterState *interp,
     PyConfig_InitPythonConfig(&interp->config);
 #ifdef Py_GIL_DISABLED
     _Py_brc_init_state(interp);
+
+    interp->mimalloc.subproc = mi_subproc_new();
+    if (interp->mimalloc.subproc == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
 #endif
 
     llist_init(&interp->mem_free_queue.head);
@@ -3325,10 +3330,11 @@ tstate_mimalloc_bind(PyThreadState *tstate)
     _mi_tld_init(tld, &mts->heaps[_Py_MIMALLOC_HEAP_MEM]);
     llist_init(&mts->page_list);
 
-    // Exiting threads push any remaining in-use segments to the abandoned
-    // pool to be re-claimed later by other threads. We use per-interpreter
-    // pools to keep Python objects from different interpreters separate.
-    tld->segments.abandoned = &tstate->interp->mimalloc.abandoned_pool;
+    // Exiting threads abandon any remaining in-use segments to be re-claimed
+    // later by other threads. We use a per-interpreter mimalloc sub-process
+    // to keep Python objects from different interpreters separate.
+    assert(tstate->interp->mimalloc.subproc != NULL);
+    tld->segments.subproc = tstate->interp->mimalloc.subproc;
 
     // Don't fill in the first N bytes up to ob_type in debug builds. We may
     // access ob_tid and the refcount fields in the dict and list lock-less
@@ -3346,7 +3352,7 @@ tstate_mimalloc_bind(PyThreadState *tstate)
 
     // Initialize each heap
     for (uint8_t i = 0; i < _Py_MIMALLOC_HEAP_COUNT; i++) {
-        _mi_heap_init_ex(&mts->heaps[i], tld, _mi_arena_id_none(), false, i);
+        _mi_heap_init(&mts->heaps[i], tld, _mi_arena_id_none(), false, i);
         mts->heaps[i].debug_offset = (uint8_t)debug_offsets[i];
     }
 

@@ -1823,10 +1823,10 @@ get_mimalloc_allocated_blocks(PyInterpreterState *interp)
         }
     }
 
-    mi_abandoned_pool_t *pool = &interp->mimalloc.abandoned_pool;
-    for (uint8_t tag = 0; tag < _Py_MIMALLOC_HEAP_COUNT; tag++) {
-        _mi_abandoned_pool_visit_blocks(pool, tag, false, &count_blocks,
-                                        &allocated_blocks);
+    mi_subproc_t *subproc = interp->mimalloc.subproc;
+    for (int tag = 0; tag < _Py_MIMALLOC_HEAP_COUNT; tag++) {
+        _PyMem_mi_visit_abandoned_blocks(subproc, tag, false, &count_blocks,
+                                         &allocated_blocks);
     }
 #else
     // TODO(sgross): this only counts the current thread's blocks.

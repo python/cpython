@@ -16,138 +16,132 @@ terms of the MIT license. A copy of the license can be found in the file
 #include "mimalloc/internal.h"
 #include "mimalloc/atomic.h"
 
-#if (MI_INTPTR_SIZE==8)
-#define MI_MAX_ADDRESS    ((size_t)40 << 40)  // 40TB (to include huge page areas)
+// Reduce total address space to reduce .bss  (due to the `mi_segment_map`)
+#if (MI_INTPTR_SIZE > 4) && MI_TRACK_ASAN
+#define MI_SEGMENT_MAP_MAX_ADDRESS    (128*1024ULL*MI_GiB)  // 128 TiB  (see issue #881)
+#elif (MI_INTPTR_SIZE > 4)
+#define MI_SEGMENT_MAP_MAX_ADDRESS    (48*1024ULL*MI_GiB)   // 48 TiB
 #else
-#define MI_MAX_ADDRESS    ((size_t)2 << 30)   // 2Gb
+#define MI_SEGMENT_MAP_MAX_ADDRESS    (UINT32_MAX)
 #endif
 
-#define MI_SEGMENT_MAP_BITS  (MI_MAX_ADDRESS / MI_SEGMENT_SIZE)
-#define MI_SEGMENT_MAP_SIZE  (MI_SEGMENT_MAP_BITS / 8)
-#define MI_SEGMENT_MAP_WSIZE (MI_SEGMENT_MAP_SIZE / MI_INTPTR_SIZE)
+#define MI_SEGMENT_MAP_PART_SIZE      (MI_INTPTR_SIZE*MI_KiB - 128)      // 128 > sizeof(mi_memid_t) !
+#define MI_SEGMENT_MAP_PART_BITS      (8*MI_SEGMENT_MAP_PART_SIZE)
+#define MI_SEGMENT_MAP_PART_ENTRIES   (MI_SEGMENT_MAP_PART_SIZE / MI_INTPTR_SIZE)
+#define MI_SEGMENT_MAP_PART_BIT_SPAN  (MI_SEGMENT_ALIGN)                 // memory area covered by 1 bit
 
-static _Atomic(uintptr_t) mi_segment_map[MI_SEGMENT_MAP_WSIZE + 1];  // 2KiB per TB with 64MiB segments
+#if (MI_SEGMENT_MAP_PART_BITS < (MI_SEGMENT_MAP_MAX_ADDRESS / MI_SEGMENT_MAP_PART_BIT_SPAN)) // prevent overflow on 32-bit (issue #1017)
+#define MI_SEGMENT_MAP_PART_SPAN      (MI_SEGMENT_MAP_PART_BITS * MI_SEGMENT_MAP_PART_BIT_SPAN)
+#else
+#define MI_SEGMENT_MAP_PART_SPAN      MI_SEGMENT_MAP_MAX_ADDRESS
+#endif
 
-static size_t mi_segment_map_index_of(const mi_segment_t* segment, size_t* bitidx) {
+#define MI_SEGMENT_MAP_MAX_PARTS      ((MI_SEGMENT_MAP_MAX_ADDRESS / MI_SEGMENT_MAP_PART_SPAN) + 1)
+
+// A part of the segment map.
+typedef struct mi_segmap_part_s {
+  mi_memid_t memid;
+  _Atomic(uintptr_t) map[MI_SEGMENT_MAP_PART_ENTRIES];
+} mi_segmap_part_t;
+
+// Allocate parts on-demand to reduce .bss footprint
+static _Atomic(mi_segmap_part_t*) mi_segment_map[MI_SEGMENT_MAP_MAX_PARTS]; // = { NULL, .. }
+
+static mi_segmap_part_t* mi_segment_map_index_of(const mi_segment_t* segment, bool create_on_demand, size_t* idx, size_t* bitidx) {
+  // note: segment can be invalid or NULL.
   mi_assert_internal(_mi_ptr_segment(segment + 1) == segment); // is it aligned on MI_SEGMENT_SIZE?
-  if ((uintptr_t)segment >= MI_MAX_ADDRESS) {
-    *bitidx = 0;
-    return MI_SEGMENT_MAP_WSIZE;
+  *idx = 0;
+  *bitidx = 0;
+  if ((uintptr_t)segment >= MI_SEGMENT_MAP_MAX_ADDRESS) return NULL;
+  const uintptr_t segindex = ((uintptr_t)segment) / MI_SEGMENT_MAP_PART_SPAN;
+  if (segindex >= MI_SEGMENT_MAP_MAX_PARTS) return NULL;
+  mi_segmap_part_t* part = mi_atomic_load_ptr_relaxed(mi_segmap_part_t, &mi_segment_map[segindex]);
+
+  // allocate on demand to reduce .bss footprint
+  if mi_unlikely(part == NULL) {
+    if (!create_on_demand) return NULL;
+    mi_memid_t memid;
+    part = (mi_segmap_part_t*)_mi_os_zalloc(sizeof(mi_segmap_part_t), &memid);
+    if (part == NULL) return NULL;
+    part->memid = memid;
+    mi_segmap_part_t* expected = NULL;
+    if (!mi_atomic_cas_ptr_strong_release(mi_segmap_part_t, &mi_segment_map[segindex], &expected, part)) {
+      _mi_os_free(part, sizeof(mi_segmap_part_t), memid);
+      part = expected;
+      if (part == NULL) return NULL;
+    }
   }
-  else {
-    const uintptr_t segindex = ((uintptr_t)segment) / MI_SEGMENT_SIZE;
-    *bitidx = segindex % MI_INTPTR_BITS;
-    const size_t mapindex = segindex / MI_INTPTR_BITS;
-    mi_assert_internal(mapindex < MI_SEGMENT_MAP_WSIZE);
-    return mapindex;
-  }
+  mi_assert(part != NULL);
+  const uintptr_t offset = ((uintptr_t)segment) % MI_SEGMENT_MAP_PART_SPAN;
+  const uintptr_t bitofs = offset / MI_SEGMENT_MAP_PART_BIT_SPAN;
+  *idx = bitofs / MI_INTPTR_BITS;
+  *bitidx = bitofs % MI_INTPTR_BITS;
+  return part;
 }
 
 void _mi_segment_map_allocated_at(const mi_segment_t* segment) {
+  if (segment->memid.memkind == MI_MEM_ARENA) return; // we lookup segments first in the arena's and don't need the segment map
+  size_t index;
   size_t bitidx;
-  size_t index = mi_segment_map_index_of(segment, &bitidx);
-  mi_assert_internal(index <= MI_SEGMENT_MAP_WSIZE);
-  if (index==MI_SEGMENT_MAP_WSIZE) return;
-  uintptr_t mask = mi_atomic_load_relaxed(&mi_segment_map[index]);
+  mi_segmap_part_t* part = mi_segment_map_index_of(segment, true /* alloc map if needed */, &index, &bitidx);
+  if (part == NULL) return; // outside our address range..
+  uintptr_t mask = mi_atomic_load_relaxed(&part->map[index]);
   uintptr_t newmask;
   do {
     newmask = (mask | ((uintptr_t)1 << bitidx));
-  } while (!mi_atomic_cas_weak_release(&mi_segment_map[index], &mask, newmask));
+  } while (!mi_atomic_cas_weak_release(&part->map[index], &mask, newmask));
 }
 
 void _mi_segment_map_freed_at(const mi_segment_t* segment) {
+  if (segment->memid.memkind == MI_MEM_ARENA) return;
+  size_t index;
   size_t bitidx;
-  size_t index = mi_segment_map_index_of(segment, &bitidx);
-  mi_assert_internal(index <= MI_SEGMENT_MAP_WSIZE);
-  if (index == MI_SEGMENT_MAP_WSIZE) return;
-  uintptr_t mask = mi_atomic_load_relaxed(&mi_segment_map[index]);
+  mi_segmap_part_t* part = mi_segment_map_index_of(segment, false /* don't alloc if not present */, &index, &bitidx);
+  if (part == NULL) return; // outside our address range..
+  uintptr_t mask = mi_atomic_load_relaxed(&part->map[index]);
   uintptr_t newmask;
   do {
     newmask = (mask & ~((uintptr_t)1 << bitidx));
-  } while (!mi_atomic_cas_weak_release(&mi_segment_map[index], &mask, newmask));
+  } while (!mi_atomic_cas_weak_release(&part->map[index], &mask, newmask));
 }
 
 // Determine the segment belonging to a pointer or NULL if it is not in a valid segment.
 static mi_segment_t* _mi_segment_of(const void* p) {
   if (p == NULL) return NULL;
-  mi_segment_t* segment = _mi_ptr_segment(p);
-  mi_assert_internal(segment != NULL);
+  mi_segment_t* segment = _mi_ptr_segment(p);  // segment can be NULL
+  size_t index;
   size_t bitidx;
-  size_t index = mi_segment_map_index_of(segment, &bitidx);
-  // fast path: for any pointer to valid small/medium/large object or first MI_SEGMENT_SIZE in huge
-  const uintptr_t mask = mi_atomic_load_relaxed(&mi_segment_map[index]);
+  mi_segmap_part_t* part = mi_segment_map_index_of(segment, false /* dont alloc if not present */, &index, &bitidx);
+  if (part == NULL) return NULL;
+  const uintptr_t mask = mi_atomic_load_relaxed(&part->map[index]);
   if mi_likely((mask & ((uintptr_t)1 << bitidx)) != 0) {
-    return segment; // yes, allocated by us
+    // yes, allocated by us
+    const bool cookie_ok = (_mi_ptr_cookie(segment) == segment->cookie);
+    if mi_likely(cookie_ok) {
+      return segment; // yes, allocated by us and valid
+    }
+    else {
+      _mi_error_message(EFAULT, "segment map found an invalid segment, possibly corrupted meta-data (address=%p, segment=%p)\n", p, segment);
+    }
   }
-  if (index==MI_SEGMENT_MAP_WSIZE) return NULL;
-
-  // TODO: maintain max/min allocated range for efficiency for more efficient rejection of invalid pointers?
-
-  // search downwards for the first segment in case it is an interior pointer
-  // could be slow but searches in MI_INTPTR_SIZE * MI_SEGMENT_SIZE (512MiB) steps through
-  // valid huge objects
-  // note: we could maintain a lowest index to speed up the path for invalid pointers?
-  size_t lobitidx;
-  size_t loindex;
-  uintptr_t lobits = mask & (((uintptr_t)1 << bitidx) - 1);
-  if (lobits != 0) {
-    loindex = index;
-    lobitidx = mi_bsr(lobits);    // lobits != 0
-  }
-  else if (index == 0) {
-    return NULL;
-  }
-  else {
-    mi_assert_internal(index > 0);
-    uintptr_t lomask = mask;
-    loindex = index;
-    do {
-      loindex--;
-      lomask = mi_atomic_load_relaxed(&mi_segment_map[loindex]);
-    } while (lomask != 0 && loindex > 0);
-    if (lomask == 0) return NULL;
-    lobitidx = mi_bsr(lomask);    // lomask != 0
-  }
-  mi_assert_internal(loindex < MI_SEGMENT_MAP_WSIZE);
-  // take difference as the addresses could be larger than the MAX_ADDRESS space.
-  size_t diff = (((index - loindex) * (8*MI_INTPTR_SIZE)) + bitidx - lobitidx) * MI_SEGMENT_SIZE;
-  segment = (mi_segment_t*)((uint8_t*)segment - diff);
-
-  if (segment == NULL) return NULL;
-  mi_assert_internal((void*)segment < p);
-  bool cookie_ok = (_mi_ptr_cookie(segment) == segment->cookie);
-  mi_assert_internal(cookie_ok);
-  if mi_unlikely(!cookie_ok) return NULL;
-  if (((uint8_t*)segment + mi_segment_size(segment)) <= (uint8_t*)p) return NULL; // outside the range
-  mi_assert_internal(p >= (void*)segment && (uint8_t*)p < (uint8_t*)segment + mi_segment_size(segment));
-  return segment;
+  return NULL;
 }
 
 // Is this a valid pointer in our heap?
-static bool  mi_is_valid_pointer(const void* p) {
-  return ((_mi_segment_of(p) != NULL) || (_mi_arena_contains(p)));
+static bool mi_is_valid_pointer(const void* p) {
+  // first check if it is in an arena, then check if it is OS allocated
+  return (_mi_arena_contains(p) || _mi_segment_of(p) != NULL);
 }
 
 mi_decl_nodiscard mi_decl_export bool mi_is_in_heap_region(const void* p) mi_attr_noexcept {
   return mi_is_valid_pointer(p);
 }
 
-/*
-// Return the full segment range belonging to a pointer
-static void* mi_segment_range_of(const void* p, size_t* size) {
-  mi_segment_t* segment = _mi_segment_of(p);
-  if (segment == NULL) {
-    if (size != NULL) *size = 0;
-    return NULL;
+void _mi_segment_map_unsafe_destroy(void) {
+  for (size_t i = 0; i < MI_SEGMENT_MAP_MAX_PARTS; i++) {
+    mi_segmap_part_t* part = mi_atomic_exchange_ptr_relaxed(mi_segmap_part_t, &mi_segment_map[i], NULL);
+    if (part != NULL) {
+      _mi_os_free(part, sizeof(mi_segmap_part_t), part->memid);
+    }
   }
-  else {
-    if (size != NULL) *size = segment->segment_size;
-    return segment;
-  }
-  mi_assert_expensive(page == NULL || mi_segment_is_valid(_mi_page_segment(page),tld));
-  mi_assert_internal(page == NULL || (mi_segment_page_size(_mi_page_segment(page)) - (MI_SECURE == 0 ? 0 : _mi_os_page_size())) >= block_size);
-  mi_reset_delayed(tld);
-  mi_assert_internal(page == NULL || mi_page_not_in_queue(page, tld));
-  return page;
 }
-*/
