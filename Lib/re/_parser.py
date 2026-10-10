@@ -77,6 +77,7 @@ class State:
     # keeps track of state for parsing
     def __init__(self):
         self.flags = 0
+        self.locale_used = False
         self.groupdict = {}
         self.groupwidths = [None]  # group 0
         self.lookbehindgroups = None
@@ -1097,6 +1098,8 @@ def _parse_flags(source, state, char):
         raise source.error("bad inline flags: cannot turn off global flag", 1)
     if add_flags & del_flags:
         raise source.error("bad inline flags: flag turned on and off", 1)
+    if add_flags & SRE_FLAG_LOCALE:
+        state.locale_used = True
     return add_flags, del_flags
 
 def fix_flags(src, flags):
