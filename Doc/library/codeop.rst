@@ -35,9 +35,7 @@ To do just the former:
    ``'<input>'``.  Returns ``None`` if *source* is *not* valid Python code, but is a
    prefix of valid Python code.
 
-   If there is a problem with *source*, an exception will be raised.
-   :exc:`SyntaxError` is raised if there is invalid Python syntax, and
-   :exc:`OverflowError` or :exc:`ValueError` if there is an invalid literal.
+   If there is a problem with *source*, :exc:`SyntaxError` is raised.
 
    The *symbol* argument determines whether *source* is compiled as a statement
    (``'single'``, the default), as a sequence of :term:`statement` (``'exec'``) or

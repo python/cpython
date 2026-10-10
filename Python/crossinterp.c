@@ -943,7 +943,7 @@ get_script_xidata(PyThreadState *tstate, PyObject *obj, int pure,
         PyCompilerFlags cf = _PyCompilerFlags_INIT;
         cf.cf_flags = PyCF_SOURCE_IS_UTF8;
         PyObject *ref = NULL;
-        const char *script = _Py_SourceAsString(obj, "???", "???", &cf, &ref);
+        const char *script = _Py_SourceAsString(obj, "???", "???", NULL, &cf, &ref);
         if (script == NULL) {
             if (!_PyObject_SupportedAsScript(obj)) {
                 // We discard the raised exception.
