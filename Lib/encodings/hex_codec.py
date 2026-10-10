@@ -8,14 +8,20 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 import codecs
 import binascii
 
+### Codec Helpers
+
+def _assert_strict(errors):
+    if errors != 'strict':
+        raise ValueError(f'Unsupported error handling mode: "{errors}" - must be "strict"')
+
 ### Codec APIs
 
 def hex_encode(input, errors='strict'):
-    assert errors == 'strict'
+    _assert_strict(errors)
     return (binascii.b2a_hex(input), len(input))
 
 def hex_decode(input, errors='strict'):
-    assert errors == 'strict'
+    _assert_strict(errors)
     return (binascii.a2b_hex(input), len(input))
 
 class Codec(codecs.Codec):
@@ -26,12 +32,12 @@ class Codec(codecs.Codec):
 
 class IncrementalEncoder(codecs.IncrementalEncoder):
     def encode(self, input, final=False):
-        assert self.errors == 'strict'
+        _assert_strict(self.errors)
         return binascii.b2a_hex(input)
 
 class IncrementalDecoder(codecs.IncrementalDecoder):
     def decode(self, input, final=False):
-        assert self.errors == 'strict'
+        _assert_strict(self.errors)
         return binascii.a2b_hex(input)
 
 class StreamWriter(Codec, codecs.StreamWriter):
