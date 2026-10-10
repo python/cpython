@@ -1,0 +1,6 @@
+Fix a crash on the :term:`free-threaded <free threading>` build when a single
+iterator over a :class:`contextvars.Context` (as returned by :func:`iter`,
+:meth:`~contextvars.Context.keys`, :meth:`~contextvars.Context.values` or
+:meth:`~contextvars.Context.items`) is advanced from several threads at once.
+The underlying HAMT iterator now advances its traversal cursor while holding
+the iterator lock.
