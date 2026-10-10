@@ -1,0 +1,2 @@
+Fix issue where email.generator.Generator ignores policy when using multipart/signed due to old functions in generator.py
+:func:`_handle_multipart_signed`. Patch by Jack Pendley.
