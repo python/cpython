@@ -473,6 +473,10 @@ The ``SendType`` and ``ReturnType`` parameters default to :const:`!None`::
            yield start
            start += 1
 
+.. versionadded:: 3.13
+
+   Added default :const:`!None` for ``SendType`` and ``ReturnType``
+
 It is also possible to set these types explicitly::
 
    def infinite_stream(start: int) -> Generator[int, None, None]:
