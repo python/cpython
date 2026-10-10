@@ -112,6 +112,20 @@ def open_new_tab(url):
     return open(url, 2)
 
 
+def _split_browser_var(value):
+    # Split on os.pathsep, but allow backslash-escaping (e.g. \: on Unix)
+    # so protocol handlers like 'ext+container\:name=X&url=%s' work.
+    sep = os.pathsep
+    segments = value.split(sep)
+    entries = []
+    for segment in segments:
+        if entries and entries[-1].endswith('\\'):
+            entries[-1] = entries[-1][:-1] + sep + segment
+        else:
+            entries.append(segment)
+    return entries
+
+
 def _synthesize(browser, *, preferred=False):
     """Attempt to synthesize a controller based on existing controllers.
 
@@ -570,7 +584,7 @@ def register_standard_browsers():
     # OK, now that we know what the default preference orders for each
     # platform are, allow user to override them with the BROWSER variable.
     if "BROWSER" in os.environ:
-        userchoices = os.environ["BROWSER"].split(os.pathsep)
+        userchoices = _split_browser_var(os.environ["BROWSER"])
         userchoices.reverse()
 
         # Treat choices in same way as if passed into get() but do register

@@ -1,0 +1,2 @@
+Allow escaping :data:`os.pathsep` with backslash in the :envvar:`BROWSER`
+environment variable.
