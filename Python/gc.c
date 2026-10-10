@@ -661,18 +661,25 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
 * and is much faster than a more complex approach that
 * would untrack all relevant tuples.
 */
-static void
+static Py_ssize_t
 untrack_tuples(PyGC_Head *head)
 {
+    Py_ssize_t tracked = 0;
     PyGC_Head *gc = GC_NEXT(head);
     while (gc != head) {
         PyObject *op = FROM_GC(gc);
         PyGC_Head *next = GC_NEXT(gc);
         if (PyTuple_CheckExact(op)) {
             _PyTuple_MaybeUntrack(op);
+            if (!_PyObject_GC_IS_TRACKED(op)) {
+                gc = next;
+                continue;
+            }
         }
+        tracked++;
         gc = next;
     }
+    return tracked;
 }
 
 /* Return true if object has a pre-PEP 442 finalization method. */
@@ -1514,11 +1521,11 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 
     stats.candidates = deduce_unreachable(young, &unreachable);
 
-    untrack_tuples(young);
+    Py_ssize_t survivors = untrack_tuples(young);
     /* Move reachable objects to next generation. */
     if (young != old) {
         if (generation == NUM_GENERATIONS - 2) {
-            gcstate->long_lived_pending += gc_list_size(young);
+            gcstate->long_lived_pending += survivors;
         }
         gc_list_merge(young, old);
     }
@@ -1531,7 +1538,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         // site; the cost is slightly more work for full collections on dicts
         // with only atomic values.
         gcstate->long_lived_pending = 0;
-        gcstate->long_lived_total = gc_list_size(young);
+        gcstate->long_lived_total = survivors;
     }
 
     /* All objects in unreachable are trash, but objects reachable from
