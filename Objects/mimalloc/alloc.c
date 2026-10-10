@@ -16,6 +16,20 @@ terms of the MIT license. A copy of the license can be found in the file
 #include <string.h>      // memset, strlen (for mi_strdup)
 #include <stdlib.h>      // malloc, abort
 
+// CPython: don't export the weak C++ `std::get_new_handler` symbol from libpython
+#define _ZSt15get_new_handlerv _Py__ZSt15get_new_handlerv
+
+#if (MI_DEBUG>0)
+// CPython: fill freed or uninitialized memory but preserve the first `page->debug_offset`
+// bytes (e.g. `ob_tid` and the reference count fields that lock-free readers may still access)
+static inline void mi_debug_fill(mi_page_t* page, mi_block_t* block, int c, size_t size) {
+  size_t offset = (size_t)page->debug_offset;
+  if (offset < size) {
+    memset((char*)block + offset, c, size - offset);
+  }
+}
+#endif
+
 #define MI_IN_ALLOC_C
 #include "alloc-override.c"
 #include "free.c"
@@ -74,7 +88,7 @@ extern inline void* _mi_page_malloc_zero(mi_heap_t* heap, mi_page_t* page, size_
 
   #if (MI_DEBUG>0) && !MI_TRACK_ENABLED && !MI_TSAN
   if (!zero && !mi_page_is_huge(page)) {
-    memset(block, MI_DEBUG_UNINIT, mi_page_usable_block_size(page));
+    mi_debug_fill(page, block, MI_DEBUG_UNINIT, mi_page_usable_block_size(page));
   }
   #elif (MI_SECURE!=0)
   if (!zero) { block->next = 0; } // don't leak internal data

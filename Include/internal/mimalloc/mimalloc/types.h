@@ -248,7 +248,7 @@ typedef size_t     mi_threadid_t;
 
 // free lists contain blocks
 typedef struct mi_block_s {
-  mi_encoded_t next;
+  _Atomic(mi_encoded_t) next;   // CPython: atomic to avoid TSAN reports from concurrent heap visits (gh-129748)
 } mi_block_t;
 
 #if MI_GUARDED
@@ -341,6 +341,8 @@ typedef struct mi_page_s {
   uint16_t              used;              // number of blocks in use (including blocks in `thread_free`)
   uint8_t               block_size_shift;  // if not zero, then `(1 << block_size_shift) == block_size` (only used for fast path in `free.c:_mi_page_ptr_unalign`)
   uint8_t               heap_tag;          // tag of the owning heap, used to separate heaps by object type
+  uint8_t               use_qsbr:1;        // CPython: delay page freeing using QSBR
+  uint8_t               debug_offset;      // CPython: number of bytes to preserve when filling freed or uninitialized memory
                                            // padding
   size_t                block_size;        // size available in each block (always `>0`)
   uint8_t*              page_start;        // start of the page area containing the blocks
@@ -355,8 +357,13 @@ typedef struct mi_page_s {
   struct mi_page_s*     next;              // next page owned by this thread with the same `block_size`
   struct mi_page_s*     prev;              // previous page owned by this thread with the same `block_size`
 
+#ifdef Py_GIL_DISABLED
+  struct llist_node     qsbr_node;         // CPython: list of pages waiting for a QSBR goal before being freed
+  uint64_t              qsbr_goal;         // CPython: QSBR goal to reach before the page can be freed (0 if none)
+#else
   // 64-bit 11 words, 32-bit 13 words, (+2 for secure)
   void* padding[1];
+#endif
 } mi_page_t;
 
 
@@ -573,6 +580,8 @@ struct mi_heap_s {
   mi_heap_t*            next;                                // list of heaps per thread
   bool                  no_reclaim;                          // `true` if this heap should not reclaim abandoned pages
   uint8_t               tag;                                 // custom tag, can be used for separating heaps based on the object types
+  uint8_t               debug_offset;                        // CPython: number of bytes to preserve when filling freed or uninitialized memory
+  bool                  page_use_qsbr;                       // CPython: should freeing pages be delayed using QSBR
   #if MI_GUARDED
   size_t                guarded_size_min;                    // minimal size for guarded objects
   size_t                guarded_size_max;                    // maximal size for guarded objects

@@ -104,7 +104,13 @@ static bool mi_heap_page_collect(mi_heap_t* heap, mi_page_queue_t* pq, mi_page_t
   if (mi_page_all_free(page)) {
     // no more used blocks, free the page.
     // note: this will free retired pages as well.
-    _mi_page_free(page, pq, collect >= MI_FORCE);
+    bool freed = _PyMem_mi_page_maybe_free(page, pq, collect >= MI_FORCE);
+    if (!freed && collect == MI_ABANDON) {
+      // CPython: _PyMem_mi_page_maybe_free may have moved the page to a different
+      // page queue, so we need to re-fetch the correct queue.
+      size_t bin = (mi_page_is_in_full(page) ? MI_BIN_FULL : _mi_bin(mi_page_block_size(page)));
+      _mi_page_abandon(page, &heap->pages[bin]);
+    }
   }
   else if (collect == MI_ABANDON) {
     // still used blocks but the thread is done; abandon the page
@@ -163,6 +169,9 @@ static void mi_heap_collect_ex(mi_heap_t* heap, mi_collect_t collect)
 
   // collect retired pages
   _mi_heap_collect_retired(heap, force);
+
+  // CPython: free pages that were delayed with QSBR
+  _PyMem_mi_heap_collect_qsbr(heap);
 
   // collect all pages owned by this thread
   mi_heap_visit_pages(heap, &mi_heap_page_collect, (collect!=MI_NORMAL), &collect, NULL); // normally don't visit full pages, issue #1220
@@ -741,6 +750,7 @@ static bool mi_heap_area_visitor(const mi_heap_t* heap, const mi_heap_area_ex_t*
 // Visit all blocks in a heap
 bool mi_heap_visit_blocks(const mi_heap_t* heap, bool visit_blocks, mi_block_visit_fun* visitor, void* arg) {
   mi_visit_blocks_args_t args = { visit_blocks, visitor, arg };
+  _mi_heap_delayed_free_partial((mi_heap_t *)heap);  // CPython: gh-112532
   return mi_heap_visit_areas(heap, &mi_heap_area_visitor, &args);
 }
 

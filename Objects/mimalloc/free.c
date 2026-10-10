@@ -38,7 +38,7 @@ static inline void mi_free_block_local(mi_page_t* page, mi_block_t* block, bool 
   #if (MI_DEBUG>0) && !MI_TRACK_ENABLED  && !MI_TSAN
   if (!mi_page_is_huge(page)) {   // huge page content may be already decommitted
     size_t dbgsize = mi_page_block_size(page); if (dbgsize > 1*MI_MiB) { dbgsize = 1*MI_MiB; }
-    memset(block, MI_DEBUG_FREED, dbgsize);
+    mi_debug_fill(page, block, MI_DEBUG_FREED, dbgsize);
   }
   #endif
   if (track_stats) { mi_track_free_size(block, mi_page_usable_size_of(page, block, was_guarded)); } // faster then mi_usable_size as we already know the page and that p is unaligned
@@ -147,7 +147,7 @@ static inline mi_segment_t* mi_checked_ptr_segment(const void* p, const char* ms
   mi_segment_t* const segment = _mi_ptr_segment(p);
   if mi_unlikely(segment==NULL) return segment;
 
-  #if (MI_DEBUG>0)
+  #if 0 && (MI_DEBUG>0)  // CPython: disabled, the warning is noisy and not actionable for Python allocations
   if mi_unlikely(!mi_is_in_heap_region(p)) {
   #if (MI_INTPTR_SIZE == 8 && defined(__linux__))
     if (((uintptr_t)p >> 40) != 0x7F) { // linux tends to align large blocks above 0x7F000000000 (issue #640)
@@ -222,7 +222,10 @@ bool _mi_free_delayed_block(mi_block_t* block) {
   mi_assert_internal(block!=NULL);
   const mi_segment_t* const segment = _mi_ptr_segment(block);
   mi_assert_internal(_mi_ptr_cookie(segment) == segment->cookie);
+#ifndef Py_GIL_DISABLED
+  // CPython: the GC traverses heaps of other threads, which can trigger this assert.
   mi_assert_internal(_mi_thread_id() == segment->thread_id);
+#endif
   mi_page_t* const page = _mi_segment_page_of(segment, block);
 
   // Clear the no-delayed flag so delayed freeing is used again for this page.
@@ -340,7 +343,7 @@ static void mi_decl_noinline mi_free_block_mt(mi_page_t* page, mi_segment_t* seg
   else {
     #if (MI_DEBUG>0) && !MI_TRACK_ENABLED  && !MI_TSAN       // note: when tracking, cannot use mi_usable_size with multi-threading
     size_t dbgsize = mi_usable_size(block); if (dbgsize > 1*MI_MiB) { dbgsize = 1*MI_MiB; }
-    memset(block, MI_DEBUG_FREED, dbgsize);
+    mi_debug_fill(page, block, MI_DEBUG_FREED, dbgsize);
     #endif
   }
 

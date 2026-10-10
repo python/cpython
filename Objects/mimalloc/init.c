@@ -13,29 +13,7 @@ terms of the MIT license. A copy of the license can be found in the file
 
 
 // Empty page used to initialize the small free pages array
-const mi_page_t _mi_page_empty = {
-  0,
-  false, false, false, false,
-  0,       // capacity
-  0,       // reserved capacity
-  { 0 },   // flags
-  false,   // is_zero
-  0,       // retire_expire
-  NULL,    // free
-  NULL,    // local_free
-  0,       // used
-  0,       // block size shift
-  0,       // heap tag
-  0,       // block_size
-  NULL,    // page_start
-  #if (MI_PADDING || MI_ENCODE_FREELIST)
-  { 0, 0 },
-  #endif
-  MI_ATOMIC_VAR_INIT(0), // xthread_free
-  MI_ATOMIC_VAR_INIT(0), // xheap
-  NULL, NULL
-  , { 0 }  // padding
-};
+const mi_page_t _mi_page_empty;  // CPython: zero-initialized since mi_page_t has extra fields
 
 #define MI_PAGE_EMPTY() ((mi_page_t*)&_mi_page_empty)
 
@@ -124,6 +102,8 @@ mi_decl_cache_align const mi_heap_t _mi_heap_empty = {
   NULL,             // next
   false,            // can reclaim
   0,                // tag
+  0,                // debug_offset (CPython)
+  false,            // page_use_qsbr (CPython)
   #if MI_GUARDED
   0, 0, 0, 1,       // rate is 0 and count is 1 so we never write to it (see `internal.h:mi_heap_malloc_use_guarded`)
   #endif
@@ -176,6 +156,8 @@ mi_decl_cache_align mi_heap_t _mi_heap_main = {
   NULL,             // next heap
   false,            // can reclaim
   0,                // tag
+  0,                // debug_offset (CPython)
+  false,            // page_use_qsbr (CPython)
   #if MI_GUARDED
   0, 0, 0, 0,
   #endif
