@@ -1,0 +1,3 @@
+The Locals and Globals panes of IDLE's Debug Control window no longer show
+values in entries that look editable.
+Editing them never had any effect, as the objects live in the user process.

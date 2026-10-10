@@ -1,0 +1,8 @@
+IDLE's trees are now ``ttk.Treeview`` widgets instead of trees drawn on a
+canvas: the Module and Path browsers, Debug => Stack Viewer, the object
+browsers, and the stack and namespace panes of the Debug Control window.
+Rows are as high as the configured font needs, so they are no longer clipped
+on high-resolution monitors, and the trees are navigated with the keyboard.
+The stack views show the module, the function, the line number and the
+source of a frame in columns of their own, and the debugger marks the frame
+that it stopped in with an arrow instead of a "> " in front of the text.

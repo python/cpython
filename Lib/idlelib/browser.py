@@ -12,9 +12,8 @@ import os
 import pyclbr
 import sys
 
-from idlelib.config import idleConf
 from idlelib import pyshell
-from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
+from idlelib.tree import TreeItem, TreeWidget
 from idlelib.util import py_extensions
 from idlelib.window import ListedToplevel
 
@@ -96,9 +95,8 @@ class ModuleBrowser:
         self.init()
 
     def close(self, event=None):
-        "Dismiss the window and the tree nodes."
+        "Dismiss the window."
         self.top.destroy()
-        self.node.destroy()
 
     def init(self):
         "Create browser tkinter widgets, including the tree."
@@ -117,24 +115,22 @@ class ModuleBrowser:
             top.geometry("+%d+%d" %
                 (root.winfo_rootx(), root.winfo_rooty() + 200))
         self.settitle()
-        top.focus_set()
 
-        # create scrolled canvas
-        theme = idleConf.CurrentTheme()
-        background = idleConf.GetHighlight(theme, 'normal')['background']
-        sc = ScrolledCanvas(top, bg=background, highlightthickness=0,
-                            takefocus=1)
-        sc.frame.pack(expand=1, fill="both")
-        item = self.rootnode()
-        self.node = node = TreeNode(sc.canvas, None, item)
+        # create the tree
+        self.tree = tree = TreeWidget(top, self.rootnode())
+        tree.pack(expand=True, fill="both")
+        self.set_icons()
+        tree.focus_set()
         if not self._utest:
-            node.update()
-            node.expand()
+            tree.expand()
 
     def settitle(self):
         "Set the window title."
         self.top.wm_title("Module Browser - " + os.path.basename(self.path))
         self.top.wm_iconname("Module Browser")
+
+    def set_icons(self):
+        "Give the rows icons.  The module browser shows none; see gh-69277."
 
     def rootnode(self):
         "Return a ModuleBrowserTreeItem as the root of the tree."
@@ -160,13 +156,13 @@ class ModuleBrowserTreeItem(TreeItem):
         "Return the module name as the text string to display."
         return os.path.basename(self.file)
 
-    def GetIconName(self):
-        "Return the name of the icon to display."
-        return "python"
-
     def GetSubList(self):
         "Return ChildBrowserTreeItems for children."
         return [ChildBrowserTreeItem(obj) for obj in self.listchildren()]
+
+    def GetTags(self):
+        "Mark the row as a module, which the Path Browser gives an icon."
+        return ('module',)
 
     def OnDoubleClick(self):
         "Open a module in an editor window when double clicked."
@@ -213,13 +209,6 @@ class ChildBrowserTreeItem(TreeItem):
         else:
             return "class " + name
 
-    def GetIconName(self):
-        "Return the name of the icon to display."
-        if self.isfunction:
-            return "python"
-        else:
-            return "folder"
-
     def IsExpandable(self):
         "Return True if self.obj has nested objects."
         return self.obj.children != {}
@@ -244,7 +233,7 @@ def _module_browser(parent): # htest #
     else:
         file = __file__
         # Add nested objects for htest.
-        class Nested_in_func(TreeNode):
+        class Nested_in_func(TreeItem):
             def nested_in_class(): pass
         def closure():
             class Nested_in_closure: pass
