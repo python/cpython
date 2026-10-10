@@ -6647,7 +6647,10 @@ PyDoc_STRVAR(os_readlink__doc__,
 "that directory.\n"
 "\n"
 "dir_fd may not be implemented on your platform.  If it is unavailable,\n"
-"using it will raise a NotImplementedError.");
+"using it will raise a NotImplementedError.\n"
+"\n"
+"On Linux, Android, macOS and iOS, path may be a file descriptor\n"
+"referring to a symlink. If it is, dir_fd must be None.");
 
 #define OS_READLINK_METHODDEF    \
     {"readlink", _PyCFunction_CAST(os_readlink), METH_FASTCALL|METH_KEYWORDS, os_readlink__doc__},
@@ -6688,7 +6691,7 @@ os_readlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    path_t path = PATH_T_INITIALIZE_P("readlink", "path", 0, 0, 0, 0);
+    path_t path = PATH_T_INITIALIZE_P("readlink", "path", 0, 0, 0, 1);
     int dir_fd = DEFAULT_DIR_FD;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -13760,4 +13763,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=f1113bf7c270d271 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8bf88a95035a0188 input=a9049054013a1b77]*/
