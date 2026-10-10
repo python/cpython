@@ -54,6 +54,27 @@ class BytesThreading(unittest.TestCase):
 
         threading_helper.run_concurrently([writer] + [reader] * 4)
 
+    def test_racing_join_replace_large(self):
+        # join() suspends the critical section while it copies a result
+        # of 1 MiB or more, so the list can drop its items meanwhile.
+        size = 1 << 18
+        lst = [bytes(size) for _ in range(8)]
+        done = Event()
+
+        def writer():
+            try:
+                for _ in range(100):
+                    for i in range(len(lst)):
+                        lst[i] = bytes(size)
+            finally:
+                done.set()
+
+        def reader():
+            while not done.is_set():
+                self.assertEqual(b''.join(lst), bytes(size * len(lst)))
+
+        threading_helper.run_concurrently([writer] + [reader] * 4)
+
 
 if __name__ == "__main__":
     unittest.main()

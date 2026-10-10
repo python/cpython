@@ -1,0 +1,4 @@
+Speed up :meth:`bytes.join` and :meth:`bytearray.join` by not taking a new
+reference to each :class:`bytes` item, which recovers the overhead of the
+lock added in the :term:`free-threaded build`. Patch by Christian Aurich
+Zanettini Martins.
