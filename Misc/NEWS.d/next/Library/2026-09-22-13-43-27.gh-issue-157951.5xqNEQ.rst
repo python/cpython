@@ -1,0 +1,3 @@
+Fix :mod:`http.client` blocking in :meth:`~http.client.HTTPResponse.read` when
+a 1xx, 204 or 304 response has a ``Transfer-Encoding: chunked`` header. Such
+responses never have a body.
