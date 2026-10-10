@@ -5052,6 +5052,40 @@ class ClassPropertiesAndMethods(unittest.TestCase):
 
         self.assertRaises(AttributeError, getattr, EvilGetattribute(), "attr")
 
+    def test_getattr_name_changes_class(self):
+        # gh-159098: The type could be freed while hashing or comparing
+        # the attribute name.
+        class Replacement:
+            pass
+
+        def make_obj():
+            class Victim:
+                pass
+            return Victim()
+
+        class HashChangesClass(str):
+            def __hash__(self):
+                obj.__class__ = Replacement
+                gc.collect()
+                return super().__hash__()
+
+        obj = make_obj()
+        with self.assertRaises(AttributeError):
+            getattr(obj, HashChangesClass("missing"))
+
+        class EqChangesClass(str):
+            def __hash__(self):
+                return hash("pad")
+            def __eq__(self, other):
+                obj.__class__ = Replacement
+                gc.collect()
+                return False
+
+        obj = make_obj()
+        obj.pad = None
+        with self.assertRaises(AttributeError):
+            getattr(obj, EqChangesClass("missing"))
+
     def test_type___getattribute__(self):
         self.assertRaises(TypeError, type.__getattribute__, list, type)
 
