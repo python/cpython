@@ -1,0 +1,7 @@
+The :mod:`email` header parser now attaches an ``InvalidHeaderDefect`` to the
+``misplaced-special`` token it creates for a stray special character in an
+invalid mailbox, instead of reporting the problem only on the enclosing
+address list or mailbox list.  As a result,
+:attr:`~email.headerregistry.BaseHeader.defects` for a malformed address
+header such as ``To: abc@xyz.c:om`` gains one entry per misplaced character.
+Patch by Dmitry Voropaev.
