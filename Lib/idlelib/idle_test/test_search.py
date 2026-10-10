@@ -77,4 +77,4 @@ class SearchDialogTest(unittest.TestCase):
         text.delete('2.0', 'end')
 
 if __name__ == '__main__':
-    unittest.main(verbosity=2, exit=2)
+    unittest.main(verbosity=2)
