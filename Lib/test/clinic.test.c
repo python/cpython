@@ -5381,6 +5381,34 @@ Test_meth_coexist_impl(TestObj *self)
 /*[clinic end generated code: output=7edf4e95b29f06fa input=2a1d75b5e6fec6dd]*/
 
 /*[clinic input]
+@deleter
+Test.deletable
+[clinic start generated code]*/
+
+static int
+Test_deletable_del_impl(TestObj *self);
+
+static int
+Test_deletable_del(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
+{
+    int return_value = -1;
+
+    if (arg != NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute 'deletable' of '%.100s' objects is not writable",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
+    return_value = Test_deletable_del_impl((TestObj *)self);
+
+    return return_value;
+}
+
+static int
+Test_deletable_del_impl(TestObj *self)
+/*[clinic end generated code: output=01336ded38587734 input=4fcdd5171ed08c49]*/
+
+/*[clinic input]
 @setter
 @deleter
 Test.settable
@@ -5406,6 +5434,64 @@ Test_settable_set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 static int
 Test_settable_set_impl(TestObj *self, PyObject *value)
 /*[clinic end generated code: output=46832806d93e5391 input=c5e1780ba116abdc]*/
+
+/*[clinic input]
+@setter
+Test.settable_deletable
+[clinic start generated code]*/
+
+static int
+Test_settable_deletable_set_impl(TestObj *self, PyObject *value);
+
+static int
+Test_settable_deletable_set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
+{
+    int return_value = -1;
+    PyObject *value;
+
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute 'settable_deletable' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
+    value = arg;
+    return_value = Test_settable_deletable_set_impl((TestObj *)self, value);
+
+    return return_value;
+}
+
+static int
+Test_settable_deletable_set_impl(TestObj *self, PyObject *value)
+/*[clinic end generated code: output=acf1cc489e57a1d2 input=a7c956963a35028a]*/
+
+/*[clinic input]
+@deleter
+Test.settable_deletable
+[clinic start generated code]*/
+
+static int
+Test_settable_deletable_del_impl(TestObj *self);
+
+static int
+Test_settable_deletable_del(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
+{
+    int return_value = -1;
+
+    if (arg != NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute 'settable_deletable' of '%.100s' objects is not writable",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
+    return_value = Test_settable_deletable_del_impl((TestObj *)self);
+
+    return return_value;
+}
+
+static int
+Test_settable_deletable_del_impl(TestObj *self)
+/*[clinic end generated code: output=8b93e59f2a8f0f69 input=731adc7d73cb3cf9]*/
 
 /*[clinic input]
 @getter
@@ -5574,7 +5660,19 @@ Test_setter_first_with_docstr_get_impl(TestObj *self)
 /*[clinic input]
 dump buffer
 [clinic start generated code]*/
+#define TEST_DELETABLE_GETSETDEF {"deletable", (getter)NULL, (setter)Test_deletable_del, NULL},
+
 #define TEST_SETTABLE_GETSETDEF {"settable", (getter)NULL, (setter)Test_settable_set, NULL},
+
+static int
+Test_settable_deletable_set_or_del(PyObject *self, PyObject *value, void *context)
+{
+    if (value == NULL) {
+        return ((setter)Test_settable_deletable_del)(self, value, context);
+    }
+    return ((setter)Test_settable_deletable_set)(self, value, context);
+}
+#define TEST_SETTABLE_DELETABLE_GETSETDEF {"settable_deletable", (getter)NULL, (setter)Test_settable_deletable_set_or_del, NULL},
 
 #define TEST_INT_PROPERTY_GETSETDEF {"int_property", (getter)Test_int_property_get, (setter)Test_int_property_set, NULL},
 
@@ -5582,7 +5680,7 @@ dump buffer
 
 #define TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF {"setter_first_with_docstr", (getter)Test_setter_first_with_docstr_get, (setter)Test_setter_first_with_docstr_set, Test_setter_first_with_docstr__doc__},
 
-/*[clinic end generated code: output=011497a4f5a2e835 input=524ce2e021e4eba6]*/
+/*[clinic end generated code: output=76a58036c91356d4 input=524ce2e021e4eba6]*/
 
 /*[clinic input]
 output push
