@@ -3658,6 +3658,18 @@ class ContextAPItests:
         self.assertRaises(TypeError, c.same_quantum, '1', 2)
         self.assertRaises(TypeError, c.same_quantum, 1, '2')
 
+    def test_context_hash(self):
+        Context = self.decimal.Context
+        c1 = Context()
+        c2 = Context()
+        self.assertIsInstance(hash(c1), int)
+        self.assertIsInstance(hash(c2), int)
+        self.assertEqual(hash(c1), c1.__hash__())
+        self.assertNotEqual(hash(c1), hash(c2))
+        d = {c1: 'first', c2: 'second'}
+        self.assertEqual(d[c1], 'first')
+        self.assertEqual(d[c2], 'second')
+
     def test_scaleb(self):
         Decimal = self.decimal.Decimal
         Context = self.decimal.Context
