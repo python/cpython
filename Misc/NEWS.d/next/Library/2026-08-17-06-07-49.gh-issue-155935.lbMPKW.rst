@@ -1,0 +1,1 @@
+Fix :meth:`!importlib.machinery.FileFinder.discover` looping forever when the underlying directory scan keeps failing with :exc:`OSError`. A failing scan now ends the listing instead of being retried.
