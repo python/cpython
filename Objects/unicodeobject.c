@@ -1835,8 +1835,7 @@ PyUnicode_Resize(PyObject **p_unicode, Py_ssize_t length)
 static PyObject*
 get_latin1_char(Py_UCS1 ch)
 {
-    PyObject *o = LATIN1(ch);
-    return o;
+    return LATIN1(ch);
 }
 
 static PyObject*
@@ -10481,10 +10480,8 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
     else {
         /* Set up sep and seplen */
         if (separator == NULL) {
-            /* fall back to a blank space separator */
-            sep = PyUnicode_FromOrdinal(' ');
-            if (!sep)
-                goto onError;
+            /* fall back to a blank space separator (immortal object) */
+            sep = get_latin1_char(' ');
             seplen = 1;
             maxchar = 32;
         }
@@ -10499,8 +10496,6 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
             sep = separator;
             seplen = PyUnicode_GET_LENGTH(separator);
             maxchar = PyUnicode_MAX_CHAR_VALUE(separator);
-            /* inc refcount to keep this code path symmetric with the
-               above case of a blank separator */
             Py_INCREF(sep);
         }
         last_obj = sep;
@@ -10555,51 +10550,78 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
     use_memcpy = 0;
 #else
     if (use_memcpy) {
-        res_data = PyUnicode_1BYTE_DATA(res);
+        res_data = PyUnicode_DATA(res);
         kind = PyUnicode_KIND(res);
         if (seplen != 0)
-            sep_data = PyUnicode_1BYTE_DATA(sep);
+            sep_data = PyUnicode_DATA(sep);
     }
 #endif
     if (use_memcpy) {
-        for (i = 0; i < seqlen; ++i) {
-            Py_ssize_t itemlen;
-            item = items[i];
-
-            /* Copy item, and maybe the separator. */
-            if (i && seplen != 0) {
-                memcpy(res_data,
-                          sep_data,
-                          kind * seplen);
-                res_data += kind * seplen;
+        if (seplen != 0) {
+            item = items[0];
+            Py_ssize_t itemlen = PyUnicode_GET_LENGTH(item);
+            if (itemlen != 0) {
+                memcpy(res_data, PyUnicode_DATA(item), kind * itemlen);
+                res_data += kind * itemlen;
             }
 
-            itemlen = PyUnicode_GET_LENGTH(item);
-            if (itemlen != 0) {
-                memcpy(res_data,
-                          PyUnicode_DATA(item),
-                          kind * itemlen);
-                res_data += kind * itemlen;
+            for (i = 1; i < seqlen; ++i) {
+                /* Copy item, and maybe the separator. */
+                memcpy(res_data, sep_data, kind * seplen);
+                res_data += kind * seplen;
+
+                item = items[i];
+                itemlen = PyUnicode_GET_LENGTH(item);
+                if (itemlen != 0) {
+                    memcpy(res_data, PyUnicode_DATA(item), kind * itemlen);
+                    res_data += kind * itemlen;
+                }
+            }
+        }
+        else {
+            for (i = 0; i < seqlen; ++i) {
+                item = items[i];
+                Py_ssize_t itemlen = PyUnicode_GET_LENGTH(item);
+                if (itemlen != 0) {
+                    memcpy(res_data, PyUnicode_DATA(item), kind * itemlen);
+                    res_data += kind * itemlen;
+                }
             }
         }
         assert(res_data == PyUnicode_1BYTE_DATA(res)
                            + kind * PyUnicode_GET_LENGTH(res));
     }
     else {
-        for (i = 0, res_offset = 0; i < seqlen; ++i) {
-            Py_ssize_t itemlen;
-            item = items[i];
-
-            /* Copy item, and maybe the separator. */
-            if (i && seplen != 0) {
-                _PyUnicode_FastCopyCharacters(res, res_offset, sep, 0, seplen);
-                res_offset += seplen;
-            }
-
-            itemlen = PyUnicode_GET_LENGTH(item);
+        if (seplen != 0) {
+            res_offset = 0;
+            item = items[0];
+            Py_ssize_t itemlen = PyUnicode_GET_LENGTH(item);
             if (itemlen != 0) {
                 _PyUnicode_FastCopyCharacters(res, res_offset, item, 0, itemlen);
                 res_offset += itemlen;
+            }
+
+            for (i = 1; i < seqlen; ++i) {
+                /* Copy item, and maybe the separator. */
+                _PyUnicode_FastCopyCharacters(res, res_offset, sep, 0, seplen);
+                res_offset += seplen;
+
+                item = items[i];
+                itemlen = PyUnicode_GET_LENGTH(item);
+                if (itemlen != 0) {
+                    _PyUnicode_FastCopyCharacters(res, res_offset, item, 0, itemlen);
+                    res_offset += itemlen;
+                }
+            }
+        }
+        else {
+            for (i = 0, res_offset = 0; i < seqlen; ++i) {
+                item = items[i];
+                Py_ssize_t itemlen = PyUnicode_GET_LENGTH(item);
+                if (itemlen != 0) {
+                    _PyUnicode_FastCopyCharacters(res, res_offset, item, 0, itemlen);
+                    res_offset += itemlen;
+                }
             }
         }
         assert(res_offset == PyUnicode_GET_LENGTH(res));
