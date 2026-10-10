@@ -1100,6 +1100,21 @@ class CodecCallbackTest(unittest.TestCase):
             self.assertEqual(encoded[0].decode(), "abcdx" * 51)
             self.assertEqual(encoded[1], len(input))
 
+    def test_encode_backward_non_bmp(self):
+        # Characters re-encoded after a backward jump can take more
+        # space than a single code unit.
+        handler = RepeatedPosReturn("x")
+        codecs.register_error("test.backward_non_bmp", handler.handle)
+
+        input = "\U0001f40d" * 10 + "\udc80"
+        for enc in ("utf-8", "utf-16", "utf-16-le", "utf-16-be",
+                    "utf-32", "utf-32-le", "utf-32-be"):
+            with self.subTest(encoding=enc):
+                handler.count = 50
+                encoded = input.encode(enc, "test.backward_non_bmp")
+                self.assertEqual(encoded.decode(enc),
+                                 ("\U0001f40d" * 10 + "x") * 51)
+
     def test_translatehelper(self):
         # enhance coverage of:
         # Objects/unicodeobject.c::unicode_encode_call_errorhandler()
