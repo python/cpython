@@ -150,6 +150,7 @@ class Stats:
             except:  # in case this is not unix
                 pass
             self.files = [arg]
+            return
         elif hasattr(arg, 'create_stats'):
             arg.create_stats()
             self.stats = arg.stats
