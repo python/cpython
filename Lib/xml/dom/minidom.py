@@ -42,6 +42,7 @@ class Node(xml.dom.Node):
     ownerDocument = None
     nextSibling = None
     previousSibling = None
+    nodeValue = None
 
     prefix = EMPTY_PREFIX # non-null only for NS elements and attributes
 
@@ -502,9 +503,7 @@ def _get_elements_by_tagName_ns_helper(parent, nsURI, localName, rc):
 class DocumentFragment(Node):
     nodeType = Node.DOCUMENT_FRAGMENT_NODE
     nodeName = "#document-fragment"
-    nodeValue = None
     attributes = None
-    parentNode = None
     _child_node_types = (Node.ELEMENT_NODE,
                          Node.TEXT_NODE,
                          Node.CDATA_SECTION_NODE,
@@ -848,7 +847,6 @@ class Element(Node):
                'namespaceURI', '_localName', 'childNodes', '_attrs', '_attrsNS',
                'nextSibling', 'previousSibling')
     nodeType = Node.ELEMENT_NODE
-    nodeValue = None
     schemaType = _no_type
 
     _magic_id_nodes = 0
@@ -1523,7 +1521,6 @@ class Identified:
 
 class DocumentType(Identified, Childless, Node):
     nodeType = Node.DOCUMENT_TYPE_NODE
-    nodeValue = None
     name = None
     publicId = None
     systemId = None
@@ -1584,7 +1581,6 @@ class DocumentType(Identified, Childless, Node):
 class Entity(Identified, Node):
     attributes = None
     nodeType = Node.ENTITY_NODE
-    nodeValue = None
 
     actualEncoding = None
     encoding = None
@@ -1662,7 +1658,6 @@ class EntityReference(Node):
 
 class Notation(Identified, Childless, Node):
     nodeType = Node.NOTATION_NODE
-    nodeValue = None
 
     def __init__(self, name, publicId, systemId):
         self.nodeName = name
@@ -1808,10 +1803,7 @@ class Document(Node, DocumentLS):
     implementation = DOMImplementation()
     nodeType = Node.DOCUMENT_NODE
     nodeName = "#document"
-    nodeValue = None
     attributes = None
-    parentNode = None
-    previousSibling = nextSibling = None
 
 
     # Document attributes from Level 3 (WD 9 April 2002)
