@@ -1,0 +1,3 @@
+Remove the deprecated :c:type:`!Py_UNICODE` type.  It was a typedef to
+:c:type:`wchar_t`, deprecated by :pep:`393` since Python 3.3 and at runtime
+since Python 3.13.  Use :c:type:`wchar_t` instead.
