@@ -1527,6 +1527,34 @@ class UrlParseTestCase(unittest.TestCase):
             self.assertEqual(cm.filename, __file__)
             self.assertRaises(ValueError, urllib.parse.parse_qsl, x, separator=1)
 
+    def test_parse_qsl_strict_parsing(self):
+        self.assertRaises(ValueError, urllib.parse.parse_qsl,
+                          'a=1&b&c=3', strict_parsing=True)
+        self.assertRaises(ValueError, urllib.parse.parse_qsl,
+                          b'a=1&b', strict_parsing=True)
+        self.assertRaises(ValueError, urllib.parse.parse_qs,
+                          'a=1&b&c=3', strict_parsing=True)
+        self.assertRaises(ValueError, urllib.parse.parse_qs,
+                          b'a=1&b', strict_parsing=True)
+        self.assertRaises(ValueError, urllib.parse.parse_qsl,
+                          'a=1&&c=3', strict_parsing=True)
+        self.assertRaises(ValueError, urllib.parse.parse_qsl,
+                          b'a=1&', strict_parsing=True)
+        self.assertRaises(ValueError, urllib.parse.parse_qs,
+                          'a=1&&c=3', strict_parsing=True)
+        self.assertRaises(ValueError, urllib.parse.parse_qs,
+                          b'a=1&', strict_parsing=True)
+        self.assertEqual(urllib.parse.parse_qsl('a=1&c=3', strict_parsing=True),
+                         [('a', '1'), ('c', '3')])
+        self.assertEqual(urllib.parse.parse_qs('a=1&c=3', strict_parsing=True),
+                         {'a': ['1'], 'c': ['3']})
+        self.assertEqual(urllib.parse.parse_qsl('=abc', strict_parsing=True),
+                         [('', 'abc')])
+        self.assertEqual(
+            urllib.parse.parse_qsl(
+                'abc=', strict_parsing=True, keep_blank_values=True),
+            [('abc', '')])
+
     def test_parse_qsl_errors(self):
         self.assertRaises(TypeError, urllib.parse.parse_qsl, list(b'a=b'))
         self.assertRaises(TypeError, urllib.parse.parse_qsl, iter(b'a=b'))
