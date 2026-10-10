@@ -815,10 +815,30 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         self._csock.setblocking(False)
         self._internal_fds += 1
 
+    def _rebuild_self_pipe(self):
+        # gh-156333: the self-pipe socketpair reached EOF -- the OS tore the
+        # loopback connection down (e.g. across a power/session state change).
+        # Re-arming a read on the dead socket would busy-loop the CPU, so
+        # rebuild the pair instead. Build the replacement before touching the
+        # old sockets so a failure leaves the previous state intact, and
+        # re-register the wakeup fd before closing the old sockets, mirroring
+        # close().
+        ssock, csock = socket.socketpair()
+        ssock.setblocking(False)
+        csock.setblocking(False)
+        if threading.current_thread() is threading.main_thread():
+            # The wakeup fd was registered with the old socket.
+            signal.set_wakeup_fd(csock.fileno())
+        self._ssock.close()
+        self._csock.close()
+        self._ssock, self._csock = ssock, csock
+
     def _loop_self_reading(self, f=None):
         try:
-            if f is not None:
-                f.result()  # may raise
+            if f is None:
+                data = None
+            else:
+                data = f.result()  # may raise
             if self._self_reading_future is not f:
                 # When we scheduled this Future, we assigned it to
                 # _self_reading_future. If it's not there now, something has
@@ -827,6 +847,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                 # that case stop here instead of continuing to schedule a new
                 # iteration.
                 return
+            if f is not None and not data:
+                self._rebuild_self_pipe()
             f = self._proactor.recv(self._ssock, 4096)
         except exceptions.CancelledError:
             # _close_self_pipe() has been called, stop waiting for data
@@ -839,6 +861,36 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                 'exception': exc,
                 'loop': self,
             })
+            if f is not None and self._self_reading_future is f:
+                # The read itself failed (e.g. an aborted or reset
+                # overlapped operation on Windows), but the loop is still
+                # running and nothing else will re-arm it: report, then
+                # rebuild the pipe and arm a fresh read, or cross-thread
+                # wakeups would be lost silently for the life of the loop.
+                # A recovery that fails in turn is reported the same way
+                # and leaves the loop un-wakeable, like the original code;
+                # the field is reset so a later run_forever() can arm a
+                # read again, though that arm is not itself recovered if
+                # the pipe is still dead.  Rebuilding gives the next read
+                # a fresh socketpair, so a repeat failure needs a new
+                # cause -- sustained exhaustion of sockets or handles
+                # fails the rebuild itself and ends the cycle above.
+                try:
+                    self._rebuild_self_pipe()
+                    f = self._proactor.recv(self._ssock, 4096)
+                except (SystemExit, KeyboardInterrupt):
+                    raise
+                except BaseException as exc:
+                    self._self_reading_future = None
+                    self.call_exception_handler({
+                        'message': ('Error on re-arming the event loop '
+                                    'self pipe read'),
+                        'exception': exc,
+                        'loop': self,
+                    })
+                else:
+                    self._self_reading_future = f
+                    f.add_done_callback(self._loop_self_reading)
         else:
             self._self_reading_future = f
             f.add_done_callback(self._loop_self_reading)

@@ -831,6 +831,106 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         self.loop._loop_self_reading()
         self.assertTrue(self.loop.call_exception_handler.called)
 
+    def test_loop_self_reading_error_rebuilds_and_rearms(self):
+        # gh-156333: if the pending read on the self-pipe fails (e.g. an
+        # aborted overlapped operation on Windows), the loop must rebuild
+        # the pipe and arm a fresh read, or every later cross-thread
+        # wakeup would be silently dropped for the life of the loop.
+        fut = mock.Mock()
+        fut.result.side_effect = ConnectionResetError()
+        self.loop._self_reading_future = fut
+        self.loop.call_exception_handler = mock.Mock()
+
+        new_ssock, new_csock = mock.Mock(), mock.Mock()
+        with mock.patch('asyncio.proactor_events.socket.socketpair',
+                        return_value=(new_ssock, new_csock)):
+            with mock.patch('signal.set_wakeup_fd'):
+                self.loop._loop_self_reading(fut)
+
+        self.loop.call_exception_handler.assert_called_once()
+        self.assertTrue(self.ssock.close.called)
+        self.assertIs(self.loop._ssock, new_ssock)
+        self.proactor.recv.assert_called_with(new_ssock, 4096)
+        self.assertIs(self.loop._self_reading_future,
+                      self.proactor.recv.return_value)
+        (self.proactor.recv.return_value.add_done_callback
+         .assert_called_with(self.loop._loop_self_reading))
+
+    def test_loop_self_reading_error_while_closing_stops(self):
+        # A failed read for a future that is no longer the current one
+        # means the loop is closing (gh-39010): report the error but do
+        # not touch the sockets or arm anything.
+        fut = mock.Mock()
+        fut.result.side_effect = ConnectionResetError()
+        self.proactor.recv.side_effect = OSError()
+        self.loop.call_exception_handler = mock.Mock()
+
+        # Patched defensively: the path under test should never reach the
+        # rebuild, but if the guard regresses the real signal wakeup fd
+        # and a real socketpair must not be touched from a test.
+        new_ssock, new_csock = mock.Mock(), mock.Mock()
+        with mock.patch('asyncio.proactor_events.socket.socketpair',
+                        return_value=(new_ssock, new_csock)):
+            with mock.patch('signal.set_wakeup_fd'):
+                self.loop._loop_self_reading(fut)
+
+        self.loop.call_exception_handler.assert_called_once()
+        self.assertFalse(self.ssock.close.called)
+        self.proactor.recv.assert_not_called()
+
+    def test_loop_self_reading_recover_failure_reported_once(self):
+        # If rebuilding or re-arming after a failed read fails in turn,
+        # the failure is reported once and the field is reset so a later
+        # run_forever() can arm a read again.
+        fut = mock.Mock()
+        fut.result.side_effect = ConnectionResetError()
+        self.loop._self_reading_future = fut
+        self.proactor.recv.side_effect = OSError()
+        self.loop.call_exception_handler = mock.Mock()
+
+        new_ssock, new_csock = mock.Mock(), mock.Mock()
+        with mock.patch('asyncio.proactor_events.socket.socketpair',
+                        return_value=(new_ssock, new_csock)):
+            with mock.patch('signal.set_wakeup_fd'):
+                self.loop._loop_self_reading(fut)
+
+        self.assertEqual(self.loop.call_exception_handler.call_count, 2)
+        messages = [c.args[0]['message']
+                    for c in self.loop.call_exception_handler.call_args_list]
+        self.assertIn('Error on reading from the event loop self pipe',
+                      messages)
+        self.assertIn('Error on re-arming the event loop self pipe read',
+                      messages)
+        self.assertIsNone(self.loop._self_reading_future)
+
+    def test_loop_self_reading_eof_rebuilds_self_pipe(self):
+        # gh-156333: a clean EOF on the self-pipe (recv returns b'') must
+        # rebuild the socketpair instead of re-arming a read that completes
+        # immediately, which would busy-loop the CPU at 100%.
+        fut = mock.Mock()
+        fut.result.return_value = b''
+        self.loop._self_reading_future = fut
+
+        new_ssock, new_csock = mock.Mock(), mock.Mock()
+        with mock.patch('asyncio.proactor_events.socket.socketpair',
+                        return_value=(new_ssock, new_csock)):
+            with mock.patch('signal.set_wakeup_fd') as m_wakeup_fd:
+                self.loop._loop_self_reading(fut)
+
+        # the dead pipe is closed and replaced
+        self.assertTrue(self.ssock.close.called)
+        self.assertTrue(self.csock.close.called)
+        self.assertIs(self.loop._ssock, new_ssock)
+        self.assertIs(self.loop._csock, new_csock)
+        self.assertEqual(self.loop._internal_fds, 1)
+        # the wakeup fd is re-registered to the new socket before the old
+        # sockets are closed
+        self.assertEqual(m_wakeup_fd.call_args.args, (new_csock.fileno(),))
+        # a new read is armed on the NEW socket, not the dead one
+        self.proactor.recv.assert_called_with(new_ssock, 4096)
+        self.assertIs(self.loop._self_reading_future,
+                      self.proactor.recv.return_value)
+
     def test_write_to_self(self):
         self.loop._write_to_self()
         self.csock.send.assert_called_with(b'\0')
