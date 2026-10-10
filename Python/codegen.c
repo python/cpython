@@ -309,19 +309,23 @@ codegen_addop_load_const(compiler *c, location loc, PyObject *o)
 #define ADDOP_LOAD_CONST_IN_SCOPE(C, LOC, O) \
     RETURN_IF_ERROR_IN_SCOPE((C), codegen_addop_load_const((C), (LOC), (O)))
 
+static int
+codegen_addop_load_const_new(compiler *c, location loc, PyObject *o)
+{
+    if (o == NULL) {
+        return ERROR;
+    }
+    int ret = codegen_addop_load_const(c, loc, o);
+    Py_DECREF(o);
+    return ret;
+}
+
 /* Same as ADDOP_LOAD_CONST, but steals a reference. */
-#define ADDOP_LOAD_CONST_NEW(C, LOC, O)                                 \
-    do {                                                                \
-        PyObject *__new_const = (O);                                    \
-        if (__new_const == NULL) {                                      \
-            return ERROR;                                               \
-        }                                                               \
-        if (codegen_addop_load_const((C), (LOC), __new_const) < 0) {    \
-            Py_DECREF(__new_const);                                     \
-            return ERROR;                                               \
-        }                                                               \
-        Py_DECREF(__new_const);                                         \
-    } while (0)
+#define ADDOP_LOAD_CONST_NEW(C, LOC, O)  \
+    RETURN_IF_ERROR(codegen_addop_load_const_new((C), (LOC), (O)))
+
+#define ADDOP_LOAD_CONST_NEW_IN_SCOPE(C, LOC, O) \
+    RETURN_IF_ERROR_IN_SCOPE((C), codegen_addop_load_const_new((C), (LOC), (O)))
 
 static int
 codegen_addop_o(compiler *c, location loc,
@@ -540,6 +544,7 @@ codegen_unwind_fblock(compiler *c, location *ploc,
         case COMPILE_FBLOCK_EXCEPTION_HANDLER:
         case COMPILE_FBLOCK_EXCEPTION_GROUP_HANDLER:
         case COMPILE_FBLOCK_ASYNC_COMPREHENSION_GENERATOR:
+        case COMPILE_FBLOCK_INLINED_COMPREHENSION:
         case COMPILE_FBLOCK_STOP_ITERATION:
             return SUCCESS;
 
@@ -679,6 +684,7 @@ codegen_enter_scope(compiler *c, identifier name, int scope_type,
 {
     RETURN_IF_ERROR(
         _PyCompile_EnterScope(c, name, scope_type, key, lineno, private, umd));
+    RETURN_IF_ERROR_IN_SCOPE(c, _PyCompile_SetQualname(c));
     location loc = LOCATION(lineno, lineno, 0, 0);
     if (scope_type == COMPILE_SCOPE_MODULE) {
         loc.lineno = 0;
@@ -691,13 +697,13 @@ codegen_enter_scope(compiler *c, identifier name, int scope_type,
          * of 0. This is because RETURN_GENERATOR pushes the generator
          before returning. */
         location loc = LOCATION(lineno, lineno, -1, -1);
-        ADDOP(c, loc, RETURN_GENERATOR);
-        ADDOP(c, loc, POP_TOP);
+        ADDOP_IN_SCOPE(c, loc, RETURN_GENERATOR);
+        ADDOP_IN_SCOPE(c, loc, POP_TOP);
     }
 
-    ADDOP_I(c, loc, RESUME, RESUME_AT_FUNC_START);
+    ADDOP_I_IN_SCOPE(c, loc, RESUME, RESUME_AT_FUNC_START);
     if (scope_type == COMPILE_SCOPE_MODULE) {
-        ADDOP(c, loc, ANNOTATIONS_PLACEHOLDER);
+        ADDOP_IN_SCOPE(c, loc, ANNOTATIONS_PLACEHOLDER);
     }
     return SUCCESS;
 }
@@ -1178,7 +1184,7 @@ codegen_function_annotations(compiler *c, location loc,
         RETURN_IF_ERROR_IN_SCOPE(
             c, codegen_annotations_in_scope(c, loc, args, returns, &annotations_len)
         );
-        ADDOP_I(c, loc, BUILD_MAP, annotations_len);
+        ADDOP_I_IN_SCOPE(c, loc, BUILD_MAP, annotations_len);
         RETURN_IF_ERROR(codegen_leave_annotations_scope(c, loc));
         return MAKE_FUNCTION_ANNOTATE;
     }
@@ -1365,6 +1371,44 @@ codegen_type_params(compiler *c, asdl_type_param_seq *type_params)
 }
 
 static int
+codegen_emit_function_body(compiler *c, asdl_stmt_seq *body)
+{
+    PySTEntryObject *ste = SYMTABLE_ENTRY(c);
+    Py_ssize_t first_instr = 0;
+    if (ste->ste_has_docstring) {
+        PyObject *docstring = _PyAST_GetDocString(body);
+        assert(docstring);
+        first_instr = 1;
+        docstring = _PyCompile_CleanDoc(docstring);
+        if (docstring == NULL) {
+            return ERROR;
+        }
+        Py_ssize_t idx = _PyCompile_AddConst(c, docstring);
+        Py_DECREF(docstring);
+        RETURN_IF_ERROR(idx < 0 ? ERROR : SUCCESS);
+    }
+
+    NEW_JUMP_TARGET_LABEL(c, start);
+    USE_LABEL(c, start);
+    bool add_stopiteration_handler = ste->ste_coroutine || ste->ste_generator;
+    if (add_stopiteration_handler) {
+        /* codegen_wrap_in_stopiteration_handler will push a block, so we need to account for that */
+        RETURN_IF_ERROR(
+            _PyCompile_PushFBlock(c, NO_LOCATION, COMPILE_FBLOCK_STOP_ITERATION,
+                                  start, NO_LABEL, NULL));
+    }
+
+    for (Py_ssize_t i = first_instr; i < asdl_seq_LEN(body); i++) {
+        VISIT(c, stmt, (stmt_ty)asdl_seq_GET(body, i));
+    }
+    if (add_stopiteration_handler) {
+        RETURN_IF_ERROR(codegen_wrap_in_stopiteration_handler(c));
+        _PyCompile_PopFBlock(c, COMPILE_FBLOCK_STOP_ITERATION, start);
+    }
+    return SUCCESS;
+}
+
+static int
 codegen_function_body(compiler *c, stmt_ty s, int is_async, Py_ssize_t funcflags,
                       int firstlineno)
 {
@@ -1399,39 +1443,8 @@ codegen_function_body(compiler *c, stmt_ty s, int is_async, Py_ssize_t funcflags
     RETURN_IF_ERROR(
         codegen_enter_scope(c, name, scope_type, (void *)s, firstlineno, NULL, &umd));
 
-    PySTEntryObject *ste = SYMTABLE_ENTRY(c);
-    Py_ssize_t first_instr = 0;
-    if (ste->ste_has_docstring) {
-        PyObject *docstring = _PyAST_GetDocString(body);
-        assert(docstring);
-        first_instr = 1;
-        docstring = _PyCompile_CleanDoc(docstring);
-        if (docstring == NULL) {
-            _PyCompile_ExitScope(c);
-            return ERROR;
-        }
-        Py_ssize_t idx = _PyCompile_AddConst(c, docstring);
-        Py_DECREF(docstring);
-        RETURN_IF_ERROR_IN_SCOPE(c, idx < 0 ? ERROR : SUCCESS);
-    }
+    RETURN_IF_ERROR_IN_SCOPE(c, codegen_emit_function_body(c, body));
 
-    NEW_JUMP_TARGET_LABEL(c, start);
-    USE_LABEL(c, start);
-    bool add_stopiteration_handler = ste->ste_coroutine || ste->ste_generator;
-    if (add_stopiteration_handler) {
-        /* codegen_wrap_in_stopiteration_handler will push a block, so we need to account for that */
-        RETURN_IF_ERROR(
-            _PyCompile_PushFBlock(c, NO_LOCATION, COMPILE_FBLOCK_STOP_ITERATION,
-                                  start, NO_LABEL, NULL));
-    }
-
-    for (Py_ssize_t i = first_instr; i < asdl_seq_LEN(body); i++) {
-        VISIT_IN_SCOPE(c, stmt, (stmt_ty)asdl_seq_GET(body, i));
-    }
-    if (add_stopiteration_handler) {
-        RETURN_IF_ERROR_IN_SCOPE(c, codegen_wrap_in_stopiteration_handler(c));
-        _PyCompile_PopFBlock(c, COMPILE_FBLOCK_STOP_ITERATION, start);
-    }
     PyCodeObject *co = _PyCompile_OptimizeAndAssemble(c, 1);
     _PyCompile_ExitScope(c);
     if (co == NULL) {
@@ -1591,16 +1604,16 @@ codegen_class_body(compiler *c, stmt_ty s, int firstlineno)
     RETURN_IF_ERROR_IN_SCOPE(c, codegen_nameop(c, loc, &_Py_ID(__name__), Load));
     /* ... and store it as __module__ */
     RETURN_IF_ERROR_IN_SCOPE(c, codegen_nameop(c, loc, &_Py_ID(__module__), Store));
-    ADDOP_LOAD_CONST(c, loc, QUALNAME(c));
+    ADDOP_LOAD_CONST_IN_SCOPE(c, loc, QUALNAME(c));
     RETURN_IF_ERROR_IN_SCOPE(c, codegen_nameop(c, loc, &_Py_ID(__qualname__), Store));
-    ADDOP_LOAD_CONST_NEW(c, loc, PyLong_FromLong(METADATA(c)->u_firstlineno));
+    ADDOP_LOAD_CONST_NEW_IN_SCOPE(c, loc, PyLong_FromLong(METADATA(c)->u_firstlineno));
     RETURN_IF_ERROR_IN_SCOPE(c, codegen_nameop(c, loc, &_Py_ID(__firstlineno__), Store));
     asdl_type_param_seq *type_params = s->v.ClassDef.type_params;
     if (asdl_seq_LEN(type_params) > 0) {
         RETURN_IF_ERROR_IN_SCOPE(c, codegen_set_type_params_in_class(c, loc));
     }
     if (SYMTABLE_ENTRY(c)->ste_needs_classdict) {
-        ADDOP(c, loc, LOAD_LOCALS);
+        ADDOP_IN_SCOPE(c, loc, LOAD_LOCALS);
 
         // We can't use codegen_nameop here because we need to generate a
         // STORE_DEREF in a class namespace, and codegen_nameop() won't do
@@ -1613,13 +1626,7 @@ codegen_class_body(compiler *c, stmt_ty s, int firstlineno)
     }
     /* compile the body proper */
     RETURN_IF_ERROR_IN_SCOPE(c, codegen_body(c, loc, s->v.ClassDef.body, false));
-    PyObject *static_attributes = _PyCompile_StaticAttributesAsTuple(c);
-    if (static_attributes == NULL) {
-        _PyCompile_ExitScope(c);
-        return ERROR;
-    }
-    ADDOP_LOAD_CONST(c, NO_LOCATION, static_attributes);
-    Py_CLEAR(static_attributes);
+    ADDOP_LOAD_CONST_NEW_IN_SCOPE(c, NO_LOCATION, _PyCompile_StaticAttributesAsTuple(c));
     RETURN_IF_ERROR_IN_SCOPE(
         c, codegen_nameop(c, NO_LOCATION, &_Py_ID(__static_attributes__), Store));
     /* The following code is artificial */
@@ -1628,7 +1635,7 @@ codegen_class_body(compiler *c, stmt_ty s, int firstlineno)
         /* Store __classdictcell__ into class namespace */
         int i = _PyCompile_LookupCellvar(c, &_Py_ID(__classdict__));
         RETURN_IF_ERROR_IN_SCOPE(c, i);
-        ADDOP_I(c, NO_LOCATION, LOAD_CLOSURE, i);
+        ADDOP_I_IN_SCOPE(c, NO_LOCATION, LOAD_CLOSURE, i);
         RETURN_IF_ERROR_IN_SCOPE(
             c, codegen_nameop(c, NO_LOCATION, &_Py_ID(__classdictcell__), Store));
     }
@@ -1637,14 +1644,14 @@ codegen_class_body(compiler *c, stmt_ty s, int firstlineno)
         /* Store __classcell__ into class namespace & return it */
         int i = _PyCompile_LookupCellvar(c, &_Py_ID(__class__));
         RETURN_IF_ERROR_IN_SCOPE(c, i);
-        ADDOP_I(c, NO_LOCATION, LOAD_CLOSURE, i);
-        ADDOP_I(c, NO_LOCATION, COPY, 1);
+        ADDOP_I_IN_SCOPE(c, NO_LOCATION, LOAD_CLOSURE, i);
+        ADDOP_I_IN_SCOPE(c, NO_LOCATION, COPY, 1);
         RETURN_IF_ERROR_IN_SCOPE(
             c, codegen_nameop(c, NO_LOCATION, &_Py_ID(__classcell__), Store));
     }
     else {
         /* No methods referenced __class__, so just return None */
-        ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
+        ADDOP_LOAD_CONST_IN_SCOPE(c, NO_LOCATION, Py_None);
     }
     ADDOP_IN_SCOPE(c, NO_LOCATION, RETURN_VALUE);
     /* create the code object */
@@ -4873,8 +4880,11 @@ codegen_push_inlined_comprehension_locals(compiler *c, location loc,
         NEW_JUMP_TARGET_LABEL(c, cleanup);
         state->cleanup = cleanup;
 
-        // no need to push an fblock for this "virtual" try/finally; there can't
-        // be return/continue/break inside a comprehension
+        // Count against CO_MAXBLOCKS: SETUP_FINALLY consumes an except-stack
+        // slot even though return/continue/break cannot appear here.
+        RETURN_IF_ERROR(_PyCompile_PushFBlock(
+            c, loc, COMPILE_FBLOCK_INLINED_COMPREHENSION,
+            cleanup, NO_LABEL, NULL));
         ADDOP_JUMP(c, loc, SETUP_FINALLY, cleanup);
     }
     return SUCCESS;
@@ -4920,6 +4930,8 @@ codegen_pop_inlined_comprehension_locals(compiler *c, location loc,
 {
     if (state->pushed_locals) {
         ADDOP(c, NO_LOCATION, POP_BLOCK);
+        _PyCompile_PopFBlock(c, COMPILE_FBLOCK_INLINED_COMPREHENSION,
+                             state->cleanup);
 
         NEW_JUMP_TARGET_LABEL(c, end);
         ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, end);

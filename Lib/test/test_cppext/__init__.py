@@ -102,11 +102,9 @@ class TestPublicCAPI(BaseTests, unittest.TestCase):
     def test_build(self):
         self.check_build('_testcppext')
 
-    @support.requires_gil_enabled('incompatible with Free Threading')
     def test_build_limited_cpp03(self):
         self.check_build('_test_limited_cpp03ext', std='c++03', limited=True)
 
-    @support.requires_gil_enabled('incompatible with Free Threading')
     def test_build_limited(self):
         self.check_build('_testcppext_limited', limited=True)
 

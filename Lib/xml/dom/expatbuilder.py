@@ -30,7 +30,8 @@ This avoids all the overhead of SAX and pulldom to gain performance.
 from xml.dom import xmlbuilder, minidom, Node
 from xml.dom import EMPTY_NAMESPACE, EMPTY_PREFIX, XMLNS_NAMESPACE
 from xml.parsers import expat
-from xml.dom.minidom import _append_child, _set_attribute_node
+from xml.dom.minidom import (_append_child, _set_attribute_node,
+                            _XML_WHITESPACE)
 from xml.dom.NodeFilter import NodeFilter
 
 TEXT_NODE = Node.TEXT_NODE
@@ -412,7 +413,8 @@ class ExpatBuilder:
         # whitespace.
         L = []
         for child in node.childNodes:
-            if child.nodeType == TEXT_NODE and not child.data.strip():
+            if (child.nodeType == TEXT_NODE
+                    and not child.data.strip(_XML_WHITESPACE)):
                 L.append(child)
 
         # Remove ignorable whitespace from the tree.

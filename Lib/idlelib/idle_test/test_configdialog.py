@@ -167,8 +167,8 @@ class FontPageTest(unittest.TestCase):
         font = d.fontlist.get('active')
 
         # Test Down key.
-        fontlist.focus_force()
         fontlist.update()
+        fontlist.focus_force()
         fontlist.event_generate('<Key-Down>')
         fontlist.event_generate('<KeyRelease-Down>')
 
@@ -177,8 +177,8 @@ class FontPageTest(unittest.TestCase):
         self.assertIn(d.font_name.get(), down_font.lower())
 
         # Test Up key.
-        fontlist.focus_force()
         fontlist.update()
+        fontlist.focus_force()
         fontlist.event_generate('<Key-Up>')
         fontlist.event_generate('<KeyRelease-Up>')
 
@@ -1711,6 +1711,10 @@ class VarTraceTest(unittest.TestCase):
         sv.set('5')
         cb()
         self.assertEqual(changes['main']['section']['option'], '5')
+        # gh-75487: blanking the entry forgets the value recorded before.
+        sv.set('')
+        cb()
+        self.assertNotIn('option', changes['main']['section'])
         changes.clear()
 
     def test_attach_detach(self):
