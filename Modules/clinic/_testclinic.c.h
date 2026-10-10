@@ -4990,7 +4990,7 @@ vc_plain_vectorcall(PyObject *type, PyObject *const *args,
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     PyObject *a = Py_None;
 
-    assert(Py_Is(_PyType_CAST(type), &VcNew_Type));
+    assert(_PyType_CAST(type)->tp_new == vc_plain_new);
     /* Make sure the type object is immutable: the generated
      * vectorcall doesn't deal e.g. with users reassigning __init__. */
     assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
@@ -5089,7 +5089,7 @@ vc_posorkw_vectorcall(PyObject *type, PyObject *const *args,
     PyObject *a;
     PyObject *b = Py_None;
 
-    assert(Py_Is(_PyType_CAST(type), &VcInit_Type));
+    assert(_PyType_CAST(type)->tp_init == vc_posorkw_init);
     /* Make sure the type object is immutable: the generated
      * vectorcall doesn't deal e.g. with users reassigning __init__. */
     assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
@@ -5208,7 +5208,7 @@ vc_base_vectorcall(PyObject *type, PyObject *const *args,
     PyObject *a;
     PyObject *b = Py_None;
 
-    assert(Py_Is(_PyType_CAST(type), &VcNewBase_Type));
+    assert(_PyType_CAST(type)->tp_new == vc_base_new);
     /* Make sure the type object is immutable: the generated
      * vectorcall doesn't deal e.g. with users reassigning __init__. */
     assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
@@ -5301,7 +5301,7 @@ vc_kwonly_vectorcall(PyObject *type, PyObject *const *args,
 {
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
 
-    assert(Py_Is(_PyType_CAST(type), &VcKwOnly_Type));
+    assert(_PyType_CAST(type)->tp_new == vc_kwonly_new);
     /* Make sure the type object is immutable: the generated
      * vectorcall doesn't deal e.g. with users reassigning __init__. */
     assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
@@ -5309,4 +5309,4 @@ vc_kwonly_vectorcall(PyObject *type, PyObject *const *args,
         kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
         NULL, kwnames);
 }
-/*[clinic end generated code: output=e1f97f59fec61b6b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b18344bb0b57e66c input=a9049054013a1b77]*/

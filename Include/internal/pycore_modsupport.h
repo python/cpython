@@ -20,6 +20,12 @@ PyAPI_FUNC(int) _PyArg_NoPositional(const char *funcname, PyObject *args);
 #define _PyArg_NoPositional(funcname, args) \
     ((args) == NULL || _PyArg_NoPositional((funcname), (args)))
 
+// Export for Argument Clinic generated code in shared extensions
+PyAPI_FUNC(int) _PyArg_NoPositionalStack(const char *funcname,
+                                         Py_ssize_t nargs);
+#define _PyArg_NoPositionalStack(funcname, nargs) \
+    ((nargs) == 0 || _PyArg_NoPositionalStack((funcname), (nargs)))
+
 // Export for '_asyncio' shared extension
 PyAPI_FUNC(int) _PyArg_NoKeywords(const char *funcname, PyObject *kwargs);
 #define _PyArg_NoKeywords(funcname, kwargs) \
