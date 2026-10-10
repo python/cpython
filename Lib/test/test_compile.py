@@ -59,6 +59,27 @@ class TestSpecifics(unittest.TestCase):
         """)
         script_helper.assert_python_ok('-c', code)
 
+    @support.requires_subprocess()
+    @support.nomemtest
+    def test_push_cold_blocks_to_end_allocation_failure(self):
+        code = textwrap.dedent("""
+            from test import support
+
+            source = "async def f():\\n    await x\\n"
+            for n in range(1, 1000):
+                with support.inject_memory_error_cm(n, n + 1):
+                    try:
+                        compile(source, "<test>", "exec")
+                    except MemoryError:
+                        continue
+                break
+            else:
+                raise AssertionError("compile() never succeeded")
+            if n == 1:
+                raise AssertionError("no MemoryError raised")
+        """)
+        script_helper.assert_python_ok('-c', code)
+
     def test_other_newlines(self):
         compile("\r\n", "<test>", "exec")
         compile("\r", "<test>", "exec")
