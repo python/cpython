@@ -70,11 +70,27 @@ class FileCompareTestCase(unittest.TestCase):
                         "Mismatched file to shallow identical file compares as equal")
 
     def test_cache_clear(self):
-        first_compare = filecmp.cmp(self.name, self.name_same, shallow=False)
-        second_compare = filecmp.cmp(self.name, self.name_diff, shallow=False)
+        filecmp.cmp(self.name, self.name_same, shallow=False)
+        filecmp.cmp(self.name, self.name_diff, shallow=False)
         filecmp.clear_cache()
-        self.assertTrue(len(filecmp._cache) == 0,
-                        "Cache not cleared after calling clear_cache")
+        self.assertEqual(len(filecmp._cache), 0,
+                         "Cache not cleared after calling clear_cache")
+        filecmp.clear_cache()
+        res1 = filecmp.cmp(self.name, self.name_same, shallow=False)
+        self.assertEqual(len(filecmp._cache), 1)
+        res2 = filecmp.cmp(self.name, self.name_same, shallow=False)
+        self.assertTrue(res1)
+        self.assertEqual(res1, res2)
+        self.assertEqual(len(filecmp._cache), 1)
+
+    def test_cmp_cache_clearing_on_overflow(self):
+        filecmp.clear_cache()
+        fake_sig = (33188, 100, 12345)
+        for i in range(105):
+            filecmp._cache[(f"fake_f1_{i}", f"fake_f2_{i}", fake_sig, fake_sig)] = True
+        self.assertGreater(len(filecmp._cache), 100)
+        filecmp.cmp(self.name, self.name_same_shallow, shallow=False)
+        self.assertEqual(len(filecmp._cache), 1)
 
 class DirCompareTestCase(unittest.TestCase):
     def setUp(self):
