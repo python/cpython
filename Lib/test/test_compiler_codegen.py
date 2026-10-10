@@ -217,6 +217,35 @@ class IsolatedCodeGenTests(CodegenTestCase):
         ]
         self.codegen_test(snippet, expected)
 
+    def test_frozendict_optimization(self):
+        l1 = self.Label()
+        snippet = "frozendict({1: 2})"
+        expected = [
+            ('RESUME', 0),
+            ('ANNOTATIONS_PLACEHOLDER', None),
+            ('LOAD_NAME', 0),
+            ('COPY', 1),
+            ('LOAD_COMMON_CONSTANT', 12),
+            ('IS_OP', 0),
+            ('POP_JUMP_IF_FALSE', l1),
+            ('POP_TOP', None),
+            ('LOAD_CONST', 1),
+            ('LOAD_CONST', 2),
+            ('BUILD_MAP', 2),
+            ('CALL_INTRINSIC_1', 12),
+            ('JUMP', 0),
+            l1,
+            ('PUSH_NULL', None),
+            ('LOAD_CONST', 1),
+            ('LOAD_CONST', 2),
+            ('BUILD_MAP', 3),
+            ('CALL', 1),
+            ('POP_TOP', None),
+            ('LOAD_CONST', 0),
+            ('RETURN_VALUE', None)
+        ]
+        self.codegen_test(snippet, expected)
+
     def test_comp_without_target_optimization(self):
         snippet = "[i for i in range(10)]"
         expected = [
