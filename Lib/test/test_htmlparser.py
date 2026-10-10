@@ -42,7 +42,9 @@ class EventCollector(html.parser.HTMLParser):
             else:
                 L.append(event)
             prevtype = type
+        # Reset events and append for re-testing
         self.events = L
+        self.append = self.events.append
         return L
 
     # structure markup
@@ -1020,6 +1022,24 @@ text
             [('data', 'foo '), ('starttag', 'a', []), ('data', 'link'),
              ('endtag', 'a'), ('data', ' bar & baz')]
         )
+
+    def test_flush(self):
+        attrs = [(f"a{i}", str(i)) for i in range(8)]
+        parts = ["<div", *[f' {attr[0]}="{attr[1]}"' for attr in attrs], ">", "</div>"]
+        parser = EventCollector()
+        for part in parts:
+            parser.feed(part)
+        # confirm the fed data is buffered and not processed yet
+        self.assertEqual(parser.get_events(), [])
+        parser.flush()
+        expected = [
+            ('starttag', 'div', attrs),
+            ('endtag', 'div'),
+        ]
+        self.assertEqual(parser.get_events(), expected)
+        parser.close()
+        # close should do nothing, event log is the same as before
+        self.assertEqual(parser.get_events(), expected)
 
     @support.requires_resource('cpu')
     def test_eof_no_quadratic_complexity(self):
