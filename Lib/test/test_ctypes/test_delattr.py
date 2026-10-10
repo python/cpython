@@ -1,5 +1,5 @@
 import unittest
-from ctypes import CDLL, Structure, c_char, c_int
+from ctypes import CDLL, POINTER, Structure, c_char, c_int
 from test.support import import_helper
 
 
@@ -16,6 +16,11 @@ class TestCase(unittest.TestCase):
         chararray = (c_char * 5)()
         with self.assertRaises(TypeError):
             del chararray.value
+
+    def test_pointer_contents(self):
+        ptr = POINTER(c_int)(c_int(42))
+        with self.assertRaises(TypeError):
+            del ptr.contents
 
     def test_struct(self):
         struct = X()
