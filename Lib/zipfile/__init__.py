@@ -2243,6 +2243,8 @@ class ZipFile:
                     "Close the writing handle before trying to read.")
 
         # Open for reading:
+        if zinfo.header_offset < 0:
+            raise BadZipFile("Bad offset for file header")
         self._fileRefCnt += 1
         zef_file = _SharedFile(self.fp, zinfo.header_offset,
                                self._fpclose, self._lock, lambda: self._writing)
