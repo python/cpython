@@ -12,6 +12,7 @@ from itertools import cycle, count
 from test import support
 from test.support import check_sanitizer, os_helper, threading_helper
 from .utils import byteslike, CTestCase, PyTestCase
+from .utils import check_readinto_readonly_buffer
 
 
 import io # C implementation.
@@ -312,6 +313,21 @@ class BufferedReaderTest(CommonBufferedTests):
         self.assertEqual(b, b"ab")
         self.assertEqual(bufio.readinto(b), 1)
         self.assertEqual(b, b"cb")
+
+    @support.subTests("method", ("readinto", "readinto1"))
+    @support.subTests("buffer", (
+        b"xxx", memoryview(b"xxx"),
+    ))
+    @support.subTests("position", (0, 4))
+    @support.subTests("buffered", (False, True))
+    def test_readinto_readonly_buffer(self, method, buffer, position, buffered):
+        data = b"abcdef"
+        with self.tp(self.BytesIO(data)) as bufio:
+            bufio.seek(position)
+            if buffered:
+                bufio.peek(1)
+            check_readinto_readonly_buffer(
+                self, bufio, method, buffer, position, data[position:])
 
     def test_readinto1(self):
         buffer_size = 10
