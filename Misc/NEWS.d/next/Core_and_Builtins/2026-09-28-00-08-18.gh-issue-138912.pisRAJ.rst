@@ -1,0 +1,3 @@
+Add :opcode:`MATCH_CLASS_GET_OPT_ATTR` to improve the performance of
+:keyword:`match` class patterns with only keyword sub-patterns by 10% to
+30%. Patch by Marc Mueller.
