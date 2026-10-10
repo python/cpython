@@ -26,6 +26,14 @@ else:
         return obj
 
 
+def check_readinto_readonly_buffer(testcase, stream, method, buffer,
+                                  position, remaining):
+    op = getattr(stream, method)
+    testcase.assertRaises(TypeError, op, buffer)
+    testcase.assertEqual(stream.tell(), position)
+    testcase.assertEqual(stream.read(), remaining)
+
+
 class MockRawIOWithoutRead:
     """A RawIO implementation without read(), so as to exercise the default
     RawIO.read() which calls readinto()."""

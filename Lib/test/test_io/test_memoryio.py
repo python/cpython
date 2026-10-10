@@ -5,6 +5,7 @@ BytesIO -- for bytes
 
 import unittest
 from test import support
+from .utils import check_readinto_readonly_buffer
 
 import gc
 import io
@@ -577,10 +578,8 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         data = b"abcdef"
         with self.ioclass(data) as memio:
             memio.seek(position)
-            op = getattr(memio, method)
-            self.assertRaises(TypeError, op, buffer)
-            self.assertEqual(memio.tell(), position)
-            self.assertEqual(memio.read(), data[position:])
+            check_readinto_readonly_buffer(
+                self, memio, method, buffer, position, data[position:])
 
     def test_relative_seek(self):
         buf = self.buftype("1234567890")
