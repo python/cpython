@@ -52,9 +52,11 @@ extern "C++" {
 
 #ifdef Py_GIL_DISABLED
 struct _mimalloc_interp_state {
-    // When exiting, threads place any segments with live blocks in this
-    // shared pool for other threads to claim and reuse.
-    mi_abandoned_pool_t abandoned_pool;
+    // When exiting, threads abandon any segments with live blocks. The
+    // abandoned segments are tracked per mimalloc sub-process so that other
+    // threads of the same interpreter can claim and reuse them, and so that
+    // the GC can visit them.
+    mi_subproc_t *subproc;
 };
 
 struct _mimalloc_thread_state {
@@ -64,6 +66,27 @@ struct _mimalloc_thread_state {
     int initialized;
     struct llist_node page_list;
 };
+
+// Visit the blocks in the abandoned segments (from exited threads) of a
+// mimalloc sub-process. Same as mi_abandoned_visit_blocks() but without
+// requiring mi_option_visit_abandoned: the caller must guarantee that no
+// other thread abandons or reclaims segments concurrently (STW).
+static inline bool
+_PyMem_mi_visit_abandoned_blocks(mi_subproc_t *subproc, int heap_tag,
+                                 bool visit_blocks,
+                                 mi_block_visit_fun *visitor, void *arg)
+{
+    mi_arena_field_cursor_t current;
+    _mi_arena_field_cursor_init(NULL, subproc, true /* visit all */, &current);
+    mi_segment_t *segment;
+    bool ok = true;
+    while (ok && (segment = _mi_arena_segment_clear_abandoned_next(&current)) != NULL) {
+        ok = _mi_segment_visit_blocks(segment, heap_tag, visit_blocks, visitor, arg);
+        _mi_arena_segment_mark_abandoned(segment);
+    }
+    _mi_arena_field_cursor_done(&current);
+    return ok;
+}
 #endif
 
 #endif // Py_INTERNAL_MIMALLOC_H
