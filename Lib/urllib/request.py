@@ -190,6 +190,24 @@ def install_opener(opener):
     global _opener
     _opener = opener
 
+def _get_status(response):
+    # Handlers can return any response object, and one written before the
+    # status attribute was added in 3.9 only provides the deprecated code
+    # attribute (gh-123503).
+    try:
+        return response.status
+    except AttributeError:
+        return response.code
+
+
+def _get_headers(response):
+    # Likewise, such a response only provides the deprecated info() method.
+    try:
+        return response.headers
+    except AttributeError:
+        return response.info()
+
+
 _url_tempfiles = []
 def urlretrieve(url, filename=None, reporthook=None, data=None):
     """
@@ -210,7 +228,7 @@ def urlretrieve(url, filename=None, reporthook=None, data=None):
     url_type, path = _splittype(url)
 
     with contextlib.closing(urlopen(url, data)) as fp:
-        headers = fp.info()
+        headers = _get_headers(fp)
 
         # Just return the local path and the "headers" for file://
         # URLs. No sense in performing a copy unless requested.
@@ -596,7 +614,9 @@ class HTTPErrorProcessor(BaseHandler):
     handler_order = 1000  # after all other processing
 
     def http_response(self, request, response):
-        code, msg, hdrs = response.code, response.msg, response.info()
+        code = _get_status(response)
+        msg = response.msg
+        hdrs = _get_headers(response)
 
         # According to RFC 2616, "2xx" code indicates that the client's
         # request was successfully received, understood, and accepted.
@@ -1021,7 +1041,7 @@ class AbstractBasicAuthHandler:
 
     def http_response(self, req, response):
         if hasattr(self.passwd, 'is_authenticated'):
-            if 200 <= response.code < 300:
+            if 200 <= _get_status(response) < 300:
                 self.passwd.update_authenticated(req.full_url, True)
             else:
                 self.passwd.update_authenticated(req.full_url, False)
@@ -1352,8 +1372,7 @@ class AbstractHTTPHandler(BaseHandler):
         # This line replaces the .msg attribute of the HTTPResponse
         # with .headers, because urllib clients expect the response to
         # have the reason in .msg.  It would be good to mark this
-        # attribute is deprecated and get then to use info() or
-        # .headers.
+        # attribute is deprecated and get then to use .headers.
         r.msg = r.reason
         return r
 
