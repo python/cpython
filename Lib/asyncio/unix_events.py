@@ -968,7 +968,18 @@ class _ThreadedChildWatcher:
             # This makes the reaping of the child and notification of the return code
             # atomic with respect to the event loop thread.
             try:
-                os.waitid(os.P_PID, expected_pid, os.WEXITED | os.WNOWAIT)
+                while True:
+                    res = os.waitid(os.P_PID, expected_pid, os.WEXITED | os.WNOWAIT)
+                    # On macOS, waitid() with WEXITED incorrectly returns stopped
+                    # child processes (si_code == CLD_STOPPED). Consume the stop
+                    # notification so we wait for actual process termination.
+                    if res.si_code == os.CLD_STOPPED:
+                        try:
+                            os.waitid(os.P_PID, expected_pid, os.WSTOPPED | os.WNOHANG)
+                        except ChildProcessError:
+                            pass
+                        continue
+                    break
             except ChildProcessError:
                 # The child process is already reaped
                 pass
