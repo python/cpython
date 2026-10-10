@@ -1,0 +1,1 @@
+Make the macos detection of architecture in cflags more robust
