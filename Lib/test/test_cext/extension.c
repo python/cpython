@@ -95,9 +95,17 @@ _testcext_exec(PyObject *module)
     Py_BUILD_ASSERT(sizeof(int) == sizeof(unsigned int));
     assert(Py_BUILD_ASSERT_EXPR(sizeof(int) == sizeof(unsigned int)) == 0);
 
-    // Test Py_CLEAR()
-    obj = NULL;
+    // Test Py_CLEAR(): use typeof()/__typeof__() if available, or memcpy()
+    obj = Py_None;
     Py_CLEAR(obj);
+    assert(obj == NULL);
+
+#ifndef Py_LIMITED_API
+    // Test Py_SETREF(): use typeof()/__typeof__() if available, or memcpy()
+    obj = Py_None;
+    Py_SETREF(obj, NULL);
+    assert(obj == NULL);
+#endif
 
     // Test that Py_BEGIN_CRITICAL_SECTION is available
     Py_BEGIN_CRITICAL_SECTION(module);
