@@ -189,6 +189,7 @@ objects are either directly shared or copied efficiently.  For example:
 * :class:`str`
 * :class:`int`
 * :class:`float`
+* :class:`complex`
 * :class:`tuple` (of similarly supported objects)
 
 There are a small number of Python types that actually share mutable
