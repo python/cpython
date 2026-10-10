@@ -163,8 +163,7 @@ class zipimporter(_bootstrap_external._LoaderBasics):
         """
         # Deciding the filename requires working out where the code
         # would come from if the module was actually loaded
-        _, _, modpath = _get_module_code(
-            self, fullname, compile_source=False)
+        _, _, modpath = _get_module_code(self, fullname, load_code=False)
         return modpath
 
 
@@ -557,14 +556,22 @@ cp437_table = (
     '\xb0\u2219\xb7\u221a\u207f\xb2\u25a0\xa0'
 )
 
+# ZIP compression methods supported by zipimport.  bz2 and lzma could be
+# added, but are largely obsolete.
+_ZIP_STORED = 0
+_ZIP_DEFLATED = 8
+_ZIP_ZSTANDARD = 93
+_RAW_DEFLATE_WBITS = -15
+
 _importing_zlib = False
 _zlib_decompress = None
+_zlib_decompressobj = None
 
 # Return the zlib.decompress function object, or NULL if zlib couldn't
 # be imported. The function is cached when found, so subsequent calls
 # don't import zlib again.
 def _get_zlib_decompress_func():
-    global _zlib_decompress
+    global _zlib_decompress, _zlib_decompressobj
     if _zlib_decompress:
         return _zlib_decompress
 
@@ -577,6 +584,9 @@ def _get_zlib_decompress_func():
 
     _importing_zlib = True
     try:
+        # _decompress_prefix() relies on _zlib_decompressobj being set
+        # whenever _zlib_decompress is, so bind them in this order.
+        from zlib import decompressobj as _zlib_decompressobj
         from zlib import decompress as _zlib_decompress
     except Exception:
         _bootstrap._verbose_message('zipimport: zlib UNAVAILABLE')
@@ -646,9 +656,51 @@ def _zstd_decompress(data):
     return b"".join(results)
 
 
+# Compressed input fed to the decompressor per iteration.  Deflate and zstd
+# emit the Huffman tables before any output, so a chunk should cover them.
+_PREFIX_READ_CHUNK = 1024
+
+# Decompress only the beginning of a compressed member: read from fp, which
+# is positioned at the member's data, until at least min_bytes decompressed
+# bytes are available (or the member ends), and return them.
+def _decompress_prefix(fp, compress, data_size, min_bytes):
+    if compress == _ZIP_DEFLATED:
+        _get_zlib_decompress_func()
+        decomp = _zlib_decompressobj(_RAW_DEFLATE_WBITS)
+    else:
+        decomp = _get_zstd_decompressor_class()()
+    result = b''
+    remaining = data_size
+    pending = b''
+    while len(result) < min_bytes and (remaining or pending):
+        if pending:
+            chunk, pending = pending, b''
+        else:
+            chunk = fp.read(min(remaining, _PREFIX_READ_CHUNK))
+            if not chunk:
+                raise OSError("zipimport: can't read data")
+            remaining -= len(chunk)
+        needed = min_bytes - len(result)
+        try:
+            result += decomp.decompress(chunk, needed)
+        except Exception:
+            if compress == _ZIP_DEFLATED:
+                raise
+            raise ZipImportError("could not decompress zstd data")
+        if compress == _ZIP_ZSTANDARD and decomp.eof:
+            # Concatenated zstd frames: continue with a fresh decompressor.
+            pending = decomp.unused_data
+            decomp = _get_zstd_decompressor_class()()
+    return result
+
+
 # Given a path to a Zip file and a toc_entry, return the (uncompressed) data.
-def _get_data(archive, toc_entry):
+# If min_bytes is non-negative, only the first min_bytes bytes are needed: the
+# result may be longer, or shorter if the data is.
+def _get_data(archive, toc_entry, min_bytes=-1):
     datapath, compress, data_size, file_size, file_offset, time, date, crc = toc_entry
+    if compress not in (_ZIP_STORED, _ZIP_DEFLATED, _ZIP_ZSTANDARD):
+        raise ZipImportError(f"zipimport: unsupported compression {compress}")
     if data_size < 0:
         raise ZipImportError('negative data size')
 
@@ -674,27 +726,28 @@ def _get_data(archive, toc_entry):
             fp.seek(file_offset)
         except OSError:
             raise ZipImportError(f"can't read Zip file: {archive!r}", path=archive)
+        if min_bytes >= 0:
+            if compress == _ZIP_STORED:
+                data_size = min(min_bytes, data_size)
+            else:
+                return _decompress_prefix(fp, compress, data_size, min_bytes)
         raw_data = fp.read(data_size)
         if len(raw_data) != data_size:
             raise OSError("zipimport: can't read data")
 
-    match compress:
-        case 0:  # stored
-            return raw_data
-        case 8:  # deflate aka zlib
-            try:
-                decompress = _get_zlib_decompress_func()
-            except Exception:
-                raise ZipImportError("can't decompress data; zlib not available")
-            return decompress(raw_data, -15)
-        case 93:  # zstd
-            try:
-                return _zstd_decompress(raw_data)
-            except Exception:
-                raise ZipImportError("could not decompress zstd data")
-        # bz2 and lzma could be added, but are largely obsolete.
-        case _:
-            raise ZipImportError(f"zipimport: unsupported compression {compress}")
+    if compress == _ZIP_STORED:
+        return raw_data
+    elif compress == _ZIP_DEFLATED:
+        try:
+            decompress = _get_zlib_decompress_func()
+        except Exception:
+            raise ZipImportError("can't decompress data; zlib not available")
+        return decompress(raw_data, _RAW_DEFLATE_WBITS)
+    else:
+        try:
+            return _zstd_decompress(raw_data)
+        except Exception:
+            raise ZipImportError("could not decompress zstd data")
 
 
 # Lenient date/time comparison function. The precision of the mtime
@@ -705,10 +758,14 @@ def _eq_mtime(t1, t2):
     return abs(t1 - t2) <= 1
 
 
-# Given the contents of a .py[co] file, unmarshal the data
-# and return the code object. Raises ImportError it the magic word doesn't
-# match, or if the recorded .py[co] metadata does not match the source.
-def _unmarshal_code(self, pathname, fullpath, fullname, data):
+# Size of the .pyc header (see PEP 552).
+_PYC_HEADER_SIZE = 16
+
+# Given at least the first _PYC_HEADER_SIZE bytes of a .pyc file, raise
+# ImportError if the magic number or flags are bad or a checked hash doesn't
+# match the source, return False if a timestamp-based .pyc is stale, and
+# True otherwise.  The marshalled code is not examined.
+def _validate_pyc_header(self, fullpath, fullname, data):
     exc_details = {
         'name': fullname,
         'path': fullpath,
@@ -741,9 +798,18 @@ def _unmarshal_code(self, pathname, fullpath, fullname, data):
                     _unpack_uint32(data[12:16]) != source_size):
                 _bootstrap._verbose_message(
                     f'bytecode is stale for {fullname!r}')
-                return None
+                return False
+    return True
 
-    code = marshal.loads(data[16:])
+
+# Given the contents of a .py[co] file, unmarshal the data
+# and return the code object. Raises ImportError if the magic word doesn't
+# match, or if the recorded .py[co] metadata does not match the source.
+# Returns None if the .pyc is stale.
+def _unmarshal_code(self, pathname, fullpath, fullname, data):
+    if not _validate_pyc_header(self, fullpath, fullname, data):
+        return None
+    code = marshal.loads(data[_PYC_HEADER_SIZE:])
     if not isinstance(code, _code_type):
         raise TypeError(f'compiled module {pathname!r} is not a code object')
     return code
@@ -812,8 +878,10 @@ def _get_pyc_source(self, path):
 
 
 # Get the code object associated with the module specified by 'fullname'.
-# If compile_source is false, return None for source code without reading or compiling it.
-def _get_module_code(self, fullname, *, compile_source=True):
+# If load_code is false, return None instead of the code object and only
+# determine which file it would come from, without compiling source or
+# unmarshalling bytecode.
+def _get_module_code(self, fullname, *, load_code=True):
     path = _get_module_path(self, fullname)
     import_error = None
     for suffix, isbytecode, ispackage in _zip_searchorder:
@@ -825,8 +893,16 @@ def _get_module_code(self, fullname, *, compile_source=True):
             pass
         else:
             modpath = toc_entry[0]
-            if not isbytecode and not compile_source:
-                return None, ispackage, modpath
+            if not load_code:
+                if not isbytecode:
+                    return None, ispackage, modpath
+                header = _get_data(self.archive, toc_entry, _PYC_HEADER_SIZE)
+                try:
+                    if _validate_pyc_header(self, fullpath, fullname, header):
+                        return None, ispackage, modpath
+                except ImportError as exc:
+                    import_error = exc
+                continue
             data = _get_data(self.archive, toc_entry)
             code = None
             if isbytecode:
