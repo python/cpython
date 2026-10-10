@@ -69,7 +69,7 @@ module syslog
 /*  only one instance, only one syslog, so globals should be ok,
  *  these fields are writable from the main interpreter only. */
 static PyObject *S_ident_o = NULL;  // identifier, held by openlog()
-static char S_log_open = 0;
+static int S_log_open = 0;
 
 static inline int
 is_main_interpreter(void)
@@ -189,7 +189,7 @@ syslog_openlog_impl(PyObject *module, PyObject *ident, long logopt,
     }
 
     openlog(ident_str, logopt, facility);
-    S_log_open = 1;
+    _Py_atomic_store_int(&S_log_open, 1);
     Py_XSETREF(S_ident_o, ident);
 
     Py_RETURN_NONE;
@@ -222,7 +222,7 @@ syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
     }
 
     /*  if log is not opened, open it now  */
-    if (!S_log_open) {
+    if (!_Py_atomic_load_int(&S_log_open)) {
         if (!is_main_interpreter()) {
             PyErr_SetString(PyExc_RuntimeError, "subinterpreter can't use syslog.syslog() "
                                                 "until the syslog is opened by the main interpreter");
@@ -235,10 +235,6 @@ syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
         Py_DECREF(openlog_ret);
     }
 
-    /* Incref ident, because it can be decrefed if syslog.openlog() is
-     * called when the GIL is released.
-     */
-    PyObject *ident = Py_XNewRef(S_ident_o);
 #ifdef __APPLE__
     // gh-98178: On macOS, libc syslog() is not thread-safe
     syslog(priority, "%s", message);
@@ -247,7 +243,6 @@ syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
     syslog(priority, "%s", message);
     Py_END_ALLOW_THREADS;
 #endif
-    Py_XDECREF(ident);
     Py_RETURN_NONE;
 }
 
@@ -273,10 +268,11 @@ syslog_closelog_impl(PyObject *module)
     if (PySys_Audit("syslog.closelog", NULL) < 0) {
         return NULL;
     }
-    if (S_log_open) {
+
+    int was_open = _Py_atomic_exchange_int(&S_log_open, 0);
+    if (was_open) {
         closelog();
         Py_CLEAR(S_ident_o);
-        S_log_open = 0;
     }
     Py_RETURN_NONE;
 }
