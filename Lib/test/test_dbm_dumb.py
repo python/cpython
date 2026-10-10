@@ -41,6 +41,15 @@ class DumbDBMTestCase(unittest.TestCase):
                 f[key] = self._dict[key]
             self.read_helper(f)
 
+    def test_dumbdbm_bytearray_keys(self):
+        # gh-158217: bytearray keys must not raise TypeError:
+        with contextlib.closing(dumbdbm.open(_fname, 'c')) as f:
+            f[bytearray(b'key')] = b'value'
+            self.assertEqual(f[bytearray(b'key')], b'value')
+            self.assertIn(bytearray(b'key'), f)
+            del f[bytearray(b'key')]
+            self.assertNotIn(bytearray(b'key'), f)
+
     @unittest.skipUnless(hasattr(os, 'umask'), 'test needs os.umask()')
     @os_helper.skip_unless_working_chmod
     def test_dumbdbm_creation_mode(self):
