@@ -543,6 +543,64 @@ class ProcessPoolExecutorTest(ExecutorTest):
                     break
 
 
+class BrokenPoolCleanupTest(unittest.TestCase):
+
+    def test_shutdown_lock_released_before_joining_workers(self):
+        join_started = threading.Event()
+        release_join = threading.Event()
+
+        class Executor:
+            pass
+
+        class Process:
+            pid = 1
+            exitcode = None
+
+            def terminate(self):
+                pass
+
+            def join(self):
+                join_started.set()
+                release_join.wait()
+
+        class CallQueue:
+            def _terminate_broken(self):
+                pass
+
+            def close(self):
+                pass
+
+            def join_thread(self):
+                pass
+
+        class ThreadWakeup:
+            def close(self):
+                pass
+
+        executor = Executor()
+        executor._broken = None
+        executor._shutdown_thread = False
+        manager = object.__new__(futures.process._ExecutorManagerThread)
+        manager.shutdown_lock = threading.Lock()
+        manager.executor_reference = weakref.ref(executor)
+        manager.processes = {1: Process()}
+        manager.pending_work_items = {}
+        manager.call_queue = CallQueue()
+        manager.thread_wakeup = ThreadWakeup()
+        manager_thread = threading.Thread(
+            target=manager.terminate_broken, args=(None,))
+        manager_thread.start()
+        try:
+            self.assertTrue(join_started.wait(support.SHORT_TIMEOUT))
+            self.assertTrue(
+                manager.shutdown_lock.acquire(timeout=support.SHORT_TIMEOUT))
+            manager.shutdown_lock.release()
+        finally:
+            release_join.set()
+            manager_thread.join(support.SHORT_TIMEOUT)
+        self.assertFalse(manager_thread.is_alive())
+
+
 create_executor_tests(globals(), ProcessPoolExecutorTest,
                       executor_mixins=(ProcessPoolForkMixin,
                                        ProcessPoolForkserverMixin,
