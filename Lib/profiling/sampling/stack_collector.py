@@ -60,11 +60,16 @@ class CollapsedStackCollector(StackTraceCollector):
 
         lines.sort(key=lambda x: (-x[1], x[0]))
 
-        with open(filename, "w") as f:
+        with open(filename, "w",
+                  encoding="utf-8", errors="surrogatepass") as f:
             for stack, count in lines:
                 f.write(f"{stack} {count}\n")
         print(f"Collapsed stack output written to {filename}")
         return True
+
+
+# Allow for tree conversion and the dict/list frames in the Python JSON encoder.
+_FLAMEGRAPH_RECURSION_MARGIN = 6000
 
 
 class FlamegraphCollector(StackTraceCollector):
@@ -165,34 +170,41 @@ class FlamegraphCollector(StackTraceCollector):
         self.stats["mode"] = mode
 
     def export(self, filename):
-        flamegraph_data = self._convert_to_flamegraph_format()
+        # Converting the call tree recurses to the sampled stack depth.
+        old_limit = sys.getrecursionlimit()
+        sys.setrecursionlimit(old_limit + _FLAMEGRAPH_RECURSION_MARGIN)
+        try:
+            flamegraph_data = self._convert_to_flamegraph_format()
 
-        # Debug output with string table statistics
-        num_functions = len(flamegraph_data.get("children", []))
-        total_time = flamegraph_data.get("value", 0)
-        string_count = len(self._string_table)
-        s1 = "" if num_functions == 1 else "s"
-        s2 = "" if total_time == 1 else "s"
-        s3 = "" if string_count == 1 else "s"
-        print(
-            f"Flamegraph data: {num_functions} root function{s1}, "
-            f"{total_time} total sample{s2}, "
-            f"{string_count} unique string{s3}"
-        )
-
-        if num_functions == 0:
+            # Debug output with string table statistics
+            num_functions = len(flamegraph_data.get("children", []))
+            total_time = flamegraph_data.get("value", 0)
+            string_count = len(self._string_table)
+            s1 = "" if num_functions == 1 else "s"
+            s2 = "" if total_time == 1 else "s"
+            s3 = "" if string_count == 1 else "s"
             print(
-                "Warning: No functions found in profiling data. Check if sampling captured any data."
+                f"Flamegraph data: {num_functions} root function{s1}, "
+                f"{total_time} total sample{s2}, "
+                f"{string_count} unique string{s3}"
             )
-            return False
 
-        html_content = self._create_flamegraph_html(flamegraph_data)
+            if num_functions == 0:
+                print(
+                    "Warning: No functions found in profiling data. "
+                    "Check if sampling captured any data."
+                )
+                return False
 
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(html_content)
+            html_content = self._create_flamegraph_html(flamegraph_data)
 
-        print(f"Flamegraph saved to: {filename}")
-        return True
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(html_content)
+
+            print(f"Flamegraph saved to: {filename}")
+            return True
+        finally:
+            sys.setrecursionlimit(old_limit)
 
     @staticmethod
     @functools.lru_cache(maxsize=None)
@@ -486,7 +498,12 @@ class FlamegraphCollector(StackTraceCollector):
             return None
 
     def _create_flamegraph_html(self, data):
-        data_json = json.dumps(data)
+        try:
+            data_json = json.dumps(data)
+        except RecursionError:
+            # The C encoder can exhaust the C stack independently of the
+            # Python recursion limit. iterencode() uses the Python encoder.
+            data_json = "".join(json.JSONEncoder().iterencode(data))
 
         template_dir = importlib.resources.files(__package__)
         vendor_dir = template_dir / "_vendor"
