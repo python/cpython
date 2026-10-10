@@ -531,8 +531,7 @@ class BaseManager(object):
         '''
         Connect manager object to the server process
         '''
-        Listener, Client = listener_client[self._serializer]
-        conn = Client(self._address, authkey=self._authkey)
+        conn = self._Client(self._address, authkey=self._authkey)
         dispatch(conn, None, 'dummy')
         self._state.value = State.STARTED
 
@@ -786,8 +785,13 @@ class BaseProxy(object):
         self._token = token
         self._id = self._token.id
         self._manager = manager
-        self._serializer = serializer
-        self._Client = listener_client[serializer][1]
+
+        if manager is not None:
+            self._serializer = manager._serializer
+            self._Client = manager._Client
+        else:
+            self._serializer = serializer
+            self._Client = listener_client[serializer][1]
 
         # Should be set to True only when a proxy object is being created
         # on the manager server; primary use case: nested proxy objects.
@@ -989,7 +993,10 @@ def AutoProxy(token, serializer, manager=None, authkey=None,
     '''
     Return an auto-proxy for `token`
     '''
-    _Client = listener_client[serializer][1]
+    if manager is not None:
+        _Client = manager._Client
+    else:
+        _Client = listener_client[serializer][1]
 
     if exposed is None:
         conn = _Client(token.address, authkey=authkey)
