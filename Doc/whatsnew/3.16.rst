@@ -1176,6 +1176,11 @@ Build changes
 
   (Contributed by Stan Ulbrych, Florian Mayer and AnnaAr321 in :gh:`156049`.)
 
+* Update the bundled `mimalloc library`_ from version 2.1.2 to 2.5.2.
+  (Contributed by Donghee Na in :gh:`159111`.)
+
+  .. _mimalloc library: https://github.com/microsoft/mimalloc/
+
 
 C API changes
 =============
