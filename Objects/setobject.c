@@ -1574,6 +1574,7 @@ _PySet_Freeze(PyObject *set)
     assert(PySet_CheckExact(set));
     assert(_PyObject_IsUniquelyReferenced(set));
     set->ob_type = &PyFrozenSet_Type;
+    _PyFrozenSet_MaybeUntrack(set);
     return Py_NewRef(set);
 }
 
