@@ -983,6 +983,37 @@ func_callback(sqlite3_context *context, int argc, sqlite3_value **argv)
     PyGILState_Release(threadstate);
 }
 
+/* Fetch the aggregate instance for a window/aggregate callback, lazily
+ * creating it on first use.  SQLite may invoke the value() or inverse()
+ * callback before step() has run for a given aggregate instance -- e.g. when
+ * the window frame is empty for an output row -- in which case the aggregate
+ * context is still zero-initialised (gh-153800).  Returns a borrowed reference
+ * owned by the aggregate context, or NULL with a SQLite error set on failure.
+ */
+static PyObject *
+get_or_create_aggregate_instance(sqlite3_context *context,
+                                 callback_context *ctx)
+{
+    PyObject **aggregate_instance;
+
+    aggregate_instance = (PyObject **)sqlite3_aggregate_context(context,
+                                                        sizeof(PyObject *));
+    if (aggregate_instance == NULL) {
+        (void)PyErr_NoMemory();
+        set_sqlite_error(context, "unable to allocate SQLite aggregate context");
+        return NULL;
+    }
+    if (*aggregate_instance == NULL) {
+        *aggregate_instance = PyObject_CallNoArgs(ctx->callable);
+        if (*aggregate_instance == NULL) {
+            set_sqlite_error(context,
+                    "user-defined aggregate's '__init__' method raised error");
+            return NULL;
+        }
+    }
+    return *aggregate_instance;
+}
+
 static void
 step_callback(sqlite3_context *context, int argc, sqlite3_value **params)
 {
@@ -990,28 +1021,18 @@ step_callback(sqlite3_context *context, int argc, sqlite3_value **params)
 
     PyObject* args;
     PyObject* function_result = NULL;
-    PyObject** aggregate_instance;
+    PyObject* aggregate_instance;
     PyObject* stepmethod = NULL;
 
     callback_context *ctx = (callback_context *)sqlite3_user_data(context);
     incref_callback_context(ctx);
 
-    aggregate_instance = (PyObject**)sqlite3_aggregate_context(context, sizeof(PyObject*));
+    aggregate_instance = get_or_create_aggregate_instance(context, ctx);
     if (aggregate_instance == NULL) {
-        (void)PyErr_NoMemory();
-        set_sqlite_error(context, "unable to allocate SQLite aggregate context");
         goto error;
     }
-    if (*aggregate_instance == NULL) {
-        *aggregate_instance = PyObject_CallNoArgs(ctx->callable);
-        if (!*aggregate_instance) {
-            set_sqlite_error(context,
-                    "user-defined aggregate's '__init__' method raised error");
-            goto error;
-        }
-    }
 
-    stepmethod = PyObject_GetAttr(*aggregate_instance, ctx->state->str_step);
+    stepmethod = PyObject_GetAttr(aggregate_instance, ctx->state->str_step);
     if (!stepmethod) {
         set_sqlite_error(context,
                 "user-defined aggregate's 'step' method not defined");
@@ -1254,12 +1275,13 @@ inverse_callback(sqlite3_context *context, int argc, sqlite3_value **params)
     callback_context *ctx = (callback_context *)sqlite3_user_data(context);
     incref_callback_context(ctx);
 
-    int size = sizeof(PyObject *);
-    PyObject **cls = (PyObject **)sqlite3_aggregate_context(context, size);
-    assert(cls != NULL);
-    assert(*cls != NULL);
+    PyObject *method = NULL;
+    PyObject *aggregate_instance = get_or_create_aggregate_instance(context, ctx);
+    if (aggregate_instance == NULL) {
+        goto exit;
+    }
 
-    PyObject *method = PyObject_GetAttr(*cls, ctx->state->str_inverse);
+    method = PyObject_GetAttr(aggregate_instance, ctx->state->str_inverse);
     if (method == NULL) {
         set_sqlite_error(context,
                 "user-defined aggregate's 'inverse' method not defined");
@@ -1303,12 +1325,14 @@ value_callback(sqlite3_context *context)
     callback_context *ctx = (callback_context *)sqlite3_user_data(context);
     incref_callback_context(ctx);
 
-    int size = sizeof(PyObject *);
-    PyObject **cls = (PyObject **)sqlite3_aggregate_context(context, size);
-    assert(cls != NULL);
-    assert(*cls != NULL);
+    PyObject *aggregate_instance = get_or_create_aggregate_instance(context, ctx);
+    if (aggregate_instance == NULL) {
+        decref_callback_context(ctx);
+        PyGILState_Release(gilstate);
+        return;
+    }
 
-    PyObject *res = PyObject_CallMethodNoArgs(*cls, ctx->state->str_value);
+    PyObject *res = PyObject_CallMethodNoArgs(aggregate_instance, ctx->state->str_value);
     decref_callback_context(ctx);
 
     if (res == NULL) {
