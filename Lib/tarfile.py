@@ -478,9 +478,13 @@ class _Stream:
            is ready to be written.
         """
         self.buf += s
-        while len(self.buf) > self.bufsize:
-            self.fileobj.write(self.buf[:self.bufsize])
-            self.buf = self.buf[self.bufsize:]
+        if len(self.buf) > self.bufsize:
+            # Write whole blocks from buf and keep the rest. Slicing off
+            # each block would copy the whole remaining buffer every time.
+            end = (len(self.buf) - 1) // self.bufsize * self.bufsize
+            for i in range(0, end, self.bufsize):
+                self.fileobj.write(self.buf[i:i + self.bufsize])
+            self.buf = self.buf[end:]
 
     def close(self):
         """Close the _Stream object. No operation should be
