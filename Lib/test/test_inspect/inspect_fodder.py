@@ -118,3 +118,15 @@ class WhichComments:
 # a closing parenthesis with the opening paren being in another line
 (
 ); after_closing = lambda: 1
+
+def gen_subclass(abuse_msg):
+
+    class subclass(StupidGit):
+        def abuse(self, a, b, c):
+            print(abuse_msg)
+            super().abuse(a, b, c)
+
+    return subclass
+
+DynamicSubclass = gen_subclass("some message")
+del gen_subclass
