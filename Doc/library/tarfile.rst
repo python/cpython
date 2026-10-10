@@ -305,7 +305,7 @@ The :mod:`!tarfile` module defines the following exceptions:
    The exception that was raised to reject the replacement member is available
    as :attr:`!BaseException.__context__`.
 
-   .. versionadded:: 3.15
+   .. versionadded:: 3.14
 
 
 The following constants are available at the module level:
