@@ -1,0 +1,2 @@
+Add support for the recursive wildcard "``**``" in
+:meth:`pathlib.PurePath.match`.
