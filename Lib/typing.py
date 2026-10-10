@@ -1093,6 +1093,62 @@ def _typevar_subst(self, arg):
     return arg
 
 
+def _resolve_type_param_default(param, default, params, resolved):
+    """Substitute already-bound type parameters into a type parameter default.
+
+    PEP 696 allows the default of a type parameter to refer to type parameters
+    that appear earlier in the same type parameter list, for example::
+
+        class A[T, S = list[T]]: ...
+
+    `param` is the type parameter whose `default` is being filled in, `params`
+    is the full list of type parameters of the object being subscripted, and
+    `resolved` holds the values that have already been determined for the
+    leading ``len(resolved)`` of them, so that ``params[len(resolved)]`` is
+    `param` itself.
+
+    Type parameters that come from an enclosing scope (they do not appear in
+    `params`) are left untouched.  Referring to a type parameter that is not
+    bound yet is an error; that covers both self-references such as
+    ``class A[T = T]`` and cycles such as ``class A[T = S, S = T]``.
+    """
+    bound = dict(zip(params, resolved))
+    unbound = frozenset(params[len(resolved):])
+
+    def resolve(value):
+        if isinstance(value, (TypeVar, ParamSpec, TypeVarTuple)):
+            if value in bound:
+                return bound[value]
+            if value in unbound:
+                raise TypeError(
+                    f"The default of type parameter {param} refers to type "
+                    f"parameter {value}, which is not declared before it"
+                )
+            return value
+        if isinstance(value, list):
+            return [resolve(v) for v in value]
+        if isinstance(value, tuple):
+            return tuple(resolve(v) for v in value)
+        subparams = getattr(value, '__parameters__', ())
+        if not subparams:
+            return value
+        subargs = []
+        changed = False
+        for subparam in subparams:
+            new_subarg = resolve(subparam)
+            changed |= new_subarg is not subparam
+            if (isinstance(subparam, TypeVarTuple)
+                    and isinstance(new_subarg, tuple)):
+                subargs.extend(new_subarg)
+            else:
+                subargs.append(new_subarg)
+        if not changed:
+            return value
+        return value[tuple(subargs)]
+
+    return resolve(default)
+
+
 def _typevartuple_prepare_subst(self, alias, args):
     params = alias.__parameters__
     typevartuple_index = params.index(self)
@@ -1121,7 +1177,9 @@ def _typevartuple_prepare_subst(self, alias, args):
         raise TypeError(f"Too few arguments for {alias};"
                         f" actual {alen}, expected at least {plen-1}")
     if left == alen - right and self.has_default():
-        replacement = _unpack_args(self.__default__)
+        default = _resolve_type_param_default(self, self.__default__, params,
+                                              args[:left])
+        replacement = _unpack_args(default)
     else:
         replacement = args[left: alen - right]
 
@@ -1147,7 +1205,9 @@ def _paramspec_prepare_subst(self, alias, args):
     params = alias.__parameters__
     i = params.index(self)
     if i == len(args) and self.has_default():
-        args = (*args, self.__default__)
+        default = _resolve_type_param_default(self, self.__default__, params,
+                                              args)
+        args = (*args, default)
     if i >= len(args):
         raise TypeError(f"Too few arguments for {alias}")
     # Special case where Z[[int, str, bool]] == Z[int, str, bool] in PEP 612.

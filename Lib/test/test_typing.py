@@ -826,6 +826,36 @@ class TypeParameterDefaultsTests(BaseTestCase):
                 self.assertEqual(z.__bound__, typevar.__bound__)
                 self.assertEqual(z.__default__, typevar.__default__)
 
+    def test_default_referring_to_earlier_type_param(self):
+        T = TypeVar('T')
+        U = TypeVar('U', default=T)
+        V = TypeVar('V', default=List[U])
+
+        class A(Generic[T, U, V]): ...
+
+        self.assertEqual(A[int].__args__, (int, int, List[int]))
+        self.assertEqual(A[int, str].__args__, (int, str, List[str]))
+        self.assertEqual(A[int, str, bool].__args__, (int, str, bool))
+
+    def test_default_referring_to_earlier_type_param_alias(self):
+        T = TypeVar('T')
+        U = TypeVar('U', default=T)
+        Alias = Union[T, U]
+
+        self.assertEqual(Alias[int], int)
+        self.assertEqual(Alias[int, str], Union[int, str])
+
+    def test_default_referring_to_earlier_paramspec_and_typevartuple(self):
+        T = TypeVar('T')
+        Ts = TypeVarTuple('Ts', default=Unpack[Tuple[T, int]])
+        P = ParamSpec('P', default=[T, int])
+
+        class A(Generic[T, Unpack[Ts]]): ...
+        self.assertEqual(A[str].__args__, (str, str, int))
+
+        class B(Generic[T, P]): ...
+        self.assertEqual(B[str].__args__, (str, (str, int)))
+
 
 def template_replace(templates: list[str], replacements: dict[str, list[str]]) -> list[tuple[str]]:
     """Renders templates with possible combinations of replacements.
