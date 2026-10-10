@@ -737,6 +737,28 @@ class TypeParameterDefaultsTests(BaseTestCase):
         a4 = Callable[*Ts, T]
         self.assertEqual(a4.__args__, (*Ts, T))
 
+    def test_typevar_default_in_alias_specialization(self):
+        T = TypeVar('T')
+        D = TypeVar('D', default=int)
+        class A(Generic[T, D]): ...
+
+        self.assertEqual(Dict[T, D][str], Dict[str, int])
+        self.assertEqual(Tuple[T, D][str], Tuple[str, int])
+        self.assertEqual(Callable[[T], D][str], Callable[[str], int])
+        self.assertEqual(A[T, D][str].__args__, (str, int))
+        self.assertEqual(dict[T, D][str], dict[str, int])
+        self.assertEqual(Dict[T, D][str, bytes], Dict[str, bytes])
+
+    def test_typevartuple_default_in_alias_specialization(self):
+        T = TypeVar('T')
+        Ts = TypeVarTuple('Ts', default=Unpack[Tuple[int, str]])
+
+        self.assertEqual(Tuple[bool, *Ts][()].__args__, (bool, int, str))
+        self.assertEqual(tuple[bool, *Ts][()].__args__, (bool, int, str))
+        self.assertEqual(tuple[*Ts][()].__args__, (int, str))
+        self.assertEqual(tuple[T, *Ts][bool].__args__, (bool, int, str))
+        self.assertEqual(tuple[T, *Ts][bool, bytes].__args__, (bool, bytes))
+
     def test_paramspec_specialization(self):
         T = TypeVar("T")
         P = ParamSpec('P', default=[str, int])
