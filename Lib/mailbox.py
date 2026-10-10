@@ -922,9 +922,11 @@ class mbox(_mboxMMDF):
         starts, stops = [], []
         last_was_empty = False
         self._file.seek(0)
+        next_pos = 0
         while True:
-            line_pos = self._file.tell()
+            line_pos = next_pos
             line = self._file.readline()
+            next_pos += len(line)
             if line.startswith(b'From '):
                 if len(stops) < len(starts):
                     if last_was_empty:
@@ -972,17 +974,18 @@ class MMDF(_mboxMMDF):
         starts, stops = [], []
         self._file.seek(0)
         next_pos = 0
+        sep = b'\001\001\001\001' + linesep
         while True:
             line_pos = next_pos
             line = self._file.readline()
-            next_pos = self._file.tell()
-            if line.startswith(b'\001\001\001\001' + linesep):
+            next_pos += len(line)
+            if line.startswith(sep):
                 starts.append(next_pos)
                 while True:
                     line_pos = next_pos
                     line = self._file.readline()
-                    next_pos = self._file.tell()
-                    if line == b'\001\001\001\001' + linesep:
+                    next_pos += len(line)
+                    if line == sep:
                         stops.append(line_pos - len(linesep))
                         break
                     elif not line:
@@ -1418,19 +1421,23 @@ class Babyl(_singlefileMailbox):
         self._file.seek(0)
         next_pos = 0
         label_lists = []
+        msg_sep = b'\037\014' + linesep
+        end_sep = b'\037' + linesep
         while True:
             line_pos = next_pos
             line = self._file.readline()
-            next_pos = self._file.tell()
-            if line == b'\037\014' + linesep:
+            next_pos += len(line)
+            if line == msg_sep:
                 if len(stops) < len(starts):
                     stops.append(line_pos - len(linesep))
                 starts.append(next_pos)
+                label_line = self._file.readline()
+                next_pos += len(label_line)
                 labels = [label.strip() for label
-                                        in self._file.readline()[1:].split(b',')
+                                        in label_line[1:].split(b',')
                                         if label.strip()]
                 label_lists.append(labels)
-            elif line == b'\037' or line == b'\037' + linesep:
+            elif line == b'\037' or line == end_sep:
                 if len(stops) < len(starts):
                     stops.append(line_pos - len(linesep))
             elif not line:
