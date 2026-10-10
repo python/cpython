@@ -1,0 +1,6 @@
+Fix duplicate :exc:`SyntaxWarning` messages when importing source modules
+from ZIP archives. :meth:`zipimport.zipimporter.get_filename`, and therefore
+:meth:`~zipimport.zipimporter.find_spec`, no longer compile source modules. A
+:exc:`SyntaxError` in a zipped source module is now raised when the module is
+executed rather than when it is found, matching the behavior of
+filesystem-based loaders.

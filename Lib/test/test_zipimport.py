@@ -9,6 +9,7 @@ import struct
 import time
 import unittest
 import unittest.mock
+import warnings
 
 from test import support
 from test.support import import_helper
@@ -228,6 +229,81 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
     def testPy(self):
         files = {TESTMOD + ".py": test_src}
         self.doTest(".py", files, TESTMOD)
+
+    def test_syntax_warning(self):
+        files = {TESTMOD + ".py": "x = 1 is 1\n"}
+        self.makeZip(files)
+        zi = zipimport.zipimporter(TEMP_ZIP)
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always", SyntaxWarning)
+            spec = zi.find_spec(TESTMOD)
+            self.assertIsNotNone(spec)
+            self.assertEqual(caught, [])
+
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+
+        self.assertEqual(len(caught), 1)
+        self.assertIsInstance(caught[0].message, SyntaxWarning)
+
+    def test_syntax_error_defers_to_exec(self):
+        files = {TESTMOD + ".py": "x =\n"}
+        self.makeZip(files)
+        zi = zipimport.zipimporter(TEMP_ZIP)
+        expected_path = os.path.join(TEMP_ZIP, TESTMOD + ".py")
+
+        spec = zi.find_spec(TESTMOD)
+        self.assertIsNotNone(spec)
+        self.assertEqual(spec.origin, expected_path)
+        self.assertEqual(zi.get_filename(TESTMOD), expected_path)
+
+        mod = importlib.util.module_from_spec(spec)
+        with self.assertRaises(SyntaxError):
+            spec.loader.exec_module(mod)
+
+    def test_get_filename_no_warnings(self):
+        files = {TESTMOD + ".py": "x = 1 is 1\n"}
+        self.makeZip(files)
+        zi = zipimport.zipimporter(TEMP_ZIP)
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always", SyntaxWarning)
+            zi.get_filename(TESTMOD)
+
+        self.assertEqual(caught, [])
+
+    def test_syntax_error_in_source_with_valid_pyc(self):
+        bad_src = "x =\n"
+        files = {TESTMOD + ".py": bad_src,
+                 TESTMOD + pyc_ext: make_pyc(test_co, NOW, len(bad_src))}
+        self.makeZip(files)
+        zi = zipimport.zipimporter(TEMP_ZIP)
+        expected_path = os.path.join(TEMP_ZIP, TESTMOD + pyc_ext)
+
+        spec = zi.find_spec(TESTMOD)
+        self.assertIsNotNone(spec)
+        self.assertEqual(spec.origin, expected_path)
+
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        self.assertEqual(mod.get_file(), expected_path)
+
+    def test_syntax_error_in_package_init_no_fallthrough(self):
+        packdir = TESTPACK + os.sep
+        files = {packdir + "__init__.py": "x =\n",
+                 TESTPACK + ".py": test_src}
+        self.makeZip(files)
+        zi = zipimport.zipimporter(TEMP_ZIP)
+        expected_path = os.path.join(TEMP_ZIP, TESTPACK, "__init__.py")
+
+        spec = zi.find_spec(TESTPACK)
+        self.assertIsNotNone(spec)
+        self.assertEqual(spec.origin, expected_path)
+
+        mod = importlib.util.module_from_spec(spec)
+        with self.assertRaises(SyntaxError):
+            spec.loader.exec_module(mod)
 
     def testPyc(self):
         files = {TESTMOD + pyc_ext: test_pyc}
