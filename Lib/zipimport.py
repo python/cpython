@@ -163,7 +163,8 @@ class zipimporter(_bootstrap_external._LoaderBasics):
         """
         # Deciding the filename requires working out where the code
         # would come from if the module was actually loaded
-        code, ispackage, modpath = _get_module_code(self, fullname)
+        _, _, modpath = _get_module_code(
+            self, fullname, compile_source=False)
         return modpath
 
 
@@ -793,9 +794,9 @@ def _get_pyc_source(self, path):
         return _get_data(self.archive, toc_entry)
 
 
-# Get the code object associated with the module specified by
-# 'fullname'.
-def _get_module_code(self, fullname):
+# Get the code object associated with the module specified by 'fullname'.
+# If compile_source is false, return None for source code without compiling it.
+def _get_module_code(self, fullname, *, compile_source=True):
     path = _get_module_path(self, fullname)
     import_error = None
     for suffix, isbytecode, ispackage in _zip_searchorder:
@@ -807,6 +808,8 @@ def _get_module_code(self, fullname):
             pass
         else:
             modpath = toc_entry[0]
+            if not isbytecode and not compile_source:
+                return None, ispackage, modpath
             data = _get_data(self.archive, toc_entry)
             code = None
             if isbytecode:
