@@ -3636,7 +3636,7 @@ class IO(Generic[AnyStr]):
         pass
 
     @abstractmethod
-    def writelines(self, lines: list[AnyStr], /) -> None:
+    def writelines(self, lines: collections.abc.Iterable[AnyStr], /) -> None:
         pass
 
     @abstractmethod
@@ -3654,7 +3654,17 @@ class BinaryIO(IO[bytes]):
     __slots__ = ()
 
     @abstractmethod
-    def write(self, s: bytes | bytearray, /) -> int:
+    def readinto(self, buffer: collections.abc.Buffer, /) -> int:
+        pass
+
+    @abstractmethod
+    def write(self, s: collections.abc.Buffer, /) -> int:
+        pass
+
+    @abstractmethod
+    def writelines(
+        self, lines: collections.abc.Iterable[collections.abc.Buffer], /
+    ) -> None:
         pass
 
     @abstractmethod
