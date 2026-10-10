@@ -1,0 +1,2 @@
+:mod:`sqlite3`: Disallow removing the ``row_factory`` attribute of a cursor
+to prevent a crash on a query.
