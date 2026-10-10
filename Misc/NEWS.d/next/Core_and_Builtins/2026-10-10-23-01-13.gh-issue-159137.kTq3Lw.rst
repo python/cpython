@@ -1,0 +1,2 @@
+Avoid walking the surviving objects a second time after each garbage collection
+to count them. Patch by Maurycy Pawłowski-Wieroński.
