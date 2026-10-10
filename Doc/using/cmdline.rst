@@ -302,7 +302,8 @@ Miscellaneous options
 
 .. option:: -i
 
-   Enter interactive mode after execution.
+   Enter interactive mode after execution, or force interactive mode even when
+   :data:`sys.stdin` does not appear to be a terminal.
 
    Using the :option:`-i` option will enter interactive mode in any of the following circumstances\:
 
@@ -310,8 +311,13 @@ Miscellaneous options
    * When the :option:`-c` option is used
    * When the :option:`-m` option is used
 
-   Interactive mode will start even when :data:`sys.stdin` does not appear to be a terminal. The
-   :envvar:`PYTHONSTARTUP` file is not read.
+   In these "execute then interact" cases, Python runs the script or command
+   first and does not read the :envvar:`PYTHONSTARTUP` file before entering
+   interactive mode.
+
+   When :option:`-i` is used only to force interactive mode despite redirected
+   standard input (for example, ``python -i < /dev/null``), the interpreter
+   enters interactive mode directly and reads :envvar:`PYTHONSTARTUP` as usual.
 
    This can be useful to inspect global variables or a stack trace when a script
    raises an exception.  See also :envvar:`PYTHONINSPECT`.
