@@ -1413,11 +1413,11 @@ if HAS_SHMEM:
             return self._Server(self._registry, self._address,
                                 self._authkey, self._serializer)
 
-        def SharedMemory(self, size):
+        def SharedMemory(self, size, name=None):
             """Returns a new SharedMemory instance with the specified size in
             bytes, to be tracked by the manager."""
             with self._Client(self._address, authkey=self._authkey) as conn:
-                sms = shared_memory.SharedMemory(None, create=True, size=size)
+                sms = shared_memory.SharedMemory(name, create=True, size=size)
                 try:
                     dispatch(conn, None, 'track_segment', (sms.name,))
                 except BaseException as e:
@@ -1425,11 +1425,11 @@ if HAS_SHMEM:
                     raise e
             return sms
 
-        def ShareableList(self, sequence):
+        def ShareableList(self, sequence, name=None):
             """Returns a new ShareableList instance populated with the values
             from the input sequence, to be tracked by the manager."""
             with self._Client(self._address, authkey=self._authkey) as conn:
-                sl = shared_memory.ShareableList(sequence)
+                sl = shared_memory.ShareableList(sequence, name=name)
                 try:
                     dispatch(conn, None, 'track_segment', (sl.shm.name,))
                 except BaseException as e:
