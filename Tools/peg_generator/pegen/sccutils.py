@@ -1,6 +1,6 @@
 # Adapted from mypy (mypy/build.py) under the MIT license.
 
-from collections.abc import Iterable, Iterator, Set
+from collections.abc import Iterator, Set
 
 
 def strongly_connected_components(
@@ -49,32 +49,22 @@ def strongly_connected_components(
             yield from dfs(v)
 
 
-def find_cycles_in_scc(
-    graph: dict[str, Set[str]], scc: Set[str], start: str
-) -> Iterable[list[str]]:
-    """Find cycles in SCC emanating from start.
+def is_acyclic(graph: dict[str, Set[str]], vertices: Set[str]) -> bool:
+    """Check the subgraph induced by vertices using a topological sort."""
+    indegree = dict.fromkeys(vertices, 0)
+    for src in vertices:
+        for dst in graph[src]:
+            if dst in vertices:
+                indegree[dst] += 1
 
-    Yields lists of the form ['A', 'B', 'C', 'A'], which means there's
-    a path from A -> B -> C -> A.  The first item is always the start
-    argument, but the last item may be another element, e.g.  ['A',
-    'B', 'C', 'B'] means there's a path from A to B and there's a
-    cycle from B to C and back.
-    """
-    # Basic input checks.
-    assert start in scc, (start, scc)
-    assert scc <= graph.keys(), scc - graph.keys()
-
-    # Reduce the graph to nodes in the SCC.
-    graph = {src: {dst for dst in dsts if dst in scc} for src, dsts in graph.items() if src in scc}
-    assert start in graph
-
-    # Recursive helper that yields cycles.
-    def dfs(node: str, path: list[str]) -> Iterator[list[str]]:
-        if node in path:
-            yield path + [node]
-            return
-        path = path + [node]  # TODO: Make this not quadratic.
-        for child in graph[node]:
-            yield from dfs(child, path)
-
-    yield from dfs(start, [])
+    ready = [node for node, degree in indegree.items() if degree == 0]
+    processed = 0
+    while ready:
+        src = ready.pop()
+        processed += 1
+        for dst in graph[src]:
+            if dst in vertices:
+                indegree[dst] -= 1
+                if indegree[dst] == 0:
+                    ready.append(dst)
+    return processed == len(vertices)
