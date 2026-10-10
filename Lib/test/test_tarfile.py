@@ -1967,7 +1967,42 @@ class WriteTest(WriteTestBase, unittest.TestCase):
                 tar.addfile(tarinfo)
 
 
-class GzipWriteTest(GzipTest, WriteTest):
+class GzipFnameTestBase:
+    # gh-88661: the FNAME field of the gzip header holds the name that the
+    # archive is expected to have after decompression.  Like gunzip, the
+    # suffix is matched ignoring case, and ".tgz" becomes ".tar".
+
+    def gzip_header_fname(self, path):
+        with open(path, "rb") as fobj:
+            header = fobj.read(1024)
+        self.assertEqual(header[:2], b"\037\213")  # gzip magic number
+        self.assertEqual(header[3], 8)  # only the FNAME flag
+        return header[10:header.index(b"\0", 10)].decode("latin-1")
+
+    def test_fname(self):
+        # Only the suffix is matched ignoring case; the rest of the name
+        # keeps the case it was given, the way make_ofname() does in gunzip.
+        for name, expected in (("tmp.tar.gz", "tmp.tar"),
+                               ("tmp.TAR.GZ", "tmp.TAR"),
+                               ("tmp.tgz", "tmp.tar"),
+                               ("tmp.TGZ", "tmp.tar"),
+                               ("tmp.tGz", "tmp.tar"),
+                               # .taz means .tar.Z, not gzip.
+                               ("tmp.taz", "tmp.taz"),
+                               ("tmp.TAZ", "tmp.TAZ"),
+                               ("TMP.TGZ", "TMP.tar"),
+                               ("TMP.TAZ", "TMP.TAZ"),
+                               ("tmp.tar", "tmp.tar")):
+            with self.subTest(name=name):
+                path = os.path.join(TEMPDIR, name)
+                try:
+                    tarfile.open(path, self.mode).close()
+                    self.assertEqual(self.gzip_header_fname(path), expected)
+                finally:
+                    os_helper.unlink(path)
+
+
+class GzipWriteTest(GzipTest, GzipFnameTestBase, WriteTest):
     pass
 
 
@@ -2034,7 +2069,7 @@ class StreamWriteTest(WriteTestBase, unittest.TestCase):
                 os_helper.unlink(tmpname)
 
 
-class GzipStreamWriteTest(GzipTest, StreamWriteTest):
+class GzipStreamWriteTest(GzipTest, GzipFnameTestBase, StreamWriteTest):
     def test_source_directory_not_leaked(self):
         """
         Ensure the source directory is not included in the tar header
