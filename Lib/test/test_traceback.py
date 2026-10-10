@@ -1864,6 +1864,17 @@ print(
         self.assertIn("Perhaps you forgot a comma", stderr_text)
         self.assertNotIn("Did you mean", stderr_text)
 
+    def test_format_is_idempotent(self):
+        code = "fr x in range(10):\n    pass\n"
+        try:
+            compile(code, "<test>", "exec")
+        except SyntaxError as exc:
+            te = traceback.TracebackException(type(exc), exc, None)
+            r1 = list(te.format_exception_only())
+            r2 = list(te.format_exception_only())
+            self.assertEqual(r1, r2)
+            self.assertEqual(te.msg, exc.msg)
+
 @requires_debug_ranges()
 @force_not_colorized_test_class
 class PurePythonTracebackErrorCaretTests(
