@@ -38,5 +38,5 @@ VT_MAP: dict[bytes, str] = {
 }
 
 class EventQueue(BaseEventQueue):
-    def __init__(self, encoding: str) -> None:
-        BaseEventQueue.__init__(self, encoding, VT_MAP)
+    def __init__(self, encoding: str, esc_timeout: float | None = None) -> None:
+        BaseEventQueue.__init__(self, encoding, VT_MAP, esc_timeout)

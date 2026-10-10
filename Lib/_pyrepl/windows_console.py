@@ -568,6 +568,12 @@ class WindowsConsole(Console):
             return None
 
         while self.event_queue.empty():
+            if self.event_queue.pending():
+                # Timed out waiting for the rest of a sequence: flush the
+                # pending prefix as a complete key (e.g. a lone ESC).
+                if not self.wait_for_event(self.event_queue.esc_timeout * 1000):
+                    self.event_queue.flush()
+                    continue
             rec = self._read_input()
             if rec is None:
                 return None
