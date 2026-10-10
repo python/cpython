@@ -1,0 +1,4 @@
+Avoid a second reachability analysis in the garbage collector when no weakref
+callback, finalizer, or collectable-object debug output ran. Finished generators,
+coroutines, and async generators can skip this analysis even when finalized.
+Free-threaded builds also avoid a second stop-the-world pause in this case.
