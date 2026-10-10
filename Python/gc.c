@@ -41,8 +41,7 @@ typedef struct _gc_runtime_state GCState;
 // Lowest bit of _gc_next is used for UNREACHABLE flag.
 //
 // move_unreachable() sets this flag on the objects it assumes unreachable.
-// While it runs they stay where they are in the list being scanned, so that
-// list is not a normal list either; when it ends they are in unreachable list.
+// They stay in the list being scanned until the scan ends.
 //
 // Although this flag is used only in move_unreachable(), move_unreachable()
 // doesn't clear this flag to skip unnecessary iteration.
@@ -50,9 +49,6 @@ typedef struct _gc_runtime_state GCState;
 // Between them, unreachable list is not normal list and we can not use
 // most gc_list_* functions for it.
 #define NEXT_MASK_UNREACHABLE  (1)
-
-// Number of objects visit_reachable() can queue for traversal.
-#define REACHABLE_STACK_SIZE 1024
 
 #define AS_GC(op) _Py_AS_GC(op)
 #define FROM_GC(gc) _Py_FROM_GC(gc)
@@ -203,8 +199,7 @@ NEXT_MASK_UNREACHABLE
 
     Objects that are found to be reachable have gc_refs set to 1.
     When this flag is set for the reachable object, the scan has already
-    passed it.  The flag is unset and the object is traversed without being
-    moved.
+    passed it.  The flag is unset and the object is traversed in place.
 
     move_legacy_finalizers() will remove this flag from "unreachable" set.
 */
@@ -507,11 +502,10 @@ subtract_refs(PyGC_Head *containers)
 
 /* State shared by move_unreachable() and visit_reachable(). */
 struct reachable_state {
-    PyGC_Head *tail;        /* where to insert objects after the scanned one */
-    PyGC_Head *first;       /* at or before every object with the flag */
-    Py_ssize_t unreachable; /* objects with NEXT_MASK_UNREACHABLE */
+    PyGC_Head *young;
+    Py_ssize_t unreachable;     /* objects with NEXT_MASK_UNREACHABLE */
     Py_ssize_t top;
-    PyGC_Head *stack[REACHABLE_STACK_SIZE];
+    PyGC_Head *stack[1024];     /* reachable objects to traverse */
 };
 
 /* A traversal callback for move_unreachable. */
@@ -525,11 +519,12 @@ visit_reachable(PyObject *op, void *arg)
     }
 
     PyGC_Head *gc = AS_GC(op);
+    const Py_ssize_t gc_refs = gc_get_refs(gc);
 
     // Ignore objects in other generation.
-    // This also skips objects already known to be reachable: those that
-    // move_unreachable has traversed, is traversing, or has in the stack.
-    // They no longer have the PREV_MASK_COLLECTING flag.
+    // This also skips objects "to the left" of the current position in
+    // move_unreachable's scan of the 'young' list - they've already been
+    // traversed, and no longer have the PREV_MASK_COLLECTING flag.
     if (! gc_is_collecting(gc)) {
         return 0;
     }
@@ -540,35 +535,32 @@ visit_reachable(PyObject *op, void *arg)
     if (gc->_gc_next & NEXT_MASK_UNREACHABLE) {
         /* This had gc_refs = 0 when move_unreachable got
          * to it, but turns out it's reachable after all.
-         * It is "to the left" of the scan and _gc_prev is
-         * a pointer again.  Leave it where it is and let
-         * move_unreachable traverse it from the stack.
+         * Leave it where it is, so that the list keeps its
+         * order, and let move_unreachable traverse it.
          */
-        PyGC_Head *next = (PyGC_Head*)(gc->_gc_next & ~NEXT_MASK_UNREACHABLE);
+        gc->_gc_next &= ~NEXT_MASK_UNREACHABLE;
         state->unreachable--;
-        if (state->top < REACHABLE_STACK_SIZE) {
-            gc->_gc_next = (uintptr_t)next;
+        if (state->top < (Py_ssize_t)Py_ARRAY_LENGTH(state->stack)) {
             gc_clear_collecting(gc);
             state->stack[state->top++] = gc;
         }
         else {
-            /* No room.  Move it to the right of the object being scanned
-             * instead, and move_unreachable will get to it again.
+            /* No room.  Move it to the end of 'young' and
+             * move_unreachable will eventually get to it again.
              */
+            // Manually unlink gc because the list functions don't work
+            // right in the presence of NEXT_MASK_UNREACHABLE flags.
             PyGC_Head *prev = GC_PREV(gc);
+            PyGC_Head *next = GC_NEXT(gc);
             prev->_gc_next = (prev->_gc_next & NEXT_MASK_UNREACHABLE)
                 | (uintptr_t)next;
             _PyGCHead_SET_PREV(next, prev);
-            if (state->first == gc) {
-                state->first = next;
-            }
-            gc->_gc_next = state->tail->_gc_next;
-            state->tail->_gc_next = (uintptr_t)gc;
-            state->tail = gc;
+
+            gc_list_append(gc, state->young);
             gc_set_refs(gc, 1);
         }
     }
-    else if (gc_get_refs(gc) == 0) {
+    else if (gc_refs == 0) {
         /* This is in move_unreachable's 'young' list, but
          * the traversal hasn't yet gotten to it.  All
          * we need to do is tell move_unreachable that it's
@@ -581,8 +573,7 @@ visit_reachable(PyObject *op, void *arg)
      * list, and move_unreachable will eventually get to it.
      */
     else {
-        _PyObject_ASSERT_WITH_MSG(op, gc_get_refs(gc) > 0,
-                                  "refcount is too small");
+        _PyObject_ASSERT_WITH_MSG(op, gc_refs > 0, "refcount is too small");
     }
     return 0;
 }
@@ -599,26 +590,19 @@ visit_reachable(PyObject *op, void *arg)
  * But _gc_next in unreachable list has NEXT_MASK_UNREACHABLE flag.
  * So we can not gc_list_* functions for unreachable until we remove the flag.
  *
- * The objects that stay in young keep their relative order.  The order is
- * the order of allocation, which is close to the order in memory, and every
- * walk of the list in this and in later collections is faster for it.
+ * The objects left in young keep their order.  It is the order in which they
+ * were allocated, so walking the list visits memory mostly in address order.
  */
 static void
 move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
 {
     struct reachable_state state;
-    state.first = NULL;
+    state.young = young;
     state.unreachable = 0;
     state.top = 0;
     // previous elem in the young list, used for restore gc_prev.
     PyGC_Head *prev = young;
     PyGC_Head *gc = GC_NEXT(young);
-    // Number of objects scanned, and where the flag was set: for the first
-    // time since no object had it, and for the last time.
-    Py_ssize_t pos = 0;
-    Py_ssize_t first_pos = 0;
-    Py_ssize_t last_pos = 0;
-    PyGC_Head *last = NULL;
 
     /* Invariants:  all objects "to the left" of us in young without
      * NEXT_MASK_UNREACHABLE are reachable (directly or indirectly) from
@@ -635,9 +619,9 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
              * original 'young'.  Mark it as such, and traverse
              * its pointers to find any other objects that may
              * be directly reachable from it.  Note that the
-             * call to tp_traverse may insert objects in young
-             * after gc, so we have to wait until it returns to
-             * determine the next object to visit.
+             * call to tp_traverse may append objects to young,
+             * so we have to wait until it returns to determine
+             * the next object to visit.
              */
             PyObject *op = FROM_GC(gc);
             traverseproc traverse = Py_TYPE(op)->tp_traverse;
@@ -647,20 +631,17 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
             _PyGCHead_SET_PREV(gc, prev);
             // gc is not COLLECTING state after here.
             gc_clear_collecting(gc);
-            state.tail = gc;
+            // NOTE: visit_reachable may change gc->_gc_next when
+            // young->_gc_prev == gc.  Don't do gc = GC_NEXT(gc) before!
             (void) traverse(op,
                     visit_reachable,
                     (void *)&state);
             while (state.top > 0) {
                 op = FROM_GC(state.stack[--state.top]);
-                traverse = Py_TYPE(op)->tp_traverse;
-                (void) traverse(op,
+                (void) Py_TYPE(op)->tp_traverse(op,
                         visit_reachable,
                         (void *)&state);
             }
-            prev = gc;
-            gc = (PyGC_Head*)gc->_gc_next;
-            pos++;
         }
         else {
             /* This *may* be unreachable.  To make progress,
@@ -670,70 +651,42 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
              * visit_reachable will eventually clear the flag
              * if that's so.
              */
-            // gc_refs is not needed anymore: relink gc_prev.
             _PyGCHead_SET_PREV(gc, prev);
-            prev = gc;
-            if (state.unreachable++ == 0) {
-                state.first = gc;
-                first_pos = pos;
-            }
-            last = gc;
-            last_pos = pos++;
-            uintptr_t next = gc->_gc_next;
-            gc->_gc_next = (NEXT_MASK_UNREACHABLE | next);
-            gc = (PyGC_Head*)next;
+            gc->_gc_next |= NEXT_MASK_UNREACHABLE;
+            state.unreachable++;
         }
+        prev = gc;
+        gc = (PyGC_Head*)(gc->_gc_next & ~NEXT_MASK_UNREACHABLE);
     }
     // young->_gc_prev must be last element remained in the list.
     young->_gc_prev = (uintptr_t)prev;
 
-    /* The objects that still have the flag are unreachable.  Move each run
-     * of them to unreachable.  The links inside a run are already the ones
-     * the unreachable list needs.
-     */
-    if (state.unreachable == 0) {
-        return;
-    }
-    if (state.unreachable == last_pos - first_pos + 1) {
-        // Everything from 'first' to 'last' has the flag: it is one run.
-        gc = state.first;
-        prev = GC_PREV(gc);
-        PyGC_Head *next = (PyGC_Head*)(last->_gc_next & ~NEXT_MASK_UNREACHABLE);
-        prev->_gc_next = (uintptr_t)next;
-        _PyGCHead_SET_PREV(next, prev);
+    /* Move the objects that still have the flag to unreachable. */
+    PyGC_Head *last = unreachable;
+    PyGC_Head *next;
+    for (gc = GC_NEXT(young); state.unreachable > 0; gc = next) {
+        next = (PyGC_Head*)(gc->_gc_next & ~NEXT_MASK_UNREACHABLE);
+        if (gc->_gc_next & NEXT_MASK_UNREACHABLE) {
+            prev = GC_PREV(gc);
+            prev->_gc_next = (uintptr_t)next;
+            _PyGCHead_SET_PREV(next, prev);
 
-        unreachable->_gc_next = (uintptr_t)gc;
-        _PyGCHead_SET_PREV(gc, unreachable);
-        last->_gc_next = (NEXT_MASK_UNREACHABLE | (uintptr_t)unreachable);
-        unreachable->_gc_prev = (uintptr_t)last;
-        return;
-    }
-    last = unreachable;
-    gc = state.first;
-    while (state.unreachable > 0) {
-        if (!(gc->_gc_next & NEXT_MASK_UNREACHABLE)) {
-            gc = GC_NEXT(gc);
-            continue;
-        }
-        PyGC_Head *run = gc;
-        prev = GC_PREV(run);
-        PyGC_Head *end;
-        do {
-            end = gc;
-            gc = (PyGC_Head*)(gc->_gc_next & ~NEXT_MASK_UNREACHABLE);
+            // We can't use gc_list_append() here because we use
+            // NEXT_MASK_UNREACHABLE here.
+            // NOTE: Since all objects in unreachable set has
+            // NEXT_MASK_UNREACHABLE flag, we set it unconditionally.
+            // But this may pollute the unreachable list head's 'next' pointer
+            // too. That's semantically senseless but expedient here - the
+            // damage is repaired when this function ends.
+            last->_gc_next = (NEXT_MASK_UNREACHABLE | (uintptr_t)gc);
+            _PyGCHead_SET_PREV(gc, last);
+            gc->_gc_next = (NEXT_MASK_UNREACHABLE | (uintptr_t)unreachable);
+            unreachable->_gc_prev = (uintptr_t)gc;
+            last = gc;
             state.unreachable--;
-        } while (gc->_gc_next & NEXT_MASK_UNREACHABLE);
-        prev->_gc_next = (uintptr_t)gc;
-        _PyGCHead_SET_PREV(gc, prev);
-
-        // NOTE: This may pollute the unreachable list head's 'next' pointer
-        // with the flag.  The damage is repaired below.
-        last->_gc_next = (NEXT_MASK_UNREACHABLE | (uintptr_t)run);
-        _PyGCHead_SET_PREV(run, last);
-        last = end;
+        }
     }
-    last->_gc_next = (NEXT_MASK_UNREACHABLE | (uintptr_t)unreachable);
-    unreachable->_gc_prev = (uintptr_t)last;
+    // don't let the pollution of the list head's next pointer leak
     unreachable->_gc_next &= ~NEXT_MASK_UNREACHABLE;
 }
 
@@ -1267,10 +1220,6 @@ deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
     /* Leave everything reachable from outside base in base, and move
      * everything else (in base) to unreachable.
      *
-     * NOTE:  This used to move the reachable objects into a reachable
-     * set instead.  But most things usually turn out to be reachable,
-     * so it's more efficient to move the unreachable things.
-     *
      * Suppose we create objects A, B, C in that order.  They appear in the young
      * generation in the same order.  If B points to A, and C to B, and C is
      * reachable from outside, then the adjusted refcounts will be 0, 0, and 1
@@ -1278,17 +1227,8 @@ deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
      *
      * When move_unreachable finds A, A is assumed to be unreachable.  The
      * same for B when it's first encountered.  Then C is traversed, B is
-     * found to be reachable and is traversed right away, and then A is.
-     * None of them moves.
-     *
-     * This used to move A and B to the unreachable list, and then back to the
-     * end of the reachable list, which left the objects in order C, B, A.  On
-     * all _subsequent_ scans none of them was assumed to be unreachable again.
-     * But that order is the order in which the objects are reached, and it has
-     * nothing to do with where the objects are in memory.  Every walk of the
-     * list, in every later collection, then misses the cache at each step.
-     * That costs much more than finding B and A to be reachable after
-     * the fact each time.
+     * found to be reachable and is traversed, and then A is.  None of them
+     * moves: the list stays in the order A, B, C.
      */
     gc_list_init(unreachable);
     move_unreachable(base, unreachable);  // gc_prev is pointer again
