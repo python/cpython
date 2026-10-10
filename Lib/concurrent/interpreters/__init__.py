@@ -192,6 +192,12 @@ class Interpreter:
         """
         return _interpreters.destroy(self._id, restrict=True)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        self.close()
+
     def prepare_main(self, ns=None, /, **kwargs):
         """Bind the given values into the interpreter's __main__.
 
