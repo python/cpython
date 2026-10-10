@@ -19,6 +19,8 @@ import tempfile
 import threading
 import unittest
 import warnings
+from functools import partial
+from operator import attrgetter
 from test import support
 from test.support import _4G, bigmemtest
 from test.support import hashlib_helper
@@ -53,18 +55,39 @@ if not get_fips_mode:
     def get_fips_mode():
         return 0
 
+
+try:
+    import _md5
+except ImportError:
+    _md5 = None
+requires_md5 = unittest.skipUnless(_md5, 'requires _md5')
+
+
 try:
     import _blake2
 except ImportError:
     _blake2 = None
-
 requires_blake2 = unittest.skipUnless(_blake2, 'requires _blake2')
+
+
+try:
+    import _sha1
+except ImportError:
+    _sha1 = None
+requires_sha1 = unittest.skipUnless(_sha1, 'requires _sha1')
+
+
+try:
+    import _sha2
+except ImportError:
+    _sha2 = None
+requires_sha2 = unittest.skipUnless(_sha2, 'requires _sha2')
+
 
 try:
     import _sha3
 except ImportError:
     _sha3 = None
-
 requires_sha3 = unittest.skipUnless(_sha3, 'requires _sha3')
 
 
@@ -1299,6 +1322,142 @@ class KDFTests(unittest.TestCase):
 
         with self.assertRaises(BlockingIOError):
             hashlib.file_digest(NonBlocking(), hashlib.sha256)
+
+
+@unittest.skipUnless(hasattr(hashlib, 'scrypt'), 'requires OpenSSL 1.1+')
+@unittest.skipIf(get_fips_mode(), reason="scrypt is blocked in FIPS mode")
+class TestScrypt(unittest.TestCase):
+
+    scrypt_test_vectors = [
+        (b'', b'', 16, 1, 1, unhexlify('77d6576238657b203b19ca42c18a0497f16b4844e3074ae8dfdffa3fede21442fcd0069ded0948f8326a753a0fc81f17e8d3e0fb2e0d3628cf35e20c38d18906')),
+        (b'password', b'NaCl', 1024, 8, 16, unhexlify('fdbabe1c9d3472007856e7190d01e9fe7c6ad7cbc8237830e77376634b3731622eaf30d92e22a3886ff109279d9830dac727afb94a83ee6d8360cbdfa2cc0640')),
+        (b'pleaseletmein', b'SodiumChloride', 16384, 8, 1, unhexlify('7023bdcb3afd7348461c06cd81fd38ebfda8fbba904f8e3ea9b543f6545da1f2d5432955613f0fcf62d49705242a9af9e61e85dc0d651e40dfcf017b45575887')),
+   ]
+
+    def test_scrypt(self):
+        for password, salt, n, r, p, expected in self.scrypt_test_vectors:
+            result = hashlib.scrypt(password, salt=salt, n=n, r=r, p=p)
+            self.assertEqual(result, expected)
+
+        # these parameters must be valid
+        hashlib.scrypt(b'password', salt=b'salt', n=2, r=8, p=1)
+        hashlib.scrypt(b'password', salt=b'salt', n=2, r=8, p=1, maxmem=0)
+        hashlib.scrypt(b'password', salt=b'salt', n=2, r=8, p=1, dklen=1)
+
+    def test_scrypt_types(self):
+        # password and salt must be bytes-like
+        with self.assertRaises(TypeError):
+            hashlib.scrypt('password', salt=b'salt', n=2, r=8, p=1)
+        with self.assertRaises(TypeError):
+            hashlib.scrypt(b'password', salt='salt', n=2, r=8, p=1)
+        # require keyword args
+        with self.assertRaises(TypeError):
+            hashlib.scrypt(b'password')
+        with self.assertRaises(TypeError):
+            hashlib.scrypt(b'password', b'salt')
+        with self.assertRaises(TypeError):
+            hashlib.scrypt(b'password', 2, 8, 1, salt=b'salt')
+
+    def test_scrypt_validate(self):
+        def scrypt(password=b"password", /, **kwargs):
+            # overwrite well-defined parameters with bad ones
+            kwargs = dict(salt=b'salt', n=2, r=8, p=1) | kwargs
+            return hashlib.scrypt(password, **kwargs)
+
+        for param_name in ('n', 'r', 'p', 'maxmem', 'dklen'):
+            param = {param_name: None}
+            with self.subTest(**param):
+                self.assertRaises(TypeError, scrypt, **param)
+
+        self.assertRaises(ValueError, scrypt, n=0)
+        self.assertRaises(ValueError, scrypt, n=-1)
+        self.assertRaises(ValueError, scrypt, n=1)
+
+        self.assertRaises(ValueError, scrypt, r=0)
+        self.assertRaises(ValueError, scrypt, r=-1)
+
+        self.assertRaises(ValueError, scrypt, p=-1)
+        self.assertRaises(ValueError, scrypt, p=0)
+
+        self.assertRaises(ValueError, scrypt, maxmem=-1)
+        # OpenSSL hard limit for 'maxmem' is an 'uint64_t' but for now,
+        # we do not use the 'uint64' Clinic converter but the 'long' one.
+        self.assertRaises(OverflowError, scrypt, maxmem=(1 << 64))
+        # Historically, Python allowed 'maxmem' to be at most INT_MAX,
+        # which is at most 2**32-1 (on Windows, sizeof(long) == 4, so
+        # an OverflowError will be raised instead of a ValueError).
+        numeric_exc_types = (OverflowError, ValueError)
+        self.assertRaises(numeric_exc_types, scrypt, maxmem=(1 << 32))
+
+        self.assertRaises(ValueError, scrypt, dklen=-1)
+        self.assertRaises(ValueError, scrypt, dklen=0)
+        MAX_DKLEN = ((1 << 32) - 1) * 32  # see RFC 7914
+        self.assertRaises(numeric_exc_types, scrypt, dklen=MAX_DKLEN + 1)
+
+
+@threading_helper.requires_working_threading()
+class TestTSAN(unittest.TestCase):
+
+    @threading_helper.reap_threads
+    def check_attribute(self, write, read, expected, nthreads=8):
+        ready = threading.Event()
+        barrier = threading.Barrier(nthreads)
+
+        def writer():
+            barrier.wait()
+            while not ready.is_set():
+                write()
+
+        def reader():
+            barrier.wait()
+            while not ready.is_set():
+                self.assertEqual(read(), expected)
+
+        targets = [writer if i % 2 else reader for i in range(nthreads)]
+        workers = [threading.Thread(target=target) for target in targets]
+        with threading_helper.start_threads(workers, unlock=ready.set):
+            pass
+
+    def check_HACL_attribute(self, module, version, attrname):
+        blob = b"A" * 65536
+        obj = getattr(module, version)()
+        update = partial(obj.update, blob)
+        read = attrgetter(attrname)
+        self.check_attribute(update, partial(read, obj), read(obj))
+
+    @requires_md5
+    @support.subTests("attrname", ["block_size", "digest_size"])
+    def test_HACL_md5_attributes(self, attrname):
+        self.check_HACL_attribute(_md5, "md5", attrname)
+
+    @requires_sha1
+    @support.subTests("attrname", ["block_size", "digest_size"])
+    def test_HACL_sha1_attributes(self, attrname):
+        self.check_HACL_attribute(_sha1, "sha1", attrname)
+
+    @requires_sha2
+    @support.subTests("size", [224, 256, 384, 512])
+    @support.subTests("attrname", ["block_size", "digest_size"])
+    def test_HACL_sha2_attributes(self, size, attrname):
+        self.check_HACL_attribute(_sha2, f"sha{size}", attrname)
+
+    @requires_sha3
+    @support.subTests("size", [224, 256, 384, 512])
+    @support.subTests(
+        "attrname",
+        ["block_size", "digest_size", "_capacity_bits", "_rate_bits"],
+    )
+    def test_HACL_sha3_attributes(self, size, attrname):
+        self.check_HACL_attribute(_sha3, f"sha3_{size}", attrname)
+
+    @requires_sha3
+    @support.subTests("size", [128, 256])
+    @support.subTests(
+        "attrname",
+        ["block_size", "digest_size", "_capacity_bits", "_rate_bits"],
+    )
+    def test_HACL_shake_attributes(self, size, attrname):
+        self.check_HACL_attribute(_sha3, f"shake_{size}", attrname)
 
 
 if __name__ == "__main__":
