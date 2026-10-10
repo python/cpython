@@ -401,6 +401,18 @@ Server Objects
       default implementation always returns :const:`True`.
 
 
+   .. method:: server_shutdown()
+
+      Shutdown the server.
+      Called by :meth:`shutdown` to make the
+      :meth:`~selectors.BaseSelector.select` called by
+      :meth:`handle_request` / :meth:`serve_forever`
+      return immediately.
+
+      For example the class :class:`TCPServer` implements this function
+      by calling shutdown on the server socket.
+
+
    .. versionchanged:: 3.6
       Support for the :term:`context manager` protocol was added.  Exiting the
       context manager is equivalent to calling :meth:`server_close`.
