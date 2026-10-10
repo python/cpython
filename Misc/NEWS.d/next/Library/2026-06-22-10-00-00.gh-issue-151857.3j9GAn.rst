@@ -1,0 +1,4 @@
+Fixed two cases where the :mod:`email` header parser (under
+:class:`~email.policy.EmailPolicy`) raised an uncaught :exc:`IndexError` on
+malformed input: a MIME parameter name ending with ``*``, and an address
+header whose display name is only a comment. Both now degrade gracefully.

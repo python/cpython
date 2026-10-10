@@ -1862,6 +1862,15 @@ class TestParser(TestParserMixin, TestEmailBase):
             ':Foo ', '', '', [errors.InvalidHeaderDefect], ':Foo ')
         self.assertEqual(display_name.value, '')
 
+    def test_get_display_name_comment_only(self):
+        # gh-151857: a comment-only (CFWS) display name raised IndexError.
+        display_name = self._test_get_x(
+            parser.get_display_name,
+            '(c)', '(c)', ' "" ',
+            [errors.InvalidHeaderDefect, errors.ObsoleteHeaderDefect], '')
+        self.assertEqual(display_name.display_name, '')
+        self.assertEqual(display_name.value, ' "" ')
+
     # get_name_addr
 
     def test_get_name_addr_angle_addr_only(self):
@@ -3144,6 +3153,29 @@ class Test_parse_mime_parameters(TestParserMixin, TestEmailBase):
             'r*=\'a\'"',
             [('r', '"')],
             [errors.InvalidHeaderDefect]*2),
+
+        # gh-151857: a parameter name ending in the extended marker '*' with
+        # no value used to raise an uncaught IndexError instead of a defect.
+        'extended_marker_no_value': (
+            'name*',
+            '',
+            'name*',
+            [],
+            [errors.InvalidHeaderDefect]),
+
+        'extended_marker_no_value_sectioned': (
+            'name*0*',
+            '',
+            'name*0*',
+            [],
+            [errors.InvalidHeaderDefect]),
+
+        'extended_marker_no_value_after_param': (
+            'x=1; name*',
+            ' x="1"',
+            'x=1; name*',
+            [('x', '1')],
+            [errors.InvalidHeaderDefect]),
     }
 
 @parameterize
