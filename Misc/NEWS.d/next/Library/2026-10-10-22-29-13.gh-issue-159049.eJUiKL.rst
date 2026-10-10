@@ -1,2 +1,2 @@
-Fix reference cycles in :meth:asyncio.loop.create_connection after a failed
-TLS handshake.
+Fix reference cycles in :meth:`asyncio.loop.create_connection` after a failed
+TLS handshake. Patch by Timofei Ivankov
