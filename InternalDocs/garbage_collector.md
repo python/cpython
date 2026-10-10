@@ -260,8 +260,10 @@ ended having `gc_ref == 0` but is referenced still by the `link_1` object that
 is reachable from the outside. To obtain the set of objects that are really
 unreachable, the garbage collector re-scans the container objects using the
 `tp_traverse` slot; this time with a different traverse function that marks objects with
-`gc_ref == 0` as "tentatively unreachable" and then moves them to the
-tentatively unreachable list. The following image depicts the state of the lists in a
+`gc_ref == 0` as "tentatively unreachable". The images show these objects in a
+list of their own; the implementation sets the `NEXT_MASK_UNREACHABLE` flag on them
+and leaves them where they are until the scan ends. The following image depicts the
+state of the lists in a
 moment when the GC processed the `link_3` and `link_4` objects but has not
 processed `link_1` and `link_2` yet.
 
@@ -275,13 +277,12 @@ already in what will become the reachable list):
 
 When the GC encounters an object which is reachable (`gc_ref > 0`), it traverses
 its references using the `tp_traverse` slot to find all the objects that are
-reachable from it, moving them to the end of the list of reachable objects (where
-they started originally) and setting its `gc_ref` field to 1. This is what happens
-to `link_2` and `link_3` below as they are reachable from `link_1`.  From the
+reachable from it. Those that the scan has not processed yet get their `gc_ref`
+field set to 1, so that the GC knows they are reachable when it gets to them. This is
+what happens to `link_2` below as it is reachable from `link_1`.  From the
 state in the previous image and after examining the objects referred to by `link_1`
-the GC knows that `link_3` is reachable after all, so it is moved back to the
-original list and its `gc_ref` field is set to 1 so that if the GC visits it again,
-it will know that it's reachable. To avoid visiting an object twice, the GC marks all
+the GC knows that `link_3` is reachable after all, so it is no longer tentatively
+unreachable. To avoid visiting an object twice, the GC marks all
 objects that have already been visited once (by unsetting the `PREV_MASK_COLLECTING`
 flag) so that if an object that has already been processed is referenced by some other
 object, the GC does not process it twice.
@@ -289,42 +290,38 @@ object, the GC does not process it twice.
 ![gc-image5](images/python-cyclic-gc-5-new-page.png)
 
 Notice that an object that was marked as "tentatively unreachable" and was later
-moved back to the reachable list will be visited again by the garbage collector
-as now all the references that the object has need to be processed as well. This
-process is really a breadth first search over the object graph. Once all the objects
-are scanned, the GC knows that all container objects in the tentatively unreachable
-list are really unreachable and can thus be garbage collected.
+found to be reachable has to be traversed as well, as now all the references that
+the object has need to be processed. The scan has already passed it, so the GC puts
+it in a small stack and traverses the objects in the stack before it moves on. Once
+all the objects are scanned, the GC knows that all container objects that are still
+tentatively unreachable are really unreachable and can thus be garbage collected.
+They are then moved to the unreachable list.
 
 Pragmatically, it's important to note that no recursion is required by any of this,
 and neither does it in any other way require additional memory proportional to the
 number of objects, number of pointers, or the lengths of pointer chains.  Apart from
 `O(1)` storage for internal C needs, the objects themselves contain all the storage
-the GC algorithms require.
+the GC algorithms require. The stack has a fixed size: when it is full, an object
+found to be reachable is moved to the end of the list instead, where the scan gets
+to it again.
 
-Why moving unreachable objects is better
-----------------------------------------
-
-It sounds logical to move the unreachable objects under the premise that most objects
-are usually reachable, until you think about it: the reason it pays isn't actually
-obvious.
+Why reachable objects are not moved
+-----------------------------------
 
 Suppose we create objects A, B, C in that order. They appear in the young generation
 in the same order. If B points to A, and C to B, and C is reachable from outside,
 then the adjusted refcounts after the first step of the algorithm runs will be 0, 0,
 and 1 respectively because the only reachable object from the outside is C.
 
-When the next step of the algorithm finds A, A is moved to the unreachable list. The
-same for B when it's first encountered. Then C is traversed, B is moved *back* to
-the reachable list. B is eventually traversed, and then A is moved back to the reachable
-list.
+When the next step of the algorithm finds A, A is marked as tentatively unreachable.
+The same for B when it's first encountered. Then C is traversed, B is found to be
+reachable and is traversed from the stack, and then A is. The list is still A, B, C.
 
-So instead of not moving at all, the reachable objects B and A are each moved twice.
-Why is this a win? A straightforward algorithm to move the reachable objects instead
-would move A, B, and C once each. The key is that this dance leaves the objects in
-order C, B, A - it's reversed from the original order.  On all *subsequent* scans,
-none of them will move.  Since most objects aren't in cycles, this can save an
-unbounded number of moves across an unbounded number of later collections. The only
-time the cost can be higher is the first time the chain is scanned.
+Objects are added to the list as they are allocated, so the order of the list is
+close to the order of the objects in memory, and a walk of the list goes through
+memory mostly in address order. The collector walks the list several times in every
+collection. Keeping the order keeps those walks friendly to the CPU cache, in this
+collection and in all the later ones.
 
 Destroying unreachable objects
 ==============================
