@@ -1,0 +1,2 @@
+:data:`functools.Placeholder` is now a :class:`sentinel`. It is no longer an
+instance of its own singleton type.
