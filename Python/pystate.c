@@ -813,6 +813,21 @@ common_constants_clear(PyInterpreterState *interp)
 
 
 static void
+move_asyncio_tasks_to_interpreter(PyThreadState *tstate)
+{
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    if (llist_empty(&tstate_impl->asyncio_tasks_head)) {
+        return;
+    }
+
+    PyMutex_Lock(&tstate->interp->asyncio_tasks_lock);
+    llist_concat(&tstate->interp->asyncio_tasks_head,
+                 &tstate_impl->asyncio_tasks_head);
+    PyMutex_Unlock(&tstate->interp->asyncio_tasks_lock);
+}
+
+
+static void
 interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 {
     assert(interp != NULL);
@@ -951,6 +966,9 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 #endif
 
     if (tstate->interp == interp) {
+        // gh-159041: Finalizers above may have registered new asyncio tasks.
+        move_asyncio_tasks_to_interpreter(tstate);
+
         /* We are now safe to fix tstate->_status.cleared. */
         // XXX Do this (much) earlier?
         tstate->_status.cleared = 1;
@@ -1837,13 +1855,6 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(((_PyThreadStateImpl *)tstate)->asyncio_running_task);
 
 
-    PyMutex_Lock(&tstate->interp->asyncio_tasks_lock);
-    // merge any lingering tasks from thread state to interpreter's
-    // tasks list
-    llist_concat(&tstate->interp->asyncio_tasks_head,
-                 &((_PyThreadStateImpl *)tstate)->asyncio_tasks_head);
-    PyMutex_Unlock(&tstate->interp->asyncio_tasks_lock);
-
     Py_CLEAR(tstate->dict);
     Py_CLEAR(tstate->async_exc);
 
@@ -1910,6 +1921,11 @@ PyThreadState_Clear(PyThreadState *tstate)
     _PyJit_TracerFree((_PyThreadStateImpl *)tstate);
 #endif
 
+    // Merge any lingering tasks from the thread state to the interpreter's
+    // tasks list.  This must happen after all cleanup which can run finalizers,
+    // since those finalizers may create and register new tasks.
+    move_asyncio_tasks_to_interpreter(tstate);
+
     tstate->_status.cleared = 1;
 
     // XXX Call _PyThreadStateSwap(runtime, NULL) here if "current".
@@ -1924,6 +1940,8 @@ static void
 tstate_delete_common(PyThreadState *tstate, int release_gil)
 {
     assert(tstate->_status.cleared && !tstate->_status.finalized);
+    assert(llist_empty(
+        &((_PyThreadStateImpl *)tstate)->asyncio_tasks_head));
     tstate_verify_not_active(tstate);
     assert(!_PyThreadState_IsRunningMain(tstate));
 
