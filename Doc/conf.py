@@ -30,6 +30,7 @@ extensions = [
     'implementation_detail',
     'issue_role',
     'lexers',
+    'meta_navigation',
     'misc_news',
     'profiling_trace',
     'pydoc_topics',
@@ -315,9 +316,9 @@ html_copy_source = False
 
 # Custom sidebar templates, filenames relative to this file.
 html_sidebars = {
-    # Defaults taken from https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-html_sidebars
-    # Removes the quick search block
-    '**': ['localtoc.html', 'relations.html', 'customsourcelink.html'],
+    # Sidebar configuration: https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-html_sidebars
+    # Custom sidebars without quick search; the homepage uses a dedicated sidebar.
+    '**': ['localtoc.html', 'relations.html', 'pageactions.html'],
     'index': ['indexsidebar.html'],
 }
 
