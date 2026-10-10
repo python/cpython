@@ -1,0 +1,3 @@
+Speed up the garbage collector on large heaps by keeping the objects that
+survive a collection in the order in which they were allocated.
+:func:`gc.get_objects` returns them in that order.
