@@ -1,0 +1,5 @@
+Fix undefined behaviour in ``_PyObject_MergePerThreadRefcounts()`` on the
+free-threaded build. The per-thread reference count delta being merged is
+routinely negative, and it was shifted left by ``_Py_REF_SHARED_SHIFT``,
+which is undefined behaviour for a negative value. The shift is now done in
+the unsigned domain.
