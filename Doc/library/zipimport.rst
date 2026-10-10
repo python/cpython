@@ -123,7 +123,7 @@ zipimporter Objects
 
       Return the value ``__file__`` would be set to if the specified module
       was imported. Raise :exc:`ZipImportError` if the module couldn't be
-      imported.
+      found.
 
       .. versionadded:: 3.1
 
