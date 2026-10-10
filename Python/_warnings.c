@@ -747,7 +747,8 @@ call_show_warning(PyThreadState *tstate, PyObject *category,
     }
 
     msg = PyObject_CallFunctionObjArgs(warnmsg_cls, message, category,
-            filename, lineno_obj, Py_None, Py_None,
+            filename, lineno_obj, Py_None,
+            sourceline ? sourceline : Py_None,
             source ? source : Py_None, module,
             NULL);
     Py_DECREF(warnmsg_cls);
@@ -1155,7 +1156,7 @@ warn as warnings_warn
     source: object = None
       If supplied, the destroyed object which emitted a ResourceWarning
     *
-    skip_file_prefixes: object(type='PyTupleObject *', subclass_of='&PyTuple_Type') = NULL
+    skip_file_prefixes: object(type='PyTupleObject *', subclass_of='&PyTuple_Type', c_default='NULL') = ()
       An optional tuple of module filename prefixes indicating frames to skip
       during stacklevel computations for stack frame attribution.
 
@@ -1166,7 +1167,7 @@ static PyObject *
 warnings_warn_impl(PyObject *module, PyObject *message, PyObject *category,
                    Py_ssize_t stacklevel, PyObject *source,
                    PyTupleObject *skip_file_prefixes)
-/*[clinic end generated code: output=a68e0f6906c65f80 input=eb37c6a18bec4ea1]*/
+/*[clinic end generated code: output=a68e0f6906c65f80 input=2b52e8b20f508f51]*/
 {
     category = get_category(message, category);
     if (category == NULL)
@@ -1234,8 +1235,11 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
     }
 
     /* Get the source line. */
-    source_line = PyList_GetItem(source_list, lineno-1);
-    Py_XINCREF(source_line);
+    if (lineno < 1 || lineno > PyList_GET_SIZE(source_list)) {
+        Py_DECREF(source_list);
+        return NULL;
+    }
+    source_line = Py_NewRef(PyList_GET_ITEM(source_list, lineno-1));
     Py_DECREF(source_list);
     return source_line;
 }
