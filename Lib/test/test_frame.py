@@ -557,6 +557,47 @@ class TestFrameLocals(unittest.TestCase):
         with self.assertRaises(KeyError):
             d['non_exist']
 
+    def test_values_reference_ownership(self):
+        class Value:
+            pass
+
+        for duplicate_names in (False, True):
+            with self.subTest(duplicate_names=duplicate_names):
+                def make_frame(first, second):
+                    return sys._getframe()
+
+                if duplicate_names:
+                    make_frame.__code__ = make_frame.__code__.replace(
+                        co_varnames=('value', 'value'))
+
+                first = Value()
+                second = Value()
+                extra = Value()
+                refs = [weakref.ref(value) for value in (first, second, extra)]
+                frame = make_frame(first, second)
+                proxy = frame.f_locals
+                proxy['extra'] = extra
+                values = proxy.values()
+                if duplicate_names:
+                    self.assertEqual(values, [first, extra])
+                else:
+                    self.assertEqual(values, [first, second, extra])
+
+                frame.clear()
+                del first, second, extra
+                support.gc_collect()
+                self.assertIsNotNone(refs[0]())
+                self.assertIsNotNone(refs[2]())
+                if duplicate_names:
+                    self.assertIsNone(refs[1]())
+                else:
+                    self.assertIsNotNone(refs[1]())
+
+                values.clear()
+                support.gc_collect()
+                for ref in refs:
+                    self.assertIsNone(ref())
+
     def test_as_number(self):
         x = 1
         y = 2
