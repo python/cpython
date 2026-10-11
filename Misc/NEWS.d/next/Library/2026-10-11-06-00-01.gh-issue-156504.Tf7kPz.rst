@@ -1,0 +1,3 @@
+In the :term:`free-threaded build`, the output of :func:`marshal.dumps` and
+:func:`marshal.dump`, and so the content of :file:`.pyc` files, no longer
+depends on whether the serialized objects have been used by other threads.
