@@ -7,11 +7,9 @@ Python distribution.
 
 These instructions are only needed if you're planning to compile Python for iOS
 yourself. Most users should *not* need to do this. If you're looking to
-experiment with writing an iOS app in Python, tools such as [BeeWare's
-Briefcase](https://briefcase.readthedocs.io), [Kivy's
-Buildozer](https://buildozer.readthedocs.io), and
-[Flet](https://flet.dev/) will provide a much more approachable
-user experience.
+experiment with writing an iOS app in Python, use one of the tools listed in
+[Using Python on iOS](https://docs.python.org/3/using/ios.html) for a much more
+approachable user experience.
 
 ## Compilers for building on iOS
 
