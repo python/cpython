@@ -326,6 +326,9 @@ process_frame_chain(
         }
         assert(frame_count <= MAX_FRAME_CHAIN_DEPTH);
 
+        // The base frame is a sentinel with previous == NULL: reaching it is
+        // enough, no need to read it. Still read it when it is the GC frame
+        // so the <GC> marker gets emitted.
         if (frame_addr == ctx->base_frame_addr
                 && !(unwinder->gc && frame_addr == ctx->gc_frame)) {
             break;
