@@ -1111,6 +1111,10 @@ _PyEval_StopTracingAndJit(PyThreadState *tstate, _PyInterpreterFrame *frame)
 
 #if _Py_TAIL_CALL_INTERP
 #include "opcode_targets.h"
+/* Give start_frame its own frame pointer, independently of the handlers. */
+#define _Py_CEVAL_START_FRAME
+#include "generated_cases.c.h"
+#undef _Py_CEVAL_START_FRAME
 #endif
 
 

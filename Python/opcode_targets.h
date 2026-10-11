@@ -524,13 +524,13 @@ extern py_tail_call_funcptr instruction_funcptr_tracing_table[256];
 
 extern PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_error(TAIL_CALL_PARAMS);
 extern PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_start_frame(TAIL_CALL_PARAMS);
+extern PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_exit_unwind(TAIL_CALL_PARAMS);
+extern PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_exit_unwind_notrace(TAIL_CALL_PARAMS);
 
 #ifdef _Py_CEVAL_OPCODE_TARGETS_DEFINE
 extern PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_pop_2_error(TAIL_CALL_PARAMS);
 extern PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_pop_1_error(TAIL_CALL_PARAMS);
 extern PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_exception_unwind(TAIL_CALL_PARAMS);
-extern PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_exit_unwind(TAIL_CALL_PARAMS);
-extern PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_exit_unwind_notrace(TAIL_CALL_PARAMS);
 extern PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_stop_tracing(TAIL_CALL_PARAMS);
 
 extern PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_BINARY_OP(TAIL_CALL_PARAMS);

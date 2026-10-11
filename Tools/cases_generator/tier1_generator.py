@@ -149,6 +149,7 @@ def generate_tier1(
     #error "This file is for Tier 1 only"
 #endif
 #define TIER_ONE 1
+#ifndef _Py_CEVAL_START_FRAME
 """)
     outfile.write(f"""
 #if !_Py_TAIL_CALL_INTERP
@@ -187,16 +188,22 @@ def generate_tier1(
     emitter = Emitter(out, analysis.labels)
     generate_tier1_labels(analysis, emitter)
     outfile.write(f"{LABEL_END_MARKER}\n")
+    outfile.write("#endif /* _Py_CEVAL_START_FRAME */\n")
+    outfile.write("#if !_Py_TAIL_CALL_INTERP || defined(_Py_CEVAL_START_FRAME)\n")
+    generate_tier1_labels(analysis, emitter, start_frame=True)
+    outfile.write("#endif /* !_Py_TAIL_CALL_INTERP || defined(_Py_CEVAL_START_FRAME) */\n")
     outfile.write(FOOTER)
 
 
 
 def generate_tier1_labels(
-    analysis: Analysis, emitter: Emitter
+    analysis: Analysis, emitter: Emitter, *, start_frame: bool = False
 ) -> None:
     emitter.emit("\n")
     # Emit tail-callable labels as function defintions
     for name, label in analysis.labels.items():
+        if (name == "start_frame") != start_frame:
+            continue
         if name == 'stop_tracing':
             emitter.emit("#if _Py_TAIL_CALL_INTERP && !defined(_Py_TIER2)\n")
             emitter.emit("Py_GCC_ATTRIBUTE((unused))\n")

@@ -51,7 +51,7 @@ def function_proto(name: str) -> str:
     return f"extern {function_signature(name)}"
 
 def write_tailcall_dispatch_table(analysis: Analysis, out: CWriter) -> None:
-    shared_labels = ("error", "start_frame")
+    shared_labels = ("error", "start_frame", "exit_unwind", "exit_unwind_notrace")
     out.emit("extern py_tail_call_funcptr instruction_funcptr_handler_table[256];\n")
     out.emit("\n")
     out.emit("extern py_tail_call_funcptr instruction_funcptr_tracing_table[256];\n")

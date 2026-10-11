@@ -2208,8 +2208,6 @@ Python/ceval_tailcall.o: \
 		$(srcdir)/Python/opcode_targets.h \
 		$(srcdir)/Python/record_functions.c.h
 
-Modules/_testinternalcapi/interpreter.o: PY_STDMODULE_CFLAGS += $(CFLAGS_CEVAL_TAILCALL)
-
 Python/flowgraph.o: \
 		$(srcdir)/Include/internal/pycore_opcode_metadata.h
 
