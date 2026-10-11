@@ -661,31 +661,57 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
     // young->_gc_prev must be last element remained in the list.
     young->_gc_prev = (uintptr_t)prev;
 
-    /* Move the objects that still have the flag to unreachable.  The links
-     * between consecutive ones are already those of the unreachable list.
+    /* Move the objects that still have the flag to unreachable.  Look for
+     * them from both ends of the list at once and stop when all of them are
+     * found.  The links between consecutive ones are already those of the
+     * unreachable list.
      */
-    PyGC_Head *last = unreachable;
-    gc = GC_NEXT(young);
+    PyGC_Head *front = unreachable;     // last object taken from the front
+    PyGC_Head *back = unreachable;      // first object taken from the back
+    PyGC_Head *fwd = GC_NEXT(young);
+    PyGC_Head *bwd = prev;
     while (state.unreachable > 0) {
-        if (!(gc->_gc_next & NEXT_MASK_UNREACHABLE)) {
-            gc = GC_NEXT(gc);
-            continue;
+        if (fwd->_gc_next & NEXT_MASK_UNREACHABLE) {
+            prev = GC_PREV(fwd);
+            // NOTE: This may pollute the unreachable list head's 'next'
+            // pointer with the flag.  It is repaired below.
+            front->_gc_next = (NEXT_MASK_UNREACHABLE | (uintptr_t)fwd);
+            _PyGCHead_SET_PREV(fwd, front);
+            do {
+                front = fwd;
+                fwd = (PyGC_Head*)(fwd->_gc_next & ~NEXT_MASK_UNREACHABLE);
+                state.unreachable--;
+            } while (fwd->_gc_next & NEXT_MASK_UNREACHABLE);
+            prev->_gc_next = (uintptr_t)fwd;
+            _PyGCHead_SET_PREV(fwd, prev);
+            if (state.unreachable == 0) {
+                break;
+            }
         }
-        prev = GC_PREV(gc);
-        // NOTE: This may pollute the unreachable list head's 'next' pointer
-        // with the flag.  The damage is repaired when this function ends.
-        last->_gc_next = (NEXT_MASK_UNREACHABLE | (uintptr_t)gc);
-        _PyGCHead_SET_PREV(gc, last);
-        do {
-            last = gc;
-            gc = (PyGC_Head*)(gc->_gc_next & ~NEXT_MASK_UNREACHABLE);
-            state.unreachable--;
-        } while (gc->_gc_next & NEXT_MASK_UNREACHABLE);
-        prev->_gc_next = (uintptr_t)gc;
-        _PyGCHead_SET_PREV(gc, prev);
+        else {
+            fwd = GC_NEXT(fwd);
+        }
+        if (bwd->_gc_next & NEXT_MASK_UNREACHABLE) {
+            PyGC_Head *last = bwd;
+            PyGC_Head *next = (PyGC_Head*)(bwd->_gc_next & ~NEXT_MASK_UNREACHABLE);
+            do {
+                gc = bwd;
+                bwd = GC_PREV(bwd);
+                state.unreachable--;
+            } while (bwd->_gc_next & NEXT_MASK_UNREACHABLE);
+            bwd->_gc_next = (uintptr_t)next;
+            _PyGCHead_SET_PREV(next, bwd);
+
+            last->_gc_next = (NEXT_MASK_UNREACHABLE | (uintptr_t)back);
+            _PyGCHead_SET_PREV(back, last);
+            back = gc;
+        }
+        else {
+            bwd = GC_PREV(bwd);
+        }
     }
-    last->_gc_next = (NEXT_MASK_UNREACHABLE | (uintptr_t)unreachable);
-    unreachable->_gc_prev = (uintptr_t)last;
+    front->_gc_next = (NEXT_MASK_UNREACHABLE | (uintptr_t)back);
+    _PyGCHead_SET_PREV(back, front);
     // don't let the pollution of the list head's next pointer leak
     unreachable->_gc_next &= ~NEXT_MASK_UNREACHABLE;
 }
