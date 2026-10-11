@@ -118,7 +118,20 @@ static inline void _PyObject_GC_SET_SHARED(PyObject *op) {
 /* Bit 1 is set when the object is in generation which is GCed currently. */
 #define _PyGC_PREV_MASK_COLLECTING ((uintptr_t)2)
 
-#define _PyGC_PREV_SHIFT           2
+/* Use an epoch bit only where the existing header alignment permits it. */
+#if !defined(Py_GIL_DISABLED) && SIZEOF_VOID_P == 8
+#  ifdef __cplusplus
+#    define _PyGC_PREV_MASK_EPOCH \
+        ((uintptr_t)(alignof(PyGC_Head) >= 8 ? 4 : 0))
+#  else
+#    define _PyGC_PREV_MASK_EPOCH \
+        ((uintptr_t)(_Alignof(PyGC_Head) >= 8 ? 4 : 0))
+#  endif
+#else
+#  define _PyGC_PREV_MASK_EPOCH ((uintptr_t)0)
+#endif
+
+#define _PyGC_PREV_SHIFT           (2 + (_PyGC_PREV_MASK_EPOCH != 0))
 #define _PyGC_PREV_MASK            (((uintptr_t) -1) << _PyGC_PREV_SHIFT)
 
 /* set for debugging information */
@@ -151,7 +164,7 @@ static inline void _PyGCHead_SET_NEXT(PyGC_Head *gc, PyGC_Head *next) {
     gc->_gc_next = (uintptr_t)next;
 }
 
-// Lowest two bits of _gc_prev is used for _PyGC_PREV_MASK_* flags.
+// Low bits of _gc_prev are used for _PyGC_PREV_MASK_* flags.
 static inline PyGC_Head* _PyGCHead_PREV(PyGC_Head *gc) {
     uintptr_t prev = (gc->_gc_prev & _PyGC_PREV_MASK);
     return (PyGC_Head*)prev;
@@ -228,6 +241,10 @@ static inline void _PyObject_GC_TRACK(
     PyGC_Head *last = (PyGC_Head*)(generation0->_gc_prev);
     _PyGCHead_SET_NEXT(last, gc);
     _PyGCHead_SET_PREV(gc, last);
+    if (_PyGC_PREV_MASK_EPOCH) {
+        gc->_gc_prev = (gc->_gc_prev & ~_PyGC_PREV_MASK_EPOCH)
+            | gcstate->mark_epoch;
+    }
     _PyGCHead_SET_NEXT(gc, generation0);
     generation0->_gc_prev = (uintptr_t)gc;
     gcstate->heap_size++;

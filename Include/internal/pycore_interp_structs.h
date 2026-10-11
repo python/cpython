@@ -163,8 +163,8 @@ typedef struct {
     _Py_ALIGNED_DEF(_PyObject_MIN_ALIGNMENT, uintptr_t) _gc_next;
 
     // Tagged pointer to previous object in the list.
-    // Lowest two bits are used for flags documented later.
-    // Those bits are made available by the struct's minimum alignment.
+    // Low bits are used for flags documented in pycore_gc.h.
+    // The available bits depend on the header's existing alignment.
     uintptr_t _gc_prev;
 } PyGC_Head;
 
@@ -244,6 +244,10 @@ struct _gc_runtime_state {
 #endif
     /* true if we are currently running the collector */
     int collecting;
+#ifndef Py_GIL_DISABLED
+    /* Epoch bit stamped on tracked objects; toggled by eligible full GCs. */
+    unsigned char mark_epoch;
+#endif
     // The frame that started the current collection. It might be NULL even when
     // collecting (if no Python frame is running):
     _PyInterpreterFrame *frame;

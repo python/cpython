@@ -22,6 +22,11 @@
 
 typedef struct _gc_runtime_state GCState;
 
+/* Root marking requires unique interpreter ownership. Keep this state outside
+ * _PyRuntime so secondary interpreters and runtime reinitialization disable it.
+ */
+static int gc_ownership_state;  // 0: never initialized, 1: unique, 2: unknown
+
 #ifdef Py_DEBUG
 #  define GC_DEBUG
 #endif
@@ -82,10 +87,10 @@ gc_set_refs(PyGC_Head *g, Py_ssize_t refs)
 }
 
 static inline void
-gc_reset_refs(PyGC_Head *g, Py_ssize_t refs)
+gc_reset_refs(PyGC_Head *g, Py_ssize_t refs, uintptr_t epoch)
 {
     g->_gc_prev = (g->_gc_prev & _PyGC_PREV_MASK_FINALIZED)
-        | PREV_MASK_COLLECTING
+        | epoch | PREV_MASK_COLLECTING
         | ((uintptr_t)(refs) << _PyGC_PREV_SHIFT);
 }
 
@@ -113,6 +118,10 @@ get_gc_state(void)
 void
 _PyGC_InitState(GCState *gcstate)
 {
+    int expected = 0;
+    if (!_Py_atomic_compare_exchange_int(&gc_ownership_state, &expected, 1)) {
+        _Py_atomic_store_int_relaxed(&gc_ownership_state, 2);
+    }
 #define INIT_HEAD(GEN) \
     do { \
         GEN.head._gc_next = (uintptr_t)&GEN.head; \
@@ -124,6 +133,7 @@ _PyGC_InitState(GCState *gcstate)
         INIT_HEAD(gcstate->generations[i]);
     };
     gcstate->generation0 = GEN_HEAD(gcstate, 0);
+    gcstate->mark_epoch = 0;
     INIT_HEAD(gcstate->permanent_generation);
 
 #undef INIT_HEAD
@@ -160,7 +170,7 @@ _gc_prev values
 
 Between collections, _gc_prev is used for doubly linked list.
 
-Lowest two bits of _gc_prev are used for flags.
+Low bits of _gc_prev are used for flags, including a mark epoch on supported ABIs.
 PREV_MASK_COLLECTING is used only while collecting and cleared before GC ends
 or _PyObject_GC_UNTRACK() is called.
 
@@ -400,6 +410,7 @@ update_refs(PyGC_Head *containers)
     PyGC_Head *next;
     PyGC_Head *gc = GC_NEXT(containers);
     Py_ssize_t candidates = 0;
+    uintptr_t epoch = _PyGC_PREV_MASK_EPOCH ? get_gc_state()->mark_epoch : 0;
 
     while (gc != containers) {
         next = GC_NEXT(gc);
@@ -410,7 +421,7 @@ update_refs(PyGC_Head *containers)
             gc = next;
             continue;
         }
-        gc_reset_refs(gc, Py_REFCNT(op));
+        gc_reset_refs(gc, Py_REFCNT(op), epoch);
         /* Python's cyclic gc should never see an incoming refcount
          * of 0:  if something decref'ed to 0, it should have been
          * deallocated immediately at that time.
@@ -1227,6 +1238,124 @@ deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
     return candidates;
 }
 
+typedef struct {
+    PyGC_Head live;
+    PyGC_Head *cursor;
+    uintptr_t epoch;
+    Py_ssize_t candidates;
+} GCMarkQueue;
+
+/* Unlike gc_list_move(), preserve flags on the destination's neighbors. */
+static void
+gc_list_move_after(PyGC_Head *node, PyGC_Head *cursor)
+{
+    assert(node != cursor);
+    PyGC_Head *from_prev = GC_PREV(node);
+    PyGC_Head *from_next = GC_NEXT(node);
+    _PyGCHead_SET_NEXT(from_prev, from_next);
+    _PyGCHead_SET_PREV(from_next, from_prev);
+
+    PyGC_Head *to_next = GC_NEXT(cursor);
+    _PyGCHead_SET_PREV(node, cursor);
+    _PyGCHead_SET_NEXT(node, to_next);
+    _PyGCHead_SET_NEXT(cursor, node);
+    _PyGCHead_SET_PREV(to_next, node);
+}
+
+static int
+visit_add_to_container(PyObject *op, void *arg)
+{
+    OBJECT_STAT_INC(object_visits);
+    if (!_Py_IsImmortal(op) && _PyObject_IS_GC(op) &&
+        _PyObject_GC_IS_TRACKED(op)) {
+        PyGC_Head *gc = AS_GC(op);
+        GCMarkQueue *queue = arg;
+        /* Recheck ownership after tp_is_gc, which can create an interpreter.
+         * A partial live set is safe: its outgoing references stay external.
+         */
+        if ((gc->_gc_prev & _PyGC_PREV_MASK_EPOCH) != queue->epoch &&
+            _Py_atomic_load_int_relaxed(&gc_ownership_state) == 1) {
+            gc->_gc_prev = (gc->_gc_prev & ~_PyGC_PREV_MASK_EPOCH)
+                | queue->epoch;
+            /* Prefer depth-first order within a 1 MiB address region. */
+            if ((((uintptr_t)gc ^ (uintptr_t)queue->cursor) >> 20) == 0) {
+                gc_list_move_after(gc, queue->cursor);
+            }
+            else {
+                gc_list_move(gc, &queue->live);
+            }
+            queue->candidates++;
+        }
+    }
+    return 0;
+}
+
+/* Avoid extension callbacks while root enumeration holds HEAD_LOCK. */
+static int
+visit_known_root(PyObject *op, void *arg)
+{
+    if (op == NULL) {
+        return 0;
+    }
+    if (Py_TYPE(op)->tp_is_gc != NULL) {
+        OBJECT_STAT_INC(object_visits);
+        return 0;
+    }
+    return visit_add_to_container(op, arg);
+}
+
+static void
+mark_known_roots(GCMarkQueue *queue)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    visit_known_root(interp->sysdict, queue);
+    visit_known_root(interp->builtins, queue);
+    visit_known_root(interp->dict, queue);
+    visit_known_root(interp->imports.modules, queue);
+    _Py_FOR_EACH_TSTATE_BEGIN(interp, tstate) {
+        for (_PyInterpreterFrame *frame = tstate->current_frame;
+             frame != NULL; frame = frame->previous) {
+            if (frame->owner >= FRAME_OWNED_BY_INTERPRETER ||
+                frame->stackpointer == NULL || _PyFrame_IsIncomplete(frame)) {
+                continue;
+            }
+            (void)_PyFrame_Traverse(frame, visit_known_root, queue);
+        }
+    }
+    _Py_FOR_EACH_TSTATE_END(interp);
+    PyGC_Head *gc = GC_NEXT(&queue->live);
+    while (gc != &queue->live) {
+        queue->cursor = gc;
+        PyObject *op = FROM_GC(gc);
+        (void)Py_TYPE(op)->tp_traverse(op, visit_add_to_container, queue);
+        /* Read next after traversal, which can insert children here. */
+        gc = GC_NEXT(gc);
+    }
+}
+
+/* Toggle the epoch to distinguish unseen objects. GC_TRACK stamps new objects
+ * with the new epoch. The live list doubles as the pending work queue.
+ */
+static Py_ssize_t
+collect_from_known_roots(PyGC_Head *base, PyGC_Head *unreachable)
+{
+    GCState *gcstate = get_gc_state();
+    gcstate->mark_epoch ^= _PyGC_PREV_MASK_EPOCH;
+    GCMarkQueue queue = {.epoch = gcstate->mark_epoch};
+    gc_list_init(&queue.live);
+    queue.cursor = &queue.live;
+    mark_known_roots(&queue);
+
+    /* Known-live references stay external to the residual analysis.
+     * update_refs stamps the remaining candidates before callbacks can run.
+     */
+    Py_ssize_t candidates = deduce_unreachable(base, unreachable);
+    gc_list_merge(base, &queue.live);
+    gc_list_merge(&queue.live, base);
+    validate_list(base, collecting_clear_unreachable_clear);
+    return queue.candidates + candidates;
+}
+
 /* Handle objects that may have resurrected after a call to 'finalize_garbage', moving
    them to 'old_generation' and placing the rest on 'still_unreachable'.
 
@@ -1521,7 +1650,19 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     }
     validate_list(old, collecting_clear_unreachable_clear);
 
-    stats.candidates = deduce_unreachable(young, &unreachable);
+    if (_PyGC_PREV_MASK_EPOCH && generation == NUM_GENERATIONS - 1 &&
+        _Py_IsMainInterpreter(tstate->interp) &&
+        gcstate->heap_size >= 4096 &&
+        gc_list_is_empty(&gcstate->permanent_generation.head) &&
+        _Py_atomic_load_int_relaxed(&gc_ownership_state) == 1) {
+        /* Without frozen or foreign objects, every tracked non-immortal
+         * object belongs to this full collection before update_refs.
+         */
+        stats.candidates = collect_from_known_roots(young, &unreachable);
+    }
+    else {
+        stats.candidates = deduce_unreachable(young, &unreachable);
+    }
 
     untrack_tuples(young);
     /* Move reachable objects to next generation. */
@@ -1901,6 +2042,7 @@ finalize_unlink_gc_head(PyGC_Head *gc) {
 void
 _PyGC_Fini(PyInterpreterState *interp)
 {
+    _Py_atomic_store_int_relaxed(&gc_ownership_state, 2);
     GCState *gcstate = &interp->gc;
     Py_CLEAR(gcstate->garbage);
     Py_CLEAR(gcstate->callbacks);

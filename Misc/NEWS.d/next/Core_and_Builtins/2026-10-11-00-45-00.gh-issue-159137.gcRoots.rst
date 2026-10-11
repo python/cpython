@@ -1,0 +1,2 @@
+Restore known-root marking in the GIL garbage collector to reduce trial
+reference counting during full collections.

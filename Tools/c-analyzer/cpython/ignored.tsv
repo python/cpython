@@ -22,6 +22,7 @@ Python/fileutils.c	set_inheritable	ioctl_works	-
 # (set lazily, atomically, *after* first init)
 Modules/posixmodule.c	os_dup2_impl	dup3_works_atomic	-
 Modules/posixmodule.c	os_pipe_impl	pipe2_works_atomic	-
+Python/gc.c	-	gc_ownership_state	Atomic process-lifetime ownership guard; never reset across interpreter or runtime finalization.
 
 ## guards around resource init
 Python/thread_pthread.h	PyThread__init_thread	lib_initialized	-

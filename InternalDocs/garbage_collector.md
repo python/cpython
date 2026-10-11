@@ -661,10 +661,10 @@ of `PyGC_Head` discussed in the `Memory layout and object structure`_ section:
 - The `_gc_prev` field is normally used as the "previous" pointer to maintain the
   doubly linked list but its lowest two bits are used to keep the flags
   `PREV_MASK_COLLECTING` and `_PyGC_PREV_MASK_FINALIZED`. Between collections,
-  the only flag that can be present is `_PyGC_PREV_MASK_FINALIZED` that indicates
+  the `_PyGC_PREV_MASK_FINALIZED` flag indicates
   if an object has been already finalized. During collections `_gc_prev` is
   temporarily used for storing a copy of the reference count (`gc_ref`), in
-  addition to two flags, and the GC linked list becomes a singly linked list until
+  addition to these flags, and the GC linked list becomes a singly linked list until
   `_gc_prev` is restored.
 
 - The `_gc_next` field is used as the "next" pointer to maintain the doubly linked
@@ -675,6 +675,12 @@ of `PyGC_Head` discussed in the `Memory layout and object structure`_ section:
   constant-time, there is no efficient way to determine which partition an object is
   currently in.  Instead, when that's needed, ad hoc tricks (like the
   `NEXT_MASK_UNREACHABLE` flag) are employed.
+
+On supported 64-bit GIL builds, `_gc_prev` also holds a mark-epoch bit.
+Eligible full collections first trace interpreter dictionaries and active frames,
+moving known-live objects to a separate list using the existing links. Only the
+remaining objects need trial reference counting. This shortcut is disabled for
+frozen heaps, secondary interpreters and after interpreter finalization.
 
 Optimization: delayed untracking containers
 ===========================================
