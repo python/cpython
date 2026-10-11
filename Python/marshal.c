@@ -104,6 +104,7 @@ module marshal
 #define WFERR_NESTEDTOODEEP 2
 #define WFERR_NOMEMORY 3
 #define WFERR_CODE_NOT_ALLOWED 4
+#define WFERR_SET_CHANGED_SIZE 5
 
 typedef struct {
     FILE *fp;
@@ -635,9 +636,19 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             p->error = WFERR_NOMEMORY;
             return;
         }
+        // Marshalling an element can run arbitrary code (an audit hook, or
+        // the __buffer__() method of the element), which can add elements
+        // to the set or remove some: n is not trusted to still be the size
+        // of the set.
         Py_ssize_t i = 0;
+        bool changed = false;
         Py_BEGIN_CRITICAL_SECTION(v);
         while (_PySet_NextEntryRef(v, &pos, &value, &hash)) {
+            if (i == n) {
+                changed = true;
+                Py_DECREF(value);
+                break;
+            }
             PyObject *dump = _PyMarshal_WriteObjectToString(value,
                                     p->version, p->allow_code);
             if (dump == NULL) {
@@ -659,7 +670,11 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             Py_DECREF(pairs);
             return;
         }
-        assert(i == n);
+        if (changed || i != n) {
+            p->error = WFERR_SET_CHANGED_SIZE;
+            Py_DECREF(pairs);
+            return;
+        }
         if (PyList_Sort(pairs)) {
             p->error = WFERR_NOMEMORY;
             Py_DECREF(pairs);
@@ -1908,6 +1923,10 @@ _PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code)
         case WFERR_CODE_NOT_ALLOWED:
             PyErr_SetString(PyExc_ValueError,
                             "marshalling code objects is disallowed");
+            break;
+        case WFERR_SET_CHANGED_SIZE:
+            PyErr_SetString(PyExc_RuntimeError,
+                            "set changed size during iteration");
             break;
         default:
         case WFERR_UNMARSHALLABLE:
