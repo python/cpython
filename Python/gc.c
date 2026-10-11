@@ -110,9 +110,15 @@ get_gc_state(void)
 }
 
 
+/* The number of interpreters that the process has had.  While it is 1, every
+ * tracked object is in a list of that interpreter. */
+static Py_ssize_t gc_states;
+
 void
 _PyGC_InitState(GCState *gcstate)
 {
+    _Py_atomic_add_ssize(&gc_states, 1);
+
 #define INIT_HEAD(GEN) \
     do { \
         GEN.head._gc_next = (uintptr_t)&GEN.head; \
@@ -534,9 +540,8 @@ subtract_refs(PyGC_Head *containers)
 static Py_ssize_t
 update_and_subtract_refs(PyGC_Head *containers)
 {
-    PyGC_Head *prev = containers;   /* last object left in the list */
+    PyGC_Head *prev = containers;
     PyGC_Head *gc = GC_NEXT(containers);
-    uintptr_t orig_prev = (uintptr_t)containers;
     Py_ssize_t candidates = 0;
 
     while (gc != containers) {
@@ -544,33 +549,28 @@ update_and_subtract_refs(PyGC_Head *containers)
         PyObject *op = FROM_GC(gc);
         if (_Py_IsImmortal(op)) {
             assert(!_Py_IsStaticImmortal(op));
-            // Not _PyObject_GC_UNTRACK(): _gc_prev of next may hold
-            // decrements.
+            // _PyObject_GC_UNTRACK(), keeping the decrements of next.
             _PyGCHead_SET_NEXT(prev, next);
+            next->_gc_prev += (uintptr_t)prev - (uintptr_t)gc;
             gc->_gc_next = 0;
             gc->_gc_prev &= _PyGC_PREV_MASK_FINALIZED;
             get_gc_state()->heap_size--;
+            gc = next;
+            continue;
         }
-        else {
-            /* _gc_prev is orig_prev plus the flags, minus the decrements
-             * that came before the walk. */
-            uintptr_t word = gc->_gc_prev;
-            gc->_gc_prev = (((uintptr_t)Py_REFCNT(op) << _PyGC_PREV_SHIFT)
-                            + (word & _PyGC_PREV_MASK) - orig_prev)
-                | (word & _PyGC_PREV_MASK_FINALIZED)
-                | PREV_MASK_COLLECTING;
-            // See update_refs() for a refcount of 0.
-            _PyObject_ASSERT(op, Py_REFCNT(op) != 0);
-            _PyObject_ASSERT_WITH_MSG(op, gc_get_refs(gc) <= Py_REFCNT(op),
-                                      "refcount is too small");
-            (void) Py_TYPE(op)->tp_traverse(op, visit_decref_tracked, op);
-            prev = gc;
-            candidates++;
-        }
-        orig_prev = (uintptr_t)gc;
+        /* _gc_prev is prev and the flags, minus the decrements so far. */
+        gc->_gc_prev = (gc->_gc_prev - (uintptr_t)prev
+                        + ((uintptr_t)Py_REFCNT(op) << _PyGC_PREV_SHIFT))
+                       | PREV_MASK_COLLECTING;
+        // See update_refs() for a refcount of 0.
+        _PyObject_ASSERT(op, Py_REFCNT(op) != 0);
+        _PyObject_ASSERT_WITH_MSG(op, gc_get_refs(gc) <= Py_REFCNT(op),
+                                  "refcount is too small");
+        (void) Py_TYPE(op)->tp_traverse(op, visit_decref_tracked, op);
+        prev = gc;
         gc = next;
+        candidates++;
     }
-    containers->_gc_prev = (uintptr_t)prev;
     return candidates;
 }
 
@@ -1600,11 +1600,11 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     }
     validate_list(old, collecting_clear_unreachable_clear);
 
-    /* A full collection with nothing frozen examines every tracked object,
-     * if no other interpreter has ever existed. */
+    /* A full collection examines every tracked object if none is frozen and
+     * the process has had no other interpreter. */
     bool all_tracked = (generation == NUM_GENERATIONS - 1
                         && gc_list_is_empty(&gcstate->permanent_generation.head)
-                        && _PyRuntime.interpreters.next_id == 1);
+                        && _Py_atomic_load_ssize_relaxed(&gc_states) == 1);
     stats.candidates = deduce_unreachable(young, &unreachable, all_tracked);
 
     untrack_tuples(young);

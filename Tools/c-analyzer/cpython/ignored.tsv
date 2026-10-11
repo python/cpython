@@ -150,6 +150,7 @@ Python/import.c	-	PyImport_Inittab	-
 ## the consolidated runtime state
 Python/pylifecycle.c	-	_PyRuntime	-
 Python/pylifecycle.c	-	runtime_initialized	-
+Python/gc.c	-	gc_states	-
 
 # All cases of _PyArg_Parser are handled in c-analyzr/cpython/_analyzer.py.
 
