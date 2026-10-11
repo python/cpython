@@ -14,8 +14,6 @@ STRINGLIB(bytes_join_lock_held)(PyObject *sep, PyObject *seq)
     Py_ssize_t seqlen = 0;
     Py_ssize_t sz = 0;
     Py_ssize_t i, nbufs;
-    /* buffers[:nborrowed] hold borrowed references */
-    Py_ssize_t nborrowed = 0;
     PyObject *item;
     Py_buffer *buffers = NULL;
 #define NB_STATIC_BUFFERS 10
@@ -36,6 +34,44 @@ STRINGLIB(bytes_join_lock_held)(PyObject *sep, PyObject *seq)
         }
     }
 #endif
+
+    /* Fast path: all items are exact bytes and the result is too small to
+     * release the GIL for.  Nothing here runs Python code or suspends the
+     * critical section, so seq keeps the items alive and they can be copied
+     * without taking references. */
+    Py_ssize_t limit = GIL_THRESHOLD - seplen;
+    for (i = 0; i < seqlen; i++) {
+        item = PySequence_Fast_GET_ITEM(seq, i);
+        if (!PyBytes_CheckExact(item)
+            || PyBytes_GET_SIZE(item) >= limit - sz) {
+            break;
+        }
+        sz += PyBytes_GET_SIZE(item) + seplen;
+    }
+    if (i == seqlen) {
+        res = STRINGLIB_NEW(NULL, sz - seplen);
+        if (res == NULL) {
+            return NULL;
+        }
+        p = STRINGLIB_STR(res);
+        for (i = 0; i < seqlen; i++) {
+            if (i != 0 && seplen != 0) {
+                if (seplen == 1) {
+                    *p++ = *sepstr;
+                }
+                else {
+                    memcpy(p, sepstr, seplen);
+                    p += seplen;
+                }
+            }
+            item = PySequence_Fast_GET_ITEM(seq, i);
+            memcpy(p, PyBytes_AS_STRING(item), PyBytes_GET_SIZE(item));
+            p += PyBytes_GET_SIZE(item);
+        }
+        return res;
+    }
+    sz = 0;
+
     if (seqlen > NB_STATIC_BUFFERS) {
         buffers = PyMem_NEW(Py_buffer, seqlen);
         if (buffers == NULL) {
@@ -55,28 +91,14 @@ STRINGLIB(bytes_join_lock_held)(PyObject *sep, PyObject *seq)
         Py_ssize_t itemlen;
         item = PySequence_Fast_GET_ITEM(seq, i);
         if (PyBytes_CheckExact(item)) {
-            /* Fast path.  While the critical section is held, seq keeps
-               the item alive, so it can be borrowed. */
-            buffers[i].obj = item;
+            /* Fast path. */
+            buffers[i].obj = Py_NewRef(item);
             buffers[i].buf = PyBytes_AS_STRING(item);
             buffers[i].len = PyBytes_GET_SIZE(item);
-            if (nborrowed == i) {
-                /* Nothing has suspended the critical section yet. */
-                nborrowed++;
-            }
-            else {
-                Py_INCREF(item);
-            }
         }
         else {
-            /* PyObject_GetBuffer() can run Python code (__buffer__()) or
-               wait for a lock, which suspends the critical section.  The
-               sequence may then drop its items, this one included, so take
-               references to them first. */
-            for (Py_ssize_t j = 0; j < nborrowed; j++) {
-                Py_INCREF(buffers[j].obj);
-            }
-            nborrowed = 0;
+            /* item is only borrowed; its __buffer__() may run Python that
+               drops the sequence's last reference to it. */
             Py_INCREF(item);
             if (PyObject_GetBuffer(item, &buffers[i], PyBUF_SIMPLE) != 0) {
                 PyErr_Format(PyExc_TypeError,
@@ -129,11 +151,6 @@ STRINGLIB(bytes_join_lock_held)(PyObject *sep, PyObject *seq)
         drop_gil = 0;   /* Benefits are likely outweighed by the overheads */
     }
     if (drop_gil) {
-        /* This suspends the critical section too. */
-        for (i = 0; i < nborrowed; i++) {
-            Py_INCREF(buffers[i].obj);
-        }
-        nborrowed = 0;
         save = PyEval_SaveThread();
     }
     if (!seplen) {
@@ -169,8 +186,16 @@ STRINGLIB(bytes_join_lock_held)(PyObject *sep, PyObject *seq)
 error:
     res = NULL;
 done:
-    for (i = nborrowed; i < nbufs; i++)
-        PyBuffer_Release(&buffers[i]);
+    for (i = 0; i < nbufs; i++) {
+        PyObject *obj = buffers[i].obj;
+        if (obj != NULL && PyBytes_CheckExact(obj)) {
+            /* bytes has no bf_releasebuffer */
+            Py_DECREF(obj);
+        }
+        else {
+            PyBuffer_Release(&buffers[i]);
+        }
+    }
     if (buffers != static_buffers)
         PyMem_Free(buffers);
     return res;

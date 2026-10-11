@@ -644,6 +644,7 @@ class BaseBytesTest:
             self.assertEqual(self.type2test(b"").join(lst), b"abc")
             self.assertEqual(self.type2test(b"").join(tuple(lst)), b"abc")
             self.assertEqual(self.type2test(b"").join(iter(lst)), b"abc")
+        self.assertEqual(self.type2test(b".").join([b"ab", b"cd"]), b"ab.cd")
         dot_join = self.type2test(b".:").join
         self.assertEqual(dot_join([b"ab", b"cd"]), b"ab.:cd")
         self.assertEqual(dot_join([memoryview(b"ab"), b"cd"]), b"ab.:cd")
