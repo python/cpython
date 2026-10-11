@@ -101,12 +101,6 @@ gc_decref(PyGC_Head *g)
 
 #define GEN_HEAD(gcstate, n) (&(gcstate)->generations[n].head)
 
-/* Set once an object can be tracked outside the generations of the
- * interpreter that looks at it: another interpreter exists, or one was
- * finalized with objects left.
- */
-static int gc_foreign_objects;
-
 
 static GCState *
 get_gc_state(void)
@@ -141,9 +135,6 @@ _PyGC_Init(PyInterpreterState *interp)
 {
     GCState *gcstate = &interp->gc;
 
-    if (!_Py_IsMainInterpreter(interp)) {
-        _Py_atomic_store_int_relaxed(&gc_foreign_objects, 1);
-    }
     gcstate->generation_stats = PyMem_RawCalloc(1, sizeof(struct gc_stats));
     if (gcstate->generation_stats == NULL) {
         return _PyStatus_NO_MEMORY();
@@ -1610,10 +1601,10 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     validate_list(old, collecting_clear_unreachable_clear);
 
     /* A full collection with nothing frozen examines every tracked object,
-     * unless some are in no generation of this interpreter. */
+     * if no other interpreter has ever existed. */
     bool all_tracked = (generation == NUM_GENERATIONS - 1
                         && gc_list_is_empty(&gcstate->permanent_generation.head)
-                        && !_Py_atomic_load_int_relaxed(&gc_foreign_objects));
+                        && _PyRuntime.interpreters.next_id == 1);
     stats.candidates = deduce_unreachable(young, &unreachable, all_tracked);
 
     untrack_tuples(young);
@@ -1985,9 +1976,6 @@ _PyGC_DumpShutdownStats(PyInterpreterState *interp)
 
 static void
 finalize_unlink_gc_head(PyGC_Head *gc) {
-    if (!gc_list_is_empty(gc)) {
-        _Py_atomic_store_int_relaxed(&gc_foreign_objects, 1);
-    }
     PyGC_Head *prev = GC_PREV(gc);
     PyGC_Head *next = GC_NEXT(gc);
     _PyGCHead_SET_NEXT(prev, next);
