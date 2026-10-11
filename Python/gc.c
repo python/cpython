@@ -576,9 +576,10 @@ visit_reachable(PyObject *op, void *arg)
  * But _gc_next in unreachable list has NEXT_MASK_UNREACHABLE flag.
  * So we can not gc_list_* functions for unreachable until we remove the flag.
  */
-static void
+static Py_ssize_t
 move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
 {
+    Py_ssize_t reachable = 0;
     // previous elem in the young list, used for restore gc_prev.
     PyGC_Head *prev = young;
     PyGC_Head *gc = GC_NEXT(young);
@@ -615,7 +616,21 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
             _PyGCHead_SET_PREV(gc, prev);
             // gc is not COLLECTING state after here.
             gc_clear_collecting(gc);
-            prev = gc;
+            if (PyTuple_CheckExact(op)) {
+                // Untracking gc overwrites the gc_refs of the next object.
+                PyGC_Head *next = GC_NEXT(gc);
+                uintptr_t next_refs = next->_gc_prev;
+                _PyTuple_MaybeUntrack(op);
+                next->_gc_prev = next_refs;
+                if (gc->_gc_next != 0) {
+                    prev = gc;
+                    reachable++;
+                }
+            }
+            else {
+                prev = gc;
+                reachable++;
+            }
         }
         else {
             /* This *may* be unreachable.  To make progress,
@@ -648,32 +663,7 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
     young->_gc_prev = (uintptr_t)prev;
     // don't let the pollution of the list head's next pointer leak
     unreachable->_gc_next &= ~NEXT_MASK_UNREACHABLE;
-}
-
-/* In theory, all tuples should be younger than the
-* objects they refer to, as tuples are immortal.
-* Therefore, untracking tuples in oldest-first order in the
-* young generation before promoting them should have tracked
-* all the tuples that can be untracked.
-*
-* Unfortunately, the C API allows tuples to be created
-* and then filled in. So this won't untrack all tuples
-* that can be untracked. It should untrack most of them
-* and is much faster than a more complex approach that
-* would untrack all relevant tuples.
-*/
-static void
-untrack_tuples(PyGC_Head *head)
-{
-    PyGC_Head *gc = GC_NEXT(head);
-    while (gc != head) {
-        PyObject *op = FROM_GC(gc);
-        PyGC_Head *next = GC_NEXT(gc);
-        if (PyTuple_CheckExact(op)) {
-            _PyTuple_MaybeUntrack(op);
-        }
-        gc = next;
-    }
+    return reachable;
 }
 
 /* Return true if object has a pre-PEP 442 finalization method. */
@@ -1175,7 +1165,8 @@ flag is cleared (for example, by using 'clear_unreachable_mask' function or
 by a call to 'move_legacy_finalizers'), the 'unreachable' list is not a normal
 list and we can not use most gc_list_* functions for it. */
 static inline Py_ssize_t
-deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
+deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable,
+                   Py_ssize_t *reachable) {
     validate_list(base, collecting_clear_unreachable_clear);
     /* Using ob_refcnt and gc_refs, calculate which objects in the
      * container set are reachable from outside the set (i.e., have a
@@ -1221,7 +1212,8 @@ deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
      * worth complicating the code to speed just a little.
      */
     gc_list_init(unreachable);
-    move_unreachable(base, unreachable);  // gc_prev is pointer again
+    // gc_prev is pointer again
+    *reachable = move_unreachable(base, unreachable);
     validate_list(base, collecting_clear_unreachable_clear);
     validate_list(unreachable, collecting_set_unreachable_set);
     return candidates;
@@ -1252,7 +1244,8 @@ handle_resurrected_objects(PyGC_Head *unreachable, PyGC_Head* still_unreachable,
     // have the PREV_MARK_COLLECTING set, but the objects are going to be
     // removed so we can skip the expense of clearing the flag.
     PyGC_Head* resurrected = unreachable;
-    deduce_unreachable(resurrected, still_unreachable);
+    Py_ssize_t reachable;
+    deduce_unreachable(resurrected, still_unreachable, &reachable);
     clear_unreachable_mask(still_unreachable);
 
     // Move the resurrected objects to the old generation for future collection.
@@ -1521,13 +1514,13 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     }
     validate_list(old, collecting_clear_unreachable_clear);
 
-    stats.candidates = deduce_unreachable(young, &unreachable);
+    Py_ssize_t reachable;
+    stats.candidates = deduce_unreachable(young, &unreachable, &reachable);
 
-    untrack_tuples(young);
     /* Move reachable objects to next generation. */
     if (young != old) {
         if (generation == NUM_GENERATIONS - 2) {
-            gcstate->long_lived_pending += gc_list_size(young);
+            gcstate->long_lived_pending += reachable;
         }
         gc_list_merge(young, old);
     }
@@ -1540,7 +1533,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         // site; the cost is slightly more work for full collections on dicts
         // with only atomic values.
         gcstate->long_lived_pending = 0;
-        gcstate->long_lived_total = gc_list_size(young);
+        gcstate->long_lived_total = reachable;
     }
 
     /* All objects in unreachable are trash, but objects reachable from
