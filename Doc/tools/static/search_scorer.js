@@ -17,6 +17,7 @@ var Scorer = {
   },
 
   // all values below this line are the Sphinx defaults
+  // (see https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-html_search_scorer)
 
   // Additive scores depending on the priority of the object
   // Priority is set by object domains
