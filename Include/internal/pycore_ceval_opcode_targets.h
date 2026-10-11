@@ -61,7 +61,7 @@ extern "C" {
             } while (0)
 #   endif
 #    define LABEL(name) TARGET(name)
-#   include "Python/opcode_targets.h"
+#   include "opcode_targets.h"
 #endif
 
 #ifdef __cplusplus
