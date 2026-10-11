@@ -6541,26 +6541,26 @@ dummy_func(
         }
 
         spilled label(start_frame) {
-#ifdef Py_DEBUG
+            #ifdef Py_DEBUG
             assert(frame->stackpointer_valid == 1);
-#endif
+            #endif
             int too_deep = _Py_EnterRecursivePy(tstate);
             if (too_deep) {
                 goto exit_unwind_notrace;
             }
             DTRACE_FUNCTION_ENTRY();
             next_instr = frame->instr_ptr;
-#ifdef Py_DEBUG
+        #ifdef Py_DEBUG
             int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS());
             if (lltrace < 0) {
-                goto exit_unwind;
+                JUMP_TO_LABEL(exit_unwind);
             }
             frame->lltrace = lltrace;
             /* _PyEval_EvalFrameDefault() must not be called with an exception set,
-             * because it can clear it (directly or indirectly) and so the
-             * caller loses its exception. */
+            because it can clear it (directly or indirectly) and so the
+            caller loses its exception */
             assert(!_PyErr_Occurred(tstate));
-#endif
+        #endif
             RELOAD_STACK();
 #if _Py_TAIL_CALL_INTERP
             int opcode;
@@ -6650,6 +6650,7 @@ dummy_func(
  exit_unwind_notrace:
  handle_eval_breaker:
  resume_frame:
+ start_frame:
  unbound_local_error:
     ;
 }
