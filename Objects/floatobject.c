@@ -5,6 +5,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_bitutils.h"      // _Py_bswap16()
 #include "pycore_dtoa.h"          // _Py_dg_dtoa()
 #include "pycore_floatobject.h"   // _PyFloat_FormatAdvancedWriter()
 #include "pycore_freelist.h"      // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
@@ -1894,12 +1895,43 @@ _PyFloat_DebugMallocStats(FILE *out)
 int
 PyFloat_Pack2(double x, char *data, int le)
 {
-    unsigned char *p = (unsigned char *)data;
+#if _Py_HAVE_FLOAT16
+    /* Conversion can change NaNs type or alter payload.  Here we
+       just fallback to the generic code, instead of providing
+       workarounds as for single/double precision. */
+    if (!isnan(x)) {
+        _Float16 y = (_Float16)x;
+
+        if (isinf(y) && !isinf(x)) {
+            goto Overflow;
+        }
+
+        if ((_PY_FLOAT_LITTLE_ENDIAN && !le) || (_PY_FLOAT_BIG_ENDIAN && le)) {
+#if defined(__s390x__) && defined(__GNUC__)
+            // gh-158567: Workaround GCC crash on s390x.
+            // Avoid __builtin_bswap16() with _Float16.
+            // https://bugzilla.redhat.com/show_bug.cgi?id=2544649
+            char buffer[2];
+            memcpy(buffer, &y, 2);
+            data[0] = buffer[1];
+            data[1] = buffer[0];
+#else
+            uint16_t word;
+            memcpy(&word, &y, 2);
+            word = _Py_bswap16(word);
+            memcpy(data, &word, 2);
+#endif
+        }
+        else {
+            memcpy(data, &y, sizeof(_Float16));
+        }
+        return 0;
+    }
+#endif
     unsigned char sign;
     int e;
     double f;
-    unsigned short bits;
-    int incr = 1;
+    uint16_t bits;
 
     if (x == 0.0) {
         sign = (copysign(1.0, x) == -1.0);
@@ -1979,18 +2011,10 @@ PyFloat_Pack2(double x, char *data, int le)
     bits |= (e << 10) | (sign << 15);
 
     /* Write out result. */
-    if (le) {
-        p += 1;
-        incr = -1;
+    if ((_PY_FLOAT_LITTLE_ENDIAN && !le) || (_PY_FLOAT_BIG_ENDIAN && le)) {
+        bits = _Py_bswap16(bits);
     }
-
-    /* First byte */
-    *p = (unsigned char)((bits >> 8) & 0xFF);
-    p += incr;
-
-    /* Second byte */
-    *p = (unsigned char)(bits & 0xFF);
-
+    memcpy(data, &bits, 2);
     return 0;
 
   Overflow:
@@ -2002,10 +2026,7 @@ PyFloat_Pack2(double x, char *data, int le)
 int
 PyFloat_Pack4(double x, char *data, int le)
 {
-    unsigned char *p = (unsigned char *)data;
     float y = (float)x;
-    int i, incr = 1;
-
     if (isinf(y) && !isinf(x)) {
         PyErr_SetString(PyExc_OverflowError,
                         "float too large to pack with f format");
@@ -2029,8 +2050,8 @@ PyFloat_Pack4(double x, char *data, int le)
         }
 #else
         uint32_t u32;
-
         memcpy(&u32, &y, 4);
+
         /* Workaround RISC-V: "If a NaN value is converted to a
          * different floating-point type, the result is the
          * canonical NaN of the new type".  The canonical NaN here
@@ -2050,17 +2071,14 @@ PyFloat_Pack4(double x, char *data, int le)
 #endif
     }
 
-    unsigned char s[sizeof(float)];
-    memcpy(s, &y, sizeof(float));
-
     if ((_PY_FLOAT_LITTLE_ENDIAN && !le) || (_PY_FLOAT_BIG_ENDIAN && le)) {
-        p += 3;
-        incr = -1;
+        uint32_t word;
+        memcpy(&word, &y, 4);
+        word = _Py_bswap32(word);
+        memcpy(data, &word, 4);
     }
-
-    for (i = 0; i < 4; i++) {
-        *p = s[i];
-        p += incr;
+    else {
+        memcpy(data, &y, sizeof(float));
     }
     return 0;
 }
@@ -2068,20 +2086,14 @@ PyFloat_Pack4(double x, char *data, int le)
 int
 PyFloat_Pack8(double x, char *data, int le)
 {
-    unsigned char *p = (unsigned char *)data;
-    unsigned char as_bytes[8];
-    memcpy(as_bytes, &x, 8);
-    const unsigned char *s = as_bytes;
-    int i, incr = 1;
-
     if ((_PY_FLOAT_LITTLE_ENDIAN && !le) || (_PY_FLOAT_BIG_ENDIAN && le)) {
-        p += 7;
-        incr = -1;
+        uint64_t word;
+        memcpy(&word, &x, 8);
+        word = _Py_bswap64(word);
+        memcpy(data, &word, 8);
     }
-
-    for (i = 0; i < 8; i++) {
-        *p = *s++;
-        p += incr;
+    else {
+        memcpy(data, &x, 8);
     }
     return 0;
 }
@@ -2090,6 +2102,24 @@ double
 PyFloat_Unpack2(const char *data, int le)
 {
     unsigned char *p = (unsigned char *)data;
+#if _Py_HAVE_FLOAT16
+    _Float16 x16;
+
+    if ((_PY_FLOAT_LITTLE_ENDIAN && !le) || (_PY_FLOAT_BIG_ENDIAN && le)) {
+        char buf[2];
+
+        buf[1] = p[0];
+        buf[0] = p[1];
+        memcpy(&x16, buf, 2);
+    }
+    else {
+        memcpy(&x16, p, 2);
+    }
+    if (!isnan(x16)) {
+        return x16;
+    }
+    /* Fallback to the generic code for NaNs, see PyFloat_Pack2(). */
+#endif
     unsigned char sign;
     int e;
     unsigned int f;

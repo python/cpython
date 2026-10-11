@@ -212,7 +212,7 @@ of the new API.
    When a header parameter is encoded in :rfc:`2231` format,
    :meth:`Message.get_param <email.message.Message.get_param>` may return a
    3-tuple containing the character set,
-   language, and value.  :func:`collapse_rfc2231_value` turns this into a unicode
+   language, and value.  :func:`collapse_rfc2231_value` turns this into a
    string.  Optional *errors* is passed to the *errors* argument of :class:`str`'s
    :func:`~str.encode` method; it defaults to ``'replace'``.  Optional
    *fallback_charset* specifies the character set to use if the one in the

@@ -365,7 +365,7 @@ class Compat32(Policy):
                                       charset=_charset.UNKNOWN8BIT,
                                       header_name=name)
                 else:
-                    # If we have raw 8bit data in a byte string, we have no idea
+                    # If we have raw 8bit data in a string, we have no idea
                     # what the encoding is.  There is no safe way to split this
                     # string.  If it's ascii-subset, then we could do a normal
                     # ascii split, but if it's multibyte then we could break the

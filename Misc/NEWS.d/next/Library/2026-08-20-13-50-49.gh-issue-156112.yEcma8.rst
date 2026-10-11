@@ -1,0 +1,4 @@
+:mod:`!_ios_support` no longer fails to import when
+:func:`ctypes.util.find_library` cannot resolve the ObjC runtime through the
+dyld shared cache, as is the case on iOS 13. The runtime is now loaded by name,
+which dyld resolves against the cache directly.

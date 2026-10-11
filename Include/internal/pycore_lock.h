@@ -34,6 +34,11 @@ _PyMutex_at_fork_reinit(PyMutex *m)
 
 typedef enum _PyLockFlags {
     // Do not detach/release the GIL when waiting on the lock.
+    //
+    // Note that code executed while holding a mutex with this flag must
+    // not detach, reach a safepoint or initiate a stop-the-world pause.
+    // Otherwise, a non-detaching waiter may remain waiting for this mutex and
+    // prevent the pause from completing.
     _Py_LOCK_DONT_DETACH = 0,
 
     // Detach/release the GIL while waiting on the lock.
@@ -206,40 +211,6 @@ PyAPI_FUNC(void) _PyRWMutex_RUnlock(_PyRWMutex *rwmutex);
 // Write lock (i.e., exclusive lock)
 PyAPI_FUNC(void) _PyRWMutex_Lock(_PyRWMutex *rwmutex);
 PyAPI_FUNC(void) _PyRWMutex_Unlock(_PyRWMutex *rwmutex);
-
-// Similar to linux seqlock: https://en.wikipedia.org/wiki/Seqlock
-// We use a sequence number to lock the writer, an even sequence means we're unlocked, an odd
-// sequence means we're locked.  Readers will read the sequence before attempting to read the
-// underlying data and then read the sequence number again after reading the data.  If the
-// sequence has not changed the data is valid.
-//
-// Differs a little bit in that we use CAS on sequence as the lock, instead of a separate spin lock.
-// The writer can also detect that the undelering data has not changed and abandon the write
-// and restore the previous sequence.
-typedef struct {
-    uint32_t sequence;
-} _PySeqLock;
-
-// Lock the sequence lock for the writer
-PyAPI_FUNC(void) _PySeqLock_LockWrite(_PySeqLock *seqlock);
-
-// Unlock the sequence lock and move to the next sequence number.
-PyAPI_FUNC(void) _PySeqLock_UnlockWrite(_PySeqLock *seqlock);
-
-// Abandon the current update indicating that no mutations have occurred
-// and restore the previous sequence value.
-PyAPI_FUNC(void) _PySeqLock_AbandonWrite(_PySeqLock *seqlock);
-
-// Begin a read operation and return the current sequence number.
-PyAPI_FUNC(uint32_t) _PySeqLock_BeginRead(_PySeqLock *seqlock);
-
-// End the read operation and confirm that the sequence number has not changed.
-// Returns 1 if the read was successful or 0 if the read should be retried.
-PyAPI_FUNC(int) _PySeqLock_EndRead(_PySeqLock *seqlock, uint32_t previous);
-
-// Check if the lock was held during a fork and clear the lock.  Returns 1
-// if the lock was held and any associated data should be cleared.
-PyAPI_FUNC(int) _PySeqLock_AfterFork(_PySeqLock *seqlock);
 
 #ifdef __cplusplus
 }

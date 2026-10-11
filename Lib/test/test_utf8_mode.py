@@ -29,11 +29,11 @@ class UTF8ModeTests(unittest.TestCase):
     def get_output(self, *args, failure=False, **kw):
         kw = dict(self.DEFAULT_ENV, **kw)
         if failure:
-            out = assert_python_failure(*args, **kw)
-            out = out[2]
+            proc = assert_python_failure(*args, **kw)
+            out = proc.err
         else:
-            out = assert_python_ok(*args, **kw)
-            out = out[1]
+            proc = assert_python_ok(*args, **kw)
+            out = proc.out
         return out.decode().rstrip("\n\r")
 
     @unittest.skipIf(MS_WINDOWS, 'Windows has no POSIX locale')

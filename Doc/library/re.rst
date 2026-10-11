@@ -614,7 +614,7 @@ character ``'$'``.
 
       Matches ``[0-9]`` if the :py:const:`~re.ASCII` flag is used.
 
-      __ https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-4/#G124142
+      __ https://www.unicode.org/versions/Unicode18.0.0/core-spec/chapter-4/#G124142
 
    For 8-bit (bytes) patterns:
       Matches any decimal digit in the ASCII character set;

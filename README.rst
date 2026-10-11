@@ -91,7 +91,7 @@ For example::
 (This will fail if you *also* built at the top-level directory.  You should do
 a ``make clean`` at the top-level first.)
 
-To get an optimized build of Python, ``configure --enable-optimizations``
+To get an optimized build of Python, run ``configure --enable-optimizations``
 before you run ``make``.  This sets the default make targets up to enable
 Profile Guided Optimization (PGO) and may be used to auto-enable Link Time
 Optimization (LTO) on some platforms.  For more details, see the sections

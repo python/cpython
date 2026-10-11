@@ -1,0 +1,3 @@
+Reading from the console on Windows now continues if the read was cancelled
+by Ctrl+C, but the :const:`~signal.SIGINT` handler did not raise an
+exception.  Previously the read ended as if at end of file.
