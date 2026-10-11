@@ -13,6 +13,7 @@ import os
 import tabnanny
 import time
 import tokenize
+import traceback
 
 from tkinter import messagebox
 
@@ -94,14 +95,19 @@ class ScriptBinding:
             # If successful, return the compiled code
             return compile(source, filename, "exec")
         except SyntaxError as value:
-            msg = value.msg or "<no detail available>"
             lineno = value.lineno or 1
             offset = value.offset or 0
             if offset == 0:
                 lineno += 1  #mark end of offending line
             pos = "0.0 + %d lines + %d chars" % (lineno-1, offset-1)
             editwin.colorize_syntax_error(text, pos)
-            self.errorbox(type(value).__name__, msg)
+
+            shell.stderr.write(
+                ''.join(traceback.format_exception_only(value))
+            )
+            shell.text.see("end")
+            shell.top.lift()
+            shell.text.focus_set()
             return False
         except Exception as value:
             msg = str(value) or "<no detail available>"

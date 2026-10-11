@@ -62,6 +62,44 @@ class ScriptBindingTest(unittest.TestCase):
         interp.runcode.assert_not_called()
         ew._close()
 
+    def test_checksyntax_reports_error_in_shell(self):
+        ew = EditorWindow(root=self.root)
+        self.addCleanup(ew._close)
+
+        sb = runscript.ScriptBinding(ew)
+        shell = mock.Mock()
+        sb.flist = mock.Mock()
+        sb.flist.open_shell.return_value = shell
+
+        source = b"def hello()\n    print('hello')\n"
+
+        with (
+            mock.patch("builtins.open", mock.mock_open(read_data=source)),
+            mock.patch.object(sb, "errorbox") as errorbox,
+            mock.patch.object(ew, "colorize_syntax_error") as colorize,
+        ):
+            result = sb.checksyntax("example.py")
+        self.assertFalse(result)
+
+        # The Shell receives the complete syntax diagnostic.
+        output = ''.join(
+            call.args[0] for call in shell.stderr.write.call_args_list
+        )
+        self.assertIn("example.py", output)
+        self.assertIn("line 1", output)
+        self.assertIn("def hello()", output)
+        self.assertIn("^", output)
+        self.assertIn("SyntaxError: expected ':'", output)
+
+        # No modal error dialog.
+        errorbox.assert_not_called()
+
+        # Preserve error highlighting in the editor.
+        colorize.assert_called_once()
+        # Make the Shell visible and focus it.
+        shell.top.lift.assert_called_once()
+        shell.text.focus_set.assert_called_once()
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
