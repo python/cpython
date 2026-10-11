@@ -290,9 +290,18 @@ typedef struct {
     size_t pending_rle_samples;
 } ThreadEntry;
 
+/* Limit errors occur before emitting an incomplete sample. Other write
+ * failures may leave partial records and must prevent finalization. */
+typedef enum {
+    BINARY_WRITER_OPEN,
+    BINARY_WRITER_LIMIT_REACHED,
+    BINARY_WRITER_BROKEN,
+} BinaryWriterState;
+
 /* Main binary writer structure */
 typedef struct {
     FILE *fp;
+    BinaryWriterState state;
 
     /* Write buffer for batched I/O */
     uint8_t *write_buffer;
