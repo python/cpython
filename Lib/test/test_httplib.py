@@ -398,6 +398,19 @@ class HeaderTests(TestCase):
                 with self.assertRaisesRegex(ValueError, 'Invalid header'):
                     conn._tunnel()  # Called in .connect()
 
+    def test_tunnel_headers_are_converted_to_strings(self):
+        conn = client.HTTPConnection('example.com')
+        conn.set_tunnel('tunnel', headers={
+            'None-Value': None,
+            'Integer-Value': 42,
+        })
+        conn.sock = FakeSocket('HTTP/1.1 200 Connection established\r\n\r\n')
+
+        conn._tunnel()  # Called in .connect()
+
+        self.assertIn(b'None-Value: None\r\n', conn.sock.data)
+        self.assertIn(b'Integer-Value: 42\r\n', conn.sock.data)
+
     def test_invalid_tunnel_host(self):
         cases = (
             'invalid\r.host',

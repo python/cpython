@@ -372,6 +372,8 @@ HTTPConnection Objects
    The *headers* argument should be a mapping of extra HTTP headers to send with
    the CONNECT request.
 
+   Header values in the mapping are converted to strings before they are sent.
+
    As HTTP/1.1 is used for HTTP CONNECT tunnelling request, `as per the RFC
    <https://datatracker.ietf.org/doc/html/rfc7231#section-4.3.6>`_, a HTTP ``Host:``
    header must be provided, matching the authority-form of the request target
