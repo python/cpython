@@ -562,6 +562,29 @@ class BugsTestCase(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "unmarshallable object"):
                     marshal.dumps((arg, memoryview(b'')))
 
+    def test_set_changed_size(self):
+        # A set is modified while its items are being marshalled.
+        class Item:
+            def __hash__(self):
+                return 0
+            def __buffer__(self, flags):
+                change(sample)
+                return memoryview(b'abc')
+        def grow(sample):
+            sample.update(range(1000, 1400))
+        def shrink(sample):
+            sample.difference_update(range(1, 60))
+        for change in grow, shrink:
+            for version in range(marshal.version + 1):
+                with self.subTest(change=change.__name__, version=version):
+                    # The first item of the set modifies it.
+                    sample = {Item()}
+                    sample.update(range(1, 60))
+                    self.assertIsInstance(next(iter(sample)), Item)
+                    with self.assertRaisesRegex(RuntimeError,
+                                                "set changed size"):
+                        marshal.dumps(sample, version)
+
 
 LARGE_SIZE = 2**31
 pointer_size = 8 if sys.maxsize > 0xFFFFFFFF else 4
