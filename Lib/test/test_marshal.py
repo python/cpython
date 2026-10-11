@@ -597,13 +597,44 @@ class BugsTestCase(unittest.TestCase):
                                             "cannot marshal type objects"):
                     marshal.dumps((arg, memoryview(b'')))
 
-    def test_error_in_set_item(self):
-        # Set items are sorted by their marshalled representation, and NaNs
-        # are only distinguished by identity, so they are compared as
-        # complex numbers.
+    def test_unorderable_set_items(self):
+        # Set items are sorted by their marshalled representation, they
+        # are not compared, even if NaNs which are distinct objects have
+        # the same marshalled representation.
         nan = float('nan')
-        with self.assertRaisesRegex(TypeError, "'<' not supported"):
-            marshal.dumps({complex(nan, 0), complex(nan, 0)})
+        for kind in set, frozenset:
+            for version in range(marshal.version + 1):
+                with self.subTest(kind=kind, version=version):
+                    sample = kind([complex(nan, 0), complex(nan, 0), 1j,
+                                   (complex(nan, 0),), (complex(nan, 0),),
+                                   float('nan'), float('nan')])
+                    self.assertEqual(len(sample), 7)
+                    new = marshal.loads(marshal.dumps(sample, version))
+                    self.assertIs(type(new), kind)
+                    self.assertEqual(sorted(map(repr, new)),
+                                     sorted(map(repr, sample)))
+
+
+    def test_unorderable_set_items_in_code(self):
+        # A constant set containing NaNs which are distinct objects.
+        # Run in a subprocess: constants of code objects are immortal
+        # in the free-threaded build.
+        script = textwrap.dedent("""
+            import marshal
+            source = 'x in {(1e999-1e999)*1j, (1e999-1e999)*2j, 1.5}'
+            code = compile(source, '<marshal test>', 'eval')
+            def consts(code):
+                return [sorted(map(repr, x)) if isinstance(x, frozenset) else x
+                        for x in code.co_consts]
+            assert ['(nan+nanj)', '(nan+nanj)', '1.5'] in consts(code)
+            for version in range(marshal.version + 1):
+                new = marshal.loads(marshal.dumps(code, version))
+                assert new.co_code == code.co_code
+                assert consts(new) == consts(code)
+                assert eval(new, {'x': 1.5}) is True
+                assert eval(new, {'x': complex('nan')}) is False
+            """)
+        assert_python_ok('-c', script)
 
     def test_set_changed_size(self):
         # A set is modified while its items are being marshalled.
