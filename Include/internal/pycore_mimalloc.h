@@ -26,6 +26,9 @@ typedef enum {
 #  define MI_DEBUG_UNINIT     PYMEM_CLEANBYTE
 #  define MI_DEBUG_FREED      PYMEM_DEADBYTE
 #  define MI_DEBUG_PADDING    PYMEM_FORBIDDENBYTE
+// Do not use transparent huge pages (THP). They increase RSS on Linux.
+// See https://github.com/microsoft/mimalloc/blob/v2.5.2/readme.md#environment-options
+#  define MI_NO_THP 1
 #ifdef Py_DEBUG
 #  define MI_DEBUG 2
 #else
