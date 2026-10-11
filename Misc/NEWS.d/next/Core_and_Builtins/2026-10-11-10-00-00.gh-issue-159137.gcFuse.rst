@@ -1,0 +1,3 @@
+Speed up full collections of the garbage collector: the reference counts are
+copied and the references between the collected objects subtracted in a
+single walk of the generation.

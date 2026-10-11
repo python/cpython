@@ -101,6 +101,12 @@ gc_decref(PyGC_Head *g)
 
 #define GEN_HEAD(gcstate, n) (&(gcstate)->generations[n].head)
 
+/* Set once an object can be tracked outside the generations of the
+ * interpreter that looks at it: another interpreter exists, or one was
+ * finalized with objects left.
+ */
+static int gc_foreign_objects;
+
 
 static GCState *
 get_gc_state(void)
@@ -135,6 +141,9 @@ _PyGC_Init(PyInterpreterState *interp)
 {
     GCState *gcstate = &interp->gc;
 
+    if (!_Py_IsMainInterpreter(interp)) {
+        _Py_atomic_store_int_relaxed(&gc_foreign_objects, 1);
+    }
     gcstate->generation_stats = PyMem_RawCalloc(1, sizeof(struct gc_stats));
     if (gcstate->generation_stats == NULL) {
         return _PyStatus_NO_MEMORY();
@@ -456,6 +465,30 @@ visit_decref(PyObject *op, void *parent)
     return 0;
 }
 
+/* A traversal callback for update_and_subtract_refs(), where every tracked
+ * object is in the list being collected.  If the walk has not reached op yet,
+ * its _gc_prev still holds a pointer, and the walk recovers the decrements
+ * from the difference with the pointer that it knows was there.
+ */
+static int
+visit_decref_tracked(PyObject *op, void *parent)
+{
+    OBJECT_STAT_INC(object_visits);
+    _PyObject_ASSERT(_PyObject_CAST(parent), !_PyObject_IsFreed(op));
+
+    if (_PyObject_IS_GC(op)) {
+        PyGC_Head *gc = AS_GC(op);
+        if (gc->_gc_next != 0) {
+            _PyObject_ASSERT_WITH_MSG(op,
+                                      gc_get_refs(gc) > 0
+                                      || !gc_is_collecting(gc),
+                                      "refcount is too small");
+            gc->_gc_prev -= 1 << _PyGC_PREV_SHIFT;
+        }
+    }
+    return 0;
+}
+
 int
 _PyGC_VisitStackRef(_PyStackRef *ref, visitproc visit, void *arg)
 {
@@ -463,7 +496,9 @@ _PyGC_VisitStackRef(_PyStackRef *ref, visitproc visit, void *arg)
     // refcounts when computing the incoming references, but otherwise treat
     // them like normal.
     assert(!PyStackRef_IsTaggedInt(*ref));
-    if (!PyStackRef_RefcountOnObject(*ref) && (visit == visit_decref)) {
+    if (!PyStackRef_RefcountOnObject(*ref)
+        && (visit == visit_decref || visit == visit_decref_tracked))
+    {
         return 0;
     }
     Py_VISIT(PyStackRef_AsPyObjectBorrow(*ref));
@@ -499,6 +534,53 @@ subtract_refs(PyGC_Head *containers)
                         visit_decref,
                         op);
     }
+}
+
+/* update_refs() and subtract_refs() in one walk, for a list that holds every
+ * tracked object.  visit_decref_tracked() then needs no flag to recognise a
+ * candidate, so an object can be decremented before the walk gets to it.
+ */
+static Py_ssize_t
+update_and_subtract_refs(PyGC_Head *containers)
+{
+    PyGC_Head *prev = containers;   /* last object left in the list */
+    PyGC_Head *gc = GC_NEXT(containers);
+    uintptr_t orig_prev = (uintptr_t)containers;
+    Py_ssize_t candidates = 0;
+
+    while (gc != containers) {
+        PyGC_Head *next = GC_NEXT(gc);
+        PyObject *op = FROM_GC(gc);
+        if (_Py_IsImmortal(op)) {
+            assert(!_Py_IsStaticImmortal(op));
+            // Not _PyObject_GC_UNTRACK(): _gc_prev of next may hold
+            // decrements.
+            _PyGCHead_SET_NEXT(prev, next);
+            gc->_gc_next = 0;
+            gc->_gc_prev &= _PyGC_PREV_MASK_FINALIZED;
+            get_gc_state()->heap_size--;
+        }
+        else {
+            /* _gc_prev is orig_prev plus the flags, minus the decrements
+             * that came before the walk. */
+            uintptr_t word = gc->_gc_prev;
+            gc->_gc_prev = (((uintptr_t)Py_REFCNT(op) << _PyGC_PREV_SHIFT)
+                            + (word & _PyGC_PREV_MASK) - orig_prev)
+                | (word & _PyGC_PREV_MASK_FINALIZED)
+                | PREV_MASK_COLLECTING;
+            // See update_refs() for a refcount of 0.
+            _PyObject_ASSERT(op, Py_REFCNT(op) != 0);
+            _PyObject_ASSERT_WITH_MSG(op, gc_get_refs(gc) <= Py_REFCNT(op),
+                                      "refcount is too small");
+            (void) Py_TYPE(op)->tp_traverse(op, visit_decref_tracked, op);
+            prev = gc;
+            candidates++;
+        }
+        orig_prev = (uintptr_t)gc;
+        gc = next;
+    }
+    containers->_gc_prev = (uintptr_t)prev;
+    return candidates;
 }
 
 /* A traversal callback for move_unreachable. */
@@ -1175,15 +1257,21 @@ flag is cleared (for example, by using 'clear_unreachable_mask' function or
 by a call to 'move_legacy_finalizers'), the 'unreachable' list is not a normal
 list and we can not use most gc_list_* functions for it. */
 static inline Py_ssize_t
-deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
+deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable, bool all_tracked) {
     validate_list(base, collecting_clear_unreachable_clear);
     /* Using ob_refcnt and gc_refs, calculate which objects in the
      * container set are reachable from outside the set (i.e., have a
      * refcount greater than 0 when all the references within the
      * set are taken into account).
      */
-    Py_ssize_t candidates = update_refs(base);  // gc_prev is used for gc_refs
-    subtract_refs(base);
+    Py_ssize_t candidates;  // gc_prev is used for gc_refs
+    if (all_tracked) {
+        candidates = update_and_subtract_refs(base);
+    }
+    else {
+        candidates = update_refs(base);
+        subtract_refs(base);
+    }
 
     /* Leave everything reachable from outside base in base, and move
      * everything else (in base) to unreachable.
@@ -1252,7 +1340,7 @@ handle_resurrected_objects(PyGC_Head *unreachable, PyGC_Head* still_unreachable,
     // have the PREV_MARK_COLLECTING set, but the objects are going to be
     // removed so we can skip the expense of clearing the flag.
     PyGC_Head* resurrected = unreachable;
-    deduce_unreachable(resurrected, still_unreachable);
+    deduce_unreachable(resurrected, still_unreachable, false);
     clear_unreachable_mask(still_unreachable);
 
     // Move the resurrected objects to the old generation for future collection.
@@ -1521,7 +1609,12 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     }
     validate_list(old, collecting_clear_unreachable_clear);
 
-    stats.candidates = deduce_unreachable(young, &unreachable);
+    /* A full collection with nothing frozen examines every tracked object,
+     * unless some are in no generation of this interpreter. */
+    bool all_tracked = (generation == NUM_GENERATIONS - 1
+                        && gc_list_is_empty(&gcstate->permanent_generation.head)
+                        && !_Py_atomic_load_int_relaxed(&gc_foreign_objects));
+    stats.candidates = deduce_unreachable(young, &unreachable, all_tracked);
 
     untrack_tuples(young);
     /* Move reachable objects to next generation. */
@@ -1892,6 +1985,9 @@ _PyGC_DumpShutdownStats(PyInterpreterState *interp)
 
 static void
 finalize_unlink_gc_head(PyGC_Head *gc) {
+    if (!gc_list_is_empty(gc)) {
+        _Py_atomic_store_int_relaxed(&gc_foreign_objects, 1);
+    }
     PyGC_Head *prev = GC_PREV(gc);
     PyGC_Head *next = GC_NEXT(gc);
     _PyGCHead_SET_NEXT(prev, next);

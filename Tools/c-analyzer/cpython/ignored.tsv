@@ -61,6 +61,9 @@ Python/parking_lot.c	-	buckets	-
 ## shared empty sentinel for the per-type method cache
 Python/typecache.c	-	empty_cache	-
 
+## set at most once (atomically), outlives runtime finalization on purpose
+Python/gc.c	-	gc_foreign_objects	-
+
 ## data needed for introspecting asyncio state from debuggers and profilers
 Modules/_asynciomodule.c	-	_Py_AsyncioDebug	-
 
