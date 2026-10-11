@@ -6481,6 +6481,27 @@ class TestUnixDomain(unittest.TestCase):
         self.sock.bind('')
         self.assertEqual(self.sock.getsockname(), '')
 
+    @unittest.skipUnless(sys.platform == 'win32',
+                         'Windows-specific behavior')
+    def test_dgram_on_windows(self):
+        # Windows only supports SOCK_STREAM for AF_UNIX.
+        with self.assertRaises(OSError) as cm:
+            socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+        self.assertEqual(cm.exception.winerror, errno.WSAEAFNOSUPPORT)
+
+    @unittest.skipUnless(sys.platform == 'win32',
+                         'Windows-specific behavior')
+    def test_abstract_namespace_on_windows(self):
+        # Windows does not support the abstract namespace: binding
+        # succeeds, but nothing can connect to the socket.
+        address = b'\x00python-test-hello'
+        self.sock.bind(address)
+        self.sock.listen()
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as cli:
+            with self.assertRaises(OSError) as cm:
+                cli.connect(address)
+            self.assertEqual(cm.exception.winerror, errno.WSAEINVAL)
+
 
 class BufferIOTest(SocketConnectedTest):
     """
