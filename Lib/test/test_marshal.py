@@ -617,7 +617,6 @@ class BugsTestCase(unittest.TestCase):
                     self.assertEqual(sorted(map(repr, new)),
                                      sorted(map(repr, sample)))
 
-
     def test_unorderable_set_items_in_code(self):
         # A constant set containing NaNs which are distinct objects.
         # Run in a subprocess: constants of code objects are immortal
@@ -661,7 +660,6 @@ class BugsTestCase(unittest.TestCase):
                     with self.assertRaisesRegex(RuntimeError,
                                                 "set changed size"):
                         marshal.dumps(sample, version)
-
 
     def test_error_in_buffer(self):
         # The BufferError raised for a non-contiguous buffer is not replaced
@@ -1238,7 +1236,8 @@ class ReferenceTestCase(unittest.TestCase):
                     nan1 = float('nan')
                     nan2 = float('nan')
                     nan3 = float('nan')
-                    s = kind([nan1, 1.5, nan2, nan3])
+                    s = kind([nan1, 1.5, nan2, nan3,
+                              complex('nan'), complex('nan')])
                     for sample in (s, [s], [nan1, s], [s, nan2],
                                    [nan3, s, nan1], [nan1, nan2, nan3, s],
                                    [s, s], (nan2, [s, nan2], s)):
@@ -1246,6 +1245,59 @@ class ReferenceTestCase(unittest.TestCase):
                         self.assertEqual(marshal.dumps(sample, version), data)
                         new = marshal.loads(data)
                         self.check_same_structure(new, sample, version >= 3)
+
+    @support.cpython_only
+    def test_nan_in_set_order(self):
+        # The output does not depend on the order of the elements of a set
+        # which have the same marshalled representation, even if some of
+        # them are also referenced elsewhere.
+        version = self.VERSION
+        def flagged(data):
+            data = bytearray(data)
+            data[0] |= self.FLAG_REF
+            return bytes(data)
+        def ref(index):
+            return b'r' + struct.pack('<i', index)
+        keep = []
+        for make_nan in (lambda: float('nan'), lambda: complex('nan')):
+            data = marshal.dumps(make_nan(), version)
+            fdata = flagged(data)
+            data15 = marshal.dumps(1.5, version)
+            for kind, typecode in (set, b'<'), (frozenset, b'>'):
+                head = typecode + b'\4\0\0\0' + data15
+                for i in range(20):
+                    # Different objects at different addresses every time.
+                    keep.append(bytes(i * 8))
+                    nans = [make_nan() for j in range(3)]
+                    keep.append(nans)
+                    s = kind([1.5, *nans])
+                    a, b, c = nans[i % 3:] + nans[:i % 3]
+                    for sample, expected in [
+                        (s, head + data * 3),
+                        ([s, a],
+                         b'[\2\0\0\0' + head + fdata + data * 2 + ref(0)),
+                        ([a, s],
+                         b'[\2\0\0\0' + fdata + head + ref(0) + data * 2),
+                        ([s, a, b, a],
+                         b'[\4\0\0\0' + head + fdata * 2 + data +
+                         ref(0) + ref(1) + ref(0)),
+                        ([a, b, s, c],
+                         b'[\4\0\0\0' + fdata * 2 + head + ref(0) + ref(1) +
+                         flagged(data) + ref(2)),
+                        ([b, s, c, a, kind([a, b, c])],
+                         b'[\5\0\0\0' + fdata + head + ref(0) + fdata * 2 +
+                         ref(1) + ref(2) + typecode + b'\3\0\0\0' +
+                         ref(0) + ref(1) + ref(2)),
+                        ([s, kind([b, a]), kind([c, make_nan()]), b, a, c],
+                         b'[\6\0\0\0' + head + fdata * 3 +
+                         typecode + b'\2\0\0\0' + ref(0) + ref(1) +
+                         typecode + b'\2\0\0\0' + ref(2) + data +
+                         ref(0) + ref(1) + ref(2)),
+                    ]:
+                        self.assertEqual(marshal.dumps(sample, version),
+                                         expected)
+                        new = marshal.loads(expected)
+                        self.check_same_structure(new, sample, True)
 
     def check_same_structure(self, new, sample, shared):
         # Both object graphs have the same values and, if shared is true,
@@ -1261,7 +1313,7 @@ class ReferenceTestCase(unittest.TestCase):
                 if shared:
                     return seen.get(id(x), -1)
             def visit(x):
-                if isinstance(x, float):
+                if isinstance(x, (float, complex)):
                     result.append((repr(x), number(x)))
                 elif isinstance(x, (set, frozenset)):
                     # Elements are only numbered if they occur elsewhere.
