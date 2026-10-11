@@ -8,7 +8,7 @@
 #include "../../Python/ceval.h"
 
 #include "../../Python/ceval_macros.h"
-#include "pycore_ceval_opcode_targets.h"
+#include "../../Include/internal/pycore_ceval_opcode_targets.h"
 
 #undef IS_PEP523_HOOKED
 #define IS_PEP523_HOOKED(tstate) (tstate->interp->eval_frame != NULL && !tstate->interp->eval_frame_allow_specialization)
