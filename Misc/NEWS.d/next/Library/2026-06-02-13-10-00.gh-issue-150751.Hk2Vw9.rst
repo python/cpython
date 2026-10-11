@@ -1,0 +1,5 @@
+:mod:`http.client` now validates the ``Content-Length`` header and the
+chunked ``chunk-size`` against the RFC 9112 grammar (``1*DIGIT`` and
+``1*HEXDIG``) before parsing them, rejecting values such as ``+5``, ``5_0``
+or a ``0x``-prefixed or negative chunk size that :func:`int` would otherwise
+accept. This avoids framing a response differently from a strict peer.

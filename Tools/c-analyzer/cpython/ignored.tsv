@@ -465,6 +465,13 @@ Modules/_testcapi/datetime.c	-	test_run_counter	-
 Modules/_testcapi/docstring.c	-	DocStringNoSignatureTest	-
 Modules/_testcapi/docstring.c	-	DocStringUnrepresentableSignatureTest	-
 Modules/_testcapi/exceptions.c	-	PyRecursingInfinitelyError_Type	-
+Modules/_testcapi/fpcast.c	-	last_set_value	-
+Modules/_testcapi/fpcast.c	-	FpcastTestType	-
+Modules/_testcapi/fpcast.c	-	FpcastCallable0	-
+Modules/_testcapi/fpcast.c	-	FpcastCallable1	-
+Modules/_testcapi/fpcast.c	-	FpcastCallable2	-
+Modules/_testcapi/fpcast.c	-	FpcastCallable3	-
+Modules/_testcapi/fpcast.c	-	FpcastCallable4	-
 Modules/_testcapi/heaptype.c	-	_testcapimodule	-
 Modules/_testcapi/mem.c	-	FmData	-
 Modules/_testcapi/mem.c	-	FmHook	-

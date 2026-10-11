@@ -1542,11 +1542,19 @@ move_legacy_finalizer_reachable(struct collection_state *state)
 // or missing `tp_traverse` methods.  When that object goes away, the callback
 // for weakref can be executed and that could reveal unreachable objects to
 // Python-level code.  See bpo-38006 as an example bug.
-static void
-find_weakref_callbacks(struct collection_state *state)
+static bool
+prepare_finalization(struct collection_state *state,
+                     bool *needs_resurrection_check)
 {
+    bool has_finalizers = false;
     PyObject *op;
     WORKSTACK_FOR_EACH(&state->unreachable, op) {
+        if (!_PyGC_FINALIZED(op) && Py_TYPE(op)->tp_finalize != NULL) {
+            has_finalizers = true;
+            if (!_PyGen_FinalizerIsNoop(op)) {
+                *needs_resurrection_check = true;
+            }
+        }
         if (!_PyType_SUPPORTS_WEAKREFS(Py_TYPE(op))) {
             continue;
         }
@@ -1590,12 +1598,14 @@ find_weakref_callbacks(struct collection_state *state)
 
             // Enqueue weakref to be called later.
             worklist_push(&state->wrcb_to_call, (PyObject *)wr);
+            *needs_resurrection_check = true;
         }
     }
+    return has_finalizers;
 }
 
 // Clear weakrefs to objects in the unreachable set.  See comments
-// above find_weakref_callbacks() for why this clearing is required.
+// above prepare_finalization() for why this clearing is required.
 static void
 clear_weakrefs(struct collection_state *state)
 {
@@ -2132,29 +2142,40 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     gc_visit_heaps(interp, &validate_alive_bits, &state->base);
 #endif
 
+    // Deallocations after the refcount merge may run Python code.
+    bool needs_resurrection_check = state->objs_to_decref.head != 0;
+
     // Print debugging information.
     if (interp->gc.debug & _PyGC_DEBUG_COLLECTABLE) {
+        needs_resurrection_check = true;
         PyObject *op;
         WORKSTACK_FOR_EACH(&state->unreachable, op) {
             debug_cycle("collectable", op);
         }
     }
 
-    // Find weakref callbacks we will honor (but do not call them).
-    find_weakref_callbacks(state);
-    _PyEval_StartTheWorld(interp);
+    // Find weakref callbacks and pending finalizers (but do not call them).
+    bool has_finalizers = prepare_finalization(state, &needs_resurrection_check);
+    if (needs_resurrection_check) {
+        _PyEval_StartTheWorld(interp);
 
-    // Deallocate any object from the refcount merge step
-    cleanup_worklist(&state->objs_to_decref);
+        // Deallocate any object from the refcount merge step
+        cleanup_worklist(&state->objs_to_decref);
 
-    // Call weakref callbacks and finalizers after unpausing other threads to
-    // avoid potential deadlocks.
-    call_weakref_callbacks(state);
-    finalize_garbage(state);
+        // Call weakref callbacks and finalizers after unpausing other threads to
+        // avoid potential deadlocks.
+        call_weakref_callbacks(state);
+        finalize_garbage(state);
 
-    _PyEval_StopTheWorld(interp);
-    // Handle any objects that may have resurrected after the finalization.
-    err = handle_resurrected_objects(state);
+        _PyEval_StopTheWorld(interp);
+        // Handle any objects that may have resurrected after the finalization.
+        err = handle_resurrected_objects(state);
+    }
+    else if (has_finalizers) {
+        // Only no-op generator finalizers remain; keep other threads paused.
+        finalize_garbage(state);
+    }
+    // Otherwise, keep other threads paused so the unreachable set stays valid.
     // Clear free lists in all threads
     _PyGC_ClearAllFreeLists(interp);
     if (err == 0) {
