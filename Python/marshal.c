@@ -675,9 +675,13 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         // bpo-37596: To support reproducible builds, sets and frozensets need
         // to have their elements serialized in a consistent order (even when
         // they have been scrambled by hash randomization). To ensure this, we
-        // use an order equivalent to sorted(v, key=marshal.dumps):
-        PyObject *pairs = PyList_New(n);
-        if (pairs == NULL) {
+        // use an order equivalent to sorted(v, key=marshal.dumps).
+        // The list has a (dump, index, element) tuple for each element.
+        // The indexes are all different, so that sorting never compares
+        // two elements: elements with the same dump (NaNs which are
+        // distinct objects) may not be orderable.
+        PyObject *items = PyList_New(n);
+        if (items == NULL) {
             p->error = true;
             return;
         }
@@ -701,12 +705,19 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
                 Py_DECREF(value);
                 break;
             }
-            PyObject *pair = _PyTuple_FromPairSteal(dump, value);
-            if (pair == NULL) {
+            PyObject *index = PyLong_FromSsize_t(i);
+            PyObject *item = NULL;
+            if (index != NULL) {
+                item = PyTuple_Pack(3, dump, index, value);
+                Py_DECREF(index);
+            }
+            Py_DECREF(dump);
+            Py_DECREF(value);
+            if (item == NULL) {
                 p->error = true;
                 break;
             }
-            PyList_SET_ITEM(pairs, i++, pair);
+            PyList_SET_ITEM(items, i++, item);
         }
         Py_END_CRITICAL_SECTION();
         if (!p->error && (changed || i != n)) {
@@ -715,20 +726,20 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             p->error = true;
         }
         if (p->error) {
-            Py_DECREF(pairs);
+            Py_DECREF(items);
             return;
         }
-        if (PyList_Sort(pairs)) {
+        if (PyList_Sort(items)) {
             p->error = true;
-            Py_DECREF(pairs);
+            Py_DECREF(items);
             return;
         }
         for (Py_ssize_t i = 0; i < n; i++) {
-            PyObject *pair = PyList_GET_ITEM(pairs, i);
-            value = PyTuple_GET_ITEM(pair, 1);
+            PyObject *item = PyList_GET_ITEM(items, i);
+            value = PyTuple_GET_ITEM(item, 2);
             w_object(value, p);
         }
-        Py_DECREF(pairs);
+        Py_DECREF(items);
     }
     else if (PyCode_Check(v)) {
         if (!p->allow_code) {
