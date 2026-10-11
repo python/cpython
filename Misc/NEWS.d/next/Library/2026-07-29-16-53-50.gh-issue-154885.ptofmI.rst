@@ -1,0 +1,2 @@
+:func:`os.get_terminal_size` now checks ``isatty`` before calling ``ioctl``,
+which reduces log noise on Android.

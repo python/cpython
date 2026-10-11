@@ -10,7 +10,8 @@ extern "C" {
 #endif
 
 
-extern int _PyArg_NoKwnames(const char *funcname, PyObject *kwnames);
+// Export for 'array' shared extension
+PyAPI_FUNC(int) _PyArg_NoKwnames(const char *funcname, PyObject *kwnames);
 #define _PyArg_NoKwnames(funcname, kwnames) \
     ((kwnames) == NULL || _PyArg_NoKwnames((funcname), (kwnames)))
 

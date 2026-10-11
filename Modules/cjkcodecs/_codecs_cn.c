@@ -414,9 +414,9 @@ DECODER(hz)
         Py_UCS4 decoded;
 
         if (c == '~') {
+            REQUIRE_INBUF(2);
             unsigned char c2 = INBYTE2;
 
-            REQUIRE_INBUF(2);
             if (c2 == '~' && state->c[CN_STATE_OFFSET] == 0)
                 OUTCHAR('~');
             else if (c2 == '{' && state->c[CN_STATE_OFFSET] == 0)

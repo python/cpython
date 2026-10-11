@@ -1,0 +1,3 @@
+Fix cleanup on error in ``compiler_set_qualname``. Previously it was called in
+``_PyCompile_EnterScope``, after the scope had been entered, and this was not
+reversed in case of an error.

@@ -222,6 +222,33 @@ class FrameAttrsTest(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del f.f_lineno
 
+    def test_f_trace(self):
+        f, _, _ = self.make_frames()
+        def tracer(*args):
+            pass
+        for value in tracer, 42, None:
+            f.f_trace = value
+            self.assertEqual(f.f_trace, value)
+        f.f_trace = tracer
+        del f.f_trace
+        self.assertIsNone(f.f_trace)
+
+    def test_f_trace_lines_and_opcodes(self):
+        f, _, _ = self.make_frames()
+        for name in 'f_trace_lines', 'f_trace_opcodes':
+            with self.subTest(name=name):
+                for value in False, True:
+                    setattr(f, name, value)
+                    self.assertEqual(getattr(f, name), value)
+                with self.assertRaisesRegex(TypeError,
+                                            'attribute value type must be bool'):
+                    setattr(f, name, 1)
+        with self.assertRaisesRegex(TypeError,
+                                    "can't delete numeric/char attribute"):
+            del f.f_trace_lines
+        with self.assertRaisesRegex(AttributeError, 'cannot be deleted'):
+            del f.f_trace_opcodes
+
     def test_f_generator(self):
         # Test f_generator in different contexts.
 
@@ -821,28 +848,37 @@ class TestFrameCApi(unittest.TestCase):
     def test_basic(self):
         x = 1
         ctypes = import_helper.import_module('ctypes')
-        PyEval_GetFrameLocals = ctypes.pythonapi.PyEval_GetFrameLocals
-        PyEval_GetFrameLocals.restype = ctypes.py_object
+        import ctypes.util  # noqa: F811
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def PyEval_GetFrameLocals() -> ctypes.py_object:
+            pass
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def PyEval_GetFrameGlobals() -> ctypes.py_object:
+            pass
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def PyEval_GetFrameBuiltins() -> ctypes.py_object:
+            pass
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def PyFrame_GetLocals(frame: ctypes.py_object) -> ctypes.py_object:
+            pass
+
         frame_locals = PyEval_GetFrameLocals()
         self.assertTrue(type(frame_locals), dict)
         self.assertEqual(frame_locals['x'], 1)
         frame_locals['x'] = 2
         self.assertEqual(x, 1)
 
-        PyEval_GetFrameGlobals = ctypes.pythonapi.PyEval_GetFrameGlobals
-        PyEval_GetFrameGlobals.restype = ctypes.py_object
         frame_globals = PyEval_GetFrameGlobals()
         self.assertTrue(type(frame_globals), dict)
         self.assertIs(frame_globals, globals())
 
-        PyEval_GetFrameBuiltins = ctypes.pythonapi.PyEval_GetFrameBuiltins
-        PyEval_GetFrameBuiltins.restype = ctypes.py_object
         frame_builtins = PyEval_GetFrameBuiltins()
         self.assertEqual(frame_builtins, __builtins__)
 
-        PyFrame_GetLocals = ctypes.pythonapi.PyFrame_GetLocals
-        PyFrame_GetLocals.argtypes = [ctypes.py_object]
-        PyFrame_GetLocals.restype = ctypes.py_object
         frame = sys._getframe()
         f_locals = PyFrame_GetLocals(frame)
         self.assertTrue(f_locals['x'], 1)

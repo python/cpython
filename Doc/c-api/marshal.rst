@@ -16,6 +16,20 @@ Numeric values are stored with the least significant byte first.
 The module supports several versions of the data format; see
 the :py:mod:`Python module documentation <marshal>` for details.
 
+The following exceptions can be raised by these functions:
+:exc:`ValueError` if the value cannot be marshalled,
+:exc:`ValueError` or :exc:`TypeError` if the data is malformed,
+:exc:`EOFError` if the end of the data is reached before the value is complete,
+:exc:`OSError` if reading from or writing to a :c:expr:`FILE*` fails,
+:exc:`KeyboardInterrupt` if reading or writing is interrupted by a signal,
+and :exc:`MemoryError` if memory allocation fails.
+
+.. versionchanged:: next
+   Previously, in functions taking a :c:expr:`FILE*`,
+   the reading functions raised :exc:`EOFError`
+   instead of :exc:`OSError` and :exc:`KeyboardInterrupt`,
+   and the writing functions ignored I/O errors and interruptions.
+
 .. c:macro:: Py_MARSHAL_VERSION
 
    The current format version. See :py:data:`marshal.version`.
@@ -42,6 +56,8 @@ the :py:mod:`Python module documentation <marshal>` for details.
    Return a bytes object containing the marshalled representation of *value*.
    *version* indicates the file format.
 
+   On error, raises an exception and returns ``NULL``.
+
 
 The following functions allow marshalled values to be read back in.
 
@@ -52,8 +68,7 @@ The following functions allow marshalled values to be read back in.
    for reading.  Only a 32-bit value can be read in using this function,
    regardless of the native size of :c:expr:`long`.
 
-   On error, sets the appropriate exception (:exc:`EOFError`) and returns
-   ``-1``.
+   On error, raises an exception and returns ``-1``.
 
 
 .. c:function:: int PyMarshal_ReadShortFromFile(FILE *file)
@@ -62,8 +77,7 @@ The following functions allow marshalled values to be read back in.
    for reading.  Only a 16-bit value can be read in using this function,
    regardless of the native size of :c:expr:`short`.
 
-   On error, sets the appropriate exception (:exc:`EOFError`) and returns
-   ``-1``.
+   On error, raises an exception and returns ``-1``.
 
 
 .. c:function:: PyObject* PyMarshal_ReadObjectFromFile(FILE *file)
@@ -71,8 +85,7 @@ The following functions allow marshalled values to be read back in.
    Return a Python object from the data stream in a :c:expr:`FILE*` opened for
    reading.
 
-   On error, sets the appropriate exception (:exc:`EOFError`, :exc:`ValueError`
-   or :exc:`TypeError`) and returns ``NULL``.
+   On error, raises an exception and returns ``NULL``.
 
 
 .. c:function:: PyObject* PyMarshal_ReadLastObjectFromFile(FILE *file)
@@ -85,8 +98,7 @@ The following functions allow marshalled values to be read back in.
    file.  Only use this variant if you are certain that you won't be reading
    anything else from the file.
 
-   On error, sets the appropriate exception (:exc:`EOFError`, :exc:`ValueError`
-   or :exc:`TypeError`) and returns ``NULL``.
+   On error, raises an exception and returns ``NULL``.
 
 
 .. c:function:: PyObject* PyMarshal_ReadObjectFromString(const char *data, Py_ssize_t len)
@@ -94,6 +106,5 @@ The following functions allow marshalled values to be read back in.
    Return a Python object from the data stream in a byte buffer
    containing *len* bytes pointed to by *data*.
 
-   On error, sets the appropriate exception (:exc:`EOFError`, :exc:`ValueError`
-   or :exc:`TypeError`) and returns ``NULL``.
+   On error, raises an exception and returns ``NULL``.
 

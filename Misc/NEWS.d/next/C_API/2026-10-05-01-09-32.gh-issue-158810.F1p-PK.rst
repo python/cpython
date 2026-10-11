@@ -1,0 +1,2 @@
+Fix :c:macro:`Py_ARRAY_LENGTH()` macro on C++: do not use
+``__builtin_types_compatible_p()`` on C++. Patch by Victor Stinner.

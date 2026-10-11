@@ -1,0 +1,6 @@
+Doctests run by the :mod:`unittest` test runner now report every example, as
+in verbose mode, if the runner reports more than the test names, i.e. its
+verbosity is 3 or higher.  The :option:`!-v` option of :mod:`unittest` can now
+be repeated, so ``python -m unittest -vv`` asks for this.  Added also the
+:attr:`~unittest.TestResult.verbosity` attribute of
+:class:`unittest.TestResult`.

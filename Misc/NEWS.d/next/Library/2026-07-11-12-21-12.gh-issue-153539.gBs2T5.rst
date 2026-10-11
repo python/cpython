@@ -1,0 +1,3 @@
+Fix a crash in the C implementation of :meth:`io.TextIOWrapper.tell` when the
+decoder's ``getstate`` method triggers a reentrant seek, or when another thread
+seeks the same stream concurrently. Patch by tonghuaroot.

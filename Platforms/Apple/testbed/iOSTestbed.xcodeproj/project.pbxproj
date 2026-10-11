@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		607A66172B0EFA380010BFC8 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 607A66162B0EFA380010BFC8 /* AppDelegate.m */; };
+		71CB095279CCE565BAFB69C3 /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = D995ADFDE8B3EF5DDEB37874 /* SceneDelegate.m */; };
 		607A66222B0EFA390010BFC8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 607A66212B0EFA390010BFC8 /* Assets.xcassets */; };
 		607A66252B0EFA390010BFC8 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 607A66232B0EFA390010BFC8 /* LaunchScreen.storyboard */; };
 		607A66282B0EFA390010BFC8 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 607A66272B0EFA390010BFC8 /* main.m */; };
@@ -59,6 +60,8 @@
 		607A66122B0EFA380010BFC8 /* iOSTestbed.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iOSTestbed.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		607A66152B0EFA380010BFC8 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		607A66162B0EFA380010BFC8 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		83DC5E71F9D64737365A3BE4 /* SceneDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SceneDelegate.h; sourceTree = "<group>"; };
+		D995ADFDE8B3EF5DDEB37874 /* SceneDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SceneDelegate.m; sourceTree = "<group>"; };
 		607A66212B0EFA390010BFC8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		607A66242B0EFA390010BFC8 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		607A66272B0EFA390010BFC8 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
@@ -120,6 +123,8 @@
 				607A66592B0F08600010BFC8 /* iOSTestbed-Info.plist */,
 				607A66152B0EFA380010BFC8 /* AppDelegate.h */,
 				607A66162B0EFA380010BFC8 /* AppDelegate.m */,
+				83DC5E71F9D64737365A3BE4 /* SceneDelegate.h */,
+				D995ADFDE8B3EF5DDEB37874 /* SceneDelegate.m */,
 				607A66212B0EFA390010BFC8 /* Assets.xcassets */,
 				607A66232B0EFA390010BFC8 /* LaunchScreen.storyboard */,
 				607A66272B0EFA390010BFC8 /* main.m */,
@@ -270,6 +275,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				607A66172B0EFA380010BFC8 /* AppDelegate.m in Sources */,
+				71CB095279CCE565BAFB69C3 /* SceneDelegate.m in Sources */,
 				607A66282B0EFA390010BFC8 /* main.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -356,7 +362,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -411,7 +417,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -437,7 +443,7 @@
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -468,7 +474,7 @@
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -491,7 +497,7 @@
 				DEVELOPMENT_TEAM = 3HEZE76D99;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = "\"$(BUILT_PRODUCTS_DIR)/Python.framework/Headers\"";
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.python.iOSTestbedTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -511,7 +517,7 @@
 				DEVELOPMENT_TEAM = 3HEZE76D99;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = "\"$(BUILT_PRODUCTS_DIR)/Python.framework/Headers\"";
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.python.iOSTestbedTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";

@@ -306,6 +306,25 @@ void _PyEval_DTraceFunctionReturn(_PyInterpreterFrame *);
 #define ADAPTIVE_COUNTER_TRIGGERS(COUNTER) \
     backoff_counter_triggers(forge_backoff_counter((COUNTER)))
 
+#ifdef Py_GIL_DISABLED
+/* Counters are unreachable when thread-local bytecode is disabled,
+ * so there is no need to update them. */
+#define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
+    do { \
+        _Py_BackoffCounter cnt = (COUNTER); \
+        if (!backoff_counter_is_unreachable(cnt)) { \
+            (COUNTER) = advance_backoff_counter(cnt); \
+        } \
+    } while (0);
+
+#define PAUSE_ADAPTIVE_COUNTER(COUNTER) \
+    do { \
+        _Py_BackoffCounter cnt = (COUNTER); \
+        if (!backoff_counter_is_unreachable(cnt)) { \
+            (COUNTER) = pause_backoff_counter(cnt); \
+        } \
+    } while (0);
+#else
 #define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
     do { \
         (COUNTER) = advance_backoff_counter((COUNTER)); \
@@ -315,6 +334,7 @@ void _PyEval_DTraceFunctionReturn(_PyInterpreterFrame *);
     do { \
         (COUNTER) = pause_backoff_counter((COUNTER)); \
     } while (0);
+#endif
 
 #ifdef ENABLE_SPECIALIZATION
 /* Multiple threads may execute these concurrently if thread-local bytecode is

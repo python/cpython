@@ -805,7 +805,7 @@ class BigmemTclTest(unittest.TestCase):
 
     @support.cpython_only
     @unittest.skipUnless(INT_MAX < PY_SSIZE_T_MAX, "needs UINT_MAX < SIZE_MAX")
-    @support.bigmemtest(size=INT_MAX + 1, memuse=2, dry_run=False)
+    @support.bigmemtest(size=INT_MAX + 1, memuse=3, dry_run=False)
     def test_huge_string_builtins(self, size):
         tk = self.interp.tk
         value = '1' + ' ' * size

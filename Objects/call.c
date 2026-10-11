@@ -612,18 +612,70 @@ _PyObject_CallFunction_SizeT(PyObject *callable, const char *format, ...)
 }
 
 
-static PyObject*
-callmethod(PyThreadState *tstate, PyObject* callable, const char *format, va_list va)
+static PyObject *
+callmethod(PyThreadState *tstate, PyObject *obj, PyObject *name,
+           const char *format, va_list va)
 {
-    assert(callable != NULL);
+    PyObject *result = NULL;
+
+    _PyCStackRef self, method;
+    _PyThreadState_PushCStackRef(tstate, &self);
+    _PyThreadState_PushCStackRef(tstate, &method);
+    self.ref = PyStackRef_FromPyObjectBorrow(obj);
+
+    int res = _PyObject_GetMethodStackRef(tstate, &self.ref, name, &method.ref);
+    if (res < 0) {
+        goto exit;
+    }
+
+    PyObject *callable = PyStackRef_AsPyObjectBorrow(method.ref);
+    PyObject *self_obj = PyStackRef_AsPyObjectBorrow(self.ref);
+
     if (!PyCallable_Check(callable)) {
         _PyErr_Format(tstate, PyExc_TypeError,
                       "attribute of type '%.200s' is not callable",
                       Py_TYPE(callable)->tp_name);
-        return NULL;
+        goto exit;
     }
 
-    return _PyObject_CallFunctionVa(tstate, callable, format, va);
+    /* Build the positional arguments from the format string. */
+    PyObject *small_stack[_PY_FASTCALL_SMALL_STACK];
+    Py_ssize_t nargs = 0;
+    PyObject **built = NULL;
+    if (format != NULL && *format != '\0') {
+        built = _Py_VaBuildStack(small_stack, _PY_FASTCALL_SMALL_STACK,
+                                 format, va, &nargs);
+        if (built == NULL) {
+            goto exit;
+        }
+    }
+
+    /* Backward compat: a single tuple from "O" is unpacked. */
+    PyObject *const *args = built;
+    Py_ssize_t n = nargs;
+    if (nargs == 1 && PyTuple_Check(built[0])) {
+        args = _PyTuple_ITEMS(built[0]);
+        n = PyTuple_GET_SIZE(built[0]);
+    }
+
+    if (self_obj != NULL) {
+        result = _PyObject_VectorcallPrepend(tstate, callable, self_obj, args, n, NULL);
+    }
+    else {
+        result = _PyObject_VectorcallTstate(tstate, callable, args, n, NULL);
+    }
+
+    for (Py_ssize_t i = 0; i < nargs; i++) {
+        Py_DECREF(built[i]);
+    }
+    if (built != small_stack) {
+        PyMem_Free(built);
+    }
+
+exit:
+    _PyThreadState_PopCStackRef(tstate, &method);
+    _PyThreadState_PopCStackRef(tstate, &self);
+    return result;
 }
 
 PyObject *
@@ -635,17 +687,17 @@ PyObject_CallMethod(PyObject *obj, const char *name, const char *format, ...)
         return null_error(tstate);
     }
 
-    PyObject *callable = PyObject_GetAttrString(obj, name);
-    if (callable == NULL) {
+    PyObject *name_obj = PyUnicode_FromString(name);
+    if (name_obj == NULL) {
         return NULL;
     }
 
     va_list va;
     va_start(va, format);
-    PyObject *retval = callmethod(tstate, callable, format, va);
+    PyObject *retval = callmethod(tstate, obj, name_obj, format, va);
     va_end(va);
 
-    Py_DECREF(callable);
+    Py_DECREF(name_obj);
     return retval;
 }
 
@@ -660,17 +712,17 @@ PyEval_CallMethod(PyObject *obj, const char *name, const char *format, ...)
         return null_error(tstate);
     }
 
-    PyObject *callable = PyObject_GetAttrString(obj, name);
-    if (callable == NULL) {
+    PyObject *name_obj = PyUnicode_FromString(name);
+    if (name_obj == NULL) {
         return NULL;
     }
 
     va_list va;
     va_start(va, format);
-    PyObject *retval = callmethod(tstate, callable, format, va);
+    PyObject *retval = callmethod(tstate, obj, name_obj, format, va);
     va_end(va);
 
-    Py_DECREF(callable);
+    Py_DECREF(name_obj);
     return retval;
 }
 
@@ -684,17 +736,11 @@ _PyObject_CallMethod(PyObject *obj, PyObject *name,
         return null_error(tstate);
     }
 
-    PyObject *callable = PyObject_GetAttr(obj, name);
-    if (callable == NULL) {
-        return NULL;
-    }
-
     va_list va;
     va_start(va, format);
-    PyObject *retval = callmethod(tstate, callable, format, va);
+    PyObject *retval = callmethod(tstate, obj, name, format, va);
     va_end(va);
 
-    Py_DECREF(callable);
     return retval;
 }
 
@@ -710,30 +756,17 @@ _PyObject_CallMethodId(PyObject *obj, _Py_Identifier *name,
 
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    PyObject *callable = _PyObject_GetAttrId(obj, name);
+    PyObject *name_obj = _PyUnicode_FromId(name); /* borrowed */
 _Py_COMP_DIAG_POP
-    if (callable == NULL) {
+    if (name_obj == NULL) {
         return NULL;
     }
 
     va_list va;
     va_start(va, format);
-    PyObject *retval = callmethod(tstate, callable, format, va);
+    PyObject *retval = callmethod(tstate, obj, name_obj, format, va);
     va_end(va);
 
-    Py_DECREF(callable);
-    return retval;
-}
-
-
-PyObject * _PyObject_CallMethodFormat(PyThreadState *tstate, PyObject *callable,
-                                      const char *format, ...)
-{
-    assert(callable != NULL);
-    va_list va;
-    va_start(va, format);
-    PyObject *retval = callmethod(tstate, callable, format, va);
-    va_end(va);
     return retval;
 }
 
@@ -749,17 +782,17 @@ _PyObject_CallMethod_SizeT(PyObject *obj, const char *name,
         return null_error(tstate);
     }
 
-    PyObject *callable = PyObject_GetAttrString(obj, name);
-    if (callable == NULL) {
+    PyObject *name_obj = PyUnicode_FromString(name);
+    if (name_obj == NULL) {
         return NULL;
     }
 
     va_list va;
     va_start(va, format);
-    PyObject *retval = callmethod(tstate, callable, format, va);
+    PyObject *retval = callmethod(tstate, obj, name_obj, format, va);
     va_end(va);
 
-    Py_DECREF(callable);
+    Py_DECREF(name_obj);
     return retval;
 }
 
