@@ -240,6 +240,16 @@ Interpreter objects
    Generally, :class:`Interpreter` shouldn't be called directly.
    Instead, use :func:`create` or one of the other module functions.
 
+   :class:`!Interpreter` objects support the :term:`context manager`
+   protocol. Exiting the :keyword:`with` block calls :meth:`close`::
+
+      with interpreters.create() as interp:
+          interp.exec('print("hello")')
+
+   .. versionchanged:: next
+      Added support for using :class:`!Interpreter` objects in
+      a :term:`context manager`.
+
    .. attribute:: id
 
       (read-only)
@@ -352,33 +362,32 @@ Creating an interpreter and running code in it::
 
     from concurrent import interpreters
 
-    interp = interpreters.create()
+    with interpreters.create() as interp:
+        # Run in the current OS thread.
 
-    # Run in the current OS thread.
+        interp.exec('print("spam!")')
 
-    interp.exec('print("spam!")')
+        interp.exec("""if True:
+            print('spam!')
+            """)
 
-    interp.exec("""if True:
-        print('spam!')
-        """)
+        from textwrap import dedent
+        interp.exec(dedent("""
+            print('spam!')
+            """))
 
-    from textwrap import dedent
-    interp.exec(dedent("""
-        print('spam!')
-        """))
+        def run(arg):
+            return arg
 
-    def run(arg):
-        return arg
+        res = interp.call(run, 'spam!')
+        print(res)
 
-    res = interp.call(run, 'spam!')
-    print(res)
+        def run():
+            print('spam!')
 
-    def run():
-        print('spam!')
+        interp.call(run)
 
-    interp.call(run)
+        # Run in new OS thread.
 
-    # Run in new OS thread.
-
-    t = interp.call_in_thread(run)
-    t.join()
+        t = interp.call_in_thread(run)
+        t.join()
