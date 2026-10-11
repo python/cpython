@@ -499,15 +499,13 @@ end:;
     return ret;
 }
 
-static void ptr_wise_atomic_memmove(PyListObject *a, PyObject **dest,
-                                    PyObject **src, Py_ssize_t n);
-
 static inline void
 list_shift_items_right_lock_held(PyListObject *self, Py_ssize_t first,
                                  Py_ssize_t last)
 {
 #ifdef Py_GIL_DISABLED
-    ptr_wise_atomic_memmove(self, &self->ob_item[first + 1],
+       _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+    _PyObject_ptr_wise_atomic_memmove(self, &self->ob_item[first + 1],
                             &self->ob_item[first], last - first);
 #else
     PyObject **items = self->ob_item;
@@ -522,7 +520,8 @@ list_shift_items_left_lock_held(PyListObject *self, Py_ssize_t first,
                                 Py_ssize_t last)
 {
 #ifdef Py_GIL_DISABLED
-    ptr_wise_atomic_memmove(self, &self->ob_item[first],
+       _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+    _PyObject_ptr_wise_atomic_memmove(self, &self->ob_item[first],
                             &self->ob_item[first + 1], last - first);
 #else
     PyObject **items = self->ob_item;
