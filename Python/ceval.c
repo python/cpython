@@ -2,7 +2,6 @@
 
 #include "ceval.h"
 #include "pycore_long.h"
-#include "pycore_ceval_opcode_targets.h"
 
 int
 Py_GetRecursionLimit(void)
@@ -1108,6 +1107,10 @@ _PyEval_StopTracingAndJit(PyThreadState *tstate, _PyInterpreterFrame *frame)
 #ifdef DO_NOT_OPTIMIZE_INTERP_LOOP
 #  pragma optimize("t", off)
 /* This setting is reversed below following _PyEval_EvalFrameDefault */
+#endif
+
+#if _Py_TAIL_CALL_INTERP
+#include "opcode_targets.h"
 #endif
 
 

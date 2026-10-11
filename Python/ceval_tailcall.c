@@ -5,7 +5,7 @@
 
 #if _Py_TAIL_CALL_INTERP
 #define _Py_CEVAL_OPCODE_TARGETS_DEFINE
-#include "pycore_ceval_opcode_targets.h"
+#include "opcode_targets.h"
 #undef _Py_CEVAL_OPCODE_TARGETS_DEFINE
 #include "generated_cases.c.h"
 #endif
