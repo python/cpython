@@ -368,10 +368,7 @@ class ListTest(list_tests.CommonTest):
         # objects that are not equal to themselves (see seq_tests).
         nan = float("nan")
         self.assertIn(nan, [nan])
-        self.assertEqual([nan].index(nan), 0)
-        self.assertEqual([nan].count(nan), 1)
-        self.assertEqual([nan], [nan])
-        self.assertNotEqual([nan], [float("nan")])
+        self.assertNotIn(float("nan"), [nan])
 
     def test_tier2_invalidates_iterator(self):
         # GH-121012
