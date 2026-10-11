@@ -1,0 +1,3 @@
+Wait for Windows threads to finish suspending before reading target memory
+in the sampling profiler's blocking mode. Resume the target if waiting for
+suspension fails.

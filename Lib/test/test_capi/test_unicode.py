@@ -25,6 +25,7 @@ INVALID_CHAR = MAX_UNICODE + 1
 # Maximum invalid character which fits into 32-bit Py_UCS4
 MAX_INVALID_CHAR = 0xFFFF_FFFF
 NULL = None
+USED_STR_ERROR = 'Cannot modify a string currently used'
 
 class Str(str):
     pass
@@ -76,9 +77,27 @@ class CAPITest(unittest.TestCase):
         # Test PyUnicode_CheckExact()
         self._test_check(_testlimitedcapi.unicode_checkexact, exact=True)
 
+    def assert_is_mutable(self, result, refcnt):
+        # Check that result is a "mutable" Unicode string
+        self.assertEqual(refcnt, 1)
+        self.assertFalse(sys._is_immortal(result))
+
+    def assert_is_empty_singleton(self, result):
+        # Check that result is the empty string singleton
+        self.assertEqual(result, '')
+        self.assertTrue(sys._is_immortal(result))
+
     def test_new(self):
         """Test PyUnicode_New()"""
-        new = _testcapi.unicode_new
+        _unicode_new = _testcapi.unicode_new
+
+        def new(size, maxchar):
+            result = _unicode_new(size, maxchar)
+            if size != 0:
+                self.assert_is_mutable(result, sys.getrefcount(result))
+            else:
+                self.assert_is_empty_singleton(result)
+            return result
 
         for maxchar in 0, 0x61, 0xa1, 0x4f60, 0x1f600, 0x10ffff:
             self.assertEqual(new(0, maxchar), '')
@@ -123,6 +142,10 @@ class CAPITest(unittest.TestCase):
                         self.assertEqual(fill(to, start, length, fill_char),
                                         (expected, filled))
 
+        # A string with 2 references cannot be modified
+        with self.assertRaisesRegex(SystemError, USED_STR_ERROR):
+            fill('abc', 0, 3, ord('x'), incref=True)
+
         s = strings[0]
         self.assertRaises(IndexError, fill, s, -1, 0, 0x78)
         self.assertRaises(IndexError, fill, s, PY_SSIZE_T_MIN, 0, 0x78)
@@ -162,7 +185,12 @@ class CAPITest(unittest.TestCase):
 
     def test_writechar(self):
         """Test PyUnicode_WriteChar()"""
-        self._test_writechar(_testlimitedcapi.unicode_writechar, check=True)
+        writechar = _testlimitedcapi.unicode_writechar
+        self._test_writechar(writechar, check=True)
+
+        # A string with 2 references cannot be modified
+        with self.assertRaisesRegex(SystemError, USED_STR_ERROR):
+            writechar('abc', 1, ord('x'), incref=True)
 
     def test_write_macro(self):
         """Test PyUnicode_WRITE()"""
@@ -170,27 +198,72 @@ class CAPITest(unittest.TestCase):
 
     def test_resize(self):
         """Test PyUnicode_Resize()"""
-        resize = _testlimitedcapi.unicode_resize
+        _resize = _testlimitedcapi.unicode_resize
+        resize_null = _testlimitedcapi.unicode_resize_null
+
+        def resize(s, length, new=True, compute_hash=False):
+            if s is not NULL and isinstance(s, str):
+                old_length = len(s)
+            else:
+                old_length = 0
+            result, int_result, refcnt, is_new_obj = _resize(s, length,
+                                                             new, compute_hash)
+            self.assertEqual(int_result, 0)
+
+            if length == old_length:
+                # Return the same object unchanged
+                self.assertFalse(is_new_obj)
+            elif length == 0:
+                # Get the empty Unicode string
+                self.assert_is_empty_singleton(result)
+                self.assertTrue(is_new_obj)
+            elif (not new) or compute_hash:
+                # Get a fresh copy
+                self.assert_is_mutable(result, refcnt)
+                self.assertTrue(is_new_obj)
+            else:
+                # In-size replace can return the same address, or not.
+                # So 'is_new_obj' cannot be tested.
+                self.assert_is_mutable(result, refcnt)
+
+            return result
 
         strings = [
             # all strings have exactly 3 characters
             'abc', '\xa1\xa2\xa3', '\u4f60\u597d\u4e16',
             '\U0001f600\U0001f601\U0001f602'
         ]
-        for s in strings:
-            self.assertEqual(resize(s, 3), (s, 0))
-            self.assertEqual(resize(s, 2), (s[:2], 0))
-            self.assertEqual(resize(s, 4), (s + '\0', 0))
-            self.assertEqual(resize(s, 10), (s + '\0'*7, 0))
-            self.assertEqual(resize(s, 0), ('', 0))
-            self.assertRaises(MemoryError, resize, s, PY_SSIZE_T_MAX)
-            self.assertRaises(SystemError, resize, s, -1)
-            self.assertRaises(SystemError, resize, s, PY_SSIZE_T_MIN)
+        for new in (True, False):
+            for compute_hash in (True, False):
+                for s in strings:
+                    with self.subTest(new=new, compute_hash=compute_hash, s=s):
+                        self.assertEqual(resize(s, 3, new, compute_hash),
+                                         s)
+                        self.assertEqual(resize(s, 2, new, compute_hash),
+                                         s[:2])
+                        self.assertEqual(resize(s, 4, new, compute_hash),
+                                         s + '\0')
+                        self.assertEqual(resize(s, 10, new, compute_hash),
+                                         s + '\0'*7)
+                        self.assertEqual(resize(s, 0, new, compute_hash),
+                                         '')
+
+                        with self.assertRaises(MemoryError):
+                            resize(s, PY_SSIZE_T_MAX, new, compute_hash)
+                        with self.assertRaises(SystemError):
+                            resize(s, -1, new, compute_hash)
+                        with self.assertRaises(SystemError):
+                            resize(s, PY_SSIZE_T_MIN, new, compute_hash)
+
         self.assertRaises(SystemError, resize, b'abc', 0)
         self.assertRaises(SystemError, resize, [], 0)
         self.assertRaises(SystemError, resize, NULL, 0)
         # TODO: Test PyUnicode_Resize() with non-modifiable and legacy unicode
         # and with NULL as the address.
+
+        # Test PyUnicode_Resize(NULL, length)
+        self.assertRaises(SystemError, resize_null, 0)
+        self.assertRaises(SystemError, resize_null, 123)
 
     def test_append(self):
         """Test PyUnicode_Append()"""
@@ -315,6 +388,7 @@ class CAPITest(unittest.TestCase):
 
         # Test invalid UCS-4 string. Create an invalid string in release mode,
         # or raise SystemError in debug mode.
+        built_with_assert = support.built_with_c_assertions()
         for invalid_char in (INVALID_CHAR, MAX_INVALID_CHAR):
             with self.subTest(invalid_char=invalid_char):
                 # Test single character
@@ -325,9 +399,12 @@ class CAPITest(unittest.TestCase):
                 s = 'valid'.encode(enc4) + ucs4_char
                 if support.Py_DEBUG:
                     self.assertRaises(SystemError, fromkindanddata, 4, s)
-                else:
+                elif not built_with_assert :
                     result = fromkindanddata(4, s)
                     assert_invalid_string(self, result)
+                else:
+                    # PyUnicode_FromKindAndData() fails with an assertion error
+                    pass
 
     def test_substring(self):
         """Test PyUnicode_Substring()"""
@@ -1742,6 +1819,11 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, unicode_copycharacters, s, 0, s, 0, PY_SSIZE_T_MIN)
         self.assertRaises(SystemError, unicode_copycharacters, s, 0, b'', 0, 0)
         self.assertRaises(SystemError, unicode_copycharacters, s, 0, [], 0, 0)
+
+        # A string with 2 references cannot be modified
+        with self.assertRaisesRegex(SystemError, USED_STR_ERROR):
+            unicode_copycharacters('abc', 0, 'abc', 0, 1, incref=True)
+
         # CRASHES unicode_copycharacters(s, 0, NULL, 0, 0)
         # TODO: Test PyUnicode_CopyCharacters() with non-unicode and
         # non-modifiable unicode as "to".
@@ -2170,6 +2252,7 @@ class PyUnicodeWriterTest(unittest.TestCase):
 
         # Invalid UCS-4 characters. Create an invalid string in release mode,
         # or raise SystemError in debug mode.
+        built_with_assert = support.built_with_c_assertions()
         writer = self.create_writer(0)
         for invalid_char in (INVALID_CHAR, MAX_INVALID_CHAR):
             with self.subTest(invalid_char=invalid_char):
@@ -2189,9 +2272,12 @@ class PyUnicodeWriterTest(unittest.TestCase):
 
         if support.Py_DEBUG:
             self.assertEqual(writer.finish(), '')
-        else:
+        elif not built_with_assert:
             result = writer.finish()
             assert_invalid_string(self, result)
+        else:
+            # PyUnicodeWriter_Finish() fails with an assertion error
+            pass
 
         # Invalid size
         writer = self.create_writer(0)

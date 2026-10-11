@@ -1630,6 +1630,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
 
     _tstate->asyncio_running_loop = NULL;
     _tstate->asyncio_running_task = NULL;
+    _tstate->lazy_imports = NULL;
 
 #ifdef _Py_TIER2
     _tstate->jit_tracer_state = NULL;
@@ -1872,6 +1873,9 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->async_gen_finalizer);
 
     Py_CLEAR(tstate->context);
+
+    // Finalizers above may resolve imports and create this set.
+    Py_CLEAR(((_PyThreadStateImpl *)tstate)->lazy_imports);
 
 #ifdef Py_GIL_DISABLED
     // Each thread should clear own freelists in free-threading builds.

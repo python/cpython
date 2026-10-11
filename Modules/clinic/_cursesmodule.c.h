@@ -8,6 +8,7 @@ preserve
 #endif
 #include "pycore_long.h"          // _PyLong_UnsignedInt_Converter()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(complexchar_new__doc__,
 "complexchar(text, /, attr=0, pair=0)\n"
@@ -3814,13 +3815,8 @@ _curses_define_key(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         definition = NULL;
     }
     else if (PyUnicode_Check(args[0])) {
-        Py_ssize_t definition_length;
-        definition = PyUnicode_AsUTF8AndSize(args[0], &definition_length);
+        definition = _PyUnicode_AsUTF8NoNUL(args[0]);
         if (definition == NULL) {
-            goto exit;
-        }
-        if (strlen(definition) != (size_t)definition_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -3870,13 +3866,8 @@ _curses_key_defined(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("key_defined", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t definition_length;
-    definition = PyUnicode_AsUTF8AndSize(arg, &definition_length);
+    definition = _PyUnicode_AsUTF8NoNUL(arg);
     if (definition == NULL) {
-        goto exit;
-    }
-    if (strlen(definition) != (size_t)definition_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _curses_key_defined_impl(module, definition);
@@ -4273,13 +4264,8 @@ _curses_setupterm(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
             term = NULL;
         }
         else if (PyUnicode_Check(args[0])) {
-            Py_ssize_t term_length;
-            term = PyUnicode_AsUTF8AndSize(args[0], &term_length);
+            term = _PyUnicode_AsUTF8NoNUL(args[0]);
             if (term == NULL) {
-                goto exit;
-            }
-            if (strlen(term) != (size_t)term_length) {
-                PyErr_SetString(PyExc_ValueError, "embedded null character");
                 goto exit;
             }
         }
@@ -4343,13 +4329,8 @@ _curses_newterm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         type = NULL;
     }
     else if (PyUnicode_Check(args[0])) {
-        Py_ssize_t type_length;
-        type = PyUnicode_AsUTF8AndSize(args[0], &type_length);
+        type = _PyUnicode_AsUTF8NoNUL(args[0]);
         if (type == NULL) {
-            goto exit;
-        }
-        if (strlen(type) != (size_t)type_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -5735,13 +5716,8 @@ _curses_tigetflag(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("tigetflag", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t capname_length;
-    capname = PyUnicode_AsUTF8AndSize(arg, &capname_length);
+    capname = _PyUnicode_AsUTF8NoNUL(arg);
     if (capname == NULL) {
-        goto exit;
-    }
-    if (strlen(capname) != (size_t)capname_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _curses_tigetflag_impl(module, capname);
@@ -5778,13 +5754,8 @@ _curses_tigetnum(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("tigetnum", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t capname_length;
-    capname = PyUnicode_AsUTF8AndSize(arg, &capname_length);
+    capname = _PyUnicode_AsUTF8NoNUL(arg);
     if (capname == NULL) {
-        goto exit;
-    }
-    if (strlen(capname) != (size_t)capname_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _curses_tigetnum_impl(module, capname);
@@ -5821,13 +5792,8 @@ _curses_tigetstr(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("tigetstr", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t capname_length;
-    capname = PyUnicode_AsUTF8AndSize(arg, &capname_length);
+    capname = _PyUnicode_AsUTF8NoNUL(arg);
     if (capname == NULL) {
-        goto exit;
-    }
-    if (strlen(capname) != (size_t)capname_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _curses_tigetstr_impl(module, capname);
@@ -6749,4 +6715,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=cc7b5de1c82ae56b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=957470523e2b0eb1 input=a9049054013a1b77]*/

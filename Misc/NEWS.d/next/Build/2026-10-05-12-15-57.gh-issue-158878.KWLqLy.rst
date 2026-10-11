@@ -1,0 +1,2 @@
+Stop creating an empty Modules/Setup.local file as it no longer seems to be
+required to statically link the extension modules.
