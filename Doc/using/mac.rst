@@ -241,6 +241,9 @@ A number of alternative macOS GUI toolkits are available including:
 * `wxPython <https://wxpython.org>`_: A cross-platform toolkit that
   supports desktop operating systems.
 
+* `Flet <https://flet.dev/>`_: A framework for building cross-platform desktop,
+  mobile, and web applications in Python.
+
 
 Advanced topics
 ===============
