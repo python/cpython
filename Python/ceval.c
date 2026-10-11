@@ -1223,11 +1223,6 @@ _PyEval_DTraceFunctionReturn(_PyInterpreterFrame *frame)
 }
 #endif
 
-#if _Py_TAIL_CALL_INTERP
-LABEL(exit_unwind_notrace);
-START_FRAME();
-#endif
-
 PyObject* _Py_HOT_FUNCTION DONT_SLP_VECTORIZE
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
@@ -1342,7 +1337,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #   endif
 #else
     goto start_frame;
-    START_FRAME();
 #   include "generated_cases.c.h"
 #endif
 

@@ -35,7 +35,6 @@ stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
 #include "test_targets.h"
 #undef _Py_CEVAL_OPCODE_TARGETS_DEFINE
 #include "test_cases.c.h"
-START_FRAME();
 #endif
 
 PyObject* _Py_HOT_FUNCTION
@@ -145,7 +144,6 @@ Test_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 #   endif
 #else
     goto start_frame;
-    START_FRAME();
 #include "test_cases.c.h"
 #endif
 
