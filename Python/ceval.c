@@ -1794,12 +1794,8 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         kwdict = NULL;
     }
 
-    /* Pin the first argument for the "missing self" hint: the surplus
-       argument cleanup below may close args[0] before the hint is computed.
-       The pin is only needed when the "too many positional arguments"
-       error is about to be raised. */
     if (argcount > co->co_argcount && !(co->co_flags & CO_VARARGS)) {
-        first_argument = Py_NewRef(PyStackRef_AsPyObjectBorrow(args[0]));
+        first_argument = PyStackRef_AsPyObjectNew(args[0]);
     }
 
     /* Copy all positional arguments into local variables */
