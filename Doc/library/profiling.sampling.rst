@@ -1312,7 +1312,7 @@ data, similar to the ``top`` command for system processes::
    python -m profiling.sampling run --live script.py
    python -m profiling.sampling attach --live 12345
 
-.. only:: not latex
+.. only:: html and not epub
 
    .. figure:: tachyon-live-mode-2.mp4
       :class: controls no-scaled-link
@@ -1338,7 +1338,7 @@ main table, showing instruction-level statistics for the currently selected
 function. This panel displays which bytecode instructions are executing most
 frequently, including specialized variants and their base opcodes.
 
-.. only:: not latex
+.. only:: html and not epub
 
    .. figure:: tachyon-live-mode-1.mp4
       :class: controls no-scaled-link
