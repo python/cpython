@@ -1314,7 +1314,8 @@ data, similar to the ``top`` command for system processes::
 
 .. only:: not latex
 
-   .. figure:: tachyon-live-mode-2.gif
+   .. figure:: tachyon-live-mode-2.mp4
+      :class: controls no-scaled-link
       :alt: Tachyon live mode showing all threads
       :align: center
       :width: 100%
@@ -1339,7 +1340,8 @@ frequently, including specialized variants and their base opcodes.
 
 .. only:: not latex
 
-   .. figure:: tachyon-live-mode-1.gif
+   .. figure:: tachyon-live-mode-1.mp4
+      :class: controls no-scaled-link
       :alt: Tachyon live mode with opcode panel
       :align: center
       :width: 100%
