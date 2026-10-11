@@ -1,0 +1,2 @@
+Fix a potential crash when a class body defines a name consisting of a
+single underscore.

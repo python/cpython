@@ -3334,6 +3334,7 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
     /* Name mangling: __private becomes _classname__private.
        This is independent from how the name is used. */
     if (privateobj == NULL || !PyUnicode_Check(privateobj) ||
+        PyUnicode_GET_LENGTH(ident) < 2 ||
         PyUnicode_READ_CHAR(ident, 0) != '_' ||
         PyUnicode_READ_CHAR(ident, 1) != '_') {
         return Py_NewRef(ident);

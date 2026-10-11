@@ -783,6 +783,11 @@ class SymtableTest(unittest.TestCase):
             self.assertIs(wm.category, SyntaxWarning)
 
 
+    def test_single_underscore_in_class(self):
+        # gh-159164: a one-character identifier in a class body must not
+        # cause an out-of-bounds read in _Py_Mangle.
+        symtable.symtable("class C:\n    _\n", "<test>", "exec")
+
 class ComprehensionTests(unittest.TestCase):
     def get_identifiers_recursive(self, st, res):
         res.extend(st.get_identifiers())
