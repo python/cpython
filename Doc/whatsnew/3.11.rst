@@ -388,7 +388,7 @@ Kumar Srinivasan and Graham Bleaney.)
 PEP 681: Data class transforms
 ------------------------------
 
-:deco:`~typing.dataclass_transform` may be used to
+:deco:`dataclass_transform <typing.dataclass_transform>` may be used to
 decorate a class, metaclass, or a function that is itself a decorator.
 The presence of ``@dataclass_transform()`` tells a static type checker that the
 decorated object performs runtime "magic" that transforms a class,
@@ -686,7 +686,7 @@ enum
 * Added the :func:`~enum.member` and :func:`~enum.nonmember` decorators,
   to ensure the decorated object is/is not converted to an enum member.
 
-* Added the :deco:`~enum.property` decorator,
+* Added the :deco:`property <enum.property>` decorator,
   which works like :deco:`property` except for enums.
   Use this instead of :func:`types.DynamicClassAttribute`.
 

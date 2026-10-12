@@ -101,7 +101,7 @@ Functions and classes provided:
 
 .. decorator:: asynccontextmanager
 
-   Similar to :deco:`~contextlib.contextmanager`, but creates an
+   Similar to :deco:`contextmanager <contextlib.contextmanager>`, but creates an
    :ref:`asynchronous context manager <async-context-managers>`.
 
    This function is a :term:`decorator` that can be used to define a factory

@@ -858,7 +858,7 @@ to behave like normal instance methods when included in a class definition.
 
 .. _whatsnew-singledispatch:
 
-The new :deco:`~functools.singledispatch` decorator brings support for
+The new :deco:`singledispatch <functools.singledispatch>` decorator brings support for
 single-dispatch generic functions to the Python standard library. Where
 object oriented programming focuses on grouping multiple operations on a
 common set of data into a class, a generic function focuses on grouping
@@ -870,7 +870,7 @@ multiple implementations of an operation that allows it to work with
    :pep:`443` -- Single-dispatch generic functions
       PEP written and implemented by Łukasz Langa.
 
-:deco:`~functools.total_ordering` now supports a return value of
+:deco:`total_ordering <functools.total_ordering>` now supports a return value of
 :data:`NotImplemented` from the underlying comparison function.  (Contributed
 by Katie Miller in :issue:`10042`.)
 

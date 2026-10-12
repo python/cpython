@@ -1148,7 +1148,7 @@ functools
 
 .. _whatsnew-lrucache:
 
-Most of the :deco:`~functools.lru_cache` machinery is now implemented in C, making
+Most of the :deco:`lru_cache <functools.lru_cache>` machinery is now implemented in C, making
 it significantly faster.  (Contributed by Matt Joiner, Alexey Kachayev, and
 Serhiy Storchaka in :issue:`14373`.)
 
