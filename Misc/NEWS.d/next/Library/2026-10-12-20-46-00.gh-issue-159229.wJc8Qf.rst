@@ -1,0 +1,1 @@
+Fix error offsets reported by the IDNA incremental encoder when a non-ASCII label precedes an invalid label.
