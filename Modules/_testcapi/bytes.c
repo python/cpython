@@ -378,6 +378,7 @@ error:
 static size_t
 pybyteswriter_small_buffer_size(void)
 {
+    // PyBytesWriter.obj is the second member, small_buffer is the first member
     return offsetof(PyBytesWriter, obj);
 }
 
@@ -503,10 +504,8 @@ _PyTestCapi_Init_Bytes(PyObject *m)
     }
     Py_DECREF(writer_type);
 
-    // PyBytesWriter.obj is the second member, small_buffer is the first member
     long size = (long)pybyteswriter_small_buffer_size();
     if (PyModule_AddIntConstant(m, "PyBytesWriter_small_buffer", size) < 0) {
-        Py_DECREF(writer_type);
         return -1;
     }
 

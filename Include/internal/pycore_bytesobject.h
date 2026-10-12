@@ -73,6 +73,8 @@ _PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
 */
 #define _PyBytesObject_SIZE (offsetof(PyBytesObject, ob_sval) + 1)
 
+extern int _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize);
+
 
 // Return the cached hash value, or -1 if not cached yet.
 static inline Py_hash_t
