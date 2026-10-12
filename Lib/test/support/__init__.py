@@ -1595,9 +1595,9 @@ def set_environment_altered(reason):
 
 
 def reap_children():
-    """Call this from a test's setUp(), tearDown(), or tearDownModule()
-    when the test starts subprocesses.  This will help ensure that no extra
-    children (zombies) stick around to hog resources and create problems when
+    """Call this from setUp(), tearDown(), or tearDownModule() in tests
+    that start subprocesses.  This will help ensure that no extra children
+    (zombies) stick around to hog resources and create problems when
     looking for refleaks.
     """
     # Need os.waitpid(-1, os.WNOHANG): Windows is not supported

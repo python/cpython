@@ -169,10 +169,9 @@ script by itself automatically starts running all regression tests in the
 start with ``test_``, importing each one, and loading its tests with
 :meth:`unittest.TestLoader.loadTestsFromModule`. See the
 :ref:`load_tests protocol <load_tests-protocol>` for how a module or package
-can customize what is loaded. A module-level ``test_main()`` function is not
-called. If a test module defines ``test_main``, :mod:`!test.regrtest` fails
-that test. The names of
-tests to execute may also be passed to the script. Specifying a single
+can customize what is loaded. Defining a module-level ``test_main()`` function
+is not supported and causes the test to fail. The names of tests to
+execute may also be passed to the script. Specifying a single
 regression test (:program:`python -m test test_spam`) will minimize output and
 only print whether the test passed or failed.
 
@@ -885,9 +884,9 @@ The :mod:`!test.support` module defines the following functions:
 
 .. function:: reap_children()
 
-   Call this from a test's :meth:`~unittest.TestCase.setUp`,
-   :meth:`~unittest.TestCase.tearDown`, or ``tearDownModule`` when the
-   test starts subprocesses.  This will help ensure that no extra children
+   Call this from :meth:`~unittest.TestCase.setUp`,
+   :meth:`~unittest.TestCase.tearDown`, or ``tearDownModule()`` in tests
+   that start subprocesses. This will help ensure that no extra children
    (zombies) stick around to hog resources and create problems when looking
    for refleaks.
 
