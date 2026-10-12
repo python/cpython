@@ -380,7 +380,6 @@ class _ReadlineWrapper:
         prompt_str = str(prompt)
         reader.ps1 = prompt_str
         sys.audit("builtins.input", prompt_str)
-        # Suspend history temporarily
         with reader.suspend_history():
             result = reader.readline(startup_hook=self.startup_hook)
         sys.audit("builtins.input/result", result)
