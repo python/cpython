@@ -577,33 +577,6 @@ C extensions.
       This thread's interpreter state.
 
 
-.. c:function:: void PyEval_InitThreads()
-
-   .. index::
-      single: PyEval_AcquireThread()
-      single: PyEval_ReleaseThread()
-      single: PyEval_SaveThread()
-      single: PyEval_RestoreThread()
-
-   Deprecated function which does nothing.
-
-   In Python 3.6 and older, this function created the GIL if it didn't exist.
-
-   .. versionchanged:: 3.9
-      The function now does nothing.
-
-   .. versionchanged:: 3.7
-      This function is now called by :c:func:`Py_Initialize()`, so you don't
-      have to call it yourself anymore.
-
-   .. versionchanged:: 3.2
-      This function cannot be called before :c:func:`Py_Initialize()` anymore.
-
-   .. deprecated:: 3.9
-
-   .. index:: pair: module; _thread
-
-
 .. c:function:: PyThreadState* PyEval_SaveThread()
 
    Detach the :term:`attached thread state` and return it.
@@ -924,7 +897,7 @@ pointer and a void pointer argument.
 
    To prevent naive misuse, you must write your own C extension to call this.
    This function must be called with an :term:`attached thread state`.
-   This function does not steal any references to *exc*.
+   This function does not :term:`steal` any references to *exc*.
    This function does not necessarily interrupt system calls such as
    :py:func:`~time.sleep`.
 

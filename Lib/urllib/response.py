@@ -11,7 +11,7 @@ import tempfile
 __all__ = ['addbase', 'addclosehook', 'addinfo', 'addinfourl']
 
 
-class addbase(tempfile._TemporaryFileWrapper):
+class addbase(tempfile.TemporaryFileWrapper):
     """Base class for addinfo and addclosehook. Is a good idea for garbage collection."""
 
     # XXX Add a method to expose the timeout on the underlying socket?

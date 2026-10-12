@@ -1,0 +1,1 @@
+Fixes a bug when a line was split (particularly on macOS Terminal.app) in the middle of a colorized keyword, causing the ANSI Color Reset sequence (ESC0m) to not be properly printed, causing the output to be colored when it shouldn't

@@ -13,7 +13,7 @@ import os
 import contextlib
 
 from test import support
-from test.support.script_helper import assert_python_ok
+from test.support.script_helper import assert_python_ok, assert_python_failure
 
 try:
     import _testcapi
@@ -53,7 +53,8 @@ class LazyImportTests(LazyImportTestCase):
             self.fail('lazy import failed')
 
         self.assertFalse("test.test_lazy_import.data.basic2" in sys.modules)
-        self.assertIn("test.test_lazy_import.data", sys.lazy_modules)
+        # The package is already loaded, so it is not a pending import.
+        self.assertNotIn("test.test_lazy_import.data", sys.lazy_modules)
         self.assertIn("test.test_lazy_import.data.basic2", sys.lazy_modules)
         test.test_lazy_import.data.basic_from_unused.basic2
         self.assertNotIn("test.test_import.data", sys.lazy_modules)
@@ -167,6 +168,19 @@ class LazyImportTests(LazyImportTestCase):
         """)
         assert_python_ok("-c", code)
 
+    @support.requires_subprocess()
+    def test_module_getattr_does_not_shadow_own_lazy_import(self):
+        """Module __getattr__ should not shadow the module's own lazy imports."""
+        code = textwrap.dedent("""
+            import types
+            import test.test_lazy_import.data.module_with_lazy_import_and_getattr as mod
+            assert mod.basic2.__name__ == "test.test_lazy_import.data.basic2"
+            assert mod.f is mod.basic2.f
+            assert not isinstance(vars(mod)["basic2"], types.LazyImportType)
+            assert mod.missing == "from_getattr:missing"
+        """)
+        assert_python_ok("-c", code)
+
 
 class GlobalLazyImportModeTests(LazyImportTestCase):
     """Tests for sys.set_lazy_imports() global mode control."""
@@ -276,6 +290,23 @@ class LazyImportTypeTests(LazyImportTestCase):
         """)
         proc = assert_python_ok("-c", code)
         self.assertIn(b"<built-in method resolve of lazy_import object at", proc.out)
+
+    @support.requires_subprocess()
+    def test_lazy_import_type_attribute_error_message(self):
+        """Check that LazyImportType attribute error message is helpful."""
+        code = textwrap.dedent("""
+            lazy import asyncio
+            try:
+                globals()["asyncio"].Task
+            except AttributeError as exc:
+                assert str(exc) == (
+                    "cannot access attribute 'Task' "
+                    "on unresolved lazy import 'asyncio'"
+                ), repr(str(exc))
+            else:
+                assert False, 'AttributeError is not raised'
+        """)
+        assert_python_ok("-c", code)
 
 
 class SyntaxRestrictionTests(LazyImportTestCase):
@@ -429,6 +460,121 @@ class WithStatementTests(LazyImportTestCase):
         """lazy from import with 'with' statement should work."""
         import test.test_lazy_import.data.lazy_with_from
         self.assertNotIn("test.test_lazy_import.data.basic2", sys.modules)
+
+
+@support.requires_subprocess()
+class IndependentSubmoduleTests(LazyImportTestCase):
+    def check(self, code):
+        assert_python_ok('-c', textwrap.dedent(code))
+
+    def test_siblings(self):
+        for package, children in (
+            ('test.test_lazy_import.data.pkg', ('b', 'bar')),
+            ('test.test_lazy_import.data.metasyntactic.foo', ('ack', 'bar')),
+        ):
+            for first, second in (children, children[::-1]):
+                with self.subTest(package=package, first=first):
+                    self.check(f"""
+                        import sys
+                        lazy import {package}.{first}
+                        lazy import {package}.{second}
+                        assert {package}.{first} is sys.modules['{package}.{first}']
+                        assert '{package}.{second}' not in sys.modules
+                        assert {package}.{second} is sys.modules['{package}.{second}']
+                    """)
+
+    def test_star_import(self):
+        self.check("""
+            lazy import urllib.nonexistent
+            lazy import urllib
+            assert urllib.__name__ == 'urllib'
+            from urllib import *
+        """)
+
+    def test_deleted_child(self):
+        self.check("""
+            lazy from xml import dom
+            assert dom.__name__ == 'xml.dom'
+            import xml
+            del xml.dom
+            assert not hasattr(xml, 'dom')
+            lazy from xml import dom
+            assert hasattr(xml, 'dom')
+        """)
+
+    def test_cached_import_releases_builtins(self):
+        for statement in ('lazy from xml.dom import Node',
+                          'lazy import xml.dom.minidom'):
+            with self.subTest(statement=statement):
+                self.check(f"""
+                    import builtins, gc, weakref
+                    import xml.dom.minidom
+                    class Payload:
+                        pass
+                    payload = Payload()
+                    reference = weakref.ref(payload)
+                    namespace = {{'__builtins__': dict(vars(builtins), payload=payload)}}
+                    exec({statement!r}, namespace)
+                    exec('Node' if 'from' in {statement!r} else 'xml.dom.minidom', namespace)
+                    del namespace, payload
+                    gc.collect()
+                    assert reference() is None
+                """)
+
+    def test_invalid_descendant_retries(self):
+        self.check("""
+            lazy import test.test_lazy_import.data.pkg.b.foo
+            for _ in range(2):
+                try:
+                    test.test_lazy_import.data.pkg.b.foo
+                except ModuleNotFoundError:
+                    pass
+                else:
+                    raise AssertionError('imported an attribute as a module')
+            import test.test_lazy_import.data.pkg.b
+            assert callable(test.test_lazy_import.data.pkg.b.foo)
+        """)
+
+    def test_namespace_import_hooks(self):
+        self.check("""
+            import builtins
+            first = {'__builtins__': vars(builtins).copy()}
+            second = {'__builtins__': vars(builtins).copy()}
+            exec('lazy import xml.dom', first)
+            exec('lazy import xml.dom', second)
+            def denied(*args):
+                raise AssertionError('used another namespace import hook')
+            second['__builtins__']['__import__'] = denied
+            exec('assert xml.dom.__name__ == "xml.dom"', first)
+        """)
+
+    def test_retry_after_recursive_access(self):
+        self.check("""
+            import sys, xml
+            from importlib.machinery import ModuleSpec
+            class Loader:
+                calls = 0
+                def find_spec(self, name, path=None, target=None):
+                    if name == 'xml.broken':
+                        return ModuleSpec(name, self)
+                def create_module(self, spec):
+                    return None
+                def exec_module(self, module):
+                    self.calls += 1
+                    xml.broken
+                    raise RuntimeError('failed initialization')
+            loader = Loader()
+            sys.meta_path.insert(0, loader)
+            lazy import xml.broken
+            for _ in range(2):
+                try:
+                    xml.broken
+                except RuntimeError as exc:
+                    assert str(exc) == 'failed initialization'
+                else:
+                    raise AssertionError('returned a failed partial module')
+            assert loader.calls == 2
+        """)
 
 
 class PackageTests(LazyImportTestCase):
@@ -600,6 +746,14 @@ class DunderLazyImportTests(LazyImportTestCase):
         with self.assertRaises(TypeError):
             __lazy_import__("sys", globals=1)
 
+        code = textwrap.dedent("""
+            __lazy_import__("sys", fromlist=(1, 2, 3))
+        """)
+        result = assert_python_failure("-c", code, NO_COLOR='y')
+        self.assertIn(
+            b"TypeError: Item in ``from list'' must be str, not int",
+            result.err)
+
     def test_dunder_lazy_import_builtins(self):
         """__lazy_import__ should use module's __builtins__ for __import__."""
         from test.test_lazy_import.data import dunder_lazy_import_builtins
@@ -676,52 +830,100 @@ class SysLazyImportsAPITests(LazyImportTestCase):
 
 @support.requires_subprocess()
 class ErrorHandlingTests(LazyImportTestCase):
-    """Tests for error handling during lazy import reification.
+    """Tests for error handling during lazy import reification."""
 
-    PEP 810: Errors during reification should show exception chaining with
-    both the lazy import definition location and the access location.
-    """
-
-    def test_import_error_shows_chained_traceback(self):
-        """Accessing a nonexistent lazy submodule via parent attr raises AttributeError."""
+    def test_missing_lazy_submodule_raises_module_not_found_error(self):
+        """Accessing a nonexistent lazy submodule via parent attr raises ModuleNotFoundError."""
         code = textwrap.dedent("""
-            import sys
             lazy import test.test_lazy_import.data.nonexistent_module
 
             try:
-                x = test.test_lazy_import.data.nonexistent_module
-            except AttributeError as e:
-                print("OK")
+                _ = test.test_lazy_import.data.nonexistent_module
+            except ModuleNotFoundError:
+                pass
+            else:
+                raise AssertionError("ModuleNotFoundError was not raised")
         """)
-        result = subprocess.run(
-            [sys.executable, "-c", code],
-            capture_output=True,
-            text=True
-        )
-        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
-        self.assertIn("OK", result.stdout)
+        assert_python_ok("-c", code)
 
-    def test_attribute_error_on_from_import_shows_chained_traceback(self):
-        """Accessing missing attribute from lazy from-import should chain errors."""
-        # Tests 'lazy from module import nonexistent' behavior
+    def test_non_package_lazily_imported(self):
+        """Accessing a nonexistent lazy name via parent attr raises ModuleNotFoundError."""
         code = textwrap.dedent("""
-            import sys
+            lazy import math.pi
+
+            try:
+                _ = math.pi
+            except ModuleNotFoundError:
+                pass
+            else:
+                raise AssertionError("ModuleNotFoundError was not raised")
+        """)
+        assert_python_ok("-c", code)
+
+    def test_non_package_lazily_imported_as(self):
+        """A dotted lazy import as raises when the name is not a module."""
+        # gh-157757: the eager statement raises, so the lazy one raises too.
+        code = textwrap.dedent("""
+            lazy import math.pi as pi
+
+            try:
+                pi
+            except ModuleNotFoundError:
+                pass
+            else:
+                raise AssertionError("ModuleNotFoundError was not raised")
+        """)
+        assert_python_ok("-c", code)
+
+    def test_missing_attribute_raises_import_error(self):
+        """Accessing a nonexistent lazy name via from import raises ImportError."""
+        code = textwrap.dedent("""
+            lazy from sys import doesnotexist
+
+            try:
+                _ = doesnotexist
+            except ImportError:
+                pass
+            else:
+                raise AssertionError("ImportError was not raised")
+        """)
+        assert_python_ok("-c", code)
+
+    def test_missing_lazy_from_import_shows_chained_traceback(self):
+        """Accessing missing attribute from lazy from-import should chain errors."""
+        code = textwrap.dedent("""
             lazy from test.test_lazy_import.data.basic2 import nonexistent_name
 
             try:
-                x = nonexistent_name
+                _ = nonexistent_name
             except ImportError as e:
-                # PEP 810: Enhanced error reporting through exception chaining
                 assert e.__cause__ is not None, "Expected chained exception"
-                print("OK")
+            else:
+                raise AssertionError("ImportError was not raised")
         """)
-        result = subprocess.run(
-            [sys.executable, "-c", code],
-            capture_output=True,
-            text=True
-        )
-        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
-        self.assertIn("OK", result.stdout)
+        assert_python_ok("-c", code)
+
+    @support.subTests('name', (
+        'test.test_lazy_import.data.broken_module_chained_cause',
+        'test.test_lazy_import.data.broken_module_chained_context',
+        'test.test_lazy_import.data.broken_module_chained_suppressed',
+    ))
+    def test_chained_exception_import_shows_notes(self, name):
+        """Accessing missing attribute from lazy from-import should chain errors."""
+        code = textwrap.dedent(f"""
+            lazy import {name}
+
+            try:
+                _ = {name}
+            except ValueError as e:
+                assert any(
+                    note.startswith("lazy import of '{name}' declared in ")
+                    for note in e.__notes__
+                ), e.__notes__
+            else:
+                raise AssertionError("ImportError was not raised")
+        """)
+        assert_python_ok("-c", code)
 
     def test_reification_retries_on_failure(self):
         """Failed reification should allow retry on subsequent access.
@@ -731,53 +933,92 @@ class ErrorHandlingTests(LazyImportTestCase):
         """
         code = textwrap.dedent("""
             import sys
-            import types
 
-            lazy import test.test_lazy_import.data.broken_module
-
-            # First access - should fail
-            try:
-                x = test.test_lazy_import.data.broken_module
-            except AttributeError:
-                pass
-
-            # The lazy object should still be a lazy proxy (not reified)
-            g = globals()
-            lazy_obj = g['test']
-            # The root 'test' binding should still allow retry
-            # Second access - should also fail (retry the import)
-            try:
-                x = test.test_lazy_import.data.broken_module
-            except AttributeError:
-                print("OK - retry worked")
-        """)
-        result = subprocess.run(
-            [sys.executable, "-c", code],
-            capture_output=True,
-            text=True
-        )
-        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
-        self.assertIn("OK", result.stdout)
-
-    def test_error_during_module_execution_propagates(self):
-        """Errors in module code during reification should propagate correctly."""
-        code = textwrap.dedent("""
-            import sys
             lazy import test.test_lazy_import.data.broken_module
 
             try:
                 _ = test.test_lazy_import.data.broken_module
-                print("FAIL - should have raised")
-            except AttributeError:
-                print("OK")
+            except ValueError as exc:
+                assert str(exc) == "This module always fails to import", exc
+            else:
+                raise AssertionError("ValueError was not raised")
+
+            assert "test.test_lazy_import.data.broken_module" not in sys.modules
+
+            try:
+                _ = test.test_lazy_import.data.broken_module
+            except ValueError as exc:
+                assert str(exc) == "This module always fails to import", exc
+            else:
+                raise AssertionError("ValueError was not raised")
         """)
-        result = subprocess.run(
-            [sys.executable, "-c", code],
-            capture_output=True,
-            text=True
-        )
-        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
-        self.assertIn("OK", result.stdout)
+        assert_python_ok("-c", code)
+
+    def test_lazy_submodule_traceback_hides_importlib_frames(self):
+        code = textwrap.dedent("""
+            import traceback
+
+            lazy import test.test_lazy_import.data.broken_module
+
+            try:
+                _ = test.test_lazy_import.data.broken_module
+            except ValueError as exc:
+                frames = traceback.extract_tb(exc.__traceback__)
+                assert [frame.name for frame in frames] == ["<module>", "<module>"], frames
+                assert frames[0].filename == "<string>", frames
+                assert frames[1].filename.endswith("broken_module.py"), frames
+            else:
+                raise AssertionError("ValueError was not raised")
+        """)
+        assert_python_ok("-c", code)
+
+    def test_module_not_found_during_module_execution_propagates(self):
+        code = textwrap.dedent("""
+            lazy import test.test_lazy_import.data.missing_dependency
+
+            try:
+                _ = test.test_lazy_import.data.missing_dependency
+            except ModuleNotFoundError as exc:
+                assert exc.name == "missing_dependency_for_lazy_import_test", exc.name
+                assert str(exc) == "No module named 'missing_dependency_for_lazy_import_test'", exc
+            else:
+                raise AssertionError("ModuleNotFoundError was not raised")
+        """)
+        assert_python_ok("-c", code)
+
+    def test_self_named_module_not_found_during_module_execution_propagates(self):
+        code = textwrap.dedent("""
+            lazy import test.test_lazy_import.data.self_named_module_not_found
+
+            try:
+                _ = test.test_lazy_import.data.self_named_module_not_found
+            except ModuleNotFoundError as exc:
+                assert exc.name == "test.test_lazy_import.data.self_named_module_not_found", exc.name
+                assert str(exc) == "boom", exc
+            else:
+                raise AssertionError("ModuleNotFoundError was not raised")
+        """)
+        assert_python_ok("-c", code)
+
+    def test_none_in_sys_modules_during_submodule_resolution_propagates(self):
+        code = textwrap.dedent("""
+            import sys
+
+            sys.modules["test.test_lazy_import.data.blocked_module"] = None
+            lazy import test.test_lazy_import.data.blocked_module
+
+            try:
+                _ = test.test_lazy_import.data.blocked_module
+            except ModuleNotFoundError as exc:
+                assert exc.name == "test.test_lazy_import.data.blocked_module", exc.name
+                assert str(exc) == (
+                    "import of test.test_lazy_import.data.blocked_module "
+                    "halted; None in sys.modules"
+                ), exc
+            else:
+                raise AssertionError("ModuleNotFoundError was not raised")
+        """)
+        assert_python_ok("-c", code)
 
     def test_circular_lazy_import_does_not_crash_for_gh_144727(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -1095,6 +1336,22 @@ class MultipleNameFromImportTests(LazyImportTestCase):
         self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
         self.assertIn("OK", result.stdout)
 
+    def test_accessing_one_name_imports_only_its_submodule(self):
+        """Accessing one name should not import the other names' submodules."""
+        code = textwrap.dedent("""
+            import sys
+
+            lazy from test.test_lazy_import.data.pkg import b, bar, broken
+
+            # Importing bar prints, and importing broken raises.
+            b.foo()
+
+            assert "test.test_lazy_import.data.pkg.bar" not in sys.modules
+            assert "test.test_lazy_import.data.pkg.broken" not in sys.modules
+        """)
+        rc, out, err = assert_python_ok("-c", code)
+        self.assertEqual(out, b"")
+
     def test_all_names_reified_after_all_accessed(self):
         """All names should be reified after each is accessed."""
         code = textwrap.dedent("""
@@ -1174,6 +1431,262 @@ class SysLazyModulesTrackingTests(LazyImportTestCase):
                 f"expected 'json' in sys.lazy_modules, got {set(sys.lazy_modules)}"
             )
             print("OK")
+        """)
+        assert_python_ok("-c", code)
+
+    def test_already_loaded_module_is_not_tracked(self):
+        """A lazy import of an already loaded module should not be tracked."""
+        code = textwrap.dedent("""
+            import sys
+
+            # Loaded by a regular import.
+            import json
+            lazy import json as lazy_json
+            assert "json" not in sys.lazy_modules, (
+                f"expected 'json' not in sys.lazy_modules, got {sys.lazy_modules}"
+            )
+
+            # Loaded by reifying an earlier lazy import.
+            lazy import base64
+            _ = base64.b64encode
+            lazy import base64 as lazy_base64
+            assert "base64" not in sys.lazy_modules, (
+                f"expected 'base64' not in sys.lazy_modules, got {sys.lazy_modules}"
+            )
+        """)
+        assert_python_ok("-c", code)
+
+    def test_already_loaded_submodule_is_not_tracked(self):
+        """`lazy from` a loaded submodule should not be tracked either."""
+        code = textwrap.dedent("""
+            import sys
+            import test.test_lazy_import.data.pkg.b
+            lazy from test.test_lazy_import.data.pkg import b
+            assert "test.test_lazy_import.data.pkg.b" not in sys.lazy_modules, (
+                f"expected 'pkg.b' untracked, got {sys.lazy_modules}"
+            )
+        """)
+        assert_python_ok("-c", code)
+
+    def test_attribute_entry_removed_on_reification(self):
+        """`lazy from x import attr` should untrack "x.attr" once resolved."""
+        code = textwrap.dedent("""
+            import sys
+            lazy from test.test_lazy_import.data.basic2 import x
+            assert "test.test_lazy_import.data.basic2.x" in sys.lazy_modules, (
+                f"expected 'basic2.x' tracked, got {sys.lazy_modules}"
+            )
+            _ = x
+            assert "test.test_lazy_import.data.basic2.x" not in sys.lazy_modules, (
+                f"expected 'basic2.x' untracked, got {sys.lazy_modules}"
+            )
+        """)
+        assert_python_ok("-c", code)
+
+    def test_already_loaded_attribute_is_not_tracked(self):
+        code = textwrap.dedent("""
+            import sys
+            import math
+
+            lazy from math import pi
+            assert "math.pi" not in sys.lazy_modules, sys.lazy_modules
+            assert pi == math.pi
+        """)
+        assert_python_ok("-c", code)
+
+    def test_cached_lazy_attribute_tracks_its_target(self):
+        code = textwrap.dedent("""
+            import sys
+            import test.test_lazy_import.data.basic_from_unused
+
+            holder = "test.test_lazy_import.data.basic_from_unused"
+            target = "test.test_lazy_import.data.basic2"
+
+            namespace = {"__name__": "cached_import_test"}
+            exec(f"lazy from {holder} import basic2", namespace)
+            assert holder + ".basic2" not in sys.lazy_modules, sys.lazy_modules
+            assert target in sys.lazy_modules, sys.lazy_modules
+            exec("assert basic2.x == 42", namespace)
+            assert target not in sys.lazy_modules, sys.lazy_modules
+        """)
+        assert_python_ok("-c", code)
+
+    def test_cached_attribute_keeps_pending_module_tracked(self):
+        code = textwrap.dedent("""
+            import sys
+            import test.test_lazy_import.data.pkg as pkg
+            pkg.b = 42
+
+            lazy import test.test_lazy_import.data.pkg.b as pending
+            lazy from test.test_lazy_import.data.pkg import b
+            name = "test.test_lazy_import.data.pkg.b"
+            assert b == 42, b
+            assert name not in sys.modules, sys.modules
+            assert name in sys.lazy_modules, sys.lazy_modules
+            assert pending.foo() == "foo"
+            assert name not in sys.lazy_modules, sys.lazy_modules
+        """)
+        assert_python_ok("-c", code)
+
+    def test_failed_reification_stays_tracked(self):
+        """A lazy import that fails to resolve must stay tracked."""
+        code = textwrap.dedent("""
+            import sys
+            lazy import test.test_lazy_import.data.broken_module
+            try:
+                _ = test.test_lazy_import.data.broken_module
+            except ValueError:
+                pass
+            else:
+                raise AssertionError("ValueError was not raised")
+            assert "test.test_lazy_import.data.broken_module" in sys.lazy_modules, (
+                f"failed reification must stay tracked, got {sys.lazy_modules}"
+            )
+        """)
+        assert_python_ok("-c", code)
+
+    def test_blocked_module_is_still_tracked(self):
+        """A ``None`` entry in sys.modules must not count as loaded."""
+        code = textwrap.dedent("""
+            import sys
+            sys.modules['test.test_lazy_import.data.basic2'] = None
+            lazy import test.test_lazy_import.data.basic2
+            assert "test.test_lazy_import.data.basic2" in sys.lazy_modules, (
+                f"blocked module must stay tracked, got {sys.lazy_modules}"
+            )
+        """)
+        assert_python_ok("-c", code)
+
+    def test_initializing_module_is_still_tracked(self):
+        """A module that is still executing must not count as loaded."""
+        code = textwrap.dedent("""
+            import sys
+            name = "test.test_lazy_import.data.init_fails"
+            try:
+                import test.test_lazy_import.data.init_fails
+            except ValueError:
+                pass
+            else:
+                raise AssertionError("ValueError was not raised")
+            assert name not in sys.modules, "failed import left a module behind"
+            assert name in sys.lazy_modules, (
+                f"expected {name!r} tracked, got {sys.lazy_modules}"
+            )
+        """)
+        assert_python_ok("-c", code)
+
+    def test_module_spec_descriptor_is_not_run(self):
+        """Checking whether a module is loaded must not run its descriptors."""
+        code = textwrap.dedent("""
+            import sys
+            import types
+
+            class RaisingSpec(types.ModuleType):
+                @property
+                def __spec__(self):
+                    raise RuntimeError("__spec__ descriptor was run")
+
+            sys.modules["raising_spec"] = RaisingSpec("raising_spec")
+            lazy import raising_spec
+            assert "raising_spec" not in sys.lazy_modules, (
+                f"expected 'raising_spec' untracked, got {sys.lazy_modules}"
+            )
+        """)
+        assert_python_ok("-c", code)
+
+    def test_spec_initializing_descriptor_is_not_run(self):
+        code = textwrap.dedent("""
+            import sys
+            import types
+
+            class Spec:
+                @property
+                def _initializing(self):
+                    raise RuntimeError("_initializing descriptor was run")
+
+                @property
+                def __dict__(self):
+                    raise RuntimeError("__dict__ descriptor was run")
+
+            class SlottedSpec:
+                __slots__ = ()
+
+                @property
+                def _initializing(self):
+                    raise RuntimeError("_initializing descriptor was run")
+
+            for spec in (Spec(), SlottedSpec()):
+                module = types.ModuleType("custom_spec")
+                module.__spec__ = spec
+                sys.modules["custom_spec"] = module
+                lazy import custom_spec
+        """)
+        assert_python_ok("-c", code)
+
+    def test_cached_attribute_does_not_check_spec_twice(self):
+        code = textwrap.dedent("""
+            import sys
+            import types
+
+            class Spec:
+                def __init__(self):
+                    self.calls = 0
+
+                @property
+                def _initializing(self):
+                    self.calls += 1
+                    if self.calls == 2:
+                        raise RuntimeError("_initializing was read twice")
+                    return False
+
+            module = types.ModuleType("cached_spec")
+            module.__spec__ = Spec()
+            module.attr = 1
+            sys.modules["cached_spec"] = module
+            lazy from cached_spec import attr
+            assert attr == 1, attr
+        """)
+        assert_python_ok("-c", code)
+
+    def test_spec_initializing_truth_conversion_is_not_run(self):
+        code = textwrap.dedent("""
+            import sys
+            import types
+            from importlib.machinery import ModuleSpec
+
+            class Flag:
+                def __bool__(self):
+                    raise RuntimeError("_initializing truth conversion was run")
+
+            released = memoryview(b"")
+            released.release()
+            for flag in (Flag(), released):
+                sys.lazy_modules.discard("custom_spec")
+                module = types.ModuleType("custom_spec")
+                module.__spec__ = ModuleSpec("custom_spec", None)
+                module.__spec__._initializing = flag
+                sys.modules["custom_spec"] = module
+                lazy import custom_spec
+                assert "custom_spec" in sys.lazy_modules, sys.lazy_modules
+        """)
+        assert_python_ok("-c", code)
+
+    def test_pending_submodule_is_still_tracked(self):
+        """`lazy from` a submodule that is not loaded must stay tracked."""
+        code = textwrap.dedent("""
+            import sys
+            lazy from test.test_lazy_import.data.pkg import b
+            assert "test.test_lazy_import.data.pkg.b" in sys.lazy_modules, (
+                f"expected 'pkg.b' tracked, got {sys.lazy_modules}"
+            )
+            import test.test_lazy_import.data.pkg
+            assert "test.test_lazy_import.data.pkg.b" not in sys.modules, (
+                "loading the package must not load the submodule"
+            )
+            assert "test.test_lazy_import.data.pkg.b" in sys.lazy_modules, (
+                f"loading the package must not untrack the submodule, "
+                f"got {sys.lazy_modules}"
+            )
         """)
         assert_python_ok("-c", code)
 
@@ -2134,6 +2647,122 @@ class ModuleVariableNameCollisionTests(unittest.TestCase):
         ]
         self.assertIs(module_same_name_var_order2.bar, bar_mod)
 
+    def test_lazy_import_as_wins_over_variable(self):
+        """A dotted lazy import as imports the submodule the variable hides."""
+        # gh-157757: importing pkg.b rebinds pkg.b from the variable to the
+        # module, eagerly and lazily alike.
+        code = textwrap.dedent("""
+            import sys
+            import test.test_lazy_import.data.pkg as pkg
+            pkg.b = "hides the b submodule"
+
+            lazy import test.test_lazy_import.data.pkg.b as b
+            lazy import test.test_lazy_import.data.metasyntactic.foo.bar as bar
+
+            assert b is sys.modules["test.test_lazy_import.data.pkg.b"], b
+            assert bar is sys.modules[
+                "test.test_lazy_import.data.metasyntactic.foo.bar"], bar
+        """)
+        assert_python_ok("-c", code)
+
+    def test_dotted_as_of_loaded_module(self):
+        """A dotted lazy import as binds the module, not a same-named attribute."""
+        # importlib.metadata is already loaded and has a `metadata` attribute.
+        code = textwrap.dedent("""
+            import importlib.metadata
+            import importlib.metadata as eager
+
+            lazy import importlib.metadata as lazily
+
+            assert lazily is eager, lazily
+        """)
+        assert_python_ok("-c", code)
+
+    def test_dotted_as_replays_lookups_on_custom_placeholder(self):
+        """A dotted lazy import as looks up its names on what the hook returned."""
+        code = textwrap.dedent("""
+            import builtins
+            import xml.dom
+
+            # In a list, so the hook reading it does not resolve it.
+            placeholder = [__lazy_import__("xml")]
+            default = builtins.__lazy_import__
+            builtins.__lazy_import__ = lambda *args: placeholder[0]
+            lazy import fake.dom as dom
+            builtins.__lazy_import__ = default
+
+            assert dom is xml.dom, dom
+        """)
+        assert_python_ok("-c", code)
+
+    def test_empty_fromlist_placeholder_matches_no_fromlist(self):
+        """An empty fromlist behaves like None."""
+        code = textwrap.dedent("""
+            expected = "<lazy_import 'xml.dom'>"
+            # In lists, so reading them does not resolve them.
+            for fromlist in (None, ()):
+                same = [__lazy_import__("xml.dom", fromlist=fromlist)]
+                assert repr(same[0]) == expected, (fromlist, repr(same[0]))
+            bare = [__lazy_import__("xml.dom")]
+            assert repr(bare[0]) == expected, repr(bare[0])
+        """)
+        assert_python_ok("-c", code)
+
+    def test_empty_fromlist_preserved_for_custom_import(self):
+        code = textwrap.dedent("""
+            import builtins
+            import types
+
+            value = object()
+            module = types.SimpleNamespace(dom=value)
+            placeholder = [__lazy_import__("xml.dom", fromlist=())]
+            default_import = builtins.__import__
+            default_lazy_import = builtins.__lazy_import__
+            calls = []
+
+            def import_hook(name, globals, locals, fromlist, level):
+                assert name == "xml.dom", name
+                assert fromlist == (), fromlist
+                calls.append(fromlist)
+                return module
+
+            builtins.__import__ = import_hook
+            assert placeholder[0].resolve() is module
+            builtins.__lazy_import__ = lambda *args: placeholder[0]
+            lazy import fake.dom as dom
+            assert dom is value
+            builtins.__import__ = default_import
+            builtins.__lazy_import__ = default_lazy_import
+
+            assert calls == [(), ()], calls
+        """)
+        assert_python_ok("-c", code)
+
+    def test_dotted_as_replays_lookups_on_dotted_placeholder(self):
+        """A dotted lazy import as replays its names on the hook's package."""
+        # importlib.metadata has a `metadata` attribute of its own, which the
+        # placeholder for importlib must not answer with.
+        for target in ("xml.dom", "importlib.metadata"):
+            with self.subTest(target=target):
+                leaf = target.rpartition(".")[2]
+                code = textwrap.dedent(f"""
+                    import builtins
+                    import sys
+                    import {target}
+
+                    # In a list, so the hook reading it does not resolve it.
+                    placeholder = [__lazy_import__("{target}", fromlist=())]
+                    default = builtins.__lazy_import__
+                    builtins.__lazy_import__ = lambda *args: placeholder[0]
+                    lazy import fake.{leaf} as {leaf}
+                    builtins.__lazy_import__ = default
+
+                    name = repr(globals()["{leaf}"])
+                    assert name == "<lazy_import '{target}'>", name
+                    assert {leaf} is sys.modules["{target}"], {leaf}
+                """)
+                assert_python_ok("-c", code)
+
 
 class DeletedModuleReimportTests(unittest.TestCase):
     """Tests for reimporting after module deletion from sys.modules."""
@@ -2189,6 +2818,61 @@ class CircularImportLazyTests(unittest.TestCase):
         )
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("ImportError", result.stderr)
+
+
+@support.requires_subprocess()
+class LazyImportFinalizationTests(unittest.TestCase):
+    """Destructors that use lazy imports after finalization freed their state."""
+
+    def test_declare(self):
+        code = textwrap.dedent("""
+            import builtins, os
+
+            class Canary:
+                def __del__(self, write=os.write, exec=exec,
+                            builtins={"__lazy_import__": builtins.__lazy_import__}):
+                    exec("lazy import a.b", {"__builtins__": builtins})
+                    write(1, b"ok")
+
+            # Only this placeholder keeps the canary alive.
+            exec("lazy import pkg.mod", {"__builtins__": {
+                "__lazy_import__": builtins.__lazy_import__, "c": Canary()}})
+        """)
+        self.assertEqual(assert_python_ok("-c", code).out, b"ok")
+
+    def test_resolve(self):
+        code = textwrap.dedent("""
+            import contextvars, json, os, types
+
+            def safe_import(name, *args, allowed={"json": json}):
+                return allowed[name]
+
+            # Not in sys.modules, with builtins that still work at shutdown.
+            ns = types.ModuleType("ns")
+            ns.json = __lazy_import__("json", {"__builtins__": {"__import__": safe_import}})
+
+            class Canary:
+                def __del__(self, write=os.write, type=type, ns=ns):
+                    write(1, type(ns.json).__name__.encode())
+
+            contextvars.ContextVar("v").set(Canary())
+        """)
+        self.assertEqual(assert_python_ok("-c", code).out, b"module")
+
+    def test_set_lazy_attributes(self):
+        code = textwrap.dedent("""
+            import _imp, os, sys
+
+            class Canary:
+                def __del__(self, write=os.write,
+                            set_lazy=_imp._set_lazy_attributes):
+                    set_lazy(None, "mod")
+                    write(1, b"ok")
+
+            # Freed while sys.lazy_modules is being cleared.
+            sys.lazy_modules.add(Canary())
+        """)
+        self.assertEqual(assert_python_ok("-c", code).out, b"ok")
 
 
 if __name__ == '__main__':

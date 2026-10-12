@@ -1,0 +1,6 @@
+Fix Argument Clinic for ``@getter`` and ``@setter`` in a preprocessor
+conditional block.
+It failed with an internal error.
+Argument Clinic now also rejects the accessors of the same attribute with
+different C basenames, and the same accessor defined twice, which silently
+generated invalid or duplicated entries of :c:type:`PyGetSetDef`.

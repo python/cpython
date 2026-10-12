@@ -34,7 +34,7 @@ class AbstractWidgetTest(AbstractTkTest):
         try:
             return self._scaling
         except AttributeError:
-            self._scaling = float(self.root.call('tk', 'scaling'))
+            self._scaling = self.root.tk_scaling()
             return self._scaling
 
     def _str(self, value):
@@ -67,6 +67,11 @@ class AbstractWidgetTest(AbstractTkTest):
                 expected = tkinter._join(expected)
             else:
                 expected = str(expected)
+        elif type(expected) is int:
+            self.assertIsInstance(widget[name], int)
+        elif type(expected) is float:
+            # An integral value may be returned as an int.
+            self.assertIsInstance(widget[name], (int, float))
         if eq is None:
             eq = tcl_obj_eq
         self.assertEqual2(widget[name], expected, eq=eq)
@@ -439,7 +444,7 @@ class StandardOptionsTests(PixelOptionsTests):
 
     def test_configure_orient(self):
         widget = self.create()
-        self.assertEqual(str(widget['orient']), self.default_orient)
+        self.assertEqual(widget['orient'], self.default_orient)
         self.checkEnumParam(widget, 'orient', 'horizontal', 'vertical')
 
     @requires_tk(8, 7)

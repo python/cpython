@@ -1,0 +1,2 @@
+Fix deep flamegraph exports on platforms with small C stacks by falling back
+to the Python JSON encoder when the C encoder runs out of stack space.

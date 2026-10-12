@@ -272,6 +272,15 @@ def make_build_python(context: argparse.Namespace) -> None:
         run(["make", "-j", str(os.cpu_count())])
 
 
+def pythoninfo_build_python(context: argparse.Namespace) -> None:
+    """The implementation of the "pythoninfo-build" command."""
+    with (
+        group("Display build info of the build Python"),
+        cwd(subdir("build")),
+    ):
+        run(["make", "pythoninfo"])
+
+
 def apple_target(host: str) -> str:
     """Return the Apple platform identifier for a given host triple."""
     for _, platform_slices in HOSTS.items():
@@ -319,7 +328,7 @@ def unpack_deps(
     for name_ver in [
         "BZip2-1.0.8-2",
         "libFFI-3.4.7-2",
-        "OpenSSL-3.5.7-1",
+        "OpenSSL-3.5.9-1",
         "XZ-5.6.4-2",
         "mpdecimal-4.0.0-2",
         "zstd-1.5.7-1",
@@ -399,7 +408,6 @@ def configure_host_python(
             f"--host={host}",
             f"--build={sysconfig.get_config_var('BUILD_GNU_TYPE')}",
             f"--with-build-python={build_python_path()}",
-            "--with-system-libmpdec",
             "--enable-framework",
             # Dependent libraries.
             f"--with-openssl={prefix_dir}",
@@ -754,6 +762,7 @@ def build(context: argparse.Namespace, host: str | None = None) -> None:
         for step in [
             configure_build_python,
             make_build_python,
+            pythoninfo_build_python,
         ]:
             step(context)
 
@@ -909,6 +918,9 @@ def parse_args() -> argparse.Namespace:
     make_build = subcommands.add_parser(
         "make-build", help="Run `make` for the build Python"
     )
+    pythoninfo_build = subcommands.add_parser(
+        "pythoninfo-build", help="Display build info of the build Python"
+    )
     configure_host = subcommands.add_parser(
         "configure-host",
         help="Run `configure` for a specific platform and target",
@@ -967,6 +979,7 @@ def parse_args() -> argparse.Namespace:
         clean,
         configure_build,
         make_build,
+        pythoninfo_build,
         configure_host,
         make_host,
         build,
@@ -1078,6 +1091,7 @@ def main() -> None:
         "clean": clean,
         "configure-build": configure_build_python,
         "make-build": make_build_python,
+        "pythoninfo-build": pythoninfo_build_python,
         "configure-host": configure_host_python,
         "make-host": make_host_python,
         "package": package,

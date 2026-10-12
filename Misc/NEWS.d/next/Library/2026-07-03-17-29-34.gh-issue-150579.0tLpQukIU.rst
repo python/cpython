@@ -1,0 +1,2 @@
+:mod:`concurrent.futures` now uses lazy imports for its executor submodules
+instead of a module ``__getattr__`` hook.

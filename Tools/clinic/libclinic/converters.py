@@ -4,11 +4,12 @@ import sys
 from types import NoneType
 from typing import Any
 
+import libclinic
 from libclinic import fail, NullType, unspecified, NULL, c_bytes_repr, c_unichar_repr
 from libclinic.function import (
     Function, Parameter,
     CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW,
-    GETTER, SETTER)
+    ACCESSORS)
 from libclinic.codegen import CRenderData, TemplateDict
 from libclinic.converter import (
     CConverter, legacy_converters, add_legacy_c_converter)
@@ -601,6 +602,60 @@ class fildes_converter(CConverter):
             argname=argname)
 
 
+class gid_t_converter(CConverter):
+    type = 'gid_t'
+    converter = '_Py_Gid_Converter'
+
+
+class uid_t_converter(CConverter):
+    type = 'uid_t'
+    converter = '_Py_Uid_Converter'
+
+
+class pid_t_converter(CConverter):
+    type = 'pid_t'
+    format_unit = '" _Py_PARSE_PID "'
+
+    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+        return self.format_code("""
+            {paramname} = PyLong_AsPid({argname});
+            if ({paramname} == (pid_t)(-1) && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """,
+            argname=argname)
+
+
+class Py_off_t_converter(CConverter):
+    type = 'Py_off_t'
+    converter = '_Py_Off_t_Converter'
+
+    def use_converter(self) -> None:
+        self.add_include('pycore_fileutils.h', '_Py_Off_t_Converter()')
+
+
+class BOOL_converter(int_converter):
+    type = 'BOOL'
+
+
+class DWORD_converter(unsigned_long_converter):
+    type = 'DWORD'
+
+
+class HANDLE_converter(CConverter):
+    type = 'HANDLE'
+    format_unit = '"_Py_PARSE_UINTPTR"'
+
+    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+        return self.format_code("""
+            {paramname} = PyLong_AsVoidPtr({argname});
+            if (!{paramname} && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """,
+            argname=argname)
+
+
 class float_converter(CConverter):
     type = 'float'
     default_type = float
@@ -781,12 +836,13 @@ class str_converter(CConverter):
             return ""
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
-        if self.format_unit == 's':
-            return self.format_code("""
-                if (!PyUnicode_Check({argname})) {{{{
-                    {bad_argument}
-                    goto exit;
-                }}}}
+        if self.format_unit not in ('s', 'z'):
+            return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+
+        # Decode a value already known to be a str.  Shared by 's' and 'z',
+        # which differ only in whether None is also accepted.
+        if limited_capi:
+            decode = """
                 Py_ssize_t {length_name};
                 {paramname} = PyUnicode_AsUTF8AndSize({argname}, &{length_name});
                 if ({paramname} == NULL) {{{{
@@ -796,35 +852,52 @@ class str_converter(CConverter):
                     PyErr_SetString(PyExc_ValueError, "embedded null character");
                     goto exit;
                 }}}}
-                """,
-                argname=argname,
-                bad_argument=self.bad_argument(displayname, 'str', limited_capi=limited_capi),
-                length_name=self.length_name)
+                """
+        else:
+            # _PyUnicode_AsUTF8NoNUL() is the same code, but its Py_ssize_t
+            # stays in the callee's frame.  An address-taken local here would
+            # give every generated parser a stack protector canary.
+            self.add_include('pycore_unicodeobject.h',
+                             '_PyUnicode_AsUTF8NoNUL()')
+            decode = """
+                {paramname} = _PyUnicode_AsUTF8NoNUL({argname});
+                if ({paramname} == NULL) {{{{
+                    goto exit;
+                }}}}
+                """
+
         if self.format_unit == 'z':
-            return self.format_code("""
+            expected = 'str or None'
+            code = """
                 if ({argname} == Py_None) {{{{
                     {paramname} = NULL;
                 }}}}
                 else if (PyUnicode_Check({argname})) {{{{
-                    Py_ssize_t {length_name};
-                    {paramname} = PyUnicode_AsUTF8AndSize({argname}, &{length_name});
-                    if ({paramname} == NULL) {{{{
-                        goto exit;
-                    }}}}
-                    if (strlen({paramname}) != (size_t){length_name}) {{{{
-                        PyErr_SetString(PyExc_ValueError, "embedded null character");
-                        goto exit;
-                    }}}}
+                    {decode}
                 }}}}
                 else {{{{
                     {bad_argument}
                     goto exit;
                 }}}}
-                """,
-                argname=argname,
-                bad_argument=self.bad_argument(displayname, 'str or None', limited_capi=limited_capi),
-                length_name=self.length_name)
-        return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+                """
+        else:
+            expected = 'str'
+            code = """
+                if (!PyUnicode_Check({argname})) {{{{
+                    {bad_argument}
+                    goto exit;
+                }}}}
+                {decode}
+                """
+
+        return self.format_code(
+            libclinic.linear_format(
+                libclinic.normalize_snippet(code),
+                decode=libclinic.normalize_snippet(decode)),
+            argname=argname,
+            bad_argument=self.bad_argument(displayname, expected,
+                                           limited_capi=limited_capi),
+            length_name=self.length_name)
 
 #
 # This is the fourth or fifth rewrite of registering all the
@@ -1124,7 +1197,7 @@ def correct_name_for_self(
         f: Function,
         parser: bool = False
 ) -> tuple[str, str]:
-    if f.kind in {CALLABLE, METHOD_INIT, GETTER, SETTER}:
+    if f.kind in {CALLABLE, METHOD_INIT} | ACCESSORS:
         if f.cls:
             return "PyObject *", "self"
         return "PyObject *", "module"

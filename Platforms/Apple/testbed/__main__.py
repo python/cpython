@@ -88,10 +88,18 @@ def xcode_test(location: Path, platform: str, simulator: str, verbose: bool):
         test_env["TEST_RUNNER_GITHUB_ACTIONS"] = os.environ["GITHUB_ACTIONS"]
 
     print("Running test project...")
-    # Test execution *can't* be run -quiet; verbose mode
-    # is how we see the output of the test output.
+    # Test execution *can't* be run -quiet; verbose mode is how we see the
+    # output of the test output. However, we don't need test diagnostics -
+    # they're large, and the context they contain generally isn't helpful for
+    # CPython tests.
     process = subprocess.Popen(
-        ["xcodebuild", "test-without-building"] + args,
+        [
+            "xcodebuild",
+            "test-without-building",
+            "-collect-test-diagnostics",
+            "never",
+        ]
+        + args,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         env=test_env,
@@ -271,8 +279,14 @@ def run_testbed(
     update_test_plan(location, platform, args)
     print(" done.")
 
+    # xcodebuild doesn't guarantee that the CoreSimulatorService daemon is
+    # running prior to using a simulator, but calling `xcrun simctl list` does.
+    # Determining the default simulator that *would* be used is a cheap action;
+    # so use that as a way to ensure that the CoreSimulatorService daemon is
+    # running.
+    default_simulator = select_simulator_device(platform)
     if simulator is None:
-        simulator = select_simulator_device(platform)
+        simulator = default_simulator
     print(f"Running test on {simulator}")
 
     xcode_test(

@@ -39,6 +39,11 @@ class ListedToplevelTest(unittest.TestCase):
         win = window.ListedToplevel(self.root)
         self.assertIn(win, window.registry)
         self.assertEqual(win.focused_widget, win)
+        self.assertEqual(win.winfo_class(), 'Idle')
+
+    def test_init_class_override(self):
+        win = window.ListedToplevel(self.root, class_='Other')
+        self.assertEqual(win.winfo_class(), 'Other')
 
 
 if __name__ == '__main__':

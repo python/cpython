@@ -1646,6 +1646,26 @@ DummyDataclass(
     'corge': 7,
 }""")
 
+    def test_expand_respects_width_with_long_keys(self):
+        # gh-155596: in expand mode the width of the "key: " prefix was not
+        # counted when deciding whether a value fits on the current line, so
+        # values under long keys could overflow width.
+        obj = {'a' * 12: 1, 'b' * 20: 2, 'c' * 30: {'d' * 5: 3, 'e' * 40: 3}}
+        result = pprint.pformat(obj, expand=True)
+        self.assertEqual(result,
+"""\
+{
+ 'aaaaaaaaaaaa': 1,
+ 'bbbbbbbbbbbbbbbbbbbb': 2,
+ 'cccccccccccccccccccccccccccccc': {
+  'ddddd': 3,
+  'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee': 3,
+ },
+}""")
+        # The nested value must be broken up rather than overflowing.
+        self.assertTrue(all(len(line) <= 80 for line in result.splitlines()),
+                        max(result.splitlines(), key=len))
+
     def test_expand_ordered_dict(self):
         dummy_ordered_dict = collections.OrderedDict(
             [
@@ -1895,7 +1915,11 @@ ChainMap(
             'baz': 123,
             'corge': 7,
             'foo': 'bar',
-            'quux': ['foo', 'bar', 'baz'],
+            'quux': [
+                'foo',
+                'bar',
+                'baz',
+            ],
             'qux': {
                 'baz': 123,
                 'foo': 'bar',
@@ -1939,7 +1963,10 @@ deque([
         'corge': 7,
         'foo': 'bar',
         'quux': ['foo', 'bar', 'baz'],
-        'qux': {'baz': 123, 'foo': 'bar'},
+        'qux': {
+            'baz': 123,
+            'foo': 'bar',
+        },
     },
     'foo',
     'bar',

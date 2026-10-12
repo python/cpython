@@ -20,6 +20,8 @@ Generating Symbol Tables
 .. function:: symtable(code, filename, compile_type, *, module=None)
 
    Return the toplevel :class:`SymbolTable` for the Python source *code*.
+   *code* can be a string, a bytes object, or an AST object,
+   as for the builtin :func:`compile`.
    *filename* is the name of the file containing the code.  *compile_type* is
    like the *mode* argument to :func:`compile`.
    The optional argument *module* specifies the module name.
@@ -28,6 +30,9 @@ Generating Symbol Tables
 
    .. versionadded:: 3.15
       Added the *module* parameter.
+
+   .. versionchanged:: next
+      *code* can now be an AST object.
 
 
 Examining Symbol Tables
@@ -51,6 +56,16 @@ Examining Symbol Tables
       :value: "class"
 
       Used for the symbol table of a class.
+
+   .. attribute:: INLINED_COMPREHENSION
+      :value: "inlined comprehension"
+
+      Used for the symbol table of a list, set or dict comprehension that
+      is inlined into the enclosing code unit (see :pep:`709`). A symbol
+      table of this type represents a sub-scope of the enclosing code unit's
+      scope, and it does not correspond to a separate compilation unit.
+
+      .. versionadded:: next
 
    The following members refer to different flavors of
    :ref:`annotation scopes <annotation-scopes>`.

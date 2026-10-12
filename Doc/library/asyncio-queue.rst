@@ -71,6 +71,8 @@ Queue
       Return an item if one is immediately available, else raise
       :exc:`QueueEmpty`.
 
+      Raises :exc:`QueueShutDown` if the queue has been shut down and is empty.
+
    .. method:: join()
       :async:
 
@@ -95,6 +97,8 @@ Queue
       Put an item into the queue without blocking.
 
       If no free slot is immediately available, raise :exc:`QueueFull`.
+
+      Raises :exc:`QueueShutDown` if the queue has been shut down.
 
    .. method:: qsize()
 
@@ -188,8 +192,9 @@ Exceptions
 
 .. exception:: QueueShutDown
 
-   Exception raised when :meth:`~Queue.put` or :meth:`~Queue.get` is
-   called on a queue which has been shut down.
+   Exception raised when :meth:`~Queue.put`, :meth:`~Queue.put_nowait`,
+   :meth:`~Queue.get` or :meth:`~Queue.get_nowait` is called
+   on a queue which has been shut down.
 
    .. versionadded:: 3.13
 
