@@ -152,10 +152,14 @@ class BasicTest(BaseTest):
             ({'symlinks': False}, False),
         ):
             with self.subTest(kwargs=kwargs):
-                with patch.object(venv.EnvBuilder, 'create', autospec=True) as create:
+                builders = []
+                def record_builder(self, env_dir):
+                    builders.append(self)
+                with patch.object(venv.EnvBuilder, 'create', autospec=True,
+                                  side_effect=record_builder) as create:
                     venv.create(self.env_dir, **kwargs)
-                builder, env_dir = create.call_args.args
-                self.assertIs(builder.symlinks, expected)
+                env_dir, = create.call_args.args
+                self.assertIs(builders[0].symlinks, expected)
                 self.assertEqual(env_dir, self.env_dir)
 
     def _check_output_of_default_create(self):

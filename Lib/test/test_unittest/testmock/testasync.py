@@ -9,9 +9,10 @@ from test import support
 support.requires_working_socket(module=True)
 
 from asyncio import run
+from test.test_unittest.testmock.testmock import SomethingAsync
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import (ANY, call, AsyncMock, patch, MagicMock, Mock,
-                           create_autospec, sentinel, _CallList, seal)
+                           create_autospec, sentinel, _CallList, seal, DEFAULT)
 
 
 def tearDownModule():
@@ -297,6 +298,148 @@ class AsyncAutospecTest(unittest.TestCase):
             self.assertEqual(mock_method.await_args_list, [])
 
         run(test_async())
+
+    # gh-76273 / bpo-32092
+    def _check_autospeced_something(self, something):
+        self._check_autospeced_something_method(something.meth)
+        self._check_autospeced_something_method(something.cmeth)
+        self._check_autospeced_something_method(something.smeth)
+
+    def _check_autospeced_something_method(self, mock_method):
+        # check that the methods are callable with correct args.
+        asyncio.run(mock_method(sentinel.a, sentinel.b, sentinel.c))
+        asyncio.run(mock_method(sentinel.a, sentinel.b, sentinel.c,
+                                d=sentinel.d))
+        mock_method.assert_has_calls([
+            call(sentinel.a, sentinel.b, sentinel.c),
+            call(sentinel.a, sentinel.b, sentinel.c, d=sentinel.d)])
+
+        # assert that TypeError is raised if the method signature is not
+        # respected.
+        self._assert_call_raises_typeerror(mock_method)
+        self._assert_call_raises_typeerror(mock_method, sentinel.a)
+        self._assert_call_raises_typeerror(mock_method, a=sentinel.a)
+        self._assert_call_raises_typeerror(
+            mock_method, sentinel.a, sentinel.b, sentinel.c, e=sentinel.e)
+
+    def _assert_call_raises_typeerror(self, mock_method, *args, **kwargs):
+        # classmethod / staticmethod autospecs check the signature
+        # synchronously at call time (they go through _check_signature,
+        # not _set_async_signature); plain instance methods only check it
+        # once the returned coroutine is awaited, since the check runs
+        # inside the coroutine body. Accept either.
+        try:
+            awaitable = mock_method(*args, **kwargs)
+        except TypeError:
+            return
+
+        self.assertRaises(TypeError, asyncio.run, awaitable)
+
+    def test_patch_autospec_obj(self):
+        something = SomethingAsync()
+        with patch.multiple(something, meth=DEFAULT, cmeth=DEFAULT,
+                            smeth=DEFAULT, autospec=True):
+            self._check_autospeced_something(something)
+
+    def test_patch_autospec_obj_wraps(self):
+        something = SomethingAsync()
+        with (
+            patch.object(something, "meth", autospec=True, wraps=something.meth),
+            patch.object(something, "cmeth", autospec=True, wraps=something.cmeth),
+            patch.object(something, "smeth", autospec=True, wraps=something.smeth),
+        ):
+            self._check_autospeced_something(something)
+
+    @patch.object(SomethingAsync, 'smeth', autospec=True)
+    @patch.object(SomethingAsync, 'cmeth', autospec=True)
+    @patch.object(SomethingAsync, 'meth', autospec=True)
+    def test_patch_autospec_class(self, mock_meth, mock_cmeth, mock_smeth):
+        something = SomethingAsync()
+        self._check_autospeced_something(something)
+
+    @patch.object(SomethingAsync, 'smeth', autospec=True,
+                  wraps=SomethingAsync.smeth)
+    @patch.object(SomethingAsync, 'cmeth', autospec=True,
+                  wraps=SomethingAsync.cmeth)
+    @patch.object(SomethingAsync, 'meth', autospec=True,
+                  wraps=SomethingAsync.meth)
+    def test_patch_autospec_class_wraps(self, mock_meth, mock_cmeth,
+                                        mock_smeth):
+        something = SomethingAsync()
+        self._check_autospeced_something(something)
+
+    def test_patch_autospec_obj_side_effect(self):
+        for method in ["meth", "cmeth", "smeth"]:
+            seen = []
+            def side_effect(a, b, c, d=None):
+                seen.append((a, b, c, d))
+
+            async def test_async():
+                something = SomethingAsync()
+                with patch.object(something, method,
+                                  autospec=True) as mock_method:
+                    mock_method.side_effect = side_effect
+
+                    await getattr(something, method)(
+                        sentinel.a, sentinel.b, sentinel.c)
+
+                    self.assertEqual(
+                        seen, [(sentinel.a, sentinel.b, sentinel.c, None)])
+                    mock_method.assert_called_once_with(
+                        sentinel.a, sentinel.b, sentinel.c)
+                    mock_method.assert_awaited_once_with(
+                        sentinel.a, sentinel.b, sentinel.c)
+
+            run(test_async())
+
+    def test_patch_autospec_class_side_effect(self):
+        for method in ["cmeth", "smeth"]:
+            seen = []
+            async def side_effect(a, b, c, d=None):
+                seen.append((a, b, c, d))
+
+            async def test_async():
+                with patch.object(SomethingAsync, method,
+                                  autospec=True) as mock_method:
+                    mock_method.side_effect = side_effect
+                    something = SomethingAsync()
+
+                    await getattr(something, method)(
+                        sentinel.a, sentinel.b, sentinel.c)
+
+                    expected = (sentinel.a, sentinel.b, sentinel.c, None)
+                    self.assertEqual(seen, [expected])
+                    mock_method.assert_called_once_with(
+                        sentinel.a, sentinel.b, sentinel.c)
+                    mock_method.assert_awaited_once_with(
+                        sentinel.a, sentinel.b, sentinel.c)
+
+            run(test_async())
+
+        # `meth` is a plain instance method patched via the class; it will
+        # goes through the self-consuming funcopy path: `side_effect` gets
+        # `self` rebound onto it, just like `wraps` does. This doesn't apply
+        # to classmethods.
+        seen = []
+        async def self_side_effect(self, a, b, c, d=None):
+            seen.append((self, a, b, c, d))
+
+        async def test_async():
+            with patch.object(SomethingAsync, "meth", autospec=True) as mock_method:
+                mock_method.side_effect = self_side_effect
+                something = SomethingAsync()
+
+                await something.meth(sentinel.a, sentinel.b, sentinel.c)
+
+                expected = (something, sentinel.a, sentinel.b, sentinel.c, None)
+                self.assertEqual(seen, [expected])
+                mock_method.assert_called_once_with(
+                    sentinel.a, sentinel.b, sentinel.c)
+                mock_method.assert_awaited_once_with(
+                    sentinel.a, sentinel.b, sentinel.c)
+
+        run(test_async())
+
 
 
 class AsyncSpecTest(unittest.TestCase):

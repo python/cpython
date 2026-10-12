@@ -743,23 +743,19 @@ Mocking unbound methods
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Sometimes a test needs to patch an *unbound method*, which means patching the
-method on the class rather than on the instance. In order to make assertions
-about which objects were calling this particular method, you need to pass
-``self`` as the first argument. The issue is that you can't patch with a mock for
-this, because if you replace an unbound method with a mock it doesn't become
-a bound method when fetched from the instance, and so it doesn't get ``self``
-passed in. The workaround is to patch the unbound method with a real function
-instead. The :func:`patch` decorator makes it so simple to patch out methods
-with a mock that having to create a real function becomes a nuisance.
+method on the class rather than on the instance. If you replace an unbound
+method with a plain mock, it doesn't become a bound method when fetched from
+an instance, so it never gets ``self`` passed in, and you also lose any
+checking of the arguments against the original method's signature.
 
 If you pass ``autospec=True`` to patch then it does the patching with a
 *real* function object. This function object has the same signature as the one
 it is replacing, but delegates to a mock under the hood. You still get your
 mock auto-created in exactly the same way as before. What it means though, is
 that if you use it to patch out an unbound method on a class the mocked
-function will be turned into a bound method if it is fetched from an instance.
-It will have ``self`` passed in as the first argument, which is exactly what
-was needed:
+function will be turned into a bound method if it is fetched from an instance,
+just like the method it replaces. ``self`` is consumed automatically, so you
+don't need to account for it in call assertions:
 
     >>> class Foo:
     ...   def foo(self):
@@ -771,7 +767,7 @@ was needed:
     ...   foo.foo()
     ...
     'foo'
-    >>> mock_foo.assert_called_once_with(foo)
+    >>> mock_foo.assert_called_once_with()
 
 If we don't use ``autospec=True`` then the unbound method is patched out
 with a Mock instance instead, and isn't called with ``self``.
