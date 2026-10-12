@@ -129,18 +129,6 @@ updates:
     cooldown:
       default-days: 14
 
-  - package-ecosystem: "pip"
-    target-branch: "3.13"
-    directory: "/Tools/"
-    schedule:
-      interval: "quarterly"
-    labels: ["skip issue", "skip news"]
-    groups:
-      pip:
-        patterns: ["*"]
-    cooldown:
-      default-days: 14
-
   # Only bump bugfix branches for npm. Remove
   # the entry when branch goes security-only.
   - package-ecosystem: "npm"
