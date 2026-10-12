@@ -6898,3 +6898,32 @@ and :mod:`!tkinter.constants` namespaces.
           DOTBOX
 
    Other option values: ``'underline'``, ``'numeric'`` and ``'dotbox'``.
+
+
+Version information
+^^^^^^^^^^^^^^^^^^^
+
+.. data:: TCL_VERSION_INFO
+          TK_VERSION_INFO
+
+   The versions of the Tcl and Tk libraries that were used for building
+   the :mod:`!_tkinter` module, as named tuples with the same five fields
+   as :data:`sys.version_info`: *major*, *minor*, *micro*, *releaselevel*
+   and *serial*.
+   *releaselevel* is ``'alpha'``, ``'beta'`` or ``'final'``.
+   Converting them to a string gives the version in the usual Tcl/Tk notation,
+   for example ``'9.0.3'`` for a final release or ``'9.1b2'`` for a
+   pre-release.
+   These may be different from the libraries actually used at runtime,
+   which are available as :meth:`Misc.info_patchlevel` (the Tcl version)
+   and the ``tk_patchLevel`` Tcl variable.
+
+   .. versionadded:: next
+
+.. data:: TkVersion
+          TclVersion
+
+   The major and minor version of the Tk and Tcl libraries that were used
+   for building the :mod:`!_tkinter` module, as floats, for example ``8.6``.
+   Prefer :data:`TK_VERSION_INFO` and :data:`TCL_VERSION_INFO`, which are
+   more precise and compare correctly.

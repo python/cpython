@@ -1,0 +1,3 @@
+Include the line number of the opening brace in the :exc:`SyntaxError` for
+an unclosed f-string or t-string replacement field when a matching quote
+on a later line is interpreted as the start of an unterminated string.

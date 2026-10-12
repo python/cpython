@@ -1,0 +1,4 @@
+Python built with :option:`--with-address-sanitizer` or
+:option:`--with-memory-sanitizer` now includes pymalloc, but uses ``malloc``
+as the default memory allocator. Set
+:envvar:`PYTHONMALLOC=pymalloc <PYTHONMALLOC>` to use pymalloc.
