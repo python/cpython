@@ -4983,13 +4983,10 @@ Array_init(PyObject *self, PyObject *args, PyObject *kw)
     if (mp != NULL && mp->mp_ass_subscript == Array_ass_subscript) {
         int result = 0;
         Py_BEGIN_CRITICAL_SECTION(self);
-        for (i = 0; i < n; ++i) {
+        for (i = 0; result >= 0 && i < n; ++i) {
             PyObject *v = PyTuple_GET_ITEM(args, i);
             assert(v != NULL);
-            if (Array_ass_item_lock_held(self, i, v) < 0) {
-                result = -1;
-                break;
-            }
+            result = Array_ass_item_lock_held(self, i, v);
         }
         Py_END_CRITICAL_SECTION();
         return result;
