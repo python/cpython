@@ -11,7 +11,7 @@ from concurrent import futures
 from concurrent.futures.process import BrokenProcessPool, _ThreadWakeup
 
 from test import support
-from test.support import warnings_helper
+from test.support import threading_helper, warnings_helper
 
 from .util import (
     create_executor_tests, setup_module,
@@ -367,11 +367,16 @@ class ExecutorDeadlockTest:
                                         mock_join_executor_internals):
             self.assertEqual(list(executor.map(int, range(10))),
                              list(range(10)))
-            shutdown = threading.Thread(target=executor.shutdown)
-            shutdown.start()
-            shutdown.join(self.TIMEOUT)
-            if shutdown.is_alive():
-                self._fail_on_deadlock(executor)
+            manager_thread = executor._executor_manager_thread
+            processes = tuple(executor._processes.values())
+            executor.shutdown(wait=False)
+            try:
+                threading_helper.join_thread(manager_thread, self.TIMEOUT)
+            finally:
+                if manager_thread.is_alive():
+                    for process in processes:
+                        process.terminate()
+                    threading_helper.join_thread(manager_thread, self.TIMEOUT)
 
 
 create_executor_tests(globals(), ExecutorDeadlockTest,
