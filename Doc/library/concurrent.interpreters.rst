@@ -323,7 +323,9 @@ Communicating Between Interpreters
 .. class:: Queue(id)
 
    A wrapper around a low-level, cross-interpreter queue, which
-   implements the :class:`queue.Queue` interface.  The underlying queue
+   implements all the methods of :class:`queue.Queue` except for
+   :meth:`~queue.Queue.task_done`, :meth:`~queue.Queue.join`
+   and :meth:`~queue.Queue.shutdown`.  The underlying queue
    can only be created through :func:`create_queue`.
 
    Some objects are actually shared and some are copied efficiently,
