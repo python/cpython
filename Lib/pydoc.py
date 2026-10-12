@@ -1866,7 +1866,7 @@ def collect_dunders(symbols):
         '__format__', '__hash__', '__bool__',
     ]
     for bd in basic_dunders:
-        dunders[bd] = ('class-customization', 'SPECIALMETHODS')
+        dunders[bd] = ('customization', 'SPECIALMETHODS')
 
     attribute_dunders = [
         '__getattr__', '__getattribute__', '__setattr__', '__delattr__',
