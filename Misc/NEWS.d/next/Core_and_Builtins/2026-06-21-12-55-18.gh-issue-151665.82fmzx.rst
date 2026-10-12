@@ -1,0 +1,2 @@
+:func:`inspect.signature` now works on the lazy evaluators of type aliases
+and type parameters instead of raising :exc:`ValueError`.

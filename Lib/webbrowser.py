@@ -1,7 +1,8 @@
 """Interfaces for launching and remotely controlling web browsers."""
-# Maintained by Georg Brandl.
 
+import builtins  # because we override open
 import os
+lazy import plistlib
 import shlex
 import shutil
 import sys
@@ -167,7 +168,7 @@ class BaseBrowser:
     def _check_url(url):
         """Ensures that the URL is safe to pass to subprocesses as a parameter"""
         if url and url.lstrip().startswith("-"):
-            raise ValueError(f"Invalid URL: {url}")
+            raise ValueError(f"Invalid URL (leading dash disallowed): {url!r}")
 
 
 class GenericBrowser(BaseBrowser):
@@ -274,7 +275,6 @@ class UnixBrowser(BaseBrowser):
 
     def open(self, url, new=0, autoraise=True):
         sys.audit("webbrowser.open", url)
-        self._check_url(url)
         if new == 0:
             action = self.remote_action
         elif new == 1:
@@ -288,7 +288,9 @@ class UnixBrowser(BaseBrowser):
             raise Error("Bad 'new' parameter to open(); "
                         f"expected 0, 1, or 2, got {new}")
 
-        args = [arg.replace("%s", url).replace("%action", action)
+        self._check_url(url.replace("%action", action))
+
+        args = [arg.replace("%action", action).replace("%s", url)
                 for arg in self.remote_args]
         args = [arg for arg in args if arg]
         success = self._invoke(args, True, autoraise, url)
@@ -491,10 +493,15 @@ def register_standard_browsers():
     _tryorder = []
 
     if sys.platform == 'darwin':
-        register("MacOSX", None, MacOSXOSAScript('default'))
-        register("chrome", None, MacOSXOSAScript('google chrome'))
-        register("firefox", None, MacOSXOSAScript('firefox'))
-        register("safari", None, MacOSXOSAScript('safari'))
+        register("MacOS", None, MacOS('default'))
+        register("MacOSX", None, MacOS('default'))  # backward compat alias
+        register("chrome", None, MacOS('google chrome'))
+        register("chromium", None, MacOS('chromium'))
+        register("firefox", None, MacOS('firefox'))
+        register("safari", None, MacOS('safari'))
+        register("opera", None, MacOS('opera'))
+        register("microsoft-edge", None, MacOS('microsoft edge'))
+        register("brave", None, MacOS('brave browser'))
         # macOS can use below Unix support (but we prefer using the macOS
         # specific stuff)
 
@@ -613,8 +620,80 @@ if sys.platform[:3] == "win":
 #
 
 if sys.platform == 'darwin':
+    def _macos_default_browser_bundle_id():
+        """Return the bundle ID of the default web browser.
+
+        Reads the LaunchServices preferences file that macOS maintains
+        when the user sets a default browser. Returns 'com.apple.Safari'
+        if the file is absent or no https handler is recorded, because on
+        a fresh macOS installation Safari is the default browser and the
+        LaunchServices plist is not written until the user explicitly
+        changes their default browser.
+        """
+        plist = os.path.expanduser(
+            '~/Library/Preferences/com.apple.LaunchServices/'
+            'com.apple.launchservices.secure.plist'
+        )
+        try:
+            with builtins.open(plist, 'rb') as f:
+                data = plistlib.load(f)
+            for handler in data.get('LSHandlers', []):
+                if handler.get('LSHandlerURLScheme') == 'https':
+                    return (handler.get('LSHandlerRoleAll')
+                            or handler.get('LSHandlerRoleViewer'))
+        except (OSError, KeyError, ValueError):
+            pass
+        return 'com.apple.Safari'
+
+    class MacOS(BaseBrowser):
+        """Launcher class for macOS browsers, using /usr/bin/open.
+
+        For http/https URLs with the default browser, /usr/bin/open is called
+        directly; macOS routes these to the registered browser.
+
+        For all other URL schemes (e.g. file://) and for named browsers,
+        /usr/bin/open -b <bundle-id> is used so that the URL is always passed
+        to a browser application rather than dispatched by the OS file handler.
+        This prevents file injection attacks where a file:// URL pointing to an
+        executable bundle could otherwise be launched by the OS.
+
+        Named browsers with known bundle IDs use -b; unknown names fall back
+        to -a.
+        """
+
+        _BUNDLE_IDS = {
+            'google chrome':  'com.google.Chrome',
+            'firefox':        'org.mozilla.firefox',
+            'safari':         'com.apple.Safari',
+            'chromium':       'org.chromium.Chromium',
+            'opera':          'com.operasoftware.Opera',
+            'microsoft edge': 'com.microsoft.edgemac',
+            'brave browser':  'com.brave.Browser',
+        }
+
+        def open(self, url, new=0, autoraise=True):
+            sys.audit("webbrowser.open", url)
+            self._check_url(url)
+            if self.name == 'default':
+                proto, sep, _ = url.partition(':')
+                if sep and proto.lower() in {'http', 'https'}:
+                    cmd = ['/usr/bin/open', url]
+                else:
+                    bundle_id = _macos_default_browser_bundle_id()
+                    cmd = ['/usr/bin/open', '-b', bundle_id, url]
+            else:
+                bundle_id = self._BUNDLE_IDS.get(self.name.lower())
+                if bundle_id:
+                    cmd = ['/usr/bin/open', '-b', bundle_id, url]
+                else:
+                    cmd = ['/usr/bin/open', '-a', self.name, url]
+            proc = subprocess.run(cmd, stderr=subprocess.DEVNULL)
+            return proc.returncode == 0
+
     class MacOSXOSAScript(BaseBrowser):
         def __init__(self, name='default'):
+            import warnings
+            warnings._deprecated("webbrowser.MacOSXOSAScript", remove=(3, 17))
             super().__init__(name)
 
         def open(self, url, new=0, autoraise=True):
@@ -656,7 +735,7 @@ if sys.platform == 'darwin':
                    end
                    '''
 
-            osapipe = os.popen("osascript", "w")
+            osapipe = os.popen("/usr/bin/osascript", "w")
             if osapipe is None:
                 return False
 
@@ -733,7 +812,7 @@ if sys.platform == "ios":
 def parse_args(arg_list: list[str] | None):
     import argparse
     parser = argparse.ArgumentParser(
-        description="Open URL in a web browser.", color=True,
+        description="Open URL in a web browser.",
     )
     parser.add_argument("url", help="URL to open")
 

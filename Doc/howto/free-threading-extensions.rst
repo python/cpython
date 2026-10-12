@@ -218,13 +218,15 @@ Thread State and GIL APIs
 Python provides a set of functions and macros to manage thread state and the
 GIL, such as:
 
+* :c:func:`PyThreadState_Ensure`, :c:func:`PyThreadState_EnsureFromView`,
+  and :c:func:`PyThreadState_Release`
 * :c:func:`PyGILState_Ensure` and :c:func:`PyGILState_Release`
 * :c:func:`PyEval_SaveThread` and :c:func:`PyEval_RestoreThread`
 * :c:macro:`Py_BEGIN_ALLOW_THREADS` and :c:macro:`Py_END_ALLOW_THREADS`
 
 These functions should still be used in the free-threaded build to manage
 thread state even when the :term:`GIL` is disabled.  For example, if you
-create a thread outside of Python, you must call :c:func:`PyGILState_Ensure`
+create a thread outside of Python, you must call :c:func:`PyThreadState_Ensure`
 before calling into the Python API to ensure that the thread has a valid
 Python thread state.
 
@@ -416,11 +418,9 @@ C API extensions need to be built specifically for the free-threaded build.
 The wheels, shared libraries, and binaries are indicated by a ``t`` suffix.
 
 * `pypa/manylinux <https://github.com/pypa/manylinux>`_ supports the
-  free-threaded build, with the ``t`` suffix, such as ``python3.13t``.
-* `pypa/cibuildwheel <https://github.com/pypa/cibuildwheel>`_ supports the
-  free-threaded build on Python 3.13 and 3.14. On Python 3.14, free-threaded
-  wheels will be built by default. On Python 3.13, you will need to set
-  `CIBW_ENABLE to cpython-freethreading <https://cibuildwheel.pypa.io/en/stable/options/#enable>`_.
+  free-threaded build, with the ``t`` suffix, such as ``python3.14t``.
+* `pypa/cibuildwheel <https://github.com/pypa/cibuildwheel>`_ supports
+  building wheels for the free-threaded build of Python 3.14 and newer.
 
 Limited C API and Stable ABI
 ............................

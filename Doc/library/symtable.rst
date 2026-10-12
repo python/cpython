@@ -20,6 +20,8 @@ Generating Symbol Tables
 .. function:: symtable(code, filename, compile_type, *, module=None)
 
    Return the toplevel :class:`SymbolTable` for the Python source *code*.
+   *code* can be a string, a bytes object, or an AST object,
+   as for the builtin :func:`compile`.
    *filename* is the name of the file containing the code.  *compile_type* is
    like the *mode* argument to :func:`compile`.
    The optional argument *module* specifies the module name.
@@ -28,6 +30,9 @@ Generating Symbol Tables
 
    .. versionadded:: 3.15
       Added the *module* parameter.
+
+   .. versionchanged:: next
+      *code* can now be an AST object.
 
 
 Examining Symbol Tables
@@ -51,6 +56,16 @@ Examining Symbol Tables
       :value: "class"
 
       Used for the symbol table of a class.
+
+   .. attribute:: INLINED_COMPREHENSION
+      :value: "inlined comprehension"
+
+      Used for the symbol table of a list, set or dict comprehension that
+      is inlined into the enclosing code unit (see :pep:`709`). A symbol
+      table of this type represents a sub-scope of the enclosing code unit's
+      scope, and it does not correspond to a separate compilation unit.
+
+      .. versionadded:: next
 
    The following members refer to different flavors of
    :ref:`annotation scopes <annotation-scopes>`.
@@ -186,57 +201,6 @@ Examining Symbol Tables
 .. class:: Class
 
    A namespace of a class.  This class inherits from :class:`SymbolTable`.
-
-   .. method:: get_methods()
-
-      Return a tuple containing the names of method-like functions declared
-      in the class.
-
-      Here, the term 'method' designates *any* function defined in the class
-      body via :keyword:`def` or :keyword:`async def`.
-
-      Functions defined in a deeper scope (e.g., in an inner class) are not
-      picked up by :meth:`get_methods`.
-
-      For example:
-
-      .. testsetup:: symtable.Class.get_methods
-
-         import warnings
-         context = warnings.catch_warnings()
-         context.__enter__()
-         warnings.simplefilter("ignore", category=DeprecationWarning)
-
-      .. testcleanup:: symtable.Class.get_methods
-
-         context.__exit__()
-
-      .. doctest:: symtable.Class.get_methods
-
-         >>> import symtable
-         >>> st = symtable.symtable('''
-         ... def outer(): pass
-         ...
-         ... class A:
-         ...    def f():
-         ...        def w(): pass
-         ...
-         ...    def g(self): pass
-         ...
-         ...    @classmethod
-         ...    async def h(cls): pass
-         ...
-         ...    global outer
-         ...    def outer(self): pass
-         ... ''', 'test', 'exec')
-         >>> class_A = st.get_children()[2]
-         >>> class_A.get_methods()
-         ('f', 'g', 'h')
-
-      Although ``A().f()`` raises :exc:`TypeError` at runtime, ``A.f`` is still
-      considered as a method-like function.
-
-      .. deprecated-removed:: 3.14 3.16
 
 
 .. class:: Symbol

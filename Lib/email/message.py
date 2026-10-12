@@ -98,7 +98,7 @@ def _parseparam(s):
 
 def _unquotevalue(value):
     # This is different than utils.collapse_rfc2231_value() because it doesn't
-    # try to convert the value to a unicode.  Message.get_param() and
+    # try to convert the value to a str.  Message.get_param() and
     # Message.get_params() are both currently defined to return the tuple in
     # the face of RFC 2231 parameters.
     if isinstance(value, tuple):
@@ -182,7 +182,7 @@ class Message:
 
         If the message object contains binary data that is not encoded
         according to RFC standards, the non-compliant data will be replaced by
-        unicode "unknown character" code points.
+        Unicode "unknown character" code points.
         """
         from email.generator import Generator
         policy = self.policy if policy is None else policy
@@ -315,7 +315,7 @@ class Message:
                 bpayload = payload.encode('ascii', 'surrogateescape')
             except UnicodeEncodeError:
                 # This won't happen for RFC compliant messages (messages
-                # containing only ASCII code points in the unicode input).
+                # containing only ASCII code points in the string input).
                 # If it does happen, turn the string into bytes in a way
                 # guaranteed not to fail.
                 bpayload = payload.encode('raw-unicode-escape')
@@ -395,7 +395,7 @@ class Message:
             try:
                 cte(self)
             except TypeError:
-                # This 'if' is for backward compatibility, it allows unicode
+                # This 'if' is for backward compatibility, it allows str
                 # through even though that won't work correctly if the
                 # message is serialized.
                 payload = self._payload

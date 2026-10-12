@@ -1,0 +1,3 @@
+Fix a data race in :class:`io.BytesIO` in free-threaded builds when
+whole-buffer reads or peeks, or :meth:`~io.BytesIO.getvalue`, share the
+internal buffer with concurrent writes.

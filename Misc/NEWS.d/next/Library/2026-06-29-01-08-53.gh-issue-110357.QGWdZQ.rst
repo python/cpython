@@ -1,0 +1,6 @@
+Importing :mod:`hashlib` no longer logs an error to stderr when a normally
+guaranteed hash algorithm is unavailable in the current runtime (for example
+under an OpenSSL FIPS configuration or a build using
+:option:`--without-builtin-hashlib-hashes <--with-builtin-hashlib-hashes>`).
+Code that actually uses the missing algorithm still gets a clear
+:exc:`ValueError`.

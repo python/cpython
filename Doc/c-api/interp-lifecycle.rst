@@ -15,8 +15,7 @@ Before Python initialization
 
 In an application embedding Python, the :c:func:`Py_Initialize` function must
 be called before using any other Python/C API functions; with the exception of
-a few functions and the :ref:`global configuration variables
-<global-conf-vars>`.
+a few functions.
 
 The following functions can be safely called before Python is initialized:
 
@@ -37,8 +36,6 @@ The following functions can be safely called before Python is initialized:
   * :c:func:`PyMem_SetAllocator`
   * :c:func:`PyMem_SetupDebugHooks`
   * :c:func:`PyObject_SetArenaAllocator`
-  * :c:func:`Py_SetProgramName`
-  * :c:func:`Py_SetPythonHome`
   * the configuration functions covered in :ref:`init-config`
 
 * Informative functions:
@@ -74,279 +71,7 @@ The following functions can be safely called before Python is initialized:
 
    Despite their apparent similarity to some of the functions listed above,
    the following functions **should not be called** before the interpreter has
-   been initialized: :c:func:`Py_EncodeLocale`, :c:func:`PyEval_InitThreads`, and
-   :c:func:`Py_RunMain`.
-
-
-.. _global-conf-vars:
-
-Global configuration variables
-------------------------------
-
-Python has variables for the global configuration to control different features
-and options. By default, these flags are controlled by :ref:`command line
-options <using-on-interface-options>`.
-
-When a flag is set by an option, the value of the flag is the number of times
-that the option was set. For example, ``-b`` sets :c:data:`Py_BytesWarningFlag`
-to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
-
-
-.. c:var:: int Py_BytesWarningFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.bytes_warning` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Issue a warning when comparing :class:`bytes` or :class:`bytearray` with
-   :class:`str` or :class:`bytes` with :class:`int`.  Issue an error if greater
-   or equal to ``2``.
-
-   Set by the :option:`-b` option.
-
-   .. deprecated-removed:: 3.12 3.15
-
-
-.. c:var:: int Py_DebugFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.parser_debug` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Turn on parser debugging output (for expert only, depending on compilation
-   options).
-
-   Set by the :option:`-d` option and the :envvar:`PYTHONDEBUG` environment
-   variable.
-
-   .. deprecated-removed:: 3.12 3.15
-
-
-.. c:var:: int Py_DontWriteBytecodeFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.write_bytecode` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   If set to non-zero, Python won't try to write ``.pyc`` files on the
-   import of source modules.
-
-   Set by the :option:`-B` option and the :envvar:`PYTHONDONTWRITEBYTECODE`
-   environment variable.
-
-   .. deprecated-removed:: 3.12 3.15
-
-
-.. c:var:: int Py_FrozenFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.pathconfig_warnings` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Private flag used by ``_freeze_module`` and ``frozenmain`` programs.
-
-   .. deprecated-removed:: 3.12 3.15
-
-
-.. c:var:: int Py_HashRandomizationFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.hash_seed` and :c:member:`PyConfig.use_hash_seed` should
-   be used instead, see :ref:`Python Initialization Configuration
-   <init-config>`.
-
-   Set to ``1`` if the :envvar:`PYTHONHASHSEED` environment variable is set to
-   a non-empty string.
-
-   If the flag is non-zero, read the :envvar:`PYTHONHASHSEED` environment
-   variable to initialize the secret hash seed.
-
-   .. deprecated-removed:: 3.12 3.15
-
-
-.. c:var:: int Py_IgnoreEnvironmentFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.use_environment` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Ignore all :envvar:`!PYTHON*` environment variables, e.g.
-   :envvar:`PYTHONPATH` and :envvar:`PYTHONHOME`, that might be set.
-
-   Set by the :option:`-E` and :option:`-I` options.
-
-   .. deprecated-removed:: 3.12 3.15
-
-
-.. c:var:: int Py_InspectFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.inspect` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   When a script is passed as first argument or the :option:`-c` option is used,
-   enter interactive mode after executing the script or the command, even when
-   :data:`sys.stdin` does not appear to be a terminal.
-
-   Set by the :option:`-i` option and the :envvar:`PYTHONINSPECT` environment
-   variable.
-
-   .. deprecated-removed:: 3.12 3.15
-
-
-.. c:var:: int Py_InteractiveFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.interactive` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Set by the :option:`-i` option.
-
-   .. deprecated-removed:: 3.12 3.15
-
-
-.. c:var:: int Py_IsolatedFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.isolated` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Run Python in isolated mode. In isolated mode :data:`sys.path` contains
-   neither the script's directory nor the user's site-packages directory.
-
-   Set by the :option:`-I` option.
-
-   .. versionadded:: 3.4
-
-   .. deprecated-removed:: 3.12 3.15
-
-
-.. c:var:: int Py_LegacyWindowsFSEncodingFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyPreConfig.legacy_windows_fs_encoding` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   If the flag is non-zero, use the ``mbcs`` encoding with ``replace`` error
-   handler, instead of the UTF-8 encoding with ``surrogatepass`` error handler,
-   for the :term:`filesystem encoding and error handler`.
-
-   Set to ``1`` if the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment
-   variable is set to a non-empty string.
-
-   See :pep:`529` for more details.
-
-   .. availability:: Windows.
-
-   .. deprecated-removed:: 3.12 3.15
-
-
-.. c:var:: int Py_LegacyWindowsStdioFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.legacy_windows_stdio` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   If the flag is non-zero, use :class:`io.FileIO` instead of
-   :class:`!io._WindowsConsoleIO` for :mod:`sys` standard streams.
-
-   Set to ``1`` if the :envvar:`PYTHONLEGACYWINDOWSSTDIO` environment
-   variable is set to a non-empty string.
-
-   See :pep:`528` for more details.
-
-   .. availability:: Windows.
-
-   .. deprecated-removed:: 3.12 3.15
-
-
-.. c:var:: int Py_NoSiteFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.site_import` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Disable the import of the module :mod:`site` and the site-dependent
-   manipulations of :data:`sys.path` that it entails.  Also disable these
-   manipulations if :mod:`site` is explicitly imported later (call
-   :func:`site.main` if you want them to be triggered).
-
-   Set by the :option:`-S` option.
-
-   .. deprecated-removed:: 3.12 3.15
-
-
-.. c:var:: int Py_NoUserSiteDirectory
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.user_site_directory` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Don't add the :data:`user site-packages directory <site.USER_SITE>` to
-   :data:`sys.path`.
-
-   Set by the :option:`-s` and :option:`-I` options, and the
-   :envvar:`PYTHONNOUSERSITE` environment variable.
-
-   .. deprecated-removed:: 3.12 3.15
-
-
-.. c:var:: int Py_OptimizeFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.optimization_level` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Set by the :option:`-O` option and the :envvar:`PYTHONOPTIMIZE` environment
-   variable.
-
-   .. deprecated-removed:: 3.12 3.15
-
-
-.. c:var:: int Py_QuietFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.quiet` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Don't display the copyright and version messages even in interactive mode.
-
-   Set by the :option:`-q` option.
-
-   .. versionadded:: 3.2
-
-   .. deprecated-removed:: 3.12 3.15
-
-
-.. c:var:: int Py_UnbufferedStdioFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.buffered_stdio` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Force the stdout and stderr streams to be unbuffered.
-
-   Set by the :option:`-u` option and the :envvar:`PYTHONUNBUFFERED`
-   environment variable.
-
-   .. deprecated-removed:: 3.12 3.15
-
-
-.. c:var:: int Py_VerboseFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.verbose` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Print a message each time a module is initialized, showing the place
-   (filename or built-in module) from which it is loaded.  If greater or equal
-   to ``2``, print a message for each file that is checked for when
-   searching for a module. Also provides information on module cleanup at exit.
-
-   Set by the :option:`-v` option and the :envvar:`PYTHONVERBOSE` environment
-   variable.
-
-   .. deprecated-removed:: 3.12 3.15
+   been initialized: :c:func:`Py_EncodeLocale`, and :c:func:`Py_RunMain`.
 
 
 Initializing and finalizing the interpreter
@@ -355,7 +80,6 @@ Initializing and finalizing the interpreter
 .. c:function:: void Py_Initialize()
 
    .. index::
-      single: PyEval_InitThreads()
       single: modules (in module sys)
       single: path (in module sys)
       pair: module; builtins
@@ -403,12 +127,22 @@ Initializing and finalizing the interpreter
    interpreter, populating the runtime configuration structure, and querying
    the returned status structure.
 
+   .. versionchanged:: next
+      The function no longer returns an exit code if a command line option
+      wants to exit Python. Instead, the option is processed in
+      :c:func:`Py_RunMain`.
+
 
 .. c:function:: int Py_IsInitialized()
 
    Return true (nonzero) when the Python interpreter has been initialized, false
    (zero) if not.  After :c:func:`Py_FinalizeEx` is called, this returns false until
    :c:func:`Py_Initialize` is called again.
+
+   .. versionchanged:: 3.15
+      This function no longer returns true until initialization has fully
+      completed, including import of the :mod:`site` module.  Previously it
+      could return true while :c:func:`Py_Initialize` was still running.
 
 
 .. c:function:: int Py_IsFinalizing()
@@ -573,69 +307,214 @@ Initializing and finalizing the interpreter
 
 .. _cautions-regarding-runtime-finalization:
 
-Cautions regarding runtime finalization
----------------------------------------
+Cautions regarding interpreter finalization
+-------------------------------------------
 
 In the late stage of :term:`interpreter shutdown`, after attempting to wait for
 non-daemon threads to exit (though this can be interrupted by
 :class:`KeyboardInterrupt`) and running the :mod:`atexit` functions, the runtime
-is marked as *finalizing*: :c:func:`Py_IsFinalizing` and
-:func:`sys.is_finalizing` return true.  At this point, only the *finalization
-thread* that initiated finalization (typically the main thread) is allowed to
-acquire the :term:`GIL`.
+is marked as finalizing, meaning that :c:func:`Py_IsFinalizing` and
+:func:`sys.is_finalizing` return true.  At this point, only the finalization
+thread (the thread that initiated finalization; this is typically the main thread)
+is allowed to :term:`attach <attached thread state>` a thread state.
 
-If any thread, other than the finalization thread, attempts to attach a :term:`thread state`
-during finalization, either explicitly or
-implicitly, the thread enters **a permanently blocked state**
-where it remains until the program exits.  In most cases this is harmless, but this can result
-in deadlock if a later stage of finalization attempts to acquire a lock owned by the
-blocked thread, or otherwise waits on the blocked thread.
+Other threads that attempt to attach during finalization, either explicitly
+(such as via :c:func:`PyThreadState_Ensure` or :c:macro:`Py_END_ALLOW_THREADS`)
+or implicitly (such as in-between bytecode instructions), will enter a
+**permanently blocked state**. Generally, this is harmless, but this can
+result in deadlocks. For example, a thread may be permanently blocked while
+holding a lock, meaning that the finalization thread can never acquire that
+lock.
 
-Gross? Yes. This prevents random crashes and/or unexpectedly skipped C++
-finalizations further up the call stack when such threads were forcibly exited
-here in CPython 3.13 and earlier. The CPython runtime :term:`thread state` C APIs
-have never had any error reporting or handling expectations at :term:`thread state`
-attachment time that would've allowed for graceful exit from this situation. Changing that
-would require new stable C APIs and rewriting the majority of C code in the
-CPython ecosystem to use those with error handling.
+Prior to CPython 3.13, the thread would exit instead of hanging,
+which led to other issues (see the warning note at
+:c:func:`PyThread_exit_thread`).
+
+Gross? Yes. Starting in Python 3.15, there are a number of C APIs that make
+it possible to avoid these issues by temporarily preventing finalization:
+
+.. _interpreter-guards:
+
+.. seealso::
+
+   :pep:`788` explains the design, motivation and rationale
+   for these APIs.
+
+.. c:type:: PyInterpreterGuard
+
+   An opaque interpreter guard structure.
+
+   By holding an interpreter guard, the caller can ensure that the interpreter
+   will not finalize until the guard is closed (through
+   :c:func:`PyInterpreterGuard_Close`).
+
+   When a guard is held, a thread attempting to finalize the interpreter will
+   block until the guard is closed before starting finalization.
+   After finalization has started, threads are forever unable to acquire
+   guards for that interpreter. This means that if you forget to close an
+   interpreter guard, the process will **permanently hang** during
+   finalization!
+
+   Holding a guard for an interpreter is similar to holding a
+   :term:`strong reference` to a Python object, except finalization does not happen
+   automatically after all guards are released: it requires an explicit
+   :c:func:`Py_EndInterpreter` call.
+
+   .. versionadded:: 3.15
+
+
+.. c:function:: PyInterpreterGuard *PyInterpreterGuard_FromCurrent(void)
+
+   Create a finalization guard for the current interpreter. This will prevent
+   finalization until the guard is closed.
+
+   For example:
+
+   .. code-block:: c
+
+      // Temporarily prevent finalization.
+      PyInterpreterGuard *guard = PyInterpreterGuard_FromCurrent();
+      if (guard == NULL) {
+         // Finalization has already started or we're out of memory.
+         return NULL;
+      }
+
+      Py_BEGIN_ALLOW_THREADS;
+      // Do some critical processing here. For example, we can safely acquire
+      // locks that might be acquired by the finalization thread.
+      Py_END_ALLOW_THREADS;
+
+      // Now that we're done with our critical processing, the interpreter is
+      // allowed to finalize again.
+      PyInterpreterGuard_Close(guard);
+
+   On success, this function returns a guard for the current interpreter;
+   on failure, it returns ``NULL`` with an exception set.
+
+   This function will fail only if the current interpreter has already started
+   finalizing, or if the process is out of memory.
+
+   The guard pointer returned by this function must be eventually closed
+   with :c:func:`PyInterpreterGuard_Close`; failing to do so will result in
+   the Python process infinitely hanging.
+
+   The caller must hold an :term:`attached thread state`.
+
+   .. versionadded:: 3.15
+
+
+.. c:function:: PyInterpreterGuard *PyInterpreterGuard_FromView(PyInterpreterView *view)
+
+   Create a finalization guard for an interpreter through a view.
+
+   On success, this function returns a guard to the interpreter
+   represented by *view*. The view is still valid after calling this
+   function. The guard must eventually be closed with
+   :c:func:`PyInterpreterGuard_Close`.
+
+   If the interpreter no longer exists, is already finalizing, or out of memory,
+   then this function returns ``NULL`` without setting an exception.
+
+   The caller does not need to hold an :term:`attached thread state`.
+
+   .. versionadded:: 3.15
+
+
+.. c:function:: void PyInterpreterGuard_Close(PyInterpreterGuard *guard)
+
+   Close an interpreter guard, allowing the interpreter to start
+   finalization if no other guards remain. If an interpreter guard
+   is never closed, the interpreter will infinitely wait when trying
+   to enter finalization!
+
+   After an interpreter guard is closed, it may not be used in
+   :c:func:`PyThreadState_Ensure`. Doing so will result in undefined
+   behavior.
+
+   This function cannot fail, and the caller doesn't need to hold an
+   :term:`attached thread state`.
+
+   .. versionadded:: 3.15
+
+
+.. _interpreter-views:
+
+Interpreter views
+-----------------
+
+In some cases, it may be necessary to access an interpreter that may have been
+deleted. This can be done using interpreter views.
+
+.. c:type:: PyInterpreterView
+
+   An opaque view of an interpreter.
+
+   This is a thread-safe way to access an interpreter that may have be
+   finalizing or already destroyed.
+
+   .. versionadded:: 3.15
+
+
+.. c:function:: PyInterpreterView *PyInterpreterView_FromCurrent(void)
+
+   Create a view to the current interpreter.
+
+   This function is generally meant to be used alongside
+   :c:func:`PyInterpreterGuard_FromView` or :c:func:`PyThreadState_EnsureFromView`.
+
+   On success, this function returns a view to the current interpreter; on
+   failure, it returns ``NULL`` with an exception set.
+
+   The caller must hold an :term:`attached thread state`.
+
+   .. versionadded:: 3.15
+
+
+.. c:function:: void PyInterpreterView_Close(PyInterpreterView *view)
+
+   Close an interpreter view.
+
+   If an interpreter view is never closed, the view's memory will never be
+   freed, but there are no other consequences. (In contrast, forgetting to
+   close a guard will infinitely hang the main thread during finalization.)
+
+   This function cannot fail, and the caller doesn't need to hold an
+   :term:`attached thread state`.
+
+   .. versionadded:: 3.15
+
+
+.. c:function:: PyInterpreterView *PyInterpreterView_FromMain(void)
+
+   Create a view for the main interpreter (the first and default
+   interpreter in a Python process; see
+   :c:func:`PyInterpreterState_Main`).
+
+   On success, this function returns a view to the main
+   interpreter; on failure, it returns ``NULL`` without an exception set.
+   Failure indicates that the process is out of memory.
+
+   Use this function when an interpreter pointer or view cannot be supplied
+   by the caller, such as when a native threading library does not provide a
+   ``void *arg`` parameter that could carry a :c:type:`PyInterpreterGuard` or
+   :c:type:`PyInterpreterView`. In code that supports subinterpreters, prefer
+   :c:func:`PyInterpreterView_FromCurrent` so the guard tracks the calling
+   interpreter rather than the main one.
+
+   The caller does not need to hold an :term:`attached thread state`.
+
+   .. versionadded:: 3.15
 
 
 Process-wide parameters
 -----------------------
-
-.. c:function:: void Py_SetProgramName(const wchar_t *name)
-
-   .. index::
-      single: Py_Initialize()
-      single: main()
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.program_name` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   This function should be called before :c:func:`Py_Initialize` is called for
-   the first time, if it is called at all.  It tells the interpreter the value
-   of the ``argv[0]`` argument to the :c:func:`main` function of the program
-   (converted to wide characters).
-   This is used by some other functions below to find
-   the Python run-time libraries relative to the interpreter executable.  The
-   default value is ``'python'``.  The argument should point to a
-   zero-terminated wide character string in static storage whose contents will not
-   change for the duration of the program's execution.  No code in the Python
-   interpreter will change the contents of this storage.
-
-   Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:expr:`wchar_t*` string.
-
-   .. deprecated-removed:: 3.11 3.15
-
 
 .. c:function:: const char* Py_GetVersion()
 
    Return the version of this Python interpreter.  This is a string that looks
    something like ::
 
-      "3.0a5+ (py3k:63103M, May 12 2008, 00:53:55) \n[GCC 4.2.3]"
+      "3.15.0rc2 (3.15.0~rc2-1.fc44.x86_64, Sep  3 2026, 00:00:00) [GCC 16.2.1 20260819 (Red Hat 16.2.1-2)]"
 
    .. index:: single: version (in module sys)
 
@@ -698,100 +577,3 @@ Process-wide parameters
    The returned string points into static storage; the caller should not modify its
    value.  The value is available to Python code as part of the variable
    ``sys.version``.
-
-
-.. c:function:: void PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
-
-   .. index::
-      single: main()
-      single: Py_FatalError()
-      single: argv (in module sys)
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.argv`, :c:member:`PyConfig.parse_argv` and
-   :c:member:`PyConfig.safe_path` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Set :data:`sys.argv` based on *argc* and *argv*.  These parameters are
-   similar to those passed to the program's :c:func:`main` function with the
-   difference that the first entry should refer to the script file to be
-   executed rather than the executable hosting the Python interpreter.  If there
-   isn't a script that will be run, the first entry in *argv* can be an empty
-   string.  If this function fails to initialize :data:`sys.argv`, a fatal
-   condition is signalled using :c:func:`Py_FatalError`.
-
-   If *updatepath* is zero, this is all the function does.  If *updatepath*
-   is non-zero, the function also modifies :data:`sys.path` according to the
-   following algorithm:
-
-   - If the name of an existing script is passed in ``argv[0]``, the absolute
-     path of the directory where the script is located is prepended to
-     :data:`sys.path`.
-   - Otherwise (that is, if *argc* is ``0`` or ``argv[0]`` doesn't point
-     to an existing file name), an empty string is prepended to
-     :data:`sys.path`, which is the same as prepending the current working
-     directory (``"."``).
-
-   Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:expr:`wchar_t*` string.
-
-   See also :c:member:`PyConfig.orig_argv` and :c:member:`PyConfig.argv`
-   members of the :ref:`Python Initialization Configuration <init-config>`.
-
-   .. note::
-      It is recommended that applications embedding the Python interpreter
-      for purposes other than executing a single script pass ``0`` as *updatepath*,
-      and update :data:`sys.path` themselves if desired.
-      See :cve:`2008-5983`.
-
-      On versions before 3.1.3, you can achieve the same effect by manually
-      popping the first :data:`sys.path` element after having called
-      :c:func:`PySys_SetArgv`, for example using::
-
-         PyRun_SimpleString("import sys; sys.path.pop(0)\n");
-
-   .. versionadded:: 3.1.3
-
-   .. deprecated-removed:: 3.11 3.15
-
-
-.. c:function:: void PySys_SetArgv(int argc, wchar_t **argv)
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.argv` and :c:member:`PyConfig.parse_argv` should be used
-   instead, see :ref:`Python Initialization Configuration <init-config>`.
-
-   This function works like :c:func:`PySys_SetArgvEx` with *updatepath* set
-   to ``1`` unless the :program:`python` interpreter was started with the
-   :option:`-I`.
-
-   Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:expr:`wchar_t*` string.
-
-   See also :c:member:`PyConfig.orig_argv` and :c:member:`PyConfig.argv`
-   members of the :ref:`Python Initialization Configuration <init-config>`.
-
-   .. versionchanged:: 3.4 The *updatepath* value depends on :option:`-I`.
-
-   .. deprecated-removed:: 3.11 3.15
-
-
-.. c:function:: void Py_SetPythonHome(const wchar_t *home)
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.home` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Set the default "home" directory, that is, the location of the standard
-   Python libraries.  See :envvar:`PYTHONHOME` for the meaning of the
-   argument string.
-
-   The argument should point to a zero-terminated character string in static
-   storage whose contents will not change for the duration of the program's
-   execution.  No code in the Python interpreter will change the contents of
-   this storage.
-
-   Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:expr:`wchar_t*` string.
-
-   .. deprecated-removed:: 3.11 3.15

@@ -1,0 +1,4 @@
+In the REPL, autocompletion might run arbitrary code in the getter of a
+descriptor. If that getter raised an exception, autocompletion would fail to
+present any options for the entire object.  Autocompletion now works as
+expected for these objects.

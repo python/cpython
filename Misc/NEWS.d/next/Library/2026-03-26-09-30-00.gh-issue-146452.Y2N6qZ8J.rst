@@ -1,0 +1,2 @@
+Fix segfault in :mod:`pickle` when pickling a dictionary concurrently
+mutated by another thread in the free-threaded build.

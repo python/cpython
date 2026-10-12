@@ -1,0 +1,3 @@
+Removes the legacy MSI and Nuget build scripts, the legacy ``py.exe``
+launcher (now replaced by the Python install manager), and adds a
+``PC/layout`` readme.

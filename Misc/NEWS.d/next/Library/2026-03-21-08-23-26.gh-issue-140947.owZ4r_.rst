@@ -1,1 +1,0 @@
-Fix incorrect contextvars handling in server tasks created by :mod:`asyncio`. Patch by Kumar Aditya.

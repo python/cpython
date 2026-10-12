@@ -1,0 +1,2 @@
+Fix undefined behaviour when a :mod:`sys.monitoring` callback raised an
+exception while the program was following a branch or loop.

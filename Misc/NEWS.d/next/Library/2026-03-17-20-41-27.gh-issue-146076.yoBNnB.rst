@@ -1,2 +1,0 @@
-:mod:`zoneinfo`: fix crashes when deleting ``_weak_cache`` from a
-:class:`zoneinfo.ZoneInfo` subclass.

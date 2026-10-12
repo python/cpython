@@ -1,0 +1,4 @@
+:func:`ctypes.util.dllist` now works on NetBSD.  It is implemented in the
+:mod:`!_ctypes` extension module so that ``dl_iterate_phdr()`` reports all
+loaded shared libraries: on NetBSD it only reports the link-map group of
+the calling object, which excluded them when called through ctypes.

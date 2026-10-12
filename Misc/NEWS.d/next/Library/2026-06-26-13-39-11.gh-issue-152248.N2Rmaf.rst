@@ -1,0 +1,3 @@
+Make the C and pure-Python :mod:`zoneinfo` parsers validate POSIX TZ
+abbreviations consistently, rejecting unquoted abbreviations with non-letter
+characters and empty quoted abbreviations. Patch by tonghuaroot.

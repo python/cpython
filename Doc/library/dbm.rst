@@ -253,6 +253,38 @@ functionality like crash tolerance.
    A string of characters the *flag* parameter of :meth:`~dbm.gnu.open` supports.
 
 
+.. data:: GDBM_VERSION_INFO
+
+   A named tuple containing the three components of the GDBM library
+   version that was used for building the module:
+   *major*, *minor*, and *patch*.
+   All values are integers.
+   The components can also be accessed by name,
+   so ``dbm.gnu.GDBM_VERSION_INFO[0]`` is equivalent to
+   ``dbm.gnu.GDBM_VERSION_INFO.major`` and so on.
+   This may be different from the GDBM library actually used at runtime,
+   which is available as :const:`gdbm_version_info`.
+
+   .. versionadded:: next
+
+
+.. data:: gdbm_version_info
+
+   A named tuple containing the version of the GDBM library
+   actually loaded by the interpreter,
+   with the same fields as :const:`GDBM_VERSION_INFO`.
+
+   .. versionadded:: next
+
+
+.. data:: gdbm_version
+
+   The release string of the GDBM library actually loaded by the interpreter,
+   like ``'GDBM version 1.26. 30/07/2025'``.
+
+   .. versionadded:: next
+
+
 .. function:: open(filename, flag="r", mode=0o666, /)
 
    Open a GDBM database and return a :class:`!gdbm` object.
@@ -382,7 +414,69 @@ This module can be used with the "classic" NDBM interface or the
 
 .. data:: library
 
-   Name of the NDBM implementation library used.
+   Name of the NDBM implementation library used:
+   ``'GNU gdbm'``, ``'Berkeley DB'`` or ``'ndbm'``.
+
+   .. versionchanged:: next
+      The value is ``'ndbm'`` for a classic NDBM library.
+      It was ``'GNU gdbm'`` before.
+
+
+.. data:: GDBM_VERSION_INFO
+          gdbm_version_info
+          gdbm_version
+
+   Information about the GDBM library in use,
+   with the same meaning as the constants of the same names in :mod:`dbm.gnu`.
+   Only available if :const:`library` is ``'GNU gdbm'``.
+
+   .. versionadded:: next
+
+
+.. data:: BDB_VERSION
+
+   The version string of the Berkeley DB library that was used for building
+   the module, like ``'Berkeley DB 5.3.28: (September  9, 2013)'``.
+   This may be different from the Berkeley DB library actually used at runtime,
+   which is available as :const:`bdb_version`.
+   Only available if :const:`library` is ``'Berkeley DB'``.
+
+   .. versionadded:: next
+
+
+.. data:: bdb_version
+
+   The version string of the Berkeley DB library actually loaded by the
+   interpreter.
+   Only available if :const:`library` is ``'Berkeley DB'``.
+
+   .. versionadded:: next
+
+
+.. data:: BDB_VERSION_INFO
+
+   A named tuple containing the three components of the Berkeley DB library
+   version that was used for building the module:
+   *major*, *minor*, and *patch*.
+   All values are integers.
+   The components can also be accessed by name,
+   so ``dbm.ndbm.BDB_VERSION_INFO[0]`` is equivalent to
+   ``dbm.ndbm.BDB_VERSION_INFO.major`` and so on.
+   This may be different from the Berkeley DB library actually used at runtime,
+   which is available as :const:`bdb_version_info`.
+   Only available if :const:`library` is ``'Berkeley DB'``.
+
+   .. versionadded:: next
+
+
+.. data:: bdb_version_info
+
+   A named tuple containing the version of the Berkeley DB library
+   actually loaded by the interpreter,
+   with the same fields as :const:`BDB_VERSION_INFO`.
+   Only available if :const:`library` is ``'Berkeley DB'``.
+
+   .. versionadded:: next
 
 
 .. function:: open(filename, flag="r", mode=0o666, /)

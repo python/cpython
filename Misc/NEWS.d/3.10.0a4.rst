@@ -622,7 +622,7 @@ Harmonized :func:`random.randrange` argument handling to match :func:`range`.
 .. nonce: O4VcCY
 .. section: Library
 
-Restore compatibility for ``uname_result`` around deepcopy and _replace.
+Restore compatibility for :class:`os.uname_result` around deepcopy and _replace.
 
 ..
 

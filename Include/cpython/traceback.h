@@ -11,3 +11,11 @@ struct _traceback {
     int tb_lasti;
     int tb_lineno;
 };
+
+PyAPI_FUNC(const char*) PyUnstable_DumpTraceback(int fd, PyThreadState *tstate);
+
+PyAPI_FUNC(const char*) PyUnstable_DumpTracebackThreads(
+    int fd,
+    PyInterpreterState *interp,
+    PyThreadState *current_tstate,
+    Py_ssize_t max_threads);

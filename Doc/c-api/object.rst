@@ -392,7 +392,7 @@ Object Protocol
    :func:`str.format`.  This function imports and calls :func:`pprint.pformat`
    with the single object argument, and is not directly exposed in Python.
 
-   .. versionadded:: 3.15
+   .. versionadded:: 3.16
 
 
 .. c:function:: PyObject* PyObject_Str(PyObject *o)

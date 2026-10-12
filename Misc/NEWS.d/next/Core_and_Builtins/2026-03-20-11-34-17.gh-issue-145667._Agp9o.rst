@@ -1,2 +1,0 @@
-Remove the ``GET_ITER_YIELD_FROM`` instruction, modifying ``SEND`` to pair
-with ``GET_ITER`` when compiling ``yield from`` expressions.

@@ -403,6 +403,7 @@ static PyObject *
 pyobject_getitemdata(PyObject *self, PyObject *o)
 {
     void *pointer = PyObject_GetItemData(o);
+    assert(pointer == PyObject_GetItemData_DuringGC(o));
     if (pointer == NULL) {
         return NULL;
     }
@@ -485,17 +486,27 @@ pytype_getbasebytoken(PyObject *self, PyObject *args)
         mro_save = type->tp_mro;
         type->tp_mro = NULL;
     }
-
     void *token = PyLong_AsVoidPtr(py_token);
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+
+    void *result_duringgc;
+    int ret_duringgc = PyType_GetBaseByToken_DuringGC(
+        type, token, (PyTypeObject **)&result_duringgc);
+    assert(!PyErr_Occurred());
+
     PyObject *result;
     int ret;
     if (need_result == Py_True) {
         ret = PyType_GetBaseByToken(type, token, (PyTypeObject **)&result);
+        assert(result == result_duringgc);
     }
     else {
         result = NULL;
         ret = PyType_GetBaseByToken(type, token, NULL);
     }
+    assert(ret == ret_duringgc);
 
     if (use_mro != Py_True) {
         type->tp_mro = mro_save;
@@ -518,6 +529,7 @@ pytype_getbasebytoken(PyObject *self, PyObject *args)
 error:
     Py_XDECREF(py_ret);
     Py_XDECREF(result);
+    assert(PyErr_Occurred());
     return NULL;
 }
 
@@ -525,6 +537,7 @@ static PyObject *
 pytype_getmodulebydef(PyObject *self, PyObject *type)
 {
     PyObject *mod = PyType_GetModuleByDef((PyTypeObject *)type, _testcapimodule);
+    assert(mod == PyType_GetModuleByToken_DuringGC((PyTypeObject *)type, _testcapimodule));
     return Py_XNewRef(mod);
 }
 
@@ -540,7 +553,9 @@ pytype_getmodulebytoken(PyObject *self, PyObject *args)
     if ((!token) && PyErr_Occurred()) {
         return NULL;
     }
-    return PyType_GetModuleByToken((PyTypeObject *)type, token);
+    PyObject *result = PyType_GetModuleByToken((PyTypeObject *)type, token);
+    assert(result == PyType_GetModuleByToken_DuringGC((PyTypeObject *)type, token));
+    return result;
 }
 
 static PyType_Slot HeapCTypeWithBasesSlotNone_slots[] = {
@@ -820,6 +835,7 @@ heapctypesubclasswithfinalizer_finalize(PyObject *self)
     PyObject *exc = PyErr_GetRaisedException();
 
     PyObject *m = PyType_GetModule(Py_TYPE(self));
+    assert(m == PyType_GetModule_DuringGC(Py_TYPE(self)));
     if (m == NULL) {
         goto cleanup_finalize;
     }
@@ -1283,6 +1299,7 @@ HeapCCollection_new(PyTypeObject *subtype, PyObject *args, PyObject *kwds)
         goto finally;
     }
     PyObject **data = PyObject_GetItemData(self);
+    assert(data == PyObject_GetItemData_DuringGC(self));
     if (!data) {
         goto finally;
     }
@@ -1312,6 +1329,7 @@ HeapCCollection_item(PyObject *self, Py_ssize_t i)
         return PyErr_Format(PyExc_IndexError, "index %zd out of range", i);
     }
     PyObject **data = PyObject_GetItemData(self);
+    assert(data == PyObject_GetItemData_DuringGC(self));
     if (!data) {
         return NULL;
     }
@@ -1322,6 +1340,7 @@ static int
 HeapCCollection_traverse(PyObject *self, visitproc visit, void *arg)
 {
     PyObject **data = PyObject_GetItemData(self);
+    assert(data == PyObject_GetItemData_DuringGC(self));
     if (!data) {
         return -1;
     }
@@ -1335,6 +1354,7 @@ static int
 HeapCCollection_clear(PyObject *self)
 {
     PyObject **data = PyObject_GetItemData(self);
+    assert(data == PyObject_GetItemData_DuringGC(self));
     if (!data) {
         return -1;
     }

@@ -68,10 +68,34 @@ STDLIB_INSTALL = os.path.join(sys.prefix, sys.platlibdir,
 if not os.path.isfile(os.path.join(STDLIB_INSTALL, 'os.py')):
     STDLIB_INSTALL = None
 
+CODE_EXITCODE_123 = 'raise SystemExit(123)'
+
+
 def debug_build(program):
     program = os.path.basename(program)
     name = os.path.splitext(program)[0]
     return name.casefold().endswith("_d".casefold())
+
+
+def getpath_which(program_name):
+    if sys.platform != 'cygwin':
+        return shutil.which(program_name)
+
+    # shutil.which() checks for os.access(fn, os.F_OK | os.X_OK), whereas
+    # getpath.isxfile() doesn't. The difference matters on Cygwin.
+    import stat
+    def isxfile(fn):
+        try:
+            st = os.stat(fn)
+        except OSError:
+            return False
+        return stat.S_ISREG(st.st_mode)
+
+    for p in os.environ['PATH'].split(':'):
+        p = os.path.join(p, program_name)
+        if isxfile(p):
+            return p
+    return None
 
 
 def remove_python_envvars():
@@ -92,6 +116,8 @@ class EmbeddingTestsMixin:
             exename += ext
             exepath = builddir
         else:
+            if sys.platform == 'cygwin':
+                exename += '.exe'
             exepath = os.path.join(builddir, 'Programs')
         self.test_exe = exe = os.path.join(exepath, exename)
         if not os.path.exists(exe):
@@ -117,12 +143,16 @@ class EmbeddingTestsMixin:
             env = env.copy()
             env['SYSTEMROOT'] = os.environ['SYSTEMROOT']
 
-        p = subprocess.Popen(cmd,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE,
-                             universal_newlines=True,
-                             env=env,
-                             cwd=cwd)
+        kwargs = dict(
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+            env=env,
+            cwd=cwd,
+        )
+        if input is not None:
+            kwargs['stdin'] = subprocess.PIPE
+        p = subprocess.Popen(cmd, **kwargs)
         try:
             (out, err) = p.communicate(input=input, timeout=timeout)
         except:
@@ -328,6 +358,8 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             expected_path = self.test_exe
         else:
             expected_path = os.path.join(os.getcwd(), "_testembed")
+            if sys.platform == 'cygwin':
+                expected_path += '.exe'
         expected_output = f"sys.executable: {expected_path}\n"
         self.assertIn(expected_output, out)
         self.assertEqual(err, '')
@@ -565,6 +597,55 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         ]
         return "\n".join(filtered_err_lines)
 
+    def check_program_exitcode(self, *args, check_stderr=True, **kwargs):
+        out, err = self.run_embedded_interpreter(*args, **kwargs)
+        self.assertEqual(out.rstrip(), 'ok! Py_RunMain() returned 123')
+        if check_stderr:
+            self.assertEqual(err, '')
+
+    def test_init_run_main_code_exitcode(self):
+        code = CODE_EXITCODE_123
+        self.check_program_exitcode("test_init_run_main_code_exitcode", code)
+
+    def test_init_run_main_script_exitcode(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            filename = os.path.join(tmpdir, 'script.py')
+            with open(filename, 'w') as fp:
+                fp.write(CODE_EXITCODE_123)
+
+            self.check_program_exitcode("test_init_run_main_script_exitcode",
+                                        filename)
+
+    def test_init_run_main_interactive_exitcode(self):
+        code = CODE_EXITCODE_123
+        self.check_program_exitcode("test_init_run_main_interactive_exitcode",
+                                    input=code,
+                                    check_stderr=False)
+
+    def test_init_run_main_startup_exitcode(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            filename = os.path.join(tmpdir, 'startup.py')
+            with open(filename, 'x') as fp:
+                fp.write(CODE_EXITCODE_123)
+
+            env = dict(os.environ)
+            env['PYTHONSTARTUP'] = filename
+            self.check_program_exitcode("test_init_run_main_interactive_exitcode",
+                                        env=env,
+                                        check_stderr=False)
+
+    def test_init_run_main_module_exitcode(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            modname = '_testembed_testmodule'
+            filename = os.path.join(tmpdir, modname + '.py')
+            with open(filename, 'x', encoding='utf8') as fp:
+                fp.write(CODE_EXITCODE_123)
+
+            env = dict(os.environ)
+            env['PYTHONPATH'] = tmpdir
+            self.check_program_exitcode("test_init_run_main_module_exitcode",
+                                        modname, env=env)
+
 
 def config_dev_mode(preconfig, config):
     preconfig['allocator'] = PYMEM_ALLOCATOR_DEBUG
@@ -702,6 +783,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'use_frozen_modules': not support.Py_DEBUG,
         'safe_path': False,
         '_is_python_build': IGNORE_CONFIG,
+        '_deferred_cmdline_option': 0,
     }
     if Py_STATS:
         CONFIG_COMPAT['_pystats'] = False
@@ -742,7 +824,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     # global config
     DEFAULT_GLOBAL_CONFIG = {
         'Py_HasFileSystemDefaultEncoding': 0,
-        'Py_HashRandomizationFlag': 1,
         '_Py_HasFileSystemDefaultEncodeErrors': 0,
     }
     COPY_GLOBAL_PRE_CONFIG = [
@@ -750,31 +831,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     ]
     COPY_GLOBAL_CONFIG = [
         # Copy core config to global config for expected values
-        # True means that the core config value is inverted (0 => 1 and 1 => 0)
-        ('Py_BytesWarningFlag', 'bytes_warning'),
-        ('Py_DebugFlag', 'parser_debug'),
-        ('Py_DontWriteBytecodeFlag', 'write_bytecode', True),
         ('Py_FileSystemDefaultEncodeErrors', 'filesystem_errors'),
         ('Py_FileSystemDefaultEncoding', 'filesystem_encoding'),
-        ('Py_FrozenFlag', 'pathconfig_warnings', True),
-        ('Py_IgnoreEnvironmentFlag', 'use_environment', True),
-        ('Py_InspectFlag', 'inspect'),
-        ('Py_InteractiveFlag', 'interactive'),
-        ('Py_IsolatedFlag', 'isolated'),
-        ('Py_NoSiteFlag', 'site_import', True),
-        ('Py_NoUserSiteDirectory', 'user_site_directory', True),
-        ('Py_OptimizeFlag', 'optimization_level'),
-        ('Py_QuietFlag', 'quiet'),
-        ('Py_UnbufferedStdioFlag', 'buffered_stdio', True),
-        ('Py_VerboseFlag', 'verbose'),
     ]
-    if MS_WINDOWS:
-        COPY_GLOBAL_PRE_CONFIG.extend((
-            ('Py_LegacyWindowsFSEncodingFlag', 'legacy_windows_fs_encoding'),
-        ))
-        COPY_GLOBAL_CONFIG.extend((
-            ('Py_LegacyWindowsStdioFlag', 'legacy_windows_stdio'),
-        ))
 
     EXPECTED_CONFIG = None
 
@@ -872,12 +931,16 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             default_executable = os.path.abspath(expected['program_name'])
         else:
             default_executable = os.path.join(os.getcwd(), '_testembed')
+            if sys.platform == 'cygwin':
+                default_executable += '.exe'
         if expected['executable'] is self.GET_DEFAULT_CONFIG:
             expected['executable'] = default_executable
         if expected['base_executable'] is self.GET_DEFAULT_CONFIG:
             expected['base_executable'] = default_executable
         if expected['program_name'] is self.GET_DEFAULT_CONFIG:
             expected['program_name'] = './_testembed'
+            if sys.platform == 'cygwin':
+                expected['program_name'] += '.exe'
 
         config = configs['config']
         for key, value in expected.items():
@@ -928,20 +991,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         config = configs['config']
 
         expected = dict(self.DEFAULT_GLOBAL_CONFIG)
-        for item in self.COPY_GLOBAL_CONFIG:
-            if len(item) == 3:
-                global_key, core_key, opposite = item
-                expected[global_key] = 0 if config[core_key] else 1
-            else:
-                global_key, core_key = item
-                expected[global_key] = config[core_key]
-        for item in self.COPY_GLOBAL_PRE_CONFIG:
-            if len(item) == 3:
-                global_key, core_key, opposite = item
-                expected[global_key] = 0 if pre_config[core_key] else 1
-            else:
-                global_key, core_key = item
-                expected[global_key] = pre_config[core_key]
+        for global_key, core_key in self.COPY_GLOBAL_CONFIG:
+            expected[global_key] = config[core_key]
+        for global_key, core_key in self.COPY_GLOBAL_PRE_CONFIG:
+            expected[global_key] = pre_config[core_key]
 
         self.assertEqual(configs['global_config'], expected)
 
@@ -1010,24 +1063,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_all_configs("test_init_compat_config", api=API_COMPAT)
 
     def test_init_global_config(self):
+        # Test Py_UTF8Mode global configuration variable
         preconfig = {
             'utf8_mode': True,
         }
-        config = {
-            'site_import': False,
-            'bytes_warning': True,
-            'warnoptions': ['default::BytesWarning'],
-            'inspect': True,
-            'interactive': True,
-            'optimization_level': 2,
-            'write_bytecode': False,
-            'verbose': True,
-            'quiet': True,
-            'buffered_stdio': False,
-            'remote_debug': True,
-            'user_site_directory': False,
-            'pathconfig_warnings': False,
-        }
+        config = {}
         self.check_all_configs("test_init_global_config", config, preconfig,
                                api=API_COMPAT)
 
@@ -1370,7 +1410,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             if MACOS:
                 executable = self.test_exe
             else:
-                executable = shutil.which(program_name) or ''
+                executable = getpath_which(program_name) or ''
         config.update({
             'program_name': program_name,
             'base_executable': executable,
@@ -1429,7 +1469,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         if prefix is None:
             prefix = config['config']['prefix']
         if exec_prefix is None:
-            exec_prefix = config['config']['prefix']
+            exec_prefix = config['config']['exec_prefix']
         if MS_WINDOWS:
             return config['config']['module_search_paths']
         else:
@@ -1468,6 +1508,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             shutil.copyfile(self.test_exe, exec_copy)
             shutil.copystat(self.test_exe, exec_copy)
             self.test_exe = exec_copy
+
+            if sys.platform == "cygwin":
+                # Copy libpython DLL
+                exe_path = os.path.dirname(sys.executable)
+                libpython_dll = sysconfig.get_config_var('DLLLIBRARY')
+                shutil.copy2(os.path.join(exe_path, libpython_dll),
+                             os.path.join(tmpdir, libpython_dll))
 
             yield tmpdir
 
@@ -1578,8 +1625,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             expected_paths[1 if MS_WINDOWS else 2] = os.path.normpath(
                 os.path.join(exedir, f'{f.read()}\n$'.splitlines()[0]))
         if not MS_WINDOWS:
-            # PREFIX (default) is set when running in build directory
-            prefix = exec_prefix = sys.prefix
+            # PREFIX and EXEC_PREFIX (defaults) are set when running in the
+            # build directory and may differ with --exec-prefix (gh-151096).
+            prefix = sys.prefix
+            exec_prefix = sys.exec_prefix
             # stdlib calculation (/Lib) is not yet supported
             expected_paths[0] = self.module_search_paths(prefix=prefix)[0]
             config.update(prefix=prefix, base_prefix=prefix,
@@ -1790,19 +1839,31 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         # The global path configuration (_Py_path_config) must be a copy
         # of the path configuration of PyInterpreter.config (PyConfig).
         ctypes = import_helper.import_module('ctypes')
+        import ctypes.util  # noqa: F811
 
-        def get_func(name):
-            func = getattr(ctypes.pythonapi, name)
-            func.argtypes = ()
-            func.restype = ctypes.c_wchar_p
-            return func
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_GetPath() -> ctypes.c_wchar_p:
+            pass
 
-        Py_GetPath = get_func('Py_GetPath')
-        Py_GetPrefix = get_func('Py_GetPrefix')
-        Py_GetExecPrefix = get_func('Py_GetExecPrefix')
-        Py_GetProgramName = get_func('Py_GetProgramName')
-        Py_GetProgramFullPath = get_func('Py_GetProgramFullPath')
-        Py_GetPythonHome = get_func('Py_GetPythonHome')
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_GetPrefix() -> ctypes.c_wchar_p:
+            pass
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_GetExecPrefix() -> ctypes.c_wchar_p:
+            pass
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_GetProgramName() -> ctypes.c_wchar_p:
+            pass
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_GetProgramFullPath() -> ctypes.c_wchar_p:
+            pass
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_GetPythonHome() -> ctypes.c_wchar_p:
+            pass
 
         config = _testinternalcapi.get_configs()['config']
 
@@ -1930,6 +1991,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_init_in_background_thread")
         self.assertEqual(err, "")
 
+    def test_isinitialized_false_during_site_import(self):
+        # gh-146302: Py_IsInitialized() must not return true during site import.
+        out, err = self.run_embedded_interpreter(
+            "test_isinitialized_false_during_site_import")
+        self.assertEqual(err, "")
+
 
 class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_open_code_hook(self):
@@ -1987,9 +2054,24 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_get_incomplete_frame(self):
         self.run_embedded_interpreter("test_get_incomplete_frame")
 
-
     def test_gilstate_after_finalization(self):
         self.run_embedded_interpreter("test_gilstate_after_finalization")
+
+    def test_thread_state_ensure(self):
+        self.run_embedded_interpreter("test_thread_state_ensure")
+
+    def test_main_interpreter_view(self):
+        self.run_embedded_interpreter("test_main_interpreter_view")
+
+    def test_thread_state_ensure_from_view(self):
+        self.run_embedded_interpreter("test_thread_state_ensure_from_view")
+
+    def test_concurrent_finalization_stress(self):
+        self.run_embedded_interpreter("test_concurrent_finalization_stress")
+
+    def test_py_getenv(self):
+        # Test Py_GETENV() before init, when initialized, and after finalize
+        self.run_embedded_interpreter("test_py_getenv")
 
 
 class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
@@ -2051,7 +2133,7 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_presite(self):
         cmd = [
             sys.executable,
-            "-I", "-X", "presite=test._test_embed_structseq",
+            "-I", "-X", "presite=test._test_embed_structseq:main",
             "-c", "print('unique-python-message')",
         ]
         proc = subprocess.run(
