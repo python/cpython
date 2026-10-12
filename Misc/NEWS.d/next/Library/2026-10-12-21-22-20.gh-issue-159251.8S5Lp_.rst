@@ -1,0 +1,3 @@
+Speed up ``\w``, ``\W``, ``\b`` and ``\B`` on ASCII characters in :mod:`re`
+patterns by checking the ASCII table before the Unicode database. Patch by
+Maurycy Pawłowski-Wieroński.
