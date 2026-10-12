@@ -1530,7 +1530,7 @@ str_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const char *c = "c";
     Py_ssize_t c_length;
 
-    if (!_PyArg_ParseStack(args, nargs, "|sys#:str_converter",
+    if (!PyArg_ParseArray(args, nargs, "|sys#:str_converter",
         &a, &b, &c, &c_length)) {
         goto exit;
     }
@@ -1561,7 +1561,7 @@ str_converter_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     char *c = NULL;
     Py_ssize_t c_length;
 
-    if (!_PyArg_ParseStack(args, nargs, "esetet#:str_converter_encoding",
+    if (!PyArg_ParseArray(args, nargs, "esetet#:str_converter_encoding",
         "idna", &a, "idna", &b, "idna", &c, &c_length)) {
         goto exit;
     }
@@ -1595,7 +1595,7 @@ py_buffer_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_buffer a = {NULL, NULL};
     Py_buffer b = {NULL, NULL};
 
-    if (!_PyArg_ParseStack(args, nargs, "z*w*:py_buffer_converter",
+    if (!PyArg_ParseArray(args, nargs, "z*w*:py_buffer_converter",
         &a, &b)) {
         goto exit;
     }
@@ -3895,7 +3895,7 @@ gh_99240_double_free(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     char *a = NULL;
     char *b = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "eses:gh_99240_double_free",
+    if (!PyArg_ParseArray(args, nargs, "eses:gh_99240_double_free",
         "idna", &a, "idna", &b)) {
         goto exit;
     }
@@ -5309,4 +5309,4 @@ vc_kwonly_vectorcall(PyObject *type, PyObject *const *args,
         kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
         NULL, kwnames);
 }
-/*[clinic end generated code: output=e1f97f59fec61b6b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=17b9ff8218a250fe input=a9049054013a1b77]*/
