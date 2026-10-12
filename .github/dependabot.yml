@@ -167,14 +167,3 @@ updates:
     cooldown:
       default-days: 14
 
-  - package-ecosystem: "npm"
-    target-branch: "3.13"
-    directory: "/Platforms/emscripten/browser_test/"
-    schedule:
-      interval: "quarterly"
-    labels: ["skip issue", "skip news"]
-    groups:
-      npm:
-        patterns: ["*"]
-    cooldown:
-      default-days: 14
