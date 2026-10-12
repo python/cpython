@@ -34,8 +34,7 @@ DEFAULT_BUFFER_SIZE
 """
 # New I/O library conforming to PEP 3116.
 
-# Original authors: Guido van Rossum <guido@python.org>,
-#                   Mike Verdone <mike.verdone@gmail.com>,
+# Original authors: Mike Verdone <mike.verdone@gmail.com>,
 #                   Mark Russell <mark.russell@zen.co.uk>,
 #                   Antoine Pitrou <solipsis@pitrou.net>,
 #                   Amaury Forgeot d'Arc <amauryfa@gmail.com>,

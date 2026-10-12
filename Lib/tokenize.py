@@ -21,8 +21,8 @@ which tells you which encoding was used to decode the bytes stream.
 """
 
 # Original author: Ka-Ping Yee
-# Credits: GvR, ESR, Tim Peters, Thomas Wouters, Fred Drake,
-#          Skip Montanaro, Raymond Hettinger, Trent Nelson, Michael Foord
+# Credits: ESR, Tim Peters, Thomas Wouters, Fred Drake, Skip Montanaro,
+#          Raymond Hettinger, Trent Nelson, Michael Foord
 
 from builtins import open as _builtin_open
 from codecs import lookup, BOM_UTF8

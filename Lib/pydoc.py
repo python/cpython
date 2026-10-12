@@ -39,8 +39,7 @@ Reference Manual pages.
 __all__ = ['help']
 
 # Original author: Ka-Ping Yee
-# Credits: Guido van Rossum, for an excellent programming language.
-#          Tommy Burnette, the original creator of manpy.
+# Credits: Tommy Burnette, the original creator of manpy.
 #          Paul Prescod, for all his work on onlinehelp.
 #          Richard Chamberlain, for the first implementation of textdoc.
 
