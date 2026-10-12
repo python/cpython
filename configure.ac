@@ -4857,6 +4857,13 @@ for db in $with_dbmliborder; do
         DBM_LIBS="-lgdbm_compat $GDBM_LIBS"
         have_dbm=yes
         break
+      elif test "$ac_cv_ndbm_h_is_gdbm" = yes && test "$have_ndbm" = yes; then
+        dnl Some systems install gdbm's ndbm interface as <ndbm.h> and ship
+        dnl neither <gdbm/ndbm.h> nor <gdbm-ndbm.h>.
+        DBM_CFLAGS="-DUSE_NDBM"
+        DBM_LIBS="$dbm_ndbm $GDBM_LIBS"
+        have_dbm=yes
+        break
       fi
       ;;
     bdb)
