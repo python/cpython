@@ -3365,10 +3365,7 @@ class ScreenTests(NewtermTestBase):
                 a = curses.newterm('xterm', s1, s1)
             except curses.error:
                 self.skipTest('no xterm terminfo entry')
-            try:
-                curses.start_color()
-            except curses.error:
-                pass
+            curses.start_color()
 
             env['LINES'] = '30'
             env['COLUMNS'] = '100'
@@ -3376,22 +3373,64 @@ class ScreenTests(NewtermTestBase):
                 b = curses.newterm('xterm-256color', s2, s2)
             except curses.error:
                 self.skipTest('no xterm-256color terminfo entry')
-            try:
-                curses.start_color()
-            except curses.error:
-                pass
+            curses.start_color()
 
         curses.set_term(a)
         self.assertEqual((curses.LINES, curses.COLS), a.stdscr.getmaxyx())
         self.assertNotEqual((curses.LINES, curses.COLS), b.stdscr.getmaxyx())
-        if hasattr(curses, 'COLORS'):
-            self.assertEqual(curses.COLORS, 8)
+        self.assertEqual(curses.COLORS, 8)
 
         self.assertEqual(curses.set_term(b), a)
         self.assertEqual((curses.LINES, curses.COLS), b.stdscr.getmaxyx())
         self.assertNotEqual((curses.LINES, curses.COLS), a.stdscr.getmaxyx())
-        if hasattr(curses, 'COLORS'):
-            self.assertEqual(curses.COLORS, 256)
+        self.assertEqual(curses.COLORS, 256)
+
+    @unittest.skipUnless(hasattr(curses.screen, 'use'),
+                         'requires curses.screen.use()')
+    def test_use_screen_refreshes_lines_cols_colors(self):
+        s1 = self.make_pty()
+        s2 = self.make_pty()
+
+        with os_helper.EnvironmentVarGuard() as env:
+            env['LINES'] = '25'
+            env['COLUMNS'] = '80'
+            try:
+                a = curses.newterm('xterm', s1, s1)
+            except curses.error:
+                self.skipTest('no xterm terminfo entry')
+            curses.start_color()
+
+            env['LINES'] = '30'
+            env['COLUMNS'] = '100'
+            try:
+                b = curses.newterm('xterm-256color', s2, s2)
+            except curses.error:
+                self.skipTest('no xterm-256color terminfo entry')
+            curses.start_color()
+
+        curses.set_term(b)
+        self.assertEqual((curses.LINES, curses.COLS), b.stdscr.getmaxyx())
+        self.assertEqual(curses.COLORS, 256)
+
+        def check_in_use(scr):
+            self.assertEqual((curses.LINES, curses.COLS), a.stdscr.getmaxyx())
+            self.assertEqual(curses.COLORS, 8)
+
+        a.use(check_in_use)
+
+        self.assertEqual((curses.LINES, curses.COLS), b.stdscr.getmaxyx())
+        self.assertEqual(curses.COLORS, 256)
+
+        def raise_in_use(scr):
+            self.assertEqual((curses.LINES, curses.COLS), a.stdscr.getmaxyx())
+            self.assertEqual(curses.COLORS, 8)
+            raise ValueError('error in use')
+
+        with self.assertRaises(ValueError):
+            a.use(raise_in_use)
+
+        self.assertEqual((curses.LINES, curses.COLS), b.stdscr.getmaxyx())
+        self.assertEqual(curses.COLORS, 256)
 
     def test_window_keeps_screen_alive(self):
         # The standard window keeps its screen alive; dropping every other
