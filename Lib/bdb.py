@@ -243,8 +243,6 @@ class Bdb:
 
     def reset(self):
         """Set values of attributes as ready to start debugging."""
-        import linecache
-        linecache.checkcache()
         self.botframe = None
         self._set_stopinfo(None, None)
 
