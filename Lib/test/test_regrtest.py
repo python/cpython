@@ -1673,17 +1673,15 @@ class ArgsTestCase(BaseTestCase):
         env.pop('SOURCE_DATE_EPOCH', None)
         output = self.run_tests('--fast-ci', '-j2', cases, crash,
                                 env=env, exitcode=EXITCODE_BAD_TEST)
-        fail_lines = [str(lineno)
+        # One annotation per failure of the re-run, not of the first run:
+        # one per "# fail" line, and the crash (without a line)
+        fail_lines = [(f'{cases}.py', str(lineno))
                       for lineno, line in enumerate(code.splitlines(), 1)
                       if line.endswith('# fail')]
-        # Only failures of the re-run are annotated
         self.assertCountEqual(
-            re.findall(r'^::error file=[^,]*?([^/,]+?)(?:,line=(\d+))?,'
-                       r'title=([^:]*)::', output, re.MULTILINE),
-            [(f'{cases}.py', fail_lines[1],
-              f'test_subtest ({cases}.Tests.test_subtest) (x=1)'),
-             (f'{cases}.py', fail_lines[0], f'doctest_fail ({cases}) [0]'),
-             (f'{crash}.py', '', crash)],
+            re.findall(r'^::error file=[^,]*?([^/,]+?)(?:,line=(\d+))?,title=',
+                       output, re.MULTILINE),
+            fail_lines + [(f'{crash}.py', '')],
             output)
         with open(filename, encoding='utf-8') as fp:
             summary = fp.read()
