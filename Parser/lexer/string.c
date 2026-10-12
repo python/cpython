@@ -7,13 +7,18 @@
 
 #define MAKE_TOKEN(token_type) _PyLexer_token_setup(tok, token, token_type, p_start, p_end)
 
-static void
-rewind_to_string_start(struct tok_state *tok, _PyTok_Off start,
-                       _PyTok_Loc location)
+static int
+string_error_token(struct tok_state *tok, struct token *token,
+                   _PyTok_Off start, _PyTok_Loc location)
 {
-    tok->cur = start + 1;
-    tok->line_start = start - location.byte_col;
-    tok->lineno = location.lineno;
+    tok->diagnostic = (_PyTokenizer_Diagnostic){
+        .location = {location.lineno, location.byte_col + 1},
+        .text_span = {start - location.byte_col, tok->inp},
+    };
+    int type = _PyLexer_token_setup(tok, token, ERRORTOKEN, -1, -1);
+    token->start_loc = location;
+    token->end_loc = (_PyTok_Loc){location.lineno, -1};
+    return type;
 }
 
 int
@@ -78,18 +83,17 @@ finish_ftstring_expr(struct tok_state *tok, ftstring_state *state,
     PyObject *res;
     if (comments != NULL && comments->count > 0) {
         Py_ssize_t stripped_size = expr_len;
-        _PyTok_Off previous_end = state->expr_span.start;
         Py_ssize_t comment_count = 0;
         for (Py_ssize_t i = 0; i < comments->count; i++) {
             _PyTok_Span comment = comments->spans[i];
             assert(_PyTok_SpanIsValid(comment));
-            assert(comment.start >= previous_end);
+            assert(comment.start >= (i == 0 ? state->expr_span.start
+                                           : comments->spans[i - 1].end));
             if (comment.start >= state->expr_span.end) {
                 break;
             }
             assert(comment.end <= state->expr_span.end);
             stripped_size -= comment.end - comment.start;
-            previous_end = comment.end;
             comment_count++;
         }
         char *stripped = PyMem_Malloc((size_t)stripped_size);
@@ -249,7 +253,8 @@ _PyLexer_check_string_prefixes(struct tok_state *tok,
 }
 
 int
-_PyLexer_scan_fstring_start(struct tok_state *tok, struct token *token, int c)
+_PyLexer_scan_fstring_start(struct tok_state *tok, struct token *token,
+                            int c, ftstring_kind kind)
 {
     _PyTok_Off p_start = -1;
     _PyTok_Off p_end = -1;
@@ -288,30 +293,9 @@ _PyLexer_scan_fstring_start(struct tok_state *tok, struct token *token, int c)
     state->start_loc = tok->start_loc;
     state->expr_span = (_PyTok_Span){-1, -1};
 
-    int raw = 0;
-    int tstring = 0;
-    switch (*_PyLexer_BufferPointer(tok, tok->start)) {
-        case 'T':
-        case 't':
-            raw = Py_TOLOWER(_PyLexer_BufferPointer(tok, tok->start)[1]) == 'r';
-            tstring = 1;
-            break;
-        case 'F':
-        case 'f':
-            raw = Py_TOLOWER(_PyLexer_BufferPointer(tok, tok->start)[1]) == 'r';
-            break;
-        case 'R':
-        case 'r':
-            raw = 1;
-            tstring = Py_TOLOWER(_PyLexer_BufferPointer(tok, tok->start)[1]) == 't';
-            break;
-        default:
-            Py_UNREACHABLE();
-    }
-    state->kind = tstring
-        ? (raw ? RAW_TSTRING : TSTRING)
-        : (raw ? RAW_FSTRING : FSTRING);
-    return tstring ? MAKE_TOKEN(TSTRING_START) : MAKE_TOKEN(FSTRING_START);
+    state->kind = kind;
+    return _PyLexer_IsTString(kind)
+        ? MAKE_TOKEN(TSTRING_START) : MAKE_TOKEN(FSTRING_START);
 }
 
 int
@@ -350,45 +334,68 @@ _PyLexer_scan_string(struct tok_state *tok, struct token *token, int c)
             break;
         }
         if (c == EOF || (quote_size == 1 && c == '\n')) {
+            if (tok_failed(tok)) {
+                return MAKE_TOKEN(ERRORTOKEN);
+            }
             int end_lineno = tok->lineno;
-            rewind_to_string_start(tok, tok->start, tok->start_loc);
+            _PyTok_Loc location = tok->start_loc;
+            const char *line = _PyLexer_BufferPointer(tok, tok->start) - location.byte_col;
+            Py_ssize_t cursor_offset = (Py_ssize_t)location.byte_col + 1;
 
             const ftstring_state *state = _PyLexer_CurrentFTString(tok);
             if (state != NULL) {
-                /* A matching quote belongs to the surrounding formatted
-                 * string, so the expression is missing its closing brace. */
+                /* A matching quote may have been intended to close the
+                 * surrounding formatted string instead of opening a string
+                 * inside a replacement field. */
                 if (state->quote == quote && state->quote_size == quote_size) {
-                    return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
-                        "%c-string: expecting '}'",
-                        _PyLexer_StringPrefix(state->kind)));
+                    int level = state->paren_level + state->replacement_depth - 1;
+                    assert(level >= 0 && level < tok->level);
+                    assert(tok->parenstack[level] == '{');
+                    int lineno = tok->parenlinenostack[level];
+                    if (lineno != location.lineno) {
+                        _PyTokenizer_syntaxerror_at(
+                            tok, line, cursor_offset, location.lineno, -1, -1,
+                            "%c-string: expecting '}' to close '{' on line %d",
+                            _PyLexer_StringPrefix(state->kind), lineno);
+                    }
+                    else {
+                        _PyTokenizer_syntaxerror_at(
+                            tok, line, cursor_offset, location.lineno, -1, -1,
+                            "%c-string: expecting '}'",
+                            _PyLexer_StringPrefix(state->kind));
+                    }
+                    return string_error_token(tok, token, tok->start, location);
                 }
             }
 
             if (quote_size == 3) {
-                _PyTokenizer_syntaxerror(tok, "unterminated triple-quoted string literal"
-                                 " (detected at line %d)", end_lineno);
+                _PyTokenizer_syntaxerror_at(
+                    tok, line, cursor_offset, location.lineno, -1, -1,
+                    "unterminated triple-quoted string literal"
+                    " (detected at line %d)", end_lineno);
                 if (c != '\n') {
                     tok->done = E_EOFS;
                 }
-                return MAKE_TOKEN(ERRORTOKEN);
+                return string_error_token(tok, token, tok->start, location);
             }
             else {
                 if (has_escaped_quote) {
-                    _PyTokenizer_syntaxerror(
-                        tok,
+                    _PyTokenizer_syntaxerror_at(
+                        tok, line, cursor_offset, location.lineno, -1, -1,
                         "unterminated string literal (detected at line %d); "
                         "perhaps you escaped the end quote?",
                         end_lineno
                     );
                 } else {
-                    _PyTokenizer_syntaxerror(
-                        tok, "unterminated string literal (detected at line %d)", end_lineno
+                    _PyTokenizer_syntaxerror_at(
+                        tok, line, cursor_offset, location.lineno, -1, -1,
+                        "unterminated string literal (detected at line %d)", end_lineno
                     );
                 }
                 if (c != '\n') {
                     tok->done = E_EOLS;
                 }
-                return MAKE_TOKEN(ERRORTOKEN);
+                return string_error_token(tok, token, tok->start, location);
             }
         }
         if (c == quote) {
@@ -452,25 +459,29 @@ _PyLexer_get_ftstring(struct tok_state *tok, ftstring_state *current, struct tok
             }
 
             int end_lineno = tok->lineno;
-            rewind_to_string_start(tok,
-                current->start,
-                current->start_loc);
+            _PyTok_Loc location = current->start_loc;
+            const char *line = _PyLexer_BufferPointer(tok, current->start) - location.byte_col;
+            Py_ssize_t cursor_offset = (Py_ssize_t)location.byte_col + 1;
 
             if (quote_size == 3) {
-                _PyTokenizer_syntaxerror(tok,
-                                    "unterminated triple-quoted %c-string literal"
-                                    " (detected at line %d)",
-                                    _PyLexer_StringPrefix(current->kind), end_lineno);
+                _PyTokenizer_syntaxerror_at(
+                    tok, line, cursor_offset, location.lineno, -1, -1,
+                    "unterminated triple-quoted %c-string literal"
+                    " (detected at line %d)",
+                    _PyLexer_StringPrefix(current->kind), end_lineno);
                 if (c != '\n') {
                     tok->done = E_EOFS;
                 }
-                return MAKE_TOKEN(ERRORTOKEN);
+                return string_error_token(tok, token,
+                    current->start, location);
             }
             else {
-                return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
-                                    "unterminated %c-string literal (detected at"
-                                    " line %d)",
-                                    _PyLexer_StringPrefix(current->kind), end_lineno));
+                _PyTokenizer_syntaxerror_at(
+                    tok, line, cursor_offset, location.lineno, -1, -1,
+                    "unterminated %c-string literal (detected at line %d)",
+                    _PyLexer_StringPrefix(current->kind), end_lineno);
+                return string_error_token(tok, token,
+                    current->start, location);
             }
         }
 

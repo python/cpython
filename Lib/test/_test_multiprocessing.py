@@ -3159,6 +3159,7 @@ class _TestPool(BaseTestCase):
         with self.assertRaisesRegex(expected_exception, expected_regex):
             method(str, range(4), buffersize=buffersize)
 
+    @unittest.skipUnless(HAS_SHAREDCTYPES, 'needs sharedctypes')
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.subTests('method_name', ("imap", "imap_unordered"))
     def test_imap_and_imap_unordered_when_buffer_is_full(self, method_name):
@@ -3194,6 +3195,7 @@ class _TestPool(BaseTestCase):
         p.terminate()
         p.join()
 
+    @unittest.skipUnless(HAS_SHAREDCTYPES, 'needs sharedctypes')
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.subTests('method_name', ("imap", "imap_unordered"))
     def test_imap_and_imap_unordered_with_buffersize_when_buffer_is_full(

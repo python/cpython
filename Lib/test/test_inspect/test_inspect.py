@@ -3556,6 +3556,48 @@ class TestSignatureObject(unittest.TestCase):
 
         self.assertEqual(str(inspect.signature(funclike)), '(marker)')
 
+    @cpython_only
+    def test_signature_functionlike_invalid_names(self):
+        # The code object of a function-like object is not guaranteed
+        # to have valid parameter names, so they must be validated.
+        def func(a, b):
+            pass
+
+        class funclike:
+            __name__ = func.__name__
+            __code__ = func.__code__.replace(co_varnames=('a', '$b'))
+            __annotations__ = {}
+            __defaults__ = None
+            __kwdefaults__ = None
+
+            def __call__(self, *args):
+                pass
+
+        with self.assertRaisesRegex(ValueError,
+                                    'is not a valid parameter name'):
+            inspect.signature(funclike())
+
+    def test_signature_parameter_cls_subclass(self):
+        # A Signature subclass can override _parameter_cls with a
+        # Parameter subclass that has its own constructor.
+        class MyParameter(inspect.Parameter):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.extra = 'spam'
+
+        class MySignature(inspect.Signature):
+            _parameter_cls = MyParameter
+
+        def f(a, /, b=1, *args, c, d=2, **kwargs):
+            pass
+
+        sig = MySignature.from_callable(f)
+        self.assertEqual(len(sig.parameters), 6)
+        for param in sig.parameters.values():
+            self.assertIs(type(param), MyParameter)
+            self.assertEqual(param.extra, 'spam')
+        self.assertEqual(sig, inspect.signature(f))
+
     def test_signature_on_method(self):
         class Test:
             def __init__(*args):
@@ -5656,6 +5698,20 @@ class TestParameterObject(unittest.TestCase):
         self.assertEqual(param.kind, inspect.Parameter.POSITIONAL_ONLY)
         self.assertEqual(param.name, 'implicit0')
 
+    @cpython_only
+    def test_signature_from_code_unusual_names(self):
+        def f(a, b): pass
+        f.__code__ = f.__code__.replace(co_varnames=('.0', 'b'))
+        sig = inspect.signature(f)
+        self.assertEqual(list(sig.parameters), ['implicit0', 'b'])
+        self.assertEqual(sig.parameters['implicit0'].kind,
+                         inspect.Parameter.POSITIONAL_ONLY)
+
+        f.__code__ = f.__code__.replace(co_varnames=('if', 'b'))
+        with self.assertRaisesRegex(ValueError,
+                                    'is not a valid parameter name'):
+            inspect.signature(f)
+
     def test_signature_parameter_immutability(self):
         p = inspect.Parameter('spam', kind=inspect.Parameter.KEYWORD_ONLY)
 
@@ -6170,11 +6226,10 @@ class TestSignatureDefinitions(unittest.TestCase):
         no_signature = {'type', 'super', 'bytearray', 'bytes',
                         'dict', 'frozendict', 'int', 'str'}
         # These need PEP 457 groups
-        needs_groups = {"range", "slice", "dir", "getattr",
-                        "next", "vars"}
+        needs_groups = {"range", "slice", "getattr", "next"}
         no_signature |= needs_groups
         # These have unrepresentable parameter default values of NULL
-        unsupported_signature = {"aiter", "iter"}
+        unsupported_signature = {"aiter", "iter", "dir", "vars"}
         # These need *args support in Argument Clinic
         needs_varargs = {"min", "max", "__build_class__"}
         no_signature |= needs_varargs
@@ -6207,10 +6262,12 @@ class TestSignatureDefinitions(unittest.TestCase):
                 methods_no_signature=methods_no_signature)
 
     def test_sys_module_has_signatures(self):
-        no_signature = {'getsizeof', 'set_asyncgen_hooks'}
-        no_signature |= {name for name in ['getobjects']
-                         if hasattr(sys, name)}
-        self._test_module_has_signatures(sys, no_signature)
+        no_signature = {name for name in ['getobjects']
+                        if hasattr(sys, name)}
+        # The C default is NULL and None has other meaning
+        unsupported_signature = {'getsizeof', 'set_asyncgen_hooks'}
+        self._test_module_has_signatures(sys, no_signature,
+                                         unsupported_signature)
 
     def test_abc_module_has_signatures(self):
         import abc
@@ -6280,11 +6337,7 @@ class TestSignatureDefinitions(unittest.TestCase):
         self._test_module_has_signatures(gc, no_signature)
 
     def test_io_module_has_signatures(self):
-        methods_no_signature = {
-            'BufferedRWPair': {'read', 'peek', 'read1', 'readinto', 'readinto1', 'write'},
-        }
-        self._test_module_has_signatures(io,
-                methods_no_signature=methods_no_signature)
+        self._test_module_has_signatures(io)
 
     def test_itertools_module_has_signatures(self):
         import itertools
@@ -6317,7 +6370,6 @@ class TestSignatureDefinitions(unittest.TestCase):
     def test_re_module_has_signatures(self):
         import re
         methods_no_signature = {
-                'Match': {'group'},
                 'Pattern': {'match'},  # It is now an alias for prefixmatch
         }
         self._test_module_has_signatures(re,

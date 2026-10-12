@@ -1,0 +1,4 @@
+:meth:`code.InteractiveInterpreter.runsource` and the REPL now report any
+exception raised by compiling the source, such as :exc:`MemoryError` or
+:exc:`RecursionError` for too deeply nested source, instead of propagating
+it or printing a traceback of the REPL internals.

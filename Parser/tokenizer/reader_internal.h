@@ -3,6 +3,8 @@
 
 #include "Python.h"
 
+#define _PYTOK_ENCODING_COOKIE_MAX_LINES 2
+
 typedef enum {
     _PYTOK_READER_PREPARED,
     _PYTOK_READER_FILE,
@@ -32,33 +34,34 @@ typedef enum {
 
 typedef struct {
     char *data;
-    Py_ssize_t len;
-    int implicit_newline;
     PyObject *owner;
+    Py_ssize_t len;
     _PyTok_ChunkOwnership ownership;
+    unsigned char implicit_newline;
 } _PyTok_Chunk;
 
 typedef struct _PyTok_Reader {
-    _PyTok_ReaderKind kind;
     PyObject *readline;
     PyObject *decoder;
+    const char *prompt;
     const char *nextprompt;
 
     char *file_buffer;
     Py_ssize_t file_buffer_cap;
-    _PyTok_Chunk prefetched_lines[2];
-    int prefetched_index;
-    int prefetched_count;
+    _PyTok_Chunk prefetched_lines[_PYTOK_ENCODING_COOKIE_MAX_LINES];
 
     char *decoded;
     Py_ssize_t decoded_pos;
+    Py_ssize_t decoded_scan;  // First byte not yet scanned for a newline.
     Py_ssize_t decoded_len;
     Py_ssize_t decoded_cap;
-    int decoded_tail_is_implicit;
-
-    int file_initialized;
-    int file_eof;
-    int decoder_finalized;
+    _PyTok_ReaderKind kind;
+    unsigned char prepared_final_newline_is_implicit;
+    unsigned char decoded_tail_is_implicit;
+    unsigned char file_initialized;
+    unsigned char file_eof;
+    unsigned char decoder_finalized;
+    unsigned char stop_interactive;
 } _PyTok_Reader;
 
 struct tok_state;
@@ -68,8 +71,7 @@ int _PyTok_ReserveBuffer(char **, Py_ssize_t *, Py_ssize_t, Py_ssize_t);
 char *_PyTok_CopyBytes(const char *, Py_ssize_t);
 int _PyTok_DecodeOnce(
     struct tok_state *, _PyTok_Chunk *, const char *, const char *);
-char *_PyTok_NormalizeNewlines(
-    const char *, Py_ssize_t, int, int, Py_ssize_t *, int *);
+char *_PyTok_NormalizeNewlines(const char *, Py_ssize_t, Py_ssize_t *);
 void _PyTok_ChunkClear(_PyTok_Chunk *);
 int _PyTok_SetEncoding(struct tok_state *, const char *);
 _PyTok_EncodingResult _PyTok_DetectEncoding(

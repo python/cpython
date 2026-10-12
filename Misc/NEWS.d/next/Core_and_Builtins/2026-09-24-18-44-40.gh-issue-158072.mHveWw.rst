@@ -1,0 +1,1 @@
+Fix a JIT crash when a class is instantiated with their default arguments

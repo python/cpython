@@ -395,10 +395,10 @@ PEGEN_OBJS=		\
 
 TOKENIZER_OBJS=		\
 		Parser/lexer/lexer.o \
+		Parser/lexer/layout.o \
 		Parser/lexer/number.o \
 		Parser/lexer/state.o \
 		Parser/lexer/string.o \
-		Parser/tokenizer/cursor.o \
 		Parser/tokenizer/decoder.o \
 		Parser/tokenizer/api.o \
 		Parser/tokenizer/reader.o \
@@ -411,10 +411,8 @@ PEGEN_HEADERS= \
 		$(srcdir)/Parser/string_parser.h
 
 TOKENIZER_HEADERS= \
-		Parser/lexer/lexer.h \
 		Parser/lexer/lexer_internal.h \
 		Parser/lexer/state.h \
-		Parser/tokenizer/cursor.h \
 		Parser/tokenizer/reader.h \
 		Parser/tokenizer/reader_internal.h \
 		Parser/tokenizer/source.h \
@@ -631,6 +629,7 @@ LIBEXPAT_HEADERS= \
 		Modules/expat/expat_config.h \
 		Modules/expat/expat_external.h \
 		Modules/expat/fallthrough.h \
+		Modules/expat/hash_table.h \
 		Modules/expat/iasciitab.h \
 		Modules/expat/internal.h \
 		Modules/expat/latin1tab.h \
@@ -1440,6 +1439,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_uop.h \
 		$(srcdir)/Include/internal/pycore_uop_ids.h \
 		$(srcdir)/Include/internal/pycore_uop_metadata.h \
+		$(srcdir)/Include/internal/pycore_wasm_trampoline.h \
 		$(srcdir)/Include/internal/pycore_warnings.h \
 		$(srcdir)/Include/internal/pycore_weakref.h \
 		$(DTRACE_HEADERS) \
@@ -2612,7 +2612,6 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_capi \
 		test/test_cext \
 		test/test_concurrent_futures \
-		test/test_cppext \
 		test/test_ctypes \
 		test/test_dataclasses \
 		test/test_doctest \
@@ -3155,13 +3154,6 @@ Python/asm_trampoline_universal2.o: $(srcdir)/Python/asm_trampoline_aarch64.S $(
 	rm -f Python/asm_trampoline_arm64-apple-darwin.o \
 	  Python/asm_trampoline_x86_64-apple-darwin.o
 
-Python/emscripten_trampoline_inner.wasm: $(srcdir)/Python/emscripten_trampoline_inner.c
-	# emcc has a path that ends with emsdk/upstream/emscripten/emcc, we're looking for emsdk/upstream/bin/clang.
-	$$(em-config LLVM_ROOT)/clang -o $@ $< -mgc -O2 -Wl,--no-entry -Wl,--import-table -Wl,--import-memory -target wasm32-unknown-unknown -nostdlib
-
-Python/emscripten_trampoline_wasm.c: Python/emscripten_trampoline_inner.wasm
-	$(PYTHON_FOR_REGEN) $(srcdir)/Platforms/emscripten/prepare_external_wasm.py $< $@ getWasmTrampolineModule
-
 JIT_SHIM_BUILD_OBJS=	@JIT_SHIM_BUILD_O@
 JIT_UNWIND_INFO_H=	$(if $(JIT_OBJS),jit_unwind_info.h $(patsubst jit_stencils-%.h,jit_unwind_info-%.h,@JIT_STENCILS_H@))
 JIT_BUILD_TARGETS=	jit_stencils.h @JIT_STENCILS_H@ $(JIT_UNWIND_INFO_H) $(JIT_SHIM_BUILD_OBJS)
@@ -3470,7 +3462,7 @@ MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h $(srcdir)/Modules/addrinfo.
 MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_openssl_mem.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h
 MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/_testcapi/parts.h $(srcdir)/Modules/_testcapi/util.h
 MODULE__TESTLIMITEDCAPI_DEPS=$(srcdir)/Modules/_testlimitedcapi/testcapi_long.h $(srcdir)/Modules/_testlimitedcapi/parts.h $(srcdir)/Modules/_testlimitedcapi/util.h
-MODULE__TESTINTERNALCAPI_DEPS=$(srcdir)/Modules/_testinternalcapi/parts.h $(srcdir)/Parser/tokenizer/cursor.h $(srcdir)/Parser/tokenizer/source.h $(srcdir)/Parser/tokenizer/types.h $(srcdir)/Python/ceval.h $(srcdir)/Modules/_testinternalcapi/test_targets.h $(srcdir)/Modules/_testinternalcapi/test_cases.c.h
+MODULE__TESTINTERNALCAPI_DEPS=$(srcdir)/Modules/_testinternalcapi/parts.h $(srcdir)/Parser/tokenizer/source.h $(srcdir)/Parser/tokenizer/types.h $(srcdir)/Python/ceval.h $(srcdir)/Modules/_testinternalcapi/test_targets.h $(srcdir)/Modules/_testinternalcapi/test_cases.c.h
 MODULE__SQLITE3_DEPS=$(srcdir)/Modules/_sqlite/connection.h $(srcdir)/Modules/_sqlite/cursor.h $(srcdir)/Modules/_sqlite/microprotocols.h $(srcdir)/Modules/_sqlite/module.h $(srcdir)/Modules/_sqlite/prepare_protocol.h $(srcdir)/Modules/_sqlite/row.h $(srcdir)/Modules/_sqlite/util.h
 MODULE__ZSTD_DEPS=$(srcdir)/Modules/_zstd/_zstdmodule.h $(srcdir)/Modules/_zstd/buffer.h $(srcdir)/Modules/_zstd/zstddict.h
 

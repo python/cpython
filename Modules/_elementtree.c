@@ -612,33 +612,41 @@ element_get_tail(ElementObject* self)
     return Py_NewRef(res);
 }
 
-static PyObject*
-subelement(PyObject *self, PyObject *args, PyObject *kwds)
+/*[clinic input]
+_elementtree.SubElement
+
+    parent: object(subclass_of='get_elementtree_state(module)->Element_Type')
+    tag: object
+    attrib: object(subclass_of='&PyDict_Type', c_default='NULL') = {}
+    /
+    **extra: dict
+
+Create a new subelement of the parent element.
+[clinic start generated code]*/
+
+static PyObject *
+_elementtree_SubElement_impl(PyObject *module, PyObject *parent,
+                             PyObject *tag, PyObject *attrib,
+                             PyObject *extra)
+/*[clinic end generated code: output=42e8a4ebc5db08aa input=8588fc68283cdaa0]*/
 {
     PyObject* elem;
 
-    elementtreestate *st = get_elementtree_state(self);
-    ElementObject* parent;
-    PyObject* tag;
-    PyObject* attrib = NULL;
-    if (!PyArg_ParseTuple(args, "O!O|O!:SubElement",
-                          st->Element_Type, &parent, &tag,
-                          &PyDict_Type, &attrib)) {
-        return NULL;
-    }
+    elementtreestate *st = get_elementtree_state(module);
+    ElementObject* parent_elem = (ElementObject *)parent;
 
     if (attrib) {
         /* attrib passed as positional arg */
         attrib = PyDict_Copy(attrib);
         if (!attrib)
             return NULL;
-        if (kwds != NULL && PyDict_Update(attrib, kwds) < 0) {
+        if (PyDict_Update(attrib, extra) < 0) {
             Py_DECREF(attrib);
             return NULL;
         }
-    } else if (kwds) {
+    } else if (PyDict_GET_SIZE(extra)) {
         /* have keyword args */
-        attrib = get_attrib_from_keywords(kwds);
+        attrib = get_attrib_from_keywords(extra);
         if (!attrib)
             return NULL;
     } else {
@@ -650,7 +658,7 @@ subelement(PyObject *self, PyObject *args, PyObject *kwds)
     if (elem == NULL)
         return NULL;
 
-    if (element_add_subelement(st, parent, elem) < 0) {
+    if (element_add_subelement(st, parent_elem, elem) < 0) {
         Py_DECREF(elem);
         return NULL;
     }
@@ -1489,11 +1497,13 @@ _elementtree_Element_get_impl(ElementObject *self, PyObject *key,
 {
     if (self->extra && self->extra->attrib) {
         PyObject *attrib = Py_NewRef(self->extra->attrib);
-        PyObject *value = Py_XNewRef(PyDict_GetItemWithError(attrib, key));
-        Py_DECREF(attrib);
-        if (value != NULL || PyErr_Occurred()) {
+        PyObject *value;
+        if (PyDict_GetItemRef(attrib, key, &value) != 0) {
+            Py_DECREF(attrib);
+            // The key exists or an error occurred
             return value;
         }
+        Py_DECREF(attrib);
     }
 
     return Py_NewRef(default_value);
@@ -3169,56 +3179,58 @@ makeuniversal(XMLParserObject* self, const char* string)
     if (!key)
         return NULL;
 
-    value = Py_XNewRef(PyDict_GetItemWithError(self->names, key));
+    if (PyDict_GetItemRef(self->names, key, &value) != 0) {
+        // The key exists or an error occurred
+        Py_DECREF(key);
+        return value;
+    }
 
-    if (value == NULL && !PyErr_Occurred()) {
-        /* new name.  convert to universal name, and decode as
-           necessary */
+    /* new name.  convert to universal name, and decode as
+       necessary */
 
-        PyObject* tag;
-        Py_ssize_t i;
+    PyObject* tag;
+    Py_ssize_t i;
 
-        /* look for namespace separator */
-        for (i = 0; i < size; i++)
-            if (string[i] == '}')
-                break;
-        if (i != size) {
-            /* convert to universal name */
-            PyBytesWriter *writer = PyBytesWriter_Create(1 + size);
-            if (writer == NULL) {
-                Py_DECREF(key);
-                return NULL;
-            }
-            char *p = PyBytesWriter_GetData(writer);
-            p[0] = '{';
-            memcpy(p+1, string, size);
-            size++;
-
-            tag = PyBytesWriter_Finish(writer);
-            if (tag == NULL) {
-                Py_DECREF(key);
-                return NULL;
-            }
-        } else {
-            /* plain name; use key as tag */
-            tag = Py_NewRef(key);
-        }
-
-        /* decode universal name */
-        const char *p = PyBytes_AS_STRING(tag);
-        value = PyUnicode_DecodeUTF8(p, size, "strict");
-        Py_DECREF(tag);
-        if (!value) {
+    /* look for namespace separator */
+    for (i = 0; i < size; i++)
+        if (string[i] == '}')
+            break;
+    if (i != size) {
+        /* convert to universal name */
+        PyBytesWriter *writer = PyBytesWriter_Create(1 + size);
+        if (writer == NULL) {
             Py_DECREF(key);
             return NULL;
         }
+        char *p = PyBytesWriter_GetData(writer);
+        p[0] = '{';
+        memcpy(p+1, string, size);
+        size++;
 
-        /* add to names dictionary */
-        if (PyDict_SetItem(self->names, key, value) < 0) {
+        tag = PyBytesWriter_Finish(writer);
+        if (tag == NULL) {
             Py_DECREF(key);
-            Py_DECREF(value);
             return NULL;
         }
+    } else {
+        /* plain name; use key as tag */
+        tag = Py_NewRef(key);
+    }
+
+    /* decode universal name */
+    const char *p = PyBytes_AS_STRING(tag);
+    value = PyUnicode_DecodeUTF8(p, size, "strict");
+    Py_DECREF(tag);
+    if (!value) {
+        Py_DECREF(key);
+        return NULL;
+    }
+
+    /* add to names dictionary */
+    if (PyDict_SetItem(self->names, key, value) < 0) {
+        Py_DECREF(key);
+        Py_DECREF(value);
+        return NULL;
     }
 
     Py_DECREF(key);
@@ -3296,7 +3308,11 @@ expat_default_handler(void *op, const XML_Char *data_in, int data_len)
     if (!key)
         return;
 
-    value = PyDict_GetItemWithError(self->entity, key);
+    if (PyDict_GetItemRef(self->entity, key, &value) < 0) {
+        Py_DECREF(key);
+        return;
+    }
+    Py_DECREF(key);
 
     elementtreestate *st = self->state;
     if (value) {
@@ -3308,8 +3324,10 @@ expat_default_handler(void *op, const XML_Char *data_in, int data_len)
             res = PyObject_CallOneArg(self->handle_data, value);
         else
             res = NULL;
+        Py_DECREF(value);
         Py_XDECREF(res);
-    } else if (!PyErr_Occurred()) {
+    }
+    else {
         /* Report the first error, not the last */
         char message[128] = "undefined entity ";
         strncat(message, data_in, data_len < 100?data_len:100);
@@ -3321,8 +3339,6 @@ expat_default_handler(void *op, const XML_Char *data_in, int data_len)
             message
             );
     }
-
-    Py_DECREF(key);
 }
 
 /* Append (action, node) to the list of events of the pull parser. */
@@ -3759,7 +3775,6 @@ ignore_attribute_error(PyObject *value)
 }
 
 /*[clinic input]
-@permit_long_summary
 _elementtree.XMLParser.__init__
 
     *
@@ -3777,7 +3792,7 @@ file: http://www.iana.org/assignments/character-sets
 static int
 _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
                                      const char *encoding)
-/*[clinic end generated code: output=3ae45ec6cdf344e4 input=43dcd316382c80a2]*/
+/*[clinic end generated code: output=3ae45ec6cdf344e4 input=a77eb075d276d487]*/
 {
     self->entity = PyDict_New();
     if (!self->entity)
@@ -4547,7 +4562,7 @@ static PyType_Spec xmlparser_spec = {
 /* python module interface */
 
 static PyMethodDef _functions[] = {
-    {"SubElement", _PyCFunction_CAST(subelement), METH_VARARGS | METH_KEYWORDS},
+    _ELEMENTTREE_SUBELEMENT_METHODDEF
     _ELEMENTTREE__SET_FACTORIES_METHODDEF
     {NULL, NULL}
 };

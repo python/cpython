@@ -7,11 +7,6 @@ updates:
     labels:
       - "skip issue"
       - "skip news"
-    ignore:
-      - dependency-name: "*"
-        update-types:
-          - "version-update:semver-minor"
-          - "version-update:semver-patch"
     groups:
       actions:
         patterns:
@@ -21,12 +16,116 @@ updates:
       # Cooldowns protect against supply chain attacks by avoiding the
       # highest-risk window immediately after new releases.
       default-days: 14
+
   - package-ecosystem: "pip"
     directory: "/Tools/"
     schedule:
       interval: "quarterly"
-    labels:
-      - "skip issue"
-      - "skip news"
+    labels: ["skip issue", "skip news"]
+    groups:
+      pip:
+        patterns: ["*"]
+    cooldown:
+      default-days: 14
+
+  # Release branches: Dependabot only reads this file from the default
+  # branch, so each branch that should get its own actions bumps needs an
+  # entry here with `target-branch`. Add one when a new release branch is
+  # created, and remove when the branch reaches end-of-life.
+  - package-ecosystem: "github-actions"
+    target-branch: "3.15"
+    directory: "/"
+    schedule:
+      interval: "quarterly"
+    labels: ["skip issue", "skip news"]
+    groups:
+      actions:
+        patterns: ["*"]
+    cooldown:
+      default-days: 14
+
+  - package-ecosystem: "github-actions"
+    target-branch: "3.14"
+    directory: "/"
+    schedule:
+      interval: "quarterly"
+    labels: ["skip issue", "skip news"]
+    groups:
+      actions:
+        patterns: ["*"]
+    cooldown:
+      default-days: 14
+
+  - package-ecosystem: "github-actions"
+    target-branch: "3.13"
+    directory: "/"
+    schedule:
+      interval: "quarterly"
+    labels: ["skip issue", "skip news"]
+    groups:
+      actions:
+        patterns: ["*"]
+    cooldown:
+      default-days: 14
+
+  - package-ecosystem: "github-actions"
+    target-branch: "3.12"
+    directory: "/"
+    schedule:
+      interval: "quarterly"
+    labels: ["skip issue", "skip news"]
+    groups:
+      actions:
+        patterns: ["*"]
+    cooldown:
+      default-days: 14
+
+  - package-ecosystem: "github-actions"
+    target-branch: "3.11"
+    directory: "/"
+    schedule:
+      interval: "quarterly"
+    labels: ["skip issue", "skip news"]
+    groups:
+      actions:
+        patterns: ["*"]
+    cooldown:
+      default-days: 14
+
+  # Only bump bugfix branches for pip. Remove
+  # the entry when branch goes security-only.
+  - package-ecosystem: "pip"
+    target-branch: "3.15"
+    directory: "/Tools/"
+    schedule:
+      interval: "quarterly"
+    labels: ["skip issue", "skip news"]
+    groups:
+      pip:
+        patterns: ["*"]
+    cooldown:
+      default-days: 14
+
+  - package-ecosystem: "pip"
+    target-branch: "3.14"
+    directory: "/Tools/"
+    schedule:
+      interval: "quarterly"
+    labels: ["skip issue", "skip news"]
+    groups:
+      pip:
+        patterns: ["*"]
+    cooldown:
+      default-days: 14
+
+  - package-ecosystem: "pip"
+    target-branch: "3.13"
+    directory: "/Tools/"
+    schedule:
+      interval: "quarterly"
+    labels: ["skip issue", "skip news"]
+    groups:
+      pip:
+        patterns: ["*"]
     cooldown:
       default-days: 14
