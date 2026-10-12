@@ -41,6 +41,7 @@ _PYDOC_TOPIC_LABELS: Sequence[str] = sorted({
     "callable-types",
     "calls",
     "class",
+    "class-customization",
     "comparisons",
     "compound",
     "context-managers",
