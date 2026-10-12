@@ -66,7 +66,8 @@ int _PyLexer_close_ftstring_expr(
 void _PyLexer_mark_ftstring_debug(struct tok_state *, ftstring_state *);
 int _PyLexer_check_string_prefixes(struct tok_state *, int, int, int, int, int);
 int _PyLexer_scan_number(struct tok_state *, struct token *, int, int);
-int _PyLexer_scan_fstring_start(struct tok_state *, struct token *, int);
+int _PyLexer_scan_fstring_start(
+    struct tok_state *, struct token *, int, ftstring_kind);
 int _PyLexer_scan_string(struct tok_state *, struct token *, int);
 int _PyLexer_get_normal(struct tok_state *, ftstring_state *, struct token *);
 int _PyLexer_get_ftstring(struct tok_state *, ftstring_state *, struct token *);

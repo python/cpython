@@ -314,7 +314,10 @@ _PyLexer_get_normal(struct tok_state *tok, ftstring_state *current, struct token
 
                 // Handle valid f or t string creation:
                 if (saw_f || saw_t) {
-                    return _PyLexer_scan_fstring_start(tok, token, c);
+                    ftstring_kind kind = saw_t
+                        ? (saw_r ? RAW_TSTRING : TSTRING)
+                        : (saw_r ? RAW_FSTRING : FSTRING);
+                    return _PyLexer_scan_fstring_start(tok, token, c, kind);
                 }
                 return _PyLexer_scan_string(tok, token, c);
             }

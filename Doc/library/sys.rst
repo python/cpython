@@ -2113,7 +2113,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    See :ref:`remote-debugging` for more information about the remote debugging
    mechanism.
 
-   .. audit-event:: sys.remote_exec pid script_path
+   .. audit-event:: sys.remote_exec pid,script_path
 
       When the code is executed in the remote process, an
       :ref:`auditing event <auditing>` ``sys.remote_exec`` is raised with

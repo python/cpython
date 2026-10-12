@@ -130,38 +130,51 @@ _PyUnicodeWriter_CanWrite(_PyUnicodeWriter *writer)
 #endif
 
 static inline void
-_PyUnicodeWriter_Update(_PyUnicodeWriter *writer)
+_PyUnicodeWriter_SetBuffer(_PyUnicodeWriter *writer, PyObject *buffer)
 {
-    PyObject *buffer = writer->buffer;
-    writer->maxchar = PyUnicode_MAX_CHAR_VALUE(buffer);
+    assert(writer->pos <= PyUnicode_GET_LENGTH(buffer));
+
+    // Py_DECREF() the previous buffer (if any)
+    Py_XSETREF(writer->buffer, buffer);
     writer->data = PyUnicode_DATA(buffer);
     writer->kind = PyUnicode_KIND(buffer);
+    writer->maxchar = PyUnicode_MAX_CHAR_VALUE(buffer);
+    writer->size = PyUnicode_GET_LENGTH(buffer);
+    writer->readonly = 0;
+}
 
-    if (!writer->readonly) {
-        writer->size = PyUnicode_GET_LENGTH(buffer);
-    }
-    else {
-        /* Copy-on-write mode: set buffer size to 0 so
-         * _PyUnicodeWriter_Prepare() will copy (and enlarge) the buffer on
-         * next write. */
-        writer->size = 0;
-    }
+static inline void
+_PyUnicodeWriter_SetReadOnly(_PyUnicodeWriter *writer, PyObject *obj,
+                             Py_ssize_t length)
+{
+    assert(writer->buffer == NULL);
+    assert(writer->pos == 0);
+    // Micro-optimization: pass length as a parameter, as it's usually known
+    // by the caller
+    assert(length == PyUnicode_GET_LENGTH(obj));
+
+    writer->buffer = obj;
+    writer->data = NULL;
+    /* Set kind and size to 0 to make sure that the next
+     * _PyUnicodeWriter_Prepare() call allocates a new buffer and copies
+     * characters. */
+    writer->kind = 0;
+    writer->maxchar = PyUnicode_MAX_CHAR_VALUE(obj);
+    writer->size = 0;
+    writer->pos = length;
+    writer->readonly = 1;
 }
 
 static inline int
 _PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch)
 {
-    if (ch > writer->maxchar || 1 > writer->size - writer->pos) {
+    if (ch > writer->maxchar || 1 > (writer->size - writer->pos)) {
         if (writer->buffer == NULL && ch <= 255) {
             // If the first write is a Latin1 character, use the singleton
             // as a read-only object
             PyObject *obj = _Py_LATIN1_CHR(ch);
-            writer->readonly = 1;
-            writer->buffer = obj; // Py_NewRef() is not need on immortal object
-            _PyUnicodeWriter_Update(writer);
-            assert(writer->pos == 0);
-            writer->pos = 1;
-            // The next write will create a new buffer and copy the string
+            // Py_NewRef() is not needed on immortal object
+            _PyUnicodeWriter_SetReadOnly(writer, obj, 1);
             return 0;
         }
 
@@ -175,6 +188,11 @@ _PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch)
     writer->pos++;
     return 0;
 }
+
+// Export for '_testcapi' shared extension
+PyAPI_FUNC(PyObject*) _PyUnicodeWriter_FinishWithSize(
+    _PyUnicodeWriter *writer,
+    Py_ssize_t size);
 
 /* --- Unicode API -------------------------------------------------------- */
 
@@ -450,7 +468,7 @@ extern void _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **);
 extern void _PyUnicode_ClearInterned(PyInterpreterState *interp);
 
 // Like PyUnicode_AsUTF8(), but check for embedded null characters.
-// Export for '_sqlite3' shared extension.
+// Export for '_sqlite3' shared extension, and for Argument Clinic code.
 PyAPI_FUNC(const char *) _PyUnicode_AsUTF8NoNUL(PyObject *);
 
 

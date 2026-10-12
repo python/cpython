@@ -1500,7 +1500,7 @@
                     ADD_OP(_NOP, 0, 0);
                 }
                 else {
-                    ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
+                    ADD_OP(_GUARD_NOS_TYPE, 0, (uintptr_t)tp);
                     sym_set_type(nos, tp);
                 }
                 PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
@@ -1524,7 +1524,7 @@
                     ADD_OP(_NOP, 0, 0);
                 }
                 else {
-                    ADD_OP(_GUARD_TYPE, 0, (uintptr_t)tp);
+                    ADD_OP(_GUARD_NOS_TYPE, 0, (uintptr_t)tp);
                     sym_set_type(nos, tp);
                 }
                 PyType_Watch(TYPE_WATCHER_ID, (PyObject *)tp);
@@ -2178,7 +2178,12 @@
             break;
         }
 
-        /* _LOAD_FROM_DICT_OR_GLOBALS is not a viable micro-op for tier 2 */
+        case _LOAD_FROM_DICT_OR_GLOBALS: {
+            JitOptRef v;
+            v = sym_new_not_null(ctx);
+            stack_pointer[-1] = v;
+            break;
+        }
 
         case _LOAD_NAME: {
             JitOptRef v;
@@ -2303,13 +2308,23 @@
             }
             else if (interp->rare_events.builtin_dict >= _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS) {
             }
+            else if (ctx->frame->func == NULL ||
+                 ctx->frame->func->func_builtins != builtins) {
+            }
             else {
                 if (!ctx->builtins_watched) {
                     PyDict_Watch(BUILTINS_WATCHER_ID, builtins);
                     ctx->builtins_watched = true;
                 }
-                if (ctx->frame->globals_checked_version != 0 && ctx->frame->globals_watched) {
+                if (ctx->frame->globals_checked_version != 0 &&
+                    ctx->frame->globals_watched)
+                {
                     cnst = convert_global_to_const(this_instr, builtins);
+                    if (cnst != NULL && !ctx->frame->builtins_checked) {
+                        ctx->frame->builtins_checked = true;
+                        ADD_OP(_GUARD_BUILTINS_IS_CANONICAL, 0, 0);
+                        ADD_OP(this_instr->opcode, 0, (uintptr_t)cnst);
+                    }
                 }
             }
             if (cnst == NULL) {
@@ -2327,6 +2342,10 @@
             stack_pointer[0] = res;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _GUARD_BUILTINS_IS_CANONICAL: {
             break;
         }
 
@@ -3707,7 +3726,7 @@
                     sym_set_type(iter, type);
                     assert((this_instr - 1)->opcode == _RECORD_NOS_TYPE);
                     int32_t orig_target = (this_instr - 1)->target;
-                    ADD_OP(_GUARD_TYPE_ITER, 0, (uintptr_t)type);
+                    ADD_OP(_GUARD_NOS_TYPE, 0, (uintptr_t)type);
                     uop_buffer_last(&ctx->out_buffer)->target = orig_target;
                 }
                 ADD_OP(_ITER_NEXT_INLINE, 0, (uintptr_t)type->tp_iternext);
@@ -3720,7 +3739,7 @@
             break;
         }
 
-        case _GUARD_TYPE_ITER: {
+        case _GUARD_NOS_TYPE: {
             break;
         }
 
@@ -4502,7 +4521,9 @@
                 if (sym_is_not_null(self_or_null)) {
                     total_args++;
                 }
-                if (total_args == 1 && PyCFunction_GET_FLAGS(callable_o) == METH_O) {
+                if (total_args == 1 &&
+                    (PyCFunction_GET_FLAGS(callable_o) &
+                        _Py_METH_CALL_FLAGS) == METH_O) {
                     ADD_OP(_NOP, 0, 0);
                 }
             }
@@ -4548,7 +4569,8 @@
             callable = stack_pointer[-2 - oparg];
             PyObject *callable_o = sym_get_const(ctx, callable);
             if (callable_o && sym_matches_type(callable, &PyCFunction_Type)) {
-                if (PyCFunction_GET_FLAGS(callable_o) == METH_FASTCALL) {
+                if ((PyCFunction_GET_FLAGS(callable_o) & _Py_METH_CALL_FLAGS) ==
+                    METH_FASTCALL) {
                     ADD_OP(_NOP, 0, 0);
                 }
             }
@@ -4571,7 +4593,8 @@
             callable = stack_pointer[-2 - oparg];
             PyObject *callable_o = sym_get_const(ctx, callable);
             if (callable_o && sym_matches_type(callable, &PyCFunction_Type)) {
-                if (PyCFunction_GET_FLAGS(callable_o) == (METH_FASTCALL | METH_KEYWORDS)) {
+                if ((PyCFunction_GET_FLAGS(callable_o) & _Py_METH_CALL_FLAGS) ==
+                    (METH_FASTCALL | METH_KEYWORDS)) {
                     ADD_OP(_NOP, 0, 0);
                 }
             }
@@ -4757,9 +4780,10 @@
                 else {
                     self_type = sym_get_type(args[0]);
                 }
-                PyTypeObject *d_type = ((PyMethodDescrObject *)callable_o)->d_common.d_type;
+                PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
+                PyTypeObject *d_type = method->d_common.d_type;
                 if (total_args == 2 &&
-                    ((PyMethodDescrObject *)callable_o)->d_method->ml_flags == METH_O &&
+                    (method->d_method->ml_flags & _Py_METH_CALL_FLAGS) == METH_O &&
                     self_type == d_type) {
                     ADD_OP(_NOP, 0, 0);
                 }
@@ -4857,9 +4881,11 @@
                 else {
                     self_type = sym_get_type(args[0]);
                 }
-                PyTypeObject *d_type = ((PyMethodDescrObject *)callable_o)->d_common.d_type;
+                PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
+                PyTypeObject *d_type = method->d_common.d_type;
                 if (total_args != 0 &&
-                    ((PyMethodDescrObject *)callable_o)->d_method->ml_flags == (METH_FASTCALL|METH_KEYWORDS) &&
+                    (method->d_method->ml_flags & _Py_METH_CALL_FLAGS) ==
+                    (METH_FASTCALL | METH_KEYWORDS) &&
                     self_type == d_type) {
                     ADD_OP(_NOP, 0, 0);
                 }
@@ -4912,9 +4938,11 @@
                 else {
                     self_type = sym_get_type(args[0]);
                 }
-                PyTypeObject *d_type = ((PyMethodDescrObject *)callable_o)->d_common.d_type;
+                PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
+                PyTypeObject *d_type = method->d_common.d_type;
                 if (total_args == 1 &&
-                    ((PyMethodDescrObject *)callable_o)->d_method->ml_flags == METH_NOARGS &&
+                    (method->d_method->ml_flags & _Py_METH_CALL_FLAGS) ==
+                    METH_NOARGS &&
                     self_type == d_type) {
                     ADD_OP(_NOP, 0, 0);
                 }
@@ -5000,9 +5028,11 @@
                 else {
                     self_type = sym_get_type(args[0]);
                 }
-                PyTypeObject *d_type = ((PyMethodDescrObject *)callable_o)->d_common.d_type;
+                PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
+                PyTypeObject *d_type = method->d_common.d_type;
                 if (total_args != 0 &&
-                    ((PyMethodDescrObject *)callable_o)->d_method->ml_flags == METH_FASTCALL &&
+                    (method->d_method->ml_flags & _Py_METH_CALL_FLAGS) ==
+                    METH_FASTCALL &&
                     self_type == d_type) {
                     ADD_OP(_NOP, 0, 0);
                 }
