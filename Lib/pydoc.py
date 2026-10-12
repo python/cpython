@@ -1875,7 +1875,7 @@ def collect_dunders(symbols):
         dunders[ad] = ('attribute-access', 'SPECIALMETHODS')
 
     class_dunders = [
-        '__init_subclass__', '__set_names__', '__mro_entries__',
+        '__init_subclass__', '__set_name__', '__mro_entries__',
     ]
     for cd in class_dunders:
         dunders[cd] = ('class-customization', 'SPECIALMETHODS')
