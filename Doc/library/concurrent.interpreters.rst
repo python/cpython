@@ -430,3 +430,17 @@ Creating an interpreter and running code in it::
 
     t = interp.call_in_thread(run)
     t.join()
+
+Communicating between interpreters with a queue::
+
+    from concurrent import interpreters
+
+    interp = interpreters.create()
+    queue = interpreters.create_queue()
+
+    def worker(queue):
+        queue.put('spam!')
+
+    t = interp.call_in_thread(worker, queue)
+    print(queue.get())
+    t.join()
