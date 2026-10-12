@@ -315,7 +315,8 @@ class IncrementalEncoder(codecs.BufferedIncrementalEncoder):
                 result.extend(b'.')
                 size += 1
             try:
-                result.extend(ToASCII(label))
+                encoded = ToASCII(label)
+                result.extend(encoded)
             except (UnicodeEncodeError, UnicodeDecodeError) as exc:
                 raise UnicodeEncodeError(
                     "idna",
@@ -324,7 +325,7 @@ class IncrementalEncoder(codecs.BufferedIncrementalEncoder):
                     size + exc.end,
                     exc.reason,
                 )
-            size += len(label)
+            size += len(encoded)
 
         result += trailing_dot
         size += len(trailing_dot)
