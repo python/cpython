@@ -1998,6 +1998,8 @@
             break;
         }
 
+        /* _CLEANUP_ASYNC_THROW is not a viable micro-op for tier 2 */
+
         case _LOAD_COMMON_CONSTANT: {
             JitOptRef value;
             assert(oparg < NUM_COMMON_CONSTANTS);
