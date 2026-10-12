@@ -4,6 +4,8 @@
 
 import collections
 import enum
+import errno
+import os
 import warnings
 try:
     import ssl
@@ -464,7 +466,7 @@ class SSLProtocol(protocols.BufferedProtocol):
                 logger.debug("%r received EOF", self)
 
             if self._state == SSLProtocolState.DO_HANDSHAKE:
-                self._on_handshake_complete(ConnectionResetError)
+                self._on_handshake_complete(ConnectionResetError(errno.ECONNRESET, os.strerror(errno.ECONNRESET)))
 
             elif self._state == SSLProtocolState.WRAPPED:
                 self._set_state(SSLProtocolState.FLUSHING)
@@ -556,7 +558,7 @@ class SSLProtocol(protocols.BufferedProtocol):
                 f"{self._ssl_handshake_timeout} seconds: "
                 f"aborting the connection"
             )
-            self._fatal_error(ConnectionAbortedError(msg))
+            self._fatal_error(ConnectionAbortedError(errno.ECONNABORTED, msg))
 
     def _do_handshake(self):
         try:
@@ -644,7 +646,8 @@ class SSLProtocol(protocols.BufferedProtocol):
             )
         ):
             self._transport._force_close(
-                exceptions.TimeoutError('SSL shutdown timed out'))
+                exceptions.TimeoutError(errno.ETIMEDOUT,
+                                        'SSL shutdown timed out'))
 
     def _do_flush(self):
         self._do_read()
