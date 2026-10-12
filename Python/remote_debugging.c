@@ -139,6 +139,41 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
         return -1;
     }
 
+    if (tid == 0) {
+        // The list head may be a subinterpreter. Find the main interpreter.
+        while (interpreter_state_addr != 0) {
+            int64_t interpreter_id;
+            if (0 != read_memory(
+                    handle,
+                    interpreter_state_addr + (uintptr_t)debug_offsets.interpreter_state.id,
+                    sizeof(interpreter_id),
+                    &interpreter_id))
+            {
+                return -1;
+            }
+
+            if (interpreter_id == 0) {
+                break;
+            }
+
+            if (0 != read_memory(
+                    handle,
+                    interpreter_state_addr + (uintptr_t)debug_offsets.interpreter_state.next,
+                    sizeof(void*),
+                    &interpreter_state_addr))
+            {
+                return -1;
+            }
+        }
+
+        if (interpreter_state_addr == 0) {
+            PyErr_SetString(
+                PyExc_RuntimeError,
+                "Can't find the main interpreter in the remote process");
+            return -1;
+        }
+    }
+
     int is_remote_debugging_enabled = 0;
     if (0 != read_memory(
             handle,
