@@ -47,5 +47,13 @@ if _interpreters:
     __all__.append('InterpreterPoolExecutor')
 
 
+# Set __module__ to the public location rather than the private _base module.
+Future.__module__ = 'concurrent.futures'
+Executor.__module__ = 'concurrent.futures'
+CancelledError.__module__ = 'concurrent.futures'
+InvalidStateError.__module__ = 'concurrent.futures'
+BrokenExecutor.__module__ = 'concurrent.futures'
+
+
 def __dir__():
     return __all__ + ['__author__', '__doc__']
