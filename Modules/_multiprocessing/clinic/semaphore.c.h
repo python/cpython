@@ -333,7 +333,7 @@ _multiprocessing_SemLock__rebuild(PyObject *type, PyObject *const *args, Py_ssiz
     int maxvalue;
     const char *name;
 
-    if (!_PyArg_ParseStack(args, nargs, ""F_SEM_HANDLE"iiz:_rebuild",
+    if (!PyArg_ParseArray(args, nargs, ""F_SEM_HANDLE"iiz:_rebuild",
         &handle, &kind, &maxvalue, &name)) {
         goto exit;
     }
@@ -578,4 +578,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
     #define _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF) */
-/*[clinic end generated code: output=5c3a00b85537e647 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7a35732855b11781 input=a9049054013a1b77]*/
