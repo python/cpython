@@ -1,0 +1,1 @@
+``del list[index]`` now triggers shrinking the list's internal array.
