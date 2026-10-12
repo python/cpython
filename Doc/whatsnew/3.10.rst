@@ -1485,7 +1485,8 @@ is a :class:`typing.TypedDict`.
 
 Subclasses of ``typing.Protocol`` which only have data variables declared
 will now raise a ``TypeError`` when checked with ``isinstance`` unless they
-are decorated with :deco:`runtime_checkable <typing.runtime_checkable>`.  Previously, these checks
+are decorated with :deco:`runtime_checkable <typing.runtime_checkable>`.
+Previously, these checks
 passed silently.  Users should decorate their
 subclasses with the :deco:`!runtime_checkable` decorator
 if they want runtime protocols.

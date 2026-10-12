@@ -709,7 +709,8 @@ The :mod:`!functools` module defines the following functions:
             return not arg
 
    The same pattern can be used for other similar decorators:
-   :deco:`staticmethod`, :deco:`abstractmethod <abc.abstractmethod>`, and others.
+   :deco:`staticmethod`, :deco:`abstractmethod <abc.abstractmethod>`, and
+   others.
 
    .. versionadded:: 3.8
 

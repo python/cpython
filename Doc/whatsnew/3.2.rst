@@ -809,7 +809,8 @@ functools
   methods to fill in the remaining methods.
 
   For example, supplying *__eq__* and *__lt__* will enable
-  :deco:`total_ordering <functools.total_ordering>` to fill-in *__le__*, *__gt__* and *__ge__*::
+  :deco:`total_ordering <functools.total_ordering>` to fill-in *__le__*,
+  *__gt__* and *__ge__*::
 
     @total_ordering
     class Student:
@@ -1097,7 +1098,8 @@ logarithm of the gamma function:
 abc
 ---
 
-The :mod:`abc` module now supports :deco:`abstractclassmethod <abc.abstractclassmethod>` and
+The :mod:`abc` module now supports
+:deco:`abstractclassmethod <abc.abstractclassmethod>` and
 :deco:`abstractstaticmethod <abc.abstractstaticmethod>`.
 
 These tools make it possible to define an :term:`abstract base class` that
@@ -1155,7 +1157,8 @@ self-reference by displaying "..." in the recursive part of the representation
 string.
 
 To help write such :meth:`~object.__repr__` methods, the :mod:`reprlib` module has a new
-decorator, :deco:`recursive_repr <reprlib.recursive_repr>`, for detecting recursive calls to
+decorator, :deco:`recursive_repr <reprlib.recursive_repr>`, for detecting
+recursive calls to
 :meth:`!__repr__` and substituting a placeholder string instead::
 
         >>> class MyList(list):
@@ -1241,7 +1244,8 @@ There is a new and slightly mind-blowing tool
 :term:`context manager` that does double duty as a function decorator.
 
 As a convenience, this new functionality is used by
-:deco:`contextmanager <contextlib.contextmanager>` so that no extra effort is needed to support
+:deco:`contextmanager <contextlib.contextmanager>` so that no extra effort is
+needed to support
 both roles.
 
 The basic idea is that both context managers and function decorators can be used
@@ -1253,7 +1257,8 @@ write a pre-action or post-action wrapper that can be used in either role.
 For example, it is sometimes useful to wrap functions or groups of statements
 with a logger that can track the time of entry and time of exit.  Rather than
 writing both a function decorator and a context manager for the task, the
-:deco:`contextmanager <contextlib.contextmanager>` provides both capabilities in a single
+:deco:`contextmanager <contextlib.contextmanager>` provides both capabilities
+in a single
 definition::
 
     from contextlib import contextmanager

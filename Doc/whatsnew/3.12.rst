@@ -1749,7 +1749,8 @@ Changes in the Python API
   around process-global resources, which are best managed from the main interpreter.
   (Contributed by Donghee Na in :gh:`99127`.)
 
-* The undocumented locking behavior of :deco:`cached_property <functools.cached_property>`
+* The undocumented locking behavior of
+  :deco:`cached_property <functools.cached_property>`
   is removed, because it locked across all instances of the class, leading to high
   lock contention. This means that a cached property getter function could now run
   more than once for a single instance, if two threads race. For most simple

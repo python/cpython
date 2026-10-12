@@ -571,7 +571,8 @@ decimal operations to work with the correct context in asynchronous code.
 dataclasses
 -----------
 
-The new :deco:`dataclass <dataclasses.dataclass>` decorator provides a way to declare
+The new :deco:`dataclass <dataclasses.dataclass>` decorator provides a way to
+declare
 *data classes*.  A data class describes its attributes using class variable
 annotations.  Its constructor and other magic methods, such as
 :meth:`~object.__repr__`, :meth:`~object.__eq__`, and
