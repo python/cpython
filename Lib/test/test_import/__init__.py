@@ -789,7 +789,7 @@ class ImportTests(unittest.TestCase):
         pydname = importlib.util.find_spec("_sqlite3").origin
         depname = os.path.join(
             os.path.dirname(pydname),
-            "sqlite3{}.dll".format("_d" if "_d" in pydname else ""))
+            "sqlite3{}.dll".format("_d" if "_d" in os.path.basename(pydname) else ""))
 
         with os_helper.temp_dir() as tmp:
             tmp2 = os.path.join(tmp, "DLLs")
@@ -2544,6 +2544,7 @@ class SubinterpImportTests(unittest.TestCase):
         excsnap = _interpreters.run_string(interpid, script)
         self.assertIsNot(excsnap, None)
 
+    @cpython_only
     @requires_subinterpreters
     def test_pyinit_function_raises_exception(self):
         # gh-144601: PyInit functions that raised exceptions would cause a

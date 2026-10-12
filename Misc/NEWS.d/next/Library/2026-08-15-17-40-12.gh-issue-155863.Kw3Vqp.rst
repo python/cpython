@@ -1,0 +1,4 @@
+Add the ``WACS_*`` constants to the :mod:`curses` module.  They are the
+counterparts of the ``ACS_*`` line-drawing codes as :class:`curses.complexchar`
+cells, and are added, like the latter, by :func:`curses.initscr` and
+:func:`curses.newterm`.
