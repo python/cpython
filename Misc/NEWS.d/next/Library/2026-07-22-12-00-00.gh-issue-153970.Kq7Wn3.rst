@@ -1,0 +1,3 @@
+Calling :func:`str` on a :exc:`subprocess.CalledProcessError` no longer
+raises :exc:`TypeError` when its :attr:`!returncode` is not an integer, such
+as ``None``.

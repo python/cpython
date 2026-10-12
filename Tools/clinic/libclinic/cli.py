@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import difflib
 import inspect
 import os
 import re
@@ -52,9 +53,12 @@ def parse_file(
         limited_capi: bool,
         output: str | None = None,
         verify: bool = True,
+        writer: libclinic.FileWriter | None = None,
 ) -> None:
     if not output:
         output = filename
+    if writer is None:
+        writer = libclinic.FileWriter()
 
     extension = os.path.splitext(filename)[1][1:]
     if not extension:
@@ -80,10 +84,11 @@ def parse_file(
     clinic = Clinic(language,
                     verify=verify,
                     filename=filename,
-                    limited_capi=limited_capi)
+                    limited_capi=limited_capi,
+                    writer=writer)
     cooked = clinic.parse(raw)
 
-    libclinic.write_file(output, cooked)
+    writer.write(output, cooked)
 
 
 def create_cli() -> argparse.ArgumentParser:
@@ -102,6 +107,12 @@ For more information see https://devguide.python.org/development-tools/clinic/""
                          help="redirect file output to OUTPUT")
     cmdline.add_argument("-v", "--verbose", action='store_true',
                          help="enable verbose mode")
+    cmdline.add_argument("--dry-run", action='store_true',
+                         help=("don't write any file, only list the files "
+                               "which would be changed"))
+    cmdline.add_argument("--diff", action='store_true',
+                         help=("don't write any file, write a unified diff "
+                               "of the changes to the standard output"))
     cmdline.add_argument("--converters", action='store_true',
                          help=("print a list of all supported converters "
                                "and return converters"))
@@ -119,12 +130,43 @@ For more information see https://devguide.python.org/development-tools/clinic/""
     return cmdline
 
 
+def print_diff(change: libclinic.FileChange) -> None:
+    if change.old_contents is None:
+        fromfile = "/dev/null"
+        old_lines: list[str] = []
+    else:
+        fromfile = change.filename
+        old_lines = change.old_contents.splitlines(keepends=True)
+    sys.stdout.writelines(difflib.unified_diff(
+        old_lines,
+        change.new_contents.splitlines(keepends=True),
+        fromfile=fromfile,
+        tofile=change.filename,
+    ))
+
+
+def report_changes(writer: libclinic.FileWriter, *, diff: bool) -> None:
+    for change in sorted(writer.changes, key=lambda change: change.filename):
+        if diff:
+            print_diff(change)
+        else:
+            action = "create" if change.old_contents is None else "update"
+            print(f"would {action} {change.filename}")
+
+
 def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
+    dry_run = ns.dry_run or ns.diff
+    # The report is written to the standard output, so the progress
+    # is written to the standard error stream to not mix them.
+    verbose_file = sys.stderr if dry_run else sys.stdout
+
     if ns.converters:
         if ns.filename:
             parser.error(
                 "can't specify --converters and a filename at the same time"
             )
+        if dry_run:
+            parser.error("can't use --dry-run or --diff with --converters")
         AnyConverterType = ConverterType | ReturnConverterType
         converter_list: list[tuple[str, AnyConverterType]] = []
         return_converter_list: list[tuple[str, AnyConverterType]] = []
@@ -188,6 +230,7 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
             excludes = [os.path.normpath(f) for f in excludes]
         else:
             excludes = []
+        writer = libclinic.FileWriter(dry_run=dry_run)
         for root, dirs, files in os.walk(ns.srcdir):
             for rcs_dir in ('.svn', '.git', '.hg', 'build', 'externals'):
                 if rcs_dir in dirs:
@@ -201,9 +244,11 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
                 if path in excludes:
                     continue
                 if ns.verbose:
-                    print(path)
+                    print(path, file=verbose_file)
                 parse_file(path,
-                           verify=not ns.force, limited_capi=ns.limited_capi)
+                           verify=not ns.force, limited_capi=ns.limited_capi,
+                           writer=writer)
+        report_changes(writer, diff=ns.diff)
         return
 
     if not ns.filename:
@@ -212,11 +257,14 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
     if ns.output and len(ns.filename) > 1:
         parser.error("can't use -o with multiple filenames")
 
+    writer = libclinic.FileWriter(dry_run=dry_run)
     for filename in ns.filename:
         if ns.verbose:
-            print(filename)
+            print(filename, file=verbose_file)
         parse_file(filename, output=ns.output,
-                   verify=not ns.force, limited_capi=ns.limited_capi)
+                   verify=not ns.force, limited_capi=ns.limited_capi,
+                   writer=writer)
+    report_changes(writer, diff=ns.diff)
 
 
 def main(argv: list[str] | None = None) -> NoReturn:

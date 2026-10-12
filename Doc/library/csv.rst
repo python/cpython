@@ -1,4 +1,4 @@
-:mod:`!csv` --- CSV File Reading and Writing
+:mod:`!csv` --- CSV file reading and writing
 ============================================
 
 .. module:: csv
@@ -42,7 +42,7 @@ using the :class:`DictReader` and :class:`DictWriter` classes.
 
 .. _csv-contents:
 
-Module Contents
+Module contents
 ---------------
 
 The :mod:`!csv` module defines the following functions:
@@ -429,7 +429,7 @@ The :mod:`!csv` module defines the following exception:
 
 .. _csv-fmt-params:
 
-Dialects and Formatting Parameters
+Dialects and formatting parameters
 ----------------------------------
 
 To make it easier to specify the format of input and output records, specific
@@ -528,7 +528,7 @@ Dialects support the following attributes:
 
 .. _reader-objects:
 
-Reader Objects
+Reader objects
 --------------
 
 Reader objects (:class:`DictReader` instances and objects returned by the
@@ -565,7 +565,7 @@ DictReader objects have the following public attribute:
 
 
 
-Writer Objects
+Writer objects
 --------------
 
 :class:`writer` objects (:class:`DictWriter` instances and objects returned by
@@ -644,17 +644,16 @@ The corresponding simplest possible writing example is::
        writer.writerows(someiterable)
 
 Since :func:`open` is used to open a CSV file for reading, the file
-will by default be decoded into unicode using the system default
-encoding (see :func:`locale.getencoding`).  To decode a file
+will by default be decoded into Unicode using UTF-8.  To decode a file
 using a different encoding, use the ``encoding`` argument of open::
 
    import csv
-   with open('some.csv', newline='', encoding='utf-8') as f:
+   with open('some.csv', newline='', encoding='latin-1') as f:
        reader = csv.reader(f)
        for row in reader:
            print(row)
 
-The same applies to writing in something other than the system default
+The same applies to writing in something other than the default
 encoding: specify the encoding argument when opening the output file.
 
 Registering a new dialect::

@@ -310,6 +310,14 @@ curses_window_set_null_error(PyCursesWindowObject *win,
     _curses_set_null_error(state, curses_funcname, python_funcname);
 }
 
+/* ncurses and PDCurses store n characters and add a terminator; NetBSD
+   curses counts the terminator in n.  Ask an unknown library for one more. */
+#if defined(NCURSES_VERSION) || defined(PDCURSES)
+#  define CURSES_STR_EXTRA  0
+#else
+#  define CURSES_STR_EXTRA  1
+#endif
+
 /* Utility Checking Procedures */
 
 /*
@@ -1150,15 +1158,14 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
         }
         Py_DECREF(bytesobj);
     }
-    if (rtn == ERR) {
-        curses_window_set_error(self, funcname, "addstr");
-        return NULL;
-    }
     if (use_attr) {
-        rtn = wattrset(self->win, attr_old);
-        return curses_window_check_err(self, rtn, "wattrset", "addstr");
+        int attr_rtn = wattrset(self->win, attr_old);
+        if (rtn != ERR) {
+            rtn = attr_rtn;
+            funcname = "wattrset";
+        }
     }
-    Py_RETURN_NONE;
+    return curses_window_check_err(self, rtn, funcname, "addstr");
 }
 
 /*[clinic input]
@@ -1249,15 +1256,14 @@ _curses_window_addnstr_impl(PyCursesWindowObject *self, int group_left_1,
         }
         Py_DECREF(bytesobj);
     }
-    if (rtn == ERR) {
-        curses_window_set_error(self, funcname, "addnstr");
-        return NULL;
-    }
     if (use_attr) {
-        rtn = wattrset(self->win, attr_old);
-        return curses_window_check_err(self, rtn, "wattrset", "addnstr");
+        int attr_rtn = wattrset(self->win, attr_old);
+        if (rtn != ERR) {
+            rtn = attr_rtn;
+            funcname = "wattrset";
+        }
     }
-    Py_RETURN_NONE;
+    return curses_window_check_err(self, rtn, funcname, "addnstr");
 }
 
 /*[clinic input]
@@ -2219,25 +2225,33 @@ PyCursesWindow_instr(PyObject *op, PyObject *args)
         return NULL;
     }
 
-    n = Py_MIN(n, max_buf_size - 1);
+    n = Py_MIN(n, max_buf_size - 1 - CURSES_STR_EXTRA);
+    n += CURSES_STR_EXTRA;
     PyBytesWriter *writer = PyBytesWriter_Create(n + 1);
     if (writer == NULL) {
         return NULL;
     }
     char *buf = PyBytesWriter_GetData(writer);
 
-    if (use_xy) {
-        rtn = mvwinnstr(self->win, y, x, buf, n);
-    }
-    else {
-        rtn = winnstr(self->win, buf, n);
+    /* Read again if the library stored more than asked: truncating could
+       split a multibyte character. */
+    for (unsigned int want = n - CURSES_STR_EXTRA; ; n = want) {
+        if (use_xy) {
+            rtn = mvwinnstr(self->win, y, x, buf, n);
+        }
+        else {
+            rtn = winnstr(self->win, buf, n);
+        }
+        if (rtn == ERR || (unsigned int)rtn <= want) {
+            break;
+        }
     }
 
     if (rtn == ERR) {
         PyBytesWriter_Discard(writer);
         return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
-    return PyBytesWriter_FinishWithSize(writer, strlen(buf));
+    return PyBytesWriter_FinishWithSize(writer, rtn);
 }
 
 /*[clinic input]
@@ -2326,15 +2340,14 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
         }
         Py_DECREF(bytesobj);
     }
-    if (rtn == ERR) {
-        curses_window_set_error(self, funcname, "insstr");
-        return NULL;
-    }
     if (use_attr) {
-        rtn = wattrset(self->win, attr_old);
-        return curses_window_check_err(self, rtn, "wattrset", "insstr");
+        int attr_rtn = wattrset(self->win, attr_old);
+        if (rtn != ERR) {
+            rtn = attr_rtn;
+            funcname = "wattrset";
+        }
     }
-    Py_RETURN_NONE;
+    return curses_window_check_err(self, rtn, funcname, "insstr");
 }
 
 /*[clinic input]
@@ -2397,6 +2410,7 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
         attr_old = getattrs(self->win);
         if (curses_wattrset(self, attr, "insnstr") < 0) {
             curses_release_wstr(strtype, wstr);
+            Py_XDECREF(bytesobj);
             return NULL;
         }
     }
@@ -2426,15 +2440,14 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
         }
         Py_DECREF(bytesobj);
     }
-    if (rtn == ERR) {
-        curses_window_set_error(self, funcname, "insnstr");
-        return NULL;
-    }
     if (use_attr) {
-        rtn = wattrset(self->win, attr_old);
-        return curses_window_check_err(self, rtn, "wattrset", "insnstr");
+        int attr_rtn = wattrset(self->win, attr_old);
+        if (rtn != ERR) {
+            rtn = attr_rtn;
+            funcname = "wattrset";
+        }
     }
-    Py_RETURN_NONE;
+    return curses_window_check_err(self, rtn, funcname, "insnstr");
 }
 
 /*[clinic input]
@@ -3901,12 +3914,12 @@ _curses.initscr
 
 Initialize the library.
 
-Return a WindowObject which represents the whole screen.
+Return a window object which represents the whole screen.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_initscr_impl(PyObject *module)
-/*[clinic end generated code: output=619fb68443810b7b input=514f4bce1821f6b5]*/
+/*[clinic end generated code: output=619fb68443810b7b input=e2bf3a061b7d948a]*/
 {
     WINDOW *win;
 

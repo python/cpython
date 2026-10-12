@@ -1124,7 +1124,9 @@ class _SelectorSocketTransport(_SelectorTransport):
                 self._loop._remove_writer(self._sock_fd)
                 if self._empty_waiter is not None:
                     self._empty_waiter.set_result(None)
-                if self._closing:
+                # gh-156512: don't let _call_connection_lost be called twice
+                if self._closing and not self._conn_lost:
+                    self._conn_lost += 1
                     self._call_connection_lost(None)
                 elif self._eof:
                     self._sock.shutdown(socket.SHUT_WR)
@@ -1170,7 +1172,9 @@ class _SelectorSocketTransport(_SelectorTransport):
                 self._loop._remove_writer(self._sock_fd)
                 if self._empty_waiter is not None:
                     self._empty_waiter.set_result(None)
-                if self._closing:
+                # gh-156512: don't let _call_connection_lost be called twice
+                if self._closing and not self._conn_lost:
+                    self._conn_lost += 1
                     self._call_connection_lost(None)
                 elif self._eof:
                     self._sock.shutdown(socket.SHUT_WR)
@@ -1197,8 +1201,13 @@ class _SelectorSocketTransport(_SelectorTransport):
             return
 
         for data in list_of_data:
+            # gh-155888: an empty chunk can never be drained, so never buffer it
+            if not data:
+                continue
             self._buffer.append(memoryview(data))
             self._buffer_size += len(data)
+        if not self._buffer:
+            return
         self._write_ready()
         # If the entire buffer couldn't be written, register a write handler
         if self._buffer:

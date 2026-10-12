@@ -73,6 +73,22 @@ _PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
 */
 #define _PyBytesObject_SIZE (offsetof(PyBytesObject, ob_sval) + 1)
 
+
+// Return the cached hash value, or -1 if not cached yet.
+static inline Py_hash_t
+_PyBytes_GET_CACHED_HASH(PyBytesObject *self)
+{
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+#ifdef Py_GIL_DISABLED
+    return _Py_atomic_load_ssize_relaxed(&self->ob_shash);
+#else
+    return self->ob_shash;
+#endif
+_Py_COMP_DIAG_POP
+}
+
+
 /* --- PyBytesWriter ------------------------------------------------------ */
 
 struct PyBytesWriter {

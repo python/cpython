@@ -824,7 +824,7 @@ They will continue to work, but new features will be added as slots for
 
    .. versionadded:: 3.12
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.15
 
       Prefer :c:func:`PyType_FromSlots` in new code.
 
@@ -855,7 +855,7 @@ They will continue to work, but new features will be added as slots for
       Creating classes whose metaclass overrides
       :c:member:`~PyTypeObject.tp_new` is no longer allowed.
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.15
 
       Prefer :c:func:`PyType_FromSlots` in new code.
 
@@ -881,7 +881,7 @@ They will continue to work, but new features will be added as slots for
       Creating classes whose metaclass overrides
       :c:member:`~PyTypeObject.tp_new` is no longer allowed.
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.15
 
       Prefer :c:func:`PyType_FromSlots` in new code.
 
@@ -906,7 +906,7 @@ They will continue to work, but new features will be added as slots for
       Creating classes whose metaclass overrides
       :c:member:`~PyTypeObject.tp_new` is no longer allowed.
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.15
 
       Prefer :c:func:`PyType_FromSlots` in new code.
 

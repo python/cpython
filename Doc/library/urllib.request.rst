@@ -992,7 +992,7 @@ These methods are available on :class:`HTTPPasswordMgr` and
    match authentication URIs with the same scheme or no scheme. A URI without a
    scheme matches authentication URIs with any scheme.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Authentication credentials for URIs with a scheme are now scoped by
       that scheme.
 
@@ -1056,6 +1056,10 @@ AbstractBasicAuthHandler Objects
    authenticate for, *req* should be the (failed) :class:`Request` object, and
    *headers* should be the error headers.
 
+   *headers* must be a mapping-like object with case-insensitive lookup
+   that implements the ``get_all()`` method,
+   such as :class:`email.message.Message` or :class:`wsgiref.headers.Headers`.
+
    *host* is either an authority (e.g. ``"python.org"``) or a URL containing an
    authority component (e.g. ``"https://python.org/"``). In either case, the
    authority must not contain a userinfo component (so, ``"python.org"`` and
@@ -1096,6 +1100,9 @@ AbstractDigestAuthHandler Objects
    is included in the request, *host* should be the host to authenticate to, *req*
    should be the (failed) :class:`Request` object, and *headers* should be the
    error headers.
+
+   *headers* must be a mapping-like object with case-insensitive lookup,
+   such as :class:`email.message.Message` or :class:`wsgiref.headers.Headers`.
 
 
 .. _http-digest-auth-handler:

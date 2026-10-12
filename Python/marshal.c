@@ -106,6 +106,7 @@ module marshal
 #define WFERR_NESTEDTOODEEP 2
 #define WFERR_NOMEMORY 3
 #define WFERR_CODE_NOT_ALLOWED 4
+#define WFERR_SET_CHANGED_SIZE 5
 
 typedef struct {
     FILE *fp;
@@ -645,15 +646,29 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         // bpo-37596: To support reproducible builds, sets and frozensets need
         // to have their elements serialized in a consistent order (even when
         // they have been scrambled by hash randomization). To ensure this, we
-        // use an order equivalent to sorted(v, key=marshal.dumps):
-        PyObject *pairs = PyList_New(n);
-        if (pairs == NULL) {
+        // use an order equivalent to sorted(v, key=marshal.dumps).
+        // The list has a (dump, index, element) tuple for each element.
+        // The indexes are all different, so that sorting never compares
+        // two elements: elements with the same dump (NaNs which are
+        // distinct objects) may not be orderable.
+        PyObject *items = PyList_New(n);
+        if (items == NULL) {
             p->error = WFERR_NOMEMORY;
             return;
         }
+        // Marshalling an element can run arbitrary code (an audit hook, or
+        // the __buffer__() method of the element), which can add elements
+        // to the set or remove some: n is not trusted to still be the size
+        // of the set.
         Py_ssize_t i = 0;
+        bool changed = false;
         Py_BEGIN_CRITICAL_SECTION(v);
         while (_PySet_NextEntryRef(v, &pos, &value, &hash)) {
+            if (i == n) {
+                changed = true;
+                Py_DECREF(value);
+                break;
+            }
             PyObject *dump = _PyMarshal_WriteObjectToString(value,
                                     p->version, p->allow_code);
             if (dump == NULL) {
@@ -661,30 +676,41 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
                 Py_DECREF(value);
                 break;
             }
-            PyObject *pair = _PyTuple_FromPairSteal(dump, value);
-            if (pair == NULL) {
+            PyObject *index = PyLong_FromSsize_t(i);
+            PyObject *item = NULL;
+            if (index != NULL) {
+                item = PyTuple_Pack(3, dump, index, value);
+                Py_DECREF(index);
+            }
+            Py_DECREF(dump);
+            Py_DECREF(value);
+            if (item == NULL) {
                 p->error = WFERR_NOMEMORY;
                 break;
             }
-            PyList_SET_ITEM(pairs, i++, pair);
+            PyList_SET_ITEM(items, i++, item);
         }
         Py_END_CRITICAL_SECTION();
         if (p->error == WFERR_UNMARSHALLABLE || p->error == WFERR_NOMEMORY) {
-            Py_DECREF(pairs);
+            Py_DECREF(items);
             return;
         }
-        assert(i == n);
-        if (PyList_Sort(pairs)) {
+        if (changed || i != n) {
+            p->error = WFERR_SET_CHANGED_SIZE;
+            Py_DECREF(items);
+            return;
+        }
+        if (PyList_Sort(items)) {
             p->error = WFERR_NOMEMORY;
-            Py_DECREF(pairs);
+            Py_DECREF(items);
             return;
         }
         for (Py_ssize_t i = 0; i < n; i++) {
-            PyObject *pair = PyList_GET_ITEM(pairs, i);
-            value = PyTuple_GET_ITEM(pair, 1);
+            PyObject *item = PyList_GET_ITEM(items, i);
+            value = PyTuple_GET_ITEM(item, 2);
             w_object(value, p);
         }
-        Py_DECREF(pairs);
+        Py_DECREF(items);
     }
     else if (PyCode_Check(v)) {
         if (!p->allow_code) {
@@ -1308,16 +1334,12 @@ r_object(RFILE *p)
                 }
                 break;
             }
-            v = PyBytes_FromStringAndSize((char *)NULL, n);
-            if (v == NULL)
-                break;
             ptr = r_string(n, p);
             if (ptr == NULL) {
-                Py_DECREF(v);
                 break;
             }
-            memcpy(PyBytes_AS_STRING(v), ptr, n);
-            retval = v;
+            // Get a singleton for 1-byte string
+            retval = PyBytes_FromStringAndSize(ptr, n);  // can be NULL
             R_REF(retval);
             break;
         }
@@ -1471,6 +1493,9 @@ r_object(RFILE *p)
         }
         if (type == TYPE_DICT) {
             R_REF(v);
+            if (v == NULL) {
+                break;
+            }
         }
         else {
             idx = r_ref_reserve(flag, p);
@@ -1502,6 +1527,7 @@ r_object(RFILE *p)
         }
         if (type == TYPE_FROZENDICT && v != NULL) {
             Py_SETREF(v, PyFrozenDict_New(v));
+            v = r_ref_insert(v, idx, flag, p);
         }
         retval = v;
         break;
@@ -1940,6 +1966,10 @@ _PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code)
         case WFERR_CODE_NOT_ALLOWED:
             PyErr_SetString(PyExc_ValueError,
                             "marshalling code objects is disallowed");
+            break;
+        case WFERR_SET_CHANGED_SIZE:
+            PyErr_SetString(PyExc_RuntimeError,
+                            "set changed size during iteration");
             break;
         default:
         case WFERR_UNMARSHALLABLE:
