@@ -41,7 +41,8 @@ notify_func_watchers(PyInterpreterState *interp, PyFunction_WatchEvent event,
             if (cb(event, func, new_value) < 0) {
                 PyErr_FormatUnraisable(
                     "Exception ignored in %s watcher callback for function %U at %p",
-                    func_event_name(event), func->func_qualname, func);
+                    func_event_name(event),
+                    FT_ATOMIC_LOAD_PTR_ACQUIRE(func->func_qualname), func);
             }
         }
         i++;
@@ -405,7 +406,7 @@ PyFunction_GetModule(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_module;
+    return PyFunction_GET_MODULE(op);
 }
 
 PyObject *
@@ -610,15 +611,10 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
         return -1;
     }
     PyFunctionObject *func = (PyFunctionObject *)op;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyEval_StopTheWorld(interp);
-    PyObject *old_annotations = func->func_annotations;
-    func->func_annotations = annotations;
-    PyObject *old_annotate = func->func_annotate;
-    func->func_annotate = NULL;
-    _PyEval_StartTheWorld(interp);
-    Py_XDECREF(old_annotations);
-    Py_XDECREF(old_annotate);
+    Py_BEGIN_CRITICAL_SECTION(func);
+    Py_XSETREF(func->func_annotations, annotations);
+    Py_CLEAR(func->func_annotate);
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -673,11 +669,11 @@ func_set_code(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
     Py_ssize_t nclosure = (op->func_closure == NULL ? 0 :
                                         PyTuple_GET_SIZE(op->func_closure));
     if (nclosure != nfree) {
+        PyObject *name = FT_ATOMIC_LOAD_PTR_ACQUIRE(op->func_name);
         PyErr_Format(PyExc_ValueError,
                      "%U() requires a code object with %zd free vars,"
                      " not %d",
-                     op->func_name,
-                     nclosure, nfree);
+                     name, nclosure, nfree);
         return -1;
     }
 
@@ -709,7 +705,8 @@ static PyObject *
 func_get_name(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
-    return Py_NewRef(op->func_name);
+    PyObject *name = FT_ATOMIC_LOAD_PTR_ACQUIRE(op->func_name);
+    return Py_NewRef(name);
 }
 
 static int
@@ -723,12 +720,9 @@ func_set_name(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
                         "__name__ must be set to a string object");
         return -1;
     }
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyEval_StopTheWorld(interp);
-    PyObject *old_name = op->func_name;
-    op->func_name = Py_NewRef(value);
-    _PyEval_StartTheWorld(interp);
-    Py_XDECREF(old_name);
+    Py_BEGIN_CRITICAL_SECTION(op);
+    _PyObject_XSetRefDelayed(&op->func_name, Py_NewRef(value));
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -736,7 +730,8 @@ static PyObject *
 func_get_qualname(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
-    return Py_NewRef(op->func_qualname);
+    PyObject *qualname = FT_ATOMIC_LOAD_PTR_ACQUIRE(op->func_qualname);
+    return Py_NewRef(qualname);
 }
 
 static int
@@ -751,12 +746,9 @@ func_set_qualname(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
         return -1;
     }
     handle_func_event(PyFunction_EVENT_MODIFY_QUALNAME, (PyFunctionObject *) op, value);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyEval_StopTheWorld(interp);
-    PyObject *old_qualname = op->func_qualname;
-    op->func_qualname = Py_NewRef(value);
-    _PyEval_StartTheWorld(interp);
-    Py_XDECREF(old_qualname);
+    Py_BEGIN_CRITICAL_SECTION(op);
+    _PyObject_XSetRefDelayed(&op->func_qualname, Py_NewRef(value));
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -764,7 +756,7 @@ static PyObject *
 func_get_doc(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
-    PyObject *doc = op->func_doc;
+    PyObject *doc = FT_ATOMIC_LOAD_PTR_ACQUIRE(op->func_doc);
     if (doc == NULL) {
         doc = Py_None;
     }
@@ -776,12 +768,9 @@ func_set_doc(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
     /* Legal to del f.__doc__ or to set it to any object. */
     PyFunctionObject *op = _PyFunction_CAST(self);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyEval_StopTheWorld(interp);
-    PyObject *old_doc = op->func_doc;
-    op->func_doc = Py_XNewRef(value);
-    _PyEval_StartTheWorld(interp);
-    Py_XDECREF(old_doc);
+    Py_BEGIN_CRITICAL_SECTION(op);
+    _PyObject_XSetRefDelayed(&op->func_doc, Py_XNewRef(value));
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -789,7 +778,7 @@ static PyObject *
 func_get_module(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
-    PyObject *module = op->func_module;
+    PyObject *module = FT_ATOMIC_LOAD_PTR_ACQUIRE(op->func_module);
     if (module == NULL) {
         module = Py_None;
     }
@@ -801,12 +790,9 @@ func_set_module(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
     /* Legal to del f.__module__ or to set it to any object. */
     PyFunctionObject *op = _PyFunction_CAST(self);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyEval_StopTheWorld(interp);
-    PyObject *old_module = op->func_module;
-    op->func_module = Py_XNewRef(value);
-    _PyEval_StartTheWorld(interp);
-    Py_XDECREF(old_module);
+    Py_BEGIN_CRITICAL_SECTION(op);
+    _PyObject_XSetRefDelayed(&op->func_module, Py_XNewRef(value));
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -1224,8 +1210,8 @@ static PyObject*
 func_repr(PyObject *self)
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
-    return PyUnicode_FromFormat("<function %U at %p>",
-                                op->func_qualname, op);
+    PyObject *qualname = FT_ATOMIC_LOAD_PTR_ACQUIRE(op->func_qualname);
+    return PyUnicode_FromFormat("<function %U at %p>", qualname, op);
 }
 
 static int
