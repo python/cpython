@@ -123,6 +123,17 @@ Some facts and figures:
    :exc:`ReadError` is raised. Use *mode* ``'r'`` to avoid this.  If a
    compression method is not supported, :exc:`CompressionError` is raised.
 
+   .. note::
+
+      Compressed archives opened with modes like ``'r:gz'``, ``'r:bz2'``,
+      ``'r:xz'``, or ``'r:zst'`` support random access, but seeking backwards
+      in the underlying compressed stream requires re-decompressing from the
+      beginning.  Extracting members in a different order than they appear in
+      the archive can therefore be significantly slower — proportional to the
+      total compressed data read rather than just the target member's size.  For
+      best performance, extract members in archive order or use
+      :meth:`TarFile.extractall`.
+
    If *fileobj* is specified, it is used as an alternative to a :term:`file object`
    opened in binary mode for *name*. It is supposed to be at position 0.
 
