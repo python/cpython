@@ -335,6 +335,18 @@ Communicating Between Interpreters
 
       The queue's ID.
 
+   .. method:: qsize()
+
+      Return the number of items in the queue.
+
+   .. method:: empty()
+
+      Return ``True`` if the queue is empty, ``False`` otherwise.
+
+   .. method:: full()
+
+      Return ``True`` if the queue is full, ``False`` otherwise.
+
 
 .. exception:: QueueEmpty
 
