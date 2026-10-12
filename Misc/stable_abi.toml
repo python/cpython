@@ -2896,9 +2896,3 @@
 [struct.PyThreadStateToken]
     added = '3.15'
     struct_abi_kind = 'opaque'
-
-
-### Python 3.16 #############################################################
-
-[function.Py_HashBuffer]
-    added = '3.16'
