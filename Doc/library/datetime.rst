@@ -2699,6 +2699,10 @@ convenience.
 |           | number, zero-padded to 6       | 999999                 |       |
 |           | digits.                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
+|  ``%Nf``  | Fraction of a second truncated | 000, 001, ..., 999     | \(5)  |
+|           | to *N* digits, where *N* is    | (``%3f``)              |       |
+|           | from 1 to 6.                   |                        |       |
++-----------+--------------------------------+------------------------+-------+
 | ``%:z``   | UTC offset in the form         | (empty), +00:00,       | \(6)  |
 |           | ``±HH:MM[:SS[.ffffff]]``       | -04:00, +10:30,        |       |
 |           | (empty string if the object is | +06:34:15,             |       |
@@ -2720,6 +2724,9 @@ differences between platforms in handling of unsupported format specifiers.
 .. versionadded:: 3.15
    ``%D``, ``%F``, ``%n``, ``%t``, and ``%:z`` were added for
    :meth:`~.datetime.strptime`.
+
+.. versionadded:: next
+   ``%Nf`` was added.
 
 
 Technical detail
@@ -2826,7 +2833,8 @@ Notes:
 
 (5)
    When used with the :meth:`~.datetime.strptime` method, the ``%f`` directive
-   accepts from one to six digits and zero pads on the right. ``%f`` is
+   accepts from one to six digits and zero pads on the right, while ``%Nf``
+   accepts exactly *N* digits. ``%f`` is
    an extension to the set of format characters in the C standard (but
    implemented separately in datetime objects, and therefore always
    available).

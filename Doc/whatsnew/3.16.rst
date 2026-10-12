@@ -347,6 +347,16 @@ concurrent.futures
   (Contributed by xzmeng and Serhiy Storchaka in :gh:`108518`.)
 
 
+datetime
+--------
+
+* Add the ``%Nf`` format code (where *N* is from 1 to 6) to
+  :meth:`datetime.datetime.strftime`, :meth:`datetime.time.strftime`,
+  :meth:`datetime.date.strftime`, :meth:`datetime.datetime.strptime` and
+  :meth:`datetime.time.strptime`.
+  (Contributed by Stan Ulbrych and Karoline Pauls in :gh:`157290`.)
+
+
 decimal
 -------
 
