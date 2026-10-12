@@ -7,8 +7,8 @@ Coroutine Objects
 
 .. versionadded:: 3.5
 
-Coroutine objects are what functions declared with an ``async`` keyword
-return.
+Coroutine objects are returned by calling a function defined with
+:keyword:`async def`.
 
 
 .. c:type:: PyCoroObject
