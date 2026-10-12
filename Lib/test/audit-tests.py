@@ -659,6 +659,22 @@ def test_winapi_createnamedpipe(pipe_name):
     _winapi.CreateNamedPipe(pipe_name, _winapi.PIPE_ACCESS_DUPLEX, 8, 2, 0, 0, 0, 0)
 
 
+def test_winapi_createprocess(command_line):
+    import _winapi
+    import subprocess
+
+    def hook(event, args):
+        if event == "_winapi.CreateProcess":
+            print(event, args)
+
+    sys.addaudithook(hook)
+    hp, ht, _, _ = _winapi.CreateProcess(
+        sys.executable, command_line, None, None, False, 0, None, None,
+        subprocess.STARTUPINFO())
+    _winapi.CloseHandle(ht)
+    _winapi.CloseHandle(hp)
+
+
 def test_assert_unicode():
     import sys
     sys.addaudithook(lambda *args: None)

@@ -319,6 +319,22 @@ class AuditTest(unittest.TestCase):
 
         self.assertEqual(actual, expected)
 
+    def test_winapi_createprocess(self):
+        winapi = import_helper.import_module("_winapi")
+
+        command_line = "python -c pass"
+        returncode, events, stderr = self.run_python("test_winapi_createprocess", command_line)
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [("_winapi.CreateProcess",
+                     f"({sys.executable!r}, {command_line!r}, None)")]
+
+        self.assertEqual(actual, expected)
+
     def test_assert_unicode(self):
         # See gh-126018
         returncode, _, stderr = self.run_python("test_assert_unicode")
