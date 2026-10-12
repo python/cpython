@@ -1314,12 +1314,7 @@ def nomemtest(f):
         import_module('_testcapi')
         return f(*args, **kwargs)
 
-    return unittest.skipIf(
-        # Python built with Py_TRACE_REFS fail with a fatal error in
-        # _PyRefchain_Trace() on memory allocation error.
-        Py_TRACE_REFS,
-        'cannot test Py_TRACE_REFS build',
-    )(cpython_only(internal))
+    return cpython_only(internal)
 
 def bigaddrspacetest(f):
     """Decorator for tests that fill the address space."""
