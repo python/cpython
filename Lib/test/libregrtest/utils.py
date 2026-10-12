@@ -148,22 +148,26 @@ GITHUB_ESCAPE_PROPERTY = GITHUB_ESCAPE_DATA | str.maketrans({":": "%3A",
                                                              ",": "%2C"})
 
 
-def print_github_annotation(title: str, message: str, filename: str,
-                            file=None) -> None:
+def print_github_annotation(title: str, message: str,
+                            filename: str | None = None, file=None) -> None:
     """Print a GitHub Actions error annotation.
 
     message is a traceback or a failure description. Only keep the exception
     which ends the traceback: the job log has the full traceback. Locate the
-    annotation at the last traceback frame in a test file, if any, or else
-    in filename, the test file.
+    annotation at the last traceback frame in a test file, or else at the
+    first frame (the test), or else in filename (the test file).
     """
     message = decolor(message)
     line = None
-    # Last traceback frame ('  File "filename", line 123') or failed doctest
-    # example (same, but not indented) in a test file
-    if frames := re.findall(r'^ *File "(.*[/\\]test_[^/\\]*\.py)", line (\d+)',
-                            message, re.MULTILINE):
-        filename, line = frames[-1]
+    # Traceback frames ('  File "filename", line 123') and failed doctest
+    # examples (same, but not indented)
+    if frames := re.findall(r'^ *File "(.*)", line (\d+)', message,
+                            re.MULTILINE):
+        test_frames = [frame for frame in frames
+                       if os.path.basename(frame[0]).startswith('test_')]
+        filename, line = test_frames[-1] if test_frames else frames[0]
+    if not filename:
+        raise ValueError(f"missing test file of annotation {title!r}")
     # In the job, the stdlib can be outside of the repository checkout
     path = pathlib.Path(filename)
     stdlib_dir = pathlib.Path(os.__file__).parent

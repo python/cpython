@@ -13,8 +13,7 @@ from test.libregrtest.utils import print_github_annotation, sanitize_xml
 
 class RegressionTestResult(unittest.TextTestResult):
     USE_XML = False
-    # Test file of the GitHub Actions annotations: don't annotate if None
-    GITHUB_TEST_FILE: str | None = None
+    GITHUB_ANNOTATIONS = False
 
     def __init__(self, stream, descriptions, verbosity):
         super().__init__(stream=stream, descriptions=descriptions,
@@ -137,9 +136,8 @@ class RegressionTestResult(unittest.TextTestResult):
             super().printErrorList(flavour, [(test, err)])
             # Annotate just after the failure report, so that the annotation
             # links to the report in the job log
-            if self.GITHUB_TEST_FILE:
-                print_github_annotation(str(test), err, self.GITHUB_TEST_FILE,
-                                        file=self.stream)
+            if self.GITHUB_ANNOTATIONS:
+                print_github_annotation(str(test), err, file=self.stream)
 
     def get_xml_element(self):
         if not self.USE_XML:

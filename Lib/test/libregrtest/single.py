@@ -16,7 +16,7 @@ from .result import State, TestResult, TestStats
 from .runtests import RunTests
 from .save_env import saved_test_environment
 from .setup import setup_tests
-from .testresult import RegressionTestResult, get_test_runner
+from .testresult import get_test_runner
 from .parallel_case import ParallelTestCase
 from .utils import (
     TestName,
@@ -37,8 +37,6 @@ def run_unittest(test_mod, runtests: RunTests):
     if loader.errors:
         raise Exception("errors while loading tests")
     _filter_suite(tests, match_test)
-    RegressionTestResult.GITHUB_TEST_FILE = (
-        test_mod.__file__ if runtests.github_annotations else None)
     if runtests.parallel_threads:
         _parallelize_tests(tests, runtests.parallel_threads)
     return _run_suite(tests)
