@@ -24,9 +24,12 @@ class PyMemDebugTests(unittest.TestCase):
             out = assert_python_failure(
                 '-c', code,
                 PYTHONMALLOC=self.PYTHONMALLOC,
-                # FreeBSD: instruct jemalloc to not fill freed() memory
-                # with junk byte 0x5a, see JEMALLOC(3)
+                # Instruct the system allocator to not fill freed() memory
+                # with junk bytes:
+                # FreeBSD: jemalloc, see JEMALLOC(3).
                 MALLOC_CONF="junk:false",
+                # OpenBSD: see MALLOC.CONF(5).
+                MALLOC_OPTIONS="j",
             )
         stderr = out.err
         return stderr.decode('ascii', 'replace')
@@ -102,7 +105,9 @@ class PyMemDebugTests(unittest.TestCase):
         assert_python_ok(
             '-c', code,
             PYTHONMALLOC=self.PYTHONMALLOC,
+            # See the comment in check() above.
             MALLOC_CONF="junk:false",
+            MALLOC_OPTIONS="j",
         )
 
     def test_pyobject_null_is_freed(self):
@@ -175,6 +180,20 @@ class PyMemMimallocDebugTests(PyMemDebugTests):
 class PyMemDefaultTests(PyMemDebugTests):
     # test default allocator of Python compiled in debug mode
     PYTHONMALLOC = ''
+
+
+@requires_subprocess()
+@support.requires_gil_enabled("PYTHONMALLOC='malloc' needs GIL build")
+@unittest.skipUnless(support.check_sanitizer(address=True),
+                     'need address sanitizer')
+class AddressSanitizerTests(unittest.TestCase):
+    def test_buffer_overflow(self):
+        with support.SuppressCrashReport():
+            out = assert_python_failure(
+                '-c', 'import _testcapi; _testcapi.pymem_buffer_overflow()',
+                PYTHONMALLOC='malloc',
+            )
+        self.assertIn(b'AddressSanitizer', out.err)
 
 
 if __name__ == "__main__":

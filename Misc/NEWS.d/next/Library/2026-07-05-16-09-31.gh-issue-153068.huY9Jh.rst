@@ -1,0 +1,2 @@
+Fix :meth:`!cProfile.Profile.enable` to no longer overwrite errors from
+:mod:`sys.monitoring`.

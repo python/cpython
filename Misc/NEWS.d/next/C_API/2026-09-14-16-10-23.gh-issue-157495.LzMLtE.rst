@@ -1,0 +1,3 @@
+If ``typeof()`` is available, implement :c:macro:`Py_MIN`, :c:macro:`Py_MAX`
+and :c:macro:`Py_ABS` using ``typeof()`` and statement expression to only
+evaluate each argument once. Patch by Victor Stinner.

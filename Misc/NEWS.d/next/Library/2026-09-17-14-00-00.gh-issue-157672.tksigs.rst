@@ -1,0 +1,4 @@
+Fix :mod:`tkinter` on macOS: creating a :class:`~tkinter.Tk` instance no
+longer replaces the Python handlers of SIGINT, SIGHUP and SIGTERM with Tk's
+handler which exits the process, so Ctrl-C raises :exc:`KeyboardInterrupt`
+again.

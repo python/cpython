@@ -1,0 +1,2 @@
+Fix a crash and possible code object corruption following a
+:exc:`MemoryError` while compiling Python code.

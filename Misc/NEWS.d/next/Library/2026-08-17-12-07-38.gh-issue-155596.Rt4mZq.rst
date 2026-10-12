@@ -1,0 +1,5 @@
+Fix :func:`pprint.pprint` and :func:`pprint.pformat` with ``expand=True``
+not honouring *width* for nested values.  The width of the ``'key':``
+prefix was not counted when deciding whether a value fitted on the current
+line, so values under long keys could overflow *width* instead of being
+expanded.

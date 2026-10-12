@@ -1,0 +1,3 @@
+Fix :func:`dir` on :class:`unittest.mock.Mock` objects
+created with a tuple *spec*: it raised :exc:`TypeError`.
+Such *spec* is now also documented.

@@ -1,0 +1,2 @@
+Fix :class:`bytearray` constructor: do not use a bytes object if its hash
+value is already computed. Patch by Cody Maloney and Victor Stinner.

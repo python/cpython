@@ -216,3 +216,39 @@ class IsolatedCodeGenTests(CodegenTestCase):
             ('RETURN_VALUE', None)
         ]
         self.codegen_test(snippet, expected)
+
+    def test_comp_without_target_optimization(self):
+        snippet = "[i for i in range(10)]"
+        expected = [
+            ('RESUME', 0),
+            ('ANNOTATIONS_PLACEHOLDER', None),
+            ('LOAD_NAME', 0),
+            ('PUSH_NULL', None),
+            ('LOAD_CONST', 0),
+            ('CALL', 1),
+            ('LOAD_FAST_AND_CLEAR', 0),
+            ('SWAP', 2),
+            ('SETUP_FINALLY', 20),
+            ('COPY', 1),
+            ('GET_ITER', 0),
+            ('FOR_ITER', 16),
+            ('STORE_FAST', 0),
+            ('LOAD_FAST', 0),
+            ('POP_TOP', None),
+            ('JUMP', 11),
+            ('END_FOR', None),
+            ('POP_ITER', None),
+            ('POP_BLOCK', None),
+            ('JUMP_NO_INTERRUPT', 25),
+            ('SWAP', 2),
+            ('POP_TOP', None),
+            ('SWAP', 2),
+            ('STORE_FAST_MAYBE_NULL', 0),
+            ('RERAISE', 0),
+            ('SWAP', 2),
+            ('STORE_FAST_MAYBE_NULL', 0),
+            ('POP_TOP', None),
+            ('LOAD_CONST', 1),
+            ('RETURN_VALUE', None),
+        ]
+        self.codegen_test(snippet, expected)
