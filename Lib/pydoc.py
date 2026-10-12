@@ -71,6 +71,7 @@ import sysconfig
 import textwrap
 import time
 import tokenize
+import urllib.parse
 import warnings
 from annotationlib import Format
 from collections import deque
@@ -2314,6 +2315,9 @@ module "pydoc_data.topics" could not be found.
 Sorry, topic and keyword documentation is not available because the
 module "pydoc_data.topics" could not be found.
 ''' , '')
+        if topic in self.symbols:
+            topic, _, xrefs = self.symbols[topic].partition(' ')
+            more_xrefs = ' '.join([xrefs, more_xrefs]).strip()
         target = self.topics.get(topic, self.keywords.get(topic))
         if not target:
             raise ValueError('could not find topic')
@@ -2687,14 +2691,14 @@ def _url_handler(url, content_type="text/html"):
 
         # format page
         def bltinlink(name):
-            return '<a href="%s.html">%s</a>' % (name, name)
+            return '<a href="%s.html">%s</a>' % (urllib.parse.quote(name), html.escape(name))
 
         results = []
         heading = html.heading('Search Results')
         for name, desc in search_result:
             results.append('<li>%s%s</li>' % (bltinlink(name), desc))
         contents = heading + html.bigsection(
-            'key = %s' % key, 'index', '<ul>\n%s\n</ul>' % '\n'.join(results))
+            'key = %s' % html.escape(key), 'index', '<ul>\n%s\n</ul>' % '\n'.join(results))
         return 'Search Results', contents
 
     def html_topics():
@@ -2720,6 +2724,18 @@ def _url_handler(url, content_type="text/html"):
         contents = heading + html.multicolumn(names, bltinlink)
         return 'Keywords', contents
 
+    def html_symbols():
+        """Index of symbols available."""
+
+        def bltinlink(name):
+            return '<a href="topic?key=%s">%s</a>' % (urllib.parse.quote(name), html.escape(name))
+
+        heading = html.heading('Symbols')
+        names = sorted(Helper.symbols.keys())
+
+        contents = heading + html.multicolumn(names, bltinlink)
+        return 'Symbols', contents
+
     def html_topicpage(topic):
         """Topic or keyword help page."""
         buf = io.StringIO()
@@ -2727,6 +2743,8 @@ def _url_handler(url, content_type="text/html"):
         contents, xrefs = htmlhelp._gettopic(topic)
         if topic in htmlhelp.keywords:
             title = 'KEYWORD'
+        elif topic in htmlhelp.symbols:
+            title = 'SYMBOL'
         else:
             title = 'TOPIC'
         heading = html.heading('%s %s' % (title.capitalize(), topic))
@@ -2755,7 +2773,7 @@ def _url_handler(url, content_type="text/html"):
         heading = html.heading('Error')
         contents = '<br>'.join(html.escape(line) for line in
                                format_exception_only(type(exc), exc))
-        contents = heading + html.bigsection(url, 'error', contents)
+        contents = heading + html.bigsection(html.escape(url), 'error', contents)
         return "Error - %s" % url, contents
 
     def get_html_page(url):
@@ -2770,8 +2788,11 @@ def _url_handler(url, content_type="text/html"):
                 title, content = html_topics()
             elif url == "keywords":
                 title, content = html_keywords()
+            elif url == "symbols":
+                title, content = html_symbols()
             elif '=' in url:
                 op, _, url = url.partition('=')
+                url = urllib.parse.unquote(url).strip()
                 if op == "search?key":
                     title, content = html_search(url)
                 elif op == "topic?key":
