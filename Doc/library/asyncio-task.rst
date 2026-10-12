@@ -356,7 +356,7 @@ and reliable way to wait for all tasks in the group to finish.
       The signature matches that of :func:`asyncio.create_task`.
       If the task group is inactive (e.g. not yet entered,
       already finished, or in the process of shutting down),
-      we will close the given ``coro``.
+      we will close the given ``coro`` and raise :exc:`RuntimeError`.
 
       .. versionchanged:: 3.13
 
@@ -843,17 +843,13 @@ Timeouts
    Wait for the *aw* :ref:`awaitable <asyncio-awaitables>`
    to complete with a timeout.
 
-   If *aw* is a coroutine it is automatically scheduled as a Task.
-
    *timeout* can either be ``None`` or a float or int number of seconds
    to wait for.  If *timeout* is ``None``, block until the future
    completes.
 
-   If a timeout occurs, it cancels the task and raises
-   :exc:`TimeoutError`.
+   If a timeout occurs, it cancels *aw* and raises :exc:`TimeoutError`.
 
-   To avoid the task :meth:`cancellation <Task.cancel>`,
-   wrap it in :func:`shield`.
+   To prevent *aw* from being cancelled, wrap it in :func:`shield`.
 
    The function will wait until the future is actually cancelled,
    so the total wait time may exceed the *timeout*. If an exception
@@ -893,6 +889,10 @@ Timeouts
 
    .. versionchanged:: 3.11
       Raises :exc:`TimeoutError` instead of :exc:`asyncio.TimeoutError`.
+
+   .. versionchanged:: 3.12
+      Implemented using :func:`asyncio.timeout`, a coroutine passed as *aw*
+      is no longer wrapped in a :class:`Task` when *timeout* is positive.
 
 
 Waiting primitives

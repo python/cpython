@@ -52,8 +52,8 @@ import types
 from test.support import (
     captured_stderr, cpython_only, requires_docstrings, import_helper, run_code,
     subTests, EqualToForwardRef,
-    exceeds_recursion_limit, skip_if_huge_c_stack, skip_wasi_stack_overflow,
-    skip_emscripten_stack_overflow,
+    exceeds_recursion_limit, run_with_limited_c_stack,
+    skip_wasi_stack_overflow, skip_emscripten_stack_overflow,
 )
 from test.typinganndata import (
     ann_module695, mod_generics_cache, _typed_dict_helper,
@@ -5097,7 +5097,7 @@ class GenericTests(BaseTestCase):
         self.assertEqual(MM2.__bases__, (collections.abc.MutableMapping, Generic))
 
     @cpython_only
-    @skip_if_huge_c_stack()
+    @run_with_limited_c_stack()
     @skip_wasi_stack_overflow()
     @skip_emscripten_stack_overflow()
     def test_parameters_deep_recursion(self):
@@ -10284,6 +10284,17 @@ class ParamSpecTests(BaseTestCase):
         self.assertNotEqual(P.args, P_2.kwargs)
         self.assertEqual(repr(P.args), "P.args")
         self.assertEqual(repr(P.kwargs), "P.kwargs")
+
+    def test_args_kwargs_weakrefs(self):
+        P = ParamSpec('P')
+        for attr_name in ('args', 'kwargs'):
+            with self.subTest(attr_name=attr_name):
+                callback_fired = []
+                attr = getattr(P, attr_name)
+                ref = weakref.ref(attr, lambda _: callback_fired.append(True))
+                del attr
+                self.assertEqual(callback_fired, [True])
+                self.assertIsNone(ref())
 
     def test_stringized(self):
         P = ParamSpec('P')

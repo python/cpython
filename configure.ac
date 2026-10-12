@@ -73,6 +73,12 @@ AC_DEFUN([PY_CHECK_FUNC],
   AS_VAR_POPDEF([py_define])
 ])
 
+dnl PY_CHECK_FUNC_PRIVATE(FUNCTION, [INCLUDES], [AC_DEFINE-VAR])
+dnl Similar to PY_CHECK_FUNC but define macro _Py_HAVE_xxx instead of HAVE_xxx
+AC_DEFUN([PY_CHECK_FUNC_PRIVATE],
+[ PY_CHECK_FUNC([$1], [$2], m4_ifblank([$3], [[_Py_HAVE_]m4_toupper($1)], [$3]))
+])
+
 dnl PY_CHECK_LIB(LIBRARY, FUNCTION, [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND], [OTHER-LIBRARIES])
 dnl Like AC_CHECK_LIB() but does not modify LIBS
 AC_DEFUN([PY_CHECK_LIB],
@@ -995,8 +1001,12 @@ AS_CASE([$host],
 )
 
 dnl Add the compiler flag for the iOS minimum supported OS version.
-AS_CASE([$ac_sys_system],
-  [iOS], [
+AS_CASE([$host],
+  [*-apple-ios*-simulator], [
+    AS_VAR_APPEND([CFLAGS], [" -mios-simulator-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"])
+    AS_VAR_APPEND([LDFLAGS], [" -mios-simulator-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"])
+  ],
+  [*-apple-ios*], [
     AS_VAR_APPEND([CFLAGS], [" -mios-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"])
     AS_VAR_APPEND([LDFLAGS], [" -mios-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"])
   ],
@@ -4356,7 +4366,7 @@ int main(void)
     {
         return 2;
     }
-    ffi_arg rc;
+    ffi_arg rc = 0;
     ffi_call(&cif, FFI_FN(z_is_expected), &rc, values);
     return !rc;
 }
@@ -5511,6 +5521,9 @@ AC_CHECK_FUNCS([ \
   tmpnam tmpnam_r truncate ttyname_r umask uname unlinkat unlockpt utimensat utimes vfork \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
 ])
+
+PY_CHECK_FUNC_PRIVATE([strerror_r], [@%:@include <string.h>])
+
 
 # os.statx uses Linux's statx function.  AIX also has a function named statx,
 # but it's unrelated.  Check only on Linux (including Android).
@@ -7149,8 +7162,9 @@ WITH_SAVE_ENV([
   ]))
 
   # Check that we're able to link with crucial curses/panel functions. This
-  # also serves as a fallback in case pkg-config failed.
-  AS_VAR_APPEND([LIBS], [" $CURSES_LIBS $PANEL_LIBS"])
+  # also serves as a fallback in case pkg-config failed. Extension modules are
+  # not linked with LIBS, so exclude it to get the required libraries.
+  LIBS="$CURSES_LIBS $PANEL_LIBS"
   AC_SEARCH_LIBS([initscr], [ncursesw ncurses],
     [AS_VAR_IF([have_curses], [no],
       [AS_VAR_SET([have_curses], [yes])

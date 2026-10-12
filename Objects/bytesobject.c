@@ -6,6 +6,7 @@
 #include "pycore_bytesobject.h"   // _PyBytes_Find(), _PyBytes_Repeat()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
+#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST()
 #include "pycore_format.h"        // F_LJUST
 #include "pycore_freelist.h"      // _Py_FREELIST_FREE()
 #include "pycore_global_objects.h"// _Py_GET_GLOBAL_OBJECT()
@@ -62,18 +63,7 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 _Py_COMP_DIAG_POP
 }
 
-static inline Py_hash_t
-get_ob_shash(PyBytesObject *a)
-{
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-#ifdef Py_GIL_DISABLED
-    return _Py_atomic_load_ssize_relaxed(&a->ob_shash);
-#else
-    return a->ob_shash;
-#endif
-_Py_COMP_DIAG_POP
-}
+#define get_ob_shash(op) _PyBytes_GET_CACHED_HASH(op)
 
 
 /*
@@ -218,7 +208,7 @@ bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
         size_t len = (len_expr); \
         s = PyBytesWriter_GrowAndUpdatePointer(writer, len, s); \
         if (s == NULL) { \
-            goto error; \
+            return NULL; \
         } \
         memcpy(s, (str), len); \
         s += len; \
@@ -272,7 +262,7 @@ bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
                 PyErr_SetString(PyExc_OverflowError,
                                 "PyBytes_FromFormatV(): %c format "
                                 "expects an integer in range [0; 255]");
-                goto error;
+                return NULL;
             }
             *s++ = (unsigned char)c;
             break;
@@ -365,9 +355,6 @@ bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
 #undef WRITE_BYTES_LEN
 
     return s;
-
- error:
-    return NULL;
 }
 
 
@@ -2694,9 +2681,10 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
         if (Py_ISSPACE(*str)) {
             do {
                 str++;
+                if (str >= end) {
+                    goto done;
+                }
             } while (Py_ISSPACE(*str));
-            if (str >= end)
-                break;
         }
 
         top = _PyLong_DigitValue[*str];
@@ -2704,16 +2692,16 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
             invalid_char = str - start;
             goto error;
         }
+
         str++;
+        if (str >= end) {
+            invalid_char = -1;
+            goto error;
+        }
 
         bot = _PyLong_DigitValue[*str];
         if (bot >= 16) {
-            /* Check if we had a second digit */
-            if (str >= end){
-                invalid_char = -1;
-            } else {
-                invalid_char = str - start;
-            }
+            invalid_char = str - start;
             goto error;
         }
         str++;
@@ -2721,6 +2709,7 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
         *buf++ = (unsigned char)((top << 4) + bot);
     }
 
+  done:
     if (view.obj != NULL) {
        PyBuffer_Release(&view);
     }
@@ -3368,14 +3357,12 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
         return 0;
     }
     if (!_PyObject_IsUniquelyReferenced(v)) {
-        if (oldsize < newsize) {
-            *pv = _PyBytes_FromSize(newsize, 0);
-            if (*pv) {
-                memcpy(PyBytes_AS_STRING(*pv), PyBytes_AS_STRING(v), oldsize);
-            }
-        }
-        else {
-            *pv = PyBytes_FromStringAndSize(PyBytes_AS_STRING(v), newsize);
+        // Allocate and then copy so we don't get a shared immortal
+        // one-character singleton!
+        *pv = _PyBytes_FromSize(newsize, 0);
+        if (*pv) {
+            memcpy(PyBytes_AS_STRING(*pv), PyBytes_AS_STRING(v),
+                   Py_MIN(oldsize, newsize));
         }
         Py_DECREF(v);
         return (*pv == NULL) ? -1 : 0;
@@ -3629,7 +3616,7 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int resize)
         return 0;
     }
 
-    if (resize & writer->overallocate) {
+    if (resize && writer->overallocate) {
         if (size <= (PY_SSIZE_T_MAX - size / OVERALLOCATE_FACTOR)) {
             size += size / OVERALLOCATE_FACTOR;
         }
@@ -3748,7 +3735,7 @@ PyObject*
 PyBytesWriter_FinishWithSize(PyBytesWriter *writer, Py_ssize_t size)
 {
     PyObject *result;
-    if (size == 0) {
+    if (size == 0 && !writer->use_bytearray) {
         result = bytes_get_empty();
     }
     else if (writer->obj != NULL) {
@@ -3912,6 +3899,7 @@ int
 PyBytesWriter_Format(PyBytesWriter *writer, const char *format, ...)
 {
     Py_ssize_t pos = writer->size;
+    Py_ssize_t old_pos = pos;
     if (PyBytesWriter_Grow(writer, strlen(format)) < 0) {
         return -1;
     }
@@ -3920,6 +3908,12 @@ PyBytesWriter_Format(PyBytesWriter *writer, const char *format, ...)
     va_start(vargs, format);
     char *buf = bytes_fromformat(writer, pos, format, vargs);
     va_end(vargs);
+
+    if (buf == NULL) {
+        // On error, reset the writer to its previous state (undo any write)
+        writer->size = old_pos;
+        return -1;
+    }
 
     Py_ssize_t size = buf - byteswriter_data(writer);
     return PyBytesWriter_Resize(writer, size);

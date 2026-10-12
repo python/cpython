@@ -1,0 +1,3 @@
+:class:`http.cookiejar.MozillaCookieJar` now reads session cookies written
+by curl and Wget, which use ``0`` in the expiration time field.
+Contributed by Jérémie Detrey.

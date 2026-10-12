@@ -103,6 +103,9 @@ typedef struct _PyThreadStateImpl {
     struct _PyJitTracerState *jit_tracer_state;
 #endif
 
+    // Reused for the thread's lifetime; owns placeholders while they resolve.
+    PyObject *lazy_imports;
+
 #ifdef Py_GIL_DISABLED
     // gh-144438: Add padding to ensure that the fields above don't share a
     // cache line with other allocations.
