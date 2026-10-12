@@ -1712,7 +1712,11 @@ def locate(path, forceload=0):
             object = getattr(object, part)
         except AttributeError:
             return None
-    if _is_dunder_name(path) and not isinstance(object, (type, type(__import__))):
+    if (
+        _is_dunder_name(path)
+        and not isinstance(object, (type, type(__import__)))
+        and path not in SKIP_DUNDER_HELP
+    ):
         # if we're looking up a special variable and we don't find a class or a
         # function, it's probably not what the user wanted (if it is, they can
         # look up builtins.whatever)
@@ -1842,8 +1846,12 @@ def _introdoc():
         enter "q", "quit" or "exit".
     ''')
 
+SKIP_DUNDER_HELP = {
+    '__future__',
+}
+
 def _is_dunder_name(x):
-    return isinstance(x, str) and len(x) > 4 and x[:2] == x[-2:] == '__'
+    return isinstance(x, str) and x.isidentifier() and len(x) > 4 and x[:2] == x[-2:] == '__'
 
 def collect_dunders(symbols):
     dunders = {
