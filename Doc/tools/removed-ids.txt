@@ -93,6 +93,9 @@ using/windows.html: the-full-installer-deprecated
 using/windows.html: virtual-environments
 using/windows.html: windows-full
 
+# Duplicated label from reference/datamodel:
+using/windows.html: customization
+
 # Moved to library/stdtypes:
 reference/expressions.html: agen.__anext__
 reference/expressions.html: agen.aclose
