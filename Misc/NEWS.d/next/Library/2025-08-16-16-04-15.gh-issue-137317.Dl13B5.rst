@@ -1,3 +1,0 @@
-:func:`inspect.signature` now correctly handles classes that use a descriptor
-on a wrapped :meth:`!__init__` or :meth:`!__new__` method.
-Contributed by Yongyu Yan.

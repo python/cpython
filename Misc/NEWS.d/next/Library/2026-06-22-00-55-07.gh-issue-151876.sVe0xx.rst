@@ -1,0 +1,2 @@
+Add the :class:`tkinter.Canvas` methods :meth:`!rchars` and :meth:`!rotate`,
+wrapping the ``rchars`` and ``rotate`` Tk canvas commands.

@@ -1,2 +1,0 @@
-Don't run PyREPL in a degraded environment where setting termios attributes
-is not allowed.

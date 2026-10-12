@@ -55,7 +55,7 @@
 @set _Py_HOST_PYTHON=%HOST_PYTHON%
 @if "%_Py_HOST_PYTHON%"=="" set _Py_HOST_PYTHON=py
 @if "%_Py_NUGET%"=="" (set _Py_NUGET=%_Py_EXTERNALS_DIR%\nuget.exe)
-@if "%_Py_NUGET_URL%"=="" (set _Py_NUGET_URL=https://aka.ms/nugetclidl)
+@if "%_Py_NUGET_URL%"=="" (set _Py_NUGET_URL=https://dist.nuget.org/win-x86-commandline/latest/nuget.exe)
 @if NOT exist "%_Py_NUGET%" (
     @if not "%_Py_Quiet%"=="1" @echo Downloading nuget...
     @rem NB: Must use single quotes around NUGET here, NOT double!
@@ -66,6 +66,9 @@
         @%_Py_HOST_PYTHON% -E "%_Py_D%\urlretrieve.py" "%_Py_NUGET_URL%" "%_Py_NUGET%"
     )
 )
+
+@rem ensure nuget.org source exist
+@"%_Py_NUGET%" sources add -Name nuget.org -Source https://api.nuget.org/v3/index.json >nul 2>nul
 
 @if not "%_Py_Quiet%"=="1" @echo Installing Python via nuget...
 @if not "%_Py_Quiet%"=="1" (

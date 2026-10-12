@@ -1,4 +1,0 @@
-The codecs lookup function now again performs only minimal normalization of
-the encoding name before passing it to the search functions: all ASCII
-letters are converted to lower case, spaces are replaced with hyphens.
-This restores the pre-Python 3.9 behavior.

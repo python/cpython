@@ -1,0 +1,3 @@
+Fix :meth:`csv.Sniffer.sniff` for a sample with ``\r\n`` line endings in
+which a quoted field ends a line: a letter could be detected as the
+delimiter.

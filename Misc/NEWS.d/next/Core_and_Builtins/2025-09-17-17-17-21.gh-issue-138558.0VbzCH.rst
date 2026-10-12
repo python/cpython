@@ -1,1 +1,0 @@
-Fix handling of unusual t-string annotations in annotationlib. Patch by Dave Peck.

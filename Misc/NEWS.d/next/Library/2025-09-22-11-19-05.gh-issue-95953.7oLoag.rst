@@ -1,2 +1,0 @@
-A CSS class, ``diff_changed``, was added to the changed lines in the
-``make_table`` output of :class:`difflib.HtmlDiff`. Patch by Katie Gardner.

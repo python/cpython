@@ -416,8 +416,15 @@ get_or_create_weakref(PyTypeObject *type, PyObject *obj, PyObject *callback)
                      Py_TYPE(obj)->tp_name);
         return NULL;
     }
-    if (callback == Py_None)
+    if (callback == Py_None) {
         callback = NULL;
+    }
+    if (callback != NULL && !PyCallable_Check(callback)) {
+        PyErr_Format(PyExc_TypeError,
+                     "callback must be callable or None, not '%T'",
+                     callback);
+        return NULL;
+    }
 
     PyWeakReference **list = GET_WEAKREFS_LISTPTR(obj);
     if ((type == &_PyWeakref_RefType) ||
@@ -491,7 +498,8 @@ static PyMemberDef weakref_members[] = {
 
 static PyMethodDef weakref_methods[] = {
     {"__class_getitem__",    Py_GenericAlias,
-    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    METH_O|METH_CLASS,
+    PyDoc_STR("Weakrefs are generic over the type of the referenced object.")},
     {NULL} /* Sentinel */
 };
 

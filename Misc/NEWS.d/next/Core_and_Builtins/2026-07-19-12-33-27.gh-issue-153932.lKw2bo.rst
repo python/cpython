@@ -1,0 +1,2 @@
+Fix thread safety issue in the ``__reduce__`` method of
+:py:class:`enumerate`.

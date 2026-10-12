@@ -1,3 +1,0 @@
-Reraise :exc:`KeyError` as :exc:`ModuleNotFoundError` when
-:meth:`importlib.machinery.PathFinder.find_spec` is called on a submodule
-without importing the parent (and without a ``path`` argument).

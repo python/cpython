@@ -1,1 +1,0 @@
-Fix incorrect sharing of current task with the child process while forking in :mod:`asyncio`. Patch by Kumar Aditya.

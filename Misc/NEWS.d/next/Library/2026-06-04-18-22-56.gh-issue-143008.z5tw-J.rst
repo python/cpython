@@ -1,0 +1,1 @@
+Fix race conditions when re-initializing a :class:`io.TextIOWrapper` object.

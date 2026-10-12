@@ -1,0 +1,2 @@
+Defer GC tracking of :class:`frozendict` to end of construction. Patch by
+Donghee Na.

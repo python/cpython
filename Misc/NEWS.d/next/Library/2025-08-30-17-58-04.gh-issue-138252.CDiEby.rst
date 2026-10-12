@@ -1,4 +1,0 @@
-:mod:`ssl`: :class:`~ssl.SSLContext` objects can now set client and server
-TLS signature algorithms. If Python has been built with OpenSSL 3.5 or later,
-:class:`~ssl.SSLSocket` objects can return the signature algorithms selected
-on a connection.

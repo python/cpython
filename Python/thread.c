@@ -334,14 +334,12 @@ PyThread_GetInfo(void)
 
 #ifdef HAVE_PTHREAD_STUBS
     value = Py_NewRef(Py_None);
-#elif defined(_POSIX_THREADS)
+#else
     value = PyUnicode_FromString("pymutex");
     if (value == NULL) {
         Py_DECREF(threadinfo);
         return NULL;
     }
-#else
-    value = Py_NewRef(Py_None);
 #endif
     PyStructSequence_SET_ITEM(threadinfo, pos++, value);
 

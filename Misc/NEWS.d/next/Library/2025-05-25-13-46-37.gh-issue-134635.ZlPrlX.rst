@@ -1,3 +1,0 @@
-:mod:`zlib`: Allow to combine Adler-32 and CRC-32 checksums via
-:func:`~zlib.adler32_combine` and :func:`~zlib.crc32_combine`. Patch by
-Callum Attryde and Bénédikt Tran.

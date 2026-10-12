@@ -1,0 +1,1 @@
+Optimize bytecode for empty unpack cases such as ``{*()}``.

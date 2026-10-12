@@ -1,0 +1,1 @@
+Speed up the parser by caching repeated identifiers during a parse.

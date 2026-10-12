@@ -1,0 +1,5 @@
+:func:`tarfile.data_filter` now validates link targets using the same
+normalised value that is written to disk, strips trailing separators from
+the member name when resolving a symlink's directory, and rejects link
+members that would replace the destination directory itself. This closes
+several path-traversal bypasses of the ``data`` extraction filter.

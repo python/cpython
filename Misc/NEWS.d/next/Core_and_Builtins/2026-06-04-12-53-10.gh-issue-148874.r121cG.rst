@@ -1,0 +1,3 @@
+Ignore interrupts immediately after calling the ``__enter__`` method of a
+context menager in a ``with`` statement. This ensures that the ``__exit__``
+method is always called in a ``with`` statement.

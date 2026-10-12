@@ -1,0 +1,3 @@
+Fix the signatures of :meth:`sqlite3.Connection.execute`, :func:`warnings.warn`
+and :func:`locale.setlocale` which rendered ``<unrepresentable>`` instead of the
+correct defaults for parameters.

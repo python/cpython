@@ -1,3 +1,0 @@
-Rewrite and cleanup the internal :mod:`!_blake2` module. Some exception
-messages were changed but their types were left untouched. Patch by Bénédikt
-Tran.

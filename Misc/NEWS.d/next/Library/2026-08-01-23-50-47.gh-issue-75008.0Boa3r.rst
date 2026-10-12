@@ -1,0 +1,2 @@
+:meth:`csv.Sniffer.sniff` now detects the *lineterminator* parameter by a
+majority vote among the line endings of the sample.

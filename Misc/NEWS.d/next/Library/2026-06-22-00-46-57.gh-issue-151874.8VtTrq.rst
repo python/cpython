@@ -1,0 +1,3 @@
+Add the :mod:`tkinter` methods :meth:`!Misc.winfo_isdark`,
+:meth:`!Wm.wm_iconbadge` and :meth:`!Wm.wm_stackorder`, wrapping the
+``winfo isdark``, ``wm iconbadge`` and ``wm stackorder`` Tk commands.

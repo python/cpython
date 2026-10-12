@@ -1,2 +1,0 @@
-Improve :exc:`SyntaxError` error messages for invalid :keyword:`assert`
-usages.
