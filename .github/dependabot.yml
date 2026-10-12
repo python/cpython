@@ -32,7 +32,7 @@ updates:
     directory: "/Platforms/emscripten/browser_test/"
     schedule:
       interval: "quarterly"
-    labels: ["skip issue", "skip news"]
+    labels: ["OS-emscripten", "skip issue", "skip news"]
     groups:
       npm:
         patterns: ["*"]
@@ -148,7 +148,7 @@ updates:
     directory: "/Platforms/emscripten/browser_test/"
     schedule:
       interval: "quarterly"
-    labels: ["skip issue", "skip news"]
+    labels: ["OS-emscripten", "skip issue", "skip news"]
     groups:
       npm:
         patterns: ["*"]
@@ -160,7 +160,7 @@ updates:
     directory: "/Platforms/emscripten/browser_test/"
     schedule:
       interval: "quarterly"
-    labels: ["skip issue", "skip news"]
+    labels: ["OS-emscripten", "skip issue", "skip news"]
     groups:
       npm:
         patterns: ["*"]
