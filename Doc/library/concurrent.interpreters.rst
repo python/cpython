@@ -349,17 +349,47 @@ Communicating Between Interpreters
 
       Return ``True`` if the queue is full, ``False`` otherwise.
 
+   .. method:: put(obj, block=True, timeout=None)
+
+      Put *obj* into the queue.  If optional args *block* is true and
+      *timeout* is ``None`` (the default), block if necessary until a free
+      slot is available.  If *timeout* is a positive number, it blocks at
+      most *timeout* seconds and raises the :exc:`QueueFull` exception if
+      no free slot was available within that time.  Otherwise (*block* is
+      false), put an object on the queue if a free slot is immediately
+      available, else raise the :exc:`QueueFull` exception (*timeout* is
+      ignored in that case).
+
+   .. method:: put_nowait(obj)
+
+      Equivalent to ``put(obj, block=False)``.
+
+   .. method:: get(block=True, timeout=None)
+
+      Remove and return an object from the queue.  If optional args *block*
+      is true and *timeout* is ``None`` (the default), block if necessary
+      until an object is available.  If *timeout* is a positive number, it
+      blocks at most *timeout* seconds and raises the :exc:`QueueEmpty`
+      exception if no object was available within that time.  Otherwise
+      (*block* is false), return an object if one is immediately available,
+      else raise the :exc:`QueueEmpty` exception (*timeout* is ignored in
+      that case).
+
+   .. method:: get_nowait()
+
+      Equivalent to ``get(block=False)``.
+
 
 .. exception:: QueueEmpty
 
    This exception, a subclass of :exc:`queue.Empty`, is raised from
-   :meth:`!Queue.get` and :meth:`!Queue.get_nowait` when the queue
+   :meth:`Queue.get` and :meth:`Queue.get_nowait` when the queue
    is empty.
 
 .. exception:: QueueFull
 
    This exception, a subclass of :exc:`queue.Full`, is raised from
-   :meth:`!Queue.put` and :meth:`!Queue.put_nowait` when the queue
+   :meth:`Queue.put` and :meth:`Queue.put_nowait` when the queue
    is full.
 
 
