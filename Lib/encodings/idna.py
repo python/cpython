@@ -309,11 +309,13 @@ class IncrementalEncoder(codecs.BufferedIncrementalEncoder):
 
         result = bytearray()
         size = 0
+        offset = 0
         for label in labels:
             if size:
                 # Join with U+002E
                 result.extend(b'.')
                 size += 1
+                offset += 1
             try:
                 encoded = ToASCII(label)
                 result.extend(encoded)
@@ -321,11 +323,12 @@ class IncrementalEncoder(codecs.BufferedIncrementalEncoder):
                 raise UnicodeEncodeError(
                     "idna",
                     input,
-                    size + exc.start,
-                    size + exc.end,
+                    offset + exc.start,
+                    offset + exc.end,
                     exc.reason,
                 )
-            size += len(encoded)
+            size += len(label)
+            offset += len(encoded)
 
         result += trailing_dot
         size += len(trailing_dot)
