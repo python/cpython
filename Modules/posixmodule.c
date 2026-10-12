@@ -2035,6 +2035,14 @@ win32_wchdir(LPCWSTR path)
 #define HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES 1
 #define HAVE_STRUCT_STAT_ST_REPARSE_TAG 1
 
+/* The \\?\ prefix disables the path normalization, in particular
+   stripping of trailing dots and spaces. */
+static int
+is_extended_path(const wchar_t *path)
+{
+    return wcsncmp(path, L"\\\\?\\", 4) == 0;
+}
+
 static void
 find_data_to_file_info(WIN32_FIND_DATAW *pFileData,
                        BY_HANDLE_FILE_INFORMATION *info,
@@ -2102,12 +2110,20 @@ update_st_mode_from_path(const wchar_t *path, DWORD attr,
            GetSecurityInfo, OpenThreadToken/OpenProcessToken, and
            AccessCheck to check for generic read, write, and execute
            access. */
-        const wchar_t *fileExtension = wcsrchr(path, '.');
-        if (fileExtension) {
-            if (_wcsicmp(fileExtension, L".exe") == 0 ||
-                _wcsicmp(fileExtension, L".bat") == 0 ||
-                _wcsicmp(fileExtension, L".cmd") == 0 ||
-                _wcsicmp(fileExtension, L".com") == 0) {
+        size_t len = wcslen(path);
+        if (!is_extended_path(path)) {
+            /* Trailing dots and spaces are stripped from the last component
+               of the path. */
+            while (len > 0 && (path[len - 1] == L'.' || path[len - 1] == L' ')) {
+                len--;
+            }
+        }
+        if (len >= 4) {
+            const wchar_t *fileExtension = path + len - 4;
+            if (_wcsnicmp(fileExtension, L".exe", 4) == 0 ||
+                _wcsnicmp(fileExtension, L".bat", 4) == 0 ||
+                _wcsnicmp(fileExtension, L".cmd", 4) == 0 ||
+                _wcsnicmp(fileExtension, L".com", 4) == 0) {
                 result->st_mode |= 0111;
             }
         }
@@ -10137,6 +10153,7 @@ os_getlogin_impl(PyObject *module)
         errno = old_errno;
     }
     else {
+        _Py_MSAN_UNPOISON(name, sizeof(name));
         result = PyUnicode_DecodeFSDefault(name);
     }
 #else
@@ -11471,9 +11488,9 @@ os.timerfd_settime_ns
     flags: int = 0
         0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.
     initial: long_long = 0
-        initial expiration timing in seconds.
+        initial expiration timing in nanoseconds.
     interval: long_long = 0
-        interval for the timer in seconds.
+        interval for the timer in nanoseconds.
 
 Alter a timer file descriptor's internal timer in nanoseconds.
 [clinic start generated code]*/
@@ -11481,7 +11498,7 @@ Alter a timer file descriptor's internal timer in nanoseconds.
 static PyObject *
 os_timerfd_settime_ns_impl(PyObject *module, int fd, int flags,
                            long long initial, long long interval)
-/*[clinic end generated code: output=6273ec7d7b4cc0b3 input=261e105d6e42f5bc]*/
+/*[clinic end generated code: output=6273ec7d7b4cc0b3 input=94bdcea7292157eb]*/
 {
     struct itimerspec new_value;
     struct itimerspec old_value;
@@ -11511,12 +11528,12 @@ os.timerfd_gettime
         A timer file descriptor.
     /
 
-Return a tuple of a timer file descriptor's (interval, next expiration) in float seconds.
+Return a tuple of a timer file descriptor's (next expiration, interval) in float seconds.
 [clinic start generated code]*/
 
 static PyObject *
 os_timerfd_gettime_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=ec5a94a66cfe6ab4 input=05f7d568a4820dc6]*/
+/*[clinic end generated code: output=ec5a94a66cfe6ab4 input=7b0a7cc61ea9e31a]*/
 {
     struct itimerspec curr_value;
     int result;
@@ -11538,12 +11555,12 @@ os.timerfd_gettime_ns
         A timer file descriptor.
     /
 
-Return a tuple of a timer file descriptor's (interval, next expiration) in nanoseconds.
+Return a tuple of a timer file descriptor's (next expiration, interval) in nanoseconds.
 [clinic start generated code]*/
 
 static PyObject *
 os_timerfd_gettime_ns_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=580633a4465f39fe input=d0de95b9782179c5]*/
+/*[clinic end generated code: output=580633a4465f39fe input=89702268455fa93b]*/
 {
     struct itimerspec curr_value;
     int result;
@@ -13815,13 +13832,7 @@ static PyObject *
 os_strerror_impl(PyObject *module, int code)
 /*[clinic end generated code: output=baebf09fa02a78f2 input=75a8673d97915a91]*/
 {
-    char *message = strerror(code);
-    if (message == NULL) {
-        PyErr_SetString(PyExc_ValueError,
-                        "strerror() argument out of range");
-        return NULL;
-    }
-    return PyUnicode_DecodeLocale(message, "surrogateescape");
+    return _Py_strerror(code);
 }
 
 
@@ -16674,12 +16685,6 @@ static PyType_Spec DirEntryType_spec = {
 
 
 #ifdef MS_WINDOWS
-
-static int
-is_extended_path(const wchar_t *path)
-{
-    return wcsncmp(path, L"\\\\?\\", 4) == 0;
-}
 
 static wchar_t *
 join_path_filenameW(const wchar_t *path_wide, const wchar_t *filename,

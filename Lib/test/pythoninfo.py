@@ -247,21 +247,23 @@ def collect_urandom(info_add):
 def collect_os(info_add):
     import os
 
-    def format_attr(attr, value):
-        if attr in ('supports_follow_symlinks', 'supports_fd',
-                    'supports_effective_ids'):
-            return str(sorted(func.__name__ for func in value))
-        else:
-            return value
-
-    attributes = (
+    plain_attributes = (
         'name',
         'supports_bytes_environ',
+    )
+    copy_attributes(info_add, os, 'os.%s', plain_attributes)
+
+    def format_set_of_functions(attr, value):
+        return str(sorted(func.__name__ for func in value))
+
+    supports_attributes = (
+        'supports_dir_fd',
         'supports_effective_ids',
         'supports_fd',
         'supports_follow_symlinks',
     )
-    copy_attributes(info_add, os, 'os.%s', attributes, formatter=format_attr)
+    copy_attributes(info_add, os, 'os.%s', supports_attributes,
+                    formatter=format_set_of_functions)
 
     for func in (
         'cpu_count',

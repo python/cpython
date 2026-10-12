@@ -155,7 +155,7 @@ def find_function(funcname, filename):
             if funcdef:
                 try:
                     code = compile(funcdef, filename, 'exec')
-                except SyntaxError:
+                except Exception:
                     continue
                 # We should always be able to find the code object here
                 funccode = next(c for c in code.co_consts if
@@ -2435,9 +2435,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 s += '->'
             elif lineno == exc_lineno:
                 s += '>>'
+            # Strip the trailing newline before colorizing: the colorizer
+            # renders control characters (like '\n') in caret notation, so a
+            # later rstrip() could not remove the resulting '^J'.
+            line = line.rstrip()
             if self.colorize:
                 line = self._colorize_code(line)
-            self.message(s + '\t' + line.rstrip())
+            self.message(s + '\t' + line)
 
     def do_whatis(self, arg):
         """whatis expression
@@ -2772,7 +2776,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """Return the error message as string if compiling `expr` fails."""
         try:
             compile(expr, "<stdin>", "eval")
-        except SyntaxError as exc:
+        except Exception as exc:
             return _rstr(self._format_exc(exc))
         return ""
 

@@ -9,6 +9,20 @@
 
 /* ############## ERRORS ############## */
 
+/* Convert a 1-based column in bytes into a 1-based column in characters.
+   The line is UTF-8 encoded, so it is enough to skip continuation bytes. */
+static int
+byte_col_to_char_col(const char *line, int byte_col)
+{
+    int char_col = 1;
+    for (int i = 0; i < byte_col - 1; i++) {
+        if ((line[i] & 0xC0) != 0x80) {
+            char_col++;
+        }
+    }
+    return char_col;
+}
+
 static int
 _syntaxerror_range(struct tok_state *tok, const char *format,
                    int col_offset, int end_col_offset,
@@ -35,8 +49,14 @@ _syntaxerror_range(struct tok_state *tok, const char *format,
     if (col_offset == -1) {
         col_offset = (int)PyUnicode_GET_LENGTH(errtext);
     }
+    else if (col_offset > 0) {
+        col_offset = byte_col_to_char_col(tok->line_start, col_offset);
+    }
     if (end_col_offset == -1) {
         end_col_offset = col_offset;
+    }
+    else if (end_col_offset > 0) {
+        end_col_offset = byte_col_to_char_col(tok->line_start, end_col_offset);
     }
 
     Py_ssize_t line_len = strcspn(tok->line_start, "\n");
@@ -559,17 +579,14 @@ _PyTokenizer_ensure_utf8(const char *line, struct tok_state *tok, int lineno)
     const char *badchar = NULL;
     const char *c;
     int length;
-    int col_offset = 0;
     const char *line_start = line;
     for (c = line; *c; c += length) {
         if (!(length = valid_utf8((const unsigned char *)c))) {
             badchar = c;
             break;
         }
-        col_offset++;
         if (*c == '\n') {
             lineno++;
-            col_offset = 0;
             line_start = c + 1;
         }
     }
@@ -578,7 +595,8 @@ _PyTokenizer_ensure_utf8(const char *line, struct tok_state *tok, int lineno)
         tok->line_start = line_start;
         tok->cur = (char *)badchar;
         _PyTokenizer_syntaxerror_known_range(tok,
-                col_offset + 1, col_offset + 1,
+                (int)(badchar - line_start) + 1,
+                (int)(badchar - line_start) + 1,
                 "Non-UTF-8 code starting with '\\x%.2x'"
                 "%s%V on line %i, "
                 "but no encoding declared; "

@@ -478,13 +478,26 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
  * and so avoid type punning. Otherwise, use memcpy() which causes type erasure
  * and so prevents the compiler to reuse an old cached 'op' value after
  * Py_CLEAR().
+ *
+ * On C++11 and newer, use "auto". On MSVC, check also _MSVC_LANG since
+ * __cplusplus is 199711L unless the /Zc:__cplusplus flag is used.
  */
 #ifdef _Py_TYPEOF
 #define Py_CLEAR(op) \
     do { \
-        _Py_TYPEOF(op)* _tmp_op_ptr = &(op); \
+        _Py_TYPEOF(&(op)) _tmp_op_ptr = &(op); \
         _Py_TYPEOF(op) _tmp_old_op = (*_tmp_op_ptr); \
-        if (_tmp_old_op != NULL) { \
+        if (_tmp_old_op != _Py_NULL) { \
+            *_tmp_op_ptr = _Py_NULL; \
+            Py_DECREF(_tmp_old_op); \
+        } \
+    } while (0)
+#elif defined(__cplusplus) && (__cplusplus >= 201103L ||  _MSVC_LANG >= 201103L)
+#define Py_CLEAR(op) \
+    do { \
+        auto _tmp_op_ptr = &(op); \
+        auto _tmp_old_op = (*_tmp_op_ptr); \
+        if (_tmp_old_op != _Py_NULL) { \
             *_tmp_op_ptr = _Py_NULL; \
             Py_DECREF(_tmp_old_op); \
         } \
@@ -494,7 +507,7 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
     do { \
         PyObject **_tmp_op_ptr = _Py_CAST(PyObject**, &(op)); \
         PyObject *_tmp_old_op = (*_tmp_op_ptr); \
-        if (_tmp_old_op != NULL) { \
+        if (_tmp_old_op != _Py_NULL) { \
             PyObject *_null_ptr = _Py_NULL; \
             memcpy(_tmp_op_ptr, &_null_ptr, sizeof(PyObject*)); \
             Py_DECREF(_tmp_old_op); \

@@ -184,6 +184,27 @@ writer_format_i(PyObject *self_raw, PyObject *args)
 
 
 static PyObject*
+writer_format_s(PyObject *self_raw, PyObject *args)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    char *format, *str;
+    if (!PyArg_ParseTuple(args, "yy", &format, &str)) {
+        return NULL;
+    }
+
+    if (PyBytesWriter_Format(self->writer, format, str) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+// PyBytesWriter_Resize
+static PyObject*
 writer_resize(PyObject *self_raw, PyObject *args)
 {
     WriterObject *self = (WriterObject *)self_raw;
@@ -262,6 +283,7 @@ writer_finish_with_size(PyObject *self_raw, PyObject *args)
 static PyMethodDef writer_methods[] = {
     {"write_bytes", _PyCFunction_CAST(writer_write_bytes), METH_VARARGS},
     {"format_i", _PyCFunction_CAST(writer_format_i), METH_VARARGS},
+    {"format_s", _PyCFunction_CAST(writer_format_s), METH_VARARGS},
     {"resize", _PyCFunction_CAST(writer_resize), METH_VARARGS},
     {"get_size", _PyCFunction_CAST(writer_get_size), METH_NOARGS},
     {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},
