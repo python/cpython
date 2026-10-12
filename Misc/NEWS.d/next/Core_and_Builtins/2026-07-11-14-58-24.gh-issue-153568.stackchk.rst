@@ -1,0 +1,2 @@
+Speed up the parser by turning its per-rule C-stack check into a single
+inline comparison.

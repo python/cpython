@@ -1,0 +1,1 @@
+Fix an invalid pointer dereference that could occur when calling :c:func:`PyObject_Realloc` with a NULL pointer in :term:`free-threaded builds <free-threaded build>` or with :envvar:`PYTHONMALLOC` set to ``mimalloc``.

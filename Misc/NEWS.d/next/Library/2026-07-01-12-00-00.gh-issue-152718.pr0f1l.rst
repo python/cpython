@@ -1,0 +1,2 @@
+Fix unbounded memory allocation in the :mod:`profiling.sampling` binary profile
+reader when a file declares more string or frame entries than it contains.

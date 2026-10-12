@@ -1,0 +1,1 @@
+Remove support for undotted *ext* in :meth:`mimetypes.MimeTypes.add_type`.

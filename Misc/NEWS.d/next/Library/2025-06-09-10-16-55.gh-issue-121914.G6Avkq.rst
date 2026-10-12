@@ -1,3 +1,0 @@
-Changed the names of the symbol tables for lambda expressions and generator
-expressions to "<lambda>" and "<genexpr>" respectively to avoid conflicts
-with user-defined names.

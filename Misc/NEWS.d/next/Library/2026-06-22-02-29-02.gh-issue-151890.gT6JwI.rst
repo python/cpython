@@ -1,0 +1,6 @@
+Add the *format* parameter to the :meth:`tkinter.PhotoImage.put` method, the
+*metadata* parameter to the :meth:`~tkinter.PhotoImage.put`,
+:meth:`~tkinter.PhotoImage.read`, :meth:`~tkinter.PhotoImage.write` and
+:meth:`~tkinter.PhotoImage.data` methods, and the *withalpha* parameter to the
+:meth:`~tkinter.PhotoImage.get` method.  The *metadata* and *withalpha*
+parameters require Tcl/Tk 9.0 or newer.

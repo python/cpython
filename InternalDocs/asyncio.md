@@ -205,7 +205,7 @@ the current task is found and returned. If no matching thread state is
 found, `None` is returned.
 
 In free-threading, it avoids contention on a global dictionary as
-threads can access the current task of thier running loop without any
+threads can access the current task of their running loop without any
 locking.
 
 ---

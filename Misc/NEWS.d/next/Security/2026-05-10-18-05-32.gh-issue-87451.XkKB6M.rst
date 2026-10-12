@@ -1,0 +1,6 @@
+The :mod:`ftplib` module's undocumented ``ftpcp`` function no longer trusts
+the IPv4 address value returned from the source server in response to the
+``PASV`` command by default, completing the fix for CVE-2021-4189.  As with
+:class:`ftplib.FTP`, the former behavior can be re-enabled by setting the
+``trust_server_pasv_ipv4_address`` attribute on the source :class:`ftplib.FTP`
+instance to ``True``.  Thanks to Qi Deng at Aurascape AI for the report.

@@ -1,0 +1,2 @@
+Update bundled `libexpat <https://libexpat.github.io/>`_ to version 2.8.1
+for the fix for :cve:`2026-45186`.

@@ -1,0 +1,5 @@
+:mod:`xml.dom` and :mod:`xml.etree.ElementTree` no longer treat characters
+which are not white space in XML (such as U+00A0) as white space.  Previously
+they could be lost in :func:`~xml.etree.ElementTree.indent`,
+:func:`~xml.etree.ElementTree.canonicalize` with ``strip_text=True``, and when
+parsing with the ``whitespace-in-element-content`` feature turned off.

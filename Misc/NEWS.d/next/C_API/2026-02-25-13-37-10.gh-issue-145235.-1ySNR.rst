@@ -1,0 +1,3 @@
+Made :c:func:`PyDict_AddWatcher`, :c:func:`PyDict_ClearWatcher`,
+:c:func:`PyDict_Watch`, and :c:func:`PyDict_Unwatch` thread-safe on the
+:term:`free threaded <free threading>` build.

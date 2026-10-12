@@ -1,0 +1,3 @@
+Update :func:`dataclasses.make_dataclass` to add a *qualname* parameter. The
+*qualname* parameter will be used to set the :attr:`!__qualname__` of the
+created ``dataclass``.

@@ -1,0 +1,2 @@
+Remove the border around the IDLE Shell sidebar, which was drawn in the
+window background color and stood out with dark themes.

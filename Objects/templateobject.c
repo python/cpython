@@ -148,13 +148,14 @@ template_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             if (last_was_str) {
                 PyObject *laststring = PyTuple_GET_ITEM(strings, stringsidx - 1);
                 PyObject *concat = PyUnicode_Concat(laststring, item);
-                Py_DECREF(laststring);
                 if (!concat) {
                     Py_DECREF(strings);
                     Py_DECREF(interpolations);
                     return NULL;
                 }
+                /* Replace laststring with concat */
                 PyTuple_SET_ITEM(strings, stringsidx - 1, concat);
+                Py_DECREF(laststring);
             }
             else {
                 PyTuple_SET_ITEM(strings, stringsidx++, Py_NewRef(item));
@@ -371,7 +372,11 @@ template_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
 static PyMethodDef template_methods[] = {
     {"__reduce__", template_reduce, METH_NOARGS, NULL},
     {"__class_getitem__", Py_GenericAlias,
-        METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+     METH_O|METH_CLASS,
+     // note that this is not supported in typeshed, and it is not clear if the
+     // type for this is a simple TypeVar or a TypeVarTuple
+     // for details, see: https://github.com/python/typeshed/issues/14878
+     PyDoc_STR("Template supports [] for generic usage")},
     {NULL, NULL},
 };
 

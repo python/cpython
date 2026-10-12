@@ -1,0 +1,3 @@
+Fix a bug in the C accelerator for :mod:`zoneinfo` where
+:class:`datetime.datetime` subclasses returning ``-1`` for ``hour``,
+``minute``, or ``second`` could incorrectly raise a :exc:`SystemError`.

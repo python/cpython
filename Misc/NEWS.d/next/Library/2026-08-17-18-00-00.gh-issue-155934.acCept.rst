@@ -1,0 +1,3 @@
+Fix a socket leak in :mod:`asyncio` when transport creation fails for a
+connection accepted by a server, and report the error via the loop exception
+handler even when debug mode is disabled.

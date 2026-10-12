@@ -1,0 +1,3 @@
+The internal :mod:`!_tkinter` ``tkapp`` and ``tktimertoken`` types now
+implement the garbage collector protocol, so reference cycles involving a
+Tcl interpreter or a timer handler can be collected.

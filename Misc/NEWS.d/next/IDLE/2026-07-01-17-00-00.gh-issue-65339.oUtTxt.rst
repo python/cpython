@@ -1,0 +1,3 @@
+Saving the IDLE Shell or an Output window now defaults to a ``.txt``
+extension and lists text files before Python files, since their content is
+not Python source.

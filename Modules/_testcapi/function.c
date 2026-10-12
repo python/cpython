@@ -123,6 +123,13 @@ function_set_closure(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *
+function_get_annotations(PyObject *self, PyObject *func)
+{
+    return Py_XNewRef(PyFunction_GetAnnotations(func));
+}
+
+
 static PyMethodDef test_methods[] = {
     {"function_get_code", function_get_code, METH_O, NULL},
     {"function_get_globals", function_get_globals, METH_O, NULL},
@@ -133,6 +140,7 @@ static PyMethodDef test_methods[] = {
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
     {"function_get_closure", function_get_closure, METH_O, NULL},
     {"function_set_closure", function_set_closure, METH_VARARGS, NULL},
+    {"function_get_annotations", function_get_annotations, METH_O, NULL},
     {NULL},
 };
 

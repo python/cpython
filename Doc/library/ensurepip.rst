@@ -11,7 +11,7 @@
 
 --------------
 
-The :mod:`ensurepip` package provides support for bootstrapping the ``pip``
+The :mod:`!ensurepip` package provides support for bootstrapping the ``pip``
 installer into an existing Python installation or virtual environment. This
 bootstrapping approach reflects the fact that ``pip`` is an independent
 project with its own release cycle, and the latest available stable version
@@ -30,6 +30,8 @@ when creating a virtual environment) or after explicitly uninstalling
    needed to bootstrap ``pip`` are included as internal parts of the
    package.
 
+.. include:: ../includes/optional-module.rst
+
 .. seealso::
 
    :ref:`installing-index`
@@ -40,7 +42,9 @@ when creating a virtual environment) or after explicitly uninstalling
 
 .. include:: ../includes/wasm-mobile-notavail.rst
 
-Command line interface
+.. _ensurepip-cli:
+
+Command-line interface
 ----------------------
 
 .. program:: ensurepip
@@ -95,7 +99,7 @@ Providing both of the script selection options will trigger an exception.
 Module API
 ----------
 
-:mod:`ensurepip` exposes two functions for programmatic use:
+:mod:`!ensurepip` exposes two functions for programmatic use:
 
 .. function:: version()
 
