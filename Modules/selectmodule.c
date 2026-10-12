@@ -2365,9 +2365,11 @@ select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
     else {
         if (_PyTime_FromSecondsObject(&timeout,
                                       otimeout, _PyTime_ROUND_TIMEOUT) < 0) {
-            PyErr_Format(PyExc_TypeError,
-                         "timeout must be a real number or None, not %T",
-                         otimeout);
+            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+                PyErr_Format(PyExc_TypeError,
+                             "timeout must be a real number or None, not %T",
+                             otimeout);
+            }
             return NULL;
         }
 

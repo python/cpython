@@ -1,0 +1,4 @@
+Add the *order* parameter to :meth:`memoryview.cast`.
+With ``order='F'`` it creates a zero-copy Fortran-contiguous (column-major)
+view of a flat buffer, mirroring the *order* argument of
+:meth:`memoryview.tobytes`.

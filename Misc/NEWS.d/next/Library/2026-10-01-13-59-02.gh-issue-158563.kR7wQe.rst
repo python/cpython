@@ -1,0 +1,4 @@
+Fix :func:`turtle.undo` after :func:`turtle.teleport` and after an exception
+in :func:`turtle.circle`, :func:`turtle.dot` or :func:`turtle.write`. Fix
+:func:`turtle.stamp`, :func:`turtle.clearstamp`, :func:`turtle.clear` and
+:func:`turtle.reset` when the undo buffer is disabled.

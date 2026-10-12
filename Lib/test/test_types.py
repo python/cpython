@@ -8,7 +8,7 @@ from test.support.script_helper import assert_python_ok
 from test.support.import_helper import import_fresh_module
 
 import collections.abc
-from collections import namedtuple, UserDict
+from collections import namedtuple, UserDict, OrderedDict
 import copy
 import _datetime
 import gc
@@ -1391,26 +1391,127 @@ class MappingProxyTests(unittest.TestCase):
         view = self.mappingproxy(mapping)
         self.assertEqual(hash(view), hash(mapping))
 
-    def test_richcompare(self):
-        mp1 = self.mappingproxy({'a': 1})
-        mp1_2 = self.mappingproxy({'a': 1})
-        mp2 = self.mappingproxy({'a': 2})
+    def check_richcompare(self, mapping_type):
+        data1 = mapping_type({'a': 1})
+        data2 = mapping_type({'a': 2})
+        mp1 = self.mappingproxy(data1)
+        copy1 = self.mappingproxy(data1)
+        mp2 = self.mappingproxy(data2)
 
-        self.assertTrue(mp1 == mp1_2)
-        self.assertFalse(mp1 != mp1_2)
+        self.assertTrue(mp1 == data1)
+        self.assertTrue(data1 == mp1)
+        self.assertTrue(copy1 == data1)
+
+        self.assertTrue(mp1 == copy1)
+        self.assertFalse(mp1 != copy1)
+
         self.assertFalse(mp1 == mp2)
         self.assertTrue(mp1 != mp2)
+        self.assertFalse(mp2 == data1)
+        self.assertTrue(mp2 != data1)
+        self.assertTrue(data1 != mp2)
 
         msg = "not supported between instances of 'mappingproxy' and 'mappingproxy'"
-
         with self.assertRaisesRegex(TypeError, msg):
             mp1 > mp2
         with self.assertRaisesRegex(TypeError, msg):
-            mp1 < mp1_2
+            mp1 < copy1
         with self.assertRaisesRegex(TypeError, msg):
             mp2 >= mp2
         with self.assertRaisesRegex(TypeError, msg):
-            mp1_2 <= mp1
+            copy1 <= mp1
+
+        if mapping_type.__module__ == 'collections':
+            mapping_name = f'{mapping_type.__module__}.{mapping_type.__name__}'
+        else:
+            mapping_name = mapping_type.__name__
+        with self.assertRaisesRegex(
+            TypeError,
+            f"not supported between instances of 'mappingproxy' and '{mapping_name}'",
+        ):
+            copy1 <= data1
+
+        class Evil:
+            def __eq__(self, other):
+                return other
+
+        result = (mp1 == Evil())
+        self.assertIs(type(result), mapping_type)
+        if mapping_type == dict:
+            # Evil.__eq__() gets a copy of the mapping
+            self.assertEqual(result, data1)
+        else:
+            self.assertIs(result, data1)
+
+    def test_richcompare_dict(self):
+        self.check_richcompare(dict)
+
+    def test_richcompare_custom_mapping(self):
+        class CustomMapping(collections.abc.Mapping):
+            def __init__(self, data):
+                self._data = data
+
+            def __getitem__(self, key):
+                return self._data[key]
+
+            def __iter__(self):
+                return iter(self._data)
+
+            def __len__(self):
+                return len(self._data)
+
+            def __contains__(self, item):
+                return item in self._data
+
+        self.check_richcompare(CustomMapping)
+
+        class CustomMapping2(CustomMapping):
+            def __eq__(self, other):
+                return (
+                    isinstance(other, CustomMapping)
+                    and self._data == other._data
+                )
+
+        mp1 = self.mappingproxy(CustomMapping({'a': 1}))
+        self.assertEqual(mp1, CustomMapping2({'a': 1}))
+        self.assertNotEqual(CustomMapping2({'a': 1}), mp1)
+
+    def test_richcompare_odict(self):
+        self.check_richcompare(OrderedDict)
+
+    def test_richcompare_frozendict(self):
+        self.check_richcompare(frozendict)
+
+    def test_richcompare_evil(self):
+        # This test used to mutate the list dictionary,
+        # but MappingProxyType now creates a copy to call `__eq__`:
+        # https://github.com/python/cpython/issues/152405
+        key = "__mappingproxy_crash_key__"
+
+        class Evil:
+            def __eq__(self, other):
+                other[key] = 1
+                return other
+
+        # Checks that it does not mutate the internals of `MappingProxyType`:
+        dc = {}
+        leaked = self.mappingproxy(dc) == Evil()
+        self.assertIs(type(leaked), dict)
+        self.assertIn(key, leaked)
+        self.assertNotIn(key, dc)
+
+        # Exposes the internals of `MappingProxyType` via richcompare:
+        leaked = vars(list) == Evil()
+        self.assertIs(type(leaked), dict)
+        self.assertIn(key, leaked)
+        name = "__mappingproxy_crash_probe__"
+        leaked[name] = lambda self: "probe"
+        self.assertIn(name, leaked)
+        self.assertNotHasAttr(list, key)
+        self.assertNotHasAttr(list, name)  # it used to return `True`
+        del leaked[name]
+        self.assertNotIn(name, leaked)
+        self.assertNotHasAttr(list, name)  # it used to crash
 
 
 class ClassCreationTests(unittest.TestCase):

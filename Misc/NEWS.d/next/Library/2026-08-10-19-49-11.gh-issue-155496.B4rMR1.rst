@@ -1,0 +1,3 @@
+:meth:`io.RawIOBase.readinto` and :meth:`io.RawIOBase.write` now raise
+:exc:`TypeError` instead of :exc:`NotImplementedError`
+if they are called without the required argument.

@@ -1,0 +1,4 @@
+Fixed a potential use-after-free when calling :func:`functools.partial`.
+Now, when invoking a :func:`~functools.partial` object, the stored function,
+positional arguments, and keyword arguments are preserved for the duration
+of the call in case of reentrancy.

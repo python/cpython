@@ -1,0 +1,8 @@
+The :mod:`tkinter.filedialog` functions that return a filename
+(:func:`~tkinter.filedialog.askopenfilename`,
+:func:`~tkinter.filedialog.asksaveasfilename` and
+:func:`~tkinter.filedialog.askdirectory`) now consistently return an empty
+string when the dialog is cancelled, instead of an empty tuple or ``b''``
+on some platforms.  :func:`~tkinter.filedialog.askopenfilenames` likewise
+always returns an empty tuple, and :func:`~tkinter.filedialog.askopenfiles`
+an empty list.

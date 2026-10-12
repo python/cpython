@@ -1,0 +1,4 @@
+Fix a compilation error in the :mod:`decimal` C extension (``_decimal``) when
+it is built with ``EXTRA_FUNCTIONALITY``. ``Context.apply()`` called the
+internal ``_apply`` helper using its pre-Argument-Clinic signature; the call is
+now made through the generated ``_impl`` function.

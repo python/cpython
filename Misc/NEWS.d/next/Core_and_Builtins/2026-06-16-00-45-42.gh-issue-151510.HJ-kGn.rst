@@ -1,0 +1,2 @@
+Fix a crash in :func:`!__lazy_import__` when called without an explicit
+``globals`` argument and without a current Python frame.

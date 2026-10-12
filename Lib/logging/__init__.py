@@ -1263,7 +1263,12 @@ class FileHandler(StreamHandler):
         """
         if self.stream is None:
             if self.mode != 'w' or not self._closed:
-                self.stream = self._open()
+                # Report an error while opening the file, like emit errors.
+                try:
+                    self.stream = self._open()
+                except Exception:
+                    self.handleError(record)
+                    return
         if self.stream:
             StreamHandler.emit(self, record)
 
@@ -1377,9 +1382,10 @@ class Manager(object):
             raise TypeError('A logger name must be a string')
         # Fast path: an already-registered, non-placeholder logger can be
         # returned without taking the lock. dict.get() is atomic under both
-        # the GIL and free threading, and a Logger is fully initialised before
-        # being inserted into loggerDict under the lock, so this never sees a
-        # partially-constructed object.
+        # the GIL and free threading. A Logger is inserted into loggerDict only
+        # after it is fully wired up (parent/child references fixed) under the
+        # lock, so the fast path never observes a logger whose parent is not yet
+        # set.
         rv = self.loggerDict.get(name)
         if rv is not None and not isinstance(rv, PlaceHolder):
             return rv
@@ -1390,14 +1396,18 @@ class Manager(object):
                     ph = rv
                     rv = (self.loggerClass or _loggerClass)(name)
                     rv.manager = self
-                    self.loggerDict[name] = rv
                     self._fixupChildren(ph, rv)
                     self._fixupParents(rv)
+                    # Publish only after rv is fully wired: the fast path reads
+                    # loggerDict without the lock.
+                    self.loggerDict[name] = rv
             else:
                 rv = (self.loggerClass or _loggerClass)(name)
                 rv.manager = self
-                self.loggerDict[name] = rv
                 self._fixupParents(rv)
+                # Publish only after rv is fully wired: the fast path reads
+                # loggerDict without the lock.
+                self.loggerDict[name] = rv
         return rv
 
     def setLoggerClass(self, klass):
@@ -1704,7 +1714,11 @@ class Logger(Filterer):
         """
         with _lock:
             if hdlr in self.handlers:
-                self.handlers.remove(hdlr)
+                # Replace the list instead of mutating it in place, so that
+                # callHandlers() can iterate it without a lock (gh-79366).
+                handlers = self.handlers.copy()
+                handlers.remove(hdlr)
+                self.handlers = handlers
 
     def hasHandlers(self):
         """

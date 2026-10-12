@@ -1,0 +1,4 @@
+Fix :mod:`asyncio` subprocess :meth:`~asyncio.subprocess.Process.wait`
+hanging when the process has exited but one of its pipes is kept open by an
+inherited child process (so the pipe never reaches EOF). ``wait()`` now
+returns as soon as the process exits, regardless of the pipes' state.

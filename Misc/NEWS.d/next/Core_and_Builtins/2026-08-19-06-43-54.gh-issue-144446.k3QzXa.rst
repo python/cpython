@@ -1,0 +1,3 @@
+Fix thread safety of the :attr:`!generator.gi_frame`,
+:attr:`!coroutine.cr_frame` and :attr:`!agen.ag_frame` attributes in the
+free-threading build.

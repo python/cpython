@@ -268,6 +268,15 @@ For example::
         >>> c['sausage'] = 0                        # counter entry with a zero count
         >>> del c['sausage']                        # del actually removes the entry
 
+    Counters maintain insertion order internally but display from most common to
+    least common when possible:
+
+        >>> c = Counter(a=1, b=2, c=3)
+        >>> c                                       # display most common to least
+        Counter({'c': 3, 'b': 2, 'a': 1})
+        >>> list(c.items())                         # original insertion order
+        [('a', 1), ('b', 2), ('c', 3)]
+
     .. versionadded:: 3.1
 
     .. versionchanged:: 3.7 As a :class:`dict` subclass, :class:`Counter`
@@ -690,7 +699,7 @@ added elements by appending to the right and popping to the left::
 A `round-robin scheduler
 <https://en.wikipedia.org/wiki/Round-robin_scheduling>`_ can be implemented with
 input iterators stored in a :class:`deque`.  Values are yielded from the active
-iterator in position zero.  If that iterator is exhausted, it can be removed
+iterator in position zero.  If that iterator is :term:`exhausted`, it can be removed
 with :meth:`~deque.popleft`; otherwise, it can be cycled back to the end with
 the :meth:`~deque.rotate` method::
 
@@ -1233,7 +1242,7 @@ variants of :deco:`functools.lru_cache`:
 .. testcode::
 
     from collections import OrderedDict
-    from time import time
+    from time import monotonic
 
     class TimeBoundedLRU:
         "LRU Cache that invalidates and refreshes old entries."
@@ -1248,10 +1257,10 @@ variants of :deco:`functools.lru_cache`:
             if args in self.cache:
                 self.cache.move_to_end(args)
                 timestamp, result = self.cache[args]
-                if time() - timestamp <= self.maxage:
+                if monotonic() - timestamp <= self.maxage:
                     return result
             result = self.func(*args)
-            self.cache[args] = time(), result
+            self.cache[args] = monotonic(), result
             if len(self.cache) > self.maxsize:
                 self.cache.popitem(last=False)
             return result

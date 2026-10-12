@@ -387,11 +387,6 @@ This requires one of:
 On Windows, the profiler requires administrative privileges or the
 ``SeDebugPrivilege`` privilege to read another process's memory.
 
-*Note*: On Windows, ``python -m profiling.sampling`` fails inside a virtual
-environment because the venv's ``python.exe`` is just a launcher shim that
-re-executes the base interpreter as a child process. The shim itself isn't
-a Python process and has no ``PyRuntime`` section to attach to. Instead,
-run it from the global Python installation.
 
 Version compatibility
 ---------------------

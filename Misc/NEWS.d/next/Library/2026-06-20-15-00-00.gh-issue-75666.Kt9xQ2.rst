@@ -1,0 +1,2 @@
+Fix a reference leak in :mod:`tkinter`: the Tcl commands created for event
+callbacks are now deleted when a binding is replaced or unbound.

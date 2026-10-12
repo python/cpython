@@ -1,6 +1,5 @@
 """Display interface abstractions for the live profiling collector."""
 
-import contextlib
 import curses
 from abc import ABC, abstractmethod
 

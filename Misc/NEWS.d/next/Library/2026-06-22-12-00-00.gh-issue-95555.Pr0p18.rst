@@ -1,0 +1,4 @@
+Regular expressions now support Unicode property escapes ``\p{...}`` and
+``\P{...}`` for properties that the engine can resolve without the unicodedata
+database: many ``General_Category`` values, a number of binary properties, the
+POSIX compatibility classes, and properties derivable from the code point.

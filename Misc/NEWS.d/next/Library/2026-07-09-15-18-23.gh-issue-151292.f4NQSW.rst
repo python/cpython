@@ -1,0 +1,5 @@
+Store the sample count in :mod:`profiling.sampling` binary format, as a
+64-bit integer, widening from previously used 32-bit integer. This breaks
+the existing recordings. Long or thread-heavy profiling sessions will no
+longer fail because of :exc:`OverflowError`. Patch by Maurycy
+Pawłowski-Wieroński.

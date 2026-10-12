@@ -1,0 +1,2 @@
+Fix :meth:`asyncio.WriteTransport.writelines` hanging the transport when the
+last data chunk is empty.

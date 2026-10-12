@@ -402,7 +402,8 @@ timed intervals.
    rollover interval.
 
    When computing the next rollover time for the first time (when the handler
-   is created), the last modification time of an existing log file, or else
+   is created), the creation time (if supported by the OS and file system)
+   or the last modification of an existing log file, or else
    the current time, is used to compute when the next rotation will occur.
 
    If the *utc* argument is true, times in UTC will be used; otherwise
@@ -448,6 +449,10 @@ timed intervals.
 
    .. versionchanged:: 3.9
       The *errors* parameter was added.
+
+   .. versionchanged:: next
+      Use the creation time instead of the last modification time, if supported by the OS and file system.
+
 
    .. method:: doRollover()
 
@@ -626,7 +631,8 @@ supports sending logging messages to a remote or local Unix syslog.
    the form of a ``(host, port)`` tuple.  If *address* is not specified,
    ``('localhost', 514)`` is used.  The address is used to open a socket.  An
    alternative to providing a ``(host, port)`` tuple is providing an address as a
-   string, for example '/dev/log'. In this case, a Unix domain socket is used to
+   string or a :class:`bytes` object, for example '/dev/log'.
+   In this case, a Unix domain socket is used to
    send the message to the syslog. If *facility* is not specified,
    :const:`LOG_USER` is used. The type of socket opened depends on the
    *socktype* argument, which defaults to :const:`socket.SOCK_DGRAM` and thus
@@ -658,6 +664,9 @@ supports sending logging messages to a remote or local Unix syslog.
 
    .. versionchanged:: 3.14
       *timeout* was added.
+
+   .. versionchanged:: next
+      *address* can now be a :class:`bytes` object.
 
    .. method:: close()
 

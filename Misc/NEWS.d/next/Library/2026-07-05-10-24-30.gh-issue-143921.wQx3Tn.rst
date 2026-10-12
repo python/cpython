@@ -1,0 +1,4 @@
+Narrow the control character check in :mod:`imaplib` commands: only NUL, CR
+and LF are now rejected. Other control characters are valid in quoted
+strings and can occur in mailbox names returned by the server, so they are
+now accepted and sent quoted.

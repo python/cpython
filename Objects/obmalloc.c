@@ -363,7 +363,10 @@ _PyObject_MiRealloc(void *ctx, void *ptr, size_t nbytes)
         _mi_memcpy((char*)newp + offset, (char*)ptr + offset, copy_size - offset);
     }
     else {
-        _mi_memcpy(newp, ptr, copy_size);
+        // memcpy(dst, NULL, 0) is undefined behavior. See gh-151297.
+        if mi_likely(ptr) {
+            _mi_memcpy(newp, ptr, copy_size);
+        }
     }
     mi_free(ptr);
     return newp;
@@ -430,6 +433,12 @@ void* _PyObject_Realloc(void *ctx, void *ptr, size_t size);
 #  define PYRAW_ALLOC MIMALLOC_RAWALLOC
 #  define PYMEM_ALLOC MIMALLOC_ALLOC
 #  define PYOBJ_ALLOC MIMALLOC_OBJALLOC
+#elif defined(_Py_ADDRESS_SANITIZER) || defined(_Py_MEMORY_SANITIZER)
+// ASan and MSan do not track pymalloc blocks, so use malloc by default.
+// pymalloc can still be selected at runtime.
+#  define PYRAW_ALLOC MALLOC_ALLOC
+#  define PYMEM_ALLOC MALLOC_ALLOC
+#  define PYOBJ_ALLOC MALLOC_ALLOC
 #elif defined(WITH_PYMALLOC)
 #  define PYRAW_ALLOC MALLOC_ALLOC
 #  define PYMEM_ALLOC PYMALLOC_ALLOC
@@ -3252,10 +3261,10 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
     }
     else {
         size_t i = original_nbytes - ERASED_SIZE;
-        memcpy(data, save, Py_MIN(nbytes, ERASED_SIZE));
+        memcpy(data, save, Py_MIN(nbytes, (size_t)ERASED_SIZE));
         if (nbytes > i) {
             memcpy(data + i, &save[ERASED_SIZE],
-                   Py_MIN(nbytes - i, ERASED_SIZE));
+                   Py_MIN(nbytes - i, (size_t)ERASED_SIZE));
         }
     }
 #endif

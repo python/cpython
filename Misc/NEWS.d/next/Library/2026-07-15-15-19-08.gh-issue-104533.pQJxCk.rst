@@ -1,0 +1,2 @@
+Add :func:`ctypes.util.struct` and :class:`ctypes.util.CFieldInfo` for
+generating structure types using annotations.

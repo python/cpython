@@ -44,7 +44,13 @@ class TestUnicode:
                          '\b\t\n\f\r')
         s = ''.join(map(chr, range(32)))
         for c in s:
-            self.assertRaises(self.JSONDecodeError, self.loads, f'"{c}"')
+            with self.subTest(control_character=ord(c)):
+                with self.assertRaises(self.JSONDecodeError) as cm:
+                    self.loads(f'"a{c}b"')
+                error = cm.exception
+                self.assertEqual(error.pos, 2)
+                self.assertEqual(error.lineno, 1)
+                self.assertEqual(error.colno, 3)
         self.assertEqual(self.loads(f'"{s}"', strict=False), s)
         self.assertEqual(self.loads('"\x7f"'), '\x7f')
 

@@ -1,0 +1,2 @@
+When matching a complex literal in :keyword:`case` statements, an extraneous
+``+`` sign (for example, ``1++1j`` or ``1-+1j``) is no longer allowed.

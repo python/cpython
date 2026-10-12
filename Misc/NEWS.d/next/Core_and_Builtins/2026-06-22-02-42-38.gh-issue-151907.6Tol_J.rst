@@ -1,0 +1,2 @@
+Avoid creating :class:`list` objects in comprehensions when the comprehension
+is not used as a value.
