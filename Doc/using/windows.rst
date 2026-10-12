@@ -382,7 +382,6 @@ again. To completely clean up all Python runtimes, run with ``--purge`` before
 uninstalling the Python install manager.
 
 .. _pymanager-config:
-.. _customization:
 .. _customizing-default-python-versions:
 .. _customization-via-ini-files:
 .. _launcher-ini:
