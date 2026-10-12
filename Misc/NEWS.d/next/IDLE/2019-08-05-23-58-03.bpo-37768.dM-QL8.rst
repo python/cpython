@@ -1,0 +1,2 @@
+``help(object)`` now shows the help text in a separate text viewing window
+rather than in the shell output.
