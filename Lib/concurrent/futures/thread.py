@@ -159,7 +159,8 @@ class ThreadPoolExecutor(_base.Executor):
         return WorkerContext.prepare(initializer, initargs)
 
     def __init__(self, max_workers=None, thread_name_prefix='',
-                 initializer=None, initargs=(), **ctxkwargs):
+                 initializer=None, initargs=(), *, daemon=False,
+                 **ctxkwargs):
         """Initializes a new ThreadPoolExecutor instance.
 
         Args:
@@ -168,8 +169,15 @@ class ThreadPoolExecutor(_base.Executor):
             thread_name_prefix: An optional name prefix to give our threads.
             initializer: A callable used to initialize worker threads.
             initargs: A tuple of arguments to pass to the initializer.
+            daemon: If True, worker threads are created as daemon threads.
             ctxkwargs: Additional arguments to cls.prepare_context().
         """
+        if daemon:
+            if not threading._daemon_threads_allowed():
+                raise RuntimeError(
+                    'daemon threads are disabled in this (sub)interpreter')
+        self._daemon = daemon
+
         if max_workers is None:
             # ThreadPoolExecutor is often used to:
             # * CPU bound task which releases GIL
@@ -233,10 +241,12 @@ class ThreadPoolExecutor(_base.Executor):
             t = threading.Thread(name=thread_name, target=_worker,
                                  args=(weakref.ref(self, weakref_cb),
                                        self._create_worker_context(),
-                                       self._work_queue))
+                                       self._work_queue),
+                                 daemon=True if self._daemon else None)
             t.start()
             self._threads.add(t)
-            _threads_queues[t] = self._work_queue
+            if not self._daemon:
+                _threads_queues[t] = self._work_queue
 
     def _initializer_failed(self):
         with self._shutdown_lock:
