@@ -7,6 +7,7 @@ import http.client
 import email.message
 import io
 import unittest
+import unittest.mock
 from test import support
 from test.support import os_helper
 from test.support import socket_helper
@@ -1677,6 +1678,17 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('//127.0.0.1/foo/bar', resolve_host=True), f'{sep}foo{sep}bar')
         self.assertEqual(fn(f'//{socket.gethostname()}/foo/bar'), f'{sep}foo{sep}bar')
         self.assertEqual(fn(f'//{socket.gethostname()}/foo/bar', resolve_host=True), f'{sep}foo{sep}bar')
+
+    def test_url2pathname_win_netloc_not_validated_as_port(self):
+        # The Windows branch of url2pathname() stuffs things like drive
+        # letters into the netloc (e.g. '//C:\\' -> authority 'C:\\'),
+        # which is not a real host[:port] pair. url2pathname() must not
+        # reject it as an invalid port; run the Windows branch directly
+        # so this is exercised on every platform, not just win32.
+        with unittest.mock.patch('os.name', 'nt'):
+            fn = urllib.request.url2pathname
+            self.assertEqual(fn('//C:\\'), 'C:\\')
+            self.assertEqual(fn('//C:80/'), 'C:80\\')
 
     @unittest.skipUnless(sys.platform == 'win32',
                          'test specific to Windows pathnames.')
