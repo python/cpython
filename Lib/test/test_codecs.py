@@ -1847,6 +1847,13 @@ class IDNACodecTest(unittest.TestCase):
         self.assertEqual(encoder.encode("ample.org."), b"xn--xample-9ta.org.")
         self.assertEqual(encoder.encode("", True), b"")
 
+        encoder.reset()
+        self.assertEqual(encoder.encode("\xe9"), b"")
+        with self.assertRaises(UnicodeEncodeError) as cm:
+            encoder.encode("." + "a" * 64, True)
+        self.assertEqual(cm.exception.start, 8)
+        self.assertEqual(cm.exception.end, 72)
+
     def test_incremental_encode_invalid(self):
         iterencode_testcases = [
             (f"foo.{'\xff'*60}", UnicodeEncodeError("idna", f"{'\xff'*60}", 0, 60, "")),
