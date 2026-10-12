@@ -114,3 +114,7 @@ library/turtle.html: changes-since-python-3-0
 # 'turtle' documentation reorganisation (gh-157847)
 library/turtle.html: note
 library/turtle.html: introduction
+
+# Wrong exception names in 'concurrent.interpreters' docs (gh-136563)
+library/concurrent.interpreters.html: concurrent.interpreters.QueueEmptyError
+library/concurrent.interpreters.html: concurrent.interpreters.QueueFullError
