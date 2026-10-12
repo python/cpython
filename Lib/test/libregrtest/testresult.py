@@ -11,18 +11,10 @@ import unittest
 from test import support
 from test.libregrtest.utils import print_github_annotation, sanitize_xml
 
-def test_to_filename(test):
-    test = getattr(test, 'test_case', test)  # subTest()
-    if dt_test := getattr(test, '_dt_test', None):  # doctest.DocTestCase
-        return dt_test.filename
-    module = type(test).__module__
-    # Fixture errors (setUpClass, setUpModule) are not supported
-    if module.startswith('unittest.'):
-        return None
-    return getattr(sys.modules.get(module), '__file__', None)
-
 class RegressionTestResult(unittest.TextTestResult):
     USE_XML = False
+    # Test file of the GitHub Actions annotations: don't annotate if None
+    GITHUB_TEST_FILE: str | None = None
 
     def __init__(self, stream, descriptions, verbosity):
         super().__init__(stream=stream, descriptions=descriptions,
@@ -145,8 +137,8 @@ class RegressionTestResult(unittest.TextTestResult):
             super().printErrorList(flavour, [(test, err)])
             # Annotate just after the failure report, so that the annotation
             # links to the report in the job log
-            if filename := test_to_filename(test):
-                print_github_annotation(str(test), err, filename,
+            if self.GITHUB_TEST_FILE:
+                print_github_annotation(str(test), err, self.GITHUB_TEST_FILE,
                                         file=self.stream)
 
     def get_xml_element(self):

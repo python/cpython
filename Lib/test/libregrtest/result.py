@@ -189,7 +189,8 @@ class TestResult:
         test file. Test case failures are annotated by the test runner, where
         they are reported (see RegressionTestResult.printErrorList()).
         """
-        if (self.is_failed(runtests.fail_env_changed)
+        if (runtests.github_annotations
+                and self.is_failed(runtests.fail_env_changed)
                 and not self.errors and not self.failures):
             message = "\n".join([str(self), *(self.env_changed_reasons or ())])
             # Test file: "test_x" is test_x.py or test_x/__init__.py,

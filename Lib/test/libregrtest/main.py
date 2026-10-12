@@ -285,7 +285,8 @@ class Regrtest:
             forever=False,
             fail_fast=False,
             match_tests_dict=match_tests_dict,
-            output_on_failure=False)
+            output_on_failure=False,
+            github_annotations=bool(self.github_summary))
         self.logger.set_tests(runtests)
 
         msg = f"Re-running {len(tests)} failed tests in verbose mode"
@@ -485,18 +486,17 @@ class Regrtest:
         self.write_github_summary()
 
     def write_github_summary(self) -> None:
-        filename = os.environ.get("GITHUB_STEP_SUMMARY")
         # Tests which failed in the last run (the re-run, if any)
         failed = self.results.rerun_results
         # Only write a summary on failure: a CI run has many test jobs
         exitcode = self.results.get_exitcode(self.fail_env_changed,
                                              self.fail_rerun)
-        if not filename or not failed or not exitcode:
+        if not self.github_summary or not failed or not exitcode:
             return
         cases = [(result.errors or []) + (result.failures or [])
                  for result in failed]
         ncases = sum(map(len, cases))
-        with open(filename, "a", encoding="utf-8") as fp:
+        with open(self.github_summary, "a", encoding="utf-8") as fp:
             def write(text: str) -> None:
                 # Separate Markdown blocks with an empty line
                 print(text, end="\n\n", file=fp)
@@ -555,6 +555,10 @@ class Regrtest:
             hunt_refleak=self.hunt_refleak,
             test_dir=self.test_dir,
             use_junit=(self.junit_filename is not None),
+            # Only annotate failures of the last run: not the first run if
+            # failed tests will be re-run (with --python, they are not)
+            github_annotations=(bool(self.github_summary) and
+                                not (self.want_rerun and not self.python_cmd)),
             coverage=self.coverage,
             memory_limit=self.memory_limit,
             gc_threshold=self.gc_threshold,
@@ -617,16 +621,10 @@ class Regrtest:
         if use_load_tracker:
             self.logger.start_load_tracker()
         try:
-            with os_helper.EnvironmentVarGuard() as env:
-                # In GitHub Actions, only annotate failures of the last run:
-                # not the first run if failed tests will be re-run (with
-                # --python, they are not: see rerun_failed_tests())
-                if self.want_rerun and not self.python_cmd:
-                    env.unset("GITHUB_STEP_SUMMARY")
-                if self.num_workers:
-                    self._run_tests_mp(runtests, self.num_workers)
-                else:
-                    self.run_tests_sequentially(runtests)
+            if self.num_workers:
+                self._run_tests_mp(runtests, self.num_workers)
+            else:
+                self.run_tests_sequentially(runtests)
 
             coverage = self.results.get_coverage_results()
             self.display_result(runtests)
@@ -807,6 +805,10 @@ class Regrtest:
             self.junit_filename = os.path.abspath(self.junit_filename)
 
         strip_py_suffix(self.cmdline_args)
+
+        # Pass GitHub Actions annotations to workers in RunTests, not to
+        # regrtest run by tests
+        self.github_summary = os.environ.pop("GITHUB_STEP_SUMMARY", None)
 
         self._tmp_dir = get_temp_dir(self._tmp_dir)
 
