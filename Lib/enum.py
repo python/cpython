@@ -34,6 +34,16 @@ class member(object):
     def __init__(self, value):
         self.value = value
 
+def _hashable(obj):
+    """
+    Returns True if obj is hashable, False otherwise.
+    """
+    try:
+        hash(obj)
+        return True
+    except TypeError:
+        return False
+
 def _is_descriptor(obj):
     """
     Returns True if obj is a descriptor, False otherwise.
@@ -313,14 +323,13 @@ class _proto_member:
 
         enum_class._add_member_(member_name, enum_member)
         try:
-            # This may fail if value is not hashable. We can't add the value
-            # to the map, and by-value lookups for this value will be
-            # linear.
+            # This may fail if value is not hashable.
             enum_class._value2member_map_.setdefault(value, enum_member)
-            if value not in enum_class._hashable_values_:
-                enum_class._hashable_values_.append(value)
+            enum_class._hashable_values_.add(value)
         except TypeError:
-            # keep track of the value in a list so containment checks are quick
+            # We can't add the value to the map; by-value lookups for this
+            # value will be linear.  keep track of the value in a list so
+            # containment checks are quicker
             enum_class._unhashable_values_.append(value)
             enum_class._unhashable_values_map_.setdefault(member_name, []).append(value)
 
@@ -530,7 +539,7 @@ class EnumType(type):
         classdict['_member_names_'] = []
         classdict['_member_map_'] = {}
         classdict['_value2member_map_'] = {}
-        classdict['_hashable_values_'] = []          # for comparing with non-hashable types
+        classdict['_hashable_values_'] = set()      # for comparing with non-hashable types
         classdict['_unhashable_values_'] = []       # e.g. frozenset() with set()
         classdict['_unhashable_values_map_'] = {}
         classdict['_member_type_'] = member_type
@@ -767,10 +776,10 @@ class EnumType(type):
                 return isinstance(result, cls)
             except ValueError:
                 pass
-        return (
-                value in cls._unhashable_values_    # both structures are lists
-                or value in cls._hashable_values_
-                )
+        try:
+            return value in cls._hashable_values_                   # a set
+        except TypeError:
+            return value in cls._unhashable_values_                 # a list
 
     def __delattr__(cls, attr):
         # nicer error message when someone tries to delete an attribute
@@ -1261,7 +1270,7 @@ class Enum(metaclass=EnumType):
             # to the map, and by-value lookups for this value will be
             # linear.
             cls._value2member_map_.setdefault(value, self)
-            cls._hashable_values_.append(value)
+            cls._hashable_values_.add(value)
         except TypeError:
             # keep track of the value in a list so containment checks are quick
             cls._unhashable_values_.append(value)
@@ -1802,7 +1811,7 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
         body['_member_names_'] = member_names = []
         body['_member_map_'] = member_map = {}
         body['_value2member_map_'] = value2member_map = {}
-        body['_hashable_values_'] = hashable_values = []
+        body['_hashable_values_'] = hashable_values = set()
         body['_unhashable_values_'] = unhashable_values = []
         body['_unhashable_values_map_'] = {}
         body['_member_type_'] = member_type = etype._member_type_
@@ -1866,7 +1875,7 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
                     contained = value2member_map.get(member._value_)
                 except TypeError:
                     contained = None
-                    if member._value_ in unhashable_values or member.value in hashable_values:
+                    if member._value_ in hashable_values or member.value in unhashable_values:
                         for m in enum_class:
                             if m._value_ == member._value_:
                                 contained = m
@@ -1886,7 +1895,7 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
                     else:
                         enum_class._add_member_(name, member)
                     value2member_map[value] = member
-                    hashable_values.append(value)
+                    hashable_values.add(value)
                     if _is_single_bit(value):
                         # not a multi-bit alias, record in _member_names_ and _flag_mask_
                         member_names.append(name)
@@ -1923,7 +1932,9 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
                     contained = value2member_map.get(member._value_)
                 except TypeError:
                     contained = None
-                    if member._value_ in unhashable_values or member._value_ in hashable_values:
+                    if (_hashable(member._value_) and member._value_ in hashable_values
+                        or member._value_ in unhashable_values
+                        ):
                         for m in enum_class:
                             if m._value_ == member._value_:
                                 contained = m
@@ -1949,8 +1960,7 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
                         # to the map, and by-value lookups for this value will be
                         # linear.
                         enum_class._value2member_map_.setdefault(value, member)
-                        if value not in hashable_values:
-                            hashable_values.append(value)
+                        hashable_values.add(value)
                     except TypeError:
                         # keep track of the value in a list so containment checks are quick
                         enum_class._unhashable_values_.append(value)
