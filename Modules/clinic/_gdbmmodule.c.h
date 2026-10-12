@@ -194,7 +194,7 @@ _gdbm_gdbm_nextkey(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_
     if (!_PyArg_NoKwnames("nextkey", kwnames)) {
         goto exit;
     }
-    if (!_PyArg_ParseStack(args, nargs, "s#:nextkey",
+    if (!PyArg_ParseArray(args, nargs, "s#:nextkey",
         &key, &key_length)) {
         goto exit;
     }
@@ -401,4 +401,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a3249cf7b6c4fae9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ea86a820d233fcad input=a9049054013a1b77]*/

@@ -605,7 +605,7 @@ _ctypes_PyCData___setstate__(PyObject *myself, PyObject *const *args, Py_ssize_t
     const char *data;
     Py_ssize_t data_length;
 
-    if (!_PyArg_ParseStack(args, nargs, "O!s#:__setstate__",
+    if (!PyArg_ParseArray(args, nargs, "O!s#:__setstate__",
         &PyDict_Type, &dict, &data, &data_length)) {
         goto exit;
     }
@@ -818,4 +818,4 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
 
 #define _CTYPES_SIMPLE_VALUE_GETSETDEF {"value", (getter)_ctypes_Simple_value_get, (setter)_ctypes_Simple_value_set, NULL},
 
-/*[clinic end generated code: output=e7e9bd957c3d7362 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fdf9a3519e34b6f4 input=a9049054013a1b77]*/

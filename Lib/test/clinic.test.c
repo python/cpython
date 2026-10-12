@@ -2049,7 +2049,7 @@ test_str_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const char *h = "mn";
     Py_ssize_t h_length;
 
-    if (!_PyArg_ParseStack(args, nargs, "|sssyzy#s#z#:test_str_converter",
+    if (!PyArg_ParseArray(args, nargs, "|sssyzy#s#z#:test_str_converter",
         &a, &b, &c, &d, &e, &f, &f_length, &g, &g_length, &h, &h_length)) {
         goto exit;
     }
@@ -2065,7 +2065,7 @@ test_str_converter_impl(PyObject *module, const char *a, const char *b,
                         const char *f, Py_ssize_t f_length, const char *g,
                         Py_ssize_t g_length, const char *h,
                         Py_ssize_t h_length)
-/*[clinic end generated code: output=82cb06d5237ef062 input=8afe9da8185cd38c]*/
+/*[clinic end generated code: output=58dc0fad26cd4c5d input=8afe9da8185cd38c]*/
 
 
 /*[clinic input]
@@ -2105,7 +2105,7 @@ test_str_converter_encoding(PyObject *module, PyObject *const *args, Py_ssize_t 
     char *e = NULL;
     Py_ssize_t e_length;
 
-    if (!_PyArg_ParseStack(args, nargs, "esesetes#et#:test_str_converter_encoding",
+    if (!PyArg_ParseArray(args, nargs, "esesetes#et#:test_str_converter_encoding",
         "idna", &a, "idna", &b, "idna", &c, "idna", &d, &d_length, "idna", &e, &e_length)) {
         goto exit;
     }
@@ -2129,7 +2129,7 @@ static PyObject *
 test_str_converter_encoding_impl(PyObject *module, char *a, char *b, char *c,
                                  char *d, Py_ssize_t d_length, char *e,
                                  Py_ssize_t e_length)
-/*[clinic end generated code: output=999c1deecfa15b0a input=eb4c38e1f898f402]*/
+/*[clinic end generated code: output=5bab02bfd6a20cf4 input=eb4c38e1f898f402]*/
 
 
 /*[clinic input]
@@ -2170,7 +2170,7 @@ test_Py_UNICODE_converter(PyObject *module, PyObject *const *args, Py_ssize_t na
     const wchar_t *e = NULL;
     Py_ssize_t e_length;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&O&O&u#Z#:test_Py_UNICODE_converter",
+    if (!PyArg_ParseArray(args, nargs, "O&O&O&u#Z#:test_Py_UNICODE_converter",
         _PyUnicode_WideCharString_Converter, &a, _PyUnicode_WideCharString_Converter, &b, _PyUnicode_WideCharString_Opt_Converter, &c, &d, &d_length, &e, &e_length)) {
         goto exit;
     }
@@ -2192,7 +2192,7 @@ test_Py_UNICODE_converter_impl(PyObject *module, const wchar_t *a,
                                const wchar_t *b, const wchar_t *c,
                                const wchar_t *d, Py_ssize_t d_length,
                                const wchar_t *e, Py_ssize_t e_length)
-/*[clinic end generated code: output=529af9cda2a20349 input=064a3b68ad7f04b0]*/
+/*[clinic end generated code: output=020370db41973be0 input=064a3b68ad7f04b0]*/
 
 
 /*[clinic input]
@@ -2229,7 +2229,7 @@ test_Py_buffer_converter(PyObject *module, PyObject *const *args, Py_ssize_t nar
     Py_buffer d = {NULL, NULL};
     Py_buffer e = {NULL, NULL};
 
-    if (!_PyArg_ParseStack(args, nargs, "y*y*s*z*w*:test_Py_buffer_converter",
+    if (!PyArg_ParseArray(args, nargs, "y*y*s*z*w*:test_Py_buffer_converter",
         &a, &b, &c, &d, &e)) {
         goto exit;
     }
@@ -2263,7 +2263,7 @@ exit:
 static PyObject *
 test_Py_buffer_converter_impl(PyObject *module, Py_buffer *a, Py_buffer *b,
                               Py_buffer *c, Py_buffer *d, Py_buffer *e)
-/*[clinic end generated code: output=a153b71b4f45f952 input=6a9da0f56f9525fd]*/
+/*[clinic end generated code: output=14bb6138c13c4085 input=6a9da0f56f9525fd]*/
 
 
 /*[clinic input]
@@ -6038,7 +6038,7 @@ Test__pyarg_parsestackandkeywords(PyObject *self, PyTypeObject *cls, PyObject *c
     if (!_PyArg_NoKwnames("_pyarg_parsestackandkeywords", kwnames)) {
         goto exit;
     }
-    if (!_PyArg_ParseStack(args, nargs, "s#:_pyarg_parsestackandkeywords",
+    if (!PyArg_ParseArray(args, nargs, "s#:_pyarg_parsestackandkeywords",
         &key, &key_length)) {
         goto exit;
     }
@@ -6052,7 +6052,7 @@ static PyObject *
 Test__pyarg_parsestackandkeywords_impl(TestObj *self, PyTypeObject *cls,
                                        const char *key,
                                        Py_ssize_t key_length)
-/*[clinic end generated code: output=21bbb9a8d0100d72 input=fc72ef4b4cfafabc]*/
+/*[clinic end generated code: output=4acb456c0ebbbd40 input=fc72ef4b4cfafabc]*/
 
 
 /*[clinic input]

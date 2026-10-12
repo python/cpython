@@ -999,19 +999,19 @@ class ParseArgsCodeGen:
         """
         self.use_converters()
         if self.limited_capi:
-            # _PyArg_ParseStack() is not part of the limited C API.
+            # PyArg_ParseArray() is not part of the limited C API.
             self.fastcall = False
         if self.fastcall:
             self.codegen.add_include('pycore_modsupport.h',
-                                     '_PyArg_ParseStack()')
-            return '_PyArg_ParseStack(args, nargs, '
+                                     'PyArg_ParseArray()')
+            return 'PyArg_ParseArray(args, nargs, '
         self.flags = "METH_VARARGS"
         self.parser_prototype = PARSER_PROTOTYPE_VARARGS
         return 'PyArg_ParseTuple(args, '
 
     def parse_pos_only(self) -> None:
         # positional-only, but no option groups: we only need one call
-        # to _PyArg_ParseStack or PyArg_ParseTuple
+        # to PyArg_ParseArray or PyArg_ParseTuple
         nargs, argname_fmt = self.select_positional_convention()
 
         parser_code = []
