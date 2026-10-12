@@ -655,6 +655,8 @@ class BaseBytesTest:
         seq = [b"abc"] * 100000
         expected = b"abc" + b".:abc" * 99999
         self.assertEqual(dot_join(seq), expected)
+        seq = [bytearray(b"abc")] * 100000
+        self.assertEqual(dot_join(seq), expected)
         # Stress test with empty separator
         seq = [b"abc"] * 100000
         expected = b"abc" * 100000
