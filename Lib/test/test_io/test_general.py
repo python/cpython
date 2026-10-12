@@ -1354,43 +1354,70 @@ class CMiscIOTest(MiscIOTest, CTestCase):
     def check_daemon_threads_shutdown_deadlock(self, stream_name):
         # Issue #23309: deadlocks at shutdown should be avoided when a
         # daemon thread and the main thread both write to a file.
+        #
+        # Focus on I/O and interaction in locks, test_threading checks daemon
+        # threads exit generally. Get into the specific I/O states we care
+        # about by using mock I/O which block in the right locks.
         code = """if 1:
+            import atexit
+            import io
             import sys
-            import time
-            import threading
+            from threading import current_thread, Event, main_thread, Thread
+
+            go = Event()
+            entered = Event()
+
+            # Register with atexit before importing test.support which imports
+            # logging so that it runs last.
+            @atexit.register
+            def release_daemon_thread():
+                # Get daemon thread to hold BufferedWriter lock.
+                go.set()
+                entered.wait()
+
             from test.support import SuppressCrashReport
 
-            file = sys.{stream_name}
+            # Mock I/O that blocks daemon thread in Raw I/O write.
+            class GatedRaw(io.RawIOBase):
+                name = '<{stream_name}>'
+
+                def writable(self):
+                    return True
+
+                def write(self, b):
+                    if current_thread() is not main_thread():
+                        # In daemon, have buffered lock. Hold it.
+                        entered.set()
+                        Event().wait()
+                    return len(b)
+
+            file = io.TextIOWrapper(io.BufferedWriter(GatedRaw()),
+                                    encoding='utf-8')
+            sys.{stream_name} = file
 
             def run():
-                while True:
-                    file.write('.')
-                    file.flush()
+                go.wait()
+                file.write('.')
+                file.flush()
 
             crash = SuppressCrashReport()
             crash.__enter__()
             # don't call __exit__(): the crash occurs at Python shutdown
 
-            thread = threading.Thread(target=run)
+            thread = Thread(target=run)
             thread.daemon = True
             thread.start()
 
-            time.sleep(0.5)
             file.write('!')
             file.flush()
-            """.format_map(locals())
+            """.format(stream_name=stream_name)
         res, _ = run_python_until_end("-c", code)
         err = res.err.decode()
-        if res.rc != 0:
-            # Failure: should be a fatal error
-            pattern = (r"Fatal Python error: _enter_buffered_busy: "
-                       r"could not acquire lock "
-                       r"for <(_io\.)?BufferedWriter name='<{stream_name}>'> "
-                       r"at interpreter shutdown, possibly due to "
-                       r"daemon threads".format_map(locals()))
-            self.assertRegex(err, pattern)
-        else:
-            self.assertFalse(err.strip('.!'))
+        # Should exit non-zero with fatal error.
+        self.assertNotEqual(res.rc, 0)
+        self.assertIn("Fatal Python error: _enter_buffered_busy", err)
+        self.assertIn(f"<_io.BufferedWriter name='<{stream_name}>'>", err)
+        self.assertIn("possibly due to daemon threads", err)
 
     @threading_helper.requires_working_threading()
     @support.requires_resource('walltime')
