@@ -34,12 +34,12 @@ DEFAULT_BUFFER_SIZE
 """
 # New I/O library conforming to PEP 3116.
 
-__author__ = ("Guido van Rossum <guido@python.org>, "
-              "Mike Verdone <mike.verdone@gmail.com>, "
-              "Mark Russell <mark.russell@zen.co.uk>, "
-              "Antoine Pitrou <solipsis@pitrou.net>, "
-              "Amaury Forgeot d'Arc <amauryfa@gmail.com>, "
-              "Benjamin Peterson <benjamin@python.org>")
+# Original authors: Guido van Rossum <guido@python.org>,
+#                   Mike Verdone <mike.verdone@gmail.com>,
+#                   Mark Russell <mark.russell@zen.co.uk>,
+#                   Antoine Pitrou <solipsis@pitrou.net>,
+#                   Amaury Forgeot d'Arc <amauryfa@gmail.com>,
+#                   Benjamin Peterson <benjamin@python.org>
 
 __all__ = ["BlockingIOError", "open", "open_code", "IOBase", "RawIOBase",
            "FileIO", "BytesIO", "StringIO", "BufferedIOBase",
@@ -52,6 +52,7 @@ __all__ = ["BlockingIOError", "open", "open_code", "IOBase", "RawIOBase",
 
 import _io
 import abc
+lazy import warnings
 
 from _collections_abc import _check_methods
 from _io import (DEFAULT_BUFFER_SIZE, BlockingIOError, UnsupportedOperation,
@@ -148,3 +149,15 @@ class Writer(metaclass=abc.ABCMeta):
         return NotImplemented
 
     __class_getitem__ = classmethod(GenericAlias)
+
+
+def __getattr__(name):
+    if name == "__author__":
+        warnings._deprecated("__author__", remove=(3, 20))
+        return ("Guido van Rossum <guido@python.org>, "
+                "Mike Verdone <mike.verdone@gmail.com>, "
+                "Mark Russell <mark.russell@zen.co.uk>, "
+                "Antoine Pitrou <solipsis@pitrou.net>, "
+                "Amaury Forgeot d'Arc <amauryfa@gmail.com>, "
+                "Benjamin Peterson <benjamin@python.org>")  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

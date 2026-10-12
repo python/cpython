@@ -59,11 +59,11 @@ Typical usage:
 import os
 import sys
 import time
+lazy import warnings
 
 from enum import Enum, _simple_enum
 
-
-__author__ = 'Ka-Ping Yee <ping@zesty.ca>'
+# Original author: Ka-Ping Yee
 
 # The recognized platforms - known behaviors
 if sys.platform in {'win32', 'darwin', 'emscripten', 'wasi'}:
@@ -1008,6 +1008,13 @@ NAMESPACE_X500 = UUID('6ba7b814-9dad-11d1-80b4-00c04fd430c8')
 
 NIL = UUID('00000000-0000-0000-0000-000000000000')
 MAX = UUID('ffffffff-ffff-ffff-ffff-ffffffffffff')
+
+def __getattr__(name):
+    if name == "__author__":
+        warnings._deprecated("__author__", remove=(3, 20))
+        return 'Ka-Ping Yee'  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 if __name__ == "__main__":
     main()

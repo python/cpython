@@ -7587,9 +7587,9 @@ class MiscTestCase(unittest.TestCase):
 
 
 class TestModule(unittest.TestCase):
-    def test_deprecated__version__and__date__(self):
+    def test_deprecated__version__and__date__and__author__(self):
         msg = "is deprecated and slated for removal in Python 3.20"
-        for attr in ("__version__", "__date__"):
+        for attr in ("__version__", "__date__", "__author__"):
             with self.subTest(attr=attr):
                 with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
                     getattr(logging, attr)

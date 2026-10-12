@@ -37,14 +37,12 @@ to a different URL or to a local directory containing the Library
 Reference Manual pages.
 """
 __all__ = ['help']
-__author__ = "Ka-Ping Yee <ping@lfw.org>"
-__date__ = "26 February 2001"
 
-__credits__ = """Guido van Rossum, for an excellent programming language.
-Tommy Burnette, the original creator of manpy.
-Paul Prescod, for all his work on onlinehelp.
-Richard Chamberlain, for the first implementation of textdoc.
-"""
+# Original author: Ka-Ping Yee
+# Credits: Guido van Rossum, for an excellent programming language.
+#          Tommy Burnette, the original creator of manpy.
+#          Paul Prescod, for all his work on onlinehelp.
+#          Richard Chamberlain, for the first implementation of textdoc.
 
 # Known bugs that can't be fixed here:
 #   - synopsis() cannot be prevented from clobbering existing
@@ -524,14 +522,14 @@ class Doc:
             docloc = None
         return docloc
 
-    def _get_version(self, object):
+    def _get_metadata(self, object, name):
         if self._is_stdlib_module(object):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", DeprecationWarning)
-                version = getattr(object, '__version__', None)
+                value = getattr(object, name, None)
         else:
-            version = getattr(object, '__version__', None)
-        return '' if version is None else str(version)
+            value = getattr(object, name, None)
+        return '' if value is None else str(value)
 
     def _is_stdlib_module(self, object, basedir=None):
         basedir = self.STDLIB_DIR if basedir is None else basedir
@@ -801,12 +799,12 @@ class HTMLDoc(Doc):
             filelink = '(built-in)'
         info = []
 
-        if version := self._get_version(object):
+        if version := self._get_metadata(object, '__version__'):
             if version[:11] == '$' + 'Revision: ' and version[-1:] == '$':
                 version = version[11:-1].strip()
             info.append('version %s' % self.escape(version))
-        if hasattr(object, '__date__'):
-            info.append(self.escape(str(object.__date__)))
+        if date := self._get_metadata(object, '__date__'):
+            info.append(self.escape(date))
         if info:
             head = head + ' (%s)' % ', '.join(info)
         docloc = self.getdocloc(object)
@@ -888,11 +886,11 @@ class HTMLDoc(Doc):
                     f'<dl class="doc"><dt>{self.document(value, key)}</dt></dl>')
             result = result + self.bigsection(
                 'Data', 'data', '\n'.join(contents))
-        if hasattr(object, '__author__'):
-            contents = self.markup(str(object.__author__), self.preformat)
+        if author := self._get_metadata(object, '__author__'):
+            contents = self.markup(author, self.preformat)
             result = result + self.bigsection('Author', 'author', contents)
-        if hasattr(object, '__credits__'):
-            contents = self.markup(str(object.__credits__), self.preformat)
+        if credits := self._get_metadata(object, '__credits__'):
+            contents = self.markup(credits, self.preformat)
             result = result + self.bigsection('Credits', 'credits', contents)
 
         return result
@@ -1368,16 +1366,16 @@ location listed above.
                 contents.append(self.docother(value, key, name, maxlen=76))
             result = result + self.section('DATA', '\n'.join(contents))
 
-        if version := self._get_version(object):
+        if version := self._get_metadata(object, '__version__'):
             if version[:11] == '$' + 'Revision: ' and version[-1:] == '$':
                 version = version[11:-1].strip()
             result = result + self.section('VERSION', version)
-        if hasattr(object, '__date__'):
-            result = result + self.section('DATE', str(object.__date__))
-        if hasattr(object, '__author__'):
-            result = result + self.section('AUTHOR', str(object.__author__))
-        if hasattr(object, '__credits__'):
-            result = result + self.section('CREDITS', str(object.__credits__))
+        if date := self._get_metadata(object, '__date__'):
+            result = result + self.section('DATE', date)
+        if author := self._get_metadata(object, '__author__'):
+            result = result + self.section('AUTHOR', author)
+        if credits := self._get_metadata(object, '__credits__'):
+            result = result + self.section('CREDITS', credits)
         try:
             file = inspect.getabsfile(object)
         except TypeError:
@@ -2541,8 +2539,7 @@ def _url_handler(url, content_type="text/html"):
             contents.append(html.index(dir, seen))
 
         contents.append(
-            '<footer><strong>pydoc</strong> by Ka-Ping Yee'
-            ' &lt;ping@lfw.org&gt;</footer>')
+            '<footer><strong>pydoc</strong> by Ka-Ping Yee</footer>')
         return 'Index of Modules', ''.join(contents)
 
     def html_search(key):
@@ -2850,6 +2847,22 @@ def cli():
     directory.  If <name> contains a '{sep}', it is treated as a filename; if
     it names a directory, documentation is written for all the contents.
 """.format(cmd=cmd, sep=os.sep))
+
+
+def __getattr__(name):
+    if name in ("__author__", "__date__", "__credits__"):
+        warnings._deprecated(name, remove=(3, 20))
+        return {  # Do not change
+            "__author__": "Ka-Ping Yee",
+            "__date__": "26 February 2001",
+            "__credits__": """Guido van Rossum, for an excellent programming language.
+Tommy Burnette, the original creator of manpy.
+Paul Prescod, for all his work on onlinehelp.
+Richard Chamberlain, for the first implementation of textdoc.
+""",
+        }[name]
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 if __name__ == '__main__':
     cli()

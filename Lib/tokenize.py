@@ -20,10 +20,10 @@ operators.  Additionally, all token lists start with an ENCODING token
 which tells you which encoding was used to decode the bytes stream.
 """
 
-__author__ = 'Ka-Ping Yee <ping@lfw.org>'
-__credits__ = ('GvR, ESR, Tim Peters, Thomas Wouters, Fred Drake, '
-               'Skip Montanaro, Raymond Hettinger, Trent Nelson, '
-               'Michael Foord')
+# Original author: Ka-Ping Yee
+# Credits: GvR, ESR, Tim Peters, Thomas Wouters, Fred Drake,
+#          Skip Montanaro, Raymond Hettinger, Trent Nelson, Michael Foord
+
 from builtins import open as _builtin_open
 from codecs import lookup, BOM_UTF8
 import collections
@@ -36,6 +36,7 @@ from token import *
 from token import EXACT_TOKEN_TYPES
 import _tokenize
 lazy import _colorize
+lazy import warnings
 
 cookie_re = re.compile(br'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
 blank_re = re.compile(br'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
@@ -638,6 +639,18 @@ def _generate_tokens_from_c_tokenizer(source, encoding=None, extra_tokens=False)
             raise e from None
         msg = _transform_msg(e.msg)
         raise TokenError(msg, (e.lineno, e.offset)) from None
+
+
+def __getattr__(name):
+    if name in ("__author__", "__credits__"):
+        warnings._deprecated(name, remove=(3, 20))
+        return {  # Do not change
+            "__author__": 'Ka-Ping Yee',
+            "__credits__": ('GvR, ESR, Tim Peters, Thomas Wouters, Fred Drake, '
+                            'Skip Montanaro, Raymond Hettinger, Trent Nelson, '
+                            'Michael Foord'),
+        }[name]
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 if __name__ == "__main__":

@@ -44,7 +44,7 @@ member (e.g., libFOO.so, or shr.o) is located and loaded.
 The mode bit RTLD_MEMBER tells initAndLoad() that it needs to use the AIX (SVR3)
 naming style.
 """
-__author__ = "Michael Felt <aixtools@felt.demon.nl>"
+# Original author: Michael Felt <aixtools@felt.demon.nl>
 
 import re
 from os import environ, path
