@@ -347,6 +347,9 @@ class SMTP:
         sys.audit("smtplib.connect", self, host, port)
         self.sock = self._get_socket(host, port, self.timeout)
         self.file = None
+        self.ehlo_resp = self.helo_resp = None
+        self.esmtp_features = {}
+        self.does_esmtp = False
         (code, msg) = self.getreply()
         if self.debuglevel > 0:
             self._print_debug('connect:', repr(msg))
@@ -1093,6 +1096,9 @@ class LMTP(SMTP):
                 self.sock.close()
             self.sock = None
             raise
+        self.ehlo_resp = self.helo_resp = None
+        self.esmtp_features = {}
+        self.does_esmtp = False
         (code, msg) = self.getreply()
         if self.debuglevel > 0:
             self._print_debug('connect:', msg)
