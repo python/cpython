@@ -4,10 +4,10 @@ var Scorer = {
 
     // boost the score of built-in functions and types
     const builtinPages = [
-      "library/stdtypes",
-      "library/functions",
-      "library/exceptions",
-      "library/constants",
+      "builtins/constants",
+      "builtins/exceptions",
+      "builtins/functions",
+      "builtins/stdtypes",
     ];
     if (builtinPages.includes(docname)) {
       score += 7;
