@@ -1,0 +1,2 @@
+Fix :func:`mimetypes.guess_extension` and :func:`mimetypes.guess_all_extensions`
+for MIME types registered with uppercase letters.
