@@ -39,6 +39,8 @@ Typical use cases:
   without replacing the native event loop.
 * Embedding asyncio I/O (HTTP clients, websockets, …) inside a GUI app.
 * Running asyncio alongside a framework that owns the main thread.
+* Running a second, isolated asyncio loop inside an asyncio program, for
+  example a server under test whose loop is separate from the test's.
 
 .. rubric:: Example
 
@@ -96,13 +98,21 @@ example that embeds asyncio inside ``tkinter.mainloop()`` using
 Lifecycle and Cleanup
 =====================
 
-For the whole guest run the guest loop is the host thread's running
-loop: :func:`get_running_loop` works inside guest tasks,
-:meth:`loop.is_running() <asyncio.loop.is_running>` returns ``True``, and
-starting another event loop on that thread — including a nested
-:func:`asyncio.run` or :meth:`loop.run_until_complete` — raises
-:exc:`RuntimeError`.  Consequently a thread that is already running an
-asyncio event loop cannot start a guest run.
+*async_fn* starts running in the first callback passed to
+*run_sync_soon_threadsafe*, after :func:`start_guest_run` has returned.
+
+The guest loop is the host thread's running loop only while guest
+callbacks run.  Around each batch of callbacks, the thread's running
+loop, asynchronous generator hooks (see :func:`sys.set_asyncgen_hooks`)
+and coroutine origin tracking depth are switched to the guest's, and
+the host's are restored afterwards.  So inside guest tasks
+:func:`get_running_loop` returns the guest loop and starting another
+event loop — including a nested :func:`asyncio.run` or
+:meth:`loop.run_until_complete` — raises :exc:`RuntimeError`, while host
+code keeps its own state: asynchronous generators it iterates are not
+finalized by the guest loop, and the host may itself be an asyncio event
+loop.  :meth:`loop.is_running() <asyncio.loop.is_running>` returns
+``True`` for the whole guest run.
 
 When the main task finishes, cleanup equivalent to :func:`asyncio.run`
 takes place on the host thread: remaining tasks are cancelled,

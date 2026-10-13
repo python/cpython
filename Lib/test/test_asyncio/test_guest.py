@@ -107,7 +107,7 @@ class TestGuestRun(GuestTestCase):
         self.assertEqual(task.result(), 10)
 
     def test_early_sync_completion(self):
-        # The task can already be done when the I/O thread starts.
+        # The task can finish in the very first batch.
         async def coro():
             return 'early'
 
@@ -135,25 +135,41 @@ class TestGuestRun(GuestTestCase):
     # -- cancellation --------------------------------------------------
 
     def test_cancel_from_host(self):
-        started = threading.Event()
+        host = MockHost()
+
+        def cancel_from_host():
+            # Host code, e.g. a button handler.  Use call_soon_threadsafe
+            # to wake the I/O thread's selector.
+            task.get_loop().call_soon_threadsafe(task.cancel)
 
         async def coro():
-            started.set()
+            host.run_sync_soon_threadsafe(cancel_from_host)
             await asyncio.sleep(3600)
 
-        host = MockHost()
         task = asyncio.start_guest_run(
             coro,
             run_sync_soon_threadsafe=host.run_sync_soon_threadsafe,
             done_callback=host.done_callback,
         )
-        # Wait for the coroutine to start, then cancel.
-        # Use call_soon_threadsafe to wake the I/O thread's selector.
-        started.wait(timeout=5)
-        loop = task.get_loop()
-        loop.call_soon_threadsafe(task.cancel)
         host.run(timeout=5)
         self.assertTrue(task.cancelled())
+
+    def test_starts_after_return(self):
+        started = False
+
+        async def coro():
+            nonlocal started
+            started = True
+
+        host = MockHost()
+        asyncio.start_guest_run(
+            coro,
+            run_sync_soon_threadsafe=host.run_sync_soon_threadsafe,
+            done_callback=host.done_callback,
+        )
+        self.assertFalse(started)
+        host.run()
+        self.assertTrue(started)
 
     # -- asyncio primitives work inside guest --------------------------
 
@@ -360,6 +376,135 @@ class TestGuestRun(GuestTestCase):
         self.assertEqual(sys.get_asyncgen_hooks(), old_hooks)
         self.assertIsNone(asyncio._get_running_loop())
         self.assertFalse(task.get_loop().is_running())
+
+    # -- per-thread state isolation ------------------------------------
+
+    def test_host_state_between_batches(self):
+        # Host code sees the host's running loop and asyncgen hooks, not
+        # the guest's, between guest batches.
+        def firstiter(agen):
+            pass
+
+        def finalizer(agen):
+            pass
+
+        host = MockHost()
+        seen = {}
+
+        def host_code():
+            seen['running_loop'] = asyncio._get_running_loop()
+            seen['hooks'] = sys.get_asyncgen_hooks()
+
+        async def coro():
+            host.run_sync_soon_threadsafe(host_code)
+            await asyncio.sleep(0.01)
+            return sys.get_asyncgen_hooks().firstiter
+
+        old_hooks = sys.get_asyncgen_hooks()
+        sys.set_asyncgen_hooks(firstiter=firstiter, finalizer=finalizer)
+        try:
+            task = asyncio.start_guest_run(
+                coro,
+                run_sync_soon_threadsafe=host.run_sync_soon_threadsafe,
+                done_callback=host.done_callback,
+            )
+            host.run()
+            self.assertEqual(sys.get_asyncgen_hooks(),
+                             (firstiter, finalizer))
+        finally:
+            sys.set_asyncgen_hooks(*old_hooks)
+        self.assertIsNone(seen['running_loop'])
+        self.assertEqual(seen['hooks'], (firstiter, finalizer))
+        self.assertEqual(task.result(),
+                         task.get_loop()._asyncgen_firstiter_hook)
+
+    def test_set_debug_during_run(self):
+        # loop.set_debug() changes the guest's coroutine origin tracking
+        # for later batches, but not the host's.
+        host = MockHost()
+        host_depths = []
+
+        def host_code():
+            host_depths.append(sys.get_coroutine_origin_tracking_depth())
+
+        async def coro():
+            loop = asyncio.get_running_loop()
+            loop.set_debug(True)
+            await asyncio.sleep(0)
+            host.run_sync_soon_threadsafe(host_code)
+            await asyncio.sleep(0.01)
+            depth = sys.get_coroutine_origin_tracking_depth()
+            loop.set_debug(False)
+            await asyncio.sleep(0)
+            return depth
+
+        old_depth = sys.get_coroutine_origin_tracking_depth()
+        asyncio.start_guest_run(
+            coro,
+            run_sync_soon_threadsafe=host.run_sync_soon_threadsafe,
+            done_callback=host.done_callback,
+        )
+        task = host.run()
+        self.assertGreater(task.result(), 0)
+        self.assertEqual(host_depths, [old_depth])
+        self.assertEqual(sys.get_coroutine_origin_tracking_depth(), old_depth)
+
+    def test_host_asyncgen_not_adopted(self):
+        # An async generator first iterated by host code belongs to the
+        # host: the guest loop must not finalize it at shutdown.
+        async def agen():
+            yield 1
+            yield 2
+
+        host = MockHost()
+        host_agen = agen()
+
+        def host_code():
+            with self.assertRaises(StopIteration):
+                host_agen.asend(None).send(None)
+
+        async def coro():
+            host.run_sync_soon_threadsafe(host_code)
+            await asyncio.sleep(0.01)
+            return host_agen in asyncio.get_running_loop()._asyncgens
+
+        asyncio.start_guest_run(
+            coro,
+            run_sync_soon_threadsafe=host.run_sync_soon_threadsafe,
+            done_callback=host.done_callback,
+        )
+        task = host.run()
+        self.assertFalse(task.result())
+        self.assertIsNotNone(host_agen.ag_frame)  # not closed by the guest
+        host_agen.aclose().close()
+
+    def test_asyncio_host(self):
+        # The host may itself be an asyncio event loop.
+        async def guest():
+            loop = asyncio.get_running_loop()
+            await asyncio.sleep(0.01)
+            return loop, asyncio.current_task()
+
+        async def main():
+            host_loop = asyncio.get_running_loop()
+            done = host_loop.create_future()
+            task = asyncio.start_guest_run(
+                guest,
+                run_sync_soon_threadsafe=host_loop.call_soon_threadsafe,
+                done_callback=done.set_result,
+            )
+            self.assertIs(asyncio.get_running_loop(), host_loop)
+            await asyncio.sleep(0.01)
+            self.assertIs(await done, task)
+            self.assertIs(asyncio.get_running_loop(), host_loop)
+            return host_loop, task
+
+        host_loop, task = asyncio.run(main())
+        guest_loop, current = task.result()
+        self.assertIsNot(guest_loop, host_loop)
+        self.assertIs(guest_loop, task.get_loop())
+        self.assertIs(current, task)
+        self.assertTrue(guest_loop.is_closed())
 
     # -- signal handling -----------------------------------------------
 
