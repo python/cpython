@@ -1887,13 +1887,15 @@ Manipulating internals
 
    A context manager that forces frozen modules to be used or excluded.
 
+   If *enabled* is ``True`` frozen modules are used, otherwise they are excluded.
+
    This only applies to modules that have not yet been imported. Some essential
    modules will always be imported frozen.
 
 
 .. function:: multi_interp_extensions_check(enabled=True)
 
-   A context manager that forces (if ``True``) or prevents legacy (single-phase init)
+   A context manager that forces (if *enabled* is ``True``) or prevents legacy (single-phase init)
    modules from being allowed in subinterpreters.
 
    This only applies to modules that haven't been imported yet.
