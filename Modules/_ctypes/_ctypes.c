@@ -2726,7 +2726,7 @@ make_funcptrtype_dict(ctypes_state *st, PyObject *attrdict, StgInfo *stginfo)
         Py_XDECREF(ob);
         return -1;
     }
-    stginfo->flags = PyLong_AsUnsignedLongMask(ob) | TYPEFLAG_ISPOINTER;
+    stginfo->flags = (uint16_t)PyLong_AsUnsignedLongMask(ob) | TYPEFLAG_ISPOINTER;
     Py_DECREF(ob);
 
     /* _argtypes_ is optional... */
