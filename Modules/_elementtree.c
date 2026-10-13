@@ -1947,7 +1947,6 @@ element_subscr(PyObject *op, PyObject *item)
     }
 }
 
-
 static int
 element_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
 {
