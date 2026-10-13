@@ -19,7 +19,8 @@ import io
 import xml
 import xml.dom
 
-from xml.dom import EMPTY_NAMESPACE, EMPTY_PREFIX, XMLNS_NAMESPACE, domreg
+from xml.dom import (EMPTY_NAMESPACE, EMPTY_PREFIX, XML_NAMESPACE,
+                     XMLNS_NAMESPACE, domreg)
 from xml.dom.minicompat import *
 from xml.dom.xmlbuilder import DOMImplementationLS, DocumentLS
 
@@ -305,6 +306,35 @@ def _check_name(name):
             "%r is not a valid XML name" % (name,))
 
 
+def _check_prefix(prefix, namespaceURI, attribute=False):
+    if not xml.is_valid_name(prefix) or ':' in prefix:
+        raise xml.dom.InvalidCharacterErr(
+            "%r is not a valid namespace prefix" % (prefix,))
+    if not namespaceURI:
+        raise xml.dom.NamespaceErr(
+            "cannot use the prefix %r with an empty namespace" % (prefix,))
+    if prefix == "xml" and namespaceURI != XML_NAMESPACE:
+        raise xml.dom.NamespaceErr(
+            "illegal use of the 'xml' prefix for the wrong namespace")
+    if attribute and (prefix == "xmlns") != (namespaceURI == XMLNS_NAMESPACE):
+        raise xml.dom.NamespaceErr(
+            "illegal use of the 'xmlns' prefix for the wrong namespace")
+
+
+def _check_qualified_name(namespaceURI, qualifiedName, attribute=False):
+    """Check a namespace URI and a qualified name (see DOM Level 2 Core)."""
+    _check_name(qualifiedName)
+    prefix, sep, localName = qualifiedName.partition(':')
+    if sep:
+        if not localName or ':' in localName or not xml.is_valid_name(localName):
+            raise xml.dom.NamespaceErr(
+                "%r is not a valid qualified name" % (qualifiedName,))
+        _check_prefix(prefix, namespaceURI, attribute)
+    elif attribute and (qualifiedName == "xmlns") != (namespaceURI == XMLNS_NAMESPACE):
+        raise xml.dom.NamespaceErr(
+            "illegal use of the 'xmlns' attribute for the wrong namespace")
+
+
 def _is_ancestor(node, other):
     "Returns true iff node is an ancestor of other."
     other = other.parentNode
@@ -349,6 +379,109 @@ def _write_data(writer, text, attr):
             text = text.replace("\t", "&#9;")
     writer.write(text)
 
+
+# The "xml" prefix is bound by definition and is never declared.
+_ROOT_NSMAP = {"xml": XML_NAMESPACE}
+
+
+def _bind_namespace(nsmap, inherited, prefix, uri):
+    """Bind *prefix* in *nsmap*, copying it if it is still the inherited one."""
+    if nsmap is inherited:
+        nsmap = dict(inherited)
+    nsmap[prefix] = uri
+    return nsmap
+
+
+def _in_scope_namespaces(element):
+    """Return the namespaces in scope for *element*, as written by writexml."""
+    ancestors = []
+    node = element.parentNode
+    while node is not None and node.nodeType == Node.ELEMENT_NODE:
+        ancestors.append(node)
+        node = node.parentNode
+    nsmap = _ROOT_NSMAP
+    for node in reversed(ancestors):
+        nsmap, _ = _fixup_namespaces(node, nsmap)
+    return nsmap
+
+
+def _fixup_namespaces(element, nsmap):
+    """Compute namespace declarations missing for the serialized element.
+
+    *nsmap* is the mapping of prefixes to namespace URIs in scope for the
+    element.  Return the mapping in scope for its children and the list of
+    (name, value) pairs of the attributes to be written, starting with the
+    added namespace declarations.  The element and its attributes are not
+    modified.
+    """
+    attrs = element._attrs
+    uri = element.namespaceURI
+    if not attrs and not uri and not nsmap.get(None):
+        # Neither the element nor its attributes need a declaration.
+        return nsmap, ()
+
+    inherited = nsmap
+    declarations = []
+    # (name, value, namespace URI, attribute) of the attributes to write.
+    entries = []
+    if attrs:
+        for attr in attrs.values():
+            name = attr.name
+            attr_uri = attr.namespaceURI
+            if (attr_uri == XMLNS_NAMESPACE or name == "xmlns"
+                    or name.startswith("xmlns:")):
+                # Declarations already present in the document take precedence.
+                nsmap = _bind_namespace(
+                    nsmap, inherited,
+                    attr.localName if attr.prefix else None, attr.value)
+                attr_uri = None
+            elif attr_uri == XML_NAMESPACE:
+                # The xml prefix is bound by definition.
+                attr_uri = None
+            entries.append((name, attr.value, attr_uri, attr))
+
+    if uri:
+        prefix, _, _ = element.tagName.rpartition(':')
+        prefix = prefix or None
+        if nsmap.get(prefix) != uri:
+            nsmap = _bind_namespace(nsmap, inherited, prefix, uri)
+            declarations.append(("xmlns:" + prefix if prefix else "xmlns", uri))
+    elif nsmap.get(None) and ':' not in element.tagName:
+        # The element is in no namespace, undeclare the default one.
+        nsmap = _bind_namespace(nsmap, inherited, None, None)
+        declarations.append(("xmlns", ""))
+
+    items = []
+    prefixes = None  # namespace URI -> prefix, built only when needed
+    n = 0
+    for name, value, attr_uri, attr in entries:
+        if attr_uri is not None:
+            # Unprefixed attributes are in no namespace, so an attribute
+            # in a namespace always needs a prefix.
+            prefix, _, _ = name.rpartition(':')
+            if not prefix:
+                # Reuse a prefix bound to the namespace, or invent one.
+                if prefixes is None:
+                    prefixes = {u: p for p, u in nsmap.items()
+                                if p is not None}
+                prefix = prefixes.get(attr_uri)
+                if prefix is None:
+                    while nsmap.get("ns%d" % n) is not None:
+                        n += 1
+                    prefix = "ns%d" % n
+                name = "%s:%s" % (prefix, attr.localName)
+            if nsmap.get(prefix) != attr_uri:
+                nsmap = _bind_namespace(nsmap, inherited, prefix, attr_uri)
+                declarations.append(("xmlns:" + prefix, attr_uri))
+                if prefixes is not None:
+                    prefixes[attr_uri] = prefix
+        items.append((name, value))
+
+    if declarations:
+        return nsmap, declarations + items
+    return nsmap, items
+
+
 def _get_elements_by_tagName_helper(parent, name, rc):
     for node in parent.childNodes:
         if node.nodeType == Node.ELEMENT_NODE and \
@@ -381,6 +514,10 @@ class DocumentFragment(Node):
 
     def __init__(self):
         self.childNodes = NodeList()
+
+    def writexml(self, writer, indent="", addindent="", newl=""):
+        for node in self.childNodes:
+            node.writexml(writer, indent, addindent, newl)
 
 
 class Attr(Node):
@@ -444,11 +581,8 @@ class Attr(Node):
         return self._prefix
 
     def _set_prefix(self, prefix):
-        nsuri = self.namespaceURI
-        if prefix == "xmlns":
-            if nsuri and nsuri != XMLNS_NAMESPACE:
-                raise xml.dom.NamespaceErr(
-                    "illegal use of 'xmlns' prefix for the wrong namespace")
+        if prefix is not None:
+            _check_prefix(prefix, self.namespaceURI, True)
         self._prefix = prefix
         if prefix is None:
             newName = self.localName
@@ -807,10 +941,10 @@ class Element(Node):
                 _clear_id_cache(self)
 
     def setAttributeNS(self, namespaceURI, qualifiedName, value):
+        _check_qualified_name(namespaceURI, qualifiedName, True)
         prefix, localname = _nssplit(qualifiedName)
         attr = self.getAttributeNodeNS(namespaceURI, localname)
         if attr is None:
-            _check_name(qualifiedName)
             attr = Attr(qualifiedName, namespaceURI, localname, prefix)
             attr.value = value
             attr.ownerDocument = self.ownerDocument
@@ -917,7 +1051,8 @@ class Element(Node):
     def __repr__(self):
         return "<DOM Element: %s at %#x>" % (self.tagName, id(self))
 
-    def writexml(self, writer, indent="", addindent="", newl=""):
+    def writexml(self, writer, indent="", addindent="", newl="", *,
+                 _nsmap=None):
         """Write an XML element to a file-like object
 
         Write the element to the writer object that must provide
@@ -926,13 +1061,14 @@ class Element(Node):
         # indent = current indentation
         # addindent = indentation to add to higher levels
         # newl = newline string
+        if _nsmap is None:
+            _nsmap = _in_scope_namespaces(self)
         writer.write(indent+"<" + self.tagName)
 
-        attrs = self._get_attributes()
-
-        for a_name in attrs.keys():
+        nsmap, items = _fixup_namespaces(self, _nsmap)
+        for a_name, value in items:
             writer.write(" %s=\"" % a_name)
-            _write_data(writer, attrs[a_name].value, True)
+            _write_data(writer, value, True)
             writer.write("\"")
         if self.childNodes:
             writer.write(">")
@@ -940,14 +1076,45 @@ class Element(Node):
                 self.childNodes[0].nodeType in (
                         Node.TEXT_NODE, Node.CDATA_SECTION_NODE)):
                 self.childNodes[0].writexml(writer, '', '', '')
+            elif self._preserves_whitespace():
+                # Adding whitespace here would change the content.
+                for node in self.childNodes:
+                    node.writexml(writer, '', '', '')
             else:
                 writer.write(newl)
                 for node in self.childNodes:
-                    node.writexml(writer, indent+addindent, addindent, newl)
+                    if type(node).writexml is Element.writexml:
+                        # Pass the namespaces in scope to the standard
+                        # implementation; an overridden writexml() has the
+                        # documented signature and computes them itself.
+                        node.writexml(writer, indent+addindent, addindent,
+                                      newl, _nsmap=nsmap)
+                    else:
+                        node.writexml(writer, indent+addindent, addindent,
+                                      newl)
                 writer.write(indent)
             writer.write("</%s>%s" % (self.tagName, newl))
         else:
             writer.write("/>%s"%(newl))
+
+    def _preserves_whitespace(self):
+        """Returns true iff whitespace in the content is significant.
+
+        This is the case if the element is marked with xml:space="preserve",
+        if the DTD declares that its content model is not element content,
+        or, in absence of such declaration, if it contains text.
+        """
+        if self.getAttribute("xml:space") == "preserve":
+            return True
+        doc = self.ownerDocument
+        info = doc and doc._get_elem_info(self)
+        if info is not None:
+            # Only whitespace in element content is ignorable
+            # (see XML 1.0, 3.2.1).
+            return not info.isElementContent()
+        return any(node.nodeType in (Node.TEXT_NODE, Node.CDATA_SECTION_NODE)
+                   and node.data.strip(_XML_WHITESPACE)
+                   for node in self.childNodes)
 
     def _get_attributes(self):
         self._ensure_attributes()
@@ -1817,14 +1984,14 @@ class Document(Node, DocumentLS):
         return a
 
     def createElementNS(self, namespaceURI, qualifiedName):
-        _check_name(qualifiedName)
+        _check_qualified_name(namespaceURI, qualifiedName)
         prefix, localName = _nssplit(qualifiedName)
         e = Element(qualifiedName, namespaceURI, prefix)
         e.ownerDocument = self
         return e
 
     def createAttributeNS(self, namespaceURI, qualifiedName):
-        _check_name(qualifiedName)
+        _check_qualified_name(namespaceURI, qualifiedName, True)
         prefix, localName = _nssplit(qualifiedName)
         a = Attr(qualifiedName, namespaceURI, localName, prefix)
         a.ownerDocument = self

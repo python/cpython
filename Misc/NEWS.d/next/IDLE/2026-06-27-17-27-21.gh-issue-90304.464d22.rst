@@ -1,0 +1,4 @@
+Prevent IDLE from failing to start when a font reports a zero width for
+the ``'0'`` character.  Such a broken font caused a
+:exc:`ZeroDivisionError`; the editor now falls back to the configured
+width.

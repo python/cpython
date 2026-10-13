@@ -10,6 +10,7 @@ preserve
 #include "pycore_fileutils.h"     // _Py_Off_t_Converter()
 #include "pycore_long.h"          // _PyLong_UnsignedInt_Converter()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(os_stat__doc__,
 "stat($module, /, path, *, dir_fd=None, follow_symlinks=True)\n"
@@ -5321,13 +5322,8 @@ os_getgrouplist(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("getgrouplist", "argument 1", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t user_length;
-    user = PyUnicode_AsUTF8AndSize(args[0], &user_length);
+    user = _PyUnicode_AsUTF8NoNUL(args[0]);
     if (user == NULL) {
-        goto exit;
-    }
-    if (strlen(user) != (size_t)user_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     basegid = PyLong_AsInt(args[1]);
@@ -5375,13 +5371,8 @@ os_getgrouplist(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("getgrouplist", "argument 1", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t user_length;
-    user = PyUnicode_AsUTF8AndSize(args[0], &user_length);
+    user = _PyUnicode_AsUTF8NoNUL(args[0]);
     if (user == NULL) {
-        goto exit;
-    }
-    if (strlen(user) != (size_t)user_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (!_Py_Gid_Converter(args[1], &basegid)) {
@@ -12443,6 +12434,33 @@ os_DirEntry___fspath__(PyObject *self, PyObject *Py_UNUSED(ignored))
     return os_DirEntry___fspath___impl((DirEntry *)self);
 }
 
+PyDoc_STRVAR(os_ScandirIterator___exit____doc__,
+"__exit__($self, /, *exc_info)\n"
+"--\n"
+"\n"
+"Close the scandir iterator.");
+
+#define OS_SCANDIRITERATOR___EXIT___METHODDEF    \
+    {"__exit__", _PyCFunction_CAST(os_ScandirIterator___exit__), METH_FASTCALL, os_ScandirIterator___exit____doc__},
+
+static PyObject *
+os_ScandirIterator___exit___impl(PyObject *self, PyObject * const *exc_info,
+                                 Py_ssize_t exc_info_length);
+
+static PyObject *
+os_ScandirIterator___exit__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject * const *exc_info;
+    Py_ssize_t exc_info_length;
+
+    exc_info = args;
+    exc_info_length = nargs;
+    return_value = os_ScandirIterator___exit___impl(self, exc_info, exc_info_length);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(os_scandir__doc__,
 "scandir($module, /, path=None)\n"
 "--\n"
@@ -13043,13 +13061,8 @@ os__emscripten_log(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
         _PyArg_BadArgument("_emscripten_log", "argument 'arg'", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t arg_length;
-    arg = PyUnicode_AsUTF8AndSize(args[0], &arg_length);
+    arg = _PyUnicode_AsUTF8NoNUL(args[0]);
     if (arg == NULL) {
-        goto exit;
-    }
-    if (strlen(arg) != (size_t)arg_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = os__emscripten_log_impl(module, arg);
@@ -13747,4 +13760,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=d4e858cbdf280235 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f1113bf7c270d271 input=a9049054013a1b77]*/
