@@ -1,7 +1,7 @@
 import sys
 import unittest
-from test.support import import_helper
 from test import support
+from test.support import import_helper
 
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 _testcapi = import_helper.import_module('_testcapi')
@@ -396,6 +396,7 @@ class BaseWriterTest:
         writer.resize(len(b'number=123456'), b'456')
         self.bytes_equal(writer.finish(), b'number=123456')
 
+    @support.nomemtest
     def test_resize_error(self):
         small_buffer = _testcapi.PyBytesWriter_small_buffer
         init = b'x' * (small_buffer * 2)

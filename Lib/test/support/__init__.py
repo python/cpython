@@ -1305,14 +1305,14 @@ def bigmemtest(size, memuse, dry_run=True):
         return wrapper
     return decorator
 
-def nomemtest(f):
+def nomemtest(test):
     """Check that we can use this test with `_testcapi.set_nomemory`."""
     from .import_helper import import_module
 
-    @functools.wraps(f)
+    @functools.wraps(test)
     def internal(*args, **kwargs):
         import_module('_testcapi')
-        return f(*args, **kwargs)
+        return test(*args, **kwargs)
 
     return cpython_only(internal)
 

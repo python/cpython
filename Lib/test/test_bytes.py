@@ -1579,6 +1579,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertRaises(MemoryError, bytearray().resize, sys.maxsize)
         self.assertRaises(MemoryError, bytearray(1000).resize, sys.maxsize)
 
+    @support.nomemtest
     def test_resize_error(self):
         # gh-157242: If bytearray.resize() fails (MemoryError),
         # the bytearray must be left unchanged.
@@ -1672,6 +1673,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertEqual(ba, bytearray(b'A'))
         self.assertEqual(ord(b'c'), ord('c'))
 
+    @support.nomemtest
     def test_take_bytes_error(self):
         # gh-157242: If bytearray.take_bytes() fails (MemoryError),
         # the bytearray must be left unchanged.
