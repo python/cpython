@@ -246,13 +246,16 @@ The following classes are provided:
    server, or ``None`` if no such data is needed.  Currently HTTP
    requests are the only ones that use *data*.  The supported object
    types include bytes, file-like objects, and iterables of bytes-like objects.
-   Mappings, such as :class:`dict`, are not accepted and raise
-   :exc:`TypeError`.
    If no ``Content-Length`` nor ``Transfer-Encoding`` header field
    has been provided, :class:`HTTPHandler` will set these headers according
    to the type of *data*.  ``Content-Length`` will be used to send
    bytes objects, while ``Transfer-Encoding: chunked`` as specified in
    :rfc:`7230`, Section 3.3.1 will be used to send files and other iterables.
+
+   *data* is not serialized before it is sent: the elements of an iterable
+   are sent as is, so a :class:`dict` yields only its keys.  Structured
+   data such as a JSON object must be encoded to bytes first, for example
+   with :func:`json.dumps`.
 
    For an HTTP POST request method, *data* should be a buffer in the
    standard :mimetype:`application/x-www-form-urlencoded` format.  The
@@ -319,9 +322,6 @@ The following classes are provided:
       Do not raise an error if the ``Content-Length`` has not been
       provided and *data* is neither ``None`` nor a bytes object.
       Fall back to use chunked transfer encoding instead.
-
-   .. versionchanged:: next
-      Raise :exc:`TypeError` if *data* is a mapping.
 
 .. class:: OpenerDirector()
 

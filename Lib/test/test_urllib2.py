@@ -11,7 +11,6 @@ import io
 import ftplib
 import socket
 import array
-import collections
 import sys
 import tempfile
 import subprocess
@@ -996,12 +995,6 @@ class HandlerTests(unittest.TestCase):
         # Check for TypeError on POST data which is str.
         req = Request("http://example.com/","badpost")
         self.assertRaises(TypeError, h.do_request_, req)
-
-        # Check for TypeError on request data which is a mapping.
-        for data in ({'a': 1}, collections.UserDict({'a': 1})):
-            req = Request("http://example.com/", data)
-            with self.assertRaisesRegex(TypeError, type(data).__name__):
-                h.do_request_(req)
 
         # check adding of standard headers
         o.addheaders = [("Spam", "eggs")]

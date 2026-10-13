@@ -95,7 +95,7 @@ import string
 import sys
 import time
 import tempfile
-from collections.abc import Mapping
+
 
 from urllib.error import URLError, HTTPError, ContentTooShortError
 from urllib.parse import (
@@ -1261,10 +1261,9 @@ class AbstractHTTPHandler(BaseHandler):
 
         if request.data is not None:  # POST
             data = request.data
-            if isinstance(data, (str, Mapping)):
+            if isinstance(data, str):
                 msg = "POST data should be bytes, an iterable of bytes, " \
-                      "or a file object. It cannot be of type " \
-                      f"{type(data).__name__}."
+                      "or a file object. It cannot be of type str."
                 raise TypeError(msg)
             if not request.has_header('Content-type'):
                 request.add_unredirected_header(
