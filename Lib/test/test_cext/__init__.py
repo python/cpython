@@ -52,6 +52,10 @@ class BaseTests:
             # Old Apple clang++ default C++ std is gnu++98, use C++11 instead
             std = 'c++11'
 
+        if limited and support.Py_GIL_DISABLED:
+            raise unittest.SkipTest("Free Threading doesn't support "
+                                    "the limited C API")
+
         pkg_dir = 'pkg'
         os.mkdir(pkg_dir)
         self.addCleanup(os_helper.rmtree, pkg_dir)
