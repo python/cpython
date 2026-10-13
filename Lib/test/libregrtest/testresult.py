@@ -9,10 +9,11 @@ import time
 import traceback
 import unittest
 from test import support
-from test.libregrtest.utils import sanitize_xml
+from test.libregrtest.utils import print_github_annotation, sanitize_xml
 
 class RegressionTestResult(unittest.TextTestResult):
     USE_XML = False
+    GITHUB_ANNOTATIONS = False
 
     def __init__(self, stream, descriptions, verbosity):
         super().__init__(stream=stream, descriptions=descriptions,
@@ -130,6 +131,14 @@ class RegressionTestResult(unittest.TextTestResult):
         self._add_result(test, outcome='UNEXPECTED_SUCCESS')
         super().addUnexpectedSuccess(test)
 
+    def printErrorList(self, flavour, errors):
+        for test, err in errors:
+            super().printErrorList(flavour, [(test, err)])
+            # Annotate just after the failure report, so that the annotation
+            # links to the report in the job log
+            if self.GITHUB_ANNOTATIONS:
+                print_github_annotation(str(test), err, stream=self.stream)
+
     def get_xml_element(self):
         if not self.USE_XML:
             raise ValueError("USE_XML is false")
@@ -146,6 +155,11 @@ class QuietRegressionTestRunner:
 
     def run(self, test):
         test(self.result)
+        # Failures are not reported in quiet mode: annotate them at the end
+        if self.result.GITHUB_ANNOTATIONS:
+            for test, err in self.result.errors + self.result.failures:
+                print_github_annotation(str(test), err,
+                                        stream=self.result.stream)
         return self.result
 
 def get_test_runner_class(verbosity, buffer=False):

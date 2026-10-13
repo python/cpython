@@ -108,6 +108,9 @@ class TestResult:
     # short descriptions of how the test altered the execution environment
     env_changed_reasons: list[str] | None = None
 
+    # test file, set once the test module is imported
+    filename: str | None = None
+
     def is_failed(self, fail_env_changed: bool) -> bool:
         if self.state == State.ENV_CHANGED:
             return fail_env_changed
@@ -205,23 +208,24 @@ class TestResult:
         return "".join(f"{block}\n\n" for block in blocks)
 
     def print_github_annotation(self, runtests: RunTests) -> None:
-        """Print github error annotation line for each failure."""
-        if not (runtests.github_annotations
-                and self.is_failed(runtests.fail_env_changed)):
+        """Annotate a failed test file without failed test cases."""
+        if (not runtests.github_annotations
+                or not self.is_failed(runtests.fail_env_changed)
+                or self.failed_test_cases):
             return
-        # Convert python import test name to relative file path.
-        # Ex: "test.test_x.test_y" is test_x/test_y.py
-        name = self.test_name.removeprefix("test.")
-        path = pathlib.Path(findtestdir(runtests.test_dir), *name.split("."))
-        filename = path.with_suffix(".py")
-        if not filename.exists():
-            filename = path / "__init__.py"
-        annotations = self.failed_test_cases
-        if not annotations:
-            message = "\n".join([str(self), *(self.env_changed_reasons or ())])
-            annotations = [(self.test_name, message)]
-        for title, message in annotations:
-            print_github_annotation(title, message, str(filename))
+        filename = self.filename
+        if not filename:
+            # The worker crashed or timed out before reporting the test file:
+            # convert python import test name to relative file path.
+            # Ex: "test.test_x.test_y" is test_x/test_y.py
+            name = self.test_name.removeprefix("test.")
+            path = pathlib.Path(findtestdir(runtests.test_dir),
+                                *name.split("."))
+            filename = path.with_suffix(".py")
+            if not filename.exists():
+                filename = path / "__init__.py"
+        message = "\n".join([str(self), *(self.env_changed_reasons or ())])
+        print_github_annotation(self.test_name, message, str(filename))
 
     def set_env_changed(self, *reasons):
         if self.state is None or self.state == State.PASSED:

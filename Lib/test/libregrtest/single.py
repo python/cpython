@@ -153,6 +153,7 @@ def _load_run_test(result: TestResult, runtests: RunTests) -> None:
     test_name = result.test_name
     module_name = abs_module_name(test_name, runtests.test_dir)
     test_mod = importlib.import_module(module_name)
+    result.filename = test_mod.__file__
 
     if hasattr(test_mod, "test_main"):
         # https://github.com/python/cpython/issues/89392

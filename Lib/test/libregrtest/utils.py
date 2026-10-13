@@ -148,19 +148,21 @@ GITHUB_ESCAPE_PROPERTY = GITHUB_ESCAPE_DATA | str.maketrans({":": "%3A",
                                                              ",": "%2C"})
 
 
-def print_github_annotation(title: str, message: str, filename: str) -> None:
+def print_github_annotation(title: str, message: str,
+                            filename: str | None = None,
+                            stream=None) -> None:
     """Print a GitHub Actions error annotation for the failure."""
-    if not filename:
-        raise ValueError(f"missing filename to annotate {title!r}")
     message = decolor(message)
 
-    # Try to get a line number from backtrace.
+    # Try to get a file + line number from backtrace.
     line = None
     if frames := re.findall(r'^ *File "(.*)", line (\d+)', message,
                             re.MULTILINE):
         test_frames = [frame for frame in frames
                        if pathlib.Path(frame[0]).name.startswith('test_')]
         filename, line = test_frames[-1] if test_frames else frames[0]
+    if not filename:
+        raise ValueError(f"missing filename to annotate {title!r}")
 
     # Normalize stdlib path to be relative inside the repository checkout.
     path = pathlib.Path(filename)
@@ -175,7 +177,7 @@ def print_github_annotation(title: str, message: str, filename: str) -> None:
     props_text = ",".join(f"{key}={value.translate(GITHUB_ESCAPE_PROPERTY)}"
                           for key, value in props.items() if value)
     print(f"::error {props_text}::{message.translate(GITHUB_ESCAPE_DATA)}",
-          flush=True)
+          file=stream, flush=True)
 
 
 def regrtest_unraisable_hook(unraisable) -> None:
