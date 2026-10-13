@@ -130,9 +130,11 @@ test_datetime(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 {
     // datetime.h is excluded from the limited C API
 #ifndef Py_LIMITED_API
-    PyDateTime_IMPORT;
-    if (PyErr_Occurred()) {
-        return NULL;
+    if (PyDateTimeAPI == NULL) {
+        PyDateTime_IMPORT;
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
     }
 #endif
 
