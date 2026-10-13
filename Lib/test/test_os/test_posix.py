@@ -1883,7 +1883,7 @@ class TestPosixDirFd(unittest.TestCase):
 
 
     _support_readlink_with_fd = (
-        hasattr(os, 'readlink') \
+        hasattr(os, 'readlink')
         and os.readlink in os.supports_fd
     )
 
