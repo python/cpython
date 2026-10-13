@@ -1163,6 +1163,13 @@ class CommandLineTestCase(unittest.TestCase):
             self.assertIn(b'January', output)
             self.assertIn(b'Mo Tu We Th Fr Sa Su', output)
 
+    def test_invalid_month(self):
+        for type in ('text', 'html'):
+            for month in ('0', '13', '-1'):
+                with self.subTest(type=type, month=month):
+                    with self.assertRaises(calendar.IllegalMonthError):
+                        self.run_cli_ok('--type', type, '2004', month)
+
     def test_output_year(self):
         for run in self.runners:
             output = run('2004')

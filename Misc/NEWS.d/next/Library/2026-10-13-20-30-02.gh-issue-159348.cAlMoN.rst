@@ -1,0 +1,2 @@
+Fix the :mod:`calendar` command line interface to reject month zero when
+generating HTML output instead of silently generating a full year.

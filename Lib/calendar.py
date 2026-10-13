@@ -964,7 +964,7 @@ def main(args=None):
         if options.year is None:
             write(cal.formatyearpage(today.year, **optdict))
         else:
-            if options.month:
+            if options.month is not None:
                 write(cal.formatmonthpage(options.year, options.month, **optdict))
             else:
                 write(cal.formatyearpage(options.year, **optdict))
