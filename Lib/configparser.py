@@ -540,7 +540,7 @@ class ExtendedInterpolation(Interpolation):
                     else:
                         raise InterpolationSyntaxError(
                             option, section,
-                            "More than one ':' found: %r" % (rest,))
+                            "More than one ':' found: %r" % (m.group(),))
                 except (KeyError, NoSectionError, NoOptionError):
                     raise InterpolationMissingOptionError(
                         option, section, rawval, ":".join(path)) from None
