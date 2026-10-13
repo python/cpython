@@ -130,9 +130,11 @@ test_datetime(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 {
     // datetime.h is excluded from the limited C API
 #ifndef Py_LIMITED_API
-    PyDateTime_IMPORT;
-    if (PyErr_Occurred()) {
-        return NULL;
+    if (PyDateTimeAPI == NULL) {
+        PyDateTime_IMPORT;
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
     }
 #endif
 
@@ -365,8 +367,6 @@ static PyMethodDef module_methods[] = {
 static int
 module_exec(PyObject *module)
 {
-    PyObject *result;
-
 #ifdef __STDC_VERSION__
     if (PyModule_AddIntMacro(module, __STDC_VERSION__) < 0) {
         return -1;
@@ -387,31 +387,8 @@ module_exec(PyObject *module)
         return -1;
     }
 #endif
-
-    result = PyObject_CallMethod(module, "test_macros", "");
-    if (!result) return -1;
-    Py_DECREF(result);
-
-    result = PyObject_CallMethod(module, "test_datetime", "");
-    if (!result) return -1;
-    Py_DECREF(result);
-
-    result = PyObject_CallMethod(module, "test_unicode", "");
-    if (!result) return -1;
-    Py_DECREF(result);
-
-#ifdef __cplusplus
-    result = PyObject_CallMethod(module, "test_api_casts", "");
-    if (!result) return -1;
-    Py_DECREF(result);
-#endif
-
-#if defined(__cplusplus) && !defined(Py_TARGET_ABI3T)
-    result = PyObject_CallMethod(module, "test_virtual_object", "");
-    if (!result) return -1;
-    Py_DECREF(result);
-#endif
-
+    // Ignore "unused argument" warning when none of these macros is defined
+    (void)module;
     return 0;
 }
 
