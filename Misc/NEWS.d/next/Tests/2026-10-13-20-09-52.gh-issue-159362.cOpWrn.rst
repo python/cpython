@@ -1,0 +1,2 @@
+Fix the incomplete-input warning test in ``test_codeop`` to capture
+warnings emitted by the compiler call.
