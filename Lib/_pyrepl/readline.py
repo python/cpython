@@ -612,12 +612,7 @@ def _setup(namespace: Mapping[str, Any]) -> None:
         f_out = sys.stdout.fileno()
     except (AttributeError, ValueError):
         return
-    if (
-        not os.isatty(f_in)
-        or not os.isatty(f_out)
-        or os.device_encoding(f_in) is None
-        or os.device_encoding(f_out) is None
-    ):
+    if not os.isatty(f_in) or not os.isatty(f_out):
         return
 
     _wrapper.f_in = f_in

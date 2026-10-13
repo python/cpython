@@ -1099,7 +1099,7 @@ class TestPyReplFancyCompleter(TestCase):
         )
 
 
-class TestPyReplReadlineSetup(TestCase):
+class TestPyReplMain(TestCase):
     @skipUnless(has_subprocess_support, "test requires subprocess support")
     @skipUnless(sys.platform == "win32", "Windows-specific test")
     def test_nul_stdin_exits_cleanly(self):
@@ -1113,7 +1113,10 @@ class TestPyReplReadlineSetup(TestCase):
         )
 
         self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("tty required", proc.stderr)
 
+
+class TestPyReplReadlineSetup(TestCase):
     def test_setup_ignores_basic_completer_env_when_env_is_disabled(self):
         class FakeFancyCompleter:
             def __init__(self, namespace):
@@ -1143,11 +1146,6 @@ class TestPyReplReadlineSetup(TestCase):
             patch.object(pyrepl_readline.sys, "stdout", stdout),
             patch.object(pyrepl_readline.sys, "flags", Mock(ignore_environment=True)),
             patch.object(pyrepl_readline.os, "isatty", return_value=True),
-            patch.object(
-                pyrepl_readline.os,
-                "device_encoding",
-                return_value="utf-8",
-            ),
             patch.object(pyrepl_readline.os, "getenv") as mock_getenv,
             patch("builtins.input", lambda prompt="": prompt),
         ):
