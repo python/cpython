@@ -466,6 +466,16 @@ alloc_interpreter(void)
 static void
 free_interpreter(PyInterpreterState *interp)
 {
+#ifdef Py_GIL_DISABLED
+    mi_subproc_t *subproc = interp->mimalloc.subproc;
+    if (subproc != NULL) {
+        // Delete the sub-process only when no abandoned segment points to it.
+        if (mi_atomic_load_relaxed(&subproc->abandoned_count) == 0) {
+            mi_subproc_delete(subproc);
+        }
+        interp->mimalloc.subproc = NULL;
+    }
+#endif
 #ifdef Py_STATS
     if (interp->pystats_struct) {
         PyMem_RawFree(interp->pystats_struct);
