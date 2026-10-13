@@ -22,7 +22,6 @@ typedef enum {
 #ifdef WITH_MIMALLOC
 #  ifdef Py_GIL_DISABLED
 #    define MI_PRIM_THREAD_ID   _Py_ThreadId
-// The GC visits abandoned segments with mi_abandoned_visit_blocks().
 #    define MI_VISIT_ABANDONED  1
 #  endif
 #  define MI_DEBUG_UNINIT     PYMEM_CLEANBYTE
