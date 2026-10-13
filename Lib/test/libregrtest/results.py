@@ -3,6 +3,7 @@ import trace
 from _colorize import get_colors  # type: ignore[import-not-found]
 lazy from xml.etree.ElementTree import Element
 
+from .reporter import get_reporter
 from .runtests import RunTests
 from .result import State, TestResult, TestStats, Location
 from .utils import (
@@ -142,6 +143,7 @@ class TestResults:
         xml_data = result.xml_data
         if xml_data:
             self.add_junit(xml_data)
+        get_reporter(runtests).test_result(result, runtests)
 
     def get_coverage_results(self) -> trace.CoverageResults:
         counts = {loc: 1 for loc in self.covered_lines}

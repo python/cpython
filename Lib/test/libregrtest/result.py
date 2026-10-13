@@ -1,16 +1,11 @@
 import dataclasses
-import html
 import json
-import pathlib
-from _colorize import decolor, get_colors  # type: ignore[import-not-found]
+from _colorize import get_colors  # type: ignore[import-not-found]
 from typing import Any
 
-from .findtests import findtestdir
-from .runtests import RunTests
 from .utils import (
     StrJSON, TestName, FilterTuple,
-    format_duration, normalize_test_name, print_warning,
-    print_github_annotation)
+    format_duration, normalize_test_name, print_warning)
 
 
 @dataclasses.dataclass(slots=True)
@@ -189,44 +184,6 @@ class TestResult:
     @property
     def failed_test_cases(self) -> list[tuple[str, str]]:
         return (self.errors or []) + (self.failures or [])
-
-    def format_github_summary(self, expand: bool) -> str:
-        """Format the Markdown section of the GitHub Actions job summary."""
-        blocks = [f"### {decolor(str(self))}"]
-        if self.env_changed_reasons:
-            blocks.append("\n".join(f"- {reason}"
-                                    for reason in self.env_changed_reasons))
-        for name, traceback in self.failed_test_cases:
-            # Only default open short tracebacks.
-            is_open = expand and traceback.count("\n") < 30
-            blocks += [f"<details{' open' if is_open else ''}>"
-                       f"<summary>{html.escape(name)}</summary>",
-                       f"```pytb\n{decolor(traceback).rstrip()}\n```",
-                       "</details>"]
-
-        # Separate Markdown blocks with an empty line
-        return "".join(f"{block}\n\n" for block in blocks)
-
-    def print_github_annotation(self, runtests: RunTests) -> None:
-        """Annotate a failed test file without failed test cases."""
-        if (not runtests.github_annotations
-                or not self.is_failed(runtests.fail_env_changed)
-                or self.failed_test_cases):
-            return
-        filename = self.filename
-        if not filename:
-            # The worker crashed or timed out before reporting the test file:
-            # convert python import test name to relative file path.
-            # Ex: "test.test_x.test_y" is test_x/test_y.py
-            name = self.test_name.removeprefix("test.")
-            path = pathlib.Path(findtestdir(runtests.test_dir),
-                                *name.split("."))
-            if path.with_suffix(".py").exists():
-                filename = str(path.with_suffix(".py"))
-            else:
-                filename = str(path / "__init__.py")
-        message = "\n".join([str(self), *(self.env_changed_reasons or ())])
-        print_github_annotation(self.test_name, message, filename)
 
     def set_env_changed(self, *reasons):
         if self.state is None or self.state == State.PASSED:

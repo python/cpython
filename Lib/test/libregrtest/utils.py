@@ -3,7 +3,6 @@ import faulthandler
 import locale
 import math
 import os.path
-import pathlib
 import platform
 import random
 import re
@@ -14,7 +13,6 @@ import sysconfig
 import tempfile
 import textwrap
 import types
-from _colorize import decolor  # type: ignore[import-not-found]
 from collections.abc import Callable
 _winapi: types.ModuleType | None
 try:
@@ -140,44 +138,6 @@ def print_warning(msg: str) -> None:
 
 
 orig_unraisablehook: Callable[..., None] | None = None
-
-
-# Escape the data and the properties of GitHub Actions workflow commands
-GITHUB_ESCAPE_DATA = str.maketrans({"%": "%25", "\r": "%0D", "\n": "%0A"})
-GITHUB_ESCAPE_PROPERTY = GITHUB_ESCAPE_DATA | str.maketrans({":": "%3A",
-                                                             ",": "%2C"})
-
-
-def print_github_annotation(title: str, message: str,
-                            filename: str | None = None,
-                            stream=None) -> None:
-    """Print a GitHub Actions error annotation for the failure."""
-    message = decolor(message)
-
-    # Try to get a file + line number from backtrace.
-    line = None
-    if frames := re.findall(r'^ *File "(.*)", line (\d+)', message,
-                            re.MULTILINE):
-        test_frames = [frame for frame in frames
-                       if pathlib.Path(frame[0]).name.startswith('test_')]
-        filename, line = test_frames[-1] if test_frames else frames[0]
-    if not filename:
-        raise ValueError(f"missing filename to annotate {title!r}")
-
-    # Normalize stdlib path to be relative inside the repository checkout.
-    path = pathlib.Path(filename)
-    stdlib_dir = pathlib.Path(os.__file__).parent
-    if path.is_relative_to(stdlib_dir):
-        filename = ("Lib" / path.relative_to(stdlib_dir)).as_posix()
-    props = {"file": filename, "line": line, "title": title}
-    # Only keep the exception: strip the traceback frames, each one a
-    # '  File' line followed by its indented source lines
-    message = re.split(r'^  File .*\n(?:    .*\n)*', message,
-                       flags=re.MULTILINE)[-1].strip()
-    props_text = ",".join(f"{key}={value.translate(GITHUB_ESCAPE_PROPERTY)}"
-                          for key, value in props.items() if value)
-    print(f"::error {props_text}::{message.translate(GITHUB_ESCAPE_DATA)}",
-          file=stream, flush=True)
 
 
 def regrtest_unraisable_hook(unraisable) -> None:

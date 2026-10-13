@@ -11,6 +11,7 @@ from test.support.os_helper import TESTFN_UNDECODABLE, FS_NONASCII
 from _colorize import can_colorize  # type: ignore[import-not-found]
 
 from .filter import set_match_tests
+from .reporter import get_reporter
 from .runtests import RunTests
 lazy from .testresult import RegressionTestResult
 from .utils import (
@@ -113,7 +114,7 @@ def setup_tests(runtests: RunTests) -> None:
 
     set_match_tests(runtests.match_tests)
 
-    RegressionTestResult.GITHUB_ANNOTATIONS = runtests.github_annotations
+    RegressionTestResult.reporter = get_reporter(runtests)
     if runtests.use_junit:
         support.junit_xml_list = []
         RegressionTestResult.USE_XML = True
