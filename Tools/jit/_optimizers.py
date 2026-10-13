@@ -91,7 +91,6 @@ _AARCH64_BRANCHES: dict[str, tuple[str | None, str | None]] = (
 
 @enum.unique
 class InstructionKind(enum.Enum):
-
     JUMP = enum.auto()
     LONG_BRANCH = enum.auto()
     SHORT_BRANCH = enum.auto()
@@ -534,9 +533,9 @@ class Optimizer:
                 continue
             for inst in block.instructions:
                 if self.frame_pointers:
-                    assert (
-                        self._frame_pointer_modify.match(inst.text) is None
-                    ), "Frame pointer should not be modified"
+                    assert self._frame_pointer_modify.match(inst.text) is None, (
+                        "Frame pointer should not be modified"
+                    )
 
     def run(self) -> None:
         """Run this optimizer."""
