@@ -447,7 +447,7 @@ subscript_slice(pysqlite_Blob *self, PyObject *item)
     }
 
     if (len == 0) {
-        return PyBytes_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
 
     if (step == 1) {

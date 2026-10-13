@@ -1,0 +1,2 @@
+Fix call specialization for C functions and methods with ``METH_CLASS``,
+``METH_STATIC``, or ``METH_COEXIST`` flags, improving their call performance.

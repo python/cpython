@@ -1,0 +1,2 @@
+:mod:`tempfile` functions that take a ``prefix`` or ``suffix`` argument now raise a :exc:`ValueError` if they contain a directory component:
+:func:`tempfile.mkstemp`, :func:`tempfile.mkdtemp`, :func:`tempfile.TemporaryFile`, :func:`tempfile.NamedTemporaryFile`.

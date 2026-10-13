@@ -52,6 +52,8 @@ source = textwrap.dedent("""\
     '''
     case _:'''
     "match x:"
+    type Point = tuple[float, float]
+    type = type(1)
     """)
 
 
@@ -404,6 +406,8 @@ class ColorDelegatorTest(unittest.TestCase):
                     ('28.25', ('STRING',)), ('28.38', ('STRING',)),
                     ('30.0', ('STRING',)),
                     ('31.1', ('STRING',)),
+                    ('32.0', ('KEYWORD',)),
+                    ('33.0', ('BUILTIN',)), ('33.1', ('BUILTIN',)),
                     # SYNC at the end of every line.
                     ('1.55', ('SYNC',)), ('2.50', ('SYNC',)), ('3.34', ('SYNC',)),
                    )
@@ -434,7 +438,7 @@ class ColorDelegatorTest(unittest.TestCase):
         eq(text.tag_nextrange('STRING', '8.12'), ('8.14', '8.17'))
         eq(text.tag_nextrange('STRING', '8.17'), ('8.19', '8.26'))
         eq(text.tag_nextrange('SYNC', '8.0'), ('8.26', '9.0'))
-        eq(text.tag_nextrange('SYNC', '31.0'), ('31.10', '33.0'))
+        eq(text.tag_nextrange('SYNC', '31.0'), ('31.10', '32.0'))
 
     def _assert_highlighting(self, source, tag_ranges):
         """Check highlighting of a given piece of code.
@@ -569,6 +573,18 @@ class ColorDelegatorTest(unittest.TestCase):
             e"""
             ''')
         self._assert_highlighting(source, {'STRING': [('1.0', '5.4')]})
+        source = '"""a\nb""" + str\n'
+        self._assert_highlighting(source, {'STRING': [('1.0', '2.4')],
+                                           'BUILTIN': [('2.7', '2.10')]})
+
+    def test_long_line(self):
+        # gh-103089: only the first MAX_COLORIZED_LINE characters of a line
+        # are colorized.
+        n = colorizer.MAX_COLORIZED_LINE
+        source = f"pass\n{'x' * (n - 3)}'a', 'b'\n'c'\n"
+        self._assert_highlighting(source, {'KEYWORD': [('1.0', '1.4')],
+                                           'STRING': [(f'2.{n-3}', f'2.{n}'),
+                                                      ('3.0', '3.3')]})
 
     @run_in_tk_mainloop(delay=50)
     def test_incremental_editing(self):

@@ -1797,13 +1797,28 @@ class ProcessTestCase(BaseTestCase):
         fds_after_exception = os.listdir(fd_directory)
         self.assertEqual(fds_before_popen, fds_after_exception)
 
-    @unittest.skipIf(mswindows, "behavior currently not supported on Windows")
     def test_file_not_found_includes_filename(self):
+        missing = (r'C:\opt\nonexistent_binary' if mswindows
+                   else '/opt/nonexistent_binary')
         with self.assertRaises(FileNotFoundError) as c:
-            subprocess.call(['/opt/nonexistent_binary', 'with', 'some', 'args'])
-        self.assertEqual(c.exception.filename, '/opt/nonexistent_binary')
+            subprocess.call([missing, 'with', 'some', 'args'])
+        self.assertEqual(c.exception.filename, missing)
 
-    @unittest.skipIf(mswindows, "behavior currently not supported on Windows")
+    def test_args_filter_iterable(self):
+        # gh-119646: Windows used to index args[0] before list2cmdline.
+        # test_faulthandler.test_sys_xoptions passes a filter() object.
+        args = filter(None, (sys.executable, "-c", "import sys; sys.exit(17)"))
+        self.assertEqual(subprocess.call(args), 17)
+
+    def test_file_not_found_includes_filename_from_iterable(self):
+        missing = (r'C:\opt\nonexistent_binary' if mswindows
+                   else '/opt/nonexistent_binary')
+        args = filter(None, (missing, "with", "some", "args"))
+        with self.assertRaises(FileNotFoundError) as c:
+            subprocess.call(args)
+        self.assertEqual(c.exception.filename, missing)
+
+    @unittest.skipIf(mswindows, "Windows reports NotADirectoryError (WinError 267)")
     def test_file_not_found_with_bad_cwd(self):
         with self.assertRaises(FileNotFoundError) as c:
             subprocess.Popen(['exit', '0'], cwd='/some/nonexistent/directory')
@@ -3717,6 +3732,34 @@ class POSIXProcessTestCase(BaseTestCase):
 
 @unittest.skipUnless(mswindows, "Windows specific tests")
 class Win32ProcessTestCase(BaseTestCase):
+
+    def test_createprocess_bad_cwd_includes_filename(self):
+        # gh-119646: invalid cwd should appear on OSError.filename.
+        missing_cwd = r'C:\some\nonexistent\directory'
+        with self.assertRaises(OSError) as c:
+            subprocess.Popen([sys.executable, '-c', 'pass'], cwd=missing_cwd)
+        self.assertEqual(c.exception.filename, missing_cwd)
+        self.assertEqual(c.exception.winerror, 267)
+
+    def test_command_string_filename_omits_later_args(self):
+        # gh-119646: a command-line string must not put later arguments
+        # on OSError.filename. Those arguments can hold secrets.
+        missing = r'C:\opt\nonexistent_binary'
+        secret = 'NOT-A-REAL-SECRET'
+        quoted = r'C:\Program Files\nonexistent_binary'
+        cases = [
+            (missing, missing),
+            (f'{missing} --token {secret}', missing),
+            (f'"{missing}" --token {secret}', missing),
+            (f'"{quoted}" --token {secret}', quoted),
+        ]
+        for command, expected in cases:
+            with self.subTest(command=command):
+                with self.assertRaises(FileNotFoundError) as c:
+                    subprocess.call(command)
+                self.assertEqual(c.exception.filename, expected)
+                self.assertNotIn(secret, c.exception.filename or '')
+                self.assertNotIn(secret, str(c.exception))
 
     def test_startupinfo(self):
         # startupinfo argument
