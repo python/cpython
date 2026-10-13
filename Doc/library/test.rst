@@ -1693,7 +1693,7 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
 
 .. versionadded:: 3.10
 
-Creating Module Objects
+Creating module objects
 -----------------------
 
 .. function:: create_module(name, loader=None, *, ispkg=False)
@@ -1717,7 +1717,7 @@ Creating Module Objects
 
    Create a :term:`package` from a name and add it to :data:`sys.modules`.
 
-   If *parents* is ``True`` then also create any missing parent modules.
+   If *parents* is ``True``, create any missing parent modules.
 
    Return the new package.
 
@@ -1745,7 +1745,7 @@ Manipulating sys.modules
 .. function:: modules_cleanup(oldmodules)
 
    Remove modules except for *oldmodules* and ``encodings`` from :data:`sys.modules`
-   in order to preserve internal cache.
+   in order to preserve the internal cache.
 
 
 .. function:: isolated_modules()
@@ -1756,7 +1756,7 @@ Manipulating sys.modules
 
 .. class:: CleanImport(*module_names, usefrozen=False)
 
-   A context manager to force import to return a new module reference.  This
+   A context manager to force imports to return new module references.  This
    is useful for testing module-level behaviors, such as the emission of a
    :exc:`DeprecationWarning` on import.
 
@@ -1858,7 +1858,7 @@ Manipulating sys.path
 
 .. function:: ready_to_import(name=None, source="")
 
-   A context manager that will create a new python module *name* with *source*
+   A context manager that will create a new Python module *name* with *source*
    source code in a temporary directory and inserts this directory at the start
    of :data:`sys.path`.
 
@@ -1907,7 +1907,7 @@ Lazy imports
    Test that when *imported_module* is imported, none of the modules named in *modules_to_block*
    are imported as a side effect.
 
-   *additional_code* if given should be additional python source code to execute before
+   *additional_code* if given should be additional Python source code to execute before
    checking that the blocked modules still haven't been imported.
 
 
