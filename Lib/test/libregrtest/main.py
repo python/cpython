@@ -1,4 +1,3 @@
-import html
 import os
 import random
 import re
@@ -493,30 +492,14 @@ class Regrtest:
                                              self.fail_rerun)
         if not self.github_summary or not failed or not exitcode:
             return
-        cases = [(result.errors or []) + (result.failures or [])
-                 for result in failed]
-        ncases = sum(map(len, cases))
+        ncases = sum(len(result.test_cases) for result in failed)
         with open(self.github_summary, "a", encoding="utf-8") as fp:
-            def write(text: str) -> None:
-                # Separate Markdown blocks with an empty line
-                print(text, end="\n\n", file=fp)
-
-            write(f"## {decolor(self.get_state())}: "
-                  f"{count(len(failed), 'test file')} and "
-                  f"{count(ncases, 'test case')} failed")
-            for result, result_cases in zip(failed, cases):
-                write(f"### {decolor(str(result))}")
-                if result.env_changed_reasons:
-                    write("\n".join(f"- {reason}"
-                                    for reason in result.env_changed_reasons))
-                for name, traceback in result_cases:
-                    # Expand the tracebacks if they fit on a screen: up to 5
-                    # test cases with a traceback of less than 30 lines
-                    is_open = ncases <= 5 and traceback.count("\n") < 30
-                    write(f"<details{' open' if is_open else ''}>"
-                          f"<summary>{html.escape(name)}</summary>")
-                    write(f"```pytb\n{decolor(traceback).rstrip()}\n```")
-                    write("</details>")
+            fp.write(f"## {decolor(self.get_state())}: "
+                     f"{count(len(failed), 'test file')} and "
+                     f"{count(ncases, 'test case')} failed\n\n")
+            for result in failed:
+                # Expand the tracebacks of up to 5 test cases
+                fp.write(result.format_github_summary(expand=ncases <= 5))
 
     def display_summary(self) -> None:
         if self.first_runtests is None:

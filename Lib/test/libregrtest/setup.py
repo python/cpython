@@ -12,7 +12,6 @@ from _colorize import can_colorize  # type: ignore[import-not-found]
 
 from .filter import set_match_tests
 from .runtests import RunTests
-lazy from .testresult import RegressionTestResult
 from .utils import (
     setup_unraisable_hook, setup_threading_excepthook,
     adjust_rlimit_nofile)
@@ -113,9 +112,9 @@ def setup_tests(runtests: RunTests) -> None:
 
     set_match_tests(runtests.match_tests)
 
-    RegressionTestResult.GITHUB_ANNOTATIONS = runtests.github_annotations
     if runtests.use_junit:
         support.junit_xml_list = []
+        from .testresult import RegressionTestResult
         RegressionTestResult.USE_XML = True
     else:
         support.junit_xml_list = None

@@ -148,8 +148,7 @@ GITHUB_ESCAPE_PROPERTY = GITHUB_ESCAPE_DATA | str.maketrans({":": "%3A",
                                                              ",": "%2C"})
 
 
-def print_github_annotation(title: str, message: str,
-                            filename: str | None = None, file=None) -> None:
+def print_github_annotation(title: str, message: str, filename: str) -> None:
     """Print a GitHub Actions error annotation.
 
     message is a traceback or a failure description. Only keep the exception
@@ -157,6 +156,8 @@ def print_github_annotation(title: str, message: str,
     annotation at the last traceback frame in a test file, or else at the
     first frame (the test), or else in filename (the test file).
     """
+    if not filename:
+        raise ValueError(f"missing test file of annotation {title!r}")
     message = decolor(message)
     line = None
     # Traceback frames ('  File "filename", line 123') and failed doctest
@@ -164,10 +165,8 @@ def print_github_annotation(title: str, message: str,
     if frames := re.findall(r'^ *File "(.*)", line (\d+)', message,
                             re.MULTILINE):
         test_frames = [frame for frame in frames
-                       if os.path.basename(frame[0]).startswith('test_')]
+                       if pathlib.Path(frame[0]).name.startswith('test_')]
         filename, line = test_frames[-1] if test_frames else frames[0]
-    if not filename:
-        raise ValueError(f"missing test file of annotation {title!r}")
     # In the job, the stdlib can be outside of the repository checkout
     path = pathlib.Path(filename)
     stdlib_dir = pathlib.Path(os.__file__).parent
@@ -181,7 +180,7 @@ def print_github_annotation(title: str, message: str,
     props_text = ",".join(f"{key}={value.translate(GITHUB_ESCAPE_PROPERTY)}"
                           for key, value in props.items() if value)
     print(f"::error {props_text}::{message.translate(GITHUB_ESCAPE_DATA)}",
-          file=file, flush=True)
+          flush=True)
 
 
 def regrtest_unraisable_hook(unraisable) -> None:
