@@ -1,0 +1,1 @@
+PyREPL on Windows now exits when ``NUL`` is passed as ``stdin`` instead of showing stream of tracebacks.
