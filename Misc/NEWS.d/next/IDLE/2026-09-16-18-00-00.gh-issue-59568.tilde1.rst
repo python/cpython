@@ -1,0 +1,2 @@
+Fix "Save As" and "Open" dialogs in IDLE for a file whose name starts with
+``~`` on Windows and X11 with Tcl/Tk older than 9.

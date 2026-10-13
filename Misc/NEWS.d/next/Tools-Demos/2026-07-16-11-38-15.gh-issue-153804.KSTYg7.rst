@@ -1,0 +1,4 @@
+Add ``Tools/inspection/oracle_external_inspection.py``, a harness for
+measuring the accuracy of Tachyon. It reports impossible-stack rates, speed,
+error rates and the statistical distance from the blocking non-cached best
+reference on selected snippets. Patch by Maurycy Pawłowski-Wieroński.

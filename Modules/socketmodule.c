@@ -290,6 +290,10 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 /* Helpers needed for AF_HYPERV */
 # include <Rpc.h>
 
+#ifndef RPC_S_OK
+#define RPC_S_OK 0L
+#endif
+
 /* Macros based on the IPPROTO enum, see: https://bugs.python.org/issue29515 */
 #define IPPROTO_ICMP IPPROTO_ICMP
 #define IPPROTO_IGMP IPPROTO_IGMP
@@ -631,14 +635,14 @@ _PyLong_##NAME##_Converter(PyObject *obj, void *ptr)                \
     return 1;                                                       \
 }
 
-#if defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS)
+#if defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS_DESKTOP)
 # ifdef MS_WINDOWS
     UNSIGNED_INT_CONVERTER(NetIfindex, NET_IFINDEX)
 # else
 #   define _PyLong_NetIfindex_Converter _PyLong_UnsignedInt_Converter
 #   define NET_IFINDEX unsigned int
 # endif
-#endif // defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS)
+#endif // defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS_DESKTOP)
 
 /*[python input]
 class NET_IFINDEX_converter(CConverter):
@@ -770,7 +774,9 @@ set_herror(socket_state *state, int h_error)
     PyObject *v;
 
 #ifdef HAVE_HSTRERROR
-    v = Py_BuildValue("(iN)", h_error, decode_error_message(hstrerror(h_error)));
+    const char *errmsg = hstrerror(h_error);
+    _Py_MSAN_UNPOISON_STRING(errmsg);
+    v = Py_BuildValue("(iN)", h_error, decode_error_message(errmsg));
 #else
     v = Py_BuildValue("(is)", h_error, "host not found");
 #endif
@@ -797,7 +803,9 @@ set_gaierror(socket_state *state, int error)
 #endif
 
 #ifdef HAVE_GAI_STRERROR
-    v = Py_BuildValue("(iN)", error, decode_error_message(gai_strerror(error)));
+    const char *errmsg = gai_strerror(error);
+    _Py_MSAN_UNPOISON_STRING(errmsg);
+    v = Py_BuildValue("(iN)", error, decode_error_message(errmsg));
 #else
     v = Py_BuildValue("(is)", error, "getaddrinfo failed");
 #endif
@@ -5924,10 +5932,12 @@ _socket_gethostname_impl(PyObject *module)
        Otherwise, gethostname apparently also returns the DNS name. */
     wchar_t buf[MAX_COMPUTERNAME_LENGTH + 1];
     DWORD size = Py_ARRAY_LENGTH(buf);
-    wchar_t *name;
-    PyObject *result;
 
+#ifdef MS_WINDOWS_DESKTOP
     if (GetComputerNameExW(ComputerNamePhysicalDnsHostname, buf, &size))
+#else
+    if (GetComputerNameW(buf, &size))
+#endif
         return PyUnicode_FromWideChar(buf, size);
 
     if (GetLastError() != ERROR_MORE_DATA)
@@ -5936,9 +5946,12 @@ _socket_gethostname_impl(PyObject *module)
     if (size == 0)
         return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
 
+#ifndef MS_WINDOWS_DESKTOP
+    return NULL;
+#else
     /* MSDN says ERROR_MORE_DATA may occur because DNS allows longer
        names */
-    name = PyMem_New(wchar_t, size);
+    wchar_t* name = PyMem_New(wchar_t, size);
     if (!name) {
         PyErr_NoMemory();
         return NULL;
@@ -5952,9 +5965,10 @@ _socket_gethostname_impl(PyObject *module)
         return NULL;
     }
 
-    result = PyUnicode_FromWideChar(name, size);
+    PyObject* result = PyUnicode_FromWideChar(name, size);
     PyMem_Free(name);
     return result;
+#endif
 #else
     char buf[1024];
     int res;
@@ -5987,6 +6001,15 @@ _socket_sethostname(PyObject *module, PyObject *hnobj)
 {
     Py_buffer buf;
     int res, flag = 0;
+
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return set_error();
+    }
+#endif
 
 #if defined(_AIX) || (defined(__sun) && defined(__SVR4) && Py_SUNOS_VERSION <= 510)
 /* issue #18259, sethostname is not declared in any useful header file on AIX
@@ -6503,6 +6526,7 @@ _socket_getservbyport_impl(PyObject *module, int port, const char *proto)
         PyErr_SetString(PyExc_OSError, "port/proto not found");
         return NULL;
     }
+    _Py_MSAN_UNPOISON_STRING(sp->s_name);
     return PyUnicode_FromString(sp->s_name);
 }
 
@@ -7312,7 +7336,7 @@ _socket_setdefaulttimeout(PyObject *module, PyObject *arg)
 }
 
 
-#if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
+#if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS_DESKTOP)
 /* Python API for getting interface indices and names */
 
 /*[clinic input]
@@ -7403,9 +7427,9 @@ _socket_if_nameindex_impl(PyObject *module)
 #endif
 }
 
-#endif // defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
+#endif // defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS_DESKTOP)
 
-#if defined(HAVE_IF_NAMETOINDEX) || defined(MS_WINDOWS)
+#if defined(HAVE_IF_NAMETOINDEX) || defined(MS_WINDOWS_DESKTOP)
 
 /*[clinic input]
 _socket.if_nametoindex
@@ -7435,9 +7459,9 @@ _socket_if_nametoindex_impl(PyObject *module, PyObject *oname)
     return PyLong_FromUnsignedLong(index);
 }
 
-#endif // defined(HAVE_IF_NAMETOINDEX) || defined(MS_WINDOWS)
+#endif // defined(HAVE_IF_NAMETOINDEX) || defined(MS_WINDOWS_DESKTOP)
 
-#if defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS)
+#if defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS_DESKTOP)
 
 /*[clinic input]
 @permit_long_summary
@@ -7462,7 +7486,7 @@ _socket_if_indextoname_impl(PyObject *module, NET_IFINDEX index)
     return PyUnicode_DecodeFSDefault(name);
 }
 
-#endif // defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS)
+#endif // defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS_DESKTOP)
 
 
 #ifdef CMSG_LEN
@@ -9365,7 +9389,7 @@ socket_exec(PyObject *m)
 #endif
 #endif /* _MSTCPIP_ */
 
-#ifdef MS_WINDOWS
+#ifdef MS_WINDOWS_DESKTOP
     /* remove some flags on older version Windows during run-time */
     if (remove_unusable_flags(m) < 0) {
         goto error;

@@ -12,8 +12,6 @@ although there is currently no date scheduled for their removal.
   Use :c:func:`PyErr_GetRaisedException` instead.
 * :c:func:`PyErr_Restore`:
   Use :c:func:`PyErr_SetRaisedException` instead.
-* :c:func:`PyModule_GetFilename`:
-  Use :c:func:`PyModule_GetFilenameObject` instead.
 * :c:func:`PyOS_AfterFork`:
   Use :c:func:`PyOS_AfterFork_Child` instead.
 * :c:func:`PySlice_GetIndicesEx`:

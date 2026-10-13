@@ -16,6 +16,7 @@ blurb
 sphinx-linklint
 sphinx-notfound-page~=1.0.0
 sphinxext-opengraph~=0.13.0
+sphinxext-rediraffe
 
 # The theme used by the documentation is stored separately, so we need
 # to install that as well.

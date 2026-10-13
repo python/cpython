@@ -328,7 +328,7 @@ def unpack_deps(
     for name_ver in [
         "BZip2-1.0.8-2",
         "libFFI-3.4.7-2",
-        "OpenSSL-3.5.8-1",
+        "OpenSSL-3.5.9-1",
         "XZ-5.6.4-2",
         "mpdecimal-4.0.0-2",
         "zstd-1.5.7-1",
@@ -408,7 +408,6 @@ def configure_host_python(
             f"--host={host}",
             f"--build={sysconfig.get_config_var('BUILD_GNU_TYPE')}",
             f"--with-build-python={build_python_path()}",
-            "--with-system-libmpdec",
             "--enable-framework",
             # Dependent libraries.
             f"--with-openssl={prefix_dir}",
