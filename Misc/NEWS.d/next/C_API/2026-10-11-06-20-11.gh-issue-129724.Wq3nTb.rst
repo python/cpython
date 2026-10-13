@@ -1,0 +1,4 @@
+:c:func:`PyMarshal_WriteObjectToFile` now builds the marshalled data in
+memory before writing it to the file, instead of writing it piece by piece
+using a buffer of constant size.  Nothing is written any more if the object
+cannot be marshalled.

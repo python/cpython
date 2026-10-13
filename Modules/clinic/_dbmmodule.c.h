@@ -4,6 +4,7 @@ preserve
 
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(_dbm_dbm_close__doc__,
 "close($self, /)\n"
@@ -82,7 +83,7 @@ _dbm_dbm_get(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_
     if (!_PyArg_NoKwnames("get", kwnames)) {
         goto exit;
     }
-    if (!_PyArg_ParseStack(args, nargs, "s#|O:get",
+    if (!PyArg_ParseArray(args, nargs, "s#|O:get",
         &key, &key_length, &default_value)) {
         goto exit;
     }
@@ -121,7 +122,7 @@ _dbm_dbm_setdefault(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     if (!_PyArg_NoKwnames("setdefault", kwnames)) {
         goto exit;
     }
-    if (!_PyArg_ParseStack(args, nargs, "s#|O:setdefault",
+    if (!PyArg_ParseArray(args, nargs, "s#|O:setdefault",
         &key, &key_length, &default_value)) {
         goto exit;
     }
@@ -231,13 +232,8 @@ dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("open", "argument 2", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t flags_length;
-    flags = PyUnicode_AsUTF8AndSize(args[1], &flags_length);
+    flags = _PyUnicode_AsUTF8NoNUL(args[1]);
     if (flags == NULL) {
-        goto exit;
-    }
-    if (strlen(flags) != (size_t)flags_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (nargs < 3) {
@@ -253,4 +249,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=336b7a79dd19219c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f9d904af4ea43d1d input=a9049054013a1b77]*/

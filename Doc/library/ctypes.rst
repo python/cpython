@@ -1579,7 +1579,10 @@ way is to instantiate :py:class:`CDLL` or one of its subclasses:
    :mod:`!ctypes` maintains a thread-local copy of the system's :data:`errno`
    variable; if you call foreign functions created with ``use_errno=True`` then the
    :data:`errno` value before the function call is swapped with the ctypes private
-   copy, the same happens immediately after the function call.
+   copy, the same happens immediately after the function call. This mechanism only
+   works for libraries that use the same C runtime library as the interpreter itself.
+   A library linked against a different C runtime (for example, a different CRT on
+   Windows) has its own :data:`errno`, which :mod:`!ctypes` cannot observe.
 
    The function :func:`ctypes.get_errno` returns the value of the ctypes private
    copy, and the function :func:`ctypes.set_errno` changes the ctypes private copy
@@ -1755,8 +1758,9 @@ These prefabricated library loaders are available:
       :c:expr:`int`, which is of course not always the truth, so you have to assign
       the correct :attr:`!restype` attribute to use these functions.
 
-      Note that if the Python interpreter is statically linked, this will be
-      ``None``, as ``dlopen`` is not possible in this case.
+      .. note::
+
+         If the Python interpreter is statically linked, this may be ``None``.
 
 .. audit-event:: ctypes.dlopen name ctypes.LibraryLoader
 
