@@ -49,3 +49,7 @@ reference/expressions.html: generator.__next__
 reference/expressions.html: generator.close
 reference/expressions.html: generator.send
 reference/expressions.html: generator.throw
+
+# Wrong exception names in 'concurrent.interpreters' docs (gh-136563)
+library/concurrent.interpreters.html: concurrent.interpreters.QueueEmptyError
+library/concurrent.interpreters.html: concurrent.interpreters.QueueFullError
