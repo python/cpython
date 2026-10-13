@@ -1793,7 +1793,7 @@ Importing modules
 
    This function imports and returns a fresh copy of the named Python module
    by removing the named module from :data:`sys.modules` before doing the import.
-   Note that unlike :func:`reload`, the original module is not affected by
+   Note that unlike :func:`reload<importlib.reload>`, the original module is not affected by
    this operation.
 
    *fresh* is an iterable of additional module names that are also removed
