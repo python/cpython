@@ -31,12 +31,6 @@ class _CReturnEmitter:
         self.writer.print("p->level--;")
         self.writer.print(f"return {value};")
 
-    def check_memory(self, expr: str) -> None:
-        self.writer.print(f"if ({expr}) {{")
-        with self.writer.indent():
-            self.no_memory()
-        self.writer.print("}")
-
     def no_memory(self) -> None:
         self.writer.print("p->error_indicator = 1;")
         self.writer.print("PyErr_NoMemory();")
@@ -51,24 +45,19 @@ class _LoopBuffer:
     def __init__(self, writer: CWriter, returns: _CReturnEmitter):
         self._print = writer.print
         self._indent = writer.indent
-        self._returns = returns
         self.error_returns = returns.with_cleanup(self._release)
 
     def initialize(self) -> None:
-        self._print("void **_children = PyMem_Malloc(sizeof(void *));")
-        self._returns.check_memory("!_children")
-        self._print("Py_ssize_t _children_capacity = 1;")
+        self._print("void **_children = NULL;")
+        self._print("Py_ssize_t _children_capacity = 0;")
         self._print("Py_ssize_t _n = 0;")
 
     def append(self, value: str) -> None:
         self._print("if (_n == _children_capacity) {")
         with self._indent():
-            self._print("_children_capacity *= 2;")
-            self._print(
-                "void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));"
+            self._check_memory(
+                "_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0"
             )
-            self._check_memory("!_new_children")
-            self._print("_children = _new_children;")
         self._print("}")
         self._print(f"_children[_n++] = {value};")
 
@@ -87,8 +76,7 @@ class _LoopBuffer:
     def _check_memory(self, expr: str) -> None:
         self._print(f"if ({expr}) {{")
         with self._indent():
-            self._print(self._release)
-            self._returns.no_memory()
+            self.error_returns.no_memory()
         self._print("}")
 
 

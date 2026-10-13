@@ -18,6 +18,7 @@ import tempfile
 import textwrap
 import threading
 import unittest
+from _codecs import _unregister_error as _codecs_unregister_error
 
 import test.support
 from test import support
@@ -409,6 +410,8 @@ class BaseBytesTest:
         self.assertRaises(TypeError, lambda: b1 + "def")
         self.assertRaises(TypeError, lambda: "abc" + b2)
 
+        self.assertEqual(self.type2test() + memoryview(b''), b'')
+
     def test_repeat(self):
         for b in b"abc", self.type2test(b"abc"):
             self.assertEqual(b * 3, b"abcabcabc")
@@ -516,6 +519,15 @@ class BaseBytesTest:
             with self.assertRaises(ValueError) as cm:
                 self.type2test.fromhex(data)
             self.assertIn('at position %s' % pos, str(cm.exception))
+
+        # gh-158583: Check for out of bounds reads (uninitialized bytes).
+        # Create an array from a list to not overallocate.
+        a = array.array('B', list(b'1234  '))  # Py_ISSPACE() loop
+        self.assertEqual(self.type2test.fromhex(a), b'\x12\x34')
+
+        a = array.array('B', list(b'12345'))  # Missing second digit
+        with self.assertRaises(ValueError):
+            self.type2test.fromhex(a)
 
     def test_hex(self):
         self.assertRaises(TypeError, self.type2test.hex)
@@ -882,7 +894,7 @@ class BaseBytesTest:
     def test_memory_leak_gh_140939(self):
         # gh-140939: MemoryError is raised without leaking
         _testcapi = import_helper.import_module('_testcapi')
-        with self.assertRaises(MemoryError):
+        with self.assertRaises((MemoryError, OverflowError)):
             b = self.type2test(b'%*b')
             b % (_testcapi.PY_SSIZE_T_MAX, b'abc')
 
@@ -1436,6 +1448,45 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
         self.assertNotEqual(id(s), id(s * 1))
         self.assertNotEqual(id(s), id(1 * s))
         self.assertNotEqual(id(s), id(s * 2))
+
+    @support.cpython_only
+    def test_concat_cpython(self):
+        # Test optimizations
+        empty = b''
+        abc = b"abc"
+        self.assertIs(abc + empty, abc)
+        self.assertIs(empty + abc, abc)
+        self.assertIs(empty + bytearray(b''), empty)
+        self.assertIs(empty + memoryview(b''), empty)
+
+        class Subclass(bytes):
+            pass
+
+        empty_subclass = Subclass(b"")
+        self.assertIs(empty + empty_subclass, empty)
+        self.assertIs(empty_subclass + empty, empty)
+        self.assertIs(abc + empty_subclass, abc)
+        self.assertIs(empty_subclass + abc, abc)
+
+        def assert_copy(result, expected):
+            self.assertIsNot(result, expected)
+            self.assertEqual(type(result), bytes)
+            self.assertEqual(result, expected)
+
+        # Copy the string if it's a subclass
+        def_subclass = Subclass(b"def")
+        assert_copy(def_subclass + empty, b'def')
+        assert_copy(empty + def_subclass, b'def')
+        assert_copy(abc + def_subclass, b'abcdef')
+        assert_copy(def_subclass + abc, b'defabc')
+
+    @support.cpython_only
+    def test_repeat_cpython(self):
+        # Test optimizations
+        for b in b'', b'x', b"abc":
+            self.assertIs(b * 1, b)
+            self.assertIs(b * 0, b'')
+            self.assertIs(b * -23, b'')
 
 
 class ByteArrayTest(BaseBytesTest, unittest.TestCase):
@@ -2194,6 +2245,30 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             b[1:-1:2] = b""
         self.assertRaises(BufferError, delslice)
         self.assertEqual(b, orig)
+
+    def test_decode_resize_forbidden(self):
+        # The storage is pinned while it is decoded, so an error handler
+        # cannot resize the bytearray.
+        b = bytearray(b'ab\xffcd')
+        errors = 'test.bytearray_decode_resize'
+        def handler(exc):
+            self.assertRaises(BufferError, b.clear)
+            self.assertRaises(BufferError, b.append, 0)
+            return ('?', exc.end)
+        self.addCleanup(_codecs_unregister_error, errors)
+        codecs.register_error(errors, handler)
+        for encoding in 'utf-8', 'utf-8-sig':
+            with self.subTest(encoding=encoding):
+                self.assertEqual(b.decode(encoding, errors), 'ab?cd')
+        self.assertEqual(b, b'ab\xffcd')
+
+    def test_decode_subclass_buffer(self):
+        # decode() decodes the buffer that the object exports.
+        class B(bytearray):
+            def __buffer__(self, flags):
+                return memoryview(b'other')
+        self.assertEqual(B(b'mine').decode(), 'other')
+        self.assertEqual(B(b'mine').decode('latin-1'), 'other')
 
     @test.support.cpython_only
     def test_obsolete_write_lock(self):

@@ -98,6 +98,11 @@ Other language changes
   they reference) alive indefinitely.
   (Contributed by Łukasz Langa in :gh:`102960`.)
 
+* :exc:`TypeError` messages for some instance methods called with too many
+  positional arguments now suggest checking whether the method definition is
+  missing the ``self`` parameter. (Contributed by Suren Nihalani in
+  :gh:`152315`.)
+
 
 New modules
 ===========
@@ -180,6 +185,7 @@ ctypes
   from an annotation-based syntax, similar to how the :mod:`dataclasses` module
   is used.
   (Contributed by Peter Bierma in :gh:`104533`.)
+
 * Add :func:`ctypes.util.wrap_dll_function` for generating function pointers
   through a function signature.
   (Contributed by Peter Bierma in :gh:`153903`.)
@@ -326,27 +332,6 @@ curses
   (Contributed by Serhiy Storchaka in :gh:`133031`.)
 
 
-ctypes
-------
-
-* Add :func:`ctypes.util.struct` for generating :class:`~ctypes.Structure` types
-  from an annotation-based syntax, similar to how the :mod:`dataclasses` module
-  is used.
-  (Contributed by Peter Bierma in :gh:`104533`.)
-* Add :func:`ctypes.util.wrap_dll_function` for generating function pointers
-  through a function signature.
-  (Contributed by Peter Bierma in :gh:`153903`.)
-
-
-concurrent.futures
-------------------
-
-* The iterator returned by :meth:`concurrent.futures.Executor.map` is no longer
-  automatically closed if a function call raises an exception.
-  Use method :meth:`!close` to explicitly close the iterator.
-  (Contributed by xzmeng and Serhiy Storchaka in :gh:`108518`.)
-
-
 decimal
 -------
 
@@ -396,6 +381,10 @@ encodings
 * Add the ``utf-7-imap`` codec, implementing the modified UTF-7 encoding
   used for international IMAP4 mailbox names (:rfc:`3501`).
   (Contributed by Serhiy Storchaka in :gh:`66788`.)
+
+* :func:`encodings.idna.nameprep` now takes a *limit* argument that allows
+  rejecting extremely large input early.
+  (Contributed by Petr Viktorin in :gh:`157675`.)
 
 
 gzip
@@ -1167,6 +1156,11 @@ Build changes
 
   (Contributed by Stan Ulbrych in :gh:`139314`.)
 
+* Add the :option:`--with-hwaddress-sanitizer` :program:`configure` option to
+  build with `HWAddressSanitizer <https://clang.llvm.org/docs/HardwareAssistedAddressSanitizerDesign.html>`_.
+
+  (Contributed by Stan Ulbrych, Florian Mayer and AnnaAr321 in :gh:`156049`.)
+
 
 C API changes
 =============
@@ -1176,6 +1170,10 @@ New features
 
 * Add :c:func:`Py_HashBuffer` to the limited C API.
   (Contributed by Victor Stinner in :gh:`148233`.)
+
+* Add :c:macro:`Py_SETREF` and :c:macro:`Py_XSETREF` macros to the limited C
+  API.
+  (Contributed by Nathan Goldbaum and Victor Stinner in :gh:`158842`.)
 
 Porting to Python 3.16
 ----------------------
@@ -1219,6 +1217,13 @@ Deprecated C APIs
 * :c:func:`PyModule_GetFilename` is no longer deprecated, but using
   :c:func:`PyModule_GetFilenameObject` instead is still recommended.
   (Contributed by Victor Stinner in :gh:`154757`.)
+
+* Soft deprecate functions modifying Unicode strings:
+  :c:func:`PyUnicode_New`, :c:func:`PyUnicode_CopyCharacters`,
+  :c:func:`PyUnicode_Fill`, :c:func:`PyUnicode_Resize`,
+  :c:func:`PyUnicode_WRITE` and :c:func:`PyUnicode_WriteChar`.
+  Use the safer :c:type:`PyUnicodeWriter` API instead.
+  (Contributed by Victor Stinner in :gh:`157710`.)
 
 .. Add C API deprecations above alphabetically, not here at the end.
 

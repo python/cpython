@@ -11,6 +11,7 @@ preserve
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(lone_kwds__doc__,
 "lone_kwds($module, /, **kwds)\n"
@@ -229,4 +230,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=62804c41a11bbd73 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=27a7ba9440b9a884 input=a9049054013a1b77]*/

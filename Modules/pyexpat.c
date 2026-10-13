@@ -1079,7 +1079,6 @@ pyexpat_xmlparser_GetSpecifiedAttributeCount_impl(xmlparseobject *self)
 }
 
 /*[clinic input]
-@permit_long_summary
 pyexpat.xmlparser.GetInputContext
 
 Return the input which generated the current event as bytes.
@@ -1093,7 +1092,7 @@ available.
 
 static PyObject *
 pyexpat_xmlparser_GetInputContext_impl(xmlparseobject *self)
-/*[clinic end generated code: output=a88026d683fc22cc input=13840373d8320ab6]*/
+/*[clinic end generated code: output=a88026d683fc22cc input=2d605aaa9edbb415]*/
 {
     if (self->in_callback) {
         int offset, size;

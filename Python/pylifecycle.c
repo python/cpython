@@ -559,7 +559,11 @@ pycore_init_runtime(_PyRuntimeState *runtime,
      */
     _PyRuntimeState_SetFinalizing(runtime, NULL);
 
-    _Py_InitVersion();
+    status = _Py_GetVersion_Init();
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     _Py_DumpTraceback_Init();
 
     status = _Py_HashRandomization_Init(config);
