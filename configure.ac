@@ -5586,6 +5586,41 @@ AC_CHECK_FUNCS([ \
 
 PY_CHECK_FUNC_PRIVATE([strerror_r], [@%:@include <string.h>])
 
+# Detect musl's behaviour of reporting the current allocated stack size for
+# the main thread, rather than the max size, in pthread_getattr_np.
+AS_IF([test "$ac_cv_func_pthread_getattr_np" = yes],
+  [AC_CACHE_CHECK([whether pthread_getattr_np reports the main thread stack reliably],
+    [ac_cv_unreliable_pthread_getattr_np],
+    [AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#define _GNU_SOURCE
+#include <pthread.h>
+#include <stdlib.h>
+#include <sys/resource.h>
+
+int main(void) {
+    pthread_attr_t attr;
+    void *stack_addr;
+    size_t stack_size, guard_size;
+    struct rlimit rl;
+
+    if (pthread_getattr_np(pthread_self(), &attr) != 0) return 1;
+    if (pthread_attr_getstack(&attr, &stack_addr, &stack_size) != 0 ||
+        pthread_attr_getguardsize(&attr, &guard_size) != 0) {
+        pthread_attr_destroy(&attr);
+        return 1;
+    }
+    pthread_attr_destroy(&attr);
+    if (getrlimit(RLIMIT_STACK, &rl) != 0) return 1;
+    if (rl.rlim_cur == RLIM_INFINITY) return 0;
+    return (stack_size >= rl.rlim_cur / 2) ? 0 : 1;
+}
+      ]])],
+      [ac_cv_unreliable_pthread_getattr_np=no],
+      [ac_cv_unreliable_pthread_getattr_np=yes],
+      [ac_cv_unreliable_pthread_getattr_np=no])])
+   AS_VAR_IF([ac_cv_unreliable_pthread_getattr_np], [yes],
+     [AC_DEFINE([HAVE_UNRELIABLE_PTHREAD_GETATTR_NP], [1],
+       [Define if pthread_getattr_np under-reports the main thread's stack size (musl behaviour).])])])
 
 # os.statx uses Linux's statx function.  AIX also has a function named statx,
 # but it's unrelated.  Check only on Linux (including Android).
