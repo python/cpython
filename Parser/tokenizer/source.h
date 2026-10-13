@@ -19,6 +19,46 @@ _PyTok_SourceData(const _PyTok_SourceText *source)
     return source->bytes != NULL ? source->bytes : "";
 }
 
+/* Convert positions within the retained source window. Pointers and views
+   are borrowed; append, discard, and clear invalidate them. */
+static inline const char *
+_PyTok_SourcePointer(const _PyTok_SourceText *source, _PyTok_Off offset)
+{
+    assert(offset >= source->base_offset);
+    assert(offset - source->base_offset <= source->len);
+    return _PyTok_SourceData(source) + (offset - source->base_offset);
+}
+
+static inline unsigned char
+_PyTok_SourceByte(const _PyTok_SourceText *source, _PyTok_Off offset)
+{
+    assert(offset >= source->base_offset);
+    assert(offset - source->base_offset < source->len);
+    return (unsigned char)source->bytes[offset - source->base_offset];
+}
+
+static inline const char *
+_PyTok_SourceSpanView(const _PyTok_SourceText *source, _PyTok_Span span,
+                      Py_ssize_t *length)
+{
+    assert(length != NULL);
+    assert(_PyTok_SpanIsValid(span));
+    assert(span.end - source->base_offset <= source->len);
+    *length = span.end - span.start;
+    return _PyTok_SourcePointer(source, span.start);
+}
+
+/* Return the first matching offset within span, or -1 if absent. */
+static inline _PyTok_Off
+_PyTok_SourceFindByte(const _PyTok_SourceText *source, _PyTok_Span span,
+                      int byte)
+{
+    Py_ssize_t length;
+    const char *data = _PyTok_SourceSpanView(source, span, &length);
+    const char *found = memchr(data, byte, length);
+    return found != NULL ? span.start + (found - data) : -1;
+}
+
 PyAPI_FUNC(void) _PyTok_SourceInit(_PyTok_SourceText *);
 /* Clear invalidates all spans and views for the source. */
 PyAPI_FUNC(void) _PyTok_SourceClear(_PyTok_SourceText *);
