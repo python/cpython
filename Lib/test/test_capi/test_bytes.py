@@ -2,7 +2,6 @@ import sys
 import unittest
 from test import support
 from test.support import import_helper
-from test import support
 
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 _testcapi = import_helper.import_module('_testcapi')
