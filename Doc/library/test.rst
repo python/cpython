@@ -1739,7 +1739,7 @@ Manipulating sys.modules
 
 .. function:: modules_setup()
 
-   Return a copy of :data:`sys.modules`.
+   Return a tuple containing a copy of :data:`sys.modules`
 
 
 .. function:: modules_cleanup(oldmodules)
@@ -1773,7 +1773,7 @@ Manipulating sys.modules
             importlib.import_module('foo')  # New reference.
 
 
-Special importers
+Importing modules
 -----------------
 
 .. function:: import_module(name, deprecated=False, *, required_on=())
@@ -1878,7 +1878,7 @@ Manipulating internals
    path to the source file.  It does not need to exist, however the PEP
    3147/488 pyc file must exist or *allow_compile* must be set.
 
-   *allow_compile* will create a .pyc file if it does not exist.
+   If *allow_compile* is ``True`` this will create a .pyc file if it does not exist.
 
 
 .. function:: frozen_modules(enabled=True)
