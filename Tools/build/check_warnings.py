@@ -100,7 +100,9 @@ def extract_warnings_from_compiler_output(
                     "line": match.group("line"),
                     "column": match.group("column"),
                     "message": match.group("message"),
-                    "option": match.group("option").lstrip("[").rstrip("]"),
+                    "option": (match.group("option") or "")
+                    .lstrip("[")
+                    .rstrip("]"),
                 })
             except AttributeError:
                 print(
