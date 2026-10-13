@@ -9020,7 +9020,6 @@
                     SET_CURRENT_CACHED_VALUES(0);
                     JUMP_TO_ERROR();
                 }
-                next = none;
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     SET_CURRENT_CACHED_VALUES(0);
@@ -9064,10 +9063,9 @@
                     SET_CURRENT_CACHED_VALUES(0);
                     JUMP_TO_ERROR();
                 }
-                next = none;
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
-                    _tos_cache0 = stack_pointer[0];
+                    _tos_cache0 = none;
                     SET_CURRENT_CACHED_VALUES(1);
                     JUMP_TO_JUMP_TARGET();
                 }
@@ -9111,10 +9109,9 @@
                     SET_CURRENT_CACHED_VALUES(0);
                     JUMP_TO_ERROR();
                 }
-                next = none;
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
-                    _tos_cache1 = stack_pointer[1];
+                    _tos_cache1 = none;
                     _tos_cache0 = null_or_index;
                     SET_CURRENT_CACHED_VALUES(2);
                     JUMP_TO_JUMP_TARGET();
@@ -9161,10 +9158,9 @@
                     SET_CURRENT_CACHED_VALUES(0);
                     JUMP_TO_ERROR();
                 }
-                next = none;
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
-                    _tos_cache2 = stack_pointer[2];
+                    _tos_cache2 = none;
                     _tos_cache1 = null_or_index;
                     _tos_cache0 = iter;
                     SET_CURRENT_CACHED_VALUES(3);
