@@ -2,6 +2,7 @@
 import io
 import struct
 from test import support
+from test.support import threading_helper
 from test.support.import_helper import import_fresh_module
 import types
 import unittest
@@ -191,6 +192,48 @@ class MiscTests(unittest.TestCase):
         root = cET.fromstring('<a></a>')
         iter_type = type(root.iter())
         support.check_disallow_instantiation(self, iter_type)
+
+
+@unittest.skipUnless(cET, 'requires _elementtree')
+@threading_helper.requires_working_threading()
+class ThreadingTests(unittest.TestCase):
+    def test_concurrent_slice_deletion(self):
+        self.check_concurrent_slice_deletion(slice(1, 65))
+
+    def test_concurrent_extended_slice_deletion(self):
+        for index in (slice(1, 65, 3), slice(64, 0, -3), slice(1, None, 3)):
+            with self.subTest(index=index):
+                self.check_concurrent_slice_deletion(index)
+
+    def check_concurrent_slice_deletion(self, index):
+        # gh-149965: Read children while slice deletion shifts the child
+        # pointers. Create the elements here so the writer does not own them.
+        roots = []
+        expected = []
+        for _ in range(100):
+            root = cET.Element('root')
+            children = [cET.SubElement(root, str(i)) for i in range(100)]
+            del children[index]
+            roots.append(root)
+            expected.append(children)
+
+        def delete():
+            for root in roots:
+                del root[index]
+
+        def read():
+            for _ in range(10):
+                for root in roots:
+                    # Each slice leaves at least two children. Their identity
+                    # can change during deletion, but they must remain valid.
+                    child = root[1]
+                    self.assertIsInstance(child, cET.Element)
+                    self.assertIn(child.tag, tags)
+
+        tags = {str(i) for i in range(100)}
+        threading_helper.run_concurrently([delete, read, read])
+        for root, children in zip(roots, expected):
+            self.assertEqual(root[:], children)
 
 
 @unittest.skipUnless(cET, 'requires _elementtree')
