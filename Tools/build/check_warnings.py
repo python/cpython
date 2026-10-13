@@ -267,6 +267,7 @@ def main(argv: list[str] | None = None) -> int:
         "-p",
         "--path-prefix",
         type=str,
+        default="",
         help="Path prefix to remove from the start of file paths"
         " in compiler output",
     )
