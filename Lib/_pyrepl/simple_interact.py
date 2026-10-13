@@ -48,8 +48,7 @@ from .readline import _get_reader, multiline_input, append_history_file
 #
 # In the REPL:
 #     >>> print("Hello, world!")
-#     \x1b]633;C\x07
-#     Hello, world!
+#     \x1b]633;C\x07Hello, world!
 statement_submitted_hook = None
 
 
