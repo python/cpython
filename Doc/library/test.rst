@@ -1897,7 +1897,7 @@ Manipulating internals
    modules from being allowed in subinterpreters.
 
    This only applies to modules that haven't been imported yet.
-   It overrides the ``PyInterpreterConfig.check_multi_interp_extensions``
+   It overrides the :c:data:`PyInterpreterConfig.check_multi_interp_extensions`
    setting.
 
 
