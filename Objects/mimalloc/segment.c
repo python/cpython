@@ -1707,10 +1707,10 @@ mi_page_t* _mi_segment_page_alloc(mi_heap_t* heap, size_t block_size, size_t pag
 
 static bool mi_segment_visit_page(mi_page_t* page, bool visit_blocks, mi_block_visit_fun* visitor, void* arg) {
   mi_heap_area_t area;
+  _mi_page_free_collect(page,true); // CPython: collect first so the used count is accurate
   _mi_heap_area_init(&area, page);
   if (!visitor(NULL, &area, NULL, area.block_size, arg)) return false;
   if (visit_blocks) {
-    _mi_page_free_collect(page,true); // collect so the used count is accurate
     return _mi_heap_area_visit_blocks(&area, page, visitor, arg);
   }
   else {
