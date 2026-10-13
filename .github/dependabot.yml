@@ -117,15 +117,3 @@ updates:
         patterns: ["*"]
     cooldown:
       default-days: 14
-
-  - package-ecosystem: "pip"
-    target-branch: "3.13"
-    directory: "/Tools/"
-    schedule:
-      interval: "quarterly"
-    labels: ["skip issue", "skip news"]
-    groups:
-      pip:
-        patterns: ["*"]
-    cooldown:
-      default-days: 14
