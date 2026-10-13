@@ -120,7 +120,7 @@ class TestFTFunctionAttributes(TestCase):
 
         def reader():
             for _ in range(ITERS):
-                self.assertRegex(repr(target), r"^<function .* at 0x[0-9a-f]+>$")
+                self.assertRegex(repr(target), r"^<function .* at 0x[0-9a-fA-F]+>$")
 
         threading_helper.run_concurrently(
             [writer, reader] * (NUM_THREADS // 2))
