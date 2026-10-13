@@ -8018,6 +8018,9 @@ PyObject_ClearManagedDict(PyObject *obj)
             // We have a materialized object which points at the inline
             // values. We need to materialize the keys. Nothing can modify
             // this object, but we need to lock the dictionary.
+            // The object can be freed while an exception is propagating:
+            // don't let a MemoryError from detaching the dict replace it.
+            PyObject *exc = PyErr_GetRaisedException();
             int err;
             Py_BEGIN_CRITICAL_SECTION(dict);
             err = detach_dict_from_object(dict, obj);
@@ -8038,6 +8041,7 @@ PyObject_ClearManagedDict(PyObject *obj)
                 clear_inline_values(_PyObject_InlineValues(obj));
                 Py_END_CRITICAL_SECTION();
             }
+            PyErr_SetRaisedException(exc);
         }
     }
     Py_CLEAR(_PyObject_ManagedDictPointer(obj)->dict);

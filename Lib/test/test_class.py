@@ -1047,6 +1047,41 @@ class TestInlineValues(unittest.TestCase):
             self.fail("MemoryError was not raised while detaching "
                       f"the dictionary: {seen}")
 
+    @support.nomemtest
+    def test_detach_materialized_dict_no_memory_keeps_exception(self):
+        # A MemoryError raised while detaching the dictionary must not
+        # replace the exception which is propagating when the object is freed.
+        import _testcapi
+
+        class A:
+            def __init__(self):
+                self.a = 1
+                self.b = 2
+
+        def f(lst):
+            # The object is only referenced from the evaluation stack,
+            # so it is freed while ZeroDivisionError propagates.
+            [lst.pop(), 1/0]
+
+        seen = []
+        for n in range(20):
+            lst = [A()]
+            d = lst[0].__dict__
+            with support.catch_unraisable_exception() as ex:
+                with self.assertRaises((ZeroDivisionError, MemoryError)) as cm:
+                    _testcapi.call_with_nomemory(n, n + 1, f, lst)
+                if ex.unraisable is None:
+                    continue
+                err_msg = ex.unraisable.err_msg
+            seen.append((n, type(cm.exception), err_msg))
+            if (err_msg ==
+                    'Exception ignored while clearing an object managed dict'):
+                self.assertIs(type(cm.exception), ZeroDivisionError)
+                break
+        else:
+            self.fail("MemoryError was not raised while detaching "
+                      f"the dictionary: {seen}")
+
 class DefinitionOrderTests(unittest.TestCase):
     # PEP 520: Preserving Class Attribute Definition Order
 

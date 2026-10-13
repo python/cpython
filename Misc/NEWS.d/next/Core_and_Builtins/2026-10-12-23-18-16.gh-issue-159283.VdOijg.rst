@@ -1,0 +1,4 @@
+Fix a :exc:`SystemError` (a fatal error in a debug build) when an object
+whose :attr:`~object.__dict__` has been accessed is freed while an exception
+propagates and detaching the dictionary fails with :exc:`MemoryError`. The
+propagating exception is now kept. Patch by Christian Aurich Zanettini Martins.
