@@ -103,6 +103,8 @@ def create_archive(source, target=None, interpreter=None, main=None,
             source_is_file = True
 
     if source_is_file:
+        if main is not None:
+            raise ZipAppError("Cannot change the main function when copying")
         _copy_archive(source, target, interpreter)
         return
 

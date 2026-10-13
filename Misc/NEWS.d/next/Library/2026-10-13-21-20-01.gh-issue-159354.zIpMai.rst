@@ -1,0 +1,2 @@
+Fix :func:`zipapp.create_archive` to reject a ``main`` argument when copying
+an existing archive, instead of silently ignoring it.
