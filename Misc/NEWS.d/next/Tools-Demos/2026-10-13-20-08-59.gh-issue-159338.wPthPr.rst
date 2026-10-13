@@ -1,0 +1,2 @@
+Fix ``Tools/build/check_warnings.py`` to work when ``--path-prefix``
+is omitted.
