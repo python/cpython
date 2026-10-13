@@ -33,9 +33,13 @@ def run_refleak_tests(testmod):
         gc.collect()
         refcount[i] = sys.gettotalrefcount()
 
-    first = refcount[0]
+    # Compute differences
+    previous = None
     for i in rep_range:
-        refcount[i] -= first
+        value = refcount[i]
+        if previous is not None:
+           refcount[i] = value - previous
+        previous = value
 
     deltas = list(refcount[warmups:])
     if all(delta >= 1 for delta in deltas):
