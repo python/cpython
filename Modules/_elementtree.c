@@ -2141,8 +2141,9 @@ element_ass_subscr_lock_held(PyObject *op, PyObject *item, PyObject *value)
 static int
 element_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
 {
+    int res = 0;
     Py_BEGIN_CRITICAL_SECTION(op);
-    int res = element_ass_subscr_lock_held(op, item, value);
+    res = element_ass_subscr_lock_held(op, item, value);
     Py_END_CRITICAL_SECTION();
     return res;
 }
