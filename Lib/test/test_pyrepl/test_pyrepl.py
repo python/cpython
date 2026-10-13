@@ -691,11 +691,15 @@ class TestPyReplOutput(ScreenEqualMixin, TestCase):
         self.assertIs(type(wrapper.get_line_buffer()), str)
 
     def test_input_does_not_modify_history(self):
-        reader = self.prepare_reader(code_to_events("new input\n"))
+        events = [
+            Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+            Event(evt="key", data="\n", raw=bytearray(b"\n")),
+        ]
+        reader = self.prepare_reader(events)
         reader.history.append("previous input")
         wrapper = _ReadlineWrapper(f_in=None, f_out=None, reader=reader)
 
-        self.assertEqual(wrapper.input(), "new input")
+        self.assertEqual(wrapper.input(), "previous input")
         self.assertEqual(reader.history, ["previous input"])
 
     def test_multiline_edit(self):
