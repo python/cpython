@@ -161,8 +161,9 @@ extern void _PyThreadState_Suspend(PyThreadState *tstate);
 // Returns 1 on success, 0 if the thread was not in the "detached" state.
 extern int _PyThreadState_TrySuspendDetached(PyThreadState *tstate);
 
-// Undo a successful _PyThreadState_TrySuspendDetached(): switch the thread
-// back to "detached" and wake it if it is waiting to attach.
+// Resume a thread suspended by _PyThreadState_TrySuspendDetached() or a
+// stop-the-world pause: switch it back to "detached" or "detached-waiting"
+// and wake it if it is waiting to attach.
 extern void _PyThreadState_ResumeDetached(PyThreadState *tstate);
 #endif
 
