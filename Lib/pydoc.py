@@ -1847,9 +1847,11 @@ def _introdoc():
         enter "q", "quit" or "exit".
     ''')
 
-SKIP_DUNDER_HELP = {
+SKIP_DUNDER_HELP = frozenset({
     '__future__',
-}
+    '__hello__',
+    '__phello__',
+})
 
 def _is_dunder_name(x):
     return isinstance(x, str) and x.isidentifier() and len(x) > 4 and x[:2] == x[-2:] == '__'
