@@ -2775,7 +2775,7 @@ def _url_handler(url, content_type="text/html"):
         heading = html.heading('Error')
         contents = '<br>'.join(html.escape(line) for line in
                                format_exception_only(type(exc), exc))
-        contents = heading + html.bigsection(html.escape(url), 'error', contents)
+        contents = heading + html.bigsection(html.escape(urllib.parse.unquote(url)), 'error', contents)
         return "Error - %s" % url, contents
 
     def get_html_page(url):
