@@ -974,11 +974,11 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
          */
         cls = (PyTypeObject*)PyExc_BaseExceptionGroup;
     }
-    PyBaseExceptionGroupObject *self =
-        PyBaseExceptionGroupObject_CAST(BaseException_new(cls, args, kwds));
-    if (!self) {
+    PyObject *op = BaseException_new(cls, args, kwds);
+    if (!op) {
         goto error;
     }
+    PyBaseExceptionGroupObject *self = PyBaseExceptionGroupObject_CAST(op);
 
     self->msg = Py_NewRef(message);
     self->excs = exceptions;
