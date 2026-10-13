@@ -5,7 +5,7 @@
 
 # The file is not used by default yet. For testing do:
 #
-#    ln -sfr Modules/Setup.stdlib Modules/Setup.local
+#     ln -sfr Modules/Setup.stdlib Modules/Setup.local
 #
 
 # * @MODULE_{NAME}_TRUE@ is removed when configure detects all build
