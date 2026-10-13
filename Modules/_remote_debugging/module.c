@@ -650,45 +650,6 @@ read_interp_state_and_maybe_thread_frame(
         interp_state_buffer);
 }
 
-static int
-filter_cpu_thread_states(PyObject *result, PyObject *bound_threads, int skip)
-{
-    // Prefer a bound stack when states share an OS thread. There may be no
-    // bound state after a native callback deletes its temporary thread state.
-    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(result); i++) {
-        PyObject *threads = PyStructSequence_GET_ITEM(PyList_GET_ITEM(result, i), 1);
-        for (Py_ssize_t j = PyList_GET_SIZE(threads); j-- > 0;) {
-            PyObject *thread = PyList_GET_ITEM(threads, j);
-            PyObject *bound = PyDict_GetItemWithError(
-                bound_threads, PyStructSequence_GET_ITEM(thread, 0));
-            if (bound == NULL) {
-                if (PyErr_Occurred()) {
-                    return -1;
-                }
-                continue;
-            }
-            long status = PyLong_AsLong(PyStructSequence_GET_ITEM(thread, 1));
-            if (bound == thread || !(status & THREAD_STATUS_ON_CPU)) {
-                continue;
-            }
-            if (skip) {
-                if (PySequence_DelItem(threads, j) < 0) {
-                    return -1;
-                }
-            }
-            else {
-                PyObject *new_status = PyLong_FromLong(status & ~THREAD_STATUS_ON_CPU);
-                if (new_status == NULL) {
-                    return -1;
-                }
-                Py_DECREF(PyStructSequence_GET_ITEM(thread, 1));
-                PyStructSequence_SET_ITEM(thread, 1, new_status);
-            }
-        }
-    }
-    return 0;
-}
-
 /*[clinic input]
 @critical_section
 _remote_debugging.RemoteUnwinder.get_stack_trace
@@ -752,15 +713,6 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
     if (!result) {
         set_exception_cause(self, PyExc_MemoryError, "Failed to create stack trace result list");
         return NULL;
-    }
-    PyObject *bound_threads = NULL;
-    if (self->tstate_addr == 0 &&
-        (self->mode == PROFILING_MODE_CPU || self->mode == PROFILING_MODE_ALL)) {
-        bound_threads = PyDict_New();
-        if (bound_threads == NULL) {
-            Py_DECREF(result);
-            return NULL;
-        }
     }
 
     // Iterate over all interpreters
@@ -850,13 +802,11 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
 
         while (current_tstate != 0) {
             uintptr_t prev_tstate = current_tstate;
-            int has_bound_stack;
             PyObject* frame_info = unwind_stack_for_thread(self, &current_tstate,
                                                            gil_holder_tstate,
                                                            gc_frame,
                                                            main_thread_tstate,
-                                                           &prefetch,
-                                                           &has_bound_stack);
+                                                           &prefetch);
             if (!frame_info) {
                 // Check if this was an intentional skip due to mode-based filtering
                 if ((self->mode == PROFILING_MODE_CPU || self->mode == PROFILING_MODE_GIL ||
@@ -882,13 +832,10 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
                 goto exit;
             }
 
-            if (PyList_Append(interpreter_threads, frame_info) == -1 ||
-                (bound_threads && has_bound_stack &&
-                 PyDict_SetItem(bound_threads,
-                                PyStructSequence_GET_ITEM(frame_info, 0), frame_info) < 0)) {
+            if (PyList_Append(interpreter_threads, frame_info) == -1) {
                 Py_DECREF(frame_info);
                 Py_DECREF(interpreter_threads);
-                set_exception_cause(self, PyExc_RuntimeError, "Failed to collect thread frame info");
+                set_exception_cause(self, PyExc_RuntimeError, "Failed to append thread frame info");
                 Py_CLEAR(result);
                 goto exit;
             }
@@ -943,14 +890,7 @@ next_interpreter:
         }
     }
 
-    if (bound_threads != NULL &&
-        filter_cpu_thread_states(result, bound_threads,
-            self->mode == PROFILING_MODE_CPU && self->skip_non_matching_threads) < 0) {
-        Py_CLEAR(result);
-    }
-
 exit:
-    Py_XDECREF(bound_threads);
     // Invalidate cache entries for threads not seen in this sample.
     // Only do this every 1024 iterations to avoid performance overhead.
     if (self->cache_frames && result) {

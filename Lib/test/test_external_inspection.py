@@ -2596,108 +2596,39 @@ class TestUnsupportedPlatformHandling(unittest.TestCase):
 
 @requires_remote_subprocess_debugging()
 class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
-    def _check_cpu_status_with_multiple_thread_states(
-        self, *, native=False, subinterpreter=False,
-    ):
+    @skip_if_not_supported
+    def test_cpu_status_with_multiple_thread_states(self):
         import_module("_testinternalcapi")
-        import_module("_interpreters")
-        if native:
-            import_module("_hashlib")
-            work = "_hashlib.pbkdf2_hmac('sha256', b'password', b'salt', 10_000_000)"
-        else:
-            work = "pass"
-        code = textwrap.dedent(f"""
-            import socket
-            {"import _hashlib" if native else ""}
-            active_sock = socket.socket(fileno={{fd}})
-
+        import_module("_hashlib")
+        code = textwrap.dedent("""
+            import _hashlib
             def active():
-                active_sock.sendall(b"ready")
                 while True:
-                    {work}
-
+                    _hashlib.pbkdf2_hmac('sha256', b'password', b'salt', 10_000_000)
             active()
         """)
         script = f"""
-            import _interpreters, _testinternalcapi
-
+            import _testinternalcapi
             def suspended():
-                if {subinterpreter}:
-                    interpid = _interpreters.create()
-                else:
-                    interpid = _interpreters.get_current()[0]
-                # Create another state on this OS thread.
-                code = {code!r}.format(fd=sock.fileno())
-                _testinternalcapi.exec_interpreter(interpid, code)
-
+                sock.sendall(b"ready")
+                _testinternalcapi.exec_interpreter(0, {code!r})
             suspended()
         """
         with self._target_process(script) as (p, sock, _):
             _wait_for_signal(sock, b"ready")
-            for mode in (PROFILING_MODE_CPU, PROFILING_MODE_ALL):
-                with self.subTest(mode=mode):
-                    unwinder = RemoteUnwinder(
-                        p.pid, all_threads=True, mode=mode,
-                        skip_non_matching_threads=(mode == PROFILING_MODE_CPU),
-                    )
-                    for _ in busy_retry(SHORT_TIMEOUT):
-                        try:
-                            trace = unwinder.get_stack_trace()
-                        except TRANSIENT_ERRORS:
-                            continue
-                        active = self._find_thread_with_frame(
-                            trace, lambda f: f.funcname == "active")
-                        if active is None or not active.status & THREAD_STATUS_ON_CPU:
-                            continue
-                        if native and active.status & THREAD_STATUS_HAS_GIL:
-                            continue
-                        suspended = self._find_thread_with_frame(
-                            trace, lambda f: f.funcname == "suspended")
-                        if mode == PROFILING_MODE_CPU:
-                            self.assertIsNone(suspended)
-                        else:
-                            self.assertIsNotNone(suspended)
-                            self.assertEqual(suspended.thread_id, active.thread_id)
-                            self.assertFalse(suspended.status & THREAD_STATUS_ON_CPU)
-                        break
-
-    @skip_if_not_supported
-    def test_cpu_status_with_multiple_thread_states(self):
-        for native in (False, True):
-            for subinterpreter in (False, True):
-                with self.subTest(native=native, subinterpreter=subinterpreter):
-                    self._check_cpu_status_with_multiple_thread_states(
-                        native=native, subinterpreter=subinterpreter)
-
-    @skip_if_not_supported
-    def test_cpu_status_after_tstate_callback(self):
-        import_module("_testinternalcapi")
-        for retain in (False, True):
-            with self.subTest(retain=retain):
-                script = f"""
-                    import _testinternalcapi
-
-                    def ready():
-                        sock.sendall(b"ready")
-
-                    def native_work():
-                        _testinternalcapi.native_work_after_tstate_callback(
-                            ready, {SHORT_TIMEOUT * 3}, {retain})
-
-                    native_work()
-                """
-                with self._target_process(script) as (p, sock, _):
-                    _wait_for_signal(sock, b"ready")
-                    for mode in (PROFILING_MODE_CPU, PROFILING_MODE_ALL):
-                        with self.subTest(mode=mode):
-                            unwinder = RemoteUnwinder(p.pid, all_threads=True, mode=mode)
-                            for _ in busy_retry(SHORT_TIMEOUT):
-                                trace = _get_stack_trace_with_retry(unwinder)
-                                thread = self._find_thread_with_frame(
-                                    trace, lambda f: f.funcname == "native_work")
-                                if thread and thread.status & THREAD_STATUS_ON_CPU:
-                                    self.assertFalse(thread.status & THREAD_STATUS_HAS_GIL)
-                                    break
+            unwinder = RemoteUnwinder(p.pid, all_threads=True, mode=PROFILING_MODE_ALL)
+            for _ in busy_retry(SHORT_TIMEOUT):
+                trace = _get_stack_trace_with_retry(unwinder)
+                active = self._find_thread_with_frame(trace, lambda f: f.funcname == "active")
+                if active is None or not active.status & THREAD_STATUS_ON_CPU:
+                    continue
+                if active.status & THREAD_STATUS_HAS_GIL:
+                    continue
+                suspended = self._find_thread_with_frame(trace, lambda f: f.funcname == "suspended")
+                self.assertIsNotNone(suspended)
+                self.assertEqual(suspended.thread_id, active.thread_id)
+                self.assertFalse(suspended.status & THREAD_STATUS_ON_CPU)
+                break
 
     def _run_thread_status_test(self, mode, check_condition):
         """

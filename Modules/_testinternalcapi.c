@@ -2372,49 +2372,6 @@ destroy_interpreter(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_RETURN_NONE;
 }
 
-static PyObject *
-native_work_after_tstate_callback(PyObject *self, PyObject *args)
-{
-    PyObject *callback;
-    double seconds;
-    int retain;
-    if (!PyArg_ParseTuple(args, "Odp", &callback, &seconds, &retain)) {
-        return NULL;
-    }
-    PyTime_t start, now;
-    if (PyTime_Monotonic(&start) < 0) {
-        return NULL;
-    }
-    PyThreadState *temporary = PyThreadState_New(PyInterpreterState_Get());
-    if (temporary == NULL) {
-        return PyErr_NoMemory();
-    }
-    PyThreadState *saved = PyThreadState_Swap(temporary);
-    PyObject *result = PyObject_CallNoArgs(callback);
-    PyObject *exc = result ? NULL : PyErr_GetRaisedException();
-    if (retain) {
-        PyThreadState_Swap(NULL);
-    }
-    else {
-        PyThreadState_Clear(temporary);
-        PyThreadState_DeleteCurrent();
-    }
-    // Continue native work without reattaching the original thread state.
-    while (result != NULL && PyTime_MonotonicRaw(&now) == 0 &&
-           PyTime_AsSecondsDouble(now - start) < seconds) {
-    }
-    if (retain) {
-        PyThreadState_Swap(temporary);
-        PyThreadState_Clear(temporary);
-        PyThreadState_DeleteCurrent();
-    }
-    PyThreadState_Swap(saved);
-    if (exc != NULL) {
-        PyErr_SetRaisedException(exc);
-    }
-    return result;
-}
-
 // This exists mostly for testing the _interpreters module, as an
 // alternative to _interpreters.destroy()
 static PyObject *
@@ -3452,8 +3409,6 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS | METH_KEYWORDS},
     {"destroy_interpreter", _PyCFunction_CAST(destroy_interpreter),
      METH_VARARGS | METH_KEYWORDS},
-    {"native_work_after_tstate_callback", native_work_after_tstate_callback,
-     METH_VARARGS, NULL},
     {"exec_interpreter", _PyCFunction_CAST(exec_interpreter),
      METH_VARARGS | METH_KEYWORDS},
     {"run_in_subinterp_with_config",

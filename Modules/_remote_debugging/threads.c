@@ -294,6 +294,62 @@ typedef struct {
 } _thread_status;
 
 static int
+has_bound_stack(RemoteUnwinderObject *unwinder, long tid)
+{
+    uintptr_t interp, tstate;
+    int remaining = 8192;
+    if (read_ptr(unwinder, unwinder->runtime_start_address +
+                 unwinder->debug_offsets.runtime_state.interpreters_head, &interp) < 0) {
+        goto unavailable;
+    }
+    while (interp && remaining-- > 0) {
+        if (read_ptr(unwinder, interp +
+                     unwinder->debug_offsets.interpreter_state.threads_head, &tstate) < 0) {
+            goto unavailable;
+        }
+        while (tstate && remaining-- > 0) {
+            char ts[SIZEOF_THREAD_STATE];
+            if (_Py_RemoteDebug_ReadRemoteMemory(&unwinder->handle, tstate,
+                    unwinder->debug_offsets.thread_state.size, ts) < 0) {
+                goto unavailable;
+            }
+            if (GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.native_thread_id) == tid &&
+                GET_MEMBER(_thread_status, ts, unwinder->debug_offsets.thread_state.status).bound_gilstate) {
+                uintptr_t frame = GET_MEMBER(uintptr_t, ts, unwinder->debug_offsets.thread_state.current_frame);
+                uintptr_t base = GET_MEMBER(uintptr_t, ts, unwinder->debug_offsets.thread_state.base_frame);
+                while (frame && frame != base && remaining-- > 0) {
+                    char data[SIZEOF_INTERP_FRAME];
+                    if (_Py_RemoteDebug_ReadRemoteMemory(&unwinder->handle, frame,
+                                                        sizeof(data), data) < 0) {
+                        goto unavailable;
+                    }
+                    int valid = is_frame_valid(unwinder, (uintptr_t)data,
+                        GET_MEMBER_NO_TAG(uintptr_t, data, unwinder->debug_offsets.interpreter_frame.executable));
+                    if (valid < 0) {
+                        goto unavailable;
+                    }
+                    if (valid == 1) {
+                        return 1;
+                    }
+                    frame = GET_MEMBER(uintptr_t, data, unwinder->debug_offsets.interpreter_frame.previous);
+                }
+            }
+            tstate = GET_MEMBER(uintptr_t, ts, unwinder->debug_offsets.thread_state.next);
+        }
+        if (read_ptr(unwinder, interp +
+                     unwinder->debug_offsets.interpreter_state.next, &interp) < 0) {
+            goto unavailable;
+        }
+    }
+    return 0;
+
+unavailable:
+    // Keep the sample when remote state changes during the lookup.
+    PyErr_Clear();
+    return 0;
+}
+
+static int
 read_thread_state_and_maybe_frame(
     RemoteUnwinderObject *unwinder,
     uintptr_t tstate_addr,
@@ -335,8 +391,7 @@ unwind_stack_for_thread(
     uintptr_t gil_holder_tstate,
     uintptr_t gc_frame,
     uintptr_t main_thread_tstate,
-    const RemoteReadPrefetch *prefetch,
-    int *has_bound_stack
+    const RemoteReadPrefetch *prefetch
 ) {
     PyObject *frame_info = NULL;
     PyObject *thread_id = NULL;
@@ -502,7 +557,11 @@ unwind_stack_for_thread(
 
     if (cpu_status == THREAD_STATE_UNKNOWN) {
         status_flags |= THREAD_STATUS_UNKNOWN;
-    } else if (cpu_status == THREAD_STATE_RUNNING) {
+    } else if (cpu_status == THREAD_STATE_RUNNING &&
+               (GET_MEMBER(_thread_status, ts, unwinder->debug_offsets.thread_state.status).bound_gilstate ||
+                !has_bound_stack(unwinder, tid))) {
+        // An unbound state may still be doing native work after a callback.
+        // Exclude it only if another bound stack shares the same OS thread.
         status_flags |= THREAD_STATUS_ON_CPU;
     }
 
@@ -618,10 +677,6 @@ unwind_stack_for_thread(
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create thread status");
         goto error;
     }
-
-    *has_bound_stack = GET_MEMBER(
-        _thread_status, ts, unwinder->debug_offsets.thread_state.status).bound_gilstate
-        && PyList_GET_SIZE(frame_info) != 0;
 
     // py_status contains status flags (bitfield)
     PyStructSequence_SetItem(result, 0, thread_id);
