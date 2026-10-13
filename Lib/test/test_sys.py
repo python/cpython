@@ -824,6 +824,16 @@ class SysModuleTest(unittest.TestCase):
         self.assertIsInstance(sys._emscripten_info.pthreads, bool)
         self.assertIsInstance(sys._emscripten_info.shared_memory, bool)
 
+    @unittest.skipUnless(support.is_wasi, "only available on WASI")
+    def test_wasi_info(self):
+        info = sys._wasi_info
+        self.assertIn(info.wasi_version, {'p1', 'p2', 'p3'})
+        self.assertIn('.', info.wasi_sdk_version)
+        sdk_major, _, sdk_minor = info.wasi_sdk_version.partition('.')
+        self.assertGreaterEqual(int(sdk_major), 1)
+        self.assertGreaterEqual(int(sdk_minor), 0)
+        self.assertIsInstance(info.cooperative_threads, bool)
+
     def test_43581(self):
         # Can't use sys.stdout, as this is a StringIO object when
         # the test runs under regrtest.

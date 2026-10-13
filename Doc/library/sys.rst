@@ -418,6 +418,29 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    .. versionadded:: 3.11
 
 
+.. data:: _wasi_info
+
+   An object containing information about the build on the WebAssembly WASI
+   platform. The object is provisional and may change in the future.
+
+   .. attribute:: _wasi_info.wasi_version
+
+      The WASI target version as a string: ``'p1'``, ``'p2'``, or ``'p3'``.
+
+   .. attribute:: _wasi_info.wasi_sdk_version
+
+      The full WASI SDK version as a string, such as ``'34.0'``.
+
+   .. attribute:: _wasi_info.cooperative_threads
+
+      ``True`` if wasi-libc was compiled with cooperative multithreading
+      support, ``False`` otherwise.
+
+   .. availability:: WASI.
+
+   .. versionadded:: next
+
+
 .. data:: pycache_prefix
 
    If this is set (not ``None``), Python will write bytecode-cache ``.pyc``
