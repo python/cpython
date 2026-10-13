@@ -98,6 +98,11 @@ Other language changes
   they reference) alive indefinitely.
   (Contributed by Łukasz Langa in :gh:`102960`.)
 
+* :exc:`TypeError` messages for some instance methods called with too many
+  positional arguments now suggest checking whether the method definition is
+  missing the ``self`` parameter. (Contributed by Suren Nihalani in
+  :gh:`152315`.)
+
 
 New modules
 ===========
@@ -180,6 +185,7 @@ ctypes
   from an annotation-based syntax, similar to how the :mod:`dataclasses` module
   is used.
   (Contributed by Peter Bierma in :gh:`104533`.)
+
 * Add :func:`ctypes.util.wrap_dll_function` for generating function pointers
   through a function signature.
   (Contributed by Peter Bierma in :gh:`153903`.)
@@ -324,27 +330,6 @@ curses
   full Unicode range, including combining characters, when curses is built with
   wide-character support.
   (Contributed by Serhiy Storchaka in :gh:`133031`.)
-
-
-ctypes
-------
-
-* Add :func:`ctypes.util.struct` for generating :class:`~ctypes.Structure` types
-  from an annotation-based syntax, similar to how the :mod:`dataclasses` module
-  is used.
-  (Contributed by Peter Bierma in :gh:`104533`.)
-* Add :func:`ctypes.util.wrap_dll_function` for generating function pointers
-  through a function signature.
-  (Contributed by Peter Bierma in :gh:`153903`.)
-
-
-concurrent.futures
-------------------
-
-* The iterator returned by :meth:`concurrent.futures.Executor.map` is no longer
-  automatically closed if a function call raises an exception.
-  Use method :meth:`!close` to explicitly close the iterator.
-  (Contributed by xzmeng and Serhiy Storchaka in :gh:`108518`.)
 
 
 decimal

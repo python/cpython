@@ -1016,9 +1016,9 @@ Debug options
 .. option:: --with-address-sanitizer
 
    Enable AddressSanitizer memory error detector, ``asan`` (default is no).
-   To improve ASan detection capabilities you may also want to combine this
-   with :option:`--without-pymalloc` to disable the specialized small-object
-   allocator whose allocations are not tracked by ASan.
+
+   When built with ``asan``, Python uses ``malloc`` instead of :ref:`pymalloc <pymalloc>` by default.
+   Set :envvar:`PYTHONMALLOC=pymalloc <PYTHONMALLOC>` to use pymalloc.
 
    .. versionadded:: 3.6
 
@@ -1033,6 +1033,9 @@ Debug options
    <https://clang.llvm.org/docs/HardwareAssistedAddressSanitizerDesign.html>`_
    for more information.
 
+   When built with ``hwasan``, Python uses ``malloc`` instead of :ref:`pymalloc <pymalloc>` by default.
+   Set :envvar:`PYTHONMALLOC=pymalloc <PYTHONMALLOC>` to use pymalloc.
+
    .. versionadded:: next
 
 .. option:: --with-memory-sanitizer
@@ -1042,6 +1045,9 @@ Debug options
    MSan reports false positives for memory initialized by libraries that are
    not built with MSan, so either build all dependencies with MSan or disable
    the extension modules that use them in :file:`Modules/Setup.local`.
+
+   When built with ``msan``, Python uses ``malloc`` instead of :ref:`pymalloc <pymalloc>` by default.
+   Set :envvar:`PYTHONMALLOC=pymalloc <PYTHONMALLOC>` to use pymalloc.
 
    .. versionadded:: 3.6
 

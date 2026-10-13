@@ -1175,6 +1175,7 @@ LDFLAGS
 LIBS
 CPPFLAGS
 CPP
+CXX
 PROFILE_TASK
 BOLT_COMMON_FLAGS
 BOLT_INSTRUMENT_FLAGS
@@ -2033,6 +2034,7 @@ Some influential environment variables:
   CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> if
               you have headers in a nonstandard directory <include dir>
   CPP         C preprocessor
+  CXX         C++ compiler command
   PROFILE_TASK
               Python args for PGO generation task
   BOLT_COMMON_FLAGS
@@ -9974,7 +9976,7 @@ fi
 
         as_fn_append LINKFORSHARED " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
     as_fn_append LINKFORSHARED " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY,ERRNO_CODES"
-    as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,_PyGILState_GetThisThreadState,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"
+    as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,_PyGILState_GetThisThreadState"
     as_fn_append LINKFORSHARED " -sSTACK_SIZE=5MB"
         as_fn_append LINKFORSHARED " -sTEXTDECODER=2"
 
@@ -14151,8 +14153,6 @@ then :
 printf "%s\n" "$withval" >&6; }
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=address $LDFLAGS"
-# ASan works by controlling memory allocation, our own malloc interferes.
-with_pymalloc="no"
 
 else case e in #(
   e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -14227,11 +14227,6 @@ else case e in #(
 esac
 fi
 
-# HWASan works by controlling memory allocation, our own malloc interferes,
-# so disable it by default, but allow --with-pymalloc to override.
-if test -z "$with_pymalloc"; then
-  with_pymalloc="no"
-fi
 
 else case e in #(
   e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -14293,8 +14288,6 @@ else case e in #(
 esac
 fi
 
-# MSan works by controlling memory allocation, our own malloc interferes.
-with_pymalloc="no"
 
 else case e in #(
   e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -20386,14 +20379,21 @@ PLATFORM_OBJS=
 case $ac_sys_system in #(
   Emscripten) :
 
-    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_trampoline_wasm.o'
+    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/wasm_trampoline.o'
+    as_fn_append CFLAGS_NODIST " -mgc"
+
     if test "x$enable_emscripten_syscalls" = xyes
 then :
 
       as_fn_append PLATFORM_OBJS ' Python/emscripten_syscalls.o'
 
 fi
-    as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'
+    as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_signal.h'
+   ;; #(
+  WASI) :
+
+    as_fn_append PLATFORM_OBJS ' Python/wasm_trampoline.o'
+    as_fn_append CFLAGS_NODIST " -mgc"
    ;; #(
   *) :
      ;;
