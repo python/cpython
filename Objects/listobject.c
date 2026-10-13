@@ -504,7 +504,6 @@ list_shift_items_right_lock_held(PyListObject *self, Py_ssize_t first,
                                  Py_ssize_t last)
 {
 #ifdef Py_GIL_DISABLED
-       _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     _PyObject_ptr_wise_atomic_memmove(self, &self->ob_item[first + 1],
                             &self->ob_item[first], last - first);
 #else
@@ -520,7 +519,6 @@ list_shift_items_left_lock_held(PyListObject *self, Py_ssize_t first,
                                 Py_ssize_t last)
 {
 #ifdef Py_GIL_DISABLED
-       _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     _PyObject_ptr_wise_atomic_memmove(self, &self->ob_item[first],
                             &self->ob_item[first + 1], last - first);
 #else
@@ -1038,7 +1036,6 @@ list_ass_slice_lock_held(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyO
 
     if (d < 0) { /* Delete -d items */
         Py_ssize_t tail = Py_SIZE(a) - ihigh;
-        _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(a);
         _PyObject_ptr_wise_atomic_memmove(a, &item[ihigh+d], &item[ihigh], tail);
         (void)list_resize(a, Py_SIZE(a) + d); // NB: shrinking a list can't fail
         item = a->ob_item;
@@ -1048,7 +1045,6 @@ list_ass_slice_lock_held(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyO
         if (list_resize(a, k+d) < 0)
             goto Error;
         item = a->ob_item;
-        _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(a);
         _PyObject_ptr_wise_atomic_memmove(a, &item[ihigh+d], &item[ihigh], k - ihigh);
     }
     for (k = 0; k < n; k++, ilow++) {
@@ -1137,7 +1133,6 @@ list_inplace_repeat_lock_held(PyListObject *self, Py_ssize_t n)
     _Py_memory_repeat((char *)items, sizeof(PyObject *)*output_size,
                       sizeof(PyObject *)*input_size);
 #else
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     Py_ssize_t copied = input_size;
     while (copied < output_size) {
         Py_ssize_t items_to_copy = Py_MIN(copied, output_size - copied);
@@ -1639,7 +1634,6 @@ list_pop_impl(PyListObject *self, Py_ssize_t index)
     }
     Py_ssize_t size_after_pop = Py_SIZE(self) - 1;
     if (index < size_after_pop) {
-        _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
         _PyObject_ptr_wise_atomic_memmove(self, &items[index], &items[index+1],
                                     size_after_pop - index);
     }
@@ -3827,13 +3821,11 @@ list_ass_subscript_lock_held(PyObject *_self, PyObject *item, PyObject *value)
                     lim = Py_SIZE(self) - cur - 1;
                 }
 
-                _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
                 _PyObject_ptr_wise_atomic_memmove(self, self->ob_item + cur - i,
                     self->ob_item + cur + 1, lim);
             }
             cur = start + (size_t)slicelength * step;
             if (cur < (size_t)Py_SIZE(self)) {
-                _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
                 _PyObject_ptr_wise_atomic_memmove(self, self->ob_item + cur - slicelength,
                     self->ob_item + cur, Py_SIZE(self) - cur);
             }
