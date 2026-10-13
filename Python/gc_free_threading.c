@@ -403,13 +403,13 @@ gc_visit_heaps_lock_held(PyInterpreterState *interp, mi_block_visit_fun *visitor
     // per-interpreter mimalloc sub-process.
     mi_subproc_t *subproc = interp->mimalloc.subproc;
     arg->offset = offset_base;
-    if (!_PyMem_mi_visit_abandoned_blocks(subproc, _Py_MIMALLOC_HEAP_GC,
-                                          true, visitor, arg)) {
+    if (!mi_abandoned_visit_blocks(subproc, _Py_MIMALLOC_HEAP_GC, true,
+                                   visitor, arg)) {
         return -1;
     }
     arg->offset = offset_pre;
-    if (!_PyMem_mi_visit_abandoned_blocks(subproc, _Py_MIMALLOC_HEAP_GC_PRE,
-                                          true, visitor, arg)) {
+    if (!mi_abandoned_visit_blocks(subproc, _Py_MIMALLOC_HEAP_GC_PRE, true,
+                                   visitor, arg)) {
         return -1;
     }
     return 0;
