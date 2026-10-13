@@ -361,7 +361,7 @@ class FileInput:
                 if self._openhook:
                     # Custom hooks made previous to Python 3.10 didn't have
                     # encoding argument
-                    if self._encoding is None:
+                    if self._encoding is None and self._errors is None:
                         self._file = self._openhook(self._filename, self._mode)
                     else:
                         self._file = self._openhook(
