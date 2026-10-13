@@ -81,7 +81,10 @@ test_add(PyObject *Py_UNUSED(module), PyObject *args)
 static PyObject *
 test_macros(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 {
-    PyObject *obj, *dict;
+    PyObject *obj;
+#ifndef Py_LIMITED_API
+    PyObject *dict;
+#endif
 
     // test Py_BUILD_ASSERT() and Py_BUILD_ASSERT_EXPR()
     Py_BUILD_ASSERT(sizeof(int) == sizeof(unsigned int));
