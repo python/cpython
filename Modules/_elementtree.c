@@ -1948,7 +1948,7 @@ element_subscr(PyObject *op, PyObject *item)
 }
 
 static int
-element_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
+element_ass_subscr_lock_held(PyObject *op, PyObject *item, PyObject *value)
 {
     ElementObject *self = _Element_CAST(op);
 
@@ -2136,6 +2136,15 @@ element_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
                 "element indices must be integers");
         return -1;
     }
+}
+
+static int
+element_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
+{
+    Py_BEGIN_CRITICAL_SECTION(op);
+    int res = element_ass_subscr_lock_held(op, item, value);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 static PyObject*
