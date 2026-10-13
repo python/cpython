@@ -279,6 +279,15 @@ int _PyUnicode_IsCaseIgnorable(Py_UCS4 ch)
 /* Returns 1 for Unicode characters having the category 'Ll', 'Lu', 'Lt',
    'Lo' or 'Lm',  0 otherwise. */
 
+int
+_PyUnicode_IsAlnum(Py_UCS4 ch)
+{
+    const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
+
+    return (ctype->flags
+            & (ALPHA_MASK | DECIMAL_MASK | DIGIT_MASK | NUMERIC_MASK)) != 0;
+}
+
 int _PyUnicode_IsAlpha(Py_UCS4 ch)
 {
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
