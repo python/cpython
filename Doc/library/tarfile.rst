@@ -976,7 +976,7 @@ A ``TarInfo`` object has the following public data attributes:
 
    This method is also used by :func:`copy.replace`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added support for :func:`copy.replace`.
 
 A :class:`TarInfo` object also provides some convenient query methods:
@@ -1147,7 +1147,7 @@ reused in custom filters:
      absolute link targets or :class:`~tarfile.LinkOutsideDestinationError`
      for link targets outside the destination.
 
-  .. versionchanged:: next
+  .. versionchanged:: 3.16
 
      Filenames containing ``..`` components are now normalized.
 

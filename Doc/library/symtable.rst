@@ -31,7 +31,7 @@ Generating Symbol Tables
    .. versionadded:: 3.15
       Added the *module* parameter.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       *code* can now be an AST object.
 
 
@@ -65,7 +65,7 @@ Examining Symbol Tables
       table of this type represents a sub-scope of the enclosing code unit's
       scope, and it does not correspond to a separate compilation unit.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
    The following members refer to different flavors of
    :ref:`annotation scopes <annotation-scopes>`.

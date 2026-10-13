@@ -826,7 +826,7 @@ distance
    A distance with a unit suffix depends on the screen resolution
    and is returned as an opaque Tcl object that can be passed back to Tk.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Screen distances with no unit suffix are returned as an :class:`int`
       or a :class:`float`.
 
@@ -1915,7 +1915,7 @@ Base and mixin classes
       and return the actual name set, which may have a suffix appended to keep
       it unique among the applications on the display.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
    .. method:: tk_useinputmethods(boolean=None, *, displayof=0)
 
@@ -1924,7 +1924,7 @@ Base and mixin classes
       This is significant only on X11; if XIM support is not available it
       always returns ``False``.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
    .. method:: tk_caret(*, x=None, y=None, height=None)
 
@@ -1936,7 +1936,7 @@ Base and mixin classes
       keys ``'x'``, ``'y'`` and ``'height'``; otherwise update the given
       coordinates.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
    .. method:: tk_scaling(number=None, *, displayof=0)
 
@@ -1946,7 +1946,7 @@ Base and mixin classes
       With no argument, return the current factor; otherwise set it to the
       floating-point *number*.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
    .. method:: tk_inactive(reset=False, *, displayof=0)
 
@@ -1955,7 +1955,7 @@ Base and mixin classes
       If *reset* is true, reset the inactivity timer to zero instead and return
       ``None``.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
    The methods with the ``busy_`` prefix manage the busy state of a window,
    which shows a busy cursor and ignores user input.
@@ -2172,7 +2172,7 @@ Base and mixin classes
       and ``False`` otherwise.
       Always return ``False`` on X11.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
          Requires Tk 9.1 or newer.
 
@@ -2668,7 +2668,7 @@ Base and mixin classes
       window's icon image for the badge to appear.
       :meth:`wm_iconbadge` is an alias of :meth:`!iconbadge`.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
          Requires Tk 9.0 or newer.
 
@@ -2897,7 +2897,7 @@ Base and mixin classes
       *window* in the stacking order, and ``False`` otherwise.
       :meth:`wm_stackorder` is an alias of :meth:`!stackorder`.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
    .. method:: wm_state(newstate=None)
       :no-typesetting:
@@ -3618,7 +3618,7 @@ Widget classes
       Print the contents of the canvas using the native print dialog.
       Requires Tk 8.7/9.0 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
    .. method:: create_arc(*args, **kw)
                create_bitmap(*args, **kw)
@@ -3886,7 +3886,7 @@ Widget classes
       degrees anticlockwise.
       Negative values of *angle* rotate clockwise.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
    .. method:: delete(*tagOrIds)
 
@@ -3916,7 +3916,7 @@ Widget classes
       coordinates.
       Items that do not support indexing ignore this operation.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
    .. method:: itemcget(tagOrId, option)
 
@@ -4418,7 +4418,7 @@ Widget classes
       independently of the conditions specified by the *validate* option, and
       return whether the value is considered valid.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
 .. class:: Frame(master=None, cnf={}, **kw)
@@ -4870,7 +4870,7 @@ Widget classes
       This has no effect if *index* does not name a cascade entry or if the
       menu itself is not posted.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
    .. method:: tk_popup(x, y, entry='')
 
@@ -4939,7 +4939,7 @@ Widget classes
    .. versionchanged:: 3.14
       Added support for the *name* keyword argument.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Other :class:`Menubutton` options can now be passed as keyword arguments.
 
 
@@ -5011,7 +5011,7 @@ Widget classes
       ``'always'``, ``'first'``, ``'last'``, ``'middle'`` or ``'never'``).
       :meth:`paneconfig` is an alias of :meth:`!paneconfigure`.
 
-      .. deprecated-removed:: next 3.18
+      .. deprecated-removed:: 3.16 3.18
          The first parameter was renamed from *tagOrId* to *child*.
          The old name is still accepted as a keyword argument.
 
@@ -5402,7 +5402,7 @@ Widget classes
       independently of the conditions specified by the *validate* option, and
       return whether the value is considered valid.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
 
@@ -5440,7 +5440,7 @@ Widget classes
       Print the contents of the text widget using the native print dialog.
       Requires Tk 8.7/9.0 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
    .. method:: insert(index, chars, *args)
 
@@ -5831,14 +5831,14 @@ Widget classes
       Return ``True`` if there is an edit action on the undo stack that can be
       undone, and ``False`` otherwise.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
    .. method:: edit_canredo()
 
       Return ``True`` if there is an edit action on the redo stack that can be
       reapplied, and ``False`` otherwise.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
    .. method:: edit_undo()
 
@@ -5971,7 +5971,7 @@ Widget classes
       once as soon as all line heights are up to date; if there are no pending
       calculations, it is called immediately.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
    .. method:: pendingsync()
 
@@ -5980,7 +5980,7 @@ Widget classes
       The ``<<WidgetViewSync>>`` virtual event fires whenever this state
       changes, with the *detail* field set to the new value.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
    .. method:: yview_pickplace(*what)
 
@@ -6240,7 +6240,7 @@ Image classes
       This is useful when the image data was supplied in pieces, in which case
       the dithered image may not be exactly correct.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
    .. method:: cget(option)
 
@@ -6338,7 +6338,7 @@ Image classes
 
       .. versionadded:: 3.13
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          Added the *metadata* parameter.
 
 
@@ -6350,7 +6350,7 @@ Image classes
       If *withalpha* is true, the returned tuple has a fourth element giving
       the alpha (opacity) value of the pixel.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          Added the *withalpha* parameter, which requires Tcl/Tk 9.0 or newer.
 
    .. method:: put(data, to=None, *, format=None, metadata=None)
@@ -6372,7 +6372,7 @@ Image classes
       *metadata* is a dictionary passed to the image format driver.
       It requires Tcl/Tk 9.0 or newer.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          Added the *format* and *metadata* parameters.
 
    .. method:: read(filename, format=None, *, from_coords=None, to=None, \
@@ -6405,7 +6405,7 @@ Image classes
 
       .. versionadded:: 3.13
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          Added the *metadata* parameter.
 
 
@@ -6468,7 +6468,7 @@ Image classes
       .. versionchanged:: 3.13
          Added the *background* and *grayscale* parameters.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          Added the *metadata* parameter.
 
 
@@ -6918,7 +6918,7 @@ Version information
    which are available as :meth:`Misc.info_patchlevel` (the Tcl version)
    and the ``tk_patchLevel`` Tcl variable.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: TkVersion
           TclVersion

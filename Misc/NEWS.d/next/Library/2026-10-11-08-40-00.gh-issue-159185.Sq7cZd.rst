@@ -1,4 +1,0 @@
-Fix a crash in :func:`marshal.dumps` and :func:`marshal.dump` when a set is
-modified while its elements are serialized, for example by the
-:meth:`~object.__buffer__` method of one of its elements.
-:exc:`RuntimeError` is now raised.

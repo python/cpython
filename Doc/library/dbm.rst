@@ -265,7 +265,7 @@ functionality like crash tolerance.
    This may be different from the GDBM library actually used at runtime,
    which is available as :const:`gdbm_version_info`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. data:: gdbm_version_info
@@ -274,7 +274,7 @@ functionality like crash tolerance.
    actually loaded by the interpreter,
    with the same fields as :const:`GDBM_VERSION_INFO`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. data:: gdbm_version
@@ -282,7 +282,7 @@ functionality like crash tolerance.
    The release string of the GDBM library actually loaded by the interpreter,
    like ``'GDBM version 1.26. 30/07/2025'``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. function:: open(filename, flag="r", mode=0o666, /)
@@ -417,7 +417,7 @@ This module can be used with the "classic" NDBM interface or the
    Name of the NDBM implementation library used:
    ``'GNU gdbm'``, ``'Berkeley DB'`` or ``'ndbm'``.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       The value is ``'ndbm'`` for a classic NDBM library.
       It was ``'GNU gdbm'`` before.
 
@@ -430,7 +430,7 @@ This module can be used with the "classic" NDBM interface or the
    with the same meaning as the constants of the same names in :mod:`dbm.gnu`.
    Only available if :const:`library` is ``'GNU gdbm'``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. data:: BDB_VERSION
@@ -441,7 +441,7 @@ This module can be used with the "classic" NDBM interface or the
    which is available as :const:`bdb_version`.
    Only available if :const:`library` is ``'Berkeley DB'``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. data:: bdb_version
@@ -450,7 +450,7 @@ This module can be used with the "classic" NDBM interface or the
    interpreter.
    Only available if :const:`library` is ``'Berkeley DB'``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. data:: BDB_VERSION_INFO
@@ -466,7 +466,7 @@ This module can be used with the "classic" NDBM interface or the
    which is available as :const:`bdb_version_info`.
    Only available if :const:`library` is ``'Berkeley DB'``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. data:: bdb_version_info
@@ -476,7 +476,7 @@ This module can be used with the "classic" NDBM interface or the
    with the same fields as :const:`BDB_VERSION_INFO`.
    Only available if :const:`library` is ``'Berkeley DB'``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. function:: open(filename, flag="r", mode=0o666, /)

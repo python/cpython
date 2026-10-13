@@ -733,7 +733,7 @@ Specifying function pointers using type annotations
       PyObject_GetAttrString(42, b"real")
 
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. _ctypes-passing-pointers:
@@ -3273,7 +3273,7 @@ fields, or any other data types containing pointer type fields.
       class PyHovercraftObject:
           ob_base: Annotated[PyObject, CFieldInfo(anonymous=True)]
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. class:: CFieldInfo(anonymous=False, bit_width=None)
@@ -3290,7 +3290,7 @@ fields, or any other data types containing pointer type fields.
    number of bits in the generated structure. This is equivalent to passing
    a third item in :attr:`~ctypes.Structure._fields_`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. _ctypes-arrays-pointers:
@@ -3414,13 +3414,13 @@ libffi 3.5 or later, which is the first version providing this information.
    This may be different from the libffi library actually used at runtime,
    which is available as :const:`libffi_version`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: libffi_version
 
    The version string of the libffi library actually loaded by the interpreter.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: LIBFFI_VERSION_INFO
 
@@ -3434,7 +3434,7 @@ libffi 3.5 or later, which is the first version providing this information.
    This may be different from the libffi library actually used at runtime,
    which is available as :const:`libffi_version_info`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: libffi_version_info
 
@@ -3442,4 +3442,4 @@ libffi 3.5 or later, which is the first version providing this information.
    actually loaded by the interpreter,
    with the same fields as :const:`LIBFFI_VERSION_INFO`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16

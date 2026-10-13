@@ -1693,7 +1693,7 @@ The Namespace object
    :class:`!Namespace` objects support :func:`copy.replace`,
    which returns a copy of the object with the specified attributes replaced.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added support for :func:`copy.replace`.
 
    This class is deliberately simple, just an :class:`object` subclass with a

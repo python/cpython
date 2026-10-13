@@ -1073,7 +1073,7 @@ As you can see, most actions involve storing or updating a value somewhere.
    :class:`!Values` objects support :func:`copy.replace`,
    which returns a copy of the object with the specified attributes replaced.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added support for :func:`copy.replace`.
 
 Option

@@ -1,2 +1,0 @@
-Exclude invalid token ``<>`` from :mod:`tokenize` output.  :exc:`SyntaxError`
-for ``<>`` now suggests ``!=``.

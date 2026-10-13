@@ -1162,7 +1162,7 @@ from text files and modules with doctests:
    .. versionchanged:: 3.15
       Run each example as a :ref:`subtest <subtests>`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Report every example, as in verbose mode, if the test runner reports
       more than the test names, i.e. its
       :attr:`~unittest.TestResult.verbosity` is 3 or higher (for example

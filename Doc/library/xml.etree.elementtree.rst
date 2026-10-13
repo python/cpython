@@ -637,7 +637,7 @@ Functions
 
    .. versionadded:: 3.9
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Whitespace is no longer added inside an element with mixed content
       or marked with ``xml:space="preserve"``.
 
@@ -707,7 +707,7 @@ Functions
       A :exc:`ResourceWarning` is now emitted if the iterator opened a file
       and is not explicitly closed.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *target* parameter.
 
 
@@ -783,7 +783,7 @@ Functions
       The :func:`tostring` function now preserves the attribute order
       specified by the user.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *standalone* parameter.
 
 
@@ -814,7 +814,7 @@ Functions
       The :func:`tostringlist` function now preserves the attribute order
       specified by the user.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *standalone* parameter.
 
 
@@ -1290,7 +1290,7 @@ ElementTree Objects
          The :meth:`write` method now preserves the attribute order specified
          by the user.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          Added the *standalone* parameter.
 
 
@@ -1565,7 +1565,7 @@ XMLPullParser Objects
    if they are not implemented, a ``(prefix, uri)`` tuple and ``None``
    are reported for the ``"start-ns"`` and ``"end-ns"`` events.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *target* parameter.
 
    .. method:: feed(data)

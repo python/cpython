@@ -89,7 +89,7 @@ Executor Objects
       .. versionchanged:: 3.14
          Added the *buffersize* parameter.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          The returned iterator is no longer automatically closed if a *fn*
          call raises an exception.
 
@@ -432,7 +432,7 @@ in a REPL or a lambda should not be expected to work.
       require the *fork* start method for :class:`ProcessPoolExecutor` you must
       explicitly pass ``mp_context=multiprocessing.get_context("fork")``.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Fixed a deadlock (:gh:`115634`) where the executor could hang after
       a worker process exited upon reaching its *max_tasks_per_child*
       limit while tasks remained queued.

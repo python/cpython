@@ -1,3 +1,0 @@
-Argument Clinic: the ``pid_t``, ``uid_t``, ``gid_t``, ``Py_off_t``,
-``HANDLE``, ``DWORD`` and ``BOOL`` converters, previously defined in
-individual files, are now provided by Argument Clinic itself.

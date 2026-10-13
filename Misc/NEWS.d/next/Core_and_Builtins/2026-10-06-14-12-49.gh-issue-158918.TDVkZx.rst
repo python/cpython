@@ -1,3 +1,0 @@
-Reduce C stack usage of ``_PyModule_IsPossiblyShadowing``, which could
-potentially cause stack overflows during module attribute access while
-deeply recursing in agressively optimized builds.

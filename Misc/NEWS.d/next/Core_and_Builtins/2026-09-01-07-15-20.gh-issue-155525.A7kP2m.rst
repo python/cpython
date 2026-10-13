@@ -1,2 +1,0 @@
-Fix quadratic-time tokenization of modules containing many f-strings or
-t-strings.
