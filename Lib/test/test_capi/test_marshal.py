@@ -121,12 +121,38 @@ class CAPI_TestCase(unittest.TestCase):
                     write_object_to_file(obj, filename, version)
                     data = read_file(filename)
                     self.assertEqual(marshal.loads(data), obj)
+                    self.assertEqual(data, marshal.dumps(obj, version))
+
+            # Larger than a stdio buffer, with references to objects
+            # written long before.
+            shared = (float('1.5'), b'bytes' * 10)
+            obj = [shared, 'long line ' * 10_000, shared, [shared] * 10_000]
+            write_object_to_file(obj, filename, version)
+            data = read_file(filename)
+            self.assertEqual(data, marshal.dumps(obj, version))
+            obj2 = marshal.loads(data)
+            self.assertEqual(obj2, obj)
+            if version >= 3:
+                self.assertIs(obj2[2], obj2[0])
+                self.assertIs(obj2[3][-1], obj2[0])
 
             with self.assertRaises(SystemError):
                 write_object_to_file(NULL, filename, version)
 
             with self.assertRaisesRegex(ValueError, 'cannot marshal object objects'):
                 write_object_to_file(UNMARSHALLABLE, filename, version)
+
+            # Nothing is written if the object cannot be marshalled,
+            # even if the error is only detected after more data than
+            # fits in a stdio buffer.
+            for obj in (UNMARSHALLABLE,
+                        [1, 'abc', UNMARSHALLABLE],
+                        [shared, 'long line ' * 10_000, shared,
+                         UNMARSHALLABLE]):
+                with self.assertRaisesRegex(ValueError,
+                                            'cannot marshal object objects'):
+                    write_object_to_file(obj, filename, version)
+                self.assertEqual(read_file(filename), b'')
 
     def test_read_short_from_file(self):
         # Test PyMarshal_ReadShortFromFile()
