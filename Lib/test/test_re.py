@@ -986,6 +986,15 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.fullmatch(r'\p{XID_Start=No}+', '123 '))
         self.assertTrue(re.fullmatch(r'\P{XID_Start}+', '123 '))
 
+        # Enumerated properties matched through the unicodedata capsule.
+        self.assertTrue(re.fullmatch(r'\p{Bidi_Class=L}+', 'abc'))
+        self.assertTrue(re.fullmatch(r'\p{bc=AL}+', 'ا'))           # Arabic
+        self.assertTrue(re.fullmatch(r'\p{East_Asian_Width=W}+', '日本'))
+        self.assertTrue(re.fullmatch(r'\p{ea=Na}+', 'AB'))
+        self.assertTrue(re.fullmatch(r'\p{GCB=Extend}', '̀'))  # comb. grave
+        self.assertTrue(re.fullmatch(r'\p{Indic_Conjunct_Break=Consonant}',
+                                     'क'))                # devanagari ka
+
         # Binary properties from str predicates.
         self.assertTrue(re.fullmatch(r'\p{Alphabetic}+', 'fo\xf6Д日'))
         self.assertTrue(re.fullmatch(r'\p{Lowercase}+', 'abc'))

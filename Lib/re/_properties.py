@@ -26,7 +26,7 @@
 #
 
 from ._constants import (
-    IN, CATEGORY, NEGATE, RANGE, LITERAL,
+    IN, CATEGORY, CATEGORY_UCD, NEGATE, RANGE, LITERAL,
     CATEGORY_DIGIT, CATEGORY_NOT_DIGIT,
     CATEGORY_SPACE, CATEGORY_NOT_SPACE,
     CATEGORY_WORD, CATEGORY_NOT_WORD,
@@ -159,6 +159,16 @@ _PATTERN_SYNTAX_RANGES = [
     (0x3008, 0x3020), (0x3030, 0x3030), (0xFD3E, 0xFD3F), (0xFE45, 0xFE46),
 ]
 
+# Enumerated properties matched through the unicodedata capsule: normalised
+# property-name alias -> table key (as in unicodedata._ucd_re_info());
+# General_Category ("gc") has its own key set below.
+_ENUM_PROPERTIES = {
+    "bc": "bc",     "bidiclass": "bc",
+    "ea": "ea",     "eastasianwidth": "ea",
+    "gcb": "gcb",   "graphemeclusterbreak": "gcb",
+    "incb": "incb", "indicconjunctbreak": "incb",
+}
+
 # Normalised property names that introduce a General_Category value.  A bare
 # \p{Lu} is shorthand for \p{gc=Lu} (UTS #18 1.2.4, "Property Syntax").
 _GC_KEYS = frozenset({"gc", "generalcategory"})
@@ -231,6 +241,44 @@ def _from_ranges(ranges, negate):
     return (IN, items)
 
 
+# Properties matched in C through the unicodedata capsule (see
+# Modules/_sre/sre.c).  Lazily loaded: {prop_key: (prop_id, vmap)} where vmap
+# maps a normalised value name to the index the capsule returns.
+_ucd_info = None
+
+
+def _ucd_property_info():
+    global _ucd_info
+    if _ucd_info is None:
+        import unicodedata
+        info = {}
+        for key, (prop_id, names) in unicodedata._ucd_re_info().items():
+            vmap = None
+            if names is not None:
+                vmap = {}
+                for index, name in enumerate(names):
+                    vmap.setdefault(_normalize(name), index)
+            info[key] = (prop_id, vmap)
+        _ucd_info = info
+    return _ucd_info
+
+
+def _ucd_item(prop_id, index, negate):
+    # A single CATEGORY_UCD charset item; the operand packs negate, property
+    # and value (see sre_category_ucd in sre.c).
+    return (CATEGORY_UCD, (negate << 24) | (prop_id << 16) | index)
+
+
+def _ucd_enum(table_key, value, negate):
+    # A capsule-backed enumerated property value, or None if the value is
+    # unknown.
+    prop_id, vmap = _ucd_property_info()[table_key]
+    index = vmap.get(value)
+    if index is None:
+        return None
+    return (IN, [_ucd_item(prop_id, index, negate)])
+
+
 def _general_category(value, negate):
     # Resolve a General_Category value to a subpattern using an engine category
     # or a fixed range set; unsupported values return None.
@@ -249,6 +297,15 @@ def _truth(value):
     return None
 
 
+def _binary_property(key, negate):
+    # Resolve a property given with no value: an engine category or a fixed
+    # range set; unknown names return None.
+    cat = _CATEGORY_PROPERTIES.get(key)
+    if cat is not None:
+        return (IN, [(CATEGORY, cat[1] if negate else cat[0])])
+    return _from_ranges(_analytic_ranges().get(key), negate)
+
+
 def parse_property(name, negate):
     """Parse the text inside \\p{...} / \\P{...}.
 
@@ -259,21 +316,18 @@ def parse_property(name, negate):
         key = _normalize(prop)
         if key in _GC_KEYS:
             return _general_category(_normalize(value), negate)
+        table = _ENUM_PROPERTIES.get(key)
+        if table is not None:
+            return _ucd_enum(table, _normalize(value), negate)
         # A binary property spelled name=yes or name=no.
         truth = _truth(value)
         if truth is None:
             return None
         negate ^= not truth
-        cat = _CATEGORY_PROPERTIES.get(key)
-        if cat is not None:
-            return (IN, [(CATEGORY, cat[1] if negate else cat[0])])
-        return _from_ranges(_analytic_ranges().get(key), negate)
+        return _binary_property(key, negate)
 
     key = _normalize(name)
-    cat = _CATEGORY_PROPERTIES.get(key)
-    if cat is not None:
-        return (IN, [(CATEGORY, cat[1] if negate else cat[0])])
-    ranges = _analytic_ranges().get(key)
-    if ranges is not None:
-        return _from_ranges(ranges, negate)
+    sub = _binary_property(key, negate)
+    if sub is not None:
+        return sub
     return _general_category(key, negate)

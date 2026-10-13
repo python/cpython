@@ -51,6 +51,9 @@ def _compile_charset(charset, flags, code):
                 emit(CH_UNICODE[av])
             else:
                 emit(av)
+        elif op is CATEGORY_UCD:
+            # av already packs negate, property and value (flag-independent).
+            emit(av)
         else:
             raise PatternError(f"internal: unsupported set operator {op!r}")
     emit(FAILURE)
