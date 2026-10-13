@@ -842,7 +842,7 @@ compound
    (display the image above, below, to the left of or to the right
    of the text).
    The themed widgets accept all these values,
-   the classic widgets all except ``"text"`` and ``"image"``.
+   the classic widgets accept all except ``"text"`` and ``"image"``.
 
 cursor
    The name of the mouse cursor to display while the pointer is over the widget.
