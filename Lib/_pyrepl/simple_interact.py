@@ -40,14 +40,16 @@ from .readline import _get_reader, multiline_input, append_history_file
 # External tools such as IDEs can install a hook to augment the behavior of the
 # REPL.
 #
-# For example, VS Code can mark the start of command execution:
+# For example, an IDE can mark the start of command execution:
 #
 #     from _pyrepl import simple_interact
 #
-#     def vscode_statement_submitted(statement: str) -> None:
-#         print("\x1b]633;C\x07", end="")
+#     simple_interact.statement_submitted_hook = lambda x: print("\x1b]633;C\x07", end="")
 #
-#     simple_interact.statement_submitted_hook = vscode_statement_submitted
+# In the REPL:
+#     >>> print("Hello, world!")
+#     \x1b]633;C\x07
+#     Hello, world!
 statement_submitted_hook = None
 
 
