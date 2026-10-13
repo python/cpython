@@ -135,6 +135,24 @@ class FutureTests(BaseTestCase):
                 repr(SUCCESSFUL_FUTURE),
                 '<Future at 0x[0-9a-f]+ state=finished returned int>')
 
+    def test_repr_exception(self):
+        class FalseyError(Exception):
+            def __bool__(self):
+                return False
+
+        class BadBoolError(Exception):
+            def __bool__(self):
+                raise AssertionError('should not be called')
+
+        for exc_type in (FalseyError, BadBoolError):
+            with self.subTest(exc_type=exc_type):
+                f = Future()
+                f.set_exception(exc_type())
+                self.assertRegex(
+                    repr(f),
+                    '<Future at 0x[0-9a-f]+ state=finished raised %s>'
+                    % exc_type.__name__)
+
     def test_cancel(self):
         f1 = create_future(state=PENDING)
         f2 = create_future(state=RUNNING)
