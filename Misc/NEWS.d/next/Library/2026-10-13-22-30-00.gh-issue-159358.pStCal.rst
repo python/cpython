@@ -1,0 +1,2 @@
+Fix stale callee statistics after combining profiling results with
+:meth:`pstats.Stats.add`.
