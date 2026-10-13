@@ -467,7 +467,11 @@ void _mi_page_force_abandon(mi_page_t* page) {
   // and now unlink it from the page queue and abandon (or free)
   mi_page_queue_t* pq = mi_heap_page_queue_of(heap, page);
   if (mi_page_all_free(page)) {
-    _mi_page_free(page, pq, false);
+    // CPython: keep the page if it is still waiting for QSBR.
+    if (!_PyMem_mi_page_maybe_free(page, pq, false)) {
+      pq = mi_heap_page_queue_of(heap, page);
+      _mi_page_abandon(page, pq);
+    }
   }
   else {
     _mi_page_abandon(page, pq);
