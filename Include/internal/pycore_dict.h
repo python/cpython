@@ -459,6 +459,9 @@ typedef struct {
 #define _PyFrozenDictObject_CAST(op) \
     (assert(PyFrozenDict_Check(op)), _Py_CAST(PyFrozenDictObject*, (op)))
 
+PyObject *
+_PyDict_Freeze(PyObject *dict);
+
 #ifdef __cplusplus
 }
 #endif
