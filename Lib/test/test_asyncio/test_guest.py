@@ -8,6 +8,7 @@ import sys
 import threading
 import time
 import unittest
+from unittest import mock
 from test.support import threading_helper
 from test.support.script_helper import assert_python_ok
 
@@ -216,6 +217,72 @@ class TestGuestRun(GuestTestCase):
         task = self._run_guest(coro)
         self.assertEqual(task.result(), "safe")
         timer.join()
+
+    def test_socket_io(self):
+        async def coro():
+            a, b = socket.socketpair()
+            ra, wa = await asyncio.open_connection(sock=a)
+            rb, wb = await asyncio.open_connection(sock=b)
+            try:
+                for i in range(20):
+                    wa.write(b'%d\n' % i)
+                    line = await rb.readline()
+                    wb.write(line)
+                    self.assertEqual(await ra.readline(), b'%d\n' % i)
+            finally:
+                wa.close()
+                wb.close()
+                await wa.wait_closed()
+                await wb.wait_closed()
+            return "ok"
+
+        task = self._run_guest(coro)
+        self.assertEqual(task.result(), "ok")
+
+    # -- polling -------------------------------------------------------
+
+    def test_ready_callbacks_do_not_go_through_io_thread(self):
+        # While callbacks are ready the poll timeout is zero; such polls
+        # run on the host thread instead of being handed to the I/O thread.
+        orig_poll_events = asyncio.BaseEventLoop.poll_events
+        io_polls = 0
+
+        def poll_events(loop):
+            nonlocal io_polls
+            io_polls += 1
+            return orig_poll_events(loop)
+
+        async def coro():
+            for _ in range(1000):
+                await asyncio.sleep(0)
+
+        with mock.patch.object(asyncio.BaseEventLoop, 'poll_events',
+                               poll_events):
+            task = self._run_guest(coro)
+        self.assertIsNone(task.result())
+        self.assertLess(io_polls, 10)
+
+    def test_busy_guest_does_not_starve_host(self):
+        # Host-thread polls reschedule themselves through the host loop,
+        # so host callbacks still run while guest tasks are busy.
+        host = MockHost()
+        host_ran = threading.Event()
+
+        async def coro():
+            for i in range(100_000):
+                if host_ran.is_set():
+                    return i
+                await asyncio.sleep(0)
+            return None
+
+        asyncio.start_guest_run(
+            coro,
+            run_sync_soon_threadsafe=host.run_sync_soon_threadsafe,
+            done_callback=host.done_callback,
+        )
+        host.run_sync_soon_threadsafe(host_ran.set)
+        task = host.run()
+        self.assertIsNotNone(task.result())
 
     # -- thread lifecycle ----------------------------------------------
 

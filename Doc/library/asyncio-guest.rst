@@ -26,7 +26,9 @@ replacing the host loop, asyncio piggybacks on it:
   :meth:`loop.process_events() <asyncio.loop.process_events>` and
   :meth:`loop.process_ready() <asyncio.loop.process_ready>` to advance
   the asyncio event loop by one step, then signals the I/O thread to
-  poll again.
+  poll again.  If callbacks are already ready or I/O events are pending,
+  the host thread skips the I/O thread and schedules the next step on
+  itself, so busy tasks do not pay for a thread switch on every step.
 
 Exactly one of the two threads touches the event loop at any moment, so
 neither the host loop nor the asyncio loop starves the other.

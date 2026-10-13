@@ -2022,6 +2022,14 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         .. versionadded:: 3.16
         """
+        return self._selector.select(self._poll_timeout())
+
+    def _poll_timeout(self):
+        """Return the timeout for the next selector poll.
+
+        Cleans up cancelled scheduled handles first.  Returns 0 if
+        callbacks are ready, None if nothing is scheduled.
+        """
         sched_count = len(self._scheduled)
         if (sched_count > _MIN_SCHEDULED_TIMER_HANDLES and
             self._timer_cancelled_count / sched_count >
@@ -2056,7 +2064,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             elif timeout < 0:
                 timeout = 0
 
-        return self._selector.select(timeout)
+        return timeout
 
     def process_events(self, event_list):
         """Process I/O events returned by :meth:`poll_events`.

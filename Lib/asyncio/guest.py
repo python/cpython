@@ -9,7 +9,10 @@ through a dual-thread architecture:
   I/O thread:   wait for token -> poll_events() -> hand events to host
 
 A single "token" (semaphore permit) ping-pongs between the two threads,
-so exactly one of them touches the event loop at any moment.
+so exactly one of them touches the event loop at any moment.  The token
+only goes to the I/O thread when the poll would block: if callbacks are
+ready or I/O events are pending, the host keeps it and schedules the
+next batch on itself.
 
 Inspired by Trio's guest mode (trio.lowlevel.start_guest_run).  The
 asyncio-guest project, which this implementation grew out of, has
@@ -250,7 +253,9 @@ def start_guest_run(async_fn, *args,
             return
         try:
             loop.process_events(event_list)
+            event_list = None
             loop.process_ready()
+            timeout = loop._poll_timeout()
         except BaseException:
             # Internal loop failure (user callback exceptions are routed
             # to the exception handler by Handle._run).  Unblock the I/O
@@ -258,12 +263,28 @@ def start_guest_run(async_fn, *args,
             shutdown.set()
             wakeup.release()
             raise
+        if shutdown.is_set():
+            return
+        # Fast path: poll without blocking on the host thread.  If there
+        # is work to do right away, run the next batch on the host too;
+        # a round trip through the I/O thread costs two thread switches.
+        try:
+            event_list = loop._selector.select(0)
+        except Exception as exc:
+            # Report it like an I/O thread failure.  Scheduled rather
+            # than called inline, so that _abort() can join the I/O
+            # thread even when this is the initial batch.
+            shutdown.set()
+            run_sync_soon_threadsafe(partial(_abort, exc))
+            return
+        if timeout == 0 or event_list:
+            run_sync_soon_threadsafe(partial(_process_on_host, event_list))
+            return
         # Hand the polling token back to the I/O thread.  Exactly one
         # token circulates: while the host runs a batch, the I/O thread
         # is parked in wakeup.acquire(), so it can never poll (or touch
         # the loop at all) concurrently with this function.
-        if not shutdown.is_set():
-            wakeup.release()
+        wakeup.release()
 
     def _on_task_done(task):
         # Runs inside process_ready() while the host holds the token,
