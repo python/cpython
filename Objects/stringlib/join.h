@@ -35,10 +35,6 @@ STRINGLIB(bytes_join_lock_held)(PyObject *sep, PyObject *seq)
     }
 #endif
 
-    /* Fast path: all items are exact bytes and the result is too small to
-     * release the GIL for.  Nothing here runs Python code or suspends the
-     * critical section, so seq keeps the items alive and they can be copied
-     * without taking references. */
     Py_ssize_t limit = GIL_THRESHOLD - seplen;
     for (i = 0; i < seqlen; i++) {
         item = PySequence_Fast_GET_ITEM(seq, i);
@@ -48,6 +44,10 @@ STRINGLIB(bytes_join_lock_held)(PyObject *sep, PyObject *seq)
         }
         sz += PyBytes_GET_SIZE(item) + seplen;
     }
+    /* Fast path: all items are exact bytes and the result is too small to
+     * release the GIL for.  Nothing here runs Python code or suspends the
+     * critical section, so seq keeps the items alive and they can be copied
+     * without taking references. */
     if (i == seqlen) {
         res = STRINGLIB_NEW(NULL, sz - seplen);
         if (res == NULL) {
@@ -189,7 +189,8 @@ done:
     for (i = 0; i < nbufs; i++) {
         PyObject *obj = buffers[i].obj;
         if (obj != NULL && PyBytes_CheckExact(obj)) {
-            /* bytes has no bf_releasebuffer */
+            /* Same as PyBuffer_Release(), without the call: bytes has no
+             * bf_releasebuffer, so only the reference to obj is dropped. */
             Py_DECREF(obj);
         }
         else {
