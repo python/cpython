@@ -1837,13 +1837,6 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(((_PyThreadStateImpl *)tstate)->asyncio_running_task);
 
 
-    PyMutex_Lock(&tstate->interp->asyncio_tasks_lock);
-    // merge any lingering tasks from thread state to interpreter's
-    // tasks list
-    llist_concat(&tstate->interp->asyncio_tasks_head,
-                 &((_PyThreadStateImpl *)tstate)->asyncio_tasks_head);
-    PyMutex_Unlock(&tstate->interp->asyncio_tasks_lock);
-
     Py_CLEAR(tstate->dict);
     Py_CLEAR(tstate->async_exc);
 
@@ -1876,6 +1869,14 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     // Finalizers above may resolve imports and create this set.
     Py_CLEAR(((_PyThreadStateImpl *)tstate)->lazy_imports);
+
+    // Finalizers run by the Py_CLEAR() calls above can create asyncio tasks.
+    // Merge the task list only after all of those finalizers have run, so
+    // those tasks are not left linked to this thread state when it is freed.
+    PyMutex_Lock(&tstate->interp->asyncio_tasks_lock);
+    llist_concat(&tstate->interp->asyncio_tasks_head,
+                 &((_PyThreadStateImpl *)tstate)->asyncio_tasks_head);
+    PyMutex_Unlock(&tstate->interp->asyncio_tasks_lock);
 
 #ifdef Py_GIL_DISABLED
     // Each thread should clear own freelists in free-threading builds.

@@ -1,4 +1,6 @@
 import asyncio
+import contextvars
+import _thread
 import threading
 import unittest
 from threading import Thread
@@ -231,6 +233,68 @@ class TestPyFreeThreading(TestFreeThreading, TestCase):
 
 @unittest.skipUnless(hasattr(asyncio.tasks, "_c_all_tasks"), "requires _asyncio")
 class TestCFreeThreading(TestFreeThreading, TestCase):
+
+    def test_task_created_during_thread_state_clear_is_tracked(self):
+        """Tasks created by a thread-state finalizer must not be orphaned."""
+        loop = asyncio.new_event_loop()
+        loop_ready = threading.Event()
+        task_started = threading.Event()
+        task_finished = threading.Event()
+        thread_done = threading.Event()
+        blocker = []
+
+        async def blocked():
+            task_started.set()
+            await blocker[0]
+            task_finished.set()
+
+        def initialize_loop():
+            blocker.append(loop.create_future())
+            loop_ready.set()
+
+        def run_loop():
+            asyncio.set_event_loop(loop)
+            loop.call_soon(initialize_loop)
+            try:
+                loop.run_forever()
+            finally:
+                loop.close()
+
+        loop_thread = Thread(target=run_loop)
+        loop_thread.start()
+        try:
+            self.assertTrue(loop_ready.wait(10))
+
+            created = []
+
+            class CreatesTaskOnClear:
+                def __del__(self):
+                    task = loop.create_task(blocked())
+                    created.append(task)
+                    # loop.create_task() does not wake a loop running in
+                    # another thread.
+                    loop.call_soon_threadsafe(lambda: None)
+
+            var = contextvars.ContextVar("var")
+
+            def worker():
+                var.set(CreatesTaskOnClear())
+                thread_done.set()
+
+            _thread.start_new_thread(worker, ())
+            self.assertTrue(thread_done.wait(10))
+
+            self.assertTrue(task_started.wait(10))
+            self.assertEqual(len(created), 1)
+            self.assertIn(created[0], asyncio.all_tasks(loop))
+        finally:
+            if blocker:
+                loop.call_soon_threadsafe(blocker[0].set_result, None)
+                if task_started.is_set():
+                    self.assertTrue(task_finished.wait(10))
+            loop.call_soon_threadsafe(loop.stop)
+            loop_thread.join(10)
+            self.assertFalse(loop_thread.is_alive())
 
     def setUp(self):
         self._old_current_task = asyncio.current_task

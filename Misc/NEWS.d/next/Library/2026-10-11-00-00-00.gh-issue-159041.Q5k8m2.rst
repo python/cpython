@@ -1,0 +1,2 @@
+Fix a use-after-free in the free-threaded build when an :mod:`asyncio` task is
+created by a thread-state finalizer.
