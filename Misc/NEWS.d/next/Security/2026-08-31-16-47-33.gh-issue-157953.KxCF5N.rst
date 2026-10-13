@@ -1,1 +1,1 @@
-Update bundled `libexpat <https://libexpat.github.io/>`_ to version 2.8.5.
+Update bundled `libexpat <https://libexpat.github.io/>`_ to version 2.9.0.
