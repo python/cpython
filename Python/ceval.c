@@ -534,6 +534,7 @@ PyObject*
 _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
                    Py_ssize_t nargs, PyObject *kwargs)
 {
+    assert(nargs > 0);
     if (!PyType_Check(type)) {
         const char *e = "class pattern must refer to a class";
         _PyErr_Format(tstate, PyExc_TypeError, e);

@@ -1755,6 +1755,17 @@ iterations of the loop.
    .. versionadded:: 3.13
 
 
+.. opcode:: MATCH_CLASS_GET_OPT_ATTR (namei)
+
+   Replaces ``STACK[-1]`` with ``getattr(STACK[-1], co_names[namei])`` and gets
+   optional attribute from match subject ``STACK[-2]``.
+
+   Pop ``Stack[-1]``. If attribute is found, pushes it and ``True`` onto the stack.
+   Otherwise pushes ``None`` and ``False``.
+
+   .. versionadded:: 3.16
+
+
 .. opcode:: MATCH_CLASS (count)
 
    ``STACK[-1]`` is a tuple of keyword attribute names, ``STACK[-2]`` is the class
