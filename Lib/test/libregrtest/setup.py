@@ -114,7 +114,7 @@ def setup_tests(runtests: RunTests) -> None:
 
     set_match_tests(runtests.match_tests)
 
-    RegressionTestResult.reporter = get_reporter(runtests)
+    RegressionTestResult.reporter = get_reporter(runtests.github_summary)
     if runtests.use_junit:
         support.junit_xml_list = []
         RegressionTestResult.USE_XML = True

@@ -16,6 +16,7 @@ from test import support
 from test.support import os_helper, MS_WINDOWS
 
 from .logger import Logger
+from .reporter import get_reporter
 from .result import TestResult, State
 from .results import TestResults
 from .runtests import RunTests, WorkerRunTests, JsonFile, JsonFileType
@@ -624,6 +625,9 @@ class RunWorkers:
             stdout = mp_result.worker_stdout
             if stdout:
                 print(stdout, flush=True)
+        # Report after the output: env changed warnings, crash traceback
+        get_reporter(self.runtests.github_summary).test_result(result,
+                                                               self.runtests)
 
         return result
 

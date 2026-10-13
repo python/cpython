@@ -135,8 +135,6 @@ class RegressionTestResult(unittest.TextTestResult):
     def printErrorList(self, flavour, errors):
         for test, err in errors:
             super().printErrorList(flavour, [(test, err)])
-            # Report just after unittest printed the failure, so that a CI
-            # annotation links to it in the job log
             self.report_failure(test, err)
 
     def report_failure(self, test, err):
@@ -158,7 +156,7 @@ class QuietRegressionTestRunner:
 
     def run(self, test):
         test(self.result)
-        # Failures are not printed in quiet mode: report them at the end
+        # Failures are not printed in quiet mode
         for test, err in self.result.errors + self.result.failures:
             self.result.report_failure(test, err)
         return self.result

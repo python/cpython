@@ -299,7 +299,7 @@ class Regrtest:
             self.run_tests_sequentially(runtests)
         return runtests
 
-    def rerun_failed_tests(self, runtests: RunTests) -> RunTests:
+    def rerun_failed_tests(self, runtests: RunTests) -> None:
         ansi = get_colors()
         red, reset = ansi.BOLD_RED, ansi.RESET
 
@@ -309,7 +309,7 @@ class Regrtest:
                 "Re-running failed tests is not supported with --python "
                 "host runner option."
             )
-            return runtests
+            return
 
         self.first_state = self.get_state()
 
@@ -324,7 +324,6 @@ class Regrtest:
             printlist(self.results.bad)
 
         self.display_result(rerun_runtests)
-        return rerun_runtests
 
     def _run_bisect(self, runtests: RunTests, test: str, progress: str) -> bool:
         print()
@@ -398,6 +397,7 @@ class Regrtest:
             result = run_single_test(test_name, runtests)
 
         self.results.accumulate_result(result, runtests)
+        get_reporter(runtests.github_summary).test_result(result, runtests)
 
         return result
 
@@ -464,8 +464,7 @@ class Regrtest:
         from .run_workers import RunWorkers
         RunWorkers(num_workers, runtests, self.logger, self.results).run()
 
-    def finalize_tests(self, coverage: trace.CoverageResults | None,
-                       runtests: RunTests) -> None:
+    def finalize_tests(self, coverage: trace.CoverageResults | None) -> None:
         if self.next_single_filename:
             if self.next_single_test:
                 with open(self.next_single_filename, 'w') as fp:
@@ -488,7 +487,8 @@ class Regrtest:
         failed = [result for result in self.results.rerun_results
                   if result.is_failed(self.fail_env_changed)]
         if failed:
-            get_reporter(runtests).run_failed(failed, self.get_state())
+            get_reporter(self.github_summary).run_failed(failed,
+                                                         self.get_state())
 
     def display_summary(self) -> None:
         if self.first_runtests is None:
@@ -527,8 +527,7 @@ class Regrtest:
             hunt_refleak=self.hunt_refleak,
             test_dir=self.test_dir,
             use_junit=(self.junit_filename is not None),
-            # Only report the failures which fail the job: when failed tests
-            # are re-run, only report the re-run.
+            # When failed tests are re-run, only report the re-run
             github_summary=(None if self.want_rerun and not self.python_cmd
                             else self.github_summary),
             coverage=self.coverage,
@@ -601,10 +600,8 @@ class Regrtest:
             coverage = self.results.get_coverage_results()
             self.display_result(runtests)
 
-            # The re-run, if any, is the last run
-            last_runtests = runtests
             if self.want_rerun and self.results.need_rerun():
-                last_runtests = self.rerun_failed_tests(runtests)
+                self.rerun_failed_tests(runtests)
 
             if self.want_bisect and self.results.need_rerun():
                 self.run_bisect(runtests)
@@ -613,7 +610,7 @@ class Regrtest:
                 self.logger.stop_load_tracker()
 
         self.display_summary()
-        self.finalize_tests(coverage, last_runtests)
+        self.finalize_tests(coverage)
 
         return self.results.get_exitcode(self.fail_env_changed,
                                          self.fail_rerun)
