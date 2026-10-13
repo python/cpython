@@ -1027,6 +1027,7 @@ _PyObject_ptr_wise_atomic_memmove(PyObject *a, PyObject **dest, PyObject **src,
     (void)a;
     memmove(dest, src, n * sizeof(PyObject *));
 #else
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(a);
     if (_Py_IsOwnedByCurrentThread(a) && !_PyObject_GC_IS_SHARED(a)) {
         // No other threads can read this object's array concurrently
         memmove(dest, src, n * sizeof(PyObject *));
