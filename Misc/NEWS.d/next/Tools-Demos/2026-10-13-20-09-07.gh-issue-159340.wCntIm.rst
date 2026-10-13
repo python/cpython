@@ -1,0 +1,3 @@
+Fix ``Tools/build/check_warnings.py`` to detect warning-count reductions
+when some warnings remain, and to accept zero expected warnings when none
+are present.
