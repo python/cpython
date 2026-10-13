@@ -1,2 +1,0 @@
-Fix the pickle closed-file loading test to exercise loading rather than
-dumping in both the Python and C implementations.
