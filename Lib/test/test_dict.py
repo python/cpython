@@ -479,6 +479,13 @@ class DictTest(unittest.TestCase):
         d2 = d.copy()
         self.assertEqual(d2, d)
 
+    @support.nomemtest
+    def test_copy_empty_no_memory(self):
+        import _testcapi
+        d = {}
+        with self.assertRaises(MemoryError):
+            _testcapi.call_with_nomemory(0, 0, d.copy)
+
     def test_get(self):
         d = {}
         self.assertIs(d.get('c'), None)
