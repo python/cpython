@@ -555,12 +555,12 @@ complex_number[expr_ty]:
 
 signed_number[expr_ty]:
     | NUMBER
-    | '+' number=NUMBER { number }
+    | '+' number=NUMBER { _PyAST_UnaryOp(UAdd, number, EXTRA) }
     | '-' number=NUMBER { _PyAST_UnaryOp(USub, number, EXTRA) }
 
 signed_real_number[expr_ty]:
     | real_number
-    | '+' real=real_number { real }
+    | '+' real=real_number { _PyAST_UnaryOp(UAdd, real, EXTRA) }
     | '-' real=real_number { _PyAST_UnaryOp(USub, real, EXTRA) }
 
 real_number[expr_ty]:
@@ -568,7 +568,6 @@ real_number[expr_ty]:
 
 imaginary_number[expr_ty]:
     | imag=NUMBER { _PyPegen_ensure_imaginary(p, imag) }
-    | '+' imag=NUMBER { _PyPegen_ensure_imaginary(p, imag) }
 
 capture_pattern[pattern_ty]:
     | target=pattern_capture_target { _PyAST_MatchAs(NULL, target->v.Name.id, EXTRA) }
@@ -795,6 +794,7 @@ compare_op_bitwise_or_pair[CmpopExprPair*]:
     | eq_bitwise_or
     | noteq_bitwise_or
     | lte_bitwise_or
+    | invalid_noteq
     | lt_bitwise_or
     | gte_bitwise_or
     | gt_bitwise_or
@@ -1644,3 +1644,10 @@ invalid_type_params:
         RAISE_SYNTAX_ERROR_STARTING_FROM(
             token,
             "Type parameter list cannot be empty")}
+
+invalid_noteq:
+    | a='<' b='>' {
+        _PyPegen_tokens_are_adjacent(a, b)
+        ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant '!=' instead of '<>'?")
+        : NULL
+    }

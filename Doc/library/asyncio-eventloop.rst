@@ -592,6 +592,10 @@ Opening network connections
    .. versionchanged:: 3.12
       *all_errors* was added.
 
+   .. versionchanged:: 3.15
+      Raises a ``ValueError`` if ``ssl.check_hostname`` is ``True``
+      and ``server_hostname`` is not supplied.
+
    .. seealso::
 
       The :func:`open_connection` function is a high-level alternative
@@ -1883,6 +1887,12 @@ Do not instantiate the :class:`Server` class directly.
 
       Wait until the :meth:`close` method completes and all active
       connections have finished.
+
+      .. versionchanged:: 3.12
+         ``wait_closed()`` now waits until the server is closed and
+         all active connections have finished.  Previously, it returned
+         immediately if the server was already closed, even if
+         connections were still active.
 
    .. attribute:: sockets
 

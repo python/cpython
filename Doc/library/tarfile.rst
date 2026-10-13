@@ -670,7 +670,7 @@ be finalized; only the internally used file object will be closed. See the
    it is best practice to only do so in top-level applications or
    :mod:`site configuration <site>`.
    To set a global default this way, a filter function needs to be wrapped in
-   :func:`staticmethod` to prevent injection of a ``self`` argument.
+   :deco:`staticmethod` to prevent injection of a ``self`` argument.
 
    .. versionchanged:: 3.14
 
@@ -1107,6 +1107,10 @@ reused in custom filters:
     paths (in case the name is absolute
     even after stripping slashes, e.g. ``C:/foo`` on Windows).
     This raises :class:`~tarfile.AbsolutePathError`.
+  - Normalize filenames (:attr:`TarInfo.name`) that contain ``..`` components
+    using :func:`os.path.normpath`.
+    Note that this removes internal ``..`` components, which may change the
+    meaning of the name if it traverses symbolic links.
   - :ref:`Refuse <tarfile-extraction-refuse>` to extract files whose absolute
     path (after following symlinks) would end up outside the destination.
     This raises :class:`~tarfile.OutsideDestinationError`.
@@ -1114,6 +1118,10 @@ reused in custom filters:
     (:const:`~stat.S_IWGRP` | :const:`~stat.S_IWOTH`).
 
   Return the modified ``TarInfo`` member.
+
+  .. versionchanged:: 3.15
+
+     Filenames containing ``..`` components are now normalized.
 
 .. function:: data_filter(member, path)
 

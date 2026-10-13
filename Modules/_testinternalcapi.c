@@ -438,7 +438,7 @@ next_frame_pointer_is_valid(uintptr_t *frame_pointer, uintptr_t *next_fp,
 #endif
 }
 
-static PyObject *
+static PyObject * _Py_NO_SANITIZE_MEMORY
 manual_unwind_from_fp(uintptr_t *frame_pointer)
 {
     uintptr_t stack_min = 0;
@@ -2049,8 +2049,8 @@ check_pyobject_forbidden_bytes_is_freed(PyObject *self,
 static PyObject *
 check_pyobject_freed_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    /* ASan or TSan would report an use-after-free error */
-#if defined(_Py_ADDRESS_SANITIZER) || defined(_Py_THREAD_SANITIZER)
+    /* ASan, MSan or TSan would report an error. */
+#if defined(_Py_ADDRESS_SANITIZER) || defined(_Py_THREAD_SANITIZER) || defined(_Py_MEMORY_SANITIZER)
     Py_RETURN_NONE;
 #else
     PyObject *op = PyObject_CallNoArgs((PyObject *)&PyBaseObject_Type);
@@ -3194,6 +3194,66 @@ test_thread_state_ensure_from_view_interp_switch(PyObject *self, PyObject *unuse
     Py_RETURN_NONE;
 }
 
+/* Self interrupting context manager */
+
+typedef struct {
+    PyObject_HEAD
+    int within;
+} SelfInterruptingContextManagerObject;
+
+static PyObject *
+new_self_interrupting(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    SelfInterruptingContextManagerObject *self =
+        (SelfInterruptingContextManagerObject *)type->tp_alloc(type, 0);
+    if (self != NULL) {
+        self->within = 0;
+    }
+    return (PyObject *)self;
+}
+
+static PyObject *
+self_interrupting_enter(PyObject *op, PyObject *Py_UNUSED(dummy))
+{
+    ((SelfInterruptingContextManagerObject *)op)->within = 1;
+    PyThreadState *tstate = PyThreadState_Get();
+    PyObject *ki = Py_NewRef(PyExc_KeyboardInterrupt);
+    PyObject *old_exc = _Py_atomic_exchange_ptr(&tstate->async_exc, ki);
+    _Py_set_eval_breaker_bit(tstate, _PY_ASYNC_EXCEPTION_BIT);
+    Py_XDECREF(old_exc);
+
+    return Py_NewRef(op);
+}
+
+static PyObject *
+self_interrupting_within(PyObject *op, PyObject *Py_UNUSED(dummy))
+{
+    return PyBool_FromLong(((SelfInterruptingContextManagerObject *)op)->within);
+}
+
+static PyObject *
+self_interrupting_exit(PyObject *op, PyObject *Py_UNUSED(args)) {
+    ((SelfInterruptingContextManagerObject *)op)->within = 0;
+    Py_RETURN_NONE;
+}
+
+static PyMethodDef self_interrupting_methods[] = {
+    {"__enter__", self_interrupting_enter, METH_NOARGS, NULL},
+    {"within", self_interrupting_within, METH_NOARGS, NULL},
+    {"__exit__", self_interrupting_exit, METH_VARARGS, NULL},
+    {NULL, NULL} /* sentinel */
+};
+
+static PyTypeObject SelfInterruptingContextManager_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "_testcapi.SelfInterruptingContextManager",
+    sizeof(SelfInterruptingContextManagerObject),
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
+    .tp_new = new_self_interrupting,
+    .tp_methods = self_interrupting_methods,
+};
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_eval_frame_stats", get_eval_frame_stats, METH_NOARGS, NULL},
@@ -3415,6 +3475,11 @@ module_exec(PyObject *module)
         return 1;
     }
 #endif
+
+    if (PyType_Ready(&SelfInterruptingContextManager_Type) < 0) {
+        return 1;
+    }
+    PyModule_AddObject(module, "SelfInterruptingContextManager", (PyObject *)&SelfInterruptingContextManager_Type);
 
     return 0;
 }

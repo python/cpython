@@ -103,40 +103,42 @@ class PrettyPrintTests(DebuggerTests):
         self.assertGdbRepr(b'And now for something hopefully the same')
         self.assertGdbRepr(b'string with embedded NUL here \0 and then some more text')
         self.assertGdbRepr(b'this is a tab:\t'
+                           b' this is a slash:\\'
                            b' this is a slash-N:\n'
                            b' this is a slash-R:\r'
                            )
+        # Test double quotes (")
+        self.assertGdbRepr(b"it's a quote")
 
         self.assertGdbRepr(b'this is byte 255:\xff and byte 128:\x80')
 
-        self.assertGdbRepr(bytes([b for b in range(255)]))
+        self.assertGdbRepr(bytes([b for b in range(256)]))
 
     @support.requires_resource('cpu')
     def test_strings(self):
         'Verify the pretty-printing of unicode strings'
-        # We cannot simply call locale.getpreferredencoding() here,
-        # as GDB might have been linked against a different version
-        # of Python with a different encoding and coercion policy
-        # with respect to PEP 538 and PEP 540.
+        # gdb emits its output in the host charset, which is not necessarily the
+        # getpreferredencoding() of the (possibly differently coerced) embedded
+        # Python.
         stdout, stderr = run_gdb(
             '--eval-command',
-            'python import locale; print(locale.getpreferredencoding())')
+            'python import gdb; print(gdb.host_charset())')
 
-        encoding = stdout
+        encoding = stdout.strip()
         if stderr or not encoding:
             raise RuntimeError(
-                f'unable to determine the Python locale preferred encoding '
-                f'of embedded Python in GDB\n'
+                f'unable to determine the host charset of gdb\n'
                 f'stdout={stdout!r}\n'
                 f'stderr={stderr!r}')
 
         def check_repr(text):
             try:
                 text.encode(encoding)
-            except UnicodeEncodeError:
+            # LookupError or ValueError if the host charset is unknown or invalid.
+            except (UnicodeEncodeError, LookupError, ValueError):
                 self.assertGdbRepr(text, ascii(text))
             else:
-                self.assertGdbRepr(text)
+                self.assertGdbRepr(text, repr(text).encode(encoding).decode('ascii', 'surrogateescape'))
 
         self.assertGdbRepr('')
         self.assertGdbRepr('And now for something hopefully the same')

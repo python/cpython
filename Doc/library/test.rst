@@ -285,7 +285,7 @@ The :mod:`!test.support` module defines the following constants:
    :meth:`~socket.socket.recv` and :meth:`~socket.socket.send` methods of
    :class:`socket.socket`.
 
-   Its default value is 5 seconds.
+   Its default value is 10 seconds.
 
    See also :data:`INTERNET_TIMEOUT`.
 
@@ -718,7 +718,7 @@ The :mod:`!test.support` module defines the following functions:
 .. decorator:: anticipate_failure(condition)
 
    A decorator to conditionally mark tests with
-   :func:`unittest.expectedFailure`. Any use of this decorator should
+   :deco:`unittest.expectedFailure`. Any use of this decorator should
    have an associated comment identifying the relevant tracker issue.
 
 
@@ -959,6 +959,72 @@ The :mod:`!test.support` module defines the following functions:
 
    Run *code* in subinterpreter.  Raise :exc:`unittest.SkipTest` if
    :mod:`tracemalloc` is enabled.
+
+
+.. currentmodule:: test.support.isolation
+
+.. decorator:: runInSubprocess(*, options=(), env=None, timeout=None)
+
+   Decorator that runs the decorated test in a fresh interpreter subprocess, in
+   isolation, so that it does not share global or interpreter state with the
+   rest of the test run.  It can decorate a test method or a whole
+   :class:`~unittest.TestCase` subclass.  Decorated methods must take no extra
+   arguments.  A failure, error or skip in the subprocess is reported for the
+   corresponding test, and individual :meth:`subtests
+   <unittest.TestCase.subTest>` that fail or are skipped are reported
+   individually.  A reported failure or error shows the original subprocess
+   traceback as the cause of the exception.
+
+   When a **method** is decorated, only that method runs in a subprocess; all
+   fixtures (:meth:`~unittest.TestCase.setUp` / :meth:`~unittest.TestCase.tearDown`,
+   :meth:`~unittest.TestCase.setUpClass` / :meth:`~unittest.TestCase.tearDownClass`
+   and ``setUpModule()`` / ``tearDownModule()``) run both in the parent process
+   (as usual) and in the subprocess around the method.
+
+   When a **class** is decorated, the whole class runs in a single subprocess,
+   and :meth:`~unittest.TestCase.setUpClass`,
+   :meth:`~unittest.TestCase.tearDownClass`, :meth:`~unittest.TestCase.setUp`
+   and :meth:`~unittest.TestCase.tearDown` run once each in the subprocess and
+   are skipped in the parent process.  A failure or skip of
+   :meth:`~unittest.TestCase.setUpClass` in the subprocess is reported for the
+   whole class.  ``setUpModule()`` cannot be controlled by a class decorator,
+   so it still runs in the parent process too; test it with
+   :data:`runningInSubprocess` if needed.
+
+   The subprocess inherits the enabled resources (``-u``), memory limit
+   (``-M``) and verbosity (``-v``) of the parent test run, so that
+   :func:`~test.support.requires_resource`, :func:`~test.support.requires`,
+   :func:`~test.support.bigmemtest` and the like behave consistently in both
+   processes.
+
+   *options* is a sequence of interpreter command line options
+   to run the subprocess with,
+   and *env* is a mapping of environment variables to set in it,
+   on top of the inherited environment.
+   A value of ``None`` in *env* unsets the variable.
+   Note that :option:`-E` and :option:`-I` make the subprocess ignore
+   the ``PYTHON*`` environment variables, including :envvar:`PYTHONPATH`.
+
+   *timeout* is the number of seconds to wait for the subprocess;
+   the test is reported as an error if it does not complete in time.
+   By default there is no timeout,
+   and a hung test is left to the timeout of the test runner.
+
+   The test is skipped on platforms without subprocess support.
+
+
+.. data:: runningInSubprocess
+
+   ``True`` while the code runs in the isolated subprocess spawned by
+   :func:`runInSubprocess`, and ``False`` otherwise (including in the parent
+   process and in a normal, non-isolated test run).  Fixtures such as
+   :meth:`~unittest.TestCase.setUp`, :meth:`~unittest.TestCase.tearDown`,
+   :meth:`~unittest.TestCase.setUpClass`, :meth:`~unittest.TestCase.tearDownClass`,
+   ``setUpModule()`` and ``tearDownModule()`` can test it to choose which code
+   to run in the subprocess.
+
+
+.. currentmodule:: test.support
 
 
 .. function:: check_free_after_iterating(test, iter, cls, args=())
@@ -1588,6 +1654,32 @@ The :mod:`!test.support.os_helper` module provides support for os tests.
    Call :func:`os.unlink` on *filename*.  As with :func:`rmdir`,
    on Windows platforms, this is
    wrapped with a wait loop that checks for the existence of the file.
+
+
+.. decorator:: with_source_date_epoch(*, epoch=123456789)
+
+   A decorator for running tests with the :envvar:`SOURCE_DATE_EPOCH`
+   environment variable set to *epoch*.
+
+
+.. decorator:: without_source_date_epoch
+
+   A decorator for running tests with the :envvar:`SOURCE_DATE_EPOCH`
+   environment variable unset.
+
+
+.. class:: SourceDateEpochTestMeta
+
+   Metaclass wrapping all test methods of the class with
+   :func:`with_source_date_epoch` if the *source_date_epoch* keyword class
+   argument is true, or with :func:`without_source_date_epoch` otherwise.
+   For example::
+
+      class TestsWithSourceEpoch(Tests,
+                                 metaclass=SourceDateEpochTestMeta,
+                                 source_date_epoch=True):
+          pass
+
 
 
 :mod:`!test.support.import_helper` --- Utilities for import tests

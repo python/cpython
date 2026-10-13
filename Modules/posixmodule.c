@@ -504,6 +504,8 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #  define HAVE_MKFIFOAT_RUNTIME __builtin_available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 #  define HAVE_MKNODAT_RUNTIME __builtin_available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 #  define HAVE_PTSNAME_R_RUNTIME __builtin_available(macOS 10.13.4, iOS 11.3, tvOS 11.3, watchOS 4.3, *)
+#  define HAVE_DUP3_RUNTIME __builtin_available(macOS 27.0, *)
+#  define HAVE_PIPE2_RUNTIME __builtin_available(macOS 27.0, *)
 
 #  define HAVE_POSIX_SPAWN_SETSID_RUNTIME __builtin_available(macOS 10.15, *)
 
@@ -589,6 +591,14 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #    define HAVE_PTSNAME_R_RUNTIME (ptsname_r != NULL)
 #  endif
 
+#  ifdef HAVE_DUP3
+#    define HAVE_DUP3_RUNTIME (dup3 != NULL)
+#  endif
+
+#  ifdef HAVE_PIPE2
+#    define HAVE_PIPE2_RUNTIME (pipe2 != NULL)
+#  endif
+
 #endif
 
 #ifdef HAVE_FUTIMESAT
@@ -619,6 +629,8 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #  define HAVE_MKFIFOAT_RUNTIME 1
 #  define HAVE_MKNODAT_RUNTIME 1
 #  define HAVE_PTSNAME_R_RUNTIME 1
+#  define HAVE_DUP3_RUNTIME 1
+#  define HAVE_PIPE2_RUNTIME 1
 #endif
 
 
@@ -2023,6 +2035,14 @@ win32_wchdir(LPCWSTR path)
 #define HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES 1
 #define HAVE_STRUCT_STAT_ST_REPARSE_TAG 1
 
+/* The \\?\ prefix disables the path normalization, in particular
+   stripping of trailing dots and spaces. */
+static int
+is_extended_path(const wchar_t *path)
+{
+    return wcsncmp(path, L"\\\\?\\", 4) == 0;
+}
+
 static void
 find_data_to_file_info(WIN32_FIND_DATAW *pFileData,
                        BY_HANDLE_FILE_INFORMATION *info,
@@ -2090,12 +2110,20 @@ update_st_mode_from_path(const wchar_t *path, DWORD attr,
            GetSecurityInfo, OpenThreadToken/OpenProcessToken, and
            AccessCheck to check for generic read, write, and execute
            access. */
-        const wchar_t *fileExtension = wcsrchr(path, '.');
-        if (fileExtension) {
-            if (_wcsicmp(fileExtension, L".exe") == 0 ||
-                _wcsicmp(fileExtension, L".bat") == 0 ||
-                _wcsicmp(fileExtension, L".cmd") == 0 ||
-                _wcsicmp(fileExtension, L".com") == 0) {
+        size_t len = wcslen(path);
+        if (!is_extended_path(path)) {
+            /* Trailing dots and spaces are stripped from the last component
+               of the path. */
+            while (len > 0 && (path[len - 1] == L'.' || path[len - 1] == L' ')) {
+                len--;
+            }
+        }
+        if (len >= 4) {
+            const wchar_t *fileExtension = path + len - 4;
+            if (_wcsnicmp(fileExtension, L".exe", 4) == 0 ||
+                _wcsnicmp(fileExtension, L".bat", 4) == 0 ||
+                _wcsnicmp(fileExtension, L".cmd", 4) == 0 ||
+                _wcsnicmp(fileExtension, L".com", 4) == 0) {
                 result->st_mode |= 0111;
             }
         }
@@ -10125,6 +10153,7 @@ os_getlogin_impl(PyObject *module)
         errno = old_errno;
     }
     else {
+        _Py_MSAN_UNPOISON(name, sizeof(name));
         result = PyUnicode_DecodeFSDefault(name);
     }
 #else
@@ -11459,9 +11488,9 @@ os.timerfd_settime_ns
     flags: int = 0
         0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.
     initial: long_long = 0
-        initial expiration timing in seconds.
+        initial expiration timing in nanoseconds.
     interval: long_long = 0
-        interval for the timer in seconds.
+        interval for the timer in nanoseconds.
 
 Alter a timer file descriptor's internal timer in nanoseconds.
 [clinic start generated code]*/
@@ -11469,7 +11498,7 @@ Alter a timer file descriptor's internal timer in nanoseconds.
 static PyObject *
 os_timerfd_settime_ns_impl(PyObject *module, int fd, int flags,
                            long long initial, long long interval)
-/*[clinic end generated code: output=6273ec7d7b4cc0b3 input=261e105d6e42f5bc]*/
+/*[clinic end generated code: output=6273ec7d7b4cc0b3 input=94bdcea7292157eb]*/
 {
     struct itimerspec new_value;
     struct itimerspec old_value;
@@ -11499,12 +11528,12 @@ os.timerfd_gettime
         A timer file descriptor.
     /
 
-Return a tuple of a timer file descriptor's (interval, next expiration) in float seconds.
+Return a tuple of a timer file descriptor's (next expiration, interval) in float seconds.
 [clinic start generated code]*/
 
 static PyObject *
 os_timerfd_gettime_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=ec5a94a66cfe6ab4 input=05f7d568a4820dc6]*/
+/*[clinic end generated code: output=ec5a94a66cfe6ab4 input=7b0a7cc61ea9e31a]*/
 {
     struct itimerspec curr_value;
     int result;
@@ -11526,12 +11555,12 @@ os.timerfd_gettime_ns
         A timer file descriptor.
     /
 
-Return a tuple of a timer file descriptor's (interval, next expiration) in nanoseconds.
+Return a tuple of a timer file descriptor's (next expiration, interval) in nanoseconds.
 [clinic start generated code]*/
 
 static PyObject *
 os_timerfd_gettime_ns_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=580633a4465f39fe input=d0de95b9782179c5]*/
+/*[clinic end generated code: output=580633a4465f39fe input=89702268455fa93b]*/
 {
     struct itimerspec curr_value;
     int result;
@@ -11833,11 +11862,16 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
 /*[clinic end generated code: output=bc059d34a73404d1 input=c3cddda8922b038d]*/
 {
     int res = 0;
-#if defined(HAVE_DUP3) && \
-    !(defined(HAVE_FCNTL_H) && defined(F_DUP2FD_CLOEXEC))
-    /* dup3() is available on Linux 2.6.27+ and glibc 2.9 */
-    static int dup3_works = -1;
-#endif
+
+    /* dup3() is available on Linux 2.6.27+ and glibc 2.9 and macOS 27.0;
+     * it needs runtime detection for the case of running on older kernels.
+     * Values: -1: unknown; 0: doesn't work; 1: works
+     * For thread safety, use a process-global with one read & one store,
+     * both relaxed. (It's fine if two threads race and do the detection
+     * simultaneously; they should get the same result.)
+     */
+    static int dup3_works_atomic = -1;
+    (void) dup3_works_atomic;  // unused on some platforms
 
     /* dup2() can fail with EINTR if the target FD is already open, because it
      * then has to be closed. See os_close_impl() for why we don't handle EINTR
@@ -11876,17 +11910,26 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
 #else
 
 #ifdef HAVE_DUP3
+    int dup3_works = FT_ATOMIC_LOAD_INT_RELAXED(dup3_works_atomic);
     if (!inheritable && dup3_works != 0) {
-        Py_BEGIN_ALLOW_THREADS
-        res = dup3(fd, fd2, O_CLOEXEC);
-        Py_END_ALLOW_THREADS
-        if (res < 0) {
-            if (dup3_works == -1)
-                dup3_works = (errno != ENOSYS);
-            if (dup3_works) {
-                posix_error();
-                return -1;
+        if (HAVE_DUP3_RUNTIME) {
+            Py_BEGIN_ALLOW_THREADS
+            res = dup3(fd, fd2, O_CLOEXEC);
+            Py_END_ALLOW_THREADS
+            if (res < 0) {
+                if (dup3_works == -1) {
+                    dup3_works = (errno != ENOSYS);
+                    FT_ATOMIC_STORE_INT_RELAXED(dup3_works_atomic, dup3_works);
+                }
+                if (dup3_works) {
+                    posix_error();
+                    return -1;
+                }
             }
+        }
+        else {
+            dup3_works = 0;
+            FT_ATOMIC_STORE_INT_RELAXED(dup3_works_atomic, dup3_works);
         }
     }
 
@@ -12581,27 +12624,35 @@ done:
         return PyLong_FromLong(0);
     }
 
-    // On illumos specifically sendfile() may perform a partial write but
-    // return -1/an error (in one confirmed case the destination socket
-    // had a 5 second timeout set and errno was EAGAIN) and it's on the client
-    // code to check if the offset parameter was modified by sendfile().
-    //
-    // We need this variable to track said change.
-    off_t original_offset = offset;
-#endif
+    // sendfile() may perform a partial write and still return -1, so the
+    // number of transferred bytes must be taken from the out parameter.
+    // sendfile() reports it by adding it to the offset, but does not
+    // initialize it when the transfer fails before writing any data, so use
+    // sendfilev(), which reports it explicitly.
+    sendfilevec_t vec;
+    size_t xferred;
+
+    vec.sfv_fd = in_fd;
+    vec.sfv_flag = 0;
+    vec.sfv_off = offset;
+    vec.sfv_len = count;
 
     do {
         Py_BEGIN_ALLOW_THREADS
-        ret = sendfile(out_fd, in_fd, &offset, count);
-#if defined(__sun) && defined(__SVR4)
-        // This handles illumos-specific sendfile() partial write behavior,
-        // see a comment above for more details.
-        if (ret < 0 && offset != original_offset) {
-            ret = offset - original_offset;
+        xferred = 0;
+        ret = sendfilev(out_fd, &vec, 1, &xferred);
+        if (ret < 0 && xferred != 0) {
+            ret = (Py_ssize_t)xferred;
         }
-#endif
         Py_END_ALLOW_THREADS
     } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+#else
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        ret = sendfile(out_fd, in_fd, &offset, count);
+        Py_END_ALLOW_THREADS
+    } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+#endif
     if (ret < 0)
         return (!async_err) ? posix_error() : NULL;
     return PyLong_FromSsize_t(ret);
@@ -12720,7 +12771,13 @@ os_pipe_impl(PyObject *module)
     SECURITY_ATTRIBUTES attr;
     BOOL ok;
 #else
-    int res;
+    int res = -1;
+
+    /* pipe2() is available on some newer linux/glibc & macOS;
+     * use the same runtime detection as for dup3 above.
+     */
+    static int pipe2_works_atomic = -1;
+    (void) pipe2_works_atomic;  // unused on some platforms
 #endif
 
 #ifdef MS_WINDOWS
@@ -12746,11 +12803,30 @@ os_pipe_impl(PyObject *module)
 #else
 
 #ifdef HAVE_PIPE2
-    Py_BEGIN_ALLOW_THREADS
-    res = pipe2(fds, O_CLOEXEC);
-    Py_END_ALLOW_THREADS
+    int pipe2_works = FT_ATOMIC_LOAD_INT_RELAXED(pipe2_works_atomic);
+    if (pipe2_works != 0) {
+        if (HAVE_PIPE2_RUNTIME) {
+            Py_BEGIN_ALLOW_THREADS
+            res = pipe2(fds, O_CLOEXEC);
+            Py_END_ALLOW_THREADS
+            if (pipe2_works == -1) {
+                if (res != 0 && errno == ENOSYS) {
+                    pipe2_works = 0;
+                }
+                else {
+                    // pipe2 is present but this call failed
+                    pipe2_works = 1;
+                }
+                FT_ATOMIC_STORE_INT_RELAXED(pipe2_works_atomic, pipe2_works);
+            }
+        }
+        else {
+            pipe2_works = 0;
+            FT_ATOMIC_STORE_INT_RELAXED(pipe2_works_atomic, pipe2_works);
+        }
+    }
 
-    if (res != 0 && errno == ENOSYS)
+    if (pipe2_works == 0)
     {
 #endif
         Py_BEGIN_ALLOW_THREADS
@@ -12773,8 +12849,9 @@ os_pipe_impl(PyObject *module)
     }
 #endif
 
-    if (res != 0)
+    if (res != 0) {
         return PyErr_SetFromErrno(PyExc_OSError);
+    }
 #endif /* !MS_WINDOWS */
     return Py_BuildValue("(ii)", fds[0], fds[1]);
 }
@@ -12804,9 +12881,17 @@ os_pipe2_impl(PyObject *module, int flags)
     int fds[2];
     int res;
 
-    res = pipe2(fds, flags);
-    if (res != 0)
+    if (HAVE_PIPE2_RUNTIME) {
+        res = pipe2(fds, flags);
+    }
+    else {
+        res = -1;
+        errno = ENOSYS;
+    }
+    if (res != 0) {
         return posix_error();
+    }
+
     return Py_BuildValue("(ii)", fds[0], fds[1]);
 }
 #endif /* HAVE_PIPE2 */
@@ -13475,6 +13560,10 @@ os_posix_fallocate_impl(PyObject *module, int fd, Py_off_t offset,
         Py_BEGIN_ALLOW_THREADS
         result = posix_fallocate(fd, offset, length);
         Py_END_ALLOW_THREADS
+        // DragonFly BSD returns -1 and sets errno.
+        if (result == -1) {
+            result = errno;
+        }
     } while (result == EINTR && !(async_err = PyErr_CheckSignals()));
 
     if (result == 0)
@@ -13522,6 +13611,10 @@ os_posix_fadvise_impl(PyObject *module, int fd, Py_off_t offset,
         Py_BEGIN_ALLOW_THREADS
         result = posix_fadvise(fd, offset, length, advice);
         Py_END_ALLOW_THREADS
+        // DragonFly BSD returns -1 and sets errno.
+        if (result == -1) {
+            result = errno;
+        }
     } while (result == EINTR && !(async_err = PyErr_CheckSignals()));
 
     if (result == 0)
@@ -13739,13 +13832,7 @@ static PyObject *
 os_strerror_impl(PyObject *module, int code)
 /*[clinic end generated code: output=baebf09fa02a78f2 input=75a8673d97915a91]*/
 {
-    char *message = strerror(code);
-    if (message == NULL) {
-        PyErr_SetString(PyExc_ValueError,
-                        "strerror() argument out of range");
-        return NULL;
-    }
-    return PyUnicode_DecodeLocale(message, "surrogateescape");
+    return _Py_strerror(code);
 }
 
 
@@ -15921,6 +16008,13 @@ os_get_terminal_size_impl(PyObject *module, int fd)
 
 #ifdef TERMSIZE_USE_IOCTL
     {
+        // On Android, stdout is probably not connected, and calling TIOCGWINSZ
+        // on an invalid file descriptor causes a log message "avc:  denied  {
+        // ioctl }". Some common tools such as pytest call get_terminal_size
+        // very often, so check it's a TTY first to avoid cluttering the log.
+        if (!isatty(fd))
+            return PyErr_SetFromErrno(PyExc_OSError);
+
         struct winsize w;
         if (ioctl(fd, TIOCGWINSZ, &w))
             return PyErr_SetFromErrno(PyExc_OSError);
@@ -16591,12 +16685,6 @@ static PyType_Spec DirEntryType_spec = {
 
 
 #ifdef MS_WINDOWS
-
-static int
-is_extended_path(const wchar_t *path)
-{
-    return wcsncmp(path, L"\\\\?\\", 4) == 0;
-}
 
 static wchar_t *
 join_path_filenameW(const wchar_t *path_wide, const wchar_t *filename,
@@ -18775,6 +18863,22 @@ posixmodule_exec(PyObject *m)
     else {
         state->StatxResultType = PyType_FromModuleAndSpec(m, &pystatx_result_spec, NULL);
         if (PyModule_AddObjectRef(m, "statx_result", state->StatxResultType) < 0) {
+            return -1;
+        }
+    }
+#endif
+
+#if HAVE_PIPE2
+    if (HAVE_PIPE2_RUNTIME) {
+        // Do nothing. (`__builtin_available` doesn't allow `!`; see
+        // "using negations" in a comment above.)
+    }
+    else {
+        PyObject* dct = PyModule_GetDict(m);
+        if (dct == NULL) {
+            return -1;
+        }
+        if (PyDict_PopString(dct, "pipe2", NULL) < 0) {
             return -1;
         }
     }

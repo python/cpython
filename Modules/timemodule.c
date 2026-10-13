@@ -763,6 +763,13 @@ Other codes may be available on your platform.  See documentation for\n\
 the C library strftime function.\n"
 
 #ifdef HAVE_STRFTIME
+// gh-154460: OpenBSD's wcsftime() computes %V incorrectly: it returns 53
+// whenever the ISO 8601 week belongs to a different year than tm_year.
+// strftime() is not affected.
+#ifdef __OpenBSD__
+#  undef HAVE_WCSFTIME
+#endif
+
 #ifdef HAVE_WCSFTIME
 #define time_char wchar_t
 #define format_time wcsftime
@@ -971,7 +978,7 @@ error:
 #undef time_char
 #undef format_time
 PyDoc_STRVAR(strftime_doc,
-"strftime(format[, tuple]) -> string\n\
+"strftime(format[, time_tuple]) -> string\n\
 \n\
 Convert a time tuple to a string according to a format specification.\n\
 See the library reference manual for formatting codes. When the time tuple\n\
@@ -996,7 +1003,7 @@ time_strptime(PyObject *self, PyObject *args)
 
 
 PyDoc_STRVAR(strptime_doc,
-"strptime(string, format) -> struct_time\n\
+"strptime(string[, format]) -> struct_time\n\
 \n\
 Parse a string to a time tuple according to a format specification.\n\
 See the library reference manual for formatting codes (same as\n\
@@ -1049,7 +1056,7 @@ time_asctime(PyObject *module, PyObject *args)
 }
 
 PyDoc_STRVAR(asctime_doc,
-"asctime([tuple]) -> string\n\
+"asctime([time_tuple]) -> string\n\
 \n\
 Convert a time tuple to a string, e.g. 'Sat Jun 06 16:26:11 1998'.\n\
 When the time tuple is not present, current time as returned by localtime()\n\
@@ -1068,11 +1075,11 @@ time_ctime(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(ctime_doc,
-"ctime(seconds) -> string\n\
+"ctime([seconds]) -> string\n\
 \n\
 Convert a time in seconds since the Epoch to a string in local time.\n\
-This is equivalent to asctime(localtime(seconds)). When the time tuple is\n\
-not present, current time as returned by localtime() is used.");
+This is equivalent to asctime(localtime(seconds)). When 'seconds' is not\n\
+passed in, convert the current time instead.");
 
 #ifdef HAVE_MKTIME
 static PyObject *
@@ -1146,7 +1153,7 @@ time_mktime(PyObject *module, PyObject *tm_tuple)
 }
 
 PyDoc_STRVAR(mktime_doc,
-"mktime(tuple) -> floating-point number\n\
+"mktime(time_tuple) -> floating-point number\n\
 \n\
 Convert a time tuple in local time to seconds since the Epoch.\n\
 Note that mktime(gmtime(0)) will not generally return zero for most\n\

@@ -1092,7 +1092,11 @@ class BaseEventLoopTests(test_utils.TestCase):
                 await asyncio.sleep(1)
             sock.connect(address)
 
-        loop = asyncio.new_event_loop()
+        # gh-151540: use a selector event loop instead of the platform
+        # default; the Windows proactor loop would register the mocked
+        # socket with a real IOCP handle instead of the mocked
+        # _add_reader/_add_writer below.
+        loop = asyncio.SelectorEventLoop()
         loop._add_writer = mock.Mock()
         loop._add_writer = mock.Mock()
         loop._add_reader = mock.Mock()
@@ -1124,7 +1128,8 @@ class BaseEventLoopTests(test_utils.TestCase):
                 await asyncio.sleep(1)
             sock.connect(address)
 
-        loop = asyncio.new_event_loop()
+        # gh-151540: see test_create_connection_happy_eyeballs above.
+        loop = asyncio.SelectorEventLoop()
         loop._add_writer = mock.Mock()
         loop._add_writer = mock.Mock()
         loop._add_reader = mock.Mock()
@@ -1281,6 +1286,47 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             with self.assertRaises(asyncio.TimeoutError):
                 self.loop.run_until_complete(coro)
             self.assertTrue(sock.close.called)
+
+    def test_create_connection_sock_transport_error_closes_sock(self):
+        # gh-153133: a user-provided socket is closed if the transport is
+        # never created.
+        sock = mock.Mock()
+        sock.type = socket.SOCK_STREAM
+
+        def factory():
+            raise ZeroDivisionError
+
+        coro = self.loop.create_connection(factory, sock=sock)
+        with self.assertRaises(ZeroDivisionError):
+            self.loop.run_until_complete(coro)
+        self.assertTrue(sock.close.called)
+
+    @patch_socket
+    def test_create_connection_transport_error_closes_sock(self, m_socket):
+        # gh-153133: an internally created socket is closed if the transport
+        # is never created.
+        sock = mock.Mock()
+        m_socket.socket.return_value = sock
+
+        def getaddrinfo(*args, **kw):
+            fut = self.loop.create_future()
+            addr = (socket.AF_INET, socket.SOCK_STREAM, 0, '',
+                    ('127.0.0.1', 80))
+            fut.set_result([addr])
+            return fut
+        self.loop.getaddrinfo = getaddrinfo
+
+        async def sock_connect(sock, address):
+            return None
+
+        def factory():
+            raise ZeroDivisionError
+
+        with mock.patch.object(self.loop, 'sock_connect', sock_connect):
+            coro = self.loop.create_connection(factory, '127.0.0.1', 80)
+            with self.assertRaises(ZeroDivisionError):
+                self.loop.run_until_complete(coro)
+        self.assertTrue(sock.close.called)
 
     @patch_socket
     def test_create_connection_happy_eyeballs_empty_exceptions(self, m_socket):

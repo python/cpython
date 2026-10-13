@@ -52,8 +52,8 @@ import types
 from test.support import (
     captured_stderr, cpython_only, requires_docstrings, import_helper, run_code,
     subTests, EqualToForwardRef,
-    exceeds_recursion_limit, skip_if_huge_c_stack, skip_wasi_stack_overflow,
-    skip_emscripten_stack_overflow,
+    exceeds_recursion_limit, run_with_limited_c_stack,
+    skip_wasi_stack_overflow, skip_emscripten_stack_overflow,
 )
 from test.typinganndata import (
     ann_module695, mod_generics_cache, _typed_dict_helper,
@@ -1318,6 +1318,11 @@ class TypeVarTupleTests(BaseTestCase):
     def test_bound(self):
         Ts_bound = TypeVarTuple('Ts_bound', bound=int)
         self.assertIs(Ts_bound.__bound__, int)
+        Ts_tuple_bound = TypeVarTuple('Ts_tuple_bound', bound=(int, str))
+        self.assertEqual(Ts_tuple_bound.__bound__, (int, str))
+        obj = object()
+        Ts_object = TypeVarTuple('Ts_object', bound=obj)
+        self.assertIs(Ts_object.__bound__, obj)
         Ts_no_bound = TypeVarTuple('Ts_no_bound')
         self.assertIsNone(Ts_no_bound.__bound__)
 
@@ -5092,7 +5097,7 @@ class GenericTests(BaseTestCase):
         self.assertEqual(MM2.__bases__, (collections.abc.MutableMapping, Generic))
 
     @cpython_only
-    @skip_if_huge_c_stack()
+    @run_with_limited_c_stack()
     @skip_wasi_stack_overflow()
     @skip_emscripten_stack_overflow()
     def test_parameters_deep_recursion(self):
@@ -6047,6 +6052,22 @@ class GenericTests(BaseTestCase):
                     a = c[[s], s]
                     with self.assertRaises(TypeError):
                         a[int]
+
+    def test_parameter_added_after_parameters_cached(self):
+        # gh-155752: GenericAlias parameters are cached before substitution, so
+        # an argument can gain __typing_subst__ after the tuple is calculated.
+        class Parameter:
+            pass
+
+        first = Parameter()
+        first.__typing_subst__ = lambda value: value
+        late = Parameter()
+        alias = types.GenericAlias(dict, (first, late))
+        self.assertEqual(alias.__parameters__, (first,))
+        late.__typing_subst__ = lambda value: value
+
+        with self.assertRaisesRegex(TypeError, "not found in __parameters__"):
+            alias[0]
 
     def test_return_non_tuple_while_unpacking(self):
         # GH-138497: GenericAlias objects didn't ensure that __typing_subst__ actually
@@ -10264,6 +10285,17 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(repr(P.args), "P.args")
         self.assertEqual(repr(P.kwargs), "P.kwargs")
 
+    def test_args_kwargs_weakrefs(self):
+        P = ParamSpec('P')
+        for attr_name in ('args', 'kwargs'):
+            with self.subTest(attr_name=attr_name):
+                callback_fired = []
+                attr = getattr(P, attr_name)
+                ref = weakref.ref(attr, lambda _: callback_fired.append(True))
+                del attr
+                self.assertEqual(callback_fired, [True])
+                self.assertIsNone(ref())
+
     def test_stringized(self):
         P = ParamSpec('P')
         class C(Generic[P]):
@@ -10564,6 +10596,17 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(G1[[int, str], float], List[C])
         self.assertEqual(G2[[int, str], float], list[C])
         self.assertEqual(G3[[int, str], float], list[C] | int)
+
+    def test_paramspec_bound(self):
+        P = ParamSpec('P', bound=[int, str])
+        self.assertEqual(P.__bound__, [int, str])
+        P2 = ParamSpec('P2', bound=(int, str))
+        self.assertEqual(P2.__bound__, (int, str))
+        obj = object()
+        P3 = ParamSpec('P3', bound=obj)
+        self.assertIs(P3.__bound__, obj)
+        P4 = ParamSpec('P4')
+        self.assertIs(P4.__bound__, None)
 
     def test_paramspec_gets_copied(self):
         # bpo-46581

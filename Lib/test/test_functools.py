@@ -579,6 +579,40 @@ class TestPartial:
         with self.assertRaises(RuntimeError):
             result = p(**{BadStr("poison"): "new_value"})
 
+    def test_call_safety_against_reentrant_mutation(self):
+        def old_function(*args, **kwargs):
+            return "old_function", args, kwargs
+
+        def new_function(*args, **kwargs):
+            return "new_function", args, kwargs
+
+        g_partial = None
+
+        class EvilKey(str):
+            armed = False
+            def __hash__(self):
+                if EvilKey.armed and g_partial is not None:
+                    EvilKey.armed = False
+                    new_args_tuple = ("new_arg",)
+                    new_keywords_dict = {"new_keyword": None}
+                    new_tuple_state = (new_function, new_args_tuple, new_keywords_dict, None)
+                    g_partial.__setstate__(new_tuple_state)
+                    gc.collect()
+                return str.__hash__(self)
+
+        g_partial = functools.partial(old_function, "old_arg", old_keyword=None)
+
+        kwargs = {EvilKey("evil_key"): None}
+        EvilKey.armed = True
+
+        result = g_partial(**kwargs)
+        expected = ("old_function", ("old_arg",), {"old_keyword": None, "evil_key": None})
+        self.assertEqual(result, expected)
+
+        result = g_partial()
+        expected = ("new_function", ("new_arg",), {"new_keyword": None})
+        self.assertEqual(result, expected)
+
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
 class TestPartialC(TestPartial, unittest.TestCase):
     if c_functools:

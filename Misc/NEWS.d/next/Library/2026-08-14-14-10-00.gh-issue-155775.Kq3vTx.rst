@@ -1,0 +1,4 @@
+Fix a regression in :mod:`imaplib` introduced in the fix for :gh:`63121`:
+refreshing the capabilities after a successful :meth:`~imaplib.IMAP4.login`
+or :meth:`~imaplib.IMAP4.authenticate` consumed the ``CAPABILITY`` response,
+so it could no longer be read with :meth:`~imaplib.IMAP4.response`.

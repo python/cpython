@@ -310,6 +310,14 @@ curses_window_set_null_error(PyCursesWindowObject *win,
     _curses_set_null_error(state, curses_funcname, python_funcname);
 }
 
+/* ncurses and PDCurses store n characters and add a terminator; NetBSD
+   curses counts the terminator in n.  Ask an unknown library for one more. */
+#if defined(NCURSES_VERSION) || defined(PDCURSES)
+#  define CURSES_STR_EXTRA  0
+#else
+#  define CURSES_STR_EXTRA  1
+#endif
+
 /* Utility Checking Procedures */
 
 /*
@@ -892,7 +900,7 @@ PyCursesWindow_New(cursesmodule_state *state,
 {
     if (encoding == NULL) {
 #if defined(MS_WINDOWS)
-        char *buffer[100];
+        char buffer[100];
         UINT cp;
         cp = GetConsoleOutputCP();
         if (cp != 0) {
@@ -1150,15 +1158,14 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
         }
         Py_DECREF(bytesobj);
     }
-    if (rtn == ERR) {
-        curses_window_set_error(self, funcname, "addstr");
-        return NULL;
-    }
     if (use_attr) {
-        rtn = wattrset(self->win, attr_old);
-        return curses_window_check_err(self, rtn, "wattrset", "addstr");
+        int attr_rtn = wattrset(self->win, attr_old);
+        if (rtn != ERR) {
+            rtn = attr_rtn;
+            funcname = "wattrset";
+        }
     }
-    Py_RETURN_NONE;
+    return curses_window_check_err(self, rtn, funcname, "addstr");
 }
 
 /*[clinic input]
@@ -1249,15 +1256,14 @@ _curses_window_addnstr_impl(PyCursesWindowObject *self, int group_left_1,
         }
         Py_DECREF(bytesobj);
     }
-    if (rtn == ERR) {
-        curses_window_set_error(self, funcname, "addnstr");
-        return NULL;
-    }
     if (use_attr) {
-        rtn = wattrset(self->win, attr_old);
-        return curses_window_check_err(self, rtn, "wattrset", "addnstr");
+        int attr_rtn = wattrset(self->win, attr_old);
+        if (rtn != ERR) {
+            rtn = attr_rtn;
+            funcname = "wattrset";
+        }
     }
-    Py_RETURN_NONE;
+    return curses_window_check_err(self, rtn, funcname, "addnstr");
 }
 
 /*[clinic input]
@@ -1747,18 +1753,25 @@ _curses.window.getch
     ]
     /
 
-Get a character code from terminal keyboard.
+Read a key press and return it as an integer.
 
-The integer returned does not have to be in ASCII range: function
-keys, keypad keys and so on return numbers higher than 256.  In
-no-delay mode, -1 is returned if there is no input, else getch()
-waits until a key is pressed.
+Wait until a key is pressed, or return -1 if the read is
+non-blocking or times out.
+
+An ordinary key is returned as the code of a single byte of its
+encoding in the current locale, so a character encoded with several
+bytes takes several calls.  Use get_wch() to read it as a single
+character.
+
+In keypad mode function keys and other special keys are returned as
+one of the KEY_* constants, which cannot be mistaken for an ordinary
+key.  Otherwise their bytes are returned one at a time.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_getch_impl(PyCursesWindowObject *self, int group_right_1,
                           int y, int x)
-/*[clinic end generated code: output=e1639e87d545e676 input=0dc5ff40e079787a]*/
+/*[clinic end generated code: output=e1639e87d545e676 input=882ddab9b41afbbd]*/
 {
     int rtn;
 
@@ -1795,18 +1808,18 @@ _curses.window.getkey
     ]
     /
 
-Get a character (string) from terminal keyboard.
+Read a key press and return it as a str.
 
-Returning a string instead of an integer, as getch() does.  Function
-keys, keypad keys and other special keys return a multibyte string
-containing the key name.  In no-delay mode, an exception is raised
-if there is no input.
+Read as getch() does, but return an ordinary key as a one-character
+string, the byte decoded as Latin-1, and a special key as its name,
+such as 'KEY_UP'.  Raise curses.error instead of returning -1 if
+there is no input.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_getkey_impl(PyCursesWindowObject *self, int group_right_1,
                            int y, int x)
-/*[clinic end generated code: output=8490a182db46b10f input=bd24a7da1ed9c73b]*/
+/*[clinic end generated code: output=8490a182db46b10f input=f054cf034c69e879]*/
 {
     int rtn;
 
@@ -1851,16 +1864,20 @@ _curses.window.get_wch
     ]
     /
 
-Get a wide character from terminal keyboard.
+Read a key press and return it as a one-character str.
 
-Return a character for most keys, or an integer for function keys,
-keypad keys, and other special keys.
+Wait until a key is pressed, or raise curses.error if the read is
+non-blocking or times out.
+
+In keypad mode function keys and other special keys are returned as
+one of the KEY_* constants, an integer.  Otherwise their characters
+are returned one at a time.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_get_wch_impl(PyCursesWindowObject *self, int group_right_1,
                             int y, int x)
-/*[clinic end generated code: output=9f4f86e91fe50ef3 input=dd7e5367fb49dc48]*/
+/*[clinic end generated code: output=9f4f86e91fe50ef3 input=77eb2da426ebe71f]*/
 {
     int ct;
     wint_t rtn;
@@ -1928,14 +1945,14 @@ curses_clinic_parse_optional_xy_n(PyObject *args,
 
 PyDoc_STRVAR(_curses_window_getstr__doc__,
 "getstr([[y, x,] n=2047])\n"
-"Read a string from the user, with primitive line editing capacity.\n"
+"Read a line of input and return it as a bytes object.\n"
 "\n"
 "  y\n"
 "    Y-coordinate.\n"
 "  x\n"
 "    X-coordinate.\n"
 "  n\n"
-"    Maximal number of characters.");
+"    Maximal number of bytes.");
 
 static PyObject *
 PyCursesWindow_getstr(PyObject *op, PyObject *args)
@@ -2102,34 +2119,6 @@ _curses_window_insch_impl(PyCursesWindowObject *self, int group_left_1,
     return curses_window_check_err(self, rtn, funcname, "insch");
 }
 
-#ifdef HAVE_NCURSESW
-/* winch() returns the low 8 bits of the character's code point with no locale
-   conversion, unlike instr(), so recover the locale byte from the wide cell
-   when the character maps to exactly one byte, keeping the attribute and color
-   bits in RTN.  A character with no single-byte form is left to winch(). */
-static chtype
-curses_cell_locale_byte(chtype rtn, const cchar_t *cell)
-{
-    wchar_t wstr[CCHARW_MAX + 1];
-    attr_t attrs;
-    short pair;
-    /* getcchar() is not guaranteed to write the text of an empty cell. */
-    wstr[0] = L'\0';
-    if (getcchar(cell, wstr, &attrs, &pair, NULL) == ERR
-        || wstr[0] == L'\0' || wstr[1] != L'\0')
-    {
-        return rtn;
-    }
-    /* wctob() mirrors ncurses' own _nc_to_char(): the single-byte form, or EOF
-       when the character has none in this locale. */
-    int byte = wctob(wstr[0]);
-    if (byte != EOF) {
-        rtn = (rtn & ~(chtype)A_CHARTEXT) | (unsigned char)byte;
-    }
-    return rtn;
-}
-#endif
-
 /*[clinic input]
 _curses.window.inch
 
@@ -2154,7 +2143,42 @@ _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
 {
     chtype rtn;
     const char *funcname;
-
+#ifdef HAVE_NCURSESW
+    /* ncursesw's winch() returns the character's whole code point instead of
+       its locale byte, overflowing the chtype's 8-bit character field into the
+       color and attribute bits; read the wide cell and rebuild it instead. */
+    cchar_t cell = {0};
+    int rc;
+    if (!group_right_1) {
+        rc = win_wch(self->win, &cell);
+        funcname = "win_wch";
+    }
+    else {
+        rc = mvwin_wch(self->win, y, x, &cell);
+        funcname = "mvwin_wch";
+    }
+    if (rc == ERR) {
+        curses_window_set_error(self, funcname, "inch");
+        return NULL;
+    }
+    wchar_t wstr[CCHARW_MAX + 1];
+    attr_t attrs;
+    short pair;
+    /* getcchar() is not guaranteed to write the text of an empty cell. */
+    wstr[0] = L'\0';
+    if (getcchar(&cell, wstr, &attrs, &pair, NULL) == ERR) {
+        curses_window_set_error(self, "getcchar", "inch");
+        return NULL;
+    }
+    int byte = 0;
+    if (wstr[0] != L'\0' && wstr[1] == L'\0') {
+        byte = wctob(wstr[0]);
+        if (byte == EOF) {
+            byte = 0;
+        }
+    }
+    rtn = (chtype)byte | (attrs & ~(attr_t)A_COLOR) | COLOR_PAIR(pair);
+#else
     if (!group_right_1) {
         rtn = winch(self->win);
         funcname = "winch";
@@ -2167,34 +2191,25 @@ _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
         curses_window_set_error(self, funcname, "inch");
         return NULL;
     }
-#ifdef HAVE_NCURSESW
-    cchar_t cell = {0};
-    if ((group_right_1 ? mvwin_wch(self->win, y, x, &cell)
-                       : win_wch(self->win, &cell)) != ERR)
-    {
-        rtn = curses_cell_locale_byte(rtn, &cell);
-    }
 #endif
     return PyLong_FromUnsignedLong(rtn);
 }
 
 PyDoc_STRVAR(_curses_window_instr__doc__,
 "instr([y, x,] n=2047)\n"
-"Return a string of characters, extracted from the window.\n"
+"Return the text of the window as a bytes object.\n"
 "\n"
 "  y\n"
 "    Y-coordinate.\n"
 "  x\n"
 "    X-coordinate.\n"
 "  n\n"
-"    Maximal number of characters.\n"
+"    Maximal number of bytes.\n"
 "\n"
-"Return a string of characters, extracted from the window starting\n"
-"at the current cursor position, or at y, x if specified, and\n"
-"stopping at the end of the line.  Attributes and color\n"
-"information are stripped from the characters.  If n is specified,\n"
-"instr() returns a string at most n characters long (exclusive of\n"
-"the trailing NUL).");
+"Read from the current cursor position, or from y, x if specified, to\n"
+"the end of the line, and return the text in the encoding of the\n"
+"current locale, with attributes and color pairs stripped.  At most n\n"
+"bytes are read.");
 
 static PyObject *
 PyCursesWindow_instr(PyObject *op, PyObject *args)
@@ -2210,25 +2225,33 @@ PyCursesWindow_instr(PyObject *op, PyObject *args)
         return NULL;
     }
 
-    n = Py_MIN(n, max_buf_size - 1);
+    n = Py_MIN(n, max_buf_size - 1 - CURSES_STR_EXTRA);
+    n += CURSES_STR_EXTRA;
     PyBytesWriter *writer = PyBytesWriter_Create(n + 1);
     if (writer == NULL) {
         return NULL;
     }
     char *buf = PyBytesWriter_GetData(writer);
 
-    if (use_xy) {
-        rtn = mvwinnstr(self->win, y, x, buf, n);
-    }
-    else {
-        rtn = winnstr(self->win, buf, n);
+    /* Read again if the library stored more than asked: truncating could
+       split a multibyte character. */
+    for (unsigned int want = n - CURSES_STR_EXTRA; ; n = want) {
+        if (use_xy) {
+            rtn = mvwinnstr(self->win, y, x, buf, n);
+        }
+        else {
+            rtn = winnstr(self->win, buf, n);
+        }
+        if (rtn == ERR || (unsigned int)rtn <= want) {
+            break;
+        }
     }
 
     if (rtn == ERR) {
         PyBytesWriter_Discard(writer);
         return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
-    return PyBytesWriter_FinishWithSize(writer, strlen(buf));
+    return PyBytesWriter_FinishWithSize(writer, rtn);
 }
 
 /*[clinic input]
@@ -2317,15 +2340,14 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
         }
         Py_DECREF(bytesobj);
     }
-    if (rtn == ERR) {
-        curses_window_set_error(self, funcname, "insstr");
-        return NULL;
-    }
     if (use_attr) {
-        rtn = wattrset(self->win, attr_old);
-        return curses_window_check_err(self, rtn, "wattrset", "insstr");
+        int attr_rtn = wattrset(self->win, attr_old);
+        if (rtn != ERR) {
+            rtn = attr_rtn;
+            funcname = "wattrset";
+        }
     }
-    Py_RETURN_NONE;
+    return curses_window_check_err(self, rtn, funcname, "insstr");
 }
 
 /*[clinic input]
@@ -2388,6 +2410,7 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
         attr_old = getattrs(self->win);
         if (curses_wattrset(self, attr, "insnstr") < 0) {
             curses_release_wstr(strtype, wstr);
+            Py_XDECREF(bytesobj);
             return NULL;
         }
     }
@@ -2417,15 +2440,14 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
         }
         Py_DECREF(bytesobj);
     }
-    if (rtn == ERR) {
-        curses_window_set_error(self, funcname, "insnstr");
-        return NULL;
-    }
     if (use_attr) {
-        rtn = wattrset(self->win, attr_old);
-        return curses_window_check_err(self, rtn, "wattrset", "insnstr");
+        int attr_rtn = wattrset(self->win, attr_old);
+        if (rtn != ERR) {
+            rtn = attr_rtn;
+            funcname = "wattrset";
+        }
     }
-    Py_RETURN_NONE;
+    return curses_window_check_err(self, rtn, funcname, "insnstr");
 }
 
 /*[clinic input]
@@ -3892,12 +3914,12 @@ _curses.initscr
 
 Initialize the library.
 
-Return a WindowObject which represents the whole screen.
+Return a window object which represents the whole screen.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_initscr_impl(PyObject *module)
-/*[clinic end generated code: output=619fb68443810b7b input=514f4bce1821f6b5]*/
+/*[clinic end generated code: output=619fb68443810b7b input=e2bf3a061b7d948a]*/
 {
     WINDOW *win;
 
@@ -5109,15 +5131,16 @@ _curses.unctrl
     ch: object
     /
 
-Return a string which is a printable representation of the character ch.
+Return a bytes object which is a printable representation of ch.
 
-Control characters are displayed as a caret followed by the character,
-for example as ^C.  Printing characters are left as they are.
+Control characters are displayed as a caret followed by the
+character, for example as ^C.  Printing characters are left as they
+are.  Any attributes and color pair are ignored.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_unctrl(PyObject *module, PyObject *ch)
-/*[clinic end generated code: output=8e07fafc430c9434 input=cd1e35e16cd1ace4]*/
+/*[clinic end generated code: output=8e07fafc430c9434 input=6732d59733d3ed5b]*/
 {
     chtype ch_;
 

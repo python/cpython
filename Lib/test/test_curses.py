@@ -431,6 +431,26 @@ class TestCurses(unittest.TestCase):
                 self.assertRaises(ValueError, stdscr.insstr, arg)
                 self.assertRaises(ValueError, stdscr.insnstr, arg, 1)
 
+    def test_output_string_attr_restored(self):
+        # A write with an attr restores the window rendition afterwards,
+        # whether it succeeded or failed.
+        win = curses.newwin(2, 10, 0, 0)
+        def current_attrs():
+            # Write a cell with the window's current rendition and read it
+            # back, so that the rendition itself is checked.
+            win.addstr(1, 0, ' ')
+            return win.inch(1, 0) & curses.A_ATTRIBUTES
+        for func, args in [(win.addstr, ('x',)), (win.addnstr, ('x', 1)),
+                           (win.insstr, ('x',)), (win.insnstr, ('x', 1))]:
+            with self.subTest(func.__qualname__):
+                win.attrset(curses.A_UNDERLINE)
+                # y=100 is outside the window, so the write fails.
+                self.assertRaises(curses.error, func, 100, 0, *args,
+                                  curses.A_BOLD)
+                self.assertEqual(current_attrs(), curses.A_UNDERLINE)
+                func(0, 0, *args, curses.A_BOLD)
+                self.assertEqual(current_attrs(), curses.A_UNDERLINE)
+
     def test_add_string_behavior(self):
         # addstr() advances the cursor past the written text; addnstr()
         # writes at most n characters.
@@ -520,7 +540,7 @@ class TestCurses(unittest.TestCase):
             with self.subTest(ch=ch):
                 stdscr.addstr(2, 0, ch)
                 self.assertEqual(stdscr.instr(2, 0, 1), b)
-                self.assertEqual(stdscr.inch(2, 0) & curses.A_CHARTEXT, b[0])
+                self.assertEqual(stdscr.inch(2, 0), b[0])
 
     def test_coordinate_errors(self):
         # Addressing a cell outside the window raises curses.error.
@@ -1368,6 +1388,22 @@ class TestCurses(unittest.TestCase):
                 panel.set_userptr(None)
         panel.set_userptr(A())
         panel.set_userptr(None)
+
+    @requires_curses_func('panel')
+    def test_userptr_dealloc_segfault(self):
+        w = curses.newwin(10, 10)
+        panel = curses.panel.new_panel(w)
+        seen = []
+        class A:
+            def __del__(self):
+                # The panel is being deallocated, so it must already be off
+                # the stack: handing it back here would resurrect an object
+                # whose refcount is zero -- segfaults.
+                seen.append(curses.panel.top_panel() is None)
+        panel.set_userptr(A())
+        del panel
+        gc_collect()
+        self.assertEqual(seen, [True])
 
     @cpython_only
     @requires_curses_func('panel')

@@ -7341,6 +7341,22 @@ class TestProgName(TestCase):
     def test_module_compiled(self):
         self.test_module(compiled=True)
 
+    def test_module_as_main_without_altering_argv(self):
+        basename = 'module' + os_helper.FS_NONASCII
+        modulename = f'{self.dirname}.{basename}'
+        self.make_script(self.dirname, basename)
+        # The filesystem encoding may be non-UTF-8,
+        # but the runner runs in UTF-8 mode
+        modulename = os.fsencode(modulename).decode("utf-8", "surrogateescape")
+        runner_source = textwrap.dedent(f'''\
+            import runpy
+            runpy._run_module_as_main({modulename!r}, alter_argv=False)
+        ''')
+        runner = script_helper.make_script(
+            self.dirname, 'runner', runner_source)
+        self.check_usage(os.path.basename(runner), runner,
+                         PYTHONPATH=os.curdir)
+
     def test_package(self, compiled=False):
         basename = 'subpackage' + os_helper.FS_NONASCII
         packagename = f'{self.dirname}.{basename}'
@@ -7578,6 +7594,62 @@ class TestColorized(TestCase):
                 Test prog and usage colors
                 """
             ),
+        )
+
+    def test_argparse_color_wrapping_matches_uncolored(self):
+        # gh-142035: color codes must not affect where help text wraps.
+        # Stripping the escapes from colored help must yield exactly the
+        # same text as the uncolored help across representative widths.
+        def build(color, path="output.txt"):
+            parser = argparse.ArgumentParser(prog="PROG", color=color)
+            parser.add_argument(
+                "--mode",
+                default="auto",
+                choices=("auto", "fast", "slow"),
+                help="select the operating mode from the available choices "
+                     "%(choices)s and note the default is %(default)s here",
+            )
+            parser.add_argument(
+                "--path",
+                default=path,
+                help="write output to %(default)s and continue processing",
+            )
+            return parser
+
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        paths = (
+            "output.txt",
+            "/var/lib/application/cache/unusually_long_generated_filename",
+            "production-read-only-replica",
+        )
+        for path in paths:
+            for columns in ("80", "60", "45", "30", "20"):
+                with self.subTest(path=path, columns=columns):
+                    env["COLUMNS"] = columns
+                    colored = build(color=True, path=path).format_help()
+                    plain = build(color=False, path=path).format_help()
+                    self.assertIn(
+                        f"{self.theme.interpolated_value}auto"
+                        f"{self.theme.reset}",
+                        colored,
+                    )
+                    self.assertEqual(_colorize.decolor(colored), plain)
+
+    def test_argparse_color_preserved_when_wrapping_between_words(self):
+        parser = argparse.ArgumentParser(prog="PROG", color=True)
+        parser.add_argument(
+            "--mode", default="auto",
+            help="select the %(default)s operating mode from the available "
+                 "options and continue with several more words",
+        )
+
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        env["COLUMNS"] = "40"
+        help_text = parser.format_help()
+
+        self.assertIn(
+            f"{self.theme.interpolated_value}auto{self.theme.reset}",
+            help_text,
         )
 
     def test_custom_formatter_function(self):
@@ -7836,6 +7908,41 @@ class TestColorized(TestCase):
         help_text = parser.format_help()
         self.assertIn("set the `foo` value", help_text)
         self.assertNotIn("\x1b[", help_text)
+
+    def test_argument_help_interpolation_accepts_string_like_proxy(self):
+        class LazyStr:
+            def __init__(self, message):
+                self._message = message
+
+            def __str__(self):
+                return self._message
+
+            def __getattr__(self, name):
+                return getattr(str(self), name)
+
+            def __contains__(self, item):
+                return item in self._message
+
+            def __mod__(self, other):
+                return self._message % other
+
+        parser = argparse.ArgumentParser(prog="PROG", color=True)
+        parser.add_argument(
+            "--foo",
+            default="bar",
+            help=LazyStr("foo (default: %(default)s)"),
+        )
+        parser.add_argument(
+            "--baz",
+            help=LazyStr("baz plain text"),
+        )
+
+        interp = self.theme.interpolated_value
+        reset = self.theme.reset
+
+        help_text = parser.format_help()
+        self.assertIn(f"foo (default: {interp}bar{reset})", help_text)
+        self.assertIn("baz plain text", help_text)
 
     def test_help_with_format_specifiers(self):
         # GH-142950: format specifiers like %x should work with color=True

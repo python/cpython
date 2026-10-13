@@ -1499,6 +1499,20 @@ static int
 context_clear(PyObject *op)
 {
     PyDecContextObject *self = _PyDecContextObject_CAST(op);
+    /* Since traps and flags hold a borrowed reference to the
+       flags stored in the context object, these references need
+       to be cleared when the context object is deallocated
+       because traps and flags can survive. See gh-146011. */
+    PyDecSignalDictObject *traps = _PyDecSignalDictObject_CAST(self->traps);
+    PyDecSignalDictObject *flags = _PyDecSignalDictObject_CAST(self->flags);
+
+    if (traps != NULL) {
+        traps->flags = NULL;
+    }
+    if (flags != NULL) {
+        flags->flags = NULL;
+    }
+
     Py_CLEAR(self->traps);
     Py_CLEAR(self->flags);
     return 0;
@@ -1676,12 +1690,12 @@ _decimal.Context.copy
 
     cls: defining_class
 
-Return a duplicate of the context with all flags cleared.
+Return a duplicate of the context.
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Context_copy_impl(PyObject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=31c9c8eeb0c0cf77 input=aef1c0bddabdf8f0]*/
+/*[clinic end generated code: output=31c9c8eeb0c0cf77 input=87f8b92b1c7462a5]*/
 {
     decimal_state *state = PyType_GetModuleState(cls);
 

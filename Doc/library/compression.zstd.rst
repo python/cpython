@@ -346,7 +346,7 @@ Compressing and decompressing data in memory
       will be set to ``True``.
 
       Attempting to decompress data after the end of a frame will raise a
-      :exc:`ZstdError`. Any data found after the end of the frame is ignored
+      :exc:`EOFError`. Any data found after the end of the frame is ignored
       and saved in the :attr:`~.unused_data` attribute.
 
    .. attribute:: eof

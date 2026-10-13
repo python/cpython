@@ -317,6 +317,9 @@
 /* Define to 1 if you have the 'dlopen' function. */
 #undef HAVE_DLOPEN
 
+/* Define to 1 if you have the 'dl_iterate_phdr' function. */
+#undef HAVE_DL_ITERATE_PHDR
+
 /* Define to 1 if you have the 'dup' function. */
 #undef HAVE_DUP
 
@@ -1872,6 +1875,9 @@
 /* The size of '_Bool', as computed by sizeof. */
 #undef SIZEOF__BOOL
 
+/* Platform tag, used in binary module extension filenames. */
+#undef SOABI_PLATFORM
+
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
@@ -2087,6 +2093,9 @@
 
 /* Define if you have the 'PR_SET_VMA_ANON_NAME' constant. */
 #undef _Py_HAVE_PR_SET_VMA_ANON_NAME
+
+/* Define if you have the 'strerror_r' function. */
+#undef _Py_HAVE_STRERROR_R
 
 /* Thread stack size set by the linker (in bytes). */
 #undef _Py_LINKER_THREAD_STACK_SIZE

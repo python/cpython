@@ -73,6 +73,12 @@ AC_DEFUN([PY_CHECK_FUNC],
   AS_VAR_POPDEF([py_define])
 ])
 
+dnl PY_CHECK_FUNC_PRIVATE(FUNCTION, [INCLUDES], [AC_DEFINE-VAR])
+dnl Similar to PY_CHECK_FUNC but define macro _Py_HAVE_xxx instead of HAVE_xxx
+AC_DEFUN([PY_CHECK_FUNC_PRIVATE],
+[ PY_CHECK_FUNC([$1], [$2], m4_ifblank([$3], [[_Py_HAVE_]m4_toupper($1)], [$3]))
+])
+
 dnl PY_CHECK_LIB(LIBRARY, FUNCTION, [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND], [OTHER-LIBRARIES])
 dnl Like AC_CHECK_LIB() but does not modify LIBS
 AC_DEFUN([PY_CHECK_LIB],
@@ -995,8 +1001,12 @@ AS_CASE([$host],
 )
 
 dnl Add the compiler flag for the iOS minimum supported OS version.
-AS_CASE([$ac_sys_system],
-  [iOS], [
+AS_CASE([$host],
+  [*-apple-ios*-simulator], [
+    AS_VAR_APPEND([CFLAGS], [" -mios-simulator-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"])
+    AS_VAR_APPEND([LDFLAGS], [" -mios-simulator-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"])
+  ],
+  [*-apple-ios*], [
     AS_VAR_APPEND([CFLAGS], [" -mios-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"])
     AS_VAR_APPEND([LDFLAGS], [" -mios-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"])
   ],
@@ -1211,6 +1221,10 @@ AS_CASE([$ac_sys_system],
   [iOS], [SOABI_PLATFORM=`echo "$PLATFORM_TRIPLET" | cut -d '-' -f2`],
   [SOABI_PLATFORM=$PLATFORM_TRIPLET]
 )
+
+if test x$SOABI_PLATFORM != x; then
+    AC_DEFINE_UNQUOTED([SOABI_PLATFORM], ["${SOABI_PLATFORM}"], [Platform tag, used in binary module extension filenames.])
+fi
 
 if test x$MULTIARCH != x; then
   MULTIARCH_CPPFLAGS="-DMULTIARCH=\\\"$MULTIARCH\\\""
@@ -4003,9 +4017,10 @@ AS_VAR_IF([ac_cv_have_uuid_generate_time_safe], [yes], [
   AC_DEFINE([HAVE_UUID_GENERATE_TIME_SAFE], [1])
 ])
 
-# gh-124228: While the libuuid library is available on NetBSD, it supports only UUID version 4.
+# gh-124228: While the libuuid library is available on NetBSD and OpenBSD,
+# it supports only UUID version 4.
 # This restriction inhibits the proper generation of time-based UUIDs.
-if test "$ac_sys_system" = "NetBSD"; then
+if test "$ac_sys_system" = "NetBSD" || test "$ac_sys_system" = "OpenBSD"; then
   have_uuid=missing
   AC_DEFINE([HAVE_UUID_H], [0])
 fi
@@ -4351,7 +4366,7 @@ int main(void)
     {
         return 2;
     }
-    ffi_arg rc;
+    ffi_arg rc = 0;
     ffi_call(&cif, FFI_FN(z_is_expected), &rc, values);
     return !rc;
 }
@@ -5406,6 +5421,9 @@ DLINCLDIR=.
 # platforms have dlopen(), but don't want to use it.
 AC_CHECK_FUNCS([dlopen])
 
+# Used by ctypes.util.dllist().
+AC_CHECK_FUNCS([dl_iterate_phdr])
+
 # DYNLOADFILE specifies which dynload_*.o file we will use for dynamic
 # loading of modules.
 AC_SUBST([DYNLOADFILE])
@@ -5503,6 +5521,9 @@ AC_CHECK_FUNCS([ \
   tmpnam tmpnam_r truncate ttyname_r umask uname unlinkat unlockpt utimensat utimes vfork \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
 ])
+
+PY_CHECK_FUNC_PRIVATE([strerror_r], [@%:@include <string.h>])
+
 
 # os.statx uses Linux's statx function.  AIX also has a function named statx,
 # but it's unrelated.  Check only on Linux (including Android).
@@ -6649,18 +6670,21 @@ LDVERSION='$(VERSION)$(ABIFLAGS)'
 AC_MSG_RESULT([$LDVERSION])
 
 # Configure the flags and dependencies used when compiling shared modules.
-# Do not rename LIBPYTHON - it's accessed via sysconfig by package build
-# systems (e.g. Meson) to decide whether to link extension modules against
-# libpython.
 AC_SUBST([MODULE_DEPS_SHARED])
 AC_SUBST([LIBPYTHON])
 MODULE_DEPS_SHARED='$(MODULE_DEPS_STATIC) $(EXPORTSYMS)'
+
+# On most platforms, extension modules aren't linked against libpython, so
+# LIBPYTHON must be empty.
 LIBPYTHON=''
 
 # On Android and Cygwin the shared libraries must be linked with libpython.
+# LIBPYTHON is used by python-config, python3.pc, the commands for building the
+# stdlib's own extension modules, and external package build systems via
+# sysconfig, so its value must be suitable for all those contexts.
 if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MACHDEP" = "cygwin"); then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(LDLIBRARY)"
-  LIBPYTHON="\$(BLDLIBRARY)"
+  LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
 fi
 
 # On iOS the shared libraries must be linked with the Python framework
@@ -7138,8 +7162,9 @@ WITH_SAVE_ENV([
   ]))
 
   # Check that we're able to link with crucial curses/panel functions. This
-  # also serves as a fallback in case pkg-config failed.
-  AS_VAR_APPEND([LIBS], [" $CURSES_LIBS $PANEL_LIBS"])
+  # also serves as a fallback in case pkg-config failed. Extension modules are
+  # not linked with LIBS, so exclude it to get the required libraries.
+  LIBS="$CURSES_LIBS $PANEL_LIBS"
   AC_SEARCH_LIBS([initscr], [ncursesw ncurses],
     [AS_VAR_IF([have_curses], [no],
       [AS_VAR_SET([have_curses], [yes])
@@ -7192,6 +7217,33 @@ AS_VAR_IF([ac_sys_system], [Darwin], [
 
 dnl pyconfig.h defines _XOPEN_SOURCE=700
 PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
+
+dnl A curses that is not named "ncursesw" can still be wide-character capable:
+dnl the system curses of NetBSD, or an ncurses built with --enable-widec that
+dnl keeps the plain name (pkgsrc, macOS).  Probe for the wide API and, if
+dnl present, build the module wide by defining HAVE_NCURSESW.
+AS_VAR_IF([have_curses], [no], [], [
+  dnl Use the adjusted CURSES_CFLAGS (e.g. macOS's -D_XOPEN_SOURCE_EXTENDED)
+  dnl so the wide-character declarations are visible to the probe.  This runs
+  dnl inside an outer WITH_SAVE_ENV, whose single CPPFLAGS save slot is not
+  dnl reentrant, so save and restore CPPFLAGS with a dedicated variable here.
+  save_curses_cppflags=$CPPFLAGS
+  AS_VAR_APPEND([CPPFLAGS], [" $CURSES_CFLAGS"])
+  AC_CACHE_CHECK([whether curses supports wide characters],
+    [ac_cv_curses_wide],
+    [AC_LINK_IFELSE(
+      [AC_LANG_PROGRAM([_CURSES_INCLUDES], [[
+        cchar_t wcval;
+        setcchar(&wcval, L"x", A_NORMAL, 0, NULL);
+        add_wch(&wcval);
+      ]])],
+      [ac_cv_curses_wide=yes],
+      [ac_cv_curses_wide=no])])
+  CPPFLAGS=$save_curses_cppflags
+  dnl HAVE_NCURSESW marks the wide (cchar_t) curses API; its template comes
+  dnl from the ncursesw pkg-config check above, so no description here.
+  AS_VAR_IF([ac_cv_curses_wide], [yes], [AC_DEFINE([HAVE_NCURSESW], [1])])
+])
 
 # On Solaris, term.h requires curses.h
 AC_CHECK_HEADERS([term.h], [], [], _CURSES_INCLUDES)

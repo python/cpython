@@ -1325,10 +1325,16 @@ _io_TextIOWrapper__CHUNK_SIZE_set(PyObject *self, PyObject *value, void *Py_UNUS
 {
     int return_value;
 
+    if (value == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '_CHUNK_SIZE' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_TextIOWrapper__CHUNK_SIZE_set_impl((textio *)self, value);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
-/*[clinic end generated code: output=8c571c9dba87d2b1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cec74a7476964ae4 input=a9049054013a1b77]*/

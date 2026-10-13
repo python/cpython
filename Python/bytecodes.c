@@ -161,7 +161,7 @@ dummy_func(
         }
 
         replaced op(_CHECK_PERIODIC_AT_END, (--)) {
-            int err = check_periodics(tstate);
+            int err = check_periodics_at_end(tstate, frame);
             ERROR_IF(err != 0);
         }
 
@@ -1378,7 +1378,15 @@ dummy_func(
         }
 
         inst(SET_ADD, (set, unused[oparg-1], v -- set, unused[oparg-1])) {
-            int err = _PySet_AddTakeRef((PySetObject *)PyStackRef_AsPyObjectBorrow(set),
+            PyObject *set_o = PyStackRef_AsPyObjectBorrow(set);
+            // gh-154902: user code can rebind __conditional_annotations__
+            if (!PySet_CheckExact(set_o)) {
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "'%T' object is not a set", set_o);
+                PyStackRef_CLOSE(v);
+                ERROR_IF(true);
+            }
+            int err = _PySet_AddTakeRef((PySetObject *)set_o,
                                         PyStackRef_AsPyObjectSteal(v));
             ERROR_IF(err);
         }
@@ -1777,8 +1785,6 @@ dummy_func(
                 if (index < 0) {
                     ERROR_NO_POP();
                 }
-                next = none;
-                DEAD(none);
                 EXIT_IF(true);
             }
             DEAD(none);
@@ -2215,80 +2221,30 @@ dummy_func(
 
         inst(LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            PyObject *namespace = PyStackRef_AsPyObjectBorrow(mod_or_class_dict);
             int err;
-            PyObject *v_o = _PyMapping_GetOptionalItem2(PyStackRef_AsPyObjectBorrow(mod_or_class_dict), name, &err);
-
+            PyObject *v_o = _PyMapping_GetOptionalItem2(namespace, name, &err);
+            if (v_o != NULL && PyLazyImport_CheckExact(v_o)) {
+                Py_SETREF(v_o, _PyLazyImport_Reify(tstate, v_o, name, namespace));
+                if (v_o == NULL) {
+                    err = -1;
+                }
+            }
             PyStackRef_CLOSE(mod_or_class_dict);
             ERROR_IF(err < 0);
             if (v_o == NULL) {
-                if (PyDict_CheckExact(GLOBALS())
-                    && PyDict_CheckExact(BUILTINS()))
-                {
-                    v_o = _PyDict_LoadGlobal((PyDictObject *)GLOBALS(),
-                                             (PyDictObject *)BUILTINS(),
-                                             name);
-                    if (v_o == NULL) {
-                        if (!_PyErr_Occurred(tstate)) {
-                            /* _PyDict_LoadGlobal() returns NULL without raising
-                            * an exception if the key doesn't exist */
-                            _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                                    NAME_ERROR_MSG, name);
-                        }
-                        ERROR_NO_POP();
-                    }
-
-                    if (PyLazyImport_CheckExact(v_o)) {
-                        PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, v_o);
-                        Py_SETREF(v_o, l_v);
-                        ERROR_IF(v_o == NULL);
-                    }
-                }
-                else {
-                    /* Slow-path if globals or builtins is not a dict */
-                    /* namespace 1: globals */
-                    v_o = _PyMapping_GetOptionalItem2(GLOBALS(), name, &err);
-                    ERROR_IF(err < 0);
-                    if (v_o == NULL) {
-                        /* namespace 2: builtins */
-                        v_o = _PyMapping_GetOptionalItem2(BUILTINS(), name, &err);
-                        ERROR_IF(err < 0);
-                        if (v_o == NULL) {
-                            _PyEval_FormatExcCheckArg(
-                                        tstate, PyExc_NameError,
-                                        NAME_ERROR_MSG, name);
-                            ERROR_IF(true);
-                        }
-                    }
-                    if (PyLazyImport_CheckExact(v_o)) {
-                        PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, v_o);
-                        Py_SETREF(v_o, l_v);
-                        ERROR_IF(v_o == NULL);
-                    }
-                }
+                _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, &v);
+                ERROR_IF(PyStackRef_IsNull(v));
             }
-            v = PyStackRef_FromPyObjectSteal(v_o);
+            else {
+                v = PyStackRef_FromPyObjectSteal(v_o);
+            }
         }
 
         inst(LOAD_NAME, (-- v)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *v_o = _PyEval_LoadName(tstate, frame, name);
             ERROR_IF(v_o == NULL);
-            if (PyLazyImport_CheckExact(v_o)) {
-                PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, v_o);
-                // cannot early-decref v_o as it may cause a side-effect on l_v
-                if (l_v == NULL) {
-                    Py_DECREF(v_o);
-                    ERROR_IF(true);
-                }
-                int err = PyDict_SetItem(GLOBALS(), name, l_v);
-                if (err < 0) {
-                    Py_DECREF(v_o);
-                    Py_DECREF(l_v);
-                    ERROR_IF(true);
-                }
-                Py_SETREF(v_o, l_v);
-            }
-
             v = PyStackRef_FromPyObjectSteal(v_o);
         }
 
@@ -2379,6 +2335,10 @@ dummy_func(
             STAT_INC(LOAD_GLOBAL, hit);
         }
 
+        tier2 op(_GUARD_BUILTINS_IS_CANONICAL, (--)) {
+            DEOPT_IF(BUILTINS() != tstate->interp->builtins);
+        }
+
         macro(LOAD_GLOBAL_MODULE) =
             unused/1 + // Skip over the counter
             NOP + // For guard insertion in the JIT optimizer
@@ -2447,6 +2407,13 @@ dummy_func(
                 value_o = PyCell_GetRef(cell);
                 if (value_o == NULL) {
                     _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
+                    ERROR_NO_POP();
+                }
+            }
+            else if (PyLazyImport_CheckExact(value_o)) {
+                Py_SETREF(value_o, _PyLazyImport_Reify(
+                    tstate, value_o, name, class_dict));
+                if (value_o == NULL) {
                     ERROR_NO_POP();
                 }
             }
@@ -6300,6 +6267,10 @@ dummy_func(
             if (target->op.code == ENTER_EXECUTOR) {
                 PyCodeObject *code = _PyFrame_GetCode(frame);
                 executor = code->co_executors->executors[target->op.arg];
+                if (executor == _PyExecutor_FromExit(exit)) {
+                    _Py_ExecutorDetach(executor);
+                    GOTO_TIER_ONE(target);
+                }
                 Py_INCREF(executor);
                 assert(tstate->jit_exit == exit);
                 exit->executor = executor;

@@ -996,7 +996,7 @@ dataclasses
 __slots__
 ~~~~~~~~~
 
-Added ``slots`` parameter in :func:`dataclasses.dataclass` decorator.
+Added ``slots`` parameter in :deco:`dataclasses.dataclass` decorator.
 (Contributed by Yurii Karabas in :issue:`42269`)
 
 Keyword-only fields
@@ -1485,9 +1485,9 @@ is a :class:`typing.TypedDict`.
 
 Subclasses of ``typing.Protocol`` which only have data variables declared
 will now raise a ``TypeError`` when checked with ``isinstance`` unless they
-are decorated with :func:`~typing.runtime_checkable`.  Previously, these checks
+are decorated with :deco:`~typing.runtime_checkable`.  Previously, these checks
 passed silently.  Users should decorate their
-subclasses with the :func:`!runtime_checkable` decorator
+subclasses with the :deco:`!runtime_checkable` decorator
 if they want runtime protocols.
 (Contributed by Yurii Karabas in :issue:`38908`.)
 

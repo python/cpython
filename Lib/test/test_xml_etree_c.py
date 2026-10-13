@@ -15,16 +15,6 @@ cET_alias = import_fresh_module('xml.etree.cElementTree',
 
 @unittest.skipUnless(cET, 'requires _elementtree')
 class MiscTests(unittest.TestCase):
-    # Issue #8651.
-    @support.bigmemtest(size=support._2G + 100, memuse=1, dry_run=False)
-    def test_length_overflow(self, size):
-        data = b'x' * size
-        parser = cET.XMLParser()
-        try:
-            self.assertRaises(OverflowError, parser.feed, data)
-        finally:
-            data = None
-
     def test_del_attribute(self):
         element = cET.Element('tag')
 

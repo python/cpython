@@ -690,7 +690,7 @@ added elements by appending to the right and popping to the left::
 A `round-robin scheduler
 <https://en.wikipedia.org/wiki/Round-robin_scheduling>`_ can be implemented with
 input iterators stored in a :class:`deque`.  Values are yielded from the active
-iterator in position zero.  If that iterator is exhausted, it can be removed
+iterator in position zero.  If that iterator is :term:`exhausted`, it can be removed
 with :meth:`~deque.popleft`; otherwise, it can be cycled back to the end with
 the :meth:`~deque.rotate` method::
 
@@ -1228,7 +1228,7 @@ original insertion position is changed and moved to the end::
             self.move_to_end(key)
 
 An :class:`OrderedDict` would also be useful for implementing
-variants of :func:`functools.lru_cache`:
+variants of :deco:`functools.lru_cache`:
 
 .. testcode::
 

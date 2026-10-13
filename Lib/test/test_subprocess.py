@@ -2051,8 +2051,9 @@ class RunFuncTestCase(BaseTestCase):
             run("echo hello", shell=True, text=True)
             check_output("echo hello", shell=True, text=True)
             """)
+        env = support.make_clean_env()
         cp = subprocess.run([sys.executable, "-Xwarn_default_encoding", "-c", code],
-                            capture_output=True)
+                            capture_output=True, env=env)
         lines = cp.stderr.splitlines()
         self.assertEqual(len(lines), 2, lines)
         self.assertStartsWith(lines[0], b"<string>:2: EncodingWarning: ")
@@ -2448,6 +2449,16 @@ class POSIXProcessTestCase(BaseTestCase):
         err = subprocess.CalledProcessError(2, "fake cmd")
         error_string = str(err)
         self.assertIn("non-zero exit status 2.", error_string)
+
+        # returncode which is not an integer, which happens for example when
+        # Popen is mocked: str() must not fail
+        for returncode in (None, "2", 2.5, [2]):
+            with self.subTest(returncode=returncode):
+                err = subprocess.CalledProcessError(returncode, "fake cmd")
+                self.assertEqual(
+                    str(err),
+                    f"Command 'fake cmd' returned non-zero "
+                    f"exit status {returncode}.")
 
     def test_preexec(self):
         # DISCLAIMER: Setting environment variables is *not* a good use
@@ -4289,6 +4300,32 @@ class FastWaitTestCase(BaseTestCase):
                 p.wait(self.WAIT_TIMEOUT)
             self.assertEqual(p.wait(timeout=support.LONG_TIMEOUT), 0)
         self.assertFalse(m.called)
+
+    @unittest.skipIf(mswindows, "requires the POSIX wait implementation")
+    def test_wait_huge_timeout(self):
+        # gh-154836: very large timeout values used to overflow the C
+        # timestamp conversion in poll() / kqueue.control() and raise
+        # OverflowError / TypeError.
+        for timeout in (10**10, sys.maxsize, float('inf')):
+            with self.subTest(timeout=timeout):
+                p = subprocess.Popen(ZERO_RETURN_CMD)
+                self.assertEqual(p.wait(timeout=timeout), 0)
+
+    @unittest.skipIf(mswindows, "requires the POSIX wait implementation")
+    def test_run_huge_timeout(self):
+        # gh-154836: same as test_wait_huge_timeout, via the
+        # subprocess.run() / communicate() code path.
+        cp = subprocess.run(ZERO_RETURN_CMD, timeout=1e10)
+        self.assertEqual(cp.returncode, 0)
+
+    @unittest.skipIf(mswindows, "requires the POSIX wait implementation")
+    def test_wait_slices_do_not_expire_early(self):
+        # A clamped wait slice must not raise TimeoutExpired before the
+        # real deadline: with a tiny slice limit, a process that
+        # outlives many slices must still be waited for successfully.
+        with mock.patch.object(subprocess, "_MAXIMUM_WAIT_TIMEOUT", 0.01):
+            p = subprocess.Popen(self.COMMAND)  # sleeps 0.3s
+            self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
 
 if __name__ == "__main__":
     unittest.main()

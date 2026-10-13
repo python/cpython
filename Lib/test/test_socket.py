@@ -1787,6 +1787,23 @@ class GeneralModuleTests(unittest.TestCase):
             except socket.gaierror:
                 pass
 
+    @unittest.skipUnless(hasattr(socket, 'AI_NUMERICSERV'),
+                         'needs socket.AI_NUMERICSERV')
+    @support.thread_unsafe('setlocale is not thread-safe')
+    @support.run_with_locales('LC_ALL',
+        'uk_UA.KOI8-U', 'uk_UA', 'ja_JP.eucJP', 'ja_JP.SJIS', 'ja_JP',
+        'ko_KR.eucKR', 'zh_CN.GB18030', 'el_GR.ISO8859-7',
+        'de_DE.ISO8859-1', 'ja_JP.UTF-8',
+        '')
+    def test_getaddrinfo_localized_error(self):
+        # gh-93251: the localized gai_strerror() message could fail to be
+        # decoded as UTF-8, so UnicodeDecodeError was raised
+        # instead of gaierror.
+        with self.assertRaises(socket.gaierror) as cm:
+            socket.getaddrinfo("localhost", "http",
+                               flags=socket.AI_NUMERICSERV)
+        str(cm.exception)
+
     @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_getaddrinfo_int_port_overflow(self):
         # gh-74895: Test that getaddrinfo does not raise OverflowError on port.
