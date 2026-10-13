@@ -1133,7 +1133,7 @@ class TarInfo(object):
         # be represented in ASCII encoding.
         for name, hname, length in (
                 ("name", "path", LENGTH_NAME), ("linkname", "linkpath", LENGTH_LINK),
-                ("uname", "uname", 32), ("gname", "gname", 32)):
+                ("uname", "uname", 31), ("gname", "gname", 31)):
 
             if hname in pax_headers:
                 # The pax header has priority.
@@ -1177,6 +1177,9 @@ class TarInfo(object):
         else:
             buf = b""
 
+        # The owner names in the base header must be NUL-terminated.
+        info["uname"] = info["uname"][:31]
+        info["gname"] = info["gname"][:31]
         return buf + self._create_header(info, USTAR_FORMAT, "ascii", "replace")
 
     @classmethod
