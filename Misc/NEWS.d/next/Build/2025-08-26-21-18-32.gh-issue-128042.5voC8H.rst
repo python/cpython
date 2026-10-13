@@ -1,1 +1,0 @@
-``./configure`` now warns when ``--enable-optimizations`` and ``CFLAGS=-O0`` are both set, suggesting removing ``-O0`` from ``CFLAGS`` for optimal performance.  Patch by Taegyun Kim.

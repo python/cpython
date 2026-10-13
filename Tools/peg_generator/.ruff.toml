@@ -13,11 +13,6 @@ select = [
     "RUF100",  # Ban unused `# noqa` comments
     "PGH004",  # Ban blanket `# noqa` comments (only ignore specific error codes)
 ]
-ignore = [
-    # Use PEP-604 unions rather than tuples for isinstance() checks.
-    # Makes code slower and more verbose. https://github.com/astral-sh/ruff/issues/7871.
-    "UP038",
-]
 unfixable = [
     # The autofixes sometimes do the wrong things for these;
     # it's better to have to manually look at the code and see how it needs fixing

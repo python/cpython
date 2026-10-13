@@ -1,0 +1,2 @@
+Fix :mod:`netrc` to distinguish empty quoted tokens from end-of-file, so
+malformed files no longer cause the remaining content to be silently ignored.

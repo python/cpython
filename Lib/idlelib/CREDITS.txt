@@ -37,6 +37,7 @@ Major contributors since 2005:
 - 2014: Saimadhav Heblikar
 - 2015: Mark Roseman
 - 2017: Louie Lu, Cheryl Sabella, and Serhiy Storchaka
+- 2025: Stan Ulbrych
 
 For additional details refer to NEWS.txt and Changelog.
 

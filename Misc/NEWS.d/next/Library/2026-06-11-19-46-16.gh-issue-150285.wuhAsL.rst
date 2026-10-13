@@ -1,0 +1,2 @@
+:mod:`pydoc` now uses all available space (80 columns) for formatting reprs
+of module and class data, but ensure that they do not overflow.

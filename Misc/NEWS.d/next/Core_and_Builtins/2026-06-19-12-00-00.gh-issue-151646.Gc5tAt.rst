@@ -1,0 +1,3 @@
+Fix a data race in free-threading builds between :func:`gc.get_stats` and a
+concurrent garbage collection cycle.  Access to the per-generation statistics
+is now serialized with a mutex so the reader observes a consistent snapshot.

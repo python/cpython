@@ -1,7 +1,8 @@
 #include "Python.h"
 
-#include "pycore_lock.h"
 #include "pycore_critical_section.h"
+#include "pycore_interp.h"
+#include "pycore_lock.h"
 
 #ifdef Py_GIL_DISABLED
 static_assert(_Alignof(PyCriticalSection) >= 4,
@@ -17,15 +18,36 @@ untag_critical_section(uintptr_t tag)
 #endif
 
 void
-_PyCriticalSection_BeginSlow(PyCriticalSection *c, PyMutex *m)
+_PyCriticalSection_BeginSlow(PyThreadState *tstate, PyCriticalSection *c, PyMutex *m)
 {
 #ifdef Py_GIL_DISABLED
-    PyThreadState *tstate = _PyThreadState_GET();
     // As an optimisation for locking the same object recursively, skip
     // locking if the mutex is currently locked by the top-most critical
     // section.
-    if (tstate->critical_section &&
-        untag_critical_section(tstate->critical_section)->_cs_mutex == m) {
+    // If the top-most critical section is a two-mutex critical section,
+    // then locking is skipped if either mutex is m.
+    if (tstate->critical_section) {
+        PyCriticalSection *prev = untag_critical_section(tstate->critical_section);
+        if (prev->_cs_mutex == m) {
+            c->_cs_mutex = NULL;
+            c->_cs_prev = 0;
+            return;
+        }
+        if (tstate->critical_section & _Py_CRITICAL_SECTION_TWO_MUTEXES) {
+            PyCriticalSection2 *prev2 = (PyCriticalSection2 *)
+                untag_critical_section(tstate->critical_section);
+            if (prev2->_cs_mutex2 == m) {
+                c->_cs_mutex = NULL;
+                c->_cs_prev = 0;
+                return;
+            }
+        }
+    }
+    // If the world is stopped, we don't need to acquire the lock because
+    // there are no other threads that could be accessing the object.
+    // Without this check, acquiring a critical section while the world is
+    // stopped could lead to a deadlock.
+    if (tstate->interp->stoptheworld.world_stopped) {
         c->_cs_mutex = NULL;
         c->_cs_prev = 0;
         return;
@@ -40,11 +62,32 @@ _PyCriticalSection_BeginSlow(PyCriticalSection *c, PyMutex *m)
 }
 
 void
-_PyCriticalSection2_BeginSlow(PyCriticalSection2 *c, PyMutex *m1, PyMutex *m2,
+_PyCriticalSection2_BeginSlow(PyThreadState *tstate, PyCriticalSection2 *c, PyMutex *m1, PyMutex *m2,
                               int is_m1_locked)
 {
 #ifdef Py_GIL_DISABLED
-    PyThreadState *tstate = _PyThreadState_GET();
+    if (tstate->interp->stoptheworld.world_stopped) {
+        c->_cs_base._cs_mutex = NULL;
+        c->_cs_mutex2 = NULL;
+        c->_cs_base._cs_prev = 0;
+        return;
+    }
+    // Same optimization as in _PyCriticalSection_BeginSlow: skip locking when
+    // recursively acquiring the same locks.
+    if (tstate->critical_section &&
+        tstate->critical_section & _Py_CRITICAL_SECTION_TWO_MUTEXES) {
+        PyCriticalSection2 *prev2 = (PyCriticalSection2 *)
+            untag_critical_section(tstate->critical_section);
+        assert((uintptr_t)m1 < (uintptr_t)m2);
+        assert((uintptr_t)prev2->_cs_base._cs_mutex <
+            (uintptr_t)prev2->_cs_mutex2);
+        if (prev2->_cs_base._cs_mutex == m1 && prev2->_cs_mutex2 == m2) {
+            c->_cs_base._cs_mutex = NULL;
+            c->_cs_mutex2 = NULL;
+            c->_cs_base._cs_prev = 0;
+            return;
+        }
+    }
     c->_cs_base._cs_mutex = NULL;
     c->_cs_mutex2 = NULL;
     c->_cs_base._cs_prev = tstate->critical_section;
@@ -126,7 +169,7 @@ void
 PyCriticalSection_Begin(PyCriticalSection *c, PyObject *op)
 {
 #ifdef Py_GIL_DISABLED
-    _PyCriticalSection_Begin(c, op);
+    _PyCriticalSection_Begin(_PyThreadState_GET(), c, op);
 #endif
 }
 
@@ -135,7 +178,7 @@ void
 PyCriticalSection_BeginMutex(PyCriticalSection *c, PyMutex *m)
 {
 #ifdef Py_GIL_DISABLED
-    _PyCriticalSection_BeginMutex(c, m);
+    _PyCriticalSection_BeginMutex(_PyThreadState_GET(), c, m);
 #endif
 }
 
@@ -144,7 +187,7 @@ void
 PyCriticalSection_End(PyCriticalSection *c)
 {
 #ifdef Py_GIL_DISABLED
-    _PyCriticalSection_End(c);
+    _PyCriticalSection_End(_PyThreadState_GET(), c);
 #endif
 }
 
@@ -153,7 +196,7 @@ void
 PyCriticalSection2_Begin(PyCriticalSection2 *c, PyObject *a, PyObject *b)
 {
 #ifdef Py_GIL_DISABLED
-    _PyCriticalSection2_Begin(c, a, b);
+    _PyCriticalSection2_Begin(_PyThreadState_GET(), c, a, b);
 #endif
 }
 
@@ -162,7 +205,7 @@ void
 PyCriticalSection2_BeginMutex(PyCriticalSection2 *c, PyMutex *m1, PyMutex *m2)
 {
 #ifdef Py_GIL_DISABLED
-    _PyCriticalSection2_BeginMutex(c, m1, m2);
+    _PyCriticalSection2_BeginMutex(_PyThreadState_GET(), c, m1, m2);
 #endif
 }
 
@@ -171,6 +214,6 @@ void
 PyCriticalSection2_End(PyCriticalSection2 *c)
 {
 #ifdef Py_GIL_DISABLED
-    _PyCriticalSection2_End(c);
+    _PyCriticalSection2_End(_PyThreadState_GET(), c);
 #endif
 }

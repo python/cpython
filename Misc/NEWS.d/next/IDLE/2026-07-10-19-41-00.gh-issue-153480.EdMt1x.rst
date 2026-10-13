@@ -1,0 +1,4 @@
+Fix IDLE failing to start when opening a file which does not exist yet.
+Fix a traceback when a file open in the IDLE editor is deleted by another
+program; IDLE now asks whether to close the window, save the file elsewhere,
+or ignore it.

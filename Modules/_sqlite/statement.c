@@ -21,9 +21,16 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "connection.h"
 #include "statement.h"
 #include "util.h"
+
+#include "pycore_object.h"        // _PyObject_VisitType()
+
 
 #define _pysqlite_Statement_CAST(op)    ((pysqlite_Statement *)(op))
 
@@ -96,7 +103,12 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     return self;
 
 error:
-    (void)sqlite3_finalize(stmt);
+    assert(PyErr_Occurred());
+    if (sqlite3_finalize(stmt) != SQLITE_OK) {
+        PyObject *exc = PyErr_GetRaisedException();
+        PyErr_SetString(connection->InternalError, "cannot finalize statement");
+        _PyErr_ChainExceptions1(exc);
+    }
     return NULL;
 }
 
@@ -107,10 +119,16 @@ stmt_dealloc(PyObject *op)
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(op);
     if (self->st) {
+        int rc;
         Py_BEGIN_ALLOW_THREADS
-        sqlite3_finalize(self->st);
+        rc = sqlite3_finalize(self->st);
         Py_END_ALLOW_THREADS
-        self->st = 0;
+        self->st = NULL;
+        if (rc != SQLITE_OK) {
+            pysqlite_state *state = PyType_GetModuleState(Py_TYPE(op));
+            PyErr_SetString(state->InternalError, "cannot finalize statement");
+            PyErr_FormatUnraisable("Exception ignored in stmt_dealloc()");
+        }
     }
     tp->tp_free(self);
     Py_DECREF(tp);

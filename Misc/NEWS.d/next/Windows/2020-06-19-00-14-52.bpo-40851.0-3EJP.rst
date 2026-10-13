@@ -1,0 +1,3 @@
+:class:`subprocess.Popen` with ``shell=True`` on Windows now honors
+``wShowWindow`` of the *startupinfo* argument, so the console window of the
+started program can be shown.  Previously it was always hidden.

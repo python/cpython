@@ -276,25 +276,12 @@ static PyObject *
 zoneinfo_ZoneInfo_utcoffset(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "utcoffset",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *dt;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("utcoffset", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("utcoffset", nargs, 1, 1)) {
         goto exit;
     }
     dt = args[0];
@@ -320,25 +307,12 @@ static PyObject *
 zoneinfo_ZoneInfo_dst(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "dst",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *dt;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("dst", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("dst", nargs, 1, 1)) {
         goto exit;
     }
     dt = args[0];
@@ -365,25 +339,12 @@ static PyObject *
 zoneinfo_ZoneInfo_tzname(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "tzname",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *dt;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("tzname", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("tzname", nargs, 1, 1)) {
         goto exit;
     }
     dt = args[0];
@@ -410,26 +371,13 @@ static PyObject *
 zoneinfo_ZoneInfo__unpickle(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "_unpickle",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *key;
     unsigned char from_cache;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("_unpickle", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("_unpickle", nargs, 2, 2)) {
         goto exit;
     }
     key = args[0];
@@ -454,4 +402,44 @@ zoneinfo_ZoneInfo__unpickle(PyObject *type, PyTypeObject *cls, PyObject *const *
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c6df04d7b400bd7f input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(zoneinfo_ZoneInfo___init_subclass____doc__,
+"__init_subclass__($type, /, **kwargs)\n"
+"--\n"
+"\n"
+"Function to initialize subclasses.");
+
+#define ZONEINFO_ZONEINFO___INIT_SUBCLASS___METHODDEF    \
+    {"__init_subclass__", _PyCFunction_CAST(zoneinfo_ZoneInfo___init_subclass__), METH_VARARGS|METH_KEYWORDS|METH_CLASS, zoneinfo_ZoneInfo___init_subclass____doc__},
+
+static PyObject *
+zoneinfo_ZoneInfo___init_subclass___impl(PyTypeObject *type,
+                                         PyObject *kwargs);
+
+static PyObject *
+zoneinfo_ZoneInfo___init_subclass__(PyObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *__clinic_kwargs = NULL;
+
+    if (!_PyArg_NoPositional("__init_subclass__", args)) {
+        goto exit;
+    }
+    if (kwargs == NULL) {
+        __clinic_kwargs = PyDict_New();
+        if (__clinic_kwargs == NULL) {
+            goto exit;
+        }
+    }
+    else {
+        __clinic_kwargs = Py_NewRef(kwargs);
+    }
+    return_value = zoneinfo_ZoneInfo___init_subclass___impl((PyTypeObject *)type, __clinic_kwargs);
+
+exit:
+    /* Cleanup for kwargs */
+    Py_XDECREF(__clinic_kwargs);
+
+    return return_value;
+}
+/*[clinic end generated code: output=d7aeeec4b950fc35 input=a9049054013a1b77]*/

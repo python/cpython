@@ -1,0 +1,3 @@
+:const:`ssl.OPENSSL_VERSION_INFO` is now a named tuple.
+Add :const:`ssl.OPENSSL_API_VERSION_INFO` which provides information about
+the version of the OpenSSL library that was used for building the module.

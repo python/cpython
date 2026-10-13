@@ -1,0 +1,6 @@
+Added :class:`tkinter.ttk.Treeview` methods wrapping the enhanced
+``ttk::treeview`` widget commands added in Tk 9.1 (and the ``detached`` query
+added in Tk 9.0): item navigation and queries, opening, hiding, sorting and
+searching of items, and cell focus, selection and tagging.  The
+:meth:`~tkinter.ttk.Treeview.expand` and :meth:`~tkinter.ttk.Treeview.collapse`
+methods (without recursion) also work on Tk older than 9.1.

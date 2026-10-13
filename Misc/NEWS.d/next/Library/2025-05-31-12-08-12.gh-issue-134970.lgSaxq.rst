@@ -1,3 +1,0 @@
-Fix the "unknown action" exception in
-:meth:`argparse.ArgumentParser.add_argument_group` to correctly replace the
-action class.

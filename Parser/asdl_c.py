@@ -487,7 +487,7 @@ class PickleVisitor(EmitVisitor):
 
 class Obj2ModPrototypeVisitor(PickleVisitor):
     def visitProduct(self, prod, name):
-        code = "static int obj2ast_%s(struct ast_state *state, PyObject* obj, %s* out, PyArena* arena);"
+        code = "static int obj2ast_%s(struct ast_state *state, PyObject* obj, %s* out, const char* field, PyArena* arena);"
         self.emit(code % (name, get_c_type(name)), 0)
 
     visitSum = visitProduct
@@ -511,7 +511,7 @@ class Obj2ModVisitor(PickleVisitor):
     def funcHeader(self, name):
         ctype = get_c_type(name)
         self.emit("int", 0)
-        self.emit("obj2ast_%s(struct ast_state *state, PyObject* obj, %s* out, PyArena* arena)" % (name, ctype), 0)
+        self.emit("obj2ast_%s(struct ast_state *state, PyObject* obj, %s* out, const char* field, PyArena* arena)" % (name, ctype), 0)
         self.emit("{", 0)
         self.emit("int isinstance;", 1)
         self.emit("", 0)
@@ -547,6 +547,18 @@ class Obj2ModVisitor(PickleVisitor):
     def buildArgs(self, fields):
         return ", ".join(fields + ["arena"])
 
+    def typeCheck(self, name):
+        self.emit("tp = state->%s_type;" % name, 1)
+        self.emit("isinstance = PyObject_IsInstance(obj, tp);", 1)
+        self.emit("if (isinstance == -1) {", 1)
+        self.emit("return 1;", 2)
+        self.emit("}", 1)
+        self.emit("if (!isinstance && field != NULL) {", 1)
+        error = "field '%%s' was expecting node of type '%s', got '%%T'" % name
+        self.emit("PyErr_Format(PyExc_TypeError, \"%s\", field, obj);" % error, 2, reflow=False)
+        self.emit("return 1;", 2)
+        self.emit("}", 1)
+
     def complexSum(self, sum, name):
         self.funcHeader(name)
         self.emit("PyObject *tmp = NULL;", 1)
@@ -559,6 +571,7 @@ class Obj2ModVisitor(PickleVisitor):
         self.emit("*out = NULL;", 2)
         self.emit("return 0;", 2)
         self.emit("}", 1)
+        self.typeCheck(name)
         for a in sum.attributes:
             self.visitField(a, name, sum=sum, depth=1)
         for t in sum.types:
@@ -593,7 +606,7 @@ class Obj2ModVisitor(PickleVisitor):
     def visitProduct(self, prod, name):
         ctype = get_c_type(name)
         self.emit("int", 0)
-        self.emit("obj2ast_%s(struct ast_state *state, PyObject* obj, %s* out, PyArena* arena)" % (name, ctype), 0)
+        self.emit("obj2ast_%s(struct ast_state *state, PyObject* obj, %s* out, const char* field, PyArena* arena)" % (name, ctype), 0)
         self.emit("{", 0)
         self.emit("PyObject* tmp = NULL;", 1)
         for f in prod.fields:
@@ -679,7 +692,7 @@ class Obj2ModVisitor(PickleVisitor):
             self.emit("Py_ssize_t i;", depth+1)
             self.emit("if (!PyList_Check(tmp)) {", depth+1)
             self.emit("PyErr_Format(PyExc_TypeError, \"%s field \\\"%s\\\" must "
-                      "be a list, not a %%.200s\", _PyType_Name(Py_TYPE(tmp)));" %
+                      "be a list, not a %%T\", tmp);" %
                       (name, field.name),
                       depth+2, reflow=False)
             self.emit("goto failed;", depth+2)
@@ -694,8 +707,8 @@ class Obj2ModVisitor(PickleVisitor):
             self.emit("%s val;" % ctype, depth+2)
             self.emit("PyObject *tmp2 = Py_NewRef(PyList_GET_ITEM(tmp, i));", depth+2)
             with self.recursive_call(name, depth+2):
-                self.emit("res = obj2ast_%s(state, tmp2, &val, arena);" %
-                          field.type, depth+2, reflow=False)
+                self.emit("res = obj2ast_%s(state, tmp2, &val, \"%s\", arena);" %
+                          (field.type, field.name), depth+2, reflow=False)
             self.emit("Py_DECREF(tmp2);", depth+2)
             self.emit("if (res != 0) goto failed;", depth+2)
             self.emit("if (len != PyList_GET_SIZE(tmp)) {", depth+2)
@@ -709,8 +722,8 @@ class Obj2ModVisitor(PickleVisitor):
             self.emit("}", depth+1)
         else:
             with self.recursive_call(name, depth+1):
-                self.emit("res = obj2ast_%s(state, tmp, &%s, arena);" %
-                          (field.type, field.name), depth+1)
+                self.emit("res = obj2ast_%s(state, tmp, &%s, \"%s\", arena);" %
+                          (field.type, field.name, field.name), depth+1)
             self.emit("if (res != 0) goto failed;", depth+1)
 
         self.emit("Py_CLEAR(tmp);", depth+1)
@@ -773,63 +786,124 @@ class PyTypesDeclareVisitor(PickleVisitor):
 
 class AnnotationsVisitor(PickleVisitor):
     def visitModule(self, mod):
+        self.nodes = []
+        for dfn in mod.dfns:
+            self.visit(dfn)
+        builtins = list(dict.fromkeys(builtin_type_to_c_type.values()))
         self.file.write(textwrap.dedent('''
             static int
             add_ast_annotations(struct ast_state *state)
             {
-                bool cond;
+                enum {
+                    FIELD_OPTIONAL = 1,
+                    FIELD_SEQUENCE = 2,
+                    FIELD_BUILTIN = 4,
+                };
+                PyTypeObject *const builtin_types[] = {
         '''))
-        for dfn in mod.dfns:
-            self.visit(dfn)
-        self.file.write(textwrap.dedent('''
+        for c_type in builtins:
+            self.emit(f"&{c_type},", 2)
+        self.file.write(textwrap.dedent('''\
+            };
+            // Offsets refer to this interpreter's AST state, not global types.
+            static_assert(sizeof(struct ast_state) <= UINT16_MAX,
+                          "ast_state offsets must fit in uint16_t");
+            static const struct {
+                uint16_t name_offset;
+                uint16_t type_offset;  // An index into builtin_types for builtins.
+                uint8_t flags;
+            } fields[] = {
+        #''').removesuffix('#'))  # Use d-string if it accepted.
+        for name, fields in self.nodes:
+            for field in fields:
+                flags = []
+                if field.opt:
+                    flags.append("FIELD_OPTIONAL")
+                elif field.seq:
+                    flags.append("FIELD_SEQUENCE")
+                if field.type in builtin_type_to_c_type:
+                    c_type = builtin_type_to_c_type[field.type]
+                    type_offset = str(builtins.index(c_type))
+                    flags.append("FIELD_BUILTIN")
+                else:
+                    type_offset = f"offsetof(struct ast_state, {field.type}_type)"
+                flags = " | ".join(flags) or "0"
+                self.emit(f"{{offsetof(struct ast_state, {field.name}),", 2)
+                self.emit(f" {type_offset}, {flags}}},", 2)
+        self.file.write(textwrap.dedent('''\
+            };
+            static const struct {
+                uint16_t type_offset;
+                uint16_t first_field;
+                uint16_t nfields;
+            } nodes[] = {
+        #''').removesuffix('#'))
+        start = 0
+        for name, fields in self.nodes:
+            self.emit(f"{{offsetof(struct ast_state, {name}_type), "
+                      f"{start}, {len(fields)}}},", 2)
+            start += len(fields)
+        self.file.write(textwrap.dedent('''\
+                };
+                char *base = (char *)state;
+                PyObject *annotations = NULL;
+                for (size_t i = 0; i < Py_ARRAY_LENGTH(nodes); i++) {
+                    annotations = PyDict_New();
+                    if (annotations == NULL) {
+                        goto error;
+                    }
+                    size_t end = nodes[i].first_field + nodes[i].nfields;
+                    for (size_t j = nodes[i].first_field; j < end; j++) {
+                        PyObject *name = *(PyObject **)(base + fields[j].name_offset);
+                        PyObject *type;
+                        if (fields[j].flags & FIELD_BUILTIN) {
+                            type = (PyObject *)builtin_types[fields[j].type_offset];
+                        }
+                        else {
+                            type = *(PyObject **)(base + fields[j].type_offset);
+                        }
+                        if (fields[j].flags & FIELD_OPTIONAL) {
+                            type = _Py_union_type_or(type, Py_None);
+                        }
+                        else if (fields[j].flags & FIELD_SEQUENCE) {
+                            type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+                        }
+                        else {
+                            Py_INCREF(type);
+                        }
+                        if (type == NULL) {
+                            goto error;
+                        }
+                        int res = PyDict_SetItem(annotations, name, type);
+                        Py_DECREF(type);
+                        if (res < 0) {
+                            goto error;
+                        }
+                    }
+                    PyObject *node = *(PyObject **)(base + nodes[i].type_offset);
+                    if (PyObject_SetAttrString(node, "_field_types", annotations) < 0 ||
+                        PyObject_SetAttrString(node, "__annotations__", annotations) < 0)
+                    {
+                        goto error;
+                    }
+                    Py_CLEAR(annotations);
+                }
                 return 1;
+            error:
+                Py_XDECREF(annotations);
+                return 0;
             }
         '''))
 
     def visitProduct(self, prod, name):
-        self.emit_annotations(name, prod.fields)
+        self.nodes.append((name, prod.fields))
 
     def visitSum(self, sum, name):
         for t in sum.types:
             self.visitConstructor(t, name)
 
     def visitConstructor(self, cons, name):
-        self.emit_annotations(cons.name, cons.fields)
-
-    def emit_annotations(self, name, fields):
-        self.emit(f"PyObject *{name}_annotations = PyDict_New();", 1)
-        self.emit(f"if (!{name}_annotations) return 0;", 1)
-        for field in fields:
-            self.emit("{", 1)
-            if field.type in builtin_type_to_c_type:
-                self.emit(f"PyObject *type = (PyObject *)&{builtin_type_to_c_type[field.type]};", 2)
-            else:
-                self.emit(f"PyObject *type = state->{field.type}_type;", 2)
-            if field.opt:
-                self.emit("type = _Py_union_type_or(type, Py_None);", 2)
-                self.emit("cond = type != NULL;", 2)
-                self.emit_annotations_error(name, 2)
-            elif field.seq:
-                self.emit("type = Py_GenericAlias((PyObject *)&PyList_Type, type);", 2)
-                self.emit("cond = type != NULL;", 2)
-                self.emit_annotations_error(name, 2)
-            else:
-                self.emit("Py_INCREF(type);", 2)
-            self.emit(f"cond = PyDict_SetItemString({name}_annotations, \"{field.name}\", type) == 0;", 2)
-            self.emit("Py_DECREF(type);", 2)
-            self.emit_annotations_error(name, 2)
-            self.emit("}", 1)
-        self.emit(f'cond = PyObject_SetAttrString(state->{name}_type, "_field_types", {name}_annotations) == 0;', 1)
-        self.emit_annotations_error(name, 1)
-        self.emit(f'cond = PyObject_SetAttrString(state->{name}_type, "__annotations__", {name}_annotations) == 0;', 1)
-        self.emit_annotations_error(name, 1)
-        self.emit(f"Py_DECREF({name}_annotations);", 1)
-
-    def emit_annotations_error(self, name, depth):
-        self.emit("if (!cond) {", depth)
-        self.emit(f"Py_DECREF({name}_annotations);", depth + 1)
-        self.emit("return 0;", depth + 1)
-        self.emit("}", depth)
+        self.nodes.append((cons.name, cons.fields))
 
 
 class PyTypesVisitor(PickleVisitor):
@@ -873,12 +947,89 @@ ast_clear(PyObject *op)
     return 0;
 }
 
+/*
+ * Format the names in the set 'missing' into a natural language list,
+ * sorted in the order in which they appear in 'fields'.
+ *
+ * Similar to format_missing() from 'Python/ceval.c'.
+ *
+ * Parameters
+ *
+ *      missing     Set of missing field names to render.
+ *      fields      Sequence of AST node field names (self._fields).
+ */
+static PyObject *
+format_missing(PyObject *missing, PyObject *fields)
+{
+    Py_ssize_t num_fields, num_total, num_left;
+    num_fields = PySequence_Size(fields);
+    if (num_fields == -1) {
+        return NULL;
+    }
+    num_total = num_left = PySet_GET_SIZE(missing);
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        goto error;
+    }
+    // Iterate all AST node fields in order so that the missing positional
+    // arguments are rendered in the order in which __init__ expects them.
+    for (Py_ssize_t i = 0; i < num_fields; i++) {
+        PyObject *name = PySequence_GetItem(fields, i);
+        if (name == NULL) {
+            goto error;
+        }
+        int contains = PySet_Contains(missing, name);
+        if (contains == -1) {
+            Py_DECREF(name);
+            goto error;
+        }
+        else if (contains == 1) {
+            const char* fmt = NULL;
+            if (num_left == 1) {
+                fmt = "'%U'";
+            }
+            else if (num_total == 2) {
+                fmt = "'%U' and ";
+            }
+            else if (num_left == 2) {
+                fmt = "'%U', and ";
+            }
+            else {
+                fmt = "'%U', ";
+            }
+            num_left--;
+            if (PyUnicodeWriter_Format(writer, fmt, name) < 0) {
+                Py_DECREF(name);
+                goto error;
+            }
+        }
+        Py_DECREF(name);
+    }
+    return PyUnicodeWriter_Finish(writer);
+error:
+    PyUnicodeWriter_Discard(writer);
+    return NULL;
+}
+
 static int
 ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 {
     struct ast_state *state = get_ast_state();
     if (state == NULL) {
         return -1;
+    }
+
+    int contains = PySet_Contains(state->abstract_types, (PyObject *)Py_TYPE(self));
+    if (contains == -1) {
+        return -1;
+    }
+    else if (contains == 1) {
+        if (PyErr_WarnFormat(
+                PyExc_DeprecationWarning, 1,
+                "Instantiating abstract AST node class %T is deprecated. "
+                "This will become an error in Python 3.20", self) < 0) {
+            return -1;
+        }
     }
 
     Py_ssize_t i, numfields = 0;
@@ -901,10 +1052,9 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 
     res = 0; /* if no error occurs, this stays 0 to the end */
     if (numfields < PyTuple_GET_SIZE(args)) {
-        PyErr_Format(PyExc_TypeError, "%.400s constructor takes at most "
+        PyErr_Format(PyExc_TypeError, "%T constructor takes at most "
                      "%zd positional argument%s",
-                     _PyType_Name(Py_TYPE(self)),
-                     numfields, numfields == 1 ? "" : "s");
+                     self, numfields, numfields == 1 ? "" : "s");
         res = -1;
         goto cleanup;
     }
@@ -942,8 +1092,8 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 }
                 if (p == 0) {
                     PyErr_Format(PyExc_TypeError,
-                        "%.400s got multiple values for argument '%U'",
-                        Py_TYPE(self)->tp_name, key);
+                        "%T got multiple values for argument %R",
+                        self, key);
                     res = -1;
                     goto cleanup;
                 }
@@ -963,16 +1113,11 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                     goto cleanup;
                 }
                 else if (contains == 0) {
-                    if (PyErr_WarnFormat(
-                        PyExc_DeprecationWarning, 1,
-                        "%.400s.__init__ got an unexpected keyword argument '%U'. "
-                        "Support for arbitrary keyword arguments is deprecated "
-                        "and will be removed in Python 3.15.",
-                        Py_TYPE(self)->tp_name, key
-                    ) < 0) {
-                        res = -1;
-                        goto cleanup;
-                    }
+                    PyErr_Format(PyExc_TypeError,
+                        "%T.__init__ got an unexpected keyword argument %R",
+                        self, key);
+                    res = -1;
+                    goto cleanup;
                 }
             }
             res = PyObject_SetAttr(self, key, value);
@@ -982,7 +1127,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
         }
     }
     Py_ssize_t size = PySet_Size(remaining_fields);
-    PyObject *field_types = NULL, *remaining_list = NULL;
+    PyObject *field_types = NULL, *remaining_list = NULL, *missing_names = NULL;
     if (size > 0) {
         if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), &_Py_ID(_field_types),
                                      &field_types) < 0) {
@@ -999,6 +1144,10 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
         if (!remaining_list) {
             goto set_remaining_cleanup;
         }
+        missing_names = PySet_New(NULL);
+        if (!missing_names) {
+            goto set_remaining_cleanup;
+        }
         for (Py_ssize_t i = 0; i < size; i++) {
             PyObject *name = PyList_GET_ITEM(remaining_list, i);
             PyObject *type = PyDict_GetItemWithError(field_types, name);
@@ -1007,14 +1156,10 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                     goto set_remaining_cleanup;
                 }
                 else {
-                    if (PyErr_WarnFormat(
-                        PyExc_DeprecationWarning, 1,
-                        "Field '%U' is missing from %.400s._field_types. "
-                        "This will become an error in Python 3.15.",
-                        name, Py_TYPE(self)->tp_name
-                    ) < 0) {
-                        goto set_remaining_cleanup;
-                    }
+                    PyErr_Format(PyExc_TypeError,
+                        "Field %R is missing from %T._field_types",
+                        name, self);
+                    goto set_remaining_cleanup;
                 }
             }
             else if (_PyUnion_Check(type)) {
@@ -1042,16 +1187,25 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
             }
             else {
                 // simple field (e.g., identifier)
-                if (PyErr_WarnFormat(
-                    PyExc_DeprecationWarning, 1,
-                    "%.400s.__init__ missing 1 required positional argument: '%U'. "
-                    "This will become an error in Python 3.15.",
-                    Py_TYPE(self)->tp_name, name
-                ) < 0) {
+                res = PySet_Add(missing_names, name);
+                if (res < 0) {
                     goto set_remaining_cleanup;
                 }
             }
         }
+        Py_ssize_t num_missing = PySet_GET_SIZE(missing_names);
+        if (num_missing > 0) {
+            PyObject *name_str = format_missing(missing_names, fields);
+            if (!name_str) {
+                goto set_remaining_cleanup;
+            }
+            PyErr_Format(PyExc_TypeError,
+                "%T.__init__ missing %d required positional argument%s: %U",
+                self, num_missing, num_missing == 1 ? "" : "s", name_str);
+            Py_DECREF(name_str);
+            goto set_remaining_cleanup;
+        }
+        Py_DECREF(missing_names);
         Py_DECREF(remaining_list);
         Py_DECREF(field_types);
     }
@@ -1061,6 +1215,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     Py_XDECREF(remaining_fields);
     return res;
   set_remaining_cleanup:
+    Py_XDECREF(missing_names);
     Py_XDECREF(remaining_list);
     Py_XDECREF(field_types);
     res = -1;
@@ -1142,182 +1297,6 @@ cleanup:
     Py_XDECREF(fields);
     Py_XDECREF(positional_args);
     return result;
-}
-
-/*
- * Perform the following validations:
- *
- *   - All keyword arguments are known 'fields' or 'attributes'.
- *   - No field or attribute would be left unfilled after copy.replace().
- *
- * On success, this returns 1. Otherwise, set a TypeError
- * exception and returns -1 (no exception is set if some
- * other internal errors occur).
- *
- * Parameters
- *
- *      self          The AST node instance.
- *      dict          The AST node instance dictionary (self.__dict__).
- *      fields        The list of fields (self._fields).
- *      attributes    The list of attributes (self._attributes).
- *      kwargs        Keyword arguments passed to ast_type_replace().
- *
- * The 'dict', 'fields', 'attributes' and 'kwargs' arguments can be NULL.
- *
- * Note: this function can be removed in 3.15 since the verification
- *       will be done inside the constructor.
- */
-static inline int
-ast_type_replace_check(PyObject *self,
-                       PyObject *dict,
-                       PyObject *fields,
-                       PyObject *attributes,
-                       PyObject *kwargs)
-{
-    // While it is possible to make some fast paths that would avoid
-    // allocating objects on the stack, this would cost us readability.
-    // For instance, if 'fields' and 'attributes' are both empty, and
-    // 'kwargs' is not empty, we could raise a TypeError immediately.
-    PyObject *expecting = PySet_New(fields);
-    if (expecting == NULL) {
-        return -1;
-    }
-    if (attributes) {
-        if (_PySet_Update(expecting, attributes) < 0) {
-            Py_DECREF(expecting);
-            return -1;
-        }
-    }
-    // Any keyword argument that is neither a field nor attribute is rejected.
-    // We first need to check whether a keyword argument is accepted or not.
-    // If all keyword arguments are accepted, we compute the required fields
-    // and attributes. A field or attribute is not needed if:
-    //
-    //  1) it is given in 'kwargs', or
-    //  2) it already exists on 'self'.
-    if (kwargs) {
-        Py_ssize_t pos = 0;
-        PyObject *key, *value;
-        while (PyDict_Next(kwargs, &pos, &key, &value)) {
-            int rc = PySet_Discard(expecting, key);
-            if (rc < 0) {
-                Py_DECREF(expecting);
-                return -1;
-            }
-            if (rc == 0) {
-                PyErr_Format(PyExc_TypeError,
-                             "%.400s.__replace__ got an unexpected keyword "
-                             "argument '%U'.", Py_TYPE(self)->tp_name, key);
-                Py_DECREF(expecting);
-                return -1;
-            }
-        }
-    }
-    // check that the remaining fields or attributes would be filled
-    if (dict) {
-        Py_ssize_t pos = 0;
-        PyObject *key, *value;
-        while (PyDict_Next(dict, &pos, &key, &value)) {
-            // Mark fields or attributes that are found on the instance
-            // as non-mandatory. If they are not given in 'kwargs', they
-            // will be shallow-coied; otherwise, they would be replaced
-            // (not in this function).
-            if (PySet_Discard(expecting, key) < 0) {
-                Py_DECREF(expecting);
-                return -1;
-            }
-        }
-        if (attributes) {
-            // Some attributes may or may not be present at runtime.
-            // In particular, now that we checked whether 'kwargs'
-            // is correct or not, we allow any attribute to be missing.
-            //
-            // Note that fields must still be entirely determined when
-            // calling the constructor later.
-            PyObject *unused = PyObject_CallMethodOneArg(expecting,
-                                                         &_Py_ID(difference_update),
-                                                         attributes);
-            if (unused == NULL) {
-                Py_DECREF(expecting);
-                return -1;
-            }
-            Py_DECREF(unused);
-        }
-    }
-
-    // Discard fields from 'expecting' that default to None
-    PyObject *field_types = NULL;
-    if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self),
-                                 &_Py_ID(_field_types),
-                                 &field_types) < 0)
-    {
-        Py_DECREF(expecting);
-        return -1;
-    }
-    if (field_types != NULL) {
-        Py_ssize_t pos = 0;
-        PyObject *field_name, *field_type;
-        while (PyDict_Next(field_types, &pos, &field_name, &field_type)) {
-            if (_PyUnion_Check(field_type)) {
-                // optional field
-                if (PySet_Discard(expecting, field_name) < 0) {
-                    Py_DECREF(expecting);
-                    Py_DECREF(field_types);
-                    return -1;
-                }
-            }
-        }
-        Py_DECREF(field_types);
-    }
-
-    // Now 'expecting' contains the fields or attributes
-    // that would not be filled inside ast_type_replace().
-    Py_ssize_t m = PySet_GET_SIZE(expecting);
-    if (m > 0) {
-        PyObject *names = PyList_New(m);
-        if (names == NULL) {
-            Py_DECREF(expecting);
-            return -1;
-        }
-        Py_ssize_t i = 0, pos = 0;
-        PyObject *item;
-        Py_hash_t hash;
-        while (_PySet_NextEntry(expecting, &pos, &item, &hash)) {
-            PyObject *name = PyObject_Repr(item);
-            if (name == NULL) {
-                Py_DECREF(expecting);
-                Py_DECREF(names);
-                return -1;
-            }
-            // steal the reference 'name'
-            PyList_SET_ITEM(names, i++, name);
-        }
-        Py_DECREF(expecting);
-        if (PyList_Sort(names) < 0) {
-            Py_DECREF(names);
-            return -1;
-        }
-        PyObject *sep = PyUnicode_FromString(", ");
-        if (sep == NULL) {
-            Py_DECREF(names);
-            return -1;
-        }
-        PyObject *str_names = PyUnicode_Join(sep, names);
-        Py_DECREF(sep);
-        Py_DECREF(names);
-        if (str_names == NULL) {
-            return -1;
-        }
-        PyErr_Format(PyExc_TypeError,
-                     "%.400s.__replace__ missing %ld keyword argument%s: %U.",
-                     Py_TYPE(self)->tp_name, m, m == 1 ? "" : "s", str_names);
-        Py_DECREF(str_names);
-        return -1;
-    }
-    else {
-        Py_DECREF(expecting);
-        return 1;
-    }
 }
 
 /*
@@ -1407,9 +1386,6 @@ ast_type_replace(PyObject *self, PyObject *args, PyObject *kwargs)
         goto cleanup;
     }
     if (PyObject_GetOptionalAttr(self, state->__dict__, &dict) < 0) {
-        goto cleanup;
-    }
-    if (ast_type_replace_check(self, dict, fields, attributes, kwargs) < 0) {
         goto cleanup;
     }
     empty_tuple = PyTuple_New(0);
@@ -1565,35 +1541,34 @@ ast_repr_max_depth(AST_object *self, int depth)
         return NULL;
     }
 
-    if (depth <= 0) {
-        return PyUnicode_FromFormat("%s(...)", Py_TYPE(self)->tp_name);
-    }
-
-    int status = Py_ReprEnter((PyObject *)self);
-    if (status != 0) {
-        if (status < 0) {
-            return NULL;
-        }
-        return PyUnicode_FromFormat("%s(...)", Py_TYPE(self)->tp_name);
-    }
-
-    PyObject *fields;
-    if (PyObject_GetOptionalAttr((PyObject *)Py_TYPE(self), state->_fields, &fields) < 0) {
-        Py_ReprLeave((PyObject *)self);
+    PyObject *fields = PyObject_GetAttr((PyObject *)Py_TYPE(self), state->_fields);
+    if (!fields) {
         return NULL;
     }
 
     Py_ssize_t numfields = PySequence_Size(fields);
     if (numfields < 0) {
-        Py_ReprLeave((PyObject *)self);
         Py_DECREF(fields);
         return NULL;
     }
 
     if (numfields == 0) {
-        Py_ReprLeave((PyObject *)self);
         Py_DECREF(fields);
         return PyUnicode_FromFormat("%s()", Py_TYPE(self)->tp_name);
+    }
+
+    if (depth <= 0) {
+        Py_DECREF(fields);
+        return PyUnicode_FromFormat("%s(...)", Py_TYPE(self)->tp_name);
+    }
+
+    int status = Py_ReprEnter((PyObject *)self);
+    if (status != 0) {
+        Py_DECREF(fields);
+        if (status < 0) {
+            return NULL;
+        }
+        return PyUnicode_FromFormat("%s(...)", Py_TYPE(self)->tp_name);
     }
 
     const char* tp_name = Py_TYPE(self)->tp_name;
@@ -1798,7 +1773,9 @@ static PyObject* ast2obj_int(struct ast_state *Py_UNUSED(state), long b)
 
 /* Conversion Python -> AST */
 
-static int obj2ast_object(struct ast_state *Py_UNUSED(state), PyObject* obj, PyObject** out, PyArena* arena)
+static int obj2ast_object(struct ast_state *Py_UNUSED(state), PyObject* obj,
+                          PyObject** out,
+                          const char* Py_UNUSED(field), PyArena* arena)
 {
     if (obj == Py_None)
         obj = NULL;
@@ -1815,7 +1792,9 @@ static int obj2ast_object(struct ast_state *Py_UNUSED(state), PyObject* obj, PyO
     return 0;
 }
 
-static int obj2ast_constant(struct ast_state *Py_UNUSED(state), PyObject* obj, PyObject** out, PyArena* arena)
+static int obj2ast_constant(struct ast_state *Py_UNUSED(state), PyObject* obj,
+                            PyObject** out,
+                            const char* Py_UNUSED(field), PyArena* arena)
 {
     if (_PyArena_AddPyObject(arena, obj) < 0) {
         *out = NULL;
@@ -1825,29 +1804,29 @@ static int obj2ast_constant(struct ast_state *Py_UNUSED(state), PyObject* obj, P
     return 0;
 }
 
-static int obj2ast_identifier(struct ast_state *state, PyObject* obj, PyObject** out, PyArena* arena)
+static int obj2ast_identifier(struct ast_state *state, PyObject* obj, PyObject** out, const char* field, PyArena* arena)
 {
     if (!PyUnicode_CheckExact(obj) && obj != Py_None) {
-        PyErr_SetString(PyExc_TypeError, "AST identifier must be of type str");
+        PyErr_Format(PyExc_TypeError, "field '%s' was expecting a string object, got %T", field, obj);
         return -1;
     }
-    return obj2ast_object(state, obj, out, arena);
+    return obj2ast_object(state, obj, out, field, arena);
 }
 
-static int obj2ast_string(struct ast_state *state, PyObject* obj, PyObject** out, PyArena* arena)
+static int obj2ast_string(struct ast_state *state, PyObject* obj, PyObject** out, const char* field, PyArena* arena)
 {
     if (!PyUnicode_CheckExact(obj) && !PyBytes_CheckExact(obj)) {
-        PyErr_SetString(PyExc_TypeError, "AST string must be of type str");
+        PyErr_Format(PyExc_TypeError, "field '%s' was expecting a string or bytes object, got %T", field, obj);
         return -1;
     }
-    return obj2ast_object(state, obj, out, arena);
+    return obj2ast_object(state, obj, out, field, arena);
 }
 
-static int obj2ast_int(struct ast_state* Py_UNUSED(state), PyObject* obj, int* out, PyArena* arena)
+static int obj2ast_int(struct ast_state* Py_UNUSED(state), PyObject* obj, int* out, const char* field, PyArena* arena)
 {
     int i;
     if (!PyLong_Check(obj)) {
-        PyErr_Format(PyExc_ValueError, "invalid integer value: %R", obj);
+        PyErr_Format(PyExc_ValueError, "field \\"%s\\" got an invalid integer value: %R", field, obj);
         return -1;
     }
 
@@ -1885,6 +1864,13 @@ static int add_ast_fields(struct ast_state *state)
                 }
                 state->AST_type = PyType_FromSpec(&AST_type_spec);
                 if (!state->AST_type) {
+                    return -1;
+                }
+                state->abstract_types = PySet_New(NULL);
+                if (!state->abstract_types) {
+                    return -1;
+                }
+                if (PySet_Add(state->abstract_types, state->AST_type) < 0) {
                     return -1;
                 }
                 if (add_ast_fields(state) < 0) {
@@ -1928,6 +1914,7 @@ static int add_ast_fields(struct ast_state *state)
                             (name, name, len(sum.attributes)), 1)
         else:
             self.emit("if (add_attributes(state, state->%s_type, NULL, 0) < 0) return -1;" % name, 1)
+        self.emit("if (PySet_Add(state->abstract_types, state->%s_type) < 0) return -1;" % name, 1)
         self.emit_defaults(name, sum.attributes, 1)
         simple = is_simple(sum)
         for t in sum.types:
@@ -1960,6 +1947,30 @@ static int add_ast_fields(struct ast_state *state)
 class ASTModuleVisitor(PickleVisitor):
 
     def visitModule(self, mod):
+        self.emit("""
+/* Helper for checking if a node class is abstract in the tests. */
+static PyObject *
+ast_is_abstract(PyObject *Py_UNUSED(module), PyObject *cls) {
+    struct ast_state *state = get_ast_state();
+    if (state == NULL) {
+        return NULL;
+    }
+    int contains = PySet_Contains(state->abstract_types, cls);
+    if (contains == -1) {
+        return NULL;
+    }
+    else if (contains == 1) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
+static struct PyMethodDef astmodule_methods[] = {
+    {"_is_abstract", ast_is_abstract, METH_O, NULL},
+    {NULL}  /* Sentinel */
+};
+""".strip(), 0, reflow=False)
+        self.emit("", 0)
         self.emit("static int", 0)
         self.emit("astmodule_exec(PyObject *m)", 0)
         self.emit("{", 0)
@@ -1989,6 +2000,7 @@ class ASTModuleVisitor(PickleVisitor):
         self.emit("", 0)
         self.emit("""
 static PyModuleDef_Slot astmodule_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, astmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -2000,7 +2012,8 @@ static struct PyModuleDef _astmodule = {
     .m_name = "_ast",
     // The _ast module uses a per-interpreter state (PyInterpreterState.ast)
     .m_size = 0,
-    .m_slots = astmodule_slots,
+    .m_methods = astmodule_methods,
+    .m_slots = astmodule_slots
 };
 
 PyMODINIT_FUNC
@@ -2169,29 +2182,32 @@ PyObject* PyAST_mod2obj(mod_ty t)
     return result;
 }
 
-/* mode is 0 for "exec", 1 for "eval" and 2 for "single" input */
+/* mode is 0 for "exec", 1 for "eval", 2 for "single" and 3 for "func_type"
+   input */
 int PyAst_CheckMode(PyObject *ast, int mode)
 {
-    const char * const req_name[] = {"Module", "Expression", "Interactive"};
+    const char * const req_name[] = {"Module", "Expression", "Interactive",
+                                     "FunctionType"};
 
     struct ast_state *state = get_ast_state();
     if (state == NULL) {
         return -1;
     }
 
-    PyObject *req_type[3];
+    PyObject *req_type[4];
     req_type[0] = state->Module_type;
     req_type[1] = state->Expression_type;
     req_type[2] = state->Interactive_type;
+    req_type[3] = state->FunctionType_type;
 
-    assert(0 <= mode && mode <= 2);
+    assert(0 <= mode && mode <= 3);
     int isinstance = PyObject_IsInstance(ast, req_type[mode]);
     if (isinstance == -1) {
         return -1;
     }
     if (!isinstance) {
-        PyErr_Format(PyExc_TypeError, "expected %s node, got %.400s",
-                     req_name[mode], _PyType_Name(Py_TYPE(ast)));
+        PyErr_Format(PyExc_TypeError, "expected %s node, got %T",
+                     req_name[mode], ast);
         return -1;
     }
     return 0;
@@ -2213,7 +2229,7 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
     }
 
     mod_ty res = NULL;
-    if (obj2ast_mod(state, ast, &res, arena) != 0)
+    if (obj2ast_mod(state, ast, &res, NULL, arena) != 0)
         return NULL;
     else
         return res;
@@ -2257,9 +2273,15 @@ def generate_ast_fini(module_state, f):
                 struct ast_state *state = &interp->ast;
 
     """))
+    f.write("    static const size_t offsets[] = {\n")
     for s in module_state:
-        f.write("    Py_CLEAR(state->" + s + ');\n')
+        f.write("        offsetof(struct ast_state, " + s + "),\n")
+    f.write("    };\n")
     f.write(textwrap.dedent("""
+                for (size_t i = 0; i < Py_ARRAY_LENGTH(offsets); i++) {
+                    PyObject **field = (PyObject **)((char *)state + offsets[i]);
+                    Py_CLEAR(*field);
+                }
                 state->finalized = 1;
                 state->once = (_PyOnceFlag){0};
             }
@@ -2289,6 +2311,7 @@ def generate_module_def(mod, metadata, f, internal_h):
         "%s_type" % type
         for type in metadata.types
     )
+    module_state.add("abstract_types")
 
     state_strings = sorted(state_strings)
     module_state = sorted(module_state)

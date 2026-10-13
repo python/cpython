@@ -1,6 +1,0 @@
-Synchronized zipfile.Path with zipp 3.23, including improved performance of
-:meth:`zipfile.Path.open` for non-reading modes, rely on
-:func:`functools.cached_property` to cache values on the instance. Rely on
-``save_method_args`` to save the initialization method arguments. Fixed
-``.name``, ``.stem`` and other basename-based properties on Windows when
-working with a zipfile on disk.
