@@ -128,7 +128,7 @@ Key and value types
 -------------------
 
 The accepted types for keys and values vary by backend. Keys and values are
-handled identically:
+handled the same way, except where noted below:
 
 * **Traditional backends:**
 
