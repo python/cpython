@@ -197,23 +197,19 @@ def get_unexpected_improvements(
     files_with_warnings: dict[str, list[CompileWarning]],
 ) -> int:
     """
-    Returns failure status if the number of warnings for a file is greater
+    Returns failure status if the number of warnings for a file is smaller
     than the expected number of warnings for that file based on the ignore
     rules
     """
     unexpected_improvements = []
     for rule in ignore_rules:
-        if (
-            not rule.ignore_all
-            and rule.file_path not in files_with_warnings.keys()
-        ):
-            if rule.file_path not in files_with_warnings.keys():
-                unexpected_improvements.append((rule.file_path, rule.count, 0))
-            elif len(files_with_warnings[rule.file_path]) < rule.count:
+        if not rule.ignore_all:
+            count = len(files_with_warnings.get(rule.file_path, ()))
+            if count < rule.count:
                 unexpected_improvements.append((
                     rule.file_path,
                     rule.count,
-                    len(files_with_warnings[rule.file_path]),
+                    count,
                 ))
 
     if unexpected_improvements:
