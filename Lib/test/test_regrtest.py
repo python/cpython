@@ -1641,8 +1641,8 @@ class ArgsTestCase(BaseTestCase):
 
     def test_github_actions(self):
         # Failures are annotated in the GitHub Actions job log at the failing
-        # line ("# fail") of the test file, and listed in the job summary
-        code = textwrap.dedent("""
+        # line of the test file, and listed in the job summary
+        cases = self.create_test('github_cases', textwrap.dedent("""
             import doctest, sys, unittest
 
             def load_tests(loader, tests, pattern):
@@ -1651,16 +1651,15 @@ class ArgsTestCase(BaseTestCase):
 
             def doctest_fail():
                 '''
-                >>> 1 + 1  # fail
+                >>> 1 + 1
                 3
                 '''
 
             class Tests(unittest.TestCase):
                 def test_subtest(self):
                     with self.subTest(x=1):
-                        self.fail()  # fail
-        """)
-        cases = self.create_test('github_cases', code)
+                        self.fail()
+        """))
         crash = self.create_test('github_crash', textwrap.dedent("""
             import os, unittest
 
@@ -1671,18 +1670,40 @@ class ArgsTestCase(BaseTestCase):
         filename = os.path.join(self.tmptestdir, 'github_step_summary.md')
         env = dict(os.environ, GITHUB_STEP_SUMMARY=filename)
         env.pop('SOURCE_DATE_EPOCH', None)
-        output = self.run_tests('--fast-ci', '-j2', cases, crash,
+        # A single worker without --randomize runs the tests in order
+        output = self.run_tests('-j1', '--rerun', cases, crash,
                                 env=env, exitcode=EXITCODE_BAD_TEST)
-        # One annotation per failure of the re-run, not of the first run:
-        # one per "# fail" line, and the crash (without a line)
-        fail_lines = [(f'{cases}.py', str(lineno))
-                      for lineno, line in enumerate(code.splitlines(), 1)
-                      if line.endswith('# fail')]
-        self.assertCountEqual(
-            re.findall(r'^::error file=[^,]*?([^/,]+?)(?:,line=(\d+))?,title=',
-                       output, re.MULTILINE),
-            fail_lines + [(f'{crash}.py', '')],
-            output)
+
+        def unescape(text):
+            for char in '\r\n:,%':
+                text = text.replace(f'%{ord(char):02X}', char)
+            return text
+
+        annotations = []
+        for props, message in re.findall(r'^::error (.*?)::(.*)$', output,
+                                         re.MULTILINE):
+            props = dict(prop.split('=', 1) for prop in props.split(','))
+            annotations.append(({key: unescape(value)
+                                 for key, value in props.items()},
+                                unescape(message)))
+        # One annotation per failure of the re-run, not of the first run
+        cases_file = os.path.join(self.tmptestdir, f'{cases}.py')
+        crash_file = os.path.join(self.tmptestdir, f'{crash}.py')
+        self.assertEqual(annotations, [
+            ({'file': cases_file, 'line': '17',
+              'title': f'test_subtest ({cases}.Tests.test_subtest) (x=1)'},
+             'AssertionError: None'),
+            ({'file': cases_file, 'line': '10',
+              'title': f'doctest_fail ({cases}) [0]'},
+             'AssertionError: Failed example:\n'
+             '    1 + 1\n'
+             'Expected:\n'
+             '    3\n'
+             'Got:\n'
+             '    2'),
+            ({'file': crash_file, 'title': crash},
+             f'{crash} worker non-zero exit code'),
+        ], output)
         with open(filename, encoding='utf-8') as fp:
             summary = fp.read()
         self.assertIn('## FAILURE: 2 test files and 2 test cases failed',
