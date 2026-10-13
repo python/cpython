@@ -221,11 +221,12 @@ class TestResult:
             name = self.test_name.removeprefix("test.")
             path = pathlib.Path(findtestdir(runtests.test_dir),
                                 *name.split("."))
-            filename = path.with_suffix(".py")
-            if not filename.exists():
-                filename = path / "__init__.py"
+            if path.with_suffix(".py").exists():
+                filename = str(path.with_suffix(".py"))
+            else:
+                filename = str(path / "__init__.py")
         message = "\n".join([str(self), *(self.env_changed_reasons or ())])
-        print_github_annotation(self.test_name, message, str(filename))
+        print_github_annotation(self.test_name, message, filename)
 
     def set_env_changed(self, *reasons):
         if self.state is None or self.state == State.PASSED:
