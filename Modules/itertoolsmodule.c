@@ -3675,7 +3675,7 @@ static PyObject *
 count_repr(PyObject *op)
 {
     countobject *lz = countobject_CAST(op);
-    PyObject *long_cnt, *msg;
+    PyObject *long_cnt;
 
     Py_BEGIN_CRITICAL_SECTION(lz);
     long_cnt = Py_XNewRef(lz->long_cnt);
@@ -3696,9 +3696,11 @@ count_repr(PyObject *op)
     }
 
     /* Don't display step when it is an integer equal to 1 */
-    msg = PyUnicode_FromFormat(step == 1 ? "%s(%R)" : "%s(%R, %R)",
-                               _PyType_Name(Py_TYPE(lz)),
-                               long_cnt, lz->long_step);
+    PyObject *msg = (step == 1)
+              ? PyUnicode_FromFormat("%s(%R)", _PyType_Name(Py_TYPE(lz)), long_cnt)
+              : PyUnicode_FromFormat("%s(%R, %R)", _PyType_Name(Py_TYPE(lz)),
+                                     long_cnt, lz->long_step);
+
     Py_DECREF(long_cnt);
     return msg;
 }
