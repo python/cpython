@@ -1860,12 +1860,14 @@ Manipulating sys.path
 
    A context manager that will create a new Python module *name* with *source*
    source code in a temporary directory and inserts this directory at the start
-   of :data:`sys.path`.
+   of :data:`sys.path`. The context manager yields a tuple with the name and the path
+   to the script in the temporary directory.
 
    If the name matches an existing module, this will be cleared from :data:`sys.modules`
    on entry and restored on exit.
 
-   Yields (name, path_to_script)
+   If no name is given, the module will be named "spam".
+
 
 
 Manipulating internals
