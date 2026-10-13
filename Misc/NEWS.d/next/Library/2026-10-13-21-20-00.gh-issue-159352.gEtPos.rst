@@ -1,0 +1,2 @@
+Fix :func:`getopt.gnu_getopt` to honor the :envvar:`!POSIXLY_CORRECT`
+environment variable when it is set to an empty string.

@@ -222,6 +222,20 @@ class GetoptTests(unittest.TestCase):
         self.assertEqual(args, [])
 
 
+    def test_gnu_getopt_posixly_correct(self):
+        cmdline = ['-a', 'arg', '-b']
+        self.assertEqual(getopt.gnu_getopt(cmdline, 'ab'),
+                         ([('-a', ''), ('-b', '')], ['arg']))
+
+        for value in ('', '1'):
+            with self.subTest(value=value):
+                self.env['POSIXLY_CORRECT'] = value
+                self.assertEqual(getopt.gnu_getopt(cmdline, 'ab'),
+                                 ([('-a', '')], ['arg', '-b']))
+                self.assertEqual(
+                    getopt.gnu_getopt(cmdline, '-ab'),
+                    ([('-a', ''), (None, ['arg']), ('-b', '')], []))
+
     def test_issue4629(self):
         longopts, shortopts = getopt.getopt(['--help='], '', ['help='])
         self.assertEqual(longopts, [('--help', '')])
