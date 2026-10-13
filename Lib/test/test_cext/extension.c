@@ -104,7 +104,6 @@ test_macros(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_CLEAR(slots[0]);
     assert(slots[0] == _Py_NULL);
 
-#ifndef Py_LIMITED_API
     // Test Py_SETREF(): use typeof()/__typeof__() if available, or memcpy()
     obj = Py_None;
     Py_SETREF(obj, _Py_NULL);
@@ -124,7 +123,6 @@ test_macros(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     slots[0] = Py_None;
     Py_XSETREF(slots[0], _Py_NULL);
     assert(slots[0] == _Py_NULL);
-#endif
 
     // Test that Py_BEGIN_CRITICAL_SECTION is available
     dict = PyDict_New();
@@ -385,6 +383,11 @@ module_exec(PyObject *module)
 {
 #ifdef __STDC_VERSION__
     if (PyModule_AddIntMacro(module, __STDC_VERSION__) < 0) {
+        return -1;
+    }
+#endif
+#ifdef __STRICT_ANSI__
+    if (PyModule_AddIntConstant(module, "__STRICT_ANSI__", 1) < 0) {
         return -1;
     }
 #endif
