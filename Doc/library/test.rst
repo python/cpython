@@ -1715,7 +1715,7 @@ Creating module objects
 
 .. function:: add_package(spec, *, parents=True)
 
-   Create a :term:`package` from a name and add it to :data:`sys.modules`.
+   Create a :term:`package` from a name or spec and add it to :data:`sys.modules`.
 
    If *parents* is ``True``, create any missing parent modules.
 
