@@ -355,7 +355,7 @@ class CodeopTests(unittest.TestCase):
     def test_incomplete_warning(self, compiler):
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter('always')
-        compiler("'\\e' + (")
+            compiler("'\\e' + (")
         self.assertEqual(w, [])
 
     @subTests('compiler', RAW_COMPILERS)
