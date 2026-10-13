@@ -689,7 +689,8 @@ extern PyObject* unwind_stack_for_thread(
     uintptr_t gil_holder_tstate,
     uintptr_t gc_frame,
     uintptr_t main_thread_tstate,
-    const RemoteReadPrefetch *prefetch
+    const RemoteReadPrefetch *prefetch,
+    int *has_bound_stack
 );
 
 /* Thread stopping functions (for blocking mode) */

@@ -335,7 +335,8 @@ unwind_stack_for_thread(
     uintptr_t gil_holder_tstate,
     uintptr_t gc_frame,
     uintptr_t main_thread_tstate,
-    const RemoteReadPrefetch *prefetch
+    const RemoteReadPrefetch *prefetch,
+    int *has_bound_stack
 ) {
     PyObject *frame_info = NULL;
     PyObject *thread_id = NULL;
@@ -617,6 +618,10 @@ unwind_stack_for_thread(
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create thread status");
         goto error;
     }
+
+    *has_bound_stack = GET_MEMBER(
+        _thread_status, ts, unwinder->debug_offsets.thread_state.status).bound_gilstate
+        && PyList_GET_SIZE(frame_info) != 0;
 
     // py_status contains status flags (bitfield)
     PyStructSequence_SetItem(result, 0, thread_id);
