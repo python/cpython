@@ -662,7 +662,8 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
 
         """
         message = (format % args).translate(self._control_char_table)
-        t = _colorize.get_theme(tty_file=sys.stderr).http_server
+        stderr = sys.stderr
+        t = _colorize.get_theme(tty_file=stderr).http_server
 
         info = getattr(self, "_log_request_info", None)
         if info is not None:
@@ -672,7 +673,9 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
             self._log_is_error = False
             message = f"{t.error}{message}{t.reset}"
 
-        sys.stderr.write(
+        if stderr is None:
+            return
+        stderr.write(
             f"{t.timestamp}{self.address_string()} - - "
             f"[{self.log_date_time_string()}]{t.reset} "
             f"{message}\n"
