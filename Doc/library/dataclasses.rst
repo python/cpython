@@ -480,7 +480,7 @@ Module contents
 
    .. versionadded:: 3.14
       Added the *decorator* parameter.
-   .. versionadded:: next
+   .. versionadded:: 3.16
       Added the *qualname* parameter.
 
 .. function:: replace(obj, /, **changes)
