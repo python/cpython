@@ -459,6 +459,18 @@ class DictTest(unittest.TestCase):
         d2 = d.copy()
         self.assertEqual(d2, d)
 
+    @support.nomemtest
+    def test_copy_empty_no_memory(self):
+        import _testcapi
+        d = {}
+        d_copy = d.copy
+        with self.assertRaises(MemoryError):
+            try:
+                _testcapi.set_nomemory(0)
+                d_copy()
+            finally:
+                _testcapi.remove_mem_hooks()
+
     def test_get(self):
         d = {}
         self.assertIs(d.get('c'), None)
@@ -678,7 +690,7 @@ class DictTest(unittest.TestCase):
         d = {1: BadRepr()}
         self.assertRaises(Exc, repr, d)
 
-    @support.skip_if_huge_c_stack()
+    @support.run_with_limited_c_stack()
     @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
     def test_repr_deep(self):

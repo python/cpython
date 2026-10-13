@@ -1,7 +1,7 @@
 import sys
 import unittest
-from test.support import import_helper
 from test import support
+from test.support import import_helper
 
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 _testcapi = import_helper.import_module('_testcapi')
@@ -316,11 +316,11 @@ class CAPITest(unittest.TestCase):
             bytes_join(b'', NULL)
 
 
-class BytesWriterTest(unittest.TestCase):
-    RESULT_TYPE = bytes
+class BaseWriterTest:
+    RESULT_TYPE = NotImplementedError
 
     def create_writer(self, alloc=0, string=b''):
-        return _testcapi.PyBytesWriter(alloc, string, 0)
+        raise NotImplementedError
 
     def bytes_equal(self, result, expected):
         # Similar to assertEqual(), but check also that the result type
@@ -340,13 +340,19 @@ class BytesWriterTest(unittest.TestCase):
 
     def test_finish_with_size(self):
         # Test PyBytesWriter_FinishWithSize()
-        writer = self.create_writer(10, b'abc')
+        writer = self.create_writer(10, b'abcdef')
         self.assertEqual(writer.get_size(), 10)
         self.bytes_equal(writer.finish_with_size(3), b'abc')
 
+        # Error if the size is negative
         writer = self.create_writer(3, b'abc')
-        with self.assertRaises(SystemError):
+        with self.assertRaises(ValueError):
             writer.finish_with_size(-3)
+
+        # Error if the requested size is larger than the allocated size
+        writer = self.create_writer(3, b'abc')
+        with self.assertRaises(ValueError):
+            writer.finish_with_size(4)
 
     def test_write_bytes(self):
         # Test PyBytesWriter_WriteBytes()
@@ -390,6 +396,25 @@ class BytesWriterTest(unittest.TestCase):
         writer.resize(len(b'number=123456'), b'456')
         self.bytes_equal(writer.finish(), b'number=123456')
 
+    @support.nomemtest
+    def test_resize_error(self):
+        small_buffer = _testcapi.PyBytesWriter_small_buffer
+        init = b'x' * (small_buffer * 2)
+        writer = self.create_writer(len(init), init)
+        size = len(init) + 100
+        try:
+            with self.assertRaises(MemoryError):
+                _testcapi.set_nomemory(0)
+                writer.resize(size, b'')
+        finally:
+            _testcapi.remove_mem_hooks()
+        suffix = b'still working'
+        writer.write_bytes(suffix, -1)
+        self.bytes_equal(writer.finish(), init + suffix)
+
+        # Note: PyBytesWriter_Resize() leaves the buffer unchanged (no resize)
+        # if the new size is smaller than the allocated size
+
     def test_format_i(self):
         # Test PyBytesWriter_Format()
         writer = self.create_writer()
@@ -420,6 +445,36 @@ class BytesWriterTest(unittest.TestCase):
         writer.write_bytes(b'after', -1)
         self.bytes_equal(writer.finish(), b'after')
 
+
+class BytesWriterTest(BaseWriterTest, unittest.TestCase):
+    RESULT_TYPE = bytes
+
+    def create_writer(self, alloc=0, string=b''):
+        # Test PyBytesWriter_Create()
+        return _testcapi.PyBytesWriter(alloc, string, 0)
+
+    # Only PyBytesWriter_Create() returns singletons
+    def test_singletons(self):
+        empty = b''
+        singletons = {ch: bytes((ch,)) for ch in range(256)}
+        small_buffer = _testcapi.PyBytesWriter_small_buffer
+
+        writer = self.create_writer()
+        self.assertIs(writer.finish(), empty)
+
+        # Test writer larger than small_buffer
+        writer = self.create_writer()
+        unused_text = b'x' * (small_buffer * 2)
+        writer.write_bytes(unused_text, len(unused_text))
+        self.assertIs(writer.finish_with_size(0), empty)
+
+        for ch in range(256):
+            text = bytes((ch,))
+
+            writer = self.create_writer()
+            writer.write_bytes(text, 1)
+            self.assertIs(writer.finish(), singletons[ch])
+
     def test_example_abc(self):
         self.assertEqual(_testcapi.byteswriter_abc(), b'abc')
 
@@ -430,10 +485,11 @@ class BytesWriterTest(unittest.TestCase):
         self.assertEqual(_testcapi.byteswriter_highlevel(), b'Hello World!')
 
 
-class ByteArrayWriterTest(BytesWriterTest):
+class ByteArrayWriterTest(BaseWriterTest, unittest.TestCase):
     RESULT_TYPE = bytearray
 
     def create_writer(self, alloc=0, string=b''):
+        # Test private _PyBytesWriter_CreateByteArray()
         return _testcapi.PyBytesWriter(alloc, string, 1)
 
 

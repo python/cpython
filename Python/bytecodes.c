@@ -1785,8 +1785,6 @@ dummy_func(
                 if (index < 0) {
                     ERROR_NO_POP();
                 }
-                next = none;
-                DEAD(none);
                 EXIT_IF(true);
             }
             DEAD(none);
@@ -2335,6 +2333,10 @@ dummy_func(
             res = PyStackRef_FromPyObjectNew(res_o);
             #endif
             STAT_INC(LOAD_GLOBAL, hit);
+        }
+
+        tier2 op(_GUARD_BUILTINS_IS_CANONICAL, (--)) {
+            DEOPT_IF(BUILTINS() != tstate->interp->builtins);
         }
 
         macro(LOAD_GLOBAL_MODULE) =

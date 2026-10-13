@@ -1006,6 +1006,10 @@ clone_combined_dict_keys(PyDictObject *orig)
 
     memcpy(keys, orig->ma_keys, keys_size);
 
+    /* The keys version must be unique per keys object: the specializer
+       and the JIT optimizer rely on it to identify a dict's keys. */
+    keys->dk_version = 0;
+
     /* After copying key/value pairs, we need to incref all
        keys and values and they are about to be co-owned by a
        new dict object. */
@@ -4444,7 +4448,7 @@ copy_lock_held_untracked(PyObject *o, int as_frozendict)
         else {
             d = dict_new_untracked(&PyDict_Type);
         }
-        assert(!_PyObject_GC_IS_TRACKED(d));
+        assert(d == NULL || !_PyObject_GC_IS_TRACKED(d));
         return d;
     }
 

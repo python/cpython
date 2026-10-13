@@ -340,9 +340,9 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
  * `dst` points to a valid object.
  *
  * Temporary variables are used to only evaluate macro arguments once and so
- * avoid the duplication of side effects. _Py_TYPEOF() or memcpy() is used to
- * avoid a miscompilation caused by type punning. See Py_CLEAR() comment for
- * implementation details about type punning.
+ * avoid the duplication of side effects. _Py_TYPEOF(), C++ auto, or memcpy()
+ * is used to avoid a miscompilation caused by type punning. See Py_CLEAR()
+ * comment for implementation details about type punning.
  *
  * The memcpy() implementation does not emit a compiler warning if 'src' has
  * not the same type than 'src': any pointer type is accepted for 'src'.
@@ -350,8 +350,16 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
 #ifdef _Py_TYPEOF
 #define Py_SETREF(dst, src) \
     do { \
-        _Py_TYPEOF(dst)* _tmp_dst_ptr = &(dst); \
+        _Py_TYPEOF(&(dst)) _tmp_dst_ptr = &(dst); \
         _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
+        *_tmp_dst_ptr = (src); \
+        Py_DECREF(_tmp_old_dst); \
+    } while (0)
+#elif defined(__cplusplus) && (__cplusplus >= 201103L ||  _MSVC_LANG >= 201103L)
+#define Py_SETREF(dst, src) \
+    do { \
+        auto _tmp_dst_ptr = &(dst); \
+        auto _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
         Py_DECREF(_tmp_old_dst); \
     } while (0)
@@ -372,8 +380,16 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
 #ifdef _Py_TYPEOF
 #define Py_XSETREF(dst, src) \
     do { \
-        _Py_TYPEOF(dst)* _tmp_dst_ptr = &(dst); \
+        _Py_TYPEOF(&(dst)) _tmp_dst_ptr = &(dst); \
         _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
+        *_tmp_dst_ptr = (src); \
+        Py_XDECREF(_tmp_old_dst); \
+    } while (0)
+#elif defined(__cplusplus) && (__cplusplus >= 201103L ||  _MSVC_LANG >= 201103L)
+#define Py_XSETREF(dst, src) \
+    do { \
+        auto _tmp_dst_ptr = &(dst); \
+        auto _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
         Py_XDECREF(_tmp_old_dst); \
     } while (0)

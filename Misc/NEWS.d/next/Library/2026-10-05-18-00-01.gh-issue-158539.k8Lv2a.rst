@@ -1,0 +1,2 @@
+Fix macOS runtime section lookup for remote debugging when virtual memory
+region sizes differ from Mach-O segment file sizes.

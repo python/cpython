@@ -1,0 +1,3 @@
+Fix matching of a negated character set in a bytes pattern compiled with both
+:const:`re.IGNORECASE` and :const:`re.LOCALE`.  The case closure is now applied
+to the members of the set, so that ``[^bc]`` no longer matches ``b'B'``.
