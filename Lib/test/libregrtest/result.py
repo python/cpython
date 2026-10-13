@@ -184,8 +184,7 @@ class TestResult:
         return State.has_meaningful_duration(self.state)
 
     @property
-    def test_cases(self) -> list[tuple[str, str]]:
-        """Failed test cases: list of (name, traceback)."""
+    def failed_test_cases(self) -> list[tuple[str, str]]:
         return (self.errors or []) + (self.failures or [])
 
     def format_github_summary(self, expand: bool) -> str:
@@ -194,37 +193,34 @@ class TestResult:
         if self.env_changed_reasons:
             blocks.append("\n".join(f"- {reason}"
                                     for reason in self.env_changed_reasons))
-        for name, traceback in self.test_cases:
-            # Expand the tracebacks if they fit on a screen: a traceback of
-            # less than 30 lines
+        for name, traceback in self.failed_test_cases:
+            # Only default open short tracebacks.
             is_open = expand and traceback.count("\n") < 30
             blocks += [f"<details{' open' if is_open else ''}>"
                        f"<summary>{html.escape(name)}</summary>",
                        f"```pytb\n{decolor(traceback).rstrip()}\n```",
                        "</details>"]
+
         # Separate Markdown blocks with an empty line
         return "".join(f"{block}\n\n" for block in blocks)
 
     def print_github_annotation(self, runtests: RunTests) -> None:
-        """Annotate each failed test case, or else the failed test file.
-
-        For example, the test file for a crash, timeout or env changed.
-        """
+        """Print github error annotation line for each failure."""
         if not (runtests.github_annotations
                 and self.is_failed(runtests.fail_env_changed)):
             return
-        # Test file: "test_x" is test_x.py or test_x/__init__.py,
-        # "test.test_x.test_y" is test_x/test_y.py
+        # Convert python import test name to relative file path.
+        # Ex: "test.test_x.test_y" is test_x/test_y.py
         name = self.test_name.removeprefix("test.")
         path = pathlib.Path(findtestdir(runtests.test_dir), *name.split("."))
         filename = path.with_suffix(".py")
         if not filename.exists():
             filename = path / "__init__.py"
-        test_cases = self.test_cases
-        if not test_cases:
+        annotations = self.failed_test_cases
+        if not annotations:
             message = "\n".join([str(self), *(self.env_changed_reasons or ())])
-            test_cases = [(self.test_name, message)]
-        for title, message in test_cases:
+            annotations = [(self.test_name, message)]
+        for title, message in annotations:
             print_github_annotation(title, message, str(filename))
 
     def set_env_changed(self, *reasons):

@@ -492,7 +492,7 @@ class Regrtest:
                                              self.fail_rerun)
         if not self.github_summary or not failed or not exitcode:
             return
-        ncases = sum(len(result.test_cases) for result in failed)
+        ncases = sum(len(result.failed_test_cases) for result in failed)
         with open(self.github_summary, "a", encoding="utf-8") as fp:
             fp.write(f"## {decolor(self.get_state())}: "
                      f"{count(len(failed), 'test file')} and "
@@ -538,8 +538,8 @@ class Regrtest:
             hunt_refleak=self.hunt_refleak,
             test_dir=self.test_dir,
             use_junit=(self.junit_filename is not None),
-            # Only annotate failures of the last run: not the first run if
-            # failed tests will be re-run (with --python, they are not)
+            # Only annotate the failure that results in job failure.
+            # Ex: When reruning failed tests, only annotate the the final run.
             github_annotations=(bool(self.github_summary) and
                                 not (self.want_rerun and not self.python_cmd)),
             coverage=self.coverage,
@@ -789,8 +789,6 @@ class Regrtest:
 
         strip_py_suffix(self.cmdline_args)
 
-        # Pass GitHub Actions annotations to workers in RunTests, not to
-        # regrtest run by tests
         self.github_summary = os.environ.pop("GITHUB_STEP_SUMMARY", None)
 
         self._tmp_dir = get_temp_dir(self._tmp_dir)
