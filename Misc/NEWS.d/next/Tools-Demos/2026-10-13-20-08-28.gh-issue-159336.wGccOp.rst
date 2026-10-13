@@ -1,0 +1,2 @@
+Fix ``Tools/build/check_warnings.py`` to accept GCC diagnostics that
+omit the warning-option suffix.
