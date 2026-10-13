@@ -1,0 +1,3 @@
+:c:func:`PyImport_CreateModuleFromInitfunc` now sets the package context
+while calling *initfunc*, so that a single-phase init submodule created with
+only the last component of its name gets the full name from the spec.

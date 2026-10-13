@@ -278,6 +278,10 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                          "my_test_extension.exec_slot_ran='yes'\n"
                          "<module 'embedded_ext' (static-extension)>\n"
                          "embedded_ext.executed='yes'\n"
+                         "<module 'sp_pkg.sp_submod' (static-extension)>\n"
+                         "sp_pkg.sp_submod.__name__='sp_pkg.sp_submod'\n"
+                         "sys.modules[\"sp_pkg.sp_submod\"] is sp_pkg.sp_submod=True\n"
+                         "\"sp_submod\" in sys.modules=False\n"
                          )
 
     def test_inittab_submodule_multiphase(self):
