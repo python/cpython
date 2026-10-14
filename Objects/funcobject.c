@@ -536,9 +536,29 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
     return 0;
 }
 
+static void
+func_set_annotations_and_annotate(PyFunctionObject *op, PyObject *annotations,
+                                  PyObject *annotate)
+{
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+    // Care is needed, finalizers can run when references are dropped.  Store
+    // both new values before dropping references to the old.
+    PyObject *old_annotations = op->func_annotations;
+    PyObject *old_annotate = op->func_annotate;
+    FT_ATOMIC_STORE_PTR_RELEASE(op->func_annotations, annotations);
+    FT_ATOMIC_STORE_PTR_RELEASE(op->func_annotate, annotate);
+    if (old_annotations != NULL && !_Py_IsImmortal(old_annotations)) {
+        _PyObject_XDecRefDelayed(old_annotations);
+    }
+    if (old_annotate != NULL && !_Py_IsImmortal(old_annotate)) {
+        _PyObject_XDecRefDelayed(old_annotate);
+    }
+}
+
 static PyObject *
 func_get_annotation_dict(PyFunctionObject *op)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     if (op->func_annotations == NULL) {
         if (op->func_annotate == NULL || !PyCallable_Check(op->func_annotate)) {
             Py_RETURN_NONE;
@@ -555,7 +575,7 @@ func_get_annotation_dict(PyFunctionObject *op)
             Py_DECREF(ann_dict);
             return NULL;
         }
-        Py_XSETREF(op->func_annotations, ann_dict);
+        _PyObject_XSetRefDelayed(&op->func_annotations, ann_dict);
         return ann_dict;
     }
     if (PyTuple_CheckExact(op->func_annotations)) {
@@ -577,7 +597,7 @@ func_get_annotation_dict(PyFunctionObject *op)
                 return NULL;
             }
         }
-        Py_SETREF(op->func_annotations, ann_dict);
+        _PyObject_XSetRefDelayed(&op->func_annotations, ann_dict);
     }
     assert(PyDict_Check(op->func_annotations));
     return op->func_annotations;
@@ -590,7 +610,11 @@ PyFunction_GetAnnotations(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return func_get_annotation_dict((PyFunctionObject *)op);
+    PyObject *d;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    d = func_get_annotation_dict((PyFunctionObject *)op);
+    Py_END_CRITICAL_SECTION();
+    return d;
 }
 
 int
@@ -612,8 +636,7 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
     }
     PyFunctionObject *func = (PyFunctionObject *)op;
     Py_BEGIN_CRITICAL_SECTION(func);
-    Py_XSETREF(func->func_annotations, annotations);
-    Py_CLEAR(func->func_annotate);
+    func_set_annotations_and_annotate(func, annotations, NULL);
     Py_END_CRITICAL_SECTION();
     return 0;
 }
@@ -920,12 +943,11 @@ function___annotate___set_impl(PyFunctionObject *self, PyObject *value)
 /*[clinic end generated code: output=05b7dfc07ada66cd input=eb6225e358d97448]*/
 {
     if (Py_IsNone(value)) {
-        Py_XSETREF(self->func_annotate, Py_NewRef(value));
+        _PyObject_XSetRefDelayed(&self->func_annotate, Py_NewRef(value));
         return 0;
     }
     else if (PyCallable_Check(value)) {
-        Py_XSETREF(self->func_annotate, Py_NewRef(value));
-        Py_CLEAR(self->func_annotations);
+        func_set_annotations_and_annotate(self, NULL, Py_NewRef(value));
         return 0;
     }
     else {
@@ -950,9 +972,10 @@ function___annotations___get_impl(PyFunctionObject *self)
     PyObject *d = NULL;
     if (self->func_annotations == NULL &&
         (self->func_annotate == NULL || !PyCallable_Check(self->func_annotate))) {
-        self->func_annotations = PyDict_New();
-        if (self->func_annotations == NULL)
+        PyObject *ann_dict = PyDict_New();
+        if (ann_dict == NULL)
             return NULL;
+        FT_ATOMIC_STORE_PTR_RELEASE(self->func_annotations, ann_dict);
     }
     d = func_get_annotation_dict(self);
     return Py_XNewRef(d);
@@ -979,8 +1002,7 @@ function___annotations___set_impl(PyFunctionObject *self, PyObject *value)
             "__annotations__ must be set to a dict object");
         return -1;
     }
-    Py_XSETREF(self->func_annotations, Py_XNewRef(value));
-    Py_CLEAR(self->func_annotate);
+    func_set_annotations_and_annotate(self, Py_XNewRef(value), NULL);
     return 0;
 }
 
