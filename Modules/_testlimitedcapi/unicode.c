@@ -946,7 +946,7 @@ unicode_encodecodepage(PyObject *self, PyObject *args)
 {
     int code_page;
     PyObject *unicode;
-    const char *errors;
+    const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "iO|z", &code_page, &unicode, &errors))
         return NULL;
@@ -963,7 +963,7 @@ unicode_decodelocaleandsize(PyObject *self, PyObject *args)
 {
     const char *data;
     Py_ssize_t size;
-    const char *errors;
+    const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "y#|z", &data, &size, &errors))
         return NULL;
@@ -977,7 +977,7 @@ unicode_decodelocale(PyObject *self, PyObject *args)
 {
     const char *data;
     Py_ssize_t size;
-    const char *errors;
+    const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "y#|z", &data, &size, &errors))
         return NULL;
@@ -990,7 +990,7 @@ static PyObject *
 unicode_encodelocale(PyObject *self, PyObject *args)
 {
     PyObject *unicode;
-    const char *errors;
+    const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "O|z", &unicode, &errors))
         return NULL;
@@ -1284,7 +1284,7 @@ unicode_comparewithasciistring(PyObject *self, PyObject *args)
 {
     PyObject *left;
     const char *right = NULL;
-    Py_ssize_t right_len;
+    Py_ssize_t right_len = 0;
     int result;
 
     if (!PyArg_ParseTuple(args, "O|y#", &left, &right, &right_len))
@@ -1323,7 +1323,7 @@ unicode_equaltoutf8andsize(PyObject *self, PyObject *args)
 {
     PyObject *left;
     const char *right = NULL;
-    Py_ssize_t right_len;
+    Py_ssize_t right_len = 0;
     Py_ssize_t size = -100;
     int result;
 
