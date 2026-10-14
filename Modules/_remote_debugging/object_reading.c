@@ -6,6 +6,7 @@
  ******************************************************************************/
 
 #include "_remote_debugging.h"
+#include "internal/pycore_unicodeobject.h"  // _Py_MAX_UNICODE
 #include <limits.h>
 
 /* ============================================================================
@@ -150,6 +151,22 @@ read_py_str(
             PyMem_Free(data);
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read string data from remote memory");
             return NULL;
+        }
+    }
+
+    if (kind == PyUnicode_4BYTE_KIND) {
+        Py_UCS4 *ucs4 = (Py_UCS4 *)data;
+        for (Py_ssize_t i = 0; i < len; i++) {
+            Py_UCS4 ch = ucs4[i];
+            if (ch > _Py_MAX_UNICODE) {
+                PyMem_Free(data);
+                PyErr_Format(PyExc_ValueError,
+                             "character U+%x is not in range [U+0000; U+%x]",
+                             ch, _Py_MAX_UNICODE);
+                set_exception_cause(unwinder, PyExc_ValueError,
+                                    "Unicode string contains invalid character");
+                return NULL;
+            }
         }
     }
 

@@ -2056,15 +2056,16 @@ unicode_transformdecimalandspacetoascii(PyObject *self, PyObject *arg)
     return _PyUnicode_TransformDecimalAndSpaceToASCII(arg);
 }
 
-/* Return a one-character str holding a code point above U+10FFFF. */
+/* Return a str holding code points above U+10FFFF. */
 static PyObject *
 new_invalid_str(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *str = PyUnicode_New(1, 0x10FFFF);
+    PyObject *str = PyUnicode_New(2, 0x10FFFF);
     if (str == NULL) {
         return NULL;
     }
     PyUnicode_4BYTE_DATA(str)[0] = 0x110000;
+    PyUnicode_4BYTE_DATA(str)[1] = 0x110000;
     return str;
 }
 
