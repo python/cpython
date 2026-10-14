@@ -19,6 +19,7 @@ import time
 import types
 import unittest
 import warnings
+lazy import platform
 
 
 __all__ = [
@@ -229,7 +230,6 @@ def _force_run(path, func, *args):
 def _is_gui_available():
     if hasattr(_is_gui_available, 'result'):
         return _is_gui_available.result
-    import platform
     reason = None
     if sys.platform.startswith('win') and platform.win32_is_iot():
         reason = "gui is not available on Windows IoT Core"
@@ -354,7 +354,6 @@ def _requires_unix_version(sysname, min_version):
     For example, @_requires_unix_version('FreeBSD', (7, 2)) raises SkipTest if
     the FreeBSD version is less than 7.2.
     """
-    import platform
     min_version_txt = '.'.join(map(str, min_version))
     version_txt = platform.release().split('-', 1)[0]
     if platform.system() == sysname:
@@ -392,19 +391,12 @@ def requires_linux_version(*min_version):
     """
     return _requires_unix_version('Linux', min_version)
 
-def requires_mac_ver(*min_version):
-    """Decorator raising SkipTest if the OS is Mac OS X and the OS X
-    version if less than min_version.
-
-    For example, @requires_mac_ver(10, 5) raises SkipTest if the OS X version
-    is lesser than 10.5.
-    """
+def _requires_apple_os_version(name, sys_platform, get_version_text, min_version):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kw):
-            if sys.platform == 'darwin':
-                import platform
-                version_txt = platform.mac_ver()[0]
+            if sys.platform == sys_platform:
+                version_txt = get_version_text()
                 try:
                     version = tuple(map(int, version_txt.split('.')))
                 except ValueError:
@@ -413,12 +405,38 @@ def requires_mac_ver(*min_version):
                     if version < min_version:
                         min_version_txt = '.'.join(map(str, min_version))
                         raise unittest.SkipTest(
-                            "Mac OS X %s or higher required, not %s"
-                            % (min_version_txt, version_txt))
+                            f"{name} {min_version_txt} or higher required, "
+                            + f"not {version_txt}")
             return func(*args, **kw)
         wrapper.min_version = min_version
         return wrapper
     return decorator
+
+
+def requires_mac_ver(*min_version):
+    """Decorator raising SkipTest if the OS is Mac OS X and the OS X
+    version if less than min_version.
+
+    For example, @requires_mac_ver(10, 5) raises SkipTest if the OS X version
+    is lesser than 10.5.
+    """
+    return _requires_apple_os_version(
+        "macOS", "darwin",
+        get_version_text=lambda: platform.mac_ver()[0],
+        min_version=min_version)
+
+
+def requires_ios_ver(*min_version):
+    """Decorator raising SkipTest if the OS is iOS and the OS version
+    version if less than min_version.
+
+    For example, requires_ios_ver(16, 0) raises SkipTest if the iOS version
+    is lesser than 16.0.
+    """
+    return _requires_apple_os_version(
+        "iOS", "ios",
+        get_version_text=lambda: platform.ios_ver().release,
+        min_version=min_version)
 
 
 def thread_unsafe(reason):
@@ -2223,7 +2241,6 @@ def setswitchinterval(interval):
     if is_android and interval < minimum_interval:
         global _old_android_emulator
         if _old_android_emulator is None:
-            import platform
             av = platform.android_ver()
             _old_android_emulator = av.is_emulator and av.api_level < 24
         if _old_android_emulator:
@@ -3480,7 +3497,6 @@ def linked_to_musl():
 
     # On linux, we'll depend on the platform module to do the check, so new
     # musl platforms should add support in that module if possible.
-    import platform
     lib, version = platform.libc_ver()
     if lib != 'musl':
         _linked_to_musl = False
