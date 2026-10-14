@@ -1,0 +1,3 @@
+Suppress a duplicate ``Task exception was never retrieved`` warning when an
+asyncio task raises :exc:`SystemExit` or :exc:`KeyboardInterrupt`, which is
+already propagated by the event loop.
