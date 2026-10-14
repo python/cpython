@@ -1,0 +1,3 @@
+Fix truncated output when a writable :class:`gzip.GzipFile` that was never
+closed is finalized and emitting its :exc:`ResourceWarning` fails, for
+example at interpreter shutdown. The file is now always closed.
