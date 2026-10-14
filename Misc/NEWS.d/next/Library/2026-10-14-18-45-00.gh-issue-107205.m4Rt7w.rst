@@ -1,0 +1,4 @@
+:class:`ipaddress.IPv6Network` subnets of the IPv4-mapped range now use the
+embedded IPv4 network for ``is_private`` and ``is_global``. A mapped
+address and the ``/128`` network of that address no longer disagree,
+including shared address space (``100.64.0.0/10``).

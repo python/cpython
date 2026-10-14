@@ -2587,6 +2587,43 @@ class IpaddrUnitTest(unittest.TestCase):
                 self.assertEqual(ipv4.is_link_local, ipv6.is_link_local)
                 self.assertEqual(ipv4.is_loopback, ipv6.is_loopback)
 
+    def testIpv4MappedNetworkProperties(self):
+        # gh-107205: a mapped address and its network must agree. Shared
+        # address space is neither private nor global.
+        samples = (
+            "178.62.3.251",     # global
+            "192.168.0.1",      # private
+            "100.64.0.0",       # shared address space
+            "100.64.0.1",
+            "8.8.8.8",
+            "127.0.0.1",
+        )
+        for addr4 in samples:
+            with self.subTest(addr4):
+                ipv4 = ipaddress.ip_address(addr4)
+                ipv6 = ipaddress.ip_address(f"::ffff:{addr4}")
+                net6 = ipaddress.ip_network(f"::ffff:{addr4}")
+                self.assertEqual(ipv4.is_private, net6.is_private)
+                self.assertEqual(ipv4.is_global, net6.is_global)
+                self.assertEqual(ipv6.is_private, net6.is_private)
+                self.assertEqual(ipv6.is_global, net6.is_global)
+
+        shared = ipaddress.ip_network("::ffff:100.64.0.0/106")
+        v4shared = ipaddress.ip_network("100.64.0.0/10")
+        self.assertEqual(shared.is_private, v4shared.is_private)
+        self.assertEqual(shared.is_global, v4shared.is_global)
+        self.assertFalse(shared.is_private)
+        self.assertFalse(shared.is_global)
+
+        private = ipaddress.ip_network("::ffff:10.0.0.0/104")
+        self.assertTrue(private.is_private)
+        self.assertFalse(private.is_global)
+        public = ipaddress.ip_network("::ffff:8.8.8.0/120")
+        self.assertFalse(public.is_private)
+        self.assertTrue(public.is_global)
+        # The mapped range as a whole remains an IPv6 special-purpose block.
+        self.assertTrue(ipaddress.ip_network("::ffff:0:0/96").is_private)
+
     def testIpv4MappedPrivateCheck(self):
         self.assertEqual(
                 True, ipaddress.ip_address('::ffff:192.168.1.1').is_private)
