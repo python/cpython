@@ -83,7 +83,7 @@ _dbm_dbm_get(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_
     if (!_PyArg_NoKwnames("get", kwnames)) {
         goto exit;
     }
-    if (!_PyArg_ParseStack(args, nargs, "s#|O:get",
+    if (!PyArg_ParseArray(args, nargs, "s#|O:get",
         &key, &key_length, &default_value)) {
         goto exit;
     }
@@ -122,7 +122,7 @@ _dbm_dbm_setdefault(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     if (!_PyArg_NoKwnames("setdefault", kwnames)) {
         goto exit;
     }
-    if (!_PyArg_ParseStack(args, nargs, "s#|O:setdefault",
+    if (!PyArg_ParseArray(args, nargs, "s#|O:setdefault",
         &key, &key_length, &default_value)) {
         goto exit;
     }
@@ -249,4 +249,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1ad0e5f0f4c7e9dd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f9d904af4ea43d1d input=a9049054013a1b77]*/

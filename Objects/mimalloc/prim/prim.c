@@ -18,7 +18,8 @@ terms of the MIT license. A copy of the license can be found in the file
 #define MI_USE_SBRK
 #include "wasi/prim.c"     // memory-grow or sbrk (Wasm)
 
-#elif defined(__EMSCRIPTEN__)
+// CPython: use the unix prim on Emscripten (emmalloc is not linked)
+#elif defined(__EMSCRIPTEN__) && 0
 #include "emscripten/prim.c" // emmalloc_*, + pthread support
 
 #else

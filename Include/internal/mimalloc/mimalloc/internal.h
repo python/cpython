@@ -102,10 +102,6 @@ terms of the MIT license. A copy of the license can be found in the file
 #define mi_decl_externc
 #endif
 
-#if defined(__EMSCRIPTEN__) && !defined(__wasi__)
-#define __wasi__
-#endif
-
 
 // --------------------------------------------------------------------------
 // Internal functions

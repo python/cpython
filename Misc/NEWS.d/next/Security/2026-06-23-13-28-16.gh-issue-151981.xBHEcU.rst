@@ -1,2 +1,0 @@
-In :mod:`tarfile`, seeking a stream now stops when end of the stream is
-reached.

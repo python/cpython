@@ -34,6 +34,7 @@ _PyTok_ReaderFree(struct tok_state *tok)
          i < (int)Py_ARRAY_LENGTH(reader->prefetched_lines); i++) {
         _PyTok_ChunkClear(&reader->prefetched_lines[i]);
     }
+    PyMem_Free(reader->encoding);
     PyMem_Free(reader->file_buffer);
     PyMem_Free(reader->decoded);
     PyMem_Free(reader);
@@ -173,15 +174,13 @@ next_prepared(struct tok_state *tok, _PyTok_Chunk *chunk)
     if (tok->lineno >= tok->source.nlines) {
         return _PYTOK_READ_EOF;
     }
-    const char *start = _PyLexer_BufferPointer(tok, tok->inp);
-    const char *newline = memchr(
-        start, '\n', tok->source.bytes + tok->source.len - start);
-    _PyTok_Off end = newline != NULL
-        ? newline - tok->source.bytes + 1 : tok->source.len;
-    chunk->data = (char *)start;
-    chunk->len = tok->source.bytes + end - start;
+    _PyTok_Span tail = {tok->inp, tok->source.base_offset + tok->source.len};
+    _PyTok_Off newline = _PyTok_SourceFindByte(&tok->source, tail, '\n');
+    _PyTok_Span line = {tail.start, newline >= 0 ? newline + 1 : tail.end};
+    chunk->data = (char *)_PyTok_SourceSpanView(
+        &tok->source, line, &chunk->len);
     chunk->ownership = _PYTOK_CHUNK_BORROWED;
-    chunk->implicit_newline = end == tok->source.len &&
+    chunk->implicit_newline = line.end == tail.end &&
         tok->reader->prepared_final_newline_is_implicit;
     return _PYTOK_READ_LINE;
 }
@@ -203,7 +202,7 @@ read_file_line(struct tok_state *tok, _PyTok_Chunk *chunk)
         int available = (int)Py_MIN(reader->file_buffer_cap - len, INT_MAX);
         size_t read = 0;
         char *result = _Py_UniversalNewlineFgetsWithSize(
-            reader->file_buffer + len, available, tok->fp, NULL, &read);
+            reader->file_buffer + len, available, reader->fp, NULL, &read);
         if (result == NULL) {
             if (len == 0) {
                 return _PYTOK_READ_EOF;
@@ -228,7 +227,7 @@ initialize_file(struct tok_state *tok)
 {
     _PyTok_Reader *reader = tok->reader;
     reader->file_initialized = 1;
-    if (tok->encoding != NULL) {
+    if (reader->encoding != NULL) {
         return _PyTok_StartDecoder(tok, "strict");
     }
 
@@ -411,7 +410,7 @@ next_readline(struct tok_state *tok, _PyTok_Chunk *chunk)
         }
 
         _PyTok_Chunk input = {0};
-        if (tok->encoding != NULL) {
+        if (reader->encoding != NULL) {
             if (!PyBytes_Check(raw)) {
                 PyErr_SetString(PyExc_TypeError,
                                 "readline() returned a non-bytes object");
@@ -434,7 +433,7 @@ next_readline(struct tok_state *tok, _PyTok_Chunk *chunk)
             input.ownership = _PYTOK_CHUNK_PYOBJECT;
             int decoded;
             if (reader->decoder == NULL &&
-                    strcmp(tok->encoding, "utf-8") == 0 &&
+                    strcmp(reader->encoding, "utf-8") == 0 &&
                     chunk_is_line(&input)) {
                 decoded = _PyTok_DecodeOnce(
                     tok, &input, "utf-8", "replace");
@@ -510,7 +509,7 @@ next_interactive(struct tok_state *tok, _PyTok_Chunk *chunk)
         return _PYTOK_READ_STOPPED;
     }
     char *input = PyOS_Readline(
-        tok->fp != NULL ? tok->fp : stdin, stdout, reader->prompt);
+        reader->fp != NULL ? reader->fp : stdin, stdout, reader->prompt);
     if (reader->nextprompt != NULL) {
         reader->prompt = reader->nextprompt;
     }
@@ -527,9 +526,9 @@ next_interactive(struct tok_state *tok, _PyTok_Chunk *chunk)
         .len = len,
         .ownership = _PYTOK_CHUNK_PYMEM,
     };
-    if (tok->encoding != NULL &&
+    if (reader->encoding != NULL &&
             _PyTok_DecodeOnce(
-                tok, &decoded, tok->encoding, NULL) < 0) {
+                tok, &decoded, reader->encoding, NULL) < 0) {
         _PyTok_ChunkClear(&decoded);
         return _PYTOK_READ_ERROR;
     }
@@ -605,10 +604,11 @@ int
 _PyTok_ReaderUnderflow(struct tok_state *tok)
 {
     assert(tok->cur >= tok->buf_offset && tok->cur <= tok->inp);
-    _PyTok_ReaderKind kind = tok->reader->kind;
+    _PyTok_Reader *reader = tok->reader;
+    _PyTok_ReaderKind kind = reader->kind;
     int prepared = kind == _PYTOK_READER_PREPARED;
     int streaming = reader_is_streaming(kind);
-    int reset_buffer = !prepared && tok->start < 0 &&
+    int reset_buffer = tok->start < 0 &&
         _PyLexer_CurrentFTString(tok) == NULL;
 
     _PyTok_Chunk chunk;
@@ -661,23 +661,24 @@ _PyTok_ReaderUnderflow(struct tok_state *tok)
             tok->cur = source_start;
             tok->buf_offset = source_start;
             tok->line_start = tok->buf_offset;
-            tok->start = -1;
         }
         tok->inp = source_start + chunk.len;
     }
-    if (prepared) {
-        if (tok->start < 0 && _PyLexer_CurrentFTString(tok) == NULL) {
-            tok->buf_offset = tok->source.base_offset +
-                (chunk.data - tok->source.bytes);
+    else {
+        if (reset_buffer) {
+            tok->buf_offset = tok->inp;
         }
-        tok->inp = _PyLexer_BufferOffset(tok, chunk.data) + chunk.len;
+        tok->inp += chunk.len;
     }
     tok->implicit_newline = chunk.implicit_newline;
 
     tok->lineno++;
     if (kind == _PYTOK_READER_FILE &&
-            (tok->encoding == NULL || strcmp(tok->encoding, "utf-8") == 0) &&
-            !_PyTokenizer_ensure_utf8(_PyLexer_BufferPointer(tok, tok->cur), tok, tok->lineno)) {
+            (reader->encoding == NULL ||
+             strcmp(reader->encoding, "utf-8") == 0) &&
+            !_PyTokenizer_ensure_utf8(
+                _PyTok_SourcePointer(&tok->source, tok->cur),
+                tok, tok->lineno)) {
         _PyTok_ChunkClear(&chunk);
         return 0;
     }
@@ -779,7 +780,7 @@ _PyTokenizer_FromFile(FILE *fp, const char *encoding,
         _PyTokenizer_Free(tok);
         return NULL;
     }
-    tok->fp = fp;
+    tok->reader->fp = fp;
     tok->reader->prompt = ps1;
     tok->reader->nextprompt = ps2;
     return tok;
@@ -840,8 +841,8 @@ _PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
     tok->filename = Py_NewRef(filename != NULL ? filename : &_Py_STR(anon_string));
     char *encoding = NULL;
     if (initialize_file(tok) == 0) {
-        encoding = tok->encoding;
-        tok->encoding = NULL;
+        encoding = tok->reader->encoding;
+        tok->reader->encoding = NULL;
     }
     fclose(fp);
     _PyTokenizer_Free(tok);
