@@ -80,10 +80,11 @@ class CompileallTestsBase:
 
     def timestamp_metadata(self):
         with open(self.bc_path, 'rb') as file:
-            data = file.read(12)
-        mtime = int(os.stat(self.source_path).st_mtime)
-        compare = struct.pack('<4sLL', importlib.util.MAGIC_NUMBER, 0,
-                              mtime & 0xFFFF_FFFF)
+            data = file.read(16)
+        st = os.stat(self.source_path)
+        compare = struct.pack('<4sLLL', importlib.util.MAGIC_NUMBER, 0,
+                              int(st.st_mtime) & 0xFFFF_FFFF,
+                              st.st_size & 0xFFFF_FFFF)
         return data, compare
 
     def test_year_2038_mtime_compilation(self):
@@ -120,7 +121,7 @@ class CompileallTestsBase:
             file.write(bc)
         self.assertNotEqual(*self.timestamp_metadata())
         compileall.compile_dir(self.directory, force=False, quiet=True)
-        self.assertTrue(*self.timestamp_metadata())
+        self.assertEqual(*self.timestamp_metadata())
 
     def test_mtime(self):
         # Test a change in mtime leads to a new .pyc.
@@ -130,6 +131,38 @@ class CompileallTestsBase:
     def test_magic_number(self):
         # Test a change in mtime leads to a new .pyc.
         self.recreation_check(b'\0\0\0\0')
+
+    def test_size(self):
+        # Test a change in source size leads to a new .pyc.
+        mtime = int(os.stat(self.source_path).st_mtime)
+        self.recreation_check(struct.pack('<4sLLL', importlib.util.MAGIC_NUMBER,
+                                          0, mtime & 0xFFFF_FFFF, 1))
+
+    def test_no_recompile_when_up_to_date(self):
+        # Test an up-to-date .pyc is not recompiled in any invalidation mode.
+        for mode in py_compile.PycInvalidationMode:
+            with self.subTest(mode=mode):
+                compileall.compile_dir(self.directory, quiet=True, force=True,
+                                       invalidation_mode=mode)
+                with mock.patch('compileall.py_compile.compile') as compile:
+                    compileall.compile_dir(self.directory, quiet=True,
+                                           invalidation_mode=mode)
+                compile.assert_not_called()
+
+    def test_hash_mismatch(self):
+        # Test a hash-based .pyc whose hash does not match the source
+        # leads to a new .pyc.
+        mode = py_compile.PycInvalidationMode.CHECKED_HASH
+        py_compile.compile(self.source_path, invalidation_mode=mode)
+        with open(self.bc_path, 'r+b') as file:
+            file.seek(8)
+            file.write(b'\xff' * 8)
+        compileall.compile_dir(self.directory, quiet=True,
+                               invalidation_mode=mode)
+        with open(self.source_path, 'rb') as file:
+            source_hash = importlib.util.source_hash(file.read())
+        with open(self.bc_path, 'rb') as file:
+            self.assertEqual(file.read(16)[8:], source_hash)
 
     def test_compile_files(self):
         # Test compiling a single file, and complete directory
@@ -875,7 +908,8 @@ class CommandLineTestsBase:
         with open(pyc, 'rb') as fp:
             data = fp.read()
         self.assertEqual(int.from_bytes(data[4:8], 'little'), 0b11)
-        self.assertRunOK('--invalidation-mode=unchecked-hash', self.pkgdir)
+        self.assertRunOK('--invalidation-mode=unchecked-hash', '-f',
+                         self.pkgdir)
         with open(pyc, 'rb') as fp:
             data = fp.read()
         self.assertEqual(int.from_bytes(data[4:8], 'little'), 0b01)
