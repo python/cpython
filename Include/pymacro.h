@@ -254,7 +254,9 @@
  *
  * int func(int a, int Py_UNUSED(b)) { return a; }
  */
-#if defined(__GNUC__) || defined(__clang__)
+#if _Py__has_c_cpp_attribute(maybe_unused)
+#  define Py_UNUSED(name) _unused_ ## name _Py_C_ATTRIBUTE(maybe_unused)
+#elif defined(__GNUC__) || defined(__clang__)
 #  define Py_UNUSED(name) _unused_ ## name __attribute__((unused))
 #elif defined(_MSC_VER)
    // Disable warning C4100: unreferenced formal parameter,
