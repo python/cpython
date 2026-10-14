@@ -1,2 +1,0 @@
-Fix a :exc:`SystemError` when compiling a compiling ``__classdict__`` class
-annotation. Found by OSS-Fuzz in :oss-fuzz:`512907042`.

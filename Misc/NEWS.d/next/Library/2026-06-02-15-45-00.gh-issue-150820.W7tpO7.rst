@@ -1,1 +1,0 @@
-Speed up :func:`json.dumps` for small documents. Patch by Bernát Gábor.
