@@ -11,7 +11,7 @@ import sys
 import unittest
 from subprocess import PIPE, Popen
 from unittest import mock
-from test.support import catch_unraisable_exception
+from test.support import catch_unraisable_exception, gc_collect
 from test.support import force_not_colorized_test_class, import_helper
 from test.support import os_helper
 from test.support import _4G, bigmemtest, requires_subprocess
@@ -965,16 +965,18 @@ class TestGzip(BaseTest):
                 gc.collect()
                 self.assertIsNone(cm.unraisable)
 
-    @requires_subprocess()
-    def test_unclosed_at_shutdown(self):
-        # The file must still be closed if the warning fails at shutdown.
-        assert_python_ok("-c", f"""if 1:
-            import gzip
-            f = gzip.open({self.filename!r}, "wb")
-            f.write({data1!r})
-        """)
-        with gzip.open(self.filename, "rb") as f:
-            self.assertEqual(f.read(), data1)
+    def test_del_closes_if_warning_fails(self):
+        # The file must still be closed if emitting the ResourceWarning
+        # raises, as can happen at interpreter shutdown.
+        b = io.BytesIO()
+        f = gzip.GzipFile(fileobj=b, mode="wb")
+        f.write(data1)
+        with (mock.patch("warnings.warn", side_effect=RuntimeError),
+              catch_unraisable_exception() as cm):
+            del f
+            gc_collect()
+            self.assertIs(cm.unraisable.exc_type, RuntimeError)
+        self.assertEqual(gzip.decompress(b.getvalue()), data1)
 
 
 class TestOpen(BaseTest):
