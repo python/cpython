@@ -417,21 +417,27 @@ Importing Modules
    (Custom importers should do this in their
    :py:meth:`~importlib.abc.Loader.exec_module` method.)
 
-   If *initfunc* uses
-   :ref:`legacy single-phase initialization <single-phase-initialization>`,
-   the module is fully initialized by *initfunc* itself, and it is also
-   added to :data:`sys.modules` under the spec's name.
-   Calling :c:func:`PyModule_Exec` on such a module is still safe.
-   As with any single-phase module, the spec's name identifies the module:
-   if a single-phase module was previously created under the same name
-   (by this function, or in another interpreter), Python does not call
-   *initfunc* again but reuses the saved module contents, so a later call
-   with the same name but a different *initfunc* has no effect.
-
-   If the spec's name is dotted and *initfunc* creates the module using only
-   the last component of the name, the module's :attr:`~module.__name__`
-   is set to the full name from the spec.
-
    On error, return NULL with an exception set.
+
+   For modules using :ref:`legacy single-phase initialization <single-phase-initialization>`,
+   most of the import process is done in this function, rather than in
+   extra steps that importers typically take after
+   :py:meth:`~importlib.abc.Loader.create_module`.
+   Specifically:
+
+   - The module is added to :data:`sys.modules` under the *spec*'s
+     :py:attr:`~importlib.machinery.ModuleSpec.name` as part of initialization.
+   - If *any* single-phase module was previously imported under the
+     same :py:attr:`~importlib.machinery.ModuleSpec.name` (by this function
+     or by other import machinery,
+     including in another :ref:`interpreter <sub-interpreter-support>`),
+     Python does not call *initfunc* again,
+     and instead reuses the previous module's contents.
+   - The module will be fully initialized by *initfunc*.
+     Calling :c:func:`PyModule_Exec` on it will have no effect, though it is
+     recommended (in case the module's implementation will change).
+   - Also, if the *spec*'s :py:attr:`!name` contains dots, this name is used
+     for prepending a parent package to the new module's
+     :attr:`~module.__name__`.
 
    .. versionadded:: 3.15
