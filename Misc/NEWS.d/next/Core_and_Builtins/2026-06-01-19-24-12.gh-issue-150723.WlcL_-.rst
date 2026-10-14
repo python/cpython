@@ -1,4 +1,0 @@
-Fix perf jitdump timestamps on macOS. Events were stamped using
-``CLOCK_MONOTONIC``, but macOS profilers timestamp their samples with
-``mach_absolute_time()``. The mismatch prevented the JIT code mappings from
-lining up with the samples, so no Python frame could be resolved.
