@@ -275,6 +275,19 @@ class CAPITest(unittest.TestCase):
             obj = MyObj()
             _testinternalcapi.incref_decref_delayed(obj)
 
+    def test_decref_delayed_immortal(self):
+        # _PyObject_XDecRefDelayed() must handle immortal objects, including
+        # objects that become immortal after they were queued.  The GC
+        # processes the queue with the world stopped.
+        import gc
+        _testinternalcapi.incref_decref_delayed(None)
+        gc.collect()
+
+        s = ''.join(['decref', '_delayed', '_immortal'])
+        _testinternalcapi.incref_decref_delayed(s)
+        s = sys.intern(s)
+        gc.collect()
+
     def test_is_unique_temporary(self):
         self.assertTrue(_testcapi.pyobject_is_unique_temporary(object()))
         obj = object()
