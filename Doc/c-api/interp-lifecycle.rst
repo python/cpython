@@ -127,7 +127,7 @@ Initializing and finalizing the interpreter
    interpreter, populating the runtime configuration structure, and querying
    the returned status structure.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       The function no longer returns an exit code if a command line option
       wants to exit Python. Instead, the option is processed in
       :c:func:`Py_RunMain`.

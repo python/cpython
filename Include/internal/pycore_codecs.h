@@ -59,10 +59,9 @@ extern PyObject* _PyCodec_DecodeText(
    const char *encoding,
    const char *errors);
 
-/* These two aren't actually text encoding specific, but _io.TextIOWrapper
- * is the only current API consumer.
- */
-extern PyObject* _PyCodecInfo_GetIncrementalDecoder(
+/* Helpers to create incremental codecs from a codec info object. */
+// Export for test_peg_generator.
+PyAPI_FUNC(PyObject*) _PyCodecInfo_GetIncrementalDecoder(
    PyObject *codec_info,
    const char *errors);
 

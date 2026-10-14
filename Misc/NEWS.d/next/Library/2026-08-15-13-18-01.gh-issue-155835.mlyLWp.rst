@@ -1,2 +1,0 @@
-:mod:`hashlib`: Fix a data race when accessing :attr:`~hashlib.hash.digest_size`
-on BLAKE-2 objects. Patch by Bénédikt Tran.
