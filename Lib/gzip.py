@@ -467,12 +467,13 @@ class GzipFile(_streams.BaseStream):
         return self._buffer.readline(size)
 
     def __del__(self):
-        if self.mode == WRITE and not self.closed:
-            import warnings
-            warnings.warn("unclosed GzipFile",
-                          ResourceWarning, source=self, stacklevel=2)
-
-        super().__del__()
+        try:
+            if self.mode == WRITE and not self.closed:
+                import warnings
+                warnings.warn("unclosed GzipFile",
+                              ResourceWarning, source=self, stacklevel=2)
+        finally:
+            super().__del__()
 
 def _read_exact(fp, n):
     '''Read exactly *n* bytes from `fp`

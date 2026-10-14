@@ -965,6 +965,17 @@ class TestGzip(BaseTest):
                 gc.collect()
                 self.assertIsNone(cm.unraisable)
 
+    @requires_subprocess()
+    def test_unclosed_at_shutdown(self):
+        # The file must still be closed if the warning fails at shutdown.
+        assert_python_ok("-c", f"""if 1:
+            import gzip
+            f = gzip.open({self.filename!r}, "wb")
+            f.write({data1!r})
+        """)
+        with gzip.open(self.filename, "rb") as f:
+            self.assertEqual(f.read(), data1)
+
 
 class TestOpen(BaseTest):
     def test_binary_modes(self):
