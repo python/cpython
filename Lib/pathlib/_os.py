@@ -94,7 +94,7 @@ if hasattr(os, 'sendfile'):
         while True:
             sent = os.sendfile(target_fd, source_fd, offset, blocksize)
             if sent == 0:
-                break  # EOF
+                return offset != 0  # Initial zero may be a failed copy.
             offset += sent
 else:
     _sendfile = None
@@ -147,8 +147,8 @@ def copyfileobj(source_f, target_f):
                         raise err
             if _sendfile:
                 try:
-                    _sendfile(source_fd, target_fd)
-                    return
+                    if _sendfile(source_fd, target_fd):
+                        return
                 except OSError as err:
                     if err.errno != ENOTSOCK:
                         raise err
