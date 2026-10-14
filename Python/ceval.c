@@ -142,7 +142,7 @@ hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
     *top = (uintptr_t)stack_addr;
     *base = ((uintptr_t)stack_addr) - stack_size;
 #else
-    // musl supports HAVE_PTHRED_GETATTR_NP, but the resulting stack size
+    // musl supports HAVE_PTHREAD_GETATTR_NP, but the resulting stack size
     // (on alpine at least) is much smaller than expected and imposes undue
     // limits compared to the old stack size estimation. musl doesn't give
     // us a way to detect it, so we have to assume any non-glibc,
