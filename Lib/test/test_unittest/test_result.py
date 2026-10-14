@@ -54,6 +54,13 @@ class Test_TestResult(unittest.TestCase):
         self.assertEqual(result.shouldStop, False)
         self.assertIsNone(result._stdout_buffer)
         self.assertIsNone(result._stderr_buffer)
+        self.assertEqual(result.verbosity, 1)
+
+    def test_init_verbosity(self):
+        for verbosity in range(4):
+            with self.subTest(verbosity=verbosity):
+                result = unittest.TestResult(None, None, verbosity)
+                self.assertEqual(result.verbosity, verbosity)
 
     # "This method can be called to signal that the set of tests being
     # run should be aborted by setting the TestResult's shouldStop

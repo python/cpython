@@ -23,8 +23,6 @@ the CPython prompt as closely as possible, with the exception of
 allowing multiline input and multiline history entries.
 """
 
-from __future__ import annotations
-
 import _sitebuiltins
 import functools
 import os
@@ -84,7 +82,7 @@ def _more_lines(console: code.InteractiveConsole, unicodetext: str) -> bool:
     src = _strip_final_indent(unicodetext)
     try:
         code = console.compile(src, "<stdin>", "single")
-    except (OverflowError, SyntaxError, ValueError):
+    except Exception:
         lines = src.splitlines(keepends=True)
         if len(lines) == 1:
             return False
