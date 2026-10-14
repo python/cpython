@@ -193,4 +193,31 @@ _functools__lru_cache_wrapper_cache_clear(PyObject *self, PyObject *Py_UNUSED(ig
 
     return return_value;
 }
-/*[clinic end generated code: output=6d8fdaeba4b520fa input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_functools__lru_cache_wrapper___copy____doc__,
+"__copy__($self, /)\n"
+"--\n"
+"\n"
+"Return a copy of the wrapper, which is the wrapper itself.");
+
+#define _FUNCTOOLS__LRU_CACHE_WRAPPER___COPY___METHODDEF    \
+    {"__copy__", (PyCFunction)_functools__lru_cache_wrapper___copy__, METH_NOARGS, _functools__lru_cache_wrapper___copy____doc__},
+
+static PyObject *
+_functools__lru_cache_wrapper___copy___impl(PyObject *self);
+
+static PyObject *
+_functools__lru_cache_wrapper___copy__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _functools__lru_cache_wrapper___copy___impl(self);
+}
+
+PyDoc_STRVAR(_functools__lru_cache_wrapper___deepcopy____doc__,
+"__deepcopy__($self, memo, /)\n"
+"--\n"
+"\n"
+"Return a deep copy of the wrapper, which is the wrapper itself.");
+
+#define _FUNCTOOLS__LRU_CACHE_WRAPPER___DEEPCOPY___METHODDEF    \
+    {"__deepcopy__", (PyCFunction)_functools__lru_cache_wrapper___deepcopy__, METH_O, _functools__lru_cache_wrapper___deepcopy____doc__},
+/*[clinic end generated code: output=9af090694f03b4f2 input=a9049054013a1b77]*/

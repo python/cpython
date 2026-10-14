@@ -505,6 +505,7 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #  define HAVE_UNLINKAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
 #  define HAVE_OPENAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
 #  define HAVE_READLINKAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
+#  define HAVE_FREADLINK_RUNTIME __builtin_available(macOS 13.0, iOS 16.0, *)
 #  define HAVE_SYMLINKAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
 #  define HAVE_FUTIMENS_RUNTIME __builtin_available(macOS 10.13, iOS 11.0, tvOS 11.0, watchOS 4.0, *)
 #  define HAVE_UTIMENSAT_RUNTIME __builtin_available(macOS 10.13, iOS 11.0, tvOS 11.0, watchOS 4.0, *)
@@ -512,8 +513,8 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #  define HAVE_MKFIFOAT_RUNTIME __builtin_available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 #  define HAVE_MKNODAT_RUNTIME __builtin_available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 #  define HAVE_PTSNAME_R_RUNTIME __builtin_available(macOS 10.13.4, iOS 11.3, tvOS 11.3, watchOS 4.3, *)
-#  define HAVE_DUP3_RUNTIME __builtin_available(macOS 27.0, *)
-#  define HAVE_PIPE2_RUNTIME __builtin_available(macOS 27.0, *)
+#  define HAVE_DUP3_RUNTIME __builtin_available(macOS 27.0, iOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
+#  define HAVE_PIPE2_RUNTIME __builtin_available(macOS 27.0, iOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
 
 #  define HAVE_POSIX_SPAWN_SETSID_RUNTIME __builtin_available(macOS 10.15, *)
 
@@ -569,6 +570,10 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 
 #  ifdef HAVE_READLINKAT
 #    define HAVE_READLINKAT_RUNTIME (readlinkat != NULL)
+#  endif
+
+#  ifdef _Py_HAVE_FREADLINK
+#    define HAVE_FREADLINK_RUNTIME (freadlink != NULL)
 #  endif
 
 #  ifdef HAVE_SYMLINKAT
@@ -639,6 +644,7 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #  define HAVE_PTSNAME_R_RUNTIME 1
 #  define HAVE_DUP3_RUNTIME 1
 #  define HAVE_PIPE2_RUNTIME 1
+#  define HAVE_FREADLINK_RUNTIME 1
 #endif
 
 
@@ -3204,14 +3210,6 @@ class dir_fd_converter(CConverter):
     def c_default_init(self):
         self.c_default = 'DEFAULT_DIR_FD'
 
-class uid_t_converter(CConverter):
-    type = "uid_t"
-    converter = '_Py_Uid_Converter'
-
-class gid_t_converter(CConverter):
-    type = "gid_t"
-    converter = '_Py_Gid_Converter'
-
 class dev_t_converter(CConverter):
     type = 'dev_t'
     converter = '_Py_Dev_Converter'
@@ -3268,7 +3266,7 @@ class confname_converter(CConverter):
         """, argname=argname, converter=self.converter, table=self.table)
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=e459765bdf453ebf]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=7ceccf55bb600f61]*/
 
 /*[clinic input]
 
@@ -10146,6 +10144,7 @@ os_getlogin_impl(PyObject *module)
         errno = old_errno;
     }
     else {
+        _Py_MSAN_UNPOISON(name, sizeof(name));
         result = PyUnicode_DecodeFSDefault(name);
     }
 #else
@@ -10986,11 +10985,19 @@ os_unshare_impl(PyObject *module, int flags)
 #endif
 
 
+
 #if defined(HAVE_READLINK) || defined(MS_WINDOWS)
+
+#if (defined(__linux__) || defined(__ANDROID__)) && defined(O_PATH)
+// readlinkat(fd, "", ...) reads the symlink that fd refers to.
+// supported since Linux 2.6.39 (same version that O_PATH was introduced).
+#define _Py_READLINKAT_SUPPORTS_EMPTY_PATH
+#endif
+
 /*[clinic input]
 os.readlink
 
-    path: path_t
+    path: path_t(allow_fd=True)
     *
     dir_fd: dir_fd(requires='readlinkat') = None
 
@@ -11002,48 +11009,74 @@ that directory.
 
 dir_fd may not be implemented on your platform.  If it is unavailable,
 using it will raise a NotImplementedError.
+
+On Linux, Android, macOS and iOS, path may be a file descriptor
+referring to a symlink. If it is, dir_fd must be None.
 [clinic start generated code]*/
 
 static PyObject *
 os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
-/*[clinic end generated code: output=d21b732a2e814030 input=03d10130870dbca8]*/
+/*[clinic end generated code: output=d21b732a2e814030 input=d90bddfeee86f673]*/
 {
 #if defined(HAVE_READLINK)
     char buffer[MAXPATHLEN+1];
     ssize_t length;
-#ifdef HAVE_READLINKAT
-    int readlinkat_unavailable = 0;
-#endif
 
-    Py_BEGIN_ALLOW_THREADS
+    if (path_and_dir_fd_invalid("readlink", path, dir_fd)) {
+        return NULL;
+    }
+
+    if (path->is_fd) {
+#if defined(_Py_HAVE_FREADLINK)
+        if (HAVE_FREADLINK_RUNTIME) {
+            Py_BEGIN_ALLOW_THREADS
+            length = freadlink(path->fd, buffer, MAXPATHLEN);
+            Py_END_ALLOW_THREADS
+        } else
+#elif defined(HAVE_READLINKAT) && defined(_Py_READLINKAT_SUPPORTS_EMPTY_PATH)
+        // linux/android:
+        // readlinkat(fd, "", ...) reads the link that fd refers to.
+        if (HAVE_READLINKAT_RUNTIME) {
+            Py_BEGIN_ALLOW_THREADS
+            length = readlinkat(path->fd, "", buffer, MAXPATHLEN);
+            Py_END_ALLOW_THREADS
+        } else
+#endif
+        {
+            PyErr_SetString(PyExc_NotImplementedError,
+                "readlink cannot read file descriptors on this platform");
+            return NULL;
+        }
+    } else
 #ifdef HAVE_READLINKAT
     if (dir_fd != DEFAULT_DIR_FD) {
         if (HAVE_READLINKAT_RUNTIME) {
+            Py_BEGIN_ALLOW_THREADS
             length = readlinkat(dir_fd, path->narrow, buffer, MAXPATHLEN);
+            Py_END_ALLOW_THREADS
         } else {
-            readlinkat_unavailable = 1;
+            argument_unavailable_error(NULL, "dir_fd");
+            return NULL;
         }
     } else
 #endif
+    {
+        Py_BEGIN_ALLOW_THREADS
         length = readlink(path->narrow, buffer, MAXPATHLEN);
-    Py_END_ALLOW_THREADS
-
-#ifdef HAVE_READLINKAT
-    if (readlinkat_unavailable) {
-        argument_unavailable_error(NULL, "dir_fd");
-        return NULL;
+        Py_END_ALLOW_THREADS
     }
-#endif
 
     if (length < 0) {
         return path_error(path);
     }
     buffer[length] = '\0';
 
-    if (PyUnicode_Check(path->object))
+    if (path->is_fd || PyUnicode_Check(path->object)) {
         return PyUnicode_DecodeFSDefaultAndSize(buffer, length);
-    else
+    }
+    else {
         return PyBytes_FromStringAndSize(buffer, length);
+    }
 #elif defined(MS_WINDOWS)
     DWORD n_bytes_returned;
     DWORD io_result = 0;
@@ -11051,6 +11084,12 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
     char target_buffer[_Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
     _Py_REPARSE_DATA_BUFFER *rdb = (_Py_REPARSE_DATA_BUFFER *)target_buffer;
     PyObject *result = NULL;
+
+    if (path->is_fd) {
+        PyErr_SetString(PyExc_NotImplementedError,
+            "readlink cannot read file descriptors on this platform");
+        return NULL;
+    }
 
     /* First get a handle to the reparse point */
     Py_BEGIN_ALLOW_THREADS
@@ -13930,13 +13969,7 @@ static PyObject *
 os_strerror_impl(PyObject *module, int code)
 /*[clinic end generated code: output=baebf09fa02a78f2 input=75a8673d97915a91]*/
 {
-    char *message = strerror(code);
-    if (message == NULL) {
-        PyErr_SetString(PyExc_ValueError,
-                        "strerror() argument out of range");
-        return NULL;
-    }
-    return PyUnicode_DecodeLocale(message, "surrogateescape");
+    return _Py_strerror(code);
 }
 
 
@@ -16396,8 +16429,9 @@ os_set_blocking_impl(PyObject *module, int fd, int blocking)
 
 /*[clinic input]
 class os.DirEntry "DirEntry *" "DirEntryType"
+class os.ScandirIterator "PyObject *" "ScandirIteratorType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3c18c7a448247980]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b845e502eb4a0406]*/
 
 typedef struct {
     PyObject_HEAD
@@ -17286,11 +17320,20 @@ ScandirIterator_enter(PyObject *self, PyObject *Py_UNUSED(dummy))
     return Py_NewRef(self);
 }
 
+/*[clinic input]
+os.ScandirIterator.__exit__
+
+    *exc_info: array
+
+Close the scandir iterator.
+[clinic start generated code]*/
+
 static PyObject *
-ScandirIterator_exit(PyObject *op, PyObject *Py_UNUSED(args))
+os_ScandirIterator___exit___impl(PyObject *self, PyObject * const *exc_info,
+                                 Py_ssize_t exc_info_length)
+/*[clinic end generated code: output=5d3941725a7c97c7 input=ff3ffe83ae605a36]*/
 {
-    ScandirIterator *self = ScandirIterator_CAST(op);
-    ScandirIterator_closedir(self);
+    ScandirIterator_closedir(ScandirIterator_CAST(self));
     Py_RETURN_NONE;
 }
 
@@ -17337,7 +17380,7 @@ ScandirIterator_dealloc(PyObject *op)
 
 static PyMethodDef ScandirIterator_methods[] = {
     {"__enter__", ScandirIterator_enter, METH_NOARGS},
-    {"__exit__", ScandirIterator_exit, METH_VARARGS},
+    OS_SCANDIRITERATOR___EXIT___METHODDEF
     {"close", ScandirIterator_close, METH_NOARGS},
     {NULL}
 };
@@ -18881,6 +18924,10 @@ PROBE(probe_openat, HAVE_OPENAT_RUNTIME)
 PROBE(probe_readlinkat, HAVE_READLINKAT_RUNTIME)
 #endif
 
+#ifdef _Py_HAVE_FREADLINK
+PROBE(probe_freadlink, HAVE_FREADLINK_RUNTIME)
+#endif
+
 #ifdef HAVE_SYMLINKAT
 PROBE(probe_symlinkat, HAVE_SYMLINKAT_RUNTIME)
 #endif
@@ -18946,6 +18993,10 @@ static const struct have_function {
 
 #ifdef HAVE_FPATHCONF
     { "HAVE_FPATHCONF", NULL },
+#endif
+
+#ifdef _Py_HAVE_FREADLINK
+    { "HAVE_FREADLINK", probe_freadlink },
 #endif
 
 #ifdef HAVE_FSTATAT

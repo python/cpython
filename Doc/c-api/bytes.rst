@@ -8,6 +8,13 @@ Bytes Objects
 These functions raise :exc:`TypeError` when expecting a bytes parameter and
 called with a non-bytes parameter.
 
+.. impl-detail::
+
+   The internal buffer of :c:type:`PyBytesObject` always includes an extra
+   trailing null byte for compatibility with null terminated C strings.
+   This extra byte is not counted in :c:func:`PyBytes_Size` nor in the
+   various *length* and *size* arguments of the functions below.
+
 .. index:: pair: object; bytes
 
 
@@ -242,7 +249,7 @@ called with a non-bytes parameter.
 
    While bytes objects are usually immutable in Python, this special C API
    allows mutating a bytes object in-place. The returned bytes object can still
-   be mutated using :c:func:`PyBytesWriter_GetData`; except if *newsize* is
+   be mutated using :c:func:`PyBytes_AsString`; except if *newsize* is
    zero in which case it returns the immutable empty bytes string.
 
    .. soft-deprecated:: 3.15
@@ -298,8 +305,8 @@ object.
 
    A bytes writer object.
 
-   The API is **not thread safe**. A :c:type:`PyBytesWriter` object must only
-   be used by a single thread, it must not be shared between threads.
+   The API is **not thread safe**. To share a writer with multiple threads, a
+   critical section or a lock is needed.
 
    The instance must be destroyed by :c:func:`PyBytesWriter_Finish` on
    success, or :c:func:`PyBytesWriter_Discard` on error.
@@ -457,3 +464,112 @@ Low-level API
            return NULL;
        }
        return (char*)PyBytesWriter_GetData(writer) + pos;
+
+
+Example creating the string ``b'abc'``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Example creating the bytes string ``b"abc"``, with a fixed size of 3 bytes::
+
+    PyObject* create_abc(void)
+    {
+        PyBytesWriter *writer = PyBytesWriter_Create(3);
+        if (writer == NULL) {
+            return NULL;
+        }
+
+        char *str = PyBytesWriter_GetData(writer);
+        memcpy(str, "abc", 3);
+        return PyBytesWriter_Finish(writer);
+    }
+
+Variant using a pointer to compute the final size::
+
+    PyObject* create_abc_ptr(void)
+    {
+        PyBytesWriter *writer = PyBytesWriter_Create(3);
+        if (writer == NULL) {
+            return NULL;
+        }
+
+        char *str = PyBytesWriter_GetData(writer);
+        memcpy(str, "abc", 3);
+        str += 1;
+        return PyBytesWriter_FinishWithPointer(writer, str);
+    }
+
+
+Update ``PyBytes_FromStringAndSize()`` code
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Example of code using the soft deprecated
+``PyBytes_FromStringAndSize(NULL, size)`` API::
+
+    int copy_bytes(char *dest, const char *src, Py_ssize_t num_bytes)
+    {
+        ...
+    }
+
+    PyObject* create_string(const char *start, Py_ssize_t num_bytes)
+    {
+        PyObject *result = PyBytes_FromStringAndSize(NULL, num_bytes);
+        if (result == NULL) {
+            return NULL;
+        }
+        if (copy_bytes(PyBytes_AS_STRING(result), start, num_bytes) < 0) {
+            Py_CLEAR(result);
+        }
+        return result;
+    }
+
+It can now be updated to::
+
+    PyObject* create_string(const char *start, Py_ssize_t num_bytes)
+    {
+        PyBytesWriter *writer = PyBytesWriter_Create(num_bytes);
+        if (writer == NULL) {
+            return NULL;
+        }
+        if (copy_bytes(PyBytesWriter_GetData(writer), start, num_bytes) < 0) {
+            PyBytesWriter_Discard(writer);
+            return NULL;
+        }
+        return PyBytesWriter_Finish(writer);
+    }
+
+
+Update ``_PyBytes_Resize()`` code
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Example of code using the soft deprecated ``_PyBytes_Resize()`` API::
+
+    void create_string(Py_ssize_t size)
+    {
+        PyObject *bytes = PyBytes_FromStringAndSize(NULL, size);
+        if (bytes == NULL) {
+            return NULL;
+        }
+        char *str = PyBytes_AS_STRING(bytes);
+
+        // ... write data into str ...
+
+        if (_PyBytes_Resize(&bytes, (str - PyBytes_AS_STRING(bytes)))) {
+            return NULL;
+        }
+        return bytes;
+    }
+
+It can now be updated to::
+
+    void create_string(Py_ssize_t size)
+    {
+        PyBytesWriter *writer = PyBytesWriter_Create(size);
+        if (writer == NULL) {
+            return NULL;
+        }
+        char *str = PyBytesWriter_GetData(writer);
+
+        // ... write data into str ...
+
+        return PyBytesWriter_FinishWithPointer(writer, str);
+    }

@@ -428,6 +428,10 @@ Importing Modules
    *initfunc* again but reuses the saved module contents, so a later call
    with the same name but a different *initfunc* has no effect.
 
+   If the spec's name is dotted and *initfunc* creates the module using only
+   the last component of the name, the module's :attr:`~module.__name__`
+   is set to the full name from the spec.
+
    On error, return NULL with an exception set.
 
    .. versionadded:: 3.15

@@ -11,6 +11,7 @@ preserve
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(test_empty_function__doc__,
 "test_empty_function($module, /)\n"
@@ -1529,7 +1530,7 @@ str_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const char *c = "c";
     Py_ssize_t c_length;
 
-    if (!_PyArg_ParseStack(args, nargs, "|sys#:str_converter",
+    if (!PyArg_ParseArray(args, nargs, "|sys#:str_converter",
         &a, &b, &c, &c_length)) {
         goto exit;
     }
@@ -1560,7 +1561,7 @@ str_converter_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     char *c = NULL;
     Py_ssize_t c_length;
 
-    if (!_PyArg_ParseStack(args, nargs, "esetet#:str_converter_encoding",
+    if (!PyArg_ParseArray(args, nargs, "esetet#:str_converter_encoding",
         "idna", &a, "idna", &b, "idna", &c, &c_length)) {
         goto exit;
     }
@@ -1594,7 +1595,7 @@ py_buffer_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_buffer a = {NULL, NULL};
     Py_buffer b = {NULL, NULL};
 
-    if (!_PyArg_ParseStack(args, nargs, "z*w*:py_buffer_converter",
+    if (!PyArg_ParseArray(args, nargs, "z*w*:py_buffer_converter",
         &a, &b)) {
         goto exit;
     }
@@ -3894,7 +3895,7 @@ gh_99240_double_free(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     char *a = NULL;
     char *b = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "eses:gh_99240_double_free",
+    if (!PyArg_ParseArray(args, nargs, "eses:gh_99240_double_free",
         "idna", &a, "idna", &b)) {
         goto exit;
     }
@@ -4043,13 +4044,8 @@ clone_f1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         _PyArg_BadArgument("clone_f1", "argument 'path'", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t path_length;
-    path = PyUnicode_AsUTF8AndSize(args[0], &path_length);
+    path = _PyUnicode_AsUTF8NoNUL(args[0]);
     if (path == NULL) {
-        goto exit;
-    }
-    if (strlen(path) != (size_t)path_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = clone_f1_impl(module, path);
@@ -4112,13 +4108,8 @@ clone_f2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         _PyArg_BadArgument("clone_f2", "argument 'path'", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t path_length;
-    path = PyUnicode_AsUTF8AndSize(args[0], &path_length);
+    path = _PyUnicode_AsUTF8NoNUL(args[0]);
     if (path == NULL) {
-        goto exit;
-    }
-    if (strlen(path) != (size_t)path_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = clone_f2_impl(module, path);
@@ -4259,6 +4250,158 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(alias_pos__doc__,
+"alias_pos($module, /, a=None)\n"
+"--\n"
+"\n");
+
+#define ALIAS_POS_METHODDEF    \
+    {"alias_pos", _PyCFunction_CAST(alias_pos), METH_FASTCALL|METH_KEYWORDS, alias_pos__doc__},
+
+static PyObject *
+alias_pos_impl(PyObject *module, PyObject *a);
+
+static PyObject *
+alias_pos(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", "b", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "alias_pos",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *a = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        a = args[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[0]) {
+        PyErr_Format(PyExc_TypeError,
+                "argument for alias_pos() given by "
+                "name ('b') and %s", 0 < nargs ? "position (1)" : "name ('a')");
+        goto exit;
+    }
+    a = args[1];
+skip_optional_kwonly:
+    return_value = alias_pos_impl(module, a);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(alias_kwonly__doc__,
+"alias_kwonly($module, /, *, a=None)\n"
+"--\n"
+"\n");
+
+#define ALIAS_KWONLY_METHODDEF    \
+    {"alias_kwonly", _PyCFunction_CAST(alias_kwonly), METH_FASTCALL|METH_KEYWORDS, alias_kwonly__doc__},
+
+static PyObject *
+alias_kwonly_impl(PyObject *module, PyObject *a);
+
+static PyObject *
+alias_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", "b", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "alias_kwonly",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *a = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 0, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[0]) {
+        a = args[0];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[0]) {
+        PyErr_Format(PyExc_TypeError,
+                "argument for alias_kwonly() given by "
+                "name ('b') and name ('a')");
+        goto exit;
+    }
+    a = args[1];
+skip_optional_kwonly:
+    return_value = alias_kwonly_impl(module, a);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_testclinic_TestClass_get_defining_class__doc__,
 "get_defining_class($self, /)\n"
 "--\n"
@@ -4356,26 +4499,9 @@ static PyObject *
 _testclinic_TestClass_defclass_varpos(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "defclass_varpos",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
-    PyObject * const *fastargs;
     PyObject *__clinic_args = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 0, /*minkw*/ 0, /*varpos*/ 1, argsbuf);
-    if (!fastargs) {
+    if (!_PyArg_NoKwnames("defclass_varpos", kwnames)) {
         goto exit;
     }
     __clinic_args = PyTuple_FromArray(args, nargs);
@@ -4409,32 +4535,18 @@ static PyObject *
 _testclinic_TestClass_defclass_posonly_varpos(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "defclass_posonly_varpos",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
-    PyObject * const *fastargs;
     PyObject *a;
     PyObject *b;
     PyObject *__clinic_args = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 1, argsbuf);
-    if (!fastargs) {
+    if (!_PyArg_NoKwnames("defclass_posonly_varpos", kwnames)) {
         goto exit;
     }
-    a = fastargs[0];
-    b = fastargs[1];
+    if (!_PyArg_CheckPositional("defclass_posonly_varpos", nargs, 2, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    a = args[0];
+    b = args[1];
     __clinic_args = PyTuple_FromArray(args + 2, nargs - 2);
     if (__clinic_args == NULL) {
         goto exit;
@@ -5197,4 +5309,4 @@ vc_kwonly_vectorcall(PyObject *type, PyObject *const *args,
         kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
         NULL, kwnames);
 }
-/*[clinic end generated code: output=10fcd30a5d85ce11 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=17b9ff8218a250fe input=a9049054013a1b77]*/
