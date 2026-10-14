@@ -5254,7 +5254,7 @@ copying.
       .. versionchanged:: 3.5
          The source format is no longer restricted when casting to a byte view.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          Casting a multi-dimensional F-contiguous view to a one-dimensional
          view is now supported.
 
@@ -5331,7 +5331,7 @@ copying.
 
       .. versionadded:: 3.3
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          Added the *order* parameter.
 
    .. attribute:: readonly

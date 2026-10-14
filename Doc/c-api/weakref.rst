@@ -45,7 +45,7 @@ as much as it can.
    weakly referenceable object, or if *callback* is not callable, ``None``, or
    ``NULL``, this will raise :exc:`TypeError` and return ``NULL``.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Raise :exc:`!TypeError` if *callback* is not callable, ``None``, or
       ``NULL``.
 
@@ -65,7 +65,7 @@ as much as it can.
    is not a weakly referenceable object, or if *callback* is not callable,
    ``NULL``, this will raise :exc:`TypeError` and return ``NULL``.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Raise :exc:`!TypeError` if *callback* is not callable, ``None``, or
       ``NULL``.
 
