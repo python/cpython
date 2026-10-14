@@ -34,6 +34,7 @@ __all__ = [
     "is_resource_enabled", "get_resource_value", "requires", "requires_resource",
     "requires_freebsd_version",
     "requires_gil_enabled", "requires_linux_version", "requires_mac_ver",
+    "requires_ios_ver",
     "check_syntax_error",
     "requires_gzip", "requires_bz2", "requires_lzma", "requires_zstd",
     "bigmemtest", "nomemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
