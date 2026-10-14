@@ -73,7 +73,7 @@ The formal grammar for an expression statement is:
 
 .. note::
 
-   The formal grammar includes as special case for a single :keyword:`!yield`
+   The formal grammar includes a special case for a single :keyword:`!yield`
    expression, without parentheses around it.
    This is sometimes called a :dfn:`yield statement`.
    For complete documentation of :keyword:`!yield` semantics, see
