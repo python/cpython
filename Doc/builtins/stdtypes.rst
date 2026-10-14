@@ -1078,7 +1078,7 @@ If a generator iterator is not resumed before it is destroyed
 raising a :exc:`GeneratorExit` at the :keyword:`!yield` point where the
 function is suspended.
 If the :keyword:`!yield` point is in a :keyword:`try` construct,
-pending :keyword:`finally` clauses execute. (:keyword:`except GeneratorExit` and
+pending :keyword:`finally` clauses execute.
 
 .. admonition:: CPython implementation detail
 
