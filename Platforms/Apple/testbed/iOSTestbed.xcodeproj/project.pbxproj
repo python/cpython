@@ -7,10 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		607A664C2B0EFC080010BFC8 /* Python.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 607A664A2B0EFB310010BFC8 /* Python.xcframework */; };
-		607A664D2B0EFC080010BFC8 /* Python.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 607A664A2B0EFB310010BFC8 /* Python.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		607A66502B0EFFE00010BFC8 /* Python.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 607A664A2B0EFB310010BFC8 /* Python.xcframework */; };
-		607A66512B0EFFE00010BFC8 /* Python.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 607A664A2B0EFB310010BFC8 /* Python.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		607A664C2B0EFC080010BFC8 /* Python{{abiflags}}.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 607A664A2B0EFB310010BFC8 /* Python{{abiflags}}.xcframework */; };
+		607A664D2B0EFC080010BFC8 /* Python{{abiflags}}.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 607A664A2B0EFB310010BFC8 /* Python{{abiflags}}.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		607A66502B0EFFE00010BFC8 /* Python{{abiflags}}.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 607A664A2B0EFB310010BFC8 /* Python{{abiflags}}.xcframework */; };
+		607A66512B0EFFE00010BFC8 /* Python{{abiflags}}.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 607A664A2B0EFB310010BFC8 /* Python{{abiflags}}.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -30,7 +30,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				607A664D2B0EFC080010BFC8 /* Python.xcframework in Embed Frameworks */,
+				607A664D2B0EFC080010BFC8 /* Python{{abiflags}}.xcframework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -41,7 +41,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				607A66512B0EFFE00010BFC8 /* Python.xcframework in Embed Frameworks */,
+				607A66512B0EFFE00010BFC8 /* Python{{abiflags}}.xcframework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -51,7 +51,7 @@
 /* Begin PBXFileReference section */
 		607A66122B0EFA380010BFC8 /* iOSTestbed.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iOSTestbed.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		607A662D2B0EFA3A0010BFC8 /* iOSTestbedTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iOSTestbedTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		607A664A2B0EFB310010BFC8 /* Python.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = Python.xcframework; sourceTree = "<group>"; };
+		607A664A2B0EFB310010BFC8 /* Python{{abiflags}}.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = "Python{{abiflags}}.xcframework"; sourceTree = "<group>"; };
 		60FE0EFB2E56BB6D00524F87 /* iOSTestbed.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = iOSTestbed.xctestplan; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -90,7 +90,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				607A664C2B0EFC080010BFC8 /* Python.xcframework in Frameworks */,
+				607A664C2B0EFC080010BFC8 /* Python{{abiflags}}.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -98,7 +98,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				607A66502B0EFFE00010BFC8 /* Python.xcframework in Frameworks */,
+				607A66502B0EFFE00010BFC8 /* Python{{abiflags}}.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -109,7 +109,7 @@
 			isa = PBXGroup;
 			children = (
 				60FE0EFB2E56BB6D00524F87 /* iOSTestbed.xctestplan */,
-				607A664A2B0EFB310010BFC8 /* Python.xcframework */,
+				607A664A2B0EFB310010BFC8 /* Python{{abiflags}}.xcframework */,
 				607A66142B0EFA380010BFC8 /* iOSTestbed */,
 				607A66302B0EFA3A0010BFC8 /* TestbedTests */,
 				607A66132B0EFA380010BFC8 /* Products */,
@@ -250,7 +250,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e\nsource $PROJECT_DIR/Python.xcframework/build/utils.sh\ninstall_python Python.xcframework app app_packages\n";
+			shellScript = "set -e\nsource $PROJECT_DIR/Python{{abiflags}}.xcframework/build/utils.sh\ninstall_python Python{{abiflags}}.xcframework app app_packages\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -407,7 +407,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				HEADER_SEARCH_PATHS = "\"$(BUILT_PRODUCTS_DIR)/Python.framework/Headers\"";
+				HEADER_SEARCH_PATHS = "\"$(BUILT_PRODUCTS_DIR)/Python{{abiflags}}.framework/Headers\"";
 				INFOPLIST_FILE = "iOSTestbed/iOSTestbed-Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
@@ -438,7 +438,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				HEADER_SEARCH_PATHS = "\"$(BUILT_PRODUCTS_DIR)/Python.framework/Headers\"";
+				HEADER_SEARCH_PATHS = "\"$(BUILT_PRODUCTS_DIR)/Python{{abiflags}}.framework/Headers\"";
 				INFOPLIST_FILE = "iOSTestbed/iOSTestbed-Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
@@ -467,7 +467,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3HEZE76D99;
 				GENERATE_INFOPLIST_FILE = YES;
-				HEADER_SEARCH_PATHS = "\"$(BUILT_PRODUCTS_DIR)/Python.framework/Headers\"";
+				HEADER_SEARCH_PATHS = "\"$(BUILT_PRODUCTS_DIR)/Python{{abiflags}}.framework/Headers\"";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.python.iOSTestbedTests;
@@ -487,7 +487,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3HEZE76D99;
 				GENERATE_INFOPLIST_FILE = YES;
-				HEADER_SEARCH_PATHS = "\"$(BUILT_PRODUCTS_DIR)/Python.framework/Headers\"";
+				HEADER_SEARCH_PATHS = "\"$(BUILT_PRODUCTS_DIR)/Python{{abiflags}}.framework/Headers\"";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.python.iOSTestbedTests;
