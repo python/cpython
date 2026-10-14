@@ -1,0 +1,3 @@
+Fix data loss when a writable :class:`zipfile.ZipFile` that was never closed
+is finalized during interpreter shutdown: :meth:`~zipfile.ZipFile.close` is
+now called even if emitting the :exc:`ResourceWarning` fails.
