@@ -724,14 +724,12 @@ class TestSpecifics(unittest.TestCase):
 
     @support.cpython_only
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
-    @support.run_with_limited_c_stack(
-        100_000 if sys.platform == "android" else 500_000)
+    @support.run_with_limited_c_stack(500_000)
     @support.skip_emscripten_stack_overflow()
     def test_compiler_recursion_limit(self):
         # Compiler frames are small
         limit = 100
-        # Android test devices have less memory.
-        crash_depth = limit * (1000 if sys.platform == "android" else 5000)
+        crash_depth = limit * 5000
         success_depth = limit
 
         def check_limit(prefix, repeated, mode="single"):
@@ -1037,8 +1035,7 @@ class TestSpecifics(unittest.TestCase):
     # complex statements.
     @support.requires_resource('cpu')
     def test_stack_overflow(self):
-        # Android test devices have less memory.
-        size = 100_000 if sys.platform == "android" else 200_000
+        size = 200_000
         compile("if a: b\n" * size, "<dummy>", "exec")
 
     # Multiple users rely on the fact that CPython does not generate
