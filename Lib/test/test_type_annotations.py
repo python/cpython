@@ -328,6 +328,18 @@ class AnnotateTests(unittest.TestCase):
         f.__annotations__ = {"z": 43}
         self.assertIs(f.__annotate__, None)
 
+    def test_annotate_sets_annotations(self):
+        # If __annotate__ sets the function's annotations while it runs,
+        # those are kept instead of the result of the call.
+        def f():
+            pass
+        def annotate(format):
+            f.__annotations__ = {"x": int}
+            return {"y": str}
+        f.__annotate__ = annotate
+        self.assertEqual(f.__annotations__, {"x": int})
+        self.assertIs(f.__annotate__, None)
+
     def test_user_defined_annotate(self):
         class X:
             a: int
