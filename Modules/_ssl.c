@@ -142,10 +142,9 @@ static void _PySSLFixErrno(void) {
 #endif
 
 #if (OPENSSL_VERSION_NUMBER >= 0x40000000L)
+/* OpenSSL 4.0 removed SSLv3 and the version-specific methods,
+ * but TLS 1.0, 1.1 and 1.2 are still available via TLS_method(). */
 #  define OPENSSL_NO_SSL3
-#  define OPENSSL_NO_TLS1
-#  define OPENSSL_NO_TLS1_1
-#  define OPENSSL_NO_TLS1_2
 #  define OPENSSL_NO_SSL3_METHOD
 #  define OPENSSL_NO_TLS1_METHOD
 #  define OPENSSL_NO_TLS1_1_METHOD
@@ -7012,13 +7011,13 @@ sslmodule_init_constants(PyObject *m)
     ADD_INT_CONST("PROTOCOL_TLS", PY_SSL_VERSION_TLS);
     ADD_INT_CONST("PROTOCOL_TLS_CLIENT", PY_SSL_VERSION_TLS_CLIENT);
     ADD_INT_CONST("PROTOCOL_TLS_SERVER", PY_SSL_VERSION_TLS_SERVER);
-#ifndef OPENSSL_NO_TLS1
+#if !defined(OPENSSL_NO_TLS1) && !defined(OPENSSL_NO_TLS1_METHOD)
     ADD_INT_CONST("PROTOCOL_TLSv1", PY_SSL_VERSION_TLS1);
 #endif
-#ifndef OPENSSL_NO_TLS1_1
+#if !defined(OPENSSL_NO_TLS1_1) && !defined(OPENSSL_NO_TLS1_1_METHOD)
     ADD_INT_CONST("PROTOCOL_TLSv1_1", PY_SSL_VERSION_TLS1_1);
 #endif
-#ifndef OPENSSL_NO_TLS1_2
+#if !defined(OPENSSL_NO_TLS1_2) && !defined(OPENSSL_NO_TLS1_2_METHOD)
     ADD_INT_CONST("PROTOCOL_TLSv1_2", PY_SSL_VERSION_TLS1_2);
 #endif
 

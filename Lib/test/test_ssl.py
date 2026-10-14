@@ -4025,6 +4025,8 @@ class ThreadedTests(unittest.TestCase):
         try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_TLSv1_1, False)
 
     @requires_tls_version('TLSv1_2')
+    @unittest.skipUnless(hasattr(ssl, 'PROTOCOL_TLSv1_2'),
+                         'needs ssl.PROTOCOL_TLSv1_2')
     def test_protocol_tlsv1_2(self):
         """Connecting to a TLSv1.2 server with various client options.
            Testing against older TLS versions."""
