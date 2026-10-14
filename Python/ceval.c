@@ -142,11 +142,14 @@ hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
     *top = (uintptr_t)stack_addr;
     *base = ((uintptr_t)stack_addr) - stack_size;
 #else
-    /// XXX musl supports HAVE_PTHRED_GETATTR_NP, but the resulting stack size
-    /// (on alpine at least) is much smaller than expected and imposes undue limits
-    /// compared to the old stack size estimation.  (We assume musl is not glibc.)
+    // musl supports HAVE_PTHREAD_GETATTR_NP, but the resulting stack size
+    // (on alpine at least) is much smaller than expected and imposes undue
+    // limits compared to the old stack size estimation. musl doesn't give
+    // us a way to detect it, so we have to assume any non-glibc,
+    // non-Android Linux is musl and mustn't rely on pthread_getattr_np.
 #  if defined(HAVE_PTHREAD_GETATTR_NP) && !defined(_AIX) && \
-        !defined(__NetBSD__) && (defined(__GLIBC__) || !defined(__linux__))
+        !defined(__NetBSD__) && \
+        (defined(__GLIBC__) || defined(__ANDROID__) || !defined(__linux__))
     size_t stack_size, guard_size;
     void *stack_addr;
     pthread_attr_t attr;
