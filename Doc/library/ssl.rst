@@ -991,7 +991,7 @@ Constants
 
    .. versionadded:: 3.2
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       It is now a named tuple.
 
 .. data:: OPENSSL_API_VERSION_INFO
@@ -1000,7 +1000,7 @@ Constants
    for building the module, with the same fields as :const:`OPENSSL_VERSION_INFO`.
    This may be different from the OpenSSL library actually used at runtime.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: OPENSSL_VERSION_NUMBER
 
@@ -1889,7 +1889,7 @@ to speed up repeated connections from the same clients.
 
    .. versionadded:: 3.7
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       After the callback assigns a new :attr:`SSLSocket.context`, later
       ClientHello messages on the connection are dispatched to the new
       context's *sni_callback*.
@@ -2028,7 +2028,7 @@ to speed up repeated connections from the same clients.
       The method returns an instance of :attr:`SSLContext.sslobject_class`
       instead of hard-coded :class:`SSLObject`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       The *server_side*, *server_hostname* and *session* parameters are now
       validated as :meth:`SSLContext.wrap_socket` validates them. Previously
       a context with :attr:`~SSLContext.check_hostname` enabled and no

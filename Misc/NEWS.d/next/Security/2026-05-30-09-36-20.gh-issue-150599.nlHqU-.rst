@@ -1,3 +1,0 @@
-Fix a possible stack buffer overflow in :mod:`bz2` when a
-:class:`bz2.BZ2Decompressor` is reused after a decompression error.
-The decompressor now becomes unusable after libbz2 reports an error.
