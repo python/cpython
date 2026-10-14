@@ -2056,6 +2056,18 @@ unicode_transformdecimalandspacetoascii(PyObject *self, PyObject *arg)
     return _PyUnicode_TransformDecimalAndSpaceToASCII(arg);
 }
 
+/* Return a one-character str holding a code point above U+10FFFF. */
+static PyObject *
+new_invalid_str(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *str = PyUnicode_New(1, 0x10FFFF);
+    if (str == NULL) {
+        return NULL;
+    }
+    PyUnicode_4BYTE_DATA(str)[0] = 0x110000;
+    return str;
+}
+
 static PyObject *
 test_pyobject_is_freed(const char *test_name, PyObject *op)
 {
@@ -3395,6 +3407,7 @@ static PyMethodDef module_functions[] = {
     {"_PyTraceMalloc_GetTraceback", tracemalloc_get_traceback, METH_VARARGS},
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {"_PyUnicode_TransformDecimalAndSpaceToASCII", unicode_transformdecimalandspacetoascii, METH_O},
+    {"new_invalid_str", new_invalid_str, METH_NOARGS},
     {"check_pyobject_forbidden_bytes_is_freed",
                             check_pyobject_forbidden_bytes_is_freed, METH_NOARGS},
     {"check_pyobject_freed_is_freed", check_pyobject_freed_is_freed, METH_NOARGS},

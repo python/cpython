@@ -751,6 +751,35 @@ class TestGetStackTrace(RemoteInspectionTestBase):
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",
     )
+    def test_remote_stack_trace_invalid_unicode_name(self):
+        import_module("_testinternalcapi")
+
+        script = textwrap.dedent("""\
+            import os
+            import _remote_debugging
+            import _testinternalcapi
+
+            def func():
+                return _remote_debugging.RemoteUnwinder(os.getpid()).get_stack_trace()
+
+            name = _testinternalcapi.new_invalid_str()
+            func.__code__ = func.__code__.replace(co_qualname=name)
+            print(func())
+            """)
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            capture_output=True,
+            text=True,
+            timeout=SHORT_TIMEOUT,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("<unknown function>", result.stdout)
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
     def test_async_remote_stack_trace(self):
         port = find_unused_port()
         script = textwrap.dedent(
