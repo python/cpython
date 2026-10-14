@@ -1,0 +1,1 @@
+Fix doctest badly handling unwrapable objects. Patch by Mickaël Schoentgen.
