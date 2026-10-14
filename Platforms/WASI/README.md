@@ -279,10 +279,16 @@ posix.uname_result(
 
 ### C code
 
-WASI SDK defines several built-in macros. You can dump a full list of built-ins
-with ``/path/to/wasi-sdk/bin/clang -dM -E - < /dev/null``.
+The following built-in macros identify WebAssembly targets and environments.
+For WASI SDK, you can dump a full list of built-ins with
+`/path/to/wasi-sdk/bin/clang -dM -E - < /dev/null`.
 
-* WebAssembly ``__wasm__`` (also ``__wasm``)
-* wasm32 ``__wasm32__`` (also ``__wasm32``)
-* wasm64 ``__wasm64__``
-* WASI ``__wasi__``
+#### Shared with Emscripten
+
+- WebAssembly target: `__wasm__` (also `__wasm`)
+- wasm32 target: `__wasm32__` (also `__wasm32`)
+- wasm64 target: `__wasm64__`
+
+#### Unique to WASI
+
+- WASI environment: `__wasi__`
