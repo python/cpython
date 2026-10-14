@@ -3129,7 +3129,10 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
         if (PyErr_GivenExceptionMatches(exc, PyExc_KeyboardInterrupt) ||
             PyErr_GivenExceptionMatches(exc, PyExc_SystemExit))
         {
-            /* We've got a KeyboardInterrupt or a SystemError; re-raise it */
+            /* The exception is re-raised to the event loop, so it cannot be
+               lost even if loop shutdown prevents this task from being
+               awaited. */
+            task->task_log_tb = 0;
             PyErr_SetRaisedException(exc);
             goto fail;
         }

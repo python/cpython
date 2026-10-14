@@ -313,6 +313,10 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             super().cancel()  # I.e., Future.cancel(self).
         except (KeyboardInterrupt, SystemExit) as exc:
             super().set_exception(exc)
+            # This exception is re-raised to the event loop instead of being
+            # retained solely by this Task, so it is not unhandled if the
+            # task cannot subsequently be awaited during loop shutdown.
+            self._log_traceback = False
             raise
         except BaseException as exc:
             super().set_exception(exc)

@@ -1965,6 +1965,17 @@ class BaseTaskTests:
                 self.assertTrue(not t.cancelled())
                 self.assertEqual(t.result(), "ok")
 
+    def test_step_does_not_log_reraised_base_exceptions(self):
+        async def raise_exception(exc):
+            raise exc
+
+        for exc_type in (SystemExit, KeyboardInterrupt):
+            with self.subTest(exc_type=exc_type):
+                task = self.new_task(self.loop, raise_exception(exc_type()))
+                with self.assertRaises(exc_type):
+                    self.loop.run_until_complete(task)
+                self.assertFalse(task._log_traceback)
+
     def test_step_result_future(self):
         # If coroutine returns future, task waits on this future.
 
