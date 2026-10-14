@@ -996,7 +996,7 @@ The iterator then allows control over the execution of the underlying function.
 Initially, the function is *suspended*.
 Execution starts when a :dfn:`consumer` asks the iterator to produce the next
 value, for example using the :func:`next` function (which calls
-the generator's :meth:`!generator.__next__()` method).
+the generator's :meth:`~generator.__next__()` method).
 The execution starts at the beginning of the function body
 and proceeds to the first :keyword:`!yield` expression.
 The expression after the :keyword:`!yield` keyword is evaluated and returned
@@ -1015,7 +1015,8 @@ the internal evaluation stack, and the state of any exception handling.
 
 When the iterator is asked to produce another value, execution is *resumed*:
 the function proceeds from the :keyword:`!yield` expression where it was
-suspended until the next :keyword:`!yield` expression is encountered::
+suspended and continues until the next :keyword:`!yield` expression
+is encountered::
 
    >>> second_value = next(generator_iterator)
    generator at line 4
@@ -1038,8 +1039,7 @@ a :exc:`StopIteration` exception::
    StopIteration
 
 Commonly, an iterator is consumed via a :keyword:`for` loop, which implicitly
-calls :func:`next` at the start of each iteration, and handles
-:exc:`StopIteration`::
+calls :func:`next` repeatedly, and handles :exc:`StopIteration`::
 
    >>> for value in generator_function():
    ...     print("value from generator:", value)
@@ -1049,9 +1049,11 @@ calls :func:`next` at the start of each iteration, and handles
    value from generator: 456
    generator ending
 
-Note that instead of reusing the exhausted ``generator_iterator``,
-this example calls ``generator_function()`` again to create a new iterator
-with its own local execution state.
+.. note::
+
+   In this example, the ``generator_function()`` call creates a new iterator
+   with its own local execution state.
+   The exhausted ``generator_iterator`` from earlier examples is not reused.
 
 One common use for generator functions is implementing the
 :meth:`~object.__iter__` method of custom iterable objects.
@@ -1074,10 +1076,11 @@ Generator finalization
 ^^^^^^^^^^^^^^^^^^^^^^
 
 If a generator iterator is not resumed before it is destroyed
-(garbage collected), its :meth:`~generator.close` method will be called,
-raising a :exc:`GeneratorExit` at the :keyword:`!yield` point where the
+(:term:`garbage collected <garbage collection>`),
+its :meth:`~generator.close` method will be called,
+raising a :exc:`GeneratorExit` at the :keyword:`!yield` expression where the
 function is suspended.
-If the :keyword:`!yield` point is in a :keyword:`try` construct,
+If that :keyword:`!yield` expression is in a :keyword:`try` construct,
 pending :keyword:`finally` clauses execute.
 
 .. admonition:: CPython implementation detail
@@ -1101,8 +1104,9 @@ pending :keyword:`finally` clauses execute.
    garbage collection (and thus printing the message) may happen at any
    later point, or even not at all.
 
-Note that yielding a value after :meth:`~generator.close` raises
-:exc:`!GeneratorExit` is an error::
+After :meth:`~generator.close` raises :exc:`!GeneratorExit`,
+the underlying function must not yield.
+If it does, :exc:`RuntimeError` is raised instead of suspending the function::
 
    >>> def gen():
    ...     try:
@@ -1126,8 +1130,8 @@ Note that yielding a value after :meth:`~generator.close` raises
 .. index:: pair: object; generator
 .. _generator-methods:
 
-Generator iterators
-^^^^^^^^^^^^^^^^^^^
+Generator iterator methods
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Generator iterators implement the
 :ref:`iterator protocol <stdtypes-iterators>`.
@@ -1139,20 +1143,19 @@ Iterating them drives execution of the underlying generator function.
 
    Starts the execution of a generator function or resumes it at the
    :ref:`yield expression <yieldexpr>` where the function is currently suspended.
-   When a generator function is resumed with a :meth:`~generator.__next__`
-   method, the current yield expression always evaluates to :const:`None`.
-   The execution then continues to the next yield expression, where the
-   generator is suspended again, and the value of the expression after the
-   :keyword:`yield` keyword is returned to :meth:`~generator.__next__`'s
-   caller.
+   The :keyword:`!yield` expression (if any) evaluates to :const:`!None`.
+   The execution then continues to the next :keyword:`!yield` expression,
+   where the generator is suspended again, and the value of the expression
+   after the :keyword:`!yield` keyword is returned to
+   :meth:`!__next__`'s caller.
    If the generator exits without yielding another value,
-   :meth:`~generator.__next__` raises a :exc:`StopIteration` exception,
+   :meth:`!__next__` raises a :exc:`StopIteration` exception,
    signalling that iteration has completed.
 
    This method is normally called implicitly, for example by a :keyword:`for`
    loop, or by the built-in :func:`next` function.
 
-Generator iterators have a few more methods than generic iterators, which
+Generator iterators have a few more methods than generic iterators. These
 can be used to control the execution of the underlying generator function:
 
 .. method:: generator.send(value)
@@ -1164,8 +1167,8 @@ can be used to control the execution of the underlying generator function:
    the underlying function and either returns the next yielded value or raises
    :exc:`StopIteration`.
 
-   When :meth:`send` is called to start the generator, it must be called
-   with :const:`None` as the argument, because there is no current yield
+   When :meth:`!send` is called to start the generator, it must be called
+   with :const:`!None` as the argument, because there is no current yield
    expression that could receive the value.
 
 
@@ -1180,10 +1183,9 @@ can be used to control the execution of the underlying generator function:
    If the generator function does not catch the passed-in exception, or
    raises a different exception, then that exception propagates to the caller.
 
-   When :meth:`throw` is called to start the generator, the generator
-   immediately exits (that is, subsequent calls to :meth:`~generator.__next__`
-   will raise :exc:`StopIteration`) and the thrown exception is propagated to
-   :meth:`throw`'s caller.
+   When :meth:`throw` is called to start the generator, the generator is
+   immediately :term:`exhausted`, the underlying function is not executed,
+   and the thrown exception is propagated to :meth:`throw`'s caller.
 
    In typical use, this is called with a single argument, an exception instance,
    similar to the way the :keyword:`raise` keyword is used.
@@ -1209,9 +1211,9 @@ can be used to control the execution of the underlying generator function:
    Raises a :exc:`GeneratorExit` exception at the point where the generator
    function is currently suspended (equivalent to calling ``throw(GeneratorExit)``).
 
-   If the generator function has already exited (due to an exception or
-   normal return), or raises :exc:`GeneratorExit` (by not catching the
-   exception), :meth:`close` returns :const:`None`.
+   Then, if the generator function has already exited (due to an exception or
+   normal return), or raises :exc:`GeneratorExit` (including by not catching
+   the exception), :meth:`close` returns :const:`None`.
    If the generator yields a value, a :exc:`RuntimeError` is raised.
    If the generator raises any other exception, it is propagated to the caller.
    If a generator returns a value upon being closed, that value is returned

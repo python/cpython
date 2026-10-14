@@ -1095,7 +1095,7 @@ see :ref:`yield-expression-placement` for details.
 
 A function that contains one or more yield expressions
 is a :term:`generator function`.
-At runtime, calling such a function does not run its code directly, but instead
+At runtime, calling such a function does not run its code immediately, but instead
 returns a :term:`generator iterator` which controls execution of the underlying
 function.
 
@@ -1122,7 +1122,7 @@ For example::
    got: 3
 
 See :ref:`generator-types` for details on runtime behavior and
-ways to control execution of the underlying function.
+ways to control the execution of the underlying function.
 
 If the underlying function is defined using ``async def``, it becomes an
 :term:`asynchronous generator function` instead.
@@ -1157,8 +1157,8 @@ Using :keyword:`!yield` as an expression
 
 Usually, :keyword:`!yield` expressions are used alone on a line,
 as in the examples above.
-However, like other expressions, they can also be used in assignments and
-more complex expressions.
+However, like other expressions, they can also be used in other contexts,
+such as assignments and as parts of more complex expressions.
 
 .. seealso::
 
@@ -1176,7 +1176,7 @@ can be used in assignments::
    ...     print("value of yield is", value)
 
 At runtime, when using the basic iteration protocol (:keyword:`for` or
-:func:`next`), the value of a :keyword:`yield` expression is ``None``::
+:func:`next`), the value of a :keyword:`!yield` expression is ``None``::
 
    >>> for value in generator_function():
    ...     pass
@@ -1205,6 +1205,7 @@ For example::
    >>> def adding_generator():
    ...    sum_of_yields = (yield "first number") + (yield "second number")
    ...    print("The sum is:", sum_of_yields)
+
    >>> iterator = adding_generator()
    >>> next(iterator)
    "first number"
@@ -1216,7 +1217,9 @@ For example::
    Traceback (most recent call last):
    StopIteration
 
-More precisely, parentheses can be only omitted when the :keyword:`yield`
+Parentheses around :keyword:`yield` expressions are also required in other
+contexts, such as :keyword:`if` statement conditions.
+They can be only omitted when the :keyword:`yield`
 expression is:
 
 - an :ref:`expression statement <exprstmts>`'s only expression, or
@@ -1236,7 +1239,7 @@ a :keyword:`!yield from` expression.
 Like a :keyword:`yield` expression, a :keyword:`!yield from` expression
 is only allowed in functions and turns the enclosing function into a generator.
 It must be parenthesized in some contexts; :ref:`the rules <yield-expression-parentheses>`
-are the same as for :keyword:`!yield` expressions.
+for parentheses are the same as for :keyword:`!yield` expressions.
 
 At runtime, *subiterable* -- the expression after the :keyword:`!yield from`
 keywords -- must evaluate to an iterable.
@@ -1314,24 +1317,27 @@ is a function definition, not a module-level or class block.
 For example::
 
    class C:
-      # yield is not allowed here
+       # yield is not allowed here
 
-      def foo(self):
-            yield 1  # this makes `foo` a generator function
+       def foo(self):
+           yield 1  # this makes `foo` a generator function
 
-            class NestedClass:
+           class NestedClass:
                # yield is not allowed here
                pass
 
-            def nested_function():
+           def nested_function():
                # this function is *not* a generator
 
                def double_nested():
-                  yield 2  # this makes `double_nested` a generator function
+                   # this `yield` makes `double_nested` (but
+                   # not `nested_function`) a generator function
+                   yield 2
 
 Due to their side effects on the containing scope, ``yield`` expressions
 are not permitted as part of the implicitly defined scopes used to
-implement comprehensions and generator expressions.
+implement :ref:`comprehensions <comprehensions>` and
+:ref:`generator expressions <genexpr>`.
 
 For :keyword:`!yield from` expressions, the same restrictions apply.
 
@@ -1353,11 +1359,7 @@ expressions is:
 
    yield_expression:
       | 'yield' 'from' `expression`
-      | 'yield' [`yield_list`]
-
-   yield_list:
-      | `expression_list`
-      | `starred_expression` "," [`starred_expression_list`]
+      | 'yield' [`starred_expression_list`]
 
 Note that ``yield_expression``, the unparenthesized rule, also appears in
 :token:`~python-grammar:expression_stmt` and
@@ -1366,8 +1368,8 @@ Note that ``yield_expression``, the unparenthesized rule, also appears in
 
 .. index:: single: yield; examples
 
-Examples
-^^^^^^^^
+Examples of :keyword:`!yield` expressions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Here is a simple example that demonstrates the behavior of generators and
 generator functions::
@@ -1446,7 +1448,7 @@ how a generator object would be used in a :keyword:`for` statement.
 Calling one of the asynchronous generator's methods returns an :term:`awaitable`
 object, and the execution starts when this object is awaited on. At that time,
 the execution proceeds to the first yield expression, where it is suspended
-again, returning the value of :token:`~python-grammar:yield_list` to the
+again, returning the value of the expression after :keyword:`!yield` to the
 awaiting coroutine. As with a generator, suspension means that all local state
 is retained, including the current bindings of local variables, the instruction
 pointer, the internal evaluation stack, and the state of any exception handling.
