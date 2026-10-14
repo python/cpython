@@ -2494,6 +2494,23 @@ class HardlinkTest(unittest.TestCase):
 
 class PaxWriteTest(GNUWriteTest):
 
+    def test_100_byte_names(self):
+        for field, offset in (("name", 0), ("linkname", 157)):
+            with self.subTest(field=field):
+                name = "a" * 100
+                tarinfo = tarfile.TarInfo("test")
+                if field == "linkname":
+                    tarinfo.type = tarfile.SYMTYPE
+                setattr(tarinfo, field, name)
+                header = tarinfo.tobuf(format=tarfile.PAX_FORMAT)
+                self.assertEqual(len(header), tarfile.BLOCKSIZE)
+                self.assertEqual(header[offset:offset + 100],
+                                 name.encode("ascii"))
+                with tarfile.open(fileobj=io.BytesIO(header)) as tar:
+                    member = tar.next()
+                    self.assertEqual(getattr(member, field), name)
+                    self.assertEqual(member.pax_headers, {})
+
     def test_owner_names(self):
         for field, offset in (("uname", 265), ("gname", 297)):
             for length in (0, 31, 32, 33, 40):
