@@ -408,7 +408,6 @@ def configure_host_python(
             f"--host={host}",
             f"--build={sysconfig.get_config_var('BUILD_GNU_TYPE')}",
             f"--with-build-python={build_python_path()}",
-            "--with-system-libmpdec",
             "--enable-framework",
             # Dependent libraries.
             f"--with-openssl={prefix_dir}",

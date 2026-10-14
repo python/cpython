@@ -123,6 +123,17 @@ Some facts and figures:
    :exc:`ReadError` is raised. Use *mode* ``'r'`` to avoid this.  If a
    compression method is not supported, :exc:`CompressionError` is raised.
 
+   .. note::
+
+      Compressed archives opened with modes like ``'r:gz'``, ``'r:bz2'``,
+      ``'r:xz'``, or ``'r:zst'`` support random access, but seeking backwards
+      in the underlying compressed stream requires re-decompressing from the
+      beginning.  Extracting members in a different order than they appear in
+      the archive can therefore be significantly slower — proportional to the
+      total compressed data read rather than just the target member's size.  For
+      best performance, extract members in archive order or use
+      :meth:`TarFile.extractall`.
+
    If *fileobj* is specified, it is used as an alternative to a :term:`file object`
    opened in binary mode for *name*. It is supposed to be at position 0.
 
@@ -965,7 +976,7 @@ A ``TarInfo`` object has the following public data attributes:
 
    This method is also used by :func:`copy.replace`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added support for :func:`copy.replace`.
 
 A :class:`TarInfo` object also provides some convenient query methods:
@@ -1056,7 +1067,8 @@ can be:
 
 * the string ``'tar'``: Honor most *tar*-specific features (i.e. features of
   UNIX-like filesystems), but block features that are very likely to be
-  surprising or malicious. See :func:`tar_filter` for details.
+  surprising or malicious. Note that this filter does not limit the targets of
+  symbolic links. See :func:`tar_filter` for details.
 
 * the string ``'data'``: Ignore or block most features specific to UNIX-like
   filesystems. Intended for extracting cross-platform data archives.
@@ -1124,7 +1136,18 @@ reused in custom filters:
 
   Return the modified ``TarInfo`` member.
 
-  .. versionchanged:: next
+  .. warning::
+     This filter does not check :attr:`TarInfo.linkname`. This means it does
+     not limit where a symbolic link member points. An absolute symbolic-link
+     target will remain absolute, and a relative target may resolve outside the
+     extraction destination. The destination path protection described above
+     concerns only where the archive member itself is written, not where a
+     symbolic link resolves. The stricter :func:`data_filter` rejects these
+     unsafe link targets, raising :class:`~tarfile.AbsoluteLinkError` for
+     absolute link targets or :class:`~tarfile.LinkOutsideDestinationError`
+     for link targets outside the destination.
+
+  .. versionchanged:: 3.16
 
      Filenames containing ``..`` components are now normalized.
 
