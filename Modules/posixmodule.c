@@ -644,6 +644,7 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #  define HAVE_PTSNAME_R_RUNTIME 1
 #  define HAVE_DUP3_RUNTIME 1
 #  define HAVE_PIPE2_RUNTIME 1
+#  define HAVE_FREADLINK_RUNTIME 1
 #endif
 
 
