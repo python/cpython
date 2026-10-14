@@ -167,10 +167,10 @@ hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
     if (err == 0) {
 #    ifdef HAVE_UNRELIABLE_PTHREAD_GETATTR_NP
         /* pthread_getattr_np on the main thread of a musl process reports a
-         * stack size based on the current stack rather than RLIMIT_STACK
+         * stack size based on the current stack rather than RLIMIT_STACK.
          * New threads pass their size to pthread_attr_setstacksize and are
          * reported correctly even on musl, so this fallback only applies to
-         * the main thread.  */
+         * the main thread. */
         if ((pid_t)syscall(SYS_gettid) == getpid()) {
             struct rlimit rl;
             if (getrlimit(RLIMIT_STACK, &rl) == 0 &&
