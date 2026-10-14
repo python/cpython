@@ -2418,6 +2418,9 @@ set_issubset_impl(PySetObject *so, PyObject *other)
     Py_ssize_t pos = 0;
     int rv;
 
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(so);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(other);
+
     if (!PyAnySet_Check(other)) {
         PyObject *tmp = set_intersection(so, other);
         if (tmp == NULL) {
@@ -2460,7 +2463,7 @@ set_issuperset_impl(PySetObject *so, PyObject *other)
 /*[clinic end generated code: output=ecf00ce552c09461 input=5f2e1f262e6e4ccc]*/
 {
     if (PyAnySet_Check(other)) {
-        return set_issubset(other, (PyObject *)so);
+        return set_issubset_impl((PySetObject *)other, (PyObject *)so);
     }
 
     PyObject *key, *it = PyObject_GetIter(other);
