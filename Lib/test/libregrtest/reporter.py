@@ -5,10 +5,10 @@ import re
 from _colorize import decolor  # type: ignore[import-not-found]
 from typing import TextIO
 
-from .findtests import findtestdir
 from .result import TestResult
+lazy from .results import TestResults
 from .runtests import RunTests
-from .utils import StrPath, count
+from .utils import count
 
 
 class Reporter:
@@ -16,6 +16,14 @@ class Reporter:
 
     The default reporter does nothing.
     """
+
+    def run_started(self, runtests: RunTests) -> None:
+        """Start a run of tests.
+
+        Called in the main process at the start of each run (the first run
+        and the re-run), and in the process running the tests before each
+        test file.
+        """
 
     def test_case_failed(self, test_case: str, traceback: str,
                          stream: TextIO) -> None:
@@ -25,11 +33,11 @@ class Reporter:
         test file in quiet mode.
         """
 
-    def test_result(self, result: TestResult, runtests: RunTests) -> None:
+    def test_result(self, result: TestResult) -> None:
         """Report the result of a test file, in the main process."""
 
-    def run_failed(self, failed: list[TestResult], state: str) -> None:
-        """Report the test files which failed the run."""
+    def summary(self, results: TestResults, state: str) -> None:
+        """Report the results of all runs, in the main process."""
 
     @staticmethod
     def parse_traceback(traceback: str) -> tuple[str | None, str | None, str]:
@@ -49,25 +57,10 @@ class Reporter:
                              flags=re.MULTILINE)[-1].strip()
         return filename, line, exception
 
-    @staticmethod
-    def test_filename(result: TestResult,
-                      test_dir: StrPath | None) -> str | None:
-        """Get the filename of a test, or None if it is not found."""
-        if result.filename:
-            return result.filename
-        # The worker crashed or timed out before importing the test:
-        # "test.test_x.test_y" is test_x/test_y.py or test_x/test_y/__init__.py
-        name = result.test_name.removeprefix("test.")
-        path = pathlib.Path(findtestdir(test_dir), *name.split("."))
-        for filename in (path.with_suffix(".py"), path / "__init__.py"):
-            if filename.exists():
-                return str(filename)
-        return None
 
-
-def get_reporter(github_summary: str | None) -> Reporter:
-    if github_summary:
-        return GitHubActionsReporter(github_summary)
+def get_reporter() -> Reporter:
+    if GitHubActionsReporter.enabled():
+        return GitHubActionsReporter()
     return Reporter()
 
 
@@ -79,23 +72,31 @@ class GitHubActionsReporter(Reporter):
     ESCAPE_DATA = str.maketrans({"%": "%25", "\r": "%0D", "\n": "%0A"})
     ESCAPE_PROPERTY = ESCAPE_DATA | str.maketrans({":": "%3A", ",": "%2C"})
 
-    def __init__(self, summary_filename: str) -> None:
-        self.summary_filename = summary_filename
+    @staticmethod
+    def enabled() -> bool:
+        return "GITHUB_STEP_SUMMARY" in os.environ
+
+    def run_started(self, runtests: RunTests) -> None:
+        self.runtests = runtests
 
     def test_case_failed(self, test_case: str, traceback: str,
                          stream: TextIO) -> None:
+        # Only report the failures which decide the result
+        if not self.runtests.final_run:
+            return
         # The job log has the full traceback: only keep the exception
         filename, line, exception = self.parse_traceback(decolor(traceback))
         self.annotate(test_case, exception, filename, line, stream)
 
-    def test_result(self, result: TestResult, runtests: RunTests) -> None:
+    def test_result(self, result: TestResult) -> None:
         # Failed test cases are annotated by test_case_failed()
-        if (not result.is_failed(runtests.fail_env_changed)
+        if (not self.runtests.final_run
+                or not result.is_failed(self.runtests.fail_env_changed)
                 or result.failed_test_cases):
             return
         message = "\n".join([str(result), *(result.env_changed_reasons or ())])
         self.annotate(result.test_name, decolor(message),
-                      self.test_filename(result, runtests.test_dir))
+                      result.find_filename(self.runtests.test_dir))
 
     def annotate(self, title: str, message: str, filename: str | None,
                  line: str | None = None, stream: TextIO | None = None) -> None:
@@ -113,7 +114,12 @@ class GitHubActionsReporter(Reporter):
         print(f"::error {props_text}::{message.translate(self.ESCAPE_DATA)}",
               file=stream, flush=True)
 
-    def run_failed(self, failed: list[TestResult], state: str) -> None:
+    def summary(self, results: TestResults, state: str) -> None:
+        # Test files which failed in the last run (the re-run, if any)
+        failed = [result for result in results.rerun_results
+                  if result.is_failed(self.runtests.fail_env_changed)]
+        if not failed:
+            return
         ncases = sum(len(result.failed_test_cases) for result in failed)
         blocks = [f"## {decolor(state)}: "
                   f"{count(len(failed), 'test file')} and "
@@ -131,5 +137,6 @@ class GitHubActionsReporter(Reporter):
                            f"```pytb\n{decolor(traceback).rstrip()}\n```",
                            "</details>"]
         # Markdown blocks are separated by an empty line
-        with open(self.summary_filename, "a", encoding="utf-8") as fp:
+        with open(os.environ["GITHUB_STEP_SUMMARY"], "a",
+                  encoding="utf-8") as fp:
             fp.write("".join(f"{block}\n\n" for block in blocks))

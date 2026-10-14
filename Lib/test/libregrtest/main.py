@@ -69,6 +69,7 @@ class Regrtest:
 
         # Logger
         self.logger = Logger(self.results, self.quiet, self.pgo)
+        self.reporter = get_reporter()
 
         # Actions
         self.want_header: bool = ns.header
@@ -286,8 +287,9 @@ class Regrtest:
             fail_fast=False,
             match_tests_dict=match_tests_dict,
             output_on_failure=False,
-            github_summary=self.github_summary)
+            final_run=True)
         self.logger.set_tests(runtests)
+        self.reporter.run_started(runtests)
 
         msg = f"Re-running {len(tests)} failed tests in verbose mode"
         if not self.single_process:
@@ -397,7 +399,7 @@ class Regrtest:
             result = run_single_test(test_name, runtests)
 
         self.results.accumulate_result(result, runtests)
-        get_reporter(runtests.github_summary).test_result(result, runtests)
+        self.reporter.test_result(result)
 
         return result
 
@@ -462,7 +464,8 @@ class Regrtest:
 
     def _run_tests_mp(self, runtests: RunTests, num_workers: int) -> None:
         from .run_workers import RunWorkers
-        RunWorkers(num_workers, runtests, self.logger, self.results).run()
+        RunWorkers(num_workers, runtests, self.logger, self.results,
+                   self.reporter).run()
 
     def finalize_tests(self, coverage: trace.CoverageResults | None) -> None:
         if self.next_single_filename:
@@ -483,12 +486,7 @@ class Regrtest:
         if self.junit_filename:
             self.results.write_junit(self.junit_filename)
 
-        # Test files which failed in the last run (the re-run, if any)
-        failed = [result for result in self.results.rerun_results
-                  if result.is_failed(self.fail_env_changed)]
-        if failed:
-            get_reporter(self.github_summary).run_failed(failed,
-                                                         self.get_state())
+        self.reporter.summary(self.results, self.get_state())
 
     def display_summary(self) -> None:
         if self.first_runtests is None:
@@ -527,9 +525,7 @@ class Regrtest:
             hunt_refleak=self.hunt_refleak,
             test_dir=self.test_dir,
             use_junit=(self.junit_filename is not None),
-            # When failed tests are re-run, only report the re-run
-            github_summary=(None if self.want_rerun and not self.python_cmd
-                            else self.github_summary),
+            final_run=not (self.want_rerun and not self.python_cmd),
             coverage=self.coverage,
             memory_limit=self.memory_limit,
             gc_threshold=self.gc_threshold,
@@ -581,6 +577,7 @@ class Regrtest:
             runtests = runtests.copy(tests=case_ids, case_groups=case_groups)
         self.first_runtests = runtests
         self.logger.set_tests(runtests)
+        self.reporter.run_started(runtests)
 
         if (runtests.hunt_refleak is not None) and (not self.num_workers):
             # gh-109739: WindowsLoadTracker thread interferes with refleak check
@@ -776,8 +773,6 @@ class Regrtest:
             self.junit_filename = os.path.abspath(self.junit_filename)
 
         strip_py_suffix(self.cmdline_args)
-
-        self.github_summary = os.environ.pop("GITHUB_STEP_SUMMARY", None)
 
         self._tmp_dir = get_temp_dir(self._tmp_dir)
 

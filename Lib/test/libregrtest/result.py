@@ -1,10 +1,12 @@
 import dataclasses
 import json
+import pathlib
 from _colorize import get_colors  # type: ignore[import-not-found]
 from typing import Any
 
+from .findtests import findtestdir
 from .utils import (
-    StrJSON, TestName, FilterTuple,
+    StrJSON, StrPath, TestName, FilterTuple,
     format_duration, normalize_test_name, print_warning)
 
 
@@ -184,6 +186,19 @@ class TestResult:
     @property
     def failed_test_cases(self) -> list[tuple[str, str]]:
         return (self.errors or []) + (self.failures or [])
+
+    def find_filename(self, test_dir: StrPath | None) -> str | None:
+        """Get the filename of the test, or None if it is not found."""
+        if self.filename:
+            return self.filename
+        # The worker crashed or timed out before importing the test:
+        # "test.test_x.test_y" is test_x/test_y.py or test_x/test_y/__init__.py
+        name = self.test_name.removeprefix("test.")
+        path = pathlib.Path(findtestdir(test_dir), *name.split("."))
+        for filename in (path.with_suffix(".py"), path / "__init__.py"):
+            if filename.exists():
+                return str(filename)
+        return None
 
     def set_env_changed(self, *reasons):
         if self.state is None or self.state == State.PASSED:
