@@ -1351,7 +1351,7 @@ class BasicTest(TestCase):
     def test_malformed_content_length(self):
         # RFC 9112: Content-Length = 1*DIGIT.  Values that int() accepts but
         # the grammar forbids must not be used to frame the body.
-        for value in ('+5', '5_0'):
+        for value in ('+5', '5_0', '5 0'):
             with self.subTest(value=value):
                 sock = FakeSocket(
                     'HTTP/1.1 200 OK\r\nContent-Length: %s\r\n\r\nHello\r\n' % value)
@@ -1359,6 +1359,22 @@ class BasicTest(TestCase):
                 resp.begin()
                 self.assertIsNone(resp.length)
                 self.assertEqual(resp.read(), b'Hello\r\n')
+                resp.close()
+
+    def test_content_length_with_whitespace(self):
+        # RFC 9112, section 5.1: optional whitespace (SP / HTAB) around
+        # the field value is not part of the value, so it must not
+        # prevent the Content-Length from being used to frame the body.
+        for value in ('7 ', '7\t', '7 \t ', ' 7 '):
+            with self.subTest(value=value):
+                sock = FakeSocket(
+                    'HTTP/1.1 200 OK\r\nContent-Length: %s\r\n\r\n'
+                    'Hello\r\nextra' % value)
+                resp = client.HTTPResponse(sock, method="GET")
+                resp.begin()
+                self.assertEqual(resp.length, 7)
+                self.assertEqual(resp.read(), b'Hello\r\n')
+                self.assertTrue(resp.isclosed())
                 resp.close()
 
     def test_malformed_chunk_size(self):
