@@ -979,29 +979,32 @@ finally:
 }
 
 /* AC: cannot convert yet, as needs PEP 457 group support in inspect */
-static PyObject *
-builtin_dir(PyObject *self, PyObject *args)
-{
-    PyObject *arg = NULL;
+/*[clinic input]
+dir as builtin_dir
 
-    if (!PyArg_UnpackTuple(args, "dir", 0, 1, &arg))
-        return NULL;
+    object as arg: object = NULL
+    /
+
+Return an alphabetized list of the attributes of the object.
+
+If called without an argument, return the names in the current scope.
+Else, return an alphabetized list of names comprising (some of) the
+attributes of the given object, and of attributes reachable from it.
+If the object supplies a method named __dir__, it will be used;
+otherwise the default dir() logic is used and returns:
+  for a module object: the module's attributes.
+  for a class object:  its attributes, and recursively the attributes
+    of its bases.
+  for any other object: its attributes, its class's attributes, and
+    recursively the attributes of its class's base classes.
+[clinic start generated code]*/
+
+static PyObject *
+builtin_dir_impl(PyObject *module, PyObject *arg)
+/*[clinic end generated code: output=24f2c7a52c1e3b08 input=7fe1b2a5ca9ae355]*/
+{
     return PyObject_Dir(arg);
 }
-
-PyDoc_STRVAR(dir_doc,
-"dir([object]) -> list of strings\n"
-"\n"
-"If called without an argument, return the names in the current scope.\n"
-"Else, return an alphabetized list of names comprising (some of) the\n"
-"attributes of the given object, and of attributes reachable from it.\n"
-"If the object supplies a method named __dir__, it will be used;\n"
-"otherwise the default dir() logic is used and returns:\n"
-"  for a module object: the module's attributes.\n"
-"  for a class object:  its attributes, and recursively the attributes\n"
-"    of its bases.\n"
-"  for any other object: its attributes, its class's attributes, and\n"
-"    recursively the attributes of its class's base classes.");
 
 /*[clinic input]
 divmod as builtin_divmod
@@ -2749,14 +2752,24 @@ builtin_sorted(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
 
 
 /* AC: cannot convert yet, as needs PEP 457 group support in inspect */
+/*[clinic input]
+vars as builtin_vars
+
+    object as v: object = NULL
+    /
+
+Show vars.
+
+Without arguments, equivalent to locals().
+With an argument, equivalent to object.__dict__.
+[clinic start generated code]*/
+
 static PyObject *
-builtin_vars(PyObject *self, PyObject *args)
+builtin_vars_impl(PyObject *module, PyObject *v)
+/*[clinic end generated code: output=a64017e4a4dc53fc input=577550318240f012]*/
 {
-    PyObject *v = NULL;
     PyObject *d;
 
-    if (!PyArg_UnpackTuple(args, "vars", 0, 1, &v))
-        return NULL;
     if (v == NULL) {
         if (_PyEval_GetFrame() != NULL) {
             d = _PyEval_GetFrameLocals();
@@ -2783,12 +2796,6 @@ builtin_vars(PyObject *self, PyObject *args)
     }
     return d;
 }
-
-PyDoc_STRVAR(vars_doc,
-"vars([object]) -> dictionary\n\
-\n\
-Without arguments, equivalent to locals().\n\
-With an argument, equivalent to object.__dict__.");
 
 
 /* Improved Kahan–Babuška algorithm by Arnold Neumaier
@@ -3433,7 +3440,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_CHR_METHODDEF
     BUILTIN_COMPILE_METHODDEF
     BUILTIN_DELATTR_METHODDEF
-    {"dir", builtin_dir, METH_VARARGS, dir_doc},
+    BUILTIN_DIR_METHODDEF
     BUILTIN_DIVMOD_METHODDEF
     BUILTIN_EVAL_METHODDEF
     BUILTIN_EXEC_METHODDEF
@@ -3463,7 +3470,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_SETATTR_METHODDEF
     BUILTIN_SORTED_METHODDEF
     BUILTIN_SUM_METHODDEF
-    {"vars",            builtin_vars,       METH_VARARGS, vars_doc},
+    BUILTIN_VARS_METHODDEF
     {NULL,              NULL},
 };
 

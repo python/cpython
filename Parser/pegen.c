@@ -7,11 +7,14 @@
 #include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal
 #include <errcode.h>
 
+#include "lexer/state.h"
 #include "tokenizer/tokenizer.h"
 #include "pegen.h"
 
 #define IDENTIFIER_CACHE_SIZE 2048  // Must be a power of two.
 #define IDENTIFIER_CACHE_MAX_PROBES 8
+#define PEGEN_ARRAY_GROWTH_FACTOR 2
+#define TYPE_IGNORE_INITIAL_CAPACITY 10
 
 struct _identifier_cache_entry {
     const char *key;   // Borrowed from arena-owned token bytes.
@@ -35,6 +38,9 @@ Py_ssize_t
 _PyPegen_byte_offset_to_character_offset_line(PyObject *line, Py_ssize_t col_offset, Py_ssize_t end_col_offset)
 {
     const unsigned char *data = (const unsigned char*)PyUnicode_AsUTF8(line);
+    if (data == NULL) {
+        return -1;
+    }
 
     Py_ssize_t len = 0;
     while (col_offset < end_col_offset) {
@@ -143,21 +149,37 @@ init_normalization(Parser *p)
     return 1;
 }
 
-static int
-growable_comment_array_init(growable_comment_array *arr, size_t initial_size) {
-    assert(initial_size > 0);
-    arr->items = PyMem_Malloc(initial_size * sizeof(*arr->items));
-    arr->size = initial_size;
-    arr->num_items = 0;
-
-    return arr->items != NULL;
+int
+_PyPegen_grow_loop_buffer(void ***buffer, Py_ssize_t *capacity)
+{
+    if ((size_t)*capacity > (size_t)PY_SSIZE_T_MAX /
+            (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(**buffer))) {
+        return -1;
+    }
+    Py_ssize_t new_capacity = *capacity == 0
+        ? 1 : *capacity * PEGEN_ARRAY_GROWTH_FACTOR;
+    void **new_buffer = PyMem_Realloc(*buffer, new_capacity * sizeof(**buffer));
+    if (new_buffer == NULL) {
+        return -1;
+    }
+    *buffer = new_buffer;
+    *capacity = new_capacity;
+    return 0;
 }
 
 static int
-growable_comment_array_add(growable_comment_array *arr, int lineno, char *comment) {
+growable_comment_array_add(growable_comment_array *arr, int lineno, char *comment)
+{
     if (arr->num_items >= arr->size) {
-        size_t new_size = arr->size * 2;
-        void *new_items_array = PyMem_Realloc(arr->items, new_size * sizeof(*arr->items));
+        if (arr->size > (size_t)PY_SSIZE_T_MAX /
+                (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*arr->items))) {
+            return 0;
+        }
+        size_t new_size = arr->size == 0
+            ? TYPE_IGNORE_INITIAL_CAPACITY
+            : arr->size * PEGEN_ARRAY_GROWTH_FACTOR;
+        void *new_items_array = PyMem_Realloc(
+            arr->items, new_size * sizeof(*arr->items));
         if (!new_items_array) {
             return 0;
         }
@@ -172,8 +194,9 @@ growable_comment_array_add(growable_comment_array *arr, int lineno, char *commen
 }
 
 static void
-growable_comment_array_deallocate(growable_comment_array *arr) {
-    for (unsigned i = 0; i < arr->num_items; i++) {
+growable_comment_array_deallocate(growable_comment_array *arr)
+{
+    for (size_t i = 0; i < arr->num_items; i++) {
         PyMem_Free(arr->items[i].comment);
     }
     PyMem_Free(arr->items);
@@ -273,12 +296,13 @@ initialize_token(Parser *p, Token *parser_token, struct token *new_token, int to
 
 static int
 _resize_tokens_array(Parser *p) {
-    if (p->size > INT_MAX / 2 ||
-        (size_t)p->size > PY_SSIZE_T_MAX / (2 * sizeof(*p->tokens))) {
+    if (p->size > INT_MAX / PEGEN_ARRAY_GROWTH_FACTOR ||
+            (size_t)p->size > PY_SSIZE_T_MAX /
+                (PEGEN_ARRAY_GROWTH_FACTOR * sizeof(*p->tokens))) {
         PyErr_NoMemory();
         return -1;
     }
-    int newsize = p->size * 2;
+    int newsize = p->size * PEGEN_ARRAY_GROWTH_FACTOR;
     Token **new_tokens = PyMem_Realloc(p->tokens, (size_t)newsize * sizeof(Token *));
     if (new_tokens == NULL) {
         PyErr_NoMemory();
@@ -320,6 +344,7 @@ _PyPegen_fill_token(Parser *p)
         tag[len] = '\0';
         // Ownership of tag passes to the growable array
         if (!growable_comment_array_add(&p->type_ignore_comments, new_token.end_loc.lineno, tag)) {
+            PyMem_Free(tag);
             PyErr_NoMemory();
             goto error;
         }
@@ -943,12 +968,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
         PyMem_Free(p);
         return (Parser *) PyErr_NoMemory();
     }
-    if (!growable_comment_array_init(&p->type_ignore_comments, 10)) {
-        PyMem_Free(p->tokens[0]);
-        PyMem_Free(p->tokens);
-        PyMem_Free(p);
-        return (Parser *) PyErr_NoMemory();
-    }
+    p->type_ignore_comments = (growable_comment_array){0};
 
     p->mark = 0;
     p->fill = 0;
@@ -995,7 +1015,7 @@ _PyPegen_Parser_Free(Parser *p)
     Py_XDECREF(p->normalize);
     // Resizes allocate blocks starting at indices 1, 2, 4, and so on.
     PyMem_Free(p->tokens[0]);
-    for (int i = 1; i < p->size; i *= 2) {
+    for (int i = 1; i < p->size; i *= PEGEN_ARRAY_GROWTH_FACTOR) {
         PyMem_Free(p->tokens[i]);
     }
     PyMem_Free(p->tokens);
@@ -1124,6 +1144,7 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
                              PyCompilerFlags *flags, int *errcode,
                              PyObject **interactive_src, PyArena *arena)
 {
+    int parser_flags = compute_parser_flags(flags);
     struct tok_state *tok = _PyTokenizer_FromFile(fp, enc, ps1, ps2);
     if (tok == NULL) {
         if (PyErr_Occurred()) {
@@ -1135,6 +1156,7 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
         }
         return NULL;
     }
+    tok->barry_as_bdfl = parser_flags & PyPARSE_BARRY_AS_BDFL;
 
     // From here on we need to clean up even if there's an error
     mod_ty result = NULL;
@@ -1146,7 +1168,6 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
     _PyTokenizer_SetContext(tok, filename_ob, module);
     Py_DECREF(module);
 
-    int parser_flags = compute_parser_flags(flags);
     Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, PY_MINOR_VERSION,
                                     errcode, NULL, arena);
     if (p == NULL) {
@@ -1176,6 +1197,7 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
                        PyCompilerFlags *flags, PyArena *arena, PyObject *module)
 {
     int exec_input = start_rule == Py_file_input;
+    int parser_flags = compute_parser_flags(flags);
 
     struct tok_state *tok;
     if (flags != NULL && flags->cf_flags & PyCF_IGNORE_COOKIE) {
@@ -1193,12 +1215,13 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
         }
         return NULL;
     }
+    tok->barry_as_bdfl = parser_flags & PyPARSE_BARRY_AS_BDFL;
+
     _PyTokenizer_SetContext(tok, filename_ob, module);
 
     // We need to clear up from here on
     mod_ty result = NULL;
 
-    int parser_flags = compute_parser_flags(flags);
     int feature_version = flags && (flags->cf_flags & PyCF_ONLY_AST) ?
         flags->cf_feature_version : PY_MINOR_VERSION;
     Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, feature_version,

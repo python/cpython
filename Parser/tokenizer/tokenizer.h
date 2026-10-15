@@ -21,9 +21,8 @@ struct token {
 typedef struct {
     const char *text;
     Py_ssize_t length;
-    const char *line;
-    Py_ssize_t line_length;
-    const char *end_line;
+    _PyTok_Span line_span;
+    _PyTok_Off end_line_start;
     int implicit_newline;
     int at_eof;
 } _PyToken_View;
@@ -58,6 +57,7 @@ typedef struct {
    Errors are returned as ERRORTOKEN, with or without a Python exception. */
 void _PyTokenizer_Get(struct tok_state *, struct token *);
 void _PyTokenizer_Free(struct tok_state *);
+int _PyTokenizer_Traverse(struct tok_state *, visitproc, void *);
 void _PyTokenizer_raise_init_error(PyObject *filename);
 void _PyToken_Init(struct token *);
 static inline void
@@ -72,8 +72,9 @@ _PyTokenizer_Info _PyTokenizer_GetInfo(const struct tok_state *);
 /* An absent token span has a nonnull empty text view. */
 const char *_PyToken_TextView(
     const struct tok_state *, const struct token *, Py_ssize_t *);
-/* Use the token from the most recent Get. text is NULL for an absent span;
-   line includes the token's complete physical line range. */
+/* Use the token from the most recent Get. An absent span has nonnull empty text.
+   line_span covers the token's complete physical line range. end_line_start
+   is the logical offset of its final physical line. */
 void _PyToken_GetView(
     const struct tok_state *tok, const struct token *token,
     _PyToken_View *view);

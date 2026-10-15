@@ -786,7 +786,7 @@ class _GatheringFuture(futures.Future):
         return ret
 
 
-def _discard_awaited_by(children, waiter, outer):
+def _discard_awaited_by(children, waiter):
     for fut in children:
         futures.future_discard_from_awaited_by(fut, waiter)
 
@@ -852,11 +852,14 @@ def gather(*coros_or_futures, return_exceptions=False):
                 # 'fut.exception()' will *raise* a CancelledError
                 # instead of returning it.
                 exc = fut._make_cancelled_error()
+                # gh-157213: children outliving gather() must lose the edge
+                _discard_awaited_by(children, cur_task)
                 outer.set_exception(exc)
                 return
             else:
                 exc = fut.exception()
                 if exc is not None:
+                    _discard_awaited_by(children, cur_task)
                     outer.set_exception(exc)
                     return
 
@@ -924,10 +927,6 @@ def gather(*coros_or_futures, return_exceptions=False):
         children.append(fut)
 
     outer = _GatheringFuture(children, loop=loop)
-    if cur_task is not None:
-        # gh-157213: a child outliving gather() must lose the awaited-by edge
-        outer.add_done_callback(
-            functools.partial(_discard_awaited_by, children, cur_task))
     # Run done callbacks after GatheringFuture created so any post-processing
     # can be performed at this point
     # optimization: in the special case that *all* futures finished eagerly,
@@ -936,25 +935,6 @@ def gather(*coros_or_futures, return_exceptions=False):
     for fut in done_futs:
         _done_callback(fut)
     return outer
-
-
-def _log_on_exception(fut):
-    if fut.cancelled():
-        return
-
-    exc = fut.exception()
-    if exc is None:
-        return
-
-    context = {
-        'message':
-        f'{exc.__class__.__name__} exception in shielded future',
-        'exception': exc,
-        'future': fut,
-    }
-    if fut._source_traceback:
-        context['source_traceback'] = fut._source_traceback
-    fut._loop.call_exception_handler(context)
 
 
 def shield(arg):
@@ -1021,9 +1001,6 @@ def shield(arg):
     def _outer_done_callback(outer):
         if not inner.done():
             inner.remove_done_callback(_inner_done_callback)
-            # Keep only one callback to log on cancel
-            inner.remove_done_callback(_log_on_exception)
-            inner.add_done_callback(_log_on_exception)
             if cur_task is not None:
                 inner.remove_done_callback(_clear_awaited_by_callback)
                 futures.future_discard_from_awaited_by(inner, cur_task)

@@ -350,184 +350,185 @@ static char *soft_keywords[] = {
 #define invalid_type_params_type 1261
 #define invalid_bitwise_and_type 1262  // Left-recursive
 #define invalid_bitwise_or_type 1263  // Left-recursive
-#define _loop0_1_type 1264
-#define _loop1_2_type 1265
-#define _loop0_3_type 1266
-#define _gather_4_type 1267
-#define _tmp_5_type 1268
-#define _tmp_6_type 1269
-#define _tmp_7_type 1270
-#define _tmp_8_type 1271
-#define _tmp_9_type 1272
-#define _tmp_10_type 1273
-#define _tmp_11_type 1274
-#define _loop1_12_type 1275
-#define _loop0_13_type 1276
-#define _gather_14_type 1277
-#define _tmp_15_type 1278
-#define _tmp_16_type 1279
-#define _loop0_17_type 1280
-#define _loop1_18_type 1281
-#define _loop0_19_type 1282
-#define _gather_20_type 1283
-#define _tmp_21_type 1284
-#define _loop0_22_type 1285
-#define _gather_23_type 1286
-#define _loop1_24_type 1287
-#define _tmp_25_type 1288
-#define _tmp_26_type 1289
-#define _loop0_27_type 1290
-#define _loop0_28_type 1291
-#define _loop1_29_type 1292
-#define _loop1_30_type 1293
-#define _loop0_31_type 1294
-#define _loop1_32_type 1295
-#define _loop0_33_type 1296
-#define _gather_34_type 1297
-#define _tmp_35_type 1298
-#define _loop1_36_type 1299
-#define _loop1_37_type 1300
-#define _loop1_38_type 1301
-#define _loop0_39_type 1302
-#define _gather_40_type 1303
-#define _tmp_41_type 1304
-#define _tmp_42_type 1305
-#define _tmp_43_type 1306
-#define _loop0_44_type 1307
-#define _gather_45_type 1308
-#define _loop0_46_type 1309
-#define _gather_47_type 1310
-#define _tmp_48_type 1311
-#define _loop0_49_type 1312
-#define _gather_50_type 1313
-#define _loop0_51_type 1314
-#define _gather_52_type 1315
-#define _loop0_53_type 1316
-#define _gather_54_type 1317
-#define _loop1_55_type 1318
-#define _loop1_56_type 1319
-#define _loop0_57_type 1320
-#define _gather_58_type 1321
-#define _loop1_59_type 1322
-#define _loop1_60_type 1323
-#define _loop1_61_type 1324
-#define _tmp_62_type 1325
-#define _loop0_63_type 1326
-#define _gather_64_type 1327
-#define _tmp_65_type 1328
-#define _tmp_66_type 1329
-#define _tmp_67_type 1330
-#define _tmp_68_type 1331
-#define _tmp_69_type 1332
-#define _loop0_70_type 1333
-#define _loop0_71_type 1334
-#define _loop1_72_type 1335
-#define _loop1_73_type 1336
-#define _loop0_74_type 1337
-#define _loop1_75_type 1338
-#define _loop0_76_type 1339
-#define _loop0_77_type 1340
-#define _loop0_78_type 1341
-#define _loop0_79_type 1342
-#define _loop1_80_type 1343
-#define _loop1_81_type 1344
-#define _loop0_82_type 1345
-#define _gather_83_type 1346
-#define _tmp_84_type 1347
-#define _loop0_85_type 1348
-#define _gather_86_type 1349
-#define _loop1_87_type 1350
-#define _loop0_88_type 1351
-#define _tmp_89_type 1352
-#define _loop0_90_type 1353
-#define _gather_91_type 1354
-#define _tmp_92_type 1355
-#define _loop0_93_type 1356
-#define _gather_94_type 1357
-#define _tmp_95_type 1358
-#define _loop0_96_type 1359
-#define _gather_97_type 1360
-#define _loop0_98_type 1361
-#define _tmp_99_type 1362
-#define _tmp_100_type 1363
-#define _loop0_101_type 1364
-#define _gather_102_type 1365
-#define _loop0_103_type 1366
-#define _gather_104_type 1367
-#define _tmp_105_type 1368
-#define _tmp_106_type 1369
-#define _loop0_107_type 1370
-#define _gather_108_type 1371
-#define _tmp_109_type 1372
-#define _tmp_110_type 1373
-#define _tmp_111_type 1374
-#define _tmp_112_type 1375
-#define _loop1_113_type 1376
-#define _tmp_114_type 1377
-#define _tmp_115_type 1378
-#define _tmp_116_type 1379
-#define _tmp_117_type 1380
-#define _tmp_118_type 1381
-#define _loop0_119_type 1382
-#define _loop0_120_type 1383
-#define _tmp_121_type 1384
-#define _tmp_122_type 1385
-#define _tmp_123_type 1386
-#define _tmp_124_type 1387
-#define _tmp_125_type 1388
-#define _tmp_126_type 1389
-#define _tmp_127_type 1390
-#define _tmp_128_type 1391
-#define _loop0_129_type 1392
-#define _gather_130_type 1393
-#define _tmp_131_type 1394
-#define _tmp_132_type 1395
-#define _tmp_133_type 1396
-#define _tmp_134_type 1397
-#define _loop0_135_type 1398
-#define _gather_136_type 1399
-#define _tmp_137_type 1400
-#define _loop0_138_type 1401
-#define _gather_139_type 1402
-#define _loop0_140_type 1403
-#define _gather_141_type 1404
-#define _tmp_142_type 1405
-#define _loop0_143_type 1406
-#define _tmp_144_type 1407
-#define _tmp_145_type 1408
-#define _tmp_146_type 1409
-#define _tmp_147_type 1410
-#define _tmp_148_type 1411
-#define _tmp_149_type 1412
-#define _tmp_150_type 1413
-#define _tmp_151_type 1414
-#define _tmp_152_type 1415
-#define _tmp_153_type 1416
-#define _tmp_154_type 1417
-#define _tmp_155_type 1418
-#define _tmp_156_type 1419
-#define _tmp_157_type 1420
-#define _tmp_158_type 1421
-#define _tmp_159_type 1422
-#define _tmp_160_type 1423
-#define _tmp_161_type 1424
-#define _tmp_162_type 1425
-#define _tmp_163_type 1426
-#define _tmp_164_type 1427
-#define _tmp_165_type 1428
-#define _tmp_166_type 1429
-#define _tmp_167_type 1430
-#define _tmp_168_type 1431
-#define _tmp_169_type 1432
-#define _tmp_170_type 1433
-#define _tmp_171_type 1434
-#define _loop0_172_type 1435
-#define _tmp_173_type 1436
-#define _tmp_174_type 1437
-#define _tmp_175_type 1438
-#define _tmp_176_type 1439
-#define _tmp_177_type 1440
-#define _tmp_178_type 1441
+#define invalid_noteq_type 1264
+#define _loop0_1_type 1265
+#define _loop1_2_type 1266
+#define _loop0_3_type 1267
+#define _gather_4_type 1268
+#define _tmp_5_type 1269
+#define _tmp_6_type 1270
+#define _tmp_7_type 1271
+#define _tmp_8_type 1272
+#define _tmp_9_type 1273
+#define _tmp_10_type 1274
+#define _tmp_11_type 1275
+#define _loop1_12_type 1276
+#define _loop0_13_type 1277
+#define _gather_14_type 1278
+#define _tmp_15_type 1279
+#define _tmp_16_type 1280
+#define _loop0_17_type 1281
+#define _loop1_18_type 1282
+#define _loop0_19_type 1283
+#define _gather_20_type 1284
+#define _tmp_21_type 1285
+#define _loop0_22_type 1286
+#define _gather_23_type 1287
+#define _loop1_24_type 1288
+#define _tmp_25_type 1289
+#define _tmp_26_type 1290
+#define _loop0_27_type 1291
+#define _loop0_28_type 1292
+#define _loop1_29_type 1293
+#define _loop1_30_type 1294
+#define _loop0_31_type 1295
+#define _loop1_32_type 1296
+#define _loop0_33_type 1297
+#define _gather_34_type 1298
+#define _tmp_35_type 1299
+#define _loop1_36_type 1300
+#define _loop1_37_type 1301
+#define _loop1_38_type 1302
+#define _loop0_39_type 1303
+#define _gather_40_type 1304
+#define _tmp_41_type 1305
+#define _tmp_42_type 1306
+#define _tmp_43_type 1307
+#define _loop0_44_type 1308
+#define _gather_45_type 1309
+#define _loop0_46_type 1310
+#define _gather_47_type 1311
+#define _tmp_48_type 1312
+#define _loop0_49_type 1313
+#define _gather_50_type 1314
+#define _loop0_51_type 1315
+#define _gather_52_type 1316
+#define _loop0_53_type 1317
+#define _gather_54_type 1318
+#define _loop1_55_type 1319
+#define _loop1_56_type 1320
+#define _loop0_57_type 1321
+#define _gather_58_type 1322
+#define _loop1_59_type 1323
+#define _loop1_60_type 1324
+#define _loop1_61_type 1325
+#define _tmp_62_type 1326
+#define _loop0_63_type 1327
+#define _gather_64_type 1328
+#define _tmp_65_type 1329
+#define _tmp_66_type 1330
+#define _tmp_67_type 1331
+#define _tmp_68_type 1332
+#define _tmp_69_type 1333
+#define _loop0_70_type 1334
+#define _loop0_71_type 1335
+#define _loop1_72_type 1336
+#define _loop1_73_type 1337
+#define _loop0_74_type 1338
+#define _loop1_75_type 1339
+#define _loop0_76_type 1340
+#define _loop0_77_type 1341
+#define _loop0_78_type 1342
+#define _loop0_79_type 1343
+#define _loop1_80_type 1344
+#define _loop1_81_type 1345
+#define _loop0_82_type 1346
+#define _gather_83_type 1347
+#define _tmp_84_type 1348
+#define _loop0_85_type 1349
+#define _gather_86_type 1350
+#define _loop1_87_type 1351
+#define _loop0_88_type 1352
+#define _tmp_89_type 1353
+#define _loop0_90_type 1354
+#define _gather_91_type 1355
+#define _tmp_92_type 1356
+#define _loop0_93_type 1357
+#define _gather_94_type 1358
+#define _tmp_95_type 1359
+#define _loop0_96_type 1360
+#define _gather_97_type 1361
+#define _loop0_98_type 1362
+#define _tmp_99_type 1363
+#define _tmp_100_type 1364
+#define _loop0_101_type 1365
+#define _gather_102_type 1366
+#define _loop0_103_type 1367
+#define _gather_104_type 1368
+#define _tmp_105_type 1369
+#define _tmp_106_type 1370
+#define _loop0_107_type 1371
+#define _gather_108_type 1372
+#define _tmp_109_type 1373
+#define _tmp_110_type 1374
+#define _tmp_111_type 1375
+#define _tmp_112_type 1376
+#define _loop1_113_type 1377
+#define _tmp_114_type 1378
+#define _tmp_115_type 1379
+#define _tmp_116_type 1380
+#define _tmp_117_type 1381
+#define _tmp_118_type 1382
+#define _loop0_119_type 1383
+#define _loop0_120_type 1384
+#define _tmp_121_type 1385
+#define _tmp_122_type 1386
+#define _tmp_123_type 1387
+#define _tmp_124_type 1388
+#define _tmp_125_type 1389
+#define _tmp_126_type 1390
+#define _tmp_127_type 1391
+#define _tmp_128_type 1392
+#define _loop0_129_type 1393
+#define _gather_130_type 1394
+#define _tmp_131_type 1395
+#define _tmp_132_type 1396
+#define _tmp_133_type 1397
+#define _tmp_134_type 1398
+#define _loop0_135_type 1399
+#define _gather_136_type 1400
+#define _tmp_137_type 1401
+#define _loop0_138_type 1402
+#define _gather_139_type 1403
+#define _loop0_140_type 1404
+#define _gather_141_type 1405
+#define _tmp_142_type 1406
+#define _loop0_143_type 1407
+#define _tmp_144_type 1408
+#define _tmp_145_type 1409
+#define _tmp_146_type 1410
+#define _tmp_147_type 1411
+#define _tmp_148_type 1412
+#define _tmp_149_type 1413
+#define _tmp_150_type 1414
+#define _tmp_151_type 1415
+#define _tmp_152_type 1416
+#define _tmp_153_type 1417
+#define _tmp_154_type 1418
+#define _tmp_155_type 1419
+#define _tmp_156_type 1420
+#define _tmp_157_type 1421
+#define _tmp_158_type 1422
+#define _tmp_159_type 1423
+#define _tmp_160_type 1424
+#define _tmp_161_type 1425
+#define _tmp_162_type 1426
+#define _tmp_163_type 1427
+#define _tmp_164_type 1428
+#define _tmp_165_type 1429
+#define _tmp_166_type 1430
+#define _tmp_167_type 1431
+#define _tmp_168_type 1432
+#define _tmp_169_type 1433
+#define _tmp_170_type 1434
+#define _tmp_171_type 1435
+#define _loop0_172_type 1436
+#define _tmp_173_type 1437
+#define _tmp_174_type 1438
+#define _tmp_175_type 1439
+#define _tmp_176_type 1440
+#define _tmp_177_type 1441
+#define _tmp_178_type 1442
 
 static mod_ty file_rule(Parser *p);
 static mod_ty interactive_rule(Parser *p);
@@ -793,6 +794,7 @@ static void *invalid_factor_rule(Parser *p);
 static void *invalid_type_params_rule(Parser *p);
 static void *invalid_bitwise_and_rule(Parser *p);
 static void *invalid_bitwise_or_rule(Parser *p);
+static void *invalid_noteq_rule(Parser *p);
 static asdl_seq *_loop0_1_rule(Parser *p);
 static asdl_seq *_loop1_2_rule(Parser *p);
 static asdl_seq *_loop0_3_rule(Parser *p);
@@ -12712,6 +12714,7 @@ comparison_rule(Parser *p)
 //     | '==' bitwise_or
 //     | ('!=') bitwise_or
 //     | '<=' bitwise_or
+//     | invalid_noteq
 //     | '<' bitwise_or
 //     | '>=' bitwise_or
 //     | '>' bitwise_or
@@ -12811,6 +12814,25 @@ compare_op_bitwise_or_pair_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s compare_op_bitwise_or_pair[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'<=' bitwise_or"));
+    }
+    if (p->call_invalid_rules) { // invalid_noteq
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> compare_op_bitwise_or_pair[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_noteq"));
+        void *invalid_noteq_var;
+        if (
+            (invalid_noteq_var = invalid_noteq_rule(p))  // invalid_noteq
+        )
+        {
+            D(fprintf(stderr, "%*c+ compare_op_bitwise_or_pair[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "invalid_noteq"));
+            _res = invalid_noteq_var;
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s compare_op_bitwise_or_pair[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_noteq"));
     }
     { // '<' bitwise_or
         if (p->error_indicator) {
@@ -27269,6 +27291,52 @@ invalid_bitwise_or_rule(Parser *p)
     return _res;
 }
 
+// invalid_noteq: '<' '>'
+static void *
+invalid_noteq_rule(Parser *p)
+{
+    if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
+        _Pypegen_stack_overflow(p);
+    }
+    if (p->error_indicator) {
+        p->level--;
+        return NULL;
+    }
+    void * _res = NULL;
+    int _mark = p->mark;
+    { // '<' '>'
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> invalid_noteq[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'<' '>'"));
+        Token * a;
+        Token * b;
+        if (
+            (a = _PyPegen_expect_token(p, 20))  // token='<'
+            &&
+            (b = _PyPegen_expect_token(p, 21))  // token='>'
+        )
+        {
+            D(fprintf(stderr, "%*c+ invalid_noteq[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'<' '>'"));
+            _res = _PyPegen_tokens_are_adjacent ( a , b ) ? RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "invalid syntax.  Maybe you meant '!=' instead of '<>'?" ) : NULL;
+            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s invalid_noteq[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'<' '>'"));
+    }
+    _res = NULL;
+  done:
+    p->level--;
+    return _res;
+}
+
 // _loop0_1: NEWLINE
 static asdl_seq *
 _loop0_1_rule(Parser *p)
@@ -27282,14 +27350,8 @@ _loop0_1_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // NEWLINE
         if (p->error_indicator) {
@@ -27304,16 +27366,13 @@ _loop0_1_rule(Parser *p)
         {
             _res = newline_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -27324,9 +27383,9 @@ _loop0_1_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -27349,14 +27408,8 @@ _loop1_2_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // statement
         if (p->error_indicator) {
@@ -27371,16 +27424,13 @@ _loop1_2_rule(Parser *p)
         {
             _res = statement_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -27396,9 +27446,9 @@ _loop1_2_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -27421,14 +27471,8 @@ _loop0_3_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ';' simple_stmt
         if (p->error_indicator) {
@@ -27452,16 +27496,13 @@ _loop0_3_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -27472,9 +27513,9 @@ _loop0_3_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -27975,14 +28016,8 @@ _loop1_12_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // (star_targets '=')
         if (p->error_indicator) {
@@ -27997,16 +28032,13 @@ _loop1_12_rule(Parser *p)
         {
             _res = _tmp_157_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -28022,9 +28054,9 @@ _loop1_12_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -28047,14 +28079,8 @@ _loop0_13_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ',' NAME
         if (p->error_indicator) {
@@ -28078,16 +28104,13 @@ _loop0_13_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -28098,9 +28121,9 @@ _loop0_13_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -28267,14 +28290,8 @@ _loop0_17_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ('.' | '...')
         if (p->error_indicator) {
@@ -28289,16 +28306,13 @@ _loop0_17_rule(Parser *p)
         {
             _res = _tmp_158_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -28309,9 +28323,9 @@ _loop0_17_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -28334,14 +28348,8 @@ _loop1_18_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ('.' | '...')
         if (p->error_indicator) {
@@ -28356,16 +28364,13 @@ _loop1_18_rule(Parser *p)
         {
             _res = _tmp_158_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -28381,9 +28386,9 @@ _loop1_18_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -28406,14 +28411,8 @@ _loop0_19_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ',' import_from_as_name
         if (p->error_indicator) {
@@ -28437,16 +28436,13 @@ _loop0_19_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -28457,9 +28453,9 @@ _loop0_19_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -28569,14 +28565,8 @@ _loop0_22_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ',' dotted_as_name
         if (p->error_indicator) {
@@ -28600,16 +28590,13 @@ _loop0_22_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -28620,9 +28607,9 @@ _loop0_22_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -28686,14 +28673,8 @@ _loop1_24_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ('@' named_expression NEWLINE)
         if (p->error_indicator) {
@@ -28708,16 +28689,13 @@ _loop1_24_rule(Parser *p)
         {
             _res = _tmp_159_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -28733,9 +28711,9 @@ _loop1_24_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -28853,14 +28831,8 @@ _loop0_27_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // param_no_default
         if (p->error_indicator) {
@@ -28875,16 +28847,13 @@ _loop0_27_rule(Parser *p)
         {
             _res = param_no_default_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -28895,9 +28864,9 @@ _loop0_27_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -28920,14 +28889,8 @@ _loop0_28_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // param_with_default
         if (p->error_indicator) {
@@ -28942,16 +28905,13 @@ _loop0_28_rule(Parser *p)
         {
             _res = param_with_default_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -28962,9 +28922,9 @@ _loop0_28_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -28987,14 +28947,8 @@ _loop1_29_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // param_no_default
         if (p->error_indicator) {
@@ -29009,16 +28963,13 @@ _loop1_29_rule(Parser *p)
         {
             _res = param_no_default_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -29034,9 +28985,9 @@ _loop1_29_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -29059,14 +29010,8 @@ _loop1_30_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // param_with_default
         if (p->error_indicator) {
@@ -29081,16 +29026,13 @@ _loop1_30_rule(Parser *p)
         {
             _res = param_with_default_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -29106,9 +29048,9 @@ _loop1_30_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -29131,14 +29073,8 @@ _loop0_31_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // param_maybe_default
         if (p->error_indicator) {
@@ -29153,16 +29089,13 @@ _loop0_31_rule(Parser *p)
         {
             _res = param_maybe_default_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -29173,9 +29106,9 @@ _loop0_31_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -29198,14 +29131,8 @@ _loop1_32_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // param_maybe_default
         if (p->error_indicator) {
@@ -29220,16 +29147,13 @@ _loop1_32_rule(Parser *p)
         {
             _res = param_maybe_default_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -29245,9 +29169,9 @@ _loop1_32_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -29270,14 +29194,8 @@ _loop0_33_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ',' with_item
         if (p->error_indicator) {
@@ -29301,16 +29219,13 @@ _loop0_33_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -29321,9 +29236,9 @@ _loop0_33_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -29463,14 +29378,8 @@ _loop1_36_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // except_block
         if (p->error_indicator) {
@@ -29485,16 +29394,13 @@ _loop1_36_rule(Parser *p)
         {
             _res = except_block_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -29510,9 +29416,9 @@ _loop1_36_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -29535,14 +29441,8 @@ _loop1_37_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // except_star_block
         if (p->error_indicator) {
@@ -29557,16 +29457,13 @@ _loop1_37_rule(Parser *p)
         {
             _res = except_star_block_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -29582,9 +29479,9 @@ _loop1_37_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -29607,14 +29504,8 @@ _loop1_38_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // case_block
         if (p->error_indicator) {
@@ -29629,16 +29520,13 @@ _loop1_38_rule(Parser *p)
         {
             _res = case_block_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -29654,9 +29542,9 @@ _loop1_38_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -29679,14 +29567,8 @@ _loop0_39_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // '|' closed_pattern
         if (p->error_indicator) {
@@ -29710,16 +29592,13 @@ _loop0_39_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -29730,9 +29609,9 @@ _loop0_39_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -30005,14 +29884,8 @@ _loop0_44_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ',' maybe_star_pattern
         if (p->error_indicator) {
@@ -30036,16 +29909,13 @@ _loop0_44_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -30056,9 +29926,9 @@ _loop0_44_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -30122,14 +29992,8 @@ _loop0_46_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ',' key_value_pattern
         if (p->error_indicator) {
@@ -30153,16 +30017,13 @@ _loop0_46_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -30173,9 +30034,9 @@ _loop0_46_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -30296,14 +30157,8 @@ _loop0_49_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ',' pattern
         if (p->error_indicator) {
@@ -30327,16 +30182,13 @@ _loop0_49_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -30347,9 +30199,9 @@ _loop0_49_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -30413,14 +30265,8 @@ _loop0_51_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ',' keyword_pattern
         if (p->error_indicator) {
@@ -30444,16 +30290,13 @@ _loop0_51_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -30464,9 +30307,9 @@ _loop0_51_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -30530,14 +30373,8 @@ _loop0_53_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ',' type_param
         if (p->error_indicator) {
@@ -30561,16 +30398,13 @@ _loop0_53_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -30581,9 +30415,9 @@ _loop0_53_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -30647,14 +30481,8 @@ _loop1_55_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // (',' expression)
         if (p->error_indicator) {
@@ -30669,16 +30497,13 @@ _loop1_55_rule(Parser *p)
         {
             _res = _tmp_16_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -30694,9 +30519,9 @@ _loop1_55_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -30719,14 +30544,8 @@ _loop1_56_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // (',' star_expression)
         if (p->error_indicator) {
@@ -30741,16 +30560,13 @@ _loop1_56_rule(Parser *p)
         {
             _res = _tmp_160_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -30766,9 +30582,9 @@ _loop1_56_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -30791,14 +30607,8 @@ _loop0_57_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ',' star_named_expression
         if (p->error_indicator) {
@@ -30822,16 +30632,13 @@ _loop0_57_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -30842,9 +30649,9 @@ _loop0_57_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -30908,14 +30715,8 @@ _loop1_59_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ('or' conjunction)
         if (p->error_indicator) {
@@ -30930,16 +30731,13 @@ _loop1_59_rule(Parser *p)
         {
             _res = _tmp_161_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -30955,9 +30753,9 @@ _loop1_59_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -30980,14 +30778,8 @@ _loop1_60_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ('and' inversion)
         if (p->error_indicator) {
@@ -31002,16 +30794,13 @@ _loop1_60_rule(Parser *p)
         {
             _res = _tmp_162_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -31027,9 +30816,9 @@ _loop1_60_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -31052,14 +30841,8 @@ _loop1_61_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // compare_op_bitwise_or_pair
         if (p->error_indicator) {
@@ -31074,16 +30857,13 @@ _loop1_61_rule(Parser *p)
         {
             _res = compare_op_bitwise_or_pair_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -31099,9 +30879,9 @@ _loop1_61_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -31167,14 +30947,8 @@ _loop0_63_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ',' (slice | starred_expression)
         if (p->error_indicator) {
@@ -31198,16 +30972,13 @@ _loop0_63_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -31218,9 +30989,9 @@ _loop0_63_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -31615,14 +31386,8 @@ _loop0_70_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // lambda_param_no_default
         if (p->error_indicator) {
@@ -31637,16 +31402,13 @@ _loop0_70_rule(Parser *p)
         {
             _res = lambda_param_no_default_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -31657,9 +31419,9 @@ _loop0_70_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -31682,14 +31444,8 @@ _loop0_71_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // lambda_param_with_default
         if (p->error_indicator) {
@@ -31704,16 +31460,13 @@ _loop0_71_rule(Parser *p)
         {
             _res = lambda_param_with_default_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -31724,9 +31477,9 @@ _loop0_71_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -31749,14 +31502,8 @@ _loop1_72_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // lambda_param_no_default
         if (p->error_indicator) {
@@ -31771,16 +31518,13 @@ _loop1_72_rule(Parser *p)
         {
             _res = lambda_param_no_default_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -31796,9 +31540,9 @@ _loop1_72_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -31821,14 +31565,8 @@ _loop1_73_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // lambda_param_with_default
         if (p->error_indicator) {
@@ -31843,16 +31581,13 @@ _loop1_73_rule(Parser *p)
         {
             _res = lambda_param_with_default_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -31868,9 +31603,9 @@ _loop1_73_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -31893,14 +31628,8 @@ _loop0_74_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // lambda_param_maybe_default
         if (p->error_indicator) {
@@ -31915,16 +31644,13 @@ _loop0_74_rule(Parser *p)
         {
             _res = lambda_param_maybe_default_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -31935,9 +31661,9 @@ _loop0_74_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -31960,14 +31686,8 @@ _loop1_75_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // lambda_param_maybe_default
         if (p->error_indicator) {
@@ -31982,16 +31702,13 @@ _loop1_75_rule(Parser *p)
         {
             _res = lambda_param_maybe_default_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -32007,9 +31724,9 @@ _loop1_75_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -32032,14 +31749,8 @@ _loop0_76_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // fstring_format_spec
         if (p->error_indicator) {
@@ -32054,16 +31765,13 @@ _loop0_76_rule(Parser *p)
         {
             _res = fstring_format_spec_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -32074,9 +31782,9 @@ _loop0_76_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -32099,14 +31807,8 @@ _loop0_77_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // fstring_middle
         if (p->error_indicator) {
@@ -32121,16 +31823,13 @@ _loop0_77_rule(Parser *p)
         {
             _res = fstring_middle_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -32141,9 +31840,9 @@ _loop0_77_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -32166,14 +31865,8 @@ _loop0_78_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // tstring_format_spec
         if (p->error_indicator) {
@@ -32188,16 +31881,13 @@ _loop0_78_rule(Parser *p)
         {
             _res = tstring_format_spec_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -32208,9 +31898,9 @@ _loop0_78_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -32233,14 +31923,8 @@ _loop0_79_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // tstring_middle
         if (p->error_indicator) {
@@ -32255,16 +31939,13 @@ _loop0_79_rule(Parser *p)
         {
             _res = tstring_middle_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -32275,9 +31956,9 @@ _loop0_79_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -32300,14 +31981,8 @@ _loop1_80_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // (fstring | string)
         if (p->error_indicator) {
@@ -32322,16 +31997,13 @@ _loop1_80_rule(Parser *p)
         {
             _res = _tmp_154_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -32347,9 +32019,9 @@ _loop1_80_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -32372,14 +32044,8 @@ _loop1_81_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // tstring
         if (p->error_indicator) {
@@ -32394,16 +32060,13 @@ _loop1_81_rule(Parser *p)
         {
             _res = tstring_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -32419,9 +32082,9 @@ _loop1_81_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -32444,14 +32107,8 @@ _loop0_82_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ',' display_item
         if (p->error_indicator) {
@@ -32475,16 +32132,13 @@ _loop0_82_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -32495,9 +32149,9 @@ _loop0_82_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -32610,14 +32264,8 @@ _loop0_85_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ',' double_starred_kvpair
         if (p->error_indicator) {
@@ -32641,16 +32289,13 @@ _loop0_85_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -32661,9 +32306,9 @@ _loop0_85_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -32727,14 +32372,8 @@ _loop1_87_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // for_if_clause
         if (p->error_indicator) {
@@ -32749,16 +32388,13 @@ _loop1_87_rule(Parser *p)
         {
             _res = for_if_clause_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -32774,9 +32410,9 @@ _loop1_87_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -32799,14 +32435,8 @@ _loop0_88_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ('if' disjunction)
         if (p->error_indicator) {
@@ -32821,16 +32451,13 @@ _loop0_88_rule(Parser *p)
         {
             _res = _tmp_164_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -32841,9 +32468,9 @@ _loop0_88_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -32944,14 +32571,8 @@ _loop0_90_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ',' (starred_expression | (assignment_expression | expression !':=') !'=')
         if (p->error_indicator) {
@@ -32975,16 +32596,13 @@ _loop0_90_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -32995,9 +32613,9 @@ _loop0_90_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -33108,14 +32726,8 @@ _loop0_93_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ',' kwarg_or_starred
         if (p->error_indicator) {
@@ -33139,16 +32751,13 @@ _loop0_93_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -33159,9 +32768,9 @@ _loop0_93_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -33271,14 +32880,8 @@ _loop0_96_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ',' kwarg_or_double_starred
         if (p->error_indicator) {
@@ -33302,16 +32905,13 @@ _loop0_96_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -33322,9 +32922,9 @@ _loop0_96_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -33388,14 +32988,8 @@ _loop0_98_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // (',' star_target)
         if (p->error_indicator) {
@@ -33410,16 +33004,13 @@ _loop0_98_rule(Parser *p)
         {
             _res = _tmp_166_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -33430,9 +33021,9 @@ _loop0_98_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -33571,14 +33162,8 @@ _loop0_101_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ',' del_target
         if (p->error_indicator) {
@@ -33602,16 +33187,13 @@ _loop0_101_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -33622,9 +33204,9 @@ _loop0_101_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -33688,14 +33270,8 @@ _loop0_103_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ',' expression
         if (p->error_indicator) {
@@ -33719,16 +33295,13 @@ _loop0_103_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -33739,9 +33312,9 @@ _loop0_103_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -33905,14 +33478,8 @@ _loop0_107_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ',' (starred_expression !'=')
         if (p->error_indicator) {
@@ -33936,16 +33503,13 @@ _loop0_107_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -33956,9 +33520,9 @@ _loop0_107_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -34221,14 +33785,8 @@ _loop1_113_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // (!STRING expression_without_invalid)
         if (p->error_indicator) {
@@ -34243,16 +33801,13 @@ _loop1_113_rule(Parser *p)
         {
             _res = _tmp_169_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -34268,9 +33823,9 @@ _loop1_113_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -34676,14 +34231,8 @@ _loop0_119_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // star_named_expressions
         if (p->error_indicator) {
@@ -34698,16 +34247,13 @@ _loop0_119_rule(Parser *p)
         {
             _res = star_named_expressions_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -34718,9 +34264,9 @@ _loop0_119_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -34743,14 +34289,8 @@ _loop0_120_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // (star_targets '=')
         if (p->error_indicator) {
@@ -34765,16 +34305,13 @@ _loop0_120_rule(Parser *p)
         {
             _res = _tmp_157_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -34785,9 +34322,9 @@ _loop0_120_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -35288,14 +34825,8 @@ _loop0_129_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ',' lambda_param
         if (p->error_indicator) {
@@ -35319,16 +34850,13 @@ _loop0_129_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -35339,9 +34867,9 @@ _loop0_129_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -35624,14 +35152,8 @@ _loop0_135_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ',' dotted_name
         if (p->error_indicator) {
@@ -35655,16 +35177,13 @@ _loop0_135_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -35675,9 +35194,9 @@ _loop0_135_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -35782,14 +35301,8 @@ _loop0_138_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ',' (expression ['as' star_target])
         if (p->error_indicator) {
@@ -35813,16 +35326,13 @@ _loop0_138_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -35833,9 +35343,9 @@ _loop0_138_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -35899,14 +35409,8 @@ _loop0_140_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // ',' (expressions ['as' star_target])
         if (p->error_indicator) {
@@ -35930,16 +35434,13 @@ _loop0_140_rule(Parser *p)
                 return NULL;
             }
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -35950,9 +35451,9 @@ _loop0_140_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -36073,14 +35574,8 @@ _loop0_143_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // block
         if (p->error_indicator) {
@@ -36095,16 +35590,13 @@ _loop0_143_rule(Parser *p)
         {
             _res = block_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -36115,9 +35607,9 @@ _loop0_143_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }
@@ -37726,14 +37218,8 @@ _loop0_172_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    void **_children = PyMem_Malloc(sizeof(void *));
-    if (!_children) {
-        p->error_indicator = 1;
-        PyErr_NoMemory();
-        p->level--;
-        return NULL;
-    }
-    Py_ssize_t _children_capacity = 1;
+    void **_children = NULL;
+    Py_ssize_t _children_capacity = 0;
     Py_ssize_t _n = 0;
     { // (',' bitwise_or)
         if (p->error_indicator) {
@@ -37748,16 +37234,13 @@ _loop0_172_rule(Parser *p)
         {
             _res = _tmp_177_var;
             if (_n == _children_capacity) {
-                _children_capacity *= 2;
-                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_new_children) {
-                    PyMem_Free(_children);
+                if (_PyPegen_grow_loop_buffer(&_children, &_children_capacity) < 0) {
                     p->error_indicator = 1;
                     PyErr_NoMemory();
+                    PyMem_Free(_children);
                     p->level--;
                     return NULL;
                 }
-                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -37768,9 +37251,9 @@ _loop0_172_rule(Parser *p)
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
-        PyMem_Free(_children);
         p->error_indicator = 1;
         PyErr_NoMemory();
+        PyMem_Free(_children);
         p->level--;
         return NULL;
     }

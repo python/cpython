@@ -123,6 +123,7 @@
     <ClCompile Include="..\Modules\_testlimitedcapi\run.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\type.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\hash.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\build.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />

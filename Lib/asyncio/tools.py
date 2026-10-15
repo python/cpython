@@ -27,6 +27,10 @@ class CycleFoundException(Exception):
 # ─── indexing helpers ───────────────────────────────────────────
 def _format_stack_entry(elem: str|FrameInfo) -> str:
     if not isinstance(elem, str):
+        if elem.location is None:
+            if elem.filename in ("", "~"):
+                return f"{elem.funcname}"
+            return f"{elem.funcname} {elem.filename}"
         if elem.location.lineno == 0 and elem.filename == "":
             return f"{elem.funcname}"
         else:
@@ -190,8 +194,7 @@ def build_task_table(result):
             # Build coroutine stack string
             frames = [frame for coro in task_info.coroutine_stack
                      for frame in coro.call_stack]
-            coro_stack = " -> ".join(_format_stack_entry(x).split(" ")[0]
-                                   for x in frames)
+            coro_stack = " -> ".join(x.funcname for x in frames)
 
             # Handle tasks with no awaiters
             if not task_info.awaited_by:
@@ -202,8 +205,7 @@ def build_task_table(result):
             # Handle tasks with awaiters
             for coro_info in task_info.awaited_by:
                 parent_id = coro_info.task_name
-                awaiter_frames = [_format_stack_entry(x).split(" ")[0]
-                                for x in coro_info.call_stack]
+                awaiter_frames = [x.funcname for x in coro_info.call_stack]
                 awaiter_chain = " -> ".join(awaiter_frames)
                 awaiter_name = id2name.get(parent_id, "Unknown")
                 parent_id_str = (hex(parent_id) if isinstance(parent_id, int)
