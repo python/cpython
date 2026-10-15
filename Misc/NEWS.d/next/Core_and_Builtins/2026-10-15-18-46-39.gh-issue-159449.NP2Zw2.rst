@@ -1,1 +1,0 @@
-Fix a free-threaded asyncio race that can lead to a segfault with asyncio.
