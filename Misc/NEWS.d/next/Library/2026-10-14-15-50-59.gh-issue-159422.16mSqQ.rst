@@ -1,3 +1,4 @@
-Fix truncated output when a writable :class:`gzip.GzipFile` that was never
-closed is finalized and emitting its :exc:`ResourceWarning` fails, for
-example at interpreter shutdown. The file is now always closed.
+:mod:`gzip` now imports :mod:`warnings` eagerly so that a writable
+:class:`~gzip.GzipFile` left unclosed at interpreter shutdown can emit its
+:exc:`ResourceWarning` and be closed instead of failing with an
+:exc:`ImportError`.
