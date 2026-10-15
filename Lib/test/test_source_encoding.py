@@ -3,8 +3,8 @@
 import unittest
 from test import support
 from test.support import script_helper
-from test.support.os_helper import TESTFN, unlink, rmtree
-from test.support.import_helper import unload
+from test.support.os_helper import TESTFN, TESTFN_ASCII, unlink, rmtree
+from test.support.import_helper import import_module, unload
 import importlib
 import os
 import sys
@@ -83,12 +83,30 @@ class MiscSourceEncodingTest(unittest.TestCase):
                 self.assertRaises(SyntaxError, compile, seq, '<test>', 'exec')
 
     def test_invalid_utf8_offset_after_non_ascii(self):
+        for name in ('é', 'éé', '𝒜'):
+            with self.subTest(name=name):
+                source = ('x = ' + name).encode() + b'\xff\n'
+                with self.assertRaises(SyntaxError) as caught:
+                    compile(source, '<test>', 'exec')
+                error = caught.exception
+                self.assertEqual(
+                    (error.lineno, error.offset, error.end_lineno, error.end_offset),
+                    (1, 5 + len(name), 1, 5 + len(name)),
+                )
+
+    @support.cpython_only
+    def test_invalid_utf8_file_offset_after_non_ascii(self):
+        _testcapi = import_module('_testcapi')
+        self.addCleanup(unlink, TESTFN_ASCII)
+        with open(TESTFN_ASCII, 'wb') as f:
+            f.write(b'\nx = \xc3\xa9\xc3\xa9\xff\n')
         with self.assertRaises(SyntaxError) as caught:
-            compile(b"x = \xc3\xa9\xff\n", "<test>", "exec")
+            _testcapi.run_file(
+                os.fsencode(TESTFN_ASCII), _testcapi.Py_file_input, {})
         error = caught.exception
         self.assertEqual(
             (error.lineno, error.offset, error.end_lineno, error.end_offset),
-            (1, 6, 1, 6),
+            (2, 7, 2, 7),
         )
 
     def test_long_bom_conflict_message_is_not_truncated(self):

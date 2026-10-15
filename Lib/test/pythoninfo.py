@@ -611,14 +611,6 @@ def collect_sysconfig(info_add):
         value = normalize_text(value)
         info_add('sysconfig[%s]' % name, value)
 
-    PY_CFLAGS = sysconfig.get_config_var('PY_CFLAGS')
-    NDEBUG = (PY_CFLAGS and '-DNDEBUG' in PY_CFLAGS)
-    if NDEBUG:
-        text = 'ignore assertions (macro defined)'
-    else:
-        text= 'build assertions (macro not defined)'
-    info_add('build.NDEBUG',text)
-
     for name in (
         'WITH_DOC_STRINGS',
         'WITH_DTRACE',
@@ -719,8 +711,28 @@ def collect_zlib(info_add):
     except ImportError:
         return
 
-    attributes = ('ZLIB_VERSION', 'ZLIB_RUNTIME_VERSION', 'ZLIBNG_VERSION')
+    attributes = ('ZLIB_VERSION', 'zlib_version', 'ZLIBNG_VERSION')
     copy_attributes(info_add, zlib, 'zlib.%s', attributes)
+
+
+def collect_bz2(info_add):
+    try:
+        import _bz2
+    except ImportError:
+        return
+
+    attributes = ('bzlib_version',)
+    copy_attributes(info_add, _bz2, 'bz2.%s', attributes)
+
+
+def collect_lzma(info_add):
+    try:
+        import _lzma
+    except ImportError:
+        return
+
+    attributes = ('LZMA_VERSION', 'lzma_version')
+    copy_attributes(info_add, _lzma, 'lzma.%s', attributes)
 
 
 def collect_zstd(info_add):
@@ -729,8 +741,18 @@ def collect_zstd(info_add):
     except ImportError:
         return
 
-    attributes = ('zstd_version',)
+    attributes = ('ZSTD_VERSION', 'zstd_version')
     copy_attributes(info_add, _zstd, 'zstd.%s', attributes)
+
+
+def collect_ctypes(info_add):
+    try:
+        import _ctypes
+    except ImportError:
+        return
+
+    attributes = ('LIBFFI_VERSION', 'libffi_version')
+    copy_attributes(info_add, _ctypes, 'ctypes.%s', attributes)
 
 
 def collect_expat(info_add):
@@ -844,6 +866,8 @@ def collect_support(info_add):
              support.check_sanitizer(memory=True))
     info_add('support.check_sanitizer(ub=True)',
              support.check_sanitizer(ub=True))
+    info_add('support.built_with_c_assertions',
+             support.built_with_c_assertions())
 
 
 def collect_support_os_helper(info_add):
@@ -1334,16 +1358,19 @@ def collect_info(info):
         collect_urandom,
 
         collect_builtins,
+        collect_bz2,
         collect_cc,
         collect_curses,
         collect_datetime,
         collect_decimal,
+        collect_ctypes,
         collect_expat,
         collect_fips,
         collect_gdb,
         collect_gdbm,
         collect_get_config,
         collect_locale,
+        collect_lzma,
         collect_os,
         collect_platform,
         collect_pwd,

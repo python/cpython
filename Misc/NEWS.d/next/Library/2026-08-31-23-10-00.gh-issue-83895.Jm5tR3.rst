@@ -1,0 +1,4 @@
+:mod:`xml.etree.ElementTree` now accepts input larger than 2 GiB
+in the C implementation.
+The data is fed to Expat in chunks, as :mod:`xml.parsers.expat` already did,
+instead of raising :exc:`OverflowError`.

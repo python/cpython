@@ -892,8 +892,10 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
     if (spec->n_lpadding || spec->n_spadding || spec->n_rpadding)
         *maxchar = Py_MAX(*maxchar, format->fill_char);
 
-    if (spec->n_decimal)
-        *maxchar = Py_MAX(*maxchar, PyUnicode_MAX_CHAR_VALUE(locale->decimal_point));
+    if (spec->n_decimal) {
+        Py_UCS4 point_maxchar = PyUnicode_MAX_CHAR_VALUE(locale->decimal_point);
+        *maxchar = Py_MAX(*maxchar, point_maxchar);
+    }
 
     return spec->n_lpadding + spec->n_sign + spec->n_prefix +
         spec->n_spadding + spec->n_grouped_digits + spec->n_decimal +

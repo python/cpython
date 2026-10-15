@@ -15,8 +15,7 @@ Before Python initialization
 
 In an application embedding Python, the :c:func:`Py_Initialize` function must
 be called before using any other Python/C API functions; with the exception of
-a few functions and the :ref:`global configuration variables
-<global-conf-vars>`.
+a few functions.
 
 The following functions can be safely called before Python is initialized:
 
@@ -37,8 +36,6 @@ The following functions can be safely called before Python is initialized:
   * :c:func:`PyMem_SetAllocator`
   * :c:func:`PyMem_SetupDebugHooks`
   * :c:func:`PyObject_SetArenaAllocator`
-  * :c:func:`Py_SetProgramName`
-  * :c:func:`Py_SetPythonHome`
   * the configuration functions covered in :ref:`init-config`
 
 * Informative functions:
@@ -74,279 +71,7 @@ The following functions can be safely called before Python is initialized:
 
    Despite their apparent similarity to some of the functions listed above,
    the following functions **should not be called** before the interpreter has
-   been initialized: :c:func:`Py_EncodeLocale`, :c:func:`PyEval_InitThreads`, and
-   :c:func:`Py_RunMain`.
-
-
-.. _global-conf-vars:
-
-Global configuration variables
-------------------------------
-
-Python has variables for the global configuration to control different features
-and options. By default, these flags are controlled by :ref:`command line
-options <using-on-interface-options>`.
-
-When a flag is set by an option, the value of the flag is the number of times
-that the option was set. For example, ``-b`` sets :c:data:`Py_BytesWarningFlag`
-to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
-
-
-.. c:var:: int Py_BytesWarningFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.bytes_warning` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Issue a warning when comparing :class:`bytes` or :class:`bytearray` with
-   :class:`str` or :class:`bytes` with :class:`int`.  Issue an error if greater
-   or equal to ``2``.
-
-   Set by the :option:`-b` option.
-
-   .. deprecated-removed:: 3.12 3.16
-
-
-.. c:var:: int Py_DebugFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.parser_debug` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Turn on parser debugging output (for expert only, depending on compilation
-   options).
-
-   Set by the :option:`-d` option and the :envvar:`PYTHONDEBUG` environment
-   variable.
-
-   .. deprecated-removed:: 3.12 3.16
-
-
-.. c:var:: int Py_DontWriteBytecodeFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.write_bytecode` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   If set to non-zero, Python won't try to write ``.pyc`` files on the
-   import of source modules.
-
-   Set by the :option:`-B` option and the :envvar:`PYTHONDONTWRITEBYTECODE`
-   environment variable.
-
-   .. deprecated-removed:: 3.12 3.16
-
-
-.. c:var:: int Py_FrozenFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.pathconfig_warnings` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Private flag used by ``_freeze_module`` and ``frozenmain`` programs.
-
-   .. deprecated-removed:: 3.12 3.16
-
-
-.. c:var:: int Py_HashRandomizationFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.hash_seed` and :c:member:`PyConfig.use_hash_seed` should
-   be used instead, see :ref:`Python Initialization Configuration
-   <init-config>`.
-
-   Set to ``1`` if the :envvar:`PYTHONHASHSEED` environment variable is set to
-   a non-empty string.
-
-   If the flag is non-zero, read the :envvar:`PYTHONHASHSEED` environment
-   variable to initialize the secret hash seed.
-
-   .. deprecated-removed:: 3.12 3.16
-
-
-.. c:var:: int Py_IgnoreEnvironmentFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.use_environment` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Ignore all :envvar:`!PYTHON*` environment variables, e.g.
-   :envvar:`PYTHONPATH` and :envvar:`PYTHONHOME`, that might be set.
-
-   Set by the :option:`-E` and :option:`-I` options.
-
-   .. deprecated-removed:: 3.12 3.16
-
-
-.. c:var:: int Py_InspectFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.inspect` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   When a script is passed as first argument or the :option:`-c` option is used,
-   enter interactive mode after executing the script or the command, even when
-   :data:`sys.stdin` does not appear to be a terminal.
-
-   Set by the :option:`-i` option and the :envvar:`PYTHONINSPECT` environment
-   variable.
-
-   .. deprecated-removed:: 3.12 3.16
-
-
-.. c:var:: int Py_InteractiveFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.interactive` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Set by the :option:`-i` option.
-
-   .. deprecated-removed:: 3.12 3.16
-
-
-.. c:var:: int Py_IsolatedFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.isolated` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Run Python in isolated mode. In isolated mode :data:`sys.path` contains
-   neither the script's directory nor the user's site-packages directory.
-
-   Set by the :option:`-I` option.
-
-   .. versionadded:: 3.4
-
-   .. deprecated-removed:: 3.12 3.16
-
-
-.. c:var:: int Py_LegacyWindowsFSEncodingFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyPreConfig.legacy_windows_fs_encoding` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   If the flag is non-zero, use the ``mbcs`` encoding with ``replace`` error
-   handler, instead of the UTF-8 encoding with ``surrogatepass`` error handler,
-   for the :term:`filesystem encoding and error handler`.
-
-   Set to ``1`` if the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment
-   variable is set to a non-empty string.
-
-   See :pep:`529` for more details.
-
-   .. availability:: Windows.
-
-   .. deprecated-removed:: 3.12 3.16
-
-
-.. c:var:: int Py_LegacyWindowsStdioFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.legacy_windows_stdio` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   If the flag is non-zero, use :class:`io.FileIO` instead of
-   :class:`!io._WindowsConsoleIO` for :mod:`sys` standard streams.
-
-   Set to ``1`` if the :envvar:`PYTHONLEGACYWINDOWSSTDIO` environment
-   variable is set to a non-empty string.
-
-   See :pep:`528` for more details.
-
-   .. availability:: Windows.
-
-   .. deprecated-removed:: 3.12 3.16
-
-
-.. c:var:: int Py_NoSiteFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.site_import` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Disable the import of the module :mod:`site` and the site-dependent
-   manipulations of :data:`sys.path` that it entails.  Also disable these
-   manipulations if :mod:`site` is explicitly imported later (call
-   :func:`site.main` if you want them to be triggered).
-
-   Set by the :option:`-S` option.
-
-   .. deprecated-removed:: 3.12 3.16
-
-
-.. c:var:: int Py_NoUserSiteDirectory
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.user_site_directory` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Don't add the :data:`user site-packages directory <site.USER_SITE>` to
-   :data:`sys.path`.
-
-   Set by the :option:`-s` and :option:`-I` options, and the
-   :envvar:`PYTHONNOUSERSITE` environment variable.
-
-   .. deprecated-removed:: 3.12 3.16
-
-
-.. c:var:: int Py_OptimizeFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.optimization_level` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Set by the :option:`-O` option and the :envvar:`PYTHONOPTIMIZE` environment
-   variable.
-
-   .. deprecated-removed:: 3.12 3.16
-
-
-.. c:var:: int Py_QuietFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.quiet` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Don't display the copyright and version messages even in interactive mode.
-
-   Set by the :option:`-q` option.
-
-   .. versionadded:: 3.2
-
-   .. deprecated-removed:: 3.12 3.16
-
-
-.. c:var:: int Py_UnbufferedStdioFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.buffered_stdio` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Force the stdout and stderr streams to be unbuffered.
-
-   Set by the :option:`-u` option and the :envvar:`PYTHONUNBUFFERED`
-   environment variable.
-
-   .. deprecated-removed:: 3.12 3.16
-
-
-.. c:var:: int Py_VerboseFlag
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.verbose` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Print a message each time a module is initialized, showing the place
-   (filename or built-in module) from which it is loaded.  If greater or equal
-   to ``2``, print a message for each file that is checked for when
-   searching for a module. Also provides information on module cleanup at exit.
-
-   Set by the :option:`-v` option and the :envvar:`PYTHONVERBOSE` environment
-   variable.
-
-   .. deprecated-removed:: 3.12 3.16
+   been initialized: :c:func:`Py_EncodeLocale`, and :c:func:`Py_RunMain`.
 
 
 Initializing and finalizing the interpreter
@@ -355,7 +80,6 @@ Initializing and finalizing the interpreter
 .. c:function:: void Py_Initialize()
 
    .. index::
-      single: PyEval_InitThreads()
       single: modules (in module sys)
       single: path (in module sys)
       pair: module; builtins
@@ -402,6 +126,11 @@ Initializing and finalizing the interpreter
    See the :ref:`init-config` section for details on pre-initializing the
    interpreter, populating the runtime configuration structure, and querying
    the returned status structure.
+
+   .. versionchanged:: next
+      The function no longer returns an exit code if a command line option
+      wants to exit Python. Instead, the option is processed in
+      :c:func:`Py_RunMain`.
 
 
 .. c:function:: int Py_IsInitialized()
@@ -780,33 +509,6 @@ deleted. This can be done using interpreter views.
 Process-wide parameters
 -----------------------
 
-.. c:function:: void Py_SetProgramName(const wchar_t *name)
-
-   .. index::
-      single: Py_Initialize()
-      single: main()
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.program_name` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   This function should be called before :c:func:`Py_Initialize` is called for
-   the first time, if it is called at all.  It tells the interpreter the value
-   of the ``argv[0]`` argument to the :c:func:`main` function of the program
-   (converted to wide characters).
-   This is used by some other functions below to find
-   the Python run-time libraries relative to the interpreter executable.  The
-   default value is ``'python'``.  The argument should point to a
-   zero-terminated wide character string in static storage whose contents will not
-   change for the duration of the program's execution.  No code in the Python
-   interpreter will change the contents of this storage.
-
-   Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:expr:`wchar_t*` string.
-
-   .. deprecated-removed:: 3.11 3.16
-
-
 .. c:function:: const char* Py_GetVersion()
 
    Return the version of this Python interpreter.  This is a string that looks
@@ -875,100 +577,3 @@ Process-wide parameters
    The returned string points into static storage; the caller should not modify its
    value.  The value is available to Python code as part of the variable
    ``sys.version``.
-
-
-.. c:function:: void PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
-
-   .. index::
-      single: main()
-      single: Py_FatalError()
-      single: argv (in module sys)
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.argv`, :c:member:`PyConfig.parse_argv` and
-   :c:member:`PyConfig.safe_path` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Set :data:`sys.argv` based on *argc* and *argv*.  These parameters are
-   similar to those passed to the program's :c:func:`main` function with the
-   difference that the first entry should refer to the script file to be
-   executed rather than the executable hosting the Python interpreter.  If there
-   isn't a script that will be run, the first entry in *argv* can be an empty
-   string.  If this function fails to initialize :data:`sys.argv`, a fatal
-   condition is signalled using :c:func:`Py_FatalError`.
-
-   If *updatepath* is zero, this is all the function does.  If *updatepath*
-   is non-zero, the function also modifies :data:`sys.path` according to the
-   following algorithm:
-
-   - If the name of an existing script is passed in ``argv[0]``, the absolute
-     path of the directory where the script is located is prepended to
-     :data:`sys.path`.
-   - Otherwise (that is, if *argc* is ``0`` or ``argv[0]`` doesn't point
-     to an existing file name), an empty string is prepended to
-     :data:`sys.path`, which is the same as prepending the current working
-     directory (``"."``).
-
-   Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:expr:`wchar_t*` string.
-
-   See also :c:member:`PyConfig.orig_argv` and :c:member:`PyConfig.argv`
-   members of the :ref:`Python Initialization Configuration <init-config>`.
-
-   .. note::
-      It is recommended that applications embedding the Python interpreter
-      for purposes other than executing a single script pass ``0`` as *updatepath*,
-      and update :data:`sys.path` themselves if desired.
-      See :cve:`2008-5983`.
-
-      On versions before 3.1.3, you can achieve the same effect by manually
-      popping the first :data:`sys.path` element after having called
-      :c:func:`PySys_SetArgv`, for example using::
-
-         PyRun_SimpleString("import sys; sys.path.pop(0)\n");
-
-   .. versionadded:: 3.1.3
-
-   .. deprecated-removed:: 3.11 3.16
-
-
-.. c:function:: void PySys_SetArgv(int argc, wchar_t **argv)
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.argv` and :c:member:`PyConfig.parse_argv` should be used
-   instead, see :ref:`Python Initialization Configuration <init-config>`.
-
-   This function works like :c:func:`PySys_SetArgvEx` with *updatepath* set
-   to ``1`` unless the :program:`python` interpreter was started with the
-   :option:`-I`.
-
-   Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:expr:`wchar_t*` string.
-
-   See also :c:member:`PyConfig.orig_argv` and :c:member:`PyConfig.argv`
-   members of the :ref:`Python Initialization Configuration <init-config>`.
-
-   .. versionchanged:: 3.4 The *updatepath* value depends on :option:`-I`.
-
-   .. deprecated-removed:: 3.11 3.16
-
-
-.. c:function:: void Py_SetPythonHome(const wchar_t *home)
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.home` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Set the default "home" directory, that is, the location of the standard
-   Python libraries.  See :envvar:`PYTHONHOME` for the meaning of the
-   argument string.
-
-   The argument should point to a zero-terminated character string in static
-   storage whose contents will not change for the duration of the program's
-   execution.  No code in the Python interpreter will change the contents of
-   this storage.
-
-   Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:expr:`wchar_t*` string.
-
-   .. deprecated-removed:: 3.11 3.16

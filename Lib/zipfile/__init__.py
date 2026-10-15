@@ -802,7 +802,7 @@ class LZMADecompressor:
             return b''
 
     @property
-    def _needs_input(self):
+    def needs_input(self):
         # While the LZMA properties header is still being buffered, more input
         # is required; afterwards defer to the wrapped decompressor so a bounded
         # decompress() call can be drained across reads.
@@ -891,13 +891,6 @@ def _get_compressor(compress_type, compresslevel=None):
         return zstd.ZstdCompressor(level=compresslevel)
     else:
         return None
-
-
-def _decompressor_needs_input(decompressor):
-    # bz2/zstd expose the stdlib decompressor's public needs_input; the LZMA
-    # wrapper keeps it private (_needs_input) to avoid adding public API.
-    needs_input = getattr(decompressor, "needs_input", None)
-    return decompressor._needs_input if needs_input is None else needs_input
 
 
 def _get_decompressor(compress_type):
@@ -1207,7 +1200,7 @@ class ZipExtFile(io.BufferedIOBase):
         else:
             # bzip2/lzma/zstd: a bounded decompress() call may leave input
             # buffered inside the decompressor; drain that before reading more.
-            if _decompressor_needs_input(self._decompressor):
+            if getattr(self._decompressor, "needs_input", True):
                 data = self._read2(n)
             else:
                 data = b''
@@ -1226,10 +1219,23 @@ class ZipExtFile(io.BufferedIOBase):
             # Bound the output of a single decompress() call (mirroring the
             # DEFLATE path above) so that a small compressed member cannot
             # expand into one unbounded read.
-            data = self._decompressor.decompress(data, max(n, self.MIN_READ_SIZE))
+            try:
+                data = self._decompressor.decompress(data, max(n, self.MIN_READ_SIZE))
+            except TypeError:
+                # See MonkeypatchedDecompressorTests in test_core.py
+                warnings._deprecated(
+                    'one-argument decompress()',
+                    'The decompress() method of '
+                    + type(self._decompressor).__name__
+                    + ' should take two arguments, data and max_length.'
+                    + ' One-argument calls will stop working before'
+                    + ' Python 3.21.',
+                    remove=(3, 21),
+                    stacklevel=4)
+                data = self._decompressor.decompress(data)
             self._eof = (self._decompressor.eof or
                          self._compress_left <= 0 and
-                         _decompressor_needs_input(self._decompressor))
+                         getattr(self._decompressor, "needs_input", True))
 
         data = data[:self._left]
         self._left -= len(data)

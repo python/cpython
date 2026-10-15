@@ -466,6 +466,28 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn(stack1_expected, lines)
         self.assertIn(stack2_expected, lines)
 
+    def test_collapsed_stack_collector_export_non_ascii_names(self):
+        # gh-156810: frame names are written verbatim, so the output must be
+        # opened with an encoding that can represent non-ASCII and
+        # surrogate-escaped (undecodable-path) names.
+        collapsed_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, collapsed_out)
+
+        collector = CollapsedStackCollector(1000)
+        frame = MockFrameInfo("/tmp/ba\udc80d.py", 5, "计算")
+        collector.collect([
+            MockInterpreterInfo(0, [MockThreadInfo(1, [frame])])
+        ])
+
+        with captured_stdout(), captured_stderr():
+            collector.export(collapsed_out.name)
+
+        with open(collapsed_out.name, encoding="utf-8",
+                  errors="surrogatepass") as f:
+            content = f.read()
+        self.assertIn("计算", content)
+        self.assertIn("ba\udc80d.py", content)
+
     def test_flamegraph_collector_basic(self):
         """Test basic FlamegraphCollector functionality."""
         collector = FlamegraphCollector(1000)
@@ -1637,6 +1659,50 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertEqual(cold_node["self_time"], 1)
         self.assertAlmostEqual(cold_node["diff"], -1.0)
         self.assertAlmostEqual(cold_node["diff_pct"], -50.0)
+
+    def test_diff_flamegraph_rejects_mismatched_profiling_modes(self):
+        from profiling.sampling.binary_collector import BinaryCollector
+        from profiling.sampling.stack_collector import DiffFlamegraphCollector
+
+        bin_file = tempfile.NamedTemporaryFile(suffix=".bin", delete=False)
+        self.addCleanup(close_and_unlink, bin_file)
+        writer = BinaryCollector(
+            bin_file.name,
+            sample_interval_usec=1000,
+            compression="none",
+            mode=PROFILING_MODE_CPU,
+        )
+        writer.export(None)
+
+        diff = DiffFlamegraphCollector(
+            1000,
+            baseline_binary_path=bin_file.name,
+            mode=PROFILING_MODE_WALL,
+        )
+        with self.assertRaisesRegex(ValueError, "profiling mode"):
+            diff._convert_to_flamegraph_format()
+
+    def test_diff_flamegraph_rejects_mismatched_capture_config(self):
+        from profiling.sampling.binary_collector import BinaryCollector
+        from profiling.sampling.stack_collector import DiffFlamegraphCollector
+
+        bin_file = tempfile.NamedTemporaryFile(suffix=".bin", delete=False)
+        self.addCleanup(close_and_unlink, bin_file)
+        writer = BinaryCollector(
+            bin_file.name,
+            sample_interval_usec=1000,
+            compression="none",
+            capture_config={"all_threads": True},
+        )
+        writer.export(None)
+
+        diff = DiffFlamegraphCollector(
+            1000,
+            baseline_binary_path=bin_file.name,
+            capture_config={"all_threads": False},
+        )
+        with self.assertRaisesRegex(ValueError, "all_threads"):
+            diff._convert_to_flamegraph_format()
 
     def test_diff_flamegraph_scale_factor(self):
         """Scale factor adjusts when sample counts differ."""

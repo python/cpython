@@ -16,6 +16,9 @@ ROOT_DIR = os.path.abspath(ROOT_DIR)
 FROZEN_ONLY = os.path.join(ROOT_DIR, 'Tools', 'freeze', 'flag.py')
 
 STDLIB_DIR = os.path.join(ROOT_DIR, 'Lib')
+# Frozen under the "builtins" ID rather than its own name, so that the frames
+# of the builtins it defines show up as "<frozen builtins>" in tracebacks.
+PYBUILTINS = os.path.join(STDLIB_DIR, '_pybuiltins.py')
 # If FROZEN_MODULES_DIR or DEEPFROZEN_MODULES_DIR is changed then the
 # .gitattributes and .gitignore files needs to be updated.
 FROZEN_MODULES_DIR = os.path.join(ROOT_DIR, 'Python', 'frozen_modules')
@@ -45,6 +48,8 @@ FROZEN = [
         # This module is important because some Python builds rely
         # on a builtin zip file instead of a filesystem.
         'zipimport',
+        # Builtins implemented in Python; loaded while builtins is set up.
+        f'builtins : _pybuiltins = {PYBUILTINS}',
         ]),
     # (You can delete entries from here down to the end of the list.)
     ('stdlib - startup, without site (python -S)', [
@@ -91,6 +96,7 @@ BOOTSTRAP = {
     'importlib._bootstrap',
     'importlib._bootstrap_external',
     'zipimport',
+    'builtins',
 }
 
 

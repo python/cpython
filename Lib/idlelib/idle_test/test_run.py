@@ -2,7 +2,11 @@
 
 from idlelib import run
 import io
+import signal
 import sys
+import threading
+import time
+from test import support
 from test.support import captured_output, captured_stderr
 import unittest
 from unittest import mock
@@ -520,6 +524,34 @@ class ExecRuncodeTest(unittest.TestCase):
         t, e, tb = ex.user_exc_info
         self.assertIs(t, TypeError)
         self.assertTrue(isinstance(e.__context__, ZeroDivisionError))
+
+
+class InterruptTest(unittest.TestCase):
+
+    def setUp(self):
+        self.ex = run.Executive(mock.Mock(sendlock=threading.Lock()))
+        self.addCleanup(setattr, run, 'interruptible', run.interruptible)
+        run.interruptible = True
+
+    @unittest.skipIf(signal.getsignal(signal.SIGINT)
+                     in (signal.SIG_DFL, signal.SIG_IGN, None),
+                     'SIGINT is not handled by Python')
+    def test_interrupt_blocking_call(self):
+        # gh-74112: interrupt the main thread blocked in time.sleep().
+        timer = threading.Timer(0.1, self.ex.interrupt_the_server)
+        self.addCleanup(timer.join)
+        timer.start()
+        start = time.monotonic()
+        with self.assertRaises(KeyboardInterrupt):
+            time.sleep(support.SHORT_TIMEOUT)
+        self.assertLess(time.monotonic() - start, support.SHORT_TIMEOUT / 2)
+
+    def test_interrupt_ignored(self):
+        old_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
+        self.addCleanup(signal.signal, signal.SIGINT, old_handler)
+        with mock.patch.object(run.thread, 'interrupt_main') as interrupt_main:
+            self.ex.interrupt_the_server()
+        interrupt_main.assert_called_once_with()
 
 
 if __name__ == '__main__':
