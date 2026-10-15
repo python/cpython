@@ -11,9 +11,9 @@
 
 /*[clinic input]
 module weakref
-class weakref.ref "PyWeakReference *" "&_PyWeakref_RefType"
+class weakref.ReferenceType "PyWeakReference *" "&_PyWeakref_RefType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ddbc2579691f1260]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=25211e4a7d687f3f]*/
 
 #ifdef Py_GIL_DISABLED
 /*
@@ -470,22 +470,28 @@ get_or_create_weakref(PyTypeObject *type, PyObject *obj, PyObject *callback)
 /*[clinic input]
 @classmethod
 @vectorcall
-weakref.ref.__new__ as weakref_ref_new
+weakref.ReferenceType.__new__ as weakref_ref_new
 
     ob: object
     callback: object(c_default="NULL") = None
     /
+
+Create a weak reference to ob.
+
+Calling the reference returns ob, or None once ob has been garbage
+collected.  If callback is given, it is called with the reference as
+its only argument when ob is about to be finalized.
 [clinic start generated code]*/
 
 static PyObject *
 weakref_ref_new_impl(PyTypeObject *type, PyObject *ob, PyObject *callback)
-/*[clinic end generated code: output=689332971ea485ce input=0b15234862919541]*/
+/*[clinic end generated code: output=689332971ea485ce input=f9264872536c6be7]*/
 {
     return (PyObject *)get_or_create_weakref(type, ob, callback);
 }
 
 /*[clinic input]
-weakref.ref.__init__ as weakref_ref_init
+weakref.ReferenceType.__init__ as weakref_ref_init
 
     ob: object
     callback: object = None
@@ -495,7 +501,7 @@ weakref.ref.__init__ as weakref_ref_init
 static int
 weakref_ref_init_impl(PyWeakReference *self, PyObject *ob,
                       PyObject *callback)
-/*[clinic end generated code: output=57cec8c3671e296c input=d9ac4909b0fc36bf]*/
+/*[clinic end generated code: output=57cec8c3671e296c input=7dd1cba6e88c7df8]*/
 {
     /* The arguments were already used by __new__; only validate them. */
     return 0;
@@ -519,6 +525,7 @@ _PyWeakref_RefType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "weakref.ReferenceType",
     .tp_basicsize = sizeof(PyWeakReference),
+    .tp_doc = weakref_ref_new__doc__,
     .tp_dealloc = weakref_dealloc,
     .tp_vectorcall_offset = offsetof(PyWeakReference, vectorcall),
     .tp_call = PyVectorcall_Call,
