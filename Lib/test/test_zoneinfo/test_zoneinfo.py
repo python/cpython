@@ -1681,8 +1681,10 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
                 return super().__eq__(other)
             __hash__ = str.__hash__
 
-        klass(Stringy("America/Los_Angeles"))
-        klass(Stringy("America/Los_Angeles"))
+        zone1 = klass(Stringy("America/Los_Angeles"))
+        zone2 = klass(Stringy("America/Los_Angeles"))
+        self.assertEqual(str(zone1), "America/Los_Angeles")
+        self.assertEqual(str(zone2), "America/Los_Angeles")
 
 
 class CZoneInfoCacheTest(ZoneInfoCacheTest):
