@@ -396,11 +396,16 @@ class HTTPResponse(io.BufferedIOBase):
         # do we have a Content-Length?
         # NOTE: RFC 2616, S4.4, #3 says we ignore this if tr_enc is "chunked"
         self.length = None
-        length = self.headers.get("content-length")
-        if length is not None:
-            # RFC 9112, section 5.1: optional whitespace (SP / HTAB) around
-            # the field value is not part of the value.
-            length = length.strip(' \t')
+        # RFC 9112, section 6.3: a Content-Length that is a comma-separated
+        # list (or, per RFC 9110, section 5.3, a repeated field) is only
+        # valid if all the values are the same, and is then used as that
+        # single value; otherwise the message framing is invalid.
+        # RFC 9112, section 5.1: optional whitespace (SP / HTAB) around
+        # the field value is not part of the value.
+        lengths = {value.strip(' \t')
+                   for field in self.headers.get_all("content-length", ())
+                   for value in field.split(',')}
+        length = lengths.pop() if len(lengths) == 1 else None
         if length and not self.chunked and _is_legal_content_length(length):
             self.length = int(length)
         else:

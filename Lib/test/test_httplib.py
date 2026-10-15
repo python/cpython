@@ -1377,6 +1377,40 @@ class BasicTest(TestCase):
                 self.assertTrue(resp.isclosed())
                 resp.close()
 
+    def test_duplicate_content_length(self):
+        # RFC 9112, section 6.3: a comma-separated list of identical
+        # Content-Length values, or (RFC 9110, section 5.3) a repeated
+        # field, is processed with that single value.
+        for fields in ('Content-Length: 7\r\nContent-Length: 7\r\n',
+                       'Content-Length: 7, 7\r\n',
+                       'Content-Length: 7 ,7\r\nContent-Length: 7\r\n'):
+            with self.subTest(fields=fields):
+                sock = FakeSocket(
+                    'HTTP/1.1 200 OK\r\n%s\r\nHello\r\nextra' % fields)
+                resp = client.HTTPResponse(sock, method="GET")
+                resp.begin()
+                self.assertEqual(resp.length, 7)
+                self.assertEqual(resp.read(), b'Hello\r\n')
+                self.assertTrue(resp.isclosed())
+                resp.close()
+
+    def test_conflicting_content_length(self):
+        # RFC 9112, section 6.3: differing Content-Length values make the
+        # message framing invalid, so none of them may be used to frame
+        # the body, and the connection must not be reused.
+        for fields in ('Content-Length: 5\r\nContent-Length: 7\r\n',
+                       'Content-Length: 7\r\nContent-Length: 5\r\n',
+                       'Content-Length: 5, 7\r\n'):
+            with self.subTest(fields=fields):
+                sock = FakeSocket(
+                    'HTTP/1.1 200 OK\r\n%s\r\nHello\r\n' % fields)
+                resp = client.HTTPResponse(sock, method="GET")
+                resp.begin()
+                self.assertIsNone(resp.length)
+                self.assertTrue(resp.will_close)
+                self.assertEqual(resp.read(), b'Hello\r\n')
+                resp.close()
+
     def test_malformed_chunk_size(self):
         # RFC 9112: chunk-size = 1*HEXDIG.  Reject sizes that int(_, 16) accepts
         # but the grammar forbids (a sign, an "0x" prefix, underscores or
