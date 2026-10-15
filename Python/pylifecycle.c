@@ -2452,6 +2452,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
     for (PyThreadState *p = list; p != NULL; p = p->next) {
         _PyThreadState_SetShuttingDown(p);
     }
+    _PyWarnings_PrepareForFinalization(tstate->interp);
     _PyEval_StartTheWorldAll(runtime);
     PyMutex_Unlock(&tstate->interp->ceval.pending.mutex);
 
@@ -2834,6 +2835,7 @@ Py_EndInterpreter(PyThreadState *tstate)
         _PyThreadState_SetShuttingDown(p);
     }
 
+    _PyWarnings_PrepareForFinalization(interp);
     _PyEval_StartTheWorldAll(interp->runtime);
     PyMutex_Unlock(&interp->ceval.pending.mutex);
     _PyThreadState_DeleteList(list, /*is_after_fork=*/0);

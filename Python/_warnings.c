@@ -254,6 +254,13 @@ get_warnings_attr(PyInterpreterState *interp, PyObject *attr, int try_import)
     return obj;
 }
 
+void
+_PyWarnings_PrepareForFinalization(PyInterpreterState *interp)
+{
+    WarningsState *st = warnings_get_state(interp);
+    _PyRecursiveMutex_at_shutdown_reinit(&st->lock);
+}
+
 static inline void
 warnings_lock(PyInterpreterState *interp)
 {

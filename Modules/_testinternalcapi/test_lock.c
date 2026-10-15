@@ -1,7 +1,9 @@
 // C Extension module to test pycore_lock.h API
 
 #include "parts.h"
+#include "pycore_interp.h"        // PyInterpreterState.warnings
 #include "pycore_lock.h"
+#include "pycore_pystate.h"      // _PyEval_StopTheWorld()
 #include "pycore_pythread.h"      // PyThread_get_thread_ident_ex()
 
 #include "clinic/test_lock.c.h"
@@ -549,7 +551,21 @@ test_lock_recursive(PyObject *self, PyObject *obj)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+warnings_lock_has_waiters(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyMutex *mutex = &interp->warnings.lock.mutex;
+    // A contender sets the parked bit before enqueuing, but cannot detach
+    // until it has enqueued. Stop the world to close that window on nogil.
+    _PyEval_StopTheWorld(interp);
+    uint8_t bits = _Py_atomic_load_uint8_relaxed(&mutex->_bits);
+    _PyEval_StartTheWorld(interp);
+    return PyBool_FromLong((bits & _Py_HAS_PARKED) != 0);
+}
+
 static PyMethodDef test_methods[] = {
+    {"warnings_lock_has_waiters", warnings_lock_has_waiters, METH_NOARGS},
     {"test_lock_basic", test_lock_basic, METH_NOARGS},
     {"test_lock_two_threads", test_lock_two_threads, METH_NOARGS},
     {"test_lock_counter", test_lock_counter, METH_NOARGS},
