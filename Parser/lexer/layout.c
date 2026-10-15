@@ -21,6 +21,9 @@ _PyLexer_ContinueLine(struct tok_state *tok)
         return -1;
     }
     c = tok_nextc(tok);
+    if (tok->implicit_newline == _PyTokenizer_APPEND_NEWLINE) {
+        tok->needs_newline = 1;
+    }
     if (c == EOF) {
         tok->done = E_EOF;
         tok->cur = tok->inp;

@@ -124,6 +124,71 @@ class CodeopTests(unittest.TestCase):
         self.assertEqual(cm.exception.args, (
             'incomplete input', ('<input>', 2, 9, text, 2, -1)))
 
+    @subTests('symbol', ('single', 'exec', 'eval'))
+    def test_unfinished_token_in_invalid_position(self, symbol):
+        for source in ('a b', '(a b', '1 """', '(1 """',
+                       'f"{lambda:\\', 't"{lambda:\\'):
+            for compiler in COMPILERS:
+                with self.subTest(source=source, compiler=compiler):
+                    with self.assertRaises(SyntaxError) as cm:
+                        compiler(source, '<input>', symbol)
+                    self.assertNotIsInstance(cm.exception, _IncompleteInputError)
+
+    @subTests('symbol', ('single', 'exec', 'eval'))
+    def test_invalid_partial_string_diagnostic(self, symbol):
+        with self.assertRaisesRegex(SyntaxError, 'invalid syntax'):
+            Compile()('a"""', '<input>', symbol)
+
+    @subTests('symbol', ('single', 'exec', 'eval'))
+    @subTests('prefix', ('', 'r', 'b', 'f', 't', 'rf', 'rt'))
+    def test_string_continuation(self, symbol, prefix):
+        source = prefix + '"first\\'
+        compile(source + '\nsecond"\n', '<input>', symbol)
+        self.assertIsNone(compile_command(source, symbol=symbol))
+        with self.assertRaises(_IncompleteInputError):
+            Compile()(source, '<input>', symbol)
+
+    @subTests('symbol', ('single', 'exec', 'eval'))
+    @subTests('newline', ('\n', '\r', '\r\n'))
+    def test_continued_final_line(self, symbol, newline):
+        source = '1\\' + newline
+        compile(source + '+ 2\n', '<input>', symbol)
+        self.assertIsNone(compile_command(source, symbol=symbol))
+        with self.assertRaises(_IncompleteInputError):
+            Compile()(source, '<input>', symbol)
+        with self.assertRaises(SyntaxError) as cm:
+            Compile()('1 + \\' + newline, '<input>', symbol)
+        # Appending LF to CR completes the CRLF line terminator.
+        if newline != '\r':
+            self.assertNotIsInstance(cm.exception, _IncompleteInputError)
+
+    @subTests('symbol', ('single', 'exec'))
+    def test_eof_before_nested_body(self, symbol):
+        for source in ('if True:\n    if True:',
+                       'if True:\n    def f():',
+                       'match 1:\n    case 1:'):
+            for tail in ('', '\n', '\n\n'):
+                with self.subTest(source=source, tail=tail):
+                    compile(source + tail + '\n        pass\n', '<input>', symbol)
+                    self.assertIsNone(compile_command(source + tail, symbol=symbol))
+                    with self.assertRaises(_IncompleteInputError):
+                        Compile()(source + tail, '<input>', symbol)
+
+    def test_incomplete_suite_semantic_errors(self):
+        cases = (
+            ('if True: break', "'break' outside loop"),
+            ('if True: return 1', "'return' outside function"),
+            ('def f(x, x):\n    pass', 'duplicate parameter'),
+        )
+        for source, message in cases:
+            for compiler in COMPILERS:
+                with self.subTest(source=source, compiler=compiler):
+                    with self.assertRaises(SyntaxError) as cm:
+                        compiler(source, '<input>', 'single')
+                    self.assertNotIsInstance(cm.exception, _IncompleteInputError)
+                    if compiler in RAW_COMPILERS:
+                        self.assertIn(message, str(cm.exception))
+
     @subTests('compiler', COMPILERS)
     def test_incomplete(self, compiler):
         ai = functools.partial(self.assertIncomplete, compiler=compiler)

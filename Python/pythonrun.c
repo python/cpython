@@ -1285,7 +1285,7 @@ _PyRun_String(const char *str, PyObject* name, int start,
         goto done;
     }
 
-    mod = _PyParser_ASTFromString(str, name, start, flags, arena, module);
+    mod = _PyParser_ASTFromString(str, name, start, flags, arena, module, NULL);
     Py_XDECREF(module);
 
     if (mod != NULL) {
@@ -1575,7 +1575,9 @@ _Py_CompileString(const char *str, PyObject *filename, int start,
     if (arena == NULL)
         return NULL;
 
-    mod = _PyParser_ASTFromString(str, filename, start, flags, arena, module);
+    PyObject *incomplete = NULL;
+    mod = _PyParser_ASTFromString(str, filename, start, flags, arena, module,
+                                 &incomplete);
     if (mod == NULL) {
         _PyArena_Free(arena);
         return NULL;
@@ -1585,7 +1587,13 @@ _Py_CompileString(const char *str, PyObject *filename, int start,
         if (_PyCompile_AstPreprocess(mod, filename, flags, optimize, arena,
                                      syntax_check_only, module) < 0)
         {
+            Py_XDECREF(incomplete);
             _PyArena_Free(arena);
+            return NULL;
+        }
+        if (incomplete != NULL) {
+            _PyArena_Free(arena);
+            PyErr_SetRaisedException(incomplete);
             return NULL;
         }
         PyObject *result = PyAST_mod2obj(mod);
@@ -1594,6 +1602,12 @@ _Py_CompileString(const char *str, PyObject *filename, int start,
     }
     co = _PyAST_Compile(mod, filename, flags, optimize, arena, module);
     _PyArena_Free(arena);
+    if (co != NULL && incomplete != NULL) {
+        Py_DECREF(co);
+        PyErr_SetRaisedException(incomplete);
+        return NULL;
+    }
+    Py_XDECREF(incomplete);
     return (PyObject *)co;
 }
 

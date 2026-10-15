@@ -516,7 +516,7 @@ _PyTokenizer_Get(struct tok_state *tok, struct token *token)
             Py_UNREACHABLE();
         }
     }
-    if (tok_failed(tok)) {
+    if (tok_failed(tok) && tok->done != E_INCOMPLETE) {
         result = ERRORTOKEN;
     }
     token->type = result;

@@ -7,11 +7,19 @@
 #include "reader_internal.h"
 #include "../lexer/state.h"
 
+int
+_PyTokenizer_GetStatus(const struct tok_state *tok)
+{
+    return tok->done;
+}
+
 _PyTokenizer_Info
 _PyTokenizer_GetInfo(const struct tok_state *tok)
 {
     _PyTokenizer_Info info = {
         .status = tok->done,
+        .implicit_newline = tok->implicit_newline,
+        .needs_newline = tok->needs_newline,
         .diagnostic = tok->diagnostic,
         .location = {tok->lineno, tok->line_start < 0
             ? -1 : (int)(tok->cur - tok->line_start)},
@@ -101,6 +109,12 @@ void
 _PyTokenizer_ImplyDedents(struct tok_state *tok)
 {
     _PyLexer_ImplyDedents(tok);
+}
+
+void
+_PyTokenizer_AllowIncompleteInput(struct tok_state *tok, int allow)
+{
+    tok->allow_incomplete_input = allow != 0;
 }
 
 int
