@@ -23,6 +23,8 @@ Compiling Python Source Code
 
 - [Compiler Design](compiler.md)
 
+- [Inlined comprehensions](inlined_comprehensions.md)
+
 - [Changing Python's Grammar](changing_grammar.md)
 
 Runtime Objects

@@ -4,7 +4,7 @@
 #include "pycore_abstract.h"      // _PyObject_RealIsSubclass()
 #include "pycore_call.h"          // _PyStack_AsDict()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
-#include "pycore_emscripten_trampoline.h" // descr_set_trampoline_call(), descr_get_trampoline_call()
+#include "pycore_wasm_trampoline.h" // descr_set_trampoline_call(), descr_get_trampoline_call()
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
 #include "pycore_modsupport.h"    // _PyArg_UnpackStack()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
@@ -18,6 +18,8 @@ class mappingproxy "mappingproxyobject *" "&PyDictProxy_Type"
 class property "propertyobject *" "&PyProperty_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=556352653fd4c02e]*/
+
+#include "clinic/descrobject.c.h"
 
 static void
 descr_dealloc(PyObject *self)
@@ -621,9 +623,17 @@ static PyObject *
 descr_get_qualname(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyDescrObject *descr = (PyDescrObject *)self;
-    if (descr->d_qualname == NULL)
-        descr->d_qualname = calculate_qualname(descr);
-    return Py_XNewRef(descr->d_qualname);
+    PyObject *qualname;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    if (descr->d_qualname == NULL) {
+        PyObject *new_qualname = calculate_qualname(descr);
+        if (new_qualname != NULL) {
+            Py_XSETREF(descr->d_qualname, new_qualname);
+        }
+    }
+    qualname = Py_XNewRef(descr->d_qualname);
+    Py_END_CRITICAL_SECTION();
+    return qualname;
 }
 
 static PyObject *
@@ -928,8 +938,7 @@ PyDescr_NewMethod(PyTypeObject *type, PyMethodDef *method)
 {
     /* Figure out correct vectorcall function to use */
     vectorcallfunc vectorcall;
-    switch (method->ml_flags & (METH_VARARGS | METH_FASTCALL | METH_NOARGS |
-                                METH_O | METH_KEYWORDS | METH_METHOD))
+    switch (method->ml_flags & _Py_METH_CALL_FLAGS)
     {
         case METH_VARARGS:
             vectorcall = method_vectorcall_VARARGS;
@@ -1610,26 +1619,22 @@ property_deleter(PyObject *self, PyObject *deleter)
 }
 
 
-PyDoc_STRVAR(set_name_doc,
-             "__set_name__($self, owner, name, /)\n"
-             "--\n"
-             "\n"
-             "Method to set name of a property.");
+/*[clinic input]
+property.__set_name__
+
+    owner: object
+    name: object
+    /
+
+Method to set name of a property.
+[clinic start generated code]*/
 
 static PyObject *
-property_set_name(PyObject *self, PyObject *args) {
-    if (PyTuple_GET_SIZE(args) != 2) {
-        PyErr_Format(
-                PyExc_TypeError,
-                "__set_name__() takes 2 positional arguments but %zd were given",
-                PyTuple_GET_SIZE(args));
-        return NULL;
-    }
-
-    propertyobject *prop = (propertyobject *)self;
-    PyObject *name = PyTuple_GET_ITEM(args, 1);
-
-    Py_XSETREF(prop->prop_name, Py_XNewRef(name));
+property___set_name___impl(propertyobject *self, PyObject *owner,
+                           PyObject *name)
+/*[clinic end generated code: output=959e301a91f7fb85 input=0211b5b7ace099c5]*/
+{
+    Py_XSETREF(self->prop_name, Py_XNewRef(name));
 
     Py_RETURN_NONE;
 }
@@ -1638,7 +1643,7 @@ static PyMethodDef property_methods[] = {
     {"getter", property_getter, METH_O, getter_doc},
     {"setter", property_setter, METH_O, setter_doc},
     {"deleter", property_deleter, METH_O, deleter_doc},
-    {"__set_name__", property_set_name, METH_VARARGS, set_name_doc},
+    PROPERTY___SET_NAME___METHODDEF
     {0}
 };
 
@@ -2006,7 +2011,6 @@ property_clear(PyObject *self)
     return 0;
 }
 
-#include "clinic/descrobject.c.h"
 
 PyTypeObject PyDictProxy_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)

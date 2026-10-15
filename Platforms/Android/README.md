@@ -31,7 +31,7 @@ The script also requires the following commands to be on the `PATH`:
 
 * `curl`
 * `java` (or set the `JAVA_HOME` environment variable).
-  Java versions 17 and 21 are supported.
+  Java versions 17, 21 and 25 are supported.
 
 ## Building
 
