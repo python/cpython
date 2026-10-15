@@ -221,6 +221,10 @@ weakref_repr(PyObject *self)
     }
 
     PyObject *name = _PyObject_LookupSpecial(obj, &_Py_ID(__name__));
+    if (name == NULL && PyErr_Occurred()) {
+        Py_DECREF(obj);
+        return NULL;
+    }
     PyObject *repr;
     if (name == NULL || !PyUnicode_Check(name)) {
         repr = PyUnicode_FromFormat(

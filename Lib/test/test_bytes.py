@@ -898,6 +898,19 @@ class BaseBytesTest:
             b = self.type2test(b'%*b')
             b % (_testcapi.PY_SSIZE_T_MAX, b'abc')
 
+    def test_mod_bytes_lookup_error(self):
+        # An error raised while looking up __bytes__ propagates.
+        class BadBytes:
+            @property
+            def __bytes__(self):
+                raise ZeroDivisionError
+            def __buffer__(self, flags):
+                return memoryview(b'abc')
+
+        b = self.type2test(b'%b')
+        with self.assertRaises(ZeroDivisionError):
+            b % BadBytes()
+
     def test_imod(self):
         b = self.type2test(b'hello, %b!')
         orig = b
