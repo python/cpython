@@ -9744,12 +9744,21 @@
             value = _PyCell_GetStackRef(cell);
             _PyFrame_StackPointerInvalidate(frame);
             if (PyStackRef_IsNull(value)) {
+                PyCodeObject *co = _PyFrame_GetCode(frame);
                 stack_pointer[0] = value;
                 stack_pointer += 1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
-                _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
+                int unbound_local = (oparg < PyUnstable_Code_GetFirstFree(co) ||
+                                     _PyFrame_IsInlinedCompTempFree(frame, oparg));
+                _PyFrame_StackPointerInvalidate(frame);
+                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                _PyFrame_StackPointerValidate(frame);
+                _PyEval_FormatExcCheckArg(tstate,
+                    unbound_local ? PyExc_UnboundLocalError : PyExc_NameError,
+                    unbound_local ? UNBOUNDLOCAL_ERROR_MSG : UNBOUNDFREE_ERROR_MSG,
+                    PyTuple_GET_ITEM(co->co_localsplusnames, oparg));
                 _PyFrame_StackPointerInvalidate(frame);
                 JUMP_TO_LABEL(error);
             }
@@ -10652,7 +10661,11 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(MAKE_CELL);
-            PyObject *initial = PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
+            PyObject *initial = NULL;
+            PyCodeObject *co = _PyFrame_GetCode(frame);
+            if (!(_PyLocals_GetKind(co->co_localspluskinds, oparg) & CO_FAST_FREE)) {
+                initial = PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
+            }
             PyObject *cell = PyCell_New(initial);
             if (cell == NULL) {
                 JUMP_TO_LABEL(error);

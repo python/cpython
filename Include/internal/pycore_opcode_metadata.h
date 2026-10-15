@@ -19,6 +19,7 @@ extern "C" {
 
 #define IS_PSEUDO_INSTR(OP)  ( \
     ((OP) == LOAD_CLOSURE) || \
+    ((OP) == STORE_CLOSURE) || \
     ((OP) == STORE_FAST_MAYBE_NULL) || \
     ((OP) == ANNOTATIONS_PLACEHOLDER) || \
     ((OP) == JUMP) || \
@@ -460,6 +461,8 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 2;
         case STORE_ATTR_WITH_HINT:
             return 2;
+        case STORE_CLOSURE:
+            return 1;
         case STORE_DEREF:
             return 1;
         case STORE_FAST:
@@ -955,6 +958,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 0;
         case STORE_ATTR_WITH_HINT:
             return 0;
+        case STORE_CLOSURE:
+            return 0;
         case STORE_DEREF:
             return 0;
         case STORE_FAST:
@@ -1037,7 +1042,7 @@ enum InstructionFormat {
 };
 
 #define IS_VALID_OPCODE(OP) \
-    (((OP) >= 0) && ((OP) < 267) && \
+    (((OP) >= 0) && ((OP) < 268) && \
      (_PyOpcode_opcode_metadata[(OP)].valid_entry))
 
 #define HAS_ARG_FLAG (1)
@@ -1097,9 +1102,9 @@ struct opcode_metadata {
     uint32_t flags;
 };
 
-PyAPI_DATA(const struct opcode_metadata) _PyOpcode_opcode_metadata[267];
+PyAPI_DATA(const struct opcode_metadata) _PyOpcode_opcode_metadata[268];
 #ifdef NEED_OPCODE_METADATA
-const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
+const struct opcode_metadata _PyOpcode_opcode_metadata[268] = {
     [BINARY_OP] = { true, INSTR_FMT_IBC0000, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG | HAS_RECORDS_VALUE_FLAG },
     [BINARY_OP_ADD_FLOAT] = { true, INSTR_FMT_IXC0000, HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG },
     [BINARY_OP_ADD_INT] = { true, INSTR_FMT_IXC0000, HAS_EXIT_FLAG },
@@ -1341,6 +1346,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
     [SETUP_CLEANUP] = { true, -1, HAS_PURE_FLAG | HAS_ARG_FLAG },
     [SETUP_FINALLY] = { true, -1, HAS_PURE_FLAG | HAS_ARG_FLAG },
     [SETUP_WITH] = { true, -1, HAS_PURE_FLAG | HAS_ARG_FLAG },
+    [STORE_CLOSURE] = { true, -1, HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_ESCAPES_FLAG },
     [STORE_FAST_MAYBE_NULL] = { true, -1, HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_ESCAPES_FLAG },
 };
 #endif
@@ -1549,9 +1555,9 @@ _PyOpcode_macro_expansion[256] = {
 };
 #endif // NEED_OPCODE_METADATA
 
-PyAPI_DATA(const char) *_PyOpcode_OpName[267];
+PyAPI_DATA(const char) *_PyOpcode_OpName[268];
 #ifdef NEED_OPCODE_METADATA
-const char *_PyOpcode_OpName[267] = {
+const char *_PyOpcode_OpName[268] = {
     [ANNOTATIONS_PLACEHOLDER] = "ANNOTATIONS_PLACEHOLDER",
     [BINARY_OP] = "BINARY_OP",
     [BINARY_OP_ADD_FLOAT] = "BINARY_OP_ADD_FLOAT",
@@ -1764,6 +1770,7 @@ const char *_PyOpcode_OpName[267] = {
     [STORE_ATTR_INSTANCE_VALUE] = "STORE_ATTR_INSTANCE_VALUE",
     [STORE_ATTR_SLOT] = "STORE_ATTR_SLOT",
     [STORE_ATTR_WITH_HINT] = "STORE_ATTR_WITH_HINT",
+    [STORE_CLOSURE] = "STORE_CLOSURE",
     [STORE_DEREF] = "STORE_DEREF",
     [STORE_FAST] = "STORE_FAST",
     [STORE_FAST_LOAD_FAST] = "STORE_FAST_LOAD_FAST",
@@ -2119,10 +2126,11 @@ struct pseudo_targets {
     uint8_t as_sequence;
     uint8_t targets[4];
 };
-extern const struct pseudo_targets _PyOpcode_PseudoTargets[11];
+extern const struct pseudo_targets _PyOpcode_PseudoTargets[12];
 #ifdef NEED_OPCODE_METADATA
-const struct pseudo_targets _PyOpcode_PseudoTargets[11] = {
+const struct pseudo_targets _PyOpcode_PseudoTargets[12] = {
     [LOAD_CLOSURE-256] = { 0, { LOAD_FAST, 0, 0, 0 } },
+    [STORE_CLOSURE-256] = { 0, { STORE_FAST, 0, 0, 0 } },
     [STORE_FAST_MAYBE_NULL-256] = { 0, { STORE_FAST, 0, 0, 0 } },
     [ANNOTATIONS_PLACEHOLDER-256] = { 0, { NOP, 0, 0, 0 } },
     [JUMP-256] = { 0, { JUMP_FORWARD, JUMP_BACKWARD, 0, 0 } },
@@ -2138,7 +2146,7 @@ const struct pseudo_targets _PyOpcode_PseudoTargets[11] = {
 #endif // NEED_OPCODE_METADATA
 static inline bool
 is_pseudo_target(int pseudo, int target) {
-    if (pseudo < 256 || pseudo >= 267) {
+    if (pseudo < 256 || pseudo >= 268) {
         return false;
     }
     for (int i = 0; _PyOpcode_PseudoTargets[pseudo-256].targets[i]; i++) {

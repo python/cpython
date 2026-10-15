@@ -2003,6 +2003,16 @@ but are replaced by real opcodes or removed before bytecode is generated.
    .. versionchanged:: 3.13
       This opcode is now a pseudo-instruction.
 
+.. opcode:: STORE_CLOSURE (i)
+
+   Stores the TOS into the cell slot ``i`` of the "fast locals" storage.
+   Used to restore a cell saved by ``LOAD_CLOSURE`` when isolating an
+   inlined comprehension that reuses an enclosing free variable.
+
+   Note that ``STORE_CLOSURE`` is replaced with ``STORE_FAST`` in the assembler.
+
+   .. versionadded:: next
+
 
 .. _opcode_collections:
 

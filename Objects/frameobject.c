@@ -14,6 +14,7 @@
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_metadata.h" // _PyOpcode_Caches
 #include "pycore_optimizer.h"     // _Py_Executors_InvalidateDependency()
+#include "pycore_symtable.h"      // _PyST_IsClassClosureName()
 #include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
@@ -94,9 +95,15 @@ framelocalsproxy_hasval(_PyInterpreterFrame *frame, PyCodeObject *co, int i)
     return true;
 }
 
+/* 1 = include, 0 = skip duplicate, -1 = error.
+ * Class-closure names are not slot-reused, so localsplus can hold both a
+ * comprehension local and a free; track only those names in seen. */
 static int
-framelocalsproxy_is_first_occurrence(PyObject *seen, PyObject *name)
+framelocalsproxy_include_name(PyObject *seen, PyObject *name)
 {
+    if (!_PyST_IsClassClosureName(name)) {
+        return 1;
+    }
     int found = PySet_Contains(seen, name);
     if (found < 0) {
         return -1;
@@ -396,7 +403,6 @@ framelocalsproxy_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (names == NULL) {
         return NULL;
     }
-    // An inlined comprehension cell can share a name with a free var.
     PyObject *seen = PySet_New(NULL);
     if (seen == NULL) {
         Py_DECREF(names);
@@ -406,18 +412,18 @@ framelocalsproxy_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         if (framelocalsproxy_hasval(frame->f_frame, co, i)) {
             PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-            int first = framelocalsproxy_is_first_occurrence(seen, name);
-            if (first < 0) {
+            int include = framelocalsproxy_include_name(seen, name);
+            if (include < 0) {
                 goto error;
             }
-            if (first) {
-                if (PyList_Append(names, name) < 0) {
-                    goto error;
-                }
+            if (!include) {
+                continue;
+            }
+            if (PyList_Append(names, name) < 0) {
+                goto error;
             }
         }
     }
-    Py_DECREF(seen);
 
     // Iterate through the extra locals
     if (frame->f_extra_locals) {
@@ -429,12 +435,12 @@ framelocalsproxy_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
 
         while (PyDict_Next(frame->f_extra_locals, &i, &key, &value)) {
             if (PyList_Append(names, key) < 0) {
-                Py_DECREF(names);
-                return NULL;
+                goto error;
             }
         }
     }
 
+    Py_DECREF(seen);
     return names;
 
 error:
@@ -442,6 +448,7 @@ error:
     Py_DECREF(names);
     return NULL;
 }
+
 
 static void
 framelocalsproxy_dealloc(PyObject *self)
@@ -632,20 +639,22 @@ framelocalsproxy_values(PyObject *self, PyObject *Py_UNUSED(ignored))
         PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
         if (value) {
             PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-            int first = framelocalsproxy_is_first_occurrence(seen, name);
-            if (first == 1) {
-                if (PyList_Append(values, value) < 0) {
-                    Py_DECREF(value);
-                    goto error;
-                }
-            }
-            Py_DECREF(value);
-            if (first < 0) {
+            int include = framelocalsproxy_include_name(seen, name);
+            if (include < 0) {
+                Py_DECREF(value);
                 goto error;
             }
+            if (!include) {
+                Py_DECREF(value);
+                continue;
+            }
+            if (PyList_Append(values, value) < 0) {
+                Py_DECREF(value);
+                goto error;
+            }
+            Py_DECREF(value);
         }
     }
-    Py_DECREF(seen);
 
     // Iterate through the extra locals
     if (frame->f_extra_locals) {
@@ -654,12 +663,12 @@ framelocalsproxy_values(PyObject *self, PyObject *Py_UNUSED(ignored))
         PyObject *value = NULL;
         while (PyDict_Next(frame->f_extra_locals, &j, &key, &value)) {
             if (PyList_Append(values, value) < 0) {
-                Py_DECREF(values);
-                return NULL;
+                goto error;
             }
         }
     }
 
+    Py_DECREF(seen);
     return values;
 
 error:
@@ -667,6 +676,7 @@ error:
     Py_DECREF(values);
     return NULL;
 }
+
 
 static PyObject *
 framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -688,26 +698,24 @@ framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
         PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
 
         if (value) {
-            int first = framelocalsproxy_is_first_occurrence(seen, name);
-            if (first == 1) {
-                PyObject *pair = _PyTuple_FromPairSteal(Py_NewRef(name), value);
-                if (pair == NULL) {
-                    goto error;
-                }
-                if (_PyList_AppendTakeRef((PyListObject *)items, pair) < 0) {
-                    goto error;
-                }
-            }
-            else {
+            int include = framelocalsproxy_include_name(seen, name);
+            if (include < 0) {
                 Py_DECREF(value);
-                if (first < 0) {
-                    goto error;
-                }
+                goto error;
+            }
+            if (!include) {
+                Py_DECREF(value);
+                continue;
+            }
+            PyObject *pair = _PyTuple_FromPairSteal(Py_NewRef(name), value);
+            if (pair == NULL) {
+                goto error;
+            }
+            if (_PyList_AppendTakeRef((PyListObject *)items, pair) < 0) {
+                goto error;
             }
         }
     }
-    Py_DECREF(seen);
-    seen = NULL;
 
     // Iterate through the extra locals
     if (frame->f_extra_locals) {
@@ -726,13 +734,15 @@ framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
         }
     }
 
+    Py_DECREF(seen);
     return items;
 
 error:
-    Py_XDECREF(seen);
+    Py_DECREF(seen);
     Py_DECREF(items);
     return NULL;
 }
+
 
 static Py_ssize_t
 framelocalsproxy_length(PyObject *self)
@@ -753,12 +763,12 @@ framelocalsproxy_length(PyObject *self)
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         if (framelocalsproxy_hasval(frame->f_frame, co, i)) {
             PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-            int first = framelocalsproxy_is_first_occurrence(seen, name);
-            if (first < 0) {
+            int include = framelocalsproxy_include_name(seen, name);
+            if (include < 0) {
                 Py_DECREF(seen);
                 return -1;
             }
-            else if (first) {
+            if (include) {
                 size++;
             }
         }
@@ -766,6 +776,7 @@ framelocalsproxy_length(PyObject *self)
     Py_DECREF(seen);
     return size;
 }
+
 
 static int
 framelocalsproxy_contains(PyObject *self, PyObject *key)
@@ -2327,6 +2338,35 @@ frame_get_var(_PyInterpreterFrame *frame, PyCodeObject *co, int i,
 
 
 bool
+_PyFrame_IsInlinedCompTempFree(_PyInterpreterFrame *frame, int oparg)
+{
+    PyCodeObject *co = _PyFrame_GetCode(frame);
+    if (oparg < 0 || oparg >= co->co_nlocalsplus) {
+        return false;
+    }
+    if (!(_PyLocals_GetKind(co->co_localspluskinds, oparg) & CO_FAST_FREE)) {
+        return false;
+    }
+    if (!PyStackRef_FunctionCheck(frame->f_funcobj)) {
+        return false;
+    }
+    PyFunctionObject *func =
+        (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+    PyObject *closure = func->func_closure;
+    if (closure == NULL) {
+        return false;
+    }
+    int free_index = oparg - (co->co_nlocalsplus - co->co_nfreevars);
+    if (free_index < 0 || free_index >= co->co_nfreevars) {
+        return false;
+    }
+    assert(free_index < PyTuple_GET_SIZE(closure));
+    PyObject *closure_cell = PyTuple_GET_ITEM(closure, free_index);
+    PyObject *frame_cell = PyStackRef_AsPyObjectBorrow(frame->localsplus[oparg]);
+    return frame_cell != NULL && frame_cell != closure_cell;
+}
+
+bool
 _PyFrame_HasHiddenLocals(_PyInterpreterFrame *frame)
 {
     /*
@@ -2340,6 +2380,14 @@ _PyFrame_HasHiddenLocals(_PyInterpreterFrame *frame)
 
         if (kind & CO_FAST_HIDDEN) {
             if (framelocalsproxy_hasval(frame, co, i)) {
+                return true;
+            }
+        }
+        else if (kind & CO_FAST_FREE) {
+            /* A free slot whose cell was swapped for an inlined
+             * comprehension temporary must also force FrameLocalsProxy
+             * in class/module scopes (no separate HIDDEN slot). */
+            if (_PyFrame_IsInlinedCompTempFree(frame, i)) {
                 return true;
             }
         }
