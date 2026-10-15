@@ -1,0 +1,1 @@
+Speed up ``set >= set``, ``set > set`` and ``set.issuperset()`` on the free-threaded build.
