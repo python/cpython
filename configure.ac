@@ -3526,6 +3526,11 @@ AC_ARG_WITH([address_sanitizer],
 AC_MSG_RESULT([$withval])
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=address $LDFLAGS"
+AC_MSG_CHECKING([whether a program links with -fsanitize=address])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+  [AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no])
+   AC_MSG_ERROR([cannot link with -fsanitize=address: the compiler does not support AddressSanitizer or its runtime library is not installed; see config.log])])
 ],
 [AC_MSG_RESULT([no])])
 
@@ -3545,10 +3550,13 @@ hwasan_flags="-fsanitize=hwaddress"
 AS_CASE([$host_cpu],
   [x86_64|amd64], [hwasan_flags="$hwasan_flags -fsanitize-hwaddress-experimental-aliasing"]
 )
-AX_CHECK_COMPILE_FLAG([$hwasan_flags],[
 BASECFLAGS="$hwasan_flags -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="$hwasan_flags $LDFLAGS"
-],[AC_MSG_ERROR([The selected compiler doesn't support hardware address sanitizer])])
+AC_MSG_CHECKING([whether a program links with -fsanitize=hwaddress])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+  [AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no])
+   AC_MSG_ERROR([cannot link with -fsanitize=hwaddress: the compiler does not support Hardware-assisted AddressSanitizer or its runtime library is not installed; see config.log])])
 ],
 [AC_MSG_RESULT([no])])
 
@@ -3561,10 +3569,13 @@ AC_ARG_WITH(
   )],
 [
 AC_MSG_RESULT([$withval])
-AX_CHECK_COMPILE_FLAG([-fsanitize=memory],[
 BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
-],[AC_MSG_ERROR([The selected compiler doesn't support memory sanitizer])])
+AC_MSG_CHECKING([whether a program links with -fsanitize=memory])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+  [AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no])
+   AC_MSG_ERROR([cannot link with -fsanitize=memory: the compiler does not support MemorySanitizer or its runtime library is not installed; see config.log])])
 ],
 [AC_MSG_RESULT([no])])
 
@@ -3580,6 +3591,11 @@ AC_MSG_RESULT([$withval])
 BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
 LDFLAGS="-fsanitize=undefined $LDFLAGS"
 with_ubsan="yes"
+AC_MSG_CHECKING([whether a program links with -fsanitize=undefined])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+  [AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no])
+   AC_MSG_ERROR([cannot link with -fsanitize=undefined: the compiler does not support UndefinedBehaviorSanitizer or its runtime library is not installed; see config.log])])
 ],
 [
 AC_MSG_RESULT([no])
@@ -3598,6 +3614,11 @@ AC_MSG_RESULT([$withval])
 BASECFLAGS="-fsanitize=thread $BASECFLAGS"
 LDFLAGS="-fsanitize=thread $LDFLAGS"
 with_tsan="yes"
+AC_MSG_CHECKING([whether a program links with -fsanitize=thread])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+  [AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no])
+   AC_MSG_ERROR([cannot link with -fsanitize=thread: the compiler does not support ThreadSanitizer or its runtime library is not installed; see config.log])])
 ],
 [
 AC_MSG_RESULT([no])
