@@ -11736,6 +11736,61 @@ static pytype_slotdef slotdefs[] = {
    interpreter starts. */
 static uint8_t slotdefs_dups[Py_ARRAY_LENGTH(slotdefs)][1 + MAX_EQUIV];
 
+/* Open-addressing hash table: slot name -> index of the first slotdef with
+   that name (slotdefs_dups[] lists the others).  Entry 0 means "empty".
+   Built by _PyType_InitSlotDefs(). */
+#define SLOTNAME_TABLE_SIZE 512
+static uint16_t slotname_table[SLOTNAME_TABLE_SIZE];
+#ifndef NDEBUG
+static bool slotname_table_initialized = false;
+#endif
+
+static void
+init_slotname_table(void)
+{
+#ifndef NDEBUG
+    slotname_table_initialized = true;
+#endif
+    memset(slotname_table, 0, sizeof(slotname_table));
+    for (size_t idx = 0; slotdefs[idx].name != NULL; idx++) {
+        PyObject *name = slotdefs[idx].name_strobj;
+        Py_hash_t hash = _PyObject_HashDictKey(name);
+        assert(hash != -1);
+        size_t i = (size_t)hash & (SLOTNAME_TABLE_SIZE - 1);
+        while (slotname_table[i] != 0) {
+            if (slotdefs[slotname_table[i] - 1].name_strobj == name) {
+                break;
+            }
+            i = (i + 1) & (SLOTNAME_TABLE_SIZE - 1);
+        }
+        if (slotname_table[i] == 0) {
+            slotname_table[i] = (uint16_t)(idx + 1);
+        }
+    }
+    /* Keep the load factor low so probe sequences stay short. */
+    Py_BUILD_ASSERT(4 * Py_ARRAY_LENGTH(slotdefs) <= SLOTNAME_TABLE_SIZE);
+}
+
+/* Return the index of the first slotdef named 'key' (a str with hash
+   'hash'), or -1 if 'key' is not a slot name. */
+static Py_ssize_t
+slotname_lookup(PyObject *key, Py_hash_t hash)
+{
+    assert(slotname_table_initialized);
+    size_t i = (size_t)hash & (SLOTNAME_TABLE_SIZE - 1);
+    while (slotname_table[i] != 0) {
+        Py_ssize_t idx = slotname_table[i] - 1;
+        PyObject *name = slotdefs[idx].name_strobj;
+        if (name == key
+            || (_PyASCIIObject_CAST(name)->hash == hash
+                && _PyUnicode_Equal(name, key))) {
+            return idx;
+        }
+        i = (i + 1) & (SLOTNAME_TABLE_SIZE - 1);
+    }
+    return -1;
+}
+
 /* Given a type pointer and an offset gotten from a slotdef entry, return a
    pointer to the actual slot.  This is not quite the same as simply adding
    the offset to the type pointer, since it takes care to indirect through the
@@ -11783,12 +11838,90 @@ slotptr(PyTypeObject *type, int ioffset)
 static bool
 has_slotdef(PyObject *name)
 {
-    for (pytype_slotdef *p = slotdefs; p->name_strobj; p++) {
-        if (p->name_strobj == name) {
-            return true;
+    Py_hash_t hash = _PyObject_HashDictKey(name);
+    assert(hash != -1);
+    return slotname_lookup(name, hash) >= 0;
+}
+
+#define SLOT_SCAN_MAX_DICT_SIZE 1000
+
+static void
+clear_slot_descrs(PyObject **descrs)
+{
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(slotdefs) - 1; i++) {
+        Py_CLEAR(descrs[i]);
+    }
+}
+
+/* Scan the dicts along the MRO once and set descrs[i] to a strong reference
+   to what find_name_in_mro() would return for slotdefs[i].name, or NULL.
+   Return -1 (descrs[] all NULL) if some dict cannot be scanned. */
+static int
+collect_slot_descrs(PyTypeObject *type, PyObject **descrs)
+{
+    ASSERT_NEW_TYPE_OR_LOCKED(type);
+    PyObject *mro = lookup_tp_mro(type);
+    if (mro == NULL || !PyTuple_CheckExact(mro)) {
+        return -1;
+    }
+    memset(descrs, 0, sizeof(PyObject *) * (Py_ARRAY_LENGTH(slotdefs) - 1));
+    Py_ssize_t mro_size = PyTuple_GET_SIZE(mro);
+    for (Py_ssize_t m = 0; m < mro_size; m++) {
+        PyObject *base = PyTuple_GET_ITEM(mro, m);
+        if (!PyType_Check(base)) {
+            goto fail;
+        }
+        PyObject *dict = lookup_tp_dict(_PyType_CAST(base));
+        if (dict == NULL || !PyDict_CheckExact(dict)) {
+            goto fail;
+        }
+#ifdef Py_GIL_DISABLED
+        /* _PyDict_Next() needs the dict mutex, but we must not block for it:
+           blocking detaches the thread, which releases TYPE_LOCK and lets
+           another thread change a dict scanned earlier.  Fall back instead. */
+        PyMutex *mutex = &dict->ob_mutex;
+        if (!PyMutex_LockFast(mutex)) {
+            goto fail;
+        }
+#endif
+        int ok = 1;
+        if (!DK_IS_UNICODE(((PyDictObject *)dict)->ma_keys)
+            || PyDict_GET_SIZE(dict) > SLOT_SCAN_MAX_DICT_SIZE) {
+            ok = 0;
+        }
+        else {
+            Py_ssize_t pos = 0;
+            PyObject *key, *value;
+            Py_hash_t hash;
+            while (_PyDict_Next(dict, &pos, &key, &value, &hash)) {
+                if (!is_dunder_name(key)) {
+                    continue;
+                }
+                Py_ssize_t idx = slotname_lookup(key, hash);
+                if (idx < 0) {
+                    continue;
+                }
+                /* First class in the MRO wins. */
+                const uint8_t *dups = slotdefs_dups[idx];
+                for (uint8_t k = 1; k <= dups[0]; k++) {
+                    if (descrs[dups[k]] == NULL) {
+                        descrs[dups[k]] = Py_NewRef(value);
+                    }
+                }
+            }
+        }
+#ifdef Py_GIL_DISABLED
+        PyMutex_Unlock(mutex);
+#endif
+        if (!ok) {
+            goto fail;
         }
     }
-    return false;
+    return 0;
+
+fail:
+    clear_slot_descrs(descrs);
+    return -1;
 }
 
 /* Common code for update_slots_callback() and fixup_slot_dispatchers().
@@ -11855,7 +11988,7 @@ has_slotdef(PyObject *name)
  * occur internally are ignored, such as when looking up descriptors. */
 static int
 update_one_slot(PyTypeObject *type, pytype_slotdef *p, pytype_slotdef **next_p,
-                slot_update_t *queued_updates)
+                slot_update_t *queued_updates, PyObject **descrs)
 {
     ASSERT_NEW_TYPE_OR_LOCKED(type);
 
@@ -11887,9 +12020,18 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p, pytype_slotdef **next_p,
     /* We may end up clearing live exceptions below, so make sure it's ours. */
     assert(!PyErr_Occurred());
     do {
-        /* Use faster uncached lookup as we won't get any cache hits during type setup. */
         _PyStackRef descr_ref;
-        int res = find_name_in_mro(type, p->name_strobj, &descr_ref);
+        int res;
+        if (descrs != NULL) {
+            /* Precomputed by collect_slot_descrs(), which owns the refs. */
+            PyObject *found = descrs[p - slotdefs];
+            res = (found != NULL);
+            descr_ref = res ? PyStackRef_FromPyObjectBorrow(found) : PyStackRef_NULL;
+        }
+        else {
+            /* Use faster uncached lookup as we won't get any cache hits during type setup. */
+            res = find_name_in_mro(type, p->name_strobj, &descr_ref);
+        }
         if (res <= 0) {
             if (ptr == (void**)&type->tp_iternext) {
                 specific = (void *)_PyObject_NextNotImplemented;
@@ -12027,7 +12169,8 @@ update_slots_callback(PyTypeObject *type, void *data)
     update_callback_data_t *update_data = (update_callback_data_t *)data;
     pytype_slotdef **pp = update_data->defs;
     for (; *pp; pp++) {
-        if (update_one_slot(type, *pp, NULL, update_data->queued_updates) < 0) {
+        if (update_one_slot(type, *pp, NULL, update_data->queued_updates,
+                            NULL) < 0) {
             return -1;
         }
     }
@@ -12085,11 +12228,19 @@ fixup_slot_dispatchers(PyTypeObject *type)
     ASSERT_TYPE_LOCK_HELD();
     ASSERT_WORLD_STOPPED_OR_NEW_TYPE(type);
     assert(!PyErr_Occurred());
+    PyObject *descrs_buf[Py_ARRAY_LENGTH(slotdefs) - 1];
+    PyObject **descrs = descrs_buf;
+    if (collect_slot_descrs(type, descrs_buf) < 0) {
+        descrs = NULL;
+    }
     for (pytype_slotdef *p = slotdefs; p->name; ) {
-        int rv = update_one_slot(type, p, &p, NULL);
+        int rv = update_one_slot(type, p, &p, NULL, descrs);
         // always returns 0 if queued_updates == NULL
         assert (rv == 0);
         (void)rv;
+    }
+    if (descrs != NULL) {
+        clear_slot_descrs(descrs);
     }
 }
 
@@ -12143,68 +12294,30 @@ _PyType_InitSlotDefs(PyInterpreterState *interp)
     if (!_Py_IsMainInterpreter(interp)) {
         return 0;
     }
-    PyObject *bytearray = NULL;
-    PyObject *cache = PyDict_New();
-    if (!cache) {
-        return -1;
-    }
+    init_slotname_table();
 
-    pytype_slotdef *p;
-    Py_ssize_t idx = 0;
-    for (p = slotdefs; p->name_strobj; p++, idx++) {
+    /* Group the slotdefs by name: slotdefs_dups[i] lists the indices of
+       all slotdefs with the same name as slotdefs[i], in slotdefs order. */
+    memset(slotdefs_dups, 0, sizeof(slotdefs_dups));
+    for (Py_ssize_t idx = 0; slotdefs[idx].name_strobj != NULL; idx++) {
         assert(idx < 255);
-
-        if (PyDict_GetItemRef(cache, p->name_strobj, &bytearray) < 0) {
-            goto error;
-        }
-
-        if (!bytearray) {
-            Py_ssize_t size = sizeof(uint8_t) * (1 + MAX_EQUIV);
-            bytearray = PyByteArray_FromStringAndSize(NULL, size);
-            if (!bytearray) {
-                goto error;
-            }
-
-            uint8_t *data = (uint8_t *)PyByteArray_AS_STRING(bytearray);
-            data[0] = 0;
-
-            if (PyDict_SetItem(cache, p->name_strobj, bytearray) < 0) {
-                goto error;
-            }
-        }
-
-        assert(PyByteArray_CheckExact(bytearray));
-        uint8_t *data = (uint8_t *)PyByteArray_AS_STRING(bytearray);
-
+        PyObject *name = slotdefs[idx].name_strobj;
+        Py_ssize_t first = slotname_lookup(name, _PyObject_HashDictKey(name));
+        assert(first >= 0 && first <= idx);
+        uint8_t *data = slotdefs_dups[first];
         data[0] += 1;
         assert(data[0] < MAX_EQUIV);
-
         data[data[0]] = (uint8_t)idx;
-
-        Py_CLEAR(bytearray);
     }
-
-    memset(slotdefs_dups, -1, sizeof(slotdefs_dups));
-
-    Py_ssize_t pos = 0;
-    PyObject *key = NULL;
-    PyObject *value = NULL;
-    while (PyDict_Next(cache, &pos, &key, &value)) {
-        uint8_t *data = (uint8_t *)PyByteArray_AS_STRING(value);
-        uint8_t n = data[0];
-        for (uint8_t i = 0; i < n; i++) {
-            uint8_t idx = data[i + 1];
-            memcpy(&slotdefs_dups[idx], data, sizeof(uint8_t) * (n + 1));
+    for (Py_ssize_t idx = 0; slotdefs[idx].name_strobj != NULL; idx++) {
+        PyObject *name = slotdefs[idx].name_strobj;
+        Py_ssize_t first = slotname_lookup(name, _PyObject_HashDictKey(name));
+        if (first != idx) {
+            memcpy(slotdefs_dups[idx], slotdefs_dups[first],
+                   sizeof(slotdefs_dups[idx]));
         }
     }
-
-    Py_DECREF(cache);
     return 0;
-
-error:
-    Py_XDECREF(bytearray);
-    Py_DECREF(cache);
-    return -1;
 }
 
 
