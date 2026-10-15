@@ -162,6 +162,17 @@ class ReferencesTestCase(TestBase):
         self.assertIn('MyConfig', repr(obj_weakref))
         self.assertIn('MyConfig', str(obj_weakref))
 
+    def test_repr_name_lookup_error(self):
+        # An error raised while looking up __name__ propagates.
+        class BadName:
+            @property
+            def __name__(self):
+                raise ZeroDivisionError
+
+        obj = BadName()
+        with self.assertRaises(ZeroDivisionError):
+            repr(weakref.ref(obj))
+
     def test_basic_callback(self):
         self.check_basic_callback(C)
         self.check_basic_callback(create_function)
