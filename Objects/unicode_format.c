@@ -571,6 +571,7 @@ unicode_format_arg_parse(struct unicode_formatter_t *ctx,
             arg->ch = FORMAT_READ(ctx);
             ctx->fmtpos++;
         }
+        assert(arg->width >= 0);
     }
     else if (arg->ch >= '0' && arg->ch <= '9') {
         arg->width = arg->ch - '0';
@@ -590,6 +591,7 @@ unicode_format_arg_parse(struct unicode_formatter_t *ctx,
             }
             arg->width = arg->width*10 + (arg->ch - '0');
         }
+        assert(arg->width >= 0);
     }
 
     /* Parse precision. Example: "%.3f" => prec=3 */
@@ -645,6 +647,7 @@ unicode_format_arg_parse(struct unicode_formatter_t *ctx,
                 arg->prec = arg->prec*10 + (arg->ch - '0');
             }
         }
+        assert(arg->prec >= 0);
     }
 
     /* Ignore "h", "l" and "L" format prefix (ex: "%hi" or "%ls") */
@@ -701,24 +704,27 @@ unicode_format_arg_format(struct unicode_formatter_t *ctx,
     case 's':
     case 'r':
     case 'a':
-        if (PyLong_CheckExact(v) && arg->width == -1 && arg->prec == -1) {
-            /* Fast path */
-            if (_PyLong_FormatWriter(writer, v, 10, arg->flags & F_ALT) == -1)
-                return -1;
-            return 1;
+        if (arg->width < 0 && arg->prec < 0) {
+            if (arg->ch == 's') {
+                if (PyUnicodeWriter_WriteStr((PyUnicodeWriter*)writer, v) < 0) {
+                    return -1;
+                }
+                return 1;
+            }
+            else if (arg->ch == 'r') {
+                if (PyUnicodeWriter_WriteRepr((PyUnicodeWriter*)writer, v) < 0) {
+                    return -1;
+                }
+                return 1;
+            }
         }
 
-        if (PyUnicode_CheckExact(v) && arg->ch == 's') {
-            *p_str = Py_NewRef(v);
-        }
-        else {
-            if (arg->ch == 's')
-                *p_str = PyObject_Str(v);
-            else if (arg->ch == 'r')
-                *p_str = PyObject_Repr(v);
-            else
-                *p_str = PyObject_ASCII(v);
-        }
+        if (arg->ch == 's')
+            *p_str = PyObject_Str(v);
+        else if (arg->ch == 'r')
+            *p_str = PyObject_Repr(v);
+        else
+            *p_str = PyObject_ASCII(v);
         break;
 
     case 'i':

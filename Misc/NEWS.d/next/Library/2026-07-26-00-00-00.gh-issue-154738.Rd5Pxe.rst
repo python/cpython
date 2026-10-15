@@ -1,3 +1,0 @@
-Fix :meth:`!ExternalEntityParserCreate` not propagating the reparse-deferral
-setting to the subparser, which left :meth:`!GetReparseDeferralEnabled`
-returning an uninitialized value.  Patch by tonghuaroot.

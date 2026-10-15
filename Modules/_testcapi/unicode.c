@@ -59,13 +59,20 @@ unicode_copy(PyObject *unicode)
 
 /* Test PyUnicode_Fill() */
 static PyObject *
-unicode_fill(PyObject *self, PyObject *args)
+unicode_fill(PyObject *self, PyObject *args, PyObject *kwargs)
 {
+    static char *kwlist[] = {"to", "start", "length", "fill_char",
+                             "incref", NULL};
     PyObject *to, *to_copy;
     Py_ssize_t start, length, filled;
     unsigned int fill_char;
+    int incref = 0;
 
-    if (!PyArg_ParseTuple(args, "OnnI", &to, &start, &length, &fill_char)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                                     "OnnI|p", kwlist,
+                                     &to, &start, &length,
+                                     &fill_char, &incref))
+    {
         return NULL;
     }
 
@@ -74,7 +81,14 @@ unicode_fill(PyObject *self, PyObject *args)
         return NULL;
     }
 
+    if (incref) {
+        Py_INCREF(to_copy);
+    }
     filled = PyUnicode_Fill(to_copy, start, length, (Py_UCS4)fill_char);
+    if (incref) {
+        Py_DECREF(to_copy);
+    }
+
     if (filled == -1 && PyErr_Occurred()) {
         Py_DECREF(to_copy);
         return NULL;
@@ -190,13 +204,18 @@ unicode_asutf8(PyObject *self, PyObject *args)
 
 /* Test PyUnicode_CopyCharacters() */
 static PyObject *
-unicode_copycharacters(PyObject *self, PyObject *args)
+unicode_copycharacters(PyObject *self, PyObject *args, PyObject *kwargs)
 {
+    static char *kwlist[] = {"to", "to_start", "from", "from_start",
+                             "howmany", "incref", NULL};
     PyObject *from, *to, *to_copy;
     Py_ssize_t from_start, to_start, how_many, copied;
+    int incref = 0;
 
-    if (!PyArg_ParseTuple(args, "UnOnn", &to, &to_start,
-                          &from, &from_start, &how_many)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                                     "UnOnn|p", kwlist,
+                                     &to, &to_start, &from, &from_start,
+                                     &how_many, &incref)) {
         return NULL;
     }
 
@@ -210,8 +229,15 @@ unicode_copycharacters(PyObject *self, PyObject *args)
         return NULL;
     }
 
+    if (incref) {
+        Py_INCREF(to_copy);
+    }
     copied = PyUnicode_CopyCharacters(to_copy, to_start, from,
                                       from_start, how_many);
+    if (incref) {
+        Py_DECREF(to_copy);
+    }
+
     if (copied == -1 && PyErr_Occurred()) {
         Py_DECREF(to_copy);
         return NULL;
@@ -686,6 +712,32 @@ writer_write_substring(PyObject *self_raw, PyObject *args)
 
 
 static PyObject*
+writer_write_latin1(PyObject *self_raw, PyObject *args)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    const char *str;
+    Py_ssize_t bsize, size;
+    if (!PyArg_ParseTuple(args, "z#n", &str, &bsize, &size)) {
+        return NULL;
+    }
+
+    _PyUnicodeWriter *writer = (_PyUnicodeWriter*)self->writer;
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+    if (_PyUnicodeWriter_WriteLatin1String(writer, str, size) < 0) {
+        return NULL;
+    }
+_Py_COMP_DIAG_POP
+
+    Py_RETURN_NONE;
+}
+
+
+static PyObject*
 writer_decodeutf8stateful(PyObject *self_raw, PyObject *args)
 {
     WriterObject *self = (WriterObject *)self_raw;
@@ -769,6 +821,31 @@ writer_finish(PyObject *self_raw, PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject*
+writer_finish_with_size(PyObject *self_raw, PyObject *args)
+{
+    PyAPI_FUNC(PyObject*) _PyUnicodeWriter_FinishWithSize(
+        _PyUnicodeWriter *writer,
+        Py_ssize_t size);
+
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "n", &size)) {
+        return NULL;
+    }
+
+    _PyUnicodeWriter *writer = (_PyUnicodeWriter*)self->writer;
+    PyObject *str = _PyUnicodeWriter_FinishWithSize(writer, size);
+    PyUnicodeWriter_Discard(self->writer);
+    self->writer = NULL;
+    return str;
+}
+
+
 static PyMethodDef writer_methods[] = {
     {"write_char", _PyCFunction_CAST(writer_write_char), METH_VARARGS},
     {"write_utf8", _PyCFunction_CAST(writer_write_utf8), METH_VARARGS},
@@ -778,10 +855,12 @@ static PyMethodDef writer_methods[] = {
     {"write_str", _PyCFunction_CAST(writer_write_str), METH_O},
     {"write_repr", _PyCFunction_CAST(writer_write_repr), METH_O},
     {"write_substring", _PyCFunction_CAST(writer_write_substring), METH_VARARGS},
+    {"write_latin1", _PyCFunction_CAST(writer_write_latin1), METH_VARARGS},
     {"decodeutf8stateful", _PyCFunction_CAST(writer_decodeutf8stateful), METH_VARARGS},
     {"get_pointer", _PyCFunction_CAST(writer_get_pointer), METH_VARARGS},
     {"get_buffer", _PyCFunction_CAST(writer_get_buffer), METH_VARARGS},
     {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},
+    {"finish_with_size", _PyCFunction_CAST(writer_finish_with_size), METH_VARARGS},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -803,12 +882,12 @@ static PyType_Spec Writer_spec = {
 
 static PyMethodDef TestMethods[] = {
     {"unicode_new",              unicode_new,                    METH_VARARGS},
-    {"unicode_fill",             unicode_fill,                   METH_VARARGS},
+    {"unicode_fill",             _PyCFunction_CAST(unicode_fill), METH_VARARGS | METH_KEYWORDS},
     {"unicode_fromkindanddata",  unicode_fromkindanddata,        METH_VARARGS},
     {"unicode_asucs4",           unicode_asucs4,                 METH_VARARGS},
     {"unicode_asucs4copy",       unicode_asucs4copy,             METH_VARARGS},
     {"unicode_asutf8",           unicode_asutf8,                 METH_VARARGS},
-    {"unicode_copycharacters",   unicode_copycharacters,         METH_VARARGS},
+    {"unicode_copycharacters",   _PyCFunction_CAST(unicode_copycharacters), METH_VARARGS | METH_KEYWORDS},
     {"unicode_GET_CACHED_HASH",  unicode_GET_CACHED_HASH,        METH_O},
     {"test_py_identifier",       test_py_identifier,             METH_NOARGS},
     {"corrupt_unicode",          corrupt_unicode,                METH_VARARGS},
