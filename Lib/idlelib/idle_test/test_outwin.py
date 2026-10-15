@@ -46,7 +46,11 @@ class OutputWindowTest(unittest.TestCase):
         io = self.window.io
         self.assertEqual(io.defaultextension, '.txt')
         # Text files are offered before Python files.
-        self.assertEqual(io.filetypes[0][0], 'Text files')
+        self.assertEqual(io.save_filetypes[0][0], 'Text files')
+
+    def test_open_defaults_to_python(self):
+        # gh-158067: File Open still lists Python files first.
+        self.assertEqual(self.window.io.filetypes[0][0], 'Python files')
 
     def test_window_title(self):
         self.assertEqual(self.window.top.title(), 'Output' + ' (%s)' % platform.python_version())
