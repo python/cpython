@@ -126,6 +126,14 @@ class ReprTests(unittest.TestCase):
         d['arthur'] = 1
         eq(r(d), "{'alice': 1, 'arthur': 1, 'bob': 2, 'charles': 3, ...}")
 
+        # Frozendicts give up after 4 as well.
+        eq(r(frozendict()), "frozendict()")
+        d = frozendict(alice=1, bob=2, charles=3, dave=4)
+        eq(r(d), "frozendict({'alice': 1, 'bob': 2, 'charles': 3, 'dave': 4})")
+        d |= {'arthur': 1}
+        eq(r(d),
+           "frozendict({'alice': 1, 'arthur': 1, 'bob': 2, 'charles': 3, ...})")
+
         # array.array after 5.
         eq(r(array('i')), "array('i')")
         eq(r(array('i', [1])), "array('i', [1])")
@@ -149,6 +157,25 @@ class ReprTests(unittest.TestCase):
         eq(r(frozenset({1, 2, 3})), "frozenset({1, 2, 3})")
         eq(r(frozenset({1, 2, 3, 4, 5, 6})), "frozenset({1, 2, 3, 4, 5, 6})")
         eq(r(frozenset({1, 2, 3, 4, 5, 6, 7})), "frozenset({1, 2, 3, 4, 5, 6, ...})")
+
+    def test_frozendict(self):
+        eq = self.assertEqual
+        eq(r(frozendict({1: 1})), "frozendict({1: 1})")
+        eq(r(frozendict({1: 1, 2: 2, 3: 3})), "frozendict({1: 1, 2: 2, 3: 3})")
+        eq(r(frozendict({1: 1, 2: 2, 3: 3, 4: 4})),
+           "frozendict({1: 1, 2: 2, 3: 3, 4: 4})")
+        eq(r(frozendict({1: 1, 2: 2, 3: 3, 4: 4, 5: 5})),
+           "frozendict({1: 1, 2: 2, 3: 3, 4: 4, ...})")
+
+        # Keys are sorted and values are abbreviated, as for dict
+        eq(r(frozendict({3: 'c', 1: 'a' * 40, 2: 'b'})),
+           "frozendict({1: 'aaaaaaaaaaaa...aaaaaaaaaaaaa', 2: 'b', 3: 'c'})")
+
+        # The limit is shared with dict
+        r2 = Repr(maxdict=2)
+        eq(r2.repr(frozendict({1: 1, 2: 2})), "frozendict({1: 1, 2: 2})")
+        eq(r2.repr(frozendict({1: 1, 2: 2, 3: 3})),
+           "frozendict({1: 1, 2: 2, ...})")
 
     def test_numbers(self):
         for x in [123, 1.0 / 3]:
@@ -237,6 +264,12 @@ class ReprTests(unittest.TestCase):
         eq(r([[[[[[{}]]]]]]), "[[[[[[{}]]]]]]")
         eq(r([[[[[[[{}]]]]]]]), "[[[[[[[...]]]]]]]")
 
+        r1 = Repr(maxlevel=1)
+        eq(r1.repr(frozendict({1: frozendict()})),
+           "frozendict({1: frozendict()})")
+        eq(r1.repr(frozendict({1: frozendict({2: 3})})),
+           "frozendict({1: frozendict({...})})")
+
     def test_cell(self):
         def get_cell():
             x = 42
@@ -269,9 +302,11 @@ class ReprTests(unittest.TestCase):
         x = set([1j, 2j, 3j])
         y = frozenset(x)
         z = {1j: 1, 2j: 2}
+        w = frozendict(z)
         r(x)
         r(y)
         r(z)
+        r(w)
 
     def test_valid_indent(self):
         test_cases = [
@@ -574,6 +609,32 @@ class ReprTests(unittest.TestCase):
                         }'''),
                 ),
             },
+            {
+                'object': frozendict({1: 'two', b'three': frozendict({4: 5})}),
+                'tests': (
+                    (dict(indent=None), '''\
+                        frozendict({1: 'two', b'three': frozendict({4: 5})})'''),
+                    (dict(indent=4), '''\
+                        frozendict({
+                            1: 'two',
+                            b'three': frozendict({
+                                4: 5,
+                            }),
+                        })'''),
+                    (dict(indent=4, maxlevel=1), '''\
+                        frozendict({
+                            1: 'two',
+                            b'three': frozendict({...}),
+                        })'''),
+                    (dict(indent='-->'), '''\
+                        frozendict({
+                        -->1: 'two',
+                        -->b'three': frozendict({
+                        -->-->4: 5,
+                        -->}),
+                        })'''),
+                ),
+            },
         ]
         for test_case in test_cases:
             with self.subTest(test_object=test_case['object']):
@@ -621,6 +682,13 @@ class ReprTests(unittest.TestCase):
                 return "not builtins.list"
 
         self.assertEqual(r(list()), "not builtins.list")
+
+    def test_shadowed_frozendict(self):
+        class frozendict:
+            def __repr__(self):
+                return "not builtins.frozendict"
+
+        self.assertEqual(r(frozendict()), "not builtins.frozendict")
 
     def test_custom_repr(self):
         class MyRepr(Repr):
