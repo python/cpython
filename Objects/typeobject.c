@@ -11743,6 +11743,22 @@ static uint16_t slotname_table[SLOTNAME_TABLE_SIZE];
 static bool slotname_table_initialized = false;
 #endif
 
+static size_t
+slotname_probe(PyObject *key, Py_hash_t hash)
+{
+    size_t i = (size_t)hash & (SLOTNAME_TABLE_SIZE - 1);
+    while (slotname_table[i] != 0) {
+        PyObject *name = slotdefs[slotname_table[i] - 1].name_strobj;
+        if (name == key
+            || (_PyASCIIObject_CAST(name)->hash == hash
+                && _PyUnicode_Equal(name, key))) {
+            break;
+        }
+        i = (i + 1) & (SLOTNAME_TABLE_SIZE - 1);
+    }
+    return i;
+}
+
 static void
 init_slotname_table(void)
 {
@@ -11754,13 +11770,7 @@ init_slotname_table(void)
         PyObject *name = slotdefs[idx].name_strobj;
         Py_hash_t hash = _PyObject_HashDictKey(name);
         assert(hash != -1);
-        size_t i = (size_t)hash & (SLOTNAME_TABLE_SIZE - 1);
-        while (slotname_table[i] != 0) {
-            if (slotdefs[slotname_table[i] - 1].name_strobj == name) {
-                break;
-            }
-            i = (i + 1) & (SLOTNAME_TABLE_SIZE - 1);
-        }
+        size_t i = slotname_probe(name, hash);
         if (slotname_table[i] == 0) {
             slotname_table[i] = (uint16_t)(idx + 1);
         }
@@ -11775,18 +11785,8 @@ static Py_ssize_t
 slotname_lookup(PyObject *key, Py_hash_t hash)
 {
     assert(slotname_table_initialized);
-    size_t i = (size_t)hash & (SLOTNAME_TABLE_SIZE - 1);
-    while (slotname_table[i] != 0) {
-        Py_ssize_t idx = slotname_table[i] - 1;
-        PyObject *name = slotdefs[idx].name_strobj;
-        if (name == key
-            || (_PyASCIIObject_CAST(name)->hash == hash
-                && _PyUnicode_Equal(name, key))) {
-            return idx;
-        }
-        i = (i + 1) & (SLOTNAME_TABLE_SIZE - 1);
-    }
-    return -1;
+    size_t i = slotname_probe(key, hash);
+    return slotname_table[i] ? slotname_table[i] - 1 : -1;
 }
 
 /* Given a type pointer and an offset gotten from a slotdef entry, return a
