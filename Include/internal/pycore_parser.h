@@ -27,7 +27,7 @@ _Py_DECLARE_STR(empty, "")
         }, \
     }
 
-/* If incomplete is non-NULL, initialize *incomplete to NULL. A returned AST
+/* The caller must initialize *incomplete to NULL if supplied. A returned AST
    can also return an owned exception there for a missing line terminator.
    Validate the AST before reporting that exception. */
 extern struct _mod* _PyParser_ASTFromString(

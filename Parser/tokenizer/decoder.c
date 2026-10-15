@@ -300,25 +300,24 @@ store_prepared_source(struct tok_state *tok, const char *data, Py_ssize_t len,
         int add_newline = add_final_newline &&
             pos + raw_line_len == len && !terminated;
         const char *line = data + pos;
-        Py_ssize_t line_len = raw_line_len;
         // raw_line_length stops at the first CR or LF, so any CR is in
         // the line terminator.
         Py_ssize_t terminator_len = 0;
         if (!preserve_crlf) {
-            if (line[line_len - 1] == '\r') {
+            if (line[raw_line_len - 1] == '\r') {
                 terminator_len = 1;
             }
-            else if (line_len > 1 && line[line_len - 2] == '\r') {
+            else if (raw_line_len > 1 && line[raw_line_len - 2] == '\r') {
                 terminator_len = 2;
             }
         }
         _PyTok_Off appended;
         if (terminator_len || add_newline) {
             appended = _PyTok_SourceAppendLineWithNewline(
-                &tok->source, line, line_len - terminator_len);
+                &tok->source, line, raw_line_len - terminator_len);
         }
         else {
-            appended = _PyTok_SourceAppendLine(&tok->source, line, line_len);
+            appended = _PyTok_SourceAppendLine(&tok->source, line, raw_line_len);
         }
         if (appended < 0) {
             tok->done = PyErr_ExceptionMatches(PyExc_MemoryError)
