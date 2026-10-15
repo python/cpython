@@ -576,9 +576,9 @@ Pure paths provide the following methods and properties:
       True
 
    A pattern ending in "``/**``" needs the separator before it to be present
-   in the path, even though "``**``" can match zero segments.  So "``/a/**``"
-   matches "``/a/b``" but not "``/a``", and :class:`PurePath` drops trailing
-   slashes, so it does not match "``/a/``" either::
+   in the path, even though "``**``" can match zero segments. For instance,
+   "``/a/**``" matches "``/a/b``" but not "``/a``", and since :class:`PurePath`
+   drops trailing slashes, it does not match "``/a/``" either::
 
       >>> PurePath('/a/b').full_match('/a/**')
       True
@@ -1805,9 +1805,9 @@ The following wildcards are supported in patterns for
 :meth:`~PurePath.full_match`, :meth:`~Path.glob` and :meth:`~Path.rglob`:
 
 ``**`` (entire segment)
-  Matches any number of file or directory segments, including zero.  But in
-  :meth:`~PurePath.full_match`, "``a/**``" does not match "``a``", although
-  :meth:`~Path.glob` yields "``a``" for that pattern.
+  Matches any number of file or directory segments, including zero.
+  Note that in :meth:`~PurePath.full_match`, "``a/**``" does not match
+  "``a``", whereas :meth:`~Path.glob` yields "``a``" for that pattern.
 ``*`` (entire segment)
   Matches one file or directory segment.
 ``*`` (part of a segment)
