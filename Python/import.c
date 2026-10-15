@@ -4223,12 +4223,78 @@ ensure_lazy_pending_submodules(PyDictObject *lazy_modules, PyObject *parent)
     return lazy_submodules;
 }
 
+// A pending child maps either to Py_None, for a name that is pending without a
+// declaration, or to a dict of the declarations recorded for it.  Each
+// declaration is keyed by the declaring module's __name__, or by None when that
+// module has none, so that the child can be resolved with the declaration in
+// scope where the access is written instead of with whichever declaration was
+// registered last.
+static int
+add_lazy_declaration(PyObject *submodules, PyObject *child,
+                     PyObject *declaring, PyObject *source)
+{
+    PyObject *decls = NULL;
+    if (PyDict_GetItemRef(submodules, child, &decls) < 0) {
+        return -1;
+    }
+    if (decls == NULL || decls == Py_None) {
+        Py_XDECREF(decls);
+        decls = PyDict_New();
+        if (decls == NULL) {
+            return -1;
+        }
+        if (PyDict_SetItem(submodules, child, decls) < 0) {
+            Py_DECREF(decls);
+            return -1;
+        }
+    }
+    int err = PyDict_SetItem(decls, declaring, source);
+    Py_DECREF(decls);
+    return err;
+}
+
+// The declaration recorded by *declaring*, as a new reference, or NULL when
+// that module recorded none.  *declaring* is the __name__ of the module
+// performing the access, or None when it has no __name__.
+static PyObject *
+lazy_declaration_for(PyObject *entry, PyObject *declaring)
+{
+    if (entry == NULL || entry == Py_None) {
+        return NULL;
+    }
+    PyObject *decl = NULL;
+    if (PyDict_GetItemRef(entry, declaring, &decl) < 0) {
+        return NULL;
+    }
+    return decl;
+}
+
+// The most recently registered declaration for a pending child, as a new
+// reference, or NULL when it has none.  Every declaration of a child names the
+// same module, so any of them imports the same thing.  This serves an access
+// that has no declaration of its own in scope, and keeps the declaration that
+// would have been used before declarations became keyed by their module.
+static PyObject *
+lazy_any_declaration(PyObject *entry)
+{
+    if (entry == NULL || entry == Py_None) {
+        return NULL;
+    }
+    Py_ssize_t pos = 0;
+    PyObject *value = NULL, *last = NULL;
+    while (PyDict_Next(entry, &pos, NULL, &value)) {
+        last = value;
+    }
+    return last == NULL ? NULL : Py_NewRef(last);
+}
+
 // Records all parent-child relationships in lazy_pending_submodules
 // for a lazily imported module name. When a parent module's attribute
 // is accessed, _Py_module_getattro_impl will check lazy_pending_submodules
 // and trigger the import.
 static int
-register_lazy_on_parent(PyThreadState *tstate, PyObject *name, PyObject *source)
+register_lazy_on_parent(PyThreadState *tstate, PyObject *name,
+                        PyObject *source, PyObject *declaring)
 {
     PyDictObject *pending =
         (PyDictObject *)LAZY_PENDING_SUBMODULES(tstate->interp);
@@ -4261,9 +4327,18 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name, PyObject *source)
         PyObject *value = cached != NULL && cached != Py_None ? Py_None : source;
         int err = -1;
         if (submodules != NULL && !PyErr_Occurred()) {
-            err = source == Py_None ?
-                PyDict_SetDefaultRef(submodules, child, value, NULL) :
-                PyDict_SetItem(submodules, child, value);
+            if (source == Py_None) {
+                err = PyDict_SetDefaultRef(submodules, child, value, NULL);
+            }
+            else if (value == Py_None) {
+                err = PyDict_SetItem(submodules, child, value);
+            }
+            else {
+                err = add_lazy_declaration(submodules, child,
+                                           declaring != NULL ? declaring
+                                                             : Py_None,
+                                           source);
+            }
         }
         Py_XDECREF(cached);
         Py_DECREF(child);
@@ -4296,7 +4371,7 @@ register_from_lazy_on_parent(PyThreadState *tstate, PyObject *existing_module,
 
     rc = lazy_modules_add(tstate, fromname, NULL);
     if (rc == 0) {
-        rc = register_lazy_on_parent(tstate, fromname, Py_None);
+        rc = register_lazy_on_parent(tstate, fromname, Py_None, Py_None);
     }
     Py_DECREF(fromname);
     return rc;
@@ -4379,6 +4454,27 @@ lazy_submodule_matches(PyObject *value, void *expected)
     return value == expected;
 }
 
+// The __name__ of the module performing an attribute access, as a new
+// reference, or None when the access cannot be attributed to a module.
+static PyObject *
+lazy_accessing_module_name(void)
+{
+    PyObject *globals = PyEval_GetGlobals();  // borrowed
+    if (globals == NULL || !PyDict_Check(globals)) {
+        return Py_NewRef(Py_None);
+    }
+    PyObject *name = NULL;
+    if (PyDict_GetItemRef(globals, &_Py_ID(__name__), &name) < 0) {
+        PyErr_Clear();
+        return Py_NewRef(Py_None);
+    }
+    if (name == NULL || !PyUnicode_Check(name)) {
+        Py_CLEAR(name);
+        return Py_NewRef(Py_None);
+    }
+    return name;
+}
+
 PyObject *
 _PyImport_TryLoadLazySubmodule(PyObject *module, PyObject *attr_name,
                               int suppress, int *recheck_dict)
@@ -4389,7 +4485,7 @@ _PyImport_TryLoadLazySubmodule(PyObject *module, PyObject *attr_name,
     if (PyDict_GetItemRef(mod_dict, &_Py_ID(__name__), &mod_name) <= 0) {
         return NULL;
     }
-    PyObject *mod = NULL, *pending_set = NULL, *source = NULL;
+    PyObject *mod = NULL, *pending_set = NULL, *entry = NULL, *source = NULL;
     if (!PyUnicode_Check(mod_name)) {
         goto done;
     }
@@ -4401,18 +4497,28 @@ _PyImport_TryLoadLazySubmodule(PyObject *module, PyObject *attr_name,
     }
 
     *recheck_dict = 1;
-    if (PyDict_GetItemRef(pending_set, attr_name, &source) <= 0) {
+    if (PyDict_GetItemRef(pending_set, attr_name, &entry) <= 0) {
         goto done;
+    }
+    // Resolve with the declaration in scope where the access is written.  One
+    // made by another module still imports the same child, but its location
+    // must not be reported as a frame of this module's traceback.
+    PyObject *accessing = lazy_accessing_module_name();
+    source = lazy_declaration_for(entry, accessing);
+    Py_DECREF(accessing);
+    int attributed = source != NULL;
+    if (source == NULL) {
+        source = lazy_any_declaration(entry);
     }
     PyObject *full_name = PyUnicode_FromFormat("%U.%U", mod_name, attr_name);
     if (full_name == NULL) {
         goto done;
     }
     // Match eager from-imports: accept a partial module in an import cycle.
-    if (source != Py_None && !suppress &&
+    if (source != NULL && !suppress &&
         (_PyLazyImport_IsActive(source) ||
          !PyDict_Contains(mod_dict, &_Py_ID(__getattr__)))) {
-        mod = _PyLazyImport_LoadChild(tstate, source, full_name);
+        mod = _PyLazyImport_LoadChild(tstate, source, full_name, attributed);
     }
     else {
         mod = PyImport_GetModule(full_name);
@@ -4428,7 +4534,7 @@ _PyImport_TryLoadLazySubmodule(PyObject *module, PyObject *attr_name,
         if (loaded != NULL && loaded != Py_None) {
             (void)_PyDict_DelItemIf(mod_dict, attr_name,
                                   lazy_submodule_matches, loaded);
-            (void)PyDict_SetDefaultRef(pending_set, attr_name, source, NULL);
+            (void)PyDict_SetDefaultRef(pending_set, attr_name, entry, NULL);
         }
         Py_XDECREF(loaded);
         PyErr_SetRaisedException(exc);
@@ -4456,6 +4562,7 @@ _PyImport_TryLoadLazySubmodule(PyObject *module, PyObject *attr_name,
 
 done:
     Py_XDECREF(source);
+    Py_XDECREF(entry);
     Py_XDECREF(pending_set);
     Py_DECREF(mod_name);
     return mod;
@@ -4571,8 +4678,21 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
             }
         }
     }
-    else if (register_lazy_on_parent(tstate, abs_name, res) < 0) {
-        goto error;
+    else {
+        // Remember which module declared this name, so that a later attribute
+        // access reports the declaration that is in scope for it.
+        PyObject *declaring = NULL;
+        if (PyDict_GetItemRef(globals, &_Py_ID(__name__), &declaring) < 0) {
+            goto error;
+        }
+        if (declaring != NULL && !PyUnicode_Check(declaring)) {
+            Py_CLEAR(declaring);
+        }
+        int rc = register_lazy_on_parent(tstate, abs_name, res, declaring);
+        Py_XDECREF(declaring);
+        if (rc < 0) {
+            goto error;
+        }
     }
 
     goto done;

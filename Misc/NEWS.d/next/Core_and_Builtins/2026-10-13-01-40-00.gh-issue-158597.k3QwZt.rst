@@ -1,0 +1,5 @@
+Resolve a lazily imported submodule reached through its parent's attribute
+with the declaration in scope where the access is written, instead of the
+declaration of whichever module registered that name last.  A declaration made
+by another module is no longer reported as a frame of the accessing module's
+traceback.

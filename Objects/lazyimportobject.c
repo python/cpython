@@ -26,6 +26,9 @@ typedef struct {
     // Declaration location.
     PyCodeObject *lz_code;
     int lz_instr_offset;
+    // The location is the accessing module's own declaration, so it belongs in
+    // that module's traceback.
+    int lz_attributed;
     // The root was accessed, so its declared path requires import semantics.
     int lz_active;
 } PyLazyImportObject;
@@ -73,6 +76,7 @@ _PyLazyImport_New(_PyInterpreterFrame *frame, PyObject *builtins,
 
     m->lz_code = NULL;
     m->lz_instr_offset = -1;
+    m->lz_attributed = 1;
     m->lz_active = 0;
 
     if (frame != NULL) {
@@ -346,7 +350,11 @@ lazy_import_add_exception_cause(PyThreadState *tstate, PyLazyImportObject *lz)
         goto done;
     }
     _PyErr_SetRaisedException(tstate, cause);
-    _PyTraceback_Add(funcname, filename, lineno);
+    if (lz->lz_attributed) {
+        _PyTraceback_Add(funcname, filename, lineno);
+    }
+    // A declaration made by another module is not a frame of the traceback
+    // being raised here, so only the cause reports it.
     PyException_SetCause(exc, _PyErr_GetRaisedException(tstate));
 
 done:
@@ -570,7 +578,7 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
 // Resolve a pending child as an aliased import, preserving its declaration.
 PyObject *
 _PyLazyImport_LoadChild(PyThreadState *tstate, PyObject *declaration,
-                        PyObject *name)
+                        PyObject *name, int attributed)
 {
     assert(PyLazyImport_CheckExact(declaration));
     PyLazyImportObject *source = PyLazyImportObject_CAST(declaration);
@@ -599,6 +607,7 @@ _PyLazyImport_LoadChild(PyThreadState *tstate, PyObject *declaration,
     PyLazyImportObject *child = PyLazyImportObject_CAST(lz);
     child->lz_code = (PyCodeObject *)Py_XNewRef(source->lz_code);
     child->lz_instr_offset = source->lz_instr_offset;
+    child->lz_attributed = attributed;
     PyObject *result = _PyImport_LoadLazyImportTstate(tstate, lz);
     Py_DECREF(lz);
     if (result != NULL && PyModule_Check(result) &&
@@ -606,7 +615,8 @@ _PyLazyImport_LoadChild(PyThreadState *tstate, PyObject *declaration,
         !PyDict_Contains(_PyModule_GetDict(result), &_Py_ID(__path__))) {
         // Reaching a non-package must still reject an invalid dotted import.
         Py_DECREF(result);
-        return _PyLazyImport_LoadChild(tstate, declaration, source->lz_from);
+        return _PyLazyImport_LoadChild(tstate, declaration, source->lz_from,
+                                       attributed);
     }
     return result;
 }

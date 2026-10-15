@@ -13,6 +13,7 @@ import os
 import contextlib
 
 from test import support
+from test.support import os_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
 try:
@@ -937,6 +938,70 @@ class ErrorHandlingTests(LazyImportTestCase):
                 raise AssertionError("ImportError was not raised")
         """)
         assert_python_ok("-c", code)
+
+    @support.requires_subprocess()
+    def test_pending_child_reports_accessing_module_declaration(self):
+        """A pending child resolves with the declaration in scope for the access.
+
+        gh-158597: a declaration of the same name made by another module must
+        not replace the accessing module's own declaration.
+        """
+        a_source = (
+            "import os, sys, traceback\n"                               # 1
+            "sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\n"
+            "\n"                                                        # 3
+            "lazy import xml.missing\n"                                 # 4
+            "import B\n"                                                # 5
+            "\n"                                                        # 6
+            "try:\n"                                                    # 7
+            "    xml.missing\n"                                         # 8
+            "except ModuleNotFoundError as exc:\n"
+            "    cause = exc.__cause__\n"
+            "    assert cause is not None, 'expected a chained ImportError'\n"
+            "    frame = traceback.extract_tb(cause.__traceback__)[-1]\n"
+            "    assert frame.filename.endswith('A.py'), frame\n"
+            "    assert frame.lineno == 4, frame\n"
+            "else:\n"
+            "    raise AssertionError('ModuleNotFoundError was not raised')\n"
+        )
+        b_source = "lazy import xml.missing\n"
+        with os_helper.temp_dir() as tmp:
+            for name, source in (('A.py', a_source), ('B.py', b_source)):
+                with open(os.path.join(tmp, name), 'w', encoding='utf-8') as f:
+                    f.write(source)
+            assert_python_ok(os.path.join(tmp, 'A.py'))
+
+    @support.requires_subprocess()
+    def test_unattributed_access_is_not_given_another_declaration(self):
+        """A declaration made by another module is not this module's frame.
+
+        gh-158597: an access from a module that declared nothing must still
+        fail the same way, but the chained error must not point into the file
+        of a module that merely declared the name.
+        """
+        with os_helper.temp_dir() as tmp:
+            for name in ('A', 'B'):
+                path = os.path.join(tmp, name + '.py')
+                with open(path, 'w', encoding='utf-8') as f:
+                    f.write('lazy import xml.missing\n')
+            code = textwrap.dedent(f"""
+                import sys, traceback
+                sys.path.insert(0, {tmp!r})
+                import A, B
+                import xml
+                try:
+                    xml.missing
+                except ModuleNotFoundError as exc:
+                    cause = exc.__cause__
+                    assert cause is not None, 'expected a chained ImportError'
+                    frames = traceback.extract_tb(cause.__traceback__)
+                    declared = [f.filename for f in frames
+                                if f.filename.endswith(('A.py', 'B.py'))]
+                    assert not declared, declared
+                else:
+                    raise AssertionError('ModuleNotFoundError was not raised')
+            """)
+            assert_python_ok("-c", code)
 
     def test_reification_retries_on_failure(self):
         """Failed reification should allow retry on subsequent access.
