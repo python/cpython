@@ -12,7 +12,7 @@ import struct
 import sys
 import threading
 import time
-lazy import warnings
+import warnings  # must stay eager to support finalization
 
 try:
     import zlib # We may need its compression method
@@ -2650,14 +2650,10 @@ class ZipFile:
         """Call the "close()" method in case the user forgot."""
         # gh-81954: Warn if writable ZipFile is implicitly closed.
         # GC cleanup order is non-deterministic and can result in data loss.
-        try:
-            # Wrap within a try to ensure the file is closed even if the
-            # warnings module is unable to load during finalization.
-            if self.fp is not None and self.mode in ('w', 'x', 'a'):
-                warnings.warn(f"unclosed ZipFile {self!r}",
-                              ResourceWarning, source=self, stacklevel=2)
-        finally:
-            self.close()
+        if self.fp is not None and self.mode in ('w', 'x', 'a'):
+            warnings.warn(f"unclosed ZipFile {self!r}",
+                          ResourceWarning, source=self, stacklevel=2)
+        self.close()
 
     def close(self):
         """Close the file, and for mode 'w', 'x' and 'a' write the ending

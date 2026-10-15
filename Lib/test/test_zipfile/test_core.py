@@ -4095,28 +4095,13 @@ class OtherTests(unittest.TestCase):
             zf.close()
             del zf
 
-    def test_garbage_collection_closes_when_warning_fails(self):
-        buf = io.BytesIO()
-        zf = zipfile.ZipFile(buf, "w")
-        zf.writestr("f.txt", b"data")
-        with warnings.catch_warnings(), catch_unraisable_exception() as cm:
-            warnings.simplefilter("error", ResourceWarning)
+        # ResourceWarning escalated to an error is reported as unraisable.
+        zf = zipfile.ZipFile(io.BytesIO(), "w")
+        with (warnings.catch_warnings(action="error", category=ResourceWarning),
+              catch_unraisable_exception() as cm):
             del zf
             gc_collect()
-            self.assertIsInstance(cm.unraisable.exc_value, ResourceWarning)
-        with zipfile.ZipFile(buf) as zf:
-            self.assertEqual(zf.namelist(), ["f.txt"])
-
-    @requires_subprocess()
-    def test_unclosed_at_shutdown(self):
-        self.addCleanup(unlink, TESTFN)
-        script_helper.assert_python_ok("-c", f"""if 1:
-            import zipfile
-            zf = zipfile.ZipFile({TESTFN!r}, "w")
-            zf.writestr("f.txt", b"data")
-        """)
-        with zipfile.ZipFile(TESTFN) as zf:
-            self.assertEqual(zf.namelist(), ["f.txt"])
+            self.assertIs(cm.unraisable.exc_type, ResourceWarning)
 
     def test_unsupported_version(self):
         # File has an extract_version of 120

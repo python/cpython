@@ -1,3 +1,4 @@
-Fix data loss when a writable :class:`zipfile.ZipFile` that was never closed
-is finalized during interpreter shutdown: :meth:`~zipfile.ZipFile.close` is
-now called even if emitting the :exc:`ResourceWarning` fails.
+:mod:`zipfile` now imports :mod:`warnings` eagerly so that a writable
+:class:`~zipfile.ZipFile` left unclosed at interpreter shutdown can emit its
+:exc:`ResourceWarning` and be closed instead of failing with an
+:exc:`ImportError`.
