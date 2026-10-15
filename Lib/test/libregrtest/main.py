@@ -525,7 +525,7 @@ class Regrtest:
             hunt_refleak=self.hunt_refleak,
             test_dir=self.test_dir,
             use_junit=(self.junit_filename is not None),
-            final_run=not (self.want_rerun and not self.python_cmd),
+            final_run=not self.want_rerun or bool(self.python_cmd),
             coverage=self.coverage,
             memory_limit=self.memory_limit,
             gc_threshold=self.gc_threshold,

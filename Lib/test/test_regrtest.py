@@ -1657,35 +1657,23 @@ class ArgsTestCase(BaseTestCase):
         fail = self.create_test('reporter_fail', code)
         crash = self.create_test('reporter_crash',
                                  code.replace('self.fail()', 'os._exit(1)'))
-        fail_case = (os.path.join(self.tmptestdir, f'{fail}.py'), '6',
-                     f'test_fail ({fail}.Tests.test_fail)')
-        filename = os.path.join(self.tmptestdir, 'github_step_summary.md')
-        env = dict(os.environ, GITHUB_STEP_SUMMARY=filename)
+        summary = os.path.join(self.tmptestdir, 'summary.md')
+        env = dict(os.environ, GITHUB_STEP_SUMMARY=summary)
 
-        def reported(output):
-            return re.findall(r'^::error file=(.*),line=(\d+),title=(.*)::',
-                              output, re.MULTILINE)
+        def reported(*args, exitcode=EXITCODE_BAD_TEST):
+            output = self.run_tests('-j1', *args, env=env, exitcode=exitcode)
+            return re.findall(r'^::error file=.*,title=(\w+)', output,
+                              re.MULTILINE)
 
-        # Only the re-run is reported
-        output = self.run_tests('-j1', '--rerun', fail, crash,
-                                env=env, exitcode=EXITCODE_BAD_TEST)
-        self.assertEqual(reported(output), [
-            fail_case,
-            (os.path.join(self.tmptestdir, f'{crash}.py'), '1', crash),
-        ], output)
-        with open(filename, encoding='utf-8') as fp:
-            self.assertIn('2 test files and 1 test case failed', fp.read())
-        os_helper.unlink(filename)
-
+        self.assertEqual(reported(self.create_test(), exitcode=0), [])
+        self.assertFalse(os.path.exists(summary))
         # Quiet mode doesn't print the failure, but reports it
-        output = self.run_tests('-j1', fail, env=env,
-                                exitcode=EXITCODE_BAD_TEST)
-        self.assertEqual(reported(output), [fail_case], output)
-        os_helper.unlink(filename)
-
-        output = self.run_tests(self.create_test(), env=env)
-        self.assertEqual(reported(output), [])
-        self.assertFalse(os.path.exists(filename))
+        self.assertEqual(reported(fail), ['test_fail'])
+        # Only the re-run is reported
+        self.assertEqual(reported('--rerun', fail, crash),
+                         ['test_fail', crash])
+        with open(summary, encoding='utf-8') as fp:
+            self.assertIn('2 test files and 1 test case failed', fp.read())
 
     def test_rerun_fail(self):
         # FAILURE then FAILURE

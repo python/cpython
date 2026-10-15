@@ -13,7 +13,7 @@ from _colorize import can_colorize  # type: ignore[import-not-found]
 from .filter import set_match_tests
 from .reporter import get_reporter
 from .runtests import RunTests
-lazy from .testresult import RegressionTestResult
+from .testresult import RegressionTestResult
 from .utils import (
     setup_unraisable_hook, setup_threading_excepthook,
     adjust_rlimit_nofile)

@@ -7,7 +7,7 @@ from typing import TextIO
 
 from .findtests import findtestdir
 from .result import TestResult
-lazy from .results import TestResults
+from .results import TestResults
 from .runtests import RunTests
 from .utils import count
 
@@ -31,20 +31,20 @@ class Reporter:
     @staticmethod
     def parse_traceback(traceback: str) -> tuple[str | None, str | None, str]:
         """Return (filename, line, exception) of a failure."""
-        frames = re.findall(r'^ *File "(.*)", line (\d+)', traceback,
-                            re.MULTILINE)
-        test_frames = [frame for frame in frames
-                       if pathlib.Path(frame[0]).name.startswith('test_')]
+        # A frame is its "File" line and its source lines
+        frames = list(re.finditer(
+            r'^ *File "(.*)", line (\d+).*\n(?:    .*\n)*', traceback,
+            re.MULTILINE))
+        filename = line = None
+        exception = traceback
+        if frames:
+            filename, line = frames[0].groups()
+            exception = traceback[frames[-1].end():]
         # Prefer the last frame in a test file, the assertion
-        if test_frames:
-            filename, line = test_frames[-1]
-        elif frames:
-            filename, line = frames[0]
-        else:
-            filename = line = None
-        exception = re.split(r'^  File .*\n(?:    .*\n)*', traceback,
-                             flags=re.MULTILINE)[-1].strip()
-        return filename, line, exception
+        for frame in frames:
+            if pathlib.Path(frame[1]).name.startswith("test_"):
+                filename, line = frame.groups()
+        return filename, line, exception.strip()
 
 
 def get_reporter() -> Reporter:
@@ -93,7 +93,8 @@ class GitHubActionsReporter(Reporter):
         self.annotate(result.test_name, decolor(message), filename)
 
     def annotate(self, title: str, message: str, filename: str | None,
-                 line: str | None = None, stream: TextIO | None = None) -> None:
+                 line: str | None = None,
+                 stream: TextIO | None = None) -> None:
         if filename:
             # Make installed stdlib paths relative to the checkout
             path = pathlib.Path(filename)
@@ -120,8 +121,8 @@ class GitHubActionsReporter(Reporter):
         for result in failed:
             blocks.append(f"### {decolor(str(result))}")
             if result.env_changed_reasons:
-                blocks.append("\n".join(f"- {reason}"
-                                        for reason in result.env_changed_reasons))
+                blocks.append("\n".join(
+                    f"- {reason}" for reason in result.env_changed_reasons))
             for name, traceback in result.failed_test_cases:
                 # Expand short tracebacks if there are only a few
                 if ncases <= 5 and traceback.count("\n") < 30:
