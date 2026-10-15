@@ -1247,10 +1247,12 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
 
     result = _PyPegen_run_parser(p);
     if (result != NULL && (parser_flags & PyPARSE_ALLOW_INCOMPLETE_INPUT)) {
-        _PyTokenizer_Info info = _PyTokenizer_GetInfo(tok);
-        if (info.needs_newline ||
+        int needs_newline = _PyTokenizer_GetNewlineRequirements(tok);
+        if ((needs_newline & _PyTokenizer_NEWLINE_CONTINUATION) ||
+            (start_rule != Py_file_input &&
+             (needs_newline & _PyTokenizer_NEWLINE_INDENT)) ||
             (start_rule == Py_single_input && p->input_exhausted &&
-             info.implicit_newline == _PyTokenizer_IMPLY_NEWLINE)) {
+             (needs_newline & _PyTokenizer_NEWLINE_STATEMENT))) {
             _PyPegen_raise_incomplete_input(p);
             if (incomplete != NULL && PyErr_ExceptionMatches(PyExc_IncompleteInputError)) {
                 *incomplete = PyErr_GetRaisedException();

@@ -88,8 +88,8 @@ typedef struct {
     int n_keyword_lists;
     int start_rule;
     int *errcode;
-    int parsing_started;
-    int input_exhausted;
+    unsigned char parsing_started;
+    unsigned char input_exhausted;
     PyObject* normalize;
     int starting_lineno;
     int starting_col_offset;

@@ -12,6 +12,13 @@ typedef enum {
     _PyTokenizer_APPEND_NEWLINE, // Also append a blank line to terminated input.
 } _PyTokenizer_Newline;
 
+/* Reasons that the appended newline can change the token stream. */
+enum {
+    _PyTokenizer_NEWLINE_STATEMENT = 1,
+    _PyTokenizer_NEWLINE_INDENT = 2,
+    _PyTokenizer_NEWLINE_CONTINUATION = 4,
+};
+
 /* Initialize before use. metadata owns a reference released by _PyToken_Free;
    a consumer taking that reference must set metadata to NULL. */
 struct token {
@@ -44,7 +51,6 @@ typedef struct {
 typedef struct {
     int status;
     unsigned char implicit_newline;  // _PyTokenizer_Newline
-    unsigned char needs_newline;
     _PyTokenizer_Diagnostic diagnostic;
     _PyTok_Loc location;
     _PyTok_Off cursor;
@@ -80,6 +86,7 @@ _PyToken_Free(struct token *token)
    mutated or freed. Source spans may be discarded when reading more input. */
 _PyTokenizer_Info _PyTokenizer_GetInfo(const struct tok_state *);
 int _PyTokenizer_GetStatus(const struct tok_state *);
+int _PyTokenizer_GetNewlineRequirements(const struct tok_state *);
 /* An absent token span has a nonnull empty text view. */
 const char *_PyToken_TextView(
     const struct tok_state *, const struct token *, Py_ssize_t *);

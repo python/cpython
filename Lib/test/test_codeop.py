@@ -124,6 +124,34 @@ class CodeopTests(unittest.TestCase):
         self.assertEqual(cm.exception.args, (
             'incomplete input', ('<input>', 2, 9, text, 2, -1)))
 
+    @subTests('compiler', COMPILERS)
+    @subTests('newline', ('\n', '\r', '\r\n'))
+    def test_unterminated_trailing_line(self, compiler, newline):
+        for head, symbol in (('1', 'eval'), ('if 1: pass', 'single'),
+                             ('if 1:\n pass', 'single')):
+            for tail in (' ', '\t', '\f ', '\n '):
+                source = head + newline + tail
+                with self.subTest(source=source, symbol=symbol):
+                    if compiler in RAW_COMPILERS:
+                        with self.assertRaises(_IncompleteInputError):
+                            compiler(source, '<input>', symbol)
+                    else:
+                        self.assertIsNone(compiler(source, '<input>', symbol))
+                    self.assertValid(source + '\n', symbol, compiler=compiler)
+            for tail in ('\f', ' \f', '\n\f'):
+                with self.subTest(head=head, tail=tail, symbol=symbol):
+                    self.assertValid(head + newline + tail, symbol,
+                                     compiler=compiler)
+
+        for tail in ('# comment', ' # comment'):
+            self.assertValid('if 1: pass' + newline + tail, compiler=compiler)
+            self.assertValid('1' + newline + tail, 'eval', compiler=compiler)
+
+        for head in ('1', 'if 1: pass', 'if 1:\n pass'):
+            for tail in (' ', '\t', '\f', '# comment'):
+                self.assertValid(head + newline + tail, 'exec',
+                                 compiler=compiler)
+
     @subTests('symbol', ('single', 'exec', 'eval'))
     def test_unfinished_token_in_invalid_position(self, symbol):
         for source in ('a b', '(a b', '1 """', '(1 """',

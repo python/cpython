@@ -13,13 +13,18 @@ _PyTokenizer_GetStatus(const struct tok_state *tok)
     return tok->done;
 }
 
+int
+_PyTokenizer_GetNewlineRequirements(const struct tok_state *tok)
+{
+    return tok->needs_newline;
+}
+
 _PyTokenizer_Info
 _PyTokenizer_GetInfo(const struct tok_state *tok)
 {
     _PyTokenizer_Info info = {
         .status = tok->done,
         .implicit_newline = tok->implicit_newline,
-        .needs_newline = tok->needs_newline,
         .diagnostic = tok->diagnostic,
         .location = {tok->lineno, tok->line_start < 0
             ? -1 : (int)(tok->cur - tok->line_start)},
