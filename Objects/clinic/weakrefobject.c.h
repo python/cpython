@@ -64,4 +64,36 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e376f863eef4ceb7 input=a9049054013a1b77]*/
+
+static int
+weakref_ref_init_impl(PyWeakReference *self, PyObject *ob,
+                      PyObject *callback);
+
+static int
+weakref_ref_init(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int return_value = -1;
+    PyTypeObject *base_tp = &_PyWeakref_RefType;
+    PyObject *ob;
+    PyObject *callback = Py_None;
+
+    if ((Py_IS_TYPE(self, base_tp) ||
+         Py_TYPE(self)->tp_new == base_tp->tp_new) &&
+        !_PyArg_NoKeywords("ref", kwargs)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("ref", PyTuple_GET_SIZE(args), 1, 2)) {
+        goto exit;
+    }
+    ob = PyTuple_GET_ITEM(args, 0);
+    if (PyTuple_GET_SIZE(args) < 2) {
+        goto skip_optional;
+    }
+    callback = PyTuple_GET_ITEM(args, 1);
+skip_optional:
+    return_value = weakref_ref_init_impl((PyWeakReference *)self, ob, callback);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=d3dd6d5b2987762f input=a9049054013a1b77]*/
