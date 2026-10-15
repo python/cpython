@@ -12182,26 +12182,21 @@ update_slot(PyTypeObject *type, PyObject *name, slot_update_t *queued_updates)
     assert(PyUnicode_CheckExact(name));
     assert(PyUnicode_CHECK_INTERNED(name));
 
-    pp = ptrs;
-    for (p = slotdefs; p->name; p++) {
-        assert(PyUnicode_CheckExact(p->name_strobj));
-        assert(PyUnicode_CHECK_INTERNED(p->name_strobj));
-        assert(PyUnicode_CheckExact(name));
-        /* bpo-40521: Using interned strings. */
-        if (p->name_strobj == name) {
-            *pp++ = p;
-        }
+    Py_ssize_t idx = slotname_lookup(name, _PyObject_HashDictKey(name));
+    if (idx < 0) {
+        return 0; /* Not an attribute that affects any slots */
     }
-    *pp = NULL;
-    for (pp = ptrs; *pp; pp++) {
-        p = *pp;
+    /* All slotdefs with this name, in slotdefs order. */
+    const uint8_t *dups = slotdefs_dups[idx];
+    pp = ptrs;
+    for (uint8_t k = 1; k <= dups[0]; k++) {
+        p = &slotdefs[dups[k]];
         offset = p->offset;
         while (p > slotdefs && (p-1)->offset == offset)
             --p;
-        *pp = p;
+        *pp++ = p;
     }
-    if (ptrs[0] == NULL)
-        return 0; /* Not an attribute that affects any slots */
+    *pp = NULL;
 
     update_callback_data_t callback_data;
     callback_data.defs = ptrs;
