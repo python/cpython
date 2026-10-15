@@ -427,12 +427,11 @@ Importing Modules
 
    - The module is added to :data:`sys.modules` under the *spec*'s
      :py:attr:`~importlib.machinery.ModuleSpec.name` as part of initialization.
-   - If *any* single-phase module was previously imported under the
-     same :py:attr:`~importlib.machinery.ModuleSpec.name` (by this function
-     or by other import machinery,
-     including in another :ref:`interpreter <sub-interpreter-support>`),
-     Python does not call *initfunc* again,
-     and instead reuses the previous module's contents.
+   - If a single-phase module was previously imported under the
+     same :py:attr:`~importlib.machinery.ModuleSpec.name` by this function
+     or as a built-in module (for example, one registered with
+     :c:func:`PyImport_AppendInittab`), Python may reuse the previous module's
+     contents instead of calling *initfunc* again.
    - The module will be fully initialized by *initfunc*.
      Calling :c:func:`PyModule_Exec` on it will have no effect, though it is
      recommended (in case the module's implementation will change).
