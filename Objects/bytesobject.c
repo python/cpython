@@ -3003,11 +3003,6 @@ bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
             bytes = _PyBytes_FromSizeZero(size);
         }
     }
-    /* Adopt unique temporary bytearray rather than copying. */
-    else if (PyByteArray_CheckExact(x)
-             && PyUnstable_Object_IsUniqueReferencedTemporary(x)) {
-        bytes = PyObject_CallMethodNoArgs(x, &_Py_ID(take_bytes));
-    }
     else {
         bytes = PyBytes_FromObject(x);
     }

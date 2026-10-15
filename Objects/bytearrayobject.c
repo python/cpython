@@ -1083,33 +1083,6 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
         }
     }
 
-    /* optimization: Adopt bytes rather than copying. */
-    if (PyBytes_CheckExact(arg)
-        && PyUnstable_Object_IsUniqueReferencedTemporary(arg)
-        && _PyBytes_GET_CACHED_HASH((PyBytesObject *)arg) == -1)
-    {
-        /* Reinit before taking a reference: it asserts the bytes is
-           uniquely referenced. */
-        self->ob_bytes_object = arg;
-        bytearray_reinit_from_bytes(self, PyBytes_GET_SIZE(arg));
-        Py_INCREF(arg);
-        return 0;
-    }
-
-    /* optimization: Adopt bytearray rather than copying. */
-    if (PyByteArray_CheckExact(arg)
-        && PyUnstable_Object_IsUniqueReferencedTemporary(arg))
-    {
-        PyObject *bytes = bytearray_take_bytes_impl((PyByteArrayObject *)arg,
-                                                    Py_None);
-        if (bytes == NULL) {
-            return -1;
-        }
-        self->ob_bytes_object = bytes;
-        bytearray_reinit_from_bytes(self, PyBytes_GET_SIZE(bytes));
-        return 0;
-    }
-
     /* Use the buffer API */
     if (PyObject_CheckBuffer(arg)) {
         Py_ssize_t size;
