@@ -10,6 +10,8 @@
 
 #include "pycore_opcode_utils.h"
 #include "pycore_opcode_metadata.h" // OPCODE_HAS_ARG, etc
+#include "pycore_pystate.h"         // _PyInterpreterState_GET()
+#include "pycore_stackref.h"        // PyStackRef_AsPyObjectBorrow()
 
 #include <stdbool.h>
 
@@ -39,9 +41,9 @@ typedef struct _PyCfgInstruction {
 
 typedef struct _PyCfgBasicblock {
     /* Each basicblock in a compilation unit is linked via b_list in the
-       reverse order that the block are allocated.  b_list points to the next
-       block in this list, not to be confused with b_next, which is next by
-       control flow. */
+       reverse order that blocks are allocated.  b_list points to the
+       previously allocated block, not to be confused with b_next, which is
+       next by control flow. */
     struct _PyCfgBasicblock *b_list;
     /* The label of this block if it is a jump target, -1 otherwise */
     _PyJumpTargetLabel b_label;
@@ -402,7 +404,6 @@ cfg_builder_maybe_start_new_block(cfg_builder *g)
 static bool
 cfg_builder_check(cfg_builder *g)
 {
-    assert(g->g_entryblock->b_iused > 0);
     for (basicblock *block = g->g_block_list; block != NULL; block = block->b_list) {
         assert(!_PyMem_IsPtrFreed(block));
         if (block->b_instr != NULL) {
@@ -1125,6 +1126,8 @@ remove_redundant_nops(cfg_builder *g) {
     return changes;
 }
 
+static int loads_const(int opcode);
+
 static int
 remove_redundant_nops_and_pairs(basicblock *entryblock)
 {
@@ -1148,7 +1151,7 @@ remove_redundant_nops_and_pairs(basicblock *entryblock)
                 int opcode = instr->i_opcode;
                 bool is_redundant_pair = false;
                 if (opcode == POP_TOP) {
-                   if (prev_opcode == LOAD_CONST || prev_opcode == LOAD_SMALL_INT) {
+                   if (loads_const(prev_opcode)) {
                        is_redundant_pair = true;
                    }
                    else if (prev_opcode == COPY && prev_oparg == 1) {
@@ -1300,7 +1303,9 @@ jump_thread(basicblock *bb, cfg_instr *inst, cfg_instr *target, int opcode)
 static int
 loads_const(int opcode)
 {
-    return OPCODE_HAS_CONST(opcode) || opcode == LOAD_SMALL_INT;
+    return OPCODE_HAS_CONST(opcode)
+        || opcode == LOAD_SMALL_INT
+        || opcode == LOAD_COMMON_CONSTANT;
 }
 
 /* Returns new reference */
@@ -1322,6 +1327,11 @@ get_const_value(int opcode, int oparg, PyObject *co_consts)
     }
     if (opcode == LOAD_SMALL_INT) {
         return PyLong_FromLong(oparg);
+    }
+    if (opcode == LOAD_COMMON_CONSTANT) {
+        assert(oparg < NUM_COMMON_CONSTANTS);
+        return PyStackRef_AsPyObjectBorrow(
+            _PyInterpreterState_GET()->common_consts[oparg]);
     }
 
     if (constant == NULL) {
@@ -1437,6 +1447,50 @@ maybe_instr_make_load_smallint(cfg_instr *instr, PyObject *newconst,
     return 0;
 }
 
+/* Does not steal reference to "newconst".
+   Return 1 if changed instruction to LOAD_COMMON_CONSTANT.
+   Return 0 if could not change instruction to LOAD_COMMON_CONSTANT.
+   Return -1 on error.
+*/
+static int
+maybe_instr_make_load_common_const(cfg_instr *instr, PyObject *newconst)
+{
+    int oparg;
+    if (newconst == Py_None) {
+        oparg = CONSTANT_NONE;
+    }
+    else if (newconst == Py_True) {
+        oparg = CONSTANT_TRUE;
+    }
+    else if (newconst == Py_False) {
+        oparg = CONSTANT_FALSE;
+    }
+    else if (PyUnicode_CheckExact(newconst)
+             && PyUnicode_GET_LENGTH(newconst) == 0) {
+        oparg = CONSTANT_EMPTY_STR;
+    }
+    else if (PyTuple_CheckExact(newconst)
+             && PyTuple_GET_SIZE(newconst) == 0) {
+        oparg = CONSTANT_EMPTY_TUPLE;
+    }
+    else if (PyLong_CheckExact(newconst)) {
+        int overflow;
+        long val = PyLong_AsLongAndOverflow(newconst, &overflow);
+        if (val == -1 && PyErr_Occurred()) {
+            return -1;
+        }
+        if (overflow || val != -1) {
+            return 0;
+        }
+        oparg = CONSTANT_MINUS_ONE;
+    }
+    else {
+        return 0;
+    }
+    assert(_Py_IsImmortal(newconst));
+    INSTR_SET_OP1(instr, LOAD_COMMON_CONSTANT, oparg);
+    return 1;
+}
 
 /* Steals reference to "newconst" */
 static int
@@ -1445,6 +1499,14 @@ instr_make_load_const(cfg_instr *instr, PyObject *newconst,
                       _Py_hashtable_t *consts_index)
 {
     int res = maybe_instr_make_load_smallint(instr, newconst, consts, const_cache);
+    if (res < 0) {
+        Py_DECREF(newconst);
+        return ERROR;
+    }
+    if (res > 0) {
+        return SUCCESS;
+    }
+    res = maybe_instr_make_load_common_const(instr, newconst);
     if (res < 0) {
         Py_DECREF(newconst);
         return ERROR;
@@ -1507,34 +1569,48 @@ fold_tuple_of_constants(basicblock *bb, int i, PyObject *consts,
 }
 
 /* Replace:
-    BUILD_LIST 0
+    BUILD_LIST/BUILD_SET 0
     LOAD_CONST c1
-    LIST_APPEND 1
+    LIST_APPEND/SET_ADD 1
     LOAD_CONST c2
-    LIST_APPEND 1
+    LIST_APPEND/SET_ADD 1
     ...
     LOAD_CONST cN
-    LIST_APPEND 1
-    CALL_INTRINSIC_1 INTRINSIC_LIST_TO_TUPLE
+    LIST_APPEND/SET_ADD 1
+    [CALL_INTRINSIC_1 INTRINSIC_LIST_TO_TUPLE]   <-- optional
    with:
     LOAD_CONST (c1, c2, ... cN)
+   The instruction at `i` is either the LIST_TO_TUPLE intrinsic (so the
+   immediately preceding non-NOP instruction is expected to be a
+   LIST_APPEND, and only the BUILD_LIST/LIST_APPEND form is considered),
+   or the trailing LIST_APPEND or SET_ADD itself, in which case the
+   matching BUILD_LIST/BUILD_SET start is selected from its opcode, and
+   for sets the result is wrapped in a frozenset.
 */
 static int
-fold_constant_intrinsic_list_to_tuple(basicblock *bb, int i,
-                                      PyObject *consts, PyObject *const_cache,
-                                      _Py_hashtable_t *consts_index)
+fold_constant_seq_into_load_const(basicblock *bb, int i,
+                                  PyObject *consts, PyObject *const_cache,
+                                  _Py_hashtable_t *consts_index)
 {
     assert(PyDict_CheckExact(const_cache));
     assert(PyList_CheckExact(consts));
     assert(i >= 0);
     assert(i < bb->b_iused);
 
-    cfg_instr *intrinsic = &bb->b_instr[i];
-    assert(intrinsic->i_opcode == CALL_INTRINSIC_1);
-    assert(intrinsic->i_oparg == INTRINSIC_LIST_TO_TUPLE);
-
+    cfg_instr *target = &bb->b_instr[i];
+    assert(target->i_opcode == LIST_APPEND || target->i_opcode == SET_ADD ||
+           (target->i_opcode == CALL_INTRINSIC_1 &&
+            target->i_oparg == INTRINSIC_LIST_TO_TUPLE));
+    bool expected_append = target->i_opcode == CALL_INTRINSIC_1;
+    int append_op = expected_append ? LIST_APPEND : target->i_opcode;
+    assert(append_op == LIST_APPEND || append_op == SET_ADD);
+    int build_op = append_op == LIST_APPEND ? BUILD_LIST : BUILD_SET;
     int consts_found = 0;
-    bool expect_append = true;
+    /* Walking backward from `i`, we expect LIST_APPEND/SET_ADD and
+       LOAD_CONST to alternate. If `i` is the trailing LIST_TO_TUPLE
+       intrinsic, the next instruction back is an APPEND. If `i` is the
+       trailing APPEND itself, the next instruction back is a LOAD_CONST. */
+    bool expect_append = expected_append;
 
     for (int pos = i - 1; pos >= 0; pos--) {
         cfg_instr *instr = &bb->b_instr[pos];
@@ -1545,7 +1621,7 @@ fold_constant_intrinsic_list_to_tuple(basicblock *bb, int i,
             continue;
         }
 
-        if (opcode == BUILD_LIST && oparg == 0) {
+        if (opcode == build_op && oparg == 0) {
             if (!expect_append) {
                 /* Not a sequence start. */
                 return SUCCESS;
@@ -1557,7 +1633,8 @@ fold_constant_intrinsic_list_to_tuple(basicblock *bb, int i,
                 return ERROR;
             }
 
-            for (int newpos = i - 1; newpos >= pos; newpos--) {
+            int newpos_start = expected_append ? i - 1 : i;
+            for (int newpos = newpos_start; newpos >= pos; newpos--) {
                 instr = &bb->b_instr[newpos];
                 if (instr->i_opcode == NOP) {
                     continue;
@@ -1574,11 +1651,20 @@ fold_constant_intrinsic_list_to_tuple(basicblock *bb, int i,
                 nop_out(&instr, 1);
             }
             assert(consts_found == 0);
-            return instr_make_load_const(intrinsic, newconst, consts, const_cache, consts_index);
+
+            if (build_op == BUILD_SET) {
+                PyObject *frozen = PyFrozenSet_New(newconst);
+                Py_DECREF(newconst);
+                if (frozen == NULL) {
+                    return ERROR;
+                }
+                newconst = frozen;
+            }
+            return instr_make_load_const(target, newconst, consts, const_cache, consts_index);
         }
 
         if (expect_append) {
-            if (opcode != LIST_APPEND || oparg != 1) {
+            if (opcode != append_op || oparg != 1) {
                 return SUCCESS;
             }
         }
@@ -2208,7 +2294,7 @@ basicblock_optimize_load_const(PyObject *const_cache, basicblock *bb,
             oparg = inst->i_oparg;
         }
         assert(!IS_ASSEMBLER_OPCODE(opcode));
-        if (opcode != LOAD_CONST && opcode != LOAD_SMALL_INT) {
+        if (!loads_const(opcode)) {
             continue;
         }
         int nextop = i+1 < bb->b_iused ? bb->b_instr[i+1].i_opcode : 0;
@@ -2306,6 +2392,17 @@ basicblock_optimize_load_const(PyObject *const_cache, basicblock *bb,
                 INSTR_SET_OP0(inst, NOP);
                 INSTR_SET_OP1(&bb->b_instr[i + 1], LOAD_CONST, index);
                 break;
+            }
+        }
+        if (inst->i_opcode == LOAD_CONST) {
+            PyObject *constant = get_const_value(inst->i_opcode, inst->i_oparg, consts);
+            if (constant == NULL) {
+                return ERROR;
+            }
+            int res = maybe_instr_make_load_common_const(inst, constant);
+            Py_DECREF(constant);
+            if (res < 0) {
+                return ERROR;
             }
         }
     }
@@ -2506,15 +2603,20 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts,
                 break;
             case CALL_INTRINSIC_1:
                 if (oparg == INTRINSIC_LIST_TO_TUPLE) {
-                    if (nextop == GET_ITER) {
+                    RETURN_IF_ERROR(fold_constant_seq_into_load_const(bb, i, consts, const_cache, consts_index));
+                    if (inst->i_opcode == CALL_INTRINSIC_1 && nextop == GET_ITER) {
                         INSTR_SET_OP0(inst, NOP);
-                    }
-                    else {
-                        RETURN_IF_ERROR(fold_constant_intrinsic_list_to_tuple(bb, i, consts, const_cache, consts_index));
                     }
                 }
                 else if (oparg == INTRINSIC_UNARY_POSITIVE) {
                     RETURN_IF_ERROR(fold_const_unaryop(bb, i, consts, const_cache, consts_index));
+                }
+                break;
+            case LIST_APPEND:
+            case SET_ADD:
+                if (oparg == 1 && (nextop == GET_ITER || nextop == CONTAINS_OP)) {
+                    RETURN_IF_ERROR(fold_constant_seq_into_load_const(
+                        bb, i, consts, const_cache, consts_index));
                 }
                 break;
             case BINARY_OP:
@@ -3205,6 +3307,7 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
 
     index_map = PyMem_Malloc(nconsts * sizeof(Py_ssize_t));
     if (index_map == NULL) {
+        PyErr_NoMemory();
         goto end;
     }
     for (Py_ssize_t i = 1; i < nconsts; i++) {
@@ -3257,6 +3360,7 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
     /* adjust const indices in the bytecode */
     reverse_index_map = PyMem_Malloc(nconsts * sizeof(Py_ssize_t));
     if (reverse_index_map == NULL) {
+        PyErr_NoMemory();
         goto end;
     }
     for (Py_ssize_t i = 0; i < nconsts; i++) {
@@ -3686,6 +3790,7 @@ _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
                         int nlocals, int nparams, int firstlineno)
 {
     assert(cfg_builder_check(g));
+    assert(g->g_entryblock->b_iused > 0);
     /** Preprocessing **/
     /* Map labels to targets and mark exception handlers */
     RETURN_IF_ERROR(translate_jump_labels_to_targets(g->g_entryblock));

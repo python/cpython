@@ -38,7 +38,7 @@ Extension export hook
 
 The export hook must be an exported function with the following signature:
 
-.. c:function:: PyModuleDef_Slot *PyModExport_modulename(void)
+.. c:function:: PySlot *PyModExport_modulename(void)
 
 For modules with ASCII-only names, the :ref:`export hook <extension-export-hook>`
 must be named :samp:`PyModExport_{<name>}`,
@@ -57,7 +57,7 @@ Python's *punycode* encoding with hyphens replaced by underscores. In Python:
             suffix = b'U_' + name.encode('punycode').replace(b'-', b'_')
         return b'PyModExport' + suffix
 
-The export hook returns an array of :c:type:`PyModuleDef_Slot` entries,
+The export hook returns an array of :c:type:`PySlot` entries,
 terminated by an entry with a slot ID of ``0``.
 These slots describe how the module should be created and initialized.
 
@@ -75,7 +75,7 @@ It is recommended to define the export hook function using a helper macro:
    Declare an extension module export hook.
    This macro:
 
-   * specifies the :c:expr:`PyModuleDef_Slot*` return type,
+   * specifies the :c:expr:`PySlot*` return type,
    * adds any special linkage declarations required by the platform, and
    * for C++, declares the function as ``extern "C"``.
 
@@ -83,12 +83,12 @@ For example, a module called ``spam`` would be defined like this::
 
    PyABIInfo_VAR(abi_info);
 
-   static PyModuleDef_Slot spam_slots[] = {
-       {Py_mod_abi, &abi_info},
-       {Py_mod_name, "spam"},
-       {Py_mod_init, spam_init_function},
+   static PySlot spam_slots[] = {
+       PySlot_STATIC_DATA(Py_mod_abi, &abi_info),
+       PySlot_STATIC_DATA(Py_mod_name, "spam"),
+       PySlot_FUNC(Py_mod_init, spam_init_function),
        ...
-       {0, NULL},
+       PySlot_END
    };
 
    PyMODEXPORT_FUNC
@@ -100,11 +100,35 @@ For example, a module called ``spam`` would be defined like this::
 The export hook is typically the only non-\ ``static``
 item defined in the module's C source.
 
-The hook should be kept short -- ideally, one line as above.
-If you do need to use Python C API in this function, it is recommended to call
-``PyABIInfo_Check(&abi_info, "modulename")`` first to raise an exception,
-rather than crash, in common cases of ABI mismatch.
+.. _pymodexport-api-caveats:
 
+The hook should be kept short.
+If it does more than ``return`` a static array, several caveats apply:
+
+- If you need to use any Python C API, it is recommended to call
+  :c:func:`PyABIInfo_Check` first to raise an exception,
+  rather than crash, in common cases of ABI mismatch.
+- Code in the export hook must never rely on the :term:`GIL`:
+  :term:`free-threaded builds <free-threaded build>` of Python can only check
+  the :c:macro:`Py_mod_gil` slot (or the lack of it) after the hook returns,
+- Similarly, the hook may be called in any subinterpreter, since the
+  :c:macro:`Py_mod_multiple_interpreters` slot (or lack of it)
+  is only checked after the hook returns.
+
+For example::
+
+   PyMODEXPORT_FUNC
+   PyModExport_modulename(void)
+   {
+      if (PyABIInfo_Check(&abi_info, "modulename") < 0) {
+         /* ABI mismatch. It's not safe to examine the raised exception. */
+         return NULL;
+      }
+
+      /* use Python API (as little as possible); don't rely on GIL */
+
+      return modulename_slots;
+   }
 
 .. note::
 

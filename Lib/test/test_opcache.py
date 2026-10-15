@@ -1,3 +1,4 @@
+import collections
 import copy
 import pickle
 import dis
@@ -1418,6 +1419,30 @@ class TestSpecializer(TestBase):
                 self.assertEqual(c, 2.0)
                 c = b / a
                 self.assertEqual(c, 0.5)
+                c = a
+                c += b
+                self.assertEqual(c, 9.0)
+                c = b
+                c += a
+                self.assertEqual(c, 9.0)
+                c = a
+                c -= b
+                self.assertEqual(c, 3.0)
+                c = b
+                c -= a
+                self.assertEqual(c, -3.0)
+                c = a
+                c *= b
+                self.assertEqual(c, 18.0)
+                c = b
+                c *= a
+                self.assertEqual(c, 18.0)
+                c = a
+                c /= b
+                self.assertEqual(c, 2.0)
+                c = b
+                c /= a
+                self.assertEqual(c, 0.5)
 
         binary_op_add_extend()
         self.assert_specialized(binary_op_add_extend, "BINARY_OP_EXTEND")
@@ -1635,6 +1660,37 @@ class TestSpecializer(TestBase):
 
         self.assert_specialized(send_yield_from, "SEND_GEN")
         self.assert_no_opcode(send_yield_from, "SEND")
+
+    @cpython_only
+    @requires_specialization
+    def test_send_yield_from_iter(self):
+        L = list(range(100))
+        def send_yield_from():
+            yield from L
+
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            list(send_yield_from())
+
+        self.assert_specialized(send_yield_from, "SEND_VIRTUAL")
+        self.assert_no_opcode(send_yield_from, "SEND")
+
+    @cpython_only
+    @requires_specialization
+    def test_send_async_for(self):
+        async def g():
+            yield None
+
+        async def send_for():
+            async for _ in g():
+                break
+
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            try:
+                send_for().send(None)
+            except StopIteration:
+                pass
+        self.assert_specialized(send_for, "SEND_ASYNC_GEN")
+        self.assert_no_opcode(send_for, "SEND")
 
     @cpython_only
     @requires_specialization
@@ -1863,7 +1919,43 @@ class TestSpecializer(TestBase):
                 self.assertEqual(a[2], 3)
 
         binary_subscr_frozen_dict_subclass()
-        self.assert_no_opcode(binary_subscr_frozen_dict_subclass, "BINARY_OP_SUBSCR_DICT")
+        self.assert_specialized(binary_subscr_frozen_dict_subclass, "BINARY_OP_SUBSCR_DICT")
+        self.assert_no_opcode(binary_subscr_frozen_dict_subclass, "BINARY_OP")
+
+        def binary_subscr_defaultdict():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = collections.defaultdict(lambda: 42, {1: 2, 2: 3})
+                self.assertEqual(a[1], 2)
+                self.assertEqual(a[2], 3)
+                self.assertEqual(a[7], 42)
+
+        binary_subscr_defaultdict()
+        self.assert_specialized(binary_subscr_defaultdict, "BINARY_OP_SUBSCR_DICT")
+        self.assert_no_opcode(binary_subscr_defaultdict, "BINARY_OP")
+
+        def binary_subscr_counter():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = collections.Counter('abcdeabcdabcaba')
+                self.assertEqual(a['a'], 5)
+                self.assertEqual(a['b'], 4)
+                self.assertEqual(a['m'], 0)
+
+        binary_subscr_counter()
+        self.assert_specialized(binary_subscr_counter, "BINARY_OP_SUBSCR_DICT")
+        self.assert_no_opcode(binary_subscr_counter, "BINARY_OP")
+
+        def binary_subscr_dict_subclass_override():
+            class MyDict(dict):
+                def __getitem__(self, key):
+                    return 42
+
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = MyDict()
+                self.assertEqual(a['a'], 42)
+                self.assertEqual(a['b'], 42)
+
+        binary_subscr_dict_subclass_override()
+        self.assert_no_opcode(binary_subscr_dict_subclass_override, "BINARY_OP_SUBSCR_DICT")
 
         def binary_subscr_str_int():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
@@ -1923,6 +2015,29 @@ class TestSpecializer(TestBase):
             store_subscr_frozen_dict()
         self.assert_specialized(store_subscr_frozen_dict, "STORE_SUBSCR_DICT")
         self.assert_no_opcode(store_subscr_frozen_dict, "STORE_SUBSCR")
+
+        def store_subscr_defaultdict():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = collections.defaultdict(int)
+                a[1] = 4
+                self.assertEqual(a[1], 4)
+
+        store_subscr_defaultdict()
+        self.assert_specialized(store_subscr_defaultdict, "STORE_SUBSCR_DICT")
+        self.assert_no_opcode(store_subscr_defaultdict, "STORE_SUBSCR")
+
+        def store_subscr_dict_subclass_override():
+            class MyDict(dict):
+                def __setitem__(self, key, value):
+                    super().__setitem__(key, value * 2)
+
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = MyDict()
+                a['x'] = 5
+                self.assertEqual(a['x'], 10)
+
+        store_subscr_dict_subclass_override()
+        self.assert_no_opcode(store_subscr_dict_subclass_override, "STORE_SUBSCR_DICT")
 
     @cpython_only
     @requires_specialization
@@ -2058,6 +2173,89 @@ class TestSpecializer(TestBase):
 
     @cpython_only
     @requires_specialization
+    def test_call_c_function_extra_flags(self):
+        # METH_CLASS, METH_STATIC and METH_COEXIST do not change the C
+        # calling convention, so the specialized instructions must not
+        # miss because of them.
+        _testcapi = import_module("_testcapi")
+
+        def call_1(func, arg):
+            return func(arg)
+
+        def call_2(func, arg1, arg2):
+            return func(arg1, arg2)
+
+        def call_3(func, arg1, arg2, arg3):
+            return func(arg1, arg2, arg3)
+
+        def call_method(obj, arg):
+            return obj.__contains__(arg)
+
+        def call_method_noargs(obj):
+            return obj.meth_noargs_coexist()
+
+        def call_method_fast(obj, arg1, arg2):
+            return obj.meth_fastcall_coexist(arg1, arg2)
+
+        def call_method_fast_with_keywords(obj, arg1, arg2):
+            return obj.meth_fastcall_keywords_coexist(arg1, arg2)
+
+        def call_site(f):
+            [call] = [instr for instr in dis.get_instructions(f, adaptive=True)
+                      if instr.baseopname == "CALL"]
+            cache = {name: data for name, _, data in call.cache_info}
+            return call.opname, cache["counter"]
+
+        def label(obj):
+            return getattr(obj, "__qualname__", type(obj).__name__)
+
+        coexist = _testcapi.MethInstance()
+        cases = [
+            # dict.__contains__ has METH_O | METH_COEXIST
+            (call_1, {}.__contains__, ("key",), "CALL_BUILTIN_O"),
+            (call_method, {}, ("key",), "CALL_METHOD_DESCRIPTOR_O"),
+            # meth_noargs_coexist has METH_NOARGS | METH_COEXIST
+            (call_method_noargs, _testcapi.DocStringNoSignatureTest(), (),
+             "CALL_METHOD_DESCRIPTOR_NOARGS"),
+            # METH_FASTCALL, with or without METH_KEYWORDS, and METH_COEXIST
+            (call_method_fast, coexist, (1, 2),
+             "CALL_METHOD_DESCRIPTOR_FAST"),
+            (call_method_fast_with_keywords, coexist, (1, 2),
+             "CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS"),
+            (call_3, _testcapi.MethInstance.meth_fastcall_coexist,
+             (coexist, 1, 2), "CALL_METHOD_DESCRIPTOR_FAST"),
+            (call_3, _testcapi.MethInstance.meth_fastcall_keywords_coexist,
+             (coexist, 1, 2), "CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS"),
+            (call_2, coexist.meth_fastcall_coexist, (1, 2),
+             "CALL_BUILTIN_FAST"),
+            (call_2, coexist.meth_fastcall_keywords_coexist, (1, 2),
+             "CALL_BUILTIN_FAST_WITH_KEYWORDS"),
+        ]
+        for owner in (_testcapi.MethClass, _testcapi.MethStatic):
+            cases += [
+                (call_1, owner.meth_o, (1,), "CALL_BUILTIN_O"),
+                (call_2, owner.meth_fastcall, (1, 2), "CALL_BUILTIN_FAST"),
+                (call_2, owner.meth_fastcall_keywords, (1, 2),
+                 "CALL_BUILTIN_FAST_WITH_KEYWORDS"),
+            ]
+
+        for f, func, args, opname in cases:
+            with self.subTest(call=f.__name__, func=label(func)):
+                reset_code(f)
+                expected = f(func, *args)
+                for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                    f(func, *args)
+                self.assertEqual(call_site(f)[0], opname)
+
+                # A hit leaves the counter of the call site unchanged.
+                # A miss decrements it.
+                before = call_site(f)
+                for _ in range(10):
+                    self.assertEqual(f(func, *args), expected)
+                self.assertEqual(call_site(f), before)
+
+    @cpython_only
+    @requires_specialization
     def test_load_attr_module_with_getattr(self):
         module = types.ModuleType("test_module_with_getattr")
         module.__dict__["some_attr"] = "foo"
@@ -2093,6 +2291,17 @@ class TestSpecializer(TestBase):
             self.assert_no_opcode(load_module_attr_missing, "LOAD_ATTR_MODULE")
         finally:
             sys.modules.pop("test_module_with_getattr", None)
+
+    @cpython_only
+    @requires_specialization
+    def test_specialized_iter_doesnt_skip_send_check(self):
+        def gen_func(seq):
+            yield from seq
+        gen = gen_func(list(range(10)))
+        for _ in range(3):
+            gen.send(None)
+        with self.assertRaises(AttributeError):
+            gen.send(1)
 
 
     @cpython_only

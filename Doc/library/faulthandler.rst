@@ -67,7 +67,7 @@ Dumping the traceback
    .. versionchanged:: 3.5
       Added support for passing file descriptor to this function.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *max_threads* keyword argument.
 
 
@@ -140,7 +140,7 @@ Fault handler state
    .. versionchanged:: 3.14
       The dump now displays the C stack trace if *c_stack* is true.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *max_threads* keyword argument.
 
 .. function:: disable()
@@ -178,7 +178,7 @@ Dumping the tracebacks after a timeout
    .. versionchanged:: 3.7
       This function is now always available.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *max_threads* keyword argument.
 
 .. function:: cancel_dump_traceback_later()
@@ -204,7 +204,7 @@ Dumping the traceback on a user signal
    .. versionchanged:: 3.5
       Added support for passing file descriptor to this function.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *max_threads* keyword argument.
 
 .. function:: unregister(signum)

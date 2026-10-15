@@ -620,17 +620,18 @@ def warn_explicit(message, category, filename, lineno,
     linecache.getlines(filename, module_globals)
 
     # Print message and context
-    msg = _wm.WarningMessage(message, category, filename, lineno, source=source)
+    msg = _wm.WarningMessage(message, category, filename, lineno,
+                             module=module, source=source)
     _wm._showwarnmsg(msg)
 
 
 class WarningMessage(object):
 
     _WARNING_DETAILS = ("message", "category", "filename", "lineno", "file",
-                        "line", "source")
+                        "line", "source", "module")
 
     def __init__(self, message, category, filename, lineno, file=None,
-                 line=None, source=None):
+                 line=None, source=None, module=None):
         self.message = message
         self.category = category
         self.filename = filename
@@ -638,12 +639,14 @@ class WarningMessage(object):
         self.file = file
         self.line = line
         self.source = source
+        self.module = module
         self._category_name = category.__name__ if category else None
 
     def __str__(self):
-        return ("{message : %r, category : %r, filename : %r, lineno : %s, "
-                    "line : %r}" % (self.message, self._category_name,
-                                    self.filename, self.lineno, self.line))
+        return ("{message : %r, category : %r, module : %r, "
+                "filename : %r, lineno : %s, line : %r}" % (
+                    self.message, self._category_name, self.module,
+                    self.filename, self.lineno, self.line))
 
     def __repr__(self):
         return f'<{type(self).__qualname__} {self}>'
@@ -870,7 +873,8 @@ class deprecated:
 _DEPRECATED_MSG = "{name!r} is deprecated and slated for removal in Python {remove}"
 
 
-def _deprecated(name, message=_DEPRECATED_MSG, *, remove, _version=sys.version_info):
+def _deprecated(name, message=_DEPRECATED_MSG, *, remove, _version=sys.version_info,
+                stacklevel=3):
     """Warn that *name* is deprecated or should be removed.
 
     RuntimeError is raised if *remove* specifies a major/minor tuple older than
@@ -886,7 +890,7 @@ def _deprecated(name, message=_DEPRECATED_MSG, *, remove, _version=sys.version_i
         raise RuntimeError(msg)
     else:
         msg = message.format(name=name, remove=remove_formatted)
-        _wm.warn(msg, DeprecationWarning, stacklevel=3)
+        _wm.warn(msg, DeprecationWarning, stacklevel=stacklevel)
 
 
 # Private utility function called by _PyErr_WarnUnawaitedCoroutine

@@ -317,13 +317,8 @@
 {
    Avoid problems w/readline doing a putenv and leaking on exit
    Memcheck:Leak
-   fun:malloc
-   fun:xmalloc
-   fun:sh_set_lines_and_columns
-   fun:_rl_get_screen_size
-   fun:_rl_init_terminal_io
-   obj:/lib/libreadline.so.4.3
-   fun:rl_initialize
+   ...
+   fun:setup_readline
 }
 
 # Valgrind emits "Conditional jump or move depends on uninitialised value(s)"
