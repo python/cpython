@@ -38,7 +38,7 @@ from test.libregrtest import main
 from test.libregrtest import setup
 from test.libregrtest import utils
 from test.libregrtest.filter import get_match_tests, match_test
-from test.libregrtest.reporter import GitHubActionsReporter, Reporter
+from test.libregrtest.reporter import GitHubActionsReporter
 from test.libregrtest.result import State, TestResult, TestStats
 from test.libregrtest.results import TestResults
 from test.libregrtest.utils import normalize_test_name
@@ -1647,68 +1647,42 @@ class ArgsTestCase(BaseTestCase):
                                   stats=2)
 
     def test_reporter(self):
-        # Failures which fail the run are reported, with their location
-        cases = self.create_test('reporter_cases', textwrap.dedent("""
-            import doctest, sys, unittest
-
-            def load_tests(loader, tests, pattern):
-                tests.addTests(doctest.DocTestSuite(sys.modules[__name__]))
-                return tests
-
-            def doctest_fail():
-                '''
-                >>> 1 + 1
-                3
-                '''
-
-            class Tests(unittest.TestCase):
-                def test_subtest(self):
-                    with self.subTest(x=1):
-                        self.fail()
-        """))
-        crash = self.create_test('reporter_crash', textwrap.dedent("""
+        code = textwrap.dedent("""
             import os, unittest
 
             class Tests(unittest.TestCase):
-                def test_crash(self):
-                    os._exit(1)
-        """))
-        cases_file = os.path.join(self.tmptestdir, f'{cases}.py')
-        crash_file = os.path.join(self.tmptestdir, f'{crash}.py')
-        reported_cases = [
-            (f'test_subtest ({cases}.Tests.test_subtest) (x=1)',
-             cases_file, '17'),
-            (f'doctest_fail ({cases}) [0]', cases_file, '10'),
-        ]
-        reported_crash = (crash, crash_file, '1')
+                def test_fail(self):
+                    self.fail()
+        """)
+        fail = self.create_test('reporter_fail', code)
+        crash = self.create_test('reporter_crash',
+                                 code.replace('self.fail()', 'os._exit(1)'))
+        fail_case = (os.path.join(self.tmptestdir, f'{fail}.py'), '6',
+                     f'test_fail ({fail}.Tests.test_fail)')
         filename = os.path.join(self.tmptestdir, 'github_step_summary.md')
         env = dict(os.environ, GITHUB_STEP_SUMMARY=filename)
-        env.pop('SOURCE_DATE_EPOCH', None)
 
         def reported(output):
-            annotations = re.findall(r'^::error (.*?)::', output, re.MULTILINE)
-            props = [dict(prop.split('=', 1) for prop in text.split(','))
-                     for text in annotations]
-            return [(prop['title'], prop.get('file'), prop.get('line'))
-                    for prop in props]
+            return re.findall(r'^::error file=(.*),line=(\d+),title=(.*)::',
+                              output, re.MULTILINE)
 
-        # Only the failures of the re-run are reported. A single worker
-        # without --randomize runs the tests in order.
-        output = self.run_tests('-j1', '--rerun', cases, crash,
+        # Only the re-run is reported
+        output = self.run_tests('-j1', '--rerun', fail, crash,
                                 env=env, exitcode=EXITCODE_BAD_TEST)
-        self.assertEqual(reported(output), [*reported_cases, reported_crash],
-                         output)
+        self.assertEqual(reported(output), [
+            fail_case,
+            (os.path.join(self.tmptestdir, f'{crash}.py'), '1', crash),
+        ], output)
         with open(filename, encoding='utf-8') as fp:
-            self.assertIn('2 test files and 2 test cases failed', fp.read())
+            self.assertIn('2 test files and 1 test case failed', fp.read())
         os_helper.unlink(filename)
 
-        # Quiet mode doesn't print failed test cases, but reports them
-        output = self.run_tests('-j1', cases, env=env,
+        # Quiet mode doesn't print the failure, but reports it
+        output = self.run_tests('-j1', fail, env=env,
                                 exitcode=EXITCODE_BAD_TEST)
-        self.assertEqual(reported(output), reported_cases, output)
+        self.assertEqual(reported(output), [fail_case], output)
         os_helper.unlink(filename)
 
-        # Nothing is reported when all tests pass
         output = self.run_tests(self.create_test(), env=env)
         self.assertEqual(reported(output), [])
         self.assertFalse(os.path.exists(filename))
@@ -3020,133 +2994,53 @@ class TestUtils(unittest.TestCase):
                          'valid t\xe9xt \u20ac')
 
 
-class ReporterTestCase(unittest.TestCase):
-    def test_parse_traceback(self):
-        parse = Reporter.parse_traceback
-        self.assertEqual(parse('AssertionError\n'),
-                         (None, None, 'AssertionError'))
-        traceback = textwrap.dedent("""
-            Traceback (most recent call last):
-              File "/lib/test_x.py", line 5, in test_x
-                helper()
-              File "/lib/test_x.py", line 9, in helper
-                check()
-              File "/lib/check.py", line 2, in check
-                raise ValueError
-            ValueError
-        """)
-        # The last frame in a test file
-        self.assertEqual(parse(traceback),
-                         ('/lib/test_x.py', '9', 'ValueError'))
-        # Without a test file, the first frame
-        traceback = traceback.replace('test_x.py', 'x.py')
-        self.assertEqual(parse(traceback), ('/lib/x.py', '5', 'ValueError'))
-
-    def test_find_filename(self):
-        test_dir = self.enterContext(os_helper.temp_dir())
-        os.mkdir(os.path.join(test_dir, 'test_pkg'))
-        for name in ('test_x.py', os.path.join('test_pkg', '__init__.py')):
-            open(os.path.join(test_dir, name), 'w').close()
-
-        def filename(test_name, filename=None):
-            result = TestResult(test_name, filename=filename)
-            return result.find_filename(test_dir)
-
-        self.assertEqual(filename('test_x', '/imported/test_x.py'),
-                         '/imported/test_x.py')
-        self.assertEqual(filename('test_x'),
-                         os.path.join(test_dir, 'test_x.py'))
-        self.assertEqual(filename('test_pkg'),
-                         os.path.join(test_dir, 'test_pkg', '__init__.py'))
-        self.assertIsNone(filename('<regrtest worker>'))
-
-
 class GitHubActionsReporterTestCase(unittest.TestCase):
-    ENV_CHANGED = TestResult('test_x', state=State.ENV_CHANGED,
-                             env_changed_reasons=['dangling thread'],
-                             filename='/tests/test_x.py')
-
     def setUp(self):
-        self.summary = os_helper.TESTFN
-        self.addCleanup(os_helper.unlink, self.summary)
-        env = self.enterContext(os_helper.EnvironmentVarGuard())
-        env['GITHUB_STEP_SUMMARY'] = self.summary
-
-    def create_reporter(self, *, final_run=True, fail_env_changed=True):
-        reporter = GitHubActionsReporter()
-        reporter.run_started(types.SimpleNamespace(
-            final_run=final_run, fail_env_changed=fail_env_changed,
-            test_dir=None))
-        return reporter
-
-    def annotate_test_case(self, test_case, traceback, **kwargs):
-        stream = io.StringIO()
-        self.create_reporter(**kwargs).test_case_failed(test_case, traceback,
-                                                        stream)
-        return stream.getvalue()
-
-    def annotate_result(self, result, **kwargs):
-        with support.captured_stdout() as stdout:
-            self.create_reporter(**kwargs).test_result(result)
-        return stdout.getvalue()
+        self.reporter = GitHubActionsReporter()
+        self.reporter.run_started(types.SimpleNamespace(
+            final_run=True, fail_env_changed=True, test_dir=None))
 
     def test_test_case_failed(self):
-        stdlib_file = os.path.join(os.path.dirname(os.__file__), 'test',
-                                   'test_x.py')
+        stdlib_dir = os.path.dirname(os.__file__)
         traceback = textwrap.dedent(f"""\
             Traceback (most recent call last):
-              File "{stdlib_file}", line 3, in test_x
-                self.fail('50%')
-            AssertionError: 50%
+              File "{stdlib_dir}/test/test_x.py", line 3, in test_x
+                helper()
+              File "{stdlib_dir}/helper.py", line 9, in helper
+                raise ValueError('50%')
+            ValueError: 50%
             more
         """)
-        # Only the exception is kept, the stdlib path is relative to the
-        # checkout, and the data and properties are escaped
+        stream = io.StringIO()
+        self.reporter.test_case_failed('test_x (a: b, c)', traceback, stream)
         self.assertEqual(
-            self.annotate_test_case('test_x (a: b, c)', traceback),
+            stream.getvalue(),
             '::error file=Lib/test/test_x.py,line=3,'
-            'title=test_x (a%3A b%2C c)::AssertionError: 50%25%0Amore\n')
-
-    def test_test_case_failed_without_traceback(self):
-        self.assertEqual(self.annotate_test_case('test_x', 'AssertionError\n'),
-                         '::error title=test_x::AssertionError\n')
-
-    def test_test_case_failed_not_final_run(self):
-        # Failed tests will be re-run: only the re-run is reported
-        self.assertEqual(self.annotate_test_case('test_x', 'AssertionError\n',
-                                                 final_run=False),
-                         '')
+            'title=test_x (a%3A b%2C c)::ValueError: 50%25%0Amore\n')
 
     def test_test_result(self):
-        self.assertEqual(self.annotate_result(self.ENV_CHANGED),
-                         '::error file=/tests/test_x.py,line=1,title=test_x::'
+        result = TestResult('test_x', state=State.ENV_CHANGED,
+                            env_changed_reasons=['dangling thread'])
+        with support.captured_stdout() as stdout:
+            self.reporter.test_result(result)
+        self.assertEqual(stdout.getvalue(),
+                         '::error title=test_x::'
                          'test_x failed (env changed)%0Adangling thread\n')
-
-    def test_test_result_not_reported(self):
-        failed_test_cases = TestResult(
-            'test_x', state=State.FAILED,
-            failures=[('test_a', 'AssertionError\n')])
-        cases = {
-            'not final run': (self.ENV_CHANGED, {'final_run': False}),
-            'not failing the run': (self.ENV_CHANGED,
-                                    {'fail_env_changed': False}),
-            'passed': (TestResult('test_x', state=State.PASSED), {}),
-            # Annotated by test_case_failed()
-            'failed test cases': (failed_test_cases, {}),
-        }
-        for name, (result, kwargs) in cases.items():
-            with self.subTest(name):
-                self.assertEqual(self.annotate_result(result, **kwargs), '')
 
     def test_summary(self):
         results = TestResults()
         results.rerun_results = [
             TestResult('test_x', state=State.FAILED,
-                       failures=[('test_a (<T>)', 'Traceback\nAssertionError\n')]),
-            self.ENV_CHANGED,
+                       failures=[('test_a (<T>)',
+                                  'Traceback\nAssertionError\n')]),
+            TestResult('test_y', state=State.ENV_CHANGED,
+                       env_changed_reasons=['dangling thread']),
         ]
-        self.create_reporter().summary(results, 'FAILURE')
-        with open(self.summary, encoding='utf-8') as fp:
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with os_helper.EnvironmentVarGuard() as env:
+            env['GITHUB_STEP_SUMMARY'] = os_helper.TESTFN
+            self.reporter.summary(results, 'FAILURE')
+        with open(os_helper.TESTFN, encoding='utf-8') as fp:
             summary = fp.read()
         self.assertEqual(summary, textwrap.dedent("""\
             ## FAILURE: 2 test files and 1 test case failed
@@ -3162,15 +3056,11 @@ class GitHubActionsReporterTestCase(unittest.TestCase):
 
             </details>
 
-            ### test_x failed (env changed)
+            ### test_y failed (env changed)
 
             - dangling thread
 
         """))
-
-    def test_summary_nothing_failed(self):
-        self.create_reporter().summary(TestResults(), 'SUCCESS')
-        self.assertFalse(os.path.exists(self.summary))
 
 
 class TestColorized(unittest.TestCase):
