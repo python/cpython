@@ -42,10 +42,10 @@ __all__ = [
     "suffix_map", "encodings_map", "types_map", "common_types"
 ]
 
-# These paths resolve against the root of the current drive on Windows
-# (e.g. C:\etc\mime.types), which unprivileged users can usually create.
-# Only the registry is used by default.
 if sys.platform == "win32":
+    # The default paths would resolve to the root of the current drive on Windows
+    # (e.g. C:\etc\mime.types), which unprivileged users can usually create.
+    # Only the registry is used by default.
     knownfiles = []
 else:
     knownfiles = [
