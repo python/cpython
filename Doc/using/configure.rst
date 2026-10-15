@@ -1271,7 +1271,7 @@ Security Options
       The settings ``python`` and *STRING* also set TLS 1.2 as minimum
       protocol version.
 
-.. option:: --enable-safety, --disable-safety
+.. option:: --enable-safety
 
    Enable compiler options that are `recommended by OpenSSF`_ for security reasons
    with no performance overhead. This option is disabled by default.
