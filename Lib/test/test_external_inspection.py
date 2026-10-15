@@ -36,6 +36,7 @@ THREAD_STATUS_HAS_GIL = 1 << 0
 THREAD_STATUS_ON_CPU = 1 << 1
 THREAD_STATUS_UNKNOWN = 1 << 2
 THREAD_STATUS_HAS_EXCEPTION = 1 << 4
+THREAD_STATUS_MAIN_THREAD = 1 << 5
 
 # Maximum number of retry attempts for operations that may fail transiently
 MAX_TRIES = 10
@@ -2627,7 +2628,7 @@ class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
                 suspended = self._find_thread_with_frame(trace, lambda f: f.funcname == "suspended")
                 self.assertIsNotNone(suspended)
                 self.assertEqual(suspended.thread_id, active.thread_id)
-                self.assertFalse(suspended.status & THREAD_STATUS_ON_CPU)
+                self.assertEqual(suspended.status, THREAD_STATUS_MAIN_THREAD)
                 break
 
     def _run_thread_status_test(self, mode, check_condition):
