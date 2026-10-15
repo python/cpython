@@ -103,8 +103,7 @@ typedef struct {
     PyObject *TIMEDELTA_CACHE;
     PyObject *ZONEINFO_WEAK_CACHE;
     StrongCacheNode *ZONEINFO_STRONG_CACHE;
-    // Bumped whenever the strong cache is mutated, so a lookup can detect
-    // re-entrant mutation during a key comparison (gh-142782).
+    // Bumped on every strong-cache mutation (gh-142782).
     size_t strong_cache_version;
 
     _ttinfo NO_TTINFO;
@@ -2439,11 +2438,8 @@ remove_from_strong_cache(zoneinfo_state *state, StrongCacheNode *node)
 static StrongCacheNode *
 find_in_strong_cache(zoneinfo_state *state, PyObject *const key)
 {
-    // Comparing keys may run arbitrary Python code (a str subclass __eq__),
-    // which can re-enter and mutate the cache (e.g. ZoneInfo.clear_cache()),
-    // freeing nodes.  Keep a reference to the key for the comparison, and if
-    // the cache was mutated during it, treat the lookup as a miss rather than
-    // dereference a possibly freed node (gh-142782).
+    // A key's __eq__ can re-enter and clear the cache during the comparison,
+    // freeing nodes; treat such a mutation as a miss (gh-142782).
     size_t version = state->strong_cache_version;
     const StrongCacheNode *node = state->ZONEINFO_STRONG_CACHE;
     while (node != NULL) {
