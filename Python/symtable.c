@@ -154,6 +154,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_in_unevaluated_annotation = 0;
     ste->ste_annotation_block = NULL;
 
+    ste->ste_has_late_defaults = 0;
     ste->ste_has_docstring = 0;
 
     ste->ste_method = 0;
@@ -272,6 +273,7 @@ static int symtable_visit_listcomp(struct symtable *st, expr_ty s);
 static int symtable_visit_setcomp(struct symtable *st, expr_ty s);
 static int symtable_visit_dictcomp(struct symtable *st, expr_ty s);
 static int symtable_visit_arguments(struct symtable *st, arguments_ty);
+static int symtable_visit_defaults(struct symtable *st, arguments_ty, int);
 static int symtable_visit_excepthandler(struct symtable *st, excepthandler_ty);
 static int symtable_visit_alias(struct symtable *st, alias_ty);
 static int symtable_visit_comprehension(struct symtable *st, comprehension_ty);
@@ -1681,7 +1683,8 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag,
 static int
 symtable_enter_type_param_block(struct symtable *st, identifier name,
                                void *ast, int has_defaults, int has_kwdefaults,
-                               enum _stmt_kind kind, _Py_SourceLocation loc)
+                               arguments_ty defaults_args, enum _stmt_kind kind,
+                               _Py_SourceLocation loc)
 {
     _Py_block_ty current_type = st->st_cur->ste_type;
     if(!symtable_enter_block(st, name, TypeParametersBlock, ast, loc)) {
@@ -1718,10 +1721,37 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
             goto error;
         }
     }
+    if (defaults_args != NULL) {
+        int has_late = 0;
+        for (Py_ssize_t i = 0; i < asdl_seq_LEN(defaults_args->posonlyargs); i++) {
+            has_late |= asdl_seq_GET(defaults_args->posonlyargs, i)->late_default != NULL;
+        }
+        for (Py_ssize_t i = 0; i < asdl_seq_LEN(defaults_args->args); i++) {
+            has_late |= asdl_seq_GET(defaults_args->args, i)->late_default != NULL;
+        }
+        if (has_late) {
+            _Py_DECLARE_STR(defaults_extra, ".defaults_extra");
+            if (!symtable_add_def(st, &_Py_STR(defaults_extra), DEF_PARAM, loc)) {
+                goto error;
+            }
+        }
+    }
     if (has_kwdefaults) {
         _Py_DECLARE_STR(kwdefaults, ".kwdefaults");
         if (!symtable_add_def(st, &_Py_STR(kwdefaults), DEF_PARAM, loc)) {
             goto error;
+        }
+    }
+    if (defaults_args != NULL) {
+        int has_late = 0;
+        for (Py_ssize_t i = 0; i < asdl_seq_LEN(defaults_args->kwonlyargs); i++) {
+            has_late |= asdl_seq_GET(defaults_args->kwonlyargs, i)->late_default != NULL;
+        }
+        if (has_late) {
+            _Py_DECLARE_STR(kwdefaults_extra, ".kwdefaults_extra");
+            if (!symtable_add_def(st, &_Py_STR(kwdefaults_extra), DEF_PARAM, loc)) {
+                goto error;
+            }
         }
     }
     return 1;
@@ -1916,10 +1946,9 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
     case FunctionDef_kind: {
         if (!symtable_add_def(st, s->v.FunctionDef.name, DEF_LOCAL, LOCATION(s)))
             return 0;
-        if (s->v.FunctionDef.args->defaults)
-            VISIT_SEQ(st, expr, s->v.FunctionDef.args->defaults);
-        if (s->v.FunctionDef.args->kw_defaults)
-            VISIT_SEQ_WITH_NULL(st, expr, s->v.FunctionDef.args->kw_defaults);
+        if (!symtable_visit_defaults(st, s->v.FunctionDef.args, 0)) {
+            return 0;
+        }
         if (s->v.FunctionDef.decorator_list)
             VISIT_SEQ(st, expr, s->v.FunctionDef.decorator_list);
         if (asdl_seq_LEN(s->v.FunctionDef.type_params) > 0) {
@@ -1929,7 +1958,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                     s->v.FunctionDef.args->defaults != NULL,
                     has_kwonlydefaults(s->v.FunctionDef.args->kwonlyargs,
                                        s->v.FunctionDef.args->kw_defaults),
-                    s->kind,
+                    s->v.FunctionDef.args, s->kind,
                     LOCATION(s))) {
                 return 0;
             }
@@ -1975,7 +2004,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         if (asdl_seq_LEN(s->v.ClassDef.type_params) > 0) {
             if (!symtable_enter_type_param_block(st, s->v.ClassDef.name,
                                                 (void *)s->v.ClassDef.type_params,
-                                                false, false, s->kind,
+                                                false, false, NULL, s->kind,
                                                 LOCATION(s))) {
                 return 0;
             }
@@ -2032,7 +2061,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             if (!symtable_enter_type_param_block(
                     st, name,
                     (void *)s->v.TypeAlias.type_params,
-                    false, false, s->kind,
+                    false, false, NULL, s->kind,
                     LOCATION(s))) {
                 return 0;
             }
@@ -2300,11 +2329,9 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
     case AsyncFunctionDef_kind: {
         if (!symtable_add_def(st, s->v.AsyncFunctionDef.name, DEF_LOCAL, LOCATION(s)))
             return 0;
-        if (s->v.AsyncFunctionDef.args->defaults)
-            VISIT_SEQ(st, expr, s->v.AsyncFunctionDef.args->defaults);
-        if (s->v.AsyncFunctionDef.args->kw_defaults)
-            VISIT_SEQ_WITH_NULL(st, expr,
-                                s->v.AsyncFunctionDef.args->kw_defaults);
+        if (!symtable_visit_defaults(st, s->v.AsyncFunctionDef.args, 0)) {
+            return 0;
+        }
         if (s->v.AsyncFunctionDef.decorator_list)
             VISIT_SEQ(st, expr, s->v.AsyncFunctionDef.decorator_list);
         if (asdl_seq_LEN(s->v.AsyncFunctionDef.type_params) > 0) {
@@ -2314,7 +2341,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                     s->v.AsyncFunctionDef.args->defaults != NULL,
                     has_kwonlydefaults(s->v.AsyncFunctionDef.args->kwonlyargs,
                                        s->v.AsyncFunctionDef.args->kw_defaults),
-                    s->kind,
+                    s->v.AsyncFunctionDef.args, s->kind,
                     LOCATION(s))) {
                 return 0;
             }
@@ -2521,10 +2548,9 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         VISIT(st, expr, e->v.UnaryOp.operand);
         break;
     case Lambda_kind: {
-        if (e->v.Lambda.args->defaults)
-            VISIT_SEQ(st, expr, e->v.Lambda.args->defaults);
-        if (e->v.Lambda.args->kw_defaults)
-            VISIT_SEQ_WITH_NULL(st, expr, e->v.Lambda.args->kw_defaults);
+        if (!symtable_visit_defaults(st, e->v.Lambda.args, 0)) {
+            return 0;
+        }
         if (!symtable_enter_block(st, &_Py_STR(anon_lambda),
                                   FunctionBlock, (void *)e, LOCATION(e))) {
             return 0;
@@ -2978,6 +3004,35 @@ symtable_visit_annotations(struct symtable *st, stmt_ty o, arguments_ty a, expr_
 }
 
 static int
+symtable_visit_defaults(struct symtable *st, arguments_ty a, int late)
+{
+    Py_ssize_t nposonly = asdl_seq_LEN(a->posonlyargs);
+    Py_ssize_t npos = nposonly + asdl_seq_LEN(a->args);
+    Py_ssize_t first = npos - asdl_seq_LEN(a->defaults);
+    for (Py_ssize_t i = first; i < npos; i++) {
+        arg_ty arg = i < nposonly ? asdl_seq_GET(a->posonlyargs, i)
+            : asdl_seq_GET(a->args, i - nposonly);
+        if (!!arg->late_default == late) {
+            VISIT(st, expr, asdl_seq_GET(a->defaults, i - first));
+            if (late) {
+                st->st_cur->ste_has_late_defaults = 1;
+            }
+        }
+    }
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(a->kwonlyargs); i++) {
+        arg_ty arg = asdl_seq_GET(a->kwonlyargs, i);
+        expr_ty value = asdl_seq_GET(a->kw_defaults, i);
+        if (value && !!arg->late_default == late) {
+            VISIT(st, expr, value);
+            if (late) {
+                st->st_cur->ste_has_late_defaults = 1;
+            }
+        }
+    }
+    return 1;
+}
+
+static int
 symtable_visit_arguments(struct symtable *st, arguments_ty a)
 {
     /* skip default arguments inside function block
@@ -2999,7 +3054,7 @@ symtable_visit_arguments(struct symtable *st, arguments_ty a)
             return 0;
         st->st_cur->ste_varkeywords = 1;
     }
-    return 1;
+    return symtable_visit_defaults(st, a, 1);
 }
 
 

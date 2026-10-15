@@ -1025,8 +1025,14 @@ codegen_make_closure(compiler *c, location loc,
     if (flags & MAKE_FUNCTION_ANNOTATE) {
         ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_ANNOTATE);
     }
+    if (flags & MAKE_FUNCTION_KWDEFAULTS_EXTRA) {
+        ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_KWDEFAULTS_EXTRA);
+    }
     if (flags & MAKE_FUNCTION_KWDEFAULTS) {
         ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_KWDEFAULTS);
+    }
+    if (flags & MAKE_FUNCTION_DEFAULTS_EXTRA) {
+        ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_DEFAULTS_EXTRA);
     }
     if (flags & MAKE_FUNCTION_DEFAULTS) {
         ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_DEFAULTS);
@@ -1061,6 +1067,68 @@ codegen_apply_decorators(compiler *c, asdl_expr_seq* decos)
     return SUCCESS;
 }
 
+/* Return the positional parameter corresponding to a defaults entry. */
+static arg_ty
+codegen_default_arg(arguments_ty args, Py_ssize_t index)
+{
+    Py_ssize_t nposonly = asdl_seq_LEN(args->posonlyargs);
+    Py_ssize_t offset = nposonly + asdl_seq_LEN(args->args)
+        - asdl_seq_LEN(args->defaults) + index;
+    return offset < nposonly ? asdl_seq_GET(args->posonlyargs, offset)
+        : asdl_seq_GET(args->args, offset - nposonly);
+}
+
+static int
+codegen_late_default(compiler *c, arg_ty arg, expr_ty value)
+{
+    if (!arg->late_default) {
+        return SUCCESS;
+    }
+    location loc = LOC(value);
+    PyObject *mangled = _PyCompile_MaybeMangle(c, arg->arg);
+    if (mangled == NULL) {
+        return ERROR;
+    }
+    _PyCompile_optype optype;
+    Py_ssize_t index = 0;
+    int scope = _PyCompile_ResolveNameop(c, mangled, &optype, &index);
+    if (scope < 0) {
+        Py_DECREF(mangled);
+        return ERROR;
+    }
+    if (optype == COMPILE_OP_DEREF) {
+        Py_DECREF(mangled);
+        ADDOP_I(c, loc, QUERY_DEREF, index);
+    }
+    else {
+        assert(optype == COMPILE_OP_FAST);
+        ADDOP_N(c, loc, QUERY_FAST, mangled, varnames);
+    }
+    NEW_JUMP_TARGET_LABEL(c, bound);
+    ADDOP_JUMP(c, loc, POP_JUMP_IF_TRUE, bound);
+    VISIT(c, expr, value);
+    RETURN_IF_ERROR(codegen_nameop(c, loc, arg->arg, Store));
+    USE_LABEL(c, bound);
+    return SUCCESS;
+}
+
+static int
+codegen_late_defaults(compiler *c, arguments_ty args)
+{
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(args->defaults); i++) {
+        RETURN_IF_ERROR(codegen_late_default(c, codegen_default_arg(args, i),
+                                            asdl_seq_GET(args->defaults, i)));
+    }
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(args->kwonlyargs); i++) {
+        arg_ty arg = asdl_seq_GET(args->kwonlyargs, i);
+        if (arg->late_default) {
+            RETURN_IF_ERROR(codegen_late_default(c, arg,
+                                                asdl_seq_GET(args->kw_defaults, i)));
+        }
+    }
+    return SUCCESS;
+}
+
 static int
 codegen_kwonlydefaults(compiler *c, location loc,
                        asdl_arg_seq *kwonlyargs, asdl_expr_seq *kw_defaults)
@@ -1080,7 +1148,12 @@ codegen_kwonlydefaults(compiler *c, location loc,
                 return ERROR;
             }
             ADDOP_LOAD_CONST_NEW(c, loc, mangled);
-            VISIT(c, expr, default_);
+            if (arg->late_default) {
+                ADDOP_LOAD_CONST(c, loc, Py_Ellipsis);
+            }
+            else {
+                VISIT(c, expr, default_);
+            }
         }
     }
     if (default_count) {
@@ -1221,7 +1294,14 @@ static int
 codegen_defaults(compiler *c, arguments_ty args,
                         location loc)
 {
-    VISIT_SEQ(c, expr, args->defaults);
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(args->defaults); i++) {
+        if (codegen_default_arg(args, i)->late_default) {
+            ADDOP_LOAD_CONST(c, loc, Py_Ellipsis);
+        }
+        else {
+            VISIT(c, expr, asdl_seq_GET(args->defaults, i));
+        }
+    }
     ADDOP_I(c, loc, BUILD_TUPLE, asdl_seq_LEN(args->defaults));
     return SUCCESS;
 }
@@ -1234,6 +1314,23 @@ codegen_default_arguments(compiler *c, location loc,
     if (args->defaults && asdl_seq_LEN(args->defaults) > 0) {
         RETURN_IF_ERROR(codegen_defaults(c, args, loc));
         funcflags |= MAKE_FUNCTION_DEFAULTS;
+        int has_late = 0;
+        for (Py_ssize_t i = 0; i < asdl_seq_LEN(args->defaults); i++) {
+            has_late |= codegen_default_arg(args, i)->late_default != NULL;
+        }
+        if (has_late) {
+            for (Py_ssize_t i = 0; i < asdl_seq_LEN(args->defaults); i++) {
+                if (codegen_default_arg(args, i)->late_default) {
+                    ADDOP_LOAD_CONST_NEW(c, loc,
+                        Py_NewRef(codegen_default_arg(args, i)->late_default));
+                }
+                else {
+                    ADDOP_LOAD_CONST(c, loc, Py_None);
+                }
+            }
+            ADDOP_I(c, loc, BUILD_TUPLE, asdl_seq_LEN(args->defaults));
+            funcflags |= MAKE_FUNCTION_DEFAULTS_EXTRA;
+        }
     }
     if (args->kwonlyargs) {
         int res = codegen_kwonlydefaults(c, loc,
@@ -1242,6 +1339,20 @@ codegen_default_arguments(compiler *c, location loc,
         RETURN_IF_ERROR(res);
         if (res > 0) {
             funcflags |= MAKE_FUNCTION_KWDEFAULTS;
+            int count = 0;
+            for (Py_ssize_t i = 0; i < asdl_seq_LEN(args->kwonlyargs); i++) {
+                arg_ty arg = asdl_seq_GET(args->kwonlyargs, i);
+                if (arg->late_default) {
+                    ADDOP_LOAD_CONST_NEW(c, loc, _PyCompile_MaybeMangle(c, arg->arg));
+                    ADDOP_LOAD_CONST_NEW(c, loc,
+                        Py_NewRef(arg->late_default));
+                    count++;
+                }
+            }
+            if (count) {
+                ADDOP_I(c, loc, BUILD_MAP, count);
+                funcflags |= MAKE_FUNCTION_KWDEFAULTS_EXTRA;
+            }
         }
     }
     return funcflags;
@@ -1397,7 +1508,7 @@ codegen_type_params(compiler *c, asdl_type_param_seq *type_params)
 }
 
 static int
-codegen_emit_function_body(compiler *c, asdl_stmt_seq *body)
+codegen_emit_function_body(compiler *c, asdl_stmt_seq *body, arguments_ty args)
 {
     PySTEntryObject *ste = SYMTABLE_ENTRY(c);
     Py_ssize_t first_instr = 0;
@@ -1424,6 +1535,7 @@ codegen_emit_function_body(compiler *c, asdl_stmt_seq *body)
                                   start, NO_LABEL, NULL));
     }
 
+    RETURN_IF_ERROR(codegen_late_defaults(c, args));
     for (Py_ssize_t i = first_instr; i < asdl_seq_LEN(body); i++) {
         VISIT(c, stmt, (stmt_ty)asdl_seq_GET(body, i));
     }
@@ -1469,7 +1581,7 @@ codegen_function_body(compiler *c, stmt_ty s, int is_async, Py_ssize_t funcflags
     RETURN_IF_ERROR(
         codegen_enter_scope(c, name, scope_type, (void *)s, firstlineno, NULL, &umd));
 
-    RETURN_IF_ERROR_IN_SCOPE(c, codegen_emit_function_body(c, body));
+    RETURN_IF_ERROR_IN_SCOPE(c, codegen_emit_function_body(c, body, args));
 
     PyCodeObject *co = _PyCompile_OptimizeAndAssemble(c, 1);
     _PyCompile_ExitScope(c);
@@ -1533,8 +1645,14 @@ codegen_function(compiler *c, stmt_ty s, int is_async)
         if (funcflags & MAKE_FUNCTION_KWDEFAULTS) {
             num_typeparam_args += 1;
         }
-        if (num_typeparam_args == 2) {
-            ADDOP_I(c, loc, SWAP, 2);
+        if (funcflags & MAKE_FUNCTION_DEFAULTS_EXTRA) {
+            num_typeparam_args++;
+        }
+        if (funcflags & MAKE_FUNCTION_KWDEFAULTS_EXTRA) {
+            num_typeparam_args++;
+        }
+        for (int i = num_typeparam_args; i > 1; i--) {
+            ADDOP_I(c, loc, SWAP, i);
         }
         PyObject *type_params_name = PyUnicode_FromFormat("<generic parameters of %U>", name);
         if (!type_params_name) {
@@ -2112,6 +2230,7 @@ codegen_lambda(compiler *c, expr_ty e)
 
     assert(!SYMTABLE_ENTRY(c)->ste_has_docstring);
 
+    RETURN_IF_ERROR_IN_SCOPE(c, codegen_late_defaults(c, args));
     VISIT_IN_SCOPE(c, expr, e->v.Lambda.body);
     if (SYMTABLE_ENTRY(c)->ste_generator) {
         co = _PyCompile_OptimizeAndAssemble(c, 0);

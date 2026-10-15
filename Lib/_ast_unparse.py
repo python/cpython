@@ -1012,7 +1012,7 @@ class Unparser(NodeVisitor):
                 self.write(", ")
             self.traverse(a)
             if d:
-                self.write("=")
+                self.write("=>" if a.late_default is not None else "=")
                 self.traverse(d)
             if index == len(node.posonlyargs):
                 self.write(", /")
@@ -1036,7 +1036,7 @@ class Unparser(NodeVisitor):
                 self.write(", ")
                 self.traverse(a)
                 if d:
-                    self.write("=")
+                    self.write("=>" if a.late_default is not None else "=")
                     self.traverse(d)
 
         # kwargs

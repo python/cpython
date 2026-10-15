@@ -36,6 +36,8 @@ typedef struct {
 typedef struct {
     PyObject_HEAD
     _Py_COMMON_FIELDS(func_)
+    PyObject *func_defaults_extra;  /* NULL or tuple of expression strings */
+    PyObject *func_kwdefaults_extra; /* NULL or dict of expression strings */
     PyObject *func_doc;         /* The __doc__ attribute, can be anything */
     PyObject *func_dict;        /* The __dict__ attribute, a dict or NULL */
     PyObject *func_weakreflist; /* List of weak references */

@@ -34,6 +34,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(dbl_open_br), "{{", 2);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(dbl_percent), "%%", 2);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(defaults), ".defaults", 9);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(defaults_extra), ".defaults_extra", 15);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(dot_locals), ".<locals>", 9);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(empty), "", 0);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(format), ".format", 7);
@@ -41,6 +42,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(generic_base), ".generic_base", 13);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(json_decoder), "json.decoder", 12);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(kwdefaults), ".kwdefaults", 11);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(kwdefaults_extra), ".kwdefaults_extra", 17);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(list_err), "list index out of range", 23);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(native), "<native>", 8);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(str_replace_inf), "1e309", 5);

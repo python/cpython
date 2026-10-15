@@ -11144,6 +11144,45 @@
             DISPATCH();
         }
 
+        TARGET(QUERY_DEREF) {
+            #if _Py_TAIL_CALL_INTERP
+            int opcode = QUERY_DEREF;
+            (void)(opcode);
+            #endif
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(QUERY_DEREF);
+            _PyStackRef value;
+            PyCellObject *cell = (PyCellObject *)PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
+            PyObject *contents = PyCell_GetRef(cell);
+            value = contents == NULL ? PyStackRef_False : PyStackRef_True;
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
+            Py_XDECREF(contents);
+            _PyFrame_StackPointerInvalidate(frame);
+            DISPATCH();
+        }
+
+        TARGET(QUERY_FAST) {
+            #if _Py_TAIL_CALL_INTERP
+            int opcode = QUERY_FAST;
+            (void)(opcode);
+            #endif
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(QUERY_FAST);
+            _PyStackRef value;
+            value = PyStackRef_IsNull(GETLOCAL(oparg))
+            ? PyStackRef_False : PyStackRef_True;
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            DISPATCH();
+        }
+
         TARGET(RAISE_VARARGS) {
             #if _Py_TAIL_CALL_INTERP
             int opcode = RAISE_VARARGS;

@@ -1318,6 +1318,7 @@ extern "C" {
     INIT_STR(dbl_open_br, "{{"), \
     INIT_STR(dbl_percent, "%%"), \
     INIT_STR(defaults, ".defaults"), \
+    INIT_STR(defaults_extra, ".defaults_extra"), \
     INIT_STR(dot_locals, ".<locals>"), \
     INIT_STR(empty, ""), \
     INIT_STR(format, ".format"), \
@@ -1325,6 +1326,7 @@ extern "C" {
     INIT_STR(generic_base, ".generic_base"), \
     INIT_STR(json_decoder, "json.decoder"), \
     INIT_STR(kwdefaults, ".kwdefaults"), \
+    INIT_STR(kwdefaults_extra, ".kwdefaults_extra"), \
     INIT_STR(list_err, "list index out of range"), \
     INIT_STR(native, "<native>"), \
     INIT_STR(str_replace_inf, "1e309"), \

@@ -32,6 +32,7 @@ Python Library Reference.
    instrumentation.rst
    perf_profiling.rst
    annotations.rst
+   late-bound-defaults.rst
    isolating-extensions.rst
    timerfd.rst
    mro.rst

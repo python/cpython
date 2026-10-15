@@ -368,6 +368,7 @@ KeyPatternPair *_PyPegen_key_pattern_pair(Parser *, expr_ty, pattern_ty);
 asdl_expr_seq *_PyPegen_get_pattern_keys(Parser *, asdl_seq *);
 asdl_pattern_seq *_PyPegen_get_patterns(Parser *, asdl_seq *);
 NameDefaultPair *_PyPegen_name_default_pair(Parser *, arg_ty, expr_ty, Token *);
+NameDefaultPair *_PyPegen_late_default_pair(Parser *, arg_ty, expr_ty, Token *);
 SlashWithDefault *_PyPegen_slash_with_default(Parser *, asdl_arg_seq *, asdl_seq *);
 StarEtc *_PyPegen_star_etc(Parser *, arg_ty, asdl_seq *, arg_ty);
 arguments_ty _PyPegen_make_arguments(Parser *, asdl_arg_seq *, SlashWithDefault *,

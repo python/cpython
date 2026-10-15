@@ -116,7 +116,7 @@ module Python
     arguments = (arg* posonlyargs, arg* args, arg? vararg, arg* kwonlyargs,
                  expr?* kw_defaults, arg? kwarg, expr* defaults)
 
-    arg = (identifier arg, expr? annotation, string? type_comment)
+    arg = (identifier arg, expr? annotation, string? type_comment, string? late_default)
            attributes (int lineno, int col_offset, int? end_lineno, int? end_col_offset)
 
     -- keyword arguments supplied to call (NULL identifier for **kwargs)

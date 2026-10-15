@@ -412,6 +412,8 @@ const size_t _Py_FunctionAttributeOffsets[] = {
     [MAKE_FUNCTION_KWDEFAULTS] = offsetof(PyFunctionObject, func_kwdefaults),
     [MAKE_FUNCTION_DEFAULTS] = offsetof(PyFunctionObject, func_defaults),
     [MAKE_FUNCTION_ANNOTATE] = offsetof(PyFunctionObject, func_annotate),
+    [MAKE_FUNCTION_DEFAULTS_EXTRA] = offsetof(PyFunctionObject, func_defaults_extra),
+    [MAKE_FUNCTION_KWDEFAULTS_EXTRA] = offsetof(PyFunctionObject, func_kwdefaults_extra),
 };
 
 // PEP 634: Structural Pattern Matching
@@ -1973,6 +1975,12 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
             for (; i < defcount; i++) {
                 if (PyStackRef_AsPyObjectBorrow(localsplus[m+i]) == NULL) {
                     PyObject *def = defs[i];
+                    if ((co->co_flags & CO_LATE_DEFAULTS) && def == Py_Ellipsis
+                        && func->func_defaults_extra != NULL
+                        && i < PyTuple_GET_SIZE(func->func_defaults_extra)
+                        && PyTuple_GET_ITEM(func->func_defaults_extra, i) != Py_None) {
+                        continue;
+                    }
                     localsplus[m+i] = PyStackRef_FromPyObjectNew(def);
                 }
             }
@@ -1981,7 +1989,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
 
     /* Add missing keyword arguments (copy default values from kwdefs) */
     if (co->co_kwonlyargcount > 0) {
-        Py_ssize_t missing = 0;
+        PyObject *missing_names = NULL;
         for (i = co->co_argcount; i < total_args; i++) {
             if (PyStackRef_AsPyObjectBorrow(localsplus[i]) != NULL)
                 continue;
@@ -1989,18 +1997,54 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
             if (func->func_kwdefaults != NULL) {
                 PyObject *def;
                 if (PyDict_GetItemRef(func->func_kwdefaults, varname, &def) < 0) {
+                    Py_XDECREF(missing_names);
                     goto fail_post_args;
                 }
                 if (def) {
+                    if ((co->co_flags & CO_LATE_DEFAULTS) && def == Py_Ellipsis
+                        && func->func_kwdefaults_extra != NULL) {
+                        PyObject *extra;
+                        if (PyDict_GetItemRef(func->func_kwdefaults_extra, varname, &extra) < 0) {
+                            Py_DECREF(def);
+                            Py_XDECREF(missing_names);
+                            goto fail_post_args;
+                        }
+                        if (extra != NULL && extra != Py_None) {
+                            Py_DECREF(extra);
+                            Py_DECREF(def);
+                            continue;
+                        }
+                        Py_XDECREF(extra);
+                    }
                     localsplus[i] = PyStackRef_FromPyObjectSteal(def);
                     continue;
                 }
             }
-            missing++;
+            /* Record required names while binding. Re-reading a mutable
+               defaults dict later could disagree with which arguments were
+               omitted, and late defaults intentionally leave a NULL local. */
+            if (missing_names == NULL) {
+                missing_names = PyList_New(0);
+                if (missing_names == NULL) {
+                    goto fail_post_args;
+                }
+            }
+            PyObject *name = PyObject_Repr(varname);
+            if (name == NULL) {
+                Py_DECREF(missing_names);
+                goto fail_post_args;
+            }
+            int err = PyList_Append(missing_names, name);
+            Py_DECREF(name);
+            if (err < 0) {
+                Py_DECREF(missing_names);
+                goto fail_post_args;
+            }
         }
-        if (missing) {
-            missing_arguments(tstate, co, missing, -1, localsplus,
-                              func->func_qualname);
+        if (missing_names != NULL) {
+            format_missing(tstate, "keyword-only", co, missing_names,
+                           func->func_qualname);
+            Py_DECREF(missing_names);
             goto fail_post_args;
         }
     }

@@ -2363,6 +2363,8 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
                                   format=annotation_format)
     defaults = func.__defaults__
     kwdefaults = func.__kwdefaults__
+    defaults_extra = getattr(func, "__defaults_extra__", None) or ()
+    kwdefaults_extra = getattr(func, "__kwdefaults_extra__", None) or {}
 
     if defaults:
         pos_default_count = len(defaults)
@@ -2387,9 +2389,10 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
     for offset, name in enumerate(positional[non_default_count:]):
         kind = _POSITIONAL_ONLY if posonly_left else _POSITIONAL_OR_KEYWORD
         annotation = annotations.get(name, _empty)
+        extra = defaults_extra[offset] if offset < len(defaults_extra) else None
+        options = {'late_default': extra} if extra is not None else {}
         parameters.append(Parameter(name, annotation=annotation,
-                                    kind=kind,
-                                    default=defaults[offset]))
+                                    kind=kind, default=defaults[offset], **options))
         if posonly_left:
             posonly_left -= 1
 
@@ -2407,9 +2410,10 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
             default = kwdefaults.get(name, _empty)
 
         annotation = annotations.get(name, _empty)
+        extra = kwdefaults_extra.get(name)
+        options = {'late_default': extra} if extra is not None else {}
         parameters.append(Parameter(name, annotation=annotation,
-                                    kind=_KEYWORD_ONLY,
-                                    default=default))
+                                    kind=_KEYWORD_ONLY, default=default, **options))
     # **kwargs
     if func_code.co_flags & CO_VARKEYWORDS:
         index = pos_count + keyword_only_count
@@ -2683,6 +2687,9 @@ class Parameter:
         The default value for the parameter if specified.  If the
         parameter has no default value, this attribute is set to
         `Parameter.empty`.
+    * late_default : str | None
+        The source expression for a late-bound default, or None for an
+        early-bound default or a required parameter.
     * annotation
         The annotation for the parameter if specified.  If the
         parameter has no annotation, this attribute is set to
@@ -2695,7 +2702,7 @@ class Parameter:
         Every value has a `description` attribute describing meaning.
     """
 
-    __slots__ = ('_name', '_kind', '_default', '_annotation')
+    __slots__ = ('_name', '_kind', '_default', '_annotation', '_late_default')
 
     POSITIONAL_ONLY         = _POSITIONAL_ONLY
     POSITIONAL_OR_KEYWORD   = _POSITIONAL_OR_KEYWORD
@@ -2705,7 +2712,8 @@ class Parameter:
 
     empty = _empty
 
-    def __init__(self, name, kind, *, default=_empty, annotation=_empty):
+    def __init__(self, name, kind, *, default=_empty, annotation=_empty,
+                 late_default=None):
         try:
             self._kind = _ParameterKind(kind)
         except ValueError:
@@ -2715,6 +2723,7 @@ class Parameter:
                 msg = '{} parameters cannot have default values'
                 msg = msg.format(self._kind.description)
                 raise ValueError(msg)
+        self._late_default = late_default
         self._default = default
         self._annotation = annotation
 
@@ -2749,13 +2758,16 @@ class Parameter:
         self._name = name
 
     @classmethod
-    def _from_code(cls, name, kind, *, default=_empty, annotation=_empty):
+    def _from_code(cls, name, kind, *, default=_empty, annotation=_empty,
+                   late_default=None):
         # Fast path for Python functions: only the name needs validation.
         if iskeyword(name) or not name.isidentifier():
-            return cls(name, kind, default=default, annotation=annotation)
+            options = {'late_default': late_default} if late_default is not None else {}
+            return cls(name, kind, default=default, annotation=annotation, **options)
         self = object.__new__(cls)
         self._name = name
         self._kind = kind
+        self._late_default = late_default
         self._default = default
         self._annotation = annotation
         return self
@@ -2763,10 +2775,11 @@ class Parameter:
     def __reduce__(self):
         return (type(self),
                 (self._name, self._kind),
-                {'_default': self._default,
+                {'_default': self._default, '_late_default': self._late_default,
                  '_annotation': self._annotation})
 
     def __setstate__(self, state):
+        self._late_default = state.get('_late_default')
         self._default = state['_default']
         self._annotation = state['_annotation']
 
@@ -2779,6 +2792,11 @@ class Parameter:
         return self._default
 
     @property
+    def late_default(self):
+        """Source expression for a late-bound default, or None."""
+        return self._late_default
+
+    @property
     def annotation(self):
         return self._annotation
 
@@ -2787,7 +2805,7 @@ class Parameter:
         return self._kind
 
     def replace(self, *, name=_void, kind=_void,
-                annotation=_void, default=_void):
+                annotation=_void, default=_void, late_default=_void):
         """Creates a customized copy of the Parameter."""
 
         if name is _void:
@@ -2802,7 +2820,11 @@ class Parameter:
         if default is _void:
             default = self._default
 
-        return type(self)(name, kind, default=default, annotation=annotation)
+        if late_default is _void:
+            late_default = self._late_default
+
+        options = {'late_default': late_default} if late_default is not None else {}
+        return type(self)(name, kind, default=default, annotation=annotation, **options)
 
     def __str__(self):
         return self._format()
@@ -2817,7 +2839,9 @@ class Parameter:
                                           quote_annotation_strings=quote_annotation_strings)
             formatted = '{}: {}'.format(formatted, annotation)
 
-        if self._default is not _empty:
+        if self._late_default is not None and self._default is Ellipsis:
+            formatted += f"=>{self._late_default}"
+        elif self._default is not _empty:
             if self._annotation is not _empty:
                 formatted = '{} = {}'.format(formatted, repr(self._default))
             else:
@@ -2836,7 +2860,7 @@ class Parameter:
         return '<{} "{}">'.format(self.__class__.__name__, self)
 
     def __hash__(self):
-        return hash((self._name, self._kind, self._annotation, self._default))
+        return hash((self._name, self._kind, self._annotation, self._default, self._late_default))
 
     def __eq__(self, other):
         if self is other:
@@ -2846,7 +2870,8 @@ class Parameter:
         return (self._name == other._name and
                 self._kind == other._kind and
                 self._default == other._default and
-                self._annotation == other._annotation)
+                self._annotation == other._annotation and
+                self._late_default == other._late_default)
 
 
 class BoundArguments:

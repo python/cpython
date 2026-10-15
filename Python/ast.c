@@ -150,6 +150,29 @@ validate_arguments(arguments_ty args)
                         "kw_defaults on arguments");
         return 0;
     }
+    Py_ssize_t nposonly = asdl_seq_LEN(args->posonlyargs);
+    Py_ssize_t npos = nposonly + asdl_seq_LEN(args->args);
+    Py_ssize_t first_default = npos - asdl_seq_LEN(args->defaults);
+    for (Py_ssize_t i = 0; i < npos; i++) {
+        arg_ty arg = i < nposonly ? asdl_seq_GET(args->posonlyargs, i)
+            : asdl_seq_GET(args->args, i - nposonly);
+        if (arg->late_default && i < first_default) {
+            PyErr_SetString(PyExc_ValueError, "late-bound parameter has no default");
+            return 0;
+        }
+    }
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(args->kwonlyargs); i++) {
+        if (asdl_seq_GET(args->kwonlyargs, i)->late_default
+            && asdl_seq_GET(args->kw_defaults, i) == NULL) {
+            PyErr_SetString(PyExc_ValueError, "late-bound parameter has no default");
+            return 0;
+        }
+    }
+    if ((args->vararg && args->vararg->late_default)
+        || (args->kwarg && args->kwarg->late_default)) {
+        PyErr_SetString(PyExc_ValueError, "variadic parameter cannot have a late default");
+        return 0;
+    }
     return validate_exprs(args->defaults, Load, 0) && validate_exprs(args->kw_defaults, Load, 1);
 }
 

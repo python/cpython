@@ -414,6 +414,10 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 1;
         case PUSH_NULL:
             return 0;
+        case QUERY_DEREF:
+            return 0;
+        case QUERY_FAST:
+            return 0;
         case RAISE_VARARGS:
             return oparg;
         case RERAISE:
@@ -909,6 +913,10 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 2;
         case PUSH_NULL:
             return 1;
+        case QUERY_DEREF:
+            return 1;
+        case QUERY_FAST:
+            return 1;
         case RAISE_VARARGS:
             return 0;
         case RERAISE:
@@ -1282,6 +1290,8 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
     [POP_TOP] = { true, INSTR_FMT_IX, HAS_ESCAPES_FLAG | HAS_PURE_FLAG },
     [PUSH_EXC_INFO] = { true, INSTR_FMT_IX, 0 },
     [PUSH_NULL] = { true, INSTR_FMT_IX, HAS_PURE_FLAG },
+    [QUERY_DEREF] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_FREE_FLAG | HAS_ESCAPES_FLAG },
+    [QUERY_FAST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_PURE_FLAG },
     [RAISE_VARARGS] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG },
     [RERAISE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [RESERVED] = { true, INSTR_FMT_IX, 0 },
@@ -1504,6 +1514,8 @@ _PyOpcode_macro_expansion[256] = {
     [POP_TOP] = { .nuops = 1, .uops = { { _POP_TOP, OPARG_SIMPLE, 0 } } },
     [PUSH_EXC_INFO] = { .nuops = 1, .uops = { { _PUSH_EXC_INFO, OPARG_SIMPLE, 0 } } },
     [PUSH_NULL] = { .nuops = 1, .uops = { { _PUSH_NULL, OPARG_SIMPLE, 0 } } },
+    [QUERY_DEREF] = { .nuops = 1, .uops = { { _QUERY_DEREF, OPARG_SIMPLE, 0 } } },
+    [QUERY_FAST] = { .nuops = 1, .uops = { { _QUERY_FAST, OPARG_SIMPLE, 0 } } },
     [RESUME_CHECK] = { .nuops = 1, .uops = { { _RESUME_CHECK, OPARG_SIMPLE, 1 } } },
     [RETURN_GENERATOR] = { .nuops = 1, .uops = { { _RETURN_GENERATOR, OPARG_SIMPLE, 0 } } },
     [RETURN_VALUE] = { .nuops = 2, .uops = { { _MAKE_HEAP_SAFE, OPARG_SIMPLE, 0 }, { _RETURN_VALUE, OPARG_SIMPLE, 0 } } },
@@ -1741,6 +1753,8 @@ const char *_PyOpcode_OpName[267] = {
     [POP_TOP] = "POP_TOP",
     [PUSH_EXC_INFO] = "PUSH_EXC_INFO",
     [PUSH_NULL] = "PUSH_NULL",
+    [QUERY_DEREF] = "QUERY_DEREF",
+    [QUERY_FAST] = "QUERY_FAST",
     [RAISE_VARARGS] = "RAISE_VARARGS",
     [RERAISE] = "RERAISE",
     [RESERVED] = "RESERVED",
@@ -1828,8 +1842,6 @@ const uint8_t _PyOpcode_Caches[256] = {
 PyAPI_DATA(const uint8_t) _PyOpcode_Deopt[256];
 #ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Deopt[256] = {
-    [117] = 117,
-    [118] = 118,
     [119] = 119,
     [120] = 120,
     [121] = 121,
@@ -2035,6 +2047,8 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [POP_TOP] = POP_TOP,
     [PUSH_EXC_INFO] = PUSH_EXC_INFO,
     [PUSH_NULL] = PUSH_NULL,
+    [QUERY_DEREF] = QUERY_DEREF,
+    [QUERY_FAST] = QUERY_FAST,
     [RAISE_VARARGS] = RAISE_VARARGS,
     [RERAISE] = RERAISE,
     [RESERVED] = RESERVED,
@@ -2089,8 +2103,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif // NEED_OPCODE_METADATA
 
 #define EXTRA_CASES \
-    case 117: \
-    case 118: \
     case 119: \
     case 120: \
     case 121: \

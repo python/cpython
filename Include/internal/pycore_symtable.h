@@ -126,6 +126,7 @@ typedef struct _symtable_entry {
     unsigned ste_comp_iter_target : 1; /* true if visiting comprehension target */
     unsigned ste_can_see_class_scope : 1; /* true if this block can see names bound in an
                                              enclosing class scope */
+    unsigned ste_has_late_defaults : 1; /* parameters initialized at call time */
     unsigned ste_has_docstring : 1; /* true if docstring present */
     unsigned ste_method : 1; /* true if block is a function block defined in class scope */
     unsigned ste_has_conditional_annotations : 1; /* true if block has conditionally executed annotations */
