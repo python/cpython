@@ -128,9 +128,9 @@ HAS_GIT=no-repository
 fi
 if test $HAS_GIT = found
 then
-    GITVERSION="git --git-dir \$(srcdir)/.git rev-parse --short HEAD"
-    GITTAG="git --git-dir \$(srcdir)/.git describe --all --always --dirty"
-    GITBRANCH="git --git-dir \$(srcdir)/.git name-rev --name-only HEAD"
+    GITVERSION="git --git-dir \$(srcdir)/.git --work-tree \$(srcdir) rev-parse --short HEAD"
+    GITTAG="git --git-dir \$(srcdir)/.git --work-tree \$(srcdir) describe --all --always --dirty"
+    GITBRANCH="git --git-dir \$(srcdir)/.git --work-tree \$(srcdir) name-rev --name-only HEAD"
 else
     GITVERSION=""
     GITTAG=""
@@ -439,7 +439,7 @@ if test -z "$AR"; then
 		aarch64-apple-ios*)           AR=arm64-apple-ios-ar ;;
 		x86_64-apple-ios*-simulator)  AR=x86_64-apple-ios-simulator-ar ;;
 		*)
-	esac
+    esac
 fi
 if test -z "$CC"; then
 	case "$host" in
@@ -1146,7 +1146,7 @@ AC_CACHE_CHECK([for GCC compatible compiler],
                [ac_cv_gcc_compat=yes],
                [ac_cv_gcc_compat=no])])
 
-AC_SUBST([CXX])
+AC_ARG_VAR([CXX], [C++ compiler command])
 
 preset_cxx="$CXX"
 if test -z "$CXX"
@@ -2443,7 +2443,7 @@ AS_CASE([$ac_sys_system],
     dnl Include file system support
     AS_VAR_APPEND([LINKFORSHARED], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY,ERRNO_CODES"])
-    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,_PyGILState_GetThisThreadState,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,_PyGILState_GetThisThreadState"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sSTACK_SIZE=5MB"])
     dnl Avoid bugs in JS fallback string decoding path
     AS_VAR_APPEND([LINKFORSHARED], [" -sTEXTDECODER=2"])
@@ -3526,8 +3526,29 @@ AC_ARG_WITH([address_sanitizer],
 AC_MSG_RESULT([$withval])
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=address $LDFLAGS"
-# ASan works by controlling memory allocation, our own malloc interferes.
-with_pymalloc="no"
+],
+[AC_MSG_RESULT([no])])
+
+AC_MSG_CHECKING([for --with-hwaddress-sanitizer])
+AC_ARG_WITH(
+  [hwaddress_sanitizer],
+  [AS_HELP_STRING(
+    [--with-hwaddress-sanitizer],
+    [enable HWAddressSanitizer memory error detector, 'hwasan' (default is no)]
+  )],
+[
+AC_MSG_RESULT([$withval])
+hwasan_flags="-fsanitize=hwaddress"
+# x86-64 lacks address tagging, so HWASan needs the page aliasing mode there.
+# See gh-156049 and
+# https://clang.llvm.org/docs/HardwareAssistedAddressSanitizerDesign.html#supported-architectures
+AS_CASE([$host_cpu],
+  [x86_64|amd64], [hwasan_flags="$hwasan_flags -fsanitize-hwaddress-experimental-aliasing"]
+)
+AX_CHECK_COMPILE_FLAG([$hwasan_flags],[
+BASECFLAGS="$hwasan_flags -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="$hwasan_flags $LDFLAGS"
+],[AC_MSG_ERROR([The selected compiler doesn't support hardware address sanitizer])])
 ],
 [AC_MSG_RESULT([no])])
 
@@ -3544,8 +3565,6 @@ AX_CHECK_COMPILE_FLAG([-fsanitize=memory],[
 BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
 ],[AC_MSG_ERROR([The selected compiler doesn't support memory sanitizer])])
-# MSan works by controlling memory allocation, our own malloc interferes.
-with_pymalloc="no"
 ],
 [AC_MSG_RESULT([no])])
 
@@ -5443,11 +5462,17 @@ PLATFORM_OBJS=
 
 AS_CASE([$ac_sys_system],
   [Emscripten], [
-    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_trampoline_wasm.o'])
+    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o Python/wasm_trampoline.o'])
+    AS_VAR_APPEND([CFLAGS_NODIST], [" -mgc"])
+
     AS_VAR_IF([enable_emscripten_syscalls], [yes], [
       AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_syscalls.o'])
     ])
-    AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'])
+    AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h'])
+  ],
+  [WASI], [
+    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/wasm_trampoline.o'])
+    AS_VAR_APPEND([CFLAGS_NODIST], [" -mgc"])
   ],
 )
 AC_SUBST([PLATFORM_HEADERS])
@@ -5559,6 +5584,10 @@ AC_CHECK_FUNCS([ \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
 ])
 
+PY_CHECK_FUNC_PRIVATE([freadlink], [@%:@include <unistd.h>])
+PY_CHECK_FUNC_PRIVATE([strerror_r], [@%:@include <string.h>])
+
+
 # os.statx uses Linux's statx function.  AIX also has a function named statx,
 # but it's unrelated.  Check only on Linux (including Android).
 AS_CASE([$ac_sys_system],
@@ -5576,9 +5605,24 @@ fi
 # found by configure), but either raise a compilation error (because the
 # header definition prevents usage - autoconf doesn't use the headers), or
 # raise an error if used at runtime. Force these symbols off.
-if test "$ac_sys_system" != "iOS" ; then
-  AC_CHECK_FUNCS([dup3 getentropy getgroups pipe2 system])
-fi
+# In particular, dup3 and pipe2 are available as of iOS 27 but were
+# incorrectly detected in older simulator versions.
+case "$ac_sys_system" in
+    iOS)
+        AC_MSG_CHECKING([if iOS SDK is older than 27])
+        ios_sdk_version=$(xcrun --sdk iphoneos --show-sdk-version 2>/dev/null | cut -d. -f1)
+        if test -n "$ios_sdk_version" && test "$ios_sdk_version" -ge 27; then
+            AC_MSG_RESULT([no])
+            AC_CHECK_FUNCS([dup3 pipe2])
+        else
+            AC_MSG_RESULT([yes])
+        fi
+        ;;
+    *)
+        # not iOS
+        AC_CHECK_FUNCS([dup3 getentropy getgroups pipe2 system])
+        ;;
+esac
 
 AC_CHECK_DECL([dirfd],
               [AC_DEFINE([HAVE_DIRFD], [1],

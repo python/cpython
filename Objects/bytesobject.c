@@ -652,6 +652,9 @@ format_obj(PyObject *v, Py_ssize_t argidx, PyObject *key,
         *plen = PyBytes_GET_SIZE(result);
         return result;
     }
+    else if (PyErr_Occurred()) {
+        return NULL;
+    }
     /* does it support buffer protocol? */
     if (PyObject_CheckBuffer(v)) {
         /* maybe we can avoid making a copy of the buffer object here? */

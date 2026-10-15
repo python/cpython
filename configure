@@ -1122,6 +1122,7 @@ with_frame_pointers
 enable_experimental_jit
 with_dsymutil
 with_address_sanitizer
+with_hwaddress_sanitizer
 with_memory_sanitizer
 with_undefined_behavior_sanitizer
 with_thread_sanitizer
@@ -1174,6 +1175,7 @@ LDFLAGS
 LIBS
 CPPFLAGS
 CPP
+CXX
 PROFILE_TASK
 BOLT_COMMON_FLAGS
 BOLT_INSTRUMENT_FLAGS
@@ -1930,6 +1932,9 @@ Optional Packages:
   --with-address-sanitizer
                           enable AddressSanitizer memory error detector,
                           'asan' (default is no)
+  --with-hwaddress-sanitizer
+                          enable HWAddressSanitizer memory error detector,
+                          'hwasan' (default is no)
   --with-memory-sanitizer enable MemorySanitizer allocation error detector,
                           'msan' (default is no)
   --with-undefined-behavior-sanitizer
@@ -2029,6 +2034,7 @@ Some influential environment variables:
   CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> if
               you have headers in a nonstandard directory <include dir>
   CPP         C preprocessor
+  CXX         C++ compiler command
   PROFILE_TASK
               Python args for PGO generation task
   BOLT_COMMON_FLAGS
@@ -3688,9 +3694,9 @@ HAS_GIT=no-repository
 fi
 if test $HAS_GIT = found
 then
-    GITVERSION="git --git-dir \$(srcdir)/.git rev-parse --short HEAD"
-    GITTAG="git --git-dir \$(srcdir)/.git describe --all --always --dirty"
-    GITBRANCH="git --git-dir \$(srcdir)/.git name-rev --name-only HEAD"
+    GITVERSION="git --git-dir \$(srcdir)/.git --work-tree \$(srcdir) rev-parse --short HEAD"
+    GITTAG="git --git-dir \$(srcdir)/.git --work-tree \$(srcdir) describe --all --always --dirty"
+    GITBRANCH="git --git-dir \$(srcdir)/.git --work-tree \$(srcdir) name-rev --name-only HEAD"
 else
     GITVERSION=""
     GITTAG=""
@@ -4282,7 +4288,7 @@ if test -z "$AR"; then
 		aarch64-apple-ios*)           AR=arm64-apple-ios-ar ;;
 		x86_64-apple-ios*-simulator)  AR=x86_64-apple-ios-simulator-ar ;;
 		*)
-	esac
+    esac
 fi
 if test -z "$CC"; then
 	case "$host" in
@@ -9970,7 +9976,7 @@ fi
 
         as_fn_append LINKFORSHARED " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
     as_fn_append LINKFORSHARED " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY,ERRNO_CODES"
-    as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,_PyGILState_GetThisThreadState,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"
+    as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,_PyGILState_GetThisThreadState"
     as_fn_append LINKFORSHARED " -sSTACK_SIZE=5MB"
         as_fn_append LINKFORSHARED " -sTEXTDECODER=2"
 
@@ -14147,8 +14153,80 @@ then :
 printf "%s\n" "$withval" >&6; }
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=address $LDFLAGS"
-# ASan works by controlling memory allocation, our own malloc interferes.
-with_pymalloc="no"
+
+else case e in #(
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; } ;;
+esac
+fi
+
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-hwaddress-sanitizer" >&5
+printf %s "checking for --with-hwaddress-sanitizer... " >&6; }
+
+# Check whether --with-hwaddress_sanitizer was given.
+if test ${with_hwaddress_sanitizer+y}
+then :
+  withval=$with_hwaddress_sanitizer;
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
+printf "%s\n" "$withval" >&6; }
+hwasan_flags="-fsanitize=hwaddress"
+# x86-64 lacks address tagging, so HWASan needs the page aliasing mode there.
+# See gh-156049 and
+# https://clang.llvm.org/docs/HardwareAssistedAddressSanitizerDesign.html#supported-architectures
+case $host_cpu in #(
+  x86_64|amd64) :
+    hwasan_flags="$hwasan_flags -fsanitize-hwaddress-experimental-aliasing"
+ ;; #(
+  *) :
+     ;;
+esac
+as_CACHEVAR=`printf "%s\n" "ax_cv_check_cflags__$hwasan_flags" | sed "$as_sed_sh"`
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts $hwasan_flags" >&5
+printf %s "checking whether C compiler accepts $hwasan_flags... " >&6; }
+if eval test \${$as_CACHEVAR+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  $hwasan_flags"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  eval "$as_CACHEVAR=yes"
+else case e in #(
+  e) eval "$as_CACHEVAR=no" ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags ;;
+esac
+fi
+eval ac_res=\$$as_CACHEVAR
+	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+printf "%s\n" "$ac_res" >&6; }
+if eval test \"x\$"$as_CACHEVAR"\" = x"yes"
+then :
+
+BASECFLAGS="$hwasan_flags -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="$hwasan_flags $LDFLAGS"
+
+else case e in #(
+  e) as_fn_error $? "The selected compiler doesn't support hardware address sanitizer" "$LINENO" 5 ;;
+esac
+fi
+
 
 else case e in #(
   e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -14210,8 +14288,6 @@ else case e in #(
 esac
 fi
 
-# MSan works by controlling memory allocation, our own malloc interferes.
-with_pymalloc="no"
 
 else case e in #(
   e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -20303,14 +20379,21 @@ PLATFORM_OBJS=
 case $ac_sys_system in #(
   Emscripten) :
 
-    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_trampoline_wasm.o'
+    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/wasm_trampoline.o'
+    as_fn_append CFLAGS_NODIST " -mgc"
+
     if test "x$enable_emscripten_syscalls" = xyes
 then :
 
       as_fn_append PLATFORM_OBJS ' Python/emscripten_syscalls.o'
 
 fi
-    as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'
+    as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_signal.h'
+   ;; #(
+  WASI) :
+
+    as_fn_append PLATFORM_OBJS ' Python/wasm_trampoline.o'
+    as_fn_append CFLAGS_NODIST " -mgc"
    ;; #(
   *) :
      ;;
@@ -21647,6 +21730,92 @@ then :
 fi
 
 
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for freadlink" >&5
+printf %s "checking for freadlink... " >&6; }
+if test ${ac_cv_func_freadlink+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <unistd.h>
+int
+main (void)
+{
+void *x=freadlink
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_freadlink=yes
+else case e in #(
+  e) ac_cv_func_freadlink=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_freadlink" >&5
+printf "%s\n" "$ac_cv_func_freadlink" >&6; }
+  if test "x$ac_cv_func_freadlink" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_FREADLINK 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for strerror_r" >&5
+printf %s "checking for strerror_r... " >&6; }
+if test ${ac_cv_func_strerror_r+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <string.h>
+int
+main (void)
+{
+void *x=strerror_r
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_strerror_r=yes
+else case e in #(
+  e) ac_cv_func_strerror_r=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_strerror_r" >&5
+printf "%s\n" "$ac_cv_func_strerror_r" >&6; }
+  if test "x$ac_cv_func_strerror_r" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_STRERROR_R 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
 # os.statx uses Linux's statx function.  AIX also has a function named statx,
 # but it's unrelated.  Check only on Linux (including Android).
 case $ac_sys_system in #(
@@ -21680,8 +21849,37 @@ fi
 # found by configure), but either raise a compilation error (because the
 # header definition prevents usage - autoconf doesn't use the headers), or
 # raise an error if used at runtime. Force these symbols off.
-if test "$ac_sys_system" != "iOS" ; then
-  ac_fn_c_check_func "$LINENO" "dup3" "ac_cv_func_dup3"
+# In particular, dup3 and pipe2 are available as of iOS 27 but were
+# incorrectly detected in older simulator versions.
+case "$ac_sys_system" in
+    iOS)
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if iOS SDK is older than 27" >&5
+printf %s "checking if iOS SDK is older than 27... " >&6; }
+        ios_sdk_version=$(xcrun --sdk iphoneos --show-sdk-version 2>/dev/null | cut -d. -f1)
+        if test -n "$ios_sdk_version" && test "$ios_sdk_version" -ge 27; then
+            { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+            ac_fn_c_check_func "$LINENO" "dup3" "ac_cv_func_dup3"
+if test "x$ac_cv_func_dup3" = xyes
+then :
+  printf "%s\n" "#define HAVE_DUP3 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "pipe2" "ac_cv_func_pipe2"
+if test "x$ac_cv_func_pipe2" = xyes
+then :
+  printf "%s\n" "#define HAVE_PIPE2 1" >>confdefs.h
+
+fi
+
+        else
+            { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+        fi
+        ;;
+    *)
+        # not iOS
+        ac_fn_c_check_func "$LINENO" "dup3" "ac_cv_func_dup3"
 if test "x$ac_cv_func_dup3" = xyes
 then :
   printf "%s\n" "#define HAVE_DUP3 1" >>confdefs.h
@@ -21712,7 +21910,8 @@ then :
 
 fi
 
-fi
+        ;;
+esac
 
 ac_fn_check_decl "$LINENO" "dirfd" "ac_cv_have_decl_dirfd" "#include <sys/types.h>
                #include <dirent.h>
