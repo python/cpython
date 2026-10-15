@@ -1290,7 +1290,8 @@ Security Options
 .. option:: --enable-slower-safety
 
    Enable compiler options that are `recommended by OpenSSF`_ for security reasons which require overhead.
-   This option is disabled by default.
+   If this option is not enabled, CPython will not be built with safety compiler options that have a performance impact.
+   When this option is enabled, CPython will be built with the compiler options listed below.
 
    The following compiler options are enabled with :option:`!--enable-slower-safety`:
 
