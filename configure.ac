@@ -2590,7 +2590,7 @@ AS_VAR_IF([with_strict_overflow], [yes],
           [BASECFLAGS="$BASECFLAGS $NO_STRICT_OVERFLOW_CFLAGS"])
 
 # Enable flags that warn and protect for potential security vulnerabilities.
-# These flags should be enabled by default for all builds.
+# These flags are opt-in to avoid additional compiler warnings.
 
 AC_MSG_CHECKING([for --enable-safety])
 AC_ARG_ENABLE([safety],
@@ -2598,7 +2598,7 @@ AC_ARG_ENABLE([safety],
   [AS_CASE([$enableval],
     [yes|no], [enable_safety=$enableval],
     [AC_MSG_ERROR([invalid --enable-safety option: expected "yes" or "no"])])],
-  [enable_safety=yes])
+  [enable_safety=no])
 AC_MSG_RESULT([$enable_safety])
 
 if test "$enable_safety" = "yes"

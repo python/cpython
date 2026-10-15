@@ -10154,7 +10154,7 @@ esac
 fi
 
 # Enable flags that warn and protect for potential security vulnerabilities.
-# These flags should be enabled by default for all builds.
+# These flags are opt-in to avoid additional compiler warnings.
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-safety" >&5
 printf %s "checking for --enable-safety... " >&6; }
@@ -10168,7 +10168,7 @@ then :
     as_fn_error $? "invalid --enable-safety option: expected \"yes\" or \"no\"" "$LINENO" 5 ;;
 esac
 else case e in #(
-  e) enable_safety=yes ;;
+  e) enable_safety=no ;;
 esac
 fi
 

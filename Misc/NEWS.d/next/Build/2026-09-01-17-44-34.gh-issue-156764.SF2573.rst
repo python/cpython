@@ -1,2 +1,2 @@
-Fix the default handling of the ``safety`` configure option and the
-``--disable-*`` handling of the ``safety`` and ``slower-safety`` options.
+Honor ``--disable-safety`` and ``--disable-slower-safety`` without enabling
+their compiler options. Both options remain disabled by default.
