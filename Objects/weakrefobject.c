@@ -7,6 +7,14 @@
 #include "pycore_pystate.h"
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
+#include "clinic/weakrefobject.c.h"
+
+/*[clinic input]
+module weakref
+class weakref.ref "PyWeakReference *" "&_PyWeakref_RefType"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ddbc2579691f1260]*/
+
 #ifdef Py_GIL_DISABLED
 /*
  * Thread-safety for free-threaded builds
@@ -459,21 +467,21 @@ get_or_create_weakref(PyTypeObject *type, PyObject *obj, PyObject *callback)
     }
 }
 
-static int
-parse_weakref_init_args(const char *funcname, PyObject *args, PyObject *kwargs,
-                        PyObject **obp, PyObject **callbackp)
-{
-    return PyArg_UnpackTuple(args, funcname, 1, 2, obp, callbackp);
-}
+/*[clinic input]
+@classmethod
+@vectorcall
+weakref.ref.__new__ as weakref_ref_new
+
+    ob: object
+    callback: object(c_default="NULL") = None
+    /
+[clinic start generated code]*/
 
 static PyObject *
-weakref___new__(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+weakref_ref_new_impl(PyTypeObject *type, PyObject *ob, PyObject *callback)
+/*[clinic end generated code: output=689332971ea485ce input=0b15234862919541]*/
 {
-    PyObject *ob, *callback = NULL;
-    if (parse_weakref_init_args("__new__", args, kwargs, &ob, &callback)) {
-        return (PyObject *)get_or_create_weakref(type, ob, callback);
-    }
-    return NULL;
+    return (PyObject *)get_or_create_weakref(type, ob, callback);
 }
 
 static int
@@ -484,7 +492,7 @@ weakref___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     if (!_PyArg_NoKeywords("ref", kwargs))
         return -1;
 
-    if (parse_weakref_init_args("__init__", args, kwargs, &tmp, &tmp))
+    if (PyArg_UnpackTuple(args, "__init__", 1, 2, &tmp, &tmp))
         return 0;
     else
         return -1;
@@ -522,8 +530,9 @@ _PyWeakref_RefType = {
     .tp_members = weakref_members,
     .tp_init = weakref___init__,
     .tp_alloc = PyType_GenericAlloc,
-    .tp_new = weakref___new__,
+    .tp_new = weakref_ref_new,
     .tp_free = PyObject_GC_Del,
+    .tp_vectorcall = weakref_ref_vectorcall,
 };
 
 
