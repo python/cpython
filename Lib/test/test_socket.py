@@ -608,8 +608,23 @@ class ThreadedVSOCKSocketStreamTest(unittest.TestCase, ThreadableTest):
             else:
                 raise
         self.serv.listen()
-        self.serverExplicitReady()
         self.serv.settimeout(support.LOOPBACK_TIMEOUT)
+        # gh-158883: The local CID can be known even if no transport is able
+        # to deliver a connection to it.  Check that before the client thread
+        # is released: once it is, a failing connect() leaves accept() below
+        # waiting for the timeout.
+        with socket.socket(socket.AF_VSOCK, socket.SOCK_STREAM) as probe:
+            probe.settimeout(support.LOOPBACK_TIMEOUT)
+            try:
+                probe.connect((cid, VSOCKPORT))
+            except OSError as exc:
+                if exc.errno == errno.ENODEV:
+                    self.skipTest(f"connect() failed with {exc!r}")
+                else:
+                    raise
+            conn, _ = self.serv.accept()
+        conn.close()
+        self.serverExplicitReady()
         self.conn, self.connaddr = self.serv.accept()
         self.addCleanup(self.conn.close)
 

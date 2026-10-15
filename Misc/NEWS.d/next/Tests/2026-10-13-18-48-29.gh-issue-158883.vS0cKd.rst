@@ -1,0 +1,3 @@
+Skip ``test_socket.ThreadedVSOCKSocketStreamTest`` when connecting to the
+local ``AF_VSOCK`` address fails with :data:`~errno.ENODEV`, instead of
+failing with a timeout.
