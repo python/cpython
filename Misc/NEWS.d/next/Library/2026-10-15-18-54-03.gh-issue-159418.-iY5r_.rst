@@ -1,0 +1,4 @@
+Fix :mod:`multiprocessing` ``forkserver`` child processes exiting with a
+:exc:`TypeError` when :data:`~signal.SIGINT` had a handler installed outside
+of Python, for example by a native library loaded with ``LD_PRELOAD``. Such
+a signal is now reset to :data:`~signal.SIG_DFL` in the child.

@@ -7611,6 +7611,44 @@ class _TestSpawnedSysPath(BaseTestCase):
         self.assertIn(self._mod_name, child_imported_modules)
 
     @staticmethod
+    def send_child_sigint_state(conn, mod_name):
+        conn.send((mod_name in sys.modules, signal.getsignal(signal.SIGINT)))
+
+    def test_forkserver_preload_foreign_sigint_handler(self):
+        # gh-159418: signal.signal() returns None when the handler was already
+        # installed outside Python before the interpreter started, for example
+        # by a library loaded with LD_PRELOAD. Simulate that in the forkserver
+        # with a preloaded module.
+        if self._ctx.get_start_method() != "forkserver":
+            self.skipTest("forkserver specific test.")
+        mod_name = "foreign_sigint_test_mod"
+        mod_path = os.path.join(self._temp_dir, f"{mod_name}.py")
+        with open(mod_path, "w", encoding="utf-8") as mod:
+            mod.write(textwrap.dedent("""\
+                import signal
+                _signal = signal.signal
+                def _fake_signal(signum, handler):
+                    old_handler = _signal(signum, handler)
+                    return None if signum == signal.SIGINT else old_handler
+                signal.signal = _fake_signal
+                """))
+        forkserver = multiprocessing.forkserver._forkserver
+        self.addCleanup(self._ctx.set_forkserver_preload,
+                        forkserver._preload_modules)
+        self.addCleanup(forkserver._stop)  # Don't reuse the patched server.
+        forkserver._stop()  # Must be fresh.
+        self._ctx.set_forkserver_preload([mod_name])
+        r, w = self._ctx.Pipe(duplex=False)
+        self.addCleanup(r.close)
+        proc = self._ctx.Process(
+                target=self.send_child_sigint_state, args=(w, mod_name))
+        proc.start()
+        w.close()
+        proc.join()
+        self.assertEqual(proc.exitcode, 0)
+        self.assertEqual(r.recv(), (True, signal.SIG_DFL))
+
+    @staticmethod
     def enq_sys_path_and_import(queue, mod_name):
         queue.put(sys.path)
         try:
