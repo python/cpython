@@ -1664,6 +1664,26 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
         self.assertEqual(str(zone2), key)
         self.assertIsNot(zone2, zone1)
 
+    def test_strong_cache_reentrant_clear(self):
+        # gh-142782: a key whose __eq__ clears the cache during a strong-cache
+        # lookup must not cause a use-after-free.
+        klass = self.klass
+
+        class Stringy(str):
+            def __new__(cls, value):
+                self = super().__new__(cls, value)
+                self.cleared = False
+                return self
+            def __eq__(self, other):
+                if not self.cleared:
+                    self.cleared = True
+                    klass.clear_cache(only_keys=(self,))
+                return super().__eq__(other)
+            __hash__ = str.__hash__
+
+        klass(Stringy("America/Los_Angeles"))
+        klass(Stringy("America/Los_Angeles"))
+
 
 class CZoneInfoCacheTest(ZoneInfoCacheTest):
     module = c_zoneinfo

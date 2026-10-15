@@ -1,0 +1,2 @@
+Fix a use-after-free in :class:`zoneinfo.ZoneInfo` when a key's ``__eq__``
+clears the cache during a strong-cache lookup.
