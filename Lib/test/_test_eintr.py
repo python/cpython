@@ -11,6 +11,7 @@ sub-second periodicity (contrarily to signal()).
 import contextlib
 import faulthandler
 import fcntl
+import io
 import os
 import platform
 import select
@@ -162,6 +163,12 @@ class OSEINTRTest(EINTRBaseTest):
             buffer = bytearray(len(expected))
             self.assertEqual(os.readinto(fd, buffer), len(expected))
             self.assertEqual(buffer, expected)
+
+    def test_fileio_readall(self):
+        # The first readall() reads everything up to EOF.
+        data = [io.FileIO(fd, closefd=False).readall()
+                for fd, _ in self._interrupted_reads()]
+        self.assertEqual(data, [b"helloworldspam", b"", b""])
 
     def test_write(self):
         rd, wr = os.pipe()
