@@ -8,8 +8,6 @@
 # $Id$
 #
 
-import os
-import sys
 import unittest
 
 from textwrap import TextWrapper, wrap, fill, dedent, indent, shorten
@@ -68,9 +66,6 @@ class WrapTestCase(BaseTestCase):
         self.check_wrap(text, 80, [text])
 
     def test_empty_string(self):
-        if sys.platform == "linux":
-            # XXX: Intentional failure to test GitHub Actions annotations
-            os.environ["GHA_ANNOTATION_TEST"] = "1"
         # Check that wrapping the empty string returns an empty list.
         self.check_wrap("", 6, [])
         self.check_wrap("", 6, [], drop_whitespace=False)

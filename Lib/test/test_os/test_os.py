@@ -4080,8 +4080,7 @@ class MemfdCreateTests(unittest.TestCase):
         self.assertFalse(os.get_inheritable(fd))
         with open(fd, "wb", closefd=False) as f:
             f.write(b'memfd_create')
-            # XXX: Intentional failure to test GitHub Actions job summaries
-            self.assertEqual(f.tell(), 13)
+            self.assertEqual(f.tell(), 12)
 
         fd2 = os.memfd_create("Hi")
         self.addCleanup(os.close, fd2)

@@ -1,5 +1,4 @@
 import decimal
-import sys
 import unittest.mock
 from io import StringIO
 from collections import OrderedDict
@@ -10,9 +9,6 @@ from test import support
 class TestDecode:
     def test_decimal(self):
         rval = self.loads('1.1', parse_float=decimal.Decimal)
-        if sys.platform == "linux":
-            # XXX: Intentional failure to test GitHub Actions annotations
-            self.loads('{"bad": }')
         self.assertIsInstance(rval, decimal.Decimal)
         self.assertEqual(rval, decimal.Decimal('1.1'))
 
