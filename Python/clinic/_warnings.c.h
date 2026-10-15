@@ -45,7 +45,7 @@ warnings_release_lock(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 PyDoc_STRVAR(warnings_warn__doc__,
 "warn($module, /, message, category=None, stacklevel=1, source=None, *,\n"
-"     skip_file_prefixes=<unrepresentable>)\n"
+"     skip_file_prefixes=())\n"
 "--\n"
 "\n"
 "Issue a warning, or maybe ignore it or raise an exception.\n"
@@ -284,4 +284,4 @@ warnings_filters_mutated_lock_held(PyObject *module, PyObject *Py_UNUSED(ignored
 {
     return warnings_filters_mutated_lock_held_impl(module);
 }
-/*[clinic end generated code: output=610ed5764bf40bb5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fc026d6a21e12170 input=a9049054013a1b77]*/

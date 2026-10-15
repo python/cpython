@@ -200,14 +200,16 @@ class Textbox:
         result = ""
         self._update_max_yx()
         for y in range(self.maxy+1):
-            self.win.move(y, 0)
-            stop = self._end_of_line(y)
-            if stop == 0 and self.stripspaces:
-                continue
-            for x in range(self.maxx+1):
-                if self.stripspaces and x > stop:
-                    break
-                result = result + str(self.win.in_wch(y, x))
+            # The whole line: in_wstr() reads a double-width character once,
+            # skipping the continuation cell that holds its other half.
+            line = self.win.in_wstr(y, 0)
+            if self.stripspaces:
+                stripped = line.rstrip(' ')
+                if not stripped:
+                    continue
+                # Keep the blank the cursor rests on past the last character.
+                line = stripped + ' ' if len(stripped) < len(line) else stripped
+            result = result + line
             if self.maxy > 0:
                 result = result + "\n"
         return result

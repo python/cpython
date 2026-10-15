@@ -135,7 +135,7 @@ See :ref:`__slots__ documentation <slots>` for details.
    .. versionchanged:: 3.4
       Added the :attr:`__callback__` attribute.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Raise :exc:`!TypeError` if *callback* is not callable or ``None``.
 
 
@@ -157,7 +157,7 @@ See :ref:`__slots__ documentation <slots>` for details.
       Extended the operator support on proxy objects to include the matrix
       multiplication operators ``@`` and ``@=``.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Raise :exc:`!TypeError` if *callback* is not callable or ``None``.
 
 
@@ -290,9 +290,10 @@ same issues as the :meth:`WeakKeyDictionary.keyrefs` method.
    from an object's :meth:`~object.__del__` method or a weak reference's
    callback.
 
-   When the program exits, each remaining live finalizer is called
-   unless its :attr:`atexit` attribute has been set to false.  They
-   are called in reverse order of creation.
+   When the program exits (or more generally, at :term:`interpreter shutdown`),
+   each remaining live finalizer is called unless its :attr:`atexit` attribute
+   has been set to false.
+   They are called in reverse order of creation.
 
    A finalizer will never invoke its callback during the later part of
    the :term:`interpreter shutdown` when module globals are liable to have
@@ -321,9 +322,9 @@ same issues as the :meth:`WeakKeyDictionary.keyrefs` method.
 
    .. attribute:: atexit
 
-      A writable boolean property which by default is true.  When the
-      program exits, it calls all remaining live finalizers for which
-      :attr:`.atexit` is true.  They are called in reverse order of
+      A writable boolean property which by default is true.  At
+      :term:`interpreter shutdown`, all remaining live finalizers for which
+      :attr:`.atexit` is true are called in reverse order of
       creation.
 
    .. note::

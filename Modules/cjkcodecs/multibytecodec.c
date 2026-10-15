@@ -82,7 +82,8 @@ typedef struct {
     PyObject            *inobj;
     Py_ssize_t          inpos, inlen;
     unsigned char       *outbuf, *outbuf_end;
-    PyObject            *excobj, *outobj;
+    PyObject            *excobj;
+    PyBytesWriter       *writer;
 } MultibyteEncodeBuffer;
 
 typedef struct {
@@ -209,8 +210,8 @@ expand_encodebuffer(MultibyteEncodeBuffer *buf, Py_ssize_t esize)
     Py_ssize_t orgpos, orgsize, incsize;
 
     orgpos = (Py_ssize_t)((char *)buf->outbuf -
-                            PyBytes_AS_STRING(buf->outobj));
-    orgsize = PyBytes_GET_SIZE(buf->outobj);
+                            (char *)PyBytesWriter_GetData(buf->writer));
+    orgsize = PyBytesWriter_GetSize(buf->writer);
     incsize = (esize < (orgsize >> 1) ? (orgsize >> 1) | 1 : esize);
 
     if (orgsize > PY_SSIZE_T_MAX - incsize) {
@@ -218,12 +219,12 @@ expand_encodebuffer(MultibyteEncodeBuffer *buf, Py_ssize_t esize)
         return -1;
     }
 
-    if (_PyBytes_Resize(&buf->outobj, orgsize + incsize) == -1)
+    if (PyBytesWriter_Resize(buf->writer, orgsize + incsize) == -1)
         return -1;
 
-    buf->outbuf = (unsigned char *)PyBytes_AS_STRING(buf->outobj) +orgpos;
-    buf->outbuf_end = (unsigned char *)PyBytes_AS_STRING(buf->outobj)
-        + PyBytes_GET_SIZE(buf->outobj);
+    unsigned char *data = PyBytesWriter_GetData(buf->writer);
+    buf->outbuf = data + orgpos;
+    buf->outbuf_end = data + PyBytesWriter_GetSize(buf->writer);
 
     return 0;
 }
@@ -429,8 +430,8 @@ multibytecodec_decerror(const MultibyteCodec *codec,
     }
 
     if (errors == ERROR_REPLACE) {
-        if (_PyUnicodeWriter_WriteChar(&buf->writer,
-                                       Py_UNICODE_REPLACEMENT_CHARACTER) < 0)
+        if (_PyUnicodeWriter_WriteCharInline(
+                &buf->writer, Py_UNICODE_REPLACEMENT_CHARACTER) < 0)
             goto errorexit;
     }
     if (errors == ERROR_IGNORE || errors == ERROR_REPLACE) {
@@ -503,7 +504,7 @@ multibytecodec_encode(const MultibyteCodec *codec,
                       PyObject *errors, int flags)
 {
     MultibyteEncodeBuffer buf;
-    Py_ssize_t finalsize, r = 0;
+    Py_ssize_t r = 0;
     Py_ssize_t datalen;
     int kind;
     const void *data;
@@ -511,10 +512,10 @@ multibytecodec_encode(const MultibyteCodec *codec,
     datalen = PyUnicode_GET_LENGTH(text);
 
     if (datalen == 0 && !(flags & MBENC_RESET))
-        return PyBytes_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
 
     buf.excobj = NULL;
-    buf.outobj = NULL;
+    buf.writer = NULL;
     buf.inobj = text;   /* borrowed reference */
     buf.inpos = 0;
     buf.inlen = datalen;
@@ -526,11 +527,11 @@ multibytecodec_encode(const MultibyteCodec *codec,
         goto errorexit;
     }
 
-    buf.outobj = PyBytes_FromStringAndSize(NULL, datalen * 2 + 16);
-    if (buf.outobj == NULL)
+    buf.writer = PyBytesWriter_Create(datalen * 2 + 16);
+    if (buf.writer == NULL)
         goto errorexit;
-    buf.outbuf = (unsigned char *)PyBytes_AS_STRING(buf.outobj);
-    buf.outbuf_end = buf.outbuf + PyBytes_GET_SIZE(buf.outobj);
+    buf.outbuf = (unsigned char *)PyBytesWriter_GetData(buf.writer);
+    buf.outbuf_end = buf.outbuf + PyBytesWriter_GetSize(buf.writer);
 
     while (buf.inpos < buf.inlen) {
         /* we don't reuse inleft and outleft here.
@@ -563,21 +564,14 @@ multibytecodec_encode(const MultibyteCodec *codec,
                 goto errorexit;
         }
 
-    finalsize = (Py_ssize_t)((char *)buf.outbuf -
-                             PyBytes_AS_STRING(buf.outobj));
-
-    if (finalsize != PyBytes_GET_SIZE(buf.outobj))
-        if (_PyBytes_Resize(&buf.outobj, finalsize) == -1)
-            goto errorexit;
-
     if (inpos_t)
         *inpos_t = buf.inpos;
     Py_XDECREF(buf.excobj);
-    return buf.outobj;
+    return PyBytesWriter_FinishWithPointer(buf.writer, buf.outbuf);
 
 errorexit:
     Py_XDECREF(buf.excobj);
-    Py_XDECREF(buf.outobj);
+    PyBytesWriter_Discard(buf.writer);
     return NULL;
 }
 
@@ -1482,23 +1476,25 @@ mbstreamreader_iread(MultibyteStreamReaderObject *self,
         endoffile = (PyBytes_GET_SIZE(cres) == 0);
 
         if (self->pendingsize > 0) {
-            PyObject *ctr;
-            char *ctrdata;
-
             if (PyBytes_GET_SIZE(cres) > PY_SSIZE_T_MAX - self->pendingsize) {
                 PyErr_NoMemory();
                 goto errorexit;
             }
             rsize = PyBytes_GET_SIZE(cres) + self->pendingsize;
-            ctr = PyBytes_FromStringAndSize(NULL, rsize);
-            if (ctr == NULL)
+
+            PyBytesWriter *writer = PyBytesWriter_Create(rsize);
+            if (writer == NULL) {
                 goto errorexit;
-            ctrdata = PyBytes_AS_STRING(ctr);
+            }
+            char *ctrdata = PyBytesWriter_GetData(writer);
             memcpy(ctrdata, self->pending, self->pendingsize);
             memcpy(ctrdata + self->pendingsize,
                     PyBytes_AS_STRING(cres),
                     PyBytes_GET_SIZE(cres));
-            Py_SETREF(cres, ctr);
+            Py_SETREF(cres, PyBytesWriter_Finish(writer));
+            if (cres == NULL) {
+                goto errorexit;
+            }
             self->pendingsize = 0;
         }
 
