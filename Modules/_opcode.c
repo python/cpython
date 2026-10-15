@@ -423,6 +423,40 @@ _opcode_exec(PyObject *m) {
     if (PyModule_AddIntMacro(m, ENABLE_SPECIALIZATION) < 0) {
         return -1;
     }
+    PyObject *compiler_flag_names = PyDict_New();
+    if (compiler_flag_names == NULL) {
+        return -1;
+    }
+    PyObject *val;
+#   define ADD_CO(NAME)                                                     \
+    do {                                                                    \
+        val = PyLong_FromLong(CO_ ## NAME);                                 \
+        if (val == NULL) {                                                  \
+            return -1;                                                      \
+        }                                                                   \
+        if (PyDict_SetItemString(compiler_flag_names, #NAME, val) < 0) {    \
+            return -1;                                                      \
+        }                                                                   \
+        Py_DECREF(val);                                                     \
+    } while(0)                                                              \
+    /////////////////////////////////////////////////////////////////////////
+    ADD_CO(OPTIMIZED);
+    ADD_CO(NEWLOCALS);
+    ADD_CO(VARARGS);
+    ADD_CO(VARKEYWORDS);
+    ADD_CO(NESTED);
+    ADD_CO(GENERATOR);
+    ADD_CO(COROUTINE);
+    ADD_CO(ITERABLE_COROUTINE);
+    ADD_CO(ASYNC_GENERATOR);
+    ADD_CO(HAS_DOCSTRING);
+    ADD_CO(METHOD);
+#   undef ADD_CO
+    if (PyModule_Add(m, "COMPILER_FLAGS",
+                     PyFrozenDict_New(compiler_flag_names)) < 0) {
+        return -1;
+    }
+    Py_DECREF(compiler_flag_names);
     return 0;
 }
 

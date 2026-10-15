@@ -46,18 +46,7 @@ __all__ = [
     "CORO_CREATED",
     "CORO_RUNNING",
     "CORO_SUSPENDED",
-    "CO_ASYNC_GENERATOR",
-    "CO_COROUTINE",
-    "CO_GENERATOR",
-    "CO_ITERABLE_COROUTINE",
-    "CO_NESTED",
-    "CO_NEWLOCALS",
-    "CO_NOFREE",
-    "CO_OPTIMIZED",
-    "CO_VARARGS",
-    "CO_VARKEYWORDS",
-    "CO_HAS_DOCSTRING",
-    "CO_METHOD",
+    # CO_* -- added below
     "ClassFoundException",
     "ClosureVars",
     "EndOfBlock",
@@ -169,8 +158,10 @@ from _weakref import ref as make_weakref
 # We try to get them from dis to avoid duplication
 mod_dict = globals()
 for k, v in dis.COMPILER_FLAG_NAMES.items():
-    mod_dict["CO_" + v] = k
-del k, v, mod_dict
+    name = "CO_" + v
+    mod_dict[name] = k
+    __all__.append(name)
+del k, v, name, mod_dict
 
 # See Include/object.h
 TPFLAGS_IS_ABSTRACT = 1 << 20
@@ -3473,6 +3464,15 @@ def _render_details_for_cli(details):
 
     lines.append("")
     return "\n".join(lines)
+
+
+def __getattr__(name):
+    if name == "CO_NOFREE":
+        # CO_NOFREE: removed from C code in GH-26839 (Python 3.5)
+        import warnings
+        warnings._deprecated("inspect.CO_NOFREE", remove=(3, 21))
+        return 64
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def _main():

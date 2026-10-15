@@ -119,12 +119,14 @@ typedef struct {
 struct PyCodeObject _PyCode_DEF(1);
 
 /* Masks for co_flags above */
+// Keep in sync with _opcode.c, which exposes these for inspect & dis
 #define CO_OPTIMIZED    0x0001
 #define CO_NEWLOCALS    0x0002
 #define CO_VARARGS      0x0004
 #define CO_VARKEYWORDS  0x0008
 #define CO_NESTED       0x0010
 #define CO_GENERATOR    0x0020
+// CO_NOFREE used to be 0x0040 -- don't reuse before inspect.CO_NOFREE is gone
 
 /* The CO_COROUTINE flag is set for coroutine functions (defined with
    ``async def`` keywords) */
