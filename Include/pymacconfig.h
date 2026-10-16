@@ -21,7 +21,6 @@
 #undef DOUBLE_IS_BIG_ENDIAN_IEEE754
 #undef DOUBLE_IS_LITTLE_ENDIAN_IEEE754
 #undef HAVE_GCC_ASM_FOR_X87
-#undef HAVE_GCC_ASM_FOR_X64
 
 #undef VA_LIST_IS_ARRAY
 #if defined(__LP64__) && defined(__x86_64__)
@@ -79,7 +78,6 @@
 #if defined(__i386__) || defined(__x86_64__)
 #  define HAVE_GCC_ASM_FOR_X87
 #  define ALIGNOF_MAX_ALIGN_T 16
-#  define HAVE_GCC_ASM_FOR_X64 1
 #  define SIZEOF_LONG_DOUBLE 16
 #else
 #  define ALIGNOF_MAX_ALIGN_T 8
