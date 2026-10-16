@@ -25,6 +25,26 @@
 
         /* _MONITOR_RESUME is not a viable micro-op for tier 2 */
 
+        case _QUERY_FAST: {
+            JitOptRef value;
+            value = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _QUERY_DEREF: {
+            JitOptRef value;
+            value = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
         case _LOAD_FAST_CHECK: {
             JitOptRef value;
             value = GETLOCAL(oparg);

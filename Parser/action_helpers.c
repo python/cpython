@@ -467,6 +467,18 @@ _PyPegen_name_default_pair(Parser *p, arg_ty arg, expr_ty value, Token *tc)
     return a;
 }
 
+/* Preserve the expression for introspection before AST optimization. */
+NameDefaultPair *
+_PyPegen_late_default_pair(Parser *p, arg_ty arg, expr_ty value, Token *tc)
+{
+    PyObject *source = _PyAST_ExprAsUnicode(value);
+    if (source == NULL || _PyArena_AddPyObject(p->arena, source) < 0) {
+        return NULL;
+    }
+    arg->late_default = source;
+    return _PyPegen_name_default_pair(p, arg, value, tc);
+}
+
 /* Constructs a SlashWithDefault */
 SlashWithDefault *
 _PyPegen_slash_with_default(Parser *p, asdl_arg_seq *plain_names, asdl_seq *names_with_defaults)
@@ -938,7 +950,7 @@ _PyPegen_add_type_comment_to_arg(Parser *p, arg_ty a, Token *tc)
     if (tco == NULL) {
         return NULL;
     }
-    return _PyAST_arg(a->arg, a->annotation, tco,
+    return _PyAST_arg(a->arg, a->annotation, tco, a->late_default,
                       a->lineno, a->col_offset, a->end_lineno, a->end_col_offset,
                       p->arena);
 }

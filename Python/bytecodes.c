@@ -270,6 +270,18 @@ dummy_func(
             LOAD_FAST,
         };
 
+        pure inst(QUERY_FAST, (-- value)) {
+            value = PyStackRef_IsNull(GETLOCAL(oparg))
+                ? PyStackRef_False : PyStackRef_True;
+        }
+
+        inst(QUERY_DEREF, (-- value)) {
+            PyCellObject *cell = (PyCellObject *)PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
+            PyObject *contents = PyCell_GetRef(cell);
+            value = contents == NULL ? PyStackRef_False : PyStackRef_True;
+            Py_XDECREF(contents);
+        }
+
         inst(LOAD_FAST_CHECK, (-- value)) {
             _PyStackRef value_s = GETLOCAL(oparg);
             if (PyStackRef_IsNull(value_s)) {

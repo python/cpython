@@ -313,7 +313,8 @@ Known values:
 
 */
 
-#define PYC_MAGIC_NUMBER 3706
+/* 3707: experimental PEP 671 query opcodes and function metadata. */
+#define PYC_MAGIC_NUMBER 3707
 /* This is equivalent to converting PYC_MAGIC_NUMBER to 2 bytes
    (little-endian) and then appending b'\r\n'. */
 #define PYC_MAGIC_NUMBER_TOKEN \

@@ -1,0 +1,3 @@
+Add an experimental implementation of :pep:`671` late-bound argument defaults
+using ``name=>expression``. This is a reference implementation of a draft PEP;
+the proposal has not been accepted.

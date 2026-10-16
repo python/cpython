@@ -131,6 +131,8 @@ struct PyCodeObject _PyCode_DEF(1);
 #define CO_COROUTINE            0x0080
 #define CO_ITERABLE_COROUTINE   0x0100
 #define CO_ASYNC_GENERATOR      0x0200
+/* Experimental PEP 671 call-time default evaluation. */
+#define CO_LATE_DEFAULTS        0x0400
 
 /* bpo-39562: These constant values are changed in Python 3.9
    to prevent collision with compiler flags. CO_FUTURE_ and PyCF_

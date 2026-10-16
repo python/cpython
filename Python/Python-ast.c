@@ -237,6 +237,7 @@ void _PyAST_Fini(PyInterpreterState *interp)
         offsetof(struct ast_state, kwd_attrs),
         offsetof(struct ast_state, kwd_patterns),
         offsetof(struct ast_state, kwonlyargs),
+        offsetof(struct ast_state, late_default),
         offsetof(struct ast_state, left),
         offsetof(struct ast_state, level),
         offsetof(struct ast_state, lineno),
@@ -347,6 +348,7 @@ static int init_identifiers(struct ast_state *state)
     if ((state->kwd_attrs = PyUnicode_InternFromString("kwd_attrs")) == NULL) return -1;
     if ((state->kwd_patterns = PyUnicode_InternFromString("kwd_patterns")) == NULL) return -1;
     if ((state->kwonlyargs = PyUnicode_InternFromString("kwonlyargs")) == NULL) return -1;
+    if ((state->late_default = PyUnicode_InternFromString("late_default")) == NULL) return -1;
     if ((state->left = PyUnicode_InternFromString("left")) == NULL) return -1;
     if ((state->level = PyUnicode_InternFromString("level")) == NULL) return -1;
     if ((state->lineno = PyUnicode_InternFromString("lineno")) == NULL) return -1;
@@ -726,6 +728,7 @@ static const char * const arg_fields[]={
     "arg",
     "annotation",
     "type_comment",
+    "late_default",
 };
 static PyObject* ast2obj_keyword(struct ast_state *state, void*);
 static const char * const keyword_attributes[] = {
@@ -1177,6 +1180,8 @@ add_ast_annotations(struct ast_state *state)
          offsetof(struct ast_state, expr_type), FIELD_OPTIONAL},
         {offsetof(struct ast_state, type_comment),
          0, FIELD_OPTIONAL | FIELD_BUILTIN},
+        {offsetof(struct ast_state, late_default),
+         0, FIELD_OPTIONAL | FIELD_BUILTIN},
         {offsetof(struct ast_state, arg),
          0, FIELD_OPTIONAL | FIELD_BUILTIN},
         {offsetof(struct ast_state, value),
@@ -1343,23 +1348,23 @@ add_ast_annotations(struct ast_state *state)
         {offsetof(struct ast_state, comprehension_type), 149, 4},
         {offsetof(struct ast_state, ExceptHandler_type), 153, 3},
         {offsetof(struct ast_state, arguments_type), 156, 7},
-        {offsetof(struct ast_state, arg_type), 163, 3},
-        {offsetof(struct ast_state, keyword_type), 166, 2},
-        {offsetof(struct ast_state, alias_type), 168, 2},
-        {offsetof(struct ast_state, withitem_type), 170, 2},
-        {offsetof(struct ast_state, match_case_type), 172, 3},
-        {offsetof(struct ast_state, MatchValue_type), 175, 1},
-        {offsetof(struct ast_state, MatchSingleton_type), 176, 1},
-        {offsetof(struct ast_state, MatchSequence_type), 177, 1},
-        {offsetof(struct ast_state, MatchMapping_type), 178, 3},
-        {offsetof(struct ast_state, MatchClass_type), 181, 4},
-        {offsetof(struct ast_state, MatchStar_type), 185, 1},
-        {offsetof(struct ast_state, MatchAs_type), 186, 2},
-        {offsetof(struct ast_state, MatchOr_type), 188, 1},
-        {offsetof(struct ast_state, TypeIgnore_type), 189, 2},
-        {offsetof(struct ast_state, TypeVar_type), 191, 3},
-        {offsetof(struct ast_state, ParamSpec_type), 194, 2},
-        {offsetof(struct ast_state, TypeVarTuple_type), 196, 2},
+        {offsetof(struct ast_state, arg_type), 163, 4},
+        {offsetof(struct ast_state, keyword_type), 167, 2},
+        {offsetof(struct ast_state, alias_type), 169, 2},
+        {offsetof(struct ast_state, withitem_type), 171, 2},
+        {offsetof(struct ast_state, match_case_type), 173, 3},
+        {offsetof(struct ast_state, MatchValue_type), 176, 1},
+        {offsetof(struct ast_state, MatchSingleton_type), 177, 1},
+        {offsetof(struct ast_state, MatchSequence_type), 178, 1},
+        {offsetof(struct ast_state, MatchMapping_type), 179, 3},
+        {offsetof(struct ast_state, MatchClass_type), 182, 4},
+        {offsetof(struct ast_state, MatchStar_type), 186, 1},
+        {offsetof(struct ast_state, MatchAs_type), 187, 2},
+        {offsetof(struct ast_state, MatchOr_type), 189, 1},
+        {offsetof(struct ast_state, TypeIgnore_type), 190, 2},
+        {offsetof(struct ast_state, TypeVar_type), 192, 3},
+        {offsetof(struct ast_state, ParamSpec_type), 195, 2},
+        {offsetof(struct ast_state, TypeVarTuple_type), 197, 2},
     };
     char *base = (char *)state;
     PyObject *annotations = NULL;
@@ -3040,14 +3045,16 @@ init_types(void *arg)
         return -1;
     if (PyObject_SetAttr(state->arguments_type, state->kwarg, Py_None) == -1)
         return -1;
-    state->arg_type = make_type(state, "arg", state->AST_type, arg_fields, 3,
-        "arg(identifier arg, expr? annotation, string? type_comment)");
+    state->arg_type = make_type(state, "arg", state->AST_type, arg_fields, 4,
+        "arg(identifier arg, expr? annotation, string? type_comment, string? late_default)");
     if (!state->arg_type) return -1;
     if (add_attributes(state, state->arg_type, arg_attributes, 4) < 0) return
         -1;
     if (PyObject_SetAttr(state->arg_type, state->annotation, Py_None) == -1)
         return -1;
     if (PyObject_SetAttr(state->arg_type, state->type_comment, Py_None) == -1)
+        return -1;
+    if (PyObject_SetAttr(state->arg_type, state->late_default, Py_None) == -1)
         return -1;
     if (PyObject_SetAttr(state->arg_type, state->end_lineno, Py_None) == -1)
         return -1;
@@ -4761,8 +4768,9 @@ _PyAST_arguments(asdl_arg_seq * posonlyargs, asdl_arg_seq * args, arg_ty
 }
 
 arg_ty
-_PyAST_arg(identifier arg, expr_ty annotation, string type_comment, int lineno,
-           int col_offset, int end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_arg(identifier arg, expr_ty annotation, string type_comment, string
+           late_default, int lineno, int col_offset, int end_lineno, int
+           end_col_offset, PyArena *arena)
 {
     arg_ty p;
     if (!arg) {
@@ -4776,6 +4784,7 @@ _PyAST_arg(identifier arg, expr_ty annotation, string type_comment, int lineno,
     p->arg = arg;
     p->annotation = annotation;
     p->type_comment = type_comment;
+    p->late_default = late_default;
     p->lineno = lineno;
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
@@ -6611,6 +6620,11 @@ ast2obj_arg(struct ast_state *state, void* _o)
     value = ast2obj_string(state, o->type_comment);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->type_comment, value) == -1)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_string(state, o->late_default);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, state->late_default, value) == -1)
         goto failed;
     Py_DECREF(value);
     value = ast2obj_int(state, o->lineno);
@@ -12870,6 +12884,7 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, const char*
     identifier arg;
     expr_ty annotation;
     string type_comment;
+    string late_default;
     int lineno;
     int col_offset;
     int end_lineno;
@@ -12922,6 +12937,23 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, const char*
             goto failed;
         }
         res = obj2ast_string(state, tmp, &type_comment, "type_comment", arena);
+        _Py_LeaveRecursiveCall();
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    if (PyObject_GetOptionalAttr(obj, state->late_default, &tmp) < 0) {
+        return -1;
+    }
+    if (tmp == NULL || tmp == Py_None) {
+        Py_CLEAR(tmp);
+        late_default = NULL;
+    }
+    else {
+        int res;
+        if (_Py_EnterRecursiveCall(" while traversing 'arg' node")) {
+            goto failed;
+        }
+        res = obj2ast_string(state, tmp, &late_default, "late_default", arena);
         _Py_LeaveRecursiveCall();
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
@@ -12994,8 +13026,8 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, const char*
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    *out = _PyAST_arg(arg, annotation, type_comment, lineno, col_offset,
-                      end_lineno, end_col_offset, arena);
+    *out = _PyAST_arg(arg, annotation, type_comment, late_default, lineno,
+                      col_offset, end_lineno, end_col_offset, arena);
     if (*out == NULL) goto failed;
     return 0;
 failed:

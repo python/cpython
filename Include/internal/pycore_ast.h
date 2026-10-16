@@ -565,6 +565,7 @@ struct _arg {
     identifier arg;
     expr_ty annotation;
     string type_comment;
+    string late_default;
     int lineno;
     int col_offset;
     int end_lineno;
@@ -878,9 +879,9 @@ arguments_ty _PyAST_arguments(asdl_arg_seq * posonlyargs, asdl_arg_seq * args,
                               arg_ty vararg, asdl_arg_seq * kwonlyargs,
                               asdl_expr_seq * kw_defaults, arg_ty kwarg,
                               asdl_expr_seq * defaults, PyArena *arena);
-arg_ty _PyAST_arg(identifier arg, expr_ty annotation, string type_comment, int
-                  lineno, int col_offset, int end_lineno, int end_col_offset,
-                  PyArena *arena);
+arg_ty _PyAST_arg(identifier arg, expr_ty annotation, string type_comment,
+                  string late_default, int lineno, int col_offset, int
+                  end_lineno, int end_col_offset, PyArena *arena);
 keyword_ty _PyAST_keyword(identifier arg, expr_ty value, int lineno, int
                           col_offset, int end_lineno, int end_col_offset,
                           PyArena *arena);

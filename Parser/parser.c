@@ -5578,7 +5578,11 @@ param_no_default_star_annotation_rule(Parser *p)
     return _res;
 }
 
-// param_with_default: param default ',' TYPE_COMMENT? | param default TYPE_COMMENT? &')'
+// param_with_default:
+//     | param '=' '>' expression ',' TYPE_COMMENT?
+//     | param '=' '>' expression TYPE_COMMENT? &')'
+//     | param default ',' TYPE_COMMENT?
+//     | param default TYPE_COMMENT? &')'
 static NameDefaultPair*
 param_with_default_rule(Parser *p)
 {
@@ -5591,6 +5595,83 @@ param_with_default_rule(Parser *p)
     }
     NameDefaultPair* _res = NULL;
     int _mark = p->mark;
+    { // param '=' '>' expression ',' TYPE_COMMENT?
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> param_with_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param '=' '>' expression ',' TYPE_COMMENT?"));
+        Token * _literal;
+        Token * _literal_1;
+        Token * _literal_2;
+        arg_ty a;
+        expr_ty c;
+        void *tc;
+        if (
+            (a = param_rule(p))  // param
+            &&
+            (_literal = _PyPegen_expect_token(p, 22))  // token='='
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 21))  // token='>'
+            &&
+            (c = expression_rule(p))  // expression
+            &&
+            (_literal_2 = _PyPegen_expect_token(p, 12))  // token=','
+            &&
+            (tc = _PyPegen_expect_token(p, TYPE_COMMENT), !p->error_indicator)  // TYPE_COMMENT?
+        )
+        {
+            D(fprintf(stderr, "%*c+ param_with_default[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "param '=' '>' expression ',' TYPE_COMMENT?"));
+            _res = _PyPegen_late_default_pair ( p , a , c , tc );
+            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s param_with_default[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "param '=' '>' expression ',' TYPE_COMMENT?"));
+    }
+    { // param '=' '>' expression TYPE_COMMENT? &')'
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> param_with_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param '=' '>' expression TYPE_COMMENT? &')'"));
+        Token * _literal;
+        Token * _literal_1;
+        arg_ty a;
+        expr_ty c;
+        void *tc;
+        if (
+            (a = param_rule(p))  // param
+            &&
+            (_literal = _PyPegen_expect_token(p, 22))  // token='='
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 21))  // token='>'
+            &&
+            (c = expression_rule(p))  // expression
+            &&
+            (tc = _PyPegen_expect_token(p, TYPE_COMMENT), !p->error_indicator)  // TYPE_COMMENT?
+            &&
+            _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 8)  // token=')'
+        )
+        {
+            D(fprintf(stderr, "%*c+ param_with_default[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "param '=' '>' expression TYPE_COMMENT? &')'"));
+            _res = _PyPegen_late_default_pair ( p , a , c , tc );
+            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s param_with_default[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "param '=' '>' expression TYPE_COMMENT? &')'"));
+    }
     { // param default ',' TYPE_COMMENT?
         if (p->error_indicator) {
             p->level--;
@@ -5663,6 +5744,8 @@ param_with_default_rule(Parser *p)
 }
 
 // param_maybe_default:
+//     | param '=' '>' expression ',' TYPE_COMMENT?
+//     | param '=' '>' expression TYPE_COMMENT? &')'
 //     | param default? ',' TYPE_COMMENT?
 //     | param default? TYPE_COMMENT? &')'
 static NameDefaultPair*
@@ -5677,6 +5760,83 @@ param_maybe_default_rule(Parser *p)
     }
     NameDefaultPair* _res = NULL;
     int _mark = p->mark;
+    { // param '=' '>' expression ',' TYPE_COMMENT?
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> param_maybe_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param '=' '>' expression ',' TYPE_COMMENT?"));
+        Token * _literal;
+        Token * _literal_1;
+        Token * _literal_2;
+        arg_ty a;
+        expr_ty c;
+        void *tc;
+        if (
+            (a = param_rule(p))  // param
+            &&
+            (_literal = _PyPegen_expect_token(p, 22))  // token='='
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 21))  // token='>'
+            &&
+            (c = expression_rule(p))  // expression
+            &&
+            (_literal_2 = _PyPegen_expect_token(p, 12))  // token=','
+            &&
+            (tc = _PyPegen_expect_token(p, TYPE_COMMENT), !p->error_indicator)  // TYPE_COMMENT?
+        )
+        {
+            D(fprintf(stderr, "%*c+ param_maybe_default[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "param '=' '>' expression ',' TYPE_COMMENT?"));
+            _res = _PyPegen_late_default_pair ( p , a , c , tc );
+            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s param_maybe_default[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "param '=' '>' expression ',' TYPE_COMMENT?"));
+    }
+    { // param '=' '>' expression TYPE_COMMENT? &')'
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> param_maybe_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "param '=' '>' expression TYPE_COMMENT? &')'"));
+        Token * _literal;
+        Token * _literal_1;
+        arg_ty a;
+        expr_ty c;
+        void *tc;
+        if (
+            (a = param_rule(p))  // param
+            &&
+            (_literal = _PyPegen_expect_token(p, 22))  // token='='
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 21))  // token='>'
+            &&
+            (c = expression_rule(p))  // expression
+            &&
+            (tc = _PyPegen_expect_token(p, TYPE_COMMENT), !p->error_indicator)  // TYPE_COMMENT?
+            &&
+            _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 8)  // token=')'
+        )
+        {
+            D(fprintf(stderr, "%*c+ param_maybe_default[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "param '=' '>' expression TYPE_COMMENT? &')'"));
+            _res = _PyPegen_late_default_pair ( p , a , c , tc );
+            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s param_maybe_default[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "param '=' '>' expression TYPE_COMMENT? &')'"));
+    }
     { // param default? ',' TYPE_COMMENT?
         if (p->error_indicator) {
             p->level--;
@@ -5794,7 +5954,7 @@ param_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _PyAST_arg ( a -> v . Name . id , b , NULL , EXTRA );
+            _res = _PyAST_arg ( a -> v . Name . id , b , NULL , NULL , EXTRA );
             if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -5858,7 +6018,7 @@ param_star_annotation_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _PyAST_arg ( a -> v . Name . id , b , NULL , EXTRA );
+            _res = _PyAST_arg ( a -> v . Name . id , b , NULL , NULL , EXTRA );
             if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -15963,7 +16123,11 @@ lambda_param_no_default_rule(Parser *p)
     return _res;
 }
 
-// lambda_param_with_default: lambda_param default ',' | lambda_param default &':'
+// lambda_param_with_default:
+//     | lambda_param '=' '>' expression ','
+//     | lambda_param '=' '>' expression &':'
+//     | lambda_param default ','
+//     | lambda_param default &':'
 static NameDefaultPair*
 lambda_param_with_default_rule(Parser *p)
 {
@@ -15976,6 +16140,77 @@ lambda_param_with_default_rule(Parser *p)
     }
     NameDefaultPair* _res = NULL;
     int _mark = p->mark;
+    { // lambda_param '=' '>' expression ','
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> lambda_param_with_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param '=' '>' expression ','"));
+        Token * _literal;
+        Token * _literal_1;
+        Token * _literal_2;
+        arg_ty a;
+        expr_ty c;
+        if (
+            (a = lambda_param_rule(p))  // lambda_param
+            &&
+            (_literal = _PyPegen_expect_token(p, 22))  // token='='
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 21))  // token='>'
+            &&
+            (c = expression_rule(p))  // expression
+            &&
+            (_literal_2 = _PyPegen_expect_token(p, 12))  // token=','
+        )
+        {
+            D(fprintf(stderr, "%*c+ lambda_param_with_default[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "lambda_param '=' '>' expression ','"));
+            _res = _PyPegen_late_default_pair ( p , a , c , NULL );
+            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s lambda_param_with_default[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "lambda_param '=' '>' expression ','"));
+    }
+    { // lambda_param '=' '>' expression &':'
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> lambda_param_with_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param '=' '>' expression &':'"));
+        Token * _literal;
+        Token * _literal_1;
+        arg_ty a;
+        expr_ty c;
+        if (
+            (a = lambda_param_rule(p))  // lambda_param
+            &&
+            (_literal = _PyPegen_expect_token(p, 22))  // token='='
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 21))  // token='>'
+            &&
+            (c = expression_rule(p))  // expression
+            &&
+            _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 11)  // token=':'
+        )
+        {
+            D(fprintf(stderr, "%*c+ lambda_param_with_default[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "lambda_param '=' '>' expression &':'"));
+            _res = _PyPegen_late_default_pair ( p , a , c , NULL );
+            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s lambda_param_with_default[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "lambda_param '=' '>' expression &':'"));
+    }
     { // lambda_param default ','
         if (p->error_indicator) {
             p->level--;
@@ -16041,7 +16276,11 @@ lambda_param_with_default_rule(Parser *p)
     return _res;
 }
 
-// lambda_param_maybe_default: lambda_param default? ',' | lambda_param default? &':'
+// lambda_param_maybe_default:
+//     | lambda_param '=' '>' expression ','
+//     | lambda_param '=' '>' expression &':'
+//     | lambda_param default? ','
+//     | lambda_param default? &':'
 static NameDefaultPair*
 lambda_param_maybe_default_rule(Parser *p)
 {
@@ -16054,6 +16293,77 @@ lambda_param_maybe_default_rule(Parser *p)
     }
     NameDefaultPair* _res = NULL;
     int _mark = p->mark;
+    { // lambda_param '=' '>' expression ','
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> lambda_param_maybe_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param '=' '>' expression ','"));
+        Token * _literal;
+        Token * _literal_1;
+        Token * _literal_2;
+        arg_ty a;
+        expr_ty c;
+        if (
+            (a = lambda_param_rule(p))  // lambda_param
+            &&
+            (_literal = _PyPegen_expect_token(p, 22))  // token='='
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 21))  // token='>'
+            &&
+            (c = expression_rule(p))  // expression
+            &&
+            (_literal_2 = _PyPegen_expect_token(p, 12))  // token=','
+        )
+        {
+            D(fprintf(stderr, "%*c+ lambda_param_maybe_default[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "lambda_param '=' '>' expression ','"));
+            _res = _PyPegen_late_default_pair ( p , a , c , NULL );
+            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s lambda_param_maybe_default[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "lambda_param '=' '>' expression ','"));
+    }
+    { // lambda_param '=' '>' expression &':'
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> lambda_param_maybe_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "lambda_param '=' '>' expression &':'"));
+        Token * _literal;
+        Token * _literal_1;
+        arg_ty a;
+        expr_ty c;
+        if (
+            (a = lambda_param_rule(p))  // lambda_param
+            &&
+            (_literal = _PyPegen_expect_token(p, 22))  // token='='
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 21))  // token='>'
+            &&
+            (c = expression_rule(p))  // expression
+            &&
+            _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 11)  // token=':'
+        )
+        {
+            D(fprintf(stderr, "%*c+ lambda_param_maybe_default[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "lambda_param '=' '>' expression &':'"));
+            _res = _PyPegen_late_default_pair ( p , a , c , NULL );
+            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s lambda_param_maybe_default[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "lambda_param '=' '>' expression &':'"));
+    }
     { // lambda_param default? ','
         if (p->error_indicator) {
             p->level--;
@@ -16162,7 +16472,7 @@ lambda_param_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _PyAST_arg ( a -> v . Name . id , NULL , NULL , EXTRA );
+            _res = _PyAST_arg ( a -> v . Name . id , NULL , NULL , NULL , EXTRA );
             if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;

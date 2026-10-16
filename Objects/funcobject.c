@@ -134,6 +134,8 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
     _Py_INCREF_CODE((PyCodeObject *)constr->fc_code);
     op->func_code = constr->fc_code;
     op->func_defaults = Py_XNewRef(constr->fc_defaults);
+    op->func_defaults_extra = NULL;
+    op->func_kwdefaults_extra = NULL;
     op->func_kwdefaults = Py_XNewRef(constr->fc_kwdefaults);
     op->func_closure = Py_XNewRef(constr->fc_closure);
     op->func_doc = Py_NewRef(Py_None);
@@ -212,6 +214,8 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     op->func_qualname = qualname;
     op->func_code = (PyObject*)code_obj;
     op->func_defaults = NULL;    // No default positional arguments
+    op->func_defaults_extra = NULL;
+    op->func_kwdefaults_extra = NULL;
     op->func_kwdefaults = NULL;  // No default keyword arguments
     op->func_closure = NULL;
     op->func_doc = doc;
@@ -369,6 +373,10 @@ _PyFunction_ClearCodeByVersion(uint32_t version)
 uint32_t
 _PyFunction_GetVersionForCurrentState(PyFunctionObject *func)
 {
+    /* Existing call specializations assume that defaults are already bound. */
+    if (((PyCodeObject *)func->func_code)->co_flags & CO_LATE_DEFAULTS) {
+        return FUNC_VERSION_UNSET;
+    }
     return func->func_version;
 }
 
@@ -905,6 +913,99 @@ func_set_kwdefaults(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
     return 0;
 }
 
+static PyObject *
+func_get_defaults_extra(PyObject *self, void *Py_UNUSED(ignored))
+{
+    PyFunctionObject *op = _PyFunction_CAST(self);
+    if (PySys_Audit("object.__getattr__", "Os", op, "__defaults_extra__") < 0) {
+        return NULL;
+    }
+    if (op->func_defaults_extra == NULL) {
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef(op->func_defaults_extra);
+}
+
+static int
+func_set_defaults_extra(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
+{
+    /* Legal to del f.func_defaults_extra.
+     * Can only set func_defaults_extra to NULL or a tuple. */
+    PyFunctionObject *op = _PyFunction_CAST(self);
+    if (value == Py_None)
+        value = NULL;
+    if (value != NULL && !PyTuple_Check(value)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "__defaults_extra__ must be set to a tuple object");
+        return -1;
+    }
+    if (value) {
+        if (PySys_Audit("object.__setattr__", "OsO",
+                        op, "__defaults_extra__", value) < 0) {
+            return -1;
+        }
+    } else if (PySys_Audit("object.__delattr__", "Os",
+                           op, "__defaults_extra__") < 0) {
+        return -1;
+    }
+
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    func_clear_version(interp, op);
+    PyObject *old_defaults = op->func_defaults_extra;
+    op->func_defaults_extra = Py_XNewRef(value);
+    _PyEval_StartTheWorld(interp);
+    Py_XDECREF(old_defaults);
+    return 0;
+}
+
+static PyObject *
+func_get_kwdefaults_extra(PyObject *self, void *Py_UNUSED(ignored))
+{
+    PyFunctionObject *op = _PyFunction_CAST(self);
+    if (PySys_Audit("object.__getattr__", "Os",
+                    op, "__kwdefaults_extra__") < 0) {
+        return NULL;
+    }
+    if (op->func_kwdefaults_extra == NULL) {
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef(op->func_kwdefaults_extra);
+}
+
+static int
+func_set_kwdefaults_extra(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
+{
+    PyFunctionObject *op = _PyFunction_CAST(self);
+    if (value == Py_None)
+        value = NULL;
+    /* Legal to del f.func_kwdefaults_extra.
+     * Can only set func_kwdefaults_extra to NULL or a dict. */
+    if (value != NULL && !PyDict_Check(value)) {
+        PyErr_SetString(PyExc_TypeError,
+            "__kwdefaults_extra__ must be set to a dict object");
+        return -1;
+    }
+    if (value) {
+        if (PySys_Audit("object.__setattr__", "OsO",
+                        op, "__kwdefaults_extra__", value) < 0) {
+            return -1;
+        }
+    } else if (PySys_Audit("object.__delattr__", "Os",
+                           op, "__kwdefaults_extra__") < 0) {
+        return -1;
+    }
+
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    func_clear_version(interp, op);
+    PyObject *old_kwdefaults = op->func_kwdefaults_extra;
+    op->func_kwdefaults_extra = Py_XNewRef(value);
+    _PyEval_StartTheWorld(interp);
+    Py_XDECREF(old_kwdefaults);
+    return 0;
+}
+
 /*[clinic input]
 @critical_section
 @getter
@@ -1048,6 +1149,8 @@ static PyGetSetDef func_getsetlist[] = {
     {"__code__", func_get_code, func_set_code},
     {"__defaults__", func_get_defaults, func_set_defaults},
     {"__kwdefaults__", func_get_kwdefaults, func_set_kwdefaults},
+    {"__defaults_extra__", func_get_defaults_extra, func_set_defaults_extra},
+    {"__kwdefaults_extra__", func_get_kwdefaults_extra, func_set_kwdefaults_extra},
     FUNCTION___ANNOTATIONS___GETSETDEF
     FUNCTION___ANNOTATE___GETSETDEF
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
@@ -1184,6 +1287,8 @@ func_clear(PyObject *self)
     }
     Py_CLEAR(op->func_module);
     Py_CLEAR(op->func_defaults);
+    Py_CLEAR(op->func_defaults_extra);
+    Py_CLEAR(op->func_kwdefaults_extra);
     Py_CLEAR(op->func_kwdefaults);
     Py_CLEAR(op->func_doc);
     Py_CLEAR(op->func_dict);
@@ -1237,6 +1342,8 @@ func_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(f->func_builtins);
     Py_VISIT(f->func_module);
     Py_VISIT(f->func_defaults);
+    Py_VISIT(f->func_defaults_extra);
+    Py_VISIT(f->func_kwdefaults_extra);
     Py_VISIT(f->func_kwdefaults);
     Py_VISIT(f->func_doc);
     Py_VISIT(f->func_name);

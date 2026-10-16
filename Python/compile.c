@@ -1600,6 +1600,8 @@ compute_code_flags(compiler *c)
             flags |= CO_HAS_DOCSTRING;
         if (ste->ste_method)
             flags |= CO_METHOD;
+        if (ste->ste_has_late_defaults)
+            flags |= CO_LATE_DEFAULTS;
     }
 
     if (ste->ste_coroutine && !ste->ste_generator) {
@@ -1630,7 +1632,9 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
         goto error;
     }
     int nlocals = (int)PyDict_GET_SIZE(u->u_metadata.u_varnames);
-    int nparams = (int)PyList_GET_SIZE(u->u_ste->ste_varnames);
+    /* Late-bound parameters can still be unbound in the function prologue. */
+    int nparams = u->u_ste->ste_has_late_defaults ? 0
+        : (int)PyList_GET_SIZE(u->u_ste->ste_varnames);
     assert(u->u_metadata.u_firstlineno);
 
     if (_PyCfg_OptimizeCodeUnit(g, consts, const_cache, nlocals,
