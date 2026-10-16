@@ -104,10 +104,11 @@ class TestInteractiveInterpreter(unittest.TestCase):
         # no memory. Check also that the fix does not break the interactive
         # loop when an exception is raised.
         user_input = """
-            import sys, _testcapi
+            import sys
+            from test import support
             1/0
             print('After the exception.')
-            _testcapi.set_nomemory(0)
+            support.inject_memory_error()
             sys.exit(0)
         """
         user_input = dedent(user_input)

@@ -461,15 +461,11 @@ class DictTest(unittest.TestCase):
 
     @support.nomemtest
     def test_copy_empty_no_memory(self):
-        import _testcapi
         d = {}
         d_copy = d.copy
         with self.assertRaises(MemoryError):
-            try:
-                _testcapi.set_nomemory(0)
+            with support.inject_memory_error_cm():
                 d_copy()
-            finally:
-                _testcapi.remove_mem_hooks()
 
     def test_get(self):
         d = {}
