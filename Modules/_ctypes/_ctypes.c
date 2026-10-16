@@ -2906,6 +2906,22 @@ GetKeepedObjects(CDataObject *target)
     return container->b_objects;
 }
 
+/* Like GetKeepedObjects(), for a caller that already holds target's lock. */
+static PyObject *
+GetKeepedObjects_lock_held(CDataObject *target)
+{
+    CDataObject *container;
+    if (target->b_base == NULL) {
+        container = PyCData_GetContainer_lock_held(target);
+    }
+    else {
+        container = PyCData_GetContainer(target);
+    }
+    if (container == NULL)
+        return NULL;
+    return container->b_objects;
+}
+
 static PyObject *
 unique_key(CDataObject *target, Py_ssize_t index)
 {
@@ -5716,15 +5732,15 @@ Pointer_set_contents_lock_held(PyObject *op, PyObject *value, void *closure)
        'value' itself as the second item of the b_objects list, additionally.
     */
     Py_INCREF(value);
-    if (-1 == KeepRef(self, 1, value))
+    if (-1 == KeepRef_lock_held(self, 1, value))
         return -1;
 
-    keep = GetKeepedObjects(dst);
+    keep = GetKeepedObjects_lock_held(dst);
     if (keep == NULL)
         return -1;
 
     Py_INCREF(keep);
-    return KeepRef(self, 0, keep);
+    return KeepRef_lock_held(self, 0, keep);
 }
 
 static int
