@@ -3351,6 +3351,52 @@ _PyBytes_IsMutable(PyObject *self)
 #endif
 
 
+static inline int
+bytes_resize_inplace(PyObject **pv, Py_ssize_t newsize)
+{
+    PyObject *v = *pv;
+    // Do not test _PyObject_IsUniquelyReferenced(). The function is used by
+    // PyBytesWriter_FinishWithSize() and its caller can have its own lock.
+    assert(Py_REFCNT(v) == 1);
+    assert(PyBytes_GET_SIZE(v) >= 1);
+    assert(newsize >= 1);
+
+    // Only mutable bytes can be resized in-place
+    assert(_PyBytes_IsMutable(v));
+
+    if ((size_t)newsize > (size_t)PY_SSIZE_T_MAX - PyBytesObject_SIZE) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "byte string is too large");
+        return -1;
+    }
+
+#ifdef Py_TRACE_REFS
+    _Py_ForgetReference(v);
+#endif
+    _PyReftracerTrack(v, PyRefTracer_DESTROY);
+
+    PyObject *result = PyObject_Realloc(v, PyBytesObject_SIZE + newsize);
+    if (result == NULL) {
+#ifdef Py_TRACE_REFS
+        _Py_AddToAllObjects(v);
+#endif
+        _PyReftracerTrack(v, PyRefTracer_CREATE);
+
+        PyErr_NoMemory();
+        return -1;
+    }
+
+    *pv = result;
+    v = result;
+    _Py_NewReferenceNoTotal(v);
+    PyBytesObject *sv = (PyBytesObject *)v;
+    Py_SET_SIZE(sv, newsize);
+    sv->ob_sval[newsize] = '\0';
+    assert(_PyBytes_IsMutable(*pv));
+    return 0;
+}
+
+
 /* The following function breaks the notion that bytes are immutable:
    it changes the size of a bytes object.  You can think of it
    as creating a new bytes object and destroying the old one, only
@@ -3377,7 +3423,9 @@ _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize)
 
     Py_ssize_t oldsize = PyBytes_GET_SIZE(v);
     if (oldsize == newsize) {
-        /* return early if newsize equals to v->ob_size */
+        // Leave the object unchanged if the new size is the same as the old
+        // size, even if the object is not uniquely referenced or if the hash
+        // value was already computed.
         return 0;
     }
 
@@ -3397,7 +3445,10 @@ _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize)
         return 0;
     }
 
-    if (!_PyObject_IsUniquelyReferenced(v)) {
+    if (!_PyObject_IsUniquelyReferenced(v)
+        // Return a copy if the hash value was already computed
+        || get_ob_shash((PyBytesObject *)v) != -1)
+    {
         // Allocate and then copy so we don't get a shared immortal
         // one-character singleton!
         result = _PyBytes_FromSize(newsize, 0);
@@ -3411,38 +3462,8 @@ _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize)
         Py_DECREF(v);
         return 0;
     }
-    assert(v != bytes_get_empty());
 
-    if ((size_t)newsize > (size_t)PY_SSIZE_T_MAX - PyBytesObject_SIZE) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "byte string is too large");
-        return -1;
-    }
-
-#ifdef Py_TRACE_REFS
-    _Py_ForgetReference(v);
-#endif
-    _PyReftracerTrack(v, PyRefTracer_DESTROY);
-
-    result = (PyObject *)PyObject_Realloc(v, PyBytesObject_SIZE + newsize);
-    if (result == NULL) {
-#ifdef Py_TRACE_REFS
-        _Py_AddToAllObjects(v);
-#endif
-        _PyReftracerTrack(v, PyRefTracer_CREATE);
-
-        PyErr_NoMemory();
-        return -1;
-    }
-
-    *pv = result;
-    v = result;
-    _Py_NewReferenceNoTotal(v);
-    PyBytesObject *sv = (PyBytesObject *)v;
-    Py_SET_SIZE(sv, newsize);
-    sv->ob_sval[newsize] = '\0';
-    set_ob_shash(sv, -1);          /* invalidate cached hash value */
-    return 0;
+    return bytes_resize_inplace(pv, newsize);
 }
 
 
