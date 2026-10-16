@@ -2600,6 +2600,28 @@ check_class(PyObject *cls, const char *error)
     return -1;
 }
 
+/* Return 1 if inst.__class__ is known to evaluate to Py_TYPE(inst) without
+   running any code: generic attribute lookup resolves __class__ to object's
+   own getset descriptor.  That descriptor is a data descriptor, so it wins
+   over the instance __dict__, and object_get_class() just returns the type.
+   Types with a custom tp_getattro (modules, type objects, classes with
+   __getattr__/__getattribute__) or a __class__ override fall back to the
+   generic path. */
+static inline int
+class_attr_is_type(PyObject *inst)
+{
+    PyTypeObject *tp = Py_TYPE(inst);
+    if (tp->tp_getattro != PyObject_GenericGetAttr) {
+        return 0;
+    }
+    PyObject *descr = _PyType_LookupRef(tp, &_Py_ID(__class__));
+    int res = (descr != NULL
+               && Py_IS_TYPE(descr, &PyGetSetDescr_Type)
+               && PyDescr_TYPE(descr) == &PyBaseObject_Type);
+    Py_XDECREF(descr);
+    return res;
+}
+
 static int
 object_isinstance(PyObject *inst, PyObject *cls)
 {
@@ -2608,6 +2630,10 @@ object_isinstance(PyObject *inst, PyObject *cls)
     if (PyType_Check(cls)) {
         retval = PyObject_TypeCheck(inst, (PyTypeObject *)cls);
         if (retval == 0) {
+            if (class_attr_is_type(inst)) {
+                /* __class__ is Py_TYPE(inst): nothing more to check. */
+                return 0;
+            }
             retval = PyObject_GetOptionalAttr(inst, &_Py_ID(__class__), &icls);
             if (icls != NULL) {
                 if (icls != (PyObject *)(Py_TYPE(inst)) && PyType_Check(icls)) {
