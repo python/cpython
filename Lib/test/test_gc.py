@@ -1422,6 +1422,54 @@ class GCTests(unittest.TestCase):
         del l
         self.assertEqual(count, _testinternalcapi.get_tracked_heap_size())
 
+    @requires_gil_enabled("tests fused full-collection reference accounting")
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+    def test_full_collection_preserves_refs_while_untracking_immortal(self):
+        """Untracking an immortal preserves adjacent candidates and heap accounting."""
+        import_module("ctypes")
+        source = textwrap.dedent("""
+            import ctypes
+            import gc
+            import _testinternalcapi
+
+            set_immortal = ctypes.pythonapi._Py_SetImmortal
+            set_immortal.argtypes = [ctypes.py_object]
+            set_immortal.restype = None
+            track = ctypes.pythonapi.PyObject_GC_Track
+            track.argtypes = [ctypes.py_object]
+            track.restype = None
+            may_have_foreign_gc_objects = ctypes.pythonapi._PyInterpreterState_MayHaveForeignGcObjects
+            may_have_foreign_gc_objects.argtypes = []
+            may_have_foreign_gc_objects.restype = ctypes.c_bool
+
+            gc.disable()
+            gc.collect(2)
+            candidates_before = gc.get_stats()[2]["candidates"]
+            parent = []
+            middle = []
+            set_immortal(middle)
+            track(middle)
+            child = []
+            parent.append(child)
+            child.append(parent)
+
+            # Traversing parent initializes child before the intervening
+            # immortal is removed from the forward chain.
+            del parent, child
+            assert gc.get_freeze_count() == 0
+            assert not may_have_foreign_gc_objects()
+            # Every tracked object except middle is a candidate here.
+            expected_candidates = _testinternalcapi.get_tracked_heap_size() - 1
+            assert gc.collect(2) == 2
+            assert not gc.is_tracked(middle)
+            assert gc.get_stats()[2]["candidates"] - candidates_before == expected_candidates
+
+            # get_objects() omits the result list itself.
+            objects = gc.get_objects()
+            assert _testinternalcapi.get_tracked_heap_size() == len(objects) + 1
+        """)
+        assert_python_ok("-c", source)
+
 
 class GCCallbackTests(unittest.TestCase):
     def setUp(self):

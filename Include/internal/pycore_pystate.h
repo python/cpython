@@ -62,6 +62,18 @@ _Py_IsMainInterpreter(PyInterpreterState *interp)
     return (interp == _PyInterpreterState_Main());
 }
 
+/* Return whether tracked objects may belong to another interpreter lifetime.
+ *
+ * Result:
+ * - false before any subinterpreter reservation or runtime reinitialization.
+ * - true after either event, including across Py_Finalize()/Py_Initialize().
+ *
+ * Extension-owned objects may outlive the interpreter whose GC list held them,
+ * so callers must not assume every tracked object belongs to the current
+ * runtime when this returns true.
+ */
+PyAPI_FUNC(bool) _PyInterpreterState_MayHaveForeignGcObjects(void);
+
 extern int _Py_IsMainInterpreterFinalizing(PyInterpreterState *interp);
 
 // Export for _interpreters module.

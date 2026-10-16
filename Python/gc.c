@@ -29,9 +29,8 @@ typedef struct _gc_runtime_state GCState;
 #define GC_NEXT _PyGCHead_NEXT
 #define GC_PREV _PyGCHead_PREV
 
-// update_refs() set this bit for all objects in current generation.
-// subtract_refs() and move_unreachable() uses this to distinguish
-// visited object is in GCing or not.
+// Reference initialization marks objects in the current generation.
+// Reference subtraction and reachability use this bit to recognize them.
 //
 // move_unreachable() removes this flag from reachable objects.
 // Only unreachable objects have this flag.
@@ -168,15 +167,14 @@ During a collection, _gc_prev is temporary used for gc_refs, and the gc list
 is singly linked until _gc_prev is restored.
 
 gc_refs
-    At the start of a collection, update_refs() copies the true refcount
-    to gc_refs, for each object in the generation being collected.
-    subtract_refs() then adjusts gc_refs so that it equals the number of
-    times an object is referenced directly from outside the generation
-    being collected.
+    The true refcount is copied to gc_refs and reduced by references from
+    objects in the generation being collected. The remaining count is the
+    number of direct references from outside that generation. Full collections
+    may initialize and subtract these counts in one traversal.
 
 PREV_MASK_COLLECTING
-    Objects in generation being collected are marked PREV_MASK_COLLECTING in
-    update_refs().
+    Reference initialization marks objects in the generation being collected
+    with PREV_MASK_COLLECTING.
 
 
 _gc_next values
@@ -456,6 +454,43 @@ visit_decref(PyObject *op, void *parent)
     return 0;
 }
 
+/* Subtract a GC reference, initializing and marking the referent on first visit.
+ *
+ * This visitor is used only when every tracked mortal object it may reach
+ * belongs to the collection. Non-GC, untracked, and immortal referents remain
+ * unchanged.
+ *
+ * Arguments:
+ * - `op`: the object referenced by the traversed parent.
+ * - `parent`: the traversed owner used by debug reference validation.
+ *
+ * Return zero, as required by traversal callbacks.
+ */
+static int
+gc_decref_and_mark_collecting(PyObject *op, void *parent)
+{
+    OBJECT_STAT_INC(object_visits);
+    _PyObject_ASSERT(_PyObject_CAST(parent), !_PyObject_IsFreed(op));
+
+    if (!_PyObject_IS_GC(op)) {
+        return 0;
+    }
+
+    PyGC_Head *gc = AS_GC(op);
+    if (gc_is_collecting(gc)) {
+        gc_decref(gc);
+        return 0;
+    }
+
+    if (!_PyObject_GC_IS_TRACKED(op) || _Py_IsImmortal(op)) {
+        return 0;
+    }
+    Py_ssize_t refs = Py_REFCNT(op);
+    _PyObject_ASSERT(op, refs != 0);
+    gc_reset_refs(gc, refs - 1);
+    return 0;
+}
+
 int
 _PyGC_VisitStackRef(_PyStackRef *ref, visitproc visit, void *arg)
 {
@@ -463,7 +498,8 @@ _PyGC_VisitStackRef(_PyStackRef *ref, visitproc visit, void *arg)
     // refcounts when computing the incoming references, but otherwise treat
     // them like normal.
     assert(!PyStackRef_IsTaggedInt(*ref));
-    if (!PyStackRef_RefcountOnObject(*ref) && (visit == visit_decref)) {
+    if (!PyStackRef_RefcountOnObject(*ref) &&
+        (visit == visit_decref || visit == gc_decref_and_mark_collecting)) {
         return 0;
     }
     Py_VISIT(PyStackRef_AsPyObjectBorrow(*ref));
@@ -499,6 +535,60 @@ subtract_refs(PyGC_Head *containers)
                         visit_decref,
                         op);
     }
+}
+
+/* Initialize and subtract references in one traversal of all ordinary generations.
+ *
+ * Mortal candidates retain adjusted gc_refs. Dynamic immortal candidates become
+ * untracked without changing other candidates' temporary counts.
+ *
+ * Prerequisites:
+ * - This is the initial pass of a full collection, not a resurrection recheck.
+ * - `containers` is a valid list containing all ordinary generations with no masks set.
+ * - The permanent generation is empty.
+ * - `_PyInterpreterState_MayHaveForeignGcObjects()` is false.
+ *
+ * Arguments:
+ * - `containers`: tracked objects belonging to the initial main interpreter.
+ *
+ * Return the number of mortal collection candidates.
+ */
+static Py_ssize_t
+update_and_subtract_refs(PyGC_Head *containers)
+{
+    Py_ssize_t candidates = 0;
+    PyGC_Head *previous = containers;
+    PyGC_Head *gc = GC_NEXT(containers);
+
+    while (gc != containers) {
+        PyGC_Head *next = GC_NEXT(gc);
+        PyObject *op = FROM_GC(gc);
+
+        if (!gc_is_collecting(gc)) {
+            if (_Py_IsImmortal(op)) {
+                assert(!_Py_IsStaticImmortal(op));
+                // The next node may already hold gc_refs instead of a predecessor,
+                // so ordinary untracking would corrupt its count.
+                _PyGCHead_SET_NEXT(previous, next);
+                gc->_gc_prev &= _PyGC_PREV_MASK_FINALIZED;
+                gc->_gc_next = 0;
+                _PyInterpreterState_GET()->gc.heap_size--;
+                gc = next;
+                continue;
+            }
+            gc_reset_refs(gc, Py_REFCNT(op));
+            _PyObject_ASSERT(op, gc_get_refs(gc) != 0);
+        }
+
+        candidates++;
+        (void)Py_TYPE(op)->tp_traverse(op, gc_decref_and_mark_collecting, op);
+        previous = gc;
+        gc = next;
+    }
+
+    // The tail must remain valid until reachability restores predecessor links.
+    containers->_gc_prev = (uintptr_t)previous;
+    return candidates;
 }
 
 /* A traversal callback for move_unreachable. */
@@ -1185,6 +1275,8 @@ show_stats_each_generations(GCState *gcstate)
 /* Deduce which objects among "base" are unreachable from outside the list
    and move them to 'unreachable'. The process consist in the following steps:
 
+The first two steps may be combined for the initial pass of a full collection.
+
 1. Copy all reference counts to a different field (gc_prev is used to hold
    this copy to save memory).
 2. Traverse all objects in "base" and visit all referred objects using
@@ -1204,6 +1296,13 @@ Contracts:
     * The "unreachable" list must be uninitialized (this function calls
       gc_list_init over 'unreachable').
 
+    * "full_collection_pass" means this is the initial pass over all ordinary generations.
+      Resurrection rechecks pass false even during a full collection.
+
+    * "reachable" must point to storage for the number of survivors that remain tracked.
+
+    * The return value is the number of mortal collection candidates.
+
 IMPORTANT: This function leaves 'unreachable' with the NEXT_MASK_UNREACHABLE
 flag set but it does not clear it to skip unnecessary iteration. Before the
 flag is cleared (for example, by using 'clear_unreachable_mask' function or
@@ -1211,15 +1310,25 @@ by a call to 'move_legacy_finalizers'), the 'unreachable' list is not a normal
 list and we can not use most gc_list_* functions for it. */
 static inline Py_ssize_t
 deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable,
-                   Py_ssize_t *reachable) {
+                   bool full_collection_pass, Py_ssize_t *reachable) {
     validate_list(base, collecting_clear_unreachable_clear);
     /* Using ob_refcnt and gc_refs, calculate which objects in the
      * container set are reachable from outside the set (i.e., have a
      * refcount greater than 0 when all the references within the
      * set are taken into account).
      */
-    Py_ssize_t candidates = update_refs(base);  // gc_prev is used for gc_refs
-    subtract_refs(base);
+    // Lazy initialization can touch any tracked mortal referent. Use it only
+    // when all such objects belong to this initial full collection.
+    Py_ssize_t candidates;
+    if (full_collection_pass &&
+        gc_list_is_empty(&get_gc_state()->permanent_generation.head) &&
+        !_PyInterpreterState_MayHaveForeignGcObjects()) {
+        candidates = update_and_subtract_refs(base);
+    }
+    else {
+        candidates = update_refs(base);  // gc_prev is used for gc_refs
+        subtract_refs(base);
+    }
 
     /* Leave everything reachable from outside base in base, and move
      * everything else (in base) to unreachable.
@@ -1290,7 +1399,7 @@ handle_resurrected_objects(PyGC_Head *unreachable, PyGC_Head* still_unreachable,
     // removed so we can skip the expense of clearing the flag.
     PyGC_Head* resurrected = unreachable;
     Py_ssize_t reachable;
-    deduce_unreachable(resurrected, still_unreachable, &reachable);
+    deduce_unreachable(resurrected, still_unreachable, false, &reachable);
     clear_unreachable_mask(still_unreachable);
 
     // Move the resurrected objects to the old generation for future collection.
@@ -1597,7 +1706,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     validate_list(old, collecting_clear_unreachable_clear);
 
     Py_ssize_t reachable;
-    stats.candidates = deduce_unreachable(young, &unreachable, &reachable);
+    stats.candidates = deduce_unreachable(young, &unreachable, generation == NUM_GENERATIONS - 1, &reachable);
 
     /* Move reachable objects to next generation. */
     if (young != old) {
