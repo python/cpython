@@ -798,16 +798,22 @@ move_legacy_finalizer_reachable(PyGC_Head *finalizers)
  * Arguments:
  * - `unreachable`: normalized collecting list to inspect.
  * - `wrcb_to_call`: initialized list receiving weakrefs whose callbacks are safe to invoke.
+ * - `collectable_count_out`: receives the number of objects in `unreachable`.
+ * - `needs_weakref_cleanup_out`: receives whether garbage weakrefs or remaining incoming weakrefs may need cleanup.
  *
  * Return whether any finalizer is pending or a weakref callback is queued.
- * This function does not invoke callbacks.
+ * This function does not invoke callbacks. The count and cleanup decision
+ * remain valid only while the unreachable set and its weakrefs cannot change.
  */
 Py_NO_INLINE static bool
-prepare_callbacks(PyGC_Head *unreachable, PyGC_Head *wrcb_to_call)
+prepare_callbacks(PyGC_Head *unreachable, PyGC_Head *wrcb_to_call,
+                  Py_ssize_t *collectable_count_out, bool *needs_weakref_cleanup_out)
 {
     PyGC_Head *gc;
     PyGC_Head *next;
+    Py_ssize_t count = 0;
     bool has_pending_finalizer = false;
+    bool needs_weakref_cleanup = false;
 
     /* Find all weakrefs with callbacks and move into `wrcb_to_call` if the
      * callback needs to be invoked. We make another pass over wrcb_to_call,
@@ -818,10 +824,15 @@ prepare_callbacks(PyGC_Head *unreachable, PyGC_Head *wrcb_to_call)
 
         PyObject *op = FROM_GC(gc);
         PyTypeObject *type = Py_TYPE(op);
+        count++;
         if (type->tp_finalize != NULL && !has_pending_finalizer) {
             has_pending_finalizer = !_PyGC_FINALIZED(op);
         }
         next = GC_NEXT(gc);
+
+        // Garbage weakrefs need clearing even if their referents are outside
+        // this collection (bpo-38006).
+        needs_weakref_cleanup |= PyWeakref_Check(op);
 
         if (! _PyType_SUPPORTS_WEAKREFS(type)) {
             continue;
@@ -900,8 +911,12 @@ prepare_callbacks(PyGC_Head *unreachable, PyGC_Head *wrcb_to_call)
             _PyObject_ASSERT((PyObject *)wr, wrasgc != next);
             gc_list_move(wrasgc, wrcb_to_call);
         }
+        // Callback-free weakrefs remain linked until finalization.
+        needs_weakref_cleanup |= *wrlist != NULL;
     }
 
+    *collectable_count_out = count;
+    *needs_weakref_cleanup_out = needs_weakref_cleanup;
     return has_pending_finalizer || !gc_list_is_empty(wrcb_to_call);
 }
 
@@ -1632,7 +1647,9 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 
     PyGC_Head wrcb_to_call;
     gc_list_init(&wrcb_to_call);
-    bool has_pending_callbacks = prepare_callbacks(&unreachable, &wrcb_to_call);
+    Py_ssize_t collectable_count;
+    bool needs_weakref_cleanup;
+    bool has_pending_callbacks = prepare_callbacks(&unreachable, &wrcb_to_call, &collectable_count, &needs_weakref_cleanup);
     has_pending_callbacks |= needs_resurrection_check;
 
     PyGC_Head final_unreachable;
@@ -1641,6 +1658,9 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         bool resurrection_checked = handle_callbacks(tstate, collectable, &final_unreachable, old, &wrcb_to_call, &stats.collected, needs_resurrection_check);
         if (resurrection_checked) {
             collectable = &final_unreachable;
+            // Python code may have changed the garbage set or created weakrefs.
+            // Refresh both cleanup and counting.
+            needs_weakref_cleanup = true;
         }
     }
     validate_list(old, collecting_clear_unreachable_clear);
@@ -1652,7 +1672,10 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
      * and create new weakrefs.  If those weakrefs were not cleared, they
      * could reveal unreachable objects.  Callbacks are not executed.
      */
-    stats.collected += clear_weakrefs(collectable);
+    if (needs_weakref_cleanup) {
+        collectable_count = clear_weakrefs(collectable);
+    }
+    stats.collected += collectable_count;
 
     /* Call tp_clear on objects in the collectable set.  This will cause
     * the reference cycles to be broken.  It may also cause some objects
