@@ -1196,6 +1196,36 @@ class GCTests(unittest.TestCase):
 
         gc.enable()
 
+    @requires_gil_enabled("tests the generation-list collector")
+    def test_callback_free_weakref_clear_without_pending_callbacks(self):
+        """Clear callback-free weakrefs before tp_clear can expose garbage."""
+        was_enabled = gc.isenabled()
+        gc.disable()
+        self.addCleanup(gc.enable if was_enabled else gc.disable)
+        self.addCleanup(gc.collect)
+        observed = []
+        self.addCleanup(observed.clear)
+
+        class Observer:
+            """Inspect a young target when its clearing releases this object."""
+
+            def __del__(self):
+                """Record whether the weakref still exposes the target."""
+                observed.append(reference())
+
+        observer = Observer()
+        gc.collect()
+        # The older observer does not open the callback path for generation 0.
+        # Clearing the target releases it, so the weakref must already be dead.
+        target = C1055820(0)
+        target.observer = observer
+        reference = weakref.ref(target)
+        del observer, target
+
+        self.assertEqual(gc.collect(0), 1)
+        self.assertEqual(observed, [None])
+        self.assertIsNone(reference())
+
     @unittest.skipIf(ContainerNoGC is None,
                      'requires ContainerNoGC extension type')
     def test_trash_weakref_clear(self):
