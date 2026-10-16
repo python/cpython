@@ -808,6 +808,12 @@ Object Protocol
    that this function doesn't call into the Python interpreter. This function
    cannot fail.
 
+   .. caution::
+
+      For objects where :c:expr:`Py_REFCNT(op) == 1` is always true this
+      function will return false when checked in a different thread than the
+      allocation.
+
    .. versionadded:: 3.14
 
 .. c:function:: int PyUnstable_SetImmortal(PyObject *op)
