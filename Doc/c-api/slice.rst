@@ -1,6 +1,6 @@
 .. highlight:: c
 
-.. _slice-objects:
+.. _c-api-slice-objects:
 
 Slice Objects
 -------------
