@@ -160,10 +160,10 @@ read_py_str(
             Py_UCS4 ch = ucs4[i];
             if (ch > _Py_MAX_UNICODE) {
                 PyMem_Free(data);
-                PyErr_Format(PyExc_ValueError,
+                PyErr_Format(PyExc_RuntimeError,
                              "character U+%x is not in range [U+0000; U+%x]",
                              ch, _Py_MAX_UNICODE);
-                set_exception_cause(unwinder, PyExc_ValueError,
+                set_exception_cause(unwinder, PyExc_RuntimeError,
                                     "Unicode string contains invalid character");
                 return NULL;
             }
