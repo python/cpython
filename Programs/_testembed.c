@@ -1304,6 +1304,36 @@ static int test_audit(void)
     return result;
 }
 
+static int
+audit_hook_clear_finalizer(const char *event, PyObject *args, void *userdata)
+{
+    if (strcmp(event, "cpython._PySys_ClearAuditHooks") == 0) {
+        PyObject **finalizer = userdata;
+        Py_CLEAR(*finalizer);
+    }
+    return 0;
+}
+
+static int test_audit_clear_finalizer(void)
+{
+    assert(main_argc == 3);
+    _testembed_initialize();
+    if (PyRun_SimpleString(main_argv[2]) < 0) {
+        return 1;
+    }
+
+    PyObject *main_module = PyImport_AddModule("__main__");
+    assert(main_module != NULL);
+    PyObject *finalizer = PyObject_GetAttrString(main_module, "finalizer");
+    assert(finalizer != NULL);
+    assert(PyObject_DelAttrString(main_module, "finalizer") == 0);
+    assert(PySys_AddAuditHook(audit_hook_clear_finalizer, &finalizer) == 0);
+
+    int result = Py_FinalizeEx();
+    assert(finalizer == NULL);
+    return result;
+}
+
 static int test_audit_tuple(void)
 {
 #define ASSERT(TEST, EXITCODE) \
@@ -3011,6 +3041,7 @@ static struct TestCase TestCases[] = {
     // Audit
     {"test_open_code_hook", test_open_code_hook},
     {"test_audit", test_audit},
+    {"test_audit_clear_finalizer", test_audit_clear_finalizer},
     {"test_audit_tuple", test_audit_tuple},
     {"test_audit_subinterpreter", test_audit_subinterpreter},
     {"test_audit_run_command", test_audit_run_command},

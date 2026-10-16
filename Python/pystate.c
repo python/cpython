@@ -966,9 +966,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 #endif
 
     if (tstate->interp == interp) {
-        // gh-159041: Finalizers above may have registered new asyncio tasks.
-        move_asyncio_tasks_to_interpreter(tstate);
-
         /* We are now safe to fix tstate->_status.cleared. */
         // XXX Do this (much) earlier?
         tstate->_status.cleared = 1;
@@ -1039,6 +1036,10 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     // we start finalizing the interpreter (or the current thread state).
     PyThreadState *tcur = current_fast_get();
     if (tcur != NULL && interp == tcur->interp) {
+        // Finalizers and C audit hooks can create tasks after interpreter_clear().
+        // Transfer them while the current thread state is still attached.
+        move_asyncio_tasks_to_interpreter(tcur);
+
         /* Unset current thread.  After this, many C API calls become crashy. */
         _PyThreadState_Detach(tcur);
     }

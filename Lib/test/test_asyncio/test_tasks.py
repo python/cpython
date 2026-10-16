@@ -3130,40 +3130,6 @@ class CTask_CFuture_Tests(BaseTaskTests, SetMethodsTest,
         finally:
             loop.run_until_complete(task)
 
-    def test_task_created_during_interpreter_clear(self):
-        code = """if 1:
-            import asyncio
-            import contextvars
-            import warnings
-
-            async def noop():
-                pass
-
-            class Loop:
-                def get_debug(self):
-                    return False
-
-                def call_soon(self, callback, *args, context=None):
-                    self.callback = callback
-
-            class CreatesTaskOnClear:
-                def __init__(self):
-                    self.task_type = asyncio.Task
-                    self.coro = noop()
-                    self.loop = Loop()
-                    self.context = contextvars.Context()
-
-                def __del__(self):
-                    self.task_type(
-                        self.coro, loop=self.loop, context=self.context)
-
-            # Leave the only reference to the filters list in the warnings
-            # state, which is cleared after the final garbage collection.
-            warnings.filters.append(CreatesTaskOnClear())
-            del warnings.filters
-        """
-        assert_python_ok('-c', code)
-
     def test_del__log_destroy_pending_segfault(self):
         async def coro():
             pass

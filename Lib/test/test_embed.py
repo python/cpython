@@ -2005,6 +2005,57 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_audit(self):
         self.run_embedded_interpreter("test_audit")
 
+    def test_asyncio_tasks_during_shutdown(self):
+        import_helper.import_module('_asyncio')
+        code = textwrap.dedent("""
+            import asyncio
+            import contextvars
+            import os
+            import warnings
+
+            async def noop():
+                pass
+
+            class Loop:
+                debug = False
+
+                def get_debug(self):
+                    return self.debug
+
+                def call_soon(self, callback, *args, context=None):
+                    self.callback = callback
+                    return callback
+
+            class CreatesTaskOnClear:
+                def __init__(self, message):
+                    self.task_type = asyncio.Task
+                    self.coro = noop()
+                    self.loop = Loop()
+                    self.context = contextvars.Context()
+                    self.write = os.write
+                    self.message = message
+
+                def __del__(self):
+                    self.task_type(
+                        self.coro, loop=self.loop, context=self.context)
+                    return self.write(1, self.message)
+
+            # Release one finalizer when interpreter_clear() clears warnings.
+            warnings.filters.append(CreatesTaskOnClear(b'warnings cleared\\n'))
+            del warnings.filters
+
+            # The native audit hook releases this one after interpreter_clear().
+            finalizer = CreatesTaskOnClear(b'audit hooks cleared\\n')
+        """)
+        # gh-159041: Native audit hooks are cleared after interpreter_clear().
+        # The methods above avoid loading common constants (including an
+        # implicit return None), which have already been cleared at that point.
+        out, err = self.run_embedded_interpreter(
+            "test_audit_clear_finalizer", code,
+            timeout=support.SHORT_TIMEOUT)
+        self.assertEqual(out, "warnings cleared\naudit hooks cleared\n")
+        self.assertEqual(err, "")
+
     def test_audit_tuple(self):
         self.run_embedded_interpreter("test_audit_tuple")
 
