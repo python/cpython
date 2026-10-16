@@ -180,6 +180,17 @@ class PolicyAPITests(unittest.TestCase):
 
         self.assertIn(b"invalid \xff", output)
 
+    def test_smtputf8_parse_then_compat32_serialize_preserves_addresses(self):
+        # gh-99927: parsing with SMTPUTF8 and serializing with compat32 must
+        # keep address headers structured - regressing here encodes the
+        # whole header as one encoded word and destroys the addr-spec.
+        odata = (b"From: Sender <s@example.com>\n"
+                 + "To: J\xf6rg <a@b>\n".encode("utf-8")
+                 + b"Subject: test\n\nbody\n")
+        msg = email.message_from_bytes(odata, policy=email.policy.SMTPUTF8)
+        out = msg.as_bytes(policy=email.policy.compat32)
+        self.assertIn(b"<a@b>", out)
+
     def test_fold_zero_max_line_length(self):
         expected = 'Subject: =?utf-8?q?=C3=A1?=\n'
 
