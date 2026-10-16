@@ -7,6 +7,7 @@
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_traceback.h"     // _Py_DisplaySourceLine()
 #include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
@@ -255,38 +256,24 @@ get_warnings_attr(PyInterpreterState *interp, PyObject *attr, int try_import)
     return obj;
 }
 
-static _Py_thread_local PyInterpreterGuard warnings_guard;
-
 static inline int
 warnings_lock(PyInterpreterState *interp)
 {
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
-    if (_PyRecursiveMutex_IsLockedByCurrentThread(&st->lock)) {
-        _PyRecursiveMutex_Lock(&st->lock);
-        return 0;
-    }
-    PyInterpreterGuard *guard = NULL;
-    if (_PyInterpreterState_GetFinalizing(interp) != _PyThreadState_GET()) {
-        guard = &warnings_guard;
-        if (guard->interp != NULL) {
-            guard = PyMem_RawMalloc(sizeof(*guard));
-            if (guard == NULL) {
-                PyErr_NoMemory();
-                return -1;
-            }
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    if (!_PyRecursiveMutex_IsLockedByCurrentThread(&st->lock) &&
+        _PyInterpreterState_GetFinalizing(interp) != tstate)
+    {
+        assert(tstate_impl->warnings_lock_guard == NULL);
+        PyInterpreterGuard *guard = PyInterpreterGuard_FromCurrent();
+        if (guard == NULL) {
+            return -1;
         }
-        if (_PyInterpreterGuard_TryAcquire(interp, guard) < 0) {
-            if (guard != &warnings_guard) {
-                PyMem_RawFree(guard);
-            }
-            // Finalization has begun; this thread must stop before it takes
-            // the lock.
-            _PyThreadState_HangThread(_PyThreadState_GET());
-        }
+        tstate_impl->warnings_lock_guard = guard;
     }
     _PyRecursiveMutex_Lock(&st->lock);
-    st->lock_guard = guard;
     return 0;
 }
 
@@ -302,17 +289,12 @@ warnings_unlock(PyInterpreterState *interp)
         _PyRecursiveMutex_Unlock(&st->lock);
         return 0;
     }
-    PyInterpreterGuard *guard = st->lock_guard;
-    st->lock_guard = NULL;
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    PyInterpreterGuard *guard = tstate->warnings_lock_guard;
+    tstate->warnings_lock_guard = NULL;
     _PyRecursiveMutex_Unlock(&st->lock);
     if (guard != NULL) {
-        _PyInterpreterGuard_Release(guard);
-        if (guard == &warnings_guard) {
-            guard->interp = NULL;
-        }
-        else {
-            PyMem_RawFree(guard);
-        }
+        PyInterpreterGuard_Close(guard);
     }
     return 0;
 }
