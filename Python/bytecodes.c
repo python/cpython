@@ -1224,11 +1224,13 @@ dummy_func(
             EXIT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject*)sub));
             Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
             EXIT_IF(PyUnicode_GET_LENGTH(str) <= index);
-            // Specialize for reading an ASCII character from any string:
+            // Interned one-character strings exist for latin-1 only:
             Py_UCS4 c = PyUnicode_READ_CHAR(str, index);
-            EXIT_IF(Py_ARRAY_LENGTH(_Py_SINGLETON(strings).ascii) <= c);
+            EXIT_IF(c >= 256);
             STAT_INC(BINARY_OP, hit);
-            PyObject *res_o = (PyObject*)&_Py_SINGLETON(strings).ascii[c];
+            PyObject *res_o = (c < 128)
+                ? (PyObject*)&_Py_SINGLETON(strings).ascii[c]
+                : (PyObject*)&_Py_SINGLETON(strings).latin1[c - 128];
             s = str_st;
             i = sub_st;
             INPUTS_DEAD();
