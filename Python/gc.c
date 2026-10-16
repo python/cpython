@@ -44,7 +44,8 @@ typedef struct _gc_runtime_state GCState;
 //
 // Although this flag is used only in move_unreachable(), move_unreachable()
 // doesn't clear this flag to skip unnecessary iteration.
-// move_legacy_finalizers() removes this flag instead.
+// move_legacy_finalizers(), clear_unreachable_mask(), or prepare_callbacks()
+// remove this flag instead.
 // Between them, unreachable list is not normal list and we can not use
 // most gc_list_* functions for it.
 #define NEXT_MASK_UNREACHABLE  (1)
@@ -200,7 +201,8 @@ NEXT_MASK_UNREACHABLE
     "unreachable" set.
     The flag is unset and the object is moved back to "reachable" set.
 
-    move_legacy_finalizers() will remove this flag from "unreachable" set.
+    move_legacy_finalizers(), clear_unreachable_mask(), or prepare_callbacks()
+    remove this flag from the "unreachable" set.
 */
 
 /*** list functions ***/
@@ -522,19 +524,26 @@ _PyGC_VisitFrameStack(_PyInterpreterFrame *frame, visitproc visit, void *arg)
 /* Subtract internal references from gc_refs.  After this, gc_refs is >= 0
  * for all objects in containers. The ones with gc_refs > 0 are directly
  * reachable from outside containers, and so can't be collected.
+ *
+ * Return the number of objects whose type defines tp_del. A zero count
+ * excludes legacy finalizers from the eventual unreachable subset.
  */
-static void
+static Py_ssize_t
 subtract_refs(PyGC_Head *containers)
 {
+    Py_ssize_t legacy_finalizer_count = 0;
     traverseproc traverse;
     PyGC_Head *gc = GC_NEXT(containers);
     for (; gc != containers; gc = GC_NEXT(gc)) {
         PyObject *op = FROM_GC(gc);
-        traverse = Py_TYPE(op)->tp_traverse;
+        PyTypeObject *type = Py_TYPE(op);
+        legacy_finalizer_count += type->tp_del != NULL;
+        traverse = type->tp_traverse;
         (void) traverse(op,
                         visit_decref,
                         op);
     }
+    return legacy_finalizer_count;
 }
 
 /* Initialize and subtract references in one traversal of all ordinary generations.
@@ -550,13 +559,15 @@ subtract_refs(PyGC_Head *containers)
  *
  * Arguments:
  * - `containers`: tracked objects belonging to the initial main interpreter.
+ * - `legacy_finalizer_count_out`: receives the number of mortal candidates whose type defines tp_del.
  *
  * Return the number of mortal collection candidates.
  */
 static Py_ssize_t
-update_and_subtract_refs(PyGC_Head *containers)
+update_and_subtract_refs(PyGC_Head *containers, Py_ssize_t *legacy_finalizer_count_out)
 {
     Py_ssize_t candidates = 0;
+    Py_ssize_t legacy_finalizer_count = 0;
     PyGC_Head *previous = containers;
     PyGC_Head *gc = GC_NEXT(containers);
 
@@ -581,13 +592,16 @@ update_and_subtract_refs(PyGC_Head *containers)
         }
 
         candidates++;
-        (void)Py_TYPE(op)->tp_traverse(op, gc_decref_and_mark_collecting, op);
+        PyTypeObject *type = Py_TYPE(op);
+        legacy_finalizer_count += type->tp_del != NULL;
+        (void)type->tp_traverse(op, gc_decref_and_mark_collecting, op);
         previous = gc;
         gc = next;
     }
 
     // The tail must remain valid until reachability restores predecessor links.
     containers->_gc_prev = (uintptr_t)previous;
+    *legacy_finalizer_count_out = legacy_finalizer_count;
     return candidates;
 }
 
@@ -886,19 +900,22 @@ move_legacy_finalizer_reachable(PyGC_Head *finalizers)
  * Python-level code.  See bpo-38006 as an example bug.
  *
  * Arguments:
- * - `unreachable`: normalized collecting list to inspect.
+ * - `unreachable`: collecting list with an untagged head; member _gc_next links must all be normalized or all carry NEXT_MASK_UNREACHABLE.
  * - `wrcb_to_call`: initialized list receiving weakrefs whose callbacks are safe to invoke.
  * - `collectable_count_out`: receives the number of objects in `unreachable`.
  * - `needs_weakref_cleanup_out`: receives whether garbage weakrefs or remaining incoming weakrefs may need cleanup.
  *
  * Return whether any finalizer is pending or a weakref callback is queued.
- * This function does not invoke callbacks. The count and cleanup decision
- * remain valid only while the unreachable set and its weakrefs cannot change.
+ * On return, `unreachable` is normalized. This function does not invoke callbacks.
+ * The count and cleanup decision remain valid only while the unreachable set and its weakrefs cannot change.
  */
 Py_NO_INLINE static bool
 prepare_callbacks(PyGC_Head *unreachable, PyGC_Head *wrcb_to_call,
                   Py_ssize_t *collectable_count_out, bool *needs_weakref_cleanup_out)
 {
+    assert((unreachable->_gc_next & NEXT_MASK_UNREACHABLE) == 0);
+    validate_list(unreachable, (GC_NEXT(unreachable)->_gc_next & NEXT_MASK_UNREACHABLE) ? collecting_set_unreachable_set : collecting_set_unreachable_clear);
+
     PyGC_Head *gc;
     PyGC_Head *next;
     Py_ssize_t count = 0;
@@ -918,6 +935,7 @@ prepare_callbacks(PyGC_Head *unreachable, PyGC_Head *wrcb_to_call,
         if (type->tp_finalize != NULL && !has_pending_finalizer) {
             has_pending_finalizer = !_PyGC_FINALIZED(op);
         }
+        gc->_gc_next &= ~NEXT_MASK_UNREACHABLE;
         next = GC_NEXT(gc);
 
         // Garbage weakrefs need clearing even if their referents are outside
@@ -1005,6 +1023,7 @@ prepare_callbacks(PyGC_Head *unreachable, PyGC_Head *wrcb_to_call,
         needs_weakref_cleanup |= *wrlist != NULL;
     }
 
+    validate_list(unreachable, collecting_set_unreachable_clear);
     *collectable_count_out = count;
     *needs_weakref_cleanup_out = needs_weakref_cleanup;
     return has_pending_finalizer || !gc_list_is_empty(wrcb_to_call);
@@ -1301,16 +1320,20 @@ Contracts:
 
     * "reachable" must point to storage for the number of survivors that remain tracked.
 
+    * "legacy_finalizer_count_out" receives the number of candidate objects
+      whose type defines tp_del. Zero excludes legacy finalizers from the
+      unreachable subset.
+
     * The return value is the number of mortal collection candidates.
 
 IMPORTANT: This function leaves 'unreachable' with the NEXT_MASK_UNREACHABLE
 flag set but it does not clear it to skip unnecessary iteration. Before the
-flag is cleared (for example, by using 'clear_unreachable_mask' function or
-by a call to 'move_legacy_finalizers'), the 'unreachable' list is not a normal
-list and we can not use most gc_list_* functions for it. */
+flag is cleared (for example, by 'clear_unreachable_mask',
+'move_legacy_finalizers', or 'prepare_callbacks'), the 'unreachable' list is
+not a normal list and we can not use most gc_list_* functions for it. */
 static inline Py_ssize_t
 deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable,
-                   bool full_collection_pass, Py_ssize_t *reachable) {
+                   bool full_collection_pass, Py_ssize_t *reachable, Py_ssize_t *legacy_finalizer_count_out) {
     validate_list(base, collecting_clear_unreachable_clear);
     /* Using ob_refcnt and gc_refs, calculate which objects in the
      * container set are reachable from outside the set (i.e., have a
@@ -1323,11 +1346,11 @@ deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable,
     if (full_collection_pass &&
         gc_list_is_empty(&get_gc_state()->permanent_generation.head) &&
         !_PyInterpreterState_MayHaveForeignGcObjects()) {
-        candidates = update_and_subtract_refs(base);
+        candidates = update_and_subtract_refs(base, legacy_finalizer_count_out);
     }
     else {
         candidates = update_refs(base);  // gc_prev is used for gc_refs
-        subtract_refs(base);
+        *legacy_finalizer_count_out = subtract_refs(base);
     }
 
     /* Leave everything reachable from outside base in base, and move
@@ -1399,7 +1422,8 @@ handle_resurrected_objects(PyGC_Head *unreachable, PyGC_Head* still_unreachable,
     // removed so we can skip the expense of clearing the flag.
     PyGC_Head* resurrected = unreachable;
     Py_ssize_t reachable;
-    deduce_unreachable(resurrected, still_unreachable, false, &reachable);
+    Py_ssize_t unused_legacy_finalizer_count;
+    deduce_unreachable(resurrected, still_unreachable, false, &reachable, &unused_legacy_finalizer_count);
     clear_unreachable_mask(still_unreachable);
 
     // Move the resurrected objects to the old generation for future collection.
@@ -1706,7 +1730,8 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     validate_list(old, collecting_clear_unreachable_clear);
 
     Py_ssize_t reachable;
-    stats.candidates = deduce_unreachable(young, &unreachable, generation == NUM_GENERATIONS - 1, &reachable);
+    Py_ssize_t legacy_finalizer_count;
+    stats.candidates = deduce_unreachable(young, &unreachable, generation == NUM_GENERATIONS - 1, &reachable, &legacy_finalizer_count);
 
     /* Move reachable objects to next generation. */
     if (young != old) {
@@ -1731,22 +1756,28 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
      * legacy finalizers (e.g. tp_del) can't safely be deleted.
      */
     gc_list_init(&finalizers);
-    // NEXT_MASK_UNREACHABLE is cleared here.
-    // After move_legacy_finalizers(), unreachable is normal list.
-    move_legacy_finalizers(&unreachable, &finalizers);
-    /* finalizers contains the unreachable objects with a legacy finalizer;
-     * unreachable objects reachable *from* those are also uncollectable,
-     * and we move those into the finalizers list too.
-     */
-    move_legacy_finalizer_reachable(&finalizers);
+    if (legacy_finalizer_count != 0) {
+        // NEXT_MASK_UNREACHABLE is cleared here.
+        // After move_legacy_finalizers(), unreachable is a normal list.
+        move_legacy_finalizers(&unreachable, &finalizers);
+        /* finalizers contains the unreachable objects with a legacy finalizer;
+         * unreachable objects reachable *from* those are also uncollectable,
+         * and we move those into the finalizers list too.
+         */
+        move_legacy_finalizer_reachable(&finalizers);
+        validate_list(&unreachable, collecting_set_unreachable_clear);
+    }
 
     validate_list(&finalizers, collecting_clear_unreachable_clear);
-    validate_list(&unreachable, collecting_set_unreachable_clear);
 
     bool needs_resurrection_check = false;
 
     /* Print debugging information. */
     if (gcstate->debug & _PyGC_DEBUG_COLLECTABLE) {
+        if (legacy_finalizer_count == 0) {
+            // Python invoked by debug output requires normal GC list links.
+            clear_unreachable_mask(&unreachable);
+        }
         /* sys.stderr.write() can resurrect objects. */
         needs_resurrection_check = true;
         for (gc = GC_NEXT(&unreachable); gc != &unreachable; gc = GC_NEXT(gc)) {

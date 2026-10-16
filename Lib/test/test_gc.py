@@ -761,6 +761,46 @@ class GCTests(unittest.TestCase):
                 obj.cycle = None
             resurrected.clear()
 
+    @requires_gil_enabled("tests the generation-list collector")
+    def test_debug_output_precedes_weakref_preparation(self):
+        """Debug output can observe weakrefs with callbacks before they are cleared."""
+        was_enabled = gc.isenabled()
+        debug = gc.get_debug()
+        gc.disable()
+        gc.set_debug(0)
+        self.addCleanup(gc.enable if was_enabled else gc.disable)
+        self.addCleanup(gc.collect)
+        self.addCleanup(gc.set_debug, debug)
+        observed = []
+        callbacks = []
+        self.addCleanup(callbacks.clear)
+
+        class Stderr:
+            """Record whether the target is visible during collectable debug output."""
+
+            def write(self, text):
+                """Record target visibility on the first collectable debug message.
+
+                text: Debug text written by the collector.
+                Returns: Number of characters accepted.
+                """
+                if text.startswith("gc: collectable") and not observed:
+                    observed.append(reference() is not None)
+                return len(text)
+
+        writer = Stderr()
+        gc.collect()
+        obj = C1055820(0)
+        reference = weakref.ref(obj, callbacks.append)
+        del obj
+
+        with unittest.mock.patch.object(sys, "stderr", writer):
+            gc.set_debug(gc.DEBUG_COLLECTABLE)
+            gc.collect(0)
+        self.assertEqual(observed, [True])
+        self.assertEqual(callbacks, [reference])
+        self.assertIsNone(reference())
+
     def test_bug1055820b(self):
         # Corresponds to temp2b.py in the bug report.
 
@@ -1565,7 +1605,8 @@ class GCCallbackTests(unittest.TestCase):
         Uncollectable()
         Uncollectable()
         C1055820(666)
-        gc.collect()
+        # Exercise legacy-finalizer discovery in a partial collection.
+        gc.collect(0)
         for v in self.visit:
             if v[1] != "stop":
                 continue
