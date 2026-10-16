@@ -1,3 +1,0 @@
-Argument Clinic: add support for deprecating a parameter with the ``[until
-X.Y]`` marker.
-Passing such argument emits a :exc:`DeprecationWarning`.

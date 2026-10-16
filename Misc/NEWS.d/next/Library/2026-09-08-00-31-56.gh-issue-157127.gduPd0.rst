@@ -1,3 +1,0 @@
-Reword the :mod:`argparse` error message reported for a missing required
-mutually exclusive group to ``one of the following arguments is required:
---foo, --bar``, so that the argument names are separated by commas.
