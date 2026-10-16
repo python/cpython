@@ -939,22 +939,7 @@
     <ClInclude Include="..\Include\internal\pycore_uop_metadata.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\mimalloc\mimalloc.h">
-      <Filter>Include\internal\mimalloc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\internal\mimalloc\mimalloc\atomic.h">
-      <Filter>Include\internal\mimalloc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\internal\mimalloc\mimalloc\internal.h">
-      <Filter>Include\internal\mimalloc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\internal\mimalloc\mimalloc\prim.h">
-      <Filter>Include\internal\mimalloc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\internal\mimalloc\mimalloc\track.h">
-      <Filter>Include\internal\mimalloc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\internal\mimalloc\mimalloc\types.h">
+    <ClInclude Include="..\Include\internal\mimalloc\**\*.h">
       <Filter>Include\internal\mimalloc</Filter>
     </ClInclude>
     <ClInclude Include="$(zlibDir)\crc32.h">

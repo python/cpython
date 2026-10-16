@@ -303,16 +303,13 @@ static void
 gc_restore_tid(PyObject *op)
 {
     assert(_PyInterpreterState_GET()->stoptheworld.world_stopped);
-    mi_segment_t *segment = _mi_ptr_segment(op);
+    mi_page_t *page = mi_ptr_page(op);
     if (_Py_REF_IS_MERGED(op->ob_ref_shared)) {
         op->ob_tid = 0;
     }
     else {
-        // NOTE: may change ob_tid if the object was re-initialized by
-        // a different thread or its segment was abandoned and reclaimed.
-        // The segment thread id might be zero, in which case we should
-        // ensure the refcounts are now merged.
-        op->ob_tid = segment->thread_id;
+        // Reclaimed pages may have a new owner; abandoned pages have none.
+        op->ob_tid = mi_page_is_abandoned(page) ? 0 : mi_page_thread_id(page);
         if (op->ob_tid == 0) {
             merge_refcount(op, 0);
         }
@@ -379,36 +376,15 @@ gc_visit_heaps_lock_held(PyInterpreterState *interp, mi_block_visit_fun *visitor
     // Objects with Py_TPFLAGS_PREHEADER have two extra fields
     Py_ssize_t offset_pre = offset_base + 2 * sizeof(PyObject*);
 
-    // visit each thread's heaps for GC objects
-    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
-        struct _mimalloc_thread_state *m = &((_PyThreadStateImpl *)p)->mimalloc;
-        if (!_Py_atomic_load_int(&m->initialized)) {
-            // The thread may not have called tstate_mimalloc_bind() yet.
-            continue;
-        }
-
-        arg->offset = offset_base;
-        if (!mi_heap_visit_blocks(&m->heaps[_Py_MIMALLOC_HEAP_GC], true,
-                                  visitor, arg)) {
-            return -1;
-        }
-        arg->offset = offset_pre;
-        if (!mi_heap_visit_blocks(&m->heaps[_Py_MIMALLOC_HEAP_GC_PRE], true,
-                                  visitor, arg)) {
-            return -1;
-        }
-    }
-
-    // visit blocks in the per-interpreter abandoned pool (from dead threads)
-    mi_abandoned_pool_t *pool = &interp->mimalloc.abandoned_pool;
+    // Interpreter heaps include pages owned by threads and abandoned pages.
     arg->offset = offset_base;
-    if (!_mi_abandoned_pool_visit_blocks(pool, _Py_MIMALLOC_HEAP_GC, true,
-                                         visitor, arg)) {
+    if (!mi_heap_visit_blocks(interp->mimalloc.heaps[_Py_MIMALLOC_HEAP_GC],
+                              true, visitor, arg)) {
         return -1;
     }
     arg->offset = offset_pre;
-    if (!_mi_abandoned_pool_visit_blocks(pool, _Py_MIMALLOC_HEAP_GC_PRE, true,
-                                         visitor, arg)) {
+    if (!mi_heap_visit_blocks(interp->mimalloc.heaps[_Py_MIMALLOC_HEAP_GC_PRE],
+                              true, visitor, arg)) {
         return -1;
     }
     return 0;
