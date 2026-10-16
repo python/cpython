@@ -410,8 +410,11 @@ set_insert_clean(setentry *table, size_t mask, PyObject *key, Py_hash_t hash)
 /* ======== End logic for probing the hash table ========================== */
 /* ======================================================================== */
 
+// Like set_lookkey(), but the caller holds the critical section on a mutable
+// set (or has exclusive access to it), so don't lock it again.
 static int
-set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash, setentry **epp)
+set_lookkey_lock_held(PySetObject *so, PyObject *key, Py_hash_t hash,
+                      setentry **epp)
 {
     int status;
     if (PyFrozenSet_CheckExact(so)) {
@@ -419,16 +422,27 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash, setentry **epp)
                                set_compare_frozenset);
     }
     else {
-        Py_BEGIN_CRITICAL_SECTION(so);
         do {
             status = set_do_lookup(so, so->table, so->mask, key, hash, epp,
                                    set_compare_entry_lock_held);
         } while (status == SET_LOOKKEY_CHANGED);
-        Py_END_CRITICAL_SECTION();
     }
     assert(status == SET_LOOKKEY_FOUND ||
            status == SET_LOOKKEY_NO_MATCH ||
            status == SET_LOOKKEY_ERROR);
+    return status;
+}
+
+static int
+set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash, setentry **epp)
+{
+    if (PyFrozenSet_CheckExact(so)) {
+        return set_lookkey_lock_held(so, key, hash, epp);
+    }
+    int status;
+    Py_BEGIN_CRITICAL_SECTION(so);
+    status = set_lookkey_lock_held(so, key, hash, epp);
+    Py_END_CRITICAL_SECTION();
     return status;
 }
 
@@ -581,7 +595,7 @@ set_discard_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
 {
     setentry *entry;
     PyObject *old_key;
-    int status = set_lookkey(so, key, hash, &entry);
+    int status = set_lookkey_lock_held(so, key, hash, &entry);
     if (status < 0) {
         return -1;
     }
