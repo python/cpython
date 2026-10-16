@@ -652,6 +652,8 @@ struct _warnings_runtime_state {
     _PyRecursiveMutex lock;
     long filters_version;
     PyObject *context;
+    // The lock owner's guard must outlive the mutex unlock.
+    PyInterpreterGuard *lock_guard;
 };
 
 struct _Py_mem_interp_free_queue {

@@ -428,21 +428,6 @@ _PyRecursiveMutex_LockTimed(_PyRecursiveMutex *m, PyTime_t timeout, _PyLockFlags
 }
 
 void
-_PyRecursiveMutex_at_shutdown_reinit(_PyRecursiveMutex *m)
-{
-    // Preserve the finalizing thread's ownership and recursion depth.
-    if (_PyRecursiveMutex_IsLockedByCurrentThread(m)) {
-        m->mutex = (PyMutex){._bits = _Py_LOCKED};
-    }
-    else {
-        memset(m, 0, sizeof(*m));
-    }
-    // Remove parked waiters from the queue. After waking, they will hang
-    // when they try to reattach their thread state.
-    _PyParkingLot_UnparkAll(&m->mutex._bits);
-}
-
-void
 _PyRecursiveMutex_Unlock(_PyRecursiveMutex *m)
 {
     if (_PyRecursiveMutex_TryUnlock(m) < 0) {

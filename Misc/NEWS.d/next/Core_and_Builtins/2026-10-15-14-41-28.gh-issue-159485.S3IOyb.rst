@@ -1,2 +1,2 @@
-Prevent a deadlock when emitting warnings during late interpreter shutdown
-if a daemon thread holds the warnings lock or is waiting to acquire it.
+Prevent a shutdown deadlock when a daemon thread emits a warning. The
+interpreter now waits for the thread to release the warnings lock.

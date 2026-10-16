@@ -508,65 +508,46 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         self.assertEqual(out, '20000101\n' * INIT_LOOPS)
 
     @threading_helper.requires_working_threading()
-    @unittest.skipUnless(_testinternalcapi, "requires _testinternalcapi")
     def test_warnings_at_shutdown(self):
-        import_helper.import_module('_testcapi')
         code = textwrap.dedent('''
-            import _testinternalcapi
-            import _warnings
             import threading
+            import time
             import warnings
-            from test import support
 
-            warnings.simplefilter('ignore')
-            local = threading.local()
+            warnings.simplefilter('always', ResourceWarning)
             ready = threading.Event()
 
             class WarnOnDelete:
+                def __init__(self):
+                    self.self_ref = self
+
                 def __del__(self):
-                    warnings.warn('during shutdown', ResourceWarning)
-                    if not ready.is_set():
-                        # The finalizing thread still owns all three levels.
-                        for _ in range(3):
-                            _warnings._release_lock()
-                        try:
-                            _warnings._release_lock()
-                        except RuntimeError:
-                            pass
-                        else:
-                            raise AssertionError('unexpected recursion depth')
-                    print('finalized')
+                    warnings.warn('late', ResourceWarning)
+
+            def showwarning(message, *args, **kwargs):
+                if str(message) == 'hold':
+                    warnings.warn('nested', ResourceWarning)
+                    ready.set()
+                    # A Python event cannot synchronize with the point where
+                    # shutdown stops daemon threads, so hold the lock briefly.
+                    time.sleep(0.1)
+                else:
+                    print(message)
+
+            warnings.showwarning = showwarning
 
             def worker():
-                local.obj = WarnOnDelete()
-                _warnings._acquire_lock()
-                ready.set()
-                threading.Event().wait()
+                warnings.warn('hold', ResourceWarning)
 
-            for _ in range(3):
-                _warnings._acquire_lock()
             threading.Thread(target=worker, daemon=True).start()
-            for _ in support.sleeping_retry(4):
-                if _testinternalcapi.warnings_lock_has_waiters():
-                    break
+            assert ready.wait(4), 'daemon did not start warning'
+            # Collect the cycle during shutdown GC, after daemon threads stop.
+            WarnOnDelete()
         ''')
-        release = textwrap.dedent('''
-            for _ in range(3):
-                _warnings._release_lock()
-            assert ready.wait(4), 'lock not acquired'
-        ''')
-        subinterp = (
-            'from test import support\n'
-            f'assert support.run_in_subinterp({code + release!r}) == 0'
-        )
-        # Cover Py_EndInterpreter(), then shut down with a waiter. Reuse the
-        # main interpreter's mutex and shut down with a daemon owning it.
-        # All three thread-local finalizers must warn.
         out, err = self.run_embedded_interpreter(
-            "test_repeated_init_exec", subinterp + '\n' + code, code + release,
-            env=remove_python_envvars(),
-            timeout=10)
-        self.assertEqual(out, 'finalized\n' * 3)
+            "test_repeated_init_exec", code, "pass",
+            env=remove_python_envvars(), timeout=10)
+        self.assertEqual(out, 'nested\nlate\n')
         self.assertEqual(err, '--- Loop #1 ---\n--- Loop #2 ---\n')
 
     def test_static_types_inherited_slots(self):

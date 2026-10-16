@@ -168,9 +168,6 @@ typedef struct {
     size_t level;
 } _PyRecursiveMutex;
 
-// All other threads that use the mutex must be barred from reattaching.
-extern void _PyRecursiveMutex_at_shutdown_reinit(_PyRecursiveMutex *m);
-
 PyAPI_FUNC(int) _PyRecursiveMutex_IsLockedByCurrentThread(_PyRecursiveMutex *m);
 PyAPI_FUNC(void) _PyRecursiveMutex_Lock(_PyRecursiveMutex *m);
 extern PyLockStatus _PyRecursiveMutex_LockTimed(_PyRecursiveMutex *m, PyTime_t timeout, _PyLockFlags flags);

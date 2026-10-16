@@ -8,8 +8,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-extern void _PyWarnings_PrepareForFinalization(PyInterpreterState *interp);
-
 extern int _PyWarnings_InitState(PyInterpreterState *interp);
 
 extern PyObject* _PyWarnings_Init(void);
