@@ -72,7 +72,7 @@ __all__ = [
     "in_systemd_nspawn_sync_suppressed",
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
     "reset_code", "on_github_actions",
-    "requires_root_user", "requires_non_root_user",
+    "requires_root_user", "requires_non_root_user", "built_with_c_assertions",
     ]
 
 
@@ -3356,3 +3356,13 @@ def skip_on_low_desktop_heap_memory_subprocess(returncode):
 _ROOT_IN_POSIX = hasattr(os, 'geteuid') and os.geteuid() == 0
 requires_root_user = unittest.skipUnless(_ROOT_IN_POSIX, "test needs root privilege")
 requires_non_root_user = unittest.skipIf(_ROOT_IN_POSIX, "test needs non-root account")
+
+
+def built_with_c_assertions():
+    """Check if Python was built with C assertions (assert())."""
+    try:
+        import _testlimitedcapi
+    except ImportError:
+        return Py_DEBUG
+    else:
+        return bool(_testlimitedcapi._py_getbuiltwithassert())
