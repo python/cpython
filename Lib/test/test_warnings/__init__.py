@@ -1693,6 +1693,11 @@ class LocksTest(unittest.TestCase):
             for _ in range(3):
                 _warnings._acquire_lock()
             pid = os.fork()
+            if pid == 0:
+                # Ownership must also survive a second fork in the child.
+                child_pid = os.fork()
+                if child_pid != 0:
+                    support.wait_process(child_pid, exitcode=0)
             try:
                 # A warning must not change the inherited recursion depth.
                 warnings.warn('after fork')
