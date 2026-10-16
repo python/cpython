@@ -546,6 +546,9 @@ pydoc
   inherited from other classes are collapsed by default.
   (Contributed by Serhiy Storchaka in :gh:`153906`.)
 
+* Add help for more special names to the built-in :func:`help` function.
+  (Contributed by Adam Hartz in :gh:`137966`.)
+
 
 re
 --
