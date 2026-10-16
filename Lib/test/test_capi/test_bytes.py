@@ -567,11 +567,8 @@ class BaseWriterTest:
         writer = self.create_writer()
         s = b'x' * 500
         with self.assertRaises(MemoryError):
-            try:
-                _testcapi.set_nomemory(0, 0)
+            with support.inject_memory_error_cm():
                 writer.format_s(b's=%s', s)
-            finally:
-                _testcapi.remove_mem_hooks()
         writer.write_bytes(b'after', -1)
 
     @threading_helper.requires_working_threading()
