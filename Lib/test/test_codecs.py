@@ -1169,6 +1169,59 @@ class UTF8SigTest(UTF8Test, unittest.TestCase):
             got = ostream.getvalue()
             self.assertEqual(got, unistring)
 
+    def test_decode_error_offsets_with_bom(self):
+        # gh-159071: UnicodeDecodeError offsets should count the BOM
+        data = codecs.BOM_UTF8 + b"abc\xff"
+        with self.assertRaises(UnicodeDecodeError) as cm:
+            data.decode("utf-8-sig")
+        exc = cm.exception
+        self.assertEqual(exc.object, data)
+        self.assertEqual(exc.start, 6)
+        self.assertEqual(exc.end, 7)
+
+        # Test error right after BOM
+        data = codecs.BOM_UTF8 + b"\xff"
+        with self.assertRaises(UnicodeDecodeError) as cm:
+            data.decode("utf-8-sig")
+        exc = cm.exception
+        self.assertEqual(exc.object, data)
+        self.assertEqual(exc.start, 3)
+        self.assertEqual(exc.end, 4)
+
+        # Test IncrementalDecoder
+        dec = codecs.getincrementaldecoder("utf-8-sig")()
+        with self.assertRaises(UnicodeDecodeError) as cm:
+            dec.decode(data, final=True)
+        exc = cm.exception
+        self.assertEqual(exc.object, data)
+        self.assertEqual(exc.start, 3)
+        self.assertEqual(exc.end, 4)
+
+        # Test StreamReader
+        reader = codecs.getreader("utf-8-sig")(io.BytesIO(data))
+        with self.assertRaises(UnicodeDecodeError) as cm:
+            reader.read()
+        exc = cm.exception
+        self.assertEqual(exc.object, data)
+        self.assertEqual(exc.start, 3)
+        self.assertEqual(exc.end, 4)
+
+        # Test custom error handler receives correct offsets
+        received = []
+        def handler(err):
+            received.append((err.object, err.start, err.end))
+            return ("?", err.end)
+
+        old_handler = codecs.lookup_error("replace")
+        codecs.register_error("test_utf8sig_handler", handler)
+        try:
+            result = data.decode("utf-8-sig", "test_utf8sig_handler")
+            self.assertEqual(result, "?")
+            self.assertEqual(received, [(data, 3, 4)])
+        finally:
+            # clean up error handler if needed
+            pass
+
 
 class EscapeDecodeTest(unittest.TestCase):
     def test_empty(self):
