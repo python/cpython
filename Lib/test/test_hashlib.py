@@ -18,6 +18,8 @@ import sysconfig
 import tempfile
 import threading
 import unittest
+from functools import partial
+from operator import attrgetter
 from test import support
 from test.support import _4G, bigmemtest
 from test.support import hashlib_helper
@@ -52,18 +54,39 @@ if not get_fips_mode:
     def get_fips_mode():
         return 0
 
+
+try:
+    import _md5
+except ImportError:
+    _md5 = None
+requires_md5 = unittest.skipUnless(_md5, 'requires _md5')
+
+
 try:
     import _blake2
 except ImportError:
     _blake2 = None
-
 requires_blake2 = unittest.skipUnless(_blake2, 'requires _blake2')
+
+
+try:
+    import _sha1
+except ImportError:
+    _sha1 = None
+requires_sha1 = unittest.skipUnless(_sha1, 'requires _sha1')
+
+
+try:
+    import _sha2
+except ImportError:
+    _sha2 = None
+requires_sha2 = unittest.skipUnless(_sha2, 'requires _sha2')
+
 
 try:
     import _sha3
 except ImportError:
     _sha3 = None
-
 requires_sha3 = unittest.skipUnless(_sha3, 'requires _sha3')
 
 
@@ -134,8 +157,11 @@ class HashLibTestCase(unittest.TestCase):
             algorithms.add(algorithm.lower())
 
         _blake2 = self._conditional_import_module('_blake2')
+        blake2_hashes = {'blake2b', 'blake2s'}
         if _blake2:
-            algorithms.update({'blake2b', 'blake2s'})
+            algorithms.update(blake2_hashes)
+        else:
+            algorithms.difference_update(blake2_hashes)
 
         self.constructors_to_test = {}
         for algorithm in algorithms:
@@ -232,7 +258,12 @@ class HashLibTestCase(unittest.TestCase):
         # all available algorithms must be loadable, bpo-47101
         self.assertNotIn("undefined", hashlib.algorithms_available)
         for name in hashlib.algorithms_available:
-            digest = hashlib.new(name, usedforsecurity=False)
+            with self.subTest(name):
+                try:
+                    _ = hashlib.new(name, usedforsecurity=False)
+                except ValueError as exc:
+                    self.skip_if_blake2_not_builtin(name, exc)
+                    raise
 
     def test_usedforsecurity_true(self):
         hashlib.new("sha256", usedforsecurity=True)
@@ -504,6 +535,7 @@ class HashLibTestCase(unittest.TestCase):
         self.assertEqual(h.hexdigest(), "e2d4535e3b613135c14f2fe4e026d7ad8d569db44901740beffa30d430acb038")
 
     @requires_resource('cpu')
+    @requires_blake2
     def test_blake2_update_over_4gb(self):
         # blake2s or blake2b doesn't matter based on how our C code is structured, this tests the
         # common loop macro logic.
@@ -682,12 +714,12 @@ class HashLibTestCase(unittest.TestCase):
         )
 
     @unittest.skipIf(sys.maxsize < _4G + 5, 'test cannot run on 32-bit systems')
-    @bigmemtest(size=_4G + 5, memuse=1, dry_run=False)
+    @bigmemtest(size=_4G + 5, memuse=2, dry_run=False)
     def test_case_md5_huge(self, size):
         self.check('md5', b'A'*size, 'c9af2dff37468ce5dfee8f2cfc0a9c6d')
 
     @unittest.skipIf(sys.maxsize < _4G - 1, 'test cannot run on 32-bit systems')
-    @bigmemtest(size=_4G - 1, memuse=1, dry_run=False)
+    @bigmemtest(size=_4G - 1, memuse=2, dry_run=False)
     def test_case_md5_uintmax(self, size):
         self.check('md5', b'A'*size, '28138d306ff1b8281f1a9067e1a1a2b3')
 
@@ -797,6 +829,12 @@ class HashLibTestCase(unittest.TestCase):
         self.check('sha512', b"a" * 1000000,
           "e718483d0ce769644e2e42c7bc15b4638e1f98b13b2044285632a803afa973eb"+
           "de0ff244877ea60a4cb0432ce577c31beb009c5c2c49aa2e4eadb217ad8cc09b")
+
+    def skip_if_blake2_not_builtin(self, name, skip_reason):
+        # blake2 builtins may be absent if python built with
+        # a subset of --with-builtin-hashlib-hashes or none.
+        if "blake2" in name and "blake2" not in builtin_hashes:
+            self.skipTest(skip_reason)
 
     def check_blake2(self, constructor, salt_size, person_size, key_size,
                      digest_size, max_offset):
@@ -1080,10 +1118,16 @@ class HashLibTestCase(unittest.TestCase):
     def test_threaded_hashing_fast(self):
         # Same as test_threaded_hashing_slow() but only tests some functions
         # since otherwise test_hashlib.py becomes too slow during development.
-        for name in ['md5', 'sha1', 'sha256', 'sha3_256', 'blake2s']:
+        algos = ['md5', 'sha1', 'sha256', 'sha3_256', 'blake2s']
+        for name in algos:
             if constructor := getattr(hashlib, name, None):
                 with self.subTest(name):
-                    self.do_test_threaded_hashing(constructor, is_shake=False)
+                    try:
+                        self.do_test_threaded_hashing(constructor, is_shake=False)
+                    except ValueError as exc:
+                        self.skip_if_blake2_not_builtin(name, exc)
+                        raise
+
         if shake_128 := getattr(hashlib, 'shake_128', None):
             self.do_test_threaded_hashing(shake_128, is_shake=True)
 
@@ -1395,6 +1439,77 @@ class TestScrypt(unittest.TestCase):
         self.assertRaises(ValueError, scrypt, dklen=0)
         MAX_DKLEN = ((1 << 32) - 1) * 32  # see RFC 7914
         self.assertRaises(numeric_exc_types, scrypt, dklen=MAX_DKLEN + 1)
+
+
+@threading_helper.requires_working_threading()
+class TestTSAN(unittest.TestCase):
+
+    @threading_helper.reap_threads
+    def check_attribute(self, write, read, expected, nthreads=8):
+        ready = threading.Event()
+        barrier = threading.Barrier(nthreads)
+
+        def writer():
+            barrier.wait()
+            while not ready.is_set():
+                write()
+
+        def reader():
+            barrier.wait()
+            while not ready.is_set():
+                self.assertEqual(read(), expected)
+
+        targets = [writer if i % 2 else reader for i in range(nthreads)]
+        workers = [threading.Thread(target=target) for target in targets]
+        with threading_helper.start_threads(workers, unlock=ready.set):
+            pass
+
+    def check_HACL_attribute(self, module, version, attrname):
+        blob = b"A" * 65536
+        obj = getattr(module, version)()
+        update = partial(obj.update, blob)
+        read = attrgetter(attrname)
+        self.check_attribute(update, partial(read, obj), read(obj))
+
+    @requires_md5
+    @support.subTests("attrname", ["block_size", "digest_size"])
+    def test_HACL_md5_attributes(self, attrname):
+        self.check_HACL_attribute(_md5, "md5", attrname)
+
+    @requires_sha1
+    @support.subTests("attrname", ["block_size", "digest_size"])
+    def test_HACL_sha1_attributes(self, attrname):
+        self.check_HACL_attribute(_sha1, "sha1", attrname)
+
+    @requires_sha2
+    @support.subTests("size", [224, 256, 384, 512])
+    @support.subTests("attrname", ["block_size", "digest_size"])
+    def test_HACL_sha2_attributes(self, size, attrname):
+        self.check_HACL_attribute(_sha2, f"sha{size}", attrname)
+
+    @requires_sha3
+    @support.subTests("size", [224, 256, 384, 512])
+    @support.subTests(
+        "attrname",
+        ["block_size", "digest_size", "_capacity_bits", "_rate_bits"],
+    )
+    def test_HACL_sha3_attributes(self, size, attrname):
+        self.check_HACL_attribute(_sha3, f"sha3_{size}", attrname)
+
+    @requires_sha3
+    @support.subTests("size", [128, 256])
+    @support.subTests(
+        "attrname",
+        ["block_size", "digest_size", "_capacity_bits", "_rate_bits"],
+    )
+    def test_HACL_shake_attributes(self, size, attrname):
+        self.check_HACL_attribute(_sha3, f"shake_{size}", attrname)
+
+    @requires_blake2
+    @support.subTests("version", ["blake2s", "blake2b"])
+    @support.subTests("attrname", ["block_size", "digest_size"])
+    def test_HACL_blake2_attributes(self, version, attrname):
+        self.check_HACL_attribute(_blake2, version, attrname)
 
 
 if __name__ == "__main__":

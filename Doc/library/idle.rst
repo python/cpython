@@ -3,8 +3,6 @@
 IDLE --- Python editor and shell
 ================================
 
-.. moduleauthor:: Guido van Rossum <guido@python.org>
-
 **Source code:** :source:`Lib/idlelib/`
 
 .. index::
@@ -932,6 +930,8 @@ When running a tkinter program from an IDLE editor, one can comment out
 the mainloop call.  One then gets a shell prompt immediately and can
 interact with the live application.  One just has to remember to
 re-enable the mainloop call when running in standard Python.
+
+.. _idle-no-subprocess:
 
 Running without a subprocess
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

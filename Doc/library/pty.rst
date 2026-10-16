@@ -2,11 +2,7 @@
 =========================================
 
 .. module:: pty
-   :platform: Unix
    :synopsis: Pseudo-Terminal Handling for Unix.
-
-.. moduleauthor:: Steen Lumholt
-.. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
 **Source code:** :source:`Lib/pty.py`
 
@@ -92,8 +88,6 @@ The :mod:`!pty` module defines the following functions:
 
 Example
 -------
-
-.. sectionauthor:: Steen Lumholt
 
 The following program acts like the Unix command :manpage:`script(1)`, using a
 pseudo-terminal to record all input and output of a terminal session in a

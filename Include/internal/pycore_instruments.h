@@ -64,25 +64,21 @@ PyAPI_FUNC(void)
 _Py_call_instrumentation_exc2(PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1);
 
-extern int
-_Py_Instrumentation_GetLine(PyCodeObject *code, int index);
-
 PyAPI_DATA(PyObject) _PyInstrumentation_MISSING;
 PyAPI_DATA(PyObject) _PyInstrumentation_DISABLE;
 
 
 /* Total tool ids available */
 #define  PY_MONITORING_TOOL_IDS 8
-/* Count of all local monitoring events */
-#define  _PY_MONITORING_LOCAL_EVENTS 11
-/* Count of all "real" monitoring events (not derived from other events) */
+/* Count of all "real" monitoring events (not derived from other events).
+ * "Other" events can now be turned on/disabled per code object. */
 #define _PY_MONITORING_UNGROUPED_EVENTS 16
 /* Count of all  monitoring events */
 #define _PY_MONITORING_EVENTS 19
 
 /* Tables of which tools are active for each monitored event. */
 typedef struct _Py_LocalMonitors {
-    uint8_t tools[_PY_MONITORING_LOCAL_EVENTS];
+    uint8_t tools[_PY_MONITORING_UNGROUPED_EVENTS];
 } _Py_LocalMonitors;
 
 typedef struct _Py_GlobalMonitors {
@@ -122,6 +118,17 @@ typedef struct _PyCoMonitoringData {
     uint8_t *per_instruction_tools;
 } _PyCoMonitoringData;
 
+extern int
+_Py_Instrumentation_GetLine(PyCodeObject *code, _PyCoLineInstrumentationData *line_data, int index);
+
+static inline uint8_t
+_PyCode_GetOriginalOpcode(_PyCoLineInstrumentationData *line_data, int index)
+{
+    return line_data->data[index*line_data->bytes_per_entry];
+}
+
+// Exported for external JIT support
+PyAPI_FUNC(uint8_t) _PyCode_Deinstrument(uint8_t opcode);
 
 #ifdef __cplusplus
 }

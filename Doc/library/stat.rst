@@ -5,8 +5,6 @@
    :synopsis: Utilities for interpreting the results of os.stat(),
               os.lstat() and os.fstat().
 
-.. sectionauthor:: Skip Montanaro <skip@automatrix.com>
-
 **Source code:** :source:`Lib/stat.py`
 
 --------------

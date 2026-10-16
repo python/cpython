@@ -4,13 +4,6 @@
 .. module:: configparser
    :synopsis: Configuration file parser.
 
-.. moduleauthor:: Ken Manheimer <klm@zope.com>
-.. moduleauthor:: Barry Warsaw <bwarsaw@python.org>
-.. moduleauthor:: Eric S. Raymond <esr@thyrsus.com>
-.. moduleauthor:: Łukasz Langa <lukasz@langa.pl>
-.. sectionauthor:: Christopher G. Petrilli <petrilli@amber.org>
-.. sectionauthor:: Łukasz Langa <lukasz@langa.pl>
-
 **Source code:** :source:`Lib/configparser.py`
 
 .. index::
@@ -30,6 +23,11 @@ can be customized by end users easily.
 
    This library does *not* interpret or write the value-type prefixes used in
    the Windows Registry extended version of INI syntax.
+
+.. warning::
+   Be cautious when parsing data from untrusted sources. A malicious
+   INI file may cause the decoder to consume considerable CPU and memory
+   resources. Limiting the size of data to be parsed is recommended.
 
 .. seealso::
 

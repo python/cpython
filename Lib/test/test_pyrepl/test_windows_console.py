@@ -6,6 +6,7 @@ if sys.platform != "win32":
 
 
 import itertools
+from _colorize import ANSIColors
 from functools import partial
 from test.support import force_not_colorized_test_class
 from typing import Iterable
@@ -33,7 +34,6 @@ except ImportError:
 def _mock_console_init(self, f_in=0, f_out=1, term="", encoding="utf-8"):
     """Mock __init__ to avoid real Windows API calls in headless environments."""
     super(WindowsConsole, self).__init__(f_in, f_out, term, encoding)
-    self.screen = []
     self.width = 80
     self.height = 25
     self._WindowsConsole__offset = 0
@@ -129,9 +129,7 @@ class WindowsConsoleTests(TestCase):
         events = code_to_events(code)
         reader, console = self.handle_events_narrow(events)
 
-        console.height = 20
-        console.width = 80
-        console.getheightwidth = MagicMock(lambda _: (20, 80))
+        console.getheightwidth = MagicMock(side_effect=lambda: (20, 80))
 
         def same_reader(_):
             return reader
@@ -157,9 +155,7 @@ class WindowsConsoleTests(TestCase):
         events = code_to_events(code)
         reader, console = self.handle_events(events)
 
-        console.height = 20
-        console.width = 4
-        console.getheightwidth = MagicMock(lambda _: (20, 4))
+        console.getheightwidth = MagicMock(side_effect=lambda: (20, 4))
 
         def same_reader(_):
             return reader
@@ -292,8 +288,7 @@ class WindowsConsoleTests(TestCase):
         events = itertools.chain(code_to_events(code))
         reader, console = self.handle_events_short(events)
 
-        console.height = 2
-        console.getheightwidth = MagicMock(lambda _: (2, 80))
+        console.getheightwidth = MagicMock(side_effect=lambda: (2, 80))
 
         def same_reader(_):
             return reader
@@ -312,7 +307,8 @@ class WindowsConsoleTests(TestCase):
                 call(self.move_left(5)),
                 call(self.move_up()),
                 call(b"def f():"),
-                call(self.move_left(3)),
+                call(self.move_left(8)),
+                call(self.move_right(5)),
                 call(self.move_down()),
             ]
         )
@@ -330,8 +326,7 @@ class WindowsConsoleTests(TestCase):
         events = itertools.chain(code_to_events(code))
         reader, console = self.handle_events_height_3(events)
 
-        console.height = 1
-        console.getheightwidth = MagicMock(lambda _: (1, 80))
+        console.getheightwidth = MagicMock(side_effect=lambda: (1, 80))
 
         def same_reader(_):
             return reader
@@ -385,6 +380,28 @@ class WindowsConsoleTests(TestCase):
         reader, con = self.handle_events_narrow(events)
         self.assertEqual(reader.cxy, (2, 3))
         con.restore()
+
+    def test_reset_on_finish(self):
+        # gh-152068: finish() must emit the ANSI reset sequence so any
+        # active color does not leak past the prompt.
+        code = "1"
+        events = code_to_events(code)
+        _, con = self.handle_events(events)
+        con.finish()
+        con.out.write.assert_any_call(ANSIColors.RESET.encode(con.encoding))
+        con.restore()
+
+    def test_reset_on_restore(self):
+        # gh-152068: restore() must emit the ANSI reset sequence when VT
+        # support is enabled.
+        code = "1"
+        events = code_to_events(code)
+        _, con = self.handle_events(events)
+        con._WindowsConsole__vt_support = True
+        con._WindowsConsole__original_input_mode = 0
+        with patch.object(wc, "SetConsoleMode", return_value=1):
+            con.restore()
+        con.out.write.assert_any_call(ANSIColors.RESET.encode(con.encoding))
 
 
 @patch.object(WindowsConsole, '__init__', _mock_console_init)

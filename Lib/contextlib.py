@@ -1,10 +1,16 @@
 """Utilities for with-statement contexts.  See PEP 343."""
+
 import abc
 import os
 import sys
 import _collections_abc
 from collections import deque
 from functools import wraps
+lazy from inspect import (
+    isasyncgenfunction as _isasyncgenfunction,
+    iscoroutinefunction as _iscoroutinefunction,
+    isgeneratorfunction as _isgeneratorfunction,
+)
 from types import GenericAlias
 
 __all__ = ["asynccontextmanager", "contextmanager", "closing", "nullcontext",
@@ -79,11 +85,37 @@ class ContextDecorator(object):
         return self
 
     def __call__(self, func):
-        @wraps(func)
-        def inner(*args, **kwds):
-            with self._recreate_cm():
-                return func(*args, **kwds)
-        return inner
+        wrapper = wraps(func)
+        if _isasyncgenfunction(func):
+
+            async def asyncgen_inner(*args, **kwds):
+                with self._recreate_cm():
+                    async with aclosing(func(*args, **kwds)) as gen:
+                        async for value in gen:
+                            yield value
+
+            return wrapper(asyncgen_inner)
+        elif _iscoroutinefunction(func):
+
+            async def async_inner(*args, **kwds):
+                with self._recreate_cm():
+                    return await func(*args, **kwds)
+
+            return wrapper(async_inner)
+        elif _isgeneratorfunction(func):
+
+            def gen_inner(*args, **kwds):
+                with self._recreate_cm(), closing(func(*args, **kwds)) as gen:
+                    return (yield from gen)
+
+            return wrapper(gen_inner)
+        else:
+
+            def inner(*args, **kwds):
+                with self._recreate_cm():
+                    return func(*args, **kwds)
+
+            return wrapper(inner)
 
 
 class AsyncContextDecorator(object):
@@ -95,11 +127,41 @@ class AsyncContextDecorator(object):
         return self
 
     def __call__(self, func):
-        @wraps(func)
-        async def inner(*args, **kwds):
-            async with self._recreate_cm():
-                return await func(*args, **kwds)
-        return inner
+        wrapper = wraps(func)
+        if _isasyncgenfunction(func):
+
+            async def asyncgen_inner(*args, **kwds):
+                async with (
+                    self._recreate_cm(),
+                    aclosing(func(*args, **kwds)) as gen
+                ):
+                    async for value in gen:
+                        yield value
+
+            return wrapper(asyncgen_inner)
+        elif _iscoroutinefunction(func):
+
+            async def async_inner(*args, **kwds):
+                async with self._recreate_cm():
+                    return await func(*args, **kwds)
+
+            return wrapper(async_inner)
+        elif _isgeneratorfunction(func):
+
+            async def gen_inner(*args, **kwds):
+                async with self._recreate_cm():
+                    with closing(func(*args, **kwds)) as gen:
+                        for value in gen:
+                            yield value
+
+            return wrapper(gen_inner)
+        else:
+
+            async def inner(*args, **kwds):
+                async with self._recreate_cm():
+                    return func(*args, **kwds)
+
+            return wrapper(inner)
 
 
 class _GeneratorContextManagerBase:
@@ -137,22 +199,20 @@ class _GeneratorContextManager(
         # do not keep args and kwds alive unnecessarily
         # they are only needed for recreation, which is not possible anymore
         del self.args, self.kwds, self.func
-        try:
-            return next(self.gen)
-        except StopIteration:
-            raise RuntimeError("generator didn't yield") from None
+        # Slightly faster way to return next(self.gen):
+        for once in self.gen:
+            return once
+        raise RuntimeError("generator didn't yield")
 
     def __exit__(self, typ, value, traceback):
         if typ is None:
-            try:
-                next(self.gen)
-            except StopIteration:
-                return False
-            else:
+            # Faster way to run next(self.gen) and check for StopIteration:
+            for _ in self.gen:
                 try:
                     raise RuntimeError("generator didn't stop")
                 finally:
                     self.gen.close()
+            return False
         else:
             if value is None:
                 # Need to force instantiation so we can reliably
