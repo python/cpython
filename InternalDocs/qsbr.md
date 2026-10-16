@@ -136,6 +136,47 @@ by slightly delaying when memory can be reclaimed; the size-based thresholds
 above bound that extra memory.
 
 
+### Mimalloc Integration
+
+Each interpreter owns four mimalloc heaps: one for `PyMem` allocations and
+three for objects with different header layouts. Only the object heaps enable
+QSBR. Each thread state retains a `mi_theap_t` handle for each heap. Clearing a
+thread state abandons its pages without invalidating live objects; heap
+visitation includes both owned and abandoned pages, so they remain visible to
+the garbage collector.
+
+CPython supplies four typed hooks: `mi_heap_qsbr_init` associates a heap with its
+interpreter's QSBR state, `mi_page_qsbr_clear` and `mi_page_qsbr_is_clear` manage
+a page's goal, and `mi_page_qsbr_should_delay` establishes a goal if needed and
+checks cached read-sequence progress. These hooks may run without an attached
+Python thread state and while allocator locks are held. They must not poll the
+thread registry. `_PyMem_ProcessDelayed` polls outside those locks, then drains
+each object heap's thread-local delayed-page queue.
+
+Mimalloc owns the delayed-page queues and page transitions. A delayed empty
+page can still supply allocations of its existing size class. If it becomes
+empty again, its previous goal is cleared and a new grace period is required.
+Queues are FIFO; an incomplete goal at the head may delay later pages. During
+stop-the-world collection, CPython also sweeps abandoned pages using the same
+cached QSBR progress.
+
+The object's reference-count fields and any pre-header remain untouched by
+debug fills, using the heap's `debug_fill_preserve` setting. At interpreter
+shutdown, empty heaps can be destroyed, but live allocations may still be
+referenced elsewhere, including by a shared interned-string dictionary.
+Retained object heaps are disconnected from the interpreter's QSBR state and
+conservatively keep their pages rather than consulting a deleted domain.
+
+CPython disables mimalloc's automatic `pthread_atfork` handler and invokes its
+child cleanup from `PyOS_AfterFork_Child`, after a coordinated fork. Exec-only
+subprocess forks do not stop other allocator users and must not perform that
+cleanup or use the allocator before exec.
+
+The regular GIL build does not enable QSBR and retains full pages in their
+owning thread, as in mimalloc v2. Its allocation statistics visit only the
+current thread's pages, so early abandonment would make those counts incomplete.
+
+
 ## Limitations
 
 Determining the `rd_seq` requires scanning over all thread states. This operation
