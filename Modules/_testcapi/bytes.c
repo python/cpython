@@ -28,7 +28,7 @@ bytes_resize(PyObject *Py_UNUSED(module), PyObject *args, PyObject *kwargs)
     NULLABLE(obj);
     if (new) {
         assert(obj != NULL);
-        assert(PyBytes_CheckExact(obj));
+        assert(PyBytes_Check(obj));
         PyObject *newobj = PyBytes_FromStringAndSize(NULL, PyBytes_Size(obj));
         if (newobj == NULL) {
             return NULL;
@@ -56,6 +56,7 @@ bytes_resize(PyObject *Py_UNUSED(module), PyObject *args, PyObject *kwargs)
         assert(obj != NULL);
     }
 
+    assert(PyBytes_CheckExact(obj));
     Py_ssize_t refcnt = Py_REFCNT(obj);
     return Py_BuildValue("Nnp", obj, refcnt, obj != old_obj);
 }
