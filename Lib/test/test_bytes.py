@@ -5,6 +5,7 @@ the latter should be modernized).
 """
 
 import array
+import contextlib
 import operator
 import os
 import re
@@ -46,6 +47,13 @@ class Indexable:
         self.value = value
     def __index__(self):
         return self.value
+
+
+@contextlib.contextmanager
+def inject_memory_error(testcase, start=0):
+    with testcase.assertRaises(MemoryError):
+        with support.inject_memory_error_cm(start):
+            yield
 
 
 class BaseBytesTest:
@@ -1528,6 +1536,36 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertRaises(ValueError, bytearray().resize, -200)
         self.assertRaises(MemoryError, bytearray().resize, sys.maxsize)
         self.assertRaises(MemoryError, bytearray(1000).resize, sys.maxsize)
+
+    @support.nomemtest
+    def test_resize_error(self):
+        # gh-157242: If bytearray.resize() fails (MemoryError),
+        # the bytearray must be left unchanged.
+
+        offset = 3
+        for logical_offset in (False, True):
+            with self.subTest(logical_offset=logical_offset):
+                # grow bytearray
+                ba = bytearray(b'0123456789')
+                if logical_offset:
+                    expected = ba[offset:]
+                    del ba[:offset]
+                else:
+                    expected = ba.copy()
+                with inject_memory_error(self):
+                    ba.resize(1024)
+                self.assertEqual(ba, expected)
+
+                # shrink bytearray
+                ba = bytearray(b'0123456789')
+                if logical_offset:
+                    expected = ba[offset:]
+                    del ba[:offset]
+                else:
+                    expected = ba.copy()
+                with inject_memory_error(self):
+                    ba.resize(1)
+                self.assertEqual(ba, expected)
 
     def test_setitem(self):
         def setitem_as_mapping(b, i, val):
