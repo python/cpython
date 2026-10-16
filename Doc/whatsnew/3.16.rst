@@ -769,6 +769,14 @@ tkinter
   with no unit suffix to :class:`int` or :class:`float`.
   (Contributed by Serhiy Storchaka in :gh:`153513`.)
 
+* Added symbolic constants for Tk option values which were missing in
+  :mod:`!tkinter.constants`: values for the *labelanchor*, *compound*,
+  *bordermode*, *direction*, *stretch*, *tabstyle*, *insertunfocussed*,
+  *mode*, *selecttype*, *show*, *state*, *validate* and *type* options,
+  the names of the themed widget states, and ``PIXELS`` for scrolling
+  the :class:`~tkinter.Text` widget.
+  (Contributed by Serhiy Storchaka in :gh:`159301`.)
+
 
 turtle
 ------

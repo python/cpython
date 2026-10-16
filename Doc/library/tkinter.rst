@@ -6845,6 +6845,17 @@ and :mod:`!tkinter.constants` namespaces.
    edges) plus ``CENTER`` (``'center'``), used as values for the *anchor* and
    *sticky* options and by methods such as :meth:`Misc.grid_anchor`.
 
+.. data:: EN
+          ES
+          WN
+          WS
+
+   Additional values for the *labelanchor* option of :class:`LabelFrame`
+   and :class:`ttk.LabelFrame <tkinter.ttk.LabelFrame>`,
+   which also accept the compass directions above.
+
+   .. versionadded:: next
+
 .. data:: LEFT
           RIGHT
           TOP
@@ -6881,6 +6892,13 @@ and :mod:`!tkinter.constants` namespaces.
    Values for the *wrap* option of the :class:`Text` widget, selecting line
    wrapping on character or word boundaries.
 
+.. data:: TABULAR
+          WORDPROCESSOR
+
+   Values for the *tabstyle* option of the :class:`Text` widget.
+
+   .. versionadded:: next
+
 .. data:: BASELINE
 
    The text-alignment value ``'baseline'``.
@@ -6890,6 +6908,12 @@ and :mod:`!tkinter.constants` namespaces.
 
    Values for the *bordermode* option of the placer (see
    :meth:`Place.place_configure`).
+
+.. data:: IGNORE
+
+   An additional value for the *bordermode* option of the placer.
+
+   .. versionadded:: next
 
 .. data:: INSERT
           CURRENT
@@ -6916,6 +6940,38 @@ and :mod:`!tkinter.constants` namespaces.
 
    Values for the *state* option of various widgets and items.
 
+.. data:: READONLY
+
+   An additional value for the *state* option of :class:`Entry`,
+   :class:`Spinbox` and the themed widgets.
+
+   .. versionadded:: next
+
+.. data:: ALTERNATE
+          BACKGROUND
+          FOCUS
+          HOVER
+          INVALID
+          PRESSED
+          SELECTED
+
+   Names of the themed widget states
+   (see :meth:`ttk.Widget.state <tkinter.ttk.Widget.state>`),
+   in addition to ``ACTIVE``, ``DISABLED`` and ``READONLY``.
+
+   .. versionadded:: next
+
+.. data:: LEAF
+          OPEN
+
+   Names of the themed widget states used by
+   :class:`ttk.Treeview <tkinter.ttk.Treeview>`,
+   as are ``FIRST`` and ``LAST`` for the tabs of
+   :class:`ttk.Notebook <tkinter.ttk.Notebook>`.
+   They require Tk 9.1 or newer.
+
+   .. versionadded:: next
+
 .. data:: CASCADE
           CHECKBUTTON
           COMMAND
@@ -6925,12 +6981,37 @@ and :mod:`!tkinter.constants` namespaces.
    Menu entry types, used as the *itemType* argument of :meth:`Menu.add` and
    :meth:`Menu.insert`.
 
+.. data:: MENUBAR
+          TEAROFF
+
+   Values for the *type* option of the :class:`Menu` widget,
+   in addition to ``NORMAL``.
+
+   .. versionadded:: next
+
 .. data:: SINGLE
           BROWSE
           MULTIPLE
           EXTENDED
 
    Values for the *selectmode* option of the :class:`Listbox` widget.
+
+.. data:: ITEM
+          CELL
+
+   Values for the *selecttype* option of
+   :class:`ttk.Treeview <tkinter.ttk.Treeview>`.
+   It requires Tk 9.0 or newer.
+
+   .. versionadded:: next
+
+.. data:: TREE
+          HEADINGS
+
+   Values for the *show* option of
+   :class:`ttk.Treeview <tkinter.ttk.Treeview>`.
+
+   .. versionadded:: next
 
 .. data:: PIESLICE
           CHORD
@@ -6965,6 +7046,74 @@ and :mod:`!tkinter.constants` namespaces.
 
    Values for the *what* argument of :meth:`XView.xview_scroll` and
    :meth:`YView.yview_scroll`.
+
+.. data:: PIXELS
+
+   An additional value for the *what* argument of
+   :meth:`YView.yview_scroll` of the :class:`Text` widget.
+
+   .. versionadded:: next
+
+.. data:: TEXT
+          IMAGE
+
+   Values for the *compound* option of the themed widgets,
+   in addition to ``CENTER``, ``LEFT``, ``RIGHT``, ``TOP``, ``BOTTOM``
+   and ``NONE``.
+
+   .. versionadded:: next
+
+.. data:: ABOVE
+          BELOW
+          FLUSH
+
+   Values for the *direction* option of :class:`Menubutton` and
+   :class:`ttk.Menubutton <tkinter.ttk.Menubutton>`,
+   in addition to ``LEFT`` and ``RIGHT``.
+
+   .. versionadded:: next
+
+.. data:: ALWAYS
+          MIDDLE
+          NEVER
+
+   Values for the *stretch* option of :meth:`PanedWindow.paneconfigure`,
+   in addition to ``FIRST`` and ``LAST``.
+
+   .. versionadded:: next
+
+.. data:: DETERMINATE
+          INDETERMINATE
+
+   Values for the *mode* option of
+   :class:`ttk.Progressbar <tkinter.ttk.Progressbar>`.
+
+   .. versionadded:: next
+
+.. data:: HOLLOW
+
+   An additional value for the *insertunfocussed* option of the
+   :class:`Text` widget, which also accepts ``NONE`` and ``SOLID``.
+   The option requires Tk 8.6 or newer.
+
+   .. versionadded:: next
+
+.. data:: KEY
+          FOCUSIN
+          FOCUSOUT
+
+   Values for the *validate* option of :class:`Entry`, :class:`Spinbox`
+   and :class:`ttk.Entry <tkinter.ttk.Entry>`,
+   in addition to ``ALL``, ``FOCUS`` and ``NONE``.
+
+   .. versionadded:: next
+
+.. data:: FORCED
+
+   An additional validation reason reported by the ``%V`` substitution
+   of the *validatecommand* option.
+
+   .. versionadded:: next
 
 .. data:: UNDERLINE
           NUMERIC
