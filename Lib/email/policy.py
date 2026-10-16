@@ -132,7 +132,11 @@ class EmailPolicy(Policy):
         """
         name, value = sourcelines[0].split(':', 1)
         value = ''.join((value, *sourcelines[1:])).lstrip(' \t\r\n')
-        return (name, value.rstrip('\r\n'))
+        value = value.rstrip('\r\n')
+        if self.utf8:
+            value = value.encode('utf-8', 'surrogateescape').decode(
+                'utf-8', 'surrogateescape')
+        return (name, value)
 
     def header_store_parse(self, name, value):
         """+

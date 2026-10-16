@@ -1,0 +1,3 @@
+Fix the :class:`email.policy.SMTPUTF8` policy so UTF-8 header values survive a
+parse and regenerate round trip instead of being mangled or demoted to
+``unknown-8bit`` bodies.

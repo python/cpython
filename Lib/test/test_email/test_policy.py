@@ -153,6 +153,33 @@ class PolicyAPITests(unittest.TestCase):
         self.assertEqual(p_ascii.fold('Subject', s), expected_ascii)
         self.assertEqual(p_utf8.fold('Subject', s), expected_utf8)
 
+    def test_smtputf8_round_trip_preserves_utf8_headers(self):
+        odata = textwrap.dedent("""\
+            From: Unicôde Nâme <example@example.com>
+            To: Name One <name-one@example.com>, Name Two <name-two@example.com>, Unicôde Nàme <unicode-name@example.com>
+            Subject: Unicôde Subjéct
+
+            This message contains Uniçôde Çôntent.
+            """)
+        msg = email.message_from_bytes(
+            odata.encode(), policy=email.policy.SMTPUTF8
+        )
+        output = msg.as_bytes(policy=email.policy.SMTPUTF8).decode()
+
+        self.assertNotIn("unknown-8bit", output)
+        self.assertIn(
+            "Unicôde Nàme <unicode-name@example.com>", output
+        )
+
+    def test_smtputf8_round_trip_preserves_invalid_header_bytes(self):
+        msg = email.message_from_bytes(
+            b"Subject: invalid \xff\n\n",
+            policy=email.policy.SMTPUTF8,
+        )
+        output = msg.as_bytes(policy=email.policy.SMTPUTF8)
+
+        self.assertIn(b"invalid \xff", output)
+
     def test_fold_zero_max_line_length(self):
         expected = 'Subject: =?utf-8?q?=C3=A1?=\n'
 
