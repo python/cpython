@@ -1946,6 +1946,8 @@ class TestPosixDirFd(unittest.TestCase):
 
     @unittest.skipUnless(sys.platform in ["linux", "android", "darwin", "ios"],
                          "feature not supported on this platform")
+    @support.requires_mac_ver(13, 0)
+    @support.requires_ios_ver(16, 0)
     def test_readlink_is_marked_as_supports_fd(self):
         self.assertIn(os.readlink, os.supports_fd)
 
