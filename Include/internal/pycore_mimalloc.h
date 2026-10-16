@@ -5,7 +5,7 @@
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#if defined(MIMALLOC_H) || defined(MIMALLOC_TYPES_H)
+#if defined(MIMALLOC_H) || defined(MI_TYPES_H)
 #  error "pycore_mimalloc.h must be included before mimalloc.h"
 #endif
 
@@ -20,9 +20,21 @@ typedef enum {
 #include "pycore_pymem.h"
 
 #ifdef WITH_MIMALLOC
+#  define MI_NO_PTHREAD_ATFORK 1
 #  ifdef Py_GIL_DISABLED
 #    define MI_PRIM_THREAD_ID   _Py_ThreadId
-#    define MI_VISIT_ABANDONED  1
+#    define MI_CPYTHON 1
+
+struct mi_page_qsbr_s {
+    uint64_t goal;
+};
+
+struct mi_heap_qsbr_s {
+    struct _qsbr_shared *shared;
+};
+#  else
+// Keep full pages in their owning thread's allocation statistics.
+#    define MI_DEFAULT_PAGE_FULL_RETAIN -1
 #  endif
 #  define MI_DEBUG_UNINIT     PYMEM_CLEANBYTE
 #  define MI_DEBUG_FREED      PYMEM_DEADBYTE
@@ -58,20 +70,17 @@ extern "C++" {
 
 #ifdef Py_GIL_DISABLED
 struct _mimalloc_interp_state {
-    // When exiting, threads abandon any segments with live blocks. The
-    // abandoned segments are tracked per mimalloc sub-process so that other
-    // threads of the same interpreter can claim and reuse them, and so that
-    // the GC can visit them.
-    mi_subproc_t *subproc;
+    mi_heap_t *heaps[_Py_MIMALLOC_HEAP_COUNT];
 };
 
 struct _mimalloc_thread_state {
-    mi_heap_t *current_object_heap;
-    mi_heap_t heaps[_Py_MIMALLOC_HEAP_COUNT];
-    mi_tld_t tld;
+    mi_theap_t *current_object_heap;
+    mi_theap_t *heaps[_Py_MIMALLOC_HEAP_COUNT];
     int initialized;
-    struct llist_node page_list;
 };
+
+extern int _PyMem_InitMimalloc(PyInterpreterState *interp);
+extern void _PyMem_FiniMimalloc(PyInterpreterState *interp);
 #endif
 
 #endif // Py_INTERNAL_MIMALLOC_H

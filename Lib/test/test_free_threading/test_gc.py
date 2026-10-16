@@ -17,6 +17,29 @@ class MyObj:
 
 @threading_helper.requires_working_threading()
 class TestGC(TestCase):
+    def test_collect_cycles_after_thread_exit(self):
+        class Slotted:
+            __slots__ = ("cycle", "__weakref__")
+
+        refs = []
+
+        def worker():
+            for cls in (MyObj, Slotted):
+                for _ in range(200):
+                    obj = cls()
+                    obj.cycle = obj
+                    refs.append(weakref.ref(obj))
+            obj = Slotted()
+            obj.cycle = (obj,) * 100_000
+            refs.append(weakref.ref(obj))
+
+        with support.disable_gc():
+            with threading_helper.start_threads([Thread(target=worker)]):
+                pass
+            self.assertTrue(all(ref() is not None for ref in refs))
+            gc.collect()
+            self.assertTrue(all(ref() is None for ref in refs))
+
     def test_get_objects(self):
         event = threading.Event()
 
