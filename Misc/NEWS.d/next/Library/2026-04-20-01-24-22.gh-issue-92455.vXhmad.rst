@@ -1,3 +1,0 @@
-Fix :mod:`mimetypes` to prefer case-sensitive matches for suffix mappings and
-MIME type suffixes before falling back to case-insensitive matches.
-Contributed by Xiao Yuan.

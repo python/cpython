@@ -4497,7 +4497,7 @@ copy_lock_held_untracked(PyObject *o, int as_frozendict)
         else {
             d = dict_new_untracked(&PyDict_Type);
         }
-        assert(!_PyObject_GC_IS_TRACKED(d));
+        assert(d == NULL || !_PyObject_GC_IS_TRACKED(d));
         return d;
     }
 

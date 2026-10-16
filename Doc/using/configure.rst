@@ -1036,7 +1036,7 @@ Debug options
    When built with ``hwasan``, Python uses ``malloc`` instead of :ref:`pymalloc <pymalloc>` by default.
    Set :envvar:`PYTHONMALLOC=pymalloc <PYTHONMALLOC>` to use pymalloc.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. option:: --with-memory-sanitizer
 
@@ -1142,14 +1142,14 @@ Libraries options
    tries ``ncursesw`` and then ``ncurses``; the native ``curses`` is used only
    when requested explicitly.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. option:: --without-curses
 
    Don't build the :mod:`curses` and :mod:`curses.panel` modules, even when a
    curses library is present (built by default when one is found).
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. option:: --with-zlib=zlib|zlib-ng|zlib-rs
 
@@ -1167,14 +1167,14 @@ Libraries options
    zlib is used when found; configure only fails when an implementation was
    requested explicitly but cannot be found.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. option:: --without-zlib
 
    Don't build the :mod:`zlib` module, even when a zlib library is present
    (built by default when one is found).
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. option:: --with-bzip2=bzip2|bzip2-rs
 
@@ -1190,14 +1190,14 @@ Libraries options
    system bzip2 is used when found; configure only fails when an
    implementation was requested explicitly but cannot be found.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. option:: --without-bzip2
 
    Don't build the :mod:`bz2` module, even when a bzip2 library is present
    (built by default when one is found).
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. option:: --with-libm=STRING
 

@@ -260,7 +260,7 @@ _testcapi_err_setstring(PyObject *module, PyObject *const *args, Py_ssize_t narg
     const char *value;
     Py_ssize_t value_length;
 
-    if (!_PyArg_ParseStack(args, nargs, "Oz#:err_setstring",
+    if (!PyArg_ParseArray(args, nargs, "Oz#:err_setstring",
         &exc, &value, &value_length)) {
         goto exit;
     }
@@ -292,7 +292,7 @@ _testcapi_err_setfromerrnowithfilename(PyObject *module, PyObject *const *args, 
     const char *value;
     Py_ssize_t value_length;
 
-    if (!_PyArg_ParseStack(args, nargs, "iOz#:err_setfromerrnowithfilename",
+    if (!PyArg_ParseArray(args, nargs, "iOz#:err_setfromerrnowithfilename",
         &error, &exc, &value, &value_length)) {
         goto exit;
     }
@@ -370,7 +370,7 @@ _testcapi_fatal_error(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const char *message;
     int release_gil = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "y|p:fatal_error",
+    if (!PyArg_ParseArray(args, nargs, "y|p:fatal_error",
         &message, &release_gil)) {
         goto exit;
     }
@@ -481,4 +481,4 @@ _testcapi_unstable_exc_prep_reraise_star(PyObject *module, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=89fd3856718cf39c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=93dfd0e1ca2253b6 input=a9049054013a1b77]*/

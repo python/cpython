@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_frame.h"         // FRAME_STATE_FINISHED()
 #include "pycore_interpframe_structs.h" // _PyGenObject
 
 #include <stddef.h>               // offsetof()
@@ -19,6 +20,14 @@ PyGenObject *_PyGen_GetGeneratorFromFrame(_PyInterpreterFrame *frame)
     assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
     size_t offset_in_gen = offsetof(PyGenObject, gi_iframe);
     return (PyGenObject *)(((char *)frame) - offset_in_gen);
+}
+
+// The generator finalizer is a no-op once its frame is cleared.
+static inline int
+_PyGen_FinalizerIsNoop(PyObject *op)
+{
+    return Py_TYPE(op)->tp_finalize == PyGen_Type.tp_finalize &&
+        FRAME_STATE_FINISHED(((PyGenObject *)op)->gi_frame_state);
 }
 
 PyAPI_FUNC(PyObject *)_PyGen_yf(PyGenObject *);
