@@ -45,7 +45,8 @@ typedef struct _gc_runtime_state GCState;
 // Although this flag is used only in move_unreachable(), move_unreachable()
 // doesn't clear this flag to skip unnecessary iteration.
 // move_legacy_finalizers(), clear_unreachable_mask(), or prepare_callbacks()
-// remove this flag instead.
+// remove this flag after initial deduction. clear_weakrefs() removes it after
+// a resurrection recheck.
 // Between them, unreachable list is not normal list and we can not use
 // most gc_list_* functions for it.
 #define NEXT_MASK_UNREACHABLE  (1)
@@ -202,7 +203,8 @@ NEXT_MASK_UNREACHABLE
     The flag is unset and the object is moved back to "reachable" set.
 
     move_legacy_finalizers(), clear_unreachable_mask(), or prepare_callbacks()
-    remove this flag from the "unreachable" set.
+    remove this flag after initial deduction. clear_weakrefs() removes it after
+    a resurrection recheck.
 */
 
 /*** list functions ***/
@@ -302,16 +304,6 @@ gc_list_size(PyGC_Head *list)
         n++;
     }
     return n;
-}
-
-/* Walk the list and mark all objects as non-collecting */
-static inline void
-gc_list_clear_collecting(PyGC_Head *collectable)
-{
-    PyGC_Head *gc;
-    for (gc = GC_NEXT(collectable); gc != collectable; gc = GC_NEXT(gc)) {
-        gc_clear_collecting(gc);
-    }
 }
 
 /* Append objects in a GC list to a Python list.
@@ -1092,11 +1084,13 @@ invoke_weakref_callbacks(PyGC_Head *wrcb_to_call, PyGC_Head *old)
 }
 
 /* Clear all weakrefs to unreachable objects without invoking callbacks.
- * When this returns, no object in `unreachable` is weakly referenced anymore.
  * See the comments above prepare_callbacks() for why these weakrefs need to be cleared.
  *
- * `unreachable`: Final collectable list; membership is unchanged.
- * Return: Number of objects in `unreachable`.
+ * Arguments:
+ * - `unreachable`: final collectable list with an untagged head; member _gc_next links must all be normalized or all carry NEXT_MASK_UNREACHABLE.
+ *
+ * Return the number of objects in `unreachable`. On return, the list is
+ * normalized, membership is unchanged, and no member is weakly referenced.
  */
 static Py_ssize_t
 clear_weakrefs(PyGC_Head *unreachable)
@@ -1109,6 +1103,7 @@ clear_weakrefs(PyGC_Head *unreachable)
         PyWeakReference **wrlist;
 
         PyObject *op = FROM_GC(gc);
+        gc->_gc_next &= ~NEXT_MASK_UNREACHABLE;
         next = GC_NEXT(gc);
         count++;
 
@@ -1310,7 +1305,9 @@ The first two steps may be combined for the initial pass of a full collection.
 
 Contracts:
 
-    * The "base" has to be a valid list with no mask set.
+    * The "base" has to be a valid list. Its members may carry
+      PREV_MASK_COLLECTING during a resurrection recheck.
+      NEXT_MASK_UNREACHABLE must be clear.
 
     * The "unreachable" list must be uninitialized (this function calls
       gc_list_init over 'unreachable').
@@ -1329,12 +1326,11 @@ Contracts:
 IMPORTANT: This function leaves 'unreachable' with the NEXT_MASK_UNREACHABLE
 flag set but it does not clear it to skip unnecessary iteration. Before the
 flag is cleared (for example, by 'clear_unreachable_mask',
-'move_legacy_finalizers', or 'prepare_callbacks'), the 'unreachable' list is
-not a normal list and we can not use most gc_list_* functions for it. */
+'move_legacy_finalizers', 'prepare_callbacks', or 'clear_weakrefs'), the
+'unreachable' list is not a normal list and we can not use most gc_list_* functions for it. */
 static inline Py_ssize_t
 deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable,
                    bool full_collection_pass, Py_ssize_t *reachable, Py_ssize_t *legacy_finalizer_count_out) {
-    validate_list(base, collecting_clear_unreachable_clear);
     /* Using ob_refcnt and gc_refs, calculate which objects in the
      * container set are reachable from outside the set (i.e., have a
      * refcount greater than 0 when all the references within the
@@ -1406,25 +1402,18 @@ deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable,
        * The "still_unreachable" list must be uninitialized (this function calls
          gc_list_init over 'still_unreachable').
 
-IMPORTANT: After a call to this function, the 'still_unreachable' set will have the
-PREV_MARK_COLLECTING set, but the objects in this set are going to be removed so
-we can skip the expense of clearing the flag to avoid extra iteration. */
+IMPORTANT: The 'still_unreachable' head is untagged. Its members carry
+PREV_MASK_COLLECTING and NEXT_MASK_UNREACHABLE. 'clear_weakrefs' must normalize
+the list before ordinary list operations or deletion. */
 static inline void
 handle_resurrected_objects(PyGC_Head *unreachable, PyGC_Head* still_unreachable,
                            PyGC_Head *old_generation)
 {
-    // Remove the PREV_MASK_COLLECTING from unreachable
-    // to prepare it for a new call to 'deduce_unreachable'
-    gc_list_clear_collecting(unreachable);
-
-    // After the call to deduce_unreachable, the 'still_unreachable' set will
-    // have the PREV_MARK_COLLECTING set, but the objects are going to be
-    // removed so we can skip the expense of clearing the flag.
     PyGC_Head* resurrected = unreachable;
+    validate_list(resurrected, collecting_set_unreachable_clear);
     Py_ssize_t reachable;
     Py_ssize_t unused_legacy_finalizer_count;
     deduce_unreachable(resurrected, still_unreachable, false, &reachable, &unused_legacy_finalizer_count);
-    clear_unreachable_mask(still_unreachable);
 
     // Move the resurrected objects to the old generation for future collection.
     gc_list_merge(resurrected, old_generation);
@@ -1443,8 +1432,10 @@ handle_resurrected_objects(PyGC_Head *unreachable, PyGC_Head* still_unreachable,
  * - `needs_resurrection_check`: whether earlier work may have run Python.
  *
  * Return whether resurrection analysis ran. If true, `collectable` must not be
- * used again and `still_unreachable` contains the remaining garbage. Otherwise,
- * `collectable` remains selected and `still_unreachable` is untouched.
+ * used again and `still_unreachable` contains the remaining garbage with
+ * NEXT_MASK_UNREACHABLE set on every member and an untagged head. It must pass
+ * through `clear_weakrefs()` before deletion. Otherwise, `collectable` remains
+ * selected and `still_unreachable` is untouched.
  */
 Py_NO_INLINE static bool
 handle_callbacks(PyThreadState *tstate, PyGC_Head *collectable,
@@ -1728,6 +1719,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         old = young;
     }
     validate_list(old, collecting_clear_unreachable_clear);
+    validate_list(young, collecting_clear_unreachable_clear);
 
     Py_ssize_t reachable;
     Py_ssize_t legacy_finalizer_count;
@@ -1799,12 +1791,11 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         if (resurrection_checked) {
             collectable = &final_unreachable;
             // Python code may have changed the garbage set or created weakrefs.
-            // Refresh both cleanup and counting.
+            // Refresh cleanup and counting, and normalize the recheck's tags.
             needs_weakref_cleanup = true;
         }
     }
     validate_list(old, collecting_clear_unreachable_clear);
-    validate_list(collectable, collecting_set_unreachable_clear);
 
     /* Clear weakrefs to objects in the unreachable set.  No Python-level
      * code must be allowed to access those unreachable objects.  During
@@ -1815,6 +1806,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     if (needs_weakref_cleanup) {
         collectable_count = clear_weakrefs(collectable);
     }
+    validate_list(collectable, collecting_set_unreachable_clear);
     stats.collected += collectable_count;
 
     /* Call tp_clear on objects in the collectable set.  This will cause

@@ -1,0 +1,1 @@
+With the GIL enabled, avoid separate passes that clear collecting bits before resurrection analysis and unreachable tags afterward. The existing reference and late weak-reference passes now perform that bookkeeping.
