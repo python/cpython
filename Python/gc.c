@@ -967,21 +967,26 @@ invoke_weakref_callbacks(PyGC_Head *wrcb_to_call, PyGC_Head *old)
     return num_freed;
 }
 
-/* Clear all weakrefs to unreachable objects.  When this returns, no object in
- * `unreachable` is weakly referenced anymore.  See the comments above
- * prepare_callbacks() for why these weakrefs need to be cleared.
+/* Clear all weakrefs to unreachable objects without invoking callbacks.
+ * When this returns, no object in `unreachable` is weakly referenced anymore.
+ * See the comments above prepare_callbacks() for why these weakrefs need to be cleared.
+ *
+ * `unreachable`: Final collectable list; membership is unchanged.
+ * Return: Number of objects in `unreachable`.
  */
-static void
+static Py_ssize_t
 clear_weakrefs(PyGC_Head *unreachable)
 {
     PyGC_Head *gc;
     PyGC_Head *next;
+    Py_ssize_t count = 0;
 
     for (gc = GC_NEXT(unreachable); gc != unreachable; gc = next) {
         PyWeakReference **wrlist;
 
         PyObject *op = FROM_GC(gc);
         next = GC_NEXT(gc);
+        count++;
 
         if (PyWeakref_Check(op)) {
             /* A weakref inside the unreachable set is always cleared. See
@@ -1015,6 +1020,8 @@ clear_weakrefs(PyGC_Head *unreachable)
             _PyObject_ASSERT((PyObject *)wr, wr->wr_object == Py_None);
         }
     }
+
+    return count;
 }
 
 static void
@@ -1645,13 +1652,12 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
      * and create new weakrefs.  If those weakrefs were not cleared, they
      * could reveal unreachable objects.  Callbacks are not executed.
      */
-    clear_weakrefs(collectable);
+    stats.collected += clear_weakrefs(collectable);
 
     /* Call tp_clear on objects in the collectable set.  This will cause
     * the reference cycles to be broken.  It may also cause some objects
     * in finalizers to be freed.
     */
-    stats.collected += gc_list_size(collectable);
     delete_garbage(tstate, gcstate, collectable, old);
 
     /* Collect statistics on uncollectable objects found and print
