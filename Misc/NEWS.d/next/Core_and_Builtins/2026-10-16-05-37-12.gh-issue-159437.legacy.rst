@@ -1,0 +1,1 @@
+Garbage collection in builds with the GIL now avoids legacy finalizer scans when no candidate defines a legacy finalizer, and combines unreachable list cleanup with weakref preparation when possible.
