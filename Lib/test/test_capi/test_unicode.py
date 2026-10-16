@@ -2088,10 +2088,8 @@ class PyUnicodeWriterTest(unittest.TestCase):
         self.assertEqual(writer.finish(), '')
 
     def test_singletons(self):
-        for size in (0, 123):
-            with self.subTest(size=size):
-                writer = self.create_writer(size)
-                self.assertIs(writer.finish(), '')
+        writer = self.create_writer(5)
+        self.assertIs(writer.finish(), '')
 
         for ch in range(256):
             with self.subTest(ch=ch):
@@ -2099,6 +2097,39 @@ class PyUnicodeWriterTest(unittest.TestCase):
                 writer = self.create_writer(0)
                 writer.write_substring(ch + 'xxx', 0, 1)
                 self.assertIs(writer.finish(), ch)
+
+    @support.nomemtest
+    def test_memory_error(self):
+        # Inject MemoryError in PyUnicodeWriter_WriteStr()
+        writer = self.create_writer(0)
+        writer.write_str("start")
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
+                # Resize the internal str object
+                writer.write_str("s" * 1024)
+        writer.write_str(" end")
+        self.assertEqual(writer.finish(), "start end")
+
+        # Inject MemoryError in PyUnicodeWriter_Finish()
+        writer = self.create_writer(1024)
+        writer.write_str("abc")
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
+                # Need to truncate the internal str object
+                writer.finish()
+
+    def test_change_kind(self):
+        writer = self.create_writer(0)
+        # Create an ASCII buffer
+        writer.write_str('ascii ')
+        # Change the buffer to UCS1
+        writer.write_str('latin1:\xe9 ')
+        # Change the buffer to UCS2
+        writer.write_str('ucs2:\u20ac ')
+        # Change the buffer to UCS4
+        writer.write_str('ucs4:\U0010ffff')
+        self.assertEqual(writer.finish(),
+                         'ascii latin1:\xe9 ucs2:\u20ac ucs4:\U0010ffff')
 
 
 # Test PyUnicodeWriter_Format()
