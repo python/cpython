@@ -5,8 +5,8 @@ terms of the MIT license. A copy of the license can be found in the file
 "LICENSE" at the root of this distribution.
 -----------------------------------------------------------------------------*/
 #pragma once
-#ifndef MIMALLOC_TRACK_H
-#define MIMALLOC_TRACK_H
+#ifndef MI_TRACK_H
+#define MI_TRACK_H
 
 /* ------------------------------------------------------------------------------------------------------
 Track memory ranges with macros for tools like Valgrind address sanitizer, or other memory checkers.
@@ -47,7 +47,7 @@ defined, undefined, or not accessible at all:
 // valgrind tool
 
 #define MI_TRACK_ENABLED      1
-#define MI_TRACK_HEAP_DESTROY 1           // track free of individual blocks on heap_destroy
+#define MI_TRACK_HEAP_DESTROY 1           // track free of individual blocks on theap_destroy
 #define MI_TRACK_TOOL         "valgrind"
 
 #include <valgrind/valgrind.h>
@@ -82,13 +82,25 @@ defined, undefined, or not accessible at all:
 #define MI_TRACK_HEAP_DESTROY 1
 #define MI_TRACK_TOOL         "ETW"
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
 #include "../src/prim/windows/etw.h"
 
-#define mi_track_init()                           EventRegistermicrosoft_windows_mimalloc();
+#define mi_track_init()                           EventRegistermicrosoft_windows_mimalloc()
+#define mi_track_done()                           EventUnregistermicrosoft_windows_mimalloc()
 #define mi_track_malloc_size(p,reqsize,size,zero) EventWriteETW_MI_ALLOC((UINT64)(p), size)
 #define mi_track_free_size(p,size)                EventWriteETW_MI_FREE((UINT64)(p), size)
+
+#elif defined(MI_TRACK_CUSTOM)
+// application-defined hooks
+
+#define MI_TRACK_ENABLED      0
+#define MI_TRACK_HEAP_DESTROY 0
+#define MI_TRACK_TOOL         "custom"
+
+void mi_track_malloc_hook(const void* p, size_t reqsize, size_t size, bool zero) mi_attr_noexcept;
+void mi_track_free_hook(const void* p, size_t size) mi_attr_noexcept;
+
+#define mi_track_malloc_size(p,reqsize,size,zero) mi_track_malloc_hook((p),(reqsize),(size),(zero))
+#define mi_track_free_size(p,size)                mi_track_free_hook((p),(size))
 
 #else
 // no tracking
@@ -106,7 +118,7 @@ defined, undefined, or not accessible at all:
 // Utility definitions
 
 #ifndef mi_track_resize
-#define mi_track_resize(p,oldsize,newsize)      mi_track_free_size(p,oldsize); mi_track_malloc(p,newsize,false)
+#define mi_track_resize(p,oldsize,newsize)      do{ mi_track_free_size(p,oldsize); mi_track_malloc(p,newsize,false); } while(0)
 #endif
 
 #ifndef mi_track_align
@@ -115,6 +127,10 @@ defined, undefined, or not accessible at all:
 
 #ifndef mi_track_init
 #define mi_track_init()
+#endif
+
+#ifndef mi_track_done
+#define mi_track_done()
 #endif
 
 #ifndef mi_track_mem_defined
@@ -130,18 +146,18 @@ defined, undefined, or not accessible at all:
 #endif
 
 
-#if MI_PADDING
+#if MI_PADDING_CHECK_BYTES && !MI_GUARDED
 #define mi_track_malloc(p,reqsize,zero) \
-  if ((p)!=NULL) { \
+  do { if ((p)!=NULL) { \
     mi_assert_internal(mi_usable_size(p)==(reqsize)); \
     mi_track_malloc_size(p,reqsize,reqsize,zero); \
-  }
+  } } while(0)
 #else
 #define mi_track_malloc(p,reqsize,zero) \
-  if ((p)!=NULL) { \
+  do { if ((p)!=NULL) { \
     mi_assert_internal(mi_usable_size(p)>=(reqsize)); \
     mi_track_malloc_size(p,reqsize,mi_usable_size(p),zero); \
-  }
+  } } while(0)
 #endif
 
-#endif
+#endif // MI_TRACK_H
