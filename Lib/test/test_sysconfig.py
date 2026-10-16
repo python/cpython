@@ -390,6 +390,16 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
                                 '#1 Tue Jan 9 20:35:43 UTC 2018', machine))
                 self.assertEqual(get_platform(), f'android-9-{abi}')
 
+        # FreeBSD
+        os.name = 'posix'
+        sys.platform = 'freebsd'
+        self._set_uname((
+            'FreeBSD', 'localhost', '15.1-RELEASE-p4',
+            'FreeBSD 15.1-RELEASE-p4 releng/15.1-n283627-e38a7085f3a8 GENERIC',
+            'amd64'
+        ))
+        self.assertEqual(get_platform(), 'freebsd-15.1-amd64')
+
         # XXX more platforms to tests here
 
     @unittest.skipIf(is_wasi, "Incompatible with WASI mapdir and OOT builds")

@@ -755,6 +755,8 @@ def get_platform():
             osname, release, machine = _osx_support.get_platform_osx(
                                                 get_config_vars(),
                                                 osname, release, machine)
+    elif osname == "freebsd":
+        release = release.partition('-')[0]
 
     return '-'.join(map(str, filter(None, (osname, release, machine))))
 
