@@ -4449,6 +4449,19 @@ class TestMetadataDegradation(RemoteInspectionTestBase):
         self.assertIsNotNone(frame)
         self.assertEqual(frame.funcname, "f" * 1024)
 
+    def test_long_qualname_truncated_to_narrower_kind(self):
+        name = "a" * 1024 + "\U00010300"
+        src = f"def {name}(sample):\n    return sample()\n"
+        ns = {}
+        exec(src, ns)
+
+        trace = ns[name](RemoteUnwinder(os.getpid()).get_stack_trace)
+        frame = self._find_frame_in_trace(
+            trace, lambda f: f.funcname.startswith("aaa")
+        )
+        self.assertIsNotNone(frame)
+        self.assertEqual(frame.funcname, "a" * 1024)
+
     def test_long_filename_truncated(self):
         """A filename longer than 1024 chars is truncated instead of
         failing the whole sample."""
