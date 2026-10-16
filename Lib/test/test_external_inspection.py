@@ -772,7 +772,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
             text=True,
             timeout=SHORT_TIMEOUT,
         )
-        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.returncode, 0, result)
         self.assertIn("<unknown function>", result.stdout)
 
     @skip_if_not_supported

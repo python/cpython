@@ -2060,12 +2060,12 @@ unicode_transformdecimalandspacetoascii(PyObject *self, PyObject *arg)
 static PyObject *
 new_invalid_str(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *str = PyUnicode_New(2, 0x10FFFF);
+    PyObject *str = PyUnicode_New(2, _Py_MAX_UNICODE);
     if (str == NULL) {
         return NULL;
     }
-    PyUnicode_4BYTE_DATA(str)[0] = 0x110000;
-    PyUnicode_4BYTE_DATA(str)[1] = 0x110000;
+    PyUnicode_4BYTE_DATA(str)[0] = _Py_MAX_UNICODE + 1;
+    PyUnicode_4BYTE_DATA(str)[1] = _Py_MAX_UNICODE + 2;
     return str;
 }
 
