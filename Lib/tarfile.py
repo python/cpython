@@ -1616,6 +1616,8 @@ class TarInfo(object):
         except HeaderError as e:
             raise SubsequentHeaderError(str(e)) from None
 
+        data_offset = next.offset_data
+
         # Process GNU sparse information.
         if "GNU.sparse.map" in pax_headers:
             # GNU extended sparse format version 0.1.
@@ -1637,7 +1639,7 @@ class TarInfo(object):
                 # If the extended header replaces the size field,
                 # we need to recalculate the offset where the next
                 # header starts.
-                offset = next.offset + BLOCKSIZE
+                offset = data_offset
                 if next.isreg() or next.type not in SUPPORTED_TYPES:
                     try:
                         size = PAX_NUMBER_FIELDS["size"](pax_headers["size"])
