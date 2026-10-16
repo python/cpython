@@ -176,35 +176,24 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(opts, {'a': True, 'b': 'c,d=e'})
 
     def test_showrefcount(self):
-        def run_python(*args):
-            # this is similar to assert_python_ok but doesn't strip
-            # the refcount from stderr.  It can be replaced once
-            # assert_python_ok stops doing that.
-            cmd = [sys.executable]
-            cmd.extend(args)
-            PIPE = subprocess.PIPE
-            p = subprocess.Popen(cmd, stdout=PIPE, stderr=PIPE)
-            out, err = p.communicate()
-            p.stdout.close()
-            p.stderr.close()
-            rc = p.returncode
-            self.assertEqual(rc, 0)
-            return rc, out, err
-        code = 'import sys; print(sys._xoptions)'
         # normally the refcount is hidden
-        rc, out, err = run_python('-c', code)
-        self.assertEqual(out.rstrip(), b'{}')
-        self.assertEqual(err, b'')
+        # (assert_python_ok() enables faulthandler)
+        code = 'import sys; print(sys._xoptions)'
+        proc = assert_python_ok('-c', code)
+        self.assertEqual(proc.out.rstrip(), b"{'faulthandler': True}")
+        self.assertEqual(proc.err, b'')
+
         # "-X showrefcount" shows the refcount, but only in debug builds
-        rc, out, err = run_python('-I', '-X', 'showrefcount', '-c', code)
-        self.assertEqual(out.rstrip(), b"{'showrefcount': True}")
+        proc = assert_python_ok('-I', '-X', 'showrefcount', '-c', code)
+        self.assertEqual(proc.out.rstrip(),
+                         b"{'faulthandler': True, 'showrefcount': True}")
         if support.Py_DEBUG:
             # bpo-46417: Tolerate negative reference count which can occur
             # because of bugs in C extensions. This test is only about checking
             # the showrefcount feature.
-            self.assertRegex(err, br'^\[-?\d+ refs, \d+ blocks\]')
+            self.assertRegex(proc.err, br'^\[-?\d+ refs, \d+ blocks\]')
         else:
-            self.assertEqual(err, b'')
+            self.assertEqual(proc.err, b'')
 
     @support.cpython_only
     def test_xoption_frozen_modules(self):
