@@ -30,7 +30,7 @@ extern "C" {
     do { \
         PyStats *s = _PyStats_GET(); \
         if (s) { \
-            assert(opname < 512); \
+            assert((opname) <= PYSTATS_MAX_UOP_ID); \
             s->optimization_stats.opcode[opname].name++; \
         } \
     } while (0)
