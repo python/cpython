@@ -1,0 +1,1 @@
+Record the awaiting task in the :mod:`asyncio` call graph for internal pipe-connection tasks created during subprocess spawning.

@@ -450,6 +450,52 @@ class CallStackTestBase:
             ]
         ])
 
+    async def test_stack_subprocess_connect_pipes(self):
+        # gh-157259: create_subprocess_exec must record the awaiting waiter / task
+        # on the internal _connect_pipes task
+        loop = asyncio.get_running_loop()
+        in_connect_pipes = asyncio.Event()
+        can_finish = asyncio.Event()
+
+        pipe_task = None
+        orig_connect = loop.connect_write_pipe
+        async def mocked_connect(*args, **kwargs):
+            nonlocal pipe_task
+            pipe_task = asyncio.current_task()
+            in_connect_pipes.set()
+            await can_finish.wait()
+            return await orig_connect(*args, **kwargs)
+
+        loop.connect_write_pipe = mocked_connect
+        spawn = None
+        try:
+            spawn = asyncio.create_task(
+                asyncio.create_subprocess_exec(
+                    sys.executable, '-c', 'pass',
+                    stdin=asyncio.subprocess.PIPE,
+                ),
+                name='spawn',
+            )
+
+            await in_connect_pipes.wait()
+            self.assertIsNotNone(pipe_task)
+
+            stack = capture_test_stack(fut=pipe_task)
+
+            self.assertEqual(stack[0][0], 'T<anon>')
+            awaited_by = stack[0][2]
+            self.assertEqual(len(awaited_by), 1)
+            self.assertEqual(awaited_by[0][0], 'F')
+            self.assertEqual(awaited_by[0][2][0][0], 'T<spawn>')
+        finally:
+            can_finish.set()
+            loop.connect_write_pipe = orig_connect
+            if spawn is not None:
+                proc = await spawn
+                await proc.wait()
+
+        self.assertFalse(pipe_task._asyncio_awaited_by)
+
     async def test_stack_task(self):
 
         stack_for_inner = None
