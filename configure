@@ -12008,12 +12008,6 @@ then :
   printf "%s\n" "#define HAVE_LINUX_RANDOM_H 1" >>confdefs.h
 
 fi
-ac_fn_c_check_header_compile "$LINENO" "linux/soundcard.h" "ac_cv_header_linux_soundcard_h" "$ac_includes_default"
-if test "x$ac_cv_header_linux_soundcard_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_LINUX_SOUNDCARD_H 1" >>confdefs.h
-
-fi
 ac_fn_c_check_header_compile "$LINENO" "linux/sched.h" "ac_cv_header_linux_sched_h" "$ac_includes_default"
 if test "x$ac_cv_header_linux_sched_h" = xyes
 then :
@@ -12092,12 +12086,6 @@ then :
   printf "%s\n" "#define HAVE_SETJMP_H 1" >>confdefs.h
 
 fi
-ac_fn_c_check_header_compile "$LINENO" "shadow.h" "ac_cv_header_shadow_h" "$ac_includes_default"
-if test "x$ac_cv_header_shadow_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_SHADOW_H 1" >>confdefs.h
-
-fi
 ac_fn_c_check_header_compile "$LINENO" "signal.h" "ac_cv_header_signal_h" "$ac_includes_default"
 if test "x$ac_cv_header_signal_h" = xyes
 then :
@@ -12108,12 +12096,6 @@ ac_fn_c_check_header_compile "$LINENO" "spawn.h" "ac_cv_header_spawn_h" "$ac_inc
 if test "x$ac_cv_header_spawn_h" = xyes
 then :
   printf "%s\n" "#define HAVE_SPAWN_H 1" >>confdefs.h
-
-fi
-ac_fn_c_check_header_compile "$LINENO" "sys/audioio.h" "ac_cv_header_sys_audioio_h" "$ac_includes_default"
-if test "x$ac_cv_header_sys_audioio_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_SYS_AUDIOIO_H 1" >>confdefs.h
 
 fi
 ac_fn_c_check_header_compile "$LINENO" "sys/bsdtty.h" "ac_cv_header_sys_bsdtty_h" "$ac_includes_default"
@@ -12252,12 +12234,6 @@ ac_fn_c_check_header_compile "$LINENO" "sys/socket.h" "ac_cv_header_sys_socket_h
 if test "x$ac_cv_header_sys_socket_h" = xyes
 then :
   printf "%s\n" "#define HAVE_SYS_SOCKET_H 1" >>confdefs.h
-
-fi
-ac_fn_c_check_header_compile "$LINENO" "sys/soundcard.h" "ac_cv_header_sys_soundcard_h" "$ac_includes_default"
-if test "x$ac_cv_header_sys_soundcard_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_SYS_SOUNDCARD_H 1" >>confdefs.h
 
 fi
 ac_fn_c_check_header_compile "$LINENO" "sys/stat.h" "ac_cv_header_sys_stat_h" "$ac_includes_default"
@@ -20868,18 +20844,6 @@ ac_fn_c_check_func "$LINENO" "getsid" "ac_cv_func_getsid"
 if test "x$ac_cv_func_getsid" = xyes
 then :
   printf "%s\n" "#define HAVE_GETSID 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "getspent" "ac_cv_func_getspent"
-if test "x$ac_cv_func_getspent" = xyes
-then :
-  printf "%s\n" "#define HAVE_GETSPENT 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "getspnam" "ac_cv_func_getspnam"
-if test "x$ac_cv_func_getspnam" = xyes
-then :
-  printf "%s\n" "#define HAVE_GETSPNAM 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "gettid" "ac_cv_func_gettid"

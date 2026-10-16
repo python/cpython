@@ -696,12 +696,6 @@
 /* Define if you have the 'getsockname' function. */
 #undef HAVE_GETSOCKNAME
 
-/* Define to 1 if you have the 'getspent' function. */
-#undef HAVE_GETSPENT
-
-/* Define to 1 if you have the 'getspnam' function. */
-#undef HAVE_GETSPNAM
-
 /* Define to 1 if you have the 'gettid' function. */
 #undef HAVE_GETTID
 
@@ -867,9 +861,6 @@
 
 /* Define to 1 if you have the <linux/sched.h> header file. */
 #undef HAVE_LINUX_SCHED_H
-
-/* Define to 1 if you have the <linux/soundcard.h> header file. */
-#undef HAVE_LINUX_SOUNDCARD_H
 
 /* Define to 1 if you have the <linux/tipc.h> header file. */
 #undef HAVE_LINUX_TIPC_H
@@ -1321,9 +1312,6 @@
 /* Define to 1 if you have the 'setvbuf' function. */
 #undef HAVE_SETVBUF
 
-/* Define to 1 if you have the <shadow.h> header file. */
-#undef HAVE_SHADOW_H
-
 /* Define to 1 if you have the 'shm_open' function. */
 #undef HAVE_SHM_OPEN
 
@@ -1510,9 +1498,6 @@
 /* Define to 1 if you have the 'system' function. */
 #undef HAVE_SYSTEM
 
-/* Define to 1 if you have the <sys/audioio.h> header file. */
-#undef HAVE_SYS_AUDIOIO_H
-
 /* Define to 1 if you have the <sys/auxv.h> header file. */
 #undef HAVE_SYS_AUXV_H
 
@@ -1592,9 +1577,6 @@
 
 /* Define to 1 if you have the <sys/socket.h> header file. */
 #undef HAVE_SYS_SOCKET_H
-
-/* Define to 1 if you have the <sys/soundcard.h> header file. */
-#undef HAVE_SYS_SOUNDCARD_H
 
 /* Define to 1 if you have the <sys/statvfs.h> header file. */
 #undef HAVE_SYS_STATVFS_H
