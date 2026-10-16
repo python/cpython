@@ -1,4 +1,3 @@
-import functools
 import importlib.util
 import os
 import py_compile
@@ -11,43 +10,7 @@ import unittest
 
 from test import support
 from test.support import os_helper, script_helper
-
-
-def without_source_date_epoch(fxn):
-    """Runs function with SOURCE_DATE_EPOCH unset."""
-    @functools.wraps(fxn)
-    def wrapper(*args, **kwargs):
-        with os_helper.EnvironmentVarGuard() as env:
-            env.unset('SOURCE_DATE_EPOCH')
-            return fxn(*args, **kwargs)
-    return wrapper
-
-
-def with_source_date_epoch(fxn):
-    """Runs function with SOURCE_DATE_EPOCH set."""
-    @functools.wraps(fxn)
-    def wrapper(*args, **kwargs):
-        with os_helper.EnvironmentVarGuard() as env:
-            env['SOURCE_DATE_EPOCH'] = '123456789'
-            return fxn(*args, **kwargs)
-    return wrapper
-
-
-# Run tests with SOURCE_DATE_EPOCH set or unset explicitly.
-class SourceDateEpochTestMeta(type(unittest.TestCase)):
-    def __new__(mcls, name, bases, dct, *, source_date_epoch):
-        cls = super().__new__(mcls, name, bases, dct)
-
-        for attr in dir(cls):
-            if attr.startswith('test_'):
-                meth = getattr(cls, attr)
-                if source_date_epoch:
-                    wrapper = with_source_date_epoch(meth)
-                else:
-                    wrapper = without_source_date_epoch(meth)
-                setattr(cls, attr, wrapper)
-
-        return cls
+from test.support.os_helper import SourceDateEpochTestMeta
 
 
 class PyCompileTestsBase:
