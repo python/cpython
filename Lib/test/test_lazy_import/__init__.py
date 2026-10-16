@@ -317,10 +317,10 @@ class LazyImportTypeTests(LazyImportTestCase):
         m.m = m
         ns = {"__builtins__": {"__lazy_import__": __lazy_import__,
                                "__import__": lambda *args: m}}
-        exec("lazy import " + ".".join(["m"] * 10_000) + " as x", ns)
         # Free the chain in the main thread: in a thread with a small C stack,
         # deallocations deferred by the trashcan are never run.
         self.addCleanup(ns.clear)
+        exec("lazy import " + ".".join(["m"] * 10_000) + " as x", ns)
         with contextlib.suppress(RecursionError):
             ns["x"].resolve()
 
