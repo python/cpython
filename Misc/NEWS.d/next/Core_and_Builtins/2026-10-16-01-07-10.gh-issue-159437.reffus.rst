@@ -1,0 +1,1 @@
+With the GIL enabled, combine reference initialization and subtraction in the initial pass of a full collection when the permanent generation is empty and tracked objects cannot belong to another interpreter lifetime.

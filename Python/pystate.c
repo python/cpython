@@ -309,6 +309,17 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 static const _PyRuntimeState initial = _PyRuntimeState_INIT(_PyRuntime, "");
 _Py_COMP_DIAG_POP
 
+/* Monotonic guard for tracked objects that may outlive their interpreter.
+ * Kept outside _PyRuntime so reinitialization cannot clear it.
+ */
+static int may_have_foreign_gc_objects;
+
+bool
+_PyInterpreterState_MayHaveForeignGcObjects(void)
+{
+    return _Py_atomic_load_int_relaxed(&may_have_foreign_gc_objects) != 0;
+}
+
 #define LOCKS_INIT(runtime) \
     { \
         &(runtime)->interpreters.mutex, \
@@ -364,6 +375,7 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
 
     if (runtime->_initialized) {
         // Py_Initialize() must be running again.
+        _Py_atomic_store_int_relaxed(&may_have_foreign_gc_objects, 1);
         // Reset to _PyRuntimeState_INIT.
         memcpy(runtime, &initial, sizeof(*runtime));
         // Preserve the cookie from the original runtime.
@@ -722,6 +734,8 @@ _PyInterpreterState_New(PyThreadState *tstate, PyInterpreterState **pinterp)
     else {
         assert(interpreters->main != NULL);
         assert(id != 0);
+
+        _Py_atomic_store_int_relaxed(&may_have_foreign_gc_objects, 1);
 
         interp = alloc_interpreter();
         if (interp == NULL) {
