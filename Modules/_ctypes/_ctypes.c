@@ -3563,7 +3563,7 @@ PyCData_set(ctypes_state *st,
     /* KeepRef steals a refcount from it's last argument */
     /* If KeepRef fails, we are stumped.  The dst memory block has already
        been changed */
-    return KeepRef(mem, index, result);
+    return KeepRef_lock_held(mem, index, result);
 }
 
 
