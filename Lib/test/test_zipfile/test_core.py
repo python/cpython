@@ -4095,13 +4095,20 @@ class OtherTests(unittest.TestCase):
             zf.close()
             del zf
 
-        # ResourceWarning escalated to an error is reported as unraisable.
-        zf = zipfile.ZipFile(io.BytesIO(), "w")
+        # ResourceWarning escalated to an error is reported as unraisable,
+        # and the archive is still closed.
+        buf = io.BytesIO()
+        zf = zipfile.ZipFile(buf, "w")
+        zf.writestr("f.txt", b"data")
         with (warnings.catch_warnings(action="error", category=ResourceWarning),
               catch_unraisable_exception() as cm):
             del zf
             gc_collect()
             self.assertIs(cm.unraisable.exc_type, ResourceWarning)
+
+        with zipfile.ZipFile(buf, "r") as zf:
+            self.assertEqual(zf.namelist(), ["f.txt"])
+            self.assertEqual(zf.read("f.txt"), b"data")
 
     def test_unsupported_version(self):
         # File has an extract_version of 120

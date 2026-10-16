@@ -2646,14 +2646,16 @@ class ZipFile:
             self.fp.write(zinfo.FileHeader(False))
             self.start_dir = self.fp.tell()
 
-    def __del__(self):
+    def __del__(self, _warn=warnings.warn):
         """Call the "close()" method in case the user forgot."""
         # gh-81954: Warn if writable ZipFile is implicitly closed.
         # GC cleanup order is non-deterministic and can result in data loss.
-        if self.fp is not None and self.mode in ('w', 'x', 'a'):
-            warnings.warn(f"unclosed ZipFile {self!r}",
-                          ResourceWarning, source=self, stacklevel=2)
-        self.close()
+        try:
+            if self.fp is not None and self.mode in ('w', 'x', 'a'):
+                _warn(f"unclosed ZipFile {self!r}",
+                      ResourceWarning, source=self, stacklevel=2)
+        finally:
+            self.close()
 
     def close(self):
         """Close the file, and for mode 'w', 'x' and 'a' write the ending
