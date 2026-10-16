@@ -1576,13 +1576,15 @@ Special read-only attributes
 
 .. index:: pair: object; generator
 
-The following flag bits are defined for :attr:`~codeobject.co_flags`:
-bit ``0x04`` is set if
+The :attr:`~codeobject.co_flags` attribute uses flag bits listed in
+:ref:`inspect-module-co-flags`.
+For example, :attr:`~inspect.CO_VARARGS` (bit ``0x04``) is set if
 the function uses the ``*arguments`` syntax to accept an arbitrary number of
-positional arguments; bit ``0x08`` is set if the function uses the
-``**keywords`` syntax to accept arbitrary keyword arguments; bit ``0x20`` is set
-if the function is a generator. See :ref:`inspect-module-co-flags` for details
-on the semantics of each flags that might be present.
+positional arguments; :attr:`~inspect.CO_VARKEYWORDS` (bit ``0x08``)
+is set if the function uses the ``**keywords`` syntax to accept arbitrary
+keyword arguments;
+:attr:`~inspect.CO_GENERATOR` (bit ``0x20``) is set if the function
+is a generator.
 
 Future feature declarations (for example, ``from __future__ import division``) also use bits
 in :attr:`~codeobject.co_flags` to indicate whether a code object was compiled with a

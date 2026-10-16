@@ -1871,6 +1871,16 @@ which is a bitmap of the following flags:
 
    .. versionadded:: 3.14
 
+.. data:: CO_NOFREE
+
+   Unused; always unset.
+
+   .. versionchanged:: 3.5
+      Previously, this flag indicated whether there are free variables
+      in the code object.
+
+   .. deprecated-removed:: next 3.21
+
 .. note::
    The flags are specific to CPython, and may not be defined in other
    Python implementations.  Furthermore, the flags are an implementation

@@ -43,6 +43,7 @@ from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN, TESTFN_UNDECODABLE, temp_cwd
 from test.support.script_helper import assert_python_ok, assert_python_failure, kill_python
 from test.support import has_subprocess_support
+from test.support import warnings_helper
 from test import support
 
 from test.test_inspect import inspect_fodder as mod
@@ -6971,6 +6972,18 @@ class TestRepl(unittest.TestCase):
 
         expected = "The source is: <<<def f():\n    print(0)\n    return 1 + 2\n>>>"
         self.assertIn(expected, output)
+
+
+class TestCompilerConstants(unittest.TestCase):
+    def test_previously_documented_values(self):
+        # The numeric values are in the docs; we better not change them
+        self.assertEqual(inspect.CO_VARARGS, 0x04)
+        self.assertEqual(inspect.CO_VARKEYWORDS, 0x08)
+        self.assertEqual(inspect.CO_GENERATOR, 0x20)
+
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
+    def test_nofree(self):
+        self.assertEqual(inspect.CO_NOFREE, 0x40)
 
 
 if __name__ == "__main__":

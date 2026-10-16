@@ -7,7 +7,8 @@ operate on bytecodes (e.g. peephole optimizers).
 
 __all__ = ["cmp_op", "stack_effect", "hascompare", "opname", "opmap",
            "HAVE_ARGUMENT", "EXTENDED_ARG", "hasarg", "hasconst", "hasname",
-           "hasjump", "hasjrel", "hasjabs", "hasfree", "haslocal", "hasexc"]
+           "hasjump", "hasjrel", "hasjabs", "hasfree", "haslocal", "hasexc",
+           "COMPILER_FLAG_NAMES"]
 
 import builtins
 import _opcode
@@ -16,6 +17,8 @@ from _opcode import stack_effect
 from _opcode_metadata import (_specializations, _specialized_opmap, opmap,  # noqa: F401
                               HAVE_ARGUMENT, MIN_INSTRUMENTED_OPCODE)  # noqa: F401
 EXTENDED_ARG = opmap['EXTENDED_ARG']
+
+COMPILER_FLAG_NAMES = {n: name for name, n in _opcode.COMPILER_FLAGS.items()}
 
 opname = ['<%r>' % (op,) for op in range(max(opmap.values()) + 1)]
 for m in (opmap, _specialized_opmap):
