@@ -226,6 +226,45 @@ class EmbeddingTestsMixin:
 class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
     maxDiff = 100 * 50
 
+    def test_asyncio_task_during_interpreter_clear(self):
+        import_helper.import_module('_asyncio')
+        code = textwrap.dedent("""
+            import asyncio
+            import contextvars
+            import gc
+            import os
+
+            gc.disable()
+
+            async def noop():
+                pass
+
+            class Loop:
+                def get_debug(self):
+                    return False
+
+                def call_soon(self, callback, *args, context=None):
+                    self.callback = callback
+
+            class CreatesTaskOnClear:
+                def __del__(self, task_type=asyncio.Task, coro=noop,
+                            loop=Loop(), context=contextvars.Context(),
+                            write=os.write):
+                    task_type(coro(), loop=loop, context=context)
+                    write(1, b'task created\\n')
+
+            # Keep the finalizer alive until interpreter_clear()'s last GC.
+            finalizer = CreatesTaskOnClear()
+            finalizer.cycle = finalizer
+            del finalizer
+        """)
+        # gh-159041: Delete the cleared interpreter with no thread state attached.
+        out, err = self.run_embedded_interpreter(
+            "test_interpreter_clear_and_delete", code,
+            timeout=support.SHORT_TIMEOUT)
+        self.assertEqual(out, "task created\n")
+        self.assertEqual(err, "")
+
     def test_subinterps_main(self):
         for run in self.run_repeated_init_and_subinterpreters():
             main = run[0]
@@ -2008,57 +2047,6 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_audit(self):
         self.run_embedded_interpreter("test_audit")
-
-    def test_asyncio_tasks_during_shutdown(self):
-        import_helper.import_module('_asyncio')
-        code = textwrap.dedent("""
-            import asyncio
-            import contextvars
-            import os
-            import warnings
-
-            async def noop():
-                pass
-
-            class Loop:
-                debug = False
-
-                def get_debug(self):
-                    return self.debug
-
-                def call_soon(self, callback, *args, context=None):
-                    self.callback = callback
-                    return callback
-
-            class CreatesTaskOnClear:
-                def __init__(self, message):
-                    self.task_type = asyncio.Task
-                    self.coro = noop()
-                    self.loop = Loop()
-                    self.context = contextvars.Context()
-                    self.write = os.write
-                    self.message = message
-
-                def __del__(self):
-                    self.task_type(
-                        self.coro, loop=self.loop, context=self.context)
-                    return self.write(1, self.message)
-
-            # Release one finalizer when interpreter_clear() clears warnings.
-            warnings.filters.append(CreatesTaskOnClear(b'warnings cleared\\n'))
-            del warnings.filters
-
-            # The native audit hook releases this one after interpreter_clear().
-            finalizer = CreatesTaskOnClear(b'audit hooks cleared\\n')
-        """)
-        # gh-159041: Native audit hooks are cleared after interpreter_clear().
-        # The methods above avoid loading common constants (including an
-        # implicit return None), which have already been cleared at that point.
-        out, err = self.run_embedded_interpreter(
-            "test_audit_clear_finalizer", code,
-            timeout=support.SHORT_TIMEOUT)
-        self.assertEqual(out, "warnings cleared\naudit hooks cleared\n")
-        self.assertEqual(err, "")
 
     def test_audit_tuple(self):
         self.run_embedded_interpreter("test_audit_tuple")

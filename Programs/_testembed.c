@@ -154,6 +154,23 @@ static void _testembed_initialize(void)
 }
 
 
+static int test_interpreter_clear_and_delete(void)
+{
+    assert(main_argc == 3);
+    _testembed_initialize();
+    if (PyRun_SimpleString(main_argv[2]) < 0) {
+        return 1;
+    }
+
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState_Clear(interp);
+    PyThreadState_Swap(NULL);
+    PyInterpreterState_Delete(interp);
+    // The interpreter has already been deleted, so don't call Py_FinalizeEx().
+    return 0;
+}
+
+
 static int test_import_in_subinterpreters(void)
 {
     _testembed_initialize();
@@ -1301,36 +1318,6 @@ static int test_audit(void)
     if (_audit_hook_clear_count != 1) {
         return 0x1000 | _audit_hook_clear_count;
     }
-    return result;
-}
-
-static int
-audit_hook_clear_finalizer(const char *event, PyObject *args, void *userdata)
-{
-    if (strcmp(event, "cpython._PySys_ClearAuditHooks") == 0) {
-        PyObject **finalizer = userdata;
-        Py_CLEAR(*finalizer);
-    }
-    return 0;
-}
-
-static int test_audit_clear_finalizer(void)
-{
-    assert(main_argc == 3);
-    _testembed_initialize();
-    if (PyRun_SimpleString(main_argv[2]) < 0) {
-        return 1;
-    }
-
-    PyObject *main_module = PyImport_AddModule("__main__");
-    assert(main_module != NULL);
-    PyObject *finalizer = PyObject_GetAttrString(main_module, "finalizer");
-    assert(finalizer != NULL);
-    assert(PyObject_DelAttrString(main_module, "finalizer") == 0);
-    assert(PySys_AddAuditHook(audit_hook_clear_finalizer, &finalizer) == 0);
-
-    int result = Py_FinalizeEx();
-    assert(finalizer == NULL);
     return result;
 }
 
@@ -3033,6 +3020,7 @@ static struct TestCase TestCases[] = {
     {"test_repeated_init_exec", test_repeated_init_exec},
     {"test_repeated_simple_init", test_repeated_simple_init},
     {"test_forced_io_encoding", test_forced_io_encoding},
+    {"test_interpreter_clear_and_delete", test_interpreter_clear_and_delete},
     {"test_import_in_subinterpreters", test_import_in_subinterpreters},
     {"test_repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters},
     {"test_repeated_init_and_inittab", test_repeated_init_and_inittab},
@@ -3091,7 +3079,6 @@ static struct TestCase TestCases[] = {
     // Audit
     {"test_open_code_hook", test_open_code_hook},
     {"test_audit", test_audit},
-    {"test_audit_clear_finalizer", test_audit_clear_finalizer},
     {"test_audit_tuple", test_audit_tuple},
     {"test_audit_subinterpreter", test_audit_subinterpreter},
     {"test_audit_run_command", test_audit_run_command},
