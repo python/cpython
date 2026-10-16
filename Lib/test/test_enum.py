@@ -3530,6 +3530,34 @@ class TestSpecial(unittest.TestCase):
             UNRESTRICTED = frozenset({"sc", "cs"})
         self.assertIs(Directions({"sc"}), Directions.DOWN_ONLY)
 
+    def test_hashable_values_creation_work(self):
+        class CountedInt(int):
+            comparisons = 0
+            __hash__ = int.__hash__
+
+            def __eq__(self, other):
+                type(self).comparisons += 1
+                return super().__eq__(other)
+
+        size = 200
+        values = [CountedInt(i) for i in range(size)]
+        CountedInt.comparisons = 0
+        Big = Enum('Big', [(f'M{i}', v) for i, v in enumerate(values)])
+        self.assertLess(CountedInt.comparisons, 4 * size)
+        self.assertEqual(len(Big), size)
+        self.assertEqual(Big._hashable_values_, values)
+        self.assertIn(values[-1], Big)
+
+    def test_hashable_values_with_aliases(self):
+        class Color(Enum):
+            RED = 1
+            GREEN = 2
+            CRIMSON = 1
+            BLUE = 3
+        self.assertEqual(Color._hashable_values_, [1, 2, 3])
+        self.assertIs(Color.CRIMSON, Color.RED)
+        self.assertIn(1, Color)
+
 
 class TestOrder(unittest.TestCase):
     "test usage of the `_order_` attribute"
