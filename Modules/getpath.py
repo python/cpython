@@ -211,6 +211,28 @@ def search_up(prefix, *landmarks, test=isfile):
         prefix = dirname(prefix)
 
 
+# The traditional Windows path length limit, not counting the terminating NUL.
+MAX_PATH = 260
+
+
+def strip_extended_length_prefix(path):
+    """
+    Remove the leading "\\\\?\\" of a Windows extended-length path, and
+    rewrite the "\\\\?\\UNC\\" form of a UNC path back to a plain "\\\\" one.
+    Windows does not resolve relative components (such as ".." or "/") in an
+    extended-length path, so keeping the prefix in a path that we later join
+    onto is liable to break consumers.  A path that is still too long to be
+    used unprefixed keeps its prefix, as it has no other usable form.
+    """
+    if path.startswith('\\\\?\\UNC\\'):
+        stripped = '\\\\' + path[8:]
+    elif path.startswith('\\\\?\\'):
+        stripped = path[4:]
+    else:
+        return path
+    return stripped if len(stripped) < MAX_PATH else path
+
+
 # ******************************************************************************
 # READ VARIABLES FROM config
 # ******************************************************************************
@@ -319,6 +341,13 @@ if ENV_PYTHONEXECUTABLE or ENV___PYVENV_LAUNCHER__:
         real_executable = base_executable
         #real_executable_dir = dirname(real_executable)
     executable = ENV_PYTHONEXECUTABLE or ENV___PYVENV_LAUNCHER__
+    if os_name == 'nt':
+        # QUIRK: On Windows the venv launcher reports its own path through
+        # GetModuleFileNameW, which hands back a "\\?\" extended-length path
+        # whenever that is how the interpreter was invoked.  Drop that prefix
+        # again, so the venv prefix and sys.executable stay usable by tools
+        # that join relative components onto them (gh-157917).
+        executable = strip_extended_length_prefix(executable)
     executable_dir = dirname(executable)
 
 
