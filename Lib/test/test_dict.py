@@ -461,7 +461,6 @@ class DictTest(unittest.TestCase):
 
     @support.nomemtest
     def test_copy_empty_no_memory(self):
-        import _testcapi
         d = {}
         d_copy = d.copy
         with self.assertRaises(MemoryError):
