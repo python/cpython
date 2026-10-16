@@ -1427,6 +1427,10 @@ PyConfig
 
       See also the :c:member:`~PyConfig.filesystem_errors` member.
 
+      See also :c:func:`PyUnicode_EncodeFSDefault` and
+      :ref:`related functions <capi-filesystem-encoding>`
+      for encoding paths at runtime.
+
    .. c:member:: wchar_t* filesystem_errors
 
       :term:`Filesystem error handler <filesystem encoding and error handler>`:

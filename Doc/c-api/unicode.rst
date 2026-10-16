@@ -911,6 +911,8 @@ system.
       used for ``strict``.
 
 
+.. _capi-filesystem-encoding:
+
 File System Encoding
 """"""""""""""""""""
 
