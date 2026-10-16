@@ -118,7 +118,15 @@ static inline void _PyObject_GC_SET_SHARED(PyObject *op) {
 /* Bit 1 is set when the object is in generation which is GCed currently. */
 #define _PyGC_PREV_MASK_COLLECTING ((uintptr_t)2)
 
-#define _PyGC_PREV_SHIFT           2
+#if !defined(Py_GIL_DISABLED) && SIZEOF_VOID_P > 4
+// Pointer alignment reserves bit 2 for permanent ownership, including queued weakrefs.
+#  define _PyGC_PREV_MASK_PERM     ((uintptr_t)4)
+#  define _PyGC_PREV_SHIFT         3
+#else
+// 32-bit and free-threaded builds retain the existing two-bit header layout.
+#  define _PyGC_PREV_SHIFT         2
+#endif
+// The remaining high bits contain the predecessor address or gc_refs.
 #define _PyGC_PREV_MASK            (((uintptr_t) -1) << _PyGC_PREV_SHIFT)
 
 /* set for debugging information */
@@ -151,7 +159,7 @@ static inline void _PyGCHead_SET_NEXT(PyGC_Head *gc, PyGC_Head *next) {
     gc->_gc_next = (uintptr_t)next;
 }
 
-// Lowest two bits of _gc_prev is used for _PyGC_PREV_MASK_* flags.
+// Low bits of _gc_prev store _PyGC_PREV_MASK_* flags.
 static inline PyGC_Head* _PyGCHead_PREV(PyGC_Head *gc) {
     uintptr_t prev = (gc->_gc_prev & _PyGC_PREV_MASK);
     return (PyGC_Head*)prev;

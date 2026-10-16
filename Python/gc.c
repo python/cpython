@@ -63,6 +63,25 @@ gc_is_collecting(PyGC_Head *g)
     return (g->_gc_prev & PREV_MASK_COLLECTING) != 0;
 }
 
+#ifdef _PyGC_PREV_MASK_PERM
+/* Test whether a GC header retains permanent-generation ownership.
+ *
+ * Arguments:
+ * - `gc`: the object header to inspect.
+ *
+ * Return true for permanent objects, including queued weakrefs temporarily
+ * outside the permanent list.
+ */
+static inline bool
+gc_is_permanent(PyGC_Head *gc)
+{
+    static_assert(_Alignof(PyGC_Head) >= (1 << _PyGC_PREV_SHIFT), "GC headers must satisfy their reserved-bit alignment");
+    static_assert(_Alignof(PyObject) >= (1 << _PyGC_PREV_SHIFT), "GC objects must satisfy their reserved-bit alignment");
+
+    return (gc->_gc_prev & _PyGC_PREV_MASK_PERM) != 0;
+}
+#endif
+
 static inline void
 gc_clear_collecting(PyGC_Head *g)
 {
@@ -161,9 +180,10 @@ _gc_prev values
 
 Between collections, _gc_prev is used for doubly linked list.
 
-Lowest two bits of _gc_prev are used for flags.
+Lowest bits of _gc_prev are used for flags.
 PREV_MASK_COLLECTING is used only while collecting and cleared before GC ends
 or _PyObject_GC_UNTRACK() is called.
+_PyGC_PREV_MASK_PERM identifies objects owned by the permanent generation.
 
 During a collection, _gc_prev is temporary used for gc_refs, and the gc list
 is singly linked until _gc_prev is restored.
@@ -450,9 +470,8 @@ visit_decref(PyObject *op, void *parent)
 
 /* Subtract a GC reference, initializing and marking the referent on first visit.
  *
- * This visitor is used only when every tracked mortal object it may reach
- * belongs to the collection. Non-GC, untracked, and immortal referents remain
- * unchanged.
+ * Every tracked mortal referent must belong to this collection or be marked permanent.
+ * Non-GC, untracked, immortal, and permanent referents remain unchanged.
  *
  * Arguments:
  * - `op`: the object referenced by the traversed parent.
@@ -476,6 +495,11 @@ gc_decref_and_mark_collecting(PyObject *op, void *parent)
         return 0;
     }
 
+#ifdef _PyGC_PREV_MASK_PERM
+    if (gc_is_permanent(gc)) {
+        return 0;
+    }
+#endif
     if (!_PyObject_GC_IS_TRACKED(op) || _Py_IsImmortal(op)) {
         return 0;
     }
@@ -546,7 +570,7 @@ subtract_refs(PyGC_Head *containers)
  * Prerequisites:
  * - This is the initial pass of a full collection, not a resurrection recheck.
  * - `containers` is a valid list containing all ordinary generations with no masks set.
- * - The permanent generation is empty.
+ * - Permanent objects are identifiable, or the permanent generation is empty.
  * - `_PyInterpreterState_MayHaveForeignGcObjects()` is false.
  *
  * Arguments:
@@ -1072,7 +1096,10 @@ invoke_weakref_callbacks(PyGC_Head *wrcb_to_call, PyGC_Head *old)
          */
         Py_DECREF(op);
         if (wrcb_to_call->_gc_next == (uintptr_t)gc) {
-            /* object is still alive -- move it */
+#ifdef _PyGC_PREV_MASK_PERM
+            // The old generation must not retain permanent markers.
+            gc->_gc_prev &= ~_PyGC_PREV_MASK_PERM;
+#endif
             gc_list_move(gc, old);
         }
         else {
@@ -1336,11 +1363,13 @@ deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable,
      * refcount greater than 0 when all the references within the
      * set are taken into account).
      */
-    // Lazy initialization can touch any tracked mortal referent. Use it only
-    // when all such objects belong to this initial full collection.
+    // Marked permanent objects are excluded from lazy initialization.
+    // Every other tracked mortal referent must belong to this initial full collection.
     Py_ssize_t candidates;
     if (full_collection_pass &&
+#ifndef _PyGC_PREV_MASK_PERM
         gc_list_is_empty(&get_gc_state()->permanent_generation.head) &&
+#endif
         !_PyInterpreterState_MayHaveForeignGcObjects()) {
         candidates = update_and_subtract_refs(base, legacy_finalizer_count_out);
     }
@@ -1972,7 +2001,13 @@ _PyGC_Freeze(PyInterpreterState *interp)
 {
     GCState *gcstate = &interp->gc;
     for (int i = 0; i < NUM_GENERATIONS; ++i) {
-        gc_list_merge(GEN_HEAD(gcstate, i), &gcstate->permanent_generation.head);
+        PyGC_Head *generation = GEN_HEAD(gcstate, i);
+#ifdef _PyGC_PREV_MASK_PERM
+        for (PyGC_Head *gc = GC_NEXT(generation); gc != generation; gc = GC_NEXT(gc)) {
+            gc->_gc_prev |= _PyGC_PREV_MASK_PERM;
+        }
+#endif
+        gc_list_merge(generation, &gcstate->permanent_generation.head);
         gcstate->generations[i].count = 0;
     }
 }
@@ -1981,8 +2016,13 @@ void
 _PyGC_Unfreeze(PyInterpreterState *interp)
 {
     GCState *gcstate = &interp->gc;
-    gc_list_merge(&gcstate->permanent_generation.head,
-                  GEN_HEAD(gcstate, NUM_GENERATIONS-1));
+    PyGC_Head *permanent = &gcstate->permanent_generation.head;
+#ifdef _PyGC_PREV_MASK_PERM
+    for (PyGC_Head *gc = GC_NEXT(permanent); gc != permanent; gc = GC_NEXT(gc)) {
+        gc->_gc_prev &= ~_PyGC_PREV_MASK_PERM;
+    }
+#endif
+    gc_list_merge(permanent, GEN_HEAD(gcstate, NUM_GENERATIONS-1));
 }
 
 Py_ssize_t

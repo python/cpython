@@ -1034,6 +1034,187 @@ class GCTests(unittest.TestCase):
         gc.unfreeze()
         self.assertEqual(gc.get_freeze_count(), 0)
 
+    @requires_gil_enabled("tests frozen objects in the generation-list collector")
+    def test_frozen_references_survive_full_collection(self):
+        """Full collection preserves frozen ownership and reclaims unrelated cycles."""
+        gc.collect()
+        frozen = []
+        gc.freeze()
+        self.addCleanup(gc.unfreeze)
+
+        class Node:
+            """A cycle-capable object whose lifetime can be observed."""
+
+        owned = Node()
+        owned.link = owned
+        owned_ref = weakref.ref(owned)
+        frozen.append(owned)
+
+        garbage = Node()
+        garbage.link = garbage
+        garbage_ref = weakref.ref(garbage)
+        del owned, garbage
+
+        gc.collect(2)
+        self.assertIsNotNone(owned_ref())
+        self.assertIsNone(garbage_ref())
+
+        frozen.clear()
+        gc.collect(2)
+        self.assertIsNone(owned_ref())
+
+    @requires_gil_enabled("tests repeated permanent-generation transitions")
+    @unittest.skipUnless(sys.maxsize > 2**32, "requires 64-bit GC header flags")
+    def test_repeated_freeze_and_unfreeze_preserve_cycles(self):
+        """Repeated freezing preserves cycles and unfreezing restores eligibility."""
+        import_module("ctypes")
+        source = textwrap.dedent("""
+            import ctypes
+            import gc
+            import weakref
+
+            may_have_foreign_gc_objects = ctypes.pythonapi._PyInterpreterState_MayHaveForeignGcObjects
+            may_have_foreign_gc_objects.argtypes = []
+            may_have_foreign_gc_objects.restype = ctypes.c_bool
+
+            class Node:
+                "A cycle-capable object whose lifetime can be observed."
+
+            gc.disable()
+            first = Node()
+            first.link = first
+            first_ref = weakref.ref(first)
+            gc.freeze()
+
+            second = Node()
+            second.link = second
+            second_ref = weakref.ref(second)
+            gc.freeze()
+
+            # The ordinary holder makes the fused visitor encounter both frozen objects.
+            holder = [first, second]
+            del first, second
+            assert ctypes.sizeof(ctypes.c_void_p) > 4
+            assert gc.get_freeze_count() > 0
+            assert not may_have_foreign_gc_objects()
+            gc.collect(2)
+            assert len(holder) == 2
+
+            gc.unfreeze()
+            del holder
+            gc.collect(2)
+            assert first_ref() is None
+            assert second_ref() is None
+        """)
+        assert_python_ok("-c", source)
+
+    @requires_gil_enabled("tests permanent weak-reference callback migration")
+    @unittest.skipUnless(sys.maxsize > 2**32, "requires 64-bit GC header flags")
+    def test_permanent_weakrefs_move_to_old_after_callbacks(self):
+        """Surviving queued weakrefs enter the old generation with their marker cleared."""
+        import_module("ctypes")
+        source = textwrap.dedent("""
+            import ctypes
+            import gc
+            import sys
+            import weakref
+
+            generation = int(sys.argv[1])
+            callbacks = []
+
+            class Target:
+                "A cyclic referent used to queue a permanent weakref."
+
+            untrack = ctypes.pythonapi.PyObject_GC_UnTrack
+            untrack.argtypes = [ctypes.py_object]
+            untrack.restype = None
+            track = ctypes.pythonapi.PyObject_GC_Track
+            track.argtypes = [ctypes.py_object]
+            track.restype = None
+
+            def callback(reference):
+                "Retain the callback weakref for post-collection inspection."
+                callbacks.append(reference)
+
+            targets = [Target(), Target()]
+            for target in targets:
+                target.link = target
+            references = [weakref.ref(target, callback) for target in targets]
+            gc.freeze()
+
+            for reference in references:
+                previous = ctypes.c_size_t.from_address(id(reference) - ctypes.sizeof(ctypes.c_size_t))
+                assert previous.value & 4, hex(previous.value)
+            for target in targets:
+                untrack(target)
+                track(target)
+            del target, targets
+
+            gc.collect(generation)
+
+            assert len(callbacks) == 2, callbacks
+            assert all(reference() is None for reference in references)
+            old_generation = min(generation + 1, 2)
+            for reference in references:
+                previous = ctypes.c_size_t.from_address(id(reference) - ctypes.sizeof(ctypes.c_size_t))
+                assert previous.value & 4 == 0, hex(previous.value)
+                assert any(obj is reference for obj in gc.get_objects(old_generation))
+
+            gc.unfreeze()
+            callbacks.clear()
+            del references
+            gc.collect(2)
+        """)
+        for generation in (0, 2):
+            with self.subTest(generation=generation):
+                assert_python_ok("-c", source, str(generation))
+
+    @requires_gil_enabled("tests permanent weak-reference callback ownership")
+    @unittest.skipUnless(sys.maxsize > 2**32, "requires 64-bit GC header flags")
+    def test_permanent_weakref_callback_can_release_its_last_owner(self):
+        """A permanent weakref can be freed when its callback drops its final owner."""
+        import_module("ctypes")
+        source = textwrap.dedent("""
+            import ctypes
+            import gc
+            import weakref
+
+            callbacks = []
+            owners = []
+
+            class Target:
+                "A cyclic referent used to queue a permanent weakref."
+
+            untrack = ctypes.pythonapi.PyObject_GC_UnTrack
+            untrack.argtypes = [ctypes.py_object]
+            untrack.restype = None
+            track = ctypes.pythonapi.PyObject_GC_Track
+            track.argtypes = [ctypes.py_object]
+            track.restype = None
+
+            def callback(reference):
+                "Release the final owner without retaining the weakref."
+                callbacks.append(len(callbacks))
+                owners.remove(reference)
+
+            targets = [Target(), Target()]
+            for target in targets:
+                target.link = target
+                owners.append(weakref.ref(target, callback))
+            gc.freeze()
+
+            for target in targets:
+                untrack(target)
+                track(target)
+            del target, targets
+            gc.collect(2)
+
+            assert callbacks == [0, 1], callbacks
+            assert owners == [], owners
+            gc.unfreeze()
+        """)
+        assert_python_ok("-c", source)
+
     def test_get_objects(self):
         gc.collect()
         l = []
