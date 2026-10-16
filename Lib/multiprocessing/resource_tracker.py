@@ -310,11 +310,8 @@ class ResourceTracker(object):
             else:
                 self._launch()
 
-        while True:
-            try:
-                reentrant_msg = self._reentrant_messages.popleft()
-            except IndexError:
-                break
+        for reentrant_msg in iter(self._reentrant_messages.popleft,
+                                  stop_exception=IndexError):
             self._write(reentrant_msg)
         if msg is not None:
             self._write(msg)
