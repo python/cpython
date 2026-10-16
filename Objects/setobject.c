@@ -410,8 +410,6 @@ set_insert_clean(setentry *table, size_t mask, PyObject *key, Py_hash_t hash)
 /* ======== End logic for probing the hash table ========================== */
 /* ======================================================================== */
 
-// Like set_lookkey(), but the caller holds the critical section on a mutable
-// set (or has exclusive access to it), so don't lock it again.
 static int
 set_lookkey_lock_held(PySetObject *so, PyObject *key, Py_hash_t hash,
                       setentry **epp)
