@@ -1,0 +1,2 @@
+Speed up :meth:`set.discard` and :meth:`set.remove` on the free-threaded build
+by not re-entering the critical section already held on the set.
