@@ -1,11 +1,9 @@
 import sys
-import textwrap
 import threading
 import unittest
 from test import support
 from test.support import import_helper
 from test.support import threading_helper
-from test.support.script_helper import assert_python_failure
 
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 _testcapi = import_helper.import_module('_testcapi')
