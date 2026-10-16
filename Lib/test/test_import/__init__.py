@@ -1264,6 +1264,37 @@ os.does_not_exist
                 origin = "a\x00b"
             _imp.create_dynamic(Spec2())
 
+    @unittest.skipUnless(_testsinglephase is not None,
+                         'requires _testsinglephase')
+    @unittest.skipUnless(os_helper.TESTFN_UNDECODABLE,
+                         'requires undecodable file names')
+    def test_import_from_undecodable_path(self):
+        # gh-155247: the path of the extension module is not encodable
+        # in UTF-8.
+        origin = _testsinglephase.__file__
+        with os_helper.temp_dir() as tempdir:
+            subdir = os.path.join(os.fsencode(tempdir),
+                                  os_helper.TESTFN_UNDECODABLE)
+            try:
+                os.mkdir(subdir)
+            except OSError:
+                self.skipTest('undecodable paths are not supported')
+            path = os.path.join(subdir, os.fsencode(os.path.basename(origin)))
+            shutil.copyfile(origin, path)
+            # Import it in a subprocess: the extension module stays loaded,
+            # and on Windows its file cannot be removed.
+            script = textwrap.dedent(f"""
+                import importlib.util
+                path = {os.fsdecode(path)!a}
+                spec = importlib.util.spec_from_file_location(
+                        '_testsinglephase', path)
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                assert module.__name__ == '_testsinglephase', module.__name__
+                assert module.__file__ == path, module.__file__
+                """)
+            script_helper.assert_python_ok('-c', script)
+
     def test_create_builtin(self):
         class Spec:
             pass
