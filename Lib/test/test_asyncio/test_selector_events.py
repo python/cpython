@@ -973,6 +973,22 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.assertEqual(list_to_buffer([b'ta']), transport._buffer)
 
     @unittest.skipUnless(selector_events._HAS_SENDMSG, 'no sendmsg')
+    def test_write_sendmsg_partial_bytes_no_copy(self):
+        # gh-159503: the unsent remainder of a bytes object must not be
+        # copied, otherwise a large write costs O(n**2).
+        data = b'data'
+        self.sock.sendmsg = mock.Mock()
+        self.sock.sendmsg.return_value = 2
+
+        transport = self.socket_transport(sendmsg=True)
+        transport._buffer.append(data)
+        self.loop._add_writer(7, transport._write_ready)
+        transport._write_ready()
+        self.assertEqual(list_to_buffer([b'ta']), transport._buffer)
+        self.assertIsInstance(transport._buffer[0], memoryview)
+        self.assertIs(transport._buffer[0].obj, data)
+
+    @unittest.skipUnless(selector_events._HAS_SENDMSG, 'no sendmsg')
     def test_write_sendmsg_half_buffer(self):
         data = [memoryview(b'data1'), memoryview(b'data2')]
         self.sock.sendmsg = mock.Mock()
@@ -1080,6 +1096,20 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         transport._write_ready()
         self.loop.assert_writer(7, transport._write_ready)
         self.assertEqual(list_to_buffer([b'ta']), transport._buffer)
+
+    def test_write_ready_partial_bytes_no_copy(self):
+        # gh-159503: the unsent remainder of a bytes object must not be
+        # copied, otherwise a large write costs O(n**2).
+        data = b'data'
+        self.sock.send.return_value = 2
+
+        transport = self.socket_transport()
+        transport._buffer.append(data)
+        self.loop._add_writer(7, transport._write_ready)
+        transport._write_ready()
+        self.assertEqual(list_to_buffer([b'ta']), transport._buffer)
+        self.assertIsInstance(transport._buffer[0], memoryview)
+        self.assertIs(transport._buffer[0].obj, data)
 
     def test_write_ready_partial_none(self):
         data = b'data'
