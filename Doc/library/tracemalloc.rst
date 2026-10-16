@@ -762,3 +762,71 @@ Traceback
               obj = Object()
             File "test.py", line 12
               tb = tracemalloc.get_object_traceback(f())
+
+
+.. _tracemalloc-cli:
+
+Command-line usage
+------------------
+
+.. versionadded:: next
+
+The :mod:`!tracemalloc` module can be invoked as a script to trace the memory
+allocations of a Python program, without modifying its source code:
+
+.. code-block:: sh
+
+   python -m tracemalloc [-o OUTFILE] [-t KEY_TYPE] [--cumulative] [-n NFRAME] [-l LIMIT] (-m module | script.py) [args ...]
+
+Tracing starts just before the program is run.  When the program exits,
+a snapshot is taken and the top statistics of the memory blocks which are
+still allocated are displayed, followed by their total size and the peak
+size of traced memory blocks.  Memory blocks freed before the program exits
+are only reflected in the peak size.  Example of output::
+
+   Top 10 lineno allocations still alive at exit:
+   /home/user/script.py:4: size=977 KiB, count=100, average=10000 B
+   <frozen importlib._bootstrap_external>:511: size=64.7 KiB, count=588, average=113 B
+   ...
+   164 other: size=145 KiB, count=1062
+   Total size: 1411 KiB
+   Peak size: 1412 KiB
+
+The following options are accepted:
+
+.. program:: tracemalloc
+
+.. option:: -h, --help
+
+   Show the help message and exit.
+
+.. option:: -o <outfile>, --outfile <outfile>
+
+   Dump the snapshot to *outfile* instead of displaying statistics.  The
+   snapshot can be loaded later using :meth:`Snapshot.load`.
+
+.. option:: -t <key_type>, --key-type <key_type>
+
+   Group statistics by *key_type*: ``'filename'``, ``'lineno'`` (default) or
+   ``'traceback'``.  See :meth:`Snapshot.statistics`.
+
+.. option:: --cumulative
+
+   Cumulate the size and count of memory blocks of all frames of the
+   traceback of a trace, not only the most recent frame.  This option
+   cannot be used with the ``'traceback'`` key type.
+
+.. option:: -n <nframe>, --nframe <nframe>
+
+   Store at most *nframe* frames in the traceback of a trace (default: 1).
+   See :func:`start`.  Tracing is restarted with this limit if it was already
+   enabled by the :envvar:`PYTHONTRACEMALLOC` environment variable or the
+   ``-X tracemalloc`` command line option.
+
+.. option:: -l <limit>, --limit <limit>
+
+   Display at most *limit* statistics (default: 10).
+
+.. option:: -m <module>
+
+   Run *module* as a script, like ``python -m``.
