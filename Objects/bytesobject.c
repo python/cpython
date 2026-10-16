@@ -3217,9 +3217,7 @@ int
 _PyBytes_IsMutable(PyObject *self)
 {
     assert(PyBytes_Check(self));
-    // Do not use _PyObject_IsUniquelyReferenced(): this function is called
-    // by bytearray and PyBytesWriter which can be used by multiple threads.
-    assert(Py_REFCNT(self) == 1);
+    assert(_PyObject_IsUniquelyReferenced(self));
     assert(!_Py_IsImmortal(self));
 
     // Check that the object is not a singleton
@@ -3240,9 +3238,7 @@ static inline int
 bytes_resize_inplace(PyObject **pv, Py_ssize_t newsize)
 {
     PyObject *v = *pv;
-    // Do not test _PyObject_IsUniquelyReferenced(). The function is used by
-    // PyBytesWriter_FinishWithSize() and its caller can have its own lock.
-    assert(Py_REFCNT(v) == 1);
+    assert(_PyObject_IsUniquelyReferenced(v));
     assert(PyBytes_GET_SIZE(v) >= 1);
     assert(newsize >= 1);
 
@@ -3321,6 +3317,7 @@ _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize)
         }
         *pv = result;
         Py_DECREF(v);
+        assert(_PyBytes_IsMutable(*pv));
         return 0;
     }
 
@@ -3345,6 +3342,7 @@ _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize)
                Py_MIN(oldsize, newsize));
         *pv = result;
         Py_DECREF(v);
+        assert(_PyBytes_IsMutable(*pv));
         return 0;
     }
 
