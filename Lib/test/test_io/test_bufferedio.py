@@ -624,8 +624,8 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest, CTestCase):
         self.assertIsInstance(cm.exception.__cause__, TypeError)
 
     @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
-    @unittest.skipIf(check_sanitizer(thread=True),
-                     'ThreadSanitizer aborts on huge allocations (exit code 66).')
+    @unittest.skipIf(check_sanitizer(address=True, thread=True),
+                     'Sanitizers abort on huge allocations.')
     def test_read1_error_does_not_cause_reentrant_failure(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         with self.open(os_helper.TESTFN, "wb") as f:
