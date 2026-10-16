@@ -1968,7 +1968,8 @@ dummy_func(
             assert(exc_value && PyExceptionInstance_Check(exc_value));
             int matches = PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration);
             if (matches) {
-                value = PyStackRef_FromPyObjectNew(((PyStopIterationObject *)exc_value)->value);
+                PyObject *val = ((PyStopIterationObject *)exc_value)->value;
+                value = val ? PyStackRef_FromPyObjectNew(val) : PyStackRef_None;
                 DECREF_INPUTS();
                 null_out = null_in;
                 none = PyStackRef_None;

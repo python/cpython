@@ -5190,7 +5190,8 @@
             int matches = PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration);
             _PyFrame_StackPointerInvalidate(frame);
             if (matches) {
-                value = PyStackRef_FromPyObjectNew(((PyStopIterationObject *)exc_value)->value);
+                PyObject *val = ((PyStopIterationObject *)exc_value)->value;
+                value = val ? PyStackRef_FromPyObjectNew(val) : PyStackRef_None;
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
                 _PyStackRef tmp = sub_iter;
