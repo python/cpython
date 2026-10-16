@@ -1,0 +1,1 @@
+Allow full garbage collections to combine reference passes after :func:`gc.freeze` on GIL builds with pointers larger than four bytes.
