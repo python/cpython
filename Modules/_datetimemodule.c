@@ -1783,17 +1783,19 @@ inline static int
 normalize_century(void)
 {
     static int cache = -1;
-    if (cache < 0) {
+    int res = FT_ATOMIC_LOAD_INT_RELAXED(cache);
+    if (res < 0) {
         char year[5];
         struct tm date = {
             .tm_year = -1801,
             .tm_mon = 0,
             .tm_mday = 1
         };
-        cache = (strftime(year, sizeof(year), "%Y", &date) &&
-                 strcmp(year, "0099") != 0);
+        res = (strftime(year, sizeof(year), "%Y", &date) &&
+               strcmp(year, "0099") != 0);
+        FT_ATOMIC_STORE_INT_RELAXED(cache, res);
     }
-    return cache;
+    return res;
 }
 
 static PyObject *
