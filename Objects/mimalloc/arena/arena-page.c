@@ -266,7 +266,6 @@ static size_t mi_page_meta_in_front_block_start(size_t block_size, bool os_align
   else if (block_size != 0 && mi_is_power_of_two(block_size) && block_size <= MI_PAGE_MAX_START_BLOCK_ALIGN2) {
     // naturally align power-of-2 blocks up to MI_PAGE_MAX_START_BLOCK_ALIGN2 size (4KiB)
     offset = mi_align_up(mi_page_info_size(), block_size);
-    if (block_size < 64) { offset += 3*block_size; }
   }
   else if (block_size != 0 && block_size <= MI_SMALL_SIZE_MAX) {
     // align small blocks to their size
@@ -302,16 +301,7 @@ static bool mi_page_block_can_cache_offset(size_t block_size, bool os_align) {
   return true;
 }
 
-// Cache offset for the first block to spread the blocks of different pages over the cache sets (issue #1121).
-// The offset fits in the unused space at the end of the page; if there is none, we skip the last block
-// if that wastes less than 12.5% of the page (e.g. 64 KiB blocks in a 4 MiB page, but not 512 KiB blocks).
-static size_t mi_page_block_cache_offset(uint8_t* slice_start, size_t slice_count, size_t block_size, size_t block_start, bool os_align) {
-  if (!mi_page_block_can_cache_offset(block_size, os_align)) return 0;
-  const size_t page_noguard_size = mi_arenas_page_noguard_size(_mi_size_of_slices(slice_count));
-  mi_assert_internal(block_start + block_size <= page_noguard_size);
-  size_t slack = (page_noguard_size - block_start) % block_size;
-  if (slack < MI_PAGE_CACHE_OFFSET_UNIT && block_size < page_noguard_size/8) { slack += block_size; }
-  const size_t noffsets = 1 + (slack < MI_PAGE_CACHE_OFFSET_MAX ? slack : MI_PAGE_CACHE_OFFSET_MAX) / MI_PAGE_CACHE_OFFSET_UNIT;
+static size_t mi_page_cache_offset_index(uint8_t* slice_start, size_t slice_count, size_t noffsets) {
   // Fibonacci hash of the page index: the top bits spread consecutive pages evenly over the offsets
   const size_t page_index = (size_t)((uintptr_t)slice_start / MI_ARENA_SLICE_SIZE) / slice_count;
   #if MI_SIZE_BITS >= 64
@@ -319,7 +309,28 @@ static size_t mi_page_block_cache_offset(uint8_t* slice_start, size_t slice_coun
   #else
   const size_t hash = page_index * MI_ZU(0x9E3779B9);
   #endif
-  return (((hash >> (MI_SIZE_BITS - 16)) * noffsets) >> 16) * MI_PAGE_CACHE_OFFSET_UNIT;
+  return (((hash >> (MI_SIZE_BITS - 16)) * noffsets) >> 16);
+}
+
+static size_t mi_page_small_block_cache_offset(uint8_t* slice_start, size_t slice_count, size_t block_size) {
+  const size_t unit = mi_max(MI_PAGE_SMALL_CACHE_OFFSET_UNIT, mi_natural_alignment_of_size(block_size));
+  if (unit > MI_PAGE_SMALL_CACHE_OFFSET_MAX) return 0;
+  return mi_page_cache_offset_index(slice_start, slice_count, 1 + MI_PAGE_SMALL_CACHE_OFFSET_MAX/unit) * unit;
+}
+
+// Cache offset for the first block to spread the blocks of different pages over the cache sets (issue #1121).
+// The offset fits in the unused space at the end of the page; if there is none, we skip the last block
+// if that wastes less than 12.5% of the page (e.g. 64 KiB blocks in a 4 MiB page, but not 512 KiB blocks).
+static size_t mi_page_block_cache_offset(uint8_t* slice_start, size_t slice_count, size_t block_size, size_t block_start, bool os_align) {
+  if (MI_PAGE_CACHE_OFFSET == 0 || os_align) return 0;
+  if (!mi_block_size_has_cache_offset(block_size)) return mi_page_small_block_cache_offset(slice_start, slice_count, block_size);
+  if (!mi_page_block_can_cache_offset(block_size, os_align)) return 0;
+  const size_t page_noguard_size = mi_arenas_page_noguard_size(_mi_size_of_slices(slice_count));
+  mi_assert_internal(block_start + block_size <= page_noguard_size);
+  size_t slack = (page_noguard_size - block_start) % block_size;
+  if (slack < MI_PAGE_CACHE_OFFSET_UNIT && block_size < page_noguard_size/8) { slack += block_size; }
+  const size_t noffsets = 1 + (slack < MI_PAGE_CACHE_OFFSET_MAX ? slack : MI_PAGE_CACHE_OFFSET_MAX) / MI_PAGE_CACHE_OFFSET_UNIT;
+  return mi_page_cache_offset_index(slice_start, slice_count, noffsets) * MI_PAGE_CACHE_OFFSET_UNIT;
 }
 
 // Use the separate (zero initialized) `page_meta` if available and not preferring in front of the slices,
@@ -343,15 +354,7 @@ static mi_page_t* mi_page_meta_select(uint8_t* slice_start, size_t slice_count, 
   else {
     // use the separate page meta data
     mi_memzero_aligned(page_meta, sizeof(*page_meta));
-    #if !defined(MI_PAGE_BLOCK_START_MAX_OFFSET)
-    #define MI_PAGE_BLOCK_START_MAX_OFFSET  (8*MI_INTPTR_BITS) /* 512 */
-    #endif
     offset = 0;
-    if (block_size >= MI_SIZE_SIZE && block_size <= MI_PAGE_BLOCK_START_MAX_OFFSET && mi_is_power_of_two(block_size)) {
-      // use the same offset as if the page meta data was in front
-      offset = mi_align_up(mi_page_info_size(), block_size); // to maintain natural alignment
-      if (block_size < 64) { offset += 3*block_size; }
-    }
     page = page_meta;
   }
   offset += mi_page_block_cache_offset(slice_start, slice_count, block_size, offset, os_align);

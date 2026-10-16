@@ -7,7 +7,7 @@ and configuration options.
 - [`atomic.h`](atomic.h): Portable atomic operations and locks.
 - [`prim.h`](prim.h): Primitive and minimal portability API needed from a host system.
 - [`track.h`](track.h): Memory-tracking integration for Valgrind, AddressSanitizer, and Windows event tracing.
-- [`qsbr.h`](qsbr.h): Quiescent state-based reclamation primitives (for runtime systems like CPython).
+- [`qsbr.h`](qsbr.h): Quiescent-state based reclamation primitives (for runtime systems like CPython).
 - [`internal.h`](internal.h): Deprecated: umbrella header for internal allocator declarations and utilities.
 
 # Source Headers
