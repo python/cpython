@@ -1453,10 +1453,10 @@ def set_environment_altered(reason):
 
 
 def reap_children():
-    """Use this function at the end of test_main() whenever sub-processes
-    are started.  This will help ensure that no extra children (zombies)
-    stick around to hog resources and create problems when looking
-    for refleaks.
+    """Call this from setUp(), tearDown(), or tearDownModule() in tests
+    that start subprocesses.  This will help ensure that no extra children
+    (zombies) stick around to hog resources and create problems when
+    looking for refleaks.
     """
     # Need os.waitpid(-1, os.WNOHANG): Windows is not supported
     if not (hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG')):
@@ -3361,3 +3361,22 @@ def built_with_c_assertions():
         return Py_DEBUG
     else:
         return bool(_testlimitedcapi._py_getbuiltwithassert())
+
+
+@contextlib.contextmanager
+def inject_memory_error_cm(start=0, stop=0):
+    """
+    Similar to inject_memory_error() but can be used as a context manager.
+
+    Raise SkipTest if the _testcapi extension module is missing
+    """
+    try:
+        import _testcapi
+    except ImportError:
+        raise unittest.SkipTest("_testcapi required")
+
+    try:
+        _testcapi.set_nomemory(start, stop)
+        yield
+    finally:
+        _testcapi.remove_mem_hooks()

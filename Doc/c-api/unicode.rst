@@ -412,6 +412,10 @@ APIs:
    the UCS1 range, it will be transformed into UCS1
    (:c:macro:`PyUnicode_1BYTE_KIND`).
 
+   All characters must be in range [U+0000; U+10ffff]. If *kind* is
+   :c:macro:`PyUnicode_4BYTE_KIND` and the string contains invalid characters,
+   the behavior is undefined.
+
    .. versionadded:: 3.3
 
 
@@ -1809,6 +1813,9 @@ object.
    The instance must be destroyed by :c:func:`PyUnicodeWriter_Finish` on
    success, or :c:func:`PyUnicodeWriter_Discard` on error.
 
+   The API is **not thread safe**. To share a writer with multiple threads, a
+   critical section or a lock is needed.
+
 .. c:function:: PyUnicodeWriter* PyUnicodeWriter_Create(Py_ssize_t length)
 
    Create a Unicode writer instance.
@@ -1880,9 +1887,12 @@ object.
 
 .. c:function:: int PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *writer, Py_UCS4 *str, Py_ssize_t size)
 
-   Writer the UCS4 string *str* into *writer*.
+   Write the UCS4 string *str* into *writer*.
 
    *size* is a number of UCS4 characters.
+
+   All characters must be in range [U+0000; U+10ffff]. If the string contains
+   invalid characters, the behavior is undefined.
 
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
