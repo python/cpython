@@ -1,0 +1,4 @@
+:class:`typing.BinaryIO` now declares a ``readinto()`` method.  Every class
+that typeshed marks as inheriting from ``BinaryIO`` provides it, in
+:class:`codecs.StreamRecoder`'s case through ``__getattr__``, so the runtime
+stub was missing a method the type describes.
