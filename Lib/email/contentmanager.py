@@ -231,9 +231,9 @@ def set_bytes_content(msg, data, maintype, subtype, cte='base64',
         data = binascii.b2a_qp(data, istext=False, header=False, quotetabs=True)
         data = data.decode('ascii')
     elif cte == '7bit':
-        data = data.decode('ascii')
+        data = str(data, 'ascii')
     elif cte in ('8bit', 'binary'):
-        data = data.decode('ascii', 'surrogateescape')
+        data = str(data, 'ascii', 'surrogateescape')
     msg.set_payload(data)
     msg['Content-Transfer-Encoding'] = cte
     _finalize_set(msg, disposition, filename, cid, params)

@@ -848,6 +848,29 @@ class TestRawDataManager(TestEmailBase):
             ASCII-only message.
             """))
 
+    def test_set_byteslike_content_with_unencoded_cte(self):
+        for cte in ('7bit', '8bit', 'binary'):
+            content = (b'ASCII-only message.\n' if cte == '7bit' else
+                       b'non-ASCII \xa7\xff message.\r\n')
+            for buffer_type in (bytes, bytearray, memoryview):
+                with self.subTest(cte=cte, buffer_type=buffer_type):
+                    m = self._make_message()
+                    m.set_content(buffer_type(content),
+                                  maintype='application',
+                                  subtype='octet-stream', cte=cte)
+                    self.assertEqual(m['Content-Transfer-Encoding'], cte)
+                    self.assertEqual(m.get_payload(decode=True), content)
+                    self.assertEqual(m.get_content(), content)
+
+    def test_set_byteslike_non_ascii_with_cte_7bit_raises(self):
+        for buffer_type in (bytes, bytearray, memoryview):
+            with self.subTest(buffer_type=buffer_type):
+                m = self._make_message()
+                with self.assertRaises(UnicodeDecodeError):
+                    m.set_content(buffer_type(b'non-ASCII \xa7\xff message'),
+                                  maintype='application',
+                                  subtype='octet-stream', cte='7bit')
+
     content_object_params = {
         'text_plain': ('content', ()),
         'text_html': ('content', ('html',)),
