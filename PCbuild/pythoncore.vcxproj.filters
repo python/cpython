@@ -1469,19 +1469,7 @@
     <ClCompile Include="..\Python\getargs.c">
       <Filter>Python</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\getcompiler.c">
-      <Filter>Python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Python\getcopyright.c">
-      <Filter>Python</Filter>
-    </ClCompile>
     <ClCompile Include="..\Python\getopt.c">
-      <Filter>Python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Python\getplatform.c">
-      <Filter>Python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Python\getversion.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\ceval_gil.c">

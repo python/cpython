@@ -1,7 +1,8 @@
-
-/* Return the compiler identification, if possible. */
+// On Windows, do not link the program to python3x.lib
+#define Py_NO_LINK_LIB
 
 #include "Python.h"
+#include <stdio.h>                // printf()
 
 // PC/pyconfig.h defines _Py_COMPILER
 #ifdef _Py_COMPILER
@@ -13,20 +14,21 @@
 // Note the __clang__ conditional has to come before the __GNUC__ one because
 // clang pretends to be GCC.
 #if defined(__clang__)
-#  define COMPILER "[Clang " __clang_version__ "]"
+#  define COMPILER "Clang " __clang_version__
 #elif defined(__GNUC__)
-#  define COMPILER "[GCC " __VERSION__ "]"
+#  define COMPILER "GCC " __VERSION__
 // Generic fallbacks.
 #elif defined(__cplusplus)
-#  define COMPILER "[C++]"
+#  define COMPILER "C++"
 #else
-#  define COMPILER "[C]"
+#  define COMPILER "C"
 #endif
 
 #endif /* !COMPILER */
 
-const char *
-Py_GetCompiler(void)
+int main()
 {
-    return COMPILER;
+    const char *compiler = COMPILER;
+    printf("%s\n", compiler);
+    return 0;
 }

@@ -196,22 +196,10 @@
     <ClCompile Include="..\Modules\getbuildinfo.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\getcompiler.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Python\getcopyright.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\Python\getopt.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\getpath_noop.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Python\getplatform.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Python\getversion.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\ceval_gil.c">

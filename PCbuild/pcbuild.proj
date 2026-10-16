@@ -18,7 +18,7 @@
 
   <ItemDefinitionGroup>
     <FreezeProjects>
-      <Platform>$(PreferredToolArchitecture)</Platform>
+      <Platform>$(Platform)</Platform>
       <Configuration>$(Configuration)</Configuration>
       <Configuration Condition="$(Configuration) == 'PGInstrument'">Release</Configuration>
       <Properties></Properties>
@@ -87,7 +87,7 @@
     </Projects>
 
     <!-- _freeze_module -->
-    <FreezeProjects Include="_freeze_module.vcxproj" />
+    <FreezeProjects Include="_getcompiler.vcxproj;_freeze_module.vcxproj" />
     <!-- python[w].exe -->
     <Projects2 Include="python.vcxproj;pythonw.vcxproj" />
     <Projects2 Include="python_uwp.vcxproj;pythonw_uwp.vcxproj" Condition="$(IncludeUwp)" />

@@ -45,11 +45,7 @@ Objects/unicodeobject.c	_init_global_state	initialized	-
 ## other values (Python-specific)
 
 ## internal state - set before/during first init
-Modules/getbuildinfo.c	-	buildinfo	-
-Modules/getbuildinfo.c	-	initialized	-
-Python/getversion.c	-	initialized	-
-Python/getversion.c	-	static_version	-
-Python/getversion.c	-	heap_version	-
+Modules/getbuildinfo.c	-	version	-
 
 ## public C-API - set during first init
 Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
