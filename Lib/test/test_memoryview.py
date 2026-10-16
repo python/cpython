@@ -91,6 +91,13 @@ class AbstractMemoryTests:
             m = self._view(b)
             self.assertEqual(list(m), [m[i] for i in range(len(m))])
 
+    def test_released_empty_iterator(self):
+        for tp in self._types:
+            m = self._view(tp(b""))
+            iterator = iter(m)
+            m.release()
+            self.assertRaises(StopIteration, next, iterator)
+
     def test_count(self):
         for tp in self._types:
             b = tp(self._source)
