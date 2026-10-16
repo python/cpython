@@ -701,6 +701,11 @@ Signal Handling
 
    :c:func:`!PyErr_CheckSignals` should be called by long-running C code
    frequently enough so that the response appears immediate to humans.
+   See :ref:`extending-interruptible` for guidance and an example.
+
+   The caller must have an :term:`attached thread state`.
+   This function can execute arbitrary Python code, so objects visible to
+   that code must be in a consistent state before it is called.
 
    Handlers invoked by this function currently include:
 

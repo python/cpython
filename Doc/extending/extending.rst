@@ -187,6 +187,100 @@ call to :c:func:`PyErr_SetString` as shown below::
    }
 
 
+.. _extending-interruptible:
+
+Making long-running operations interruptible
+============================================
+
+An extension that spends a long time in C code should call
+:c:func:`PyErr_CheckSignals` periodically so that users can interrupt it with
+:kbd:`Ctrl-C`.  Python defers running signal handlers until it is safe to execute
+Python code.  Without these checks, a signal handler may not run until the
+operation returns to the interpreter, even if the extension releases the
+:term:`global interpreter lock` (GIL).  See :mod:`signal` for details.
+
+When :c:func:`PyErr_CheckSignals` returns ``-1``, an exception is already set.
+Stop the operation, release any resources it owns, and propagate the exception
+to the caller, as described in :ref:`extending-errors`.  Do not clear or replace
+the exception: although the default handler for :py:data:`signal.SIGINT` raises
+:exc:`KeyboardInterrupt`, a user-defined handler can raise any exception.
+A return value of ``0`` means that execution can continue, including when a
+handler ran without raising an exception.
+
+Choosing safe places to check
+-----------------------------
+
+:c:func:`PyErr_CheckSignals` can execute arbitrary Python code before returning.
+That code may call back into your extension or modify objects it uses.  Before
+each check, put shared state into a consistent state and release locks that a
+callback might acquire.  Keep strong references to objects needed after the
+check, and revalidate assumptions about mutable data before using it again.
+See :ref:`thinice` for related pitfalls with borrowed references.
+
+The calling thread must have an :term:`attached thread state`.  On builds with
+the GIL, this also means holding the GIL.  When processing data with the thread
+state detached, divide the work into chunks and reattach it before each check.
+In particular, call :c:func:`PyErr_CheckSignals` after
+:c:macro:`Py_END_ALLOW_THREADS`, not between :c:macro:`Py_BEGIN_ALLOW_THREADS`
+and :c:macro:`Py_END_ALLOW_THREADS`.  This requirement also applies to
+:term:`free-threaded <free threading>` builds; see
+:ref:`detaching-thread-state`.
+
+For example, this function inverts the bits in a :class:`bytes` object and
+returns a new :class:`bytes` object.  It checks for interruptions between chunks
+and discards the partial result if an exception is raised::
+
+   static PyObject *
+   spam_invert(PyObject *self, PyObject *arg)
+   {
+       char *source;
+       Py_ssize_t length;
+       if (PyBytes_AsStringAndSize(arg, &source, &length) < 0) {
+           return NULL;
+       }
+       PyObject *result = PyBytes_FromStringAndSize(NULL, length);
+       if (result == NULL) {
+           return NULL;
+       }
+       unsigned char *dest = (unsigned char *)PyBytes_AS_STRING(result);
+       const Py_ssize_t chunk_size = 65536;
+       Py_ssize_t offset = 0;
+       while (offset < length) {
+           Py_ssize_t count = Py_MIN(chunk_size, length - offset);
+           Py_BEGIN_ALLOW_THREADS
+           for (Py_ssize_t i = 0; i < count; i++) {
+               dest[offset + i] = (unsigned char)source[offset + i] ^ 0xff;
+           }
+           Py_END_ALLOW_THREADS
+           offset += count;
+           if (PyErr_CheckSignals() < 0) {
+               Py_DECREF(result);
+               return NULL;
+           }
+       }
+       return result;
+   }
+
+The input is immutable and the caller keeps it alive for the duration of the
+call.  The output is private to this function until it returns, so callbacks
+cannot observe a partially filled result.  No Python C API calls are made while
+the thread state is detached.
+
+Choose a chunk size that balances the overhead of checking and reattaching the
+thread state against the time a user must wait for an interruption.  The size
+above is illustrative; the appropriate interval depends on how much work each
+iteration performs.  A check outside a long-running inner loop does not make
+that loop interruptible.  Likewise, a single blocking call to an external
+library may need a timeout or a cancellation mechanism provided by that library
+so that control returns to a place where you can check for interruptions.
+
+Python signal handlers run only in the main thread of the main interpreter.
+Calling :c:func:`PyErr_CheckSignals` in a worker thread does not run those
+handlers there.  To cancel work in other threads, arrange for the main thread
+to handle the signal and communicate cancellation to the workers using a
+thread-safe mechanism.  See :ref:`signals-and-threads`.
+
+
 .. _compilation:
 
 Embedding an extension
