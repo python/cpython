@@ -252,10 +252,8 @@ The following classes are provided:
    bytes objects, while ``Transfer-Encoding: chunked`` as specified in
    :rfc:`7230`, Section 3.3.1 will be used to send files and other iterables.
 
-   *data* is not serialized before it is sent: the elements of an iterable
-   are sent as is, so a :class:`dict` yields only its keys.  Structured
-   data such as a JSON object must be encoded to bytes first, for example
-   with :func:`json.dumps`.
+   *data* is sent as is without serialization. An iterable is sent element
+   by element so passing a :class:`dict`, for example, sends only its keys.
 
    For an HTTP POST request method, *data* should be a buffer in the
    standard :mimetype:`application/x-www-form-urlencoded` format.  The
