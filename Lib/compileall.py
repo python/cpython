@@ -235,13 +235,31 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
         if tail == '.py':
             if not force:
                 try:
-                    mtime = int(os.stat(fullname).st_mtime)
-                    expect = struct.pack('<4sLL', importlib.util.MAGIC_NUMBER,
-                                         0, mtime & 0xFFFF_FFFF)
+                    st = os.stat(fullname)
+                    mtime = int(st.st_mtime) & 0xFFFF_FFFF
+                    size = st.st_size & 0xFFFF_FFFF
+                    source_hash = None
+
                     for cfile in opt_cfiles.values():
                         with open(cfile, 'rb') as chandle:
-                            actual = chandle.read(12)
-                        if expect != actual:
+                            # PEP 552 format
+                            header = chandle.read(16)
+                        if len(header) != 16:
+                            break
+                        if header[:4] != importlib.util.MAGIC_NUMBER:
+                            break
+                        flags = int.from_bytes(header[4:8], 'little')
+                        # unknown header format
+                        if flags & ~0b11:
+                            break
+                        if flags & 0b1:
+                            if source_hash is None:
+                                with open(fullname, 'rb') as f:
+                                    source_hash = importlib.util.source_hash(
+                                        f.read())
+                            if header[8:] != source_hash:
+                                break
+                        elif header[8:] != struct.pack('<LL', mtime, size):
                             break
                     else:
                         return success
