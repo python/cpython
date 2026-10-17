@@ -1,0 +1,3 @@
+Add an attribute to the object returned by :func:`pstats.Stats.get_stats_profile` to access
+function profiles disambiguated by file name and line number. This handles cases
+where multiple functions share the same name in profiling programs. Contributed by Edward Thomas.
