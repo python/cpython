@@ -1,0 +1,2 @@
+Fix ``python -m profiling.sampling --async-aware`` showing tasks from only
+one interpreter. Patch by Timofei Ivankov.
