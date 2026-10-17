@@ -9,6 +9,7 @@
 #include "pycore_sysmodule.h"     // _PySys_GetOptionalAttr()
 #include "pycore_traceback.h"     // _Py_DisplaySourceLine()
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
+#include "pycore_warnings.h"      // _PyWarnings_AfterFork()
 
 #include <stdbool.h>
 #include "clinic/_warnings.c.h"
@@ -263,6 +264,28 @@ warnings_lock_held(WarningsState *st)
 {
     return PyMutex_IsLocked(&st->lock.mutex);
 }
+
+#ifdef HAVE_FORK
+// PyOS_BeforeFork() holds HEAD_LOCK while saving this value and until fork(),
+// so concurrent forks cannot overwrite it before the child inherits it.
+// The child consumes its private copy before running Python callbacks.
+static bool warnings_lock_held_at_fork;
+
+void
+_PyWarnings_BeforeFork(PyInterpreterState *interp)
+{
+    WarningsState *st = warnings_get_state(interp);
+    warnings_lock_held_at_fork = _PyRecursiveMutex_IsLockedByCurrentThread(&st->lock);
+}
+
+void
+_PyWarnings_AfterFork(PyInterpreterState *interp)
+{
+    WarningsState *st = warnings_get_state(interp);
+    _PyRecursiveMutex_at_fork_reinit(&st->lock, warnings_lock_held_at_fork);
+    warnings_lock_held_at_fork = false;
+}
+#endif
 
 static PyObject *
 get_warnings_context(PyInterpreterState *interp)
