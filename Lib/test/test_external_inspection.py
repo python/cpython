@@ -340,6 +340,40 @@ class RemoteInspectionTestBase(unittest.TestCase):
             finally:
                 _cleanup_sockets(client_socket, server_socket)
 
+    @contextmanager
+    def _target_process(self, script_body):
+        """Context manager for running a target process with socket sync."""
+        port = find_unused_port()
+        script = f"""\
+import socket
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect(('localhost', {port}))
+{textwrap.dedent(script_body)}
+"""
+
+        with os_helper.temp_dir() as work_dir:
+            script_dir = os.path.join(work_dir, "script_pkg")
+            os.mkdir(script_dir)
+
+            server_socket = _create_server_socket(port)
+            script_name = _make_test_script(script_dir, "script", script)
+            client_socket = None
+
+            try:
+                with _managed_subprocess([sys.executable, script_name]) as p:
+                    client_socket, _ = server_socket.accept()
+                    server_socket.close()
+                    server_socket = None
+
+                    def make_unwinder(cache_frames=True):
+                        return RemoteUnwinder(
+                            p.pid, all_threads=True, cache_frames=cache_frames
+                        )
+
+                    yield p, client_socket, make_unwinder
+            finally:
+                _cleanup_sockets(client_socket, server_socket)
+
     def _find_frame_in_trace(self, stack_trace, predicate):
         """
         Find a frame matching predicate in stack trace.
@@ -457,6 +491,22 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
         main_name, names = asyncio.run(main())
         self.assertIn(main_name, names)
         self.assertEqual([len(n) for n in names if n.startswith("x")], [255])
+
+    @skip_if_not_supported
+    def test_recursive_coroutine_stack_is_not_truncated(self):
+        # gh-158522
+        async def rec(n):
+            if n:
+                return await rec(n - 1)
+            return [
+                frame.funcname.rpartition(".")[2]
+                for task in RemoteUnwinder(
+                    os.getpid()).get_async_stack_trace()[0].awaited_by
+                for coro in task.coroutine_stack
+                for frame in coro.call_stack
+            ]
+
+        self.assertEqual(asyncio.run(rec(3)), ["rec"] * 4)
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -1510,6 +1560,71 @@ class TestGetStackTrace(RemoteInspectionTestBase):
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",
     )
+    def test_async_awaited_by_skips_set_tombstones(self):
+        script_body = """\
+            import asyncio
+
+            class RemovedTask(asyncio.Task):
+                def __hash__(self):
+                    return 0
+
+            class RemainingTask(asyncio.Task):
+                def __hash__(self):
+                    return 1
+
+            async def main():
+                victim = asyncio.current_task()
+                victim.set_name("victim")
+                removed = RemovedTask(
+                    asyncio.sleep(10_000), name="removed"
+                )
+                remaining = RemainingTask(
+                    asyncio.sleep(10_000), name="remaining"
+                )
+
+                asyncio.future_add_to_awaited_by(victim, removed)
+                asyncio.future_add_to_awaited_by(victim, remaining)
+
+                # Removing hash 0 leaves a dummy in slot 0 before the only
+                # active entry in slot 1. It must not count toward the set's
+                # used entries.
+                asyncio.future_discard_from_awaited_by(victim, removed)
+
+                sock.sendall(b"ready")
+                sock.recv(16)
+
+            asyncio.run(main())
+            """
+
+        with self._target_process(script_body) as (
+            _,
+            client_socket,
+            make_unwinder,
+        ):
+            _wait_for_signal(client_socket, b"ready")
+
+            for method_name in (
+                "get_async_stack_trace",
+                "get_all_awaited_by",
+            ):
+                with self.subTest(method=method_name):
+                    unwinder = make_unwinder(cache_frames=False)
+                    stack_trace = getattr(unwinder, method_name)()
+                    relationships = self._get_awaited_by_relationships(
+                        stack_trace
+                    )
+                    self.assertEqual(
+                        relationships["victim"],
+                        {"remaining"},
+                    )
+
+            client_socket.sendall(b"done")
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
     def test_async_global_awaited_by_from_non_main_thread(self):
         port = find_unused_port()
         script = textwrap.dedent(
@@ -1683,6 +1798,80 @@ class TestGetStackTrace(RemoteInspectionTestBase):
         self.assertTrue(this_thread_stack[0].filename.endswith("test_external_inspection.py"))
         self.assertEqual(this_thread_stack[1].funcname, "TestGetStackTrace.test_self_trace")
         self.assertTrue(this_thread_stack[1].filename.endswith("test_external_inspection.py"))
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_empty_native_thread_stack(self):
+        _testcapi = import_module("_testcapi")
+        lock = threading.Lock()
+        lock.acquire()
+        # A built-in callback leaves the C thread's Python stack empty.
+        _testcapi.call_in_temporary_c_thread(lock.acquire, False)
+        try:
+            for cache_frames, native in ((False, False), (False, True),
+                                         (True, False), (True, True)):
+                with self.subTest(cache_frames=cache_frames, native=native):
+                    unwinder = RemoteUnwinder(
+                        os.getpid(), all_threads=True, cache_frames=cache_frames,
+                        native=native,
+                    )
+                    _get_stack_trace_with_retry(
+                        unwinder, condition=lambda trace: len(trace[0].threads) == 2,
+                    )
+                    threads = unwinder.get_stack_trace()[0].threads
+                    native_stack, python_stack = sorted(
+                        (thread.frame_info for thread in threads), key=len,
+                    )
+                    self.assertEqual(native_stack, [])
+                    self.assertEqual(
+                        python_stack[0].funcname,
+                        "TestGetStackTrace.test_empty_native_thread_stack",
+                    )
+        finally:
+            lock.release()
+            _testcapi.join_temporary_c_thread()
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_popping_python_frame_is_not_native(self):
+        script = """\
+def leaf(depth):
+    if depth:
+        leaf(depth - 1)
+
+while True:
+        leaf(300)
+"""
+        with _managed_subprocess([sys.executable, "-c", script]) as process:
+            for _ in busy_retry(SHORT_TIMEOUT):
+                try:
+                    unwinder = RemoteUnwinder(
+                        process.pid, native=True, gc=False, cache_frames=False,
+                    )
+                except RuntimeError:
+                    continue
+                break
+            samples = 0
+            for _ in range(10_000):
+                try:
+                    threads = unwinder.get_stack_trace()[0].threads
+                except TRANSIENT_ERRORS:
+                    continue
+                if not threads:
+                    continue
+                frames = threads[0].frame_info
+                names = [frame.funcname for frame in frames]
+                if "leaf" not in names:
+                    continue
+                samples += 1
+                self.assertNotIn(("leaf", "<native>"), zip(names, names[1:]))
+            self.assertGreater(samples, 1000)
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -2252,6 +2441,139 @@ class TestGetStackTrace(RemoteInspectionTestBase):
         actual = (location.lineno, location.end_lineno,
                   location.col_offset, location.end_col_offset)
         self.assertIn(actual, valid_locations)
+
+    @skip_if_not_supported
+    @unittest.skipIf(sys._is_gil_enabled(), "Requires free-threading")
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Requires process_vm_readv",
+    )
+    def test_tlbc_cache_refresh_after_growth(self):
+        # Reproducer from gh-157660.
+        script = textwrap.dedent("""\
+            import os, threading
+            from _remote_debugging import RemoteUnwinder
+            from _queue import SimpleQueue
+            from test import support
+
+            go = threading.Lock()
+            stop = threading.Lock()
+            go.acquire()
+            stop.acquire()
+            ready = SimpleQueue()
+
+            def leaf():
+                ready.put(None)
+                stop.acquire()
+
+            def start_leaf():
+                ready.put(None)
+                go.acquire()
+                leaf()
+
+            def park():
+                ready.put(None)
+                stop.acquire()
+
+            def leaf_count(u):
+                return sum(
+                    f.funcname == "leaf"
+                    for i in u.get_stack_trace()
+                    for t in i.threads for f in t.frame_info
+                )
+
+            # SimpleQueue.put() and Lock.acquire() do not push Python frames.
+            # Once notified, the worker's stack stays stable until go is released.
+            threading.Thread(target=leaf, daemon=True).start()
+            ready.get(timeout=support.SHORT_TIMEOUT)
+            for _ in range(16):
+                threading.Thread(target=park, daemon=True).start()
+                ready.get(timeout=support.SHORT_TIMEOUT)
+            threading.Thread(target=start_leaf, daemon=True).start()
+            ready.get(timeout=support.SHORT_TIMEOUT)
+
+            u = RemoteUnwinder(os.getpid(), all_threads=True, cache_frames=False)
+            assert leaf_count(u) == 1
+            go.release()
+            ready.get(timeout=support.SHORT_TIMEOUT)
+            assert leaf_count(u) == 2
+            """)
+        result = subprocess.run(
+            [sys.executable, "-X", "gil=0", "-X", "tlbc=1", "-c", script],
+            capture_output=True,
+            text=True,
+            timeout=SHORT_TIMEOUT,
+        )
+        self.assertEqual(
+            result.returncode, 0,
+            f"stdout: {result.stdout}\nstderr: {result.stderr}",
+        )
+
+    @skip_if_not_supported
+    @unittest.skipIf(sys._is_gil_enabled(), "Requires free-threading")
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Requires process_vm_readv",
+    )
+    def test_tlbc_cache_refresh_after_slot_fill(self):
+        # Reproducer from gh-157660.
+        script = textwrap.dedent("""\
+            import os, threading
+            from _remote_debugging import RemoteUnwinder
+            from _queue import SimpleQueue
+
+            go = threading.Lock()
+            stop = threading.Lock()
+            go.acquire()
+            stop.acquire()
+            ready = SimpleQueue()
+
+            def leaf():
+                ready.put(None)
+                stop.acquire()
+
+            def start_leaf():
+                ready.put(None)
+                go.acquire()
+                leaf()
+
+            from test import support
+
+            def lines(u):
+                return sorted(
+                    f.location.lineno
+                    for i in u.get_stack_trace()
+                    for t in i.threads for f in t.frame_info
+                    if f.funcname == "leaf"
+                )
+
+            # SimpleQueue.put() and Lock.acquire() do not push Python frames.
+            # Once notified, the worker's stack stays stable until go is released.
+            threading.Thread(target=leaf, daemon=True).start()
+            ready.get(timeout=support.SHORT_TIMEOUT)
+            threading.Thread(target=start_leaf, daemon=True).start()
+            ready.get(timeout=support.SHORT_TIMEOUT)
+            u = RemoteUnwinder(os.getpid(), all_threads=True, cache_frames=False)
+            before = lines(u)
+            # The notification can be observed before put() returns, so either
+            # line in leaf() is a valid sample.
+            assert before in ([12], [13]), before
+            go.release()
+            ready.get(timeout=support.SHORT_TIMEOUT)
+            cached = lines(u)
+            assert len(cached) == 2, cached
+            assert all(line in (12, 13) for line in cached), cached
+            """)
+        result = subprocess.run(
+            [sys.executable, "-X", "gil=0", "-X", "tlbc=1", "-c", script],
+            capture_output=True,
+            text=True,
+            timeout=SHORT_TIMEOUT,
+        )
+        self.assertEqual(
+            result.returncode, 0,
+            f"stdout: {result.stdout}\nstderr: {result.stderr}",
+        )
 
 
 class TestUnsupportedPlatformHandling(unittest.TestCase):
@@ -2987,6 +3309,242 @@ t.join()
             self._check_exception_status(p, thread_tid, expect_exception=False)
 
 
+@skip_if_not_supported
+class TestExceptionDetectionInProcess(RemoteInspectionTestBase):
+    """gh-158539: HAS_EXCEPTION for handlers running in generators/coroutines.
+
+    ``TestExceptionDetectionScenarios`` samples a child process and therefore
+    needs subprocess debugging permissions. These tests inspect the current
+    process with ``RemoteUnwinder`` and only need self-inspection, so they also
+    run on macOS without special entitlements.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        try:
+            RemoteUnwinder(os.getpid(), all_threads=True).get_stack_trace()
+        except PermissionError as exc:
+            raise unittest.SkipTest(f"self-inspection is unavailable: {exc}")
+
+    def _check_running_handler(
+        self, target, expect_exception, *, mode=PROFILING_MODE_ALL,
+        skip_non_matching_threads=False,
+    ):
+        """Run *target* in a thread and check its HAS_EXCEPTION flag.
+
+        *target* receives ``(ready, stop)`` events and must signal ``ready``
+        only once it is executing inside the code region under test, then keep
+        running until ``stop`` is set.
+        """
+        stop = threading.Event()
+        ready = threading.Event()
+        failure = []
+
+        def runner():
+            try:
+                target(ready, stop)
+            except BaseException as exc:
+                failure.append(exc)
+                ready.set()
+
+        thread = threading.Thread(target=runner, daemon=True)
+        thread.start()
+        try:
+            self.assertTrue(ready.wait(SHORT_TIMEOUT), "handler never started")
+            self.assertFalse(failure, f"handler raised {failure!r}")
+
+            unwinder = RemoteUnwinder(
+                os.getpid(),
+                all_threads=True,
+                mode=mode,
+                skip_non_matching_threads=skip_non_matching_threads,
+            )
+            observed = []
+            for _ in busy_retry(SHORT_TIMEOUT):
+                with contextlib.suppress(*TRANSIENT_ERRORS):
+                    statuses = self._get_thread_statuses(unwinder.get_stack_trace())
+                    status = statuses.get(thread.native_id)
+                    if status is None:
+                        continue
+                    has_exception = bool(status & THREAD_STATUS_HAS_EXCEPTION)
+                    observed.append(has_exception)
+                    if has_exception == expect_exception:
+                        break
+            self.assertTrue(
+                observed, "target thread status was never observed"
+            )
+            self.assertIn(
+                expect_exception,
+                observed,
+                f"HAS_EXCEPTION was never {expect_exception} while the "
+                f"handler was running (observed {observed})",
+            )
+        finally:
+            stop.set()
+            thread.join(SHORT_TIMEOUT)
+
+    def _busy_until_stopped(self, ready, stop):
+        ready.set()
+        while not stop.is_set():
+            time.sleep(0.001)
+
+    def test_handler_in_function(self):
+        def target(ready, stop):
+            try:
+                raise ValueError("test")
+            except ValueError:
+                self._busy_until_stopped(ready, stop)
+
+        self._check_running_handler(target, expect_exception=True)
+
+    def test_handler_in_generator(self):
+        def target(ready, stop):
+            def gen():
+                try:
+                    raise ValueError("test")
+                except ValueError:
+                    self._busy_until_stopped(ready, stop)
+                yield
+
+            for _ in gen():
+                pass
+
+        self._check_running_handler(target, expect_exception=True)
+
+    def test_handler_in_genexpr_callee(self):
+        def target(ready, stop):
+            def callee():
+                try:
+                    raise ValueError("test")
+                except ValueError:
+                    self._busy_until_stopped(ready, stop)
+
+            list(callee() for _ in range(1))
+
+        self._check_running_handler(target, expect_exception=True)
+
+    def test_handler_in_coroutine(self):
+        async def coro(ready, stop):
+            try:
+                raise ValueError("test")
+            except ValueError:
+                self._busy_until_stopped(ready, stop)
+
+        def target(ready, stop):
+            asyncio.run(coro(ready, stop))
+
+        self._check_running_handler(target, expect_exception=True)
+
+    def test_handler_in_callee_from_coroutine(self):
+        def callee(ready, stop):
+            try:
+                raise ValueError("test")
+            except ValueError:
+                self._busy_until_stopped(ready, stop)
+
+        async def coro(ready, stop):
+            callee(ready, stop)
+
+        def target(ready, stop):
+            asyncio.run(coro(ready, stop))
+
+        self._check_running_handler(target, expect_exception=True)
+
+    def test_outer_handler_while_generator_runs(self):
+        """A generator with no handler of its own must not hide the outer one.
+
+        ``exc_info`` points at the generator's empty ``_PyErr_StackItem`` whose
+        ``previous_item`` is the thread's ``exc_state``, so the profiler has to
+        walk the chain to find the exception ``sys.exception()`` reports.
+        """
+        def target(ready, stop):
+            def gen():
+                self._busy_until_stopped(ready, stop)
+                yield
+
+            try:
+                raise ValueError("outer")
+            except ValueError:
+                for _ in gen():
+                    pass
+
+        self._check_running_handler(target, expect_exception=True)
+
+    def test_generator_without_exception(self):
+        def target(ready, stop):
+            def gen():
+                self._busy_until_stopped(ready, stop)
+                yield
+
+            for _ in gen():
+                pass
+
+        self._check_running_handler(target, expect_exception=False)
+
+    def test_outer_handler_while_nested_generators_run(self):
+        def target(ready, stop):
+            def gen(depth):
+                if depth:
+                    yield from gen(depth - 1)
+                else:
+                    self._busy_until_stopped(ready, stop)
+                yield
+
+            try:
+                raise ValueError("outer")
+            except ValueError:
+                for _ in gen(32):
+                    pass
+
+        self._check_running_handler(
+            target,
+            expect_exception=True,
+            mode=PROFILING_MODE_EXCEPTION,
+            skip_non_matching_threads=True,
+        )
+
+    def test_generator_finally_after_except(self):
+        """The handled exception is cleared before the generator's finally."""
+        def target(ready, stop):
+            def gen():
+                try:
+                    raise ValueError("test")
+                except ValueError:
+                    pass
+                finally:
+                    self._busy_until_stopped(ready, stop)
+                yield
+
+            for _ in gen():
+                pass
+
+        self._check_running_handler(target, expect_exception=False)
+
+    def test_exception_mode_filter_keeps_generator_handler(self):
+        """The exception-mode thread filter must not drop a generator handler.
+
+        This mirrors what ``--mode=exception`` actually does: threads without
+        HAS_EXCEPTION are skipped before their stack is unwound.
+        """
+        def target(ready, stop):
+            def gen():
+                try:
+                    raise ValueError("test")
+                except ValueError:
+                    self._busy_until_stopped(ready, stop)
+                yield
+
+            for _ in gen():
+                pass
+
+        self._check_running_handler(
+            target,
+            expect_exception=True,
+            mode=PROFILING_MODE_EXCEPTION,
+            skip_non_matching_threads=True,
+        )
+
+
 @requires_remote_subprocess_debugging()
 class TestFrameCaching(RemoteInspectionTestBase):
     """Test that frame caching produces correct results.
@@ -2994,40 +3552,6 @@ class TestFrameCaching(RemoteInspectionTestBase):
     Uses socket-based synchronization for deterministic testing.
     All tests verify cache reuse via object identity checks (assertIs).
     """
-
-    @contextmanager
-    def _target_process(self, script_body):
-        """Context manager for running a target process with socket sync."""
-        port = find_unused_port()
-        script = f"""\
-import socket
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect(('localhost', {port}))
-{textwrap.dedent(script_body)}
-"""
-
-        with os_helper.temp_dir() as work_dir:
-            script_dir = os.path.join(work_dir, "script_pkg")
-            os.mkdir(script_dir)
-
-            server_socket = _create_server_socket(port)
-            script_name = _make_test_script(script_dir, "script", script)
-            client_socket = None
-
-            try:
-                with _managed_subprocess([sys.executable, script_name]) as p:
-                    client_socket, _ = server_socket.accept()
-                    server_socket.close()
-                    server_socket = None
-
-                    def make_unwinder(cache_frames=True):
-                        return RemoteUnwinder(
-                            p.pid, all_threads=True, cache_frames=cache_frames
-                        )
-
-                    yield p, client_socket, make_unwinder
-            finally:
-                _cleanup_sockets(client_socket, server_socket)
 
     def _get_frames_with_retry(self, unwinder, required_funcs):
         """Get frames containing required_funcs, with retry for transient errors."""
@@ -3870,6 +4394,251 @@ recurse({depth})
                 unwinder.get_stats()
 
             client_socket.sendall(b"done")
+
+
+@requires_remote_subprocess_debugging()
+@skip_if_not_supported
+@unittest.skipIf(
+    sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+    "Test only runs on Linux with process_vm_readv support",
+)
+class TestMetadataDegradation(RemoteInspectionTestBase):
+    """Tests for graceful degradation of oversized code-object metadata."""
+
+    def test_long_qualname_truncated_not_dropped(self):
+        """A qualname longer than 1024 chars is truncated instead of
+        failing the whole sample."""
+        name = "f" * 1100
+        src = f"def {name}(sample):\n    return sample()\n"
+        ns = {}
+        exec(src, ns)
+
+        trace = ns[name](RemoteUnwinder(os.getpid()).get_stack_trace)
+        frame = self._find_frame_in_trace(
+            trace, lambda f: f.funcname.startswith("fff")
+        )
+        self.assertIsNotNone(frame)
+        self.assertEqual(frame.funcname, "f" * 1024)
+
+    def test_long_filename_truncated(self):
+        """A filename longer than 1024 chars is truncated instead of
+        failing the whole sample."""
+        src = "def g(sample):\n    return sample()\n"
+        ns = {}
+        exec(compile(src, "x" * 1500 + ".py", "exec"), ns)
+
+        trace = ns["g"](RemoteUnwinder(os.getpid()).get_stack_trace)
+        frame = self._find_frame_in_trace(trace, lambda f: f.funcname == "g")
+        self.assertIsNotNone(frame)
+        self.assertEqual(frame.filename, "x" * 1024)
+
+    def test_oversized_linetable_degrades_to_no_location(self):
+        """A linetable over MAX_LINETABLE_SIZE degrades to a frame without
+        location instead of failing the whole sample."""
+        src = (
+            "def big(sample):\n"
+            + "    x = 1\n" * 20_000
+            + "    return sample()\n"
+        )
+        ns = {}
+        exec(compile(src, "big_linetable.py", "exec"), ns)
+        big = ns["big"]
+        self.assertGreater(len(big.__code__.co_linetable), 64 * 1024)
+
+        trace = big(RemoteUnwinder(os.getpid()).get_stack_trace)
+        frame = self._find_frame_in_trace(
+            trace, lambda f: f.funcname == "big"
+        )
+        self.assertIsNone(frame.location)
+        self.assertEqual(frame.filename, "big_linetable.py")
+
+    @unittest.skipIf(
+        sys.platform == "win32",
+        "Process death maps to ProcessLookupError only on POSIX platforms",
+    )
+    def test_dead_process_raises_not_degrades(self):
+        """Death of the target raises ProcessLookupError instead of
+        degrading to synthetic frames."""
+        script_body = """\
+            import time
+            sock.sendall(b"ready")
+            time.sleep(10_000)
+            """
+        with self._target_process(script_body) as (p, client_socket, make_unwinder):
+            _wait_for_signal(client_socket, b"ready")
+            unwinder = make_unwinder()
+            _get_stack_trace_with_retry(unwinder)
+
+            p.kill()
+            p.wait()
+
+            for _ in busy_retry(SHORT_TIMEOUT, error=False):
+                try:
+                    unwinder.get_stack_trace()
+                except ProcessLookupError:
+                    break
+                except RuntimeError:
+                    continue
+            else:
+                self.fail("ProcessLookupError never raised for dead process")
+
+
+@requires_remote_subprocess_debugging()
+class TestFrameChainLimits(RemoteInspectionTestBase):
+    """Frame chain walks abort instead of looping/overflowing on deep chains."""
+
+    # Limits plus one, to exceed them (must match MAX_FRAME_CHAIN_DEPTH /
+    # MAX_TASK_WAITER_WALK_TASKS from _remote_debugging.h)
+    FRAME_CHAIN_DEPTH = 1024 + 512 + 1
+    TASK_WAITER_WALK_TASKS = 2**14 + 1
+
+    def _assert_unwinder_limit_error(self, unwind, expected_substring):
+        """Call unwind() until it raises the frame chain limit error.
+
+        unwind must construct the RemoteUnwinder and call it, so that
+        transient RuntimeErrors from either step are retried; a successful
+        call means the limit never triggered and fails immediately.
+        """
+        last_error = None
+        for _ in busy_retry(SHORT_TIMEOUT, error=False):
+            try:
+                unwind()
+            except TRANSIENT_ERRORS as e:
+                if expected_substring in str(e):
+                    return
+                last_error = e
+                continue
+            self.fail(
+                "frame chain limit did not trigger; call returned a result"
+            )
+        self.fail(
+            f"frame chain limit never raised; last transient error: "
+            f"{last_error!r}"
+        )
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_get_stack_trace_deep_frame_chain_aborts(self):
+        """Test that a frame chain deeper than the limit aborts the
+        synchronous stack walk instead of walking it indefinitely."""
+        script_body = f"""\
+            import sys
+            sys.setrecursionlimit({self.FRAME_CHAIN_DEPTH * 2})
+
+            def recurse(n):
+                if n <= 0:
+                    sock.sendall(b"ready")
+                    sock.recv(16)
+                    return
+                recurse(n - 1)
+
+            recurse({self.FRAME_CHAIN_DEPTH})
+            """
+        with self._target_process(script_body) as (p, client_socket, _):
+            _wait_for_signal(client_socket, b"ready")
+            self._assert_unwinder_limit_error(
+                lambda: RemoteUnwinder(p.pid).get_stack_trace(),
+                "Too many stack frames",
+            )
+            client_socket.sendall(b"done")
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_get_async_stack_trace_deep_task_waiter_chain_aborts(self):
+        """Test that a task waiter chain deeper than the limit aborts
+        the walk instead of overflowing the C stack."""
+        script_body = f"""\
+            import asyncio
+
+            async def chain(n):
+                if n <= 0:
+                    sock.sendall(b"ready")
+                    sock.recv(16)
+                    return
+
+                task = asyncio.create_task(chain(n - 1))
+                await task
+
+            asyncio.run(chain({self.TASK_WAITER_WALK_TASKS}))
+            """
+        with self._target_process(script_body) as (p, client_socket, _):
+            _wait_for_signal(client_socket, b"ready")
+            self._assert_unwinder_limit_error(
+                lambda: RemoteUnwinder(p.pid).get_async_stack_trace(),
+                "Too many task waiters",
+            )
+            client_socket.sendall(b"done")
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_get_async_stack_trace_deep_frame_chain_aborts(self):
+        """Test that a frame chain deeper than the limit aborts the async
+        stack walk instead of walking it indefinitely."""
+        script_body = f"""\
+            import sys, asyncio
+            sys.setrecursionlimit({self.FRAME_CHAIN_DEPTH * 2})
+
+            def recurse(n):
+                if n <= 0:
+                    sock.sendall(b"ready")
+                    sock.recv(16)
+                    return
+                recurse(n - 1)
+
+            async def deep():
+                recurse({self.FRAME_CHAIN_DEPTH})
+
+            asyncio.run(deep())
+            """
+        with self._target_process(script_body) as (p, client_socket, _):
+            _wait_for_signal(client_socket, b"ready")
+            self._assert_unwinder_limit_error(
+                lambda: RemoteUnwinder(p.pid).get_async_stack_trace(),
+                "Too many async stack frames",
+            )
+            client_socket.sendall(b"done")
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_get_all_awaited_by_deep_coro_chain_aborts(self):
+        """Test that a coroutine await chain deeper than the limit aborts
+        the walk instead of overflowing the C stack."""
+        script_body = f"""\
+            import sys, asyncio
+            sys.setrecursionlimit({self.FRAME_CHAIN_DEPTH * 2})
+
+            async def chain(n):
+                if n <= 0:
+                    await asyncio.sleep(10_000)
+                    return
+                await chain(n - 1)
+
+            async def main():
+                task = asyncio.create_task(chain({self.FRAME_CHAIN_DEPTH}))
+                await asyncio.sleep(0)
+                sock.sendall(b"ready")
+                await task
+
+            asyncio.run(main())
+            """
+        with self._target_process(script_body) as (p, client_socket, _):
+            _wait_for_signal(client_socket, b"ready")
+            self._assert_unwinder_limit_error(
+                lambda: RemoteUnwinder(p.pid).get_all_awaited_by(),
+                "Too many coroutine frames",
+            )
 
 
 if __name__ == "__main__":

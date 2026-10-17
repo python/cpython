@@ -1,2 +1,0 @@
-Add the :func:`curses.has_mouse` function and the
-:meth:`curses.window.mouse_trafo` method.
