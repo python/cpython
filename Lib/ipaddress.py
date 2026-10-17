@@ -299,7 +299,7 @@ def _collapse_addresses_internal(addresses):
 
 
 def collapse_addresses(addresses):
-    """Collapse a list of IP objects.
+    """Collapse an iterable of IP addresses or networks.
 
     Example:
         collapse_addresses([IPv4Network('192.0.2.0/25'),
@@ -307,13 +307,14 @@ def collapse_addresses(addresses):
                            [IPv4Network('192.0.2.0/24')]
 
     Args:
-        addresses: An iterable of IPv4Network or IPv6Network objects.
+        addresses: An iterable of IPv4Address, IPv6Address, IPv4Network or
+          IPv6Network objects.
 
     Returns:
         An iterator of the collapsed IPv(4|6)Network objects.
 
     Raises:
-        TypeError: If passed a list of mixed version objects.
+        TypeError: If passed an iterable of mixed version objects.
 
     """
     addrs = []
@@ -322,24 +323,19 @@ def collapse_addresses(addresses):
 
     # split IP addresses and networks
     for ip in addresses:
-        if isinstance(ip, _BaseAddress):
-            if ips and ips[-1].version != ip.version:
-                raise TypeError("%s and %s are not of the same version" % (
-                                 ip, ips[-1]))
+        if isinstance(ip, _BaseAddress) and not hasattr(ip, 'ip'):
             ips.append(ip)
-        elif ip._prefixlen == ip.max_prefixlen:
-            if ips and ips[-1].version != ip.version:
-                raise TypeError("%s and %s are not of the same version" % (
-                                 ip, ips[-1]))
-            try:
-                ips.append(ip.ip)
-            except AttributeError:
+        elif isinstance(ip, _BaseNetwork):
+            if ip._prefixlen == ip.max_prefixlen:
                 ips.append(ip.network_address)
+            else:
+                if nets and nets[-1].version != ip.version:
+                    raise TypeError("%s and %s are not of the same version" % (
+                                    ip, nets[-1]))
+                nets.append(ip)
         else:
-            if nets and nets[-1].version != ip.version:
-                raise TypeError("%s and %s are not of the same version" % (
-                                 ip, nets[-1]))
-            nets.append(ip)
+            raise TypeError("expected an iterable of IP addresses or "
+                            "networks, not %s" % type(ip).__name__)
 
     # sort and dedup
     ips = sorted(set(ips))
