@@ -4276,6 +4276,86 @@ class CTextIOWrapperTest(TextIOWrapperTest):
         wrapper = self.TextIOWrapper(raw)
         wrapper.close()  # should not crash
 
+    def test_reentrant_detach_during_flush(self):
+        # gh-143008: Reentrant detach() during flush should not crash.
+
+        class DetachOnce(self.BufferedRandom):
+            wrapper = None
+
+            def detach_once(self):
+                original = self.wrapper
+                self.wrapper = None
+                if original is not None:
+                    original.detach()
+                    original.flush()
+
+        class DetachOnFlush(DetachOnce):
+            def flush(self):
+                self.detach_once()
+
+        class DetachOnWrite(DetachOnce):
+            def write(self, b):
+                self.detach_once()
+                return len(b)
+
+        # Separate reference for after detach_once.
+        wrapper = None
+
+        def make_text(buffer):
+            nonlocal wrapper
+            buffer.wrapper = self.TextIOWrapper(buffer, encoding='utf-8')
+            wrapper = buffer.wrapper
+
+        # Many calls could result in the same null self->buffer crash.
+        tests = [
+            ('truncate', lambda: wrapper.truncate(0)),
+            ('close', lambda: wrapper.close()),
+            ('detach', lambda: wrapper.detach()),
+            ('seek', lambda: wrapper.seek(0)),
+            ('tell', lambda: wrapper.tell()),
+            ('reconfigure', lambda: wrapper.reconfigure(line_buffering=True)),
+        ]
+        for name, method in tests:
+            with self.subTest(name):
+                make_text(DetachOnFlush(self.MockRawIO()))
+                self.assertRaisesRegex(ValueError, "detached", method)
+
+        # Should not crash.
+        with self.subTest('read via writeflush'):
+            make_text(DetachOnWrite(self.MockRawIO()))
+            wrapper.write('x')
+            self.assertRaisesRegex(ValueError, "detached", wrapper.read)
+
+    def test_reentrant_detach_during_read(self):
+        # gh-157363, gh-157364: The buffer must stay alive until its active
+        # read operation returns.
+        wrapper = None
+
+        class DetachOnRead(self.RawIOBase):
+            detached = False
+
+            def readable(self):
+                return True
+
+            def readinto(self, b):
+                if self.detached:
+                    return 0
+                self.detached = True
+                wrapper.detach()
+                b[:3] = b"ab\n"
+                return 3
+
+        for method_name in ("read", "readline"):
+            with self.subTest(method_name):
+                raw = DetachOnRead()
+                wrapper = self.TextIOWrapper(
+                    self.BufferedReader(raw), encoding="utf-8")
+                method = getattr(wrapper, method_name)
+                self.assertEqual(method(), "ab\n")
+                with self.assertRaisesRegex(ValueError,
+                                            "underlying buffer has been detached"):
+                    getattr(wrapper, 'buffer')
+
 
 class PyTextIOWrapperTest(TextIOWrapperTest):
     io = pyio

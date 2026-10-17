@@ -11,6 +11,7 @@ import sys
 import unittest
 import warnings
 from subprocess import PIPE, Popen
+from unittest import mock
 from test.support import catch_unraisable_exception
 from test.support import import_helper
 from test.support import os_helper
@@ -350,6 +351,26 @@ class TestGzip(BaseTest):
             dataRead = fRead.read()
             self.assertEqual(dataRead, data1)
             self.assertEqual(fRead.mtime, mtime)
+
+    def test_mtime_out_of_range(self):
+        for mtime in (-1, 2**32):
+            with gzip.GzipFile(self.filename, 'w', mtime=mtime) as fWrite:
+                fWrite.write(data1)
+            with gzip.GzipFile(self.filename) as fRead:
+                fRead.read(1)
+                self.assertEqual(fRead.mtime, 0)
+            datac = gzip.compress(data1, mtime=mtime)
+            with gzip.GzipFile(fileobj=io.BytesIO(datac)) as fRead:
+                fRead.read(1)
+                self.assertEqual(fRead.mtime, 0)
+
+        for mtime in (-1, 2**32):
+            with mock.patch('time.time', return_value=float(mtime)):
+                with gzip.GzipFile(self.filename, 'w') as fWrite:
+                    fWrite.write(data1)
+                with gzip.GzipFile(self.filename) as fRead:
+                    fRead.read(1)
+                    self.assertEqual(fRead.mtime, 0)
 
     def test_metadata(self):
         mtime = 123456789

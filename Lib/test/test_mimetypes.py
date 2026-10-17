@@ -265,6 +265,10 @@ class MimeTypesModuleTestCase(unittest.TestCase):
         mimetypes.init()
         self.assertEqual(guess_file_type("file.test2")[0], "testing/test2")
 
+    @unittest.skipIf(sys.platform == "win32", "non-Windows only")
+    def test_default_knownfiles(self):
+        self.assertIn("/etc/mime.types", knownfiles)
+
     def test_added_types_are_used(self):
         mimetypes.add_type('testing/default-type', '')
         mime_type, _ = mimetypes.guess_type('')
@@ -504,6 +508,9 @@ class Win32MimeTypesTestCase(unittest.TestCase):
         eq(self.db.guess_type("foo.txt"), ("text/plain", None))
         eq(self.db.guess_type("image.jpg"), ("image/jpeg", None))
         eq(self.db.guess_type("image.png"), ("image/png", None))
+
+    def test_default_knownfiles(self):
+        self.assertEqual(knownfiles, [])
 
     @unittest.skipIf(not hasattr(_winapi, "_mimetypes_read_windows_registry"),
                      "read_windows_registry accelerator unavailable")
