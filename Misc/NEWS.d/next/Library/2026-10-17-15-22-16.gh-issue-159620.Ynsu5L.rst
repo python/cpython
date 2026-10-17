@@ -1,0 +1,2 @@
+Fix ``python -m asyncio ps`` and ``pstree`` stacks stopping at
+asynchronous generators. Patch by Timofei Ivankov.
