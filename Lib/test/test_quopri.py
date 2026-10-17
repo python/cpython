@@ -1,3 +1,5 @@
+import os
+import tempfile
 import unittest
 
 import sys, io, subprocess
@@ -208,6 +210,111 @@ zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''')
         cout = cout.decode('latin-1')
         p = p.decode('latin-1')
         self.assertEqual(cout.splitlines(), p.splitlines())
+
+@support.requires_subprocess()
+class CommandLineTest(unittest.TestCase):
+    """Tests for the ``python -m quopri`` command-line interface."""
+
+    def _run(self, *args, stdin=b''):
+        """Invoke ``python -m quopri`` with *args* and *stdin*.
+
+        Returns a ``(returncode, stdout, stderr)`` tuple where stdout and
+        stderr are bytes.
+        """
+        with subprocess.Popen(
+            [sys.executable, '-m', 'quopri', *args],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        ) as proc:
+            stdout, stderr = proc.communicate(stdin)
+        return proc.returncode, stdout, stderr
+
+    def _write_temp(self, data):
+        fd, path = tempfile.mkstemp()
+        self.addCleanup(os.unlink, path)
+        with os.fdopen(fd, 'wb') as f:
+            f.write(data)
+        return path
+
+    # -- encode mode --
+
+    def test_encode_stdin(self):
+        rc, out, err = self._run(stdin=b'hello\xa1world\n')
+        self.assertEqual(rc, 0)
+        self.assertEqual(err, b'')
+        self.assertEqual(out.splitlines(), [b'hello=A1world'])
+
+    def test_encode_file(self):
+        path = self._write_temp(b'hello\xa1world\n')
+        rc, out, err = self._run(path)
+        self.assertEqual(rc, 0)
+        self.assertEqual(err, b'')
+        self.assertEqual(out.splitlines(), [b'hello=A1world'])
+
+    def test_encode_quote_tabs(self):
+        # -t forces tabs and embedded spaces to be quoted.
+        rc, out, err = self._run('-t', stdin=b'a\tb c\n')
+        self.assertEqual(rc, 0)
+        self.assertEqual(err, b'')
+        self.assertEqual(out.splitlines(), [b'a=09b=20c'])
+
+    def test_encode_stdin_dash(self):
+        # An explicit ``-`` positional reads from stdin.
+        rc, out, err = self._run('-', stdin=b'hello\xa1\n')
+        self.assertEqual(rc, 0)
+        self.assertEqual(err, b'')
+        self.assertEqual(out.splitlines(), [b'hello=A1'])
+
+    def test_encode_multiple_files(self):
+        # Output from multiple file arguments is concatenated.
+        path1 = self._write_temp(b'first\n')
+        path2 = self._write_temp(b'second\n')
+        rc, out, err = self._run(path1, path2)
+        self.assertEqual(rc, 0)
+        self.assertEqual(err, b'')
+        self.assertEqual(out.splitlines(), [b'first', b'second'])
+
+    # -- decode mode --
+
+    def test_decode_stdin(self):
+        rc, out, err = self._run('-d', stdin=b'hello=A1world\n')
+        self.assertEqual(rc, 0)
+        self.assertEqual(err, b'')
+        self.assertEqual(out.splitlines(), [b'hello\xa1world'])
+
+    def test_decode_file(self):
+        path = self._write_temp(b'hello=20world\n')
+        rc, out, err = self._run('-d', path)
+        self.assertEqual(rc, 0)
+        self.assertEqual(err, b'')
+        self.assertEqual(out.splitlines(), [b'hello world'])
+
+    # -- error paths --
+
+    def test_mutually_exclusive_flags(self):
+        # ``-t`` and ``-d`` cannot be combined; the error goes to stderr and
+        # the process exits with status 2.
+        rc, out, err = self._run('-t', '-d')
+        self.assertEqual(rc, 2)
+        self.assertIn(b'mutually exclusive', out + err)
+
+    def test_unknown_option(self):
+        # Unknown short options trigger a ``getopt`` error: a usage banner
+        # is printed to stderr and the process exits with status 2.
+        rc, out, err = self._run('-x')
+        self.assertEqual(rc, 2)
+        self.assertIn(b'usage', out + err)
+
+    def test_missing_file(self):
+        # A nonexistent file produces a diagnostic on stderr; once all files
+        # have been processed the command exits with status 1.
+        with tempfile.TemporaryDirectory() as tmp:
+            missing = os.path.join(tmp, 'does-not-exist')
+            rc, out, err = self._run(missing)
+        self.assertEqual(rc, 1)
+        self.assertIn(b"can't open", err)
+
 
 if __name__ == "__main__":
     unittest.main()
