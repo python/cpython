@@ -288,6 +288,35 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 def foo(self, val): pass
             self.assertFalse(E.foo.__isabstractmethod__)
 
+        def test_concrete_override_drops_abstract_components(self):
+            # Only the object a subclass finally binds to an abstract name is
+            # inspected; nothing checks that it still provides the components
+            # of the descriptor it replaces.  See gh-83888.
+            class C(metaclass=abc_ABCMeta):
+                @property
+                @abc.abstractmethod
+                def foo(self): ...
+                @foo.setter
+                @abc.abstractmethod
+                def foo(self, val): ...
+            self.assertEqual(C.__abstractmethods__, {"foo"})
+            # A read-only property makes the read-write abstract property
+            # concrete, silently dropping the setter.
+            class D(C):
+                @property
+                def foo(self): return 3
+            self.assertEqual(D.__abstractmethods__, set())
+            d = D()
+            self.assertEqual(d.foo, 3)
+            with self.assertRaises(AttributeError):
+                d.foo = 4
+            # The same holds for an abstract name that is not a descriptor at
+            # all: any non-abstract object counts as an implementation.
+            class E(C):
+                foo = 3
+            self.assertEqual(E.__abstractmethods__, set())
+            self.assertEqual(E().foo, 3)
+
         def test_metaclass_abc(self):
             # Metaclasses can be ABCs, too.
             class A(metaclass=abc_ABCMeta):
