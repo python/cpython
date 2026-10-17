@@ -27,6 +27,52 @@
 #  define _Py__has_attribute(x) 0
 #endif
 
+// Same check for C23 [[attribute]].
+#ifdef __has_c_attribute
+#  define _Py__has_c_attribute(X) __has_c_attribute(X)
+#else
+#  define _Py__has_c_attribute(X) 0
+#endif
+
+// Same check for C++17 [[attribute]].
+#if defined(__cpp_attributes) && defined(__has_cpp_attribute)
+#  define _Py__has_cpp_attribute(X) __has_cpp_attribute(X)
+#else
+#  define _Py__has_cpp_attribute(X) 0
+#endif
+
+// Combined check for C & C++ [[attribute]]. Only use if attribute works
+// the same way in both languages.
+#ifdef __cplusplus
+#  define _Py__has_c_cpp_attribute(X) _Py__has_cpp_attribute(X)
+#else
+#  define _Py__has_c_cpp_attribute(X) _Py__has_c_attribute(X)
+#endif
+
+// _Py_C_ATTRIBUTE(attribute): wrapper for [[attribute]]
+#if defined(__GNUC__) && !defined(__clang__) && defined(__STDC_VERSION__) && __STDC_VERSION__ < 202311L
+// In GCC pedantic mode before C23, `__has_c_attribute` is defined but using
+// C attributes emits warnings. Suppress them.
+#  define _Py_C_ATTRIBUTE(ATTR) [[__extension__ ATTR]]
+#elif defined(__clang__) && defined(__STDC_VERSION__) && __STDC_VERSION__ < 202311L
+// Similar for clang and C23. It's not clear how to suppress this,
+// so pretend the feature is missing.
+#  undef _Py__has_cpp_attribute
+#  undef _Py__has_c_cpp_attribute
+#  define _Py__has_cpp_attribute(X) 0
+#  define _Py__has_c_cpp_attribute(X) 0
+#  define _Py_C_ATTRIBUTE(ATTR)
+#elif defined(__clang__) && defined(__cplusplus) && __cplusplus < 201703L
+// Same for clang and C++17.
+#  undef _Py__has_c_attribute
+#  undef _Py__has_c_cpp_attribute
+#  define _Py__has_c_attribute(X) 0
+#  define _Py__has_c_cpp_attribute(X) 0
+#  define _Py_C_ATTRIBUTE(ATTR)
+#else
+#  define _Py_C_ATTRIBUTE(ATTR) [[ATTR]]
+#endif
+
 // Macro to use C++ static_cast<> in the Python C API.
 #ifdef __cplusplus
 #  define _Py_STATIC_CAST(type, expr) static_cast<type>(expr)
