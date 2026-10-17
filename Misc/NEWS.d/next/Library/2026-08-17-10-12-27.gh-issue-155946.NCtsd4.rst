@@ -1,0 +1,2 @@
+:mod:`logging`: ensure that :class:`logging.handlesr.SMTPHandler`
+correctly releases resources on SMTP connection failures.
