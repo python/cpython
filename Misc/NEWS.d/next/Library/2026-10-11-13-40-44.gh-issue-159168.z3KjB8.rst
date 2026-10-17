@@ -1,0 +1,2 @@
+Fix :exc:`RecursionError` in ``python -m asyncio pstree`` on a deep chain of
+awaiting tasks. Patch by Timofei Ivankov.
