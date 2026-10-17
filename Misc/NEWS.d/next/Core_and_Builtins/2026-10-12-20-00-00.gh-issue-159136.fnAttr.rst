@@ -1,0 +1,8 @@
+Setting ``__name__``, ``__qualname__``, ``__doc__`` or ``__module__`` on a
+function no longer stops all threads in the free-threaded build. The setters
+now use the per-object lock and defer freeing the old value with QSBR, the
+same approach used for generator ``__name__``. This fixes a large slowdown
+in multi-threaded code using :func:`functools.wraps` since 3.14.7. Readers
+of these attributes now use atomic loads, and argument error reporting reads
+``__qualname__`` after keyword comparisons, which may execute Python code and
+replace it. Previously this could use a freed object.

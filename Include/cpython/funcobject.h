@@ -98,7 +98,12 @@ static inline PyObject* PyFunction_GET_GLOBALS(PyObject *func) {
 #define PyFunction_GET_GLOBALS(func) PyFunction_GET_GLOBALS(_PyObject_CAST(func))
 
 static inline PyObject* PyFunction_GET_MODULE(PyObject *func) {
+#ifdef Py_GIL_DISABLED
+    return (PyObject *)_Py_atomic_load_ptr_acquire(
+        &_PyFunction_CAST(func)->func_module);
+#else
     return _PyFunction_CAST(func)->func_module;
+#endif
 }
 #define PyFunction_GET_MODULE(func) PyFunction_GET_MODULE(_PyObject_CAST(func))
 
@@ -118,7 +123,12 @@ static inline PyObject* PyFunction_GET_CLOSURE(PyObject *func) {
 #define PyFunction_GET_CLOSURE(func) PyFunction_GET_CLOSURE(_PyObject_CAST(func))
 
 static inline PyObject* PyFunction_GET_ANNOTATIONS(PyObject *func) {
+#ifdef Py_GIL_DISABLED
+    return (PyObject *)_Py_atomic_load_ptr_acquire(
+        &_PyFunction_CAST(func)->func_annotations);
+#else
     return _PyFunction_CAST(func)->func_annotations;
+#endif
 }
 #define PyFunction_GET_ANNOTATIONS(func) PyFunction_GET_ANNOTATIONS(_PyObject_CAST(func))
 

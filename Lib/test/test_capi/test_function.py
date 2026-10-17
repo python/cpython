@@ -44,6 +44,12 @@ class FunctionTest(unittest.TestCase):
         with self.assertRaises(SystemError):
             _testcapi.function_get_module(None)  # not a function
 
+        self.assertEqual(_testcapi.function_get_module_macro(some), module)
+        value = object()
+        some.__module__ = value
+        self.assertIs(_testcapi.function_get_module(some), value)
+        self.assertIs(_testcapi.function_get_module_macro(some), value)
+
     def test_function_get_defaults(self):
         # Test PyFunction_GetDefaults()
         def some(
