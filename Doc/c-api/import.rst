@@ -366,8 +366,7 @@ Importing Modules
 
 .. c:function:: int PyImport_SetLazyImportsMode(PyImport_LazyImportsMode mode)
 
-   Similar to :c:func:`PyImport_ImportModuleAttr`, but names are UTF-8 encoded
-   strings instead of Python :class:`str` objects.
+   Sets the current lazy imports mode.
 
    This function always returns ``0``.
 
