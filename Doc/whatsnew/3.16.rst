@@ -953,6 +953,8 @@ mimetypes
   Valid extensions must now start with a ``'.'`` or be empty;
   undotted extensions raise a :exc:`ValueError`.
   (Contributed by Nikita Sobolev in :gh:`149720`.)
+* Add more MIME types.
+  (Contributed by Charlie Lin in :gh:`146342`.)
 
 shutil
 ------
