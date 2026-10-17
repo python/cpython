@@ -4319,6 +4319,41 @@ class OtherTests(unittest.TestCase):
             f = io.BytesIO(buffer)
             self.assertRaises(zipfile.BadZipFile, zipfile.ZipFile, f)
 
+    def test_negative_file_header_offset_raises_BadZipFile(self):
+        data = io.BytesIO()
+        with zipfile.ZipFile(data, "w") as zipf:
+            zipf.writestr("bad.txt", b"corrupt header")
+            zipf.writestr("good.txt", b"intact contents")
+        # Removing the first byte leaves the central directory intact, but
+        # makes the first member's local file header offset negative.
+        damaged = data.getvalue()[1:]
+        for file in get_files(self):
+            with self.subTest(type=type(file)):
+                if isinstance(file, str):
+                    with open(file, "wb") as fp:
+                        fp.write(damaged)
+                else:
+                    file.write(damaged)
+                    file.seek(0)
+                with zipfile.ZipFile(file) as zipf:
+                    for name in ("bad.txt", zipf.getinfo("bad.txt")):
+                        with self.assertRaises(zipfile.BadZipFile):
+                            zipf.open(name)
+                    self.assertEqual(zipf.testzip(), "bad.txt")
+                    self.assertEqual(zipf.read("good.txt"), b"intact contents")
+
+    def test_read_file_header_raises_OSError(self):
+        data = io.BytesIO()
+        with zipfile.ZipFile(data, "w") as zipf:
+            zipf.writestr("foo.txt", b"contents")
+        data.seek(0)
+        with zipfile.ZipFile(data) as zipf:
+            with mock.patch.object(data, "seek", side_effect=OSError("seek failed")):
+                with self.assertRaisesRegex(OSError, "seek failed"):
+                    zipf.read("foo.txt")
+                with self.assertRaisesRegex(OSError, "seek failed"):
+                    zipf.testzip()
+
     def test_closed_zip_raises_ValueError(self):
         """Verify that testzip() doesn't swallow inappropriate exceptions."""
         data = io.BytesIO()
