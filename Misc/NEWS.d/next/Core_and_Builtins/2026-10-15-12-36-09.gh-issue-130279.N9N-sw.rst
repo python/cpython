@@ -1,0 +1,4 @@
+Fix exceptions raised at the backward jump of a loop (such as
+:exc:`KeyboardInterrupt`) skipping the enclosing :keyword:`try` or
+:keyword:`with` statement when the loop body ends with an :keyword:`if`
+statement whose condition is false.

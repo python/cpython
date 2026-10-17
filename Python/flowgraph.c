@@ -586,6 +586,13 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
         basicblock_addop(backwards_jump, NOT_TAKEN, 0, last->i_loc));
     RETURN_IF_ERROR(
         basicblock_add_jump(backwards_jump, JUMP, target, last->i_loc));
+    /* The new instructions are covered by the same exception handler as
+     * the conditional jump, since the backward jump can raise when it
+     * checks the eval breaker.
+     */
+    for (int i = 0; i < backwards_jump->b_iused; i++) {
+        backwards_jump->b_instr[i].i_except = last->i_except;
+    }
     backwards_jump->b_startdepth = target->b_startdepth;
     last->i_opcode = reversed_opcode;
     last->i_target = b->b_next;
@@ -1288,12 +1295,15 @@ jump_thread(basicblock *bb, cfg_instr *inst, cfg_instr *target, int opcode)
     if (inst->i_target != target->i_target) {
         /* Change inst to NOP and append a jump to target->i_target. The
          * NOP will be removed later if it's not needed for the lineno.
+         * The new jump keeps the exception handler of inst.
          */
+        basicblock *except = inst->i_except;
         INSTR_SET_OP0(inst, NOP);
 
         RETURN_IF_ERROR(
             basicblock_add_jump(
                 bb, opcode, target->i_target, target->i_loc));
+        basicblock_last_instr(bb)->i_except = except;
 
         return true;
     }
