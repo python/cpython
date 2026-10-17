@@ -1,0 +1,2 @@
+:mod:`plistlib` now raises :exc:`ValueError` for an invalid ``<date>`` in an
+XML plist. Patch by tonghuaroot.
