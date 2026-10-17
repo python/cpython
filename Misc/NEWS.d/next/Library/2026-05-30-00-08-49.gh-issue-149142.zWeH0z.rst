@@ -1,0 +1,3 @@
+Fix data races in :meth:`decimal.Context.create_decimal` and
+:meth:`decimal.Context.clear_flags` when updating
+:class:`decimal.Context` status flags in the :term:`free-threaded build`.
