@@ -520,7 +520,9 @@ static void *opcode_tracing_targets_table[256] = {
 #else /* _Py_TAIL_CALL_INTERP */
 static py_tail_call_funcptr instruction_funcptr_handler_table[256];
 
+#if _Py_TIER2
 static py_tail_call_funcptr instruction_funcptr_tracing_table[256];
+#endif
 
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_pop_2_error(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_pop_1_error(TAIL_CALL_PARAMS);
@@ -1031,6 +1033,7 @@ static py_tail_call_funcptr instruction_funcptr_handler_table[256] = {
     [231] = _TAIL_CALL_UNKNOWN_OPCODE,
     [232] = _TAIL_CALL_UNKNOWN_OPCODE,
 };
+#if _Py_TIER2
 static py_tail_call_funcptr instruction_funcptr_tracing_table[256] = {
     [BINARY_OP] = _TAIL_CALL_TRACE_RECORD,
     [BINARY_OP_ADD_FLOAT] = _TAIL_CALL_TRACE_RECORD,
@@ -1289,4 +1292,5 @@ static py_tail_call_funcptr instruction_funcptr_tracing_table[256] = {
     [231] = _TAIL_CALL_UNKNOWN_OPCODE,
     [232] = _TAIL_CALL_UNKNOWN_OPCODE,
 };
+#endif
 #endif /* _Py_TAIL_CALL_INTERP */
