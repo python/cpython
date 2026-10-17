@@ -88,6 +88,13 @@ pysqlite_row_new_impl(PyTypeObject *type, pysqlite_Cursor *cursor,
 
     assert(type != NULL && type->tp_alloc != NULL);
 
+    if (!cursor->initialized) {
+        pysqlite_state *state = pysqlite_get_state_by_type(type);
+        PyErr_SetString(state->ProgrammingError,
+                        "Base Cursor.__init__ not called.");
+        return NULL;
+    }
+
     self = (pysqlite_Row *) type->tp_alloc(type, 0);
     if (self == NULL)
         return NULL;

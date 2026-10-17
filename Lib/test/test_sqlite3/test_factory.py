@@ -280,6 +280,12 @@ class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
         self.assertRaises(TypeError, self.con.cursor, FakeCursor)
         self.assertRaises(TypeError, sqlite.Row, FakeCursor(), ())
 
+    def test_uninitialised_cursor(self):
+        cur = sqlite.Cursor.__new__(sqlite.Cursor)
+        with self.assertRaisesRegex(sqlite.ProgrammingError,
+                                    "Base Cursor.__init__ not called"):
+            sqlite.Row(cur, ())
+
 
 class TextFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
 
