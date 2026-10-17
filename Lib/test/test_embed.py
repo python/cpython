@@ -507,6 +507,49 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, '20000101\n' * INIT_LOOPS)
 
+    @threading_helper.requires_working_threading()
+    def test_warnings_at_shutdown(self):
+        code = textwrap.dedent('''
+            import threading
+            import time
+            import warnings
+
+            warnings.simplefilter('always', ResourceWarning)
+            ready = threading.Event()
+
+            class WarnOnDelete:
+                def __init__(self):
+                    self.self_ref = self
+
+                def __del__(self):
+                    warnings.warn('late', ResourceWarning)
+
+            def showwarning(message, *args, **kwargs):
+                if str(message) == 'hold':
+                    warnings.warn('nested', ResourceWarning)
+                    ready.set()
+                    # A Python event cannot synchronize with the point where
+                    # shutdown stops daemon threads, so hold the lock briefly.
+                    time.sleep(0.1)
+                else:
+                    print(message)
+
+            warnings.showwarning = showwarning
+
+            def worker():
+                warnings.warn('hold', ResourceWarning)
+
+            threading.Thread(target=worker, daemon=True).start()
+            assert ready.wait(4), 'daemon did not start warning'
+            # Collect the cycle during shutdown GC, after daemon threads stop.
+            WarnOnDelete()
+        ''')
+        out, err = self.run_embedded_interpreter(
+            "test_repeated_init_exec", code, "pass",
+            env=remove_python_envvars(), timeout=10)
+        self.assertEqual(out, 'nested\nlate\n')
+        self.assertEqual(err, '--- Loop #1 ---\n--- Loop #2 ---\n')
+
     def test_static_types_inherited_slots(self):
         script = textwrap.dedent("""
             import test.support
