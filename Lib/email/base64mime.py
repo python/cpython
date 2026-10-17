@@ -34,8 +34,8 @@ __all__ = [
     ]
 
 
-from base64 import b64encode
-from binascii import b2a_base64, a2b_base64
+from base64 import b64encode, urlsafe_b64decode
+from binascii import b2a_base64
 
 CRLF = '\r\n'
 NL = '\n'
@@ -101,12 +101,15 @@ def decode(string):
     base64 (like =?iso-8859-1?b?bmloISBuaWgh?=) -- please use the high
     level email.header class for that functionality.
     """
+    # We use urlsafe_b64decode here because some mailers apparently use the
+    # urlsafe b64 alphabet, and urlsafe_b64decode will correctly decode both
+    # the urlsafe and regular alphabets.
     if not string:
         return bytes()
     elif isinstance(string, str):
-        return a2b_base64(string.encode('raw-unicode-escape'))
+        return urlsafe_b64decode(string.encode('raw-unicode-escape'))
     else:
-        return a2b_base64(string)
+        return urlsafe_b64decode(string)
 
 
 # For convenience and backwards compatibility w/ standard base64 module
