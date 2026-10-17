@@ -4060,9 +4060,6 @@ class Context(object):
         for flag in flags:
             self._ignored_flags.remove(flag)
 
-    # We inherit object.__hash__, so we must deny this explicitly
-    __hash__ = None
-
     def Etiny(self):
         """Returns Etiny (= Emin - prec + 1)"""
         return int(self.Emin - self.prec + 1)
