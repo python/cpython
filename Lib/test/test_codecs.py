@@ -3654,6 +3654,33 @@ class CodePageTest(unittest.TestCase):
                                           False)
         self.assertEqual(decoded, ('abc', 3))
 
+    def test_stream_reader(self):
+        # cp20866 and cp20932 are implemented by encodings._win_cp_codecs.
+        for cp, text in ((20866, '\u043f\u0440\u0438\n\u043c\u0438\u0440\n'),
+                         (20932, 'a\u3042\u65e5b\n\u672c\n')):
+            with self.subTest(cp=cp):
+                if not is_code_page_present(cp):
+                    self.skipTest(f'cp{cp} is not present')
+                info = codecs.lookup(f'cp{cp}')
+                data = text.encode(f'cp{cp}')
+
+                reader = info.streamreader(io.BytesIO(data))
+                self.assertEqual(reader.read(), text)
+
+                reader = info.streamreader(io.BytesIO(data))
+                self.assertEqual(list(iter(reader.readline, '')),
+                                 text.splitlines(keepends=True))
+
+                # A partial multibyte sequence is kept until the next read.
+                reader = info.streamreader(io.BytesIO(data))
+                self.assertEqual(list(iter(lambda: reader.read(1), '')),
+                                 list(text))
+
+                stream = codecs.StreamReaderWriter(io.BytesIO(data),
+                                                   info.streamreader,
+                                                   info.streamwriter)
+                self.assertEqual(stream.read(), text)
+
     def test_mbcs_code_page(self):
         # Check that codec for the current Windows (ANSII) code page is
         # always available.
