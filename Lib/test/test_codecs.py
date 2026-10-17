@@ -4338,5 +4338,30 @@ class CodecCacheTest(unittest.TestCase):
         self.assertLessEqual(len(encodings._cache), encodings._MAXCACHE)
 
 
+@support.requires_subprocess()
+class Rot13CommandLineTest(unittest.TestCase):
+    """Tests for the encodings.rot_13 command-line interface."""
+
+    def run_rot13(self, input_data):
+        from test.support.script_helper import spawn_python
+        with spawn_python('-m', 'encodings.rot_13') as proc:
+            out, err = proc.communicate(input_data.encode())
+        return out.decode()
+
+    def test_stdin_to_stdout(self):
+        result = self.run_rot13('Hello World')
+        self.assertEqual(result, 'Uryyb Jbeyq')
+
+    def test_rot13_is_own_inverse(self):
+        plaintext = 'To be, or not to be, that is the question'
+        encoded = self.run_rot13(plaintext)
+        decoded = self.run_rot13(encoded)
+        self.assertEqual(decoded, plaintext)
+
+    def test_non_alpha_unchanged(self):
+        result = self.run_rot13('Hello, World! 123')
+        self.assertEqual(result, 'Uryyb, Jbeyq! 123')
+
+
 if __name__ == "__main__":
     unittest.main()
