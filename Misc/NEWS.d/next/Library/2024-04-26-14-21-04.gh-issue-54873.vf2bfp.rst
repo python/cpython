@@ -1,0 +1,2 @@
+Backported namespaces prefixes support for xml.sax.expatreader from PyXML
+(0.8.4)
