@@ -1,0 +1,3 @@
+:meth:`sqlite3.Connection.iterdump` no longer emits ``INSERT`` statements for
+a virtual table's own rows, which previously made restoring the dump raise
+:exc:`sqlite3.OperationalError`.  Patch by tonghuaroot.

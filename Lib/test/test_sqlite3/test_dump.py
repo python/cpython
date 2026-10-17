@@ -1,6 +1,10 @@
 # Author: Paul Kippes <kippesp@gmail.com>
 
+import sqlite3
 import unittest
+from contextlib import closing
+
+from test.support.os_helper import TESTFN, unlink
 
 from .util import memory_database
 from .util import MemoryDatabaseMixin
@@ -245,6 +249,34 @@ class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
         self.cu.execute("CREATE VIRTUAL TABLE test USING fts4(example)")
         actual = list(self.cx.iterdump())
         self.assertEqual(expected, actual)
+
+    @requires_virtual_table("fts4")
+    def test_dump_virtual_table_data_roundtrip(self):
+        # gh-153729: a populated virtual table must round-trip through iterdump().
+        self.addCleanup(unlink, TESTFN)
+        with closing(sqlite3.connect(TESTFN)) as src:
+            src.execute("CREATE VIRTUAL TABLE test USING fts4(example)")
+            src.execute("INSERT INTO test(example) VALUES('hello world')")
+            src.execute("INSERT INTO test(example) VALUES('second row')")
+            src.commit()
+            script = "".join(src.iterdump())
+
+        # The virtual table's own rows are not dumped as INSERT statements
+        # (the data is preserved via the shadow tables instead).
+        self.assertNotIn('INSERT INTO "test"', script)
+
+        restored_path = f"{TESTFN}.restored"
+        self.addCleanup(unlink, restored_path)
+        with closing(sqlite3.connect(restored_path)) as dst:
+            # Defensive mode blocks writable_schema writes to sqlite_master.
+            dst.setconfig(sqlite3.SQLITE_DBCONFIG_DEFENSIVE, False)
+            dst.setconfig(sqlite3.SQLITE_DBCONFIG_WRITABLE_SCHEMA, True)
+            dst.executescript(script)
+        with closing(sqlite3.connect(restored_path)) as restored:
+            rows = restored.execute(
+                "SELECT example FROM test ORDER BY docid"
+            ).fetchall()
+        self.assertEqual(rows, [("hello world",), ("second row",)])
 
 
 if __name__ == "__main__":
