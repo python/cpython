@@ -1,0 +1,2 @@
+Hide internal Tier 2 executor implementation details from ABI analysis tools
+by making the executor array referenced by :c:type:`PyCodeObject` opaque.

@@ -819,6 +819,8 @@ struct _Py_unique_id_pool {
 
 #endif
 
+struct _PyExecutorObject;
+
 typedef _Py_CODEUNIT *(*_PyJitEntryFuncPtr)(struct _PyExecutorObject *exec, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate);
 
 #define _PyInterpreterGuard_GUARDS_NOT_ALLOWED UINTPTR_MAX
