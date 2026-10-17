@@ -62,6 +62,7 @@ _STRATEGIES = {
     "slices",
     "timedeltas",
     "times",
+    "timezones",
     "text",
     "tuples",
     "uuids",
