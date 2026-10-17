@@ -1690,6 +1690,9 @@ PyOS_FSPath:PyObject*:path:0:
 PyObject_ASCII:PyObject*::+1:
 PyObject_ASCII:PyObject*:o:0:
 
+PyObject_Pretty:PyObject*::+1:
+PyObject_Pretty:PyObject*:o:0:
+
 PyObject_Bytes:PyObject*::+1:
 PyObject_Bytes:PyObject*:o:0:
 

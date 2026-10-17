@@ -2915,3 +2915,5 @@
     added = '3.16'
 [macro.Py_XSETREF]
     added = '3.16'
+[function.PyObject_Pretty]
+    added = '3.16'
