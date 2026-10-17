@@ -1,0 +1,4 @@
+The Tier 2 translator now tracks the confidence level for staying "on trace"
+(i.e. not exiting back to the Tier 1 interpreter) for branch instructions
+based on the number of bits set in the branch "counter". Trace translation
+ends when the confidence drops below 1/3rd.

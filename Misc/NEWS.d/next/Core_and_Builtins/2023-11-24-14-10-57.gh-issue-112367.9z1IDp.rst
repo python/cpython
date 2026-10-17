@@ -1,0 +1,2 @@
+Avoid undefined behaviour when using the perf trampolines by not freeing the
+code arenas until shutdown. Patch by Pablo Galindo
