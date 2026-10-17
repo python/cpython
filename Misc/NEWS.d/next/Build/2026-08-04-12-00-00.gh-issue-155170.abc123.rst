@@ -1,0 +1,2 @@
+Expose CPython's frame-pointer flags for extension builds in
+``build-details.json``.
