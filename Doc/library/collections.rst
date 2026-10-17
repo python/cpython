@@ -741,14 +741,18 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
            defaultdict(default_factory, iterable, /, **kwargs)
 
     Return a new dictionary-like object.  :class:`defaultdict` is a subclass of the
-    built-in :class:`dict` class.  It overrides one method and adds one writable
-    instance variable.  The remaining functionality is the same as for the
-    :class:`dict` class and is not documented here.
+    built-in :class:`dict` class.  If :attr:`default_factory` is not ``None``, a
+    missing key causes the factory to be called without arguments; its result is
+    inserted into the dictionary and returned.  If :attr:`default_factory` is
+    ``None``, missing-key access raises a :exc:`KeyError` exception.  The remaining
+    functionality is the same as for the :class:`dict` class and is not documented
+    here.
 
     The first argument provides the initial value for the :attr:`default_factory`
-    attribute; it defaults to ``None``. All remaining arguments are treated the same
-    as if they were passed to the :class:`dict` constructor, including keyword
-    arguments.
+    attribute; it should be a callable or ``None``.  If it is neither, a
+    :exc:`TypeError` exception is raised.  It defaults to ``None``.  All remaining
+    arguments are treated the same as if they were passed to the :class:`dict`
+    constructor, including keyword arguments.
 
     :class:`!defaultdict`\s are :ref:`generic <generics>` over two types,
     signifying (respectively) the types of the dictionary's keys and values.
