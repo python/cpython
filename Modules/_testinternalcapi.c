@@ -1142,7 +1142,8 @@ record_eval(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
         assert(module != NULL);
         module_state *state = get_module_state(module);
         Py_DECREF(module);
-        int res = PyList_Append(state->record_list, func->func_name);
+        int res = PyList_Append(state->record_list,
+                                FT_ATOMIC_LOAD_PTR_ACQUIRE(func->func_name));
         if (res < 0) {
             return NULL;
         }
@@ -1203,7 +1204,8 @@ record_eval_interp(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc
         assert(module != NULL);
         module_state *state = get_module_state(module);
         Py_DECREF(module);
-        int res = PyList_Append(state->record_list, func->func_name);
+        int res = PyList_Append(state->record_list,
+                                FT_ATOMIC_LOAD_PTR_ACQUIRE(func->func_name));
         if (res < 0) {
             return NULL;
         }
