@@ -1,0 +1,5 @@
+Tests using a machine-wide resource, such as the display or the sound device,
+no longer run at the same time as other tests using the same resource.  Add
+:func:`~test.support.exclusive` and :func:`~test.support.requires_exclusive`;
+:func:`~test.support.requires`, :func:`~test.support.requires_resource` and
+:func:`~test.support.bigmemtest` use them for such resources.
