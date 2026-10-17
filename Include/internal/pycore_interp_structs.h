@@ -422,6 +422,10 @@ struct _stoptheworld_state {
     Py_ssize_t thread_countdown;  // Number of threads that must pause.
 
     PyThreadState *requester; // Thread that requested the pause (may be NULL).
+
+#ifdef Py_STATS
+    PyTime_t start_time; // When the current pause was requested (for pystats).
+#endif
 };
 
 /* Tracks some rare events per-interpreter, used by the optimizer to turn on/off
