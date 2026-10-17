@@ -1,0 +1,1 @@
+Fix the returned value of the :meth:`asyncio.Barrier.wait`. This value is now calculated on demand during the *draining* phasis.
