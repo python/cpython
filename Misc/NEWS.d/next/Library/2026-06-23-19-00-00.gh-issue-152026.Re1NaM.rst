@@ -1,0 +1,5 @@
+A group name can now be used for more than one group in a regular expression.
+All such groups share a single group number, and the name refers to whichever
+of them matched (the last one, if more than one matched).  This is chiefly
+useful for giving the same name to corresponding groups in alternative
+spellings of a pattern, e.g. ``(?P<y>\d{4})-(?P<m>\d\d)|(?P<m>\d\d)/(?P<y>\d{4})``.
