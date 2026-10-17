@@ -319,6 +319,8 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 +-----------------+-------------------+---------------------------+
 |                 | __self__          | instance to which a       |
 |                 |                   | method is bound, or       |
+|                 |                   | module object a function  |
+|                 |                   | was defined in, or        |
 |                 |                   | ``None``                  |
 +-----------------+-------------------+---------------------------+
 
