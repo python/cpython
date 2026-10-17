@@ -2061,6 +2061,9 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
         f = Py_TYPE(descr)->tp_descr_set;
         if (f != NULL) {
             res = f(descr, obj, value);
+            if (res < 0) {
+                _PyObject_SetAttributeErrorContext(obj, name);
+            }
             goto done;
         }
     }
