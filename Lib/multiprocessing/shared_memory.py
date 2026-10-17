@@ -118,7 +118,7 @@ class SharedMemory:
             except OSError:
                 self.unlink()
                 raise
-            if self._track:
+            if self._track and create:
                 resource_tracker.register(self._name, "shared_memory")
 
         else:
