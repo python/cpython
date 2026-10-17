@@ -23,8 +23,6 @@
 # governing permissions and limitations under the License.
 
 
-import importlib.machinery
-import io
 import sys
 import time
 import marshal
@@ -562,7 +560,9 @@ class Profile:
 
 def main():
     import os
+    import runpy
     from optparse import OptionParser
+    from pkgutil import get_importer
 
     usage = "profile.py [-o output_file_path] [-s sort] [-m module | scriptfile] [arg] ..."
     parser = OptionParser(usage=usage)
@@ -589,7 +589,6 @@ def main():
 
     if len(args) > 0:
         if options.module:
-            import runpy
             code = "run_module(modname, run_name='__main__')"
             globs = {
                 'run_module': runpy.run_module,
@@ -597,17 +596,28 @@ def main():
             }
         else:
             progname = args[0]
+            importer = get_importer(progname)
             sys.path.insert(0, os.path.dirname(progname))
-            with io.open_code(progname) as fp:
-                code = compile(fp.read(), progname, 'exec')
-            spec = importlib.machinery.ModuleSpec(name='__main__', loader=None,
-                                                  origin=progname)
-            globs = {
-                '__spec__': spec,
-                '__file__': spec.origin,
-                '__name__': spec.name,
-                '__package__': None,
-            }
+
+            if importer is not None:
+                code = "run_module_as_main('__main__', alter_argv=False)"
+                globs = {
+                    "run_module_as_main": runpy._run_module_as_main,
+                }
+            else:
+                import io
+                import importlib.machinery
+
+                with io.open_code(progname) as fp:
+                    code = compile(fp.read(), progname, 'exec')
+                spec = importlib.machinery.ModuleSpec(name='__main__', loader=None,
+                                                      origin=progname)
+                globs = {
+                    '__spec__': spec,
+                    '__file__': spec.origin,
+                    '__name__': spec.name,
+                    '__package__': None,
+                }
         try:
             runctx(code, globs, None, options.outfile, options.sort)
         except BrokenPipeError as exc:
