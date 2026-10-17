@@ -3757,7 +3757,7 @@ class TestCachedProperty(unittest.TestCase):
 
         with self.assertRaisesRegex(
             TypeError,
-            "The '__dict__' attribute on 'MyMeta' instance does not support item assignment for caching 'prop' property.",
+            "The '__dict__' attribute on 'MyMeta' instance does not support 'setdefault' for caching 'prop' property.",
         ):
             MyClass.prop
 
