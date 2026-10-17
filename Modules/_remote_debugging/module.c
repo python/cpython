@@ -823,6 +823,9 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
                         goto exit;
                     }
                     // Thread was skipped due to mode filtering, continue to next thread
+                    if (self->tstate_addr || self->only_active_thread) {
+                        break;
+                    }
                     continue;
                 }
                 // This was an actual error
