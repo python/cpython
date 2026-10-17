@@ -75,13 +75,38 @@ static int
 function___annotations___set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 {
     int return_value = -1;
-    PyObject *value = NULL;
+    PyObject *value;
 
-    if (arg != NULL) {
-        value = arg;
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '__annotations__' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
     }
+    value = arg;
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = function___annotations___set_impl((PyFunctionObject *)self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+function___annotations___del_impl(PyFunctionObject *self);
+
+static int
+function___annotations___del(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
+{
+    int return_value = -1;
+
+    if (arg != NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '__annotations__' of '%.100s' objects is not writable",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___annotations___del_impl((PyFunctionObject *)self);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -245,8 +270,16 @@ exit:
 }
 #define FUNCTION___ANNOTATE___GETSETDEF {"__annotate__", (getter)function___annotate___get, (setter)function___annotate___set, function___annotate____doc__},
 
-#define FUNCTION___ANNOTATIONS___GETSETDEF {"__annotations__", (getter)function___annotations___get, (setter)function___annotations___set, function___annotations____doc__},
+static int
+function___annotations___set_or_del(PyObject *self, PyObject *value, void *context)
+{
+    if (value == NULL) {
+        return ((setter)function___annotations___del)(self, value, context);
+    }
+    return ((setter)function___annotations___set)(self, value, context);
+}
+#define FUNCTION___ANNOTATIONS___GETSETDEF {"__annotations__", (getter)function___annotations___get, (setter)function___annotations___set_or_del, function___annotations____doc__},
 
 #define FUNCTION___TYPE_PARAMS___GETSETDEF {"__type_params__", (getter)function___type_params___get, (setter)function___type_params___set, function___type_params____doc__},
 
-/*[clinic end generated code: output=b722bea4e9d8b8be input=a9049054013a1b77]*/
+/*[clinic end generated code: output=916d95458bdae4f6 input=a9049054013a1b77]*/
