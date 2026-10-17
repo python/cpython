@@ -542,6 +542,75 @@ class SelectorTransportTests(test_utils.TestCase):
         self.assertFalse(self.loop.readers)
         self.assertEqual(1, self.loop.remove_reader_count[7])
 
+    def test_del(self):
+        tr = self.create_transport()
+        self.loop._add_reader(7, mock.sentinel)
+
+        with self.assertWarns(ResourceWarning):
+            tr.__del__()
+
+        # The socket is closed, so fd 7 may be handed out to an unrelated
+        # file at any moment: the loop must not be left polling it, and the
+        # cached fd must no longer look valid.
+        self.assertFalse(self.loop.readers)
+        self.assertEqual(1, self.loop.remove_reader_count[7])
+        self.assertEqual(-1, tr._sock_fd)
+        self.sock.close.assert_called_with()
+        self.assertIsNone(tr._sock)
+        self.assertIsNone(tr._protocol)
+        self.assertIsNone(tr._loop)
+        self.assertTrue(tr.is_closing())
+
+    def test_del_write_buffer(self):
+        tr = self.create_transport()
+        tr._buffer.extend(b'data')
+        tr._buffer_size = 4
+        self.loop._add_reader(7, mock.sentinel)
+        self.loop._add_writer(7, mock.sentinel)
+
+        with self.assertWarns(ResourceWarning):
+            tr.__del__()
+
+        self.assertFalse(self.loop.readers)
+        self.assertFalse(self.loop.writers)
+        self.assertEqual(1, self.loop.remove_writer_count[7])
+        self.assertEqual(tr._buffer, list_to_buffer())
+        self.assertEqual(0, tr.get_write_buffer_size())
+
+    def test_del_warning_names_the_fd(self):
+        # The warning has to be issued before the cleanup, otherwise its
+        # repr(self) reports a transport that is already closed and the fd
+        # number, the only actionable part of the message, is lost.
+        tr = self.create_transport()
+
+        with self.assertWarns(ResourceWarning) as cm:
+            tr.__del__()
+
+        self.assertIn('fd=7', str(cm.warning))
+
+    def test_del_then_close_leaves_reused_fd_alone(self):
+        tr = self.create_transport()
+        self.loop._add_reader(7, mock.sentinel)
+
+        with self.assertWarns(ResourceWarning):
+            tr.__del__()
+
+        # Something else in the process now owns fd 7 and waits on it.
+        self.loop._add_reader(7, mock.sentinel.other)
+        self.loop._add_writer(7, mock.sentinel.other)
+        self.loop.reset_counters()
+
+        # The transport got resurrected during garbage collection and is
+        # closed properly by its new owner.  It no longer owns fd 7, so it
+        # must keep its hands off the loop.
+        tr.close()
+        tr.abort()
+
+        self.assertEqual(0, self.loop.remove_reader_count[7])
+        self.assertEqual(0, self.loop.remove_writer_count[7])
+        self.assertIs(mock.sentinel.other, self.loop.readers[7]._callback)
+        self.assertIs(mock.sentinel.other, self.loop.writers[7]._callback)
+
     @mock.patch('asyncio.log.logger.error')
     def test_fatal_error(self, m_exc):
         exc = OSError()
@@ -597,6 +666,31 @@ class SelectorTransportTests(test_utils.TestCase):
         # can not add readers after closing
         tr._add_reader(7, mock.sentinel)
         self.assertFalse(self.loop.readers)
+
+
+class SelectorTransportDelTests(test_utils.TestCase):
+    """__del__ against a real event loop and a real socket."""
+
+    def test_del_unregisters_fd_from_the_selector(self):
+        loop = asyncio.SelectorEventLoop()
+        self.set_event_loop(loop)
+        rsock, wsock = socket.socketpair()
+        self.addCleanup(wsock.close)
+        self.addCleanup(rsock.close)
+
+        protocol = test_utils.make_test_protocol(asyncio.Protocol)
+        tr = _SelectorSocketTransport(loop, rsock, protocol)
+        test_utils.run_briefly(loop)  # let connection_made() and _add_reader()
+        fd = tr._sock_fd
+        self.assertIn(fd, loop._selector.get_map())
+
+        with self.assertWarns(ResourceWarning):
+            tr.__del__()
+
+        # Leaving the fd registered here would make the loop poll a
+        # descriptor owned by whatever opens a file next.
+        self.assertNotIn(fd, loop._selector.get_map())
+        self.assertEqual(-1, tr._sock_fd)
 
 
 class SelectorSocketTransportTests(test_utils.TestCase):
