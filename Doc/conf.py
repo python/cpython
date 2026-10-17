@@ -577,6 +577,11 @@ linkcheck_ignore = [
     r'https://unix.org/version2/whatsnew/lp64_wp.html',
 ]
 
+# Options to adjust search results sorting
+# ----------------------------------------
+
+html_search_scorer = "tools/static/search_scorer.js"
+
 
 # Options for sphinx.ext.extlinks
 # -------------------------------
