@@ -7,14 +7,20 @@ __Py_trampoline_func_start:
     .globl	_Py_trampoline_func_start
 _Py_trampoline_func_start:
 #endif
+    .cfi_startproc
 #if defined(__CET__) && (__CET__ & 1)
     endbr64
 #endif
     push   %rbp
+    .cfi_def_cfa_offset 16
+    .cfi_offset %rbp, -16
     mov    %rsp, %rbp
+    .cfi_def_cfa_register %rbp
     call   *%rcx
     pop    %rbp
+    .cfi_def_cfa %rsp, 8
     ret
+    .cfi_endproc
 #if defined(__APPLE__)
     .globl	__Py_trampoline_func_end
 __Py_trampoline_func_end:
