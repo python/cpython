@@ -1682,12 +1682,6 @@ typedef struct PyAsyncGenAThrow {
     int8_t agt_state;
 } PyAsyncGenAThrow;
 
-// _remote_debugging reads the generator right after PyObject_HEAD.
-static_assert(offsetof(PyAsyncGenASend, ags_gen) == sizeof(PyObject),
-              "ags_gen must immediately follow PyObject_HEAD");
-static_assert(offsetof(PyAsyncGenAThrow, agt_gen) == sizeof(PyObject),
-              "agt_gen must immediately follow PyObject_HEAD");
-
 
 typedef struct _PyAsyncGenWrappedValue {
     PyObject_HEAD
@@ -2246,6 +2240,9 @@ async_gen_asend_new(PyAsyncGenObject *gen, PyObject *sendval)
         }
     }
 
+    // _remote_debugging reads the generator right after PyObject_HEAD.
+    static_assert(offsetof(PyAsyncGenASend, ags_gen) == sizeof(PyObject),
+                  "ags_gen must immediately follow PyObject_HEAD");
     ags->ags_gen = (PyAsyncGenObject*)Py_NewRef(gen);
     ags->ags_sendval = Py_XNewRef(sendval);
     ags->ags_state = AWAITABLE_STATE_INIT;
@@ -2716,6 +2713,9 @@ async_gen_athrow_new(PyAsyncGenObject *gen, PyObject *args)
     if (o == NULL) {
         return NULL;
     }
+    // _remote_debugging reads the generator right after PyObject_HEAD.
+    static_assert(offsetof(PyAsyncGenAThrow, agt_gen) == sizeof(PyObject),
+                  "agt_gen must immediately follow PyObject_HEAD");
     o->agt_gen = (PyAsyncGenObject*)Py_NewRef(gen);
     o->agt_typ = Py_XNewRef(typ);
     o->agt_tb = Py_XNewRef(tb);
