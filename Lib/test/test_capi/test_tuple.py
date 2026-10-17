@@ -1,5 +1,7 @@
 import unittest
 import gc
+import struct
+import weakref
 from sys import getrefcount
 from test.support import import_helper
 
@@ -334,6 +336,20 @@ class CAPITest(unittest.TestCase):
         # non-tuple
         self.assertRaises(SystemError, resize, [1, 2, 3], 0, False)
         self.assertRaises(SystemError, resize, NULL, 0, False)
+
+    def test__tuple_resize_memory_error(self):
+        class Item:
+            pass
+
+        item = Item()
+        ref = weakref.ref(item)
+        tup = (item, item)
+        # The GC header makes this exceed the allocator's checked size limit.
+        newsize = PY_SSIZE_T_MAX // struct.calcsize('P')
+        self.assertRaises(MemoryError, _testcapi._tuple_resize, tup, newsize)
+        del tup, item
+        gc.collect()
+        self.assertIsNone(ref())
 
     def test_bug_59313(self):
         # Before 3.14, the C-API function PySequence_Tuple
