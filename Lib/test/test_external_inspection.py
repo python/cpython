@@ -46,6 +46,7 @@ TRANSIENT_ERRORS = (OSError, RuntimeError, UnicodeDecodeError)
 
 try:
     from concurrent import interpreters
+    from concurrent.futures import InterpreterPoolExecutor
 except ImportError:
     interpreters = None
 
@@ -212,6 +213,21 @@ skip_if_not_supported = unittest.skipIf(
     ),
     "Test only runs on Linux, Windows and MacOS",
 )
+
+
+def _asyncio_in_subinterpreter(ready, release):
+    """Park an asyncio task in a subinterpreter until released."""
+    import asyncio
+
+    def wait(loop):
+        # Signal via the loop, so the task has already suspended
+        loop.call_soon_threadsafe(ready.put, None)
+        release.get()
+
+    async def sub_worker():
+        await asyncio.to_thread(wait, asyncio.get_running_loop())
+
+    asyncio.run(sub_worker())
 
 
 def requires_subinterpreters(meth):
@@ -491,6 +507,42 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
         main_name, names = asyncio.run(main())
         self.assertIn(main_name, names)
         self.assertEqual([len(n) for n in names if n.startswith("x")], [255])
+
+    @skip_if_not_supported
+    @requires_subinterpreters
+    def test_all_awaited_by_covers_every_interpreter(self):
+        # gh-158880
+        ready = interpreters.create_queue()
+        release = interpreters.create_queue()
+
+        async def main_worker():
+            await asyncio.sleep(SHORT_TIMEOUT)
+
+        async def main():
+            with InterpreterPoolExecutor() as pool:
+                try:
+                    loop = asyncio.get_running_loop()
+                    loop.run_in_executor(pool, _asyncio_in_subinterpreter,
+                                         ready, release)
+                    task = asyncio.create_task(main_worker(),
+                                               name="main_worker")
+                    self.addCleanup(task.cancel)
+                    await asyncio.sleep(0)
+                    ready.get(timeout=SHORT_TIMEOUT)
+                    return [
+                        [frame.funcname.rpartition(".")[2]
+                         for frame in coro.call_stack]
+                        for info in RemoteUnwinder(
+                            os.getpid()).get_all_awaited_by()
+                        for task in info.awaited_by
+                        for coro in task.coroutine_stack
+                    ]
+                finally:
+                    release.put(None)
+
+        stacks = asyncio.run(main())
+        self.assertIn(["to_thread", "sub_worker"], stacks)
+        self.assertIn(["sleep", "main_worker"], stacks)
 
     @skip_if_not_supported
     def test_recursive_coroutine_stack_is_not_truncated(self):
