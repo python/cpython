@@ -1855,6 +1855,29 @@ ghi\0jkl
         sample = '"",' * 100 + '"' * 100 + '0' + '"' * 100 + '0'
         self.assertEqual(sniffer.sniff(sample).delimiter, ',')
 
+    def test_sniff_quotechar_tie_break(self):
+        # When both quote characters fit the sample equally well, the
+        # one starting more fields wins, not the one tried first.
+        # A single row of double-quoted fields used to make the sniffer
+        # report '"' even for a file quoted with "'".
+        sniffer = csv.Sniffer()
+        sample = "\n".join(["'a','b'"] * 99 + ['"k","l"']) + "\n"
+        dialect = sniffer.sniff(sample)
+        self.assertEqual(dialect.quotechar, "'")
+        self.assertEqual(list(csv.reader(StringIO(sample), dialect))[0],
+                         ['a', 'b'])
+        # The mirror sample is not ambiguous: '"' starts far more fields.
+        sample = "\n".join(['"a","b"'] * 99 + ["'k','l'"]) + "\n"
+        dialect = sniffer.sniff(sample)
+        self.assertEqual(dialect.quotechar, '"')
+        # A single unquoted field starting with a double quote does not
+        # outweigh the single-quoted fields.
+        sample = ("id,note\n"
+                  + "'1','a'\n" * 20
+                  + "5,\"N/A\"\n")
+        dialect = sniffer.sniff(sample)
+        self.assertEqual(dialect.quotechar, "'")
+
     def test_doublequote(self):
         sniffer = csv.Sniffer()
         dialect = sniffer.sniff(self.header1)
