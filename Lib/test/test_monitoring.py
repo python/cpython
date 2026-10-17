@@ -2605,46 +2605,59 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
 
         self.cases = [
             # (Event, function, *args)
-            ( 1, E.PY_START, capi.fire_event_py_start),
-            ( 1, E.PY_RESUME, capi.fire_event_py_resume),
-            ( 1, E.PY_YIELD, capi.fire_event_py_yield, 10),
-            ( 1, E.PY_RETURN, capi.fire_event_py_return, 20),
-            ( 2, E.CALL, capi.fire_event_call, callable, 40),
-            ( 1, E.JUMP, capi.fire_event_jump, 60),
-            ( 1, E.BRANCH_RIGHT, capi.fire_event_branch_right, 70),
-            ( 1, E.BRANCH_LEFT, capi.fire_event_branch_left, 80),
-            ( 1, E.PY_THROW, capi.fire_event_py_throw, ValueError(1)),
-            ( 1, E.RAISE, capi.fire_event_raise, ValueError(2)),
-            ( 1, E.EXCEPTION_HANDLED, capi.fire_event_exception_handled, ValueError(5)),
-            ( 1, E.PY_UNWIND, capi.fire_event_py_unwind, ValueError(6)),
-            ( 1, E.STOP_ITERATION, capi.fire_event_stop_iteration, 7),
-            ( 1, E.STOP_ITERATION, capi.fire_event_stop_iteration, StopIteration(8)),
+            (E.PY_START, capi.fire_event_py_start),
+            (E.PY_RESUME, capi.fire_event_py_resume),
+            (E.PY_YIELD, capi.fire_event_py_yield, 10),
+            (E.PY_RETURN, capi.fire_event_py_return, 20),
+            (E.CALL, capi.fire_event_call, callable, 40),
+            (E.LINE, capi.fire_event_line, 50),
+            (E.JUMP, capi.fire_event_jump, 60),
+            (E.BRANCH_RIGHT, capi.fire_event_branch_right, 70),
+            (E.BRANCH_LEFT, capi.fire_event_branch_left, 80),
+            (E.C_RETURN, capi.fire_event_c_return, 90),
+            (E.PY_THROW, capi.fire_event_py_throw, ValueError(1)),
+            (E.RAISE, capi.fire_event_raise, ValueError(2)),
+            (E.RERAISE, capi.fire_event_reraise, ValueError(3)),
+            (E.C_RAISE, capi.fire_event_c_raise, ValueError(4)),
+            (E.EXCEPTION_HANDLED, capi.fire_event_exception_handled, ValueError(5)),
+            (E.PY_UNWIND, capi.fire_event_py_unwind, ValueError(6)),
+            (E.STOP_ITERATION, capi.fire_event_stop_iteration, 7),
+            (E.STOP_ITERATION, capi.fire_event_stop_iteration, StopIteration(8)),
         ]
 
-        self.EXPECT_RAISED_EXCEPTION = [E.PY_THROW, E.RAISE, E.EXCEPTION_HANDLED, E.PY_UNWIND]
+        self.EXPECT_RAISED_EXCEPTION = [
+            E.PY_THROW, E.RAISE, E.EXCEPTION_HANDLED, E.PY_UNWIND, E.RERAISE, E.C_RAISE
+        ]
 
+    class Counter:
+        """Count events fired only for the given CodeLike."""
+        def __init__(self, codelike, callback_raises=None):
+            self.codelike = codelike
+            self.callback_raises = callback_raises
+            self.disable = False
+            self.count = 0
 
-    def check_event_count(self, event, func, args, expected, callback_raises=None):
-        class Counter:
-            def __init__(self, callback_raises):
-                self.callback_raises = callback_raises
-                self.count = 0
+        def __call__(self, code, *args):
+            if code is not self.codelike:
+                return
+            self.count += 1
+            if self.callback_raises:
+                exc = self.callback_raises
+                self.callback_raises = None
+                raise exc
+            if self.disable:
+                return sys.monitoring.DISABLE
 
-            def __call__(self, *args):
-                self.count += 1
-                if self.callback_raises:
-                    exc = self.callback_raises
-                    self.callback_raises = None
-                    raise exc
-
+    def check_event_count(self, event, func, args, expected=None, callback_raises=None):
         try:
-            counter = Counter(callback_raises)
+            counter = self.Counter(self.codelike, callback_raises)
             sys.monitoring.register_callback(TEST_TOOL, event, counter)
             if event == E.C_RETURN or event == E.C_RAISE:
                 sys.monitoring.set_events(TEST_TOOL, E.CALL)
+                event_value = int(math.log2(E.CALL))
             else:
                 sys.monitoring.set_events(TEST_TOOL, event)
-            event_value = int(math.log2(event))
+                event_value = int(math.log2(event))
             with self.Scope(self.codelike, event_value):
                 counter.count = 0
                 try:
@@ -2654,7 +2667,8 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
                     self.assertEqual(str(e), str(expected))
                     return
                 else:
-                    self.assertEqual(counter.count, expected)
+                    self.assertIsNone(expected)
+                    self.assertEqual(counter.count, 1)
 
             prev = sys.monitoring.register_callback(TEST_TOOL, event, None)
             with self.Scope(self.codelike, event_value):
@@ -2666,15 +2680,15 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
             sys.monitoring.set_events(TEST_TOOL, 0)
 
     def test_fire_event(self):
-        for expected, event, function, *args in self.cases:
+        for event, function, *args in self.cases:
             offset = 0
             self.codelike = self._testcapi.CodeLike(1)
             with self.subTest(function.__name__):
                 args_ = (self.codelike, offset) + tuple(args)
-                self.check_event_count(event, function, args_, expected)
+                self.check_event_count(event, function, args_)
 
     def test_missing_exception(self):
-        for _, event, function, *args in self.cases:
+        for event, function, *args in self.cases:
             if event not in self.EXPECT_RAISED_EXCEPTION:
                 continue
             assert args and isinstance(args[-1], BaseException)
@@ -2687,33 +2701,34 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
                 self.check_event_count(event, function, args_, expected)
 
     def test_fire_event_failing_callback(self):
-        for expected, event, function, *args in self.cases:
+        for event, function, *args in self.cases:
             offset = 0
             self.codelike = self._testcapi.CodeLike(1)
             with self.subTest(function.__name__):
                 args_ = (self.codelike, offset) + tuple(args)
                 exc = OSError(42)
                 with self.assertRaises(type(exc)):
-                    self.check_event_count(event, function, args_, expected,
+                    self.check_event_count(event, function, args_,
                                            callback_raises=exc)
 
 
     CANNOT_DISABLE = { E.PY_THROW, E.RAISE, E.RERAISE,
-                       E.EXCEPTION_HANDLED, E.PY_UNWIND }
+                       E.EXCEPTION_HANDLED, E.PY_UNWIND, E.C_RETURN, E.C_RAISE }
 
-    def check_disable(self, event, func, args, expected):
+    def check_disable(self, event, func, args):
         try:
-            counter = CounterWithDisable()
+            counter = self.Counter(self.codelike)
             sys.monitoring.register_callback(TEST_TOOL, event, counter)
             if event == E.C_RETURN or event == E.C_RAISE:
                 sys.monitoring.set_events(TEST_TOOL, E.CALL)
+                event_value = int(math.log2(E.CALL))
             else:
                 sys.monitoring.set_events(TEST_TOOL, event)
-            event_value = int(math.log2(event))
+                event_value = int(math.log2(event))
             with self.Scope(self.codelike, event_value):
                 counter.count = 0
                 func(*args)
-                self.assertEqual(counter.count, expected)
+                self.assertEqual(counter.count, 1)
                 counter.disable = True
                 if event in self.CANNOT_DISABLE:
                     # use try-except rather then assertRaises to avoid
@@ -2721,28 +2736,27 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
                     try:
                         counter.count = 0
                         func(*args)
-                        self.assertEqual(counter.count, expected)
+                        self.assertEqual(counter.count, 1)
                     except ValueError:
                         pass
                     else:
-                        self.Error("Expected a ValueError")
+                        self.fail("Expected a ValueError")
                 else:
                     counter.count = 0
                     func(*args)
-                    self.assertEqual(counter.count, expected)
+                    self.assertEqual(counter.count, 1)
                     counter.count = 0
                     func(*args)
-                    self.assertEqual(counter.count, expected - 1)
+                    self.assertEqual(counter.count, 0)
         finally:
             sys.monitoring.set_events(TEST_TOOL, 0)
 
     def test_disable_event(self):
-        for expected, event, function, *args in self.cases:
-            offset = 0
+        for event, function, *args in self.cases:
             self.codelike = self._testcapi.CodeLike(2)
             with self.subTest(function.__name__):
                 args_ = (self.codelike, 0) + tuple(args)
-                self.check_disable(event, function, args_, expected)
+                self.check_disable(event, function, args_)
 
     def test_enter_scope_two_events(self):
         _testcapi = self._testcapi
@@ -2781,3 +2795,53 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
 
         finally:
             sys.monitoring.set_events(TEST_TOOL, 0)
+
+    def check_legacy_tracing_ignores_pymonitoring_fire(self, setter, expected):
+        # gh-158711: When a PyMonitoring_Fire* function is passed a code object
+        # not being run by the top frame, it must not trigger a call to the
+        # legacy trace or profile func.
+        def fire(function, args):
+            function(*args)
+
+        for event, function, *args in self.cases:
+            with self.subTest(function.__name__):
+                events = []
+                def tracer(frame, what, _arg):
+                    if frame.f_code is fire.__code__:
+                        events.append(what)
+                    return tracer
+
+                self.codelike = self._testcapi.CodeLike(1)
+                args_ = (self.codelike, 0) + tuple(args)
+                if event == E.C_RETURN or event == E.C_RAISE:
+                    event_value = int(math.log2(E.CALL))
+                else:
+                    event_value = int(math.log2(event))
+                # Also watch the event with a sys.monitoring tool, so that a
+                # correctly ignored event can be told apart from one that was
+                # never dispatched at all (e.g. if Scope stopped activating).
+                counter = self.Counter(self.codelike)
+                try:
+                    sys.monitoring.register_callback(TEST_TOOL, event, counter)
+                    sys.monitoring.set_events(TEST_TOOL, 1 << event_value)
+                    setter(tracer)
+                    with self.Scope(self.codelike, event_value):
+                        fire(function, args_)
+                finally:
+                    setter(None)
+                    sys.monitoring.set_events(TEST_TOOL, 0)
+                    sys.monitoring.register_callback(TEST_TOOL, event, None)
+                self.assertEqual(events, expected)
+                self.assertEqual(counter.count, 1)
+
+    def test_setprofile_ignores_pymonitoring_fire(self):
+        self.check_legacy_tracing_ignores_pymonitoring_fire(
+            sys.setprofile,
+            ['call', 'c_call', 'c_return', 'return'],
+        )
+
+    def test_settrace_ignores_pymonitoring_fire(self):
+        self.check_legacy_tracing_ignores_pymonitoring_fire(
+            sys.settrace,
+            ['call', 'line', 'return'],
+        )
