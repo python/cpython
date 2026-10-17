@@ -96,6 +96,8 @@ import sys
 import time
 import tempfile
 
+from functools import lru_cache
+from ipaddress import ip_address, ip_network
 
 from urllib.error import URLError, HTTPError, ContentTooShortError
 from urllib.parse import (
@@ -1924,7 +1926,8 @@ def proxy_bypass_environment(host, proxies=None):
     """Test if proxies should not be used for a particular host.
 
     Checks the proxy dict for the value of no_proxy, which should
-    be a list of comma separated DNS suffixes, or '*' for all hosts.
+    be a list of comma separated DNS suffixes and IP CIDRs, or
+    '*' for all hosts.
 
     """
     if proxies is None:
@@ -1937,22 +1940,61 @@ def proxy_bypass_environment(host, proxies=None):
     # '*' is special case for always bypass
     if no_proxy == '*':
         return True
-    host = host.lower()
-    # strip port off host
-    hostonly, port = _splitport(host)
-    # check if the host ends with any of the DNS suffixes
-    for name in no_proxy.split(','):
-        name = name.strip()
-        if name:
-            name = name.lstrip('.')  # ignore leading dots
-            name = name.lower()
-            if hostonly == name or host == name:
+
+    return _ProxyBypassEnvSettings.cached(no_proxy).should_bypass(host)
+
+
+class _ProxyBypassEnvSettings:
+    def __init__(self, data):
+        self.matches = set()
+        self.cidrs = []
+
+        for elem in data.split(','):
+            elem = elem.strip()
+
+            if not elem:
+                continue
+
+            try:
+                block = ip_network(elem, strict=False)
+            except ValueError:
+                self.matches.add(elem.lstrip('.').lower())
+            else:
+                self.cidrs.append(block)
+
+    def should_bypass(self, host):
+        host = host.lower()
+        hostonly, _ = _splitport(host)
+
+        try:
+            ip = ip_address(hostonly.strip('[]'))
+        except ValueError:
+            pass
+        else:
+            if any(ip in cidr for cidr in self.cidrs):
                 return True
-            name = '.' + name
-            if hostonly.endswith(name) or host.endswith(name):
+
+        if host in self.matches or hostonly in self.matches:
+            return True
+
+        for match in self.matches:
+            dot_match = '.' + match
+            if host.endswith(dot_match) or hostonly.endswith(dot_match):
                 return True
-    # otherwise, don't bypass
-    return False
+
+        return False
+
+    @classmethod
+    @lru_cache
+    def cached(cls, data):
+        """Initializer with cache.
+
+        The vast majority of the time, NO_PROXY won't change.
+
+        This function caches the string manipulations so they don't repeat on
+        every single proxy check.
+        """
+        return cls(data)
 
 
 # This code tests an OSX specific data structure but is testable on all
