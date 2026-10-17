@@ -1042,22 +1042,10 @@ class TestGetStackTrace(unittest.TestCase):
                 for _ in busy_retry(SHORT_TIMEOUT):
                     try:
                         all_awaited_by = get_all_awaited_by(p.pid)
-                    except RuntimeError as re:
-                        # This call reads a linked list in another process with
-                        # no synchronization. That occasionally leads to invalid
-                        # reads. Here we avoid making the test flaky.
-                        msg = str(re)
-                        if msg.startswith("Task list appears corrupted"):
-                            continue
-                        elif msg.startswith(
-                            "Invalid linked list structure reading remote memory"
-                        ):
-                            continue
-                        elif msg.startswith("Unknown error reading memory"):
-                            continue
-                        elif msg.startswith("Unhandled frame owner"):
-                            continue
-                        raise  # Unrecognized exception, safest not to ignore it
+                    except RuntimeError:
+                        # Tasks and awaited objects can change while we read
+                        # the running process. Retry with a fresh sample.
+                        continue
                     else:
                         break
                 # expected: a list of two elements: 1 thread, 1 interp
