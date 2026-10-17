@@ -1,0 +1,3 @@
+``frozendict`` can now be pickled with all pickle protocols, matching
+:class:`frozenset`. Previously protocols 0 and 1 raised :exc:`TypeError`.
+Patch by tonghuaroot.
