@@ -723,7 +723,10 @@ class _MapResultIterator:
     def __next__(self):
         value, exc = next(self.gen)
         if exc is not None:
-            raise exc
+            try:
+                raise exc
+            finally:
+                exc = None
         return value
 
     def close(self):
