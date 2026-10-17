@@ -5033,8 +5033,6 @@ class ThreadedTests(unittest.TestCase):
         server_context.set_ciphers("AES256:eNULL")
         expected_algs = [
             "AES256", "AES-256",
-            # TLS 1.3 ciphers are always enabled
-            "TLS_CHACHA20", "TLS_AES",
         ]
 
         stats = server_params_test(client_context, server_context,
@@ -5042,6 +5040,9 @@ class ThreadedTests(unittest.TestCase):
         ciphers = stats['server_shared_ciphers'][0]
         self.assertGreater(len(ciphers), 0)
         for name, tls_version, bits in ciphers:
+            # TLS 1.3 cipher suites are not affected by set_ciphers().
+            if tls_version == "TLSv1.3":
+                continue
             if not any(alg in name for alg in expected_algs):
                 self.fail(name)
 
