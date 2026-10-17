@@ -3196,6 +3196,35 @@ class TestMove(BaseTest, unittest.TestCase):
                 os.lchflags(TESTFN_DST, stat.UF_OPAQUE)
                 os_helper.rmtree(TESTFN_DST)
 
+    @unittest.mock.patch('os.rename')
+    def test_no_copied_file_left_not_EXDEV(self, mock_rename):
+        new_file = os.path.join(self.dst_dir, "bar")
+        mock_rename.side_effect = PermissionError("not EXDEV")
+        with self.assertRaises(PermissionError):
+            shutil.move(self.src_file, new_file)
+        self.assertFalse(os.path.exists(new_file))
+
+    @unittest.mock.patch('os.rename')
+    def test_no_copied_dir_left_not_EXDEV(self, mock_rename):
+        subdir = os.path.join(self.src_dir, "subdir")
+        os.mkdir(subdir)
+        new_dir = os.path.join(self.dst_dir, "new_dir")
+        mock_rename.side_effect = PermissionError("not EXDEV")
+        with self.assertRaises(PermissionError):
+            shutil.move(subdir, new_dir)
+        self.assertFalse(os.path.exists(new_dir))
+
+    @unittest.mock.patch('os.rename')
+    @os_helper.skip_unless_symlink
+    def test_no_copied_symlink_left_not_EXDEV(self, mock_rename):
+        old_link = os.path.join(self.src_dir, "bar")
+        os.symlink(os.path.basename(self.src_file), old_link)
+        new_link = os.path.join(self.dst_dir, "new_link")
+        mock_rename.side_effect = PermissionError("not EXDEV")
+        with self.assertRaises(PermissionError):
+            shutil.move(old_link, new_link)
+        self.assertFalse(os.path.exists(new_link))
+
 
 class TestCopyFile(unittest.TestCase):
 
