@@ -1,0 +1,1 @@
+Add some missing attributes to multiprocessing.dummy. Patch by Joannah Nanjekye
