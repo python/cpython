@@ -1,0 +1,3 @@
+Speed up :func:`re.compile` of patterns with character ranges by replacing
+the per-byte loop in :mod:`!re._compiler` with a single bytearray slice
+fill.
