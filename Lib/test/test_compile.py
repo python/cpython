@@ -1,7 +1,11 @@
 import contextlib
+import dataclasses
 import dis
+import inspect
 import io
 import itertools
+import json
+import marshal
 import math
 import opcode
 import os
@@ -22,6 +26,7 @@ from test import support
 from test.support import (script_helper, requires_debug_ranges, run_code,
                           requires_specialization)
 from test.support.bytecode_helper import instructions_with_positions
+from test.support import os_helper
 from test.support.os_helper import FakePath
 
 class TestSpecifics(unittest.TestCase):
@@ -38,6 +43,26 @@ class TestSpecifics(unittest.TestCase):
 
     def test_empty(self):
         compile("", "<test>", "exec")
+
+    @support.requires_subprocess()
+    @support.nomemtest
+    def test_assemble_init_allocation_failure(self):
+        # gh-158241: Check error handling on MemoryError in Python/assemble.c
+        code = textwrap.dedent("""
+            from test import support
+
+            failures = 0
+            for n in range(1, 100):
+                with support.inject_memory_error_cm(n, n + 1):
+                    try:
+                        compile("x", "<test>", "exec")
+                    except MemoryError:
+                        failures += 1
+
+            if failures == 0:
+                raise AssertionError
+        """)
+        script_helper.assert_python_ok('-c', code)
 
     def test_other_newlines(self):
         compile("\r\n", "<test>", "exec")
@@ -62,6 +87,30 @@ class TestSpecifics(unittest.TestCase):
         self.assertRaises(SyntaxError, exec, 'def f(a, a): pass')
         self.assertRaises(SyntaxError, exec, 'def f(a = 0, a = 1): pass')
         self.assertRaises(SyntaxError, exec, 'def f(a): global a; a = 1')
+
+    def test_call_opcode_stack_use_limit(self):
+        def get_call_opcode(positional_count, keyword_count):
+            args = ["0"] * positional_count
+            args.extend(f"a{i}=0" for i in range(keyword_count))
+            code = compile(f"f({', '.join(args)})", "<test>", "exec")
+            return next(
+                instr.opname for instr in dis.get_instructions(code)
+                if instr.opname.startswith("CALL")
+            )
+
+        for positional_count, keyword_count, expected_opcode in [
+            (0, 16, "CALL_KW"),
+            (15, 14, "CALL_KW"),
+            (15, 15, "CALL_FUNCTION_EX"),
+        ]:
+            with self.subTest(
+                positional_count=positional_count,
+                keyword_count=keyword_count,
+            ):
+                self.assertEqual(
+                    get_call_opcode(positional_count, keyword_count),
+                    expected_opcode,
+                )
 
     def test_syntax_error(self):
         self.assertRaises(SyntaxError, compile, "1+*3", "filename", "exec")
@@ -724,12 +773,12 @@ class TestSpecifics(unittest.TestCase):
 
     @support.cpython_only
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
+    @support.run_with_limited_c_stack(500_000)
     @support.skip_emscripten_stack_overflow()
     def test_compiler_recursion_limit(self):
         # Compiler frames are small
         limit = 100
-        # Android test devices have less memory.
-        crash_depth = limit * (1000 if sys.platform == "android" else 5000)
+        crash_depth = limit * 5000
         success_depth = limit
 
         def check_limit(prefix, repeated, mode="single"):
@@ -1041,8 +1090,7 @@ class TestSpecifics(unittest.TestCase):
     # complex statements.
     @support.requires_resource('cpu')
     def test_stack_overflow(self):
-        # Android test devices have less memory.
-        size = 100_000 if sys.platform == "android" else 200_000
+        size = 200_000
         compile("if a: b\n" * size, "<dummy>", "exec")
 
     # Multiple users rely on the fact that CPython does not generate
@@ -1118,6 +1166,160 @@ class TestSpecifics(unittest.TestCase):
                 self.assertLessEqual(len(opcodes), 3)
                 self.assertIn('LOAD_', opcodes[-2].opname)
                 self.assertEqual('RETURN_VALUE', opcodes[-1].opname)
+
+    def test_empty_set_unpack_literal_bytecode_optimization(self):
+        cases = {
+            # optimized cases
+            '{*()}': [
+                ('RESUME', 0),
+                ('BUILD_SET', 0),
+                ('RETURN_VALUE', None),
+            ],
+            '{*(), *()}': [
+                ('RESUME', 0),
+                ('BUILD_SET', 0),
+                ('RETURN_VALUE', None),
+            ],
+            '{*(), 1}': [
+                ('RESUME', 0),
+                ('LOAD_SMALL_INT', 1),
+                ('BUILD_SET', 1),
+                ('RETURN_VALUE', None),
+            ],
+            '{*(), 1, 2, 3}': [
+                ('RESUME', 0),
+                ('BUILD_SET', 0),
+                ('LOAD_CONST', frozenset({1, 2, 3})),
+                ('SET_UPDATE', 1),
+                ('RETURN_VALUE', None),
+            ],
+            '{1, *()}': [
+                ('RESUME', 0),
+                ('LOAD_SMALL_INT', 1),
+                ('BUILD_SET', 1),
+                ('RETURN_VALUE', None),
+            ],
+            '{1, 2, 3, *()}': [
+                ('RESUME', 0),
+                ('BUILD_SET', 0),
+                ('LOAD_CONST', frozenset({1, 2, 3})),
+                ('SET_UPDATE', 1),
+                ('RETURN_VALUE', None),
+            ],
+            '{1, 2, *(), 3}': [
+                ('RESUME', 0),
+                ('BUILD_SET', 0),
+                ('LOAD_CONST', frozenset({1, 2, 3})),
+                ('SET_UPDATE', 1),
+                ('RETURN_VALUE', None),
+            ],
+            # unoptimized cases
+            '{*(1,)}': [
+                ('RESUME', 0),
+                ('BUILD_SET', 0),
+                ('LOAD_CONST', (1,)),
+                ('SET_UPDATE', 1),
+                ('RETURN_VALUE', None),
+            ],
+            '{*(x,)}': [
+                ('RESUME', 0),
+                ('BUILD_SET', 0),
+                ('LOAD_NAME', 'x'),
+                ('BUILD_TUPLE', 1),
+                ('SET_UPDATE', 1),
+                ('RETURN_VALUE', None),
+            ],
+        }
+
+        for source, expected in cases.items():
+            with self.subTest(source=source):
+                code = compile(source, '<test>', 'eval')
+                instructions = [
+                    (instruction.opname, instruction.argval)
+                    for instruction in dis.get_instructions(code)
+                ]
+                self.assertEqual(instructions, expected)
+
+    def test_empty_leading_tuple_unpack_list_and_tuple_bytecode_optimization(self):
+        cases = {
+            # optimized cases
+            '[*()]': [
+                ('RESUME', 0),
+                ('BUILD_LIST', 0),
+                ('RETURN_VALUE', None),
+            ],
+            '[*(), *()]': [
+                ('RESUME', 0),
+                ('BUILD_LIST', 0),
+                ('RETURN_VALUE', None),
+            ],
+            '[*(), 1]': [
+                ('RESUME', 0),
+                ('LOAD_SMALL_INT', 1),
+                ('BUILD_LIST', 1),
+                ('RETURN_VALUE', None),
+            ],
+            '(*(),)': [
+                ('RESUME', 0),
+                ('LOAD_COMMON_CONSTANT', ()),
+                ('RETURN_VALUE', None),
+            ],
+            '(*(), *())': [
+                ('RESUME', 0),
+                ('LOAD_COMMON_CONSTANT', ()),
+                ('RETURN_VALUE', None),
+            ],
+            '(*(), 1)': [
+                ('RESUME', 0),
+                ('LOAD_CONST', (1,)),
+                ('RETURN_VALUE', None),
+            ],
+            '[1, *()]': [
+                ('RESUME', 0),
+                ('LOAD_SMALL_INT', 1),
+                ('BUILD_LIST', 1),
+                ('RETURN_VALUE', None),
+            ],
+            '[1, 2, 3, *()]': [
+                ('RESUME', 0),
+                ('BUILD_LIST', 0),
+                ('LOAD_CONST', (1, 2, 3)),
+                ('LIST_EXTEND', 1),
+                ('RETURN_VALUE', None),
+            ],
+            '[1, 2, *(), 3]': [
+                ('RESUME', 0),
+                ('BUILD_LIST', 0),
+                ('LOAD_CONST', (1, 2, 3)),
+                ('LIST_EXTEND', 1),
+                ('RETURN_VALUE', None),
+            ],
+            # unoptimized cases
+            '[*(1,)]': [
+                ('RESUME', 0),
+                ('BUILD_LIST', 0),
+                ('LOAD_CONST', (1,)),
+                ('LIST_EXTEND', 1),
+                ('RETURN_VALUE', None),
+            ],
+            '[*(x,)]': [
+                ('RESUME', 0),
+                ('BUILD_LIST', 0),
+                ('LOAD_NAME', 'x'),
+                ('BUILD_TUPLE', 1),
+                ('LIST_EXTEND', 1),
+                ('RETURN_VALUE', None),
+            ],
+        }
+
+        for source, expected in cases.items():
+            with self.subTest(source=source):
+                code = compile(source, '<test>', 'eval')
+                instructions = [
+                    (instruction.opname, instruction.argval)
+                    for instruction in dis.get_instructions(code)
+                ]
+                self.assertEqual(instructions, expected)
 
     def test_imported_load_method(self):
         sources = [
@@ -1833,6 +2035,528 @@ class TestSpecifics(unittest.TestCase):
             compile(src, '<string>', 'exec')
 
 
+# The functions describe_code(), compile_and_describe() and
+# prepare_process_state() are also run in child processes by
+# TestConstantsIdentity: their source is passed to the child, which imports
+# the modules they use.
+
+def describe_code(code):
+    """Describe the constants and the names of a code object.
+
+    The description has their values, which strings are interned, and
+    which of them are the same object: the n-th distinct str, bytes, tuple,
+    frozenset or slice is described once and then referred to
+    as ['ref', n].
+    """
+    code_type = type(code)
+    seen = {}
+    keep = []
+
+    def describe(obj):
+        if isinstance(obj, code_type):
+            return ['code', [describe(getattr(obj, name)) for name in (
+                'co_name', 'co_qualname', 'co_filename', 'co_consts',
+                'co_names', 'co_varnames', 'co_freevars', 'co_cellvars',
+                'co_linetable', 'co_exceptiontable')]]
+        if not isinstance(obj, (str, bytes, tuple, frozenset, slice)):
+            return [type(obj).__name__, repr(obj)]
+        if id(obj) in seen:
+            return ['ref', seen[id(obj)]]
+        seen[id(obj)] = len(seen)
+        keep.append(obj)
+        if isinstance(obj, str):
+            return ['str', obj, sys._is_interned(obj)]
+        if isinstance(obj, bytes):
+            return ['bytes', obj.hex()]
+        if isinstance(obj, tuple):
+            items = obj
+        elif isinstance(obj, frozenset):
+            items = sorted(obj, key=repr)
+        else:
+            items = [obj.start, obj.stop, obj.step]
+        return [type(obj).__name__, [describe(item) for item in items]]
+
+    return describe(code)
+
+
+def compile_and_describe(source, use_ast):
+    """Compile source; return the code object and what depends on identity.
+
+    If use_ast is true, compile an AST in which the set displays are
+    frozenset constants.
+    """
+    if use_ast:
+        class Transformer(ast.NodeTransformer):
+            def visit_Set(self, node):
+                value = frozenset(ast.literal_eval(node))
+                return ast.copy_location(ast.Constant(value), node)
+        source = Transformer().visit(ast.parse(source))
+    # The marshal format also depends on reference counts (gh-156504),
+    # which a collection changes in the free-threaded build.
+    with support.disable_gc():
+        # The result must not depend on the -O option of the process.
+        code = compile(source, '<test>', 'exec', optimize=0)
+        dump = marshal.dumps(code)
+
+    def constants(code):
+        for const in code.co_consts:
+            if isinstance(const, type(code)):
+                yield from constants(const)
+            elif isinstance(const, (frozenset, slice)):
+                yield const
+    consts = list(constants(code))
+    return code, {
+        # the number of frozenset and slice constants,
+        # and the number of distinct objects among them
+        'shared': [len(consts), len(set(map(id, consts)))],
+        'graph': describe_code(code),
+        'dump': dump.hex(),
+    }
+
+
+def prepare_process_state(mode, source, strings, use_ast):
+    """Change the state of the process in a way which must not change
+    the result of compiling source; return what has to be kept alive."""
+    if mode == 'fresh':
+        return None
+    if mode == 'interned':
+        return [sys.intern(s) for s in strings]
+    if mode == 'interned_some':
+        return [sys.intern(s) for s in strings[::2]]
+    if mode == 'name':
+        # The names of a code object are interned and immortal.
+        names = [s for s in strings if s.isidentifier()]
+        return compile('\n'.join(names), '<names>', 'exec', optimize=0)
+    if mode == 'constant':
+        # The constants of a code object are interned while it is alive.
+        return compile(f'x = {strings!r}', '<constants>', 'exec',
+                       optimize=0)
+    if mode == 'compiled':
+        # The same source was compiled and its code object is alive.
+        return compile_and_describe(source, use_ast)[0]
+    raise ValueError(mode)
+
+
+class TestConstantsIdentity(unittest.TestCase):
+    # gh-129724: which constants and names of the code objects created by a
+    # compilation are the same object, and so the output of marshal.dumps(),
+    # must not depend on the state of the process: the strings which are
+    # already interned, or the code which was compiled before.
+
+    @dataclasses.dataclass(frozen=True)
+    class Case:
+        # "ID" in source and in strings is replaced by a prefix which makes
+        # the strings of each case unique, to compile them all in one
+        # process.
+        source: str
+        # The strings to intern before compiling.
+        strings: list[str]
+        # The number of frozenset and slice constants in the code objects,
+        # and the number of distinct objects among them.
+        frozensets_and_slices: int = 0
+        distinct: int = 0
+        # Compile an AST with frozenset constants.  In the free-threaded
+        # build, the constants of code compiled from an AST are also
+        # interned.
+        use_ast: bool = False
+
+    @dataclasses.dataclass(frozen=True)
+    class Job:
+        # What a process compiles: a case with "ID" replaced.
+        key: str
+        source: str
+        strings: list[str]
+        use_ast: bool
+
+    CASES = {
+        'contains_set': Case(
+            source="""
+                def f(x):
+                    if x in {"ID_a", "ID_b"}:
+                        return "f"
+                def g(x):
+                    if x not in {"ID_a", "ID_b"}:
+                        return "g"
+                """,
+            strings=['ID_a', 'ID_b'],
+            frozensets_and_slices=2, distinct=1),
+        'iter_set': Case(
+            source="""
+                def f():
+                    for x in {"ID_a", "ID_b"}:
+                        yield "f"
+                def g():
+                    for x in {"ID_a", "ID_b"}:
+                        yield "g"
+                """,
+            strings=['ID_a', 'ID_b'],
+            frozensets_and_slices=2, distinct=1),
+        'set_display': Case(
+            source="""
+                a = {"ID_a", 2, 3}
+                def f():
+                    b = {"ID_a", 2, 3}
+                """,
+            strings=['ID_a'],
+            frozensets_and_slices=2, distinct=1),
+        'several_sets': Case(
+            source="""
+                def f(x):
+                    if x in {"ID_a", "ID_b", "ID_c"}:
+                        return x in {"ID_0", "ID_1", "ID_2"}
+                def g(x):
+                    return x in {"ID_0", "ID_1", "ID_2"}
+                """,
+            strings=['ID_0', 'ID_a'],
+            frozensets_and_slices=3, distinct=2),
+        'folded_strings_in_set': Case(
+            source="""
+                def f(x):
+                    return "f", x in {"ID_" + "a", "ID_b" * 2}
+                def g(x):
+                    return "g", x in {"ID_" + "a", "ID_b" * 2}
+                """,
+            strings=['ID_a', 'ID_bID_b', 'ID_', 'ID_b'],
+            frozensets_and_slices=2, distinct=1),
+        'tuple_in_set': Case(
+            source="""
+                def f(x):
+                    return "f", x in {("ID_a", "ID_b"), "ID_c"}
+                def g(x):
+                    return "g", x in {("ID_a", "ID_b"), "ID_c"}
+                def h(x):
+                    return "h", x in {("ID_a", ("ID_b",)), 1}
+                def i(x):
+                    return "i", x in {("ID_a", ("ID_b",)), 1}
+                """,
+            strings=['ID_a', 'ID_b', 'ID_c'],
+            frozensets_and_slices=4, distinct=2),
+        'set_in_tuple': Case(
+            source="""
+                def f(x):
+                    return x in {"ID_a", "ID_b"}
+                def g(x):
+                    return (1, x in {"ID_a", "ID_b"})
+                def h(x):
+                    return [x in {"ID_a", "ID_b"}, 2]
+                """,
+            strings=['ID_a', 'ID_b'],
+            frozensets_and_slices=3, distinct=1),
+        # These strings are only interned by the free-threaded build.
+        'not_identifier_strings': Case(
+            source="""
+                def f(x):
+                    return "f", x in {"ID a", "ID-b"}
+                def g(x):
+                    return "g", x in {"ID a", "ID-b"}
+                """,
+            strings=['ID a', 'ID-b'],
+            frozensets_and_slices=2, distinct=1),
+        'tuple': Case(
+            source="""
+                def f():
+                    return "f", ("ID_a", "ID b", ("ID_c", 1.5))
+                def g():
+                    return "g", ("ID_a", "ID b", ("ID_c", 1.5)), "ID_c"
+                """,
+            strings=['ID_a', 'ID b', 'ID_c']),
+        'slice': Case(
+            source="""
+                def f(x):
+                    return "f", x["ID_a":"ID_b"]
+                def g(x):
+                    return "g", x["ID_a":"ID_b"]
+                def h(x):
+                    return "h", x["ID c":"ID-d":2]
+                def i(x):
+                    return "i", x["ID c":"ID-d":2]
+                """,
+            strings=['ID_a', 'ID_b', 'ID c', 'ID-d'],
+            frozensets_and_slices=4, distinct=2),
+        # The strings of the slice are also a name, an attribute
+        # and a constant.
+        'slice_of_names': Case(
+            source="""
+                def f(x):
+                    return x["ID_a":"ID_b":"ID_c"]
+                def g(x, ID_a):
+                    return x["ID_a":"ID_b":"ID_c"].ID_b, "ID_c"
+                """,
+            strings=['ID_a', 'ID_b', 'ID_c'],
+            frozensets_and_slices=2, distinct=1),
+        # The qualified name is a constant of the body of a class.
+        'class_qualname': Case(
+            source="""
+                class ID_A:
+                    class ID_B:
+                        pass
+                def f():
+                    class ID_C:
+                        pass
+                    return "f.<locals>.ID_C"
+                class ID_A:
+                    class ID_B:
+                        pass
+                """,
+            strings=['ID_A.ID_B', 'f.<locals>.ID_C', 'ID_A']),
+        # A private name is mangled by each compilation: the string is new,
+        # unlike the identifiers that the parser interns.  The methods
+        # have the same co_names.
+        'mangled_names': Case(
+            source="""
+                class ID_A:
+                    def f(self):
+                        return self.__x
+                    def g(self):
+                        return [self.__x]
+                """,
+            strings=['_ID_A__x']),
+        # The methods have the same names of local variables.
+        'mangled_varnames': Case(
+            source="""
+                class ID_A:
+                    def f(self, __x):
+                        return __x
+                    def g(self, __x):
+                        return [__x]
+                """,
+            strings=['_ID_A__x']),
+        # The names of the keyword arguments are a constant equal to
+        # the co_names of the function.
+        'kwnames': Case(
+            source="""
+                def f():
+                    return ID_a(ID_a=1)
+                class ID_A:
+                    def f(self):
+                        return self.__x(_ID_A__x=1)
+                """,
+            strings=['ID_a', '_ID_A__x']),
+        # The names to import are a constant equal to the co_names.
+        'fromlist': Case(
+            source="""
+                def f():
+                    from ID_a import ID_a
+                """,
+            strings=['ID_a']),
+        # __static_attributes__ is a constant of the body of the class,
+        # equal to the co_names of the method.
+        'static_attributes': Case(
+            source="""
+                class ID_A:
+                    def f(self):
+                        self.ID_a = 1
+                """,
+            strings=['ID_a']),
+        'ast_constants': Case(
+            source="""
+                def f(x):
+                    return "f", x in {"ID_a", ("ID_b", "ID_c")}
+                def g(x):
+                    return "g", x in {"ID_a", ("ID_b", "ID_c")}
+                """,
+            strings=['ID_a', 'ID_b', 'ID_c'],
+            frozensets_and_slices=2, distinct=1,
+            use_ast=True),
+    }
+
+    @classmethod
+    def jobs(cls, tag):
+        # A Job for each of the cases.  The prefix depends on tag: a
+        # process compiles a source with given strings only once.
+        jobs = []
+        for name, case in cls.CASES.items():
+            prefix = f'gh129724{tag}_{name}'
+            jobs.append(cls.Job(
+                key=f'{tag}:{name}',
+                source=textwrap.dedent(case.source).replace('ID', prefix),
+                strings=[s.replace('ID', prefix) for s in case.strings],
+                use_ast=case.use_ast))
+        return jobs
+
+    @classmethod
+    def run_child(cls, mode, jobs):
+        # Compile the sources of all the jobs in one new process,
+        # each after prepare_process_state(mode, ...).  The jobs are passed
+        # in a file: they can be too long for a command line.
+        with os_helper.temp_dir() as tmpdir:
+            filename = os.path.join(tmpdir, 'jobs.json')
+            with open(filename, 'w', encoding='utf-8') as file:
+                json.dump([dataclasses.asdict(job) for job in jobs], file)
+            rc, out, err = script_helper.assert_python_ok(
+                '-c', cls.child, mode, filename)
+        return json.loads(out)
+
+    @classmethod
+    def setUpClass(cls):
+        cls.child = '\n'.join([
+            textwrap.dedent("""\
+                import ast
+                import json
+                import marshal
+                import sys
+                from test import support
+                """),
+            inspect.getsource(describe_code),
+            inspect.getsource(compile_and_describe),
+            inspect.getsource(prepare_process_state),
+            textwrap.dedent("""\
+                mode = sys.argv[1]
+                keep = []
+                results = {}
+                with open(sys.argv[2], encoding='utf-8') as file:
+                    jobs = json.load(file)
+                for job in jobs:
+                    keep.append(prepare_process_state(
+                        mode, job['source'], job['strings'], job['use_ast']))
+                    code, results[job['key']] = compile_and_describe(
+                        job['source'], job['use_ast'])
+                    keep.append(code)
+                print(json.dumps(results))
+                """)])
+        # The reference: what a process which did nothing else gives.
+        # The tags are for the tests in child processes, and for each of
+        # the tests in this process.
+        cls.fresh = cls.run_child(
+            'fresh', cls.jobs('c') + cls.jobs('t') + cls.jobs('i'))
+
+    def check(self, key, result):
+        fresh = self.fresh[key]
+        self.assertEqual(result['shared'], fresh['shared'])
+        self.assertEqual(result['graph'], fresh['graph'])
+        self.assertEqual(result['dump'], fresh['dump'])
+
+    def check_child(self, mode):
+        jobs = self.jobs('c')
+        results = self.run_child(mode, jobs)
+        for job in jobs:
+            with self.subTest(job.key):
+                self.check(job.key, results[job.key])
+
+    def test_fresh(self):
+        # equal constants are the same object
+        for name, case in self.CASES.items():
+            with self.subTest(name):
+                self.assertEqual(self.fresh[f'c:{name}']['shared'],
+                                 [case.frozensets_and_slices, case.distinct])
+
+    def test_interned(self):
+        self.check_child('interned')
+
+    def test_interned_some(self):
+        self.check_child('interned_some')
+
+    def test_name(self):
+        self.check_child('name')
+
+    def test_constant(self):
+        self.check_child('constant')
+
+    def test_compiled(self):
+        self.check_child('compiled')
+
+    def test_same_process_compiled_twice(self):
+        # Compile twice in this process, which has done many other things,
+        # and keep the first code object alive.
+        for job in self.jobs('t'):
+            with self.subTest(job.key):
+                first_code, first = compile_and_describe(job.source,
+                                                         job.use_ast)
+                second_code, second = compile_and_describe(job.source,
+                                                           job.use_ast)
+                self.check(job.key, first)
+                self.check(job.key, second)
+
+    def test_same_process_interned(self):
+        for job in self.jobs('i'):
+            with self.subTest(job.key):
+                keep = prepare_process_state('interned', job.source,
+                                             job.strings, job.use_ast)
+                code, result = compile_and_describe(job.source, job.use_ast)
+                self.check(job.key, result)
+
+    def test_names_tuples(self):
+        # Code objects with equal names share one tuple, and a constant
+        # equal to the names is that same tuple, whatever was compiled
+        # before.  The mangled names are new strings in each compilation.
+        source = textwrap.dedent("""
+            class gh129724_names_A:
+                def f(self):
+                    return self.__x
+                def g(self):
+                    return [self.__x]
+                def kwnames(self):
+                    return self.__y(_gh129724_names_A__y=1)
+            def fromlist():
+                from gh129724_names_m import gh129724_names_m
+            class gh129724_names_B:
+                def static_attribute(self):
+                    self.gh129724_names_s = 1
+            """)
+        def code_constants(code):
+            return [const for const in code.co_consts
+                    if isinstance(const, types.CodeType)]
+        keep = []
+        for attempt in range(2):
+            with self.subTest(attempt=attempt):
+                code = compile(source, '<test>', 'exec', optimize=0)
+                keep.append(code)
+                body_a, fromlist, body_b = code_constants(code)
+                f, g, kwnames = code_constants(body_a)
+                static_attribute, = code_constants(body_b)
+                self.assertEqual(f.co_names, ('_gh129724_names_A__x',))
+                self.assertIs(f.co_names, g.co_names)
+                for names, consts in [
+                    (kwnames.co_names, kwnames.co_consts),
+                    (fromlist.co_names, fromlist.co_consts),
+                    # __static_attributes__
+                    (static_attribute.co_names, body_b.co_consts),
+                ]:
+                    self.assertEqual(len(names), 1)
+                    self.assertTrue(any(const is names for const in consts))
+
+    @support.cpython_only
+    def test_slice_strings(self):
+        # The strings of a slice constant are interned like the other
+        # constants, in all builds, and a slice with an equal name or
+        # constant has that same string, whatever was compiled before.
+        source = textwrap.dedent("""
+            def f(x):
+                return x["gh129724_slice_a":"gh129724 slice b"]
+            def g(x, gh129724_slice_a):
+                return x["gh129724_slice_a":"gh129724 slice b"]
+            def h(x):
+                y = x["gh129724_slice_a":"gh129724 slice b"]
+                return y.gh129724_slice_a
+            def i(x):
+                y = x["gh129724_slice_a":"gh129724 slice b"]
+                return y, "gh129724_slice_a"
+            """)
+        def slice_constant(code):
+            const, = [const for const in code.co_consts
+                      if isinstance(const, slice)]
+            return const
+        keep = []
+        for attempt in range(2):
+            with self.subTest(attempt=attempt):
+                code = compile(source, '<test>', 'exec', optimize=0)
+                keep.append(code)
+                f, g, h, i = [const for const in code.co_consts
+                              if isinstance(const, types.CodeType)]
+                const = slice_constant(f)
+                self.assertEqual(const.start, 'gh129724_slice_a')
+                self.assertEqual(const.stop, 'gh129724 slice b')
+                self.assertTrue(sys._is_interned(const.start))
+                # Only the free-threaded build interns all the strings.
+                self.assertEqual(sys._is_interned(const.stop),
+                                 support.Py_GIL_DISABLED)
+                for other in g, h, i:
+                    self.assertIs(slice_constant(other), const)
+                self.assertIs(g.co_varnames[1], const.start)
+                self.assertIs(h.co_names[0], const.start)
+                self.assertTrue(any(c is const.start for c in i.co_consts))
+
+
 class TestBooleanExpression(unittest.TestCase):
     class Value:
         def __init__(self):
@@ -2063,7 +2787,7 @@ class TestSourcePositions(unittest.TestCase):
 
     def test_multiline_list_comprehension(self):
         snippet = textwrap.dedent("""\
-            [(x,
+            _ = [(x,
                 2*x)
                 for x
                 in [1,2,3] if (x > 0
@@ -2073,14 +2797,14 @@ class TestSourcePositions(unittest.TestCase):
         compiled_code, _ = self.check_positions_against_ast(snippet)
         self.assertIsInstance(compiled_code, types.CodeType)
         self.assertOpcodeSourcePositionIs(compiled_code, 'LIST_APPEND',
-            line=1, end_line=2, column=1, end_column=8, occurrence=1)
+            line=1, end_line=2, column=5, end_column=8, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
-            line=1, end_line=2, column=1, end_column=8, occurrence=1)
+            line=1, end_line=2, column=5, end_column=8, occurrence=1)
 
     def test_multiline_async_list_comprehension(self):
         snippet = textwrap.dedent("""\
             async def f():
-                [(x,
+                _ = [(x,
                     2*x)
                     async for x
                     in [1,2,3] if (x > 0
@@ -2093,11 +2817,11 @@ class TestSourcePositions(unittest.TestCase):
         compiled_code = g['f'].__code__
         self.assertIsInstance(compiled_code, types.CodeType)
         self.assertOpcodeSourcePositionIs(compiled_code, 'LIST_APPEND',
-            line=2, end_line=3, column=5, end_column=12, occurrence=1)
+            line=2, end_line=3, column=9, end_column=12, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
-            line=2, end_line=3, column=5, end_column=12, occurrence=1)
+            line=2, end_line=3, column=9, end_column=12, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE',
-            line=2, end_line=7, column=4, end_column=36, occurrence=1)
+            line=2, end_line=2, column=4, end_column=5, occurrence=1)
 
     def test_multiline_set_comprehension(self):
         snippet = textwrap.dedent("""\
@@ -2369,7 +3093,10 @@ class TestSourcePositions(unittest.TestCase):
         source = "del (\n lhs  \n   .    \n     rhs      \n       )"
         code = compile(source, "<test>", "exec")
         self.assertOpcodeSourcePositionIs(
-            code, "DELETE_ATTR", line=4, end_line=4, column=5, end_column=8
+            code, "PUSH_NULL", line=4, end_line=4, column=5, end_column=8
+        )
+        self.assertOpcodeSourcePositionIs(
+            code, "STORE_ATTR", line=4, end_line=4, column=5, end_column=8
         )
 
     def test_attribute_load(self):

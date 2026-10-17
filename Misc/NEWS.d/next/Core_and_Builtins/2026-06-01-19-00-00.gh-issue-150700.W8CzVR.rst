@@ -1,3 +1,0 @@
-Fix a :exc:`SystemError` when compiling a class-scope comprehension containing
-a ``lambda`` that references ``__class__``, ``__classdict__``, or
-``__conditional_annotations__``. Patch by Bartosz Sławecki.

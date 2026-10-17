@@ -109,6 +109,16 @@ def test_block_add_hook_baseexception():
                 pass
 
 
+def test_block_add_hook_valueerror():
+    # Non-RuntimeError exceptions (like ValueError) should propagate out
+    with assertRaises(ValueError):
+        with TestHook(
+            raise_on_events="sys.addaudithook", exc_type=ValueError
+        ) as hook1:
+            with TestHook() as hook2:
+                pass
+
+
 def test_marshal():
     import marshal
     o = ("a", "b", "c", 1, 2, 3)
