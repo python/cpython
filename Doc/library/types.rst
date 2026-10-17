@@ -89,10 +89,12 @@ Dynamic Type Creation
     (following the mechanisms laid out in :pep:`560`). This is useful for
     introspecting :ref:`Generics <user-defined-generics>`.
 
-    For classes that have an ``__orig_bases__`` attribute, this
-    function returns the value of ``cls.__orig_bases__``.
-    For classes without the ``__orig_bases__`` attribute,
-    :attr:`cls.__bases__ <type.__bases__>` is returned.
+    If ``__orig_bases__`` is defined in the namespace of *cls* itself, this
+    function returns its value.  Otherwise,
+    :attr:`cls.__bases__ <type.__bases__>` is returned.  Unlike accessing
+    ``cls.__orig_bases__`` directly, this function never returns an
+    ``__orig_bases__`` attribute inherited from a base class, so the result
+    always describes the bases of *cls* and not those of one of its ancestors.
 
     Examples::
 
@@ -101,12 +103,17 @@ Dynamic Type Creation
         T = TypeVar("T")
         class Foo(Generic[T]): ...
         class Bar(Foo[int], float): ...
+        class Ham(Bar): ...
         class Baz(list[str]): ...
         Eggs = NamedTuple("Eggs", [("a", int), ("b", str)])
         Spam = TypedDict("Spam", {"a": int, "b": str})
 
         assert Bar.__bases__ == (Foo, float)
         assert get_original_bases(Bar) == (Foo[int], float)
+
+        assert Ham.__orig_bases__ == (Foo[int], float)  # inherited from Bar
+        assert Ham.__bases__ == (Bar,)
+        assert get_original_bases(Ham) == (Bar,)
 
         assert Baz.__bases__ == (list,)
         assert get_original_bases(Baz) == (list[str],)
