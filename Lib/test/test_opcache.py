@@ -5,9 +5,11 @@ import dis
 import threading
 import types
 import unittest
+import weakref
 from test.support import (threading_helper, check_impl_detail,
-                          requires_specialization,
-                          cpython_only, requires_jit_disabled, reset_code)
+                          requires_specialization, Py_GIL_DISABLED,
+                          cpython_only, requires_jit_disabled, reset_code,
+                          gc_collect)
 from test.support.import_helper import import_module
 
 # Skip this module on other interpreters, it is cpython specific:
@@ -2322,6 +2324,38 @@ class TestSpecializer(TestBase):
         load_enum_member()
         self.assert_specialized(load_enum_member,
                                 "LOAD_ATTR_CLASS_WITH_METACLASS_CHECK")
+
+    @cpython_only
+    @requires_specialization
+    @unittest.skipUnless(Py_GIL_DISABLED,
+                         "deferred refcounting needs the free-threaded build")
+    @threading_helper.requires_working_threading()
+    def test_load_attr_class_mutable_value_deferred_non_owning_threading(self):
+        # Ensure load attributes from class mutable values
+        # are still enabled for deferred referencing
+        # counting from a non owning thread
+        class Value:
+            pass
+
+        class Holder:
+            attr = Value()
+
+        value = Holder.attr
+        wr = weakref.ref(value)
+
+        def load_class_attr():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                x = Holder.attr
+                assert x is value
+
+        # Ensure we specialise from a non owning thread
+        threading_helper.run_concurrently(load_class_attr, nthreads=1)
+        self.assert_no_opcode(load_class_attr, "LOAD_ATTR_CLASS")
+        self.assertTrue(_testinternalcapi.has_deferred_refcount(value))
+
+        del load_class_attr, Holder, value
+        gc_collect()
+        self.assertIsNone(wr())
 
 
 if __name__ == "__main__":
