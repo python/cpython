@@ -1,0 +1,2 @@
+Improve attribute access performance for instances whose ``__dict__`` has
+been replaced.
