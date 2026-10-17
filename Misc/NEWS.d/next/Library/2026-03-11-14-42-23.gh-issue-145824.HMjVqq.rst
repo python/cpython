@@ -1,0 +1,3 @@
+:func:`email.utils.collapse_rfc2231_value` now raises :exc:`TypeError`
+instead of :exc:`AttributeError` when called with a value that is neither a
+string nor a 3-tuple.
