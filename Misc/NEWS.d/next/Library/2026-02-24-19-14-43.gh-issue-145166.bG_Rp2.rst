@@ -1,0 +1,4 @@
+Fix crash in :meth:`datetime.tzinfo.fromutc` and
+:meth:`datetime.datetime.utctimetuple` when a
+:class:`~datetime.datetime` subclass ``__new__`` returns a non-datetime
+object. A :exc:`TypeError` is now raised instead.
