@@ -1,0 +1,2 @@
+Avoid reacquiring the source dictionary lock when copying a sparse dictionary
+in the free-threaded build.
