@@ -591,6 +591,14 @@ class StreamTests(test_utils.TestCase):
         stream.set_exception(exc)
         self.assertIs(stream.exception(), exc)
 
+        # Raised even when the data is already buffered.
+        stream.feed_data(b'line\n')
+        self.assertRaises(
+            ValueError, self.loop.run_until_complete, stream.readline())
+        self.assertRaises(
+            ValueError, self.loop.run_until_complete, stream.readuntil())
+        self.assertEqual(b'line\n', stream._buffer)
+
     def test_exception_waiter(self):
         stream = asyncio.StreamReader(loop=self.loop)
 
