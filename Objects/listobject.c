@@ -16,6 +16,7 @@
 #include "pycore_stackref.h"      // _Py_TryIncrefCompareStackRef()
 #include "pycore_tuple.h"         // _PyTuple_FromArraySteal()
 #include "pycore_typeobject.h"    // _Py_TYPE_VERSION_LIST
+#include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 #include <stddef.h>
 
 /*[clinic input]
@@ -707,17 +708,80 @@ list_length(PyObject *a)
     return PyList_GET_SIZE(a);
 }
 
+static inline PyTypeObject *
+list_fast_eq_type(PyObject *value)
+{
+    if (value != NULL) {
+        PyTypeObject *type = Py_TYPE(value);
+        if (type == &PyLong_Type || type == &PyFloat_Type ||
+            type == &PyUnicode_Type) {
+            return type;
+        }
+    }
+    return NULL;
+}
+
+static inline int
+list_item_eq(PyObject *item, PyObject *value, PyTypeObject *fast_type)
+{
+    if (fast_type != NULL && Py_TYPE(item) == fast_type) {
+        int res;
+        if (item == value) {
+            return 1;
+        }
+        if (fast_type == &PyLong_Type) {
+            PyLongObject *v = (PyLongObject *)item;
+            PyLongObject *w = (PyLongObject *)value;
+            if (!_PyLong_BothAreCompact(v, w)) {
+                return PyObject_RichCompareBool(item, value, Py_EQ);
+            }
+            res = _PyLong_CompactValue(v) == _PyLong_CompactValue(w);
+        }
+        else if (fast_type == &PyFloat_Type) {
+            res = PyFloat_AS_DOUBLE(item) == PyFloat_AS_DOUBLE(value);
+        }
+        else {
+            assert(fast_type == &PyUnicode_Type);
+            res = _PyUnicode_Equal(item, value);
+        }
+        assert(res == PyObject_RichCompareBool(item, value, Py_EQ));
+        return res;
+    }
+    return PyObject_RichCompareBool(item, value, Py_EQ);
+}
+
+static Py_NO_INLINE int
+list_contains_generic(PyListObject *a, PyObject *el)
+{
+    for (Py_ssize_t i = 0; ; i++) {
+        PyObject *item = list_get_item_ref(a, i);
+        if (item == NULL) {
+            // out-of-bounds
+            return 0;
+        }
+        int cmp = PyObject_RichCompareBool(item, el, Py_EQ);
+        Py_DECREF(item);
+        if (cmp != 0) {
+            return cmp;
+        }
+    }
+    return 0;
+}
+
 static int
 list_contains(PyObject *aa, PyObject *el)
 {
-
+    PyTypeObject *fast_type = list_fast_eq_type(el);
+    if (fast_type == NULL) {
+        return list_contains_generic((PyListObject *)aa, el);
+    }
     for (Py_ssize_t i = 0; ; i++) {
         PyObject *item = list_get_item_ref((PyListObject *)aa, i);
         if (item == NULL) {
             // out-of-bounds
             return 0;
         }
-        int cmp = PyObject_RichCompareBool(item, el, Py_EQ);
+        int cmp = list_item_eq(item, el, fast_type);
         Py_DECREF(item);
         if (cmp != 0) {
             return cmp;
