@@ -5060,7 +5060,7 @@ dummy_func(
             EXIT_IF(total_args != 2);
             PyObject *self = PyStackRef_AsPyObjectBorrow(
                 PyStackRef_IsNull(self_or_null) ? args[0] : self_or_null);
-            EXIT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
+            EXIT_IF(!PyObject_TypeCheck(self, method->d_common.d_type));
         }
 
          op(_CALL_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- res, c, s, a)) {
@@ -5137,7 +5137,7 @@ dummy_func(
             }
             EXIT_IF(total_args == 0);
             PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
-            EXIT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
+            EXIT_IF(!PyObject_TypeCheck(self, method->d_common.d_type));
         }
 
         op(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
@@ -5211,7 +5211,7 @@ dummy_func(
             EXIT_IF(total_args != 1);
             PyObject *self = PyStackRef_AsPyObjectBorrow(
                 PyStackRef_IsNull(self_or_null) ? args[0] : self_or_null);
-            EXIT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
+            EXIT_IF(!PyObject_TypeCheck(self, method->d_common.d_type));
         }
 
         op(_CALL_METHOD_DESCRIPTOR_NOARGS, (callable, self_or_null, args[oparg] -- res, c, s)) {
@@ -5281,7 +5281,7 @@ dummy_func(
             EXIT_IF(total_args == 0);
             PyObject *self = PyStackRef_AsPyObjectBorrow(
                 PyStackRef_IsNull(self_or_null) ? args[0] : self_or_null);
-            EXIT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
+            EXIT_IF(!PyObject_TypeCheck(self, method->d_common.d_type));
         }
 
         op(_CALL_METHOD_DESCRIPTOR_FAST, (callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {

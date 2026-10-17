@@ -4061,7 +4061,7 @@
                 }
                 PyObject *self = PyStackRef_AsPyObjectBorrow(
                     PyStackRef_IsNull(self_or_null) ? args[0] : self_or_null);
-                if (!Py_IS_TYPE(self, method->d_common.d_type)) {
+                if (!PyObject_TypeCheck(self, method->d_common.d_type)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
@@ -4182,7 +4182,7 @@
                     JUMP_TO_PREDICTED(CALL);
                 }
                 PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
-                if (!Py_IS_TYPE(self, method->d_common.d_type)) {
+                if (!PyObject_TypeCheck(self, method->d_common.d_type)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
@@ -4305,7 +4305,7 @@
                 }
                 PyObject *self = PyStackRef_AsPyObjectBorrow(
                     PyStackRef_IsNull(self_or_null) ? args[0] : self_or_null);
-                if (!Py_IS_TYPE(self, method->d_common.d_type)) {
+                if (!PyObject_TypeCheck(self, method->d_common.d_type)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
@@ -4429,7 +4429,7 @@
                 }
                 PyObject *self = PyStackRef_AsPyObjectBorrow(
                     PyStackRef_IsNull(self_or_null) ? args[0] : self_or_null);
-                if (!Py_IS_TYPE(self, method->d_common.d_type)) {
+                if (!PyObject_TypeCheck(self, method->d_common.d_type)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);

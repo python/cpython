@@ -19272,7 +19272,7 @@
             }
             PyObject *self = PyStackRef_AsPyObjectBorrow(
                 PyStackRef_IsNull(self_or_null) ? args[0] : self_or_null);
-            if (!Py_IS_TYPE(self, method->d_common.d_type)) {
+            if (!PyObject_TypeCheck(self, method->d_common.d_type)) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -19479,7 +19479,7 @@
                 JUMP_TO_JUMP_TARGET();
             }
             PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
-            if (!Py_IS_TYPE(self, method->d_common.d_type)) {
+            if (!PyObject_TypeCheck(self, method->d_common.d_type)) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -19623,7 +19623,7 @@
             }
             PyObject *self = PyStackRef_AsPyObjectBorrow(
                 PyStackRef_IsNull(self_or_null) ? args[0] : self_or_null);
-            if (!Py_IS_TYPE(self, method->d_common.d_type)) {
+            if (!PyObject_TypeCheck(self, method->d_common.d_type)) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -19753,7 +19753,7 @@
             }
             PyObject *self = PyStackRef_AsPyObjectBorrow(
                 PyStackRef_IsNull(self_or_null) ? args[0] : self_or_null);
-            if (!Py_IS_TYPE(self, method->d_common.d_type)) {
+            if (!PyObject_TypeCheck(self, method->d_common.d_type)) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();

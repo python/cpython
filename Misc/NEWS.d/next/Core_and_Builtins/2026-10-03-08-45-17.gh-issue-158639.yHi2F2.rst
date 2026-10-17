@@ -1,0 +1,5 @@
+Fix specialization of calls to C methods inherited from built-in types when
+the receiver is an instance of a subclass, such as
+:class:`~collections.defaultdict` or a :func:`~collections.namedtuple`. The
+specialized ``CALL_METHOD_DESCRIPTOR_*`` instructions previously failed their
+guard on every such call and fell back to the generic call path.

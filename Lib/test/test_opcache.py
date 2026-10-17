@@ -38,6 +38,43 @@ class TestBase(unittest.TestCase):
         opnames = {instruction.opname for instruction in instructions}
         self.assertNotIn(opname, opnames)
 
+    def adaptive_counters(self, f):
+        """Map each specialized instruction in f to its adaptive counter."""
+        counters = {}
+        for instruction in dis.get_instructions(f, adaptive=True):
+            if instruction.opname == instruction.baseopname:
+                continue
+            if instruction.baseopname in ("RESUME", "JUMP_BACKWARD"):
+                continue
+            cache = {name: data for name, _, data in instruction.cache_info}
+            if "counter" in cache:
+                counters[instruction.offset] = (instruction.opname,
+                                                cache["counter"])
+        return counters
+
+    def assert_specialization_stable(self, f, *args, calls=10):
+        """Assert that no specialized instruction in f misses its guard.
+
+        A guard miss advances the instruction's adaptive counter.  f should
+        have a fresh code object (see reset_code()), otherwise leftover
+        specializations from earlier runs can show up as misses.
+        """
+        before = self.adaptive_counters(f)
+        self.assertTrue(before, f"{f.__qualname__} has no specialized "
+                                "instructions")
+        for _ in range(calls):
+            f(*args)
+        after = self.adaptive_counters(f)
+        # Ignore instructions that only specialize during these calls.
+        moved = []
+        for off, (op, counter) in before.items():
+            if after.get(off) != (op, counter):
+                now = after[off][1] if off in after else "unspecialized"
+                moved.append(f"{op} at offset {off}: counter {counter} -> {now}")
+        self.assertEqual(moved, [],
+                         f"specialized instructions in {f.__qualname__} "
+                         f"missed their guard during {calls} calls")
+
 
 class TestLoadSuperAttrCache(unittest.TestCase):
     def test_descriptor_not_double_executed_on_spec_fail(self):
@@ -2156,6 +2193,7 @@ class TestSpecializer(TestBase):
             for _ in r:
                 l.append(1)
 
+        reset_code(list_append)
         list_append([])
         self.assert_specialized(list_append, "CALL_LIST_APPEND")
         self.assert_no_opcode(list_append, "CALL_METHOD_DESCRIPTOR_O")
@@ -2166,10 +2204,45 @@ class TestSpecializer(TestBase):
                 l.append(1)
 
         class MyList(list): pass
-        my_list_append(MyList())
+        my_list = MyList()
+        reset_code(my_list_append)
+        my_list_append(my_list)
         self.assert_specialized(my_list_append, "CALL_METHOD_DESCRIPTOR_O")
         self.assert_no_opcode(my_list_append, "CALL_LIST_APPEND")
         self.assert_no_opcode(my_list_append, "CALL")
+        self.assert_specialization_stable(my_list_append, my_list)
+
+    @cpython_only
+    @requires_specialization
+    @requires_jit_disabled
+    def test_call_method_descriptor_subclass_instance(self):
+        # C methods inherited from a built-in type must not miss
+        # their guard on subclass instances.  One case per guard, plus unbound.
+        class MyStr(str): pass
+        Point = collections.namedtuple("Point", "x y")
+        counts = collections.defaultdict(int, {1: 2})
+
+        def noargs(s): return s.upper()
+        def o(p): return p.count(1)
+        def fast(d): return d.get(1)
+        def fast_with_keywords(s): return s.split()
+        def unbound(d): return dict.get(d, 1)
+
+        cases = [
+            (noargs, MyStr("abc"), "CALL_METHOD_DESCRIPTOR_NOARGS"),
+            (o, Point(1, 2), "CALL_METHOD_DESCRIPTOR_O"),
+            (fast, counts, "CALL_METHOD_DESCRIPTOR_FAST"),
+            (fast_with_keywords, MyStr("a b"),
+             "CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS"),
+            (unbound, counts, "CALL_METHOD_DESCRIPTOR_FAST"),
+        ]
+        for f, obj, opname in cases:
+            with self.subTest(f=f.__name__, obj=type(obj).__name__):
+                reset_code(f)
+                for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                    f(obj)
+                self.assert_specialized(f, opname)
+                self.assert_specialization_stable(f, obj)
 
     @cpython_only
     @requires_specialization
