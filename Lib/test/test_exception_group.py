@@ -1,6 +1,7 @@
 import collections
 import types
 import unittest
+from test import support
 from test.support import (skip_emscripten_stack_overflow,
                           skip_wasi_stack_overflow, run_with_limited_c_stack,
                           exceeds_recursion_limit)
@@ -129,6 +130,15 @@ class InstanceCreation(unittest.TestCase):
         self.assertIs(
             type(MyBEG("eg", [ValueError(12), KeyboardInterrupt(42)])),
             MyBEG)
+
+    @support.nomemtest
+    def test_no_memory(self):
+        import _testcapi
+        # A tuple of exceptions is not copied, so the first allocation
+        # is the one of the exception group itself.
+        excs = (ValueError(1),)
+        with self.assertRaises(MemoryError):
+            _testcapi.call_with_nomemory(0, 0, ExceptionGroup, "eg", excs)
 
 
 class StrAndReprTests(unittest.TestCase):
