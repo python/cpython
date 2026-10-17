@@ -84,9 +84,9 @@ clear_weakref_lock_held(PyWeakReference *self, PyObject **callback)
             /* If 'self' is the end of the list (and thus self->wr_next ==
                NULL) then the weakref list itself (and thus the value of *list)
                will end up being set to NULL. */
-            FT_ATOMIC_STORE_PTR(*list, self->wr_next);
+            FT_ATOMIC_STORE_PTR_RELEASE(*list, self->wr_next);
         }
-        FT_ATOMIC_STORE_PTR(self->wr_object, Py_None);
+        FT_ATOMIC_STORE_PTR_RELEASE(self->wr_object, Py_None);
         if (self->wr_prev != NULL) {
             self->wr_prev->wr_next = self->wr_next;
         }
