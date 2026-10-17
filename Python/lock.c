@@ -8,14 +8,6 @@
 #include "pycore_time.h"          // _PyTime_Add()
 #include "pycore_stats.h"         // FT_STAT_MUTEX_SLEEP_INC()
 
-#ifdef MS_WINDOWS
-#  ifndef WIN32_LEAN_AND_MEAN
-#    define WIN32_LEAN_AND_MEAN
-#  endif
-#  include <windows.h>            // SwitchToThread()
-#elif defined(HAVE_SCHED_H)
-#  include <sched.h>              // sched_yield()
-#endif
 
 // If a thread waits on a lock for longer than TIME_TO_BE_FAIR_NS (1 ms), then
 // the unlocking thread directly hands off ownership of the lock. This avoids
@@ -39,16 +31,6 @@ struct mutex_entry {
     // Set to 1 if the lock was handed off. Written by the unlocking thread.
     int handed_off;
 };
-
-void
-_Py_yield(void)
-{
-#ifdef MS_WINDOWS
-    SwitchToThread();
-#elif defined(HAVE_SCHED_H)
-    sched_yield();
-#endif
-}
 
 PyLockStatus
 _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
