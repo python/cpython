@@ -1,4 +1,5 @@
 import pickle
+import re
 import unittest
 from collections.abc import Iterator, Iterable
 from string.templatelib import Template, Interpolation, convert
@@ -100,6 +101,46 @@ world"""
         age = 0
         t = t'Hello, {name}, {age} from {country}'
         self.assertEqual(t.values, ("Lys", 0, "GR"))
+
+    def check_repr(self, template, source):
+        """
+        Check that the repr of 'template' consists of the class name, 'source'
+        (the source-like part of the repr, including the 't' prefix and the
+        quotes) and the id of the template.
+        """
+        self.assertRegex(
+            repr(template),
+            rf'^<Template {re.escape(source)} at 0x[0-9A-Fa-f]+>$')
+
+    def test_repr(self):
+        self.check_repr(t'', """t''""")
+        self.check_repr(t'foo', """t'foo'""")
+
+        # Test various combination for present/absent conversion and format_spec
+        x = 42
+        self.check_repr(t'{x}', """t'{x=42}'""")
+        self.check_repr(t'{x!r}', """t'{x!r=42}'""")
+        self.check_repr(t'{x:02}', """t'{x:02=42}'""")
+        self.check_repr(t'a{x!r:02}b', """t'a{x!r:02=42}b'""")
+
+        # Braces in the literal parts have to be doubled
+        self.check_repr(t'{{a}}{x}', """t'{{a}}{x=42}'""")
+
+        # The literal parts are escaped like in a string repr, and the quote
+        # is chosen the same way
+        self.check_repr(t'a\n{x}', """t'a\\n{x=42}'""")
+        self.check_repr(t'"a"{x}', """t'"a"{x=42}'""")
+        self.check_repr(t"'a'{x}", '''t"'a'{x=42}"''')
+        self.check_repr(t'\'a\'"b"{x}', """t'\\'a\\'"b"{x=42}'""")
+
+        # Test a "recursive" template
+        x = []
+        t = t'a{x}b'
+        x.append(t)
+        self.assertRegex(
+            repr(t),
+            r"^<Template t'a\{x=\[<Template \.\.\. at 0x[0-9A-Fa-f]+>\]\}b' "
+            r"at 0x[0-9A-Fa-f]+>$")
 
     def test_pickle_template(self):
         user = 'test'
