@@ -1123,10 +1123,6 @@ faster than when interpreted.  If you are confident in your C programming
 skills, you can also :ref:`write a C extension module <extending-index>`
 yourself.
 
-.. seealso::
-   The wiki page devoted to `performance tips
-   <https://wiki.python.org/moin/PythonSpeed/PerformanceTips>`_.
-
 
 .. _efficient_string_concatenation:
 

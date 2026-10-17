@@ -54,10 +54,6 @@ test runner
       Third-party unittest framework with a lighter-weight syntax for writing
       tests.  For example, ``assert func(10) == 42``.
 
-   `The Python Testing Tools Taxonomy <https://wiki.python.org/moin/PythonTestingToolsTaxonomy>`_
-      An extensive list of Python testing tools including functional testing
-      frameworks and mock object libraries.
-
    `Testing in Python Mailing List <http://lists.idyll.org/listinfo/testing-in-python>`_
       A special-interest-group for discussion of testing, and testing tools,
       in Python.
