@@ -1029,6 +1029,51 @@ class BasicSocketTests(unittest.TestCase):
                 self.assertEqual(s.recv(0), b"")
                 self.assertEqual(s.send(b""), 0)
 
+    def test_write_with_stale_error_queue(self):
+        client_socket, server_socket = socket.socketpair()
+        self.addCleanup(client_socket.close)
+        self.addCleanup(server_socket.close)
+        client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 16384)
+        client_socket.setblocking(False)
+        server_socket.setblocking(False)
+        client_context, server_context, hostname = testing_context()
+        client = self.enterContext(client_context.wrap_socket(
+            client_socket, server_hostname=hostname,
+            do_handshake_on_connect=False))
+        server = self.enterContext(server_context.wrap_socket(
+            server_socket, server_side=True, do_handshake_on_connect=False))
+
+        pending = [client, server]
+        for _ in support.busy_retry(support.LOOPBACK_TIMEOUT):
+            for conn in pending[:]:
+                try:
+                    conn.do_handshake()
+                except (ssl.SSLWantReadError, ssl.SSLWantWriteError):
+                    pass
+                else:
+                    pending.remove(conn)
+            if not pending:
+                break
+
+        # Settle the post-handshake state before testing the write.
+        with self.assertRaises(ssl.SSLWantReadError):
+            client.read(1)
+
+        # The peer does not read, so fill the socket's send buffer.
+        data = b'x' * 16384
+        for _ in range(256):
+            try:
+                client.write(data)
+            except ssl.SSLWantWriteError:
+                break
+        else:
+            self.fail("could not fill the socket's send buffer")
+
+        with self.assertRaises(ValueError):
+            _ssl.nid2obj(9999999)
+        with self.assertRaises(ssl.SSLWantWriteError):
+            client.write(data)
+
 
 class ContextTests(unittest.TestCase):
 
@@ -2269,6 +2314,45 @@ class SSLObjectTests(unittest.TestCase):
         # raise either.
         c_in.write(s_out.read())
         client.unwrap()
+
+    def test_read_with_stale_error_queue(self):
+        # gh-148594: SSL_get_error() checks the thread's OpenSSL error queue
+        # before the state of the SSL object.  An error left in the queue by
+        # an earlier, unrelated call made a read that would block raise
+        # SSLError or OSError instead of SSLWantReadError.
+        client_context, server_context, hostname = testing_context()
+        client, *_ = connected_bio_pair(client_context, server_context,
+                                        hostname)
+        # The first read processes the post-handshake messages, which clears
+        # the queue by itself, so read once before leaving errors in it.
+        with self.assertRaises(ssl.SSLWantReadError):
+            client.read(1)
+
+        # Each of these calls fails and leaves its error in the queue.
+        failing_calls = [
+            (ValueError, _ssl.nid2obj, 9999999),
+            (ValueError, _ssl.txt2obj, 'bogus'),
+            (ssl.SSLError, _ssl._test_decode_cert, NONEXISTINGCERT),
+        ]
+        for exc_type, func, arg in failing_calls:
+            with self.subTest(func=func.__name__):
+                with self.assertRaises(exc_type):
+                    func(arg)
+                with self.assertRaises(ssl.SSLWantReadError):
+                    client.read(1)
+
+    def test_unwrap_with_stale_error_queue(self):
+        client_context, server_context, hostname = testing_context()
+        client, *_ = connected_bio_pair(client_context, server_context,
+                                        hostname)
+        with self.assertRaises(ssl.SSLWantReadError):
+            client.read(1)
+
+        with self.assertRaises(ValueError):
+            _ssl.nid2obj(9999999)
+        # The peer has not sent close_notify, so shutdown must wait for it.
+        with self.assertRaises(ssl.SSLWantReadError):
+            client.unwrap()
 
     def test_sni_callback_context_released_and_callback_raises(self):
         # Variant of the test below without a HelloRetryRequest: the callback
