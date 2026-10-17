@@ -3424,6 +3424,7 @@ sock_setsockopt(PyObject *self, PyObject *args)
             PyErr_Format(PyExc_TypeError,
                          "setsockopt() argument 3 for AF_VSOCK must be an int (got %T)",
                          optval);
+            return NULL;
         }
         uint64_t vflag; // Must be set width of 64 bits
         /* setsockopt(level, opt, flag) */
