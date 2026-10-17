@@ -84,14 +84,27 @@ write back the modified script.
 
 .. function:: untokenize(iterable)
 
-    Converts tokens back into Python source code.  The *iterable* must return
-    sequences with at least two elements, the token type and the token string.
-    Any additional sequence elements are ignored.
+    Converts tokens back into Python source code.
 
-    The result is guaranteed to tokenize back to match the input so that the
-    conversion is lossless and round-trips are assured.  The guarantee applies
-    only to the token type and token string as the spacing between tokens
-    (column positions) may change.
+    The *iterable* should return sequences with either two or five elements:
+
+    - If *iterable* returns sequences with two elements ``(type, string)``,
+      the result will tokenize back to the same token types and strings as
+      the input, but the resulting output is poor.
+
+    - If *iterable* returns sequences with five elements
+      ``(type, string, start, end, line)``,
+      the result will tokenize back to match the input as closely as possible
+      (tab characters may be replaced with spaces).
+
+    If *iterable* mixes two- and five-element sequences,
+    as soon as a two-element sequence is encountered, the extra elements
+    ``(start, end, line)`` of any later five-element sequences are ignored too.
+
+    The result is guaranteed to tokenize back to match the input so
+    that the conversion is lossless and round-trips are assured.
+    The guarantee applies only to the token type and token string as
+    the spacing between tokens (column positions) may change.
 
     It returns bytes, encoded using the :data:`~token.ENCODING` token, which
     is the first token sequence output by :func:`.tokenize`. If there is no
