@@ -1,0 +1,2 @@
+Fix :class:`http.server.BaseHTTPRequestHandler` failing to send responses
+when :data:`sys.stderr` is ``None``, for example when running with ``pythonw``.
