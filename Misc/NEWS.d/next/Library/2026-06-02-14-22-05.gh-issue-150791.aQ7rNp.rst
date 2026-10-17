@@ -1,0 +1,1 @@
+Fix a data race in :func:`itertools.groupby` on free-threaded builds where concurrent calls to :func:`next` could corrupt the iterator's internal state.
