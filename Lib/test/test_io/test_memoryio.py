@@ -54,6 +54,9 @@ class MemorySeekTestMixin:
         self.assertEqual(buf[3:], bytesIo.read())
         self.assertRaises(TypeError, bytesIo.seek, 0.0)
 
+        # gh-148286: seeking this far past the end and then reading is
+        # what exercises the overseek path where the pointer arithmetic
+        # wraps. Under UBSan this is the case that reports, so keep it.
         self.assertEqual(sys.maxsize, bytesIo.seek(sys.maxsize))
         self.assertEqual(self.EOF, bytesIo.read(4))
 
