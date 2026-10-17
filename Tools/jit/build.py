@@ -69,6 +69,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--llvm-tools-install-dir", help="Installation location of LLVM tools"
     )
+    parser.add_argument(
+        "--prebuilt",
+        action="store_true",
+        help="accept prebuilt stencil headers even if the digest does not match",
+    )
     args = parser.parse_args()
     for target in args.target:
         target.debug = args.debug
@@ -85,6 +90,7 @@ if __name__ == "__main__":
         target.build(
             comment=comment,
             force=args.force,
+            prebuilt=args.prebuilt,
             jit_stencils=args.output_dir / f"jit_stencils-{target.triple}.h",
             jit_shim_object=args.output_dir / f"jit_shim-{target.triple}.o",
             jit_unwind_info=args.output_dir / f"jit_unwind_info-{target.triple}.h",
