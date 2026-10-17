@@ -1,0 +1,3 @@
+Fix an out-of-bounds read in the C implementation of :mod:`decimal` when
+comparing the ``flags`` or ``traps`` of a :class:`~decimal.Context` with an
+object that is not a signal dict, such as ``None``.
