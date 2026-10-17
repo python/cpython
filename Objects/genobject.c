@@ -1682,6 +1682,12 @@ typedef struct PyAsyncGenAThrow {
     int8_t agt_state;
 } PyAsyncGenAThrow;
 
+// _remote_debugging reads the generator right after PyObject_HEAD.
+static_assert(offsetof(PyAsyncGenASend, ags_gen) == sizeof(PyObject),
+              "ags_gen must immediately follow PyObject_HEAD");
+static_assert(offsetof(PyAsyncGenAThrow, agt_gen) == sizeof(PyObject),
+              "agt_gen must immediately follow PyObject_HEAD");
+
 
 typedef struct _PyAsyncGenWrappedValue {
     PyObject_HEAD
