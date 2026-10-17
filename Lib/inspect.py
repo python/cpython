@@ -163,6 +163,7 @@ import builtins
 from keyword import iskeyword
 from operator import attrgetter
 from collections import namedtuple, OrderedDict
+from _typing import TypeAliasType
 from _weakref import ref as make_weakref
 
 # Create constants for the compiler flags in Include/cpython/code.h
@@ -872,8 +873,18 @@ def getfile(object):
         object = object.f_code
     if iscode(object):
         return object.co_filename
-    raise TypeError('module, class, method, function, traceback, frame, or '
-                    'code object was expected, got {}'.format(
+    if isinstance(object, TypeAliasType):
+        evaluator = object.evaluate_value
+        if isfunction(evaluator):
+            return getfile(evaluator)
+        module = sys.modules.get(object.__module__)
+        if getattr(module, '__file__', None):
+            return module.__file__
+        if object.__module__ == '__main__':
+            raise OSError('source code not available')
+        raise TypeError(f'module not available for {object!r}')
+    raise TypeError('module, class, method, function, traceback, frame, '
+                    'code object, or type alias was expected, got {}'.format(
                     type(object).__name__))
 
 def getmodulename(path):
@@ -984,9 +995,14 @@ def findsource(object):
     """Return the entire source file and starting line number for an object.
 
     The argument may be a module, class, method, function, traceback, frame,
-    or code object.  The source code is returned as a list of all the lines
-    in the file and the line number indexes a line in that list.  An OSError
-    is raised if the source code cannot be retrieved."""
+    code object, or type alias.  The source code is returned as a list of all
+    the lines in the file and the line number indexes a line in that list.
+    An OSError is raised if the source code cannot be retrieved."""
+
+    if isinstance(object, TypeAliasType):
+        evaluator = object.evaluate_value
+        if isfunction(evaluator):
+            object = evaluator
 
     file = getsourcefile(object)
     if file:
@@ -1168,7 +1184,7 @@ def getsourcelines(object):
     """Return a list of source lines and starting line number for an object.
 
     The argument may be a module, class, method, function, traceback, frame,
-    or code object.  The source code is returned as a list of the lines
+    code object, or type alias.  The source code is returned as a list of the lines
     corresponding to the object and the line number indicates where in the
     original source file the first line of code was found.  An OSError is
     raised if the source code cannot be retrieved."""
@@ -1189,7 +1205,7 @@ def getsource(object):
     """Return the text of the source code for an object.
 
     The argument may be a module, class, method, function, traceback, frame,
-    or code object.  The source code is returned as a single string.  An
+    code object, or type alias.  The source code is returned as a single string.  An
     OSError is raised if the source code cannot be retrieved."""
     lines, lnum = getsourcelines(object)
     return ''.join(lines)

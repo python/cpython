@@ -750,10 +750,14 @@ Retrieving source code
 .. function:: getcomments(object)
 
    Return in a single string any lines of comments immediately preceding the
-   object's source code (for a class, function, or method), or at the top of the
-   Python source file (if the object is a module).  If the object's source code
-   is unavailable, return ``None``.  This could happen if the object has been
-   defined in C or the interactive shell.
+   object's source code (for a class, function, method, or type alias), or at the
+   top of the Python source file (if the object is a module).  If the object's
+   source code is unavailable, return ``None``.  This could happen if the object
+   has been defined in C or in an interactive shell that does not retain source
+   code.
+
+   .. versionchanged:: next
+      Added support for type aliases created with the :keyword:`type` statement.
 
 
 .. function:: getfile(object)
@@ -762,6 +766,9 @@ Retrieving source code
    An :exc:`OSError` is raised if the source code cannot be retrieved.
    This will fail with a :exc:`TypeError` if the object is a built-in module,
    class, or function.
+
+   .. versionchanged:: next
+      Added support for :class:`~typing.TypeAliasType` objects.
 
 
 .. function:: getmodule(object)
@@ -778,35 +785,44 @@ Retrieving source code
    This will fail with a :exc:`TypeError` if the object is a built-in module,
    class, or function.
 
+   .. versionchanged:: next
+      Added support for :class:`~typing.TypeAliasType` objects.
+
 
 .. function:: getsourcelines(object)
 
    Return a list of source lines and starting line number for an object. The
-   argument may be a module, class, method, function, traceback, frame, or code
-   object.  The source code is returned as a list of the lines corresponding to the
-   object and the line number indicates where in the original source file the first
-   line of code was found.  An :exc:`OSError` is raised if the source code cannot
-   be retrieved.
+   argument may be a module, class, method, function, traceback, frame, code
+   object, or type alias.  The source code is returned as a list of the lines
+   corresponding to the object and the line number indicates where in the
+   original source file the first line of code was found.  An :exc:`OSError` is
+   raised if the source code cannot be retrieved.
    A :exc:`TypeError` is raised if the object is a built-in module, class, or
    function.
 
    .. versionchanged:: 3.3
       :exc:`OSError` is raised instead of :exc:`IOError`, now an alias of the
       former.
+
+   .. versionchanged:: next
+      Added support for type aliases created with the :keyword:`type` statement.
 
 
 .. function:: getsource(object)
 
    Return the text of the source code for an object. The argument may be a module,
-   class, method, function, traceback, frame, or code object.  The source code is
-   returned as a single string.  An :exc:`OSError` is raised if the source code
-   cannot be retrieved.
+   class, method, function, traceback, frame, code object, or type alias.  The
+   source code is returned as a single string.  An :exc:`OSError` is raised if the
+   source code cannot be retrieved.
    A :exc:`TypeError` is raised if the object is a built-in module, class, or
    function.
 
    .. versionchanged:: 3.3
       :exc:`OSError` is raised instead of :exc:`IOError`, now an alias of the
       former.
+
+   .. versionchanged:: next
+      Added support for type aliases created with the :keyword:`type` statement.
 
 
 .. function:: cleandoc(doc, *, dedent=True)
