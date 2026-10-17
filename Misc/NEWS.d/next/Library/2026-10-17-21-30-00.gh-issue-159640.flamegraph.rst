@@ -1,0 +1,2 @@
+Escape profile data embedded in sampling profiler flamegraph reports to
+prevent strings containing ``</script>`` from breaking the generated HTML.

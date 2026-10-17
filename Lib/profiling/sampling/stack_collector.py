@@ -505,6 +505,10 @@ class FlamegraphCollector(StackTraceCollector):
             # Python recursion limit. iterencode() uses the Python encoder.
             data_json = "".join(json.JSONEncoder().iterencode(data))
 
+        # Prevent profile strings from closing the script element or starting
+        # an HTML comment, while preserving their values in JavaScript.
+        data_json = data_json.replace("<", "\\u003c")
+
         template_dir = importlib.resources.files(__package__)
         vendor_dir = template_dir / "_vendor"
         assets_dir = template_dir / "_assets"
