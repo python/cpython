@@ -1,0 +1,2 @@
+Fix ``Document.async_`` in :mod:`xml.dom.minidom` so setting it to true
+raises :exc:`xml.dom.NotSupportedErr`.
