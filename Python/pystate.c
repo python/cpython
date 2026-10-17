@@ -812,6 +812,8 @@ common_constants_clear(PyInterpreterState *interp)
 }
 
 
+// Finalizers may register tasks during or after PyThreadState_Clear().
+// Transfer any remaining tasks before deleting the thread state.
 static void
 move_asyncio_tasks_to_interpreter(PyThreadState *tstate)
 {
@@ -1918,11 +1920,6 @@ PyThreadState_Clear(PyThreadState *tstate)
     _PyJit_TracerFree((_PyThreadStateImpl *)tstate);
 #endif
 
-    // Merge any lingering tasks from the thread state to the interpreter's
-    // tasks list.  This must happen after all cleanup which can run finalizers,
-    // since those finalizers may create and register new tasks.
-    move_asyncio_tasks_to_interpreter(tstate);
-
     tstate->_status.cleared = 1;
 
     // XXX Call _PyThreadStateSwap(runtime, NULL) here if "current".
@@ -1937,7 +1934,6 @@ static void
 tstate_delete_common(PyThreadState *tstate, int release_gil)
 {
     assert(tstate->_status.cleared && !tstate->_status.finalized);
-    // Finalizers that run after PyThreadState_Clear() may register new tasks.
     move_asyncio_tasks_to_interpreter(tstate);
     assert(llist_empty(
         &((_PyThreadStateImpl *)tstate)->asyncio_tasks_head));
@@ -2120,6 +2116,9 @@ _PyThreadState_DeleteList(PyThreadState *list, int is_after_fork)
     for (p = list; p; p = next) {
         next = p->next;
         PyThreadState_Clear(p);
+        move_asyncio_tasks_to_interpreter(p);
+        assert(llist_empty(
+            &((_PyThreadStateImpl *)p)->asyncio_tasks_head));
         if (is_after_fork) {
             free_threadstate((_PyThreadStateImpl *)p);
         }
