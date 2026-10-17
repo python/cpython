@@ -2,6 +2,8 @@
 
 The SysTrayIcon class gives access to the "tk systray" command and
 the notify() function gives access to the "tk sysnotify" command.
+The NotificationHandler class is a logging handler which shows
+log records as desktop notifications.
 They require Tk 8.7/9.0 or newer.
 
 Only one system tray icon is supported per Tcl interpreter.
@@ -11,9 +13,10 @@ has been created first; the icon is also displayed in the
 notification.
 """
 
+import logging
 import tkinter
 
-__all__ = ["SysTrayIcon", "notify"]
+__all__ = ["SysTrayIcon", "notify", "NotificationHandler"]
 
 
 class SysTrayIcon:
@@ -128,3 +131,31 @@ def notify(title, message, *, master=None):
     if master is None:
         master = tkinter._get_default_root('send a notification')
     master.tk.call('tk', 'sysnotify', title, message)
+
+
+class NotificationHandler(logging.Handler):
+    """A logging handler which shows log records as desktop notifications.
+
+    The title of the notification is the given title if it is not None,
+    otherwise the level name of the record.  The message of the
+    notification is the formatted record.
+
+    The default root window is used if master is None; it is looked up
+    when a record is emitted, so the handler can be created before the
+    root window.
+    """
+
+    def __init__(self, title=None, *, master=None):
+        super().__init__()
+        self.master = master
+        self.title = title
+
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            title = self.title
+            if title is None:
+                title = record.levelname
+            notify(title, msg, master=self.master)
+        except Exception:
+            self.handleError(record)
