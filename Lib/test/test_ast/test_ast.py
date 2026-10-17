@@ -696,6 +696,51 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(grandchild_binop.end_col_offset, 3)
         self.assertEqual(grandchild_binop.end_lineno, 1)
 
+    def test_primary_target_context(self):
+        for expression in ('factory().field[index]', 'factory()[index].field'):
+            for context in (ast.Load, ast.Store, ast.Del):
+                with self.subTest(expression=expression, context=context):
+                    if context is ast.Load:
+                        node = ast.parse(expression).body[0].value
+                    elif context is ast.Store:
+                        node = ast.parse(f'{expression} = value').body[0].targets[0]
+                    else:
+                        node = ast.parse(f'del {expression}').body[0].targets[0]
+                    self.assertIsInstance(node.ctx, context)
+                    for child in ast.walk(node):
+                        if child is not node and hasattr(child, 'ctx'):
+                            self.assertIsInstance(child.ctx, ast.Load)
+
+    def test_container_target_context(self):
+        cases = (
+            ('(a, [b, c])', '(a, [b, c])'),
+            ('[a, (b, c)]', '[a, (b, c)]'),
+            ('((a))', 'a'),
+            ('()', '()'),
+            ('[]', '[]'),
+        )
+        for expression, expected_segment in cases:
+            for context in (ast.Load, ast.Store, ast.Del):
+                with self.subTest(expression=expression, context=context):
+                    if context is ast.Load:
+                        source = expression
+                    elif context is ast.Store:
+                        source = f'{expression} = value'
+                    else:
+                        source = f'del {expression}'
+                    statement = ast.parse(source).body[0]
+                    node = statement.value if context is ast.Load else statement.targets[0]
+                    for child in ast.walk(node):
+                        if hasattr(child, 'ctx'):
+                            self.assertIsInstance(child.ctx, context)
+                    self.assertEqual(ast.get_source_segment(source, node),
+                                     expected_segment)
+
+        node = ast.parse('[a, *[b, *c]] = value').body[0].targets[0]
+        for child in ast.walk(node):
+            if hasattr(child, 'ctx'):
+                self.assertIsInstance(child.ctx, ast.Store)
+
     def test_issue39579_dotted_name_end_col_offset(self):
         tree = ast.parse('@a.b.c\ndef f(): pass')
         attr_b = tree.body[0].decorator_list[0].value
@@ -1062,13 +1107,11 @@ class AST_Tests(unittest.TestCase):
         enum._test_simple_enum(_Precedence, _ast_unparse._Precedence)
 
     @support.cpython_only
-    @support.run_with_limited_c_stack(
-        100_000 if sys.platform == "android" else 500_000)
+    @support.run_with_limited_c_stack(500_000)
     @skip_wasi_stack_overflow()
     @skip_emscripten_stack_overflow()
     def test_ast_recursion_limit(self):
-        # Android test devices have less memory.
-        crash_depth = 100_000 if sys.platform == "android" else 500_000
+        crash_depth = 500_000
         success_depth = 200
         if _testinternalcapi is not None:
             remaining = _testinternalcapi.get_c_recursion_remaining()

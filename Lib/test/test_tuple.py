@@ -38,6 +38,10 @@ class TupleTest(seq_tests.CommonTest):
         self.assertEqual(tuple(x for x in range(10) if x % 2),
                          (1, 3, 5, 7, 9))
 
+    def test_too_many_args(self):
+        with self.assertRaises(TypeError):
+            tuple([1, 2], 3)
+
     def test_keyword_args(self):
         with self.assertRaisesRegex(TypeError, 'keyword argument'):
             tuple(sequence=())

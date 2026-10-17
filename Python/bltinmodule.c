@@ -979,29 +979,32 @@ finally:
 }
 
 /* AC: cannot convert yet, as needs PEP 457 group support in inspect */
-static PyObject *
-builtin_dir(PyObject *self, PyObject *args)
-{
-    PyObject *arg = NULL;
+/*[clinic input]
+dir as builtin_dir
 
-    if (!PyArg_UnpackTuple(args, "dir", 0, 1, &arg))
-        return NULL;
+    object as arg: object = NULL
+    /
+
+Return an alphabetized list of the attributes of the object.
+
+If called without an argument, return the names in the current scope.
+Else, return an alphabetized list of names comprising (some of) the
+attributes of the given object, and of attributes reachable from it.
+If the object supplies a method named __dir__, it will be used;
+otherwise the default dir() logic is used and returns:
+  for a module object: the module's attributes.
+  for a class object:  its attributes, and recursively the attributes
+    of its bases.
+  for any other object: its attributes, its class's attributes, and
+    recursively the attributes of its class's base classes.
+[clinic start generated code]*/
+
+static PyObject *
+builtin_dir_impl(PyObject *module, PyObject *arg)
+/*[clinic end generated code: output=24f2c7a52c1e3b08 input=7fe1b2a5ca9ae355]*/
+{
     return PyObject_Dir(arg);
 }
-
-PyDoc_STRVAR(dir_doc,
-"dir([object]) -> list of strings\n"
-"\n"
-"If called without an argument, return the names in the current scope.\n"
-"Else, return an alphabetized list of names comprising (some of) the\n"
-"attributes of the given object, and of attributes reachable from it.\n"
-"If the object supplies a method named __dir__, it will be used;\n"
-"otherwise the default dir() logic is used and returns:\n"
-"  for a module object: the module's attributes.\n"
-"  for a class object:  its attributes, and recursively the attributes\n"
-"    of its bases.\n"
-"  for any other object: its attributes, its class's attributes, and\n"
-"    recursively the attributes of its class's base classes.");
 
 /*[clinic input]
 divmod as builtin_divmod
@@ -1960,52 +1963,6 @@ builtin_aiter_impl(PyObject *module, PyObject *object, PyObject *stop_value,
     return _PyACallIter_New(object, stop_value, stop_exception);
 }
 
-PyObject *PyAnextAwaitable_New(PyObject *, PyObject *);
-
-/*[clinic input]
-anext as builtin_anext
-
-    async_iterator as aiterator: object
-    default: object = NULL
-    /
-
-Return the next item from the async iterator.
-
-If default is given and the async iterator is exhausted,
-it is returned instead of raising StopAsyncIteration.
-[clinic start generated code]*/
-
-static PyObject *
-builtin_anext_impl(PyObject *module, PyObject *aiterator,
-                   PyObject *default_value)
-/*[clinic end generated code: output=f02c060c163a81fa input=f3dc5a93f073e5ac]*/
-{
-    PyTypeObject *t;
-    PyObject *awaitable;
-
-    t = Py_TYPE(aiterator);
-    if (t->tp_as_async == NULL || t->tp_as_async->am_anext == NULL) {
-        PyErr_Format(PyExc_TypeError,
-            "'%.200s' object is not an async iterator",
-            t->tp_name);
-        return NULL;
-    }
-
-    awaitable = (*t->tp_as_async->am_anext)(aiterator);
-    if (awaitable == NULL) {
-        return NULL;
-    }
-    if (default_value == NULL) {
-        return awaitable;
-    }
-
-    PyObject* new_awaitable = PyAnextAwaitable_New(
-            awaitable, default_value);
-    Py_DECREF(awaitable);
-    return new_awaitable;
-}
-
-
 /*[clinic input]
 len as builtin_len
 
@@ -2795,14 +2752,24 @@ builtin_sorted(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
 
 
 /* AC: cannot convert yet, as needs PEP 457 group support in inspect */
+/*[clinic input]
+vars as builtin_vars
+
+    object as v: object = NULL
+    /
+
+Show vars.
+
+Without arguments, equivalent to locals().
+With an argument, equivalent to object.__dict__.
+[clinic start generated code]*/
+
 static PyObject *
-builtin_vars(PyObject *self, PyObject *args)
+builtin_vars_impl(PyObject *module, PyObject *v)
+/*[clinic end generated code: output=a64017e4a4dc53fc input=577550318240f012]*/
 {
-    PyObject *v = NULL;
     PyObject *d;
 
-    if (!PyArg_UnpackTuple(args, "vars", 0, 1, &v))
-        return NULL;
     if (v == NULL) {
         if (_PyEval_GetFrame() != NULL) {
             d = _PyEval_GetFrameLocals();
@@ -2829,12 +2796,6 @@ builtin_vars(PyObject *self, PyObject *args)
     }
     return d;
 }
-
-PyDoc_STRVAR(vars_doc,
-"vars([object]) -> dictionary\n\
-\n\
-Without arguments, equivalent to locals().\n\
-With an argument, equivalent to object.__dict__.");
 
 
 /* Improved Kahan–Babuška algorithm by Arnold Neumaier
@@ -3479,7 +3440,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_CHR_METHODDEF
     BUILTIN_COMPILE_METHODDEF
     BUILTIN_DELATTR_METHODDEF
-    {"dir", builtin_dir, METH_VARARGS, dir_doc},
+    BUILTIN_DIR_METHODDEF
     BUILTIN_DIVMOD_METHODDEF
     BUILTIN_EVAL_METHODDEF
     BUILTIN_EXEC_METHODDEF
@@ -3500,7 +3461,6 @@ static PyMethodDef builtin_methods[] = {
     {"max", _PyCFunction_CAST(builtin_max), METH_FASTCALL | METH_KEYWORDS, max_doc},
     {"min", _PyCFunction_CAST(builtin_min), METH_FASTCALL | METH_KEYWORDS, min_doc},
     {"next", _PyCFunction_CAST(builtin_next), METH_FASTCALL, next_doc},
-    BUILTIN_ANEXT_METHODDEF
     BUILTIN_OCT_METHODDEF
     BUILTIN_ORD_METHODDEF
     BUILTIN_POW_METHODDEF
@@ -3510,7 +3470,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_SETATTR_METHODDEF
     BUILTIN_SORTED_METHODDEF
     BUILTIN_SUM_METHODDEF
-    {"vars",            builtin_vars,       METH_VARARGS, vars_doc},
+    BUILTIN_VARS_METHODDEF
     {NULL,              NULL},
 };
 
@@ -3538,6 +3498,57 @@ static struct PyModuleDef builtinsmodule = {
     NULL
 };
 
+
+/* Builtins implemented in Python.
+
+   Lib/_pybuiltins.py is frozen into the interpreter as a bootstrap module
+   (see Tools/build/freeze_modules.py), so it can be imported here before
+   the import system exists.  The names in its __all__ are copied into the
+   builtins dict. */
+
+int
+_PyBuiltin_InitPythonFunctions(PyObject *dict)
+{
+    if (PyImport_ImportFrozenModule("_pybuiltins") <= 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ImportError,
+                            "frozen module _pybuiltins not found");
+        }
+        return -1;
+    }
+    PyObject *mod = PyImport_AddModuleRef("_pybuiltins");
+    if (mod == NULL) {
+        return -1;
+    }
+
+    int rc = -1;
+    PyObject *all = PyObject_GetAttr(mod, &_Py_ID(__all__));
+    if (all == NULL) {
+        goto done;
+    }
+    Py_ssize_t n = PyList_Size(all);
+    if (n < 0) {
+        goto done;
+    }
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *name = PyList_GET_ITEM(all, i);
+        PyObject *func = PyObject_GetAttr(mod, name);
+        if (func == NULL) {
+            goto done;
+        }
+        int r = PyDict_SetItem(dict, name, func);
+        Py_DECREF(func);
+        if (r < 0) {
+            goto done;
+        }
+    }
+    rc = 0;
+
+done:
+    Py_XDECREF(all);
+    Py_DECREF(mod);
+    return rc;
+}
 
 PyObject *
 _PyBuiltin_Init(PyInterpreterState *interp)
