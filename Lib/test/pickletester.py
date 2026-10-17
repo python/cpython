@@ -4910,10 +4910,10 @@ class AbstractPickleModuleTests:
             os_helper.unlink(TESTFN)
 
     def test_load_closed_file(self):
-        f = open(TESTFN, "wb")
+        f = open(TESTFN, "w+b")
         try:
             f.close()
-            self.assertRaises(ValueError, self.dump, 123, f)
+            self.assertRaises(ValueError, self.load, f)
         finally:
             os_helper.unlink(TESTFN)
 
