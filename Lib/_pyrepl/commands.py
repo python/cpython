@@ -504,15 +504,19 @@ class paste_mode(Command):
 
 class perform_bracketed_paste(Command):
     def do(self) -> None:
-        done = "\x1b[201~"
-        data = ""
+        done = b"\x1b[201~"
+        data = b""
         start = time.time()
         while done not in data:
             ev = self.reader.console.getpending()
-            data += ev.data
+            data += ev.raw
         trace(
-            "bracketed pasting of {l} chars done in {s:.2f}s",
+            "bracketed pasting of {l} bytes done in {s:.2f}s",
             l=len(data),
             s=time.time() - start,
         )
-        self.reader.insert(data.replace(done, ""))
+        pasted, _, rest = data.partition(done)
+        self.reader.insert(pasted.decode(self.reader.console.encoding, "replace"))
+
+        for byte in rest:
+            self.reader.console.push_char(byte)
