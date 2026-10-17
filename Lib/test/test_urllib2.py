@@ -1517,6 +1517,20 @@ class HandlerTests(unittest.TestCase):
         new_req = h.redirect_request(req, fp, 302, "Found", {}, to_url)
         self.assertEqual(new_req.get_method(), "HEAD")
 
+    def test_redirect_drops_auth_headers(self):
+        from_url = "http://target.invalid/"
+        to_url = "http://new.target.invalid/"
+        h = urllib.request.HTTPRedirectHandler()
+        req = Request(from_url)
+        req.add_header("Proxy-Authorization", "Basic dXNlcjpwYXNzCg==")
+        req.add_header("Spam", "eggs")
+        fp = MockFile()
+
+        new_req = h.redirect_request(req, fp, 302, "Found", {}, to_url)
+
+        self.assertIsNone(new_req.get_header("Proxy-Authorization"))
+        self.assertEqual(new_req.get_header("Spam"), "eggs")
+
     def test_proxy(self):
         u = "proxy.example.com:3128"
         for d in dict(http=u), dict(HTTP=u):
