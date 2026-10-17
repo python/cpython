@@ -1,0 +1,4 @@
+Fix an infinite loop in :func:`textwrap.wrap` and :func:`textwrap.fill` when
+the indent is wider than *width* and the text starts with whitespace, or
+*drop_whitespace* is false. They also no longer add an empty or indent-only
+last line in some cases where the indent is not narrower than *width*.
