@@ -35,6 +35,29 @@ extern "C" {
 #define _Py_MAX_GLOBAL_TYPE_VERSION_TAG (_Py_TYPE_BASE_VERSION_TAG - 1)
 
 
+extern const PyNumberMethods _PyType_EmptyNumberMethods;
+extern const PySequenceMethods _PyType_EmptySequenceMethods;
+extern const PyMappingMethods _PyType_EmptyMappingMethods;
+
+static inline int
+_PyType_HasOwnNumberMethods(PyTypeObject *tp)
+{
+    return tp->tp_as_number != &_PyType_EmptyNumberMethods;
+}
+
+static inline int
+_PyType_HasOwnSequenceMethods(PyTypeObject *tp)
+{
+    return tp->tp_as_sequence != &_PyType_EmptySequenceMethods;
+}
+
+static inline int
+_PyType_HasOwnMappingMethods(PyTypeObject *tp)
+{
+    return tp->tp_as_mapping != &_PyType_EmptyMappingMethods;
+}
+
+
 /* runtime lifecycle */
 
 extern PyStatus _PyTypes_InitTypes(PyInterpreterState *);

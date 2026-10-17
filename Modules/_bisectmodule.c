@@ -35,11 +35,11 @@ get_sq_item(PyObject *s)
     // The parts of PySequence_GetItem that we only need to do once
     PyTypeObject *tp = Py_TYPE(s);
     PySequenceMethods *m = tp->tp_as_sequence;
-    if (m && m->sq_item) {
+    if (m->sq_item) {
         return m->sq_item;
     }
     const char *msg;
-    if (tp->tp_as_mapping && tp->tp_as_mapping->mp_subscript) {
+    if (tp->tp_as_mapping->mp_subscript) {
         msg = "%.200s is not a sequence";
     }
     else {
