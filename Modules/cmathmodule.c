@@ -382,7 +382,7 @@ cmath_atanh_impl(PyObject *module, Py_complex z)
         r.real = z.real/4./h/h;
         r.imag = copysign(Py_MATH_PI/2., z.imag);
         errno = 0;
-    } else if (z.real == 1. && ay < CM_SQRT_DBL_MIN) {
+    } else if (z.real == 1. && ay <= CM_SQRT_DBL_MIN) {
         /* C99 standard says:  atanh(1+/-0.) should be inf +/- 0i */
         if (ay == 0.) {
             r.real = INF;
