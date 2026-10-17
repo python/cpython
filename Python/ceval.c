@@ -65,6 +65,18 @@ _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int margin_count)
 #  define Py_C_STACK_SIZE 4000000
 #endif
 
+#ifdef HAVE_UNRELIABLE_PTHREAD_GETATTR_NP
+#ifdef HAVE_SYS_RESOURCE_H
+#  include <sys/resource.h>
+#endif
+#ifdef HAVE_SYS_SYSCALL_H
+#  include <sys/syscall.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>
+#endif
+#endif
+
 #if defined(__EMSCRIPTEN__)
 
 // Temporary workaround to make `pthread_getattr_np` work on Emscripten.
@@ -142,14 +154,7 @@ hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
     *top = (uintptr_t)stack_addr;
     *base = ((uintptr_t)stack_addr) - stack_size;
 #else
-    // musl supports HAVE_PTHREAD_GETATTR_NP, but the resulting stack size
-    // (on alpine at least) is much smaller than expected and imposes undue
-    // limits compared to the old stack size estimation. musl doesn't give
-    // us a way to detect it, so we have to assume any non-glibc,
-    // non-Android Linux is musl and mustn't rely on pthread_getattr_np.
-#  if defined(HAVE_PTHREAD_GETATTR_NP) && !defined(_AIX) && \
-        !defined(__NetBSD__) && \
-        (defined(__GLIBC__) || defined(__ANDROID__) || !defined(__linux__))
+#  if defined(HAVE_PTHREAD_GETATTR_NP) && !defined(_AIX) && !defined(__NetBSD__)
     size_t stack_size, guard_size;
     void *stack_addr;
     pthread_attr_t attr;
@@ -160,6 +165,21 @@ hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
         err |= pthread_attr_destroy(&attr);
     }
     if (err == 0) {
+#    ifdef HAVE_UNRELIABLE_PTHREAD_GETATTR_NP
+        /* pthread_getattr_np on the main thread of a musl process reports a
+         * stack size based on the current stack rather than RLIMIT_STACK.
+         * New threads are reported correctly even on musl, so this fallback
+         * only applies to the main thread. */
+        if ((pid_t)syscall(SYS_gettid) == getpid()) {
+            struct rlimit rl;
+            if (getrlimit(RLIMIT_STACK, &rl) == 0 &&
+                rl.rlim_cur != RLIM_INFINITY &&
+                stack_size < rl.rlim_cur)
+            {
+                stack_size = rl.rlim_cur;
+            }
+        }
+#    endif
         *base = ((uintptr_t)stack_addr) + guard_size;
         *top = (uintptr_t)stack_addr + stack_size;
         return;

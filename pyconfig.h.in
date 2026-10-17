@@ -1706,6 +1706,10 @@
 /* Define to 1 if you have the 'unlockpt' function. */
 #undef HAVE_UNLOCKPT
 
+/* Define if pthread_getattr_np under-reports the main thread's stack size
+   (musl behaviour). */
+#undef HAVE_UNRELIABLE_PTHREAD_GETATTR_NP
+
 /* Define to 1 if you have the 'unshare' function. */
 #undef HAVE_UNSHARE
 
