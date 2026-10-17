@@ -438,6 +438,18 @@ class AST_Tests(unittest.TestCase):
                 if isinstance(x, ast.AST):
                     self.assertIs(type(x._fields), tuple)
 
+    def test_field_types_attr_existence(self):
+        # gh-135797: every AST class has a _field_types dictionary whose keys
+        # are the names listed in _fields.  Abstract classes have no fields
+        # and thus an empty dictionary, just like their empty _fields tuple.
+        for name, cls in ast.__dict__.items():
+            if isinstance(cls, type) and issubclass(cls, ast.AST):
+                with self.subTest(cls=name):
+                    self.assertIsInstance(cls._field_types, dict)
+                    self.assertEqual(set(cls._field_types), set(cls._fields))
+        self.assertEqual(ast.AST._field_types, {})
+        self.assertEqual(ast.mod._field_types, {})
+
     def test_dynamic_attr(self):
         for name, item in ast.__dict__.items():
             # constructor has a different signature
