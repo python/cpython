@@ -163,6 +163,7 @@ import builtins
 from keyword import iskeyword
 from operator import attrgetter
 from collections import namedtuple, OrderedDict
+from _typing import TypeAliasType
 from _weakref import ref as make_weakref
 
 # Create constants for the compiler flags in Include/cpython/code.h
@@ -1382,7 +1383,7 @@ def formatannotation(annotation, base_module=None, *, quote_annotation_strings=T
         return re.sub(r'[\w\.]+', repl, repr(annotation))
     if isinstance(annotation, types.GenericAlias):
         return str(annotation)
-    if isinstance(annotation, type):
+    if isinstance(annotation, (type, TypeAliasType)):
         if annotation.__module__ in ('builtins', base_module):
             return annotation.__qualname__
         return annotation.__module__+'.'+annotation.__qualname__
