@@ -1454,6 +1454,13 @@ class UrlParseTestCase(unittest.TestCase):
                                                           errors="ignore")
         self.assertEqual(result, {'key': ['\u0141-']})
 
+    def test_qsl_strict_parsing_raises(self):
+        with self.assertRaises(ValueError):
+            urllib.parse.parse_qsl("foo=^", strict_parsing=True)
+
+        with self.assertRaises(ValueError):
+            urllib.parse.parse_qsl(b"foo=`", strict_parsing=True)
+
     def test_parse_qsl_encoding(self):
         result = urllib.parse.parse_qsl("key=\u0141%E9", encoding="latin-1")
         self.assertEqual(result, [('key', '\u0141\xE9')])
