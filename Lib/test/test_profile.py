@@ -134,6 +134,34 @@ class ProfileTest(unittest.TestCase):
 
             self.assertTrue(os.path.exists('out.pstats'))
 
+    def test_sort(self):
+        status, stdout, stderr = assert_python_ok(
+            '-m', self.profilermodule.__name__,
+            '-s', 'time', '-m', 'timeit', '-n', '1'
+        )
+
+        output = stdout.decode()
+
+        self.assertIn("Ordered by:", output)
+
+    def test_help(self):
+        status1, stdout1, stderr1 = assert_python_ok('-m', self.profilermodule.__name__, '-h')
+        status2, stdout2, stderr2 = assert_python_ok('-m', self.profilermodule.__name__, '--help')
+
+        output1 = stdout1.decode()
+        output2 = stdout2.decode()
+
+        self.assertIn("Usage:", output1)
+        self.assertIn("Options:", output1)
+        self.assertEqual(output1, output2)
+
+    def test_invalid_option(self):
+        status, stdout, stderr = assert_python_failure('-m', self.profilermodule.__name__, '-invalidop')
+
+        output = stderr.decode()
+
+        self.assertIn("error: no such option", output)
+
 
 def regenerate_expected_output(filename, cls):
     filename = filename.rstrip('co')
