@@ -499,6 +499,69 @@ class TestCoverageCommandLineOutput(unittest.TestCase):
                 >>>>>>     print('unreachable')
             '''))
 
+
+# gh-142867: Deferred annotations (PEP 649) do not run unless something
+# introspects them, so their lines must not be reported as missing.
+class TestCoverageAnnotations(unittest.TestCase):
+
+    codefile = 'tmp_annotations.py'
+    coverfile = 'tmp_annotations.cover'
+
+    def tearDown(self):
+        unlink(self.codefile)
+        unlink(self.coverfile)
+
+    def cover(self, source):
+        with open(self.codefile, 'w', encoding='utf-8') as f:
+            f.write(textwrap.dedent(source))
+        argv = '-m trace --count --missing'.split() + [self.codefile]
+        status, stdout, stderr = assert_python_ok(*argv)
+        self.assertTrue(os.path.exists(self.coverfile))
+        with open(self.coverfile, encoding='utf-8') as f:
+            return f.read()
+
+    def test_multiline_function_annotation(self):
+        # The continuation line of the annotation is neither hit nor missing.
+        self.assertEqual(self.cover('''\
+            def x() -> tuple[
+                    int,
+            ]:
+                return (1,)
+            x()
+        '''),
+            "    1: def x() -> tuple[\n"
+            "               int,\n"
+            "       ]:\n"
+            "    1:     return (1,)\n"
+            "    1: x()\n"
+        )
+
+    def test_class_annotation(self):
+        self.assertEqual(self.cover('''\
+            class X:
+                a: int
+            X()
+        '''),
+            "    2: class X:\n"
+            "           a: int\n"
+            "    1: X()\n"
+        )
+
+    def test_evaluated_annotation_is_counted(self):
+        # Introspecting the annotations runs __annotate__, so its lines get
+        # hit counts as usual.  The def line's count depends on how
+        # __annotate__ is compiled, so only check the lines that matter.
+        cover = self.cover('''\
+            def x() -> tuple[
+                    int,
+            ]:
+                return (1,)
+            x.__annotations__
+        ''')
+        self.assertIn("    1:         int,\n", cover)
+        self.assertIn(">>>>>>     return (1,)\n", cover)
+
+
 class TestCommandLine(unittest.TestCase):
 
     def test_failures(self):
