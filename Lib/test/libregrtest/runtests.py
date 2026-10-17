@@ -93,6 +93,8 @@ class RunTests:
     hunt_refleak: HuntRefleak | None
     test_dir: StrPath | None
     use_junit: bool
+    # Failed tests are not re-run after this run
+    final_run: bool
     coverage: bool
     memory_limit: str | None
     gc_threshold: int | None
