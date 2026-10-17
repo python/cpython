@@ -3,6 +3,7 @@
 # http://www.voidspace.org.uk/python/mock/
 
 import unittest
+import inspect
 from test.test_unittest.testmock.support import is_instance, X, SomeClass
 
 from unittest.mock import (
@@ -144,6 +145,19 @@ class TestCallable(unittest.TestCase):
         mock.wibble.assert_called_once_with()
 
         self.assertRaises(TypeError, mock.wibble, 'some',  'args')
+
+
+    def test_autospec_inspect_iscoroutinefunction(self):
+        class A:
+            def method(self):
+                pass
+
+            async def async_method(self):
+                pass
+
+        mock = create_autospec(A)
+        self.assertFalse(inspect.iscoroutinefunction(mock.method))
+        self.assertTrue(inspect.iscoroutinefunction(mock.async_method))
 
 
 if __name__ == "__main__":
