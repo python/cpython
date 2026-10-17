@@ -1,7 +1,7 @@
 # Copyright 2009 Brian Quinlan. All Rights Reserved.
 # Licensed to PSF under a Contributor Agreement.
 
-__author__ = 'Brian Quinlan (brian@sweetapp.com)'
+# Original author: Brian Quinlan (brian@sweetapp.com)
 
 import collections
 import logging

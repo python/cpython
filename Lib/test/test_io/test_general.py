@@ -1427,5 +1427,15 @@ class ProtocolsTest(unittest.TestCase):
         self.assertNotIsSubclass(str, io.Writer)
 
 
+class TestModule(unittest.TestCase):
+    def test_deprecated__author__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__author__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(io, "__author__")
+        self.assertEqual(cm.filename, __file__)
+
+
 if __name__ == "__main__":
     unittest.main()

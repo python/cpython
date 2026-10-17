@@ -28,6 +28,14 @@ class TestModule(unittest.TestCase):
             getattr(ttk, "__version__")
         self.assertEqual(cm.filename, __file__)
 
+    def test_deprecated__author__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__author__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(ttk, "__author__")
+        self.assertEqual(cm.filename, __file__)
+
 
 def setUpModule():
     wantobjects = support.get_resource_value('wantobjects')

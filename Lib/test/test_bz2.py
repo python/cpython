@@ -1249,6 +1249,16 @@ class MiscTests(unittest.TestCase):
         self.assertStartsWith(bz2.bzlib_version, '%d.%d.%d' % v)
 
 
+class TestModule(unittest.TestCase):
+    def test_deprecated__author__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__author__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(bz2, "__author__")
+        self.assertEqual(cm.filename, __file__)
+
+
 def tearDownModule():
     support.reap_children()
 

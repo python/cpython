@@ -3896,5 +3896,15 @@ class StringPrefixTest(unittest.TestCase):
         self.assertEqual(defined_prefixes, self.determine_valid_prefixes())
 
 
+class TestModule(unittest.TestCase):
+    def test_deprecated__author__and__credits__(self):
+        msg = "is deprecated and slated for removal in Python 3.20"
+        for attr in ("__author__", "__credits__"):
+            with self.subTest(attr=attr):
+                with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
+                    getattr(tokenize, attr)
+                self.assertEqual(cm.filename, __file__)
+
+
 if __name__ == "__main__":
     unittest.main()

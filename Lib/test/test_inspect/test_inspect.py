@@ -6973,5 +6973,15 @@ class TestRepl(unittest.TestCase):
         self.assertIn(expected, output)
 
 
+class TestModule(unittest.TestCase):
+    def test_deprecated__author__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__author__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(inspect, "__author__")
+        self.assertEqual(cm.filename, __file__)
+
+
 if __name__ == "__main__":
     unittest.main()

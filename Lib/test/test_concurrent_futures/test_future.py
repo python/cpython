@@ -340,6 +340,18 @@ class FutureTests(BaseTestCase):
             self.assertEqual(result, expected)
 
 
+class TestModule(unittest.TestCase):
+    def test_deprecated__author__(self):
+        for mod in (futures, futures.process, futures.thread):
+            with self.subTest(mod=mod.__name__):
+                with self.assertWarnsRegex(
+                    DeprecationWarning,
+                    "'__author__' is deprecated and slated for removal in Python 3.20",
+                ) as cm:
+                    getattr(mod, "__author__")
+                self.assertEqual(cm.filename, __file__)
+
+
 def setUpModule():
     setup_module()
 

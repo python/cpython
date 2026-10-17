@@ -1553,5 +1553,15 @@ class TestInternalsWithExtModule(BaseTestInternals, unittest.TestCase):
         self.check_node(node)
 
 
+class TestModule(unittest.TestCase):
+    def test_deprecated__author__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__author__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(py_uuid, "__author__")
+        self.assertEqual(cm.filename, __file__)
+
+
 if __name__ == '__main__':
     unittest.main()
