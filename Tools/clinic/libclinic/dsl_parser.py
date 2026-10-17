@@ -639,11 +639,6 @@ class DSLParser:
             if not self.kind.new_or_init:
                 fail("@vectorcall can only be used with __init__ and __new__ "
                      "methods currently")
-            # Guaranteed by the __new__ / __init__ checks above.
-            assert cls is not None
-            if not cls.type_object:
-                fail(f"@vectorcall requires the type object of {cls.name!r}, "
-                     f"which was declared without one")
 
     def resolve_return_converter(
         self, full_name: str, forced_converter: str
