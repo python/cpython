@@ -293,7 +293,7 @@ class Future:
         self.__schedule_callbacks()
         self.__log_traceback = True
 
-    def __await__(self):
+    def _await(self):
         if not self.done():
             self._asyncio_future_blocking = True
             yield self  # This tells Task to wait for completion.
@@ -301,7 +301,41 @@ class Future:
             raise RuntimeError("await wasn't used with future")
         return self.result()  # May raise too.
 
+    def __await__(self):
+        # Return an object that exposes fi_future in addition to being
+        # a generator, for compatability with the C version.
+        return _FutureIter(self)
+
     __iter__ = __await__  # make compatible with 'yield from'.
+
+
+class _FutureIter:
+    __slots__ = ('__future', '__gen')
+
+    def __init__(self, fut):
+        self.__future = fut
+        self.__gen = fut._await()
+
+    @property
+    def fi_future(self):
+        return self.__future
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return self.__gen.__next__()
+
+    def send(self, v, /):
+        return self.__gen.send(v)
+
+    def throw(self, *args):
+        self.__future = None
+        return self.__gen.throw(*args)
+
+    def close(self):
+        self.__future = None
+        self.__gen.close()
 
 
 # Needed for testing purposes.

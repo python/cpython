@@ -712,6 +712,10 @@ class BaseFutureTests:
             self.fail('StopIteration was expected')
         self.assertEqual(result, (1, 2))
 
+    def test_future_iter_fut(self):
+        fut = self._new_future(loop=self.loop)
+        self.assertIs(iter(fut).fi_future, fut)
+
     def test_future_iter_throw(self):
         fut = self._new_future(loop=self.loop)
         fi = iter(fut)

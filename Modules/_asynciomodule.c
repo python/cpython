@@ -1971,6 +1971,22 @@ static PyMethodDef FutureIter_methods[] = {
     {NULL, NULL}        /* Sentinel */
 };
 
+static PyObject *
+FutureIter_get_fi_future(PyObject *op, void *Py_UNUSED(closure))
+{
+    futureiterobject *it = (futureiterobject*)op;
+    PyObject *fut;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    fut = it->future ? Py_NewRef(it->future) : Py_None;
+    Py_END_CRITICAL_SECTION();
+    return fut;
+}
+
+static PyGetSetDef FutureIter_getsetlist[] = {
+    {"fi_future", FutureIter_get_fi_future, NULL, NULL},
+    {NULL} /* Sentinel */
+};
+
 static PyType_Slot FutureIter_slots[] = {
     {Py_tp_dealloc, FutureIter_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
@@ -1979,6 +1995,7 @@ static PyType_Slot FutureIter_slots[] = {
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, FutureIter_iternext},
     {Py_tp_methods, FutureIter_methods},
+    {Py_tp_getset, FutureIter_getsetlist},
 
     // async methods
     {Py_am_send, FutureIter_am_send},
