@@ -1,0 +1,2 @@
+Raise :exc:`MemoryError` on allocation failure in
+``_PyXIData_InitWithSize``.
