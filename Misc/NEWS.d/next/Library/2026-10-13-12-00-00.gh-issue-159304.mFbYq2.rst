@@ -1,0 +1,2 @@
+Fix :exc:`AttributeError` in :meth:`email.message.EmailMessage.get_body` when a
+nested ``multipart`` part is malformed and its payload is a string.
