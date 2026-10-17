@@ -509,6 +509,140 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
         self.assertEqual(asyncio.run(rec(3)), ["rec"] * 4)
 
     @skip_if_not_supported
+    def test_async_generator_stack_is_not_truncated(self):
+        # gh-159620
+        async def agen():
+            await asyncio.sleep(10_000)
+            yield
+
+        async def agen_with_cleanup():
+            try:
+                yield
+            finally:
+                await asyncio.sleep(10_000)
+
+        async def outer_agen():
+            async for _ in agen():
+                yield
+
+        async def consumer():
+            async for _ in agen():
+                pass
+
+        async def nested_consumer():
+            async for _ in outer_agen():
+                pass
+
+        async def main():
+            g = agen_with_cleanup()
+            await anext(g)
+            async_for_task = asyncio.create_task(consumer(), name="async for")
+            nested_task = asyncio.create_task(
+                nested_consumer(), name="nested async for")
+            anext_task = asyncio.create_task(anext(agen()), name="anext")
+            aclose_task = asyncio.create_task(g.aclose(), name="aclose")
+            await asyncio.sleep(0)
+            return {
+                task.task_name: [
+                    frame.funcname.rpartition(".")[2]
+                    for coro in task.coroutine_stack
+                    for frame in coro.call_stack
+                ]
+                for info in RemoteUnwinder(os.getpid()).get_all_awaited_by()
+                for task in info.awaited_by
+            }
+
+        stacks = asyncio.run(main())
+        self.assertEqual(stacks["async for"], ["sleep", "agen", "consumer"])
+        self.assertEqual(stacks["nested async for"],
+                         ["sleep", "agen", "outer_agen", "nested_consumer"])
+        self.assertEqual(stacks["anext"], ["sleep", "agen"])
+        self.assertEqual(stacks["aclose"], ["sleep", "agen_with_cleanup"])
+
+    @skip_if_not_supported
+    def test_async_generator_waiter_in_async_stack_trace(self):
+        # gh-159620
+        async def agen(task):
+            await task
+            yield
+
+        async def main():
+            waiter_task = asyncio.create_task(
+                anext(agen(asyncio.current_task())), name="anext")
+            await asyncio.sleep(0)
+            return {
+                task.task_name: [
+                    frame.funcname.rpartition(".")[2]
+                    for coro in task.coroutine_stack
+                    for frame in coro.call_stack
+                ]
+                for info in RemoteUnwinder(os.getpid()).get_async_stack_trace()
+                for task in info.awaited_by
+            }
+
+        stacks = asyncio.run(main())
+        self.assertEqual(stacks["anext"], ["agen"])
+
+    @skip_if_not_supported
+    def test_async_generator_running_task_stack(self):
+        # gh-159620
+        async def agen():
+            yield {
+                task.task_name: [
+                    frame.funcname.rpartition(".")[2]
+                    for coro in task.coroutine_stack
+                    for frame in coro.call_stack
+                ]
+                for info in RemoteUnwinder(os.getpid()).get_async_stack_trace()
+                for task in info.awaited_by
+            }
+
+        async def main():
+            return await asyncio.create_task(anext(agen()), name="anext")
+
+        stacks = asyncio.run(main())
+        self.assertEqual(stacks["anext"], ["agen"])
+
+    @skip_if_not_supported
+    def test_class_named_like_async_generator_wrapper_is_not_walked(self):
+        # gh-159620
+        async def decoy():
+            await asyncio.sleep(10_000)
+
+        class async_generator_asend:
+            __slots__ = ("gen",)
+            def __init__(self, gen):
+                self.gen = gen
+            def __await__(self):
+                return self
+            def __next__(self):
+                return None
+
+        async def consumer(aw):
+            await aw
+
+        async def main():
+            gen = decoy()
+            consumer_task = asyncio.create_task(
+                consumer(async_generator_asend(gen)), name="consumer")
+            await asyncio.sleep(0)
+            try:
+                return {
+                    task.task_name: [
+                        frame.funcname.rpartition(".")[2]
+                        for coro in task.coroutine_stack
+                        for frame in coro.call_stack
+                    ]
+                    for info in RemoteUnwinder(os.getpid()).get_all_awaited_by()
+                    for task in info.awaited_by
+                }
+            finally:
+                gen.close()
+
+        stacks = asyncio.run(main())
+        self.assertEqual(stacks["consumer"], ["consumer"])
+
+    @skip_if_not_supported
     @unittest.skipIf(
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",
