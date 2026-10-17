@@ -1323,7 +1323,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             if (c == '}' && current_tok->curly_bracket_depth == current_tok->curly_bracket_expr_start_depth) {
                 current_tok->curly_bracket_expr_start_depth--;
                 current_tok->kind = TOK_FSTRING_MODE;
-                current_tok->in_format_spec = 0;
+                current_tok->in_format_spec = INSIDE_FSTRING_EXPR(current_tok);
                 current_tok->in_debug = 0;
             }
         }
