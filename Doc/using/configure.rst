@@ -1271,13 +1271,12 @@ Security Options
       The settings ``python`` and *STRING* also set TLS 1.2 as minimum
       protocol version.
 
-.. option:: --disable-safety
+.. option:: --enable-safety
 
-   Disable compiler options that are `recommended by OpenSSF`_ for security reasons with no performance overhead.
-   If this option is not enabled, CPython will be built based on safety compiler options with no slow down.
-   When this option is enabled, CPython will not be built with the compiler options listed below.
+   Enable compiler options that are `recommended by OpenSSF`_ for security reasons
+   with no performance overhead. This option is disabled by default.
 
-   The following compiler options are disabled with :option:`!--disable-safety`:
+   Compiler options enabled with :option:`!--enable-safety` include:
 
    * `-fstack-protector-strong`_: Enable run-time checks for stack-based buffer overflows.
    * `-Wtrampolines`_: Enable warnings about trampolines that require executable stacks.
@@ -1291,7 +1290,7 @@ Security Options
 .. option:: --enable-slower-safety
 
    Enable compiler options that are `recommended by OpenSSF`_ for security reasons which require overhead.
-   If this option is not enabled, CPython will not be built based on safety compiler options which performance impact.
+   If this option is not enabled, CPython will not be built with safety compiler options that have a performance impact.
    When this option is enabled, CPython will be built with the compiler options listed below.
 
    The following compiler options are enabled with :option:`!--enable-slower-safety`:
