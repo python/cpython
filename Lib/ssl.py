@@ -1193,6 +1193,9 @@ class SSLSocket(socket):
 
     @_sslcopydoc
     def get_verified_chain(self):
+        self._checkClosed()
+        if self._sslobj is None:
+            return []
         chain = self._sslobj.get_verified_chain()
 
         if chain is None:
@@ -1202,6 +1205,9 @@ class SSLSocket(socket):
 
     @_sslcopydoc
     def get_unverified_chain(self):
+        self._checkClosed()
+        if self._sslobj is None:
+            return []
         chain = self._sslobj.get_unverified_chain()
 
         if chain is None:
