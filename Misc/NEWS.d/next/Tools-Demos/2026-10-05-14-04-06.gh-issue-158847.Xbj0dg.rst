@@ -1,0 +1,2 @@
+Pegen now picks the leader of a left-recursive rule cycle in polynomial time,
+instead of enumerating every path through the cycle.

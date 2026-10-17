@@ -115,19 +115,15 @@ def compute_left_recursives(
         if len(scc) > 1:
             for name in scc:
                 rules[name].left_recursive = True
-            # Try to find a leader such that all cycles go through it.
-            leaders = set(scc)
-            for start in scc:
-                for cycle in sccutils.find_cycles_in_scc(graph, scc, start):
-                    # print("Cycle:", " -> ".join(cycle))
-                    leaders -= scc - set(cycle)
-                    if not leaders:
-                        raise ValueError(
-                            f"SCC {scc} has no leadership candidate (no element is included in all cycles)"
-                        )
-            # print("Leaders:", leaders)
-            leader = min(leaders)  # Pick an arbitrary leader from the candidates.
-            rules[leader].leader = True
+            # A leader lies in every cycle, so removing it must leave a DAG.
+            for leader in sorted(scc):
+                if sccutils.is_acyclic(graph, scc - {leader}):
+                    rules[leader].leader = True
+                    break
+            else:
+                raise ValueError(
+                    f"SCC {scc} has no leadership candidate (no element is included in all cycles)"
+                )
         else:
             name = min(scc)  # The only element.
             if name in graph[name]:

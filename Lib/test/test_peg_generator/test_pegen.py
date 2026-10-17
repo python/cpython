@@ -12,7 +12,9 @@ test_tools.skip_if_missing("peg_generator")
 with test_tools.imports_under_tool("peg_generator"):
     from pegen.grammar_parser import GeneratedParser as GrammarParser
     from pegen.testutil import parse_string, generate_parser, make_parser
-    from pegen.grammar import GrammarVisitor, GrammarError, Grammar, RuleKind
+    from pegen.grammar import (
+        GrammarVisitor, GrammarError, Grammar, NameLeaf, RuleKind,
+    )
     from pegen.grammar_visualizer import ASTGrammarPrinter
     from pegen.parser import Parser
     from pegen.parser_generator import compute_nullables, compute_left_recursives
@@ -750,6 +752,56 @@ class TestPegen(unittest.TestCase):
         # This case was failing because of a double trailing comma at the end
         # of a line in the generated source. See bpo-41044
         make_parser(grammar)
+
+    def test_left_recursion_leader_order(self) -> None:
+        grammar = parse_string("""
+        start: zeta NEWLINE
+        zeta: alpha '+' | NUMBER
+        alpha: zeta '-' | NUMBER
+        """, GrammarParser)
+        PythonParserGenerator(grammar, io.StringIO())
+        self.assertTrue(grammar.rules["alpha"].leader)
+        self.assertFalse(grammar.rules["zeta"].leader)
+
+    def test_large_left_recursive_grammar(self) -> None:
+        size = 12
+        lines = ["start: r0 NEWLINE ENDMARKER"]
+        for i in range(size):
+            children = list(range(i + 1, size))
+            if i:
+                children.append(0)
+            alternatives = [f"r{j} '+'" for j in children] + ["NUMBER"]
+            lines.append(f"r{i}: " + " | ".join(alternatives))
+        parser_class = make_parser("\n".join(lines) + "\n")
+        node = parse_string("1\n", parser_class)
+        self.assertEqual(node[0].string, "1")
+
+    def test_left_recursion_analysis_work(self) -> None:
+        class CountedName(str):
+            comparisons = 0
+            __hash__ = str.__hash__
+
+            def __eq__(self, other):
+                type(self).comparisons += 1
+                return super().__eq__(other)
+
+        size = 8
+        lines = ["start: r0 NEWLINE ENDMARKER"]
+        for i in range(size):
+            alternatives = [
+                f"r{j} '+'" for j in range(size) if j != i
+            ] + ["NUMBER"]
+            lines.append(f"r{i}: " + " | ".join(alternatives))
+        grammar = parse_string("\n".join(lines) + "\n", GrammarParser)
+        for rule in grammar.rules.values():
+            for alt in rule.rhs.alts:
+                for item in alt.items:
+                    if isinstance(item.item, NameLeaf):
+                        item.item.value = CountedName(item.item.value)
+        CountedName.comparisons = 0
+        with self.assertRaisesRegex(ValueError, "no leadership candidate"):
+            PythonParserGenerator(grammar, io.StringIO())
+        self.assertLess(CountedName.comparisons, 2_000)
 
     def test_left_recursion_too_complex(self) -> None:
         grammar = """
