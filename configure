@@ -12074,6 +12074,12 @@ then :
   printf "%s\n" "#define HAVE_PTHREAD_H 1" >>confdefs.h
 
 fi
+ac_fn_c_check_header_compile "$LINENO" "pthread_np.h" "ac_cv_header_pthread_np_h" "$ac_includes_default"
+if test "x$ac_cv_header_pthread_np_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_PTHREAD_NP_H 1" >>confdefs.h
+
+fi
 ac_fn_c_check_header_compile "$LINENO" "pty.h" "ac_cv_header_pty_h" "$ac_includes_default"
 if test "x$ac_cv_header_pty_h" = xyes
 then :
@@ -21808,6 +21814,49 @@ printf "%s\n" "$ac_cv_func_strerror_r" >&6; }
 then :
 
 printf "%s\n" "#define _Py_HAVE_STRERROR_R 1" >>confdefs.h
+
+fi
+
+
+
+
+# FreeBSD pthread_attr_get_np()
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for pthread_attr_get_np" >&5
+printf %s "checking for pthread_attr_get_np... " >&6; }
+if test ${ac_cv_func_pthread_attr_get_np+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <pthread_np.h>
+int
+main (void)
+{
+void *x=pthread_attr_get_np
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_pthread_attr_get_np=yes
+else case e in #(
+  e) ac_cv_func_pthread_attr_get_np=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_pthread_attr_get_np" >&5
+printf "%s\n" "$ac_cv_func_pthread_attr_get_np" >&6; }
+  if test "x$ac_cv_func_pthread_attr_get_np" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_PTHREAD_ATTR_GET_NP 1" >>confdefs.h
 
 fi
 
