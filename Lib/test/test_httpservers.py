@@ -1684,6 +1684,9 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
 
     def setUp(self):
         super().setUp()
+        # fetch_file() calls urlopen() without an SSL context for the plain
+        # HTTP cases, which installs a process-wide default opener.
+        self.addCleanup(urllib.request.urlcleanup)
         server_dir_context = os_helper.temp_cwd()
         server_dir = self.enterContext(server_dir_context)
         with open(self.served_filename, 'wb') as f:
