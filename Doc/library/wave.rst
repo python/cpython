@@ -281,6 +281,8 @@ Wave_write Objects
       When setting :data:`WAVE_FORMAT_IEEE_FLOAT`, the sample width must be
       4 or 8 bytes.
 
+      .. versionadded:: 3.15
+
 
    .. method:: getformat()
 
