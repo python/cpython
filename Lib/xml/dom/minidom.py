@@ -2169,11 +2169,15 @@ def _clone_node(node, deep, newOwnerDocument):
     else:
         operation = xml.dom.UserDataHandler.NODE_IMPORTED
     if node.nodeType == Node.ELEMENT_NODE:
-        clone = newOwnerDocument.createElementNS(node.namespaceURI,
-                                                 node.nodeName)
+        prefix, localName = _nssplit(node.nodeName)
+        clone = Element(node.nodeName, node.namespaceURI, prefix)
+        clone.ownerDocument = newOwnerDocument
         for attr in node.attributes.values():
-            clone.setAttributeNS(attr.namespaceURI, attr.nodeName, attr.value)
-            a = clone.getAttributeNodeNS(attr.namespaceURI, attr.localName)
+            prefix, localName = _nssplit(attr.nodeName)
+            a = Attr(attr.nodeName, attr.namespaceURI, localName, prefix)
+            a.value = attr.value
+            a.ownerDocument = newOwnerDocument
+            clone.setAttributeNode(a)
             a.specified = attr.specified
 
         if deep:
@@ -2200,8 +2204,9 @@ def _clone_node(node, deep, newOwnerDocument):
     elif node.nodeType == Node.ENTITY_REFERENCE_NODE:
         clone = newOwnerDocument.createEntityReference(node.nodeName)
     elif node.nodeType == Node.ATTRIBUTE_NODE:
-        clone = newOwnerDocument.createAttributeNS(node.namespaceURI,
-                                                   node.nodeName)
+        prefix, localName = _nssplit(node.nodeName)
+        clone = Attr(node.nodeName, node.namespaceURI, localName, prefix)
+        clone.ownerDocument = newOwnerDocument
         clone.specified = True
         clone.value = node.value
     elif node.nodeType == Node.DOCUMENT_TYPE_NODE:
