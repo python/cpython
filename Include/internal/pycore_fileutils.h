@@ -115,6 +115,11 @@ extern Py_ssize_t _Py_read(
     void *buf,
     size_t count);
 
+extern Py_ssize_t _Py_read_noraise(
+    int fd,
+    void *buf,
+    size_t count);
+
 // Export for 'select' shared extension (Solaris devpoll_flush())
 PyAPI_FUNC(Py_ssize_t) _Py_write(
     int fd,

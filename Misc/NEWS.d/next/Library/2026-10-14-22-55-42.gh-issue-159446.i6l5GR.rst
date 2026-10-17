@@ -1,0 +1,3 @@
+Opening and reading a small file with :class:`io.FileIO` is about 5% faster:
+the constructor no longer raises and discards a :exc:`TypeError` for a path,
+and the :term:`GIL` is released fewer times.
