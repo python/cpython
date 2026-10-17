@@ -1,0 +1,3 @@
+Avoid failures to set RLIMIT_STACK with the resource module by no longer
+setting a default stack size for the cpython executable in the standard
+build configuration.
