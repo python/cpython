@@ -954,14 +954,15 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
             try:
                 sock.start_tls(
                     sslctx,
-                    server_side=True)
+                    server_side=True,
+                    suppress_ragged_eofs=False)
                 sock.sendall(b'A\n')
                 sock.recv_all(1)
                 orig_sock.send(b'please corrupt the SSL connection')
                 # the client now closes the connection; although its
                 # TLS shutdown fails on the corrupted record, it must
-                # still send close_notify, completing our unwrap()
-                sock.unwrap()
+                # still send close_notify
+                self.assertEqual(sock.recv(1), b'')
             except ssl.SSLError as exc:
                 server_err = exc
             finally:
