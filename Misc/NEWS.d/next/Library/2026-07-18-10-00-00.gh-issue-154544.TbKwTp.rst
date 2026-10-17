@@ -1,0 +1,3 @@
+Fix :func:`traceback.TracebackException.format_exception_only` mutating
+its own attributes when suggesting a keyword typo fix, making repeated
+calls produce different output.  Patch by tonghuaroot.
