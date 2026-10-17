@@ -1,0 +1,4 @@
+Add :func:`email.saslprep`, an implementation of the RFC 4013 SASLprep
+string-preparation algorithm, and use it in :mod:`smtplib` to support Unicode
+usernames and passwords in SMTP authentication. SASLprep implementation
+contributed by MongoDB, Inc.

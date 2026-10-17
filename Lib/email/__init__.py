@@ -21,6 +21,7 @@ __all__ = [
     'mime',
     'parser',
     'quoprimime',
+    'saslprep',
     'utils',
     ]
 
@@ -59,3 +60,6 @@ def message_from_binary_file(fp, *args, **kws):
     """
     from email.parser import BytesParser
     return BytesParser(*args, **kws).parse(fp)
+
+
+from email._saslprep import saslprep
