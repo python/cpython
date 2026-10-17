@@ -1,0 +1,4 @@
+Fix data race in :mod:`faulthandler` where concurrent calls to
+:func:`~faulthandler.dump_traceback_later` and
+:func:`~faulthandler.cancel_dump_traceback_later` could corrupt the
+watchdog lock handshake on free-threaded builds.
