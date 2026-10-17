@@ -43,6 +43,15 @@ jobs:
         # please update the versions in `Tools/pixi-packages/variants.yaml` too.
         echo "CC=clang" >> "$GITHUB_ENV"
         echo "CXX=clang++" >> "$GITHUB_ENV"
+    - name: ASan option setup
+      if: inputs.sanitizer == 'ASan'
+      run: |
+        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
+        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> "$GITHUB_ENV"
+        echo "ASAN_OPTIONS=${SAN_LOG_OPTION} detect_leaks=0 allocator_may_return_null=1 handle_segv=0" >> "$GITHUB_ENV"
+        echo "PYTHONSTRICTEXTENSIONBUILD=1" >> "$GITHUB_ENV"
+      env:
+        SAN_LOG_OPTION: log_path=${{ github.workspace }}/san_log
     - name: TSan option setup
       if: inputs.sanitizer == 'TSan'
       run: |
@@ -88,16 +97,19 @@ jobs:
     - name: Add ccache to PATH
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
-    - name: 'Restore OpenSSL build (TSan)'
+    - name: 'Restore OpenSSL build'
       id: cache-openssl
-      if: inputs.sanitizer == 'TSan'
+      if: inputs.sanitizer == 'TSan' || inputs.sanitizer == 'ASan'
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
-        key: ${{ env.IMAGE_OS_VERSION }}-multissl-openssl-tsan-${{ env.OPENSSL_VER }}
-    - name: Install OpenSSL (TSan)
+        key: >-
+          ${{ env.IMAGE_OS_VERSION }}-multissl-openssl-${{
+            inputs.sanitizer == 'TSan' && 'tsan-' || ''
+          }}${{ env.OPENSSL_VER }}
+    - name: Install OpenSSL
       if: >-
-        inputs.sanitizer == 'TSan'
+        (inputs.sanitizer == 'TSan' || inputs.sanitizer == 'ASan')
         && steps.cache-openssl.outputs.cache-hit != 'true'
       run: >-
         python3 Tools/ssl/multissltests.py
@@ -105,7 +117,7 @@ jobs:
         --base-directory="${MULTISSL_DIR}"
         --openssl="${OPENSSL_VER}"
         --system=Linux
-        --tsan
+        ${{ inputs.sanitizer == 'TSan' && '--tsan' || '' }}
     # gh-157958: -O2 instead of the pydebug default -Og to avoid a clang 21
     # compile-time blowup on some interpreter files.
     # (https://github.com/llvm/llvm-project/issues/179695)
@@ -117,14 +129,20 @@ jobs:
         --config-cache
         OPT="-O2 -g"
         ${{
-          inputs.sanitizer == 'TSan'
+          inputs.sanitizer == 'ASan'
+          && '--with-address-sanitizer --without-pymalloc'
+          || inputs.sanitizer == 'TSan'
           && '--with-thread-sanitizer'
           || inputs.sanitizer == 'MSan'
           && '--with-memory-sanitizer'
           || '--with-undefined-behavior-sanitizer --with-strict-overflow'
         }}
         ${{ inputs.sanitizer == 'MSan' && '--with-assertions' || '--with-pydebug' }}
-        ${{ inputs.sanitizer == 'TSan' && '--with-openssl="$OPENSSL_DIR" --with-openssl-rpath=auto' || '' }}
+        ${{
+          (inputs.sanitizer == 'TSan' || inputs.sanitizer == 'ASan')
+          && '--with-openssl="$OPENSSL_DIR" --with-openssl-rpath=auto'
+          || ''
+        }}
         ${{ inputs.free-threading && '--disable-gil' || '' }}
     - name: Build CPython
       run: make -j4
