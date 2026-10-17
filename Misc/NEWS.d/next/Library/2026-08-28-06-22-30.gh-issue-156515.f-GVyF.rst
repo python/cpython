@@ -1,0 +1,2 @@
+Fix bug where :mod:`annotationlib` could return annotations located in code
+blocks that are not executed at runtime.
