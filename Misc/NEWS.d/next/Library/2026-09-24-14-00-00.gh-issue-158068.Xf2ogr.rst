@@ -1,0 +1,4 @@
+:mod:`venv` no longer clears the target directory when it is a symlink or a
+regular file. Previously ``venv --clear`` followed a symlink and could delete
+the contents of the linked directory. It now raises :exc:`ValueError` before
+removing anything.

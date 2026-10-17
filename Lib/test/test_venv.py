@@ -663,6 +663,34 @@ class BasicTest(BaseTest):
             self.assertRaises((ValueError, OSError), venv.create, self.env_dir)
             self.clear_directory(self.env_dir)
 
+    @unittest.skipUnless(can_symlink(), 'Needs symlinks')
+    def test_clear_symlink_not_followed(self):
+        # gh-158068: venv --clear must not wipe the contents of a directory
+        # that env_dir merely points to via a symlink.
+        target = os.path.join(self.env_dir, 'target')
+        os.mkdir(target)
+        keep = os.path.join(target, 'keep')
+        with open(keep, 'wb') as f:
+            f.write(b'Still here?')
+        link = os.path.join(self.env_dir, 'link')
+        os.symlink(target, link)
+
+        with self.assertRaises(ValueError):
+            venv.create(link, clear=True)
+        # The symlink target and its content are left untouched.
+        self.assertTrue(os.path.islink(link))
+        self.assertTrue(os.path.exists(keep))
+
+    def test_clear_file_not_removed(self):
+        # gh-158068: venv --clear must not treat a regular file as env_dir.
+        target = os.path.join(self.env_dir, 'afile')
+        with open(target, 'wb') as f:
+            f.write(b'Still here?')
+
+        with self.assertRaises(ValueError):
+            venv.create(target, clear=True)
+        self.assertTrue(os.path.isfile(target))
+
     def test_upgrade(self):
         """
         Test upgrading an existing environment directory.
