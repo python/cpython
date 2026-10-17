@@ -14,6 +14,7 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_INT_RELAXED()
 #include "pycore_time.h"          // _PyTime_FromSecondsObject()
 #include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 
@@ -2162,7 +2163,7 @@ kqueue_queue_internal_close(kqueue_queue_Object *self)
     int save_errno = 0;
     if (self->kqfd >= 0) {
         int kqfd = self->kqfd;
-        self->kqfd = -1;
+        FT_ATOMIC_STORE_INT_RELAXED(self->kqfd, -1);
         _selectstate *state = _selectstate_by_type(Py_TYPE(self));
         kqueue_tracking_remove(state, self);
         Py_BEGIN_ALLOW_THREADS
@@ -2276,7 +2277,7 @@ static PyObject *
 kqueue_queue_get_closed(PyObject *op, void *Py_UNUSED(closure))
 {
     kqueue_queue_Object *self = kqueue_queue_Object_CAST(op);
-    if (self->kqfd < 0) {
+    if (FT_ATOMIC_LOAD_INT_RELAXED(self->kqfd) < 0) {
         Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;
@@ -2292,9 +2293,10 @@ static PyObject *
 select_kqueue_fileno_impl(kqueue_queue_Object *self)
 /*[clinic end generated code: output=716f46112a4f6e5c input=41911c539ca2b0ca]*/
 {
-    if (self->kqfd < 0)
+    int kqfd = FT_ATOMIC_LOAD_INT_RELAXED(self->kqfd);
+    if (kqfd < 0)
         return kqueue_queue_err_closed();
-    return PyLong_FromLong(self->kqfd);
+    return PyLong_FromLong(kqfd);
 }
 
 /*[clinic input]
@@ -2349,7 +2351,7 @@ select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
     PyTime_t timeout, deadline = 0;
     _selectstate *state = _selectstate_by_type(Py_TYPE(self));
 
-    if (self->kqfd < 0)
+    if (FT_ATOMIC_LOAD_INT_RELAXED(self->kqfd) < 0)
         return kqueue_queue_err_closed();
 
     if (maxevents < 0) {
@@ -2431,8 +2433,8 @@ select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
     do {
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
-        gotevents = kevent(self->kqfd, chl, nchanges,
-                           evl, maxevents, ptimeoutspec);
+        gotevents = kevent(FT_ATOMIC_LOAD_INT_RELAXED(self->kqfd),
+                           chl, nchanges, evl, maxevents, ptimeoutspec);
         Py_END_ALLOW_THREADS
 
         if (errno != EINTR)
