@@ -1,0 +1,3 @@
+Fix crashes when entering JIT-compiled code with UndefinedBehaviorSanitizer
+and unaligned memory accesses when patching JIT code.
+Patch by Shamil Abdulaev.

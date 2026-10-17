@@ -2423,6 +2423,21 @@ class TestSysJIT(unittest.TestCase):
         assert_python_ok("-c", script.format(enabled=False), PYTHON_JIT="0")
         assert_python_ok("-c", script.format(enabled=available), PYTHON_JIT="1")
 
+    @unittest.skipUnless(sys._jit.is_available(), "requires JIT")
+    def test_jit_compile_regex(self):
+        script = textwrap.dedent(r"""
+            import re
+
+            for _ in range(2):
+                re.purge()
+                pattern = re.compile(r"[\x00-\uffff]")
+                assert pattern.fullmatch("\x00") is not None
+                assert pattern.fullmatch("\uffff") is not None
+                assert pattern.fullmatch("\U00010000") is None
+        """)
+        _, _, err = assert_python_ok("-c", script, PYTHON_JIT="1")
+        self.assertEqual(err, b"")
+
     def test_jit_is_active(self):
         available = sys._jit.is_available()
         script = textwrap.dedent(
