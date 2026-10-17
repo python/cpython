@@ -4,6 +4,8 @@
 
 #include "parts.h"
 #include "pycore_critical_section.h"
+#include "pycore_interp_structs.h" // _stoptheworld_state
+#include "pycore_lock.h"          // _Py_HAS_PARKED
 #include "pycore_pystate.h"
 #include "pycore_pythread.h"
 
@@ -464,6 +466,209 @@ test_critical_sections_stw(PyObject *self, PyObject *Py_UNUSED(args))
 
 #endif // Py_CAN_START_THREADS
 
+#if defined(Py_GIL_DISABLED) && defined(Py_CAN_START_THREADS)
+
+// gh-158195: Test that a thread waiting to stop the world does not try to
+// re-acquire its critical sections while it owns the stop-the-world mutex.
+//
+// The main thread holds the interpreter's stop-the-world mutex so that both
+// worker threads must wait for it:
+//
+// 1. The "waiter" thread holds a critical section on `obj` and requests
+//    stop-the-world.  It parks on the STW mutex and, because it detaches
+//    while waiting, releases the mutex of `obj`.
+// 2. The "pinned" thread locks `obj->ob_mutex` directly, which mimics a
+//    pinned critical section: the mutex is not released when the thread
+//    detaches.  It then requests stop-the-world and parks behind the waiter.
+// 3. The main thread releases the STW mutex.  The waiter acquires it.
+//
+// Before the fix, the waiter re-acquired `obj` when it re-attached while
+// owning the STW mutex, and blocked forever: the pinned thread holds `obj`
+// and waits for the STW mutex.  This test deadlocks on builds without the fix.
+
+enum {
+    STW_HANDOFF_ONE_MUTEX,
+    STW_HANDOFF_TWO_MUTEXES,
+    STW_HANDOFF_NESTED,
+};
+
+struct test_data_stw_handoff {
+    PyObject *obj;
+    PyObject *other;
+    PyObject *inner;
+    int mode;
+    PyMutex *stw_mutex;
+    PyThreadState *pinned_tstate;
+};
+
+static void
+detached_sleep(int ms)
+{
+    Py_BEGIN_ALLOW_THREADS
+    pysleep(ms);
+    Py_END_ALLOW_THREADS
+}
+
+static void
+stw_handoff_stop_start(struct test_data_stw_handoff *test_data)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    _PyEval_StopTheWorld(interp);
+    // A critical section begun and ended while the world is stopped must not
+    // resume the critical sections suspended by the STW request.
+    Py_BEGIN_CRITICAL_SECTION(test_data->inner);
+    Py_END_CRITICAL_SECTION();
+    _PyEval_StartTheWorld(interp);
+
+    // The critical section is restored by the time StartTheWorld returns.
+    PyThreadState *tstate = PyThreadState_GET();
+    assert(_PyCriticalSection_IsActive(tstate->critical_section));
+    assert(PyMutex_IsLocked(&test_data->obj->ob_mutex));
+    (void)tstate;
+}
+
+static void
+thread_stw_handoff_waiter(void *arg)
+{
+    struct test_data_stw_handoff *test_data = arg;
+    PyGILState_STATE gil = PyGILState_Ensure();
+
+    switch (test_data->mode) {
+    case STW_HANDOFF_ONE_MUTEX:
+        Py_BEGIN_CRITICAL_SECTION(test_data->obj);
+        stw_handoff_stop_start(test_data);
+        Py_END_CRITICAL_SECTION();
+        break;
+    case STW_HANDOFF_TWO_MUTEXES:
+        Py_BEGIN_CRITICAL_SECTION2(test_data->obj, test_data->other);
+        stw_handoff_stop_start(test_data);
+        assert(PyMutex_IsLocked(&test_data->other->ob_mutex));
+        Py_END_CRITICAL_SECTION2();
+        break;
+    case STW_HANDOFF_NESTED:
+        Py_BEGIN_CRITICAL_SECTION(test_data->other);
+        Py_BEGIN_CRITICAL_SECTION(test_data->obj);
+        stw_handoff_stop_start(test_data);
+        Py_END_CRITICAL_SECTION();
+        // Ending the inner section resumes the outer one.
+        assert(PyMutex_IsLocked(&test_data->other->ob_mutex));
+        Py_END_CRITICAL_SECTION();
+        break;
+    }
+
+    PyGILState_Release(gil);
+}
+
+static void
+thread_stw_handoff_pinned(void *arg)
+{
+    struct test_data_stw_handoff *test_data = arg;
+    PyGILState_STATE gil = PyGILState_Ensure();
+
+    // Wait for the waiter thread to park on the STW mutex.
+    while (!(_Py_atomic_load_uint8(&test_data->stw_mutex->_bits) &
+             _Py_HAS_PARKED)) {
+        detached_sleep(1);
+    }
+
+    // Lock the mutex directly so that it stays locked while this thread is
+    // detached, like a critical section pinned by type_lock_prevent_release().
+    PyMutex_Lock(&test_data->obj->ob_mutex);
+    _Py_atomic_store_ptr(&test_data->pinned_tstate, PyThreadState_GET());
+
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    _PyEval_StopTheWorld(interp);
+    _PyEval_StartTheWorld(interp);
+    PyMutex_Unlock(&test_data->obj->ob_mutex);
+
+    PyGILState_Release(gil);
+}
+
+static PyObject *
+stw_handoff_run(int mode)
+{
+    struct test_data_stw_handoff test_data = {
+        .obj = PyDict_New(),
+        .other = PyDict_New(),
+        .inner = PyDict_New(),
+        .mode = mode,
+        .stw_mutex = &PyInterpreterState_Get()->stoptheworld.mutex,
+    };
+    if (test_data.obj == NULL || test_data.other == NULL ||
+        test_data.inner == NULL)
+    {
+        goto error;
+    }
+
+    // Hold the STW mutex so that both threads must wait for it.  Avoid
+    // anything that could stop the world (e.g., allocation triggering a GC)
+    // until it is released.
+    PyMutex_Lock(test_data.stw_mutex);
+
+    PyThread_handle_t handles[2];
+    PyThread_ident_t idents[2];
+    if (PyThread_start_joinable_thread(&thread_stw_handoff_waiter, &test_data,
+                                       &idents[0], &handles[0]) != 0) {
+        PyMutex_Unlock(test_data.stw_mutex);
+        PyErr_SetString(PyExc_RuntimeError, "could not start thread");
+        goto error;
+    }
+    if (PyThread_start_joinable_thread(&thread_stw_handoff_pinned, &test_data,
+                                       &idents[1], &handles[1]) != 0) {
+        Py_FatalError("could not start thread");
+    }
+
+    // Wait for the pinned thread to park on the STW mutex.  It parks before
+    // detaching, so once it is detached it is queued behind the waiter.
+    for (;;) {
+        PyThreadState *t = _Py_atomic_load_ptr(&test_data.pinned_tstate);
+        if (t != NULL &&
+            _Py_atomic_load_int(&t->state) == _Py_THREAD_DETACHED) {
+            break;
+        }
+        detached_sleep(1);
+    }
+
+    PyMutex_Unlock(test_data.stw_mutex);
+
+    Py_BEGIN_ALLOW_THREADS
+    PyThread_join_thread(handles[0]);
+    PyThread_join_thread(handles[1]);
+    Py_END_ALLOW_THREADS
+
+    Py_DECREF(test_data.obj);
+    Py_DECREF(test_data.other);
+    Py_DECREF(test_data.inner);
+    Py_RETURN_NONE;
+
+error:
+    Py_XDECREF(test_data.obj);
+    Py_XDECREF(test_data.other);
+    Py_XDECREF(test_data.inner);
+    return NULL;
+}
+
+static PyObject *
+test_critical_section_stw_handoff(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    return stw_handoff_run(STW_HANDOFF_ONE_MUTEX);
+}
+
+static PyObject *
+test_critical_section2_stw_handoff(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    return stw_handoff_run(STW_HANDOFF_TWO_MUTEXES);
+}
+
+static PyObject *
+test_critical_section_nested_stw_handoff(PyObject *self,
+                                         PyObject *Py_UNUSED(args))
+{
+    return stw_handoff_run(STW_HANDOFF_NESTED);
+}
+
+#endif // Py_GIL_DISABLED && Py_CAN_START_THREADS
+
 static PyMethodDef test_methods[] = {
     {"test_critical_sections", test_critical_sections, METH_NOARGS},
     {"test_critical_sections_nest", test_critical_sections_nest, METH_NOARGS},
@@ -476,6 +681,14 @@ static PyMethodDef test_methods[] = {
     {"test_critical_sections_threads", test_critical_sections_threads, METH_NOARGS},
     {"test_critical_sections_gc", test_critical_sections_gc, METH_NOARGS},
     {"test_critical_sections_stw", test_critical_sections_stw, METH_NOARGS},
+#endif
+#if defined(Py_GIL_DISABLED) && defined(Py_CAN_START_THREADS)
+    {"test_critical_section_stw_handoff",
+     test_critical_section_stw_handoff, METH_NOARGS},
+    {"test_critical_section2_stw_handoff",
+     test_critical_section2_stw_handoff, METH_NOARGS},
+    {"test_critical_section_nested_stw_handoff",
+     test_critical_section_nested_stw_handoff, METH_NOARGS},
 #endif
     {NULL, NULL} /* sentinel */
 };

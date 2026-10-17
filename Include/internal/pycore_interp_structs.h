@@ -422,6 +422,10 @@ struct _stoptheworld_state {
     Py_ssize_t thread_countdown;  // Number of threads that must pause.
 
     PyThreadState *requester; // Thread that requested the pause (may be NULL).
+
+    // Critical sections suspended by a requester waiting for mutex. They are
+    // restored after both stop-the-world locks have been released.
+    uintptr_t requester_critical_section;
 };
 
 /* Tracks some rare events per-interpreter, used by the optimizer to turn on/off

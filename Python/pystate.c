@@ -2524,13 +2524,36 @@ stop_the_world(struct _stoptheworld_state *stw)
     else {
         _PyRWMutex_RLock(&runtime->stoptheworld_mutex);
     }
-    PyMutex_Lock(&stw->mutex);
+
+    uintptr_t requester_critical_section = 0;
+    PyThreadState *requester = _PyThreadState_GET();
+    if (!PyMutex_LockFast(&stw->mutex)) {
+        if (requester != NULL && requester->critical_section != 0) {
+            // gh-158195: Do not resume our critical sections while owning the
+            // STW mutex.  Another thread waiting for the mutex may hold one of
+            // their locks without releasing it on detach (see
+            // type_lock_prevent_release() in typeobject.c), which would
+            // deadlock.  Detach (suspending the critical sections) and hide
+            // them from _PyThreadState_Attach().  start_the_world() restores
+            // them after releasing the STW locks.
+            _PyThreadState_Detach(requester);
+            requester_critical_section = requester->critical_section;
+            assert(requester_critical_section & _Py_CRITICAL_SECTION_INACTIVE);
+            requester->critical_section = 0;
+            _PyMutex_LockTimed(&stw->mutex, -1, _Py_LOCK_DONT_DETACH);
+            _PyThreadState_Attach(requester);
+        }
+        else {
+            PyMutex_Lock(&stw->mutex);
+        }
+    }
 
     HEAD_LOCK(runtime);
     stw->requested = 1;
     stw->thread_countdown = 0;
     stw->stop_event = (PyEvent){0};  // zero-initialize (unset)
-    stw->requester = _PyThreadState_GET();  // may be NULL
+    stw->requester = requester;  // may be NULL
+    stw->requester_critical_section = requester_critical_section;
     FT_STAT_WORLD_STOP_INC();
 
     _Py_FOR_EACH_STW_INTERP(stw, i) {
@@ -2575,7 +2598,12 @@ start_the_world(struct _stoptheworld_state *stw)
     _PyRuntimeState *runtime = &_PyRuntime;
     assert(PyMutex_IsLocked(&stw->mutex));
 
+    PyThreadState *requester;
+    uintptr_t requester_critical_section;
+
     HEAD_LOCK(runtime);
+    requester = stw->requester;
+    requester_critical_section = stw->requester_critical_section;
     stw->requested = 0;
     stw->world_stopped = 0;
     // Switch threads back to the detached state.
@@ -2587,6 +2615,7 @@ start_the_world(struct _stoptheworld_state *stw)
         }
     }
     stw->requester = NULL;
+    stw->requester_critical_section = 0;
     HEAD_UNLOCK(runtime);
     PyMutex_Unlock(&stw->mutex);
     if (stw->is_global) {
@@ -2594,6 +2623,17 @@ start_the_world(struct _stoptheworld_state *stw)
     }
     else {
         _PyRWMutex_RUnlock(&runtime->stoptheworld_mutex);
+    }
+
+    if (requester_critical_section != 0) {
+        // Restore the critical sections hidden by stop_the_world().  This may
+        // block, so it must happen after releasing the STW locks.  Critical
+        // sections begun while the world was stopped must have ended.
+        assert(requester != NULL);
+        assert(requester == _PyThreadState_GET());
+        assert(requester->critical_section == 0);
+        requester->critical_section = requester_critical_section;
+        _PyCriticalSection_Resume(requester);
     }
 }
 #endif  // Py_GIL_DISABLED
