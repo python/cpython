@@ -1,0 +1,3 @@
+Fix a crash when encoding a string with non-BMP characters to UTF-16 with
+an error handler that returns a position before the error. Patch by
+Christian Aurich Zanettini Martins.
