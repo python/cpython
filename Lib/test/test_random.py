@@ -154,6 +154,8 @@ class TestBasicOps:
         self.assertRaises(ValueError, self.gen.sample, population, N+1)
         self.assertRaises(ValueError, self.gen.sample, [], -1)
         self.assertRaises(TypeError, self.gen.sample, population, 1.0)
+        with self.assertRaises(TypeError):
+            self.gen.sample(population, 1, counts = [" "] * N)
 
     def test_sample_distribution(self):
         # For the entire allowable range of 0 <= k <= N, validate that
