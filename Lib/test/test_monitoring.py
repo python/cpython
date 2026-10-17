@@ -702,6 +702,25 @@ class LineMonitoringTest(MonitoringTestBase, unittest.TestCase):
 
         self.check_lines(f, [1,3,5,4,2,4])
 
+    def test_line_same_line_as_def(self):
+
+        def func(): line = 1; line = 2
+
+        self.check_lines(func, [0])
+
+    def test_line_multi_line_body_starting_on_def_line(self):
+
+        def func(): line = 1; \
+            line = 2
+
+        self.check_lines(func, [0, 1])
+
+    def test_line_lambda_body(self):
+
+        lam = lambda: 1
+
+        self.check_lines(lam, [0])
+
 class TestDisable(MonitoringTestBase, unittest.TestCase):
 
     def gen(self, cond):
