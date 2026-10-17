@@ -1,0 +1,4 @@
+:mod:`uuid`: the timestamp of UUIDv7 objects generated within the same
+millisecond after encountering a counter overflow is only incremented once
+for the entire batch of UUIDv7 objects instead at each object creation.
+Patch by Bénédikt Tran.
