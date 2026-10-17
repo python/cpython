@@ -361,9 +361,9 @@ class MacOSTest(unittest.TestCase):
         )
         self.assertTrue(result)
 
-    def test_default_non_http_uses_bundle_id(self):
-        # Non-http(s) URLs (e.g. file://) must be routed through the browser
-        # via -b <bundle-id> to prevent OS file handler dispatch.
+    def test_default_file_uses_bundle_id(self):
+        # file:// URLs must be routed through the browser via -b <bundle-id>
+        # to prevent OS file handler dispatch.
         file_url = 'file:///tmp/test.html'
         browser = webbrowser.MacOS('default')
         with mock.patch('webbrowser._macos_default_browser_bundle_id',
@@ -375,6 +375,23 @@ class MacOSTest(unittest.TestCase):
             ['/usr/bin/open', '-b', 'com.google.Chrome', file_url],
             stderr=subprocess.DEVNULL,
         )
+        self.assertTrue(result)
+
+    def test_default_custom_scheme_uses_plain_open(self):
+        # Custom app URI schemes (e.g. vscode://, slack://) are not routed
+        # through the default browser's bundle ID -- the OS should resolve
+        # the scheme's own registered handler (gh-149454).
+        custom_url = 'vscode://vscode-remote/ssh-remote+host/workspace'
+        browser = webbrowser.MacOS('default')
+        with mock.patch('webbrowser._macos_default_browser_bundle_id') as mock_bundle, \
+             mock.patch('subprocess.run') as mock_run:
+            mock_run.return_value = mock.Mock(returncode=0)
+            result = browser.open(custom_url)
+        mock_run.assert_called_once_with(
+            ['/usr/bin/open', custom_url],
+            stderr=subprocess.DEVNULL,
+        )
+        mock_bundle.assert_not_called()
         self.assertTrue(result)
 
     def test_named_known_browser_uses_bundle_id(self):
