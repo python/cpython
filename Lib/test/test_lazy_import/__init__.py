@@ -308,6 +308,22 @@ class LazyImportTypeTests(LazyImportTestCase):
         """)
         assert_python_ok("-c", code)
 
+    @support.run_with_limited_c_stack(depth=10_000, size=256 * 1024)
+    def test_deeply_dotted_name(self):
+        """A long dotted name must not overflow the C stack."""
+        m = types.SimpleNamespace()
+        # Every lookup in m.m.m... succeeds, so resolve() only fails if the
+        # C stack runs out.
+        m.m = m
+        ns = {"__builtins__": {"__lazy_import__": __lazy_import__,
+                               "__import__": lambda *args: m}}
+        # Free the chain on the main thread: a thread with a small C stack
+        # postpones deep deallocations and never gets back to them.
+        self.addCleanup(ns.clear)
+        exec("lazy import " + ".".join(["m"] * 10_000) + " as x", ns)
+        with contextlib.suppress(RecursionError):
+            ns["x"].resolve()
+
 
 class SyntaxRestrictionTests(LazyImportTestCase):
     """Tests for syntax restrictions on lazy imports."""

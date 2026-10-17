@@ -812,6 +812,8 @@ system.
       used for ``strict``.
 
 
+.. _capi-filesystem-encoding:
+
 File System Encoding
 """"""""""""""""""""
 
@@ -1945,7 +1947,7 @@ Python does not always check these requirements.
 
    .. versionadded:: 3.3
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.16
       See :ref:`pyunicode-new-mutating`.
 
 
@@ -1968,7 +1970,7 @@ Python does not always check these requirements.
 
    .. versionadded:: 3.3
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.16
       Use the :c:type:`PyUnicodeWriter` API instead.
 
 
@@ -1988,7 +1990,7 @@ Python does not always check these requirements.
 
    .. versionadded:: 3.3
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.16
       Use the :c:type:`PyUnicodeWriter` API instead.
 
 
@@ -2009,7 +2011,7 @@ Python does not always check these requirements.
    *\*unicode* must not be "used" yet.
    See :ref:`pyunicode-new-mutating` for details.
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.16
       Use the :c:type:`PyUnicodeWriter` API instead.
 
 
@@ -2030,7 +2032,7 @@ Python does not always check these requirements.
 
    .. versionadded:: 3.3
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.16
       Use the :c:type:`PyUnicodeWriter` API instead.
 
 
@@ -2050,5 +2052,5 @@ Python does not always check these requirements.
 
    .. versionadded:: 3.3
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.16
       Use the :c:type:`PyUnicodeWriter` API instead.

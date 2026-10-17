@@ -3694,9 +3694,9 @@ HAS_GIT=no-repository
 fi
 if test $HAS_GIT = found
 then
-    GITVERSION="git --git-dir \$(srcdir)/.git rev-parse --short HEAD"
-    GITTAG="git --git-dir \$(srcdir)/.git describe --all --always --dirty"
-    GITBRANCH="git --git-dir \$(srcdir)/.git name-rev --name-only HEAD"
+    GITVERSION="git --git-dir \$(srcdir)/.git --work-tree \$(srcdir) rev-parse --short HEAD"
+    GITTAG="git --git-dir \$(srcdir)/.git --work-tree \$(srcdir) describe --all --always --dirty"
+    GITBRANCH="git --git-dir \$(srcdir)/.git --work-tree \$(srcdir) name-rev --name-only HEAD"
 else
     GITVERSION=""
     GITTAG=""
@@ -4288,7 +4288,7 @@ if test -z "$AR"; then
 		aarch64-apple-ios*)           AR=arm64-apple-ios-ar ;;
 		x86_64-apple-ios*-simulator)  AR=x86_64-apple-ios-simulator-ar ;;
 		*)
-	esac
+    esac
 fi
 if test -z "$CC"; then
 	case "$host" in
@@ -21732,6 +21732,48 @@ fi
 
 
 
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for freadlink" >&5
+printf %s "checking for freadlink... " >&6; }
+if test ${ac_cv_func_freadlink+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <unistd.h>
+int
+main (void)
+{
+void *x=freadlink
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_freadlink=yes
+else case e in #(
+  e) ac_cv_func_freadlink=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_freadlink" >&5
+printf "%s\n" "$ac_cv_func_freadlink" >&6; }
+  if test "x$ac_cv_func_freadlink" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_FREADLINK 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for strerror_r" >&5
 printf %s "checking for strerror_r... " >&6; }
 if test ${ac_cv_func_strerror_r+y}
@@ -21807,8 +21849,37 @@ fi
 # found by configure), but either raise a compilation error (because the
 # header definition prevents usage - autoconf doesn't use the headers), or
 # raise an error if used at runtime. Force these symbols off.
-if test "$ac_sys_system" != "iOS" ; then
-  ac_fn_c_check_func "$LINENO" "dup3" "ac_cv_func_dup3"
+# In particular, dup3 and pipe2 are available as of iOS 27 but were
+# incorrectly detected in older simulator versions.
+case "$ac_sys_system" in
+    iOS)
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if iOS SDK is older than 27" >&5
+printf %s "checking if iOS SDK is older than 27... " >&6; }
+        ios_sdk_version=$(xcrun --sdk iphoneos --show-sdk-version 2>/dev/null | cut -d. -f1)
+        if test -n "$ios_sdk_version" && test "$ios_sdk_version" -ge 27; then
+            { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+            ac_fn_c_check_func "$LINENO" "dup3" "ac_cv_func_dup3"
+if test "x$ac_cv_func_dup3" = xyes
+then :
+  printf "%s\n" "#define HAVE_DUP3 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "pipe2" "ac_cv_func_pipe2"
+if test "x$ac_cv_func_pipe2" = xyes
+then :
+  printf "%s\n" "#define HAVE_PIPE2 1" >>confdefs.h
+
+fi
+
+        else
+            { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+        fi
+        ;;
+    *)
+        # not iOS
+        ac_fn_c_check_func "$LINENO" "dup3" "ac_cv_func_dup3"
 if test "x$ac_cv_func_dup3" = xyes
 then :
   printf "%s\n" "#define HAVE_DUP3 1" >>confdefs.h
@@ -21839,7 +21910,8 @@ then :
 
 fi
 
-fi
+        ;;
+esac
 
 ac_fn_check_decl "$LINENO" "dirfd" "ac_cv_have_decl_dirfd" "#include <sys/types.h>
                #include <dirent.h>
