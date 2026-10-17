@@ -1,0 +1,2 @@
+Fixed the cleanup of weakref objects created by
+:meth:`sqlite3.Connection.blobopen`.

@@ -73,6 +73,10 @@ typedef struct
     /* Lists of weak references to blobs used within this connection */
     PyObject *blobs;
 
+    /* Counter for how many blobs were opened in this connection;
+     * May be reset to 0 at certain intervals. */
+    int created_blobs;
+
     PyObject* row_factory;
 
     /* Determines how bytestrings from SQLite are converted to Python objects:
