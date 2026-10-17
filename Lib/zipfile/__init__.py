@@ -12,7 +12,7 @@ import struct
 import sys
 import threading
 import time
-lazy import warnings
+import warnings  # must stay eager to support finalization
 
 try:
     import zlib # We may need its compression method

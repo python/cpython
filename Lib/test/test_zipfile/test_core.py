@@ -26,7 +26,7 @@ from test.support import script_helper
 from test.support import (
     findfile, requires_zlib, requires_bz2, requires_lzma,
     requires_zstd, captured_stdout, captured_stderr, requires_subprocess,
-    cpython_only, gc_collect
+    cpython_only, gc_collect, catch_unraisable_exception
 )
 from test.support.os_helper import (
     TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count, FakePath,
@@ -4094,6 +4094,14 @@ class OtherTests(unittest.TestCase):
             zf.writestr("f.txt", b"data")
             zf.close()
             del zf
+
+        # ResourceWarning escalated to an error is reported as unraisable.
+        zf = zipfile.ZipFile(io.BytesIO(), "w")
+        with (warnings.catch_warnings(action="error", category=ResourceWarning),
+              catch_unraisable_exception() as cm):
+            del zf
+            gc_collect()
+            self.assertIs(cm.unraisable.exc_type, ResourceWarning)
 
     def test_unsupported_version(self):
         # File has an extract_version of 120
