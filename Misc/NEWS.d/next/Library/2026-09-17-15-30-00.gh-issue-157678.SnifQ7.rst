@@ -1,0 +1,2 @@
+Allow :meth:`csv.Sniffer.sniff` to process fields larger than the configured
+:func:`csv.field_size_limit` without changing the configured limit.
