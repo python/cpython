@@ -1106,8 +1106,12 @@ class AbstractDigestAuthHandler:
                                  " the following scheme: '%s'" % scheme)
 
     def retry_http_digest_auth(self, req, auth):
-        token, challenge = auth.split(' ', 1)
-        chal = parse_keqv_list(filter(None, parse_http_list(challenge)))
+        try:
+            token, challenge = auth.split(' ', 1)
+            chal = parse_keqv_list(filter(None, parse_http_list(challenge)))
+        except (ValueError, IndexError):
+            # A malformed challenge cannot be used to authenticate.
+            return None
         auth = self.get_authorization(req, chal)
         if auth:
             auth_val = 'Digest %s' % auth
