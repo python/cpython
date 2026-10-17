@@ -1,0 +1,2 @@
+Add the DOM Level 3 Recommendation names for methods and attributes in
+:mod:`xml.dom.minidom`. Keep the names from earlier working drafts as aliases.
