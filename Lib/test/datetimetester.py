@@ -507,6 +507,123 @@ class HarmlessMixedComparison:
         self.assertRaises(TypeError, lambda: () > me)
         self.assertRaises(TypeError, lambda: () >= me)
 
+
+#############################################################################
+# Common tests for types containing time
+
+def check_strftime_Nf_invalid(self: unittest.TestCase, t: datetime | time) -> None:
+    """Test %Nf codes with invalid N parameters."""
+    for fmt, expected_exc_message in [
+        ("%0f", "%Nf format code requires 1 <= N <= 6, got 0"),
+        ("%7f", "%Nf format code requires 1 <= N <= 6, got 7"),
+        ("%8f", "%Nf format code requires 1 <= N <= 6, got 8"),
+        ("%9f", "%Nf format code requires 1 <= N <= 6, got 9"),
+    ]:
+        with self.subTest(fmt=fmt):
+            with self.assertRaisesRegex(ValueError, re.escape(expected_exc_message)):
+                t.strftime(fmt)
+
+    # "%NNf", "%NNNf", etc fall through to libc and therefore remain undefined
+
+class TimeTestMixin:
+
+    # datetime and time have incompatible constructor args
+    def make_instance(self):
+        raise NotImplementedError
+
+    def test_strftime_Nf_valid(self):
+        """Test the "%Nf" formatting code, where N ∈ {'','1','2','3','4','5','6'}."""
+        t = self.make_instance()
+
+        all_usec_formats = "%f: %1f %2f %3f %4f %5f %6f"
+        for fmt, expected in [
+            ("%f", "123456"),
+            ("%1f", "1"),
+            ("%2f", "12"),
+            ("%3f", "123"),
+            ("%4f", "1234"),
+            ("%5f", "12345"),
+            ("%6f", "123456"),
+            ("TIME: %T.%f%Z", "TIME: 06:22:33.123456UTC"),
+            ("TIME: %T.%3f%Z", "TIME: 06:22:33.123UTC"),
+            (all_usec_formats, "123456: 1 12 123 1234 12345 123456"),
+            ("%ff", "123456f"),
+            ("%1ff", "1f"),
+            ("%2ff", "12f"),
+        ]:
+            with self.subTest(fmt=fmt):
+                self.assertEqual(t.strftime(fmt), expected)
+
+        t_6_usec = t.replace(microsecond=6)
+        self.assertEqual(t_6_usec.microsecond, 6)
+        self.assertEqual(t_6_usec.strftime(all_usec_formats), "000006: 0 00 000 0000 00000 000006")
+
+        t_0_usec = t.replace(microsecond=0)
+        self.assertEqual(t_0_usec.microsecond, 0)
+        self.assertEqual(t_0_usec.strftime(all_usec_formats), "000000: 0 00 000 0000 00000 000000")
+
+    def test_strftime_Nf_invalid(self):
+        """Test the "%Nf" formatting code, where N ∉ {'','1','2','3','4','5','6'}."""
+        t = self.make_instance()
+        check_strftime_Nf_invalid(self, t)
+
+    def test_strptime_Nf_format_valid(self):
+        """Ensure that the "%Nf" format works with strptime."""
+        Nf_cases = [
+            ("%T.%1f", "06:22:33.1", 100000),
+            ("%T.%2f", "06:22:33.12", 120000),
+            ("%T.%3f", "06:22:33.123", 123000),
+            ("%T.%4f", "06:22:33.1234", 123400),
+            ("%T.%5f", "06:22:33.12345", 123450),
+            ("%T.%6f", "06:22:33.123456", 123456),
+        ]
+        for fmt, time_str, expected_microsec in [
+            ("%T.%f", "06:22:33.123456", 123456),
+            *Nf_cases,
+        ]:
+            with self.subTest(fmt):
+                expected = self.make_instance().replace(microsecond=expected_microsec)
+                actual = self.theclass.strptime(time_str, fmt)
+
+                self.assertEqual(
+                    (actual.hour, actual.minute, actual.second, actual.microsecond),
+                    (expected.hour, expected.minute, expected.second, expected.microsecond),
+                )
+
+            # Too many digits should raise
+            with self.subTest(f"{fmt}_extra_digits"):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    re.escape("unconverted data remains: 0"),
+                ):
+                    self.theclass.strptime(time_str + "0", fmt)
+
+        # Too few digits should raise (unless %f is used)
+        for fmt, time_str, expected_microsec in Nf_cases:
+            with self.subTest(f"{fmt}_missing_digits"):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    re.escape("does not match format"),
+                ):
+                    self.theclass.strptime(time_str[:-1], fmt)
+
+    def test_strptime_Nf_format_invalid(self):
+        """Ensure the "%Nf" is rejected for unhandled Ns."""
+        for fmt, exc_msg in [
+            ("%T.%0f", "'0f' is a bad directive in format '%T.%0f'"),
+            ("%T.%-0f", "'-0f' is a bad directive in format '%T.%-0f'"),
+            ("%T.%-1f", "'-1f' is a bad directive in format '%T.%-1f'"),
+            ("%T.%-2f", "'-2f' is a bad directive in format '%T.%-2f'"),
+            ("%T.%7f", "'7f' is a bad directive in format '%T.%7f'"),
+            ("%T.%8f", "'8f' is a bad directive in format '%T.%8f'"),
+            ("%T.%10f", "'10f' is a bad directive in format '%T.%10f'"),
+            ("%T.%Nf", "'N' is a bad directive in format '%T.%Nf'"),
+        ]:
+            with self.subTest(fmt):
+                with self.assertRaisesRegex(ValueError, re.escape(exc_msg)):
+                    (self.theclass.strptime("", fmt),)
+
+
 #############################################################################
 # timedelta tests
 
@@ -1171,6 +1288,11 @@ class TestDateOnly(unittest.TestCase):
             # Variations on ISO 8601 format
             (date(2023, 9, 25), '2023-W39-1', '%G-W%V-%u'),  # ISO week date (Week 39, Monday)
             (date(2023, 9, 25), '2023-268', '%Y-%j'),  # Year and day of the year (Julian)
+
+            # Time discarded
+            (date(2004, 12, 2), '2004-12-02 11:33:44.123456', '%F %T.%f'),
+            (date(2004, 12, 2), '2004-12-02 11:33:44.123', '%F %T.%3f'),
+            (date(2004, 12, 2), '2004-12-02 11:33:44.1', '%F %T.%1f'),
         ]
         for expected, string, format in inputs:
             with self.subTest(string=string, format=format):
@@ -1630,9 +1752,29 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
 
         #check that this standard extension works
         t.strftime("%f")
+        t.strftime("%3f")
 
         # bpo-41260: The parameter was named "fmt" in the pure python impl.
         t.strftime(format="%f")
+
+    def test_strftime_Nf_zeros(self):
+        t = self.theclass(2005, 3, 2)
+
+        for fmt, expected in [
+            ("%f", "000000"),
+            ("%1f", "0"),
+            ("%2f", "00"),
+            ("%3f", "000"),
+            ("%4f", "0000"),
+            ("%5f", "00000"),
+            ("%6f", "000000"),
+        ]:
+            with self.subTest(fmt):
+                self.assertEqual(t.strftime(fmt), expected)
+
+    def test_strftime_Nf_invalid(self):
+        t = self.theclass(2005, 3, 2)
+        check_strftime_Nf_invalid(self, t)
 
     def test_strftime_trailing_percent(self):
         # bpo-35066: Make sure trailing '%' doesn't cause datetime's strftime to
@@ -2245,9 +2387,12 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
 class SubclassDatetime(datetime):
     sub_var = 1
 
-class TestDateTime(TestDate):
+class TestDateTime(TestDate, TimeTestMixin):
 
     theclass = datetime
+
+    def make_instance(self) -> datetime:
+        return self.theclass(2004, 12, 31, 6, 22, 33, 123456, tzinfo=timezone.utc)
 
     def test_basic_attributes(self):
         dt = self.theclass(2002, 3, 1, 12, 0)
@@ -3222,6 +3367,12 @@ class TestDateTime(TestDate):
         self.assertEqual(t.strftime('\0%c\0%B'), f'\0{s1}\0{s2}')
         self.assertEqual(t.strftime('%c\0%B\0'), f'{s1}\0{s2}\0')
 
+    def test_strftime_Nf_datetime(self):
+        """Test datetime.strftime with the date and %f/%Nf codes formatting."""
+        t = self.make_instance()
+        self.assertEqual(t.strftime("%FT%T.%f%Z"), "2004-12-31T06:22:33.123456UTC")
+        self.assertEqual(t.strftime("%FT%T.%3f%Z"),  "2004-12-31T06:22:33.123UTC")
+
     def test_extract(self):
         dt = self.theclass(2002, 3, 4, 18, 45, 3, 1234)
         self.assertEqual(dt.date(), date(2002, 3, 4))
@@ -3878,7 +4029,6 @@ class TestDateTime(TestDate):
             self.theclass.strptime(test_time, "%H:%M:%S")
         )
 
-
 class TestSubclassDateTime(TestDateTime):
     theclass = SubclassDatetime
     # Override tests not designed for subclass
@@ -3889,9 +4039,12 @@ class TestSubclassDateTime(TestDateTime):
 class SubclassTime(time):
     sub_var = 1
 
-class TestTime(HarmlessMixedComparison, unittest.TestCase):
+class TestTime(HarmlessMixedComparison, TimeTestMixin, unittest.TestCase):
 
     theclass = time
+
+    def make_instance(self) -> time:
+        return self.theclass(6, 22, 33, 123456, tzinfo=timezone.utc)
 
     def test_basic_attributes(self):
         t = self.theclass(12, 0)
@@ -4145,6 +4298,14 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
                                     ('%C', '19'), ('%F', '1900-01-01')):
             with self.subTest(directive=directive):
                 self.assertEqual(t.strftime(directive), expected)
+
+    def test_strftime_Nf_time(self):
+        """Test time.strftime with the date and %f/%Nf codes.
+
+        The date should be default 1900-01-01."""
+        t = self.make_instance()
+        self.assertEqual(t.strftime("%FT%T.%f%Z"), "1900-01-01T06:22:33.123456UTC")
+        self.assertEqual(t.strftime("%FT%T.%3f%Z"),  "1900-01-01T06:22:33.123UTC")
 
     def test_format(self):
         t = self.theclass(1, 2, 3, 4)
