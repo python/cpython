@@ -1,0 +1,2 @@
+:func:`unittest.main` no longer resolves to the :mod:`!unittest.main`
+submodule when lazy imports are enabled with ``-X lazy_imports=all``.
