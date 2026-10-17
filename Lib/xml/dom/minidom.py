@@ -2129,15 +2129,17 @@ class Document(Node, DocumentLS):
             prefix = None
             localName = None
         if n.nodeType == Node.ATTRIBUTE_NODE:
+            if prefix is not None:
+                _check_prefix(prefix, namespaceURI, True)
             element = n.ownerElement
             if element is not None:
                 is_id = n._is_id
                 element.removeAttributeNode(n)
         else:
             element = None
+        n.namespaceURI = namespaceURI
         n.prefix = prefix
         n._localName = localName
-        n.namespaceURI = namespaceURI
         n.nodeName = name
         if n.nodeType == Node.ELEMENT_NODE:
             n.tagName = name
