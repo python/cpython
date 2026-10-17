@@ -860,6 +860,60 @@ class TestPartialMethod(unittest.TestCase):
         self.assertIs(p2.func, min)
         self.assertEqual(p2.__get__(0)(), 0)
 
+    def test_regression(self):
+        # 1. Placeholder TypeError on Initialization
+        with self.assertRaises(TypeError):
+            class C:
+                m = functools.partialmethod(print, functools.Placeholder)
+
+        # 2. A descriptor that needs no binding
+        class D:
+            def __get__(self, obj, cls=None): return self
+            def __call__(self, *a, **kw):     return a
+        class C:
+            m = functools.partialmethod(D(), 42)
+        c = C()
+        self.assertEqual(c.m(), (c, 42))
+
+        # 3. Correct coroutine detection
+        async def coro(self, a): ...
+
+        class B:
+            pm = functools.partialmethod(coro, 1)
+            ps = functools.partialmethod(staticmethod(coro), 1)
+            pc = functools.partialmethod(classmethod(coro), 1)
+
+        for name in ("pm", "ps", "pc"):
+            self.assertTrue(getattr(B, name))
+            self.assertTrue(getattr(B(), name))
+
+        # 4. Bound method pickling
+        bound = _SerializationTestDescriptor().pm
+        deserialized_bound = pickle.loads(pickle.dumps(bound))
+        self.assertEqual(deserialized_bound(9), (1, 9))
+
+        # 5. Not callable itself; returns
+        #   a) self on class access
+        #   b) a callable on instance access.
+        class Desc:
+            def __get__(self, obj, cls=None):
+                if obj is None: return self
+                return functools.partial(lambda o, a, b: (a, b), obj)
+
+        class A:
+            pd = functools.partialmethod(Desc(), 1)
+
+        self.assertEqual(A().pd(2), (1, 2))
+        A.pd    # Returns without error
+        with self.assertRaises(TypeError):
+            A.pd(1)     # Only raises on call
+
+
+class _SerializationTestDescriptor:
+    # Pickling fails for both local and class level definitions
+    def instance_method(self, x, y): return (x, y)
+    pm = functools.partialmethod(instance_method, 1)
+
 
 class TestUpdateWrapper(unittest.TestCase):
 
