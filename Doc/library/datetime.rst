@@ -2924,6 +2924,15 @@ Notes:
       :meth:`~.datetime.strptime` calls using a format string containing
       ``%e`` without a year now emit a :exc:`DeprecationWarning`.
 
+(11)
+   When parsing a string using :meth:`~.datetime.strptime`, if more than one
+   directive of the same time unit is used, a SyntaxWarning is raised as
+   only the last directive gets parsed and applied to the datetime object. For
+   example, if the format string contains both ``%Y`` and ``%y``, like ``%Y%y``,
+   only the last directive of the string (``%y``) gets used on the resulting
+   datetime object.
+
+
 .. rubric:: Footnotes
 
 .. [#] If, that is, we ignore the effects of relativity.
