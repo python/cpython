@@ -778,6 +778,22 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         # test that object has a __dir__()
         self.assertEqual(sorted([].__dir__()), dir([]))
 
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
+    def test_dir_cyclic_bases(self):
+        class Fake:
+            pass
+
+        a = Fake()
+        a.__bases__ = (a,)
+
+        class C:
+            @property
+            def __class__(self):
+                return a
+
+        self.assertRaises(RecursionError, dir, C())
+
     def test___ne__(self):
         self.assertFalse(None.__ne__(None))
         self.assertIs(None.__ne__(0), NotImplemented)
