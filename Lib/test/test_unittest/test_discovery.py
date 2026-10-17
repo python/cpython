@@ -386,7 +386,7 @@ class TestDiscovery(unittest.TestCase):
         with self.assertRaises(ImportError):
             loader.discover('/foo/bar', top_level_dir='/foo')
 
-        self.assertEqual(loader._top_level_dir, full_path)
+        self.assertIsNone(loader._top_level_dir)
         self.assertIn(full_path, sys.path)
 
         os.path.isfile = lambda path: True
@@ -408,7 +408,7 @@ class TestDiscovery(unittest.TestCase):
         top_level_dir = os.path.abspath('/foo/bar')
         start_dir = os.path.abspath('/foo/bar/baz')
         self.assertEqual(suite, "['tests']")
-        self.assertEqual(loader._top_level_dir, os.path.abspath('/foo'))
+        self.assertIsNone(loader._top_level_dir)
         self.assertEqual(_find_tests_args, [(start_dir, 'pattern')])
         self.assertIn(top_level_dir, sys.path)
 
@@ -434,6 +434,31 @@ class TestDiscovery(unittest.TestCase):
 
         loader._top_level_dir = dir2 = '/previous/dir'
         loader.discover(dir, top_level_dir=top_level_dir)
+        self.assertEqual(loader._top_level_dir, dir2)
+
+    def test_discover_should_not_persist_top_level_dir_on_error(self):
+        original_isfile = os.path.isfile
+        original_isdir = os.path.isdir
+        original_sys_path = sys.path[:]
+        def restore():
+            os.path.isfile = original_isfile
+            os.path.isdir = original_isdir
+            sys.path[:] = original_sys_path
+        self.addCleanup(restore)
+
+        os.path.isfile = lambda path: False
+        os.path.isdir = lambda path: True
+        loader = unittest.TestLoader()
+        dir = '/foo/bar'
+        top_level_dir = '/foo'
+
+        with self.assertRaises(ImportError):
+            loader.discover(dir, top_level_dir=top_level_dir)
+        self.assertIsNone(loader._top_level_dir)
+
+        loader._top_level_dir = dir2 = '/previous/dir'
+        with self.assertRaises(ImportError):
+            loader.discover(dir, top_level_dir=top_level_dir)
         self.assertEqual(loader._top_level_dir, dir2)
 
     def test_discover_start_dir_is_package_calls_package_load_tests(self):
