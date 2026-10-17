@@ -191,10 +191,13 @@ class Pool(object):
         self._setup_queues()
         self._taskqueue = queue.SimpleQueue()
         # The _taskqueue_buffersize_semaphores exist to allow calling .release()
-        # on every active semaphore when the pool is terminating to let task_handler
-        # wake up to stop. It's a set so that each iterator object can efficiently
-        # deregister its semaphore when iterator finishes.
+        # on every active semaphore when the pool is terminating or joined to
+        # let task_handler wake up. It's a set so that each iterator object can
+        # efficiently deregister its semaphore when iterator finishes.
         self._taskqueue_buffersize_semaphores = set()
+        # Set by join(): from then on the buffersize of imap iterators is
+        # ignored, since there may be nobody left to consume their results.
+        self._taskqueue_buffersize_ignored = False
         # The _change_notifier queue exist to wake up self._handle_workers()
         # when the cache (self._cache) is empty or when there is a change in
         # the _state variable of the thread that runs _handle_workers.
@@ -402,11 +405,11 @@ class Pool(object):
             else:
                 enumerated_iter = iter(enumerate(iterable))
                 while True:
-                    sema.acquire()
-                    if self._state != RUN:
-                        # The pool is closing or terminating; stop submitting
-                        # the still-throttled tasks so the task handler can
-                        # finish instead of blocking here forever.
+                    if not self._taskqueue_buffersize_ignored:
+                        sema.acquire()
+                    if self._state == TERMINATE:
+                        # The pool is terminating; stop submitting tasks so
+                        # the task handler can finish.
                         break
                     try:
                         i, x = next(enumerated_iter)
@@ -666,10 +669,6 @@ class Pool(object):
             self._state = CLOSE
             self._worker_handler._state = CLOSE
             self._change_notifier.put(None)
-            # Wake any task generator throttled on a buffersize semaphore so
-            # it observes the CLOSE state and stops submitting.
-            for sema in list(self._taskqueue_buffersize_semaphores):
-                sema.release()
 
     def terminate(self):
         util.debug('terminating pool')
@@ -682,6 +681,12 @@ class Pool(object):
             raise ValueError("Pool is still running")
         elif self._state not in (CLOSE, TERMINATE):
             raise ValueError("In unknown state")
+        # Wake any task generator throttled on a buffersize semaphore and let
+        # it submit the remaining tasks unthrottled: join() has to wait for
+        # them, and there may be nobody left to consume the results.
+        self._taskqueue_buffersize_ignored = True
+        for sema in list(self._taskqueue_buffersize_semaphores):
+            sema.release()
         self._worker_handler.join()
         self._task_handler.join()
         self._result_handler.join()

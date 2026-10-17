@@ -3241,7 +3241,7 @@ class _TestPool(BaseTestCase):
         p = self.Pool(2)
         method = getattr(p, method_name)
         it = method(sqr, range(1000), buffersize=2)
-        next(it)
+        first = next(it)
         finished = threading.Event()
         def finalize():
             p.close()
@@ -3251,6 +3251,20 @@ class _TestPool(BaseTestCase):
         t.start()
         t.join(support.SHORT_TIMEOUT)
         self.assertTrue(finished.is_set(), "close()/join() deadlocked")
+        # The tasks which were not submitted yet must not be dropped.
+        self.assertEqual(sorted([first, *it]), list(map(sqr, range(1000))))
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    @support.subTests('method_name', ("imap", "imap_unordered"))
+    def test_imap_with_buffersize_consumption_after_close(self, method_name):
+        # close() must not drop the tasks of a buffersize iterator which
+        # were not submitted yet.
+        p = self.Pool(2)
+        method = getattr(p, method_name)
+        it = method(sqr, range(100), buffersize=2)
+        p.close()
+        self.assertEqual(sorted(it), list(map(sqr, range(100))))
+        p.join()
 
     @support.subTests('method_name', ("imap", "imap_unordered"))
     def test_imap_and_imap_unordered_with_buffersize_on_empty_iterable(
