@@ -2721,6 +2721,10 @@ differences between platforms in handling of unsupported format specifiers.
    ``%D``, ``%F``, ``%n``, ``%t``, and ``%:z`` were added for
    :meth:`~.datetime.strptime`.
 
+.. versionchanged:: next
+   Non-ASCII digits are now rejected by ``strptime`` for non-locale-specific
+   numerical directives.
+
 
 Technical detail
 ^^^^^^^^^^^^^^^^
@@ -2802,7 +2806,9 @@ Notes:
    Because the format depends on the current locale, care should be taken when
    making assumptions about the output value. Field orderings will vary (for
    example, "month/day/year" versus "day/month/year"), and the output may
-   contain non-ASCII characters.
+   contain non-ASCII characters. :meth:`~.datetime.strptime` rejects non-ASCII
+   digits for non-locale-specific numeric format codes (for example, ``%Y`` and
+   ``%H``).
 
 (2)
    The :meth:`~.datetime.strptime` method can parse years in the full [1, 9999] range, but
