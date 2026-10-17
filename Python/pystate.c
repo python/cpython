@@ -812,23 +812,6 @@ common_constants_clear(PyInterpreterState *interp)
 }
 
 
-// Finalizers may register tasks during or after PyThreadState_Clear().
-// Transfer any remaining tasks before deleting the thread state.
-static void
-move_asyncio_tasks_to_interpreter(PyThreadState *tstate)
-{
-    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
-    if (llist_empty(&tstate_impl->asyncio_tasks_head)) {
-        return;
-    }
-
-    PyMutex_Lock(&tstate->interp->asyncio_tasks_lock);
-    llist_concat(&tstate->interp->asyncio_tasks_head,
-                 &tstate_impl->asyncio_tasks_head);
-    PyMutex_Unlock(&tstate->interp->asyncio_tasks_lock);
-}
-
-
 static void
 interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 {
@@ -1530,8 +1513,10 @@ alloc_threadstate(PyInterpreterState *interp)
     return tstate;
 }
 
+// No task-list cleanup here: a daemon may release its allocation after
+// the interpreter has been destroyed.
 static void
-free_threadstate(_PyThreadStateImpl *tstate)
+free_threadstate_memory(_PyThreadStateImpl *tstate)
 {
     PyInterpreterState *interp = tstate->base.interp;
 #ifdef Py_STATS
@@ -1555,7 +1540,7 @@ decref_threadstate(_PyThreadStateImpl *tstate)
 {
     if (_Py_atomic_add_ssize(&tstate->refcount, -1) == 1) {
         // The last reference to the thread state is gone.
-        free_threadstate(tstate);
+        free_threadstate_memory(tstate);
     }
 }
 
@@ -1691,20 +1676,20 @@ new_threadstate(PyInterpreterState *interp, int whence)
     // The PyStats structure is quite large and is allocated separated from
     // tstate.
     if (!_PyStats_ThreadInit(interp, tstate)) {
-        free_threadstate(tstate);
+        free_threadstate_memory(tstate);
         return NULL;
     }
 #endif
 #ifdef Py_GIL_DISABLED
     int32_t tlbc_idx = _Py_ReserveTLBCIndex(interp);
     if (tlbc_idx < 0) {
-        free_threadstate(tstate);
+        free_threadstate_memory(tstate);
         return NULL;
     }
     Py_ssize_t qsbr_idx = _Py_qsbr_reserve(interp);
     if (qsbr_idx < 0) {
         _Py_UnreserveTLBCIndex(interp, tlbc_idx);
-        free_threadstate(tstate);
+        free_threadstate_memory(tstate);
         return NULL;
     }
 #endif
@@ -1934,9 +1919,6 @@ static void
 tstate_delete_common(PyThreadState *tstate, int release_gil)
 {
     assert(tstate->_status.cleared && !tstate->_status.finalized);
-    move_asyncio_tasks_to_interpreter(tstate);
-    assert(llist_empty(
-        &((_PyThreadStateImpl *)tstate)->asyncio_tasks_head));
     tstate_verify_not_active(tstate);
     assert(!_PyThreadState_IsRunningMain(tstate));
 
@@ -2007,6 +1989,42 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
     tstate->_status.finalized = 1;
 }
 
+// `delete_common` unlinks and finishes thread-state cleanup; `release_gil`
+// also releases the current thread's GIL and requires `delete_common`.
+// Without `delete_common`, the state is already unlinked: `decref` drops the
+// interpreter's reference. After fork, pass zero for all flags to free
+// the thread state immediately.
+static void
+free_threadstate(PyThreadState *tstate, int delete_common, int release_gil,
+                 int decref)
+{
+    assert(!release_gil || delete_common);
+    assert(!decref || !delete_common);
+
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    // Finalizers may register tasks during or after PyThreadState_Clear().
+    // Transfer them before unlinking or releasing the GIL: cross-thread task
+    // removal uses stop-the-world or the GIL, not asyncio_tasks_lock.
+    if (!llist_empty(&tstate_impl->asyncio_tasks_head)) {
+        // Serialize transfers from concurrently exiting threads.
+        PyMutex_Lock(&tstate->interp->asyncio_tasks_lock);
+        llist_concat(&tstate->interp->asyncio_tasks_head,
+                     &tstate_impl->asyncio_tasks_head);
+        PyMutex_Unlock(&tstate->interp->asyncio_tasks_lock);
+    }
+    assert(llist_empty(&tstate_impl->asyncio_tasks_head));
+
+    if (delete_common) {
+        tstate_delete_common(tstate, release_gil);
+    }
+    if (decref) {
+        decref_threadstate(tstate_impl);
+    }
+    else {
+        free_threadstate_memory(tstate_impl);
+    }
+}
+
 static void
 zapthreads(PyInterpreterState *interp)
 {
@@ -2019,8 +2037,8 @@ zapthreads(PyInterpreterState *interp)
     */
     while ((tstate = interp->threads.head) != NULL) {
         tstate_verify_not_active(tstate);
-        tstate_delete_common(tstate, 0);
-        free_threadstate((_PyThreadStateImpl *)tstate);
+        free_threadstate(tstate, /*delete_common=*/1, /*release_gil=*/0,
+                         /*decref=*/0);
     }
 }
 
@@ -2030,8 +2048,8 @@ PyThreadState_Delete(PyThreadState *tstate)
 {
     _Py_EnsureTstateNotNULL(tstate);
     tstate_verify_not_active(tstate);
-    tstate_delete_common(tstate, 0);
-    free_threadstate((_PyThreadStateImpl *)tstate);
+    free_threadstate(tstate, /*delete_common=*/1, /*release_gil=*/0,
+                     /*decref=*/0);
 }
 
 
@@ -2046,8 +2064,8 @@ _PyThreadState_DeleteCurrent(PyThreadState *tstate)
     _PyStats_Detach((_PyThreadStateImpl *)tstate);
 #endif
     current_fast_clear(tstate->interp->runtime);
-    tstate_delete_common(tstate, 1);  // release GIL as part of call
-    free_threadstate((_PyThreadStateImpl *)tstate);
+    free_threadstate(tstate, /*delete_common=*/1, /*release_gil=*/1,
+                     /*decref=*/0);
 }
 
 void
@@ -2116,15 +2134,8 @@ _PyThreadState_DeleteList(PyThreadState *list, int is_after_fork)
     for (p = list; p; p = next) {
         next = p->next;
         PyThreadState_Clear(p);
-        move_asyncio_tasks_to_interpreter(p);
-        assert(llist_empty(
-            &((_PyThreadStateImpl *)p)->asyncio_tasks_head));
-        if (is_after_fork) {
-            free_threadstate((_PyThreadStateImpl *)p);
-        }
-        else {
-            decref_threadstate((_PyThreadStateImpl *)p);
-        }
+        free_threadstate(p, /*delete_common=*/0, /*release_gil=*/0,
+                         /*decref=*/!is_after_fork);
     }
 }
 
