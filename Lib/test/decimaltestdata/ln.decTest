@@ -1,0 +1,611 @@
+------------------------------------------------------------------------
+-- ln.decTest -- decimal natural logarithm                            --
+-- Copyright (c) IBM Corporation, 2005, 2008.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.59
+
+extended:    1
+precision:   16
+rounding:    half_even
+maxExponent: 384
+minexponent: -383
+
+-- basics (examples in specification)
+precision: 9
+lnxs001 ln  0                 -> -Infinity
+lnxs002 ln  1.000             ->   0
+lnxs003 ln  2.71828183        ->   1.00000000         Inexact Rounded
+lnxs004 ln  10                ->   2.30258509         Inexact Rounded
+lnxs005 ln +Infinity          ->  Infinity
+
+
+-- basics
+precision:   16
+lnx0001 ln  0                 -> -Infinity
+lnx0002 ln  1E-9              -> -20.72326583694641   Inexact Rounded
+lnx0003 ln  0.0007            ->  -7.264430222920869  Inexact Rounded
+lnx0004 ln  0.1               ->  -2.302585092994046  Inexact Rounded
+lnx0005 ln  0.7               ->  -0.3566749439387324 Inexact Rounded
+lnx0006 ln  1                 ->   0
+lnx0007 ln  1.000             ->   0
+lnx0008 ln  1.5               ->   0.4054651081081644 Inexact Rounded
+lnx0009 ln  2                 ->   0.6931471805599453 Inexact Rounded
+lnx0010 ln  2.718281828459045 ->   0.9999999999999999 Inexact Rounded
+lnx0011 ln  2.718281828459046 ->   1.000000000000000  Inexact Rounded
+lnx0012 ln  2.718281828459047 ->   1.000000000000001  Inexact Rounded
+lnx0013 ln  10                ->   2.302585092994046  Inexact Rounded
+lnx0014 ln  10.5              ->   2.351375257163478  Inexact Rounded
+lnx0015 ln  9999              ->   9.210240366975849  Inexact Rounded
+lnx0016 ln  1E6               ->  13.81551055796427   Inexact Rounded
+lnx0017 ln  1E+9              ->  20.72326583694641   Inexact Rounded
+lnx0018 ln +Infinity          ->  Infinity
+
+-- notable cases
+-- negatives
+lnx0021 ln -1E-9              -> NaN Invalid_operation
+lnx0022 ln -0.0007            -> NaN Invalid_operation
+lnx0023 ln -0.1               -> NaN Invalid_operation
+lnx0024 ln -0.7               -> NaN Invalid_operation
+lnx0025 ln -1                 -> NaN Invalid_operation
+lnx0026 ln -1.5               -> NaN Invalid_operation
+lnx0027 ln -2                 -> NaN Invalid_operation
+lnx0029 ln -10.5              -> NaN Invalid_operation
+lnx0028 ln -9999              -> NaN Invalid_operation
+lnx0030 ln -2.718281828459045 -> NaN Invalid_operation
+lnx0031 ln -2.718281828459046 -> NaN Invalid_operation
+lnx0032 ln -0                 -> -Infinity
+lnx0033 ln -0E+17             -> -Infinity
+lnx0034 ln -0E-17             -> -Infinity
+-- other zeros
+lnx0041 ln  0                 -> -Infinity
+lnx0042 ln  0E+17             -> -Infinity
+lnx0043 ln  0E-17             -> -Infinity
+-- infinities
+lnx0045 ln -Infinity          -> NaN Invalid_operation
+lnx0046 ln +Infinity          -> Infinity
+-- ones
+lnx0050 ln  1                 ->   0
+lnx0051 ln  1.0               ->   0
+lnx0052 ln  1.000000000000000 ->   0
+lnx0053 ln  1.000000000000000000 ->   0
+
+-- lower precision basics
+Precision: 7
+lnx0101 ln  0                 -> -Infinity
+lnx0102 ln  1E-9              -> -20.72327            Inexact Rounded
+lnx0103 ln  0.0007            ->  -7.264430           Inexact Rounded
+lnx0104 ln  0.1               ->  -2.302585           Inexact Rounded
+lnx0105 ln  0.7               ->  -0.3566749          Inexact Rounded
+lnx0106 ln  1                 ->   0
+lnx0107 ln  1.5               ->   0.4054651          Inexact Rounded
+lnx0108 ln  2                 ->   0.6931472          Inexact Rounded
+lnx0109 ln  2.718281828459045 ->   1.000000           Inexact Rounded
+lnx0110 ln  2.718281828459046 ->   1.000000           Inexact Rounded
+lnx0111 ln  2.718281828459047 ->   1.000000           Inexact Rounded
+lnx0112 ln  10                ->   2.302585           Inexact Rounded
+lnx0113 ln  10.5              ->   2.351375           Inexact Rounded
+lnx0114 ln  9999              ->   9.210240           Inexact Rounded
+lnx0115 ln  1E6               ->  13.81551            Inexact Rounded
+lnx0116 ln  1E+9              ->  20.72327            Inexact Rounded
+lnx0117 ln +Infinity          ->  Infinity
+Precision: 2
+lnx0121 ln  0                 -> -Infinity
+lnx0122 ln  1E-9              -> -21                  Inexact Rounded
+lnx0123 ln  0.0007            ->  -7.3                Inexact Rounded
+lnx0124 ln  0.1               ->  -2.3                Inexact Rounded
+lnx0125 ln  0.7               ->  -0.36               Inexact Rounded
+lnx0126 ln  1                 ->   0
+lnx0127 ln  1.5               ->   0.41               Inexact Rounded
+lnx0128 ln  2                 ->   0.69               Inexact Rounded
+lnx0129 ln  2.718281828459045 ->   1.0                Inexact Rounded
+lnx0130 ln  2.718281828459046 ->   1.0                Inexact Rounded
+lnx0131 ln  2.718281828459047 ->   1.0                Inexact Rounded
+lnx0132 ln  10                ->   2.3                Inexact Rounded
+lnx0133 ln  10.5              ->   2.4                Inexact Rounded
+lnx0134 ln  9999              ->   9.2                Inexact Rounded
+lnx0135 ln  1E6               ->  14                  Inexact Rounded
+lnx0136 ln  1E+9              ->  21                  Inexact Rounded
+lnx0137 ln +Infinity          ->  Infinity
+Precision: 1
+lnx0141 ln  0                 -> -Infinity
+lnx0142 ln  1E-9              -> -2E+1                Inexact Rounded
+lnx0143 ln  0.0007            ->  -7                  Inexact Rounded
+lnx0144 ln  0.1               ->  -2                  Inexact Rounded
+lnx0145 ln  0.7               ->  -0.4                Inexact Rounded
+lnx0146 ln  1                 ->   0
+lnx0147 ln  1.5               ->   0.4                Inexact Rounded
+lnx0148 ln  2                 ->   0.7                Inexact Rounded
+lnx0149 ln  2.718281828459045 ->   1                  Inexact Rounded
+lnx0150 ln  2.718281828459046 ->   1                  Inexact Rounded
+lnx0151 ln  2.718281828459047 ->   1                  Inexact Rounded
+lnx0152 ln  10                ->   2                  Inexact Rounded
+lnx0153 ln  10.5              ->   2                  Inexact Rounded
+lnx0154 ln  9999              ->   9                  Inexact Rounded
+lnx0155 ln  1E6               ->  1E+1                Inexact Rounded
+lnx0156 ln  1E+9              ->  2E+1                Inexact Rounded
+lnx0157 ln +Infinity          ->  Infinity
+
+-- group low-precision ln(1)s:
+precision: 1
+lnx0161 ln  1 -> 0
+precision: 2
+lnx0162 ln  1 -> 0
+precision: 3
+lnx0163 ln  1 -> 0
+precision: 4
+lnx0164 ln  1 -> 0
+precision: 5
+lnx0165 ln  1 -> 0
+precision: 6
+lnx0166 ln  1 -> 0
+precision: 7
+lnx0167 ln  1 -> 0
+precision: 8
+lnx0168 ln  1 -> 0
+
+-- edge-test ln(2) and ln(10) in case of lookasides
+precision: 45
+lnx201  ln  2 -> 0.693147180559945309417232121458176568075500134  Inexact Rounded
+lnx202  ln 10 -> 2.30258509299404568401799145468436420760110149   Inexact Rounded
+precision: 44
+lnx203  ln  2 -> 0.69314718055994530941723212145817656807550013   Inexact Rounded
+lnx204  ln 10 -> 2.3025850929940456840179914546843642076011015    Inexact Rounded
+precision: 43
+lnx205  ln  2 -> 0.6931471805599453094172321214581765680755001    Inexact Rounded
+lnx206  ln 10 -> 2.302585092994045684017991454684364207601101     Inexact Rounded
+precision: 42
+lnx207  ln  2 -> 0.693147180559945309417232121458176568075500     Inexact Rounded
+lnx208  ln 10 -> 2.30258509299404568401799145468436420760110      Inexact Rounded
+precision: 41
+lnx209  ln  2 -> 0.69314718055994530941723212145817656807550      Inexact Rounded
+lnx210  ln 10 -> 2.3025850929940456840179914546843642076011       Inexact Rounded
+precision: 40
+lnx211  ln  2 -> 0.6931471805599453094172321214581765680755       Inexact Rounded
+lnx212  ln 10 -> 2.302585092994045684017991454684364207601        Inexact Rounded
+precision: 39
+lnx213  ln  2 -> 0.693147180559945309417232121458176568076        Inexact Rounded
+lnx214  ln 10 -> 2.30258509299404568401799145468436420760         Inexact Rounded
+precision: 38
+lnx215  ln  2 -> 0.69314718055994530941723212145817656808         Inexact Rounded
+lnx216  ln 10 -> 2.3025850929940456840179914546843642076          Inexact Rounded
+precision: 37
+lnx217  ln  2 -> 0.6931471805599453094172321214581765681          Inexact Rounded
+lnx218  ln 10 -> 2.302585092994045684017991454684364208           Inexact Rounded
+precision: 36
+lnx219  ln  2 -> 0.693147180559945309417232121458176568           Inexact Rounded
+lnx220  ln 10 -> 2.30258509299404568401799145468436421            Inexact Rounded
+precision: 35
+lnx221  ln  2 -> 0.69314718055994530941723212145817657            Inexact Rounded
+lnx222  ln 10 -> 2.3025850929940456840179914546843642             Inexact Rounded
+precision: 34
+lnx223  ln  2 -> 0.6931471805599453094172321214581766             Inexact Rounded
+lnx224  ln 10 -> 2.302585092994045684017991454684364              Inexact Rounded
+precision: 33
+lnx225  ln  2 -> 0.693147180559945309417232121458177              Inexact Rounded
+lnx226  ln 10 -> 2.30258509299404568401799145468436               Inexact Rounded
+precision: 32
+lnx227  ln  2 -> 0.69314718055994530941723212145818               Inexact Rounded
+lnx228  ln 10 -> 2.3025850929940456840179914546844                Inexact Rounded
+precision: 31
+lnx229  ln  2 -> 0.6931471805599453094172321214582                Inexact Rounded
+lnx230  ln 10 -> 2.302585092994045684017991454684                 Inexact Rounded
+precision: 30
+lnx231  ln  2 -> 0.693147180559945309417232121458                 Inexact Rounded
+lnx232  ln 10 -> 2.30258509299404568401799145468                  Inexact Rounded
+
+-- extreme input range values
+maxExponent: 384
+minExponent: -383
+Precision: 16
+
+lnx0901 ln 1e-400    -> -921.0340371976183  Inexact Rounded
+lnx0902 ln 1e+400    ->  921.0340371976183  Inexact Rounded
+lnx0903 ln 1e-999999 -> -2302582.790408953  Inexact Rounded
+lnx0904 ln 1e+999999 ->  2302582.790408953  Inexact Rounded
+lnx0905 ln 1e-1000013                -> -2302615.026600255  Inexact Rounded
+lnx0906 ln 2e-1000013                -> -2302614.333453074  Inexact Rounded
+
+lnx0910 ln 9.999999e+999999          ->  2302585.092993946  Inexact Rounded
+lnx0911 ln 9.9999999e+999999         ->  2302585.092994036  Inexact Rounded
+lnx0912 ln 9.99999999e+999999        ->  2302585.092994045  Inexact Rounded
+lnx0913 ln 9.999999999e+999999       ->  2302585.092994046  Inexact Rounded
+lnx0914 ln 9.999999999999e+999999    ->  2302585.092994046  Inexact Rounded
+lnx0915 ln 9.999999999999999e+999999 ->  2302585.092994046  Inexact Rounded
+lnx0916 ln 9.999999999999999999999999e+999999 ->  2302585.092994046  Inexact Rounded
+
+-- randoms
+-- P=50, within 0-999
+Precision: 50
+maxExponent: 384
+minExponent: -383
+lnx1501 ln 0.00098800906574486388604608477869812518857023768951 -> -6.9198186844033787995945147836955586009548513043689 Inexact Rounded
+lnx1502 ln 158.15866624664623070184595045304145949900714987827  -> 5.0635987458895647454907806507503825602758392287684 Inexact Rounded
+lnx1503 ln 0.00565661412059571925040285814021799775249288309321 -> -5.1749297776760632102047540300491550931651318975237 Inexact Rounded
+lnx1504 ln 0.00000006914232532620489602008402091666547903180607 -> -16.487098770877825308138976818688771638172333034347 Inexact Rounded
+lnx1505 ln 0.00025380374621297657504661540749355251231770070723 -> -8.2789492423005003205242162741569033124260321954589 Inexact Rounded
+lnx1506 ln 83.033654063877426261108592599182418953442677554806  -> 4.4192459962647137976949249810815698465031609843669 Inexact Rounded
+lnx1507 ln 0.00000000416863228092481651627734668440663678118729 -> -19.295677845122141772791294599714950175284915666430 Inexact Rounded
+lnx1508 ln 0.00000140847873187820570181214271960511080523457669 -> -13.473000349581967189668305314384952251556809480339 Inexact Rounded
+lnx1509 ln 66.176106555181527101630351127583944689752069132522  -> 4.1923194696232505883666171116966137694013431504252 Inexact Rounded
+lnx1510 ln 0.00000000000009899043487403590900111602024562297908 -> -29.943753166877840985821508112917991506656545174163 Inexact Rounded
+lnx1511 ln 0.00000000000324618296721747097510453388683912733569 -> -26.453541281444586819009546418577507163362590139422 Inexact Rounded
+lnx1512 ln 72.646968818463546449499147579023555008392860423385  -> 4.2856116660689646882852128853423566276718230426479 Inexact Rounded
+lnx1513 ln 0.00000000000000066755483124635612574263153825990523 -> -34.942910142802769319262875080398852491588707172483 Inexact Rounded
+lnx1514 ln 61.002910447202398204114909451851111424657671911002  -> 4.1109215752843377323363182051446177066434038096529 Inexact Rounded
+lnx1515 ln 917.06917611331980999227893584010544542312239174774  -> 6.8211829068303114128752453661946446979787826282907 Inexact Rounded
+lnx1516 ln 0.00000000170823794883673083358549749078972003965194 -> -20.187803436976150477297246666771626827057191023004 Inexact Rounded
+lnx1517 ln 0.53731767845358224445809761315159249898566542910649 -> -0.62116577939968409211736413628236285160048357000961 Inexact Rounded
+lnx1518 ln 0.00000000000000008965291392882804161299758708033373 -> -36.950585970980857376081265073276303670820056916206 Inexact Rounded
+lnx1519 ln 0.00000000006990244916026429904498278982530170295668 -> -23.383920429244457578373523508427783144589480420753 Inexact Rounded
+lnx1520 ln 4.0312542977070300070506064666536478373801988540614  -> 1.3940775676592451945795752796421391871302024763305 Inexact Rounded
+lnx1521 ln 271.84991311551875601432518819562391699324632396423  -> 5.6052501239873862517916679747146539808077431873478 Inexact Rounded
+lnx1522 ln 7.4118671629373864667229445746862314443895404818689  -> 2.0030823863706344628239147639318289961917060121141 Inexact Rounded
+lnx1523 ln 0.00000000000002026311452625364905357321664186034258 -> -31.529974180054438792043856877314043794320951134754 Inexact Rounded
+lnx1524 ln 0.00000000000009563398651261756952398250624737809347 -> -29.978248130576972953141284136962670021368834792579 Inexact Rounded
+lnx1525 ln 0.00000000009556772669409858653026558223465197808991 -> -23.071185939748285541228206161472956661196956741186 Inexact Rounded
+lnx1526 ln 6.8441648298027301292342057248737326152250794026761  -> 1.9233964395801946597272589473417948024361005082908 Inexact Rounded
+lnx1527 ln 0.00000000000073059699884439979394945822035704264577 -> -27.944914388353724718836101828677771967128509603158 Inexact Rounded
+lnx1528 ln 0.00000000000000002610078280419082263138064745416787 -> -38.184566367516207885573773320135965798717120735115 Inexact Rounded
+lnx1529 ln 0.00000000000000000150259517166294243088546806083283 -> -41.039337946266676108538170837580051699618334928421 Inexact Rounded
+lnx1530 ln 0.00000000000000087919160541714580707181969708502091 -> -34.667528818827671507514319744047440696187358676848 Inexact Rounded
+lnx1531 ln 0.00000000000395726725120787763271849577708068584598 -> -26.255467416961357741818735787226671938678424748431 Inexact Rounded
+lnx1532 ln 0.00000000002014334901669366218018377213150715938355 -> -24.628146955635359035289123027319969201693737159108 Inexact Rounded
+lnx1533 ln 0.00000008097927101101093117753938766241442896030637 -> -16.329072628469715178637178365710373398203190937454 Inexact Rounded
+lnx1534 ln 0.00000000000017115834162632864392039668116243984176 -> -29.396187292434898225453626794459285157263177528034 Inexact Rounded
+lnx1535 ln 0.39168317593866334087305459933723864294857086105035 -> -0.93730199062757240485836637306785037368746737693029 Inexact Rounded
+lnx1536 ln 79.335036798971515026519630103325369729637514127617  -> 4.3736798570287828823772149735170431010616961976965 Inexact Rounded
+lnx1537 ln 0.00000000000000056004952129926137413602116591493625 -> -35.118506463181870020730685884333000241039028127213 Inexact Rounded
+lnx1538 ln 0.00000006006035907843890918832481099660639553666078 -> -16.627915795747112566532705974853114454405010472043 Inexact Rounded
+lnx1539 ln 0.00000000085242024937414906371333826574632450587590 -> -20.882941460268101080186482230657774997273494107221 Inexact Rounded
+lnx1540 ln 0.00000000000043671099499262350316173246550771951561 -> -28.459504757285639221776305968469058854558726593945 Inexact Rounded
+
+-- P=34, within 0-999
+Precision: 34
+lnx1201 ln 0.0086732880815927182997566810334394 -> -4.747507311920844752486938187973721 Inexact Rounded
+lnx1202 ln 0.0007104103693460260609792222569854 -> -7.249667769903503023005549250347695 Inexact Rounded
+lnx1203 ln 786.8398945385105190697541493392742  -> 6.668024790031836340471824147010546 Inexact Rounded
+lnx1204 ln 0.7723073620282687656895190171967399 -> -0.2583726708506850868786816238217326 Inexact Rounded
+lnx1205 ln 0.0061057951517197631287183938412200 -> -5.098516933918797347064454103742635 Inexact Rounded
+lnx1206 ln 0.6181379708184393730103917562498745 -> -0.4810435926903365087463387760350021 Inexact Rounded
+lnx1207 ln 09.13888261229039989110753389096760  -> 2.212538125507975574509563027696021 Inexact Rounded
+lnx1208 ln 802.0105417063143696497292158147174  -> 6.687121752052341737234832203350214 Inexact Rounded
+lnx1209 ln 778.7749710387773713523028497333058  -> 6.657722135126935472086625031413031 Inexact Rounded
+lnx1210 ln 0.0024457295895346502513567679390616 -> -6.013411799940245345321348290398517 Inexact Rounded
+lnx1211 ln 0.0000511296947872828310338864217860 -> -9.881145118237281798081573131711636 Inexact Rounded
+lnx1212 ln 0.0000246803508602554924938685155658 -> -10.60950314264825661825360971430218 Inexact Rounded
+lnx1213 ln 9.027898199253511668242977766616082  -> 2.200319582778899029786017830557293 Inexact Rounded
+lnx1214 ln 0.0991812396542505631850692800904188 -> -2.310806398964672258823043180400384 Inexact Rounded
+lnx1215 ln 0.0000000000070238810143028811223924 -> -25.68170519961636647174714538290075 Inexact Rounded
+lnx1216 ln 2.630101665342826494730394729313167  -> 0.9670225014664367465128243039749559 Inexact Rounded
+lnx1217 ln 0.0056878928594359587691526063254683 -> -5.169415422904037819736637399445096 Inexact Rounded
+lnx1218 ln 567.3436047121057843908106573095590  -> 6.340965124964258486463444360787970 Inexact Rounded
+lnx1219 ln 1.199291248124655996614605745649725  -> 0.1817307557425911805765087755675657 Inexact Rounded
+lnx1220 ln 25.02050448582031098696267479135557  -> 3.219695668137659139544178905459317 Inexact Rounded
+lnx1221 ln 0.0000000000009939597023558756961300 -> -27.63707972996537636504396558259058 Inexact Rounded
+lnx1222 ln 0.0000007988551670159429716506430403 -> -14.04008617542597230988198612376415 Inexact Rounded
+lnx1223 ln 4.681515800176129184873770605589795  -> 1.543621946415383338972124445445748 Inexact Rounded
+lnx1224 ln 15.95126669161103011206658749345781  -> 2.769538242479483539275986395443539 Inexact Rounded
+lnx1225 ln 0.0301626783922211213675457279076066 -> -3.501149933677283341023932281826341 Inexact Rounded
+lnx1226 ln 000.0040544064881821770528475185674  -> -5.507950967557021671647165889608324 Inexact Rounded
+lnx1227 ln 29.01617095935593792095913785100360  -> 3.367853293862745651888450004473297 Inexact Rounded
+lnx1228 ln 78.01836167344736733024804243195323  -> 4.356944205055768575987781375003992 Inexact Rounded
+lnx1229 ln 0.0000000096545319316965321158634893 -> -18.45583840160965814462095477365013 Inexact Rounded
+lnx1230 ln 97.95475237720579752770587185074428  -> 4.584505661612812742208619358214729 Inexact Rounded
+lnx1231 ln 528.0609262050423246402564228432371  -> 6.269211667589138113396583894315956 Inexact Rounded
+lnx1232 ln 0.0000002250064349732969696660452972 -> -15.30713683526963996712167701738724 Inexact Rounded
+lnx1233 ln 47.97063637767998658567199049725754  -> 3.870589081585660692195989854842372 Inexact Rounded
+lnx1234 ln 0.0005394311344541432318853513414361 -> -7.524995428393925934087126702974121 Inexact Rounded
+lnx1235 ln 0.0000000090973385649567471674972633 -> -18.51528393158931783447035004125791 Inexact Rounded
+lnx1236 ln 0.0000000000238776490227576197317977 -> -24.45807828188389561331158879207262 Inexact Rounded
+lnx1237 ln 0.0000236587000231921532145326218758 -> -10.65177964499823314952429277979034 Inexact Rounded
+lnx1238 ln 499.1277448846130709827154556125942  -> 6.212862064761427967461188083514774 Inexact Rounded
+lnx1239 ln 0.0000003960192300284787663712417647 -> -14.74180306619298548093697608293284 Inexact Rounded
+lnx1240 ln 41.08268350829477451667228892495136  -> 3.715586706887278039173584859218960 Inexact Rounded
+
+-- P=16, within 0-99
+Precision: 16
+lnx1101 ln 7.964875261033948  -> 2.075041282352241 Inexact Rounded
+lnx1102 ln 13.54527396845394  -> 2.606037701870263 Inexact Rounded
+lnx1103 ln 0.0008026554341331 -> -7.127585034321814 Inexact Rounded
+lnx1104 ln 0.0000030582233261 -> -12.69767642300625 Inexact Rounded
+lnx1105 ln 0.0004477497509672 -> -7.711276073210766 Inexact Rounded
+lnx1106 ln 7.616268622474371  -> 2.030286567675148 Inexact Rounded
+lnx1107 ln 51.58329925806381  -> 3.943197962309569 Inexact Rounded
+lnx1108 ln 0.0018197497951263 -> -6.309056262549345 Inexact Rounded
+lnx1109 ln 2.956282457072984  -> 1.083932552334575 Inexact Rounded
+lnx1110 ln 0.3843325579189906 -> -0.9562470649400558 Inexact Rounded
+lnx1111 ln 0.0074466329265663 -> -4.899993304919237 Inexact Rounded
+lnx1112 ln 0.0003372478532993 -> -7.994692428206378 Inexact Rounded
+lnx1113 ln 0.0084792263167809 -> -4.770136069569271 Inexact Rounded
+lnx1114 ln 5.926756998151102  -> 1.779477182834305 Inexact Rounded
+lnx1115 ln 9.025699152180897  -> 2.200075969604119 Inexact Rounded
+lnx1116 ln 1.910124643533526  -> 0.6471684983238183 Inexact Rounded
+lnx1117 ln 0.8158922711411020 -> -0.2034729533939387 Inexact Rounded
+lnx1118 ln 0.0067080016475322 -> -5.004454189414139 Inexact Rounded
+lnx1119 ln 0.0047583242092716 -> -5.347859729601094 Inexact Rounded
+lnx1120 ln 0.0386647411641339 -> -3.252827175263113 Inexact Rounded
+lnx1121 ln 0.0050226427841761 -> -5.293799032774131 Inexact Rounded
+lnx1122 ln 6.927937541637261  -> 1.935562155866906 Inexact Rounded
+lnx1123 ln 0.0000095745343513 -> -11.55640365579814 Inexact Rounded
+lnx1124 ln 1.602465492956538  -> 0.4715433763243936 Inexact Rounded
+lnx1125 ln 38.98415625087535  -> 3.663155313610213 Inexact Rounded
+lnx1126 ln 5.343182042276734  -> 1.675821363568112 Inexact Rounded
+lnx1127 ln 55.89763703245816  -> 4.023522107934110 Inexact Rounded
+lnx1128 ln 0.7445257810280847 -> -0.2950077988101030 Inexact Rounded
+lnx1129 ln 1.631407314946094  -> 0.4894430257201248 Inexact Rounded
+lnx1130 ln 0.0005462451932602 -> -7.512442611116852 Inexact Rounded
+lnx1131 ln 0.0000864173269362 -> -9.356322359017317 Inexact Rounded
+lnx1132 ln 5.227161719132849  -> 1.653868438439637 Inexact Rounded
+lnx1133 ln 60.57078466941998  -> 4.103812675662452 Inexact Rounded
+lnx1134 ln 0.0992864325333160 -> -2.309746348350318 Inexact Rounded
+lnx1135 ln 09.48564268447325  -> 2.249779359074983 Inexact Rounded
+lnx1136 ln 0.0036106089355634 -> -5.623878840650787 Inexact Rounded
+lnx1137 ln 1.805176865587172  -> 0.5906585734593707 Inexact Rounded
+lnx1138 ln 62.59363259642255  -> 4.136663557220559 Inexact Rounded
+lnx1139 ln 4.373828261137201  -> 1.475638657912000 Inexact Rounded
+lnx1140 ln 0.994483524148738  -> -0.005531747794938690 Inexact Rounded
+
+-- P=7, within 0-9
+Precision: 7
+lnx1001 ln 0.0912025 -> -2.394673 Inexact Rounded
+lnx1002 ln 0.9728626 -> -0.02751242 Inexact Rounded
+lnx1003 ln 0.3886032 -> -0.9451965 Inexact Rounded
+lnx1004 ln 8.798639  -> 2.174597 Inexact Rounded
+lnx1005 ln 2.459121  -> 0.8998040 Inexact Rounded
+lnx1006 ln 2.013193  -> 0.6997220 Inexact Rounded
+lnx1007 ln 9.064857  -> 2.204405 Inexact Rounded
+lnx1008 ln 5.796417  -> 1.757240 Inexact Rounded
+lnx1009 ln 0.1143471 -> -2.168517 Inexact Rounded
+lnx1010 ln 0.5341542 -> -0.6270707 Inexact Rounded
+lnx1011 ln 6.693781  -> 1.901179 Inexact Rounded
+lnx1012 ln 0.0081779 -> -4.806320 Inexact Rounded
+lnx1013 ln 8.313616  -> 2.117895 Inexact Rounded
+lnx1014 ln 3.486925  -> 1.249020 Inexact Rounded
+lnx1015 ln 0.1801401 -> -1.714020 Inexact Rounded
+lnx1016 ln 0.5227148 -> -0.6487193 Inexact Rounded
+lnx1017 ln 7.818111  -> 2.056443 Inexact Rounded
+lnx1018 ln 0.0870671 -> -2.441076 Inexact Rounded
+lnx1019 ln 8.153966  -> 2.098504 Inexact Rounded
+lnx1020 ln 2.040975  -> 0.7134276 Inexact Rounded
+lnx1021 ln 1.481642  -> 0.3931509 Inexact Rounded
+lnx1022 ln 0.2610123 -> -1.343188 Inexact Rounded
+lnx1023 ln 0.466723  -> -0.7620193 Inexact Rounded
+lnx1024 ln 0.0518756 -> -2.958907 Inexact Rounded
+lnx1025 ln 2.056410  -> 0.7209617 Inexact Rounded
+lnx1026 ln 0.181522  -> -1.706378 Inexact Rounded
+lnx1027 ln 0.515551  -> -0.6625190 Inexact Rounded
+lnx1028 ln 8.425089  -> 2.131214 Inexact Rounded
+lnx1029 ln 2.077091  -> 0.7309684 Inexact Rounded
+lnx1030 ln 6.212705  -> 1.826596 Inexact Rounded
+lnx1031 ln 5.729343  -> 1.745601 Inexact Rounded
+lnx1032 ln 4.831251  -> 1.575105 Inexact Rounded
+lnx1033 ln 2.029760  -> 0.7079176 Inexact Rounded
+lnx1034 ln 8.615060  -> 2.153512 Inexact Rounded
+lnx1035 ln 0.0611511 -> -2.794407 Inexact Rounded
+lnx1036 ln 5.195269  -> 1.647748 Inexact Rounded
+lnx1037 ln 9.617686  -> 2.263604 Inexact Rounded
+lnx1038 ln 0.0049382 -> -5.310754 Inexact Rounded
+lnx1039 ln 2.786840  -> 1.024908 Inexact Rounded
+lnx1040 ln 0.0091073 -> -4.698679 Inexact Rounded
+
+-- from here 3-digit tests are based on reverse exp tests
+precision:   9
+rounding:    half_even
+maxExponent: 384
+minexponent: -383
+
+lnx001  ln 0           ->  -Infinity
+lnx002  ln 0.367879441 ->  -1.00000000    Inexact Rounded
+lnx003  ln 1           ->   0
+lnx005  ln 2.71828183  ->   1.00000000    Inexact Rounded
+lnx006  ln 2.00000000  ->   0.693147181   Inexact Rounded
+lnx007  ln +Infinity   ->   Infinity
+
+-- tiny edge cases
+precision:   7
+lnx011  ln 1.105171 ->  0.1000001       Inexact Rounded
+lnx012  ln 1.010050 ->  0.009999835     Inexact Rounded
+lnx013  ln 1.000010 ->  0.000009999950  Inexact Rounded
+lnx014  ln 1.000001 ->  9.999995E-7     Inexact Rounded
+lnx015  ln 1.000000 ->  0
+
+-- basic e=0, e=1, e=2, e=4, e>=8 cases
+precision:   7
+lnx041  ln 2.718282      ->  1.000000    Inexact Rounded
+lnx042  ln 0.3678794     -> -1.000000    Inexact Rounded
+lnx043  ln 22026.47      ->  10.00000    Inexact Rounded
+lnx044  ln 0.00004539993 -> -10.00000    Inexact Rounded
+lnx045  ln 2.688117E+43  ->  100.0000    Inexact Rounded
+lnx046  ln 3.720076E-44  -> -100.0000    Inexact Rounded
+lnx047  ln Infinity      ->  Infinity
+lnx048  ln 0E-389        -> -Infinity
+
+-- miscellanea
+precision: 16
+lnx055  ln 2.717658486884572E-236     -> -542.4103112874415       Inexact Rounded
+precision: 17
+lnx056  ln 2.7176584868845721E-236    -> -542.41031128744146      Inexact Rounded
+precision: 18
+lnx057  ln 2.71765848688457211E-236   -> -542.410311287441459     Inexact Rounded
+precision: 19
+lnx058  ln 2.717658486884572112E-236  -> -542.4103112874414592    Inexact Rounded
+precision: 20
+lnx059  ln 2.7176584868845721118E-236 -> -542.41031128744145917   Inexact Rounded
+
+-- inputs ending in ..500.., ..499.., ..100.., ..999.. sequences
+precision:   50
+lnx102  ln 0.9999999100000040499998785000027 -> -9.0000000000000000000000033749953829996446124861750E-8  Inexact Rounded
+precision:   30
+lnx103  ln 0.999999910000004049999878500003 -> -8.99999999999999999999997337499E-8   Inexact Rounded
+precision:   29
+lnx104  ln 0.99999991000000404999987850000 -> -9.0000000000000000000002733750E-8    Inexact Rounded
+precision:   28
+lnx105  ln 0.9999999100000040499998785000 -> -9.000000000000000000000273375E-8     Inexact Rounded
+precision:   27
+lnx106  ln 0.999999910000004049999878500 -> -9.00000000000000000000027338E-8      Inexact Rounded
+precision:   26
+lnx107  ln 0.99999991000000404999987850 -> -9.0000000000000000000002734E-8       Inexact Rounded
+precision:   25
+lnx108  ln 0.9999999100000040499998785 -> -9.000000000000000000000273E-8        Inexact Rounded
+precision:   24
+lnx109  ln 0.999999910000004049999879 -> -8.99999999999999995000027E-8         Inexact Rounded
+precision:   23
+lnx110  ln 0.99999991000000404999988 -> -8.9999999999999998500003E-8          Inexact Rounded
+precision:   22
+lnx111  ln 0.9999999100000040499999 -> -8.999999999999997850000E-8           Inexact Rounded
+precision:   21
+lnx112  ln 0.999999910000004050000 -> -8.99999999999998785000E-8            Inexact Rounded
+precision:   20
+lnx113  ln 0.99999991000000405000 -> -8.9999999999999878500E-8             Inexact Rounded
+precision:   19
+lnx114  ln 0.9999999100000040500 -> -8.999999999999987850E-8              Inexact Rounded
+precision:   18
+lnx115  ln 0.999999910000004050 -> -8.99999999999998785E-8               Inexact Rounded
+-- next may be a > 0.5ulp case; a more precise answer is:
+--                                -8.99999999999998784999918E-8
+precision:   17
+lnx116  ln 0.99999991000000405 -> -8.9999999999999878E-8               Inexact Rounded
+precision:   16
+lnx117  ln 0.9999999100000040 -> -9.000000004999988E-8               Inexact Rounded
+precision:   15
+lnx118  ln 0.999999910000004 -> -9.00000000499999E-8            Inexact Rounded
+precision:   14
+lnx119  ln 0.99999991000000 -> -9.0000004050000E-8                  Inexact Rounded
+precision:   13
+lnx120  ln 0.9999999100000 -> -9.000000405000E-8       Inexact Rounded
+precision:   12
+lnx121  ln 0.999999910000 -> -9.00000040500E-8        Inexact Rounded
+precision:   11
+lnx122  ln 0.99999991000 -> -9.0000004050E-8         Inexact Rounded
+precision:   10
+lnx123  ln 0.9999999100 -> -9.000000405E-8          Inexact Rounded
+precision:    9
+lnx124  ln 0.999999910 -> -9.00000041E-8           Inexact Rounded
+precision:    8
+lnx125  ln 0.99999991 -> -9.0000004E-8            Inexact Rounded
+precision:    7
+lnx126  ln 0.9999999 -> -1.000000E-7                   Inexact Rounded
+precision:   16
+lnx126b ln 0.9999999 -> -1.000000050000003E-7          Inexact Rounded
+precision:    6
+lnx127  ln 0.999999 -> -0.00000100000                  Inexact Rounded
+precision:    5
+lnx128  ln 0.99999 -> -0.000010000                     Inexact Rounded
+precision:    4
+lnx129  ln 0.9999 -> -0.0001000                        Inexact Rounded
+precision:    3
+lnx130  ln 0.999 -> -0.00100                           Inexact Rounded
+precision:    2
+lnx131  ln 0.99 -> -0.010                              Inexact Rounded
+precision:    1
+lnx132  ln 0.9 -> -0.1                                 Inexact Rounded
+
+
+-- cases near 1              --  1 2345678901234567890
+precision:    20
+lnx401  ln 2.7182818284589365041 -> 0.99999999999996000000 Inexact Rounded
+lnx402  ln 2.7182818284589636869 -> 0.99999999999997000000 Inexact Rounded
+lnx403  ln 2.7182818284589908697 -> 0.99999999999997999999 Inexact Rounded
+lnx404  ln 2.7182818284590180525 -> 0.99999999999998999998 Inexact Rounded
+lnx405  ln 2.7182818284590452354 -> 1.0000000000000000000  Inexact Rounded
+lnx406  ln 2.7182818284593170635 -> 1.0000000000001000000  Inexact Rounded
+lnx407  ln 2.7182818284595888917 -> 1.0000000000002000000  Inexact Rounded
+precision:    14
+lnx411  ln 2.7182818284589 -> 0.99999999999995    Inexact Rounded
+lnx413  ln 2.7182818284590 -> 0.99999999999998    Inexact Rounded
+lnx416  ln 2.7182818284591 -> 1.0000000000000     Inexact Rounded
+lnx417  ln 2.7182818284592 -> 1.0000000000001     Inexact Rounded
+
+-- overflows, including some exp overprecise borderlines
+precision:   7
+maxExponent: 384
+minExponent: -383
+lnx709  ln 9.999999E+384 ->  886.4953     Inexact Rounded
+lnx711  ln 9.999992E+384 ->  886.4953     Inexact Rounded
+precision:   16
+lnx722  ln 9.999999999999999E+384 ->  886.4952608027076     Inexact Rounded
+lnx724  ln 9.999999999999917E+384 ->  886.4952608027076     Inexact Rounded
+lnx726  ln 9.999999999999117E+384 ->  886.4952608027075     Inexact Rounded
+-- and more...
+precision:   15
+maxExponent: 999
+minExponent: -999
+lnx731  ln 9.99999999999999E+999 -> 2302.58509299405       Inexact Rounded
+-- next may be a > 0.5ulp case; a more precise answer is:
+--                                  2302.58509299404495001799145442
+lnx732  ln 9.99999999999266E+999 -> 2302.58509299404       Inexact Rounded
+lnx733  ln 9.99999999999265E+999 -> 2302.58509299404       Inexact Rounded
+lnx734  ln 9.99999999999264E+999 -> 2302.58509299404       Inexact Rounded
+
+-- subnormals and underflows for exp, including underflow-to-zero edge point
+precision:   7
+maxExponent: 384
+minExponent: -383
+lnx751  ln 0E-389 -> -Infinity
+lnx758  ln 1.000001E-383 -> -881.8901      Inexact Rounded
+lnx759  ln 9.99991E-384 -> -881.8901       Inexact Rounded
+lnx760  ln 4.4605E-385 -> -885.0000        Inexact Rounded
+lnx761  ln 2.221E-386 -> -887.9999         Inexact Rounded
+lnx762  ln 3.01E-387 -> -889.9985          Inexact Rounded
+lnx763  ln 1.7E-388 -> -892.8724           Inexact Rounded
+lnx764  ln 1.5E-388 -> -892.9976           Inexact Rounded
+lnx765  ln 9E-389 -> -893.5084             Inexact Rounded
+lnx766  ln 1E-389 -> -895.7056             Inexact Rounded
+lnx774  ln 0E-389 -> -Infinity
+
+-- special values
+lnx820  ln Infinity ->   Infinity
+lnx821  ln 0        ->  -Infinity
+lnx822  ln NaN      ->   NaN
+lnx823  ln sNaN     ->   NaN     Invalid_operation
+-- propagating NaNs
+lnx824  ln sNaN123  ->   NaN123  Invalid_operation
+lnx825  ln -sNaN321 ->  -NaN321  Invalid_operation
+lnx826  ln NaN456   ->   NaN456
+lnx827  ln -NaN654  ->  -NaN654
+lnx828  ln NaN1     ->   NaN1
+
+-- Invalid operations due to restrictions
+-- [next two probably skipped by most test harnesses]
+precision: 100000000
+lnx901  ln 1 ->  NaN            Invalid_context
+precision:  99999999
+lnx902  ln 0 ->  NaN            Invalid_context
+
+precision: 9
+maxExponent:   1000000
+minExponent:   -999999
+lnx903  ln 1   ->  NaN          Invalid_context
+maxExponent:    999999
+minExponent:   -999999
+lnx904  ln 0 ->  -Infinity
+maxExponent:    999999
+minExponent:  -1000000
+lnx905  ln 1   ->  NaN          Invalid_context
+maxExponent:    999999
+minExponent:   -999998
+lnx906  ln 0 ->  -Infinity
+
+-- payload decapitate
+precision: 5
+lnx910  ln -sNaN1234567890 -> -NaN67890  Invalid_operation
+
+-- Null test
+lnx900  ln #   -> NaN Invalid_operation
+
+

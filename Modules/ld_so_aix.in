@@ -1,0 +1,195 @@
+#!/bin/sh
+#
+#   ========================================================================
+#   FILE:           ld_so_aix
+#   TYPE:           executable, uses makexp_aix
+#   SYSTEM:         AIX
+#
+#   DESCRIPTION:    Creates a shareable .o from a set of pre-compiled
+#                   (unshared) .o files
+#
+#   USAGE:          ld_so_aix [CC] [arguments]
+#
+#   ARGUMENTS:      Same as for "ld". The following arguments are processed
+#                   or supplied by this script (those marked with an asterisk
+#                   can be overridden from command line):
+#
+#                       Argument                     Default value
+#                   (*) -o [OutputFileName]          -o shr.o
+#                   (*) -e [EntryPointLabel]         -e init[OutputBaseName]
+#                   (*) -bE:[ExportFile]             -bE:[OutputBaseName].exp
+#                   (*) -bI:[ImportFile]             -bI:./python.exp
+#                       -bM:[ModuleType]             -bM:SRE
+#                       -bhalt:[Number]              -bhalt:4
+#                       -T[Number]                   -T512
+#                       -H[Number]                   -H512
+#                       -lm
+#
+#                   The compiler specific ("-lc" or "-lc_r", "-lpthreads",...)
+#                   arguments will be automatically passed to "ld" according
+#                   to the CC command provided as a first argument to this
+#                   script. Usually, the same CC command was used to produce
+#                   the pre-compiled .o file(s).
+#
+#   NOTES:          1.  Since "ld_so_aix" was originally written for building
+#                       shared modules for the Python interpreter, the -e and
+#                       -bI default values match Python's conventions. In
+#                       Python, the entry point for a shared module is based
+#                       on the module's name (e.g., the "mathmodule" will
+#                       expect an  entry point of "initmath").
+#                   2.  The script accepts multiple .o or .a input files and
+#                       creates a single (shared) output file. The export list
+#                       that is created is based on the output file's basename
+#                       with the suffix ".exp".
+#                   3.  The resulting shared object file is left in the
+#                       current directory.
+#                   4.  Uncommenting the "echo" lines gives detailed output
+#                       about the commands executed in the script.
+#
+#
+#   HISTORY:        Oct-1996    -- Support added for multiple .o files --
+#                               -- and optional arguments processing.  --
+#                   Chris Myers (myers@tc.cornell.edu), Keith Kwok
+#                   (kkwok@tc.cornell.edu) and Vladimir Marangozov
+#
+#                   Aug-6-1996  -- Take care of the compiler specific  --
+#                               -- args by leaving CC to invoke "ld".  --
+#                   Vladimir Marangozov
+#
+#                   Jul-1-1996  -- Make sure to use /usr/ccs/bin/ld    --
+#                               -- Use makexp_aix for the export list. --
+#                   Vladimir Marangozov     (Vladimir.Marangozov@imag.fr)
+#
+#                   Manus Hand (mhand@csn.net) -- Initial code -- 6/24/96
+#   ========================================================================
+#
+
+usage="Usage: ld_so_aix [CC command] [ld arguments]"
+if test ! -n "$*"; then
+  echo $usage; exit 2
+fi
+
+makexp=`dirname $0`/makexp_aix
+test -x "${makexp}" || makexp="@abs_srcdir@/makexp_aix"
+
+# Check for existence of compiler.
+CC=$1; shift
+whichcc=`which $CC`
+
+if test ! -x "$whichcc"; then
+  echo "ld_so_aix: Compiler '$CC' not found; exiting."
+  exit 2
+fi
+
+if test ! -n "$*"; then
+  echo $usage; exit 2
+fi
+
+# Default import file for Python
+# Can be overridden by providing a -bI: argument.
+impfile="./python.exp"
+
+# Parse arguments
+while test -n "$1"
+do
+  case "$1" in
+    -e | -Wl,-e)
+        if test -z "$2"; then
+	  echo "ld_so_aix: The -e flag needs a parameter; exiting."; exit 2
+	else
+	  shift; entry=$1
+	fi
+	;;
+    -e* | -Wl,-e*)
+	entry=`echo $1 | sed -e "s/-Wl,//" -e "s/-e//"`
+	;;
+    -o)
+	if test -z "$2"; then
+	  echo "ld_so_aix: The -o flag needs a parameter; exiting."; exit 2
+	else
+	  shift; objfile=$1
+	fi
+	;;
+    -o*)
+	objfile=`echo $1 | sed "s/-o//"`
+	;;
+    -bI:* | -Wl,-bI:*)
+	impfile=`echo $1 | sed -e "s/-Wl,//" -e "s/-bI://"`
+	;;
+    -bE:* | -Wl,-bE:*)
+	expfile=`echo $1 | sed -e "s/-Wl,//" -e "s/-bE://"`
+	;;
+    *.o | *.a)
+	objs="$objs $1"
+	args="$args $1"
+	;;
+    -bM:* | -Wl,-bM:* | -H* | -Wl,-H* | -T* | -Wl,-T* | -lm)
+	;;
+    *)
+        args="$args $1"
+	;;
+  esac
+  shift
+done
+
+if test "$objfile" = "libpython@VERSION@@ABIFLAGS@.so"; then
+  ldsocoremode="true"
+fi
+
+if test -z "$objs"; then
+  echo "ld_so_aix: No input files; exiting."
+  exit 2
+elif test ! -r "$impfile" -a -z "$ldsocoremode"; then
+  echo "ld_so_aix: Import file '$impfile' not found or not readable; exiting."
+  exit 2
+fi
+
+# If -o wasn't specified, assume "-o shr.o"
+if test -z "$objfile"; then
+  objfile=shr.o
+fi
+
+filename=`basename $objfile | sed "s/\.[^.]*$//"`
+
+# If -bE: wasn't specified, assume "-bE:$filename.exp"
+if test -z "$expfile"; then
+  expfile="$filename.exp"
+fi
+
+# Default entry symbol for Python modules = init[modulename]
+# Can be overridden by providing a -e argument.
+if test -z "$entry"; then
+  entry=PyInit_`echo $filename | sed "s/module.*//"`
+fi
+
+#echo "ld_so_aix: Debug info section"
+#echo "  -> output file : $objfile"
+#echo "  -> import file : $impfile"
+#echo "  -> export file : $expfile"
+#echo "  -> entry point : $entry"
+#echo "  -> object files: $objs"
+#echo "  -> CC arguments: $args"
+
+if test -z "$ldsocoremode"; then
+  CCOPT="-Wl,-e$entry -Wl,-bE:$expfile -Wl,-bI:$impfile -Wl,-bhalt:4"
+else
+  CCOPT="-Wl,-bnoentry -Wl,-bE:$expfile -Wl,-bhalt:4"
+fi
+CCOPT="$CCOPT -Wl,-bM:SRE -Wl,-T512 -Wl,-H512 -Wl,-brtl -Wl,-bnortllib -lm -o $objfile"
+
+CCARGS="$args"
+
+# Export list generation.
+#echo $makexp $expfile "$objfile" $objs
+$makexp $expfile "$objfile" $objs
+
+# Perform the link.
+#echo $CC $CCOPT $CCARGS
+$CC $CCOPT $CCARGS
+retval=$?
+
+# Delete the module's export list file.
+# Comment this line if you need it.
+rm -f $expfile
+
+exit $retval

@@ -1,0 +1,11 @@
+fuzz_builtin_float
+fuzz_builtin_int
+fuzz_builtin_unicode
+fuzz_json_loads
+fuzz_sre_compile
+fuzz_sre_match
+fuzz_csv_reader
+fuzz_struct_unpack
+fuzz_ast_literal_eval
+fuzz_elementtree_parsewhole
+fuzz_pycompile

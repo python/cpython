@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+        <key>Python GUI Script</key>
+        <dict>
+                <key>debug</key>
+                <false/>
+                <key>inspect</key>
+                <false/>
+                <key>interpreter_list</key>
+                <array>
+                    <string>/usr/local/bin/python3</string>
+                    <string>/opt/local/bin/python3</string>
+                    <string>/sw/bin/python3</string>
+                </array>
+                <key>honourhashbang</key>
+                <false/>
+                <key>nosite</key>
+                <false/>
+                <key>optimize</key>
+                <false/>
+                <key>others</key>
+                <string></string>
+                <key>verbose</key>
+                <false/>
+                <key>with_terminal</key>
+                <false/>
+        </dict>
+        <key>Python Script</key>
+        <dict>
+                <key>debug</key>
+                <false/>
+                <key>inspect</key>
+                <false/>
+                <key>interpreter_list</key>
+                <array>
+                    <string>/usr/local/bin/python3</string>
+                    <string>/opt/local/bin/python3</string>
+                    <string>/sw/bin/python3</string>
+                </array>
+                <key>honourhashbang</key>
+                <false/>
+                <key>nosite</key>
+                <false/>
+                <key>optimize</key>
+                <false/>
+                <key>others</key>
+                <string></string>
+                <key>verbose</key>
+                <false/>
+                <key>with_terminal</key>
+                <true/>
+        </dict>
+        <key>Python Bytecode Document</key>
+        <dict>
+                <key>debug</key>
+                <false/>
+                <key>inspect</key>
+                <false/>
+                <key>interpreter_list</key>
+                <array>
+                    <string>/usr/local/bin/python3</string>
+                    <string>/opt/local/bin/python3</string>
+                    <string>/sw/bin/python3</string>
+                </array>
+                <key>honourhashbang</key>
+                <false/>
+                 <key>nosite</key>
+                <false/>
+                <key>optimize</key>
+                <false/>
+                <key>others</key>
+                <string></string>
+                <key>verbose</key>
+                <false/>
+                <key>with_terminal</key>
+                <true/>
+        </dict>
+</dict>
+</plist>

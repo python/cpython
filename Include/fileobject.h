@@ -1,0 +1,28 @@
+/* File object interface (what's left of it -- see io.py) */
+
+#ifndef Py_FILEOBJECT_H
+#define Py_FILEOBJECT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define PY_STDIOTEXTMODE "b"
+
+PyAPI_FUNC(PyObject *) PyFile_FromFd(int, const char *, const char *, int,
+                                     const char *, const char *,
+                                     const char *, int);
+PyAPI_FUNC(PyObject *) PyFile_GetLine(PyObject *, int);
+PyAPI_FUNC(int) PyFile_WriteObject(PyObject *, PyObject *, int);
+PyAPI_FUNC(int) PyFile_WriteString(const char *, PyObject *);
+PyAPI_FUNC(int) PyObject_AsFileDescriptor(PyObject *);
+
+#ifndef Py_LIMITED_API
+#  define Py_CPYTHON_FILEOBJECT_H
+#  include "cpython/fileobject.h"
+#  undef Py_CPYTHON_FILEOBJECT_H
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_FILEOBJECT_H */

@@ -1,0 +1,8 @@
+<h3>{% trans %}Download{% endtrans %}</h3>
+<p><a href="{{ pathto('download') }}">{% trans %}Download the documentation{% endtrans %}</a></p>
+<h3>{% trans %}Docs by version{% endtrans %}</h3>
+<ul>
+  {# _docs_by_version.html is overwritten by build_docs.py for non-EOL versions #}
+  {% include "_docs_by_version.html" without context %}
+  <li><a href="https://www.python.org/doc/versions/">{% trans %}All versions{% endtrans %}</a></li>
+</ul>

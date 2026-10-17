@@ -1,0 +1,309 @@
+------------------------------------------------------------------------
+-- dqMin.decTest -- decQuad minnum                                    --
+-- Copyright (c) IBM Corporation, 1981, 2008.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.59
+
+-- we assume that base comparison is tested in compare.decTest, so
+-- these mainly cover special cases and rounding
+extended:    1
+clamp:       1
+precision:   34
+maxExponent: 6144
+minExponent: -6143
+rounding:    half_even
+
+-- sanity checks
+dqmin001 min  -2  -2  -> -2
+dqmin002 min  -2  -1  -> -2
+dqmin003 min  -2   0  -> -2
+dqmin004 min  -2   1  -> -2
+dqmin005 min  -2   2  -> -2
+dqmin006 min  -1  -2  -> -2
+dqmin007 min  -1  -1  -> -1
+dqmin008 min  -1   0  -> -1
+dqmin009 min  -1   1  -> -1
+dqmin010 min  -1   2  -> -1
+dqmin011 min   0  -2  -> -2
+dqmin012 min   0  -1  -> -1
+dqmin013 min   0   0  ->  0
+dqmin014 min   0   1  ->  0
+dqmin015 min   0   2  ->  0
+dqmin016 min   1  -2  -> -2
+dqmin017 min   1  -1  -> -1
+dqmin018 min   1   0  ->  0
+dqmin019 min   1   1  ->  1
+dqmin020 min   1   2  ->  1
+dqmin021 min   2  -2  -> -2
+dqmin022 min   2  -1  -> -1
+dqmin023 min   2   0  ->  0
+dqmin025 min   2   1  ->  1
+dqmin026 min   2   2  ->  2
+
+-- extended zeros
+dqmin030 min   0     0   ->  0
+dqmin031 min   0    -0   -> -0
+dqmin032 min   0    -0.0 -> -0.0
+dqmin033 min   0     0.0 ->  0.0
+dqmin034 min  -0     0   -> -0
+dqmin035 min  -0    -0   -> -0
+dqmin036 min  -0    -0.0 -> -0
+dqmin037 min  -0     0.0 -> -0
+dqmin038 min   0.0   0   ->  0.0
+dqmin039 min   0.0  -0   -> -0
+dqmin040 min   0.0  -0.0 -> -0.0
+dqmin041 min   0.0   0.0 ->  0.0
+dqmin042 min  -0.0   0   -> -0.0
+dqmin043 min  -0.0  -0   -> -0
+dqmin044 min  -0.0  -0.0 -> -0.0
+dqmin045 min  -0.0   0.0 -> -0.0
+
+dqmin046 min   0E1  -0E1 -> -0E+1
+dqmin047 min  -0E1   0E2 -> -0E+1
+dqmin048 min   0E2   0E1 ->  0E+1
+dqmin049 min   0E1   0E2 ->  0E+1
+dqmin050 min  -0E3  -0E2 -> -0E+3
+dqmin051 min  -0E2  -0E3 -> -0E+3
+
+-- Specials
+dqmin090 min  Inf  -Inf   -> -Infinity
+dqmin091 min  Inf  -1000  -> -1000
+dqmin092 min  Inf  -1     -> -1
+dqmin093 min  Inf  -0     -> -0
+dqmin094 min  Inf   0     ->  0
+dqmin095 min  Inf   1     ->  1
+dqmin096 min  Inf   1000  ->  1000
+dqmin097 min  Inf   Inf   ->  Infinity
+dqmin098 min -1000  Inf   -> -1000
+dqmin099 min -Inf   Inf   -> -Infinity
+dqmin100 min -1     Inf   -> -1
+dqmin101 min -0     Inf   -> -0
+dqmin102 min  0     Inf   ->  0
+dqmin103 min  1     Inf   ->  1
+dqmin104 min  1000  Inf   ->  1000
+dqmin105 min  Inf   Inf   ->  Infinity
+
+dqmin120 min -Inf  -Inf   -> -Infinity
+dqmin121 min -Inf  -1000  -> -Infinity
+dqmin122 min -Inf  -1     -> -Infinity
+dqmin123 min -Inf  -0     -> -Infinity
+dqmin124 min -Inf   0     -> -Infinity
+dqmin125 min -Inf   1     -> -Infinity
+dqmin126 min -Inf   1000  -> -Infinity
+dqmin127 min -Inf   Inf   -> -Infinity
+dqmin128 min -Inf  -Inf   -> -Infinity
+dqmin129 min -1000 -Inf   -> -Infinity
+dqmin130 min -1    -Inf   -> -Infinity
+dqmin131 min -0    -Inf   -> -Infinity
+dqmin132 min  0    -Inf   -> -Infinity
+dqmin133 min  1    -Inf   -> -Infinity
+dqmin134 min  1000 -Inf   -> -Infinity
+dqmin135 min  Inf  -Inf   -> -Infinity
+
+-- 2004.08.02 754r chooses number over NaN in mixed cases
+dqmin141 min  NaN -Inf    ->  -Infinity
+dqmin142 min  NaN -1000   ->  -1000
+dqmin143 min  NaN -1      ->  -1
+dqmin144 min  NaN -0      ->  -0
+dqmin145 min  NaN  0      ->  0
+dqmin146 min  NaN  1      ->  1
+dqmin147 min  NaN  1000   ->  1000
+dqmin148 min  NaN  Inf    ->  Infinity
+dqmin149 min  NaN  NaN    ->  NaN
+dqmin150 min -Inf  NaN    -> -Infinity
+dqmin151 min -1000 NaN    -> -1000
+dqmin152 min -1   -NaN    -> -1
+dqmin153 min -0    NaN    -> -0
+dqmin154 min  0   -NaN    ->  0
+dqmin155 min  1    NaN    ->  1
+dqmin156 min  1000 NaN    ->  1000
+dqmin157 min  Inf  NaN    ->  Infinity
+
+dqmin161 min  sNaN -Inf   ->  NaN  Invalid_operation
+dqmin162 min  sNaN -1000  ->  NaN  Invalid_operation
+dqmin163 min  sNaN -1     ->  NaN  Invalid_operation
+dqmin164 min  sNaN -0     ->  NaN  Invalid_operation
+dqmin165 min -sNaN  0     -> -NaN  Invalid_operation
+dqmin166 min -sNaN  1     -> -NaN  Invalid_operation
+dqmin167 min  sNaN  1000  ->  NaN  Invalid_operation
+dqmin168 min  sNaN  NaN   ->  NaN  Invalid_operation
+dqmin169 min  sNaN sNaN   ->  NaN  Invalid_operation
+dqmin170 min  NaN  sNaN   ->  NaN  Invalid_operation
+dqmin171 min -Inf  sNaN   ->  NaN  Invalid_operation
+dqmin172 min -1000 sNaN   ->  NaN  Invalid_operation
+dqmin173 min -1    sNaN   ->  NaN  Invalid_operation
+dqmin174 min -0    sNaN   ->  NaN  Invalid_operation
+dqmin175 min  0    sNaN   ->  NaN  Invalid_operation
+dqmin176 min  1    sNaN   ->  NaN  Invalid_operation
+dqmin177 min  1000 sNaN   ->  NaN  Invalid_operation
+dqmin178 min  Inf  sNaN   ->  NaN  Invalid_operation
+dqmin179 min  NaN  sNaN   ->  NaN  Invalid_operation
+
+-- propagating NaNs
+dqmin181 min  NaN9   -Inf   -> -Infinity
+dqmin182 min -NaN8    9990  ->  9990
+dqmin183 min  NaN71   Inf   ->  Infinity
+
+dqmin184 min  NaN1    NaN54 ->  NaN1
+dqmin185 min  NaN22  -NaN53 ->  NaN22
+dqmin186 min -NaN3    NaN6  -> -NaN3
+dqmin187 min -NaN44   NaN7  -> -NaN44
+
+dqmin188 min -Inf     NaN41 -> -Infinity
+dqmin189 min -9999   -NaN33 -> -9999
+dqmin190 min  Inf     NaN2  ->  Infinity
+
+dqmin191 min  sNaN99 -Inf    ->  NaN99 Invalid_operation
+dqmin192 min  sNaN98 -11     ->  NaN98 Invalid_operation
+dqmin193 min -sNaN97  NaN8   -> -NaN97 Invalid_operation
+dqmin194 min  sNaN69 sNaN94  ->  NaN69 Invalid_operation
+dqmin195 min  NaN95  sNaN93  ->  NaN93 Invalid_operation
+dqmin196 min -Inf    sNaN92  ->  NaN92 Invalid_operation
+dqmin197 min  088    sNaN91  ->  NaN91 Invalid_operation
+dqmin198 min  Inf   -sNaN90  -> -NaN90 Invalid_operation
+dqmin199 min  NaN    sNaN86  ->  NaN86 Invalid_operation
+
+-- old rounding checks
+dqmin221 min -12345678000 1  -> -12345678000
+dqmin222 min 1 -12345678000  -> -12345678000
+dqmin223 min -1234567800  1  -> -1234567800
+dqmin224 min 1 -1234567800   -> -1234567800
+dqmin225 min -1234567890  1  -> -1234567890
+dqmin226 min 1 -1234567890   -> -1234567890
+dqmin227 min -1234567891  1  -> -1234567891
+dqmin228 min 1 -1234567891   -> -1234567891
+dqmin229 min -12345678901 1  -> -12345678901
+dqmin230 min 1 -12345678901  -> -12345678901
+dqmin231 min -1234567896  1  -> -1234567896
+dqmin232 min 1 -1234567896   -> -1234567896
+dqmin233 min 1234567891  1   -> 1
+dqmin234 min 1 1234567891    -> 1
+dqmin235 min 12345678901 1   -> 1
+dqmin236 min 1 12345678901   -> 1
+dqmin237 min 1234567896  1   -> 1
+dqmin238 min 1 1234567896    -> 1
+
+-- from examples
+dqmin280 min '3'   '2'  ->  '2'
+dqmin281 min '-10' '3'  ->  '-10'
+dqmin282 min '1.0' '1'  ->  '1.0'
+dqmin283 min '1' '1.0'  ->  '1.0'
+dqmin284 min '7' 'NaN'  ->  '7'
+
+-- expanded list from min/max 754r purple prose
+-- [explicit tests for exponent ordering]
+dqmin401 min  Inf    1.1     ->  1.1
+dqmin402 min  1.1    1       ->  1
+dqmin403 min  1      1.0     ->  1.0
+dqmin404 min  1.0    0.1     ->  0.1
+dqmin405 min  0.1    0.10    ->  0.10
+dqmin406 min  0.10   0.100   ->  0.100
+dqmin407 min  0.10   0       ->  0
+dqmin408 min  0      0.0     ->  0.0
+dqmin409 min  0.0   -0       -> -0
+dqmin410 min  0.0   -0.0     -> -0.0
+dqmin411 min  0.00  -0.0     -> -0.0
+dqmin412 min  0.0   -0.00    -> -0.00
+dqmin413 min  0     -0.0     -> -0.0
+dqmin414 min  0     -0       -> -0
+dqmin415 min -0.0   -0       -> -0
+dqmin416 min -0     -0.100   -> -0.100
+dqmin417 min -0.100 -0.10    -> -0.10
+dqmin418 min -0.10  -0.1     -> -0.1
+dqmin419 min -0.1   -1.0     -> -1.0
+dqmin420 min -1.0   -1       -> -1
+dqmin421 min -1     -1.1     -> -1.1
+dqmin423 min -1.1   -Inf     -> -Infinity
+-- same with operands reversed
+dqmin431 min  1.1    Inf     ->  1.1
+dqmin432 min  1      1.1     ->  1
+dqmin433 min  1.0    1       ->  1.0
+dqmin434 min  0.1    1.0     ->  0.1
+dqmin435 min  0.10   0.1     ->  0.10
+dqmin436 min  0.100  0.10    ->  0.100
+dqmin437 min  0      0.10    ->  0
+dqmin438 min  0.0    0       ->  0.0
+dqmin439 min -0      0.0     -> -0
+dqmin440 min -0.0    0.0     -> -0.0
+dqmin441 min -0.0    0.00    -> -0.0
+dqmin442 min -0.00   0.0     -> -0.00
+dqmin443 min -0.0    0       -> -0.0
+dqmin444 min -0      0       -> -0
+dqmin445 min -0     -0.0     -> -0
+dqmin446 min -0.100 -0       -> -0.100
+dqmin447 min -0.10  -0.100   -> -0.10
+dqmin448 min -0.1   -0.10    -> -0.1
+dqmin449 min -1.0   -0.1     -> -1.0
+dqmin450 min -1     -1.0     -> -1
+dqmin451 min -1.1   -1       -> -1.1
+dqmin453 min -Inf   -1.1     -> -Infinity
+-- largies
+dqmin460 min  1000   1E+3    ->  1000
+dqmin461 min  1E+3   1000    ->  1000
+dqmin462 min  1000  -1E+3    -> -1E+3
+dqmin463 min  1E+3  -384    -> -384
+dqmin464 min -384   1E+3    -> -384
+dqmin465 min -1E+3   1000    -> -1E+3
+dqmin466 min -384  -1E+3    -> -1E+3
+dqmin467 min -1E+3  -384    -> -1E+3
+
+-- misalignment traps for little-endian
+dqmin471 min      1.0       0.1  -> 0.1
+dqmin472 min      0.1       1.0  -> 0.1
+dqmin473 min     10.0       0.1  -> 0.1
+dqmin474 min      0.1      10.0  -> 0.1
+dqmin475 min      100       1.0  -> 1.0
+dqmin476 min      1.0       100  -> 1.0
+dqmin477 min     1000      10.0  -> 10.0
+dqmin478 min     10.0      1000  -> 10.0
+dqmin479 min    10000     100.0  -> 100.0
+dqmin480 min    100.0     10000  -> 100.0
+dqmin481 min   100000    1000.0  -> 1000.0
+dqmin482 min   1000.0    100000  -> 1000.0
+dqmin483 min  1000000   10000.0  -> 10000.0
+dqmin484 min  10000.0   1000000  -> 10000.0
+
+-- subnormals
+dqmin510 min  1.00E-6143       0  ->   0
+dqmin511 min  0.1E-6143        0  ->   0
+dqmin512 min  0.10E-6143       0  ->   0
+dqmin513 min  0.100E-6143      0  ->   0
+dqmin514 min  0.01E-6143       0  ->   0
+dqmin515 min  0.999E-6143      0  ->   0
+dqmin516 min  0.099E-6143      0  ->   0
+dqmin517 min  0.009E-6143      0  ->   0
+dqmin518 min  0.001E-6143      0  ->   0
+dqmin519 min  0.0009E-6143     0  ->   0
+dqmin520 min  0.0001E-6143     0  ->   0
+
+dqmin530 min -1.00E-6143       0  ->  -1.00E-6143
+dqmin531 min -0.1E-6143        0  ->  -1E-6144    Subnormal
+dqmin532 min -0.10E-6143       0  ->  -1.0E-6144  Subnormal
+dqmin533 min -0.100E-6143      0  ->  -1.00E-6144 Subnormal
+dqmin534 min -0.01E-6143       0  ->  -1E-6145    Subnormal
+dqmin535 min -0.999E-6143      0  ->  -9.99E-6144 Subnormal
+dqmin536 min -0.099E-6143      0  ->  -9.9E-6145  Subnormal
+dqmin537 min -0.009E-6143      0  ->  -9E-6146    Subnormal
+dqmin538 min -0.001E-6143      0  ->  -1E-6146    Subnormal
+dqmin539 min -0.0009E-6143     0  ->  -9E-6147    Subnormal
+dqmin540 min -0.0001E-6143     0  ->  -1E-6147    Subnormal
+
+
+-- Null tests
+dqmin900 min 10  # -> NaN Invalid_operation
+dqmin901 min  # 10 -> NaN Invalid_operation

@@ -1,0 +1,301 @@
+import os
+import sys
+import warnings
+from array import array
+from inspect import isabstract
+from typing import Any
+import linecache
+
+from test import support
+from test.support import os_helper
+from test.support import refleak_helper
+
+from .runtests import HuntRefleak
+from .utils import clear_caches
+
+try:
+    from _abc import _get_dump
+except ImportError:
+    import weakref
+
+    def _get_dump(cls):
+        # Reimplement _get_dump() for pure-Python implementation of
+        # the abc module (Lib/_py_abc.py)
+        registry_weakrefs = set(weakref.ref(obj) for obj in cls._abc_registry)
+        return (registry_weakrefs, cls._abc_cache,
+                cls._abc_negative_cache, cls._abc_negative_cache_version)
+
+
+def save_support_xml(filename):
+    if support.junit_xml_list is None:
+        return
+
+    import pickle
+    with open(filename, 'xb') as fp:
+        pickle.dump(support.junit_xml_list, fp)
+    support.junit_xml_list = None
+
+
+def restore_support_xml(filename):
+    try:
+        fp = open(filename, 'rb')
+    except FileNotFoundError:
+        return
+
+    import pickle
+    with fp:
+        xml_list = pickle.load(fp)
+    os.unlink(filename)
+
+    support.junit_xml_list = xml_list
+
+
+def runtest_refleak(test_name, test_func,
+                    hunt_refleak: HuntRefleak,
+                    quiet: bool):
+    """Run a test multiple times, looking for reference leaks.
+
+    Returns:
+        False if the test didn't leak references; True if we detected refleaks.
+    """
+    # This code is hackish and inelegant, but it seems to do the job.
+    import copyreg
+    import collections.abc
+
+    if not hasattr(sys, 'gettotalrefcount'):
+        raise Exception("Tracking reference leaks requires a debug build "
+                        "of Python")
+
+    # Avoid false positives due to various caches
+    # filling slowly with random data:
+    warm_caches()
+
+    # Save current values for dash_R_cleanup() to restore.
+    fs = warnings.filters[:]
+    ps = copyreg.dispatch_table.copy()
+    pic = sys.path_importer_cache.copy()
+    zdc: dict[str, Any] | None
+    # Linecache holds a cache with the source of interactive code snippets
+    # (e.g. code typed in the REPL). This cache is not cleared by
+    # linecache.clearcache(). We need to save and restore it to avoid false
+    # positives.
+    linecache_data = linecache.cache.copy(), linecache._interactive_cache.copy() # type: ignore[attr-defined]
+    try:
+        import zipimport
+    except ImportError:
+        zdc = None # Run unmodified on platforms without zipimport support
+    else:
+        # private attribute that mypy doesn't know about:
+        zdc = zipimport._zip_directory_cache.copy()  # type: ignore[attr-defined]
+    abcs = {}
+    for abc in [getattr(collections.abc, a) for a in collections.abc.__all__]:
+        if not isabstract(abc):
+            continue
+        for obj in abc.__subclasses__() + [abc]:
+            abcs[obj] = _get_dump(obj)[0]
+
+    # `ByteString` is not included in `collections.abc.__all__`
+    with warnings.catch_warnings(action='ignore', category=DeprecationWarning):
+        ByteString = collections.abc.ByteString  # type: ignore[attr-defined]
+    for obj in ByteString.__subclasses__() + [ByteString]:
+        abcs[obj] = _get_dump(obj)[0]
+
+    warmups = hunt_refleak.warmups
+    runs = hunt_refleak.runs
+    filename = hunt_refleak.filename
+    repcount = warmups + runs
+
+    # Pre-allocate to ensure that the loop doesn't allocate anything new.
+    # Store the deltas as raw values in arrays rather than as int objects in
+    # lists: each unique delta stored as an object would live until the end of
+    # the loop and show up in the following repetition's reference and memory
+    # block deltas (gh-75400, gh-155981).
+    rep_range = list(range(repcount))
+    rc_deltas = array('q', [0]) * repcount
+    alloc_deltas = array('q', [0]) * repcount
+    fd_deltas = array('q', [0]) * repcount
+    handle_deltas = array('q', [0]) * repcount
+    getallocatedblocks = sys.getallocatedblocks
+    gettotalrefcount = sys.gettotalrefcount
+    getunicodeinternedsize = sys.getunicodeinternedsize
+    fd_count = os_helper.fd_count
+    handle_count = os_helper.handle_count
+    # initialize variables to make pyflakes quiet
+    rc_before = alloc_before = fd_before = interned_immortal_before = 0
+    handle_before = 0
+
+    if not quiet:
+        print("beginning", repcount, "repetitions. Showing number of leaks "
+                "(. for 0 or less, X for 10 or more)",
+              file=sys.stderr)
+        numbers = ("1234567890"*(repcount//10 + 1))[:repcount]
+        numbers = numbers[:warmups] + ':' + numbers[warmups:]
+        print(numbers, file=sys.stderr, flush=True)
+
+    xml_filename = 'refleak-xml.tmp'
+    result = None
+    dash_R_cleanup(fs, ps, pic, zdc, abcs, linecache_data)
+
+    for i in rep_range:
+        support.gc_collect()
+        current = refleak_helper._hunting_for_refleaks
+        refleak_helper._hunting_for_refleaks = True
+        try:
+            result = test_func()
+        finally:
+            refleak_helper._hunting_for_refleaks = current
+
+        save_support_xml(xml_filename)
+        dash_R_cleanup(fs, ps, pic, zdc, abcs, linecache_data)
+        support.gc_collect()
+
+        # Read memory statistics immediately after the garbage collection.
+        # Also, readjust the reference counts and alloc blocks by ignoring
+        # any strings that might have been interned during test_func. These
+        # strings will be deallocated at runtime shutdown
+        interned_immortal_after = getunicodeinternedsize(_only_immortal=True)
+        alloc_after = getallocatedblocks() - interned_immortal_after
+        rc_after = gettotalrefcount()
+        fd_after = fd_count()
+        handle_after = handle_count()
+
+        rc_deltas[i] = rc_after - rc_before
+        alloc_deltas[i] = alloc_after - alloc_before
+        fd_deltas[i] = fd_after - fd_before
+        handle_deltas[i] = handle_after - handle_before
+
+        if not quiet:
+            # use max, not sum, so total_leaks is one of the pooled ints
+            total_leaks = max(rc_deltas[i], alloc_deltas[i],
+                              fd_deltas[i], handle_deltas[i])
+            if total_leaks <= 0:
+                symbol = '.'
+            elif total_leaks < 10:
+                symbol = (
+                    '.', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+                    )[total_leaks]
+            else:
+                symbol = 'X'
+            if i == warmups:
+                print(' ', end='', file=sys.stderr, flush=True)
+            print(symbol, end='', file=sys.stderr, flush=True)
+            del total_leaks
+            del symbol
+
+        alloc_before = alloc_after
+        rc_before = rc_after
+        fd_before = fd_after
+        handle_before = handle_after
+        interned_immortal_before = interned_immortal_after
+
+        restore_support_xml(xml_filename)
+
+    if not quiet:
+        print(file=sys.stderr)
+
+    if ('multiprocessing' in test_name
+        or 'concurrent_futures' in test_name):
+        # gh-154208: Disable check for Windows handle leaks when
+        # multiprocessing is used. There is a known race condition in
+        # multiprocessing causing handle leak. Disable the multiprocessing
+        # tests to be able to check for leaks for all other tests.
+        for i in range(len(handle_deltas)):
+            handle_deltas[i] = 0
+
+    failed = False
+    for raw_deltas, item_name in [
+        (rc_deltas, 'references'),
+        (alloc_deltas, 'memory blocks'),
+        (fd_deltas, 'file descriptors'),
+        (handle_deltas, 'handles'),
+    ]:
+        # Ignore warmup runs; convert to a list for reporting
+        deltas = list(raw_deltas[warmups:])
+
+        # Only consider that a test leaks if all deltas are greater than or
+        # equal to 1. Otherwise, ignore deltas.
+        #
+        # For example, ignore deltas:
+        #
+        #   [3, 0, 0] references, sum=3
+        #   [0, 1, 0] references, sum=1
+        #   [8, -8, 1] references, sum=1
+        #   [0, 1, -1] file descriptors, sum=0
+        #
+        # Examples of deltas treated as leaks:
+        #
+        #   [5, 5, 6] references, sum=16
+        #   [10, 1, 1] references, sum=12
+        failing = all(delta >= 1 for delta in deltas)
+
+        suspicious = any(deltas)
+        if failing or suspicious:
+            msg = '%s leaked %s %s, sum=%s' % (
+                test_name, deltas, item_name, sum(deltas))
+            print(msg, end='', file=sys.stderr)
+            if failing:
+                print(file=sys.stderr, flush=True)
+                with open(filename, "a", encoding="utf-8") as refrep:
+                    print(msg, file=refrep)
+                    refrep.flush()
+                failed = True
+            else:
+                print(' (this is fine)', file=sys.stderr, flush=True)
+    return (failed, result)
+
+
+def dash_R_cleanup(fs, ps, pic, zdc, abcs, linecache_data):
+    import copyreg
+    import collections.abc
+
+    # Restore some original values.
+    warnings.filters[:] = fs
+    copyreg.dispatch_table.clear()
+    copyreg.dispatch_table.update(ps)
+    sys.path_importer_cache.clear()
+    sys.path_importer_cache.update(pic)
+    lcache, linteractive = linecache_data
+    linecache._interactive_cache.clear()
+    linecache._interactive_cache.update(linteractive)
+    linecache.cache.clear()
+    linecache.cache.update(lcache)
+    try:
+        import zipimport
+    except ImportError:
+        pass # Run unmodified on platforms without zipimport support
+    else:
+        zipimport._zip_directory_cache.clear()
+        zipimport._zip_directory_cache.update(zdc)
+
+    # Clear ABC registries, restoring previously saved ABC registries.
+    abs_classes = [getattr(collections.abc, a) for a in collections.abc.__all__]
+    with warnings.catch_warnings(action='ignore', category=DeprecationWarning):
+        abs_classes.append(collections.abc.ByteString)
+    abs_classes = filter(isabstract, abs_classes)
+    for abc in abs_classes:
+        for obj in abc.__subclasses__() + [abc]:
+            refs = abcs.get(obj, None)
+            if refs is not None:
+                obj._abc_registry_clear()
+                for ref in refs:
+                    subclass = ref()
+                    if subclass is not None:
+                        obj.register(subclass)
+            obj._abc_caches_clear()
+
+    # Clear caches
+    clear_caches()
+
+    # Clear other caches last (previous function calls can re-populate them):
+    sys._clear_internal_caches()
+
+
+def warm_caches() -> None:
+    # char cache
+    s = bytes(range(256))
+    for i in range(256):
+        s[i:i+1]
+    # unicode cache
+    [chr(i) for i in range(256)]
+    # int cache
+    list(range(-5, 257))

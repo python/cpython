@@ -1,0 +1,965 @@
+Intro
+-----
+This describes an adaptive, stable, natural mergesort, modestly called
+timsort (hey, I earned it <wink>).  It has supernatural performance on many
+kinds of partially ordered arrays (less than lg(N!) comparisons needed, and
+as few as N-1), yet as fast as Python's previous highly tuned samplesort
+hybrid on random arrays.
+
+In a nutshell, the main routine marches over the array once, left to right,
+alternately identifying the next run, then merging it into the previous
+runs "intelligently".  Everything else is complication for speed, and some
+hard-won measure of memory efficiency.
+
+
+Comparison with Python's Samplesort Hybrid
+------------------------------------------
++ timsort can require a temp array containing as many as N//2 pointers,
+  which means as many as 2*N extra bytes on 32-bit boxes.  It can be
+  expected to require a temp array this large when sorting random data; on
+  data with significant structure, it may get away without using any extra
+  heap memory.  This appears to be the strongest argument against it, but
+  compared to the size of an object, 2 temp bytes worst-case (also expected-
+  case for random data) doesn't scare me much.
+
+  It turns out that Perl is moving to a stable mergesort, and the code for
+  that appears always to require a temp array with room for at least N
+  pointers. (Note that I wouldn't want to do that even if space weren't an
+  issue; I believe its efforts at memory frugality also save timsort
+  significant pointer-copying costs, and allow it to have a smaller working
+  set.)
+
++ Across about four hours of generating random arrays, and sorting them
+  under both methods, samplesort required about 1.5% more comparisons
+  (the program is at the end of this file).
+
++ In real life, this may be faster or slower on random arrays than
+  samplesort was, depending on platform quirks.  Since it does fewer
+  comparisons on average, it can be expected to do better the more
+  expensive a comparison function is.  OTOH, it does more data movement
+  (pointer copying) than samplesort, and that may negate its small
+  comparison advantage (depending on platform quirks) unless comparison
+  is very expensive.
+
++ On arrays with many kinds of pre-existing order, this blows samplesort out
+  of the water.  It's significantly faster than samplesort even on some
+  cases samplesort was special-casing the snot out of.  I believe that lists
+  very often do have exploitable partial order in real life, and this is the
+  strongest argument in favor of timsort (indeed, samplesort's special cases
+  for extreme partial order are appreciated by real users, and timsort goes
+  much deeper than those, in particular naturally covering every case where
+  someone has suggested "and it would be cool if list.sort() had a special
+  case for this too ... and for that ...").
+
++ Here are exact comparison counts across all the tests in sortperf.py,
+  when run with arguments "15 20 1".
+
+  Column Key:
+      *sort: random data
+      \sort: descending data
+      /sort: ascending data
+      3sort: ascending, then 3 random exchanges
+      +sort: ascending, then 10 random at the end
+      %sort: ascending, then randomly replace 1% of elements w/ random values
+      ~sort: many duplicates
+      =sort: all equal
+      !sort: worst case scenario
+
+  First the trivial cases, trivial for samplesort because it special-cased
+  them, and trivial for timsort because it naturally works on runs.  Within
+  an "n" block, the first line gives the # of compares done by samplesort,
+  the second line by timsort, and the third line is the percentage by
+  which the samplesort count exceeds the timsort count:
+
+      n   \sort   /sort   =sort
+-------  ------  ------  ------
+  32768   32768   32767   32767  samplesort
+          32767   32767   32767  timsort
+          0.00%   0.00%   0.00%  (samplesort - timsort) / timsort
+
+  65536   65536   65535   65535
+          65535   65535   65535
+          0.00%   0.00%   0.00%
+
+ 131072  131072  131071  131071
+         131071  131071  131071
+          0.00%   0.00%   0.00%
+
+ 262144  262144  262143  262143
+         262143  262143  262143
+          0.00%   0.00%   0.00%
+
+ 524288  524288  524287  524287
+         524287  524287  524287
+          0.00%   0.00%   0.00%
+
+1048576 1048576 1048575 1048575
+        1048575 1048575 1048575
+          0.00%   0.00%   0.00%
+
+  The algorithms are effectively identical in these cases, except that
+  timsort does one less compare in \sort.
+
+  Now for the more interesting cases.  Where lg(x) is the logarithm of x to
+  the base 2 (e.g., lg(8)=3), lg(n!) is the information-theoretic limit for
+  the best any comparison-based sorting algorithm can do on average (across
+  all permutations).  When a method gets significantly below that, it's
+  either astronomically lucky, or is finding exploitable structure in the
+  data.
+
+
+      n   lg(n!)    *sort    3sort     +sort   %sort    ~sort     !sort
+-------  -------   ------   -------  -------  ------  -------  --------
+  32768   444255   453096   453614    32908   452871   130491    469141 old
+                   448885    33016    33007    50426   182083     65534 new
+                    0.94% 1273.92%   -0.30%  798.09%  -28.33%   615.87% %ch from new
+
+  65536   954037   972699   981940    65686   973104   260029   1004607
+                   962991    65821    65808   101667   364341    131070
+                    1.01% 1391.83%   -0.19%  857.15%  -28.63%   666.47%
+
+ 131072  2039137  2101881  2091491   131232  2092894   554790   2161379
+                  2057533   131410   131361   206193   728871    262142
+                    2.16% 1491.58%   -0.10%  915.02%  -23.88%   724.51%
+
+ 262144  4340409  4464460  4403233   262314  4445884  1107842   4584560
+                  4377402   262437   262459   416347  1457945    524286
+                    1.99% 1577.82%   -0.06%  967.83%  -24.01%   774.44%
+
+ 524288  9205096  9453356  9408463   524468  9441930  2218577   9692015
+                  9278734   524580   524633   837947  2916107   1048574
+                   1.88%  1693.52%   -0.03% 1026.79%  -23.92%   824.30%
+
+1048576 19458756 19950272 19838588  1048766 19912134  4430649  20434212
+                 19606028  1048958  1048941  1694896  5832445   2097150
+                    1.76% 1791.27%   -0.02% 1074.83%  -24.03%   874.38%
+
+  Discussion of cases:
+
+  *sort:  There's no structure in random data to exploit, so the theoretical
+  limit is lg(n!).  Both methods get close to that, and timsort is hugging
+  it (indeed, in a *marginal* sense, it's a spectacular improvement --
+  there's only about 1% left before hitting the wall, and timsort knows
+  darned well it's doing compares that won't pay on random data -- but so
+  does the samplesort hybrid).  For contrast, Hoare's original random-pivot
+  quicksort does about 39% more compares than the limit, and the median-of-3
+  variant about 19% more.
+
+  3sort, %sort, and !sort:  No contest; there's structure in this data, but
+  not of the specific kinds samplesort special-cases.  Note that structure
+  in !sort wasn't put there on purpose -- it was crafted as a worst case for
+  a previous quicksort implementation.  That timsort nails it came as a
+  surprise to me (although it's obvious in retrospect).
+
+  +sort:  samplesort special-cases this data, and does a few less compares
+  than timsort.  However, timsort runs this case significantly faster on all
+  boxes we have timings for, because timsort is in the business of merging
+  runs efficiently, while samplesort does much more data movement in this
+  (for it) special case.
+
+  ~sort:  samplesort's special cases for large masses of equal elements are
+  extremely effective on ~sort's specific data pattern, and timsort just
+  isn't going to get close to that, despite that it's clearly getting a
+  great deal of benefit out of the duplicates (the # of compares is much less
+  than lg(n!)).  ~sort has a perfectly uniform distribution of just 4
+  distinct values, and as the distribution gets more skewed, samplesort's
+  equal-element gimmicks become less effective, while timsort's adaptive
+  strategies find more to exploit; in a database supplied by Kevin Altis, a
+  sort on its highly skewed "on which stock exchange does this company's
+  stock trade?" field ran over twice as fast under timsort.
+
+  However, despite that timsort does many more comparisons on ~sort, and
+  that on several platforms ~sort runs highly significantly slower under
+  timsort, on other platforms ~sort runs highly significantly faster under
+  timsort.  No other kind of data has shown this wild x-platform behavior,
+  and we don't have an explanation for it.  The only thing I can think of
+  that could transform what "should be" highly significant slowdowns into
+  highly significant speedups on some boxes are catastrophic cache effects
+  in samplesort.
+
+  But timsort "should be" slower than samplesort on ~sort, so it's hard
+  to count that it isn't on some boxes as a strike against it <wink>.
+
++ Here's the highwater mark for the number of heap-based temp slots (4
+  bytes each on this box) needed by each test, again with arguments
+  "15 20 1":
+
+   2**i  *sort \sort /sort  3sort  +sort  %sort  ~sort  =sort  !sort
+  32768  16384     0     0   6256      0  10821  12288      0  16383
+  65536  32766     0     0  21652      0  31276  24576      0  32767
+ 131072  65534     0     0  17258      0  58112  49152      0  65535
+ 262144 131072     0     0  35660      0 123561  98304      0 131071
+ 524288 262142     0     0  31302      0 212057 196608      0 262143
+1048576 524286     0     0 312438      0 484942 393216      0 524287
+
+  Discussion:  The tests that end up doing (close to) perfectly balanced
+  merges (*sort, !sort) need all N//2 temp slots (or almost all).  ~sort
+  also ends up doing balanced merges, but systematically benefits a lot from
+  the preliminary pre-merge searches described under "Merge Memory" later.
+  %sort approaches having a balanced merge at the end because the random
+  selection of elements to replace is expected to produce an out-of-order
+  element near the midpoint.  \sort, /sort, =sort are the trivial one-run
+  cases, needing no merging at all.  +sort ends up having one very long run
+  and one very short, and so gets all the temp space it needs from the small
+  temparray member of the MergeState struct (note that the same would be
+  true if the new random elements were prefixed to the sorted list instead,
+  but not if they appeared "in the middle").  3sort approaches N//3 temp
+  slots twice, but the run lengths that remain after 3 random exchanges
+  clearly has very high variance.
+
+
+A detailed description of timsort follows.
+
+Runs
+----
+count_run() returns the # of elements in the next run, and, if it's a
+descending run, reverses it in-place. A run is either "ascending", which
+means non-decreasing:
+
+    a0 <= a1 <= a2 <= ...
+
+or "descending", which means non-increasing:
+
+    a0 >= a1 >= a2 >= ...
+
+Note that a run is always at least 2 long, unless we start at the array's
+last element. If all elements in the array are equal, it can be viewed as
+both ascending and descending. Upon return, the run count_run() identifies
+is always ascending.
+
+Reversal is done via the obvious fast "swap elements starting at each
+end, and converge at the middle" method. That can violate stability if
+the slice contains any equal elements. For that reason, for a long time
+the code used strict inequality (">" rather than ">=") in its definition
+of descending.
+
+Removing that restriction required some complication: when processing a
+descending run, all-equal sub-runs of elements are reversed in-place, on the
+fly. Their original relative order is restored "by magic" via the final
+"reverse the entire run" step.
+
+This makes processing descending runs a little more costly. We only use
+`__lt__` comparisons, so that `x == y` has to be deduced from
+`not x < y and not y < x`. But so long as a run remains strictly decreasing,
+only one of those compares needs to be done per loop iteration. So the primsry
+extra cost is paid only when there are equal elements, and they get some
+compensating benefit by not needing to end the descending run.
+
+There's one more trick added since the original: after reversing a descending
+run, it's possible that it can be extended by an adjacent ascending run. For
+example, given [3, 2, 1, 3, 4, 5, 0], the 3-element descending prefix is
+reversed in-place, and then extended by [3, 4, 5].
+
+If an array is random, it's very unlikely we'll see long runs.  If a natural
+run contains less than minrun elements (see next section), the main loop
+artificially boosts it to minrun elements, via a stable binary insertion sort
+applied to the right number of array elements following the short natural
+run.  In a random array, *all* runs are likely to be minrun long as a
+result.  This has two primary good effects:
+
+1. Random data strongly tends then toward perfectly balanced (both runs have
+   the same length) merges, which is the most efficient way to proceed when
+   data is random.
+
+2. Because runs are never very short, the rest of the code doesn't make
+   heroic efforts to shave a few cycles off per-merge overheads.  For
+   example, reasonable use of function calls is made, rather than trying to
+   inline everything.  Since there are no more than N/minrun runs to begin
+   with, a few "extra" function calls per merge is barely measurable.
+
+
+Computing minrun
+----------------
+If N < MAX_MINRUN, minrun is N.  IOW, binary insertion sort is used for the
+whole array then; it's hard to beat that given the overheads of trying
+something fancier (see note BINSORT).
+
+When N is a power of 2, testing on random data showed that minrun values of
+16, 32, 64 and 128 worked about equally well.  At 256 the data-movement cost
+in binary insertion sort clearly hurt, and at 8 the increase in the number
+of function calls clearly hurt.  Picking *some* power of 2 is important
+here, so that the merges end up perfectly balanced (see next section).  We
+pick 32 as a good value in the sweet range; picking a value at the low end
+allows the adaptive gimmicks more opportunity to exploit shorter natural
+runs.
+
+Because sortperf.py only tries powers of 2, it took a long time to notice
+that 32 isn't a good choice for the general case!  Consider N=2112:
+
+>>> divmod(2112, 32)
+(66, 0)
+
+If the data is randomly ordered, we're very likely to end up with 66 runs
+each of length 32.  The first 64 of these trigger a sequence of perfectly
+balanced merges (see next section), leaving runs of lengths 2048 and 64 to
+merge at the end.  The adaptive gimmicks can do that with fewer than 2048+64
+compares, but it's still more compares than necessary, and-- mergesort's
+bugaboo relative to samplesort --a lot more data movement (O(N) copies just
+to get 64 elements into place).
+
+If we take minrun=33 in this case, then we're very likely to end up with 64
+runs each of length 33, and then all merges are perfectly balanced.  Better!
+
+The original code used a cheap heuristic to pick a minrun that avoided the
+very worst cases of imbalance for the final merge, but "pretty bad" cases
+still existed.
+
+In 2025, Stefan Pochmann found a much better approach, based on letting minrun
+vary a bit from one run to the next. Under his scheme, at _all_ levels of the
+merge tree:
+
+- The number of runs is a power of 2.
+- At most two different run lengths appear.
+- When two do appear, the smaller is one less than the larger.
+- The lengths of run pairs merged never differ by more than one.
+
+So, in all respects, as perfectly balanced as possible.
+
+For the 2112 case, that also keeps minrun at 33, but we were lucky there
+that 2112 is 33 times a power of 2. The new approach doesn't rely on luck.
+
+For example, with 315 random elements, the old scheme uses fixed minrun=40 and
+produces runs of length 40, except for the last. The new scheme produces a
+mix of lengths 39 and 40:
+
+old:  40 40 40 40 40 40 40 35
+new:  39 39 40 39 39 40 39 40
+
+Both schemes produce eight runs, a power of 2. That's good for a balanced
+merge tree. But the new scheme allows merges where left and right length
+never differ by more than 1:
+
+39 39 40 39 39 40 39 40
+  78   79     79   79
+    157         158
+          315
+
+(This shows merges downward, e.g., two runs of length 39 are merged and
+become a run of length 78.)
+
+With larger lists, the old scheme can get even more unbalanced. For example,
+with 32769 elements (that's 2**15 + 1), it uses minrun=33 and produces 993
+runs (of length 33). That's not even a power of 2. The new scheme instead
+produces 1024 runs, all with length 32 except for the last one with length 33.
+
+How does it work? Ideally, all runs would be exactly equally long. For the
+above example, each run would have 315/8 = 39.375 elements. Which of course
+doesn't work. But we can get close:
+
+For the first run, we'd like 39.375 elements. Since that's impossible, we
+instead use 39 (the floor) and remember the current leftover fraction 0.375.
+For the second run, we add 0.375 + 39.375 = 39.75. Again impossible, so we
+instead use 39 and remember 0.75. For the third run, we add 0.75 + 39.375 =
+40.125. This time we get 40 and remember 0.125. And so on. Here's a Python
+generator doing that:
+
+def gen_minruns_with_floats(n):
+    mr = n
+    while mr >= MAX_MINRUN:
+        mr /= 2
+
+    mr_current = 0
+    while True:
+        mr_current += mr
+        yield int(mr_current)
+        mr_current %= 1
+
+But while all arithmetic here can be done exactly using binery floating point,
+floats have less precision that a Py_ssize_t, and mixing floats with ints is
+needlessly expensive anyway.
+
+So here's an integer version, where the internal numbers are scaled up by
+2**e, or rather not divided by 2**e. Instead, only each yielded minrun gets
+divided (by right-shifting). For example instead of adding 39.375 and
+reducing modulo 1, it just adds 315 and reduces modulo 8. And always divides
+by 8 to get each actual minrun value:
+
+def gen_minruns_simpler(n):
+    e = 0
+    while (n >> e) >= MAX_MINRUN:
+        e += 1
+    mask = (1 << e) - 1
+
+    mr_current = 0
+    while True:
+        mr_current += n
+        yield mr_current >> e
+        mr_current &= mask
+
+See note MINRUN CODE for a full implementation and a driver that exhaustively
+verifies the claims above for all list lengths through 2 million.
+
+
+The Merge Pattern
+-----------------
+In order to exploit regularities in the data, we're merging on natural
+run lengths, and they can become wildly unbalanced.  That's a Good Thing
+for this sort!  It means we have to find a way to manage an assortment of
+potentially very different run lengths, though.
+
+Stability constrains permissible merging patterns.  For example, if we have
+3 consecutive runs of lengths
+
+    A:10000  B:20000  C:10000
+
+we dare not merge A with C first, because if A, B and C happen to contain
+a common element, it would get out of order wrt its occurrence(s) in B.  The
+merging must be done as (A+B)+C or A+(B+C) instead.
+
+So merging is always done on two consecutive runs at a time, and in-place,
+although this may require some temp memory (more on that later).
+
+When a run is identified, its length is passed to found_new_run() to
+potentially merge runs on a stack of pending runs.  We would like to delay
+merging as long as possible in order to exploit patterns that may come up
+later, but we like even more to do merging as soon as possible to exploit
+that the run just found is still high in the memory hierarchy.  We also can't
+delay merging "too long" because it consumes memory to remember the runs that
+are still unmerged, and the stack has a fixed size.
+
+The original version of this code used the first thing I made up that didn't
+obviously suck ;-) It was loosely based on invariants involving the Fibonacci
+sequence.
+
+It worked OK, but it was hard to reason about, and was subtle enough that the
+intended invariants weren't actually preserved.  Researchers discovered that
+when trying to complete a computer-generated correctness proof.  That was
+easily-enough repaired, but the discovery spurred quite a bit of academic
+interest in truly good ways to manage incremental merging on the fly.
+
+At least a dozen different approaches were developed, some provably having
+near-optimal worst case behavior with respect to the entropy of the
+distribution of run lengths.  Some details can be found in bpo-34561.
+
+The code now uses the "powersort" merge strategy from:
+
+    "Nearly-Optimal Mergesorts: Fast, Practical Sorting Methods
+     That Optimally Adapt to Existing Runs"
+    J. Ian Munro and Sebastian Wild
+
+The code is pretty simple, but the justification is quite involved, as it's
+based on fast approximations to optimal binary search trees, which are
+substantial topics on their own.
+
+Here we'll just cover some pragmatic details:
+
+The `powerloop()` function computes a run's "power". Say two adjacent runs
+begin at index s1. The first run has length n1, and the second run (starting
+at index s1+n1, called "s2" below) has length n2. The list has total length n.
+The "power" of the first run is a small integer, the depth of the node
+connecting the two runs in an ideal binary merge tree, where power 1 is the
+root node, and the power increases by 1 for each level deeper in the tree.
+
+The power is the least integer L such that the "midpoint interval" contains
+a rational number of the form J/2**L. The midpoint interval is the semi-
+closed interval:
+
+    ((s1 + n1/2)/n, (s2 + n2/2)/n]
+
+Yes, that's brain-busting at first ;-) Concretely, if (s1 + n1/2)/n and
+(s2 + n2/2)/n are computed to infinite precision in binary, the power L is
+the first position at which the 2**-L bit differs between the expansions.
+Since the left end of the interval is less than the right end, the first
+differing bit must be a 0 bit in the left quotient and a 1 bit in the right
+quotient.
+
+`powerloop()` emulates these divisions, 1 bit at a time, using comparisons,
+subtractions, and shifts in a loop.
+
+You'll notice the paper uses an O(1) method instead, but that relies on two
+things we don't have:
+
+- An O(1) "count leading zeroes" primitive. We can find such a thing as a C
+  extension on most platforms, but not all, and there's no uniform spelling
+  on the platforms that support it.
+
+- Integer division on an integer type twice as wide as needed to hold the
+  list length. But the latter is Py_ssize_t for us, and is typically the
+  widest native signed integer type the platform supports.
+
+But since runs in our algorithm are almost never very short, the once-per-run
+overhead of `powerloop()` seems lost in the noise.
+
+Detail: why is Py_ssize_t "wide enough" in `powerloop()`?  We do, after all,
+shift integers of that width left by 1.  How do we know that won't spill into
+the sign bit?  The trick is that we have some slop. `n` (the total list
+length) is the number of list elements, which is at most 4 times (on a 32-box,
+with 4-byte pointers) smaller than than the largest size_t. So at least the
+leading two bits of the integers we're using are clear.
+
+Since we can't compute a run's power before seeing the run that follows it,
+the most-recently identified run is never merged by `found_new_run()`.
+Instead a new run is only used to compute the 2nd-most-recent run's power.
+Then adjacent runs are merged so long as their saved power (tree depth) is
+greater than that newly computed power. When found_new_run() returns, only
+then is a new run pushed on to the stack of pending runs.
+
+A key invariant is that powers on the run stack are strictly decreasing
+(starting from the run at the top of the stack).
+
+Note that even powersort's strategy isn't always truly optimal. It can't be.
+Computing an optimal merge sequence can be done in time quadratic in the
+number of runs, which is very much slower, and also requires finding &
+remembering _all_ the runs' lengths (of which there may be billions) in
+advance.  It's remarkable, though, how close to optimal this strategy gets.
+
+Curious factoid: of all the alternatives I've seen in the literature,
+powersort's is the only one that's always truly optimal for a collection of 3
+run lengths (for three lengths A B C, it's always optimal to first merge the
+shorter of A and C with B).
+
+
+Merge Memory
+------------
+Merging adjacent runs of lengths A and B in-place, and in linear time, is
+difficult.  Theoretical constructions are known that can do it, but they're
+too difficult and slow for practical use.  But if we have temp memory equal
+to min(A, B), it's easy.
+
+If A is smaller (function merge_lo), copy A to a temp array, leave B alone,
+and then we can do the obvious merge algorithm left to right, from the temp
+area and B, starting the stores into where A used to live.  There's always a
+free area in the original area comprising a number of elements equal to the
+number not yet merged from the temp array (trivially true at the start;
+proceed by induction).  The only tricky bit is that if a comparison raises an
+exception, we have to remember to copy the remaining elements back in from
+the temp area, lest the array end up with duplicate entries from B.  But
+that's exactly the same thing we need to do if we reach the end of B first,
+so the exit code is pleasantly common to both the normal and error cases.
+
+If B is smaller (function merge_hi, which is merge_lo's "mirror image"),
+much the same, except that we need to merge right to left, copying B into a
+temp array and starting the stores at the right end of where B used to live.
+
+A refinement:  When we're about to merge adjacent runs A and B, we first do
+a form of binary search (more on that later) to see where B[0] should end up
+in A.  Elements in A preceding that point are already in their final
+positions, effectively shrinking the size of A.  Likewise we also search to
+see where A[-1] should end up in B, and elements of B after that point can
+also be ignored.  This cuts the amount of temp memory needed by the same
+amount.
+
+These preliminary searches may not pay off, and can be expected *not* to
+repay their cost if the data is random.  But they can win huge in all of
+time, copying, and memory savings when they do pay, so this is one of the
+"per-merge overheads" mentioned above that we're happy to endure because
+there is at most one very short run.  It's generally true in this algorithm
+that we're willing to gamble a little to win a lot, even though the net
+expectation is negative for random data.
+
+
+Merge Algorithms
+----------------
+merge_lo() and merge_hi() are where the bulk of the time is spent.  merge_lo
+deals with runs where A <= B, and merge_hi where A > B.  They don't know
+whether the data is clustered or uniform, but a lovely thing about merging
+is that many kinds of clustering "reveal themselves" by how many times in a
+row the winning merge element comes from the same run.  We'll only discuss
+merge_lo here; merge_hi is exactly analogous.
+
+Merging begins in the usual, obvious way, comparing the first element of A
+to the first of B, and moving B[0] to the merge area if it's less than A[0],
+else moving A[0] to the merge area.  Call that the "one pair at a time"
+mode.  The only twist here is keeping track of how many times in a row "the
+winner" comes from the same run.
+
+If that count reaches MIN_GALLOP, we switch to "galloping mode".  Here
+we *search* B for where A[0] belongs, and move over all the B's before
+that point in one chunk to the merge area, then move A[0] to the merge
+area.  Then we search A for where B[0] belongs, and similarly move a
+slice of A in one chunk.  Then back to searching B for where A[0] belongs,
+etc.  We stay in galloping mode until both searches find slices to copy
+less than MIN_GALLOP elements long, at which point we go back to one-pair-
+at-a-time mode.
+
+A refinement:  The MergeState struct contains the value of min_gallop that
+controls when we enter galloping mode, initialized to MIN_GALLOP.
+merge_lo() and merge_hi() adjust this higher when galloping isn't paying
+off, and lower when it is.
+
+
+Galloping
+---------
+Still without loss of generality, assume A is the shorter run.  In galloping
+mode, we first look for A[0] in B.  We do this via "galloping", comparing
+A[0] in turn to B[0], B[1], B[3], B[7], ..., B[2**j - 1], ..., until finding
+the k such that B[2**(k-1) - 1] < A[0] <= B[2**k - 1].  This takes at most
+roughly lg(B) comparisons, and, unlike a straight binary search, favors
+finding the right spot early in B (more on that later).
+
+After finding such a k, the region of uncertainty is reduced to 2**(k-1) - 1
+consecutive elements, and a straight binary search requires exactly k-1
+additional comparisons to nail it (see note REGION OF UNCERTAINTY).  Then we
+copy all the B's up to that point in one chunk, and then copy A[0].  Note
+that no matter where A[0] belongs in B, the combination of galloping + binary
+search finds it in no more than about 2*lg(B) comparisons.
+
+If we did a straight binary search, we could find it in no more than
+ceiling(lg(B+1)) comparisons -- but straight binary search takes that many
+comparisons no matter where A[0] belongs.  Straight binary search thus loses
+to galloping unless the run is quite long, and we simply can't guess
+whether it is in advance.
+
+If data is random and runs have the same length, A[0] belongs at B[0] half
+the time, at B[1] a quarter of the time, and so on:  a consecutive winning
+sub-run in B of length k occurs with probability 1/2**(k+1).  So long
+winning sub-runs are extremely unlikely in random data, and guessing that a
+winning sub-run is going to be long is a dangerous game.
+
+OTOH, if data is lopsided or lumpy or contains many duplicates, long
+stretches of winning sub-runs are very likely, and cutting the number of
+comparisons needed to find one from O(B) to O(log B) is a huge win.
+
+Galloping compromises by getting out fast if there isn't a long winning
+sub-run, yet finding such very efficiently when they exist.
+
+I first learned about the galloping strategy in a related context; see:
+
+    "Adaptive Set Intersections, Unions, and Differences" (2000)
+    Erik D. Demaine, Alejandro López-Ortiz, J. Ian Munro
+
+and its followup(s).  An earlier paper called the same strategy
+"exponential search":
+
+   "Optimistic Sorting and Information Theoretic Complexity"
+   Peter McIlroy
+   SODA (Fourth Annual ACM-SIAM Symposium on Discrete Algorithms), pp
+   467-474, Austin, Texas, 25-27 January 1993.
+
+and it probably dates back to an earlier paper by Bentley and Yao.  The
+McIlroy paper in particular has good analysis of a mergesort that's
+probably strongly related to this one in its galloping strategy.
+
+
+Galloping with a Broken Leg
+---------------------------
+So why don't we always gallop?  Because it can lose, on two counts:
+
+1. While we're willing to endure small per-merge overheads, per-comparison
+   overheads are a different story.  Calling Yet Another Function per
+   comparison is expensive, and gallop_left() and gallop_right() are
+   too long-winded for sane inlining.
+
+2. Galloping can-- alas --require more comparisons than linear one-at-time
+   search, depending on the data.
+
+#2 requires details.  If A[0] belongs before B[0], galloping requires 1
+compare to determine that, same as linear search, except it costs more
+to call the gallop function.  If A[0] belongs right before B[1], galloping
+requires 2 compares, again same as linear search.  On the third compare,
+galloping checks A[0] against B[3], and if it's <=, requires one more
+compare to determine whether A[0] belongs at B[2] or B[3].  That's a total
+of 4 compares, but if A[0] does belong at B[2], linear search would have
+discovered that in only 3 compares, and that's a huge loss!  Really.  It's
+an increase of 33% in the number of compares needed, and comparisons are
+expensive in Python.
+
+index in B where    # compares linear  # gallop  # binary  gallop
+A[0] belongs        search needs       compares  compares  total
+----------------    -----------------  --------  --------  ------
+               0                    1         1         0       1
+
+               1                    2         2         0       2
+
+               2                    3         3         1       4
+               3                    4         3         1       4
+
+               4                    5         4         2       6
+               5                    6         4         2       6
+               6                    7         4         2       6
+               7                    8         4         2       6
+
+               8                    9         5         3       8
+               9                   10         5         3       8
+              10                   11         5         3       8
+              11                   12         5         3       8
+                                        ...
+
+In general, if A[0] belongs at B[i], linear search requires i+1 comparisons
+to determine that, and galloping a total of 2*floor(lg(i))+2 comparisons.
+The advantage of galloping is unbounded as i grows, but it doesn't win at
+all until i=6.  Before then, it loses twice (at i=2 and i=4), and ties
+at the other values.  At and after i=6, galloping always wins.
+
+We can't guess in advance when it's going to win, though, so we do one pair
+at a time until the evidence seems strong that galloping may pay.  MIN_GALLOP
+is 7, and that's pretty strong evidence.  However, if the data is random, it
+simply will trigger galloping mode purely by luck every now and again, and
+it's quite likely to hit one of the losing cases next.  On the other hand,
+in cases like ~sort, galloping always pays, and MIN_GALLOP is larger than it
+"should be" then.  So the MergeState struct keeps a min_gallop variable
+that merge_lo and merge_hi adjust:  the longer we stay in galloping mode,
+the smaller min_gallop gets, making it easier to transition back to
+galloping mode (if we ever leave it in the current merge, and at the
+start of the next merge).  But whenever the gallop loop doesn't pay,
+min_gallop is increased by one, making it harder to transition back
+to galloping mode (and again both within a merge and across merges).  For
+random data, this all but eliminates the gallop penalty:  min_gallop grows
+large enough that we almost never get into galloping mode.  And for cases
+like ~sort, min_gallop can fall to as low as 1.  This seems to work well,
+but in all it's a minor improvement over using a fixed MIN_GALLOP value.
+
+
+Galloping Complication
+----------------------
+The description above was for merge_lo.  merge_hi has to merge "from the
+other end", and really needs to gallop starting at the last element in a run
+instead of the first.  Galloping from the first still works, but does more
+comparisons than it should (this is significant -- I timed it both ways). For
+this reason, the gallop_left() and gallop_right() (see note LEFT OR RIGHT)
+functions have a "hint" argument, which is the index at which galloping
+should begin.  So galloping can actually start at any index, and proceed at
+offsets of 1, 3, 7, 15, ... or -1, -3, -7, -15, ... from the starting index.
+
+In the code as I type it's always called with either 0 or n-1 (where n is
+the # of elements in a run).  It's tempting to try to do something fancier,
+melding galloping with some form of interpolation search; for example, if
+we're merging a run of length 1 with a run of length 10000, index 5000 is
+probably a better guess at the final result than either 0 or 9999.  But
+it's unclear how to generalize that intuition usefully, and merging of
+wildly unbalanced runs already enjoys excellent performance.
+
+~sort is a good example of when balanced runs could benefit from a better
+hint value:  to the extent possible, this would like to use a starting
+offset equal to the previous value of acount/bcount.  Doing so saves about
+10% of the compares in ~sort.  However, doing so is also a mixed bag,
+hurting other cases.
+
+
+Comparing Average # of Compares on Random Arrays
+------------------------------------------------
+[NOTE:  This was done when the new algorithm used about 0.1% more compares
+ on random data than does its current incarnation.]
+
+Here list.sort() is samplesort, and list.msort() this sort:
+
+"""
+import random
+from time import clock as now
+
+def fill(n):
+    from random import random
+    return [random() for i in range(n)]
+
+def mycmp(x, y):
+    global ncmp
+    ncmp += 1
+    return cmp(x, y)
+
+def timeit(values, method):
+    global ncmp
+    X = values[:]
+    bound = getattr(X, method)
+    ncmp = 0
+    t1 = now()
+    bound(mycmp)
+    t2 = now()
+    return t2-t1, ncmp
+
+format = "%5s  %9.2f  %11d"
+f2     = "%5s  %9.2f  %11.2f"
+
+def drive():
+    count = sst = sscmp = mst = mscmp = nelts = 0
+    while True:
+        n = random.randrange(100000)
+        nelts += n
+        x = fill(n)
+
+        t, c = timeit(x, 'sort')
+        sst += t
+        sscmp += c
+
+        t, c = timeit(x, 'msort')
+        mst += t
+        mscmp += c
+
+        count += 1
+        if count % 10:
+            continue
+
+        print "count", count, "nelts", nelts
+        print format % ("sort",  sst, sscmp)
+        print format % ("msort", mst, mscmp)
+        print f2     % ("", (sst-mst)*1e2/mst, (sscmp-mscmp)*1e2/mscmp)
+
+drive()
+"""
+
+I ran this on Windows and kept using the computer lightly while it was
+running.  time.clock() is wall-clock time on Windows, with better than
+microsecond resolution.  samplesort started with a 1.52% #-of-comparisons
+disadvantage, fell quickly to 1.48%, and then fluctuated within that small
+range.  Here's the last chunk of output before I killed the job:
+
+count 2630 nelts 130906543
+ sort    6110.80   1937887573
+msort    6002.78   1909389381
+            1.80         1.49
+
+We've done nearly 2 billion comparisons apiece at Python speed there, and
+that's enough <wink>.
+
+For random arrays of size 2 (yes, there are only 2 interesting ones),
+samplesort has a 50%(!) comparison disadvantage.  This is a consequence of
+samplesort special-casing at most one ascending run at the start, then
+falling back to the general case if it doesn't find an ascending run
+immediately.  The consequence is that it ends up using two compares to sort
+[2, 1].  Gratifyingly, timsort doesn't do any special-casing, so had to be
+taught how to deal with mixtures of ascending and descending runs
+efficiently in all cases.
+
+
+NOTES
+-----
+
+BINSORT
+A "binary insertion sort" is just like a textbook insertion sort, but instead
+of locating the correct position of the next item via linear (one at a time)
+search, an equivalent to Python's bisect.bisect_right is used to find the
+correct position in logarithmic time.  Most texts don't mention this
+variation, and those that do usually say it's not worth the bother:  insertion
+sort remains quadratic (expected and worst cases) either way.  Speeding the
+search doesn't reduce the quadratic data movement costs.
+
+But in CPython's case, comparisons are extraordinarily expensive compared to
+moving data, and the details matter.  Moving objects is just copying
+pointers.  Comparisons can be arbitrarily expensive (can invoke arbitrary
+user-supplied Python code), but even in simple cases (like 3 < 4) _all_
+decisions are made at runtime:  what's the type of the left comparand?  the
+type of the right?  do they need to be coerced to a common type?  where's the
+code to compare these types?  And so on.  Even the simplest Python comparison
+triggers a large pile of C-level pointer dereferences, conditionals, and
+function calls.
+
+So cutting the number of compares is almost always measurably helpful in
+CPython, and the savings swamp the quadratic-time data movement costs for
+reasonable minrun values.
+
+
+LEFT OR RIGHT
+gallop_left() and gallop_right() are akin to the Python bisect module's
+bisect_left() and bisect_right():  they're the same unless the slice they're
+searching contains a (at least one) value equal to the value being searched
+for.  In that case, gallop_left() returns the position immediately before the
+leftmost equal value, and gallop_right() the position immediately after the
+rightmost equal value.  The distinction is needed to preserve stability.  In
+general, when merging adjacent runs A and B, gallop_left is used to search
+thru B for where an element from A belongs, and gallop_right to search thru A
+for where an element from B belongs.
+
+
+REGION OF UNCERTAINTY
+Two kinds of confusion seem to be common about the claim that after finding
+a k such that
+
+    B[2**(k-1) - 1] < A[0] <= B[2**k - 1]
+
+then a binary search requires exactly k-1 tries to find A[0]'s proper
+location. For concreteness, say k=3, so B[3] < A[0] <= B[7].
+
+The first confusion takes the form "OK, then the region of uncertainty is at
+indices 3, 4, 5, 6 and 7:  that's 5 elements, not the claimed 2**(k-1) - 1 =
+3"; or the region is viewed as a Python slice and the objection is "but that's
+the slice B[3:7], so has 7-3 = 4 elements".  Resolution:  we've already
+compared A[0] against B[3] and against B[7], so A[0]'s correct location is
+already known wrt _both_ endpoints.  What remains is to find A[0]'s correct
+location wrt B[4], B[5] and B[6], which spans 3 elements.  Or in general, the
+slice (leaving off both endpoints) (2**(k-1)-1)+1 through (2**k-1)-1
+inclusive = 2**(k-1) through (2**k-1)-1 inclusive, which has
+    (2**k-1)-1 - 2**(k-1) + 1 =
+    2**k-1 - 2**(k-1) =
+    2*2**(k-1)-1 - 2**(k-1) =
+    (2-1)*2**(k-1) - 1 =
+    2**(k-1) - 1
+elements.
+
+The second confusion:  "k-1 = 2 binary searches can find the correct location
+among 2**(k-1) = 4 elements, but you're only applying it to 3 elements:  we
+could make this more efficient by arranging for the region of uncertainty to
+span 2**(k-1) elements."  Resolution:  that confuses "elements" with
+"locations".  In a slice with N elements, there are N+1 _locations_.  In the
+example, with the region of uncertainty B[4], B[5], B[6], there are 4
+locations:  before B[4], between B[4] and B[5], between B[5] and B[6], and
+after B[6].  In general, across 2**(k-1)-1 elements, there are 2**(k-1)
+locations.  That's why k-1 binary searches are necessary and sufficient.
+
+OPTIMIZATION OF INDIVIDUAL COMPARISONS
+As noted above, even the simplest Python comparison triggers a large pile of
+C-level pointer dereferences, conditionals, and function calls.  This can be
+partially mitigated by pre-scanning the data to determine whether the data is
+homogeneous with respect to type.  If so, it is sometimes possible to
+substitute faster type-specific comparisons for the slower, generic
+PyObject_RichCompareBool.
+
+MINRUN CODE
+from itertools import accumulate
+try:
+    from itertools import batched
+except ImportError:
+    from itertools import islice
+    def batched(xs, k):
+        it = iter(xs)
+        while chunk := tuple(islice(it, k)):
+            yield chunk
+
+MAX_MINRUN = 64
+
+def gen_minruns(n):
+    # In listobject.c, initialization is done in merge_init(), and
+    # the body of the loop in minrun_next().
+    mr_e = 0
+    while (n >> mr_e) >= MAX_MINRUN:
+        mr_e += 1
+    mr_mask = (1 << mr_e) - 1
+
+    mr_current = 0
+    while True:
+        mr_current += n
+        yield mr_current >> mr_e
+        mr_current &= mr_mask
+
+def chew(n, show=False):
+    if n < 1:
+        return
+
+    sizes = []
+    tot = 0
+    for size in gen_minruns(n):
+        sizes.append(size)
+        tot += size
+        if tot >= n:
+            break
+    assert tot == n
+    print(n, len(sizes))
+
+    small, large = MAX_MINRUN // 2, MAX_MINRUN
+    while len(sizes) > 1:
+        assert not len(sizes) & 1
+        assert len(sizes).bit_count() == 1 # i.e., power of 2
+        assert sum(sizes) == n
+        assert min(sizes) >= min(n, small)
+        assert max(sizes) <= large
+
+        d = set(sizes)
+        assert len(d) <= 2
+        if len(d) == 2:
+            lo, hi = sorted(d)
+            assert lo + 1 == hi
+
+        mr = n / len(sizes)
+        for i, s in enumerate(accumulate(sizes, initial=0)):
+            assert int(mr * i) == s
+
+        newsizes = []
+        for a, b in batched(sizes, 2):
+            assert abs(a - b) <= 1
+            newsizes.append(a + b)
+        sizes = newsizes
+        smsll = large
+        large *= 2
+
+    assert sizes[0] == n
+
+for n in range(2_000_001):
+    chew(n)

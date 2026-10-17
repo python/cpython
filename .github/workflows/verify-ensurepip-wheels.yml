@@ -1,0 +1,35 @@
+name: Verify bundled wheels
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'Lib/ensurepip/_bundled/**'
+      - '.github/workflows/verify-ensurepip-wheels.yml'
+      - 'Tools/build/verify_ensurepip_wheels.py'
+  pull_request:
+    paths:
+      - 'Lib/ensurepip/_bundled/**'
+      - '.github/workflows/verify-ensurepip-wheels.yml'
+      - 'Tools/build/verify_ensurepip_wheels.py'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3'
+      - name: Compare checksum of bundled wheels to the ones published on PyPI
+        run: ./Tools/build/verify_ensurepip_wheels.py

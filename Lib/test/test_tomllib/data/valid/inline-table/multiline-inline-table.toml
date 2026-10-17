@@ -1,0 +1,12 @@
+multiline = {
+  "a" = 1, "b" = 2,
+  c = [
+       1,
+       2,
+       3,
+      ],# comment
+  d = 3,
+  e = 4, f = {
+              # comment
+             },
+}

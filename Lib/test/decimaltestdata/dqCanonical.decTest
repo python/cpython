@@ -1,0 +1,372 @@
+------------------------------------------------------------------------
+-- dqCanonical.decTest -- test decQuad canonical results              --
+-- Copyright (c) IBM Corporation, 1981, 2008.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.59
+
+-- This file tests that copy operations leave uncanonical operands
+-- unchanged, and vice versa
+
+-- All operands and results are decQuads.
+extended:    1
+clamp:       1
+precision:   34
+maxExponent: 6144
+minExponent: -6143
+rounding:    half_even
+
+-- Uncanonical declets are: abc, where:
+--   a=1,2,3
+--   b=6,7,e,f
+--   c=e,f
+
+-- assert some standard (canonical) values; this tests that FromString
+-- produces canonical results (many more in decimalNN)
+dqcan001 apply 9.999999999999999999999999999999999E+6144  -> #77ffcff3fcff3fcff3fcff3fcff3fcff
+dqcan002 apply 0                      -> #22080000000000000000000000000000
+dqcan003 apply 1                      -> #22080000000000000000000000000001
+dqcan004 apply -1                     -> #a2080000000000000000000000000001
+dqcan005 apply Infinity               -> #78000000000000000000000000000000
+dqcan006 apply -Infinity              -> #f8000000000000000000000000000000
+dqcan007 apply -NaN                   -> #fc000000000000000000000000000000
+dqcan008 apply -sNaN                  -> #fe000000000000000000000000000000
+dqcan009 apply  NaN999999999999999999999999999999999  -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan010 apply sNaN999999999999999999999999999999999  -> #7e000ff3fcff3fcff3fcff3fcff3fcff
+decan011 apply  9999999999999999999999999999999999    -> #6e080ff3fcff3fcff3fcff3fcff3fcff
+dqcan012 apply 7.50                                   -> #220780000000000000000000000003d0
+dqcan013 apply 9.99                                   -> #220780000000000000000000000000ff
+
+-- Base tests for canonical encodings (individual operator
+-- propagation is tested later)
+
+-- Finites: declets in coefficient
+dqcan021 canonical  #77ffcff3fcff3fcff3fcff3fcff3fcff -> #77ffcff3fcff3fcff3fcff3fcff3fcff
+dqcan022 canonical  #77fffff3fcff3fcff3fcff3fcff3fcff -> #77ffcff3fcff3fcff3fcff3fcff3fcff
+dqcan023 canonical  #77ffcffffcff3fcff3fcff3fcff3fcff -> #77ffcff3fcff3fcff3fcff3fcff3fcff
+dqcan024 canonical  #77ffcff3ffff3fcff3fcff3fcff3fcff -> #77ffcff3fcff3fcff3fcff3fcff3fcff
+dqcan025 canonical  #77ffcff3fcffffcff3fcff3fcff3fcff -> #77ffcff3fcff3fcff3fcff3fcff3fcff
+dqcan026 canonical  #77ffcff3fcff3ffff3fcff3fcff3fcff -> #77ffcff3fcff3fcff3fcff3fcff3fcff
+dqcan027 canonical  #77ffcff3fcff3fcffffcff3fcff3fcff -> #77ffcff3fcff3fcff3fcff3fcff3fcff
+dqcan028 canonical  #77ffcff3fcff3fcff3ffff3fcff3fcff -> #77ffcff3fcff3fcff3fcff3fcff3fcff
+dqcan029 canonical  #77ffcff3fcff3fcff3fcffffcff3fcff -> #77ffcff3fcff3fcff3fcff3fcff3fcff
+dqcan030 canonical  #77ffcff3fcff3fcff3fcff3ffff3fcff -> #77ffcff3fcff3fcff3fcff3fcff3fcff
+dqcan031 canonical  #77ffcff3fcff3fcff3fcff3fcffffcff -> #77ffcff3fcff3fcff3fcff3fcff3fcff
+dqcan032 canonical  #77ffcff3fcff3fcff3fcff3fcff3ffff -> #77ffcff3fcff3fcff3fcff3fcff3fcff
+
+-- NaN: declets in payload
+dqcan061 canonical  #7c000ff3fcff3fcff3fcff3fcff3fcff -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan062 canonical  #7c000ffffcff3fcff3fcff3fcff3fcff -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan063 canonical  #7c000ff3ffff3fcff3fcff3fcff3fcff -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan064 canonical  #7c000ff3fcffffcff3fcff3fcff3fcff -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan065 canonical  #7c000ff3fcff3ffff3fcff3fcff3fcff -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan066 canonical  #7c000ff3fcff3fcffffcff3fcff3fcff -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan067 canonical  #7c000ff3fcff3fcff3ffff3fcff3fcff -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan068 canonical  #7c000ff3fcff3fcff3fcffffcff3fcff -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan069 canonical  #7c000ff3fcff3fcff3fcff3ffff3fcff -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan070 canonical  #7c000ff3fcff3fcff3fcff3fcffffcff -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan071 canonical  #7c000ff3fcff3fcff3fcff3fcff3ffff -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+-- NaN: exponent continuation bits [excluding sNaN selector]
+dqcan081 canonical  #7d000ff3fcff3fcff3fcff3fcff3fcff -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan082 canonical  #7c800ff3fcff3fcff3fcff3fcff3fcff -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan083 canonical  #7c400ff3fcff3fcff3fcff3fcff3fcff -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan084 canonical  #7c200ff3fcff3fcff3fcff3fcff3fcff -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan085 canonical  #7c100ff3fcff3fcff3fcff3fcff3fcff -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan086 canonical  #7c080ff3fcff3fcff3fcff3fcff3fcff -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan087 canonical  #7c040ff3fcff3fcff3fcff3fcff3fcff -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan088 canonical  #7c020ff3fcff3fcff3fcff3fcff3fcff -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan089 canonical  #7c010ff3fcff3fcff3fcff3fcff3fcff -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan090 canonical  #7c008ff3fcff3fcff3fcff3fcff3fcff -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan091 canonical  #7c004ff3fcff3fcff3fcff3fcff3fcff -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+
+-- sNaN: declets in payload
+dqcan101 canonical  #7e000ff3fcff3fcff3fcff3fcff3fcff -> #7e000ff3fcff3fcff3fcff3fcff3fcff
+dqcan102 canonical  #7e000ffffcff3fcff3fcff3fcff3fcff -> #7e000ff3fcff3fcff3fcff3fcff3fcff
+dqcan103 canonical  #7e000ff3ffff3fcff3fcff3fcff3fcff -> #7e000ff3fcff3fcff3fcff3fcff3fcff
+dqcan104 canonical  #7e000ff3fcffffcff3fcff3fcff3fcff -> #7e000ff3fcff3fcff3fcff3fcff3fcff
+dqcan105 canonical  #7e000ff3fcff3ffff3fcff3fcff3fcff -> #7e000ff3fcff3fcff3fcff3fcff3fcff
+dqcan106 canonical  #7e000ff3fcff3fcffffcff3fcff3fcff -> #7e000ff3fcff3fcff3fcff3fcff3fcff
+dqcan107 canonical  #7e000ff3fcff3fcff3ffff3fcff3fcff -> #7e000ff3fcff3fcff3fcff3fcff3fcff
+dqcan108 canonical  #7e000ff3fcff3fcff3fcffffcff3fcff -> #7e000ff3fcff3fcff3fcff3fcff3fcff
+dqcan109 canonical  #7e000ff3fcff3fcff3fcff3ffff3fcff -> #7e000ff3fcff3fcff3fcff3fcff3fcff
+dqcan100 canonical  #7e000ff3fcff3fcff3fcff3fcffffcff -> #7e000ff3fcff3fcff3fcff3fcff3fcff
+dqcan111 canonical  #7e000ff3fcff3fcff3fcff3fcff3ffff -> #7e000ff3fcff3fcff3fcff3fcff3fcff
+-- sNaN: exponent continuation bits [excluding sNaN selector]
+dqcan121 canonical  #7f000ff3fcff3fcff3fcff3fcff3fcff -> #7e000ff3fcff3fcff3fcff3fcff3fcff
+dqcan122 canonical  #7e800ff3fcff3fcff3fcff3fcff3fcff -> #7e000ff3fcff3fcff3fcff3fcff3fcff
+dqcan123 canonical  #7e400ff3fcff3fcff3fcff3fcff3fcff -> #7e000ff3fcff3fcff3fcff3fcff3fcff
+dqcan124 canonical  #7e200ff3fcff3fcff3fcff3fcff3fcff -> #7e000ff3fcff3fcff3fcff3fcff3fcff
+dqcan125 canonical  #7e100ff3fcff3fcff3fcff3fcff3fcff -> #7e000ff3fcff3fcff3fcff3fcff3fcff
+dqcan126 canonical  #7e080ff3fcff3fcff3fcff3fcff3fcff -> #7e000ff3fcff3fcff3fcff3fcff3fcff
+dqcan127 canonical  #7e040ff3fcff3fcff3fcff3fcff3fcff -> #7e000ff3fcff3fcff3fcff3fcff3fcff
+dqcan128 canonical  #7e020ff3fcff3fcff3fcff3fcff3fcff -> #7e000ff3fcff3fcff3fcff3fcff3fcff
+dqcan129 canonical  #7e010ff3fcff3fcff3fcff3fcff3fcff -> #7e000ff3fcff3fcff3fcff3fcff3fcff
+dqcan130 canonical  #7e008ff3fcff3fcff3fcff3fcff3fcff -> #7e000ff3fcff3fcff3fcff3fcff3fcff
+dqcan131 canonical  #7e004ff3fcff3fcff3fcff3fcff3fcff -> #7e000ff3fcff3fcff3fcff3fcff3fcff
+
+-- Inf: exponent continuation bits
+dqcan137 canonical  #78000000000000000000000000000000 -> #78000000000000000000000000000000
+dqcan138 canonical  #79000000000000000000000000000000 -> #78000000000000000000000000000000
+dqcan139 canonical  #7a000000000000000000000000000000 -> #78000000000000000000000000000000
+dqcan140 canonical  #78800000000000000000000000000000 -> #78000000000000000000000000000000
+dqcan141 canonical  #78400000000000000000000000000000 -> #78000000000000000000000000000000
+dqcan142 canonical  #78200000000000000000000000000000 -> #78000000000000000000000000000000
+dqcan143 canonical  #78100000000000000000000000000000 -> #78000000000000000000000000000000
+dqcan144 canonical  #78080000000000000000000000000000 -> #78000000000000000000000000000000
+dqcan145 canonical  #78040000000000000000000000000000 -> #78000000000000000000000000000000
+dqcan146 canonical  #78020000000000000000000000000000 -> #78000000000000000000000000000000
+dqcan147 canonical  #78010000000000000000000000000000 -> #78000000000000000000000000000000
+dqcan148 canonical  #78008000000000000000000000000000 -> #78000000000000000000000000000000
+dqcan149 canonical  #78004000000000000000000000000000 -> #78000000000000000000000000000000
+
+-- Inf: coefficient continuation bits (first, last, and a few others)
+dqcan150 canonical  #78000000000000000000000000000000 -> #78000000000000000000000000000000
+dqcan151 canonical  #78020000000000000000000000000000 -> #78000000000000000000000000000000
+dqcan152 canonical  #78000000000000000000000000000001 -> #78000000000000000000000000000000
+dqcan153 canonical  #78010000000000000000000000000000 -> #78000000000000000000000000000000
+dqcan154 canonical  #78002000000000000000000000000000 -> #78000000000000000000000000000000
+dqcan155 canonical  #78000800000000000000000000000000 -> #78000000000000000000000000000000
+dqcan156 canonical  #78000020000000000000000000000000 -> #78000000000000000000000000000000
+dqcan157 canonical  #78000004000000000000000000000000 -> #78000000000000000000000000000000
+dqcan158 canonical  #78000000400000000000000000000000 -> #78000000000000000000000000000000
+dqcan159 canonical  #78000000080000000000000000000000 -> #78000000000000000000000000000000
+dqcan160 canonical  #78000000004000000000000000000000 -> #78000000000000000000000000000000
+dqcan161 canonical  #78000000000200000000000000000000 -> #78000000000000000000000000000000
+dqcan162 canonical  #78000000000080000000000000000000 -> #78000000000000000000000000000000
+dqcan163 canonical  #78000000000002000000000000000000 -> #78000000000000000000000000000000
+dqcan164 canonical  #78000000000000400000000000000000 -> #78000000000000000000000000000000
+dqcan165 canonical  #78000000000000080000000000000000 -> #78000000000000000000000000000000
+dqcan166 canonical  #78000000000000001000000000000000 -> #78000000000000000000000000000000
+dqcan167 canonical  #78000000000000000200000000000000 -> #78000000000000000000000000000000
+dqcan168 canonical  #78000000000000000080000000000000 -> #78000000000000000000000000000000
+dqcan169 canonical  #78000000000000000004000000000000 -> #78000000000000000000000000000000
+dqcan170 canonical  #78000000000000000000400000000000 -> #78000000000000000000000000000000
+dqcan171 canonical  #78000000000000000000010000000000 -> #78000000000000000000000000000000
+dqcan172 canonical  #78000000000000000000002000000000 -> #78000000000000000000000000000000
+dqcan173 canonical  #78000000000000000000000400000000 -> #78000000000000000000000000000000
+dqcan174 canonical  #78000000000000000000000080000000 -> #78000000000000000000000000000000
+dqcan175 canonical  #78000000000000000000000002000000 -> #78000000000000000000000000000000
+dqcan176 canonical  #78000000000000000000000000400000 -> #78000000000000000000000000000000
+dqcan177 canonical  #78000000000000000000000000020000 -> #78000000000000000000000000000000
+dqcan178 canonical  #78000000000000000000000000001000 -> #78000000000000000000000000000000
+dqcan179 canonical  #78000000000000000000000000000400 -> #78000000000000000000000000000000
+dqcan180 canonical  #78000000000000000000000000000020 -> #78000000000000000000000000000000
+dqcan181 canonical  #78000000000000000000000000000008 -> #78000000000000000000000000000000
+
+
+-- Now the operators -- trying to check paths that might fail to
+-- canonicalize propagated operands
+
+----- Add:
+-- Finites: neutral 0
+dqcan202 add  0E+6144 #77ffcff3fcff3fcffffcff3fcff3fcff         -> #77ffcff3fcff3fcff3fcff3fcff3fcff
+dqcan203 add          #77ffcff3fcff3fcff3fcff3ffff3fcff 0E+6144 -> #77ffcff3fcff3fcff3fcff3fcff3fcff
+-- tiny zero
+dqcan204 add  0E-6176 #77ffcff3ffff3fcff3fcff3fcff3fcff         -> #77ffcff3fcff3fcff3fcff3fcff3fcff Rounded
+dqcan205 add          #77ffcff3fcff3fcff3fcff3fcff3ffff 0E-6176 -> #77ffcff3fcff3fcff3fcff3fcff3fcff Rounded
+-- tiny non zero
+dqcan206 add -1E-6176 #77ffcff3fcff3fcff3fcff3fcfffffff          -> #77ffcff3fcff3fcff3fcff3fcff3fcff Inexact Rounded
+dqcan207 add          #77ffcffffffffffffffffffffff3fcff -1E-6176 -> #77ffcff3fcff3fcff3fcff3fcff3fcff Inexact Rounded
+-- NaN: declets in payload
+dqcan211 add  0  #7c000ff3fcff3fcff3fcfffffff3fcff   -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan212 add     #7c000ff3fcff3fcfffffff3fcff3fcff 0 -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+-- NaN: exponent continuation bits [excluding sNaN selector]
+dqcan213 add  0  #7c400ff3fcff3fcff3fcff3fcff3fcff   -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan214 add     #7c020ff3fcff3fcff3fcff3fcff3fcff 0 -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+-- sNaN: declets in payload
+dqcan215 add  0  #7e000ff3fcffffcff3fcff3fcff3fcff   -> #7c000ff3fcff3fcff3fcff3fcff3fcff  Invalid_operation
+dqcan216 add     #7e003ff3fcff3fcff3fcff3fcff3fcff 0 -> #7c000ff3fcff3fcff3fcff3fcff3fcff  Invalid_operation
+-- sNaN: exponent continuation bits [excluding sNaN selector]
+dqcan217 add  0  #7e500ff3fcff3fcff3fcff3fcff3fcff   -> #7c000ff3fcff3fcff3fcff3fcff3fcff  Invalid_operation
+dqcan218 add     #7e0e0ff3fcff3fcff3fcff3fcff3fcff 0 -> #7c000ff3fcff3fcff3fcff3fcff3fcff  Invalid_operation
+-- Inf: exponent continuation bits
+dqcan220 add  0  #78010000000000000000000000000000   -> #78000000000000000000000000000000
+dqcan221 add     #78680000000000000000000000000000 0 -> #78000000000000000000000000000000
+-- Inf: coefficient continuation bits
+dqcan222 add  0  #78002000000000000000000000000000   -> #78000000000000000000000000000000
+dqcan223 add     #78000000000000000000000000000001 0 -> #78000000000000000000000000000000
+dqcan224 add  0  #78000002000000000000000000000000   -> #78000000000000000000000000000000
+dqcan225 add     #780000000000f0000000000000000000 0 -> #78000000000000000000000000000000
+dqcan226 add  0  #78000000000000000005000000000000   -> #78000000000000000000000000000000
+dqcan227 add     #780000000000000000000000000a0000 0 -> #78000000000000000000000000000000
+
+----- Class: [does not return encoded]
+
+----- Compare:
+dqcan231 compare -Inf   1     ->  #a2080000000000000000000000000001
+dqcan232 compare -Inf  -Inf   ->  #22080000000000000000000000000000
+dqcan233 compare  1    -Inf   ->  #22080000000000000000000000000001
+dqcan234 compare  #7c010ff3fcff3fcff3fcff3ffffffcff     -1000  -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan235 compare  #7e004ff3fcff3fcff3ffffffcff3fcff     -1000  -> #7c000ff3fcff3fcff3fcff3fcff3fcff Invalid_operation
+
+----- CompareSig:
+dqcan241 comparesig -Inf   1     ->  #a2080000000000000000000000000001
+dqcan242 comparesig -Inf  -Inf   ->  #22080000000000000000000000000000
+dqcan243 comparesig  1    -Inf   ->  #22080000000000000000000000000001
+dqcan244 comparesig  #7c400ff3ffff3fcff3fcff3fcff3fcff   -1000 -> #7c000ff3fcff3fcff3fcff3fcff3fcff Invalid_operation
+dqcan245 comparesig  #7e050ff3fcfffffff3fcff3fcff3fcff   -1000 -> #7c000ff3fcff3fcff3fcff3fcff3fcff Invalid_operation
+
+----- Copy: [does not usually canonicalize]
+-- finites
+dqcan250 copy  #6e080ff3fcff3fcfffffff3fcfffffff -> #6e080ff3fcff3fcfffffff3fcfffffff
+dqcan251 copy  #ee080ff3fcff3ffff3fcff3ffff3fcff -> #ee080ff3fcff3ffff3fcff3ffff3fcff
+-- NaNs
+dqcan252 copy  #7c000ff3fcffffffffffffffcff3fcff -> #7c000ff3fcffffffffffffffcff3fcff
+dqcan253 copy  #7c080ff3fcff3fcff3fcff3fcff3fcff -> #7c080ff3fcff3fcff3fcff3fcff3fcff
+-- sNaN
+dqcan254 copy  #7e003ff3fcffffffffffffffcff3fcff -> #7e003ff3fcffffffffffffffcff3fcff
+dqcan255 copy  #7e100ff3fcff3fcff3fcff3fcff3fcff -> #7e100ff3fcff3fcff3fcff3fcff3fcff
+-- Inf
+dqcan258 copy  #78002000000000000000000000000000 -> #78002000000000000000000000000000
+dqcan259 copy  #78000000000010000000000000100000 -> #78000000000010000000000000100000
+
+----- CopyAbs: [does not usually canonicalize]
+-- finites
+dqcan260 copyabs  #6e080ff3fcff3fcfffffff3fcfffffff -> #6e080ff3fcff3fcfffffff3fcfffffff
+dqcan261 copyabs  #ee080ff3fcff3ffff3fcff3ffff3fcff -> #6e080ff3fcff3ffff3fcff3ffff3fcff
+-- NaNs
+dqcan262 copyabs  #fc000ff3fcffffffffffffffcff3fcff -> #7c000ff3fcffffffffffffffcff3fcff
+dqcan263 copyabs  #fc080ff3fcff3fcff3fcff3fcff3fcff -> #7c080ff3fcff3fcff3fcff3fcff3fcff
+-- sNaN
+dqcan264 copyabs  #fe003ff3fcffffffffffffffcff3fcff -> #7e003ff3fcffffffffffffffcff3fcff
+dqcan265 copyabs  #fe100ff3fcff3fcff3fcff3fcff3fcff -> #7e100ff3fcff3fcff3fcff3fcff3fcff
+-- Inf
+dqcan268 copyabs  #f8002000000000000000000000000000 -> #78002000000000000000000000000000
+dqcan269 copyabs  #f8000000000000700700700000000000 -> #78000000000000700700700000000000
+
+----- CopyNegate: [does not usually canonicalize]
+-- finites
+dqcan270 copynegate  #6e080ff3fcff3fcfffffff3fcfffffff -> #ee080ff3fcff3fcfffffff3fcfffffff
+dqcan271 copynegate  #ee080ff3fcff3ffff3fcff3ffff3fcff -> #6e080ff3fcff3ffff3fcff3ffff3fcff
+-- NaNs
+dqcan272 copynegate  #7c000ff3fcffffffffffff3fcff3fcff -> #fc000ff3fcffffffffffff3fcff3fcff
+dqcan273 copynegate  #7c080ff3fcff3fcff3fcff3fcff3fcff -> #fc080ff3fcff3fcff3fcff3fcff3fcff
+-- sNaN
+dqcan274 copynegate  #7e003ff3fcffffffffffffffcff3fcff -> #fe003ff3fcffffffffffffffcff3fcff
+dqcan275 copynegate  #7e100ff3fcff3fcff3fcff3fcff3fcff -> #fe100ff3fcff3fcff3fcff3fcff3fcff
+-- Inf
+dqcan278 copynegate  #78002000000000000000000000000000 -> #f8002000000000000000000000000000
+dqcan279 copynegate  #78000000000010000000000000100000 -> #f8000000000010000000000000100000
+
+----- CopySign: [does not usually canonicalize]
+-- finites
+dqcan280 copysign  #6e080ff3fcff3fcfffffff3fcfffffff -1 -> #ee080ff3fcff3fcfffffff3fcfffffff
+dqcan281 copysign  #ee080ff3fcff3ffff3fcff3ffff3fcff  1 -> #6e080ff3fcff3ffff3fcff3ffff3fcff
+-- NaNs
+dqcan282 copysign  #7c000ff3fcffffffffffffffcff3fcff -1 -> #fc000ff3fcffffffffffffffcff3fcff
+dqcan283 copysign  #7c080ff3fcff3fcff3fcff3fcff3fcff  1 -> #7c080ff3fcff3fcff3fcff3fcff3fcff
+-- sNaN
+dqcan284 copysign  #7e003ff3fcffffffffffffffcff3fcff -1 -> #fe003ff3fcffffffffffffffcff3fcff
+dqcan285 copysign  #7e100ff3fcff3fcff3fcff3fcff3fcff  1 -> #7e100ff3fcff3fcff3fcff3fcff3fcff
+-- Inf
+dqcan288 copysign  #78002000000000000000000000000000 -1 -> #f8002000000000000000000000000000
+dqcan289 copysign  #78000000000010000000000000100000  1 -> #78000000000010000000000000100000
+
+----- Multiply:
+-- Finites: neutral 0
+dqcan302 multiply  1  #77ffff3fcff3fcff0000000000000000               -> #77ffff3fcff3fcff0000000000000000
+dqcan303 multiply     #77fcffffcff3fcff0000000000000000 1             -> #77fccfffcff3fcff0000000000000000
+-- negative
+dqcan306 multiply -1  #77ffff3fcff3fcff0000000000000000               -> #f7ffff3fcff3fcff0000000000000000
+dqcan307 multiply     #77fcffffcff3fcff0000000000000000 -1            -> #f7fccfffcff3fcff0000000000000000
+-- NaN: declets in payload
+dqcan311 multiply  1  #7c03ff3fcff3fcff0000000000000000               -> #7c003f3fcff3fcff0000000000000000
+dqcan312 multiply     #7c03ff3fcff3fcff0000000000000000 1             -> #7c003f3fcff3fcff0000000000000000
+-- NaN: exponent continuation bits [excluding sNaN selector]
+dqcan313 multiply  1  #7c40ff3fcff3fcff0000000000000000               -> #7c003f3fcff3fcff0000000000000000
+dqcan314 multiply     #7c40ff3fcff3fcff0000000000000000 1             -> #7c003f3fcff3fcff0000000000000000
+-- sNaN: declets in payload
+dqcan315 multiply  1  #7e00ffffcff3fcff0000000000000000               -> #7c000fffcff3fcff0000000000000000 Invalid_operation
+dqcan316 multiply     #7e00ffffcff3fcff0000000000000000 1             -> #7c000fffcff3fcff0000000000000000 Invalid_operation
+-- sNaN: exponent continuation bits [excluding sNaN selector]
+dqcan317 multiply  1  #7e80ff3fcff3fcff0000000000000000               -> #7c003f3fcff3fcff0000000000000000 Invalid_operation
+dqcan318 multiply     #7e80ff3fcff3fcff0000000000000000 1             -> #7c003f3fcff3fcff0000000000000000 Invalid_operation
+-- Inf: exponent continuation bits
+dqcan320 multiply  1  #78800000000000000000000000000000               -> #78000000000000000000000000000000
+dqcan321 multiply     #78800000000000000000000000000000 1             -> #78000000000000000000000000000000
+-- Inf: coefficient continuation bits
+dqcan322 multiply  1  #78020000000000000000000000000000               -> #78000000000000000000000000000000
+dqcan323 multiply     #78020000000000000000000000000000 1             -> #78000000000000000000000000000000
+dqcan324 multiply  1  #78000000000000010000000000000000               -> #78000000000000000000000000000000
+dqcan325 multiply     #78000000000000010000000000000000 1             -> #78000000000000000000000000000000
+dqcan326 multiply  1  #78000020000000000000000000000000               -> #78000000000000000000000000000000
+dqcan327 multiply     #78000020000000000000000000000000 1             -> #78000000000000000000000000000000
+
+----- Quantize:
+dqcan401 quantize  #ee080ff3fcff3fcff3fffffffff3fcff 0    -> #ee080ff3fcff3fcff3fcff3fcff3fcff
+dqcan402 quantize  #ee080ff3fffffffffffcff3fcff3fcff 0    -> #ee080ff3fcff3fcff3fcff3fcff3fcff
+dqcan403 quantize  #78800000000000000000000000000000 Inf  -> #78000000000000000000000000000000
+dqcan404 quantize  #78020000000000000000000000000000 -Inf -> #78000000000000000000000000000000
+dqcan410 quantize  #7c080ff3fcff3fcff3fcff3fcff3fcff  1   -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan411 quantize  #fc000ff3fcfffffff3fcff3fcff3fcff  1   -> #fc000ff3fcff3fcff3fcff3fcff3fcff
+dqcan412 quantize  #7e100ff3fcff3fcff3fcff3fcff3fcff  1   -> #7c000ff3fcff3fcff3fcff3fcff3fcff Invalid_operation
+dqcan413 quantize  #fe000ff3fcff3fcff3ffffffcff3fcff  1   -> #fc000ff3fcff3fcff3fcff3fcff3fcff Invalid_operation
+
+----- Subtract:
+-- Finites: neutral 0
+dqcan502 subtract  0E+6144 #77ffcff3fcff3fcffffcff3fcff3fcff         -> #f7ffcff3fcff3fcff3fcff3fcff3fcff
+dqcan503 subtract          #77ffcff3fcff3fcff3fcff3ffff3fcff 0E+6144 -> #77ffcff3fcff3fcff3fcff3fcff3fcff
+-- tiny zero
+dqcan504 subtract  0E-6176 #77ffcff3ffff3fcff3fcff3fcff3fcff         -> #f7ffcff3fcff3fcff3fcff3fcff3fcff Rounded
+dqcan505 subtract          #77ffcff3fcff3fcff3fcff3fcff3ffff 0E-6176 -> #77ffcff3fcff3fcff3fcff3fcff3fcff Rounded
+-- tiny non zero
+dqcan506 subtract -1E-6176 #77ffcff3fcff3fcff3fcff3fcfffffff          -> #f7ffcff3fcff3fcff3fcff3fcff3fcff Inexact Rounded
+dqcan507 subtract          #77ffcffffffffffffffffffffff3fcff -1E-6176 -> #77ffcff3fcff3fcff3fcff3fcff3fcff Inexact Rounded
+-- NaN: declets in payload
+dqcan511 subtract  0  #7c000ff3fcff3fcff3fcfffffff3fcff   -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan512 subtract     #7c000ff3fcff3fcfffffff3fcff3fcff 0 -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+-- NaN: exponent continuation bits [excluding sNaN selector]
+dqcan513 subtract  0  #7c400ff3fcff3fcff3fcff3fcff3fcff   -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan514 subtract     #7c020ff3fcff3fcff3fcff3fcff3fcff 0 -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+-- sNaN: declets in payload
+dqcan515 subtract  0  #7e000ff3fcffffcff3fcff3fcff3fcff   -> #7c000ff3fcff3fcff3fcff3fcff3fcff  Invalid_operation
+dqcan516 subtract     #7e003ff3fcff3fcff3fcff3fcff3fcff 0 -> #7c000ff3fcff3fcff3fcff3fcff3fcff  Invalid_operation
+-- sNaN: exponent continuation bits [excluding sNaN selector]
+dqcan517 subtract  0  #7e500ff3fcff3fcff3fcff3fcff3fcff   -> #7c000ff3fcff3fcff3fcff3fcff3fcff  Invalid_operation
+dqcan518 subtract     #7e0e0ff3fcff3fcff3fcff3fcff3fcff 0 -> #7c000ff3fcff3fcff3fcff3fcff3fcff  Invalid_operation
+-- Inf: exponent continuation bits
+dqcan520 subtract  0  #78010000000000000000000000000000   -> #f8000000000000000000000000000000
+dqcan521 subtract     #78680000000000000000000000000000 0 -> #78000000000000000000000000000000
+-- Inf: coefficient continuation bits
+dqcan522 subtract  0  #78002000000000000000000000000000   -> #f8000000000000000000000000000000
+dqcan523 subtract     #78000000000000000000000000000001 0 -> #78000000000000000000000000000000
+dqcan524 subtract  0  #78000002000000000000000000000000   -> #f8000000000000000000000000000000
+dqcan525 subtract     #780000000000f0000000000000000000 0 -> #78000000000000000000000000000000
+dqcan526 subtract  0  #78000000000000000005000000000000   -> #f8000000000000000000000000000000
+dqcan527 subtract     #780000000000000000000000000a0000 0 -> #78000000000000000000000000000000
+
+----- ToIntegral:
+dqcan601 tointegralx  #6e080ff3fdff3fcff3fcff3fcff3fcff  -> #6e080ff3fcff3fcff3fcff3fcff3fcff
+dqcan602 tointegralx  #ee080ff3fcff3ffff3fcff3fcff3fcff  -> #ee080ff3fcff3fcff3fcff3fcff3fcff
+dqcan603 tointegralx  #78800000000000000000000000000000  -> #78000000000000000000000000000000
+dqcan604 tointegralx  #78020000000000000000000000000000  -> #78000000000000000000000000000000
+dqcan614 tointegralx  #7c100ff3fcff3fcff3fcff3fcff3fcff  -> #7c000ff3fcff3fcff3fcff3fcff3fcff
+dqcan615 tointegralx  #fc000ff3fcff3fcff3fcffffcff3fcff  -> #fc000ff3fcff3fcff3fcff3fcff3fcff
+dqcan616 tointegralx  #7e010ff3fcff3fcff3fcff3fcff3fcff  -> #7c000ff3fcff3fcff3fcff3fcff3fcff  Invalid_operation
+dqcan617 tointegralx  #fe000ff3fcff3fcff3fdff3fcff3fcff  -> #fc000ff3fcff3fcff3fcff3fcff3fcff  Invalid_operation
+-- uncanonical 3999, 39.99, 3.99, 0.399,                  and negatives
+dqcan618 tointegralx  #22080000000000000000000000000fff  -> #22080000000000000000000000000cff
+dqcan619 tointegralx  #22078000000000000000000000000fff  -> #22080000000000000000000000000040  Inexact Rounded
+dqcan620 tointegralx  #22074000000000000000000000000fff  -> #22080000000000000000000000000004  Inexact Rounded
+dqcan621 tointegralx  #22070000000000000000000000000fff  -> #22080000000000000000000000000000  Inexact Rounded
+dqcan622 tointegralx  #a2080000000000000000000000000fff  -> #a2080000000000000000000000000cff
+dqcan623 tointegralx  #a2078000000000000000000000000fff  -> #a2080000000000000000000000000040  Inexact Rounded
+dqcan624 tointegralx  #a2074000000000000000000000000fff  -> #a2080000000000000000000000000004  Inexact Rounded
+dqcan625 tointegralx  #a2070000000000000000000000000fff  -> #a2080000000000000000000000000000  Inexact Rounded
+
+
+

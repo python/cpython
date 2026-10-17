@@ -1,0 +1,54 @@
+// Resource script for Python console EXEs.
+
+#include "python_ver_rc.h"
+
+#ifndef RT_MANIFEST
+// bpo-45220: Cannot reliably #include RT_MANIFEST from
+// anywhere, so we hardcode it
+#define RT_MANIFEST 24
+#endif
+
+// Include the manifest file that indicates we support all
+// current versions of Windows.
+1 RT_MANIFEST "python.manifest"
+
+1 ICON DISCARDABLE "icons\python.ico" 
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION PYVERSION64
+ PRODUCTVERSION PYVERSION64
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS VS_FF_DEBUG
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS VOS__WINDOWS32
+ FILETYPE VFT_APP
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "000004b0"
+        BEGIN
+            VALUE "CompanyName", PYTHON_COMPANY "\0"
+            VALUE "FileDescription", "Python\0"
+            VALUE "FileVersion", PYTHON_VERSION
+            VALUE "InternalName", "Python Console\0"
+            VALUE "LegalCopyright", PYTHON_COPYRIGHT "\0"
+            VALUE "OriginalFilename", "python" PYTHON_DEBUG_EXT ".exe\0"
+            VALUE "ProductName", "Python\0"
+            VALUE "ProductVersion", PYTHON_VERSION
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0, 1200
+    END
+END
