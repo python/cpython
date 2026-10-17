@@ -11,6 +11,7 @@ import socket
 import threading
 import unittest
 import socketserver
+from unittest import mock
 
 import test.support
 from test.support import reap_children, verbose
@@ -466,6 +467,59 @@ class SocketWriterTest(unittest.TestCase):
 
 
 class MiscTestCase(unittest.TestCase):
+
+    def test_handle_request_timeout_at_deadline(self):
+        # Let a second poll advance past the deadline so a regression fails
+        # instead of looping forever on a frozen clock.
+        cases = (
+            (0, [10, 10, 11], [0]),
+            (1, [10, 11, 12], [1]),
+            (1, [10, 10.25, 11, 12], [1, 0.75]),
+            (1, [10, 11.25], [1]),
+        )
+        for timeout, clock, expected_timeouts in cases:
+            with self.subTest(timeout=timeout, clock=clock):
+                with socketserver.TCPServer(
+                    (HOST, 0), socketserver.BaseRequestHandler
+                ) as server:
+                    server.timeout = timeout
+                    with (
+                        mock.patch('socketserver.time', side_effect=clock),
+                        mock.patch('socketserver._ServerSelector') as selector_cls,
+                        mock.patch.object(
+                            server, 'handle_timeout',
+                            return_value=mock.sentinel.timeout,
+                        ) as handle_timeout,
+                    ):
+                        selector = selector_cls.return_value.__enter__.return_value
+                        selector.select.return_value = []
+                        result = server.handle_request()
+                    self.assertIs(result, mock.sentinel.timeout)
+                    self.assertEqual(selector.select.call_args_list,
+                                     [mock.call(t) for t in expected_timeouts])
+                    handle_timeout.assert_called_once_with()
+
+    def test_handle_request_ready_with_zero_timeout(self):
+        with socketserver.TCPServer(
+            (HOST, 0), socketserver.BaseRequestHandler
+        ) as server:
+            server.timeout = 0
+            with (
+                mock.patch('socketserver.time', return_value=10),
+                mock.patch('socketserver._ServerSelector') as selector_cls,
+                mock.patch.object(
+                    server, '_handle_request_noblock',
+                    return_value=mock.sentinel.request,
+                ) as handle_request,
+                mock.patch.object(server, 'handle_timeout') as handle_timeout,
+            ):
+                selector = selector_cls.return_value.__enter__.return_value
+                selector.select.return_value = [mock.sentinel.ready]
+                result = server.handle_request()
+            self.assertIs(result, mock.sentinel.request)
+            selector.select.assert_called_once_with(0)
+            handle_request.assert_called_once_with()
+            handle_timeout.assert_not_called()
 
     def test_all(self):
         # objects defined in the module should be in __all__
