@@ -180,6 +180,8 @@ def getaddresses(fieldvalues, *, strict=True):
     fieldvalues = _pre_parse_validation(fieldvalues)
     addr = COMMASPACE.join(fieldvalues)
     a = _AddressList(addr)
+    if a._inline_comment:
+        return [('', '')]
     result = _post_parse_validation(a.addresslist)
 
     # Treat output as invalid if the number of addresses is not equal to the
@@ -355,7 +357,10 @@ def parseaddr(addr, *, strict=True):
         return ('', '')
 
     addr = _pre_parse_validation([addr])[0]
-    addrs = _post_parse_validation(_AddressList(addr).addresslist)
+    parsed = _AddressList(addr)
+    if parsed._inline_comment:
+        return ('', '')
+    addrs = _post_parse_validation(parsed.addresslist)
 
     if not addrs or len(addrs) > 1:
         return ('', '')

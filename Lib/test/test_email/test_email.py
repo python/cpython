@@ -3546,6 +3546,44 @@ Foo
         addrs = utils.getaddresses(['User ((nested comment)) <foo@bar.com>'])
         eq(addrs[0][1], 'foo@bar.com')
 
+    def test_parseaddr_inline_comment(self):
+        # An inline comment inside a dot-atom is invalid, but the lenient
+        # parser used to silently drop it and splice the surrounding atoms
+        # together, e.g. 'u(comment)ser@d.com' -> 'user@d.com'.  That result
+        # disagrees with the strict parser, so in strict mode (the default)
+        # such addresses are now rejected.  strict=False keeps the historical
+        # lenient behavior.
+        empty = ('', '')
+        for address, lenient in (
+            # local-part comment spliced between two atoms
+            ('u(comment)ser@d.com', ('comment comment', 'user@d.com')),
+            ('u()ser@d.com', (' ', 'user@d.com')),
+            ('u(c(d)e)ser@d.com', ('cde cde', 'user@d.com')),
+            ('a.b(comment)c@d.com', ('comment comment', 'a.bc@d.com')),
+            # domain comment spliced between two atoms
+            ('user@exa(comment)mple.com', ('comment', 'user@example.com')),
+            ('user@exa.(comment)com', ('comment', 'user@exa.com')),
+        ):
+            with self.subTest(address=address):
+                self.assertEqual(utils.parseaddr(address), empty)
+                self.assertEqual(utils.parseaddr(address, strict=False), lenient)
+                self.assertEqual(utils.getaddresses([address]), [empty])
+                self.assertEqual(utils.getaddresses([address], strict=False),
+                                 [lenient])
+
+        # Leading and trailing comments are valid CFWS and stay accepted.
+        self.assertEqual(utils.parseaddr('(comment)user@d.com'),
+                         ('comment', 'user@d.com'))
+        self.assertEqual(utils.parseaddr('user(comment)@d.com'),
+                         ('comment comment', 'user@d.com'))
+        self.assertEqual(utils.parseaddr('user@(comment)example.com'),
+                         ('comment', 'user@example.com'))
+        self.assertEqual(utils.parseaddr('user@example.com(comment)'),
+                         ('comment', 'user@example.com'))
+        # A comment inside a quoted string is literal content, not a comment.
+        self.assertEqual(utils.parseaddr('"u(comment)ser"@d.com'),
+                         ('', '"u(comment)ser"@d.com'))
+
     def test_getaddresses_header_obj(self):
         """Test the handling of a Header object."""
         addrs = utils.getaddresses([Header('Al Person <aperson@dom.ain>')])
