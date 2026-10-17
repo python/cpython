@@ -3333,7 +3333,7 @@ class ScreenTests(NewtermTestBase):
         self.assertIsInstance(screen, curses.screen)
         win = screen.stdscr
         self.assertIsInstance(win, curses.window)
-        self.assertEqual(win.getmaxyx(), (24, 80))
+        self.assertEqual(win.getmaxyx(), (curses.LINES, curses.COLS))
         win.addstr(0, 0, 'hello')
         win.refresh()
 
