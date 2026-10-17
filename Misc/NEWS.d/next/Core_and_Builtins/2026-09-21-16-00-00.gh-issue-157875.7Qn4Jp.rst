@@ -1,0 +1,2 @@
+Fix a reference leak in the JIT when a trace is rewound after encountering
+unsupported bytecode.
