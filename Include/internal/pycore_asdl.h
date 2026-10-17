@@ -60,7 +60,7 @@ asdl_ ## NAME ## _seq *_Py_asdl_ ## NAME ## _seq_new(Py_ssize_t size, PyArena *a
         PyErr_NoMemory(); \
         return NULL; \
     } \
-    n = (size ? (sizeof(TYPE *) * (size - 1)) : 0); \
+    n = (size ? (sizeof(TYPE) * (size - 1)) : 0); \
     /* check if size can be added safely */ \
     if (n > SIZE_MAX - sizeof(asdl_ ## NAME ## _seq)) { \
         PyErr_NoMemory(); \
