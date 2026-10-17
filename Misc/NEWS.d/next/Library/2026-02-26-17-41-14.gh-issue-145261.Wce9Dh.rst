@@ -1,0 +1,4 @@
+Fix :class:`~multiprocessing.shared_memory.ShareableList` corrupting
+multi-byte UTF-8 strings due to using character count instead of byte count
+for slot allocation, and stripping legitimate trailing null bytes from
+``bytes`` values.
