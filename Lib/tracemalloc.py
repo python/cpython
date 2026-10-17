@@ -558,3 +558,138 @@ def take_snapshot():
     traces = _get_traces()
     traceback_limit = get_traceback_limit()
     return Snapshot(traces, traceback_limit)
+
+
+def _main(args=None):
+    import argparse
+    # Import pkgutil now, rather than when runpy imports it, so that its
+    # memory is not attributed to the traced program.
+    import pkgutil
+    import runpy
+    import sys
+
+    parser = argparse.ArgumentParser(
+        prog='python -m tracemalloc',
+        description='Trace memory allocations of a Python script or module '
+                    'and display the top allocations which are still alive '
+                    'when it finishes.',
+    )
+    parser.add_argument('-o', '--outfile',
+                        help='dump the snapshot to OUTFILE instead of '
+                             'displaying statistics; the file can be loaded '
+                             'with Snapshot.load()')
+    parser.add_argument('-t', '--key-type', default='lineno',
+                        choices=('filename', 'lineno', 'traceback'),
+                        help='group statistics by key type '
+                             '(default: %(default)s)')
+    parser.add_argument('--cumulative', action='store_true',
+                        help='cumulate the size and count of memory blocks '
+                             'of all frames of a traceback, not only the '
+                             'most recent frame')
+    parser.add_argument('-n', '--nframe', type=int, default=1,
+                        help='maximum number of frames stored in a traceback '
+                             '(default: %(default)s)')
+    parser.add_argument('-l', '--limit', type=int, default=10,
+                        help='number of statistics to display '
+                             '(default: %(default)s)')
+    parser.add_argument('-m', dest='module', action='store_true',
+                        help='run target as a module (like python -m)')
+    parser.add_argument('target',
+                        help='script file or module name to trace')
+    parser.add_argument('args', nargs=argparse.REMAINDER,
+                        help='arguments passed to the script or module')
+    opts = parser.parse_args(args)
+
+    if opts.cumulative and opts.key_type == 'traceback':
+        parser.error("--cumulative cannot be used with key type 'traceback'")
+    if opts.limit < 1:
+        parser.error('--limit must be a positive integer')
+
+    # The traced program may chdir, so capture the absolute path now.
+    if opts.outfile is not None:
+        opts.outfile = os.path.abspath(opts.outfile)
+
+    if not opts.module:
+        if not os.path.exists(opts.target):
+            parser.error(f'cannot find script {opts.target!r}')
+        # runpy.run_path() inserts directories and zip files in sys.path
+        if (not sys.flags.safe_path
+                and pkgutil.get_importer(opts.target) is None):
+            sys.path[0] = os.path.dirname(os.path.realpath(opts.target))
+    sys.argv[:] = [opts.target, *opts.args]
+
+    # Restart tracing if it was enabled by -X tracemalloc or
+    # PYTHONTRACEMALLOC, so that the requested number of frames is used and
+    # the report only covers the traced program.
+    stop()
+    try:
+        start(opts.nframe)
+    except ValueError as exc:
+        parser.error(str(exc))
+
+    try:
+        # Keep the globals of the traced program alive, so that the memory
+        # they reference is included in the snapshot.
+        if opts.module:
+            globs = runpy.run_module(opts.target, run_name='__main__',
+                                     alter_sys=True)
+        else:
+            globs = runpy.run_path(opts.target, run_name='__main__')
+    finally:
+        # The traced program can stop tracing
+        if is_tracing():
+            size, peak = get_traced_memory()
+            snapshot = _strip_frames(take_snapshot(), {
+                _main.__code__.co_filename,
+                runpy._run_code.__code__.co_filename,
+            })
+            stop()
+            if opts.outfile is not None:
+                snapshot.dump(opts.outfile)
+            else:
+                _print_top(snapshot, opts.key_type, opts.cumulative,
+                           opts.limit, size, peak)
+
+
+def _strip_frames(snapshot, filenames):
+    # Remove the oldest frames belonging to the given files (the frames of
+    # the command line interface), but keep at least the most recent frame.
+    if snapshot.traceback_limit == 1:
+        return snapshot
+    traces = []
+    for domain, size, frames, total_nframe in snapshot.traces._traces:
+        nframe = len(frames)
+        while nframe > 1 and frames[nframe - 1][0] in filenames:
+            nframe -= 1
+        stripped = len(frames) - nframe
+        traces.append((domain, size, frames[:nframe], total_nframe - stripped))
+    return Snapshot(traces, snapshot.traceback_limit)
+
+
+def _print_top(snapshot, key_type, cumulative, limit, size, peak):
+    stats = snapshot.statistics(key_type, cumulative)
+    print(f'Top {min(limit, len(stats))} {key_type} allocations '
+          f'still alive at exit:')
+    for stat in stats[:limit]:
+        if key_type == 'traceback':
+            print(f'{stat.count} memory blocks: '
+                  f'{_format_size(stat.size, False)}')
+            for line in stat.traceback.format():
+                print(line)
+        else:
+            print(stat)
+    if not cumulative and len(stats) > limit:
+        other = stats[limit:]
+        other_size = sum(stat.size for stat in other)
+        other_count = sum(stat.count for stat in other)
+        print(f'{len(other)} other: size={_format_size(other_size, False)}, '
+              f'count={other_count}')
+    print(f'Total size: {_format_size(size, False)}')
+    print(f'Peak size: {_format_size(peak, False)}')
+
+
+if __name__ == '__main__':
+    # Use the classes of the tracemalloc module rather than the ones of
+    # __main__, so that dumped snapshots can be loaded.
+    import tracemalloc
+    tracemalloc._main()

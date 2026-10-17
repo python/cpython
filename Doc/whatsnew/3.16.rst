@@ -770,6 +770,15 @@ tkinter
   (Contributed by Serhiy Storchaka in :gh:`153513`.)
 
 
+tracemalloc
+-----------
+
+* Added a :ref:`command-line interface <tracemalloc-cli>` to trace
+  the memory allocations of a script or module without modifying it:
+  ``python -m tracemalloc script.py``.
+  (Contributed by Vadim Smal in :gh:`159560`.)
+
+
 turtle
 ------
 
