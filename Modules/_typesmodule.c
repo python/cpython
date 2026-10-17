@@ -6,6 +6,46 @@
 #include "pycore_namespace.h"     // _PyNamespace_Type
 #include "pycore_object.h"        // _PyNone_Type, _PyNotImplemented_Type
 #include "pycore_unionobject.h"   // _PyUnion_Type
+#include "pycore_typeobject.h"    // _PyObject_LookupSpecial
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional
+
+PyDoc_STRVAR(lookup_special_doc,
+"lookup_special(object, name[, default], /)\n\
+\n\
+Lookup method name `name` on `object` skipping the instance dictionary.\n\
+`name` must be a string. If the named special attribute does not\n\
+exist,`default` is returned if provided, otherwise `AttributeError` is raised.");
+
+/* AC: cannot convert yet, as needs PEP 457 group support in inspect */
+static PyObject *
+_types_lookup_special_impl(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *v, *name, *result;
+
+    if (!_PyArg_CheckPositional("lookup_special", nargs, 2, 3))
+        return NULL;
+
+    v = args[0];
+    name = args[1];
+    if (!PyUnicode_Check(name)) {
+        PyErr_Format(PyExc_TypeError,
+                     "attribute name must be string, not '%.200s'",
+                     Py_TYPE(name)->tp_name);
+        return NULL;
+    }
+    result = _PyObject_LookupSpecial(v, name);
+    if (result == NULL) {
+        if (nargs > 2) {
+            PyObject *dflt = args[2];
+            return Py_NewRef(dflt);
+        } else {
+            PyErr_Format(PyExc_AttributeError,
+                         "'%.50s' object has no special attribute '%U'",
+                         Py_TYPE(v)->tp_name, name);
+        }
+    }
+    return result;
+}
 
 static int
 _types_exec(PyObject *m)
@@ -61,12 +101,18 @@ static struct PyModuleDef_Slot _typesmodule_slots[] = {
     {0, NULL}
 };
 
+static PyMethodDef _typesmodule_methods[] = {
+    {"lookup_special", _PyCFunction_CAST(_types_lookup_special_impl),
+     METH_FASTCALL, lookup_special_doc},
+    {NULL, NULL, 0, NULL}};
+
 static struct PyModuleDef typesmodule = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_types",
     .m_doc = "Define names for built-in types.",
     .m_size = 0,
     .m_slots = _typesmodule_slots,
+    .m_methods = _typesmodule_methods,
 };
 
 PyMODINIT_FUNC
