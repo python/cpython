@@ -311,13 +311,6 @@
 #endif
 
 
-#if !defined(_MSC_VER) && defined(__sgi) && _COMPILER_VERSION>=700
-/* declare ctermid_r if compiling with MIPSPro 7.x in ANSI C mode
-   (default) */
-extern char *ctermid_r(char *);
-#endif
-
-
 #if defined(__VXWORKS__)
 #  include <vxCpuLib.h>
 #  include <rtpLib.h>

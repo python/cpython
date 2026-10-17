@@ -497,9 +497,6 @@
 /* Define to 1 if you have the 'fpathconf' function. */
 #undef HAVE_FPATHCONF
 
-/* Define to 1 if you have the 'fseek64' function. */
-#undef HAVE_FSEEK64
-
 /* Define to 1 if you have the 'fseeko' function. */
 #undef HAVE_FSEEKO
 
@@ -512,14 +509,8 @@
 /* Define if you have the 'fsync' function. */
 #undef HAVE_FSYNC
 
-/* Define to 1 if you have the 'ftell64' function. */
-#undef HAVE_FTELL64
-
 /* Define to 1 if you have the 'ftello' function. */
 #undef HAVE_FTELLO
-
-/* Define to 1 if you have the 'ftime' function. */
-#undef HAVE_FTIME
 
 /* Define to 1 if you have the 'ftruncate' function. */
 #undef HAVE_FTRUNCATE
@@ -538,9 +529,6 @@
 
 /* Define if we can use gcc inline assembler to get and set mc68881 fpcr */
 #undef HAVE_GCC_ASM_FOR_MC68881
-
-/* Define if we can use x64 gcc inline assembler */
-#undef HAVE_GCC_ASM_FOR_X64
 
 /* Define if we can use gcc inline assembler to get and set x87 control word
    */
@@ -696,24 +684,11 @@
 /* Define if you have the 'getsockname' function. */
 #undef HAVE_GETSOCKNAME
 
-/* Define to 1 if you have the 'getspent' function. */
-#undef HAVE_GETSPENT
-
-/* Define to 1 if you have the 'getspnam' function. */
-#undef HAVE_GETSPNAM
-
 /* Define to 1 if you have the 'gettid' function. */
 #undef HAVE_GETTID
 
 /* Define to 1 if you have the 'getuid' function. */
 #undef HAVE_GETUID
-
-/* Define to 1 if you have the 'getwd' function. */
-#undef HAVE_GETWD
-
-/* Define if glibc has incorrect _FORTIFY_SOURCE wrappers for memmove and
-   bcopy. */
-#undef HAVE_GLIBC_MEMMOVE_BUG
 
 /* Define to 1 if you have the 'grantpt' function. */
 #undef HAVE_GRANTPT
@@ -756,9 +731,6 @@
 
 /* Define to 1 if you have the <io.h> header file. */
 #undef HAVE_IO_H
-
-/* Define if gcc has the ipa-pure-const bug. */
-#undef HAVE_IPA_PURE_CONST_BUG
 
 /* Define to 1 if you have the 'kill' function. */
 #undef HAVE_KILL
@@ -867,9 +839,6 @@
 
 /* Define to 1 if you have the <linux/sched.h> header file. */
 #undef HAVE_LINUX_SCHED_H
-
-/* Define to 1 if you have the <linux/soundcard.h> header file. */
-#undef HAVE_LINUX_SOUNDCARD_H
 
 /* Define to 1 if you have the <linux/tipc.h> header file. */
 #undef HAVE_LINUX_TIPC_H
@@ -1104,9 +1073,6 @@
 /* Define to 1 if you have the 'process_vm_readv' function. */
 #undef HAVE_PROCESS_VM_READV
 
-/* Define if your compiler supports function prototype */
-#undef HAVE_PROTOTYPES
-
 /* Define to 1 if you have the 'pthread_condattr_setclock' function. */
 #undef HAVE_PTHREAD_CONDATTR_SETCLOCK
 
@@ -1321,9 +1287,6 @@
 /* Define to 1 if you have the 'setvbuf' function. */
 #undef HAVE_SETVBUF
 
-/* Define to 1 if you have the <shadow.h> header file. */
-#undef HAVE_SHADOW_H
-
 /* Define to 1 if you have the 'shm_open' function. */
 #undef HAVE_SHM_OPEN
 
@@ -1353,9 +1316,6 @@
 
 /* Define to 1 if you have the 'sigpending' function. */
 #undef HAVE_SIGPENDING
-
-/* Define to 1 if you have the 'sigrelse' function. */
-#undef HAVE_SIGRELSE
 
 /* Define to 1 if you have the 'sigtimedwait' function. */
 #undef HAVE_SIGTIMEDWAIT
@@ -1510,9 +1470,6 @@
 /* Define to 1 if you have the 'system' function. */
 #undef HAVE_SYSTEM
 
-/* Define to 1 if you have the <sys/audioio.h> header file. */
-#undef HAVE_SYS_AUDIOIO_H
-
 /* Define to 1 if you have the <sys/auxv.h> header file. */
 #undef HAVE_SYS_AUXV_H
 
@@ -1593,9 +1550,6 @@
 /* Define to 1 if you have the <sys/socket.h> header file. */
 #undef HAVE_SYS_SOCKET_H
 
-/* Define to 1 if you have the <sys/soundcard.h> header file. */
-#undef HAVE_SYS_SOUNDCARD_H
-
 /* Define to 1 if you have the <sys/statvfs.h> header file. */
 #undef HAVE_SYS_STATVFS_H
 
@@ -1650,9 +1604,6 @@
 /* Define to 1 if you have the 'tcsetpgrp' function. */
 #undef HAVE_TCSETPGRP
 
-/* Define to 1 if you have the 'tempnam' function. */
-#undef HAVE_TEMPNAM
-
 /* Define to 1 if you have the <termios.h> header file. */
 #undef HAVE_TERMIOS_H
 
@@ -1670,12 +1621,6 @@
 
 /* Define to 1 if you have the 'tmpfile' function. */
 #undef HAVE_TMPFILE
-
-/* Define to 1 if you have the 'tmpnam' function. */
-#undef HAVE_TMPNAM
-
-/* Define to 1 if you have the 'tmpnam_r' function. */
-#undef HAVE_TMPNAM_R
 
 /* Define to 1 if your 'struct tm' has 'tm_zone'. Deprecated, use
    'HAVE_STRUCT_TM_TM_ZONE' instead. */
@@ -2260,9 +2205,6 @@
 /* Define to 'long' if <time.h> does not define clock_t. */
 #undef clock_t
 
-/* Define to empty if 'const' does not conform to ANSI C. */
-#undef const
-
 /* Define as 'int' if <sys/types.h> doesn't define. */
 #undef gid_t
 
@@ -2274,9 +2216,6 @@
 
 /* Define as a signed integer type capable of holding a process identifier. */
 #undef pid_t
-
-/* Define to empty if the keyword does not work. */
-#undef signed
 
 /* Define as 'unsigned int' if <stddef.h> doesn't define. */
 #undef size_t

@@ -844,19 +844,6 @@ fi
 # (which may remove their limitations).
 dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
 case $ac_sys_system/$ac_sys_release in
-  # On OpenBSD, select(2) is not available if _XOPEN_SOURCE is defined,
-  # even though select is a POSIX function. Reported by J. Ribbens.
-  # Reconfirmed for OpenBSD 3.3 by Zachary Hamm, for 3.4 by Jason Ish.
-  # In addition, Stefan Krah confirms that issue #1244610 exists through
-  # OpenBSD 4.6, but is fixed in 4.7.
-  OpenBSD/2.* | OpenBSD/3.* | OpenBSD/4.@<:@0123456@:>@)
-    define_xopen_source=no
-    # OpenBSD undoes our definition of __BSD_VISIBLE if _XOPEN_SOURCE is
-    # also defined. This can be overridden by defining _BSD_SOURCE
-    # As this has a different meaning on Linux, only define it on OpenBSD
-    AC_DEFINE([_BSD_SOURCE], [1],
-              [Define on OpenBSD to activate all library features])
-    ;;
   OpenBSD/*)
     # OpenBSD undoes our definition of __BSD_VISIBLE if _XOPEN_SOURCE is
     # also defined. This can be overridden by defining _BSD_SOURCE
@@ -864,11 +851,6 @@ case $ac_sys_system/$ac_sys_release in
     AC_DEFINE([_BSD_SOURCE], [1],
               [Define on OpenBSD to activate all library features])
     ;;
-  # Defining _XOPEN_SOURCE on NetBSD version prior to the introduction of
-  # _NETBSD_SOURCE disables certain features (eg. setgroups). Reported by
-  # Marc Recht
-  NetBSD/1.5 | NetBSD/1.5.* | NetBSD/1.6 | NetBSD/1.6.* | NetBSD/1.6@<:@A-S@:>@)
-    define_xopen_source=no;;
   # On Solaris, _XOPEN_SOURCE=800 hides platform specific features.
   # A lower level is defined below.
   SunOS/*)
@@ -3194,12 +3176,12 @@ AC_DEFINE([STDC_HEADERS], [1],
 AC_CHECK_HEADERS([ \
   alloca.h asm/types.h bluetooth.h conio.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
   io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/limits.h linux/memfd.h \
-  linux/netfilter_ipv4.h linux/random.h linux/soundcard.h linux/sched.h \
+  linux/netfilter_ipv4.h linux/random.h linux/sched.h \
   linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
-  sched.h setjmp.h shadow.h signal.h spawn.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
+  sched.h setjmp.h signal.h spawn.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
   sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/pidfd.h sys/poll.h \
-  sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/soundcard.h sys/stat.h \
+  sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/stat.h \
   sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysctl.h \
   sys/sysmacros.h sys/termio.h sys/time.h sys/times.h sys/timerfd.h \
   sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h sys/xattr.h sysexits.h syslog.h \
@@ -5555,12 +5537,12 @@ AC_CHECK_FUNCS([ \
   clock closefrom close_range confstr \
   copy_file_range ctermid dladdr dup execv explicit_bzero explicit_memset \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
-  fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
+  fork fork1 fpathconf fstatat ftruncate futimens futimes futimesat \
   gai_strerror getdents64 getegid geteuid getgid getgrent getgrgid getgrgid_r \
   getgrnam_r getgrouplist gethostname getitimer getloadavg getlogin getlogin_r \
   getpeername getpgid getpid getppid getpriority _getpty \
-  getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid getspent \
-  getspnam gettid getuid getwd grantpt if_indextoname if_nameindex \
+  getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid \
+  gettid getuid grantpt if_indextoname if_nameindex \
   if_nametoindex initgroups kill killpg lchown linkat \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause \
@@ -5577,10 +5559,10 @@ AC_CHECK_FUNCS([ \
   sem_timedwait sem_unlink sendfile setegid seteuid setgid sethostname \
   setitimer setlocale setpgid setpgrp setpriority setregid setresgid \
   setresuid setreuid setsid setuid setvbuf shutdown sigaction sigaltstack \
-  sigfillset siginterrupt sigpending sigrelse sigtimedwait sigwait \
+  sigfillset siginterrupt sigpending sigtimedwait sigwait \
   sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
-  sysconf sysctlbyname tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
-  tmpnam tmpnam_r truncate ttyname_r umask uname unlinkat unlockpt utimensat utimes vfork \
+  sysconf sysctlbyname tcgetpgrp tcsetpgrp timegm times tmpfile \
+  truncate ttyname_r umask uname unlinkat unlockpt utimensat utimes vfork \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
 ])
 
@@ -6031,7 +6013,7 @@ AC_CHECK_FUNCS([forkpty], [],
       [AC_DEFINE([HAVE_FORKPTY]) LIBS="$LIBS -lbsd"])])])
 
 # check for long file support functions
-AC_CHECK_FUNCS([fseek64 fseeko fstatvfs ftell64 ftello statvfs])
+AC_CHECK_FUNCS([fseeko fstatvfs ftello statvfs])
 
 AC_REPLACE_FUNCS([dup2])
 AC_CHECK_FUNCS([getpgrp],
@@ -6329,28 +6311,6 @@ if test $ac_cv_struct_sockaddr_alg = yes; then
       [struct sockaddr_alg (linux/if_alg.h)])
 fi
 
-# checks for compiler characteristics
-
-AC_C_CONST
-
-AC_CACHE_CHECK([for working signed char], [ac_cv_working_signed_char_c], [
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[signed char c;]])],
-  [ac_cv_working_signed_char_c=yes], [ac_cv_working_signed_char_c=no])
-])
-AS_VAR_IF([ac_cv_working_signed_char_c], [no], [
-  AC_DEFINE([signed], [], [Define to empty if the keyword does not work.])
-])
-
-AC_CACHE_CHECK([for prototypes], [ac_cv_function_prototypes], [
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[int foo(int x) { return 0; }]], [[return foo(10);]])],
-  [ac_cv_function_prototypes=yes], [ac_cv_function_prototypes=no])
-])
-AS_VAR_IF([ac_cv_function_prototypes], [yes], [
-  AC_DEFINE([HAVE_PROTOTYPES], [1],
-     [Define if your compiler supports function prototype])
-])
-
-
 # check for socketpair
 PY_CHECK_FUNC([socketpair], [
 #include <sys/types.h>
@@ -6488,22 +6448,6 @@ then LIBC=$withval
 else AC_MSG_ERROR([proper usage is --with-libc=STRING])
 fi],
 [AC_MSG_RESULT([default LIBC="$LIBC"])])
-
-# **************************************
-# * Check for gcc x64 inline assembler *
-# **************************************
-
-
-AC_CACHE_CHECK([for x64 gcc inline assembler], [ac_cv_gcc_asm_for_x64], [
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
-  __asm__ __volatile__ ("movq %rcx, %rax");
-]])],[ac_cv_gcc_asm_for_x64=yes],[ac_cv_gcc_asm_for_x64=no])
-])
-
-AS_VAR_IF([ac_cv_gcc_asm_for_x64], [yes], [
-    AC_DEFINE([HAVE_GCC_ASM_FOR_X64], [1],
-    [Define if we can use x64 gcc inline assembler])
-])
 
 # **************************************************
 # * Check for various properties of floating point *
@@ -7800,49 +7744,6 @@ for dir in $SRCDIRS; do
 done
 AC_MSG_RESULT([done])
 
-# Availability of -O2:
-AC_CACHE_CHECK([for -O2], [ac_cv_compile_o2], [
-saved_cflags="$CFLAGS"
-CFLAGS="-O2"
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [])], [ac_cv_compile_o2=yes], [ac_cv_compile_o2=no])
-CFLAGS="$saved_cflags"
-])
-
-# _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
-# http://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
-AC_MSG_CHECKING([for glibc _FORTIFY_SOURCE/memmove bug])
-saved_cflags="$CFLAGS"
-CFLAGS="-O2 -D_FORTIFY_SOURCE=2"
-if test "$ac_cv_compile_o2" = no; then
-    CFLAGS=""
-fi
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-void foo(void *p, void *q) { memmove(p, q, 19); }
-int main(void) {
-  char a[32] = "123456789000000000";
-  foo(&a[9], a);
-  if (strcmp(a, "123456789123456789000000000") != 0)
-    return 1;
-  foo(a, &a[9]);
-  if (strcmp(a, "123456789000000000") != 0)
-    return 1;
-  return 0;
-}
-]])],
-[have_glibc_memmove_bug=no],
-[have_glibc_memmove_bug=yes],
-[have_glibc_memmove_bug=undefined])
-CFLAGS="$saved_cflags"
-AC_MSG_RESULT([$have_glibc_memmove_bug])
-if test "$have_glibc_memmove_bug" = yes; then
-    AC_DEFINE([HAVE_GLIBC_MEMMOVE_BUG], [1],
-    [Define if glibc has incorrect _FORTIFY_SOURCE wrappers
-     for memmove and bcopy.])
-fi
-
 AC_MSG_CHECKING([if we need to manually block large inlining in ceval.c])
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main(void) {
@@ -7870,45 +7771,6 @@ if test "$block_huge_inlining_in_ceval" = yes && test "$ac_cv_computed_gotos" = 
     CFLAGS_CEVAL="$CFLAGS_CEVAL -finline-max-stacksize=512"
 fi
 AC_SUBST([CFLAGS_CEVAL])
-
-if test "$ac_cv_gcc_asm_for_x87" = yes; then
-    # Some versions of gcc miscompile inline asm:
-    # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
-    # http://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
-    case $ac_cv_cc_name in
-        gcc)
-            AC_MSG_CHECKING([for gcc ipa-pure-const bug])
-            saved_cflags="$CFLAGS"
-            CFLAGS="-O2"
-            AC_RUN_IFELSE([AC_LANG_SOURCE([[
-            __attribute__((noinline)) int
-            foo(int *p) {
-              int r;
-              asm ( "movl \$6, (%1)\n\t"
-                    "xorl %0, %0\n\t"
-                    : "=r" (r) : "r" (p) : "memory"
-              );
-              return r;
-            }
-            int main(void) {
-              int p = 8;
-              if ((foo(&p) ? : p) != 6)
-                return 1;
-              return 0;
-            }
-            ]])],
-            [have_ipa_pure_const_bug=no],
-            [have_ipa_pure_const_bug=yes],
-            [have_ipa_pure_const_bug=undefined])
-            CFLAGS="$saved_cflags"
-            AC_MSG_RESULT([$have_ipa_pure_const_bug])
-            if test "$have_ipa_pure_const_bug" = yes; then
-                AC_DEFINE([HAVE_IPA_PURE_CONST_BUG], [1],
-                          [Define if gcc has the ipa-pure-const bug.])
-            fi
-        ;;
-    esac
-fi
 
 # ensurepip option
 AC_MSG_CHECKING([for ensurepip])

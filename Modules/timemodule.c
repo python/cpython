@@ -854,14 +854,14 @@ time_strftime1(time_char **outbuf, size_t *bufsize,
             return NULL;
         }
         *outbuf = tmp;
-#if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
+#if defined _MSC_VER && defined(__STDC_SECURE_LIB__)
         errno = 0;
 #endif
         _Py_BEGIN_SUPPRESS_IPH
         buflen = format_time(*outbuf, *bufsize, format, tm);
         _Py_END_SUPPRESS_IPH
-#if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
-        /* VisualStudio .NET 2005 does this properly */
+#if defined _MSC_VER && defined(__STDC_SECURE_LIB__)
+        /* The secure CRT reports invalid format strings with EINVAL. */
         if (buflen == 0 && errno == EINVAL) {
             PyErr_SetString(PyExc_ValueError, "Invalid format string");
             return NULL;
