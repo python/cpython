@@ -572,8 +572,13 @@ class EventTests(BaseTestCase):
 
         N = 5
         with Bunch(f, N):
-            # Threads blocked on event.wait()
-            wait_threads_blocked(N)
+            # Wait until all threads are registered as waiters in
+            # event.wait(). A thread that only reaches wait() after set()
+            # and clear() would block until the timeout, so a fixed sleep
+            # is not enough on a busy machine.
+            for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+                if len(event._cond._waiters) >= N:
+                    break
 
             # Threads unblocked
             event.set()
