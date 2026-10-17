@@ -67,6 +67,13 @@ The :mod:`!csv` module defines the following functions:
    dialect.  For full details about the dialect and formatting parameters, see
    section :ref:`csv-fmt-params`.
 
+   .. note::
+      If *csvfile* is an iterable of strings (such as a list) and the CSV format
+      contains quoted fields with embedded newlines, ensure that the strings
+      retain their newline characters. For example, using :meth:`~str.splitlines`
+      without ``keepends=True`` will strip these newlines, causing them to be
+      lost when the quoted fields are reconstructed.
+
    Each row read from the csv file is returned as a list of strings.  No
    automatic data type conversion is performed unless the :data:`QUOTE_NONNUMERIC` format
    option is specified (in which case unquoted fields are transformed into floats).
@@ -709,6 +716,17 @@ done::
 
    import csv
    for row in csv.reader(['one,two,three']):
+       print(row)
+
+If the string contains quoted fields with embedded newlines, use
+:meth:`~str.splitlines` with ``keepends=True`` to ensure the newlines
+are preserved::
+
+   import csv
+   text = '''"Id (id)","Comments (comments)"
+   "195","This is a
+   multiline comment"'''
+   for row in csv.reader(text.splitlines(True)):
        print(row)
 
 
