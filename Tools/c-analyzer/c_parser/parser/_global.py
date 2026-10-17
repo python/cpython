@@ -7,6 +7,7 @@ from ._common import (
     log_match,
     parse_var_decl,
     set_capture_groups,
+    skip_static_assert,
 )
 from ._compound_decl_body import DECL_BODY_PARSERS
 from ._func_body import parse_function_statics as parse_function_body
@@ -36,6 +37,8 @@ GLOBAL_RE = re.compile(rf'^ \s* {GLOBAL}', re.VERBOSE)
 
 def parse_globals(source, anon_name):
     for srcinfo in source:
+        if skip_static_assert(srcinfo):
+            continue
         m = GLOBAL_RE.match(srcinfo.text)
         if not m:
             # We need more text.
