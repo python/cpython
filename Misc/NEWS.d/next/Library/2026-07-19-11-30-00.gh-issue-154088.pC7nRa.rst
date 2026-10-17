@@ -1,2 +1,0 @@
-Make Tachyon count and render elided stacks consistently in differential
-flamegraphs.

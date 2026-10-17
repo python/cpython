@@ -1238,7 +1238,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: before_item(item, *, hidden=False, recurse=True)
@@ -1253,7 +1253,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: depth(item)
@@ -1262,7 +1262,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: haschildren(item)
@@ -1271,7 +1271,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: visible(item)
@@ -1282,7 +1282,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: size(item, *, hidden=False, recurse=False)
@@ -1296,7 +1296,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: range(first, last, *, hidden=False, recurse=True)
@@ -1307,7 +1307,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: identifier(item, index)
@@ -1317,7 +1317,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: current()
@@ -1328,7 +1328,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: expand(*items, recurse=False)
@@ -1339,7 +1339,7 @@ ttk.Treeview
       Use ``''`` for the root item.
       ``expand(item)`` is equivalent to ``item(item, open=True)``.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: collapse(*items, recurse=False)
@@ -1350,7 +1350,7 @@ ttk.Treeview
       Use ``''`` for the root item.
       ``collapse(item)`` is equivalent to ``item(item, open=False)``.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: hide(*items, recurse=False)
@@ -1362,7 +1362,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: unhide(*items, recurse=False)
@@ -1374,7 +1374,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: detached(item=None)
@@ -1388,7 +1388,7 @@ ttk.Treeview
 
       Requires Tk 9.0 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: detached_all()
@@ -1398,7 +1398,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: cellfocus(cell=None)
@@ -1411,7 +1411,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: sort(parent, *, column=None, command=None, dictionary=False, integer=False, real=False, nocase=False, decreasing=False, ignoreempty=False, recurse=False)
@@ -1430,7 +1430,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: search(parent, pattern, *, columns=None, start=None, stop=None, dictionary=False, integer=False, real=False, nocase=False, glob=False, regexp=False, backwards=False, hidden=False, recurse=False, wraparound=False)
@@ -1455,7 +1455,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: search_all(parent, pattern, **kwargs)
@@ -1465,7 +1465,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: search_cell(parent, pattern, **kwargs)
@@ -1476,7 +1476,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: search_all_cells(parent, pattern, **kwargs)
@@ -1487,7 +1487,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: cellselection()
@@ -1499,7 +1499,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: cellselection_set(*cells)
@@ -1510,7 +1510,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: cellselection_add(*cells)
@@ -1519,7 +1519,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: cellselection_remove(*cells)
@@ -1528,7 +1528,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: cellselection_set_range(first, last, *, hidden=True, recurse=True)
@@ -1542,7 +1542,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: cellselection_add_range(first, last, *, hidden=True, recurse=True)
@@ -1553,7 +1553,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: cellselection_remove_range(first, last, *, hidden=True, recurse=True)
@@ -1563,7 +1563,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: cellselection_anchor(cell=None)
@@ -1575,7 +1575,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: cellselection_includes(*cells)
@@ -1584,7 +1584,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: cellselection_present()
@@ -1593,7 +1593,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: tag_cell_add(tagname, *cells)
@@ -1604,7 +1604,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: tag_cell_remove(tagname, *cells)
@@ -1614,7 +1614,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: tag_cell_has(tagname, cell=None)
@@ -1626,7 +1626,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: see(item)
@@ -2042,7 +2042,7 @@ If you don't know the class name of a widget, use the method
       Returns a tuple of all styles in *themename*.
       If *themename* is not given, the current theme is used.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
       Availability: Tk 9.0.
 

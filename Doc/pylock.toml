@@ -18,9 +18,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/77/f5/21d2de20e8b8b04
 
 [[packages]]
 name = "blurb"
-version = "2.1.0"
-sdist = { url = "https://files.pythonhosted.org/packages/5b/9e/f38cff22d0e00f0ae5bb67bc57dbf3b6bfc9d61933b6451744568b90be7d/blurb-2.1.0.tar.gz", upload-time = 2026-08-27T15:32:29Z, size = 28097, hashes = { sha256 = "0154689a5aa009174b5e332a6997318e82e1b12b57fce03162ed49ea25c65652" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/01/f4/f4b0958ee24cd7355a4edccf6dbb5c76329544aa25eadb21963838e1e2c9/blurb-2.1.0-py3-none-any.whl", upload-time = 2026-08-27T15:32:28Z, size = 22980, hashes = { sha256 = "dfc96f59f2431a245df96f601df5b7b9a96e39e6887430046fa774fb61c910bb" } }]
+version = "2.2.0"
+sdist = { url = "https://files.pythonhosted.org/packages/0a/79/1e78c8d116720d85783c9dbc628b576e888c57d4b5e6a562451098d494fc/blurb-2.2.0.tar.gz", upload-time = 2026-10-09T10:48:19Z, size = 28063, hashes = { sha256 = "9ce54639a3a319e15dc7abbd2974cfa6817c27d9a5ba7d60c0851f53616e8391" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/98/f2/1862e5f4f4c681ee7e3427fdc54bf698a3991e3ef98d7ef607acc1a10b3c/blurb-2.2.0-py3-none-any.whl", upload-time = 2026-10-09T10:48:17Z, size = 22868, hashes = { sha256 = "d6b329c9cdfbb5abe18b28c095ff64f59078cfaf43318f59b7db7a1e9075791d" } }]
 
 [[packages]]
 name = "certifi"
@@ -173,9 +173,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/8f/d7/9322c609343d929
 
 [[packages]]
 name = "idna"
-version = "3.19"
-sdist = { url = "https://files.pythonhosted.org/packages/5f/f7/abb373e5757eaec4b922b92f97ec8d6d7e057cf06778247604fbc4e7c3f3/idna-3.19.tar.gz", upload-time = 2026-08-18T05:14:24Z, size = 215237, hashes = { sha256 = "5e0811a4383b21dc5838069f801c4fb62113b7447663d2530d2bd6e77b49bf15" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/57/b0/0e52c878c53f245edd3a11020f20979b3f490f245af532c7cae3027754b5/idna-3.19-py3-none-any.whl", upload-time = 2026-08-18T05:14:22Z, size = 68550, hashes = { sha256 = "815e7be7a7806d54abb586dc943addc79e8b2ee16915059658cbeff4b1b43bf4" } }]
+version = "3.20"
+sdist = { url = "https://files.pythonhosted.org/packages/f5/08/8eea9d4b8302028f3abb2c0813953f7aec26d33b7a8960ed760e65ff29fa/idna-3.20.tar.gz", upload-time = 2026-09-17T14:11:04Z, size = 216463, hashes = { sha256 = "a7db850025b95ded1eae8a46181a1a6c56c92c96f0e2b005d9ff8dc0210cab44" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/58/a2/bb081bab032533a855d44de1d56f8e8426114ff1ba5d1f07a438a0a654f8/idna-3.20-py3-none-any.whl", upload-time = 2026-09-17T14:11:03Z, size = 69583, hashes = { sha256 = "ab7ae7122974553370f0bdb919e1a960b2cd1bc1ef0276416d896db81c14582c" } }]
 
 [[packages]]
 name = "imagesize"
@@ -256,9 +256,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/31/53/136e9eca6e0b9dc
 
 [[packages]]
 name = "sphinx-linklint"
-version = "2.0.1"
-sdist = { url = "https://files.pythonhosted.org/packages/96/25/f5dc4e284565e931bba2fc730df1d20cb465961ac471c01575c2de830265/sphinx_linklint-2.0.1.tar.gz", upload-time = 2026-08-26T12:06:49Z, size = 40515, hashes = { sha256 = "b0079a667282537529a8b10e1e0477c4af3486a4aa3f309fe0457d200ac69472" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/7f/83/4b78c062448ee95bdbb27bac0c4cc89319e4ae318214044cb46b29a36ad2/sphinx_linklint-2.0.1-py3-none-any.whl", upload-time = 2026-08-26T12:06:47Z, size = 13277, hashes = { sha256 = "c2b58122ea38d8c1d5d5a67d525cf290be8d3f30424fb45cc1049d32ad0fc096" } }]
+version = "2.0.2"
+sdist = { url = "https://files.pythonhosted.org/packages/21/86/12a57b6e2458bd84b2973e235b3576682e0213ba7f37493f5bbb055c6666/sphinx_linklint-2.0.2.tar.gz", upload-time = 2026-10-04T22:38:01Z, size = 41305, hashes = { sha256 = "e08119e4a0a90997baf867fc8895346bb30798598dc4d274c1632854ca68a9df" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/43/c5/74980bc587ec161aa5117e9f7ba2ee7fbc1a236f834d9585a142d8de46e6/sphinx_linklint-2.0.2-py3-none-any.whl", upload-time = 2026-10-04T22:37:59Z, size = 13562, hashes = { sha256 = "54993451c264b5dc9beb61e3039cdb234e7f9a9133aad9e61782a8b0a51e085b" } }]
 
 [[packages]]
 name = "sphinx-notfound-page"
