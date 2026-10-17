@@ -54,7 +54,7 @@ def __getattr__(name):
         else:
             return 2
 
-    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+    raise AttributeError(f"module '{__name__}' has no attribute {name!r}")
 
 
 # Constants for months
