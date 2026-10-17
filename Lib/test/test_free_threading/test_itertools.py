@@ -5,6 +5,7 @@ from itertools import (
     chain,
     combinations_with_replacement,
     cycle,
+    pairwise,
     permutations,
     tee,
     zip_longest,
@@ -70,6 +71,13 @@ class ItertoolsThreading(unittest.TestCase):
             threading_helper.run_concurrently(
                 work_iterator, nthreads=6, args=[it]
             )
+
+    @threading_helper.reap_threads
+    def test_pairwise(self):
+        number_of_iterations = 10
+        for _ in range(number_of_iterations):
+            it = pairwise(tuple(range(100)))
+            threading_helper.run_concurrently(work_iterator, nthreads=10, args=[it])
 
     @threading_helper.reap_threads
     def test_permutations(self):
