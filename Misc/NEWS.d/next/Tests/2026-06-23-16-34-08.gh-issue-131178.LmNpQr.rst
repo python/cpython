@@ -1,0 +1,1 @@
+Add CLI tests for :mod:`pydoc`.

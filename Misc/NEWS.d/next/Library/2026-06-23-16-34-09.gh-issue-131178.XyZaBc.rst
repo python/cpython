@@ -1,0 +1,1 @@
+Make :mod:`pydoc` exit with code 1 when invoked with no arguments or an invalid option.
