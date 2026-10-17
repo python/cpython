@@ -908,12 +908,14 @@ class IMAP4:
             user = user.encode('utf-8')
         if isinstance(password, str):
             password = password.encode('utf-8')
+        user = bytes(user)
+        password = bytes(password)
         if b'\0' in user or b'\0' in password:
             raise ValueError("NUL is not allowed in user name or password")
         # An empty authorization identity (RFC 4616) makes the server
         # derive it from the authentication identity; a non-empty one
         # requests proxy authorization and is often rejected.
-        response = b'\0' + bytes(user) + b'\0' + bytes(password)
+        response = b'\0' + user + b'\0' + password
         return self.authenticate("PLAIN", lambda _: response)
 
 
