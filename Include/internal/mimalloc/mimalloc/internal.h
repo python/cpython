@@ -23,10 +23,6 @@ terms of the MIT license. A copy of the license can be found in the file
 #define mi_trace_message(...)
 #endif
 
-#if defined(__EMSCRIPTEN__) && !defined(__wasi__)
-#define __wasi__
-#endif
-
 #if defined(__cplusplus)
 #define mi_decl_externc       extern "C"
 #else
@@ -34,7 +30,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #endif
 
 // pthreads
-#if !defined(_WIN32) && !defined(__wasi__)
+#if !defined(_WIN32) && !defined(__wasm__)
 #define  MI_USE_PTHREADS
 #include <pthread.h>
 #endif
@@ -634,10 +630,10 @@ static inline mi_block_t* mi_block_nextx( const void* null, const mi_block_t* bl
   mi_track_mem_defined(block,sizeof(mi_block_t));
   mi_block_t* next;
   #ifdef MI_ENCODE_FREELIST
-  next = (mi_block_t*)mi_ptr_decode(null, mi_atomic_load_relaxed(&block->next), keys);
+  next = (mi_block_t*)mi_ptr_decode(null, mi_atomic_load_relaxed((_Atomic(mi_encoded_t)*)&block->next), keys);
   #else
   MI_UNUSED(keys); MI_UNUSED(null);
-  next = (mi_block_t*)mi_atomic_load_relaxed(&block->next);
+  next = (mi_block_t*)mi_atomic_load_relaxed((_Atomic(mi_encoded_t)*)&block->next);
   #endif
   mi_track_mem_noaccess(block,sizeof(mi_block_t));
   return next;

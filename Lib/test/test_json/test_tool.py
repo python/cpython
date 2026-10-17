@@ -1,4 +1,5 @@
 import errno
+import pathlib
 import os
 import sys
 import textwrap
@@ -13,6 +14,7 @@ from _colorize import get_theme
 
 
 @support.requires_subprocess()
+@support.skip_if_pgo_task
 class TestMain(unittest.TestCase):
     data = """
 
@@ -156,11 +158,19 @@ class TestMain(unittest.TestCase):
         self.assertEqual(process.stdout, self.jsonlines_expect)
         self.assertEqual(process.stderr, '')
 
+    @force_not_colorized
+    def test_jsonlines_from_file(self):
+        jsonl = pathlib.Path(__file__).parent / 'json_lines.jsonl'
+        args = sys.executable, '-m', self.module, '--json-lines', jsonl
+        process = subprocess.run(args, capture_output=True, text=True, check=True)
+        self.assertEqual(process.stdout, self.jsonlines_expect)
+        self.assertEqual(process.stderr, '')
+
     def test_help_flag(self):
         rc, out, err = assert_python_ok('-m', self.module, '-h',
                                         PYTHON_COLORS='0')
         self.assertEqual(rc, 0)
-        self.assertTrue(out.startswith(b'usage: '))
+        self.assertStartsWith(out, b'usage: ')
         self.assertEqual(err, b'')
 
     def test_sort_keys_flag(self):
@@ -270,7 +280,7 @@ class TestMain(unittest.TestCase):
             (r'" \"foo\" "', f'{t.string}" \\"foo\\" "{t.reset}'),
             ('"α"', f'{t.string}"\\u03b1"{t.reset}'),
             ('123', f'{t.number}123{t.reset}'),
-            ('-1.2345e+23', f'{t.number}-1.2345e+23{t.reset}'),
+            ('-1.25e+23', f'{t.number}-1.25e+23{t.reset}'),
             (r'{"\\": ""}',
              f'''\
 {ob}
@@ -319,6 +329,7 @@ class TestMain(unittest.TestCase):
 
 
 @support.requires_subprocess()
+@support.skip_if_pgo_task
 class TestTool(TestMain):
     module = 'json.tool'
 

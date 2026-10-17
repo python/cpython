@@ -32,7 +32,7 @@ NLCRE = re.compile(r'\r\n|\r|\n')
 NLCRE_bol = re.compile(r'(\r\n|\r|\n)')
 NLCRE_eol = re.compile(r'(\r\n|\r|\n)\z')
 NLCRE_crack = re.compile(r'(\r\n|\r|\n)')
-# RFC 2822 $3.6.8 Optional fields.  ftext is %d33-57 / %d59-126, Any character
+# RFC 5322 section 3.6.8 Optional fields.  ftext is %d33-57 / %d59-126, Any character
 # except controls, SP, and ":".
 headerRE = re.compile(r'^(From |[\041-\071\073-\176]*:|[\t ])')
 EMPTYSTRING = ''
@@ -294,7 +294,7 @@ class FeedParser:
             return
         if self._cur.get_content_maintype() == 'message':
             # The message claims to be a message/* type, then what follows is
-            # another RFC 2822 message.
+            # another RFC 5322 message.
             for retval in self._parsegen():
                 if retval is NeedMoreData:
                     yield NeedMoreData
@@ -504,10 +504,9 @@ class FeedParser:
                     self._input.unreadline(line)
                     return
                 else:
-                    # Weirdly placed unix-from line.  Note this as a defect
-                    # and ignore it.
+                    # Weirdly placed unix-from line.
                     defect = errors.MisplacedEnvelopeHeaderDefect(line)
-                    self._cur.defects.append(defect)
+                    self.policy.handle_defect(self._cur, defect)
                     continue
             # Split the line on the colon separating field name from value.
             # There will always be a colon, because if there wasn't the part of
@@ -519,7 +518,7 @@ class FeedParser:
             # message. Track the error but keep going.
             if i == 0:
                 defect = errors.InvalidHeaderDefect("Missing header name.")
-                self._cur.defects.append(defect)
+                self.policy.handle_defect(self._cur, defect)
                 continue
 
             assert i>0, "_parse_headers fed line with no : and no leading WS"

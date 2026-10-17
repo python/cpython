@@ -1004,6 +1004,32 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         parsed_msg = message_from_bytes(m.as_bytes(), policy=policy.default)
         self.assertEqual(parsed_msg['Message-ID'], m['Message-ID'])
 
+    def test_no_wrapping_max_line_length(self):
+        # Test that falsey 'max_line_length' are converted to sys.maxsize.
+        for n in [0, None]:
+            with self.subTest(max_line_length=n):
+                self.do_test_no_wrapping_max_line_length(n)
+
+    def do_test_no_wrapping_max_line_length(self, falsey):
+        self.assertFalse(falsey)
+        pol = policy.default.clone(max_line_length=falsey)
+        subj = "S" * 100
+        body = "B" * 100
+        msg = EmailMessage(policy=pol)
+        msg["From"] = "a@ex.com"
+        msg["To"] = "b@ex.com"
+        msg["Subject"] = subj
+        msg.set_content(body)
+
+        raw = msg.as_bytes()
+        self.assertNotIn(b"=\n", raw,
+                         "Found fold indicator; wrapping not disabled")
+
+        parsed = message_from_bytes(raw, policy=policy.default)
+        self.assertEqual(parsed["Subject"], subj)
+        parsed_body = parsed.get_body().get_content().rstrip('\n')
+        self.assertEqual(parsed_body, body)
+
     def test_invalid_header_names(self):
         invalid_headers = [
             ('Invalid Header', 'contains space'),
@@ -1054,6 +1080,34 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         # In bpo-42892, this would raise
         # AttributeError: 'str' object has no attribute 'is_attachment'
         m.get_body()
+
+    def test_get_body_malformed_nested_multipart(self):
+        # gh-159304: a nested multipart part without a boundary has a
+        # string payload, which get_body() must not iterate over.
+        msg = textwrap.dedent("""\
+            From: sender@example.com
+            To: receiver@example.com
+            Subject: Malformed
+            Content-Type: multipart/related; boundary=OUTER
+
+            --OUTER
+            Content-Type: multipart/related
+
+            raw body no boundary
+            --OUTER--
+            """)
+        m = self._str_msg(msg)
+        self.assertIsNone(m.get_body(('plain', 'html')))
+        self.assertIs(m.get_body(('related',)), m)
+
+    def test_get_bytes_payload_with_quoted_printable_encoding(self):
+        # We use a memoryview to avoid directly changing the private payload
+        # and to prevent using the dedicated paths for string or bytes objects.
+        payload = memoryview(b'Some payload')
+        m = self._make_message()
+        m.add_header('Content-Transfer-Encoding', 'quoted-printable')
+        m.set_payload(payload)
+        self.assertEqual(m.get_payload(decode=True), payload)
 
 
 class TestMIMEPart(TestEmailMessageBase, TestEmailBase):

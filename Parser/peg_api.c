@@ -4,13 +4,15 @@
 
 mod_ty
 _PyParser_ASTFromString(const char *str, PyObject* filename, int mode,
-                        PyCompilerFlags *flags, PyArena *arena)
+                        PyCompilerFlags *flags, PyArena *arena,
+                        PyObject *module)
 {
     if (PySys_Audit("compile", "yO", str, filename) < 0) {
         return NULL;
     }
 
-    mod_ty result = _PyPegen_run_parser_from_string(str, mode, filename, flags, arena);
+    mod_ty result = _PyPegen_run_parser_from_string(str, mode, filename, flags,
+                                                    arena, module);
     return result;
 }
 

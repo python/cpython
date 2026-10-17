@@ -54,11 +54,13 @@ extern "C" {
 # define _Py_Debug_Free_Threaded 1
 # define _Py_Debug_code_object_co_tlbc offsetof(PyCodeObject, co_tlbc)
 # define _Py_Debug_interpreter_frame_tlbc_index offsetof(_PyInterpreterFrame, tlbc_index)
+# define _Py_Debug_interpreter_state_tlbc_generation offsetof(PyInterpreterState, tlbc_indices.tlbc_generation)
 #else
 # define _Py_Debug_gilruntimestate_enabled 0
 # define _Py_Debug_Free_Threaded 0
 # define _Py_Debug_code_object_co_tlbc 0
 # define _Py_Debug_interpreter_frame_tlbc_index 0
+# define _Py_Debug_interpreter_state_tlbc_generation 0
 #endif
 
 
@@ -89,6 +91,8 @@ typedef struct _Py_DebugOffsets {
         uint64_t gil_runtime_state_enabled;
         uint64_t gil_runtime_state_locked;
         uint64_t gil_runtime_state_holder;
+        uint64_t code_object_generation;
+        uint64_t tlbc_generation;
     } interpreter_state;
 
     // Thread state offset;
@@ -98,11 +102,23 @@ typedef struct _Py_DebugOffsets {
         uint64_t next;
         uint64_t interp;
         uint64_t current_frame;
+        uint64_t base_frame;
+        uint64_t last_profiled_frame;
+        uint64_t last_profiled_frame_seq;
         uint64_t thread_id;
         uint64_t native_thread_id;
         uint64_t datastack_chunk;
         uint64_t status;
+        uint64_t holds_gil;
+        uint64_t gil_requested;
+        uint64_t current_exception;
+        uint64_t exc_state;
     } thread_state;
+
+    // Exception stack item offset
+    struct {
+        uint64_t exc_value;
+    } err_stackitem;
 
     // InterpreterFrame offset;
     struct _interpreter_frame {
@@ -143,7 +159,15 @@ typedef struct _Py_DebugOffsets {
         uint64_t tp_name;
         uint64_t tp_repr;
         uint64_t tp_flags;
+        uint64_t tp_basicsize;
+        uint64_t tp_dictoffset;
     } type_object;
+
+    // PyHeapTypeObject offset;
+    struct _heap_type_object {
+        uint64_t size;
+        uint64_t ht_cached_keys;
+    } heap_type_object;
 
     // PyTuple object offset;
     struct _tuple_object {
@@ -200,12 +224,16 @@ typedef struct _Py_DebugOffsets {
         uint64_t state;
         uint64_t length;
         uint64_t asciiobject_size;
+        uint64_t compactunicodeobject_size;
     } unicode_object;
 
     // GC runtime state offset;
     struct _gc {
         uint64_t size;
         uint64_t collecting;
+        uint64_t frame;
+        uint64_t generation_stats_size;
+        uint64_t generation_stats;
     } gc;
 
     // Generator object offset;
@@ -215,6 +243,11 @@ typedef struct _Py_DebugOffsets {
         uint64_t gi_iframe;
         uint64_t gi_frame_state;
     } gen_object;
+
+    struct _llist_node {
+        uint64_t next;
+        uint64_t prev;
+    } llist_node;
 
     struct _debugger_support {
         uint64_t eval_breaker;
@@ -251,6 +284,8 @@ typedef struct _Py_DebugOffsets {
         .gil_runtime_state_enabled = _Py_Debug_gilruntimestate_enabled, \
         .gil_runtime_state_locked = offsetof(PyInterpreterState, _gil.locked), \
         .gil_runtime_state_holder = offsetof(PyInterpreterState, _gil.last_holder), \
+        .code_object_generation = offsetof(PyInterpreterState, _code_object_generation), \
+        .tlbc_generation = _Py_Debug_interpreter_state_tlbc_generation, \
     }, \
     .thread_state = { \
         .size = sizeof(PyThreadState), \
@@ -258,10 +293,20 @@ typedef struct _Py_DebugOffsets {
         .next = offsetof(PyThreadState, next), \
         .interp = offsetof(PyThreadState, interp), \
         .current_frame = offsetof(PyThreadState, current_frame), \
+        .base_frame = offsetof(PyThreadState, base_frame), \
+        .last_profiled_frame = offsetof(PyThreadState, last_profiled_frame), \
+        .last_profiled_frame_seq = offsetof(PyThreadState, last_profiled_frame_seq), \
         .thread_id = offsetof(PyThreadState, thread_id), \
         .native_thread_id = offsetof(PyThreadState, native_thread_id), \
         .datastack_chunk = offsetof(PyThreadState, datastack_chunk), \
         .status = offsetof(PyThreadState, _status), \
+        .holds_gil = offsetof(PyThreadState, holds_gil), \
+        .gil_requested = offsetof(PyThreadState, gil_requested), \
+        .current_exception = offsetof(PyThreadState, current_exception), \
+        .exc_state = offsetof(PyThreadState, exc_state), \
+    }, \
+    .err_stackitem = { \
+        .exc_value = offsetof(_PyErr_StackItem, exc_value), \
     }, \
     .interpreter_frame = { \
         .size = sizeof(_PyInterpreterFrame), \
@@ -295,6 +340,12 @@ typedef struct _Py_DebugOffsets {
         .tp_name = offsetof(PyTypeObject, tp_name), \
         .tp_repr = offsetof(PyTypeObject, tp_repr), \
         .tp_flags = offsetof(PyTypeObject, tp_flags), \
+        .tp_basicsize = offsetof(PyTypeObject, tp_basicsize), \
+        .tp_dictoffset = offsetof(PyTypeObject, tp_dictoffset), \
+    }, \
+    .heap_type_object = { \
+        .size = sizeof(PyHeapTypeObject), \
+        .ht_cached_keys = offsetof(PyHeapTypeObject, ht_cached_keys), \
     }, \
     .tuple_object = { \
         .size = sizeof(PyTupleObject), \
@@ -336,10 +387,14 @@ typedef struct _Py_DebugOffsets {
         .state = offsetof(PyUnicodeObject, _base._base.state), \
         .length = offsetof(PyUnicodeObject, _base._base.length), \
         .asciiobject_size = sizeof(PyASCIIObject), \
+        .compactunicodeobject_size = sizeof(PyCompactUnicodeObject), \
     }, \
     .gc = { \
         .size = sizeof(struct _gc_runtime_state), \
         .collecting = offsetof(struct _gc_runtime_state, collecting), \
+        .frame = offsetof(struct _gc_runtime_state, frame), \
+        .generation_stats_size = sizeof(struct gc_stats), \
+        .generation_stats = offsetof(struct _gc_runtime_state, generation_stats), \
     }, \
     .gen_object = { \
         .size = sizeof(PyGenObject), \
@@ -347,13 +402,17 @@ typedef struct _Py_DebugOffsets {
         .gi_iframe = offsetof(PyGenObject, gi_iframe), \
         .gi_frame_state = offsetof(PyGenObject, gi_frame_state), \
     }, \
+    .llist_node = { \
+        .next = offsetof(struct llist_node, next), \
+        .prev = offsetof(struct llist_node, prev), \
+    }, \
     .debugger_support = { \
         .eval_breaker = offsetof(PyThreadState, eval_breaker), \
         .remote_debugger_support = offsetof(PyThreadState, remote_debugger_support),  \
         .remote_debugging_enabled = offsetof(PyInterpreterState, config.remote_debug),  \
         .debugger_pending_call = offsetof(_PyRemoteDebuggerSupport, debugger_pending_call),  \
         .debugger_script_path = offsetof(_PyRemoteDebuggerSupport, debugger_script_path),  \
-        .debugger_script_path_size = MAX_SCRIPT_PATH_SIZE, \
+        .debugger_script_path_size = _Py_MAX_SCRIPT_PATH_SIZE, \
     }, \
 }
 

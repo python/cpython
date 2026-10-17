@@ -7,6 +7,7 @@ import unittest.mock
 from test import support
 from test.support import import_helper
 from test.support import os_helper
+from test.support.script_helper import assert_python_ok
 
 
 turtle = import_helper.import_module('turtle')
@@ -60,12 +61,25 @@ def patch_screen():
     We must patch the _Screen class itself instead of the _Screen
     instance because instantiating it requires a display.
     """
+    # Create a mock screen that delegates color validation to the real TurtleScreen methods
+    mock_screen = unittest.mock.MagicMock()
+    mock_screen.__class__ = turtle._Screen
+    mock_screen.mode.return_value = "standard"
+    mock_screen._colormode = 1.0
+
+    def mock_iscolorstring(color):
+        valid_colors = {'red', 'green', 'blue', 'black', 'white', 'yellow',
+                        'orange', 'purple', 'pink', 'brown', 'gray', 'grey',
+                        'cyan', 'magenta'}
+
+        return color in valid_colors or (isinstance(color, str) and color.startswith('#'))
+
+    mock_screen._iscolorstring = mock_iscolorstring
+    mock_screen._colorstr = turtle._Screen._colorstr.__get__(mock_screen)
+
     return unittest.mock.patch(
         "turtle._Screen.__new__",
-        **{
-            "return_value.__class__": turtle._Screen,
-            "return_value.mode.return_value": "standard",
-        },
+        return_value=mock_screen
     )
 
 
@@ -564,6 +578,28 @@ class TestTurtleScreen(unittest.TestCase):
             s.update.assert_not_called()
         s.update.assert_called_once()
 
+    def test_update_is_not_reentrant(self):
+        # ondrag(goto) reenters _update() while cv.update() processes events;
+        # without a guard this recurses without bound (gh-50966).
+        s = turtle.TurtleScreen(cv=unittest.mock.MagicMock())
+        depth = max_depth = 0
+
+        def reenter():
+            nonlocal depth, max_depth
+            depth += 1
+            max_depth = max(max_depth, depth)
+            if depth < 50:
+                s._update()  # as an event handler would
+            depth -= 1
+
+        s.cv.update.reset_mock()  # ignore calls made during construction
+        s.cv.update.side_effect = reenter
+        s._update()
+        # cv.update() runs once; reentrant calls only flush idle tasks.
+        self.assertEqual(s.cv.update.call_count, 1)
+        self.assertEqual(max_depth, 1)
+        self.assertTrue(s.cv.update_idletasks.called)
+
 
 class TestTurtle(unittest.TestCase):
     def setUp(self):
@@ -635,6 +671,56 @@ class TestTurtle(unittest.TestCase):
             self.assertTrue(self.turtle._creatingPoly)
         self.assertFalse(self.turtle._creatingPoly)
 
+    def test_dot_signature(self):
+        self.turtle.dot()
+        self.turtle.dot(10)
+        self.turtle.dot(size=10)
+        self.turtle.dot((0, 0, 0))
+        self.turtle.dot(size=(0, 0, 0))
+        self.turtle.dot("blue")
+        self.turtle.dot("")
+        self.turtle.dot(size="blue")
+        self.turtle.dot(20, "blue")
+        self.turtle.dot(20, "blue")
+        self.turtle.dot(20, (0, 0, 0))
+        self.turtle.dot(20, 0, 0, 0)
+        with self.assertRaises(TypeError):
+            self.turtle.dot(color="blue")
+        self.assertRaises(turtle.TurtleGraphicsError, self.turtle.dot, "_not_a_color_")
+        self.assertRaises(turtle.TurtleGraphicsError, self.turtle.dot, 0, (0, 0, 0, 0))
+        self.assertRaises(turtle.TurtleGraphicsError, self.turtle.dot, 0, 0, 0, 0, 0)
+        self.assertRaises(turtle.TurtleGraphicsError, self.turtle.dot, 0, (-1, 0, 0))
+        self.assertRaises(turtle.TurtleGraphicsError, self.turtle.dot, 0, -1, 0, 0)
+        self.assertRaises(turtle.TurtleGraphicsError, self.turtle.dot, 0, (0, 257, 0))
+        self.assertRaises(turtle.TurtleGraphicsError, self.turtle.dot, 0, 0, 257, 0)
+
+    def test_circle_undo(self):
+        self.turtle.circle(50, 90)
+        self.turtle.undo()
+        self.assertEqual(self.turtle.pos(), (0, 0))
+        self.assertEqual(self.turtle.undobufferentries(), 0)
+
+    def test_undo_sequence_resets_after_exception(self):
+        with unittest.mock.patch.object(self.turtle, "_write",
+                                        side_effect=ValueError):
+            self.assertRaises(ValueError, self.turtle.write, "spam")
+        self.assertFalse(self.turtle.undobuffer.cumulate)
+
+    def test_nested_undo_sequence(self):
+        with self.turtle._undo_sequence():
+            self.turtle.teleport(10, 20)
+            self.turtle.forward(10)
+        self.assertEqual(self.turtle.undobufferentries(), 1)
+        self.turtle.undo()
+        self.assertEqual(self.turtle.pos(), (0, 0))
+
+    def test_stamp_without_undobuffer(self):
+        shape = turtle.Shape("polygon", ((0, 0), (5, 9), (-5, 9)))
+        self.turtle.screen._shapes = {self.turtle.shape(): shape}
+        self.turtle.setundobuffer(None)
+        stamp = self.turtle.stamp()
+        self.turtle.clearstamp(stamp)
+        self.assertEqual(self.turtle.stampItems, [])
 
 class TestModuleLevel(unittest.TestCase):
     def test_all_signatures(self):
@@ -654,6 +740,34 @@ class TestModuleLevel(unittest.TestCase):
                 obj = getattr(turtle, name)
                 sig = inspect.signature(obj)
                 self.assertEqual(str(sig), known_signatures[name])
+
+
+class TurtleDocstringTranslationTest(unittest.TestCase):
+
+    def _make_translation(self, dirname, filename, docstring):
+        with open(os.path.join(dirname, filename), 'w') as f:
+            f.write('docsdict = {"Turtle.forward": %r}\n' % docstring)
+
+    def _get_forward_docstring(self, dirname, lang):
+        rc, out, err = assert_python_ok(
+            '-c', 'import turtle; print(turtle.forward.__doc__)',
+            PYTHONPATH=dirname, PYTHON_TURTLE_LANG=lang)
+        return out.decode()
+
+    def test_translation(self):
+        with os_helper.temp_dir() as dirname:
+            self._make_translation(dirname, 'turtle_docstringdict_ga.py',
+                                  'chun tosaigh')
+
+            out = self._get_forward_docstring(dirname, 'ga')
+            self.assertIn('chun tosaigh', out)
+
+    def test_unknown_language(self):
+        with os_helper.temp_dir() as dirname:
+            out = self._get_forward_docstring(dirname, 'ga')
+
+            self.assertIn('Cannot find docsdict for ga', out)
+            self.assertIn('Move the turtle forward', out)
 
 
 if __name__ == '__main__':

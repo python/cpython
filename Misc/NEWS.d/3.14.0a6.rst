@@ -621,7 +621,7 @@ Andrew Svetlov.
 .. nonce: jQ0CvW
 .. section: Library
 
-Update the deprecation warning of :meth:`importlib.abc.Loader.load_module`.
+Update the deprecation warning of ``importlib.abc.Loader.load_module``.
 
 ..
 
@@ -758,7 +758,7 @@ Patch by Semyon Moroz.
 .. nonce: wDLTay
 .. section: Library
 
-Delay deprecated :meth:`zipimport.zipimporter.load_module` removal time to
+Delay deprecated :meth:`!zipimport.zipimporter.load_module` removal time to
 3.15. Use :meth:`zipimport.zipimporter.exec_module` instead.
 
 ..
@@ -1187,7 +1187,7 @@ Improve the experimental JIT's handling of returns to unknown callers.
 .. date: 2025-02-11-20-38-37
 .. gh-issue: 129983
 .. nonce: _1Fujo
-.. section: Core and Builtins
+.. section: Library
 
 Fix data race in compile_template in :file:`sre.c`.
 
@@ -1325,7 +1325,7 @@ variable.
 .. nonce: d75n8U
 .. section: Core and Builtins
 
-Adapt :func:`reversed` for use in the free-theading build. The
+Adapt :func:`reversed` for use in the free-threading build. The
 :func:`reversed` is still not thread-safe in the sense that concurrent
 iterations may see the same object, but they will not corrupt the
 interpreter state.
@@ -1335,7 +1335,7 @@ interpreter state.
 .. date: 2022-12-21-14-28-01
 .. gh-issue: 100388
 .. nonce: vne8ky
-.. section: Core and Builtins
+.. section: Library
 
 Fix the ``platform._sys_version()`` method when ``__DATE__`` is undefined at
 buildtime by changing default buildtime datetime string to the UNIX epoch.

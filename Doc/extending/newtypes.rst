@@ -560,6 +560,8 @@ For an object to be weakly referenceable, the extension type must set the
 field. The legacy :c:member:`~PyTypeObject.tp_weaklistoffset` field should
 be left as zero.
 
+If this flag is set, :c:macro:`Py_TPFLAGS_HAVE_GC` should also be set.
+
 Concretely, here is how the statically declared type object would look::
 
    static PyTypeObject TrivialType = {

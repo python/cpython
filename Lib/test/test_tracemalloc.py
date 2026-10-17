@@ -8,7 +8,7 @@ from unittest.mock import patch
 from test.support.script_helper import (assert_python_ok, assert_python_failure,
                                         interpreter_requires_environment)
 from test import support
-from test.support import force_not_colorized
+from test.support import force_not_colorized, warnings_helper
 from test.support import os_helper
 from test.support import threading_helper
 
@@ -41,6 +41,8 @@ def get_frames(nframe, lineno_delta):
 def allocate_bytes(size):
     nframe = tracemalloc.get_traceback_limit()
     bytes_len = (size - EMPTY_STRING_SIZE)
+    if bytes_len < 0:
+        raise ValueError(f"{size} bytes is too small")
     frames = get_frames(nframe, 1)
     data = b'x' * bytes_len
     return data, tracemalloc.Traceback(frames, min(len(frames), nframe))
@@ -158,7 +160,7 @@ class TestTracemallocEnabled(unittest.TestCase):
         self.assertEqual(traceback, obj_traceback)
 
     def test_set_traceback_limit(self):
-        obj_size = 10
+        obj_size = 123
 
         tracemalloc.stop()
         self.assertRaises(ValueError, tracemalloc.start, -1)
@@ -354,6 +356,7 @@ class TestTracemallocEnabled(unittest.TestCase):
         # everything is fine
         return 0
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.requires_fork()
     def test_fork(self):
         # check that tracemalloc is still working after fork
@@ -1055,8 +1058,8 @@ class TestCAPI(unittest.TestCase):
         self.check_track(False)
 
     def test_track_without_gil(self):
-        # check that calling _PyTraceMalloc_Track() without holding the GIL
-        # works too
+        # check that calling PyTraceMalloc_Track() without the GIL
+        # (detached thread state) still captures the Python traceback
         self.check_track(True)
 
     def test_track_already_tracked(self):

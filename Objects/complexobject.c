@@ -1,4 +1,3 @@
-
 /* Complex object implementation */
 
 /* Borrows heavily from floatobject.c */
@@ -9,6 +8,7 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_complexobject.h" // _PyComplex_FormatAdvancedWriter()
 #include "pycore_floatobject.h"   // _Py_convert_int_to_double()
+#include "pycore_freelist.h"      // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_pymath.h"        // _Py_ADJUST_ERANGE2()
@@ -25,8 +25,6 @@ class complex "PyComplexObject *" "&PyComplex_Type"
 #include "clinic/complexobject.c.h"
 
 /* elementary operations on complex numbers */
-
-static Py_complex c_1 = {1., 0.};
 
 Py_complex
 _Py_c_sum(Py_complex a, Py_complex b)
@@ -139,8 +137,8 @@ _Py_c_prod(Py_complex z, Py_complex w)
             recalc = 1;
         }
         if (recalc) {
-            r.real = Py_INFINITY*(a*c - b*d);
-            r.imag = Py_INFINITY*(a*d + b*c);
+            r.real = INFINITY*(a*c - b*d);
+            r.imag = INFINITY*(a*d + b*c);
         }
     }
 
@@ -229,8 +227,8 @@ _Py_c_quot(Py_complex a, Py_complex b)
         {
             const double x = copysign(isinf(a.real) ? 1.0 : 0.0, a.real);
             const double y = copysign(isinf(a.imag) ? 1.0 : 0.0, a.imag);
-            r.real = Py_INFINITY * (x*b.real + y*b.imag);
-            r.imag = Py_INFINITY * (y*b.real - x*b.imag);
+            r.real = INFINITY * (x*b.real + y*b.imag);
+            r.imag = INFINITY * (y*b.real - x*b.imag);
         }
         else if ((isinf(abs_breal) || isinf(abs_bimag))
                  && isfinite(a.real) && isfinite(a.imag))
@@ -333,23 +331,36 @@ _Py_c_pow(Py_complex a, Py_complex b)
         r.real = len*cos(phase);
         r.imag = len*sin(phase);
 
-        _Py_ADJUST_ERANGE2(r.real, r.imag);
+        /* Don't rely on errno set by the math functions above, for
+           example cos() and sin() set EDOM for an infinite phase. */
+        errno = 0;
+        if (isfinite(a.real) && isfinite(a.imag)
+            && isfinite(b.real) && isfinite(b.imag))
+        {
+            _Py_ADJUST_ERANGE2(r.real, r.imag);
+        }
     }
     return r;
 }
 
+#define INT_EXP_CUTOFF 100
+
 static Py_complex
 c_powu(Py_complex x, long n)
 {
-    Py_complex r, p;
-    long mask = 1;
-    r = c_1;
-    p = x;
-    while (mask > 0 && n >= mask) {
-        if (n & mask)
-            r = _Py_c_prod(r,p);
-        mask <<= 1;
-        p = _Py_c_prod(p,p);
+    assert(0 < n && n <= INT_EXP_CUTOFF);
+    while ((n & 1) == 0) {
+        x = _Py_c_prod(x, x);
+        n >>= 1;
+    }
+    Py_complex r = x;
+    n >>= 1;
+    while (n) {
+        x = _Py_c_prod(x, x);
+        if (n & 1) {
+            r = _Py_c_prod(r, x);
+        }
+        n >>= 1;
     }
     return r;
 }
@@ -358,17 +369,19 @@ static Py_complex
 c_powi(Py_complex x, long n)
 {
     if (n > 0)
-        return c_powu(x,n);
+        return c_powu(x, n);
+    else if (n < 0)
+        return _Py_rc_quot(1.0, c_powu(x, -n));
     else
-        return _Py_c_quot(c_1, c_powu(x,-n));
-
+        return (Py_complex){1., 0.};
 }
 
 double
 _Py_c_abs(Py_complex z)
 {
-    /* sets errno = ERANGE on overflow;  otherwise errno = 0 */
+    /* sets errno = ERANGE on overflow */
     double result;
+    int saved_errno = errno;
 
     if (!isfinite(z.real) || !isfinite(z.imag)) {
         /* C99 rules: if either the real or the imaginary part is an
@@ -376,23 +389,24 @@ _Py_c_abs(Py_complex z)
            NaN. */
         if (isinf(z.real)) {
             result = fabs(z.real);
-            errno = 0;
+            errno = saved_errno;
             return result;
         }
         if (isinf(z.imag)) {
             result = fabs(z.imag);
-            errno = 0;
+            errno = saved_errno;
             return result;
         }
         /* either the real or imaginary part is a NaN,
            and neither is infinite. Result should be NaN. */
+        errno = saved_errno;
         return Py_NAN;
     }
     result = hypot(z.real, z.imag);
     if (!isfinite(result))
         errno = ERANGE;
     else
-        errno = 0;
+        errno = saved_errno;
     return result;
 }
 
@@ -410,14 +424,30 @@ complex_subtype_from_c_complex(PyTypeObject *type, Py_complex cval)
 PyObject *
 PyComplex_FromCComplex(Py_complex cval)
 {
-    /* Inline PyObject_New */
-    PyComplexObject *op = PyObject_Malloc(sizeof(PyComplexObject));
+    PyComplexObject *op = _Py_FREELIST_POP(PyComplexObject, complexes);
+
     if (op == NULL) {
-        return PyErr_NoMemory();
+        /* Inline PyObject_New */
+        op = PyObject_Malloc(sizeof(PyComplexObject));
+        if (op == NULL) {
+            return PyErr_NoMemory();
+        }
+        _PyObject_Init((PyObject*)op, &PyComplex_Type);
     }
-    _PyObject_Init((PyObject*)op, &PyComplex_Type);
     op->cval = cval;
     return (PyObject *) op;
+}
+
+static void
+complex_dealloc(PyObject *op)
+{
+    assert(PyComplex_Check(op));
+    if (PyComplex_CheckExact(op)) {
+        _Py_FREELIST_FREE(complexes, op, PyObject_Free);
+    }
+    else {
+        Py_TYPE(op)->tp_free(op);
+    }
 }
 
 static PyObject *
@@ -499,17 +529,17 @@ try_complex_special_method(PyObject *op)
         }
         if (!PyComplex_Check(res)) {
             PyErr_Format(PyExc_TypeError,
-                "__complex__ returned non-complex (type %.200s)",
-                Py_TYPE(res)->tp_name);
+                "%T.__complex__() must return a complex, not %T",
+                op, res);
             Py_DECREF(res);
             return NULL;
         }
         /* Issue #29894: warn if 'res' not of exact type complex. */
         if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                "__complex__ returned non-complex (type %.200s).  "
+                "%T.__complex__() must return a complex, not %T.  "
                 "The ability to return an instance of a strict subclass of complex "
                 "is deprecated, and may be removed in a future version of Python.",
-                Py_TYPE(res)->tp_name)) {
+                op, res)) {
             Py_DECREF(res);
             return NULL;
         }
@@ -628,7 +658,7 @@ complex_hash(PyObject *op)
      * compare equal must have the same hash value, so that
      * hash(x + 0*j) must equal hash(x).
      */
-    combined = hashreal + _PyHASH_IMAG * hashimag;
+    combined = hashreal + PyHASH_IMAG * hashimag;
     if (combined == (Py_uhash_t)-1)
         combined = (Py_uhash_t)-2;
     return (Py_hash_t)combined;
@@ -735,9 +765,13 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
     errno = 0;
     // Check whether the exponent has a small integer value, and if so use
     // a faster and more accurate algorithm.
-    if (b.imag == 0.0 && b.real == floor(b.real) && fabs(b.real) <= 100.0) {
+    if (b.imag == 0.0 && b.real == floor(b.real)
+        && fabs(b.real) <= INT_EXP_CUTOFF)
+    {
         p = c_powi(a, (long)b.real);
-        _Py_ADJUST_ERANGE2(p.real, p.imag);
+        if (isfinite(a.real) && isfinite(a.imag)) {
+            _Py_ADJUST_ERANGE2(p.real, p.imag);
+        }
     }
     else {
         p = _Py_c_pow(a, b);
@@ -780,7 +814,10 @@ static PyObject *
 complex_abs(PyObject *op)
 {
     PyComplexObject *v = _PyComplexObject_CAST(op);
-    double result = _Py_c_abs(v->cval);
+    double result;
+
+    errno = 0;
+    result = _Py_c_abs(v->cval);
     if (errno == ERANGE) {
         PyErr_SetString(PyExc_OverflowError,
                         "absolute value too large");
@@ -853,6 +890,7 @@ Unimplemented:
 }
 
 /*[clinic input]
+@permit_long_summary
 complex.conjugate
 
 Return the complex conjugate of its argument. (3-4j).conjugate() == 3+4j.
@@ -860,7 +898,7 @@ Return the complex conjugate of its argument. (3-4j).conjugate() == 3+4j.
 
 static PyObject *
 complex_conjugate_impl(PyComplexObject *self)
-/*[clinic end generated code: output=5059ef162edfc68e input=5fea33e9747ec2c4]*/
+/*[clinic end generated code: output=5059ef162edfc68e input=71b8ab003e1cec95]*/
 {
     Py_complex c = self->cval;
     c.imag = -c.imag;
@@ -1383,7 +1421,7 @@ PyTypeObject PyComplex_Type = {
     "complex",
     sizeof(PyComplexObject),
     0,
-    0,                                          /* tp_dealloc */
+    complex_dealloc,                            /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */

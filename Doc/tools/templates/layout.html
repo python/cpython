@@ -28,7 +28,7 @@
 {% block extrahead %}
     {% if builder == "html" %}
       {% if enable_analytics %}
-      <script defer data-domain="docs.python.org" src="https://analytics.python.org/js/script.outbound-links.js"></script>
+      <script defer file-types="bz2,epub,zip" data-domain="docs.python.org" src="https://analytics.python.org/js/script.file-downloads.outbound-links.js"></script>
       {% endif %}
       <link rel="canonical" href="https://docs.python.org/3/{{pagename}}.html">
       {% if pagename == 'whatsnew/changelog' and not embedded %}

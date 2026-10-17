@@ -8,6 +8,7 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 
 /* undefine macro trampoline to PyCFunction_NewEx */
@@ -47,8 +48,7 @@ PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *c
 {
     /* Figure out correct vectorcall function to use */
     vectorcallfunc vectorcall;
-    switch (ml->ml_flags & (METH_VARARGS | METH_FASTCALL | METH_NOARGS |
-                            METH_O | METH_KEYWORDS | METH_METHOD))
+    switch (ml->ml_flags & _Py_METH_CALL_FLAGS)
     {
         case METH_VARARGS:
         case METH_VARARGS | METH_KEYWORDS:
@@ -167,9 +167,7 @@ meth_dealloc(PyObject *self)
 {
     PyCFunctionObject *m = _PyCFunctionObject_CAST(self);
     PyObject_GC_UnTrack(m);
-    if (m->m_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject*) m);
-    }
+    FT_CLEAR_WEAKREFS(self, m->m_weakreflist);
     // We need to access ml_flags here rather than later.
     // `m->m_ml` might have the same lifetime
     // as `m_self` when it's dynamically allocated.
