@@ -305,41 +305,41 @@ Edge and level trigger polling (epoll) objects
    +-------------------------+------------------------------------------------+
    | Constant                | Meaning                                        |
    +=========================+================================================+
-   | :const:`EPOLLIN`        | Available for read.                            |
+   | .. data:: EPOLLIN       | Available for read.                            |
    +-------------------------+------------------------------------------------+
-   | :const:`EPOLLOUT`       | Available for write.                           |
+   | .. data:: EPOLLOUT      | Available for write.                           |
    +-------------------------+------------------------------------------------+
-   | :const:`EPOLLPRI`       | Urgent data for read.                          |
+   | .. data:: EPOLLPRI      | Urgent data for read.                          |
    +-------------------------+------------------------------------------------+
-   | :const:`EPOLLERR`       | Error condition happened on the associated fd. |
+   | .. data:: EPOLLERR      | Error condition happened on the associated fd. |
    +-------------------------+------------------------------------------------+
-   | :const:`EPOLLHUP`       | Hang up happened on the associated fd.         |
+   | .. data:: EPOLLHUP      | Hang up happened on the associated fd.         |
    +-------------------------+------------------------------------------------+
-   | :const:`EPOLLET`        | Set Edge Trigger behavior, the default is      |
+   | .. data:: EPOLLET       | Set Edge Trigger behavior, the default is      |
    |                         | Level Trigger behavior.                        |
    +-------------------------+------------------------------------------------+
-   | :const:`EPOLLONESHOT`   | Set one-shot behavior. After one event is      |
+   | .. data:: EPOLLONESHOT  | Set one-shot behavior. After one event is      |
    |                         | pulled out, the fd is internally disabled.     |
    +-------------------------+------------------------------------------------+
-   | :const:`EPOLLEXCLUSIVE` | Wake only one epoll object when the            |
+   | .. data:: EPOLLEXCLUSIVE| Wake only one epoll object when the            |
    |                         | associated fd has an event. The default (if    |
    |                         | this flag is not set) is to wake all epoll     |
    |                         | objects polling on an fd.                      |
    +-------------------------+------------------------------------------------+
-   | :const:`EPOLLRDHUP`     | Stream socket peer closed connection or shut   |
+   | .. data:: EPOLLRDHUP    | Stream socket peer closed connection or shut   |
    |                         | down writing half of connection.               |
    +-------------------------+------------------------------------------------+
-   | :const:`EPOLLRDNORM`    | Equivalent to :const:`EPOLLIN`                 |
+   | .. data:: EPOLLRDNORM   | Equivalent to :const:`EPOLLIN`                 |
    +-------------------------+------------------------------------------------+
-   | :const:`EPOLLRDBAND`    | Priority data band can be read.                |
+   | .. data:: EPOLLRDBAND   | Priority data band can be read.                |
    +-------------------------+------------------------------------------------+
-   | :const:`EPOLLWRNORM`    | Equivalent to :const:`EPOLLOUT`.               |
+   | .. data:: EPOLLWRNORM   | Equivalent to :const:`EPOLLOUT`.               |
    +-------------------------+------------------------------------------------+
-   | :const:`EPOLLWRBAND`    | Priority data may be written.                  |
+   | .. data:: EPOLLWRBAND   | Priority data may be written.                  |
    +-------------------------+------------------------------------------------+
-   | :const:`EPOLLMSG`       | Ignored.                                       |
+   | .. data:: EPOLLMSG      | Ignored.                                       |
    +-------------------------+------------------------------------------------+
-   | :const:`EPOLLWAKEUP`    | Prevents sleep during event waiting.           |
+   | .. data:: EPOLLWAKEUP   | Prevents sleep during event waiting.           |
    +-------------------------+------------------------------------------------+
 
    .. versionadded:: 3.6
@@ -417,7 +417,6 @@ on bits for the fds of interest, and then afterward the whole bitmap has to be
 linearly scanned again. :c:func:`!select` is *O*\ (*highest file descriptor*), while
 :c:func:`!poll` is *O*\ (*number of file descriptors*).
 
-
 .. method:: poll.register(fd[, eventmask])
 
    Register a file descriptor with the polling object.  Future calls to the
@@ -426,32 +425,35 @@ linearly scanned again. :c:func:`!select` is *O*\ (*highest file descriptor*), w
    :meth:`~io.IOBase.fileno` method that returns an integer.  File objects
    implement :meth:`!fileno`, so they can also be used as the argument.
 
+   Registering a file descriptor that's already registered is not an error, and
+   has the same effect as registering the descriptor exactly once.
+
    *eventmask* is an optional bitmask describing the type of events you want to
    check for, and can be a combination of the constants :const:`POLLIN`,
    :const:`POLLPRI`, and :const:`POLLOUT`, described in the table below.  If not
    specified, the default value used will check for all 3 types of events.
 
-   +-------------------+-------------------------------------------+
-   | Constant          | Meaning                                   |
-   +===================+===========================================+
-   | :const:`POLLIN`   | There is data to read.                    |
-   +-------------------+-------------------------------------------+
-   | :const:`POLLPRI`  | There is urgent data to read.             |
-   +-------------------+-------------------------------------------+
-   | :const:`POLLOUT`  | Ready for output: writing will not block. |
-   +-------------------+-------------------------------------------+
-   | :const:`POLLERR`  | Error condition of some sort.             |
-   +-------------------+-------------------------------------------+
-   | :const:`POLLHUP`  | Hung up.                                  |
-   +-------------------+-------------------------------------------+
-   | :const:`POLLRDHUP`| Stream socket peer closed connection, or  |
-   |                   | shut down writing half of connection.     |
-   +-------------------+-------------------------------------------+
-   | :const:`POLLNVAL` | Invalid request: descriptor not open.     |
-   +-------------------+-------------------------------------------+
+The event masks that can be used with polling objects are combinations of the
+following constants:
 
-   Registering a file descriptor that's already registered is not an error, and has
-   the same effect as registering the descriptor exactly once.
++--------------------+-------------------------------------------+
+| Constant           | Meaning                                   |
++====================+===========================================+
+| .. data:: POLLIN   | There is data to read.                    |
++--------------------+-------------------------------------------+
+| .. data:: POLLPRI  | There is urgent data to read.             |
++--------------------+-------------------------------------------+
+| .. data:: POLLOUT  | Ready for output: writing will not block. |
++--------------------+-------------------------------------------+
+| .. data:: POLLERR  | Error condition of some sort.             |
++--------------------+-------------------------------------------+
+| .. data:: POLLHUP  | Hung up.                                  |
++--------------------+-------------------------------------------+
+| .. data:: POLLRDHUP| Stream socket peer closed connection, or  |
+|                    | shut down writing half of connection.     |
++--------------------+-------------------------------------------+
+| .. data:: POLLNVAL | Invalid request: descriptor not open.     |
++--------------------+-------------------------------------------+
 
 
 .. method:: poll.modify(fd, eventmask)
@@ -459,7 +461,7 @@ linearly scanned again. :c:func:`!select` is *O*\ (*highest file descriptor*), w
    Modifies an already registered fd. This has the same effect as
    ``register(fd, eventmask)``.  Attempting to modify a file descriptor
    that was never registered causes an :exc:`OSError` exception with errno
-   :const:`ENOENT` to be raised.
+   :data:`~errno.ENOENT` to be raised.
 
 
 .. method:: poll.unregister(fd)
@@ -522,9 +524,10 @@ Kqueue objects
    Create a kqueue object from a given file descriptor.
 
 
-.. method:: kqueue.control(changelist, max_events[, timeout]) -> eventlist
+.. method:: kqueue.control(changelist, max_events[, timeout])
 
-   Low level interface to kevent
+   Low level interface to kevent, returning a list of :ref:`kevent <kevent-objects>`
+   objects.
 
    - changelist must be an iterable of kevent objects or ``None``
    - max_events must be 0 or a positive integer
@@ -559,126 +562,133 @@ https://man.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
 
    Name of the kernel filter.
 
-   +---------------------------+---------------------------------------------+
-   | Constant                  | Meaning                                     |
-   +===========================+=============================================+
-   | :const:`KQ_FILTER_READ`   | Takes a descriptor and returns whenever     |
-   |                           | there is data available to read.            |
-   +---------------------------+---------------------------------------------+
-   | :const:`KQ_FILTER_WRITE`  | Takes a descriptor and returns whenever     |
-   |                           | there is data available to write.           |
-   +---------------------------+---------------------------------------------+
-   | :const:`KQ_FILTER_AIO`    | AIO requests.                               |
-   +---------------------------+---------------------------------------------+
-   | :const:`KQ_FILTER_VNODE`  | Returns when one or more of the requested   |
-   |                           | events watched in *fflag* occurs.           |
-   +---------------------------+---------------------------------------------+
-   | :const:`KQ_FILTER_PROC`   | Watch for events on a process ID.           |
-   +---------------------------+---------------------------------------------+
-   | :const:`KQ_FILTER_NETDEV` | Watch for events on a network device        |
-   |                           | (not available on macOS).                   |
-   +---------------------------+---------------------------------------------+
-   | :const:`KQ_FILTER_SIGNAL` | Returns whenever the watched signal is      |
-   |                           | delivered to the process.                   |
-   +---------------------------+---------------------------------------------+
-   | :const:`KQ_FILTER_TIMER`  | Establishes an arbitrary timer.             |
-   +---------------------------+---------------------------------------------+
+The following constants can be used with :attr:`kevent.filter`:
+
++---------------------------+---------------------------------------------+
+| Constant                  | Meaning                                     |
++===========================+=============================================+
+| .. data:: KQ_FILTER_READ  | Takes a descriptor and returns whenever     |
+|                           | there is data available to read.            |
++---------------------------+---------------------------------------------+
+| .. data:: KQ_FILTER_WRITE | Takes a descriptor and returns whenever     |
+|                           | there is data available to write.           |
++---------------------------+---------------------------------------------+
+| .. data:: KQ_FILTER_AIO   | AIO requests.                               |
++---------------------------+---------------------------------------------+
+| .. data:: KQ_FILTER_VNODE | Returns when one or more of the requested   |
+|                           | events watched in *fflag* occurs.           |
++---------------------------+---------------------------------------------+
+| .. data:: KQ_FILTER_PROC  | Watch for events on a process ID.           |
++---------------------------+---------------------------------------------+
+| .. data:: KQ_FILTER_NETDEV| Watch for events on a network device        |
+|                           | (not available on macOS).                   |
++---------------------------+---------------------------------------------+
+| .. data:: KQ_FILTER_SIGNAL| Returns whenever the watched signal is      |
+|                           | delivered to the process.                   |
++---------------------------+---------------------------------------------+
+| .. data:: KQ_FILTER_TIMER | Establishes an arbitrary timer.             |
++---------------------------+---------------------------------------------+
 
 .. attribute:: kevent.flags
 
    Filter action.
 
-   +---------------------------+----------------------------------------------+
-   | Constant                  | Meaning                                      |
-   +===========================+==============================================+
-   | :const:`KQ_EV_ADD`        | Adds or modifies an event.                   |
-   +---------------------------+----------------------------------------------+
-   | :const:`KQ_EV_DELETE`     | Removes an event from the queue.             |
-   +---------------------------+----------------------------------------------+
-   | :const:`KQ_EV_ENABLE`     | Permits control() to return the event.       |
-   +---------------------------+----------------------------------------------+
-   | :const:`KQ_EV_DISABLE`    | Disables event.                              |
-   +---------------------------+----------------------------------------------+
-   | :const:`KQ_EV_ONESHOT`    | Removes event after first occurrence.        |
-   +---------------------------+----------------------------------------------+
-   | :const:`KQ_EV_CLEAR`      | Reset the state after an event is retrieved. |
-   +---------------------------+----------------------------------------------+
-   | :const:`KQ_EV_SYSFLAGS`   | Internal event.                              |
-   +---------------------------+----------------------------------------------+
-   | :const:`KQ_EV_FLAG1`      | Internal event.                              |
-   +---------------------------+----------------------------------------------+
-   | :const:`KQ_EV_EOF`        | Filter-specific EOF condition.               |
-   +---------------------------+----------------------------------------------+
-   | :const:`KQ_EV_ERROR`      | See return values.                           |
-   +---------------------------+----------------------------------------------+
+The following constants can be used with :attr:`kevent.flags`:
+
++---------------------------+----------------------------------------------+
+| Constant                  | Meaning                                      |
++===========================+==============================================+
+| .. data:: KQ_EV_ADD       | Adds or modifies an event.                   |
++---------------------------+----------------------------------------------+
+| .. data:: KQ_EV_DELETE    | Removes an event from the queue.             |
++---------------------------+----------------------------------------------+
+| .. data:: KQ_EV_ENABLE    | Permits control() to return the event.       |
++---------------------------+----------------------------------------------+
+| .. data:: KQ_EV_DISABLE   | Disables event.                              |
++---------------------------+----------------------------------------------+
+| .. data:: KQ_EV_ONESHOT   | Removes event after first occurrence.        |
++---------------------------+----------------------------------------------+
+| .. data:: KQ_EV_CLEAR     | Reset the state after an event is retrieved. |
++---------------------------+----------------------------------------------+
+| .. data:: KQ_EV_SYSFLAGS  | Internal event.                              |
++---------------------------+----------------------------------------------+
+| .. data:: KQ_EV_FLAG1     | Internal event.                              |
++---------------------------+----------------------------------------------+
+| .. data:: KQ_EV_EOF       | Filter-specific EOF condition.               |
++---------------------------+----------------------------------------------+
+| .. data:: KQ_EV_ERROR     | See return values.                           |
++---------------------------+----------------------------------------------+
 
 
 .. attribute:: kevent.fflags
 
    Filter-specific flags.
 
-   :const:`KQ_FILTER_READ` and  :const:`KQ_FILTER_WRITE` filter flags:
+The following flags can be used with :attr:`kevent.fflags`, depending on the
+filter type.
 
-   +----------------------------+--------------------------------------------+
-   | Constant                   | Meaning                                    |
-   +============================+============================================+
-   | :const:`KQ_NOTE_LOWAT`     | Low water mark of a socket buffer.         |
-   +----------------------------+--------------------------------------------+
+:const:`KQ_FILTER_READ` and  :const:`KQ_FILTER_WRITE` filter flags:
 
-   :const:`KQ_FILTER_VNODE` filter flags:
++----------------------------+--------------------------------------------+
+| Constant                   | Meaning                                    |
++============================+============================================+
+| .. data:: KQ_NOTE_LOWAT    | Low water mark of a socket buffer.         |
++----------------------------+--------------------------------------------+
 
-   +----------------------------+--------------------------------------------+
-   | Constant                   | Meaning                                    |
-   +============================+============================================+
-   | :const:`KQ_NOTE_DELETE`    | *unlink()* was called.                     |
-   +----------------------------+--------------------------------------------+
-   | :const:`KQ_NOTE_WRITE`     | A write occurred.                          |
-   +----------------------------+--------------------------------------------+
-   | :const:`KQ_NOTE_EXTEND`    | The file was extended.                     |
-   +----------------------------+--------------------------------------------+
-   | :const:`KQ_NOTE_ATTRIB`    | An attribute was changed.                  |
-   +----------------------------+--------------------------------------------+
-   | :const:`KQ_NOTE_LINK`      | The link count has changed.                |
-   +----------------------------+--------------------------------------------+
-   | :const:`KQ_NOTE_RENAME`    | The file was renamed.                      |
-   +----------------------------+--------------------------------------------+
-   | :const:`KQ_NOTE_REVOKE`    | Access to the file was revoked.            |
-   +----------------------------+--------------------------------------------+
+:const:`KQ_FILTER_VNODE` filter flags:
 
-   :const:`KQ_FILTER_PROC` filter flags:
++----------------------------+--------------------------------------------+
+| Constant                   | Meaning                                    |
++============================+============================================+
+| .. data:: KQ_NOTE_DELETE   | *unlink()* was called.                     |
++----------------------------+--------------------------------------------+
+| .. data:: KQ_NOTE_WRITE    | A write occurred.                          |
++----------------------------+--------------------------------------------+
+| .. data:: KQ_NOTE_EXTEND   | The file was extended.                     |
++----------------------------+--------------------------------------------+
+| .. data:: KQ_NOTE_ATTRIB   | An attribute was changed.                  |
++----------------------------+--------------------------------------------+
+| .. data:: KQ_NOTE_LINK     | The link count has changed.                |
++----------------------------+--------------------------------------------+
+| .. data:: KQ_NOTE_RENAME   | The file was renamed.                      |
++----------------------------+--------------------------------------------+
+| .. data:: KQ_NOTE_REVOKE   | Access to the file was revoked.            |
++----------------------------+--------------------------------------------+
 
-   +----------------------------+--------------------------------------------+
-   | Constant                   | Meaning                                    |
-   +============================+============================================+
-   | :const:`KQ_NOTE_EXIT`      | The process has exited.                    |
-   +----------------------------+--------------------------------------------+
-   | :const:`KQ_NOTE_FORK`      | The process has called *fork()*.           |
-   +----------------------------+--------------------------------------------+
-   | :const:`KQ_NOTE_EXEC`      | The process has executed a new process.    |
-   +----------------------------+--------------------------------------------+
-   | :const:`KQ_NOTE_PCTRLMASK` | Internal filter flag.                      |
-   +----------------------------+--------------------------------------------+
-   | :const:`KQ_NOTE_PDATAMASK` | Internal filter flag.                      |
-   +----------------------------+--------------------------------------------+
-   | :const:`KQ_NOTE_TRACK`     | Follow a process across *fork()*.          |
-   +----------------------------+--------------------------------------------+
-   | :const:`KQ_NOTE_CHILD`     | Returned on the child process for          |
-   |                            | *NOTE_TRACK*.                              |
-   +----------------------------+--------------------------------------------+
-   | :const:`KQ_NOTE_TRACKERR`  | Unable to attach to a child.               |
-   +----------------------------+--------------------------------------------+
+:const:`KQ_FILTER_PROC` filter flags:
 
-   :const:`KQ_FILTER_NETDEV` filter flags (not available on macOS):
++----------------------------+--------------------------------------------+
+| Constant                   | Meaning                                    |
++============================+============================================+
+| .. data:: KQ_NOTE_EXIT     | The process has exited.                    |
++----------------------------+--------------------------------------------+
+| .. data:: KQ_NOTE_FORK     | The process has called *fork()*.           |
++----------------------------+--------------------------------------------+
+| .. data:: KQ_NOTE_EXEC     | The process has executed a new process.    |
++----------------------------+--------------------------------------------+
+| .. data:: KQ_NOTE_PCTRLMASK| Internal filter flag.                      |
++----------------------------+--------------------------------------------+
+| .. data:: KQ_NOTE_PDATAMASK| Internal filter flag.                      |
++----------------------------+--------------------------------------------+
+| .. data:: KQ_NOTE_TRACK    | Follow a process across *fork()*.          |
++----------------------------+--------------------------------------------+
+| .. data:: KQ_NOTE_CHILD    | Returned on the child process for          |
+|                            | *NOTE_TRACK*.                              |
++----------------------------+--------------------------------------------+
+| .. data:: KQ_NOTE_TRACKERR | Unable to attach to a child.               |
++----------------------------+--------------------------------------------+
 
-   +----------------------------+--------------------------------------------+
-   | Constant                   | Meaning                                    |
-   +============================+============================================+
-   | :const:`KQ_NOTE_LINKUP`    | Link is up.                                |
-   +----------------------------+--------------------------------------------+
-   | :const:`KQ_NOTE_LINKDOWN`  | Link is down.                              |
-   +----------------------------+--------------------------------------------+
-   | :const:`KQ_NOTE_LINKINV`   | Link state is invalid.                     |
-   +----------------------------+--------------------------------------------+
+:const:`KQ_FILTER_NETDEV` filter flags (not available on macOS):
+
++----------------------------+--------------------------------------------+
+| Constant                   | Meaning                                    |
++============================+============================================+
+| .. data:: KQ_NOTE_LINKUP   | Link is up.                                |
++----------------------------+--------------------------------------------+
+| .. data:: KQ_NOTE_LINKDOWN | Link is down.                              |
++----------------------------+--------------------------------------------+
+| .. data:: KQ_NOTE_LINKINV  | Link state is invalid.                     |
++----------------------------+--------------------------------------------+
 
 
 .. attribute:: kevent.data
