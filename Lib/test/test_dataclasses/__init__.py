@@ -1976,6 +1976,98 @@ class TestCase(unittest.TestCase):
         self.assertEqual(t, ({"x": [12]},))
         self.assertTrue(t[0] is not dd) # make sure defaultdict is copied
 
+    def test_helper_asdict_circular_reference(self):
+        # gh-94345: asdict() must raise a clear error on a circular reference
+        # instead of recursing until a RecursionError (or crashing).
+        @dataclass
+        class C:
+            name: str
+            link: object = None
+            items: list = field(default_factory=list)
+
+        # Direct self reference.
+        c = C('c')
+        c.link = c
+        with self.assertRaisesRegex(ValueError, 'Circular reference detected'):
+            asdict(c)
+        # Indirect cycle through another dataclass.
+        a = C('a')
+        b = C('b')
+        a.link = b
+        b.link = a
+        with self.assertRaisesRegex(ValueError, 'Circular reference detected'):
+            asdict(a)
+        # Cycle through a list field.
+        d = C('d')
+        d.items.append(d)
+        with self.assertRaisesRegex(ValueError, 'Circular reference detected'):
+            asdict(d)
+        # Cycle through a dict field.
+        e = C('e')
+        e.link = {'self': e}
+        with self.assertRaisesRegex(ValueError, 'Circular reference detected'):
+            asdict(e)
+
+    def test_helper_asdict_shared_reference_is_not_circular(self):
+        # gh-94345: an object referenced more than once without forming a
+        # cycle (a DAG) must still be converted successfully.
+        @dataclass
+        class Inner:
+            value: int
+        @dataclass
+        class Outer:
+            left: object
+            right: object
+
+        shared = Inner(1)
+        o = Outer(left=shared, right=shared)
+        self.assertEqual(asdict(o),
+                         {'left': {'value': 1}, 'right': {'value': 1}})
+        # A shared built-in container referenced twice is fine too.
+        shared_list = [1, 2]
+        o2 = Outer(left=shared_list, right=shared_list)
+        self.assertEqual(asdict(o2), {'left': [1, 2], 'right': [1, 2]})
+
+    def test_helper_astuple_circular_reference(self):
+        # gh-94345: see test_helper_asdict_circular_reference.
+        @dataclass
+        class C:
+            name: str
+            link: object = None
+            items: list = field(default_factory=list)
+
+        c = C('c')
+        c.link = c
+        with self.assertRaisesRegex(ValueError, 'Circular reference detected'):
+            astuple(c)
+        a = C('a')
+        b = C('b')
+        a.link = b
+        b.link = a
+        with self.assertRaisesRegex(ValueError, 'Circular reference detected'):
+            astuple(a)
+        d = C('d')
+        d.items.append(d)
+        with self.assertRaisesRegex(ValueError, 'Circular reference detected'):
+            astuple(d)
+
+    def test_helper_astuple_shared_reference_is_not_circular(self):
+        # gh-94345: a DAG must still be converted successfully.
+        @dataclass
+        class Inner:
+            value: int
+        @dataclass
+        class Outer:
+            left: object
+            right: object
+
+        shared = Inner(1)
+        o = Outer(left=shared, right=shared)
+        self.assertEqual(astuple(o), ((1,), (1,)))
+        shared_list = [1, 2]
+        o2 = Outer(left=shared_list, right=shared_list)
+        self.assertEqual(astuple(o2), ([1, 2], [1, 2]))
+
     def test_dynamic_class_creation(self):
         cls_dict = {'__annotations__': {'x': int, 'y': int},
                     }
