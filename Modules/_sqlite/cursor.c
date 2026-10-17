@@ -804,7 +804,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     PyObject* column_name;
 
     if (!check_cursor(self)) {
-        goto error;
+        return NULL;
     }
 
     self->locked = 1;
