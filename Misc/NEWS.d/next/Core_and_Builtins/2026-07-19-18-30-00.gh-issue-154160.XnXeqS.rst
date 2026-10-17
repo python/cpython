@@ -1,0 +1,3 @@
+Fixed :data:`sys.executable` being a relative path when the interpreter was
+found through a relative entry in :envvar:`PATH`.  It is now made absolute, as
+documented.
