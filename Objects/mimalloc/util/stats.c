@@ -98,8 +98,11 @@ static void mi_stat_count_add_mt(mi_stat_count_t* stat, const mi_stat_count_t* s
   mi_atomic_volatile_void_addi64_relaxed(&stat->total, &src->total);
   const int64_t src_peak = mi_atomic_loadi64_relaxed((_Atomic(int64_t)*)&src->peak);
   const int64_t src_current = mi_atomic_loadi64_relaxed((_Atomic(int64_t)*)&src->current);
-  const int64_t prev_current = mi_atomic_volatile_addi64_relaxed(&stat->current, src_current);
-
+  // avoid atomic operations for common cases
+  if (src_current == 0 && src_peak == 0) return;
+  const int64_t prev_current = (src_current == 0 ? mi_atomic_loadi64_relaxed((_Atomic(int64_t)*)&stat->current)
+                                                 : mi_atomic_volatile_addi64_relaxed(&stat->current, src_current));
+  
   // Global current plus thread peak approximates new global peak
   // note: peak scores do not really work across threads.
   // we used to just add them together but that often overestimates in practice.
