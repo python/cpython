@@ -7,6 +7,7 @@ import os
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 from test.support import is_emscripten, run_with_limited_c_stack, set_recursion_limit
 
@@ -595,6 +596,35 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn('"children":', content)
         self.assertIn('"sample_interval_usec": 10000', content)
         self.assertIn("samples * data.stats.sample_interval_usec / 1000", content)
+
+    def test_flamegraph_html_escapes_script_data(self):
+        collector = FlamegraphCollector(1000)
+        data = {
+            "strings": [
+                "</script><script>alert(1)</script>",
+                "</ScRiPt \t><script>alert(2)</script>",
+                "<!--<script>",
+                "<>&\u2028\u2029",
+                'quotes " and \\ and \\u003c',
+                "计算\udc80",
+            ],
+            "stats": {},
+        }
+        for side_effect in (None, RecursionError):
+            with self.subTest(side_effect=side_effect):
+                # Also exercise the fallback used for deeply nested profiles.
+                with mock.patch(
+                    "profiling.sampling.stack_collector.json.dumps",
+                    wraps=json.dumps,
+                    side_effect=side_effect,
+                ):
+                    content = collector._create_flamegraph_html(data)
+                embedded_data = content.split("const EMBEDDED_DATA = ", 1)[1]
+                embedded_data = embedded_data.split(";\n", 1)[0]
+                self.assertNotIn("<", embedded_data)
+                self.assertNotIn("\u2028", embedded_data)
+                self.assertNotIn("\u2029", embedded_data)
+                self.assertEqual(json.loads(embedded_data), data)
 
     def test_flamegraph_collector_empty_export_fails(self):
         """Test empty flamegraph export reports no output."""
