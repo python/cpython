@@ -2264,9 +2264,10 @@ substring of *y*.  An equivalent test is ``y.find(x) != -1``.  Empty strings are
 always considered to be a substring of any other string, so ``"" in "abc"`` will
 return ``True``.
 
-For user-defined classes which define the :meth:`~object.__contains__` method, ``x in
-y`` returns ``True`` if ``y.__contains__(x)`` returns a true value, and
-``False`` otherwise.
+For user-defined classes which define the :meth:`~object.__contains__` method,
+``x in y`` calls this method with *x* as its argument, using
+:ref:`special method lookup <special-lookup>`. It returns ``True`` if the
+result has a true value, and ``False`` otherwise.
 
 For user-defined classes which do not define :meth:`~object.__contains__` but do define
 :meth:`~object.__iter__`, ``x in y`` is ``True`` if some value ``z``, for which the
