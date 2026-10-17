@@ -1229,8 +1229,10 @@ class RawConfigParser(MutableMapping):
         return self.BOOLEAN_STATES[value.lower()]
 
     def _validate_key_contents(self, key):
-        """Raises an InvalidWriteError for any keys containing
-        delimiters or that begins with the section header pattern"""
+        """Raise InvalidWriteError for keys that cannot be read back."""
+        if key != key.strip():
+            raise InvalidWriteError(
+                f"Cannot write key {key!r}; leading or trailing whitespace")
         if re.match(self.SECTCRE, key):
             raise InvalidWriteError(
                 f"Cannot write key {key}; begins with section pattern")
