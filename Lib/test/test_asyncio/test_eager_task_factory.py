@@ -147,6 +147,28 @@ class EagerTaskFactoryLoopTests:
         self.run_coro(run())
         captured_current_task = None
 
+    def test_exception_state_not_inherited(self):
+        # gh-155575: the eager first step must not see the creator's exception
+        async def bare():
+            raise
+
+        async def explicit():
+            raise ValueError
+
+        async def run():
+            try:
+                raise ConnectionError
+            except ConnectionError:
+                t1 = self.loop.create_task(bare())
+                t2 = self.loop.create_task(explicit())
+            with self.assertRaises(RuntimeError):
+                await t1
+            with self.assertRaises(ValueError) as cm:
+                await t2
+            self.assertIsNone(cm.exception.__context__)
+
+        self.run_coro(run())
+
     def test_all_tasks_with_eager_completion(self):
         captured_all_tasks = None
 
@@ -297,6 +319,10 @@ class PyEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase
         asyncio.all_tasks = asyncio.tasks.all_tasks = self._all_tasks
         return super().tearDown()
 
+    # gh-155575: Python Task implementation cannot clear the exception state
+    @unittest.expectedFailure
+    def test_exception_state_not_inherited(self):
+        super().test_exception_state_not_inherited()
 
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
