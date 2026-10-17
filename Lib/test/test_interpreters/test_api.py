@@ -895,6 +895,21 @@ class TestInterpreterPrepareMain(TestBase):
                 interp.prepare_main({'spam': False})
         interp.exec('assert spam is True')
 
+    def test_memoryview_obj_buffer(self):
+        # gh-158923: Exporting a buffer from the object behind a shared
+        # memoryview must not drop a reference to it.
+        interp = interpreters.create()
+        interp.prepare_main(mv=memoryview(bytearray(b'spam')))
+        interp.exec(dedent("""
+            obj = mv.obj
+            for _ in range(10):
+                assert bytes(obj) == b'spam'
+                with memoryview(obj) as m:
+                    assert m.tobytes() == b'spam'
+            del obj
+            mv.release()
+            """))
+
     @requires_test_modules
     def test_created_with_capi(self):
         with self.interpreter_obj_from_capi() as (interp, interpid):
