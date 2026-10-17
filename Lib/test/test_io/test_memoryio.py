@@ -5,6 +5,7 @@ BytesIO -- for bytes
 
 import unittest
 from test import support
+from .utils import check_readinto_readonly_buffer
 
 import gc
 import io
@@ -567,6 +568,9 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         memio.seek(42)
         memio.readinto(b)
         self.assertEqual(b, b"")
+
+    def test_readinto_readonly_buffer(self):
+        check_readinto_readonly_buffer(self, self.ioclass, empty_and_eof=True)
 
     def test_relative_seek(self):
         buf = self.buftype("1234567890")
