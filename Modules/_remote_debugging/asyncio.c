@@ -645,35 +645,54 @@ process_task_waiters(
     RemoteUnwinderObject *unwinder,
     PyObject *result
 ) {
+    // gh-158688: walk each task once, not once per path to it
+    PyObject *seen = PySet_New(NULL);
+    if (seen == NULL) {
+        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create visited task set");
+        return -1;
+    }
+
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(result); i++) {
         PyObject *task_info = PyList_GET_ITEM(result, i);
+        if (PySet_Add(seen, PyStructSequence_GET_ITEM(task_info, 0)) < 0) {
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to mark task as visited");
+            goto error;
+        }
         PyObject *waiters = PyStructSequence_GET_ITEM(task_info, 3);
         for (Py_ssize_t j = 0; j < PyList_GET_SIZE(waiters); j++) {
-            if (PyList_GET_SIZE(result) >= MAX_TASK_WAITER_WALK_TASKS) {
-                PyErr_SetString(PyExc_RuntimeError,
-                    "Too many task waiters (possible infinite loop)");
-                set_exception_cause(unwinder, PyExc_RuntimeError,
-                    "Task waiter walk size limit exceeded");
-                return -1;
-            }
             PyObject *waiter = PyList_GET_ITEM(waiters, j);
             // CoroInfo item 1 holds the waiter task address stored by parse_task().
             PyObject *task_id = PyStructSequence_GET_ITEM(waiter, 1);
+            Py_ssize_t seen_count = PySet_GET_SIZE(seen);
+            int marked = PySet_Add(seen, task_id);
+            if (marked < 0) {
+                set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to mark task as visited");
+                goto error;
+            }
+            if (PySet_GET_SIZE(seen) == seen_count) {
+                // already visited
+                continue;
+            }
             void *task_ptr = PyLong_AsVoidPtr(task_id);
             if (task_ptr == NULL && PyErr_Occurred()) {
                 set_exception_cause(unwinder, PyExc_RuntimeError,
                                     "Failed to parse waiter task ID");
-                return -1;
+                goto error;
             }
             if (process_single_task_node(
                     unwinder, (uintptr_t)task_ptr, NULL, result) < 0)
             {
-                return -1;
+                goto error;
             }
         }
     }
 
+    Py_DECREF(seen);
     return 0;
+
+error:
+    Py_DECREF(seen);
+    return -1;
 }
 
 /* ============================================================================

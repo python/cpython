@@ -509,6 +509,34 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
         self.assertEqual(asyncio.run(rec(3)), ["rec"] * 4)
 
     @skip_if_not_supported
+    def test_deep_awaiter_chain_is_walked_fully(self):
+        # gh-158688
+        depth = 20000
+
+        async def root():
+            await asyncio.sleep(0)
+            return [
+                task.task_name
+                for info in RemoteUnwinder(os.getpid()).get_async_stack_trace()
+                for task in info.awaited_by
+            ]
+
+        async def link(awaited):
+            return await awaited
+
+        async def main():
+            first = asyncio.create_task(root(), name="root")
+            top = first
+            for i in range(depth):
+                top = asyncio.create_task(link(top), name=f"a{i}")
+            second = asyncio.create_task(link(first), name="b")
+            return (await top), asyncio.current_task().get_name()
+
+        names, main_name = asyncio.run(main())
+        self.assertEqual(len(names), depth + 3)
+        self.assertIn(main_name, names)
+
+    @skip_if_not_supported
     @unittest.skipIf(
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",
@@ -4550,9 +4578,9 @@ class TestFrameChainLimits(RemoteInspectionTestBase):
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",
     )
-    def test_get_async_stack_trace_deep_task_waiter_chain_aborts(self):
-        """Test that a task waiter chain deeper than the limit aborts
-        the walk instead of overflowing the C stack."""
+    def test_get_async_stack_trace_deep_task_waiter_chain_is_walked(self):
+        """Test that a task waiter chain longer than the walk used to allow
+        is walked to the end instead of overflowing the C stack."""
         script_body = f"""\
             import asyncio
 
@@ -4569,10 +4597,12 @@ class TestFrameChainLimits(RemoteInspectionTestBase):
             """
         with self._target_process(script_body) as (p, client_socket, _):
             _wait_for_signal(client_socket, b"ready")
-            self._assert_unwinder_limit_error(
-                lambda: RemoteUnwinder(p.pid).get_async_stack_trace(),
-                "Too many task waiters",
-            )
+            tasks = [
+                task
+                for info in get_async_stack_trace(p.pid)
+                for task in info.awaited_by
+            ]
+            self.assertEqual(len(tasks), self.TASK_WAITER_WALK_TASKS + 1)
             client_socket.sendall(b"done")
 
     @skip_if_not_supported
