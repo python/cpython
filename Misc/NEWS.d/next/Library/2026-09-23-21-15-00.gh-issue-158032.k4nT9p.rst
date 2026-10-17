@@ -1,0 +1,2 @@
+Fix a use-after-free in :meth:`xml.etree.ElementTree.Element.iter` when a
+tag's equality comparison replaces that tag.
