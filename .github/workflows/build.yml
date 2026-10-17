@@ -346,18 +346,28 @@ jobs:
         run: python3 Platforms/Android ci --fast-ci ${{ matrix.arch }}-linux-android
 
   build-ios:
-    name: iOS
+    name: >-
+      iOS
+      ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
     needs: build-context
     if: needs.build-context.outputs.run-ios == 'true'
     timeout-minutes: 60
     runs-on: macos-26
+    strategy:
+      fail-fast: false
+      matrix:
+        free-threading:
+        - false
+        - true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Build and test
-        run: python3 Platforms/Apple ci iOS --fast-ci
+        run: >-
+          python3 Platforms/Apple ci iOS --fast-ci
+          ${{ fromJSON(matrix.free-threading) && '--abiflags t' || '' }}
 
   build-emscripten:
     name: 'Emscripten'
