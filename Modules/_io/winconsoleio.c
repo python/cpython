@@ -1093,7 +1093,10 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, PyTypeObject *cls,
     len = Py_MIN(len, max_wlen * 3);
     while (1) {
         /* Fix for github issues gh-110913 and gh-82052. */
-        len = _find_last_utf8_boundary(b->buf, len);
+        DWORD boundary = _find_last_utf8_boundary(b->buf, len);
+        if (boundary != 0) {
+            len = boundary;
+        }
         wlen = MultiByteToWideChar(CP_UTF8, 0, b->buf, len, NULL, 0);
         if (wlen <= max_wlen) {
             break;
