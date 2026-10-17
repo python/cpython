@@ -69,15 +69,21 @@ The :mod:`!wave` module defines the following function and exception:
 
    Format code for uncompressed PCM audio.
 
+   .. versionadded:: 3.15
+
 
 .. data:: WAVE_FORMAT_IEEE_FLOAT
 
    Format code for IEEE floating-point audio.
 
+   .. versionadded:: 3.15
+
 
 .. data:: WAVE_FORMAT_EXTENSIBLE
 
    Format code for WAVE extensible headers.
+
+   .. versionadded:: 3.15
 
 
 .. _wave-read-objects:
@@ -281,6 +287,8 @@ Wave_write Objects
       When setting :data:`WAVE_FORMAT_IEEE_FLOAT`, the sample width must be
       4 or 8 bytes.
 
+      .. versionadded:: 3.15
+
 
    .. method:: getformat()
 
@@ -300,6 +308,8 @@ Wave_write Objects
 
       For ``format=WAVE_FORMAT_IEEE_FLOAT``, *sampwidth* must be 4 or 8.
 
+      .. versionchanged:: 3.15
+         Added optional item *format* to the *tuple*.
 
    .. method:: getparams()
 
