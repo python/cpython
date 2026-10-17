@@ -576,6 +576,7 @@ class PlatformTest(unittest.TestCase):
                 (b'GLIBC_2.9', ('glibc', '2.9')),
                 (b'libc.so.1.2.5', ('libc', '1.2.5')),
                 (b'libc_pthread.so.1.2.5', ('libc', '1.2.5_pthread')),
+                (b'libc_r.so', ('libc', '')),
                 (b'/aports/main/musl/src/musl-1.2.5', ('musl', '1.2.5')),
                 # musl uses semver, but we accept some variations anyway:
                 (b'/aports/main/musl/src/musl-12.5', ('musl', '12.5')),
