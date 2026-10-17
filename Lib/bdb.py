@@ -1,12 +1,12 @@
 """Debugger basics"""
 
-import fnmatch
-import sys
-import threading
 import os
-import weakref
+import sys
 from contextlib import contextmanager
 from inspect import CO_GENERATOR, CO_COROUTINE, CO_ASYNC_GENERATOR
+lazy import fnmatch
+lazy import threading
+lazy import weakref
 
 __all__ = ["BdbQuit", "Bdb", "Breakpoint"]
 
