@@ -218,6 +218,33 @@ class Difflib(ThemeSection):
 
 
 @dataclass(frozen=True, kw_only=True)
+class Dis(ThemeSection):
+    disassembly_header: str = ANSIColors.GREEN
+
+    jump_target: str = ANSIColors.GREEN
+    exception_label: str = ANSIColors.GREEN
+    location_info: str = ANSIColors.MAGENTA
+
+    opname: str | None = ANSIColors.BLUE
+    opname_with_label: str | None = ANSIColors.GREEN
+
+    arg: str = ANSIColors.CYAN
+
+    load_opname: str = ANSIColors.BLUE
+    pop_opname: str = ANSIColors.BLUE
+
+    reset: str = ANSIColors.RESET
+
+    def color_from_opname(self, opname: str) -> str:
+        if opname.startswith("LOAD_"):
+            return self.load_opname
+
+        if opname.startswith("POP_"):
+            return self.pop_opname
+
+        return self.opname or self.reset
+
+@dataclass(frozen=True, kw_only=True)
 class FancyCompleter(ThemeSection):
     # functions and methods
     function: builtins.str = ANSIColors.BOLD_BLUE
@@ -478,6 +505,7 @@ class Theme:
     tokenize: Tokenize = field(default_factory=Tokenize)
     traceback: Traceback = field(default_factory=Traceback)
     unittest: Unittest = field(default_factory=Unittest)
+    dis: Dis = field(default_factory=Dis)
 
     def copy_with(
         self,
@@ -496,6 +524,7 @@ class Theme:
         tokenize: Tokenize | None = None,
         traceback: Traceback | None = None,
         unittest: Unittest | None = None,
+        dis: Dis | None = None
     ) -> Self:
         """Return a new Theme based on this instance with some sections replaced.
 
@@ -517,6 +546,7 @@ class Theme:
             tokenize=tokenize or self.tokenize,
             traceback=traceback or self.traceback,
             unittest=unittest or self.unittest,
+            dis=dis or self.dis
         )
 
     @classmethod
@@ -542,6 +572,7 @@ class Theme:
             tokenize=Tokenize.no_colors(),
             traceback=Traceback.no_colors(),
             unittest=Unittest.no_colors(),
+            dis=Dis.no_colors(),
         )
 
 
