@@ -9173,7 +9173,20 @@
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
-            /* Skip 2 cache entries */
+            // _GUARD_SHADOWING_SLOT_EMPTY
+            {
+                uint16_t slot_offset = read_u16(&this_instr[4].cache);
+                if (slot_offset != 0) {
+                    PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
+                    PyObject **value_ptr = (PyObject **)(((char *)owner_o) + slot_offset);
+                    if (FT_ATOMIC_LOAD_PTR_RELAXED(*value_ptr) != NULL) {
+                        UPDATE_MISS_STATS(LOAD_ATTR);
+                        assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
+                        JUMP_TO_PREDICTED(LOAD_ATTR);
+                    }
+                }
+            }
+            /* Skip 1 cache entry */
             // _LOAD_ATTR_METHOD_WITH_VALUES
             {
                 PyObject *descr = read_obj(&this_instr[6].cache);
@@ -9358,7 +9371,20 @@
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
-            /* Skip 2 cache entries */
+            // _GUARD_SHADOWING_SLOT_EMPTY
+            {
+                uint16_t slot_offset = read_u16(&this_instr[4].cache);
+                if (slot_offset != 0) {
+                    PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
+                    PyObject **value_ptr = (PyObject **)(((char *)owner_o) + slot_offset);
+                    if (FT_ATOMIC_LOAD_PTR_RELAXED(*value_ptr) != NULL) {
+                        UPDATE_MISS_STATS(LOAD_ATTR);
+                        assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
+                        JUMP_TO_PREDICTED(LOAD_ATTR);
+                    }
+                }
+            }
+            /* Skip 1 cache entry */
             // _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES
             {
                 PyObject *descr = read_obj(&this_instr[6].cache);
