@@ -1,0 +1,4 @@
+Speed up matching of regular expression alternations whose alternatives
+start with a capturing group or with a repeat with a nonzero minimum:
+such alternatives can now be skipped without entering them when their
+first character cannot match.
