@@ -240,11 +240,63 @@ parse_task_name(
  * COROUTINE CHAIN PARSING
  * ============================================================================ */
 
+// gh-159620
+/* Return in *coro_addr the coroutine or async generator to walk for the
+   awaitable at addr, or 0 if it is neither (for example, a future). */
+static int
+get_coro_like_address(
+    RemoteUnwinderObject *unwinder,
+    uintptr_t addr,
+    uintptr_t *coro_addr
+) {
+    *coro_addr = 0;
+
+    // Skip user classes that share a name with the generator types below
+    uintptr_t type_addr;
+    unsigned long tp_flags;
+    if (read_ptr(unwinder, addr + (uintptr_t)unwinder->debug_offsets.pyobject.ob_type,
+                 &type_addr) < 0
+        || _Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle,
+                type_addr + (uintptr_t)unwinder->debug_offsets.type_object.tp_flags,
+                sizeof(tp_flags), &tp_flags) < 0)
+    {
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read awaitable type");
+        return -1;
+    }
+
+    if (tp_flags & Py_TPFLAGS_HEAPTYPE) {
+        return 0;
+    }
+
+    uintptr_t name_addr;
+    char name[32] = {0};
+    if (read_ptr(unwinder, type_addr + (uintptr_t)unwinder->debug_offsets.type_object.tp_name,
+                 &name_addr) < 0
+        || _Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, name_addr,
+                                                 sizeof(name) - 1, name) < 0)
+    {
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read awaitable type name");
+        return -1;
+    }
+
+    if (strcmp(name, "coroutine") == 0) {
+        *coro_addr = addr;
+    }
+    else if (strcmp(name, "async_generator_asend") == 0
+             || strcmp(name, "async_generator_athrow") == 0)
+    {
+        // asend and athrow are separate wrapper objects: read the pointer
+        // to their parent async generator, stored right after PyObject_HEAD
+        return read_ptr(unwinder, addr + (uintptr_t)unwinder->debug_offsets.pyobject.size,
+                        coro_addr);
+    }
+    return 0;
+}
+
 static int
 get_awaited_coro_address(
     RemoteUnwinderObject *unwinder,
     uintptr_t gi_iframe_addr,
-    uintptr_t gen_type_addr,
     uintptr_t *next_coro
 ) {
     *next_coro = 0;
@@ -272,40 +324,13 @@ get_awaited_coro_address(
     uintptr_t stackpointer_addr = GET_MEMBER_NO_TAG(uintptr_t, iframe, unwinder->debug_offsets.interpreter_frame.stackpointer);
 
     if ((void*)stackpointer_addr != NULL) {
-        uintptr_t gi_await_addr;
         err = read_py_ptr(
             unwinder,
             stackpointer_addr - sizeof(void*) * 2,
-            &gi_await_addr);
+            next_coro);
         if (err) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read gi_await address");
             return -1;
-        }
-
-        if ((void*)gi_await_addr != NULL) {
-            uintptr_t gi_await_addr_type_addr;
-            err = read_ptr(
-                unwinder,
-                gi_await_addr + (uintptr_t)unwinder->debug_offsets.pyobject.ob_type,
-                &gi_await_addr_type_addr);
-            if (err) {
-                set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read gi_await type address");
-                return -1;
-            }
-
-            if (gen_type_addr == gi_await_addr_type_addr) {
-                /* This needs an explanation. We always start with parsing
-                   native coroutine / generator frames. Ultimately they
-                   are awaiting on something. That something can be
-                   a native coroutine frame or... an iterator.
-                   If it's the latter -- we can't continue building
-                   our chain. So the condition to bail out of this is
-                   to do that when the type of the current coroutine
-                   doesn't match the type of whatever it points to
-                   in its cr_await.
-                */
-                *next_coro = gi_await_addr;
-            }
         }
     }
 
@@ -329,6 +354,13 @@ parse_coro_chain(
             return -1;
         }
 
+        if (get_coro_like_address(unwinder, coro_address, &coro_address) < 0) {
+            return -1;
+        }
+        if ((void*)coro_address == NULL) {
+            return 0;
+        }
+
         // Read the entire generator object at once
         char gen_object[SIZEOF_GEN_OBJ];
         int err = _Py_RemoteDebug_PagedReadRemoteMemory(
@@ -345,8 +377,6 @@ parse_coro_chain(
         if (frame_state == FRAME_CLEARED) {
             return 0;
         }
-
-        uintptr_t gen_type_addr = GET_MEMBER(uintptr_t, gen_object, unwinder->debug_offsets.pyobject.ob_type);
 
         PyObject* name = NULL;
 
@@ -374,8 +404,7 @@ parse_coro_chain(
             return 0;
         }
 
-        if (get_awaited_coro_address(unwinder, gi_iframe_addr, gen_type_addr,
-                                     &coro_address) < 0) {
+        if (get_awaited_coro_address(unwinder, gi_iframe_addr, &coro_address) < 0) {
             return -1;
         }
     }
@@ -730,6 +759,10 @@ get_task_frame(RemoteUnwinderObject *unwinder, uintptr_t task_addr, uintptr_t *f
     if (running_coro_addr == 0) {
         PyErr_SetString(PyExc_RuntimeError, "Running task coro is NULL");
         set_exception_cause(unwinder, PyExc_RuntimeError, "Running task coro address is NULL");
+        return -1;
+    }
+
+    if (get_coro_like_address(unwinder, running_coro_addr, &running_coro_addr) < 0) {
         return -1;
     }
 
