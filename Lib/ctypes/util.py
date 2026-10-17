@@ -1,7 +1,7 @@
 import os
 import sys
 
-from dataclasses import dataclass
+from dataclasses import dataclass, _update_func_cell_for__class__
 
 lazy import functools
 lazy import inspect
@@ -477,6 +477,17 @@ def _process_struct(decorated_class, /, *, align, layout, endian, pack):
             _pack_ = pack
         _fields_ = fields
         _anonymous_ = anonymous
+
+    for member in vars(_Struct).values():
+        if not isinstance(member, type) and hasattr(member, '__wrapped__'):
+            member = inspect.unwrap(member)
+        if isinstance(member, property):
+            functions = (member.fget, member.fset, member.fdel)
+        else:
+            functions = (member,)
+        for func in functions:
+            if inspect.isfunction(func):
+                _update_func_cell_for__class__(func, decorated_class, _Struct)
 
     return _Struct
 
