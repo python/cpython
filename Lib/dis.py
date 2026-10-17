@@ -357,6 +357,10 @@ def _get_jump_target(op, arg, offset):
             arg = -arg
         target = offset + 2 + arg*2
         target += 2 * caches
+        # FOR_ITER uses JUMPBY(oparg + 1) at runtime to land on POP_ITER,
+        # skipping END_FOR. Add the extra 2 bytes to match the actual target.
+        if deop == FOR_ITER:
+            target += 2
     elif deop in hasjabs:
         target = arg*2
     else:
@@ -574,6 +578,8 @@ class ArgResolver:
             argval = offset + 2 + signed_arg*2
             caches = _get_cache_size(_all_opname[deop])
             argval += 2 * caches
+            if deop == FOR_ITER:
+                argval += 2
             return argval
         return None
 
