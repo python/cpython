@@ -152,6 +152,14 @@ class TestImaplib(unittest.TestCase):
             '"18-May-2033 05:33:20 +0200"',
         )
 
+    def test_Time2Internaldate_invalid_str(self):
+        # gh-153854: an empty string raised IndexError instead of the
+        # documented ValueError.
+        for invalid in '', '18-May-2033 05:33:20 +0200':
+            with self.subTest(invalid=invalid):
+                with self.assertRaises(ValueError):
+                    imaplib.Time2Internaldate(invalid)
+
     def test_that_Time2Internaldate_returns_a_result(self):
         # Without tzset, we can check only that it successfully
         # produces a result, not the correctness of the result itself,
