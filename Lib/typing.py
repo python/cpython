@@ -363,7 +363,7 @@ def _unpack_args(*args):
             newargs.extend(subargs)
         else:
             newargs.append(arg)
-    return newargs
+    return tuple(newargs)
 
 def _deduplicate(params, *, unhashable_fallback=False):
     # Weed out strict duplicates, preserving the first of each occurrence.
