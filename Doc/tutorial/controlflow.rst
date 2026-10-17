@@ -503,12 +503,12 @@ The *execution* of a function introduces a new symbol table used for the local
 variables of the function.  More precisely, all variable assignments in a
 function store the value in the local symbol table; whereas variable references
 first look in the local symbol table, then in the local symbol tables of
-enclosing functions, then in the global symbol table, and finally in the table
-of built-in names. Thus, global variables and variables of enclosing functions
-cannot be directly assigned a value within a function (unless, for global
-variables, named in a :keyword:`global` statement, or, for variables of enclosing
-functions, named in a :keyword:`nonlocal` statement), although they may be
-referenced.
+functions enclosing the definition, then in the global symbol table, and finally
+in the table of built-in names. Thus, global variables and variables of
+functions enclosing the definition cannot be directly assigned a value within a
+function (unless, for global variables, named in a :keyword:`global` statement,
+or, for variables of functions enclosing the definition, named in a
+:keyword:`nonlocal` statement), although they may be referenced.
 
 The actual parameters (arguments) to a function call are introduced in the local
 symbol table of the called function when it is called; thus, arguments are
