@@ -268,6 +268,23 @@ static int test_repeated_init_exec(void)
     return 0;
 }
 
+
+static int test_interpreter_clear_and_delete(void)
+{
+    assert(main_argc == 3);
+    _testembed_initialize();
+    if (PyRun_SimpleString(main_argv[2]) < 0) {
+        return 1;
+    }
+
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState_Clear(interp);
+    PyThreadState_Swap(NULL);
+    PyInterpreterState_Delete(interp);
+    // The interpreter has already been deleted, so don't call Py_FinalizeEx().
+    return 0;
+}
+
 /****************************************************************************
  * Test the Py_Initialize(Ex) convenience/compatibility wrappers
  ***************************************************************************/
@@ -3001,6 +3018,7 @@ struct TestCase
 static struct TestCase TestCases[] = {
     // Python initialization
     {"test_repeated_init_exec", test_repeated_init_exec},
+    {"test_interpreter_clear_and_delete", test_interpreter_clear_and_delete},
     {"test_repeated_simple_init", test_repeated_simple_init},
     {"test_forced_io_encoding", test_forced_io_encoding},
     {"test_import_in_subinterpreters", test_import_in_subinterpreters},
