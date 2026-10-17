@@ -1,0 +1,2 @@
+Speed up matching of case-insensitive character sets in :mod:`re`, such as
+``[a-z]+`` used with the :const:`re.IGNORECASE` flag. Patch by Pieter Eendebak.
