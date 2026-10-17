@@ -21,8 +21,8 @@ to avoid refcount contention on commonly shared objects.
 Three conversions control ownership:
 
 - `PyStackRef_FromPyObjectNew(obj)` - create a new reference (INCREF if mortal).
-- `PyStackRef_FromPyObjectSteal(obj)` - take over ownership without changing the count unless the
-  object is immortal.
+- `PyStackRef_FromPyObjectSteal(obj)` - take over ownership without changing the count;
+  this function is very lightweight since it does not check or modify any refcount.
 - `PyStackRef_FromPyObjectBorrow(obj)` - create a borrowed stackref (never decref on close).
 
 The `obj` argument must not be `NULL`.
