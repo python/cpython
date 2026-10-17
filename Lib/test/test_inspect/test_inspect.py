@@ -1071,6 +1071,16 @@ class TestOneliners(GetSourceBase):
         # Test inspect.getsource with a nested lambda function.
         self.assertSourceEqual(mod2.nested_lambda, 291, 292)
 
+    def test_lambda_after_multiline_string(self):
+        # gh-158556: the lambda starts on the line where a multiline string
+        # ends, and a later docstring must not change the result.
+        self.assertSourceEqual(mod2.string_then_lambda[1], 407, 408)
+        self.assertSourceEqual(mod2.string_then_multiline_lambda[1], 416, 418)
+        self.assertSourceEqual(mod2.string_then_fstring_lambda[1], 422, 423)
+
+    def test_genexpr_after_multiline_string(self):
+        self.assertSourceEqual(mod2.string_then_genexpr[1].gi_code, 427, 428)
+
     def test_onelinefunc(self):
         # Test inspect.getsource with a regular one-line function.
         self.assertSourceEqual(mod2.onelinefunc, 37, 37)
@@ -1119,6 +1129,21 @@ class TestOneliners(GetSourceBase):
         self.assertSourceEqual(mod2.dc364, 364, 367)
         self.assertRaises(OSError, inspect.getsource, mod2.dc370)
         self.assertRaises(OSError, inspect.getsource, mod2.dc371)
+
+    def test_lambda_after_multiline_string_end(self):
+        # gh-158556: a lambda on the same line as the closing delimiter of a
+        # multiline string must not make getblock() fail while tokenizing.
+        src = textwrap.dedent('''\
+            pair = (
+                """text
+            """, lambda: None
+            )
+            ''')
+        with ready_to_import('lambda_after_string', src) as (name, path):
+            module = import_helper.import_module(name)
+            lines, lnum = inspect.getsourcelines(module.pair[1])
+        self.assertEqual(lines, ['    """text\n', '""", lambda: None\n'])
+        self.assertEqual(lnum, 2)
 
 class TestBlockComments(GetSourceBase):
     fodderModule = mod
