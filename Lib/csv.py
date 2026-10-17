@@ -423,7 +423,11 @@ class Sniffer:
             consistency = 1.0
             # minimum consistency threshold
             threshold = 0.9
-            while len(delims) == 0 and consistency >= threshold:
+            # Tolerance for the rounding error accumulated by stepping
+            # 'consistency' down by 0.01: without it the counter stops at
+            # 0.9099999999999999 and the pass at the threshold never runs.
+            epsilon = 1e-9
+            while len(delims) == 0 and consistency >= threshold - epsilon:
                 for k, v in modeList:
                     if v[0] > 0 and v[1] > 0:
                         if ((v[1]/total) >= consistency and
