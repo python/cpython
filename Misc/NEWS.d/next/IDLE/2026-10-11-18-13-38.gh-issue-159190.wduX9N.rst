@@ -1,0 +1,1 @@
+IDLE now displays detailed syntax error diagnostics in the Shell instead of a modal dialog, while preserving error highlighting in the editor.
