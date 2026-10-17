@@ -1,0 +1,4 @@
+Fix quadratic copying in :mod:`asyncio` selector socket transports when a
+large :class:`bytes` write is only partly sent while other data is buffered.
+The unsent remainder is now kept as a :class:`memoryview` instead of being
+copied on every partial send.
