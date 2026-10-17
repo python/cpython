@@ -210,10 +210,11 @@ class ErrorHandler:
 class DOMEventStream:
     """Stream of the pull parser events."""
 
-    def __init__(self, stream, parser, bufsize):
+    def __init__(self, stream, parser, bufsize, _owns_stream=False):
         self.stream = stream
         self.parser = parser
         self.bufsize = bufsize
+        self._owns_stream = _owns_stream
         if not hasattr(self.parser, 'feed'):
             self.getEvent = self._slurp
         self.reset()
@@ -233,6 +234,12 @@ class DOMEventStream:
 
     def __iter__(self):
         return self
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.clear()
 
     def expandNode(self, node):
         """Expand all children of the node into the node."""
@@ -285,9 +292,15 @@ class DOMEventStream:
         return rc
 
     def clear(self):
-        """Release the parser and the document."""
-        self.pulldom.clear()
-        del self.pulldom
+        """Release the parser and the document.
+
+        The stream is closed if it was opened by parse().
+        """
+        if self._owns_stream and self.stream is not None:
+            self.stream.close()
+        if self.pulldom is not None:
+            self.pulldom.clear()
+        self.pulldom = None
         self.parser = None
         self.stream = None
 
@@ -333,11 +346,13 @@ def parse(stream_or_string, parser=None, bufsize=None):
         bufsize = default_bufsize
     if isinstance(stream_or_string, str):
         stream = open(stream_or_string, 'rb')
+        owns_stream = True
     else:
         stream = stream_or_string
+        owns_stream = False
     if not parser:
         parser = xml.sax.make_parser()
-    return DOMEventStream(stream, parser, bufsize)
+    return DOMEventStream(stream, parser, bufsize, _owns_stream=owns_stream)
 
 def parseString(string, parser=None):
     """Return a DOMEventStream for the given string."""
