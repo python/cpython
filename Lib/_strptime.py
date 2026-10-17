@@ -788,6 +788,9 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
         datetime_result = datetime_date.fromordinal(
                             (julian - 1) +
                             datetime_date(year, 1, 1).toordinal())
+        if year != datetime_result.year:
+            year_start = datetime_date(datetime_result.year, 1, 1)
+            julian = datetime_result.toordinal() - year_start.toordinal() + 1
         year = datetime_result.year
         month = datetime_result.month
         day = datetime_result.day
