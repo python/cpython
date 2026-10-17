@@ -101,6 +101,11 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                             "with add_signal_handler()")
         self._check_signal(sig)
         self._check_closed()
+        if self._guest_mode:
+            raise RuntimeError(
+                "add_signal_handler() is not supported in asyncio guest "
+                "mode; the host event loop owns signal handling -- "
+                "forward signals to the loop with call_soon_threadsafe()")
         try:
             # set_wakeup_fd() raises ValueError if this is not the
             # main thread.  By calling it early we ensure that an
@@ -150,6 +155,10 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         Return True if a signal handler was removed, False if not.
         """
         self._check_signal(sig)
+        if self._guest_mode:
+            raise RuntimeError(
+                "remove_signal_handler() is not supported in asyncio "
+                "guest mode; the host event loop owns signal handling")
         try:
             del self._signal_handlers[sig]
         except KeyError:
