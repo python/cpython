@@ -593,6 +593,8 @@ class _Stream:
             else:
                 # Other decompressors have needs_input.
                 # decompress() can buffer data internally.
+                if self.cmp.eof:
+                    break
                 if self.cmp.needs_input:
                     cbuf = self.fileobj.read(self.bufsize)
                     if not cbuf:
