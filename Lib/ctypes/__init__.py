@@ -4,8 +4,6 @@ import os as _os
 import sys as _sys
 import types as _types
 
-lazy import sysconfig as _sysconfig
-
 from _ctypes import Union, Structure, Array
 from _ctypes import _Pointer
 from _ctypes import CFuncPtr as _CFuncPtr
@@ -557,9 +555,11 @@ if _os.name == "nt":
     pythonapi = PyDLL("python dll", None, _sys.dllhandle)
 elif _sys.platform == "android":
     # These are Unix-like platforms which use a dynamically-linked libpython.
-    pythonapi = PyDLL(_sysconfig.get_config_var("LDLIBRARY"))
+    import sysconfig
+    pythonapi = PyDLL(sysconfig.get_config_var("LDLIBRARY"))
 elif _sys.platform == "cygwin":
-    pythonapi = PyDLL(_sysconfig.get_config_var("DLLLIBRARY"))
+    import sysconfig
+    pythonapi = PyDLL(sysconfig.get_config_var("DLLLIBRARY"))
 else:
     try:
         pythonapi = PyDLL(None)

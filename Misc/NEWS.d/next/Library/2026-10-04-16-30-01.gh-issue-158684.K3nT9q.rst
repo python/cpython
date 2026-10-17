@@ -1,0 +1,4 @@
+Remove an ineffective lazy import of :mod:`sysconfig` from :mod:`ctypes`.
+``sysconfig`` is now imported directly on Android and Cygwin, the only
+platforms that need it, so importing :mod:`ctypes` no longer leaves an
+unused lazy import pending on other platforms.
