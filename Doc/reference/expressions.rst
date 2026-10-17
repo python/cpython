@@ -967,6 +967,17 @@ For example::
    >>> iterator
    <generator object <genexpr> at ...>
 
+Like list comprehensions, generator expressions can unpack the iterable
+produced by their leading expression by prefixing it with ``*``.
+The elements of each iterable are yielded in order::
+
+   >>> flattened = (*values for values in [(1, 2), (3, 4)])
+   >>> list(flattened)
+   [1, 2, 3, 4]
+
+.. versionadded:: 3.15
+   Unpacking in generator expressions was introduced in :pep:`798`.
+
 At runtime, a generator expression evaluates to a :term:`generator iterator`
 which yields the same values as the corresponding list comprehension::
 
