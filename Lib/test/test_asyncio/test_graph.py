@@ -2,6 +2,7 @@ import asyncio
 import io
 import sys
 import unittest
+from test import support
 from unittest import mock
 
 
@@ -450,6 +451,7 @@ class CallStackTestBase:
             ]
         ])
 
+    @support.requires_subprocess()
     async def test_stack_subprocess_connect_pipes(self):
         # gh-157259: create_subprocess_exec must record the awaiting waiter / task
         # on the internal _connect_pipes task
@@ -477,7 +479,7 @@ class CallStackTestBase:
                 name='spawn',
             )
 
-            await in_connect_pipes.wait()
+            await asyncio.wait_for(in_connect_pipes.wait(), timeout=support.SHORT_TIMEOUT)
             self.assertIsNotNone(pipe_task)
 
             stack = capture_test_stack(fut=pipe_task)
