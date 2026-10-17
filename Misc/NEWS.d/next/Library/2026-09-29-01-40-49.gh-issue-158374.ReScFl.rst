@@ -1,0 +1,3 @@
+Fix :func:`re.search` and other searching functions missing matches when the
+pattern starts with a scoped ``(?a:...)`` or ``(?u:...)`` group whose type flag
+differs from the pattern's own flags.
