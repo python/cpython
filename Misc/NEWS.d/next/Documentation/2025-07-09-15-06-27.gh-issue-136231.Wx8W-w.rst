@@ -1,0 +1,2 @@
+Document that :func:`xml.etree.ElementTree.iselement` works identically on
+both object instances and types.
