@@ -470,6 +470,11 @@ def _get_command_stdout(command, *args):
 def _is_universal(mac):
     return not (mac & (1 << 41))
 
+# Since macOS 27, processes without a special entitlement see the placeholder
+# 02:00:00:00:00:00 instead of the hardware address of every interface.  It is
+# the same on every machine, so it must not be used as a node.
+_MAC_PLACEHOLDER = 0x02_00_00_00_00_00
+
 
 def _find_mac_near_keyword(command, args, keywords, get_word_index):
     """Searches a command's output for a MAC address near a keyword.
@@ -500,6 +505,8 @@ def _find_mac_near_keyword(command, args, keywords, get_word_index):
                     # real MAC address
                     pass
                 else:
+                    if mac == _MAC_PLACEHOLDER:
+                        continue
                     if _is_universal(mac):
                         return mac
                     first_local_mac = first_local_mac or mac
@@ -560,7 +567,7 @@ def _find_mac_under_heading(command, args, heading):
             continue
 
         mac = _parse_mac(word)
-        if mac is None:
+        if mac is None or mac == _MAC_PLACEHOLDER:
             continue
         if _is_universal(mac):
             return mac
