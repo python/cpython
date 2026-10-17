@@ -1,0 +1,1 @@
+Fix ``make coverage-lcov`` to work with lcov v2.x. Remove the ``--path`` option which was repurposed in lcov v2, and add ``--ignore-errors negative,inconsistent,unused`` flags to handle stricter validation introduced in lcov v2.
