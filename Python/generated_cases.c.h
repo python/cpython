@@ -2390,7 +2390,7 @@
             {
                 callable = stack_pointer[-2 - oparg];
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
-                if (!PyType_Check(callable_o)) {
+                if (!Py_IS_TYPE(callable_o, &PyType_Type)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);

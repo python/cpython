@@ -497,6 +497,42 @@ class InitTakesArg:
 
 
 class TestCallCache(TestBase):
+    @requires_jit_disabled
+    @requires_specialization
+    def test_call_builtin_class_custom_metaclass(self):
+        _testcapi = import_module("_testcapi")
+
+        def call(cls):
+            return cls()
+
+        Meta = _testcapi.make_vectorcall_class(type)
+        C = type.__new__(Meta, "C", (), {})
+        Meta.set_vectorcall(C, type)
+
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            call(list)
+        self.assert_specialized(call, "CALL_BUILTIN_CLASS")
+        Meta.__call__ = lambda cls: "custom"
+        self.assertEqual(call(C), "custom")
+
+    @requires_jit_disabled
+    @requires_specialization
+    def test_call_immutable_class_custom_metaclass(self):
+        _testcapi = import_module("_testcapi")
+        _testlimitedcapi = import_module("_testlimitedcapi")
+
+        def call(cls):
+            return cls()
+
+        Meta = _testcapi.make_vectorcall_class(type)
+        C = type.__new__(Meta, "C", (), {})
+        Meta.set_vectorcall(C, type)
+        _testlimitedcapi.type_freeze(C)
+
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            self.assertEqual(call(C), "tp_call")
+        self.assert_specialized(call, "CALL_NON_PY_GENERAL")
+
     def test_too_many_defaults_0(self):
         def f():
             pass
