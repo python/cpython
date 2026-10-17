@@ -1,0 +1,3 @@
+:class:`configparser.ConfigParser` now raises :exc:`ValueError` instead of
+:exc:`AttributeError` when :meth:`~configparser.ConfigParser.getboolean` is
+called on an option without a value while ``allow_no_value=True``.
