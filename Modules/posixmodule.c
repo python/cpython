@@ -13655,8 +13655,10 @@ os_truncate_impl(PyObject *module, path_t *path, Py_off_t length)
     else {
         result = _chsize_s(fd, length);
         close(fd);
-        if (result < 0)
+        if (result != 0) {
             errno = result;
+            result = -1;
+        }
     }
 #else
     result = truncate(path->narrow, length);
