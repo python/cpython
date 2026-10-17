@@ -1,0 +1,5 @@
+The new interactive shell now strips ``>>>`` and ``...`` prompts and omits
+output when an interactive session is pasted into an empty input buffer using
+bracketed paste.  The code remains editable before execution, and pastes into
+existing input or an :func:`input` prompt are unchanged.
+Patch by Bartosz Sławecki.
