@@ -1174,6 +1174,11 @@ are always available.  They are listed here in alphabetical order.
    a :exc:`TypeError` exception is raised. :exc:`TypeError` may not be
    raised for an invalid type if an earlier check succeeds.
 
+   If *object* has a ``__class__`` attribute that differs from
+   :func:`type(object) <type>` (for example a proxy, or a :mod:`unittest.mock`
+   object created with a *spec*), ``True`` is also returned when that class
+   is a subclass of *classinfo*.
+
    .. versionchanged:: 3.10
       *classinfo* can be a :ref:`types-union`.
 
