@@ -49,7 +49,10 @@ fcre = re.compile(r'[\041-\176]+:$')
 
 # Find a header embedded in a putative header value.  Used to check for
 # header injection attack.
-_embedded_header = re.compile(r'\n[^ \t]+:')
+# A header name may not contain whitespace, but receivers are lenient about
+# whitespace before the colon, so an injected line using it still reaches
+# them as a header.  Match it here too (gh-76787).
+_embedded_header = re.compile(r'\n[^ \t]+[ \t]*:')
 
 
 # Helpers
