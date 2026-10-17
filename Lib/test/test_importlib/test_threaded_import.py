@@ -461,6 +461,120 @@ raise RuntimeError("Intentional import failure")
                 errors, [],
                 f"Import(s) failed on iteration {i}: {errors}")
 
+    def test_lazy_submodule_not_visible_before_parent_setattr(self):
+        # gh-149728: a submodule must not be advertised as fully imported
+        # before it is bound as an attribute of its parent package.  A
+        # thread seeing that window in a package that resolves its
+        # submodules from a module-level __getattr__ would re-enter
+        # __getattr__ for the same submodule over and over, until
+        # RecursionError.
+        os.makedirs(os.path.join(TESTFN, "lazypkg"))
+        self.addCleanup(shutil.rmtree, TESTFN)
+        with open(os.path.join(TESTFN, "lazypkg", "__init__.py"), "w") as f:
+            f.write("""if 1:
+                import sys
+                import threading
+                from types import ModuleType
+
+                # Set when the import system is about to bind 'sub' on this
+                # package, i.e. at the start of the window under test.
+                setattr_reached = threading.Event()
+                # Set by the probing thread once it is out of that window.
+                probe_finished = threading.Event()
+                # __spec__._initializing of 'lazypkg.sub', as seen from
+                # inside the window.
+                observed_initializing = []
+                # Whether the probing thread was still blocked when the
+                # window closed.
+                probe_blocked = []
+
+                _importing = threading.local()
+
+                class _Package(ModuleType):
+                    def __setattr__(self, name, value):
+                        if name == "sub":
+                            observed_initializing.append(
+                                value.__spec__._initializing)
+                            setattr_reached.set()
+                            # Hold the window open long enough to see what
+                            # the other thread does with it.  This is a cap,
+                            # not a synchronisation point: a thread wrongly
+                            # handed the module returns at once and sets
+                            # probe_finished, while a thread correctly made
+                            # to block cannot set it at all, since it waits
+                            # on the module lock held right here.
+                            probe_blocked.append(
+                                not probe_finished.wait(0.1))
+                        super().__setattr__(name, value)
+
+                def __getattr__(name):
+                    if name != "sub":
+                        raise AttributeError(name)
+                    if getattr(_importing, "sub", False):
+                        raise AssertionError(
+                            "lazypkg.__getattr__ re-entered for 'sub': the "
+                            "submodule was handed out as fully imported "
+                            "before being bound on its parent package")
+                    _importing.sub = True
+                    try:
+                        import lazypkg.sub as sub
+                    finally:
+                        _importing.sub = False
+                    return sub
+
+                sys.modules[__name__].__class__ = _Package
+                """)
+        with open(os.path.join(TESTFN, "lazypkg", "sub.py"), "w") as f:
+            f.write("X = 42\n")
+
+        sys.path.insert(0, TESTFN)
+        self.addCleanup(sys.path.remove, TESTFN)
+        for mod in ("lazypkg", "lazypkg.sub"):
+            self.addCleanup(forget, mod)
+        importlib.invalidate_caches()
+
+        pkg = importlib.import_module("lazypkg")
+        results = {}
+
+        def importer():
+            try:
+                results["importer"] = pkg.sub
+            except BaseException as exc:
+                results["importer_error"] = exc
+
+        def prober():
+            pkg.setattr_reached.wait(support.SHORT_TIMEOUT)
+            try:
+                results["prober"] = pkg.sub
+            except BaseException as exc:
+                results["prober_error"] = exc
+            finally:
+                pkg.probe_finished.set()
+
+        threads = [threading.Thread(target=prober),
+                   threading.Thread(target=importer)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=support.SHORT_TIMEOUT)
+        for thread in threads:
+            self.assertFalse(thread.is_alive(), "thread deadlocked")
+
+        for key in ("importer_error", "prober_error"):
+            if key in results:
+                raise results[key]
+        sub = sys.modules["lazypkg.sub"]
+        self.assertIs(results["importer"], sub)
+        self.assertIs(results["prober"], sub)
+        # The submodule is bound on its parent while its spec still says it
+        # is initializing, so no thread can take the lock-free fast path
+        # for it before it is reachable through the parent package.
+        self.assertEqual(pkg.observed_initializing, [True])
+        # And the other thread really was held off for as long as that
+        # window was open, rather than let through to a package that does
+        # not have 'sub' yet.
+        self.assertEqual(pkg.probe_blocked, [True])
+
 
 def setUpModule():
     thread_info = threading_helper.threading_setup()
