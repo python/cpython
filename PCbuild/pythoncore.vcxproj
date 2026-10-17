@@ -626,6 +626,9 @@
     <ClCompile Include="..\Python\ceval.c">
       <AdditionalOptions Condition="'$(UseTailCallInterp)' == 'true' and $(PlatformToolset) != 'ClangCL'">/std:clatest %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
+    <ClCompile Include="..\Python\ceval_tailcall.c">
+      <AdditionalOptions Condition="'$(UseTailCallInterp)' == 'true' and $(PlatformToolset) != 'ClangCL'">/std:clatest %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="..\Python\codecs.c" />
     <ClCompile Include="..\Python\codegen.c" />
     <ClCompile Include="..\Python\compile.c" />

@@ -30,8 +30,13 @@ stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
 #endif
 
 #if _Py_TAIL_CALL_INTERP
+#define _Py_CEVAL_OPCODE_TARGETS_DEFINE
 #include "test_targets.h"
+#undef _Py_CEVAL_OPCODE_TARGETS_DEFINE
 #include "test_cases.c.h"
+#define _Py_CEVAL_START_FRAME
+#include "test_cases.c.h"
+#undef _Py_CEVAL_START_FRAME
 #endif
 
 PyObject* _Py_HOT_FUNCTION

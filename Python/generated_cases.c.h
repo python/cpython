@@ -7,6 +7,7 @@
     #error "This file is for Tier 1 only"
 #endif
 #define TIER_ONE 1
+#ifndef _Py_CEVAL_START_FRAME
 
 #if !_Py_TAIL_CALL_INTERP
 #if !USE_COMPUTED_GOTOS
@@ -13770,33 +13771,6 @@ JUMP_TO_LABEL(error);
             JUMP_TO_LABEL(error);
         }
 
-        LABEL(start_frame)
-        {
-            #ifdef Py_DEBUG
-            assert(frame->stackpointer_valid == 1);
-            #endif
-            int too_deep = _Py_EnterRecursivePy(tstate);
-            if (too_deep) {
-                JUMP_TO_LABEL(exit_unwind_notrace);
-            }
-            DTRACE_FUNCTION_ENTRY();
-            next_instr = frame->instr_ptr;
-            #ifdef Py_DEBUG
-            int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS());
-            if (lltrace < 0) {
-                JUMP_TO_LABEL(exit_unwind);
-            }
-            frame->lltrace = lltrace;
-            assert(!_PyErr_Occurred(tstate));
-            #endif
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            _PyFrame_StackPointerInvalidate(frame);
-            #if _Py_TAIL_CALL_INTERP
-            int opcode;
-            #endif
-            DISPATCH();
-        }
-
         #if _Py_TAIL_CALL_INTERP && !defined(_Py_TIER2)
         Py_GCC_ATTRIBUTE((unused))
         #endif
@@ -13824,4 +13798,35 @@ JUMP_TO_LABEL(error);
         }
 
 /* END LABELS */
+#endif /* _Py_CEVAL_START_FRAME */
+#if !_Py_TAIL_CALL_INTERP || defined(_Py_CEVAL_START_FRAME)
+
+        LABEL(start_frame)
+        {
+            #ifdef Py_DEBUG
+            assert(frame->stackpointer_valid == 1);
+            #endif
+            int too_deep = _Py_EnterRecursivePy(tstate);
+            if (too_deep) {
+                JUMP_TO_LABEL(exit_unwind_notrace);
+            }
+            DTRACE_FUNCTION_ENTRY();
+            next_instr = frame->instr_ptr;
+            #ifdef Py_DEBUG
+            int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS());
+            if (lltrace < 0) {
+                JUMP_TO_LABEL(exit_unwind);
+            }
+            frame->lltrace = lltrace;
+            assert(!_PyErr_Occurred(tstate));
+            #endif
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
+            #if _Py_TAIL_CALL_INTERP
+            int opcode;
+            #endif
+            DISPATCH();
+        }
+
+#endif /* !_Py_TAIL_CALL_INTERP || defined(_Py_CEVAL_START_FRAME) */
 #undef TIER_ONE
