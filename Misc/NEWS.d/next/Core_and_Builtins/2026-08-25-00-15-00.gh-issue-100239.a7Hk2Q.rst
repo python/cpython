@@ -1,0 +1,2 @@
+Specialize exact ``float`` true division in the tier 1 interpreter using
+``BINARY_OP_EXTEND``.
