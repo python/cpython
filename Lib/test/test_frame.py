@@ -18,6 +18,11 @@ from test.support.script_helper import assert_python_ok
 from test import mapping_tests
 
 
+class FailingKeys(dict):
+    def keys(self):
+        raise RuntimeError("keys failed")
+
+
 class ClearTest(unittest.TestCase):
     """
     Tests for frame.clear().
@@ -547,7 +552,12 @@ class TestFrameLocals(unittest.TestCase):
         self.assertEqual(d['x'], 3)
         self.assertEqual(d['z'], 4)
 
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(RuntimeError, "keys failed"):
+            d.update(FailingKeys())
+
+        with self.assertRaisesRegex(
+            TypeError, r"update\(\) argument must be dict or another FrameLocalsProxy"
+        ):
             d.update([1, 2])
 
         self.assertEqual(d.setdefault('x', 5), 3)
@@ -566,6 +576,8 @@ class TestFrameLocals(unittest.TestCase):
         self.assertEqual(d['z'], 3)
         d |= {'y': 3}
         self.assertEqual(d['y'], 3)
+        with self.assertRaisesRegex(RuntimeError, "keys failed"):
+            d |= FailingKeys()
         with self.assertRaises(TypeError):
             d |= 3
         with self.assertRaises(TypeError):
