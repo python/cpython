@@ -11,6 +11,21 @@ def get_cache_token():
     return ABCMeta._abc_invalidation_counter
 
 
+def _cache_add(cache, subclass):
+    """Add *subclass* to *cache*, unless it cannot be cached.
+
+    The caches hold weak references, and a weak reference hashes to the hash
+    of its referent, so an unhashable class cannot be stored in them.  Skip
+    caching for it and recompute the check on every call instead.  The
+    registry must not use this: dropping a registration would turn a loud
+    error into a silently wrong issubclass() answer.
+    """
+    try:
+        cache.add(subclass)
+    except TypeError:
+        pass
+
+
 class ABCMeta(type):
     """Metaclass for defining Abstract Base Classes (ABCs).
 
@@ -98,11 +113,18 @@ class ABCMeta(type):
             # Fall back to the type when the instance has no __class__,
             # matching the behaviour of the built-in isinstance() (gh-153772).
             subclass = type(instance)
-        if subclass in cls._abc_cache:
-            return True
+        try:
+            if subclass in cls._abc_cache:
+                return True
+            cacheable = True
+        except TypeError:
+            # gh-129589: an unhashable class is never stored in the caches,
+            # so looking it up raises where it would otherwise miss.
+            cacheable = False
         subtype = type(instance)
         if subtype is subclass:
-            if (cls._abc_negative_cache_version ==
+            if (cacheable and
+                cls._abc_negative_cache_version ==
                 ABCMeta._abc_invalidation_counter and
                 subclass in cls._abc_negative_cache):
                 return False
@@ -115,38 +137,44 @@ class ABCMeta(type):
         if not isinstance(subclass, type):
             raise TypeError('issubclass() arg 1 must be a class')
         # Check cache
-        if subclass in cls._abc_cache:
-            return True
+        try:
+            if subclass in cls._abc_cache:
+                return True
+            cacheable = True
+        except TypeError:
+            # gh-129589: an unhashable class is never stored in the caches,
+            # so looking it up raises where it would otherwise miss.
+            cacheable = False
         # Check negative cache; may have to invalidate
         if cls._abc_negative_cache_version < ABCMeta._abc_invalidation_counter:
             # Invalidate the negative cache
             cls._abc_negative_cache = WeakSet()
             cls._abc_negative_cache_version = ABCMeta._abc_invalidation_counter
-        elif subclass in cls._abc_negative_cache:
+        elif cacheable and subclass in cls._abc_negative_cache:
             return False
         # Check the subclass hook
         ok = cls.__subclasshook__(subclass)
         if ok is not NotImplemented:
             assert isinstance(ok, bool)
             if ok:
-                cls._abc_cache.add(subclass)
+                _cache_add(cls._abc_cache, subclass)
             else:
-                cls._abc_negative_cache.add(subclass)
+                _cache_add(cls._abc_negative_cache, subclass)
             return ok
         # Check if it's a direct subclass
         if cls in getattr(subclass, '__mro__', ()):
-            cls._abc_cache.add(subclass)
+            _cache_add(cls._abc_cache, subclass)
             return True
         # Check if it's a subclass of a registered class (recursive)
         for rcls in cls._abc_registry:
             if issubclass(subclass, rcls):
-                cls._abc_cache.add(subclass)
+                _cache_add(cls._abc_cache, subclass)
                 return True
         # Check if it's a subclass of a subclass (recursive)
         for scls in cls.__subclasses__():
             if issubclass(subclass, scls):
-                cls._abc_cache.add(subclass)
+                _cache_add(cls._abc_cache, subclass)
                 return True
         # No dice; update negative cache
-        cls._abc_negative_cache.add(subclass)
+        _cache_add(cls._abc_negative_cache, subclass)
         return False
