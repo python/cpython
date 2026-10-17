@@ -2,11 +2,11 @@
 
 .. _memoryview-objects:
 
-.. index::
-   pair: object; memoryview
-
 MemoryView objects
 ------------------
+
+.. index::
+   pair: object; memoryview
 
 A :class:`memoryview` object exposes the C level :ref:`buffer interface
 <bufferobjects>` as a Python object which can then be passed around like
