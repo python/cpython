@@ -729,16 +729,20 @@ def uuid1(node=None, clock_seq=None):
     address.  If 'clock_seq' is given, it is used as the sequence number;
     otherwise a random 14-bit sequence number is chosen."""
 
-    # When the system provides a version-1 UUID generator, use it (but don't
-    # use UuidCreate here because its UUIDs don't conform to RFC 4122).
-    if _generate_time_safe is not None and node is clock_seq is None:
-        uuid_time, safely_generated = _generate_time_safe()
-        try:
-            is_safe = SafeUUID(safely_generated)
-        except ValueError:
-            is_safe = SafeUUID.unknown
-        # The version field is assumed to be handled by _generate_time_safe().
-        return UUID(bytes=uuid_time, is_safe=is_safe)
+    # When the system provides a version-1 UUID generator, use it.
+    if node is clock_seq is None:
+        if _generate_time_safe is not None:
+            uuid_time, safely_generated = _generate_time_safe()
+            try:
+                is_safe = SafeUUID(safely_generated)
+            except ValueError:
+                is_safe = SafeUUID.unknown
+            # The version field is assumed to be handled by
+            # _generate_time_safe().
+            return UUID(bytes=uuid_time, is_safe=is_safe)
+        if _UuidCreate is not None:
+            uuid_bytes = _UuidCreate()
+            return UUID(bytes_le=uuid_bytes, is_safe=SafeUUID.safe)
 
     global _last_timestamp
     nanoseconds = time.time_ns()
