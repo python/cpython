@@ -1575,26 +1575,30 @@ _Py_CompileString(const char *str, PyObject *filename, int start,
     if (arena == NULL)
         return NULL;
 
+    PyObject *result = NULL;
     mod = _PyParser_ASTFromString(str, filename, start, flags, arena, module);
     if (mod == NULL) {
-        _PyArena_Free(arena);
-        return NULL;
+        goto done;
     }
     if (flags && (flags->cf_flags & PyCF_ONLY_AST)) {
         int syntax_check_only = ((flags->cf_flags & PyCF_OPTIMIZED_AST) == PyCF_ONLY_AST); /* unoptiomized AST */
         if (_PyCompile_AstPreprocess(mod, filename, flags, optimize, arena,
                                      syntax_check_only, module) < 0)
         {
-            _PyArena_Free(arena);
-            return NULL;
+            goto done;
         }
-        PyObject *result = PyAST_mod2obj(mod);
-        _PyArena_Free(arena);
-        return result;
+        result = PyAST_mod2obj(mod);
     }
-    co = _PyAST_Compile(mod, filename, flags, optimize, arena, module);
+    else {
+        co = _PyAST_Compile(mod, filename, flags, optimize, arena, module);
+        result = (PyObject *)co;
+    }
+done:
     _PyArena_Free(arena);
-    return (PyObject *)co;
+    if (result == NULL) {
+        _PyCompile_CheckRecursionError();
+    }
+    return result;
 }
 
 PyObject *
@@ -1630,8 +1634,48 @@ _PyObject_SupportedAsScript(PyObject *cmd)
     }
 }
 
+/* Raise a SyntaxError for the character at index pos of the source string. */
+static void
+source_syntax_error(PyObject *source, PyObject *filename, Py_ssize_t pos,
+                    const char *msg)
+{
+    Py_ssize_t len = PyUnicode_GET_LENGTH(source);
+    Py_ssize_t lineno = 1;
+    Py_ssize_t linestart = 0;
+    for (Py_ssize_t i = 0; i < pos; i++) {
+        if (PyUnicode_READ_CHAR(source, i) == '\n') {
+            lineno++;
+            linestart = i + 1;
+        }
+    }
+    Py_ssize_t lineend = PyUnicode_FindChar(source, '\n', pos, len, 1);
+    if (lineend < 0) {
+        lineend = len;
+    }
+    PyObject *text = PyUnicode_Substring(source, linestart, lineend);
+    if (text == NULL) {
+        return;
+    }
+    Py_ssize_t offset = pos - linestart + 1;
+    PyObject *args;
+    if (filename != NULL) {
+        args = Py_BuildValue("s(OnnNnn)", msg, filename,
+                             lineno, offset, text, lineno, offset + 1);
+    }
+    else {
+        args = Py_BuildValue("s(snnNnn)", msg, "<string>",
+                             lineno, offset, text, lineno, offset + 1);
+    }
+    if (args == NULL) {
+        return;
+    }
+    PyErr_SetObject(PyExc_SyntaxError, args);
+    Py_DECREF(args);
+}
+
 const char *
-_Py_SourceAsString(PyObject *cmd, const char *funcname, const char *what, PyCompilerFlags *cf, PyObject **cmd_copy)
+_Py_SourceAsString(PyObject *cmd, const char *funcname, const char *what,
+                   PyObject *filename, PyCompilerFlags *cf, PyObject **cmd_copy)
 {
     const char *str;
     Py_ssize_t size;
@@ -1641,8 +1685,18 @@ _Py_SourceAsString(PyObject *cmd, const char *funcname, const char *what, PyComp
     if (PyUnicode_Check(cmd)) {
         cf->cf_flags |= PyCF_IGNORE_COOKIE;
         str = PyUnicode_AsUTF8AndSize(cmd, &size);
-        if (str == NULL)
+        if (str == NULL) {
+            if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError)) {
+                PyObject *exc = PyErr_GetRaisedException();
+                Py_ssize_t pos;
+                if (PyUnicodeEncodeError_GetStart(exc, &pos) == 0) {
+                    source_syntax_error(cmd, filename, pos,
+                        "source code string cannot contain surrogate characters");
+                }
+                Py_DECREF(exc);
+            }
             return NULL;
+        }
     }
     else if (PyBytes_Check(cmd)) {
         str = PyBytes_AS_STRING(cmd);

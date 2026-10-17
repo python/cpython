@@ -2338,9 +2338,8 @@ and classes for traversing abstract syntax trees:
       It is possible to crash the Python interpreter due to stack depth
       limitations in Python's AST compiler.
 
-      It can raise :exc:`ValueError`, :exc:`TypeError`, :exc:`SyntaxError`,
-      :exc:`MemoryError` and :exc:`RecursionError` depending on the malformed
-      input.
+      It can raise :exc:`ValueError`, :exc:`TypeError` or :exc:`SyntaxError`
+      depending on the malformed input.
 
    .. versionchanged:: 3.2
       Now allows bytes and set literals.
