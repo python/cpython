@@ -1,0 +1,1 @@
+Add cross-platform support for the ``%s`` strftime format code to the :mod:`datetime` module.
