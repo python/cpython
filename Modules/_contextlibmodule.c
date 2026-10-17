@@ -49,16 +49,24 @@ static PyMethodDef contextlib_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
+static PyModuleDef_Slot contextlib_slots[] = {
+    _Py_ABI_SLOT,
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL}
+};
+
 static struct PyModuleDef _contextlibmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_contextlib",
     .m_doc = _contextlib_doc,
-    .m_size = -1,
+    .m_size = 0,
     .m_methods = contextlib_methods,
+    .m_slots = contextlib_slots,
 };
 
 PyMODINIT_FUNC
 PyInit__contextlib(void)
 {
-    return PyModule_Create(&_contextlibmodule);
+    return PyModuleDef_Init(&_contextlibmodule);
 }
