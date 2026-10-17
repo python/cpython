@@ -1,0 +1,2 @@
+Fix :meth:`zipfile.ZipFile.mkdir` failing with an :class:`zipfile.ZipInfo`
+that does not already have a ``CRC`` attribute.
