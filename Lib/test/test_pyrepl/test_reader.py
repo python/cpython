@@ -35,6 +35,11 @@ class TestReader(ScreenEqualMixin, TestCase):
         reader, _ = handle_events_narrow_console(events)
         self.assert_screen_equal(reader, f"{9*"a"}\\\n{9*"a"}\\\naa")
 
+    def test_calc_screen_wrap_three_lines_last_char(self):
+        events = code_to_events(19 * "a")
+        reader, _ = handle_events_narrow_console(events)
+        self.assert_screen_equal(reader, f"{9*"a"}\\\n{9*"a"}\\\na")
+
     def test_calc_screen_prompt_handling(self):
         def prepare_reader_keep_prompts(*args, **kwargs):
             reader = prepare_reader(*args, **kwargs)
