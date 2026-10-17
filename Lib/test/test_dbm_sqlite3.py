@@ -5,7 +5,7 @@ import unittest
 from contextlib import closing
 from functools import partial
 from pathlib import Path
-from test.support import import_helper, os_helper
+from test.support import import_helper, os_helper, gc_collect
 
 dbm_sqlite3 = import_helper.import_module("dbm.sqlite3")
 # N.B. The test will fail on some platforms without sqlite3
@@ -31,7 +31,6 @@ class _SQLiteDbmTests(unittest.TestCase):
     def tearDown(self):
         for suffix in "", "-wal", "-shm":
             os_helper.unlink(self.filename + suffix)
-
 
 class URI(unittest.TestCase):
 
@@ -72,6 +71,7 @@ class ReadOnly(_SQLiteDbmTests):
         with dbm_sqlite3.open(self.filename, "w") as db:
             db[b"key1"] = "value1"
             db[b"key2"] = "value2"
+        gc_collect()
         self.db = dbm_sqlite3.open(self.filename, "r")
 
     def tearDown(self):
@@ -112,6 +112,7 @@ class ReadOnlyFilesystem(unittest.TestCase):
 
     def test_readonly_file_read(self):
         os.chmod(self.db_path, stat.S_IREAD)
+        gc_collect()
         with dbm_sqlite3.open(self.db_path, "r") as db:
             self.assertEqual(db[b"key"], b"value")
 
@@ -123,6 +124,7 @@ class ReadOnlyFilesystem(unittest.TestCase):
 
     def test_readonly_dir_read(self):
         os.chmod(self.test_dir, stat.S_IREAD | stat.S_IEXEC)
+        gc_collect()
         with dbm_sqlite3.open(self.db_path, "r") as db:
             self.assertEqual(db[b"key"], b"value")
 
@@ -134,6 +136,7 @@ class ReadOnlyFilesystem(unittest.TestCase):
                 modified = True  # on Windows and macOS
             except dbm_sqlite3.error:
                 modified = False
+        gc_collect()
         with dbm_sqlite3.open(self.db_path, "r") as db:
             if modified:
                 self.assertEqual(db[b"newkey"], b"newvalue")
@@ -350,6 +353,7 @@ class CorruptDatabase(_SQLiteDbmTests):
                 check(fn=self.len_)
 
     def test_corrupt_force_new(self):
+        gc_collect()
         with closing(dbm_sqlite3.open(self.filename, "n")) as db:
             db["foo"] = "write"
             _ = db[b"foo"]
