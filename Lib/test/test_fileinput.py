@@ -343,6 +343,14 @@ class FileInputTests(BaseTests, unittest.TestCase):
             result = fi.readline()
         self.assertEqual(result, "I used to receive only filename and mode")
 
+    def test_file_hook_errors_without_encoding(self):
+        def hook(filename, mode, *, encoding=None, errors=None):
+            return open(filename, mode, encoding=encoding or 'ascii', errors=errors)
+
+        filename = self.writeTmp(b'hello\xff\n', mode='wb')
+        with FileInput([filename], openhook=hook, errors='ignore') as fi:
+            self.assertEqual(list(fi), ['hello\n'])
+
     def test_context_manager(self):
         t1 = self.writeTmp("A\nB\nC")
         t2 = self.writeTmp("D\nE\nF")
