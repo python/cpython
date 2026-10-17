@@ -34,8 +34,15 @@ class ContentManager:
             # but we can't add it later, so do it for now.
             raise TypeError("set_content not valid on multipart")
         handler = self._find_set_handler(msg, obj)
-        msg.clear_content()
-        handler(msg, obj, *args, **kw)
+        headers = msg._headers
+        payload = msg._payload
+        try:
+            msg.clear_content()
+            handler(msg, obj, *args, **kw)
+        except BaseException:
+            msg._headers = headers
+            msg._payload = payload
+            raise
 
     def _find_set_handler(self, msg, obj):
         full_path_for_error = None
@@ -234,6 +241,8 @@ def set_bytes_content(msg, data, maintype, subtype, cte='base64',
         data = data.decode('ascii')
     elif cte in ('8bit', 'binary'):
         data = data.decode('ascii', 'surrogateescape')
+    else:
+        raise ValueError("Unknown content transfer encoding {}".format(cte))
     msg.set_payload(data)
     msg['Content-Transfer-Encoding'] = cte
     _finalize_set(msg, disposition, filename, cid, params)
