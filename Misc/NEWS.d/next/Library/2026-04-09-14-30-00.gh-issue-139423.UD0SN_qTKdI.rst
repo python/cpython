@@ -1,0 +1,4 @@
+Fixed :mod:`plistlib` to preserve carriage return characters (``\r``) during
+XML plist round-trips. Previously, ``\r`` and ``\r\n`` were normalized to
+``\n`` during serialization, causing data corruption. Carriage returns are now
+encoded as ``&#13;`` XML character references, which the XML parser preserves.
