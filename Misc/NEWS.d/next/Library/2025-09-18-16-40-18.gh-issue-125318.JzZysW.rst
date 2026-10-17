@@ -1,0 +1,3 @@
+Fixes a segmentation fault that would happen if :class:`zoneinfo.ZoneInfo`
+were used with certain non-:class:`datetime.datetime` classes. Patch by Paul
+Ganssle
