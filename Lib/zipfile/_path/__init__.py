@@ -414,7 +414,10 @@ class Path:
         """
         Return whether this path is a symlink.
         """
-        info = self.root.getinfo(self.at)
+        try:
+            info = self.root.getinfo(self.at)
+        except KeyError:
+            return False
         mode = info.external_attr >> 16
         return stat.S_ISLNK(mode)
 
