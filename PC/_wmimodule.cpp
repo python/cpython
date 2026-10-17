@@ -67,7 +67,7 @@ _query_thread(LPVOID param)
     }
 
     if (SUCCEEDED(hr)) {
-        hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+        hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     }
 
     if (FAILED(hr)) {
