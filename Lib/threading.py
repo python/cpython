@@ -1537,11 +1537,6 @@ class _MainThread(Thread):
             _active[self._ident] = self
 
 
-# Helper thread-local instance to detect when a _DummyThread
-# is collected. Not a part of the public API.
-_thread_local_info = local()
-
-
 class _DeleteDummyThreadOnDel:
     '''
     Helper class to remove a dummy thread from threading._active on __del__.
@@ -1691,6 +1686,24 @@ from _thread import stack_size
 # (Py_Main) as threading._shutdown.
 
 _main_thread = _MainThread()
+
+# Helper thread-local instance to detect when a _DummyThread is collected.
+# Not a part of the public API.
+#
+# This must be created only after _main_thread has been constructed and
+# registered in `_active` above (rather than immediately after the
+# _MainThread class, where it conceptually belongs). Constructing a
+# local() instance immediately populates the thread-local dict for the
+# creating thread, which calls current_thread(). When the platform's
+# `_thread` module doesn't provide `_local` (see the `local` import near
+# the top of this file), that population is done by the pure Python
+# fallback implementation in `_threading_local`. Creating this any earlier
+# either reintroduces the circular import described in gh-156341 (if
+# current_thread isn't defined yet), or -- if current_thread is defined
+# but the main thread hasn't been registered in `_active` yet -- causes
+# current_thread() to construct a _DummyThread, whose __init__ itself
+# needs _thread_local_info to already exist.
+_thread_local_info = local()
 
 def _shutdown():
     """
