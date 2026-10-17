@@ -1,0 +1,2 @@
+Document support for :rfc:`8259` in :mod:`json` module, which obsoletes
+:rfc:`7159`.
