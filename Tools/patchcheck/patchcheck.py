@@ -68,10 +68,16 @@ def get_git_upstream_remote():
         cwd=SRCDIR,
         encoding="UTF-8"
     )
+    # Keep the "(fetch)" lines only. A partial clone lists its filter after
+    # the URL type, e.g. "upstream\thttps://github.com/python/cpython (fetch)
+    # [blob:none]", so "(fetch)" is not necessarily at the end of the line.
+    fetch_remotes = [
+        remote for remote in output.split('\n') if "(fetch)" in remote
+    ]
     # Filter to desired remotes, accounting for potential uppercasing
     filtered_remotes = {
-        remote.split("\t")[0].lower() for remote in output.split('\n')
-        if "python/cpython" in remote.lower() and remote.endswith("(fetch)")
+        remote.split("\t")[0].lower() for remote in fetch_remotes
+        if "python/cpython" in remote.lower()
     }
     if len(filtered_remotes) == 1:
         [remote] = filtered_remotes
@@ -79,9 +85,7 @@ def get_git_upstream_remote():
     for remote_name in ["upstream", "origin", "python"]:
         if remote_name in filtered_remotes:
             return remote_name
-    remotes_found = "\n".join(
-        {remote for remote in output.split('\n') if remote.endswith("(fetch)")}
-    )
+    remotes_found = "\n".join(fetch_remotes)
     raise ValueError(
         f"Patchcheck was unable to find an unambiguous upstream remote, "
         f"with URL matching 'https://github.com/python/cpython'. "
