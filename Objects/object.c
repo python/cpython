@@ -1709,12 +1709,14 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
             dict = NULL;
         }
     }
+    _Py_INCREF_TYPE(tp);
     if (dict != NULL) {
         Py_INCREF(dict);
         if (PyDict_GetItemRef(dict, name, method) != 0) {
             // found or error
             Py_DECREF(dict);
             Py_XDECREF(descr);
+            _Py_DECREF_TYPE(tp);
             return 0;
         }
         // not found
@@ -1723,23 +1725,27 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
 
     if (meth_found) {
         *method = descr;
+        _Py_DECREF_TYPE(tp);
         return 1;
     }
 
     if (f != NULL) {
         *method = f(descr, obj, (PyObject *)Py_TYPE(obj));
         Py_DECREF(descr);
+        _Py_DECREF_TYPE(tp);
         return 0;
     }
 
     if (descr != NULL) {
         *method = descr;
+        _Py_DECREF_TYPE(tp);
         return 0;
     }
 
     PyErr_Format(PyExc_AttributeError,
                  "'%.100s' object has no attribute '%U'",
                  tp->tp_name, name);
+    _Py_DECREF_TYPE(tp);
 
     _PyObject_SetAttributeErrorContext(obj, name);
     return 0;
@@ -1823,22 +1829,26 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, _PyStackRef *self,
             dict = NULL;
         }
     }
+    _Py_INCREF_TYPE(tp);
     if (dict != NULL) {
         assert(PyUnicode_CheckExact(name));
         int found = _PyDict_GetMethodStackRef((PyDictObject *)dict, name, method);
         if (found < 0) {
             assert(PyStackRef_IsNull(*method));
             PyStackRef_CLEAR(*self);
+            _Py_DECREF_TYPE(tp);
             return -1;
         }
         else if (found) {
             PyStackRef_CLEAR(*self);
+            _Py_DECREF_TYPE(tp);
             return 0;
         }
     }
 
     if (meth_found) {
         assert(!PyStackRef_IsNull(*method));
+        _Py_DECREF_TYPE(tp);
         return 1;
     }
 
@@ -1847,17 +1857,20 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, _PyStackRef *self,
             PyObject *callable = _PyClassMethod_GetFunc(descr);
             PyStackRef_XSETREF(*method, PyStackRef_FromPyObjectNew(callable));
             PyStackRef_XSETREF(*self, PyStackRef_FromPyObjectNew((PyObject *)tp));
+            _Py_DECREF_TYPE(tp);
             return 1;
         }
         else if (Py_IS_TYPE(descr, &PyStaticMethod_Type)) {
             PyObject *callable = _PyStaticMethod_GetFunc(descr);
             PyStackRef_XSETREF(*method, PyStackRef_FromPyObjectNew(callable));
             PyStackRef_CLEAR(*self);
+            _Py_DECREF_TYPE(tp);
             return 0;
         }
         PyObject *value = f(descr, obj, (PyObject *)tp);
         PyStackRef_CLEAR(*method);
         PyStackRef_CLEAR(*self);
+        _Py_DECREF_TYPE(tp);
         if (value) {
             *method = PyStackRef_FromPyObjectSteal(value);
             return 0;
@@ -1868,12 +1881,14 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, _PyStackRef *self,
     if (descr != NULL) {
         assert(!PyStackRef_IsNull(*method));
         PyStackRef_CLEAR(*self);
+        _Py_DECREF_TYPE(tp);
         return 0;
     }
 
     PyErr_Format(PyExc_AttributeError,
                  "'%.100s' object has no attribute '%U'",
                  tp->tp_name, name);
+    _Py_DECREF_TYPE(tp);
 
     _PyObject_SetAttributeErrorContext(obj, name);
     assert(PyStackRef_IsNull(*method));
@@ -1912,6 +1927,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     }
 
     Py_INCREF(name);
+    _Py_INCREF_TYPE(tp);
 
     PyThreadState *tstate = _PyThreadState_GET();
     _PyCStackRef cref;
@@ -2016,6 +2032,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     }
   done:
     _PyThreadState_PopCStackRef(tstate, &cref);
+    _Py_DECREF_TYPE(tp);
     Py_DECREF(name);
     return res;
 }
