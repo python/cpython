@@ -1,0 +1,2 @@
+Fix a leak of header buffer exports in :func:`os.sendfile` on macOS and
+FreeBSD.
