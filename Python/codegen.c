@@ -6336,7 +6336,6 @@ codegen_pattern_or(compiler *c, pattern_ty p, pattern_context *pc)
     assert(size > 1);
     PyObject *mismatched_names = NULL;
     Py_ssize_t mismatch_index = 0;
-    PyObject *str_nothing = NULL; // the string 'nothing'
     // We're going to be messing with pc. Keep the original info handy:
     pattern_context old_pc = *pc;
     Py_INCREF(pc->stores);
@@ -6483,24 +6482,17 @@ diff:;
         || PyList_GET_SIZE(mismatched_names) == 0
     );
 
-    if (control_is_empty || pattern_is_empty) {
-        str_nothing = PyUnicode_FromString("nothing");
-        if (str_nothing == NULL) {
-            goto error;
-        }
-    }
     _PyCompile_Error(
         c, LOC(p),
         "alternative patterns bind different names "
         "(pattern 1 binds %S, pattern %zd binds %S)",
-        control_is_empty ? str_nothing : control,
+        control_is_empty ? &_Py_ID(nothing) : control,
         mismatch_index + 1,
-        pattern_is_empty ? str_nothing : mismatched_names
+        pattern_is_empty ? &_Py_ID(nothing) : mismatched_names
     );
 error:
     PyMem_Free(old_pc.fail_pop);
     Py_XDECREF(mismatched_names);
-    Py_XDECREF(str_nothing);
     Py_DECREF(old_pc.stores);
     Py_XDECREF(control);
     return ERROR;

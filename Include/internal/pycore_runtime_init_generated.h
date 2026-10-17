@@ -1944,6 +1944,7 @@ extern "C" {
     INIT_ID(nlocals), \
     INIT_ID(node_depth), \
     INIT_ID(node_offset), \
+    INIT_ID(nothing), \
     INIT_ID(ns), \
     INIT_ID(nstype), \
     INIT_ID(nt), \
