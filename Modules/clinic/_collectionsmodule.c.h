@@ -565,6 +565,36 @@ deque___reversed__(PyObject *deque, PyObject *Py_UNUSED(ignored))
     return deque___reversed___impl((dequeobject *)deque);
 }
 
+PyDoc_STRVAR(defdict_missing__doc__,
+"__missing__($self, key, /)\n"
+"--\n"
+"\n"
+"Called by __getitem__ for missing key.\n"
+"\n"
+"Pseudo-code:\n"
+"  if self.default_factory is None:\n"
+"    raise KeyError((key,))\n"
+"  self[key] = value = self.default_factory()\n"
+"  return value");
+
+#define DEFDICT_MISSING_METHODDEF    \
+    {"__missing__", (PyCFunction)defdict_missing, METH_O, defdict_missing__doc__},
+
+static PyObject *
+defdict_missing_impl(defdictobject *self, PyObject *key);
+
+static PyObject *
+defdict_missing(PyObject *self, PyObject *key)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = defdict_missing_impl((defdictobject *)self, key);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_collections__count_elements__doc__,
 "_count_elements($module, mapping, iterable, /)\n"
 "--\n"
@@ -632,4 +662,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f5a388add99d3d15 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4979a785e33cb0ee input=a9049054013a1b77]*/
