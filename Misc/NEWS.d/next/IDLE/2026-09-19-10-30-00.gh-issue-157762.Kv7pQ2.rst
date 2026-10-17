@@ -1,0 +1,3 @@
+Fix the Alt-2 (zoom height) binding in IDLE's tree windows, such as Path
+Browser and Module Browser.  It called a function removed from
+``idlelib.zoomheight`` in 2019 and raised :exc:`AttributeError`.

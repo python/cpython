@@ -28,6 +28,10 @@ class TreeTest(unittest.TestCase):
         node = tree.TreeNode(sc.canvas, None, item)
         node.expand()
 
+    def test_zoom_height(self):
+        sc = tree.ScrolledCanvas(self.root)
+        self.assertEqual(sc.zoom_height(None), "break")
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
