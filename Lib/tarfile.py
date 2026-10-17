@@ -1498,6 +1498,8 @@ class TarInfo(object):
         # Collect sparse structures from extended header blocks.
         while isextended:
             buf = tarfile.fileobj.read(BLOCKSIZE)
+            if len(buf) < BLOCKSIZE:
+                raise ReadError("unexpected end of data")
             pos = 0
             for i in range(21):
                 try:
