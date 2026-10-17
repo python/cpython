@@ -11,6 +11,7 @@ import os
 import struct
 import sys
 import time
+import warnings  # must stay eager to support finalization
 import weakref
 import zlib
 from compression._common import _streams
@@ -229,7 +230,6 @@ class GzipFile(_streams.BaseStream):
 
             elif mode.startswith(('w', 'a', 'x')):
                 if origmode is None:
-                    import warnings
                     warnings.warn(
                         "GzipFile was opened for writing, but this will "
                         "change in future Python releases.  "
@@ -468,7 +468,6 @@ class GzipFile(_streams.BaseStream):
 
     def __del__(self):
         if self.mode == WRITE and not self.closed:
-            import warnings
             warnings.warn("unclosed GzipFile",
                           ResourceWarning, source=self, stacklevel=2)
 

@@ -1,0 +1,4 @@
+:mod:`gzip` now imports :mod:`warnings` eagerly so that a writable
+:class:`~gzip.GzipFile` left unclosed at interpreter shutdown can emit its
+:exc:`ResourceWarning` and be closed instead of failing with an
+:exc:`ImportError`.
