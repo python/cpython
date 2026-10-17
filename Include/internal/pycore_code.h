@@ -566,8 +566,11 @@ _PyCode_GetTLBCFast(PyThreadState *tstate, PyCodeObject *co)
 {
     _PyCodeArray *code = _PyCode_GetTLBCArray(co);
     int32_t idx = ((_PyThreadStateImpl*) tstate)->tlbc_index;
-    if (idx < code->size && code->entries[idx] != NULL) {
-        return (_Py_CODEUNIT *) code->entries[idx];
+    if (idx < code->size) {
+        void *entry = _Py_atomic_load_ptr_acquire(&code->entries[idx]);
+        if (entry != NULL) {
+            return (_Py_CODEUNIT *) entry;
+        }
     }
     return NULL;
 }
