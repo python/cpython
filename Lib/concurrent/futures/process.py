@@ -708,8 +708,9 @@ def _check_system_limits():
         raise NotImplementedError(_system_limited)
     try:
         nsems_max = os.sysconf("SC_SEM_NSEMS_MAX")
-    except (AttributeError, ValueError):
-        # sysconf not available or setting not available
+    except (AttributeError, ValueError, OSError):
+        # sysconf not available, setting not available, or the read was
+        # denied (e.g. a sandbox profile that denies sysctl reads on macOS)
         return
     if nsems_max == -1:
         # indetermined limit, assume that limit is determined
