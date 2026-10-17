@@ -475,6 +475,17 @@ sock.connect(('localhost', {port}))
 
 @requires_remote_subprocess_debugging()
 class TestSelfStackTrace(RemoteInspectionTestBase):
+    def _extract_coroutine_funcnames(self, trace):
+        return {
+            task.task_name: [
+                frame.funcname.rpartition(".")[2]
+                for coro in task.coroutine_stack
+                for frame in coro.call_stack
+            ]
+            for info in trace
+            for task in info.awaited_by
+        }
+
     @skip_if_not_supported
     def test_long_task_name_is_truncated(self):
         # gh-157788
@@ -525,37 +536,25 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
             async for _ in agen():
                 yield
 
-        async def consumer():
-            async for _ in agen():
-                pass
-
-        async def nested_consumer():
-            async for _ in outer_agen():
+        async def consumer(gen):
+            async for _ in gen:
                 pass
 
         async def main():
             g = agen_with_cleanup()
             await anext(g)
-            async_for_task = asyncio.create_task(consumer(), name="async for")
+            async_for_task = asyncio.create_task(consumer(agen()), name="async for")
             nested_task = asyncio.create_task(
-                nested_consumer(), name="nested async for")
+                consumer(outer_agen()), name="nested async for")
             anext_task = asyncio.create_task(anext(agen()), name="anext")
             aclose_task = asyncio.create_task(g.aclose(), name="aclose")
             await asyncio.sleep(0)
-            return {
-                task.task_name: [
-                    frame.funcname.rpartition(".")[2]
-                    for coro in task.coroutine_stack
-                    for frame in coro.call_stack
-                ]
-                for info in RemoteUnwinder(os.getpid()).get_all_awaited_by()
-                for task in info.awaited_by
-            }
+            return RemoteUnwinder(os.getpid()).get_all_awaited_by()
 
-        stacks = asyncio.run(main())
+        stacks = self._extract_coroutine_funcnames(asyncio.run(main()))
         self.assertEqual(stacks["async for"], ["sleep", "agen", "consumer"])
         self.assertEqual(stacks["nested async for"],
-                         ["sleep", "agen", "outer_agen", "nested_consumer"])
+                         ["sleep", "agen", "outer_agen", "consumer"])
         self.assertEqual(stacks["anext"], ["sleep", "agen"])
         self.assertEqual(stacks["aclose"], ["sleep", "agen_with_cleanup"])
 
@@ -570,37 +569,21 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
             waiter_task = asyncio.create_task(
                 anext(agen(asyncio.current_task())), name="anext")
             await asyncio.sleep(0)
-            return {
-                task.task_name: [
-                    frame.funcname.rpartition(".")[2]
-                    for coro in task.coroutine_stack
-                    for frame in coro.call_stack
-                ]
-                for info in RemoteUnwinder(os.getpid()).get_async_stack_trace()
-                for task in info.awaited_by
-            }
+            return RemoteUnwinder(os.getpid()).get_async_stack_trace()
 
-        stacks = asyncio.run(main())
+        stacks = self._extract_coroutine_funcnames(asyncio.run(main()))
         self.assertEqual(stacks["anext"], ["agen"])
 
     @skip_if_not_supported
     def test_async_generator_running_task_stack(self):
         # gh-159620
         async def agen():
-            yield {
-                task.task_name: [
-                    frame.funcname.rpartition(".")[2]
-                    for coro in task.coroutine_stack
-                    for frame in coro.call_stack
-                ]
-                for info in RemoteUnwinder(os.getpid()).get_async_stack_trace()
-                for task in info.awaited_by
-            }
+            yield RemoteUnwinder(os.getpid()).get_async_stack_trace()
 
         async def main():
             return await asyncio.create_task(anext(agen()), name="anext")
 
-        stacks = asyncio.run(main())
+        stacks = self._extract_coroutine_funcnames(asyncio.run(main()))
         self.assertEqual(stacks["anext"], ["agen"])
 
     @skip_if_not_supported
@@ -622,24 +605,13 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
             await aw
 
         async def main():
-            gen = decoy()
-            consumer_task = asyncio.create_task(
-                consumer(async_generator_asend(gen)), name="consumer")
-            await asyncio.sleep(0)
-            try:
-                return {
-                    task.task_name: [
-                        frame.funcname.rpartition(".")[2]
-                        for coro in task.coroutine_stack
-                        for frame in coro.call_stack
-                    ]
-                    for info in RemoteUnwinder(os.getpid()).get_all_awaited_by()
-                    for task in info.awaited_by
-                }
-            finally:
-                gen.close()
+            with contextlib.closing(decoy()) as gen:
+                consumer_task = asyncio.create_task(
+                    consumer(async_generator_asend(gen)), name="consumer")
+                await asyncio.sleep(0)
+                return RemoteUnwinder(os.getpid()).get_all_awaited_by()
 
-        stacks = asyncio.run(main())
+        stacks = self._extract_coroutine_funcnames(asyncio.run(main()))
         self.assertEqual(stacks["consumer"], ["consumer"])
 
     @skip_if_not_supported

@@ -324,17 +324,14 @@ get_awaited_coro_address(
     uintptr_t stackpointer_addr = GET_MEMBER_NO_TAG(uintptr_t, iframe, unwinder->debug_offsets.interpreter_frame.stackpointer);
 
     if ((void*)stackpointer_addr != NULL) {
-        uintptr_t gi_await_addr;
         err = read_py_ptr(
             unwinder,
             stackpointer_addr - sizeof(void*) * 2,
-            &gi_await_addr);
+            next_coro);
         if (err) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read gi_await address");
             return -1;
         }
-
-        *next_coro = gi_await_addr;
     }
 
     return 0;
