@@ -2848,6 +2848,36 @@ class BugsTest(unittest.TestCase):
         self.assertEqual(ET.tostring(e),
             b'<dc:title xmlns:dc="http://purl.org/dc/elements/1.1/" />')
 
+    def test_register_namespace_invalid(self):
+        # gh-157518
+        xml_ns = 'http://www.w3.org/XML/1998/namespace'
+        xmlns_ns = 'http://www.w3.org/2000/xmlns/'
+        nsmap = ET.register_namespace._namespace_map
+        saved = dict(nsmap)
+        for prefix, uri in [
+            ('ns0', 'u'), ('ns12', 'u'),
+            ('xml', 'u'), ('foo', xml_ns),
+            ('xmlns', 'u'), ('foo', xmlns_ns),
+            ('a:b', 'u'), ('1', 'u'), ('a b', 'u'), ('a\xa0b', 'u'),
+        ]:
+            with self.subTest(prefix=prefix, uri=uri):
+                with self.assertRaises(ValueError):
+                    ET.register_namespace(prefix, uri)
+                # the registry is not changed
+                self.assertEqual(nsmap, saved)
+        for prefix, uri in [(1, 'u'), (b'a', 'u'), ('a', 1), ('a', None)]:
+            with self.subTest(prefix=prefix, uri=uri):
+                with self.assertRaises(TypeError):
+                    ET.register_namespace(prefix, uri)
+        # the xml prefix can be registered for its namespace
+        ET.register_namespace('xml', xml_ns)
+        self.assertEqual(ET.register_namespace._namespace_map[xml_ns], 'xml')
+        # non-ASCII names are valid
+        self.addCleanup(ET.register_namespace._namespace_map.pop, 'u', None)
+        ET.register_namespace('\xe9', 'u')
+        self.assertEqual(ET.tostring(ET.Element('{u}a'), encoding='unicode'),
+                         '<\xe9:a xmlns:\xe9="u" />')
+
     def test_bug_200709_element_comment(self):
         # Not sure if this can be fixed, really (since the serializer needs
         # ET.Comment, not cET.comment).
