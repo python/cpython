@@ -1,0 +1,7 @@
+The IPv6 address block ``fec0::/10`` (the former Site-Local scoped address
+prefix deprecated by :rfc:`3879`) is now reported as reserved by
+:attr:`ipaddress.IPv6Address.is_reserved`.  The
+:attr:`~ipaddress.IPv6Address.is_site_local` and
+:attr:`~ipaddress.IPv6Network.is_site_local` attributes are now deprecated
+and slated for removal in Python 3.21; use
+:attr:`~ipaddress.IPv6Address.is_private` instead.
