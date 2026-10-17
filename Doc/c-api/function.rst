@@ -14,6 +14,10 @@ There are a few functions specific to Python functions.
 
    The C structure used for functions.
 
+   In the free-threaded build, direct access to mutable fields requires
+   synchronization if another thread may modify the function. See
+   :ref:`freethreading-extensions-howto`.
+
 
 .. c:var:: PyTypeObject PyFunction_Type
 
@@ -70,6 +74,11 @@ There are a few functions specific to Python functions.
 
    This is normally a :class:`string <str>` containing the module name,
    but can be set to any other object by Python code.
+
+   In the free-threaded build, if the attribute may be modified concurrently,
+   convert the borrowed reference to a strong reference with :c:func:`Py_XNewRef`
+   immediately, before calling any other Python API. The same applies to
+   :c:func:`PyFunction_GET_MODULE`.
 
 
 .. c:function:: PyObject* PyFunction_GetDefaults(PyObject *op)
