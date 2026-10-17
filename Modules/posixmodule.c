@@ -11941,7 +11941,10 @@ os_closerange_impl(PyObject *module, int fd_low, int fd_high)
 /*[clinic end generated code: output=0ce5c20fcda681c2 input=5855a3d053ebd4ec]*/
 {
     Py_BEGIN_ALLOW_THREADS
-    _Py_closerange(fd_low, fd_high - 1);
+    /* Check the exclusive upper bound before converting it to inclusive. */
+    if (fd_high > 0 && fd_low < fd_high) {
+        _Py_closerange(fd_low, fd_high - 1);
+    }
     Py_END_ALLOW_THREADS
     Py_RETURN_NONE;
 }
