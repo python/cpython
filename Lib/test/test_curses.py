@@ -14,6 +14,7 @@ from test.support import (requires, verbose, SaveSignals, cpython_only,
                           check_disallow_instantiation, MISSING_C_DOCSTRINGS,
                           gc_collect, SHORT_TIMEOUT)
 from test.support.import_helper import import_module
+from test.support.os_helper import EnvironmentVarGuard
 
 # Optionally test curses module.  This currently requires that the
 # 'curses' resource be given on the regrtest command line using the -u
@@ -3271,6 +3272,11 @@ class NewtermTestBase(unittest.TestCase):
         self.save_signals = SaveSignals()
         self.save_signals.save()
         self.addCleanup(self.save_signals.restore)
+        # A new pseudo-terminal has no size, so newterm() takes it from
+        # $LINES and $COLUMNS, or from the terminfo entry if they are unset.
+        env = self.enterContext(EnvironmentVarGuard())
+        env['LINES'] = '24'
+        env['COLUMNS'] = '80'
 
     def tearDown(self):
         # Leave visual mode and reclaim the test's screens while their
@@ -3336,6 +3342,26 @@ class ScreenTests(NewtermTestBase):
         self.assertEqual(win.getmaxyx(), (24, 80))
         win.addstr(0, 0, 'hello')
         win.refresh()
+
+    def test_lines_columns_env(self):
+        # $LINES and $COLUMNS override the size from the terminfo entry
+        # (24x80 for xterm).
+        for lines, columns, size in [('30', '100', (30, 100)),
+                                     ('30', None, (30, 80)),
+                                     (None, '100', (24, 100)),
+                                     (None, None, (24, 80))]:
+            with self.subTest(lines=lines, columns=columns):
+                with EnvironmentVarGuard() as env:
+                    for name, value in [('LINES', lines),
+                                        ('COLUMNS', columns)]:
+                        if value is None:
+                            env.unset(name)
+                        else:
+                            env[name] = value
+                    s = self.make_pty()
+                    screen = curses.newterm('xterm', s, s)
+                self.assertEqual(screen.stdscr.getmaxyx(), size)
+                self.assertEqual((curses.LINES, curses.COLS), size)
 
     def test_newterm_file_object(self):
         # type=None uses $TERM; the file arguments accept file objects too.
