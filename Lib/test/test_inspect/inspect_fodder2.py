@@ -400,4 +400,34 @@ def func394():
 def func400():
     return 401
 
+# line 403
+class FunctionLike:
+    # Like a function compiled by Cython: it provides __code__, but it is not
+    # an instance of types.FunctionType.  It does not set __wrapped__, so
+    # inspect cannot unwrap it to get back to the original function.
+    def __init__(self, func):
+        self.__code__ = func.__code__
+
+    def __get__(self, instance, owner=None):
+        if instance is None:
+            return self
+        return MethodLike(self, instance)
+
+class MethodLike:
+    # Provides __func__, but is not an instance of types.MethodType.
+    def __init__(self, func, instance):
+        self.__func__ = func
+        self.__self__ = instance
+
+# line 422
+@FunctionLike
+def func424():
+    return 425
+
+# line 427
+class cls428:
+    @FunctionLike
+    def func430(self):
+        return 431
+
 pass # end of file

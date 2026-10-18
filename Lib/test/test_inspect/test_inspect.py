@@ -1039,6 +1039,14 @@ class TestDecorators(GetSourceBase):
     def test_decorator_with_lambda(self):
         self.assertSourceEqual(mod2.func114, 113, 115)
 
+    def test_function_like_decorator(self):
+        # Test duck-typed functions and methods (as dummies for Cython functions)
+        self.assertEqual(inspect.getfile(mod2.func424), mod2.__file__)
+        self.assertSourceEqual(mod2.func424, 423, 425)
+        method = mod2.cls428().func430
+        self.assertEqual(inspect.getfile(method), mod2.__file__)
+        self.assertSourceEqual(method, 429, 431)
+
 class TestOneliners(GetSourceBase):
     fodderModule = mod2
     def test_oneline_lambda(self):

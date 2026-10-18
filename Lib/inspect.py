@@ -270,7 +270,7 @@ else:
         return False
 
 def isfunction(object):
-    """Return true if the object is a user-defined Python function.
+    """Return true if the object is a user-defined function.
 
     Function objects provide these attributes:
         __doc__         documentation string
