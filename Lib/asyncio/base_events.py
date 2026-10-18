@@ -1244,7 +1244,6 @@ class BaseEventLoop(events.AbstractEventLoop):
             await waiter
         except:
             transport.close()
-            # gh-159049
             waiter = None
             raise
 
