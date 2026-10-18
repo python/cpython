@@ -5017,8 +5017,15 @@ static PyObject *
 _imp_acquire_lock_impl(PyObject *module)
 /*[clinic end generated code: output=1aff58cb0ee1b026 input=60e9c1b4ab471ead]*/
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyImport_AcquireLock(interp);
+    PyThreadState *tstate = _PyThreadState_GET();
+    // Leave enough stack for importlib to release the lock.
+    if (_Py_ReachedRecursionLimitWithMargin(tstate, 2)) {
+        _PyErr_SetString(tstate, PyExc_RecursionError,
+                         "maximum recursion depth exceeded while "
+                         "acquiring the import lock");
+        return NULL;
+    }
+    _PyImport_AcquireLock(tstate->interp);
     Py_RETURN_NONE;
 }
 
