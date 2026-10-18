@@ -1,6 +1,5 @@
 """Tests for asyncio/sslproto.py."""
 
-import gc
 import logging
 import socket
 import unittest
@@ -838,12 +837,19 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
         sslctx = test_utils.simple_server_sslcontext()
         client_sslctx = test_utils.simple_client_sslcontext(
             disable_verify=False)
+        transports = []
 
         def server(sock):
             try:
                 sock.start_tls(sslctx, server_side=True)
             except OSError:
                 pass
+
+        connection_made = sslproto.SSLProtocol.connection_made
+
+        def remember_transport(proto, tr):
+            transports.append(weakref.ref(tr))
+            connection_made(proto, tr)
 
         async def conn(addr):
             try:
@@ -854,11 +860,11 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 pass
 
         support.gc_collect()
-        with self.tcp_server(server) as srv, support.disable_gc():
+        with (self.tcp_server(server) as srv, support.disable_gc(),
+              mock.patch.object(sslproto.SSLProtocol, 'connection_made',
+                                remember_transport)):
             self.loop.run_until_complete(conn(srv.addr))
-            self.assertFalse([o for o in gc.get_objects()
-                              if isinstance(o, (asyncio.Transport,
-                                                sslproto.SSLProtocol))])
+            self.assertEqual([tr() for tr in transports], [None])
 
     def test_create_server_ssl_failed_handshake_sends_alert(self):
         # gh-98078: when the handshake fails, the server must send the
