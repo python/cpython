@@ -1145,21 +1145,16 @@ try_keyword_typo(Parser *p, KeywordTypo *candidate, KeywordTrial *state)
     // must be private: even a failed trial can memoize nodes containing its edit.
     Token *tokens = PyMem_Malloc(p->fill * sizeof(*tokens));
     Token **index = PyMem_Malloc(p->fill * sizeof(*index));
-    IdentifierCacheEntry *identifiers = p->identifier_cache == NULL ? NULL :
-        PyMem_Malloc(IDENTIFIER_CACHE_SIZE * sizeof(*identifiers));
+    Parser trial = *p;
+    trial.identifier_cache = p->identifier_cache == NULL ? NULL :
+        PyMem_Malloc(IDENTIFIER_CACHE_SIZE * sizeof(*trial.identifier_cache));
     PyArena *arena = _PyArena_New();
     PyObject *replacement = PyBytes_FromString(candidate->keyword);
+    int accepted = -1;
     if (tokens == NULL || index == NULL || arena == NULL || replacement == NULL ||
-        (p->identifier_cache != NULL && identifiers == NULL))
+        (p->identifier_cache != NULL && trial.identifier_cache == NULL))
     {
-        PyMem_Free(tokens);
-        PyMem_Free(index);
-        PyMem_Free(identifiers);
-        if (arena != NULL) {
-            _PyArena_Free(arena);
-        }
-        Py_XDECREF(replacement);
-        return -1;
+        goto done;
     }
     for (int i = 0; i < p->fill; i++) {
         tokens[i] = *p->tokens[i];
@@ -1167,9 +1162,9 @@ try_keyword_typo(Parser *p, KeywordTypo *candidate, KeywordTrial *state)
         tokens[i].memo_mask = 0;
         index[i] = &tokens[i];
     }
-    if (identifiers != NULL) {
-        memcpy(identifiers, p->identifier_cache,
-               IDENTIFIER_CACHE_SIZE * sizeof(*identifiers));
+    if (trial.identifier_cache != NULL) {
+        memcpy(trial.identifier_cache, p->identifier_cache,
+               IDENTIFIER_CACHE_SIZE * sizeof(*trial.identifier_cache));
     }
     Token *edited = &tokens[candidate->mark];
     edited->type = _get_keyword_or_name_type(
@@ -1178,7 +1173,6 @@ try_keyword_typo(Parser *p, KeywordTypo *candidate, KeywordTrial *state)
 
     state->furthest = 0;
     state->incomplete_suite = 0;
-    Parser trial = *p;
     trial.tokens = index;
     trial.arena = arena;
     trial.size = trial.fill;
@@ -1197,10 +1191,9 @@ try_keyword_typo(Parser *p, KeywordTypo *candidate, KeywordTrial *state)
 #endif
     trial.known_err_token = NULL;
     trial.errcode = NULL;
-    trial.identifier_cache = identifiers;
     trial.normalize = NULL;
-    int accepted = _PyPegen_parse(&trial) != NULL &&
-                   !trial.error_indicator && !PyErr_Occurred();
+    accepted = _PyPegen_parse(&trial) != NULL &&
+               !trial.error_indicator && !PyErr_Occurred();
     for (int i = trial.mark; accepted && i < trial.fill; i++) {
         accepted = tokens[i].type == NEWLINE || tokens[i].type == ENDMARKER;
     }
@@ -1224,11 +1217,14 @@ try_keyword_typo(Parser *p, KeywordTypo *candidate, KeywordTrial *state)
         // older grammars, require a complete repair so those checks execute.
         accepted = state->incomplete_suite && p->feature_version == PY_MINOR_VERSION;
     }
+done:
     // No Parser_Free: the trial borrows the tokenizer and type-ignore comments,
     // and its token headers are a single allocation.
     PyMem_Free(trial.identifier_cache);
-    _PyArena_Free(arena);
-    Py_DECREF(replacement);
+    if (arena != NULL) {
+        _PyArena_Free(arena);
+    }
+    Py_XDECREF(replacement);
     PyMem_Free(index);
     PyMem_Free(tokens);
     return PyErr_Occurred() ? -1 : accepted;
@@ -1365,7 +1361,7 @@ keyword_typo_metadata(Parser *p, PySyntaxErrorObject *error)
     qsort(candidates, count, sizeof(*candidates), compare_keyword_typos);
     // All candidates and both parser passes share this work budget.
     KeywordTrial state = {.budget = MAX_KEYWORD_TYPO_STEPS};
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < count && state.budget > 0; i++) {
         int accepted = try_keyword_typo(p, &candidates[i], &state);
         if (accepted < 0) {
             return NULL;

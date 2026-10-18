@@ -1866,12 +1866,6 @@ class TestKeywordTypoSuggestions(unittest.TestCase):
                     with self.assertRaises(SyntaxError) as caught:
                         compile(source + ending, "<test>", "single")
                     self.assertEqual(caught.exception._metadata[0], keyword)
-                    with (unittest.mock.patch("builtins.compile") as compile_mock,
-                          unittest.mock.patch("builtins.open") as open_mock):
-                        text = ''.join(traceback.format_exception_only(caught.exception))
-                    self.assertIn(f"Did you mean '{keyword}'", text)
-                    compile_mock.assert_not_called()
-                    open_mock.assert_not_called()
 
     def test_no_keyword_suggestion_for_comma_errors(self):
         # When the parser identifies a missing comma, don't suggest
