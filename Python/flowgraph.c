@@ -1298,7 +1298,7 @@ jump_thread(basicblock *bb, cfg_instr *inst, cfg_instr *target, int opcode)
         RETURN_IF_ERROR(
             basicblock_add_jump(
                 bb, opcode, target->i_target, target->i_loc,
-                inst->i_except));
+                target->i_except));
 
         return true;
     }
