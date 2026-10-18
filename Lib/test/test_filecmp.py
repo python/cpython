@@ -274,6 +274,7 @@ class DirCompareTestCase(unittest.TestCase):
         with self.assertRaises(AttributeError):
             dc.invalid_attr_test_123
 
+
     def tearDown(self):
         for dir in (self.dir, self.dir_same, self.dir_diff,
                     self.dir_same_shallow, self.dir_diff_file):
