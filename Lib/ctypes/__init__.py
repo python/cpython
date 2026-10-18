@@ -12,6 +12,12 @@ from _ctypes import CFuncPtr as _CFuncPtr
 from _ctypes import RTLD_LOCAL, RTLD_GLOBAL
 from _ctypes import ArgumentError
 from _ctypes import SIZEOF_TIME_T
+try:
+    from _ctypes import (LIBFFI_VERSION, libffi_version,
+                         LIBFFI_VERSION_INFO, libffi_version_info)
+except ImportError:
+    # libffi < 3.5 does not provide version information.
+    pass
 from _ctypes import CField
 
 from struct import calcsize as _calcsize
@@ -555,7 +561,10 @@ elif _sys.platform == "android":
 elif _sys.platform == "cygwin":
     pythonapi = PyDLL(_sysconfig.get_config_var("DLLLIBRARY"))
 else:
-    pythonapi = PyDLL(None)
+    try:
+        pythonapi = PyDLL(None)
+    except OSError:
+        pythonapi = None
 
 
 if _os.name == "nt":

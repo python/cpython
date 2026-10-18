@@ -285,6 +285,10 @@ ZipFile objects
       Added support for specifying member name encoding for reading
       metadata in the zipfile's directory and file headers.
 
+   .. versionchanged:: 3.16
+      Deleting a writable, open :class:`zipfile.ZipFile` now emits a
+      :exc:`ResourceWarning`. Use as a :term:`context manager` or call
+      :meth:`~zipfile.ZipFile.close` explicitly.
 
 .. method:: ZipFile.close()
 
@@ -574,14 +578,16 @@ ZipFile objects
       :class:`ZipInfo` to :meth:`repack` to ensure the data is removed
       regardless of how the entry was written.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. method:: ZipFile.repack(removed=None, *, \
                            strict_descriptor=True[, chunk_size])
 
    Rewrites the archive to remove unreferenced local file entries, shrinking
-   its file size.  The archive must be opened with mode ``'a'``.
+   its file size.  The archive must be opened with mode ``'a'``, and any file
+   object returned by :meth:`ZipFile.open` must be closed first, since
+   repacking moves the member data such objects refer to.
 
    If *removed* is provided, it must be a sequence of :class:`ZipInfo` objects
    representing the recently removed members, and only their corresponding
@@ -635,7 +641,7 @@ ZipFile objects
       recommended to provide the *removed* argument for better reliability and
       performance.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 The following data attributes are also available:

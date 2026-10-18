@@ -594,9 +594,14 @@ _zstd_ZstdDecompressor_unused_data_get_impl(ZstdDecompressor *self)
     }
     else {
         if (self->unused_data == NULL) {
-            self->unused_data = PyBytes_FromStringAndSize(
-                                    self->input_buffer + self->in_begin,
-                                    self->in_end - self->in_begin);
+            if (self->input_buffer == NULL) {
+                self->unused_data = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+            }
+            else {
+                self->unused_data = PyBytes_FromStringAndSize(
+                                        self->input_buffer + self->in_begin,
+                                        self->in_end - self->in_begin);
+            }
             ret = self->unused_data;
             Py_XINCREF(ret);
         }

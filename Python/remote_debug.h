@@ -107,9 +107,18 @@ _Py_RemoteDebug_HasPermissionError(void)
         && PyErr_ExceptionMatches(PyExc_PermissionError);
 }
 
+static inline int
+_Py_RemoteDebug_IsFatalReadError(void)
+{
+    return _Py_RemoteDebug_HasPermissionError()
+        || PyErr_ExceptionMatches(PyExc_MemoryError)
+        || PyErr_ExceptionMatches(PyExc_ProcessLookupError)
+        || (PyErr_Occurred() && !PyErr_ExceptionMatches(PyExc_Exception));
+}
+
 #define _set_debug_exception_cause(exception, format, ...) \
     do { \
-        if (!_Py_RemoteDebug_HasPermissionError()) { \
+        if (!_Py_RemoteDebug_IsFatalReadError()) { \
             PyThreadState *tstate = _PyThreadState_GET(); \
             if (!_PyErr_Occurred(tstate)) { \
                 _PyErr_Format(tstate, exception, format, ##__VA_ARGS__); \
@@ -142,7 +151,8 @@ get_page_size(void) {
         GetSystemInfo(&si);
         page_size = si.dwPageSize;
 #else
-        page_size = (size_t)getpagesize();
+        long n = sysconf(_SC_PAGESIZE);
+        page_size = (n > 0) ? (size_t)n : 4096;
 #endif
     }
     return page_size;
@@ -183,7 +193,7 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
 typedef int (*section_validator_t)(proc_handle_t *handle, uintptr_t address);
 
 // Validate that a candidate address starts with _Py_Debug_Cookie.
-static int
+UNUSED static int
 _Py_RemoteDebug_ValidatePyRuntimeCookie(proc_handle_t *handle, uintptr_t address)
 {
     if (address == 0) {
@@ -287,7 +297,6 @@ _Py_RemoteDebug_CleanupProcHandle(proc_handle_t *handle) {
 static uintptr_t
 return_section_address64(
     const char* section,
-    mach_port_t proc_ref,
     uintptr_t base,
     void* map
 ) {
@@ -297,11 +306,6 @@ return_section_address64(
     int cmd_cnt = 0;
     struct segment_command_64* cmd = map + sizeof(struct mach_header_64);
 
-    mach_vm_size_t size = 0;
-    mach_msg_type_number_t count = sizeof(vm_region_basic_info_data_64_t);
-    mach_vm_address_t address = (mach_vm_address_t)base;
-    vm_region_basic_info_data_64_t r_info;
-    mach_port_t object_name;
     uintptr_t vmaddr = 0;
 
     for (int i = 0; cmd_cnt < 2 && i < ncmds; i++) {
@@ -309,25 +313,8 @@ return_section_address64(
             vmaddr = cmd->vmaddr;
         }
         if (cmd->cmd == LC_SEGMENT_64 && strcmp(cmd->segname, "__DATA") == 0) {
-            while (cmd->filesize != size) {
-                address += size;
-                kern_return_t ret = mach_vm_region(
-                    proc_ref,
-                    &address,
-                    &size,
-                    VM_REGION_BASIC_INFO_64,
-                    (vm_region_info_t)&r_info,  // cppcheck-suppress [uninitvar]
-                    &count,
-                    &object_name
-                );
-                if (ret != KERN_SUCCESS) {
-                    PyErr_Format(PyExc_RuntimeError,
-                        "mach_vm_region failed while parsing 64-bit Mach-O binary "
-                        "at base address 0x%lx (kern_return_t: %d)",
-                        base, ret);
-                    return 0;
-                }
-            }
+            // The section address only needs the image's ASLR slide.
+            // VM regions need not match the segment's on-disk size.
 
             int nsects = cmd->nsects;
             struct section_64* sec = (struct section_64*)(
@@ -350,7 +337,6 @@ return_section_address64(
 static uintptr_t
 return_section_address32(
     const char* section,
-    mach_port_t proc_ref,
     uintptr_t base,
     void* map
 ) {
@@ -360,11 +346,6 @@ return_section_address32(
     int cmd_cnt = 0;
     struct segment_command* cmd = map + sizeof(struct mach_header);
 
-    mach_vm_size_t size = 0;
-    mach_msg_type_number_t count = sizeof(vm_region_basic_info_data_t);
-    mach_vm_address_t address = (mach_vm_address_t)base;
-    vm_region_basic_info_data_t r_info;
-    mach_port_t object_name;
     uintptr_t vmaddr = 0;
 
     for (int i = 0; cmd_cnt < 2 && i < ncmds; i++) {
@@ -372,25 +353,8 @@ return_section_address32(
             vmaddr = cmd->vmaddr;
         }
         if (cmd->cmd == LC_SEGMENT && strcmp(cmd->segname, "__DATA") == 0) {
-            while (cmd->filesize != size) {
-                address += size;
-                kern_return_t ret = mach_vm_region(
-                    proc_ref,
-                    &address,
-                    &size,
-                    VM_REGION_BASIC_INFO,
-                    (vm_region_info_t)&r_info,  // cppcheck-suppress [uninitvar]
-                    &count,
-                    &object_name
-                );
-                if (ret != KERN_SUCCESS) {
-                    PyErr_Format(PyExc_RuntimeError,
-                        "mach_vm_region failed while parsing 32-bit Mach-O binary "
-                        "at base address 0x%lx (kern_return_t: %d)",
-                        base, ret);
-                    return 0;
-                }
-            }
+            // The section address only needs the image's ASLR slide.
+            // VM regions need not match the segment's on-disk size.
 
             int nsects = cmd->nsects;
             struct section* sec = (struct section*)(
@@ -413,7 +377,6 @@ return_section_address32(
 static uintptr_t
 return_section_address_fat(
     const char* section,
-    mach_port_t proc_ref,
     uintptr_t base,
     void* map
 ) {
@@ -463,11 +426,11 @@ return_section_address_fat(
             switch (hdr->magic) {
                 case MH_MAGIC:
                 case MH_CIGAM:
-                    return return_section_address32(section, proc_ref, base, (void*)hdr);
+                    return return_section_address32(section, base, (void*)hdr);
 
                 case MH_MAGIC_64:
                 case MH_CIGAM_64:
-                    return return_section_address64(section, proc_ref, base, (void*)hdr);
+                    return return_section_address64(section, base, (void*)hdr);
 
                 default:
                     PyErr_Format(PyExc_RuntimeError,
@@ -486,7 +449,7 @@ return_section_address_fat(
 }
 
 static uintptr_t
-search_section_in_file(const char* secname, char* path, uintptr_t base, mach_vm_size_t size, mach_port_t proc_ref)
+search_section_in_file(const char* secname, char* path, uintptr_t base)
 {
     int fd = open(path, O_RDONLY);
     if (fd == -1) {
@@ -523,15 +486,15 @@ search_section_in_file(const char* secname, char* path, uintptr_t base, mach_vm_
     switch (magic) {
     case MH_MAGIC:
     case MH_CIGAM:
-        result = return_section_address32(secname, proc_ref, base, map);
+        result = return_section_address32(secname, base, map);
         break;
     case MH_MAGIC_64:
     case MH_CIGAM_64:
-        result = return_section_address64(secname, proc_ref, base, map);
+        result = return_section_address64(secname, base, map);
         break;
     case FAT_MAGIC:
     case FAT_CIGAM:
-        result = return_section_address_fat(secname, proc_ref, base, map);
+        result = return_section_address_fat(secname, base, map);
         break;
     default:
         PyErr_Format(PyExc_RuntimeError,
@@ -634,7 +597,7 @@ search_map_for_section(proc_handle_t *handle, const char* secname, const char* s
         if (strncmp(filename, substr, strlen(substr)) == 0) {
             PyErr_Clear();
             uintptr_t result = search_section_in_file(
-                secname, map_filename, address, size, proc_ref);
+                secname, map_filename, address);
             if (result != 0) {
                 if (validator == NULL || validator(handle, result)) {
                     return result;
@@ -781,6 +744,106 @@ exit:
     return result;
 }
 
+static const char *
+find_debug_cookie(const char *buffer, size_t len)
+{
+    const char *cookie = _Py_Debug_Cookie;
+    const size_t cookie_len = sizeof(_Py_Debug_Cookie) - 1;
+    if (len < cookie_len) {
+        return NULL;
+    }
+
+    size_t pos = 0;
+    size_t last = len - cookie_len;
+    while (pos <= last) {
+        const char *candidate = memchr(
+            buffer + pos, cookie[0], last - pos + 1);
+        if (candidate == NULL) {
+            return NULL;
+        }
+        pos = (size_t)(candidate - buffer);
+        if (memcmp(candidate, cookie, cookie_len) == 0) {
+            return candidate;
+        }
+        pos++;
+    }
+    return NULL;
+}
+
+static int
+linux_map_path_is_deleted(const char *path)
+{
+    static const char deleted_suffix[] = " (deleted)";
+    size_t path_len = strlen(path);
+    size_t suffix_len = sizeof(deleted_suffix) - 1;
+    return path_len >= suffix_len
+        && strcmp(path + path_len - suffix_len, deleted_suffix) == 0;
+}
+
+static int
+linux_map_perms_are_readwrite(const char *perms)
+{
+    return perms[0] == 'r' && perms[1] == 'w';
+}
+
+static uintptr_t
+scan_linux_mapping_for_pyruntime_cookie(
+        proc_handle_t *handle,
+        uintptr_t start,
+        uintptr_t end)
+{
+    if (end <= start) {
+        return 0;
+    }
+
+    const size_t cookie_len = sizeof(_Py_Debug_Cookie) - 1;
+    const size_t overlap = cookie_len - 1;
+    const size_t chunk_size = 1024 * 1024;
+    char *buffer = PyMem_Malloc(chunk_size);
+    if (buffer == NULL) {
+        PyErr_NoMemory();
+        _set_debug_exception_cause(PyExc_MemoryError,
+            "Cannot allocate memory while scanning PID %d for PyRuntime cookie",
+            handle->pid);
+        return 0;
+    }
+
+    uintptr_t retval = 0;
+    uintptr_t mapping_size = end - start;
+    uintptr_t offset = 0;
+    while (offset < mapping_size) {
+        uintptr_t remaining = mapping_size - offset;
+        size_t wanted = remaining > chunk_size
+            ? chunk_size : (size_t)remaining;
+        if (_Py_RemoteDebug_ReadRemoteMemory(
+                handle, start + offset, wanted, buffer) < 0) {
+            if (_Py_RemoteDebug_HasPermissionError()) {
+                goto exit;
+            }
+            // A candidate mapping can disappear or contain unreadable holes while
+            // the target process keeps running. Treat those as non-matches and
+            // keep scanning other candidate mappings.
+            PyErr_Clear();
+        }
+        else {
+            const char *hit = find_debug_cookie(buffer, wanted);
+            if (hit != NULL) {
+                retval = start + offset + (uintptr_t)(hit - buffer);
+                goto exit;
+            }
+        }
+
+        if (wanted <= overlap) {
+            break;
+        }
+        offset += wanted - overlap;
+    }
+
+exit:
+    PyMem_Free(buffer);
+    return retval;
+}
+
 static uintptr_t
 search_linux_map_for_section(proc_handle_t *handle, const char* secname, const char* substr,
                              section_validator_t validator)
@@ -835,16 +898,22 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
         linelen = 0;
 
         unsigned long start = 0;
-        unsigned long path_pos = 0;
-        sscanf(line, "%lx-%*x %*s %*s %*s %*s %ln", &start, &path_pos);
+        unsigned long end = 0;
+        int path_pos = 0;
+        char perms[5] = "";
+        int fields = sscanf(line, "%lx-%lx %4s %*s %*s %*s %n",
+                            &start, &end, perms, &path_pos);
 
-        if (!path_pos) {
+        if (fields < 3 || !path_pos) {
             // Line didn't match our format string.  This shouldn't be
             // possible, but let's be defensive and skip the line.
             continue;
         }
 
         const char *path = line + path_pos;
+        if (path[0] == '\0') {
+            continue;
+        }
         if (path[0] == '[' && path[strlen(path)-1] == ']') {
             // Skip [heap], [stack], [anon:cpython:pymalloc], etc.
             continue;
@@ -858,8 +927,21 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
         }
 
         if (strstr(filename, substr)) {
-            PyErr_Clear();
-            retval = search_elf_file_for_section(handle, secname, start, path);
+            int deleted_pyruntime_mapping =
+                strcmp(secname, "PyRuntime") == 0
+                && linux_map_path_is_deleted(path);
+            if (deleted_pyruntime_mapping
+                && linux_map_perms_are_readwrite(perms)) {
+                PyErr_Clear();
+                retval = scan_linux_mapping_for_pyruntime_cookie(
+                    handle, (uintptr_t)start, (uintptr_t)end);
+            }
+            if (!deleted_pyruntime_mapping
+                && retval == 0 && !PyErr_Occurred()) {
+                PyErr_Clear();
+                retval = search_elf_file_for_section(
+                    handle, secname, start, path);
+            }
             if (retval) {
                 if (validator == NULL || validator(handle, retval)) {
                     break;
