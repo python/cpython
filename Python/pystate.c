@@ -1513,10 +1513,8 @@ alloc_threadstate(PyInterpreterState *interp)
     return tstate;
 }
 
-// No task-list cleanup here: a daemon may release its allocation after
-// the interpreter has been destroyed.
 static void
-free_threadstate_memory(_PyThreadStateImpl *tstate)
+free_threadstate(_PyThreadStateImpl *tstate)
 {
     PyInterpreterState *interp = tstate->base.interp;
 #ifdef Py_STATS
@@ -1540,7 +1538,7 @@ decref_threadstate(_PyThreadStateImpl *tstate)
 {
     if (_Py_atomic_add_ssize(&tstate->refcount, -1) == 1) {
         // The last reference to the thread state is gone.
-        free_threadstate_memory(tstate);
+        free_threadstate(tstate);
     }
 }
 
@@ -1676,20 +1674,20 @@ new_threadstate(PyInterpreterState *interp, int whence)
     // The PyStats structure is quite large and is allocated separated from
     // tstate.
     if (!_PyStats_ThreadInit(interp, tstate)) {
-        free_threadstate_memory(tstate);
+        free_threadstate(tstate);
         return NULL;
     }
 #endif
 #ifdef Py_GIL_DISABLED
     int32_t tlbc_idx = _Py_ReserveTLBCIndex(interp);
     if (tlbc_idx < 0) {
-        free_threadstate_memory(tstate);
+        free_threadstate(tstate);
         return NULL;
     }
     Py_ssize_t qsbr_idx = _Py_qsbr_reserve(interp);
     if (qsbr_idx < 0) {
         _Py_UnreserveTLBCIndex(interp, tlbc_idx);
-        free_threadstate_memory(tstate);
+        free_threadstate(tstate);
         return NULL;
     }
 #endif
@@ -1914,11 +1912,30 @@ PyThreadState_Clear(PyThreadState *tstate)
 static void
 decrement_stoptheworld_countdown(struct _stoptheworld_state *stw);
 
-/* Common code for PyThreadState_Delete() and PyThreadState_DeleteCurrent() */
+// `release_gil` releases the current thread's GIL. For states already removed
+// by _PyThreadState_RemoveExcept(), `is_unlinked` limits cleanup to task transfer.
 static void
-tstate_delete_common(PyThreadState *tstate, int release_gil)
+tstate_delete_common(PyThreadState *tstate, int release_gil, int is_unlinked)
 {
     assert(tstate->_status.cleared && !tstate->_status.finalized);
+    assert(!is_unlinked || !release_gil);
+
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    // Finalizers may register tasks during or after PyThreadState_Clear().
+    // Transfer them before normal unlinking or GIL release: cross-thread task
+    // removal uses stop-the-world or the GIL, not asyncio_tasks_lock.
+    if (!llist_empty(&tstate_impl->asyncio_tasks_head)) {
+        // Serialize transfers from concurrently exiting threads.
+        PyMutex_Lock(&tstate->interp->asyncio_tasks_lock);
+        llist_concat(&tstate->interp->asyncio_tasks_head,
+                     &tstate_impl->asyncio_tasks_head);
+        PyMutex_Unlock(&tstate->interp->asyncio_tasks_lock);
+    }
+    assert(llist_empty(&tstate_impl->asyncio_tasks_head));
+    if (is_unlinked) {
+        return;
+    }
+
     tstate_verify_not_active(tstate);
     assert(!_PyThreadState_IsRunningMain(tstate));
 
@@ -1954,7 +1971,6 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
 
 #if defined(Py_REF_DEBUG) && defined(Py_GIL_DISABLED)
     // Add our portion of the total refcount to the interpreter's total.
-    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
     tstate->interp->object_state.reftotal += tstate_impl->reftotal;
     tstate_impl->reftotal = 0;
     assert(tstate_impl->refcounts.values == NULL);
@@ -1989,42 +2005,6 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
     tstate->_status.finalized = 1;
 }
 
-// `delete_common` unlinks and finishes thread-state cleanup; `release_gil`
-// also releases the current thread's GIL and requires `delete_common`.
-// Without `delete_common`, the state is already unlinked: `decref` drops the
-// interpreter's reference. After fork, pass zero for all flags to free
-// the thread state immediately.
-static void
-free_threadstate(PyThreadState *tstate, int delete_common, int release_gil,
-                 int decref)
-{
-    assert(!release_gil || delete_common);
-    assert(!decref || !delete_common);
-
-    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
-    // Finalizers may register tasks during or after PyThreadState_Clear().
-    // Transfer them before unlinking or releasing the GIL: cross-thread task
-    // removal uses stop-the-world or the GIL, not asyncio_tasks_lock.
-    if (!llist_empty(&tstate_impl->asyncio_tasks_head)) {
-        // Serialize transfers from concurrently exiting threads.
-        PyMutex_Lock(&tstate->interp->asyncio_tasks_lock);
-        llist_concat(&tstate->interp->asyncio_tasks_head,
-                     &tstate_impl->asyncio_tasks_head);
-        PyMutex_Unlock(&tstate->interp->asyncio_tasks_lock);
-    }
-    assert(llist_empty(&tstate_impl->asyncio_tasks_head));
-
-    if (delete_common) {
-        tstate_delete_common(tstate, release_gil);
-    }
-    if (decref) {
-        decref_threadstate(tstate_impl);
-    }
-    else {
-        free_threadstate_memory(tstate_impl);
-    }
-}
-
 static void
 zapthreads(PyInterpreterState *interp)
 {
@@ -2037,8 +2017,8 @@ zapthreads(PyInterpreterState *interp)
     */
     while ((tstate = interp->threads.head) != NULL) {
         tstate_verify_not_active(tstate);
-        free_threadstate(tstate, /*delete_common=*/1, /*release_gil=*/0,
-                         /*decref=*/0);
+        tstate_delete_common(tstate, /*release_gil=*/0, /*is_unlinked=*/0);
+        free_threadstate((_PyThreadStateImpl *)tstate);
     }
 }
 
@@ -2048,8 +2028,8 @@ PyThreadState_Delete(PyThreadState *tstate)
 {
     _Py_EnsureTstateNotNULL(tstate);
     tstate_verify_not_active(tstate);
-    free_threadstate(tstate, /*delete_common=*/1, /*release_gil=*/0,
-                     /*decref=*/0);
+    tstate_delete_common(tstate, /*release_gil=*/0, /*is_unlinked=*/0);
+    free_threadstate((_PyThreadStateImpl *)tstate);
 }
 
 
@@ -2064,8 +2044,8 @@ _PyThreadState_DeleteCurrent(PyThreadState *tstate)
     _PyStats_Detach((_PyThreadStateImpl *)tstate);
 #endif
     current_fast_clear(tstate->interp->runtime);
-    free_threadstate(tstate, /*delete_common=*/1, /*release_gil=*/1,
-                     /*decref=*/0);
+    tstate_delete_common(tstate, /*release_gil=*/1, /*is_unlinked=*/0);
+    free_threadstate((_PyThreadStateImpl *)tstate);
 }
 
 void
@@ -2134,8 +2114,13 @@ _PyThreadState_DeleteList(PyThreadState *list, int is_after_fork)
     for (p = list; p; p = next) {
         next = p->next;
         PyThreadState_Clear(p);
-        free_threadstate(p, /*delete_common=*/0, /*release_gil=*/0,
-                         /*decref=*/!is_after_fork);
+        tstate_delete_common(p, /*release_gil=*/0, /*is_unlinked=*/1);
+        if (is_after_fork) {
+            free_threadstate((_PyThreadStateImpl *)p);
+        }
+        else {
+            decref_threadstate((_PyThreadStateImpl *)p);
+        }
     }
 }
 
