@@ -556,7 +556,7 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
     bool is_forward = last->i_target->b_visited == 0;
     if (is_forward) {
         RETURN_IF_ERROR(
-            basicblock_addop(b, NOT_TAKEN, 0, last->i_loc, NULL));
+            basicblock_addop(b, NOT_TAKEN, 0, last->i_loc, last->i_except));
         return SUCCESS;
     }
 
@@ -584,10 +584,6 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
     if (backwards_jump == NULL) {
         return ERROR;
     }
-    /* The new instructions are covered by the same exception handler as
-     * the conditional jump, since the backward jump can raise when it
-     * checks the eval breaker.
-     */
     RETURN_IF_ERROR(
         basicblock_addop(backwards_jump, NOT_TAKEN, 0, last->i_loc,
                          last->i_except));
