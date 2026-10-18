@@ -21,8 +21,7 @@ that work tightly with the python syntax (template engines for example).
 :license: Python License.
 """
 from _ast import *
-lazy from _colorize import can_colorize, get_theme
-
+lazy import warnings
 
 def parse(source, filename='<unknown>', mode='exec', *,
           type_comments=False, feature_version=None, optimize=-1, module=None):
@@ -142,6 +141,8 @@ def dump(
     If show_empty is False, then empty lists and fields that are None
     will be omitted from the output for better readability.
     """
+    from _colorize import get_theme
+
     t = get_theme(force_color=color, force_no_color=not color).ast
 
     def _format(node, level=0):
@@ -629,9 +630,11 @@ if not hasattr(Tuple, 'dims'):
 
     def _dims_getter(self):
         """Deprecated. Use elts instead."""
+        warnings._deprecated(f"ast.Tuple.dims", remove=(3, 21))
         return self.elts
 
     def _dims_setter(self, value):
+        warnings._deprecated(f"ast.Tuple.dims", remove=(3, 21))
         self.elts = value
 
     Tuple.dims = property(_dims_getter, _dims_setter)
@@ -665,7 +668,7 @@ def main(args=None):
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('infile', nargs='?', default='-',
-                        help='the file to parse; defaults to stdin')
+                        help='the file to parse; defaults to `stdin`')
     parser.add_argument('-m', '--mode', default='exec',
                         choices=('exec', 'single', 'eval', 'func_type'),
                         help='specify what kind of code must be parsed')
@@ -678,8 +681,8 @@ def main(args=None):
                         help='indentation of nodes (number of spaces)')
     parser.add_argument('--feature-version',
                         type=str, default=None, metavar='VERSION',
-                        help='Python version in the format 3.x '
-                             '(for example, 3.10)')
+                        help='Python version in the format `3.x` '
+                             '(for example, `3.10`)')
     parser.add_argument('-O', '--optimize',
                         type=int, default=-1, metavar='LEVEL',
                         help='optimization level for parser')
@@ -708,9 +711,28 @@ def main(args=None):
 
     tree = parse(source, name, args.mode, type_comments=args.no_type_comments,
                  feature_version=feature_version, optimize=args.optimize)
+    from _colorize import can_colorize
     print(dump(tree, include_attributes=args.include_attributes,
                color=can_colorize(file=sys.stdout),
                indent=args.indent, show_empty=args.show_empty))
+
+_deprecated = {
+        'slice': globals().pop("slice"),
+        'Index': globals().pop("Index"),
+        'ExtSlice': globals().pop("ExtSlice"),
+        'Suite': globals().pop("Suite"),
+        'AugLoad': globals().pop("AugLoad"),
+        'AugStore': globals().pop("AugStore"),
+        'Param': globals().pop("Param")
+}
+
+def __getattr__(attr):
+    try:
+        val = _deprecated[attr]
+    except KeyError:
+        raise AttributeError(f"module 'ast' has no attribute {attr!r}") from None
+    warnings._deprecated(f"ast.{attr}", remove=(3, 21))
+    return val
 
 if __name__ == '__main__':
     main()

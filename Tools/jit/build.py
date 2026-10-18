@@ -4,8 +4,31 @@ import argparse
 import pathlib
 import shlex
 import sys
+import typing
 
 import _targets
+
+
+def _write_target_dispatcher(
+    output: pathlib.Path,
+    targets: typing.Iterable[_targets._Target[typing.Any, typing.Any]],
+    comment: str,
+    header_prefix: str,
+) -> None:
+    lines = [f"// {comment}\n"]
+    guard = "#if"
+    for target in targets:
+        lines.append(f"{guard} {target.condition}\n")
+        lines.append(f'#include "{header_prefix}-{target.triple}.h"\n')
+        guard = "#elif"
+    lines.append("#else\n")
+    lines.append('#error "unexpected target"\n')
+    lines.append("#endif\n")
+    body = "".join(lines)
+    # Don't touch the file if it hasn't changed (so we don't trigger a rebuild):
+    if not output.is_file() or output.read_text() != body:
+        output.write_text(body)
+
 
 if __name__ == "__main__":
     comment = f"$ {shlex.join([pathlib.Path(sys.executable).name] + sys.argv)}"
@@ -57,23 +80,27 @@ if __name__ == "__main__":
             target.llvm_version = args.llvm_version
         if args.llvm_tools_install_dir:
             target.llvm_tools_install_dir = args.llvm_tools_install_dir
+        # Build this target's stencils, shim object, and target-specific
+        # unwind metadata before writing the generic dispatcher headers below.
         target.build(
             comment=comment,
             force=args.force,
             jit_stencils=args.output_dir / f"jit_stencils-{target.triple}.h",
             jit_shim_object=args.output_dir / f"jit_shim-{target.triple}.o",
+            jit_unwind_info=args.output_dir / f"jit_unwind_info-{target.triple}.h",
         )
-    jit_stencils_h = args.output_dir / "jit_stencils.h"
-    lines = [f"// {comment}\n"]
-    guard = "#if"
-    for target in args.target:
-        lines.append(f"{guard} {target.condition}\n")
-        lines.append(f'#include "jit_stencils-{target.triple}.h"\n')
-        guard = "#elif"
-    lines.append("#else\n")
-    lines.append('#error "unexpected target"\n')
-    lines.append("#endif\n")
-    body = "".join(lines)
-    # Don't touch the file if it hasn't changed (so we don't trigger a rebuild):
-    if not jit_stencils_h.is_file() or jit_stencils_h.read_text() != body:
-        jit_stencils_h.write_text(body)
+    # Write the target dispatcher that includes the right stencil header for
+    # the platform compiling Python/jit.c.
+    _write_target_dispatcher(
+        args.output_dir / "jit_stencils.h",
+        args.target,
+        comment,
+        "jit_stencils",
+    )
+    # Write the matching dispatcher for generated JIT unwind constants.
+    _write_target_dispatcher(
+        args.output_dir / "jit_unwind_info.h",
+        args.target,
+        comment,
+        "jit_unwind_info",
+    )

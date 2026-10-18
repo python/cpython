@@ -19,6 +19,13 @@ if libc_ver[0] == 'glibc':
 else:
     glibc_ver = None
 
+def skip_cygwin_locale():
+    if sys.platform != 'cygwin':
+        return
+    loc = locale.getlocale(locale.LC_TIME)[0]
+    if loc in ('my_MM', 'or_IN'):
+        raise unittest.SkipTest('test fails on Cygwin')
+
 
 class getlang_Tests(unittest.TestCase):
     """Test _getlang"""
@@ -229,7 +236,8 @@ class StrptimeTests(unittest.TestCase):
             directive = bad_format[1:].rstrip()
             with (self.subTest(format=bad_format),
                   self.assertRaisesRegex(ValueError,
-                    f"'{re.escape(directive)}' is a bad directive in format ")):
+                    f"{re.escape(repr(directive))} is a bad directive "
+                    f"in format ")):
                 _strptime._strptime_time("2005", bad_format)
 
         msg_week_no_year_or_weekday = r"ISO week directive '%V' must be used with " \
@@ -295,6 +303,11 @@ class StrptimeTests(unittest.TestCase):
     def test_unconverteddata(self):
         # Check ValueError is raised when there is unconverted data
         self.assertRaises(ValueError, _strptime._strptime_time, "10 12", "%m")
+
+        # gh-141540: a trailing newline must be visible in the message
+        with self.assertRaisesRegex(ValueError,
+                                    r"unconverted data remains: '\\n'"):
+            _strptime._strptime_time("2001-02-03\n", "%Y-%m-%d")
 
     def roundtrip(self, fmt, position, time_tuple=None):
         """Helper fxn in testing."""
@@ -444,7 +457,8 @@ class StrptimeTests(unittest.TestCase):
 
         with self.assertRaises(ValueError) as err:
             _strptime._strptime("-01:3030", "%z")
-        self.assertEqual("Inconsistent use of : in -01:3030", str(err.exception))
+        self.assertEqual("Inconsistent use of : in '-01:3030'",
+                         str(err.exception))
         with self.assertRaises(ValueError) as err:
             _strptime._strptime("-01:3030", "%:z")
         self.assertEqual("Missing colon in %:z before '30', got '-01:3030'",
@@ -509,6 +523,8 @@ class StrptimeTests(unittest.TestCase):
                       'my_MM', 'or_IN', 'shn_MM', 'az_IR',
                       'byn_ER', 'wal_ET', 'lzh_TW')
     def test_date_time_locale(self):
+        skip_cygwin_locale()
+
         # Test %c directive
         loc = locale.getlocale(locale.LC_TIME)[0]
         if glibc_ver and glibc_ver < (2, 31) and loc == 'br_FR':
@@ -536,6 +552,8 @@ class StrptimeTests(unittest.TestCase):
                       'csb_PL', 'br_FR', 'gez_ET', 'brx_IN',
                       'my_MM', 'shn_MM')
     def test_date_time_locale2(self):
+        skip_cygwin_locale()
+
         # Test %c directive
         loc = locale.getlocale(locale.LC_TIME)[0]
         if sys.platform.startswith('sunos'):
@@ -550,6 +568,8 @@ class StrptimeTests(unittest.TestCase):
                       'he_IL', 'eu_ES', 'ar_AE',
                       'az_IR', 'my_MM', 'or_IN', 'shn_MM', 'lzh_TW')
     def test_date_locale(self):
+        skip_cygwin_locale()
+
         # Test %x directive
         now = time.time()
         self.roundtrip('%x', slice(0, 3), time.localtime(now))
@@ -567,6 +587,8 @@ class StrptimeTests(unittest.TestCase):
     @run_with_locales('LC_TIME', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
                       'eu_ES', 'ar_AE', 'my_MM', 'shn_MM', 'lzh_TW')
     def test_date_locale2(self):
+        skip_cygwin_locale()
+
         # Test %x directive
         loc = locale.getlocale(locale.LC_TIME)[0]
         if sys.platform.startswith(('sunos', 'aix')):
@@ -587,6 +609,8 @@ class StrptimeTests(unittest.TestCase):
                       'ti_ET', 'tig_ER', 'wal_ET', 'lzh_TW',
                       'ar_SA', 'bg_BG')
     def test_time_locale(self):
+        skip_cygwin_locale()
+
         # Test %X directive
         loc = locale.getlocale(locale.LC_TIME)[0]
         pos = slice(3, 6)

@@ -1,2 +1,0 @@
-``typing.IO`` and ``typing.BinaryIO`` method arguments are now
-positional-only.

@@ -55,6 +55,8 @@
  *
  *  (Don't use Py_TARGET_ABI3T directly. It's currently only used to set these
  *   2 macros, and defined for users' convenience.)
+ *
+ * This logic is currently partially duplicated in PC/pyconfig.h.
  */
 #if defined(Py_LIMITED_API) && defined(Py_GIL_DISABLED) \
         && !defined(Py_TARGET_ABI3T)

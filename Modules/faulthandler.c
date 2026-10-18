@@ -7,7 +7,7 @@
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_signal.h"        // Py_NSIG
 #include "pycore_time.h"          // _PyTime_FromSecondsObject()
-#include "pycore_traceback.h"     // _Py_DumpTracebackThreads
+#include "pycore_traceback.h"     // _Py_DumpStack()
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // _exit()
 #endif
@@ -101,8 +101,6 @@ static int
 faulthandler_get_fileno(PyObject **file_ptr)
 {
     PyObject *result;
-    long fd_long;
-    int fd;
     PyObject *file = *file_ptr;
 
     if (file == NULL || file == Py_None) {
@@ -124,7 +122,7 @@ faulthandler_get_fileno(PyObject **file_ptr)
                 return -1;
             }
         }
-        fd = PyLong_AsInt(file);
+        int fd = PyLong_AsInt(file);
         if (fd == -1 && PyErr_Occurred())
             return -1;
         if (fd < 0) {
@@ -145,15 +143,16 @@ faulthandler_get_fileno(PyObject **file_ptr)
         return -1;
     }
 
-    fd = -1;
+    int fd;
     if (PyLong_Check(result)) {
-        fd_long = PyLong_AsLong(result);
-        if (0 <= fd_long && fd_long < INT_MAX)
-            fd = (int)fd_long;
+        fd = PyLong_AsInt(result);
+    }
+    else {
+        fd = -1;
     }
     Py_DECREF(result);
 
-    if (fd == -1) {
+    if (fd < 0) {
         PyErr_SetString(PyExc_RuntimeError,
                         "file.fileno() is not a valid file descriptor");
         Py_DECREF(file);
@@ -206,14 +205,15 @@ faulthandler_dump_traceback(int fd, int all_threads,
     PyThreadState *tstate = PyGILState_GetThisThreadState();
 
     if (all_threads == 1) {
-        (void)_Py_DumpTracebackThreads(fd, NULL, tstate, max_threads);
+        (void)PyUnstable_DumpTracebackThreads(fd, NULL, tstate, max_threads);
     }
     else {
         if (all_threads == FT_IGNORE_ALL_THREADS) {
             PUTS(fd, "<Cannot show all threads while the GIL is disabled>\n");
         }
-        if (tstate != NULL)
-            _Py_DumpTraceback(fd, tstate);
+        if (tstate != NULL) {
+            PyUnstable_DumpTraceback(fd, tstate);
+        }
     }
 
     reentrant = 0;
@@ -277,17 +277,18 @@ faulthandler_dump_traceback_py_impl(PyObject *module, PyObject *file,
         /* gh-128400: Accessing other thread states while they're running
          * isn't safe if those threads are running. */
         _PyEval_StopTheWorld(interp);
-        errmsg = _Py_DumpTracebackThreads(fd, NULL, tstate, max_threads);
+        errmsg = PyUnstable_DumpTracebackThreads(fd, NULL, tstate, max_threads);
         _PyEval_StartTheWorld(interp);
-        if (errmsg != NULL) {
-            PyErr_SetString(PyExc_RuntimeError, errmsg);
-            Py_XDECREF(file);
-            return NULL;
-        }
     }
     else {
-        _Py_DumpTraceback(fd, tstate);
+        errmsg = PyUnstable_DumpTraceback(fd, tstate);
     }
+    if (errmsg != NULL) {
+        PyErr_SetString(PyExc_RuntimeError, errmsg);
+        Py_XDECREF(file);
+        return NULL;
+    }
+
     Py_XDECREF(file);
 
     if (PyErr_CheckSignals())
@@ -405,10 +406,8 @@ faulthandler_fatal_error(int signum)
         PUTS(fd, "\n\n");
     }
     else {
-        char unknown_signum[23] = {0,};
-        snprintf(unknown_signum, 23, "%d", signum);
         PUTS(fd, "Fatal Python error from unexpected signum: ");
-        PUTS(fd, unknown_signum);
+        _Py_DumpDecimal(fd, signum);
         PUTS(fd, "\n\n");
     }
 
@@ -582,7 +581,7 @@ faulthandler_enable(void)
         handler->enabled = 1;
     }
 
-#ifdef MS_WINDOWS
+#ifdef MS_WINDOWS_DESKTOP
     assert(fatal_error.exc_handler == NULL);
     fatal_error.exc_handler = AddVectoredExceptionHandler(1, faulthandler_exc_handler);
 #endif
@@ -646,7 +645,7 @@ faulthandler_disable(void)
             faulthandler_disable_fatal_handler(handler);
         }
     }
-#ifdef MS_WINDOWS
+#ifdef MS_WINDOWS_DESKTOP
     if (fatal_error.exc_handler != NULL) {
         RemoveVectoredExceptionHandler(fatal_error.exc_handler);
         fatal_error.exc_handler = NULL;
@@ -711,10 +710,10 @@ faulthandler_thread(void *unused)
         /* Timeout => dump traceback */
         assert(st == PY_LOCK_FAILURE);
 
-        (void)_Py_write_noraise(thread.fd, thread.header, (int)thread.header_len);
+        (void)_Py_write_noraise(thread.fd, thread.header, thread.header_len);
 
-        errmsg = _Py_DumpTracebackThreads(thread.fd, thread.interp, NULL,
-                                          thread.max_threads);
+        errmsg = PyUnstable_DumpTracebackThreads(thread.fd, thread.interp, NULL,
+                                                 thread.max_threads);
         ok = (errmsg == NULL);
 
         if (thread.exit)
@@ -793,9 +792,9 @@ faulthandler.dump_traceback_later
 
 Dump the traceback of all threads in timeout seconds.
 
-If repeat is true, the tracebacks of all threads are dumped every timeout
-seconds. If exit is true, call _exit(1) which is not safe. max_threads
-caps the number of threads dumped.
+If repeat is true, the tracebacks of all threads are dumped every
+timeout seconds.  If exit is true, call _exit(1) which is not safe.
+max_threads caps the number of threads dumped.
 [clinic start generated code]*/
 
 static PyObject *
@@ -803,7 +802,7 @@ faulthandler_dump_traceback_later_impl(PyObject *module,
                                        PyObject *timeout_obj, int repeat,
                                        PyObject *file, int exit,
                                        Py_ssize_t max_threads)
-/*[clinic end generated code: output=543a0f3807113394 input=6836555ee157ddb4]*/
+/*[clinic end generated code: output=543a0f3807113394 input=32aaf7437d0928db]*/
 {
     PyTime_t timeout, timeout_us;
     int fd;
@@ -1222,7 +1221,7 @@ static PyObject *
 faulthandler__fatal_error_c_thread_impl(PyObject *module)
 /*[clinic end generated code: output=101bc8aaf4a5eec1 input=fbdca6fffd639a39]*/
 {
-    long tid;
+    unsigned long tid;
     PyThread_type_lock lock;
 
     faulthandler_suppress_crash_report();
@@ -1234,7 +1233,7 @@ faulthandler__fatal_error_c_thread_impl(PyObject *module)
     PyThread_acquire_lock(lock, WAIT_LOCK);
 
     tid = PyThread_start_new_thread(faulthandler_fatal_error_thread, lock);
-    if (tid == -1) {
+    if (tid == PYTHREAD_INVALID_THREAD_ID) {
         PyThread_free_lock(lock);
         PyErr_SetString(PyExc_RuntimeError, "unable to start the thread");
         return NULL;
@@ -1347,21 +1346,6 @@ faulthandler__stack_overflow_impl(PyObject *module)
 #endif   /* defined(FAULTHANDLER_USE_ALT_STACK) && defined(HAVE_SIGACTION) */
 
 
-static int
-faulthandler_traverse(PyObject *module, visitproc visit, void *arg)
-{
-    Py_VISIT(thread.file);
-#ifdef FAULTHANDLER_USER
-    if (user_signals != NULL) {
-        for (size_t signum=0; signum < Py_NSIG; signum++)
-            Py_VISIT(user_signals[signum].file);
-    }
-#endif
-    Py_VISIT(fatal_error.file);
-    return 0;
-}
-
-
 #ifdef MS_WINDOWS
 /*[clinic input]
 faulthandler._raise_exception
@@ -1457,7 +1441,6 @@ static struct PyModuleDef module_def = {
     .m_name = "faulthandler",
     .m_doc = module_doc,
     .m_methods = module_methods,
-    .m_traverse = faulthandler_traverse,
     .m_slots = faulthandler_slots
 };
 

@@ -17,7 +17,7 @@ import linecache
 import zipapp
 import zipfile
 
-from asyncio.events import _set_event_loop_policy
+from asyncio import set_event_loop
 from contextlib import ExitStack, redirect_stdout
 from io import StringIO
 from test import support
@@ -3653,6 +3653,23 @@ def quux():
             ('bœr', 5),
         )
 
+    def test_find_function_too_complex(self):
+        # gh-69919: compile() can raise more than SyntaxError.
+        self._assert_find_function(
+            b"def foo():\n    return " + b"-" * 100_000 + b"1\n"
+            b"def bar():\n    pass\n",
+            'bar',
+            ('bar', 4),
+        )
+
+    def test_compile_error_message(self):
+        p = pdb.Pdb()
+        self.assertEqual(p._compile_error_message('1 + 1'), '')
+        self.assertIn('SyntaxError', p._compile_error_message('1 +'))
+        # gh-69919: compile() can raise more than SyntaxError.
+        self.assertRegex(p._compile_error_message('-' * 100_000 + '1'),
+                         r'^(MemoryError|RecursionError|SyntaxError):')
+
     def test_print_stack_entry_uses_dynamic_line_prefix(self):
         """Test that pdb.line_prefix binding is dynamic (gh-141781)."""
         stdout = io.StringIO()
@@ -4718,6 +4735,27 @@ def bœr():
             ]))
             self.assertIn('break in bar', stdout)
 
+    def test_end_of_options_separator(self):
+        # gh-148615: Test parsing when '--' separator is used
+        script = "import sys; print(f'ARGS: {sys.argv[1:]}')"
+        with open(os_helper.TESTFN, 'w', encoding='utf-8') as f:
+            f.write(script)
+        stdout, _ = self._run_pdb(['--', os_helper.TESTFN, '-foo'], 'c\nq')
+        self.assertIn("ARGS: ['-foo']", stdout)
+        stdout, _ = self._run_pdb(['-c', 'continue', '--', os_helper.TESTFN, '-c', 'foo'], 'q')
+        self.assertIn("ARGS: ['-c', 'foo']", stdout)
+        stdout, stderr = self._run_pdb(['--'], 'q', expected_returncode=2)
+        self.assertIn("missing script or module to run", stderr)
+        stdout, stderr = self._run_pdb(['-x', '--', os_helper.TESTFN], 'q', expected_returncode=2)
+        self.assertIn("unrecognized arguments: -x", stderr)
+        stdout, _ = self._run_pdb([os_helper.TESTFN, '--', 'arg'], 'c\nq')
+        self.assertIn("ARGS: ['--', 'arg']", stdout)
+        with os_helper.temp_cwd():
+            with open('mymod.py', 'w', encoding='utf-8') as f:
+                f.write(script)
+            stdout, _ = self._run_pdb(['-m', 'mymod', '--', 'arg'], 'c\nq')
+            self.assertIn("ARGS: ['--', 'arg']", stdout)
+
     @unittest.skipIf(SKIP_CORO_TESTS, "Coroutine tests are skipped")
     def test_async_break(self):
         script = """
@@ -4975,11 +5013,44 @@ class PdbTestColorize(unittest.TestCase):
         p.set_trace(commands=['ll', 'c'])
         self.assertNotIn("\x1b", output.getvalue())
 
+    def test_list_does_not_colorize_trailing_newlines(self):
+        # Keep the marker split so it is not present in the listed source.
+        caret_newline = "^" + "J"
+        output = io.StringIO()
+        p = pdb.Pdb(stdout=output, colorize=True)
+        p.set_trace(commands=['list', 'continue'])
+        result = output.getvalue()
+        self.assertIn("\x1b", result)
+        self.assertNotIn(caret_newline, result)
+
     def test_stack_entry(self):
         output = io.StringIO()
         p = pdb.Pdb(stdout=output, colorize=True)
         p.set_trace(commands=['w', 'c'])
         self.assertIn("\x1b", output.getvalue())
+
+    @unittest.skipIf(not pdb._pyrepl_available(), "pyrepl is not available")
+    def test_gen_colors(self):
+        p = pdb.Pdb()
+        gen_colors = p.pyrepl_input.gen_colors
+
+        test_cases = [
+            ("longlist", [((0, 7), "soft_keyword")]),
+            ("!longlist", [((0, 0), "op")]),
+            ("list", [((0, 3), "soft_keyword")]),
+            ("list(", [((0, 3), "builtin"), ((4, 4), "op")]),
+            ("a = 1", [
+                ((0, 0), "soft_keyword"),
+                ((2, 2), "op"),
+                ((4, 4), "number"),
+            ])
+        ]
+
+        for buffer, expected in test_cases:
+            for color_span, ((start, end), tag) in zip(gen_colors(buffer), expected, strict=True):
+                self.assertEqual(color_span.span.start, start)
+                self.assertEqual(color_span.span.end, end)
+                self.assertEqual(color_span.tag, tag)
 
 
 @support.force_not_colorized_test_class
@@ -5123,8 +5194,9 @@ class PdbTestReadline(unittest.TestCase):
 
         self.assertIn('I love Python', output)
 
-    @unittest.skipIf(sys.platform.startswith('freebsd'),
-                     '\\x08 is not interpreted as backspace on FreeBSD')
+    @unittest.skipIf(sys.platform.startswith(('freebsd', 'dragonfly', 'sunos')),
+                     '\\x08 does not remove the auto-indentation with '
+                     'GNU readline on this platform')
     def test_multiline_auto_indent(self):
         script = textwrap.dedent("""
             import pdb; pdb.Pdb().set_trace()
@@ -5163,8 +5235,9 @@ class PdbTestReadline(unittest.TestCase):
 
         self.assertIn('42', output)
 
-    @unittest.skipIf(sys.platform.startswith('freebsd'),
-                     '\\x08 is not interpreted as backspace on FreeBSD')
+    @unittest.skipIf(sys.platform.startswith(('freebsd', 'dragonfly', 'sunos')),
+                     '\\x08 does not remove the auto-indentation with '
+                     'GNU readline on this platform')
     def test_multiline_indent_completion(self):
         script = textwrap.dedent("""
             import pdb; pdb.Pdb().set_trace()
@@ -5268,7 +5341,7 @@ def load_tests(loader, tests, pattern):
         # Ensure that asyncio state has been cleared at the end of the test.
         # This prevents a "test altered the execution environment" warning if
         # asyncio features are used.
-        _set_event_loop_policy(None)
+        set_event_loop(None)
 
         # A doctest of pdb could have residues. For example, pdb could still
         # be running, or breakpoints might be left uncleared. These residues

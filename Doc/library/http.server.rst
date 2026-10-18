@@ -39,7 +39,17 @@ handler.  Code to create and run the server looks like this::
    This class builds on the :class:`~socketserver.TCPServer` class by storing
    the server address as instance variables named :attr:`server_name` and
    :attr:`server_port`. The server is accessible by the handler, typically
-   through the handler's :attr:`server` instance variable.
+   through the handler's :attr:`~socketserver.BaseRequestHandler.server`
+   instance variable.
+
+   .. attribute:: server_name
+
+      The HTTP server's fully qualified domain name.
+
+   .. attribute:: server_port
+
+      The HTTP server's port number obtained from *server_address*.
+
 
 .. class:: ThreadingHTTPServer(server_address, RequestHandlerClass)
 
@@ -60,7 +70,7 @@ handler.  Code to create and run the server looks like this::
    object fails with a :exc:`RuntimeError`.
 
    The *certfile* argument is the path to the SSL certificate chain file,
-   and the *keyfile* is the path to file containing the private key.
+   and the *keyfile* is the path to the file containing the private key.
 
    A *password* can be specified for files protected and wrapped with PKCS#8,
    but beware that this could possibly expose hardcoded passwords in clear.
@@ -140,7 +150,7 @@ instantiation, of which this module provides three different variants:
 
    .. attribute:: path
 
-      Contains the request path. If query component of the URL is present,
+      Contains the request path. If the query component of the URL is present,
       then ``path`` includes the query. Using the terminology of :rfc:`3986`,
       ``path`` here includes ``hier-part`` and the ``query``.
 
@@ -190,7 +200,7 @@ instantiation, of which this module provides three different variants:
       Specifies a format string that should be used by :meth:`send_error` method
       for building an error response to the client. The string is filled by
       default with variables from :attr:`responses` based on the status code
-      that passed to :meth:`send_error`.
+      passed to :meth:`send_error`.
 
    .. attribute:: error_content_type
 
@@ -238,8 +248,8 @@ instantiation, of which this module provides three different variants:
    .. method:: handle_expect_100()
 
       When an HTTP/1.1 conformant server receives an ``Expect: 100-continue``
-      request header it responds back with a ``100 Continue`` followed by ``200
-      OK`` headers.
+      request header it responds with a ``100 Continue`` followed by ``200 OK``
+      headers.
       This method can be overridden to raise an error if the server does not
       want the client to continue.  For example, the server can choose to send ``417
       Expectation Failed`` as a response header and ``return False``.
@@ -295,8 +305,8 @@ instantiation, of which this module provides three different variants:
    .. method:: send_response_only(code, message=None)
 
       Sends the response header only, used for the purposes when ``100
-      Continue`` response is sent by the server to the client. The headers not
-      buffered and sent directly the output stream.If the *message* is not
+      Continue`` response is sent by the server to the client. The headers are
+      not buffered and sent directly the output stream. If the *message* is not
       specified, the HTTP message corresponding the response *code*  is sent.
 
       This method does not reject *message* containing CRLF sequences.
@@ -338,7 +348,7 @@ instantiation, of which this module provides three different variants:
       to create custom error logging mechanisms. The *format* argument is a
       standard printf-style format string, where the additional arguments to
       :meth:`log_message` are applied as inputs to the formatting. The client
-      ip address and current date and time are prefixed to every message logged.
+      IP address and current date and time are prefixed to every message logged.
 
    .. method:: version_string()
 
@@ -366,7 +376,8 @@ instantiation, of which this module provides three different variants:
          delays, it now always returns the IP address.
 
 
-.. class:: SimpleHTTPRequestHandler(request, client_address, server, directory=None)
+.. class:: SimpleHTTPRequestHandler(request, client_address, server, \
+                                    *, directory=None, extra_response_headers=None)
 
    This class serves files from the directory *directory* and below,
    or the current directory if *directory* is not provided, directly
@@ -377,6 +388,9 @@ instantiation, of which this module provides three different variants:
 
    .. versionchanged:: 3.9
       The *directory* parameter accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.15
+      Added *extra_response_headers* parameter.
 
    A lot of the work, such as parsing the request, is done by the base class
    :class:`BaseHTTPRequestHandler`.  This class implements the :func:`do_GET`
@@ -396,7 +410,15 @@ instantiation, of which this module provides three different variants:
       cannot be guessed from the file extension of the requested URL.
       By default, it is set to ``'application/octet-stream'``.
 
-      .. versionadded:: next
+      .. versionadded:: 3.15
+
+   .. attribute:: index_pages
+
+      Specifies the filenames that are treated as directory index pages.
+
+      Defaults to ``("index.html", "index.htm")``.
+
+      .. versionadded:: 3.12
 
    .. attribute:: extensions_map
 
@@ -407,6 +429,15 @@ instantiation, of which this module provides three different variants:
       .. versionchanged:: 3.9
          This dictionary is no longer filled with the default system mappings,
          but only contains overrides.
+
+   .. attribute:: extra_response_headers
+
+      A sequence of ``(name, value)`` pairs containing user-defined extra HTTP
+      response headers to add to each successful HTTP status 200 response. These
+      headers are not included in other status code responses.
+
+      Headers that the server sends automatically such as ``Content-Type``
+      will not be overwritten by :attr:`!extra_response_headers`.
 
    The :class:`SimpleHTTPRequestHandler` class defines the following methods:
 
@@ -421,8 +452,8 @@ instantiation, of which this module provides three different variants:
       The request is mapped to a local file by interpreting the request as a
       path relative to the current working directory.
 
-      If the request was mapped to a directory, the directory is checked for a
-      file named ``index.html`` or ``index.htm`` (in that order). If found, the
+      If the request was mapped to a directory, the directory is checked for
+      an index page as specified by :attr:`index_pages`. If found, the
       file's contents are returned; otherwise a directory listing is generated
       by calling the :meth:`list_directory` method. This method uses
       :func:`os.listdir` to scan the directory, and returns a ``404`` error
@@ -440,6 +471,9 @@ instantiation, of which this module provides three different variants:
       followed by a ``'Content-Length:'`` header with the file's size and a
       ``'Last-Modified:'`` header with the file's modification time.
 
+      The instance attribute :attr:`extra_response_headers` is a sequence of
+      ``(name, value)`` pairs containing user-defined extra response headers.
+
       Then follows a blank line signifying the end of the headers, and then the
       contents of the file are output.
 
@@ -449,9 +483,32 @@ instantiation, of which this module provides three different variants:
       .. versionchanged:: 3.7
          Support of the ``'If-Modified-Since'`` header.
 
-The :class:`SimpleHTTPRequestHandler` class can be used in the following
-manner in order to create a very basic webserver serving files relative to
-the current directory::
+   .. method:: list_directory(path)
+
+      Helper to list the contents of *path* when no index page is present.
+
+      This returns either a :term:`file-like object` (which must be closed
+      by the caller) or ``None`` to indicate an error, in which case the
+      caller has nothing further to do. In either case, the headers are sent.
+
+   .. method:: guess_type(path)
+
+      Guess the type of the file at the given *path*.
+
+      This returns a string of the form ``type/subtype``, usable for
+      a MIME Content-type header.
+
+      The default implementation looks the file's extension up in
+      :attr:`extensions_map`, falling back to
+      :func:`mimetypes.guess_file_type` and then to
+      :attr:`default_content_type`.
+
+      .. versionchanged:: 3.13
+         Add :func:`mimetypes.guess_file_type` as a fallback.
+
+
+The :class:`SimpleHTTPRequestHandler` class can be used to create a very basic
+webserver serving files relative to the current directory as follows::
 
    import http.server
    import socketserver
@@ -467,7 +524,7 @@ the current directory::
 
 :class:`SimpleHTTPRequestHandler` can also be subclassed to enhance behavior,
 such as using different index file names by overriding the class attribute
-:attr:`index_pages`.
+:attr:`~SimpleHTTPRequestHandler.index_pages`.
 
 
 .. _http-server-cli:
@@ -546,7 +603,7 @@ The following options are accepted:
 
       python -m http.server --content-type text/html
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. option:: --tls-cert
 
@@ -581,6 +638,15 @@ The following options are accepted:
 
    .. versionadded:: 3.14
 
+.. option:: -H, --header <header> <value>
+
+   Specify an additional HTTP Response Header to send on successful HTTP 200
+   responses. Can be used multiple times to send additional custom response
+   headers. Headers that are sent automatically by the server (for instance
+   Content-Type) will not be overwritten by the server.
+
+   .. versionadded:: 3.15
+
 
 .. _http.server-security:
 
@@ -590,13 +656,13 @@ Security considerations
 .. index:: pair: http.server; security
 
 :class:`SimpleHTTPRequestHandler` will follow symbolic links when handling
-requests, this makes it possible for files outside of the specified directory
+requests which makes it possible for files outside of the specified directory
 to be served.
 
 Methods :meth:`BaseHTTPRequestHandler.send_header` and
 :meth:`BaseHTTPRequestHandler.send_response_only` assume sanitized input
 and do not perform input validation such as checking for the presence of CRLF
-sequences. Untrusted input may result in HTTP Header injection attacks.
+sequences. Untrusted input may result in HTTP header injection attacks.
 
 Earlier versions of Python did not scrub control characters from the
 log messages emitted to stderr from ``python -m http.server`` or the

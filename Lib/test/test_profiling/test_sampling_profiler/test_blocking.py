@@ -1,7 +1,11 @@
 """Tests for blocking mode sampling profiler."""
 
 import io
+import os
+import subprocess
+import sys
 import textwrap
+import time
 import unittest
 from unittest import mock
 
@@ -15,7 +19,11 @@ except ImportError:
         "Test only runs when _remote_debugging is available"
     )
 
-from test.support import requires_remote_subprocess_debugging
+from test.support import (
+    SHORT_TIMEOUT,
+    os_helper,
+    requires_remote_subprocess_debugging,
+)
 
 from .helpers import test_subprocess
 
@@ -39,8 +47,9 @@ class TestBlockingModeStackAccuracy(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Test script that uses a generator consumed in a loop.
-        # When consume_generator is on the arithmetic lines (temp1, temp2, etc.),
-        # fibonacci_generator should NOT be in the stack at all.
+        # When consume_generator is the executing leaf frame on the arithmetic
+        # lines (temp1, temp2, etc.), fibonacci_generator should NOT be in the
+        # stack at all.
         # Line numbers are important here - see ARITHMETIC_LINES below.
         cls.generator_script = textwrap.dedent('''
             def fibonacci_generator(n):
@@ -65,29 +74,32 @@ class TestBlockingModeStackAccuracy(unittest.TestCase):
             main()
         ''')
         # Line numbers of the arithmetic operations in consume_generator.
-        # These are the lines where fibonacci_generator should NOT be in the stack.
-        # The socket injection code adds 7 lines before our script.
-        # temp1 = value + 1  -> line 17
-        # temp2 = value * 2  -> line 18
-        # temp3 = value - 1  -> line 19
-        # result = ...       -> line 20
-        cls.ARITHMETIC_LINES = {17, 18, 19, 20}
+        # These are the lines where fibonacci_generator should NOT be in the
+        # stack when consume_generator is the executing leaf frame. They account
+        # for the socket prelude added by test_subprocess().
+        # temp1 = value + 1  -> line 16
+        # temp2 = value * 2  -> line 17
+        # temp3 = value - 1  -> line 18
+        # result = ...       -> line 19
+        cls.ARITHMETIC_LINES = {16, 17, 18, 19}
 
     def test_generator_not_under_consumer_arithmetic(self):
         """Test that fibonacci_generator doesn't appear when consume_generator does arithmetic.
 
-        When consume_generator is executing arithmetic lines (temp1, temp2, etc.),
-        fibonacci_generator should NOT be anywhere in the stack - it's not being
-        called at that point.
+        When consume_generator is the leaf frame on arithmetic lines (temp1,
+        temp2, etc.), fibonacci_generator should NOT be anywhere in the stack -
+        it's not being called at that point. Non-leaf frame line numbers are
+        caller/resume metadata, not proof that the frame is executing.
 
         Valid stacks:
-          - consume_generator at 'for value in gen:' line WITH fibonacci_generator
-            at the top (generator is yielding)
+          - fibonacci_generator at the top (generator is executing), with
+            consume_generator below it
           - consume_generator at arithmetic lines WITHOUT fibonacci_generator
             (we're just doing math, not calling the generator)
 
         Invalid stacks (indicate torn/inconsistent reads):
-          - consume_generator at arithmetic lines WITH fibonacci_generator
+          - consume_generator leaf frame at arithmetic lines WITH
+            fibonacci_generator
             anywhere in the stack
 
         Note: call_tree is ordered from bottom (index 0) to top (index -1).
@@ -110,6 +122,8 @@ class TestBlockingModeStackAccuracy(unittest.TestCase):
         total_samples = 0
         invalid_stacks = 0
         arithmetic_samples = 0
+        generator_samples = 0
+        generator_not_leaf_samples = 0
 
         for (call_tree, _thread_id), count in collector.stack_counter.items():
             total_samples += count
@@ -117,15 +131,21 @@ class TestBlockingModeStackAccuracy(unittest.TestCase):
             if not call_tree:
                 continue
 
-            # Find consume_generator in the stack and check its line number
-            for i, (filename, lineno, funcname) in enumerate(call_tree):
-                if funcname == "consume_generator" and lineno in self.ARITHMETIC_LINES:
-                    arithmetic_samples += count
-                    # Check if fibonacci_generator appears anywhere in this stack
-                    func_names = [frame[2] for frame in call_tree]
-                    if "fibonacci_generator" in func_names:
-                        invalid_stacks += count
-                    break
+            # Non-leaf frame line numbers can point at resume locations while
+            # a callee is the executing leaf frame.
+            _, lineno, funcname = call_tree[-1]
+            func_names = [frame[2] for frame in call_tree]
+
+            if "fibonacci_generator" in func_names:
+                generator_samples += count
+                if funcname != "fibonacci_generator":
+                    generator_not_leaf_samples += count
+
+            if funcname == "consume_generator" and lineno in self.ARITHMETIC_LINES:
+                arithmetic_samples += count
+                # Check if fibonacci_generator appears anywhere in this stack.
+                if "fibonacci_generator" in func_names:
+                    invalid_stacks += count
 
         self.assertGreater(total_samples, 10,
             f"Expected at least 10 samples, got {total_samples}")
@@ -134,8 +154,119 @@ class TestBlockingModeStackAccuracy(unittest.TestCase):
         self.assertGreater(arithmetic_samples, 0,
             f"Expected some samples on arithmetic lines, got {arithmetic_samples}")
 
+        self.assertGreater(generator_samples, 0,
+            f"Expected some samples in fibonacci_generator, got {generator_samples}")
+
+        self.assertEqual(generator_not_leaf_samples, 0,
+            f"Found {generator_not_leaf_samples}/{generator_samples} stacks where "
+            f"fibonacci_generator appears but is not the leaf frame.")
+
         self.assertEqual(invalid_stacks, 0,
             f"Found {invalid_stacks}/{arithmetic_samples} invalid stacks where "
             f"fibonacci_generator appears in the stack when consume_generator "
-            f"is on an arithmetic line. This indicates torn/inconsistent stack "
-            f"traces are being captured.")
+            f"is the leaf frame on an arithmetic line. This indicates "
+            f"torn/inconsistent stack traces are being captured.")
+
+
+@requires_remote_subprocess_debugging()
+@unittest.skipUnless(sys.platform == "win32", "Windows only")
+class TestBlockingModeCLI(unittest.TestCase):
+    def test_run_blocking_exits_after_target_process_exits(self):
+        script = 'print("done")\n'
+
+        tmpdir = os.path.abspath(os_helper.TESTFN + "_profiling_blocking")
+        with os_helper.temp_dir(tmpdir) as tmpdir:
+            script_path = os.path.join(tmpdir, "tiny_target.py")
+            profile_path = os.path.join(tmpdir, "blocking.bin")
+            with open(script_path, "w", encoding="utf-8") as file:
+                file.write(script)
+
+            cmd = [
+                sys.executable, "-m", "profiling.sampling", "run",
+                "--binary", "-o", profile_path,
+                "--mode=cpu", "--blocking", "-r", "100",
+                script_path,
+            ]
+            result = subprocess.run(
+                cmd,
+                cwd=tmpdir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=SHORT_TIMEOUT,
+            )
+
+            self.assertEqual(
+                result.returncode, 0,
+                f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}",
+            )
+            self.assertGreater(os.path.getsize(profile_path), 0)
+
+            replay = subprocess.run(
+                [sys.executable, "-m", "profiling.sampling", "replay",
+                 profile_path],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=SHORT_TIMEOUT,
+            )
+            self.assertEqual(
+                replay.returncode, 0,
+                f"stdout:\n{replay.stdout}\nstderr:\n{replay.stderr}",
+            )
+
+
+@requires_remote_subprocess_debugging()
+@unittest.skipUnless(sys.platform == "win32", "Windows only")
+class TestBlockingModeSuspension(unittest.TestCase):
+    def test_all_threads_stop_before_pause_returns(self):
+        import mmap
+
+        tag = f"cpython_blocking_{os.getpid()}_{id(self)}"
+        script = textwrap.dedent(f'''
+            import mmap
+            import struct
+            import threading
+
+            memory = mmap.mmap(-1, 16, tagname={tag!r})
+
+            def worker(offset):
+                counter = 0
+                while True:
+                    counter += 1
+                    struct.pack_into("q", memory, offset, counter)
+
+            for offset in (0, 8):
+                threading.Thread(target=worker, args=(offset,), daemon=True).start()
+            _test_sock.sendall(b"working")
+            _test_sock.recv(1)
+        ''')
+        with mmap.mmap(-1, 16, tagname=tag) as memory:
+            with test_subprocess(script, wait_for_working=True) as subproc:
+                unwinder = _remote_debugging.RemoteUnwinder(
+                    subproc.process.pid, all_threads=True)
+                deadline = time.monotonic() + SHORT_TIMEOUT
+                while not all(memory[offset:offset + 8] != bytes(8)
+                              for offset in (0, 8)):
+                    self.assertLess(time.monotonic(), deadline,
+                                    "Worker threads did not start")
+                    time.sleep(0.001)
+                for _ in range(100):
+                    self.assertTrue(unwinder.pause_threads())
+                    try:
+                        before = memory[:]
+                        self.assertFalse(unwinder.pause_threads())
+                        unwinder.get_stack_trace()
+                        time.sleep(0.001)
+                        self.assertEqual(memory[:], before,
+                                         "Target memory changed while paused")
+                    finally:
+                        unwinder.resume_threads()
+                    self.assertFalse(unwinder.resume_threads())
+                before = memory[:]
+                deadline = time.monotonic() + SHORT_TIMEOUT
+                while any(memory[offset:offset + 8] == before[offset:offset + 8]
+                          for offset in (0, 8)):
+                    self.assertLess(time.monotonic(), deadline,
+                                    "Worker threads did not resume")
+                    time.sleep(0.001)

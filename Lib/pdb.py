@@ -84,7 +84,6 @@ import pprint
 import signal
 import socket
 import typing
-import asyncio
 import inspect
 import weakref
 import builtins
@@ -101,6 +100,8 @@ import _colorize
 from contextlib import ExitStack, closing, contextmanager
 from types import CodeType
 from warnings import deprecated
+
+lazy import asyncio
 
 try:
     import _pyrepl.utils
@@ -155,7 +156,7 @@ def find_function(funcname, filename):
             if funcdef:
                 try:
                     code = compile(funcdef, filename, 'exec')
-                except SyntaxError:
+                except Exception:
                     continue
                 # We should always be able to find the code object here
                 funccode = next(c for c in code.co_consts if
@@ -402,6 +403,7 @@ class PdbPyReplInput:
                 completer_delims=frozenset(' \t\n`@#%^&*()=+[{]}\\|;:\'",<>?')
             )
         )
+        self.readline_wrapper.get_reader().gen_colors = self.gen_colors
 
     def readline(self):
 
@@ -462,6 +464,26 @@ class PdbPyReplInput:
             return self.completion_matches[state]
         except IndexError:
             return None
+
+    def gen_colors(self, buffer):
+        from _pyrepl.utils import ColorSpan, Span
+
+        if not buffer.strip():
+            return
+
+        leading_spaces = len(buffer) - len(buffer.lstrip())
+        leading_text = buffer.split()[0]
+        if hasattr(self.pdb_instance, 'do_' + leading_text):
+            yield ColorSpan(
+                Span(leading_spaces, leading_spaces + len(leading_text) - 1),
+                "soft_keyword"
+            )
+            # Redact the command text with spaces so there will be no duplicated
+            # color span generated for it later.
+            redact_length = leading_spaces + len(leading_text)
+            buffer = ' ' * redact_length + buffer[redact_length:]
+
+        yield from _pyrepl.utils.gen_colors(buffer)
 
 
 class Pdb(bdb.Bdb, cmd.Cmd):
@@ -881,6 +903,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self._chained_exception_index = 0
 
     def _get_asyncio_task(self):
+        # If asyncio has never been imported there cannot be a running task,
+        # so skip the import rather than pay for it on every interaction.
+        if 'asyncio' not in sys.modules:
+            return None
         try:
             task = asyncio.current_task()
         except RuntimeError:
@@ -2414,9 +2440,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 s += '->'
             elif lineno == exc_lineno:
                 s += '>>'
+            # Strip the trailing newline before colorizing: the colorizer
+            # renders control characters (like '\n') in caret notation, so a
+            # later rstrip() could not remove the resulting '^J'.
+            line = line.rstrip()
             if self.colorize:
                 line = self._colorize_code(line)
-            self.message(s + '\t' + line.rstrip())
+            self.message(s + '\t' + line)
 
     def do_whatis(self, arg):
         """whatis expression
@@ -2751,7 +2781,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """Return the error message as string if compiling `expr` fails."""
         try:
             compile(expr, "<stdin>", "eval")
-        except SyntaxError as exc:
+        except Exception as exc:
             return _rstr(self._format_exc(exc))
         return ""
 
@@ -3136,6 +3166,15 @@ class _PdbServer(Pdb):
         super().postloop()
         if self.quitting:
             self.detach()
+
+    @contextmanager
+    def _maybe_use_pyrepl_as_stdin(self):
+        # The server reads every command from the client over the socket, never
+        # from a local pyrepl. The base implementation swaps in pyrepl as stdin
+        # and blanks `self.prompt` to '' (pyrepl would draw the prompt itself),
+        # which here would transmit an empty prompt to the client whenever the
+        # target process happens to be pyrepl-capable. Keep the real prompt.
+        yield
 
     def detach(self):
         # Detach the debugger and close the socket without raising BdbQuit
@@ -3713,18 +3752,18 @@ def help():
     pydoc.pager(__doc__)
 
 _usage = """\
-Debug the Python program given by pyfile. Alternatively,
+Debug the Python program given by `pyfile`. Alternatively,
 an executable module or package to debug can be specified using
-the -m switch. You can also attach to a running Python process
-using the -p option with its PID.
+the `-m` switch. You can also attach to a running Python process
+using the `-p` option with its PID.
 
-Initial commands are read from .pdbrc files in your home directory
+Initial commands are read from `.pdbrc` files in your home directory
 and in the current directory, if they exist.  Commands supplied with
--c are executed after commands from .pdbrc files.
+`-c` are executed after commands from `.pdbrc` files.
 
-To let the script run until an exception occurs, use "-c continue".
+To let the script run until an exception occurs, use `-c continue`.
 To let the script run up to a given line X in the debugged file, use
-"-c 'until X'"."""
+`-c 'until X'`."""
 
 
 def exit_with_permission_help_text():
@@ -3757,13 +3796,12 @@ def parse_args():
         description=_usage,
         formatter_class=argparse.RawDescriptionHelpFormatter,
         allow_abbrev=False,
-        color=True,
     )
 
     # Get all the commands out first. For backwards compatibility, we allow
     # -c commands to be after the target.
     parser.add_argument('-c', '--command', action='append', default=[], metavar='command', dest='commands',
-                        help='pdb commands to execute as if given in a .pdbrc file')
+                        help='pdb commands to execute as if given in a `.pdbrc` file')
 
     opts, args = parser.parse_known_args()
 
@@ -3789,6 +3827,10 @@ def parse_args():
         opt_module = parser.parse_args(args[:2])
         opts.module = opt_module.module
         args = args[2:]
+    elif args[0] == '--':
+        args.pop(0)
+        if not args:
+            parser.error("missing script or module to run")
     elif args[0].startswith('-'):
         # Invalid argument before the script name.
         invalid_args = list(itertools.takewhile(lambda a: a.startswith('-'), args))

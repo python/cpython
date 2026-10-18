@@ -9,7 +9,7 @@ Python 3.11 or newer is required to build the JIT.
 
 The JIT compiler does not require end users to install any third-party dependencies, but part of it must be *built* using LLVM[^why-llvm]. You are *not* required to build the rest of CPython using LLVM, or even the same version of LLVM (in fact, this is uncommon).
 
-LLVM version 21 is the officially supported version. Both `clang` and `llvm-readobj` need to be installed and discoverable (version suffixes, like `clang-21`, are okay). It's highly recommended that you also have `llvm-objdump` available, since this allows the build script to dump human-readable assembly for the generated code.
+LLVM version 21 is the officially supported version. The tools `clang`, `llvm-readobj`, `llvm-objdump`, and `llvm-dwarfdump` need to be installed and discoverable (version suffixes, like `clang-21`, are okay).
 
 You can customize the LLVM configuration using environment variables before running configure:
 
@@ -85,7 +85,7 @@ If you're looking for information on how to update the JIT build dependencies, s
 
 [^pep-744]: [PEP 744](https://peps.python.org/pep-0744/)
 
-[^why-llvm]: Clang is specifically needed because it's the only C compiler with support for guaranteed tail calls (`musttail`), which are required by CPython's continuation-passing-style approach to JIT compilation. Since LLVM also includes other functionalities we need (namely, object file parsing and disassembly), it's convenient to only support one toolchain at this time.
+[^why-llvm]: Clang is specifically needed because it's the only C compiler with support for guaranteed tail calls (`musttail`), which are required by CPython's continuation-passing-style approach to JIT compilation. Since LLVM also includes other functionalities we need (namely, object file parsing, disassembly, and DWARF inspection), it's convenient to only support one toolchain at this time.
 
 ### Understanding JIT behavior
 

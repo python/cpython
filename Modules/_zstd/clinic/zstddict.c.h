@@ -21,8 +21,8 @@ PyDoc_STRVAR(_zstd_ZstdDict_new__doc__,
 "    advanced cases. Otherwise, check that the content represents\n"
 "    a Zstandard dictionary created by the zstd library or CLI.\n"
 "\n"
-"The dictionary can be used for compression or decompression, and can be shared\n"
-"by multiple ZstdCompressor or ZstdDecompressor objects.");
+"The dictionary can be used for compression or decompression, and can be\n"
+"shared by multiple ZstdCompressor or ZstdDecompressor objects.");
 
 static PyObject *
 _zstd_ZstdDict_new_impl(PyTypeObject *type, Py_buffer *dict_content,
@@ -95,20 +95,6 @@ exit:
 
 PyDoc_STRVAR(_zstd_ZstdDict_dict_content__doc__,
 "The content of a Zstandard dictionary, as a bytes object.");
-#if defined(_zstd_ZstdDict_dict_content_DOCSTR)
-#   undef _zstd_ZstdDict_dict_content_DOCSTR
-#endif
-#define _zstd_ZstdDict_dict_content_DOCSTR _zstd_ZstdDict_dict_content__doc__
-
-#if !defined(_zstd_ZstdDict_dict_content_DOCSTR)
-#  define _zstd_ZstdDict_dict_content_DOCSTR NULL
-#endif
-#if defined(_ZSTD_ZSTDDICT_DICT_CONTENT_GETSETDEF)
-#  undef _ZSTD_ZSTDDICT_DICT_CONTENT_GETSETDEF
-#  define _ZSTD_ZSTDDICT_DICT_CONTENT_GETSETDEF {"dict_content", (getter)_zstd_ZstdDict_dict_content_get, (setter)_zstd_ZstdDict_dict_content_set, _zstd_ZstdDict_dict_content_DOCSTR},
-#else
-#  define _ZSTD_ZSTDDICT_DICT_CONTENT_GETSETDEF {"dict_content", (getter)_zstd_ZstdDict_dict_content_get, NULL, _zstd_ZstdDict_dict_content_DOCSTR},
-#endif
 
 static PyObject *
 _zstd_ZstdDict_dict_content_get_impl(ZstdDict *self);
@@ -125,26 +111,12 @@ PyDoc_STRVAR(_zstd_ZstdDict_as_digested_dict__doc__,
 "Pass this attribute as zstd_dict argument:\n"
 "compress(dat, zstd_dict=zd.as_digested_dict)\n"
 "\n"
-"1. Some advanced compression parameters of compressor may be overridden\n"
-"   by parameters of digested dictionary.\n"
-"2. ZstdDict has a digested dictionaries cache for each compression level.\n"
-"   It\'s faster when loading again a digested dictionary with the same\n"
-"   compression level.\n"
+"1. Some advanced compression parameters of compressor may be\n"
+"   overridden by parameters of digested dictionary.\n"
+"2. ZstdDict has a digested dictionaries cache for each compression\n"
+"   level.  It\'s faster when loading again a digested dictionary with\n"
+"   the same compression level.\n"
 "3. No need to use this for decompression.");
-#if defined(_zstd_ZstdDict_as_digested_dict_DOCSTR)
-#   undef _zstd_ZstdDict_as_digested_dict_DOCSTR
-#endif
-#define _zstd_ZstdDict_as_digested_dict_DOCSTR _zstd_ZstdDict_as_digested_dict__doc__
-
-#if !defined(_zstd_ZstdDict_as_digested_dict_DOCSTR)
-#  define _zstd_ZstdDict_as_digested_dict_DOCSTR NULL
-#endif
-#if defined(_ZSTD_ZSTDDICT_AS_DIGESTED_DICT_GETSETDEF)
-#  undef _ZSTD_ZSTDDICT_AS_DIGESTED_DICT_GETSETDEF
-#  define _ZSTD_ZSTDDICT_AS_DIGESTED_DICT_GETSETDEF {"as_digested_dict", (getter)_zstd_ZstdDict_as_digested_dict_get, (setter)_zstd_ZstdDict_as_digested_dict_set, _zstd_ZstdDict_as_digested_dict_DOCSTR},
-#else
-#  define _ZSTD_ZSTDDICT_AS_DIGESTED_DICT_GETSETDEF {"as_digested_dict", (getter)_zstd_ZstdDict_as_digested_dict_get, NULL, _zstd_ZstdDict_as_digested_dict_DOCSTR},
-#endif
 
 static PyObject *
 _zstd_ZstdDict_as_digested_dict_get_impl(ZstdDict *self);
@@ -161,24 +133,11 @@ PyDoc_STRVAR(_zstd_ZstdDict_as_undigested_dict__doc__,
 "Pass this attribute as zstd_dict argument:\n"
 "compress(dat, zstd_dict=zd.as_undigested_dict)\n"
 "\n"
-"1. The advanced compression parameters of compressor will not be overridden.\n"
-"2. Loading an undigested dictionary is costly. If load an undigested dictionary\n"
-"   multiple times, consider reusing a compressor object.\n"
+"1. The advanced compression parameters of compressor will not be\n"
+"   overridden.\n"
+"2. Loading an undigested dictionary is costly. If load an undigested\n"
+"   dictionary multiple times, consider reusing a compressor object.\n"
 "3. No need to use this for decompression.");
-#if defined(_zstd_ZstdDict_as_undigested_dict_DOCSTR)
-#   undef _zstd_ZstdDict_as_undigested_dict_DOCSTR
-#endif
-#define _zstd_ZstdDict_as_undigested_dict_DOCSTR _zstd_ZstdDict_as_undigested_dict__doc__
-
-#if !defined(_zstd_ZstdDict_as_undigested_dict_DOCSTR)
-#  define _zstd_ZstdDict_as_undigested_dict_DOCSTR NULL
-#endif
-#if defined(_ZSTD_ZSTDDICT_AS_UNDIGESTED_DICT_GETSETDEF)
-#  undef _ZSTD_ZSTDDICT_AS_UNDIGESTED_DICT_GETSETDEF
-#  define _ZSTD_ZSTDDICT_AS_UNDIGESTED_DICT_GETSETDEF {"as_undigested_dict", (getter)_zstd_ZstdDict_as_undigested_dict_get, (setter)_zstd_ZstdDict_as_undigested_dict_set, _zstd_ZstdDict_as_undigested_dict_DOCSTR},
-#else
-#  define _ZSTD_ZSTDDICT_AS_UNDIGESTED_DICT_GETSETDEF {"as_undigested_dict", (getter)_zstd_ZstdDict_as_undigested_dict_get, NULL, _zstd_ZstdDict_as_undigested_dict_DOCSTR},
-#endif
 
 static PyObject *
 _zstd_ZstdDict_as_undigested_dict_get_impl(ZstdDict *self);
@@ -195,24 +154,11 @@ PyDoc_STRVAR(_zstd_ZstdDict_as_prefix__doc__,
 "Pass this attribute as zstd_dict argument:\n"
 "compress(dat, zstd_dict=zd.as_prefix)\n"
 "\n"
-"1. Prefix is compatible with long distance matching, while dictionary is not.\n"
-"2. It only works for the first frame, then the compressor/decompressor will\n"
-"   return to no prefix state.\n"
+"1. Prefix is compatible with long distance matching, while\n"
+"   dictionary is not.\n"
+"2. It only works for the first frame, then the\n"
+"   compressor/decompressor will return to no prefix state.\n"
 "3. When decompressing, must use the same prefix as when compressing.");
-#if defined(_zstd_ZstdDict_as_prefix_DOCSTR)
-#   undef _zstd_ZstdDict_as_prefix_DOCSTR
-#endif
-#define _zstd_ZstdDict_as_prefix_DOCSTR _zstd_ZstdDict_as_prefix__doc__
-
-#if !defined(_zstd_ZstdDict_as_prefix_DOCSTR)
-#  define _zstd_ZstdDict_as_prefix_DOCSTR NULL
-#endif
-#if defined(_ZSTD_ZSTDDICT_AS_PREFIX_GETSETDEF)
-#  undef _ZSTD_ZSTDDICT_AS_PREFIX_GETSETDEF
-#  define _ZSTD_ZSTDDICT_AS_PREFIX_GETSETDEF {"as_prefix", (getter)_zstd_ZstdDict_as_prefix_get, (setter)_zstd_ZstdDict_as_prefix_set, _zstd_ZstdDict_as_prefix_DOCSTR},
-#else
-#  define _ZSTD_ZSTDDICT_AS_PREFIX_GETSETDEF {"as_prefix", (getter)_zstd_ZstdDict_as_prefix_get, NULL, _zstd_ZstdDict_as_prefix_DOCSTR},
-#endif
 
 static PyObject *
 _zstd_ZstdDict_as_prefix_get_impl(ZstdDict *self);
@@ -222,4 +168,12 @@ _zstd_ZstdDict_as_prefix_get(PyObject *self, void *Py_UNUSED(context))
 {
     return _zstd_ZstdDict_as_prefix_get_impl((ZstdDict *)self);
 }
-/*[clinic end generated code: output=f41d9e2e2cc2928f input=a9049054013a1b77]*/
+#define _ZSTD_ZSTDDICT_DICT_CONTENT_GETSETDEF {"dict_content", (getter)_zstd_ZstdDict_dict_content_get, (setter)NULL, _zstd_ZstdDict_dict_content__doc__},
+
+#define _ZSTD_ZSTDDICT_AS_DIGESTED_DICT_GETSETDEF {"as_digested_dict", (getter)_zstd_ZstdDict_as_digested_dict_get, (setter)NULL, _zstd_ZstdDict_as_digested_dict__doc__},
+
+#define _ZSTD_ZSTDDICT_AS_UNDIGESTED_DICT_GETSETDEF {"as_undigested_dict", (getter)_zstd_ZstdDict_as_undigested_dict_get, (setter)NULL, _zstd_ZstdDict_as_undigested_dict__doc__},
+
+#define _ZSTD_ZSTDDICT_AS_PREFIX_GETSETDEF {"as_prefix", (getter)_zstd_ZstdDict_as_prefix_get, (setter)NULL, _zstd_ZstdDict_as_prefix__doc__},
+
+/*[clinic end generated code: output=aa4d4b8fd985ae08 input=a9049054013a1b77]*/
