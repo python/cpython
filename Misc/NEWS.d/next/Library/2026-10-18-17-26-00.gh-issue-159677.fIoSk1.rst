@@ -1,0 +1,2 @@
+Fix :meth:`io.FileIO.seekable` always returning ``False`` for a seekable file
+when the first call to :meth:`~io.FileIO.seek` failed.
