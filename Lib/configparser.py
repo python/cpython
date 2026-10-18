@@ -143,10 +143,10 @@ ConfigParser -- responsible for parsing a list of
         between keys and values are surrounded by spaces.
 """
 
-# Do not import dataclasses; overhead is unacceptable (gh-117703)
+# Defer annotations so that typing need not be imported at runtime.
+from __future__ import annotations
 
-from collections.abc import Iterable, MutableMapping
-from collections import ChainMap as _ChainMap
+# Do not import dataclasses; overhead is unacceptable (gh-117703)
 import contextlib
 import functools
 import io
@@ -154,16 +154,39 @@ import itertools
 import os
 import re
 import sys
+from collections import ChainMap as _ChainMap
+from collections.abc import Iterable, MutableMapping
 
-__all__ = ("NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
-           "NoOptionError", "InterpolationError", "InterpolationDepthError",
-           "InterpolationMissingOptionError", "InterpolationSyntaxError",
-           "ParsingError", "MissingSectionHeaderError",
-           "MultilineContinuationError", "UnnamedSectionDisabledError",
-           "InvalidWriteError", "ConfigParser", "RawConfigParser",
-           "Interpolation", "BasicInterpolation",  "ExtendedInterpolation",
-           "SectionProxy", "ConverterMapping",
-           "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH", "UNNAMED_SECTION")
+# Do not import typing either; it is only needed for annotations.
+TYPE_CHECKING = False
+if TYPE_CHECKING:
+    from typing import ClassVar
+
+__all__ = (
+    "DEFAULTSECT",
+    "MAX_INTERPOLATION_DEPTH",
+    "UNNAMED_SECTION",
+    "BasicInterpolation",
+    "ConfigParser",
+    "ConverterMapping",
+    "DuplicateOptionError",
+    "DuplicateSectionError",
+    "ExtendedInterpolation",
+    "Interpolation",
+    "InterpolationDepthError",
+    "InterpolationError",
+    "InterpolationMissingOptionError",
+    "InterpolationSyntaxError",
+    "InvalidWriteError",
+    "MissingSectionHeaderError",
+    "MultilineContinuationError",
+    "NoOptionError",
+    "NoSectionError",
+    "ParsingError",
+    "RawConfigParser",
+    "SectionProxy",
+    "UnnamedSectionDisabledError",
+)
 
 _default_dict = dict
 DEFAULTSECT = "DEFAULT"
@@ -325,7 +348,7 @@ class ParsingError(Error):
         return self
 
     @staticmethod
-    def _raise_all(exceptions: Iterable['ParsingError']):
+    def _raise_all(exceptions: Iterable[ParsingError]):
         """
         Combine any number of ParsingErrors into one and raise it.
         """
@@ -499,8 +522,8 @@ class ExtendedInterpolation(Interpolation):
                              f"at position {tmp_value.find('$'):d}")
         return value
 
-    def _interpolate_some(self, parser, option, accum, rest, section, map,
-                          depth):
+    def _interpolate_some(self, parser, option,  # noqa: C901  # gh-159686
+                          accum, rest, section, map, depth):
         rawval = parser.get(section, option, raw=True, fallback=rest)
         if depth > MAX_INTERPOLATION_DEPTH:
             raise InterpolationDepthError(option, section, rawval)
@@ -647,8 +670,10 @@ class RawConfigParser(MutableMapping):
     # Compiled regular expression for matching leading whitespace in a line
     NONSPACECRE = re.compile(r"\S")
     # Possible boolean values in the configuration.
-    BOOLEAN_STATES = {'1': True, 'yes': True, 'true': True, 'on': True,
-                      '0': False, 'no': False, 'false': False, 'off': False}
+    BOOLEAN_STATES: ClassVar[dict[str, bool]] = {
+        '1': True, 'yes': True, 'true': True, 'on': True,
+        '0': False, 'no': False, 'false': False, 'off': False,
+    }
 
     def __init__(self, defaults=None, dict_type=_default_dict,
                  allow_no_value=False, *, delimiters=('=', ':'),

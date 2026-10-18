@@ -4,6 +4,7 @@ import io
 import os
 import textwrap
 import unittest
+from typing import ClassVar
 
 from test import support
 from test.support import os_helper
@@ -1412,8 +1413,8 @@ class RawConfigParserNoValueAndExtendedInterpolationTest(
 
 class ConfigParserTestCaseTrickyFile(CfgParserTestCaseClass, unittest.TestCase):
     config_class = configparser.ConfigParser
-    delimiters = {'='}
-    comment_prefixes = {'#'}
+    delimiters: ClassVar[set[str]] = {'='}
+    comment_prefixes: ClassVar[set[str]] = {'#'}
     allow_no_value = True
 
     def test_cfgparser_dot_3(self):
@@ -2347,7 +2348,8 @@ class ReDoSTestCase(unittest.TestCase):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        support.check__all__(self, configparser, not_exported={"Error"})
+        support.check__all__(self, configparser,
+                             not_exported={"Error", "TYPE_CHECKING"})
 
 
 if __name__ == '__main__':
