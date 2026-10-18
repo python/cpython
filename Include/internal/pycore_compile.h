@@ -36,6 +36,8 @@ PyAPI_FUNC(PyCodeObject*) _PyAST_Compile(
     PyObject *module);
 
 /* AST preprocessing */
+extern void _PyCompile_CheckRecursionError(void);
+
 extern int _PyCompile_AstPreprocess(
     struct _mod *mod,
     PyObject *filename,

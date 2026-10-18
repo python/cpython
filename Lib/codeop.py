@@ -6,9 +6,7 @@ and:
 
 - Return code object if the command is complete and valid
 - Return None if the command is incomplete
-- Raise SyntaxError, ValueError or OverflowError if the command is a
-  syntax error (OverflowError and ValueError can be produced by
-  malformed literals).
+- Raise SyntaxError if the command is a syntax error.
 
 The two interfaces are:
 
@@ -95,9 +93,7 @@ def compile_command(source, filename="<input>", symbol="single", flags=0):
 
     - Return a code object if the command is complete and valid
     - Return None if the command is incomplete
-    - Raise SyntaxError, ValueError or OverflowError if the command is a
-      syntax error (OverflowError and ValueError can be produced by
-      malformed literals).
+    - Raise SyntaxError if the command is a syntax error.
     """
     return _maybe_compile(_compile, source, filename, symbol, flags)
 
@@ -147,8 +143,6 @@ class CommandCompiler:
 
         - Return a code object if the command is complete and valid
         - Return None if the command is incomplete
-        - Raise SyntaxError, ValueError or OverflowError if the command is a
-          syntax error (OverflowError and ValueError can be produced by
-          malformed literals).
+        - Raise SyntaxError if the command is a syntax error.
         """
         return _maybe_compile(self.compiler, source, filename, symbol, flags=self.compiler.flags)
