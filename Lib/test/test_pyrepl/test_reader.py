@@ -236,6 +236,22 @@ class TestReader(ScreenEqualMixin, TestCase):
         reader, _ = handle_all_events(events)
         self.assertIn(reader.screen, ([], [""]))
 
+    def test_up_arrow_with_prompt_wider_than_terminal(self):
+        events = itertools.chain(
+            code_to_events("x\nabc"),
+            [Event(evt="key", data="up", raw=bytearray(b"\x1bOA"))],
+        )
+        reader, _ = handle_all_events(
+            events,
+            prepare_console=functools.partial(prepare_console, width=20),
+            prepare_reader=functools.partial(
+                prepare_reader, get_prompt=lambda lineno, cursor_on_line: "a" * 30
+            ),
+        )
+        # the prompt-only row above "abc" is skipped, landing on "x"
+        self.assertEqual(reader.pos, 1)
+        self.assertEqual(reader.cxy, (1, 1))
+
     def test_newline_within_block_trailing_whitespace(self):
         # fmt: off
         code = (
