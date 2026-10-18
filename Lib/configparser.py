@@ -568,7 +568,7 @@ class _ReadState:
 
     def __init__(self):
         self.elements_added = set()
-        self.errors = list()
+        self.errors = []
 
 
 class _Line(str):
@@ -714,9 +714,8 @@ class RawConfigParser(MutableMapping):
         if section == self.default_section:
             raise ValueError(f'Invalid section name: {section!r}')
 
-        if section is UNNAMED_SECTION:
-            if not self._allow_unnamed_section:
-                raise UnnamedSectionDisabledError
+        if section is UNNAMED_SECTION and not self._allow_unnamed_section:
+            raise UnnamedSectionDisabledError
 
         if section in self._sections:
             raise DuplicateSectionError(section)
@@ -974,7 +973,7 @@ class RawConfigParser(MutableMapping):
         if self._defaults:
             self._write_section(fp, self.default_section,
                                     self._defaults.items(), d)
-        if UNNAMED_SECTION in self._sections and self._sections[UNNAMED_SECTION]:
+        if self._sections.get(UNNAMED_SECTION):
             self._write_section(fp, UNNAMED_SECTION, self._sections[UNNAMED_SECTION].items(), d, unnamed=True)
 
         for section in self._sections:
@@ -1163,7 +1162,7 @@ class RawConfigParser(MutableMapping):
             st.errors.append(ParsingError(fpname, st.lineno, line))
             return
 
-        st.optname, vi, optval = mo.group('option', 'vi', 'value')
+        st.optname, optval = mo.group('option', 'value')
         if not st.optname:
             st.errors.append(ParsingError(fpname, st.lineno, line))
         st.optname = self.optionxform(st.optname.rstrip())
@@ -1254,9 +1253,8 @@ class RawConfigParser(MutableMapping):
             raise TypeError("section names must be strings or UNNAMED_SECTION")
         if not isinstance(option, str):
             raise TypeError("option keys must be strings")
-        if not self._allow_no_value or value:
-            if not isinstance(value, str):
-                raise TypeError("option values must be strings")
+        if (not self._allow_no_value or value) and not isinstance(value, str):
+            raise TypeError("option values must be strings")
 
     @property
     def converters(self):

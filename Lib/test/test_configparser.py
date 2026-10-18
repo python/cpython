@@ -102,10 +102,10 @@ class BasicTestCase(CfgParserTestCaseClass):
         E.sort()
         eq(L, E)
         L = cf['Spacey Bar From The Beginning'].items()
-        L = sorted(list(L))
+        L = sorted(L)
         eq(L, F)
         L = cf.items()
-        L = sorted(list(L))
+        L = sorted(L)
         self.assertEqual(len(L), len(E))
         for name, section in L:
             eq(name, section.name)
@@ -1074,9 +1074,8 @@ class ConfigParserTestCaseNoInterpolation(BasicTestCase, unittest.TestCase):
 class ConfigParserTestCaseInvalidInterpolationType(unittest.TestCase):
     def test_error_on_wrong_type_for_interpolation(self):
         for value in [configparser.ExtendedInterpolation,  42,  "a string"]:
-            with self.subTest(value=value):
-                with self.assertRaises(TypeError):
-                    configparser.ConfigParser(interpolation=value)
+            with self.subTest(value=value), self.assertRaises(TypeError):
+                configparser.ConfigParser(interpolation=value)
 
 
 class ConfigParserTestCaseNonStandardDelimiters(ConfigParserTestCase):
@@ -1423,8 +1422,8 @@ class ConfigParserTestCaseTrickyFile(CfgParserTestCaseClass, unittest.TestCase):
         self.assertEqual(len(cf.read(tricky, encoding='utf-8')), 1)
         self.assertEqual(cf.sections(), ['strange',
                                          'corruption',
-                                         'yeah, sections can be '
-                                         'indented as well',
+                                         ('yeah, sections can be '
+                                          'indented as well'),
                                          'another one!',
                                          'no values here',
                                          'tricky interpolation',
@@ -1698,7 +1697,7 @@ class CoverageOneHundredTestCase(unittest.TestCase):
         self.assertEqual(error.section, 'section')
 
     def test_parsing_error(self):
-        with self.assertRaises(TypeError) as cm:
+        with self.assertRaises(TypeError):
             configparser.ParsingError()
         error = configparser.ParsingError(source='source')
         self.assertEqual(error.source, 'source')
@@ -2225,7 +2224,8 @@ class SectionlessTestCase(unittest.TestCase):
         c = 3
         """)
 
-        self.assertEqual(set([configparser.UNNAMED_SECTION, 'sect1']), set(cfg1.sections()))
+        self.assertEqual({configparser.UNNAMED_SECTION, 'sect1'},
+                         set(cfg1.sections()))
         self.assertEqual('1', cfg1[configparser.UNNAMED_SECTION]['a'])
         self.assertEqual('2', cfg1[configparser.UNNAMED_SECTION]['b'])
         self.assertEqual('3', cfg1['sect1']['c'])
