@@ -14,6 +14,7 @@ from test.support import (requires, verbose, SaveSignals, cpython_only,
                           check_disallow_instantiation, MISSING_C_DOCSTRINGS,
                           gc_collect, SHORT_TIMEOUT)
 from test.support.import_helper import import_module
+from test.support import os_helper
 
 # Optionally test curses module.  This currently requires that the
 # 'curses' resource be given on the regrtest command line using the -u
@@ -47,6 +48,26 @@ def requires_curses_window_meth(name):
     return deco
 
 WIDE_BUILD = import_module('_curses')._wide_character_support
+
+def encodable(s, encoding):
+    # Wide characters are only supported in a locale that can encode them.
+    try:
+        s.encode(encoding)
+    except UnicodeEncodeError:
+        return False
+    return True
+
+def storable(s, encoding):
+    # Text the current build can place in character cells.  A wide build
+    # stores any locale-encodable text (combining sequences and multibyte
+    # characters included).  A narrow build has no wide-character cells, so
+    # each character must occupy a single cell -- that is, encode to exactly
+    # one byte.
+    if not encodable(s, encoding):
+        return False
+    if WIDE_BUILD:
+        return True
+    return len(s.encode(encoding)) == len(s)
 
 def requires_wide_build(test):
     @functools.wraps(test)
@@ -108,6 +129,9 @@ def _broken_variation_selector_width():
     return False
 
 BROKEN_VARIATION_SELECTOR_WIDTH = _broken_variation_selector_width()
+
+class CustomError(Exception):
+    pass
 
 # newterm() is used when available (it reports errors instead of exiting), but
 # initscr() is still the fallback, and an unusable $TERM has no terminal to
@@ -387,24 +411,10 @@ class TestCurses(unittest.TestCase):
     # combining sequence or a multibyte character are guarded with _storable().
 
     def _encodable(self, s):
-        # Wide characters are only supported in a locale that can encode them.
-        try:
-            s.encode(self.stdscr.encoding)
-        except UnicodeEncodeError:
-            return False
-        return True
+        return encodable(s, self.stdscr.encoding)
 
     def _storable(self, s):
-        # Text the current build can place in character cells.  A wide build
-        # stores any locale-encodable text (combining sequences and multibyte
-        # characters included).  A narrow build has no wide-character cells, so
-        # each character must occupy a single cell -- that is, encode to exactly
-        # one byte.
-        if not self._encodable(s):
-            return False
-        if WIDE_BUILD:
-            return True
-        return len(s.encode(self.stdscr.encoding)) == len(s)
+        return storable(s, self.stdscr.encoding)
 
     def _char_code(self, ch):
         # The integer the int-input API (addch(int), do_command()) uses for a
@@ -796,6 +806,9 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(str(s[1:]), 'bc')
         self.assertEqual(str(s[::-1]), 'cbA')
         self.assertEqual(str(s + curses.complexstr(['Z'])), 'AbcZ')
+        # Concatenating anything else raises instead of returning NotImplemented.
+        self.assertRaises(TypeError, lambda: s + 'Z')
+        self.assertRaises(TypeError, lambda: s + cc('Z'))
         # The empty complexstr.
         self.assertEqual(len(curses.complexstr([])), 0)
         self.assertEqual(str(curses.complexstr('')), '')
@@ -1121,7 +1134,11 @@ class TestCurses(unittest.TestCase):
         # A cell holding a NUL reads back as the cell that writes it.
         win = curses.newwin(3, 8, 0, 0)
         win.insch(0, 0, '\0')
-        self.assertEqual(win.in_wch(0, 0), cell)
+        if WIDE_BUILD:
+            self.assertEqual(win.in_wch(0, 0), cell)
+        else:
+            # A narrow build inserts a NUL as "^@".
+            self.assertEqual(str(win.in_wch(0, 0)), '^')
         # A string of cells cannot hold a NUL: it would end a batch write.
         self.assertRaises(ValueError, curses.complexstr, 'a\0b')
         self.assertRaises(ValueError, curses.complexstr, '\0')
@@ -2428,6 +2445,22 @@ class TestCurses(unittest.TestCase):
         panel.set_userptr(A())
         panel.set_userptr(None)
 
+    @requires_curses_func('panel')
+    def test_userptr_dealloc_segfault(self):
+        w = curses.newwin(10, 10)
+        panel = curses.panel.new_panel(w)
+        seen = []
+        class A:
+            def __del__(self):
+                # The panel is being deallocated, so it must already be off
+                # the stack: handing it back here would resurrect an object
+                # whose refcount is zero -- segfaults.
+                seen.append(curses.panel.top_panel() is None)
+        panel.set_userptr(A())
+        del panel
+        gc_collect()
+        self.assertEqual(seen, [True])
+
     @cpython_only
     @requires_curses_func('panel')
     def test_disallow_instantiation(self):
@@ -3324,6 +3357,50 @@ class ScreenTests(NewtermTestBase):
         self.assertIs(curses.set_term(a), b)  # returns the previous one
         self.assertIs(curses.set_term(b), a)
 
+    def make_screens_of_different_terms(self):
+        # Two screens of different sizes and numbers of colors.  Return them
+        # with the values of LINES, COLS, COLORS and COLOR_PAIRS for each.
+        screens = []
+        with os_helper.EnvironmentVarGuard() as env:
+            for term, lines, cols in [('xterm', 25, 80),
+                                      ('xterm-256color', 30, 100)]:
+                env['LINES'] = str(lines)
+                env['COLUMNS'] = str(cols)
+                s = self.make_pty()
+                try:
+                    screen = curses.newterm(term, s, s)
+                except curses.error:
+                    self.skipTest(f'no {term} terminfo entry')
+                curses.start_color()
+                self.assertEqual(screen.stdscr.getmaxyx(), (lines, cols))
+                screens.append((screen, self.get_screen_values()))
+        self.assertNotEqual(screens[0][1], screens[1][1])
+        return screens
+
+    def get_screen_values(self):
+        return curses.LINES, curses.COLS, curses.COLORS, curses.COLOR_PAIRS
+
+    def test_set_term_refreshes_lines_cols_colors(self):
+        (a, avalues), (b, bvalues) = self.make_screens_of_different_terms()
+        self.assertIs(curses.set_term(a), b)
+        self.assertEqual(self.get_screen_values(), avalues)
+        self.assertIs(curses.set_term(b), a)
+        self.assertEqual(self.get_screen_values(), bvalues)
+
+    @unittest.skipUnless(hasattr(curses.screen, 'use'),
+                         'requires curses.screen.use()')
+    def test_use_screen_refreshes_lines_cols_colors(self):
+        (a, avalues), (b, bvalues) = self.make_screens_of_different_terms()
+        self.assertEqual(a.use(lambda scr: self.get_screen_values()), avalues)
+        self.assertEqual(self.get_screen_values(), bvalues)
+
+        def raise_in_use(scr):
+            self.assertEqual(self.get_screen_values(), avalues)
+            raise CustomError
+        with self.assertRaises(CustomError):
+            a.use(raise_in_use)
+        self.assertEqual(self.get_screen_values(), bvalues)
+
     def test_window_keeps_screen_alive(self):
         # The standard window keeps its screen alive; dropping every other
         # reference and collecting must not invalidate the window.
@@ -3383,6 +3460,23 @@ class ScreenTests(NewtermTestBase):
         # close() is idempotent.
         screen.close()
 
+    def test_close_then_write_with_attr_keeps_no_reference(self):
+        # A write with an *attr* argument on a detached window fails while
+        # setting the rendition, and has to release the bytes it converted.
+        s = self.make_pty()
+        screen = curses.newterm('xterm', s, s)
+        win = screen.stdscr
+        screen.close()
+        writes = [lambda b: win.addstr(b, curses.A_BOLD),
+                  lambda b: win.addnstr(b, 4, curses.A_BOLD),
+                  lambda b: win.insstr(b, curses.A_BOLD),
+                  lambda b: win.insnstr(b, 4, curses.A_BOLD)]
+        data = b'x' * 8
+        nrefs = sys.getrefcount(data)
+        for write in writes:
+            self.assertRaises(curses.error, write, data)
+        self.assertEqual(sys.getrefcount(data), nrefs)
+
     @requires_curses_func('panel')
     def test_close_then_panel_replace(self):
         # A detached window has no underlying curses window, so replace()
@@ -3439,9 +3533,49 @@ class ScreenTests(NewtermTestBase):
             with self.assertRaises(curses.error):
                 prescr.use(func)
         # Affecting the state before initscr() is what such a screen is for.
+        # use_env() is process-wide, not a property of this screen.
+        self.addCleanup(curses.use_env, True)
         prescr.use(lambda scr: curses.use_env(False))
         # The current screen is unchanged.
         screen.stdscr.refresh()
+
+    @unittest.skipUnless(hasattr(curses, 'new_prescr'),
+                         'requires curses.new_prescr()')
+    def test_new_prescr_returns_existing_screen(self):
+        pre1 = curses.new_prescr()
+        pre2 = curses.new_prescr()
+        self.assertIs(pre1, pre2)
+
+    @unittest.skipUnless(hasattr(curses, 'new_prescr'),
+                         'requires curses.new_prescr()')
+    def test_newterm_after_new_prescr_keeps_screen_alive(self):
+        # newterm() adopts the SCREEN created by new_prescr().  Dropping the
+        # pre-screen wrapper must not delete the live screen.
+        s = self.make_pty()
+        pre = curses.new_prescr()
+        screen = curses.newterm('xterm', s, s)
+        del pre
+        gc_collect()
+        screen.stdscr.addstr(0, 0, 'x')
+        screen.stdscr.refresh()
+
+    @unittest.skipUnless(hasattr(curses, 'new_prescr'),
+                         'requires curses.new_prescr()')
+    def test_initscr_after_new_prescr_keeps_screen_alive(self):
+        # initscr() adopts the SCREEN created by new_prescr().  Dropping the
+        # pre-screen wrapper must not delete the live screen.
+        s = self.make_pty()
+        saved = os.dup(1)
+        self.addCleanup(os.close, saved)
+        self.addCleanup(os.dup2, saved, 1)
+        os.dup2(s, 1)
+
+        pre = curses.new_prescr()
+        stdscr = curses.initscr()
+        del pre
+        gc_collect()
+        stdscr.addstr(0, 0, 'x')
+        stdscr.refresh()
 
     def test_initscr_after_newterm_keeps_screen_alive(self):
         # initscr() called while a newterm() screen is current returns that
@@ -3479,10 +3613,10 @@ class SLKTests(NewtermTestBase):
     # slk_init() must run before newterm()/initscr(), so each test sets up its
     # own screen rather than reusing the one TestCurses builds in setUp().
 
-    def make_slk_screen(self, fmt=0):
+    def make_slk_screen(self, fmt=0, term='xterm'):
         s = self.make_pty()
         curses.slk_init(fmt)
-        return curses.newterm('xterm', s, s)
+        return curses.newterm(term, s, s)
 
     def test_init_reserves_a_line(self):
         # Every layout takes the bottom line for the labels; the index-line
@@ -3517,10 +3651,8 @@ class SLKTests(NewtermTestBase):
     def test_set_wide(self):
         screen = self.make_slk_screen()
         label = 'Ångström'
-        try:
-            label.encode(screen.stdscr.encoding)
-        except UnicodeEncodeError:
-            self.skipTest('the locale cannot encode %r' % label)
+        if not storable(label, screen.stdscr.encoding):
+            self.skipTest('cannot store %r in this locale' % label)
         curses.slk_set(1, label, 0)
         # The label can be truncated to fit the soft label width, e.g. in the
         # EUC-JP locale, where "Å" and "ö" are double-width JIS X 0212
@@ -3564,6 +3696,26 @@ class SLKTests(NewtermTestBase):
         curses.slk_attr_set(curses.A_BOLD)
         curses.slk_attr_set(curses.A_BOLD, 0)
         curses.slk_color(0)
+
+    def test_color_wide_pair(self):
+        # Drive a terminal with enough color pairs to reach past a short,
+        # rather than relying on whatever $TERM happens to be.
+        try:
+            self.make_slk_screen(term='xterm-256color')
+        except curses.error:
+            self.skipTest('no xterm-256color terminfo entry')
+        if not curses.has_colors():
+            self.skipTest('requires colors support')
+        curses.start_color()
+        if not (curses.has_extended_color_support()
+                and curses.COLOR_PAIRS > SHORT_MAX + 1):
+            self.skipTest('requires extended color support')
+        # A pair that does not fit in a short is still a valid pair here.
+        curses.slk_color(SHORT_MAX + 1)
+        # The low 16 bits of this are pair 5, but the pair itself is out of
+        # range, so it must raise instead of selecting pair 5.
+        self.assertRaises(curses.error, curses.slk_color,
+                          curses.COLOR_PAIRS * 2 + 5)
 
 
 @unittest.skipUnless(hasattr(curses, 'newterm'), 'requires curses.newterm()')

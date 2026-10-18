@@ -1,2 +1,0 @@
-Prevent differential flamegraphs from duplicating self time across line
-nodes for the same function.

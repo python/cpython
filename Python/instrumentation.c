@@ -1690,6 +1690,7 @@ allocate_instrumentation_data(PyCodeObject *code)
         }
         monitoring->local_monitors = (_Py_LocalMonitors){ 0 };
         monitoring->active_monitors = (_Py_LocalMonitors){ 0 };
+        memset(monitoring->tool_versions, 0, sizeof(monitoring->tool_versions));
         monitoring->tools = NULL;
         monitoring->lines = NULL;
         monitoring->line_tools = NULL;
