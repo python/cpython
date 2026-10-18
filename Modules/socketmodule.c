@@ -3420,11 +3420,6 @@ sock_setsockopt(PyObject *self, PyObject *args)
 
 #ifdef AF_VSOCK
     if (s->sock_family == AF_VSOCK) {
-        if (!PyIndex_Check(optval)) {
-            PyErr_Format(PyExc_TypeError,
-                         "setsockopt() argument 3 for AF_VSOCK must be an int (got %T)",
-                         optval);
-        }
         uint64_t vflag; // Must be set width of 64 bits
         /* setsockopt(level, opt, flag) */
         if (!PyArg_Parse(optval, "K", &vflag)) {
