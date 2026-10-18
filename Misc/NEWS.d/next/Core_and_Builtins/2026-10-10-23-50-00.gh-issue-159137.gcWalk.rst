@@ -1,3 +1,0 @@
-Speed up the garbage collector by untracking tuples and counting the surviving
-objects while it looks for unreachable objects, which saves two walks of the
-collected generation in every collection.

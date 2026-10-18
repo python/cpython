@@ -41,6 +41,8 @@ typedef struct {
 } _PyTok_Chunk;
 
 typedef struct _PyTok_Reader {
+    FILE *fp;  // Borrowed input stream; NULL for string and readline input.
+    char *encoding;  // Owned source encoding.
     PyObject *readline;
     PyObject *decoder;
     const char *prompt;

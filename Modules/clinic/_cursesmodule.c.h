@@ -5834,7 +5834,7 @@ _curses_tparm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int i8 = 0;
     int i9 = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "y|iiiiiiiii:tparm",
+    if (!PyArg_ParseArray(args, nargs, "y|iiiiiiiii:tparm",
         &str, &i1, &i2, &i3, &i4, &i5, &i6, &i7, &i8, &i9)) {
         goto exit;
     }
@@ -6715,4 +6715,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=957470523e2b0eb1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=422461e62cb86010 input=a9049054013a1b77]*/
