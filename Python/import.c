@@ -287,6 +287,9 @@ _PyImport_ClearLazyModules(PyInterpreterState *interp)
 int
 _PyImport_DiscardLazyModule(PyInterpreterState *interp, PyObject *name)
 {
+    if (LAZY_MODULES(interp) == NULL) {
+        return 0;
+    }
     return PySet_Discard(LAZY_MODULES(interp), name);
 }
 
@@ -2512,6 +2515,19 @@ create_builtin(
     if (_Py_ext_module_loader_info_init_for_builtin(&info, name) < 0) {
         return NULL;
     }
+    if (initfunc != NULL) {
+        /* An explicitly provided init function (see
+         * PyImport_CreateModuleFromInitfunc()) may belong to a submodule
+         * whose single-phase init creates the module using only the last
+         * component of the name (as e.g. pybind11 does).  Set the package
+         * context so that PyModule_Create() resolves the full name, the
+         * same as for dynamically loaded extensions. */
+        info.newcontext = PyUnicode_AsUTF8(info.name);
+        if (info.newcontext == NULL) {
+            _Py_ext_module_loader_info_clear(&info);
+            return NULL;
+        }
+    }
 
     struct extensions_cache_value *cached = NULL;
     PyObject *mod = import_find_extension(tstate, &info, &cached);
@@ -4179,7 +4195,10 @@ lazy_modules_add(PyThreadState *tstate, PyObject *name,
     else {
         Py_XDECREF(mod);
     }
-    return loaded ? 0 : PySet_Add(LAZY_MODULES(tstate->interp), name);
+    if (loaded || LAZY_MODULES(tstate->interp) == NULL) {
+        return 0;
+    }
+    return PySet_Add(LAZY_MODULES(tstate->interp), name);
 }
 
 // Ensure a dict of pending submodule names exists for the parent.
@@ -4213,7 +4232,10 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name, PyObject *source)
 {
     PyDictObject *pending =
         (PyDictObject *)LAZY_PENDING_SUBMODULES(tstate->interp);
-    assert(pending != NULL);
+    // Finalizers can still run after finalize_modules() cleared the dict.
+    if (pending == NULL) {
+        return 0;
+    }
     Py_ssize_t end = PyUnicode_GET_LENGTH(name);
     while (true) {
         Py_ssize_t dot = PyUnicode_FindChar(name, '.', 0, end, -1);
@@ -5575,7 +5597,7 @@ _imp__set_lazy_attributes_impl(PyObject *module, PyObject *modobj,
 /*[clinic end generated code: output=3369bb3242b1f043 input=900339e013ab2b82]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (PySet_Discard(LAZY_MODULES(interp), name) < 0) {
+    if (_PyImport_DiscardLazyModule(interp, name) < 0) {
         return NULL;
     }
     if (_PyImport_ClearLazySubmodule(_PyThreadState_GET(), name, 0) < 0) {

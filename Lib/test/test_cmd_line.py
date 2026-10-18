@@ -176,35 +176,24 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(opts, {'a': True, 'b': 'c,d=e'})
 
     def test_showrefcount(self):
-        def run_python(*args):
-            # this is similar to assert_python_ok but doesn't strip
-            # the refcount from stderr.  It can be replaced once
-            # assert_python_ok stops doing that.
-            cmd = [sys.executable]
-            cmd.extend(args)
-            PIPE = subprocess.PIPE
-            p = subprocess.Popen(cmd, stdout=PIPE, stderr=PIPE)
-            out, err = p.communicate()
-            p.stdout.close()
-            p.stderr.close()
-            rc = p.returncode
-            self.assertEqual(rc, 0)
-            return rc, out, err
-        code = 'import sys; print(sys._xoptions)'
         # normally the refcount is hidden
-        rc, out, err = run_python('-c', code)
-        self.assertEqual(out.rstrip(), b'{}')
-        self.assertEqual(err, b'')
+        # (assert_python_ok() enables faulthandler)
+        code = 'import sys; print(sys._xoptions)'
+        proc = assert_python_ok('-c', code)
+        self.assertEqual(proc.out.rstrip(), b"{'faulthandler': True}")
+        self.assertEqual(proc.err, b'')
+
         # "-X showrefcount" shows the refcount, but only in debug builds
-        rc, out, err = run_python('-I', '-X', 'showrefcount', '-c', code)
-        self.assertEqual(out.rstrip(), b"{'showrefcount': True}")
+        proc = assert_python_ok('-I', '-X', 'showrefcount', '-c', code)
+        self.assertEqual(proc.out.rstrip(),
+                         b"{'faulthandler': True, 'showrefcount': True}")
         if support.Py_DEBUG:
             # bpo-46417: Tolerate negative reference count which can occur
             # because of bugs in C extensions. This test is only about checking
             # the showrefcount feature.
-            self.assertRegex(err, br'^\[-?\d+ refs, \d+ blocks\]')
+            self.assertRegex(proc.err, br'^\[-?\d+ refs, \d+ blocks\]')
         else:
-            self.assertEqual(err, b'')
+            self.assertEqual(proc.err, b'')
 
     @support.cpython_only
     def test_xoption_frozen_modules(self):
@@ -845,10 +834,13 @@ class CmdLineTest(unittest.TestCase):
             code = "import _testinternalcapi; print(_testinternalcapi.pymem_getallocatorsname())"
             with support.SuppressCrashReport():
                 out = self.run_xdev("-c", code, check_exitcode=False)
-            if support.with_pymalloc():
-                alloc_name = "pymalloc_debug"
-            elif support.Py_GIL_DISABLED:
+            if support.Py_GIL_DISABLED:
                 alloc_name = "mimalloc_debug"
+            elif support.check_sanitizer(address=True, memory=True):
+                # ASan and MSan builds default to malloc, even with pymalloc.
+                alloc_name = "malloc_debug"
+            elif support.with_pymalloc():
+                alloc_name = "pymalloc_debug"
             else:
                 alloc_name = "malloc_debug"
             self.assertEqual(out, alloc_name)
@@ -927,10 +919,15 @@ class CmdLineTest(unittest.TestCase):
         # Test the PYTHONMALLOC environment variable
         malloc = not support.Py_GIL_DISABLED
         pymalloc = support.with_pymalloc()
+        sanitizer = support.check_sanitizer(address=True, memory=True)
         mimalloc = support.with_mimalloc()
         if support.Py_GIL_DISABLED:
             default_name = 'mimalloc_debug' if support.Py_DEBUG else 'mimalloc'
             default_name_debug = 'mimalloc_debug'
+        elif sanitizer:
+            # ASan and MSan builds default to malloc, even with pymalloc.
+            default_name = 'malloc_debug' if support.Py_DEBUG else 'malloc'
+            default_name_debug = 'malloc_debug'
         elif pymalloc:
             default_name = 'pymalloc_debug' if support.Py_DEBUG else 'pymalloc'
             default_name_debug = 'pymalloc_debug'

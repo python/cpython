@@ -192,6 +192,7 @@ class TestInteralCpp(BaseTests, unittest.TestCase):
         self.check_build('_test_cppext_internal')
 
 
+@support.requires_venv_with_pip()
 def setUpModule():
     global VENV_CONTEXT, PYTHON_EXE
     VENV_CONTEXT = support.setup_venv_with_pip_setuptools('env')
