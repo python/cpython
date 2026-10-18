@@ -423,7 +423,11 @@ if sys.platform.startswith("win"):
         _waitfor(os.rmdir, dirname)
 
     def _rmtree(path):
+        import shutil
         from test.support import _force_run
+
+        # Use the extended-length path to remove trees deeper than MAX_PATH.
+        path = shutil._rmtree_long_path(path)
 
         def _rmtree_inner(path):
             for name in _force_run(path, os.listdir, path):

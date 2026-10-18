@@ -681,10 +681,31 @@ else:
     def _rmtree_islink(st):
         return stat.S_ISLNK(st.st_mode)
 
+if os.name == 'nt':
+    def _rmtree_long_path(path):
+        # Return the extended-length form of path, which is not limited by
+        # MAX_PATH, so that trees of any depth can be removed.
+        path = os.path.abspath(path)
+        if isinstance(path, bytes):
+            prefix, dot_prefix, unc_prefix = b'\\\\?\\', b'\\\\.\\', b'\\\\?\\UNC\\'
+        else:
+            prefix, dot_prefix, unc_prefix = '\\\\?\\', '\\\\.\\', '\\\\?\\UNC\\'
+        if path.startswith((prefix, dot_prefix)):
+            # Already a device path.
+            return path
+        if path.startswith(prefix[:2]):
+            return unc_prefix + path[2:]
+        return prefix + path
+else:
+    def _rmtree_long_path(path):
+        return path
+
 # version vulnerable to race conditions
 def _rmtree_unsafe(path, dir_fd, onexc):
     if dir_fd is not None:
         raise NotImplementedError("dir_fd unavailable on this platform")
+    toppath = os.fspath(path)
+    walkpath = _rmtree_long_path(toppath)
     try:
         st = os.lstat(path)
     except OSError as err:
@@ -700,8 +721,11 @@ def _rmtree_unsafe(path, dir_fd, onexc):
         return
     def onerror(err):
         if not isinstance(err, FileNotFoundError):
+            if walkpath is not toppath and err.filename == walkpath:
+                # Report the original path for the top directory.
+                err.filename = path
             onexc(os.scandir, err.filename, err)
-    results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
+    results = os.walk(walkpath, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
     for dirpath, dirnames, filenames in results:
         for name in dirnames:
             fullname = os.path.join(dirpath, name)
@@ -720,10 +744,11 @@ def _rmtree_unsafe(path, dir_fd, onexc):
             except OSError as err:
                 onexc(os.unlink, fullname, err)
     try:
-        os.rmdir(path)
+        os.rmdir(walkpath)
     except FileNotFoundError:
         pass
     except OSError as err:
+        err.filename = path
         onexc(os.rmdir, path, err)
 
 # Version using fd-based APIs to protect against races

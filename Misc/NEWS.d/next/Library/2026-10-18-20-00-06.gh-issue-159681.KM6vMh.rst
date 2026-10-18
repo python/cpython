@@ -1,0 +1,5 @@
+Fix :func:`shutil.rmtree` on Windows for directory trees with paths longer
+than ``MAX_PATH``.
+Paths of nested files and directories passed to the *onexc* and *onerror*
+callbacks and set in exceptions are now extended-length paths
+(``\\?\...``).

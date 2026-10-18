@@ -127,6 +127,12 @@ def rlistdir(path):
             res.append(name)
     return res
 
+def rmtree_path(path):
+    # Return path of a nested file as rmtree() passes it to onexc().
+    if os.name == 'nt':
+        return '\\\\?\\' + os.path.abspath(path)
+    return path
+
 def supports_file2file_sendfile():
     # ...apparently Linux and Solaris are the only ones
     if not hasattr(os, "sendfile"):
@@ -423,12 +429,12 @@ class TestRmTree(BaseTest, unittest.TestCase):
         # be either.
         if self.errorState < 2:
             if func is os.unlink:
-                self.assertEqual(arg, self.child_file_path)
+                self.assertEqual(arg, rmtree_path(self.child_file_path))
             elif func is os.rmdir:
-                self.assertEqual(arg, self.child_dir_path)
+                self.assertEqual(arg, rmtree_path(self.child_dir_path))
             else:
                 self.assertIs(func, os.listdir)
-                self.assertIn(arg, [TESTFN, self.child_dir_path])
+                self.assertIn(arg, [TESTFN, rmtree_path(self.child_dir_path)])
             self.assertIsSubclass(exc[0], OSError)
             self.errorState += 1
         else:
@@ -481,12 +487,12 @@ class TestRmTree(BaseTest, unittest.TestCase):
         # be either.
         if self.errorState < 2:
             if func is os.unlink:
-                self.assertEqual(arg, self.child_file_path)
+                self.assertEqual(arg, rmtree_path(self.child_file_path))
             elif func is os.rmdir:
-                self.assertEqual(arg, self.child_dir_path)
+                self.assertEqual(arg, rmtree_path(self.child_dir_path))
             else:
                 self.assertIs(func, os.listdir)
-                self.assertIn(arg, [TESTFN, self.child_dir_path])
+                self.assertIn(arg, [TESTFN, rmtree_path(self.child_dir_path)])
             self.assertTrue(isinstance(exc, OSError))
             self.errorState += 1
         else:
@@ -691,6 +697,27 @@ class TestRmTree(BaseTest, unittest.TestCase):
         finally:
             shutil.rmtree(TESTFN, ignore_errors=True)
 
+    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
+    def test_rmtree_long_path(self):
+        # The path is longer than MAX_PATH.  Paths passed to onexc can be
+        # used to fix the error.
+        path = rmtree_path(TESTFN)
+        os.mkdir(path)
+        for i in range(200):
+            path += '\\d'
+            os.mkdir(path)
+        path += '\\f'
+        create_file(path)
+        os.chmod(path, stat.S_IREAD)
+        errors = []
+        def onexc(func, path, exc):
+            errors.append((func, path))
+            os.chmod(path, stat.S_IWRITE)
+            func(path)
+        shutil.rmtree(TESTFN, onexc=onexc)
+        self.assertEqual(errors, [(os.unlink, path)])
+        self.assertFalse(os.path.exists(TESTFN))
+
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
     @unittest.skipIf(sys.platform == "vxworks",
                     "fifo requires special path on VxWorks")
@@ -726,12 +753,12 @@ class TestRmTree(BaseTest, unittest.TestCase):
             for p, mode in zip(paths, old_modes):
                 os.chmod(p, mode)
             # Remove other dirs except one.
-            keep = next(p for p in dirs if p != path)
+            keep = next(p for p in dirs if rmtree_path(p) != path)
             for p in dirs:
                 if p != keep:
                     os.rmdir(p)
             # Remove other files except one.
-            keep = next(p for p in files if p != path)
+            keep = next(p for p in files if rmtree_path(p) != path)
             for p in files:
                 if p != keep:
                     os.unlink(p)
