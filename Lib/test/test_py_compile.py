@@ -1,4 +1,3 @@
-import functools
 import importlib.util
 import os
 import py_compile
@@ -11,43 +10,7 @@ import unittest
 
 from test import support
 from test.support import os_helper, script_helper
-
-
-def without_source_date_epoch(fxn):
-    """Runs function with SOURCE_DATE_EPOCH unset."""
-    @functools.wraps(fxn)
-    def wrapper(*args, **kwargs):
-        with os_helper.EnvironmentVarGuard() as env:
-            env.unset('SOURCE_DATE_EPOCH')
-            return fxn(*args, **kwargs)
-    return wrapper
-
-
-def with_source_date_epoch(fxn):
-    """Runs function with SOURCE_DATE_EPOCH set."""
-    @functools.wraps(fxn)
-    def wrapper(*args, **kwargs):
-        with os_helper.EnvironmentVarGuard() as env:
-            env['SOURCE_DATE_EPOCH'] = '123456789'
-            return fxn(*args, **kwargs)
-    return wrapper
-
-
-# Run tests with SOURCE_DATE_EPOCH set or unset explicitly.
-class SourceDateEpochTestMeta(type(unittest.TestCase)):
-    def __new__(mcls, name, bases, dct, *, source_date_epoch):
-        cls = super().__new__(mcls, name, bases, dct)
-
-        for attr in dir(cls):
-            if attr.startswith('test_'):
-                meth = getattr(cls, attr)
-                if source_date_epoch:
-                    wrapper = with_source_date_epoch(meth)
-                else:
-                    wrapper = without_source_date_epoch(meth)
-                setattr(cls, attr, wrapper)
-
-        return cls
+from test.support.os_helper import SourceDateEpochTestMeta
 
 
 class PyCompileTestsBase:
@@ -186,21 +149,24 @@ class PyCompileTestsBase:
     def test_double_dot_no_clobber(self):
         # http://bugs.python.org/issue22966
         # py_compile foo.bar.py -> __pycache__/foo.cpython-34.pyc
-        weird_path = os.path.join(self.directory, 'foo.bar.py')
-        cache_path = importlib.util.cache_from_source(weird_path)
-        pyc_path = weird_path + 'c'
-        head, tail = os.path.split(cache_path)
-        penultimate_tail = os.path.basename(head)
-        self.assertEqual(
-            os.path.join(penultimate_tail, tail),
-            os.path.join(
-                '__pycache__',
-                'foo.bar.{}.pyc'.format(sys.implementation.cache_tag)))
-        with open(weird_path, 'w') as file:
-            file.write('x = 123\n')
-        py_compile.compile(weird_path)
-        self.assertTrue(os.path.exists(cache_path))
-        self.assertFalse(os.path.exists(pyc_path))
+        # This test asserts the default __pycache__ layout, so neutralize any
+        # pycache prefix (e.g. when run with PYTHONPYCACHEPREFIX set).
+        with support.swap_attr(sys, 'pycache_prefix', None):
+            weird_path = os.path.join(self.directory, 'foo.bar.py')
+            cache_path = importlib.util.cache_from_source(weird_path)
+            pyc_path = weird_path + 'c'
+            head, tail = os.path.split(cache_path)
+            penultimate_tail = os.path.basename(head)
+            self.assertEqual(
+                os.path.join(penultimate_tail, tail),
+                os.path.join(
+                    '__pycache__',
+                    'foo.bar.{}.pyc'.format(sys.implementation.cache_tag)))
+            with open(weird_path, 'w') as file:
+                file.write('x = 123\n')
+            py_compile.compile(weird_path)
+            self.assertTrue(os.path.exists(cache_path))
+            self.assertFalse(os.path.exists(pyc_path))
 
     @unittest.skipIf(sys.implementation.cache_tag is None,
                      'requires sys.implementation.cache_tag is not None')
@@ -307,7 +273,13 @@ class PyCompileCLITestCase(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertEqual(stdout, b'')
         self.assertEqual(stderr, b'')
-        self.assertTrue(os.path.exists(self.cache_path))
+        # pycompilecmd() runs the interpreter in isolated mode (-I), which
+        # ignores PYTHONPYCACHEPREFIX, so the bytecode is written next to the
+        # source.  Compute the expected cache path the same way.
+        with support.swap_attr(sys, 'pycache_prefix', None):
+            cache_path = importlib.util.cache_from_source(
+                self.source_path, optimization='' if __debug__ else 1)
+        self.assertTrue(os.path.exists(cache_path))
 
     def test_bad_syntax(self):
         bad_syntax = os.path.join(os.path.dirname(__file__),
@@ -326,6 +298,12 @@ class PyCompileCLITestCase(unittest.TestCase):
         self.assertEqual(rc, 1)
         self.assertEqual(stdout, b'')
         self.assertEqual(stderr, b'')
+
+    def test_bad_syntax_stderr_ends_with_newline(self):
+        with open(self.source_path, 'w') as file:
+            file.write('  print("hello world")\n')
+        rc, stdout, stderr = self.pycompilecmd_failure(self.source_path)
+        self.assertTrue(stderr.endswith(b'\n'))
 
     def test_file_not_exists(self):
         should_not_exists = os.path.join(os.path.dirname(__file__), 'should_not_exists.py')

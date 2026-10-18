@@ -542,6 +542,10 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             '''a = [x async for x in (x async for x in arange(5))][1]''',
             '''a, = [1 for x in {x async for x in arange(1)}]''',
             '''a = [await sleep(0, x) async for x in arange(2)][1]''',
+            '''a = [await sleep(0, 1) for _ in [0]][0]''',
+            '''a = {await sleep(0, 1) for _ in [0]}.pop()''',
+            '''a = {0: await sleep(0, 1) for _ in [0]}[0]''',
+            '''a = (lambda x=[await sleep(0, 1) for _ in [0]]: x)()[0]''',
             # gh-121637: Make sure we correctly handle the case where the
             # async code is optimized away
             '''assert not await sleep(0); a = 1''',
@@ -610,7 +614,26 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             '''def f():
                    async with Lock() as l:
                        a = 1
-            '''
+            ''',
+            '''class C:
+                   [await x for x in y]
+            ''',
+            '''class C:
+                   [x async for x in arange(10)]
+            ''',
+            '''async def f():
+                   class C:
+                       [await x for x in y]
+            ''',
+            '''lambda: [await x for x in y]''',
+            '''class C:
+                   def f(self, x=[await y for y in z]):
+                       pass
+            ''',
+            '''type T = [await x for x in y]''',
+            '''async def f[T=[await x for x in y]]():
+                   pass
+            ''',
         ]
         for mode, code_sample in product(modes, code_samples):
             source = dedent(code_sample)
@@ -1362,12 +1385,18 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                 return -10
         self.assertRaises(ValueError, len, NegativeLen())
         class HugeLen:
+            def __init__(self):
+                self.calls = 0
+
             def __len__(self):
+                self.calls += 1
                 return sys.maxsize + 1
-        self.assertEqual(len(HugeLen()), sys.maxsize + 1)
         huge_len = HugeLen()
+        self.assertEqual(len(huge_len), sys.maxsize + 1)
+        self.assertEqual(huge_len.calls, 1)
         huge_len.__len__ = lambda: 0
         self.assertEqual(len(huge_len), sys.maxsize + 1)
+        self.assertEqual(huge_len.calls, 2)
         class HugeNegativeLen:
             def __len__(self):
                 return -sys.maxsize-10

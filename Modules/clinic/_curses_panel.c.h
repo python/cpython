@@ -47,7 +47,9 @@ PyDoc_STRVAR(_curses_panel_panel_show__doc__,
 "show($self, /)\n"
 "--\n"
 "\n"
-"Display the panel (which might have been hidden).");
+"Display the panel (which might have been hidden).\n"
+"\n"
+"The panel is placed on top of the panel stack.");
 
 #define _CURSES_PANEL_PANEL_SHOW_METHODDEF    \
     {"show", (PyCFunction)_curses_panel_panel_show, METH_NOARGS, _curses_panel_panel_show__doc__},
@@ -280,7 +282,9 @@ PyDoc_STRVAR(_curses_panel_new_panel__doc__,
 "new_panel($module, win, /)\n"
 "--\n"
 "\n"
-"Return a panel object, associating it with the given window win.");
+"Return a panel object, associating it with the given window win.\n"
+"\n"
+"The new panel is placed on top of the panel stack.");
 
 #define _CURSES_PANEL_NEW_PANEL_METHODDEF    \
     {"new_panel", (PyCFunction)_curses_panel_new_panel, METH_O, _curses_panel_new_panel__doc__},
@@ -343,4 +347,4 @@ _curses_panel_update_panels(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_panel_update_panels_impl(module);
 }
-/*[clinic end generated code: output=62f20ef03eefdf44 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ec3fe619150e512e input=a9049054013a1b77]*/

@@ -564,7 +564,8 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 static PyMethodDef slice_methods[] = {
     {"indices", slice_indices, METH_O, slice_indices_doc},
     {"__reduce__", slice_reduce, METH_NOARGS, reduce_doc},
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, "See PEP 585"},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+     "slices are generic over the types of their start, end, and step values"},
     {NULL, NULL}
 };
 

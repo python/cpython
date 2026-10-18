@@ -19,8 +19,6 @@
 # CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-from __future__ import annotations
-
 import sys
 import _colorize
 
@@ -38,7 +36,7 @@ from .content import (
 )
 from .layout import LayoutMap, LayoutResult, LayoutRow, WrappedRow, layout_content_lines
 from .render import RenderCell, RenderLine, RenderedScreen, ScreenOverlay
-from .utils import ANSI_ESCAPE_SEQUENCE, ColorSpan, THEME, StyleRef, wlen, gen_colors
+from .utils import ANSI_ESCAPE_SEQUENCE, ColorSpan, THEME, StyleRef, gen_colors
 from .trace import trace
 
 

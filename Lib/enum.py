@@ -624,9 +624,13 @@ class EnumType(type):
                     '__invert__'
                 ):
                 if name not in classdict:
+                    # check for mixin overrides before replacing
                     enum_method = getattr(Flag, name)
-                    setattr(enum_class, name, enum_method)
-                    classdict[name] = enum_method
+                    found_method = getattr(enum_class, name)
+                    data_type_method = getattr(member_type, name, None)
+                    if found_method in (enum_method, data_type_method):
+                        setattr(enum_class, name, enum_method)
+                        classdict[name] = enum_method
         #
         # replace any other __new__ with our own (as long as Enum is not None,
         # anyway) -- again, this is to support pickle
@@ -1620,10 +1624,14 @@ class Flag(Enum, boundary=STRICT):
         if other_value is NotImplemented:
             return NotImplemented
 
-        for flag in self, other:
-            if self._get_value(flag) is None:
-                raise TypeError(f"'{flag}' cannot be combined with other flags with |")
         value = self._value_
+        # _get_value(self) is self._value_ and _get_value(other) is
+        # other_value, so only walk the operands (to raise on the offending
+        # flag) when one of those values is actually None.
+        if value is None or other_value is None:
+            for flag in self, other:
+                if self._get_value(flag) is None:
+                    raise TypeError(f"'{flag}' cannot be combined with other flags with |")
         return self.__class__(value | other_value)
 
     def __and__(self, other):
@@ -1631,10 +1639,11 @@ class Flag(Enum, boundary=STRICT):
         if other_value is NotImplemented:
             return NotImplemented
 
-        for flag in self, other:
-            if self._get_value(flag) is None:
-                raise TypeError(f"'{flag}' cannot be combined with other flags with &")
         value = self._value_
+        if value is None or other_value is None:
+            for flag in self, other:
+                if self._get_value(flag) is None:
+                    raise TypeError(f"'{flag}' cannot be combined with other flags with &")
         return self.__class__(value & other_value)
 
     def __xor__(self, other):
@@ -1642,10 +1651,11 @@ class Flag(Enum, boundary=STRICT):
         if other_value is NotImplemented:
             return NotImplemented
 
-        for flag in self, other:
-            if self._get_value(flag) is None:
-                raise TypeError(f"'{flag}' cannot be combined with other flags with ^")
         value = self._value_
+        if value is None or other_value is None:
+            for flag in self, other:
+                if self._get_value(flag) is None:
+                    raise TypeError(f"'{flag}' cannot be combined with other flags with ^")
         return self.__class__(value ^ other_value)
 
     def __invert__(self):

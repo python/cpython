@@ -363,7 +363,10 @@ _PyObject_MiRealloc(void *ctx, void *ptr, size_t nbytes)
         _mi_memcpy((char*)newp + offset, (char*)ptr + offset, copy_size - offset);
     }
     else {
-        _mi_memcpy(newp, ptr, copy_size);
+        // memcpy(dst, NULL, 0) is undefined behavior. See gh-151297.
+        if mi_likely(ptr) {
+            _mi_memcpy(newp, ptr, copy_size);
+        }
     }
     mi_free(ptr);
     return newp;
@@ -430,6 +433,12 @@ void* _PyObject_Realloc(void *ctx, void *ptr, size_t size);
 #  define PYRAW_ALLOC MIMALLOC_RAWALLOC
 #  define PYMEM_ALLOC MIMALLOC_ALLOC
 #  define PYOBJ_ALLOC MIMALLOC_OBJALLOC
+#elif defined(_Py_ADDRESS_SANITIZER) || defined(_Py_MEMORY_SANITIZER)
+// ASan and MSan do not track pymalloc blocks, so use malloc by default.
+// pymalloc can still be selected at runtime.
+#  define PYRAW_ALLOC MALLOC_ALLOC
+#  define PYMEM_ALLOC MALLOC_ALLOC
+#  define PYOBJ_ALLOC MALLOC_ALLOC
 #elif defined(WITH_PYMALLOC)
 #  define PYRAW_ALLOC MALLOC_ALLOC
 #  define PYMEM_ALLOC PYMALLOC_ALLOC
@@ -1375,6 +1384,10 @@ free_work_item(uintptr_t ptr, delayed_dealloc_cb cb, void *state)
             return;
         }
         assert(_PyInterpreterState_GET()->stoptheworld.world_stopped);
+        if (_Py_IsImmortal(obj)) {
+            // The object may have become immortal after it was queued.
+            return;
+        }
         Py_ssize_t refcount = _Py_ExplicitMergeRefcount(obj, -1);
         if (refcount == 0) {
             cb(obj, state);
@@ -1467,9 +1480,11 @@ free_delayed(uintptr_t ptr, size_t size)
         _PyEval_StopTheWorld(tstate->base.interp);
         if (work_item_should_decref(ptr)) {
             PyObject *obj = (PyObject *)(ptr - 1);
-            Py_ssize_t refcount = _Py_ExplicitMergeRefcount(obj, -1);
-            if (refcount == 0) {
-                to_dealloc = obj;
+            if (!_Py_IsImmortal(obj)) {
+                Py_ssize_t refcount = _Py_ExplicitMergeRefcount(obj, -1);
+                if (refcount == 0) {
+                    to_dealloc = obj;
+                }
             }
         }
         else {
@@ -1517,7 +1532,7 @@ void
 _PyObject_XDecRefDelayed(PyObject *ptr)
 {
     assert(!((uintptr_t)ptr & 0x01));
-    if (ptr != NULL) {
+    if (ptr != NULL && !_Py_IsImmortal(ptr)) {
         // We use 0 as the size since we don't have an easy way to know the
         // actual size.  If we are freeing many objects, the write sequence
         // will be advanced due to QSBR_DEFERRED_LIMIT.
@@ -1532,12 +1547,7 @@ _PyObject_XSetRefDelayed(PyObject **ptr, PyObject *value)
 {
     PyObject *old = *ptr;
     FT_ATOMIC_STORE_PTR_RELEASE(*ptr, value);
-    if (old == NULL) {
-        return;
-    }
-    if (!_Py_IsImmortal(old)) {
-         _PyObject_XDecRefDelayed(old);
-    }
+    _PyObject_XDecRefDelayed(old);
 }
 #endif
 
@@ -3252,10 +3262,10 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
     }
     else {
         size_t i = original_nbytes - ERASED_SIZE;
-        memcpy(data, save, Py_MIN(nbytes, ERASED_SIZE));
+        memcpy(data, save, Py_MIN(nbytes, (size_t)ERASED_SIZE));
         if (nbytes > i) {
             memcpy(data + i, &save[ERASED_SIZE],
-                   Py_MIN(nbytes - i, ERASED_SIZE));
+                   Py_MIN(nbytes - i, (size_t)ERASED_SIZE));
         }
     }
 #endif

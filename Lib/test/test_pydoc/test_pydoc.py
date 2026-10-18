@@ -19,6 +19,7 @@ import typing
 import unittest
 import unittest.mock
 import urllib.parse
+import urllib.request
 import xml.etree
 import xml.etree.ElementTree
 import textwrap
@@ -369,7 +370,7 @@ def html2text(html):
 
     Tailored for pydoc tests only.
     """
-    html = html.replace("<dd>", "\n")
+    html = re.sub(r"<dd\b[^>]*>", "\n", html)
     html = html.replace("<hr>", "-"*70)
     html = re.sub("<.*?>", "", html)
     html = pydoc.replace(html, "&nbsp;", " ", "&gt;", ">", "&lt;", "<")
@@ -429,7 +430,7 @@ class PydocDocTest(unittest.TestCase):
         expected_lines = [line.strip() for line in expected_lines if line]
         self.assertEqual(text_lines, expected_lines)
         mod_file = inspect.getabsfile(pydoc_mod)
-        mod_url = urllib.parse.quote(mod_file)
+        mod_url = urllib.request.pathname2url(mod_file)
         self.assertIn(mod_url, result)
         self.assertIn(mod_file, result)
         self.assertIn(doc_loc, result)
@@ -1024,6 +1025,31 @@ class PydocDocTest(unittest.TestCase):
             synopsis_cached = pydoc.synopsis(cached_path, {})
             self.assertIsNone(synopsis_cached)
 
+    @unittest.skipUnless(os_helper.TESTFN_UNDECODABLE,
+                         'requires undecodable file names')
+    def test_html_doc_undecodable_path(self):
+        # gh-69371: the path of the module is not encodable in UTF-8.
+        with os_helper.temp_cwd() as test_dir:
+            subdir = os.path.join(os.fsencode(test_dir),
+                                  os_helper.TESTFN_UNDECODABLE)
+            try:
+                os.mkdir(subdir)
+            except OSError:
+                self.skipTest('undecodable paths are not supported')
+            with open(os.path.join(subdir, b'undecodable_mod.py'), 'w') as f:
+                f.write('"""Module docstring."""\n')
+            with import_helper.DirsOnSysPath(os.fsdecode(subdir)):
+                mod = import_helper.import_fresh_module('undecodable_mod')
+                doc = pydoc.HTMLDoc().docmodule(mod)
+                with captured_stdout():
+                    pydoc.writedoc(mod)
+            # The link contains the percent-encoded path...
+            path = inspect.getabsfile(mod)
+            self.assertIn(urllib.request.pathname2url(path), doc)
+            # ...and the page can be written and served as UTF-8.
+            with open('undecodable_mod.html', encoding='utf-8') as f:
+                self.assertIn('undecodable_mod', f.read())
+
     def test_splitdoc_with_description(self):
         example_string = "I Am A Doc\n\n\nHere is my description"
         self.assertEqual(pydoc.splitdoc(example_string),
@@ -1244,6 +1270,71 @@ function_with_really_long_name_so_annotations_can_be_rather_small(
 
 <lambda> lambda very_long_parameter_name_that_should_not_fit_into_a_single_line, second_very_long_parameter_name
 ''' % __name__)
+
+    @requires_docstrings
+    def test_long_summaries(self):
+        from . import longsummary
+        doc = pydoc.render_doc(longsummary)
+        doc = clean_text(doc)
+        self.assertEqual(doc, '''Python Library Documentation: module test.test_pydoc.longsummary in test.test_pydoc
+
+NAME
+    test.test_pydoc.longsummary
+
+CLASSES
+    builtins.object
+        C
+
+    class C(builtins.object)
+     |  This is a class summary that consists of a very long single line,
+     |  exceeding the recommended PEP 8 limit.
+     |
+     |  The rest of the docstring body, separated from the summary by a blank line, can also contain very long lines.
+     |
+     |  Methods defined here:
+     |
+     |  meth(self)
+     |      This is a method summary that consists of a very long single line,
+     |      exceeding the recommended PEP 8 limit.
+     |
+     |      The rest of the docstring body, separated from the summary by a blank line, can also contain very long lines.
+     |
+     |  ----------------------------------------------------------------------
+     |  Readonly properties defined here:
+     |
+     |  prop
+     |      This is a property summary that consists of a very long single line,
+     |      exceeding the recommended PEP 8 limit.
+     |
+     |      The rest of the docstring body, separated from the summary by a blank line, can also contain very long lines.
+     |
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |
+     |  __dict__
+     |      dictionary for instance variables
+     |
+     |  __weakref__
+     |      list of weak references to the object
+
+FUNCTIONS
+    func(self)
+        This is a function summary that consists of a very long single line,
+        exceeding the recommended PEP 8 limit.
+
+        The rest of the docstring body, separated from the summary by a blank line, can also contain very long lines.
+
+DATA
+    data = <test.test_pydoc.longsummary.C object>
+        This is a data summary that consists of a very long single line,
+        exceeding the recommended PEP 8 limit.
+
+        The rest of the docstring body, separated from the summary by a blank line, can also contain very long lines.
+
+FILE
+    %s
+
+''' % inspect.getabsfile(longsummary))
 
     def test__future__imports(self):
         # __future__ features are excluded from module help,
@@ -1848,7 +1939,7 @@ foo
 
         html = pydoc.HTMLDoc().document(coro_function)
         self.assertIn(
-            'async <a name="-coro_function"><strong>coro_function',
+            'async <a id="-coro_function"><strong>coro_function',
             html)
 
     def test_async_generator_annotation(self):
@@ -1860,7 +1951,7 @@ foo
 
         html = pydoc.HTMLDoc().document(an_async_generator)
         self.assertIn(
-            'async <a name="-an_async_generator"><strong>an_async_generator',
+            'async <a id="-an_async_generator"><strong>an_async_generator',
             html)
 
     @requires_docstrings
@@ -2026,7 +2117,7 @@ class PydocFodderTest(unittest.TestCase):
         doc = pydoc.HTMLDoc()
         result = doc.docmodule(pydocfodder)
         result = html2text(result)
-        lines = self.getsection(result, ' Functions', None)
+        lines = self.getsection(result, 'Functions', None)
         # function alias
         self.assertIn(' global_func_alias = global_func(x, y)', lines)
         self.assertIn(' A_staticmethod(x, y)', lines)
@@ -2172,7 +2263,7 @@ class TestHelper(unittest.TestCase):
 
     def test_keywords(self):
         self.assertEqual(sorted(pydoc.Helper.keywords),
-                         sorted(keyword.kwlist + ['lazy']))
+                         sorted(keyword.kwlist + ['case', 'match', 'lazy']))
 
     def test_interact_empty_line_continues(self):
         # gh-138568: test pressing Enter without input should continue in help session

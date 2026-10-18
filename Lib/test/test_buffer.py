@@ -24,7 +24,6 @@ import warnings
 import sys, array, io, os
 from decimal import Decimal
 from fractions import Fraction
-from test.support import warnings_helper
 
 try:
     from _testbuffer import *
@@ -38,6 +37,7 @@ except ImportError:
 
 try:
     import ctypes
+    import ctypes.util
 except ImportError:
     ctypes = None
 
@@ -2850,8 +2850,11 @@ class TestBufferProtocol(unittest.TestCase):
 
         if ctypes:
             # format: "T{>l:x:>d:y:}"
-            class BEPoint(ctypes.BigEndianStructure):
-                _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_double)]
+            @ctypes.util.struct(endian='big')
+            class BEPoint:
+                x: ctypes.c_long
+                y: ctypes.c_double
+
             point = BEPoint(100, 200.1)
             m1 = memoryview(point)
             m2 = m1.cast('B')
@@ -2873,6 +2876,32 @@ class TestBufferProtocol(unittest.TestCase):
             self.assertEqual(m2.shape, (m2.nbytes,))
             self.assertEqual(m2.strides, (1,))
             self.assertEqual(m2.suboffsets, ())
+
+    def test_memoryview_cast_f_contiguous_ND_1D(self):
+        nd = ndarray(list(range(12)), shape=[3, 4], format='B', flags=ND_FORTRAN)
+        m = memoryview(nd)
+        self.assertTrue(m.f_contiguous)
+        self.assertTrue(m.contiguous)
+
+        m1 = m.cast('B')
+        self.assertEqual(m1.ndim, 1)
+        self.assertEqual(m1.shape, (m.nbytes,))
+        self.assertEqual(m1.strides, (1,))
+        self.assertTrue(m1.c_contiguous)
+        self.assertTrue(m1.contiguous)
+        self.assertEqual(m1.tobytes(), memoryview(nd).tobytes(order='F'))
+
+        for fmt in ('B', 'b', 'c', 'H', 'I'):
+            size = struct.calcsize(fmt)
+            if m.nbytes % size == 0:
+                m2 = m.cast(fmt)
+                self.assertEqual(m2.ndim, 1)
+                self.assertEqual(m2.shape, (m.nbytes // size,))
+                self.assertTrue(m2.contiguous)
+
+        m3 = m[::-1]
+        with self.assertRaises(TypeError):
+            m3.cast('B')
 
     def test_memoryview_tolist(self):
 
@@ -3251,8 +3280,11 @@ class TestBufferProtocol(unittest.TestCase):
         # Some ctypes format strings are unknown to the struct module.
         if ctypes:
             # format: "T{>l:x:>l:y:}"
-            class BEPoint(ctypes.BigEndianStructure):
-                _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
+            @ctypes.util.struct(endian='big')
+            class BEPoint:
+                x: ctypes.c_long
+                y: ctypes.c_long
+
             point = BEPoint(100, 200)
             a = memoryview(point)
             b = memoryview(point)
@@ -3260,15 +3292,6 @@ class TestBufferProtocol(unittest.TestCase):
             self.assertNotEqual(a, point)
             self.assertNotEqual(point, a)
             self.assertRaises(NotImplementedError, a.tolist)
-
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-80480 array('u')
-    def test_memoryview_compare_special_cases_deprecated_u_type_code(self):
-
-        # Depends on issue #15625: the struct module does not understand 'u'.
-        a = array.array('u', 'xyz')
-        v = memoryview(a)
-        self.assertNotEqual(a, v)
-        self.assertNotEqual(v, a)
 
     def test_memoryview_compare_ndim_zero(self):
 
@@ -3998,8 +4021,11 @@ class TestBufferProtocol(unittest.TestCase):
         # Unknown formats are handled: tobytes() purely depends on itemsize.
         if ctypes:
             # format: "T{>l:x:>l:y:}"
-            class BEPoint(ctypes.BigEndianStructure):
-                _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
+            @ctypes.util.struct(endian='big')
+            class BEPoint:
+                x: ctypes.c_long
+                y: ctypes.c_long
+
             point = BEPoint(100, 200)
             a = memoryview(point)
             self.assertEqual(a.tobytes(), bytes(point))

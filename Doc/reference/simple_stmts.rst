@@ -181,7 +181,7 @@ Assignment of an object to a single target is recursively defined as follows.
      inst.x = inst.x + 1   # writes inst.x as 4 leaving Cls.x as 3
 
   This description does not necessarily apply to descriptor attributes, such as
-  properties created with :func:`property`.
+  properties created with :deco:`property`.
 
   .. index::
      pair: subscription; assignment

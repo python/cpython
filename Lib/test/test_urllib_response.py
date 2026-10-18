@@ -21,7 +21,7 @@ class TestResponse(unittest.TestCase):
     def test_with(self):
         addbase = urllib.response.addbase(self.fp)
 
-        self.assertIsInstance(addbase, tempfile._TemporaryFileWrapper)
+        self.assertIsInstance(addbase, tempfile.TemporaryFileWrapper)
 
         def f():
             with addbase as spam:
