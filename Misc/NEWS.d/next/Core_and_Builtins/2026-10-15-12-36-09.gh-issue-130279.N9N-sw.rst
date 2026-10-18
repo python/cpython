@@ -1,4 +1,2 @@
-Fix exceptions raised at the backward jump of a loop (such as
-:exc:`KeyboardInterrupt`) skipping the enclosing :keyword:`try` or
-:keyword:`with` statement when the loop body ends with an :keyword:`if`
-statement whose condition is false.
+Fix bug where compiler did not set the right exception handler for some jump
+instructions.
