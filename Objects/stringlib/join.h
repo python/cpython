@@ -5,7 +5,7 @@
 #endif
 
 Py_LOCAL_INLINE(PyObject *)
-STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
+STRINGLIB(bytes_join_lock_held)(PyObject *sep, PyObject *seq)
 {
     const char *sepstr = STRINGLIB_STR(sep);
     Py_ssize_t seplen = STRINGLIB_LEN(sep);
@@ -14,7 +14,7 @@ STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
     Py_ssize_t seqlen = 0;
     Py_ssize_t sz = 0;
     Py_ssize_t i, nbufs;
-    PyObject *seq, *item;
+    PyObject *item;
     Py_buffer *buffers = NULL;
 #define NB_STATIC_BUFFERS 10
     Py_buffer static_buffers[NB_STATIC_BUFFERS];
@@ -22,30 +22,21 @@ STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
     int drop_gil = 1;
     PyThreadState *save = NULL;
 
-    seq = PySequence_Fast(iterable, "can only join an iterable");
-    if (seq == NULL) {
-        return NULL;
-    }
-
     seqlen = PySequence_Fast_GET_SIZE(seq);
     if (seqlen == 0) {
-        Py_DECREF(seq);
         return STRINGLIB_NEW(NULL, 0);
     }
 #if !STRINGLIB_MUTABLE
     if (seqlen == 1) {
         item = PySequence_Fast_GET_ITEM(seq, 0);
         if (STRINGLIB_CHECK_EXACT(item)) {
-            Py_INCREF(item);
-            Py_DECREF(seq);
-            return item;
+            return Py_NewRef(item);
         }
     }
 #endif
     if (seqlen > NB_STATIC_BUFFERS) {
         buffers = PyMem_NEW(Py_buffer, seqlen);
         if (buffers == NULL) {
-            Py_DECREF(seq);
             PyErr_NoMemory();
             return NULL;
         }
@@ -134,13 +125,15 @@ STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
         }
     }
     else {
-        for (i = 0; i < nbufs; i++) {
-            Py_ssize_t n;
-            char *q;
-            if (i) {
-                memcpy(p, sepstr, seplen);
-                p += seplen;
-            }
+        Py_ssize_t n = buffers[0].len;
+        char *q = buffers[0].buf;
+        memcpy(p, q, n);
+        p += n;
+
+        for (i = 1; i < nbufs; i++) {
+            memcpy(p, sepstr, seplen);
+            p += seplen;
+
             n = buffers[i].len;
             q = buffers[i].buf;
             memcpy(p, q, n);
@@ -155,11 +148,28 @@ STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
 error:
     res = NULL;
 done:
-    Py_DECREF(seq);
     for (i = 0; i < nbufs; i++)
         PyBuffer_Release(&buffers[i]);
     if (buffers != static_buffers)
         PyMem_Free(buffers);
+    return res;
+}
+
+Py_LOCAL_INLINE(PyObject *)
+STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
+{
+    PyObject *seq, *res;
+
+    seq = PySequence_Fast(iterable, "can only join an iterable");
+    if (seq == NULL) {
+        return NULL;
+    }
+
+    Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(iterable);
+    res = STRINGLIB(bytes_join_lock_held)(sep, seq);
+    Py_END_CRITICAL_SECTION_SEQUENCE_FAST();
+
+    Py_DECREF(seq);
     return res;
 }
 

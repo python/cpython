@@ -31,6 +31,7 @@
 #include "pycore_time.h"          // _PyLong_FromTime_t()
 #include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 #include "pycore_typeobject.h"    // _PyType_AddMethod()
+#include "pycore_warnings.h"      // _PyWarnings_AfterFork()
 
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"        // _PyLong_FromUid()
@@ -160,6 +161,9 @@
 #endif
 #ifdef HAVE_SYS_SYSCALL_H
 #  include <sys/syscall.h>        // syscall(), __NR_xxx syscall numbers
+#endif
+#if !defined(SYS_getrandom) && defined(__NR_getrandom)
+#  define SYS_getrandom __NR_getrandom
 #endif
 
 #ifdef HAVE_POSIX_SPAWN
@@ -502,6 +506,7 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #  define HAVE_UNLINKAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
 #  define HAVE_OPENAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
 #  define HAVE_READLINKAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
+#  define HAVE_FREADLINK_RUNTIME __builtin_available(macOS 13.0, iOS 16.0, *)
 #  define HAVE_SYMLINKAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
 #  define HAVE_FUTIMENS_RUNTIME __builtin_available(macOS 10.13, iOS 11.0, tvOS 11.0, watchOS 4.0, *)
 #  define HAVE_UTIMENSAT_RUNTIME __builtin_available(macOS 10.13, iOS 11.0, tvOS 11.0, watchOS 4.0, *)
@@ -509,8 +514,8 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #  define HAVE_MKFIFOAT_RUNTIME __builtin_available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 #  define HAVE_MKNODAT_RUNTIME __builtin_available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 #  define HAVE_PTSNAME_R_RUNTIME __builtin_available(macOS 10.13.4, iOS 11.3, tvOS 11.3, watchOS 4.3, *)
-#  define HAVE_DUP3_RUNTIME __builtin_available(macOS 27.0, *)
-#  define HAVE_PIPE2_RUNTIME __builtin_available(macOS 27.0, *)
+#  define HAVE_DUP3_RUNTIME __builtin_available(macOS 27.0, iOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
+#  define HAVE_PIPE2_RUNTIME __builtin_available(macOS 27.0, iOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
 
 #  define HAVE_POSIX_SPAWN_SETSID_RUNTIME __builtin_available(macOS 10.15, *)
 
@@ -566,6 +571,10 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 
 #  ifdef HAVE_READLINKAT
 #    define HAVE_READLINKAT_RUNTIME (readlinkat != NULL)
+#  endif
+
+#  ifdef _Py_HAVE_FREADLINK
+#    define HAVE_FREADLINK_RUNTIME (freadlink != NULL)
 #  endif
 
 #  ifdef HAVE_SYMLINKAT
@@ -636,6 +645,7 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #  define HAVE_PTSNAME_R_RUNTIME 1
 #  define HAVE_DUP3_RUNTIME 1
 #  define HAVE_PIPE2_RUNTIME 1
+#  define HAVE_FREADLINK_RUNTIME 1
 #endif
 
 
@@ -713,6 +723,7 @@ PyOS_BeforeFork(void)
     _PyImport_AcquireLock(interp);
     _PyEval_StopTheWorldAll(&_PyRuntime);
     HEAD_LOCK(&_PyRuntime);
+    _PyWarnings_BeforeFork(interp);
 }
 
 void
@@ -782,6 +793,9 @@ PyOS_AfterFork_Child(void)
     // Reinitialize it before any executor cleanup can unregister JIT code.
     _Py_jit_debug_mutex = (PyMutex){0};
 #endif
+
+    // Thread-state cleanup can run finalizers that issue warnings.
+    _PyWarnings_AfterFork(tstate->interp);
 
     reset_remotedebug_data(tstate);
 
@@ -3201,14 +3215,6 @@ class dir_fd_converter(CConverter):
     def c_default_init(self):
         self.c_default = 'DEFAULT_DIR_FD'
 
-class uid_t_converter(CConverter):
-    type = "uid_t"
-    converter = '_Py_Uid_Converter'
-
-class gid_t_converter(CConverter):
-    type = "gid_t"
-    converter = '_Py_Gid_Converter'
-
 class dev_t_converter(CConverter):
     type = 'dev_t'
     converter = '_Py_Dev_Converter'
@@ -3265,7 +3271,7 @@ class confname_converter(CConverter):
         """, argname=argname, converter=self.converter, table=self.table)
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=e459765bdf453ebf]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=7ceccf55bb600f61]*/
 
 /*[clinic input]
 
@@ -4399,6 +4405,14 @@ static PyObject *
 os_chroot_impl(PyObject *module, path_t *path)
 /*[clinic end generated code: output=de80befc763a4475 input=14822965652c3dc3]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return path_error(path);
+    }
+#endif
     int res;
     Py_BEGIN_ALLOW_THREADS
     res = chroot(path->narrow);
@@ -9875,6 +9889,14 @@ os_initgroups_impl(PyObject *module, PyObject *oname, gid_t gid)
 /*[clinic end generated code: output=59341244521a9e3f input=7e4514dff4526a95]*/
 #endif
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     const char *username = PyBytes_AS_STRING(oname);
 
     if (initgroups(username, gid) == -1)
@@ -10127,6 +10149,7 @@ os_getlogin_impl(PyObject *module)
         errno = old_errno;
     }
     else {
+        _Py_MSAN_UNPOISON(name, sizeof(name));
         result = PyUnicode_DecodeFSDefault(name);
     }
 #else
@@ -10301,6 +10324,14 @@ static PyObject *
 os_setuid_impl(PyObject *module, uid_t uid)
 /*[clinic end generated code: output=a0a41fd0d1ec555f input=c921a3285aa22256]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     if (setuid(uid) < 0)
         return posix_error();
     Py_RETURN_NONE;
@@ -10322,6 +10353,14 @@ static PyObject *
 os_seteuid_impl(PyObject *module, uid_t euid)
 /*[clinic end generated code: output=102e3ad98361519a input=ba93d927e4781aa9]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     if (seteuid(euid) < 0)
         return posix_error();
     Py_RETURN_NONE;
@@ -10343,6 +10382,14 @@ static PyObject *
 os_setegid_impl(PyObject *module, gid_t egid)
 /*[clinic end generated code: output=4e4b825a6a10258d input=4080526d0ccd6ce3]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     if (setegid(egid) < 0)
         return posix_error();
     Py_RETURN_NONE;
@@ -10365,6 +10412,14 @@ static PyObject *
 os_setreuid_impl(PyObject *module, uid_t ruid, uid_t euid)
 /*[clinic end generated code: output=62d991210006530a input=0ca8978de663880c]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     if (setreuid(ruid, euid) < 0) {
         return posix_error();
     } else {
@@ -10389,6 +10444,14 @@ static PyObject *
 os_setregid_impl(PyObject *module, gid_t rgid, gid_t egid)
 /*[clinic end generated code: output=aa803835cf5342f3 input=c59499f72846db78]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     if (setregid(rgid, egid) < 0)
         return posix_error();
     Py_RETURN_NONE;
@@ -10409,6 +10472,14 @@ static PyObject *
 os_setgid_impl(PyObject *module, gid_t gid)
 /*[clinic end generated code: output=bdccd7403f6ad8c3 input=27d30c4059045dc6]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     if (setgid(gid) < 0)
         return posix_error();
     Py_RETURN_NONE;
@@ -10919,11 +10990,19 @@ os_unshare_impl(PyObject *module, int flags)
 #endif
 
 
+
 #if defined(HAVE_READLINK) || defined(MS_WINDOWS)
+
+#if (defined(__linux__) || defined(__ANDROID__)) && defined(O_PATH)
+// readlinkat(fd, "", ...) reads the symlink that fd refers to.
+// supported since Linux 2.6.39 (same version that O_PATH was introduced).
+#define _Py_READLINKAT_SUPPORTS_EMPTY_PATH
+#endif
+
 /*[clinic input]
 os.readlink
 
-    path: path_t
+    path: path_t(allow_fd=True)
     *
     dir_fd: dir_fd(requires='readlinkat') = None
 
@@ -10935,48 +11014,74 @@ that directory.
 
 dir_fd may not be implemented on your platform.  If it is unavailable,
 using it will raise a NotImplementedError.
+
+On Linux, Android, macOS and iOS, path may be a file descriptor
+referring to a symlink. If it is, dir_fd must be None.
 [clinic start generated code]*/
 
 static PyObject *
 os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
-/*[clinic end generated code: output=d21b732a2e814030 input=03d10130870dbca8]*/
+/*[clinic end generated code: output=d21b732a2e814030 input=d90bddfeee86f673]*/
 {
 #if defined(HAVE_READLINK)
     char buffer[MAXPATHLEN+1];
     ssize_t length;
-#ifdef HAVE_READLINKAT
-    int readlinkat_unavailable = 0;
-#endif
 
-    Py_BEGIN_ALLOW_THREADS
+    if (path_and_dir_fd_invalid("readlink", path, dir_fd)) {
+        return NULL;
+    }
+
+    if (path->is_fd) {
+#if defined(_Py_HAVE_FREADLINK)
+        if (HAVE_FREADLINK_RUNTIME) {
+            Py_BEGIN_ALLOW_THREADS
+            length = freadlink(path->fd, buffer, MAXPATHLEN);
+            Py_END_ALLOW_THREADS
+        } else
+#elif defined(HAVE_READLINKAT) && defined(_Py_READLINKAT_SUPPORTS_EMPTY_PATH)
+        // linux/android:
+        // readlinkat(fd, "", ...) reads the link that fd refers to.
+        if (HAVE_READLINKAT_RUNTIME) {
+            Py_BEGIN_ALLOW_THREADS
+            length = readlinkat(path->fd, "", buffer, MAXPATHLEN);
+            Py_END_ALLOW_THREADS
+        } else
+#endif
+        {
+            PyErr_SetString(PyExc_NotImplementedError,
+                "readlink cannot read file descriptors on this platform");
+            return NULL;
+        }
+    } else
 #ifdef HAVE_READLINKAT
     if (dir_fd != DEFAULT_DIR_FD) {
         if (HAVE_READLINKAT_RUNTIME) {
+            Py_BEGIN_ALLOW_THREADS
             length = readlinkat(dir_fd, path->narrow, buffer, MAXPATHLEN);
+            Py_END_ALLOW_THREADS
         } else {
-            readlinkat_unavailable = 1;
+            argument_unavailable_error(NULL, "dir_fd");
+            return NULL;
         }
     } else
 #endif
+    {
+        Py_BEGIN_ALLOW_THREADS
         length = readlink(path->narrow, buffer, MAXPATHLEN);
-    Py_END_ALLOW_THREADS
-
-#ifdef HAVE_READLINKAT
-    if (readlinkat_unavailable) {
-        argument_unavailable_error(NULL, "dir_fd");
-        return NULL;
+        Py_END_ALLOW_THREADS
     }
-#endif
 
     if (length < 0) {
         return path_error(path);
     }
     buffer[length] = '\0';
 
-    if (PyUnicode_Check(path->object))
+    if (path->is_fd || PyUnicode_Check(path->object)) {
         return PyUnicode_DecodeFSDefaultAndSize(buffer, length);
-    else
+    }
+    else {
         return PyBytes_FromStringAndSize(buffer, length);
+    }
 #elif defined(MS_WINDOWS)
     DWORD n_bytes_returned;
     DWORD io_result = 0;
@@ -10984,6 +11089,12 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
     char target_buffer[_Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
     _Py_REPARSE_DATA_BUFFER *rdb = (_Py_REPARSE_DATA_BUFFER *)target_buffer;
     PyObject *result = NULL;
+
+    if (path->is_fd) {
+        PyErr_SetString(PyExc_NotImplementedError,
+            "readlink cannot read file descriptors on this platform");
+        return NULL;
+    }
 
     /* First get a handle to the reparse point */
     Py_BEGIN_ALLOW_THREADS
@@ -13863,13 +13974,7 @@ static PyObject *
 os_strerror_impl(PyObject *module, int code)
 /*[clinic end generated code: output=baebf09fa02a78f2 input=75a8673d97915a91]*/
 {
-    char *message = strerror(code);
-    if (message == NULL) {
-        PyErr_SetString(PyExc_ValueError,
-                        "strerror() argument out of range");
-        return NULL;
-    }
-    return PyUnicode_DecodeLocale(message, "surrogateescape");
+    return _Py_strerror(code);
 }
 
 
@@ -15506,6 +15611,14 @@ static PyObject *
 os_setresuid_impl(PyObject *module, uid_t ruid, uid_t euid, uid_t suid)
 /*[clinic end generated code: output=834a641e15373e97 input=9e33cb79a82792f3]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     if (setresuid(ruid, euid, suid) < 0)
         return posix_error();
     Py_RETURN_NONE;
@@ -15529,6 +15642,14 @@ static PyObject *
 os_setresgid_impl(PyObject *module, gid_t rgid, gid_t egid, gid_t sgid)
 /*[clinic end generated code: output=6aa402f3d2e514a9 input=33e9e0785ef426b1]*/
 {
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return posix_error();
+    }
+#endif
     if (setresgid(rgid, egid, sgid) < 0)
         return posix_error();
     Py_RETURN_NONE;
@@ -16313,8 +16434,9 @@ os_set_blocking_impl(PyObject *module, int fd, int blocking)
 
 /*[clinic input]
 class os.DirEntry "DirEntry *" "DirEntryType"
+class os.ScandirIterator "PyObject *" "ScandirIteratorType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3c18c7a448247980]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b845e502eb4a0406]*/
 
 typedef struct {
     PyObject_HEAD
@@ -17203,11 +17325,20 @@ ScandirIterator_enter(PyObject *self, PyObject *Py_UNUSED(dummy))
     return Py_NewRef(self);
 }
 
+/*[clinic input]
+os.ScandirIterator.__exit__
+
+    *exc_info: array
+
+Close the scandir iterator.
+[clinic start generated code]*/
+
 static PyObject *
-ScandirIterator_exit(PyObject *op, PyObject *Py_UNUSED(args))
+os_ScandirIterator___exit___impl(PyObject *self, PyObject * const *exc_info,
+                                 Py_ssize_t exc_info_length)
+/*[clinic end generated code: output=5d3941725a7c97c7 input=ff3ffe83ae605a36]*/
 {
-    ScandirIterator *self = ScandirIterator_CAST(op);
-    ScandirIterator_closedir(self);
+    ScandirIterator_closedir(ScandirIterator_CAST(self));
     Py_RETURN_NONE;
 }
 
@@ -17254,7 +17385,7 @@ ScandirIterator_dealloc(PyObject *op)
 
 static PyMethodDef ScandirIterator_methods[] = {
     {"__enter__", ScandirIterator_enter, METH_NOARGS},
-    {"__exit__", ScandirIterator_exit, METH_VARARGS},
+    OS_SCANDIRITERATOR___EXIT___METHODDEF
     {"close", ScandirIterator_close, METH_NOARGS},
     {NULL}
 };
@@ -18798,6 +18929,10 @@ PROBE(probe_openat, HAVE_OPENAT_RUNTIME)
 PROBE(probe_readlinkat, HAVE_READLINKAT_RUNTIME)
 #endif
 
+#ifdef _Py_HAVE_FREADLINK
+PROBE(probe_freadlink, HAVE_FREADLINK_RUNTIME)
+#endif
+
 #ifdef HAVE_SYMLINKAT
 PROBE(probe_symlinkat, HAVE_SYMLINKAT_RUNTIME)
 #endif
@@ -18863,6 +18998,10 @@ static const struct have_function {
 
 #ifdef HAVE_FPATHCONF
     { "HAVE_FPATHCONF", NULL },
+#endif
+
+#ifdef _Py_HAVE_FREADLINK
+    { "HAVE_FREADLINK", probe_freadlink },
 #endif
 
 #ifdef HAVE_FSTATAT
