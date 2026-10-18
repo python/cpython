@@ -26,8 +26,6 @@ on top of pyrepl.  Not all functionalities are supported.  Contains
 extensions for multiline input.
 """
 
-from __future__ import annotations
-
 import warnings
 from dataclasses import dataclass, field
 
@@ -55,13 +53,10 @@ ENCODING = sys.getdefaultencoding() or "latin1"
 
 # types
 Command = commands.Command
-from collections.abc import Callable, Collection
+from collections.abc import Callable, Collection, Mapping
 from .types import Callback, Completer, KeySpec, CommandName, CompletionAction
 
-TYPE_CHECKING = False
-
-if TYPE_CHECKING:
-    from typing import Any, Mapping
+lazy from typing import Any
 
 
 MoreLinesCallable = Callable[[str], bool]
@@ -385,7 +380,8 @@ class _ReadlineWrapper:
         prompt_str = str(prompt)
         reader.ps1 = prompt_str
         sys.audit("builtins.input", prompt_str)
-        result = reader.readline(startup_hook=self.startup_hook)
+        with reader.suspend_history_writes():
+            result = reader.readline(startup_hook=self.startup_hook)
         sys.audit("builtins.input/result", result)
         return result
 
