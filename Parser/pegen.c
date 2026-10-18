@@ -1045,6 +1045,19 @@ _PyPegen_Parser_Free(Parser *p)
     PyMem_Free(p);
 }
 
+int
+_PyPegen_stack_exhausted_slow(Parser *p)
+{
+    if (p->keyword_trial != NULL) {
+        if (p->keyword_trial->budget == 0) {
+            return 1;
+        }
+        p->keyword_trial->budget--;
+        p->keyword_trial->furthest = Py_MAX(p->keyword_trial->furthest, p->mark);
+    }
+    return _Py_ReachedRecursionLimitWithMargin(p->tstate, 1);
+}
+
 static void
 reset_parser_state_for_error_pass(Parser *p)
 {
@@ -1156,6 +1169,14 @@ try_keyword_typo(Parser *p, KeywordTypo *candidate)
     trial.error_indicator = 0;
     trial.call_invalid_rules = 0;
     trial.keyword_trial = &state;
+    // Force trials through the existing stack-check slow path to count rule
+    // entries without adding a branch to normal parsing. The slow path still
+    // checks the thread's real stack limit.
+#if _Py_STACK_GROWS_DOWN
+    trial.stack_soft_limit = UINTPTR_MAX;
+#else
+    trial.stack_soft_limit = 0;
+#endif
     trial.known_err_token = NULL;
     trial.errcode = NULL;
     trial.identifier_cache = identifiers;

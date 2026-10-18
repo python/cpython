@@ -111,19 +111,14 @@ typedef struct {
     uintptr_t stack_soft_limit;
 } Parser;
 
+int _PyPegen_stack_exhausted_slow(Parser *p);
+
 // C-stack exhaustion check run on every rule entry. The fast path compares
 // the machine stack pointer against the soft limit cached in the Parser;
-// only when the stack is nearly exhausted is the full check called.
+// trials force the slow path to account for their rule budget.
 static inline int
 _PyPegen_stack_exhausted(Parser *p)
 {
-    if (p->keyword_trial != NULL) {
-        if (p->keyword_trial->budget == 0) {
-            return 1;
-        }
-        p->keyword_trial->budget--;
-        p->keyword_trial->furthest = Py_MAX(p->keyword_trial->furthest, p->mark);
-    }
 #if _Py_STACK_GROWS_DOWN
     if (_Py_get_machine_stack_pointer() > p->stack_soft_limit) {
 #else
@@ -132,7 +127,7 @@ _PyPegen_stack_exhausted(Parser *p)
         assert(!_Py_ReachedRecursionLimitWithMargin(p->tstate, 1));
         return 0;
     }
-    return _Py_ReachedRecursionLimitWithMargin(p->tstate, 1);
+    return _PyPegen_stack_exhausted_slow(p);
 }
 
 typedef struct {
