@@ -8,6 +8,7 @@ preserve
 #endif
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 #if defined(HAVE_MP_SEMAPHORE) && defined(MS_WINDOWS)
 
@@ -292,13 +293,8 @@ _multiprocessing_SemLock(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         _PyArg_BadArgument("SemLock", "argument 'name'", "str", fastargs[3]);
         goto exit;
     }
-    Py_ssize_t name_length;
-    name = PyUnicode_AsUTF8AndSize(fastargs[3], &name_length);
+    name = _PyUnicode_AsUTF8NoNUL(fastargs[3]);
     if (name == NULL) {
-        goto exit;
-    }
-    if (strlen(name) != (size_t)name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     unlink = PyObject_IsTrue(fastargs[4]);
@@ -337,7 +333,7 @@ _multiprocessing_SemLock__rebuild(PyObject *type, PyObject *const *args, Py_ssiz
     int maxvalue;
     const char *name;
 
-    if (!_PyArg_ParseStack(args, nargs, ""F_SEM_HANDLE"iiz:_rebuild",
+    if (!PyArg_ParseArray(args, nargs, ""F_SEM_HANDLE"iiz:_rebuild",
         &handle, &kind, &maxvalue, &name)) {
         goto exit;
     }
@@ -582,4 +578,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
     #define _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF) */
-/*[clinic end generated code: output=d1e349d4ee3d4bbf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7a35732855b11781 input=a9049054013a1b77]*/

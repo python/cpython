@@ -564,15 +564,15 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                 del err
                 bad_directive = bad_directive.replace('\\s', '')
                 if not bad_directive:
-                    raise ValueError("stray %% in format '%s'" % format) from None
+                    raise ValueError(f"stray % in format {format!r}") from None
                 bad_directive = bad_directive.replace('\\', '', 1)
-                raise ValueError("'%s' is a bad directive in format '%s'" %
-                                    (bad_directive, format)) from None
+                raise ValueError(f"{bad_directive!r} is a bad directive "
+                                 f"in format {format!r}") from None
             _regex_cache[format] = format_regex
     found = format_regex.match(data_string)
     if not found:
-        raise ValueError("time data %r does not match format %r" %
-                         (data_string, format))
+        raise ValueError(f"time data {data_string!r} does not match "
+                         f"format {format!r}")
     if len(data_string) != found.end():
         rest = data_string[found.end():]
         # Specific check for '%:z' directive
@@ -582,9 +582,9 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             and rest[0] != ":"
         ):
             raise ValueError(
-                f"Missing colon in %:z before '{rest}', got '{data_string}'"
+                f"Missing colon in %:z before {rest!r}, got {data_string!r}"
             )
-        raise ValueError("unconverted data remains: %s" % rest)
+        raise ValueError(f"unconverted data remains: {rest!r}")
 
     iso_year = year = None
     month = day = 1
@@ -700,7 +700,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                         z = z[:3] + z[4:]
                         if len(z) > 5:
                             if z[5] != ':':
-                                msg = f"Inconsistent use of : in {found_dict[group_key]}"
+                                msg = f"Inconsistent use of : in {found_dict[group_key]!r}"
                                 raise ValueError(msg)
                             z = z[:5] + z[6:]
                     hours = int(z[1:3])

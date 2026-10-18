@@ -34,7 +34,7 @@ alternative `GUI frameworks and tools <https://wiki.python.org/moin/GuiProgrammi
    tkinter.colorchooser.rst
    tkinter.font.rst
    tkinter.fontchooser.rst
-   dialog.rst
+   tkinter.dialogs.rst
    tkinter.messagebox.rst
    tkinter.scrolledtext.rst
    tkinter.systray.rst
