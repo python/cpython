@@ -1082,7 +1082,7 @@ typedef struct {
 } KeywordTypo;
 
 #define MAX_KEYWORD_TYPO_CANDIDATES 32
-#define MAX_KEYWORD_TYPO_STEPS 100000
+#define MAX_KEYWORD_TYPO_STEPS 5000000
 
 static int
 compare_keyword_typos(const void *a, const void *b)

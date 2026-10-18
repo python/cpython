@@ -1931,7 +1931,7 @@ print(
     def test_keyword_replay_requires_complete_valid_input(self):
         for source in ("dell 1", "impor math\nother =", "whille True:\npass",
                        "switch +:\n case:", "function f(=):\n pass", "(mat x)",
-                       "impor math\n" + "pass\n" * 3000):
+                       "impor math\n" + "pass\n" * 20000):
             with self.subTest(source=source):
                 with self.assertRaises(SyntaxError) as caught:
                     compile(source, "<test>", "exec")
@@ -1958,13 +1958,13 @@ print(
     @cpython_only
     def test_keyword_replay_source_limit(self):
         with tempfile.TemporaryDirectory() as script_dir:
-            for size in (64 * 1024 - 512, 64 * 1024 + 512):
+            for size in (256 * 1024 - 512, 256 * 1024 + 512):
                 literal = "value = " + repr("a" * size) + "\n"
                 for source in (literal + "impor math", "impor math\n" + literal):
                     with self.subTest(size=size, typo_first=source.startswith("impor")):
                         with self.assertRaises(SyntaxError) as caught:
                             compile(source, "<test>", "exec")
-                        expected = size < 64 * 1024
+                        expected = size < 256 * 1024
                         self.assertEqual(caught.exception._metadata is not None, expected)
                         script = make_script(script_dir, "large_keyword_typo", source)
                         _, _, stderr = assert_python_failure(script)
@@ -1975,8 +1975,8 @@ print(
     @cpython_only
     def test_keyword_replay_work_limit(self):
         # Several candidates must share the budget, including failed passes.
-        for count, expected in ((100, "in"), (300, None)):
-            source = "x = 1\n" * count + "for x im seq:\n    pass"
+        for count, expected in ((100, "lambda"), (2000, None)):
+            source = "x = 1\n" * count + "f(" + "fron, " * 8 + "lamda x: x)"
             with self.subTest(count=count), self.assertRaises(SyntaxError) as caught:
                 compile(source, "<test>", "exec")
             metadata = caught.exception._metadata

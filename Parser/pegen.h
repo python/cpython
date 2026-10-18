@@ -30,8 +30,8 @@
 #define CURRENT_POS (-5)
 
 // Error-only token replay is bounded independently of the source length.
-#define MAX_KEYWORD_TYPO_TOKENS 4096
-#define MAX_KEYWORD_TYPO_BYTES (64 * 1024)
+#define MAX_KEYWORD_TYPO_TOKENS 32768
+#define MAX_KEYWORD_TYPO_BYTES (256 * 1024)
 
 typedef struct _memo {
     int type;
