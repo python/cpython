@@ -348,16 +348,17 @@ def requires(resource, msg=None):
     if resource == 'gui' and not _is_gui_available():
         raise ResourceDenied(_is_gui_available.reason)
 
-def _requires_unix_version(sysname, min_version):
-    """Decorator raising SkipTest if the OS is `sysname` and the version is less
+
+def _requires_platform_version(name, sys_platform, get_version_text, min_version):
+    """
+    Decorator raising SkipTest if the OS is `sysname` and the version is less
     than `min_version`.
 
-    For example, @_requires_unix_version('FreeBSD', (7, 2)) raises SkipTest if
-    the FreeBSD version is less than 7.2.
+    For example, @_requires_platform_version('FreeBSD', 'freebsd', (7, 2))
+    raises SkipTest if the FreeBSD version is less than 7.2.
     """
-    min_version_txt = '.'.join(map(str, min_version))
-    version_txt = platform.release().split('-', 1)[0]
-    if platform.system() == sysname:
+    version_txt = get_version_text()
+    if sys.platform == sys_platform:
         try:
             version = tuple(map(int, version_txt.split('.')))
         except ValueError:
@@ -367,11 +368,17 @@ def _requires_unix_version(sysname, min_version):
     else:
         skip = False
 
+    min_version_txt = '.'.join(map(str, min_version))
     return unittest.skipIf(
         skip,
-        f"{sysname} version {min_version_txt} or higher required, not "
+        f"{name} version {min_version_txt} or higher required, not "
         f"{version_txt}"
     )
+
+
+def _get_platform_release():
+    # Replace '7.2.8-200.fc44.x86_64' with '7.2.8'
+    return platform.release().partition('-')[0]
 
 
 def requires_freebsd_version(*min_version):
@@ -381,7 +388,11 @@ def requires_freebsd_version(*min_version):
     For example, @requires_freebsd_version(7, 2) raises SkipTest if the FreeBSD
     version is less than 7.2.
     """
-    return _requires_unix_version('FreeBSD', min_version)
+    return _requires_platform_version(
+        'FreeBSD', 'freebsd',
+        get_version_text=_get_platform_release,
+        min_version=min_version)
+
 
 def requires_linux_version(*min_version):
     """Decorator raising SkipTest if the OS is Linux and the Linux version is
@@ -390,28 +401,10 @@ def requires_linux_version(*min_version):
     For example, @requires_linux_version(2, 6, 32) raises SkipTest if the Linux
     version is less than 2.6.32.
     """
-    return _requires_unix_version('Linux', min_version)
-
-def _requires_apple_os_version(name, sys_platform, get_version_text, min_version):
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kw):
-            if sys.platform == sys_platform:
-                version_txt = get_version_text()
-                try:
-                    version = tuple(map(int, version_txt.split('.')))
-                except ValueError:
-                    pass
-                else:
-                    if version < min_version:
-                        min_version_txt = '.'.join(map(str, min_version))
-                        raise unittest.SkipTest(
-                            f"{name} {min_version_txt} or higher required, "
-                            + f"not {version_txt}")
-            return func(*args, **kw)
-        wrapper.min_version = min_version
-        return wrapper
-    return decorator
+    return _requires_platform_version(
+        "Linux", "linux",
+        get_version_text=_get_platform_release,
+        min_version=min_version)
 
 
 def requires_mac_ver(*min_version):
@@ -421,7 +414,7 @@ def requires_mac_ver(*min_version):
     For example, @requires_mac_ver(10, 5) raises SkipTest if the OS X version
     is lesser than 10.5.
     """
-    return _requires_apple_os_version(
+    return _requires_platform_version(
         "macOS", "darwin",
         get_version_text=lambda: platform.mac_ver()[0],
         min_version=min_version)
@@ -434,7 +427,7 @@ def requires_ios_ver(*min_version):
     For example, requires_ios_ver(16, 0) raises SkipTest if the iOS version
     is lesser than 16.0.
     """
-    return _requires_apple_os_version(
+    return _requires_platform_version(
         "iOS", "ios",
         get_version_text=lambda: platform.ios_ver().release,
         min_version=min_version)
