@@ -1142,7 +1142,43 @@ add_keyword_typo(KeywordTypo *candidates, int *count, int mark,
 }
 
 static int
-try_keyword_typo(Parser *p, KeywordTypo *candidate, KeywordTrial *state)
+keyword_trial_accepts(Parser *p, const KeywordTypo *candidate)
+{
+    int accepted = _PyPegen_parse(p) != NULL;
+    if (p->error_indicator || PyErr_Occurred()) {
+        return 0;
+    }
+    for (int i = p->mark; accepted && i < p->fill; i++) {
+        int type = p->tokens[i]->type;
+        accepted = type == NEWLINE || type == ENDMARKER;
+    }
+    if (accepted) {
+        return 1;
+    }
+    // Version checks on an enclosing rule can run after its suite. For older
+    // grammars, require a complete repair so those checks execute.
+    if (p->feature_version != PY_MINOR_VERSION) {
+        return 0;
+    }
+    // Known foreign keywords can identify a valid header even when its body
+    // contains another error (for example, "switch x:\n case:"). Require the
+    // ordinary grammar to advance into a later line before accepting that hint.
+    if (candidate->is_alias) {
+        for (int i = candidate->mark; i < p->keyword_trial->furthest; i++) {
+            if (p->tokens[i]->type == NEWLINE) {
+                return 1;
+            }
+        }
+    }
+    reset_parser_state_for_error_pass(p);
+    _PyPegen_parse(p);
+    return p->keyword_trial->incomplete_suite;
+}
+
+// Return 1 for an accepted repair, 0 for a rejected repair, or -1 to stop the
+// search. Raw allocation failures need not set an exception.
+static int
+try_keyword_typo(Parser *p, const KeywordTypo *candidate, KeywordTrial *state)
 {
     // Token text belongs to the original arena. Token headers and memo entries
     // must be private: even a failed trial can memoize nodes containing its edit.
@@ -1195,31 +1231,7 @@ try_keyword_typo(Parser *p, KeywordTypo *candidate, KeywordTrial *state)
     trial.known_err_token = NULL;
     trial.errcode = NULL;
     trial.normalize = NULL;
-    accepted = _PyPegen_parse(&trial) != NULL &&
-               !trial.error_indicator && !PyErr_Occurred();
-    for (int i = trial.mark; accepted && i < trial.fill; i++) {
-        accepted = tokens[i].type == NEWLINE || tokens[i].type == ENDMARKER;
-    }
-    // Known foreign keywords may identify a valid header even when its body
-    // contains another error (for example, "switch x:\n case:"). Require the
-    // ordinary grammar to advance into a later line before accepting that hint.
-    if (!accepted && !trial.error_indicator && candidate->is_alias &&
-        p->feature_version == PY_MINOR_VERSION)
-    {
-        for (int i = candidate->mark; i < state->furthest; i++) {
-            if (tokens[i].type == NEWLINE) {
-                accepted = 1;
-                break;
-            }
-        }
-    }
-    if (!accepted && !trial.error_indicator && !PyErr_Occurred()) {
-        reset_parser_state_for_error_pass(&trial);
-        _PyPegen_parse(&trial);
-        // Version checks on an enclosing rule can run after its suite. For
-        // older grammars, require a complete repair so those checks execute.
-        accepted = state->incomplete_suite && p->feature_version == PY_MINOR_VERSION;
-    }
+    accepted = keyword_trial_accepts(&trial, candidate);
 done:
     // No Parser_Free: the trial borrows the tokenizer and type-ignore comments,
     // and its token headers are a single allocation.
@@ -1233,39 +1245,60 @@ done:
     return PyErr_Occurred() ? -1 : accepted;
 }
 
-static PyObject *
-keyword_typo_metadata(Parser *p, PySyntaxErrorObject *error)
+static const char *
+keyword_typo_text(Parser *p, Token *token, int at_error, int *is_keyword)
 {
-    // A real ENDMARKER is required even for an unfinished suite. A truncated
-    // token cache is never evidence that a replacement is valid.
-    if ((p->start_rule != Py_file_input && p->start_rule != Py_eval_input &&
-         p->start_rule != Py_single_input) ||
-        p->fill == 0 || p->fill > MAX_KEYWORD_TYPO_TOKENS ||
-        _PyTokenizer_GetInfo(p->tok).input_span.end > MAX_KEYWORD_TYPO_BYTES ||
-        p->tokens[p->fill - 1]->type != ENDMARKER ||
-        _PyTokenizer_IsInteractive(p->tok) ||
-        !Py_IS_TYPE(error, (PyTypeObject *)PyExc_SyntaxError))
-    {
+    // A keyword can itself be a typo, as in "for x is y". Consider an existing
+    // keyword only at the reported error, not throughout the statement.
+    *is_keyword = token->type != NAME;
+    if (*is_keyword) {
+        if (!at_error) {
+            return NULL;
+        }
+        // Hard keywords have no token text. Use the generated keyword table.
+        for (int length = 0; length < p->n_keyword_lists; length++) {
+            for (KeywordToken *k = p->keywords[length];
+                 k != NULL && k->type != -1; k++)
+            {
+                if (k->type == token->type) {
+                    return k->str;
+                }
+            }
+        }
         return NULL;
     }
+    const char *text = PyBytes_AS_STRING(token->bytes);
+    for (char **k = p->soft_keywords; k != NULL && *k != NULL; k++) {
+        if (strcmp(text, *k) == 0) {
+            *is_keyword = 1;
+            return at_error ? text : NULL;
+        }
+    }
+    return text;
+}
+
+// Return the candidate count, or -1 if allocation or capacity prevents a
+// complete search. Capacity exhaustion does not set an exception.
+static int
+collect_keyword_typos(Parser *p, PySyntaxErrorObject *error, KeywordTypo *candidates)
+{
     long error_line = PyLong_AsLong(error->lineno);
     long error_offset = PyLong_AsLong(error->offset);
     if (error_line < 0 || error_offset < 0) {
-        return NULL;
+        return -1;
     }
     Py_ssize_t error_col = -1;
     if (error_offset > 0 && error->text != NULL && PyUnicode_Check(error->text)) {
         PyObject *prefix = PyUnicode_Substring(error->text, 0, error_offset - 1);
         if (prefix == NULL) {
-            return NULL;
+            return -1;
         }
-        const char *text = PyUnicode_AsUTF8AndSize(prefix, &error_col);
+        int failed = PyUnicode_AsUTF8AndSize(prefix, &error_col) == NULL;
         Py_DECREF(prefix);
-        if (text == NULL) {
-            return NULL;
+        if (failed) {
+            return -1;
         }
     }
-    KeywordTypo candidates[MAX_KEYWORD_TYPO_CANDIDATES];
     int count = 0;
     int start = 0;
     for (int i = 0; i < p->fill && p->tokens[i]->lineno < error_line; i++) {
@@ -1287,34 +1320,15 @@ keyword_typo_metadata(Parser *p, PySyntaxErrorObject *error)
         if (token->type == NEWLINE) {
             break;
         }
-        const char *text = token->type == NAME ? PyBytes_AS_STRING(token->bytes) : NULL;
-        Py_ssize_t text_length = text == NULL ? 0 : PyBytes_GET_SIZE(token->bytes);
-        int is_keyword = token->type != NAME;
-        // A keyword can itself be a typo, as in "for x is y". Consider an
-        // existing keyword only at the reported error, not throughout the line.
-        if (text == NULL && token->lineno == error_line && token->col_offset == error_col) {
-            for (int length = 0; length < p->n_keyword_lists && text == NULL; length++) {
-                for (KeywordToken *k = p->keywords[length];
-                     k != NULL && k->type != -1; k++)
-                {
-                    if (k->type == token->type) {
-                        text = k->str;
-                        text_length = length;
-                        break;
-                    }
-                }
-            }
-        }
-        if (text == NULL || text_length < 2 || text_length > 10) {
+        int at_error = token->lineno == error_line && token->col_offset == error_col;
+        int is_keyword;
+        const char *text = keyword_typo_text(p, token, at_error, &is_keyword);
+        if (text == NULL) {
             continue;
         }
-        for (char **k = p->soft_keywords; k != NULL && *k != NULL; k++) {
-            if (strcmp(text, *k) == 0) {
-                is_keyword = 1;
-                break;
-            }
-        }
-        if (is_keyword && (token->lineno != error_line || token->col_offset != error_col)) {
+        Py_ssize_t text_length = token->type == NAME ?
+            PyBytes_GET_SIZE(token->bytes) : (Py_ssize_t)strlen(text);
+        if (text_length < 2 || text_length > 10) {
             continue;
         }
         const char *alias = NULL;
@@ -1326,14 +1340,14 @@ keyword_typo_metadata(Parser *p, PySyntaxErrorObject *error)
         }
         if (alias != NULL) {
             if (count == MAX_KEYWORD_TYPO_CANDIDATES) {
-                return NULL;
+                return -1;
             }
             candidates[count++] = (KeywordTypo){i, alias, 0, 1};
             continue;
         }
         PyObject *name = PyUnicode_DecodeUTF8(text, text_length, NULL);
         if (name == NULL) {
-            return NULL;
+            return -1;
         }
         // Preserve missing-comma diagnostics and correctly spelled keywords
         // unless one edit repairs the input. For keywords, only substitute a
@@ -1358,8 +1372,60 @@ keyword_typo_metadata(Parser *p, PySyntaxErrorObject *error)
         }
         Py_DECREF(name);
         if (result < 0) {
-            return NULL;
+            return -1;
         }
+    }
+    return count;
+}
+
+static PyObject *
+build_keyword_typo_metadata(Parser *p, const KeywordTypo *candidate)
+{
+    Token *token = p->tokens[candidate->mark];
+    PyObject *line;
+    if (_PyTokenizer_RetainedSource(p->tok) != NULL) {
+        Py_ssize_t size;
+        const char *text = _PyTokenizer_LineView(p->tok, token->lineno, &size);
+        line = PyUnicode_DecodeUTF8(text, size, "replace");
+    }
+    else {
+        _PyTokenizer_Info info = _PyTokenizer_GetInfo(p->tok);
+        line = _PyErr_ProgramDecodedTextObject(
+            info.filename, token->lineno, info.encoding);
+    }
+    if (line == NULL) {
+        return NULL;
+    }
+    Py_ssize_t start = _PyPegen_byte_offset_to_character_offset(line, token->col_offset);
+    Py_ssize_t end = _PyPegen_byte_offset_to_character_offset(line, token->end_col_offset);
+    PyObject *metadata = NULL;
+    if (start >= 0 && end >= 0) {
+        metadata = Py_BuildValue("(sOinin)", candidate->keyword, line,
+                                 token->lineno, start + 1,
+                                 token->end_lineno, end + 1);
+    }
+    Py_DECREF(line);
+    return metadata;
+}
+
+static PyObject *
+keyword_typo_metadata(Parser *p, PySyntaxErrorObject *error)
+{
+    // A real ENDMARKER is required even for an unfinished suite. A truncated
+    // token cache is never evidence that a replacement is valid.
+    if ((p->start_rule != Py_file_input && p->start_rule != Py_eval_input &&
+         p->start_rule != Py_single_input) ||
+        p->fill == 0 || p->fill > MAX_KEYWORD_TYPO_TOKENS ||
+        _PyTokenizer_GetInfo(p->tok).input_span.end > MAX_KEYWORD_TYPO_BYTES ||
+        p->tokens[p->fill - 1]->type != ENDMARKER ||
+        _PyTokenizer_IsInteractive(p->tok))
+    {
+        return NULL;
+    }
+    KeywordTypo candidates[MAX_KEYWORD_TYPO_CANDIDATES];
+    int count = collect_keyword_typos(p, error, candidates);
+    if (count <= 0) {
+        return NULL;
     }
     qsort(candidates, count, sizeof(*candidates), compare_keyword_typos);
     // All candidates and both parser passes share this work budget.
@@ -1369,55 +1435,27 @@ keyword_typo_metadata(Parser *p, PySyntaxErrorObject *error)
         if (accepted < 0) {
             return NULL;
         }
-        if (!accepted) {
-            continue;
+        if (accepted) {
+            return build_keyword_typo_metadata(p, &candidates[i]);
         }
-        Token *token = p->tokens[candidates[i].mark];
-        PyObject *line;
-        if (_PyTokenizer_RetainedSource(p->tok) != NULL) {
-            Py_ssize_t size;
-            const char *text = _PyTokenizer_LineView(p->tok, token->lineno, &size);
-            line = PyUnicode_DecodeUTF8(text, size, "replace");
-        }
-        else {
-            _PyTokenizer_Info info = _PyTokenizer_GetInfo(p->tok);
-            line = _PyErr_ProgramDecodedTextObject(
-                info.filename, token->lineno, info.encoding);
-        }
-        if (line == NULL) {
-            return NULL;
-        }
-        Py_ssize_t start = _PyPegen_byte_offset_to_character_offset(line, token->col_offset);
-        Py_ssize_t end = _PyPegen_byte_offset_to_character_offset(line, token->end_col_offset);
-        PyObject *metadata = NULL;
-        if (start >= 0 && end >= 0) {
-            metadata = Py_BuildValue("(sOinin)", candidates[i].keyword, line,
-                                     token->lineno, start + 1,
-                                     token->end_lineno, end + 1);
-        }
-        Py_DECREF(line);
-        return metadata;
     }
     return NULL;
 }
 
 static void
-_PyPegen_set_syntax_error_metadata(Parser *p) {
+_PyPegen_set_syntax_error_metadata(Parser *p)
+{
     PyObject *exc = PyErr_GetRaisedException();
-    if (!exc || !PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_SyntaxError)) {
-        PyErr_SetRaisedException(exc);
-        return;
+    if (exc != NULL && Py_IS_TYPE(exc, (PyTypeObject *)PyExc_SyntaxError)) {
+        PySyntaxErrorObject *syntax_error = (PySyntaxErrorObject *)exc;
+        PyObject *hint = keyword_typo_metadata(p, syntax_error);
+        if (hint != NULL) {
+            Py_XSETREF(syntax_error->metadata, hint);
+        }
+        // Suggestions must never replace the original exception, including
+        // when a trial runs out of memory or exhausts its rule budget.
+        PyErr_Clear();
     }
-    PySyntaxErrorObject *syntax_error = (PySyntaxErrorObject *)exc;
-    PyObject *hint = keyword_typo_metadata(p, syntax_error);
-    if (hint != NULL) {
-        Py_XSETREF(syntax_error->metadata, hint);
-        PyErr_SetRaisedException(exc);
-        return;
-    }
-    // Suggestions must never replace the original exception, including when
-    // a trial runs out of memory or exhausts its rule budget.
-    PyErr_Clear();
     PyErr_SetRaisedException(exc);
 }
 
