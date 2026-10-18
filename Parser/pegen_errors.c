@@ -154,11 +154,24 @@ _PyPegen_tokenize_full_source_to_check_for_errors(Parser *p) {
     Py_ssize_t current_err_line = current_token->lineno;
 
     int ret = 0;
+    int cache_tokens = 1;
     struct token new_token;
     _PyToken_Init(&new_token);
 
     for (;;) {
         _PyTokenizer_Get(p->tok, &new_token);
+        // Retain the tokens this error check already reads for bounded typo
+        // trials. Never treat a truncated cache as complete input.
+        if (cache_tokens && p->fill < MAX_KEYWORD_TYPO_TOKENS &&
+            (p->fill == 0 || p->tokens[p->fill - 1]->type != ENDMARKER) &&
+            new_token.type != ERRORTOKEN && new_token.type != TYPE_IGNORE &&
+            _PyPegen_append_token(p, &new_token) < 0)
+        {
+            // Caching is optional; its allocation failures must not replace
+            // the syntax error we are already reporting.
+            PyErr_Clear();
+            cache_tokens = 0;
+        }
         switch (new_token.type) {
             case ERRORTOKEN: {
                 if (PyErr_Occurred()) {
@@ -177,6 +190,14 @@ _PyPegen_tokenize_full_source_to_check_for_errors(Parser *p) {
                 break;
             }
             case ENDMARKER:
+                if (cache_tokens && p->fill < MAX_KEYWORD_TYPO_TOKENS &&
+                    p->start_rule == Py_single_input && p->fill > 0 &&
+                    p->tokens[p->fill - 1]->type == NEWLINE)
+                {
+                    // append_token inserted single input's implicit newline;
+                    // retain any pending dedents and the actual end marker.
+                    continue;
+                }
                 break;
             default:
                 continue;

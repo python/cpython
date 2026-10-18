@@ -328,6 +328,28 @@ _resize_tokens_array(Parser *p) {
 }
 
 int
+_PyPegen_append_token(Parser *p, struct token *token)
+{
+    int type = token->type;
+    // Single input inserts a final newline and may still need dedents. Apply
+    // the same normalization when the error pass fills the replay cache.
+    if (p->start_rule == Py_single_input && type == ENDMARKER && p->parsing_started) {
+        type = NEWLINE;
+        p->parsing_started = 0;
+        if (!(p->flags & PyPARSE_DONT_IMPLY_DEDENT)) {
+            _PyTokenizer_ImplyDedents(p->tok);
+        }
+    }
+    else {
+        p->parsing_started = 1;
+    }
+    if (p->fill == p->size && _resize_tokens_array(p) < 0) {
+        return -1;
+    }
+    return initialize_token(p, p->tokens[p->fill], token, type);
+}
+
+int
 _PyPegen_fill_token(Parser *p)
 {
     struct token new_token;
@@ -363,26 +385,7 @@ _PyPegen_fill_token(Parser *p)
         p->input_exhausted = 1;
     }
 
-    // If we have reached the end and we are in single input mode we need to insert a newline and reset the parsing
-    if (p->start_rule == Py_single_input && type == ENDMARKER && p->parsing_started) {
-        type = NEWLINE; /* Add an extra newline */
-        p->parsing_started = 0;
-
-        if (!(p->flags & PyPARSE_DONT_IMPLY_DEDENT)) {
-            _PyTokenizer_ImplyDedents(p->tok);
-        }
-    }
-    else {
-        p->parsing_started = 1;
-    }
-
-    // Check if we are at the limit of the token array capacity and resize if needed
-    if ((p->fill == p->size) && (_resize_tokens_array(p) != 0)) {
-        goto error;
-    }
-
-    Token *t = p->tokens[p->fill];
-    int result = initialize_token(p, t, &new_token, type);
+    int result = _PyPegen_append_token(p, &new_token);
     _PyToken_Free(&new_token);
     return result;
 error:

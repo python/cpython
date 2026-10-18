@@ -29,6 +29,9 @@
 
 #define CURRENT_POS (-5)
 
+// Error-only token replay is bounded independently of the source length.
+#define MAX_KEYWORD_TYPO_TOKENS 4096
+
 typedef struct _memo {
     int type;
     int mark;
@@ -193,6 +196,7 @@ expr_ty _PyPegen_soft_keyword_token(Parser *p);
 expr_ty _PyPegen_fstring_middle_token(Parser* p);
 Token *_PyPegen_get_last_nonnwhitespace_token(Parser *);
 int _PyPegen_fill_token(Parser *p);
+int _PyPegen_append_token(Parser *p, struct token *token);
 // Return -1 on failure, leaving the buffer and capacity unchanged.
 int _PyPegen_grow_loop_buffer(void ***buffer, Py_ssize_t *capacity);
 expr_ty _PyPegen_name_token(Parser *p);
