@@ -3,7 +3,9 @@ A library of useful helper classes to the SAX classes, for the
 convenience of application and driver writers.
 """
 
-import os, urllib.parse, urllib.request
+import os
+lazy import urllib.parse
+lazy import urllib.request
 import io
 import codecs
 from . import handler
