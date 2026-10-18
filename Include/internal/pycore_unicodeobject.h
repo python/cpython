@@ -9,7 +9,40 @@ extern "C" {
 #endif
 
 #include "pycore_fileutils.h"     // _Py_error_handler
+#include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_LOAD_SSIZE_RELAXED
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
+
+
+// Maximum code point of Unicode 6.0: 0x10ffff (1,114,111).
+// The value must be the same in fileutils.c.
+#define _Py_MAX_UNICODE 0x10ffff
+
+
+static inline Py_hash_t PyUnicode_HASH(PyObject *op)
+{
+    assert(PyUnicode_Check(op));
+    return FT_ATOMIC_LOAD_SSIZE_RELAXED(_PyASCIIObject_CAST(op)->hash);
+}
+
+
+#ifndef NDEBUG
+static inline int
+_PyUnicodeWriter_CanWrite(_PyUnicodeWriter *writer)
+{
+    // Code adapted from unicode_modifiable()
+    assert(!writer->readonly);
+    PyObject *buffer = writer->buffer;
+    assert(buffer != NULL);
+    // Do not use _PyObject_IsUniquelyReferenced(): the caller can have its own
+    // lock to prevent a writer being used by two theads at the same time.
+    assert(Py_REFCNT(buffer) == 1);
+    assert(PyUnicode_HASH(buffer) == -1);
+    assert(!PyUnicode_CHECK_INTERNED(buffer));
+    assert(!_Py_IsImmortal(buffer));
+    return 1;
+}
+#endif
+
 
 /* --- Characters Type APIs ----------------------------------------------- */
 

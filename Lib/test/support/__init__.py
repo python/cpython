@@ -72,7 +72,7 @@ __all__ = [
     "in_systemd_nspawn_sync_suppressed",
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
     "reset_code", "on_github_actions",
-    "requires_root_user", "requires_non_root_user",
+    "requires_root_user", "requires_non_root_user", "built_with_c_assertions",
     ]
 
 
@@ -1217,21 +1217,16 @@ def bigmemtest(size, memuse, dry_run=True):
         return wrapper
     return decorator
 
-def nomemtest(f):
+def nomemtest(test):
     """Check that we can use this test with `_testcapi.set_nomemory`."""
     from .import_helper import import_module
 
-    @functools.wraps(f)
+    @functools.wraps(test)
     def internal(*args, **kwargs):
         import_module('_testcapi')
-        return f(*args, **kwargs)
+        return test(*args, **kwargs)
 
-    return unittest.skipIf(
-        # Python built with Py_TRACE_REFS fail with a fatal error in
-        # _PyRefchain_Trace() on memory allocation error.
-        Py_TRACE_REFS,
-        'cannot test Py_TRACE_REFS build',
-    )(cpython_only(internal))
+    return cpython_only(internal)
 
 def bigaddrspacetest(f):
     """Decorator for tests that fill the address space."""
@@ -1458,10 +1453,10 @@ def set_environment_altered(reason):
 
 
 def reap_children():
-    """Use this function at the end of test_main() whenever sub-processes
-    are started.  This will help ensure that no extra children (zombies)
-    stick around to hog resources and create problems when looking
-    for refleaks.
+    """Call this from setUp(), tearDown(), or tearDownModule() in tests
+    that start subprocesses.  This will help ensure that no extra children
+    (zombies) stick around to hog resources and create problems when
+    looking for refleaks.
     """
     # Need os.waitpid(-1, os.WNOHANG): Windows is not supported
     if not (hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG')):
@@ -3356,3 +3351,48 @@ def skip_on_low_desktop_heap_memory_subprocess(returncode):
 _ROOT_IN_POSIX = hasattr(os, 'geteuid') and os.geteuid() == 0
 requires_root_user = unittest.skipUnless(_ROOT_IN_POSIX, "test needs root privilege")
 requires_non_root_user = unittest.skipIf(_ROOT_IN_POSIX, "test needs non-root account")
+
+
+def built_with_c_assertions():
+    """Check if Python was built with C assertions (assert())."""
+    try:
+        import _testlimitedcapi
+    except ImportError:
+        return Py_DEBUG
+    else:
+        return bool(_testlimitedcapi._py_getbuiltwithassert())
+
+
+def inject_memory_error(start=0, stop=0):
+    """
+    Memory allocation fails after 'start' allocation requests, and until 'stop'
+    allocation requests except when 'stop' is negative or equal to 0 (default)
+    in which case allocation failures never stop.
+
+    Raise SkipTest if the _testcapi extension module is missing
+    """
+    try:
+        import _testcapi
+    except ImportError:
+        raise unittest.SkipTest("_testcapi required")
+
+    _testcapi.set_nomemory(start, stop)
+
+
+@contextlib.contextmanager
+def inject_memory_error_cm(start=0, stop=0):
+    """
+    Similar to inject_memory_error() but can be used as a context manager.
+
+    Raise SkipTest if the _testcapi extension module is missing
+    """
+    try:
+        import _testcapi
+    except ImportError:
+        raise unittest.SkipTest("_testcapi required")
+
+    try:
+        _testcapi.set_nomemory(start, stop)
+        yield
+    finally:
+        _testcapi.remove_mem_hooks()

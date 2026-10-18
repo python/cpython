@@ -41,7 +41,7 @@ Py_LOCAL_INLINE(Py_ssize_t) _PyBytesWriter_GetSize(_PyBytesWriter *writer,
 
 #define CHARACTERS _Py_SINGLETON(bytes_characters)
 #define CHARACTER(ch) \
-     ((PyBytesObject *)&(CHARACTERS[ch]));
+     ((PyBytesObject *)&(CHARACTERS[ch]))
 #define EMPTY (&_Py_SINGLETON(bytes_empty))
 
 
@@ -576,6 +576,9 @@ format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
         *pbuf = PyBytes_AS_STRING(result);
         *plen = PyBytes_GET_SIZE(result);
         return result;
+    }
+    else if (PyErr_Occurred()) {
+        return NULL;
     }
     /* does it support buffer protocol? */
     if (PyObject_CheckBuffer(v)) {
@@ -3206,6 +3209,75 @@ PyBytes_ConcatAndDel(PyObject **pv, PyObject *w)
 }
 
 
+#ifndef NDEBUG
+// Make sure that a bytes object can still be mutated.
+//
+// Usage: assert(_PyBytes_IsMutable(obj)).
+int
+_PyBytes_IsMutable(PyObject *self)
+{
+    assert(PyBytes_Check(self));
+    assert(_PyObject_IsUniquelyReferenced(self));
+    assert(!_Py_IsImmortal(self));
+
+    // Check that the object is not a singleton
+    Py_ssize_t size = PyBytes_GET_SIZE(self);
+    if (size == 0) {
+        assert(self != bytes_get_empty());
+    }
+    else if (size == 1) {
+        unsigned char ch = PyBytes_AS_STRING(self)[0];
+        assert(self != (PyObject*)CHARACTER(ch));
+    }
+    return 1;
+}
+#endif
+
+
+static inline int
+bytes_resize_inplace(PyObject **pv, Py_ssize_t newsize)
+{
+    PyObject *v = *pv;
+    assert(_PyObject_IsUniquelyReferenced(v));
+    assert(PyBytes_GET_SIZE(v) >= 1);
+    assert(newsize >= 1);
+
+    // Only mutable bytes can be resized in-place
+    assert(_PyBytes_IsMutable(v));
+
+    if ((size_t)newsize > (size_t)PY_SSIZE_T_MAX - PyBytesObject_SIZE) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "byte string is too large");
+        return -1;
+    }
+
+#ifdef Py_TRACE_REFS
+    _Py_ForgetReference(v);
+#endif
+    _PyReftracerTrack(v, PyRefTracer_DESTROY);
+
+    PyObject *result = PyObject_Realloc(v, PyBytesObject_SIZE + newsize);
+    if (result == NULL) {
+#ifdef Py_TRACE_REFS
+        _Py_AddToAllObjects(v);
+#endif
+        _PyReftracerTrack(v, PyRefTracer_CREATE);
+
+        PyErr_NoMemory();
+        return -1;
+    }
+
+    *pv = result;
+    v = result;
+    _Py_NewReferenceNoTotal(v);
+    PyBytesObject *sv = (PyBytesObject *)v;
+    Py_SET_SIZE(sv, newsize);
+    sv->ob_sval[newsize] = '\0';
+    assert(_PyBytes_IsMutable(*pv));
+    return 0;
+}
+
+
 /* The following function breaks the notion that bytes are immutable:
    it changes the size of a bytes object.  You can think of it
    as creating a new bytes object and destroying the old one, only
@@ -3218,65 +3290,76 @@ PyBytes_ConcatAndDel(PyObject **pv, PyObject *w)
    does *not* include that), and a trailing \0 byte is stored.
 */
 
+// Similar to _PyBytes_Resize(), but leaves the object unchanged on error.
 int
-_PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
+_PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize)
 {
-    PyObject *v;
-    PyBytesObject *sv;
-    v = *pv;
+    PyObject *v = *pv;
+    PyObject *result;
+
     if (!PyBytes_Check(v) || newsize < 0) {
-        *pv = 0;
-        Py_DECREF(v);
         PyErr_BadInternalCall();
         return -1;
     }
+
     Py_ssize_t oldsize = PyBytes_GET_SIZE(v);
     if (oldsize == newsize) {
-        /* return early if newsize equals to v->ob_size */
+        // Leave the object unchanged if the new size is the same as the old
+        // size, even if the object is not uniquely referenced or if the hash
+        // value was already computed.
         return 0;
-    }
-    if (oldsize == 0) {
-        *pv = _PyBytes_FromSize(newsize, 0);
-        Py_DECREF(v);
-        return (*pv == NULL) ? -1 : 0;
-    }
-    if (newsize == 0) {
-        *pv = bytes_get_empty();
-        Py_DECREF(v);
-        return 0;
-    }
-    if (!_PyObject_IsUniquelyReferenced(v)) {
-        // Allocate and then copy so we don't get a shared immortal
-        // one-character singleton!
-        *pv = _PyBytes_FromSize(newsize, 0);
-        if (*pv) {
-            memcpy(PyBytes_AS_STRING(*pv), PyBytes_AS_STRING(v),
-                   Py_MIN(oldsize, newsize));
-        }
-        Py_DECREF(v);
-        return (*pv == NULL) ? -1 : 0;
     }
 
-#ifdef Py_TRACE_REFS
-    _Py_ForgetReference(v);
-#endif
-    _PyReftracerTrack(v, PyRefTracer_DESTROY);
-    *pv = (PyObject *)
-        PyObject_Realloc(v, PyBytesObject_SIZE + newsize);
-    if (*pv == NULL) {
-#ifdef Py_REF_DEBUG
-        _Py_DecRefTotal(_PyThreadState_GET());
-#endif
-        PyObject_Free(v);
-        PyErr_NoMemory();
-        return -1;
+    if (oldsize == 0) {
+        result = _PyBytes_FromSize(newsize, 0);
+        if (result == NULL) {
+            return -1;
+        }
+        *pv = result;
+        Py_DECREF(v);
+        assert(_PyBytes_IsMutable(*pv));
+        return 0;
     }
-    _Py_NewReferenceNoTotal(*pv);
-    sv = (PyBytesObject *) *pv;
-    Py_SET_SIZE(sv, newsize);
-    sv->ob_sval[newsize] = '\0';
-    set_ob_shash(sv, -1);          /* invalidate cached hash value */
-    return 0;
+
+    if (newsize == 0) {
+        *pv = bytes_get_empty();  // cannot fail
+        Py_DECREF(v);
+        return 0;
+    }
+
+    if (!_PyObject_IsUniquelyReferenced(v)
+        // Return a copy if the hash value was already computed
+        || get_ob_shash((PyBytesObject *)v) != -1)
+    {
+        // Allocate and then copy so we don't get a shared immortal
+        // one-character singleton!
+        result = _PyBytes_FromSize(newsize, 0);
+        if (!result) {
+            return -1;
+        }
+
+        memcpy(PyBytes_AS_STRING(result), PyBytes_AS_STRING(v),
+               Py_MIN(oldsize, newsize));
+        *pv = result;
+        Py_DECREF(v);
+        assert(_PyBytes_IsMutable(*pv));
+        return 0;
+    }
+
+    return bytes_resize_inplace(pv, newsize);
+}
+
+
+int
+_PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
+{
+    int res = _PyBytes_ResizeKeepOnError(pv, newsize);
+    if (res < 0) {
+        PyObject *v = *pv;
+        *pv = NULL;
+        Py_DECREF(v);
+    }
+    return res;
 }
 
 
