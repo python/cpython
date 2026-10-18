@@ -190,7 +190,7 @@ class NoSectionError(Error):
     """Raised when no section matches a requested option."""
 
     def __init__(self, section):
-        Error.__init__(self, 'No section: %r' % (section,))
+        Error.__init__(self, f'No section: {section!r}')
         self.section = section
         self.args = (section, )
 
@@ -208,7 +208,7 @@ class DuplicateSectionError(Error):
         if source is not None:
             message = ["While reading from ", repr(source)]
             if lineno is not None:
-                message.append(" [line {0:2d}]".format(lineno))
+                message.append(f" [line {lineno:2d}]")
             message.append(": section ")
             message.extend(msg)
             msg = message
@@ -234,7 +234,7 @@ class DuplicateOptionError(Error):
         if source is not None:
             message = ["While reading from ", repr(source)]
             if lineno is not None:
-                message.append(" [line {0:2d}]".format(lineno))
+                message.append(f" [line {lineno:2d}]")
             message.append(": option ")
             message.extend(msg)
             msg = message
@@ -252,8 +252,7 @@ class NoOptionError(Error):
     """A requested option was not found."""
 
     def __init__(self, option, section):
-        Error.__init__(self, "No option %r in section: %r" %
-                       (option, section))
+        Error.__init__(self, f"No option {option!r} in section: {section!r}")
         self.option = option
         self.section = section
         self.args = (option, section)
@@ -273,9 +272,9 @@ class InterpolationMissingOptionError(InterpolationError):
     """A string substitution required a setting which was not available."""
 
     def __init__(self, option, section, rawval, reference):
-        msg = ("Bad value substitution: option {!r} in section {!r} contains "
-               "an interpolation key {!r} which is not a valid option name. "
-               "Raw value: {!r}".format(option, section, reference, rawval))
+        msg = (f"Bad value substitution: option {option!r} in section "
+               f"{section!r} contains an interpolation key {reference!r} "
+               f"which is not a valid option name. Raw value: {rawval!r}")
         InterpolationError.__init__(self, option, section, msg)
         self.reference = reference
         self.args = (option, section, rawval, reference)
@@ -293,11 +292,10 @@ class InterpolationDepthError(InterpolationError):
     """Raised when substitutions are nested too deeply."""
 
     def __init__(self, option, section, rawval):
-        msg = ("Recursion limit exceeded in value substitution: option {!r} "
-               "in section {!r} contains an interpolation key which "
-               "cannot be substituted in {} steps. Raw value: {!r}"
-               "".format(option, section, MAX_INTERPOLATION_DEPTH,
-                         rawval))
+        msg = (f"Recursion limit exceeded in value substitution: option "
+               f"{option!r} in section {section!r} contains an interpolation "
+               f"key which cannot be substituted in "
+               f"{MAX_INTERPOLATION_DEPTH} steps. Raw value: {rawval!r}")
         InterpolationError.__init__(self, option, section, msg)
         self.args = (option, section, rawval)
 
@@ -463,7 +461,7 @@ class BasicInterpolation(Interpolation):
                 m = self._KEYCRE.match(rest)
                 if m is None:
                     raise InterpolationSyntaxError(option, section,
-                        "bad interpolation variable reference %r" % rest)
+                        f"bad interpolation variable reference {rest!r}")
                 var = parser.optionxform(m.group(1))
                 rest = rest[m.end():]
                 try:
@@ -479,8 +477,8 @@ class BasicInterpolation(Interpolation):
             else:
                 raise InterpolationSyntaxError(
                     option, section,
-                    "'%%' must be followed by '%%' or '(', "
-                    "found: %r" % (rest,))
+                    "'%' must be followed by '%' or '(', "
+                    f"found: {rest!r}")
 
 
 class ExtendedInterpolation(Interpolation):
@@ -524,7 +522,7 @@ class ExtendedInterpolation(Interpolation):
                 m = self._KEYCRE.match(rest)
                 if m is None:
                     raise InterpolationSyntaxError(option, section,
-                        "bad interpolation variable reference %r" % rest)
+                        f"bad interpolation variable reference {rest!r}")
                 path = m.group(1).split(':')
                 rest = rest[m.end():]
                 sect = section
@@ -540,7 +538,7 @@ class ExtendedInterpolation(Interpolation):
                     else:
                         raise InterpolationSyntaxError(
                             option, section,
-                            "More than one ':' found: %r" % (rest,))
+                            f"More than one ':' found: {rest!r}")
                 except (KeyError, NoSectionError, NoOptionError):
                     raise InterpolationMissingOptionError(
                         option, section, rawval, ":".join(path)) from None
@@ -556,7 +554,7 @@ class ExtendedInterpolation(Interpolation):
                 raise InterpolationSyntaxError(
                     option, section,
                     "'$' must be followed by '$' or '{', "
-                    "found: %r" % (rest,))
+                    f"found: {rest!r}")
 
 
 class _ReadState:
@@ -714,7 +712,7 @@ class RawConfigParser(MutableMapping):
         already exists. Raise ValueError if name is DEFAULT.
         """
         if section == self.default_section:
-            raise ValueError('Invalid section name: %r' % section)
+            raise ValueError(f'Invalid section name: {section!r}')
 
         if section is UNNAMED_SECTION:
             if not self._allow_unnamed_section:
@@ -970,7 +968,7 @@ class RawConfigParser(MutableMapping):
         preserved when writing the configuration back.
         """
         if space_around_delimiters:
-            d = " {} ".format(self._delimiters[0])
+            d = f" {self._delimiters[0]} "
         else:
             d = self._delimiters[0]
         if self._defaults:
@@ -988,7 +986,7 @@ class RawConfigParser(MutableMapping):
     def _write_section(self, fp, section_name, section_items, delimiter, unnamed=False):
         """Write a single section to the specified 'fp'."""
         if not unnamed:
-            fp.write("[{}]\n".format(section_name))
+            fp.write(f"[{section_name}]\n")
         for key, value in section_items:
             self._validate_key_contents(key)
             value = self._interpolation.before_write(self, section_name, key,
@@ -999,7 +997,7 @@ class RawConfigParser(MutableMapping):
                          .replace('\r', '\n').replace('\n', '\n\t'))
             else:
                 value = ""
-            fp.write("{}{}\n".format(key, value))
+            fp.write(f"{key}{value}\n")
         fp.write("\n")
 
     def remove_option(self, section, option):
@@ -1225,7 +1223,7 @@ class RawConfigParser(MutableMapping):
         """Return a boolean value translating from other types if necessary.
         """
         if value.lower() not in self.BOOLEAN_STATES:
-            raise ValueError('Not a boolean: %s' % value)
+            raise ValueError(f'Not a boolean: {value}')
         return self.BOOLEAN_STATES[value.lower()]
 
     def _validate_key_contents(self, key):
@@ -1310,7 +1308,7 @@ class SectionProxy(MutableMapping):
             setattr(self, key, getter)
 
     def __repr__(self):
-        return '<Section: {}>'.format(self._name)
+        return f'<Section: {self._name}>'
 
     def __getitem__(self, key):
         if not self._parser.has_option(self._name, key):
@@ -1393,8 +1391,7 @@ class ConverterMapping(MutableMapping):
         try:
             k = 'get' + key
         except TypeError:
-            raise ValueError('Incompatible key: {} (type: {})'
-                             ''.format(key, type(key)))
+            raise ValueError(f'Incompatible key: {key} (type: {type(key)})')
         if k == 'get':
             raise ValueError('Incompatible key: cannot use "" as a name')
         self._data[key] = value
