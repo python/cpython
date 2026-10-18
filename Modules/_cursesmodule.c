@@ -209,6 +209,8 @@ static int curses_initscr_called = FALSE;
 /* Tells whether start_color() has been called to initialise color usage. */
 static int curses_start_color_called = FALSE;
 
+static int update_lines_cols(PyObject *private_module);
+
 /* Encoding of the initial screen, used by module-level functions that have
    no window object to take it from (e.g. unctrl(), ungetch()).  This is a
    private copy: the window object that initscr() returns may be deallocated
@@ -5480,7 +5482,13 @@ static PyGetSetDef PyCursesScreen_getsets[] = {
 static int
 curses_use_screen_cb(SCREEN *Py_UNUSED(sp), void *data)
 {
-    curses_use_call((curses_use_data *)data);
+    curses_use_data *u = (curses_use_data *)data;
+    PyObject *module = PyType_GetModule(Py_TYPE(u->obj));
+    if (module == NULL || !update_lines_cols(module)) {
+        u->result = NULL;
+        return 0;
+    }
+    curses_use_call(u);
     return 0;
 }
 
@@ -5502,12 +5510,27 @@ PyCursesScreen_use(PyObject *self, PyObject *args, PyObject *kwargs)
     if (curses_use_parse(args, &func, &extra) < 0) {
         return NULL;
     }
+    PyObject *module = PyType_GetModule(Py_TYPE(self));
+    if (module == NULL) {
+        Py_DECREF(extra);
+        return NULL;
+    }
     curses_use_data data = {self, func, extra, kwargs, NULL};
     PyObject *prev = state->topscreen;
     state->topscreen = Py_NewRef(self);
     use_screen(so->screen, curses_use_screen_cb, &data);
     Py_SETREF(state->topscreen, prev);
     Py_DECREF(extra);
+    if (data.result == NULL) {
+        PyObject *exc = PyErr_GetRaisedException();
+        (void)update_lines_cols(module);
+        _PyErr_ChainExceptions1(exc);
+    }
+    else {
+        if (!update_lines_cols(module)) {
+            Py_CLEAR(data.result);
+        }
+    }
     return data.result;
 }
 #endif /* HAVE_CURSES_USE_SCREEN */
@@ -7073,8 +7096,6 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
     Py_RETURN_NONE;
 }
 
-static int update_lines_cols(PyObject *private_module);  /* defined below */
-
 /* Return a file descriptor for obj, or, if obj is NULL or None, for the
    sys.<stdname> stream.  Returns -1 with an exception set on error. */
 static int
@@ -7930,7 +7951,11 @@ update_lines_cols(PyObject *private_module)
         goto error;
     }
 
-    o = PyLong_FromLong(LINES);
+    int lines = LINES;
+    if (stdscr != NULL) {
+        lines = getmaxy(stdscr);
+    }
+    o = PyLong_FromLong(lines);
     if (o == NULL) {
         goto error;
     }
@@ -7942,7 +7967,11 @@ update_lines_cols(PyObject *private_module)
     }
     Py_DECREF(o);
 
-    o = PyLong_FromLong(COLS);
+    int cols = COLS;
+    if (stdscr != NULL) {
+        cols = getmaxx(stdscr);
+    }
+    o = PyLong_FromLong(cols);
     if (o == NULL) {
         goto error;
     }
@@ -7953,6 +7982,32 @@ update_lines_cols(PyObject *private_module)
         goto error;
     }
     Py_DECREF(o);
+
+    if (curses_start_color_called) {
+        o = PyLong_FromUnsignedLongLong((unsigned long long)COLORS);
+        if (o == NULL) {
+            goto error;
+        }
+        if (PyDict_SetItemString(exposed_module_dict, "COLORS", o) < 0) {
+            goto error;
+        }
+        if (PyDict_SetItemString(private_module_dict, "COLORS", o) < 0) {
+            goto error;
+        }
+        Py_DECREF(o);
+
+        o = PyLong_FromUnsignedLongLong((unsigned long long)COLOR_PAIRS);
+        if (o == NULL) {
+            goto error;
+        }
+        if (PyDict_SetItemString(exposed_module_dict, "COLOR_PAIRS", o) < 0) {
+            goto error;
+        }
+        if (PyDict_SetItemString(private_module_dict, "COLOR_PAIRS", o) < 0) {
+            goto error;
+        }
+        Py_DECREF(o);
+    }
     Py_DECREF(exposed_module);
     return 1;
 
