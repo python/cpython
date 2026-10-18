@@ -1959,6 +1959,30 @@ print(
         self.assertIsNone(caught.exception._metadata)
 
     @cpython_only
+    @requires_subprocess()
+    def test_keyword_trials_do_not_intern_names(self):
+        assert_python_ok('-c', textwrap.dedent('''
+            import sys
+
+            def check(index, suffix):
+                source = (f"impor math\\nidentifier_after_typo_{index} = 1\\n"
+                          f"import module_after_typo_{index}.child" + suffix)
+                try:
+                    compile(source, "<test>", "exec")
+                except SyntaxError as error:
+                    assert (error._metadata is not None) == (not suffix)
+                else:
+                    raise AssertionError("expected SyntaxError")
+
+            for suffix in ("", "\\nother ="):
+                check(0, suffix)
+                before = sys.getunicodeinternedsize(_only_immortal=True)
+                for index in range(1, 20):
+                    check(index, suffix)
+                assert sys.getunicodeinternedsize(_only_immortal=True) == before
+        '''))
+
+    @cpython_only
     def test_keyword_replay_source_limit(self):
         with tempfile.TemporaryDirectory() as script_dir:
             for size in (256 * 1024 - 512, 256 * 1024 + 512):

@@ -662,8 +662,11 @@ _PyPegen_new_identifier(Parser *p, const char *n)
             goto error;
         }
     }
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyUnicode_InternImmortal(interp, &id);
+    // Trial-only identifiers must die with the trial arena.
+    if (p->keyword_trial == NULL) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        _PyUnicode_InternImmortal(interp, &id);
+    }
     if (_PyArena_AddPyObject(p->arena, id) < 0)
     {
         Py_DECREF(id);
@@ -687,7 +690,7 @@ get_cached_identifier(Parser *p, PyObject *bytes)
     }
     // Identifiers repeat constantly; a small span-keyed cache skips the
     // UTF-8 decode + intern for repeated occurrences. Keys point into
-    // arena-owned token bytes and values are arena-owned interned strings,
+    // arena-owned token bytes and values are arena-owned strings,
     // so borrowed references are valid for the lifetime of the parse
     // (including the second error pass, which reuses parser and arena).
     Py_ssize_t len = PyBytes_GET_SIZE(bytes);
