@@ -118,6 +118,22 @@ class CProfileTest(ProfileTest):
         prof.disable()
         self.assertIs(sys.monitoring.get_tool(sys.monitoring.PROFILER_ID), None)
 
+    def test_dealloc_does_not_disable_sys_profile(self):
+        self.addCleanup(sys.setprofile, sys.getprofile())
+        self.addCleanup(sys.monitoring.free_tool_id, sys.monitoring.PROFILER_ID)
+
+        def callback(frame, event, arg):
+            pass
+
+        prof = self.profilerclass()
+        prof.enable()
+        sys.setprofile(callback)
+        # Release the monitoring callbacks so the enabled profiler can be
+        # destroyed without an explicit disable().
+        sys.monitoring.free_tool_id(sys.monitoring.PROFILER_ID)
+        del prof
+        self.assertIs(sys.getprofile(), callback)
+
     def test_profile_as_context_manager(self):
         prof = self.profilerclass()
         # Make sure we clean ourselves up if the test fails for some reason.
