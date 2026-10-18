@@ -341,8 +341,8 @@ class MissingSectionHeaderError(ParsingError):
     def __init__(self, filename, lineno, line):
         Error.__init__(
             self,
-            'File contains no section headers.\nfile: %r, line: %d\n%r' %
-            (filename, lineno, line))
+            'File contains no section headers.\n'
+            f'file: {filename!r}, line: {lineno:d}\n{line!r}')
         self.source = filename
         self.lineno = lineno
         self.line = line
@@ -355,8 +355,7 @@ class MultilineContinuationError(ParsingError):
         Error.__init__(
             self,
             "Key without value continued with an indented line.\n"
-            "file: %r, line: %d\n%r"
-            %(filename, lineno, line))
+            f"file: {filename!r}, line: {lineno:d}\n{line!r}")
         self.source = filename
         self.lineno = lineno
         self.line = line
@@ -435,8 +434,8 @@ class BasicInterpolation(Interpolation):
         tmp_value = value.replace('%%', '') # escaped percent signs
         tmp_value = self._KEYCRE.sub('', tmp_value) # valid syntax
         if '%' in tmp_value:
-            raise ValueError("invalid interpolation syntax in %r at "
-                             "position %d" % (value, tmp_value.find('%')))
+            raise ValueError(f"invalid interpolation syntax in {value!r} "
+                             f"at position {tmp_value.find('%'):d}")
         return value
 
     def _interpolate_some(self, parser, option, accum, rest, section, map,
@@ -496,8 +495,8 @@ class ExtendedInterpolation(Interpolation):
         tmp_value = value.replace('$$', '') # escaped dollar signs
         tmp_value = self._KEYCRE.sub('', tmp_value) # valid syntax
         if '$' in tmp_value:
-            raise ValueError("invalid interpolation syntax in %r at "
-                             "position %d" % (value, tmp_value.find('$')))
+            raise ValueError(f"invalid interpolation syntax in {value!r} "
+                             f"at position {tmp_value.find('$'):d}")
         return value
 
     def _interpolate_some(self, parser, option, accum, rest, section, map,

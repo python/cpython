@@ -647,10 +647,10 @@ boolean {self.delimiters[0]} NO
             f"E5{self.delimiters[0]}FALSE AND MORE"
             )
         for x in range(1, 5):
-            self.assertTrue(cf.getboolean('BOOLTEST', 't%d' % x))
-            self.assertFalse(cf.getboolean('BOOLTEST', 'f%d' % x))
+            self.assertTrue(cf.getboolean('BOOLTEST', f't{x}'))
+            self.assertFalse(cf.getboolean('BOOLTEST', f'f{x}'))
             self.assertRaises(ValueError,
-                              cf.getboolean, 'BOOLTEST', 'e%d' % x)
+                              cf.getboolean, 'BOOLTEST', f'e{x}')
 
     def test_weird_errors(self):
         cf = self.newconfig()
