@@ -1,0 +1,1 @@
+Added new unit tests to improve test coverage for the filecmp module.
