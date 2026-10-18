@@ -976,7 +976,7 @@ A ``TarInfo`` object has the following public data attributes:
 
    This method is also used by :func:`copy.replace`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added support for :func:`copy.replace`.
 
 A :class:`TarInfo` object also provides some convenient query methods:
@@ -1137,15 +1137,11 @@ reused in custom filters:
   Return the modified ``TarInfo`` member.
 
   .. warning::
-     This filter does not check :attr:`TarInfo.linkname`. This means it does
-     not limit where a symbolic link member points. An absolute symbolic-link
-     target will remain absolute, and a relative target may resolve outside the
-     extraction destination. The destination path protection described above
-     concerns only where the archive member itself is written, not where a
-     symbolic link resolves. The stricter :func:`data_filter` rejects these
-     unsafe link targets, raising :class:`~tarfile.AbsoluteLinkError` for
-     absolute link targets or :class:`~tarfile.LinkOutsideDestinationError`
-     for link targets outside the destination.
+
+     This filter does not check link targets (:attr:`TarInfo.linkname`).
+     It allows benign cases (like links to ``/dev/null``), but it also allows
+     links (symbolic and hard) to arbitrary files on the filesystem,
+     potentially granting unintended access to these files.
 
   .. versionchanged:: next
 

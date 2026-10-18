@@ -1497,11 +1497,11 @@ _PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* raw_expressions, Token*b
 }
 
 expr_ty _PyPegen_decoded_constant_from_token(Parser* p, Token* tok) {
-    Py_ssize_t bsize;
-    char* bstr;
-    if (PyBytes_AsStringAndSize(tok->bytes, &bstr, &bsize) == -1) {
-        return NULL;
+    if (tok->bytes == NULL) {
+        return _PyPegen_raise_incomplete_input(p);
     }
+    Py_ssize_t bsize = PyBytes_GET_SIZE(tok->bytes);
+    const char *bstr = PyBytes_AS_STRING(tok->bytes);
 
     int is_raw = tok->is_raw;
 
@@ -1519,10 +1519,10 @@ expr_ty _PyPegen_decoded_constant_from_token(Parser* p, Token* tok) {
 }
 
 expr_ty _PyPegen_constant_from_token(Parser* p, Token* tok) {
-    const char* bstr = PyBytes_AsString(tok->bytes);
-    if (bstr == NULL) {
-        return NULL;
+    if (tok->bytes == NULL) {
+        return _PyPegen_raise_incomplete_input(p);
     }
+    const char *bstr = PyBytes_AS_STRING(tok->bytes);
     PyObject* str = PyUnicode_FromString(bstr);
     if (str == NULL) {
         return NULL;
@@ -1537,10 +1537,10 @@ expr_ty _PyPegen_constant_from_token(Parser* p, Token* tok) {
 }
 
 expr_ty _PyPegen_constant_from_string(Parser* p, Token* tok) {
-    const char* the_str = PyBytes_AsString(tok->bytes);
-    if (the_str == NULL) {
-        return NULL;
+    if (tok->bytes == NULL) {
+        return _PyPegen_raise_incomplete_input(p);
     }
+    const char *the_str = PyBytes_AS_STRING(tok->bytes);
     PyObject *s = _PyPegen_parse_string(p, tok);
     if (s == NULL) {
         _Pypegen_raise_decode_error(p);
