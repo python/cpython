@@ -986,6 +986,7 @@ _PyPegen_raise_error_for_missing_comma(Parser *p, expr_ty a, expr_ty b)
     if (p->tokens[p->mark - 1]->level == 0) {
         return NULL;
     }
+    p->missing_comma = 1;
     // For multi-line expressions (like string concatenations), point to the
     // last line instead of the first for a more helpful error message.
     // Use a->col_offset as the starting column since all strings in the

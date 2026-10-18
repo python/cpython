@@ -287,11 +287,11 @@ Comprehensions without 'in' keyword:
 
 >>> [x for x if range(1)]
 Traceback (most recent call last):
-SyntaxError: 'in' expected after for-loop variables
+SyntaxError: invalid syntax. Did you mean 'in'?
 
 >>> tuple(x for x if range(1))
 Traceback (most recent call last):
-SyntaxError: 'in' expected after for-loop variables
+SyntaxError: invalid syntax. Did you mean 'in'?
 
 >>> [x for x() in a]
 Traceback (most recent call last):

@@ -1022,6 +1022,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
 #endif
     p->level = 0;
     p->call_invalid_rules = 0;
+    p->missing_comma = 0;
     p->input_exhausted = 0;
     p->keyword_trial = NULL;
 #ifdef Py_DEBUG
@@ -1107,6 +1108,22 @@ add_keyword_typo(KeywordTypo *candidates, int *count, int mark,
         max_cost = Py_MIN(max_cost, 2);
     }
     Py_ssize_t cost = _Py_UTF8_Edit_Cost(name, word, max_cost);
+    // Adjacent transpositions are one spelling error. The shared Levenshtein
+    // distance counts them as two substitutions.
+    if (cost > 2 && PyUnicode_IS_ASCII(name) &&
+        PyUnicode_GET_LENGTH(name) == PyUnicode_GET_LENGTH(word))
+    {
+        const char *text = (const char *)PyUnicode_1BYTE_DATA(name);
+        Py_ssize_t i = 0;
+        while (text[i] && text[i] == keyword[i]) {
+            i++;
+        }
+        if (text[i] && text[i + 1] && text[i] == keyword[i + 1] &&
+            text[i + 1] == keyword[i] && strcmp(text + i + 2, keyword + i + 2) == 0)
+        {
+            cost = 2;
+        }
+    }
     Py_DECREF(word);
     if (cost < 0) {
         return -1;
@@ -1227,22 +1244,27 @@ keyword_typo_metadata(Parser *p, PySyntaxErrorObject *error)
         p->fill == 0 || p->fill > MAX_KEYWORD_TYPO_TOKENS ||
         _PyTokenizer_GetInfo(p->tok).input_span.end > MAX_KEYWORD_TYPO_BYTES ||
         p->tokens[p->fill - 1]->type != ENDMARKER ||
-        _PyTokenizer_IsInteractive(p->tok) || !PyUnicode_Check(error->msg))
+        _PyTokenizer_IsInteractive(p->tok) ||
+        !Py_IS_TYPE(error, (PyTypeObject *)PyExc_SyntaxError))
     {
         return NULL;
     }
-    const char *message = PyUnicode_AsUTF8(error->msg);
-    if (message == NULL || (strcmp(message, "invalid syntax") != 0 &&
-                           strstr(message, "Perhaps you forgot a comma") == NULL))
-    {
-        return NULL;
-    }
-    // Prefer an existing missing-comma diagnostic unless the spelling differs
-    // by only one edit (the shared edit-cost function charges two per edit).
-    Py_ssize_t max_cost = strcmp(message, "invalid syntax") == 0 ? 4 : 2;
     long error_line = PyLong_AsLong(error->lineno);
-    if (error_line < 0) {
+    long error_offset = PyLong_AsLong(error->offset);
+    if (error_line < 0 || error_offset < 0) {
         return NULL;
+    }
+    Py_ssize_t error_col = -1;
+    if (error_offset > 0 && error->text != NULL && PyUnicode_Check(error->text)) {
+        PyObject *prefix = PyUnicode_Substring(error->text, 0, error_offset - 1);
+        if (prefix == NULL) {
+            return NULL;
+        }
+        const char *text = PyUnicode_AsUTF8AndSize(prefix, &error_col);
+        Py_DECREF(prefix);
+        if (text == NULL) {
+            return NULL;
+        }
     }
     KeywordTypo candidates[MAX_KEYWORD_TYPO_CANDIDATES];
     int count = 0;
@@ -1261,15 +1283,44 @@ keyword_typo_metadata(Parser *p, PySyntaxErrorObject *error)
     };
     for (int i = start; i < p->fill; i++) {
         Token *token = p->tokens[i];
-        if (token->type != NAME || token->lineno > error_line ||
-            PyBytes_GET_SIZE(token->bytes) < 2 ||
-            PyBytes_GET_SIZE(token->bytes) > 10)
-        {
+        // Error spans can start before the typo in a multiline expression.
+        // Keep the complete logical statement as the candidate range.
+        if (token->type == NEWLINE) {
+            break;
+        }
+        const char *text = token->type == NAME ? PyBytes_AS_STRING(token->bytes) : NULL;
+        Py_ssize_t text_length = text == NULL ? 0 : PyBytes_GET_SIZE(token->bytes);
+        int is_keyword = token->type != NAME;
+        // A keyword can itself be a typo, as in "for x is y". Consider an
+        // existing keyword only at the reported error, not throughout the line.
+        if (text == NULL && token->lineno == error_line && token->col_offset == error_col) {
+            for (int length = 0; length < p->n_keyword_lists && text == NULL; length++) {
+                for (KeywordToken *k = p->keywords[length];
+                     k != NULL && k->type != -1; k++)
+                {
+                    if (k->type == token->type) {
+                        text = k->str;
+                        text_length = length;
+                        break;
+                    }
+                }
+            }
+        }
+        if (text == NULL || text_length < 2 || text_length > 10) {
+            continue;
+        }
+        for (char **k = p->soft_keywords; k != NULL && *k != NULL; k++) {
+            if (strcmp(text, *k) == 0) {
+                is_keyword = 1;
+                break;
+            }
+        }
+        if (is_keyword && (token->lineno != error_line || token->col_offset != error_col)) {
             continue;
         }
         const char *alias = NULL;
         for (size_t j = 0; j < Py_ARRAY_LENGTH(aliases); j++) {
-            if (strcmp(PyBytes_AS_STRING(token->bytes), aliases[j].name) == 0) {
+            if (strcmp(text, aliases[j].name) == 0) {
                 alias = aliases[j].keyword;
                 break;
             }
@@ -1281,13 +1332,19 @@ keyword_typo_metadata(Parser *p, PySyntaxErrorObject *error)
             candidates[count++] = (KeywordTypo){i, alias, 0, 1};
             continue;
         }
-        PyObject *name = PyUnicode_DecodeUTF8(
-            PyBytes_AS_STRING(token->bytes), PyBytes_GET_SIZE(token->bytes), NULL);
+        PyObject *name = PyUnicode_DecodeUTF8(text, text_length, NULL);
         if (name == NULL) {
             return NULL;
         }
+        // Preserve missing-comma diagnostics and correctly spelled keywords
+        // unless one edit repairs the input. For keywords, only substitute a
+        // character: deleting one from "for" must not suggest "or".
+        Py_ssize_t max_cost = p->missing_comma || is_keyword ? 2 : 4;
         int result = 0;
         for (int length = 0; length < p->n_keyword_lists && result == 0; length++) {
+            if (is_keyword && length != text_length) {
+                continue;
+            }
             for (KeywordToken *k = p->keywords[length];
                  k != NULL && k->type != -1 && result == 0; k++)
             {
@@ -1295,6 +1352,9 @@ keyword_typo_metadata(Parser *p, PySyntaxErrorObject *error)
             }
         }
         for (char **k = p->soft_keywords; k != NULL && *k != NULL && result == 0; k++) {
+            if (is_keyword && (Py_ssize_t)strlen(*k) != text_length) {
+                continue;
+            }
             result = add_keyword_typo(candidates, &count, i, name, *k, max_cost);
         }
         Py_DECREF(name);

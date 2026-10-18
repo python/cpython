@@ -1822,6 +1822,10 @@ class TestKeywordTypoSuggestions(unittest.TestCase):
         ("[x for x\nin range(3)\nof x]", "if"),
         ("[123 fur x\nin range(3)\nif x]", "for"),
         ("for x im n:\n  pass", "in"),
+        ("for x is n:\n  pass", "in"),
+        ("is x in y:\n  pass", "if"),
+        ("try:\n  pass\nfinaly:\n  pass", "finally"),
+        ("result = (one\n          adn two)", "and"),
         ("mach x:", "match"),
         ("math x:", "match"),
         ("match 1:\n  cse 1:", "case"),
@@ -1880,17 +1884,22 @@ print(
     file=sys.stderr
 )
 '''
-        source = textwrap.dedent(code).strip()
-        rc, stdout, stderr = assert_python_failure('-c', source)
-        stderr_text = stderr.decode('utf-8')
-        self.assertIn("Perhaps you forgot a comma", stderr_text)
-        self.assertNotIn("Did you mean", stderr_text)
+        for source in (textwrap.dedent(code).strip(), "[foo bar]", "f(foo bar)"):
+            with self.subTest(source=source):
+                rc, stdout, stderr = assert_python_failure('-c', source)
+                stderr_text = stderr.decode('utf-8')
+                self.assertIn("Perhaps you forgot a comma", stderr_text)
+                self.assertNotIn("Did you mean", stderr_text)
 
     @cpython_only
     def test_parser_suggestions_need_no_formatting_work(self):
         cases = [
             ("def f():\n    returm value", "return", 2, 5),
+            ("a=b=c=d=e=f=g=h=i=0\ndef fn():\n    retrun True", "return", 3, 5),
+            ("def f(a,b):\n    if b:\n        yield\n    retrun a+b", "return", 4, 5),
+            ("def f():\n    for i in range(10):\n        yield i\n\ndfe x():", "def", 5, 1),
             ("é = 1; impor math", "import", 1, 8),
+            ("for café is items:\n    pass", "in", 1, 10),
             ("a = 1\nif True:\n    pass\nelso:\n    pass", "else", 4, 1),
             ("[123 fur x\nin range(3)\nif x]", "for", 1, 6),
             ("mach x:\n    case 1: pass", "match", 1, 1),

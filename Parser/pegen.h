@@ -103,6 +103,7 @@ typedef struct {
     Token *known_err_token;
     int level;
     int call_invalid_rules;
+    int missing_comma;
     KeywordTrial *keyword_trial;
     int debug;
     IdentifierCacheEntry *identifier_cache;
