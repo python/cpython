@@ -968,7 +968,7 @@ compute_parser_flags(PyCompilerFlags *flags)
 
 Parser *
 _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
-                    int feature_version, int *errcode, const char* source, PyArena *arena)
+                    int feature_version, int *errcode, PyArena *arena)
 {
     Parser *p = PyMem_Malloc(sizeof(Parser));
     if (p == NULL) {
@@ -1023,10 +1023,6 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->level = 0;
     p->call_invalid_rules = 0;
     p->input_exhausted = 0;
-    p->last_stmt_location.lineno = 0;
-    p->last_stmt_location.col_offset = 0;
-    p->last_stmt_location.end_lineno = 0;
-    p->last_stmt_location.end_col_offset = 0;
     p->keyword_trial = NULL;
 #ifdef Py_DEBUG
     p->debug = _Py_GetConfig()->parser_debug;
@@ -1052,10 +1048,6 @@ _PyPegen_Parser_Free(Parser *p)
 static void
 reset_parser_state_for_error_pass(Parser *p)
 {
-    p->last_stmt_location.lineno = 0;
-    p->last_stmt_location.col_offset = 0;
-    p->last_stmt_location.end_lineno = 0;
-    p->last_stmt_location.end_col_offset = 0;
     for (int i = 0; i < p->fill; i++) {
         p->tokens[i]->memo = NULL;
         p->tokens[i]->memo_mask = 0;
@@ -1432,7 +1424,7 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
     Py_DECREF(module);
 
     Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, PY_MINOR_VERSION,
-                                    errcode, NULL, arena);
+                                    errcode, arena);
     if (p == NULL) {
         goto error;
     }
@@ -1493,7 +1485,7 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
     int feature_version = flags && (flags->cf_flags & PyCF_ONLY_AST) ?
         flags->cf_feature_version : PY_MINOR_VERSION;
     Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, feature_version,
-                                    NULL, str, arena);
+                                    NULL, arena);
     if (p == NULL) {
         goto error;
     }

@@ -19,6 +19,19 @@ COMPILERS = WRAPPING_COMPILERS + RAW_COMPILERS
 
 
 class CodeopTests(unittest.TestCase):
+    def test_compile_command_flags(self):
+        import __future__
+
+        source = "x = 1"
+        expected = compile(source, "<input>", "single")
+        self.assertEqual(compile_command(source, "<input>", "single", 0), expected)
+        self.assertEqual(compile_command(source, flags=0), expected)
+
+        flags = __future__.barry_as_FLUFL.compiler_flag
+        source = "if 1 <> 2:\n"
+        self.assertIsNone(compile_command(source, "<input>", "single", flags))
+        self.assertIsNone(compile_command(source, flags=flags))
+
     def assertValid(self, str, symbol='single', *, compiler):
         '''succeed iff str is a valid piece of code'''
         expected = compile(str, "<input>", symbol, PyCF_DONT_IMPLY_DEDENT)

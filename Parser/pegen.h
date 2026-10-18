@@ -72,13 +72,6 @@ typedef struct {
 } growable_comment_array;
 
 typedef struct {
-    int lineno;
-    int col_offset;
-    int end_lineno;
-    int end_col_offset;
-} location;
-
-typedef struct {
     int budget;
     int furthest;
     int incomplete_suite;
@@ -111,7 +104,6 @@ typedef struct {
     int call_invalid_rules;
     KeywordTrial *keyword_trial;
     int debug;
-    location last_stmt_location;
     IdentifierCacheEntry *identifier_cache;
     PyThreadState *tstate;
     // Cached copy of tstate->c_stack_soft_limit offset by one margin toward
@@ -433,12 +425,10 @@ stmt_ty _PyPegen_checked_from_import(Parser *p, asdl_seq *dots, expr_ty module_n
                                      asdl_alias_seq *names, expr_ty lazy_token, int lineno,
                                      int col_offset, int end_lineno, int end_col_offset,
                                      PyArena *arena);
-asdl_stmt_seq* _PyPegen_register_stmts(Parser *p, asdl_stmt_seq* stmts);
-stmt_ty _PyPegen_register_stmt(Parser *p, stmt_ty s);
 
 // Parser API
 
-Parser *_PyPegen_Parser_New(struct tok_state *, int, int, int, int *, const char*, PyArena *);
+Parser *_PyPegen_Parser_New(struct tok_state *, int, int, int, int *, PyArena *);
 void _PyPegen_Parser_Free(Parser *);
 mod_ty _PyPegen_run_parser_from_file_pointer(FILE *, int, PyObject *, const char *,
                                     const char *, const char *, PyCompilerFlags *, int *, PyObject **,
