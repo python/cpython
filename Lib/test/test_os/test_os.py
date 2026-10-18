@@ -233,6 +233,24 @@ class FileTests(unittest.TestCase):
         new = sys.getrefcount(path)
         self.assertEqual(old, new)
 
+    def test_renames(self):
+        old_path = os_helper.TESTFN + "old_dir"
+        old = os.path.join(old_path, "test")
+        os.mkdir(old_path)
+        open(old, "w+b").close()
+        self.addCleanup(os_helper.rmdir, old_path)
+        self.addCleanup(os_helper.unlink, old)
+
+        new_path = os_helper.TESTFN + "new_dir"
+        new = os.path.join(new_path, "test")
+        self.addCleanup(os_helper.rmdir, new_path)
+        self.addCleanup(os_helper.unlink, new)
+
+        os.renames(old, new)
+        self.assertTrue(os.path.exists(new))
+        self.assertFalse(os.path.exists(old))
+        self.assertFalse(os.path.exists(old_path))
+
     def test_read(self):
         with open(os_helper.TESTFN, "w+b") as fobj:
             fobj.write(b"spam")
