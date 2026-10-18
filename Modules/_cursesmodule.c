@@ -5523,8 +5523,8 @@ PyCursesScreen_use(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_DECREF(extra);
     if (data.result == NULL) {
         PyObject *exc = PyErr_GetRaisedException();
-        update_lines_cols(module);
-        PyErr_SetRaisedException(exc);
+        (void)update_lines_cols(module);
+        _PyErr_ChainExceptions1(exc);
     }
     else {
         if (!update_lines_cols(module)) {
