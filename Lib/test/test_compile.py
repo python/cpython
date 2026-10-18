@@ -1584,9 +1584,9 @@ class TestSpecifics(unittest.TestCase):
         self.check_line_numbers(f.__code__, 'JUMP_BACKWARD')
 
     def test_backward_jump_conditional_in_loop_in_try(self):
-        # gh-130279: The backward jump for the untaken branch of a
-        # conditional at the end of a loop body must be covered by the
-        # exception handler of the enclosing try.
+        # gh-130279: The jumps in a loop body, including the backward jump
+        # for the untaken branch of a conditional at the end of the body,
+        # must be covered by the exception handler of the enclosing try.
         def f(items):
             try:
                 for x in items:
@@ -1597,7 +1597,7 @@ class TestSpecifics(unittest.TestCase):
 
         bytecode = dis.Bytecode(f)
         jumps = [instr for instr in bytecode
-                 if instr.opname == 'JUMP_BACKWARD']
+                 if instr.opcode in dis.hasjump]
         self.assertTrue(jumps)
         for instr in jumps:
             with self.subTest(instr=instr):
