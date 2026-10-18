@@ -1122,7 +1122,7 @@ add_keyword_typo(KeywordTypo *candidates, int *count, int mark,
 }
 
 static int
-try_keyword_typo(Parser *p, KeywordTypo *candidate)
+try_keyword_typo(Parser *p, KeywordTypo *candidate, KeywordTrial *state)
 {
     // Token text belongs to the original arena. Token headers and memo entries
     // must be private: even a failed trial can memoize nodes containing its edit.
@@ -1159,7 +1159,8 @@ try_keyword_typo(Parser *p, KeywordTypo *candidate)
         p, candidate->keyword, strlen(candidate->keyword));
     edited->bytes = replacement;
 
-    KeywordTrial state = {.budget = MAX_KEYWORD_TYPO_STEPS};
+    state->furthest = 0;
+    state->incomplete_suite = 0;
     Parser trial = *p;
     trial.tokens = index;
     trial.arena = arena;
@@ -1168,7 +1169,7 @@ try_keyword_typo(Parser *p, KeywordTypo *candidate)
     trial.level = 0;
     trial.error_indicator = 0;
     trial.call_invalid_rules = 0;
-    trial.keyword_trial = &state;
+    trial.keyword_trial = state;
     // Force trials through the existing stack-check slow path to count rule
     // entries without adding a branch to normal parsing. The slow path still
     // checks the thread's real stack limit.
@@ -1192,7 +1193,7 @@ try_keyword_typo(Parser *p, KeywordTypo *candidate)
     if (!accepted && !trial.error_indicator && candidate->is_alias &&
         p->feature_version == PY_MINOR_VERSION)
     {
-        for (int i = candidate->mark; i < state.furthest; i++) {
+        for (int i = candidate->mark; i < state->furthest; i++) {
             if (tokens[i].type == NEWLINE) {
                 accepted = 1;
                 break;
@@ -1204,7 +1205,7 @@ try_keyword_typo(Parser *p, KeywordTypo *candidate)
         _PyPegen_parse(&trial);
         // Version checks on an enclosing rule can run after its suite. For
         // older grammars, require a complete repair so those checks execute.
-        accepted = state.incomplete_suite && p->feature_version == PY_MINOR_VERSION;
+        accepted = state->incomplete_suite && p->feature_version == PY_MINOR_VERSION;
     }
     // No Parser_Free: the trial borrows the tokenizer and type-ignore comments,
     // and its token headers are a single allocation.
@@ -1224,6 +1225,7 @@ keyword_typo_metadata(Parser *p, PySyntaxErrorObject *error)
     if ((p->start_rule != Py_file_input && p->start_rule != Py_eval_input &&
          p->start_rule != Py_single_input) ||
         p->fill == 0 || p->fill > MAX_KEYWORD_TYPO_TOKENS ||
+        _PyTokenizer_GetInfo(p->tok).input_span.end > MAX_KEYWORD_TYPO_BYTES ||
         p->tokens[p->fill - 1]->type != ENDMARKER ||
         _PyTokenizer_IsInteractive(p->tok) || !PyUnicode_Check(error->msg))
     {
@@ -1301,8 +1303,10 @@ keyword_typo_metadata(Parser *p, PySyntaxErrorObject *error)
         }
     }
     qsort(candidates, count, sizeof(*candidates), compare_keyword_typos);
+    // All candidates and both parser passes share this work budget.
+    KeywordTrial state = {.budget = MAX_KEYWORD_TYPO_STEPS};
     for (int i = 0; i < count; i++) {
-        int accepted = try_keyword_typo(p, &candidates[i]);
+        int accepted = try_keyword_typo(p, &candidates[i], &state);
         if (accepted < 0) {
             return NULL;
         }

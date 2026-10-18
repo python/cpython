@@ -160,6 +160,13 @@ _PyPegen_tokenize_full_source_to_check_for_errors(Parser *p) {
 
     for (;;) {
         _PyTokenizer_Get(p->tok, &new_token);
+        if (cache_tokens &&
+            _PyTokenizer_GetInfo(p->tok).input_span.end > MAX_KEYWORD_TYPO_BYTES)
+        {
+            // Logical offsets include discarded input in file mode. Stop
+            // before copying a large token into the parser's arena.
+            cache_tokens = 0;
+        }
         // Retain the tokens this error check already reads for bounded typo
         // trials. Never treat a truncated cache as complete input.
         if (cache_tokens && p->fill < MAX_KEYWORD_TYPO_TOKENS &&

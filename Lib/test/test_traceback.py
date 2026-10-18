@@ -1955,6 +1955,33 @@ print(
         normalize.assert_not_called()
         self.assertIsNone(caught.exception._metadata)
 
+    @cpython_only
+    def test_keyword_replay_source_limit(self):
+        with tempfile.TemporaryDirectory() as script_dir:
+            for size in (64 * 1024 - 512, 64 * 1024 + 512):
+                literal = "value = " + repr("a" * size) + "\n"
+                for source in (literal + "impor math", "impor math\n" + literal):
+                    with self.subTest(size=size, typo_first=source.startswith("impor")):
+                        with self.assertRaises(SyntaxError) as caught:
+                            compile(source, "<test>", "exec")
+                        expected = size < 64 * 1024
+                        self.assertEqual(caught.exception._metadata is not None, expected)
+                        script = make_script(script_dir, "large_keyword_typo", source)
+                        _, _, stderr = assert_python_failure(script)
+                        self.assertEqual(b"Did you mean 'import'" in stderr, expected)
+        # The size limit applies only to optional hints.
+        compile("value = " + repr("a" * (1024 * 1024)), "<test>", "exec")
+
+    @cpython_only
+    def test_keyword_replay_work_limit(self):
+        # Several candidates must share the budget, including failed passes.
+        for count, expected in ((100, "in"), (300, None)):
+            source = "x = 1\n" * count + "for x im seq:\n    pass"
+            with self.subTest(count=count), self.assertRaises(SyntaxError) as caught:
+                compile(source, "<test>", "exec")
+            metadata = caught.exception._metadata
+            self.assertEqual(metadata[0] if metadata else None, expected)
+
 @requires_debug_ranges()
 @force_not_colorized_test_class
 class PurePythonTracebackErrorCaretTests(
