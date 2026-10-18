@@ -163,6 +163,8 @@ find_frame_in_chunks(StackChunkList *chunks, uintptr_t remote_ptr)
  * FRAME PARSING FUNCTIONS
  * ============================================================================ */
 
+enum { FRAME_PARSE_INTERPRETER = 2 };
+
 int
 is_frame_valid(
     RemoteUnwinderObject *unwinder,
@@ -170,14 +172,14 @@ is_frame_valid(
     uintptr_t code_object_addr
 ) {
     if ((void*)code_object_addr == NULL) {
-        return 0;
+        return 0;  // Frame being cleared
     }
 
     void* frame = (void*)frame_addr;
 
     char owner = GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner);
     if (owner == FRAME_OWNED_BY_INTERPRETER) {
-        return 0;  // C frame or sentinel base frame
+        return FRAME_PARSE_INTERPRETER;  // C frame or sentinel base frame
     }
 
     if (owner != FRAME_OWNED_BY_GENERATOR && owner != FRAME_OWNED_BY_THREAD) {
@@ -305,35 +307,35 @@ process_frame_chain(
     uintptr_t frame_addr = ctx->frame_addr;
     uintptr_t prev_frame_addr = 0;
     uintptr_t last_frame_addr = 0;
-    const size_t MAX_FRAMES = 1024 + 512;
     size_t frame_count = 0;
-    assert(MAX_FRAMES > 0 && MAX_FRAMES < 10000);
 
     ctx->stopped_at_cached_frame = 0;
     ctx->last_frame_visited = 0;
 
     while ((void*)frame_addr != NULL) {
+        int parse_result = 0;
         PyObject *frame = NULL;
         uintptr_t next_frame_addr = 0;
         uintptr_t stackpointer = 0;
         last_frame_addr = frame_addr;
 
-        if (++frame_count > MAX_FRAMES) {
+        if (++frame_count > MAX_FRAME_CHAIN_DEPTH) {
             PyErr_SetString(PyExc_RuntimeError, "Too many stack frames (possible infinite loop)");
             set_exception_cause(unwinder, PyExc_RuntimeError, "Frame chain iteration limit exceeded");
             return -1;
         }
-        assert(frame_count <= MAX_FRAMES);
+        assert(frame_count <= MAX_FRAME_CHAIN_DEPTH);
 
         if (ctx->chunks && ctx->chunks->count > 0) {
-            if (parse_frame_from_chunks(unwinder, &frame, frame_addr, &next_frame_addr, &stackpointer, ctx->chunks) == 0) {
+            parse_result = parse_frame_from_chunks(
+                unwinder, &frame, frame_addr, &next_frame_addr, &stackpointer, ctx->chunks);
+            if (parse_result == 0) {
                 goto parsed_frame;
             }
             PyErr_Clear();
         }
         {
             uintptr_t address_of_code_object = 0;
-            int parse_result;
             if (ctx->prefetch.frame && ctx->prefetch.frame_addr == frame_addr) {
                 parse_result = parse_frame_buffer(
                     unwinder, &frame, ctx->prefetch.frame,
@@ -358,19 +360,19 @@ parsed_frame:
             continue;
         }
 
-        if (frame == NULL && PyList_GET_SIZE(ctx->frame_info) == 0) {
-            const char *e = "Failed to parse initial frame in chain";
-            PyErr_SetString(PyExc_RuntimeError, e);
-            return -1;
-        }
         PyObject *extra_frame = NULL;
         if (unwinder->gc && frame_addr == ctx->gc_frame) {
             _Py_DECLARE_STR(gc, "<GC>");
             extra_frame = &_Py_STR(gc);
         }
+        // A leading frame without Python code marks no transition between
+        // Python frames: it is a frame being popped or C code the thread is
+        // returning into.
         else if (unwinder->native &&
                  frame == NULL &&
+                 parse_result == FRAME_PARSE_INTERPRETER &&
                  next_frame_addr &&
+                 PyList_GET_SIZE(ctx->frame_info) > 0 &&
                  !(unwinder->gc && next_frame_addr == ctx->gc_frame))
         {
             _Py_DECLARE_STR(native, "<native>");

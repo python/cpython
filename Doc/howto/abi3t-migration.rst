@@ -169,14 +169,22 @@ or :c:member:`PyTypeObject.tp_itemsize`), it cannot be ported to
 ``abi3t`` 3.15.
 
 
+.. _abi3t-migration-build:
+
 Setting up the build
 ====================
 
-If you use a build tool (such as setuptools, meson-python, scikit-build-core),
-search its documentation for a way to select ``abi3t``.
-At the time of writing, not all of them have this; but if your tool does,
-use it.
-You may want to verify that it set the right flag by temporarily adding the
+If you use a build tool, search its documentation for "``abi3t``", and follow
+any instructions to select the ABI.
+For reference, here are direct links for several popular build tools:
+
+- `meson-python
+  <https://mesonbuild.com/meson-python/how-to-guides/limited-api.html#the-abi3t-stable-abi>`__
+- `scikit-build-core
+  <https://scikit-build-core.readthedocs.io/en/stable/configuration/#customizing-the-output-wheel>`__
+- `Maturin <https://www.maturin.rs/bindings#py_limited_apiabi3>`__
+
+You may want to verify that the tool set the right flag by temporarily adding the
 following just after ``#include <Python.h>``::
 
    #if Py_TARGET_ABI3T+0 <= 0x30f0000
@@ -184,6 +192,13 @@ following just after ``#include <Python.h>``::
    #endif
 
 This should result in a different error than "``abi3t`` define is not set".
+
+.. seealso::
+
+   `Building and distributing abi3t extensions
+   <https://py-free-threading.github.io/abi3t/>`__:
+   Build configuration and wheel testing examples in the community-maintained
+   Python Free-Threading Guide.
 
 .. note::
 
@@ -217,9 +232,9 @@ Module export hook
 
 Unless you've done this step already, your extension module defines a
 :ref:`module initialization function <extension-pyinit>`
-named :samp:`PyInit_{<module_name>}`.
+named :samp:`PyInit_{<modname>}` (where ``modname`` is the name of your module).
 You will need to port it to a :ref:`module export hook <extension-export-hook>`,
-:samp:`PyModExport_{<module name>}`, a feature added in CPython 3.15 in
+:samp:`PyModExport_{<modname>}`, a feature added in CPython 3.15 in
 :pep:`793`.
 
 Your existing init function should look like this (with your own names
@@ -296,6 +311,34 @@ As in the example, your ``PyModExport_`` function should *only* return a
 pointer to static data.
 If you cannot avoid additional code, refer to the
 :ref:`caveats in PyModExport documentation <pymodexport-api-caveats>`.
+
+.. note::
+
+   When building for Windows using the Setuptools_ build tool,
+   removing the :samp:`PyInit_{<modname>}` function may result in the linker error
+   :samp:`LINK : error LNK2001: unresolved external symbol PyInit_{<modname>}`.
+   This is caused by Setuptools passing an ``/EXPORT`` linker flag, which
+   is redundant since Python 3.15 (see :gh:`141671`).
+   A workaround is to add a dummy :samp:`PyInit_{<modname>}` function
+   to your code.
+   Python 3.15+ will never call this function if
+   :samp:`PyModExport_{<modname>}` is present, so it can always fail:
+
+   .. code-block:: c
+
+      // Workaround for https://github.com/pypa/distutils/issues/387
+      PyMODINIT_FUNC
+      PyInit_<modname>(void)
+      {
+          PyErr_SetString(PyExc_SystemError,
+                          "PyInit_* called for module with PyModExport_*");
+          return NULL;
+      }
+
+   (This issue is present in Setuptools 84.0.0; it might be fixed in newer
+   versions.)
+
+.. _Setuptools: https://setuptools.pypa.io/
 
 
 Existing slots
