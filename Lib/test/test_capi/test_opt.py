@@ -4887,6 +4887,47 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_UNPACK_SEQUENCE_TUPLE", uops)
         self.assertNotIn("_GUARD_TOS_TUPLE", uops)
 
+    def test_binary_op_extend_wide_int_subtract(self):
+        # Non-compact int - int is specialized via BINARY_OP_EXTEND. The
+        # result is known to be an int, so the second subtraction only needs
+        # to guard its rhs.
+        def testfunc(n):
+            a = 10**20
+            b = 10**19
+            c = 10**18
+            res = 0
+            for _ in range(n):
+                res = (a - b) - c
+            return res
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 10**20 - 10**19 - 10**18)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertEqual(uops.count("_BINARY_OP_EXTEND"), 2)
+        self.assertEqual(uops.count("_GUARD_BINARY_OP_EXTEND"), 1)
+        self.assertIn("_GUARD_BINARY_OP_EXTEND_RHS", uops)
+        self.assertNotIn("_BINARY_OP_SUBTRACT_INT", uops)
+
+    def test_compact_int_ops_see_non_compact_operands(self):
+        # Trace compiled for compact ints, then re-entered with operands whose
+        # difference is not compact. The follow-up int op must not treat the
+        # result as compact.
+        def testfunc(args):
+            a, b, c, n = args
+            res = 0
+            for _ in range(n):
+                res = (a - b) - c
+            return res
+
+        res, ex = self._run_with_optimizer(testfunc, (5, 2, 1000, TIER2_THRESHOLD))
+        self.assertEqual(res, -997)
+        self.assertIsNotNone(ex)
+        self.assertIn("_BINARY_OP_SUBTRACT_INT", get_opnames(ex))
+        a, b = 2**60 + 2**59, 2**60
+        res = testfunc((a, b, 1000, TIER2_THRESHOLD))
+        self.assertEqual(res, 2**59 - 1000)
+
     def test_binary_op_extend_guard_elimination(self):
         # When both operands have known types (e.g., from a prior
         # _BINARY_OP_EXTEND result), the _GUARD_BINARY_OP_EXTEND

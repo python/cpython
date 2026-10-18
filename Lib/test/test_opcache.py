@@ -1536,6 +1536,39 @@ class TestSpecializer(TestBase):
         self.assert_specialized(binary_op_bitwise_extend, "BINARY_OP_EXTEND")
         self.assert_no_opcode(binary_op_bitwise_extend, "BINARY_OP")
 
+        def binary_op_wide_int_extend():
+            for _ in range(100):
+                a, b = 10**20, 10**19
+                x = a + b
+                self.assertEqual(x, 11 * 10**19)
+                y = a - b
+                self.assertEqual(y, 9 * 10**19)
+                a += b
+                self.assertEqual(a, 11 * 10**19)
+                a -= b
+                self.assertEqual(a, 10**20)
+
+        binary_op_wide_int_extend()
+        self.assert_specialized(binary_op_wide_int_extend, "BINARY_OP_EXTEND")
+        self.assert_no_opcode(binary_op_wide_int_extend, "BINARY_OP")
+        self.assert_no_opcode(binary_op_wide_int_extend, "BINARY_OP_ADD_INT")
+        self.assert_no_opcode(binary_op_wide_int_extend, "BINARY_OP_SUBTRACT_INT")
+
+        def wide_int_extend_mixed(a, b):
+            return a - b, a + b
+
+        # Specialized on wide operands; compact operands and bool still
+        # produce correct results (bool is not an exact int and deopts).
+        for _ in range(100):
+            self.assertEqual(wide_int_extend_mixed(10**20, 1),
+                             (10**20 - 1, 10**20 + 1))
+        self.assert_specialized(wide_int_extend_mixed, "BINARY_OP_EXTEND")
+        self.assertEqual(wide_int_extend_mixed(5, 7), (-2, 12))
+        self.assertEqual(wide_int_extend_mixed(True, 10**20),
+                         (1 - 10**20, 1 + 10**20))
+        self.assertEqual(wide_int_extend_mixed(-10**20, 10**20),
+                         (-2 * 10**20, 0))
+
     @cpython_only
     @requires_specialization
     def test_load_super_attr(self):

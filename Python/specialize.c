@@ -2157,6 +2157,21 @@ SEQ_INT_MULTIPLY_ACTION(tuple_int_multiply, _PyTuple_Repeat,   lhs, rhs)
 SEQ_INT_MULTIPLY_ACTION(int_tuple_multiply, _PyTuple_Repeat,   rhs, lhs)
 #undef SEQ_INT_MULTIPLY_ACTION
 
+/* Exact ints that are not both compact (those take BINARY_OP_ADD_INT and
+   friends). Calling the long implementation directly skips the generic
+   binary_op1 slot dispatch. */
+static PyObject *
+longs_add(PyObject *lhs, PyObject *rhs)
+{
+    return _PyLong_Add((PyLongObject *)lhs, (PyLongObject *)rhs);
+}
+
+static PyObject *
+longs_subtract(PyObject *lhs, PyObject *rhs)
+{
+    return _PyLong_Subtract((PyLongObject *)lhs, (PyLongObject *)rhs);
+}
+
 static int
 compactlongs_guard(PyObject *lhs, PyObject *rhs)
 {
@@ -2255,6 +2270,14 @@ static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
     {NB_INPLACE_OR, compactlongs_guard, compactlongs_or, &PyLong_Type, 1, NULL, NULL},
     {NB_INPLACE_AND, compactlongs_guard, compactlongs_and, &PyLong_Type, 1, NULL, NULL},
     {NB_INPLACE_XOR, compactlongs_guard, compactlongs_xor, &PyLong_Type, 1, NULL, NULL},
+
+    /* long-long add/subtract for operands that are not both compact.
+       The guard is a pure type check: the result may be non-compact, so
+       it is typed as int without compactness and follow-up int guards stay. */
+    {NB_ADD, NULL, longs_add, &PyLong_Type, 1, &PyLong_Type, &PyLong_Type},
+    {NB_SUBTRACT, NULL, longs_subtract, &PyLong_Type, 1, &PyLong_Type, &PyLong_Type},
+    {NB_INPLACE_ADD, NULL, longs_add, &PyLong_Type, 1, &PyLong_Type, &PyLong_Type},
+    {NB_INPLACE_SUBTRACT, NULL, longs_subtract, &PyLong_Type, 1, &PyLong_Type, &PyLong_Type},
 
     /* float-long arithmetic: guards also check NaN and compactness. */
     {NB_ADD, float_compactlong_guard, float_compactlong_add, &PyFloat_Type, 1, NULL, NULL},
