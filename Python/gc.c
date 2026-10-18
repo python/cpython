@@ -274,9 +274,16 @@ gc_list_move(PyGC_Head *node, PyGC_Head *list)
     _PyGCHead_SET_NEXT(node, list);
 }
 
-/* append list `from` onto list `to`; `from` becomes an empty list */
-static void
-gc_list_merge(PyGC_Head *from, PyGC_Head *to)
+/* Append all members of `from` to `to` in order.
+ *
+ * `from`: Source GC list with untagged _gc_next links.
+ * `to`: Distinct, disjoint GC list with untagged _gc_next links.
+ *
+ * `to` remains valid and _gc_prev flags are preserved. The source head must
+ * be discarded or reinitialized with gc_list_init() before any list operation.
+ */
+static inline void
+gc_list_splice(PyGC_Head *from, PyGC_Head *to)
 {
     assert(from != to);
     if (!gc_list_is_empty(from)) {
@@ -292,6 +299,13 @@ gc_list_merge(PyGC_Head *from, PyGC_Head *to)
         _PyGCHead_SET_NEXT(from_tail, to);
         _PyGCHead_SET_PREV(to, from_tail);
     }
+}
+
+/* append list `from` onto list `to`; `from` becomes an empty list */
+static void
+gc_list_merge(PyGC_Head *from, PyGC_Head *to)
+{
+    gc_list_splice(from, to);
     gc_list_init(from);
 }
 
@@ -1416,7 +1430,7 @@ handle_resurrected_objects(PyGC_Head *unreachable, PyGC_Head* still_unreachable,
     deduce_unreachable(resurrected, still_unreachable, false, &reachable, &unused_legacy_finalizer_count);
 
     // Move the resurrected objects to the old generation for future collection.
-    gc_list_merge(resurrected, old_generation);
+    gc_list_splice(resurrected, old_generation);
 }
 
 
