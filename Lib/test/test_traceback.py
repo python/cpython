@@ -1854,6 +1854,21 @@ class TestKeywordTypoSuggestions(unittest.TestCase):
                 stderr_text = stderr.decode('utf-8')
                 self.assertIn(f"Did you mean '{expected_kw}'", stderr_text)
 
+    @cpython_only
+    def test_keyword_suggestions_from_single_input(self):
+        for source, keyword in self.TYPO_CASES:
+            for ending in ('', '\n'):
+                with self.subTest(source=source, ending=ending):
+                    with self.assertRaises(SyntaxError) as caught:
+                        compile(source + ending, "<test>", "single")
+                    self.assertEqual(caught.exception._metadata[0], keyword)
+                    with (unittest.mock.patch("builtins.compile") as compile_mock,
+                          unittest.mock.patch("builtins.open") as open_mock):
+                        text = ''.join(traceback.format_exception_only(caught.exception))
+                    self.assertIn(f"Did you mean '{keyword}'", text)
+                    compile_mock.assert_not_called()
+                    open_mock.assert_not_called()
+
     def test_no_keyword_suggestion_for_comma_errors(self):
         # When the parser identifies a missing comma, don't suggest
         # bogus keyword replacements like 'print' -> 'not'
@@ -1870,6 +1885,75 @@ print(
         stderr_text = stderr.decode('utf-8')
         self.assertIn("Perhaps you forgot a comma", stderr_text)
         self.assertNotIn("Did you mean", stderr_text)
+
+    @cpython_only
+    def test_parser_suggestions_need_no_formatting_work(self):
+        cases = [
+            ("def f():\n    returm value", "return", 2, 5),
+            ("é = 1; impor math", "import", 1, 8),
+            ("a = 1\nif True:\n    pass\nelso:\n    pass", "else", 4, 1),
+            ("[123 fur x\nin range(3)\nif x]", "for", 1, 6),
+            ("mach x:\n    case 1: pass", "match", 1, 1),
+            ("match x:\n    cse 1: pass", "case", 2, 5),
+            ("typ Alias = int", "type", 1, 1),
+            ("lazi import math", "lazy", 1, 1),
+            ("long_name = 1\n" * 85 + "whille True:\n    pass", "while", 86, 1),
+        ]
+        for source, keyword, lineno, offset in cases:
+            with self.subTest(source=source):
+                with self.assertRaises(SyntaxError) as caught:
+                    compile(source, "<test>", "exec")
+                error = caught.exception
+                original = error.args
+                with (unittest.mock.patch("builtins.compile") as compile_mock,
+                      unittest.mock.patch("builtins.open") as open_mock):
+                    exc = traceback.TracebackException.from_exception(error)
+                    first = ''.join(exc.format_exception_only())
+                    self.assertEqual(first, ''.join(exc.format_exception_only()))
+                compile_mock.assert_not_called()
+                open_mock.assert_not_called()
+                self.assertIn(f"Did you mean '{keyword}'?", first)
+                self.assertEqual((exc.lineno, exc.offset), (str(lineno), offset))
+                self.assertEqual(error.args, original)
+
+    @cpython_only
+    def test_keyword_trials_do_not_repeat_warnings(self):
+        import warnings
+        for prefix in ("value = '\\q'\n", "from . lazy import x\n"):
+            with self.subTest(prefix=prefix), warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                with self.assertRaises(SyntaxError) as error:
+                    compile(prefix + "impor math", "<test>", "exec")
+                self.assertEqual(len(caught), 1)
+                self.assertEqual(error.exception._metadata[0], "import")
+
+    @cpython_only
+    def test_keyword_replay_requires_complete_valid_input(self):
+        for source in ("dell 1", "impor math\nother =", "whille True:\npass",
+                       "switch +:\n case:", "function f(=):\n pass", "(mat x)",
+                       "impor math\n" + "pass\n" * 3000):
+            with self.subTest(source=source):
+                with self.assertRaises(SyntaxError) as caught:
+                    compile(source, "<test>", "exec")
+                # Action errors and a cache which stopped before EOF must not
+                # count as successful repairs.
+                self.assertIsNone(caught.exception._metadata)
+
+    @cpython_only
+    def test_keyword_replay_respects_feature_version(self):
+        import ast
+        for source in ("mach x:\n    case 1: pass", "mach x:", "switch x:\n case:"):
+            with self.subTest(source=source), self.assertRaises(SyntaxError) as caught:
+                ast.parse(source, feature_version=(3, 9))
+            self.assertIsNone(caught.exception._metadata)
+
+    @cpython_only
+    def test_keyword_trials_do_not_call_normalizer(self):
+        with unittest.mock.patch("unicodedata.normalize") as normalize:
+            with self.assertRaises(SyntaxError) as caught:
+                compile("whille True:\n    café = 1", "<test>", "exec")
+        normalize.assert_not_called()
+        self.assertIsNone(caught.exception._metadata)
 
 @requires_debug_ranges()
 @force_not_colorized_test_class

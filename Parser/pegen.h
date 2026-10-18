@@ -78,6 +78,12 @@ typedef struct {
     int end_col_offset;
 } location;
 
+typedef struct {
+    int budget;
+    int furthest;
+    int incomplete_suite;
+} KeywordTrial;
+
 typedef struct _identifier_cache_entry IdentifierCacheEntry;
 
 typedef struct {
@@ -103,6 +109,7 @@ typedef struct {
     Token *known_err_token;
     int level;
     int call_invalid_rules;
+    KeywordTrial *keyword_trial;
     int debug;
     location last_stmt_location;
     IdentifierCacheEntry *identifier_cache;
@@ -118,6 +125,13 @@ typedef struct {
 static inline int
 _PyPegen_stack_exhausted(Parser *p)
 {
+    if (p->keyword_trial != NULL) {
+        if (p->keyword_trial->budget == 0) {
+            return 1;
+        }
+        p->keyword_trial->budget--;
+        p->keyword_trial->furthest = Py_MAX(p->keyword_trial->furthest, p->mark);
+    }
 #if _Py_STACK_GROWS_DOWN
     if (_Py_get_machine_stack_pointer() > p->stack_soft_limit) {
 #else

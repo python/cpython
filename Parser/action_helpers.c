@@ -2072,7 +2072,7 @@ _warn_relative_import_of_lazy(Parser *p, asdl_seq *dots, expr_ty module)
     // the module name is insignificant, so this is parsed exactly like
     // `from .lazy import x` (an import of the relative module "lazy"), but it
     // is most likely a transposition of `lazy from . import x` (PEP 810).
-    if (p->call_invalid_rules) {
+    if (p->call_invalid_rules || p->keyword_trial != NULL) {
         return 0;
     }
 
@@ -2134,7 +2134,9 @@ _PyPegen_checked_from_import(Parser *p, asdl_seq *dots, expr_ty module_name,
             alias_ty alias = asdl_seq_GET(names, i);
             if (PyUnicode_CompareWithASCIIString(alias->name, "barry_as_FLUFL") == 0) {
                 p->flags |= PyPARSE_BARRY_AS_BDFL;
-                p->tok->barry_as_bdfl = 1;
+                if (p->keyword_trial == NULL) {
+                    p->tok->barry_as_bdfl = 1;
+                }
             }
         }
     }

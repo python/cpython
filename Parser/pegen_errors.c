@@ -225,6 +225,19 @@ exit:
 void *
 _PyPegen_raise_error(Parser *p, PyObject *errtype, int use_mark, const char *errmsg, ...)
 {
+    if (p->keyword_trial != NULL) {
+        if (errtype == PyExc_IndentationError) {
+            int mark = p->mark;
+            while (mark < p->fill && (p->tokens[mark]->type == DEDENT ||
+                                      p->tokens[mark]->type == NEWLINE)) {
+                mark++;
+            }
+            p->keyword_trial->incomplete_suite =
+                mark < p->fill && p->tokens[mark]->type == ENDMARKER;
+        }
+        p->error_indicator = 1;
+        return NULL;
+    }
     // Bail out if we already have an error set.
     if (p->error_indicator && PyErr_Occurred()) {
         return NULL;
@@ -289,6 +302,10 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
                                     Py_ssize_t end_lineno, Py_ssize_t end_col_offset,
                                     const char *errmsg, va_list va)
 {
+    if (p->keyword_trial != NULL) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     // Bail out if we already have an error set.
     if (p->error_indicator && PyErr_Occurred()) {
         return NULL;
