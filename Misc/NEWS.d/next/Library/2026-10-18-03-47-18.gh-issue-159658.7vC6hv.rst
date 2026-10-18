@@ -1,0 +1,2 @@
+Fix the :term:`REPL` mangling typed input when :data:`sys.ps1` is wider than
+the terminal.
