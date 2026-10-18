@@ -11750,7 +11750,7 @@ slotname_probe(PyObject *key, Py_hash_t hash)
     while (slotname_table[i] != 0) {
         PyObject *name = slotdefs[slotname_table[i] - 1].name_strobj;
         if (name == key
-            || (_PyASCIIObject_CAST(name)->hash == hash
+            || (PyUnstable_Unicode_GET_CACHED_HASH(name) == hash
                 && _PyUnicode_Equal(name, key))) {
             break;
         }
@@ -11768,8 +11768,8 @@ init_slotname_table(void)
     memset(slotname_table, 0, sizeof(slotname_table));
     for (size_t idx = 0; slotdefs[idx].name != NULL; idx++) {
         PyObject *name = slotdefs[idx].name_strobj;
+        /* Computes and caches the hash of name_strobj if not done yet. */
         Py_hash_t hash = _PyObject_HashDictKey(name);
-        assert(hash != -1);
         size_t i = slotname_probe(name, hash);
         if (slotname_table[i] == 0) {
             slotname_table[i] = (uint16_t)(idx + 1);
@@ -11785,6 +11785,7 @@ static Py_ssize_t
 slotname_lookup(PyObject *key, Py_hash_t hash)
 {
     assert(slotname_table_initialized);
+    assert(hash != -1);
     size_t i = slotname_probe(key, hash);
     return slotname_table[i] ? slotname_table[i] - 1 : -1;
 }
@@ -11836,9 +11837,7 @@ slotptr(PyTypeObject *type, int ioffset)
 static bool
 has_slotdef(PyObject *name)
 {
-    Py_hash_t hash = _PyObject_HashDictKey(name);
-    assert(hash != -1);
-    return slotname_lookup(name, hash) >= 0;
+    return slotname_lookup(name, _PyObject_HashDictKey(name)) >= 0;
 }
 
 #define SLOT_SCAN_MAX_DICT_SIZE 1000
