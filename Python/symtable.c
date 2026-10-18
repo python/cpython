@@ -3271,7 +3271,7 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
     if (arena == NULL)
         return NULL;
 
-    mod = _PyParser_ASTFromString(str, filename, start, flags, arena, module);
+    mod = _PyParser_ASTFromString(str, filename, start, flags, arena, module, NULL);
     if (mod == NULL) {
         _PyArena_Free(arena);
         return NULL;
