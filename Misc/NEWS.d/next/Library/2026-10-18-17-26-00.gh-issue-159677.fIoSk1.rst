@@ -1,2 +1,2 @@
-Fix :meth:`io.FileIO.seekable` always returning ``False`` for a seekable file
-when the first call to :meth:`~io.FileIO.seek` failed.
+Fix :class:`io.FileIO` ``seekable`` being cached as false because of an invalid
+argument to :meth:`!io.FileIO.seek`
