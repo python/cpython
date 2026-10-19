@@ -212,7 +212,7 @@ static const double logpi = 1.144729885849400174143427351353058711647;
         }                                                  \
     }
 
-#ifndef HAVE_ACOSPI
+#ifndef _Py_HAVE_ACOSPI
 /*
    acos(x)/pi.  It conforms to C23 Annex 'F'.
 */
@@ -236,7 +236,7 @@ m_acospi(double x)
 #define m_acospi acospi
 #endif
 
-#ifndef HAVE_ASINPI
+#ifndef _Py_HAVE_ASINPI
 /*
    asin(x)/pi.  It conforms to C23 Annex 'F'.
 */
@@ -254,9 +254,9 @@ m_asinpi(double x)
 #define m_asinpi asinpi
 #endif
 
-#ifndef HAVE_ATANPI
+#ifndef _Py_HAVE_ATANPI
 /*
-   asin(x)/pi.  It conforms to C23 Annex 'F'.
+   atan(x)/pi.  It conforms to C23 Annex 'F'.
 */
 
 static double
@@ -272,9 +272,9 @@ m_atanpi(double x)
 #define m_atanpi atanpi
 #endif
 
-#ifndef HAVE_ATAN2PI
+#ifndef _Py_HAVE_ATAN2PI
 /*
-   asin(x)/pi.  It conforms to C23 Annex 'F'.
+   atan2(y, x)/pi.  It conforms to C23 Annex 'F'.
 */
 
 static double
@@ -290,7 +290,7 @@ m_atan2pi(double y, double x)
 #define m_atan2pi atan2pi
 #endif
 
-#ifndef HAVE_COSPI
+#ifndef _Py_HAVE_COSPI
 /*
    cos(pi*x), giving accurate results for all finite x (especially x
    integral or close to an integer).  It conforms to C23 Annex 'F'.
@@ -318,7 +318,7 @@ m_cospi(double x)
 #define m_cospi cospi
 #endif
 
-#ifndef HAVE_SINPI
+#ifndef _Py_HAVE_SINPI
 /*
    sin(pi*x), giving accurate results for all finite x (especially x
    integral or close to an integer).  It conforms to C23 Annex 'F'.
@@ -362,7 +362,7 @@ m_sinpi(double x)
 #define m_sinpi sinpi
 #endif
 
-#ifndef HAVE_TANPI
+#ifndef _Py_HAVE_TANPI
 /*
    tan(pi*x), giving accurate results for all finite x (especially x
    integral or close to an integer).  It conforms to C23 Annex 'F'.
@@ -1136,7 +1136,7 @@ FUNC1D(atanh, atanh, 0,
 FUNC1D(atanpi, m_atanpi, 0,
       "atanpi($module, x, /)\n--\n\n"
       "Return the arc tangent (measured in half-turns) of x.\n\n"
-      "The result is between 0 and 1.",
+      "The result is between -1/2 and 1/2.",
       "expected a number in range from -1 up to 1, got %s")
 FUNC1(cbrt, cbrt, 0,
       "cbrt($module, x, /)\n--\n\n"
@@ -1343,10 +1343,10 @@ FUNC1D(tan, tan, 0,
 FUNC1(tanh, tanh, 0,
       "tanh($module, x, /)\n--\n\n"
       "Return the hyperbolic tangent of x.")
-FUNC1D(tanpi, m_tanpi, 1,
+FUNC1D(tanpi, m_tanpi, 0,
       "tanpi($module, x, /)\n--\n\n"
       "Return the tangent of x (measured in half-turns).",
-      "expected a finite input, got %s")
+      "expected a finite input not equal to a half-integer, got %s")
 
 /* Precision summation function as msum() by Raymond Hettinger in
    <https://code.activestate.com/recipes/393090-binary-floating-point-summation-accurate-to-full-p/>,
