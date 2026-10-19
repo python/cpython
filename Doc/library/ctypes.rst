@@ -3675,6 +3675,12 @@ fields, or any other data types containing pointer type fields.
 
       point = Point(1, 2)
 
+   .. note::
+
+      Calling :func:`super` without arguments in methods of the decorated
+      class raises a :exc:`TypeError`. Use the two-argument form instead, for example
+      ``super(Point, self).__init__(x, y)``.
+
    *align*, *layout*, and *pack* supply the value for the :attr:`~ctypes.Structure._align_`,
    :attr:`~ctypes.Structure._layout_`, and :attr:`~ctypes.Structure._pack_`
    attributes, respectively.
