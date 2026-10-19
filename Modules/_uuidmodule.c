@@ -18,6 +18,7 @@
 #include <string.h>        // for strncasecmp
 #include "structmember.h"  // for PyMemberDef
 
+#include "pycore_critical_section.h"  // _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED()
 #include "pycore_long.h"          // _PyLong_FromByteArray, _PyLong_AsByteArray
 #include "pycore_pylifecycle.h"   // _PyOS_URandom()
 #include "pycore_time.h"          // PyTime_Time
@@ -206,8 +207,9 @@ static int from_fields(uuidobject *self, PyObject *fields);
 static PyObject * get_SafeUUID(uuid_state *state);
 
 static uint64_t
-uuid_getpid(void) {
-    #if !defined(MS_WINDOWS) || defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
+uuid_getpid(void)
+{
+#if !defined(MS_WINDOWS) || defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
     return (uint64_t)getpid();
 #else
     return (uint64_t)GetCurrentProcessId();
@@ -261,14 +263,14 @@ gen_time(uuid_state *state, PyTime_t *time)
 }
 
 static int
-gen_random(uuid_state *state, uint8_t *bytes, Py_ssize_t size)
+gen_random_lock_held(PyObject *module, uuid_state *state, uint8_t *bytes,
+                     Py_ssize_t size)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(module);
+
     // Overfetching & caching entropy improves the performance 10x.
     // There's a precedent with NodeJS doing exact same thing for
     // improving performance of their UUID implementation.
-
-    // IMPORTANT: callers should have a critical section or a lock
-    // around this function.
 
     uint64_t pid = uuid_getpid();
     if (pid != state->random_last_pid) {
@@ -352,22 +354,23 @@ _uuid_uuid4_impl(PyObject *module)
     uuid_state *state = get_uuid_state(module);
     uint8_t bytes[16];
 
-    if (gen_random(state, bytes, 16) < 0) {
+    if (gen_random_lock_held(module, state, bytes, 16) < 0) {
         return NULL;
     }
 
     // Set version (4) and variant
-    bytes[6] = (bytes[6] & 0x0f) | 0x40;
-    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    bytes[6] = (uint8_t)((bytes[6] & 0x0f) | 0x40);
+    bytes[8] = (uint8_t)((bytes[8] & 0x3f) | 0x80);
 
     return uuid_from_bytes_array(state->UuidType, bytes);
 }
 
 static inline int
-uuid7_get_counter_and_tail(uuid_state *state, uint64_t *counter, uint8_t *tail)
+uuid7_get_counter_and_tail(PyObject *module, uuid_state *state,
+                          uint64_t *counter, uint8_t *tail)
 {
     uint8_t rand_bytes[10];
-    if (gen_random(state, rand_bytes, 10) < 0) {
+    if (gen_random_lock_held(module, state, rand_bytes, 10) < 0) {
         return -1;
     }
 
@@ -410,7 +413,7 @@ _uuid_uuid7_impl(PyObject *module)
     timestamp_ms = (uint64_t)(pytime / 1000000);
 
     if (!state->last_timestamp_v7_init || timestamp_ms > state->last_timestamp_v7) {
-        if (uuid7_get_counter_and_tail(state, &counter, bytes + 12) < 0) {
+        if (uuid7_get_counter_and_tail(module, state, &counter, bytes + 12) < 0) {
             return NULL;
         }
     } else {
@@ -422,37 +425,37 @@ _uuid_uuid7_impl(PyObject *module)
         if (counter > 0x3FFFFFFFFFF) {
             // advance the 48-bit timestamp
             timestamp_ms += 1;
-            if (uuid7_get_counter_and_tail(state, &counter, bytes + 12) < 0) {
+            if (uuid7_get_counter_and_tail(module, state, &counter, bytes + 12) < 0) {
                 return NULL;
             }
         } else {
             // This is the common fast path, we only need 4 bytes of entropy
             // 32-bit random data
-            if (gen_random(state,  bytes + 12, 4) < 0) {
+            if (gen_random_lock_held(module, state, bytes + 12, 4) < 0) {
                 return NULL;
             }
         }
     }
 
     timestamp_ms &= 0xFFFFFFFFFFFF;
-    bytes[0] = (timestamp_ms >> 40);
-    bytes[1] = (timestamp_ms >> 32);
-    bytes[2] = (timestamp_ms >> 24);
-    bytes[3] = (timestamp_ms >> 16);
-    bytes[4] = (timestamp_ms >> 8);
-    bytes[5] = timestamp_ms;
+    bytes[0] = (uint8_t)(timestamp_ms >> 40);
+    bytes[1] = (uint8_t)(timestamp_ms >> 32);
+    bytes[2] = (uint8_t)(timestamp_ms >> 24);
+    bytes[3] = (uint8_t)(timestamp_ms >> 16);
+    bytes[4] = (uint8_t)(timestamp_ms >> 8);
+    bytes[5] = (uint8_t)timestamp_ms;
 
-    uint16_t counter_hi = (counter >> 30) & 0x0FFF;
-    bytes[6] = 0x70 | ((counter_hi >> 8));  // Version 7 = 0111
-    bytes[7] = counter_hi;
+    uint16_t counter_hi = (uint16_t)((counter >> 30) & 0x0FFF);
+    bytes[6] = (uint8_t)(0x70 | (counter_hi >> 8));  // Version 7 = 0111
+    bytes[7] = (uint8_t)counter_hi;
 
-    uint16_t counter_mid = (counter >> 16) & 0x3FFF;
-    bytes[8] = 0x80 | (counter_mid >> 8);  // Variant = 10
-    bytes[9] = counter_mid;
+    uint16_t counter_mid = (uint16_t)((counter >> 16) & 0x3FFF);
+    bytes[8] = (uint8_t)(0x80 | (counter_mid >> 8));  // Variant = 10
+    bytes[9] = (uint8_t)counter_mid;
 
-    uint16_t counter_lo = counter & 0xFFFF;
-    bytes[10] = counter_lo >> 8;
-    bytes[11] = counter_lo;
+    uint16_t counter_lo = (uint16_t)(counter & 0xFFFF);
+    bytes[10] = (uint8_t)(counter_lo >> 8);
+    bytes[11] = (uint8_t)counter_lo;
 
     state->last_timestamp_v7_init = 1;
     state->last_timestamp_v7 = timestamp_ms;
@@ -594,7 +597,7 @@ _uuid_UUID___init___impl(uuidobject *self, PyObject *hex, PyObject *bytes,
         // Set the variant to RFC 4122/9562 (binary 10xx xxxx)
         self->bytes[8] |= 0x80;  // 1000 0000
         // Set the version number (upper 4 bits of byte 6)
-        self->bytes[6] |= (version_num << 4);
+        self->bytes[6] |= (uint8_t)(version_num << 4);
     }
 
     Py_XSETREF(self->is_safe, Py_XNewRef(is_safe));
@@ -701,7 +704,7 @@ from_hex(uuidobject *self, PyObject *hex)
             j++;
         }
         else {
-            acc = (uint8_t)part << 4;
+            acc = (uint8_t)(part << 4);
             acc_set = 1;
         }
 
@@ -914,27 +917,27 @@ from_fields(uuidobject *self, PyObject *fields)
         uint64_t, node
     );
 
-    self->bytes[0] = time_low >> 24;
-    self->bytes[1] = time_low >> 16;
-    self->bytes[2] = time_low >> 8;
-    self->bytes[3] = time_low;
+    self->bytes[0] = (uint8_t)(time_low >> 24);
+    self->bytes[1] = (uint8_t)(time_low >> 16);
+    self->bytes[2] = (uint8_t)(time_low >> 8);
+    self->bytes[3] = (uint8_t)time_low;
 
-    self->bytes[4] = time_mid >> 8;
-    self->bytes[5] = time_mid;
+    self->bytes[4] = (uint8_t)(time_mid >> 8);
+    self->bytes[5] = (uint8_t)time_mid;
 
-    self->bytes[6] = time_hi_version >> 8;
-    self->bytes[7] = time_hi_version;
+    self->bytes[6] = (uint8_t)(time_hi_version >> 8);
+    self->bytes[7] = (uint8_t)time_hi_version;
 
     self->bytes[8] = clock_seq_hi_variant;
 
     self->bytes[9] = clock_seq_low;
 
-    self->bytes[10] = node >> 40;
-    self->bytes[11] = node >> 32;
-    self->bytes[12] = node >> 24;
-    self->bytes[13] = node >> 16;
-    self->bytes[14] = node >> 8;
-    self->bytes[15] = node;
+    self->bytes[10] = (uint8_t)(node >> 40);
+    self->bytes[11] = (uint8_t)(node >> 32);
+    self->bytes[12] = (uint8_t)(node >> 24);
+    self->bytes[13] = (uint8_t)(node >> 16);
+    self->bytes[14] = (uint8_t)(node >> 8);
+    self->bytes[15] = (uint8_t)node;
 
     return 0;
 }
@@ -1168,15 +1171,13 @@ get_time_low(uuidobject *self)
 static inline uint16_t
 get_time_mid(uuidobject *self)
 {
-    return ((uint16_t)self->bytes[4] << 8) |
-           ((uint16_t)self->bytes[5]);
+    return (uint16_t)((self->bytes[4] << 8) | self->bytes[5]);
 }
 
 static inline uint16_t
 get_time_hi_version(uuidobject *self)
 {
-    return ((uint16_t)self->bytes[6] << 8) |
-           ((uint16_t)self->bytes[7]);
+    return (uint16_t)((self->bytes[6] << 8) | self->bytes[7]);
 }
 
 static inline uint8_t
@@ -1248,8 +1249,8 @@ Uuid_get_time(PyObject *o, void *closure)
         // UUID v6: time_hi (32) | time_mid (16) | ver (4) | time_lo (12) | ... (64)
         uint32_t time_hi = get_time_low(self);
         uint16_t time_mid = get_time_mid(self);
-        uint16_t time_lo = ((uint16_t)(self->bytes[6] & 0x0f) << 8) |
-                          ((uint16_t)self->bytes[7]);
+        uint16_t time_lo = (uint16_t)(((self->bytes[6] & 0x0f) << 8) |
+                                    self->bytes[7]);
 
         uint64_t time = ((uint64_t)time_hi << 28) |
                         ((uint64_t)time_mid << 12) |
@@ -1272,8 +1273,8 @@ Uuid_get_time(PyObject *o, void *closure)
         //                     | time_hi (12) | ... (64)
         uint32_t time_lo = get_time_low(self);
         uint16_t time_mid = get_time_mid(self);
-        uint16_t time_hi = ((uint16_t)(self->bytes[6] & 0x0f) << 8) |
-                          ((uint16_t)self->bytes[7]);
+        uint16_t time_hi = (uint16_t)(((self->bytes[6] & 0x0f) << 8) |
+                                    self->bytes[7]);
 
         uint64_t time = ((uint64_t)time_hi << 48) |
                         ((uint64_t)time_mid << 32) |
@@ -1287,8 +1288,8 @@ Uuid_get_clock_seq(PyObject *o, void *closure)
 {
     uuidobject *self = (uuidobject *)o;
     // clock_seq_hi_variant (byte 8) & 0x3f, then clock_seq_low (byte 9)
-    uint16_t clock_seq = ((uint16_t)(get_clock_seq_hi_variant(self) & 0x3f) << 8) |
-                         ((uint16_t)get_clock_seq_low(self));
+    uint16_t clock_seq = (uint16_t)(((get_clock_seq_hi_variant(self) & 0x3f) << 8) |
+                                    get_clock_seq_low(self));
     return PyLong_FromUnsignedLong(clock_seq);
 }
 
