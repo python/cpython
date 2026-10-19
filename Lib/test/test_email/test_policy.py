@@ -8,6 +8,7 @@ import email.parser
 import email.generator
 import email.message
 from email import headerregistry
+from test.support.hypothesis_helper import hypothesis
 
 def make_defaults(base_defaults, differences):
     defaults = base_defaults.copy()
@@ -294,6 +295,65 @@ class PolicyAPITests(unittest.TestCase):
                 policy = email.policy.default.clone(max_line_length=maxlen)
                 with self.assertRaises(email.errors.HeaderParseError):
                     policy.fold("Subject", subject)
+
+    def test_wide_char_too_long_for_line_does_not_cause_inf_loop(self):
+        # A four byte UTF-8 character needs 12 characters in a q-encoded
+        # word, so with the RFC 2047 chrome and the leading space it cannot
+        # fit on a 20 character line at all.  Rather than looping forever
+        # trying to shrink the word, the line is allowed to run over.
+        policy = email.policy.default.clone(max_line_length=20)
+        actual = policy.fold('Subject', '\U0001f600')
+        self.assertEqual(actual, 'Subject:\n =?utf-8?q?=F0=9F=98=80?=\n')
+
+    # Pieces chosen to exercise folding: words, runs of whitespace, RFC 5322
+    # specials, characters needing 2, 3 and 4 byte UTF-8 encodings, and the
+    # delimiters of RFC 2047 encoded words.  The pieces cannot combine into a
+    # well-formed encoded word (there is no lone '?').
+    _fold_pieces = hypothesis.strategies.sampled_from([
+        'a', 'word', 'longwordlongwordlongword', ' ', '  ', '\t', ',', ';',
+        ':', '(', ')', '<', '>', '"', '@', '\\', '.', '-', '_', '\xa0',
+        '\xe9', '\u0444', '\u3042', '\U0001f600', '=?', '?=',
+    ])
+
+    @hypothesis.given(
+        subject=hypothesis.strategies.lists(
+            _fold_pieces, max_size=12).map(''.join),
+        maxlen=(hypothesis.strategies.integers(1, 120)
+                | hypothesis.strategies.sampled_from([0, None])),
+    )
+    # Looped forever before the single character case was handled.
+    @hypothesis.example(subject='\U0001f600', maxlen=20)
+    @hypothesis.example(subject='\U0001f600a', maxlen=16)
+    @hypothesis.example(subject='\U0001f600\U0001f600', maxlen=20)
+    # bpo-33529 and bpo-36564, the earlier infinite loops.
+    @hypothesis.example(subject='\u0105' * 12, maxlen=20)
+    @hypothesis.example(subject='Melt away the pounds! 1234567890', maxlen=9)
+    # Encoded words that must be recombined on reparse (test_generator).
+    @hypothesis.example(subject='aaaaaaaaa \u0444\u0444\u0444\u0444\u0444\u0444\u0444\u0444 ', maxlen=30)
+    @hypothesis.example(subject='aaa aaaaaaa   aaa \u0444\u0444\u0444 \u0444\u0444\u0444\u0444  ', maxlen=30)
+    # No wrapping at all, and nothing but whitespace.
+    @hypothesis.example(subject='word \U0001f600 word', maxlen=None)
+    @hypothesis.example(subject='word \U0001f600 word', maxlen=0)
+    @hypothesis.example(subject='  ', maxlen=78)
+    @hypothesis.example(subject='', maxlen=78)
+    def test_fold_unstructured_round_trip(self, subject, maxlen):
+        policy = email.policy.default.clone(max_line_length=maxlen)
+        try:
+            folded = policy.fold('Subject', subject)
+        except email.errors.HeaderParseError:
+            # The utf-8 RFC 2047 chrome is 12 characters, so no encoded
+            # word fits on a line of 13 characters or fewer; see
+            # test_short_maxlen_error.  Any other width must fold.
+            self.assertIsNotNone(maxlen)
+            self.assertLessEqual(maxlen, 13)
+            return
+        reparsed = email.message_from_string(
+            folded, policy=email.policy.default)['Subject']
+        # Leading whitespace is dropped by the parser; everything else,
+        # including trailing whitespace, survives.
+        self.assertEqual(reparsed.strip(' \t'), subject.strip(' \t'))
+        if subject == subject.lstrip(' \t'):
+            self.assertEqual(reparsed, subject)
 
     def test_verify_generated_headers(self):
         # Turning protection off allows header injection
