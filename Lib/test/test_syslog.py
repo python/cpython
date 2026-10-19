@@ -142,6 +142,29 @@ class Test(unittest.TestCase):
         finally:
             syslog.closelog()
 
+    @threading_helper.requires_working_threading()
+    def test_subinterpreter_concurrent_syslog(self):
+        # gh-158929: This used to crash.
+        from concurrent import interpreters
+
+        interp = interpreters.create()
+        try:
+            def in_interpreter():
+                import syslog
+
+                for _ in range(40000):
+                    try:
+                        syslog.syslog('my hovercraft is full of eels')
+                    except RuntimeError:
+                        pass
+            thread = interp.call_in_thread(in_interpreter)
+            for i in range(40000):
+                syslog.openlog(f"python{i}")
+                syslog.closelog()
+            thread.join()
+        finally:
+            interp.close()
+
 
 if __name__ == "__main__":
     unittest.main()

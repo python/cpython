@@ -21,10 +21,9 @@ module instead.
 
 /*[clinic input]
 module _csv
+class _csv.Dialect "DialectObj *" "clinic_state()->dialect_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=385118b71aa43706]*/
-
-#include "clinic/_csv.c.h"
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=042fcc14c7d541cc]*/
 #define NOT_SET ((Py_UCS4)-1)
 #define EOL ((Py_UCS4)-2)
 
@@ -117,8 +116,15 @@ typedef struct {
     Py_UCS4 quotechar;          /* quote character */
     Py_UCS4 escapechar;         /* escape character */
     PyObject *lineterminator;   /* string to write between records */
-
+    /* Cache for the writer: bit c is set if the ASCII character c needs
+       quoting or escaping (delimiter, quotechar, escapechar, '\r', '\n'
+       and the characters of lineterminator). */
+    uint64_t special_chars[2];
+    /* Whether any of the special characters is non-ASCII. */
+    bool nonascii_special;
 } DialectObj;
+
+#include "clinic/_csv.c.h"
 
 typedef struct {
     PyObject_HEAD
@@ -330,6 +336,54 @@ _set_str(const char *name, PyObject **target, PyObject *src, const char *dflt)
         Py_XSETREF(*target, Py_NewRef(src));
     }
     return 0;
+}
+
+static void
+dialect_add_special_char(DialectObj *self, Py_UCS4 c)
+{
+    if (c == NOT_SET) {
+        return;
+    }
+    if (c < 128) {
+        self->special_chars[c / 64] |= (uint64_t)1 << (c % 64);
+    }
+    else {
+        self->nonascii_special = true;
+    }
+}
+
+static void
+dialect_init_special_chars_cache(DialectObj *self)
+{
+    self->special_chars[0] = self->special_chars[1] = 0;
+    self->nonascii_special = false;
+    dialect_add_special_char(self, self->delimiter);
+    dialect_add_special_char(self, self->quotechar);
+    dialect_add_special_char(self, self->escapechar);
+    dialect_add_special_char(self, '\r');
+    dialect_add_special_char(self, '\n');
+    PyObject *lt = self->lineterminator;
+    for (Py_ssize_t i = 0; i < PyUnicode_GET_LENGTH(lt); i++) {
+        dialect_add_special_char(self, PyUnicode_READ_CHAR(lt, i));
+    }
+}
+
+/* Whether the character needs quoting or escaping by the writer. */
+static inline bool
+dialect_is_special_char(DialectObj *self, Py_UCS4 c)
+{
+    if (c < 128) {
+        return (self->special_chars[c / 64] >> (c % 64)) & 1;
+    }
+    if (!self->nonascii_special) {
+        return false;
+    }
+    return (c == self->delimiter ||
+            c == self->quotechar ||
+            c == self->escapechar ||
+            PyUnicode_FindChar(self->lineterminator, c, 0,
+                               PyUnicode_GET_LENGTH(self->lineterminator),
+                               1) >= 0);
 }
 
 static int
@@ -558,6 +612,7 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     {
         goto err;
     }
+    dialect_init_special_chars_cache(self);
 
     ret = Py_NewRef(self);
 err:
@@ -577,18 +632,62 @@ err:
 /* Since dialect is now a heap type, it inherits pickling method for
  * protocol 0 and 1 from object, therefore it needs to be overridden */
 
-PyDoc_STRVAR(dialect_reduce_doc, "raises an exception to avoid pickling");
+/*[clinic input]
+_csv.Dialect.__reduce__
+
+Raise an exception to avoid pickling.
+[clinic start generated code]*/
 
 static PyObject *
-Dialect_reduce(PyObject *self, PyObject *args) {
+_csv_Dialect___reduce___impl(DialectObj *self)
+/*[clinic end generated code: output=f728b34af509ed69 input=e46419b46279e480]*/
+{
     PyErr_Format(PyExc_TypeError,
         "cannot pickle '%.100s' instances", _PyType_Name(Py_TYPE(self)));
     return NULL;
 }
 
+/*[clinic input]
+_csv.Dialect.__reduce_ex__
+
+    protocol: object
+    /
+
+Raise an exception to avoid pickling.
+[clinic start generated code]*/
+
+static PyObject *
+_csv_Dialect___reduce_ex___impl(DialectObj *self, PyObject *protocol)
+/*[clinic end generated code: output=d45dec397da6575a input=c6ebd579e8959040]*/
+{
+    return _csv_Dialect___reduce___impl(self);
+}
+
+/*[clinic input]
+_csv.Dialect.__replace__
+
+    **changes: dict
+
+Return a copy of the dialect with the specified options replaced.
+[clinic start generated code]*/
+
+static PyObject *
+_csv_Dialect___replace___impl(DialectObj *self, PyObject *changes)
+/*[clinic end generated code: output=8f692c2c63a61b50 input=154beb565fbabd4c]*/
+{
+    PyObject *newargs = PyTuple_Pack(1, self);
+    if (newargs == NULL) {
+        return NULL;
+    }
+    PyObject *result = dialect_new(Py_TYPE(self), newargs, changes);
+    Py_DECREF(newargs);
+    return result;
+}
+
 static struct PyMethodDef dialect_methods[] = {
-    {"__reduce__", Dialect_reduce, METH_VARARGS, dialect_reduce_doc},
-    {"__reduce_ex__", Dialect_reduce, METH_VARARGS, dialect_reduce_doc},
+    _CSV_DIALECT___REDUCE___METHODDEF
+    _CSV_DIALECT___REDUCE_EX___METHODDEF
+    _CSV_DIALECT___REPLACE___METHODDEF
     {NULL, NULL}
 };
 
@@ -1083,10 +1182,31 @@ PyType_Spec Reader_Type_spec = {
 };
 
 
+/*[clinic input]
+_csv.reader
+
+    iterable: object
+    dialect: object(c_default='NULL') = 'excel'
+    /
+    **fmtparams: dict
+
+Return a reader object that will process lines from the given iterable.
+
+The "iterable" argument can be any object that returns a line
+of input for each iteration, such as a file object or a list.  The
+optional "dialect" argument defines a CSV dialect.  The function
+also accepts optional keyword arguments which override settings
+provided by the dialect.
+
+The returned object is an iterator.  Each iteration returns a row
+of the CSV file (which can span multiple input lines).
+[clinic start generated code]*/
+
 static PyObject *
-csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
+_csv_reader_impl(PyObject *module, PyObject *iterable, PyObject *dialect,
+                 PyObject *fmtparams)
+/*[clinic end generated code: output=c7033323f4e82fae input=330c6d58878e33b7]*/
 {
-    PyObject * iterator, * dialect = NULL;
     _csvstate *module_state = get_csv_state(module);
     ReaderObj * self = PyObject_GC_New(
         ReaderObj,
@@ -1107,17 +1227,13 @@ csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
         return NULL;
     }
 
-    if (!PyArg_UnpackTuple(args, "reader", 1, 2, &iterator, &dialect)) {
-        Py_DECREF(self);
-        return NULL;
-    }
-    self->input_iter = PyObject_GetIter(iterator);
+    self->input_iter = PyObject_GetIter(iterable);
     if (self->input_iter == NULL) {
         Py_DECREF(self);
         return NULL;
     }
     self->dialect = (DialectObj *)_call_dialect(module_state, dialect,
-                                                keyword_args);
+                                                fmtparams);
     if (self->dialect == NULL) {
         Py_DECREF(self);
         return NULL;
@@ -1183,14 +1299,7 @@ join_append_data(WriterObj *self, int field_kind, const void *field_data,
         Py_UCS4 c = PyUnicode_READ(field_kind, field_data, i);
         int want_escape = 0;
 
-        if (c == dialect->delimiter ||
-            c == dialect->escapechar ||
-            c == dialect->quotechar  ||
-            c == '\n'  ||
-            c == '\r'  ||
-            PyUnicode_FindChar(
-                dialect->lineterminator, c, 0,
-                PyUnicode_GET_LENGTH(dialect->lineterminator), 1) >= 0) {
+        if (dialect_is_special_char(dialect, c)) {
             if (dialect->quoting == QUOTE_NONE)
                 want_escape = 1;
             else {
@@ -1552,10 +1661,27 @@ PyType_Spec Writer_Type_spec = {
 };
 
 
+/*[clinic input]
+_csv.writer
+
+    fileobj as output_file: object
+    dialect: object(c_default='NULL') = 'excel'
+    /
+    **fmtparams: dict
+
+Return a writer object writing user data to the given file object.
+
+The "fileobj" argument can be any object that supports the file API.
+The optional "dialect" argument defines a CSV dialect.  The function
+also accepts optional keyword arguments which override settings
+provided by the dialect.
+[clinic start generated code]*/
+
 static PyObject *
-csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
+_csv_writer_impl(PyObject *module, PyObject *output_file, PyObject *dialect,
+                 PyObject *fmtparams)
+/*[clinic end generated code: output=3f57919e03cca475 input=18d396d2aa8138f0]*/
 {
-    PyObject * output_file, * dialect = NULL;
     _csvstate *module_state = get_csv_state(module);
     WriterObj * self = PyObject_GC_New(WriterObj, module_state->writer_type);
 
@@ -1572,10 +1698,6 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
 
     self->error_obj = Py_NewRef(module_state->error_obj);
 
-    if (!PyArg_UnpackTuple(args, "writer", 1, 2, &output_file, &dialect)) {
-        Py_DECREF(self);
-        return NULL;
-    }
     if (PyObject_GetOptionalAttr(output_file,
                              module_state->str_write,
                              &self->write) < 0) {
@@ -1589,7 +1711,7 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
         return NULL;
     }
     self->dialect = (DialectObj *)_call_dialect(module_state, dialect,
-                                                keyword_args);
+                                                fmtparams);
     if (self->dialect == NULL) {
         Py_DECREF(self);
         return NULL;
@@ -1615,21 +1737,36 @@ _csv_list_dialects_impl(PyObject *module)
     return PyDict_Keys(get_csv_state(module)->dialects);
 }
 
+/*[clinic input]
+_csv.register_dialect
+
+    name as name_obj: object
+    dialect as dialect_obj: object(c_default='NULL') = 'excel'
+    /
+    **fmtparams: dict
+
+Create a mapping from a string name to a CVS dialect.
+
+The optional "dialect" argument specifies the base dialect instance
+or the name of the registered dialect.  The function also accepts
+optional keyword arguments which override settings provided by the
+dialect.
+[clinic start generated code]*/
+
 static PyObject *
-csv_register_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
+_csv_register_dialect_impl(PyObject *module, PyObject *name_obj,
+                           PyObject *dialect_obj, PyObject *fmtparams)
+/*[clinic end generated code: output=b00b54de5b950472 input=64e9180e18d88a97]*/
 {
-    PyObject *name_obj, *dialect_obj = NULL;
     _csvstate *module_state = get_csv_state(module);
     PyObject *dialect;
 
-    if (!PyArg_UnpackTuple(args, "register_dialect", 1, 2, &name_obj, &dialect_obj))
-        return NULL;
     if (!PyUnicode_Check(name_obj)) {
         PyErr_SetString(PyExc_TypeError,
                         "dialect name must be a string");
         return NULL;
     }
-    dialect = _call_dialect(module_state, dialect_obj, kwargs);
+    dialect = _call_dialect(module_state, dialect_obj, fmtparams);
     if (dialect == NULL)
         return NULL;
     if (PyDict_SetItem(module_state->dialects, name_obj, dialect) < 0) {
@@ -1728,47 +1865,10 @@ PyType_Spec error_spec = {
 
 PyDoc_STRVAR(csv_module_doc, "CSV parsing and writing.\n");
 
-PyDoc_STRVAR(csv_reader_doc,
-"reader($module, iterable, /, dialect='excel', **fmtparams)\n"
-"--\n\n"
-"Return a reader object that will process lines from the given iterable.\n"
-"\n"
-"The \"iterable\" argument can be any object that returns a line\n"
-"of input for each iteration, such as a file object or a list.  The\n"
-"optional \"dialect\" argument defines a CSV dialect.  The function\n"
-"also accepts optional keyword arguments which override settings\n"
-"provided by the dialect.\n"
-"\n"
-"The returned object is an iterator.  Each iteration returns a row\n"
-"of the CSV file (which can span multiple input lines).\n");
-
-PyDoc_STRVAR(csv_writer_doc,
-"writer($module, fileobj, /, dialect='excel', **fmtparams)\n"
-"--\n\n"
-"Return a writer object that will write user data on the given file object.\n"
-"\n"
-"The \"fileobj\" argument can be any object that supports the file API.\n"
-"The optional \"dialect\" argument defines a CSV dialect.  The function\n"
-"also accepts optional keyword arguments which override settings\n"
-"provided by the dialect.\n");
-
-PyDoc_STRVAR(csv_register_dialect_doc,
-"register_dialect($module, name, /, dialect='excel', **fmtparams)\n"
-"--\n\n"
-"Create a mapping from a string name to a CVS dialect.\n"
-"\n"
-"The optional \"dialect\" argument specifies the base dialect instance\n"
-"or the name of the registered dialect.  The function also accepts\n"
-"optional keyword arguments which override settings provided by the\n"
-"dialect.\n");
-
 static struct PyMethodDef csv_methods[] = {
-    { "reader", _PyCFunction_CAST(csv_reader),
-        METH_VARARGS | METH_KEYWORDS, csv_reader_doc},
-    { "writer", _PyCFunction_CAST(csv_writer),
-        METH_VARARGS | METH_KEYWORDS, csv_writer_doc},
-    { "register_dialect", _PyCFunction_CAST(csv_register_dialect),
-        METH_VARARGS | METH_KEYWORDS, csv_register_dialect_doc},
+    _CSV_READER_METHODDEF
+    _CSV_WRITER_METHODDEF
+    _CSV_REGISTER_DIALECT_METHODDEF
     _CSV_LIST_DIALECTS_METHODDEF
     _CSV_UNREGISTER_DIALECT_METHODDEF
     _CSV_GET_DIALECT_METHODDEF

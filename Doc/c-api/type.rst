@@ -37,6 +37,10 @@ Type Objects
 
    Clear the internal lookup cache. Return the current version tag.
 
+   .. versionchanged:: 3.16
+      This function is now a no-op as the type cache is now implemented
+      per-type. It still returns the current version tag.
+
 .. c:function:: unsigned long PyType_GetFlags(PyTypeObject* type)
 
    Return the :c:member:`~PyTypeObject.tp_flags` member of *type*. This function is primarily
@@ -639,7 +643,7 @@ but need extra remarks for use as slots:
    in the following situations:
 
    - The base is not variable-sized (its
-     :c:member:`~PyTypeObject.tp_itemsize`).
+     :c:member:`~PyTypeObject.tp_itemsize` is zero).
    - The requested :c:member:`PyType_Spec.basicsize` is positive,
      suggesting that the memory layout of the base class is known.
    - The requested :c:member:`PyType_Spec.basicsize` is zero,
@@ -699,7 +703,7 @@ but need extra remarks for use as slots:
 
    .. soft-deprecated:: 3.15
 
-      When not targetting older Python versions, pefer :c:macro:`!Py_tp_bases`.
+      When not targeting older Python versions, prefer :c:macro:`!Py_tp_bases`.
 
 The following slots do not correspond to public fields in the
 underlying structures:
@@ -824,7 +828,7 @@ They will continue to work, but new features will be added as slots for
 
    .. versionadded:: 3.12
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.15
 
       Prefer :c:func:`PyType_FromSlots` in new code.
 
@@ -855,7 +859,7 @@ They will continue to work, but new features will be added as slots for
       Creating classes whose metaclass overrides
       :c:member:`~PyTypeObject.tp_new` is no longer allowed.
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.15
 
       Prefer :c:func:`PyType_FromSlots` in new code.
 
@@ -881,7 +885,7 @@ They will continue to work, but new features will be added as slots for
       Creating classes whose metaclass overrides
       :c:member:`~PyTypeObject.tp_new` is no longer allowed.
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.15
 
       Prefer :c:func:`PyType_FromSlots` in new code.
 
@@ -906,7 +910,7 @@ They will continue to work, but new features will be added as slots for
       Creating classes whose metaclass overrides
       :c:member:`~PyTypeObject.tp_new` is no longer allowed.
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.15
 
       Prefer :c:func:`PyType_FromSlots` in new code.
 

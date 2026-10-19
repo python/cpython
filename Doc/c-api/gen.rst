@@ -35,8 +35,8 @@ than explicitly calling :c:func:`PyGen_New` or :c:func:`PyGen_NewWithQualName`.
 .. c:function:: PyObject* PyGen_New(PyFrameObject *frame)
 
    Create and return a new generator object based on the *frame* object.
-   A reference to *frame* is stolen by this function. The argument must not be
-   ``NULL``.
+   A reference to *frame* is ":term:`stolen <steal>`" by this function (even
+   on error). The argument must not be ``NULL``.
 
    .. deprecated-removed:: 3.16 3.18
 
@@ -48,8 +48,8 @@ than explicitly calling :c:func:`PyGen_New` or :c:func:`PyGen_NewWithQualName`.
 
    Create and return a new generator object based on the *frame* object,
    with ``__name__`` and ``__qualname__`` set to *name* and *qualname*.
-   A reference to *frame* is stolen by this function.  The *frame* argument
-   must not be ``NULL``.
+   A reference to *frame* is ":term:`stolen <steal>`" by this function (even
+   on error).  The *frame* argument must not be ``NULL``.
 
    .. deprecated-removed:: 3.16 3.18
 
@@ -80,8 +80,9 @@ Asynchronous Generator Objects
 .. c:function:: PyObject *PyAsyncGen_New(PyFrameObject *frame, PyObject *name, PyObject *qualname)
 
    Create a new asynchronous generator wrapping *frame*, with ``__name__`` and
-   ``__qualname__`` set to *name* and *qualname*. *frame* is stolen by this
-   function and must not be ``NULL``.
+   ``__qualname__`` set to *name* and *qualname*.
+   *frame* is ":term:`stolen <steal>`" by this function (even on error) and
+   must not be ``NULL``.
 
    On success, this function returns a :term:`strong reference` to the
    new asynchronous generator. On failure, this function returns ``NULL``
