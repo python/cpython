@@ -222,6 +222,33 @@ class FrameAttrsTest(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del f.f_lineno
 
+    def test_f_trace(self):
+        f, _, _ = self.make_frames()
+        def tracer(*args):
+            pass
+        for value in tracer, 42, None:
+            f.f_trace = value
+            self.assertEqual(f.f_trace, value)
+        f.f_trace = tracer
+        del f.f_trace
+        self.assertIsNone(f.f_trace)
+
+    def test_f_trace_lines_and_opcodes(self):
+        f, _, _ = self.make_frames()
+        for name in 'f_trace_lines', 'f_trace_opcodes':
+            with self.subTest(name=name):
+                for value in False, True:
+                    setattr(f, name, value)
+                    self.assertEqual(getattr(f, name), value)
+                with self.assertRaisesRegex(TypeError,
+                                            'attribute value type must be bool'):
+                    setattr(f, name, 1)
+        with self.assertRaisesRegex(TypeError,
+                                    "can't delete numeric/char attribute"):
+            del f.f_trace_lines
+        with self.assertRaisesRegex(AttributeError, 'cannot be deleted'):
+            del f.f_trace_opcodes
+
     def test_f_generator(self):
         # Test f_generator in different contexts.
 

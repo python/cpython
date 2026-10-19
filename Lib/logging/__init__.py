@@ -1263,7 +1263,12 @@ class FileHandler(StreamHandler):
         """
         if self.stream is None:
             if self.mode != 'w' or not self._closed:
-                self.stream = self._open()
+                # Report an error while opening the file, like emit errors.
+                try:
+                    self.stream = self._open()
+                except Exception:
+                    self.handleError(record)
+                    return
         if self.stream:
             StreamHandler.emit(self, record)
 
@@ -1675,6 +1680,8 @@ class Logger(Filterer):
                 exc_info = (type(exc_info), exc_info, exc_info.__traceback__)
             elif not isinstance(exc_info, tuple):
                 exc_info = sys.exc_info()
+        else:  # Normalize any falsy value to None, for type precision
+            exc_info = None
         record = self.makeRecord(self.name, level, fn, lno, msg, args,
                                  exc_info, func, extra, sinfo)
         self.handle(record)

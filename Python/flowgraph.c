@@ -188,7 +188,8 @@ cfg_builder_new_block(cfg_builder *g)
 }
 
 static int
-basicblock_addop(basicblock *b, int opcode, int oparg, location loc)
+basicblock_addop(basicblock *b, int opcode, int oparg, location loc,
+                 basicblock *except)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
@@ -203,15 +204,16 @@ basicblock_addop(basicblock *b, int opcode, int oparg, location loc)
     i->i_opcode = opcode;
     i->i_oparg = oparg;
     i->i_loc = loc;
+    i->i_except = except;
     // memory is already zero initialized
     assert(i->i_target == NULL);
-    assert(i->i_except == NULL);
 
     return SUCCESS;
 }
 
 static int
-basicblock_add_jump(basicblock *b, int opcode, basicblock *target, location loc)
+basicblock_add_jump(basicblock *b, int opcode, basicblock *target, location loc,
+                    basicblock *except)
 {
     cfg_instr *last = basicblock_last_instr(b);
     if (last && is_jump(last)) {
@@ -219,7 +221,7 @@ basicblock_add_jump(basicblock *b, int opcode, basicblock *target, location loc)
     }
 
     RETURN_IF_ERROR(
-        basicblock_addop(b, opcode, target->b_label.id, loc));
+        basicblock_addop(b, opcode, target->b_label.id, loc, except));
     last = basicblock_last_instr(b);
     assert(last && last->i_opcode == opcode);
     last->i_target = target;
@@ -493,7 +495,7 @@ int
 _PyCfgBuilder_Addop(cfg_builder *g, int opcode, int oparg, location loc)
 {
     RETURN_IF_ERROR(cfg_builder_maybe_start_new_block(g));
-    return basicblock_addop(g->g_curblock, opcode, oparg, loc);
+    return basicblock_addop(g->g_curblock, opcode, oparg, loc, NULL);
 }
 
 
@@ -554,7 +556,7 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
     bool is_forward = last->i_target->b_visited == 0;
     if (is_forward) {
         RETURN_IF_ERROR(
-            basicblock_addop(b, NOT_TAKEN, 0, last->i_loc));
+            basicblock_addop(b, NOT_TAKEN, 0, last->i_loc, last->i_except));
         return SUCCESS;
     }
 
@@ -583,9 +585,11 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
         return ERROR;
     }
     RETURN_IF_ERROR(
-        basicblock_addop(backwards_jump, NOT_TAKEN, 0, last->i_loc));
+        basicblock_addop(backwards_jump, NOT_TAKEN, 0, last->i_loc,
+                         last->i_except));
     RETURN_IF_ERROR(
-        basicblock_add_jump(backwards_jump, JUMP, target, last->i_loc));
+        basicblock_add_jump(backwards_jump, JUMP, target, last->i_loc,
+                            last->i_except));
     backwards_jump->b_startdepth = target->b_startdepth;
     last->i_opcode = reversed_opcode;
     last->i_target = b->b_next;
@@ -1293,7 +1297,8 @@ jump_thread(basicblock *bb, cfg_instr *inst, cfg_instr *target, int opcode)
 
         RETURN_IF_ERROR(
             basicblock_add_jump(
-                bb, opcode, target->i_target, target->i_loc));
+                bb, opcode, target->i_target, target->i_loc,
+                target->i_except));
 
         return true;
     }
@@ -1569,34 +1574,48 @@ fold_tuple_of_constants(basicblock *bb, int i, PyObject *consts,
 }
 
 /* Replace:
-    BUILD_LIST 0
+    BUILD_LIST/BUILD_SET 0
     LOAD_CONST c1
-    LIST_APPEND 1
+    LIST_APPEND/SET_ADD 1
     LOAD_CONST c2
-    LIST_APPEND 1
+    LIST_APPEND/SET_ADD 1
     ...
     LOAD_CONST cN
-    LIST_APPEND 1
-    CALL_INTRINSIC_1 INTRINSIC_LIST_TO_TUPLE
+    LIST_APPEND/SET_ADD 1
+    [CALL_INTRINSIC_1 INTRINSIC_LIST_TO_TUPLE]   <-- optional
    with:
     LOAD_CONST (c1, c2, ... cN)
+   The instruction at `i` is either the LIST_TO_TUPLE intrinsic (so the
+   immediately preceding non-NOP instruction is expected to be a
+   LIST_APPEND, and only the BUILD_LIST/LIST_APPEND form is considered),
+   or the trailing LIST_APPEND or SET_ADD itself, in which case the
+   matching BUILD_LIST/BUILD_SET start is selected from its opcode, and
+   for sets the result is wrapped in a frozenset.
 */
 static int
-fold_constant_intrinsic_list_to_tuple(basicblock *bb, int i,
-                                      PyObject *consts, PyObject *const_cache,
-                                      _Py_hashtable_t *consts_index)
+fold_constant_seq_into_load_const(basicblock *bb, int i,
+                                  PyObject *consts, PyObject *const_cache,
+                                  _Py_hashtable_t *consts_index)
 {
     assert(PyDict_CheckExact(const_cache));
     assert(PyList_CheckExact(consts));
     assert(i >= 0);
     assert(i < bb->b_iused);
 
-    cfg_instr *intrinsic = &bb->b_instr[i];
-    assert(intrinsic->i_opcode == CALL_INTRINSIC_1);
-    assert(intrinsic->i_oparg == INTRINSIC_LIST_TO_TUPLE);
-
+    cfg_instr *target = &bb->b_instr[i];
+    assert(target->i_opcode == LIST_APPEND || target->i_opcode == SET_ADD ||
+           (target->i_opcode == CALL_INTRINSIC_1 &&
+            target->i_oparg == INTRINSIC_LIST_TO_TUPLE));
+    bool expected_append = target->i_opcode == CALL_INTRINSIC_1;
+    int append_op = expected_append ? LIST_APPEND : target->i_opcode;
+    assert(append_op == LIST_APPEND || append_op == SET_ADD);
+    int build_op = append_op == LIST_APPEND ? BUILD_LIST : BUILD_SET;
     int consts_found = 0;
-    bool expect_append = true;
+    /* Walking backward from `i`, we expect LIST_APPEND/SET_ADD and
+       LOAD_CONST to alternate. If `i` is the trailing LIST_TO_TUPLE
+       intrinsic, the next instruction back is an APPEND. If `i` is the
+       trailing APPEND itself, the next instruction back is a LOAD_CONST. */
+    bool expect_append = expected_append;
 
     for (int pos = i - 1; pos >= 0; pos--) {
         cfg_instr *instr = &bb->b_instr[pos];
@@ -1607,7 +1626,7 @@ fold_constant_intrinsic_list_to_tuple(basicblock *bb, int i,
             continue;
         }
 
-        if (opcode == BUILD_LIST && oparg == 0) {
+        if (opcode == build_op && oparg == 0) {
             if (!expect_append) {
                 /* Not a sequence start. */
                 return SUCCESS;
@@ -1619,7 +1638,8 @@ fold_constant_intrinsic_list_to_tuple(basicblock *bb, int i,
                 return ERROR;
             }
 
-            for (int newpos = i - 1; newpos >= pos; newpos--) {
+            int newpos_start = expected_append ? i - 1 : i;
+            for (int newpos = newpos_start; newpos >= pos; newpos--) {
                 instr = &bb->b_instr[newpos];
                 if (instr->i_opcode == NOP) {
                     continue;
@@ -1636,11 +1656,20 @@ fold_constant_intrinsic_list_to_tuple(basicblock *bb, int i,
                 nop_out(&instr, 1);
             }
             assert(consts_found == 0);
-            return instr_make_load_const(intrinsic, newconst, consts, const_cache, consts_index);
+
+            if (build_op == BUILD_SET) {
+                PyObject *frozen = PyFrozenSet_New(newconst);
+                Py_DECREF(newconst);
+                if (frozen == NULL) {
+                    return ERROR;
+                }
+                newconst = frozen;
+            }
+            return instr_make_load_const(target, newconst, consts, const_cache, consts_index);
         }
 
         if (expect_append) {
-            if (opcode != LIST_APPEND || oparg != 1) {
+            if (opcode != append_op || oparg != 1) {
                 return SUCCESS;
             }
         }
@@ -2579,15 +2608,20 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts,
                 break;
             case CALL_INTRINSIC_1:
                 if (oparg == INTRINSIC_LIST_TO_TUPLE) {
-                    if (nextop == GET_ITER) {
+                    RETURN_IF_ERROR(fold_constant_seq_into_load_const(bb, i, consts, const_cache, consts_index));
+                    if (inst->i_opcode == CALL_INTRINSIC_1 && nextop == GET_ITER) {
                         INSTR_SET_OP0(inst, NOP);
-                    }
-                    else {
-                        RETURN_IF_ERROR(fold_constant_intrinsic_list_to_tuple(bb, i, consts, const_cache, consts_index));
                     }
                 }
                 else if (oparg == INTRINSIC_UNARY_POSITIVE) {
                     RETURN_IF_ERROR(fold_const_unaryop(bb, i, consts, const_cache, consts_index));
+                }
+                break;
+            case LIST_APPEND:
+            case SET_ADD:
+                if (oparg == 1 && (nextop == GET_ITER || nextop == CONTAINS_OP)) {
+                    RETURN_IF_ERROR(fold_constant_seq_into_load_const(
+                        bb, i, consts, const_cache, consts_index));
                 }
                 break;
             case BINARY_OP:
@@ -3518,7 +3552,7 @@ push_cold_blocks_to_end(cfg_builder *g) {
                 b->b_next->b_label.id = next_lbl++;
             }
             basicblock_addop(explicit_jump, JUMP_NO_INTERRUPT, b->b_next->b_label.id,
-                             NO_LOCATION);
+                             NO_LOCATION, NULL);
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
             explicit_jump->b_predecessors = 1;
