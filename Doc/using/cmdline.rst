@@ -652,7 +652,7 @@ Miscellaneous options
 
      .. versionadded:: 3.13
 
-   * ``-X disable_remote_debug`` disables the remote debugging support as described
+   * ``-X disable-remote-debug`` disables the remote debugging support as described
      in :pep:`768`.  This includes both the functionality to schedule code for
      execution in another process and the functionality to receive code for
      execution in the current process.
@@ -1313,7 +1313,7 @@ conflict.
    to schedule code for execution in another process and the functionality to
    receive code for execution in the current process.
 
-   See also the :option:`-X disable_remote_debug` command-line option.
+   See also the :option:`-X disable-remote-debug` command-line option.
 
    .. versionadded:: 3.14
 

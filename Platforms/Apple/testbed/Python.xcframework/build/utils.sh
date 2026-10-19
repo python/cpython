@@ -140,7 +140,7 @@ install_python() {
     shift
 
     install_stdlib $PYTHON_XCFRAMEWORK_PATH
-    PYTHON_VER=$(ls -1 "$CODESIGNING_FOLDER_PATH/python/lib" | grep -E "^python3\.\d+$")
+    PYTHON_VER=$(ls -1 "$CODESIGNING_FOLDER_PATH/python/lib" | grep -E "^python3\.\d+[a-z]*$")
     echo "Install Python $PYTHON_VER standard library extension modules..."
     process_dylibs $PYTHON_XCFRAMEWORK_PATH python/lib/$PYTHON_VER/lib-dynload
 
