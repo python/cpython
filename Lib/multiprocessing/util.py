@@ -239,6 +239,7 @@ def get_temp_dir():
     # get name of a temp directory which will be automatically cleaned up
     tempdir = process.current_process()._config.get('tempdir')
     if tempdir is None:
+        # Deferred until first use to keep importing this module cheap.
         import shutil, tempfile
         base_tempdir = _get_base_temp_dir(tempfile)
         tempdir = tempfile.mkdtemp(prefix=_TMPPYMP_PREFIX, dir=base_tempdir)
@@ -249,6 +250,34 @@ def get_temp_dir():
                  exitpriority=-100)
         process.current_process()._config['tempdir'] = tempdir
     return tempdir
+
+
+def _has_writeable_tempdir():
+    # 'forkserver' requires writeable temporary files. This function is
+    # called to determine the default context's start method.
+    #
+    # See: https://github.com/python/cpython/issues/155717.
+
+    # Deferred until first use to keep importing this module cheap.
+    import tempfile
+
+    try:
+        path = _get_base_temp_dir(tempfile)
+    except OSError:
+        # No usable temporary directory at all.
+        return False
+    if path is None:
+        return False
+
+    # os.access() is advisory and racy. It can lie on read-only filesystems,
+    # NFS/network mounts, containers, and immutable-flag files, so we simply
+    # try to create a file to check if this works and delete it otherwise.
+    try:
+        with tempfile.NamedTemporaryFile(dir=path):
+            return True
+    except OSError:
+        return False
+
 
 #
 # Support for reinitialization of objects when bootstrapping a child process
