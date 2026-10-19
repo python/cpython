@@ -37,16 +37,28 @@ prefix_real=$(installed_prefix "$0") || {
     exit 1
 }
 
-# Use sed to fix paths from their built-to locations to their installed-to
-# locations. Keep prefix & exec_prefix using their original values in case
+# Fix paths from their built-to locations to their installed-to locations
+# by replacing the first occurrence of the configured prefix with the actual
+# one. Keep prefix & exec_prefix using their original values in case
 # they are referenced in other configure variables, to prevent double
 # substitution, issue #22140.
 prefix="@prefix@"
 exec_prefix="@exec_prefix@"
 exec_prefix_real=${prefix_real}
-includedir=$(echo "@includedir@" | sed "s#$prefix#$prefix_real#")
-libdir=$(echo "@libdir@" | sed "s#$prefix#$prefix_real#")
-CFLAGS=$(echo "@CFLAGS@" | sed "s#$prefix#$prefix_real#")
+relocate ()
+{
+    case "$1" in
+        *"$prefix"*)
+            printf '%s\n' "${1%%"$prefix"*}${prefix_real}${1#*"$prefix"}"
+        ;;
+        *)
+            printf '%s\n' "$1"
+        ;;
+    esac
+}
+includedir=$(relocate "@includedir@")
+libdir=$(relocate "@libdir@")
+CFLAGS=$(relocate "@CFLAGS@")
 VERSION="@VERSION@"
 LIBM="@LIBM@"
 LIBC="@LIBC@"
@@ -60,7 +72,7 @@ OPT="@OPT@"
 PY_ENABLE_SHARED="@PY_ENABLE_SHARED@"
 LDVERSION="@LDVERSION@"
 LIBDEST=${prefix_real}/lib/python${VERSION}
-LIBPL=$(echo "@LIBPL@" | sed "s#$prefix#$prefix_real#")
+LIBPL=$(relocate "@LIBPL@")
 SO="@EXT_SUFFIX@"
 PYTHONFRAMEWORK="@PYTHONFRAMEWORK@"
 INCDIR="-I$includedir/python${VERSION}${ABIFLAGS}"
