@@ -31,7 +31,6 @@ PY_DWORD_MAX
 PY_FORMAT_SIZE_T
 PY_INT32_T
 PY_INT64_T
-PY_LITTLE_ENDIAN
 PY_LLONG_MAX
 PY_LLONG_MIN
 PY_LONG_LONG
@@ -56,8 +55,6 @@ PyDescr_COMMON
 PyDescr_NAME
 PyDescr_TYPE
 PyWrapperFlag_KEYWORDS
-# cpython/fileobject.h
-Py_UniversalNewlineFgets
 # cpython/pylifecycle.h
 Py_FrozenMain
 # cpython/objimpl.h
