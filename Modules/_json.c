@@ -1075,26 +1075,31 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
     else {
         Py_ssize_t i, n;
 
-        /* Fast path for integers with at most 19 digits (excluding the
-           optional minus sign): the magnitude always fits in an unsigned
-           long long, so we construct the result from it directly. */
-        int neg = (PyUnicode_READ(kind, str, start) == '-');
-        if (!is_float && idx - start - neg <= 19) {
-            unsigned long long value = 0;
-            for (i = start + neg; i < idx; i++) {
-                value = value * 10 + (PyUnicode_READ(kind, str, i) - '0');
-            }
+        n = idx - start;
+        if (!is_float && n <= 19) {
             *next_idx_ptr = idx;
-            rval = PyLong_FromUnsignedLongLong(value);
-            if (neg && rval != NULL) {
-                Py_SETREF(rval, PyNumber_Negative(rval));
+            if (PyUnicode_READ(kind, str, start) == '-') {
+                /* integer with at most 18 digits (excluding sign) fits in
+                   long long (10 ** 18 - 1 <= 2 ** 63 < 10 ** 19 - 1) */
+                long long value = 0;
+                for (i = start + 1; i < idx; i++) {
+                    value = value * 10 - (PyUnicode_READ(kind, str, i) - '0');
+                }
+                return PyLong_FromLongLong(value);
             }
-            return rval;
+            else {
+                /* integer with at most 19 digits fits in unsigned long
+                   long (10 ** 19 - 1 <= 2 ** 64 - 1 < 10 ** 20 - 1) */
+                unsigned long long value = 0;
+                for (i = start; i < idx; i++) {
+                    value = value * 10 + (PyUnicode_READ(kind, str, i) - '0');
+                }
+                return PyLong_FromUnsignedLongLong(value);
+            }
         }
 
         /* Straight conversion to ASCII, to avoid costly conversion of
            decimal unicode digits (which cannot appear here) */
-        n = idx - start;
         char stackbuf[64];
         char *buf = stackbuf;
         if (n >= (Py_ssize_t)sizeof(stackbuf)) {
