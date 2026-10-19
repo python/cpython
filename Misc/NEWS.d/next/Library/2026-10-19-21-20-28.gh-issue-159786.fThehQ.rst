@@ -1,0 +1,4 @@
+Fix a crash on DEBUG builds when the HACL* routine used by
+:meth:`hmac.HMAC.update` fails. This only happens for messages larger
+than 4 GiB once the maximum input length of the underlying hash function
+is exceeded. Patch by Bénédikt Tran.
