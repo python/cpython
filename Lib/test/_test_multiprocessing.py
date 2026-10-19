@@ -3626,6 +3626,48 @@ class _TestPoolWorkerErrors(BaseTestCase):
         p.close()
         p.join()
 
+class _TestPoolTaskBaseException(BaseTestCase):
+    # gh-76067: a task raising a BaseException which is not an Exception
+    # ended the worker before the job's result was sent, so the pool hung
+    ALLOWED_TYPES = ('processes', 'threads')
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_apply_async_task_raises_system_exit(self):
+        with self.Pool(1) as p:
+            res = p.apply_async(reraise, (SystemExit(3),))
+            # queued behind it, so it hangs if the worker is not replaced
+            res2 = p.apply_async(sqr, (3,))
+            with self.assertRaises(SystemExit) as cm:
+                res.get(support.SHORT_TIMEOUT)
+            self.assertEqual(cm.exception.code, 3)
+            self.assertEqual(res2.get(support.SHORT_TIMEOUT), 9)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_map_async_task_raises_system_exit(self):
+        with self.Pool(1) as p:
+            res = p.map_async(reraise, [SystemExit(0) for _ in range(20)])
+            with self.assertRaises(SystemExit):
+                res.get(support.SHORT_TIMEOUT)
+            res = p.apply_async(sqr, (3,))
+            self.assertEqual(res.get(support.SHORT_TIMEOUT), 9)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_worker_exits_after_system_exit(self):
+        if self.TYPE == 'threads':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+        with self.Pool(1) as p:
+            # the second worker is started by the worker handler thread
+            for code in (3, 4):
+                worker, = p._pool
+                res = p.apply_async(reraise, (SystemExit(code),))
+                with self.assertRaises(SystemExit):
+                    res.get(support.SHORT_TIMEOUT)
+                res = p.apply_async(sqr, (3,))
+                self.assertEqual(res.get(support.SHORT_TIMEOUT), 9)
+                # the worker still exits with that code, and is replaced
+                self.assertEqual(worker.exitcode, code)
+                self.assertNotIn(worker, p._pool)
+
 class _TestPoolWorkerLifetime(BaseTestCase):
     ALLOWED_TYPES = ('processes', )
 

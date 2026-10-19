@@ -1,0 +1,9 @@
+Fix a deadlock in :class:`multiprocessing.pool.Pool` and
+:class:`~multiprocessing.pool.ThreadPool` when a task raises
+:exc:`SystemExit` or another :exc:`BaseException` which is not an
+:exc:`Exception`, for example from a :data:`~signal.SIGTERM` handler.
+The result of the job was never sent, so that the pool hung forever.
+The exception is now the result of the job and is raised by
+:meth:`!AsyncResult.get`, like other exceptions.
+A worker process still exits afterwards and is replaced,
+while a :class:`!ThreadPool` thread keeps running.
