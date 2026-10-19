@@ -22,9 +22,9 @@ terms of the MIT license. A copy of the license can be found in the file
 // mi_subproc_t   : all heaps belong to a sub-process (usually just the main one)
 // --------------------------------------------------------------------------
 
-#include <mimalloc.h>
-#include <mimalloc-stats.h>
-#include <mimalloc-profile.h>
+#include "../mimalloc.h"
+#include "../mimalloc-stats.h"
+#include "../mimalloc-profile.h"
 #include <stddef.h>   // ptrdiff_t
 #include <stdint.h>   // uintptr_t, uint16_t, etc
 #include <stdbool.h>  // bool
