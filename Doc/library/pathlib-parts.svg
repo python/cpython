@@ -9,8 +9,6 @@
   <!-- Transparent background for the documentation theme's
        invert-in-dark-mode class. The colors distinguish the spans;
        labels and connectors also identify each part without color. -->
-  <!-- Regenerate the EPUB fallback from the repository root with:
-       rsvg-convert -z 2 -b white Doc/library/pathlib-parts.svg -o Doc/library/pathlib-parts.png -->
   <style>
     text {
       font-family: "DejaVu Sans Mono", monospace;

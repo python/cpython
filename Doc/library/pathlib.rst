@@ -313,24 +313,12 @@ different parts of a path.  For example, given::
 
    >>> p = PurePosixPath('/srv/holy/grail.tar.gz')
 
-.. only:: not epub
-
-   .. image:: pathlib-parts.svg
-      :align: center
-      :class: invert-in-dark-mode
-      :alt: For p = PurePosixPath('/srv/holy/grail.tar.gz'), p.parent is
-            PurePosixPath('/srv/holy'), p.name is 'grail.tar.gz',
-            p.stem is 'grail.tar', and p.suffix is '.gz'.
-
-.. only:: epub
-
-   .. image:: pathlib-parts.png
-      :align: center
-      :width: 880px
-      :class: invert-in-dark-mode
-      :alt: For p = PurePosixPath('/srv/holy/grail.tar.gz'), p.parent is
-            PurePosixPath('/srv/holy'), p.name is 'grail.tar.gz',
-            p.stem is 'grail.tar', and p.suffix is '.gz'.
+.. image:: pathlib-parts.svg
+   :align: center
+   :class: invert-in-dark-mode
+   :alt: For p = PurePosixPath('/srv/holy/grail.tar.gz'), p.parent is
+         PurePosixPath('/srv/holy'), p.name is 'grail.tar.gz',
+         p.stem is 'grail.tar', and p.suffix is '.gz'.
 
 The stem excludes only the final suffix: in this example, it includes ``.tar``.
 
