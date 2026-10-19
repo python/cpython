@@ -434,7 +434,8 @@ Importing Modules
      contents instead of calling *initfunc* again.
    - The module will be fully initialized by *initfunc*.
      Calling :c:func:`PyModule_Exec` on it will have no effect, though it is
-     recommended (in case the module's implementation will change).
+     still recommended, in case the module later switches to
+     :ref:`multi-phase initialization <multi-phase-initialization>`.
    - Also, if the *spec*'s :py:attr:`!name` contains dots, this name is used
      for prepending a parent package to the new module's
      :attr:`~module.__name__`.

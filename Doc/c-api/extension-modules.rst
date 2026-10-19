@@ -328,8 +328,8 @@ in the following ways:
   tuple where:
 
   - *module_name* is the module's full dotted name, taken from
-    :py:attr:`~importlib.machinery.ModuleSpec`
-    (or similar argument to importing function).
+    :py:attr:`ModuleSpec.name <importlib.machinery.ModuleSpec.name>`
+    (or the equivalent argument of the importing function).
     Note that names that the initialization function uses to create the module
     (for example, :c:member:`PyModuleDef.m_name`) are not taken into account.
   - *file_name* is the extension's file name.
