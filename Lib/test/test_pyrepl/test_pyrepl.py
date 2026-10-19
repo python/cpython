@@ -13,7 +13,7 @@ import sys
 import tempfile
 from functools import partial
 from pkgutil import ModuleInfo
-from unittest import TestCase, skipUnless, skipIf, SkipTest
+from unittest import TestCase, skipUnless, SkipTest
 from unittest.mock import Mock, patch
 import warnings
 from test.support import (
@@ -37,6 +37,7 @@ from .support import (
     code_to_events,
 )
 from _colorize import ANSIColors, get_theme
+from _pyrepl import terminfo
 from _pyrepl.console import Event
 from _pyrepl.completing_reader import stripcolor
 from _pyrepl._module_completer import (
@@ -688,6 +689,64 @@ class TestPyReplOutput(ScreenEqualMixin, TestCase):
         reader = self.prepare_reader(code_to_events("\n"))
         wrapper = _ReadlineWrapper(f_in=None, f_out=None, reader=reader)
         self.assertIs(type(wrapper.get_line_buffer()), str)
+
+    def test_input_does_not_add_history(self):
+        for history in ([], ["previous input"]):
+            with self.subTest(history=history):
+                reader = self.prepare_reader(
+                    code_to_events("first input\nsecond input\n1+1\n")
+                )
+                reader.history[:] = history
+                wrapper = _ReadlineWrapper(f_in=None, f_out=None, reader=reader)
+
+                self.assertEqual(wrapper.input(), "first input")
+                self.assertEqual(reader.history, history)
+                self.assertEqual(wrapper.input(), "second input")
+                self.assertEqual(reader.history, history)
+                self.assertEqual(multiline_input(reader), "1+1")
+                self.assertEqual(reader.history, [*history, "1+1"])
+
+    def test_input_can_read_history(self):
+        events = [
+            Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+            Event(evt="key", data="\n", raw=bytearray(b"\n")),
+        ]
+        reader = self.prepare_reader(events)
+        reader.history.append("previous input")
+        wrapper = _ReadlineWrapper(f_in=None, f_out=None, reader=reader)
+
+        self.assertEqual(wrapper.input(), "previous input")
+        self.assertEqual(reader.history, ["previous input"])
+
+    def test_input_does_not_modify_history(self):
+        events = itertools.chain(
+            [Event(evt="key", data="up", raw=bytearray(b"\x1bOA"))],
+            code_to_events(" edited"),
+            [Event(evt="key", data="down", raw=bytearray(b"\x1bOB"))],
+            code_to_events("new input\n"),
+        )
+        reader = self.prepare_reader(events)
+        reader.history.append("previous input")
+        wrapper = _ReadlineWrapper(f_in=None, f_out=None, reader=reader)
+
+        self.assertEqual(wrapper.input(), "new input")
+        self.assertEqual(reader.history, ["previous input"])
+
+    def test_input_error_does_not_modify_history(self):
+        for text, exception in (
+            ("partial input\x03", KeyboardInterrupt),
+            ("\x04", EOFError),
+        ):
+            with self.subTest(exception=exception):
+                reader = self.prepare_reader(code_to_events(text + "1+1\n"))
+                reader.history.append("previous input")
+                wrapper = _ReadlineWrapper(f_in=None, f_out=None, reader=reader)
+
+                with self.assertRaises(exception):
+                    wrapper.input()
+                self.assertEqual(reader.history, ["previous input"])
+                self.assertEqual(multiline_input(reader), "1+1")
+                self.assertEqual(reader.history, ["previous input", "1+1"])
 
     def test_multiline_edit(self):
         events = itertools.chain(
@@ -1466,7 +1525,10 @@ class TestPyReplModuleCompleter(TestCase):
                         reader = self.prepare_reader(events, namespace={})
                         output = reader.readline()
                         self.assertEqual(output, expected)
-                        new_imports = sys.modules.keys() - _imported
+                        # The reader imports its own helpers lazily.
+                        new_imports = {name for name in
+                                       sys.modules.keys() - _imported
+                                       if not name.startswith('_pyrepl.')}
                         self.assertEqual(new_imports, expected_imports)
 
     @patch.dict(sys.modules)
@@ -1998,8 +2060,20 @@ class TestDumbTerminal(ReplTestCase):
         self.assertNotIn("Traceback", output)
 
 
+def supports_pyrepl():
+    # pyrepl falls back to the basic REPL if the terminal lacks any of the
+    # capabilities which UnixConsole requires.  This covers an unset or
+    # "dumb" TERM as well, they are resolved to the "dumb" capabilities.
+    try:
+        info = terminfo.TermInfo(None)
+    except Exception:
+        return False
+    return all(info.get(cap) is not None
+               for cap in ("bel", "clear", "cup", "el"))
+
+
 @skipUnless(pty, "requires pty")
-@skipIf((os.environ.get("TERM") or "dumb") == "dumb", "can't use pyrepl in dumb terminal")
+@skipUnless(supports_pyrepl(), "can't use pyrepl in this terminal")
 class TestMain(ReplTestCase):
     def setUp(self):
         # Cleanup from PYTHON* variables to isolate from local
@@ -2415,6 +2489,8 @@ class TestMain(ReplTestCase):
         env = os.environ.copy()
         env.pop("PYTHON_BASIC_REPL", "")
         env["PYTHON_BASIC_REPL"] = "1"
+        # Ensure user's .inputrc doesn't interfere with basic REPL output
+        env["INPUTRC"] = "/dev/null"
 
         commands = "print('Something pretty long', end='')\nexit()\n"
         expected_output_sequence = "Something pretty long>>> exit()"
