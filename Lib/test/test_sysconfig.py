@@ -21,7 +21,8 @@ from test.support import (
 )
 from test.support.import_helper import import_module
 from test.support.os_helper import (TESTFN, unlink, skip_unless_symlink,
-                                    change_cwd, EnvironmentVarGuard)
+                                    change_cwd, temp_dir,
+                                    EnvironmentVarGuard)
 from test.support.venv import VirtualEnvironmentMixin
 
 import sysconfig
@@ -766,6 +767,53 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         self.assertEqual(config_vars['base'], sys.prefix)
         self.assertEqual(config_vars['exec_prefix'], sys.exec_prefix)
         self.assertEqual(config_vars['platbase'], sys.exec_prefix)
+
+    @unittest.skipUnless(os.name == 'posix', 'python-config.sh is POSIX only')
+    @unittest.skipIf(is_wasi, "Incompatible with WASI mapdir and OOT builds")
+    @unittest.skipIf(is_android or is_apple_mobile,
+                     'Android and iOS do not ship python-config')
+    @requires_subprocess()
+    def test_python_config_sh_prefix_with_spaces(self):
+        # gh-159819: the shell variant of python-config must report the
+        # directory it was installed to even if that path contains spaces.
+        if is_python_build():
+            script = os.path.join(_PROJECT_BASE, 'python-config')
+        else:
+            ldversion = get_config_var('LDVERSION')
+            script = os.path.join(os.path.dirname(sys.executable),
+                                  f'python{ldversion}-config')
+        if not os.path.isfile(script):
+            self.skipTest(f'{script!r} does not exist')
+        with open(script, encoding='utf-8') as f:
+            if f.readline().rstrip() != '#!/bin/sh':
+                self.skipTest('python-config is not the shell script variant')
+
+        with temp_dir() as tmpdir:
+            prefix = os.path.realpath(os.path.join(tmpdir, 'path with spaces'))
+            bindir = os.path.join(prefix, 'bin')
+            os.mkdir(prefix)
+            os.mkdir(bindir)
+            copy = os.path.join(bindir, 'python-config')
+            shutil.copyfile(script, copy)
+
+            def check(option, expected):
+                proc = subprocess.run(['/bin/sh', copy, option],
+                                      capture_output=True, text=True)
+                self.assertEqual(proc.returncode, 0, proc.stderr)
+                self.assertEqual(proc.stdout.rstrip('\n'), expected)
+                self.assertEqual(proc.stderr, '')
+
+            check('--prefix', prefix)
+            check('--exec-prefix', prefix)
+
+            # The script rewrites the configured include directory by
+            # replacing the configured prefix with the actual one.
+            makefile_vars = _parse_makefile(sysconfig.get_makefile_filename())
+            includedir = makefile_vars['INCLUDEDIR'].replace(
+                makefile_vars['prefix'], prefix, 1)
+            incdir = os.path.join(includedir, 'python{VERSION}{ABIFLAGS}'
+                                  .format_map(makefile_vars))
+            check('--includes', f'-I{incdir} -I{incdir}')
 
     def test_parse_config_h(self):
         config = textwrap.dedent('''
