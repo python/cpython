@@ -904,8 +904,11 @@ class _SingleDispatchCallable:
     def __init__(self, wrapper):
         self._wrapper = wrapper
 
-    def __call__(self, /, *args, **kwds):
+    # Preserve the wrapper frame name used by importlib.resources caller detection.
+    def wrapper(self, /, *args, **kwds):
         return self._wrapper(*args, **kwds)
+
+    __call__ = wrapper
 
     def __getitem__(self, cls):
         return self.dispatch(cls)
