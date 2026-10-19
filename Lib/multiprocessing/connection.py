@@ -65,6 +65,20 @@ def _init_timeout(timeout=CONNECTION_TIMEOUT):
 def _check_timeout(t):
     return time.monotonic() > t
 
+
+class _SentinelReady(Exception):
+    """A wait sentinel became readable while a connection read was in progress.
+
+    Used by ProcessPoolExecutor so a worker killed mid-result does not leave
+    the manager thread blocked in a read that can never see EOF. The parent's
+    copy of the result pipe's write end stays open for the executor's
+    lifetime, so the death of the writer is not delivered as end-of-file.
+    """
+
+    def __init__(self, ready):
+        super().__init__(ready)
+        self.ready = ready
+
 #
 #
 #
@@ -253,11 +267,18 @@ class _ConnectionBase:
                               (offset + size) // itemsize])
             return size
 
-    def recv(self):
-        """Receive a (picklable) object"""
+    def recv(self, *, sentinels=()):
+        """Receive a (picklable) object.
+
+        *sentinels* is an optional sequence of objects accepted by
+        :func:`wait`, such as process sentinels. Before each read, those
+        objects are waited on together with this connection. If one of them
+        is ready and this connection is not, :class:`_SentinelReady` is
+        raised instead of blocking until the rest of the message arrives.
+        """
         self._check_closed()
         self._check_readable()
-        buf = self._recv_bytes()
+        buf = self._recv_bytes(sentinels=sentinels)
         return _ForkingPickler.loads(buf.getbuffer())
 
     def poll(self, timeout=0.0):
@@ -317,7 +338,31 @@ if _winapi:
             assert err == 0
             assert nwritten == len(buf)
 
-        def _recv_bytes(self, maxsize=None):
+        def _wait_overlapped_or_sentinels(self, ov, sentinels):
+            """Block until *ov* completes, or a sentinel is signaled."""
+            if not sentinels:
+                waitres = _winapi.WaitForMultipleObjects(
+                    [ov.event], False, INFINITE)
+                assert waitres == WAIT_OBJECT_0
+                return
+            sentinels = list(sentinels)
+            handles = [ov.event, *(int(item) for item in sentinels)]
+            waitres = _winapi.WaitForMultipleObjects(handles, False, INFINITE)
+            if waitres == WAIT_OBJECT_0:
+                return
+            ov.cancel()
+            try:
+                ov.GetOverlappedResult(True)
+            except OSError:
+                pass
+            idx = waitres - WAIT_OBJECT_0
+            if not 0 < idx <= len(sentinels):
+                idx = waitres - WAIT_ABANDONED_0
+            if 0 < idx <= len(sentinels):
+                raise _SentinelReady([sentinels[idx - 1]])
+            raise OSError("failed waiting for pipe data")
+
+        def _recv_bytes(self, maxsize=None, sentinels=()):
             if self._got_empty_message:
                 self._got_empty_message = False
                 return io.BytesIO()
@@ -329,23 +374,29 @@ if _winapi:
 
                     sentinel = object()
                     return_value = sentinel
+                    sentinel_ready = False
                     try:
                         try:
                             if err == _winapi.ERROR_IO_PENDING:
-                                waitres = _winapi.WaitForMultipleObjects(
-                                    [ov.event], False, INFINITE)
-                                assert waitres == WAIT_OBJECT_0
+                                self._wait_overlapped_or_sentinels(
+                                    ov, sentinels)
+                        except _SentinelReady:
+                            # Already cancelled and reaped above.
+                            sentinel_ready = True
+                            raise
                         except:
                             ov.cancel()
                             raise
                         finally:
-                            nread, err = ov.GetOverlappedResult(True)
-                            if err == 0:
-                                f = io.BytesIO()
-                                f.write(ov.getbuffer())
-                                return_value = f
-                            elif err == _winapi.ERROR_MORE_DATA:
-                                return_value = self._get_more_data(ov, maxsize)
+                            if not sentinel_ready:
+                                nread, err = ov.GetOverlappedResult(True)
+                                if err == 0:
+                                    f = io.BytesIO()
+                                    f.write(ov.getbuffer())
+                                    return_value = f
+                                elif err == _winapi.ERROR_MORE_DATA:
+                                    return_value = self._get_more_data(
+                                        ov, maxsize, sentinels)
                     except:
                         if return_value is sentinel:
                             raise
@@ -365,11 +416,28 @@ if _winapi:
                 return True
             return bool(wait([self], timeout))
 
-        def _get_more_data(self, ov, maxsize):
+        def _get_more_data(self, ov, maxsize, sentinels=()):
             buf = ov.getbuffer()
             f = io.BytesIO()
             f.write(buf)
             left = _winapi.PeekNamedPipe(self._handle)[1]
+            while left == 0 and sentinels:
+                # The rest of this message has not been written yet. The
+                # parent keeps its own write end open, so a killed writer
+                # does not surface as EOF. Poll the sentinels directly:
+                # waiting on this pipe here would start another overlapped
+                # read and consume the message.
+                handles = [int(item) for item in sentinels]
+                waitres = _winapi.WaitForMultipleObjects(handles, False, 50)
+                if waitres == WAIT_TIMEOUT:
+                    left = _winapi.PeekNamedPipe(self._handle)[1]
+                    continue
+                idx = waitres - WAIT_OBJECT_0
+                if not 0 <= idx < len(handles):
+                    idx = waitres - WAIT_ABANDONED_0
+                if 0 <= idx < len(handles):
+                    raise _SentinelReady([sentinels[idx]])
+                raise OSError("failed waiting for pipe data")
             assert left > 0
             if maxsize is not None and len(buf) + left > maxsize:
                 self._bad_message_length()
@@ -407,11 +475,27 @@ class Connection(_ConnectionBase):
                 break
             buf = buf[n:]
 
-    def _recv(self, size, read=_read):
+    def _abandon_read_if_sentinel_ready(self, sentinels):
+        """Raise if a sentinel is ready and this connection has no data.
+
+        A non-blocking poll covers the common case where the next chunk is
+        already buffered, so a large result does not block once per chunk.
+        """
+        ready = wait([self, *sentinels], timeout=0)
+        if self in ready:
+            return
+        if not ready:
+            ready = wait([self, *sentinels])
+        if self not in ready:
+            raise _SentinelReady(ready)
+
+    def _recv(self, size, sentinels=(), read=_read):
         buf = io.BytesIO()
         handle = self._handle
         remaining = size
         while remaining > 0:
+            if sentinels:
+                self._abandon_read_if_sentinel_ready(sentinels)
             to_read = min(BUFSIZE, remaining)
             chunk = read(handle, to_read)
             n = len(chunk)
@@ -447,15 +531,15 @@ class Connection(_ConnectionBase):
                 # to avoid "broken pipe" errors if the other end closed the pipe.
                 self._send(header + buf)
 
-    def _recv_bytes(self, maxsize=None):
-        buf = self._recv(4)
+    def _recv_bytes(self, maxsize=None, sentinels=()):
+        buf = self._recv(4, sentinels)
         size, = struct.unpack("!i", buf.getvalue())
         if size == -1:
-            buf = self._recv(8)
+            buf = self._recv(8, sentinels)
             size, = struct.unpack("!Q", buf.getvalue())
         if maxsize is not None and size > maxsize:
             return None
-        return self._recv(size)
+        return self._recv(size, sentinels)
 
     def _poll(self, timeout):
         r = wait([self], timeout)
