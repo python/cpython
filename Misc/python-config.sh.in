@@ -19,18 +19,23 @@ if [ "$1" = "" ] ; then
 fi
 
 # Returns the actual prefix where this script was installed to.
+# Fails if the directory containing this script cannot be resolved.
 installed_prefix ()
 {
-    RESULT=$(dirname $(cd $(dirname "$1") && pwd -P))
+    RESULT=$(cd "$(dirname "$1")" && pwd -P) || return 1
+    RESULT=$(dirname "$RESULT")
     if which readlink >/dev/null 2>&1 ; then
         if readlink -f "$RESULT" >/dev/null 2>&1; then
           RESULT=$(readlink -f "$RESULT")
         fi
     fi
-    echo $RESULT
+    echo "$RESULT"
 }
 
-prefix_real=$(installed_prefix "$0")
+prefix_real=$(installed_prefix "$0") || {
+    echo "$0: cannot determine the installation prefix" >&2
+    exit 1
+}
 
 # Use sed to fix paths from their built-to locations to their installed-to
 # locations. Keep prefix & exec_prefix using their original values in case
@@ -63,9 +68,9 @@ PLATINCDIR="-I$includedir/python${VERSION}${ABIFLAGS}"
 PY_EMBED=0
 
 # Scan for --help or unknown argument.
-for ARG in $*
+for ARG in "$@"
 do
-    case $ARG in
+    case "$ARG" in
         --help)
             exit_with_usage 0
         ;;
