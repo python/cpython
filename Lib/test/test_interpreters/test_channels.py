@@ -1,4 +1,3 @@
-import importlib
 import pickle
 import threading
 from textwrap import dedent
@@ -9,7 +8,7 @@ from test.support import import_helper
 # Raise SkipTest if subinterpreters not supported.
 _channels = import_helper.import_module('_interpchannels')
 from concurrent import interpreters
-from test.support import channels
+from test.support import channels, force_not_colorized
 from .utils import _run_output, TestBase
 
 
@@ -35,8 +34,14 @@ class LowLevelTests(TestBase):
             importlib.reload(channels)
             """));
 
+    @force_not_colorized
     def test_channel_id_types(self):
         # See https://github.com/python/cpython/issues/143376.
+        code = """\
+        import _interpchannels
+        import re
+        from concurrent import interpreters
+
         class End:
             __slots__ = ()
             def __new__(cls, chan=None):
@@ -48,18 +53,19 @@ class LowLevelTests(TestBase):
         class Send(End): pass
         class Recv(End): pass
 
-        _ = importlib.reload(_channels)
-        # ensure that the following tests do not have the registered bad types
-        self.addCleanup(importlib.reload, _channels)
-        _._register_end_types(Send, Recv)
-        chan = _._channel_id(_.create(), _resolve=True)
+        _interpchannels._register_end_types(Send, Recv)
+        chan = _interpchannels._channel_id(_interpchannels.create(), _resolve=True)
         interp = interpreters.create()
-        # The TypeError exception arises from our internal check,
-        # but subinterpreters use a generic exception message instead
-        # while retaining the original exception type.
-        err = "does not support cross-interpreter data"
-        with self.assertRaisesRegex(TypeError, err):
+        try:
             interp.prepare_main(chan=Send(chan))
+        finally:
+            interp.close()
+        """
+
+        out, err = self.assert_python_failure("-c", code)
+        self.assertEqual(out, '')
+        errmsg = "TypeError: '_id' attribute must be an _interpchannels.ChannelID object, not object"
+        self.assertIn(errmsg, err)
 
 
 class TestChannels(TestBase):
