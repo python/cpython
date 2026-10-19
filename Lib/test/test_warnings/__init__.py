@@ -15,6 +15,7 @@ from test import support
 from test.support import import_helper
 from test.support import isolation
 from test.support import os_helper
+from test.support import threading_helper
 from test.support import warnings_helper
 from test.support import force_not_colorized
 from test.support.script_helper import assert_python_ok, assert_python_failure
@@ -1631,6 +1632,100 @@ class LocksTest(unittest.TestCase):
             'cannot release un-acquired lock',
         ):
             c_warnings._release_lock()
+
+    @support.cpython_only
+    @unittest.skipUnless(support.has_fork_support, 'requires working os.fork')
+    @threading_helper.requires_working_threading()
+    def test_fork_other_thread_holds_lock(self):
+        code = textwrap.dedent('''
+            import _warnings
+            import os
+            import threading
+            import warnings
+            from test import support
+
+            parent_pid = os.getpid()
+            read_fd, write_fd = os.pipe()
+            local = threading.local()
+            ready = threading.Event()
+            release = threading.Event()
+            warnings.simplefilter('ignore', DeprecationWarning)
+            warnings.simplefilter('ignore', ResourceWarning)
+
+            class WarnOnDelete:
+                def __del__(self):
+                    if os.getpid() != parent_pid:
+                        # Even an ignored warning must acquire the lock.
+                        warnings.warn('child cleanup', ResourceWarning)
+                        os.write(write_fd, b'finalized')
+
+            def worker():
+                local.obj = WarnOnDelete()
+                _warnings._acquire_lock()
+                _warnings._acquire_lock()
+                try:
+                    ready.set()
+                    release.wait()
+                finally:
+                    _warnings._release_lock()
+                    _warnings._release_lock()
+
+            thread = threading.Thread(target=worker)
+            thread.start()
+            # Release the worker before fork's parent-side warning attempts
+            # to acquire the warnings lock.
+            os.register_at_fork(after_in_parent=release.set)
+            try:
+                assert ready.wait(support.LONG_TIMEOUT)
+                pid = os.fork()
+                if pid == 0:
+                    # The finalizer must run before os.fork() returns.
+                    os._exit(0)
+                support.wait_process(pid, exitcode=0)
+            finally:
+                release.set()
+                thread.join()
+                os.close(write_fd)
+            assert os.read(read_fd, 100) == b'finalized'
+            os.close(read_fd)
+        ''')
+        assert_python_ok('-c', code)
+
+    @support.cpython_only
+    @unittest.skipUnless(support.has_fork_support, 'requires working os.fork')
+    def test_fork_current_thread_holds_lock(self):
+        code = textwrap.dedent('''
+            import _warnings
+            import os
+            import warnings
+            from test import support
+
+            warnings.simplefilter('ignore')
+            for _ in range(3):
+                _warnings._acquire_lock()
+            pid = os.fork()
+            try:
+                # A warning must not change the inherited recursion depth.
+                warnings.warn('after fork')
+                for _ in range(3):
+                    _warnings._release_lock()
+                try:
+                    _warnings._release_lock()
+                except RuntimeError:
+                    pass
+                else:
+                    raise AssertionError('unexpected recursion depth')
+                _warnings._acquire_lock()
+                _warnings._release_lock()
+            except BaseException:
+                if pid == 0:
+                    os._exit(1)
+                raise
+            if pid == 0:
+                os._exit(0)
+            support.wait_process(pid, exitcode=0)
+        ''')
+        assert_python_ok('-c', code)
 
 
 class _DeprecatedTest(BaseTest, unittest.TestCase):

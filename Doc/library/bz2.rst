@@ -323,7 +323,7 @@ because the bzip2 library does not provide it.
    The version string of the bzip2 compression library
    actually loaded by the interpreter.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. data:: bzlib_version_info
@@ -334,7 +334,7 @@ because the bzip2 library does not provide it.
    The components can also be accessed by name, so ``bz2.bzlib_version_info[0]``
    is equivalent to ``bz2.bzlib_version_info.major`` and so on.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. _bz2-usage-examples:

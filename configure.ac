@@ -128,9 +128,9 @@ HAS_GIT=no-repository
 fi
 if test $HAS_GIT = found
 then
-    GITVERSION="git --git-dir \$(srcdir)/.git rev-parse --short HEAD"
-    GITTAG="git --git-dir \$(srcdir)/.git describe --all --always --dirty"
-    GITBRANCH="git --git-dir \$(srcdir)/.git name-rev --name-only HEAD"
+    GITVERSION="git --git-dir \$(srcdir)/.git --work-tree \$(srcdir) rev-parse --short HEAD"
+    GITTAG="git --git-dir \$(srcdir)/.git --work-tree \$(srcdir) describe --all --always --dirty"
+    GITBRANCH="git --git-dir \$(srcdir)/.git --work-tree \$(srcdir) name-rev --name-only HEAD"
 else
     GITVERSION=""
     GITTAG=""
@@ -439,7 +439,7 @@ if test -z "$AR"; then
 		aarch64-apple-ios*)           AR=arm64-apple-ios-ar ;;
 		x86_64-apple-ios*-simulator)  AR=x86_64-apple-ios-simulator-ar ;;
 		*)
-	esac
+    esac
 fi
 if test -z "$CC"; then
 	case "$host" in
@@ -5584,6 +5584,7 @@ AC_CHECK_FUNCS([ \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
 ])
 
+PY_CHECK_FUNC_PRIVATE([freadlink], [@%:@include <unistd.h>])
 PY_CHECK_FUNC_PRIVATE([strerror_r], [@%:@include <string.h>])
 
 
@@ -5604,9 +5605,24 @@ fi
 # found by configure), but either raise a compilation error (because the
 # header definition prevents usage - autoconf doesn't use the headers), or
 # raise an error if used at runtime. Force these symbols off.
-if test "$ac_sys_system" != "iOS" ; then
-  AC_CHECK_FUNCS([dup3 getentropy getgroups pipe2 system])
-fi
+# In particular, dup3 and pipe2 are available as of iOS 27 but were
+# incorrectly detected in older simulator versions.
+case "$ac_sys_system" in
+    iOS)
+        AC_MSG_CHECKING([if iOS SDK is older than 27])
+        ios_sdk_version=$(xcrun --sdk iphoneos --show-sdk-version 2>/dev/null | cut -d. -f1)
+        if test -n "$ios_sdk_version" && test "$ios_sdk_version" -ge 27; then
+            AC_MSG_RESULT([no])
+            AC_CHECK_FUNCS([dup3 pipe2])
+        else
+            AC_MSG_RESULT([yes])
+        fi
+        ;;
+    *)
+        # not iOS
+        AC_CHECK_FUNCS([dup3 getentropy getgroups pipe2 system])
+        ;;
+esac
 
 AC_CHECK_DECL([dirfd],
               [AC_DEFINE([HAVE_DIRFD], [1],
