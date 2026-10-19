@@ -400,6 +400,43 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, 'Tests passed\n' * INIT_LOOPS)
 
+    def test_asyncio_task_during_interpreter_clear(self):
+        import_helper.import_module('_asyncio')
+        code = textwrap.dedent("""
+            import asyncio
+            import contextvars
+            import gc
+            import os
+
+            gc.disable()
+
+            async def noop():
+                pass
+
+            class Loop:
+                def get_debug(self):
+                    return False
+
+                def call_soon(self, callback, *args, context=None):
+                    self.callback = callback
+
+            class CreatesTaskOnClear:
+                def __del__(self):
+                    asyncio.Task(noop(), loop=Loop(), context=contextvars.Context())
+                    os.write(1, b'task created\\n')
+
+            # Keep the finalizer alive until interpreter_clear()'s last GC.
+            finalizer = CreatesTaskOnClear()
+            finalizer.cycle = finalizer
+            del finalizer
+        """)
+        # gh-159041: Delete the cleared interpreter with no thread state attached.
+        out, err = self.run_embedded_interpreter(
+            "test_interpreter_clear_and_delete", code,
+            timeout=support.SHORT_TIMEOUT)
+        self.assertEqual(out, "task created\n")
+        self.assertEqual(err, "")
+
     def test_simple_initialization_api(self):
         # _testembed now uses Py_InitializeFromConfig by default
         # This case specifically checks Py_Initialize(Ex) still works
