@@ -922,6 +922,7 @@ WASM_ASSETS_DIR
 LDFLAGS_NOLTO
 EXE_LDFLAGS
 LDFLAGS_NODIST
+FUNCTION_ALIGNMENT_CFLAGS
 CFLAGS_NODIST
 BASECFLAGS
 CFLAGS_ALIASING
@@ -9960,6 +9961,75 @@ then
     esac
 fi
 
+# Keep performance-oriented release builds aligned on validated platforms
+# without changing size-optimized, mobile, or third-party extension builds.
+FUNCTION_ALIGNMENT_CFLAGS=
+case $host in #(
+  *-*-linux-android*) :
+     ;; #(
+  *-*-linux*|*-apple-darwin*) :
+
+    if test "x$Py_DEBUG" = xtrue
+then :
+
+else case e in #(
+  e)
+      case " $OPT $CFLAGS " in #(
+  *" -Os "*|*" -Oz "*) :
+     ;; #(
+  *) :
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -falign-functions=64" >&5
+printf %s "checking whether C compiler accepts -falign-functions=64... " >&6; }
+if test ${ax_cv_check_cflags__Werror__falign_functions_64+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -falign-functions=64"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__falign_functions_64=yes
+else case e in #(
+  e) ax_cv_check_cflags__Werror__falign_functions_64=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__falign_functions_64" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__falign_functions_64" >&6; }
+if test "x$ax_cv_check_cflags__Werror__falign_functions_64" = xyes
+then :
+
+          FUNCTION_ALIGNMENT_CFLAGS="-falign-functions=64"
+
+else case e in #(
+  e) : ;;
+esac
+fi
+ ;;
+esac
+     ;;
+esac
+fi
+   ;; #(
+  *) :
+     ;;
+esac
+
 # WASM flags
 case $ac_sys_system in #(
   Emscripten) :
@@ -10122,6 +10192,7 @@ case $enable_wasm_dynamic_linking in #(
   *) :
      ;;
 esac
+
 
 
 

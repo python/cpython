@@ -102,7 +102,13 @@ CONFIGURE_LDFLAGS=	@LDFLAGS@
 # command line to append to these values without stomping the pre-set
 # values.
 PY_CFLAGS=	$(BASECFLAGS) $(OPT) $(CONFIGURE_CFLAGS) $(CFLAGS) $(EXTRA_CFLAGS)
-PY_CFLAGS_NODIST=$(CONFIGURE_CFLAGS_NODIST) $(CFLAGS_NODIST) -I$(srcdir)/Include/internal -I$(srcdir)/Include/internal/mimalloc
+# Configure validates function alignment once, but make-time CFLAGS can still
+# select a size-optimized build after configure has completed.
+PY_ALIGN_FUNCTIONS_CFLAGS=@FUNCTION_ALIGNMENT_CFLAGS@
+ifneq ($(filter -Os -Oz,$(PY_CFLAGS) $(CONFIGURE_CFLAGS_NODIST) $(CFLAGS_NODIST)),)
+PY_ALIGN_FUNCTIONS_CFLAGS=
+endif
+PY_CFLAGS_NODIST=$(CONFIGURE_CFLAGS_NODIST) $(CFLAGS_NODIST) $(PY_ALIGN_FUNCTIONS_CFLAGS) -I$(srcdir)/Include/internal -I$(srcdir)/Include/internal/mimalloc
 # Both CPPFLAGS and LDFLAGS need to contain the shell's value for setup.py to
 # be able to build extension modules using the directories specified in the
 # environment variables
