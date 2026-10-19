@@ -10,7 +10,9 @@ import sys
 import textwrap
 import unittest
 import weakref
+from collections import UserDict
 from itertools import product
+from types import MappingProxyType
 from unittest import mock
 
 from test import support
@@ -391,6 +393,63 @@ class BaseTestUUID:
                 for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                     with self.subTest(protocol=proto):
                         check(pickle.loads(pickle.dumps(u, proto)), u)
+
+    def test_setstate_mapping(self):
+        # State restoration accepts mappings and decodes serialized safety values.
+        safety_states = [({}, self.uuid.SafeUUID.unknown)]
+        safety_states.extend(
+            ({'is_safe': safety.value}, safety)
+            for safety in self.uuid.SafeUUID
+        )
+        with support.swap_item(sys.modules, 'uuid', self.uuid):
+            for mapping in (dict, UserDict, MappingProxyType):
+                for safety_state, expected_safety in safety_states:
+                    with self.subTest(mapping=mapping, state=safety_state):
+                        u = self.uuid.UUID(int=0, is_safe=self.uuid.SafeUUID.safe)
+                        state = mapping({'int': 1, **safety_state})
+                        self.assertIsNone(u.__setstate__(state))
+                        self.assertEqual(u.int, 1)
+                        self.assertIs(u.is_safe, expected_safety)
+
+    def test_setstate_missing_int(self):
+        # A missing required key must retain the mapping's KeyError and key.
+        for mapping in (dict, UserDict, MappingProxyType):
+            with self.subTest(mapping=mapping):
+                u = self.uuid.UUID(int=1)
+                with self.assertRaises(KeyError) as cm:
+                    u.__setstate__(mapping({}))
+                self.assertEqual(cm.exception.args, ('int',))
+                self.assertEqual(u.int, 1)
+
+    def test_setstate_lookup_error(self):
+        class State(dict):
+            def __getitem__(self, key):
+                if key == bad_key:
+                    raise RuntimeError('lookup failed')
+                return super().__getitem__(key)
+
+        # Honor overridden lookups, including on dict subclasses.
+        for bad_key in ('int', 'is_safe'):
+            with self.subTest(key=bad_key):
+                u = self.uuid.UUID(int=1)
+                with self.assertRaisesRegex(RuntimeError, 'lookup failed'):
+                    u.__setstate__(State(int=2, is_safe=0))
+
+    def test_setstate_contains_error(self):
+        class State(dict):
+            def __contains__(self, key):
+                raise RuntimeError('membership test failed')
+
+        # Errors checking for the optional key must propagate as well.
+        u = self.uuid.UUID(int=1)
+        with self.assertRaisesRegex(RuntimeError, 'membership test failed'):
+            u.__setstate__(State(int=2))
+
+    def test_setstate_invalid_is_safe(self):
+        u = self.uuid.UUID(int=0)
+        with support.swap_item(sys.modules, 'uuid', self.uuid):
+            with self.assertRaisesRegex(ValueError, '42 is not a valid SafeUUID'):
+                u.__setstate__({'int': 1, 'is_safe': 42})
 
     def test_unpickle_previous_python_versions(self):
         def check(actual, expected):

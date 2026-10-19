@@ -297,7 +297,7 @@ PyDoc_STRVAR(_uuid_UUID___setstate____doc__,
 "\n"
 "Restore the UUID\'s state from pickling.\n"
 "\n"
-"Expects a dictionary with \'int\' and optionally \'is_safe\' keys.");
+"Expects a mapping with \'int\' and optionally \'is_safe\' keys.");
 
 #define _UUID_UUID___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)_uuid_UUID___setstate__, METH_O, _uuid_UUID___setstate____doc__},
@@ -314,4 +314,4 @@ _uuid_UUID___setstate__(PyObject *self, PyObject *state)
 
     return return_value;
 }
-/*[clinic end generated code: output=095610812af4b3bd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=06f9a312bde5b746 input=a9049054013a1b77]*/

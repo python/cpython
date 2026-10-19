@@ -1616,33 +1616,49 @@ _uuid.UUID.__setstate__
 
 Restore the UUID's state from pickling.
 
-Expects a dictionary with 'int' and optionally 'is_safe' keys.
+Expects a mapping with 'int' and optionally 'is_safe' keys.
 [clinic start generated code]*/
 
 static PyObject *
 _uuid_UUID___setstate___impl(uuidobject *self, PyObject *state)
-/*[clinic end generated code: output=cdf6bd4a2a680b3f input=b1ec0744788a73a0]*/
+/*[clinic end generated code: output=cdf6bd4a2a680b3f input=fc65bdad0a8d6211]*/
 {
-    if (!PyDict_Check(state)) {
-        PyErr_SetString(PyExc_TypeError, "state must be a dictionary");
-        return NULL;
-    }
-
     // Get and set the 'int' value
-    PyObject *int_value = PyDict_GetItem(state, &_Py_ID(int));
+    PyObject *int_value = PyObject_GetItem(state, &_Py_ID(int));
     if (int_value == NULL) {
-        PyErr_SetString(PyExc_ValueError, "state must have 'int' key");
         return NULL;
     }
 
-    if (from_int(self, int_value, 1) < 0) {
+    int result = from_int(self, int_value, 1);
+    Py_DECREF(int_value);
+    if (result < 0) {
         return NULL;
     }
 
-    Py_CLEAR(self->is_safe);
-    if (PyDict_GetItemRef(state, &_Py_ID(is_safe), &self->is_safe) < 0) {
+    int has_is_safe = PySequence_Contains(state, &_Py_ID(is_safe));
+    if (has_is_safe < 0) {
         return NULL;
     }
+    PyObject *is_safe = has_is_safe
+        ? PyObject_GetItem(state, &_Py_ID(is_safe))
+        : Py_NewRef(Py_None);
+    if (is_safe == NULL) {
+        return NULL;
+    }
+
+    uuid_state *module_state = get_uuid_state_by_cls(Py_TYPE(self));
+    PyObject *SafeUUID = get_SafeUUID(module_state);
+    if (SafeUUID == NULL) {
+        Py_DECREF(is_safe);
+        return NULL;
+    }
+    PyObject *safety = PyObject_CallOneArg(SafeUUID, is_safe);
+    Py_DECREF(SafeUUID);
+    Py_DECREF(is_safe);
+    if (safety == NULL) {
+        return NULL;
+    }
+    Py_XSETREF(self->is_safe, safety);
 
     Py_RETURN_NONE;
 }
