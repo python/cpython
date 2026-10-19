@@ -8,7 +8,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #ifndef MIMALLOC_PROFILE_H
 #define MIMALLOC_PROFILE_H
 
-#include <mimalloc.h>
+#include "mimalloc.h"
 #include <stdbool.h>  // bool
 #include <stdint.h>   // uint64_t
 

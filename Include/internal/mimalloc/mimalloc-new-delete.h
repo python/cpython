@@ -20,7 +20,7 @@ terms of the MIT license. A copy of the license can be found in the file
 // ---------------------------------------------------------------------------
 #if defined(__cplusplus)
   #include <new>
-  #include <mimalloc.h>
+  #include "mimalloc.h"
 
   #if defined(_MSC_VER) && defined(_Ret_notnull_) && defined(_Post_writable_byte_size_)
   // stay consistent with VCRT definitions

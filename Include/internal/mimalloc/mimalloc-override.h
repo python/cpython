@@ -15,7 +15,7 @@ each source file in a project (but be careful when using external code to
 not accidentally mix pointers from different allocators).
 -----------------------------------------------------------------------------*/
 
-#include <mimalloc.h>
+#include "mimalloc.h"
 
 // Standard C allocation
 #define malloc(n)               mi_malloc(n)
