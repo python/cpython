@@ -330,6 +330,7 @@ class JoinTestBase:
         self.assertEqual(P('/a/b.py').with_name('d.xml'), P('/a/d.xml'))
         self.assertEqual(P('a/Dot ending.').with_name('d.xml'), P('a/d.xml'))
         self.assertEqual(P('/a/Dot ending.').with_name('d.xml'), P('/a/d.xml'))
+        self.assertRaises(ValueError, P('a/b').with_name, '')
         self.assertRaises(ValueError, P('a/b').with_name, '/c')
         self.assertRaises(ValueError, P('a/b').with_name, 'c/')
         self.assertRaises(ValueError, P('a/b').with_name, 'c/d')
