@@ -1448,6 +1448,29 @@ def _to_memoryview(buf):
 class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
     shutdown_error = "LookupError: unknown encoding: ascii"
 
+    def test_chunk_size(self):
+        t = self.TextIOWrapper(self.BytesIO(), encoding="utf-8")
+        self.assertGreater(t._CHUNK_SIZE, 0)
+        t._CHUNK_SIZE = 1024
+        self.assertEqual(t._CHUNK_SIZE, 1024)
+        with self.assertRaisesRegex(ValueError,
+                                    'a strictly positive integer is required'):
+            t._CHUNK_SIZE = 0
+        with self.assertRaises(TypeError):
+            t._CHUNK_SIZE = 'x'
+        with self.assertRaises(OverflowError):
+            t._CHUNK_SIZE = sys.maxsize + 1
+        with self.assertRaises(OverflowError):
+            t._CHUNK_SIZE = -sys.maxsize - 2
+        with self.assertRaises(OverflowError):
+            t._CHUNK_SIZE = 2**1000
+        with self.assertRaises(OverflowError):
+            t._CHUNK_SIZE = -2**1000
+        with self.assertRaisesRegex(AttributeError, 'cannot be deleted'):
+            del t._CHUNK_SIZE
+        # a failed assignment does not change the value
+        self.assertEqual(t._CHUNK_SIZE, 1024)
+
     def test_initialization(self):
         r = self.BytesIO(b"\xc3\xa9\n\n")
         b = self.BufferedReader(r, 1000)
@@ -1609,6 +1632,36 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
             make_text(DetachOnWrite(self.MockRawIO()))
             wrapper.write('x')
             self.assertRaisesRegex(ValueError, "detached", wrapper.read)
+
+    def test_reentrant_detach_during_read(self):
+        # gh-157363, gh-157364: The buffer must stay alive until its active
+        # read operation returns.
+        wrapper = None
+
+        class DetachOnRead(self.RawIOBase):
+            detached = False
+
+            def readable(self):
+                return True
+
+            def readinto(self, b):
+                if self.detached:
+                    return 0
+                self.detached = True
+                wrapper.detach()
+                b[:3] = b"ab\n"
+                return 3
+
+        for method_name in ("read", "readline"):
+            with self.subTest(method_name):
+                raw = DetachOnRead()
+                wrapper = self.TextIOWrapper(
+                    self.BufferedReader(raw), encoding="utf-8")
+                method = getattr(wrapper, method_name)
+                self.assertEqual(method(), "ab\n")
+                with self.assertRaisesRegex(ValueError,
+                                            "underlying buffer has been detached"):
+                    getattr(wrapper, 'buffer')
 
     def test_reentrant_seek_during_tell(self):
         # gh-153539: reading short of _CHUNK_SIZE leaves residual bytes in the
