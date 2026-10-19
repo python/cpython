@@ -60,6 +60,29 @@ the :mod:`io` APIs instead.
    raised if the end of the file is reached immediately.
 
 
+.. c:function:: char* Py_UniversalNewlineFgets(char *buf, int n, FILE *stream, PyObject *fobj)
+
+   Read a line from the C stream *stream* into the buffer *buf*, like the
+   C standard library function :c:func:`!fgets`, but treating all of ``\n``,
+   ``\r`` and ``\r\n`` as line endings (see :term:`universal newlines`).
+   Any ``\r`` or ``\r\n`` read from the stream is stored in *buf* as a
+   single ``\n``.
+
+   At most ``n - 1`` characters are stored in *buf*; reading stops after a
+   newline has been stored or when the end of the file is reached.
+   The result is always null-terminated.
+   *stream* should be opened in binary mode, so that the C library does not
+   perform its own newline translation.
+
+   Return *buf* on success.
+   Return ``NULL`` if no characters could be read, because *stream* is at
+   end of file, a read error occurred, or *n* is less than 2.
+   Like :c:func:`!fgets`, this function does not distinguish between end of
+   file and a read error, and it does not set an exception.
+
+   *fobj* exists only for backward compatibility and must be ``NULL``.
+
+
 .. c:function:: int PyFile_SetOpenCodeHook(Py_OpenCodeHookFunction handler)
 
    Overrides the normal behavior of :func:`io.open_code` to pass its parameter
