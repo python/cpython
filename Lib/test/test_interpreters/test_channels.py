@@ -49,6 +49,8 @@ class LowLevelTests(TestBase):
         class Recv(End): pass
 
         _ = importlib.reload(_channels)
+        # ensure that the following tests do not have the registered bad types
+        self.addCleanup(importlib.reload, _channels)
         _._register_end_types(Send, Recv)
         chan = _._channel_id(_.create(), _resolve=True)
         interp = interpreters.create()
