@@ -327,6 +327,15 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(MemoryError, resize, a, PY_SSIZE_T_MAX)
         self.assertRaises(SystemError, resize, a, -1)
         self.assertRaises(SystemError, resize, a, PY_SSIZE_T_MIN)
+        # gh-159739: items are released if the reallocation fails
+        x = object()
+        refcnt = getrefcount(x)
+        a = (x, x, x)
+        # Too large to allocate, but small enough not to overflow.
+        newsize = PY_SSIZE_T_MAX // _testcapi.SIZEOF_VOID_P - 100
+        self.assertRaises(MemoryError, resize, a, newsize)
+        del a
+        self.assertEqual(getrefcount(x), refcnt)
         # refcount > 1
         a = (1, 2, 3)
         self.assertRaises(SystemError, resize, a, 3, False)
