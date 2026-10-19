@@ -313,9 +313,10 @@ This is typically done using :c:func:`PyModule_Create` and functions like
 Single-phase initialization differs from the :ref:`default <multi-phase-initialization>`
 in the following ways:
 
-* Single-phase modules are, or rather *contain*, “singletons”.
+* Single-phase modules with :c:member:`PyModuleDef.m_size` set to -1 are,
+  or rather *contain*, “singletons”.
 
-  When the module is first initialized, Python saves the contents of
+  When such a module is first initialized, Python saves the contents of
   the module's ``__dict__`` (that is, typically, the module's functions and
   types).
 
@@ -323,6 +324,21 @@ in the following ways:
   again.
   Instead, it creates a new module object with a new ``__dict__``, and copies
   the saved contents to it.
+  Modules are matched to the saved contents by a (*module_name*, *file_name*)
+  tuple where:
+
+  - *module_name* is the module's full dotted name, taken from
+    :py:attr:`ModuleSpec.name <importlib.machinery.ModuleSpec.name>`
+    (or the equivalent argument of the importing function).
+    Note that names that the initialization function uses to create the module
+    (for example, :c:member:`PyModuleDef.m_name`) are not taken into account.
+  - *file_name* is the extension's file name.
+    It is unset for modules not loaded from a file, such as built-ins and
+    modules added with :c:func:`PyImport_CreateModuleFromInitfunc` or
+    :c:func:`PyImport_AppendInittab`.
+
+  As part of the first initialization, Python also adds the module to
+  :data:`sys.modules` under its name.
   For example, given a single-phase module ``_testsinglephase``
   [#testsinglephase]_ that defines a function ``sum`` and an exception class
   ``error``:
@@ -343,6 +359,16 @@ in the following ways:
      True
 
   The exact behavior should be considered a CPython implementation detail.
+
+* For single-phase modules with non-negative :c:member:`PyModuleDef.m_size`,
+  Python may cache a pointer to the initialization function under the
+  (*module_name*, *file_name*) key as for ``m_size == -1``.
+
+  Subsequent imports that specify a different initialization function
+  (for example, using :c:func:`PyImport_CreateModuleFromInitfunc`)
+  may call either the cached function or the provided "new" one.
+
+  The exact behavior should again be considered a CPython implementation detail.
 
 * To work around the fact that ``PyInit_modulename`` does not take a *spec*
   argument, some state of the import machinery is saved and applied to the
