@@ -1375,8 +1375,13 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    names used in Python programs are automatically interned, and the dictionaries
    used to hold module, class or instance attributes have interned keys.
 
-   Interned strings are not :term:`immortal`; you must keep a reference to the
-   return value of :func:`intern` around to benefit from it.
+   Interned strings are not necessarily :term:`immortal`; you must keep a
+   reference to the return value of :func:`intern` around to benefit from it.
+
+   .. impl-detail::
+
+      In the :term:`free-threaded build`, all interned strings are immortal.
+      This behavior may change in future Python versions.
 
 
 .. function:: _is_gil_enabled()
