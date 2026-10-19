@@ -121,18 +121,16 @@ class DictTest(unittest.TestCase):
         import_helper.import_module('_testcapi')
         from test.support.script_helper import assert_python_ok
         code = """if 1:
-            import _testcapi
+            from test import support
             items = {1: 2, 3: 4}.items()
             ballast = [(i, i) for i in range(3000)]
             held = []
             for start in range(1, 5):
-                _testcapi.set_nomemory(start)
                 try:
-                    held.append(iter(items))
+                    with support.inject_memory_error_cm(start):
+                        held.append(iter(items))
                 except MemoryError:
                     pass
-                finally:
-                    _testcapi.remove_mem_hooks()
             """
         assert_python_ok('-c', code)
 
