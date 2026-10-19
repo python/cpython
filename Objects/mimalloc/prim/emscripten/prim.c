@@ -57,10 +57,12 @@ void _mi_prim_mem_init( mi_os_mem_config_t* config) {
   config->has_virtual_reserve = false;
 }
 
-extern void emmalloc_free(void*);
+// CPython: use the builtin allocator (dlmalloc by default) rather than requiring
+// the process to link with -sMALLOC=emmalloc.
+#include <emscripten/heap.h>  // emscripten_builtin_memalign, emscripten_builtin_free
 
 int _mi_prim_free(void* addr, size_t size) {
-  emmalloc_free(addr);
+  emscripten_builtin_free(addr);
   return 0;
 }
 
@@ -68,8 +70,6 @@ int _mi_prim_free(void* addr, size_t size) {
 //---------------------------------------------
 // Allocation
 //---------------------------------------------
-
-extern void* emmalloc_memalign(size_t alignment, size_t size);
 
 // Note: the `try_alignment` is just a hint and the returned pointer is not guaranteed to be aligned.
 int _mi_prim_alloc(void* hint_addr, size_t size, size_t try_alignment, bool commit, bool allow_large, bool* is_large, bool* is_zero, void** addr) {
@@ -84,7 +84,7 @@ int _mi_prim_alloc(void* hint_addr, size_t size, size_t try_alignment, bool comm
   if (try_alignment < MIN_EMMALLOC_ALIGN) {
     try_alignment = MIN_EMMALLOC_ALIGN;
   }
-  void* p = emmalloc_memalign(try_alignment, size);
+  void* p = emscripten_builtin_memalign(try_alignment, size);
   *addr = p;
   if (p == 0) {
     return ENOMEM;
