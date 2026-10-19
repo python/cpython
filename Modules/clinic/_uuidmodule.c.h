@@ -122,16 +122,15 @@ exit:
 }
 
 PyDoc_STRVAR(_uuid_UUID___init____doc__,
-"UUID(hex=<unrepresentable>, bytes=None, bytes_le=None,\n"
-"     fields=<unrepresentable>, int=<unrepresentable>,\n"
-"     version=<unrepresentable>, *, is_safe=<unrepresentable>)\n"
+"UUID(hex=None, bytes=None, bytes_le=None, fields=None, int=None,\n"
+"     version=None, *, is_safe=<unrepresentable>)\n"
 "--\n"
 "\n"
 "UUID is a fast base implementation type for uuid.UUID.");
 
 static int
-_uuid_UUID___init___impl(uuidobject *self, PyObject *hex, Py_buffer *bytes,
-                         Py_buffer *bytes_le, PyObject *fields,
+_uuid_UUID___init___impl(uuidobject *self, PyObject *hex, PyObject *bytes,
+                         PyObject *bytes_le, PyObject *fields,
                          PyObject *int_value, PyObject *version,
                          PyObject *is_safe);
 
@@ -170,12 +169,12 @@ _uuid_UUID___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
-    PyObject *hex = NULL;
-    Py_buffer bytes = {NULL, NULL};
-    Py_buffer bytes_le = {NULL, NULL};
-    PyObject *fields = NULL;
-    PyObject *int_value = NULL;
-    PyObject *version = NULL;
+    PyObject *hex = Py_None;
+    PyObject *bytes = Py_None;
+    PyObject *bytes_le = Py_None;
+    PyObject *fields = Py_None;
+    PyObject *int_value = Py_None;
+    PyObject *version = Py_None;
     PyObject *is_safe = NULL;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
@@ -187,27 +186,19 @@ _uuid_UUID___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         goto skip_optional_pos;
     }
     if (fastargs[0]) {
-        if (!PyUnicode_Check(fastargs[0])) {
-            _PyArg_BadArgument("UUID", "argument 'hex'", "str", fastargs[0]);
-            goto exit;
-        }
         hex = fastargs[0];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
     if (fastargs[1]) {
-        if (PyObject_GetBuffer(fastargs[1], &bytes, PyBUF_SIMPLE) != 0) {
-            goto exit;
-        }
+        bytes = fastargs[1];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
     if (fastargs[2]) {
-        if (PyObject_GetBuffer(fastargs[2], &bytes_le, PyBUF_SIMPLE) != 0) {
-            goto exit;
-        }
+        bytes_le = fastargs[2];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -236,18 +227,9 @@ skip_optional_pos:
     }
     is_safe = fastargs[6];
 skip_optional_kwonly:
-    return_value = _uuid_UUID___init___impl((uuidobject *)self, hex, &bytes, &bytes_le, fields, int_value, version, is_safe);
+    return_value = _uuid_UUID___init___impl((uuidobject *)self, hex, bytes, bytes_le, fields, int_value, version, is_safe);
 
 exit:
-    /* Cleanup for bytes */
-    if (bytes.obj) {
-       PyBuffer_Release(&bytes);
-    }
-    /* Cleanup for bytes_le */
-    if (bytes_le.obj) {
-       PyBuffer_Release(&bytes_le);
-    }
-
     return return_value;
 }
 
@@ -314,4 +296,4 @@ _uuid_UUID___setstate__(PyObject *self, PyObject *state)
 
     return return_value;
 }
-/*[clinic end generated code: output=06f9a312bde5b746 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=929e54bf30e649aa input=a9049054013a1b77]*/

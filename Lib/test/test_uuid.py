@@ -371,6 +371,52 @@ class BaseTestUUID:
         badtype(lambda: u < object())
         badtype(lambda: u > object())
 
+    def test_constructor_none(self):
+        # Explicit None has the same meaning as omitting an input argument.
+        expected = self.uuid.UUID('12345678-1234-5678-1234-567812345678')
+        inputs = {
+            'hex': expected.hex,
+            'bytes': expected.bytes,
+            'bytes_le': expected.bytes_le,
+            'fields': expected.fields,
+            'int': expected.int,
+        }
+        for name, value in inputs.items():
+            with self.subTest(input=name):
+                kwargs = dict.fromkeys(inputs)
+                kwargs[name] = value
+                self.assertEqual(self.uuid.UUID(**kwargs, version=None), expected)
+                self.assertEqual(
+                    self.uuid.UUID(*kwargs.values(), version=None), expected)
+
+        with self.assertRaisesRegex(TypeError, 'one of the hex, bytes, bytes_le'):
+            self.uuid.UUID(**dict.fromkeys(inputs))
+
+    def test_constructor_bytes_type(self):
+        # A buffer interface alone does not satisfy the bytes arguments.
+        for name in ('bytes', 'bytes_le'):
+            for value in (bytearray(16), memoryview(bytes(16)), 'x' * 16,
+                          [0] * 16, 16, object()):
+                with self.subTest(argument=name, type=type(value)):
+                    with self.assertRaisesRegex(
+                        TypeError, f'^{name} must be a bytes object$'
+                    ):
+                        self.uuid.UUID(**{name: value})
+
+    def test_constructor_bytes_subclass(self):
+        class BytesSubclass(bytes):
+            pass
+
+        expected = self.uuid.UUID('12345678-1234-5678-1234-567812345678')
+        for name in ('bytes', 'bytes_le'):
+            with self.subTest(argument=name):
+                value = BytesSubclass(getattr(expected, name))
+                self.assertEqual(self.uuid.UUID(**{name: value}), expected)
+
+    def test_constructor_is_safe_none(self):
+        # is_safe is stored as supplied; None is distinct from SafeUUID.unknown.
+        self.assertIsNone(self.uuid.UUID(int=1, is_safe=None).is_safe)
+
     def test_getnode(self):
         node1 = self.uuid.getnode()
         self.assertTrue(0 < node1 < (1 << 48), '%012x' % node1)

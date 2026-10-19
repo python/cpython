@@ -200,7 +200,7 @@ class _uuid.UUID "uuidobject *" "&UuidType"
 
 // Forward declarations
 static int from_hex(uuidobject *self, PyObject *hex);
-static int from_bytes_le(uuidobject *self, Py_buffer *bytes_le);
+static int from_bytes_le(uuidobject *self, PyObject *bytes_le);
 static int from_int(uuidobject *self, PyObject *int_value, int validate);
 static int from_fields(uuidobject *self, PyObject *fields);
 static PyObject * get_SafeUUID(uuid_state *state);
@@ -504,12 +504,12 @@ _uuid__install_c_hooks_impl(PyObject *module, PyObject *random_func,
 /*[clinic input]
 _uuid.UUID.__init__
 
-    hex: 'U' = NULL
-    bytes: 'y*' = None
-    bytes_le: 'y*' = None
-    fields: object = NULL
-    int: object = NULL
-    version: object = NULL
+    hex: object = None
+    bytes: object = None
+    bytes_le: object = None
+    fields: object = None
+    int: object = None
+    version: object = None
     *
     is_safe: object = NULL
 
@@ -517,19 +517,20 @@ UUID is a fast base implementation type for uuid.UUID.
 [clinic start generated code]*/
 
 static int
-_uuid_UUID___init___impl(uuidobject *self, PyObject *hex, Py_buffer *bytes,
-                         Py_buffer *bytes_le, PyObject *fields,
+_uuid_UUID___init___impl(uuidobject *self, PyObject *hex, PyObject *bytes,
+                         PyObject *bytes_le, PyObject *fields,
                          PyObject *int_value, PyObject *version,
                          PyObject *is_safe)
-/*[clinic end generated code: output=93a6881c8f79bf9b input=b9c79672fbd76a99]*/
+/*[clinic end generated code: output=6d100803f5ecd751 input=23c754454cc11724]*/
 
 {
+    // Explicit None values do not select a UUID input form.
     int passed = 0;
-    if (hex != NULL) passed++;
-    if (bytes->obj != NULL) passed++;
-    if (bytes_le->obj != NULL) passed++;
-    if (fields != NULL) passed++;
-    if (int_value != NULL) passed++;
+    if (hex != Py_None) passed++;
+    if (bytes != Py_None) passed++;
+    if (bytes_le != Py_None) passed++;
+    if (fields != Py_None) passed++;
+    if (int_value != Py_None) passed++;
     if (passed != 1) {
         PyErr_SetString(
             PyExc_TypeError,
@@ -538,32 +539,36 @@ _uuid_UUID___init___impl(uuidobject *self, PyObject *hex, Py_buffer *bytes,
         return -1;
     }
 
-    if (hex != NULL) {
+    if (hex != Py_None) {
         if (from_hex(self, hex) < 0) {
             return -1;
         }
     }
-    else if (bytes->obj != NULL) {
-        if (bytes->len != 16) {
+    else if (bytes != Py_None) {
+        if (!PyBytes_Check(bytes)) {
+            PyErr_SetString(PyExc_TypeError, "bytes must be a bytes object");
+            return -1;
+        }
+        if (PyBytes_GET_SIZE(bytes) != 16) {
             PyErr_SetString(
                 PyExc_ValueError,
                 "bytes is not a 16-char string"
             );
             return -1;
         }
-        memcpy(self->bytes, bytes->buf, 16);
+        memcpy(self->bytes, PyBytes_AS_STRING(bytes), 16);
     }
-    else if (bytes_le->obj != NULL) {
+    else if (bytes_le != Py_None) {
         if (from_bytes_le(self, bytes_le) < 0) {
             return -1;
         }
     }
-    else if (fields != NULL) {
+    else if (fields != Py_None) {
         if (from_fields(self, fields) < 0) {
             return -1;
         }
     }
-    else if (int_value != NULL) {
+    else if (int_value != Py_None) {
         if (from_int(self, int_value, 1) < 0) {
             return -1;
         }
@@ -572,7 +577,7 @@ _uuid_UUID___init___impl(uuidobject *self, PyObject *hex, Py_buffer *bytes,
         Py_UNREACHABLE();
     }
 
-    if (version != NULL && version != Py_None) {
+    if (version != Py_None) {
         long version_num = PyLong_AsLong(version);
         if (version_num == -1 && PyErr_Occurred()) {
             return -1;
@@ -592,13 +597,7 @@ _uuid_UUID___init___impl(uuidobject *self, PyObject *hex, Py_buffer *bytes,
         self->bytes[6] |= (version_num << 4);
     }
 
-    if (is_safe == Py_None) {
-        // Py_None is immortal; skip decref
-        is_safe = NULL;
-    }
-    if (is_safe != NULL) {
-        Py_XSETREF(self->is_safe, Py_NewRef(is_safe));
-    }
+    Py_XSETREF(self->is_safe, Py_XNewRef(is_safe));
 
     return 0;
 }
@@ -725,9 +724,13 @@ from_hex(uuidobject *self, PyObject *hex)
 }
 
 static int
-from_bytes_le(uuidobject *self, Py_buffer *bytes_le)
+from_bytes_le(uuidobject *self, PyObject *bytes_le)
 {
-    if (bytes_le->len != 16) {
+    if (!PyBytes_Check(bytes_le)) {
+        PyErr_SetString(PyExc_TypeError, "bytes_le must be a bytes object");
+        return -1;
+    }
+    if (PyBytes_GET_SIZE(bytes_le) != 16) {
         PyErr_SetString(PyExc_ValueError,
             "bytes_le is not a 16-char string");
         return -1;
@@ -742,7 +745,7 @@ from_bytes_le(uuidobject *self, Py_buffer *bytes_le)
     // - clock_seq_low (1 byte) - no swap needed
     // - node (6 bytes) - no swap needed
 
-    unsigned char *src = (unsigned char *)bytes_le->buf;
+    const unsigned char *src = (const unsigned char *)PyBytes_AS_STRING(bytes_le);
     unsigned char *dst = (unsigned char *)self->bytes;
 
     // Swap time_low (bytes 0-3)

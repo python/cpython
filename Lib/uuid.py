@@ -261,23 +261,17 @@ class UUID:
             int = int_(hex, 16)
         elif bytes_le is not None:
             if not isinstance(bytes_le, bytes_):
-                raise TypeError(
-                    f'a bytes-like object is required, not {type(bytes_le).__name__!r}'
-                )
+                raise TypeError('bytes_le must be a bytes object')
             if len(bytes_le) != 16:
                 raise ValueError('bytes_le is not a 16-char string')
-            assert isinstance(bytes_le, bytes_), repr(bytes_le)
             bytes = (bytes_le[4-1::-1] + bytes_le[6-1:4-1:-1] +
                      bytes_le[8-1:6-1:-1] + bytes_le[8:])
             int = int_.from_bytes(bytes)  # big endian
         elif bytes is not None:
             if not isinstance(bytes, bytes_):
-                raise TypeError(
-                    f'a bytes-like object is required, not {type(bytes).__name__!r}'
-                )
+                raise TypeError('bytes must be a bytes object')
             if len(bytes) != 16:
                 raise ValueError('bytes is not a 16-char string')
-            assert isinstance(bytes, bytes_), repr(bytes)
             int = int_.from_bytes(bytes)  # big endian
         elif fields is not None:
             if len(fields) != 6:
