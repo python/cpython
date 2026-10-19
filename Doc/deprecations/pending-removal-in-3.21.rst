@@ -18,6 +18,11 @@ Pending removal in Python 3.21
   * The ``dims`` property of ``ast.Tuple`` will be removed in Python 3.21. Use
     the ``ast.Tuple.elts`` property instead.
 
+* :mod:`inspect`:
+
+  * :attr:`inspect.CO_NOFREE`, a name for an unused compiler flag, will
+    be removed in Python 3.21.
+
 * :mod:`struct`:
 
   * Soft-deprecated since Python 3.15, using ``'F'`` and ``'D'`` type codes are now
