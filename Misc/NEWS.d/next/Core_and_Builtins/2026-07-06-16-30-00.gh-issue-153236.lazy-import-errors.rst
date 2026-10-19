@@ -1,2 +1,0 @@
-Propagate exceptions raised while importing lazy submodules instead of
-reporting them as missing attributes.
