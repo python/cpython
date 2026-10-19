@@ -12,15 +12,6 @@ EPOCH = datetime(1970, 1, 1)
 EPOCHORDINAL = datetime(1970, 1, 1).toordinal()
 
 _SECONDS_PER_DAY = 24 * 60 * 60
-# Parsed transition times are less than 168 hours and explicit UTC offsets
-# less than 25 hours (26 with the default one-hour DST adjustment). Offset
-# differences are less than 50 hours. Their sum is less than 244 hours, so
-# an 11-day margin also covers looking back across a fold.
-_TZSTR_YEAR_BOUNDARY_MARGIN = 11 * _SECONDS_PER_DAY
-# Use the common-year length; in leap years this leaves an extra day of margin.
-_TZSTR_FAST_PATH_END = 365 * _SECONDS_PER_DAY - _TZSTR_YEAR_BOUNDARY_MARGIN
-# Each rule's day-of-year can vary by up to seven days between years.
-_TZSTR_RULE_ORDER_MARGIN = 2 * 7 * _SECONDS_PER_DAY
 
 # It is relatively expensive to construct new timedelta objects, and in most
 # cases we're looking at the same deltas, like integer numbers of hours, etc.
@@ -486,13 +477,19 @@ class _TZStr:
         """Get the information about the current transition - tti"""
 
         year_start = (_post_epoch_days_before_year(year) + 1) * _SECONDS_PER_DAY
-        if (year_start + _TZSTR_YEAR_BOUNDARY_MARGIN <= ts
-                < year_start + _TZSTR_FAST_PATH_END):
+        # _parse_transition_time caps the hour field at 167; _parse_tz_delta
+        # caps it at 24, with one extra hour possible for default DST.
+        # Including minute/second fields and the offset difference across a
+        # fold, the displacement is less than 11 days. Use a common year's
+        # length here, leaving an extra day of margin in leap years.
+        if (year_start + 11 * _SECONDS_PER_DAY <= ts
+                < year_start + (365 - 11) * _SECONDS_PER_DAY):
             start, end = self.transitions(year)
-            # Each rule's day-of-year can move by up to seven days between
-            # years. Nearby rules can reverse order, allowing a previous
-            # year's southern season to overlap this year's northern one.
-            if abs(end - start - self.dst_diff) > _TZSTR_RULE_ORDER_MARGIN:
+            # An M rule selects a weekday within a week: its date can vary
+            # by six days, plus one day-of-year for leap years. Allow seven
+            # days for each rule. Nearby rules can reverse order, allowing
+            # a previous southern season to overlap this northern one.
+            if abs(end - start - self.dst_diff) > 2 * 7 * _SECONDS_PER_DAY:
                 if fold == (self.dst_diff >= 0):
                     end -= self.dst_diff
                 else:
@@ -529,12 +526,16 @@ class _TZStr:
 
     def _get_trans_info_fromutc(self, ts, year):
         year_start = (_post_epoch_days_before_year(year) + 1) * _SECONDS_PER_DAY
-        if (year_start + _TZSTR_YEAR_BOUNDARY_MARGIN <= ts
-                < year_start + _TZSTR_FAST_PATH_END):
+        # As in _get_trans_info, the parser limits and fold lookback fit
+        # within 11 days. Using 365 leaves an extra margin in leap years.
+        if (year_start + 11 * _SECONDS_PER_DAY <= ts
+                < year_start + (365 - 11) * _SECONDS_PER_DAY):
             start, end = self.transitions(year)
             start -= self.std.utcoff.total_seconds()
             end -= self.dst.utcoff.total_seconds()
-            if abs(end - start) > _TZSTR_RULE_ORDER_MARGIN:
+            # Each M rule can move six calendar days plus a leap day;
+            # allow seven days for each rule to keep their order stable.
+            if abs(end - start) > 2 * 7 * _SECONDS_PER_DAY:
                 before = ts - abs(self.dst_diff)
                 if start < end:
                     isdst = start <= ts < end
