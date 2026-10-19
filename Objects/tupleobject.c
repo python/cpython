@@ -1086,6 +1086,11 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
 #ifdef Py_REF_DEBUG
         _Py_DecRefTotal(_PyThreadState_GET());
 #endif
+        /* The failed reallocation leaves the original items owned by v. */
+        i = oldsize;
+        while (--i >= 0) {
+            Py_XDECREF(v->ob_item[i]);
+        }
         PyObject_GC_Del(v);
         return -1;
     }
