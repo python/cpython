@@ -1908,13 +1908,33 @@ in :mod:`!ctypes`) which inherits from the private :class:`_CFuncPtr` class:
          same callable object to check or post process the results of several
          functions.
 
-         *arguments* is a tuple containing the parameters originally passed to
-         the function call, this allows specializing the behavior on the
+         *arguments* is a tuple containing the parameters passed to the
+         function call, including any output parameters that :mod:`!ctypes`
+         created for the call; this allows specializing the behavior on the
          arguments used.
 
-      The object that this function returns will be returned from the
-      foreign function call, but it can also check the result value
-      and raise an exception if the foreign function call failed.
+      If the callable returns the *arguments* tuple it received, unchanged,
+      :mod:`!ctypes` continues its normal processing of the result, which
+      includes returning output parameters (see
+      :ref:`ctypes-function-prototypes`). Any other object returned by the
+      callable is returned from the foreign function call instead. The
+      callable can also check the result value and raise an exception if the
+      foreign function call failed.
+
+      For example, this callable raises an exception when the foreign function
+      signals failure with a negative return value, and otherwise leaves the
+      result to :mod:`!ctypes`::
+
+         def errcheck(result, func, arguments):
+             if result < 0:
+                 raise RuntimeError(f"call failed with error {result}")
+             return arguments
+
+      This one instead replaces the result, converting a C ``int`` used as a
+      boolean into a :class:`bool`::
+
+         def errcheck(result, func, arguments):
+             return result != 0
 
 
 .. audit-event:: ctypes.set_exception code foreign-functions
