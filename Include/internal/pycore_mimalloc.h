@@ -57,6 +57,12 @@ struct mi_heap_qsbr_s {
 #  define MI_TSAN 1
 #endif
 
+// Used to disable warnings on failed ASAN allocations, Not disabled on
+// free-threaded builds because they safely read memory after free
+#if defined(_Py_ADDRESS_SANITIZER) && !Py_GIL_DISABLED
+#  define MI_TRACK_ASAN 1
+#endif
+
 #ifdef __cplusplus
 extern "C++" {
 #endif
