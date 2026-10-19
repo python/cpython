@@ -469,20 +469,18 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                 timeTuple = time.localtime(t + addend)
         dfn = self.rotation_filename(self.baseFilename + "." +
                                      time.strftime(self.suffix, timeTuple))
-        if os.path.exists(dfn):
-            # Already rolled over.
-            return
-
         if self.stream:
             self.stream.close()
             self.stream = None
-        self.rotate(self.baseFilename, dfn)
-        if self.backupCount > 0:
+        rolledOver = os.path.exists(dfn)
+        if not rolledOver:
+            self.rotate(self.baseFilename, dfn)
+        self.rolloverAt = self.computeRollover(currentTime)
+        if not rolledOver and self.backupCount > 0:
             for s in self.getFilesToDelete():
                 os.remove(s)
         if not self.delay:
             self.stream = self._open()
-        self.rolloverAt = self.computeRollover(currentTime)
 
 class WatchedFileHandler(logging.FileHandler):
     """

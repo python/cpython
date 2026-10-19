@@ -6902,6 +6902,96 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
     def test_rollover_at_weekday(self):
         self.test_rollover_at_midnight(weekly=True)
 
+    def _make_fake_time_handler(self, now, when='S', **kwargs):
+        dirname = tempfile.mkdtemp()
+        self.addCleanup(os_helper.rmtree, dirname)
+        fn = os.path.join(dirname, 'test.log')
+        with patch('time.time', lambda: now[0]):
+            fh = logging.handlers.TimedRotatingFileHandler(
+                fn, when=when, encoding='utf-8', delay=True, **kwargs)
+        self.addCleanup(fh.close)
+        return fh
+
+    def test_rollover_after_failed_rollover(self):
+        for target in 'os.remove', '_open':
+            with self.subTest(target=target):
+                now = [1_000_000_000]
+                fh = self._make_fake_time_handler(now, backupCount=1)
+                fn = fh.baseFilename
+                emit = lambda msg: fh.emit(logging.makeLogRecord({'msg': msg}))
+                with patch('time.time', lambda: now[0]):
+                    for msg in 'a', 'b':
+                        now[0] += 2
+                        emit(msg)
+                    now[0] += 2
+                    if target == '_open':
+                        failure = patch.object(fh, '_open', side_effect=OSError)
+                        fh.delay = False
+                    else:
+                        failure = patch('os.remove', side_effect=OSError)
+                    with failure, support.captured_stderr():
+                        emit('c')
+                    fh.delay = True
+                    for msg in 'd', 'e':
+                        now[0] += 2
+                        emit(msg)
+                    self.assertGreater(fh.rolloverAt, now[0])
+                fh.close()
+                with open(fn, encoding='utf-8') as f:
+                    self.assertEqual(f.read(), 'e\n')
+                backups = [f for f in os.listdir(os.path.dirname(fn))
+                           if f != 'test.log']
+                self.assertEqual(len(backups), 1)
+
+    def test_rollover_already_rolled_over(self):
+        now = [1_000_000_000]
+        fh1 = self._make_fake_time_handler(now)
+        fn = fh1.baseFilename
+        with patch('time.time', lambda: now[0]):
+            fh2 = logging.handlers.TimedRotatingFileHandler(
+                fn, when='S', encoding='utf-8', delay=True)
+            self.addCleanup(fh2.close)
+            for i in range(4):
+                if os.name == 'nt' and fh2.stream:
+                    fh2.stream.close()
+                    fh2.stream = None
+                fh1.emit(logging.makeLogRecord({'msg': f'a{i}'}))
+                fh2.emit(logging.makeLogRecord({'msg': f'b{i}'}))
+                now[0] += 2
+            self.assertGreater(fh2.rolloverAt, now[0] - 2)
+        fh1.close()
+        fh2.close()
+        with open(fn, encoding='utf-8') as f:
+            self.assertEqual(f.read(), 'a3\nb3\n')
+        backups = sorted(f for f in os.listdir(os.path.dirname(fn))
+                         if f != 'test.log')
+        self.assertEqual(len(backups), 3)
+        for backup, i in zip(backups, range(3)):
+            with open(os.path.join(os.path.dirname(fn), backup),
+                      encoding='utf-8') as f:
+                self.assertEqual(f.read(), f'a{i}\nb{i}\n')
+
+    def test_rollover_existing_destination_reopens_stream(self):
+        now = [1_000_000_000]
+        fh = self._make_fake_time_handler(now)
+        fn = fh.baseFilename
+        with patch('time.time', lambda: now[0]):
+            fh.emit(logging.makeLogRecord({'msg': 'a'}))
+            old_stream = fh.stream
+            t = fh.rolloverAt - fh.interval
+            dfn = fh.rotation_filename(
+                fn + '.' + time.strftime(fh.suffix, time.localtime(t)))
+            with open(dfn, 'w', encoding='utf-8'):
+                pass
+            now[0] += 2
+            fh.emit(logging.makeLogRecord({'msg': 'b'}))
+            self.assertTrue(old_stream.closed)
+            self.assertIsNot(fh.stream, old_stream)
+            self.assertGreater(fh.rolloverAt, now[0])
+        fh.close()
+        with open(fn, encoding='utf-8') as f:
+            self.assertEqual(f.read(), 'a\nb\n')
+
     def test_invalid(self):
         assertRaises = self.assertRaises
         assertRaises(ValueError, logging.handlers.TimedRotatingFileHandler,
