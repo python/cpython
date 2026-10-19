@@ -2651,8 +2651,8 @@ class ZipFile:
         # gh-81954: Warn if writable ZipFile is implicitly closed.
         # GC cleanup order is non-deterministic and can result in data loss.
         try:
-            # Wrap within a try to ensure the file is closed even if the
-            # warning raises, e.g. when ResourceWarning is made an error.
+            # Wrap within a try to ensure the file is closed even if
+            # warnings raises.
             if self.fp is not None and self.mode in ('w', 'x', 'a'):
                 _warn(f"unclosed ZipFile {self!r}",
                       ResourceWarning, source=self, stacklevel=2)
