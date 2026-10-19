@@ -784,12 +784,12 @@ Generator functions
    single: generator; function
    single: generator; iterator
 
-A function or method which uses the :keyword:`yield` statement (see section
-:ref:`yield`) is called a :dfn:`generator function`.  Such a function, when
+A function or method which contains a :keyword:`yield` expression (see section
+:ref:`yieldexpr`) is called a :dfn:`generator function`.  Such a function, when
 called, always returns an :term:`iterator` object which can be used to
 execute the body of the function:  calling the iterator's
 :meth:`iterator.__next__` method will cause the function to execute until
-it provides a value using the :keyword:`!yield` statement.  When the
+it provides a value using the :keyword:`!yield` expression.  When the
 function executes a :keyword:`return` statement or falls off the end, a
 :exc:`StopIteration` exception is raised and the iterator will have
 reached the end of the set of values to be returned.
@@ -816,7 +816,7 @@ Asynchronous generator functions
    single: asynchronous generator; asynchronous iterator
 
 A function or method which is defined using :keyword:`async def` and
-which uses the :keyword:`yield` statement is called a
+which contains a :keyword:`yield` expression is called a
 :dfn:`asynchronous generator function`.  Such a function, when called,
 returns an :term:`asynchronous iterator` object which can be used in an
 :keyword:`async for` statement to execute the body of the function.
@@ -1557,6 +1557,16 @@ Special read-only attributes
        .. deprecated:: 3.12
           This attribute of code objects is deprecated, and may be removed in
           Python 3.15.
+
+   * - .. attribute:: codeobject.co_linetable
+     - A :class:`bytes` object containing encoded source location information.
+       The exact format is an implementation detail and may change between
+       Python versions. Use :meth:`~codeobject.co_lines` and
+       :meth:`~codeobject.co_positions` for supported access to line and
+       position information. To create a modified copy of a code object,
+       use :meth:`~codeobject.replace`.
+
+       .. versionadded:: 3.10
 
    * - .. attribute:: codeobject.co_stacksize
      - The required stack size of the code object

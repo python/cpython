@@ -1608,24 +1608,15 @@ static int
 mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
 {
     mmap_object *self = mmap_object_CAST(op);
-    CHECK_VALID(-1);
 
     if (!is_writable(self))
         return -1;
 
     if (PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
-        Py_ssize_t v;
-
         if (i == -1 && PyErr_Occurred())
             return -1;
-        if (i < 0)
-            i += self->size;
-        if (i < 0 || i >= self->size) {
-            PyErr_SetString(PyExc_IndexError,
-                            "mmap index out of range");
-            return -1;
-        }
+
         if (value == NULL) {
             PyErr_SetString(PyExc_TypeError,
                             "mmap doesn't support item deletion");
@@ -1636,7 +1627,7 @@ mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
                             "mmap item value must be an int");
             return -1;
         }
-        v = PyNumber_AsSsize_t(value, PyExc_TypeError);
+        Py_ssize_t v = PyNumber_AsSsize_t(value, PyExc_TypeError);
         if (v == -1 && PyErr_Occurred())
             return -1;
         if (v < 0 || v > 255) {
@@ -1645,7 +1636,18 @@ mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
                             "in range(0, 256)");
             return -1;
         }
+
+        /* Converting item or value above may have run arbitrary code
+         * (e.g. __index__) that resized or closed the mmap, so bounds
+         * are only checked now, against the current size. */
         CHECK_VALID(-1);
+        if (i < 0)
+            i += self->size;
+        if (i < 0 || i >= self->size) {
+            PyErr_SetString(PyExc_IndexError,
+                            "mmap index out of range");
+            return -1;
+        }
 
         char v_char = (char) v;
         if (safe_byte_copy(self->data + i, &v_char) < 0) {
@@ -1660,7 +1662,6 @@ mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
         if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return -1;
         }
-        slicelen = PySlice_AdjustIndices(self->size, &start, &stop, step);
         if (value == NULL) {
             PyErr_SetString(PyExc_TypeError,
                 "mmap object doesn't support slice deletion");
@@ -1668,6 +1669,12 @@ mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
         }
         if (PyObject_GetBuffer(value, &vbuf, PyBUF_SIMPLE) < 0)
             return -1;
+
+        /* Acquiring the buffer above may have run arbitrary code (e.g. a
+         * __buffer__ method) that resized or closed this mmap, so the slice bounds
+         * are only computed now, against the current size. */
+        CHECK_VALID_OR_RELEASE(-1, vbuf);
+        slicelen = PySlice_AdjustIndices(self->size, &start, &stop, step);
         if (vbuf.len != slicelen) {
             PyErr_SetString(PyExc_IndexError,
                 "mmap slice assignment is wrong size");
@@ -1675,7 +1682,6 @@ mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
             return -1;
         }
 
-        CHECK_VALID_OR_RELEASE(-1, vbuf);
         int result = 0;
         if (slicelen == 0) {
         }

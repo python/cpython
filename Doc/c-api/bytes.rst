@@ -8,6 +8,13 @@ Bytes Objects
 These functions raise :exc:`TypeError` when expecting a bytes parameter and
 called with a non-bytes parameter.
 
+.. impl-detail::
+
+   The internal buffer of :c:type:`PyBytesObject` always includes an extra
+   trailing null byte for compatibility with null terminated C strings.
+   This extra byte is not counted in :c:func:`PyBytes_Size` nor in the
+   various *length* and *size* arguments of the functions below.
+
 .. index:: pair: object; bytes
 
 

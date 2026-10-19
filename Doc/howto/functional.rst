@@ -723,9 +723,10 @@ returns them in a tuple::
     zip(['a', 'b', 'c'], (1, 2, 3)) =>
       ('a', 1), ('b', 2), ('c', 3)
 
-It doesn't construct an in-memory list and exhaust all the input iterators
-before returning; instead tuples are constructed and returned only if they're
-requested.  (The technical term for this behaviour is `lazy evaluation
+It doesn't construct an in-memory list and :term:`exhaust <exhausted>` all
+the input iterators before returning; instead tuples are constructed and
+returned only if they're requested.
+(The technical term for this behaviour is `lazy evaluation
 <https://en.wikipedia.org/wiki/Lazy_evaluation>`__.)
 
 This iterator is intended to be used with iterables that are all of the same
@@ -786,7 +787,7 @@ element *n* times, or returns the element endlessly if *n* is not provided. ::
 :func:`itertools.chain(iterA, iterB, ...) <itertools.chain>` takes an arbitrary
 number of iterables as input, and returns all the elements of the first
 iterator, then all the elements of the second, and so on, until all of the
-iterables have been exhausted. ::
+iterables have been :term:`exhausted`. ::
 
     itertools.chain(['a', 'b', 'c'], (1, 2, 3)) =>
       a, b, c, 1, 2, 3
@@ -881,7 +882,7 @@ iterable's results. ::
 
 :func:`itertools.compress(data, selectors) <itertools.compress>` takes two
 iterators and returns only those elements of *data* for which the corresponding
-element of *selectors* is true, stopping whenever either one is exhausted::
+element of *selectors* is true, stopping whenever either one is :term:`exhausted`::
 
     itertools.compress([1, 2, 3, 4, 5], [True, True, False, False, True]) =>
        1, 2, 5
@@ -1031,7 +1032,7 @@ that takes two elements and returns a single value.  :func:`functools.reduce`
 takes the first two elements A and B returned by the iterator and calculates
 ``func(A, B)``.  It then requests the third element, C, calculates
 ``func(func(A, B), C)``, combines this result with the fourth element returned,
-and continues until the iterable is exhausted.  If the iterable returns no
+and continues until the iterable is :term:`exhausted`.  If the iterable returns no
 values at all, a :exc:`TypeError` exception is raised.  If the initial value is
 supplied, it's used as a starting point and ``func(initial_value, A)`` is the
 first calculation. ::

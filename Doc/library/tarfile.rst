@@ -1112,7 +1112,7 @@ reused in custom filters:
 
   Return the modified ``TarInfo`` member.
 
-  .. versionchanged:: next
+  .. versionchanged:: 3.14.8
 
      Filenames containing ``..`` components are now normalized.
 

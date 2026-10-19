@@ -5,14 +5,14 @@
 # https://git-scm.com/docs/gitignore#_pattern_format
 
 # GitHub
-.github/**                    @ezio-melotti @hugovk @AA-Turner @webknjaz
+.github/**                    @ezio-melotti @hugovk @AA-Turner @webknjaz @StanFromIreland
 .github/workflows/jit.yml     @savannahostrowski
-Tools/build/compute-changes.py              @AA-Turner @hugovk @webknjaz
-Lib/test/test_tools/test_compute_changes.py @AA-Turner @hugovk @webknjaz
+Tools/build/compute-changes.py              @AA-Turner @hugovk @webknjaz @StanFromIreland
+Lib/test/test_tools/test_compute_changes.py @AA-Turner @hugovk @webknjaz @StanFromIreland
 
 # pre-commit
-.pre-commit-config.yaml       @hugovk
-.ruff.toml                    @hugovk @AlexWaygood @AA-Turner
+.pre-commit-config.yaml       @hugovk @StanFromIreland
+.ruff.toml                    @hugovk @AlexWaygood @AA-Turner @StanFromIreland
 
 # Build system
 configure*                    @erlend-aasland @corona10

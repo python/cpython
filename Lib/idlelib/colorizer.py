@@ -8,6 +8,11 @@ from idlelib.delegator import Delegator
 
 DEBUG = False
 
+# Adding a tag to a line takes time proportional to the number of tags
+# already in the line, so only the beginning of a line is colorized;
+# the rest is usually not visible anyway (gh-103089).
+MAX_COLORIZED_LINE = 2000
+
 
 def any(name, alternates):
     "Return a named group pattern matching list of alternates."
@@ -42,6 +47,11 @@ def make_pat():
         ]) +
         r"))"
     )
+    type_softkw = (
+        r"^[ \t]*" +  # at beginning of line + possible indentation
+        r"(?P<TYPE_SOFTKW>type)" +
+        r"(?=[ \t]+(?!(?:" + "|".join(keyword.kwlist) + r")\b)[^\W\d])"
+    )
     builtinlist = [str(name) for name in dir(builtins)
                    if not name.startswith('_') and
                    name not in keyword.kwlist]
@@ -54,7 +64,7 @@ def make_pat():
     dq3string = stringprefix + r'"""[^"\\]*((\\.|"(?!""))[^"\\]*)*(""")?'
     string = any("STRING", [sq3string, dq3string, sqstring, dqstring])
     prog = re.compile("|".join([
-                                builtin, comment, string, kw,
+                                type_softkw, builtin, comment, string, kw,
                                 match_softkw, case_default,
                                 case_softkw_and_pattern,
                                 any("SYNC", [r"\n"]),
@@ -70,6 +80,7 @@ prog_group_name_to_tag = {
     "CASE_SOFTKW": "KEYWORD",
     "CASE_DEFAULT_UNDERSCORE": "KEYWORD",
     "CASE_SOFTKW2": "KEYWORD",
+    "TYPE_SOFTKW": "KEYWORD",
 }
 
 
@@ -338,16 +349,39 @@ class ColorDelegator(Delegator):
         `chars` is a string with the text to parse and to which
         highlighting is to be applied.
 
-            `head` is the index in the text widget where the text is found.
+        `head` is the index in the text widget where the text is found.
         """
-        for m in self.prog.finditer(chars):
+        # Positions are relative to the start of the current line, so that
+        # Tk does not resolve them through the previous lines.
+        line = int(head.split('.')[0])
+        line_start = 0  # Offset of the current line in chars.
+        tags = []
+        pos = 0
+        while True:
+            m = self.prog.search(chars, pos)
+            if m is None:
+                break
             for name, matched_text in matched_named_groups(m):
                 a, b = m.span(name)
-                self._add_tag(a, b, head, name)
+                tags.append((a - line_start, b - line_start, head, name))
                 if matched_text in ("def", "class"):
                     if m1 := self.idprog.match(chars, b):
                         a, b = m1.span(1)
-                        self._add_tag(a, b, head, "DEFINITION")
+                        tags.append((a - line_start, b - line_start,
+                                     head, "DEFINITION"))
+            pos = m.end()
+            if '\n' in m[0]:
+                line += m[0].count('\n')
+                line_start = m.start() + m[0].rindex('\n') + 1
+                head = f"{line}.0"
+            elif pos - line_start >= MAX_COLORIZED_LINE:
+                # The rest of a long line is not colorized.
+                pos = chars.find('\n', pos)
+                if pos < 0:
+                    break
+        # Adding a tag is faster if there are no tags after it.
+        for args in reversed(tags):
+            self._add_tag(*args)
 
     def removecolors(self):
         "Remove all colorizing tags."

@@ -919,7 +919,7 @@ object::
     exception,
   - if ``side_effect`` is an iterable, the async function will return the
     next value of the iterable, however, if the sequence of result is
-    exhausted, ``StopAsyncIteration`` is raised immediately,
+    :term:`exhausted`, ``StopAsyncIteration`` is raised immediately,
   - if ``side_effect`` is not defined, the async function will return the
     value defined by ``return_value``, hence, by default, the async function
     returns a new :class:`AsyncMock` object.
@@ -1269,7 +1269,7 @@ To remove a :attr:`~Mock.side_effect`, and return to the default behaviour, set 
         6
 
 The :attr:`~Mock.side_effect` can also be any iterable object. Repeated calls to the mock
-will return values from the iterable (until the iterable is exhausted and
+will return values from the iterable (until the iterable is :term:`exhausted` and
 a :exc:`StopIteration` is raised):
 
         >>> m = MagicMock(side_effect=[1, 2, 3])
@@ -2946,7 +2946,7 @@ precedence remains the same:
     >>> order_mock.get_value()
     'third'
 
-If :attr:`~Mock.side_effect` is exhausted, the order of precedence will not
+If :attr:`~Mock.side_effect` is :term:`exhausted`, the order of precedence will not
 cause a value to be obtained from the successors. Instead, ``StopIteration``
 exception is raised.
 

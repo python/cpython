@@ -283,8 +283,8 @@ Passing ``--update`` will replace existing installs if the new version is newer.
 Otherwise, they will be left. If no tags are provided with ``--update``, all
 installs managed by the Python install manager will be updated if newer versions
 are available. Updates will remove any modifications made to the install,
-including globally installed packages, but virtual environments will continue to
-work.
+including globally installed packages, but will leave ``site-packages`` and
+``Scripts`` directories as is.  Virtual environments are also unaffected.
 
 Passing ``--dry-run`` will generate output and logs, but will not modify any
 installs.
@@ -394,8 +394,9 @@ override all other settings, but not every option is available.
 This section will describe the defaults, but be aware that modified or
 overridden installs may resolve settings differently.
 
-A global configuration file may be configured by an administrator, and would be
-read first. The user configuration file is stored at
+A global configuration file may be configured by an
+:ref:`administrator <pymanager-admin-config>`
+and would be read first. The user configuration file is stored at
 :file:`%AppData%\\Python\\pymanager.json`
 (note that this location is under ``Roaming``, not ``Local``) and is read next,
 overwriting any settings from earlier files. An additional configuration file
@@ -935,6 +936,37 @@ checking for that feed.
      }
    }
 
+
+Proxy settings
+--------------
+
+.. versionadded:: 26.4
+
+By default, the Python install manager will use your system-wide proxy settings,
+including automatic authentication. For most users, this behaves the same as
+your browser and other applications.
+
+To override the settings, use the ``NO_PROXY``, ``HTTP_PROXY`` and
+``HTTPS_PROXY`` environment variables. These should be set in the terminal
+session before using the Python install manager. Other applications may also
+use the variables, so use caution before setting them globally for your entire
+machine.
+
+Setting ``NO_PROXY`` to any non-empty value will disable the use of any proxy.
+Use this to bypass your system's default proxy setting and attempt to access the
+index server directly.
+
+Setting ``HTTPS_PROXY`` to a string like ``example.com:8080`` will connect to
+that proxy server for all HTTPS connections. For the default index, all
+connections will be using HTTPS, and so this is the usual setting to override.
+
+The ``HTTP_PROXY`` variable may be needed if you are using a private index
+server that does not use encrypted connections, but does require the default
+proxy server to be overridden. It follows the same format as ``HTTPS_PROXY``.
+
+Credentials may be embedded in either setting, however, when ``HTTPS_PROXY`` has
+credentials embedded they will be used in preference to other credentials. Only
+one set of credentials will be used for both types of proxy.
 
 .. _pymanager-troubleshoot:
 

@@ -311,13 +311,13 @@ PyCursesPanel_Clear(PyObject *op)
     PyCursesPanelObject *self = _PyCursesPanelObject_CAST(op);
     PyObject *extra = (PyObject *)panel_userptr(self->pan);
     if (extra != NULL) {
-        Py_DECREF(extra);
         if (set_panel_userptr(self->pan, NULL) == ERR) {
             _curses_panel_state *state = get_curses_panel_state_by_panel(self);
             PyErr_SetString(state->PyCursesError,
                             "set_panel_userptr() returned ERR");
             return -1;
         }
+        Py_DECREF(extra);
     }
     // self->wo should not be cleared because an associated WINDOW may exist
     return 0;
@@ -330,18 +330,26 @@ PyCursesPanel_Dealloc(PyObject *self)
     PyObject_GC_UnTrack(self);
 
     PyCursesPanelObject *po = _PyCursesPanelObject_CAST(self);
-    if (PyCursesPanel_Clear(self) < 0) {
+    PyObject *extra = (PyObject *)panel_userptr(po->pan);
+    if (extra != NULL && set_panel_userptr(po->pan, NULL) == ERR) {
+        _curses_panel_state *state = get_curses_panel_state_by_panel(po);
+        PyErr_SetString(state->PyCursesError,
+                        "set_panel_userptr() returned ERR");
         PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
+    }
+    if (po->wo != NULL) {
+        remove_lop(po);
+        if (PyErr_Occurred()) {
+            PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
+        }
     }
     if (del_panel(po->pan) == ERR && !PyErr_Occurred()) {
         _curses_panel_state *state = get_curses_panel_state_by_panel(po);
         PyErr_SetString(state->PyCursesError, "del_panel() returned ERR");
         PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
     }
-    if (po->wo != NULL) {
-        Py_DECREF(po->wo);
-        remove_lop(po);
-    }
+    Py_XDECREF(extra);
+    Py_XDECREF(po->wo);
     tp->tp_free(po);
     Py_DECREF(tp);
 }

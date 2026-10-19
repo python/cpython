@@ -28,7 +28,7 @@ from sysconfig import (get_paths, get_platform, get_config_vars,
                        get_path, get_path_names, _INSTALL_SCHEMES,
                        get_default_scheme, get_scheme_names, get_config_var,
                        _expand_vars, _get_preferred_schemes,
-                       is_python_build, _PROJECT_BASE)
+                       is_python_build, _PROJECT_BASE, parse_config_h)
 from sysconfig.__main__ import _main, _parse_makefile, _get_pybuilddir, _get_json_data_name
 import _imp
 import _osx_support
@@ -748,6 +748,72 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         self.assertEqual(config_vars['base'], sys.prefix)
         self.assertEqual(config_vars['exec_prefix'], sys.exec_prefix)
         self.assertEqual(config_vars['platbase'], sys.exec_prefix)
+
+    def test_parse_config_h(self):
+        config = textwrap.dedent('''
+            #ifndef Py_PYCONFIG_H
+            #define Py_PYCONFIG_H
+
+            /* C comment */
+
+            #define ALIGNOF_LONG 8
+            #define HAVE_ACCEPT 1
+            #define _Py_HAVE_COSPI 1
+            #define INVALID_NUMBER abc
+            #define ALT_SOABI "cpython-316t-x86_64-linux-gnu"
+
+            // Undef macros must be written as "/* #undef NAME */":
+            // name must be valid and there is not value.
+            /* #undef ANDROID_API_LEVEL */
+            #undef IGNORE_UNDEF
+            /* #undef IGNORE_VALUE 1 */
+
+            # _ALWAYS_STR: don't convert values to an integer
+            #define IPHONEOS_DEPLOYMENT_TARGET "13.0"
+            #define MACOSX_DEPLOYMENT_TARGET 10
+
+            // Spaces are tolerated after the name, not before
+            #define SPACES_AFTER    1
+            #define    IGNORED_SPACES_BEFORE 1
+
+            // Ignore macro without value
+            #define IGNORE_NO_VALUE
+
+            // Ignore macros with an invalid name
+            #define _PRIVATE_IGNORED 1
+            #define aLOWER_IGNORED 1
+            #define 123IGNORED 1
+            #define INVALID-NAME 1
+            #define INVALID#NAME 1
+            #define NONASCII_NAME_é 1
+
+            // Ignore single letter names
+            #define A 1
+            /* #undef A */
+
+            #endif /*Py_PYCONFIG_H*/
+        ''')
+
+        filename = TESTFN
+        self.addCleanup(unlink, filename)
+        with open(filename, "w", encoding="utf-8") as fp:
+            fp.write(config)
+        vars = {}
+        # In Python 3.14, quotes are not stripped
+        with open(filename, encoding="utf-8") as fp:
+            parse_config_h(fp, vars)
+        expected = {
+            'ALIGNOF_LONG': 8,
+            'HAVE_ACCEPT': 1,
+            '_Py_HAVE_COSPI': 1,
+            'INVALID_NUMBER': 'abc',
+            'ALT_SOABI': '"cpython-316t-x86_64-linux-gnu"',
+            'ANDROID_API_LEVEL': 0,
+            'IPHONEOS_DEPLOYMENT_TARGET': '"13.0"',
+            'MACOSX_DEPLOYMENT_TARGET': '10',  # str, not int
+            'SPACES_AFTER': 1,
+        }
+        self.assertEqual(vars, expected)
 
 
 class MakefileTests(unittest.TestCase):

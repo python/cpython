@@ -3609,6 +3609,23 @@ def quux():
             ('bœr', 5),
         )
 
+    def test_find_function_too_complex(self):
+        # gh-69919: compile() can raise more than SyntaxError.
+        self._assert_find_function(
+            b"def foo():\n    return " + b"-" * 100_000 + b"1\n"
+            b"def bar():\n    pass\n",
+            'bar',
+            ('bar', 4),
+        )
+
+    def test_compile_error_message(self):
+        p = pdb.Pdb()
+        self.assertEqual(p._compile_error_message('1 + 1'), '')
+        self.assertIn('SyntaxError', p._compile_error_message('1 +'))
+        # gh-69919: compile() can raise more than SyntaxError.
+        self.assertRegex(p._compile_error_message('-' * 100_000 + '1'),
+                         r'^(MemoryError|RecursionError|SyntaxError):')
+
     def test_find_function_found_with_encoding_cookie(self):
         self._assert_find_function(
             """\

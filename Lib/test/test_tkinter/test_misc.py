@@ -1,5 +1,6 @@
 import functools
 import platform
+import signal
 import sys
 import textwrap
 import unittest
@@ -9,6 +10,7 @@ from tkinter import TclError
 import enum
 from test import support
 from test.support import os_helper
+from test.support.isolation import runInSubprocess
 from test.support.script_helper import assert_python_ok
 from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import (AbstractTkTest, AbstractDefaultRootTest,
@@ -451,15 +453,20 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.root.update_idletasks()
         f.focus_force()
         self.root.update()
-        self.assertIs(self.root.focus_get(), f)
-        self.assertIs(self.root.focus_displayof(), f)
+        # The window manager can take the focus away, and then focus_get()
+        # and focus_displayof() return None.
+        if self.root.focus_displayof() is not None:
+            self.assertIs(self.root.focus_get(), f)
+            self.assertIs(self.root.focus_displayof(), f)
         self.assertIs(f.focus_lastfor(), f)
         b = tkinter.Button(f)
         b.pack()
         self.root.update()
         b.focus_set()
         self.root.update()
-        self.assertIs(self.root.focus_get(), b)
+        if self.root.focus_displayof() is not None:
+            self.assertIs(self.root.focus_get(), b)
+        self.assertIs(f.focus_lastfor(), b)
 
     def test_focus_methods_unresolvable(self):
         # The focus may be on a widget that tkinter did not create and so
@@ -1164,7 +1171,9 @@ class EventTest(AbstractTkTest, unittest.TestCase):
 
         f.focus_force()
         self.root.update()
-        self.assertEqual(len(events), 1, events)
+        # The window manager can take the focus away and give it back,
+        # which makes Tk generate additional focus events.
+        self.assertGreaterEqual(len(events), 1, events)
         e = events[0]
         self.assertIs(e.type, tkinter.EventType.FocusIn)
         self.assertIs(e.widget, f)
@@ -1904,6 +1913,18 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
 
 def _info_commands(widget, pattern=None):
     return widget.tk.splitlist(widget.tk.call('info', 'commands', pattern))
+
+
+class SignalTest(unittest.TestCase):
+
+    @runInSubprocess()
+    def test_sigint_handler(self):
+        # gh-157672: Tk on macOS replaced the SIGINT handler with its own,
+        # which exits the process.
+        root = tkinter.Tk()
+        self.addCleanup(root.destroy)
+        with self.assertRaises(KeyboardInterrupt):
+            signal.raise_signal(signal.SIGINT)
 
 
 if __name__ == "__main__":

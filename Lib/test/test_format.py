@@ -494,6 +494,28 @@ class FormatTest(unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             format(c, ".%sf" % (INT_MAX + 1))
 
+    @support.cpython_only
+    def test_precision_near_int_max(self):
+        # gh-158446: Precisions just below INT_MAX are rejected before any
+        # output buffer size is computed from them.
+        _testcapi = import_module("_testcapi")
+        INT_MAX = _testcapi.INT_MAX
+
+        f = 1e300
+        c = complex(f)
+        for prec in (INT_MAX, INT_MAX - 1023):
+            for code in "feg":
+                spec = ".%d%s" % (prec, code)
+                with self.subTest(spec=spec):
+                    with self.assertRaises(ValueError):
+                        format(f, spec)
+                    with self.assertRaises(ValueError):
+                        format(c, spec)
+                    with self.assertRaises(ValueError):
+                        ("%" + spec) % f
+                    with self.assertRaises(ValueError):
+                        ("%" + spec).encode() % f
+
     def test_g_format_has_no_trailing_zeros(self):
         # regression test for bugs.python.org/issue40780
         self.assertEqual("%.3g" % 1505.0, "1.5e+03")

@@ -33,6 +33,8 @@ import types
 import platform
 from fcntl import ioctl
 
+from _colorize import ANSIColors
+
 from . import terminfo
 from .console import Console, Event
 from .fancy_termios import tcgetattr, tcsetattr, TermState
@@ -356,6 +358,7 @@ class UnixConsole(Console):
         raw.cc[termios.VMIN] = 1
         raw.cc[termios.VTIME] = 0
         self.__input_fd_set(raw)
+        self.__rawtermstate = raw
 
         # In macOS terminal we need to deactivate line wrap via ANSI escape code
         if self.is_apple_terminal:
@@ -382,6 +385,8 @@ class UnixConsole(Console):
         """
         Restore the console to the default state
         """
+        trace("unix.restore")
+        self.__write(ANSIColors.RESET)
         self.__disable_bracketed_paste()
         self.__maybe_write_code(self._rmkx)
         self.flushoutput()
@@ -518,6 +523,7 @@ class UnixConsole(Console):
         while y >= 0 and not self.screen[y]:
             y -= 1
         self.__move(0, min(y, self.height + self.__offset - 1))
+        self.__write(ANSIColors.RESET)
         self.__write("\n\r")
         self.flushoutput()
 
@@ -590,7 +596,19 @@ class UnixConsole(Console):
         # avoid inline imports here so the repl doesn't get flooded
         # with import logging from -X importtime=2
         if posix is not None and posix._is_inputhook_installed():
-            return posix._inputhook
+            return self.__run_input_hook
+
+    def __run_input_hook(self):
+        # gh-152907: input hooks expect cooked output, but pyrepl runs with
+        # OPOST disabled.  Restore the saved output flags around the hook
+        # (only oflag; input must stay raw at the prompt).
+        cooked = self.__rawtermstate.copy()
+        cooked.oflag = self.__svtermstate.oflag
+        self.__input_fd_set(cooked)
+        try:
+            return posix._inputhook()
+        finally:
+            self.__input_fd_set(self.__rawtermstate)
 
     def __enable_bracketed_paste(self) -> None:
         os.write(self.output_fd, b"\x1b[?2004h")

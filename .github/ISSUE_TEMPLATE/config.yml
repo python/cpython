@@ -1,7 +1,0 @@
-contact_links:
-  - name: "Getting help"
-    about: "Ask questions about using Python and debugging errors on Discourse."
-    url: "https://discuss.python.org/c/users/7"
-  - name: "Proposing new features"
-    about: "Submit major feature proposal (e.g. syntax changes) to an ideas forum first."
-    url: "https://discuss.python.org/c/ideas/6"

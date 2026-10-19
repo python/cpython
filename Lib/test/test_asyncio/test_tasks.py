@@ -1,5 +1,6 @@
 """Tests for tasks.py."""
 
+import _thread
 import collections
 import contextlib
 import contextvars
@@ -19,6 +20,7 @@ from asyncio import futures
 from asyncio import tasks
 from test.test_asyncio import utils as test_utils
 from test import support
+from test.support import threading_helper
 from test.support.script_helper import assert_python_ok
 from test.support.warnings_helper import ignore_warnings
 
@@ -1231,6 +1233,56 @@ class BaseTaskTests:
 
         self.loop.run_until_complete(self.new_task(self.loop, coro()))
 
+    def test_gather_discards_awaited_by_for_pending(self):
+        # gh-157213: a child outliving gather() must lose the awaited-by edge
+        async def fail():
+            raise ValueError
+
+        async def survivor():
+            await asyncio.Future()
+
+        async def coro():
+            t = self.new_task(self.loop, survivor())
+            with self.assertRaises(ValueError):
+                await asyncio.gather(t, fail())
+            self.assertFalse(t._asyncio_awaited_by)
+            t.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await t
+
+        self.loop.run_until_complete(self.new_task(self.loop, coro()))
+
+    def test_gather_discards_awaited_by_for_cancelled_sibling(self):
+        # gh-157213: same, when gather() is ended by a cancelled child
+        async def survivor():
+            await asyncio.Future()
+
+        async def coro():
+            t = self.new_task(self.loop, survivor())
+            victim = self.new_task(self.loop, asyncio.sleep(10))
+            victim.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await asyncio.gather(t, victim)
+            self.assertFalse(t._asyncio_awaited_by)
+            t.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await t
+
+        self.loop.run_until_complete(self.new_task(self.loop, coro()))
+
+    def test_gather_does_not_add_callback_to_outer(self):
+        # gh-158239: gather() must not add an internal done callback to
+        # the outer future just to maintain the await graph.
+        async def child():
+            await asyncio.sleep(0)
+
+        async def coro():
+            outer = asyncio.gather(child(), child())
+            self.assertFalse(outer._callbacks)
+            await outer
+
+        self.loop.run_until_complete(self.new_task(self.loop, coro()))
+
     def test_wait_really_done(self):
         # there is possibility that some tasks in the pending list
         # became done but their callbacks haven't all been called yet
@@ -2128,6 +2180,8 @@ class BaseTaskTests:
         test_utils.run_briefly(self.loop)
         self.assertTrue(outer.cancelled())
         self.assertEqual(0, 0 if outer._callbacks is None else len(outer._callbacks))
+        self.assertFalse(inner._asyncio_awaited_by)
+        self.assertFalse(inner._callbacks)
 
     def test_shield_cancel_outer_result(self):
         mock_handler = mock.Mock()
@@ -2142,6 +2196,8 @@ class BaseTaskTests:
         mock_handler.assert_not_called()
 
     def test_shield_cancel_outer_exception(self):
+        # gh-156321: an exception in the inner future must not be reported
+        # eagerly, as it may still be retrieved later.
         mock_handler = mock.Mock()
         self.loop.set_exception_handler(mock_handler)
         inner = self.new_future(self.loop)
@@ -2151,9 +2207,46 @@ class BaseTaskTests:
         test_utils.run_briefly(self.loop)
         inner.set_exception(Exception('foo'))
         test_utils.run_briefly(self.loop)
-        mock_handler.assert_called_once()
+        mock_handler.assert_not_called()
+        self.assertIsInstance(inner.exception(), Exception)
 
-    def test_shield_duplicate_log_once(self):
+    def test_shield_cancel_outer_exception_never_retrieved(self):
+        # gh-156321: an exception nobody retrieves is reported by the inner
+        # future itself when it is garbage collected, like any other future.
+        mock_handler = mock.Mock()
+        self.loop.set_exception_handler(mock_handler)
+        inner = self.new_future(self.loop)
+        outer = asyncio.shield(inner)
+        test_utils.run_briefly(self.loop)
+        outer.cancel()
+        test_utils.run_briefly(self.loop)
+        inner.set_exception(Exception('foo'))
+        test_utils.run_briefly(self.loop)
+        mock_handler.assert_not_called()
+        inner = None
+        outer = None
+        support.gc_collect()
+        mock_handler.assert_called_once()
+        context = mock_handler.call_args[0][1]
+        self.assertEndsWith(context['message'], 'exception was never retrieved')
+        self.assertIsInstance(context['exception'], Exception)
+
+    def test_shield_cancel_outer_in_task(self):
+        inner = self.new_future(self.loop)
+
+        async def coro():
+            outer = asyncio.shield(inner)
+            self.assertNotEqual(0, len(inner._callbacks))
+            outer.cancel()
+            await asyncio.sleep(0)
+            self.assertTrue(outer.cancelled())
+
+        task = self.new_task(self.loop, coro())
+        self.loop.run_until_complete(task)
+        self.assertFalse(inner._asyncio_awaited_by)
+        self.assertFalse(inner._callbacks)
+
+    def test_shield_cancel_outer_twice_exception(self):
         mock_handler = mock.Mock()
         self.loop.set_exception_handler(mock_handler)
         inner = self.new_future(self.loop)
@@ -2165,9 +2258,11 @@ class BaseTaskTests:
         test_utils.run_briefly(self.loop)
         outer.cancel()
         test_utils.run_briefly(self.loop)
+        self.assertFalse(inner._callbacks)
         inner.set_exception(Exception('foo'))
         test_utils.run_briefly(self.loop)
-        mock_handler.assert_called_once()
+        mock_handler.assert_not_called()
+        self.assertIsInstance(inner.exception(), Exception)
 
     def test_shield_shortcut(self):
         fut = self.new_future(self.loop)
@@ -2958,6 +3053,39 @@ class CTask_CFuture_Tests(BaseTaskTests, SetMethodsTest,
             task.__init__(coro(), loop=self.loop)
             self.loop.run_until_complete(task)
         self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
+
+    @threading_helper.requires_working_threading()
+    def test_task_created_during_thread_state_clear(self):
+        loop = self.loop
+        task = None
+        var = contextvars.ContextVar('var')
+        # Avoid recreating the thread state's context after it is cleared.
+        task_context = contextvars.Context()
+
+        async def noop():
+            pass
+
+        class CreatesTaskOnClear:
+            def __del__(self):
+                nonlocal task
+                task = loop.create_task(noop(), context=task_context)
+
+        def create_finalizer():
+            # gh-159041: Run the finalizer when PyThreadState_Clear()
+            # clears the thread's context.
+            var.set(CreatesTaskOnClear())
+
+        # threading.Thread owns its Context, so use _thread to make the
+        # Context lifetime match the thread state's lifetime.
+        handle = _thread.start_joinable_thread(create_finalizer)
+        handle.join(support.SHORT_TIMEOUT)
+        self.assertTrue(handle.is_done(), 'thread failed to exit')
+        self.assertIsNotNone(task)
+
+        try:
+            self.assertEqual(self.all_tasks(loop), {task})
+        finally:
+            loop.run_until_complete(task)
 
     def test_del__log_destroy_pending_segfault(self):
         async def coro():

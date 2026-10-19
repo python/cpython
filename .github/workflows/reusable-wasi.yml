@@ -20,7 +20,7 @@ jobs:
       WASI_SDK_PATH: /opt/wasi-sdk
       CROSS_BUILD_WASI: cross-build/wasm32-wasip1
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         persist-credentials: false
     # No problem resolver registered as one doesn't currently exist for Clang.
@@ -30,7 +30,7 @@ jobs:
         version: ${{ env.WASMTIME_VERSION }}
     - name: "Restore WASI SDK"
       id: cache-wasi-sdk
-      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ env.WASI_SDK_PATH }}
         key: ${{ runner.os }}-wasi-sdk-${{ env.WASI_SDK_VERSION }}
@@ -41,7 +41,7 @@ jobs:
         curl -s -S --location "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VERSION}/wasi-sdk-${WASI_SDK_VERSION}.0-x86_64-linux.tar.gz" | \
         tar --strip-components 1 --directory "${WASI_SDK_PATH}" --extract --gunzip
     - name: "Install Python"
-      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
       with:
         python-version: '3.x'
     - name: "Runner image version"

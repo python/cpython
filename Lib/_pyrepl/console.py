@@ -195,7 +195,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
                 ast.PyCF_ONLY_AST,
                 incomplete_input=False,
             )
-        except (SyntaxError, OverflowError, ValueError):
+        except Exception:
             self.showsyntaxerror(filename, source=source)
             return False
         if tree.body:
@@ -216,7 +216,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
                     )
                 self.showsyntaxerror(filename, source=source)
                 return False
-            except (OverflowError, ValueError):
+            except Exception:
                 self.showsyntaxerror(filename, source=source)
                 return False
 

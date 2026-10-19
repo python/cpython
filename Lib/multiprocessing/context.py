@@ -1,3 +1,4 @@
+import functools
 import os
 import sys
 import threading
@@ -236,9 +237,18 @@ class Process(process.BaseProcess):
 class DefaultContext(BaseContext):
     Process = Process
 
-    def __init__(self, context):
-        self._default_context = context
+    def __init__(self, context=None):
+        if context is not None:
+            self._default_context = context
         self._actual_context = None
+
+    # The platform default is only determined when first needed, as doing
+    # so can be costly; importing multiprocessing must stay cheap.
+    # A cached_property rather than a property so that the attribute can
+    # still be assigned, deleted and patched like a plain one.
+    @functools.cached_property
+    def _default_context(self):
+        return _get_platform_default_context()
 
     def get_context(self, method=None):
         if method is None:
@@ -325,13 +335,22 @@ if sys.platform != 'win32':
         'spawn': SpawnContext(),
         'forkserver': ForkServerContext(),
     }
-    # bpo-33725: running arbitrary code after fork() is no longer reliable
-    # on macOS since macOS 10.14 (Mojave). Use spawn by default instead.
-    # gh-84559: We changed everyones default to a thread safeish one in 3.14.
-    if reduction.HAVE_SEND_HANDLE and sys.platform != 'darwin':
-        _default_context = DefaultContext(_concrete_contexts['forkserver'])
-    else:
-        _default_context = DefaultContext(_concrete_contexts['spawn'])
+
+    def _get_platform_default_context():
+        # bpo-33725: running arbitrary code after fork() is no longer reliable
+        # on macOS since macOS 10.14 (Mojave). Use spawn by default instead.
+        # gh-84559: We changed everyones default to a thread safeish one in 3.14.
+        if reduction.HAVE_SEND_HANDLE and sys.platform != 'darwin':
+            # gh-155717: forkserver requires to write temporary files.
+            #
+            # Imported here rather than at the top level as util is costly
+            # to import and is not otherwise needed to import this module.
+            from . import util
+            if util._has_writeable_tempdir():
+                return _concrete_contexts['forkserver']
+        return _concrete_contexts['spawn']
+
+    _default_context = DefaultContext()
 
 else:  # Windows
 
@@ -354,7 +373,10 @@ else:  # Windows
     _concrete_contexts = {
         'spawn': SpawnContext(),
     }
-    _default_context = DefaultContext(_concrete_contexts['spawn'])
+    def _get_platform_default_context():
+        return _concrete_contexts['spawn']
+
+    _default_context = DefaultContext()
 
 #
 # Force the start method

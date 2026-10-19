@@ -2892,6 +2892,11 @@ features:
 
    .. audit-event:: os.scandir path os.scandir
 
+   Sharing a :func:`scandir` iterator between threads will not corrupt the
+   iterator, but it is subject to :term:`race conditions <race condition>`:
+   which entries each thread receives is unspecified, and closing the iterator
+   while another thread is iterating ends that iteration early.
+
    The :func:`scandir` iterator supports the :term:`context manager` protocol
    and has the following method:
 
@@ -2899,7 +2904,7 @@ features:
 
       Close the iterator and free acquired resources.
 
-      This is called automatically when the iterator is exhausted or garbage
+      This is called automatically when the iterator is :term:`exhausted` or garbage
       collected, or when an error happens during iterating.  However it
       is advisable to call it explicitly or use the :keyword:`with`
       statement.

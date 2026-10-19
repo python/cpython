@@ -16,6 +16,7 @@
 #endif
 #include "Python.h"
 #include <internal/pycore_debug_offsets.h>  // _Py_DebugOffsets
+#include <internal/pycore_global_objects.h>
 #include <internal/pycore_frame.h>          // FRAME_SUSPENDED_YIELD_FROM
 #include <internal/pycore_interpframe.h>    // FRAME_OWNED_BY_CSTACK
 #include <internal/pycore_llist.h>          // struct llist_node
@@ -83,6 +84,8 @@
 #define INTERP_STATE_BUFFER_SIZE MAX(INTERP_STATE_MIN_SIZE, 256)
 #define MAX_STACK_CHUNK_SIZE (16 * 1024 * 1024)  /* 16 MB max for stack chunks */
 #define MAX_SET_TABLE_SIZE (1 << 20)  /* 1 million entries max for set iteration */
+#define MAX_FRAME_CHAIN_DEPTH 1024  /* Iteration bound for frame chain walks */
+#define MAX_TASK_WAITER_WALK_TASKS (1 << 14)  /* Total-task bound for waiter walks */
 #define MAX_LONG_DIGITS 64  /* Allows values up to ~2^1920 */
 
 
@@ -754,11 +757,6 @@ typedef int (*thread_processor_func)(
     void *context
 );
 
-typedef int (*set_entry_processor_func)(
-    RemoteUnwinderObject *unwinder,
-    uintptr_t key_addr,
-    void *context
-);
 
 
 static int
@@ -793,10 +791,9 @@ parse_async_frame_chain(
 );
 
 static int read_py_ptr(RemoteUnwinderObject *unwinder, uintptr_t address, uintptr_t *ptr_addr);
-static int read_Py_ssize_t(RemoteUnwinderObject *unwinder, uintptr_t address, Py_ssize_t *size);
 
-static int process_task_and_waiters(RemoteUnwinderObject *unwinder, uintptr_t task_addr, PyObject *result);
-static int process_task_awaited_by(RemoteUnwinderObject *unwinder, uintptr_t task_address, set_entry_processor_func processor, void *context);
+static int process_task_waiters(RemoteUnwinderObject *unwinder, PyObject *result);
+static int parse_task_awaited_by(RemoteUnwinderObject *unwinder, uintptr_t task_address, PyObject *awaited_by);
 static int find_running_task_in_thread(RemoteUnwinderObject *unwinder, uintptr_t thread_state_addr, uintptr_t *running_task_addr);
 static int get_task_code_object(RemoteUnwinderObject *unwinder, uintptr_t task_addr, uintptr_t *code_obj_addr);
 static int append_awaited_by(RemoteUnwinderObject *unwinder, unsigned long tid, uintptr_t head_addr, PyObject *result);
@@ -808,7 +805,7 @@ static int append_awaited_by(RemoteUnwinderObject *unwinder, unsigned long tid, 
 #define set_exception_cause(unwinder, exc_type, message)                              \
     do {                                                                              \
         assert(PyErr_Occurred() && "function returned -1 without setting exception"); \
-        if (unwinder->debug && !_Py_RemoteDebug_HasPermissionError()) {               \
+        if (unwinder->debug && !_Py_RemoteDebug_IsFatalReadError()) {               \
             _set_debug_exception_cause(exc_type, message);                            \
         }                                                                             \
     } while (0)
@@ -977,8 +974,7 @@ static int
 iterate_set_entries(
     RemoteUnwinderObject *unwinder,
     uintptr_t set_addr,
-    set_entry_processor_func processor,
-    void *context
+    PyObject *awaited_by
 ) {
     char set_object[SIZEOF_SET_OBJ];
     if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, set_addr,
@@ -990,6 +986,8 @@ iterate_set_entries(
     Py_ssize_t num_els = GET_MEMBER(Py_ssize_t, set_object, unwinder->debug_offsets.set_object.used);
     Py_ssize_t mask = GET_MEMBER(Py_ssize_t, set_object, unwinder->debug_offsets.set_object.mask);
     uintptr_t table_ptr = GET_MEMBER(uintptr_t, set_object, unwinder->debug_offsets.set_object.table);
+
+    // Validate mask and num_els to prevent huge loop iterations from garbage data
     if (mask < 0 || mask >= MAX_SET_TABLE_SIZE || num_els < 0 || num_els > mask + 1) {
         PyErr_SetString(PyExc_RuntimeError, "Invalid set object (corrupted remote memory)");
         set_exception_cause(unwinder, PyExc_RuntimeError,
@@ -1001,54 +999,26 @@ iterate_set_entries(
     Py_ssize_t i = 0;
     Py_ssize_t els = 0;
     while (i < set_len && els < num_els) {
-        uintptr_t key_addr;
-        if (read_py_ptr(unwinder, table_ptr, &key_addr) < 0) {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read set entry key");
+        setentry entry;
+        if (_Py_RemoteDebug_PagedReadRemoteMemory(
+                &unwinder->handle, table_ptr, sizeof(entry), &entry) < 0)
+        {
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read set entry");
             return -1;
         }
 
-        if ((void*)key_addr != NULL) {
-            Py_ssize_t ref_cnt;
-            if (read_Py_ssize_t(unwinder, table_ptr, &ref_cnt) < 0) {
-                set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read set entry ref count");
+        uintptr_t key_addr = (uintptr_t)entry.key;
+        if (key_addr != 0 && entry.hash != -1) {
+            if (parse_task(unwinder, key_addr, awaited_by) < 0) {
                 return -1;
             }
-
-            if (ref_cnt) {
-                // Process this valid set entry
-                if (processor(unwinder, key_addr, context) < 0) {
-                    return -1;
-                }
-                els++;
-            }
+            els++;
         }
-        table_ptr += sizeof(void*) * 2;
+        table_ptr += sizeof(entry);
         i++;
     }
 
     return 0;
-}
-
-// Processor function for task waiters
-static int
-process_waiter_task(
-    RemoteUnwinderObject *unwinder,
-    uintptr_t key_addr,
-    void *context
-) {
-    PyObject *result = (PyObject *)context;
-    return process_task_and_waiters(unwinder, key_addr, result);
-}
-
-// Processor function for parsing tasks in sets
-static int
-process_task_parser(
-    RemoteUnwinderObject *unwinder,
-    uintptr_t key_addr,
-    void *context
-) {
-    PyObject *awaited_by = (PyObject *)context;
-    return parse_task(unwinder, key_addr, awaited_by);
 }
 
 /* ============================================================================
@@ -1068,7 +1038,6 @@ read_##type_name(RemoteUnwinderObject *unwinder, uintptr_t address, c_type *resu
 }
 
 DEFINE_MEMORY_READER(ptr, uintptr_t, "Failed to read pointer from remote memory")
-DEFINE_MEMORY_READER(Py_ssize_t, Py_ssize_t, "Failed to read Py_ssize_t from remote memory")
 DEFINE_MEMORY_READER(char, char, "Failed to read char from remote memory")
 
 static int
@@ -1109,11 +1078,15 @@ read_py_str(
     }
 
     Py_ssize_t len = GET_MEMBER(Py_ssize_t, unicode_obj, unwinder->debug_offsets.unicode_object.length);
-    if (len < 0 || len > max_len) {
+    if (len < 0) {
         PyErr_Format(PyExc_RuntimeError,
                      "Invalid string length (%zd) at 0x%lx", len, address);
         set_exception_cause(unwinder, PyExc_RuntimeError, "Invalid string length in remote Unicode object");
         return NULL;
+    }
+    if (len > max_len) {
+        // gh-157788: a long name must not fail the whole read
+        len = max_len;
     }
 
     buf = (char *)PyMem_RawMalloc(len+1);
@@ -1452,21 +1425,68 @@ parse_task_name(
     );
 }
 
-static int parse_task_awaited_by(
+
+// gh-159620
+/* Return in *coro_addr the coroutine or async generator to walk for the
+   awaitable at addr, or 0 if it is neither (for example, a future). */
+static int
+get_coro_like_address(
     RemoteUnwinderObject *unwinder,
-    uintptr_t task_address,
-    PyObject *awaited_by
+    uintptr_t addr,
+    uintptr_t *coro_addr
 ) {
-    return process_task_awaited_by(unwinder, task_address, process_task_parser, awaited_by);
+    *coro_addr = 0;
+
+    // Skip user classes that share a name with the generator types below
+    uintptr_t type_addr;
+    unsigned long tp_flags;
+    if (read_ptr(unwinder, addr + (uintptr_t)unwinder->debug_offsets.pyobject.ob_type,
+                 &type_addr) < 0
+        || _Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle,
+                type_addr + (uintptr_t)unwinder->debug_offsets.type_object.tp_flags,
+                sizeof(tp_flags), &tp_flags) < 0)
+    {
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read awaitable type");
+        return -1;
+    }
+
+    if (tp_flags & Py_TPFLAGS_HEAPTYPE) {
+        return 0;
+    }
+
+    uintptr_t name_addr;
+    char name[32] = {0};
+    if (read_ptr(unwinder, type_addr + (uintptr_t)unwinder->debug_offsets.type_object.tp_name,
+                 &name_addr) < 0
+        || _Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, name_addr,
+                                                 sizeof(name) - 1, name) < 0)
+    {
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read awaitable type name");
+        return -1;
+    }
+
+    if (strcmp(name, "coroutine") == 0) {
+        *coro_addr = addr;
+    }
+    else if (strcmp(name, "async_generator_asend") == 0
+             || strcmp(name, "async_generator_athrow") == 0)
+    {
+        // asend and athrow are separate wrapper objects: read the pointer
+        // to their parent async generator, stored right after PyObject_HEAD
+        return read_ptr(unwinder, addr + (uintptr_t)unwinder->debug_offsets.pyobject.size,
+                        coro_addr);
+    }
+    return 0;
 }
 
 static int
-handle_yield_from_frame(
+get_awaited_coro_address(
     RemoteUnwinderObject *unwinder,
     uintptr_t gi_iframe_addr,
-    uintptr_t gen_type_addr,
-    PyObject *render_to
+    uintptr_t *next_coro
 ) {
+    *next_coro = 0;
+
     // Read the entire interpreter frame at once
     char iframe[SIZEOF_INTERP_FRAME];
     int err = _Py_RemoteDebug_PagedReadRemoteMemory(
@@ -1490,44 +1510,13 @@ handle_yield_from_frame(
     uintptr_t stackpointer_addr = GET_MEMBER_NO_TAG(uintptr_t, iframe, unwinder->debug_offsets.interpreter_frame.stackpointer);
 
     if ((void*)stackpointer_addr != NULL) {
-        uintptr_t gi_await_addr;
         err = read_py_ptr(
             unwinder,
             stackpointer_addr - sizeof(void*),
-            &gi_await_addr);
+            next_coro);
         if (err) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read gi_await address");
             return -1;
-        }
-
-        if ((void*)gi_await_addr != NULL) {
-            uintptr_t gi_await_addr_type_addr;
-            err = read_ptr(
-                unwinder,
-                gi_await_addr + (uintptr_t)unwinder->debug_offsets.pyobject.ob_type,
-                &gi_await_addr_type_addr);
-            if (err) {
-                set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read gi_await type address");
-                return -1;
-            }
-
-            if (gen_type_addr == gi_await_addr_type_addr) {
-                /* This needs an explanation. We always start with parsing
-                   native coroutine / generator frames. Ultimately they
-                   are awaiting on something. That something can be
-                   a native coroutine frame or... an iterator.
-                   If it's the latter -- we can't continue building
-                   our chain. So the condition to bail out of this is
-                   to do that when the type of the current coroutine
-                   doesn't match the type of whatever it points to
-                   in its cr_await.
-                */
-                err = parse_coro_chain(unwinder, gi_await_addr, render_to);
-                if (err) {
-                    set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse coroutine chain in yield_from");
-                    return -1;
-                }
-            }
         }
     }
 
@@ -1542,49 +1531,68 @@ parse_coro_chain(
 ) {
     assert((void*)coro_address != NULL);
 
-    // Read the entire generator object at once
-    char gen_object[SIZEOF_GEN_OBJ];
-    int err = _Py_RemoteDebug_PagedReadRemoteMemory(
-        &unwinder->handle,
-        coro_address,
-        SIZEOF_GEN_OBJ,
-        gen_object);
-    if (err < 0) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read generator object in coro chain");
-        return -1;
-    }
+    for (size_t depth = 0; (void*)coro_address != NULL; depth++) {
+        if (depth >= MAX_FRAME_CHAIN_DEPTH) {
+            PyErr_SetString(PyExc_RuntimeError,
+                "Too many coroutine frames (possible infinite loop)");
+            set_exception_cause(unwinder, PyExc_RuntimeError,
+                "Coroutine chain depth limit exceeded");
+            return -1;
+        }
 
-    int8_t frame_state = GET_MEMBER(int8_t, gen_object, unwinder->debug_offsets.gen_object.gi_frame_state);
-    if (frame_state == FRAME_CLEARED) {
-        return 0;
-    }
+        if (get_coro_like_address(unwinder, coro_address, &coro_address) < 0) {
+            return -1;
+        }
+        if ((void*)coro_address == NULL) {
+            return 0;
+        }
 
-    uintptr_t gen_type_addr = GET_MEMBER(uintptr_t, gen_object, unwinder->debug_offsets.pyobject.ob_type);
+        // Read the entire generator object at once
+        char gen_object[SIZEOF_GEN_OBJ];
+        int err = _Py_RemoteDebug_PagedReadRemoteMemory(
+            &unwinder->handle,
+            coro_address,
+            SIZEOF_GEN_OBJ,
+            gen_object);
+        if (err < 0) {
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read generator object in coro chain");
+            return -1;
+        }
 
-    PyObject* name = NULL;
+        int8_t frame_state = GET_MEMBER(int8_t, gen_object, unwinder->debug_offsets.gen_object.gi_frame_state);
+        if (frame_state == FRAME_CLEARED) {
+            return 0;
+        }
 
-    // Parse the previous frame using the gi_iframe from local copy
-    uintptr_t prev_frame;
-    uintptr_t gi_iframe_addr = coro_address + (uintptr_t)unwinder->debug_offsets.gen_object.gi_iframe;
-    uintptr_t address_of_code_object = 0;
-    if (parse_frame_object(unwinder, &name, gi_iframe_addr, &address_of_code_object, &prev_frame) < 0) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse frame object in coro chain");
-        return -1;
-    }
+        PyObject* name = NULL;
 
-    if (!name) {
-        return 0;
-    }
+        // Parse the previous frame using the gi_iframe from local copy
+        uintptr_t prev_frame;
+        uintptr_t gi_iframe_addr = coro_address + (uintptr_t)unwinder->debug_offsets.gen_object.gi_iframe;
+        uintptr_t address_of_code_object = 0;
+        if (parse_frame_object(unwinder, &name, gi_iframe_addr, &address_of_code_object, &prev_frame) < 0) {
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse frame object in coro chain");
+            return -1;
+        }
 
-    if (PyList_Append(render_to, name)) {
+        if (!name) {
+            return 0;
+        }
+
+        if (PyList_Append(render_to, name)) {
+            Py_DECREF(name);
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append frame to coro chain");
+            return -1;
+        }
         Py_DECREF(name);
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append frame to coro chain");
-        return -1;
-    }
-    Py_DECREF(name);
 
-    if (frame_state == FRAME_SUSPENDED_YIELD_FROM) {
-        return handle_yield_from_frame(unwinder, gi_iframe_addr, gen_type_addr, render_to);
+        if (frame_state != FRAME_SUSPENDED_YIELD_FROM) {
+            return 0;
+        }
+
+        if (get_awaited_coro_address(unwinder, gi_iframe_addr, &coro_address) < 0) {
+            return -1;
+        }
     }
 
     return 0;
@@ -1824,11 +1832,10 @@ process_thread_for_awaited_by(
 
 // Generic function to process task awaited_by
 static int
-process_task_awaited_by(
+parse_task_awaited_by(
     RemoteUnwinderObject *unwinder,
     uintptr_t task_address,
-    set_entry_processor_func processor,
-    void *context
+    PyObject *awaited_by
 ) {
     // Read the entire TaskObj at once
     char task_obj[SIZEOF_TASK_OBJ];
@@ -1847,10 +1854,10 @@ process_task_awaited_by(
     char awaited_by_is_a_set = GET_MEMBER(char, task_obj, unwinder->async_debug_offsets.asyncio_task_object.task_awaited_by_is_set);
 
     if (awaited_by_is_a_set) {
-        return iterate_set_entries(unwinder, task_ab_addr, processor, context);
+        return iterate_set_entries(unwinder, task_ab_addr, awaited_by);
     } else {
         // Single task waiting
-        return processor(unwinder, task_ab_addr, context);
+        return parse_task(unwinder, task_ab_addr, awaited_by);
     }
 }
 
@@ -1899,7 +1906,7 @@ process_running_task_chain(
     }
 
     // Now find all tasks that are waiting for this task and process them
-    if (process_task_awaited_by(unwinder, running_task_addr, process_waiter_task, result) < 0) {
+    if (process_task_waiters(unwinder, result) < 0) {
         return -1;
     }
 
@@ -1968,18 +1975,39 @@ process_thread_for_async_stack_trace(
 }
 
 static int
-process_task_and_waiters(
+process_task_waiters(
     RemoteUnwinderObject *unwinder,
-    uintptr_t task_addr,
     PyObject *result
 ) {
-    // First, add this task to the result
-    if (process_single_task_node(unwinder, task_addr, NULL, result) < 0) {
-        return -1;
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(result); i++) {
+        PyObject *task_info = PyList_GET_ITEM(result, i);
+        PyObject *waiters = PyStructSequence_GET_ITEM(task_info, 3);
+        for (Py_ssize_t j = 0; j < PyList_GET_SIZE(waiters); j++) {
+            if (PyList_GET_SIZE(result) >= MAX_TASK_WAITER_WALK_TASKS) {
+                PyErr_SetString(PyExc_RuntimeError,
+                    "Too many task waiters (possible infinite loop)");
+                set_exception_cause(unwinder, PyExc_RuntimeError,
+                    "Task waiter walk size limit exceeded");
+                return -1;
+            }
+            PyObject *waiter = PyList_GET_ITEM(waiters, j);
+            // CoroInfo item 1 holds the waiter task address stored by parse_task().
+            PyObject *task_id = PyStructSequence_GET_ITEM(waiter, 1);
+            void *task_ptr = PyLong_AsVoidPtr(task_id);
+            if (task_ptr == NULL && PyErr_Occurred()) {
+                set_exception_cause(unwinder, PyExc_RuntimeError,
+                                    "Failed to parse waiter task ID");
+                return -1;
+            }
+            if (process_single_task_node(
+                    unwinder, (uintptr_t)task_ptr, NULL, result) < 0)
+            {
+                return -1;
+            }
+        }
     }
 
-    // Now find all tasks that are waiting for this task and process them
-    return process_task_awaited_by(unwinder, task_addr, process_waiter_task, result);
+    return 0;
 }
 
 static int
@@ -2035,6 +2063,10 @@ get_task_code_object(RemoteUnwinderObject *unwinder, uintptr_t task_addr, uintpt
         return -1;
     }
 
+    if (get_coro_like_address(unwinder, running_coro_addr, &running_coro_addr) < 0) {
+        return -1;
+    }
+
     // note: genobject's gi_iframe is an embedded struct so the address to
     // the offset leads directly to its first field: f_executable
     if (read_py_ptr(
@@ -2082,9 +2114,12 @@ get_tlbc_cache_entry(RemoteUnwinderObject *self, uintptr_t code_addr, uint32_t c
     TLBCCacheEntry *entry = _Py_hashtable_get(self->tlbc_cache, key);
 
     if (entry && entry->generation != current_generation) {
-        // Entry is stale, remove it by setting to NULL
-        _Py_hashtable_set(self->tlbc_cache, key, NULL);
-        entry = NULL;
+        // Entry is stale, remove it from the cache and destroy it
+        TLBCCacheEntry *old = _Py_hashtable_steal(self->tlbc_cache, key);
+        if (old != NULL) {
+            tlbc_cache_entry_destroy(old);
+        }
+        return NULL;
     }
 
     return entry;
@@ -2263,6 +2298,7 @@ parse_code_object(RemoteUnwinderObject *unwinder,
     PyObject *linetable = NULL;
     PyObject *lineno = NULL;
     PyObject *tuple = NULL;
+    int code_metadata_incomplete = 0;
 
 #ifdef Py_GIL_DISABLED
     // In free threading builds, code object addresses might have the low bit set
@@ -2281,29 +2317,59 @@ parse_code_object(RemoteUnwinderObject *unwinder,
         if (_Py_RemoteDebug_PagedReadRemoteMemory(
                 &unwinder->handle, real_address, SIZEOF_CODE_OBJ, code_object) < 0)
         {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read code object");
-            goto error;
+            if (_Py_RemoteDebug_IsFatalReadError()) {
+                goto error;
+            }
+            PyErr_Clear();
+            func = PyUnicode_FromString("<unreadable frame>");
+            if (!func) {
+                goto error;
+            }
+            file = Py_NewRef(_Py_LATIN1_CHR('~'));
+            goto degraded;
         }
 
         func = read_py_str(unwinder,
             GET_MEMBER(uintptr_t, code_object, unwinder->debug_offsets.code_object.qualname), 1024);
         if (!func) {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read function name from code object");
-            goto error;
+            if (_Py_RemoteDebug_IsFatalReadError()) {
+                goto error;
+            }
+            PyErr_Clear();
+            func = PyUnicode_FromString("<unknown function>");
+            if (!func) {
+                goto error;
+            }
+            code_metadata_incomplete = 1;
         }
 
         file = read_py_str(unwinder,
             GET_MEMBER(uintptr_t, code_object, unwinder->debug_offsets.code_object.filename), 1024);
         if (!file) {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read filename from code object");
-            goto error;
+            if (_Py_RemoteDebug_IsFatalReadError()) {
+                goto error;
+            }
+            PyErr_Clear();
+            file = PyUnicode_FromString("<unknown file>");
+            if (!file) {
+                goto error;
+            }
+            code_metadata_incomplete = 1;
+        }
+
+        if (code_metadata_incomplete) {
+            goto degraded;
         }
 
         linetable = read_py_bytes(unwinder,
-            GET_MEMBER(uintptr_t, code_object, unwinder->debug_offsets.code_object.linetable), 4096);
+            GET_MEMBER(uintptr_t, code_object, unwinder->debug_offsets.code_object.linetable),
+            4096);
         if (!linetable) {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read linetable from code object");
-            goto error;
+            if (_Py_RemoteDebug_IsFatalReadError()) {
+                goto error;
+            }
+            PyErr_Clear();
+            goto degraded;
         }
 
         meta = PyMem_RawMalloc(sizeof(CachedCodeMetadata));
@@ -2355,6 +2421,22 @@ parse_code_object(RemoteUnwinderObject *unwinder,
             goto error;
         }
         tlbc_entry = get_tlbc_cache_entry(unwinder, real_address, unwinder->tlbc_generation);
+    }
+
+    if (tlbc_entry && tlbc_index >= 0) {
+        uintptr_t *entries = (uintptr_t *)((char *)tlbc_entry->tlbc_array + sizeof(Py_ssize_t));
+        if (tlbc_index >= tlbc_entry->tlbc_array_size ||
+            entries[tlbc_index] == 0) {
+            TLBCCacheEntry *old = _Py_hashtable_steal(unwinder->tlbc_cache, (void *)real_address);
+            if (old != NULL) {
+                tlbc_cache_entry_destroy(old);
+            }
+            if (!cache_tlbc_array(unwinder, real_address, real_address + unwinder->debug_offsets.code_object.co_tlbc,
+                                unwinder->tlbc_generation)) {
+                goto error;
+            }
+            tlbc_entry = get_tlbc_cache_entry(unwinder, real_address, unwinder->tlbc_generation);
+        }
     }
 
     if (tlbc_entry) {
@@ -2416,6 +2498,19 @@ done_tlbc:
 
     *result = tuple;
     return 0;
+
+degraded: {
+    RemoteDebuggingState *state = RemoteDebugging_GetStateFromObject((PyObject *)unwinder);
+    PyObject *degraded_tuple = PyStructSequence_New(state->FrameInfo_Type);
+    if (!degraded_tuple) {
+        goto error;
+    }
+    PyStructSequence_SetItem(degraded_tuple, 0, file);
+    PyStructSequence_SetItem(degraded_tuple, 1, Py_NewRef(Py_None));
+    PyStructSequence_SetItem(degraded_tuple, 2, func);
+    *result = degraded_tuple;
+    return 0;
+}
 
 error:
     Py_XDECREF(func);
@@ -2773,7 +2868,13 @@ static int
         return -1;
     }
 
+    size_t frame_count = 0;
     while ((void*)address_of_current_frame != NULL) {
+        if (++frame_count > MAX_FRAME_CHAIN_DEPTH) {
+            PyErr_SetString(PyExc_RuntimeError, "Too many async stack frames (possible infinite loop)");
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Async frame chain iteration limit exceeded");
+            return -1;
+        }
         PyObject* frame_info = NULL;
         uintptr_t address_of_code_object;
         int res = parse_frame_object(
@@ -2926,14 +3027,13 @@ process_frame_chain(
 ) {
     uintptr_t frame_addr = initial_frame_addr;
     uintptr_t prev_frame_addr = 0;
-    const size_t MAX_FRAMES = 1024;
     size_t frame_count = 0;
 
     while ((void*)frame_addr != NULL) {
         PyObject *frame = NULL;
         uintptr_t next_frame_addr = 0;
 
-        if (++frame_count > MAX_FRAMES) {
+        if (++frame_count > MAX_FRAME_CHAIN_DEPTH) {
             PyErr_SetString(PyExc_RuntimeError, "Too many stack frames (possible infinite loop)");
             set_exception_cause(unwinder, PyExc_RuntimeError, "Frame chain iteration limit exceeded");
             return -1;
