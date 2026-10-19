@@ -81,6 +81,21 @@ found in the dictionary of type objects.
    special method implemented by a type slot, together with the wrapper
    function used to adapt that slot to Python's calling convention.
 
+   .. c:member:: int flags
+
+      Bitwise OR of flags that describe the wrapper function. Currently, the
+      only flag is :c:macro:`PyWrapperFlag_KEYWORDS`; all other bits must be
+      zero.
+
+.. c:macro:: PyWrapperFlag_KEYWORDS
+
+   Flag that can be set in the :c:member:`~wrapperbase.flags` field of a
+   :c:struct:`wrapperbase` structure.
+   When set, the wrapper function is passed an additional argument with
+   a :class:`dict` instance containing the passed keyword arguments.
+   When not set, calling the wrapper descriptor with keyword arguments
+   raises :exc:`TypeError`.
+
 .. c:function:: PyObject* PyDescr_NewWrapper(PyTypeObject *type, struct wrapperbase *base, void *wrapped)
 
    Create a new wrapper descriptor for extension type *type* from the
@@ -137,6 +152,30 @@ found in the dictionary of type objects.
 
    On success, return a :term:`strong reference` to the wrapper object. Return
    ``NULL`` with an exception set on failure.
+
+.. c:macro:: PyDescr_TYPE(descr)
+
+   Return a :term:`borrowed reference` to the type that the descriptor
+   *descr* belongs to. This is accessible as :attr:`~object.__objclass__`
+   in Python.
+
+   *descr* must be a descriptor object created by one of the
+   ``PyDescr_New*`` functions (an instance of
+   :c:var:`PyMethodDescr_Type`, :c:var:`PyClassMethodDescr_Type`,
+   :c:var:`PyMemberDescr_Type`, :c:var:`PyGetSetDescr_Type`, or
+   :c:var:`PyWrapperDescr_Type`). If the passed descriptor is not
+   an instance of one of these types, the behavior is undefined.
+
+
+.. c:macro:: PyDescr_NAME(descr)
+
+   Return the name of the descriptor *descr* as a :term:`borrowed reference`
+   to a :class:`str` object. This is available as :attr:`~definition.__name__`
+   in Python.
+
+   *descr* must be a descriptor object created by one of the ``PyDescr_New*``
+   functions. If not, the behavior is undefined.
+
 
 .. c:macro:: PyDescr_COMMON
 
