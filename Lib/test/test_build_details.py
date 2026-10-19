@@ -184,11 +184,10 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
         if 'static' not in value:
             self.skipTest("No static libpython")
 
-        # Skip check if installation is relocated
         if sysconfig._installation_is_relocated():
             self.skipTest("Installation is relocated")
 
-        # The path must name an installed static library (an ar archive).
+        # The path must name an installed static library (an 'ar' archive).
         with open(value['static'], 'rb') as f:
             self.assertEqual(f.read(8), b'!<arch>\n')
 
@@ -256,7 +255,7 @@ class BuildDetailsRelativePathsTests(unittest.TestCase):
     generate_build_details is None,
     "Failed to import generate-build-details"
 )
-@unittest.skipIf(os.name != 'posix', 'Feature only implemented on POSIX right now')
+@unittest.skipIf(os.name != 'posix', 'Feature only implemented on POSIX')
 @unittest.skipIf(is_wasm32, 'Feature not available on WebAssembly builds')
 class BuildDetailsLibpythonTests(unittest.TestCase):
     LIBDIR = '/prefix/lib'
