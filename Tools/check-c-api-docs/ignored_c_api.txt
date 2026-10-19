@@ -33,8 +33,6 @@ PyCFunction_GET_CLASS
 PyDescr_NAME
 PyDescr_TYPE
 PyWrapperFlag_KEYWORDS
-# cpython/fileobject.h
-Py_UniversalNewlineFgets
 # cpython/pylifecycle.h
 Py_FrozenMain
 # cpython/objimpl.h
