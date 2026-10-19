@@ -26,7 +26,6 @@ PyExpat_CAPSULE_NAME
 # pyport.h
 PYLONG_BITS_IN_DIGIT
 PY_DWORD_MAX
-PY_BIG_ENDIAN
 # cpython/methodobject.h
 PyCFunction_GET_CLASS
 # cpython/descrobject.h
