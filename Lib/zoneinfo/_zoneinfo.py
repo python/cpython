@@ -477,8 +477,11 @@ class _TZStr:
         """Get the information about the current transition - tti"""
 
         year_start = (_post_epoch_days_before_year(year) + 1) * _SECONDS_PER_DAY
-        # _parse_transition_time caps the hour field at 167; _parse_tz_delta
-        # caps it at 24, with one extra hour possible for default DST.
+        # RFC 9636, section 3.3.2 specifies transition hours from -167 to 167
+        # for TZif v3+; _parse_transition_time enforces this limit.
+        # https://www.rfc-editor.org/rfc/rfc9636.html#section-3.3.2
+        # _parse_tz_delta caps offset hours at 24 (the POSIX TZ limit),
+        # with one extra hour possible for default DST.
         # Including minute/second fields and the offset difference across a
         # fold, the displacement is less than 11 days. Use a common year's
         # length here, leaving an extra day of margin in leap years.
