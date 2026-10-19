@@ -633,8 +633,6 @@ class _AsCompletedIterator:
         try:
             f = await self._done.get()
         except exceptions.CancelledError:
-            # Nothing was consumed; give the slot back so that a later
-            # iteration step can still wait for the remaining future.
             self._todo_left += 1
             raise
         if f is None:
