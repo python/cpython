@@ -574,9 +574,12 @@ process and user.
    the groups of which the specified username is a member, plus the specified
    group id.
 
-   .. availability:: Unix, not WASI, not Android.
+   .. availability:: Unix, not WASI.
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.16
+      Support for Android now exists.
 
 
 .. function:: putenv(key, value, /)
@@ -610,21 +613,30 @@ process and user.
 
    Set the current process's effective group id.
 
-   .. availability:: Unix, not WASI, not Android.
+   .. availability:: Unix, not WASI.
+
+   .. versionchanged:: 3.16
+      Support for Android now exists.
 
 
 .. function:: seteuid(euid, /)
 
    Set the current process's effective user id.
 
-   .. availability:: Unix, not WASI, not Android.
+   .. availability:: Unix, not WASI.
+
+   .. versionchanged:: 3.16
+      Support for Android now exists.
 
 
 .. function:: setgid(gid, /)
 
    Set the current process' group id.
 
-   .. availability:: Unix, not WASI, not Android.
+   .. availability:: Unix, not WASI.
+
+   .. versionchanged:: 3.16
+      Support for Android now exists.
 
 
 .. function:: setgroups(groups, /)
@@ -718,32 +730,44 @@ process and user.
 
    Set the current process's real and effective group ids.
 
-   .. availability:: Unix, not WASI, not Android.
+   .. availability:: Unix, not WASI.
+
+   .. versionchanged:: 3.16
+      Support for Android now exists.
 
 
 .. function:: setresgid(rgid, egid, sgid, /)
 
    Set the current process's real, effective, and saved group ids.
 
-   .. availability:: Unix, not WASI, not Android, not macOS, not iOS.
+   .. availability:: Unix, not WASI, not macOS, not iOS.
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.16
+      Support for Android now exists.
 
 
 .. function:: setresuid(ruid, euid, suid, /)
 
    Set the current process's real, effective, and saved user ids.
 
-   .. availability:: Unix, not WASI, not Android, not macOS, not iOS.
+   .. availability:: Unix, not WASI, not macOS, not iOS.
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.16
+      Support for Android now exists.
 
 
 .. function:: setreuid(ruid, euid, /)
 
    Set the current process's real and effective user ids.
 
-   .. availability:: Unix, not WASI, not Android.
+   .. availability:: Unix, not WASI.
+
+   .. versionchanged:: 3.16
+      Support for Android now exists.
 
 
 .. function:: getsid(pid, /)
@@ -766,7 +790,10 @@ process and user.
 
    Set the current process's user id.
 
-   .. availability:: Unix, not WASI, not Android.
+   .. availability:: Unix, not WASI.
+
+   .. versionchanged:: 3.16
+      Support for Android now exists.
 
 
 .. placed in this section since it relates to errno.... a little weak
@@ -1452,7 +1479,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Return a pair of file descriptors ``(r, w)`` usable for reading and writing,
    respectively.
 
-   .. availability:: Unix, macOS >= 27.0, not WASI, not iOS.
+   .. availability:: Unix, macOS >= 27.0, iOS >= 27.0, not WASI.
 
    .. versionadded:: 3.3
 
@@ -2324,10 +2351,13 @@ features:
 
    Change the root directory of the current process to *path*.
 
-   .. availability:: Unix, not WASI, not Android.
+   .. availability:: Unix, not WASI.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.16
+      Support for Android now exists.
 
 
 .. function:: fchdir(fd)
@@ -2769,13 +2799,22 @@ features:
    may be converted to an absolute pathname using
    ``os.path.join(os.path.dirname(path), result)``.
 
-   If the *path* is a string object (directly or indirectly through a
-   :class:`PathLike` interface), the result will also be a string object,
-   and the call may raise a UnicodeDecodeError. If the *path* is a bytes
-   object (direct or indirectly), the result will be a bytes object.
-
    This function can also support :ref:`paths relative to directory descriptors
    <dir_fd>`.
+
+   On Linux, Android, macOS and iOS, *path* can also be a file descriptor referring
+   to a symbolic link. In that case, *dir_fd* must be ``None``.
+   (On Linux and Android, such a file descriptor must be obtained through
+   :func:`os.open` with ``os.O_RDONLY | os.O_PATH | os.O_NOFOLLOW``.
+   On macOS and iOS, :func:`os.open` must be called with
+   ``os.O_RDONLY | os.O_SYMLINK``.)
+   On other operating systems, a ``NotImplementedError`` is raised if *path*
+   is an integer.
+
+   If the *path* is a string object (directly or indirectly through a
+   :class:`PathLike` interface) or a file descriptor, the result will be a
+   string object, and the call may raise a UnicodeDecodeError. If the *path*
+   is a bytes object (direct or indirectly), the result will be a bytes object.
 
    When trying to resolve a path that may contain links, use
    :func:`~os.path.realpath` to properly handle recursion and platform
@@ -2798,6 +2837,10 @@ features:
       Added support for directory junctions, and changed to return the
       substitution path (which typically includes ``\\?\`` prefix) rather
       than the optional "print name" field that was previously returned.
+
+   .. versionchanged:: next
+      Accepts file descriptors pointing to symbolic links as *path* on
+      Linux, Android, macOS and iOS.
 
 .. function:: remove(path, *, dir_fd=None)
 
@@ -2972,7 +3015,7 @@ features:
 
       Close the iterator and free acquired resources.
 
-      This is called automatically when the iterator is exhausted or garbage
+      This is called automatically when the iterator is :term:`exhausted` or garbage
       collected, or when an error happens during iterating.  However it
       is advisable to call it explicitly or use the :keyword:`with`
       statement.
@@ -5283,7 +5326,7 @@ written in Python, such as a mail server's external command delivery program.
    See the :manpage:`pidfd_getfd(2)` man page for more details.
 
    .. availability:: Linux >= 5.6, Android >= :func:`build-time <sys.getandroidapilevel>` API level 31
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. function:: plock(op, /)
 

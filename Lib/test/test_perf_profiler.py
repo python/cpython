@@ -114,6 +114,16 @@ class TestPerfTrampoline(unittest.TestCase):
             )
 
     @unittest.skipIf(support.check_bolt_optimized(), "fails on BOLT instrumented binaries")
+    def test_trampoline_with_unencodable_name(self):
+        code = """if 1:
+                import sys
+
+                sys.activate_stack_trampoline("perf")
+                eval(compile("pass", "bad\\ud800file", "exec"))
+                """
+        assert_python_ok("-c", code, PYTHON_JIT="0")
+
+    @unittest.skipIf(support.check_bolt_optimized(), "fails on BOLT instrumented binaries")
     def test_trampoline_works_with_forks(self):
         code = """if 1:
                 import os, sys
@@ -317,6 +327,27 @@ class TestPerfTrampoline(unittest.TestCase):
                 sys.activate_stack_trampoline("perf_jit")
                 """
         assert_python_ok("-c", code, PYTHON_JIT="0")
+
+    @unittest.skipUnless(
+        "-D_Py_JIT" in (sysconfig.get_config_var("PY_CORE_CFLAGS") or "").split(),
+        "requires a real JIT (_Py_JIT)",
+    )
+    def test_sys_api_perf_jit_backend_in_subinterpreter(self):
+        # gh-157247: a subinterpreter must not bypass the JIT/perf exclusion.
+        code = """if 1:
+                import sys
+                from contextlib import closing
+                from concurrent import interpreters
+
+                assert sys._jit.is_enabled(), "expected the JIT to be enabled"
+
+                with closing(interpreters.create()) as interp:
+                    interp.exec(
+                        "import sys; sys.activate_stack_trampoline('perf_jit')")
+                """
+        rc, out, err = assert_python_failure("-c", code, PYTHON_JIT="1")
+        self.assertIn(
+            b"Cannot activate the perf trampoline if the JIT is active", err)
 
 
 def is_unwinding_reliable_with_frame_pointers():

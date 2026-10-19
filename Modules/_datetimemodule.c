@@ -1783,17 +1783,19 @@ inline static int
 normalize_century(void)
 {
     static int cache = -1;
-    if (cache < 0) {
+    int res = FT_ATOMIC_LOAD_INT_RELAXED(cache);
+    if (res < 0) {
         char year[5];
         struct tm date = {
             .tm_year = -1801,
             .tm_mon = 0,
             .tm_mday = 1
         };
-        cache = (strftime(year, sizeof(year), "%Y", &date) &&
-                 strcmp(year, "0099") != 0);
+        res = (strftime(year, sizeof(year), "%Y", &date) &&
+               strcmp(year, "0099") != 0);
+        FT_ATOMIC_STORE_INT_RELAXED(cache, res);
     }
-    return cache;
+    return res;
 }
 
 static PyObject *
@@ -5051,22 +5053,33 @@ time_richcompare(PyObject *self, PyObject *other, int op)
     }
     /* The hard case: both aware with different UTC offsets */
     else if (offset1 != Py_None && offset2 != Py_None) {
-        int offsecs1, offsecs2;
+        long long norm_us1, norm_us2;
         assert(offset1 != offset2); /* else last "if" handled it */
-        offsecs1 = TIME_GET_HOUR(self) * 3600 +
-                   TIME_GET_MINUTE(self) * 60 +
-                   TIME_GET_SECOND(self) -
-                   GET_TD_DAYS(offset1) * 86400 -
-                   GET_TD_SECONDS(offset1);
-        offsecs2 = TIME_GET_HOUR(other) * 3600 +
-                   TIME_GET_MINUTE(other) * 60 +
-                   TIME_GET_SECOND(other) -
-                   GET_TD_DAYS(offset2) * 86400 -
-                   GET_TD_SECONDS(offset2);
-        diff = offsecs1 - offsecs2;
-        if (diff == 0)
-            diff = TIME_GET_MICROSECOND(self) -
-                   TIME_GET_MICROSECOND(other);
+        norm_us1 =
+            ((TIME_GET_HOUR(self) * 3600 +
+              TIME_GET_MINUTE(self) * 60 +
+              TIME_GET_SECOND(self)) * 1000000LL +
+             TIME_GET_MICROSECOND(self)) -
+            ((GET_TD_DAYS(offset1) * 86400LL +
+              GET_TD_SECONDS(offset1)) * 1000000LL +
+             GET_TD_MICROSECONDS(offset1));
+        norm_us2 =
+            ((TIME_GET_HOUR(other) * 3600 +
+              TIME_GET_MINUTE(other) * 60 +
+              TIME_GET_SECOND(other)) * 1000000LL +
+             TIME_GET_MICROSECOND(other)) -
+            ((GET_TD_DAYS(offset2) * 86400LL +
+              GET_TD_SECONDS(offset2)) * 1000000LL +
+             GET_TD_MICROSECONDS(offset2));
+        if (norm_us1 < norm_us2) {
+            diff = -1;
+        }
+        else if (norm_us1 > norm_us2) {
+            diff = 1;
+        }
+        else {
+            diff = 0;
+        }
         result = diff_to_bool(diff, op);
     }
     else if (op == Py_EQ) {

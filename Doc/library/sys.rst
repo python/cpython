@@ -418,6 +418,29 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    .. versionadded:: 3.11
 
 
+.. data:: _wasi_info
+
+   An object containing information about the build on the WebAssembly WASI
+   platform. The object is provisional and may change in the future.
+
+   .. attribute:: _wasi_info.wasi_version
+
+      The WASI target version as a string: ``'p1'``, ``'p2'``, or ``'p3'``.
+
+   .. attribute:: _wasi_info.wasi_sdk_version
+
+      The full WASI SDK version as a string, such as ``'34.0'``.
+
+   .. attribute:: _wasi_info.cooperative_threads
+
+      ``True`` if wasi-libc was compiled with cooperative multithreading
+      support, ``False`` otherwise.
+
+   .. availability:: WASI.
+
+   .. versionadded:: next
+
+
 .. data:: pycache_prefix
 
    If this is set (not ``None``), Python will write bytecode-cache ``.pyc``
@@ -1488,11 +1511,24 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 .. data:: lazy_modules
 
    A :class:`set` of fully qualified module name strings that have been lazily
-   imported in the current interpreter but not yet loaded.  When a
-   lazily imported module is accessed for the first time, its name is removed
-   from this set.
+   imported in the current interpreter but not yet loaded.
+   When a lazily imported module is accessed for the first time, its name is
+   typically removed from this set.
 
-   This attribute is intended for debugging and introspection.
+   The set may contain some additional strings.
+   It is intended for debugging and introspection, and consumers are expected
+   to verify each entry's status.
+
+   .. impl-detail::
+
+      Currently, :data:`!lazy_modules` may also contain:
+
+      * names of *attributes* (non-modules), such as ``"pathlib.Path"`` after
+        running ``lazy from pathlib import Path``, and
+      * names of items than have already been accessed.
+
+      In future versions of Python, these may be removed, and/or additional
+      extras may be added.
 
    See also :func:`set_lazy_imports` and :pep:`810`.
 
@@ -2100,7 +2136,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    See :ref:`remote-debugging` for more information about the remote debugging
    mechanism.
 
-   .. audit-event:: sys.remote_exec pid script_path
+   .. audit-event:: sys.remote_exec pid,script_path
 
       When the code is executed in the remote process, an
       :ref:`auditing event <auditing>` ``sys.remote_exec`` is raised with
