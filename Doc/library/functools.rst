@@ -641,6 +641,9 @@ The :mod:`!functools` module defines the following functions:
      >>> fun.dispatch(dict)    # note: default implementation
      <function fun at 0x103fe0000>
 
+   Subscription also returns the implementation selected for a given type:
+   ``fun[float]`` is equivalent to ``fun.dispatch(float)``.
+
    To access all registered implementations, use the read-only ``registry``
    attribute::
 

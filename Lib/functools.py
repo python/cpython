@@ -898,6 +898,27 @@ def _find_impl(cls, registry):
             match = t
     return registry.get(match)
 
+class _SingleDispatchCallable:
+    __slots__ = ('_wrapper', '__dict__', '__weakref__')
+
+    def __init__(self, wrapper):
+        self._wrapper = wrapper
+
+    def __call__(self, /, *args, **kwds):
+        return self._wrapper(*args, **kwds)
+
+    def __getitem__(self, cls):
+        return self.dispatch(cls)
+
+    def __get__(self, obj, cls=None):
+        if obj is None:
+            return self
+        return MethodType(self, obj)
+
+    def __reduce__(self):
+        return self.__qualname__
+
+
 def singledispatch(func):
     """Single-dispatch generic function decorator.
 
@@ -1009,6 +1030,7 @@ def singledispatch(func):
 
     funcname = getattr(func, '__name__', 'singledispatch function')
     registry[object] = func
+    wrapper = _SingleDispatchCallable(wrapper)
     wrapper.register = register
     wrapper.dispatch = dispatch
     wrapper.registry = MappingProxyType(registry)

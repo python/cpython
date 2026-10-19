@@ -2305,7 +2305,55 @@ class TestLRUC(TestLRU, unittest.TestCase):
             return 3 * x + y
 
 
+@functools.singledispatch
+def _pickle_single_dispatch(obj):
+    return obj
+
+
 class TestSingleDispatch(unittest.TestCase):
+    def test_subscription(self):
+        @functools.singledispatch
+        def g(obj):
+            return 'default'
+
+        @g.register(int)
+        def g_int(obj):
+            return 'integer'
+
+        @g.register(float)
+        def g_float(obj):
+            return 'float'
+
+        self.assertIs(g[int], g_int)
+        self.assertIs(g[float], g_float)
+        self.assertIs(g[bool], g_int)
+        self.assertIs(g[str], g.__wrapped__)
+        self.assertEqual(g[int](42), 'integer')
+        self.assertIs(g[int], g.dispatch(int))
+
+        @g.register(int)
+        def replacement(obj):
+            return 'replacement'
+
+        self.assertIs(g[int], replacement)
+
+    def test_descriptor(self):
+        class A:
+            @functools.singledispatch
+            def method(self, value):
+                return value
+
+        a = A()
+        self.assertEqual(a.method(42), 42)
+        self.assertIs(a.method.__func__, A.method)
+        self.assertIs(A.method[A], A.method.__wrapped__)
+
+    def test_pickle_generic_function(self):
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=protocol):
+                self.assertIs(pickle.loads(pickle.dumps(
+                    _pickle_single_dispatch, protocol)), _pickle_single_dispatch)
+
     def test_simple_overloads(self):
         @functools.singledispatch
         def g(obj):
