@@ -27,9 +27,15 @@ class TestForkServerConfiguration(unittest.TestCase):
         res = out.decode().strip().splitlines()
         self.assertEqual(len(res), 2)
 
+        # get_temp_dir() with a TMPDIR that has a too large length ends up
+        # NOT being used as it is not possible to use it. In particular,
+        # the corresponding path will fallback to one of the "built-in"
+        # ones such as '/tmp', '/var/tmp', or '/usr/tmp'.
+        root_regex = "|".join(map(re.escape, [root, "/tmp", "/var/tmp", "/usr/tmp"]))
+
         temp_pymp = res[0]
         self.assertLess(len(temp_pymp), _SUN_PATH_MAX)
-        temp_pymp_regex = os.path.join(re.escape(root), r"pymp-\w{8}")
+        temp_pymp_regex = os.path.join(root_regex, r"pymp-\w{8}")
         self.assertRegex(temp_pymp, temp_pymp_regex)
 
         temp_sock = res[1]
