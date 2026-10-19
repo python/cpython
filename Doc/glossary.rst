@@ -505,11 +505,19 @@ Glossary
       of an object, such as the value of type aliases created with the :keyword:`type`
       statement.
 
+   exhausted
+      An :term:`iterator` that has produced all of its values is said to be
+      :dfn:`exhausted`.
+      Further attempts to get the next value (for example, calls to
+      :func:`next`) raise :exc:`StopIteration`
+      (or :exc:`StopAsyncIteration` in the case of an :term:`asynchronous
+      iterator`).
+
    expression
       A piece of syntax which can be evaluated to some value.  In other words,
       an expression is an accumulation of expression elements like literals,
       names, attribute access, operators or function calls which all return a
-      value.  In contrast to many other languages, not all language constructs
+      value.  Not all language constructs
       are expressions.  There are also :term:`statement`\s which cannot be used
       as expressions, such as :keyword:`while`.  Assignments are also statements,
       not expressions.
@@ -869,7 +877,7 @@ Glossary
       :meth:`~iterator.__next__` method (or passing it to the built-in function
       :func:`next`) return successive items in the stream.  When no more data
       are available a :exc:`StopIteration` exception is raised instead.  At this
-      point, the iterator object is exhausted and any further calls to its
+      point, the iterator object is :term:`exhausted` and any further calls to its
       :meth:`!__next__` method just raise :exc:`StopIteration` again.  Iterators
       are required to have an :meth:`~iterator.__iter__` method that returns the iterator
       object itself so every iterator is also iterable and may be used in most
@@ -942,7 +950,7 @@ Glossary
    list
       A built-in Python :term:`sequence`.  Despite its name it is more akin
       to an array in other languages than to a linked list since access to
-      elements is *O*\ (1).
+      elements is *O*\ (1).  See :ref:`time-complexity`.
 
    list comprehension
       A compact way to process all or part of the elements in a sequence and
@@ -1514,6 +1522,14 @@ Glossary
 
    stdlib
       An abbreviation of :term:`standard library`.
+
+   steal
+      In Python's C API, "*stealing*" an argument means that ownership of the
+      argument is transferred to the called function.
+      The caller must not use that reference after the call.
+      Generally, functions that "steal" an argument do so even if they fail.
+
+      See :ref:`api-refcountdetails` for a full explanation.
 
    strong reference
       In Python's C API, a strong reference is a reference to an object

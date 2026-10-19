@@ -44,17 +44,17 @@ log = logging.getLogger("multissl")
 
 OPENSSL_OLD_VERSIONS = [
     "1.1.1w",
+    "3.0.22",
     "3.1.8",
     "3.2.6",
     "3.3.7",
 ]
 
 OPENSSL_RECENT_VERSIONS = [
-    "3.0.21",
-    "3.4.6",
-    "3.5.7",
-    "3.6.3",
-    "4.0.1",
+    "3.4.8",
+    "3.5.9",
+    "3.6.5",
+    "4.0.3",
     # See make_ssl_data.py for notes on adding a new version.
 ]
 
@@ -65,7 +65,7 @@ LIBRESSL_RECENT_VERSIONS = [
 ]
 
 AWSLC_RECENT_VERSIONS = [
-    "5.0.0",
+    "5.10.0",
 ]
 
 # store files in ../multissl
@@ -162,6 +162,12 @@ parser.add_argument(
     action='store_true',
     dest='keep_sources',
     help="Keep original sources for debugging."
+)
+parser.add_argument(
+    '--tsan',
+    action='store_true',
+    dest='tsan',
+    help="Build with thread sanitizer. (Disables fips in OpenSSL 3.x)."
 )
 
 
@@ -317,6 +323,8 @@ class AbstractBuilder(object):
         """Now build openssl"""
         log.info("Running build in {}".format(self.build_dir))
         cwd = self.build_dir
+        if self.args.tsan:
+            config_args += ("-fsanitize=thread",)
         cmd = [
             "./config", *config_args,
             "shared", "--debug",
