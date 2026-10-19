@@ -1614,7 +1614,10 @@ class TracebackException:
         if self.msg in (None, ''):
             msg = "<no detail available>"
         else:
-            msg = str(self.msg)
+        try:
+            (msg := m) or (msg :="<no detail available>")
+        except TypeError:
+            pass
         yield "{}{}{}: {}{}{}{}\n".format(
             theme.type,
             stype,
