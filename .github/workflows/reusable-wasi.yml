@@ -18,7 +18,7 @@ jobs:
       WASMTIME_VERSION: 48.0.2
       CROSS_BUILD_WASI: cross-build/wasm32-wasip1
     steps:
-    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         persist-credentials: false
     # No problem resolver registered as one doesn't currently exist for Clang.
@@ -39,12 +39,12 @@ jobs:
       shell: python
     - name: "Install WASI SDK"
       id: install-wasi-sdk
-      uses: bytecodealliance/setup-wasi-sdk-action@b2de090b44eb70013ee96b393727d473b35e1728
+      uses: bytecodealliance/setup-wasi-sdk-action@77d09f3df1e8da344d8403cf8631af8977938b4c
       with:
         version: ${{ steps.wasi-sdk-version.outputs.version }}
         add-to-path: false
     - name: "Install Python"
-      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
       with:
         python-version: '3.x'
     - name: "Runner image version"

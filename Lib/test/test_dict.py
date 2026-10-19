@@ -116,6 +116,24 @@ class DictTest(unittest.TestCase):
         self.assertRaises(TypeError, d.items, None)
         self.assertEqual(repr(dict(a=1).items()), "dict_items([('a', 1)])")
 
+    @support.cpython_only
+    def test_item_iterator_oom(self):
+        import_helper.import_module('_testcapi')
+        from test.support.script_helper import assert_python_ok
+        code = """if 1:
+            from test import support
+            items = {1: 2, 3: 4}.items()
+            ballast = [(i, i) for i in range(3000)]
+            held = []
+            for start in range(1, 5):
+                try:
+                    with support.inject_memory_error_cm(start):
+                        held.append(iter(items))
+                except MemoryError:
+                    pass
+            """
+        assert_python_ok('-c', code)
+
     def test_views_mapping(self):
         mappingproxy = type(type.__dict__)
         class Dict(dict):
@@ -458,6 +476,13 @@ class DictTest(unittest.TestCase):
             del d[k]
         d2 = d.copy()
         self.assertEqual(d2, d)
+
+    @support.nomemtest
+    def test_copy_empty_no_memory(self):
+        import _testcapi
+        d = {}
+        with self.assertRaises(MemoryError):
+            _testcapi.call_with_nomemory(0, 0, d.copy)
 
     def test_get(self):
         d = {}
