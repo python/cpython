@@ -105,6 +105,8 @@ struct tok_state {
     int debug;
 #endif
     int barry_as_bdfl;
+    unsigned char allow_incomplete_input;
+    unsigned char needs_newline;
 };
 
 static inline ftstring_state *
