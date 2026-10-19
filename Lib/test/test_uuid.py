@@ -1746,6 +1746,42 @@ class TestCImplementationCompat(unittest.TestCase):
         uuid_mod._install_c_hooks(random_func=None, time_func=None)
         uuid_mod._install_py_hooks(random_func=None, time_func=None)
 
+    def test_invalid_time_hook_result(self):
+        import uuid
+
+        class IntSubclass(int):
+            pass
+
+        class Indexable:
+            def __index__(self):
+                raise AssertionError('invalid results must not be converted')
+
+        # Invalid results must be rejected before integer conversion.
+        for value in (None, False, 1.0, '1', object(),
+                      IntSubclass(1), Indexable()):
+            with self.subTest(value=value):
+                uuid._install_c_hooks(random_func=None,
+                                      time_func=lambda: value)
+                try:
+                    with self.assertRaisesRegex(ValueError,
+                                                '^time_func must return int$'):
+                        uuid.uuid7()
+                finally:
+                    uuid._install_c_hooks(random_func=None, time_func=None)
+
+    def test_time_hook_exception(self):
+        import uuid
+
+        def time_func():
+            raise RuntimeError('time hook failed')
+
+        uuid._install_c_hooks(random_func=None, time_func=time_func)
+        try:
+            with self.assertRaisesRegex(RuntimeError, 'time hook failed'):
+                uuid.uuid7()
+        finally:
+            uuid._install_c_hooks(random_func=None, time_func=None)
+
     def test_exact_same_algo_uuid4(self):
         import uuid
 

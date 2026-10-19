@@ -238,7 +238,7 @@ get_uuid_state_by_cls(PyTypeObject *cls)
 static PyObject *uuid_from_bytes_array(PyTypeObject *type, uint8_t bytes[16]);
 
 static int
-gen_time(uuid_state *state, PyTime_t* time)
+gen_time(uuid_state *state, PyTime_t *time)
 {
     if (state->time_func == NULL) {
         return PyTime_Time(time);
@@ -250,7 +250,9 @@ gen_time(uuid_state *state, PyTime_t* time)
     }
 
     if (!PyLong_CheckExact(ret)) {
-        PyErr_SetString(PyExc_ValueError, "random_time must return int");
+        PyErr_SetString(PyExc_ValueError, "time_func must return int");
+        Py_DECREF(ret);
+        return -1;
     }
 
     int res = PyLong_AsInt64(ret, time);
@@ -484,16 +486,16 @@ _uuid__install_c_hooks_impl(PyObject *module, PyObject *random_func,
 
     if (random_func == Py_None) {
         Py_CLEAR(state->random_func);
-    } else {
-        Py_INCREF(random_func);
-        Py_XSETREF(state->random_func, random_func);
+    }
+    else {
+        Py_XSETREF(state->random_func, Py_NewRef(random_func));
     }
 
     if (time_func == Py_None) {
         Py_CLEAR(state->time_func);
-    } else {
-        Py_INCREF(time_func);
-        Py_XSETREF(state->time_func, time_func);
+    }
+    else {
+        Py_XSETREF(state->time_func, Py_NewRef(time_func));
     }
 
     Py_RETURN_NONE;
@@ -595,8 +597,7 @@ _uuid_UUID___init___impl(uuidobject *self, PyObject *hex, Py_buffer *bytes,
         is_safe = NULL;
     }
     if (is_safe != NULL) {
-        Py_INCREF(is_safe);
-        Py_XSETREF(self->is_safe, is_safe);
+        Py_XSETREF(self->is_safe, Py_NewRef(is_safe));
     }
 
     return 0;
