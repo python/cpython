@@ -673,6 +673,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(nlocals), "nlocals", 7);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(node_depth), "node_depth", 10);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(node_offset), "node_offset", 11);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(nothing), "nothing", 7);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(ns), "ns", 2);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(nstype), "nstype", 6);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(nt), "nt", 2);
