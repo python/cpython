@@ -31,26 +31,21 @@ still needs to be closed when done).
    that local modifications to the buffers are actually available to the
    mapping.
 
-.. data:: ACCESS_DEFAULT
-          ACCESS_READ
-          ACCESS_WRITE
-          ACCESS_COPY
+For both the Unix and Windows versions of the constructor, *access* may be
+specified as an optional keyword parameter. *access* accepts one of four
+values: :const:`ACCESS_READ`, :const:`ACCESS_WRITE`, or :const:`ACCESS_COPY` to
+specify read-only, write-through or copy-on-write memory respectively, or
+:const:`ACCESS_DEFAULT` to defer to *prot*.  *access* can be used on both Unix
+and Windows.  If *access* is not specified, Windows mmap returns a
+write-through mapping.  The initial memory values for all three access types
+are taken from the specified file.  Assignment to an :const:`ACCESS_READ`
+memory map raises a :exc:`TypeError` exception.  Assignment to an
+:const:`ACCESS_WRITE` memory map affects both memory and the underlying file.
+Assignment to an :const:`ACCESS_COPY` memory map affects memory but does not
+update the underlying file.
 
-   For both the Unix and Windows versions of the constructor, *access* may be
-   specified as an optional keyword parameter. *access* accepts one of four
-   values: :const:`ACCESS_READ`, :const:`ACCESS_WRITE`, or :const:`ACCESS_COPY`
-   to specify read-only, write-through or copy-on-write memory respectively,
-   or :const:`ACCESS_DEFAULT` to defer to *prot*.  *access* can be used on both
-   Unix and Windows.  If *access* is not specified, Windows mmap returns a
-   write-through mapping.  The initial memory values for all three access
-   types are taken from the specified file.  Assignment to an
-   :const:`ACCESS_READ` memory map raises a :exc:`TypeError` exception.
-   Assignment to an :const:`ACCESS_WRITE` memory map affects both memory and
-   the underlying file. Assignment to an :const:`ACCESS_COPY` memory map
-   affects memory but does not update the underlying file.
-
-   .. versionchanged:: 3.7
-      Added :const:`ACCESS_DEFAULT` constant.
+.. versionchanged:: 3.7
+   Added :const:`ACCESS_DEFAULT` constant.
 
 To map anonymous memory, -1 should be passed as the fileno along with the length.
 
@@ -392,9 +387,25 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       the mmap was created with :const:`ACCESS_READ`, then writing to it will
       raise a :exc:`TypeError` exception.
 
+.. _access-constants:
+
+ACCESS_* constants
+++++++++++++++++++
+
+.. data:: ACCESS_DEFAULT
+          ACCESS_READ
+          ACCESS_WRITE
+          ACCESS_COPY
+
+   These constants specify the access mode for a memory mapping.
+   :const:`ACCESS_READ` provides read-only access, :const:`ACCESS_WRITE`
+   provides write-through access, and :const:`ACCESS_COPY` provides
+   copy-on-write access. :const:`ACCESS_DEFAULT` defers to the *prot*
+   argument of :class:`mmap`.
+
 .. _page-size-constants:
 
-Page Size Constants
+Page size constants
 +++++++++++++++++++
 
 .. data:: PAGESIZE
@@ -407,7 +418,7 @@ Page Size Constants
 
 .. _prot-constants:
 
-PROT_* Constants
+PROT_* constants
 ++++++++++++++++
 
 .. data:: PROT_READ
@@ -420,11 +431,11 @@ PROT_* Constants
    can be combined using the bitwise OR operator. Not every option is present
    on every system.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
 .. _madvise-constants:
 
-MADV_* Constants
+MADV_* constants
 ++++++++++++++++
 
 .. data:: MADV_NORMAL
@@ -461,7 +472,7 @@ MADV_* Constants
 
 .. _map-constants:
 
-MAP_* Constants
+MAP_* constants
 +++++++++++++++
 
 .. data:: MAP_SHARED
@@ -508,7 +519,7 @@ MAP_* Constants
 
 .. _ms-constants:
 
-MS_* Constants
+MS_* constants
 ++++++++++++++
 
 .. data:: MS_SYNC
