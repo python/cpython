@@ -3216,7 +3216,8 @@ PyCData_create_type(PyObject *mod)
     PyType_Slot slots[] = {
         {Py_tp_dealloc, PyCData_dealloc},
         {Py_tp_hash, PyObject_HashNotImplemented},
-        {Py_tp_doc, PyDoc_STR("XXX to be provided")},
+        {Py_tp_doc, PyDoc_STR("The common base class of all ctypes "
+                              "data types.")},
         {Py_tp_traverse, PyCData_traverse},
         {Py_tp_clear, PyCData_clear},
         {Py_tp_methods, PyCData_methods},
