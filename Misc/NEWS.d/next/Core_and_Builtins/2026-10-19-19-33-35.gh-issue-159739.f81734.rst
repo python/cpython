@@ -1,0 +1,3 @@
+Fix reference handling for empty ``skip_file_prefixes`` in
+:func:`warnings.warn`, and propagate allocation errors when creating the
+fallback filename.
