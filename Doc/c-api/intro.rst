@@ -925,13 +925,10 @@ use them.
    See :pep:`353` for details.
 
 .. c:macro:: PY_SSIZE_T_MAX
+             PY_SSIZE_T_MIN
 
-   The largest positive value of type :c:type:`Py_ssize_t`.
-
-.. c:macro:: PY_SSIZE_T_MIN
-
-   The smallest negative value of type :c:type:`Py_ssize_t`.
-   This is equal to ``-PY_SSIZE_T_MAX - 1``.
+   The limit values (largest positive one and smallest negative one,
+   respecitvely) of type :c:type:`Py_ssize_t`.
 
 
 .. _api-exceptions:
