@@ -1,0 +1,2 @@
+Fix memory leaks during interpreter startup when a path configuration file is
+empty or too large, or when an audit hook rejects a command.
