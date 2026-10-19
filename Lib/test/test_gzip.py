@@ -9,9 +9,10 @@ import os
 import struct
 import sys
 import unittest
+import warnings
 from subprocess import PIPE, Popen
 from unittest import mock
-from test.support import catch_unraisable_exception
+from test.support import catch_unraisable_exception, gc_collect
 from test.support import force_not_colorized_test_class, import_helper
 from test.support import os_helper
 from test.support import _4G, bigmemtest, requires_subprocess
@@ -965,16 +966,18 @@ class TestGzip(BaseTest):
                 gc.collect()
                 self.assertIsNone(cm.unraisable)
 
-    @requires_subprocess()
-    def test_unclosed_at_shutdown(self):
-        rc, out, err = assert_python_ok("-c", f"""if 1:
-            import gzip
-            f = gzip.GzipFile({self.filename!r}, "wb")
-            f.write({data1!r})
-        """)
-        self.assertNotIn(b"Exception ignored", err)
-        with gzip.GzipFile(self.filename) as f:
-            self.assertEqual(f.read(), data1)
+    def test_del_closes_if_warning_fails(self):
+        # ResourceWarning escalated to an error is reported as unraisable,
+        # and the file is still closed.
+        b = io.BytesIO()
+        f = gzip.GzipFile(fileobj=b, mode="wb")
+        f.write(data1)
+        with (warnings.catch_warnings(action="error", category=ResourceWarning),
+              catch_unraisable_exception() as cm):
+            del f
+            gc_collect()
+            self.assertIs(cm.unraisable.exc_type, ResourceWarning)
+        self.assertEqual(gzip.decompress(b.getvalue()), data1)
 
 
 class TestOpen(BaseTest):
