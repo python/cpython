@@ -170,6 +170,7 @@ mi_page_qsbr_should_delay(mi_page_qsbr_t *page, mi_heap_qsbr_t *heap,
 int
 _PyMem_InitMimalloc(PyInterpreterState *interp)
 {
+    mi_option_set(mi_option_max_warnings, 0);
     size_t base_offset = offsetof(PyObject, ob_type);
     if (_PyMem_DebugEnabled()) {
         base_offset += 2 * sizeof(size_t);
