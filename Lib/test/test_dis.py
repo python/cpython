@@ -454,53 +454,52 @@ dis_compound_stmt_str = """\
 """
 
 dis_traceback = """\
-%4d            RESUME                   0
+%4d           RESUME                   0
 
-%4d            NOP
+%4d           NOP
 
-%4d    L1:     LOAD_SMALL_INT           1
-                LOAD_SMALL_INT           0
-            --> BINARY_OP               11 (/)
-                POP_TOP
+%4d   L1:     LOAD_SMALL_INT           1
+               LOAD_SMALL_INT           0
+           --> BINARY_OP               11 (/)
+               POP_TOP
 
-%4d    L2:     LOAD_FAST_CHECK          1 (tb)
-                RETURN_VALUE
+%4d   L2:     LOAD_FAST_CHECK          1 (tb)
+               RETURN_VALUE
 
-  --    L3:     PUSH_EXC_INFO
+  --   L3:     PUSH_EXC_INFO
 
-%4d            LOAD_GLOBAL              0 (Exception)
-                CHECK_EXC_MATCH
-                POP_JUMP_IF_FALSE       24 (to L9)
-        L4:     NOT_TAKEN
-        L5:     STORE_FAST               0 (e)
+%4d           LOAD_GLOBAL              0 (Exception)
+               CHECK_EXC_MATCH
+               POP_JUMP_IF_FALSE       24 (to L7)
+               NOT_TAKEN
+               STORE_FAST               0 (e)
 
-%4d    L6:     LOAD_FAST                0 (e)
-                LOAD_ATTR                2 (__traceback__)
-                STORE_FAST               1 (tb)
-        L7:     POP_EXCEPT
-                LOAD_COMMON_CONSTANT     7 (None)
-                STORE_FAST               0 (e)
-                DELETE_FAST              0 (e)
+%4d   L4:     LOAD_FAST                0 (e)
+               LOAD_ATTR                2 (__traceback__)
+               STORE_FAST               1 (tb)
+       L5:     POP_EXCEPT
+               LOAD_COMMON_CONSTANT     7 (None)
+               STORE_FAST               0 (e)
+               DELETE_FAST              0 (e)
 
-%4d            LOAD_FAST                1 (tb)
-                RETURN_VALUE
+%4d           LOAD_FAST                1 (tb)
+               RETURN_VALUE
 
-  --    L8:     LOAD_COMMON_CONSTANT     7 (None)
-                STORE_FAST               0 (e)
-                DELETE_FAST              0 (e)
-                RERAISE                  1
+  --   L6:     LOAD_COMMON_CONSTANT     7 (None)
+               STORE_FAST               0 (e)
+               DELETE_FAST              0 (e)
+               RERAISE                  1
 
-%4d    L9:     RERAISE                  0
+%4d   L7:     RERAISE                  0
 
-  --   L10:     COPY                     3
-                POP_EXCEPT
-                RERAISE                  1
+  --   L8:     COPY                     3
+               POP_EXCEPT
+               RERAISE                  1
 ExceptionTable:
   L1 to L2 -> L3 [0]
-  L3 to L4 -> L10 [1] lasti
-  L5 to L6 -> L10 [1] lasti
-  L6 to L7 -> L8 [1] lasti
-  L8 to L10 -> L10 [1] lasti
+  L3 to L4 -> L8 [1] lasti
+  L4 to L5 -> L6 [1] lasti
+  L6 to L8 -> L8 [1] lasti
 """ % (TRACEBACK_CODE.co_firstlineno,
        TRACEBACK_CODE.co_firstlineno + 1,
        TRACEBACK_CODE.co_firstlineno + 2,
@@ -569,11 +568,11 @@ dis_with = """\
 %4d   L3:     PUSH_EXC_INFO
                WITH_EXCEPT_START
                TO_BOOL
-               POP_JUMP_IF_TRUE         2 (to L6)
-       L4:     NOT_TAKEN
-       L5:     RERAISE                  2
-       L6:     POP_TOP
-       L7:     POP_EXCEPT
+               POP_JUMP_IF_TRUE         2 (to L4)
+               NOT_TAKEN
+               RERAISE                  2
+       L4:     POP_TOP
+       L5:     POP_EXCEPT
                POP_TOP
                POP_TOP
                POP_TOP
@@ -583,13 +582,12 @@ dis_with = """\
                LOAD_COMMON_CONSTANT     7 (None)
                RETURN_VALUE
 
-  --   L8:     COPY                     3
+  --   L6:     COPY                     3
                POP_EXCEPT
                RERAISE                  1
 ExceptionTable:
   L1 to L2 -> L3 [2] lasti
-  L3 to L4 -> L8 [4] lasti
-  L5 to L7 -> L8 [4] lasti
+  L3 to L5 -> L6 [4] lasti
 """ % (_with.__code__.co_firstlineno,
        _with.__code__.co_firstlineno + 1,
        _with.__code__.co_firstlineno + 2,
@@ -664,11 +662,11 @@ dis_asyncwith = """\
        L20:     CLEANUP_THROW
        L21:     END_SEND
                 TO_BOOL
-                POP_JUMP_IF_TRUE         2 (to L24)
-       L22:     NOT_TAKEN
-       L23:     RERAISE                  2
-       L24:     POP_TOP
-       L25:     POP_EXCEPT
+                POP_JUMP_IF_TRUE         2 (to L22)
+                NOT_TAKEN
+                RERAISE                  2
+       L22:     POP_TOP
+       L23:     POP_EXCEPT
                 POP_TOP
                 POP_TOP
                 POP_TOP
@@ -678,25 +676,24 @@ dis_asyncwith = """\
                 LOAD_COMMON_CONSTANT     7 (None)
                 RETURN_VALUE
 
-  --   L26:     COPY                     3
+  --   L24:     COPY                     3
                 POP_EXCEPT
                 RERAISE                  1
-       L27:     CALL_INTRINSIC_1         3 (INTRINSIC_STOPITERATION_ERROR)
+       L25:     CALL_INTRINSIC_1         3 (INTRINSIC_STOPITERATION_ERROR)
                 RERAISE                  1
 ExceptionTable:
-  L1 to L3 -> L27 [0] lasti
+  L1 to L3 -> L25 [0] lasti
   L3 to L4 -> L12 [5]
-  L4 to L6 -> L27 [0] lasti
+  L4 to L6 -> L25 [0] lasti
   L6 to L7 -> L16 [2] lasti
-  L7 to L9 -> L27 [0] lasti
+  L7 to L9 -> L25 [0] lasti
   L9 to L10 -> L14 [3]
-  L10 to L13 -> L27 [0] lasti
-  L14 to L15 -> L27 [0] lasti
-  L16 to L18 -> L26 [4] lasti
+  L10 to L13 -> L25 [0] lasti
+  L14 to L15 -> L25 [0] lasti
+  L16 to L18 -> L24 [4] lasti
   L18 to L19 -> L20 [8]
-  L19 to L22 -> L26 [4] lasti
-  L23 to L25 -> L26 [4] lasti
-  L25 to L27 -> L27 [0] lasti
+  L19 to L23 -> L24 [4] lasti
+  L23 to L25 -> L25 [0] lasti
 """ % (_asyncwith.__code__.co_firstlineno,
        _asyncwith.__code__.co_firstlineno + 1,
        _asyncwith.__code__.co_firstlineno + 2,
