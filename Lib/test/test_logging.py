@@ -6902,6 +6902,32 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
     def test_rollover_at_weekday(self):
         self.test_rollover_at_midnight(weekly=True)
 
+    def test_rollover_backup_exists(self):
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, 'S', encoding="utf-8", delay=True, utc=True)
+        self.addCleanup(fh.close)
+        rolloverAt = fh.rolloverAt
+        dfn = self.fn + time.strftime(".%Y-%m-%d_%H-%M-%S",
+                                      time.gmtime(rolloverAt - 1))
+        open(dfn, 'w').close()
+        self.rmfiles.append(dfn)
+        with patch('time.time', return_value=rolloverAt):
+            fh.doRollover()
+        self.assertEqual(fh.rolloverAt, rolloverAt + 1)
+
+    def test_rollover_error(self):
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, 'S', encoding="utf-8", utc=True)
+        self.addCleanup(fh.close)
+        rolloverAt = fh.rolloverAt
+        dfn = self.fn + time.strftime(".%Y-%m-%d_%H-%M-%S",
+                                      time.gmtime(rolloverAt - 1))
+        self.rmfiles.append(dfn)
+        with (patch('time.time', return_value=rolloverAt),
+              patch.object(fh, '_open', side_effect=OSError)):
+            self.assertRaises(OSError, fh.doRollover)
+        self.assertEqual(fh.rolloverAt, rolloverAt + 1)
+
     def test_invalid(self):
         assertRaises = self.assertRaises
         assertRaises(ValueError, logging.handlers.TimedRotatingFileHandler,

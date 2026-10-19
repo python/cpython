@@ -1,0 +1,2 @@
+Fix :class:`logging.handlers.TimedRotatingFileHandler` so that it no longer
+stops rolling over when a rollover fails or its backup file already exists.
