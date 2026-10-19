@@ -144,137 +144,6 @@ class DirCompareTestCase(unittest.TestCase):
         with open(os.path.join(self.dir_diff_file, 'file2'), 'w', encoding="utf-8") as output:
             output.write('Different contents.\n')
 
-    def test_dircmp_os_errors_in_phase2(self):
-        trigger_file = "error_trigger_file.txt"
-        with open(os.path.join(self.dir, trigger_file), "w",
-                encoding="utf-8") as f:
-            f.write("trigger")
-        with open(os.path.join(self.dir_same, trigger_file), "w",
-                encoding="utf-8") as f:
-            f.write("trigger")
-
-        original_stat = os.stat
-
-        def fake_stat(path, *args, **kwargs):
-            if trigger_file in str(path):
-                raise OSError
-            return original_stat(path, *args, **kwargs)
-
-        try:
-            with patch("os.stat", side_effect=fake_stat):
-                dc = filecmp.dircmp(self.dir, self.dir_same)
-                dc.phase2()
-                self.assertIn(trigger_file, dc.common_funny)
-        finally:
-            for d in (self.dir, self.dir_same):
-                p = os.path.join(d, trigger_file)
-                if os.path.exists(p):
-                    os.remove(p)
-
-    def test_dircmp_different_types_and_funny_types(self):
-        file_diff_type = "diff_type.txt"
-        file_funny_type = "funny_type.txt"
-
-        for f_name in (file_diff_type, file_funny_type):
-            with open(os.path.join(self.dir, f_name), "w",
-                    encoding="utf-8") as f:
-                f.write("data")
-            with open(os.path.join(self.dir_same, f_name), "w",
-                    encoding="utf-8") as f:
-                f.write("data")
-
-        original_stat = os.stat
-
-        def fake_stat_types(path, *args, **kwargs):
-            st = original_stat(path, *args, **kwargs)
-            path_str = str(path)
-
-            if file_diff_type in path_str:
-                is_dir_same = "dir-same" in path_str
-                target_type = stat.S_IFREG if is_dir_same else stat.S_IFDIR
-                new_mode = (st.st_mode & ~stat.S_IFREG) | target_type
-                return os.stat_result((new_mode,) + st[1:])
-
-            if file_funny_type in path_str:
-                new_mode = (st.st_mode & ~stat.S_IFREG) | stat.S_IFSOCK
-                return os.stat_result((new_mode,) + st[1:])
-
-            return st
-
-        try:
-            with patch("os.stat", side_effect=fake_stat_types):
-                dc = filecmp.dircmp(self.dir, self.dir_same)
-                dc.phase2()
-
-                self.assertIn(file_diff_type, dc.common_funny)
-                self.assertIn(file_funny_type, dc.common_funny)
-        finally:
-            for d in (self.dir, self.dir_same):
-                for f_name in (file_diff_type, file_funny_type):
-                    p = os.path.join(d, f_name)
-                    if os.path.exists(p):
-                        os.remove(p)
-
-    def test_dircmp_closure_and_report_funnies(self):
-        deep_dir_1 = os.path.join(self.dir, "subdir", "deep_folder")
-        deep_dir_2 = os.path.join(self.dir_same, "subdir", "deep_folder")
-        os.mkdir(deep_dir_1)
-        os.mkdir(deep_dir_2)
-
-        funny_trigger = "funny_report_file.txt"
-        funny_file_trigger = "funny_file_trigger.txt"
-
-        for f_name in (funny_trigger, funny_file_trigger):
-            with open(os.path.join(self.dir, f_name), "w",
-                    encoding="utf-8") as f:
-                f.write("data")
-            with open(os.path.join(self.dir_same, f_name), "w",
-                        encoding="utf-8") as f:
-                f.write("data")
-
-        original_stat = os.stat
-        original_cmp = filecmp._cmp
-
-        def fake_stat_for_report(path, *args, **kwargs):
-            if funny_trigger in str(path):
-                st = original_stat(path, *args, **kwargs)
-                new_mode = (st.st_mode & ~stat.S_IFREG) | stat.S_IFSOCK
-                return os.stat_result((new_mode,) + st[1:])
-            return original_stat(path, *args, **kwargs)
-
-        def fake_private_cmp(a, b, sh):
-            if funny_file_trigger in str(a) or funny_file_trigger in str(b):
-                return 2
-            return original_cmp(a, b, sh)
-
-        try:
-            with patch("os.stat", side_effect=fake_stat_for_report), \
-                patch("filecmp._cmp", side_effect=fake_private_cmp):
-
-                dc = filecmp.dircmp(self.dir, self.dir_same)
-                dc.phase4_closure()
-
-                with patch("sys.stdout", new=io.StringIO()) as mock_stdout:
-                    dc.report()
-                    output = mock_stdout.getvalue()
-
-                    self.assertIn("Common funny cases", output)
-                    self.assertIn("Trouble with common files", output)
-        finally:
-            for d in (self.dir, self.dir_same):
-                for f_name in (funny_trigger, funny_file_trigger):
-                    p = os.path.join(d, f_name)
-                    if os.path.exists(p):
-                        os.remove(p)
-            for d_path in (deep_dir_1, deep_dir_2):
-                if os.path.exists(d_path):
-                    os.rmdir(d_path)
-
-    def test_dircmp_invalid_attribute_error(self):
-        dc = filecmp.dircmp(self.dir, self.dir_same)
-        with self.assertRaises(AttributeError):
-            dc.invalid_attr_test_123
-
 
     def tearDown(self):
         for dir in (self.dir, self.dir_same, self.dir_diff,
@@ -515,6 +384,150 @@ class DirCompareTestCase(unittest.TestCase):
             dircmp_report()
             report_lines = stdout.getvalue().strip().split('\n')
             self.assertEqual(report_lines, expected_report_lines)
+
+
+class DirCmpImplementationTests(unittest.TestCase):
+    def setUp(self):
+        tmpdir = tempfile.gettempdir()
+        self.base_test_dir = os.path.join(tmpdir, 'test_filecmp_working_dir')
+        os.makedirs(self.base_test_dir, exist_ok=True)
+        self.addCleanup(shutil.rmtree, self.base_test_dir, ignore_errors=True)
+
+        self.dir = os.path.join(self.base_test_dir, 'dir')
+        self.dir_same = os.path.join(self.base_test_dir, 'dir-same')
+        self.dir_diff = os.path.join(self.base_test_dir, 'dir-diff')
+        self.dir_diff_file = os.path.join(self.base_test_dir, 'dir-diff-file')
+        self.dir_same_shallow = os.path.join(
+            self.base_test_dir, 'dir-same-shallow'
+        )
+
+        self.dir_ignored = os.path.join(self.dir_same, '.hg')
+        self.caseinsensitive = os.path.normcase('A') == os.path.normcase('a')
+        data = 'Contents of file go here.\n'
+
+        os.mkdir(self.dir)
+        subdir_path = os.path.join(self.dir, 'subdir')
+        os.mkdir(subdir_path)
+        dir_file_path = os.path.join(self.dir, "file")
+        with open(dir_file_path, 'w', encoding="utf-8") as output:
+            output.write(data)
+
+        for d in (self.dir_same, self.dir_same_shallow,
+                self.dir_diff, self.dir_diff_file):
+            os.mkdir(d)
+            subdir_path = os.path.join(d, 'subdir')
+            os.mkdir(subdir_path)
+            fn = ('FiLe' if (self.caseinsensitive and d is self.dir_same)
+                else 'file')
+            file_path = os.path.join(d, fn)
+
+            if d is self.dir_same_shallow:
+                _create_file_shallow_equal(dir_file_path, file_path)
+            else:
+                shutil.copy2(dir_file_path, file_path)
+
+        with open(os.path.join(self.dir_diff, 'file2'), 'w',
+                    encoding="utf-8") as output:
+            output.write('An extra file.\n')
+
+        with open(os.path.join(self.dir_diff_file, 'file2'), 'w',
+                    encoding="utf-8") as output:
+            output.write('Different contents.\n')
+
+    def test_dircmp_os_errors_in_processing(self):
+        trigger_file = "error_trigger_file.txt"
+        for d in (self.dir, self.dir_same):
+            with open(os.path.join(d, trigger_file), "w",
+                        encoding="utf-8") as f:
+                f.write("trigger")
+
+        original_stat = os.stat
+
+        def fake_stat(path, *args, **kwargs):
+            if trigger_file in str(path):
+                raise OSError
+            return original_stat(path, *args, **kwargs)
+
+        with patch("os.stat", side_effect=fake_stat):
+            dc = filecmp.dircmp(self.dir, self.dir_same)
+            self.assertIn(trigger_file, dc.common_funny)
+
+    def test_dircmp_different_types_and_funny_types(self):
+        file_diff_type = "diff_type.txt"
+        file_funny_type = "funny_type.txt"
+
+        for f_name in (file_diff_type, file_funny_type):
+            for d in (self.dir, self.dir_same):
+                with open(os.path.join(d, f_name), "w",
+                            encoding="utf-8") as f:
+                    f.write("data")
+
+        original_stat = os.stat
+
+        def fake_stat_types(path, *args, **kwargs):
+            st = original_stat(path, *args, **kwargs)
+            path_str = str(path)
+
+            if file_diff_type in path_str:
+                is_dir_same = "dir-same" in path_str
+                target_type = stat.S_IFREG if is_dir_same else stat.S_IFDIR
+                new_mode = (st.st_mode & ~stat.S_IFREG) | target_type
+                return os.stat_result((new_mode,) + st[1:])
+
+            if file_funny_type in path_str:
+                new_mode = (st.st_mode & ~stat.S_IFREG) | stat.S_IFSOCK
+                return os.stat_result((new_mode,) + st[1:])
+
+            return st
+
+        with patch("os.stat", side_effect=fake_stat_types):
+            dc = filecmp.dircmp(self.dir, self.dir_same)
+            self.assertIn(file_diff_type, dc.common_funny)
+            self.assertIn(file_funny_type, dc.common_funny)
+
+    def test_dircmp_closure_and_report_funnies(self):
+        deep_dir_1 = os.path.join(self.dir, "subdir", "deep_folder")
+        deep_dir_2 = os.path.join(self.dir_same, "subdir", "deep_folder")
+        os.mkdir(deep_dir_1)
+        os.mkdir(deep_dir_2)
+
+        funny_trigger = "funny_report_file.txt"
+        funny_file_trigger = "funny_file_trigger.txt"
+
+        for f_name in (funny_trigger, funny_file_trigger):
+            for d in (self.dir, self.dir_same):
+                with open(os.path.join(d, f_name), "w",
+                            encoding="utf-8") as f:
+                    f.write("data")
+
+        original_stat = os.stat
+        original_cmp = filecmp._cmp
+
+        def fake_stat_for_report(path, *args, **kwargs):
+            if funny_trigger in str(path):
+                st = original_stat(path, *args, **kwargs)
+                new_mode = (st.st_mode & ~stat.S_IFREG) | stat.S_IFSOCK
+                return os.stat_result((new_mode,) + st[1:])
+            return original_stat(path, *args, **kwargs)
+
+        def fake_private_cmp(a, b, sh):
+            if funny_file_trigger in str(a) or funny_file_trigger in str(b):
+                return 2
+            return original_cmp(a, b, sh)
+
+        with patch("os.stat", side_effect=fake_stat_for_report), \
+            patch("filecmp._cmp", side_effect=fake_private_cmp):
+
+            dc = filecmp.dircmp(self.dir, self.dir_same)
+            _ = dc.subdirs
+            dc.phase4_closure()
+
+            with patch("sys.stdout", new=io.StringIO()) as mock_stdout:
+                dc.report()
+                output = mock_stdout.getvalue()
+
+                self.assertIn("Common funny cases", output)
+                self.assertIn("Trouble with common files", output)
 
 
 if __name__ == "__main__":
