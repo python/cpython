@@ -7,6 +7,7 @@ import os
 import pickle
 import random
 import sys
+import textwrap
 import unittest
 import weakref
 from itertools import product
@@ -1729,6 +1730,66 @@ class TestCImplementationCompat(unittest.TestCase):
         u_str = str(u)
         del u
         self.assertEqual(u_str, '00000000-0000-0000-0000-000000000001')
+
+    def test_subclass_allocation(self):
+        # Subclasses must bypass the base UUID freelist and get enough storage
+        # for their slots and dictionary, with GC tracking for reference cycles.
+        # Run in a subprocess because an incorrectly sized or reused object
+        # can corrupt memory before the assertions detect it.
+        assert_python_ok('-c', textwrap.dedent('''
+            import gc
+            import uuid
+            import weakref
+
+            class U(uuid.UUID):
+                __slots__ = ('extra', '__dict__')
+
+            # Exercise both the constructor and the internal factory.
+            for factory in (lambda cls: cls(int=1), lambda cls: cls._from_int(1)):
+                # Leave a base UUID available in the freelist.
+                base = uuid.UUID(int=0)
+                del base
+                u = factory(U)
+                # A subclass must not receive a cached base UUID.
+                assert type(u) is U
+                assert u.int == 1
+                # Allocation must include storage for subclass slots and a dict.
+                object.__setattr__(u, 'extra', u)
+                object.__setattr__(u, 'other', 42)
+                assert u.extra is u
+                assert u.other == 42
+                # The self-reference requires GC tracking to collect the object.
+                ref = weakref.ref(u)
+                del u
+                gc.collect()
+                assert ref() is None
+
+                # Subclass allocation must leave the base freelist usable.
+                base = uuid.UUID(int=2)
+                assert type(base) is uuid.UUID
+                assert base.int == 2
+        '''))
+
+    def test_freelist_type_lifetime(self):
+        # Reused live instances must keep their type and module alive, while
+        # cached instances must allow both to be collected.
+        module = import_helper.import_fresh_module('_uuid')
+        module_ref = weakref.ref(module)
+        type_ref = weakref.ref(module.UUID)
+        # Leave a base UUID available in the freelist.
+        obj = module.UUID(int=0)
+        del obj
+        # A reused live instance must still keep its type and module alive.
+        obj = module.UUID(int=1)
+        del module
+        support.gc_collect()
+        self.assertIsNotNone(type_ref())
+        self.assertIsNotNone(module_ref())
+        self.assertEqual(obj.int, 1)
+        del obj
+        support.gc_collect()
+        self.assertIsNone(type_ref())
+        self.assertIsNone(module_ref())
 
 
 if __name__ == '__main__':

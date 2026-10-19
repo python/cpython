@@ -974,6 +974,15 @@ make_uuid(PyTypeObject *type)
     uuidobject *self = NULL;
     uuid_state *state = get_uuid_state_by_cls(type);
 
+    if (type != state->UuidType) {
+        // Allocate the subclass's full instance size and enable GC tracking.
+        self = (uuidobject *)PyType_GenericAlloc(type, 0);
+        if (self == NULL) {
+            return NULL;
+        }
+        goto init;
+    }
+
     Py_BEGIN_CRITICAL_SECTION(type);
     if (state->freelist_size > 0) {
         self = state->freelist;
@@ -983,8 +992,10 @@ make_uuid(PyTypeObject *type)
     Py_END_CRITICAL_SECTION();
 
     if (self != NULL) {
-        // Reinitialize the object from freelist
-        _Py_NewReference((PyObject *)self);
+        // Deallocation releases the type reference even when caching the object,
+        // so the freelist does not keep the type and its module alive. Restore
+        // that reference and reinitialize the object before returning it.
+        PyObject_Init((PyObject *)self, type);
     }
     else {
         self = PyObject_New(uuidobject, type);
@@ -993,6 +1004,7 @@ make_uuid(PyTypeObject *type)
         }
     }
 
+init:
     self->is_safe = NULL;
 
     self->weakreflist = NULL;
@@ -1002,7 +1014,7 @@ make_uuid(PyTypeObject *type)
 }
 
 static PyObject *
-Uuid_alloc(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+Uuid_alloc(PyTypeObject *type, Py_ssize_t Py_UNUSED(nitems))
 {
     uuidobject *self = make_uuid(type);
     if (self == NULL) {
@@ -1044,9 +1056,10 @@ Uuid_dealloc(PyObject *obj)
 dealloc:
     if (!skip_dealloc) {
         type->tp_free(uuid);
-        // UUID is a heap allocated type so we have to decref the type ref
-        Py_DECREF(type);
     }
+    // Only live instances own a reference to the heap type. Keeping that
+    // reference in the freelist would prevent the module from being collected.
+    Py_DECREF(type);
 }
 
 
