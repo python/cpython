@@ -635,10 +635,15 @@ _io_IncrementalNewlineDecoder_reset_impl(nldecoder_object *self)
         Py_RETURN_NONE;
 }
 
+/*[clinic input]
+@getter
+_io.IncrementalNewlineDecoder.newlines
+[clinic start generated code]*/
+
 static PyObject *
-incrementalnewlinedecoder_newlines_get(PyObject *op, void *Py_UNUSED(context))
+_io_IncrementalNewlineDecoder_newlines_get_impl(nldecoder_object *self)
+/*[clinic end generated code: output=4370cf5202a83d08 input=040f9a26aef317a8]*/
 {
-    nldecoder_object *self = nldecoder_object_CAST(op);
     CHECK_INITIALIZED_DECODER(self);
 
     switch (self->seennl) {
@@ -753,10 +758,8 @@ buffer_access_safe(textio *self)
         return NULL;
     }
 
-    /* Returning a borrowed reference is safe since TextIOWrapper methods are
-       protected by critical sections. */
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
-    return self->buffer;
+    return Py_NewRef(self->buffer);
 }
 
 static PyObject *
@@ -767,7 +770,9 @@ buffer_getattr(textio *self, PyObject *attr_name)
         return NULL;
     }
 
-    return PyObject_GetAttr(buffer, attr_name);
+    PyObject *res = PyObject_GetAttr(buffer, attr_name);
+    Py_DECREF(buffer);
+    return res;
 }
 
 static PyObject *
@@ -778,7 +783,9 @@ buffer_callmethod_noargs(textio *self, PyObject *name)
         return NULL;
     }
 
-    return PyObject_CallMethodNoArgs(buffer, name);
+    PyObject *res = PyObject_CallMethodNoArgs(buffer, name);
+    Py_DECREF(buffer);
+    return res;
 }
 
 static PyObject *
@@ -789,7 +796,9 @@ buffer_callmethod_onearg(textio *self, PyObject *name, PyObject *arg)
         return NULL;
     }
 
-    return PyObject_CallMethodOneArg(buffer, name, arg);
+    PyObject *res = PyObject_CallMethodOneArg(buffer, name, arg);
+    Py_DECREF(buffer);
+    return res;
 }
 
 static void
@@ -1639,7 +1648,7 @@ _io_TextIOWrapper_detach_impl(textio *self)
     if (buffer == NULL) {
         return NULL;
     }
-    self->buffer = NULL;
+    Py_CLEAR(self->buffer);
     self->detached = 1;
     return buffer;
 }
@@ -1863,7 +1872,12 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
 
     if (needflush) {
         PyObject *buffer = buffer_access_safe(self);
-        if (buffer == NULL || _PyFile_Flush(buffer) < 0) {
+        if (buffer == NULL) {
+            return NULL;
+        }
+        int res = _PyFile_Flush(buffer);
+        Py_DECREF(buffer);
+        if (res < 0) {
             return NULL;
         }
     }
@@ -2682,6 +2696,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
             goto fail;
         }
         res = _PyObject_CallMethod(buf, &_Py_ID(seek), "ii", 0, 2);
+        Py_DECREF(buf);
         Py_CLEAR(cookieObj);
         if (res == NULL)
             goto fail;
@@ -3394,38 +3409,35 @@ _io_TextIOWrapper_errors_get_impl(textio *self)
 /*[clinic input]
 @critical_section
 @getter
-_io.TextIOWrapper._CHUNK_SIZE
+_io.TextIOWrapper._CHUNK_SIZE -> Py_ssize_t
 [clinic start generated code]*/
 
-static PyObject *
+static Py_ssize_t
 _io_TextIOWrapper__CHUNK_SIZE_get_impl(textio *self)
-/*[clinic end generated code: output=039925cd2df375bc input=e9715b0e06ff0fa6]*/
+/*[clinic end generated code: output=3fe34b873b6b2c8c input=cae767b74b6b46bd]*/
 {
-    CHECK_ATTACHED(self);
-    return PyLong_FromSsize_t(self->chunk_size);
+    CHECK_ATTACHED_INT(self);
+    return self->chunk_size;
 }
 
 /*[clinic input]
 @critical_section
 @setter
 _io.TextIOWrapper._CHUNK_SIZE
+    value: Py_ssize_t
 [clinic start generated code]*/
 
 static int
-_io_TextIOWrapper__CHUNK_SIZE_set_impl(textio *self, PyObject *value)
-/*[clinic end generated code: output=edb86d2db660a5ab input=32fc99861db02a0a]*/
+_io_TextIOWrapper__CHUNK_SIZE_set_impl(textio *self, Py_ssize_t value)
+/*[clinic end generated code: output=5170a93dd4d74917 input=ede7bae6145f941b]*/
 {
-    Py_ssize_t n;
     CHECK_ATTACHED_INT(self);
-    n = PyNumber_AsSsize_t(value, PyExc_ValueError);
-    if (n == -1 && PyErr_Occurred())
-        return -1;
-    if (n <= 0) {
+    if (value <= 0) {
         PyErr_SetString(PyExc_ValueError,
                         "a strictly positive integer is required");
         return -1;
     }
-    self->chunk_size = n;
+    self->chunk_size = value;
     return 0;
 }
 
@@ -3439,7 +3451,7 @@ static PyObject *
 _io_TextIOWrapper_buffer_get_impl(textio *self)
 /*[clinic end generated code: output=d265a34555aa5d4b input=5951cfa148f7350a]*/
 {
-    return Py_XNewRef(buffer_access_safe(self));
+    return buffer_access_safe(self);
 }
 
 static PyMethodDef incrementalnewlinedecoder_methods[] = {
@@ -3451,7 +3463,7 @@ static PyMethodDef incrementalnewlinedecoder_methods[] = {
 };
 
 static PyGetSetDef incrementalnewlinedecoder_getset[] = {
-    {"newlines", incrementalnewlinedecoder_newlines_get, NULL, NULL},
+    _IO_INCREMENTALNEWLINEDECODER_NEWLINES_GETSETDEF
     {NULL}
 };
 
