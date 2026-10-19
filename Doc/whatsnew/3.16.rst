@@ -1232,6 +1232,10 @@ Deprecated C APIs
   Use the safer :c:type:`PyUnicodeWriter` API instead.
   (Contributed by Victor Stinner in :gh:`157710`.)
 
+* :c:macro:`PyWrapperFlag_KEYWORDS` is :term:`soft deprecated`.
+  It exposes CPython implementation details and has no replacement.
+  (Contributed by Peter Bierma in :gh:`141004`.)
+
 .. Add C API deprecations above alphabetically, not here at the end.
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.18.rst

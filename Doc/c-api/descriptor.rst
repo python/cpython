@@ -96,6 +96,11 @@ found in the dictionary of type objects.
    When not set, calling the wrapper descriptor with keyword arguments
    raises :exc:`TypeError`.
 
+   This flag is specific to the way CPython implements slot wrappers; do not
+   use it in extensions.
+
+   .. soft-deprecated:: 3.16
+
 .. c:function:: PyObject* PyDescr_NewWrapper(PyTypeObject *type, struct wrapperbase *base, void *wrapped)
 
    Create a new wrapper descriptor for extension type *type* from the
