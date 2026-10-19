@@ -1439,6 +1439,10 @@ dayrule_year_to_timestamp(TransitionRuleType *base_self, int year)
     if (self->julian && day >= 59 && is_leap_year(year)) {
         day += 1;
     }
+    else if (!self->julian) {
+        // Numeric day rules are zero-based, unlike Julian day rules.
+        day += 1;
+    }
 
     return (days_before_year + day) * 86400 + (int64_t)self->hour * 3600 +
            (int64_t)self->minute * 60 + self->second;

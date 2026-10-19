@@ -598,6 +598,9 @@ class _DayOffset:
         d = self.d
         if self.julian and d >= 59 and calendar.isleap(year):
             d += 1
+        elif not self.julian:
+            # Numeric day rules are zero-based, unlike Julian day rules.
+            d += 1
 
         epoch = (days_before_year + d) * 86400
         epoch += self.hour * 3600 + self.minute * 60 + self.second

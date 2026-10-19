@@ -1673,6 +1673,29 @@ class TZStrTest(ZoneInfoTestBase):
                 (datetime(2012, 11, 4, 2, 15, 45), AAA, NORMAL),
             )
 
+        @call
+        def _add():
+            # Numeric day rules count from January 1, including leap days.
+            STD = ZoneOffset("STD", ZERO)
+            DST = ZoneOffset("DST", ONE_H, ONE_H)
+
+            for day in (0, 10, 59, 60, 364, 365):
+                tzstr = f"STD0DST,{day}/2,{day}/14"
+                day_cases = []
+                for year in (2019, 2020):
+                    date = datetime(year, 1, 1) + timedelta(days=day)
+                    day_cases.extend((
+                        (date.replace(hour=1, minute=59), STD, NORMAL),
+                        (date.replace(hour=2, fold=0), STD, GAP),
+                        (date.replace(hour=2, fold=1), DST, GAP),
+                        (date.replace(hour=3), DST, NORMAL),
+                        (date.replace(hour=12, minute=59), DST, NORMAL),
+                        (date.replace(hour=13, fold=0), DST, FOLD),
+                        (date.replace(hour=13, fold=1), STD, FOLD),
+                        (date.replace(hour=14), STD, NORMAL),
+                    ))
+                cases[tzstr] = day_cases
+
         cls.test_cases = cases
 
 
