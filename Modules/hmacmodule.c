@@ -449,8 +449,6 @@ _hacl_hmac_state_free(HACL_HMAC_state *state)
 /*
  * Call the HACL* HMAC-HASH update function on the given data.
  *
- * On DEBUG builds, the update() call is verified.
- *
  * Return the HACL* exit code. No exception is set, so that this
  * can be called without an attached thread state or with a lock held.
 */
@@ -458,18 +456,11 @@ static hacl_errno_t
 _hacl_hmac_state_update_once(HACL_HMAC_state *state,
                              uint8_t *buf, uint32_t len)
 {
-#ifndef NDEBUG
     return Hacl_Streaming_HMAC_update(state, buf, len);
-#else
-    (void)Hacl_Streaming_HMAC_update(state, buf, len);
-    return Hacl_Streaming_Types_Success;
-#endif
 }
 
 /*
  * Perform the HMAC-HASH update() operation in a streaming fashion.
- *
- * On DEBUG builds, each update() call is verified.
  *
  * Return the HACL* exit code. No exception is set, so that this
  * can be called without an attached thread state or with a lock held.
@@ -795,14 +786,10 @@ _hmac_new_impl(PyObject *module, PyObject *keyobj, PyObject *msgobj,
             code = _hacl_hmac_state_update(self->state, msg.buf, msg.len)
         );
         PyBuffer_Release(&msg);
-#ifndef NDEBUG
         rc = _hacl_convert_errno(code);
         if (rc < 0) {
             goto error;
         }
-#else
-        (void)code;
-#endif
     }
     assert(rc == 0);
     return (PyObject *)self;
