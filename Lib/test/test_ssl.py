@@ -1141,6 +1141,7 @@ class ContextTests(unittest.TestCase):
         # Ensure that .group() does not crash because of OpenSSL itself.
         # See https://github.com/python/cpython/issues/155782.
         ctx = ssl.create_default_context()
+        ctx.check_hostname = False
         obj = ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO())
         self.assertIsNone(obj.group())
 
