@@ -10,6 +10,9 @@
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_interpframe.h"   // _PyFrame_GetLocalsArray()
 #include "pycore_list.h"          // _PyList_GetItemRef()
+#ifdef Py_GIL_DISABLED
+#  include "pycore_mimalloc.h"    // mi_heap_visit_blocks()
+#endif
 #include "pycore_object_alloc.h"  // _PyObject_MallocWithType()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tstate.h"        // _PyThreadStateImpl
