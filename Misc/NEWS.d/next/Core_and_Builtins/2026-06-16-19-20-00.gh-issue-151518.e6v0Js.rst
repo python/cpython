@@ -1,2 +1,0 @@
-Fix a free-threaded stop-the-world fairness issue that could starve a thread
-reattaching after being suspended while detached.

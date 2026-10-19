@@ -41,13 +41,6 @@ extern PyObject ** _Py_VaBuildStack(
 
 extern PyObject* _PyModule_CreateInitialized(PyModuleDef*, int apiver);
 
-// Export for '_curses' shared extension
-PyAPI_FUNC(int) _PyArg_ParseStack(
-    PyObject *const *args,
-    Py_ssize_t nargs,
-    const char *format,
-    ...);
-
 extern int _PyArg_UnpackStack(
     PyObject *const *args,
     Py_ssize_t nargs,
@@ -65,7 +58,9 @@ PyAPI_FUNC(void) _PyArg_BadArgument(
 
 // --- _PyArg_Parser API ---------------------------------------------------
 
-// Export for '_dbm' shared extension
+// Similar to public PyArg_ParseArrayAndKeywords(), but faster thanks
+// to "struct _PyArg_Parser *parser" cache.
+// Export for '_dbm' shared extension.
 PyAPI_FUNC(int) _PyArg_ParseStackAndKeywords(
     PyObject *const *args,
     Py_ssize_t nargs,

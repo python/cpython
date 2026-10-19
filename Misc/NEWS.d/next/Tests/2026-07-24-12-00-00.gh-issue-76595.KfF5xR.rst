@@ -1,1 +1,0 @@
-Add C API tests for :c:func:`PyCapsule_Import`.
