@@ -1374,6 +1374,28 @@ class TestSpecifics(unittest.TestCase):
 
         self.check_line_numbers(f.__code__, 'JUMP_BACKWARD')
 
+    def test_backward_jump_conditional_in_loop_in_try(self):
+        # gh-130279: The jumps in a loop body, including the backward jump
+        # for the untaken branch of a conditional at the end of the body,
+        # must be covered by the exception handler of the enclosing try.
+        def f(items):
+            try:
+                for x in items:
+                    if x < 0:
+                        raise ValueError(x)
+            except KeyboardInterrupt:
+                return 'handled'
+
+        bytecode = dis.Bytecode(f)
+        jumps = [instr for instr in bytecode
+                 if instr.opcode in dis.hasjump]
+        self.assertTrue(jumps)
+        for instr in jumps:
+            with self.subTest(instr=instr):
+                self.assertTrue(
+                    any(entry.start <= instr.offset < entry.end
+                        for entry in bytecode.exception_entries))
+
     def test_big_dict_literal(self):
         # The compiler has a flushing point in "compiler_dict" that calls compiles
         # a portion of the dictionary literal when the loop that iterates over the items

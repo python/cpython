@@ -659,11 +659,11 @@ dis_asyncwith = """\
        L20:     CLEANUP_THROW
        L21:     END_SEND
                 TO_BOOL
-                POP_JUMP_IF_TRUE         2 (to L24)
-       L22:     NOT_TAKEN
-       L23:     RERAISE                  2
-       L24:     POP_TOP
-       L25:     POP_EXCEPT
+                POP_JUMP_IF_TRUE         2 (to L22)
+                NOT_TAKEN
+                RERAISE                  2
+       L22:     POP_TOP
+       L23:     POP_EXCEPT
                 POP_TOP
                 POP_TOP
                 POP_TOP
@@ -673,25 +673,24 @@ dis_asyncwith = """\
                 LOAD_CONST               0 (None)
                 RETURN_VALUE
 
-  --   L26:     COPY                     3
+  --   L24:     COPY                     3
                 POP_EXCEPT
                 RERAISE                  1
-       L27:     CALL_INTRINSIC_1         3 (INTRINSIC_STOPITERATION_ERROR)
+       L25:     CALL_INTRINSIC_1         3 (INTRINSIC_STOPITERATION_ERROR)
                 RERAISE                  1
 ExceptionTable:
-  L1 to L3 -> L27 [0] lasti
+  L1 to L3 -> L25 [0] lasti
   L3 to L4 -> L12 [4]
-  L4 to L6 -> L27 [0] lasti
+  L4 to L6 -> L25 [0] lasti
   L6 to L7 -> L16 [2] lasti
-  L7 to L9 -> L27 [0] lasti
+  L7 to L9 -> L25 [0] lasti
   L9 to L10 -> L14 [2]
-  L10 to L13 -> L27 [0] lasti
-  L14 to L15 -> L27 [0] lasti
-  L16 to L18 -> L26 [4] lasti
+  L10 to L13 -> L25 [0] lasti
+  L14 to L15 -> L25 [0] lasti
+  L16 to L18 -> L24 [4] lasti
   L18 to L19 -> L20 [7]
-  L19 to L22 -> L26 [4] lasti
-  L23 to L25 -> L26 [4] lasti
-  L25 to L27 -> L27 [0] lasti
+  L19 to L23 -> L24 [4] lasti
+  L23 to L25 -> L25 [0] lasti
 """ % (_asyncwith.__code__.co_firstlineno,
        _asyncwith.__code__.co_firstlineno + 1,
        _asyncwith.__code__.co_firstlineno + 2,
