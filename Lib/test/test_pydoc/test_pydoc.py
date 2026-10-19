@@ -19,6 +19,7 @@ import typing
 import unittest
 import unittest.mock
 import urllib.parse
+import urllib.request
 import xml.etree
 import xml.etree.ElementTree
 import textwrap
@@ -369,7 +370,7 @@ def html2text(html):
 
     Tailored for pydoc tests only.
     """
-    html = html.replace("<dd>", "\n")
+    html = re.sub(r"<dd\b[^>]*>", "\n", html)
     html = html.replace("<hr>", "-"*70)
     html = re.sub("<.*?>", "", html)
     html = pydoc.replace(html, "&nbsp;", " ", "&gt;", ">", "&lt;", "<")
@@ -429,7 +430,7 @@ class PydocDocTest(unittest.TestCase):
         expected_lines = [line.strip() for line in expected_lines if line]
         self.assertEqual(text_lines, expected_lines)
         mod_file = inspect.getabsfile(pydoc_mod)
-        mod_url = urllib.parse.quote(mod_file)
+        mod_url = urllib.request.pathname2url(mod_file)
         self.assertIn(mod_url, result)
         self.assertIn(mod_file, result)
         self.assertIn(doc_loc, result)
@@ -1023,6 +1024,31 @@ class PydocDocTest(unittest.TestCase):
             self.assertIsNone(synopsis)
             synopsis_cached = pydoc.synopsis(cached_path, {})
             self.assertIsNone(synopsis_cached)
+
+    @unittest.skipUnless(os_helper.TESTFN_UNDECODABLE,
+                         'requires undecodable file names')
+    def test_html_doc_undecodable_path(self):
+        # gh-69371: the path of the module is not encodable in UTF-8.
+        with os_helper.temp_cwd() as test_dir:
+            subdir = os.path.join(os.fsencode(test_dir),
+                                  os_helper.TESTFN_UNDECODABLE)
+            try:
+                os.mkdir(subdir)
+            except OSError:
+                self.skipTest('undecodable paths are not supported')
+            with open(os.path.join(subdir, b'undecodable_mod.py'), 'w') as f:
+                f.write('"""Module docstring."""\n')
+            with import_helper.DirsOnSysPath(os.fsdecode(subdir)):
+                mod = import_helper.import_fresh_module('undecodable_mod')
+                doc = pydoc.HTMLDoc().docmodule(mod)
+                with captured_stdout():
+                    pydoc.writedoc(mod)
+            # The link contains the percent-encoded path...
+            path = inspect.getabsfile(mod)
+            self.assertIn(urllib.request.pathname2url(path), doc)
+            # ...and the page can be written and served as UTF-8.
+            with open('undecodable_mod.html', encoding='utf-8') as f:
+                self.assertIn('undecodable_mod', f.read())
 
     def test_splitdoc_with_description(self):
         example_string = "I Am A Doc\n\n\nHere is my description"
@@ -1913,7 +1939,7 @@ foo
 
         html = pydoc.HTMLDoc().document(coro_function)
         self.assertIn(
-            'async <a name="-coro_function"><strong>coro_function',
+            'async <a id="-coro_function"><strong>coro_function',
             html)
 
     def test_async_generator_annotation(self):
@@ -1925,7 +1951,7 @@ foo
 
         html = pydoc.HTMLDoc().document(an_async_generator)
         self.assertIn(
-            'async <a name="-an_async_generator"><strong>an_async_generator',
+            'async <a id="-an_async_generator"><strong>an_async_generator',
             html)
 
     @requires_docstrings
@@ -2091,7 +2117,7 @@ class PydocFodderTest(unittest.TestCase):
         doc = pydoc.HTMLDoc()
         result = doc.docmodule(pydocfodder)
         result = html2text(result)
-        lines = self.getsection(result, ' Functions', None)
+        lines = self.getsection(result, 'Functions', None)
         # function alias
         self.assertIn(' global_func_alias = global_func(x, y)', lines)
         self.assertIn(' A_staticmethod(x, y)', lines)

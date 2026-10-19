@@ -1,22 +1,32 @@
 import unittest
 import test.support
 from ctypes import c_int, Union, Structure, sizeof
+from ctypes.util import CFieldInfo, struct
+from typing import Annotated
 from ._support import StructCheckMixin
 
 
 class AnonTest(unittest.TestCase, StructCheckMixin):
 
-    def test_anon(self):
+    @test.support.subTests("use_struct_util", [False, True])
+    def test_anon(self, use_struct_util):
         class ANON(Union):
             _fields_ = [("a", c_int),
                         ("b", c_int)]
         self.check_union(ANON)
 
-        class Y(Structure):
-            _fields_ = [("x", c_int),
-                        ("_", ANON),
-                        ("y", c_int)]
-            _anonymous_ = ["_"]
+        if use_struct_util:
+            @struct
+            class Y:
+                x: c_int
+                _: Annotated[ANON, CFieldInfo(anonymous=True)]
+                y: c_int
+        else:
+            class Y(Structure):
+                _fields_ = [("x", c_int),
+                            ("_", ANON),
+                            ("y", c_int)]
+                _anonymous_ = ["_"]
         self.check_struct(Y)
 
         self.assertEqual(Y.a.offset, sizeof(c_int))

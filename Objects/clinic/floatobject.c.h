@@ -3,6 +3,7 @@ preserve
 [clinic start generated code]*/
 
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(float_is_integer__doc__,
 "is_integer($self, /)\n"
@@ -240,6 +241,35 @@ exit:
     return return_value;
 }
 
+static PyObject *
+float_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *x = NULL;
+
+    assert(Py_Is(_PyType_CAST(type), &PyFloat_Type));
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (!_PyArg_NoKwnames("float", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("float", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    x = args[0];
+skip_optional:
+    return_value = float_new_impl(_PyType_CAST(type), x);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(float_from_number__doc__,
 "from_number($type, number, /)\n"
 "--\n"
@@ -310,13 +340,8 @@ float___getformat__(PyObject *type, PyObject *arg)
         _PyArg_BadArgument("__getformat__", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t typestr_length;
-    typestr = PyUnicode_AsUTF8AndSize(arg, &typestr_length);
+    typestr = _PyUnicode_AsUTF8NoNUL(arg);
     if (typestr == NULL) {
-        goto exit;
-    }
-    if (strlen(typestr) != (size_t)typestr_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = float___getformat___impl((PyTypeObject *)type, typestr);
@@ -353,4 +378,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5d7b0bf9e47ff997 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=95aaa6d7174f9e40 input=a9049054013a1b77]*/

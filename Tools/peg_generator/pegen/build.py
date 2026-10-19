@@ -125,12 +125,13 @@ def compile_c_extension(
         str(MOD_DIR.parent.parent.parent / "Python" / "Python-ast.c"),
         str(MOD_DIR.parent.parent.parent / "Python" / "asdl.c"),
         str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "lexer.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "layout.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "number.c"),
         str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "state.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "buffer.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "string_tokenizer.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "file_tokenizer.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "utf8_tokenizer.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "readline_tokenizer.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "string.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "decoder.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "api.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "reader.c"),
         str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "helpers.c"),
         str(MOD_DIR.parent.parent.parent / "Parser" / "pegen.c"),
         str(MOD_DIR.parent.parent.parent / "Parser" / "pegen_errors.c"),
@@ -154,9 +155,10 @@ def compile_c_extension(
             # HACK: Our output directory for free-threaded builds has moved, and so
             # tests running in-tree require our sys.executable directory for libs
             library_dirs.append(str(pathlib.Path(sys.executable).parent))
+    sources = [generated_source_path]
     extension = Extension(
         extension_name,
-        sources=[generated_source_path],
+        sources=sources,
         extra_compile_args=extra_compile_args,
         extra_link_args=extra_link_args,
     )
@@ -214,19 +216,19 @@ def compile_c_extension(
                 ]
             )
     else:
-        extension.sources[0:0] = common_sources
+        sources[0:0] = common_sources
 
     # Compile the source code to object files.
     ext_path = cmd.get_ext_fullpath(extension_name)
-    if newer_group(extension.sources, ext_path, "newer"):
+    if newer_group(sources, ext_path, "newer"):
         objects = compiler.compile(
-            extension.sources,
+            sources,
             output_dir=cmd.build_temp,
             debug=cmd.debug,
             extra_postargs=extra_compile_args,
         )
     else:
-        objects = compiler.object_filenames(extension.sources, output_dir=cmd.build_temp)
+        objects = compiler.object_filenames(sources, output_dir=cmd.build_temp)
     # The cmd.get_libraries() call needs a valid compiler attribute or we will
     # get an incorrect library name on the free-threaded Windows build.
     cmd.compiler = compiler

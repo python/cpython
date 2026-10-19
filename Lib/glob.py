@@ -34,8 +34,8 @@ def glob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
     If `dir_fd` is not None, it should be a file descriptor referring to a
     directory, and paths will then be relative to that directory.
 
-    If `include_hidden` is true, the patterns '*', '?', '**'  will match
-    hidden directories.
+    If `include_hidden` is true, wildcards can match path segments beginning
+    with a dot ('.').
 
     If `recursive` is true, the pattern '**' will match any files and
     zero or more directories and subdirectories.
@@ -64,8 +64,8 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
     If `dir_fd` is not None, it should be a file descriptor referring to a
     directory, and paths will then be relative to that directory.
 
-    If `include_hidden` is true, the patterns '*', '?', '**'  will match
-    hidden directories.
+    If `include_hidden` is true, wildcards can match path segments beginning
+    with a dot ('.').
 
     If `recursive` is true, the pattern '**' will match any files and
     zero or more directories and subdirectories.
