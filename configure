@@ -18014,34 +18014,41 @@ printf %s "checking for --enable-loadable-sqlite-extensions... " >&6; }
 if test ${enable_loadable_sqlite_extensions+y}
 then :
   enableval=$enable_loadable_sqlite_extensions;
-    if test "x$have_sqlite3_load_extension" = xno
-then :
-
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-printf "%s\n" "n/a" >&6; }
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: Your version of SQLite does not support loadable extensions" >&5
-printf "%s\n" "$as_me: WARNING: Your version of SQLite does not support loadable extensions" >&2;}
-
 else case e in #(
-  e)
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-printf "%s\n" "#define PY_SQLITE_ENABLE_LOAD_EXTENSION 1" >>confdefs.h
-
-     ;;
-esac
-fi
-
-else case e in #(
-  e)
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-
+  e) enable_loadable_sqlite_extensions=no
  ;;
 esac
 fi
 
+if test "x$enable_loadable_sqlite_extensions" = xyes
+then :
+
+  if test "x$have_sqlite3_load_extension" = xno
+then :
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+printf "%s\n" "n/a" >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: Your version of SQLite does not support loadable extensions" >&5
+printf "%s\n" "$as_me: WARNING: Your version of SQLite does not support loadable extensions" >&2;}
+
+else case e in #(
+  e)
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+printf "%s\n" "#define PY_SQLITE_ENABLE_LOAD_EXTENSION 1" >>confdefs.h
+
+   ;;
+esac
+fi
+
+else case e in #(
+  e)
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+ ;;
+esac
+fi
 
 found_tcltk=no
 for _QUERY in \
