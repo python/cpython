@@ -77,6 +77,7 @@ newMD5object(MD5State * st)
         return NULL;
     }
     HASHLIB_INIT_MUTEX(md5);
+    md5->hash_state = NULL; // PyObject_GC_New() does not zero memory
 
     PyObject_GC_Track(md5);
     return md5;
