@@ -17,9 +17,7 @@ extern "C" {
 #define _Py_MAX_UNICODE 0x10ffff
 
 
-// Export for '_multibytecodec' shared extension. _PyUnicodeWriter_CanWrite()
-// calls this function when assertions are enabled.
-PyAPI_FUNC(int) _PyUnicode_IsModifiable(PyObject *unicode);
+extern int _PyUnicode_IsModifiable(PyObject *unicode);
 extern void _PyUnicodeWriter_InitWithBuffer(
     _PyUnicodeWriter *writer,
     PyObject *buffer);
