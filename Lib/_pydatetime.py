@@ -220,6 +220,7 @@ def _wrap_strftime(object, format, timetuple):
     zreplace = None  # the string to use for %z
     colonzreplace = None  # the string to use for %:z
     Zreplace = None  # the string to use for %Z
+    sreplace = None  # the string to use for %s
 
     # Scan format for %z, %:z and %Z escapes, replacing as needed.
     newformat = []
@@ -270,6 +271,10 @@ def _wrap_strftime(object, format, timetuple):
                                 # strftime is going to have at this: escape %
                                 Zreplace = s.replace('%', '%%')
                     newformat.append(Zreplace)
+                elif ch == 's' and hasattr(object, "timestamp"):
+                    if sreplace is None:
+                        sreplace = str(_math.floor(object.timestamp()))
+                    newformat.append(sreplace)
                 # Note that datetime(1000, 1, 1).strftime('%G') == '1000' so
                 # year 1000 for %G can go on the fast path.
                 elif (ch in 'YGFC' and timetuple[0] < 1000 and
