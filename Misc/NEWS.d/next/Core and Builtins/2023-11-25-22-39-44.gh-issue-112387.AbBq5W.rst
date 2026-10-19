@@ -1,2 +1,0 @@
-Fix error positions for decoded strings with backwards tokenize errors.
-Patch by Pablo Galindo

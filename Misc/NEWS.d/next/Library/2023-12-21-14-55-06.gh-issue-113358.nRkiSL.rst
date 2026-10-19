@@ -1,1 +1,0 @@
-Fix rendering tracebacks with exceptions with a broken __getattr__

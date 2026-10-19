@@ -79,6 +79,7 @@ class Get_argspecTest(unittest.TestCase):
         tiptest(list.append, '(self, object, /)' + append_doc)
         tiptest(List.append, '(self, object, /)' + append_doc)
         tiptest([].append, '(object, /)' + append_doc)
+        # The use of 'object' above matches the signature text.
 
         tiptest(types.MethodType,
               '(function, instance, /)\n'
@@ -281,7 +282,7 @@ class mock_Shell:
     def __init__(self, text):
         text.tag_prevrange = Mock(return_value=None)
         self.text = text
-        self.prompt_last_line = ">>> "
+        self.is_shell = True
         self.indentwidth = 4
         self.tabwidth = 8
 

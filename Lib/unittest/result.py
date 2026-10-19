@@ -37,6 +37,9 @@ class TestResult(object):
     _moduleSetUpFailed = False
     def __init__(self, stream=None, descriptions=None, verbosity=None):
         self.failfast = False
+        # How much the test runner reports: 0 -- quiet, 1 -- progress dots,
+        # 2 -- test names, 3 -- also the examples of a doctest.
+        self.verbosity = 1 if verbosity is None else verbosity
         self.failures = []
         self.errors = []
         self.testsRun = 0
@@ -97,12 +100,10 @@ class TestResult(object):
 
             sys.stdout = self._original_stdout
             sys.stderr = self._original_stderr
-            if self._stdout_buffer is not None:
-                self._stdout_buffer.seek(0)
-                self._stdout_buffer.truncate()
-            if self._stderr_buffer is not None:
-                self._stderr_buffer.seek(0)
-                self._stderr_buffer.truncate()
+            self._stdout_buffer.seek(0)
+            self._stdout_buffer.truncate()
+            self._stderr_buffer.seek(0)
+            self._stderr_buffer.truncate()
 
     def stopTestRun(self):
         """Called once after all tests are executed.
@@ -191,7 +192,10 @@ class TestResult(object):
         tb_e = traceback.TracebackException(
             exctype, value, tb,
             capture_locals=self.tb_locals, compact=True)
-        msgLines = list(tb_e.format())
+        from _colorize import can_colorize
+
+        colorize = hasattr(self, "stream") and can_colorize(file=self.stream)
+        msgLines = list(tb_e.format(colorize=colorize))
 
         if self.buffer:
             output = sys.stdout.getvalue()

@@ -8,11 +8,12 @@
 */
 
 #include "Python.h"
-#include "pycore_bytesobject.h"         // _PyBytes_Join()
 #include "pycore_call.h"                // _PyObject_CallNoArgs()
+#include "pycore_fileutils.h"           // _PyFile_Flush
 #include "pycore_object.h"              // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"            // _Py_FatalErrorFormat()
 #include "pycore_pylifecycle.h"         // _Py_IsInterpreterFinalizing()
+#include "pycore_weakref.h"             // FT_CLEAR_WEAKREFS()
 
 #include "_iomodule.h"
 
@@ -171,6 +172,7 @@ _io__BufferedIOBase_read_impl(PyObject *self, PyTypeObject *cls,
 }
 
 /*[clinic input]
+@permit_long_summary
 _io._BufferedIOBase.read1
 
     cls: defining_class
@@ -186,7 +188,7 @@ A short result does not imply that EOF is imminent.
 static PyObject *
 _io__BufferedIOBase_read1_impl(PyObject *self, PyTypeObject *cls,
                                int Py_UNUSED(size))
-/*[clinic end generated code: output=2e7fc62972487eaa input=af76380e020fd9e6]*/
+/*[clinic end generated code: output=2e7fc62972487eaa input=1e76df255063afd6]*/
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return bufferediobase_unsupported(state, "read1");
@@ -261,6 +263,8 @@ typedef struct {
     PyObject *dict;
     PyObject *weakreflist;
 } buffered;
+
+#define buffered_CAST(op)   ((buffered *)(op))
 
 /*
     Implementation notes:
@@ -358,16 +362,24 @@ _enter_buffered_busy(buffered *self)
     }
 
 #define IS_CLOSED(self) \
-    (!self->buffer || \
+    (!self->buffer ? 1 : \
     (self->fast_closed_checks \
      ? _PyFileIO_closed(self->raw) \
      : buffered_closed(self)))
 
 #define CHECK_CLOSED(self, error_msg) \
-    if (IS_CLOSED(self) && (Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t) == 0)) { \
-        PyErr_SetString(PyExc_ValueError, error_msg); \
-        return NULL; \
-    } \
+    do { \
+        int _closed = IS_CLOSED(self); \
+        if (_closed < 0) { \
+            return NULL; \
+        } \
+        if (_closed && \
+            (Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t) == 0)) \
+        { \
+            PyErr_SetString(PyExc_ValueError, error_msg); \
+            return NULL; \
+        } \
+    } while (0);
 
 #define VALID_READ_BUFFER(self) \
     (self->readable && self->read_end != -1)
@@ -400,8 +412,9 @@ _enter_buffered_busy(buffered *self)
 
 
 static int
-buffered_clear(buffered *self)
+buffered_clear(PyObject *op)
 {
+    buffered *self = buffered_CAST(op);
     self->ok = 0;
     Py_CLEAR(self->raw);
     Py_CLEAR(self->dict);
@@ -409,16 +422,16 @@ buffered_clear(buffered *self)
 }
 
 static void
-buffered_dealloc(buffered *self)
+buffered_dealloc(PyObject *op)
 {
+    buffered *self = buffered_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     self->finalizing = 1;
-    if (_PyIOBase_finalize((PyObject *) self) < 0)
+    if (_PyIOBase_finalize(op) < 0)
         return;
     _PyObject_GC_UNTRACK(self);
     self->ok = 0;
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *)self);
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
     if (self->buffer) {
         PyMem_Free(self->buffer);
         self->buffer = NULL;
@@ -427,8 +440,8 @@ buffered_dealloc(buffered *self)
         PyThread_free_lock(self->lock);
         self->lock = NULL;
     }
-    (void)buffered_clear(self);
-    tp->tp_free((PyObject *)self);
+    (void)buffered_clear(op);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -449,8 +462,9 @@ _io__Buffered___sizeof___impl(buffered *self)
 }
 
 static int
-buffered_traverse(buffered *self, visitproc visit, void *arg)
+buffered_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    buffered *self = buffered_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->raw);
     Py_VISIT(self->dict);
@@ -469,8 +483,8 @@ _io._Buffered._dealloc_warn
 [clinic start generated code]*/
 
 static PyObject *
-_io__Buffered__dealloc_warn(buffered *self, PyObject *source)
-/*[clinic end generated code: output=690dcc3df8967162 input=8f845f2a4786391c]*/
+_io__Buffered__dealloc_warn_impl(buffered *self, PyObject *source)
+/*[clinic end generated code: output=d8db21c6dec0e614 input=8f845f2a4786391c]*/
 {
     if (self->ok && self->raw) {
         PyObject *r;
@@ -547,8 +561,8 @@ _io__Buffered_close_impl(buffered *self)
     if (!ENTER_BUFFERED(self)) {
         return NULL;
     }
-
-    r = buffered_closed(self);
+    /* gh-138720: Use IS_CLOSED to match flush CHECK_CLOSED. */
+    r = IS_CLOSED(self);
     if (r < 0)
         goto end;
     if (r > 0) {
@@ -557,7 +571,7 @@ _io__Buffered_close_impl(buffered *self)
     }
 
     if (self->finalizing) {
-        PyObject *r = _io__Buffered__dealloc_warn(self, (PyObject *) self);
+        PyObject *r = _io__Buffered__dealloc_warn_impl(self, (PyObject *)self);
         if (r)
             Py_DECREF(r);
         else
@@ -1020,9 +1034,6 @@ static PyObject *
 _io__Buffered_read1_impl(buffered *self, Py_ssize_t n)
 /*[clinic end generated code: output=bcc4fb4e54d103a3 input=3d0ad241aa52b36c]*/
 {
-    Py_ssize_t have, r;
-    PyObject *res = NULL;
-
     CHECK_INITIALIZED(self)
     if (n < 0) {
         n = self->buffer_size;
@@ -1030,38 +1041,54 @@ _io__Buffered_read1_impl(buffered *self, Py_ssize_t n)
 
     CHECK_CLOSED(self, "read of closed file")
 
-    if (n == 0)
-        return PyBytes_FromStringAndSize(NULL, 0);
+    if (n == 0) {
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    }
 
     /* Return up to n bytes.  If at least one byte is buffered, we
        only return buffered bytes.  Otherwise, we do one raw read. */
 
-    have = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
+    Py_ssize_t have = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
     if (have > 0) {
         n = Py_MIN(have, n);
-        res = _bufferedreader_read_fast(self, n);
+        PyObject *res = _bufferedreader_read_fast(self, n);
         assert(res != Py_None);
         return res;
     }
-    res = PyBytes_FromStringAndSize(NULL, n);
-    if (res == NULL)
-        return NULL;
+
     if (!ENTER_BUFFERED(self)) {
-        Py_DECREF(res);
         return NULL;
+    }
+
+    /* Flush the write buffer if necessary */
+    if (self->writable) {
+        PyObject *res = buffered_flush_and_rewind_unlocked(self);
+        if (res == NULL) {
+            LEAVE_BUFFERED(self)
+            return NULL;
+        }
+        Py_DECREF(res);
     }
     _bufferedreader_reset_buf(self);
-    r = _bufferedreader_raw_read(self, PyBytes_AS_STRING(res), n);
-    LEAVE_BUFFERED(self)
-    if (r == -1) {
-        Py_DECREF(res);
+
+    PyBytesWriter *writer = PyBytesWriter_Create(n);
+    if (writer == NULL) {
+        LEAVE_BUFFERED(self)
         return NULL;
     }
-    if (r == -2)
+
+    Py_ssize_t r = _bufferedreader_raw_read(self,
+                                            PyBytesWriter_GetData(writer), n);
+    LEAVE_BUFFERED(self)
+    if (r == -1) {
+        PyBytesWriter_Discard(writer);
+        return NULL;
+    }
+    if (r == -2) {
         r = 0;
-    if (n > r)
-        _PyBytes_Resize(&res, r);
-    return res;
+    }
+
+    return PyBytesWriter_FinishWithSize(writer, r);
 }
 
 static PyObject *
@@ -1178,109 +1205,113 @@ _io__Buffered_readinto1_impl(buffered *self, Py_buffer *buffer)
 static PyObject *
 _buffered_readline(buffered *self, Py_ssize_t limit)
 {
-    PyObject *res = NULL;
-    PyObject *chunks = NULL;
-    Py_ssize_t n;
-    const char *start, *s, *end;
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
 
     CHECK_CLOSED(self, "readline of closed file")
 
     /* First, try to find a line in the buffer. This can run unlocked because
        the calls to the C API are simple enough that they can't trigger
        any thread switch. */
-    n = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
-    if (limit >= 0 && n > limit)
+    Py_ssize_t n = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
+    if (limit >= 0 && n > limit) {
         n = limit;
-    start = self->buffer + self->pos;
-    s = memchr(start, '\n', n);
-    if (s != NULL) {
-        res = PyBytes_FromStringAndSize(start, s - start + 1);
-        if (res != NULL)
-            self->pos += s - start + 1;
-        goto end_unlocked;
     }
-    if (n == limit) {
-        res = PyBytes_FromStringAndSize(start, n);
-        if (res != NULL)
-            self->pos += n;
-        goto end_unlocked;
+    const char *start = self->buffer + self->pos;
+    const char *s = memchr(start, '\n', n);
+    if (s != NULL) {
+        n = s - start + 1;
+        PyObject *res = PyBytes_FromStringAndSize(start, n);
+        if (res == NULL) {
+            return NULL;
+        }
+        self->pos += n;
+        return res;
     }
 
-    if (!ENTER_BUFFERED(self))
-        goto end_unlocked;
+    if (n == limit) {
+        PyObject *res = PyBytes_FromStringAndSize(start, n);
+        if (res == NULL) {
+            return NULL;
+        }
+        self->pos += n;
+        return res;
+    }
+
+    PyBytesWriter *writer = NULL;
+    int locked = 0;
+    if (!ENTER_BUFFERED(self)) {
+        goto error;
+    }
+    locked = 1;
 
     /* Now we try to get some more from the raw stream */
-    chunks = PyList_New(0);
-    if (chunks == NULL)
-        goto end;
+    writer = PyBytesWriter_Create(0);
+    if (writer == NULL) {
+        goto error;
+    }
+
     if (n > 0) {
-        res = PyBytes_FromStringAndSize(start, n);
-        if (res == NULL)
-            goto end;
-        if (PyList_Append(chunks, res) < 0) {
-            Py_CLEAR(res);
-            goto end;
+        if (PyBytesWriter_WriteBytes(writer, start, n) < 0) {
+            goto error;
         }
-        Py_CLEAR(res);
         self->pos += n;
-        if (limit >= 0)
+        if (limit >= 0) {
             limit -= n;
+        }
     }
     if (self->writable) {
-        PyObject *r = buffered_flush_and_rewind_unlocked(self);
-        if (r == NULL)
-            goto end;
-        Py_DECREF(r);
+        PyObject *res = buffered_flush_and_rewind_unlocked(self);
+        if (res == NULL) {
+            goto error;
+        }
+        Py_DECREF(res);
     }
 
     for (;;) {
         _bufferedreader_reset_buf(self);
         n = _bufferedreader_fill_buffer(self);
-        if (n == -1)
-            goto end;
-        if (n <= 0)
-            break;
-        if (limit >= 0 && n > limit)
-            n = limit;
-        start = self->buffer;
-        end = start + n;
-        s = start;
-        while (s < end) {
-            if (*s++ == '\n') {
-                res = PyBytes_FromStringAndSize(start, s - start);
-                if (res == NULL)
-                    goto end;
-                self->pos = s - start;
-                goto found;
-            }
+        if (n == -1) {
+            goto error;
         }
-        res = PyBytes_FromStringAndSize(start, n);
-        if (res == NULL)
-            goto end;
+        if (n <= 0) {
+            break;
+        }
+        if (limit >= 0 && n > limit) {
+            n = limit;
+        }
+        start = self->buffer;
+        const char *newline = memchr(start, '\n', n);
+        if (newline != NULL) {
+            n = newline - start + 1;
+            if (PyBytesWriter_WriteBytes(writer, start, n) < 0) {
+                goto error;
+            }
+            self->pos = n;
+            goto found;
+        }
+
+        if (PyBytesWriter_WriteBytes(writer, start, n) < 0) {
+            goto error;
+        }
         if (n == limit) {
             self->pos = n;
             break;
         }
-        if (PyList_Append(chunks, res) < 0) {
-            Py_CLEAR(res);
-            goto end;
-        }
-        Py_CLEAR(res);
-        if (limit >= 0)
+        if (limit >= 0) {
             limit -= n;
+        }
     }
-found:
-    if (res != NULL && PyList_Append(chunks, res) < 0) {
-        Py_CLEAR(res);
-        goto end;
-    }
-    Py_XSETREF(res, _PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), chunks));
 
-end:
+found:
     LEAVE_BUFFERED(self)
-end_unlocked:
-    Py_XDECREF(chunks);
-    return res;
+    return PyBytesWriter_Finish(writer);
+
+error:
+    PyBytesWriter_Discard(writer);
+    if (locked) {
+        LEAVE_BUFFERED(self)
+    }
+    return NULL;
 }
 
 /*[clinic input]
@@ -1315,7 +1346,11 @@ _io__Buffered_tell_impl(buffered *self)
     if (pos == -1)
         return NULL;
     pos -= RAW_OFFSET(self);
-    /* TODO: sanity check (pos >= 0) */
+
+    // GH-95782
+    if (pos < 0)
+        pos = 0;
+
     return PyLong_FromOff_t(pos);
 }
 
@@ -1385,6 +1420,11 @@ _io__Buffered_seek_impl(buffered *self, PyObject *targetobj, int whence)
                 offset = target;
             if (offset >= -self->pos && offset <= avail) {
                 self->pos += offset;
+
+                // GH-95782
+                if (current - avail + offset < 0)
+                    return PyLong_FromOff_t(0);
+
                 return PyLong_FromOff_t(current - avail + offset);
             }
         }
@@ -1459,8 +1499,9 @@ end:
 }
 
 static PyObject *
-buffered_iternext(buffered *self)
+buffered_iternext(PyObject *op)
 {
+    buffered *self = buffered_CAST(op);
     PyObject *line;
     PyTypeObject *tp;
 
@@ -1468,11 +1509,13 @@ buffered_iternext(buffered *self)
 
     _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     tp = Py_TYPE(self);
-    if (Py_IS_TYPE(tp, state->PyBufferedReader_Type) ||
-        Py_IS_TYPE(tp, state->PyBufferedRandom_Type))
+    if (tp == state->PyBufferedReader_Type ||
+        tp == state->PyBufferedRandom_Type)
     {
         /* Skip method call overhead for speed */
+        Py_BEGIN_CRITICAL_SECTION(self);
         line = _buffered_readline(self, -1);
+        Py_END_CRITICAL_SECTION();
     }
     else {
         line = PyObject_CallMethodNoArgs((PyObject *)self,
@@ -1499,8 +1542,9 @@ buffered_iternext(buffered *self)
 }
 
 static PyObject *
-buffered_repr(buffered *self)
+buffered_repr(PyObject *op)
 {
+    buffered *self = buffered_CAST(op);
     PyObject *nameobj, *res;
 
     if (PyObject_GetOptionalAttr((PyObject *) self, &_Py_ID(name), &nameobj) < 0) {
@@ -1718,7 +1762,7 @@ _bufferedreader_read_all(buffered *self)
                 goto cleanup;
             }
             else {
-                tmp = _PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), chunks);
+                tmp = PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), chunks);
                 res = tmp;
                 goto cleanup;
             }
@@ -1760,18 +1804,18 @@ _bufferedreader_read_fast(buffered *self, Py_ssize_t n)
 static PyObject *
 _bufferedreader_read_generic(buffered *self, Py_ssize_t n)
 {
-    PyObject *res = NULL;
     Py_ssize_t current_size, remaining, written;
-    char *out;
 
     current_size = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
     if (n <= current_size)
         return _bufferedreader_read_fast(self, n);
 
-    res = PyBytes_FromStringAndSize(NULL, n);
-    if (res == NULL)
+    PyBytesWriter *writer = PyBytesWriter_Create(n);
+    if (writer == NULL) {
         goto error;
-    out = PyBytes_AS_STRING(res);
+    }
+    char *out = PyBytesWriter_GetData(writer);
+
     remaining = n;
     written = 0;
     if (current_size > 0) {
@@ -1800,11 +1844,9 @@ _bufferedreader_read_generic(buffered *self, Py_ssize_t n)
         if (r == 0 || r == -2) {
             /* EOF occurred or read() would block. */
             if (r == 0 || written > 0) {
-                if (_PyBytes_Resize(&res, written))
-                    goto error;
-                return res;
+                return PyBytesWriter_FinishWithSize(writer, written);
             }
-            Py_DECREF(res);
+            PyBytesWriter_Discard(writer);
             Py_RETURN_NONE;
         }
         remaining -= r;
@@ -1824,11 +1866,9 @@ _bufferedreader_read_generic(buffered *self, Py_ssize_t n)
         if (r == 0 || r == -2) {
             /* EOF occurred or read() would block. */
             if (r == 0 || written > 0) {
-                if (_PyBytes_Resize(&res, written))
-                    goto error;
-                return res;
+                return PyBytesWriter_FinishWithSize(writer, written);
             }
-            Py_DECREF(res);
+            PyBytesWriter_Discard(writer);
             Py_RETURN_NONE;
         }
         if (remaining > r) {
@@ -1847,10 +1887,10 @@ _bufferedreader_read_generic(buffered *self, Py_ssize_t n)
             break;
     }
 
-    return res;
+    return PyBytesWriter_Finish(writer);
 
 error:
-    Py_XDECREF(res);
+    PyBytesWriter_Discard(writer);
     return NULL;
 }
 
@@ -2054,6 +2094,7 @@ _io_BufferedWriter_write_impl(buffered *self, Py_buffer *buffer)
     PyObject *res = NULL;
     Py_ssize_t written, avail, remaining;
     Py_off_t offset;
+    int r;
 
     CHECK_INITIALIZED(self)
 
@@ -2062,7 +2103,11 @@ _io_BufferedWriter_write_impl(buffered *self, Py_buffer *buffer)
 
     /* Issue #31976: Check for closed file after acquiring the lock. Another
        thread could be holding the lock while closing the file. */
-    if (IS_CLOSED(self)) {
+    r = IS_CLOSED(self);
+    if (r < 0) {
+        goto error;
+    }
+    if (r > 0) {
         PyErr_SetString(PyExc_ValueError, "write to closed file");
         goto error;
     }
@@ -2073,7 +2118,7 @@ _io_BufferedWriter_write_impl(buffered *self, Py_buffer *buffer)
         self->raw_pos = 0;
     }
     avail = Py_SAFE_DOWNCAST(self->buffer_size - self->pos, Py_off_t, Py_ssize_t);
-    if (buffer->len <= avail) {
+    if (buffer->len <= avail && buffer->len < self->buffer_size) {
         memcpy(self->buffer + self->pos, buffer->buf, buffer->len);
         if (!VALID_WRITE_BUFFER(self) || self->write_pos > self->pos) {
             self->write_pos = self->pos;
@@ -2142,7 +2187,7 @@ _io_BufferedWriter_write_impl(buffered *self, Py_buffer *buffer)
     /* Then write buf itself. At this point the buffer has been emptied. */
     remaining = buffer->len;
     written = 0;
-    while (remaining > self->buffer_size) {
+    while (remaining >= self->buffer_size) {
         Py_ssize_t n = _bufferedwriter_raw_write(
             self, (char *) buffer->buf + written, buffer->len - written);
         if (n == -1) {
@@ -2209,6 +2254,8 @@ typedef struct {
     PyObject *weakreflist;
 } rwpair;
 
+#define rwpair_CAST(op) ((rwpair *)(op))
+
 /*[clinic input]
 _io.BufferedRWPair.__init__
     reader: object
@@ -2258,8 +2305,9 @@ _io_BufferedRWPair___init___impl(rwpair *self, PyObject *reader,
 }
 
 static int
-bufferedrwpair_traverse(rwpair *self, visitproc visit, void *arg)
+bufferedrwpair_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    rwpair *self = rwpair_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->dict);
     Py_VISIT(self->reader);
@@ -2268,8 +2316,9 @@ bufferedrwpair_traverse(rwpair *self, visitproc visit, void *arg)
 }
 
 static int
-bufferedrwpair_clear(rwpair *self)
+bufferedrwpair_clear(PyObject *op)
 {
+    rwpair *self = rwpair_CAST(op);
     Py_CLEAR(self->reader);
     Py_CLEAR(self->writer);
     Py_CLEAR(self->dict);
@@ -2277,94 +2326,153 @@ bufferedrwpair_clear(rwpair *self)
 }
 
 static void
-bufferedrwpair_dealloc(rwpair *self)
+bufferedrwpair_dealloc(PyObject *op)
 {
+    rwpair *self = rwpair_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *)self);
-    (void)bufferedrwpair_clear(self);
-    tp->tp_free((PyObject *) self);
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
+    (void)bufferedrwpair_clear(op);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
+/* Call the method of the underlying reader or writer.  The argument is
+   only passed if it is not NULL, so that the default of that method is
+   used otherwise. */
 static PyObject *
-_forward_call(buffered *self, PyObject *name, PyObject *args)
+_forward_call(buffered *self, PyObject *name, PyObject *arg)
 {
-    PyObject *func, *ret;
     if (self == NULL) {
         PyErr_SetString(PyExc_ValueError,
                         "I/O operation on uninitialized object");
         return NULL;
     }
 
-    func = PyObject_GetAttr((PyObject *)self, name);
-    if (func == NULL) {
-        PyErr_SetObject(PyExc_AttributeError, name);
-        return NULL;
+    if (arg == NULL) {
+        return PyObject_CallMethodNoArgs((PyObject *)self, name);
     }
-
-    ret = PyObject_CallObject(func, args);
-    Py_DECREF(func);
-    return ret;
+    return PyObject_CallMethodOneArg((PyObject *)self, name, arg);
 }
 
+/*[clinic input]
+_io.BufferedRWPair.read
+    size: object(c_default="NULL") = -1
+    /
+[clinic start generated code]*/
+
 static PyObject *
-bufferedrwpair_read(rwpair *self, PyObject *args)
+_io_BufferedRWPair_read_impl(rwpair *self, PyObject *size)
+/*[clinic end generated code: output=0668e3c5dbd3e93d input=eddb5e52aba9ebe5]*/
 {
-    return _forward_call(self->reader, &_Py_ID(read), args);
+    return _forward_call(self->reader, &_Py_ID(read), size);
 }
 
+/*[clinic input]
+_io.BufferedRWPair.peek
+    size: object(c_default="NULL") = 0
+    /
+[clinic start generated code]*/
+
 static PyObject *
-bufferedrwpair_peek(rwpair *self, PyObject *args)
+_io_BufferedRWPair_peek_impl(rwpair *self, PyObject *size)
+/*[clinic end generated code: output=190a267bd694efa0 input=36af95964bebe355]*/
 {
-    return _forward_call(self->reader, &_Py_ID(peek), args);
+    return _forward_call(self->reader, &_Py_ID(peek), size);
 }
 
+/*[clinic input]
+_io.BufferedRWPair.read1
+    size: object(c_default="NULL") = -1
+    /
+[clinic start generated code]*/
+
 static PyObject *
-bufferedrwpair_read1(rwpair *self, PyObject *args)
+_io_BufferedRWPair_read1_impl(rwpair *self, PyObject *size)
+/*[clinic end generated code: output=17ec19608f2bb825 input=9e94db423e490b58]*/
 {
-    return _forward_call(self->reader, &_Py_ID(read1), args);
+    return _forward_call(self->reader, &_Py_ID(read1), size);
 }
 
+/*[clinic input]
+_io.BufferedRWPair.readinto
+    buffer: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-bufferedrwpair_readinto(rwpair *self, PyObject *args)
+_io_BufferedRWPair_readinto_impl(rwpair *self, PyObject *buffer)
+/*[clinic end generated code: output=16c86b071015f7a4 input=ccd86ce2666261f7]*/
 {
-    return _forward_call(self->reader, &_Py_ID(readinto), args);
+    return _forward_call(self->reader, &_Py_ID(readinto), buffer);
 }
 
+/*[clinic input]
+_io.BufferedRWPair.readinto1
+    buffer: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-bufferedrwpair_readinto1(rwpair *self, PyObject *args)
+_io_BufferedRWPair_readinto1_impl(rwpair *self, PyObject *buffer)
+/*[clinic end generated code: output=f1577b6f54c2b02a input=613d9bf127f88a4a]*/
 {
-    return _forward_call(self->reader, &_Py_ID(readinto1), args);
+    return _forward_call(self->reader, &_Py_ID(readinto1), buffer);
 }
 
+/*[clinic input]
+_io.BufferedRWPair.write
+    buffer: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-bufferedrwpair_write(rwpair *self, PyObject *args)
+_io_BufferedRWPair_write_impl(rwpair *self, PyObject *buffer)
+/*[clinic end generated code: output=6f7509a747410c68 input=66c602422e3ec36f]*/
 {
-    return _forward_call(self->writer, &_Py_ID(write), args);
+    return _forward_call(self->writer, &_Py_ID(write), buffer);
 }
 
+/*[clinic input]
+_io.BufferedRWPair.flush
+[clinic start generated code]*/
+
 static PyObject *
-bufferedrwpair_flush(rwpair *self, PyObject *Py_UNUSED(ignored))
+_io_BufferedRWPair_flush_impl(rwpair *self)
+/*[clinic end generated code: output=0b2dcbe828718d6b input=e853da796ee61df1]*/
 {
     return _forward_call(self->writer, &_Py_ID(flush), NULL);
 }
 
+/*[clinic input]
+_io.BufferedRWPair.readable
+[clinic start generated code]*/
+
 static PyObject *
-bufferedrwpair_readable(rwpair *self, PyObject *Py_UNUSED(ignored))
+_io_BufferedRWPair_readable_impl(rwpair *self)
+/*[clinic end generated code: output=615967d4aa58f122 input=0475ed73d0a3167f]*/
 {
     return _forward_call(self->reader, &_Py_ID(readable), NULL);
 }
 
+/*[clinic input]
+_io.BufferedRWPair.writable
+[clinic start generated code]*/
+
 static PyObject *
-bufferedrwpair_writable(rwpair *self, PyObject *Py_UNUSED(ignored))
+_io_BufferedRWPair_writable_impl(rwpair *self)
+/*[clinic end generated code: output=c5a43c84e0195c11 input=3cfd44fb4757082f]*/
 {
     return _forward_call(self->writer, &_Py_ID(writable), NULL);
 }
 
+/*[clinic input]
+_io.BufferedRWPair.close
+[clinic start generated code]*/
+
 static PyObject *
-bufferedrwpair_close(rwpair *self, PyObject *Py_UNUSED(ignored))
+_io_BufferedRWPair_close_impl(rwpair *self)
+/*[clinic end generated code: output=5924ba5ecc78752a input=4087d69f2d8fc368]*/
 {
     PyObject *exc = NULL;
     PyObject *ret = _forward_call(self->writer, &_Py_ID(close), NULL);
@@ -2382,8 +2490,13 @@ bufferedrwpair_close(rwpair *self, PyObject *Py_UNUSED(ignored))
     return ret;
 }
 
+/*[clinic input]
+_io.BufferedRWPair.isatty
+[clinic start generated code]*/
+
 static PyObject *
-bufferedrwpair_isatty(rwpair *self, PyObject *Py_UNUSED(ignored))
+_io_BufferedRWPair_isatty_impl(rwpair *self)
+/*[clinic end generated code: output=d017c621ed879cb7 input=92833e3d60586e14]*/
 {
     PyObject *ret = _forward_call(self->writer, &_Py_ID(isatty), NULL);
 
@@ -2396,8 +2509,14 @@ bufferedrwpair_isatty(rwpair *self, PyObject *Py_UNUSED(ignored))
     return _forward_call(self->reader, &_Py_ID(isatty), NULL);
 }
 
+/*[clinic input]
+@getter
+_io.BufferedRWPair.closed
+[clinic start generated code]*/
+
 static PyObject *
-bufferedrwpair_closed_get(rwpair *self, void *context)
+_io_BufferedRWPair_closed_get_impl(rwpair *self)
+/*[clinic end generated code: output=4117400c74766f21 input=8248430ac54e5b25]*/
 {
     if (self->writer == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -2483,7 +2602,7 @@ static PyType_Slot bufferediobase_slots[] = {
 };
 
 /* Do not set Py_TPFLAGS_HAVE_GC so that tp_traverse and tp_clear are inherited */
-PyType_Spec bufferediobase_spec = {
+PyType_Spec _Py_bufferediobase_spec = {
     .name = "_io._BufferedIOBase",
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_IMMUTABLETYPE),
@@ -2512,8 +2631,7 @@ static PyMethodDef bufferedreader_methods[] = {
     _IO__BUFFERED_TRUNCATE_METHODDEF
     _IO__BUFFERED___SIZEOF___METHODDEF
 
-    {"__reduce__", _PyIOBase_cannot_pickle, METH_VARARGS},
-    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_VARARGS},
+    {"__getstate__", _PyIOBase_cannot_pickle, METH_NOARGS},
     {NULL, NULL}
 };
 
@@ -2547,7 +2665,7 @@ static PyType_Slot bufferedreader_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec bufferedreader_spec = {
+PyType_Spec _Py_bufferedreader_spec = {
     .name = "_io.BufferedReader",
     .basicsize = sizeof(buffered),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
@@ -2572,8 +2690,7 @@ static PyMethodDef bufferedwriter_methods[] = {
     _IO__BUFFERED_TELL_METHODDEF
     _IO__BUFFERED___SIZEOF___METHODDEF
 
-    {"__reduce__", _PyIOBase_cannot_pickle, METH_VARARGS},
-    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_VARARGS},
+    {"__getstate__", _PyIOBase_cannot_pickle, METH_NOARGS},
     {NULL, NULL}
 };
 
@@ -2606,7 +2723,7 @@ static PyType_Slot bufferedwriter_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec bufferedwriter_spec = {
+PyType_Spec _Py_bufferedwriter_spec = {
     .name = "_io.BufferedWriter",
     .basicsize = sizeof(buffered),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
@@ -2615,20 +2732,20 @@ PyType_Spec bufferedwriter_spec = {
 };
 
 static PyMethodDef bufferedrwpair_methods[] = {
-    {"read", (PyCFunction)bufferedrwpair_read, METH_VARARGS},
-    {"peek", (PyCFunction)bufferedrwpair_peek, METH_VARARGS},
-    {"read1", (PyCFunction)bufferedrwpair_read1, METH_VARARGS},
-    {"readinto", (PyCFunction)bufferedrwpair_readinto, METH_VARARGS},
-    {"readinto1", (PyCFunction)bufferedrwpair_readinto1, METH_VARARGS},
+    _IO_BUFFEREDRWPAIR_READ_METHODDEF
+    _IO_BUFFEREDRWPAIR_PEEK_METHODDEF
+    _IO_BUFFEREDRWPAIR_READ1_METHODDEF
+    _IO_BUFFEREDRWPAIR_READINTO_METHODDEF
+    _IO_BUFFEREDRWPAIR_READINTO1_METHODDEF
 
-    {"write", (PyCFunction)bufferedrwpair_write, METH_VARARGS},
-    {"flush", (PyCFunction)bufferedrwpair_flush, METH_NOARGS},
+    _IO_BUFFEREDRWPAIR_WRITE_METHODDEF
+    _IO_BUFFEREDRWPAIR_FLUSH_METHODDEF
 
-    {"readable", (PyCFunction)bufferedrwpair_readable, METH_NOARGS},
-    {"writable", (PyCFunction)bufferedrwpair_writable, METH_NOARGS},
+    _IO_BUFFEREDRWPAIR_READABLE_METHODDEF
+    _IO_BUFFEREDRWPAIR_WRITABLE_METHODDEF
 
-    {"close", (PyCFunction)bufferedrwpair_close, METH_NOARGS},
-    {"isatty", (PyCFunction)bufferedrwpair_isatty, METH_NOARGS},
+    _IO_BUFFEREDRWPAIR_CLOSE_METHODDEF
+    _IO_BUFFEREDRWPAIR_ISATTY_METHODDEF
 
     {NULL, NULL}
 };
@@ -2640,7 +2757,7 @@ static PyMemberDef bufferedrwpair_members[] = {
 };
 
 static PyGetSetDef bufferedrwpair_getset[] = {
-    {"closed", (getter)bufferedrwpair_closed_get, NULL, NULL},
+    _IO_BUFFEREDRWPAIR_CLOSED_GETSETDEF
     {NULL}
 };
 
@@ -2656,7 +2773,7 @@ static PyType_Slot bufferedrwpair_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec bufferedrwpair_spec = {
+PyType_Spec _Py_bufferedrwpair_spec = {
     .name = "_io.BufferedRWPair",
     .basicsize = sizeof(rwpair),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
@@ -2690,8 +2807,7 @@ static PyMethodDef bufferedrandom_methods[] = {
     _IO_BUFFEREDWRITER_WRITE_METHODDEF
     _IO__BUFFERED___SIZEOF___METHODDEF
 
-    {"__reduce__", _PyIOBase_cannot_pickle, METH_VARARGS},
-    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_VARARGS},
+    {"__getstate__", _PyIOBase_cannot_pickle, METH_NOARGS},
     {NULL, NULL}
 };
 
@@ -2725,7 +2841,7 @@ static PyType_Slot bufferedrandom_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec bufferedrandom_spec = {
+PyType_Spec _Py_bufferedrandom_spec = {
     .name = "_io.BufferedRandom",
     .basicsize = sizeof(buffered),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |

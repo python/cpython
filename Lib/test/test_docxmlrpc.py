@@ -127,7 +127,7 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
         self.client.request("GET", "/")
         response = self.client.getresponse()
 
-        self.assertIn((b'<dl><dt><a name="-&lt;lambda&gt;"><strong>'
+        self.assertIn((b'<dl class="doc"><dt><a id="-&lt;lambda&gt;"><strong>'
                        b'&lt;lambda&gt;</strong></a>(x, y)</dt></dl>'),
                       response.read())
 
@@ -144,16 +144,17 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
         response = self.client.getresponse().read()
 
         self.assertIn(
-            (b'<dl><dt><a name="-add"><strong>add</strong></a>(x, y)</dt><dd>'
-             b'<tt>Add&nbsp;two&nbsp;instances&nbsp;together.&nbsp;This&nbsp;'
-             b'follows&nbsp;<a href="https://peps.python.org/pep-0008/">'
-             b'PEP008</a>,&nbsp;but&nbsp;has&nbsp;nothing<br>\nto&nbsp;do&nbsp;'
-             b'with&nbsp;<a href="https://www.rfc-editor.org/rfc/rfc1952.txt">'
-             b'RFC1952</a>.&nbsp;Case&nbsp;should&nbsp;matter:&nbsp;pEp008&nbsp;'
-             b'and&nbsp;rFC1952.&nbsp;&nbsp;Things<br>\nthat&nbsp;start&nbsp;'
-             b'with&nbsp;http&nbsp;and&nbsp;ftp&nbsp;should&nbsp;be&nbsp;'
-             b'auto-linked,&nbsp;too:<br>\n<a href="http://google.com">'
-             b'http://google.com</a>.</tt></dd></dl>'), response)
+            (b'<dl class="doc"><dt><a id="-add"><strong>add</strong></a>'
+             b'(x, y)</dt><dd class="docstring">'
+             b'Add two instances together. This '
+             b'follows <a href="https://peps.python.org/pep-0008/">'
+             b'PEP008</a>, but has nothing\nto do '
+             b'with <a href="https://www.rfc-editor.org/rfc/rfc1952.txt">'
+             b'RFC1952</a>. Case should matter: pEp008 '
+             b'and rFC1952.  Things\nthat start '
+             b'with http and ftp should be '
+             b'auto-linked, too:\n<a href="http://google.com">'
+             b'http://google.com</a>.</dd></dl>'), response)
 
     @make_request_and_skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
@@ -167,22 +168,24 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
         response = self.client.getresponse().read()
 
         self.assertIn(
-            (b'<dl><dt><a name="-system.methodHelp"><strong>system.methodHelp'
-             b'</strong></a>(method_name)</dt><dd><tt><a href="#-system.method'
-             b'Help">system.methodHelp</a>(\'add\')&nbsp;=&gt;&nbsp;"Adds&nbsp;'
-             b'two&nbsp;integers&nbsp;together"<br>\n&nbsp;<br>\nReturns&nbsp;a'
-             b'&nbsp;string&nbsp;containing&nbsp;documentation&nbsp;for&nbsp;'
-             b'the&nbsp;specified&nbsp;method.</tt></dd></dl>\n<dl><dt><a name'
-             b'="-system.methodSignature"><strong>system.methodSignature</strong>'
-             b'</a>(method_name)</dt><dd><tt><a href="#-system.methodSignature">'
-             b'system.methodSignature</a>(\'add\')&nbsp;=&gt;&nbsp;[double,&nbsp;'
-             b'int,&nbsp;int]<br>\n&nbsp;<br>\nReturns&nbsp;a&nbsp;list&nbsp;'
-             b'describing&nbsp;the&nbsp;signature&nbsp;of&nbsp;the&nbsp;method.'
-             b'&nbsp;In&nbsp;the<br>\nabove&nbsp;example,&nbsp;the&nbsp;add&nbsp;'
-             b'method&nbsp;takes&nbsp;two&nbsp;integers&nbsp;as&nbsp;arguments'
-             b'<br>\nand&nbsp;returns&nbsp;a&nbsp;double&nbsp;result.<br>\n&nbsp;'
-             b'<br>\nThis&nbsp;server&nbsp;does&nbsp;NOT&nbsp;support&nbsp;system'
-             b'.methodSignature.</tt></dd></dl>'), response)
+            (b'<dl class="doc"><dt><a id="-system.methodHelp"><strong>'
+             b'system.methodHelp</strong></a>(method_name)</dt>'
+             b'<dd class="docstring"><a href="#-system.method'
+             b'Help">system.methodHelp</a>(\'add\') =&gt; "Adds '
+             b'two integers together"\n\nReturns a'
+             b' string containing documentation for '
+             b'the specified method.</dd></dl>\n<dl class="doc"><dt><a id'
+             b'="-system.methodSignature"><strong>system.methodSignature'
+             b'</strong></a>(method_name)</dt><dd class="docstring">'
+             b'<a href="#-system.methodSignature">'
+             b'system.methodSignature</a>(\'add\') =&gt; [double, '
+             b'int, int]\n\nReturns a list '
+             b'describing the signature of the method.'
+             b' In the\nabove example, the add '
+             b'method takes two integers as arguments'
+             b'\nand returns a double result.\n\n'
+             b'This server does NOT support system'
+             b'.methodSignature.</dd></dl>'), response)
 
     def test_autolink_dotted_methods(self):
         """Test that selfdot values are made strong automatically in the
@@ -190,7 +193,7 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
         self.client.request("GET", "/")
         response = self.client.getresponse()
 
-        self.assertIn(b"""Try&nbsp;self.<strong>add</strong>,&nbsp;too.""",
+        self.assertIn(b"""Try self.<strong>add</strong>, too.""",
                       response.read())
 
     def test_annotations(self):
@@ -198,11 +201,11 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
         self.client.request("GET", "/")
         response = self.client.getresponse()
         docstring = (b'' if sys.flags.optimize >= 2 else
-                     b'<dd><tt>Use&nbsp;function&nbsp;annotations.</tt></dd>')
+                     b'<dd class="docstring">Use function annotations.</dd>')
         self.assertIn(
-            (b'<dl><dt><a name="-annotation"><strong>annotation</strong></a>'
-             b'(x: int)</dt>' + docstring + b'</dl>\n'
-             b'<dl><dt><a name="-method_annotation"><strong>'
+            (b'<dl class="doc"><dt><a id="-annotation"><strong>annotation'
+             b'</strong></a>(x: int)</dt>' + docstring + b'</dl>\n'
+             b'<dl class="doc"><dt><a id="-method_annotation"><strong>'
              b'method_annotation</strong></a>(x: bytes)</dt></dl>'),
             response.read())
 
@@ -217,9 +220,11 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
 
         generated = self.serv.generate_html_documentation()
         title = re.search(r'<title>(.+?)</title>', generated).group()
-        documentation = re.search(r'<p><tt>(.+?)</tt></p>', generated).group()
+        documentation = re.search(r'<div class="docstring">(.+?)</div>',
+                                  generated).group()
         self.assertEqual('<title>Python: test_title&lt;script&gt;</title>', title)
-        self.assertEqual('<p><tt>test_documentation&lt;script&gt;</tt></p>', documentation)
+        self.assertEqual('<div class="docstring">test_documentation&lt;script&gt;</div>',
+                documentation)
 
 
 if __name__ == '__main__':

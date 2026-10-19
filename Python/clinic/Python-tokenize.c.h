@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 static PyObject *
 tokenizeriter_new_impl(PyTypeObject *type, PyObject *readline,
@@ -22,9 +23,11 @@ tokenizeriter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(extra_tokens), &_Py_ID(encoding), },
     };
     #undef NUM_KEYWORDS
@@ -49,7 +52,8 @@ tokenizeriter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     int extra_tokens;
     const char *encoding = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 1, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 1, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -65,13 +69,8 @@ tokenizeriter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         _PyArg_BadArgument("tokenizeriter", "argument 'encoding'", "str", fastargs[2]);
         goto exit;
     }
-    Py_ssize_t encoding_length;
-    encoding = PyUnicode_AsUTF8AndSize(fastargs[2], &encoding_length);
+    encoding = _PyUnicode_AsUTF8NoNUL(fastargs[2]);
     if (encoding == NULL) {
-        goto exit;
-    }
-    if (strlen(encoding) != (size_t)encoding_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_kwonly:
@@ -80,4 +79,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=dcd6ec48f06a092e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f9091945b96e09b7 input=a9049054013a1b77]*/

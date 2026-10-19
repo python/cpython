@@ -69,7 +69,7 @@ module syslog
 /*  only one instance, only one syslog, so globals should be ok,
  *  these fields are writable from the main interpreter only. */
 static PyObject *S_ident_o = NULL;  // identifier, held by openlog()
-static char S_log_open = 0;
+static int S_log_open = 0;
 
 static inline int
 is_main_interpreter(void)
@@ -89,49 +89,55 @@ syslog_get_argv(void)
     Py_ssize_t argv_len, scriptlen;
     PyObject *scriptobj;
     Py_ssize_t slash;
-    PyObject *argv = PySys_GetObject("argv");
+    PyObject *argv;
 
-    if (argv == NULL) {
-        return(NULL);
+    if (PySys_GetOptionalAttrString("argv", &argv) <= 0) {
+        return NULL;
     }
 
     argv_len = PyList_Size(argv);
     if (argv_len == -1) {
         PyErr_Clear();
-        return(NULL);
+        Py_DECREF(argv);
+        return NULL;
     }
     if (argv_len == 0) {
-        return(NULL);
+        Py_DECREF(argv);
+        return NULL;
     }
 
     scriptobj = PyList_GetItem(argv, 0);
+    Py_XINCREF(scriptobj);
+    Py_DECREF(argv);
     if (scriptobj == NULL) {
         PyErr_Clear();
         return NULL;
     }
     if (!PyUnicode_Check(scriptobj)) {
-        return(NULL);
+        Py_DECREF(scriptobj);
+        return NULL;
     }
     scriptlen = PyUnicode_GET_LENGTH(scriptobj);
     if (scriptlen == 0) {
-        return(NULL);
+        Py_DECREF(scriptobj);
+        return NULL;
     }
 
     slash = PyUnicode_FindChar(scriptobj, SEP, 0, scriptlen, -1);
     if (slash == -2) {
         PyErr_Clear();
+        Py_DECREF(scriptobj);
         return NULL;
     }
     if (slash != -1) {
-        return PyUnicode_Substring(scriptobj, slash + 1, scriptlen);
-    } else {
-        Py_INCREF(scriptobj);
-        return(scriptobj);
+        Py_SETREF(scriptobj, PyUnicode_Substring(scriptobj, slash + 1, scriptlen));
     }
+    return scriptobj;
 }
 
 
 /*[clinic input]
+@critical_section
 syslog.openlog
 
     ident: unicode = NULL
@@ -144,7 +150,7 @@ Set logging options of subsequent syslog() calls.
 static PyObject *
 syslog_openlog_impl(PyObject *module, PyObject *ident, long logopt,
                     long facility)
-/*[clinic end generated code: output=5476c12829b6eb75 input=8a987a96a586eee7]*/
+/*[clinic end generated code: output=5476c12829b6eb75 input=ee700b8786f81c23]*/
 {
     // Since the sys.openlog changes the process level state of syslog library,
     // this operation is only allowed for the main interpreter.
@@ -161,6 +167,9 @@ syslog_openlog_impl(PyObject *module, PyObject *ident, long logopt,
     else {
         /* get sys.argv[0] or NULL if we can't for some reason  */
         ident = syslog_get_argv();
+        if (ident == NULL && PyErr_Occurred()) {
+            return NULL;
+        }
     }
 
     /* At this point, ident should be INCREF()ed.  openlog(3) does not
@@ -175,12 +184,12 @@ syslog_openlog_impl(PyObject *module, PyObject *ident, long logopt,
         }
     }
     if (PySys_Audit("syslog.openlog", "Oll", ident ? ident : Py_None, logopt, facility) < 0) {
-        Py_DECREF(ident);
+        Py_XDECREF(ident);
         return NULL;
     }
 
     openlog(ident_str, logopt, facility);
-    S_log_open = 1;
+    _Py_atomic_store_int(&S_log_open, 1);
     Py_XSETREF(S_ident_o, ident);
 
     Py_RETURN_NONE;
@@ -189,6 +198,7 @@ syslog_openlog_impl(PyObject *module, PyObject *ident, long logopt,
 
 
 /*[clinic input]
+@critical_section
 syslog.syslog
 
     [
@@ -205,14 +215,14 @@ Send the string message to the system logger.
 static PyObject *
 syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
                    const char *message)
-/*[clinic end generated code: output=c3dbc73445a0e078 input=ac83d92b12ea3d4e]*/
+/*[clinic end generated code: output=c3dbc73445a0e078 input=6588ddb0b113af8e]*/
 {
     if (PySys_Audit("syslog.syslog", "is", priority, message) < 0) {
         return NULL;
     }
 
     /*  if log is not opened, open it now  */
-    if (!S_log_open) {
+    if (!_Py_atomic_load_int(&S_log_open)) {
         if (!is_main_interpreter()) {
             PyErr_SetString(PyExc_RuntimeError, "subinterpreter can't use syslog.syslog() "
                                                 "until the syslog is opened by the main interpreter");
@@ -225,10 +235,6 @@ syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
         Py_DECREF(openlog_ret);
     }
 
-    /* Incref ident, because it can be decrefed if syslog.openlog() is
-     * called when the GIL is released.
-     */
-    PyObject *ident = Py_XNewRef(S_ident_o);
 #ifdef __APPLE__
     // gh-98178: On macOS, libc syslog() is not thread-safe
     syslog(priority, "%s", message);
@@ -237,12 +243,12 @@ syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
     syslog(priority, "%s", message);
     Py_END_ALLOW_THREADS;
 #endif
-    Py_XDECREF(ident);
     Py_RETURN_NONE;
 }
 
 
 /*[clinic input]
+@critical_section
 syslog.closelog
 
 Reset the syslog module values and call the system library closelog().
@@ -250,22 +256,23 @@ Reset the syslog module values and call the system library closelog().
 
 static PyObject *
 syslog_closelog_impl(PyObject *module)
-/*[clinic end generated code: output=97890a80a24b1b84 input=fb77a54d447acf07]*/
+/*[clinic end generated code: output=97890a80a24b1b84 input=167f489868bd5a72]*/
 {
     // Since the sys.closelog changes the process level state of syslog library,
     // this operation is only allowed for the main interpreter.
     if (!is_main_interpreter()) {
-        PyErr_SetString(PyExc_RuntimeError, "sunbinterpreter can't use syslog.closelog()");
+        PyErr_SetString(PyExc_RuntimeError, "subinterpreter can't use syslog.closelog()");
         return NULL;
     }
 
     if (PySys_Audit("syslog.closelog", NULL) < 0) {
         return NULL;
     }
-    if (S_log_open) {
+
+    int was_open = _Py_atomic_exchange_int(&S_log_open, 0);
+    if (was_open) {
         closelog();
         Py_CLEAR(S_ident_o);
-        S_log_open = 0;
     }
     Py_RETURN_NONE;
 }
@@ -287,7 +294,13 @@ syslog_setlogmask_impl(PyObject *module, long maskpri)
         return -1;
     }
 
-    return setlogmask(maskpri);
+    static PyMutex setlogmask_mutex = {0};
+    PyMutex_Lock(&setlogmask_mutex);
+    // Linux man page (3): setlogmask() is MT-Unsafe race:LogMask.
+    long previous_mask = setlogmask(maskpri);
+    PyMutex_Unlock(&setlogmask_mutex);
+
+    return previous_mask;
 }
 
 /*[clinic input]
@@ -434,8 +447,10 @@ syslog_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot syslog_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, syslog_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

@@ -1,2 +1,0 @@
-Speed up a small handful of :mod:`pathlib` methods by removing some
-temporary objects.

@@ -9,13 +9,14 @@ import time
 import traceback
 import unittest
 from test import support
+from test.libregrtest.utils import sanitize_xml
 
 class RegressionTestResult(unittest.TextTestResult):
     USE_XML = False
 
     def __init__(self, stream, descriptions, verbosity):
         super().__init__(stream=stream, descriptions=descriptions,
-                         verbosity=2 if verbosity else 0)
+                         verbosity=verbosity)
         self.buffer = True
         if self.USE_XML:
             from xml.etree import ElementTree as ET
@@ -65,23 +66,24 @@ class RegressionTestResult(unittest.TextTestResult):
         if capture:
             if self._stdout_buffer is not None:
                 stdout = self._stdout_buffer.getvalue().rstrip()
-                ET.SubElement(e, 'system-out').text = stdout
+                ET.SubElement(e, 'system-out').text = sanitize_xml(stdout)
             if self._stderr_buffer is not None:
                 stderr = self._stderr_buffer.getvalue().rstrip()
-                ET.SubElement(e, 'system-err').text = stderr
+                ET.SubElement(e, 'system-err').text = sanitize_xml(stderr)
 
         for k, v in args.items():
             if not k or not v:
                 continue
+
             e2 = ET.SubElement(e, k)
             if hasattr(v, 'items'):
                 for k2, v2 in v.items():
                     if k2:
-                        e2.set(k2, str(v2))
+                        e2.set(k2, sanitize_xml(str(v2)))
                     else:
-                        e2.text = str(v2)
+                        e2.text = sanitize_xml(str(v2))
             else:
-                e2.text = str(v)
+                e2.text = sanitize_xml(str(v))
 
     @classmethod
     def __makeErrorDict(cls, err_type, err_value, err_tb):
@@ -148,10 +150,12 @@ class QuietRegressionTestRunner:
 
 def get_test_runner_class(verbosity, buffer=False):
     if verbosity:
+        # The verbosity of regrtest is one less than the verbosity of
+        # unittest: -v reports the test names, -vv also the doctest examples.
         return functools.partial(unittest.TextTestRunner,
                                  resultclass=RegressionTestResult,
                                  buffer=buffer,
-                                 verbosity=verbosity)
+                                 verbosity=verbosity + 1)
     return functools.partial(QuietRegressionTestRunner, buffer=buffer)
 
 def get_test_runner(stream, verbosity, capture_output=False):

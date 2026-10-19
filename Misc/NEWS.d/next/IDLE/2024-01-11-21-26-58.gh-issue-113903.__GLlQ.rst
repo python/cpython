@@ -1,1 +1,0 @@
-Fix rare failure of test.test_idle, in test_configdialog.

@@ -844,7 +844,7 @@ test.regrtest now can receive a list of test patterns to ignore (using the
 .. nonce: cNsA7S
 .. section: Build
 
-:mod:`asyncio` now raises :exc:`TyperError` when calling incompatible
+:mod:`asyncio` now raises :exc:`TypeError` when calling incompatible
 methods with an :class:`ssl.SSLSocket` socket.  Patch by Ido Michael.
 
 ..

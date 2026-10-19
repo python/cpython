@@ -1,2 +1,0 @@
-Fix possible :exc:`OverflowError` in :meth:`socket.socket.sendfile` when pass
-*count* larger than 2 GiB on 32-bit platform.

@@ -1,4 +1,0 @@
-Increase the backlog for :class:`multiprocessing.connection.Listener` objects created
-by :mod:`multiprocessing.manager` and :mod:`multiprocessing.resource_sharer` to
-significantly reduce the risk of getting a connection refused error when creating
-a :class:`multiprocessing.connection.Connection` to them.

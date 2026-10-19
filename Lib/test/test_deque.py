@@ -166,7 +166,7 @@ class TestBasic(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             n in d
 
-    def test_contains_count_stop_crashes(self):
+    def test_contains_count_index_stop_crashes(self):
         class A:
             def __eq__(self, other):
                 d.clear()
@@ -177,6 +177,10 @@ class TestBasic(unittest.TestCase):
         d = deque([A(), A()])
         with self.assertRaises(RuntimeError):
             _ = d.count(3)
+
+        d = deque([A()])
+        with self.assertRaises(RuntimeError):
+            d.index(0)
 
     def test_extend(self):
         d = deque('a')
@@ -282,6 +286,22 @@ class TestBasic(unittest.TestCase):
                             d.index(element, start, stop)
                     else:
                         self.assertEqual(d.index(element, start, stop), target)
+
+        # Test stop argument
+        for elem in d:
+            index = d.index(elem)
+            self.assertEqual(
+                index,
+                d.index(elem, 0),
+            )
+            self.assertEqual(
+                index,
+                d.index(elem, 0, len(d)),
+            )
+            self.assertEqual(
+                index,
+                d.index(elem, 0, len(d) + 100),
+            )
 
         # Test large start argument
         d = deque(range(0, 10000, 10))
@@ -834,7 +854,7 @@ class TestSubclass(unittest.TestCase):
                     self.assertEqual(list(d), list(e))
                     self.assertEqual(e.x, d.x)
                     self.assertEqual(e.z, d.z)
-                    self.assertFalse(hasattr(e, 'y'))
+                    self.assertNotHasAttr(e, 'y')
 
     def test_pickle_recursive(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
