@@ -1,2 +1,2 @@
-Add a fast path for :class:`types.NoneType` in
-:c:func:`PyUnicodeWriter_WriteRepr`. Patch by Donghee Na.
+Add a fast path for :const:`None` in :c:func:`PyUnicodeWriter_WriteRepr`.
+Patch by Donghee Na.
