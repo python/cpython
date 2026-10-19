@@ -14,7 +14,7 @@ extern "C" {
 #endif
 
 #ifdef Py_GIL_DISABLED
-static inline mi_theap_t *
+static inline struct mi_theap_s *
 _PyObject_GetAllocationHeap(_PyThreadStateImpl *tstate, PyTypeObject *tp)
 {
     struct _mimalloc_thread_state *m = &tstate->mimalloc;

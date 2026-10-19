@@ -12,6 +12,9 @@
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interpframe.h"   // _PyThreadState_HasStackSpace()
+#ifdef Py_GIL_DISABLED
+#  include "pycore_mimalloc.h"    // mi_heap_theap()
+#endif
 #include "pycore_object.h"        // _Py_ClearImmortal()
 #include "pycore_obmalloc.h"      // _PyMem_obmalloc_state_on_heap()
 #include "pycore_opcode_utils.h"  // NUM_COMMON_CONSTANTS
