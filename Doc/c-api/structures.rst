@@ -769,7 +769,7 @@ The following flags can be used with :c:member:`PyMemberDef.flags`:
 
    Soft-deprecated alias of :c:macro:`Py_AUDIT_READ` (note capitalization of
    the ``y``).
-   Only available with  ``#include "structmember.h"``. 
+   Only available with  ``#include "structmember.h"``.
 
    .. soft-deprecated:: 3.12
       Use :c:macro:`Py_AUDIT_READ` instead.
