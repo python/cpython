@@ -410,35 +410,36 @@ Creating an interpreter and running code in it::
 
     from concurrent import interpreters
 
-    with interpreters.create() as interp:
-        # Run in the current OS thread.
+    interp = interpreters.create()
 
-        interp.exec('print("spam!")')
+    # Run in the current OS thread.
 
-        interp.exec("""if True:
-            print('spam!')
-            """)
+    interp.exec('print("spam!")')
 
-        from textwrap import dedent
-        interp.exec(dedent("""
-            print('spam!')
-            """))
+    interp.exec("""if True:
+        print('spam!')
+        """)
 
-        def run(arg):
-            return arg
+    from textwrap import dedent
+    interp.exec(dedent("""
+        print('spam!')
+        """))
 
-        res = interp.call(run, 'spam!')
-        print(res)
+    def run(arg):
+        return arg
 
-        def run():
-            print('spam!')
+    res = interp.call(run, 'spam!')
+    print(res)
 
-        interp.call(run)
+    def run():
+        print('spam!')
 
-        # Run in new OS thread.
+    interp.call(run)
 
-        t = interp.call_in_thread(run)
-        t.join()
+    # Run in new OS thread.
+
+    t = interp.call_in_thread(run)
+    t.join()
 
 Communicating between interpreters with a queue::
 
