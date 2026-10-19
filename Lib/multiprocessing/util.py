@@ -174,7 +174,7 @@ _SUN_PATH_LEN_RESERVED = (
     len(os.path.sep) + _TMPSOCK_PREFIXLEN + _TMPSOCK_SUFFIXLEN
 )
 assert (
-    _SUN_PATH_MAX is None 
+    _SUN_PATH_MAX is None
     or _SUN_PATH_LEN_RESERVED < _SUN_PATH_MAX
 )
 
