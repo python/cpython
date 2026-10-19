@@ -3105,16 +3105,6 @@ PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
     return 0;
 }
 
-/*
- * CData objects are mutable, so they cannot be hashable!
- */
-static Py_hash_t
-PyCData_nohash(PyObject *self)
-{
-    PyErr_SetString(PyExc_TypeError, "unhashable type");
-    return -1;
-}
-
 /*[clinic input]
 @critical_section
 _ctypes.PyCData.__reduce__
@@ -3213,7 +3203,7 @@ static PyMethodDef PyCData_methods[] = {
 
 static PyType_Slot pycdata_slots[] = {
     {Py_tp_dealloc, PyCData_dealloc},
-    {Py_tp_hash, PyCData_nohash},
+    {Py_tp_hash, PyObject_HashNotImplemented},
     {Py_tp_doc, PyDoc_STR("XXX to be provided")},
     {Py_tp_traverse, PyCData_traverse},
     {Py_tp_clear, PyCData_clear},
