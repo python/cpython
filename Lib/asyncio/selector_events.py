@@ -1206,6 +1206,7 @@ class _SelectorSocketTransport(_SelectorTransport):
             super()._call_connection_lost(exc)
         finally:
             self._write_ready = None
+            self._read_ready_cb = None
             if self._empty_waiter is not None:
                 self._empty_waiter.set_exception(
                     ConnectionError("Connection is closed by peer"))
