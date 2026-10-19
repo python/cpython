@@ -1,0 +1,3 @@
+:func:`email.utils.encode_rfc2231` no longer percent-encodes the input string
+when both *charset* and *language* are ``None``.  This matches the behavior
+documented in the function's docstring. Patch by Florian Best.
