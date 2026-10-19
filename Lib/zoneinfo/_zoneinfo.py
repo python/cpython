@@ -11,6 +11,17 @@ from . import _common, _tzpath
 EPOCH = datetime(1970, 1, 1)
 EPOCHORDINAL = datetime(1970, 1, 1).toordinal()
 
+_SECONDS_PER_DAY = 24 * 60 * 60
+# Parsed transition times are less than 168 hours and explicit UTC offsets
+# less than 25 hours (26 with the default one-hour DST adjustment). Offset
+# differences are less than 50 hours. Their sum is less than 244 hours, so
+# an 11-day margin also covers looking back across a fold.
+_TZSTR_YEAR_BOUNDARY_MARGIN = 11 * _SECONDS_PER_DAY
+# Use the common-year length; in leap years this leaves an extra day of margin.
+_TZSTR_FAST_PATH_END = 365 * _SECONDS_PER_DAY - _TZSTR_YEAR_BOUNDARY_MARGIN
+# Each rule's day-of-year can vary by up to seven days between years.
+_TZSTR_RULE_ORDER_MARGIN = 2 * 7 * _SECONDS_PER_DAY
+
 # It is relatively expensive to construct new timedelta objects, and in most
 # cases we're looking at the same deltas, like integer numbers of hours, etc.
 # To improve speed and memory use, we'll keep a dictionary with references
@@ -474,15 +485,14 @@ class _TZStr:
     def _get_trans_info(self, ts, year, fold):
         """Get the information about the current transition - tti"""
 
-        # Even the largest parsed transition time (<168h), UTC offset
-        # (<25h), and fold (<50h) cannot reach 11 days from a year boundary.
-        year_start = (_post_epoch_days_before_year(year) + 1) * 86400
-        if year_start + 11 * 86400 <= ts < year_start + 354 * 86400:
+        year_start = (_post_epoch_days_before_year(year) + 1) * _SECONDS_PER_DAY
+        if (year_start + _TZSTR_YEAR_BOUNDARY_MARGIN <= ts
+                < year_start + _TZSTR_FAST_PATH_END):
             start, end = self.transitions(year)
             # Each rule's day-of-year can move by up to seven days between
             # years. Nearby rules can reverse order, allowing a previous
             # year's southern season to overlap this year's northern one.
-            if abs(end - start - self.dst_diff) > 14 * 86400:
+            if abs(end - start - self.dst_diff) > _TZSTR_RULE_ORDER_MARGIN:
                 if fold == (self.dst_diff >= 0):
                     end -= self.dst_diff
                 else:
@@ -518,12 +528,13 @@ class _TZStr:
         return self.std
 
     def _get_trans_info_fromutc(self, ts, year):
-        year_start = (_post_epoch_days_before_year(year) + 1) * 86400
-        if year_start + 11 * 86400 <= ts < year_start + 354 * 86400:
+        year_start = (_post_epoch_days_before_year(year) + 1) * _SECONDS_PER_DAY
+        if (year_start + _TZSTR_YEAR_BOUNDARY_MARGIN <= ts
+                < year_start + _TZSTR_FAST_PATH_END):
             start, end = self.transitions(year)
             start -= self.std.utcoff.total_seconds()
             end -= self.dst.utcoff.total_seconds()
-            if abs(end - start) > 14 * 86400:
+            if abs(end - start) > _TZSTR_RULE_ORDER_MARGIN:
                 before = ts - abs(self.dst_diff)
                 if start < end:
                     isdst = start <= ts < end

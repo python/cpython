@@ -1112,20 +1112,35 @@ class TZStrTest(ZoneInfoTestBase):
         # rule evaluation. Cover starts and ends, either sign of DST, and
         # rules displaced by both UTC offsets and extended transition hours.
         cases = (
+            # Positive DST starts on January 1 locally, but December 31 UTC.
             ("STD-2DST-3,J1/0,J200/0", datetime(2100, 12, 31, 22), 2, 3),
+            # Positive DST starts in January from the previous year's J365.
             ("STD2DST1,J365/26,J200/0", datetime(2101, 1, 1, 4), -2, -1),
+            # Negative DST starts on January 1 locally, but December 31 UTC.
             ("STD-2DST-1,J1/0,J200/0", datetime(2100, 12, 31, 22), 2, 1),
+            # Negative DST starts in January from the previous year's J365.
             ("STD2DST3,J365/26,J200/0", datetime(2101, 1, 1, 4), -2, -3),
+            # Positive DST ends on January 1 locally, but December 31 UTC.
             ("STD-2DST-3,J200/0,J1/0", datetime(2100, 12, 31, 21), 3, 2),
+            # Positive DST ends in January from the previous year's J365.
             ("STD2DST1,J200/0,J365/26", datetime(2101, 1, 1, 3), -1, -2),
+            # Negative DST ends on January 1 locally, but December 31 UTC.
             ("STD-2DST-1,J200/0,J1/0", datetime(2100, 12, 31, 23), 1, 2),
+            # Negative DST ends in January from the previous year's J365.
             ("STD2DST3,J200/0,J365/26", datetime(2101, 1, 1, 5), -3, -2),
+            # The most negative transition hour moves J1 into December.
             ("STD0DST-1,J1/-167,J200/0", datetime(2099, 12, 25, 1), 0, 1),
+            # The largest transition hour moves J365 into January.
             ("STD0DST-1,J200/0,J365/167", datetime(2101, 1, 6, 22), 1, 0),
+            # A month/week rule from year 0 supplies a transition in year 1.
             ("STD0DST-1,M12.5.0/167,M6.1.0/0", datetime(1, 1, 6, 23), 0, 1),
+            # A year-10000 rule supplies a transition within datetime's range.
             ("STD0DST-1,J1/-167,J200/0", datetime(9999, 12, 25, 1), 0, 1),
+            # A season starting in rule year 2023 ends in January 2025.
             ("STD0DST-1,J365/167,J365/166", datetime(2025, 1, 6, 21), 1, 0),
+            # The next season starts two hours after the preceding one ends.
             ("STD0DST-1,J365/167,J365/166", datetime(2025, 1, 6, 23), 0, 1),
+            # The same two-rule-year lookback must work through year -1.
             ("STD0DST-1,J365/167,J365/166", datetime(1, 1, 6, 21), 1, 0),
         )
         for tzstr, transition, old_hours, new_hours in cases:
