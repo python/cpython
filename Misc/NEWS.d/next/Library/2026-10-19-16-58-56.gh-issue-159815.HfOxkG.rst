@@ -1,0 +1,2 @@
+:mod:`hashlib`: fix exception messages that reported an earlier and unrelated
+OpenSSL error after a hash algorithm could not be found. Patch by Bénédikt Tran.
