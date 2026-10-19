@@ -1611,11 +1611,9 @@ class TracebackException:
                     )
                 else:
                     yield '    {}\n'.format(ltext)
-        if self.msg in (None, ''):
-            msg = "<no detail available>"
-        else:
         try:
-            (msg := m) or (msg :="<no detail available>")
+            if not (msg := self.msg):
+                msg = "<no detail available>"
         except TypeError:
             pass
         yield "{}{}{}: {}{}{}{}\n".format(
