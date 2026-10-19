@@ -4368,6 +4368,7 @@ PyInitConfig_SetStr(PyInitConfig *config, const char *name, const char* value)
 
     if (value == NULL && spec->type != PyConfig_MEMBER_WSTR_OPT) {
         initconfig_set_error(config, "config option string cannot be NULL");
+        return -1;
     }
 
     wchar_t **member = raw_member;
