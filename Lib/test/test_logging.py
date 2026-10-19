@@ -6909,7 +6909,7 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         rolloverAt = fh.rolloverAt
         dfn = self.fn + time.strftime(".%Y-%m-%d_%H-%M-%S",
                                       time.gmtime(rolloverAt - 1))
-        open(dfn, 'w').close()
+        os_helper.create_empty_file(dfn)
         self.rmfiles.append(dfn)
         with patch('time.time', return_value=rolloverAt):
             fh.doRollover()
