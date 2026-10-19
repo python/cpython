@@ -33,6 +33,10 @@ struct _Py_exc_state {
 
 extern void _PyExc_ClearExceptionGroupType(PyInterpreterState *);
 
+struct static_exception {
+    PyTypeObject *exc;
+    const char *name;
+};
 
 #ifdef __cplusplus
 }
