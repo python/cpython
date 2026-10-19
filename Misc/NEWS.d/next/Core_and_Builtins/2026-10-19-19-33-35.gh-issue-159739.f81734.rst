@@ -1,3 +1,2 @@
-Fix reference handling for empty ``skip_file_prefixes`` in
-:func:`warnings.warn`, and propagate allocation errors when creating the
-fallback filename.
+Fix a crash in :func:`warnings.warn` when ``skip_file_prefixes`` is an empty tuple subclass.
+Propagate allocation errors when creating the fallback filename.
