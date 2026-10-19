@@ -147,7 +147,7 @@ class Server(object):
     public = ['shutdown', 'create', 'accept_connection', 'get_methods',
               'debug_info', 'number_of_objects', 'dummy', 'incref', 'decref']
 
-    def __init__(self, registry, address, authkey, serializer):
+    def __init__(self, registry, address, authkey, serializer, backlog=None):
         if not isinstance(authkey, bytes):
             raise TypeError(
                 "Authkey {0!r} is type {1!s}, not bytes".format(
@@ -157,7 +157,7 @@ class Server(object):
         Listener, Client = listener_client[serializer]
 
         # do authentication later
-        self.listener = Listener(address=address, backlog=128)
+        self.listener = Listener(address=address, backlog=backlog)
         self.address = self.listener.address
 
         self.id_to_obj = {'0': (None, ())}
