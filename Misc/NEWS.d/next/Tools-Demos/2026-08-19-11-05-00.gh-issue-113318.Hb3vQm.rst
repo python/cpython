@@ -1,0 +1,5 @@
+Used alone, the ``@deleter`` directive in Argument Clinic now defines a
+separate function which deletes the attribute.
+It can be combined with a ``@setter`` defined in a separate block: the setter
+slot of the :c:type:`PyGetSetDef` entry is then filled with a function which
+dispatches to one of them.
