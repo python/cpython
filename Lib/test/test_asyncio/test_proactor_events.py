@@ -393,6 +393,8 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         close_transport(tr)
 
     def test_pause_resume_reading(self):
+        self.loop.set_settings(asyncio.EventLoopSettings(eager_timeout=0,
+                                                         eager_bunch_size=0))
         tr = self.socket_transport()
         index = 0
         msgs = [b'data1', b'data2', b'data3', b'data4', b'data5', b'']
