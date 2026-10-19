@@ -563,8 +563,13 @@ class WatchedFileHandler(logging.FileHandler):
         If underlying file has changed, reopen the file before emitting the
         record to it.
         """
-        self.reopenIfNeeded()
-        logging.FileHandler.emit(self, record)
+        # Report an error while reopening the file, like emit errors.
+        try:
+            self.reopenIfNeeded()
+        except Exception:
+            self.handleError(record)
+        else:
+            logging.FileHandler.emit(self, record)
 
 
 class SocketHandler(logging.Handler):
@@ -886,8 +891,9 @@ class SysLogHandler(logging.Handler):
         """
         Initialize a handler.
 
-        If address is specified as a string, a UNIX socket is used. To log to a
-        local syslogd, "SysLogHandler(address="/dev/log")" can be used.
+        If address is specified as a string or bytes, a UNIX socket is used.
+        To log to a local syslogd, "SysLogHandler(address="/dev/log")" can be
+        used.
         If facility is not specified, LOG_USER is used. If socktype is
         specified as socket.SOCK_DGRAM or socket.SOCK_STREAM, that specific
         socket type will be used. For Unix sockets, you can also specify a
@@ -901,7 +907,11 @@ class SysLogHandler(logging.Handler):
         self.socktype = socktype
         self.timeout = timeout
         self.socket = None
-        self.createSocket()
+        # The address is resolved again when emitting an event.
+        try:
+            self.createSocket()
+        except socket.gaierror:
+            pass
 
     def _connect_unixsocket(self, address):
         use_socktype = self.socktype
@@ -938,7 +948,7 @@ class SysLogHandler(logging.Handler):
         address = self.address
         socktype = self.socktype
 
-        if isinstance(address, str):
+        if not isinstance(address, (list, tuple)):
             self.unixsocket = True
             # Syslog server may be unavailable during handler initialisation.
             # C's openlog() function also ignores connection errors.

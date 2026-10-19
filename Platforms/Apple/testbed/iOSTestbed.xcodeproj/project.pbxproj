@@ -3,21 +3,14 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		607A66172B0EFA380010BFC8 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 607A66162B0EFA380010BFC8 /* AppDelegate.m */; };
-		607A66222B0EFA390010BFC8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 607A66212B0EFA390010BFC8 /* Assets.xcassets */; };
-		607A66252B0EFA390010BFC8 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 607A66232B0EFA390010BFC8 /* LaunchScreen.storyboard */; };
-		607A66282B0EFA390010BFC8 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 607A66272B0EFA390010BFC8 /* main.m */; };
-		607A66322B0EFA3A0010BFC8 /* TestbedTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 607A66312B0EFA3A0010BFC8 /* TestbedTests.m */; };
-		607A664C2B0EFC080010BFC8 /* Python.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 607A664A2B0EFB310010BFC8 /* Python.xcframework */; };
-		607A664D2B0EFC080010BFC8 /* Python.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 607A664A2B0EFB310010BFC8 /* Python.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		607A66502B0EFFE00010BFC8 /* Python.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 607A664A2B0EFB310010BFC8 /* Python.xcframework */; };
-		607A66512B0EFFE00010BFC8 /* Python.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 607A664A2B0EFB310010BFC8 /* Python.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		608619542CB77BA900F46182 /* app_packages in Resources */ = {isa = PBXBuildFile; fileRef = 608619532CB77BA900F46182 /* app_packages */; };
-		608619562CB7819B00F46182 /* app in Resources */ = {isa = PBXBuildFile; fileRef = 608619552CB7819B00F46182 /* app */; };
+		607A664C2B0EFC080010BFC8 /* Python{{abiflags}}.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 607A664A2B0EFB310010BFC8 /* Python{{abiflags}}.xcframework */; };
+		607A664D2B0EFC080010BFC8 /* Python{{abiflags}}.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 607A664A2B0EFB310010BFC8 /* Python{{abiflags}}.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		607A66502B0EFFE00010BFC8 /* Python{{abiflags}}.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 607A664A2B0EFB310010BFC8 /* Python{{abiflags}}.xcframework */; };
+		607A66512B0EFFE00010BFC8 /* Python{{abiflags}}.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 607A664A2B0EFB310010BFC8 /* Python{{abiflags}}.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -37,7 +30,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				607A664D2B0EFC080010BFC8 /* Python.xcframework in Embed Frameworks */,
+				607A664D2B0EFC080010BFC8 /* Python{{abiflags}}.xcframework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -48,7 +41,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				607A66512B0EFFE00010BFC8 /* Python.xcframework in Embed Frameworks */,
+				607A66512B0EFFE00010BFC8 /* Python{{abiflags}}.xcframework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -57,26 +50,47 @@
 
 /* Begin PBXFileReference section */
 		607A66122B0EFA380010BFC8 /* iOSTestbed.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iOSTestbed.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		607A66152B0EFA380010BFC8 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
-		607A66162B0EFA380010BFC8 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
-		607A66212B0EFA390010BFC8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		607A66242B0EFA390010BFC8 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
-		607A66272B0EFA390010BFC8 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		607A662D2B0EFA3A0010BFC8 /* iOSTestbedTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iOSTestbedTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		607A66312B0EFA3A0010BFC8 /* TestbedTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TestbedTests.m; sourceTree = "<group>"; };
-		607A664A2B0EFB310010BFC8 /* Python.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = Python.xcframework; sourceTree = "<group>"; };
-		607A66592B0F08600010BFC8 /* iOSTestbed-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "iOSTestbed-Info.plist"; sourceTree = "<group>"; };
-		608619532CB77BA900F46182 /* app_packages */ = {isa = PBXFileReference; lastKnownFileType = folder; path = app_packages; sourceTree = "<group>"; };
-		608619552CB7819B00F46182 /* app */ = {isa = PBXFileReference; lastKnownFileType = folder; path = app; sourceTree = "<group>"; };
+		607A664A2B0EFB310010BFC8 /* Python{{abiflags}}.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = "Python{{abiflags}}.xcframework"; sourceTree = "<group>"; };
 		60FE0EFB2E56BB6D00524F87 /* iOSTestbed.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = iOSTestbed.xctestplan; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		691FECCB8963969DDBED592E /* Exceptions for "iOSTestbed" folder in "iOSTestbed" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"iOSTestbed-Info.plist",
+			);
+			target = 607A66112B0EFA380010BFC8 /* iOSTestbed */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		607A66142B0EFA380010BFC8 /* iOSTestbed */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				691FECCB8963969DDBED592E /* Exceptions for "iOSTestbed" folder in "iOSTestbed" target */,
+			);
+			explicitFolders = (
+				app,
+				app_packages,
+			);
+			path = iOSTestbed;
+			sourceTree = "<group>";
+		};
+		607A66302B0EFA3A0010BFC8 /* TestbedTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = TestbedTests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		607A660F2B0EFA380010BFC8 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				607A664C2B0EFC080010BFC8 /* Python.xcframework in Frameworks */,
+				607A664C2B0EFC080010BFC8 /* Python{{abiflags}}.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -84,7 +98,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				607A66502B0EFFE00010BFC8 /* Python.xcframework in Frameworks */,
+				607A66502B0EFFE00010BFC8 /* Python{{abiflags}}.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -95,11 +109,10 @@
 			isa = PBXGroup;
 			children = (
 				60FE0EFB2E56BB6D00524F87 /* iOSTestbed.xctestplan */,
-				607A664A2B0EFB310010BFC8 /* Python.xcframework */,
+				607A664A2B0EFB310010BFC8 /* Python{{abiflags}}.xcframework */,
 				607A66142B0EFA380010BFC8 /* iOSTestbed */,
 				607A66302B0EFA3A0010BFC8 /* TestbedTests */,
 				607A66132B0EFA380010BFC8 /* Products */,
-				607A664F2B0EFFE00010BFC8 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -110,36 +123,6 @@
 				607A662D2B0EFA3A0010BFC8 /* iOSTestbedTests.xctest */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		607A66142B0EFA380010BFC8 /* iOSTestbed */ = {
-			isa = PBXGroup;
-			children = (
-				608619552CB7819B00F46182 /* app */,
-				608619532CB77BA900F46182 /* app_packages */,
-				607A66592B0F08600010BFC8 /* iOSTestbed-Info.plist */,
-				607A66152B0EFA380010BFC8 /* AppDelegate.h */,
-				607A66162B0EFA380010BFC8 /* AppDelegate.m */,
-				607A66212B0EFA390010BFC8 /* Assets.xcassets */,
-				607A66232B0EFA390010BFC8 /* LaunchScreen.storyboard */,
-				607A66272B0EFA390010BFC8 /* main.m */,
-			);
-			path = iOSTestbed;
-			sourceTree = "<group>";
-		};
-		607A66302B0EFA3A0010BFC8 /* TestbedTests */ = {
-			isa = PBXGroup;
-			children = (
-				607A66312B0EFA3A0010BFC8 /* TestbedTests.m */,
-			);
-			path = TestbedTests;
-			sourceTree = "<group>";
-		};
-		607A664F2B0EFFE00010BFC8 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -159,7 +142,12 @@
 			);
 			dependencies = (
 			);
+			fileSystemSynchronizedGroups = (
+				607A66142B0EFA380010BFC8 /* iOSTestbed */,
+			);
 			name = iOSTestbed;
+			packageProductDependencies = (
+			);
 			productName = iOSTestbed;
 			productReference = 607A66122B0EFA380010BFC8 /* iOSTestbed.app */;
 			productType = "com.apple.product-type.application";
@@ -178,7 +166,12 @@
 			dependencies = (
 				607A662F2B0EFA3A0010BFC8 /* PBXTargetDependency */,
 			);
+			fileSystemSynchronizedGroups = (
+				607A66302B0EFA3A0010BFC8 /* TestbedTests */,
+			);
 			name = iOSTestbedTests;
+			packageProductDependencies = (
+			);
 			productName = iOSTestbedTests;
 			productReference = 607A662D2B0EFA3A0010BFC8 /* iOSTestbedTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -210,6 +203,8 @@
 				Base,
 			);
 			mainGroup = 607A66092B0EFA380010BFC8;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
 			productRefGroup = 607A66132B0EFA380010BFC8 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -225,10 +220,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				607A66252B0EFA390010BFC8 /* LaunchScreen.storyboard in Resources */,
-				608619562CB7819B00F46182 /* app in Resources */,
-				607A66222B0EFA390010BFC8 /* Assets.xcassets in Resources */,
-				608619542CB77BA900F46182 /* app_packages in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -259,7 +250,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e\nsource $PROJECT_DIR/Python.xcframework/build/utils.sh\ninstall_python Python.xcframework app app_packages\n";
+			shellScript = "set -e\nsource $PROJECT_DIR/Python{{abiflags}}.xcframework/build/utils.sh\ninstall_python Python{{abiflags}}.xcframework app app_packages\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -269,8 +260,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				607A66172B0EFA380010BFC8 /* AppDelegate.m in Sources */,
-				607A66282B0EFA390010BFC8 /* main.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -278,7 +267,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				607A66322B0EFA3A0010BFC8 /* TestbedTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -291,17 +279,6 @@
 			targetProxy = 607A662E2B0EFA3A0010BFC8 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
-
-/* Begin PBXVariantGroup section */
-		607A66232B0EFA390010BFC8 /* LaunchScreen.storyboard */ = {
-			isa = PBXVariantGroup;
-			children = (
-				607A66242B0EFA390010BFC8 /* Base */,
-			);
-			name = LaunchScreen.storyboard;
-			sourceTree = "<group>";
-		};
-/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		607A663F2B0EFA3A0010BFC8 /* Debug */ = {
@@ -356,7 +333,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -411,7 +388,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -430,14 +407,14 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				HEADER_SEARCH_PATHS = "\"$(BUILT_PRODUCTS_DIR)/Python.framework/Headers\"";
+				HEADER_SEARCH_PATHS = "\"$(BUILT_PRODUCTS_DIR)/Python{{abiflags}}.framework/Headers\"";
 				INFOPLIST_FILE = "iOSTestbed/iOSTestbed-Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -461,14 +438,14 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				HEADER_SEARCH_PATHS = "\"$(BUILT_PRODUCTS_DIR)/Python.framework/Headers\"";
+				HEADER_SEARCH_PATHS = "\"$(BUILT_PRODUCTS_DIR)/Python{{abiflags}}.framework/Headers\"";
 				INFOPLIST_FILE = "iOSTestbed/iOSTestbed-Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -490,8 +467,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3HEZE76D99;
 				GENERATE_INFOPLIST_FILE = YES;
-				HEADER_SEARCH_PATHS = "\"$(BUILT_PRODUCTS_DIR)/Python.framework/Headers\"";
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				HEADER_SEARCH_PATHS = "\"$(BUILT_PRODUCTS_DIR)/Python{{abiflags}}.framework/Headers\"";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.python.iOSTestbedTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -510,8 +487,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3HEZE76D99;
 				GENERATE_INFOPLIST_FILE = YES;
-				HEADER_SEARCH_PATHS = "\"$(BUILT_PRODUCTS_DIR)/Python.framework/Headers\"";
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				HEADER_SEARCH_PATHS = "\"$(BUILT_PRODUCTS_DIR)/Python{{abiflags}}.framework/Headers\"";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.python.iOSTestbedTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
