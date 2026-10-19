@@ -11,7 +11,7 @@ import unittest
 import unittest.mock
 import weakref
 from concurrent import futures
-from concurrent.futures.process import BrokenProcessPool
+from concurrent.futures.process import BrokenProcessPool, _check_system_limits
 
 from test import support
 from test.support import hashlib_helper, threading_helper, warnings_helper
@@ -616,6 +616,13 @@ class ResultPipeSentinelTest(BaseTestCase):
     ProcessPoolExecutor's result queue is set up. gh-159689.
     """
 
+    def setUp(self):
+        super().setUp()
+        try:
+            _check_system_limits()
+        except NotImplementedError:
+            self.skipTest("ProcessPoolExecutor unavailable on this system")
+
     def _context(self):
         return mp.get_context("spawn")
 
@@ -623,26 +630,31 @@ class ResultPipeSentinelTest(BaseTestCase):
         ctx = self._context()
         reader, writer = ctx.Pipe(duplex=False)
         proc = ctx.Process(target=_send_result_header_only, args=(writer,))
+        started = False
         try:
             proc.start()
+            started = True
             proc.join(support.SHORT_TIMEOUT)
             self.assertEqual(proc.exitcode, 0)
-            started = time.monotonic()
+            t0 = time.monotonic()
             with self.assertRaises(mp.connection._SentinelReady):
                 reader.recv(sentinels=[proc.sentinel])
-            self.assertLess(time.monotonic() - started, support.SHORT_TIMEOUT)
+            self.assertLess(time.monotonic() - t0, support.SHORT_TIMEOUT)
         finally:
             writer.close()
             reader.close()
-            proc.join(support.SHORT_TIMEOUT)
-            proc.close()
+            if started:
+                proc.join(support.SHORT_TIMEOUT)
+                proc.close()
 
     def test_complete_message_still_received(self):
         ctx = self._context()
         reader, writer = ctx.Pipe(duplex=False)
         proc = ctx.Process(target=_send_object, args=(writer,))
+        started = False
         try:
             proc.start()
+            started = True
             proc.join(support.SHORT_TIMEOUT)
             self.assertEqual(proc.exitcode, 0)
             writer.close()
@@ -651,8 +663,9 @@ class ResultPipeSentinelTest(BaseTestCase):
         finally:
             writer.close()
             reader.close()
-            proc.join(support.SHORT_TIMEOUT)
-            proc.close()
+            if started:
+                proc.join(support.SHORT_TIMEOUT)
+                proc.close()
 
 
 create_executor_tests(globals(), ProcessPoolExecutorTest,
