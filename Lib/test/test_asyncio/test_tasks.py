@@ -1,5 +1,6 @@
 """Tests for tasks.py."""
 
+import _thread
 import collections
 import contextlib
 import contextvars
@@ -19,6 +20,7 @@ from asyncio import futures
 from asyncio import tasks
 from test.test_asyncio import utils as test_utils
 from test import support
+from test.support import threading_helper
 from test.support.script_helper import assert_python_ok
 from test.support.warnings_helper import ignore_warnings
 
@@ -1247,6 +1249,37 @@ class BaseTaskTests:
             t.cancel()
             with self.assertRaises(asyncio.CancelledError):
                 await t
+
+        self.loop.run_until_complete(self.new_task(self.loop, coro()))
+
+    def test_gather_discards_awaited_by_for_cancelled_sibling(self):
+        # gh-157213: same, when gather() is ended by a cancelled child
+        async def survivor():
+            await asyncio.Future()
+
+        async def coro():
+            t = self.new_task(self.loop, survivor())
+            victim = self.new_task(self.loop, asyncio.sleep(10))
+            victim.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await asyncio.gather(t, victim)
+            self.assertFalse(t._asyncio_awaited_by)
+            t.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await t
+
+        self.loop.run_until_complete(self.new_task(self.loop, coro()))
+
+    def test_gather_does_not_add_callback_to_outer(self):
+        # gh-158239: gather() must not add an internal done callback to
+        # the outer future just to maintain the await graph.
+        async def child():
+            await asyncio.sleep(0)
+
+        async def coro():
+            outer = asyncio.gather(child(), child())
+            self.assertFalse(outer._callbacks)
+            await outer
 
         self.loop.run_until_complete(self.new_task(self.loop, coro()))
 
@@ -3020,6 +3053,39 @@ class CTask_CFuture_Tests(BaseTaskTests, SetMethodsTest,
             task.__init__(coro(), loop=self.loop)
             self.loop.run_until_complete(task)
         self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
+
+    @threading_helper.requires_working_threading()
+    def test_task_created_during_thread_state_clear(self):
+        loop = self.loop
+        task = None
+        var = contextvars.ContextVar('var')
+        # Avoid recreating the thread state's context after it is cleared.
+        task_context = contextvars.Context()
+
+        async def noop():
+            pass
+
+        class CreatesTaskOnClear:
+            def __del__(self):
+                nonlocal task
+                task = loop.create_task(noop(), context=task_context)
+
+        def create_finalizer():
+            # gh-159041: Run the finalizer when PyThreadState_Clear()
+            # clears the thread's context.
+            var.set(CreatesTaskOnClear())
+
+        # threading.Thread owns its Context, so use _thread to make the
+        # Context lifetime match the thread state's lifetime.
+        handle = _thread.start_joinable_thread(create_finalizer)
+        handle.join(support.SHORT_TIMEOUT)
+        self.assertTrue(handle.is_done(), 'thread failed to exit')
+        self.assertIsNotNone(task)
+
+        try:
+            self.assertEqual(self.all_tasks(loop), {task})
+        finally:
+            loop.run_until_complete(task)
 
     def test_del__log_destroy_pending_segfault(self):
         async def coro():
