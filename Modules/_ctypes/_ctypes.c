@@ -4961,6 +4961,9 @@ static PyType_Spec pycunion_spec = {
 /*
   PyCArray_Type
 */
+static int Array_ass_item_lock_held(PyObject *, Py_ssize_t, PyObject *);
+static int Array_ass_subscript(PyObject *, PyObject *, PyObject *);
+
 static int
 Array_init(PyObject *self, PyObject *args, PyObject *kw)
 {
@@ -4973,6 +4976,22 @@ Array_init(PyObject *self, PyObject *args, PyObject *kw)
         return -1;
     }
     n = PyTuple_GET_SIZE(args);
+
+    /* Optimization: If the type doesn't override __setitem__, we can store the
+     * items directly (see gh-72113). */
+    PyMappingMethods *mp = Py_TYPE(self)->tp_as_mapping;
+    if (mp != NULL && mp->mp_ass_subscript == Array_ass_subscript) {
+        int result = 0;
+        Py_BEGIN_CRITICAL_SECTION(self);
+        for (i = 0; result >= 0 && i < n; ++i) {
+            PyObject *v = PyTuple_GET_ITEM(args, i);
+            assert(v != NULL);
+            result = Array_ass_item_lock_held(self, i, v);
+        }
+        Py_END_CRITICAL_SECTION();
+        return result;
+    }
+
     for (i = 0; i < n; ++i) {
         PyObject *v;
         v = PyTuple_GET_ITEM(args, i);
