@@ -4058,12 +4058,24 @@ subtype_getweakref(PyObject *obj, void *context)
     _PyObject_ASSERT((PyObject *)type,
                      ((type->tp_weaklistoffset + (Py_ssize_t)sizeof(PyObject *))
                       <= type->tp_basicsize));
+
+    /* Synchronize with weakref creation/destruction so the list head cannot
+     * be removed and freed between loading it and taking a reference. */
+    LOCK_WEAKREFS(obj);
     weaklistptr = (PyObject **)((char *)obj + type->tp_weaklistoffset);
-    if (*weaklistptr == NULL)
-        result = Py_None;
-    else
+    if (*weaklistptr == NULL) {
+        result = Py_NewRef(Py_None);
+    }
+    else if (_Py_TryIncref(*weaklistptr)) {
         result = *weaklistptr;
-    return Py_NewRef(result);
+    }
+    else {
+        result = Py_NewRef(Py_None);
+    }
+
+    UNLOCK_WEAKREFS(obj);
+
+    return result;
 }
 
 /* getset definitions for common descriptors */
@@ -6726,9 +6738,7 @@ done:
     Py_DECREF(name);
     Py_XDECREF(descr);
     // delay decref of the old value as lock-free type cache readers may access it
-    if (old_value != NULL && !_Py_IsImmortal(old_value)) {
-        _PyObject_XDecRefDelayed(old_value);
-    }
+    _PyObject_XDecRefDelayed(old_value);
     return res;
 }
 
