@@ -225,7 +225,7 @@ static inline size_t mi_arena_start_idx(mi_heap_t* heap, size_t tseq, size_t are
   return start;
 }
 
-bool mi_decl_forceinline mi_forall_arenas(mi_heap_t* heap, mi_arena_t* req_arena, size_t tseq, mi_forall_arena_fun_t* visit, const void* arg, void** result)
+mi_decl_forceinline bool mi_forall_arenas(mi_heap_t* heap, mi_arena_t* req_arena, size_t tseq, mi_forall_arena_fun_t* visit, const void* arg, void** result)
 {
   if (result != NULL) *result = NULL;
   const size_t arena_count = mi_arenas_get_count(heap->subproc);
@@ -274,7 +274,7 @@ static inline bool mi_arena_visit_suitable(mi_arena_t* arena, const void* arg, v
   }
 }
 
-bool mi_decl_forceinline mi_forall_suitable_arenas(mi_heap_t* heap, mi_arena_t* req_arena, size_t tseq, bool match_numa, int numa_node,
+mi_decl_forceinline bool mi_forall_suitable_arenas(mi_heap_t* heap, mi_arena_t* req_arena, size_t tseq, bool match_numa, int numa_node,
                                       bool allow_large, mi_forall_arena_fun_t* visit, const void* arg, void** result) {
   const mi_arena_suitable_visit_info_t info = { req_arena, match_numa, numa_node, allow_large, visit, arg };
   return mi_forall_arenas(heap, req_arena, tseq, &mi_arena_visit_suitable, &info, result);
