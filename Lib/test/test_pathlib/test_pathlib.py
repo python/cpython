@@ -2492,6 +2492,116 @@ class PathTest(PurePathTest):
                 self.assertNotIn(str(p12), concurrently_created)
             self.assertTrue(p.exists())
 
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
+    def test_mkdir_parents_umask(self):
+        # Test that parent directories respect umask when parent_mode is not set
+        p = self.cls(self.base, 'umasktest', 'child')
+        self.assertFalse(p.exists())
+        if os.name != 'nt':
+            with os_helper.temp_umask(0o002):
+                p.mkdir(0o755, parents=True)
+                self.assertTrue(p.exists())
+                # Leaf directory gets the specified mode
+                self.assertEqual(p.stat().st_mode & 0o777, 0o755)
+                # Parent directory respects umask (0o777 & ~0o002 = 0o775)
+                self.assertEqual(p.parent.stat().st_mode & 0o777, 0o775)
+
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
+    def test_mkdir_with_parent_mode(self):
+        # Test the parent_mode parameter
+        p = self.cls(self.base, 'newdirPM', 'subdirPM')
+        self.assertFalse(p.exists())
+        if os.name != 'nt':
+            with os_helper.temp_umask(0o022):
+                # Specify different modes for parent and leaf directories
+                p.mkdir(0o755, parents=True, parent_mode=0o750)
+                self.assertTrue(p.exists())
+                self.assertTrue(p.is_dir())
+                # Leaf directory gets the mode parameter
+                self.assertEqual(p.stat().st_mode & 0o777, 0o755)
+                # Parent directory gets the parent_mode parameter
+                self.assertEqual(p.parent.stat().st_mode & 0o777, 0o750)
+
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
+    def test_mkdir_parent_mode_deep_hierarchy(self):
+        # Test parent_mode with deep directory hierarchy
+        p = self.cls(self.base, 'level1PM', 'level2PM', 'level3PM')
+        self.assertFalse(p.exists())
+        if os.name != 'nt':
+            with os_helper.temp_umask(0o022):
+                p.mkdir(0o755, parents=True, parent_mode=0o700)
+                self.assertTrue(p.exists())
+                # Check that all parent directories have parent_mode
+                level1 = self.cls(self.base, 'level1PM')
+                level2 = level1 / 'level2PM'
+                self.assertEqual(level1.stat().st_mode & 0o777, 0o700)
+                self.assertEqual(level2.stat().st_mode & 0o777, 0o700)
+                # Leaf directory has the regular mode
+                self.assertEqual(p.stat().st_mode & 0o777, 0o755)
+
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
+    def test_mkdir_parent_mode_combined_with_umask(self):
+        # parent_mode, like mode, is combined with the process umask; it does
+        # not bypass it.
+        p = self.cls(self.base, 'umaskPM', 'child')
+        self.assertFalse(p.exists())
+        if os.name != 'nt':
+            with os_helper.temp_umask(0o022):
+                p.mkdir(0o777, parents=True, parent_mode=0o777)
+                self.assertTrue(p.exists())
+                # 0o777 is masked down to 0o755 by the 0o022 umask, for both
+                # the leaf (mode) and the parent (parent_mode).
+                self.assertEqual(p.stat().st_mode & 0o777, 0o755)
+                self.assertEqual(p.parent.stat().st_mode & 0o777, 0o755)
+
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
+    def test_mkdir_parent_mode_same_as_mode(self):
+        # Test setting parent_mode same as mode
+        p = self.cls(self.base, 'samedirPM', 'subdirPM')
+        self.assertFalse(p.exists())
+        if os.name != 'nt':
+            with os_helper.temp_umask(0o022):
+                p.mkdir(0o705, parents=True, parent_mode=0o705)
+                self.assertTrue(p.exists())
+                # Both directories should have the same mode
+                self.assertEqual(p.stat().st_mode & 0o777, 0o705)
+                self.assertEqual(p.parent.stat().st_mode & 0o777, 0o705)
+
     @needs_symlinks
     def test_symlink_to(self):
         P = self.cls(self.base)
@@ -2760,6 +2870,7 @@ class PathTest(PurePathTest):
             if (isinstance(e, PermissionError) or
                     "AF_UNIX path too long" in str(e)):
                 self.skipTest("cannot bind Unix socket: " + str(e))
+            raise
         self.assertTrue(P.is_socket())
         self.assertFalse(P.is_fifo())
         self.assertFalse(P.is_file())

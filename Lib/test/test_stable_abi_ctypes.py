@@ -929,6 +929,7 @@ SYMBOL_NAMES = (
     "Py_GetRecursionLimit",
     "Py_GetVersion",
     "Py_HasFileSystemDefaultEncoding",
+    "Py_HashBuffer",
     "Py_IS_TYPE",
     "Py_IncRef",
     "Py_Initialize",
@@ -1032,19 +1033,15 @@ if feature_macros['USE_STACKCHECK']:
         'PyOS_CheckStack',
     )
 
-EXPECTED_FEATURE_MACROS = set([
-    'HAVE_FORK',
-    'MS_WINDOWS',
-    'PY_HAVE_THREAD_NATIVE_ID',
-    'Py_REF_DEBUG',
-    'Py_TRACE_REFS',
-    'USE_STACKCHECK',
-])
-WINDOWS_FEATURE_MACROS = {
-    'HAVE_FORK': False,
-    'MS_WINDOWS': True,
-    'PY_HAVE_THREAD_NATIVE_ID': True,
-    'Py_REF_DEBUG': 'maybe',
-    'Py_TRACE_REFS': 'maybe',
-    'USE_STACKCHECK': 'maybe',
-}
+EXPECTED_FEATURE_MACROS = set(['HAVE_FORK',
+ 'MS_WINDOWS',
+ 'PY_HAVE_THREAD_NATIVE_ID',
+ 'Py_REF_DEBUG',
+ 'Py_TRACE_REFS',
+ 'USE_STACKCHECK'])
+WINDOWS_FEATURE_MACROS = {'HAVE_FORK': False,
+ 'MS_WINDOWS': True,
+ 'PY_HAVE_THREAD_NATIVE_ID': True,
+ 'Py_REF_DEBUG': 'maybe',
+ 'Py_TRACE_REFS': 'maybe',
+ 'USE_STACKCHECK': 'maybe'}

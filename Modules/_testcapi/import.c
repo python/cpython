@@ -1,6 +1,27 @@
 #include "parts.h"
 #include "util.h"
 
+static PyObject *
+pyimport_lazyimportwithoutframe(PyObject *self, PyObject *name)
+{
+    PyObject *lazy_import = PyImport_ImportModuleAttrString("builtins",
+                                                            "__lazy_import__");
+    if (lazy_import == NULL) {
+        return NULL;
+    }
+
+    // Simulate being called with no running Python frame (e.g. from a freshly
+    // attached C thread), so that PyEval_GetGlobals() returns NULL.
+    PyThreadState *tstate = PyThreadState_Get();
+    struct _PyInterpreterFrame *saved = tstate->current_frame;
+    tstate->current_frame = NULL;
+    PyObject *res = PyObject_CallOneArg(lazy_import, name);
+    tstate->current_frame = saved;
+
+    Py_DECREF(lazy_import);
+    return res;
+}
+
 // Test PyImport_ImportModuleAttr()
 static PyObject *
 pyimport_importmoduleattr(PyObject *self, PyObject *args)
@@ -41,8 +62,6 @@ pyimport_setlazyimportsmode(PyObject *self, PyObject *args)
         PyImport_SetLazyImportsMode(PyImport_LAZY_NORMAL);
     } else if (strcmp(PyUnicode_AsUTF8(mode), "all") == 0) {
         PyImport_SetLazyImportsMode(PyImport_LAZY_ALL);
-    } else if (strcmp(PyUnicode_AsUTF8(mode), "none") == 0) {
-        PyImport_SetLazyImportsMode(PyImport_LAZY_NONE);
     } else {
         PyErr_SetString(PyExc_ValueError, "invalid mode");
         return NULL;
@@ -59,8 +78,6 @@ pyimport_getlazyimportsmode(PyObject *self, PyObject *args)
             return PyUnicode_FromString("normal");
         case PyImport_LAZY_ALL:
             return PyUnicode_FromString("all");
-        case PyImport_LAZY_NONE:
-            return PyUnicode_FromString("none");
         default:
             PyErr_SetString(PyExc_ValueError, "unknown mode");
             return NULL;
@@ -99,6 +116,7 @@ static PyMethodDef test_methods[] = {
     {"PyImport_GetLazyImportsMode", pyimport_getlazyimportsmode, METH_NOARGS},
     {"PyImport_SetLazyImportsFilter", pyimport_setlazyimportsfilter, METH_VARARGS},
     {"PyImport_GetLazyImportsFilter", pyimport_getlazyimportsfilter, METH_NOARGS},
+    {"lazy_import_without_frame", pyimport_lazyimportwithoutframe, METH_O},
     {NULL},
 };
 

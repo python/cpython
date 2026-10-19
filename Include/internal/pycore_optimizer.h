@@ -31,9 +31,8 @@ extern "C" {
  * 4. A push followed by a matching return is net-zero on frame-specific
  *    fitness, excluding per-slot costs.
  */
-#define MAX_TARGET_LENGTH          (UOP_MAX_TRACE_LENGTH / 2)
 #define OPTIMIZER_EFFECTIVENESS    2
-#define FITNESS_INITIAL            (MAX_TARGET_LENGTH * OPTIMIZER_EFFECTIVENESS)
+#define MAX_TARGET_LENGTH          (FITNESS_INITIAL / OPTIMIZER_EFFECTIVENESS)
 
 /* Exit quality thresholds: trace stops when fitness < exit_quality.
  * Higher = trace is more willing to stop here. */
@@ -207,7 +206,7 @@ typedef struct _PyExecutorObject {
 PyAPI_FUNC(_PyExecutorObject*) _Py_GetExecutor(PyCodeObject *code, int offset);
 
 int _Py_ExecutorInit(_PyExecutorObject *, const _PyBloomFilter *);
-void _Py_ExecutorDetach(_PyExecutorObject *);
+PyAPI_FUNC(void) _Py_ExecutorDetach(_PyExecutorObject *);
 PyAPI_FUNC(void) _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj);
 
 /* We use a bloomfilter with k = 6, m = 256
@@ -313,7 +312,7 @@ int _Py_uop_analyze_and_optimize(
     _PyUOpInstruction *input, int trace_len, int curr_stackentries,
     _PyUOpInstruction *output, _PyBloomFilter *dependencies);
 
-extern PyTypeObject _PyUOpExecutor_Type;
+PyAPI_DATA(PyTypeObject) _PyUOpExecutor_Type;
 
 
 #define UOP_FORMAT_TARGET 0

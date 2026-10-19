@@ -50,7 +50,7 @@ _MAX_PIPE_ATTEMPTS = 100
 default_family = 'AF_INET'
 families = ['AF_INET']
 
-if hasattr(socket, 'AF_UNIX'):
+if hasattr(socket, 'AF_UNIX') and sys.platform != 'cygwin':
     default_family = 'AF_UNIX'
     families += ['AF_UNIX']
 

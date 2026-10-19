@@ -455,25 +455,12 @@ static PyObject *
 zlib_Compress_compress(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "compress",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     Py_buffer data = {NULL, NULL};
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("compress", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("compress", nargs, 1, 1)) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -503,8 +490,8 @@ PyDoc_STRVAR(zlib_Decompress_decompress__doc__,
 "    Unconsumed input data will be stored in\n"
 "    the unconsumed_tail attribute.\n"
 "\n"
-"After calling this function, some of the input data may still be stored in\n"
-"internal buffers for later processing.\n"
+"After calling this function, some of the input data may still be\n"
+"stored in internal buffers for later processing.\n"
 "Call the flush() method to clear these buffers.");
 
 #define ZLIB_DECOMPRESS_DECOMPRESS_METHODDEF    \
@@ -612,35 +599,22 @@ static PyObject *
 zlib_Compress_flush(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "flush",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     int mode = Z_FINISH;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("flush", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("flush", nargs, 0, 1)) {
         goto exit;
     }
     if (nargs < 1) {
-        goto skip_optional_posonly;
+        goto skip_optional;
     }
     mode = PyLong_AsInt(args[0]);
     if (mode == -1 && PyErr_Occurred()) {
         goto exit;
     }
-skip_optional_posonly:
+skip_optional:
     return_value = zlib_Compress_flush_impl((compobject *)self, cls, mode);
 
 exit:
@@ -716,25 +690,12 @@ static PyObject *
 zlib_Compress___deepcopy__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "__deepcopy__",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *memo;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("__deepcopy__", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("__deepcopy__", nargs, 1, 1)) {
         goto exit;
     }
     memo = args[0];
@@ -815,25 +776,12 @@ static PyObject *
 zlib_Decompress___deepcopy__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "__deepcopy__",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *memo;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("__deepcopy__", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("__deepcopy__", nargs, 1, 1)) {
         goto exit;
     }
     memo = args[0];
@@ -865,29 +813,16 @@ static PyObject *
 zlib_Decompress_flush(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "flush",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     Py_ssize_t length = DEF_BUF_SIZE;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("flush", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("flush", nargs, 0, 1)) {
         goto exit;
     }
     if (nargs < 1) {
-        goto skip_optional_posonly;
+        goto skip_optional;
     }
     {
         Py_ssize_t ival = -1;
@@ -901,7 +836,7 @@ zlib_Decompress_flush(PyObject *self, PyTypeObject *cls, PyObject *const *args, 
         }
         length = ival;
     }
-skip_optional_posonly:
+skip_optional:
     return_value = zlib_Decompress_flush_impl((compobject *)self, cls, length);
 
 exit:
@@ -914,18 +849,19 @@ PyDoc_STRVAR(zlib__ZlibDecompressor_decompress__doc__,
 "\n"
 "Decompress *data*, returning uncompressed data as bytes.\n"
 "\n"
-"If *max_length* is nonnegative, returns at most *max_length* bytes of\n"
-"decompressed data. If this limit is reached and further output can be\n"
-"produced, *self.needs_input* will be set to ``False``. In this case, the next\n"
-"call to *decompress()* may provide *data* as b\'\' to obtain more of the output.\n"
+"If *max_length* is nonnegative, returns at most *max_length* bytes\n"
+"of decompressed data.  If this limit is reached and further output\n"
+"can be produced, *self.needs_input* will be set to ``False``.  In\n"
+"this case, the next call to *decompress()* may provide *data* as b\'\'\n"
+"to obtain more of the output.\n"
 "\n"
-"If all of the input data was decompressed and returned (either because this\n"
-"was less than *max_length* bytes, or because *max_length* was negative),\n"
-"*self.needs_input* will be set to True.\n"
+"If all of the input data was decompressed and returned (either\n"
+"because this was less than *max_length* bytes, or because\n"
+"*max_length* was negative), *self.needs_input* will be set to True.\n"
 "\n"
-"Attempting to decompress data after the end of stream is reached raises an\n"
-"EOFError.  Any data found after the end of the stream is ignored and saved in\n"
-"the unused_data attribute.");
+"Attempting to decompress data after the end of stream is reached\n"
+"raises an EOFError.  Any data found after the end of the stream is\n"
+"ignored and saved in the unused_data attribute.");
 
 #define ZLIB__ZLIBDECOMPRESSOR_DECOMPRESS_METHODDEF    \
     {"decompress", _PyCFunction_CAST(zlib__ZlibDecompressor_decompress), METH_FASTCALL|METH_KEYWORDS, zlib__ZlibDecompressor_decompress__doc__},
@@ -1402,4 +1338,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=13627e14206d3552 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f4c3b5abac20df9b input=a9049054013a1b77]*/

@@ -6,8 +6,6 @@
 Python support for the ``perf map`` compatible profilers
 ========================================================
 
-:author: Pablo Galindo
-
 `The Linux perf profiler <https://perf.wiki.kernel.org>`_ and
 `samply <https://github.com/mstange/samply>`_ are powerful tools that allow you to
 profile and obtain information about the performance of your application.

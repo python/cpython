@@ -806,7 +806,11 @@ def _get_type_from_annotation(annotation, cls):
     path = match[1].split(".")
     root = sys.modules.get(cls.__module__)
     for path_item in path:
-        root = getattr(root, path_item.strip(), None)
+        try:
+            root = getattr(root, path_item.strip(), None)
+        except Exception:
+            # Like annotationlib, ignore lazy imports that cannot be resolved.
+            return None
         if root is None:
             return None
 
@@ -1250,6 +1254,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
 # classes with slots.  These could be slightly more performant if we generated
 # the code instead of iterating over fields.  But that can be a project for
 # another day, if performance becomes an issue.
+
 def _dataclass_getstate(self):
     return [getattr(self, f.name) for f in fields(self)]
 
@@ -1644,7 +1649,7 @@ def _astuple_inner(obj, tuple_factory):
 def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
                    repr=True, eq=True, order=False, unsafe_hash=False,
                    frozen=False, match_args=True, kw_only=False, slots=False,
-                   weakref_slot=False, module=None, decorator=dataclass):
+                   weakref_slot=False, module=None, qualname=None, decorator=dataclass):
     """Return a new dynamically created dataclass.
 
     The dataclass name will be 'cls_name'.  'fields' is an iterable
@@ -1669,6 +1674,9 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
 
     If module parameter is defined, the '__module__' attribute of the dataclass is
     set to that value.
+
+    If qualname parameter is defined, the '__qualname__' attribute of the dataclass is set
+    to that value.
     """
 
     if namespace is None:
@@ -1757,6 +1765,9 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
                 pass
     if module is not None:
         cls.__module__ = module
+
+    if qualname:
+        cls.__qualname__ = qualname
 
     # Apply the normal provided decorator.
     cls = decorator(cls, init=init, repr=repr, eq=eq, order=order,
