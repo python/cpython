@@ -1,0 +1,2 @@
+Ensure that MD5 and SHA* objects are properly GC-untracked before freeing
+their internal HACL* state. Patch by Bénédikt Tran.
