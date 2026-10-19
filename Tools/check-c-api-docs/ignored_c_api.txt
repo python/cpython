@@ -35,8 +35,6 @@ PyDescr_TYPE
 PyWrapperFlag_KEYWORDS
 # cpython/fileobject.h
 Py_UniversalNewlineFgets
-# cpython/pylifecycle.h
-Py_FrozenMain
 # cpython/objimpl.h
 PyObject_GET_WEAKREFS_LISTPTR
 # cpython/pythonrun.h
