@@ -1481,14 +1481,29 @@ dayrule_new(int julian, int day, int hour, int minute,
     return 0;
 }
 
-/* Calculate the start and end rules for a _tzrule in the given year. */
+/* Calculate a DST period starting in the given rule year, in UTC. */
 static void
-tzrule_transitions(_tzrule *rule, int year, int64_t *start, int64_t *end)
+tzrule_dst_period(_tzrule *rule, int year, int64_t *start, int64_t *end)
 {
     assert(rule->start != NULL);
     assert(rule->end != NULL);
+    // ymd_to_ord assumes positive years. The Gregorian calendar repeats
+    // every 400 years, allowing year 1 lookups to use earlier rules too.
+    int64_t shift = 0;
+    if (year <= 0) {
+        year += 400;
+        shift = 146097LL * 86400;
+    }
     *start = rule->start->year_to_timestamp(rule->start, year);
     *end = rule->end->year_to_timestamp(rule->end, year);
+    *start -= rule->std.utcoff_seconds;
+    *end -= rule->dst.utcoff_seconds;
+    if (*end <= *start) {
+        *end = rule->end->year_to_timestamp(rule->end, year + 1);
+        *end -= rule->dst.utcoff_seconds;
+    }
+    *start -= shift;
+    *end -= shift;
 }
 
 /* Calculate the _ttinfo that applies at a given local time from a _tzrule.
@@ -1506,11 +1521,6 @@ find_tzrule_ttinfo(_tzrule *rule, int64_t ts, unsigned char fold, int year)
         return &(rule->std);
     }
 
-    int64_t start, end;
-    uint8_t isdst;
-
-    tzrule_transitions(rule, year, &start, &end);
-
     // With fold = 0, the period (denominated in local time) with the smaller
     // offset starts at the end of the gap and ends at the end of the fold;
     // with fold = 1, it runs from the start of the gap to the beginning of the
@@ -1520,25 +1530,26 @@ find_tzrule_ttinfo(_tzrule *rule, int64_t ts, unsigned char fold, int year)
     // fold and whether DST is positive or negative (rare), and it turns out
     // that this boils down to fold XOR is_positive.
     if (fold == (rule->dst_diff >= 0)) {
-        end -= rule->dst_diff;
+        ts -= rule->std.utcoff_seconds;
     }
     else {
-        start += rule->dst_diff;
+        ts -= rule->dst.utcoff_seconds;
     }
 
-    if (start < end) {
-        isdst = (ts >= start) && (ts < end);
+    // Transition times and UTC offsets can move a rule into an adjacent
+    // year. The union joins touching permanent-DST periods without a gap
+    // or fold.
+    // A southern season shifted into the following January can still be
+    // active two rule years after its start year.
+    int years[] = {year, year - 1, year + 1, year - 2};
+    for (size_t i = 0; i < 4; i++) {
+        int64_t start, end;
+        tzrule_dst_period(rule, years[i], &start, &end);
+        if (start <= ts && ts < end) {
+            return &(rule->dst);
+        }
     }
-    else {
-        isdst = (ts < end) || (ts >= start);
-    }
-
-    if (isdst) {
-        return &(rule->dst);
-    }
-    else {
-        return &(rule->std);
-    }
+    return &(rule->std);
 }
 
 /* Calculate the ttinfo and fold that applies for a _tzrule at an epoch time.
@@ -1561,33 +1572,23 @@ find_tzrule_ttinfo_fromutc(_tzrule *rule, int64_t ts, int year,
         return &(rule->std);
     }
 
-    int64_t start, end;
-    uint8_t isdst;
-    tzrule_transitions(rule, year, &start, &end);
-    start -= rule->std.utcoff_seconds;
-    end -= rule->dst.utcoff_seconds;
-
-    if (start < end) {
-        isdst = (ts >= start) && (ts < end);
-    }
-    else {
-        isdst = (ts < end) || (ts >= start);
-    }
-
-    // For positive DST, the ambiguous period is one dst_diff after the end of
-    // DST; for negative DST, the ambiguous period is one dst_diff before the
-    // start of DST.
-    int64_t ambig_start, ambig_end;
-    if (rule->dst_diff > 0) {
-        ambig_start = end;
-        ambig_end = end + rule->dst_diff;
-    }
-    else {
-        ambig_start = start;
-        ambig_end = start - rule->dst_diff;
+    uint8_t isdst = 0;
+    uint8_t wasdst = 0;
+    int64_t before = ts - llabs(rule->dst_diff);
+    int years[] = {year, year - 1, year + 1, year - 2};
+    for (size_t i = 0; i < 4; i++) {
+        int64_t start, end;
+        tzrule_dst_period(rule, years[i], &start, &end);
+        isdst |= (start <= ts && ts < end);
+        wasdst |= (start <= before && before < end);
+        if (isdst && wasdst) {
+            break;
+        }
     }
 
-    *fold = (ts >= ambig_start) && (ts < ambig_end);
+    // A nominal transition between permanent-DST periods does not create
+    // a fold: the offset must actually decrease.
+    *fold = rule->dst_diff > 0 ? (wasdst && !isdst) : (isdst && !wasdst);
 
     if (isdst) {
         return &(rule->dst);

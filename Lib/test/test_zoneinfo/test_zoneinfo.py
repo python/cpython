@@ -1077,6 +1077,130 @@ class TZStrTest(ZoneInfoTestBase):
 
                 self.assertEqual(dt_act, dt_utc)
 
+    def test_permanent_dst_year_boundary(self):
+        cases = (
+            ("STD-2DST-1,J1/0,J365/23", 1, -1),
+            ("STD2DST1,J1/0,J365/25", -1, 1),
+        )
+        for tzstr, offset, dst in cases:
+            zi = self.zone_from_tzstr(tzstr)
+            for year in (1, 2, 2019, 2020, 2100, 2400, 9998, 9999):
+                for month, day in ((1, 1), (12, 31)):
+                    for hour in (2, 12, 21, 22, 23):
+                        utc = datetime(year, month, day, hour,
+                                       tzinfo=timezone.utc)
+                        # Keep the expected local time within datetime's range.
+                        if year == 9999 and month == 12 and hour == 23:
+                            continue
+                        with self.subTest(tzstr=tzstr, utc=utc):
+                            local = utc.astimezone(zi)
+                            expected = utc.replace(tzinfo=None)
+                            expected += timedelta(hours=offset)
+                            self.assertEqual(local.replace(tzinfo=None), expected)
+                            self.assertEqual(local.fold, 0)
+                            self.assertEqual(local.tzname(), "DST")
+                            self.assertEqual(local.dst(), timedelta(hours=dst))
+                            self.assertEqual(local.astimezone(timezone.utc), utc)
+                            for fold in (0, 1):
+                                self.assertEqual(
+                                    local.replace(fold=fold).utcoffset(),
+                                    timedelta(hours=offset),
+                                )
+
+    def test_transitions_in_adjacent_year(self):
+        # UTC transition instants are stated explicitly, independently of the
+        # rule evaluation. Cover starts and ends, either sign of DST, and
+        # rules displaced by both UTC offsets and extended transition hours.
+        cases = (
+            ("STD-2DST-3,J1/0,J200/0", datetime(2100, 12, 31, 22), 2, 3),
+            ("STD2DST1,J365/26,J200/0", datetime(2101, 1, 1, 4), -2, -1),
+            ("STD-2DST-1,J1/0,J200/0", datetime(2100, 12, 31, 22), 2, 1),
+            ("STD2DST3,J365/26,J200/0", datetime(2101, 1, 1, 4), -2, -3),
+            ("STD-2DST-3,J200/0,J1/0", datetime(2100, 12, 31, 21), 3, 2),
+            ("STD2DST1,J200/0,J365/26", datetime(2101, 1, 1, 3), -1, -2),
+            ("STD-2DST-1,J200/0,J1/0", datetime(2100, 12, 31, 23), 1, 2),
+            ("STD2DST3,J200/0,J365/26", datetime(2101, 1, 1, 5), -3, -2),
+            ("STD0DST-1,J1/-167,J200/0", datetime(2099, 12, 25, 1), 0, 1),
+            ("STD0DST-1,J200/0,J365/167", datetime(2101, 1, 6, 22), 1, 0),
+            ("STD0DST-1,M12.5.0/167,M6.1.0/0", datetime(1, 1, 6, 23), 0, 1),
+            ("STD0DST-1,J1/-167,J200/0", datetime(9999, 12, 25, 1), 0, 1),
+            ("STD0DST-1,J365/167,J365/166", datetime(2025, 1, 6, 21), 1, 0),
+            ("STD0DST-1,J365/167,J365/166", datetime(2025, 1, 6, 23), 0, 1),
+            ("STD0DST-1,J365/167,J365/166", datetime(1, 1, 6, 21), 1, 0),
+        )
+        for tzstr, transition, old_hours, new_hours in cases:
+            zi = self.zone_from_tzstr(tzstr)
+            old_offset = timedelta(hours=old_hours)
+            new_offset = timedelta(hours=new_hours)
+            for seconds in (-3600, -1, 0, 1, 3599, 3600, 3601):
+                utc = (transition + timedelta(seconds=seconds)).replace(
+                    tzinfo=timezone.utc
+                )
+                offset = old_offset if seconds < 0 else new_offset
+                expected = utc.replace(tzinfo=None) + offset
+                fold = int(new_hours < old_hours and 0 <= seconds < 3600)
+                with self.subTest(tzstr=tzstr, utc=utc):
+                    local = utc.astimezone(zi)
+                    self.assertEqual(local.replace(tzinfo=None), expected)
+                    self.assertEqual(local.utcoffset(), offset)
+                    self.assertEqual(local.fold, fold)
+                    self.assertEqual(local.astimezone(timezone.utc), utc)
+
+            # Local lookups must disambiguate the gap or fold on both sides
+            # of New Year even when it belongs to a different rule year.
+            low = transition + min(old_offset, new_offset)
+            for seconds in (0, 1, 3599):
+                for fold, offset in ((0, old_offset), (1, new_offset)):
+                    local = (low + timedelta(seconds=seconds)).replace(
+                        tzinfo=zi, fold=fold
+                    )
+                    with self.subTest(tzstr=tzstr, local=local, fold=fold):
+                        self.assertEqual(local.utcoffset(), offset)
+
+    def test_rule_order_changes_between_years(self):
+        # In 2021 the first Sunday in March follows the first Monday,
+        # whereas in 2022 it precedes it. The 2021 DST period continues
+        # until March 2022, overlapping the short 2022 period.
+        zi = self.zone_from_tzstr("STD0DST-1,M3.1.0/0,M3.1.1/0")
+        for utc in (
+            datetime(2022, 1, 15, tzinfo=timezone.utc),
+            datetime(2022, 2, 1, tzinfo=timezone.utc),
+            datetime(2022, 3, 6, tzinfo=timezone.utc),
+        ):
+            with self.subTest(utc=utc):
+                local = utc.astimezone(zi)
+                self.assertEqual(local.utcoffset(), ONE_H)
+                self.assertEqual(local.fold, 0)
+                self.assertEqual(local.astimezone(timezone.utc), utc)
+
+    def test_short_dst_period_fold(self):
+        # A short DST period can end before its initial gap has elapsed.
+        # Only local times that actually occur twice should have fold=1.
+        # Exercise short periods near and away from New Year.
+        for day, month, month_day in ((1, 1, 1), (100, 4, 10)):
+            for dst_hours, end in ((1, "1:30"), (-1, "-0:30")):
+                tzstr = f"STD0DST{-dst_hours},J{day}/0,J{day}/{end}"
+                zi = self.zone_from_tzstr(tzstr)
+                transition = datetime(2025, month, month_day,
+                                      tzinfo=timezone.utc)
+                for minute in (-1, 0, 29, 30, 40, 59, 60, 89, 90):
+                    utc = transition + timedelta(minutes=minute)
+                    in_dst = 0 <= minute < 30
+                    offset = timedelta(hours=dst_hours if in_dst else 0)
+                    if dst_hours > 0:
+                        fold = int(60 <= minute < 90)
+                    else:
+                        fold = int(in_dst)
+                    with self.subTest(tzstr=tzstr, utc=utc):
+                        local = utc.astimezone(zi)
+                        self.assertEqual(local.fold, fold)
+                        self.assertEqual(local.utcoffset(), offset)
+                        self.assertEqual(
+                            local.replace(tzinfo=None),
+                            utc.replace(tzinfo=None) + offset,
+                        )
+                        self.assertEqual(local.astimezone(timezone.utc), utc)
+
     def test_extreme_tzstr(self):
         tzstrs = [
             # Extreme offset hour
