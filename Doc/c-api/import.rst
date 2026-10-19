@@ -408,7 +408,7 @@ Importing Modules
 
    *spec* must be a :class:`~importlib.machinery.ModuleSpec` object.
 
-   *initfunc* must be an :ref:`initialization function <extension-export-hook>`,
+   *initfunc* must be an :ref:`initialization function <extension-pyinit>`,
    the same as for :c:func:`PyImport_AppendInittab`.
 
    On success, create and return a module object.
@@ -417,10 +417,27 @@ Importing Modules
    (Custom importers should do this in their
    :py:meth:`~importlib.abc.Loader.exec_module` method.)
 
-   If the spec's name is dotted and *initfunc* creates the module using only
-   the last component of the name, the module's :attr:`~module.__name__`
-   is set to the full name from the spec.
-
    On error, return NULL with an exception set.
+
+   For modules using :ref:`legacy single-phase initialization <single-phase-initialization>`,
+   most of the import process is done in this function, rather than in
+   extra steps that importers typically take after
+   :py:meth:`~importlib.abc.Loader.create_module`.
+   Specifically:
+
+   - The module is added to :data:`sys.modules` under the *spec*'s
+     :py:attr:`~importlib.machinery.ModuleSpec.name` as part of initialization.
+   - If a single-phase module was previously imported under the
+     same :py:attr:`~importlib.machinery.ModuleSpec.name` by this function
+     or as a built-in module (for example, one registered with
+     :c:func:`PyImport_AppendInittab`), Python may reuse the previous module's
+     contents instead of calling *initfunc* again.
+   - The module will be fully initialized by *initfunc*.
+     Calling :c:func:`PyModule_Exec` on it will have no effect, though it is
+     still recommended, in case the module later switches to
+     :ref:`multi-phase initialization <multi-phase-initialization>`.
+   - Also, if the *spec*'s :py:attr:`!name` contains dots, this name is used
+     for prepending a parent package to the new module's
+     :attr:`~module.__name__`.
 
    .. versionadded:: 3.15
