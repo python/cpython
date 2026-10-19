@@ -110,7 +110,6 @@ New modules
 Improved modules
 ================
 
-=======
 asyncio
 -------
 
@@ -885,7 +884,6 @@ zlib
   Added :const:`~zlib.zlib_version` as an alias of
   :const:`~zlib.ZLIB_RUNTIME_VERSION`.
   (Contributed by Serhiy Storchaka in :gh:`117404`.)
->>>>>>> main
 
 .. Add improved modules above alphabetically, not here at the end.
 
