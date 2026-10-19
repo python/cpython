@@ -119,6 +119,15 @@ asyncio
   (Contributed by Sam Bull in :gh:`94984`.)
 
 
+bdb
+---
+
+* :exc:`bdb.BdbQuit` is now a subclass of :exc:`BaseException`, instead of
+  :exc:`Exception`, to allow it to be used for cleanly exiting the debugger without
+  being accidentally caught by user code.
+  (Contributed by Tian Gao in :gh:`149337`.)
+
+
 bz2
 ---
 
