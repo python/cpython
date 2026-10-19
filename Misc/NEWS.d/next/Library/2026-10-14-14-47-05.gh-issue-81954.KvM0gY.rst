@@ -1,2 +1,2 @@
-Garbage collecting an unclosed writable :class:`zipfile.ZipFile` now closes it
-even if emitting the :exc:`ResourceWarning` raises an exception.
+Fix :class:`zipfile.ZipFile` not being closed at interpreter shutdown when
+emitting its :exc:`ResourceWarning` failed with an :exc:`ImportError`.
