@@ -282,7 +282,30 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         # path object (see Issue #27493), but self.baseFilename will be a string
         filename = self.baseFilename
         if os.path.exists(filename):
-            t = int(os.stat(filename).st_mtime)
+            # Use the minimum of file creation and modification time as
+            # the base of the rollover calculation
+            creation_time = modification_time = None
+            if hasattr(os, 'statx'):
+                statx_result = os.statx(filename,
+                        os.STATX_BTIME|os.STATX_CTIME|os.STATX_MTIME)
+                # Use stx_btime whenever it is available or use stx_ctime
+                # instead otherwise
+                creation_time = statx_result.stx_btime
+                if creation_time is None:
+                    creation_time = statx_result.stx_ctime
+                modification_time = statx_result.stx_mtime
+            if creation_time is None or modification_time is None:
+                stat_result = os.stat(filename)
+                # Use st_birthtime whenever it is available or use st_ctime
+                # instead otherwise
+                if creation_time is None:
+                    try:
+                        creation_time = stat_result.st_birthtime
+                    except AttributeError:
+                        creation_time = stat_result.st_ctime
+                if modification_time is None:
+                    modification_time = stat_result.st_mtime
+            t = int(min(creation_time, modification_time))
         else:
             t = int(time.time())
         self.rolloverAt = self.computeRollover(t)
@@ -540,8 +563,13 @@ class WatchedFileHandler(logging.FileHandler):
         If underlying file has changed, reopen the file before emitting the
         record to it.
         """
-        self.reopenIfNeeded()
-        logging.FileHandler.emit(self, record)
+        # Report an error while reopening the file, like emit errors.
+        try:
+            self.reopenIfNeeded()
+        except Exception:
+            self.handleError(record)
+        else:
+            logging.FileHandler.emit(self, record)
 
 
 class SocketHandler(logging.Handler):
@@ -863,8 +891,9 @@ class SysLogHandler(logging.Handler):
         """
         Initialize a handler.
 
-        If address is specified as a string, a UNIX socket is used. To log to a
-        local syslogd, "SysLogHandler(address="/dev/log")" can be used.
+        If address is specified as a string or bytes, a UNIX socket is used.
+        To log to a local syslogd, "SysLogHandler(address="/dev/log")" can be
+        used.
         If facility is not specified, LOG_USER is used. If socktype is
         specified as socket.SOCK_DGRAM or socket.SOCK_STREAM, that specific
         socket type will be used. For Unix sockets, you can also specify a
@@ -878,7 +907,11 @@ class SysLogHandler(logging.Handler):
         self.socktype = socktype
         self.timeout = timeout
         self.socket = None
-        self.createSocket()
+        # The address is resolved again when emitting an event.
+        try:
+            self.createSocket()
+        except socket.gaierror:
+            pass
 
     def _connect_unixsocket(self, address):
         use_socktype = self.socktype
@@ -915,7 +948,7 @@ class SysLogHandler(logging.Handler):
         address = self.address
         socktype = self.socktype
 
-        if isinstance(address, str):
+        if not isinstance(address, (list, tuple)):
             self.unixsocket = True
             # Syslog server may be unavailable during handler initialisation.
             # C's openlog() function also ignores connection errors.

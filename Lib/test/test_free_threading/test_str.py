@@ -1,7 +1,9 @@
+import sys
+import threading
 import unittest
 
 from itertools import cycle
-from threading import Event, Thread
+from threading import Barrier, Event, Thread
 from unittest import TestCase
 
 from test.support import threading_helper
@@ -68,6 +70,24 @@ class TestStr(TestCase):
         writer.join()
         for reader in readers:
             reader.join()
+
+    def test_intern_unowned_string(self):
+        # Test interning strings owned by various threads.
+        strings = [f"intern_race_owner_{i}" for i in range(50)]
+
+        NUM_THREADS = 5
+        b = Barrier(NUM_THREADS)
+
+        def interner():
+            tid = threading.get_ident()
+            for i in range(20):
+                strings.append(f"intern_{tid}_{i}")
+            b.wait()
+            for s in strings:
+                r = sys.intern(s)
+                self.assertTrue(sys._is_interned(r))
+
+        threading_helper.run_concurrently(interner, nthreads=NUM_THREADS)
 
     def test_maketrans_dict_concurrent_modification(self):
         for _ in range(5):

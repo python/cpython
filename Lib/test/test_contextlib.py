@@ -680,6 +680,154 @@ class TestContextDecorator(unittest.TestCase):
         self.assertEqual(state, [1, 'something else', 999])
 
 
+    def test_contextmanager_decorate_generator_function(self):
+        @contextmanager
+        def woohoo(y):
+            state.append(y)
+            yield
+            state.append(999)
+
+        state = []
+        @woohoo(1)
+        def test(x):
+            self.assertEqual(state, [1])
+            state.append(x)
+            yield
+            state.append("second item")
+            return "result"
+
+        gen = test("something")
+        for _ in gen:
+            self.assertEqual(state, [1, "something"])
+        self.assertEqual(state, [1, "something", "second item", 999])
+
+        # The wrapped generator's return value is preserved.
+        state = []
+        gen = test("something")
+        with self.assertRaises(StopIteration) as cm:
+            while True:
+                next(gen)
+        self.assertEqual(cm.exception.value, "result")
+
+
+    def test_contextmanager_decorate_generator_function_exception(self):
+        @contextmanager
+        def woohoo():
+            state.append("enter")
+            try:
+                yield
+            finally:
+                state.append("exit")
+
+        state = []
+        @woohoo()
+        def test():
+            state.append("body")
+            yield
+            raise ZeroDivisionError
+
+        with self.assertRaises(ZeroDivisionError):
+            for _ in test():
+                pass
+        self.assertEqual(state, ["enter", "body", "exit"])
+
+
+    def test_contextmanager_decorate_generator_function_early_stop(self):
+        @contextmanager
+        def woohoo():
+            state.append("enter")
+            try:
+                yield
+            finally:
+                state.append("exit")
+
+        state = []
+        @woohoo()
+        def test():
+            try:
+                yield 1
+                yield 2
+            finally:
+                state.append("inner closed")
+
+        gen = test()
+        self.assertEqual(next(gen), 1)
+        gen.close()
+        # The inner generator is closed before the context manager exits.
+        self.assertEqual(state, ["enter", "inner closed", "exit"])
+
+
+    def test_contextmanager_decorate_generator_function_send_throw(self):
+        @contextmanager
+        def woohoo():
+            yield
+
+        @woohoo()
+        def test():
+            received = yield "first"
+            state.append(("received", received))
+            try:
+                yield "second"
+            except ValueError as exc:
+                state.append(("caught", type(exc)))
+                yield "after throw"
+
+        # .send() and .throw() are forwarded to the wrapped generator.
+        state = []
+        gen = test()
+        self.assertEqual(next(gen), "first")
+        self.assertEqual(gen.send("VALUE"), "second")
+        self.assertEqual(gen.throw(ValueError), "after throw")
+        gen.close()
+        self.assertEqual(
+            state, [("received", "VALUE"), ("caught", ValueError)]
+        )
+
+
+    def test_contextmanager_decorate_coroutine_function(self):
+        @contextmanager
+        def woohoo(y):
+            state.append(y)
+            yield
+            state.append(999)
+
+        state = []
+        @woohoo(1)
+        async def test(x):
+            self.assertEqual(state, [1])
+            state.append(x)
+
+        coro = test("something")
+        with self.assertRaises(StopIteration):
+            coro.send(None)
+
+        self.assertEqual(state, [1, "something", 999])
+
+
+    def test_contextmanager_decorate_asyncgen_function(self):
+        @contextmanager
+        def woohoo(y):
+            state.append(y)
+            yield
+            state.append(999)
+
+        state = []
+        @woohoo(1)
+        async def test(x):
+            self.assertEqual(state, [1])
+            state.append(x)
+            yield
+            state.append("second item")
+
+        agen = test("something")
+        with self.assertRaises(StopIteration):
+            agen.asend(None).send(None)
+        with self.assertRaises(StopAsyncIteration):
+            agen.asend(None).send(None)
+
+        self.assertEqual(state, [1, "something", "second item", 999])
+
+
 class TestBaseExitStack:
     exit_stack = None
 

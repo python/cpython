@@ -38,3 +38,27 @@ Pending removal in Python 3.20
   - :mod:`zlib`
 
   (Contributed by Hugo van Kemenade and Stan Ulbrych in :gh:`76007`.)
+
+* Deprecations defined by :pep:`829`:
+
+  * Warnings are produced for ``import`` lines found in :file:`{name}.pth`
+    files.
+
+  * :file:`{name}.pth` files are no longer decoded in the locale encoding by
+    default.  They **MUST** be encoded in ``utf-8-sig``.
+
+  (Contributed by Barry Warsaw in :gh:`148641`.)
+
+* :mod:`ast`:
+
+  * Creating instances of abstract AST nodes (such as :class:`ast.AST`
+    or :class:`!ast.expr`) is deprecated and will raise an error in Python 3.20.
+
+* :mod:`typing`:
+
+  * It is deprecated to call :func:`isinstance` and :func:`issubclass` checks on
+    protocol classes that were not explicitly decorated with :func:`!runtime_checkable`
+    but that inherit from a runtime-checkable protocol class.
+    This will raise a :exc:`TypeError` in Python 3.20.
+
+    (Contributed by Bartosz Sławecki in :gh:`132604`.)

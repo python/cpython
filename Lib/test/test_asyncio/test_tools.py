@@ -2,13 +2,27 @@ import unittest
 
 from asyncio import tools
 
-from collections import namedtuple
+import _remote_debugging
 
-LocationInfo = namedtuple('LocationInfo', ['lineno', 'end_lineno', 'col_offset', 'end_col_offset'], defaults=[None]*4)
-FrameInfo = namedtuple('FrameInfo', ['funcname', 'filename', 'location'])
-CoroInfo = namedtuple('CoroInfo', ['call_stack', 'task_name'])
-TaskInfo = namedtuple('TaskInfo', ['task_id', 'task_name', 'coroutine_stack', 'awaited_by'])
-AwaitedInfo = namedtuple('AwaitedInfo', ['thread_id', 'awaited_by'])
+
+def LocationInfo(lineno, end_lineno=None, col_offset=None, end_col_offset=None):
+    return _remote_debugging.LocationInfo((lineno, end_lineno, col_offset, end_col_offset))
+
+
+def FrameInfo(funcname, filename, location, opcode=None):
+    return _remote_debugging.FrameInfo((filename, location, funcname, opcode))
+
+
+def CoroInfo(call_stack, task_name):
+    return _remote_debugging.CoroInfo((call_stack, task_name))
+
+
+def TaskInfo(task_id, task_name, coroutine_stack, awaited_by):
+    return _remote_debugging.TaskInfo((task_id, task_name, coroutine_stack, awaited_by))
+
+
+def AwaitedInfo(thread_id, awaited_by):
+    return _remote_debugging.AwaitedInfo((thread_id, awaited_by))
 
 
 # mock output of get_all_awaited_by function.
@@ -1543,6 +1557,82 @@ class TestAsyncioToolsBasic(unittest.TestCase):
 
 
 class TestAsyncioToolsEdgeCases(unittest.TestCase):
+
+    def test_frames_without_location_tree(self):
+        """Frames the unwinder could not fully read - should not crash."""
+        input_ = [
+            AwaitedInfo(
+                thread_id=1,
+                awaited_by=[
+                    TaskInfo(
+                        task_id=1,
+                        task_name="Task-A",
+                        coroutine_stack=[
+                            CoroInfo(
+                                call_stack=[
+                                    FrameInfo("<unreadable frame>", "~", None),
+                                    FrameInfo("<unknown function>", "app.py", None),
+                                    FrameInfo("big", "big.py", None),
+                                ],
+                                task_name=1
+                            )
+                        ],
+                        awaited_by=[]
+                    )
+                ]
+            )
+        ]
+        self.assertEqual(
+            tools.build_async_tree(input_),
+            [[
+                "└── (T) Task-A",
+                "    └──  big big.py",
+                "        └──  <unknown function> app.py",
+                "            └──  <unreadable frame>",
+            ]],
+        )
+
+    def test_frames_without_location_table(self):
+        """Frame names are not truncated at the first space."""
+        input_ = [
+            AwaitedInfo(
+                thread_id=1,
+                awaited_by=[
+                    TaskInfo(
+                        task_id=1,
+                        task_name="Task-A",
+                        coroutine_stack=[
+                            CoroInfo(
+                                call_stack=[
+                                    FrameInfo("<unreadable frame>", "~", None)
+                                ],
+                                task_name=1
+                            )
+                        ],
+                        awaited_by=[
+                            CoroInfo(
+                                call_stack=[
+                                    FrameInfo("<unknown function>", "app.py", None)
+                                ],
+                                task_name=2
+                            )
+                        ]
+                    )
+                ]
+            )
+        ]
+        self.assertEqual(
+            tools.build_task_table(input_),
+            [[
+                1,
+                "0x1",
+                "Task-A",
+                "<unreadable frame>",
+                "<unknown function>",
+                "Unknown",
+                "0x2",
+            ]],
+        )
 
     def test_task_awaits_self(self):
         """A task directly awaits itself - should raise a cycle."""

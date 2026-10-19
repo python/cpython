@@ -1,4 +1,4 @@
-#ifndef Py_CPYTHON_STRUCTSEQ_H
+#ifndef _Py_CPYTHON_STRUCTSEQ_H
 #  error "this header file must not be included directly"
 #endif
 

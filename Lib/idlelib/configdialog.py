@@ -1146,8 +1146,8 @@ class KeysPage(Frame):
         selected keyset.  The keybindings are loaded in load_keys_list()
         and are pairs of (event, [keys]) where keys can be a list
         of one or more key combinations to bind to the same event.
-        Mouse button 1 click invokes on_bindingslist_select(), which
-        allows button_new_keys to be clicked.
+        Mouse button 1 click or Up or Down key invokes
+        on_bindingslist_select(), which allows button_new_keys to be clicked.
 
         So, an item is selected in listbindings, which activates
         button_new_keys, and clicking button_new_keys calls function
@@ -1221,8 +1221,11 @@ class KeysPage(Frame):
         scroll_target_y = Scrollbar(frame_target)
         scroll_target_x = Scrollbar(frame_target, orient=HORIZONTAL)
         self.bindingslist = Listbox(
-                frame_target, takefocus=FALSE, exportselection=FALSE)
+                frame_target, takefocus=True, exportselection=FALSE)
         self.bindingslist.bind('<ButtonRelease-1>',
+                               self.on_bindingslist_select)
+        self.bindingslist.bind('<KeyRelease-Up>', self.on_bindingslist_select)
+        self.bindingslist.bind('<KeyRelease-Down>',
                                self.on_bindingslist_select)
         scroll_target_y['command'] = self.bindingslist.yview
         scroll_target_x['command'] = self.bindingslist.xview
@@ -1427,7 +1430,14 @@ class KeysPage(Frame):
             self.create_new_key_set(new_keys_name)
 
     def on_bindingslist_select(self, event):
-        "Activate button to assign new keys to selected action."
+        """Activate button to assign new keys to selected action.
+
+        Event can result from either mouse click or Up or Down key.
+        The keys move the selection, but not the anchor used by
+        get_new_keys and var_changed_keybinding.
+        """
+        if event.type.name == 'KeyRelease':
+            self.bindingslist.selection_anchor(ACTIVE)
         self.button_new_keys.state(('!disabled',))
 
     def create_new_key_set(self, new_key_set_name):
@@ -1465,9 +1475,8 @@ class KeysPage(Frame):
 
         An action/key binding can be selected to change the key binding.
         """
-        reselect = False
+        list_index = 0
         if self.bindingslist.curselection():
-            reselect = True
             list_index = self.bindingslist.index(ANCHOR)
         keyset = idleConf.GetKeySet(keyset_name)
         # 'set' is dict mapping virtual event to list of key events.
@@ -1482,10 +1491,11 @@ class KeysPage(Frame):
                 if bind_name in changes['keys'][keyset_name]:
                     key = changes['keys'][keyset_name][bind_name]
             self.bindingslist.insert(END, bind_name+' - '+key)
-        if reselect:
-            self.bindingslist.see(list_index)
-            self.bindingslist.select_set(list_index)
-            self.bindingslist.select_anchor(list_index)
+        self.bindingslist.see(list_index)
+        self.bindingslist.select_set(list_index)
+        self.bindingslist.select_anchor(list_index)
+        self.bindingslist.activate(list_index)
+        self.button_new_keys.state(('!disabled',))
 
     @staticmethod
     def save_new_key_set(keyset_name, keyset):
@@ -1960,12 +1970,15 @@ class ExtPage(Frame):
     def load_extensions(self):
         "Fill self.extensions with data from the default and user configs."
         self.extensions = {}
+
         for ext_name in idleConf.GetExtensions(active_only=False):
             # Former built-in extensions are already filtered out.
             self.extensions[ext_name] = []
 
         for ext_name in self.extensions:
-            opt_list = sorted(self.ext_defaultCfg.GetOptionList(ext_name))
+            default = set(self.ext_defaultCfg.GetOptionList(ext_name))
+            user = set(self.ext_userCfg.GetOptionList(ext_name))
+            opt_list = sorted(default | user)
 
             # Bring 'enable' options to the beginning of the list.
             enables = [opt_name for opt_name in opt_list
@@ -1975,8 +1988,12 @@ class ExtPage(Frame):
             opt_list = enables + opt_list
 
             for opt_name in opt_list:
-                def_str = self.ext_defaultCfg.Get(
-                        ext_name, opt_name, raw=True)
+                if opt_name in default:
+                    def_str = self.ext_defaultCfg.Get(
+                            ext_name, opt_name, raw=True)
+                else:
+                    def_str = self.ext_userCfg.Get(
+                            ext_name, opt_name, raw=True)
                 try:
                     def_obj = {'True':True, 'False':False}[def_str]
                     opt_type = 'bool'
@@ -2054,10 +2071,11 @@ class ExtPage(Frame):
         default = opt['default']
         value = opt['var'].get().strip() or default
         opt['var'].set(value)
-        # if self.defaultCfg.has_section(section):
-        # Currently, always true; if not, indent to return.
-        if (value == default):
+
+        # Only save option in user config if it differs from the default
+        if self.ext_defaultCfg.has_section(section) and value == default:
             return self.ext_userCfg.RemoveOption(section, name)
+
         # Set the option.
         return self.ext_userCfg.SetOption(section, name, value)
 
@@ -2116,6 +2134,8 @@ class HelpFrame(LabelFrame):
         scroll_helplist['command'] = self.helplist.yview
         self.helplist['yscrollcommand'] = scroll_helplist.set
         self.helplist.bind('<ButtonRelease-1>', self.help_source_selected)
+        self.helplist.bind('<KeyRelease-Up>', self.help_source_selected)
+        self.helplist.bind('<KeyRelease-Down>', self.help_source_selected)
 
         frame_buttons = Frame(self)
         self.button_helplist_edit = Button(
@@ -2138,7 +2158,14 @@ class HelpFrame(LabelFrame):
         self.button_helplist_remove.pack(side=TOP, anchor=W, pady=5)
 
     def help_source_selected(self, event):
-        "Handle event for selecting additional help."
+        """Handle event for selecting additional help.
+
+        Event can result from either mouse click or Up or Down key.
+        The keys move the selection, but not the anchor used by
+        helplist_item_edit and helplist_item_remove.
+        """
+        if event.type.name == 'KeyRelease':
+            self.helplist.selection_anchor(ACTIVE)
         self.set_add_delete_state()
 
     def set_add_delete_state(self):
@@ -2257,7 +2284,14 @@ class VarTrace:
         "Return default callback function to add values to changes instance."
         def default_callback(*params):
             "Add config values to changes instance."
-            changes.add_option(*config, var.get())
+            value = var.get()
+            if value != '':
+                changes.add_option(*config, value)
+            else:
+                # A blanked int entry: do not save an invalid value, and
+                # forget the value recorded while editing (gh-75487).
+                config_type, section, item = config
+                changes[config_type].get(section, {}).pop(item, None)
         return default_callback
 
     def attach(self):
