@@ -428,7 +428,7 @@ gen_close_iter(PyObject *yf)
 {
     PyObject *retval = NULL;
 
-    if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf) || PyAsyncGen_CheckExact(yf)) {
+    if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf)) {
         retval = gen_close((PyObject *)yf, NULL);
         if (retval == NULL)
             return -1;
@@ -624,7 +624,7 @@ the (type, val, tb) signature is deprecated, \n\
 and may be removed in a future version of Python.");
 
 static PyObject *
-_gen_throw(PyGenObject *gen,
+_gen_throw(PyGenObject *gen, int close_on_genexit,
            PyObject *typ, PyObject *val, PyObject *tb)
 {
     int8_t frame_state = FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state);
@@ -655,18 +655,13 @@ _gen_throw(PyGenObject *gen,
         PyObject *yf = PyStackRef_AsPyObjectNew(_PyFrame_StackPeek(frame, 2));
         PyObject *ret;
         int err;
-        if (PyErr_GivenExceptionMatches(typ, PyExc_GeneratorExit)) {
+        if (PyErr_GivenExceptionMatches(typ, PyExc_GeneratorExit) &&
+            close_on_genexit
+        ) {
             /* Asynchronous generators *should not* be closed right away.
                We have to allow some awaits to work it through, hence the
                `close_on_genexit` parameter here.
             */
-            // XXX: As of PEP 828, this doesn't seem to be true?
-            // In the above condition, there used to be a "&& close_on_genexit",
-            // where close_on_genexit was a parameter that was always zero when
-            // this was called from athrow(). This broke some tests/expected behavior
-            // for yield from in asyncgens. Removing the parameter didn't seem to cause
-            // any new test failures, nor could I reproduce any different behavior
-            // when experimenting with it, but we need to be careful.
             err = gen_close_iter(yf);
             Py_DECREF(yf);
             if (err < 0) {
@@ -676,7 +671,7 @@ _gen_throw(PyGenObject *gen,
         }
         PyThreadState *tstate = _PyThreadState_GET();
         assert(tstate != NULL);
-        if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf) || PyAsyncGen_CheckExact(yf)) {
+        if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf)) {
             /* `yf` is a generator or a coroutine. */
 
             /* Link frame into the stack to enable complete backtraces. */
@@ -687,7 +682,8 @@ _gen_throw(PyGenObject *gen,
             tstate->current_frame = frame;
             /* Close the generator that we are currently iterating with
                'yield from' or awaiting on with 'await'. */
-            ret = _gen_throw((PyGenObject *)yf, typ, val, tb);
+            ret = _gen_throw((PyGenObject *)yf, close_on_genexit,
+                             typ, val, tb);
             tstate->current_frame = prev;
             frame->previous = NULL;
         }
@@ -757,7 +753,7 @@ gen_throw(PyObject *op, PyObject *const *args, Py_ssize_t nargs)
     else if (nargs == 2) {
         val = args[1];
     }
-    return _gen_throw(gen, typ, val, tb);
+    return _gen_throw(gen, 1, typ, val, tb);
 }
 
 
@@ -2460,6 +2456,8 @@ async_gen_athrow_send(PyObject *self, PyObject *arg)
         FT_ATOMIC_STORE_INT8_RELAXED(o->agt_gen->ag_closed, 1);
 
         retval = _gen_throw((PyGenObject *)gen,
+                            0,  /* Do not close generator when
+                                   PyExc_GeneratorExit is passed */
                             PyExc_GeneratorExit, NULL, NULL);
 
         if (retval && _PyAsyncGenWrappedValue_CheckExact(retval)) {
@@ -2468,6 +2466,8 @@ async_gen_athrow_send(PyObject *self, PyObject *arg)
         }
     } else {
         retval = _gen_throw((PyGenObject *)gen,
+                            0,  /* Do not close generator when
+                                   PyExc_GeneratorExit is passed */
                             o->agt_typ, o->agt_val, o->agt_tb);
         retval = async_gen_unwrap_value(o->agt_gen, retval);
     }

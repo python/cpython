@@ -6,12 +6,16 @@ counterpart by name with an `_ayf` suffix; `TestParityWithPEP380` enforces
 the 1:1 mapping. Tests with no PEP 380 analogue go in `TestPEP828Extras`.
 """
 
+import asyncio
 import unittest
 import inspect
 from functools import partial
 
 lazy from test import test_yield_from
-from test.support import captured_stderr, disable_gc, gc_collect, run_no_yield_async_fn, catch_unraisable_exception
+from test.support import (
+    captured_stderr, disable_gc, gc_collect, requires_working_socket,
+    run_no_yield_async_fn,
+)
 
 _async_test = partial(partial, run_no_yield_async_fn)
 
@@ -599,12 +603,11 @@ class TestPEP828Operation(unittest.TestCase):
             self.assertEqual(await anext(gi), 1)
             await gi.athrow(AttributeError)
 
-        with catch_unraisable_exception() as cm:
+        # PEP 828 only ignores AttributeError when looking up aclose().
+        with self.assertRaises(ZeroDivisionError):
             gi = g()
             self.assertEqual(await anext(gi), 1)
             await gi.aclose()
-
-            self.assertEqual(ZeroDivisionError, cm.unraisable.exc_type)
 
     @_async_test
     async def test_exception_in_initial_next_call_ayf(self):
@@ -1004,7 +1007,7 @@ class TestPEP828Operation(unittest.TestCase):
             async def __anext__(self):
                 return 42
             async def aclose(self_):
-                self.assertTrue(g1.gi_running)
+                self.assertTrue(g1.ag_running)
                 with self.assertRaises(RuntimeError):
                     await anext(g1)
         async def one():
@@ -1742,6 +1745,299 @@ class TestPEP828Extras(unittest.TestCase):
         with self.assertRaises(RuntimeError) as error:
             await g.athrow(SystemError)
         self.assertIs(raised, error.exception)
+
+
+@requires_working_socket()
+class TestAsyncDelegation(unittest.IsolatedAsyncioTestCase):
+    async def test_cleanup_suspends(self):
+        async def inner():
+            try:
+                yield 1
+            finally:
+                trace.append("cleanup started")
+                await asyncio.sleep(0)
+                trace.append("cleanup completed")
+
+        async def outer(sub):
+            yield from sub
+
+        for depth in (1, 3):
+            for close in (True, False):
+                with self.subTest(depth=depth, close=close):
+                    trace = []
+                    gen = inner()
+                    for _ in range(depth):
+                        gen = outer(gen)
+                    self.assertEqual(await anext(gen), 1)
+                    if close:
+                        await gen.aclose()
+                    else:
+                        original = GeneratorExit()
+                        with self.assertRaises(GeneratorExit) as caught:
+                            await gen.athrow(original)
+                        self.assertIs(caught.exception, original)
+                    self.assertEqual(trace,
+                                     ["cleanup started", "cleanup completed"])
+
+    async def test_generator_exit_after_suspension(self):
+        async def inner():
+            try:
+                yield 1
+            except GeneratorExit:
+                await asyncio.sleep(0)
+                if action == "raise":
+                    raise GeneratorExit()
+                if action == "yield":
+                    yield 2
+                return 42
+
+        async def outer(sub):
+            yield from sub
+            self.fail("delegation continued after GeneratorExit")
+
+        for action in ("return", "raise", "yield"):
+            for close in (True, False):
+                with self.subTest(action=action, close=close):
+                    sub = inner()
+                    try:
+                        gen = outer(sub)
+                        self.assertEqual(await anext(gen), 1)
+                        original = GeneratorExit()
+                        operation = gen.aclose() if close else gen.athrow(original)
+                        if action == "yield":
+                            with self.assertRaisesRegex(
+                                    RuntimeError, "async generator ignored GeneratorExit"):
+                                await operation
+                        elif close:
+                            await operation
+                        else:
+                            with self.assertRaises(GeneratorExit) as caught:
+                                await operation
+                            self.assertIs(caught.exception, original)
+                    finally:
+                        if action == "yield":
+                            # Finish the delegate after its illegal yield
+                            # during closing.
+                            await anext(sub, None)
+                        else:
+                            await sub.aclose()
+
+    async def test_custom_iterator_methods_suspend(self):
+        class Iterator:
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                return 1
+
+            async def athrow(self, exc):
+                trace.append(exc)
+                await asyncio.sleep(0)
+                trace.append("athrow completed")
+                return 2
+
+            async def aclose(self):
+                await asyncio.sleep(0)
+                trace.append("aclose completed")
+
+            def throw(self, *args):
+                raise AssertionError("synchronous throw called")
+
+            def close(self):
+                raise AssertionError("synchronous close called")
+
+        async def outer():
+            yield from Iterator()
+
+        trace = []
+        gen = outer()
+        self.assertEqual(await anext(gen), 1)
+        original = ValueError()
+        self.assertEqual(await gen.athrow(original), 2)
+        self.assertEqual(trace, [original, "athrow completed"])
+        await gen.aclose()
+        self.assertEqual(trace,
+                         [original, "athrow completed", "aclose completed"])
+
+    async def test_custom_iterator_throw_return_value(self):
+        class Iterator:
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                return 1
+
+            async def athrow(self, exc):
+                await asyncio.sleep(0)
+                raise StopAsyncIteration(result)
+
+        async def outer():
+            return (yield from Iterator())
+
+        for result in (None, 42, (1, 2)):
+            with self.subTest(result=result):
+                gen = outer()
+                self.assertEqual(await anext(gen), 1)
+                with self.assertRaises(StopAsyncIteration) as caught:
+                    await gen.athrow(ValueError())
+                self.assertIs(caught.exception.value, result)
+
+    async def test_missing_throw_does_not_swallow_stop_async_iteration(self):
+        class Iterator:
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                return 1
+
+        async def outer():
+            yield from Iterator()
+
+        gen = outer()
+        self.assertEqual(await anext(gen), 1)
+        original = StopAsyncIteration(42)
+        with self.assertRaisesRegex(
+                RuntimeError, "async generator raised StopAsyncIteration") as caught:
+            await gen.athrow(original)
+        self.assertIs(caught.exception.__cause__, original)
+
+    async def test_close_does_not_swallow_stop_async_iteration(self):
+        class Iterator:
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                return 1
+
+            async def aclose(self):
+                await asyncio.sleep(0)
+                raise original
+
+        async def outer():
+            yield from Iterator()
+
+        for close in (True, False):
+            with self.subTest(close=close):
+                gen = outer()
+                self.assertEqual(await anext(gen), 1)
+                original = StopAsyncIteration(42)
+                with self.assertRaisesRegex(
+                        RuntimeError, "async generator raised StopAsyncIteration") as caught:
+                    if close:
+                        await gen.aclose()
+                    else:
+                        await gen.athrow(GeneratorExit())
+                self.assertIs(caught.exception.__cause__, original)
+
+    async def test_methods_return_general_awaitables(self):
+        class Awaitable:
+            def __init__(self, result):
+                self.result = result
+
+            def __await__(self):
+                yield
+                return self.result
+
+        class Iterator:
+            def __aiter__(self):
+                return self
+
+            def __anext__(self):
+                return Awaitable(1)
+
+            def asend(self, value):
+                return Awaitable(value)
+
+            def athrow(self, exc):
+                return Awaitable(exc)
+
+            def aclose(self):
+                return Awaitable(None)
+
+        async def outer():
+            yield from Iterator()
+
+        gen = outer()
+        self.assertEqual(await anext(gen), 1)
+        self.assertEqual(await gen.asend(2), 2)
+        original = ValueError()
+        self.assertIs(await gen.athrow(original), original)
+        await gen.aclose()
+
+    async def test_optional_method_lookup_errors(self):
+        class Iterator:
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                return 1
+
+            def __getattr__(self, name):
+                if name in ("aclose", "athrow"):
+                    raise lookup_error
+                raise AttributeError(name)
+
+        async def outer():
+            yield from Iterator()
+
+        for exc_type in (AttributeError, LookupError, StopAsyncIteration):
+            for mode in ("close", "exit", "throw"):
+                with self.subTest(exc_type=exc_type, mode=mode):
+                    lookup_error = exc_type("method lookup failed")
+                    gen = outer()
+                    self.assertEqual(await anext(gen), 1)
+                    original = GeneratorExit() if mode == "exit" else ValueError()
+                    operation = (gen.aclose() if mode == "close"
+                                 else gen.athrow(original))
+                    if exc_type is AttributeError:
+                        if mode == "close":
+                            await operation
+                        else:
+                            with self.assertRaises(type(original)) as caught:
+                                await operation
+                            self.assertIs(caught.exception, original)
+                    elif exc_type is StopAsyncIteration:
+                        with self.assertRaisesRegex(
+                                RuntimeError,
+                                "async generator raised StopAsyncIteration") as caught:
+                            await operation
+                        self.assertIs(caught.exception.__cause__, lookup_error)
+                    else:
+                        with self.assertRaises(exc_type) as caught:
+                            await operation
+                        self.assertIs(caught.exception, lookup_error)
+
+    async def test_attribute_error_from_async_methods(self):
+        class Iterator:
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                return 1
+
+            async def aclose(self):
+                await asyncio.sleep(0)
+                raise method_error
+
+            async def athrow(self, exc):
+                await asyncio.sleep(0)
+                raise method_error
+
+        async def outer():
+            yield from Iterator()
+
+        for mode in ("close", "exit", "throw"):
+            with self.subTest(mode=mode):
+                method_error = AttributeError("method failed")
+                gen = outer()
+                self.assertEqual(await anext(gen), 1)
+                original = GeneratorExit() if mode == "exit" else ValueError()
+                with self.assertRaises(AttributeError) as caught:
+                    if mode == "close":
+                        await gen.aclose()
+                    else:
+                        await gen.athrow(original)
+                self.assertIs(caught.exception, method_error)
 
 
 if __name__ == '__main__':

@@ -528,6 +528,12 @@ codegen_yield_from_async(compiler *c, location loc, expr_ty e)
     NEW_JUMP_TARGET_LABEL(c, exit);
     NEW_JUMP_TARGET_LABEL(c, use_anext);
     NEW_JUMP_TARGET_LABEL(c, got_coroutine);
+    NEW_JUMP_TARGET_LABEL(c, yield);
+    NEW_JUMP_TARGET_LABEL(c, throw);
+    NEW_JUMP_TARGET_LABEL(c, athrow);
+    NEW_JUMP_TARGET_LABEL(c, throw_exit);
+    NEW_JUMP_TARGET_LABEL(c, lookup_error);
+    NEW_JUMP_TARGET_LABEL(c, missing_method);
 
     VISIT(c, expr, e->v.YieldFrom.value);
     // Stack: [value]
@@ -543,87 +549,128 @@ codegen_yield_from_async(compiler *c, location loc, expr_ty e)
     USE_LABEL(c, send);
 
     // Stack: [aiterator, asend_value]
+    ADDOP_JUMP(c, loc, SETUP_FINALLY, exit);
     ADDOP_I(c, loc, COPY, 1);
-    // Stack: [aiterator, asend_value, asend_value]
-
-    ADDOP_LOAD_CONST(c, loc, Py_None);
-    // Stack: [aiterator, asend_value, asend_value, None]
-
-    ADDOP_I(c, loc, IS_OP, 0);
-    // Stack: [aiterator, asend_value, bool]
-
-    ADDOP_JUMP(c, loc, POP_JUMP_IF_TRUE, use_anext);
-
+    ADDOP_JUMP(c, loc, POP_JUMP_IF_NONE, use_anext);
     ADDOP_I(c, loc, COPY, 2);
-    // Stack: [aiterator, asend_value, aiterator]
-
     ADDOP_NAME(c, loc, LOAD_ATTR, &_Py_ID(asend), names);
-    // Stack: [aiterator, asend_value, bound_method]
-
-    ADDOP_I(c, loc, SWAP, 2);
-    // Stack: [aiterator, bound_method, asend_value]
-
     ADDOP(c, loc, PUSH_NULL);
-    // Stack: [aiterator, bound_method, asend_value, NULL]
-
-    ADDOP_I(c, loc, SWAP, 2);
-    // Stack: [aiterator, bound_method, NULL, send_value]
-
+    ADDOP_I(c, loc, COPY, 3);
+    // Stack: [aiterator, asend_value, method, NULL, asend_value]
     ADDOP_I(c, loc, CALL, 1);
-    // Stack: [aiterator, coroutine]
-
     ADDOP_JUMP(c, loc, JUMP_NO_INTERRUPT, got_coroutine);
 
     USE_LABEL(c, use_anext);
     // Stack: [aiterator, asend_value]
-
-    ADDOP(c, loc, POP_TOP);
-    // Stack: [aiterator]
-
-    ADDOP_I(c, loc, COPY, 1);
-    // Stack: [aiterator, aiterator]
-
+    ADDOP_I(c, loc, COPY, 2);
     ADDOP_NAME(c, loc, LOAD_ATTR, &_Py_ID(__anext__), names);
     ADDOP(c, loc, PUSH_NULL);
+    // Stack: [aiterator, asend_value, method, NULL]
     ADDOP_I(c, loc, CALL, 0);
-    // Stack: [aiterator, coroutine]
-
     USE_LABEL(c, got_coroutine);
-    // Stack: [aiterator, coroutine]
+    // Stack: [aiterator, asend_value, awaitable]
 
-    // Virtual try/except for the StopAsyncIteration
-    ADDOP_JUMP(c, loc, SETUP_FINALLY, exit);
-
+    ADDOP_I(c, loc, GET_AWAITABLE, 0);
     ADDOP(c, loc, PUSH_NULL);
     ADDOP_LOAD_CONST(c, loc, Py_None);
-    // Stack: [aiterator, coroutine, NULL, None]
-
+    // Stack: [aiterator, asend_value, await_iter, NULL, None]
     ADD_YIELD_FROM(c, loc, 1);
+    // Stack: [aiterator, asend_value, asend_result]
+    ADDOP(c, NO_LOCATION, POP_BLOCK);
+    ADDOP_I(c, loc, SWAP, 2);
+    ADDOP(c, loc, POP_TOP);
     // Stack: [aiterator, asend_result]
 
+    USE_LABEL(c, yield);
     ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_ASYNC_GEN_WRAP);
     // Stack: [aiterator, wrapped_result]
 
-    // Generators expect the iterable at stack_top[-2], so we have to make an
-    // extra copy.
-    ADDOP_I(c, loc, COPY, 2);
-    // Stack: [aiterator, wrapped_result, aiterator]
-
-    ADDOP_I(c, loc, SWAP, 2);
-    // Stack: [aiterator, aiterator, wrapped_result]
-
-    ADDOP_I(c, loc, YIELD_VALUE, 1);
-    // Stack: [aiterator, aiterator, resumed_value]
-
+    ADDOP_JUMP(c, loc, SETUP_FINALLY, throw);
+    ADDOP_I(c, loc, YIELD_VALUE, 0);
     ADDOP(c, NO_LOCATION, POP_BLOCK);
-
-    ADDOP_I(c, loc, SWAP, 2);
-    // Stack: [aiterator, resumed_value, aiterator]
-
-    ADDOP(c, loc, POP_TOP);
+    ADDOP_I(c, loc, RESUME, RESUME_AFTER_YIELD);
     // Stack: [aiterator, resumed_value]
 
     ADDOP_JUMP(c, loc, JUMP_NO_INTERRUPT, send);
+
+    USE_LABEL(c, throw);
+    // Stack: [aiterator, resumed_value, exception]
+    ADDOP_I(c, loc, SWAP, 2);
+    ADDOP(c, loc, POP_TOP);
+    // Stack: [aiterator, exception]
+
+    ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_GENERATOREXIT);
+    ADDOP(c, loc, CHECK_EXC_MATCH);
+    ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, athrow);
+
+    ADDOP_JUMP(c, loc, SETUP_FINALLY, lookup_error);
+    ADDOP_I(c, loc, COPY, 2);
+    ADDOP_NAME(c, loc, LOAD_ATTR, &_Py_ID(aclose), names);
+    ADDOP(c, NO_LOCATION, POP_BLOCK);
+    // Stack: [aiterator, exception, method]
+
+    // GeneratorExit closes the delegate, then reraises the original
+    // exception. Awaiting aclose() may suspend, but must not yield an item.
+    ADDOP(c, loc, PUSH_NULL);
+    ADDOP_I(c, loc, CALL, 0);
+    // Stack: [aiterator, exception, awaitable]
+    ADDOP_I(c, loc, GET_AWAITABLE, 0);
+    ADDOP(c, loc, PUSH_NULL);
+    ADDOP_LOAD_CONST(c, loc, Py_None);
+    ADD_YIELD_FROM(c, loc, 1);
+    // Stack: [aiterator, exception, close_result]
+    ADDOP(c, loc, POP_TOP);
+    // Stack: [aiterator, exception]
+    ADDOP_I(c, loc, RERAISE, 0);
+
+    USE_LABEL(c, athrow);
+    // Stack: [aiterator, exception]
+    ADDOP_JUMP(c, loc, SETUP_FINALLY, lookup_error);
+    ADDOP_I(c, loc, COPY, 2);
+    ADDOP_NAME(c, loc, LOAD_ATTR, &_Py_ID(athrow), names);
+    ADDOP(c, NO_LOCATION, POP_BLOCK);
+    ADDOP_I(c, loc, SWAP, 2);
+    // Stack: [aiterator, method, exception]
+    ADDOP_JUMP(c, loc, SETUP_FINALLY, throw_exit);
+    ADDOP_I(c, loc, COPY, 2);
+    ADDOP_I(c, loc, COPY, 2);
+    // Stack: [aiterator, method, exception, method, exception]
+    ADDOP(c, loc, PUSH_NULL);
+    ADDOP_I(c, loc, SWAP, 2);
+    ADDOP_I(c, loc, CALL, 1);
+    // Stack: [aiterator, method, exception, awaitable]
+    ADDOP_I(c, loc, GET_AWAITABLE, 0);
+    ADDOP(c, loc, PUSH_NULL);
+    ADDOP_LOAD_CONST(c, loc, Py_None);
+    ADD_YIELD_FROM(c, loc, 1);
+    // Stack: [aiterator, method, exception, result]
+    ADDOP(c, NO_LOCATION, POP_BLOCK);
+    ADDOP_I(c, loc, SWAP, 2);
+    ADDOP(c, loc, POP_TOP);
+    // Stack: [aiterator, method, result]
+    ADDOP_I(c, loc, SWAP, 2);
+    ADDOP(c, loc, POP_TOP);
+    // Stack: [aiterator, result]
+    ADDOP_JUMP(c, loc, JUMP_NO_INTERRUPT, yield);
+
+    USE_LABEL(c, lookup_error);
+    // Stack: [aiterator, exception, lookup_exception]
+    ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_ATTRIBUTEERROR);
+    ADDOP(c, loc, CHECK_EXC_MATCH);
+    ADDOP_JUMP(c, loc, POP_JUMP_IF_TRUE, missing_method);
+    ADDOP_I(c, loc, RERAISE, 0);
+
+    USE_LABEL(c, missing_method);
+    // A missing aclose()/athrow() reraises the original exception.
+    ADDOP(c, loc, POP_TOP);
+    // Stack: [aiterator, exception]
+    ADDOP_I(c, loc, RERAISE, 0);
+
+    USE_LABEL(c, throw_exit);
+    // Stack: [aiterator, method, exception, raised_exception]
+    ADDOP_I(c, loc, SWAP, 2);
+    ADDOP(c, loc, POP_TOP);
+    // Stack: [aiterator, method, raised_exception]
 
     USE_LABEL(c, exit);
     // Stack: [aiterator, send_value, exc_value] (from SETUP_FINALLY)
