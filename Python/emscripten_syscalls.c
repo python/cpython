@@ -54,6 +54,33 @@ __attribute__((constructor)) void __syscall_init_umask(void) {
 #define EM_JS_MACROS(ret, func_name, args, body...)                            \
   EM_JS(ret, func_name, args, body)
 
+EM_JS(void, _PyEmscripten_BeforeMain_js, (void), {
+    if (!WebAssembly.promising) {
+        // No stack switching support =(
+        return;
+    }
+    if (ENVIRONMENT_IS_NODE && !Module.onExit) {
+        Module.onExit = (code) => process.exit(code);
+    }
+    // promising() needs the raw export; _main may be a JS wrapper around it.
+    const main = WebAssembly.promising(wasmExports.__main_argc_argv);
+    _main = (...args) => {
+        Module.Py_EmscriptenStackSwitching = true;
+        (async () => {
+            const ret = await main(...args);
+            Module.onExit?.(ret);
+        })();
+        _emscripten_exit_with_live_runtime();
+    };
+    // callMain() takes the entry point from _main, or from wasmImports.main
+    // when linked with -sMAIN_MODULE.
+    if ("main" in wasmImports) {
+        wasmImports.main = _main;
+    }
+})
+
+EM_JS_DEPS(_PyEmscripten_BeforeMain, "emscripten_exit_with_live_runtime");
+
 // Define FS.createAsyncInputDevice(), This is quite similar to
 // FS.createDevice() defined here:
 // https://github.com/emscripten-core/emscripten/blob/4.0.11/src/lib/libfs.js?plain=1#L1642

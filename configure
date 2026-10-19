@@ -20306,10 +20306,10 @@ case $ac_sys_system in #(
   Emscripten) :
 
     as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_trampoline_wasm.o'
-    as_fn_append PLATFORM_MAIN_OBJS ' Programs/emscripten_beforemain.o'
     if test "x$enable_emscripten_syscalls" = xyes
 then :
 
+      as_fn_append PLATFORM_MAIN_OBJS ' Programs/emscripten_beforemain.o'
       as_fn_append PLATFORM_OBJS ' Python/emscripten_syscalls.o'
 
 fi
