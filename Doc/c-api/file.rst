@@ -81,8 +81,6 @@ the :mod:`io` APIs instead.
    file and a read error, and it does not set an exception.
 
    *fobj* exists only for backward compatibility and must be ``NULL``.
-   If it is not ``NULL``, nothing is read, :c:data:`errno` is set to
-   :c:macro:`!ENXIO` and ``NULL`` is returned.
 
 
 .. c:function:: int PyFile_SetOpenCodeHook(Py_OpenCodeHookFunction handler)
