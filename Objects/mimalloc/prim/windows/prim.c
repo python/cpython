@@ -1201,7 +1201,8 @@ static void NTAPI mi_win_main(PVOID module, DWORD reason, LPVOID reserved) {
   }
 
   void _mi_prim_thread_associate_default_theap(mi_theap_t* theap) {
-    mi_assert_internal(mi_fls_key != (DWORD)(-1));
+    // mi_thread_init runs before _mi_prim_thread_init_auto_done during process init
+    if (mi_fls_key == (DWORD)(-1)) return;
     FlsSetValue(mi_fls_key, theap);
   }
 #else
