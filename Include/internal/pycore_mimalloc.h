@@ -21,6 +21,11 @@ typedef enum {
 
 #ifdef WITH_MIMALLOC
 #  define MI_NO_PTHREAD_ATFORK 1
+#  ifdef MS_WINDOWS
+// Initialize from a CRT initializer and use FLS for thread cleanup instead
+// of TLS callbacks, which run during DLL attach before the CRT is set up.
+#    define MI_WIN_INIT_USE_FLS 1
+#  endif
 #  ifdef Py_GIL_DISABLED
 #    define MI_PRIM_THREAD_ID   _Py_ThreadId
 #    define MI_CPYTHON 1
