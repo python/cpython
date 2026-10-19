@@ -994,7 +994,7 @@ def singledispatch(func):
                 import warnings
                 warnings.warn(
                     "Using the return annotation to infer the dispatch type "
-                    "is deprecated and will raise TypeError in Python 3.18. "
+                    "is deprecated and will raise TypeError in Python 3.21. "
                     "Annotate the dispatch parameter or pass the dispatch "
                     "type explicitly to register() decorator.",
                     DeprecationWarning,

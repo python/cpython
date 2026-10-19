@@ -3338,7 +3338,10 @@ class TestSingleDispatch(unittest.TestCase):
         )
 
     def test_return_annotation_deprecated(self):
-        msg = "Using the return annotation to infer the dispatch type"
+        msg = (
+            "Using the return annotation to infer the dispatch type "
+            r"is deprecated and will raise TypeError in Python 3\.21\."
+        )
 
         @functools.singledispatch
         def func(arg):

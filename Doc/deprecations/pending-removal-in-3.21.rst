@@ -18,6 +18,15 @@ Pending removal in Python 3.21
   * The ``dims`` property of ``ast.Tuple`` will be removed in Python 3.21. Use
     the ``ast.Tuple.elts`` property instead.
 
+* :mod:`functools`:
+
+  * Using a return annotation to infer the dispatch type for
+    :func:`functools.singledispatch` or
+    :class:`functools.singledispatchmethod` is deprecated since Python 3.16
+    and will raise :exc:`TypeError` in Python 3.21. Annotate the dispatch
+    parameter or pass the dispatch type explicitly instead.
+    (Contributed by Bartosz Sławecki in :gh:`143465`.)
+
 * :mod:`struct`:
 
   * Soft-deprecated since Python 3.15, using ``'F'`` and ``'D'`` type codes are now
