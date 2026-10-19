@@ -380,6 +380,25 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             self.assertIsSubclass(C, A)
             self.assertIsSubclass(C, (A,))
 
+        def test_instancecheck_no_class(self):
+            # gh-153772: __instancecheck__ must fall back to type(instance)
+            # when the instance has no __class__, matching isinstance().
+            class NoClass:
+                def __getattribute__(self, name):
+                    if name == "__class__":
+                        raise AttributeError(name)
+                    return super().__getattribute__(name)
+
+            class A(metaclass=abc_ABCMeta):
+                pass
+
+            obj = NoClass()
+            # Must return False rather than propagating the AttributeError.
+            self.assertNotIsInstance(obj, A)
+            # Registering the actual type makes the fallback report a match.
+            A.register(NoClass)
+            self.assertIsInstance(obj, A)
+
         def test_registration_edge_cases(self):
             class A(metaclass=abc_ABCMeta):
                 pass
