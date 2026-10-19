@@ -11,7 +11,7 @@ extern "C" {
 #include "pycore_brc.h"             // struct _brc_thread_state
 #include "pycore_freelist_state.h"  // struct _Py_freelists
 #include "pycore_interpframe_structs.h"  // _PyInterpreterFrame
-#include "pycore_mimalloc.h"        // struct _mimalloc_thread_state
+#include "pycore_mimalloc_structs.h"  // struct _mimalloc_thread_state
 #include "pycore_qsbr.h"            // struct qsbr
 #include "pycore_uop.h"             // struct _PyUOpInstruction
 #include "pycore_structs.h"

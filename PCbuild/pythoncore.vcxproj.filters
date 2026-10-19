@@ -765,6 +765,9 @@
     <ClInclude Include="..\Include\internal\pycore_lazyimportobject.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_mimalloc_structs.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_mmap.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
