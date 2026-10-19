@@ -306,9 +306,6 @@ Initializing and finalizing the interpreter
    frozen program instead, together with the Windows-specific hooks that the
    function requires.
 
-   .. versionchanged:: 3.10
-      This function is no longer part of the :ref:`limited API <limited-c-api>`.
-
 
 .. c:function:: int Py_RunMain(void)
 
