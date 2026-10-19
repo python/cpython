@@ -1,3 +1,3 @@
 Fix :class:`concurrent.futures.ProcessPoolExecutor` hanging when a worker
 is killed while writing a large result. The pending future now raises
-:exc:`concurrent.futures.BrokenProcessPool`, and the interpreter can exit.
+:class:`concurrent.futures.BrokenProcessPool`, and the interpreter can exit.
