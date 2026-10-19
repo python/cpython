@@ -1,5 +1,6 @@
 """Immutable C parser descriptions shared by lowering and emission."""
 
+import pathlib
 from dataclasses import dataclass
 from enum import Enum, auto
 
@@ -64,9 +65,10 @@ class CRuleSignature:
     def c_return_type(self) -> str:
         return self.return_type or "void *"
 
-    def declaration(self) -> str:
+    def declaration(self, *, static: bool = True) -> str:
         separator = " " if self.kind is RuleKind.NORMAL and self.return_type else ""
-        return f"static {self.c_return_type}{separator}{self.name}_rule(Parser *p);"
+        storage = "static " if static else ""
+        return f"{storage}{self.c_return_type}{separator}{self.name}_rule(Parser *p);"
 
 
 @dataclass(frozen=True, slots=True)
@@ -123,6 +125,8 @@ class CRule:
     memoize: bool
     disable_invalid_rules: bool
     prefixes: tuple[CPrefix, ...] = ()
+    source: pathlib.Path | None = None
+    shared: bool = False
 
     @property
     def uses_locations(self) -> bool:

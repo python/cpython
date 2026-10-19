@@ -4,7 +4,7 @@ import pathlib
 import re
 import sys
 from abc import abstractmethod
-from collections.abc import Iterator
+from collections.abc import Generator
 from typing import IO
 
 from pegen.grammar import (
@@ -111,7 +111,17 @@ class ParserGenerator:
         self.all_rules: dict[str, Rule] = self.rules.copy()  # Rules + temporal rules
         self._local_variable_stack: list[list[str]] = []
 
+        # Source of the rule being visited; artificial rules created for it
+        # belong to the same grammar file.
+        self.current_source: pathlib.Path | None = None
+
     def _validate_grammar(self) -> None:
+        if self.grammar.includes:
+            raise GrammarError(
+                f"Unresolved @include of {', '.join(map(repr, self.grammar.includes))}; "
+                "load the grammar with pegen.build.build_parser() or call "
+                "pegen.build.resolve_includes() on it"
+            )
         self.validate_rule_names()
         if "trailer" not in self.grammar.metas and "start" not in self.rules:
             raise GrammarError("Grammar without a trailer must have a 'start' rule")
@@ -125,7 +135,7 @@ class ParserGenerator:
                 raise GrammarError(f"Rule names cannot start with underscore: '{rule}'")
 
     @contextlib.contextmanager
-    def local_variable_context(self) -> Iterator[None]:
+    def local_variable_context(self) -> Generator[None]:
         self._local_variable_stack.append([])
         yield
         self._local_variable_stack.pop()
@@ -139,12 +149,21 @@ class ParserGenerator:
         raise NotImplementedError
 
     @contextlib.contextmanager
-    def indent(self) -> Iterator[None]:
+    def indent(self) -> Generator[None]:
         self.level += 1
         try:
             yield
         finally:
             self.level -= 1
+
+    @contextlib.contextmanager
+    def current_source_context(self, current_source: pathlib.Path | None) -> Generator[None]:
+        previous = self.current_source
+        self.current_source = current_source
+        try:
+            yield
+        finally:
+            self.current_source = previous
 
     def print(self, *args: object) -> None:
         if not args:
@@ -171,7 +190,9 @@ class ParserGenerator:
                 break
             done = set(self.all_rules)
             for rulename in todo:
-                rule_collector.visit(self.all_rules[rulename])
+                rule = self.all_rules[rulename]
+                with self.current_source_context(rule.source):
+                    rule_collector.visit(rule)
 
     def keyword_type(self) -> int:
         self.keyword_counter += 1
@@ -180,7 +201,7 @@ class ParserGenerator:
     def artificial_rule_from_rhs(self, rhs: Rhs) -> str:
         self.counter += 1
         name = f"_tmp_{self.counter}"  # TODO: Pick a nicer name.
-        self.all_rules[name] = Rule(name, None, rhs)
+        self._add_artificial_rule(name, rhs)
         return name
 
     def artificial_rule_from_repeat(self, node: Plain, is_repeat1: bool) -> str:
@@ -192,9 +213,7 @@ class ParserGenerator:
             prefix = "_loop0_"
             kind = RuleKind.LOOP0
         name = f"{prefix}{self.counter}"
-        self.all_rules[name] = Rule(
-            name, None, Rhs([Alt([NamedItem(None, node)])]), kind=kind
-        )
+        self._add_artificial_rule(name, Rhs([Alt([NamedItem(None, node)])]), kind)
         return name
 
     def artificial_rule_from_gather(self, node: Gather) -> str:
@@ -204,24 +223,17 @@ class ParserGenerator:
             [NamedItem(None, node.separator), NamedItem("elem", node.node)],
             action="elem",
         )
-        self.all_rules[extra_function_name] = Rule(
-            extra_function_name,
-            None,
-            Rhs([extra_function_alt]),
-            kind=RuleKind.LOOP0,
-        )
+        self._add_artificial_rule(extra_function_name, Rhs([extra_function_alt]), RuleKind.LOOP0)
         self.counter += 1
         name = f"_gather_{self.counter}"
         alt = Alt(
             [NamedItem("elem", node.node), NamedItem("seq", NameLeaf(extra_function_name))],
         )
-        self.all_rules[name] = Rule(
-            name,
-            None,
-            Rhs([alt]),
-            kind=RuleKind.GATHER,
-        )
+        self._add_artificial_rule(name, Rhs([alt]), RuleKind.GATHER)
         return name
+
+    def _add_artificial_rule(self, name: str, rhs: Rhs, kind: RuleKind = RuleKind.NORMAL) -> None:
+        self.all_rules[name] = Rule(name, None, rhs, kind=kind, source=self.current_source)
 
     def dedupe(self, name: str) -> str:
         origname = name

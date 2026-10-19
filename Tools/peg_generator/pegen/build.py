@@ -1,3 +1,4 @@
+import contextlib
 import itertools
 import logging
 import os
@@ -6,10 +7,11 @@ import sys
 import sysconfig
 import tempfile
 import tokenize
+from collections.abc import Sequence
 from typing import IO, Any
 
 from pegen.c_generator import CParserGenerator
-from pegen.grammar import Grammar
+from pegen.grammar import Grammar, GrammarError
 from pegen.grammar_parser import GeneratedParser as GrammarParser
 from pegen.parser import Parser
 from pegen.parser_generator import ParserGenerator
@@ -76,6 +78,7 @@ def compile_c_extension(
     keep_asserts: bool = True,
     disable_optimization: bool = False,
     library_dir: str | None = None,
+    extra_generated_sources: Sequence[pathlib.Path] = (),
 ) -> pathlib.Path:
     """Compile the generated source for a parser generator into an extension module.
 
@@ -90,6 +93,9 @@ def compile_c_extension(
     If *library_dir* is provided, that path will be used as the directory for a
     static library of the common parser sources (this is useful in case you are
     creating multiple extensions).
+
+    *extra_generated_sources* are the C files generated for the included
+    grammar files (see included_output_files()).
     """
     import setuptools.command.build_ext
     import setuptools.logging
@@ -154,7 +160,7 @@ def compile_c_extension(
             # HACK: Our output directory for free-threaded builds has moved, and so
             # tests running in-tree require our sys.executable directory for libs
             library_dirs.append(pathlib.Path(sys.executable).parent)
-    sources = [generated_source_path]
+    sources = [generated_source_path, *extra_generated_sources]
     extension = Extension(
         extension_name,
         sources=sources,
@@ -245,8 +251,8 @@ def compile_c_extension(
     return pathlib.Path(ext_path)
 
 
-def build_parser(
-    grammar_file: pathlib.Path, verbose_tokenizer: bool = False, verbose_parser: bool = False
+def _parse_grammar_file(
+    grammar_file: pathlib.Path, verbose_tokenizer: bool, verbose_parser: bool
 ) -> tuple[Grammar, Parser, Tokenizer]:
     with open(grammar_file) as file:
         tokenizer = Tokenizer(tokenize.generate_tokens(file.readline), verbose=verbose_tokenizer)
@@ -257,6 +263,90 @@ def build_parser(
             raise parser.make_syntax_error(str(grammar_file))
 
     return grammar, parser, tokenizer
+
+
+def _include_rules(
+    root_grammar: Grammar,
+    root_dir: pathlib.Path,
+    includes: list[str],
+    including_file: pathlib.Path,
+    rule_files: dict[str, pathlib.Path],
+    include_stack: list[pathlib.Path],
+    included_from: dict[pathlib.Path, pathlib.Path],
+    verbose_tokenizer: bool,
+    verbose_parser: bool,
+) -> None:
+    # Append the rules of each included file (and, depth-first, of the files
+    # it includes) to *root_grammar*, in order.
+    for include in includes:
+        path = (including_file.parent / include).resolve()
+        if path in include_stack:
+            raise GrammarError(f"Circular @include of '{path!s}' in '{including_file!s}'")
+        if path in included_from:
+            raise GrammarError(
+                f"'{path}' is included more than once: "
+                f"from '{included_from[path]}' and from '{including_file}'"
+            )
+        included_from[path] = including_file
+        new_grammar, _, _ = _parse_grammar_file(path, verbose_tokenizer, verbose_parser)
+        if new_grammar.metas:
+            names = ", ".join(f"@{name}" for name in new_grammar.metas)
+            raise GrammarError(f"Included grammar '{path!s}' cannot define metas: {names}")
+        for name, rule in new_grammar.rules.items():
+            if name in root_grammar.rules:
+                raise GrammarError(
+                    f"Repeated rule {name!r} in '{path!s}' "
+                    f"(first defined in '{rule_files[name]!s}')"
+                )
+            rule.source = pathlib.Path(os.path.relpath(path, root_dir))
+            root_grammar.rules[name] = rule
+            rule_files[name] = path
+        _include_rules(
+            root_grammar,
+            root_dir,
+            new_grammar.includes,
+            path,
+            rule_files,
+            include_stack + [path],
+            included_from,
+            verbose_tokenizer,
+            verbose_parser,
+        )
+
+
+def build_parser(
+    grammar_file: pathlib.Path, verbose_tokenizer: bool = False, verbose_parser: bool = False
+) -> tuple[Grammar, Parser, Tokenizer]:
+    grammar, parser, tokenizer = _parse_grammar_file(
+        grammar_file, verbose_tokenizer, verbose_parser
+    )
+    resolve_includes(grammar, grammar_file, verbose_tokenizer, verbose_parser)
+    return grammar, parser, tokenizer
+
+
+def resolve_includes(
+    grammar: Grammar,
+    grammar_file: pathlib.Path,
+    verbose_tokenizer: bool = False,
+    verbose_parser: bool = False,
+) -> None:
+    """Add the rules of the files that *grammar* includes, and clear its includes.
+
+    *grammar_file* is the file *grammar* was parsed from: its @include paths
+    are relative to that file's directory.
+    """
+    _include_rules(
+        grammar,
+        grammar_file.resolve().parent,
+        grammar.includes,
+        grammar_file,
+        dict.fromkeys(grammar.rules, grammar_file),
+        [grammar_file.resolve()],
+        {},
+        verbose_tokenizer,
+        verbose_parser,
+    )
+    grammar.includes = []
 
 
 def generate_token_definitions(tokens: IO[str]) -> TokenDefinitions:
@@ -288,6 +378,34 @@ def generate_token_definitions(tokens: IO[str]) -> TokenDefinitions:
     return all_tokens, exact_tokens, non_exact_tokens
 
 
+def included_output_files(
+    grammar: Grammar, output_file: pathlib.Path
+) -> dict[pathlib.Path, pathlib.Path]:
+    stem, dot, rest = output_file.name.partition(".")
+    outputs: dict[pathlib.Path, pathlib.Path] = {}
+    for rule in grammar.rules.values():
+        if rule.source is None or rule.source in outputs:
+            continue
+        if rule.source.is_absolute() or ".." in rule.source.parts:
+            raise GrammarError(
+                f"The C file for '{rule.source}' would be outside the output directory; "
+                "included grammar files must be in the root grammar file's directory "
+                "or its subdirectories"
+            )
+        path = (
+            output_file.parent
+            / rule.source.parent
+            / f"{stem}_{rule.source.stem}{dot}{rest}"
+        )
+        if path in outputs.values():
+            raise GrammarError(
+                f"The C file for '{rule.source}' would be '{path}', "
+                "which is already used by another grammar file"
+            )
+        outputs[rule.source] = path
+    return outputs
+
+
 def build_c_generator(
     grammar: Grammar,
     grammar_file: pathlib.Path,
@@ -300,9 +418,23 @@ def build_c_generator(
 ) -> ParserGenerator:
     with open(tokens_file) as tok_file:
         all_tokens, exact_tok, non_exact_tok = generate_token_definitions(tok_file)
-    with open(output_file, "w") as file:
+    included_outputs = included_output_files(grammar, output_file)
+    with contextlib.ExitStack() as stack:
+        file: IO[str] = stack.enter_context(open(output_file, "w"))
+        for path in included_outputs.values():
+            path.parent.mkdir(parents=True, exist_ok=True)
+        included_files: dict[pathlib.Path, IO[str]] = {
+            source: stack.enter_context(open(path, "w"))
+            for source, path in included_outputs.items()
+        }
         gen: ParserGenerator = CParserGenerator(
-            grammar, all_tokens, exact_tok, non_exact_tok, file, skip_actions=skip_actions
+            grammar,
+            all_tokens,
+            exact_tok,
+            non_exact_tok,
+            file,
+            skip_actions=skip_actions,
+            included_files=included_files,
         )
         gen.generate(grammar_file)
 
@@ -313,6 +445,7 @@ def build_c_generator(
                 build_dir=build_dir,
                 verbose=verbose_c_extension,
                 keep_asserts=keep_asserts_in_extension,
+                extra_generated_sources=list(included_outputs.values()),
             )
     return gen
 

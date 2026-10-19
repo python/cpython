@@ -390,6 +390,7 @@ PEGEN_OBJS=		\
 		Parser/pegen_errors.o \
 		Parser/action_helpers.o \
 		Parser/parser.o \
+		Parser/parser_invalid.o \
 		Parser/string_parser.o \
 		Parser/peg_api.o
 
@@ -1956,6 +1957,7 @@ regen-pegen:
 		$(srcdir)/Grammar/Tokens \
 		-o $(srcdir)/Parser/parser.c.new
 	$(UPDATE_FILE) --create $(srcdir)/Parser/parser.c $(srcdir)/Parser/parser.c.new
+	$(UPDATE_FILE) --create $(srcdir)/Parser/parser_invalid.c $(srcdir)/Parser/parser_invalid.c.new
 
 .PHONY: regen-ast
 regen-ast:

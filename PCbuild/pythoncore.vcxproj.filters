@@ -1709,6 +1709,9 @@
     <ClCompile Include="..\Parser\parser.c">
       <Filter>Parser</Filter>
     </ClCompile>
+    <ClCompile Include="..\Parser\parser_invalid.c">
+      <Filter>Parser</Filter>
+    </ClCompile>
     <ClCompile Include="..\Parser\pegen.c">
       <Filter>Parser</Filter>
     </ClCompile>

@@ -606,6 +606,7 @@
     <ClCompile Include="..\Parser\pegen_errors.c" />
     <ClCompile Include="..\Parser\action_helpers.c" />
     <ClCompile Include="..\Parser\parser.c" />
+    <ClCompile Include="..\Parser\parser_invalid.c" />
     <ClCompile Include="..\Parser\string_parser.c" />
     <ClCompile Include="..\Parser\peg_api.c" />
     <ClCompile Include="..\PC\invalid_parameter_handler.c" />

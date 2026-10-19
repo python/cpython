@@ -331,6 +331,9 @@
     <ClCompile Include="..\Parser\parser.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Parser\parser_invalid.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\parking_lot.c">
       <Filter>Source Files</Filter>
     </ClCompile>
