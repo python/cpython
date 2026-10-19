@@ -10,7 +10,6 @@
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_backoff.h"
-#include "pycore_call.h"          // _Py_METH_CALL_FLAGS
 #include "pycore_cell.h"          // PyCell_GetRef()
 #include "pycore_ceval.h"         // _PyEval_LazyImportName(), _PyEval_LazyImportFrom()
 #include "pycore_code.h"
@@ -1987,7 +1986,12 @@ dummy_func(
 
             int matches = PyErr_GivenExceptionMatches(exc_value, PyExc_StopAsyncIteration);
             if (matches) {
-                value = PyStackRef_FromPyObjectNew(((PyStopAsyncIterationObject *)exc_value)->value);
+                PyObject *ret = ((PyStopAsyncIterationObject *)exc_value)->value;
+                if (ret == NULL) {
+                    value = PyStackRef_None;
+                } else {
+                    value = PyStackRef_FromPyObjectNew(ret);
+                }
                 DECREF_INPUTS();
             }
             else {

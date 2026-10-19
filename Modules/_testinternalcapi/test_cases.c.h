@@ -5182,7 +5182,12 @@
             int matches = PyErr_GivenExceptionMatches(exc_value, PyExc_StopAsyncIteration);
             _PyFrame_StackPointerInvalidate(frame);
             if (matches) {
-                value = PyStackRef_FromPyObjectNew(((PyStopAsyncIterationObject *)exc_value)->value);
+                PyObject *ret = ((PyStopAsyncIterationObject *)exc_value)->value;
+                if (ret == NULL) {
+                    value = PyStackRef_None;
+                } else {
+                    value = PyStackRef_FromPyObjectNew(ret);
+                }
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
                 _PyStackRef tmp = iter;

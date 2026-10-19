@@ -1694,6 +1694,32 @@ class TestPEP828Extras(unittest.TestCase):
     """
 
     @_async_test
+    async def test_custom_iterator_deleted_return_value(self):
+        class Iterator:
+            def __init__(self, remaining):
+                self.remaining = remaining
+
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                if self.remaining:
+                    self.remaining -= 1
+                    return 42
+                exc = StopAsyncIteration(99)
+                del exc.value
+                raise exc
+
+        async def gen(count):
+            result = yield from Iterator(count)
+            self.assertIsNone(result)
+
+        for count in (0, 1):
+            with self.subTest(count=count):
+                self.assertEqual([item async for item in gen(count)],
+                                 [42] * count)
+
+    @_async_test
     async def test_delegate_exception(self):
         yielded_first = sentinel("yielded_first")
         yielded_second = sentinel("yielded_second")
