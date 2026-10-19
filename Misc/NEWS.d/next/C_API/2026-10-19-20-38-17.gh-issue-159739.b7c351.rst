@@ -1,0 +1,3 @@
+Stop invoking code-extra cleanup callbacks registered with
+:c:func:`PyUnstable_Eval_RequestCodeExtraIndex` for ``NULL`` data, as
+documented.

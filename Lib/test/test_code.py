@@ -1606,6 +1606,12 @@ if check_impl_detail(cpython=True) and ctypes is not None:
             gc_collect()  # For free-threaded build
             self.assertEqual(LAST_FREED, 100)
 
+            f = self.get_func()
+            SetExtra(f.__code__, FREE_INDEX, None)
+            del f
+            gc_collect()
+            self.assertEqual(LAST_FREED, 100)
+
         def test_get_set(self):
             # Test basic get/set round tripping.
             f = self.get_func()
