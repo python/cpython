@@ -21815,6 +21815,70 @@ fi
 
 
 
+# Detect musl's behaviour of reporting the current allocated stack size for
+# the main thread, rather than the max size, in pthread_getattr_np.
+if test "$ac_cv_func_pthread_getattr_np" = yes
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether pthread_getattr_np reports the main thread stack reliably" >&5
+printf %s "checking whether pthread_getattr_np reports the main thread stack reliably... " >&6; }
+if test ${ac_cv_unreliable_pthread_getattr_np+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) if test "$cross_compiling" = yes
+then :
+  ac_cv_unreliable_pthread_getattr_np=no
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define _GNU_SOURCE
+#include <pthread.h>
+#include <stdlib.h>
+#include <sys/resource.h>
+
+int main(void) {
+    pthread_attr_t attr;
+    void *stack_addr;
+    size_t stack_size, guard_size;
+    struct rlimit rl;
+
+    if (pthread_getattr_np(pthread_self(), &attr) != 0) return 1;
+    if (pthread_attr_getstack(&attr, &stack_addr, &stack_size) != 0 ||
+        pthread_attr_getguardsize(&attr, &guard_size) != 0) {
+        pthread_attr_destroy(&attr);
+        return 1;
+    }
+    pthread_attr_destroy(&attr);
+    if (getrlimit(RLIMIT_STACK, &rl) != 0) return 1;
+    if (rl.rlim_cur == RLIM_INFINITY) return 0;
+    return (stack_size >= rl.rlim_cur / 2) ? 0 : 1;
+}
+
+_ACEOF
+if ac_fn_c_try_run "$LINENO"
+then :
+  ac_cv_unreliable_pthread_getattr_np=no
+else case e in #(
+  e) ac_cv_unreliable_pthread_getattr_np=yes ;;
+esac
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
+esac
+fi
+ ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_unreliable_pthread_getattr_np" >&5
+printf "%s\n" "$ac_cv_unreliable_pthread_getattr_np" >&6; }
+   if test "x$ac_cv_unreliable_pthread_getattr_np" = xyes
+then :
+
+printf "%s\n" "#define HAVE_UNRELIABLE_PTHREAD_GETATTR_NP 1" >>confdefs.h
+
+fi
+fi
 
 # os.statx uses Linux's statx function.  AIX also has a function named statx,
 # but it's unrelated.  Check only on Linux (including Android).
