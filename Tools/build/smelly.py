@@ -20,7 +20,7 @@ if sys.platform == 'darwin':
 # mimalloc doesn't use static, but it's symbols are not exported
 # from the shared library.  They do show up in the static library
 # before its linked into an executable.
-ALLOWED_STATIC_PREFIXES = ('mi_', '_mi_')
+ALLOWED_STATIC_PREFIXES = ('mi_', '_mi_', '__mi')
 
 # "Legacy": some old symbols are prefixed by "PY_".
 EXCEPTIONS = frozenset({
