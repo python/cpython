@@ -453,6 +453,25 @@ _PyRecursiveMutex_TryUnlock(_PyRecursiveMutex *m)
     return 0;
 }
 
+#ifdef HAVE_FORK
+// Reinitialize the mutex in the child process after fork(). The caller must
+// record before fork() whether the forking thread owns the mutex, since the
+// thread ident can change in the child (gh-126688). If it does, the child
+// keeps the mutex with the same recursion level; otherwise the owner and any
+// waiters no longer exist in the child and the mutex is reset.
+void
+_PyRecursiveMutex_at_fork_reinit(_PyRecursiveMutex *m, int owned)
+{
+    if (owned) {
+        m->mutex = (PyMutex){._bits = _Py_LOCKED};
+        _Py_atomic_store_ullong_relaxed(&m->thread, PyThread_get_thread_ident_ex());
+    }
+    else {
+        memset(m, 0, sizeof(*m));
+    }
+}
+#endif
+
 #define _Py_WRITE_LOCKED 1
 #define _PyRWMutex_READER_SHIFT 2
 #define _Py_RWMUTEX_MAX_READERS (UINTPTR_MAX >> _PyRWMutex_READER_SHIFT)

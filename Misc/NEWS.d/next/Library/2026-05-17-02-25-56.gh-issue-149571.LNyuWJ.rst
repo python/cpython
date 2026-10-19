@@ -1,2 +1,0 @@
-Fix the C implementation of :meth:`xml.etree.ElementTree.Element.itertext`:
-it no longer emits text for comments and processing instructions.
