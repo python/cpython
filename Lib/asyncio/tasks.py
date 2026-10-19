@@ -601,11 +601,7 @@ class _AsCompletedIterator:
             raise StopAsyncIteration
         assert self._todo_left > 0
         self._todo_left -= 1
-        try:
-            return await self._wait_for_one()
-        except exceptions.CancelledError:
-            self._todo_left += 1
-            raise
+        return await self._wait_for_one()
 
     def __next__(self):
         if not self._todo_left:
@@ -634,7 +630,13 @@ class _AsCompletedIterator:
         # Wait for the next future to be done and return it unless resolve is
         # set, in which case return either the result of the future or raise
         # an exception.
-        f = await self._done.get()
+        try:
+            f = await self._done.get()
+        except exceptions.CancelledError:
+            # Nothing was consumed; give the slot back so that a later
+            # iteration step can still wait for the remaining future.
+            self._todo_left += 1
+            raise
         if f is None:
             # Dummy value from _handle_timeout().
             raise exceptions.TimeoutError
