@@ -24,7 +24,7 @@ terms of the MIT license. A copy of the license can be found in the file
 // OS memory configuration
 typedef struct mi_os_mem_config_s {
   size_t  page_size;              // default to 4KiB
-  size_t  large_page_size;        // 0 if not supported, usually 2MiB 
+  size_t  large_page_size;        // 0 if not supported, usually 2MiB
   size_t  alloc_granularity;      // smallest allocation size (usually 4KiB, on Windows 64KiB)
   size_t  physical_memory_in_kib; // physical memory size in KiB
   size_t  virtual_address_bits;   // usually 48 or 56 bits on 64-bit systems. (used to determine secure randomization)

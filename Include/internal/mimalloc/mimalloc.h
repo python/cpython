@@ -139,7 +139,7 @@ mi_decl_export void mi_free_size(void* p, size_t size) mi_attr_noexcept;
 
 // `mi_free_small` is for special applications like language runtimes.
 // it should only be used to free objects from `mi_*alloc_small` and is potentially a tiny bit faster than `mi_free`
-mi_decl_export void mi_free_small(void* p) mi_attr_noexcept;  
+mi_decl_export void mi_free_small(void* p) mi_attr_noexcept;
 
 // As `mi_free_small` but `p` should not be a NULL pointer.
 mi_decl_export void mi_free_small_nonnull(void* p) mi_attr_noexcept;
@@ -244,7 +244,7 @@ typedef struct mi_heap_s mi_heap_t;
 
 mi_decl_nodiscard mi_decl_export mi_heap_t* mi_heap_new(void);
 
-mi_decl_export void mi_heap_delete(mi_heap_t* heap);            // move live blocks to the main heap 
+mi_decl_export void mi_heap_delete(mi_heap_t* heap);            // move live blocks to the main heap
 mi_decl_export void mi_heap_destroy(mi_heap_t* heap);           // free all live blocks
 mi_decl_export void mi_heap_set_numa_affinity(mi_heap_t* heap, int numa_node);
 mi_decl_export void mi_heap_set_debug_fill_preserve(mi_heap_t* heap, size_t preserve); // in debug mode, do not fill the first `preserve` bytes of blocks on allocation or free
@@ -465,7 +465,7 @@ typedef enum mi_option_e {
   mi_option_show_stats,                 // print statistics on termination
   mi_option_verbose,                    // print verbose messages
   // advanced options
-  mi_option_deprecated_eager_commit,    
+  mi_option_deprecated_eager_commit,
   mi_option_arena_eager_commit,         // eager commit arenas? Use 2 to enable just on overcommit systems (=2)
   mi_option_purge_decommits,            // should a memory purge decommit? (=1). Set to 0 to use memory reset on a purge (instead of decommit)
   mi_option_allow_large_os_pages,       // allow use of large (2 or 4 MiB) OS pages, implies eager commit.
@@ -476,7 +476,7 @@ typedef enum mi_option_e {
   mi_option_deprecated_page_reset,
   mi_option_deprecated_abandoned_page_purge,
   mi_option_deprecated_segment_reset,
-  mi_option_deprecated_eager_commit_delay, 
+  mi_option_deprecated_eager_commit_delay,
   mi_option_purge_delay,                // memory purging is delayed by N milli seconds; use 0 for immediate purging or -1 for no purging at all. (=10)
   mi_option_use_numa_nodes,             // 0 = use all available numa nodes, otherwise use at most N nodes.
   mi_option_disallow_os_alloc,          // 1 = do not use OS memory for allocation (but only programmatically reserved arenas)
@@ -507,7 +507,7 @@ typedef enum mi_option_e {
   mi_option_page_cross_thread_max_reclaim, // don't reclaim pages across threads if we already own N pages (in that size class) (=32)
   mi_option_allow_thp,                  // allow transparent huge pages? (=1) (on Android =0 by default). Set to 0 to disable THP for the process.
   mi_option_arena_purge_min_size,       // set minimal purge size (in KiB) (=0). By default set to either 64 or 2048 if THP is enabled.
-  mi_option_arena_max_object_size,      // set maximal object size that can be allocated in an arena (in KiB) (=2GiB on 64-bit). 
+  mi_option_arena_max_object_size,      // set maximal object size that can be allocated in an arena (in KiB) (=2GiB on 64-bit).
   mi_option_arena_is_numa_local,        // experimental: associate local numa node with an initial arena allocation
   mi_option_stats_merge_on_collect,     // on each theap collection, the theap stats are merged automatically with the parent heap
   mi_option_profile_alloc_interval,     // number of allocated bytes between automatic dumps of the `MIMALLOC_PROFILE` heap profiler (internally, this value is in KiB; use `mi_option_get_size`) (=0, disabled)
@@ -574,8 +574,8 @@ mi_decl_nodiscard mi_decl_export mi_decl_restrict unsigned char* mi_mbsdup(const
 
 // --------------------------------------------------------
 // C++ wrappers
-// The `mi_new` wrappers implement C++ semantics on out-of-memory 
-// instead of directly returning `NULL`. (and call `std::get_new_handler` 
+// The `mi_new` wrappers implement C++ semantics on out-of-memory
+// instead of directly returning `NULL`. (and call `std::get_new_handler`
 // and potentially raise a `std::bad_alloc` exception).
 // --------------------------------------------------------
 
@@ -597,9 +597,9 @@ mi_decl_nodiscard mi_decl_export mi_decl_restrict void* mi_theap_alloc_new_nothr
 
 // --------------------------------------------------------------------------
 // Inlined constant size allocations.
-// These are meant for runtime systems, or overrides where we need the best 
+// These are meant for runtime systems, or overrides where we need the best
 // performance for small, constant-size allocations.
-// These are only better than the regular functions if the size or alignment 
+// These are only better than the regular functions if the size or alignment
 // are indeed constant at the call site.
 // --------------------------------------------------------------------------
 
@@ -619,7 +619,7 @@ static inline mi_decl_restrict void* mi_malloc_csize(size_t size) mi_attr_noexce
 static inline mi_decl_restrict void* mi_zalloc_csize(size_t size) mi_attr_noexcept {
   if (size <= MI_SMALL_SIZE_MAX) { return mi_wzalloc_small(mi_wsize_from_size(size)); } else { return mi_zalloc(size); }
 }
-static inline mi_decl_restrict void* mi_theap_malloc_csize(mi_theap_t* theap, size_t size) mi_attr_noexcept {  
+static inline mi_decl_restrict void* mi_theap_malloc_csize(mi_theap_t* theap, size_t size) mi_attr_noexcept {
   assert(theap!=NULL);
   if (size <= MI_SMALL_SIZE_MAX) { return mi_theap_wmalloc_small(theap,mi_wsize_from_size(size)); } else { return mi_theap_malloc(theap,size); }
 }

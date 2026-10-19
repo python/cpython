@@ -55,7 +55,7 @@ mi_threadid_t _mi_thread_id(void) mi_attr_noexcept {
 
 #if !MI_WIN_DIRECT_TLS
 // We initially use the last of the expansion slots as the default NULL.
-// note: this will fail if the program allocates exactly 1024+64 slots with TlsAlloc 
+// note: this will fail if the program allocates exactly 1024+64 slots with TlsAlloc
 // before we are initialized :-( (but this seems quite unlikely).
 // (todo: another approach could be to use slot 7 (EnvironmentPointer) as the initial slot as that seems to be always NULL)
 #define MI_TLS_INITIAL_SLOT             MI_TLS_EXPANSION_SLOT
@@ -166,7 +166,7 @@ void _mi_tls_slots_init(void) {
     pthread_key_t key;
     if (_mi_pthread_key_create(&key,NULL,NULL)) { mi_atomic_store_release(&_mi_theap_default_key,key); }
     if (_mi_pthread_key_create(&key,&mi_theap_cached_key_destroy,NULL)) { mi_atomic_store_release(&_mi_theap_cached_key,key); }
-  }  
+  }
 }
 
 void _mi_tls_slots_done(void) {
@@ -176,7 +176,7 @@ void _mi_tls_slots_done(void) {
   if (key!=MI_PTHREAD_KEY_INVALID) { pthread_key_delete(key); }
 }
 
-#elif MI_TLS_MODEL_FIXED 
+#elif MI_TLS_MODEL_FIXED
 
 void _mi_tls_slots_init(void) {
   mi_atomic_do_once {

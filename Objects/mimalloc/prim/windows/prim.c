@@ -558,7 +558,7 @@ size_t _mi_prim_numa_node_count(void) {
     // max node was invalid or had no processor assigned, try again
     numa_max--;
   }
-  return ((size_t)numa_max + 1);  
+  return ((size_t)numa_max + 1);
 }
 
 
@@ -837,7 +837,7 @@ static void NTAPI mi_win_main(PVOID module, DWORD reason, LPVOID reserved) {
 
 #if defined(MI_WIN_INIT_USE_CRT_TLS)
   #if !defined(__MINGW32__) || defined(MI_MINGW_UCRT64)  // on mingw without UCRT use the constructor attribute (in `src/prim/prim.c`)
-  #define MI_PRIM_HAS_PROCESS_ATTACH  1   
+  #define MI_PRIM_HAS_PROCESS_ATTACH  1
   #endif
 
   // nothing to do since `_mi_thread_done` is handled through the DLL_THREAD_DETACH event.

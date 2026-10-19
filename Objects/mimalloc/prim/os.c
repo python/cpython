@@ -61,14 +61,14 @@ size_t _mi_os_large_page_size(void) {
 // minimal purge size. Can be larger than the page size if transparent huge pages are enabled.
 size_t _mi_os_minimal_purge_size(void) {
   size_t minsize = mi_option_get_size(mi_option_minimal_purge_size);
-  if (minsize != 0) { 
+  if (minsize != 0) {
     // set by user
     return mi_align_up(minsize, _mi_os_page_size());
   }
   else if (mi_os_mem_config.has_transparent_huge_pages && mi_option_get(mi_option_allow_thp) == 2) {
-    // don't break up THP pages; 
+    // don't break up THP pages;
     // we don't do this by default as that can lead to increased memory usage (see issue #1282).
-    // on the other hand, breaking up THP pages can lead to performance degradation and perhaps 
+    // on the other hand, breaking up THP pages can lead to performance degradation and perhaps
     // allow_thp should be 2 by default (and the user can set the OS THP setting to [never]).
     return _mi_os_large_page_size();
   }
@@ -142,14 +142,14 @@ void* _mi_os_get_aligned_hint(size_t try_alignment, size_t sze)
   // todo: perhaps only do alignment hints if THP is enabled?
   if (try_alignment <= mi_os_mem_config.alloc_granularity || try_alignment > 16*MI_GiB) return NULL;
   if (mi_os_mem_config.virtual_address_bits < 46) return NULL;  // < 64TiB virtual address space
-  
+
   size_t req_size = sze + _mi_os_page_size(); // always reserve a bit more to create virtual gaps between hinted blocks.
   req_size += (try_alignment - 1);      // ensure we can align in the requested size
   req_size = mi_align_up(req_size, _mi_os_large_page_size());
   #if (MI_SECURE>=1)
   if (req_size > 32*MI_GiB) return NULL;  // guarantee the chance of fixed valid address is at most 1/(MI_HINT_AREA / 1<<34) = 1/256
   #endif
-  
+
   uintptr_t hint = mi_atomic_add_acq_rel(&aligned_base, req_size);
   if (hint == 0 || hint > MI_HINT_MAX) {   // wrap or initialize
     uintptr_t init = MI_HINT_BASE;
@@ -652,7 +652,7 @@ bool _mi_os_reset(mi_subproc_t* subproc, void* addr, size_t size) {
 }
 
 
-void _mi_os_reuse( mi_subproc_t* subproc, void* addr, size_t size ) { 
+void _mi_os_reuse( mi_subproc_t* subproc, void* addr, size_t size ) {
   MI_UNUSED(subproc);
   // page align conservatively within the range
   size_t csize = 0;

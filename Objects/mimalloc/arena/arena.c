@@ -225,7 +225,7 @@ static inline size_t mi_arena_start_idx(mi_heap_t* heap, size_t tseq, size_t are
   return start;
 }
 
-bool mi_decl_forceinline mi_forall_arenas(mi_heap_t* heap, mi_arena_t* req_arena, size_t tseq, mi_forall_arena_fun_t* visit, const void* arg, void** result) 
+bool mi_decl_forceinline mi_forall_arenas(mi_heap_t* heap, mi_arena_t* req_arena, size_t tseq, mi_forall_arena_fun_t* visit, const void* arg, void** result)
 {
   if (result != NULL) *result = NULL;
   const size_t arena_count = mi_arenas_get_count(heap->subproc);
@@ -245,7 +245,7 @@ bool mi_decl_forceinline mi_forall_arenas(mi_heap_t* heap, mi_arena_t* req_arena
     mi_arena_t* arena = mi_arena_from_index(heap->subproc,idx);
     if (req_arena != NULL && arena != req_arena &&
         (arena == NULL || arena->parent != req_arena)) continue; /* only the requested arena or its children */
-    
+
     // call the visitor
     if (arena != NULL) {
       if (!visit(arena, arg, result)) return false;
@@ -284,7 +284,7 @@ bool mi_decl_forceinline mi_forall_suitable_arenas(mi_heap_t* heap, mi_arena_t* 
 // since these are mi_decl_forceinline, ensure they are linked in the final binary by adding a reference.
 void* _mi_arena_externs[] = {
   (void*)&mi_forall_arenas,
-  (void*)&mi_forall_suitable_arenas  
+  (void*)&mi_forall_suitable_arenas
 };
 #endif
 
@@ -537,7 +537,7 @@ static mi_arena_t* mi_arena_initialize(mi_subproc_t* subproc, void* start,
   //   _mi_warning_message("cannot use OS memory since it is too large with respect to the maximum object size (size %zu MiB, meta-info slices %zu, maximum object slices are %zu)", _mi_size_of_slices(slice_count)/MI_MiB, info_slices, MI_ARENA_MAX_CHUNK_OBJ_SLICES);
   //   return NULL;
   // }
-  
+
   // commit & zero if needed
   if (!memid.initially_committed) {
     size_t commit_size = _mi_size_of_slices(info_slices);
@@ -610,16 +610,16 @@ static mi_arena_t* mi_arena_initialize(mi_subproc_t* subproc, void* start,
     const size_t start_idx = (i + meta_slices);
     size_t count = MI_PAGE_META_ALIGNED_COUNT - meta_slices;
     if (start_idx < arena->slice_count) {
-      if (count + start_idx > arena->slice_count) { 
+      if (count + start_idx > arena->slice_count) {
         count = arena->slice_count - start_idx;
         mi_assert_internal(count > 0);
       }
       mi_bbitmap_unsafe_setN(arena->slices_free, start_idx, count);
     }
-  }  
+  }
   #else
   mi_bbitmap_unsafe_setN(arena->slices_free, info_slices /* start */, arena->slice_count - info_slices);
-  #endif  
+  #endif
   if (memid.initially_committed) {
     mi_bitmap_unsafe_setN(arena->slices_committed, 0, arena->slice_count);
   }
@@ -739,7 +739,7 @@ static int mi_reserve_os_memory_ex2(mi_subproc_t* subproc, size_t size, bool com
   }
   mi_memid_t memid;
   void* start = _mi_os_alloc_aligned(subproc, size, MI_ARENA_ALIGNMENT, commit, allow_large, &memid);
-  if (start == NULL) return ENOMEM;  
+  if (start == NULL) return ENOMEM;
   if (!mi_manage_os_memory_ex2(subproc, start, size, -1 /* numa node */, exclusive, memid, NULL, NULL, arena_id)) {
     _mi_os_free_ex(subproc, start, size, commit, memid);
     _mi_verbose_message("failed to reserve %zu KiB memory\n", mi_divide_up(size, 1024));

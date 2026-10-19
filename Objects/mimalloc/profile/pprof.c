@@ -4,13 +4,13 @@ This is free software; you can redistribute it and/or modify it under the
 terms of the MIT license. A copy of the license can be found in the file
 "LICENSE" at the root of this distribution.
 
-Disclaimer: Unlike the rest of the considerate hand-crafted mimalloc sources, 
-this file was written with AI assistance (for the process image and protobuf 
+Disclaimer: Unlike the rest of the considerate hand-crafted mimalloc sources,
+this file was written with AI assistance (for the process image and protobuf
 format generation).
 -----------------------------------------------------------------------------*/
 
 // ---------------------------------------------------------------------------
-// This implements a basic memory profiler that outputs pprof-compatible heap 
+// This implements a basic memory profiler that outputs pprof-compatible heap
 // snapshots (text or protobuf). It is basic, but it does scale with a lock-free
 // hash table for locations, and uses poisson distributed sampling.
 // It has no impact on runtime performance when profiling is not active.
@@ -59,7 +59,7 @@ struct mi_callstack_s {
   void**  frames;
 };
 
-// A location is a unique combination of a thread and runtime callstack for 
+// A location is a unique combination of a thread and runtime callstack for
 // which we track allocation and deallocation statistics.
 //
 // Locations are only ever inserted, or mutated in-place after publication, and a location is only ever looked up using its own
@@ -102,9 +102,9 @@ typedef struct {
   _Atomic(mi_msecs_t)  time_interval_deadline;    // next `_mi_clock_now()` value that triggers a snapshot; advanced (monotonically increasing) whenever reached in `on_alloc`
 } mi_pprof_profiler_t;
 
-static inline mi_pprof_profiler_t* downcast( mi_profiler_t* prof ) { 
-  return (mi_pprof_profiler_t*)prof; 
-} 
+static inline mi_pprof_profiler_t* downcast( mi_profiler_t* prof ) {
+  return (mi_pprof_profiler_t*)prof;
+}
 
 static void    mi_pprof_profiler_snapshot(mi_pprof_profiler_t* prof);
 static size_t  mi_prim_backtrace(void** buffer, size_t max_depth, size_t* hash);  // `buffer` must have room for `max_depth + MI_PPROF_SKIP_FRAMES + 1` entries (see definition)
@@ -114,8 +114,8 @@ static size_t  mi_prim_backtrace(void** buffer, size_t max_depth, size_t* hash);
 // Automatic profiler driven by the `MIMALLOC_PROFILE` environment variable.
 // This allows profiling an arbitrary program (with no code changes) by
 // overriding its allocator with a mimalloc shared library build and setting
-// `MIMALLOC_PROFILE=<base_file_name>` 
-// (and optionally `MIMALLOC_PROFILE_ALLOC_INTERVAL=<KiB>` to periodically snapshot 
+// `MIMALLOC_PROFILE=<base_file_name>`
+// (and optionally `MIMALLOC_PROFILE_ALLOC_INTERVAL=<KiB>` to periodically snapshot
 // while the program is running).
 // ---------------------------------------------------------------------------
 #ifndef MI_PROFILE_USE_BUILTIN
@@ -136,7 +136,7 @@ void _mi_pprof_profiler_init(void) {
   const size_t sample_rate   = mi_option_get_size(mi_option_profile_sample_rate);           // 16 KiB by default
   const size_t alloc_interval_size = mi_option_get_size(mi_option_profile_alloc_interval);        // 0 by default (no automatic interval snapshots)
   const size_t inuse_interval_size = mi_option_get_size(mi_option_profile_inuse_interval);        // 0 by default (no automatic interval snapshots)
-  const size_t time_interval_secs = mi_option_get_clamp(mi_option_profile_time_interval,0,24*60*60L);  // 0 by default (no automatic interval snapshots)  
+  const size_t time_interval_secs = mi_option_get_clamp(mi_option_profile_time_interval,0,24*60*60L);  // 0 by default (no automatic interval snapshots)
   mi_profiler_t* profiler = mi_pprof_profiler_new(sample_rate, fname, alloc_interval_size, inuse_interval_size, time_interval_secs);
   if (profiler == NULL) return;
   mi_profile_env_profiler = profiler;
@@ -190,14 +190,14 @@ static mi_decl_noinline mi_location_t* mi_location_get(mi_pprof_profiler_t* prof
 // ---------------------------------------------------------------------------
 
 // Draws an integer approximating Exp(scale) to give a poisson distribution,
-// instead of a fixed period, which avoids sampling bias from allocation 
+// instead of a fixed period, which avoids sampling bias from allocation
 // patterns that happen to align with a constant period
 static size_t mi_exp_sample(mi_theap_t* theap, size_t scale) {
   if (scale == 0) return 0;                                     // keep 0
   #if MI_PROFILE==2
   if (scale == 1) return 1;                                     // keep 1 as is (to allow sampling every allocation)
   #endif
-  const size_t r  = _mi_theap_random_next(theap) | 1;   
+  const size_t r  = _mi_theap_random_next(theap) | 1;
   const size_t lz = mi_clz(r);                                  // coarse -log2(U): Geometric(1/2)
   const size_t frac_q8 = (r << (lz + 1)) >> (MI_SIZE_BITS - 8); // next 8 bits: fractional refinement, in [0,256)
   const size_t bits_q8 = (lz << 8) | frac_q8;                   // Q8 fixed-point estimate of -log2(U)
@@ -269,7 +269,7 @@ static bool mi_time_threshold_update(mi_msecs_t now, size_t time_interval_secs, 
 }
 
 // Sample allocation event and update profiling data accordingly
-static size_t mi_cdecl on_alloc(mi_profiler_t* profiler, mi_profiler_sample_data_t* data, void* ptr, size_t requested_size, size_t threshold, uint64_t bytes_since_last_sample, mi_heap_t* heap) 
+static size_t mi_cdecl on_alloc(mi_profiler_t* profiler, mi_profiler_sample_data_t* data, void* ptr, size_t requested_size, size_t threshold, uint64_t bytes_since_last_sample, mi_heap_t* heap)
 {
   MI_UNUSED(threshold); MI_UNUSED(heap); MI_UNUSED(ptr);
   mi_pprof_profiler_t* prof = downcast(profiler);
@@ -299,7 +299,7 @@ static size_t mi_cdecl on_alloc(mi_profiler_t* profiler, mi_profiler_sample_data
     mi_ssize_t* pinterval_pending = (mi_ssize_t*)&theap->profiler_reserved1;
     if (mi_interval_update(bytes_since_last_sample, prof->alloc_interval_size, &prof->alloc_interval_countdown, pinterval_pending)) {
       mi_profiler_snapshot(profiler);
-    }    
+    }
   }
   if (prof->inuse_interval_size > 0) { // snapshot whenever (sampled) in-use memory has grown by `inuse_interval_size` bytes
     const size_t total_inuse_bytes = mi_atomic_add_relaxed(&prof->inuse_bytes, alloc_size) + alloc_size;
@@ -316,7 +316,7 @@ static size_t mi_cdecl on_alloc(mi_profiler_t* profiler, mi_profiler_sample_data
 }
 
 // Sample free event and update profiling data accordingly
-static void mi_cdecl on_free(mi_profiler_t* profiler, mi_profiler_sample_data_t* data, void* ptr, mi_heap_t* heap) 
+static void mi_cdecl on_free(mi_profiler_t* profiler, mi_profiler_sample_data_t* data, void* ptr, mi_heap_t* heap)
 {
   MI_UNUSED(heap); MI_UNUSED(ptr);
   mi_pprof_profiler_t* prof = downcast(profiler);
@@ -414,10 +414,10 @@ void mi_pprof_profiler_delete(mi_profiler_t* profiler) {
 // since the hash (and thus the location itself) is derived from the calling
 // thread's own id, a location is only ever looked up by the same thread
 // that creates it, so there is never a concurrent insert race for the
-// same location. 
+// same location.
 // ---------------------------------------------------------------------------
 
-// A reasonably large prime bucket count to keep collision chains short 
+// A reasonably large prime bucket count to keep collision chains short
 #define MI_LOCATIONS_BUCKET_COUNT  (16 * 1024 - 3)  /* 16381, prime */
 
 // FNV-1a hash, mixed over the thread id and the (precomputed) callstack hash;
@@ -532,7 +532,7 @@ static size_t mi_prim_backtrace(void** buffer, size_t max_depth, size_t* hash) {
   MI_UNUSED(buffer);
   MI_UNUSED(max_depth);
   *hash = 0;
-  return 0; 
+  return 0;
 }
 
 void mi_pprof_profiler_snapshot(mi_pprof_profiler_t* profiler) {
@@ -559,7 +559,7 @@ static void mi_pprof_snapshot_text(mi_pprof_profiler_t* prof, const char* fname)
 static void mi_pprof_snapshot_proto(mi_pprof_profiler_t* prof, const char* fname);
 
 
-// Detect if we are running with elevated privileges (e.g. a setuid/setgid executable or similar), 
+// Detect if we are running with elevated privileges (e.g. a setuid/setgid executable or similar),
 // in which case we must not trust `MIMALLOC_PROFILE` environment.
 #if defined(_WIN32)
 static bool mi_is_elevated_process(void) {
@@ -617,7 +617,7 @@ static FILE* mi_pprof_fopen(const char* fname, bool binary) {
 // if it is NULL, no snapshot is written and this function does nothing.
 static void mi_pprof_profiler_snapshot(mi_pprof_profiler_t* prof) {
   if (prof == NULL) return;
-  bool was_running = mi_profiler_stop(&prof->profiler);    
+  bool was_running = mi_profiler_stop(&prof->profiler);
   mi_locations_t* locations = &prof->locations;
   if (locations->buckets != NULL && prof->base_file_name != NULL) {
     const size_t seq = ++prof->snapshot_count;
@@ -747,7 +747,7 @@ static void mi_pprof_modules_done(mi_pprof_modules_t* mods) {
 // per loaded Mach-O image using the dyld APIs: the range is taken from the
 // image's `__TEXT` segment, which is also the "load address" that tools like
 // `atos` use to symbolize addresses (`atos -o <path> -l <start> <addr>`). On
-// Windows we walk the process address space with `VirtualQuery` 
+// Windows we walk the process address space with `VirtualQuery`
 // On other platforms we leave this section empty (`pprof` can still work
 // without it if not using PIE, or when combined with tools like `atos` /
 // `addr2line` / a symbol server).

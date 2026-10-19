@@ -127,7 +127,7 @@ typedef int32_t  mi_ssize_t;
 // #define MI_BIG_ENDIAN  1
 
 // maximum virtual address bits in a user-space pointer
-#if MI_DEFAULT_VIRTUAL_ADDRESS_BITS > 0 
+#if MI_DEFAULT_VIRTUAL_ADDRESS_BITS > 0
 #define MI_MAX_VABITS     MI_DEFAULT_VIRTUAL_ADDRESS_BITS
 #elif   MI_ARCH_X64
 #define MI_MAX_VABITS     (47)
@@ -148,7 +148,7 @@ typedef int32_t  mi_ssize_t;
 
 // use a flat page-map or a 2-level one
 #ifndef MI_PAGE_MAP_FLAT
-#if MI_MAX_VABITS <= 40 && !defined(__APPLE__) && !MI_SECURE && !MI_FREE_IS_CHECKED && MI_FREE_USE_PAGEMAP 
+#if MI_MAX_VABITS <= 40 && !defined(__APPLE__) && !MI_SECURE && !MI_FREE_IS_CHECKED && MI_FREE_USE_PAGEMAP
 #define MI_PAGE_MAP_FLAT  1
 #else
 #define MI_PAGE_MAP_FLAT  0
@@ -229,7 +229,7 @@ static inline size_t mi_ctz(size_t x) {
     size_t r;
     __asm ("tzcnt\t%1, %0" : "=r"(r) : "r"(x) : "cc");
     return r;
-  #elif defined(_MSC_VER) && MI_ARCH_X64 && defined(__BMI1__) 
+  #elif defined(_MSC_VER) && MI_ARCH_X64 && defined(__BMI1__)
     return _tzcnt_u64(x);
   #elif defined(_MSC_VER) && (MI_ARCH_X64 || MI_ARCH_X86 || MI_ARCH_ARM64 || MI_ARCH_ARM32)
     unsigned long idx;
@@ -253,7 +253,7 @@ static inline size_t mi_clz(size_t x) {
     size_t r;
     __asm ("lzcnt\t%1, %0" : "=r"(r) : "r"(x) : "cc");
     return r;
-  #elif defined(_MSC_VER) && MI_ARCH_X64 && defined(__LZCNT__) 
+  #elif defined(_MSC_VER) && MI_ARCH_X64 && defined(__LZCNT__)
     return _lzcnt_u64(x);
   #elif defined(_MSC_VER) && (MI_ARCH_X64 || MI_ARCH_X86 || MI_ARCH_ARM64 || MI_ARCH_ARM32)
     unsigned long idx;

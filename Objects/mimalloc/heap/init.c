@@ -134,7 +134,7 @@ static mi_decl_cache_align mi_tld_t mi_tld_detached = {
 extern // fix warning in C++ for const variables with internal linkage
 #endif
 mi_decl_hidden mi_decl_cache_align const mi_theap_t _mi_theap_empty = {
-  MI_SMALL_PAGES_EMPTY,   // direct small pages  
+  MI_SMALL_PAGES_EMPTY,   // direct small pages
   &mi_tld_detached,       // tld
   MI_ATOMIC_VAR_INIT(NULL), // heap
   MI_ATOMIC_VAR_INIT(NULL), // subproc
@@ -142,9 +142,9 @@ mi_decl_hidden mi_decl_cache_align const mi_theap_t _mi_theap_empty = {
   0,                      // full page retain
   false,                  // allow reclaim
   true,                   // allow abandon
-  true,                   // is_detached 
+  true,                   // is_detached
   true,                   // profile_disabled: this static empty theap must never be sampled
-  ~MI_ZU(0),              // sample countdown: "-1" (with a sample rate of 0, so we won't write to the empty theap with MI_SAMPLE==2)  
+  ~MI_ZU(0),              // sample countdown: "-1" (with a sample rate of 0, so we won't write to the empty theap with MI_SAMPLE==2)
   0, 0,                   // sample rate, requested
   0, 0,                   // profile rate, countdown
   0, 0, 0, 0,             // guarded rate, countdown, min, max
@@ -488,7 +488,7 @@ void mi_thread_done(void) mi_attr_noexcept {
 }
 
 void _mi_thread_done(mi_theap_t* _theap_main)
-{  
+{
   // NULL can be passed on some platforms
   if (_theap_main==NULL) {
     _theap_main = _mi_theap_default();
@@ -569,7 +569,7 @@ void _mi_auto_process_init(void) {
   }
 
   // check if we should start the pprof profiler
-  _mi_pprof_profiler_init();  
+  _mi_pprof_profiler_init();
 }
 
 
@@ -630,7 +630,7 @@ void mi_process_init(void) mi_attr_noexcept {
 }
 
 // Called once on process exit (when the process/dll is exiting gracefully)
-static void mi_process_unwind_once(void) 
+static void mi_process_unwind_once(void)
 {
   // stop the profiler
   _mi_pprof_profiler_done();

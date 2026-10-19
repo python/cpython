@@ -29,28 +29,28 @@ size_t _mi_theap_update_sample_rate(mi_theap_t* theap) {
 }
 
 // Called when the theap sample countdown <= req_size; should call guarded or profiled allocation.
-mi_decl_noinline mi_decl_restrict void* _mi_theap_malloc_sampled(mi_theap_t* theap, size_t req_size, bool zero, mi_page_t** ppage) mi_attr_noexcept 
+mi_decl_noinline mi_decl_restrict void* _mi_theap_malloc_sampled(mi_theap_t* theap, size_t req_size, bool zero, mi_page_t** ppage) mi_attr_noexcept
 {
   // the size has not yet been counted against the countdown (and does not include MI_PADDING_SIZE)
   mi_assert_internal(req_size <= MI_MAX_ALLOC_SIZE);
-  mi_assert_internal((theap->sample_countdown==SIZE_MAX && _mi_is_empty_theap(theap)) || 
+  mi_assert_internal((theap->sample_countdown==SIZE_MAX && _mi_is_empty_theap(theap)) ||
                      (theap->sample_countdown <= MI_SAMPLE_COUNTDOWN_MAX && theap->sample_countdown < req_size));
   const size_t size = req_size + MI_PADDING_SIZE;
 
   // handle empty theap and disabled sampling
-  if (theap->sample_rate==0) { 
-    if (!_mi_is_empty_theap(theap)) {                    // avoid writing to the initial empty theap 
-      theap->sample_countdown = MI_SAMPLE_COUNTDOWN_MAX; // avoid the sampling path for a long time 
+  if (theap->sample_rate==0) {
+    if (!_mi_is_empty_theap(theap)) {                    // avoid writing to the initial empty theap
+      theap->sample_countdown = MI_SAMPLE_COUNTDOWN_MAX; // avoid the sampling path for a long time
     }
     return _mi_malloc_generic_no_sample(theap,size,zero,ppage);
   }
-  
+
   // update countdown and total accummulated requested bytes since the last sample
-  mi_assert_internal(!_mi_is_empty_theap(theap));  
+  mi_assert_internal(!_mi_is_empty_theap(theap));
   mi_assert_internal(req_size <= SIZE_MAX/2);
   mi_assert_internal(theap->sample_rate > 0);
   mi_assert_internal(theap->sample_rate <= SIZE_MAX/2);
-  mi_assert_internal(theap->sample_rate >= theap->sample_countdown);  
+  mi_assert_internal(theap->sample_rate >= theap->sample_countdown);
 
   const uint64_t requested = theap->sample_requested = (uint64_t)theap->sample_rate + (uint64_t)(req_size - theap->sample_countdown) + theap->sample_requested;
   mi_assert_internal(requested > 0);
@@ -105,7 +105,7 @@ mi_decl_noinline mi_decl_restrict void* _mi_theap_malloc_sampled(mi_theap_t* the
 
 static mi_profiler_t* mi_heap_profiler(const mi_heap_t* heap) {
   return mi_atomic_load_ptr_acquire(mi_profiler_t,&heap->profiler);
-} 
+}
 
 static mi_profiler_t* mi_theap_get_enabled_profiler(const mi_theap_t* theap) {
   mi_heap_t* const heap = mi_theap_heap(theap);
@@ -119,27 +119,27 @@ static mi_profiler_t* mi_theap_get_enabled_profiler(const mi_theap_t* theap) {
 }
 
 //----------------------------------------------------------------------------
-// Profile an allocation 
+// Profile an allocation
 //-----------------------------------------------------------------------------
 
 mi_decl_noinline mi_decl_restrict void* _mi_theap_malloc_profiled(mi_theap_t* theap, size_t size, uint64_t requested_since_last_sample, bool zero, mi_page_t** ppage) mi_attr_noexcept
 {
-  mi_assert_internal(theap!=NULL);  
+  mi_assert_internal(theap!=NULL);
   mi_assert_internal(size>=MI_PADDING_SIZE);
   const size_t req_size = size - MI_PADDING_SIZE;
   mi_assert_internal(req_size<=requested_since_last_sample);
   mi_profiler_t* const prof = mi_theap_get_enabled_profiler(theap);
   if (prof == NULL) { return _mi_malloc_generic_no_sample(theap,size,zero,ppage); }
   mi_assert_internal(prof!=NULL && prof->on_alloc!=NULL && mi_profiler_is_enabled(prof));
-  
+
   void* p = NULL;
   size_t new_sample_rate = 0;
-  if (prof->on_free==NULL || prof->sample_data_size==0) { 
+  if (prof->on_free==NULL || prof->sample_data_size==0) {
     // just allocate without profiler data
     p = _mi_malloc_generic_no_sample(theap,size,zero,ppage);
     if (p==NULL) { return p; }
     if (prof->on_alloc!=NULL) {
-      // we are just allocation profiling (not heap profiling as on_free == NULL)    
+      // we are just allocation profiling (not heap profiling as on_free == NULL)
       new_sample_rate = (*prof->on_alloc)(prof, NULL /* no data */, p, req_size, theap->profile_sample_rate, requested_since_last_sample, mi_theap_heap(theap) );
     }
   }
@@ -152,10 +152,10 @@ mi_decl_noinline mi_decl_restrict void* _mi_theap_malloc_profiled(mi_theap_t* th
     const size_t user_offset           = mi_align_up(sample_data_offset + sample_data_size, MI_MAX_ALIGN_SIZE);
     const size_t oversize              = user_offset + size;
     mi_page_t* page = NULL;
-    mi_block_t* const block = (mi_block_t*)_mi_malloc_generic_no_sample(theap,oversize,zero,&page); 
+    mi_block_t* const block = (mi_block_t*)_mi_malloc_generic_no_sample(theap,oversize,zero,&page);
     if (block==NULL) return NULL;
     mi_assert_internal(page!=NULL);
-    if (ppage!=NULL) { *ppage = page; }    
+    if (ppage!=NULL) { *ppage = page; }
     #if MI_PAGE_META_SMALL_IS_ALIGNED
     // we should never allocate something allocated as small in a non-small page or otherwise aligned mi_free_small may fail.
     // (that is why we need to limit the profiler_data_size as well)
@@ -165,20 +165,20 @@ mi_decl_noinline mi_decl_restrict void* _mi_theap_malloc_profiled(mi_theap_t* th
 
     // Set up the profiled block as an interior pointer so the interior "slow" path is taken on mi_free (where we catch it to call on_free)
     mi_page_set_has_interior_pointers(page, true);
-    block->next = MI_BLOCK_TAG_PROFILED;  
+    block->next = MI_BLOCK_TAG_PROFILED;
     p = (uint8_t*)block + user_offset;
     mi_profiler_sample_data_t* const sample_data = (mi_profiler_sample_data_t*)((uint8_t*)block + sample_data_offset);
     sample_data->user_data_size = sample_user_data_size;
 
     // and call the profiler on_alloc
-    if (prof->on_alloc!=NULL) { 
+    if (prof->on_alloc!=NULL) {
       new_sample_rate = (*prof->on_alloc)(prof, sample_data, p, req_size, theap->profile_sample_rate, requested_since_last_sample, mi_theap_heap(theap) );
     }
   }
-  if (new_sample_rate!=0 && new_sample_rate != (size_t)theap->profile_sample_rate) { 
+  if (new_sample_rate!=0 && new_sample_rate != (size_t)theap->profile_sample_rate) {
     _mi_theap_set_profile_sample_rate(theap,new_sample_rate);
   }
-  mi_theap_stat_counter_increase(theap,profile_samples,1);  
+  mi_theap_stat_counter_increase(theap,profile_samples,1);
   return p;
 }
 
@@ -190,7 +190,7 @@ void _mi_page_profile_on_free(mi_page_t* page, mi_block_t* block, void* p) {
   if (heap==NULL) return;
   mi_profiler_t* prof = mi_heap_profiler(heap);
   if (prof==NULL || !mi_profiler_is_enabled(prof) || prof->on_free==NULL) return;
-  
+
   // call the on_free callback
   mi_profiler_sample_data_t* const sample_data = (mi_profiler_sample_data_t*)((uint8_t*)block + sizeof(mi_block_t));
   (*prof->on_free)(prof, sample_data, p, heap);
@@ -204,7 +204,7 @@ void _mi_page_profile_on_free(mi_page_t* page, mi_block_t* block, void* p) {
 size_t _mi_theap_set_profile_sample_rate(mi_theap_t* theap, size_t sample_rate) {
   const size_t old_sample_rate = theap->profile_sample_rate;
   theap->profile_sample_rate = (sample_rate > MI_SAMPLE_RATE_MAX ? MI_SAMPLE_RATE_MAX : sample_rate);
-  if (theap->profile_sample_countdown > theap->profile_sample_rate) { 
+  if (theap->profile_sample_countdown > theap->profile_sample_rate) {
     theap->profile_sample_countdown = theap->profile_sample_rate;  // todo: adjust difference?
   }
   _mi_theap_update_sample_rate(theap);
@@ -229,10 +229,10 @@ mi_decl_export void mi_heap_profile_disable(mi_heap_t* heap) {
 
 mi_decl_export bool mi_subproc_profile(mi_subproc_id_t subproc_id, mi_profiler_t* profiler) {
   mi_subproc_t* subproc = _mi_subproc_from_id(subproc_id);
-  if (subproc==NULL) return false;   
-  mi_profiler_stop(profiler);  
+  if (subproc==NULL) return false;
+  mi_profiler_stop(profiler);
   mi_profiler_t* previous = (profiler==NULL ? mi_atomic_load_ptr_acquire(mi_profiler_t,&subproc->profiler) : NULL); // don't overwrite unless it is NULL
-  if (!mi_atomic_cas_ptr_strong_acq_rel(mi_profiler_t,&subproc->profiler, &previous, profiler)) { return false; }  
+  if (!mi_atomic_cas_ptr_strong_acq_rel(mi_profiler_t,&subproc->profiler, &previous, profiler)) { return false; }
   mi_lock(&subproc->heaps_lock) {
     for (mi_heap_t* heap = subproc->heaps; heap!=NULL; heap = heap->next) {
       mi_heap_set_profiler(heap,profiler);
@@ -247,7 +247,7 @@ mi_decl_export bool mi_profile( mi_profiler_t* profiler) {
 
 bool mi_profiler_start(mi_profiler_t* profiler ) {
   if (profiler==NULL) return false;
-  const bool was_running = mi_profiler_set_enabled(profiler,true);  
+  const bool was_running = mi_profiler_set_enabled(profiler,true);
   if (was_running) return true;
   // for the main heap, if this is the profiler, start the theap more aggressively
   // otherwise it will be picked up when theaps take the slow generic malloc path.

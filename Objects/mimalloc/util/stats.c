@@ -71,7 +71,7 @@ static void mi_stat_adjust(mi_stat_count_t* stat, int64_t amount) {
   if (amount == 0) return;
   stat->current += amount;
   if (stat->total==stat->peak) { stat->peak += amount; }
-  stat->total += amount;  
+  stat->total += amount;
 }
 
 void __mi_stat_adjust_increase_mt(mi_stat_count_t* stat, uint64_t amount) {
@@ -102,13 +102,13 @@ static void mi_stat_count_add_mt(mi_stat_count_t* stat, const mi_stat_count_t* s
   if (src_current == 0 && src_peak == 0) return;
   const int64_t prev_current = (src_current == 0 ? mi_atomic_loadi64_relaxed((_Atomic(int64_t)*)&stat->current)
                                                  : mi_atomic_volatile_addi64_relaxed(&stat->current, src_current));
-  
+
   // Global current plus thread peak approximates new global peak
   // note: peak scores do not really work across threads.
   // we used to just add them together but that often overestimates in practice.
   // similarly, max does not seem to work well. The current approach
   // by Artem Kharytoniuk (@artem-lunarg) seems to work better, see PR#1112
-  // for a longer description.  
+  // for a longer description.
   mi_atomic_volatile_maxi64_relaxed(&stat->peak, prev_current + src_peak);
 }
 
@@ -250,7 +250,7 @@ static void mi_print_stat_total_size(const mi_stat_counter_t* stat, const char* 
 }
 
 static void mi_print_check(const mi_stat_count_t* stat, mi_output_fun* out, void* arg, const char* not_ok) {
-  _mi_fprintf(out, arg, "  %s\n", (stat->current==0 ? "ok" : (not_ok == NULL ? "not all freed" : not_ok)));    
+  _mi_fprintf(out, arg, "  %s\n", (stat->current==0 ? "ok" : (not_ok == NULL ? "not all freed" : not_ok)));
 }
 
 static void mi_print_stat_bin(const mi_stat_count_t* stat, const char* msg, int64_t blocksize, int64_t total, mi_output_fun* out, void* arg) {
@@ -430,7 +430,7 @@ void _mi_stats_print(const char* name, size_t id, const mi_stats_t* stats, mi_ou
   mi_stat_counter_t numa_count = { _mi_os_numa_node_count() };
   mi_print_stat_counter(&numa_count, "numa nodes", out, arg);
   mi_process_info_print_out(out, arg);
-  
+
   mi_print_newline(out, arg);
 }
 
@@ -452,7 +452,7 @@ void _mi_stats_merge_into(mi_stats_t* to, mi_stats_t* from) {
   mi_assert_internal(to != NULL && from != NULL);
   if (to == from) return;
   mi_stats_add(to, from);
-  mi_stats_init(from); // zero field and keep the header 
+  mi_stats_init(from); // zero field and keep the header
 }
 
 static const mi_stats_t* mi_stats_merge_theap_to_heap(mi_theap_t* theap) mi_attr_noexcept {
@@ -581,7 +581,7 @@ mi_decl_export void mi_process_info(size_t* elapsed_msecs, size_t* user_msecs, s
       const int64_t peak    = mi_atomic_loadi64_relaxed((_Atomic(int64_t)*)(&subproc->stats.committed.peak));
       pinfo.current_commit  = (current < 0 ? 0 : (current < PTRDIFF_MAX ? (size_t)current : PTRDIFF_MAX));
       pinfo.peak_commit     = (peak < 0 ? 0 : (peak < PTRDIFF_MAX ? (size_t)peak : PTRDIFF_MAX));
-    }  
+    }
   }
   pinfo.current_rss    = pinfo.current_commit;
   pinfo.peak_rss       = pinfo.peak_commit;
@@ -805,7 +805,7 @@ static char* mi_stats_get_json_from(const mi_stats_t* stats, size_t output_size,
   #define MI_STAT_COUNTER(stat)  mi_json_buf_print_counter_value(&hbuf, #stat, &stats->stat);
 
   MI_STAT_FIELDS()
-  
+
   #undef MI_STAT_COUNT
   #undef MI_STAT_COUNTER
 

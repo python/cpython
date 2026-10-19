@@ -218,7 +218,7 @@ static void mi_heap_free_theaps(mi_heap_t* heap) {
       _mi_theap_decref(theap);  // a cached entry can still point to the theap
       theap = next;
     }
-  }  
+  }
 
   // set the theap thread local to NULL (so _mi_page_associated_theap does not read from a freed theap (through delete pages -> page_update_stats))
   if (!mi_is_process_heap_main(heap)) {
@@ -246,8 +246,8 @@ static void mi_heap_free(mi_heap_t* heap, bool acquire_heaps_lock) {
   }
 
   // remove the heap from the subproc
-  if (!is_main) { 
-    mi_heap_stats_merge_to_main(heap); 
+  if (!is_main) {
+    mi_heap_stats_merge_to_main(heap);
   }
   else {
     _mi_stats_merge_into(&heap->subproc->stats,&heap->stats);
@@ -265,7 +265,7 @@ static void mi_heap_free(mi_heap_t* heap, bool acquire_heaps_lock) {
   mi_lock_done(&heap->arena_pages_lock);
   if (!mi_is_process_heap_main(heap)) {
     // _mi_thread_local_free(heap->theap);
-    _mi_free_subproc_safe(heap); 
+    _mi_free_subproc_safe(heap);
   }
 }
 
@@ -292,9 +292,9 @@ void _mi_heap_force_destroy(mi_heap_t* heap, bool acquire_heaps_lock) {
   // if (_mi_subproc_main()->heap_main == heap) {
   //   _mi_stats_merge_into(&heap->subproc->stats,&heap->stats);
   // }
-  // else 
+  // else
   {
-    mi_heap_free(heap, acquire_heaps_lock);   // todo: release locks of the main heap?  
+    mi_heap_free(heap, acquire_heaps_lock);   // todo: release locks of the main heap?
   }
 }
 

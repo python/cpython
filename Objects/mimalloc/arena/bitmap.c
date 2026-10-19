@@ -249,7 +249,7 @@ static inline bool mi_bitmap_find(mi_bitmap_t* bitmap, size_t tseq, size_t n, si
 -------------------------------------------------------------------------------- */
 
 typedef struct mi_claim_fun_data_s {
-  mi_arena_t*   arena;  
+  mi_arena_t*   arena;
 } mi_claim_fun_data_t;
 
 static bool mi_bitmap_try_find_and_claim_visit(mi_bitmap_t* bitmap, size_t chunk_idx, size_t n, size_t* pidx, void* arg1, void* arg2)
@@ -429,13 +429,13 @@ bool _mi_bitmap_forall_setc_ranges(mi_bitmap_t* bitmap, mi_forall_set_fun_t* vis
 // However, the `rngslices` are capped at `MI_BFIELD_BITS` at most.
 // Used by purging to purge larger ranges when possible. With transparent huge pages we only
 // want to purge whole huge pages (2 MiB) at a time which is what the `rngslices` parameter achieves.
-bool _mi_bitmap_forall_setc_rangesn(mi_bitmap_t* bitmap, size_t rngslices, mi_forall_set_fun_t* visit, mi_arena_t* arena, void* arg) 
+bool _mi_bitmap_forall_setc_rangesn(mi_bitmap_t* bitmap, size_t rngslices, mi_forall_set_fun_t* visit, mi_arena_t* arena, void* arg)
 {
   // use the generic routine for `rngslices<=1` (as that one finds longest ranges at a time)
   if (rngslices<=1) {
     return _mi_bitmap_forall_setc_ranges(bitmap, visit, arena, arg);
   }
-  // mi_assert_internal(rngslices <= MI_BFIELD_BITS);  
+  // mi_assert_internal(rngslices <= MI_BFIELD_BITS);
   if (rngslices > MI_BFIELD_BITS) { rngslices = MI_BFIELD_BITS;  } // cap at MI_BFIELD_BITS at most
 
   // for all chunkmap entries
@@ -472,8 +472,8 @@ bool _mi_bitmap_forall_setc_rangesn(mi_bitmap_t* bitmap, size_t rngslices, mi_fo
           }
           else {
             skipped = skipped | (b & rngmask);
-          }          
-        } 
+          }
+        }
         if (shift < MI_BFIELD_BITS) {
           // there are some non-visited top bits when `MI_BFIELD_BITS % rngslices != 0`.
           mi_assert_internal(MI_BFIELD_BITS % rngslices != 0);
@@ -658,9 +658,9 @@ bool mi_bbitmap_try_clearNC(mi_bbitmap_t* bbitmap, size_t idx, size_t n) {
   bool maybe_all_clear = false;
   bool did_temp_clear_bits = false;
   const bool cleared = mi_bchunk_try_clearN(&bbitmap->chunks[chunk_idx], cidx, n, &maybe_all_clear, &did_temp_clear_bits);
-  if (cleared && maybe_all_clear) { 
+  if (cleared && maybe_all_clear) {
     mi_assert_internal(!did_temp_clear_bits);
-    mi_bbitmap_chunkmap_try_clear(bbitmap, chunk_idx); 
+    mi_bbitmap_chunkmap_try_clear(bbitmap, chunk_idx);
   } else if (did_temp_clear_bits) {
     // may have raced with a clearer (in on_find) so set the chunkmap bit conservatively
     mi_bbitmap_chunkmap_set(bbitmap, chunk_idx, false);
@@ -772,7 +772,7 @@ static bool mi_bbitmap_try_find_and_clear_generic(mi_bbitmap_t* bbitmap, size_t 
         if (did_temp_clear_bits) {
           // a concurrent find_and_claim may have cleared the chunkmap bit, restore it now
           mi_bbitmap_chunkmap_set(bbitmap, chunk_idx, false);
-        }        
+        }
         if (found) {
           if (cidx==0 && ibin == MI_CBIN_NONE) { // only the first block determines the size bin
             // this chunk is now reserved for the `bbin` size class
@@ -895,7 +895,7 @@ bool mi_bbitmap_try_find_and_clearN_(mi_bbitmap_t* bbitmap, size_t tseq, size_t 
 
     // did we find a suitable range?
     if (count == chunk_req) {
-      // now try to claim it!      
+      // now try to claim it!
       if (mi_bbitmap_try_clearN_(bbitmap, chunk_idx, n)) {
         *pidx = (chunk_idx * MI_BCHUNK_BITS);
         for (size_t i = 0; i < count; i++) {
@@ -905,7 +905,7 @@ bool mi_bbitmap_try_find_and_clearN_(mi_bbitmap_t* bbitmap, size_t tseq, size_t 
         return true;
       }
       else {
-        // contended: we reset count to retry from the first 
+        // contended: we reset count to retry from the first
         // (we still skip the first chunk to guarantee progress)
         count = 0;
       }

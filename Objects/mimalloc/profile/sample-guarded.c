@@ -19,8 +19,8 @@ mi_decl_export void mi_theap_guarded_set_sample_rate(mi_theap_t* theap, size_t s
     theap->guarded_sample_countdown = (seed % theap->guarded_sample_rate) + 1;  // start at random count between 1 and `sample_rate`
   }
   else if (theap->guarded_sample_countdown > theap->guarded_sample_rate) {
-    theap->guarded_sample_countdown = theap->guarded_sample_rate; 
-  }   
+    theap->guarded_sample_countdown = theap->guarded_sample_rate;
+  }
   _mi_theap_update_sample_rate(theap);
 }
 
@@ -63,7 +63,7 @@ static void* mi_block_ptr_set_guarded(mi_block_t* block, size_t obj_size, size_t
   }
   uint8_t* guard_page = (uint8_t*)block + block_size - os_page_size;
   // note: the alignment of the guard page relies on blocks being os_page_size aligned which
-  // is ensured in `mi_arena_page_alloc_fresh`.  
+  // is ensured in `mi_arena_page_alloc_fresh`.
   mi_assert_internal(mi_is_aligned(block, os_page_size));
   mi_assert_internal(mi_is_aligned(guard_page, os_page_size));
   if (!page->memid.is_pinned && mi_is_aligned(guard_page, os_page_size)) {
@@ -96,7 +96,7 @@ mi_decl_restrict void* _mi_theap_malloc_guarded(mi_theap_t* theap, size_t size, 
 {
   // allocate multiple of page size ending in a guard page
   // ensure minimal alignment requirement?
-  if mi_unlikely(size >= MI_MAX_ALLOC_SIZE - MI_PADDING_SIZE) {  // check up front so the `req_size` won't overflow    
+  if mi_unlikely(size >= MI_MAX_ALLOC_SIZE - MI_PADDING_SIZE) {  // check up front so the `req_size` won't overflow
     _mi_error_message(EOVERFLOW, "(guarded) allocation request is too large (%zu bytes)\n", size);
     return NULL;
   }
@@ -116,7 +116,7 @@ mi_decl_restrict void* _mi_theap_malloc_guarded(mi_theap_t* theap, size_t size, 
   }
 
   // stats
-  mi_track_malloc(p, usable_size, zero);    
+  mi_track_malloc(p, usable_size, zero);
   if (!mi_theap_is_initialized(theap)) { theap = _mi_theap_default(); }
   mi_theap_stat_counter_increase(theap, malloc_guarded_count, 1);
   #if MI_STATS
@@ -131,9 +131,9 @@ mi_decl_restrict void* _mi_theap_malloc_guarded(mi_theap_t* theap, size_t size, 
   #endif
   #if MI_PAGE_META_SMALL_IS_ALIGNED && MI_DEBUG>=2
   // we should never allocate something allocated as small in a non-small page or otherwise aligned mi_free_small may fail.
-  if (size <= MI_SMALL_SIZE_MAX) { 
+  if (size <= MI_SMALL_SIZE_MAX) {
     mi_page_t* const page = mi_ptr_page(p);
-    mi_assert_internal(mi_page_block_size(page) <= MI_SMALL_MAX_OBJ_SIZE); 
+    mi_assert_internal(mi_page_block_size(page) <= MI_SMALL_MAX_OBJ_SIZE);
   }
   #endif
   return p;
@@ -160,7 +160,7 @@ void _mi_page_block_unguard(mi_page_t* page, mi_block_t* block, void* p) {
 }
 
 // unguard a whole page (called from `mi_heap_destroy`)
-void _mi_page_unguard_all(mi_page_t* page) {      
+void _mi_page_unguard_all(mi_page_t* page) {
   if mi_likely(!mi_page_has_interior_pointers(page)) return;
   uint8_t* const start = mi_page_start(page);
   const size_t psize = mi_page_committed(page);

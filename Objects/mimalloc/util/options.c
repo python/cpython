@@ -204,7 +204,7 @@ static mi_option_desc_t mi_options[_mi_option_last] =
          MI_OPTION_UNINIT, MI_OPTION(stats_merge_threshold) },    // on a page stats update, merge theap stats into the heap if N bytes were freed/allocated (=0, disabled)
   { MI_DEFAULT_ARENA_PURGE_IMMEDIATE_SIZE,
          MI_OPTION_UNINIT, MI_OPTION(arena_purge_immediate_size) }, // ranges above this size are purged immediately
-  
+
 };
 
 static void mi_option_init(mi_option_desc_t* desc);
@@ -213,15 +213,15 @@ static void mi_option_init(mi_option_desc_t* desc);
 // todo: use mi_ssize_t for options?
 static bool mi_option_has_size_in_kib(mi_option_t option) {
   return (option == mi_option_reserve_os_memory || option == mi_option_arena_reserve ||
-          option == mi_option_arena_purge_min_size || option == mi_option_arena_purge_immediate_size || 
-          option == mi_option_arena_max_object_size 
+          option == mi_option_arena_purge_min_size || option == mi_option_arena_purge_immediate_size ||
+          option == mi_option_arena_max_object_size
           // || option == mi_option_profile_alloc_interval || option == mi_option_profile_inuse_interval || option == mi_option_profile_sample_rate
          );
 }
 
 // option value is stored in bytes as a `long` is enough.
 static bool mi_option_has_size_in_bytes(mi_option_t option) {
-  return (option == mi_option_stats_merge_threshold || 
+  return (option == mi_option_stats_merge_threshold ||
           option == mi_option_profile_alloc_interval || option == mi_option_profile_inuse_interval || option == mi_option_profile_sample_rate);
 }
 
@@ -280,7 +280,7 @@ mi_decl_export void mi_options_print_out(mi_output_fun* out, void* arg) mi_attr_
     _mi_fprintf(out, arg, "option '%s': %ld %s\n", desc->name, desc->value, (mi_option_has_size_in_kib(option) ? "KiB" : (mi_option_has_size_in_bytes(option) ? "B" : "")));
   }
 
-  // show build configuration  
+  // show build configuration
   #if MI_PAGE_META_IS_ALIGNED && MI_PAGE_META_SMALL_IS_ALIGNED
   _mi_fprintf(out, arg, "free mode   : (small) aligned, page size: %zu\n", sizeof(mi_page_t));
   #elif MI_PAGE_META_IS_ALIGNED
@@ -289,7 +289,7 @@ mi_decl_export void mi_options_print_out(mi_output_fun* out, void* arg) mi_attr_
   _mi_fprintf(out, arg, "free mode   : small aligned + pagemap, page size: %zu\n", sizeof(mi_page_t));
   #elif MI_FREE_IS_CHECKED
   _mi_fprintf(out, arg, "free mode   : checked, page size: %zu\n", sizeof(mi_page_t));
-  #else 
+  #else
   _mi_fprintf(out, arg, "free mode   : pagemap, page size: %zu\n", sizeof(mi_page_t));
   #endif
   #if MI_ENCODE_FREELIST
@@ -297,17 +297,17 @@ mi_decl_export void mi_options_print_out(mi_output_fun* out, void* arg) mi_attr_
   #endif
   #if MI_GUARDED
   _mi_fprintf(out, arg, "guarded mode: %s, rate=%ld\n",  MI_SAMPLE==2 ? "fine-grained" : "enabled", mi_option_get(mi_option_guarded_sample_rate));
-  #endif  
+  #endif
   #if MI_PROFILE
   _mi_fprintf(out, arg, "profiling   : %s\n", MI_SAMPLE==2 ? "fine-grained" : "enabled");
   #endif
   #if MI_TSAN
   _mi_fprintf(out, arg, "thread santizer enabled\n");
   #endif
-  _mi_fprintf(out, arg, "mem tracking: %s\n", MI_TRACK_TOOL);  
+  _mi_fprintf(out, arg, "mem tracking: %s\n", MI_TRACK_TOOL);
   _mi_fprintf(out, arg, "debug level : %d\n", MI_DEBUG );
   _mi_fprintf(out, arg, "secure level: %d\n", MI_SECURE );
-  _mi_fprintf(out, arg, "padding     : %s\n", (MI_PADDING==0 ? "none" : (MI_PADDING==1 ? "enabled" : "byte precise")));  
+  _mi_fprintf(out, arg, "padding     : %s\n", (MI_PADDING==0 ? "none" : (MI_PADDING==1 ? "enabled" : "byte precise")));
 }
 
 mi_decl_export void mi_options_print(void) mi_attr_noexcept {
@@ -663,7 +663,7 @@ mi_decl_noinline mi_block_t* _mi_block_next_is_corrupted(const mi_page_t* page, 
   _mi_error_message(EFAULT, "corrupted free list entry of size %zub at %p: value 0x%zx\n", mi_page_block_size(page), block, (uintptr_t)next);
   return NULL;
 }
-    
+
 // --------------------------------------------------------
 // Initialize options by checking the environment
 // --------------------------------------------------------
@@ -705,20 +705,20 @@ static void mi_option_init(mi_option_desc_t* desc) {
       errno = 0;
       long value = strtol(buf, &end, 10);
       if (errno==0 && (mi_option_has_size_in_kib(desc->option) || mi_option_has_size_in_bytes(desc->option))) {
-        // this option is interpreted in bytes. 
+        // this option is interpreted in bytes.
         size_t size = (value < 0 ? 0 : (size_t)value);
         bool overflow = false;
         if (*end == 'K') { end++; }
-        #if MI_SIZE_SIZE >= 4        
+        #if MI_SIZE_SIZE >= 4
         else if (*end == 'M') { overflow = mi_mul_overflow(size,MI_MiB,&size); end++; }
         else if (*end == 'G') { overflow = mi_mul_overflow(size,MI_GiB,&size); end++; }
         #endif
         #if MI_SIZE_SIZE >= 8
         else if (*end == 'T') { overflow = mi_mul_overflow(size,MI_GiB * MI_KiB,&size); end++; }
-        #endif        
+        #endif
         if (end[0] == 'I' && end[1] == 'B') { end += 2; } // KiB, MiB, GiB, TiB
         else if (*end == 'B') { end++; }                  // Kb, Mb, Gb, Tb
-        if (overflow || size > MI_MAX_ALLOC_SIZE) { size = MI_MAX_ALLOC_SIZE; }        
+        if (overflow || size > MI_MAX_ALLOC_SIZE) { size = MI_MAX_ALLOC_SIZE; }
         if (mi_option_has_size_in_kib(desc->option)) {
           // This option is interpreted in KiB to prevent overflow of `long` for large allocations
           // (long is 32-bit on 64-bit windows, which allows for 4TiB max.)

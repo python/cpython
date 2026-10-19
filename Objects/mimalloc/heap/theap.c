@@ -741,7 +741,7 @@ static bool mi_theap_visit_areas_page(mi_theap_t* theap, mi_page_queue_t* pq, mi
   mi_theap_area_visit_fun* fun = (mi_theap_area_visit_fun*)vfun;
   mi_theap_area_ex_t xarea;
   xarea.page = page;
-  _mi_page_free_collect(page, true);  // collect cross-thread free'd blocks so `area.used` is precise 
+  _mi_page_free_collect(page, true);  // collect cross-thread free'd blocks so `area.used` is precise
   _mi_heap_area_init(&xarea.area, page);
   return fun(theap, &xarea, arg);
 }

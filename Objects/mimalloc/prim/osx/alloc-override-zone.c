@@ -39,10 +39,10 @@ extern malloc_zone_t* malloc_default_purgeable_zone(void) __attribute__((weak_im
    malloc zone members
 ------------------------------------------------------ */
 
-static bool is_mimalloc_zone( malloc_zone_t* zone ); 
+static bool is_mimalloc_zone( malloc_zone_t* zone );
 
 static size_t zone_size(malloc_zone_t* zone, const void* p) {
-  if (mi_any_heap_contains(p)) { 
+  if (mi_any_heap_contains(p)) {
     return mi_usable_size(p);
   }
   else if (!is_mimalloc_zone(zone)) {  // can happen due to interpose
@@ -69,7 +69,7 @@ static void* zone_valloc(malloc_zone_t* zone, size_t size) {
 }
 
 static void zone_free(malloc_zone_t* zone, void* p) {
-  // during C++ thread shutdown `_pthread_tsd_cleanup` may call `zone_free` 
+  // during C++ thread shutdown `_pthread_tsd_cleanup` may call `zone_free`
   // after mimalloc mi_thread_done, and also on a pointer that was allocated in another subproc.
   if mi_unlikely(!mi_cfree(p)) {
     if (!is_mimalloc_zone(zone)) {  // can happen due to interpose
@@ -224,7 +224,7 @@ static malloc_introspection_t mi_introspect = {
 #if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6) && !defined(__ppc__)
   .statistics = &intro_statistics,
   .zone_locked = &intro_zone_locked,
-#endif  
+#endif
 #if defined(MAC_OS_X_VERSION_10_12) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_12) && !defined(__ppc__)
   .reinit_lock = &intro_reinit_lock,
 #endif
@@ -383,7 +383,7 @@ static void zone_unregister(malloc_zone_t* zone) {
 // use interposing so `DYLD_INSERT_LIBRARIES` works without `DYLD_FORCE_FLAT_NAMESPACE=1`
 // See: <https://books.google.com/books?id=K8vUkpOXhN4C&pg=PA73>
 #define MI_INTERPOSE_ZONE(fun)          MI_INTERPOSE_FUN(malloc_##fun,fun)
-MI_INTERPOSE_DECLS(_mi_zone_interposes) = 
+MI_INTERPOSE_DECLS(_mi_zone_interposes) =
 {
   MI_INTERPOSE_MI(malloc_create_zone),
   MI_INTERPOSE_MI(malloc_default_purgeable_zone),

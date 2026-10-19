@@ -102,7 +102,7 @@ static mi_decl_noinline void* mi_theap_malloc_zero_aligned_at_overalloc(mi_theap
 
     #if MI_GUARDED || MI_PROFILE
     // set tag to aligned so mi_usable_size works with guard pages
-    // note: we could have gotten a profiled or guarded block but that is still ok 
+    // note: we could have gotten a profiled or guarded block but that is still ok
     // and in such case the MI_BLOCK_TAG_ALIGNED is just not at the start of the real heap block
     if (adjust >= sizeof(mi_block_t)) {
       mi_block_t* const block = (mi_block_t*)p;
@@ -154,11 +154,11 @@ static mi_decl_noinline void* mi_theap_malloc_zero_aligned_at_generic(mi_theap_t
     if mi_likely(!mi_theap_should_sample(theap,size))
     #endif
     {
-      if (offset == 0 && mi_malloc_is_naturally_aligned(size,alignment))    
+      if (offset == 0 && mi_malloc_is_naturally_aligned(size,alignment))
       {
         mi_page_t* page = NULL;
         void* p = _mi_theap_malloc_zero(theap, size, zero, 0,&page);
-        if (ppage!=NULL) { *ppage = page; }    
+        if (ppage!=NULL) { *ppage = page; }
         const bool is_aligned_or_null = (((uintptr_t)p) & (alignment-1))==0;
         if mi_likely(is_aligned_or_null) {
           return p;
@@ -208,7 +208,7 @@ static inline void* mi_theap_malloc_zero_aligned_at(mi_theap_t* const theap, siz
     {
       #if MI_SAMPLE  // check if we shouldn't take a sample
       if mi_likely(!mi_theap_should_sample(theap,size))
-      #endif      
+      #endif
       {
         const uintptr_t align_mask = alignment-1;       // for any x, `(x & align_mask) == (x % alignment)`
         const size_t padsize = size + MI_PADDING_SIZE;
@@ -354,7 +354,7 @@ static void* mi_theap_realloc_zero_aligned_at(mi_theap_t* theap, void* p, size_t
     void* const newp = mi_theap_malloc_zero_aligned_at(theap,newsize,alignment,offset,false/*zero?*/,&newpage);
     if (newp != NULL) {
       const size_t copy_size  = (newsize > size ? size : newsize);
-      const size_t zero_start = (copy_size >= sizeof(intptr_t) ? copy_size - sizeof(intptr_t) : 0); // also set last word in the previous allocation to zero to ensure any padding is zero-initialized    
+      const size_t zero_start = (copy_size >= sizeof(intptr_t) ? copy_size - sizeof(intptr_t) : 0); // also set last word in the previous allocation to zero to ensure any padding is zero-initialized
       const size_t usable     = _mi_page_usable_size(newpage,newp);
       mi_assert_internal(usable >= newsize); // use usable for zero'ing, issue #763
       if (zero && usable > zero_start) {

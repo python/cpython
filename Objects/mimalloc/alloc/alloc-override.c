@@ -143,19 +143,19 @@ typedef void* mi_nothrow_t;
   void* __cdecl _expand(_Pre_notnull_ void* _Block, _In_ _CRT_GUARDOVERFLOW size_t _Size) {
     return mi__expand(_Block, _Size);
   }
-  _Check_return_ _ACRTIMP 
+  _Check_return_ _ACRTIMP
   size_t __cdecl _msize_base(_Pre_notnull_ void* _Block) _CRT_NOEXCEPT {
     return mi_malloc_size(_Block);
   }
-  _Check_return_ _ACRTIMP _CRT_HYBRIDPATCHABLE 
+  _Check_return_ _ACRTIMP _CRT_HYBRIDPATCHABLE
   size_t __cdecl _msize(_Pre_notnull_ void* _Block) {
     return mi_malloc_size(_Block);
   }
-  _ACRTIMP 
+  _ACRTIMP
   void __cdecl _free_base(_Pre_maybenull_ _Post_invalid_ void* _Block) {
     mi_free(_Block);
   }
-  _ACRTIMP _CRT_HYBRIDPATCHABLE 
+  _ACRTIMP _CRT_HYBRIDPATCHABLE
   void __cdecl free(_Pre_maybenull_ _Post_invalid_ void* _Block) {
     mi_free(_Block);
   }
@@ -175,7 +175,7 @@ typedef void* mi_nothrow_t;
   void* __cdecl realloc(_Pre_maybenull_ _Post_invalid_ void*  _Block, _In_ _CRT_GUARDOVERFLOW  size_t _Size) {
     return mi_realloc(_Block, _Size);
   }
-  _Check_return_ _Ret_maybenull_ _Post_writable_byte_size_(_Count * _Size) _ACRTIMP _CRTALLOCATOR _CRTRESTRICT 
+  _Check_return_ _Ret_maybenull_ _Post_writable_byte_size_(_Count * _Size) _ACRTIMP _CRTALLOCATOR _CRTRESTRICT
   void* __cdecl _calloc_base(_In_ size_t _Count, _In_ size_t _Size) {
     return mi_calloc(_Count, _Size);
   }
@@ -191,7 +191,7 @@ typedef void* mi_nothrow_t;
   void* __cdecl _recalloc(_Pre_maybenull_ _Post_invalid_ void*  _Block, _In_ _CRT_GUARDOVERFLOW size_t _Count, _In_ _CRT_GUARDOVERFLOW size_t _Size) {
     return mi_recalloc(_Block, _Count, _Size);
   }
-  _ACRTIMP 
+  _ACRTIMP
   void __cdecl _aligned_free(_Pre_maybenull_ _Post_invalid_ void* _Block) {
     mi_free(_Block);
   }
@@ -203,7 +203,7 @@ typedef void* mi_nothrow_t;
   void* __cdecl _aligned_offset_malloc(_In_ _CRT_GUARDOVERFLOW size_t _Size, _In_ size_t _Alignment, _In_ size_t _Offset) {
     return mi_malloc_aligned_at(_Size, _Alignment, _Offset);
   }
-  _Check_return_ _ACRTIMP 
+  _Check_return_ _ACRTIMP
   size_t __cdecl _aligned_msize(_Pre_notnull_ void*  _Block, _In_ size_t _Alignment, _In_ size_t _Offset) {
     MI_UNUSED(_Alignment); MI_UNUSED(_Offset); return mi_malloc_size(_Block);
   }

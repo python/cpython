@@ -25,7 +25,7 @@ static mi_lock_t     mi_subprocs_lock = MI_LOCK_INITIALIZER;
   Meta-data allocation
   We allocate thread local data and theaps through a dedicated
   theap `subproc.theap_meta` which uses a detached tld with
-  a detached thread id. The initial theap_meta is statically 
+  a detached thread id. The initial theap_meta is statically
   allocated and can thus be used to allocate on an as yet
   uninitialized thread or process.
   We need to take a lock though to allocate safely on the
@@ -56,7 +56,7 @@ void* _mi_meta_rezalloc( mi_subproc_t* subproc, void* oldp, size_t newsize, mi_m
   mi_assert_internal(subproc->theap_meta != NULL);
   // note: since we take a meta lock we cannot use `mi_theap_rezalloc` as that could call `mi_free` which
   // can call `mi_stat_free` which would try to take the meta lock again. See issue #1358.
-  void* p = NULL;  
+  void* p = NULL;
   mi_lock(&subproc->theap_meta_lock) {
     p = mi_theap_zalloc(subproc->theap_meta, newsize);
   }
@@ -65,7 +65,7 @@ void* _mi_meta_rezalloc( mi_subproc_t* subproc, void* oldp, size_t newsize, mi_m
       const size_t oldsize  = mi_usable_size(oldp);
       const size_t copysize = (newsize < oldsize ? newsize : oldsize);
       mi_memcpy(p,oldp,copysize);
-      if (memid!=NULL) { _mi_meta_free(subproc,oldp,*memid); } 
+      if (memid!=NULL) { _mi_meta_free(subproc,oldp,*memid); }
                   else { mi_free(oldp); }
     }
     if (memid!=NULL) { *memid = _mi_memid_create_malloc(p,newsize,true); }
@@ -82,7 +82,7 @@ void _mi_meta_free(mi_subproc_t* subproc, void* p, mi_memid_t memid) {
     mi_free(p);
   }
   else {
-    mi_assert_internal(subproc!=NULL);  
+    mi_assert_internal(subproc!=NULL);
     _mi_arenas_free(subproc, p, _mi_memid_size(memid), memid);
   }
 }
@@ -167,19 +167,19 @@ mi_subproc_id_t mi_subproc_new(void) {
   mi_memid_t memid;
   mi_subproc_t* const subproc = (mi_subproc_t*)_mi_meta_zalloc(parent, sizeof(mi_subproc_t), &memid);
   if (subproc == NULL) { return _mi_subproc_to_id(NULL); }
-  subproc->memid  = memid;  
-  
+  subproc->memid  = memid;
+
   mi_memid_t theap_memid;
   mi_theap_t* const theap_meta = (mi_theap_t*)_mi_meta_zalloc(parent, sizeof(mi_theap_t), &theap_memid);
-  if (theap_meta==NULL) { 
-    _mi_meta_free(parent, subproc, memid); 
-    return _mi_subproc_to_id(NULL); 
+  if (theap_meta==NULL) {
+    _mi_meta_free(parent, subproc, memid);
+    return _mi_subproc_to_id(NULL);
   }
   theap_meta->memid = memid;
-  
+
   // init subproc
   mi_subproc_init(subproc,parent);
-  
+
   // init main heap
   mi_heap_t* heap_main = _mi_heap_new_for_subproc(subproc,0,true,false);
   if (heap_main==NULL) {
@@ -229,16 +229,16 @@ static void mi_subproc_unsafe_destroy(mi_subproc_t* subproc, bool acquire_subpro
     if (subproc->heap_main!=NULL) {
       _mi_thread_locals_thread_done(); // release thread locals that may have been allocated (safe as the main heap uses the fast key)
       if (_mi_subproc_is_main(subproc)) {
-        _mi_thread_locals_done();      
+        _mi_thread_locals_done();
       }
       _mi_heap_force_destroy(subproc->heap_main, false /* don't re-acquire the heaps_lock */);  // no warning if destroying the main heap
     }
   }
 
   subproc->theap_meta = NULL;     // theap meta stats are merged during heap_destroy of the main heap
-  
+
   if (!_mi_subproc_is_main(subproc)) {
-    // merge stats back into the main subproc  
+    // merge stats back into the main subproc
     _mi_stats_merge_into(&mi_process_subproc_main.stats, &subproc->stats);
   }
 
@@ -255,8 +255,8 @@ static void mi_subproc_unsafe_destroy(mi_subproc_t* subproc, bool acquire_subpro
   // todo: should we refcount subprocesses?
   mi_lock_done(&subproc->arena_reserve_lock);
   mi_lock_done(&subproc->heaps_lock);
-  mi_lock_done(&subproc->theap_meta_lock);  
-  _mi_meta_free( subproc->parent, subproc, subproc->memid);  
+  mi_lock_done(&subproc->theap_meta_lock);
+  _mi_meta_free( subproc->parent, subproc, subproc->memid);
   if (_mi_subproc_is_main(subproc)) {
     // for the main subproc, also release the global page map
     _mi_page_map_unsafe_destroy();

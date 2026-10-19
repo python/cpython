@@ -23,7 +23,7 @@ typedef struct mi_profiler_s mi_profiler_t;
 
 // Profiler data is stored together with each sampled allocation (unless the `on_free` field in the profiler is NULL.)
 typedef struct mi_profiler_sample_data_s {
-  size_t user_data_size;      // size of the user_data (should be the `mi_profiler_t.sample_data_size`)  
+  size_t user_data_size;      // size of the user_data (should be the `mi_profiler_t.sample_data_size`)
   void*  user_data[1];        // default, but can be less or more (up to 1KiB), depending on `sample_data_size`
 } mi_profiler_sample_data_t;
 
@@ -46,7 +46,7 @@ struct mi_profiler_s {
   void*                         reserved;           // opaque; reserved by mimalloc
   size_t                        sample_data_size;   // size of required profiler data for each sampled allocation (or zero for no data)
   size_t                        initial_sample_rate;// initial sample rate in bytes (set to at least 1 or higher) (can be adjusted by `on_alloc`)
-  mi_profiler_on_alloc_fun*     on_alloc;           // called on a sampled allocation (may be called concurrently)  
+  mi_profiler_on_alloc_fun*     on_alloc;           // called on a sampled allocation (may be called concurrently)
   mi_profiler_on_free_fun*      on_free;            // called on when previous sampled allocation is freed (may be called concurrently)
   mi_profiler_on_realloc_inplace_fun* on_realloc_inplace;  // (as yet unused) called on in-place reallocation of a previous sampled allocation (may be called concurrently)
   mi_profiler_on_snapshot_fun*  on_snapshot;        // called on mi_profiler_snapshot() (only one thread at a time)

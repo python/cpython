@@ -339,7 +339,7 @@ static mi_page_t* mi_page_meta_select(uint8_t* slice_start, size_t slice_count, 
   mi_assert_internal(page_meta == NULL || page_meta->block_size == 0);
   mi_page_t* page;
   size_t offset;
-  if (page_meta == NULL 
+  if (page_meta == NULL
       #if MI_PAGE_META_SMALL_IS_ALIGNED
       // small pages keep the page meta data in front of the slices for a fast `mi_free_small`
       // (note: it is important that the separate `page_meta->block_size == 0` for `mi_arena_page_at_slice`)
@@ -543,7 +543,7 @@ static bool mi_arenas_page_commit_first_block(mi_theap_t* theap, mi_memid_t memi
 }
 
 // Prepare the page memory: zero the page meta data if it is in front of the slices, set the guard page, etc.
-static void mi_arenas_page_init_memory(mi_theap_t* theap, mi_page_t* page, uint8_t* slice_start, size_t slice_count, size_t block_start, size_t page_noguard_size, mi_memid_t* memid) 
+static void mi_arenas_page_init_memory(mi_theap_t* theap, mi_page_t* page, uint8_t* slice_start, size_t slice_count, size_t block_start, size_t page_noguard_size, mi_memid_t* memid)
 {
   MI_UNUSED(theap); MI_UNUSED(slice_count); MI_UNUSED(block_start); MI_UNUSED(page_noguard_size);
 
@@ -579,7 +579,7 @@ static void mi_arenas_page_init_memory(mi_theap_t* theap, mi_page_t* page, uint8
 
 // Initialize the fields of the page meta data.
 static void mi_arenas_page_init_meta(mi_theap_t* theap, mi_page_t* page, uint8_t* slice_start, size_t block_start, size_t block_size, bool os_align,
-                                     size_t page_noguard_size, size_t commit_size, mi_memid_t memid) 
+                                     size_t page_noguard_size, size_t commit_size, mi_memid_t memid)
 {
   const size_t reserved = (os_align ? 1 : (page_noguard_size - block_start) / block_size);
   mi_assert_internal(reserved > 0 && reserved <= UINT16_MAX);
@@ -603,7 +603,7 @@ static void mi_arenas_page_init_meta(mi_theap_t* theap, mi_page_t* page, uint8_t
 
 #if MI_PAGE_META_IS_ALIGNED
 // Point the aligned page meta entries of the slices to the actual page meta data.
-static void mi_arenas_page_link_aligned_meta(mi_page_t* page, uint8_t* slice_start, size_t slice_count, size_t max_page_meta_count) 
+static void mi_arenas_page_link_aligned_meta(mi_page_t* page, uint8_t* slice_start, size_t slice_count, size_t max_page_meta_count)
 {
   mi_page_t* const page_meta = mi_aligned_ptr_page0(slice_start);
   mi_atomic_store_ptr_release(mi_page_t,&page_meta->self,page);
@@ -627,7 +627,7 @@ static void mi_arenas_page_link_aligned_meta(mi_page_t* page, uint8_t* slice_sta
 
 // Register a fresh page in its arena pages and the page map, and claim ownership.
 // On failure the page is freed.
-static bool mi_arenas_page_register(mi_theap_t* theap, mi_page_t* page, mi_arena_pages_t* arena_pages) 
+static bool mi_arenas_page_register(mi_theap_t* theap, mi_page_t* page, mi_arena_pages_t* arena_pages)
 {
   // register in the arena_pages
   if (arena_pages!=NULL) {

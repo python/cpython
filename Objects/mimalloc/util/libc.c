@@ -292,7 +292,7 @@ static void mi_out_num(uintmax_t x, size_t base, char prefix, char** out, char* 
   }
   else {
     #define MI_MAX_OUT_DIGITS (160)     /* a 512 bit number has 155 digits */
-    char num[MI_MAX_OUT_DIGITS];  
+    char num[MI_MAX_OUT_DIGITS];
     int dcount = 0;
     while(x>0 && dcount < MI_MAX_OUT_DIGITS) {
       char digit = (char)(x % base);
@@ -358,8 +358,8 @@ int _mi_vsnprintf(char* buf, size_t bufsize, const char* fmt, va_list args) {
         }
         if (c == 0) break;  // extra check due to while
       }
-      if (c == 'z' || c == 't' || c == 'L') { 
-        numtype = c; MI_NEXTC(); 
+      if (c == 'z' || c == 't' || c == 'L') {
+        numtype = c; MI_NEXTC();
       }
       else if (c == 'l') {
         numtype = c; MI_NEXTC();
@@ -367,7 +367,7 @@ int _mi_vsnprintf(char* buf, size_t bufsize, const char* fmt, va_list args) {
         else if (c == '8') { numtype = '8'; MI_NEXTC(); } // 64-bit
         else if (c == '4') { numtype = '4'; MI_NEXTC(); } // 32-bit
       }
-      
+
 
       char* start = out;
       if (c == '%') {
@@ -387,7 +387,7 @@ int _mi_vsnprintf(char* buf, size_t bufsize, const char* fmt, va_list args) {
           else if (numtype == 'L')  x = va_arg(args, unsigned long long);
           else if (numtype == 'l')  x = va_arg(args, unsigned long);
           else if (numtype == '8')  x = va_arg(args, uint64_t);
-          else if (numtype == '4')  x = va_arg(args, uint32_t);        
+          else if (numtype == '4')  x = va_arg(args, uint32_t);
                                else x = va_arg(args, unsigned int);
         }
         else if (c == 'p') {
