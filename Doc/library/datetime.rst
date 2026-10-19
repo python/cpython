@@ -2745,6 +2745,14 @@ in the format string will be pulled from the default value.
    the default year of 1900 is *not* a leap year.  Always add a default leap
    year to partial date strings before parsing.
 
+.. note::
+   When parsing a string using :meth:`.datetime.strptime` or
+   :meth:`.date.strptime`, if more than one directive for the same time unit
+   is used, only the last directive is parsed and applied to the resulting
+   object. For example, if the format string contains both ``%Y`` and ``%y``,
+   like ``%Y%y``, only the last directive in the string (``%y``) determines
+   the year of the result.
+
 .. testsetup::
 
     # doctest seems to turn the warning into an error which makes it
@@ -2923,14 +2931,6 @@ Notes:
    .. deprecated-removed:: 3.15 3.17
       :meth:`~.datetime.strptime` calls using a format string containing
       ``%e`` without a year now emit a :exc:`DeprecationWarning`.
-
-(11)
-   When parsing a string using :meth:`~.datetime.strptime`, if more than one
-   directives of the same time unit were used, only the last directive gets parsed
-   and applied to the datetime object. For example, if the format string contains
-   both ``%Y`` and ``%y``, like ``%Y%y``, only the last directive on the string (``%y``)
-   gets used on the resulting datetime object.
-
 
 .. rubric:: Footnotes
 
