@@ -1,6 +1,7 @@
 import textwrap
 import unittest
 
+from test import support
 from test.support import import_helper, script_helper
 
 
@@ -20,6 +21,19 @@ class InterpreterTeardownTests(unittest.TestCase):
             import _testinternalcapi
 
             interpid = _testinternalcapi.create_interpreter()
+            _testinternalcapi.destroy_interpreter(interpid, basic=True)
+        """)
+        script_helper.assert_python_ok('-c', script)
+
+    @support.requires_resource('cpu')
+    def test_destroy_subinterpreter_with_abandoned_pages_does_not_abort(self):
+        # gh-159462: Py_EndInterpreter() clears a non-current thread state.
+        script = textwrap.dedent("""
+            import _testinternalcapi
+
+            interpid = _testinternalcapi.create_interpreter()
+            _testinternalcapi.exec_interpreter(
+                interpid, "objs = [[i] for i in range(400_000)]; del objs")
             _testinternalcapi.destroy_interpreter(interpid, basic=True)
         """)
         script_helper.assert_python_ok('-c', script)
