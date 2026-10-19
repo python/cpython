@@ -576,7 +576,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
             c = 0;
             next++;
             end = next + 4;
-            if (end >= len) {
+            if (end > len) {
                 raise_errmsg("Invalid \\uXXXX escape", pystr, next - 1);
                 goto bail;
             }

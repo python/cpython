@@ -146,7 +146,7 @@ Importing Modules
       alternatives.
 
    .. versionchanged:: 3.15
-      ``__cached__`` is no longer set.
+      The ``__cached__`` attribute is no longer set.
 
 
 .. c:function:: PyObject* PyImport_ExecCodeModuleEx(const char *name, PyObject *co, const char *pathname)
@@ -170,7 +170,7 @@ Importing Modules
       :class:`~importlib.machinery.ModuleSpec` for alternatives.
 
    .. versionchanged:: 3.15
-      ``__cached__`` no longer set.
+      The ``__cached__`` attribute no longer set.
 
 
 .. c:function:: PyObject* PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co, const char *pathname, const char *cpathname)
@@ -304,6 +304,11 @@ Importing Modules
 
       Initialization function for a module built into the interpreter.
 
+      Note that the inittab uses "``PyInit``"
+      :ref:`initialization functions <extension-pyinit>`;
+      there is currently no way to include "``PyModExport_``"
+      :ref:`export hooks <extension-export-hook>`.
+
 
 .. c:function:: int PyImport_ExtendInittab(struct _inittab *newtab)
 
@@ -411,6 +416,10 @@ Importing Modules
    to initialize it.
    (Custom importers should do this in their
    :py:meth:`~importlib.abc.Loader.exec_module` method.)
+
+   If the spec's name is dotted and *initfunc* creates the module using only
+   the last component of the name, the module's :attr:`~module.__name__`
+   is set to the full name from the spec.
 
    On error, return NULL with an exception set.
 
