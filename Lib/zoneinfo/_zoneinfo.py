@@ -144,7 +144,7 @@ class ZoneInfo(tzinfo):
             if num_trans > 1 and timestamp >= self._trans_utc[1]:
                 tti_prev, tti = self._ttinfos[idx - 2 : idx]
             elif timestamp > self._trans_utc[-1]:
-                tti_prev = self._ttinfos[-1]
+                tti_prev = self._tti_before
                 tti = self._tz_after
             else:
                 tti_prev = self._tti_before

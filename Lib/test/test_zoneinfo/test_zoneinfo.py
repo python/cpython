@@ -642,6 +642,26 @@ class WeirdZoneTest(ZoneInfoTestBase):
                 dt_utc_actual = dt_local.astimezone(timezone.utc)
                 self.assertEqual(dt_utc_actual, dt_utc)
 
+    def test_one_transition_fold(self):
+        GMT = ZoneOffset("-00", ZERO)
+        N03 = ZoneOffset("-03", -timedelta(hours=3))
+
+        transitions = [
+            ZoneTransition(datetime(1976, 12, 1), GMT, N03),
+        ]
+
+        after = "<-03>3"
+
+        zf = self.construct_zone(transitions, after)
+        zi = self.klass.from_file(zf)
+
+        dt_utc = datetime(1976, 12, 1, 1, tzinfo=timezone.utc)
+        dt_local = dt_utc.astimezone(zi)
+
+        self.assertEqual(dt_local.fold, 1)
+        self.assertEqual(dt_local.utcoffset(), N03.utcoffset)
+        self.assertEqual(dt_local.astimezone(timezone.utc), dt_utc)
+
     def test_one_zone_dst(self):
         DST = ZoneOffset("DST", ONE_H, ONE_H)
         transitions = [
