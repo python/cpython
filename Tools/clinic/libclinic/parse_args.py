@@ -972,6 +972,15 @@ class ParseArgsCodeGen:
         Set the method flags and the prototype, and return the expression of
         the number of arguments and the format of an argument expression.
         """
+        if self.requires_defining_class:
+            # METH_METHOD only supports the METH_FASTCALL|METH_KEYWORDS
+            # calling convention, so the wrapper still receives kwnames.
+            # A positional-only function simply rejects any keywords
+            # instead of setting up a _PyArg_Parser.
+            assert self.fastcall
+            self.flags = "METH_METHOD|METH_FASTCALL|METH_KEYWORDS"
+            self.parser_prototype = PARSER_PROTOTYPE_DEF_CLASS
+            return 'nargs', 'args[%s]'
         if self.fastcall:
             self.flags = "METH_FASTCALL"
             self.parser_prototype = PARSER_PROTOTYPE_FASTCALL
@@ -990,19 +999,19 @@ class ParseArgsCodeGen:
         """
         self.use_converters()
         if self.limited_capi:
-            # _PyArg_ParseStack() is not part of the limited C API.
+            # PyArg_ParseArray() is not part of the limited C API.
             self.fastcall = False
         if self.fastcall:
             self.codegen.add_include('pycore_modsupport.h',
-                                     '_PyArg_ParseStack()')
-            return '_PyArg_ParseStack(args, nargs, '
+                                     'PyArg_ParseArray()')
+            return 'PyArg_ParseArray(args, nargs, '
         self.flags = "METH_VARARGS"
         self.parser_prototype = PARSER_PROTOTYPE_VARARGS
         return 'PyArg_ParseTuple(args, '
 
     def parse_pos_only(self) -> None:
         # positional-only, but no option groups: we only need one call
-        # to _PyArg_ParseStack or PyArg_ParseTuple
+        # to PyArg_ParseArray or PyArg_ParseTuple
         nargs, argname_fmt = self.select_positional_convention()
 
         parser_code = []
@@ -1056,6 +1065,14 @@ class ParseArgsCodeGen:
                     goto exit;
                 }}
                 """, indent=4) % parse_call]
+        if self.requires_defining_class:
+            self.codegen.add_include('pycore_modsupport.h',
+                                     '_PyArg_NoKwnames()')
+            parser_code.insert(0, libclinic.normalize_snippet("""
+                if (!_PyArg_NoKwnames("{name}", kwnames)) {{
+                    goto exit;
+                }}
+                """, indent=4))
         self.parser_body(*parser_code)
 
     def parse_var_keyword(self) -> None:
@@ -1737,8 +1754,9 @@ class ParseArgsCodeGen:
             self.parse_option_groups()
         elif self.var_keyword is not None:
             self.parse_var_keyword()
-        elif (not self.requires_defining_class
-              and self.pos_only == len(self.parameters)):
+        elif (self.pos_only == len(self.parameters)
+              and (not self.requires_defining_class
+                   or (self.fastcall and not self.limited_capi))):
             self.parse_pos_only()
         else:
             self.parse_general(clang)

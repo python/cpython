@@ -733,7 +733,7 @@ Specifying function pointers using type annotations
       PyObject_GetAttrString(42, b"real")
 
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. _ctypes-passing-pointers:
@@ -996,6 +996,15 @@ you're doing, just as in C: You can access or change arbitrary memory locations.
 Generally you only use this feature if you receive a pointer from a C function,
 and you *know* that the pointer actually points to an array instead of a single
 item.
+
+.. warning::
+
+   Because pointer objects support subscription, they implicitly support
+   :term:`iteration <iterator>`. Unless doing this in a controlled manner,
+   such as by manually calling :func:`next` on a :func:`pointer` iterator, this
+   will typically lead to infinite loops or crashes, because ctypes has no way
+   of knowing when to stop iteration. In other words, a ``pointer`` iterator
+   will infinitely yield arbitrary memory.
 
 Behind the scenes, the :func:`pointer` function does more than simply create
 pointer instances, it has to create pointer *types* first. This is done with the
@@ -1570,7 +1579,10 @@ way is to instantiate :py:class:`CDLL` or one of its subclasses:
    :mod:`!ctypes` maintains a thread-local copy of the system's :data:`errno`
    variable; if you call foreign functions created with ``use_errno=True`` then the
    :data:`errno` value before the function call is swapped with the ctypes private
-   copy, the same happens immediately after the function call.
+   copy, the same happens immediately after the function call. This mechanism only
+   works for libraries that use the same C runtime library as the interpreter itself.
+   A library linked against a different C runtime (for example, a different CRT on
+   Windows) has its own :data:`errno`, which :mod:`!ctypes` cannot observe.
 
    The function :func:`ctypes.get_errno` returns the value of the ctypes private
    copy, and the function :func:`ctypes.set_errno` changes the ctypes private copy
@@ -1745,6 +1757,10 @@ These prefabricated library loaders are available:
       attributes.  Note that all these functions are assumed to return C
       :c:expr:`int`, which is of course not always the truth, so you have to assign
       the correct :attr:`!restype` attribute to use these functions.
+
+      .. note::
+
+         If the Python interpreter is statically linked, this may be ``None``.
 
 .. audit-event:: ctypes.dlopen name ctypes.LibraryLoader
 
@@ -3257,7 +3273,7 @@ fields, or any other data types containing pointer type fields.
       class PyHovercraftObject:
           ob_base: Annotated[PyObject, CFieldInfo(anonymous=True)]
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. class:: CFieldInfo(anonymous=False, bit_width=None)
@@ -3274,7 +3290,7 @@ fields, or any other data types containing pointer type fields.
    number of bits in the generated structure. This is equivalent to passing
    a third item in :attr:`~ctypes.Structure._fields_`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. _ctypes-arrays-pointers:
@@ -3398,13 +3414,13 @@ libffi 3.5 or later, which is the first version providing this information.
    This may be different from the libffi library actually used at runtime,
    which is available as :const:`libffi_version`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: libffi_version
 
    The version string of the libffi library actually loaded by the interpreter.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: LIBFFI_VERSION_INFO
 
@@ -3418,7 +3434,7 @@ libffi 3.5 or later, which is the first version providing this information.
    This may be different from the libffi library actually used at runtime,
    which is available as :const:`libffi_version_info`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: libffi_version_info
 
@@ -3426,4 +3442,4 @@ libffi 3.5 or later, which is the first version providing this information.
    actually loaded by the interpreter,
    with the same fields as :const:`LIBFFI_VERSION_INFO`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16

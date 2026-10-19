@@ -135,7 +135,7 @@ See :ref:`__slots__ documentation <slots>` for details.
    .. versionchanged:: 3.4
       Added the :attr:`__callback__` attribute.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Raise :exc:`!TypeError` if *callback* is not callable or ``None``.
 
 
@@ -157,7 +157,7 @@ See :ref:`__slots__ documentation <slots>` for details.
       Extended the operator support on proxy objects to include the matrix
       multiplication operators ``@`` and ``@=``.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Raise :exc:`!TypeError` if *callback* is not callable or ``None``.
 
 

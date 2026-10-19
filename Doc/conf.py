@@ -469,6 +469,10 @@ epub_exclude_files = (
 # https://github.com/sphinx-doc/sphinx/issues/12359
 epub_use_index = False
 
+# The default depth of 3 lists over a thousand entries, which makes the
+# table of contents hard to navigate in e-book readers
+epub_tocdepth = 2
+
 # translation tag
 # ---------------
 
@@ -635,6 +639,8 @@ rediraffe_redirects = {
     "library/exceptions.rst": "builtins/exceptions.rst",
     "library/threadsafety.rst": "builtins/threadsafety.rst",
     "library/time-complexity.rst": "builtins/time-complexity.rst",
+    # Renamed to tkinter.dialogs.rst in GH-151656
+    "library/dialog.rst": "library/tkinter.dialogs.rst",
 }
 
 # Refuse to run the doctest builder under a mismatched Python
