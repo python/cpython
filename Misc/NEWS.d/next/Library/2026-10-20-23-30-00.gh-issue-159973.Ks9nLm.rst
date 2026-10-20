@@ -1,0 +1,2 @@
+Fix soft keyword highlighting after blank and comment-only lines in the
+:ref:`interactive shell <tut-interactive>`. Patch by Bartosz Sławecki.
