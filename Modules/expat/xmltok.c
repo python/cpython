@@ -193,13 +193,6 @@ utf8_isInvalid4(const ENCODING *enc, const char *p) {
 struct normal_encoding {
   ENCODING enc;
   unsigned char type[256];
-#ifdef XML_MIN_SIZE
-  int (*byteType)(const ENCODING *, const char *);
-  int (*isNameMin)(const ENCODING *, const char *);
-  int (*isNmstrtMin)(const ENCODING *, const char *);
-  int (*byteToAscii)(const ENCODING *, const char *);
-  int (*charMatches)(const ENCODING *, const char *, int);
-#endif /* XML_MIN_SIZE */
   int (*isName2)(const ENCODING *, const char *);
   int (*isName3)(const ENCODING *, const char *);
   int (*isName4)(const ENCODING *, const char *);
@@ -213,16 +206,7 @@ struct normal_encoding {
 
 #define AS_NORMAL_ENCODING(enc) ((const struct normal_encoding *)(enc))
 
-#ifdef XML_MIN_SIZE
-
-#  define STANDARD_VTABLE(E)                                                   \
-    E##byteType, E##isNameMin, E##isNmstrtMin, E##byteToAscii, E##charMatches,
-
-#else
-
-#  define STANDARD_VTABLE(E) /* as nothing */
-
-#endif
+#define STANDARD_VTABLE(E) /* as nothing */
 
 #define NORMAL_VTABLE(E)                                                       \
   E##isName2, E##isName3, E##isName4, E##isNmstrt2, E##isNmstrt3,              \
@@ -233,93 +217,33 @@ struct normal_encoding {
       /* isNmstrt2 */ NULL, /* isNmstrt3 */ NULL, /* isNmstrt4 */ NULL,        \
       /* isInvalid2 */ NULL, /* isInvalid3 */ NULL, /* isInvalid4 */ NULL
 
-/* Like NULL_VTABLE but with a real isInvalid4 so the UTF-16 encodings reject a
-   high surrogate that is not followed by a low surrogate.  Only needed for the
-   XML_MIN_SIZE build, where the shared tokenizer dispatches through the vtable;
-   the regular build inlines the same check via IS_INVALID_CHAR. */
-#ifdef XML_MIN_SIZE
-#  define UTF16_NULL_VTABLE(E)                                                 \
-    /* isName2 */ NULL, /* isName3 */ NULL, /* isName4 */ NULL,                \
-        /* isNmstrt2 */ NULL, /* isNmstrt3 */ NULL, /* isNmstrt4 */ NULL,      \
-        /* isInvalid2 */ NULL, /* isInvalid3 */ NULL, E##isInvalid4
-#else
-#  define UTF16_NULL_VTABLE(E) NULL_VTABLE
-#endif
+#define UTF16_NULL_VTABLE(E) NULL_VTABLE
 
 static int checkCharRefNumber(int result);
 
 #include "xmltok_impl.h"
 #include "ascii.h"
 
-#ifdef XML_MIN_SIZE
-#  define sb_isNameMin isNever
-#  define sb_isNmstrtMin isNever
-#endif
-
-#ifdef XML_MIN_SIZE
-#  define MINBPC(enc) ((enc)->minBytesPerChar)
-#else
 /* minimum bytes per character */
-#  define MINBPC(enc) 1
-#endif
+#define MINBPC(enc) 1
 
 #define SB_BYTE_TYPE(enc, p)                                                   \
   (((const struct normal_encoding *)(enc))->type[(unsigned char)*(p)])
 
-#ifdef XML_MIN_SIZE
-static int
-sb_byteType(const ENCODING *enc, const char *p) {
-  return SB_BYTE_TYPE(enc, p);
-}
-#  define BYTE_TYPE(enc, p) (AS_NORMAL_ENCODING(enc)->byteType(enc, p))
-#else
-#  define BYTE_TYPE(enc, p) SB_BYTE_TYPE(enc, p)
-#endif
+#define BYTE_TYPE(enc, p) SB_BYTE_TYPE(enc, p)
 
-#ifdef XML_MIN_SIZE
-#  define BYTE_TO_ASCII(enc, p) (AS_NORMAL_ENCODING(enc)->byteToAscii(enc, p))
-static int
-sb_byteToAscii(const ENCODING *enc, const char *p) {
-  UNUSED_P(enc);
-  return *p;
-}
-#else
-#  define BYTE_TO_ASCII(enc, p) (*(p))
-#endif
+#define BYTE_TO_ASCII(enc, p) (*(p))
 
 #define IS_NAME_CHAR(enc, p, n) (AS_NORMAL_ENCODING(enc)->isName##n(enc, p))
 #define IS_NMSTRT_CHAR(enc, p, n) (AS_NORMAL_ENCODING(enc)->isNmstrt##n(enc, p))
-#ifdef XML_MIN_SIZE
-#  define IS_INVALID_CHAR(enc, p, n)                                           \
-    (AS_NORMAL_ENCODING(enc)->isInvalid##n                                     \
-     && AS_NORMAL_ENCODING(enc)->isInvalid##n(enc, p))
-#else
-#  define IS_INVALID_CHAR(enc, p, n)                                           \
-    (AS_NORMAL_ENCODING(enc)->isInvalid##n(enc, p))
-#endif
+#define IS_INVALID_CHAR(enc, p, n)                                             \
+  (AS_NORMAL_ENCODING(enc)->isInvalid##n(enc, p))
 
-#ifdef XML_MIN_SIZE
-#  define IS_NAME_CHAR_MINBPC(enc, p)                                          \
-    (AS_NORMAL_ENCODING(enc)->isNameMin(enc, p))
-#  define IS_NMSTRT_CHAR_MINBPC(enc, p)                                        \
-    (AS_NORMAL_ENCODING(enc)->isNmstrtMin(enc, p))
-#else
-#  define IS_NAME_CHAR_MINBPC(enc, p) (0)
-#  define IS_NMSTRT_CHAR_MINBPC(enc, p) (0)
-#endif
+#define IS_NAME_CHAR_MINBPC(enc, p) (0)
+#define IS_NMSTRT_CHAR_MINBPC(enc, p) (0)
 
-#ifdef XML_MIN_SIZE
-#  define CHAR_MATCHES(enc, p, c)                                              \
-    (AS_NORMAL_ENCODING(enc)->charMatches(enc, p, c))
-static int
-sb_charMatches(const ENCODING *enc, const char *p, int c) {
-  UNUSED_P(enc);
-  return *p == c;
-}
-#else
 /* c is an ASCII character */
-#  define CHAR_MATCHES(enc, p, c) (*(p) == (c))
-#endif
+#define CHAR_MATCHES(enc, p, c) (*(p) == (c))
 
 #define PREFIX(ident) normal_##ident
 #define XML_TOK_IMPL_C
@@ -769,76 +693,32 @@ DEFINE_UTF16_TO_UTF16(big2_)
 #define LITTLE2_IS_INVALID_CHAR(p, n)                                          \
   ((n) == 4 && ((unsigned char)(p)[3] & 0xFC) != 0xDC)
 
-#ifdef XML_MIN_SIZE
-
-static int
-little2_byteType(const ENCODING *enc, const char *p) {
-  return LITTLE2_BYTE_TYPE(enc, p);
-}
-
-static int
-little2_byteToAscii(const ENCODING *enc, const char *p) {
-  UNUSED_P(enc);
-  return LITTLE2_BYTE_TO_ASCII(p);
-}
-
-static int
-little2_charMatches(const ENCODING *enc, const char *p, int c) {
-  UNUSED_P(enc);
-  return LITTLE2_CHAR_MATCHES(p, c);
-}
-
-static int
-little2_isNameMin(const ENCODING *enc, const char *p) {
-  UNUSED_P(enc);
-  return LITTLE2_IS_NAME_CHAR_MINBPC(p);
-}
-
-static int
-little2_isNmstrtMin(const ENCODING *enc, const char *p) {
-  UNUSED_P(enc);
-  return LITTLE2_IS_NMSTRT_CHAR_MINBPC(p);
-}
-
-static int
-little2_isInvalid4(const ENCODING *enc, const char *p) {
-  UNUSED_P(enc);
-  return LITTLE2_IS_INVALID_CHAR(p, 4);
-}
-
-#  undef VTABLE
-#  define VTABLE VTABLE1, little2_toUtf8, little2_toUtf16
-
-#else /* not XML_MIN_SIZE */
-
-#  undef PREFIX
-#  define PREFIX(ident) little2_##ident
-#  define MINBPC(enc) 2
+#undef PREFIX
+#define PREFIX(ident) little2_##ident
+#define MINBPC(enc) 2
 /* CHAR_MATCHES is guaranteed to have MINBPC bytes available. */
-#  define BYTE_TYPE(enc, p) LITTLE2_BYTE_TYPE(enc, p)
-#  define BYTE_TO_ASCII(enc, p) LITTLE2_BYTE_TO_ASCII(p)
-#  define CHAR_MATCHES(enc, p, c) LITTLE2_CHAR_MATCHES(p, c)
-#  define IS_NAME_CHAR(enc, p, n) 0
-#  define IS_NAME_CHAR_MINBPC(enc, p) LITTLE2_IS_NAME_CHAR_MINBPC(p)
-#  define IS_NMSTRT_CHAR(enc, p, n) (0)
-#  define IS_NMSTRT_CHAR_MINBPC(enc, p) LITTLE2_IS_NMSTRT_CHAR_MINBPC(p)
-#  define IS_INVALID_CHAR(enc, p, n) LITTLE2_IS_INVALID_CHAR(p, n)
+#define BYTE_TYPE(enc, p) LITTLE2_BYTE_TYPE(enc, p)
+#define BYTE_TO_ASCII(enc, p) LITTLE2_BYTE_TO_ASCII(p)
+#define CHAR_MATCHES(enc, p, c) LITTLE2_CHAR_MATCHES(p, c)
+#define IS_NAME_CHAR(enc, p, n) 0
+#define IS_NAME_CHAR_MINBPC(enc, p) LITTLE2_IS_NAME_CHAR_MINBPC(p)
+#define IS_NMSTRT_CHAR(enc, p, n) (0)
+#define IS_NMSTRT_CHAR_MINBPC(enc, p) LITTLE2_IS_NMSTRT_CHAR_MINBPC(p)
+#define IS_INVALID_CHAR(enc, p, n) LITTLE2_IS_INVALID_CHAR(p, n)
 
-#  define XML_TOK_IMPL_C
-#  include "xmltok_impl.c"
-#  undef XML_TOK_IMPL_C
+#define XML_TOK_IMPL_C
+#include "xmltok_impl.c"
+#undef XML_TOK_IMPL_C
 
-#  undef MINBPC
-#  undef BYTE_TYPE
-#  undef BYTE_TO_ASCII
-#  undef CHAR_MATCHES
-#  undef IS_NAME_CHAR
-#  undef IS_NAME_CHAR_MINBPC
-#  undef IS_NMSTRT_CHAR
-#  undef IS_NMSTRT_CHAR_MINBPC
-#  undef IS_INVALID_CHAR
-
-#endif /* not XML_MIN_SIZE */
+#undef MINBPC
+#undef BYTE_TYPE
+#undef BYTE_TO_ASCII
+#undef CHAR_MATCHES
+#undef IS_NAME_CHAR
+#undef IS_NAME_CHAR_MINBPC
+#undef IS_NMSTRT_CHAR
+#undef IS_NMSTRT_CHAR_MINBPC
+#undef IS_INVALID_CHAR
 
 #ifdef XML_NS
 
@@ -914,76 +794,32 @@ static const struct normal_encoding internal_little2_encoding
 #define BIG2_IS_INVALID_CHAR(p, n)                                             \
   ((n) == 4 && ((unsigned char)(p)[2] & 0xFC) != 0xDC)
 
-#ifdef XML_MIN_SIZE
-
-static int
-big2_byteType(const ENCODING *enc, const char *p) {
-  return BIG2_BYTE_TYPE(enc, p);
-}
-
-static int
-big2_byteToAscii(const ENCODING *enc, const char *p) {
-  UNUSED_P(enc);
-  return BIG2_BYTE_TO_ASCII(p);
-}
-
-static int
-big2_charMatches(const ENCODING *enc, const char *p, int c) {
-  UNUSED_P(enc);
-  return BIG2_CHAR_MATCHES(p, c);
-}
-
-static int
-big2_isNameMin(const ENCODING *enc, const char *p) {
-  UNUSED_P(enc);
-  return BIG2_IS_NAME_CHAR_MINBPC(p);
-}
-
-static int
-big2_isNmstrtMin(const ENCODING *enc, const char *p) {
-  UNUSED_P(enc);
-  return BIG2_IS_NMSTRT_CHAR_MINBPC(p);
-}
-
-static int
-big2_isInvalid4(const ENCODING *enc, const char *p) {
-  UNUSED_P(enc);
-  return BIG2_IS_INVALID_CHAR(p, 4);
-}
-
-#  undef VTABLE
-#  define VTABLE VTABLE1, big2_toUtf8, big2_toUtf16
-
-#else /* not XML_MIN_SIZE */
-
-#  undef PREFIX
-#  define PREFIX(ident) big2_##ident
-#  define MINBPC(enc) 2
+#undef PREFIX
+#define PREFIX(ident) big2_##ident
+#define MINBPC(enc) 2
 /* CHAR_MATCHES is guaranteed to have MINBPC bytes available. */
-#  define BYTE_TYPE(enc, p) BIG2_BYTE_TYPE(enc, p)
-#  define BYTE_TO_ASCII(enc, p) BIG2_BYTE_TO_ASCII(p)
-#  define CHAR_MATCHES(enc, p, c) BIG2_CHAR_MATCHES(p, c)
-#  define IS_NAME_CHAR(enc, p, n) 0
-#  define IS_NAME_CHAR_MINBPC(enc, p) BIG2_IS_NAME_CHAR_MINBPC(p)
-#  define IS_NMSTRT_CHAR(enc, p, n) (0)
-#  define IS_NMSTRT_CHAR_MINBPC(enc, p) BIG2_IS_NMSTRT_CHAR_MINBPC(p)
-#  define IS_INVALID_CHAR(enc, p, n) BIG2_IS_INVALID_CHAR(p, n)
+#define BYTE_TYPE(enc, p) BIG2_BYTE_TYPE(enc, p)
+#define BYTE_TO_ASCII(enc, p) BIG2_BYTE_TO_ASCII(p)
+#define CHAR_MATCHES(enc, p, c) BIG2_CHAR_MATCHES(p, c)
+#define IS_NAME_CHAR(enc, p, n) 0
+#define IS_NAME_CHAR_MINBPC(enc, p) BIG2_IS_NAME_CHAR_MINBPC(p)
+#define IS_NMSTRT_CHAR(enc, p, n) (0)
+#define IS_NMSTRT_CHAR_MINBPC(enc, p) BIG2_IS_NMSTRT_CHAR_MINBPC(p)
+#define IS_INVALID_CHAR(enc, p, n) BIG2_IS_INVALID_CHAR(p, n)
 
-#  define XML_TOK_IMPL_C
-#  include "xmltok_impl.c"
-#  undef XML_TOK_IMPL_C
+#define XML_TOK_IMPL_C
+#include "xmltok_impl.c"
+#undef XML_TOK_IMPL_C
 
-#  undef MINBPC
-#  undef BYTE_TYPE
-#  undef BYTE_TO_ASCII
-#  undef CHAR_MATCHES
-#  undef IS_NAME_CHAR
-#  undef IS_NAME_CHAR_MINBPC
-#  undef IS_NMSTRT_CHAR
-#  undef IS_NMSTRT_CHAR_MINBPC
-#  undef IS_INVALID_CHAR
-
-#endif /* not XML_MIN_SIZE */
+#undef MINBPC
+#undef BYTE_TYPE
+#undef BYTE_TO_ASCII
+#undef CHAR_MATCHES
+#undef IS_NAME_CHAR
+#undef IS_NAME_CHAR_MINBPC
+#undef IS_NMSTRT_CHAR
+#undef IS_NMSTRT_CHAR_MINBPC
+#undef IS_INVALID_CHAR
 
 #ifdef XML_NS
 
