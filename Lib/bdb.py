@@ -13,7 +13,7 @@ __all__ = ["BdbQuit", "Bdb", "Breakpoint"]
 GENERATOR_AND_COROUTINE_FLAGS = CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR
 
 
-class BdbQuit(Exception):
+class BdbQuit(BaseException):
     """Exception to give up completely."""
 
 
@@ -572,7 +572,8 @@ class Bdb:
         # the name "until" is borrowed from gdb
         if lineno is None:
             lineno = frame.f_lineno + 1
-        self._set_stopinfo(frame, frame, lineno)
+        self._set_stopinfo(frame, frame, lineno,
+                           cmdframe=frame, cmdlineno=frame.f_lineno)
 
     def set_step(self):
         """Stop after one line of code."""
@@ -747,7 +748,7 @@ class Bdb:
             return 'There are no breakpoints in %s' % filename
         for line in self.breaks[filename]:
             blist = Breakpoint.bplist[filename, line]
-            for bp in blist:
+            for bp in blist[:]:
                 bp.deleteMe()
         del self.breaks[filename]
         return None

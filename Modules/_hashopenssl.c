@@ -27,6 +27,7 @@
 #include "pycore_strhex.h"               // _Py_strhex()
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR_RELAXED
 #include "hashlib.h"
+#include "_openssl_mem.h"
 
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
@@ -846,6 +847,12 @@ new_hash_object(PyTypeObject *type)
     return retval;
 }
 
+/*
+ * Update the digest context of 'self' with 'len' bytes from 'vp'.
+ *
+ * Return 0 on success and -1 if EVP_DigestUpdate() failed. No exception
+ * is set, so that this can be called without an attached thread state.
+ */
 static int
 _hashlib_HASH_hash(HASHobject *self, const void *vp, Py_ssize_t len)
 {
@@ -857,7 +864,6 @@ _hashlib_HASH_hash(HASHobject *self, const void *vp, Py_ssize_t len)
         else
             process = Py_SAFE_DOWNCAST(len, Py_ssize_t, unsigned int);
         if (!EVP_DigestUpdate(self->ctx, (const void*)cp, process)) {
-            notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_DigestUpdate));
             return -1;
         }
         len -= process;
@@ -990,7 +996,11 @@ _hashlib_HASH_update_impl(HASHobject *self, PyObject *obj)
         result = _hashlib_HASH_hash(self, view.buf, view.len)
     );
     PyBuffer_Release(&view);
-    return result < 0 ? NULL : Py_None;
+    if (result < 0) {
+        notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_DigestUpdate));
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 static PyMethodDef HASH_methods[] = {
@@ -1304,7 +1314,7 @@ _hashlib_HASH(_hashlibstate *state, const char *digestname, PyObject *data_obj,
             result = _hashlib_HASH_hash(self, view.buf, view.len)
         );
         if (result == -1) {
-            assert(PyErr_Occurred());
+            notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_DigestUpdate));
             Py_CLEAR(self);
             goto exit;
         }
@@ -1975,16 +1985,6 @@ hashlib_HMAC_get_hashlib_digest_name(HMACobject *self)
 #endif
 }
 
-static int
-hashlib_openssl_HMAC_update_once(PY_HMAC_CTX_TYPE *ctx, const Py_buffer *v)
-{
-    if (!PY_HMAC_update(ctx, (const unsigned char *)v->buf, (size_t)v->len)) {
-        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(PY_HMAC_update));
-        return -1;
-    }
-    return 0;
-}
-
 /* Thin wrapper around PY_HMAC_CTX_free that allows to pass a NULL 'ctx'. */
 static inline void
 hashlib_openssl_HMAC_CTX_free(PY_HMAC_CTX_TYPE *ctx)
@@ -2239,10 +2239,15 @@ _hmac_update(HMACobject *self, PyObject *obj)
     GET_BUFFER_VIEW_OR_ERROR(obj, &view, return -1);
     HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(
         self, view.len,
-        r = hashlib_openssl_HMAC_update_once(self->ctx, &view)
+        r = PY_HMAC_update(self->ctx, (const unsigned char *)view.buf,
+                           (size_t)view.len)
     );
     PyBuffer_Release(&view);
-    return r;
+    if (r == 0) {
+        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(PY_HMAC_update));
+        return -1;
+    }
+    return 0;
 }
 
 /*[clinic input]
@@ -2933,5 +2938,6 @@ static struct PyModuleDef _hashlibmodule = {
 PyMODINIT_FUNC
 PyInit__hashlib(void)
 {
+    _PyOpenSSL_SetupMemFunctions();
     return PyModuleDef_Init(&_hashlibmodule);
 }

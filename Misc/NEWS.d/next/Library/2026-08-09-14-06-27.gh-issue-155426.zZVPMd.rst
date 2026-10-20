@@ -1,0 +1,4 @@
+Make sure that the pure Python fallback of :func:`hmac.digest` reject
+keys that are neither :class:`bytes` or :class:`bytearray`. Previously,
+an :exc:`AttributeError` was raised instead of :exc:`TypeError`.
+Patch by Bénédikt Tran.

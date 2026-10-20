@@ -69,6 +69,11 @@ class NumberTestCase(unittest.TestCase, ComplexesAreIdenticalMixin):
         for t in signed_types + unsigned_types + float_types:
             self.assertEqual(t().value, 0)
 
+    def test_resized_scalar_value(self):
+        value = c_int(17)
+        ctypes.resize(value, 65536)
+        self.assertEqual(value.value, 17)
+
     def test_unsigned_values(self):
         # the value given to the constructor is available
         # as the 'value' attribute
@@ -239,6 +244,26 @@ class NumberTestCase(unittest.TestCase, ComplexesAreIdenticalMixin):
                 self.assertRaises(OverflowError, t.__ctype_be__, big_int)
             if (hasattr(t, "__ctype_le__")):
                 self.assertRaises(OverflowError, t.__ctype_le__, big_int)
+
+        # gh-156865: be silent in overflows of C types
+        self.assertEqual(ctypes.c_float(3e300).value, float('inf'))
+        self.assertEqual(ctypes.c_float.__ctype_le__(3e300).value, float('inf'))
+        self.assertEqual(ctypes.c_float.__ctype_be__(3e300).value, float('inf'))
+
+    @unittest.skipUnless(hasattr(ctypes, "c_float_complex"),
+                         "requires C11 complex type")
+    def test_complex_overflow(self):
+        # gh-156865: be silent in overflows of C types
+        self.assertEqual(ctypes.c_float_complex(3e300).value, complex('inf'))
+        self.assertEqual(ctypes.c_float_complex.__ctype_le__(3e300).value,
+                         complex('inf'))
+        self.assertEqual(ctypes.c_float_complex.__ctype_be__(3e300).value,
+                         complex('inf'))
+        self.assertEqual(ctypes.c_float_complex(3e300j).value, complex('infj'))
+        self.assertEqual(ctypes.c_float_complex.__ctype_le__(3e300j).value,
+                         complex('infj'))
+        self.assertEqual(ctypes.c_float_complex.__ctype_be__(3e300j).value,
+                         complex('infj'))
 
 
 if __name__ == '__main__':

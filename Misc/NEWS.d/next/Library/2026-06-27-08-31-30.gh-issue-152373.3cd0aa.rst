@@ -1,0 +1,2 @@
+Fix the :mod:`pdb` ``until`` command not stepping over a list comprehension
+when a breakpoint is set on it. Patch by tonghuaroot.
