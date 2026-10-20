@@ -1992,13 +1992,33 @@ in :mod:`!ctypes`) which inherits from the private :class:`_CFuncPtr` class:
          same callable object to check or post process the results of several
          functions.
 
-         *arguments* is a tuple containing the parameters originally passed to
-         the function call, this allows specializing the behavior on the
+         *arguments* is a tuple containing the parameters passed to the
+         function call, including any output parameters that :mod:`!ctypes`
+         created for the call; this allows specializing the behavior on the
          arguments used.
 
-      The object that this function returns will be returned from the
-      foreign function call, but it can also check the result value
-      and raise an exception if the foreign function call failed.
+      If the callable returns the *arguments* tuple it received, unchanged,
+      :mod:`!ctypes` continues its normal processing of the result, which
+      includes returning output parameters (see
+      :ref:`ctypes-function-prototypes`). Any other object returned by the
+      callable is returned from the foreign function call instead. The
+      callable can also check the result value and raise an exception if the
+      foreign function call failed.
+
+      For example, this callable raises an exception when the foreign function
+      signals failure with a negative return value, and otherwise leaves the
+      result to :mod:`!ctypes`::
+
+         def errcheck(result, func, arguments):
+             if result < 0:
+                 raise RuntimeError(f"call failed with error {result}")
+             return arguments
+
+      This one instead replaces the result, converting a C ``int`` used as a
+      boolean into a :class:`bool`::
+
+         def errcheck(result, func, arguments):
+             return result != 0
 
 
 .. audit-event:: ctypes.set_exception code foreign-functions
@@ -2052,7 +2072,11 @@ See :ref:`ctypes-callback-functions` for examples.
 .. function:: PYFUNCTYPE(restype, *argtypes)
 
    The returned function prototype creates functions that use the Python calling
-   convention.  The function will *not* release the GIL during the call.
+   convention.  Unlike :func:`CFUNCTYPE` and :func:`WINFUNCTYPE`, ctypes does
+   *not* release the GIL before calling the foreign function, so the function
+   may safely use the Python C API. Note that this does not prevent the GIL
+   from being released *during* the call.
+
 
 Function prototypes created by these factory functions can be instantiated in
 different ways, depending on the type and number of the parameters in the call:
@@ -2916,10 +2940,418 @@ These are the fundamental ctypes data types:
 
 .. _ctypes-wintypes:
 
-The :mod:`!ctypes.wintypes` module provides quite some other Windows specific
-data types, for example :c:type:`!HWND`, :c:type:`!WPARAM`,
-:c:type:`!VARIANT_BOOL` or :c:type:`!DWORD`.
-Some useful structures like :c:type:`!MSG` or :c:type:`!RECT` are also defined.
+Windows data types
+^^^^^^^^^^^^^^^^^^
+
+.. module:: ctypes.wintypes
+   :synopsis: Windows data types for ctypes.
+
+**Source code:** :source:`Lib/ctypes/wintypes.py`
+
+The :mod:`!ctypes.wintypes` module provides types for use with Windows APIs.
+Most are aliases for types defined in :mod:`ctypes`.
+See Microsoft's `Windows data types
+<https://learn.microsoft.com/en-us/windows/win32/winprog/windows-data-types>`_
+documentation for the corresponding C definitions.
+On non-Windows platforms, the sizes and layouts of these types may differ
+from their Windows counterparts.
+
+.. versionchanged:: 3.14
+   Added :class:`HCONV`, :class:`HCONVLIST`, :class:`HCURSOR`,
+   :class:`HDDEDATA`, :class:`HDROP`, :class:`HFILE`, :class:`HRESULT`,
+   and :class:`HSZ`.
+
+For example::
+
+   >>> from ctypes import POINTER
+   >>> from ctypes.wintypes import LPRECT, RECT, SHORT
+   >>> SHORT(-1).value
+   -1
+   >>> rect = RECT(0, 0, 100, 50)
+   >>> rect.right, rect.bottom
+   (100, 50)
+   >>> LPRECT is POINTER(RECT)
+   True
+
+
+Simple types
+~~~~~~~~~~~~
+
+The following names are aliases for fundamental :mod:`ctypes` types:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Windows types
+     - :mod:`ctypes` type
+
+   * - .. class:: BYTE
+                  BOOLEAN
+     - :class:`~ctypes.c_ubyte`
+
+   * - .. class:: CHAR
+     - :class:`~ctypes.c_char`
+
+   * - .. class:: WCHAR
+     - :class:`~ctypes.c_wchar`
+
+   * - .. class:: WORD
+                  USHORT
+                  ATOM
+                  LANGID
+     - :class:`~ctypes.c_ushort`
+
+   * - .. class:: DWORD
+                  ULONG
+                  COLORREF
+                  LCID
+                  LCTYPE
+                  LGRPID
+     - :class:`~ctypes.c_ulong`
+
+   * - .. class:: BOOL
+                  LONG
+                  HRESULT
+     - :class:`~ctypes.c_long`
+
+   * - .. class:: INT
+                  HFILE
+     - :class:`~ctypes.c_int`
+
+   * - .. class:: UINT
+     - :class:`~ctypes.c_uint`
+
+   * - .. class:: SHORT
+     - :class:`~ctypes.c_short`
+
+   * - .. class:: DOUBLE
+     - :class:`~ctypes.c_double`
+
+   * - .. class:: FLOAT
+     - :class:`~ctypes.c_float`
+
+   * - .. class:: LARGE_INTEGER
+     - :class:`~ctypes.c_longlong`
+
+   * - .. class:: ULARGE_INTEGER
+     - :class:`~ctypes.c_ulonglong`
+
+   * - .. class:: LPCSTR
+                  LPSTR
+     - :class:`~ctypes.c_char_p`
+
+   * - .. class:: LPCOLESTR
+                  LPOLESTR
+                  OLESTR
+                  LPCWSTR
+                  LPWSTR
+     - :class:`~ctypes.c_wchar_p`
+
+   * - .. class:: LPCVOID
+                  LPVOID
+     - :class:`~ctypes.c_void_p`
+
+:class:`LARGE_INTEGER` and :class:`ULARGE_INTEGER` expose an integer
+:attr:`!value` attribute, with no ``LowPart``, ``HighPart``, or ``QuadPart``
+fields.
+
+.. class:: WPARAM
+
+   An unsigned integer type with the same size as :class:`~ctypes.c_void_p`.
+
+.. class:: LPARAM
+
+   A signed integer type with the same size as :class:`~ctypes.c_void_p`.
+
+.. class:: VARIANT_BOOL
+
+   A 16-bit Boolean type whose :attr:`!value` attribute is a Python
+   :class:`bool`.  Assigning to :attr:`!value` stores ``-1`` for a true value
+   and ``0`` for a false value.
+
+
+Handle types
+~~~~~~~~~~~~
+
+.. class:: HANDLE
+
+   An alias for :class:`~ctypes.c_void_p`, used to represent Windows handles.
+
+.. class:: HACCEL
+           HBITMAP
+           HBRUSH
+           HCOLORSPACE
+           HCONV
+           HCONVLIST
+           HCURSOR
+           HDC
+           HDDEDATA
+           HDESK
+           HDROP
+           HDWP
+           HENHMETAFILE
+           HFONT
+           HGDIOBJ
+           HGLOBAL
+           HHOOK
+           HICON
+           HINSTANCE
+           HKEY
+           HKL
+           HLOCAL
+           HMENU
+           HMETAFILE
+           HMODULE
+           HMONITOR
+           HPALETTE
+           HPEN
+           HRGN
+           HRSRC
+           HSTR
+           HSZ
+           HTASK
+           HWINSTA
+           HWND
+           SC_HANDLE
+           SERVICE_STATUS_HANDLE
+
+   Aliases for :class:`HANDLE` for use with specific Windows APIs.
+   :class:`HFILE` is an alias for :class:`INT` and is listed among the
+   simple types above.
+
+
+Structures
+~~~~~~~~~~
+
+The following types are subclasses of :class:`ctypes.Structure`.
+
+.. class:: RECT
+           RECTL
+           tagRECT
+
+   A rectangle with ``left``, ``top``, ``right``, and ``bottom`` fields,
+   all of type :class:`LONG`.
+
+.. class:: SMALL_RECT
+
+   A rectangle with ``Left``, ``Top``, ``Right``, and ``Bottom`` fields,
+   all of type :class:`SHORT`.
+
+.. class:: POINT
+           POINTL
+           tagPOINT
+
+   A point with ``x`` and ``y`` fields, both of type :class:`LONG`.
+
+.. class:: SIZE
+           SIZEL
+           tagSIZE
+
+   Dimensions with ``cx`` and ``cy`` fields, both of type :class:`LONG`.
+
+.. class:: FILETIME
+
+   A file time with ``dwLowDateTime`` and ``dwHighDateTime`` fields,
+   both of type :class:`DWORD`.
+
+.. class:: MSG
+           tagMSG
+
+   A Windows message with the following fields:
+
+   .. list-table::
+      :header-rows: 1
+
+      * - Field
+        - Type
+      * - ``hWnd``
+        - :class:`HWND`
+      * - ``message``
+        - :class:`UINT`
+      * - ``wParam``
+        - :class:`WPARAM`
+      * - ``lParam``
+        - :class:`LPARAM`
+      * - ``time``
+        - :class:`DWORD`
+      * - ``pt``
+        - :class:`POINT`
+
+.. class:: WIN32_FIND_DATAA
+           WIN32_FIND_DATAW
+
+   Structures used by Windows file-search functions, with the following
+   fields.  :class:`WIN32_FIND_DATAA` uses :class:`CHAR` for its file names,
+   and :class:`WIN32_FIND_DATAW` uses :class:`WCHAR`.
+
+   .. list-table::
+      :header-rows: 1
+
+      * - Fields
+        - Type
+      * - ``dwFileAttributes``
+        - :class:`DWORD`
+      * - ``ftCreationTime``, ``ftLastAccessTime``, ``ftLastWriteTime``
+        - :class:`FILETIME`
+      * - ``nFileSizeHigh``, ``nFileSizeLow``
+        - :class:`DWORD`
+      * - ``dwReserved0``, ``dwReserved1``
+        - :class:`DWORD`
+      * - ``cFileName``
+        - An array of :data:`MAX_PATH` characters
+      * - ``cAlternateFileName``
+        - An array of 14 characters
+
+
+Pointer types
+~~~~~~~~~~~~~
+
+The following names are aliases for ``ctypes.POINTER(T)``, where *T* is the
+type in the second column:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Pointer types
+     - Referenced type
+
+   * - .. class:: LPBOOL
+                  PBOOL
+     - :class:`BOOL`
+
+   * - .. class:: PBOOLEAN
+     - :class:`BOOLEAN`
+
+   * - .. class:: LPBYTE
+                  PBYTE
+     - :class:`BYTE`
+
+   * - .. class:: PCHAR
+     - :class:`CHAR`
+
+   * - .. class:: LPCOLORREF
+     - :class:`COLORREF`
+
+   * - .. class:: LPDWORD
+                  PDWORD
+     - :class:`DWORD`
+
+   * - .. class:: LPFILETIME
+                  PFILETIME
+     - :class:`FILETIME`
+
+   * - .. class:: PFLOAT
+     - :class:`FLOAT`
+
+   * - .. class:: LPHANDLE
+                  PHANDLE
+     - :class:`HANDLE`
+
+   * - .. class:: PHKEY
+     - :class:`HKEY`
+
+   * - .. class:: LPHKL
+     - :class:`HKL`
+
+   * - .. class:: LPINT
+                  PINT
+     - :class:`INT`
+
+   * - .. class:: PLARGE_INTEGER
+     - :class:`LARGE_INTEGER`
+
+   * - .. class:: PLCID
+     - :class:`LCID`
+
+   * - .. class:: LPLONG
+                  PLONG
+     - :class:`LONG`
+
+   * - .. class:: LPMSG
+                  PMSG
+     - :class:`MSG`
+
+   * - .. class:: LPPOINT
+                  PPOINT
+     - :class:`POINT`
+
+   * - .. class:: PPOINTL
+     - :class:`POINTL`
+
+   * - .. class:: LPRECT
+                  PRECT
+     - :class:`RECT`
+
+   * - .. class:: LPRECTL
+                  PRECTL
+     - :class:`RECTL`
+
+   * - .. class:: LPSC_HANDLE
+     - :class:`SC_HANDLE`
+
+   * - .. class:: PSHORT
+     - :class:`SHORT`
+
+   * - .. class:: LPSIZE
+                  PSIZE
+     - :class:`SIZE`
+
+   * - .. class:: LPSIZEL
+                  PSIZEL
+     - :class:`SIZEL`
+
+   * - .. class:: PSMALL_RECT
+     - :class:`SMALL_RECT`
+
+   * - .. class:: LPUINT
+                  PUINT
+     - :class:`UINT`
+
+   * - .. class:: PULARGE_INTEGER
+     - :class:`ULARGE_INTEGER`
+
+   * - .. class:: PULONG
+     - :class:`ULONG`
+
+   * - .. class:: PUSHORT
+     - :class:`USHORT`
+
+   * - .. class:: PWCHAR
+     - :class:`WCHAR`
+
+   * - .. class:: LPWIN32_FIND_DATAA
+                  PWIN32_FIND_DATAA
+     - :class:`WIN32_FIND_DATAA`
+
+   * - .. class:: LPWIN32_FIND_DATAW
+                  PWIN32_FIND_DATAW
+     - :class:`WIN32_FIND_DATAW`
+
+   * - .. class:: LPWORD
+                  PWORD
+     - :class:`WORD`
+
+
+Constants and functions
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. data:: MAX_PATH
+
+   The value ``260``, used as the size of the file-name arrays in
+   :class:`WIN32_FIND_DATAA` and :class:`WIN32_FIND_DATAW`.
+
+.. function:: RGB(red, green, blue)
+
+   Return a :class:`COLORREF` value as a Python integer.  The *red*, *green*,
+   and *blue* arguments are integers from ``0`` to ``255``, specifying the
+   intensity of each color component::
+
+      >>> from ctypes.wintypes import RGB
+      >>> hex(RGB(255, 128, 0))
+      '0x80ff'
+
+
+.. currentmodule:: ctypes
 
 
 .. _ctypes-structured-data-types:
@@ -3242,6 +3674,12 @@ fields, or any other data types containing pointer type fields.
           y: c_int
 
       point = Point(1, 2)
+
+   .. note::
+
+      Calling :func:`super` without arguments in methods of the decorated
+      class raises a :exc:`TypeError`. Use the two-argument form instead, for example
+      ``super(Point, self).__init__(x, y)``.
 
    *align*, *layout*, and *pack* supply the value for the :attr:`~ctypes.Structure._align_`,
    :attr:`~ctypes.Structure._layout_`, and :attr:`~ctypes.Structure._pack_`
