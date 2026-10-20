@@ -112,6 +112,35 @@ class CAPITest(unittest.TestCase):
         self.assertTypedEqual(object_ascii(WithRepr(StrSubclass('<\U0001f40d>'))), r'<\U0001f40d>')
         self.assertTypedEqual(object_ascii(NULL), '<NULL>')
 
+    def test_object_pretty(self):
+        # Test PyObject_Pretty()
+        import pprint
+        object_pretty = _testlimitedcapi.object_pretty
+
+        # Simple objects: pretty == repr for short values
+        self.assertTypedEqual(object_pretty('abc'), "'abc'")
+        self.assertTypedEqual(object_pretty(42), '42')
+        self.assertTypedEqual(object_pretty([1, 2, 3]), '[1, 2, 3]')
+        self.assertTypedEqual(object_pretty({'a': 1}), "{'a': 1}")
+        self.assertTypedEqual(object_pretty(()), '()')
+        self.assertTypedEqual(object_pretty(True), 'True')
+        self.assertTypedEqual(object_pretty(None), 'None')
+
+        # Nested/long structures that pformat formats differently from repr
+        long_list = list(range(20))
+        self.assertEqual(object_pretty(long_list), pprint.pformat(long_list))
+
+        nested = {'key1': list(range(10)), 'key2': {'inner': list(range(10))}}
+        self.assertEqual(object_pretty(nested), pprint.pformat(nested))
+
+        # OrderedDict
+        od = OrderedDict([('b', 2), ('a', 1), ('c', 3)])
+        self.assertEqual(object_pretty(od), pprint.pformat(od))
+
+        # Return type is always str
+        self.assertIsInstance(object_pretty([1, 2, 3]), str)
+        self.assertIsInstance(object_pretty(nested), str)
+
     def test_object_bytes(self):
         # Test PyObject_Bytes()
         object_bytes = _testlimitedcapi.object_bytes

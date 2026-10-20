@@ -760,6 +760,51 @@ class PrettyPrinter:
 
     _dispatch[_collections.UserString.__repr__] = _pprint_user_string
 
+    def _format_pprint(self, object, method, context, maxlevels, level):
+        """Format an object using its __pprint__ method.
+
+        The __pprint__ method should be a generator yielding values:
+           - yield value                  -> positional arg
+           - yield (name, value)          -> keyword arg, always shown
+           - yield (name, value, default) -> keyword arg, shown if value != default
+        """
+        cls_name = type(object).__name__
+        parts = []
+        readable = True
+
+        for item in method(object):
+            match item:
+                case (name, value, default):
+                    # Keyword argument w/default.  Show only if value != default.
+                    if value != default:
+                        formatted, is_readable, _ = self.format(value, context, maxlevels, level + 1)
+                        parts.append(f"{name}={formatted}")
+                        readable = readable and is_readable
+                case (str() as name, value) if name:
+                    # Keyword argument.  Always show.
+                    formatted, is_readable, _ = self.format(value, context, maxlevels, level + 1)
+                    parts.append(f"{name}={formatted}")
+                    readable = readable and is_readable
+                case (name, value) if not name:
+                    # 2-tuple with a false-y name: treat as positional.
+                    formatted, is_readable, _ = self.format(value, context, maxlevels, level + 1)
+                    parts.append(formatted)
+                    readable = readable and is_readable
+                case (name, value):
+                    # Truthy non-string name is an error.
+                    raise ValueError(
+                        f"__pprint__ yielded a 2-tuple with "
+                        f"non-string name: {name!r}"
+                    )
+                case _:
+                    # Positional argument.
+                    formatted, is_readable, _ = self.format(item, context, maxlevels, level + 1)
+                    parts.append(formatted)
+                    readable = readable and is_readable
+
+        rep = f"{cls_name}({', '.join(parts)})"
+        return rep, readable, False
+
     def _pprint_template(self, object, stream, indent, allowance, context, level):
         cls_name = object.__class__.__name__
         if self._expand:
@@ -820,6 +865,9 @@ class PrettyPrinter:
         typ = type(object)
         if typ in _builtin_scalars:
             return repr(object), True, False
+
+        if (p := getattr(typ, "__pprint__", None)):
+            return self._format_pprint(object, p, context, maxlevels, level)
 
         r = getattr(typ, "__repr__", None)
 

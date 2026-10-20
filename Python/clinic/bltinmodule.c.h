@@ -1181,7 +1181,8 @@ exit:
 }
 
 PyDoc_STRVAR(builtin_print__doc__,
-"print($module, /, *objects, sep=\' \', end=\'\\n\', file=None, flush=False)\n"
+"print($module, /, *objects, sep=\' \', end=\'\\n\', file=None, flush=False,\n"
+"      pretty=None)\n"
 "--\n"
 "\n"
 "Prints the values to a stream, or to sys.stdout by default.\n"
@@ -1193,7 +1194,9 @@ PyDoc_STRVAR(builtin_print__doc__,
 "  file\n"
 "    a file-like object (stream); defaults to the current sys.stdout.\n"
 "  flush\n"
-"    whether to forcibly flush the stream.");
+"    whether to forcibly flush the stream.\n"
+"  pretty\n"
+"    a pretty-printing object, None, or True.");
 
 #define BUILTIN_PRINT_METHODDEF    \
     {"print", _PyCFunction_CAST(builtin_print), METH_FASTCALL|METH_KEYWORDS, builtin_print__doc__},
@@ -1201,7 +1204,7 @@ PyDoc_STRVAR(builtin_print__doc__,
 static PyObject *
 builtin_print_impl(PyObject *module, PyObject * const *objects,
                    Py_ssize_t objects_length, PyObject *sep, PyObject *end,
-                   PyObject *file, int flush);
+                   PyObject *file, int flush, PyObject *pretty);
 
 static PyObject *
 builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1209,7 +1212,7 @@ builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 4
+    #define NUM_KEYWORDS 5
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -1218,7 +1221,7 @@ builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(sep), &_Py_ID(end), &_Py_ID(file), &_Py_ID(flush), },
+        .ob_item = { &_Py_ID(sep), &_Py_ID(end), &_Py_ID(file), &_Py_ID(flush), &_Py_ID(pretty), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1227,14 +1230,14 @@ builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"sep", "end", "file", "flush", NULL};
+    static const char * const _keywords[] = {"sep", "end", "file", "flush", "pretty", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "print",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
+    PyObject *argsbuf[5];
     PyObject * const *fastargs;
     Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject * const *objects;
@@ -1243,6 +1246,7 @@ builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *end = Py_None;
     PyObject *file = Py_None;
     int flush = 0;
+    PyObject *pretty = Py_None;
 
     fastargs = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 0, /*minkw*/ 0, /*varpos*/ 1, argsbuf);
@@ -1270,14 +1274,20 @@ builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
             goto skip_optional_kwonly;
         }
     }
-    flush = PyObject_IsTrue(fastargs[3]);
-    if (flush < 0) {
-        goto exit;
+    if (fastargs[3]) {
+        flush = PyObject_IsTrue(fastargs[3]);
+        if (flush < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
     }
+    pretty = fastargs[4];
 skip_optional_kwonly:
     objects = args;
     objects_length = nargs;
-    return_value = builtin_print_impl(module, objects, objects_length, sep, end, file, flush);
+    return_value = builtin_print_impl(module, objects, objects_length, sep, end, file, flush, pretty);
 
 exit:
     return return_value;
@@ -1575,4 +1585,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ac4800dc25f87f6e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f1e4ae03bd5ca808 input=a9049054013a1b77]*/

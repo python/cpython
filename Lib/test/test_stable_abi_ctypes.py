@@ -614,6 +614,7 @@ SYMBOL_NAMES = (
     "PyObject_Length",
     "PyObject_Malloc",
     "PyObject_Not",
+    "PyObject_Pretty",
     "PyObject_Realloc",
     "PyObject_Repr",
     "PyObject_RichCompare",

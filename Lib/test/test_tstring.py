@@ -343,11 +343,11 @@ class TestTString(unittest.TestCase, TStringBaseCase):
             ("t'{x!}'", "t-string: missing conversion character"),
             ("t'{x=!}'", "t-string: missing conversion character"),
             ("t'{x!z}'", "t-string: invalid conversion character 'z': "
-                         "expected 's', 'r', or 'a'"),
+                         "expected 's', 'r', 'a', or 'p'"),
             ("f\"{t'{x!z}'}\"", "t-string: invalid conversion character 'z': "
-                                "expected 's', 'r', or 'a'"),
+                                "expected 's', 'r', 'a', or 'p'"),
             ("t'{f\"{x!z}\"}'", "f-string: invalid conversion character 'z': "
-                                "expected 's', 'r', or 'a'"),
+                                "expected 's', 'r', 'a', or 'p'"),
             ("t'{lambda:1}'", "t-string: lambda expressions are not allowed "
                               "without parentheses"),
             ("t'{x:{;}}'", "t-string: expecting a valid expression after '{'"),
