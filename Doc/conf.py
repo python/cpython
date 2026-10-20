@@ -24,6 +24,7 @@ extensions = [
     'pyspecific',
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
+    'sphinx.ext.extlinks',
 ]
 
 # Skip if downstream redistributors haven't installed it
@@ -499,6 +500,11 @@ linkcheck_ignore = [
 # Relative filename of the data files
 refcount_file = 'data/refcounts.dat'
 stable_abi_file = 'data/stable_abi.dat'
+
+# sphinx.ext.extlinks config
+extlinks = {
+    'cve': ('https://www.cve.org/CVERecord?id=CVE-%s', 'CVE-%s'),
+}
 
 # sphinxext-opengraph config
 ogp_site_url = 'https://docs.python.org/3/'
