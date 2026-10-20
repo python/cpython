@@ -100,6 +100,14 @@
   /* Heatmap span highlighting colors */
   --span-hot-base: 255, 100, 50;
   --span-cold-base: 150, 150, 150;
+
+  /* Summary card colors - optimized for 4.5:1 contrast on light bg */
+  --card-blue: 44, 102, 149;
+  --card-green: 26, 116, 49;
+  --card-yellow: 134, 100, 4;
+  --card-purple: 102, 57, 166;
+  --card-red: 180, 40, 50;
+  --card-orange: 166, 90, 0;
 }
 
 /* Dark theme */
@@ -162,6 +170,14 @@
   /* Heatmap span highlighting colors - dark theme */
   --span-hot-base: 255, 107, 53;
   --span-cold-base: 189, 189, 189;
+
+  /* Summary card colors - optimized for 4.5:1 contrast on dark bg */
+  --card-blue: 88, 166, 255;
+  --card-green: 63, 185, 80;
+  --card-yellow: 210, 153, 34;
+  --card-purple: 163, 113, 247;
+  --card-red: 248, 113, 113;
+  --card-orange: 251, 146, 60;
 }
 
 /* --------------------------------------------------------------------------

@@ -1,12 +1,12 @@
 import builtins
 import codecs
-import _datetime
 import gc
 import io
 import locale
 import operator
 import os
 import random
+import shutil
 import socket
 import struct
 import subprocess
@@ -265,6 +265,17 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
+        # test EXIT_SUCCESS and EXIT_FAILURE constants
+        self.assertNotEqual(sys.EXIT_SUCCESS, sys.EXIT_FAILURE)
+        rc, out, err = assert_python_ok('-c', 'import sys; sys.exit(sys.EXIT_SUCCESS)')
+        self.assertEqual(rc, sys.EXIT_SUCCESS)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+        rc, out, err = assert_python_failure('-c', 'import sys; sys.exit(sys.EXIT_FAILURE)')
+        self.assertEqual(rc, sys.EXIT_FAILURE)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
         def check_exit_message(code, expected, **env_vars):
             rc, out, err = assert_python_failure('-c', code, **env_vars)
             self.assertEqual(rc, 1)
@@ -425,6 +436,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(v[2], v.build)
         self.assertEqual(v[3], v.platform)
         self.assertEqual(v[4], v.service_pack)
+        support.check_immutable_type(self, type(v))
 
         # This is how platform.py calls it. Make sure tuple
         #  still has 5 elements
@@ -494,7 +506,7 @@ class SysModuleTest(unittest.TestCase):
             self.assertIs(f, f2)
         self.assertIsNone(sys._getframemodulename(i))
 
-    # sys._current_frames() is a CPython-only gimmick.
+    @support.cpython_only  # sys._current_frames() is a CPython-only gimmick.
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
     def test_current_frames(self):
@@ -562,6 +574,38 @@ class SysModuleTest(unittest.TestCase):
             leave_g.set()
             t.join()
 
+    @support.cpython_only
+    @requires_subinterpreters
+    @threading_helper.requires_working_threading()
+    def test_current_frames_other_interpreters(self):
+        # gh-158364: sys._current_frames() would access frames of another
+        # interpreter and crash
+        import threading
+
+        entered = threading.Event()
+        left = threading.Event()
+
+        def park():
+            entered.set()
+            left.wait()
+
+        t = threading.Thread(target=park)
+        with threading_helper.start_threads([t], unlock=left.set):
+            entered.wait()
+            interp = interpreters.create()
+            try:
+                interp.exec(f"""if True:
+                    import sys
+                    import threading
+
+                    frames = sys._current_frames()
+                    assert threading.get_ident() in frames, frames
+                    assert frames[threading.get_ident()].f_globals is globals()
+                    assert {t.ident} not in frames, frames
+                    """)
+            finally:
+                interp.close()
+
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
     def test_current_exceptions(self):
@@ -628,6 +672,39 @@ class SysModuleTest(unittest.TestCase):
             leave_g.set()
             t.join()
 
+    @support.cpython_only
+    @requires_subinterpreters
+    @threading_helper.requires_working_threading()
+    def test_current_exceptions_other_interpreters(self):
+        # gh-158364: sys._current_exceptions() would hand out exceptions of
+        # another interpreter and crash
+        import threading
+
+        entered = threading.Event()
+        left = threading.Event()
+
+        def hold():
+            # The thread has to be handling an exception, otherwise
+            # sys._current_exceptions() has nothing to report for it.
+            try:
+                raise ValueError
+            except ValueError:
+                entered.set()
+                left.wait()
+
+        t = threading.Thread(target=hold)
+        with threading_helper.start_threads([t], unlock=left.set):
+            entered.wait()
+            interp = interpreters.create()
+            try:
+                interp.exec(f"""if True:
+                    import sys
+
+                    assert {t.ident} not in sys._current_exceptions()
+                    """)
+            finally:
+                interp.close()
+
     def test_attributes(self):
         self.assertIsInstance(sys.api_version, int)
         self.assertIsInstance(sys.argv, list)
@@ -690,6 +767,7 @@ class SysModuleTest(unittest.TestCase):
             self.assertEqual(algo, 0)
         self.assertGreaterEqual(sys.hash_info.cutoff, 0)
         self.assertLess(sys.hash_info.cutoff, 8)
+        support.check_immutable_type(self, type(sys.hash_info))
 
         self.assertIsInstance(sys.maxsize, int)
         self.assertIsInstance(sys.maxunicode, int)
@@ -756,6 +834,16 @@ class SysModuleTest(unittest.TestCase):
         self.assertIsInstance(sys._emscripten_info.runtime, (str, type(None)))
         self.assertIsInstance(sys._emscripten_info.pthreads, bool)
         self.assertIsInstance(sys._emscripten_info.shared_memory, bool)
+
+    @unittest.skipUnless(support.is_wasi, "only available on WASI")
+    def test_wasi_info(self):
+        info = sys._wasi_info
+        self.assertIn(info.wasi_version, {'p1', 'p2', 'p3'})
+        self.assertIn('.', info.wasi_sdk_version)
+        sdk_major, _, sdk_minor = info.wasi_sdk_version.partition('.')
+        self.assertGreaterEqual(int(sdk_major), 1)
+        self.assertGreaterEqual(int(sdk_minor), 0)
+        self.assertIsInstance(info.cooperative_threads, bool)
 
     def test_43581(self):
         # Can't use sys.stdout, as this is a StringIO object when
@@ -859,33 +947,47 @@ class SysModuleTest(unittest.TestCase):
                     '''))
                 self.assertTrue(sys._is_interned(s))
 
-    def test_sys_flags(self):
+    def test_sys_flags_indexable_attributes(self):
         self.assertTrue(sys.flags)
-        attrs = ("debug",
+        # We've stopped assigning sequence indices to new sys.flags attributes:
+        # https://github.com/python/cpython/issues/122575#issuecomment-2416497086
+        indexable_attrs = ("debug",
                  "inspect", "interactive", "optimize",
                  "dont_write_bytecode", "no_user_site", "no_site",
                  "ignore_environment", "verbose", "bytes_warning", "quiet",
                  "hash_randomization", "isolated", "dev_mode", "utf8_mode",
                  "warn_default_encoding", "safe_path", "int_max_str_digits")
-        for attr in attrs:
+        for attr_idx, attr in enumerate(indexable_attrs):
             self.assertHasAttr(sys.flags, attr)
             attr_type = bool if attr in ("dev_mode", "safe_path") else int
             self.assertEqual(type(getattr(sys.flags, attr)), attr_type, attr)
+            attr_value = getattr(sys.flags, attr)
+            self.assertEqual(sys.flags[attr_idx], attr_value,
+                             msg=f"sys.flags .{attr} vs [{attr_idx}]")
         self.assertTrue(repr(sys.flags))
-        self.assertEqual(len(sys.flags), len(attrs))
+        self.assertEqual(len(sys.flags), 18, msg="Do not increase, see GH-122575")
 
         self.assertIn(sys.flags.utf8_mode, {0, 1, 2})
+
+    def test_sys_flags_name_only_attributes(self):
+        # non-tuple sequence fields (name only sys.flags attributes)
+        self.assertIsInstance(sys.flags.gil, int|type(None))
+        self.assertIsInstance(sys.flags.thread_inherit_context, int|type(None))
+        self.assertIsInstance(sys.flags.context_aware_warnings, int|type(None))
+        self.assertIsInstance(sys.flags.lazy_imports, int|type(None))
 
     def assert_raise_on_new_sys_type(self, sys_attr):
         # Users are intentionally prevented from creating new instances of
         # sys.flags, sys.version_info, and sys.getwindowsversion.
         support.check_disallow_instantiation(self, type(sys_attr), sys_attr)
 
-    def test_sys_flags_no_instantiation(self):
+    def test_sys_flags_type(self):
         self.assert_raise_on_new_sys_type(sys.flags)
+        support.check_immutable_type(self, type(sys.flags))
 
-    def test_sys_version_info_no_instantiation(self):
+    def test_sys_version_info_type(self):
         self.assert_raise_on_new_sys_type(sys.version_info)
+        support.check_immutable_type(self, type(sys.version_info))
 
     def test_sys_getwindowsversion_no_instantiation(self):
         # Skip if not being run on Windows.
@@ -1113,8 +1215,10 @@ class SysModuleTest(unittest.TestCase):
         # The sysconfig vars are not available on Windows.
         if sys.platform != "win32":
             with_pymalloc = sysconfig.get_config_var("WITH_PYMALLOC")
+            with_sanitizer = support.check_sanitizer(address=True, memory=True)
             self.assertIn(b"free PyDictObjects", err)
-            if with_pymalloc:
+            # ASan and MSan builds default to malloc, even with pymalloc.
+            if with_pymalloc and not with_sanitizer:
                 self.assertIn(b'Small block threshold', err)
 
         # The function has no parameter
@@ -1272,16 +1376,6 @@ class SysModuleTest(unittest.TestCase):
     def test_no_duplicates_in_meta_path(self):
         self.assertEqual(len(sys.meta_path), len(set(sys.meta_path)))
 
-    @unittest.skipUnless(hasattr(sys, "_enablelegacywindowsfsencoding"),
-                         'needs sys._enablelegacywindowsfsencoding()')
-    def test__enablelegacywindowsfsencoding(self):
-        code = ('import sys',
-                'sys._enablelegacywindowsfsencoding()',
-                'print(sys.getfilesystemencoding(), sys.getfilesystemencodeerrors())')
-        rc, out, err = assert_python_ok('-c', '; '.join(code))
-        out = out.decode('ascii', 'replace').rstrip()
-        self.assertEqual(out, 'mbcs replace')
-
     @support.requires_subprocess()
     def test_orig_argv(self):
         code = textwrap.dedent('''
@@ -1348,9 +1442,60 @@ class SysModuleTest(unittest.TestCase):
     def test_disable_gil_abi(self):
         self.assertEqual('t' in sys.abiflags, support.Py_GIL_DISABLED)
 
+    def test_int_max_str_digits(self):
+        old_limit = sys.get_int_max_str_digits()
+        self.assertIsInstance(old_limit, int)
+        self.assertGreaterEqual(old_limit, 0)
+        self.addCleanup(sys.set_int_max_str_digits, old_limit)
+
+        sys.set_int_max_str_digits(0)
+        self.assertEqual(sys.get_int_max_str_digits(), 0)
+
+        sys.set_int_max_str_digits(2_048)
+        self.assertEqual(sys.get_int_max_str_digits(), 2_048)
+
+        with self.assertRaises(ValueError):
+            # the minimum is 640 digits
+            sys.set_int_max_str_digits(5)
+        with self.assertRaises(ValueError):
+            sys.set_int_max_str_digits(-2)
+        with self.assertRaises(TypeError):
+            sys.set_int_max_str_digits(2_048.0)
+
+    @test.support.cpython_only
+    def test_is_immortal(self):
+        is_immortal = sys._is_immortal
+
+        # Singletons
+        self.assertTrue(is_immortal(None))
+        self.assertTrue(is_immortal(False))
+        self.assertTrue(is_immortal(True))
+        self.assertTrue(is_immortal(0))
+        self.assertTrue(is_immortal(b''))
+        self.assertTrue(is_immortal(''))
+        self.assertTrue(is_immortal(b'x'))
+        self.assertTrue(is_immortal('x'))
+        self.assertTrue(is_immortal(()))
+
+        # Static types
+        self.assertTrue(is_immortal(int))
+        self.assertTrue(is_immortal(dict))
+
+        # Test some mortal objects
+        class PythonType:
+            pass
+        self.assertFalse(is_immortal([1, 2, 3]))
+        self.assertFalse(is_immortal({'key': 5}))
+        self.assertFalse(is_immortal(object()))
+        self.assertFalse(is_immortal(PythonType))
+        self.assertFalse(is_immortal(2 ** 100))
+        # Use encode/decode to get a fresh object
+        self.assertFalse(is_immortal(b'abc'.decode()))
+        self.assertFalse(is_immortal('abc'.encode()))
+
 
 @test.support.cpython_only
-@force_not_colorized
+@test.support.force_not_colorized_test_class
 class UnraisableHookTest(unittest.TestCase):
     def test_original_unraisablehook(self):
         _testcapi = import_helper.import_module('_testcapi')
@@ -1492,6 +1637,7 @@ class UnraisableHookTest(unittest.TestCase):
     def test_custom_unraisablehook_fail(self):
         _testcapi = import_helper.import_module('_testcapi')
         from _testcapi import err_writeunraisable
+
         def hook_func(*args):
             raise Exception("hook_func failed")
 
@@ -1677,7 +1823,7 @@ class SizeofTest(unittest.TestCase):
             INTERPRETER_FRAME = '9PihcP'
         else:
             INTERPRETER_FRAME = '9PhcP'
-        check(x, size('3PiccPPP' + INTERPRETER_FRAME + 'P'))
+        check(x, size('3PiccPPPP' + INTERPRETER_FRAME + 'P'))
         # function
         def func(): pass
         check(func, size('16Pi'))
@@ -1699,7 +1845,7 @@ class SizeofTest(unittest.TestCase):
         check(iter('abc'), size('lP'))
         # callable-iterator
         import re
-        check(re.finditer('',''), size('2P'))
+        check(re.finditer('',''), size('3P'))
         # list
         check(list([]), vsize('Pn'))
         check(list([1]), vsize('Pn') + 2*self.P)
@@ -1741,7 +1887,12 @@ class SizeofTest(unittest.TestCase):
             x = property(getx, setx, delx, "")
             check(x, size('5Pi'))
         # PyCapsule
-        check(_datetime.datetime_CAPI, size('6P'))
+        try:
+            import _datetime
+        except ModuleNotFoundError:
+            pass
+        else:
+            check(_datetime.datetime_CAPI, size('6P'))
         # rangeiterator
         check(iter(range(1)), size('3l'))
         check(iter(range(2**65)), size('3P'))
@@ -1781,7 +1932,7 @@ class SizeofTest(unittest.TestCase):
         check((1,2,3), vsize('') + self.P + 3*self.P)
         # type
         # static type: PyTypeObject
-        fmt = 'P2nPI13Pl4Pn9Pn12PIPc'
+        fmt = 'P2nPI13Pl4Pn9Pn12PI2PcP'
         s = vsize(fmt)
         check(int, s)
         typeid = 'n' if support.Py_GIL_DISABLED else ''
@@ -1875,7 +2026,10 @@ class SizeofTest(unittest.TestCase):
         check(S(), set(), '3P')
         class FS(frozenset):
             __slots__ = 'a', 'b', 'c'
-        check(FS(), frozenset(), '3P')
+
+        class mytuple(tuple):
+            pass
+        check(FS([mytuple()]), frozenset([mytuple()]), '3P')
         from collections import OrderedDict
         class OD(OrderedDict):
             __slots__ = 'a', 'b', 'c'
@@ -1888,7 +2042,7 @@ class SizeofTest(unittest.TestCase):
         check = self.check_sizeof
         # _ast.AST
         import _ast
-        check(_ast.AST(), size('P'))
+        check(_ast.Module(), size('3P'))
         try:
             raise TypeError
         except TypeError as e:
@@ -1899,10 +2053,16 @@ class SizeofTest(unittest.TestCase):
         # symtable entry
         # XXX
         # sys.flags
-        # FIXME: The +3 is for the 'gil', 'thread_inherit_context' and
-        # 'context_aware_warnings' flags and will not be necessary once
-        # gh-122575 is fixed
-        check(sys.flags, vsize('') + self.P + self.P * (3 + len(sys.flags)))
+        # FIXME: The non_sequence_fields adjustment is for these flags:
+        # - 'gil'
+        # - 'thread_inherit_context'
+        # - 'context_aware_warnings'
+        # - 'lazy_imports'
+        # Not needing to increment this every time we add a new field
+        # per GH-122575 would be nice...
+        # Q: What is the actual point of this sys.flags C size derived from PyStructSequence_Field array assertion?
+        non_sequence_fields = 4
+        check(sys.flags, vsize('') + self.P + self.P * (non_sequence_fields + len(sys.flags)))
 
     def test_asyncgen_hooks(self):
         old = sys.get_asyncgen_hooks()
@@ -1917,6 +2077,7 @@ class SizeofTest(unittest.TestCase):
         cur = sys.get_asyncgen_hooks()
         self.assertIsNone(cur.firstiter)
         self.assertIsNone(cur.finalizer)
+        support.check_immutable_type(self, type(cur))
 
         # gh-118473
         with self.assertRaises(TypeError):
@@ -1960,6 +2121,7 @@ class SizeofTest(unittest.TestCase):
         self.assertEqual(out, b"")
         self.assertEqual(err, b"")
 
+
 @test.support.support_remote_exec_only
 @test.support.cpython_only
 class TestRemoteExec(unittest.TestCase):
@@ -1967,7 +2129,8 @@ class TestRemoteExec(unittest.TestCase):
         test.support.reap_children()
 
     def _run_remote_exec_test(self, script_code, python_args=None, env=None,
-                              prologue='',
+                              python_executable=None, prologue='',
+                              after_ready=None,
                               script_path=os_helper.TESTFN + '_remote.py'):
         # Create the script that will be remotely executed
         self.addCleanup(os_helper.unlink, script_path)
@@ -2015,7 +2178,10 @@ sock.close()
 ''')
 
         # Start the target process and capture its output
-        cmd = [sys.executable]
+        if python_executable is None:
+            python_executable = sys.executable
+
+        cmd = [python_executable]
         if python_args:
             cmd.extend(python_args)
         cmd.append(target)
@@ -2040,6 +2206,9 @@ sock.close()
                 response = client_socket.recv(1024)
                 self.assertEqual(response, b"ready")
 
+                if after_ready is not None:
+                    after_ready(proc)
+
                 # Try remote exec on the target process
                 sys.remote_exec(proc.pid, script_path)
 
@@ -2061,6 +2230,19 @@ sock.close()
                 proc.kill()
                 proc.terminate()
                 proc.wait(timeout=SHORT_TIMEOUT)
+
+    def _run_remote_exec_with_deleted_mapping(self, deleted_path, **kwargs):
+        def delete_loaded_mapping(proc):
+            os_helper.unlink(deleted_path)
+            with open(f'/proc/{proc.pid}/maps', encoding='utf-8') as maps:
+                self.assertIn(f'{deleted_path} (deleted)', maps.read())
+
+        script = 'print("Remote script executed successfully!")'
+        returncode, stdout, stderr = self._run_remote_exec_test(
+            script, after_ready=delete_loaded_mapping, **kwargs)
+        self.assertEqual(returncode, 0)
+        self.assertIn(b"Remote script executed successfully!", stdout)
+        self.assertEqual(stderr, b"")
 
     def test_remote_exec(self):
         """Test basic remote exec functionality"""
@@ -2187,6 +2369,74 @@ this is invalid python code
         """Test remote exec with invalid script path"""
         with self.assertRaises(OSError):
             sys.remote_exec(os.getpid(), "invalid_script_path")
+
+    @unittest.skipUnless(sys.platform == 'linux', 'Linux-only regression test')
+    @unittest.skipUnless(
+        sysconfig.get_config_var('Py_ENABLE_SHARED') == 1,
+        'requires a shared libpython build')
+    def test_remote_exec_deleted_libpython(self):
+        """Test remote exec when the target libpython was deleted."""
+        build_dir = sysconfig.get_config_var('abs_builddir')
+        ldlibrary = sysconfig.get_config_var('LDLIBRARY')
+        instsoname = sysconfig.get_config_var('INSTSONAME')
+        if not build_dir or not ldlibrary or not instsoname:
+            self.skipTest('cannot determine shared libpython location')
+
+        source_libpython = os.path.join(build_dir, instsoname)
+        if not os.path.exists(source_libpython):
+            self.skipTest(f'{source_libpython!r} does not exist')
+
+        with os_helper.temp_dir() as lib_dir:
+            copied_libpython = os.path.join(lib_dir, instsoname)
+            shutil.copy2(source_libpython, copied_libpython)
+            if ldlibrary != instsoname:
+                os.symlink(instsoname, os.path.join(lib_dir, ldlibrary))
+
+            env = os.environ.copy()
+            ld_library_path = env.get('LD_LIBRARY_PATH')
+            env['LD_LIBRARY_PATH'] = lib_dir if not ld_library_path else (
+                lib_dir + os.pathsep + ld_library_path)
+
+            self._run_remote_exec_with_deleted_mapping(copied_libpython,
+                                                       env=env)
+
+    @unittest.skipUnless(sys.platform == 'linux', 'Linux-only regression test')
+    @unittest.skipUnless(
+        sysconfig.get_config_var('Py_ENABLE_SHARED') == 0,
+        'requires a static Python build')
+    def test_remote_exec_deleted_static_executable(self):
+        """Test remote exec when the target static executable was deleted."""
+        build_dir = sysconfig.get_config_var('abs_builddir')
+        stdlib_dir = os.path.dirname(os.path.abspath(os.__file__))
+        if not build_dir or not os.path.isdir(stdlib_dir):
+            self.skipTest('cannot determine build-tree locations')
+
+        pybuilddir_txt = os.path.join(build_dir, 'pybuilddir.txt')
+        if not os.path.exists(pybuilddir_txt):
+            self.skipTest(f'{pybuilddir_txt!r} does not exist')
+
+        with open(pybuilddir_txt, encoding='utf-8') as pybuilddir_file:
+            pybuilddir = pybuilddir_file.read().strip()
+        source_ext_dir = os.path.join(build_dir, pybuilddir)
+        if not os.path.isdir(source_ext_dir):
+            self.skipTest(f'{source_ext_dir!r} does not exist')
+
+        with os_helper.temp_dir() as copied_root:
+            copied_build_dir = os.path.join(copied_root, 'build')
+            copied_pybuilddir = os.path.join(copied_build_dir, pybuilddir)
+            os.makedirs(os.path.dirname(copied_pybuilddir))
+            os.symlink(stdlib_dir, os.path.join(copied_root, 'Lib'))
+            os.symlink(source_ext_dir, copied_pybuilddir)
+            shutil.copy2(pybuilddir_txt,
+                         os.path.join(copied_build_dir, 'pybuilddir.txt'))
+
+            copied_python = os.path.join(copied_build_dir,
+                                         os.path.basename(sys.executable))
+            shutil.copy2(sys.executable, copied_python)
+
+            self._run_remote_exec_with_deleted_mapping(
+                copied_python, python_args=['-S'],
+                python_executable=copied_python)
 
     def test_remote_exec_in_process_without_debug_fails_envvar(self):
         """Test remote exec in a process without remote debugging enabled"""

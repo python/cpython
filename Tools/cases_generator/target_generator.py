@@ -44,7 +44,7 @@ def write_opcode_targets(analysis: Analysis, out: CWriter) -> None:
     out.emit("#else /* _Py_TAIL_CALL_INTERP */\n")
 
 def function_proto(name: str) -> str:
-    return f"Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_{name}(TAIL_CALL_PARAMS)"
+    return f"static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_{name}(TAIL_CALL_PARAMS)"
 
 
 def write_tailcall_dispatch_table(analysis: Analysis, out: CWriter) -> None:

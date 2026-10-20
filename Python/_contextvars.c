@@ -43,6 +43,7 @@ _contextvars_exec(PyObject *m)
 }
 
 static struct PyModuleDef_Slot _contextvars_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _contextvars_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

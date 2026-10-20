@@ -83,8 +83,9 @@ struct _qsbr_shared {
     // Minimum observed read sequence of all QSBR thread states
     uint64_t rd_seq;
 
-    // Array of QSBR thread states.
+    // Array of QSBR thread states (aligned to 64 bytes).
     struct _qsbr_pad *array;
+    void *array_raw;   // raw allocation pointer (for free)
     Py_ssize_t size;
 
     // Freelist of unused _qsbr_thread_states (protected by mutex)

@@ -6,7 +6,67 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
+
+PyDoc_STRVAR(_interpreters_new_config__doc__,
+"new_config($module, name=\'isolated\', /, **overrides)\n"
+"--\n"
+"\n"
+"Return a representation of a new PyInterpreterConfig.\n"
+"\n"
+"The name determines the initial values of the config.  Supported named\n"
+"configs are: default, isolated, legacy, and empty.\n"
+"\n"
+"Any keyword arguments are set on the corresponding config fields,\n"
+"overriding the initial values.");
+
+#define _INTERPRETERS_NEW_CONFIG_METHODDEF    \
+    {"new_config", _PyCFunction_CAST(_interpreters_new_config), METH_VARARGS|METH_KEYWORDS, _interpreters_new_config__doc__},
+
+static PyObject *
+_interpreters_new_config_impl(PyObject *module, const char *name,
+                              PyObject *overrides);
+
+static PyObject *
+_interpreters_new_config(PyObject *module, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    const char *name = NULL;
+    PyObject *overrides = NULL;
+
+    if (!_PyArg_CheckPositional("new_config", PyTuple_GET_SIZE(args), 0, 1)) {
+        goto exit;
+    }
+    if (PyTuple_GET_SIZE(args) < 1) {
+        goto skip_optional;
+    }
+    if (!PyUnicode_Check(PyTuple_GET_ITEM(args, 0))) {
+        _PyArg_BadArgument("new_config", "argument 1", "str", PyTuple_GET_ITEM(args, 0));
+        goto exit;
+    }
+    name = _PyUnicode_AsUTF8NoNUL(PyTuple_GET_ITEM(args, 0));
+    if (name == NULL) {
+        goto exit;
+    }
+skip_optional:
+    if (kwargs == NULL) {
+        overrides = PyDict_New();
+        if (overrides == NULL) {
+            goto exit;
+        }
+    }
+    else {
+        overrides = Py_NewRef(kwargs);
+    }
+    return_value = _interpreters_new_config_impl(module, name, overrides);
+
+exit:
+    /* Cleanup for overrides */
+    Py_XDECREF(overrides);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_interpreters_create__doc__,
 "create($module, /, config=\'isolated\', *, reqrefs=False)\n"
@@ -541,7 +601,8 @@ PyDoc_STRVAR(_interpreters_run_func__doc__,
 "Execute the body of the provided function in the identified interpreter.\n"
 "\n"
 "Code objects are also supported.  In both cases, closures and args\n"
-"are not supported.  Methods and other callables are not supported either.\n"
+"are not supported.  Methods and other callables are not supported\n"
+"either.\n"
 "\n"
 "(See _interpreters.exec().)");
 
@@ -1139,8 +1200,9 @@ PyDoc_STRVAR(_interpreters_capture_exception__doc__,
 "\n"
 "Return a snapshot of an exception.\n"
 "\n"
-"If \"exc\" is None then the current exception, if any, is used (but not cleared).\n"
-"The returned snapshot is the same as what _interpreters.exec() returns.");
+"If \"exc\" is None then the current exception, if any, is used (but not\n"
+"cleared).  The returned snapshot is the same as what\n"
+"_interpreters.exec() returns.");
 
 #define _INTERPRETERS_CAPTURE_EXCEPTION_METHODDEF    \
     {"capture_exception", _PyCFunction_CAST(_interpreters_capture_exception), METH_FASTCALL|METH_KEYWORDS, _interpreters_capture_exception__doc__},
@@ -1198,4 +1260,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c80f73761f860f6c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fa37872d6ee729ef input=a9049054013a1b77]*/

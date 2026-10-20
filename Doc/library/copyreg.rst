@@ -12,7 +12,7 @@
 
 --------------
 
-The :mod:`copyreg` module offers a way to define functions used while pickling
+The :mod:`!copyreg` module offers a way to define functions used while pickling
 specific objects.  The :mod:`pickle` and :mod:`copy` modules use those functions
 when pickling/copying those objects.  The module provides configuration
 information about object constructors which are not classes.

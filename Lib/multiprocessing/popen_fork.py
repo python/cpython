@@ -67,7 +67,17 @@ class Popen(object):
         code = 1
         parent_r, child_w = os.pipe()
         child_r, parent_w = os.pipe()
-        self.pid = os.fork()
+        # gh-146313: Tell the resource tracker's at-fork handler to keep
+        # the inherited pipe fd so this child reuses the parent's tracker
+        # (gh-80849) rather than closing it and launching its own.
+        from .resource_tracker import _fork_intent
+        _fork_intent.preserve_fd = True
+        try:
+            self.pid = os.fork()
+        finally:
+            # Reset in both parent and child so the flag does not leak
+            # into a subsequent raw os.fork() or nested Process launch.
+            _fork_intent.preserve_fd = False
         if self.pid == 0:
             try:
                 atexit._clear()

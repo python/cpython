@@ -13,12 +13,14 @@ __all__ = [
     "CHECK_ID_MAX", "CHECK_UNKNOWN",
     "FILTER_LZMA1", "FILTER_LZMA2", "FILTER_DELTA", "FILTER_X86", "FILTER_IA64",
     "FILTER_ARM", "FILTER_ARMTHUMB", "FILTER_POWERPC", "FILTER_SPARC",
+    "FILTER_ARM64", "FILTER_RISCV",
     "FORMAT_AUTO", "FORMAT_XZ", "FORMAT_ALONE", "FORMAT_RAW",
     "MF_HC3", "MF_HC4", "MF_BT2", "MF_BT3", "MF_BT4",
     "MODE_FAST", "MODE_NORMAL", "PRESET_DEFAULT", "PRESET_EXTREME",
 
     "LZMACompressor", "LZMADecompressor", "LZMAFile", "LZMAError",
     "open", "compress", "decompress", "is_check_supported",
+    "lzma_version", "lzma_version_info", "LZMA_VERSION", "LZMA_VERSION_INFO",
 ]
 
 import builtins

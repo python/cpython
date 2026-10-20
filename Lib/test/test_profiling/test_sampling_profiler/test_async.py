@@ -6,11 +6,14 @@ Each test covers a distinct algorithm path or edge case:
 3. Stack traversal: _build_linear_stacks() with BFS
 """
 
+import inspect
 import unittest
 
 try:
     import _remote_debugging  # noqa: F401
     from profiling.sampling.pstats_collector import PstatsCollector
+    from profiling.sampling.stack_collector import FlamegraphCollector
+    from profiling.sampling.sample import sample, sample_live, SampleProfiler
 except ImportError:
     raise unittest.SkipTest(
         "Test only runs when _remote_debugging is available"
@@ -561,8 +564,6 @@ class TestFlamegraphCollectorAsync(unittest.TestCase):
 
     def test_flamegraph_with_async_frames(self):
         """Test FlamegraphCollector correctly processes async task frames."""
-        from profiling.sampling.stack_collector import FlamegraphCollector
-
         collector = FlamegraphCollector(sample_interval_usec=1000)
 
         # Build async task tree: Root -> Child
@@ -607,8 +608,6 @@ class TestFlamegraphCollectorAsync(unittest.TestCase):
 
     def test_flamegraph_with_task_markers(self):
         """Test FlamegraphCollector includes <task> boundary markers."""
-        from profiling.sampling.stack_collector import FlamegraphCollector
-
         collector = FlamegraphCollector(sample_interval_usec=1000)
 
         task = MockTaskInfo(
@@ -643,8 +642,6 @@ class TestFlamegraphCollectorAsync(unittest.TestCase):
 
     def test_flamegraph_multiple_async_samples(self):
         """Test FlamegraphCollector aggregates multiple async samples correctly."""
-        from profiling.sampling.stack_collector import FlamegraphCollector
-
         collector = FlamegraphCollector(sample_interval_usec=1000)
 
         task = MockTaskInfo(
@@ -675,25 +672,16 @@ class TestAsyncAwareParameterFlow(unittest.TestCase):
 
     def test_sample_function_accepts_async_aware(self):
         """Test that sample() function accepts async_aware parameter."""
-        from profiling.sampling.sample import sample
-        import inspect
-
         sig = inspect.signature(sample)
         self.assertIn("async_aware", sig.parameters)
 
     def test_sample_live_function_accepts_async_aware(self):
         """Test that sample_live() function accepts async_aware parameter."""
-        from profiling.sampling.sample import sample_live
-        import inspect
-
         sig = inspect.signature(sample_live)
         self.assertIn("async_aware", sig.parameters)
 
     def test_sample_profiler_sample_accepts_async_aware(self):
         """Test that SampleProfiler.sample() accepts async_aware parameter."""
-        from profiling.sampling.sample import SampleProfiler
-        import inspect
-
         sig = inspect.signature(SampleProfiler.sample)
         self.assertIn("async_aware", sig.parameters)
 

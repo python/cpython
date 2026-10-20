@@ -9,6 +9,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_NO_MEMORY()
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_interpframe.h"   // _PyFrame_GetLocalsArray()
+#include "pycore_list.h"          // _PyList_GetItemRef()
 #include "pycore_object_alloc.h"  // _PyObject_MallocWithType()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tstate.h"        // _PyThreadStateImpl
@@ -17,30 +18,6 @@
 
 #include "pydtrace.h"
 
-// Platform-specific includes for get_process_mem_usage().
-#ifdef _WIN32
-    #include <windows.h>
-    #include <psapi.h> // For GetProcessMemoryInfo
-#elif defined(__linux__)
-    #include <unistd.h> // For sysconf, getpid
-#elif defined(__APPLE__)
-    #include <mach/mach.h>
-    #include <mach/task.h> // Required for TASK_VM_INFO
-    #include <unistd.h> // For sysconf, getpid
-#elif defined(__FreeBSD__)
-    #include <sys/types.h>
-    #include <sys/sysctl.h>
-    #include <sys/user.h> // Requires sys/user.h for kinfo_proc definition
-    #include <kvm.h>
-    #include <unistd.h> // For sysconf, getpid
-    #include <fcntl.h> // For O_RDONLY
-    #include <limits.h> // For _POSIX2_LINE_MAX
-#elif defined(__OpenBSD__)
-    #include <sys/types.h>
-    #include <sys/sysctl.h>
-    #include <sys/user.h> // For kinfo_proc
-    #include <unistd.h> // For sysconf, getpid
-#endif
 
 // enable the "mark alive" pass of GC
 #define GC_ENABLE_MARK_ALIVE 1
@@ -506,6 +483,10 @@ gc_visit_thread_stacks(PyInterpreterState *interp, struct collection_state *stat
 static bool
 gc_maybe_untrack(PyObject *op)
 {
+    if (_PyObject_HasDeferredRefcount(op)) {
+        // deferred refcounting only works if the object is tracked
+        return false;
+    }
     // Currently we only check for tuples containing only non-GC objects.  In
     // theory we could check other immutable objects that contain references
     // to non-GC objects.
@@ -567,7 +548,7 @@ static_assert(BUFFER_HI < BUFFER_SIZE &&
     #define PREFETCH_T1(ptr)  __builtin_prefetch(ptr, 0, 2)
     #define PREFETCH_T2(ptr)  __builtin_prefetch(ptr, 0, 1)
     #define PREFETCH_NTA(ptr)  __builtin_prefetch(ptr, 0, 0)
-#elif defined(_MSC_VER) && (defined(_M_X64) || defined(_M_I86)) && !defined(_M_ARM64EC)
+#elif defined(_MSC_VER) && (defined(_M_X64) || defined(_M_IX86)) && !defined(_M_ARM64EC)
     #include <mmintrin.h>
     #define PREFETCH_T0(ptr)  _mm_prefetch((const char*)(ptr), _MM_HINT_T0)
     #define PREFETCH_T1(ptr)  _mm_prefetch((const char*)(ptr), _MM_HINT_T1)
@@ -906,7 +887,11 @@ exit:
 static void
 queue_untracked_obj_decref(PyObject *op, struct collection_state *state)
 {
-    if (!_PyObject_GC_IS_TRACKED(op)) {
+    assert(Py_REFCNT(op) == 0);
+    // gh-142975: We have to treat frozen objects as untracked in this function
+    // or else they might be picked up in a future collection, which breaks the
+    // assumption that all incoming objects have a non-zero reference count.
+    if (!_PyObject_GC_IS_TRACKED(op) || gc_is_frozen(op)) {
         // GC objects with zero refcount are handled subsequently by the
         // GC as if they were cyclic trash, but we have to handle dead
         // non-GC objects here. Add one to the refcount so that we can
@@ -1014,7 +999,7 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
     }
     _PyObject_ASSERT(op, refcount >= 0);
 
-    if (refcount > 0 && !_PyObject_HasDeferredRefcount(op)) {
+    if (refcount > 0) {
         if (gc_maybe_untrack(op)) {
             gc_restore_refs(op);
             return true;
@@ -1557,11 +1542,19 @@ move_legacy_finalizer_reachable(struct collection_state *state)
 // or missing `tp_traverse` methods.  When that object goes away, the callback
 // for weakref can be executed and that could reveal unreachable objects to
 // Python-level code.  See bpo-38006 as an example bug.
-static void
-find_weakref_callbacks(struct collection_state *state)
+static bool
+prepare_finalization(struct collection_state *state,
+                     bool *needs_resurrection_check)
 {
+    bool has_finalizers = false;
     PyObject *op;
     WORKSTACK_FOR_EACH(&state->unreachable, op) {
+        if (!_PyGC_FINALIZED(op) && Py_TYPE(op)->tp_finalize != NULL) {
+            has_finalizers = true;
+            if (!_PyGen_FinalizerIsNoop(op)) {
+                *needs_resurrection_check = true;
+            }
+        }
         if (!_PyType_SUPPORTS_WEAKREFS(Py_TYPE(op))) {
             continue;
         }
@@ -1605,12 +1598,14 @@ find_weakref_callbacks(struct collection_state *state)
 
             // Enqueue weakref to be called later.
             worklist_push(&state->wrcb_to_call, (PyObject *)wr);
+            *needs_resurrection_check = true;
         }
     }
+    return has_finalizers;
 }
 
 // Clear weakrefs to objects in the unreachable set.  See comments
-// above find_weakref_callbacks() for why this clearing is required.
+// above prepare_finalization() for why this clearing is required.
 static void
 clear_weakrefs(struct collection_state *state)
 {
@@ -1689,6 +1684,11 @@ PyStatus
 _PyGC_Init(PyInterpreterState *interp)
 {
     GCState *gcstate = &interp->gc;
+
+    gcstate->generation_stats = PyMem_RawCalloc(1, sizeof(struct gc_stats));
+    if (gcstate->generation_stats == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
 
     gcstate->garbage = PyList_New(0);
     if (gcstate->garbage == NULL) {
@@ -1951,24 +1951,25 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
 
     /* The local variable cannot be rebound, check it for sanity */
     assert(PyList_CheckExact(gcstate->callbacks));
-    PyObject *info = NULL;
-    if (PyList_GET_SIZE(gcstate->callbacks) != 0) {
-        info = Py_BuildValue("{sisnsnsnsd}",
-            "generation", generation,
-            "collected", collected,
-            "uncollectable", uncollectable,
-            "candidates", candidates,
-            "duration", duration);
-        if (info == NULL) {
-            PyErr_FormatUnraisable("Exception ignored while "
-                                   "invoking gc callbacks");
-            return;
-        }
+    if (PyList_GET_SIZE(gcstate->callbacks) == 0) {
+        return;
+    }
+
+    PyObject *info = Py_BuildValue("{sisnsnsnsd}",
+        "generation", generation,
+        "collected", collected,
+        "uncollectable", uncollectable,
+        "candidates", candidates,
+        "duration", duration);
+    if (info == NULL) {
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "invoking gc callbacks");
+        return;
     }
 
     PyObject *phase_obj = PyUnicode_FromString(phase);
     if (phase_obj == NULL) {
-        Py_XDECREF(info);
+        Py_DECREF(info);
         PyErr_FormatUnraisable("Exception ignored while "
                                "invoking gc callbacks");
         return;
@@ -1976,8 +1977,10 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
 
     PyObject *stack[] = {phase_obj, info};
     for (Py_ssize_t i=0; i<PyList_GET_SIZE(gcstate->callbacks); i++) {
-        PyObject *r, *cb = PyList_GET_ITEM(gcstate->callbacks, i);
-        Py_INCREF(cb); /* make sure cb doesn't go away */
+        PyObject *r, *cb = _PyList_GetItemRef((PyListObject *)gcstate->callbacks, i);
+        if (cb == NULL) {
+            break;
+        }
         r = PyObject_Vectorcall(cb, stack, 2, NULL);
         if (r == NULL) {
             PyErr_FormatUnraisable("Exception ignored while "
@@ -1989,7 +1992,7 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
         Py_DECREF(cb);
     }
     Py_DECREF(phase_obj);
-    Py_XDECREF(info);
+    Py_DECREF(info);
     assert(!_PyErr_Occurred(tstate));
 }
 
@@ -2000,185 +2003,6 @@ cleanup_worklist(struct worklist *worklist)
     while ((op = worklist_pop(worklist)) != NULL) {
         gc_clear_unreachable(op);
         Py_DECREF(op);
-    }
-}
-
-// Return the memory usage (typically RSS + swap) of the process, in units of
-// KB.  Returns -1 if this operation is not supported or on failure.
-static Py_ssize_t
-get_process_mem_usage(void)
-{
-#ifdef _WIN32
-    // Windows implementation using GetProcessMemoryInfo
-    // Returns WorkingSetSize + PagefileUsage
-    PROCESS_MEMORY_COUNTERS pmc;
-    HANDLE hProcess = GetCurrentProcess();
-    if (NULL == hProcess) {
-        // Should not happen for the current process
-        return -1;
-    }
-
-    // GetProcessMemoryInfo returns non-zero on success
-    if (GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc))) {
-        // Values are in bytes, convert to KB.
-        return (Py_ssize_t)((pmc.WorkingSetSize + pmc.PagefileUsage) / 1024);
-    }
-    else {
-        return -1;
-    }
-
-#elif __linux__
-    FILE* fp = fopen("/proc/self/status", "r");
-    if (fp == NULL) {
-        return -1;
-    }
-
-    char line_buffer[256];
-    long long rss_kb = -1;
-    long long swap_kb = -1;
-
-    while (fgets(line_buffer, sizeof(line_buffer), fp) != NULL) {
-        if (rss_kb == -1 && strncmp(line_buffer, "VmRSS:", 6) == 0) {
-            sscanf(line_buffer + 6, "%lld", &rss_kb);
-        }
-        else if (swap_kb == -1 && strncmp(line_buffer, "VmSwap:", 7) == 0) {
-            sscanf(line_buffer + 7, "%lld", &swap_kb);
-        }
-        if (rss_kb != -1 && swap_kb != -1) {
-            break; // Found both
-        }
-    }
-    fclose(fp);
-
-    if (rss_kb != -1 && swap_kb != -1) {
-        return (Py_ssize_t)(rss_kb + swap_kb);
-    }
-    return -1;
-
-#elif defined(__APPLE__)
-    // --- MacOS (Darwin) ---
-    // Returns phys_footprint (RAM + compressed memory)
-    task_vm_info_data_t vm_info;
-    mach_msg_type_number_t count = TASK_VM_INFO_COUNT;
-    kern_return_t kerr;
-
-    kerr = task_info(mach_task_self(), TASK_VM_INFO, (task_info_t)&vm_info, &count);
-    if (kerr != KERN_SUCCESS) {
-        return -1;
-    }
-    // phys_footprint is in bytes. Convert to KB.
-    return (Py_ssize_t)(vm_info.phys_footprint / 1024);
-
-#elif defined(__FreeBSD__)
-    // NOTE: Returns RSS only. Per-process swap usage isn't readily available
-    long page_size_kb = sysconf(_SC_PAGESIZE) / 1024;
-    if (page_size_kb <= 0) {
-        return -1;
-    }
-
-    // Using /dev/null for vmcore avoids needing dump file.
-    // NULL for kernel file uses running kernel.
-    char errbuf[_POSIX2_LINE_MAX]; // For kvm error messages
-    kvm_t *kd = kvm_openfiles(NULL, "/dev/null", NULL, O_RDONLY, errbuf);
-    if (kd == NULL) {
-        return -1;
-    }
-
-    // KERN_PROC_PID filters for the specific process ID
-    // n_procs will contain the number of processes returned (should be 1 or 0)
-    pid_t pid = getpid();
-    int n_procs;
-    struct kinfo_proc *kp = kvm_getprocs(kd, KERN_PROC_PID, pid, &n_procs);
-    if (kp == NULL) {
-        kvm_close(kd);
-        return -1;
-    }
-
-    Py_ssize_t rss_kb = -1;
-    if (n_procs > 0) {
-        // kp[0] contains the info for our process
-        // ki_rssize is in pages. Convert to KB.
-        rss_kb = (Py_ssize_t)kp->ki_rssize * page_size_kb;
-    }
-    else {
-        // Process with PID not found, shouldn't happen for self.
-        rss_kb = -1;
-    }
-
-    kvm_close(kd);
-    return rss_kb;
-
-#elif defined(__OpenBSD__)
-    // NOTE: Returns RSS only. Per-process swap usage isn't readily available
-    long page_size_kb = sysconf(_SC_PAGESIZE) / 1024;
-    if (page_size_kb <= 0) {
-        return -1;
-    }
-
-    struct kinfo_proc kp;
-    pid_t pid = getpid();
-    int mib[6];
-    size_t len = sizeof(kp);
-
-    mib[0] = CTL_KERN;
-    mib[1] = KERN_PROC;
-    mib[2] = KERN_PROC_PID;
-    mib[3] = pid;
-    mib[4] = sizeof(struct kinfo_proc); // size of the structure we want
-    mib[5] = 1;                         // want 1 structure back
-    if (sysctl(mib, 6, &kp, &len, NULL, 0) == -1) {
-         return -1;
-    }
-
-    if (len > 0) {
-        // p_vm_rssize is in pages on OpenBSD. Convert to KB.
-        return (Py_ssize_t)kp.p_vm_rssize * page_size_kb;
-    }
-    else {
-        // Process info not returned
-        return -1;
-    }
-#else
-    // Unsupported platform
-    return -1;
-#endif
-}
-
-static bool
-gc_should_collect_mem_usage(GCState *gcstate)
-{
-    Py_ssize_t mem = get_process_mem_usage();
-    if (mem < 0) {
-        // Reading process memory usage is not support or failed.
-        return true;
-    }
-    int threshold = gcstate->young.threshold;
-    Py_ssize_t deferred = _Py_atomic_load_ssize_relaxed(&gcstate->deferred_count);
-    if (deferred > threshold * 40) {
-        // Too many new container objects since last GC, even though memory use
-        // might not have increased much.  This is intended to avoid resource
-        // exhaustion if some objects consume resources but don't result in a
-        // memory usage increase.  We use 40x as the factor here because older
-        // versions of Python would do full collections after roughly every
-        // 70,000 new container objects.
-        return true;
-    }
-    Py_ssize_t last_mem = _Py_atomic_load_ssize_relaxed(&gcstate->last_mem);
-    Py_ssize_t mem_threshold = Py_MAX(last_mem / 10, 128);
-    if ((mem - last_mem) > mem_threshold) {
-        // The process memory usage has increased too much, do a collection.
-        return true;
-    }
-    else {
-        // The memory usage has not increased enough, defer the collection and
-        // clear the young object count so we don't check memory usage again
-        // on the next call to gc_should_collect().
-        PyMutex_Lock(&gcstate->mutex);
-        int young_count = _Py_atomic_exchange_int(&gcstate->young.count, 0);
-        _Py_atomic_store_ssize_relaxed(&gcstate->deferred_count,
-                                       gcstate->deferred_count + young_count);
-        PyMutex_Unlock(&gcstate->mutex);
-        return false;
     }
 }
 
@@ -2201,7 +2025,7 @@ gc_should_collect(GCState *gcstate)
         // objects.
         return false;
     }
-    return gc_should_collect_mem_usage(gcstate);
+    return true;
 }
 
 static void
@@ -2262,7 +2086,6 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     }
 
     state->gcstate->young.count = 0;
-    state->gcstate->deferred_count = 0;
     for (int i = 1; i <= generation; ++i) {
         state->gcstate->old[i-1].count = 0;
     }
@@ -2319,29 +2142,40 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     gc_visit_heaps(interp, &validate_alive_bits, &state->base);
 #endif
 
+    // Deallocations after the refcount merge may run Python code.
+    bool needs_resurrection_check = state->objs_to_decref.head != 0;
+
     // Print debugging information.
     if (interp->gc.debug & _PyGC_DEBUG_COLLECTABLE) {
+        needs_resurrection_check = true;
         PyObject *op;
         WORKSTACK_FOR_EACH(&state->unreachable, op) {
             debug_cycle("collectable", op);
         }
     }
 
-    // Find weakref callbacks we will honor (but do not call them).
-    find_weakref_callbacks(state);
-    _PyEval_StartTheWorld(interp);
+    // Find weakref callbacks and pending finalizers (but do not call them).
+    bool has_finalizers = prepare_finalization(state, &needs_resurrection_check);
+    if (needs_resurrection_check) {
+        _PyEval_StartTheWorld(interp);
 
-    // Deallocate any object from the refcount merge step
-    cleanup_worklist(&state->objs_to_decref);
+        // Deallocate any object from the refcount merge step
+        cleanup_worklist(&state->objs_to_decref);
 
-    // Call weakref callbacks and finalizers after unpausing other threads to
-    // avoid potential deadlocks.
-    call_weakref_callbacks(state);
-    finalize_garbage(state);
+        // Call weakref callbacks and finalizers after unpausing other threads to
+        // avoid potential deadlocks.
+        call_weakref_callbacks(state);
+        finalize_garbage(state);
 
-    _PyEval_StopTheWorld(interp);
-    // Handle any objects that may have resurrected after the finalization.
-    err = handle_resurrected_objects(state);
+        _PyEval_StopTheWorld(interp);
+        // Handle any objects that may have resurrected after the finalization.
+        err = handle_resurrected_objects(state);
+    }
+    else if (has_finalizers) {
+        // Only no-op generator finalizers remain; keep other threads paused.
+        finalize_garbage(state);
+    }
+    // Otherwise, keep other threads paused so the unreachable set stays valid.
     // Clear free lists in all threads
     _PyGC_ClearAllFreeLists(interp);
     if (err == 0) {
@@ -2366,13 +2200,23 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     // to be freed.
     delete_garbage(state);
 
-    // Store the current memory usage, can be smaller now if breaking cycles
-    // freed some memory.
-    Py_ssize_t last_mem = get_process_mem_usage();
-    _Py_atomic_store_ssize_relaxed(&state->gcstate->last_mem, last_mem);
-
     // Append objects with legacy finalizers to the "gc.garbage" list.
     handle_legacy_finalizers(state);
+}
+
+static struct gc_generation_stats *
+get_stats(GCState *gcstate, int gen)
+{
+    if (gen == 0) {
+        struct gc_young_stats_buffer *buffer = &gcstate->generation_stats->young;
+        struct gc_generation_stats *stats = &buffer->items[buffer->index];
+        return stats;
+    }
+    else {
+        struct gc_old_stats_buffer *buffer = &gcstate->generation_stats->old[gen - 1];
+        struct gc_generation_stats *stats = &buffer->items[buffer->index];
+        return stats;
+    }
 }
 
 /* This is the main function.  Read this to understand how the
@@ -2462,13 +2306,24 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         }
     }
 
-    /* Update stats */
-    struct gc_generation_stats *stats = &gcstate->generation_stats[generation];
+    /* Update stats. */
+    PyMutex_Lock(&gcstate->stats_mutex);
+    struct gc_stats *generation_stats = gcstate->generation_stats;
+    uint32_t seq = _Py_atomic_load_uint32_relaxed(&generation_stats->update_seq);
+    assert((seq & 1) == 0);
+    /* Odd seq tells the reader that an update is in progress. */
+    _Py_atomic_store_uint32_relaxed(&generation_stats->update_seq, seq + 1);
+    _Py_atomic_fence_seq_cst();
+    struct gc_generation_stats *stats = get_stats(gcstate, generation);
+    stats->ts_start = start;
+    stats->ts_stop = stop;
     stats->collections++;
     stats->collected += m;
     stats->uncollectable += n;
     stats->duration += duration;
     stats->candidates += state.candidates;
+    _Py_atomic_store_uint32_release(&generation_stats->update_seq, seq + 2);
+    PyMutex_Unlock(&gcstate->stats_mutex);
 
     GC_STAT_ADD(generation, objects_collected, m);
 #ifdef Py_STATS
@@ -2557,9 +2412,10 @@ visit_get_referrers(const mi_heap_t *heap, const mi_heap_area_t *area,
         return true;
     }
     if (Py_TYPE(op)->tp_traverse(op, referrersvisit, arg->objs)) {
-        if (_PyObjectStack_Push(&arg->results, Py_NewRef(op)) < 0) {
+        if (_PyObjectStack_Push(&arg->results, op) < 0) {
             return false;
         }
+        Py_INCREF(op);
     }
 
     return true;
@@ -2604,9 +2460,10 @@ visit_get_objects(const mi_heap_t *heap, const mi_heap_area_t *area,
     }
 
     struct get_objects_args *arg = (struct get_objects_args *)args;
-    if (_PyObjectStack_Push(&arg->objects, Py_NewRef(op)) < 0) {
+    if (_PyObjectStack_Push(&arg->objects, op) < 0) {
         return false;
     }
+    Py_INCREF(op);
     return true;
 }
 
@@ -2808,6 +2665,8 @@ _PyGC_Fini(PyInterpreterState *interp)
     GCState *gcstate = &interp->gc;
     Py_CLEAR(gcstate->garbage);
     Py_CLEAR(gcstate->callbacks);
+    PyMem_RawFree(gcstate->generation_stats);
+    gcstate->generation_stats = NULL;
 
     /* We expect that none of this interpreters objects are shared
        with other interpreters.
@@ -3031,7 +2890,7 @@ static bool
 custom_visitor_wrapper(const mi_heap_t *heap, const mi_heap_area_t *area,
                        void *block, size_t block_size, void *args)
 {
-    PyObject *op = op_from_block(block, args, false);
+    PyObject *op = op_from_block(block, args, true);
     if (op == NULL) {
         return true;
     }

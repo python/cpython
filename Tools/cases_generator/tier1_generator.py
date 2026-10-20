@@ -9,8 +9,6 @@ from analyzer import (
     Analysis,
     Instruction,
     Uop,
-    Label,
-    CodeSection,
     Part,
     analyze_files,
     Skip,
@@ -24,13 +22,9 @@ from generators_common import (
     write_header,
     type_and_null,
     Emitter,
-    TokenIterator,
-    always_true,
-    emit_to,
 )
 from cwriter import CWriter
 from typing import TextIO
-from lexer import Token
 from stack import Local, Stack, StackError, get_stack_effect, Storage
 
 DEFAULT_OUTPUT = ROOT / "Python/generated_cases.c.h"
@@ -56,7 +50,7 @@ def declare_variables(inst: Instruction, out: CWriter) -> None:
         raise analysis_error(ex.args[0], inst.where) from None
     seen = {"unused"}
     for part in inst.parts:
-        if not isinstance(part, Uop):
+        if not isinstance(part, Uop) or part.properties.records_value:
             continue
         for var in part.stack.inputs:
             if var.used and var.name not in seen:
@@ -203,10 +197,15 @@ def generate_tier1_labels(
     emitter.emit("\n")
     # Emit tail-callable labels as function defintions
     for name, label in analysis.labels.items():
+        if name == 'stop_tracing':
+            emitter.emit("#if _Py_TAIL_CALL_INTERP && !defined(_Py_TIER2)\n")
+            emitter.emit("Py_GCC_ATTRIBUTE((unused))\n")
+            emitter.emit("#endif\n")
         emitter.emit(f"LABEL({name})\n")
         storage = Storage(Stack(), [], [], 0, False)
         if label.spilled:
             storage.spilled = 1
+            storage.stack.physical_sp = None
         emitter.emit_tokens(label, storage, None)
         emitter.emit("\n\n")
 
@@ -259,6 +258,8 @@ def generate_tier1_cases(
         offset = 1  # The instruction itself
         stack = Stack()
         for part in inst.parts:
+            if part.properties.records_value:
+                continue
             # Only emit braces if more than one uop
             insert_braces = len([p for p in inst.parts if isinstance(p, Uop)]) > 1
             reachable, offset, stack = write_uop(part, emitter, offset, stack, inst, insert_braces)

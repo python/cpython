@@ -7,10 +7,11 @@
 #include "jit.h"
 
 _Py_CODEUNIT *
-_JIT_ENTRY(
+_PyJIT_Entry(
     _PyExecutorObject *exec, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate
 ) {
     // Note that this is *not* a tail call
     jit_func_preserve_none jitted = (jit_func_preserve_none)exec->jit_code;
-    return jitted(frame, stack_pointer, tstate, PyStackRef_ZERO_BITS, PyStackRef_ZERO_BITS, PyStackRef_ZERO_BITS);
+    return jitted(exec, frame, stack_pointer, tstate,
+                  PyStackRef_ZERO_BITS, PyStackRef_ZERO_BITS, PyStackRef_ZERO_BITS);
 }
