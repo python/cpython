@@ -32,8 +32,6 @@ PyCFunction_GET_CLASS
 PyDescr_NAME
 PyDescr_TYPE
 PyWrapperFlag_KEYWORDS
-# cpython/pylifecycle.h
-Py_FrozenMain
 # cpython/objimpl.h
 PyObject_GET_WEAKREFS_LISTPTR
 # cpython/pythonrun.h
