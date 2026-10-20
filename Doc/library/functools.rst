@@ -553,17 +553,6 @@ The :mod:`!functools` module defines the following functions:
     ...         print(i, elem)
     ...
 
-   For code which doesn't use type annotations, or where the first
-   annotation does not belong to the dispatch argument, the appropriate type
-   can be passed explicitly to the decorator itself::
-
-     >>> @fun.register(complex)
-     ... def _(arg, verbose=False):
-     ...     if verbose:
-     ...         print("Better than complicated.", end=" ")
-     ...     print(arg.real, arg.imag)
-     ...
-
    For code that dispatches on a collections type (e.g., ``list``), but wants
    to typehint the items of the collection (e.g., ``list[int]``), the
    dispatch type should be passed explicitly to the decorator itself with the
