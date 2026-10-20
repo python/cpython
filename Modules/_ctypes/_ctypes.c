@@ -1436,6 +1436,21 @@ PyCPointerType_from_param_impl(PyObject *type, PyTypeObject *cls,
             return Py_NewRef(value);
         }
     }
+
+    PyObject *as_parameter;
+    if (PyObject_GetOptionalAttr(value, &_Py_ID(_as_parameter_), &as_parameter) < 0) {
+        return NULL;
+    }
+    if (as_parameter) {
+        if (_Py_EnterRecursiveCall(" while processing _as_parameter_")) {
+            Py_DECREF(as_parameter);
+            return NULL;
+        }
+        value = PyCPointerType_from_param_impl(type, cls, as_parameter);
+        Py_DECREF(as_parameter);
+        _Py_LeaveRecursiveCall();
+        return value;
+    }
     return CDataType_from_param_impl(type, cls, value);
 }
 

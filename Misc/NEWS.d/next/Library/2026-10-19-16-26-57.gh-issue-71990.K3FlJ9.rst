@@ -1,0 +1,2 @@
+:mod:`ctypes`: objects with an :attr:`!_as_parameter_` attribute are now
+implicitly converted when passed for a :func:`~ctypes.POINTER` argument.
