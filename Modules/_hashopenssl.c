@@ -508,6 +508,10 @@ notify_smart_ssl_error_occurred_in(const char *funcname)
 }
 
 #ifdef Py_HAS_OPENSSL3_SUPPORT
+/*
+ * The OpenSSL error queue must be cleared before calling the OpenSSL
+ * function whose failure is being reported.
+ */
 static void
 raise_unsupported_algorithm_impl(PyObject *exc_type,
                                  const char *fallback_format,
@@ -518,19 +522,21 @@ raise_unsupported_algorithm_impl(PyObject *exc_type,
     int errcode = ERR_peek_last_error();
     switch (ERR_GET_REASON(errcode)) {
         case ERR_R_UNSUPPORTED: {
+            const char *lib = ERR_lib_error_string(errcode);
+            ERR_clear_error();
             PyObject *text = PyUnicode_FromFormat(fallback_format, format_arg);
             if (text != NULL) {
-                const char *lib = ERR_lib_error_string(errcode);
                 set_exception_with_ssl_errinfo(exc_type, text, lib, NULL);
                 Py_DECREF(text);
             }
             break;
         }
         case ERR_R_FETCH_FAILED: {
+            const char *lib = ERR_lib_error_string(errcode);
+            const char *reason = ERR_reason_error_string(errcode);
+            ERR_clear_error();
             PyObject *text = PyUnicode_FromFormat(fallback_format, format_arg);
             if (text != NULL) {
-                const char *lib = ERR_lib_error_string(errcode);
-                const char *reason = ERR_reason_error_string(errcode);
                 set_exception_with_ssl_errinfo(exc_type, text, lib, reason);
                 Py_DECREF(text);
             }
@@ -601,6 +607,8 @@ get_hashentry_by_nid(int nid)
  * Convert the NID to a string via OBJ_nid2*() functions.
  *
  * If 'nid' cannot be resolved, set an exception and return NULL.
+ *
+ * The OpenSSL error queue must be cleared before calling this function.
  */
 static const char *
 get_asn1_utf8name_by_nid(int nid)
@@ -639,7 +647,11 @@ static const char *
 get_hashlib_utf8name_by_nid(int nid)
 {
     const py_hashentry_t *e = get_hashentry_by_nid(nid);
-    return e ? e->py_name : get_asn1_utf8name_by_nid(nid);
+    if (e != NULL) {
+        return e->py_name;
+    }
+    ERR_clear_error();
+    return get_asn1_utf8name_by_nid(nid);
 }
 
 #ifdef Py_HAS_OPENSSL3_SUPPORT
@@ -652,7 +664,11 @@ static const char *
 get_openssl_utf8name_by_nid(int nid)
 {
     const py_hashentry_t *e = get_hashentry_by_nid(nid);
-    return e ? e->ossl_name : get_asn1_utf8name_by_nid(nid);
+    if (e != NULL) {
+        return e->ossl_name;
+    }
+    ERR_clear_error();
+    return get_asn1_utf8name_by_nid(nid);
 }
 #endif
 
@@ -700,6 +716,7 @@ get_openssl_evp_md_by_utf8name(_hashlibstate *state, const char *name,
         if (!disable_fips_property(py_ht)) {
             digest = FT_ATOMIC_LOAD_PTR_RELAXED(entry->evp);
             if (digest == NULL) {
+                ERR_clear_error();
                 digest = PY_EVP_MD_fetch(entry->ossl_name, NULL);
 #ifdef Py_GIL_DISABLED
                 // exchange just in case another thread did same thing at same time
@@ -712,6 +729,7 @@ get_openssl_evp_md_by_utf8name(_hashlibstate *state, const char *name,
         else {
             digest = FT_ATOMIC_LOAD_PTR_RELAXED(entry->evp_nosecurity);
             if (digest == NULL) {
+                ERR_clear_error();
                 digest = PY_EVP_MD_fetch(entry->ossl_name, "-fips");
 #ifdef Py_GIL_DISABLED
                 // exchange just in case another thread did same thing at same time
@@ -731,6 +749,7 @@ get_openssl_evp_md_by_utf8name(_hashlibstate *state, const char *name,
         // Fall back for looking up an unindexed OpenSSL specific name.
         const char *props = disable_fips_property(py_ht) ? "-fips" : NULL;
         (void)props;  // will only be used in OpenSSL 3.0 and later
+        ERR_clear_error();
         digest = PY_EVP_MD_fetch(name, props);
     }
     if (digest == NULL) {
@@ -765,6 +784,7 @@ get_openssl_evp_md(_hashlibstate *state, PyObject *digestmod, Py_hash_type py_ht
     }
     if (name == NULL) {
         if (!PyErr_Occurred()) {
+            ERR_clear_error();
             raise_unsupported_algorithm_error(state, digestmod);
         }
         return NULL;
@@ -1898,6 +1918,7 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
     assert(evp != NULL);
     is_xof = PY_EVP_MD_xof(evp);
 
+    ERR_clear_error();
     Py_BEGIN_ALLOW_THREADS
     result = EVP_Q_mac(
         NULL, OSSL_MAC_NAME_HMAC, NULL, NULL,
@@ -1916,6 +1937,7 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
     }
     is_xof = PY_EVP_MD_xof(evp);
 
+    ERR_clear_error();
     Py_BEGIN_ALLOW_THREADS
     result = HMAC(
         evp,
@@ -2081,6 +2103,7 @@ hashlib_HMAC_CTX_new_from_digestmod(_hashlibstate *state,
         return NULL;
     }
 
+    ERR_clear_error();
     r = EVP_MAC_init(
         ctx,
         (const unsigned char *)key->buf,
@@ -2101,6 +2124,7 @@ hashlib_HMAC_CTX_new_from_digestmod(_hashlibstate *state,
         return NULL;
     }
 
+    ERR_clear_error();
     r = HMAC_Init_ex(ctx, key->buf, (int)key->len, md, NULL /* impl */);
     PY_EVP_MD_free(md);
 #endif
