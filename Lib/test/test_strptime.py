@@ -17,6 +17,26 @@ import _strptime
 
 class PublicStrptimeTests(unittest.TestCase):
     @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP', '')
+    def test_twelve_hour_clock(self):
+        for hour in range(24):
+            value = datetime.datetime(2024, 1, 1, hour, 24, 35)
+            for fmt in ('%Y-%m-%d %I:%M:%S %p', '%p %I:%M:%S', '%I', '%p'):
+                self.assert_matches_python(value.strftime(fmt), fmt)
+
+    @support.run_with_locale('LC_TIME', 'C')
+    def test_hour_aliases_and_precedence(self):
+        for text, fmt in (
+            ('12 AM', '%I %p'), ('12 PM', '%I %p'),
+            (' 1 pm', '%l %P'), (' 0', '%k'),
+            ('PM 12', '%p %I'), ('23 AM', '%H %p'),
+            ('12 13 PM', '%I %H %p'), ('13 12 PM', '%H %I %p'),
+            ('00 AM', '%I %p'), ('13 PM', '%I %p'),
+            ('1 pM', '%I %p'), ('1 PX', '%I %p'),
+            ('AM PM', '%p %P'),
+        ):
+            self.assert_matches_python(text, fmt)
+
+    @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP', '')
     def test_locale_names(self):
         for month in range(1, 13):
             value = datetime.datetime(2024, month, 19, 13, 24, 35)

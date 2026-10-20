@@ -10,6 +10,7 @@
  * Supported inputs are exact str objects containing only ASCII, with:
  * - numeric %Y, %y, %m, %d, %H, %M, %S, and %f fields;
  * - ASCII locale month/weekday names and numeric %w/%u weekdays;
+ * - %I with ASCII %p indicators, and the %k, %l, %P aliases;
  * - a terminal %z: empty, Z, or +/-HHMM or +/-HH:MM with hours below 24;
  * - literal characters, %%, and ASCII whitespace.
  * Duplicate directives, mixed %Y/%y, and day-of-month without a year use the
@@ -44,13 +45,14 @@ strptime_name(const unsigned char *data, Py_ssize_t length, Py_ssize_t pos,
      * As in TimeRE, prefer the longest match, then the first equal name.
      */
     int month = directive == 'b' || directive == 'B';
-    int count = month ? 12 : 7;
+    int count = month ? 12 : directive == 'p' ? 2 : 7;
     char format[] = {'%', directive, '\0'};
     int matched = 0;
     for (int i = 0; i < count; i++) {
         struct tm tm = {.tm_year = 101, .tm_mday = 1,
                         .tm_mon = month ? i : 0,
-                        .tm_wday = month ? 0 : (i + 1) % 7};
+                        .tm_wday = month ? 0 : (i + 1) % 7,
+                        .tm_hour = i == 0 ? 1 : 22};
         char name[256];
         size_t size = strftime(name, sizeof(name), format, &tm);
         if (size == 0) {
@@ -61,12 +63,31 @@ strptime_name(const unsigned char *data, Py_ssize_t length, Py_ssize_t pos,
                 return 0;
             }
         }
-        if (size <= (size_t)matched || size > (size_t)(length - pos)) {
+        char *start = name;
+        if (directive == 'p') {
+            while (size && Py_ISSPACE(start[size - 1])) {
+                size--;
+            }
+            while (size && Py_ISSPACE(*start)) {
+                start++;
+                size--;
+            }
+            /* Empty indicators have special defaulting rules in Python. */
+            if (size == 0) {
+                return 0;
+            }
+        }
+        if (data == NULL) {
+            continue;
+        }
+        if (size < (size_t)matched ||
+            (size == (size_t)matched && directive != 'p') ||
+            size > (size_t)(length - pos)) {
             continue;
         }
         size_t j;
         for (j = 0; j < size; j++) {
-            if (Py_TOLOWER(data[pos + j]) != Py_TOLOWER(name[j])) {
+            if (Py_TOLOWER(data[pos + j]) != Py_TOLOWER(start[j])) {
                 break;
             }
         }
@@ -75,7 +96,7 @@ strptime_name(const unsigned char *data, Py_ssize_t length, Py_ssize_t pos,
             *value = month ? i + 1 : i;
         }
     }
-    return matched;
+    return data == NULL ? 1 : matched;
 #else
     return 0;
 #endif
@@ -134,6 +155,7 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
         FRACTION = 1U << 7,
         OFFSET = 1U << 8,
         WEEKDAY = 1U << 9,
+        AMPM = 1U << 10,
         ANY_YEAR = YEAR | SHORT_YEAR,
     };
     static const unsigned short directive_bits[128] = {
@@ -147,6 +169,7 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
         ['f'] = FRACTION,
         ['z'] = OFFSET,
         ['w'] = WEEKDAY,
+        ['p'] = AMPM,
     };
     /* String subclasses and non-ASCII input retain Python's behavior. */
     if (!PyUnicode_CheckExact(string) || !PyUnicode_CheckExact(format) ||
@@ -160,6 +183,8 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
     *fields = (_PyTime_StrptimeFields){.year = 1900, .month = 1, .day = 1,
                                      .gmtoff = INT_MIN, .weekday = -1};
     unsigned int seen = 0;
+    int hour12 = 0;
+    int ampm = -1;
     Py_ssize_t pos = 0;
 
     for (Py_ssize_t i = 0; i < fmt_length; i++) {
@@ -187,6 +212,15 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
             return 0;
         }
         c = fmt[i];
+        if (c == 'k') {
+            c = 'H';
+        }
+        else if (c == 'l') {
+            c = 'I';
+        }
+        else if (c == 'P') {
+            c = 'p';
+        }
         if (c == '%') {
             if (pos == length || data[pos++] != '%') {
                 return 0;
@@ -202,6 +236,9 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
         else if (c == 'a' || c == 'A' || c == 'u') {
             field = 'w';
         }
+        else if (c == 'I') {
+            field = 'H';
+        }
         unsigned int bit = directive_bits[field];
         if (bit == 0) {
             return 0;
@@ -211,7 +248,7 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
         }
         seen |= bit;
 
-        if (c == 'b' || c == 'B' || c == 'a' || c == 'A') {
+        if (c == 'b' || c == 'B' || c == 'a' || c == 'A' || c == 'p') {
             int value;
             int count = strptime_name(data, length, pos, c, &value);
             if (count == 0) {
@@ -220,6 +257,9 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
             pos += count;
             if (field == 'm') {
                 fields->month = value;
+            }
+            else if (c == 'p') {
+                ampm = value;
             }
             else {
                 fields->weekday = value;
@@ -250,7 +290,8 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
         else if (field == 'w') {
             maximum = 1;
         }
-        else if ((c == 'd' || c == 'H') && pos < length && data[pos] == ' ') {
+        else if ((c == 'd' || c == 'H' || c == 'I') &&
+                 pos < length && data[pos] == ' ') {
             pos++;
             maximum = 1;
         }
@@ -261,6 +302,13 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
         }
         pos += count;
         switch (c) {
+            case 'I':
+                if (value < 1 || value > 12) {
+                    return 0;
+                }
+                hour12 = 1;
+                fields->hour = value;
+                break;
             case 'w':
                 if (value > 6) {
                     return 0;
@@ -316,6 +364,12 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
                 fields->fraction = value;
                 break;
         }
+    }
+    if (hour12) {
+        if (ampm < 0 && !strptime_name(NULL, 0, 0, 'p', &ampm)) {
+            return 0;
+        }
+        fields->hour = fields->hour % 12 + (ampm == 1 ? 12 : 0);
     }
     static const int days_before_month[] = {
         0, 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365
