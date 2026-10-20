@@ -1565,7 +1565,7 @@ encoder_write_float(PyEncoderObject *s, PyUnicodeWriter *writer, PyObject *obj)
     }
 
     // Similar to float_repr(), but writes directly into writer
-    char *buf = PyOS_double_to_string(PyFloat_AS_DOUBLE(obj),
+    char *buf = PyOS_double_to_string(i,
                                       'r', 0,
                                       Py_DTSF_ADD_DOT_0,
                                       NULL);
