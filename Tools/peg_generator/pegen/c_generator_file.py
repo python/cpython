@@ -77,7 +77,7 @@ class CParserEmitter:
             for rule in shared_rules:
                 name = f"{rule.signature.name}_rule"
                 self.print(f"#define {name} {SHARED_RULE_PREFIX}{name}")
-                self.print(rule.signature.declaration(static=False))
+                self.print(f"Py_LOCAL_SYMBOL {rule.signature.declaration(static=False)}")
             self.print()
         for _, rule in self._own_rules():
             if not rule.shared:

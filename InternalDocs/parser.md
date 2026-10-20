@@ -528,9 +528,11 @@ separately. The keyword tables and the `@trailer` code are only in the main C
 file, while the `@header` and `@subheader` code is copied into every C file,
 so it must not define non-`static` functions or variables (they would be defined
 more than once). Rules that are called from another C file, including rules of
-included files that the trailer calls, can't be `static`; the generated code
-gives them a `_PyPegen_` prefix with a `#define`, since CPython requires that
-prefix on its non-static symbols. Helper rules (for groups, repetitions and so on)
+included files that the trailer or a C action calls, can't be `static`; the
+generated code gives them a `_PyPegen_` prefix with a `#define`, since CPython
+requires that prefix on its non-static symbols, and marks them
+`Py_LOCAL_SYMBOL` so that they aren't exported from the shared library. Helper
+rules (for groups, repetitions and so on)
 are never shared between files: each C file gets its own `static` copy.
 
 Tokenization

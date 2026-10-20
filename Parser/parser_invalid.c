@@ -181,267 +181,267 @@
 
 // Rules shared between the C files of this parser
 #define simple_stmt_rule _PyPegen_simple_stmt_rule
-stmt_ty simple_stmt_rule(Parser *p);
+Py_LOCAL_SYMBOL stmt_ty simple_stmt_rule(Parser *p);
 #define annotated_rhs_rule _PyPegen_annotated_rhs_rule
-expr_ty annotated_rhs_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty annotated_rhs_rule(Parser *p);
 #define augassign_rule _PyPegen_augassign_rule
-AugOperator* augassign_rule(Parser *p);
+Py_LOCAL_SYMBOL AugOperator* augassign_rule(Parser *p);
 #define pass_stmt_rule _PyPegen_pass_stmt_rule
-stmt_ty pass_stmt_rule(Parser *p);
+Py_LOCAL_SYMBOL stmt_ty pass_stmt_rule(Parser *p);
 #define break_stmt_rule _PyPegen_break_stmt_rule
-stmt_ty break_stmt_rule(Parser *p);
+Py_LOCAL_SYMBOL stmt_ty break_stmt_rule(Parser *p);
 #define continue_stmt_rule _PyPegen_continue_stmt_rule
-stmt_ty continue_stmt_rule(Parser *p);
+Py_LOCAL_SYMBOL stmt_ty continue_stmt_rule(Parser *p);
 #define import_from_targets_rule _PyPegen_import_from_targets_rule
-asdl_alias_seq* import_from_targets_rule(Parser *p);
+Py_LOCAL_SYMBOL asdl_alias_seq* import_from_targets_rule(Parser *p);
 #define import_from_as_names_rule _PyPegen_import_from_as_names_rule
-asdl_alias_seq* import_from_as_names_rule(Parser *p);
+Py_LOCAL_SYMBOL asdl_alias_seq* import_from_as_names_rule(Parser *p);
 #define dotted_name_rule _PyPegen_dotted_name_rule
-expr_ty dotted_name_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty dotted_name_rule(Parser *p);
 #define block_rule _PyPegen_block_rule
-asdl_stmt_seq* block_rule(Parser *p);
+Py_LOCAL_SYMBOL asdl_stmt_seq* block_rule(Parser *p);
 #define params_rule _PyPegen_params_rule
-arguments_ty params_rule(Parser *p);
+Py_LOCAL_SYMBOL arguments_ty params_rule(Parser *p);
 #define slash_no_default_rule _PyPegen_slash_no_default_rule
-asdl_arg_seq* slash_no_default_rule(Parser *p);
+Py_LOCAL_SYMBOL asdl_arg_seq* slash_no_default_rule(Parser *p);
 #define slash_with_default_rule _PyPegen_slash_with_default_rule
-SlashWithDefault* slash_with_default_rule(Parser *p);
+Py_LOCAL_SYMBOL SlashWithDefault* slash_with_default_rule(Parser *p);
 #define param_no_default_rule _PyPegen_param_no_default_rule
-arg_ty param_no_default_rule(Parser *p);
+Py_LOCAL_SYMBOL arg_ty param_no_default_rule(Parser *p);
 #define param_with_default_rule _PyPegen_param_with_default_rule
-NameDefaultPair* param_with_default_rule(Parser *p);
+Py_LOCAL_SYMBOL NameDefaultPair* param_with_default_rule(Parser *p);
 #define param_maybe_default_rule _PyPegen_param_maybe_default_rule
-NameDefaultPair* param_maybe_default_rule(Parser *p);
+Py_LOCAL_SYMBOL NameDefaultPair* param_maybe_default_rule(Parser *p);
 #define param_rule _PyPegen_param_rule
-arg_ty param_rule(Parser *p);
+Py_LOCAL_SYMBOL arg_ty param_rule(Parser *p);
 #define except_block_rule _PyPegen_except_block_rule
-excepthandler_ty except_block_rule(Parser *p);
+Py_LOCAL_SYMBOL excepthandler_ty except_block_rule(Parser *p);
 #define except_star_block_rule _PyPegen_except_star_block_rule
-excepthandler_ty except_star_block_rule(Parser *p);
+Py_LOCAL_SYMBOL excepthandler_ty except_star_block_rule(Parser *p);
 #define subject_expr_rule _PyPegen_subject_expr_rule
-expr_ty subject_expr_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty subject_expr_rule(Parser *p);
 #define guard_rule _PyPegen_guard_rule
-expr_ty guard_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty guard_rule(Parser *p);
 #define patterns_rule _PyPegen_patterns_rule
-pattern_ty patterns_rule(Parser *p);
+Py_LOCAL_SYMBOL pattern_ty patterns_rule(Parser *p);
 #define or_pattern_rule _PyPegen_or_pattern_rule
-pattern_ty or_pattern_rule(Parser *p);
+Py_LOCAL_SYMBOL pattern_ty or_pattern_rule(Parser *p);
 #define name_or_attr_rule _PyPegen_name_or_attr_rule
-expr_ty name_or_attr_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty name_or_attr_rule(Parser *p);
 #define items_pattern_rule _PyPegen_items_pattern_rule
-asdl_seq* items_pattern_rule(Parser *p);
+Py_LOCAL_SYMBOL asdl_seq* items_pattern_rule(Parser *p);
 #define double_star_pattern_rule _PyPegen_double_star_pattern_rule
-expr_ty double_star_pattern_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty double_star_pattern_rule(Parser *p);
 #define positional_patterns_rule _PyPegen_positional_patterns_rule
-asdl_pattern_seq* positional_patterns_rule(Parser *p);
+Py_LOCAL_SYMBOL asdl_pattern_seq* positional_patterns_rule(Parser *p);
 #define keyword_patterns_rule _PyPegen_keyword_patterns_rule
-asdl_seq* keyword_patterns_rule(Parser *p);
+Py_LOCAL_SYMBOL asdl_seq* keyword_patterns_rule(Parser *p);
 #define type_params_rule _PyPegen_type_params_rule
-asdl_type_param_seq* type_params_rule(Parser *p);
+Py_LOCAL_SYMBOL asdl_type_param_seq* type_params_rule(Parser *p);
 #define expressions_rule _PyPegen_expressions_rule
-expr_ty expressions_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty expressions_rule(Parser *p);
 #define expression_rule _PyPegen_expression_rule
-expr_ty expression_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty expression_rule(Parser *p);
 #define if_expression_rule _PyPegen_if_expression_rule
-expr_ty if_expression_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty if_expression_rule(Parser *p);
 #define yield_expr_rule _PyPegen_yield_expr_rule
-expr_ty yield_expr_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty yield_expr_rule(Parser *p);
 #define star_expressions_rule _PyPegen_star_expressions_rule
-expr_ty star_expressions_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty star_expressions_rule(Parser *p);
 #define star_named_expressions_rule _PyPegen_star_named_expressions_rule
-asdl_expr_seq* star_named_expressions_rule(Parser *p);
+Py_LOCAL_SYMBOL asdl_expr_seq* star_named_expressions_rule(Parser *p);
 #define star_named_expression_rule _PyPegen_star_named_expression_rule
-expr_ty star_named_expression_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty star_named_expression_rule(Parser *p);
 #define assignment_expression_rule _PyPegen_assignment_expression_rule
-expr_ty assignment_expression_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty assignment_expression_rule(Parser *p);
 #define named_expression_rule _PyPegen_named_expression_rule
-expr_ty named_expression_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty named_expression_rule(Parser *p);
 #define disjunction_rule _PyPegen_disjunction_rule
-expr_ty disjunction_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty disjunction_rule(Parser *p);
 #define inversion_rule _PyPegen_inversion_rule
-expr_ty inversion_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty inversion_rule(Parser *p);
 #define bitwise_or_rule _PyPegen_bitwise_or_rule
-expr_ty bitwise_or_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty bitwise_or_rule(Parser *p);
 #define bitwise_and_rule _PyPegen_bitwise_and_rule
-expr_ty bitwise_and_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty bitwise_and_rule(Parser *p);
 #define sum_rule _PyPegen_sum_rule
-expr_ty sum_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty sum_rule(Parser *p);
 #define factor_rule _PyPegen_factor_rule
-expr_ty factor_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty factor_rule(Parser *p);
 #define lambdef_rule _PyPegen_lambdef_rule
-expr_ty lambdef_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty lambdef_rule(Parser *p);
 #define lambda_params_rule _PyPegen_lambda_params_rule
-arguments_ty lambda_params_rule(Parser *p);
+Py_LOCAL_SYMBOL arguments_ty lambda_params_rule(Parser *p);
 #define lambda_slash_no_default_rule _PyPegen_lambda_slash_no_default_rule
-asdl_arg_seq* lambda_slash_no_default_rule(Parser *p);
+Py_LOCAL_SYMBOL asdl_arg_seq* lambda_slash_no_default_rule(Parser *p);
 #define lambda_slash_with_default_rule _PyPegen_lambda_slash_with_default_rule
-SlashWithDefault* lambda_slash_with_default_rule(Parser *p);
+Py_LOCAL_SYMBOL SlashWithDefault* lambda_slash_with_default_rule(Parser *p);
 #define lambda_param_no_default_rule _PyPegen_lambda_param_no_default_rule
-arg_ty lambda_param_no_default_rule(Parser *p);
+Py_LOCAL_SYMBOL arg_ty lambda_param_no_default_rule(Parser *p);
 #define lambda_param_with_default_rule _PyPegen_lambda_param_with_default_rule
-NameDefaultPair* lambda_param_with_default_rule(Parser *p);
+Py_LOCAL_SYMBOL NameDefaultPair* lambda_param_with_default_rule(Parser *p);
 #define lambda_param_maybe_default_rule _PyPegen_lambda_param_maybe_default_rule
-NameDefaultPair* lambda_param_maybe_default_rule(Parser *p);
+Py_LOCAL_SYMBOL NameDefaultPair* lambda_param_maybe_default_rule(Parser *p);
 #define lambda_param_rule _PyPegen_lambda_param_rule
-arg_ty lambda_param_rule(Parser *p);
+Py_LOCAL_SYMBOL arg_ty lambda_param_rule(Parser *p);
 #define fstring_format_spec_rule _PyPegen_fstring_format_spec_rule
-expr_ty fstring_format_spec_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty fstring_format_spec_rule(Parser *p);
 #define fstring_rule _PyPegen_fstring_rule
-expr_ty fstring_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty fstring_rule(Parser *p);
 #define tstring_rule _PyPegen_tstring_rule
-expr_ty tstring_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty tstring_rule(Parser *p);
 #define string_rule _PyPegen_string_rule
-expr_ty string_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty string_rule(Parser *p);
 #define list_rule _PyPegen_list_rule
-expr_ty list_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty list_rule(Parser *p);
 #define tuple_rule _PyPegen_tuple_rule
-expr_ty tuple_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty tuple_rule(Parser *p);
 #define double_starred_kvpair_rule _PyPegen_double_starred_kvpair_rule
-KeyValuePair* double_starred_kvpair_rule(Parser *p);
+Py_LOCAL_SYMBOL KeyValuePair* double_starred_kvpair_rule(Parser *p);
 #define for_if_clauses_rule _PyPegen_for_if_clauses_rule
-asdl_comprehension_seq* for_if_clauses_rule(Parser *p);
+Py_LOCAL_SYMBOL asdl_comprehension_seq* for_if_clauses_rule(Parser *p);
 #define genexp_rule _PyPegen_genexp_rule
-expr_ty genexp_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty genexp_rule(Parser *p);
 #define arguments_rule _PyPegen_arguments_rule
-expr_ty arguments_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty arguments_rule(Parser *p);
 #define args_rule _PyPegen_args_rule
-expr_ty args_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty args_rule(Parser *p);
 #define kwargs_rule _PyPegen_kwargs_rule
-asdl_seq* kwargs_rule(Parser *p);
+Py_LOCAL_SYMBOL asdl_seq* kwargs_rule(Parser *p);
 #define starred_expression_rule _PyPegen_starred_expression_rule
-expr_ty starred_expression_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty starred_expression_rule(Parser *p);
 #define star_targets_rule _PyPegen_star_targets_rule
-expr_ty star_targets_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty star_targets_rule(Parser *p);
 #define star_target_rule _PyPegen_star_target_rule
-expr_ty star_target_rule(Parser *p);
+Py_LOCAL_SYMBOL expr_ty star_target_rule(Parser *p);
 #define func_type_comment_rule _PyPegen_func_type_comment_rule
-Token* func_type_comment_rule(Parser *p);
+Py_LOCAL_SYMBOL Token* func_type_comment_rule(Parser *p);
 #define invalid_arguments_rule _PyPegen_invalid_arguments_rule
-void *invalid_arguments_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_arguments_rule(Parser *p);
 #define invalid_kwarg_rule _PyPegen_invalid_kwarg_rule
-void *invalid_kwarg_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_kwarg_rule(Parser *p);
 #define invalid_legacy_expression_rule _PyPegen_invalid_legacy_expression_rule
-void *invalid_legacy_expression_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_legacy_expression_rule(Parser *p);
 #define invalid_type_param_rule _PyPegen_invalid_type_param_rule
-void *invalid_type_param_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_type_param_rule(Parser *p);
 #define invalid_expression_rule _PyPegen_invalid_expression_rule
-void *invalid_expression_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_expression_rule(Parser *p);
 #define invalid_if_expression_rule _PyPegen_invalid_if_expression_rule
-void *invalid_if_expression_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_if_expression_rule(Parser *p);
 #define invalid_named_expression_rule _PyPegen_invalid_named_expression_rule
-void *invalid_named_expression_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_named_expression_rule(Parser *p);
 #define invalid_assignment_rule _PyPegen_invalid_assignment_rule
-void *invalid_assignment_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_assignment_rule(Parser *p);
 #define invalid_raise_stmt_rule _PyPegen_invalid_raise_stmt_rule
-void *invalid_raise_stmt_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_raise_stmt_rule(Parser *p);
 #define invalid_del_stmt_rule _PyPegen_invalid_del_stmt_rule
-void *invalid_del_stmt_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_del_stmt_rule(Parser *p);
 #define invalid_assert_stmt_rule _PyPegen_invalid_assert_stmt_rule
-void *invalid_assert_stmt_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_assert_stmt_rule(Parser *p);
 #define invalid_block_rule _PyPegen_invalid_block_rule
-void *invalid_block_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_block_rule(Parser *p);
 #define invalid_comprehension_rule _PyPegen_invalid_comprehension_rule
-void *invalid_comprehension_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_comprehension_rule(Parser *p);
 #define invalid_parameters_rule _PyPegen_invalid_parameters_rule
-void *invalid_parameters_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_parameters_rule(Parser *p);
 #define invalid_default_rule _PyPegen_invalid_default_rule
-void *invalid_default_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_default_rule(Parser *p);
 #define invalid_star_etc_rule _PyPegen_invalid_star_etc_rule
-void *invalid_star_etc_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_star_etc_rule(Parser *p);
 #define invalid_kwds_rule _PyPegen_invalid_kwds_rule
-void *invalid_kwds_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_kwds_rule(Parser *p);
 #define invalid_lambda_parameters_rule _PyPegen_invalid_lambda_parameters_rule
-void *invalid_lambda_parameters_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_lambda_parameters_rule(Parser *p);
 #define invalid_lambda_star_etc_rule _PyPegen_invalid_lambda_star_etc_rule
-void *invalid_lambda_star_etc_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_lambda_star_etc_rule(Parser *p);
 #define invalid_lambda_kwds_rule _PyPegen_invalid_lambda_kwds_rule
-void *invalid_lambda_kwds_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_lambda_kwds_rule(Parser *p);
 #define invalid_double_type_comments_rule _PyPegen_invalid_double_type_comments_rule
-void *invalid_double_type_comments_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_double_type_comments_rule(Parser *p);
 #define invalid_with_item_rule _PyPegen_invalid_with_item_rule
-void *invalid_with_item_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_with_item_rule(Parser *p);
 #define invalid_for_if_clause_rule _PyPegen_invalid_for_if_clause_rule
-void *invalid_for_if_clause_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_for_if_clause_rule(Parser *p);
 #define invalid_for_target_rule _PyPegen_invalid_for_target_rule
-void *invalid_for_target_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_for_target_rule(Parser *p);
 #define invalid_group_rule _PyPegen_invalid_group_rule
-void *invalid_group_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_group_rule(Parser *p);
 #define invalid_import_rule _PyPegen_invalid_import_rule
-void *invalid_import_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_import_rule(Parser *p);
 #define invalid_dotted_as_name_rule _PyPegen_invalid_dotted_as_name_rule
-void *invalid_dotted_as_name_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_dotted_as_name_rule(Parser *p);
 #define invalid_import_from_as_name_rule _PyPegen_invalid_import_from_as_name_rule
-void *invalid_import_from_as_name_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_import_from_as_name_rule(Parser *p);
 #define invalid_import_from_rule _PyPegen_invalid_import_from_rule
-void *invalid_import_from_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_import_from_rule(Parser *p);
 #define invalid_import_from_targets_rule _PyPegen_invalid_import_from_targets_rule
-void *invalid_import_from_targets_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_import_from_targets_rule(Parser *p);
 #define invalid_with_stmt_rule _PyPegen_invalid_with_stmt_rule
-void *invalid_with_stmt_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_with_stmt_rule(Parser *p);
 #define invalid_with_stmt_indent_rule _PyPegen_invalid_with_stmt_indent_rule
-void *invalid_with_stmt_indent_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_with_stmt_indent_rule(Parser *p);
 #define invalid_try_stmt_rule _PyPegen_invalid_try_stmt_rule
-void *invalid_try_stmt_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_try_stmt_rule(Parser *p);
 #define invalid_except_stmt_rule _PyPegen_invalid_except_stmt_rule
-void *invalid_except_stmt_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_except_stmt_rule(Parser *p);
 #define invalid_except_star_stmt_rule _PyPegen_invalid_except_star_stmt_rule
-void *invalid_except_star_stmt_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_except_star_stmt_rule(Parser *p);
 #define invalid_finally_stmt_rule _PyPegen_invalid_finally_stmt_rule
-void *invalid_finally_stmt_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_finally_stmt_rule(Parser *p);
 #define invalid_except_stmt_indent_rule _PyPegen_invalid_except_stmt_indent_rule
-void *invalid_except_stmt_indent_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_except_stmt_indent_rule(Parser *p);
 #define invalid_except_star_stmt_indent_rule _PyPegen_invalid_except_star_stmt_indent_rule
-void *invalid_except_star_stmt_indent_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_except_star_stmt_indent_rule(Parser *p);
 #define invalid_match_stmt_rule _PyPegen_invalid_match_stmt_rule
-void *invalid_match_stmt_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_match_stmt_rule(Parser *p);
 #define invalid_case_block_rule _PyPegen_invalid_case_block_rule
-void *invalid_case_block_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_case_block_rule(Parser *p);
 #define invalid_as_pattern_rule _PyPegen_invalid_as_pattern_rule
-void *invalid_as_pattern_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_as_pattern_rule(Parser *p);
 #define invalid_class_pattern_rule _PyPegen_invalid_class_pattern_rule
-void *invalid_class_pattern_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_class_pattern_rule(Parser *p);
 #define invalid_mapping_pattern_rule _PyPegen_invalid_mapping_pattern_rule
-void *invalid_mapping_pattern_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_mapping_pattern_rule(Parser *p);
 #define invalid_if_stmt_rule _PyPegen_invalid_if_stmt_rule
-void *invalid_if_stmt_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_if_stmt_rule(Parser *p);
 #define invalid_elif_stmt_rule _PyPegen_invalid_elif_stmt_rule
-void *invalid_elif_stmt_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_elif_stmt_rule(Parser *p);
 #define invalid_else_stmt_rule _PyPegen_invalid_else_stmt_rule
-void *invalid_else_stmt_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_else_stmt_rule(Parser *p);
 #define invalid_while_stmt_rule _PyPegen_invalid_while_stmt_rule
-void *invalid_while_stmt_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_while_stmt_rule(Parser *p);
 #define invalid_for_stmt_rule _PyPegen_invalid_for_stmt_rule
-void *invalid_for_stmt_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_for_stmt_rule(Parser *p);
 #define invalid_def_raw_rule _PyPegen_invalid_def_raw_rule
-void *invalid_def_raw_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_def_raw_rule(Parser *p);
 #define invalid_class_def_raw_rule _PyPegen_invalid_class_def_raw_rule
-void *invalid_class_def_raw_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_class_def_raw_rule(Parser *p);
 #define invalid_double_starred_kvpairs_rule _PyPegen_invalid_double_starred_kvpairs_rule
-void *invalid_double_starred_kvpairs_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_double_starred_kvpairs_rule(Parser *p);
 #define invalid_starred_expression_unpacking_rule _PyPegen_invalid_starred_expression_unpacking_rule
-void *invalid_starred_expression_unpacking_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_starred_expression_unpacking_rule(Parser *p);
 #define invalid_starred_expression_unpacking_sequence_rule _PyPegen_invalid_starred_expression_unpacking_sequence_rule
-void *invalid_starred_expression_unpacking_sequence_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_starred_expression_unpacking_sequence_rule(Parser *p);
 #define invalid_starred_expression_rule _PyPegen_invalid_starred_expression_rule
-void *invalid_starred_expression_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_starred_expression_rule(Parser *p);
 #define invalid_fstring_replacement_field_rule _PyPegen_invalid_fstring_replacement_field_rule
-void *invalid_fstring_replacement_field_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_fstring_replacement_field_rule(Parser *p);
 #define invalid_tstring_replacement_field_rule _PyPegen_invalid_tstring_replacement_field_rule
-void *invalid_tstring_replacement_field_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_tstring_replacement_field_rule(Parser *p);
 #define invalid_string_tstring_concat_rule _PyPegen_invalid_string_tstring_concat_rule
-void *invalid_string_tstring_concat_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_string_tstring_concat_rule(Parser *p);
 #define invalid_arithmetic_rule _PyPegen_invalid_arithmetic_rule
-void *invalid_arithmetic_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_arithmetic_rule(Parser *p);
 #define invalid_factor_rule _PyPegen_invalid_factor_rule
-void *invalid_factor_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_factor_rule(Parser *p);
 #define invalid_type_params_rule _PyPegen_invalid_type_params_rule
-void *invalid_type_params_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_type_params_rule(Parser *p);
 #define invalid_bitwise_and_rule _PyPegen_invalid_bitwise_and_rule
-void *invalid_bitwise_and_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_bitwise_and_rule(Parser *p);
 #define invalid_bitwise_or_rule _PyPegen_invalid_bitwise_or_rule
-void *invalid_bitwise_or_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_bitwise_or_rule(Parser *p);
 #define invalid_noteq_rule _PyPegen_invalid_noteq_rule
-void *invalid_noteq_rule(Parser *p);
+Py_LOCAL_SYMBOL void *invalid_noteq_rule(Parser *p);
 
 static expr_ty expression_without_invalid_rule(Parser *p);
 static expr_ty invalid_ann_assign_target_rule(Parser *p);
@@ -551,7 +551,7 @@ static void *_tmp_206_rule(Parser *p);
 //     | args for_if_clauses
 //     | args ',' expression for_if_clauses
 //     | args ',' args
-void *
+Py_LOCAL_SYMBOL void *
 invalid_arguments_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -796,7 +796,7 @@ invalid_arguments_rule(Parser *p)
 //     | NAME '=' expression for_if_clauses
 //     | !(NAME '=') expression '='
 //     | '**' expression '=' expression
-void *
+Py_LOCAL_SYMBOL void *
 invalid_kwarg_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -1117,7 +1117,7 @@ expression_without_invalid_rule(Parser *p)
 }
 
 // invalid_legacy_expression: NAME !'(' star_expressions
-void *
+Py_LOCAL_SYMBOL void *
 invalid_legacy_expression_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -1165,7 +1165,7 @@ invalid_legacy_expression_rule(Parser *p)
 }
 
 // invalid_type_param: '*' NAME ':' expression | '**' NAME ':' expression
-void *
+Py_LOCAL_SYMBOL void *
 invalid_type_param_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -1257,7 +1257,7 @@ invalid_type_param_rule(Parser *p)
 //     | (pass_stmt | break_stmt | continue_stmt) 'if' disjunction 'else' simple_stmt
 //     | 'lambda' lambda_params? ':' &FSTRING_MIDDLE
 //     | 'lambda' lambda_params? ':' &TSTRING_MIDDLE
-void *
+Py_LOCAL_SYMBOL void *
 invalid_expression_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -1508,7 +1508,7 @@ invalid_expression_rule(Parser *p)
 // invalid_if_expression:
 //     | disjunction 'if' disjunction 'else' '*'
 //     | disjunction 'if' disjunction 'else' '**'
-void *
+Py_LOCAL_SYMBOL void *
 invalid_if_expression_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -1604,7 +1604,7 @@ invalid_if_expression_rule(Parser *p)
 //     | expression ':=' expression
 //     | NAME '=' bitwise_or !('=' | ':=')
 //     | !(list | tuple | genexp | 'True' | 'None' | 'False') bitwise_or '=' bitwise_or !('=' | ':=')
-void *
+Py_LOCAL_SYMBOL void *
 invalid_named_expression_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -1730,7 +1730,7 @@ invalid_named_expression_rule(Parser *p)
 //     | ((star_targets '='))* star_expressions '='
 //     | ((star_targets '='))* yield_expr '='
 //     | star_expressions augassign annotated_rhs
-void *
+Py_LOCAL_SYMBOL void *
 invalid_assignment_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -2022,7 +2022,7 @@ invalid_ann_assign_target_rule(Parser *p)
 }
 
 // invalid_raise_stmt: 'raise' 'from' | 'raise' expression 'from'
-void *
+Py_LOCAL_SYMBOL void *
 invalid_raise_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -2098,7 +2098,7 @@ invalid_raise_stmt_rule(Parser *p)
 }
 
 // invalid_del_stmt: 'del' star_expressions
-void *
+Py_LOCAL_SYMBOL void *
 invalid_del_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -2148,7 +2148,7 @@ invalid_del_stmt_rule(Parser *p)
 //     | 'assert' expression ',' expression '=' expression
 //     | 'assert' expression ':=' expression
 //     | 'assert' expression ',' expression ':=' expression
-void *
+Py_LOCAL_SYMBOL void *
 invalid_assert_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -2311,7 +2311,7 @@ invalid_assert_stmt_rule(Parser *p)
 }
 
 // invalid_block: NEWLINE !INDENT
-void *
+Py_LOCAL_SYMBOL void *
 invalid_block_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -2360,7 +2360,7 @@ invalid_block_rule(Parser *p)
 //     | '(' '**' expression for_if_clauses
 //     | ('[' | '{') star_named_expression ',' star_named_expressions for_if_clauses
 //     | ('[' | '{') star_named_expression ',' for_if_clauses
-void *
+Py_LOCAL_SYMBOL void *
 invalid_comprehension_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -2520,7 +2520,7 @@ invalid_comprehension_rule(Parser *p)
 //     | param_no_default* '(' param_no_default+ ','? ')'
 //     | [(slash_no_default | slash_with_default)] param_maybe_default* '*' (',' | param_no_default) param_maybe_default* '/'
 //     | param_maybe_default+ '/' '*'
-void *
+Py_LOCAL_SYMBOL void *
 invalid_parameters_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -2737,7 +2737,7 @@ invalid_parameters_rule(Parser *p)
 }
 
 // invalid_default: '=' &(')' | ',')
-void *
+Py_LOCAL_SYMBOL void *
 invalid_default_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -2786,7 +2786,7 @@ invalid_default_rule(Parser *p)
 //     | '*' ',' TYPE_COMMENT
 //     | '*' param '='
 //     | '*' (param_no_default | ',') param_maybe_default* '*' (param_no_default | ',')
-void *
+Py_LOCAL_SYMBOL void *
 invalid_star_etc_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -2928,7 +2928,7 @@ invalid_star_etc_rule(Parser *p)
 }
 
 // invalid_kwds: '**' param '=' | '**' param ',' param | '**' param ',' ('*' | '**' | '/')
-void *
+Py_LOCAL_SYMBOL void *
 invalid_kwds_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -3111,7 +3111,7 @@ invalid_parameters_helper_rule(Parser *p)
 //     | lambda_param_no_default* '(' ','.lambda_param+ ','? ')'
 //     | [(lambda_slash_no_default | lambda_slash_with_default)] lambda_param_maybe_default* '*' (',' | lambda_param_no_default) lambda_param_maybe_default* '/'
 //     | lambda_param_maybe_default+ '/' '*'
-void *
+Py_LOCAL_SYMBOL void *
 invalid_lambda_parameters_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -3395,7 +3395,7 @@ invalid_lambda_parameters_helper_rule(Parser *p)
 //     | '*' (':' | ',' (':' | '**'))
 //     | '*' lambda_param '='
 //     | '*' (lambda_param_no_default | ',') lambda_param_maybe_default* '*' (lambda_param_no_default | ',')
-void *
+Py_LOCAL_SYMBOL void *
 invalid_lambda_star_etc_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -3510,7 +3510,7 @@ invalid_lambda_star_etc_rule(Parser *p)
 //     | '**' lambda_param '='
 //     | '**' lambda_param ',' lambda_param
 //     | '**' lambda_param ',' ('*' | '**' | '/')
-void *
+Py_LOCAL_SYMBOL void *
 invalid_lambda_kwds_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -3625,7 +3625,7 @@ invalid_lambda_kwds_rule(Parser *p)
 }
 
 // invalid_double_type_comments: TYPE_COMMENT NEWLINE TYPE_COMMENT NEWLINE INDENT
-void *
+Py_LOCAL_SYMBOL void *
 invalid_double_type_comments_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -3680,7 +3680,7 @@ invalid_double_type_comments_rule(Parser *p)
 }
 
 // invalid_with_item: expression 'as' expression &(',' | ')' | ':')
-void *
+Py_LOCAL_SYMBOL void *
 invalid_with_item_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -3731,7 +3731,7 @@ invalid_with_item_rule(Parser *p)
 }
 
 // invalid_for_if_clause: 'async'? 'for' (bitwise_or ((',' bitwise_or))* ','?) !'in'
-void *
+Py_LOCAL_SYMBOL void *
 invalid_for_if_clause_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -3783,7 +3783,7 @@ invalid_for_if_clause_rule(Parser *p)
 }
 
 // invalid_for_target: 'async'? 'for' star_expressions
-void *
+Py_LOCAL_SYMBOL void *
 invalid_for_target_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -3833,7 +3833,7 @@ invalid_for_target_rule(Parser *p)
 }
 
 // invalid_group: '(' starred_expression ')' | '(' '**' expression ')'
-void *
+Py_LOCAL_SYMBOL void *
 invalid_group_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -3915,7 +3915,7 @@ invalid_group_rule(Parser *p)
 }
 
 // invalid_import: 'import' ','.dotted_name+ 'from' dotted_name | 'import' NEWLINE
-void *
+Py_LOCAL_SYMBOL void *
 invalid_import_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -3994,7 +3994,7 @@ invalid_import_rule(Parser *p)
 }
 
 // invalid_dotted_as_name: dotted_name 'as' !(NAME (',' | ')' | ';' | NEWLINE)) expression
-void *
+Py_LOCAL_SYMBOL void *
 invalid_dotted_as_name_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -4045,7 +4045,7 @@ invalid_dotted_as_name_rule(Parser *p)
 }
 
 // invalid_import_from_as_name: NAME 'as' !(NAME (',' | ')' | ';' | NEWLINE)) expression
-void *
+Py_LOCAL_SYMBOL void *
 invalid_import_from_as_name_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -4097,7 +4097,7 @@ invalid_import_from_as_name_rule(Parser *p)
 
 // invalid_import_from:
 //     | 'from' (('.' | '...'))* dotted_name "lazy" 'import' import_from_targets
-void *
+Py_LOCAL_SYMBOL void *
 invalid_import_from_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -4155,7 +4155,7 @@ invalid_import_from_rule(Parser *p)
 }
 
 // invalid_import_from_targets: import_from_as_names ',' NEWLINE | NEWLINE
-void *
+Py_LOCAL_SYMBOL void *
 invalid_import_from_targets_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -4231,7 +4231,7 @@ invalid_import_from_targets_rule(Parser *p)
 //     | 'async'? 'with' ','.(expression ['as' star_target])+ ',' ':'
 //     | 'async'? 'with' ','.(expression ['as' star_target])+ NEWLINE
 //     | 'async'? 'with' '(' ','.(expressions ['as' star_target])+ ','? ')' NEWLINE
-void *
+Py_LOCAL_SYMBOL void *
 invalid_with_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -4367,7 +4367,7 @@ invalid_with_stmt_rule(Parser *p)
 // invalid_with_stmt_indent:
 //     | 'async'? 'with' ','.(expression ['as' star_target])+ ':' NEWLINE !INDENT
 //     | 'async'? 'with' '(' ','.(expressions ['as' star_target])+ ','? ')' ':' NEWLINE !INDENT
-void *
+Py_LOCAL_SYMBOL void *
 invalid_with_stmt_indent_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -4478,7 +4478,7 @@ invalid_with_stmt_indent_rule(Parser *p)
 //     | 'try' ':' block !('except' | 'finally')
 //     | 'try' ':' block* except_block+ 'except' '*' expression ['as' NAME] ':'
 //     | 'try' ':' block* except_star_block+ 'except' [expression ['as' NAME]] ':'
-void *
+Py_LOCAL_SYMBOL void *
 invalid_try_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -4657,7 +4657,7 @@ invalid_try_stmt_rule(Parser *p)
 //     | 'except' expression ['as' NAME] NEWLINE
 //     | 'except' NEWLINE
 //     | 'except' expression 'as' expression ':' block
-void *
+Py_LOCAL_SYMBOL void *
 invalid_except_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -4822,7 +4822,7 @@ invalid_except_stmt_rule(Parser *p)
 //     | 'except' '*' expression ['as' NAME] NEWLINE
 //     | 'except' '*' (NEWLINE | ':')
 //     | 'except' '*' expression 'as' expression ':' block
-void *
+Py_LOCAL_SYMBOL void *
 invalid_except_star_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -4995,7 +4995,7 @@ invalid_except_star_stmt_rule(Parser *p)
 }
 
 // invalid_finally_stmt: 'finally' ':' NEWLINE !INDENT
-void *
+Py_LOCAL_SYMBOL void *
 invalid_finally_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -5048,7 +5048,7 @@ invalid_finally_stmt_rule(Parser *p)
 // invalid_except_stmt_indent:
 //     | 'except' expression ['as' NAME] ':' NEWLINE !INDENT
 //     | 'except' ':' NEWLINE !INDENT
-void *
+Py_LOCAL_SYMBOL void *
 invalid_except_stmt_indent_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -5139,7 +5139,7 @@ invalid_except_stmt_indent_rule(Parser *p)
 
 // invalid_except_star_stmt_indent:
 //     | 'except' '*' expression ['as' NAME] ':' NEWLINE !INDENT
-void *
+Py_LOCAL_SYMBOL void *
 invalid_except_star_stmt_indent_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -5203,7 +5203,7 @@ invalid_except_star_stmt_indent_rule(Parser *p)
 //     | "match" subject_expr NEWLINE
 //     | "match" subject_expr ':' NEWLINE !INDENT
 //     | "case" patterns guard? ':' block
-void *
+Py_LOCAL_SYMBOL void *
 invalid_match_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -5326,7 +5326,7 @@ invalid_match_stmt_rule(Parser *p)
 // invalid_case_block:
 //     | "case" patterns guard? NEWLINE
 //     | "case" patterns guard? ':' NEWLINE !INDENT
-void *
+Py_LOCAL_SYMBOL void *
 invalid_case_block_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -5418,7 +5418,7 @@ invalid_case_block_rule(Parser *p)
 }
 
 // invalid_as_pattern: or_pattern 'as' "_" | or_pattern 'as' expression
-void *
+Py_LOCAL_SYMBOL void *
 invalid_as_pattern_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -5497,7 +5497,7 @@ invalid_as_pattern_rule(Parser *p)
 }
 
 // invalid_class_pattern: name_or_attr '(' invalid_class_argument_pattern
-void *
+Py_LOCAL_SYMBOL void *
 invalid_class_pattern_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -5547,7 +5547,7 @@ invalid_class_pattern_rule(Parser *p)
 
 // invalid_mapping_pattern:
 //     | '{' [(items_pattern ',')] double_star_pattern ',' items_pattern ','? '}'
-void *
+Py_LOCAL_SYMBOL void *
 invalid_mapping_pattern_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -5666,7 +5666,7 @@ invalid_class_argument_pattern_rule(Parser *p)
 // invalid_if_stmt:
 //     | 'if' named_expression NEWLINE
 //     | 'if' named_expression ':' NEWLINE !INDENT
-void *
+Py_LOCAL_SYMBOL void *
 invalid_if_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -5752,7 +5752,7 @@ invalid_if_stmt_rule(Parser *p)
 // invalid_elif_stmt:
 //     | 'elif' named_expression NEWLINE
 //     | 'elif' named_expression ':' NEWLINE !INDENT
-void *
+Py_LOCAL_SYMBOL void *
 invalid_elif_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -5836,7 +5836,7 @@ invalid_elif_stmt_rule(Parser *p)
 }
 
 // invalid_else_stmt: 'else' ':' NEWLINE !INDENT | 'else' ':' block 'elif'
-void *
+Py_LOCAL_SYMBOL void *
 invalid_else_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -5922,7 +5922,7 @@ invalid_else_stmt_rule(Parser *p)
 // invalid_while_stmt:
 //     | 'while' named_expression NEWLINE
 //     | 'while' named_expression ':' NEWLINE !INDENT
-void *
+Py_LOCAL_SYMBOL void *
 invalid_while_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -6008,7 +6008,7 @@ invalid_while_stmt_rule(Parser *p)
 // invalid_for_stmt:
 //     | 'async'? 'for' star_targets 'in' star_expressions NEWLINE
 //     | 'async'? 'for' star_targets 'in' star_expressions ':' NEWLINE !INDENT
-void *
+Py_LOCAL_SYMBOL void *
 invalid_for_stmt_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -6114,7 +6114,7 @@ invalid_for_stmt_rule(Parser *p)
 // invalid_def_raw:
 //     | 'async'? 'def' NAME type_params? '(' params? ')' ['->' expression] ':' NEWLINE !INDENT
 //     | 'async'? 'def' NAME type_params? &&'(' params? ')' ['->' expression] &&':' func_type_comment? block
-void *
+Py_LOCAL_SYMBOL void *
 invalid_def_raw_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -6246,7 +6246,7 @@ invalid_def_raw_rule(Parser *p)
 // invalid_class_def_raw:
 //     | 'class' NAME type_params? ['(' arguments? ')'] NEWLINE
 //     | 'class' NAME type_params? ['(' arguments? ')'] ':' NEWLINE !INDENT
-void *
+Py_LOCAL_SYMBOL void *
 invalid_class_def_raw_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -6349,7 +6349,7 @@ invalid_class_def_raw_rule(Parser *p)
 //     | invalid_kvpair_unpacking ','?
 //     | ','.double_starred_kvpair+ ',' (invalid_kvpair | invalid_kvpair_unpacking)
 //     | expression ':' &('}' | ',')
-void *
+Py_LOCAL_SYMBOL void *
 invalid_double_starred_kvpairs_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -6776,7 +6776,7 @@ invalid_kvpair_rule(Parser *p)
 }
 
 // invalid_starred_expression_unpacking: '*' if_expression | '*' expression '=' expression
-void *
+Py_LOCAL_SYMBOL void *
 invalid_starred_expression_unpacking_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -6857,7 +6857,7 @@ invalid_starred_expression_unpacking_rule(Parser *p)
 // invalid_starred_expression_unpacking_sequence:
 //     | '**' bitwise_or
 //     | invalid_starred_expression_unpacking
-void *
+Py_LOCAL_SYMBOL void *
 invalid_starred_expression_unpacking_sequence_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -6922,7 +6922,7 @@ invalid_starred_expression_unpacking_sequence_rule(Parser *p)
 }
 
 // invalid_starred_expression: '*'
-void *
+Py_LOCAL_SYMBOL void *
 invalid_starred_expression_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -6976,7 +6976,7 @@ invalid_starred_expression_rule(Parser *p)
 //     | '{' annotated_rhs '='? ['!' NAME] !(':' | '}')
 //     | '{' annotated_rhs '='? ['!' NAME] ':' fstring_format_spec* !'}'
 //     | '{' annotated_rhs '='? ['!' NAME] !'}'
-void *
+Py_LOCAL_SYMBOL void *
 invalid_fstring_replacement_field_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -7418,7 +7418,7 @@ invalid_fstring_conversion_character_rule(Parser *p)
 //     | '{' annotated_rhs '='? ['!' NAME] !(':' | '}')
 //     | '{' annotated_rhs '='? ['!' NAME] ':' fstring_format_spec* !'}'
 //     | '{' annotated_rhs '='? ['!' NAME] !'}'
-void *
+Py_LOCAL_SYMBOL void *
 invalid_tstring_replacement_field_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -7851,7 +7851,7 @@ invalid_tstring_conversion_character_rule(Parser *p)
 // invalid_string_tstring_concat:
 //     | ((fstring | string))+ tstring
 //     | tstring+ (fstring | string)
-void *
+Py_LOCAL_SYMBOL void *
 invalid_string_tstring_concat_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -7925,7 +7925,7 @@ invalid_string_tstring_concat_rule(Parser *p)
 
 // Left-recursive
 // invalid_arithmetic: sum ('+' | '-' | '*' | '/' | '%' | '//' | '@') 'not' inversion
-void *
+Py_LOCAL_SYMBOL void *
 invalid_arithmetic_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -7977,7 +7977,7 @@ invalid_arithmetic_rule(Parser *p)
 }
 
 // invalid_factor: ('+' | '-' | '~') 'not' factor
-void *
+Py_LOCAL_SYMBOL void *
 invalid_factor_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -8026,7 +8026,7 @@ invalid_factor_rule(Parser *p)
 }
 
 // invalid_type_params: '[' ']'
-void *
+Py_LOCAL_SYMBOL void *
 invalid_type_params_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -8073,7 +8073,7 @@ invalid_type_params_rule(Parser *p)
 
 // Left-recursive
 // invalid_bitwise_and: bitwise_and '&' '&'
-void *
+Py_LOCAL_SYMBOL void *
 invalid_bitwise_and_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -8123,7 +8123,7 @@ invalid_bitwise_and_rule(Parser *p)
 
 // Left-recursive
 // invalid_bitwise_or: bitwise_or '|' '|'
-void *
+Py_LOCAL_SYMBOL void *
 invalid_bitwise_or_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
@@ -8172,7 +8172,7 @@ invalid_bitwise_or_rule(Parser *p)
 }
 
 // invalid_noteq: '<' '>'
-void *
+Py_LOCAL_SYMBOL void *
 invalid_noteq_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {

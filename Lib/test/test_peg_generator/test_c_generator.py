@@ -342,8 +342,8 @@ class TestIncludedCFiles(unittest.TestCase):
             self.assertNotIn("_PyPegen_start_rule", output)
         self.assertIn("static asdl_seq *_loop1_", root)
         self.assertIn("static void *\nstart_rule(Parser *p)", root)
-        self.assertIn("\nvoid *\nitem_rule(Parser *p)", root)
-        self.assertIn("\nvoid *\ninvalid_item_rule(Parser *p)", extra)
+        self.assertIn("\nPy_LOCAL_SYMBOL void *\nitem_rule(Parser *p)", root)
+        self.assertIn("\nPy_LOCAL_SYMBOL void *\ninvalid_item_rule(Parser *p)", extra)
         # A helper for an identical subexpression is not shared between
         # files: each one has its own static copy.
         self.assertIn("static void *_tmp_", root)
@@ -361,8 +361,21 @@ class TestIncludedCFiles(unittest.TestCase):
         self.assertIn("return start_rule(p);", root)
         for output in root, rules:
             self.assertIn("#define start_rule _PyPegen_start_rule\n", output)
-            self.assertIn("\nvoid *start_rule(Parser *p);\n", output)
-        self.assertIn("\nvoid *\nstart_rule(Parser *p)\n{", rules)
+            self.assertIn("\nPy_LOCAL_SYMBOL void *start_rule(Parser *p);\n", output)
+        self.assertIn("\nPy_LOCAL_SYMBOL void *\nstart_rule(Parser *p)\n{", rules)
+
+    def test_actions_can_call_rules_of_included_files(self):
+        main = self.write("main.gram", """\
+            @include "extra.gram"
+            start: NAME NEWLINE { extra_rule(p) }
+            """)
+        self.write("extra.gram", "extra: NAME\n")
+        root, included = self.generate(main)
+        extra = included["extra.gram"]
+        for output in root, extra:
+            self.assertIn("#define extra_rule _PyPegen_extra_rule\n", output)
+            self.assertIn("\nPy_LOCAL_SYMBOL void *extra_rule(Parser *p);\n", output)
+        self.assertIn("\nPy_LOCAL_SYMBOL void *\nextra_rule(Parser *p)\n{", extra)
 
     def test_without_includes_all_rules_are_static(self):
         main = self.write("main.gram", """\

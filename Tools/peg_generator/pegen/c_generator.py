@@ -123,7 +123,8 @@ class CParserGenerator(ParserGenerator):
             self._collected = True
 
     def _shared_rules(self) -> set[str]:
-        # Rules called from a rule whose code goes in another C file.
+        # Rules called from a rule (or its actions) whose code goes in
+        # another C file.
         shared = set()
         for rule in self.all_rules.values():
             collector = _NameCollector()
@@ -138,7 +139,7 @@ class CParserGenerator(ParserGenerator):
         # The trailer is C code in the root file that calls rules by their
         # function name (the default one calls start_rule()).
         trailer = self.grammar.metas.get("trailer", EXTENSION_SUFFIX) or ""
-        for name in re.findall(r"\b(\w+)_rule\b", trailer):
+        for name in _RULE_CALL.findall(trailer):
             callee = self.rules.get(name)
             if callee is not None and callee.source is not None:
                 shared.add(name)
@@ -170,9 +171,18 @@ class CParserGenerator(ParserGenerator):
         return None
 
 
+# A call to a rule's C function, as written in actions and the trailer.
+_RULE_CALL = re.compile(r"\b(\w+)_rule\b")
+
+
 class _NameCollector(grammar.GrammarVisitor):
     def __init__(self) -> None:
         self.names: set[str] = set()
 
     def visit_NameLeaf(self, node: grammar.NameLeaf) -> None:
         self.names.add(node.value)
+
+    def visit_Alt(self, node: grammar.Alt) -> None:
+        if node.action:
+            self.names.update(_RULE_CALL.findall(node.action))
+        self.generic_visit(node)
