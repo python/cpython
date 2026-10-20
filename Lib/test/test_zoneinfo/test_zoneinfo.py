@@ -747,6 +747,39 @@ class WeirdZoneTest(ZoneInfoTestBase):
                     self.assertEqual(dt.utcoffset(), offset.utcoffset)
                     self.assertEqual(dt.dst(), offset.dst)
 
+    def test_footer_fold_at_last_transition(self):
+        STD = ZoneOffset("STD", -2 * ONE_H)
+        transition = ZoneTransition(datetime(2023, 10, 28, 23), STD, STD)
+        earlier = ZoneTransition(datetime(2020, 1, 1), STD, STD)
+        cases = [
+            datetime(2023, 10, 28, 22, 59, 59, 999999),
+            datetime(2023, 10, 28, 23),
+            datetime(2023, 10, 28, 23, 0, 0, 1),
+            datetime(2023, 10, 28, 23, 30),
+            datetime(2023, 10, 28, 23, 59, 59, 999999),
+            datetime(2023, 10, 29),
+        ]
+
+        # As in America/Nuuk, the footer describes a fold that would start
+        # before the last explicit transition, while the table has no fold.
+        for transitions in ([transition], [earlier, transition]):
+            zf = self.construct_zone(
+                transitions, after="STD2DST,M3.5.0/-1,M10.5.0/0"
+            )
+            zi = self.klass.from_file(zf)
+            for dt in cases:
+                for fold in (0, 1):
+                    with self.subTest(
+                        num_transitions=len(transitions), dt=dt, fold=fold
+                    ):
+                        local = dt.replace(tzinfo=zi, fold=fold)
+                        self.assertEqual(local.utcoffset(), STD.utcoffset)
+                        self.assertEqual(local.dst(), STD.dst)
+                        self.assertEqual(local.tzname(), STD.tzname)
+                        round_trip = local.astimezone(timezone.utc)
+                        round_trip = round_trip.astimezone(zi)
+                        self.assertEqual(round_trip.replace(tzinfo=None), dt)
+
     def test_empty_zone(self):
         zf = self.construct_zone([], "")
 
