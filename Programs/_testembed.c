@@ -2471,7 +2471,7 @@ static PyModuleDef_Slot cmfi_nonascii_mp_slots[] = {
 
 static PyModuleDef cmfi_nonascii_mp_def = {
     PyModuleDef_HEAD_INIT,
-    .m_name = "nonascii_mp",
+    .m_name = "nonascii_mp_\xf0\x9f\x90\x8d",
     .m_size = 0,
     .m_slots = cmfi_nonascii_mp_slots,
 };
@@ -2484,7 +2484,7 @@ PyInit_cmfi_nonascii_mp(void)
 
 static PyModuleDef cmfi_nonascii_sp_def = {
     PyModuleDef_HEAD_INIT,
-    .m_name = "nonascii_sp",
+    .m_name = "nonascii_sp_\xf0\x9f\x90\x8d",
     .m_size = -1,
 };
 
@@ -2493,10 +2493,6 @@ PyInit_cmfi_nonascii_sp(void)
 {
     return PyModule_Create(&cmfi_nonascii_sp_def);
 }
-
-// "m\xf6dul_mp" and "m\xf6dul_sp" as UTF-8
-#define CMFI_NONASCII_MP_NAME "m\xc3\xb6" "dul_mp"
-#define CMFI_NONASCII_SP_NAME "m\xc3\xb6" "dul_sp"
 
 static PyObject*
 create_module(PyObject* self, PyObject* spec)
@@ -2525,11 +2521,11 @@ create_module(PyObject* self, PyObject* spec)
         Py_DECREF(name);
         return PyImport_CreateModuleFromInitfunc(spec, PyInit_cmfi_sp_submod);
     }
-    if (PyUnicode_EqualToUTF8(name, CMFI_NONASCII_MP_NAME)) {
+    if (PyUnicode_EqualToUTF8(name, "nonascii_mp_\xf0\x9f\x90\x8d")) {
         Py_DECREF(name);
         return PyImport_CreateModuleFromInitfunc(spec, PyInit_cmfi_nonascii_mp);
     }
-    if (PyUnicode_EqualToUTF8(name, CMFI_NONASCII_SP_NAME)) {
+    if (PyUnicode_EqualToUTF8(name, "nonascii_sp_\xf0\x9f\x90\x8d")) {
         Py_DECREF(name);
         return PyImport_CreateModuleFromInitfunc(spec, PyInit_cmfi_nonascii_sp);
     }
@@ -2596,9 +2592,9 @@ test_create_module_from_initfunc(void)
         L"print(f'{\"sp_submod\" in sys.modules=}');"
         // Non-ASCII names: multi-phase init works, single-phase init doesn't
         L"import importlib;"
-        L"mp = importlib.import_module('m\\xf6dul_mp');"
+        L"mp = importlib.import_module('nonascii_mp_\\N{SNAKE}');"
         L"print(f'{ascii(mp.__name__)=} {mp.executed=}');"
-        L"try_import('m\\xf6dul_sp');"
+        L"try_import('nonascii_sp_\\N{SNAKE}');"
     };
     PyConfig config;
     if (PyImport_AppendInittab("create_static_module",
@@ -2620,7 +2616,8 @@ test_create_module_from_initfunc(void)
         "   def find_spec(cls, fullname, path, target=None):\n"
         "       if fullname in {'my_test_extension', 'embedded_ext',\n"
         "                       'sp_pkg', 'sp_pkg.sp_submod',\n"
-        "                       'm\\xf6dul_mp', 'm\\xf6dul_sp',\n"
+        "                       'nonascii_mp_\\N{SNAKE}',\n"
+        "                       'nonascii_sp_\\N{SNAKE}',\n"
         "       }:\n"
         "           return spec_from_loader(fullname, cls, origin=cls._ORIGIN,\n"
         "                                   is_package=(fullname == 'sp_pkg'))\n"

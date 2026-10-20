@@ -295,9 +295,9 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             "\"sp_submod\" in sys.modules=False\n"
             # Module with non-ASCII name. (The SystemError shows the internal
             # punycode-encoded name: not ideal, but also not horrible.)
-            "created m\xf6dul_mp: in sys.modules=False\n"
-            "ascii(mp.__name__)=\"'m\\\\xf6dul_mp'\" mp.executed='yes'\n"
-            "SystemError: 'initialization of mdul_sp_90a "
+            "created nonascii_mp_\N{SNAKE}: in sys.modules=False\n"
+            "ascii(mp.__name__)=\"'nonascii_mp_\\\\U0001f40d'\" mp.executed='yes'\n"
+            "SystemError: 'initialization of nonascii_sp__rf17k "
             "did not return PyModuleDef'\n"
         )
 
