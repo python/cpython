@@ -685,8 +685,6 @@ Build configuration
 
 .. c:macro:: PYLONG_BITS_IN_DIGIT
 
-   The number of bits in each digit of CPython's internal representation of
-   integers. The value is either ``30`` (the default) or ``15``, selected when
    The number of bits in each digit of CPython's native representation of
    integers.
    The value can currently be either ``30`` (the default) or ``15``,

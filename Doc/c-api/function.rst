@@ -199,11 +199,12 @@ There are a few functions specific to Python functions.
 
 .. c:macro:: PY_FOREACH_FUNC_EVENT(V)
 
-   Apply the macro *V* to each of ``CREATE``, ``DESTROY``, ``MODIFY_CODE``,
-   ``MODIFY_DEFAULTS``, ``MODIFY_KWDEFAULTS``, and ``MODIFY_QUALNAME``, in that
-   order. These names are the suffixes of :c:type:`PyFunction_WatchEvent`
-   constants. The macro *V* must accept one event name and supply any
-   punctuation needed between expansions.
+   Apply the macro *V* to each suffix of :c:type:`PyFunction_WatchEvent`
+   constants.
+   Currently expands to ``V(CREATE) V(DESTROY) V(MODIFY_CODE)
+   V(MODIFY_DEFAULTS) V(MODIFY_KWDEFAULTS) V(MODIFY_QUALNAME)``.
+   The macro *V* must accept one event name and supply any punctuation
+   needed between expansions.
 
 .. c:type:: int (*PyFunction_WatchCallback)(PyFunction_WatchEvent event, PyFunctionObject *func, PyObject *new_value)
 

@@ -247,4 +247,3 @@ Performance statistics
    Largest micro-operation identifier for which CPython allocates performance
    statistics counters. Available only in builds configured with
    :option:`--enable-pystats`.
-

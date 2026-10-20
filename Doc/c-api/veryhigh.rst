@@ -156,36 +156,27 @@ the same library that the Python runtime is using.
       :ref:`main interpreter <sub-interpreter-support>`.
 
 
-.. c:function:: char *PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
-
-   Display *prompt*, if it is not ``NULL``, and read a line from *sys_stdin*.
-   The returned string is null-terminated and includes the trailing newline,
-   if one was read. This returns an empty string if the end of the file is reached
-   before any characters are read. This will return ``NULL`` with an exception set
-   on failure or interruption.
-
-   By default, *sys_stdout* is flushed and *prompt* is written to the C
-   standard error stream. If both streams are terminals and the call is made
-   from the :ref:`main interpreter <sub-interpreter-support>`,
-   :c:var:`PyOS_ReadlineFunctionPointer` can override this behavior.
-
-   The caller must free the returned string with :c:func:`PyMem_Free`.
-   The caller must hold an :term:`attached thread state`.
-
-
 .. c:var:: char* (*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *)
 
    Can be set to point to a function with the prototype
-   ``char *func(FILE *stdin, FILE *stdout, char *prompt)``,
+   ``char *func(FILE *stdin, FILE *stdout, const char *prompt)``,
    overriding the default function used to read a single line of input
    at the interpreter's prompt.  The function is expected to output
    the string *prompt* if it's not ``NULL``, and then read a line of
    input from the provided standard input file, returning the
-   resulting string.  For example, The :mod:`readline` module sets
+   resulting string.  For example, the :mod:`readline` module sets
    this hook to provide line-editing and tab-completion features.
 
+   If this pointer is ``NULL``, :c:func:`PyOS_Readline` sets it to the
+   default implementation before reading input.
+
+   The returned string must be null-terminated and include the trailing
+   newline, if one was read. Return an empty string if the end of the file
+   is reached before any characters are read. Return ``NULL`` on failure
+   or interruption; a Python exception may be set.
+
    The result must be a string allocated by :c:func:`PyMem_RawMalloc` or
-   :c:func:`PyMem_RawRealloc`, or ``NULL`` if an error occurred.
+   :c:func:`PyMem_RawRealloc`.
 
    .. versionchanged:: 3.4
       The result must be allocated by :c:func:`PyMem_RawMalloc` or
@@ -195,6 +186,24 @@ the same library that the Python runtime is using.
    .. versionchanged:: 3.12
       This function is only called from the
       :ref:`main interpreter <sub-interpreter-support>`.
+
+
+.. c:function:: char *PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
+
+   Display *prompt*, if it is not ``NULL``, and read a line from *sys_stdin*.
+   If both streams are terminals and the call is made from the
+   :ref:`main interpreter <sub-interpreter-support>`, use
+   :c:var:`PyOS_ReadlineFunctionPointer`. Otherwise, use the default
+   implementation, which flushes *sys_stdout* and writes *prompt* to the C
+   standard error stream.
+
+   The returned string follows the contract of
+   :c:var:`PyOS_ReadlineFunctionPointer`, but the caller must free it with
+   :c:func:`PyMem_Free`. Return ``NULL`` on failure or interruption; a Python
+   exception may be set.
+
+   The caller must hold an :term:`attached thread state`.
+
 
 .. c:function:: PyObject* PyRun_String(const char *str, int start, PyObject *globals, PyObject *locals)
 

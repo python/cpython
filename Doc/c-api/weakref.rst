@@ -111,8 +111,8 @@ as much as it can.
    Return a pointer to the head of the list of weak references to *object*.
    *object* must support weak references and must not be ``NULL``.
 
-   The returned pointer can be dereferenced to obtain the current head of
-   the list. Do not use it to modify the list or its head.
+   This function is intended for internal use only. Do not access or modify
+   the weak reference list through the returned pointer.
 
 
 .. c:function:: void PyUnstable_Object_ClearWeakRefsNoCallbacks(PyObject *object)

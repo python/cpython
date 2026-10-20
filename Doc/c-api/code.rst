@@ -181,7 +181,7 @@ bound into a function.
    Apply the macro *V* to each suffix of :c:type:`PyCodeEvent`
    constants.
    Currently expands to ``V(CREATE) V(DESTROY)``.
-   The macro *V* must accept one event name and supply any punctuation 
+   The macro *V* must accept one event name and supply any punctuation
    needed between expansions.
 
 .. c:type:: int (*PyCode_WatchCallback)(PyCodeEvent event, PyCodeObject* co)

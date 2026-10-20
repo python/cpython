@@ -221,12 +221,6 @@ under :ref:`reference counting <countingrefs>`.
    .. versionadded:: 3.9
 
 
-.. c:macro:: Py_INVALID_SIZE
-
-   A constant of type :c:type:`Py_ssize_t` with value ``-1``, representing an
-   invalid size.
-
-
 .. c:macro:: PyObject_HEAD_INIT(type)
 
    This is a macro which expands to initialization values for a new
