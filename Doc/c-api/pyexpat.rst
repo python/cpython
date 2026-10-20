@@ -53,6 +53,30 @@ which must be included after Expat's :file:`expat.h` header.
       Major, minor, and micro version numbers of the Expat library used by
       :mod:`xml.parsers.expat`.
 
+   .. c:member:: void (*SetUnknownEncodingHandler)(XML_Parser parser, XML_UnknownEncodingHandler handler, void *encodingHandlerData)
+
+      Pointer to `XML_SetUnknownEncodingHandler
+      <https://libexpat.github.io/doc/api/latest/#XML_SetUnknownEncodingHandler>`_.
+      The handler may set a Python exception on failure. The caller must
+      check for a Python exception after parsing.
+
+   .. c:member:: int (*DefaultUnknownEncodingHandler)(void *encodingHandlerData, const XML_Char *name, XML_Encoding *info)
+
+      Python's unknown-encoding handler for Expat, used with
+      ``XML_SetUnknownEncodingHandler``. It uses Python's codec
+      registry to fill *info*.
+      The *encodingHandlerData* argument is unused.
+      Calling this handler requires an :term:`attached thread state`.
+
+   Pointers to the corresponding Expat functions, or ``NULL`` if not
+   available in the Expat version used by :mod:`xml.parsers.expat`, are
+   listed below.
+
+   Member names omit the ``XML_`` prefix; for example, ``SetHashSalt``
+   exposes Expat's ``XML_SetHashSalt`` function. See the `Expat API reference
+   <https://libexpat.github.io/doc/api/latest/>`_ for their behavior
+   and the minimum Expat version they appear in.
+
    .. c:member:: const XML_LChar *(*ErrorString)(enum XML_Error code)
                  enum XML_Error (*GetErrorCode)(XML_Parser parser)
                  XML_Size (*GetErrorColumnNumber)(XML_Parser parser)
@@ -69,28 +93,7 @@ which must be included after Expat's :file:`expat.h` header.
                  void (*SetUserData)(XML_Parser parser, void *userData)
                  void (*SetStartDoctypeDeclHandler)(XML_Parser parser, XML_StartDoctypeDeclHandler start)
                  enum XML_Status (*SetEncoding)(XML_Parser parser, const XML_Char *encoding)
-
-      Pointers to the corresponding Expat functions.
-      Member names omit the ``XML_`` prefix; for example, ``Parse``
-      exposes Expat's ``XML_Parse`` function. See the `Expat API reference
-      <https://libexpat.github.io/doc/api/latest/>`_ for their behavior.
-
-   .. c:member:: void (*SetUnknownEncodingHandler)(XML_Parser parser, XML_UnknownEncodingHandler handler, void *encodingHandlerData)
-
-      Pointer to `XML_SetUnknownEncodingHandler
-      <https://libexpat.github.io/doc/api/latest/#XML_SetUnknownEncodingHandler>`_.
-      The handler may set a Python exception on failure. The caller must
-      check for a Python exception after parsing.
-
-   .. c:member:: int (*DefaultUnknownEncodingHandler)(void *encodingHandlerData, const XML_Char *name, XML_Encoding *info)
-
-      Python's unknown-encoding handler for Expat, used with
-      ``XML_SetUnknownEncodingHandler``. It uses Python's codec
-      registry to fill *info*.
-      The *encodingHandlerData* argument is unused.
-      Calling this handler requires an :term:`attached thread state`.
-
-   .. c:member:: int (*SetHashSalt)(XML_Parser parser, unsigned long hash_salt)
+                 int (*SetHashSalt)(XML_Parser parser, unsigned long hash_salt)
                  XML_Bool (*SetReparseDeferralEnabled)(XML_Parser parser, XML_Bool enabled)
                  XML_Bool (*SetAllocTrackerActivationThreshold)(XML_Parser parser, unsigned long long activationThresholdBytes)
                  XML_Bool (*SetAllocTrackerMaximumAmplification)(XML_Parser parser, float maxAmplificationFactor)
@@ -98,10 +101,4 @@ which must be included after Expat's :file:`expat.h` header.
                  XML_Bool (*SetBillionLaughsAttackProtectionMaximumAmplification)(XML_Parser parser, float maxAmplificationFactor)
                  XML_Bool (*SetHashSalt16Bytes)(XML_Parser parser, const uint8_t entropy[16])
 
-      Pointers to the corresponding Expat functions, or ``NULL`` if not
-      available in the Expat version used by :mod:`xml.parsers.expat`.
-
-      Member names omit the ``XML_`` prefix; for example, ``SetHashSalt``
-      exposes Expat's ``XML_SetHashSalt`` function. See the `Expat API reference
-      <https://libexpat.github.io/doc/api/latest/>`_ for their behavior
-      and the minimum Expat version they appear in.
+               See the `Expat API reference <https://libexpat.github.io/doc/api/latest/>`_.
