@@ -2746,12 +2746,11 @@ in the format string will be pulled from the default value.
    year to partial date strings before parsing.
 
 .. note::
-   When parsing a string using :meth:`.datetime.strptime` or
-   :meth:`.date.strptime`, if more than one directive for the same time unit
-   is used, only the last directive is parsed and applied to the resulting
-   object. For example, if the format string contains both ``%Y`` and ``%y``,
-   like ``%Y%y``, only the last directive in the string (``%y``) determines
-   the year of the result.
+   If a :meth:`~.datetime.strptime` format string contains more than
+   one directive for the same field, for example both ``%Y`` and ``%y``,
+   every directive must still match the input, but only the value of the
+   last one is used. For example, parsing ``200099`` with ``%Y%y`` gives
+   the year 1999. Repeating the same directive, like ``%Y%Y``, raises an error.
 
 .. testsetup::
 
