@@ -1,1 +1,1 @@
-Ignore :func:`pdb.set_trace()` when running it directly from :mod:`pdb` prompts.
+Ignore :func:`pdb.set_trace` when called directly at the :mod:`pdb` prompt.
