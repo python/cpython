@@ -1368,6 +1368,8 @@ class Popen:
 
         if self._communication_started and input:
             raise ValueError("Cannot send input after starting communication")
+        if input and self.stdin is not None and self.stdin.closed:
+            raise ValueError("Cannot send input to closed stdin")
 
         # Optimization: If we are not worried about timeouts, we haven't
         # started communicating, and we have one or zero pipes, using select()
@@ -1376,13 +1378,14 @@ class Popen:
             [self.stdin, self.stdout, self.stderr].count(None) >= 2):
             stdout = None
             stderr = None
+            empty_output = '' if self.text_mode else b''
             if self.stdin:
                 self._stdin_write(input)
             elif self.stdout:
-                stdout = self.stdout.read()
+                stdout = self.stdout.read() if not self.stdout.closed else empty_output
                 self.stdout.close()
             elif self.stderr:
-                stderr = self.stderr.read()
+                stderr = self.stderr.read() if not self.stderr.closed else empty_output
                 self.stderr.close()
             self.wait()
         else:
@@ -1801,8 +1804,9 @@ class Popen:
 
 
         def _readerthread(self, fh, buffer):
-            buffer.append(fh.read())
-            fh.close()
+            if not fh.closed:
+                buffer.append(fh.read())
+                fh.close()
 
 
         def _writerthread(self, input):
@@ -1857,20 +1861,16 @@ class Popen:
                 if self.stderr_thread.is_alive():
                     raise TimeoutExpired(self.args, orig_timeout)
 
-            # Collect the output from and close both pipes, now that we know
-            # both have been read successfully.
+            # A pipe closed before its reader started has an empty buffer.
             stdout = None
             stderr = None
+            empty_output = '' if self.text_mode else b''
             if self.stdout:
-                stdout = self._stdout_buff
                 self.stdout.close()
+                stdout = self._stdout_buff[0] if self._stdout_buff else empty_output
             if self.stderr:
-                stderr = self._stderr_buff
                 self.stderr.close()
-
-            # All data exchanged.  Translate lists into strings.
-            stdout = stdout[0] if stdout else None
-            stderr = stderr[0] if stderr else None
+                stderr = self._stderr_buff[0] if self._stderr_buff else empty_output
 
             return (stdout, stderr)
 
