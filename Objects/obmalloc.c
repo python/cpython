@@ -231,6 +231,7 @@ _PyMem_InitMimalloc(PyInterpreterState *interp)
     }
     mimalloc_init_qsbr = NULL;
     return 0;
+#endif
 }
 
 void
