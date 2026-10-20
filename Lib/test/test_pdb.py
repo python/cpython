@@ -3264,6 +3264,35 @@ def test_pdb_issue_gh_136057():
     """
 
 
+def test_pdb_until_skip_comprehension():
+    """See GH-152373
+    "until" should get over a list comprehension with a breakpoint set on it
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     lst = [i for i in range(10)]
+    ...     for i in lst: pass
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'break 3',
+    ...     'continue',
+    ...     'until',
+    ...     'continue',
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_until_skip_comprehension[0]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) break 3
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_until_skip_comprehension[0]>:3
+    (Pdb) continue
+    > <doctest test.test_pdb.test_pdb_until_skip_comprehension[0]>(3)test_function()
+    -> lst = [i for i in range(10)]
+    (Pdb) until
+    > <doctest test.test_pdb.test_pdb_until_skip_comprehension[0]>(4)test_function()
+    -> for i in lst: pass
+    (Pdb) continue
+    """
+
+
 def test_pdb_issue_gh_80731():
     """See GH-80731
 
