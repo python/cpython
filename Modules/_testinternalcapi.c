@@ -1569,6 +1569,7 @@ static int external_test_visitor_calls = 0;
 static int external_test_callback_calls = 0;
 static int external_test_visitor_incomplete = 0;
 
+#ifdef Py_GIL_DISABLED
 static int
 external_test_gc_visitor(PyInterpreterState *interp,
                          struct _PyInterpreterFrame *frame,
@@ -1583,6 +1584,7 @@ external_test_gc_visitor(PyInterpreterState *interp,
     }
     return external_test_visitor_incomplete;
 }
+#endif
 
 static PyObject *
 external_frame_gc_test(PyObject *self, PyObject *args)
