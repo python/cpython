@@ -13,7 +13,7 @@ __all__ = ["BdbQuit", "Bdb", "Breakpoint"]
 GENERATOR_AND_COROUTINE_FLAGS = CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR
 
 
-class BdbQuit(Exception):
+class BdbQuit(BaseException):
     """Exception to give up completely."""
 
 
@@ -747,7 +747,7 @@ class Bdb:
             return 'There are no breakpoints in %s' % filename
         for line in self.breaks[filename]:
             blist = Breakpoint.bplist[filename, line]
-            for bp in blist:
+            for bp in blist[:]:
                 bp.deleteMe()
         del self.breaks[filename]
         return None
