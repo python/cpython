@@ -10,6 +10,7 @@ import shutil
 import re
 import warnings
 import stat
+import time
 
 import unittest
 import unittest.mock
@@ -1960,6 +1961,25 @@ class GzipStreamWriteTest(GzipTest, StreamWriteTest):
         payload = pathlib.Path(tmpname).read_text(encoding='latin-1')
         assert os.path.dirname(tmpname) not in payload
 
+    def test_create_with_out_of_range_clock(self):
+        # gh-133998: an out-of-range system clock (mtime defaulting to
+        # time.time()) is stored as 0 rather than raising struct.error.
+        for clock in (-1, 2**32):
+            with self.subTest(clock=clock):
+                with unittest.mock.patch('time.time', return_value=float(clock)):
+                    tarfile.open(tmpname, self.mode).close()
+                with self.open(tmpname, 'r') as fobj:
+                    fobj.read()
+                    self.assertEqual(fobj.mtime, 0)
+                os_helper.unlink(tmpname)
+
+    def test_create_without_mtime(self):
+        before = int(time.time())
+        tarfile.open(tmpname, self.mode).close()
+        after = int(time.time())
+        with self.open(tmpname, 'r') as fobj:
+            fobj.read()
+            self.assertTrue(before <= fobj.mtime <= after)
 
 class Bz2StreamWriteTest(Bz2Test, StreamWriteTest):
     decompressor = bz2.BZ2Decompressor if bz2 else None

@@ -162,6 +162,17 @@ class ReferencesTestCase(TestBase):
         self.assertIn('MyConfig', repr(obj_weakref))
         self.assertIn('MyConfig', str(obj_weakref))
 
+    def test_repr_name_lookup_error(self):
+        # An error raised while looking up __name__ propagates.
+        class BadName:
+            @property
+            def __name__(self):
+                raise ZeroDivisionError
+
+        obj = BadName()
+        with self.assertRaises(ZeroDivisionError):
+            repr(weakref.ref(obj))
+
     def test_basic_callback(self):
         self.check_basic_callback(C)
         self.check_basic_callback(create_function)
@@ -1024,8 +1035,8 @@ class ReferencesTestCase(TestBase):
         # gh-118331: Make sure we do not raise an exception from the destructor
         # when clearing weakrefs if allocating the intermediate tuple fails.
         code = textwrap.dedent("""
-        import _testcapi
         import weakref
+        from test import support
 
         class TestObj:
             pass
@@ -1037,7 +1048,7 @@ class ReferencesTestCase(TestBase):
         # The choice of 50 is arbitrary, but must be large enough to ensure
         # the allocation won't be serviced by the free list.
         wrs = [weakref.ref(obj, callback) for _ in range(50)]
-        _testcapi.set_nomemory(0)
+        support.inject_memory_error()
         del obj
         """).strip()
         res, _ = script_helper.run_python_until_end("-c", code)

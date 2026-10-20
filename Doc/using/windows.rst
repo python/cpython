@@ -283,8 +283,8 @@ Passing ``--update`` will replace existing installs if the new version is newer.
 Otherwise, they will be left. If no tags are provided with ``--update``, all
 installs managed by the Python install manager will be updated if newer versions
 are available. Updates will remove any modifications made to the install,
-including globally installed packages, but virtual environments will continue to
-work.
+including globally installed packages, but will leave ``site-packages`` and
+``Scripts`` directories as is.  Virtual environments are also unaffected.
 
 Passing ``--dry-run`` will generate output and logs, but will not modify any
 installs.
@@ -394,8 +394,9 @@ override all other settings, but not every option is available.
 This section will describe the defaults, but be aware that modified or
 overridden installs may resolve settings differently.
 
-A global configuration file may be configured by an administrator, and would be
-read first. The user configuration file is stored at
+A global configuration file may be configured by an
+:ref:`administrator <pymanager-admin-config>`
+and would be read first. The user configuration file is stored at
 :file:`%AppData%\\Python\\pymanager.json`
 (note that this location is under ``Roaming``, not ``Local``) and is read next,
 overwriting any settings from earlier files. An additional configuration file

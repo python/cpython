@@ -2691,6 +2691,23 @@ class TunnelTests(TestCase):
         self.assertIsNotNone(exc)
         self.assertTrue(sock.file_closed)
 
+    def test_tunnel_nonstr_headers(self):
+        class CustomObject:
+            def __str__(self):
+                return 'custom-str'
+
+        self.conn.set_tunnel('destination.com', headers={
+            'None-Value': None,
+            'Integer-Value': 9,
+            'Custom-Value': CustomObject(),
+        })
+
+        self.conn.request('HEAD', '/', '')
+
+        self.assertIn(b'None-Value: None\r\n', self.conn.sock.data)
+        self.assertIn(b'Integer-Value: 9\r\n', self.conn.sock.data)
+        self.assertIn(b'Custom-Value: custom-str\r\n', self.conn.sock.data)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

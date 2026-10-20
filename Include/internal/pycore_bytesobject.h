@@ -60,6 +60,8 @@ PyAPI_FUNC(void)
 _PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
     const char* src, Py_ssize_t len_src);
 
+extern int _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize);
+
 /* --- _PyBytesWriter ----------------------------------------------------- */
 
 /* The _PyBytesWriter structure is big: it contains an embedded "stack buffer".

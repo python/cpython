@@ -71,7 +71,8 @@ __all__ = [
     "BrokenIter",
     "in_systemd_nspawn_sync_suppressed",
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
-    "reset_code", "on_github_actions"
+    "reset_code", "on_github_actions",
+    "requires_root_user", "requires_non_root_user", "built_with_c_assertions",
     ]
 
 
@@ -1160,38 +1161,6 @@ def set_memlimit(limit: str) -> None:
     max_memuse = memlimit
 
 
-class _MemoryWatchdog:
-    """An object which periodically watches the process' memory consumption
-    and prints it out.
-    """
-
-    def __init__(self):
-        self.procfile = '/proc/{pid}/statm'.format(pid=os.getpid())
-        self.started = False
-
-    def start(self):
-        import warnings
-        try:
-            f = open(self.procfile, 'r')
-        except OSError as e:
-            logging.getLogger(__name__).warning('/proc not available for stats: %s', e, exc_info=e)
-            sys.stderr.flush()
-            return
-
-        import subprocess
-        with f:
-            watchdog_script = findfile("memory_watchdog.py")
-            self.mem_watchdog = subprocess.Popen([sys.executable, watchdog_script],
-                                                 stdin=f,
-                                                 stderr=subprocess.DEVNULL)
-        self.started = True
-
-    def stop(self):
-        if self.started:
-            self.mem_watchdog.terminate()
-            self.mem_watchdog.wait()
-
-
 def bigmemtest(size, memuse, dry_run=True):
     """Decorator for bigmem tests.
 
@@ -1204,8 +1173,14 @@ def bigmemtest(size, memuse, dry_run=True):
     extra argument. If 'dry_run' is true, the value passed to the test method
     may be less than the requested value. If 'dry_run' is false, it means the
     test doesn't support dummy runs when -M is not specified.
+
+    A test that actually allocates the requested memory (that is, one run with
+    -M) runs in a subprocess, so that the memory it uses and the address space
+    it fragments are released when it ends.  A dummy run stays in the process.
     """
     def decorator(f):
+        from test.support import isolation
+
         @functools.wraps(f)
         def wrapper(self):
             size = wrapper.size
@@ -1221,41 +1196,37 @@ def bigmemtest(size, memuse, dry_run=True):
                     "not enough memory: %.1fG minimum needed"
                     % (size * memuse / (1024 ** 3)))
 
-            if real_max_memuse and verbose:
+            if (real_max_memuse and verbose
+                    and not isolation.runningInSubprocess):
                 print()
-                print(" ... expected peak memory use: {peak:.1f}G"
-                      .format(peak=size * memuse / (1024 ** 3)))
-                watchdog = _MemoryWatchdog()
-                watchdog.start()
-            else:
-                watchdog = None
+                peak = (size * memuse) / (1024 ** 3)
+                print(f" ... expected peak memory use: {peak:.1f} GiB")
 
-            try:
-                return f(self, maxsize)
-            finally:
-                if watchdog:
-                    watchdog.stop()
+            if (real_max_memuse and has_subprocess_support
+                    and not isolation.runningInSubprocess):
+                cls = type(self)
+                qualname = f'{cls.__qualname__}.{f.__name__}'
+                proc = isolation._start_test(cls.__module__, qualname)
+                isolation._replay_test(self, *proc.wait())
+                return
+
+            return f(self, maxsize)
 
         wrapper.size = size
         wrapper.memuse = memuse
         return wrapper
     return decorator
 
-def nomemtest(f):
+def nomemtest(test):
     """Check that we can use this test with `_testcapi.set_nomemory`."""
     from .import_helper import import_module
 
-    @functools.wraps(f)
+    @functools.wraps(test)
     def internal(*args, **kwargs):
         import_module('_testcapi')
-        return f(*args, **kwargs)
+        return test(*args, **kwargs)
 
-    return unittest.skipIf(
-        # Python built with Py_TRACE_REFS fail with a fatal error in
-        # _PyRefchain_Trace() on memory allocation error.
-        Py_TRACE_REFS,
-        'cannot test Py_TRACE_REFS build',
-    )(cpython_only(internal))
+    return cpython_only(internal)
 
 def bigaddrspacetest(f):
     """Decorator for tests that fill the address space."""
@@ -1482,10 +1453,10 @@ def set_environment_altered(reason):
 
 
 def reap_children():
-    """Use this function at the end of test_main() whenever sub-processes
-    are started.  This will help ensure that no extra children (zombies)
-    stick around to hog resources and create problems when looking
-    for refleaks.
+    """Call this from setUp(), tearDown(), or tearDownModule() in tests
+    that start subprocesses.  This will help ensure that no extra children
+    (zombies) stick around to hog resources and create problems when
+    looking for refleaks.
     """
     # Need os.waitpid(-1, os.WNOHANG): Windows is not supported
     if not (hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG')):
@@ -3376,3 +3347,52 @@ def skip_on_low_desktop_heap_memory_subprocess(returncode):
     if returncode == STATUS_DLL_INIT_FAILED:
         raise unittest.SkipTest('gh-150436: DLL init failed, likely because '
                                 'of low desktop heap memory')
+
+_ROOT_IN_POSIX = hasattr(os, 'geteuid') and os.geteuid() == 0
+requires_root_user = unittest.skipUnless(_ROOT_IN_POSIX, "test needs root privilege")
+requires_non_root_user = unittest.skipIf(_ROOT_IN_POSIX, "test needs non-root account")
+
+
+def built_with_c_assertions():
+    """Check if Python was built with C assertions (assert())."""
+    try:
+        import _testlimitedcapi
+    except ImportError:
+        return Py_DEBUG
+    else:
+        return bool(_testlimitedcapi._py_getbuiltwithassert())
+
+
+def inject_memory_error(start=0, stop=0):
+    """
+    Memory allocation fails after 'start' allocation requests, and until 'stop'
+    allocation requests except when 'stop' is negative or equal to 0 (default)
+    in which case allocation failures never stop.
+
+    Raise SkipTest if the _testcapi extension module is missing
+    """
+    try:
+        import _testcapi
+    except ImportError:
+        raise unittest.SkipTest("_testcapi required")
+
+    _testcapi.set_nomemory(start, stop)
+
+
+@contextlib.contextmanager
+def inject_memory_error_cm(start=0, stop=0):
+    """
+    Similar to inject_memory_error() but can be used as a context manager.
+
+    Raise SkipTest if the _testcapi extension module is missing
+    """
+    try:
+        import _testcapi
+    except ImportError:
+        raise unittest.SkipTest("_testcapi required")
+
+    try:
+        _testcapi.set_nomemory(start, stop)
+        yield
+    finally:
+        _testcapi.remove_mem_hooks()

@@ -1,0 +1,2 @@
+Fix a Use-After-Free race condition in ``subtype_getweakref()`` during
+concurrent weakref creation and destruction in the free-threading build.

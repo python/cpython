@@ -259,8 +259,11 @@ def _place_window(w, parent=None):
 
 def _setup_dialog(w):
     if w._windowingsystem == "aqua":
-        w.tk.call("::tk::unsupported::MacWindowStyle", "style",
-                  w, "moveableModal", "")
+        if w.info_patchlevel() >= (9, 1):
+            w.wm_attributes(stylemask='titled')
+        else:
+            w.tk.call('::tk::unsupported::MacWindowStyle', 'style',
+                      w, 'moveableModal', '')
     elif w._windowingsystem == "x11":
         w.wm_attributes(type="dialog")
 

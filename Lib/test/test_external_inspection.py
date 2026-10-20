@@ -1,6 +1,7 @@
 import unittest
 from contextlib import contextmanager
 import asyncio
+import contextlib
 import os
 import textwrap
 import importlib
@@ -67,6 +68,112 @@ def get_all_awaited_by(pid):
 
 class TestGetStackTrace(unittest.TestCase):
     maxDiff = None
+
+    def _extract_coroutine_funcnames(self, trace):
+        return {
+            task.task_name: [
+                frame.funcname.rpartition(".")[2]
+                for coro in task.coroutine_stack
+                for frame in coro.call_stack
+            ]
+            for info in trace
+            for task in info.awaited_by
+        }
+
+    @skip_if_not_supported
+    def test_async_generator_stack_is_not_truncated(self):
+        # gh-159620
+        async def agen():
+            await asyncio.sleep(10_000)
+            yield
+
+        async def agen_with_cleanup():
+            try:
+                yield
+            finally:
+                await asyncio.sleep(10_000)
+
+        async def outer_agen():
+            async for _ in agen():
+                yield
+
+        async def consumer(gen):
+            async for _ in gen:
+                pass
+
+        async def main():
+            g = agen_with_cleanup()
+            await anext(g)
+            async_for_task = asyncio.create_task(consumer(agen()), name="async for")
+            nested_task = asyncio.create_task(
+                consumer(outer_agen()), name="nested async for")
+            anext_task = asyncio.create_task(anext(agen()), name="anext")
+            aclose_task = asyncio.create_task(g.aclose(), name="aclose")
+            await asyncio.sleep(0)
+            return RemoteUnwinder(os.getpid()).get_all_awaited_by()
+
+        stacks = self._extract_coroutine_funcnames(asyncio.run(main()))
+        self.assertEqual(stacks["async for"], ["sleep", "agen", "consumer"])
+        self.assertEqual(stacks["nested async for"],
+                         ["sleep", "agen", "outer_agen", "consumer"])
+        self.assertEqual(stacks["anext"], ["sleep", "agen"])
+        self.assertEqual(stacks["aclose"], ["sleep", "agen_with_cleanup"])
+
+    @skip_if_not_supported
+    def test_async_generator_waiter_in_async_stack_trace(self):
+        # gh-159620
+        async def agen(task):
+            await task
+            yield
+
+        async def main():
+            waiter_task = asyncio.create_task(
+                anext(agen(asyncio.current_task())), name="anext")
+            await asyncio.sleep(0)
+            return RemoteUnwinder(os.getpid()).get_async_stack_trace()
+
+        stacks = self._extract_coroutine_funcnames(asyncio.run(main()))
+        self.assertEqual(stacks["anext"], ["agen"])
+
+    @skip_if_not_supported
+    def test_async_generator_running_task_stack(self):
+        # gh-159620
+        async def agen():
+            yield RemoteUnwinder(os.getpid()).get_async_stack_trace()
+
+        async def main():
+            return await asyncio.create_task(anext(agen()), name="anext")
+
+        stacks = self._extract_coroutine_funcnames(asyncio.run(main()))
+        self.assertEqual(stacks["anext"], ["agen"])
+
+    @skip_if_not_supported
+    def test_class_named_like_async_generator_wrapper_is_not_walked(self):
+        # gh-159620
+        async def decoy():
+            await asyncio.sleep(10_000)
+
+        class async_generator_asend:
+            __slots__ = ("gen",)
+            def __init__(self, gen):
+                self.gen = gen
+            def __await__(self):
+                return self
+            def __next__(self):
+                return None
+
+        async def consumer(aw):
+            await aw
+
+        async def main():
+            with contextlib.closing(decoy()) as gen:
+                consumer_task = asyncio.create_task(
+                    consumer(async_generator_asend(gen)), name="consumer")
+                await asyncio.sleep(0)
+                return RemoteUnwinder(os.getpid()).get_all_awaited_by()
+
+        stacks = self._extract_coroutine_funcnames(asyncio.run(main()))
+        self.assertEqual(stacks["consumer"], ["consumer"])
 
     @skip_if_not_supported
     def test_long_task_name_is_truncated(self):
@@ -935,22 +1042,10 @@ class TestGetStackTrace(unittest.TestCase):
                 for _ in busy_retry(SHORT_TIMEOUT):
                     try:
                         all_awaited_by = get_all_awaited_by(p.pid)
-                    except RuntimeError as re:
-                        # This call reads a linked list in another process with
-                        # no synchronization. That occasionally leads to invalid
-                        # reads. Here we avoid making the test flaky.
-                        msg = str(re)
-                        if msg.startswith("Task list appears corrupted"):
-                            continue
-                        elif msg.startswith(
-                            "Invalid linked list structure reading remote memory"
-                        ):
-                            continue
-                        elif msg.startswith("Unknown error reading memory"):
-                            continue
-                        elif msg.startswith("Unhandled frame owner"):
-                            continue
-                        raise  # Unrecognized exception, safest not to ignore it
+                    except RuntimeError:
+                        # Tasks and awaited objects can change while we read
+                        # the running process. Retry with a fresh sample.
+                        continue
                     else:
                         break
                 # expected: a list of two elements: 1 thread, 1 interp
