@@ -143,8 +143,7 @@ _Py_ext_module_loader_info_init(struct _Py_ext_module_loader_info *p_info,
         assert(spec != NULL);
         info.filename = PyObject_GetAttr(spec, &_Py_ID(origin));
         if (info.filename == NULL) {
-            Py_DECREF(name);
-            return -1;
+            goto error;
         }
 
         if (!PyUnicode_Check(info.filename)) {

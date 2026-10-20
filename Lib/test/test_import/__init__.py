@@ -1264,6 +1264,13 @@ os.does_not_exist
                 origin = "a\x00b"
             _imp.create_dynamic(Spec2())
 
+
+    def test_create_dynamic_no_origin(self):
+        with self.assertRaisesRegex(AttributeError, "no attribute 'origin'"):
+            class Spec:
+                name = "abc"
+            _imp.create_dynamic(Spec())
+
     def test_create_builtin(self):
         class Spec:
             pass
