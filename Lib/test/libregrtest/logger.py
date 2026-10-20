@@ -21,9 +21,13 @@ class Logger:
         self._quiet: bool = quiet
         self._pgo: bool = pgo
         self.get_mem_usage: Callable[[], int | None] | None = None
+        self.get_active_workers: Callable[[], int] | None = None
 
     def log(self, line: str = '') -> None:
         empty = not line
+
+        if self.get_active_workers is not None:
+            line = f'running: {self.get_active_workers()} {line}'
 
         # Add the memory usage: "mem: 1 GiB "
         if self.get_mem_usage is not None:

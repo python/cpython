@@ -52,6 +52,7 @@ LOG_PREFIX = (
     r'[0-9]+:[0-9]+:[0-9]+ '
     r'(?:load avg: [0-9]+\.[0-9]{2} )?'
     r'(?:mem: +[0-9]+\.[0-9] (?:MiB|GiB) )?'
+    r'(?:running: [0-9]+ )?'
 )
 RESULT_REGEX = (
     'passed',
@@ -380,8 +381,49 @@ class ParseArgsTestCase(unittest.TestCase):
             with self.subTest(opt=opt):
                 ns = self.parse_args([opt, '2'])
                 self.assertEqual(ns.use_mp, 2)
+                self.assertIsInstance(ns.use_mp, int)
                 self.checkError([opt], 'expected one argument')
                 self.checkError([opt, 'foo'], 'invalid int value')
+
+    def test_percentage_jobs(self):
+        for args in (['-j90%'], ['--multiprocess=90%'], ['-j', '90%']):
+            with self.subTest(args=args):
+                ns = self.parse_args(args)
+                self.assertEqual(ns.use_mp, 0.9)
+                self.assertIsInstance(ns.use_mp, float)
+                regrtest = main.Regrtest(ns)
+                self.assertEqual(regrtest.adaptive_target, 0.9)
+                self.assertEqual(regrtest.num_workers, -1)
+        for value, expected in (('1%', 0.01), ('100%', 1.0)):
+            ns = self.parse_args(['-j', value])
+            self.assertEqual(ns.use_mp, expected)
+            self.assertIsInstance(ns.use_mp, float)
+        for value in ('0%', '101%', '-1%', '1.5%', 'nan%', '%'):
+            with self.subTest(value=value):
+                self.checkError([f'-j{value}'], 'expected a percentage')
+
+    def test_percentage_jobs_without_load_average(self):
+        with unittest.mock.patch.object(os, 'getloadavg', create=True):
+            del os.getloadavg
+            self.assertEqual(self.parse_args(['-j90%']).use_mp, 0.9)
+            ns = self.parse_args(['-j90%', '--single-process'])
+            self.assertIsNone(ns.use_mp)
+
+    def test_percentage_jobs_worker_ceiling(self):
+        class StopRun(Exception):
+            pass
+
+        for cpu_count in (1, 16, None):
+            automatic = (cpu_count or 1) + 2
+            for option, expected in (('-j90%', 2 * automatic),
+                                     ('-j0', automatic), ('-j4', 4)):
+                with self.subTest(cpu_count=cpu_count, option=option):
+                    regrtest = self.create_regrtest([option, '--header'])
+                    with (unittest.mock.patch('os.process_cpu_count', return_value=cpu_count),
+                          unittest.mock.patch.object(main, 'display_header', side_effect=StopRun)):
+                        with self.assertRaises(StopRun):
+                            regrtest._run_tests((), [])
+                    self.assertEqual(regrtest.num_workers, expected)
 
     def test_coverage_sequential(self):
         for opt in '-T', '--coverage':
@@ -1071,6 +1113,13 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests(*tests)
         self.check_executed_tests(output, tests,
                                   stats=3 * len(tests))
+
+    def test_percentage_jobs(self):
+        tests = [self.create_test(f'cpu{i}') for i in range(3)]
+        output = self.run_tests('-j90%', *tests)
+        self.check_executed_tests(output, tests, stats=len(tests), parallel=True)
+        self.assertIn('Load target: 90%, adaptive workers', output)
+        self.assertRegex(output, r'running: \d+ \[\s*\d+/3\]')
 
     def test_skip(self):
         code = textwrap.dedent("""

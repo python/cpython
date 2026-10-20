@@ -6,6 +6,19 @@ from test.support import os_helper, Py_DEBUG
 from .utils import ALL_RESOURCES, RESOURCE_NAMES, TestFilter
 
 
+def worker_count(value: str) -> int | float:
+    if value.endswith('%'):
+        percentage = value[:-1]
+        if (not percentage.isascii() or not percentage.isdecimal()
+                or not 1 <= int(percentage) <= 100):
+            raise argparse.ArgumentTypeError('expected a percentage from 1% to 100%')
+        return int(percentage) / 100
+    try:
+        return int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f'invalid int value: {value!r}') from None
+
+
 USAGE = """\
 python -m test [options] [test_name1 [test_name2 ...]]
 python path/to/Lib/test/regrtest.py [options] [test_name1 [test_name2 ...]]
@@ -26,6 +39,14 @@ command line:
 
 EPILOG = """\
 Additional option details:
+
+`-jN%` adjusts the running worker count adaptively to approximate N% total
+system load.  At least one worker is always allowed to run, up to
+`os.process_cpu_count() * 2 + 4` (twice the limit used by `-j0`).  Running
+tests are never suspended, so the target can remain exceeded for an extended
+period of time.  At startup, `ceil(os.process_cpu_count() * (N/100))` workers
+are allowed, and failure to track load may result in reverting to this worker
+count.  Adaptive adjustments resume when load tracking recovers.
 
 `-r` randomizes test execution order. You can use `--randseed=int` to provide an
 int seed value for the randomizer. The `randseed` value will be used
@@ -174,7 +195,7 @@ class Namespace(argparse.Namespace):
         self.verbose3 = False
         self.print_slow = False
         self.random_seed = None
-        self.use_mp = None
+        self.use_mp: int | float | None = None
         self.parallel_threads = None
         self.forever = False
         self.header = False
@@ -333,8 +354,10 @@ def _create_parser():
                        help='search for reference leaks (needs debug build, '
                             'very slow).' + more_details)
     group.add_argument('-j', '--multiprocess', metavar='PROCESSES',
-                       dest='use_mp', type=int,
-                       help='run `PROCESSES` processes at once')
+                       dest='use_mp', type=worker_count,
+                       help='run `PROCESSES` processes at once, or pass a '
+                            'percentage to adaptively target a level of load.'
+                            + more_details)
     group.add_argument('--single-process', action='store_true',
                        dest='single_process',
                        help='always run all tests sequentially in '
