@@ -320,7 +320,7 @@ Standard names are defined for the following types:
 
    .. soft-deprecated:: 3.16
 
-      Use :class:`typing.Union` instead.
+      Use the ``X | Y`` syntax to create ``Union`` instances and :class:typing.Union for all other purposes.
 
 .. class:: TracebackType(tb_next, tb_frame, tb_lasti, tb_lineno)
 
