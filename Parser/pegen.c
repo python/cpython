@@ -933,7 +933,6 @@ _PyPegen_set_syntax_error_metadata(Parser *p) {
         the_source // N gives ownership to metadata
     );
     if (!metadata) {
-        Py_DECREF(the_source);
         PyErr_Clear();
         PyErr_SetRaisedException(exc);
         return;
