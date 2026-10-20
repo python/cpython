@@ -2627,10 +2627,12 @@ Data types
 
    .. attribute:: _objects
 
-      This member is either ``None`` or a dictionary containing Python objects
-      that need to be kept alive so that the memory block contents is kept
-      valid.  This object is only exposed for debugging; never modify the
-      contents of this dictionary.
+      This member holds Python objects that need to be kept alive so that the
+      memory block contents remain valid. It is usually ``None`` or a dictionary,
+      but may be another object. For example, an instance created with
+      :meth:`from_buffer` may hold a :class:`memoryview` of the source buffer.
+      This attribute is only exposed for debugging. If it is a dictionary,
+      never modify its contents.
 
 
 .. _ctypes-fundamental-data-types-2:
