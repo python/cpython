@@ -51,6 +51,9 @@ typedef struct _PyThreadStateImpl {
     PyObject *asyncio_running_loop; // Strong reference
     PyObject *asyncio_running_task; // Strong reference
 
+    // Reused for the thread's lifetime; owns placeholders while they resolve.
+    PyObject *lazy_imports;
+
     // Distinguishes between yield and return from PyEval_EvalFrame().
     // See gen_send_ex2() in Objects/genobject.c
     enum {

@@ -135,7 +135,7 @@ See :ref:`__slots__ documentation <slots>` for details.
    .. versionchanged:: 3.4
       Added the :attr:`__callback__` attribute.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Raise :exc:`!TypeError` if *callback* is not callable or ``None``.
 
 
@@ -157,7 +157,7 @@ See :ref:`__slots__ documentation <slots>` for details.
       Extended the operator support on proxy objects to include the matrix
       multiplication operators ``@`` and ``@=``.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Raise :exc:`!TypeError` if *callback* is not callable or ``None``.
 
 
@@ -227,8 +227,13 @@ than needed.
    .. versionchanged:: 3.9
       Added support for ``|`` and ``|=`` operators, as specified in :pep:`584`.
 
-:class:`WeakValueDictionary` objects have an additional method that has the
-same issues as the :meth:`WeakKeyDictionary.keyrefs` method.
+:class:`WeakValueDictionary` objects have the following additional methods.
+These have the same issues as the :meth:`WeakKeyDictionary.keyrefs` method.
+
+
+.. method:: WeakValueDictionary.itervaluerefs()
+
+   Return an :term:`iterator` that yields the weak references to the values.
 
 
 .. method:: WeakValueDictionary.valuerefs()

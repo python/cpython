@@ -14,6 +14,7 @@ from test.support import (requires, verbose, SaveSignals, cpython_only,
                           check_disallow_instantiation, MISSING_C_DOCSTRINGS,
                           gc_collect, SHORT_TIMEOUT)
 from test.support.import_helper import import_module
+from test.support import os_helper
 
 # Optionally test curses module.  This currently requires that the
 # 'curses' resource be given on the regrtest command line using the -u
@@ -47,6 +48,26 @@ def requires_curses_window_meth(name):
     return deco
 
 WIDE_BUILD = import_module('_curses')._wide_character_support
+
+def encodable(s, encoding):
+    # Wide characters are only supported in a locale that can encode them.
+    try:
+        s.encode(encoding)
+    except UnicodeEncodeError:
+        return False
+    return True
+
+def storable(s, encoding):
+    # Text the current build can place in character cells.  A wide build
+    # stores any locale-encodable text (combining sequences and multibyte
+    # characters included).  A narrow build has no wide-character cells, so
+    # each character must occupy a single cell -- that is, encode to exactly
+    # one byte.
+    if not encodable(s, encoding):
+        return False
+    if WIDE_BUILD:
+        return True
+    return len(s.encode(encoding)) == len(s)
 
 def requires_wide_build(test):
     @functools.wraps(test)
@@ -108,6 +129,9 @@ def _broken_variation_selector_width():
     return False
 
 BROKEN_VARIATION_SELECTOR_WIDTH = _broken_variation_selector_width()
+
+class CustomError(Exception):
+    pass
 
 # newterm() is used when available (it reports errors instead of exiting), but
 # initscr() is still the fallback, and an unusable $TERM has no terminal to
@@ -387,24 +411,10 @@ class TestCurses(unittest.TestCase):
     # combining sequence or a multibyte character are guarded with _storable().
 
     def _encodable(self, s):
-        # Wide characters are only supported in a locale that can encode them.
-        try:
-            s.encode(self.stdscr.encoding)
-        except UnicodeEncodeError:
-            return False
-        return True
+        return encodable(s, self.stdscr.encoding)
 
     def _storable(self, s):
-        # Text the current build can place in character cells.  A wide build
-        # stores any locale-encodable text (combining sequences and multibyte
-        # characters included).  A narrow build has no wide-character cells, so
-        # each character must occupy a single cell -- that is, encode to exactly
-        # one byte.
-        if not self._encodable(s):
-            return False
-        if WIDE_BUILD:
-            return True
-        return len(s.encode(self.stdscr.encoding)) == len(s)
+        return storable(s, self.stdscr.encoding)
 
     def _char_code(self, ch):
         # The integer the int-input API (addch(int), do_command()) uses for a
@@ -1124,7 +1134,11 @@ class TestCurses(unittest.TestCase):
         # A cell holding a NUL reads back as the cell that writes it.
         win = curses.newwin(3, 8, 0, 0)
         win.insch(0, 0, '\0')
-        self.assertEqual(win.in_wch(0, 0), cell)
+        if WIDE_BUILD:
+            self.assertEqual(win.in_wch(0, 0), cell)
+        else:
+            # A narrow build inserts a NUL as "^@".
+            self.assertEqual(str(win.in_wch(0, 0)), '^')
         # A string of cells cannot hold a NUL: it would end a batch write.
         self.assertRaises(ValueError, curses.complexstr, 'a\0b')
         self.assertRaises(ValueError, curses.complexstr, '\0')
@@ -3261,6 +3275,11 @@ class NewtermTestBase(unittest.TestCase):
         self.save_signals = SaveSignals()
         self.save_signals.save()
         self.addCleanup(self.save_signals.restore)
+        # A new pseudo-terminal has no size, so newterm() takes it from
+        # $LINES and $COLUMNS, or from the terminfo entry if they are unset.
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        env['LINES'] = '24'
+        env['COLUMNS'] = '80'
 
     def tearDown(self):
         # Leave visual mode and reclaim the test's screens while their
@@ -3327,6 +3346,26 @@ class ScreenTests(NewtermTestBase):
         win.addstr(0, 0, 'hello')
         win.refresh()
 
+    def test_lines_columns_env(self):
+        # $LINES and $COLUMNS override the size from the terminfo entry
+        # (24x80 for xterm).
+        for lines, columns, size in [('30', '100', (30, 100)),
+                                     ('30', None, (30, 80)),
+                                     (None, '100', (24, 100)),
+                                     (None, None, (24, 80))]:
+            with self.subTest(lines=lines, columns=columns):
+                with os_helper.EnvironmentVarGuard() as env:
+                    for name, value in [('LINES', lines),
+                                        ('COLUMNS', columns)]:
+                        if value is None:
+                            env.unset(name)
+                        else:
+                            env[name] = value
+                    s = self.make_pty()
+                    screen = curses.newterm('xterm', s, s)
+                self.assertEqual(screen.stdscr.getmaxyx(), size)
+                self.assertEqual((curses.LINES, curses.COLS), size)
+
     def test_newterm_file_object(self):
         # type=None uses $TERM; the file arguments accept file objects too.
         s = self.make_pty()
@@ -3342,6 +3381,50 @@ class ScreenTests(NewtermTestBase):
         b = curses.newterm('xterm', s2, s2)   # current screen is b
         self.assertIs(curses.set_term(a), b)  # returns the previous one
         self.assertIs(curses.set_term(b), a)
+
+    def make_screens_of_different_terms(self):
+        # Two screens of different sizes and numbers of colors.  Return them
+        # with the values of LINES, COLS, COLORS and COLOR_PAIRS for each.
+        screens = []
+        with os_helper.EnvironmentVarGuard() as env:
+            for term, lines, cols in [('xterm', 25, 80),
+                                      ('xterm-256color', 30, 100)]:
+                env['LINES'] = str(lines)
+                env['COLUMNS'] = str(cols)
+                s = self.make_pty()
+                try:
+                    screen = curses.newterm(term, s, s)
+                except curses.error:
+                    self.skipTest(f'no {term} terminfo entry')
+                curses.start_color()
+                self.assertEqual(screen.stdscr.getmaxyx(), (lines, cols))
+                screens.append((screen, self.get_screen_values()))
+        self.assertNotEqual(screens[0][1], screens[1][1])
+        return screens
+
+    def get_screen_values(self):
+        return curses.LINES, curses.COLS, curses.COLORS, curses.COLOR_PAIRS
+
+    def test_set_term_refreshes_lines_cols_colors(self):
+        (a, avalues), (b, bvalues) = self.make_screens_of_different_terms()
+        self.assertIs(curses.set_term(a), b)
+        self.assertEqual(self.get_screen_values(), avalues)
+        self.assertIs(curses.set_term(b), a)
+        self.assertEqual(self.get_screen_values(), bvalues)
+
+    @unittest.skipUnless(hasattr(curses.screen, 'use'),
+                         'requires curses.screen.use()')
+    def test_use_screen_refreshes_lines_cols_colors(self):
+        (a, avalues), (b, bvalues) = self.make_screens_of_different_terms()
+        self.assertEqual(a.use(lambda scr: self.get_screen_values()), avalues)
+        self.assertEqual(self.get_screen_values(), bvalues)
+
+        def raise_in_use(scr):
+            self.assertEqual(self.get_screen_values(), avalues)
+            raise CustomError
+        with self.assertRaises(CustomError):
+            a.use(raise_in_use)
+        self.assertEqual(self.get_screen_values(), bvalues)
 
     def test_window_keeps_screen_alive(self):
         # The standard window keeps its screen alive; dropping every other
@@ -3593,10 +3676,8 @@ class SLKTests(NewtermTestBase):
     def test_set_wide(self):
         screen = self.make_slk_screen()
         label = 'Ångström'
-        try:
-            label.encode(screen.stdscr.encoding)
-        except UnicodeEncodeError:
-            self.skipTest('the locale cannot encode %r' % label)
+        if not storable(label, screen.stdscr.encoding):
+            self.skipTest('cannot store %r in this locale' % label)
         curses.slk_set(1, label, 0)
         # The label can be truncated to fit the soft label width, e.g. in the
         # EUC-JP locale, where "Å" and "ö" are double-width JIS X 0212

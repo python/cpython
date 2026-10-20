@@ -3830,10 +3830,9 @@ _Py_FatalRefcountErrorFunc(const char *func, const char *msg)
 void _Py_NO_RETURN
 Py_ExitStatusException(PyStatus status)
 {
-    if (_PyStatus_IS_EXIT(status)) {
-        exit(status.exitcode);
-    }
-    else if (_PyStatus_IS_ERROR(status)) {
+    assert(!_PyStatus_IS_EXIT(status));
+
+    if (_PyStatus_IS_ERROR(status)) {
         fatal_error(fileno(stderr), 1, status.func, status.err_msg, 1);
     }
     else {
