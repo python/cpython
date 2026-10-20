@@ -570,19 +570,22 @@ Pure paths provide the following methods and properties:
       True
       >>> PurePath('a/b.py').full_match('*.py')
       False
-      >>> PurePath('/a/b/c.py').full_match('/a/**')
-      True
       >>> PurePath('/a/b/c.py').full_match('**/*.py')
       True
-
-   A pattern ending in "``/**``" needs the separator before it to be present
-   in the path, even though "``**``" can match zero segments. For instance,
-   "``/a/**``" matches "``/a/b``" but not "``/a``", and since :class:`PurePath`
-   drops trailing slashes, it does not match "``/a/``" either::
-
-      >>> PurePath('/a/b').full_match('/a/**')
+      >>> PurePath('/a/b/c.py').full_match('/a/**')
       True
+
+   Patterns ending in "``/**``", as in the example above, may surprise when
+   passed to ``full_match``. Even though "``**``" can match 0 segments,
+   "``.../**``" requires a separator to match. Hence "``/a/**``" does not
+   match path "``/a``". Since :class:`PurePath` drops trailing slashes, this
+   pattern also does not match "``/a/``".
+
+   ::
+
       >>> PurePath('/a').full_match('/a/**')
+      False
+      >>> PurePath('/a/').full_match('/a/**')
       False
 
    .. seealso::
