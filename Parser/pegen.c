@@ -1307,7 +1307,10 @@ collect_keyword_typos(Parser *p, PySyntaxErrorObject *error, KeywordTypo *candid
             start = i + 1;
         }
     }
-    static const struct { const char *name, *keyword; } aliases[] = {
+    static const struct {
+        const char *name;
+        const char *keyword;
+    } aliases[] = {
         {"switch", "match"},
         {"delete", "del"},
         {"function", "def"},
