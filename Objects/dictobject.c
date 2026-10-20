@@ -4209,7 +4209,9 @@ static int
 dict_dict_merge(PyDictObject *mp, PyDictObject *other, int override, PyObject **dupkey)
 {
     assert(can_modify_dict(mp));
-    ASSERT_DICT_LOCKED(other);
+    if (!PyFrozenDict_Check(other)) {
+        ASSERT_DICT_LOCKED(other);
+    }
 
     if (other == mp || other->ma_used == 0)
         /* a.update(a) or a.update({}); nothing to do */
@@ -4576,7 +4578,7 @@ copy_lock_held_untracked(PyObject *o, int as_frozendict)
     if (copy == NULL)
         return NULL;
     int res;
-    if (!PyFrozenDict_Check(o) && Py_TYPE(mp)->tp_iter == dict_iter) {
+    if (Py_TYPE(mp)->tp_iter == dict_iter) {
         res = dict_dict_merge((PyDictObject *)copy, mp, 1, NULL);
     }
     else {

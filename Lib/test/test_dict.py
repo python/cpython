@@ -1894,6 +1894,20 @@ class FrozenDictTests(unittest.TestCase):
         self.assertEqual(d2, frozendict(x=1, y=2))
         self.assertEqual(type(d2), frozendict)
 
+    def test_copy_iter_override(self):
+        class CustomReversedDict(frozendict):
+            def keys(self):
+                return reversed(list(frozendict.keys(self)))
+
+            __iter__ = keys
+
+        pairs = [('a', 1), ('b', 2), ('c', 3)]
+        d = CustomReversedDict(pairs)
+        d2 = d.copy()
+        self.assertIsNot(d2, d)
+        self.assertEqual(type(d2), frozendict)
+        self.assertEqual(list(d2.items()), pairs[::-1])
+
     def test_merge(self):
         # test "a | b" operator
         self.assertEqual(frozendict(x=1) | frozendict(y=2),
