@@ -299,6 +299,12 @@ Numeric utilities
    Argument must be a character or an integer in the range [-128, 127] or [0,
    255].  This macro returns ``c`` cast to an ``unsigned char``.
 
+.. c:macro:: PY_BIG_ENDIAN
+             PY_LITTLE_ENDIAN
+
+   Constants describing the byte order of the platform that Python was built
+   for. Exactly one of them is ``1`` and the other is ``0``.
+
 
 Assertion utilities
 ^^^^^^^^^^^^^^^^^^^
@@ -916,8 +922,13 @@ use them.
 
    A signed integral type such that ``sizeof(Py_ssize_t) == sizeof(size_t)``.
    C99 doesn't define such a thing directly (size_t is an unsigned integral type).
-   See :pep:`353` for details. ``PY_SSIZE_T_MAX`` is the largest positive value
-   of type :c:type:`Py_ssize_t`.
+   See :pep:`353` for details.
+
+.. c:macro:: PY_SSIZE_T_MAX
+             PY_SSIZE_T_MIN
+
+   The limit values (largest positive one and smallest negative one,
+   respecitvely) of type :c:type:`Py_ssize_t`.
 
 
 .. _api-exceptions:

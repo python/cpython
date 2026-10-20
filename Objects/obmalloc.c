@@ -194,9 +194,22 @@ _PyMem_InitMimalloc(PyInterpreterState *interp)
 {
     set_mimalloc_defaults();
 
-    size_t base_offset = offsetof(PyObject, ob_type);
-    if (_PyMem_DebugEnabled()) {
-        base_offset += 2 * sizeof(size_t);
+#ifdef Py_GIL_DISABLED
+    assert(page->qsbr_node.next == NULL);
+    if (page->qsbr_goal != 0) {
+        if (mi_page_all_free(page)) {
+            assert(page->qsbr_node.next == NULL);
+            _PyThreadStateImpl *tstate = tstate_from_heap(mi_page_heap(page));
+            // gh-159462: the owning tstate may differ from the current
+            // one, but the heap is always owned by the current OS thread,
+            // so the page list is not shared with other OS threads.
+            assert(mi_page_heap(page)->thread_id == _Py_ThreadId());
+            page->retire_expire = 0;
+            llist_insert_tail(&tstate->mimalloc.page_list, &page->qsbr_node);
+        }
+        else {
+            page->qsbr_goal = 0;
+        }
     }
     size_t debug_offsets[_Py_MIMALLOC_HEAP_COUNT] = {
         [_Py_MIMALLOC_HEAP_OBJECT] = base_offset,
