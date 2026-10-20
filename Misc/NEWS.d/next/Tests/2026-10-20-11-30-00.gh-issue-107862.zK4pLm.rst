@@ -1,3 +1,0 @@
-Add Hypothesis property tests for the incremental compression APIs of
-:mod:`bz2`, :mod:`lzma`, :mod:`zlib`, :mod:`gzip` and :mod:`compression.zstd`,
-and convert the ``zlib`` checksum combination tests to Hypothesis.
