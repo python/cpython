@@ -977,6 +977,7 @@ bytearray_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 /*[clinic input]
+@vectorcall
 bytearray.__init__
 
     source as arg: object = NULL
@@ -988,7 +989,7 @@ bytearray.__init__
 static int
 bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
                         const char *encoding, const char *errors)
-/*[clinic end generated code: output=4ce1304649c2f8b3 input=1141a7122eefd7b9]*/
+/*[clinic end generated code: output=4ce1304649c2f8b3 input=24ddb84055f432dd]*/
 {
     Py_ssize_t count;
     PyObject *it;
@@ -2599,7 +2600,19 @@ bytearray_decode_impl(PyByteArrayObject *self, const char *encoding,
 {
     if (encoding == NULL)
         encoding = PyUnicode_GetDefaultEncoding();
-    return PyUnicode_FromEncodedObject((PyObject*)self, encoding, errors);
+    if (Py_TYPE(self)->tp_as_buffer->bf_getbuffer != bytearray_getbuffer) {
+        /* A subclass may export a different buffer. */
+        return PyUnicode_FromEncodedObject((PyObject*)self, encoding, errors);
+    }
+
+    /* Decode the storage directly instead of exporting a buffer, which
+       would re-acquire the critical section we already hold.  Increase
+       exports to prevent the storage from changing during the decode. */
+    self->ob_exports++;
+    PyObject *res = PyUnicode_Decode(PyByteArray_AS_STRING(self),
+                                     Py_SIZE(self), encoding, errors);
+    self->ob_exports--;
+    return res;
 }
 
 PyDoc_STRVAR(alloc_doc,
@@ -3015,6 +3028,7 @@ PyTypeObject PyByteArray_Type = {
     PyType_GenericAlloc,                /* tp_alloc */
     bytearray_new,                      /* tp_new */
     PyObject_Free,                      /* tp_free */
+    .tp_vectorcall = bytearray_vectorcall,
     .tp_version_tag = _Py_TYPE_VERSION_BYTEARRAY,
 };
 

@@ -3,7 +3,7 @@
   What's new in Python 3.16
 ****************************
 
-:Editor: TBD
+:Editor: Savannah Ostrowski
 
 .. Rules for maintenance:
 
@@ -56,14 +56,11 @@ For full details, see the :ref:`changelog <changelog>`.
    so it's worth checking back even after reading earlier versions.
 
 
-Summary --- release highlights
-==============================
+Summary -- Release highlights
+=============================
 
 .. This section singles out the most important changes in Python 3.16.
    Brevity is key.
-
-
-.. PEP-sized items next.
 
 
 
@@ -98,6 +95,18 @@ Other language changes
   they reference) alive indefinitely.
   (Contributed by Łukasz Langa in :gh:`102960`.)
 
+* :exc:`TypeError` messages for some instance methods called with too many
+  positional arguments now suggest checking whether the method definition is
+  missing the ``self`` parameter. (Contributed by Suren Nihalani in
+  :gh:`152315`.)
+
+* :func:`anext` and :func:`aiter` are now implemented in Python instead
+  of C.  The awaitable returned by ``anext(it, default)`` and the
+  ``__anext__()`` of the iterator returned by ``aiter(callable, ...)`` are
+  now plain coroutines, so introspection tools such as
+  :func:`asyncio.print_call_graph` can see through them into the awaited code.
+  (Contributed by Kumar Aditya in :gh:`157361`.)
+
 
 New modules
 ===========
@@ -116,6 +125,16 @@ asyncio
   socket file created for *path*.
   (Contributed by Sam Bull in :gh:`94984`.)
 
+
+bdb
+---
+
+* :exc:`bdb.BdbQuit` is now a subclass of :exc:`BaseException`, instead of
+  :exc:`Exception`, to allow it to be used for cleanly exiting the debugger without
+  being accidentally caught by user code.
+  (Contributed by Tian Gao in :gh:`149337`.)
+
+
 bz2
 ---
 
@@ -123,6 +142,7 @@ bz2
   :const:`~bz2.bzlib_version_info` which provide information about
   the version of the bzip2 compression library in use.
   (Contributed by Serhiy Storchaka in :gh:`117404`.)
+
 
 codecs
 ------
@@ -134,6 +154,7 @@ codecs
   even when a built-in codec of the same name exists.
   (Contributed by Serhiy Storchaka in :gh:`152997`.)
 
+
 compression.zstd
 ----------------
 
@@ -143,12 +164,13 @@ compression.zstd
   :const:`~compression.zstd.zstd_version_info` is now a named tuple.
   (Contributed by Serhiy Storchaka in :gh:`117404`.)
 
+
 concurrent.futures
 ------------------
 
 * The iterator returned by :meth:`concurrent.futures.Executor.map` is no longer
   automatically closed if a function call raises an exception.
-  Use method :meth:`!close` to explicitly close the iterator.
+  Use the :meth:`!close` method to explicitly close the iterator.
   (Contributed by xzmeng and Serhiy Storchaka in :gh:`108518`.)
 
 
@@ -180,6 +202,7 @@ ctypes
   from an annotation-based syntax, similar to how the :mod:`dataclasses` module
   is used.
   (Contributed by Peter Bierma in :gh:`104533`.)
+
 * Add :func:`ctypes.util.wrap_dll_function` for generating function pointers
   through a function signature.
   (Contributed by Peter Bierma in :gh:`153903`.)
@@ -190,6 +213,10 @@ ctypes
   about the version of the libffi library in use.
   They are only available with libffi 3.5 or later.
   (Contributed by Serhiy Storchaka in :gh:`157487`.)
+
+* Objects with an :attr:`!_as_parameter_` attribute are now
+  implicitly converted when passed for a :func:`~ctypes.POINTER` argument.
+  (Contributed by Peter Bierma in :gh:`71990`.)
 
 
 curses
@@ -326,27 +353,6 @@ curses
   (Contributed by Serhiy Storchaka in :gh:`133031`.)
 
 
-ctypes
-------
-
-* Add :func:`ctypes.util.struct` for generating :class:`~ctypes.Structure` types
-  from an annotation-based syntax, similar to how the :mod:`dataclasses` module
-  is used.
-  (Contributed by Peter Bierma in :gh:`104533`.)
-* Add :func:`ctypes.util.wrap_dll_function` for generating function pointers
-  through a function signature.
-  (Contributed by Peter Bierma in :gh:`153903`.)
-
-
-concurrent.futures
-------------------
-
-* The iterator returned by :meth:`concurrent.futures.Executor.map` is no longer
-  automatically closed if a function call raises an exception.
-  Use method :meth:`!close` to explicitly close the iterator.
-  (Contributed by xzmeng and Serhiy Storchaka in :gh:`108518`.)
-
-
 datetime
 --------
 
@@ -355,16 +361,6 @@ datetime
   :meth:`datetime.date.strftime`, :meth:`datetime.datetime.strptime` and
   :meth:`datetime.time.strptime`.
   (Contributed by Stan Ulbrych and Karoline Pauls in :gh:`157290`.)
-
-
-decimal
--------
-
-* Added constants :const:`~decimal.LIBMPDEC_VERSION`,
-  :const:`~decimal.libmpdec_version`, :const:`~decimal.LIBMPDEC_VERSION_INFO`,
-  and :const:`~decimal.libmpdec_version_info` in the C implementation,
-  which provide information about the version of the libmpdec library in use.
-  (Contributed by Serhiy Storchaka in :gh:`157475`.)
 
 
 dbm.gnu
@@ -390,14 +386,23 @@ dbm.ndbm
   (Contributed by Serhiy Storchaka in :gh:`157480`.)
 
 
+decimal
+-------
+
+* Added constants :const:`~decimal.LIBMPDEC_VERSION`,
+  :const:`~decimal.libmpdec_version`, :const:`~decimal.LIBMPDEC_VERSION_INFO`,
+  and :const:`~decimal.libmpdec_version_info` in the C implementation,
+  which provide information about the version of the libmpdec library in use.
+  (Contributed by Serhiy Storchaka in :gh:`157475`.)
+
+
 difflib
 -------
 
-* Expose optional ``autojunk`` parameter from :class:`difflib.SequenceMatcher`
-  to public functions and class methods in :mod:`difflib`,
-  allowing to modify behavior of automatic junk heuristic in this module
-  in higher public class methods and functions.
-  (Contributed by Tomasz Kazimierczak in :gh:`118150`)
+* Expose the optional *autojunk* parameter of :class:`difflib.SequenceMatcher`
+  in public functions and class methods in :mod:`difflib`, allowing callers
+  to control the automatic junk heuristic.
+  (Contributed by Tomasz Kazimierczak in :gh:`118150`.)
 
 
 encodings
@@ -406,6 +411,10 @@ encodings
 * Add the ``utf-7-imap`` codec, implementing the modified UTF-7 encoding
   used for international IMAP4 mailbox names (:rfc:`3501`).
   (Contributed by Serhiy Storchaka in :gh:`66788`.)
+
+* :func:`encodings.idna.nameprep` now takes a *limit* argument that allows
+  rejecting extremely large input early.
+  (Contributed by Petr Viktorin in :gh:`157675`.)
 
 
 gzip
@@ -552,6 +561,10 @@ os
   now raises :exc:`PermissionError` instead of the functions being unavailable.
   (Contributed by Md Arif in :gh:`152936`.)
 
+* :func:`os.readlink` now accepts a file descriptor referring to a symlink on
+  Linux, Android, macOS and iOS.
+  (Contributed by OOTS in :gh:`157899`.)
+
 
 pydoc
 -----
@@ -562,16 +575,6 @@ pydoc
   <https://docs.python.org/>`__, with dark mode support.  Class members
   inherited from other classes are collapsed by default.
   (Contributed by Serhiy Storchaka in :gh:`153906`.)
-
-
-readline
---------
-
-* Added constants :const:`~readline.READLINE_VERSION_INFO`,
-  :const:`~readline.readline_version_info` and
-  :const:`~readline.readline_version`, which provide information about
-  the version of the Readline library in use.
-  (Contributed by Serhiy Storchaka in :gh:`157485`.)
 
 
 re
@@ -591,6 +594,16 @@ re
   :ref:`the regular expression syntax <re-syntax>` for the supported
   properties.
   (Contributed by Serhiy Storchaka in :gh:`95555`.)
+
+
+readline
+--------
+
+* Added constants :const:`~readline.READLINE_VERSION_INFO`,
+  :const:`~readline.readline_version_info` and
+  :const:`~readline.readline_version`, which provide information about
+  the version of the Readline library in use.
+  (Contributed by Serhiy Storchaka in :gh:`157485`.)
 
 
 shlex
@@ -614,7 +627,7 @@ sqlite3
 -------
 
 * :class:`sqlite3.Blob` now supports negative-step slices for reading and
-  writing (e.g. ``blob[9:0:-2]``).  Previously, such slices would raise
+  writing (for example, ``blob[9:0:-2]``).  Previously, such slices would raise
   :exc:`SystemError` or :exc:`ValueError`.
   (Contributed by Jiseok CHOI in :gh:`150449`.)
 
@@ -639,7 +652,7 @@ symtable
 --------
 
 * :func:`symtable.symtable` now accepts an AST object,
-  like the builtin :func:`compile`.
+  like the built-in :func:`compile`.
   (Contributed by Serhiy Storchaka in :gh:`153844`.)
 
 * Inlined list, set and dict comprehensions (:pep:`709`) are now represented
@@ -801,6 +814,7 @@ unicodedata
 
 * The Unicode database has been updated to Unicode 18.0.0.
 
+
 xml
 ---
 
@@ -870,6 +884,7 @@ xml
   :const:`~xml.parsers.expat.version_info` is now a named tuple.
   (Contributed by Serhiy Storchaka in :gh:`157473`.)
 
+
 zipfile
 -------
 
@@ -878,6 +893,7 @@ zipfile
   :meth:`ZipFile.repack() <zipfile.ZipFile.repack>` to reclaim the space used
   by the local file entries of removed members.
   (Contributed by Danny Lin in :gh:`51067`.)
+
 
 zlib
 ----
@@ -1139,9 +1155,9 @@ that may require changes to your code.
 Build changes
 =============
 
-* Remove the bundled copy of the libmpdec_ decimal library from the CPython source tree
-  to simplify maintenance and updates. The :mod:`decimal` module will now
-  unconditionally use the system's libmpdec decimal library. Also remove the
+* Remove the bundled copy of the libmpdec_ decimal library from the CPython
+  source tree to simplify maintenance and updates. The :mod:`decimal` module
+  will now unconditionally use the system's libmpdec decimal library. Also remove the
   now unused :option:`!--with-system-libmpdec` :program:`configure` flag.
   This change has no impact on binary releases of Python, which have been
   built against a separate copy of libmpdec for the past several releases.
@@ -1177,6 +1193,11 @@ Build changes
 
   (Contributed by Stan Ulbrych in :gh:`139314`.)
 
+* Add the :option:`--with-hwaddress-sanitizer` :program:`configure` option to
+  build with `HWAddressSanitizer <https://clang.llvm.org/docs/HardwareAssistedAddressSanitizerDesign.html>`_.
+
+  (Contributed by Stan Ulbrych, Florian Mayer and AnnaAr321 in :gh:`156049`.)
+
 
 C API changes
 =============
@@ -1186,6 +1207,10 @@ New features
 
 * Add :c:func:`Py_HashBuffer` to the limited C API.
   (Contributed by Victor Stinner in :gh:`148233`.)
+
+* Add :c:macro:`Py_SETREF` and :c:macro:`Py_XSETREF` macros to the limited C
+  API.
+  (Contributed by Nathan Goldbaum and Victor Stinner in :gh:`158842`.)
 
 Porting to Python 3.16
 ----------------------
@@ -1229,6 +1254,13 @@ Deprecated C APIs
 * :c:func:`PyModule_GetFilename` is no longer deprecated, but using
   :c:func:`PyModule_GetFilenameObject` instead is still recommended.
   (Contributed by Victor Stinner in :gh:`154757`.)
+
+* Soft deprecate functions modifying Unicode strings:
+  :c:func:`PyUnicode_New`, :c:func:`PyUnicode_CopyCharacters`,
+  :c:func:`PyUnicode_Fill`, :c:func:`PyUnicode_Resize`,
+  :c:func:`PyUnicode_WRITE` and :c:func:`PyUnicode_WriteChar`.
+  Use the safer :c:type:`PyUnicodeWriter` API instead.
+  (Contributed by Victor Stinner in :gh:`157710`.)
 
 .. Add C API deprecations above alphabetically, not here at the end.
 

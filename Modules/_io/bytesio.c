@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_bytesobject.h"       // _PyBytes_ResizeKeepOnError()
 #include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_list.h"              // _PyList_AppendTakeRef()
 #include "pycore_object.h"
 #include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_sysmodule.h"         // _PySys_GetSizeOf()
@@ -664,11 +665,9 @@ _io_BytesIO_readlines_impl(bytesio *self, PyObject *arg)
         line = PyBytes_FromStringAndSize(output, n);
         if (!line)
             goto on_error;
-        if (PyList_Append(result, line) == -1) {
-            Py_DECREF(line);
+        if (_PyList_AppendTakeRef((PyListObject *)result, line) < 0) {
             goto on_error;
         }
-        Py_DECREF(line);
         size += n;
         if (maxsize > 0 && size >= maxsize)
             break;
@@ -715,7 +714,7 @@ _io_BytesIO_readinto_impl(bytesio *self, Py_buffer *buffer)
 
     assert(self->pos + len <= PY_SSIZE_T_MAX);
     assert(len >= 0);
-    memcpy(buffer->buf, PyBytes_AS_STRING(self->buf) + self->pos, len);
+    memmove(buffer->buf, PyBytes_AS_STRING(self->buf) + self->pos, len);
     self->pos += len;
 
     return PyLong_FromSsize_t(len);

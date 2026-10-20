@@ -8,6 +8,7 @@ preserve
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(memoryview__doc__,
 "memoryview(object)\n"
@@ -373,13 +374,8 @@ memoryview_tobytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
         order = NULL;
     }
     else if (PyUnicode_Check(args[0])) {
-        Py_ssize_t order_length;
-        order = PyUnicode_AsUTF8AndSize(args[0], &order_length);
+        order = _PyUnicode_AsUTF8NoNUL(args[0]);
         if (order == NULL) {
-            goto exit;
-        }
-        if (strlen(order) != (size_t)order_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -560,4 +556,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a597307395a568ef input=a9049054013a1b77]*/
+/*[clinic end generated code: output=889b7cc1a94bfc9b input=a9049054013a1b77]*/

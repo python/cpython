@@ -8,6 +8,7 @@ preserve
 #endif
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 #if defined(HAVE_WINDOWS_CONSOLE_IO)
 
@@ -109,13 +110,8 @@ _io__WindowsConsoleIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             _PyArg_BadArgument("_WindowsConsoleIO", "argument 'mode'", "str", fastargs[1]);
             goto exit;
         }
-        Py_ssize_t mode_length;
-        mode = PyUnicode_AsUTF8AndSize(fastargs[1], &mode_length);
+        mode = _PyUnicode_AsUTF8NoNUL(fastargs[1]);
         if (mode == NULL) {
-            goto exit;
-        }
-        if (strlen(mode) != (size_t)mode_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -555,4 +551,4 @@ _io__WindowsConsoleIO_mode_get(PyObject *self, void *Py_UNUSED(context))
 #  define _IO__WINDOWSCONSOLEIO_MODE_GETSETDEF
 #endif
 
-/*[clinic end generated code: output=97863abe2990b665 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7c7499116eefd498 input=a9049054013a1b77]*/

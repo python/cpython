@@ -1,11 +1,11 @@
 import importlib.util
 import io
 import os
-import pathlib
 import sys
 import textwrap
 import token
 import tokenize
+from pathlib import Path, PurePath
 from typing import IO, Any, Final, cast
 
 from pegen.build import compile_c_extension
@@ -27,7 +27,7 @@ def generate_parser(grammar: Grammar) -> type[Parser]:
     # Generate a parser.
     out = io.StringIO()
     genr = PythonParserGenerator(grammar, out)
-    genr.generate("<string>")
+    genr.generate(PurePath("<string>"))
 
     # Load the generated parser class.
     ns: dict[str, Any] = {}
@@ -78,13 +78,13 @@ def import_file(full_name: str, path: str) -> Any:
 def generate_c_parser_source(grammar: Grammar) -> str:
     out = io.StringIO()
     genr = CParserGenerator(grammar, ALL_TOKENS, EXACT_TOKENS, NON_EXACT_TOKENS, out)
-    genr.generate("<string>")
+    genr.generate(PurePath("<string>"))
     return out.getvalue()
 
 
 def generate_parser_c_extension(
     grammar: Grammar,
-    path: pathlib.PurePath,
+    path: Path,
     debug: bool = False,
     library_dir: str | None = None,
 ) -> Any:
@@ -103,9 +103,9 @@ def generate_parser_c_extension(
         genr = CParserGenerator(
             grammar, ALL_TOKENS, EXACT_TOKENS, NON_EXACT_TOKENS, file, debug=debug
         )
-        genr.generate("parse.c")
+        genr.generate(PurePath("parse.c"))
     compile_c_extension(
-        str(source),
+        source,
         build_dir=str(path),
         # Significant test_peg_generator speedups
         disable_optimization=True,

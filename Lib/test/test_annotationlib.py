@@ -1720,6 +1720,37 @@ class TestCallAnnotateFunction(unittest.TestCase):
             with self.assertRaises(DemoException):
                 annotationlib.call_annotate_function(annotate, format=fmt)
 
+    def test_generated_annotate_non_bool_compare_result(self):
+        class NonBool(int):
+            def __gt__(self, other):
+                return None
+
+        # Function __annotate__
+        def func(x: int):
+            pass
+
+        self.assertEqual(
+            func.__annotate__(NonBool(1)),
+            {"x": int},
+        )
+
+        # Class __annotate__
+        class C:
+            y: int
+
+        self.assertEqual(
+            C.__annotate__(NonBool(1)),
+            {"y": int},
+        )
+
+        # Module __annotate__
+        ns = {}
+        exec("z: int", ns)
+
+        self.assertEqual(
+            ns["__annotate__"](NonBool(1)),
+            {"z": int},
+        )
 
 class MetaclassTests(unittest.TestCase):
     def test_annotated_meta(self):
@@ -1857,6 +1888,18 @@ class TestTypeRepr(unittest.TestCase):
             type_repr(nested), f"{__name__}.TestTypeRepr.test_type_repr.<locals>.nested"
         )
         self.assertEqual(type_repr(len), "len")
+        # gh-152692: built-in methods have __module__ set to None
+        self.assertEqual(type_repr([].append), "list.append")
+        self.assertEqual(type_repr((1).bit_length), "int.bit_length")
+        self.assertEqual(type_repr(dict.fromkeys), "dict.fromkeys")
+        # Methods of extension types also have __module__ set to None, but
+        # are not in the builtins module.
+        import datetime
+        self.assertEqual(
+            type_repr(datetime.datetime(2000, 1, 1).isoformat),
+            "datetime.datetime.isoformat",
+        )
+        self.assertEqual(type_repr(datetime.date.today), "datetime.date.today")
         self.assertEqual(type_repr(type_repr), "annotationlib.type_repr")
         self.assertEqual(type_repr(times_three), f"{__name__}.times_three")
         self.assertEqual(type_repr(...), "...")
