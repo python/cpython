@@ -1976,8 +1976,9 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             i++;
             if (freplacement == NULL) {
                 freplacement = make_freplacement(object);
-                if (freplacement == NULL)
+                if (freplacement == NULL) {
                     goto Error;
+                }
             }
             if (PyUnicodeWriter_WriteSubstring(writer, format, start, end) < 0) {
                 goto Error;

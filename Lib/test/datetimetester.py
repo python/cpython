@@ -3193,6 +3193,8 @@ class TestDateTime(TestDate):
         t = self.theclass(2004, 12, 31, 6, 22, 33, 123456)
         self.assertEqual(t.strftime("%1f %2f %3f %4f %5f %6f"),
                                     "1 12 123 1234 12345 123456")
+        self.assertEqual(t.strftime("%f %3f"), "123456 123")
+        self.assertEqual(t.strftime("%3f %f"), "123 123456")
         self.assertEqual(t.strftime("%S.%3f%%3f"), "33.123%3f")
         t = self.theclass(2004, 12, 31, 6, 22, 33, 47)
         self.assertEqual(t.strftime("%3f %5f"), "000 00004")
