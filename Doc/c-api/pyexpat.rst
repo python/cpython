@@ -3,11 +3,10 @@
 Expat C API
 ===========
 
-The :mod:`pyexpat <xml.parsers.expat>` module exposes selected Expat functions
+The :mod:`xml.parsers.expat` module exposes selected Expat functions
 through its ``expat_CAPI`` capsule. This allows extension modules to use the
 same Expat library as Python. The interface is declared in :file:`pyexpat.h`,
-which must be included after Expat's :file:`expat.h` header. It is not part of the
-:ref:`Limited API <limited-c-api>`.
+which must be included after Expat's :file:`expat.h` header.
 
 .. c:macro:: PyExpat_CAPSULE_NAME
 
@@ -70,20 +69,17 @@ which must be included after Expat's :file:`expat.h` header. It is not part of t
                  void (*SetStartDoctypeDeclHandler)(XML_Parser parser, XML_StartDoctypeDeclHandler start)
                  enum XML_Status (*SetEncoding)(XML_Parser parser, const XML_Char *encoding)
 
-      Pointers to the corresponding Expat functions. The function names are
-      the member names prefixed with ``XML_``; for example, ``Parse`` points
-      to ``XML_Parse``. See the `Expat API reference
+      Pointers to the corresponding Expat functions.
+      Member names omit the ``XML_`` prefix; for example, ``Parse``
+      exposes Expat's ``XML_Parse`` function. See the `Expat API reference
       <https://libexpat.github.io/doc/api/latest/>`_ for their behavior.
 
    .. c:member:: int (*DefaultUnknownEncodingHandler)(void *encodingHandlerData, const XML_Char *name, XML_Encoding *info)
 
-      Python's unknown-encoding handler for Expat. It uses Python's codec
-      registry to fill *info* for the encoding *name*. The
-      *encodingHandlerData* argument is unused and may be ``NULL``.
-
-      Return ``XML_STATUS_OK`` on success or ``XML_STATUS_ERROR`` on failure.
-      A Python exception may be set on failure. Calling this callback
-      requires an :term:`attached thread state`.
+      Python's unknown-encoding handler for Expat, used with
+      ``XML_SetUnknownEncodingHandler``. It uses Python's codec
+      registry to fill *info*.
+      The *encodingHandlerData* argument is unused.
 
    The remaining members also point to Expat functions with the ``XML_``
    prefix. They may be ``NULL``, depending on the Expat version used by

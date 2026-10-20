@@ -309,6 +309,7 @@ Numeric utilities
 .. c:macro:: PY_DWORD_MAX
 
    The maximum value of the Windows ``DWORD`` type.
+   Expands to ``0xffffffff`` on all platforms.
 
 
 Assertion utilities
