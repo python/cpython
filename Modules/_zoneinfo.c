@@ -2253,9 +2253,9 @@ find_ttinfo(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *dt)
         if (PyErr_Occurred()) {
             return NULL;
         }
-        if (fold_int < 0 || fold_int > 2) {
+        if (fold_int < 0 || fold_int > 1) {
             PyErr_Format(PyExc_ValueError,
-                         "fold must be 0 or 1, got %d", fold_int);
+                         "fold must be 0 or 1, got %ld", fold_int);
             return NULL;
         }
         fold = (unsigned char)fold_int;
@@ -2285,13 +2285,10 @@ find_ttinfo(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *dt)
                 return NULL;
             }
 
-            if (year < MINYEAR || year > 9999) {
+            if (year < MINYEAR || year > MAXYEAR) {
                 PyErr_Format(PyExc_ValueError,
-                        "year out of range, should be in (%d, %d) but got %d",
-                        MINYEAR,
-                        MAXYEAR,
-                        year
-                );
+                             "year must be in %d..%d, not %d",
+                             MINYEAR, MAXYEAR, year);
                 return NULL;
             }
         }
