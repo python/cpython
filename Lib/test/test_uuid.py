@@ -417,6 +417,24 @@ class BaseTestUUID:
         # is_safe is stored as supplied; None is distinct from SafeUUID.unknown.
         self.assertIsNone(self.uuid.UUID(int=1, is_safe=None).is_safe)
 
+    def test_constructor_fields_length_error(self):
+        error = RuntimeError('fields length failed')
+
+        class Fields(tuple):
+            def __len__(self):
+                raise error
+
+        class NonSequence:
+            def __len__(self):
+                raise error
+
+        # Preserve __len__ errors, including for objects without __getitem__.
+        for fields in (Fields((0,) * 6), NonSequence()):
+            with self.subTest(type=type(fields)):
+                with self.assertRaises(RuntimeError) as cm:
+                    self.uuid.UUID(fields=fields)
+                self.assertIs(cm.exception, error)
+
     def test_getnode(self):
         node1 = self.uuid.getnode()
         self.assertTrue(0 < node1 < (1 << 48), '%012x' % node1)

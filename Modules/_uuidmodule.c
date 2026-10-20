@@ -869,13 +869,11 @@ fail:
 static int
 from_fields(uuidobject *self, PyObject *fields)
 {
-    // Validate that fields is a sequence with exactly 6 elements
-    if (!PySequence_Check(fields)) {
-        PyErr_SetString(PyExc_TypeError, "fields must be a sequence");
+    // Validate the length without replacing errors raised by __len__.
+    Py_ssize_t len = PySequence_Size(fields);
+    if (len < 0) {
         return -1;
     }
-
-    Py_ssize_t len = PySequence_Size(fields);
     if (len != 6) {
         PyErr_SetString(PyExc_ValueError, "fields is not a 6-tuple");
         return -1;
