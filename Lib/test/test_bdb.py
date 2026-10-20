@@ -965,6 +965,17 @@ class BreakpointTestCase(BaseTestCase):
             with TracerRun(self) as tracer:
                 tracer.runcall(tfunc_import)
 
+    def test_clear_all_file_breaks_same_line(self):
+        reset_Breakpoint()
+        self.addCleanup(reset_Breakpoint)
+        debugger = Bdb()
+        for _ in range(3):
+            self.assertIsNone(debugger.set_break(__file__, 1))
+        self.assertIsNone(debugger.clear_all_file_breaks(__file__))
+        self.assertEqual(debugger.get_all_breaks(), {})
+        self.assertEqual(_bdb.Breakpoint.bplist, {})
+        self.assertTrue(all(bp is None for bp in _bdb.Breakpoint.bpbynumber))
+
     def test_clear_at_no_bp(self):
         self.expect_set = [
             ('line', 2, 'tfunc_import'), ('clear', (__file__, 1))
@@ -1236,6 +1247,15 @@ class TestRegressions(unittest.TestCase):
         # See gh-101517
         self.assertIn('Warning: lineno is None',
                       Bdb().format_stack_entry((sys._getframe(), None)))
+
+    def test_bdb_quit_base_exception(self):
+        # gh-149309
+        try:
+            raise _bdb.BdbQuit()
+        except Exception:
+            self.fail(f'BdbQuit should not be caught by Exception')
+        except BaseException:
+            pass
 
 
 if __name__ == "__main__":

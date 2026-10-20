@@ -100,6 +100,22 @@ Other language changes
   missing the ``self`` parameter. (Contributed by Suren Nihalani in
   :gh:`152315`.)
 
+* :func:`anext` and :func:`aiter` are now implemented in Python instead
+  of C.  The awaitable returned by ``anext(it, default)`` and the
+  ``__anext__()`` of the iterator returned by ``aiter(callable, ...)`` are
+  now plain coroutines, so introspection tools such as
+  :func:`asyncio.print_call_graph` can see through them into the awaited code.
+  (Contributed by Kumar Aditya in :gh:`157361`.)
+
+
+Default interactive shell
+=========================
+
+* The :term:`REPL` now displays error messages when editing commands cannot be
+  performed, such as when tab completion finds no matches or a history search
+  fails.
+  (Contributed by Bartosz Sławecki in :gh:`148228`.)
+
 
 New modules
 ===========
@@ -117,6 +133,15 @@ asyncio
   :func:`asyncio.start_unix_server` to set the permissions of the Unix
   socket file created for *path*.
   (Contributed by Sam Bull in :gh:`94984`.)
+
+
+bdb
+---
+
+* :exc:`bdb.BdbQuit` is now a subclass of :exc:`BaseException`, instead of
+  :exc:`Exception`, to allow it to be used for cleanly exiting the debugger without
+  being accidentally caught by user code.
+  (Contributed by Tian Gao in :gh:`149337`.)
 
 
 bz2
@@ -197,6 +222,10 @@ ctypes
   about the version of the libffi library in use.
   They are only available with libffi 3.5 or later.
   (Contributed by Serhiy Storchaka in :gh:`157487`.)
+
+* Objects with an :attr:`!_as_parameter_` attribute are now
+  implicitly converted when passed for a :func:`~ctypes.POINTER` argument.
+  (Contributed by Peter Bierma in :gh:`71990`.)
 
 
 curses
@@ -331,6 +360,16 @@ curses
   full Unicode range, including combining characters, when curses is built with
   wide-character support.
   (Contributed by Serhiy Storchaka in :gh:`133031`.)
+
+
+datetime
+--------
+
+* Add the ``%Nf`` format code (where *N* is from 1 to 6) to
+  :meth:`datetime.datetime.strftime`, :meth:`datetime.time.strftime`,
+  :meth:`datetime.date.strftime`, :meth:`datetime.datetime.strptime` and
+  :meth:`datetime.time.strptime`.
+  (Contributed by Stan Ulbrych and Karoline Pauls in :gh:`157290`.)
 
 
 dbm.gnu

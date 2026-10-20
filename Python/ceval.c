@@ -3,6 +3,11 @@
 #include "ceval.h"
 #include "pycore_long.h"
 
+#ifdef HAVE_PTHREAD_NP_H
+#  include <pthread_np.h>         // pthread_attr_get_np()
+#endif
+
+
 int
 Py_GetRecursionLimit(void)
 {
@@ -74,6 +79,7 @@ _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int margin_count)
 #include "emscripten/stack.h"
 
 #define pthread_attr_t workaround_pthread_attr_t
+#define pthread_attr_init workaround_pthread_attr_init
 #define pthread_getattr_np workaround_pthread_getattr_np
 #define pthread_attr_getguardsize workaround_pthread_attr_getguardsize
 #define pthread_attr_getstack workaround_pthread_attr_getstack
@@ -85,6 +91,11 @@ typedef struct {
 } pthread_attr_t;
 
 extern __attribute__((__visibility__("hidden"))) unsigned __default_guardsize;
+
+int pthread_attr_init(pthread_attr_t *a)
+{
+	return 0;
+}
 
 // Modified version of pthread_getattr_np from the upstream PR.
 
@@ -147,13 +158,19 @@ hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
     // limits compared to the old stack size estimation. musl doesn't give
     // us a way to detect it, so we have to assume any non-glibc,
     // non-Android Linux is musl and mustn't rely on pthread_getattr_np.
-#  if defined(HAVE_PTHREAD_GETATTR_NP) && !defined(_AIX) && \
-        !defined(__NetBSD__) && \
-        (defined(__GLIBC__) || defined(__ANDROID__) || !defined(__linux__))
+#  if (defined(HAVE_PTHREAD_GETATTR_NP) || defined(_Py_HAVE_PTHREAD_ATTR_GET_NP)) \
+        && !defined(_AIX) && !defined(__NetBSD__) \
+        && (defined(__GLIBC__) || defined(__ANDROID__) || !defined(__linux__))
     size_t stack_size, guard_size;
     void *stack_addr;
     pthread_attr_t attr;
-    int err = pthread_getattr_np(pthread_self(), &attr);
+
+    int err = pthread_attr_init(&attr);
+#ifdef _Py_HAVE_PTHREAD_ATTR_GET_NP
+    err |= pthread_attr_get_np(pthread_self(), &attr);
+#else
+    err |= pthread_getattr_np(pthread_self(), &attr);
+#endif
     if (err == 0) {
         err = pthread_attr_getguardsize(&attr, &guard_size);
         err |= pthread_attr_getstack(&attr, &stack_addr, &stack_size);
@@ -165,6 +182,7 @@ hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
         return;
     }
 #  endif
+
     // Add some space for caller function then round to minimum page size
     // This is a guess at the top of the stack, but should be a reasonably
     // good guess if called from _PyThreadState_Attach when creating a thread.

@@ -1703,8 +1703,10 @@ class TNavigator:
             undobuffer.cumulate = False
 
     def teleport(self, x=None, y=None, *, fill_gap: bool = False) -> None:
-        """To be overwritten by child class RawTurtle.
-        Includes no TPen references."""
+        """To be overwritten by the child class RawTurtle.
+
+        Includes no TPen references.
+        """
         new_x = x if x is not None else self._position[0]
         new_y = y if y is not None else self._position[1]
         self._position = Vec2D(new_x, new_y)
@@ -2121,26 +2123,29 @@ class TPen:
         self._outlinewidth = 1
 
     def resizemode(self, rmode=None):
-        """Set resizemode to one of the values: "auto", "user", "noresize".
+        """Set the resizemode to "auto", "user" or "noresize".
 
-        (Optional) Argument:
-        rmode -- one of the strings "auto", "user", "noresize"
+        If rmode is not given, return the current resizemode. The
+        different resizemodes have the following effects:
 
-        Different resizemodes have the following effects:
-          - "auto" adapts the appearance of the turtle
-                   corresponding to the value of pensize.
-          - "user" adapts the appearance of the turtle according to the
-                   values of stretchfactor and outlinewidth (outline),
-                   which are set by shapesize()
-          - "noresize" no adaption of the turtle's appearance takes place.
-        If no argument is given, return current resizemode.
-        resizemode("user") is called by a call of shapesize with arguments.
+          - "auto": the turtle is resized according to the value of
+            pensize().
+          - "user": the turtle is resized according to the stretch factors
+            and outline width, which are set by shapesize().
+          - "noresize": the turtle is not resized.
 
+        resizemode("user") is called by shapesize() when used with
+        arguments.
 
-        Examples (for a Turtle instance named turtle):
-        >>> turtle.resizemode("noresize")
-        >>> turtle.resizemode()
-        'noresize'
+        Argument:
+            rmode -- a string or None
+
+        Example (for a Turtle instance named turtle):
+            >>> turtle.resizemode()
+            'noresize'
+            >>> turtle.resizemode("auto")
+            >>> turtle.resizemode()
+            'auto'
         """
         if rmode is None:
             return self._resizemode
@@ -2149,22 +2154,21 @@ class TPen:
             self.pen(resizemode=rmode)
 
     def pensize(self, width=None):
-        """Set or return the line thickness.
+        """Return or set the line thickness.
 
-        Aliases:  pensize | width
+        Aliases: pensize | width
+
+        If width is not given, return the current pensize. If resizemode
+        is set to "auto" and the turtle shape is a polygon, that polygon is
+        drawn with the same line thickness.
 
         Argument:
-        width -- positive number
-
-        Set the line thickness to width or return it. If resizemode is set
-        to "auto" and turtleshape is a polygon, that polygon is drawn with
-        the same line thickness. If no argument is given, current pensize
-        is returned.
+            width -- a positive number or None
 
         Example (for a Turtle instance named turtle):
-        >>> turtle.pensize()
-        1
-        >>> turtle.pensize(10)   # from here on lines of width 10 are drawn
+            >>> turtle.pensize()
+            1
+            >>> turtle.pensize(10)   # from here on lines of width 10 are drawn
         """
         if width is None:
             return self._pensize
@@ -2172,68 +2176,84 @@ class TPen:
 
 
     def penup(self):
-        """Pull the pen up -- no drawing when moving.
+        """Lift the pen.
 
         Aliases: penup | pu | up
+
+        The turtle does not draw when it moves.
         """
         if not self._drawing:
             return
         self.pen(pendown=False)
 
     def pendown(self):
-        """Pull the pen down -- drawing when moving.
+        """Lower the pen.
 
         Aliases: pendown | pd | down
+
+        The turtle draws a line when it moves.
         """
         if self._drawing:
             return
         self.pen(pendown=True)
 
     def isdown(self):
-        """Return True if pen is down, False if it's up.
+        """Return True if the pen is down, False if it's up.
 
         Example (for a Turtle instance named turtle):
-        >>> turtle.penup()
-        >>> turtle.isdown()
-        False
-        >>> turtle.pendown()
-        >>> turtle.isdown()
-        True
+            >>> turtle.penup()
+            >>> turtle.isdown()
+            False
+            >>> turtle.pendown()
+            >>> turtle.isdown()
+            True
         """
         return self._drawing
 
     def speed(self, speed=None):
-        """ Return or set the turtle's speed.
+        """Return or set the turtle's speed.
 
-        Optional argument:
-        speed -- an integer in the range 0..10 or a speedstring (see below)
+        If speed is not given, return the current speed. Otherwise set the
+        turtle's speed to an integer from 0 to 10. If speed is a number
+        greater than 10 or smaller than 0.5, the speed is set to 0. You
+        can also use these names instead of numbers:
 
-        Set the turtle's speed to an integer value in the range 0 .. 10.
-        If no argument is given: return current speed.
+            "fastest": 0
+            "fast": 10
+            "normal": 6
+            "slow": 3
+            "slowest": 1
 
-        If input is a number greater than 10 or smaller than 0.5,
-        speed is set to 0.
-        Speedstrings  are mapped to speedvalues in the following way:
-            'fastest' :  0
-            'fast'    :  10
-            'normal'  :  6
-            'slow'    :  3
-            'slowest' :  1
-        speeds from 1 to 10 enforce increasingly faster animation of
-        line drawing and turtle turning.
+        Speeds from 1 to 10 give increasingly faster animation of line
+        drawing and turtle turning. A speed of 0 means that no animation
+        takes place: forward() and back() make the turtle jump, and
+        likewise left() and right() make the turtle turn instantly.
 
-        Attention:
-        speed = 0 : *no* animation takes place. forward/back makes turtle jump
-        and likewise left/right make the turtle turn instantly.
+        Argument:
+            speed -- an integer, a string or None
 
         Example (for a Turtle instance named turtle):
-        >>> turtle.speed(3)
+            >>> turtle.speed()
+            3
+            >>> turtle.speed('normal')
+            >>> turtle.speed()
+            6
+            >>> turtle.speed(9)
+            >>> turtle.speed()
+            9
         """
-        speeds = {'fastest':0, 'fast':10, 'normal':6, 'slow':3, 'slowest':1 }
+        speed_strings = {
+            'fastest': 0,
+            'fast': 10,
+            'normal': 6,
+            'slow': 3,
+            'slowest': 1,
+        }
+
         if speed is None:
             return self._speed
-        if speed in speeds:
-            speed = speeds[speed]
+        if speed in speed_strings:
+            speed = speed_strings[speed]
         elif 0.5 < speed < 10.5:
             speed = int(round(speed))
         else:
@@ -2243,32 +2263,30 @@ class TPen:
     def color(self, *args):
         """Return or set the pencolor and fillcolor.
 
-        Arguments:
-        Several input formats are allowed.
-        They use 0 to 3 arguments as follows:
+        Several input formats are allowed. They use 0 to 3 arguments as follows:
           - color()
             Return the current pencolor and the current fillcolor as
             a pair of color specification strings or tuples as returned
             by pencolor() and fillcolor().
           - color(colorstring), color((r,g,b)), color(r,g,b)
-            Inputs as in pencolor(), set both, fillcolor and pencolor,
-            to the given value.
+            Inputs as in pencolor(). Set both the pencolor and the
+            fillcolor to the given value.
           - color(colorstring1, colorstring2), color((r1,g1,b1), (r2,g2,b2))
             Equivalent to pencolor(colorstring1) and fillcolor(colorstring2)
             and analogously if the other input format is used.
 
-        If turtleshape is a polygon, outline and interior of that polygon
-        is drawn with the newly set colors.
-        For more info see: pencolor, fillcolor
+        If the turtle shape is a polygon, the outline and interior of that
+        polygon are drawn with the newly set colors. For more information,
+        see pencolor() and fillcolor().
 
         Example (for a Turtle instance named turtle):
-        >>> turtle.color('red', 'green')
-        >>> turtle.color()
-        ('red', 'green')
-        >>> colormode(255)
-        >>> color(('#285078', '#a0c8f0'))
-        >>> color()
-        ((40.0, 80.0, 120.0), (160.0, 200.0, 240.0))
+            >>> turtle.color("red", "green")
+            >>> turtle.color()
+            ('red', 'green')
+            >>> colormode(255)
+            >>> turtle.color("#285078", "#a0c8f0")
+            >>> turtle.color()
+            ((40.0, 80.0, 120.0), (160.0, 200.0, 240.0))
         """
         if args:
             l = len(args)
@@ -2285,37 +2303,36 @@ class TPen:
             return self._color(self._pencolor), self._color(self._fillcolor)
 
     def pencolor(self, *args):
-        """ Return or set the pencolor.
+        """Return or set the pencolor.
 
-        Arguments:
         Four input formats are allowed:
           - pencolor()
             Return the current pencolor as color specification string or
             as a tuple (see example).  May be used as input to another
-            color/pencolor/fillcolor/bgcolor call.
+            color(), pencolor(), fillcolor() or bgcolor() call.
           - pencolor(colorstring)
-            Set pencolor to colorstring, which is a Tk color
+            Set the pencolor to colorstring, which is a Tk color
             specification string, such as "red", "yellow", or "#33cc8c".
           - pencolor((r, g, b))
-            Set pencolor to the RGB color represented by the tuple of
-            r, g, and b.  Each of r, g, and b must be in the range
-            0..colormode, where colormode is either 1.0 or 255 (see
+            Set the pencolor to the RGB color represented by the tuple of
+            r, g, and b.  Each of r, g, and b must be between 0 and
+            colormode, where colormode is either 1.0 or 255 (see
             colormode()).
           - pencolor(r, g, b)
-            Set pencolor to the RGB color represented by r, g, and b.
-            Each of r, g, and b must be in the range 0..colormode.
+            Set the pencolor to the RGB color represented by r, g, and b.
+            Each of r, g, and b must be between 0 and colormode.
 
-        If turtleshape is a polygon, the outline of that polygon is drawn
-        with the newly set pencolor.
+        If the turtle shape is a polygon, the outline of that polygon is
+        drawn with the newly set pencolor.
 
         Example (for a Turtle instance named turtle):
-        >>> turtle.pencolor('brown')
-        >>> turtle.pencolor()
-        'brown'
-        >>> colormode(255)
-        >>> turtle.pencolor('#32c18f')
-        >>> turtle.pencolor()
-        (50.0, 193.0, 143.0)
+            >>> turtle.pencolor("brown")
+            >>> turtle.pencolor()
+            'brown'
+            >>> colormode(255)
+            >>> turtle.pencolor("#32c18f")
+            >>> turtle.pencolor()
+            (50.0, 193.0, 143.0)
         """
         if args:
             color = self._colorstr(args)
@@ -2326,37 +2343,36 @@ class TPen:
             return self._color(self._pencolor)
 
     def fillcolor(self, *args):
-        """ Return or set the fillcolor.
+        """Return or set the fillcolor.
 
-        Arguments:
         Four input formats are allowed:
           - fillcolor()
             Return the current fillcolor as color specification string,
             possibly in tuple format (see example).  May be used as
-            input to another color/pencolor/fillcolor/bgcolor call.
+            input to another color(), pencolor(), fillcolor() or bgcolor() call.
           - fillcolor(colorstring)
-            Set fillcolor to colorstring, which is a Tk color
+            Set the fillcolor to colorstring, which is a Tk color
             specification string, such as "red", "yellow", or "#33cc8c".
           - fillcolor((r, g, b))
-            Set fillcolor to the RGB color represented by the tuple of
-            r, g, and b.  Each of r, g, and b must be in the range
-            0..colormode, where colormode is either 1.0 or 255 (see
+            Set the fillcolor to the RGB color represented by the tuple of
+            r, g, and b.  Each of r, g, and b must be between 0 and
+            colormode, where colormode is either 1.0 or 255 (see
             colormode()).
           - fillcolor(r, g, b)
-            Set fillcolor to the RGB color represented by r, g, and b.
-            Each of r, g, and b must be in the range 0..colormode.
+            Set the fillcolor to the RGB color represented by r, g, and b.
+            Each of r, g, and b must be between 0 and colormode.
 
-        If turtleshape is a polygon, the interior of that polygon is drawn
-        with the newly set fillcolor.
+        If the turtle shape is a polygon, the interior of that polygon is
+        drawn with the newly set fillcolor.
 
         Example (for a Turtle instance named turtle):
-        >>> turtle.fillcolor('violet')
-        >>> turtle.fillcolor()
-        'violet'
-        >>> colormode(255)
-        >>> turtle.fillcolor('#ffffff')
-        >>> turtle.fillcolor()
-        (255.0, 255.0, 255.0)
+            >>> turtle.fillcolor("violet")
+            >>> turtle.fillcolor()
+            'violet'
+            >>> colormode(255)
+            >>> turtle.fillcolor("#ffffff")
+            >>> turtle.fillcolor()
+            (255.0, 255.0, 255.0)
         """
         if args:
             color = self._colorstr(args)
@@ -2367,7 +2383,7 @@ class TPen:
             return self._color(self._fillcolor)
 
     def teleport(self, x=None, y=None, *, fill_gap: bool = False) -> None:
-        """To be overwritten by child class RawTurtle.
+        """To be overwritten by the child class RawTurtle.
 
         Includes no TNavigator references.
         """
@@ -2393,7 +2409,7 @@ class TPen:
         self.pen(shown=False)
 
     def isvisible(self):
-        """Return True if the turtle is shown, False if it's hidden.
+        """Return True if the turtle is visible, False if it's hidden.
 
         Example (for a Turtle instance named turtle):
             >>> turtle.hideturtle()
@@ -2655,18 +2671,17 @@ class RawTurtle(TPen, TNavigator):
         self._update()
 
     def setundobuffer(self, size):
-        """Set or disable undobuffer.
+        """Set or disable the undo buffer.
+
+        If size is an integer, an empty undo buffer of the given size is
+        installed. size is the maximum number of turtle actions that can
+        be undone by undo(). If size is None, the undo buffer is disabled.
 
         Argument:
-        size -- an integer or None
-
-        If size is an integer an empty undobuffer of given size is installed.
-        Size gives the maximum number of turtle-actions that can be undone
-        by the undo() function.
-        If size is None, no undobuffer is present.
+            size -- an integer or None
 
         Example (for a Turtle instance named turtle):
-        >>> turtle.setundobuffer(42)
+            >>> turtle.setundobuffer(42)
         """
         if size is None or size <= 0:
             self.undobuffer = None
@@ -2674,7 +2689,7 @@ class RawTurtle(TPen, TNavigator):
             self.undobuffer = Tbuffer(size)
 
     def undobufferentries(self):
-        """Return the number of entries in the undobuffer.
+        """Return the number of entries in the undo buffer.
 
         Example (for a Turtle instance named turtle):
             >>> while undobufferentries():
@@ -2736,24 +2751,7 @@ class RawTurtle(TPen, TNavigator):
                 screen._update()
 
     def _tracer(self, flag=None, delay=None):
-        """Turns turtle animation on/off and set delay for update drawings.
-
-        Optional arguments:
-        n -- nonnegative  integer
-        delay -- nonnegative  integer
-
-        If n is given, only each n-th regular screen update is really performed.
-        (Can be used to accelerate the drawing of complex graphics.)
-        Second arguments sets delay value (see RawTurtle.delay())
-
-        Example (for a Turtle instance named turtle):
-        >>> turtle.tracer(8, 25)
-        >>> dist = 2
-        >>> for i in range(200):
-        ...     turtle.fd(dist)
-        ...     turtle.rt(90)
-        ...     dist += 2
-        """
+        """Forward flag and delay to the screen's tracer() method."""
         return self.screen.tracer(flag, delay)
 
     def _color(self, args):
@@ -2777,39 +2775,35 @@ class RawTurtle(TPen, TNavigator):
         return "#%02x%02x%02x" % (r, g, b)
 
     def teleport(self, x=None, y=None, *, fill_gap: bool = False) -> None:
-        """Instantly move turtle to an absolute position.
+        """Teleport, or instantly move, the turtle to an absolute position.
+
+        Unlike goto(), no line is drawn. If x or y is not given, that
+        coordinate is kept as it is. The turtle's heading does not change.
+
+        If the turtle is filling a shape, the shape drawn so far is
+        finished and filled before teleporting, and filling starts again
+        at the new position. Pass fill_gap=True to keep filling one shape
+        instead. The teleport then counts as an edge of the shape, as it
+        would with goto().
 
         Arguments:
-        x -- a number      or     None
-        y -- a number             None
-        fill_gap -- a boolean     This argument must be specified by name.
-
-        call: teleport(x, y)         # two coordinates
-        --or: teleport(x)            # teleport to x position, keeping y as is
-        --or: teleport(y=y)          # teleport to y position, keeping x as is
-        --or: teleport(x, y, fill_gap=True)
-                                     # teleport but fill the gap in between
-
-        Move turtle to an absolute position. Unlike goto(x, y), a line will not
-        be drawn. The turtle's orientation does not change. If currently
-        filling, the polygon(s) teleported from will be filled after leaving,
-        and filling will begin again after teleporting. This can be disabled
-        with fill_gap=True, which makes the imaginary line traveled during
-        teleporting act as a fill barrier like in goto(x, y).
+            x -- a number or None
+            y -- a number or None
+            fill_gap -- a boolean
 
         Example (for a Turtle instance named turtle):
-        >>> tp = turtle.pos()
-        >>> tp
-        (0.00,0.00)
-        >>> turtle.teleport(60)
-        >>> turtle.pos()
-        (60.00,0.00)
-        >>> turtle.teleport(y=10)
-        >>> turtle.pos()
-        (60.00,10.00)
-        >>> turtle.teleport(20, 30)
-        >>> turtle.pos()
-        (20.00,30.00)
+            >>> tp = turtle.pos()
+            >>> tp
+            (0.00,0.00)
+            >>> turtle.teleport(60)
+            >>> turtle.pos()
+            (60.00,0.00)
+            >>> turtle.teleport(y=10)
+            >>> turtle.pos()
+            (60.00,10.00)
+            >>> turtle.teleport(20, 30)
+            >>> turtle.pos()
+            (20.00,30.00)
         """
         pendown = self.isdown()
         was_filling = self.filling()
@@ -2830,14 +2824,11 @@ class RawTurtle(TPen, TNavigator):
     def clone(self):
         """Create and return a clone of the turtle.
 
-        No argument.
+        The clone has the same position, heading and turtle properties.
 
-        Create and return a clone of the turtle with same position, heading
-        and turtle properties.
-
-        Example (for a Turtle instance named mick):
-        mick = Turtle()
-        joe = mick.clone()
+        Example:
+            >>> leonel = Turtle()
+            >>> marco = leonel.clone()
         """
         screen = self.screen
         self._newLine(self._drawing)
@@ -2868,24 +2859,23 @@ class RawTurtle(TPen, TNavigator):
         return q
 
     def shape(self, name=None):
-        """Set turtle shape to shape with given name / return current shapename.
+        """Set the turtle shape to the named shape.
 
-        Optional argument:
-        name -- a string, which is a valid shapename
+        If name is not given, return the name of the current shape. The
+        shape must exist in the TurtleScreen's shape dictionary. Initially
+        there are the following shapes: "arrow", "turtle", "circle",
+        "square", "triangle" and "classic". To add shapes, see the Screen
+        method register_shape().
 
-        Set turtle shape to shape with given name or, if name is not given,
-        return name of current shape.
-        Shape with name must exist in the TurtleScreen's shape dictionary.
-        Initially there are the following polygon shapes:
-        'arrow', 'turtle', 'circle', 'square', 'triangle', 'classic'.
-        To learn about how to deal with shapes see Screen-method register_shape.
+        Argument:
+            name -- a string or None
 
         Example (for a Turtle instance named turtle):
-        >>> turtle.shape()
-        'arrow'
-        >>> turtle.shape("turtle")
-        >>> turtle.shape()
-        'turtle'
+            >>> turtle.shape()
+            'classic'
+            >>> turtle.shape("turtle")
+            >>> turtle.shape()
+            'turtle'
         """
         if name is None:
             return self.turtle.shapeIndex
@@ -2895,25 +2885,39 @@ class RawTurtle(TPen, TNavigator):
         self._update()
 
     def shapesize(self, stretch_wid=None, stretch_len=None, outline=None):
-        """Set/return turtle's stretchfactors/outline. Set resizemode to "user".
+        """Return or set the turtle's stretch factors and outline width.
 
-        Optional arguments:
-           stretch_wid : positive number
-           stretch_len : positive number
-           outline  : positive number
+        Aliases: shapesize | turtlesize
 
-        Return or set the pen's attributes x/y-stretchfactors and/or outline.
-        Set resizemode to "user".
-        If and only if resizemode is set to "user", the turtle will be displayed
-        stretched according to its stretchfactors:
-        stretch_wid is stretchfactor perpendicular to orientation
-        stretch_len is stretchfactor in direction of turtles orientation.
-        outline determines the width of the shapes's outline.
+        If no arguments are given, return the current values. Otherwise
+        set resizemode to "user", so that the turtle is displayed
+        stretched according to its stretch factors:
 
-        Examples (for a Turtle instance named turtle):
-        >>> turtle.resizemode("user")
-        >>> turtle.shapesize(5, 5, 12)
-        >>> turtle.shapesize(outline=8)
+          - stretch_wid: the stretch factor perpendicular to the turtle's
+            heading
+          - stretch_len: the stretch factor in the direction of the
+            turtle's heading
+          - outline: the width of the shape's outline
+
+        For example, shapesize(2, 1) makes the turtle twice as wide
+        without changing its length. If only stretch_wid is given,
+        stretch_len is set to the same value.
+
+        Arguments:
+            stretch_wid -- a positive number or None
+            stretch_len -- a positive number or None
+            outline -- a positive number or None
+
+        Example (for a Turtle instance named turtle):
+            >>> turtle.shapesize()
+            (1.0, 1.0, 1)
+            >>> turtle.resizemode("user")
+            >>> turtle.shapesize(5, 5, 12)
+            >>> turtle.shapesize()
+            (5, 5, 12)
+            >>> turtle.shapesize(outline=8)
+            >>> turtle.shapesize()
+            (5, 5, 8)
         """
         if stretch_wid is stretch_len is outline is None:
             stretch_wid, stretch_len = self._stretchfactor
@@ -3389,16 +3393,14 @@ class RawTurtle(TPen, TNavigator):
             self.currentLine = [self._position]
 
     def filling(self):
-        """Return fillstate (True if filling, False else).
-
-        No argument.
+        """Return True if the turtle is filling, False otherwise.
 
         Example (for a Turtle instance named turtle):
-        >>> turtle.begin_fill()
-        >>> if turtle.filling():
-        ...     turtle.pensize(5)
-        ... else:
-        ...     turtle.pensize(3)
+            >>> turtle.begin_fill()
+            >>> if turtle.filling():
+            ...     turtle.pensize(5)
+            ... else:
+            ...     turtle.pensize(3)
         """
         return isinstance(self._fillpath, list)
 
@@ -3461,18 +3463,19 @@ class RawTurtle(TPen, TNavigator):
             self._update()
 
     def dot(self, size=None, *color):
-        """Draw a dot with diameter size, using color.
+        """Draw a circular dot with diameter size, using color.
 
-        Optional arguments:
-        size -- an integer >= 1 (if given)
-        color -- a colorstring or a numeric color tuple
+        If size is not given, the larger of pensize + 4 and 2 * pensize is
+        used. If color is not given, the current pencolor is used.
 
-        Draw a circular dot with diameter size, using color.
-        If size is not given, the maximum of pensize+4 and 2*pensize is used.
+        Arguments:
+            size -- a positive integer or None
+            color -- a colorstring or a numeric color tuple
 
         Example (for a Turtle instance named turtle):
-        >>> turtle.dot()
-        >>> turtle.fd(50); turtle.dot(20, "blue"); turtle.fd(50)
+            >>> turtle.home()
+            >>> turtle.dot()
+            >>> turtle.fd(50); turtle.dot(20, "blue"); turtle.fd(50)
         """
         if not color:
             if isinstance(size, (str, tuple)):
@@ -3605,15 +3608,18 @@ class RawTurtle(TPen, TNavigator):
         return self.screen
 
     def getturtle(self):
-        """Return the Turtleobject itself.
+        """Return the Turtle object itself.
 
-        Only reasonable use: as a function to return the 'anonymous turtle':
+        Aliases: getturtle | getpen
+
+        Call getturtle() to get the turtle used by functions such as
+        forward() and left().
 
         Example:
             >>> pet = getturtle()
             >>> pet.fd(50)
             >>> pet
-            <turtle.Turtle object at ...>
+            <turtle.Turtle object at 0x...>
         """
         return self
 
