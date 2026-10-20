@@ -140,22 +140,23 @@ typedef struct uuidobject {
 //
 // String:       xx xx xx xx - xx xx - Mx xx - Nx xx - xx xx xx xx xx xx
 // Byte pos:     0  1  2  3    4  5    6  7    8  9    10 11 12 13 14 15
-//               ^^^^^^^^^^^   ^^^^^   ^^^^^   ^^^^^   ^^^^^^^^^^^^^^^^^
-//                time_low      mid     hi      seq          node
 //
-// Byte Layout (big-endian):
+// Time-based layouts in big-endian order (field widths in bits):
 //
-// Bytes 0-3:   time_low                 (32 bits)
-// Bytes 4-5:   time_mid                 (16 bits)
-// Bytes 6-7:   time_hi_and_version      (16 bits)
-// Bytes 8-9:   clock_seq_and_variant    (16 bits)
-// Bytes 10-15: node                     (48 bits)
+// v1: time_low(32) | time_mid(16) | version(4) | time_high(12) |
+//     variant(2) | clock_seq(14) | node(48)
+// v6: time_high(32) | time_mid(16) | version(4) | time_low(12) |
+//     variant(2) | clock_seq(14) | node(48)
+// v7: unix_ts_ms(48) | version(4) | rand_a(12) | variant(2) | rand_b(62)
 //
-// Note that the time attributes are only relevant to versions 1, 6 and 7.
+// v1 and v6 encode the same 60-bit timestamp in 100-nanosecond intervals
+// since 1582-10-15, with different field ordering. v7 uses milliseconds
+// since the Unix epoch. Its rand_a and rand_b fields hold random/counter
+// bits, with no clock sequence or node field.
 //
-// Version field is located in byte 6; most significant 4 bits:
+// M is the version field: the most significant 4 bits of byte 6.
 //
-// Variant field is located in byte 8; most significant variable bits:
+// N contains the variant: the most significant variable bits of byte 8.
 //   0xxx: Reserved for NCS compatibility
 //   10xx: RFC 4122/9562 (standard)
 //   110x: Reserved for Microsoft compatibility
