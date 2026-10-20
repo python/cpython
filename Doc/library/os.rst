@@ -1352,6 +1352,10 @@ as internal buffering of data.
 
    .. audit-event:: open path,mode,flags os.open
 
+   In this event, *mode* is always ``None``. Access modes and other options
+   are reported in *flags*. The file permission bits passed to this function
+   as *mode* are not included in the event.
+
    .. versionchanged:: 3.4
       The new file descriptor is now non-inheritable.
 
