@@ -131,10 +131,11 @@ we also call *flavours*:
       >>> PurePath(Path('foo'), Path('bar'))
       PurePosixPath('foo/bar')
 
-   When *pathsegments* is empty, the current directory is assumed::
+   When *pathsegments* is empty or consists only of empty strings,
+   the current directory is assumed::
 
-      >>> PurePath()
-      PurePosixPath('.')
+      >>> PurePath(), PurePath('')
+      (PurePosixPath('.'), PurePosixPath('.'))
 
    If a segment is an absolute path, all previous segments are ignored
    (like :func:`os.path.join`)::
@@ -305,6 +306,21 @@ Methods and properties
 .. testsetup::
 
    from pathlib import PurePath, PurePosixPath, PureWindowsPath
+
+The :attr:`~PurePath.parent`, :attr:`~PurePath.name`,
+:attr:`~PurePath.stem`, and :attr:`~PurePath.suffix` properties describe
+different parts of a path.  For example, given::
+
+   >>> p = PurePosixPath('/srv/holy/grail.tar.gz')
+
+.. image:: pathlib-parts.svg
+   :align: center
+   :class: invert-in-dark-mode
+   :alt: For p = PurePosixPath('/srv/holy/grail.tar.gz'), p.parent is
+         PurePosixPath('/srv/holy'), p.name is 'grail.tar.gz',
+         p.stem is 'grail.tar', and p.suffix is '.gz'.
+
+The stem excludes only the final suffix: in this example, it includes ``.tar``.
 
 Pure paths provide the following methods and properties:
 
@@ -1040,8 +1056,8 @@ Querying file type and status
 
 .. method:: Path.exists(*, follow_symlinks=True)
 
-   Return ``True`` if the path points to an existing file or directory.
-   ``False`` will be returned if the path is invalid, inaccessible or missing.
+   Return ``True`` if the path points to an existing file or directory and
+   ``False`` if the path is invalid, inaccessible or missing.
    Use :meth:`Path.stat` to distinguish between these cases.
 
    This method normally follows symlinks; to check if a symlink exists, add
@@ -1049,6 +1065,8 @@ Querying file type and status
 
    ::
 
+      >>> Path('').exists()  # The current directory.
+      True
       >>> Path('.').exists()
       True
       >>> Path('setup.py').exists()

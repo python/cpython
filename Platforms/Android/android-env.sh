@@ -7,7 +7,7 @@
 : "${PREFIX:-}"  # Path in which to find required libraries
 
 
-# Print all messages on stderr so they're visible when running within build-wheel.
+# Print all messages on stderr so they're visible when stdout is captured.
 log() {
     echo "$1" >&2
 }
@@ -27,7 +27,7 @@ fail() {
 ndk_version=27.3.13750724
 
 ndk=$ANDROID_HOME/ndk/$ndk_version
-if ! [ -e "$ndk" ]; then
+if ! [ -e "$ndk/package.xml" ]; then
     log "Installing NDK - this may take several minutes"
     yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "ndk;$ndk_version"
 fi
