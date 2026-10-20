@@ -2045,6 +2045,44 @@ class TestCImplementationCompat(unittest.TestCase):
                 assert base.int == 2
         '''))
 
+    def test_subclass_module_finalization(self):
+        # GC may clear the base type's module reference before a subclass-owned
+        # instance is destroyed. Drop both modules and collect the subclass's
+        # class/instance cycle; deallocation must work without module state.
+        # Isolate the module removals and a possible crash in a subprocess.
+        assert_python_ok('-c', textwrap.dedent('''
+            import gc
+            import sys
+            import weakref
+
+            for from_int in (False, True):
+                import uuid
+
+                module = sys.modules['_uuid']
+                UUID = module.UUID
+                assert uuid.UUID is UUID
+
+                # Remove the module's UUID constants before creating the cycle.
+                del sys.modules['uuid']
+                del uuid
+                gc.collect()
+
+                class Sub(UUID):
+                    pass
+
+                if from_int:
+                    Sub.keep = Sub._from_int(1)
+                else:
+                    Sub.keep = Sub(int=1)
+                refs = [weakref.ref(obj) for obj in
+                        (module, UUID, Sub, Sub.keep)]
+
+                del sys.modules['_uuid']
+                del module, UUID, Sub
+                gc.collect()
+                assert all(ref() is None for ref in refs)
+        '''))
+
     def test_freelist_type_lifetime(self):
         # Reused live instances must keep their type and module alive, while
         # cached instances must allow both to be collected.

@@ -1049,7 +1049,6 @@ static void
 Uuid_dealloc(PyObject *obj)
 {
     PyTypeObject *type = Py_TYPE(obj);
-    uuid_state *state = get_uuid_state_by_cls(type);
 
     uuidobject *uuid = uuidobject_CAST(obj);
     if (uuid->weakreflist != NULL) {
@@ -1058,9 +1057,14 @@ Uuid_dealloc(PyObject *obj)
     Py_CLEAR(uuid->is_safe);
 
     int skip_dealloc = 0;
+    // Only the base UUID type uses the freelist. Do not search a subclass's
+    // MRO: GC may already have cleared its base type's module reference.
+    PyObject *module = PyType_GetModule_DuringGC(type);
+    if (module == NULL || PyModule_GetDef(module) != &uuidmodule) {
+        goto dealloc;
+    }
+    uuid_state *state = get_uuid_state(module);
     if (type != state->uuid_type) {
-        // We only apply the freelist optimization to the known C type,
-        // not any subclasses of it.
         goto dealloc;
     }
 
