@@ -2038,6 +2038,21 @@ class PyUnicodeWriterTest(unittest.TestCase):
         self.assertEqual(result, 'abc')
         self.assertIs(type(result), str)
 
+    def test_repr(self):
+        # Test PyUnicodeWriter_WriteRepr()
+        writer = self.create_writer(0)
+        writer.write_str('str=')
+        writer.write_repr('abc')
+        writer.write_str(' int=')
+        writer.write_repr(123)
+        writer.write_str(' none=')
+        writer.write_repr_none()
+        obj = object()
+        writer.write_str(' obj=')
+        writer.write_repr(obj)
+        self.assertEqual(writer.finish(),
+                         f"str='abc' int=123 none=None obj={obj!r}")
+
     def test_repr_null(self):
         writer = self.create_writer(0)
         writer.write_utf8(b'var=', -1)
