@@ -311,8 +311,7 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
 
     /* Call interpreter hooks */
     PyObject *audit_hooks = is->audit_hooks;
-    assert(audit_hooks != NULL);
-    if (PyList_GET_SIZE(audit_hooks) > 0) {
+    if (audit_hooks != NULL && PyList_GET_SIZE(audit_hooks) > 0) {
         eventName = PyUnicode_FromString(event);
         if (!eventName) {
             goto exit;
@@ -453,8 +452,6 @@ _PySys_ClearAuditHooks(PyThreadState *ts)
         PyMem_RawFree(e);
         e = n;
     }
-
-    Py_CLEAR(ts->interp->audit_hooks);
 }
 
 static void
