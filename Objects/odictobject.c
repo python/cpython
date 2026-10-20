@@ -1941,22 +1941,21 @@ odictiter_new(PyODictObject *od, int kind)
     odictiterobject *di;
     _ODictNode *node;
     int reversed = kind & _odict_ITER_REVERSED;
-
-    di = PyObject_GC_New(odictiterobject, &PyODictIter_Type);
-    if (di == NULL)
-        return NULL;
+    PyObject *result = NULL;
 
     if ((kind & _odict_ITER_ITEMS) == _odict_ITER_ITEMS) {
-        di->di_result = _PyTuple_FromPairSteal(Py_None, Py_None);
-        if (di->di_result == NULL) {
-            Py_DECREF(di);
+        result = _PyTuple_FromPairSteal(Py_None, Py_None);
+        if (result == NULL) {
             return NULL;
         }
     }
-    else {
-        di->di_result = NULL;
+    di = PyObject_GC_New(odictiterobject, &PyODictIter_Type);
+    if (di == NULL) {
+        Py_XDECREF(result);
+        return NULL;
     }
 
+    di->di_result = result;
     di->kind = kind;
     node = reversed ? _odict_LAST(od) : _odict_FIRST(od);
     di->di_current = node ? Py_NewRef(_odictnode_KEY(node)) : NULL;
