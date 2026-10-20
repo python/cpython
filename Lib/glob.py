@@ -326,9 +326,12 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
                     results.append(r'(?!\.)')
                 translated, star_indices = fnmatch._translate(
                     part, f'{not_sep}*', not_sep)
-                results.append(fnmatch._join_translated_parts(
-                    translated, star_indices, star=f'{not_sep}*',
-                    seps=seps))
+                if len(star_indices) < 2:
+                    results.extend(translated)
+                else:
+                    results.append(fnmatch._join_translated_parts(
+                        translated, star_indices, star=f'{not_sep}*',
+                        seps=seps))
             if idx < last_part_idx:
                 results.append(any_sep)
     res = ''.join(results)
