@@ -15150,6 +15150,10 @@ unicode_format_arg_parse(struct unicode_formatter_t *ctx,
         if (arg->width == -1 && PyErr_Occurred())
             return -1;
         if (arg->width < 0) {
+            if (arg->width == PY_SSIZE_T_MIN) {
+                PyErr_SetString(PyExc_OverflowError, "width too big");
+                return -1;
+            }
             arg->flags |= F_LJUST;
             arg->width = -arg->width;
         }

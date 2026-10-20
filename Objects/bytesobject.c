@@ -752,6 +752,10 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 if (width == -1 && PyErr_Occurred())
                     goto error;
                 if (width < 0) {
+                    if (width == PY_SSIZE_T_MIN) {
+                        PyErr_SetString(PyExc_OverflowError, "width too big");
+                        goto error;
+                    }
                     flags |= F_LJUST;
                     width = -width;
                 }
