@@ -72,6 +72,7 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
     data['suffixes']['extensions'] = importlib.machinery.EXTENSION_SUFFIXES
 
     LIBDIR = sysconfig.get_config_var('LIBDIR')
+    LIBPL = sysconfig.get_config_var('LIBPL')
     LDLIBRARY = sysconfig.get_config_var('LDLIBRARY')
     LIBRARY = sysconfig.get_config_var('LIBRARY')
     PY3LIBRARY = sysconfig.get_config_var('PY3LIBRARY')
@@ -84,7 +85,14 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
         # dynamic library if enabled, otherwise it's the static library.
         # If LIBRARY != LDLIBRARY, support for the dynamic library is enabled.
         has_dynamic_library = LDLIBRARY != LIBRARY
-        has_static_library = sysconfig.get_config_var('STATIC_LIBPYTHON')
+        # Framework builds don't install the static library (see libainstall).
+        has_static_library = (
+            sysconfig.get_config_var('STATIC_LIBPYTHON')
+            and not sysconfig.get_config_var('PYTHONFRAMEWORK')
+        )
+        # The static library is only installed into LIBDIR when it is also
+        # LDLIBRARY; otherwise it is only installed into LIBPL.
+        static_library_dir = LIBPL if has_dynamic_library else LIBDIR
     elif os.name == 'nt':
         # Windows can only use a dynamic library or a static library.
         # If it's using a dynamic library, sys.dllhandle will be set.
@@ -92,6 +100,7 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
         # More context: https://github.com/python/cpython/issues/110234
         has_dynamic_library = hasattr(sys, 'dllhandle')
         has_static_library = not has_dynamic_library
+        static_library_dir = LIBDIR
     else:
         raise NotADirectoryError(f'Unknown platform: {os.name}')
 
@@ -123,7 +132,7 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
         data['libpython']['link_extensions'] = bool(LIBPYTHON)
 
     if has_static_library:
-        data['libpython']['static'] = os.path.join(LIBDIR, LIBRARY)
+        data['libpython']['static'] = os.path.join(static_library_dir, LIBRARY)
 
     data['c_api']['headers'] = INCLUDEPY
     if LIBPC:
