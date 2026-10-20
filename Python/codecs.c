@@ -1172,7 +1172,8 @@ get_standard_encoding_impl(const char *encoding, int *bytelength)
             }
             if (*encoding == '-' || *encoding == '_' )
                 encoding++;
-            if (Py_TOLOWER(encoding[1]) == 'e' && encoding[2] == '\0') {
+            if (encoding[0] != '\0' &&
+                Py_TOLOWER(encoding[1]) == 'e' && encoding[2] == '\0') {
                 if (Py_TOLOWER(encoding[0]) == 'b')
                     return ENC_UTF16BE;
                 if (Py_TOLOWER(encoding[0]) == 'l')
@@ -1191,7 +1192,8 @@ get_standard_encoding_impl(const char *encoding, int *bytelength)
             }
             if (*encoding == '-' || *encoding == '_' )
                 encoding++;
-            if (Py_TOLOWER(encoding[1]) == 'e' && encoding[2] == '\0') {
+            if (encoding[0] != '\0' &&
+                Py_TOLOWER(encoding[1]) == 'e' && encoding[2] == '\0') {
                 if (Py_TOLOWER(encoding[0]) == 'b')
                     return ENC_UTF32BE;
                 if (Py_TOLOWER(encoding[0]) == 'l')
