@@ -765,6 +765,24 @@ get_task_frame(RemoteUnwinderObject *unwinder, uintptr_t task_addr, uintptr_t *f
     if (get_coro_like_address(unwinder, running_coro_addr, &running_coro_addr) < 0) {
         return -1;
     }
+    if (running_coro_addr == 0) {
+        *frame_addr = 0;
+        return 0;
+    }
+
+    int8_t frame_state;
+    if (_Py_RemoteDebug_PagedReadRemoteMemory(
+            &unwinder->handle,
+            running_coro_addr + (uintptr_t)unwinder->debug_offsets.gen_object.gi_frame_state,
+            sizeof(frame_state),
+            &frame_state) < 0) {
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Running task coro frame state read failed");
+        return -1;
+    }
+    if (frame_state != FRAME_EXECUTING) {
+        *frame_addr = 0;
+        return 0;
+    }
 
     *frame_addr = running_coro_addr + (uintptr_t)unwinder->debug_offsets.gen_object.gi_iframe;
     return 0;
@@ -970,6 +988,11 @@ process_running_task_chain(
     PyObject *task_info = NULL;
     if (process_single_task_node(unwinder, running_task_addr, &task_info, result) < 0) {
         return -1;
+    }
+
+    // gh-159645: the coroutine isn't running, so keep its await chain.
+    if (running_task_frame == 0) {
+        return process_task_waiters(unwinder, result);
     }
 
     // Get the chain from the current frame to this task
