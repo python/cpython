@@ -146,13 +146,15 @@ mi_page_qsbr_should_delay(mi_page_qsbr_t *page, mi_heap_qsbr_t *heap,
         page->goal = QSBR_INITIAL;
         return true;
     }
+    struct _qsbr_thread_state *qsbr = NULL;
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (tstate != NULL && &tstate->interp->qsbr == heap->shared &&
+        _Py_atomic_load_int_relaxed(&tstate->state) == _Py_THREAD_ATTACHED)
+    {
+        qsbr = ((_PyThreadStateImpl *)tstate)->qsbr;
+    }
     if (page->goal == 0) {
-        struct _qsbr_thread_state *qsbr = NULL;
-        PyThreadState *tstate = _PyThreadState_GET();
-        if (tstate != NULL && &tstate->interp->qsbr == heap->shared &&
-            _Py_atomic_load_int_relaxed(&tstate->state) == _Py_THREAD_ATTACHED)
-        {
-            qsbr = ((_PyThreadStateImpl *)tstate)->qsbr;
+        if (qsbr != NULL) {
             qsbr->should_process = true;
         }
         if (qsbr == NULL || should_advance_qsbr_for_page(qsbr, page_size)) {
@@ -161,8 +163,16 @@ mi_page_qsbr_should_delay(mi_page_qsbr_t *page, mi_heap_qsbr_t *heap,
         else {
             page->goal = _Py_qsbr_shared_next(heap->shared);
         }
+        // A newly assigned goal is always ahead of the read sequence.
+        return true;
     }
-    // Hooks can run under allocator locks, so only consult cached progress.
+    if (qsbr != NULL) {
+        // Refresh the read sequence so empty pages can be freed and reused
+        // without waiting for _PyMem_ProcessDelayed(). Polling takes no locks,
+        // and the thread array cannot be resized while this thread is attached.
+        return !_Py_qsbr_poll(qsbr, page->goal);
+    }
+    // Without an attached thread, only consult cached progress.
     uint64_t rd_seq = _Py_atomic_load_uint64(&heap->shared->rd_seq);
     return !QSBR_LEQ(page->goal, rd_seq);
 }
