@@ -1329,6 +1329,9 @@ extern "C" {
     INIT_STR(native, "<native>"), \
     INIT_STR(str_replace_inf, "1e309"), \
     INIT_STR(type_params, ".type_params"), \
+    INIT_STR(unknown_file, "<unknown file>"), \
+    INIT_STR(unknown_function, "<unknown function>"), \
+    INIT_STR(unreadable_frame, "<unreadable frame>"), \
     INIT_STR(utf_8, "utf-8"), \
 }
 
@@ -1642,6 +1645,7 @@ extern "C" {
     INIT_ID(canonical), \
     INIT_ID(capath), \
     INIT_ID(capitals), \
+    INIT_ID(capture_features), \
     INIT_ID(category), \
     INIT_ID(cb_type), \
     INIT_ID(certfile), \
@@ -1692,6 +1696,7 @@ extern "C" {
     INIT_ID(ctx), \
     INIT_ID(cwd), \
     INIT_ID(d_parameter_type), \
+    INIT_ID(daemon), \
     INIT_ID(data), \
     INIT_ID(database), \
     INIT_ID(date), \
@@ -1774,7 +1779,9 @@ extern "C" {
     INIT_ID(filter), \
     INIT_ID(filters), \
     INIT_ID(final), \
+    INIT_ID(finalizer), \
     INIT_ID(find_class), \
+    INIT_ID(firstiter), \
     INIT_ID(fix_imports), \
     INIT_ID(flags), \
     INIT_ID(flush), \
@@ -1792,6 +1799,7 @@ extern "C" {
     INIT_ID(fset), \
     INIT_ID(fullerror), \
     INIT_ID(func), \
+    INIT_ID(function), \
     INIT_ID(future), \
     INIT_ID(gc), \
     INIT_ID(generation), \
@@ -1953,6 +1961,7 @@ extern "C" {
     INIT_ID(nlocals), \
     INIT_ID(node_depth), \
     INIT_ID(node_offset), \
+    INIT_ID(nothing), \
     INIT_ID(ns), \
     INIT_ID(nstype), \
     INIT_ID(nt), \

@@ -23,10 +23,6 @@ terms of the MIT license. A copy of the license can be found in the file
 #define mi_trace_message(...)
 #endif
 
-#if defined(__EMSCRIPTEN__) && !defined(__wasi__)
-#define __wasi__
-#endif
-
 #if defined(__cplusplus)
 #define mi_decl_externc       extern "C"
 #else
@@ -34,7 +30,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #endif
 
 // pthreads
-#if !defined(_WIN32) && !defined(__wasi__)
+#if !defined(_WIN32) && !defined(__wasm__)
 #define  MI_USE_PTHREADS
 #include <pthread.h>
 #endif
