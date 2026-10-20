@@ -674,6 +674,23 @@ class Reader:
             p -= 1
         return p + 1
 
+    def bow_ws(self, p: int | None = None) -> int:
+        """Return the 0-based index of the whitespace-delimited word break
+        preceding p most immediately.
+
+        p defaults to self.pos; only whitespace is considered a word
+        boundary, matching the behavior of unix-word-rubout in bash/readline.
+        """
+        if p is None:
+            p = self.pos
+        b = self.buffer
+        p -= 1
+        while p >= 0 and b[p] in " \n\t":
+            p -= 1
+        while p >= 0 and b[p] not in " \n\t":
+            p -= 1
+        return p + 1
+
     def eow(self, p: int | None = None) -> int:
         """Return the 0-based index of the word break following p most
         immediately.
