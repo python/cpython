@@ -7,6 +7,7 @@ import sysconfig
 import string
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from test.support import is_android, is_apple_mobile, is_wasm32
 
@@ -173,6 +174,23 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
         version = sysconfig.get_config_var('VERSION')
         self.assertTrue(os.path.exists(os.path.join(value['pkgconfig_path'], f'python-{version}.pc')))
 
+    @needs_installed_python
+    @unittest.skipIf(
+        is_android or is_apple_mobile,
+        "Android and iOS run tests via a custom testbed method that doesn't ship libpython"
+    )
+    def test_libpython_static(self):
+        value = self.data.get('libpython', {})
+        if 'static' not in value:
+            self.skipTest("No static libpython")
+
+        if sysconfig._installation_is_relocated():
+            self.skipTest("Installation is relocated")
+
+        # The path must name an installed static library (an 'ar' archive).
+        with open(value['static'], 'rb') as f:
+            self.assertEqual(f.read(8), b'!<arch>\n')
+
 
 @unittest.skipIf(
     generate_build_details is None,
@@ -231,6 +249,62 @@ class BuildDetailsRelativePathsTests(unittest.TestCase):
             abs_rel_path = os.path.join(base_prefix, data_rel_path[part][key])
             abs_rel_path = os.path.normpath(abs_rel_path)
             self.assertEqual(data_abs_path[part][key], abs_rel_path)
+
+
+@unittest.skipIf(
+    generate_build_details is None,
+    "Failed to import generate-build-details"
+)
+@unittest.skipIf(os.name != 'posix', 'Feature only implemented on POSIX')
+@unittest.skipIf(is_wasm32, 'Feature not available on WebAssembly builds')
+class BuildDetailsLibpythonTests(unittest.TestCase):
+    LIBDIR = '/prefix/lib'
+    LIBPL = '/prefix/lib/python3.X/config-3.X'
+
+    def generate_libpython(self, **config_vars):
+        """Generate the libpython section with overridden config vars."""
+        config_vars = dict(LIBDIR=self.LIBDIR, LIBPL=self.LIBPL,
+                           LIBRARY='libpython3.X.a', **config_vars)
+        get_config_var = sysconfig.get_config_var
+        def patched_get_config_var(name):
+            if name in config_vars:
+                return config_vars[name]
+            return get_config_var(name)
+        with mock.patch('sysconfig.get_config_var', patched_get_config_var):
+            data = generate_build_details.generate_data(schema_version='1.0')
+        return json.loads(json.dumps(data)).get('libpython', {})
+
+    def test_static_only(self):
+        libpython = self.generate_libpython(
+            LDLIBRARY='libpython3.X.a', STATIC_LIBPYTHON=1,
+            PYTHONFRAMEWORK='')
+        self.assertNotIn('dynamic', libpython)
+        self.assertEqual(libpython['static'],
+                         os.path.join(self.LIBDIR, 'libpython3.X.a'))
+
+    def test_shared_and_static(self):
+        # The static library is only installed into LIBPL, not LIBDIR.
+        libpython = self.generate_libpython(
+            LDLIBRARY='libpython3.X.so', STATIC_LIBPYTHON=1,
+            PYTHONFRAMEWORK='')
+        self.assertEqual(libpython['dynamic'],
+                         os.path.join(self.LIBDIR, 'libpython3.X.so'))
+        self.assertEqual(libpython['static'],
+                         os.path.join(self.LIBPL, 'libpython3.X.a'))
+
+    def test_shared_without_static(self):
+        libpython = self.generate_libpython(
+            LDLIBRARY='libpython3.X.so', STATIC_LIBPYTHON=0,
+            PYTHONFRAMEWORK='')
+        self.assertNotIn('static', libpython)
+
+    def test_framework(self):
+        # Framework builds don't install the static library.  LIBPL contains
+        # a libpython3.X.a symlink to the framework's shared library instead.
+        libpython = self.generate_libpython(
+            LDLIBRARY='Python.framework/Versions/3.X/Python',
+            STATIC_LIBPYTHON=1, PYTHONFRAMEWORK='Python')
+        self.assertNotIn('static', libpython)
 
 
 if __name__ == '__main__':
