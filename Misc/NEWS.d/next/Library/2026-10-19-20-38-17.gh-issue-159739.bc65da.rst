@@ -1,0 +1,2 @@
+Allow cyclic garbage collection to reclaim group records returned by
+:mod:`grp`.
