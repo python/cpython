@@ -2940,9 +2940,44 @@ def skip_if_huge_c_stack(depth=150_000):
 
 
 # Small enough to be exhausted by tens of thousands of recursive calls,
-# but not smaller than Py_C_STACK_SIZE (4 MiB) which the interpreter
-# assumes if it cannot query the thread stack size.
+# but not smaller than Py_C_STACK_SIZE (up to 4 MiB, depending on the
+# platform and on the stack size the build passes to the linker) which the
+# interpreter assumes if it cannot query the thread stack size.
 C_STACK_SIZE = 8 * 1024 * 1024
+
+
+@functools.cache
+def _c_stack_size_is_queryable():
+    """Whether the interpreter can see the real C stack size of its thread.
+
+    On some platforms (currently AIX, NetBSD and non-glibc Linux) it cannot,
+    and assumes a fixed Py_C_STACK_SIZE instead.  A thread created there with
+    a smaller stack overflows before the recursion guard notices, crashing
+    the interpreter rather than raising RecursionError.
+    """
+    try:
+        from _testinternalcapi import get_c_recursion_remaining
+    except ImportError:
+        return False
+    import threading
+    remaining = []
+    def probe():
+        remaining.append(get_c_recursion_remaining())
+    old_size = threading.stack_size()
+    try:
+        # Both sizes are larger than any Py_C_STACK_SIZE, so probing is safe.
+        for size in (C_STACK_SIZE, 2 * C_STACK_SIZE):
+            threading.stack_size(size)
+            thread = threading.Thread(target=probe)
+            thread.start()
+            thread.join()
+    except (ValueError, RuntimeError):
+        return False
+    finally:
+        threading.stack_size(old_size)
+    # Threads of different sizes report the same headroom only if the
+    # interpreter is using its fixed estimate instead of the real size.
+    return len(remaining) == 2 and remaining[0] != remaining[1]
 
 
 def run_with_limited_c_stack(depth=150_000, size=C_STACK_SIZE):
@@ -2954,11 +2989,22 @@ def run_with_limited_c_stack(depth=150_000, size=C_STACK_SIZE):
 
     If a thread with the limited C stack cannot be created, run the test in
     the current thread, but skip it if the C stack is too large.
+
+    *size* is raised to C_STACK_SIZE on platforms where the interpreter
+    cannot query a thread's real C stack size, since a smaller thread would
+    crash there instead of raising RecursionError.
     """
     reason = f"the C stack is large enough for {depth} recursive calls"
     def decorator(test):
         @functools.wraps(test)
         def wrapper(*args, **kwargs):
+            thread_size = size
+            if thread_size < C_STACK_SIZE and not _c_stack_size_is_queryable():
+                # The interpreter would assume more stack than the thread
+                # really has and overflow it instead of raising
+                # RecursionError.  Use the safe default size instead.
+                thread_size = C_STACK_SIZE
+
             def run_test():
                 # The C stack can still be too large if limiting it failed.
                 if _has_huge_c_stack(depth):
@@ -2967,7 +3013,7 @@ def run_with_limited_c_stack(depth=150_000, size=C_STACK_SIZE):
 
             try:
                 import threading
-                old_size = threading.stack_size(size)
+                old_size = threading.stack_size(thread_size)
             except (ImportError, ValueError, RuntimeError):
                 # Setting the thread stack size is not supported.
                 return run_test()
