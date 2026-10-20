@@ -356,14 +356,14 @@ Move and draw
    :param y: a number or ``None``
    :param fill_gap: a boolean
 
-   Instantly move the turtle to an absolute position. Unlike :func:`goto`, no
-   line is drawn. If *x* or *y* is not given, that coordinate is kept as it
-   is. The turtle's heading does not change.
+   Teleport, or instantly move, the turtle to an absolute position. Unlike
+   :func:`goto`, no line is drawn. If *x* or *y* is not given, that coordinate
+   is kept as it is. The turtle's heading does not change.
 
    If the turtle is filling a shape, the shape drawn so far is finished and
-   filled before the jump, and filling starts again at the new position. Pass
-   ``fill_gap=True`` to keep filling one shape instead. The jump then counts
-   as an edge of the shape, as it would with :func:`goto`.
+   filled before teleporting, and filling starts again at the new position.
+   Pass ``fill_gap=True`` to keep filling one shape instead. The teleport then
+   counts as an edge of the shape, as it would with :func:`goto`.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -626,7 +626,7 @@ Move and draw
    Return or set the turtle's speed. If *speed* is not given, return the
    current speed. Otherwise set the turtle's speed to an integer from 0 to 10.
    If *speed* is a number greater than 10 or smaller than 0.5, the speed is
-   set to 0. A speed string is mapped to a speed value as follows:
+   set to 0. You can also use these names instead of numbers:
 
    * "fastest": 0
    * "fast": 10
@@ -816,14 +816,14 @@ Drawing state
               pd()
               down()
 
-   Pull the pen down. The turtle draws a line when it moves.
+   Lower the pen. The turtle draws a line when it moves.
 
 
 .. function:: penup()
               pu()
               up()
 
-   Pull the pen up. The turtle does not draw when it moves.
+   Lift the pen. The turtle does not draw when it moves.
 
 
 .. function:: pensize(width=None)
@@ -831,9 +831,9 @@ Drawing state
 
    :param width: a positive number or ``None``
 
-   Set the line thickness to *width* or return it. If *width* is not given,
-   return the current pensize. If resizemode is set to "auto" and the turtle
-   shape is a polygon, that polygon is drawn with the same line thickness.
+   Return or set the line thickness. If *width* is not given, return the
+   current pensize. If resizemode is set to "auto" and the turtle shape is a
+   polygon, that polygon is drawn with the same line thickness.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1201,11 +1201,11 @@ Appearance
 
    :param name: a string or ``None``
 
-   Set the turtle shape to the shape with the given *name*. If *name* is not
-   given, return the name of the current shape. The shape must exist in the
+   Set the turtle shape to the named shape. If *name* is not given, return the
+   name of the current shape. The shape must exist in the
    :class:`TurtleScreen`'s shape dictionary. Initially there are the following
-   polygon shapes: "arrow", "turtle", "circle", "square", "triangle" and
-   "classic". To add shapes, see the :class:`Screen` method :func:`register_shape`.
+   shapes: "arrow", "turtle", "circle", "square", "triangle" and "classic". To
+   add shapes, see the :class:`Screen` method :func:`register_shape`.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1253,10 +1253,16 @@ Appearance
    Return or set the turtle's stretch factors and outline width. If no
    arguments are given, return the current values. Otherwise set resizemode to
    "user", so that the turtle is displayed stretched according to its stretch
-   factors. *stretch_wid* is the stretch factor perpendicular to the turtle's
-   heading and *stretch_len* the stretch factor in the direction of its
-   heading. If only *stretch_wid* is given, *stretch_len* is set to the same
-   value. *outline* is the width of the shape's outline.
+   factors:
+
+   - *stretch_wid*: the stretch factor perpendicular to the turtle's heading
+   - *stretch_len*: the stretch factor in the direction of the turtle's
+     heading
+   - *outline*: the width of the shape's outline
+
+   For example, ``shapesize(2, 1)`` makes the turtle twice as wide without
+   changing its length. If only *stretch_wid* is given, *stretch_len* is set to
+   the same value.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1520,8 +1526,8 @@ Special Turtle methods
 
    Return the Turtle object itself.
 
-   Generally used as a function, to get the anonymous turtle used by the
-   module-level functions:
+   Call ``getturtle()`` to get the turtle used by functions such as
+   :func:`forward` and :func:`left`:
 
    .. doctest::
       :skipif: _tkinter is None
@@ -2295,6 +2301,8 @@ How-to guides
 This section covers some typical turtle use-cases and approaches.
 
 
+.. _automatically-begin-and-end-filling:
+
 How to automatically begin and end filling
 ------------------------------------------
 
@@ -2321,6 +2329,7 @@ The code above is equivalent to::
 
 
 .. _compoundshapes:
+.. _compound-shapes:
 
 How to use compound shapes
 --------------------------
@@ -2353,6 +2362,8 @@ below:
       >>> shape("myshape")
 
 
+.. _use-the-turtle-module-namespace:
+
 How to use the ``turtle`` module namespace
 ------------------------------------------
 
@@ -2367,6 +2378,8 @@ The solution is to use ``import turtle`` - ``fd()`` becomes
 "turtle" over and over again becomes tedious, use for example ``import turtle
 as t`` instead.)
 
+
+.. _use-turtle-graphics-in-a-script:
 
 How to use turtle graphics in a script
 --------------------------------------
@@ -2392,6 +2405,8 @@ to the end of the script. The script will now wait to be dismissed and
 will not exit until it is terminated, for example by closing the turtle
 graphics window.
 
+
+.. _use-object-oriented-turtle-graphics:
 
 How to use object-oriented turtle graphics
 ------------------------------------------

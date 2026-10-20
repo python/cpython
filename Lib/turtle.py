@@ -2154,7 +2154,7 @@ class TPen:
             self.pen(resizemode=rmode)
 
     def pensize(self, width=None):
-        """Set the line thickness to width or return it.
+        """Return or set the line thickness.
 
         Aliases: pensize | width
 
@@ -2176,7 +2176,7 @@ class TPen:
 
 
     def penup(self):
-        """Pull the pen up.
+        """Lift the pen.
 
         Aliases: penup | pu | up
 
@@ -2187,7 +2187,7 @@ class TPen:
         self.pen(pendown=False)
 
     def pendown(self):
-        """Pull the pen down.
+        """Lower the pen.
 
         Aliases: pendown | pd | down
 
@@ -2215,8 +2215,8 @@ class TPen:
 
         If speed is not given, return the current speed. Otherwise set the
         turtle's speed to an integer from 0 to 10. If speed is a number
-        greater than 10 or smaller than 0.5, the speed is set to 0. A
-        speed string is mapped to a speed value as follows:
+        greater than 10 or smaller than 0.5, the speed is set to 0. You
+        can also use these names instead of numbers:
 
             "fastest": 0
             "fast": 10
@@ -2775,15 +2775,15 @@ class RawTurtle(TPen, TNavigator):
         return "#%02x%02x%02x" % (r, g, b)
 
     def teleport(self, x=None, y=None, *, fill_gap: bool = False) -> None:
-        """Instantly move the turtle to an absolute position.
+        """Teleport, or instantly move, the turtle to an absolute position.
 
         Unlike goto(), no line is drawn. If x or y is not given, that
         coordinate is kept as it is. The turtle's heading does not change.
 
         If the turtle is filling a shape, the shape drawn so far is
-        finished and filled before the jump, and filling starts again at
-        the new position. Pass fill_gap=True to keep filling one shape
-        instead. The jump then counts as an edge of the shape, as it
+        finished and filled before teleporting, and filling starts again
+        at the new position. Pass fill_gap=True to keep filling one shape
+        instead. The teleport then counts as an edge of the shape, as it
         would with goto().
 
         Arguments:
@@ -2859,13 +2859,13 @@ class RawTurtle(TPen, TNavigator):
         return q
 
     def shape(self, name=None):
-        """Set the turtle shape to the shape with the given name.
+        """Set the turtle shape to the named shape.
 
         If name is not given, return the name of the current shape. The
         shape must exist in the TurtleScreen's shape dictionary. Initially
-        there are the following polygon shapes: "arrow", "turtle",
-        "circle", "square", "triangle" and "classic". To add shapes,
-        see the Screen method register_shape().
+        there are the following shapes: "arrow", "turtle", "circle",
+        "square", "triangle" and "classic". To add shapes, see the Screen
+        method register_shape().
 
         Argument:
             name -- a string or None
@@ -2891,11 +2891,17 @@ class RawTurtle(TPen, TNavigator):
 
         If no arguments are given, return the current values. Otherwise
         set resizemode to "user", so that the turtle is displayed
-        stretched according to its stretch factors. stretch_wid is the
-        stretch factor perpendicular to the turtle's heading and
-        stretch_len the stretch factor in the direction of its heading.
-        If only stretch_wid is given, stretch_len is set to the same
-        value. outline is the width of the shape's outline.
+        stretched according to its stretch factors:
+
+          - stretch_wid: the stretch factor perpendicular to the turtle's
+            heading
+          - stretch_len: the stretch factor in the direction of the
+            turtle's heading
+          - outline: the width of the shape's outline
+
+        For example, shapesize(2, 1) makes the turtle twice as wide
+        without changing its length. If only stretch_wid is given,
+        stretch_len is set to the same value.
 
         Arguments:
             stretch_wid -- a positive number or None
@@ -3606,8 +3612,8 @@ class RawTurtle(TPen, TNavigator):
 
         Aliases: getturtle | getpen
 
-        Generally used as a function, to get the anonymous turtle used by
-        the module-level functions.
+        Call getturtle() to get the turtle used by functions such as
+        forward() and left().
 
         Example:
             >>> pet = getturtle()
