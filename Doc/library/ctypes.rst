@@ -1107,6 +1107,17 @@ In addition, if a function argument is explicitly declared to be a pointer type
 type (``c_int`` in this case) can be passed to the function.  ctypes will apply
 the required :func:`byref` conversion in this case automatically.
 
+These conversions are also applied to the :attr:`!_as_parameter_` attribute of
+an object passed for a pointer argument (see
+:ref:`ctypes-calling-functions-with-own-custom-data-types`). So, for a
+``POINTER(c_int)`` argument, an object whose :attr:`!_as_parameter_` is a
+``c_int`` instance is passed by reference, and one whose :attr:`!_as_parameter_`
+is a ``c_int`` array is accepted as well.
+
+.. versionchanged:: next
+   Objects with an :attr:`!_as_parameter_` attribute now receive the same
+   implicit conversions for pointer arguments as the object they wrap.
+
 To set a POINTER type field to ``NULL``, you can assign ``None``::
 
    >>> bar.values = None
