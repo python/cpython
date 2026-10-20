@@ -3105,16 +3105,6 @@ PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
     return 0;
 }
 
-/*
- * CData objects are mutable, so they cannot be hashable!
- */
-static Py_hash_t
-PyCData_nohash(PyObject *self)
-{
-    PyErr_SetString(PyExc_TypeError, "unhashable type");
-    return -1;
-}
-
 /*[clinic input]
 @critical_section
 _ctypes.PyCData.__reduce__
@@ -3211,25 +3201,40 @@ static PyMethodDef PyCData_methods[] = {
     { NULL, NULL },
 };
 
-static PyType_Slot pycdata_slots[] = {
-    {Py_tp_dealloc, PyCData_dealloc},
-    {Py_tp_hash, PyCData_nohash},
-    {Py_tp_doc, PyDoc_STR("XXX to be provided")},
-    {Py_tp_traverse, PyCData_traverse},
-    {Py_tp_clear, PyCData_clear},
-    {Py_tp_methods, PyCData_methods},
-    {Py_tp_members, PyCData_members},
-    {Py_bf_getbuffer, PyCData_NewGetBuffer},
-    {0, NULL},
-};
-
-static PyType_Spec pycdata_spec = {
-    .name = "_ctypes._CData",
-    .basicsize = sizeof(CDataObject),
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
-              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION),
-    .slots = pycdata_slots,
-};
+/*
+ * CData objects are mutable, so they cannot be hashable. Setting tp_hash to
+ * PyObject_HashNotImplemented() makes type_ready() set __hash__ to None.
+ *
+ * Unfortunately, on Windows, PyObject_HashNotImplemented is imported from
+ * the Python DLL, and MSVC resolves the address of an imported function in
+ * a static initializer to a local thunk that can't be recognized. So, we
+ * initialize the slots at runtime to load the real address from the import table.
+ */
+static PyObject *
+PyCData_create_type(PyObject *mod)
+{
+    PyType_Slot slots[] = {
+        {Py_tp_dealloc, PyCData_dealloc},
+        {Py_tp_hash, PyObject_HashNotImplemented},
+        {Py_tp_doc, PyDoc_STR("The common base class of all ctypes "
+                              "data types.")},
+        {Py_tp_traverse, PyCData_traverse},
+        {Py_tp_clear, PyCData_clear},
+        {Py_tp_methods, PyCData_methods},
+        {Py_tp_members, PyCData_members},
+        {Py_bf_getbuffer, PyCData_NewGetBuffer},
+        {0, NULL},
+    };
+    PyType_Spec spec = {
+        .name = "_ctypes._CData",
+        .basicsize = sizeof(CDataObject),
+        .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+                  Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE |
+                  Py_TPFLAGS_DISALLOW_INSTANTIATION),
+        .slots = slots,
+    };
+    return PyType_FromMetaclass(NULL, mod, &spec, NULL);
+}
 
 static int
 PyCData_MallocBuffer(CDataObject *obj, StgInfo *info)
@@ -4961,6 +4966,9 @@ static PyType_Spec pycunion_spec = {
 /*
   PyCArray_Type
 */
+static int Array_ass_item_lock_held(PyObject *, Py_ssize_t, PyObject *);
+static int Array_ass_subscript(PyObject *, PyObject *, PyObject *);
+
 static int
 Array_init(PyObject *self, PyObject *args, PyObject *kw)
 {
@@ -4973,6 +4981,22 @@ Array_init(PyObject *self, PyObject *args, PyObject *kw)
         return -1;
     }
     n = PyTuple_GET_SIZE(args);
+
+    /* Optimization: If the type doesn't override __setitem__, we can store the
+     * items directly (see gh-72113). */
+    PyMappingMethods *mp = Py_TYPE(self)->tp_as_mapping;
+    if (mp != NULL && mp->mp_ass_subscript == Array_ass_subscript) {
+        int result = 0;
+        Py_BEGIN_CRITICAL_SECTION(self);
+        for (i = 0; result >= 0 && i < n; ++i) {
+            PyObject *v = PyTuple_GET_ITEM(args, i);
+            assert(v != NULL);
+            result = Array_ass_item_lock_held(self, i, v);
+        }
+        Py_END_CRITICAL_SECTION();
+        return result;
+    }
+
     for (i = 0; i < n; ++i) {
         PyObject *v;
         v = PyTuple_GET_ITEM(args, i);
@@ -6230,7 +6254,10 @@ _ctypes_add_types(PyObject *mod)
     */
     CREATE_TYPE(st->PyCArg_Type, &carg_spec, NULL, NULL);
     CREATE_TYPE(st->PyCThunk_Type, &cthunk_spec, NULL, NULL);
-    CREATE_TYPE(st->PyCData_Type, &pycdata_spec, NULL, NULL);
+    st->PyCData_Type = (PyTypeObject *)PyCData_create_type(mod);
+    if (st->PyCData_Type == NULL) {
+        return -1;
+    }
 
     // Common Metaclass
     CREATE_TYPE(st->PyCType_Type, &pyctype_type_spec,
