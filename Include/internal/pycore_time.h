@@ -348,6 +348,8 @@ typedef struct {
     int year, month, day;
     int hour, minute, second, fraction;
     int gmtoff;  // INT_MIN means no offset was supplied.
+    int gmtoff_fraction;
+    Py_ssize_t zone_start, zone_length;  // Original spelling of a %Z name.
     int yday;    // January 1 is day 1.
     int weekday;  // Monday is 0; a supplied weekday need not agree with the date.
 } _PyTime_StrptimeFields;

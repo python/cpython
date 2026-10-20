@@ -16,6 +16,21 @@ import _strptime
 
 
 class PublicStrptimeTests(unittest.TestCase):
+    def test_offsets_and_zone_names(self):
+        offsets = ('', 'Z', '+0530', '-03:30', '+01:02:03', '-000001.000001',
+                   '+01:02:03.456789', '+000000.5', '-00:00:00.5',
+                   '+2400', '+0060', '+01:0203', '+0102:03', '+01:02:99',
+                   '+01:02:03.', '+01:02:03.1234567', 'z', '+', '+000')
+        for offset in offsets:
+            for directive in ('%z', '%:z'):
+                for suffix, fmt_suffix in (('', ''), (' UTC', ' %Z'),
+                                           (' gMt', ' %Z'), (' 12:34', ' %H:%M')):
+                    self.assert_matches_python(offset + suffix,
+                                               directive + fmt_suffix)
+        for name in ('UTC', 'GMT', 'uTc', 'gmT', 'UTCx', 'LOCAL', ''):
+            self.assert_matches_python(name, '%Z')
+        self.assert_matches_python('+0100 +0200', '%z %:z')
+
     @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP', '')
     def test_twelve_hour_clock(self):
         for hour in range(24):

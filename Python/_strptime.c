@@ -11,11 +11,11 @@
  * - numeric %Y, %y, %m, %d, %H, %M, %S, and %f fields;
  * - ASCII locale month/weekday names and numeric %w/%u weekdays;
  * - %I with ASCII %p indicators, and the %k, %l, %P aliases;
- * - a terminal %z: empty, Z, or +/-HHMM or +/-HH:MM with hours below 24;
+ * - %z and %:z offsets with hours below 24, and terminal UTC/GMT %Z names;
  * - literal characters, %%, and ASCII whitespace.
  * Duplicate directives, mixed %Y/%y, and day-of-month without a year use the
  * fallback. So do other directives (including non-ASCII locale names and
- * week/day-of-year calculations), and offsets with seconds or fractions.
+ * week/day-of-year calculations).
  */
 
 static int
@@ -104,32 +104,58 @@ strptime_name(const unsigned char *data, Py_ssize_t length, Py_ssize_t pos,
 
 static int
 strptime_offset(const unsigned char *data, Py_ssize_t length, Py_ssize_t pos,
-                _PyTime_StrptimeFields *fields)
+                int require_colon, _PyTime_StrptimeFields *fields)
 {
-    Py_ssize_t remaining = length - pos;
-    if (remaining == 0) {
-        return 1;
+    Py_ssize_t start = pos;
+    if (pos == length) {
+        return 0;
     }
-    if (remaining == 1 && data[pos] == 'Z') {
+    if (data[pos] == 'Z') {
         fields->gmtoff = 0;
         return 1;
     }
-    /* Offsets containing seconds or fractions fall back to _strptime.py. */
-    if ((remaining != 5 && remaining != 6) ||
-        (data[pos] != '+' && data[pos] != '-')) {
+    if (data[pos] != '+' && data[pos] != '-') {
         return 0;
     }
-    int hours, minutes;
-    int colon = remaining == 6;
-    if ((colon && data[pos + 3] != ':') ||
-        strptime_digits(data, length, pos + 1, 2, 2, &hours) != 2 ||
-        strptime_digits(data, length, pos + 3 + colon, 2, 2, &minutes) != 2 ||
-        hours > 23 || minutes > 59) {
-        return 0;
+    int sign = data[pos++] == '-' ? -1 : 1;
+    int hours, minutes, seconds = 0, fraction = 0;
+    if (strptime_digits(data, length, pos, 2, 2, &hours) != 2 || hours > 23) {
+        return -1;
     }
-    fields->gmtoff = (hours * 3600 + minutes * 60) *
-                    (data[pos] == '-' ? -1 : 1);
-    return 1;
+    pos += 2;
+    int colon = pos < length && data[pos] == ':';
+    if (require_colon && !colon) {
+        return -1;
+    }
+    pos += colon;
+    if (strptime_digits(data, length, pos, 2, 2, &minutes) != 2 || minutes > 59) {
+        return -1;
+    }
+    pos += 2;
+    int seconds_colon = pos < length && data[pos] == ':';
+    Py_ssize_t seconds_pos = pos + seconds_colon;
+    if (strptime_digits(data, length, seconds_pos, 2, 2, &seconds) == 2) {
+        if (seconds > 59 || seconds_colon != colon) {
+            return -1;
+        }
+        pos = seconds_pos + 2;
+        if (pos < length && data[pos] == '.') {
+            int count = strptime_digits(data, length, pos + 1, 1, 6, &fraction);
+            if (count == 0) {
+                return -1;
+            }
+            pos += count + 1;
+            for (; count < 6; count++) {
+                fraction *= 10;
+            }
+        }
+    }
+    else {
+        seconds = 0;
+    }
+    fields->gmtoff = sign * (hours * 3600 + minutes * 60 + seconds);
+    fields->gmtoff_fraction = sign * fraction;
+    return (int)(pos - start);
 }
 
 /* Return 1 for a complete numeric match, or 0 if fallback is required.
@@ -156,6 +182,7 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
         OFFSET = 1U << 8,
         WEEKDAY = 1U << 9,
         AMPM = 1U << 10,
+        ZONE = 1U << 11,
         ANY_YEAR = YEAR | SHORT_YEAR,
     };
     static const unsigned short directive_bits[128] = {
@@ -170,6 +197,7 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
         ['z'] = OFFSET,
         ['w'] = WEEKDAY,
         ['p'] = AMPM,
+        ['Z'] = ZONE,
     };
     /* String subclasses and non-ASCII input retain Python's behavior. */
     if (!PyUnicode_CheckExact(string) || !PyUnicode_CheckExact(format) ||
@@ -212,6 +240,11 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
             return 0;
         }
         c = fmt[i];
+        int require_colon = 0;
+        if (c == ':' && i + 1 < fmt_length && fmt[i + 1] == 'z') {
+            c = fmt[++i];
+            require_colon = 1;
+        }
         if (c == 'k') {
             c = 'H';
         }
@@ -267,12 +300,30 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
             continue;
         }
 
-        if (c == 'z') {
-            if (i != fmt_length - 1 ||
-                !strptime_offset(data, length, pos, fields)) {
+        if (c == 'Z') {
+            /* Local timezone names and nonterminal names retain Python's
+             * tzset state, DST rules and regex backtracking.
+             */
+            if (i != fmt_length - 1 || length - pos != 3 ||
+                !((Py_TOLOWER(data[pos]) == 'u' &&
+                   Py_TOLOWER(data[pos + 1]) == 't' &&
+                   Py_TOLOWER(data[pos + 2]) == 'c') ||
+                  (Py_TOLOWER(data[pos]) == 'g' &&
+                   Py_TOLOWER(data[pos + 1]) == 'm' &&
+                   Py_TOLOWER(data[pos + 2]) == 't'))) {
                 return 0;
             }
+            fields->zone_start = pos;
+            fields->zone_length = 3;
             pos = length;
+            continue;
+        }
+        if (c == 'z') {
+            int count = strptime_offset(data, length, pos, require_colon, fields);
+            if (count < 0) {
+                return 0;
+            }
+            pos += count;
             continue;
         }
 

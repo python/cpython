@@ -1685,6 +1685,27 @@ tzinfo_from_isoformat_results(int rv, int tzoffset, int tz_useconds)
  */
 
 static PyObject *
+tzinfo_from_strptime_results(const _PyTime_StrptimeFields *fields,
+                             PyObject *string)
+{
+    if (!fields->zone_length || fields->gmtoff == INT_MIN) {
+        return tzinfo_from_isoformat_results(fields->gmtoff != INT_MIN,
+                                            fields->gmtoff,
+                                            fields->gmtoff_fraction);
+    }
+    PyObject *name = PyUnicode_Substring(string, fields->zone_start,
+                                        fields->zone_start + fields->zone_length);
+    if (name == NULL) {
+        return NULL;
+    }
+    PyObject *delta = new_delta(0, fields->gmtoff, fields->gmtoff_fraction, 1);
+    PyObject *tzinfo = delta == NULL ? NULL : new_timezone(delta, name);
+    Py_XDECREF(delta);
+    Py_DECREF(name);
+    return tzinfo;
+}
+
+static PyObject *
 format_ctime(PyObject *date, int hours, int minutes, int seconds)
 {
     static const char * const DayNames[] = {
@@ -4804,8 +4825,7 @@ datetime_time_strptime_impl(PyTypeObject *type, PyObject *string,
     _PyTime_StrptimeFields fields;
     if (type == TIME_TYPE(NO_STATE) &&
         _PyTime_Strptime(string, format, &fields)) {
-        PyObject *tzinfo = tzinfo_from_isoformat_results(
-            fields.gmtoff != INT_MIN, fields.gmtoff, 0);
+        PyObject *tzinfo = tzinfo_from_strptime_results(&fields, string);
         if (tzinfo == NULL) {
             return NULL;
         }
@@ -5899,8 +5919,7 @@ datetime_datetime_strptime_impl(PyTypeObject *type, PyObject *string,
     _PyTime_StrptimeFields fields;
     if (type == DATETIME_TYPE(NO_STATE) &&
         _PyTime_Strptime(string, format, &fields)) {
-        PyObject *tzinfo = tzinfo_from_isoformat_results(
-            fields.gmtoff != INT_MIN, fields.gmtoff, 0);
+        PyObject *tzinfo = tzinfo_from_strptime_results(&fields, string);
         if (tzinfo == NULL) {
             return NULL;
         }
