@@ -6,7 +6,7 @@ the implementation function.  The wrapper is the place where
 ``@critical_section`` acquires the lock.
 
 The parameters declared in the DSL only select the C signature; they must be
-positional-only, without a default value. When a special method maps to 
+positional-only, without a default value. When a special method maps to
 several slots (``__getitem__`` is ``sq_item`` or ``mp_subscript``),
 the converters of its parameters determine which one it implements.
 """
