@@ -79,6 +79,7 @@ _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int margin_count)
 #include "emscripten/stack.h"
 
 #define pthread_attr_t workaround_pthread_attr_t
+#define pthread_attr_init workaround_pthread_attr_init
 #define pthread_getattr_np workaround_pthread_getattr_np
 #define pthread_attr_getguardsize workaround_pthread_attr_getguardsize
 #define pthread_attr_getstack workaround_pthread_attr_getstack
@@ -90,6 +91,11 @@ typedef struct {
 } pthread_attr_t;
 
 extern __attribute__((__visibility__("hidden"))) unsigned __default_guardsize;
+
+int pthread_attr_init(pthread_attr_t *a)
+{
+	return 0;
+}
 
 // Modified version of pthread_getattr_np from the upstream PR.
 
