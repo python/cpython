@@ -417,11 +417,6 @@ Importing Modules
    (Custom importers should do this in their
    :py:meth:`~importlib.abc.Loader.exec_module` method.)
 
-   If the spec's name is dotted and *initfunc* creates the module using only
-   the last component of the name (as some binding generators do for
-   submodules), the module's :attr:`~module.__name__` is set to the full
-   name from the spec.
-
    On error, return NULL with an exception set.
 
    For modules using :ref:`legacy single-phase initialization <single-phase-initialization>`,
