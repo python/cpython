@@ -100,6 +100,13 @@ Other language changes
   missing the ``self`` parameter. (Contributed by Suren Nihalani in
   :gh:`152315`.)
 
+* :func:`anext` and :func:`aiter` are now implemented in Python instead
+  of C.  The awaitable returned by ``anext(it, default)`` and the
+  ``__anext__()`` of the iterator returned by ``aiter(callable, ...)`` are
+  now plain coroutines, so introspection tools such as
+  :func:`asyncio.print_call_graph` can see through them into the awaited code.
+  (Contributed by Kumar Aditya in :gh:`157361`.)
+
 
 New modules
 ===========
