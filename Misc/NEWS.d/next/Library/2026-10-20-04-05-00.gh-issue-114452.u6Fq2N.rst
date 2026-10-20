@@ -1,0 +1,2 @@
+Fix :mod:`webbrowser` failing to find a registered browser when its executable
+path contains spaces.

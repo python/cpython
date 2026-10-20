@@ -563,12 +563,22 @@ class ImportTest(unittest.TestCase):
             webbrowser.get('fakebrowser')
         self.assertIsNotNone(webbrowser._tryorder)
 
-    @unittest.skipIf(" " in sys.executable, "test assumes no space in path (GH-114452)")
     def test_synthesize(self):
         webbrowser = import_helper.import_fresh_module('webbrowser')
         name = os.path.basename(sys.executable).lower()
         webbrowser.register(name, None, webbrowser.GenericBrowser(name))
         webbrowser.get(sys.executable)
+
+    def test_synthesize_space_in_path(self):
+        webbrowser = import_helper.import_fresh_module('webbrowser')
+        name = 'testbrowser'
+        path = os.path.join('path with spaces', name)
+        webbrowser.register(name, None, webbrowser.GenericBrowser(name))
+        with mock.patch.object(webbrowser.shutil, 'which', return_value=path) as which:
+            controller = webbrowser.get(path)
+        which.assert_called_once_with(path)
+        self.assertIsInstance(controller, webbrowser.GenericBrowser)
+        self.assertEqual(controller.name, path)
 
     @unittest.skipIf(
         is_apple_mobile,

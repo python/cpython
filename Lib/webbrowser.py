@@ -124,10 +124,9 @@ def _synthesize(browser, *, preferred=False):
     executable for the requested browser, return [None, None].
 
     """
-    cmd = browser.split()[0]
-    if not shutil.which(cmd):
+    if not shutil.which(browser):
         return [None, None]
-    name = os.path.basename(cmd)
+    name = os.path.basename(browser)
     try:
         command = _browsers[name.lower()]
     except KeyError:
