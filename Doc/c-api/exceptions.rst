@@ -409,7 +409,7 @@ an error value).
 
 .. c:function:: int PyErr_Warn(PyObject *category, const char *message)
 
-   Equivalent to ``PyErr_WarnEx(category, message, 1)``.
+   Equivalent to :c:expr:`PyErr_WarnEx(category, message, 1)`.
 
 
 .. c:function:: int PyErr_WarnExplicitObject(PyObject *category, PyObject *message, PyObject *filename, int lineno, PyObject *module, PyObject *registry)
