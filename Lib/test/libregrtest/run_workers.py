@@ -178,8 +178,9 @@ class WorkerThread(threading.Thread):
         self._kill()
 
     def _run_process(self, runtests: WorkerRunTests, output_fd: int,
+                     worker_config: StrPath,
                      tmp_dir: StrPath | None = None) -> int | None:
-        popen = create_worker_process(runtests, output_fd, tmp_dir)
+        popen = create_worker_process(runtests, output_fd, worker_config, tmp_dir)
         self._popen = popen
         self._killed = False
 
@@ -293,7 +294,8 @@ class WorkerThread(threading.Thread):
             **kwargs)
 
     def run_tmp_files(self, worker_runtests: WorkerRunTests,
-                      stdout_fd: int) -> tuple[int | None, list[StrPath]]:
+                      stdout_fd: int,
+                      worker_config: StrPath) -> tuple[int | None, list[StrPath]]:
         # gh-93353: Check for leaked temporary files in the parent process,
         # since the deletion of temporary files can happen late during
         # Python finalization: too late for libregrtest.
@@ -305,12 +307,12 @@ class WorkerThread(threading.Thread):
             tmp_dir = os.path.abspath(tmp_dir)
             try:
                 retcode = self._run_process(worker_runtests,
-                                            stdout_fd, tmp_dir)
+                                            stdout_fd, worker_config, tmp_dir)
             finally:
                 tmp_files = os.listdir(tmp_dir)
                 os_helper.rmtree(tmp_dir)
         else:
-            retcode = self._run_process(worker_runtests, stdout_fd)
+            retcode = self._run_process(worker_runtests, stdout_fd, worker_config)
             tmp_files = []
 
         return (retcode, tmp_files)
@@ -369,9 +371,28 @@ class WorkerThread(threading.Thread):
             worker_runtests = self.create_worker_runtests(
                 test_name, json_file, module_name=module_name)
 
+            # Custom runners may map the source tree to a different filesystem
+            # root (for example, on WASI). Keep the configuration in the test
+            # directory and resolve its path relative to libregrtest.
+            config_dir = os.curdir if worker_runtests.python_cmd else None
+            worker_config = stack.enter_context(tempfile.NamedTemporaryFile(
+                'w', encoding='utf-8', prefix='test_python_', dir=config_dir,
+                delete_on_close=False))
+            worker_config.write(worker_runtests.as_json())
+            # Allow the worker to reopen the file on Windows.
+            worker_config.close()
+            config_path = worker_config.name
+            if worker_runtests.python_cmd:
+                try:
+                    config_path = os.path.relpath(config_path, os.path.dirname(__file__))
+                except ValueError:
+                    # On Windows the directories may be on different drives.
+                    pass
+
             retcode: str | int | None
             retcode, tmp_files = self.run_tmp_files(worker_runtests,
-                                                    stdout_file.fileno())
+                                                    stdout_file.fileno(),
+                                                    config_path)
 
             stdout = self.read_stdout(stdout_file)
 

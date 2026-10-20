@@ -1609,6 +1609,24 @@ class ArgsTestCase(BaseTestCase):
         subset = ['test_method1', 'test_method3']
         self.assertEqual(methods, subset)
 
+    def test_large_matchfile(self):
+        code = textwrap.dedent("""
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_selected(self):
+                    pass
+                def test_other(self):
+                    pass
+        """)
+        testname = self.create_test(code=code)
+        filename = os.path.join(self.tmptestdir, 'matches.txt')
+        with open(filename, 'w', encoding='utf-8') as file:
+            file.write(('test_missing_' + 'x' * 80 + '\n') * 2000)
+            file.write('test_selected\n')
+        output = self.run_tests('-j2', '-v', '--matchfile', filename, testname)
+        self.assertEqual(self.parse_methods(output), ['test_selected'])
+
     def test_env_changed(self):
         code = textwrap.dedent("""
             import unittest
@@ -2311,12 +2329,23 @@ class ArgsTestCase(BaseTestCase):
 
     def test_python_command(self):
         code = textwrap.dedent(r"""
+            import os
             import sys
             import unittest
+            from test.libregrtest import worker
 
             class WorkerTests(unittest.TestCase):
                 def test_dev_mode(self):
                     self.assertTrue(sys.flags.dev_mode)
+
+                def test_worker_config(self):
+                    # A custom runner may map the source tree to a
+                    # different filesystem root, as on WASI.
+                    config = sys.orig_argv[-1]
+                    if os.name != 'nt':
+                        self.assertFalse(os.path.isabs(config))
+                    config = os.path.join(os.path.dirname(worker.__file__), config)
+                    self.assertTrue(os.path.isfile(config))
         """)
         tests = [self.create_test(code=code) for _ in range(3)]
 
@@ -2328,7 +2357,7 @@ class ArgsTestCase(BaseTestCase):
 
         output = self.run_tests("--python", python_cmd, "-j0", *tests)
         self.check_executed_tests(output, tests,
-                                  stats=len(tests), parallel=True)
+                                  stats=2 * len(tests), parallel=True)
 
     def test_unload_tests(self):
         # Test that unloading test modules does not break tests
