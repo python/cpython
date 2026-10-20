@@ -100,6 +100,13 @@ Other language changes
   missing the ``self`` parameter. (Contributed by Suren Nihalani in
   :gh:`152315`.)
 
+* :func:`anext` and :func:`aiter` are now implemented in Python instead
+  of C.  The awaitable returned by ``anext(it, default)`` and the
+  ``__anext__()`` of the iterator returned by ``aiter(callable, ...)`` are
+  now plain coroutines, so introspection tools such as
+  :func:`asyncio.print_call_graph` can see through them into the awaited code.
+  (Contributed by Kumar Aditya in :gh:`157361`.)
+
 
 New modules
 ===========
@@ -117,6 +124,15 @@ asyncio
   :func:`asyncio.start_unix_server` to set the permissions of the Unix
   socket file created for *path*.
   (Contributed by Sam Bull in :gh:`94984`.)
+
+
+bdb
+---
+
+* :exc:`bdb.BdbQuit` is now a subclass of :exc:`BaseException`, instead of
+  :exc:`Exception`, to allow it to be used for cleanly exiting the debugger without
+  being accidentally caught by user code.
+  (Contributed by Tian Gao in :gh:`149337`.)
 
 
 bz2
