@@ -3,6 +3,7 @@ import difflib
 import io
 import textwrap
 import unittest
+from pathlib import PurePath
 
 from test import test_tools
 from typing import Dict, Any
@@ -573,7 +574,7 @@ class TestPegen(unittest.TestCase):
         self.assertFalse(rules["start"].left_recursive)
         self.assertTrue(rules["foo"].left_recursive)
         self.assertTrue(rules["bar"].left_recursive)
-        genr.generate("<string>")
+        genr.generate(PurePath("<string>"))
         ns: Dict[str, Any] = {}
         exec(out.getvalue(), ns)
         parser_class: Type[Parser] = ns["GeneratedParser"]
@@ -670,7 +671,7 @@ class TestPegen(unittest.TestCase):
         grammar: Grammar = parse_string(grammar_source, GrammarParser)
         out = io.StringIO()
         genr = PythonParserGenerator(grammar, out)
-        genr.generate("<string>")
+        genr.generate(PurePath("<string>"))
         ns: Dict[str, Any] = {}
         exec(out.getvalue(), ns)
         parser_class = ns["GeneratedParser"]
@@ -902,7 +903,7 @@ class TestPegen(unittest.TestCase):
         genr = PythonParserGenerator(
             grammar, out, unreachable_formatting="This is a test"
         )
-        genr.generate("<string>")
+        genr.generate(PurePath("<string>"))
         self.assertIn("This is a test", out.getvalue())
 
     def test_unreachable_implicit1(self) -> None:
@@ -915,7 +916,7 @@ class TestPegen(unittest.TestCase):
         genr = PythonParserGenerator(
             grammar, out, unreachable_formatting="This is a test"
         )
-        genr.generate("<string>")
+        genr.generate(PurePath("<string>"))
         self.assertIn("This is a test", out.getvalue())
 
     def test_unreachable_implicit2(self) -> None:
@@ -928,7 +929,7 @@ class TestPegen(unittest.TestCase):
         genr = PythonParserGenerator(
             grammar, out, unreachable_formatting="This is a test"
         )
-        genr.generate("<string>")
+        genr.generate(PurePath("<string>"))
         self.assertIn("This is a test", out.getvalue())
 
     def test_unreachable_implicit3(self) -> None:
@@ -941,7 +942,7 @@ class TestPegen(unittest.TestCase):
         genr = PythonParserGenerator(
             grammar, out, unreachable_formatting="This is a test"
         )
-        genr.generate("<string>")
+        genr.generate(PurePath("<string>"))
         self.assertNotIn("This is a test", out.getvalue())
 
     def test_locations_in_alt_action_and_group(self) -> None:

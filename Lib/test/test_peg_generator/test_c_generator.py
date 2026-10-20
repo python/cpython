@@ -1,5 +1,6 @@
 import io
 import unittest
+from pathlib import PurePath
 from unittest import mock
 
 from test import test_tools
@@ -33,7 +34,7 @@ class TestCGenerator(unittest.TestCase):
             explicit[void*]: NAME
         """)
         generator.rules["explicit"].type = "void *"
-        start, implicit, explicit = generator.prepare("example.gram").rules
+        start, implicit, explicit = generator.prepare(PurePath("example.gram")).rules
 
         self.assertIsNone(implicit.signature.return_type)
         self.assertEqual(explicit.signature.return_type, "void *")
@@ -49,7 +50,7 @@ class TestCGenerator(unittest.TestCase):
         self.assertEqual(call.function, "_PyPegen_lookahead")
         generator = self.make_generator("start: &explicit\nexplicit[void*]: NAME\n")
         with self.assertRaisesRegex(RuntimeError, "return type is incompatible"):
-            generator.prepare("example.gram")
+            generator.prepare(PurePath("example.gram"))
 
     def test_parser_plan_does_not_depend_on_compilation_state(self):
         generator = self.make_generator("""
@@ -63,7 +64,7 @@ class TestCGenerator(unittest.TestCase):
             expr[expr_ty]: expr '+' NAME | NAME
         """)
         generator.debug = True
-        parser = generator.prepare("some/path/example.gram")
+        parser = generator.prepare(PurePath("some/path/example.gram"))
         expected = self.emit_parser(parser)
 
         self.assertEqual(generator.file.getvalue(), "")
@@ -101,12 +102,12 @@ class TestCGenerator(unittest.TestCase):
             other: name_var=NUMBER name_var=NAME { name_var_1 }
         """
         generator = self.make_generator(source)
-        parser = generator.prepare("example.gram")
+        parser = generator.prepare(PurePath("example.gram"))
         expected = self.emit_parser(parser)
 
         self.assertEqual(self.emit_parser(parser), expected)
-        self.assertEqual(generator.prepare("example.gram"), parser)
-        other = self.make_generator(source).prepare("example.gram")
+        self.assertEqual(generator.prepare(PurePath("example.gram")), parser)
+        other = self.make_generator(source).prepare(PurePath("example.gram"))
         self.assertEqual(other, parser)
         self.assertEqual(self.emit_parser(other), expected)
         self.assertEqual(expected.count("expr_ty name_var_1;"), 2)
@@ -118,7 +119,7 @@ class TestCGenerator(unittest.TestCase):
             start: prefix ':' NAME | prefix ':' NUMBER | NAME | prefix '=' NAME
             prefix[expr_ty] (memo): NAME
         """)
-        parser = generator.prepare("example.gram")
+        parser = generator.prepare(PurePath("example.gram"))
         start = parser.rules[0]
         prefix, = start.prefixes
         self.assertEqual(prefix.type, "expr_ty")
@@ -126,7 +127,7 @@ class TestCGenerator(unittest.TestCase):
             self.assertIn("!p->call_invalid_rules", alt.calls[0].expression())
             self.assertIn(prefix.result, alt.calls[0].expression())
         self.assertEqual(start.alternatives[3].calls[0].expression(), "prefix_rule(p)")
-        self.assertEqual(generator.prepare("example.gram"), parser)
+        self.assertEqual(generator.prepare(PurePath("example.gram")), parser)
         expected = self.emit_parser(parser)
         generator.rules.clear()
         generator.all_rules.clear()
@@ -137,7 +138,7 @@ class TestCGenerator(unittest.TestCase):
             start: prefix ':' NAME | prefix ':' NUMBER
             prefix (memo): NAME?
         """)
-        start = generator.prepare("example.gram").rules[0]
+        start = generator.prepare(PurePath("example.gram")).rules[0]
         self.assertEqual(start.prefixes, ())
         for alt in start.alternatives:
             self.assertEqual(alt.calls[0].expression(), "prefix_rule(p)")
@@ -148,11 +149,11 @@ class TestCGenerator(unittest.TestCase):
             start: NAME ENDMARKER
         """)
         with self.assertRaisesRegex(KeyError, "missing"):
-            generator.generate("example.gram")
+            generator.generate(PurePath("example.gram"))
         self.assertEqual(generator.file.getvalue(), "")
 
     def test_empty_keyword_tables(self):
-        parser = self.make_generator("start: NAME ENDMARKER\n").prepare("example.gram")
+        parser = self.make_generator("start: NAME ENDMARKER\n").prepare(PurePath("example.gram"))
         source = self.emit_parser(parser)
 
         self.assertEqual(parser.keyword_groups, ())
@@ -195,9 +196,9 @@ class TestCGenerator(unittest.TestCase):
                 grammar_module, "SIMPLE_STR", simple
             ):
                 generator = self.make_generator(source)
-                expected = generator.prepare("example.gram").rules
+                expected = generator.prepare(PurePath("example.gram")).rules
                 with mock.patch.object(grammar_module, "SIMPLE_STR", not simple):
-                    actual = generator.prepare("example.gram").rules
+                    actual = generator.prepare(PurePath("example.gram")).rules
                 self.assertEqual(len(actual), len(expected))
                 for old, new in zip(expected, actual):
                     self.assertEqual(old.signature, new.signature)
@@ -232,7 +233,7 @@ class TestCGenerator(unittest.TestCase):
                         start: {item} {{ _PyPegen_dummy_name(p) }}
                         invalid_example: NAME
                     """)
-                    start = generator.prepare("example.gram").rules[0]
+                    start = generator.prepare(PurePath("example.gram")).rules[0]
                     self.assertEqual(
                         start.alternatives[0].requires_invalid_rules,
                         requires_invalid_rules,
@@ -243,7 +244,7 @@ class TestCGenerator(unittest.TestCase):
             start: Mixed LPAR ENDMARKER
             Mixed[expr_ty]: NAME
         """)
-        start, mixed = generator.prepare("example.gram").rules
+        start, mixed = generator.prepare(PurePath("example.gram")).rules
         self.assertEqual(mixed.signature.return_type, "expr_ty")
         for call, name in zip(start.alternatives[0].calls, ("Mixed", "LPAR")):
             with self.subTest(name=name):
