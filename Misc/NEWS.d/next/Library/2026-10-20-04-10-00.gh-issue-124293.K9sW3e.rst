@@ -1,0 +1,2 @@
+Fix :exc:`AttributeError` from ``seekable()`` and forward ``seek()`` calls on
+file objects returned by :meth:`tarfile.TarFile.extractfile` in stream modes.

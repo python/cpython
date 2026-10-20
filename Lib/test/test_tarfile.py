@@ -547,10 +547,7 @@ class CommonReadTest(ReadTest):
             self.assertEqual(fobj.mode, 'rb')
             self.assertIs(fobj.readable(), True)
             self.assertIs(fobj.writable(), False)
-            if self.is_stream:
-                self.assertRaises(AttributeError, fobj.seekable)
-            else:
-                self.assertIs(fobj.seekable(), True)
+            self.assertIs(fobj.seekable(), True)
             self.assertIs(fobj.closed, False)
         self.assertIs(fobj.closed, True)
         self.assertEqual(fobj.name, 'ustar/regtype')
@@ -558,10 +555,7 @@ class CommonReadTest(ReadTest):
         self.assertEqual(fobj.mode, 'rb')
         self.assertIs(fobj.readable(), True)
         self.assertIs(fobj.writable(), False)
-        if self.is_stream:
-            self.assertRaises(AttributeError, fobj.seekable)
-        else:
-            self.assertIs(fobj.seekable(), True)
+        self.assertIs(fobj.seekable(), True)
 
 
 class ReadSizeRecorder(io.BytesIO):
@@ -1002,6 +996,15 @@ class StreamReadTest(CommonReadTest, unittest.TestCase):
 
     prefix="r|"
     is_stream = True
+
+    def test_extractfile_seek_forward(self):
+        tarinfo = self.tar.next()
+        with tarfile.open(tarname) as reference:
+            expected = reference.extractfile(tarinfo.name).read()
+        with self.tar.extractfile(tarinfo) as file:
+            self.assertIs(file.seekable(), True)
+            self.assertEqual(file.seek(10), 10)
+            self.assertEqual(file.read(20), expected[10:30])
 
     def test_read_through(self):
         # Issue #11224: A poorly designed _FileInFile.read() method
