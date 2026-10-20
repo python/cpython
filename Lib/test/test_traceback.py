@@ -5325,6 +5325,25 @@ class MiscTest(unittest.TestCase):
         else:
             self.fail("ModuleNotFoundError was not raised")
 
+    def test_module_not_found_without_search_paths(self):
+        code = """
+            import sys
+            import traceback
+
+            sys.path[:] = sys.argv[1:]
+            try:
+                import missing_module
+            except ModuleNotFoundError as exc:
+                print(*traceback.format_exception_only(exc), end='')
+        """
+        with os_helper.temp_dir() as tmp:
+            for paths in ([], [os.path.join(tmp, 'missing')]):
+                with self.subTest(paths=paths):
+                    _, stdout, _ = assert_python_ok('-c', code, *paths)
+                    self.assertEqual(stdout.splitlines(), [
+                        b"ModuleNotFoundError: No module named 'missing_module'",
+                    ])
+
     @unittest.skipIf(not importlib.machinery.EXTENSION_SUFFIXES, 'Platform does not support extension modules')
     def test_find_incompatible_extension_modules(self):
         """_find_incompatible_extension_modules assumes the last extension in
