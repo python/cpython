@@ -16,6 +16,29 @@ import _strptime
 
 
 class PublicStrptimeTests(unittest.TestCase):
+    def test_week_and_ordinal_dates(self):
+        for year in (1, 4, 100, 400, 1900, 1999, 2000, 2004, 2020, 9999):
+            for day in (1, 28, 59, 60, 61, 365, 366, 367):
+                self.assert_matches_python(f'{year:04d} {day:03d}', '%Y %j')
+            for week in (0, 1, 52, 53, 54):
+                for weekday in range(1, 8):
+                    for fmt in ('%Y %U %u', '%Y %W %u', '%G %V %u'):
+                        self.assert_matches_python(
+                            f'{year:04d} {week:02d} {weekday}', fmt)
+        for text, fmt in (
+            ('2023-02-31 060', '%Y-%m-%d %j'),
+            ('2024-12-31 001', '%Y-%m-%d %j'),
+            ('2023 366 1', '%Y %j %u'),
+            ('2024 53', '%Y %U'), ('366', '%j'),
+            ('2024 001 01 1', '%Y %j %W %u'),
+            ('2024 2020 01 1', '%Y %G %V %u'),
+            ('2024 001 01 1', '%G %j %V %u'),
+            ('2024 01 1', '%Y %V %u'), ('2024 01', '%G %V'),
+            ('2024', '%G'), ('0000 001', '%Y %j'),
+            ('2024 01 02 1', '%Y %U %W %u'),
+        ):
+            self.assert_matches_python(text, fmt)
+
     def test_numeric_aliases(self):
         for text, fmt in (
             ('2024-02-29', '%F'), ('02/29/24', '%D'),

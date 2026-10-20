@@ -340,7 +340,7 @@ _PyTime_Weekday(int year, int yday)
 }
 
 
-// Locale-independent numeric strptime parsing.
+// Shared strptime parsing, with fallback for unsupported inputs.
 // A complete match returns 1; otherwise use Lib/_strptime.py. This function
 // neither allocates nor sets exceptions. The calendar date is validated, but
 // seconds may be 60 or 61: callers must apply their own time validation.

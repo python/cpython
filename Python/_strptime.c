@@ -13,10 +13,10 @@
  * - %I with ASCII %p indicators, and the %k, %l, %P aliases;
  * - %z and %:z offsets with hours below 24, and terminal UTC/GMT %Z names;
  * - numeric aliases %F, %D, %T, %R, %e and whitespace %n/%t;
+ * - ordinal dates (%j), calendar weeks (%U/%W), and ISO weeks (%G/%V);
  * - literal characters, %%, and ASCII whitespace.
  * Duplicate directives, mixed %Y/%y, and day-of-month without a year use the
- * fallback. So do other directives (including non-ASCII locale names and
- * week/day-of-year calculations).
+ * fallback. So do non-ASCII locale names and directives not listed above.
  */
 
 static int
@@ -104,6 +104,48 @@ strptime_name(const unsigned char *data, Py_ssize_t length, Py_ssize_t pos,
 }
 
 static int
+strptime_date_from_ordinal(int ordinal, _PyTime_StrptimeFields *fields)
+{
+    if (ordinal < 1 || ordinal > _PyTime_DaysBeforeYear(10000)) {
+        return 0;
+    }
+    int lower = 1, upper = 10000;
+    while (lower + 1 < upper) {
+        int middle = (lower + upper) / 2;
+        if (_PyTime_DaysBeforeYear(middle) < ordinal) {
+            lower = middle;
+        }
+        else {
+            upper = middle;
+        }
+    }
+    fields->year = lower;
+    fields->yday = ordinal - _PyTime_DaysBeforeYear(lower);
+    fields->day = fields->yday;
+    int leap = lower % 4 == 0 && (lower % 100 != 0 || lower % 400 == 0);
+    static const int month_days[] = {31, 28, 31, 30, 31, 30,
+                                     31, 31, 30, 31, 30, 31};
+    for (fields->month = 1; fields->month < 12; fields->month++) {
+        int days = month_days[fields->month - 1] + (fields->month == 2 && leap);
+        if (fields->day <= days) {
+            break;
+        }
+        fields->day -= days;
+    }
+    if (fields->weekday < 0) {
+        fields->weekday = (ordinal - 1) % 7;
+    }
+    return 1;
+}
+
+static int
+strptime_iso_start(int year)
+{
+    /* ISO week 1 contains January 4. */
+    return _PyTime_DaysBeforeYear(year) + 4 - _PyTime_Weekday(year, 4);
+}
+
+static int
 strptime_offset(const unsigned char *data, Py_ssize_t length, Py_ssize_t pos,
                 int require_colon, _PyTime_StrptimeFields *fields)
 {
@@ -159,7 +201,7 @@ strptime_offset(const unsigned char *data, Py_ssize_t length, Py_ssize_t pos,
     return (int)(pos - start);
 }
 
-/* Return 1 for a complete numeric match, or 0 if fallback is required.
+/* Return 1 for a complete match, or 0 if fallback is required.
  *
  * Parsing doesn't allocate or set exceptions. Some mismatches require regex
  * backtracking, but even inputs known to be invalid use the Python parser:
@@ -184,6 +226,10 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
         WEEKDAY = 1U << 9,
         AMPM = 1U << 10,
         ZONE = 1U << 11,
+        JULIAN = 1U << 12,
+        WEEK = 1U << 13,
+        ISO_YEAR = 1U << 14,
+        ISO_WEEK = 1U << 15,
         ANY_YEAR = YEAR | SHORT_YEAR,
     };
     static const unsigned short directive_bits[128] = {
@@ -199,6 +245,10 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
         ['w'] = WEEKDAY,
         ['p'] = AMPM,
         ['Z'] = ZONE,
+        ['j'] = JULIAN,
+        ['U'] = WEEK,
+        ['G'] = ISO_YEAR,
+        ['V'] = ISO_WEEK,
     };
     /* String subclasses and non-ASCII input retain Python's behavior. */
     if (!PyUnicode_CheckExact(string) || !PyUnicode_CheckExact(format) ||
@@ -216,6 +266,9 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
     unsigned int seen = 0;
     int hour12 = 0;
     int ampm = -1;
+    int julian = -1, week = -1, monday_first = 0;
+    int have_julian = 0;
+    int iso_year = -1, iso_week = -1;
     Py_ssize_t pos = 0;
 
     for (Py_ssize_t i = 0; ; i++) {
@@ -315,6 +368,9 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
         else if (c == 'I') {
             field = 'H';
         }
+        else if (c == 'W') {
+            field = 'U';
+        }
         unsigned int bit = directive_bits[field];
         if (bit == 0) {
             return 0;
@@ -372,7 +428,7 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
 
         int minimum = 1;
         int maximum = 2;
-        if (c == 'Y') {
+        if (c == 'Y' || c == 'G') {
             minimum = maximum = 4;
         }
         else if (c == 'y') {
@@ -380,6 +436,9 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
         }
         else if (c == 'f') {
             maximum = 6;
+        }
+        else if (c == 'j') {
+            maximum = 3;
         }
         else if (field == 'w') {
             maximum = 1;
@@ -396,6 +455,30 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
         }
         pos += count;
         switch (c) {
+            case 'j':
+                if (value < 1 || value > 366) {
+                    return 0;
+                }
+                julian = value;
+                have_julian = 1;
+                break;
+            case 'U':
+            case 'W':
+                if (value > 53) {
+                    return 0;
+                }
+                week = value;
+                monday_first = c == 'W';
+                break;
+            case 'G':
+                iso_year = value;
+                break;
+            case 'V':
+                if (value < 1 || value > 53) {
+                    return 0;
+                }
+                iso_week = value;
+                break;
             case 'I':
                 if (value < 1 || value > 12) {
                     return 0;
@@ -465,6 +548,53 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
         }
         fields->hour = fields->hour % 12 + (ampm == 1 ? 12 : 0);
     }
+    /* Mixed fields and incomplete ISO dates retain Python's diagnostics. */
+    if (pos != length || (seen & ANY_YEAR) == ANY_YEAR ||
+        ((seen & DAY) && !(seen & ANY_YEAR) && iso_year < 0)) {
+        return 0;
+    }
+    if (iso_year >= 0 || iso_week >= 0) {
+        if (iso_year < 1 || iso_week < 1 || fields->weekday < 0 ||
+            julian >= 0 || week >= 0) {
+            return 0;
+        }
+        int monday = strptime_iso_start(iso_year) + 7 * (iso_week - 1);
+        if (monday >= strptime_iso_start(iso_year + 1) ||
+            !strptime_date_from_ordinal(monday + fields->weekday, fields)) {
+            return 0;
+        }
+    }
+    if (fields->year < 1) {
+        return 0;
+    }
+    if (julian < 0 && week >= 0 && fields->weekday >= 0) {
+        int first = _PyTime_Weekday(fields->year, 1);
+        int weekday = fields->weekday;
+        if (!monday_first) {
+            first = (first + 1) % 7;
+            weekday = (weekday + 1) % 7;
+        }
+        julian = week == 0 ? 1 + weekday - first
+                          : 1 + (7 - first) % 7 + 7 * (week - 1) + weekday;
+        have_julian = 1;
+    }
+    if (have_julian) {
+        /* Week zero can fall in the previous year. A day spilling into the
+         * next year retains its original yday in time.strptime's result.
+         */
+        int year = fields->year;
+        if (julian <= 0) {
+            if (year == 1) {
+                return 0;
+            }
+            year--;
+            julian += _PyTime_DaysBeforeYear(year + 1) - _PyTime_DaysBeforeYear(year);
+        }
+        if (!strptime_date_from_ordinal(_PyTime_DaysBeforeYear(year) + julian, fields)) {
+            return 0;
+        }
+        fields->yday = julian;
+    }
     static const int days_before_month[] = {
         0, 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365
     };
@@ -475,15 +605,13 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
     if (fields->month == 2) {
         month_days += leap;
     }
-    /* Mixed %Y/%y and day-without-year diagnostics belong to Python. */
-    if (pos != length || (seen & ANY_YEAR) == ANY_YEAR ||
-        ((seen & DAY) && !(seen & ANY_YEAR)) ||
-        fields->year < 1 ||
-        fields->day > month_days) {
+    if (fields->day > month_days) {
         return 0;
     }
-    fields->yday = days_before_month[fields->month] + fields->day +
-                   (fields->month > 2 && leap);
+    if (!have_julian) {
+        fields->yday = days_before_month[fields->month] + fields->day +
+                       (fields->month > 2 && leap);
+    }
     if (fields->weekday < 0) {
         fields->weekday = _PyTime_Weekday(fields->year, fields->yday);
     }
