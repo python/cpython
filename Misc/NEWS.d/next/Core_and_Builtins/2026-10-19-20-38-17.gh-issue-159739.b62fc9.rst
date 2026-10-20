@@ -1,0 +1,1 @@
+Propagate errors during generic class construction.
