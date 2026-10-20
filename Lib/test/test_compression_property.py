@@ -9,9 +9,15 @@ tests here exercise that contract with random data, random chunking and
 random ``max_length`` values, using the module-level one-shot functions as
 oracles.
 
-The strategies only use ``.map()``, never ``.filter()`` or ``assume()``, so
-every generated input is a valid test case.  That keeps the tests usable as
-fuzz targets through each test's ``hypothesis.fuzz_one_input`` attribute.
+Each API is covered twice.  A ``RuleBasedStateMachine`` declares the calls
+a user may make (feed a chunk, seek, read a line, ...) with their argument
+ranges and what must hold after each one; Hypothesis then generates and
+shrinks whole call sequences against it.  State machines have no
+``@example`` equivalent, so each one is paired with a ``@given`` companion
+test that expresses one call sequence as data (chunk sizes, ``max_length``
+values, read sizes).  The companions carry the pinned examples, including
+the shrunk reproducers for the known bugs, and are what the stub replays
+when Hypothesis is not installed; the machines are skipped then.
 """
 import dataclasses
 import functools
@@ -175,6 +181,10 @@ class _StateMachine(stateful.RuleBasedStateMachine):
         super().__init__()
         self._case = unittest.TestCase()
 
+    # Hypothesis runs a machine from the ``runTest`` of the ``TestCase`` it
+    # generates, creating a fresh instance with ``Machine()`` for every
+    # example.  The machine is not that test case and has none of its
+    # assertion state, so the methods are forwarded to a throwaway one.
     def __getattr__(self, name):
         if name.startswith("assert"):
             return getattr(self._case, name)
