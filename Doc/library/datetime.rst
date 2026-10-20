@@ -2745,6 +2745,13 @@ in the format string will be pulled from the default value.
    the default year of 1900 is *not* a leap year.  Always add a default leap
    year to partial date strings before parsing.
 
+.. note::
+   If a :meth:`~.datetime.strptime` format string contains more than
+   one directive for the same field, for example both ``%Y`` and ``%y``,
+   every directive must still match the input, but only the value of the
+   last one is used. For example, parsing ``200099`` with ``%Y%y`` gives
+   the year 1999. Repeating the same directive, like ``%Y%Y``, raises an error.
+
 .. testsetup::
 
     # doctest seems to turn the warning into an error which makes it
