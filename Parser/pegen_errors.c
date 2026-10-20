@@ -104,6 +104,11 @@ _Pypegen_tokenizer_error(Parser *p)
 int
 _Pypegen_raise_decode_error(Parser *p)
 {
+    if (p->keyword_trial != NULL) {
+        // A trial can reject a literal without creating a syntax exception.
+        p->error_indicator = 1;
+        return -1;
+    }
     assert(PyErr_Occurred());
     const char *errtype = NULL;
     if (PyErr_ExceptionMatches(PyExc_UnicodeError)) {

@@ -1951,6 +1951,75 @@ print(
             self.assertIsNone(caught.exception._metadata)
 
     @cpython_only
+    def test_keyword_trials_reject_invalid_literals(self):
+        for literal in ("b'é'", r"'\xzz'", r"'\U00110000'"):
+            for mode in ("exec", "eval", "single"):
+                source = "npt " + literal
+                with self.subTest(source=source, mode=mode):
+                    with self.assertRaises(SyntaxError) as caught:
+                        compile(source, "<test>", mode)
+                    self.assertIsNone(caught.exception._metadata)
+
+    @cpython_only
+    @requires_subprocess()
+    def test_keyword_trials_do_not_call_literal_hooks(self):
+        assert_python_ok('-c', textwrap.dedent(r'''
+            import codecs, sys, _pylong
+            calls = []
+
+            def forbidden(*args):
+                calls.append(args)
+                raise AssertionError("literal callback")
+
+            class WatchImports:
+                def find_spec(self, fullname, path=None, target=None):
+                    if fullname == "unicodedata":
+                        forbidden(fullname)
+
+            sys.meta_path.insert(0, WatchImports())
+            codecs.register_error("strict", forbidden)
+            _pylong.int_from_string = forbidden
+            sys.set_int_max_str_digits(0)
+            literals = [(r"'\N{SNOWMAN}'", False), (r"'\xzz'", False),
+                        (r"'\U00110000'", False), (r"f'\xzz'", False),
+                        (r"t'\xzz'", False), ("1" * 6001, False),
+                        (r"'\x61\u0062\U00000063'", True),
+                        (r"r'\N{SNOWMAN}'", True), (r"'\\N{SNOWMAN}'", True),
+                        (r"f'\x61{1}'", True), (r"t'\x61{1}'", True)]
+            for literal, expected in literals:
+                try:
+                    compile("impor math\nx = " + literal, "<test>", "exec")
+                except SyntaxError as error:
+                    assert (error._metadata is not None) == expected, literal
+                else:
+                    raise AssertionError(literal)
+            assert calls == [], calls
+            # A cached Unicode name table must not change the trial policy.
+            sys.meta_path.pop(0)
+            compile(r"x = '\N{SNOWMAN}'", "<test>", "exec")
+            try:
+                compile("impor math\nx = " + literals[0][0], "<test>", "exec")
+            except SyntaxError as error:
+                assert error._metadata is None
+            # The normal decoder must still honor registered error handlers.
+            try:
+                br"\xzz".decode("unicode_escape")
+            except AssertionError:
+                pass
+            assert len(calls) == 1, calls
+        '''))
+
+    @cpython_only
+    def test_keyword_trials_numeric_limit(self):
+        for digits, expected in ((640, True), (641, False)):
+            with self.subTest(digits=digits):
+                source = "x = " + "1" * digits
+                compile(source, "<test>", "exec")
+                with self.assertRaises(SyntaxError) as caught:
+                    compile("impor math\n" + source, "<test>", "exec")
+                self.assertEqual(caught.exception._metadata is not None, expected)
+
+    @cpython_only
     def test_keyword_trials_do_not_call_normalizer(self):
         with unittest.mock.patch("unicodedata.normalize") as normalize:
             with self.assertRaises(SyntaxError) as caught:

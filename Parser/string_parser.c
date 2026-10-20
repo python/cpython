@@ -195,7 +195,11 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
     const char *first_invalid_escape_ptr;
     v = _PyUnicode_DecodeUnicodeEscapeInternal2(buf, (Py_ssize_t)len, NULL, NULL,
                                                 &first_invalid_escape_char,
-                                                &first_invalid_escape_ptr);
+                                                &first_invalid_escape_ptr,
+                                                parser->keyword_trial == NULL);
+    if (v == NULL && parser->keyword_trial != NULL) {
+        parser->error_indicator = 1;
+    }
 
     // HACK: later we can simply pass the line no, since we don't preserve the tokens
     // when we are decoding the string but we preserve the line numbers.

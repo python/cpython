@@ -1,5 +1,6 @@
 #include <Python.h>
 #include "pycore_ast.h"           // _PyAST_Validate(),
+#include "pycore_long.h"          // _PY_LONG_MAX_STR_DIGITS_THRESHOLD
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_parser.h"        // _PYPEGEN_NSTATISTICS
 #include "pycore_pyerrors.h"      // PyExc_IncompleteInputError
@@ -1421,6 +1422,15 @@ keyword_typo_metadata(Parser *p, PySyntaxErrorObject *error)
         _PyTokenizer_IsInteractive(p->tok))
     {
         return NULL;
+    }
+    // Conservatively bound numeric conversion before any trial. This also
+    // excludes the Python helper without changing normal number parsing.
+    for (int i = 0; i < p->fill; i++) {
+        Token *token = p->tokens[i];
+        if (token->type == NUMBER &&
+            PyBytes_GET_SIZE(token->bytes) > _PY_LONG_MAX_STR_DIGITS_THRESHOLD) {
+            return NULL;
+        }
     }
     KeywordTypo candidates[MAX_KEYWORD_TYPO_CANDIDATES];
     int count = collect_keyword_typos(p, error, candidates);
