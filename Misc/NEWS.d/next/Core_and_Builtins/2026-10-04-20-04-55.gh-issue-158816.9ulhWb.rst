@@ -1,0 +1,3 @@
+Speed up deleting items from split dictionaries (for example the
+materialized ``__dict__`` of an instance with inline values) by skipping a
+redundant hash table probe.

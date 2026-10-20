@@ -1,5 +1,5 @@
-:mod:`copy` --- Shallow and deep copy operations
-================================================
+:mod:`!copy` --- Shallow and deep copy operations
+=================================================
 
 .. module:: copy
    :synopsis: Shallow and deep copy operations.
@@ -72,43 +72,61 @@ file, socket, window, or any similar types.  It does "copy" functions and
 classes (shallow and deeply), by returning the original object unchanged; this
 is compatible with the way these are treated by the :mod:`pickle` module.
 
-Shallow copies of dictionaries can be made using :meth:`dict.copy`, and
-of lists by assigning a slice of the entire list, for example,
-``copied_list = original_list[:]``.
+Shallow copies of many collections can be made using the corresponding
+:meth:`!copy` method (such as :meth:`list.copy`, :meth:`dict.copy` or
+:meth:`set.copy`), and of sequences (such as lists or bytearrays) by making
+a slice of the entire sequence (``sequence[:]``).
+However, these methods and slicing can create an instance of the base type
+when copying an instance of a subclass, whereas :func:`copy.copy` normally
+returns an instance of the same type.
 
 .. index:: pair: module; pickle
 
 Classes can use the same interfaces to control copying that they use to control
 pickling.  See the description of module :mod:`pickle` for information on these
-methods.  In fact, the :mod:`copy` module uses the registered
+methods.  In fact, the :mod:`!copy` module uses the registered
 pickle functions from the :mod:`copyreg` module.
 
 .. index::
    single: __copy__() (copy protocol)
    single: __deepcopy__() (copy protocol)
 
+.. currentmodule:: None
+
 In order for a class to define its own copy implementation, it can define
-special methods :meth:`__copy__` and :meth:`__deepcopy__`.  The former is called
-to implement the shallow copy operation; no additional arguments are passed.
-The latter is called to implement the deep copy operation; it is passed one
-argument, the ``memo`` dictionary.  If the :meth:`__deepcopy__` implementation needs
-to make a deep copy of a component, it should call the :func:`deepcopy` function
-with the component as first argument and the memo dictionary as second argument.
-The memo dictionary should be treated as an opaque object.
+special methods :meth:`~object.__copy__` and :meth:`~object.__deepcopy__`.
+
+.. method:: object.__copy__(self)
+   :noindexentry:
+
+   Called to implement the shallow copy operation;
+   no additional arguments are passed.
+
+.. method:: object.__deepcopy__(self, memo)
+   :noindexentry:
+
+   Called to implement the deep copy operation; it is passed one
+   argument, the *memo* dictionary.  If the ``__deepcopy__`` implementation needs
+   to make a deep copy of a component, it should call the :func:`~copy.deepcopy` function
+   with the component as first argument and the *memo* dictionary as second argument.
+   The *memo* dictionary should be treated as an opaque object.
 
 
 .. index::
    single: __replace__() (replace protocol)
 
-Function :func:`replace` is more limited than :func:`copy` and :func:`deepcopy`,
+Function :func:`!copy.replace` is more limited
+than :func:`~copy.copy` and :func:`~copy.deepcopy`,
 and only supports named tuples created by :func:`~collections.namedtuple`,
-:mod:`dataclasses`, and other classes which define method :meth:`!__replace__`.
+:mod:`dataclasses`, and other classes which define method :meth:`~object.__replace__`.
 
-   .. method:: __replace__(self, /, **changes)
-      :noindex:
+.. method:: object.__replace__(self, /, **changes)
+   :noindexentry:
 
-:meth:`!__replace__` should create a new object of the same type,
-replacing fields with values from *changes*.
+   This method should create a new object of the same type,
+   replacing fields with values from *changes*.
+
+   .. versionadded:: 3.13
 
 
 .. seealso::

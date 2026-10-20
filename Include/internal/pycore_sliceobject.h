@@ -11,10 +11,8 @@ extern "C" {
 
 /* runtime lifecycle */
 
-extern void _PySlice_Fini(PyInterpreterState *);
-
-extern PyObject *
-_PyBuildSlice_ConsumeRefs(PyObject *start, PyObject *stop);
+PyAPI_FUNC(PyObject *)
+_PyBuildSlice_ConsumeRefs(PyObject *start, PyObject *stop, PyObject *step);
 
 #ifdef __cplusplus
 }

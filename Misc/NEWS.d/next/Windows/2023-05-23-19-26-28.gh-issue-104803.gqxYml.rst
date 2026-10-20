@@ -1,3 +1,0 @@
-Add :func:`os.path.isdevdrive` to detect whether a path is on a Windows Dev
-Drive. Returns ``False`` on platforms that do not support Dev Drive, and is
-absent on non-Windows platforms.

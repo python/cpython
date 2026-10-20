@@ -1,4 +1,4 @@
-# Copyright (C) 2002-2007 Python Software Foundation
+# Copyright (C) 2002 Python Software Foundation
 # Author: Ben Gertzfield, Barry Warsaw
 # Contact: email-sig@python.org
 
@@ -59,16 +59,22 @@ _max_append = email.quoprimime._max_append
 def decode_header(header):
     """Decode a message header value without converting charset.
 
-    Returns a list of (string, charset) pairs containing each of the decoded
-    parts of the header.  Charset is None for non-encoded parts of the header,
-    otherwise a lower-case string containing the name of the character set
-    specified in the encoded string.
+    For historical reasons, this function may return either:
+
+    1. A list of length 1 containing a pair (str, None).
+    2. A list of (bytes, charset) pairs containing each of the decoded
+       parts of the header.  Charset is None for non-encoded parts of the header,
+       otherwise a lower-case string containing the name of the character set
+       specified in the encoded string.
 
     header may be a string that may or may not contain RFC2047 encoded words,
     or it may be a Header object.
 
     An email.errors.HeaderParseError may be raised when certain decoding error
     occurs (e.g. a base64 decoding exception).
+
+    This function exists for backwards compatibility only. For new code, we
+    recommend using email.headerregistry.HeaderRegistry instead.
     """
     # If it is a Header object, we can just return the encoded chunks.
     if hasattr(header, '_chunks'):
@@ -161,6 +167,9 @@ def make_header(decoded_seq, maxlinelen=None, header_name=None,
     This function takes one of those sequence of pairs and returns a Header
     instance.  Optional maxlinelen, header_name, and continuation_ws are as in
     the Header constructor.
+
+    This function exists for backwards compatibility only, and is not
+    recommended for use in new code.
     """
     h = Header(maxlinelen=maxlinelen, header_name=header_name,
                continuation_ws=continuation_ws)
@@ -180,7 +189,7 @@ class Header:
 
         Optional s is the initial header value.  If None, the initial header
         value is not set.  You can later append to the header with .append()
-        method calls.  s may be a byte string or a Unicode string, but see the
+        method calls.  s may be a byte string or a string, but see the
         .append() documentation for semantics.
 
         Optional charset serves two purposes: it has the same meaning as the
@@ -192,7 +201,7 @@ class Header:
 
         The maximum line length can be specified explicitly via maxlinelen. For
         splitting the first line to a shorter value (to account for the field
-        header which isn't included in s, e.g. `Subject') pass in the name of
+        header which isn't included in s, e.g. 'Subject') pass in the name of
         the field in header_name.  The default maxlinelen is 78 as recommended
         by RFC 2822.
 
@@ -254,7 +263,7 @@ class Header:
     # have or explicitly disable <, <=, >, >= operators?
     def __eq__(self, other):
         # other may be a Header or a string.  Both are fine so coerce
-        # ourselves to a unicode (of the unencoded header value), swap the
+        # ourselves to a str (of the unencoded header value), swap the
         # args and do another comparison.
         return other == str(self)
 
@@ -266,17 +275,17 @@ class Header:
         value of None (the default) means that the charset given in the
         constructor is used.
 
-        s may be a byte string or a Unicode string.  If it is a byte string
+        s may be a byte string or a string.  If it is a byte string
         (i.e. isinstance(s, str) is false), then charset is the encoding of
         that byte string, and a UnicodeError will be raised if the string
-        cannot be decoded with that charset.  If s is a Unicode string, then
+        cannot be decoded with that charset.  If s is a string, then
         charset is a hint specifying the character set of the characters in
         the string.  In either case, when producing an RFC 2822 compliant
         header using RFC 2047 rules, the string will be encoded using the
         output codec of the charset.  If the string cannot be encoded to the
         output codec, a UnicodeError will be raised.
 
-        Optional `errors' is passed as the errors argument to the decode
+        Optional 'errors' is passed as the errors argument to the decode
         call if s is a byte string.
         """
         if charset is None:
@@ -326,7 +335,7 @@ class Header:
 
         Optional splitchars is a string containing characters which should be
         given extra weight by the splitting algorithm during normal header
-        wrapping.  This is in very rough support of RFC 2822's `higher level
+        wrapping.  This is in very rough support of RFC 2822's 'higher level
         syntactic breaks':  split points preceded by a splitchar are preferred
         during line splitting, with the characters preferred in the order in
         which they appear in the string.  Space and tab may be included in the
@@ -388,7 +397,7 @@ class Header:
 
     def _normalize(self):
         # Step 1: Normalize the chunks so that all runs of identical charsets
-        # get collapsed into a single unicode string.
+        # get collapsed into a single string.
         chunks = []
         last_charset = None
         last_chunk = []

@@ -1,4 +1,0 @@
-``regrtest`` now computes statistics on all tests: successes, failures and
-skipped. ``test_netrc``, ``test_pep646_syntax`` and ``test_xml_etree`` now
-return results in their ``test_main()`` function. Patch by Victor Stinner
-and Alex Waygood.

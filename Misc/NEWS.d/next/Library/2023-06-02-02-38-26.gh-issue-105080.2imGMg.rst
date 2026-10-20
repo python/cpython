@@ -1,1 +1,0 @@
-Fixed inconsistent signature on derived classes for :func:`inspect.signature`

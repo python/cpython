@@ -1,4 +1,0 @@
-Attributes of :mod:`ast` nodes that are lists now default to the empty list
-if omitted. This means that some code that previously raised
-:exc:`TypeError` when the AST node was used will now proceed with the empty
-list instead. Patch by Jelle Zijlstra.

@@ -6,8 +6,12 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_runtime.h"       // _Py_ID()
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(depr_star_new__doc__,
 "DeprStarNew(a=None)\n"
@@ -44,10 +48,12 @@ depr_star_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -78,7 +84,8 @@ depr_star_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto exit;
         }
     }
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -129,10 +136,12 @@ depr_star_new_clone(PyObject *type, PyObject *const *args, Py_ssize_t nargs, PyO
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -161,7 +170,8 @@ depr_star_new_clone(PyObject *type, PyObject *const *args, Py_ssize_t nargs, PyO
             goto exit;
         }
     }
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -211,10 +221,12 @@ depr_star_init(PyObject *self, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -245,7 +257,8 @@ depr_star_init(PyObject *self, PyObject *args, PyObject *kwargs)
             goto exit;
         }
     }
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -296,10 +309,12 @@ depr_star_init_clone(PyObject *self, PyObject *const *args, Py_ssize_t nargs, Py
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -328,7 +343,8 @@ depr_star_init_clone(PyObject *self, PyObject *const *args, Py_ssize_t nargs, Py
             goto exit;
         }
     }
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -368,10 +384,12 @@ depr_star_init_noinline(PyObject *self, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -447,10 +465,12 @@ depr_kwd_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -472,7 +492,8 @@ depr_kwd_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
     PyObject *a = Py_None;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -530,10 +551,12 @@ depr_kwd_init(PyObject *self, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -555,7 +578,8 @@ depr_kwd_init(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
     PyObject *a = Py_None;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -604,10 +628,12 @@ depr_kwd_init_noinline(PyObject *self, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -634,7 +660,7 @@ depr_kwd_init_noinline(PyObject *self, PyObject *args, PyObject *kwargs)
         &a, &b, &c, &d, &d_length)) {
         goto exit;
     }
-    if (kwargs && PyDict_GET_SIZE(kwargs) && ((nargs < 2) || (nargs < 3 && PyDict_Contains(kwargs, &_Py_ID(c))))) {
+    if (kwargs && PyDict_GET_SIZE(kwargs) && ((nargs < 2) || (nargs < 3 && PyDict_Contains(kwargs, _Py_LATIN1_CHR('c'))))) {
         if (PyErr_Occurred()) { // PyDict_Contains() above can fail
             goto exit;
         }
@@ -688,10 +714,12 @@ depr_star_pos0_len1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -719,7 +747,8 @@ depr_star_pos0_len1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
             goto exit;
         }
     }
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -766,10 +795,12 @@ depr_star_pos0_len2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -798,7 +829,8 @@ depr_star_pos0_len2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
             goto exit;
         }
     }
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -847,10 +879,12 @@ depr_star_pos0_len3_with_kwd(PyObject *module, PyObject *const *args, Py_ssize_t
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -881,7 +915,8 @@ depr_star_pos0_len3_with_kwd(PyObject *module, PyObject *const *args, Py_ssize_t
             goto exit;
         }
     }
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 1, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 3, /*maxpos*/ 3, /*minkw*/ 1, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -931,10 +966,12 @@ depr_star_pos1_len1_opt(PyObject *module, PyObject *const *args, Py_ssize_t narg
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -964,7 +1001,8 @@ depr_star_pos1_len1_opt(PyObject *module, PyObject *const *args, Py_ssize_t narg
             goto exit;
         }
     }
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1016,10 +1054,12 @@ depr_star_pos1_len1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1048,7 +1088,8 @@ depr_star_pos1_len1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
             goto exit;
         }
     }
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1097,10 +1138,12 @@ depr_star_pos1_len2_with_kwd(PyObject *module, PyObject *const *args, Py_ssize_t
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1131,7 +1174,8 @@ depr_star_pos1_len2_with_kwd(PyObject *module, PyObject *const *args, Py_ssize_t
             goto exit;
         }
     }
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 1, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 3, /*maxpos*/ 3, /*minkw*/ 1, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1182,10 +1226,12 @@ depr_star_pos2_len1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(c), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1215,7 +1261,8 @@ depr_star_pos2_len1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
             goto exit;
         }
     }
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 3, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1265,10 +1312,12 @@ depr_star_pos2_len2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1299,7 +1348,8 @@ depr_star_pos2_len2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
             goto exit;
         }
     }
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 4, 4, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 4, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1350,10 +1400,12 @@ depr_star_pos2_len2_with_kwd(PyObject *module, PyObject *const *args, Py_ssize_t
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), &_Py_ID(e), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), _Py_LATIN1_CHR('e'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1385,7 +1437,8 @@ depr_star_pos2_len2_with_kwd(PyObject *module, PyObject *const *args, Py_ssize_t
             goto exit;
         }
     }
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 4, 4, 1, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 4, /*maxpos*/ 4, /*minkw*/ 1, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1437,10 +1490,12 @@ depr_star_noinline(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1521,10 +1576,12 @@ depr_star_multi(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), &_Py_ID(e), &_Py_ID(f), &_Py_ID(g), &_Py_ID(h), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), _Py_LATIN1_CHR('e'), _Py_LATIN1_CHR('f'), _Py_LATIN1_CHR('g'), _Py_LATIN1_CHR('h'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1561,7 +1618,8 @@ depr_star_multi(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
             goto exit;
         }
     }
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 7, 7, 1, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 7, /*maxpos*/ 7, /*minkw*/ 1, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1614,10 +1672,12 @@ depr_kwd_required_1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(b), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('b'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1637,7 +1697,8 @@ depr_kwd_required_1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     PyObject *a;
     PyObject *b;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1695,10 +1756,12 @@ depr_kwd_required_2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(b), &_Py_ID(c), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1719,7 +1782,8 @@ depr_kwd_required_2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     PyObject *b;
     PyObject *c;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 3, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1776,10 +1840,12 @@ depr_kwd_optional_1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(b), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('b'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1800,7 +1866,8 @@ depr_kwd_optional_1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     PyObject *a;
     PyObject *b = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1862,10 +1929,12 @@ depr_kwd_optional_2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(b), &_Py_ID(c), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1887,7 +1956,8 @@ depr_kwd_optional_2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     PyObject *b = Py_None;
     PyObject *c = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1955,10 +2025,12 @@ depr_kwd_optional_3(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(c), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1980,7 +2052,8 @@ depr_kwd_optional_3(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     PyObject *b = Py_None;
     PyObject *c = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -2053,10 +2126,12 @@ depr_kwd_required_optional(PyObject *module, PyObject *const *args, Py_ssize_t n
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(b), &_Py_ID(c), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2078,7 +2153,8 @@ depr_kwd_required_optional(PyObject *module, PyObject *const *args, Py_ssize_t n
     PyObject *b;
     PyObject *c = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -2141,10 +2217,12 @@ depr_kwd_noinline(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2170,7 +2248,7 @@ depr_kwd_noinline(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
         &a, &b, &c, &d, &d_length)) {
         goto exit;
     }
-    if (kwnames && PyTuple_GET_SIZE(kwnames) && ((nargs < 2) || (nargs < 3 && PySequence_Contains(kwnames, &_Py_ID(c))))) {
+    if (kwnames && PyTuple_GET_SIZE(kwnames) && ((nargs < 2) || (nargs < 3 && PySequence_Contains(kwnames, _Py_LATIN1_CHR('c'))))) {
         if (PyErr_Occurred()) { // PySequence_Contains() above can fail
             goto exit;
         }
@@ -2228,10 +2306,12 @@ depr_kwd_multi(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), &_Py_ID(e), &_Py_ID(f), &_Py_ID(g), &_Py_ID(h), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), _Py_LATIN1_CHR('e'), _Py_LATIN1_CHR('f'), _Py_LATIN1_CHR('g'), _Py_LATIN1_CHR('h'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2257,7 +2337,8 @@ depr_kwd_multi(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     PyObject *g;
     PyObject *h;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 8, 8, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 8, /*maxpos*/ 8, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -2281,6 +2362,212 @@ depr_kwd_multi(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     g = args[6];
     h = args[7];
     return_value = depr_kwd_multi_impl(module, a, b, c, d, e, f, g, h);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(depr_alias__doc__,
+"depr_alias($module, /, a=None)\n"
+"--\n"
+"\n");
+
+#define DEPR_ALIAS_METHODDEF    \
+    {"depr_alias", _PyCFunction_CAST(depr_alias), METH_FASTCALL|METH_KEYWORDS, depr_alias__doc__},
+
+static PyObject *
+depr_alias_impl(PyObject *module, PyObject *a);
+
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error "Update the clinic input of 'depr_alias'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ("Update the clinic input of 'depr_alias'.")
+#  else
+#    warning "Update the clinic input of 'depr_alias'."
+#  endif
+#endif
+
+static PyObject *
+depr_alias(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", "b", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "depr_alias",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *a = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        a = args[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[0]) {
+        PyErr_Format(PyExc_TypeError,
+                "argument for depr_alias() given by "
+                "name ('b') and %s", 0 < nargs ? "position (1)" : "name ('a')");
+        goto exit;
+    }
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+            "Passing the argument 'b' to depr_alias() is deprecated. Use 'a' "
+            "instead. It will be removed in Python 3.14.", 1))
+    {
+        goto exit;
+    }
+    a = args[1];
+skip_optional_kwonly:
+    return_value = depr_alias_impl(module, a);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(depr_param__doc__,
+"depr_param($module, a=None, b=None, c=None, /, *, d=None)\n"
+"--\n"
+"\n");
+
+#define DEPR_PARAM_METHODDEF    \
+    {"depr_param", _PyCFunction_CAST(depr_param), METH_FASTCALL|METH_KEYWORDS, depr_param__doc__},
+
+static PyObject *
+depr_param_impl(PyObject *module, PyObject *a, PyObject *b, PyObject *c,
+                PyObject *d);
+
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error "Update the clinic input of 'depr_param'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ("Update the clinic input of 'depr_param'.")
+#  else
+#    warning "Update the clinic input of 'depr_param'."
+#  endif
+#endif
+
+static PyObject *
+depr_param(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('d'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "", "", "d", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "depr_param",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *a = Py_None;
+    PyObject *b = Py_None;
+    PyObject *c = Py_None;
+    PyObject *d = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional_posonly;
+    }
+    noptargs--;
+    a = args[0];
+    if (nargs < 2) {
+        goto skip_optional_posonly;
+    }
+    noptargs--;
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+            "Passing the argument 'b' to depr_param() is deprecated. It will "
+            "be removed in Python 3.14.", 1))
+    {
+        goto exit;
+    }
+    b = args[1];
+    if (nargs < 3) {
+        goto skip_optional_posonly;
+    }
+    noptargs--;
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+            "Passing the argument 'c' to depr_param() is deprecated. It will "
+            "be removed in Python 3.14.", 1))
+    {
+        goto exit;
+    }
+    c = args[2];
+skip_optional_posonly:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+            "Passing the argument 'd' to depr_param() is deprecated. It will "
+            "be removed in Python 3.14.", 1))
+    {
+        goto exit;
+    }
+    d = args[3];
+skip_optional_kwonly:
+    return_value = depr_param_impl(module, a, b, c, d);
 
 exit:
     return return_value;
@@ -2329,10 +2616,12 @@ depr_multi(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), &_Py_ID(e), &_Py_ID(f), &_Py_ID(g), },
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), _Py_LATIN1_CHR('e'), _Py_LATIN1_CHR('f'), _Py_LATIN1_CHR('g'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2367,7 +2656,8 @@ depr_multi(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
             goto exit;
         }
     }
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 6, 6, 1, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 6, /*maxpos*/ 6, /*minkw*/ 1, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -2392,4 +2682,4 @@ depr_multi(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=689b1e2d0872e413 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=abe0af8d8c637c36 input=a9049054013a1b77]*/

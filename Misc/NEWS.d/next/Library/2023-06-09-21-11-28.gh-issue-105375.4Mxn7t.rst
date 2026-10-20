@@ -1,1 +1,0 @@
-Fix bugs in :mod:`zoneinfo` where exceptions could be overwritten.

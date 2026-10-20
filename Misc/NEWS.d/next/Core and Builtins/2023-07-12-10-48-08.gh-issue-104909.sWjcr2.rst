@@ -1,1 +1,0 @@
-Split :opcode:`LOAD_GLOBAL` specializations into micro-ops.

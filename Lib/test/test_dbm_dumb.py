@@ -31,6 +31,7 @@ class DumbDBMTestCase(unittest.TestCase):
              b'd': b'way',
              b'f': b'Guido',
              b'g': b'intended',
+             b'h': bytearray(b'bytearray_value'),
              '\u00fc'.encode('utf-8') : b'!',
              }
 
@@ -113,6 +114,16 @@ class DumbDBMTestCase(unittest.TestCase):
             f[b'1'] = b'hello2'
         with contextlib.closing(dumbdbm.open(_fname)) as f:
             self.assertEqual(f[b'1'], b'hello2')
+
+    def test_reorganize_persists_changed_offsets(self):
+        with dumbdbm.open(_fname, 'n') as f:
+            f[b'deleted'] = b'x'
+            f[b'retained'] = b'value'
+            del f[b'deleted']
+            f.reorganize()
+
+        with dumbdbm.open(_fname, 'r') as f:
+            self.assertEqual(f[b'retained'], b'value')
 
     def test_str_read(self):
         self.init_db()
@@ -246,8 +257,26 @@ class DumbDBMTestCase(unittest.TestCase):
             _delete_files()
             with self.assertRaises(FileNotFoundError):
                 dumbdbm.open(_fname, value)
+            self.assertFalse(os.path.exists(_fname + '.dat'))
             self.assertFalse(os.path.exists(_fname + '.dir'))
             self.assertFalse(os.path.exists(_fname + '.bak'))
+
+        for value in ('c', 'n'):
+            _delete_files()
+            with dumbdbm.open(_fname, value) as f:
+                self.assertTrue(os.path.exists(_fname + '.dat'))
+                self.assertTrue(os.path.exists(_fname + '.dir'))
+                self.assertFalse(os.path.exists(_fname + '.bak'))
+            self.assertFalse(os.path.exists(_fname + '.bak'))
+
+        for value in ('c', 'n'):
+            _delete_files()
+            with dumbdbm.open(_fname, value) as f:
+                f['key'] = 'value'
+                self.assertTrue(os.path.exists(_fname + '.dat'))
+                self.assertTrue(os.path.exists(_fname + '.dir'))
+                self.assertFalse(os.path.exists(_fname + '.bak'))
+            self.assertTrue(os.path.exists(_fname + '.bak'))
 
     def test_missing_index(self):
         with dumbdbm.open(_fname, 'n') as f:
@@ -256,6 +285,60 @@ class DumbDBMTestCase(unittest.TestCase):
         for value in ('r', 'w'):
             with self.assertRaises(FileNotFoundError):
                 dumbdbm.open(_fname, value)
+            self.assertFalse(os.path.exists(_fname + '.dir'))
+            self.assertFalse(os.path.exists(_fname + '.bak'))
+
+        for value in ('c', 'n'):
+            with dumbdbm.open(_fname, value) as f:
+                self.assertTrue(os.path.exists(_fname + '.dir'))
+                self.assertFalse(os.path.exists(_fname + '.bak'))
+            self.assertFalse(os.path.exists(_fname + '.bak'))
+            os.unlink(_fname + '.dir')
+
+        for value in ('c', 'n'):
+            with dumbdbm.open(_fname, value) as f:
+                f['key'] = 'value'
+                self.assertTrue(os.path.exists(_fname + '.dir'))
+                self.assertFalse(os.path.exists(_fname + '.bak'))
+            self.assertTrue(os.path.exists(_fname + '.bak'))
+            os.unlink(_fname + '.dir')
+            os.unlink(_fname + '.bak')
+
+    def test_sync_empty_unmodified(self):
+        with dumbdbm.open(_fname, 'n') as f:
+            pass
+        os.unlink(_fname + '.dir')
+        for value in ('c', 'n'):
+            with dumbdbm.open(_fname, value) as f:
+                self.assertTrue(os.path.exists(_fname + '.dir'))
+                self.assertFalse(os.path.exists(_fname + '.bak'))
+                f.sync()
+                self.assertTrue(os.path.exists(_fname + '.dir'))
+                self.assertFalse(os.path.exists(_fname + '.bak'))
+                os.unlink(_fname + '.dir')
+                f.sync()
+                self.assertFalse(os.path.exists(_fname + '.dir'))
+                self.assertFalse(os.path.exists(_fname + '.bak'))
+            self.assertFalse(os.path.exists(_fname + '.dir'))
+            self.assertFalse(os.path.exists(_fname + '.bak'))
+
+    def test_sync_nonempty_unmodified(self):
+        with dumbdbm.open(_fname, 'n') as f:
+            pass
+        os.unlink(_fname + '.dir')
+        for value in ('c', 'n'):
+            with dumbdbm.open(_fname, value) as f:
+                f['key'] = 'value'
+                self.assertTrue(os.path.exists(_fname + '.dir'))
+                self.assertFalse(os.path.exists(_fname + '.bak'))
+                f.sync()
+                self.assertTrue(os.path.exists(_fname + '.dir'))
+                self.assertTrue(os.path.exists(_fname + '.bak'))
+                os.unlink(_fname + '.dir')
+                os.unlink(_fname + '.bak')
+                f.sync()
+                self.assertFalse(os.path.exists(_fname + '.dir'))
+                self.assertFalse(os.path.exists(_fname + '.bak'))
             self.assertFalse(os.path.exists(_fname + '.dir'))
             self.assertFalse(os.path.exists(_fname + '.bak'))
 
@@ -295,6 +378,14 @@ class DumbDBMTestCase(unittest.TestCase):
             self.assertEqual(list(db.keys()), [b'key'])
             self.assertTrue(b'key' in db)
             self.assertEqual(db[b'key'], b'value')
+
+    def test_bytearray(self):
+        self.init_db()
+        with contextlib.closing(dumbdbm.open(_fname, 'r')) as f:
+            self.assertEqual(f[b'h'], b'bytearray_value')
+        with contextlib.closing(dumbdbm.open(_fname)) as f:
+            with self.assertRaises(TypeError):
+                f[bytearray(b'bytearray_key')] = b'value'
 
     def test_open_with_pathlib_path(self):
         dumbdbm.open(os_helper.FakePath(_fname), "c").close()

@@ -1,1 +1,0 @@
-Generate the cases needed for the barebones tier 2 abstract interpreter for optimization passes in CPython.

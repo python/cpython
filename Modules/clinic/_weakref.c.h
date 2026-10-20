@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(_weakref_getweakrefcount__doc__,
 "getweakrefcount($module, object, /)\n"
 "--\n"
@@ -110,4 +112,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f4be6b8177fbceb8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=60f59adc1dc9eab8 input=a9049054013a1b77]*/

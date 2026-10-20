@@ -1,1 +1,0 @@
-Add ``set_error_mode`` related constants in ``msvcrt`` module in Python debug build.

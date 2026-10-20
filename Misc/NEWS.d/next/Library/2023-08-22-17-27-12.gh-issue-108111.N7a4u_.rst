@@ -1,2 +1,0 @@
-Fix a regression introduced in GH-101251 for 3.12, resulting in an incorrect
-offset calculation in :meth:`gzip.GzipFile.seek`.

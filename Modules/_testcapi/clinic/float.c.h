@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(_testcapi_float_pack__doc__,
 "float_pack($module, size, d, le, /)\n"
 "--\n"
@@ -70,7 +72,7 @@ _testcapi_float_unpack(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     Py_ssize_t data_length;
     int le;
 
-    if (!_PyArg_ParseStack(args, nargs, "y#i:float_unpack",
+    if (!PyArg_ParseArray(args, nargs, "y#i:float_unpack",
         &data, &data_length, &le)) {
         goto exit;
     }
@@ -79,4 +81,4 @@ _testcapi_float_unpack(PyObject *module, PyObject *const *args, Py_ssize_t nargs
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=50146051f1341cce input=a9049054013a1b77]*/
+/*[clinic end generated code: output=397689b93b97e397 input=a9049054013a1b77]*/

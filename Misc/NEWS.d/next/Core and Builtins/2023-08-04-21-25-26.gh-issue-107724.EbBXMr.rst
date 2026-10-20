@@ -1,3 +1,0 @@
-In pre-release versions of 3.12, up to rc1, the sys.monitoring callback
-function for the ``PY_THROW`` event was missing the third, exception
-argument. That is now fixed.

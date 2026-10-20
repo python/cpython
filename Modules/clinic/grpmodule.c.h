@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(grp_getgrgid__doc__,
 "getgrgid($module, /, id)\n"
@@ -19,7 +20,7 @@ PyDoc_STRVAR(grp_getgrgid__doc__,
     {"getgrgid", _PyCFunction_CAST(grp_getgrgid), METH_FASTCALL|METH_KEYWORDS, grp_getgrgid__doc__},
 
 static PyObject *
-grp_getgrgid_impl(PyObject *module, PyObject *id);
+grp_getgrgid_impl(PyObject *module, gid_t gid);
 
 static PyObject *
 grp_getgrgid(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -31,9 +32,11 @@ grp_getgrgid(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(id), },
     };
     #undef NUM_KEYWORDS
@@ -51,14 +54,17 @@ grp_getgrgid(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    PyObject *id;
+    gid_t gid;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    id = args[0];
-    return_value = grp_getgrgid_impl(module, id);
+    if (!_Py_Gid_Converter(args[0], &gid)) {
+        goto exit;
+    }
+    return_value = grp_getgrgid_impl(module, gid);
 
 exit:
     return return_value;
@@ -88,9 +94,11 @@ grp_getgrnam(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(name), },
     };
     #undef NUM_KEYWORDS
@@ -110,7 +118,8 @@ grp_getgrnam(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *argsbuf[1];
     PyObject *name;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -145,4 +154,4 @@ grp_getgrall(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return grp_getgrall_impl(module);
 }
-/*[clinic end generated code: output=d4bdad9b26fb8558 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9052db62d986262c input=a9049054013a1b77]*/

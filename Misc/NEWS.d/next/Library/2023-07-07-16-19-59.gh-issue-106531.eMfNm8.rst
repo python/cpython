@@ -1,3 +1,0 @@
-Removed ``_legacy`` and the names it provided from ``importlib.resources``:
-``Resource``, ``contents``, ``is_resource``, ``open_binary``, ``open_text``,
-``path``, ``read_binary``, and ``read_text``.

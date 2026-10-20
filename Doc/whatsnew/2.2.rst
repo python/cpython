@@ -53,9 +53,9 @@ A long time ago I wrote a web page listing flaws in Python's design.  One of the
 most significant flaws was that it's impossible to subclass Python types
 implemented in C.  In particular, it's not possible to subclass built-in types,
 so you can't just subclass, say, lists in order to add a single useful method to
-them. The :mod:`UserList` module provides a class that supports all of the
+them. The :mod:`!UserList` module provides a class that supports all of the
 methods of lists and that can be subclassed further, but there's lots of C code
-that expects a regular Python list and won't accept a :class:`UserList`
+that expects a regular Python list and won't accept a :class:`~collections.UserList`
 instance.
 
 Python 2.2 fixes this, and in the process adds some exciting new capabilities.
@@ -69,7 +69,7 @@ A brief summary:
 
 * It's also possible to automatically call methods on accessing or setting an
   instance attribute by using a new mechanism called :dfn:`properties`.  Many uses
-  of :meth:`__getattr__` can be rewritten to use properties instead, making the
+  of :meth:`~object.__getattr__` can be rewritten to use properties instead, making the
   resulting code simpler and faster.  As a small side benefit, attributes can now
   have docstrings, too.
 
@@ -120,7 +120,7 @@ added so if no built-in type is suitable, you can just subclass
 
 This means that :keyword:`class` statements that don't have any base classes are
 always classic classes in Python 2.2.  (Actually you can also change this by
-setting a module-level variable named :attr:`__metaclass__` --- see :pep:`253`
+setting a module-level variable named :attr:`!__metaclass__` --- see :pep:`253`
 for the details --- but it's easier to just subclass :class:`object`.)
 
 The type objects for the built-in types are available as built-ins, named using
@@ -134,8 +134,8 @@ type objects that behave as factories when called. ::
    123
 
 To make the set of types complete, new type objects such as :func:`dict` and
-:func:`file` have been added.  Here's a more interesting example, adding a
-:meth:`lock` method to file objects::
+:func:`!file` have been added.  Here's a more interesting example, adding a
+:meth:`!lock` method to file objects::
 
    class LockableFile(file):
        def lock (self, operation, length=0, start=0, whence=0):
@@ -143,10 +143,10 @@ To make the set of types complete, new type objects such as :func:`dict` and
            return fcntl.lockf(self.fileno(), operation,
                               length, start, whence)
 
-The now-obsolete :mod:`posixfile` module contained a class that emulated all of
-a file object's methods and also added a :meth:`lock` method, but this class
+The now-obsolete :mod:`!posixfile` module contained a class that emulated all of
+a file object's methods and also added a :meth:`!lock` method, but this class
 couldn't be passed to internal functions that expected a built-in file,
-something which is possible with our new :class:`LockableFile`.
+something which is possible with our new :class:`!LockableFile`.
 
 
 Descriptors
@@ -154,11 +154,11 @@ Descriptors
 
 In previous versions of Python, there was no consistent way to discover what
 attributes and methods were supported by an object. There were some informal
-conventions, such as defining :attr:`__members__` and :attr:`__methods__`
+conventions, such as defining :attr:`!__members__` and :attr:`!__methods__`
 attributes that were lists of names, but often the author of an extension type
 or a class wouldn't bother to define them.  You could fall back on inspecting
 the :attr:`~object.__dict__` of an object, but when class inheritance or an arbitrary
-:meth:`__getattr__` hook were in use this could still be inaccurate.
+:meth:`!__getattr__` hook were in use this could still be inaccurate.
 
 The one big idea underlying the new class model is that an API for describing
 the attributes of an object using :dfn:`descriptors` has been formalized.
@@ -171,7 +171,7 @@ attributes of their own:
 
 * :attr:`~definition.__name__` is the attribute's name.
 
-* :attr:`__doc__` is the attribute's docstring.
+* :attr:`~definition.__doc__` is the attribute's docstring.
 
 * ``__get__(object)`` is a method that retrieves the attribute value from
   *object*.
@@ -186,7 +186,8 @@ are::
    descriptor = obj.__class__.x
    descriptor.__get__(obj)
 
-For methods, :meth:`descriptor.__get__` returns a temporary object that's
+For methods, :meth:`descriptor.__get__ <object.__get__>` returns a temporary
+object that's
 callable, and wraps up the instance and the method to be called on it. This is
 also why static methods and class methods are now possible; they have
 descriptors that wrap up just the method, or the method and the class.  As a
@@ -204,7 +205,7 @@ methods are defined like this::
            ...
        g = classmethod(g)
 
-The :func:`staticmethod` function takes the function :func:`f`, and returns it
+The :func:`staticmethod` function takes the function :func:`!f`, and returns it
 wrapped up in a descriptor so it can be stored in the class object.  You might
 expect there to be special syntax for creating such methods (``def static f``,
 ``defstatic f()``, or something like that) but no such syntax has been defined
@@ -232,10 +233,10 @@ like this::
 
        f = eiffelmethod(f, pre_f, post_f)
 
-Note that a person using the new :func:`eiffelmethod` doesn't have to understand
+Note that a person using the new :func:`!eiffelmethod` doesn't have to understand
 anything about descriptors.  This is why I think the new features don't increase
 the basic complexity of the language. There will be a few wizards who need to
-know about it in order to write :func:`eiffelmethod` or the ZODB or whatever,
+know about it in order to write :func:`!eiffelmethod` or the ZODB or whatever,
 but most users will just write code on top of the resulting libraries and ignore
 the implementation details.
 
@@ -263,10 +264,10 @@ from :pep:`253` by Guido van Rossum)::
 
 The lookup rule for classic classes is simple but not very smart; the base
 classes are searched depth-first, going from left to right.  A reference to
-:meth:`D.save` will search the classes :class:`D`, :class:`B`, and then
-:class:`A`, where :meth:`save` would be found and returned.  :meth:`C.save`
-would never be found at all.  This is bad, because if :class:`C`'s :meth:`save`
-method is saving some internal state specific to :class:`C`, not calling it will
+:meth:`!D.save` will search the classes :class:`!D`, :class:`!B`, and then
+:class:`!A`, where :meth:`!save` would be found and returned.  :meth:`!C.save`
+would never be found at all.  This is bad, because if :class:`!C`'s :meth:`!save`
+method is saving some internal state specific to :class:`!C`, not calling it will
 result in that state never getting saved.
 
 New-style classes follow a different algorithm that's a bit more complicated to
@@ -276,22 +277,22 @@ produces more useful results for really complicated inheritance graphs.)
 
 #. List all the base classes, following the classic lookup rule and include a
    class multiple times if it's visited repeatedly.  In the above example, the list
-   of visited classes is [:class:`D`, :class:`B`, :class:`A`, :class:`C`,
-   :class:`A`].
+   of visited classes is [:class:`!D`, :class:`!B`, :class:`!A`, :class:`!C`,
+   :class:`!A`].
 
 #. Scan the list for duplicated classes.  If any are found, remove all but one
    occurrence, leaving the *last* one in the list.  In the above example, the list
-   becomes [:class:`D`, :class:`B`, :class:`C`, :class:`A`] after dropping
+   becomes [:class:`!D`, :class:`!B`, :class:`!C`, :class:`!A`] after dropping
    duplicates.
 
-Following this rule, referring to :meth:`D.save` will return :meth:`C.save`,
+Following this rule, referring to :meth:`!D.save` will return :meth:`!C.save`,
 which is the behaviour we're after.  This lookup rule is the same as the one
 followed by Common Lisp.  A new built-in function, :func:`super`, provides a way
 to get at a class's superclasses without having to reimplement Python's
 algorithm. The most commonly used form will be  ``super(class, obj)``, which
 returns  a bound superclass object (not the actual class object).  This form
 will be used in methods to call a method in the superclass; for example,
-:class:`D`'s :meth:`save` method would look like this::
+:class:`!D`'s :meth:`!save` method would look like this::
 
    class D (B,C):
        def save (self):
@@ -309,7 +310,7 @@ Attribute Access
 ----------------
 
 A fair number of sophisticated Python classes define hooks for attribute access
-using :meth:`__getattr__`; most commonly this is done for convenience, to make
+using :meth:`~object.__getattr__`; most commonly this is done for convenience, to make
 code more readable by automatically mapping an attribute access such as
 ``obj.parent`` into a method call such as ``obj.get_parent``.  Python 2.2 adds
 some new ways of controlling attribute access.
@@ -321,22 +322,22 @@ instance's dictionary.
 
 New-style classes also support a new method,
 ``__getattribute__(attr_name)``.  The difference between the two methods is
-that :meth:`__getattribute__` is *always* called whenever any attribute is
-accessed, while the old :meth:`__getattr__` is only called if ``foo`` isn't
+that :meth:`~object.__getattribute__` is *always* called whenever any attribute is
+accessed, while the old :meth:`~object.__getattr__` is only called if ``foo`` isn't
 found in the instance's dictionary.
 
 However, Python 2.2's support for :dfn:`properties` will often be a simpler way
-to trap attribute references.  Writing a :meth:`__getattr__` method is
+to trap attribute references.  Writing a :meth:`!__getattr__` method is
 complicated because to avoid recursion you can't use regular attribute accesses
 inside them, and instead have to mess around with the contents of
-:attr:`~object.__dict__`. :meth:`__getattr__` methods also end up being called by Python
-when it checks for other methods such as :meth:`__repr__` or :meth:`__coerce__`,
+:attr:`~object.__dict__`. :meth:`~object.__getattr__` methods also end up being called by Python
+when it checks for other methods such as :meth:`~object.__repr__` or :meth:`!__coerce__`,
 and so have to be written with this in mind. Finally, calling a function on
 every attribute access results in a sizable performance loss.
 
 :class:`property` is a new built-in type that packages up three functions that
 get, set, or delete an attribute, and a docstring.  For example, if you want to
-define a :attr:`size` attribute that's computed, but also settable, you could
+define a :attr:`!size` attribute that's computed, but also settable, you could
 write::
 
    class C(object):
@@ -355,9 +356,9 @@ write::
                        "Storage size of this instance")
 
 That is certainly clearer and easier to write than a pair of
-:meth:`__getattr__`/:meth:`__setattr__` methods that check for the :attr:`size`
+:meth:`!__getattr__`/:meth:`!__setattr__` methods that check for the :attr:`!size`
 attribute and handle it specially while retrieving all other attributes from the
-instance's :attr:`~object.__dict__`.  Accesses to :attr:`size` are also the only ones
+instance's :attr:`~object.__dict__`.  Accesses to :attr:`!size` are also the only ones
 which have to perform the work of calling a function, so references to other
 attributes run at their usual speed.
 
@@ -424,22 +425,22 @@ Another significant addition to 2.2 is an iteration interface at both the C and
 Python levels.  Objects can define how they can be looped over by callers.
 
 In Python versions up to 2.1, the usual way to make ``for item in obj`` work is
-to define a :meth:`__getitem__` method that looks something like this::
+to define a :meth:`~object.__getitem__` method that looks something like this::
 
    def __getitem__(self, index):
        return <next item>
 
-:meth:`__getitem__` is more properly used to define an indexing operation on an
+:meth:`~object.__getitem__` is more properly used to define an indexing operation on an
 object so that you can write ``obj[5]`` to retrieve the sixth element.  It's a
 bit misleading when you're using this only to support :keyword:`for` loops.
 Consider some file-like object that wants to be looped over; the *index*
 parameter is essentially meaningless, as the class probably assumes that a
-series of :meth:`__getitem__` calls will be made with *index* incrementing by
-one each time.  In other words, the presence of the :meth:`__getitem__` method
+series of :meth:`~object.__getitem__` calls will be made with *index* incrementing by
+one each time.  In other words, the presence of the :meth:`~object.__getitem__` method
 doesn't mean that using ``file[5]``  to randomly access the sixth element will
 work, though it really should.
 
-In Python 2.2, iteration can be implemented separately, and :meth:`__getitem__`
+In Python 2.2, iteration can be implemented separately, and :meth:`~object.__getitem__`
 methods can be limited to classes that really do support random access.  The
 basic idea of iterators is  simple.  A new built-in function, ``iter(obj)``
 or ``iter(C, sentinel)``, is used to get an iterator. ``iter(obj)`` returns
@@ -447,7 +448,7 @@ an iterator for the object *obj*, while ``iter(C, sentinel)`` returns an
 iterator that will invoke the callable object *C* until it returns *sentinel* to
 signal that the iterator is done.
 
-Python classes can define an :meth:`__iter__` method, which should create and
+Python classes can define an :meth:`!__iter__` method, which should create and
 return a new iterator for the object; if the object is its own iterator, this
 method can just return ``self``.  In particular, iterators will usually be their
 own iterators.  Extension types implemented in C can implement a :c:member:`~PyTypeObject.tp_iter`
@@ -478,7 +479,7 @@ there are no more values to be returned, calling :meth:`next` should raise the
 In 2.2, Python's :keyword:`for` statement no longer expects a sequence; it
 expects something for which :func:`iter` will return an iterator. For backward
 compatibility and convenience, an iterator is automatically constructed for
-sequences that don't implement :meth:`__iter__` or a :c:member:`~PyTypeObject.tp_iter` slot, so
+sequences that don't implement :meth:`!__iter__` or a :c:member:`~PyTypeObject.tp_iter` slot, so
 ``for i in [1,2,3]`` will still work.  Wherever the Python interpreter loops
 over a sequence, it's been changed to use the iterator protocol.  This means you
 can do things like this::
@@ -510,8 +511,8 @@ Iterator support has been added to some of Python's basic types.   Calling
    Oct 10
 
 That's just the default behaviour.  If you want to iterate over keys, values, or
-key/value pairs, you can explicitly call the :meth:`iterkeys`,
-:meth:`itervalues`, or :meth:`iteritems` methods to get an appropriate iterator.
+key/value pairs, you can explicitly call the :meth:`!iterkeys`,
+:meth:`!itervalues`, or :meth:`!iteritems` methods to get an appropriate iterator.
 In a minor related change, the :keyword:`in` operator now works on dictionaries,
 so ``key in dict`` is now equivalent to ``dict.has_key(key)``.
 
@@ -580,7 +581,7 @@ allowed inside the :keyword:`!try` block of a
 :keyword:`try`...\ :keyword:`finally` statement; read :pep:`255` for a full
 explanation of the interaction between :keyword:`!yield` and exceptions.)
 
-Here's a sample usage of the :func:`generate_ints` generator::
+Here's a sample usage of the :func:`!generate_ints` generator::
 
    >>> gen = generate_ints(3)
    >>> gen
@@ -641,7 +642,7 @@ like::
    sentence := "Store it in the neighboring harbor"
    if (i := find("or", sentence)) > 5 then write(i)
 
-In Icon the :func:`find` function returns the indexes at which the substring
+In Icon the :func:`!find` function returns the indexes at which the substring
 "or" is found: 3, 23, 33.  In the :keyword:`if` statement, ``i`` is first
 assigned a value of 3, but 3 is less than 5, so the comparison fails, and Icon
 retries it with the second value of 23.  23 is greater than 5, so the comparison
@@ -671,7 +672,7 @@ PEP 237: Unifying Long Integers and Integers
 In recent versions, the distinction between regular integers, which are 32-bit
 values on most machines, and long integers, which can be of arbitrary size, was
 becoming an annoyance.  For example, on platforms that support files larger than
-``2**32`` bytes, the :meth:`tell` method of file objects has to return a long
+``2**32`` bytes, the :meth:`!tell` method of file objects has to return a long
 integer. However, there were various bits of Python that expected plain integers
 and would raise an error if a long integer was provided instead.  For example,
 in Python 1.5, only regular integers could be used as a slice index, and
@@ -752,7 +753,7 @@ Here are the changes 2.2 introduces:
   0.5.  Without the ``__future__`` statement, ``/`` still means classic division.
   The default meaning of ``/`` will not change until Python 3.0.
 
-* Classes can define methods called :meth:`__truediv__` and :meth:`__floordiv__`
+* Classes can define methods called :meth:`~object.__truediv__` and :meth:`~object.__floordiv__`
   to overload the two division operators.  At the C level, there are also slots in
   the :c:type:`PyNumberMethods` structure so extension types can define the two
   operators.
@@ -785,17 +786,17 @@ support.)
 
 When built to use UCS-4 (a "wide Python"), the interpreter can natively handle
 Unicode characters from U+000000 to U+110000, so the range of legal values for
-the :func:`unichr` function is expanded accordingly.  Using an interpreter
+the :func:`!unichr` function is expanded accordingly.  Using an interpreter
 compiled to use UCS-2 (a "narrow Python"), values greater than 65535 will still
-cause :func:`unichr` to raise a :exc:`ValueError` exception. This is all
+cause :func:`!unichr` to raise a :exc:`ValueError` exception. This is all
 described in :pep:`261`, "Support for 'wide' Unicode characters"; consult it for
 further details.
 
 Another change is simpler to explain. Since their introduction, Unicode strings
-have supported an :meth:`encode` method to convert the string to a selected
+have supported an :meth:`!encode` method to convert the string to a selected
 encoding such as UTF-8 or Latin-1.  A symmetric ``decode([*encoding*])``
 method has been added to 8-bit strings (though not to Unicode strings) in 2.2.
-:meth:`decode` assumes that the string is in the specified encoding and decodes
+:meth:`!decode` assumes that the string is in the specified encoding and decodes
 it, returning whatever is returned by the codec.
 
 Using this new feature, codecs have been added for tasks not directly related to
@@ -819,10 +820,10 @@ encoding, and compression with the :mod:`zlib` module::
    >>> "sheesh".encode('rot-13')
    'furrfu'
 
-To convert a class instance to Unicode, a :meth:`__unicode__` method can be
-defined by a class, analogous to :meth:`__str__`.
+To convert a class instance to Unicode, a :meth:`!__unicode__` method can be
+defined by a class, analogous to :meth:`!__str__`.
 
-:meth:`encode`, :meth:`decode`, and :meth:`__unicode__` were implemented by
+:meth:`!encode`, :meth:`!decode`, and :meth:`!__unicode__` were implemented by
 Marc-André Lemburg.  The changes to support using UCS-4 internally were
 implemented by Fredrik Lundh and Martin von Löwis.
 
@@ -859,7 +860,7 @@ doesn't work::
            return g(value-1) + 1
        ...
 
-The function :func:`g` will always raise a :exc:`NameError` exception, because
+The function :func:`!g` will always raise a :exc:`NameError` exception, because
 the binding of the name ``g`` isn't in either its local namespace or in the
 module-level namespace.  This isn't much of a problem in practice (how often do
 you recursively define interior functions like this?), but this also made using
@@ -915,7 +916,7 @@ To make the preceding explanation a bit clearer, here's an example::
 
 Line 4 containing the ``exec`` statement is a syntax error, since
 ``exec`` would define a new local variable named ``x`` whose value should
-be accessed by :func:`g`.
+be accessed by :func:`!g`.
 
 This shouldn't be much of a limitation, since ``exec`` is rarely used in
 most Python code (and when it is used, it's often a sign of a poor design
@@ -933,7 +934,7 @@ anyway).
 New and Improved Modules
 ========================
 
-* The :mod:`xmlrpclib` module was contributed to the standard library by Fredrik
+* The :mod:`xmlrpclib <xmlrpc.client>` module was contributed to the standard library by Fredrik
   Lundh, providing support for writing XML-RPC clients.  XML-RPC is a simple
   remote procedure call protocol built on top of HTTP and XML. For example, the
   following snippet retrieves a list of RSS channels from the O'Reilly Network,
@@ -956,7 +957,7 @@ New and Improved Modules
      #   'description': 'A utility which converts HTML to XSL FO.',
      #   'title': 'html2fo 0.3 (Default)'}, ... ]
 
-  The :mod:`SimpleXMLRPCServer` module makes it easy to create straightforward
+  The :mod:`SimpleXMLRPCServer <xmlrpc.server>` module makes it easy to create straightforward
   XML-RPC servers.  See http://xmlrpc.scripting.com/ for more information about XML-RPC.
 
 * The new :mod:`hmac` module implements the HMAC algorithm described by
@@ -964,9 +965,9 @@ New and Improved Modules
 
 * Several functions that originally returned lengthy tuples now return
   pseudo-sequences that still behave like tuples but also have mnemonic attributes such
-  as memberst_mtime or :attr:`tm_year`. The enhanced functions include
-  :func:`stat`, :func:`fstat`, :func:`statvfs`, and :func:`fstatvfs` in the
-  :mod:`os` module, and :func:`localtime`, :func:`gmtime`, and :func:`strptime` in
+  as :attr:`!memberst_mtime` or :attr:`~time.struct_time.tm_year`. The enhanced functions include
+  :func:`~os.stat`, :func:`~os.fstat`, :func:`~os.statvfs`, and :func:`~os.fstatvfs` in the
+  :mod:`os` module, and :func:`~time.localtime`, :func:`~time.gmtime`, and :func:`~time.strptime` in
   the :mod:`time` module.
 
   For example, to obtain a file's size using the old tuples, you'd end up writing
@@ -999,7 +1000,7 @@ New and Improved Modules
   underlying the :mod:`re` module.  For example, the :func:`re.sub` and
   :func:`re.split` functions have been rewritten in C.  Another contributed patch
   speeds up certain Unicode character ranges by a factor of two, and a new
-  :meth:`finditer`  method that returns an iterator over all the non-overlapping
+  :meth:`~re.finditer`  method that returns an iterator over all the non-overlapping
   matches in  a given string.  (SRE is maintained by Fredrik Lundh.  The
   BIGCHARSET patch was contributed by Martin von Löwis.)
 
@@ -1012,33 +1013,33 @@ New and Improved Modules
   new extensions: the NAMESPACE extension defined in :rfc:`2342`, SORT, GETACL and
   SETACL.  (Contributed by Anthony Baxter and Michel Pelletier.)
 
-* The :mod:`rfc822` module's parsing of email addresses is now compliant with
+* The :mod:`!rfc822` module's parsing of email addresses is now compliant with
   :rfc:`2822`, an update to :rfc:`822`.  (The module's name is *not* going to be
   changed to ``rfc2822``.)  A new package, :mod:`email`, has also been added for
   parsing and generating e-mail messages.  (Contributed by Barry Warsaw, and
   arising out of his work on Mailman.)
 
-* The :mod:`difflib` module now contains a new :class:`Differ` class for
+* The :mod:`difflib` module now contains a new :class:`!Differ` class for
   producing human-readable lists of changes (a "delta") between two sequences of
-  lines of text.  There are also two generator functions, :func:`ndiff` and
-  :func:`restore`, which respectively return a delta from two sequences, or one of
+  lines of text.  There are also two generator functions, :func:`!ndiff` and
+  :func:`!restore`, which respectively return a delta from two sequences, or one of
   the original sequences from a delta. (Grunt work contributed by David Goodger,
   from ndiff.py code by Tim Peters who then did the generatorization.)
 
-* New constants :const:`ascii_letters`, :const:`ascii_lowercase`, and
-  :const:`ascii_uppercase` were added to the :mod:`string` module.  There were
-  several modules in the standard library that used :const:`string.letters` to
+* New constants :const:`!ascii_letters`, :const:`!ascii_lowercase`, and
+  :const:`!ascii_uppercase` were added to the :mod:`string` module.  There were
+  several modules in the standard library that used :const:`!string.letters` to
   mean the ranges A-Za-z, but that assumption is incorrect when locales are in
-  use, because :const:`string.letters` varies depending on the set of legal
+  use, because :const:`!string.letters` varies depending on the set of legal
   characters defined by the current locale.  The buggy modules have all been fixed
-  to use :const:`ascii_letters` instead. (Reported by an unknown person; fixed by
+  to use :const:`!ascii_letters` instead. (Reported by an unknown person; fixed by
   Fred L. Drake, Jr.)
 
 * The :mod:`mimetypes` module now makes it easier to use alternative MIME-type
-  databases by the addition of a :class:`MimeTypes` class, which takes a list of
+  databases by the addition of a :class:`~mimetypes.MimeTypes` class, which takes a list of
   filenames to be parsed.  (Contributed by Fred L. Drake, Jr.)
 
-* A :class:`Timer` class was added to the :mod:`threading` module that allows
+* A :class:`~threading.Timer` class was added to the :mod:`threading` module that allows
   scheduling an activity to happen at some future time.  (Contributed by Itamar
   Shtull-Trauring.)
 
@@ -1062,7 +1063,7 @@ code, none of the changes described here will affect you very much.
   simply been changed to use the new C-level interface.  (Contributed by Fred L.
   Drake, Jr.)
 
-* Another low-level API, primarily of interest to implementors of Python
+* Another low-level API, primarily of interest to implementers of Python
   debuggers and development tools, was added. :c:func:`PyInterpreterState_Head` and
   :c:func:`PyInterpreterState_Next` let a caller walk through all the existing
   interpreter objects; :c:func:`PyInterpreterState_ThreadHead` and
@@ -1114,7 +1115,7 @@ code, none of the changes described here will affect you very much.
 * Two new wrapper functions, :c:func:`PyOS_snprintf` and :c:func:`PyOS_vsnprintf`
   were added to provide  cross-platform implementations for the relatively new
   :c:func:`snprintf` and :c:func:`vsnprintf` C lib APIs. In contrast to the standard
-  :c:func:`sprintf` and :c:func:`vsprintf` functions, the Python versions check the
+  :c:func:`sprintf` and :c:func:`!vsprintf` functions, the Python versions check the
   bounds of the buffer used to protect against buffer overruns. (Contributed by
   M.-A. Lemburg.)
 
@@ -1212,12 +1213,12 @@ Some of the more notable changes are:
 * The :file:`Tools/scripts/ftpmirror.py` script now parses a :file:`.netrc`
   file, if you have one. (Contributed by Mike Romberg.)
 
-* Some features of the object returned by the :func:`xrange` function are now
+* Some features of the object returned by the :func:`!xrange` function are now
   deprecated, and trigger warnings when they're accessed; they'll disappear in
-  Python 2.3. :class:`xrange` objects tried to pretend they were full sequence
+  Python 2.3. :class:`!xrange` objects tried to pretend they were full sequence
   types by supporting slicing, sequence multiplication, and the :keyword:`in`
   operator, but these features were rarely used and therefore buggy.  The
-  :meth:`tolist` method and the :attr:`start`, :attr:`stop`, and :attr:`step`
+  :meth:`!tolist` method and the :attr:`!start`, :attr:`!stop`, and :attr:`!step`
   attributes are also being deprecated.  At the C level, the fourth argument to
   the :c:func:`!PyRange_New` function, ``repeat``, has also been deprecated.
 
@@ -1249,7 +1250,7 @@ Some of the more notable changes are:
 
 * The :func:`pow` built-in function no longer supports 3 arguments when
   floating-point numbers are supplied. ``pow(x, y, z)`` returns ``(x**y) % z``,
-  but this is never useful for floating point numbers, and the final result varies
+  but this is never useful for floating-point numbers, and the final result varies
   unpredictably depending on the platform.  A call such as ``pow(2.0, 8.0, 7.0)``
   will now raise a :exc:`TypeError` exception.
 

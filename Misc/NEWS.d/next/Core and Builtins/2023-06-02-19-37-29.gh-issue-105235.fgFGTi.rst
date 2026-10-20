@@ -1,1 +1,0 @@
-Prevent out-of-bounds memory access during ``mmap.find()`` calls.

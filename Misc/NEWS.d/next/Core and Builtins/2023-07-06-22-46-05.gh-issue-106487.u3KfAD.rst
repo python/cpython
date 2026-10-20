@@ -1,2 +1,0 @@
-Allow the *count* argument of :meth:`str.replace` to be a keyword. Patch by
-Hugo van Kemenade.

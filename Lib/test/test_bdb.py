@@ -228,6 +228,10 @@ class Tracer(Bdb):
         self.process_event('exception', frame)
         self.next_set_method()
 
+    def user_opcode(self, frame):
+        self.process_event('opcode', frame)
+        self.next_set_method()
+
     def do_clear(self, arg):
         # The temporary breakpoints are deleted in user_line().
         bp_list = [self.currentbp]
@@ -366,7 +370,7 @@ class Tracer(Bdb):
         set_method = getattr(self, 'set_' + set_type)
 
         # The following set methods give back control to the tracer.
-        if set_type in ('step', 'continue', 'quit'):
+        if set_type in ('step', 'stepinstr', 'continue', 'quit'):
             set_method()
             return
         elif set_type in ('next', 'return'):
@@ -609,6 +613,15 @@ class StateTestCase(BaseTestCase):
                 ]
                 with TracerRun(self) as tracer:
                     tracer.runcall(tfunc_main)
+
+    def test_stepinstr(self):
+        self.expect_set = [
+            ('line',   2, 'tfunc_main'),  ('stepinstr', ),
+            ('opcode', 2, 'tfunc_main'),  ('next', ),
+            ('line',   3, 'tfunc_main'),  ('quit', ),
+        ]
+        with TracerRun(self) as tracer:
+            tracer.runcall(tfunc_main)
 
     def test_next(self):
         self.expect_set = [
@@ -952,6 +965,17 @@ class BreakpointTestCase(BaseTestCase):
             with TracerRun(self) as tracer:
                 tracer.runcall(tfunc_import)
 
+    def test_clear_all_file_breaks_same_line(self):
+        reset_Breakpoint()
+        self.addCleanup(reset_Breakpoint)
+        debugger = Bdb()
+        for _ in range(3):
+            self.assertIsNone(debugger.set_break(__file__, 1))
+        self.assertIsNone(debugger.clear_all_file_breaks(__file__))
+        self.assertEqual(debugger.get_all_breaks(), {})
+        self.assertEqual(_bdb.Breakpoint.bplist, {})
+        self.assertTrue(all(bp is None for bp in _bdb.Breakpoint.bpbynumber))
+
     def test_clear_at_no_bp(self):
         self.expect_set = [
             ('line', 2, 'tfunc_import'), ('clear', (__file__, 1))
@@ -1033,8 +1057,9 @@ class RunTestCase(BaseTestCase):
                 ('return', 1, '<module>'), ('quit', ),
             ]
             import test_module_for_bdb
+            ns = {'test_module_for_bdb': test_module_for_bdb}
             with TracerRun(self) as tracer:
-                tracer.runeval('test_module_for_bdb.main()', globals(), locals())
+                tracer.runeval('test_module_for_bdb.main()', ns, ns)
 
 class IssuesTestCase(BaseTestCase):
     """Test fixed bdb issues."""
@@ -1203,12 +1228,34 @@ class IssuesTestCase(BaseTestCase):
             with TracerRun(self) as tracer:
                 tracer.runcall(tfunc_import)
 
+    def test_next_to_botframe(self):
+        # gh-125422
+        # Check that next command won't go to the bottom frame.
+        code = """
+            lno = 2
+        """
+        self.expect_set = [
+            ('line', 2, '<module>'),   ('step', ),
+            ('return', 2, '<module>'), ('next', ),
+        ]
+        with TracerRun(self) as tracer:
+            tracer.run(compile(textwrap.dedent(code), '<string>', 'exec'))
+
 
 class TestRegressions(unittest.TestCase):
     def test_format_stack_entry_no_lineno(self):
         # See gh-101517
         self.assertIn('Warning: lineno is None',
                       Bdb().format_stack_entry((sys._getframe(), None)))
+
+    def test_bdb_quit_base_exception(self):
+        # gh-149309
+        try:
+            raise _bdb.BdbQuit()
+        except Exception:
+            self.fail(f'BdbQuit should not be caught by Exception')
+        except BaseException:
+            pass
 
 
 if __name__ == "__main__":

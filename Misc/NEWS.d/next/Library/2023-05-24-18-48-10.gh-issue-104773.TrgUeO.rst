@@ -1,1 +1,0 @@
-:pep:`594`: Removed the :mod:`!msilib` package, deprecated in Python 3.11.

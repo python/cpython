@@ -1,3 +1,0 @@
-The ASYNC and AWAIT tokens are removed from the Grammar, which removes the
-posibility of making ``async`` and ``await`` soft keywords when using
-``feature_version<7`` in :func:`ast.parse`.

@@ -1,2 +1,0 @@
-Clear generators' exception state after ``return`` to break reference
-cycles.

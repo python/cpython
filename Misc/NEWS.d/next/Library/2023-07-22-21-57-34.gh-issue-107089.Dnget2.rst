@@ -1,2 +1,0 @@
-Shelves opened with :func:`shelve.open` have a much faster :meth:`clear`
-method. Patch by James Cave.

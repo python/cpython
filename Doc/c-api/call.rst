@@ -108,6 +108,8 @@ This is a pointer to a function with the following signature:
    Doing so will allow callables such as bound methods to make their onward
    calls (which include a prepended *self* argument) very efficiently.
 
+   .. versionadded:: 3.8
+
 To call an object that implements vectorcall, use a :ref:`call API <capi-call>`
 function as with any other callable.
 :c:func:`PyObject_Vectorcall` will usually be most efficient.
@@ -345,6 +347,8 @@ please see individual documentation for details.
 
    .. versionadded:: 3.9
 
+.. c:function:: PyObject* _PyObject_Vectorcall(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwnames)
+   :no-typesetting:
 
 .. c:function:: PyObject* PyObject_Vectorcall(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 
@@ -356,7 +360,12 @@ please see individual documentation for details.
    Return the result of the call on success, or raise an exception and return
    *NULL* on failure.
 
-   .. versionadded:: 3.9
+   .. versionadded:: 3.8 as ``_PyObject_Vectorcall``
+
+   .. versionchanged:: 3.9
+
+      Renamed to the current name, without the leading underscore.
+      The old provisional name is :term:`soft deprecated`.
 
 .. c:function:: PyObject* PyObject_VectorcallDict(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwdict)
 

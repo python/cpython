@@ -1,0 +1,2 @@
+Add ``hypothesis.stateful`` and the ``timezones()`` and ``ip_addresses()``
+strategies to the Hypothesis stubs used when Hypothesis is not installed.

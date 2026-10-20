@@ -87,6 +87,17 @@ PyAPI_FUNC(void) PyMem_Free(void *ptr);
 #define PyMem_DEL(p)              PyMem_Free((p))
 
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+// Memory allocator which doesn't require the GIL to be held.
+// Usually, it's just a thin wrapper to functions of the standard C library:
+// malloc(), calloc(), realloc() and free(). The difference is that
+// tracemalloc can track these memory allocations.
+PyAPI_FUNC(void *) PyMem_RawMalloc(size_t size);
+PyAPI_FUNC(void *) PyMem_RawCalloc(size_t nelem, size_t elsize);
+PyAPI_FUNC(void *) PyMem_RawRealloc(void *ptr, size_t new_size);
+PyAPI_FUNC(void) PyMem_RawFree(void *ptr);
+#endif
+
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_PYMEM_H
 #  include "cpython/pymem.h"

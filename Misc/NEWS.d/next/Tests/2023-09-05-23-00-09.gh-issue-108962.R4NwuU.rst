@@ -1,3 +1,0 @@
-Skip ``test_tempfile.test_flags()`` if ``chflags()`` fails with "OSError:
-[Errno 45] Operation not supported" (ex: on FreeBSD 13). Patch by Victor
-Stinner.
