@@ -187,15 +187,14 @@ precmdline_parse_cmdline(_PyPreCmdline *cmdline)
 {
     const PyWideStringList *argv = &cmdline->argv;
 
-    _PyOS_ResetGetOpt();
+    struct _PyOS_GetOpt getopt;
+    _PyOS_GetOpt_Init(&getopt, argv->length, argv->items);
     /* Don't log parsing errors into stderr here: PyConfig_Read()
        is responsible for that */
-    _PyOS_opterr = 0;
+    getopt.error = 0;
     do {
-        int longindex = -1;
-        int c = _PyOS_GetOpt(argv->length, argv->items, &longindex);
-
-        if (c == EOF || c == 'c' || c == 'm') {
+        int c = _PyOS_GetOpt(&getopt);
+        if (c == -1 || c == 'c' || c == 'm') {
             break;
         }
 
@@ -211,7 +210,7 @@ precmdline_parse_cmdline(_PyPreCmdline *cmdline)
         case 'X':
         {
             PyStatus status = PyWideStringList_Append(&cmdline->xoptions,
-                                                      _PyOS_optarg);
+                                                      getopt.arg);
             if (_PyStatus_EXCEPTION(status)) {
                 return status;
             }

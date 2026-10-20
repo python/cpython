@@ -10,7 +10,6 @@
 import os
 import itertools
 import sys
-import tempfile
 import weakref
 import atexit
 import threading        # we want threading to install it's
@@ -155,7 +154,7 @@ def _remove_temp_dir(rmtree, tempdir):
         current_process._config['tempdir'] = None
 
 
-def _get_base_temp_dir():
+def _get_base_temp_dir(tempfile):
     """Get a temporary directory where socket files will be created.
 
     To prevent additional imports, pass a pre-imported 'tempfile' module.
@@ -216,8 +215,9 @@ def get_temp_dir():
     # get name of a temp directory which will be automatically cleaned up
     tempdir = process.current_process()._config.get('tempdir')
     if tempdir is None:
-        import shutil
-        base_tempdir = _get_base_temp_dir()
+        # Deferred until first use to keep importing this module cheap.
+        import shutil, tempfile
+        base_tempdir = _get_base_temp_dir(tempfile)
         tempdir = tempfile.mkdtemp(prefix='pymp-', dir=base_tempdir)
         info('created temp directory %s', tempdir)
         # keep a strong reference to shutil.rmtree(), since the finalizer
@@ -234,7 +234,14 @@ def _has_writeable_tempdir():
     #
     # See: https://github.com/python/cpython/issues/155717.
 
-    path = _get_base_temp_dir()
+    # Deferred until first use to keep importing this module cheap.
+    import tempfile
+
+    try:
+        path = _get_base_temp_dir(tempfile)
+    except OSError:
+        # No usable temporary directory at all.
+        return False
     if path is None:
         return False
 

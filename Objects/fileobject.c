@@ -297,6 +297,13 @@ typedef struct {
     int fd;
 } PyStdPrinter_Object;
 
+/*[clinic input]
+class stdprinter "PyStdPrinter_Object *" "&PyStdPrinter_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=031bf557c18c5df5]*/
+
+#include "clinic/fileobject.c.h"
+
 PyObject *
 PyFile_NewStdPrinter(int fd)
 {
@@ -315,11 +322,19 @@ PyFile_NewStdPrinter(int fd)
     return (PyObject*)self;
 }
 
+/*[clinic input]
+stdprinter.write
+
+    text as unicode: unicode
+    /
+
+Write the text to the stream.
+[clinic start generated code]*/
+
 static PyObject *
-stdprinter_write(PyObject *op, PyObject *args)
+stdprinter_write_impl(PyStdPrinter_Object *self, PyObject *unicode)
+/*[clinic end generated code: output=069c9645803fe8ad input=65041d6d7a23aff4]*/
 {
-    PyStdPrinter_Object *self = (PyStdPrinter_Object*)op;
-    PyObject *unicode;
     PyObject *bytes = NULL;
     const char *str;
     Py_ssize_t n;
@@ -334,10 +349,6 @@ stdprinter_write(PyObject *op, PyObject *args)
          * unlimited recursion in the case stderr is invalid.
          */
         Py_RETURN_NONE;
-    }
-
-    if (!PyArg_ParseTuple(args, "U", &unicode)) {
-        return NULL;
     }
 
     /* Encode Unicode to UTF-8/backslashreplace */
@@ -410,7 +421,7 @@ static PyMethodDef stdprinter_methods[] = {
     {"flush", stdprinter_noop, METH_NOARGS, ""},
     {"fileno", stdprinter_fileno, METH_NOARGS, ""},
     {"isatty", stdprinter_isatty, METH_NOARGS, ""},
-    {"write", stdprinter_write, METH_VARARGS, ""},
+    STDPRINTER_WRITE_METHODDEF
     {NULL,              NULL}  /*sentinel */
 };
 

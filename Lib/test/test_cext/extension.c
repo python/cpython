@@ -82,6 +82,8 @@ static PyObject *
 test_macros(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 {
     PyObject *obj, *dict;
+    PyObject *slots[1];
+    int small_array[] = {2, 5, 7};
 
     // test Py_BUILD_ASSERT() and Py_BUILD_ASSERT_EXPR()
     Py_BUILD_ASSERT(sizeof(int) == sizeof(unsigned int));
@@ -97,17 +99,30 @@ test_macros(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_CLEAR(obj);
     assert(obj == _Py_NULL);
 
-#ifndef Py_LIMITED_API
+    // gh-157649: Test Py_CLEAR() on an array
+    slots[0] = Py_None;
+    Py_CLEAR(slots[0]);
+    assert(slots[0] == _Py_NULL);
+
     // Test Py_SETREF(): use typeof()/__typeof__() if available, or memcpy()
     obj = Py_None;
     Py_SETREF(obj, _Py_NULL);
     assert(obj == _Py_NULL);
 
+    // gh-157649: Test Py_SETREF() on an array
+    slots[0] = Py_None;
+    Py_SETREF(slots[0], _Py_NULL);
+    assert(slots[0] == _Py_NULL);
+
     // Test Py_XSETREF(): use typeof()/__typeof__() if available, or memcpy()
     obj = Py_None;
     Py_XSETREF(obj, _Py_NULL);
     assert(obj == _Py_NULL);
-#endif
+
+    // gh-157649: Test Py_XSETREF() on an array
+    slots[0] = Py_None;
+    Py_XSETREF(slots[0], _Py_NULL);
+    assert(slots[0] == _Py_NULL);
 
     // Test that Py_BEGIN_CRITICAL_SECTION is available
     dict = PyDict_New();
@@ -117,6 +132,9 @@ test_macros(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_BEGIN_CRITICAL_SECTION(dict);
     Py_END_CRITICAL_SECTION();
     Py_DECREF(dict);
+
+    // Test Py_ARRAY_LENGTH()
+    assert(Py_ARRAY_LENGTH(small_array) == 3);
 
     Py_RETURN_NONE;
 }
@@ -264,8 +282,11 @@ class VirtualPyObject : public PyObject {
 public:
     VirtualPyObject();
     virtual ~VirtualPyObject() {
+        PyTypeObject *type = Py_TYPE(this);
         delete [] internal_data;
         --instance_count;
+        // Do not call type->tp_free(this), C++ manages the memory
+        Py_DECREF(type);
     }
     virtual void set_internal_data() {
         internal_data[0] = 1;
@@ -295,7 +316,7 @@ _Py_COMP_DIAG_PUSH
 #endif
 
 PyType_Slot VirtualPyObject_Slots[] = {
-    {Py_tp_free, (void*)VirtualPyObject::dealloc},
+    {Py_tp_dealloc, (void*)VirtualPyObject::dealloc},
     {0, _Py_NULL},
 };
 
@@ -333,6 +354,10 @@ test_virtual_object(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
             "instance_count should be 0, got %d",
             VirtualPyObject::instance_count);
     }
+
+    // Force a garbage collection to delete the temporary heap type
+    // used by this test
+    PyGC_Collect();
     Py_RETURN_NONE;
 }
 #endif  // __cplusplus && !Py_TARGET_ABI3T
@@ -356,10 +381,13 @@ static PyMethodDef module_methods[] = {
 static int
 module_exec(PyObject *module)
 {
-    PyObject *result;
-
 #ifdef __STDC_VERSION__
     if (PyModule_AddIntMacro(module, __STDC_VERSION__) < 0) {
+        return -1;
+    }
+#endif
+#ifdef __STRICT_ANSI__
+    if (PyModule_AddIntConstant(module, "__STRICT_ANSI__", 1) < 0) {
         return -1;
     }
 #endif
@@ -368,31 +396,13 @@ module_exec(PyObject *module)
         return -1;
     }
 #endif
-
-    result = PyObject_CallMethod(module, "test_macros", "");
-    if (!result) return -1;
-    Py_DECREF(result);
-
-    result = PyObject_CallMethod(module, "test_datetime", "");
-    if (!result) return -1;
-    Py_DECREF(result);
-
-    result = PyObject_CallMethod(module, "test_unicode", "");
-    if (!result) return -1;
-    Py_DECREF(result);
-
-#ifdef __cplusplus
-    result = PyObject_CallMethod(module, "test_api_casts", "");
-    if (!result) return -1;
-    Py_DECREF(result);
+#ifdef _MSVC_LANG
+    if (PyModule_AddIntMacro(module, _MSVC_LANG) < 0) {
+        return -1;
+    }
 #endif
-
-#if defined(__cplusplus) && !defined(Py_TARGET_ABI3T)
-    result = PyObject_CallMethod(module, "test_virtual_object", "");
-    if (!result) return -1;
-    Py_DECREF(result);
-#endif
-
+    // Ignore "unused argument" warning when none of these macros is defined
+    (void)module;
     return 0;
 }
 
