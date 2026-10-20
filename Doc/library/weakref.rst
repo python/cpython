@@ -227,8 +227,13 @@ than needed.
    .. versionchanged:: 3.9
       Added support for ``|`` and ``|=`` operators, as specified in :pep:`584`.
 
-:class:`WeakValueDictionary` objects have an additional method that has the
-same issues as the :meth:`WeakKeyDictionary.keyrefs` method.
+:class:`WeakValueDictionary` objects have the following additional methods.
+These have the same issues as the :meth:`WeakKeyDictionary.keyrefs` method.
+
+
+.. method:: WeakValueDictionary.itervaluerefs()
+
+   Return an :term:`iterator` that yields the weak references to the values.
 
 
 .. method:: WeakValueDictionary.valuerefs()
