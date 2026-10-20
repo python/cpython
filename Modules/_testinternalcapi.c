@@ -1564,12 +1564,12 @@ iframe_getlasti(PyObject *self, PyObject *frame)
     return PyLong_FromLong(PyUnstable_InterpreterFrame_GetLasti(f));
 }
 
+#ifdef Py_GIL_DISABLED
 static PyObject *external_test_visited_obj = NULL;
 static int external_test_visitor_calls = 0;
 static int external_test_callback_calls = 0;
 static int external_test_visitor_incomplete = 0;
 
-#ifdef Py_GIL_DISABLED
 static int
 external_test_gc_visitor(PyInterpreterState *interp,
                          struct _PyInterpreterFrame *frame,
