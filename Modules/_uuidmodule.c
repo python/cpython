@@ -13,15 +13,11 @@
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
-#include "pyconfig.h"   // Py_GIL_DISABLED
 #include "Python.h"
-#include <string.h>        // for strncasecmp
-#include "structmember.h"  // for PyMemberDef
 
 #include "pycore_critical_section.h"  // _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED()
-#include "pycore_long.h"          // _PyLong_FromByteArray, _PyLong_AsByteArray
+#include "pycore_long.h"          // _PyLong_AsByteArray(), _PyLong_GetOne()
 #include "pycore_pylifecycle.h"   // _PyOS_URandom()
-#include "pycore_time.h"          // PyTime_Time
 #include "pycore_runtime_init.h"  // _Py_ID()
 
 #if defined(HAVE_UUID_H)
@@ -48,6 +44,8 @@
 #define RPC_S_OK 0L
 #endif
 #endif
+
+#include <string.h>               // memcpy(), memset(), strncmp()
 
 #ifndef MS_WINDOWS
 
@@ -125,13 +123,17 @@ py_windows_has_stable_node(void)
 #endif /* MS_WINDOWS */
 
 
+#define UUID_SIZE 16
+
 typedef struct uuidobject {
     PyObject_HEAD
-    uint8_t bytes[16];
+    uint8_t bytes[UUID_SIZE];
     Py_hash_t cached_hash;
     PyObject *is_safe;
     PyObject *weakreflist;
 } uuidobject;
+
+#define uuidobject_CAST(OP) ((uuidobject *)(OP))
 
 
 // UUID Structure per RFC 9562:
@@ -167,7 +169,7 @@ typedef struct uuidobject {
 
 /* State of the _uuid module */
 typedef struct {
-    PyTypeObject *UuidType;
+    PyTypeObject *uuid_type;
 
     PyObject *safe_uuid;
 
@@ -179,7 +181,7 @@ typedef struct {
 
     // A freelist for uuid objects -- 15-20% performance boost.
     uuidobject *freelist;
-    uint64_t freelist_size;
+    size_t freelist_size;
 
     // We overfetch entropy to speed up successive uuid generations;
     // this enables 10x peformance boost.
@@ -196,16 +198,16 @@ typedef struct {
 #include "clinic/_uuidmodule.c.h"
 
 /*[clinic input]
-class _uuid.UUID "uuidobject *" "&UuidType"
+class _uuid.UUID "uuidobject *" "&uuid_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=84ae6e2089cffd3f]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b62c7d736c192881]*/
 
 // Forward declarations
 static int from_hex(uuidobject *self, PyObject *hex);
 static int from_bytes_le(uuidobject *self, PyObject *bytes_le);
 static int from_int(uuidobject *self, PyObject *int_value, int validate);
 static int from_fields(uuidobject *self, PyObject *fields);
-static PyObject * get_SafeUUID(uuid_state *state);
+static PyObject *get_SafeUUID(uuid_state *state);
 
 static uint64_t
 uuid_getpid(void)
@@ -238,7 +240,7 @@ get_uuid_state_by_cls(PyTypeObject *cls)
 }
 
 // Forward declaration
-static PyObject *uuid_from_bytes_array(PyTypeObject *type, uint8_t bytes[16]);
+static PyObject *uuid_from_bytes_array(PyTypeObject *type, uint8_t bytes[UUID_SIZE]);
 
 static int
 gen_time(uuid_state *state, PyTime_t *time)
@@ -353,9 +355,9 @@ _uuid_uuid4_impl(PyObject *module)
 /*[clinic end generated code: output=b835af30d9d6efc5 input=9cfb3a3b71c25cdf]*/
 {
     uuid_state *state = get_uuid_state(module);
-    uint8_t bytes[16];
+    uint8_t bytes[UUID_SIZE];
 
-    if (gen_random_lock_held(module, state, bytes, 16) < 0) {
+    if (gen_random_lock_held(module, state, bytes, sizeof(bytes)) < 0) {
         return NULL;
     }
 
@@ -363,7 +365,7 @@ _uuid_uuid4_impl(PyObject *module)
     bytes[6] = (uint8_t)((bytes[6] & 0x0f) | 0x40);
     bytes[8] = (uint8_t)((bytes[8] & 0x3f) | 0x80);
 
-    return uuid_from_bytes_array(state->UuidType, bytes);
+    return uuid_from_bytes_array(state->uuid_type, bytes);
 }
 
 static inline int
@@ -371,7 +373,7 @@ uuid7_get_counter_and_tail(PyObject *module, uuid_state *state,
                           uint64_t *counter, uint8_t *tail)
 {
     uint8_t rand_bytes[10];
-    if (gen_random_lock_held(module, state, rand_bytes, 10) < 0) {
+    if (gen_random_lock_held(module, state, rand_bytes, sizeof(rand_bytes)) < 0) {
         return -1;
     }
 
@@ -404,7 +406,7 @@ _uuid_uuid7_impl(PyObject *module)
 /*[clinic end generated code: output=f301accc11162c91 input=88514d61dc785108]*/
 {
     uuid_state *state = get_uuid_state(module);
-    uint8_t bytes[16];
+    uint8_t bytes[UUID_SIZE];
     uint64_t timestamp_ms, counter;
 
     PyTime_t pytime;
@@ -417,7 +419,8 @@ _uuid_uuid7_impl(PyObject *module)
         if (uuid7_get_counter_and_tail(module, state, &counter, bytes + 12) < 0) {
             return NULL;
         }
-    } else {
+    }
+    else {
         if (timestamp_ms < state->last_timestamp_v7) {
             timestamp_ms = state->last_timestamp_v7 + 1;
         }
@@ -429,7 +432,8 @@ _uuid_uuid7_impl(PyObject *module)
             if (uuid7_get_counter_and_tail(module, state, &counter, bytes + 12) < 0) {
                 return NULL;
             }
-        } else {
+        }
+        else {
             // This is the common fast path, we only need 4 bytes of entropy
             // 32-bit random data
             if (gen_random_lock_held(module, state, bytes + 12, 4) < 0) {
@@ -462,7 +466,7 @@ _uuid_uuid7_impl(PyObject *module)
     state->last_timestamp_v7 = timestamp_ms;
     state->last_counter_v7 = counter;
 
-    return uuid_from_bytes_array(state->UuidType, bytes);
+    return uuid_from_bytes_array(state->uuid_type, bytes);
 }
 
 /*[clinic input]
@@ -553,14 +557,14 @@ _uuid_UUID___init___impl(uuidobject *self, PyObject *hex, PyObject *bytes,
             PyErr_SetString(PyExc_TypeError, "bytes must be a bytes object");
             return -1;
         }
-        if (PyBytes_GET_SIZE(bytes) != 16) {
+        if (PyBytes_GET_SIZE(bytes) != UUID_SIZE) {
             PyErr_SetString(
                 PyExc_ValueError,
                 "bytes is not a 16-char string"
             );
             return -1;
         }
-        memcpy(self->bytes, PyBytes_AS_STRING(bytes), 16);
+        memcpy(self->bytes, PyBytes_AS_STRING(bytes), sizeof(self->bytes));
     }
     else if (bytes_le != Py_None) {
         if (from_bytes_le(self, bytes_le) < 0) {
@@ -709,7 +713,7 @@ from_hex(uuidobject *self, PyObject *hex)
             acc_set = 1;
         }
 
-        if (j > 16 || (j == 16 && acc_set)) {
+        if (j > UUID_SIZE || (j == UUID_SIZE && acc_set)) {
             PyErr_Format(PyExc_ValueError,
                 "invalid UUID '%s': decodes to more than 16 bytes",
                 hex);
@@ -717,7 +721,7 @@ from_hex(uuidobject *self, PyObject *hex)
         }
     }
 
-    if (j != 16) {
+    if (j != UUID_SIZE) {
         PyErr_Format(PyExc_ValueError,
             "invalid UUID '%s': decodes to less than 16 bytes",
             hex);
@@ -734,7 +738,7 @@ from_bytes_le(uuidobject *self, PyObject *bytes_le)
         PyErr_SetString(PyExc_TypeError, "bytes_le must be a bytes object");
         return -1;
     }
-    if (PyBytes_GET_SIZE(bytes_le) != 16) {
+    if (PyBytes_GET_SIZE(bytes_le) != UUID_SIZE) {
         PyErr_SetString(PyExc_ValueError,
             "bytes_le is not a 16-char string");
         return -1;
@@ -815,19 +819,14 @@ from_int(uuidobject *self, PyObject *int_value, int validate)
         return -1;
     }
 
-    if (_PyLong_AsByteArray(
-            (PyLongObject *)int_value,
-            (unsigned char *)self->bytes,
-            16,
-            0,  // big-endian
-            0,  // unsigned
-            1   // with_exceptions
-        ) < 0)
-    {
-        return -1;
-    }
-
-    return 0;
+    return _PyLong_AsByteArray(
+        (PyLongObject *)int_value,
+        (unsigned char *)self->bytes,
+        sizeof(self->bytes),
+        0,  // big-endian
+        0,  // unsigned
+        1   // with_exceptions
+    );
 }
 
 static int
@@ -880,16 +879,17 @@ from_fields(uuidobject *self, PyObject *fields)
         return -1;
     }
 
-#   define EXTRACT_FIELD(field_num, max_value, error_msg, type, name)           \
-        type name;                                                              \
-        do {                                                                    \
-            uint64_t name##_extracted;                                          \
-            if (extract_field(fields, field_num, max_value, error_msg,          \
-                            &(name##_extracted)) < 0) {                         \
-                return -1;                                                      \
-            }                                                                   \
-            name = (type)name##_extracted;                                      \
-        } while(0)
+#define EXTRACT_FIELD(FIELD_NUM, MAX_VALUE, ERROR_MSG, TYPE, NAME) \
+    TYPE NAME;                                                     \
+    do {                                                           \
+        uint64_t NAME##_extracted;                                 \
+        if (extract_field(fields, FIELD_NUM, MAX_VALUE, ERROR_MSG, \
+                          &NAME##_extracted) < 0)                  \
+        {                                                          \
+            return -1;                                             \
+        }                                                          \
+        NAME = (TYPE)NAME##_extracted;                             \
+    } while (0)
 
     EXTRACT_FIELD(
         0, (1ULL << 32) - 1, "field 1 out of range (need a 32-bit value)",
@@ -915,6 +915,8 @@ from_fields(uuidobject *self, PyObject *fields)
         5, (1ULL << 48) - 1, "field 6 out of range (need a 48-bit value)",
         uint64_t, node
     );
+
+#undef EXTRACT_FIELD
 
     self->bytes[0] = (uint8_t)(time_low >> 24);
     self->bytes[1] = (uint8_t)(time_low >> 16);
@@ -944,20 +946,14 @@ from_fields(uuidobject *self, PyObject *fields)
 static PyObject *
 get_int(uuidobject *self)
 {
-    return _PyLong_FromByteArray((unsigned char *)self->bytes, 16, 0, 0);
+    return _PyLong_FromByteArray(
+        (unsigned char *)self->bytes, sizeof(self->bytes), 0, 0);
 }
 
 static PyObject *
-get_uuidmod_attr(uuid_state *state, const char *name)
+get_uuidmod_attr(const char *name)
 {
-    PyObject *mod = PyImport_ImportModule("uuid");
-    if (mod == NULL) {
-        return NULL;
-    }
-
-    PyObject *ret = PyObject_GetAttrString(mod, name);
-    Py_DECREF(mod);
-    return ret;
+    return PyImport_ImportModuleAttrString("uuid", name);
 }
 
 static PyObject *
@@ -967,11 +963,8 @@ get_SafeUUID(uuid_state *state)
         return Py_NewRef(state->safe_uuid);
     }
 
-    state->safe_uuid = get_uuidmod_attr(state, "SafeUUID");
-    if (state->safe_uuid == NULL) {
-        return NULL;
-    }
-    return Py_NewRef(state->safe_uuid);
+    state->safe_uuid = get_uuidmod_attr("SafeUUID");
+    return Py_XNewRef(state->safe_uuid);
 }
 
 static uuidobject *
@@ -980,9 +973,9 @@ make_uuid(PyTypeObject *type)
     uuidobject *self = NULL;
     uuid_state *state = get_uuid_state_by_cls(type);
 
-    if (type != state->UuidType) {
+    if (type != state->uuid_type) {
         // Allocate the subclass's full instance size and enable GC tracking.
-        self = (uuidobject *)PyType_GenericAlloc(type, 0);
+        self = uuidobject_CAST(PyType_GenericAlloc(type, 0));
         if (self == NULL) {
             return NULL;
         }
@@ -992,7 +985,7 @@ make_uuid(PyTypeObject *type)
     Py_BEGIN_CRITICAL_SECTION(type);
     if (state->freelist_size > 0) {
         self = state->freelist;
-        state->freelist = (uuidobject *)self->weakreflist;
+        state->freelist = uuidobject_CAST(self->weakreflist);
         state->freelist_size--;
     }
     Py_END_CRITICAL_SECTION();
@@ -1026,7 +1019,7 @@ Uuid_alloc(PyTypeObject *type, Py_ssize_t Py_UNUSED(nitems))
     if (self == NULL) {
         return NULL;
     }
-    memset(self->bytes, 0, 16);
+    memset(self->bytes, 0, sizeof(self->bytes));
     return (PyObject *)self;
 }
 
@@ -1036,14 +1029,14 @@ Uuid_dealloc(PyObject *obj)
     PyTypeObject *type = Py_TYPE(obj);
     uuid_state *state = get_uuid_state_by_cls(type);
 
-    uuidobject *uuid = (uuidobject *)obj;
+    uuidobject *uuid = uuidobject_CAST(obj);
     if (uuid->weakreflist != NULL) {
         PyObject_ClearWeakRefs(obj);
     }
     Py_CLEAR(uuid->is_safe);
 
     int skip_dealloc = 0;
-    if (type != state->UuidType) {
+    if (type != state->uuid_type) {
         // We only apply the freelist optimization to the known C type,
         // not any subclasses of it.
         goto dealloc;
@@ -1070,15 +1063,15 @@ dealloc:
 
 
 static PyObject *
-Uuid_get_int(PyObject *o, void *closure)
+Uuid_get_int(PyObject *op, void *Py_UNUSED(closure))
 {
-    return get_int((uuidobject *)o);
+    return get_int(uuidobject_CAST(op));
 }
 
 static PyObject *
-Uuid_get_is_safe(PyObject *o, void *closure)
+Uuid_get_is_safe(PyObject *op, void *Py_UNUSED(closure))
 {
-    uuidobject *self = (uuidobject *)o;
+    uuidobject *self = uuidobject_CAST(op);
     uuid_state *state = get_uuid_state_by_cls(Py_TYPE(self));
     if (self->is_safe == NULL) {
         PyObject *SafeUUID = get_SafeUUID(state);
@@ -1090,44 +1083,42 @@ Uuid_get_is_safe(PyObject *o, void *closure)
 }
 
 static PyObject *
-Uuid_get_hex(PyObject *o, void *closure)
+Uuid_get_hex(PyObject *op, void *Py_UNUSED(closure))
 {
-    uuidobject *self = (uuidobject *)o;
-    char hex[32];
-    for (int i = 0; i < 16; i++) {
+    uuidobject *self = uuidobject_CAST(op);
+    char hex[UUID_SIZE * 2];
+    for (int i = 0; i < UUID_SIZE; i++) {
         byte_to_hex(self->bytes[i], &hex[i * 2]);
     }
-    return PyUnicode_FromStringAndSize(hex, 32);
+    return PyUnicode_FromStringAndSize(hex, sizeof(hex));
 }
 
 static PyObject *
-Uuid_get_variant(PyObject *o, void *closure)
+Uuid_get_variant(PyObject *op, void *Py_UNUSED(closure))
 {
-    uuidobject *self = (uuidobject *)o;
-    uuid_state *state = get_uuid_state_by_cls(Py_TYPE(self));
-
+    uuidobject *self = uuidobject_CAST(op);
     uint8_t variant_byte = self->bytes[8];
 
     // xxx - three high bits of variant_byte are unknown
     if (!(variant_byte & 0x80)) {   // & 0b1000_0000
         // 0xx - RESERVED_NCS
-        return get_uuidmod_attr(state, "RESERVED_NCS");
+        return get_uuidmod_attr("RESERVED_NCS");
     }
 
     // 1xx -- we know that high bit must be 1
     if (!(variant_byte & 0x40)) {   // & 0b0100_0000
         // 10x - RFC_4122
-        return get_uuidmod_attr(state, "RFC_4122");
+        return get_uuidmod_attr("RFC_4122");
     }
 
     // 11x -- we know that two high bits are 1
     if (!(variant_byte & 0x20)) {   // & 0b0010_0000
         // 110 - RESERVED_MICROSOFT
-        return get_uuidmod_attr(state, "RESERVED_MICROSOFT");
+        return get_uuidmod_attr("RESERVED_MICROSOFT");
     }
 
     // 111 -- we know that all three high bits are 1 - RESERVED_FUTURE
-    return get_uuidmod_attr(state, "RESERVED_FUTURE");
+    return get_uuidmod_attr("RESERVED_FUTURE");
 }
 
 static int
@@ -1149,9 +1140,9 @@ get_version(uuidobject *self)
 }
 
 static PyObject *
-Uuid_get_version(PyObject *o, void *closure)
+Uuid_get_version(PyObject *op, void *Py_UNUSED(closure))
 {
-    uuidobject *self = (uuidobject *)o;
+    uuidobject *self = uuidobject_CAST(op);
     if (!is_rfc_4122(self)) {
         Py_RETURN_NONE;
     }
@@ -1203,44 +1194,44 @@ get_node(uuidobject *self)
 }
 
 static PyObject *
-Uuid_get_time_low(PyObject *o, void *closure)
+Uuid_get_time_low(PyObject *op, void *Py_UNUSED(closure))
 {
-    uuidobject *self = (uuidobject *)o;
+    uuidobject *self = uuidobject_CAST(op);
     return PyLong_FromUnsignedLong(get_time_low(self));
 }
 
 static PyObject *
-Uuid_get_time_mid(PyObject *o, void *closure)
+Uuid_get_time_mid(PyObject *op, void *Py_UNUSED(closure))
 {
-    uuidobject *self = (uuidobject *)o;
+    uuidobject *self = uuidobject_CAST(op);
     return PyLong_FromUnsignedLong(get_time_mid(self));
 }
 
 static PyObject *
-Uuid_get_time_hi_version(PyObject *o, void *closure)
+Uuid_get_time_hi_version(PyObject *op, void *Py_UNUSED(closure))
 {
-    uuidobject *self = (uuidobject *)o;
+    uuidobject *self = uuidobject_CAST(op);
     return PyLong_FromUnsignedLong(get_time_hi_version(self));
 }
 
 static PyObject *
-Uuid_get_clock_seq_hi_variant(PyObject *o, void *closure)
+Uuid_get_clock_seq_hi_variant(PyObject *op, void *Py_UNUSED(closure))
 {
-    uuidobject *self = (uuidobject *)o;
+    uuidobject *self = uuidobject_CAST(op);
     return PyLong_FromUnsignedLong(get_clock_seq_hi_variant(self));
 }
 
 static PyObject *
-Uuid_get_clock_seq_low(PyObject *o, void *closure)
+Uuid_get_clock_seq_low(PyObject *op, void *Py_UNUSED(closure))
 {
-    uuidobject *self = (uuidobject *)o;
+    uuidobject *self = uuidobject_CAST(op);
     return PyLong_FromUnsignedLong(get_clock_seq_low(self));
 }
 
 static PyObject *
-Uuid_get_time(PyObject *o, void *closure)
+Uuid_get_time(PyObject *op, void *Py_UNUSED(closure))
 {
-    uuidobject *self = (uuidobject *)o;
+    uuidobject *self = uuidobject_CAST(op);
 
     long version = get_version(self);
 
@@ -1283,9 +1274,9 @@ Uuid_get_time(PyObject *o, void *closure)
 }
 
 static PyObject *
-Uuid_get_clock_seq(PyObject *o, void *closure)
+Uuid_get_clock_seq(PyObject *op, void *Py_UNUSED(closure))
 {
-    uuidobject *self = (uuidobject *)o;
+    uuidobject *self = uuidobject_CAST(op);
     // clock_seq_hi_variant (byte 8) & 0x3f, then clock_seq_low (byte 9)
     uint16_t clock_seq = (uint16_t)(((get_clock_seq_hi_variant(self) & 0x3f) << 8) |
                                     get_clock_seq_low(self));
@@ -1293,30 +1284,30 @@ Uuid_get_clock_seq(PyObject *o, void *closure)
 }
 
 static PyObject *
-Uuid_get_node(PyObject *o, void *closure)
+Uuid_get_node(PyObject *op, void *Py_UNUSED(closure))
 {
-    uuidobject *self = (uuidobject *)o;
+    uuidobject *self = uuidobject_CAST(op);
     return PyLong_FromUnsignedLongLong(get_node(self));
 }
 
 static PyObject *
-Uuid_get_bytes(PyObject *o, void *closure)
+Uuid_get_bytes(PyObject *op, void *Py_UNUSED(closure))
 {
-    uuidobject *self = (uuidobject *)o;
-    return PyBytes_FromStringAndSize((const char *)self->bytes, 16);
+    uuidobject *self = uuidobject_CAST(op);
+    return PyBytes_FromStringAndSize((const char *)self->bytes, sizeof(self->bytes));
 }
 
 static PyObject *
-Uuid_get_bytes_le(PyObject *o, void *closure)
+Uuid_get_bytes_le(PyObject *op, void *Py_UNUSED(closure))
 {
-    uuidobject *self = (uuidobject *)o;
+    uuidobject *self = uuidobject_CAST(op);
     // UUID fields in little-endian order need to be byte-swapped:
     // - time_low (4 bytes) - reversed
     // - time_mid (2 bytes) - reversed
     // - time_hi_version (2 bytes) - reversed
     // - clock_seq and node (8 bytes) - unchanged
 
-    unsigned char bytes_le[16];
+    unsigned char bytes_le[UUID_SIZE];
 
     // Reverse time_low (bytes 0-3)
     bytes_le[0] = self->bytes[3];
@@ -1335,13 +1326,13 @@ Uuid_get_bytes_le(PyObject *o, void *closure)
     // Copy clock_seq and node as-is (bytes 8-15)
     memcpy(bytes_le + 8, self->bytes + 8, 8);
 
-    return PyBytes_FromStringAndSize((const char *)bytes_le, 16);
+    return PyBytes_FromStringAndSize((const char *)bytes_le, sizeof(bytes_le));
 }
 
 static PyObject *
-Uuid_get_fields(PyObject *o, void *closure)
+Uuid_get_fields(PyObject *op, void *Py_UNUSED(closure))
 {
-    uuidobject *self = (uuidobject *)o;
+    uuidobject *self = uuidobject_CAST(op);
     uint32_t time_low = get_time_low(self);
     uint16_t time_mid = get_time_mid(self);
     uint16_t time_hi_version = get_time_hi_version(self);
@@ -1362,20 +1353,20 @@ Uuid_get_fields(PyObject *o, void *closure)
 }
 
 static PyObject *
-uuid_from_bytes_array(PyTypeObject *type, uint8_t bytes[16])
+uuid_from_bytes_array(PyTypeObject *type, uint8_t bytes[UUID_SIZE])
 {
     uuidobject *self = make_uuid(type);
     if (self == NULL) {
         return NULL;
     }
-    memcpy(self->bytes, bytes, 16);
+    memcpy(self->bytes, bytes, sizeof(self->bytes));
     return (PyObject *)self;
 }
 
 static PyObject *
 Uuid_nb_int(PyObject *self)
 {
-    return get_int((uuidobject *)self);
+    return get_int(uuidobject_CAST(self));
 }
 
 static PyObject *
@@ -1383,14 +1374,14 @@ Uuid_richcompare(PyObject *self, PyObject *other, int op)
 {
     uuid_state *state = get_uuid_state_by_cls(Py_TYPE(self));
 
-    if (!PyObject_TypeCheck(other, state->UuidType)) {
+    if (!PyObject_TypeCheck(other, state->uuid_type)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
 
-    uuidobject *uuid_self = (uuidobject *)self;
-    uuidobject *uuid_other = (uuidobject *)other;
+    uuidobject *uuid_self = uuidobject_CAST(self);
+    uuidobject *uuid_other = uuidobject_CAST(other);
 
-    int cmp = memcmp(uuid_self->bytes, uuid_other->bytes, 16);
+    int cmp = memcmp(uuid_self->bytes, uuid_other->bytes, sizeof(uuid_self->bytes));
 
     int result;
     switch (op) {
@@ -1418,7 +1409,8 @@ Uuid_richcompare(PyObject *self, PyObject *other, int op)
 
     if (result) {
         Py_RETURN_TRUE;
-    } else {
+    }
+    else {
         Py_RETURN_FALSE;
     }
 }
@@ -1426,7 +1418,7 @@ Uuid_richcompare(PyObject *self, PyObject *other, int op)
 static PyObject *
 Uuid_str(PyObject *self)
 {
-    uuidobject *uuid = (uuidobject *)self;
+    uuidobject *uuid = uuidobject_CAST(self);
 
     // UUID string format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (36 chars)
     char str[36];
@@ -1451,11 +1443,11 @@ Uuid_str(PyObject *self)
     }
     str[23] = '-';
 
-    for (int i = 10; i < 16; i++) {
+    for (int i = 10; i < UUID_SIZE; i++) {
         byte_to_hex(uuid->bytes[i], &str[24 + (i - 10) * 2]);
     }
 
-    return PyUnicode_FromStringAndSize(str, 36);
+    return PyUnicode_FromStringAndSize(str, sizeof(str));
 }
 
 static PyObject *
@@ -1480,17 +1472,17 @@ Uuid_repr(PyObject *self)
 }
 
 static int
-Uuid_setattr(PyObject *self, PyObject *name, PyObject *value)
+Uuid_setattr(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(name),
+             PyObject *Py_UNUSED(value))
 {
     PyErr_SetString(PyExc_TypeError, "UUID objects are immutable");
     return -1;
 }
 
 static PyObject *
-Uuid_get_urn(PyObject *o, void *closure)
+Uuid_get_urn(PyObject *op, void *Py_UNUSED(closure))
 {
-    uuidobject *self = (uuidobject *)o;
-    PyObject *str_obj = Uuid_str((PyObject *)self);
+    PyObject *str_obj = Uuid_str(op);
     if (str_obj == NULL) {
         return NULL;
     }
@@ -1501,18 +1493,15 @@ Uuid_get_urn(PyObject *o, void *closure)
 }
 
 static Py_hash_t
-Uuid_hash(PyObject *o)
+Uuid_hash(PyObject *op)
 {
-    uuidobject *uuid = (uuidobject *)o;
-    if (uuid->cached_hash != -1) {
-        // UUIDs are very often used in dicts/sets, so it makes
-        // sense to cache the computed hash (like we do for str)
-        return uuid->cached_hash;
+    uuidobject *uuid = uuidobject_CAST(op);
+    // UUIDs are very often used in dicts/sets, so it makes
+    // sense to cache the computed hash (like we do for str).
+    if (uuid->cached_hash == -1) {
+        uuid->cached_hash = Py_HashBuffer(uuid->bytes, sizeof(uuid->bytes));
     }
-
-    Py_hash_t hash = Py_HashBuffer(uuid->bytes, 16);
-    uuid->cached_hash = hash;
-    return hash;
+    return uuid->cached_hash;
 }
 
 
@@ -1672,37 +1661,20 @@ compute_uuid_max(void)
 {
     // Compute `(1 << 128) - 1`
 
-    PyObject *one = NULL;
-    PyObject *shift = NULL;
-    PyObject *shifted = NULL;
-
-    one = PyLong_FromLong(1);
-    if (one == NULL) {
-        goto err;
-    }
-
-    shift = PyLong_FromLong(128);
+    PyObject *shift = PyLong_FromLong(128);
     if (shift == NULL) {
-        goto err;
+        return NULL;
     }
 
-    shifted = PyNumber_Lshift(one, shift);
-    if (shifted == NULL) {
-        goto err;
-    }
+    PyObject *shifted = PyNumber_Lshift(_PyLong_GetOne(), shift);
     Py_DECREF(shift);
+    if (shifted == NULL) {
+        return NULL;
+    }
 
-    PyObject *result = PyNumber_Subtract(shifted, one);
+    PyObject *result = PyNumber_Subtract(shifted, _PyLong_GetOne());
     Py_DECREF(shifted);
-    Py_DECREF(one);
-
     return result;
-
-err:
-    Py_XDECREF(one);
-    Py_XDECREF(shift);
-    Py_XDECREF(shifted);
-    return NULL;
 }
 
 static PyMethodDef Uuid_methods[] = {
@@ -1759,7 +1731,7 @@ static int
 module_traverse(PyObject *mod, visitproc visit, void *arg)
 {
     uuid_state *state = get_uuid_state(mod);
-    Py_VISIT(state->UuidType);
+    Py_VISIT(state->uuid_type);
     Py_VISIT(state->safe_uuid);
     Py_VISIT(state->uint128_max);
     Py_VISIT(state->random_func);
@@ -1773,7 +1745,7 @@ module_clear(PyObject *mod)
 {
     uuid_state *state = get_uuid_state(mod);
 
-    Py_CLEAR(state->UuidType);
+    Py_CLEAR(state->uuid_type);
     Py_CLEAR(state->safe_uuid);
     Py_CLEAR(state->uint128_max);
     Py_CLEAR(state->random_func);
@@ -1783,7 +1755,7 @@ module_clear(PyObject *mod)
     if (state->freelist != NULL) {
         while (state->freelist != NULL) {
             uuidobject *cur = state->freelist;
-            state->freelist = (uuidobject *)cur->weakreflist;
+            state->freelist = uuidobject_CAST(cur->weakreflist);
             PyObject_Free(cur);
         }
         state->freelist = NULL;
@@ -1812,7 +1784,7 @@ uuid_exec(PyObject *module)
         }                                                           \
     } while (0)
 
-    assert(sizeof(uuid_t) == 16);
+    assert(sizeof(uuid_t) == UUID_SIZE);
 #if defined(MS_WINDOWS)
     ADD_INT("has_uuid_generate_time_safe", 0);
 #elif defined(HAVE_UUID_GENERATE_TIME_SAFE)
@@ -1831,16 +1803,16 @@ uuid_exec(PyObject *module)
 
 #undef ADD_INT
 
-    state->UuidType = (PyTypeObject *)PyType_FromMetaclass(
+    state->uuid_type = (PyTypeObject *)PyType_FromMetaclass(
         NULL,
         module,
         &Uuid_spec,
         NULL
     );
-    if (state->UuidType == NULL) {
+    if (state->uuid_type == NULL) {
         return -1;
     }
-    if (PyModule_AddType(module, state->UuidType) < 0) {
+    if (PyModule_AddType(module, state->uuid_type) < 0) {
         return -1;
     }
 
