@@ -668,6 +668,45 @@ class WeirdZoneTest(ZoneInfoTestBase):
                 self.assertEqual(dt.utcoffset(), DST.utcoffset)
                 self.assertEqual(dt.dst(), DST.dst)
 
+    def test_fold_after_last_transition(self):
+        OLD = ZoneOffset("OLD", -6 * ONE_H)
+        STD = ZoneOffset("STD", -7 * ONE_H)
+        transition = ZoneTransition(datetime(2022, 11, 30), OLD, STD)
+        earlier_transition = ZoneTransition(datetime(2020, 1, 1), STD, OLD)
+        microsecond = timedelta(microseconds=1)
+        cases = [
+            (
+                -microsecond,
+                datetime(2022, 11, 29, 23, 59, 59, 999999),
+                0,
+            ),
+            (ZERO, datetime(2022, 11, 29, 23), 1),
+            (microsecond, datetime(2022, 11, 29, 23, 0, 0, 1), 1),
+            (timedelta(minutes=30), datetime(2022, 11, 29, 23, 30), 1),
+            (
+                ONE_H - microsecond,
+                datetime(2022, 11, 29, 23, 59, 59, 999999),
+                1,
+            ),
+            (ONE_H, datetime(2022, 11, 30), 0),
+        ]
+
+        # The final explicit transition creates a fold that is not described
+        # by the footer's recurring rules, as in America/Ciudad_Juarez.
+        for transitions in ([transition], [earlier_transition, transition]):
+            zf = self.construct_zone(
+                transitions, after="STD7DST,M3.2.0,M11.1.0"
+            )
+            zi = self.klass.from_file(zf)
+
+            for delta, expected, fold in cases:
+                dt_utc = transition.transition_utc + delta
+                with self.subTest(num_transitions=len(transitions), dt=dt_utc):
+                    dt_local = dt_utc.astimezone(zi)
+                    self.assertEqual(dt_local.replace(tzinfo=None), expected)
+                    self.assertEqual(dt_local.fold, fold)
+                    self.assertEqual(dt_local.astimezone(timezone.utc), dt_utc)
+
     def test_no_tz_str(self):
         STD = ZoneOffset("STD", ONE_H, ZERO)
         DST = ZoneOffset("DST", 2 * ONE_H, ONE_H)

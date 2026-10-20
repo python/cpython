@@ -135,6 +135,15 @@ class ZoneInfo(tzinfo):
             tti, fold = self._tz_after.get_trans_info_fromutc(
                 timestamp, dt.year
             )
+            # The last explicit transition may introduce a fold that is not
+            # covered by the footer's recurring transitions.
+            if num_trans:
+                tti_prev = (
+                    self._ttinfos[-2] if num_trans > 1 else self._tti_before
+                )
+                shift = tti_prev.utcoff - tti.utcoff
+                if shift.total_seconds() > timestamp - self._trans_utc[-1]:
+                    fold = 1
         elif num_trans == 0:
             tti = self._tz_after
             fold = 0
