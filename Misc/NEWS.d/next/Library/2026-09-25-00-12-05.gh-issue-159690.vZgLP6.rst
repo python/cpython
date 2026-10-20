@@ -1,4 +1,0 @@
-Fix :class:`logging.handlers.TimedRotatingFileHandler` permanently stopping
-rotation after an error in :meth:`!doRollover` that occurred after the log
-file had been renamed, or when the backup file for the current period
-already existed.
