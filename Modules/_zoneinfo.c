@@ -2619,9 +2619,21 @@ initialize_caches(zoneinfo_state *state)
     return 0;
 }
 
+/*[clinic input]
+@classmethod
+zoneinfo.ZoneInfo.__init_subclass__
+
+    **kwargs: dict
+
+Function to initialize subclasses.
+[clinic start generated code]*/
+
 static PyObject *
-zoneinfo_init_subclass(PyObject *cls, PyObject *args, PyObject *kwargs)
+zoneinfo_ZoneInfo___init_subclass___impl(PyTypeObject *type,
+                                         PyObject *kwargs)
+/*[clinic end generated code: output=05b20743d42252f1 input=fd2e4b35d6ab1397]*/
 {
+    PyObject *cls = (PyObject *)type;
     PyObject *weak_cache = new_weak_cache();
     if (weak_cache == NULL) {
         return NULL;
@@ -2651,9 +2663,7 @@ static PyMethodDef zoneinfo_methods[] = {
     {"__reduce__", zoneinfo_reduce, METH_NOARGS,
      PyDoc_STR("Function for serialization with the pickle protocol.")},
     ZONEINFO_ZONEINFO__UNPICKLE_METHODDEF
-    {"__init_subclass__", _PyCFunction_CAST(zoneinfo_init_subclass),
-     METH_VARARGS | METH_KEYWORDS | METH_CLASS,
-     PyDoc_STR("Function to initialize subclasses.")},
+    ZONEINFO_ZONEINFO___INIT_SUBCLASS___METHODDEF
     {NULL} /* Sentinel */
 };
 

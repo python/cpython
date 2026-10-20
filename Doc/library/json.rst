@@ -234,6 +234,16 @@ Basic Usage
       If ``True``, dictionaries will be outputted sorted by key.
       Default ``False``.
 
+   .. note::
+
+      Keys in key/value pairs of JSON are always of the type :class:`str`. When
+      a dictionary is converted into JSON, all the keys of the dictionary are
+      converted to strings. As a result of this, if a dictionary is converted
+      into JSON and then back into a dictionary, the dictionary may not equal
+      the original one. That is, ``loads(dumps(x)) != x`` if x has non-string
+      keys. *sort_keys* sorts the keys before they are converted to strings,
+      so numeric keys are sorted by value, not by their string representation.
+
    .. versionchanged:: 3.2
       Allow strings for *indent* in addition to integers.
 
@@ -252,17 +262,6 @@ Basic Usage
    Serialize *obj* to a JSON formatted :class:`str` using this :ref:`conversion
    table <py-to-json-table>`.  The arguments have the same meaning as in
    :func:`dump`.
-
-   .. note::
-
-      Keys in key/value pairs of JSON are always of the type :class:`str`. When
-      a dictionary is converted into JSON, all the keys of the dictionary are
-      coerced to strings. As a result of this, if a dictionary is converted
-      into JSON and then back into a dictionary, the dictionary may not equal
-      the original one. That is, ``loads(dumps(x)) != x`` if x has non-string
-      keys.
-      *sort_keys* sorts the keys before they are coerced to strings,
-      so numeric keys are sorted by value, not by their string representation.
 
 .. function:: load(fp, *, cls=None, object_hook=None, parse_float=None, \
                    parse_int=None, parse_constant=None, \

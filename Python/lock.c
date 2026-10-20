@@ -27,10 +27,8 @@ static const PyTime_t TIME_TO_BE_FAIR_NS = 1000*1000;
 // enabled.
 #if Py_GIL_DISABLED
 static const int MAX_SPIN_COUNT = 40;
-static const int RELOAD_SPIN_MASK = 3;
 #else
 static const int MAX_SPIN_COUNT = 0;
-static const int RELOAD_SPIN_MASK = 1;
 #endif
 
 struct mutex_entry {
@@ -81,16 +79,6 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
     };
 
     Py_ssize_t spin_count = 0;
-#ifdef Py_GIL_DISABLED
-    // Using thread-id as a way of reducing contention further in the reload below.
-    // It adds a pseudo-random starting offset to the recurrence, so that threads
-    // are less likely to try and run compare-exchange at the same time.
-    // The lower bits of platform thread ids are likely to not be random,
-    // hence the right shift.
-    const Py_ssize_t tid = (Py_ssize_t)(_Py_ThreadId() >> 12);
-#else
-    const Py_ssize_t tid = 0;
-#endif
     for (;;) {
         if ((v & _Py_LOCKED) == 0) {
             // The lock is unlocked. Try to grab it.
@@ -104,9 +92,6 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
             // Spin for a bit.
             _Py_yield();
             spin_count++;
-            if (((spin_count + tid) & RELOAD_SPIN_MASK) == 0) {
-                v = _Py_atomic_load_uint8_relaxed(&m->_bits);
-            }
             continue;
         }
 
@@ -467,6 +452,25 @@ _PyRecursiveMutex_TryUnlock(_PyRecursiveMutex *m)
     PyMutex_Unlock(&m->mutex);
     return 0;
 }
+
+#ifdef HAVE_FORK
+// Reinitialize the mutex in the child process after fork(). The caller must
+// record before fork() whether the forking thread owns the mutex, since the
+// thread ident can change in the child (gh-126688). If it does, the child
+// keeps the mutex with the same recursion level; otherwise the owner and any
+// waiters no longer exist in the child and the mutex is reset.
+void
+_PyRecursiveMutex_at_fork_reinit(_PyRecursiveMutex *m, int owned)
+{
+    if (owned) {
+        m->mutex = (PyMutex){._bits = _Py_LOCKED};
+        _Py_atomic_store_ullong_relaxed(&m->thread, PyThread_get_thread_ident_ex());
+    }
+    else {
+        memset(m, 0, sizeof(*m));
+    }
+}
+#endif
 
 #define _Py_WRITE_LOCKED 1
 #define _PyRWMutex_READER_SHIFT 2

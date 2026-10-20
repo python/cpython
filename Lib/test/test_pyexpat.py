@@ -1078,7 +1078,7 @@ class ExternalEntityParserCreateErrorTest(unittest.TestCase):
         rc_before = sys.getrefcount(parser)
 
         with self.assertRaises(MemoryError):
-            with support.memory_error_cm(1, 10):
+            with support.inject_memory_error_cm(1, 10):
                 parser.ExternalEntityParserCreate(None)
 
         rc_after = sys.getrefcount(parser)
@@ -1391,6 +1391,35 @@ class MemoryProtectionTest(AttackProtectionTestBase, unittest.TestCase):
         # Craft a payload for which the peak amplification factor is < 1e4.
         payload = self.exponential_expansion_payload(ncols=1, nrows=2)
         self.assertIsNotNone(parser.Parse(payload, True))
+
+
+class VersionTest(unittest.TestCase):
+
+    def _test_version_info(self, v):
+        self.assertIsInstance(v[:], tuple)
+        self.assertEqual(len(v), 3)
+        self.assertIsInstance(v[0], int)
+        self.assertIsInstance(v[1], int)
+        self.assertIsInstance(v[2], int)
+        self.assertIsInstance(v.major, int)
+        self.assertIsInstance(v.minor, int)
+        self.assertIsInstance(v.micro, int)
+        self.assertEqual(v[0], v.major)
+        self.assertEqual(v[1], v.minor)
+        self.assertEqual(v[2], v.micro)
+        self.assertGreaterEqual(v.major, 2)
+        self.assertGreaterEqual(v.minor, 0)
+        self.assertGreaterEqual(v.micro, 0)
+
+    def test_version_info(self):
+        if support.verbose:
+            print(f'EXPAT_VERSION = {expat.EXPAT_VERSION}', flush=True)
+            print(f'VERSION_INFO = {expat.VERSION_INFO}', flush=True)
+            print(f'version_info = {expat.version_info}', flush=True)
+        self._test_version_info(expat.VERSION_INFO)
+        self._test_version_info(expat.version_info)
+        self.assertEqual(expat.EXPAT_VERSION, 'expat_%d.%d.%d' % expat.version_info)
+        self.assertEqual(expat.VERSION_INFO[0], expat.version_info[0])
 
 
 if __name__ == "__main__":
