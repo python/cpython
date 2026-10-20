@@ -106,6 +106,15 @@ as much as it can.
    been attempted.
 
 
+.. c:function:: PyObject **PyObject_GET_WEAKREFS_LISTPTR(PyObject *object)
+
+   Return a pointer to the head of the list of weak references to *object*.
+   *object* must support weak references and must not be ``NULL``.
+
+   The returned pointer can be dereferenced to obtain the current head of
+   the list. Do not use it to modify the list or its head.
+
+
 .. c:function:: void PyUnstable_Object_ClearWeakRefsNoCallbacks(PyObject *object)
 
    Clears the weakrefs for *object* without calling the callbacks.

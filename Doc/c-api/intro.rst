@@ -306,6 +306,11 @@ Numeric utilities
    for. Exactly one of them is ``1`` and the other is ``0``.
 
 
+.. c:macro:: PY_DWORD_MAX
+
+   The maximum value of the Windows ``DWORD`` type.
+
+
 Assertion utilities
 ^^^^^^^^^^^^^^^^^^^
 

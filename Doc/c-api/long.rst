@@ -680,6 +680,20 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    .. versionadded:: 3.12
 
 
+Build configuration
+^^^^^^^^^^^^^^^^^^^
+
+.. c:macro:: PYLONG_BITS_IN_DIGIT
+
+   The number of bits in each digit of CPython's internal representation of
+   integers. The value is either ``30`` (the default) or ``15``, selected when
+   building Python with :option:`--enable-big-digits`.
+
+   To access the native representation of integers, use
+   :c:func:`PyLong_GetNativeLayout` and its
+   :c:member:`~PyLongLayout.bits_per_digit` member instead.
+
+
 Export API
 ^^^^^^^^^^
 

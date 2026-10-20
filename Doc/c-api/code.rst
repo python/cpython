@@ -176,6 +176,16 @@ bound into a function.
 
    .. versionadded:: 3.12
 
+.. c:macro:: PY_FOREACH_CODE_EVENT(V)
+
+   Expand to ``V(CREATE) V(DESTROY)``. The argument *V* must be a macro
+   accepting one event name, which is the suffix of a :c:type:`PyCodeEvent`
+   constant. It must supply any punctuation needed between expansions.
+
+   The headers use ``PY_DEF_EVENT`` as a temporary helper macro to define
+   watcher event enumerations. It is undefined afterwards and is not available
+   to applications.
+
 .. c:type:: int (*PyCode_WatchCallback)(PyCodeEvent event, PyCodeObject* co)
 
    Type of a code object watcher callback function.

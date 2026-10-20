@@ -258,3 +258,42 @@ The argument must be a signed or unsigned :c:expr:`char`.
 .. c:macro:: Py_TOUPPER(c)
 
    Return the uppercase equivalent of the character *c*.
+
+
+Bit masks
+---------
+
+The following constants are bit masks used by the character classification
+macros above:
+
+.. c:macro:: PY_CTF_ALNUM
+
+   Mask for ASCII letters and decimal digits, used by :c:macro:`Py_ISALNUM`.
+   Equal to ``PY_CTF_ALPHA | PY_CTF_DIGIT``.
+
+.. c:macro:: PY_CTF_ALPHA
+
+   Mask for ASCII letters, used by :c:macro:`Py_ISALPHA`.
+   Equal to ``PY_CTF_LOWER | PY_CTF_UPPER``.
+
+.. c:macro:: PY_CTF_DIGIT
+
+   Mask for decimal digits (``0-9``), used by :c:macro:`Py_ISDIGIT`.
+
+.. c:macro:: PY_CTF_LOWER
+
+   Mask for lowercase ASCII letters (``a-z``), used by :c:macro:`Py_ISLOWER`.
+
+.. c:macro:: PY_CTF_SPACE
+
+   Mask for ASCII whitespace characters, used by :c:macro:`Py_ISSPACE`.
+
+.. c:macro:: PY_CTF_UPPER
+
+   Mask for uppercase ASCII letters (``A-Z``), used by :c:macro:`Py_ISUPPER`.
+
+.. c:macro:: PY_CTF_XDIGIT
+
+   Mask for hexadecimal digits (``0-9``, ``a-f``, and ``A-F``), used by
+   :c:macro:`Py_ISXDIGIT`.
+

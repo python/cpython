@@ -197,6 +197,14 @@ There are a few functions specific to Python functions.
 
    .. versionadded:: 3.15
 
+.. c:macro:: PY_FOREACH_FUNC_EVENT(V)
+
+   Apply the macro *V* to each of ``CREATE``, ``DESTROY``, ``MODIFY_CODE``,
+   ``MODIFY_DEFAULTS``, ``MODIFY_KWDEFAULTS``, and ``MODIFY_QUALNAME``, in that
+   order. These names are the suffixes of :c:type:`PyFunction_WatchEvent`
+   constants. The macro *V* must accept one event name and supply any
+   punctuation needed between expansions.
+
 .. c:type:: int (*PyFunction_WatchCallback)(PyFunction_WatchEvent event, PyFunctionObject *func, PyObject *new_value)
 
    Type of a function watcher callback function.

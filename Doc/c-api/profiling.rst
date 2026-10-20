@@ -237,3 +237,14 @@ Reference tracing
    There must be an :term:`attached thread state` when calling this function.
 
 .. versionadded:: 3.13
+
+
+Performance statistics
+======================
+
+.. c:macro:: PYSTATS_MAX_UOP_ID
+
+   Largest micro-operation identifier for which CPython allocates performance
+   statistics counters. Available only in builds configured with
+   :option:`--enable-pystats`.
+

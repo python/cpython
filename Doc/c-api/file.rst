@@ -159,6 +159,14 @@ the :mod:`io` APIs instead.
    failure; the appropriate exception will be set.
 
 
+.. c:macro:: PY_STDIOTEXTMODE
+
+   String literal ``"b"``, which can be appended to a C standard I/O mode
+   string, such as ``"r" PY_STDIOTEXTMODE``, to open a file in binary mode.
+   This prevents the C library from translating newlines, so that Python can
+   perform its own newline translation.
+
+
 Soft-deprecated API
 ^^^^^^^^^^^^^^^^^^^
 

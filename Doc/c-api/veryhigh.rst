@@ -156,6 +156,23 @@ the same library that the Python runtime is using.
       :ref:`main interpreter <sub-interpreter-support>`.
 
 
+.. c:function:: char *PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
+
+   Display *prompt*, if it is not ``NULL``, and read a line from *sys_stdin*.
+   The returned string is null-terminated and includes the trailing newline,
+   if one was read. This returns an empty string if the end of the file is reached
+   before any characters are read. This will return ``NULL`` with an exception set
+   on failure or interruption.
+
+   By default, *sys_stdout* is flushed and *prompt* is written to the C
+   standard error stream. If both streams are terminals and the call is made
+   from the :ref:`main interpreter <sub-interpreter-support>`,
+   :c:var:`PyOS_ReadlineFunctionPointer` can override this behavior.
+
+   The caller must free the returned string with :c:func:`PyMem_Free`.
+   The caller must hold an :term:`attached thread state`.
+
+
 .. c:var:: char* (*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *)
 
    Can be set to point to a function with the prototype

@@ -44,6 +44,21 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
       Add :c:macro:`!Py_HASH_SIPHASH13`.
 
 
+.. c:macro:: Py_HASH_EXTERNAL
+
+   Value of :c:macro:`Py_HASH_ALGORITHM` for a hash implementation supplied
+   by the application embedding Python. Its value is ``0``.
+
+   When Python is built with this setting, the application must define a
+   :c:type:`PyHash_FuncDef` variable named ``PyHash_Func`` instead of using
+   one of Python's built-in hash algorithms.
+
+   .. versionadded:: 3.4
+
+   .. deprecated-removed:: 3.15 3.19
+      Use one of the built-in hash algorithms instead.
+
+
 .. c:macro:: Py_HASH_CUTOFF
 
    Buffers of length in range ``[1, Py_HASH_CUTOFF)`` are hashed using DJBX33A

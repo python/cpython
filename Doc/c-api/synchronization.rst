@@ -264,6 +264,20 @@ These APIs are obsolete since Python 3.13 with the introduction of
    A pointer to a mutual exclusion lock.
 
 
+.. c:macro:: PY_TIMEOUT_T
+
+   A :term:`soft deprecated` alias to :c:expr:`long long`, the integer
+   type used for the timeout argument of :c:func:`PyThread_acquire_lock_timed`.
+
+
+.. c:var:: const long long PY_TIMEOUT_MAX
+
+   The maximum timeout, in microseconds, supported by the legacy locking APIs.
+
+   .. note::
+      This differs from :data:`_thread.TIMEOUT_MAX`, which is expressed in seconds.
+
+
 .. c:type:: PyLockStatus
 
    The result of acquiring a lock with a timeout.
