@@ -968,7 +968,7 @@ _py_uuid7 = uuid7
 _py_UUID = UUID
 try:
     from _uuid import UUID, uuid4, uuid7
-    from _uuid import _install_c_hooks
+    from _uuid import _install_c_hooks as _install_c_hooks
 except ImportError:
     _c_UUID = None
     _c_uuid4 = None
