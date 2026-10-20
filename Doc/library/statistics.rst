@@ -160,7 +160,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
 .. function:: fmean(data, weights=None)
 
-   Convert *data* to floats and compute the arithmetic mean.
+   Compute the arithmetic mean as a :class:`float`.
 
    This runs faster than the :func:`mean` function and it always returns a
    :class:`float`.  The *data* may be a sequence or iterable.  If the input
@@ -183,7 +183,10 @@ However, for reading convenience, most of the examples show sorted sequences.
       87.6
 
    If *weights* is supplied, it must be the same length as the *data* or
-   a :exc:`ValueError` will be raised.
+   a :exc:`ValueError` will be raised. The values in *data* and *weights*
+   must have compatible types for multiplication. For example,
+   :class:`~decimal.Decimal` values cannot be mixed with :class:`float`
+   or :class:`~fractions.Fraction` values.
 
    .. versionadded:: 3.8
 

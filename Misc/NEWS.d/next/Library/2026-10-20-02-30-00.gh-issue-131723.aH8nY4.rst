@@ -1,0 +1,3 @@
+Fix :func:`statistics.fmean` with compatible
+:class:`~decimal.Decimal` data and weights. Clarify that weighted inputs must
+have compatible types for multiplication.

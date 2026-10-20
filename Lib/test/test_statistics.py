@@ -1932,6 +1932,18 @@ class TestFMean(unittest.TestCase):
         with self.assertRaises(StatisticsError):
             fmean(iter([10, 20]), iter([-1, 1]))    # sum of weights is zero
 
+    def test_decimal_weights(self):
+        for data, weights in [
+            ([Decimal(2), Decimal(4), Decimal(8)], [1, 2, 1]),
+            ([2, 4, 8], [Decimal(1), Decimal(2), Decimal(1)]),
+            ([Decimal(2), Decimal(4), Decimal(8)],
+             [Decimal(1), Decimal(2), Decimal(1)]),
+        ]:
+            with self.subTest(data=data, weights=weights):
+                result = statistics.fmean(data, weights)
+                self.assertIs(type(result), float)
+                self.assertEqual(result, 4.5)
+
 
 # === Tests for variances and standard deviations ===
 

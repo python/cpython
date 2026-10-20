@@ -181,7 +181,7 @@ def mean(data):
 
 
 def fmean(data, weights=None):
-    """Convert data to floats and compute the arithmetic mean.
+    """Compute the arithmetic mean as a float.
 
     This runs faster than the mean() function and it always returns a float.
     If the input dataset is empty, it raises a StatisticsError.
@@ -189,6 +189,9 @@ def fmean(data, weights=None):
     >>> fmean([3.5, 4.0, 5.25])
     4.25
 
+    If provided, weights must have the same length as data. The values in
+    data and weights must have compatible types for multiplication.
+    Decimals cannot be mixed with floats or fractions.
     """
     if weights is None:
 
@@ -220,7 +223,7 @@ def fmean(data, weights=None):
     if not den:
         raise StatisticsError('sum of weights must be non-zero')
 
-    return num / den
+    return float(num) / den
 
 
 def geometric_mean(data):
