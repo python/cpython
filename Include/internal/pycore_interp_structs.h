@@ -588,6 +588,12 @@ struct types_state {
        where all those lower numbers are used for core static types. */
     unsigned int next_version_tag;
 
+#ifdef Py_GIL_DISABLED
+    /* Incremented on changes that can invalidate a type update that is
+       prepared under the type lock and published with the world stopped. */
+    uint64_t publish_gen;
+#endif
+
     /* Every static builtin type is initialized for each interpreter
        during its own initialization, including for the main interpreter
        during global runtime initialization.  This is done by calling
