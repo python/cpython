@@ -822,7 +822,9 @@ static bool mi_try_new_handler(void) {
 #else
 typedef void (*std_new_handler_t)(void);
 
-#if (defined(__GNUC__) || (defined(__clang__) && !defined(_MSC_VER)))  // exclude clang-cl, see issue #631
+// Define MI_NO_CXX_NEW_HANDLER to not define a weak `std::get_new_handler` (`_ZSt15get_new_handlerv`)
+// when the C++ new-handler is never used (e.g. when only the C API is used).
+#if (defined(__GNUC__) || (defined(__clang__) && !defined(_MSC_VER))) && !defined(MI_NO_CXX_NEW_HANDLER)  // exclude clang-cl, see issue #631
 std_new_handler_t __attribute__((weak)) _ZSt15get_new_handlerv(void) {
   return NULL;
 }

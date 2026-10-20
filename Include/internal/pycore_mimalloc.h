@@ -14,6 +14,9 @@
 
 #ifdef WITH_MIMALLOC
 #  define MI_NO_PTHREAD_ATFORK 1
+// CPython never uses mimalloc's C++ operator new APIs, so don't define a weak
+// std::get_new_handler() (_ZSt15get_new_handlerv) in libpython.
+#  define MI_NO_CXX_NEW_HANDLER 1
 #  ifdef MS_WINDOWS
 // Initialize from a CRT initializer and use FLS for thread cleanup instead
 // of TLS callbacks, which run during DLL attach before the CRT is set up.
