@@ -1,0 +1,1 @@
+Ignore :func:`pdb.set_trace()` when running it directly from :mod:`pdb` prompts.
