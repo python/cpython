@@ -3,10 +3,10 @@
 Expat C API
 ===========
 
-The :mod:`pyexpat` module exposes selected Expat functions through its
-``expat_CAPI`` capsule. This allows extension modules to use the same Expat
-library as Python. The interface is declared in :file:`pyexpat.h`, which must
-be included after Expat's :file:`expat.h` header. It is not part of the
+The :mod:`pyexpat <xml.parsers.expat>` module exposes selected Expat functions
+through its ``expat_CAPI`` capsule. This allows extension modules to use the
+same Expat library as Python. The interface is declared in :file:`pyexpat.h`,
+which must be included after Expat's :file:`expat.h` header. It is not part of the
 :ref:`Limited API <limited-c-api>`.
 
 .. c:macro:: PyExpat_CAPSULE_NAME
@@ -29,9 +29,9 @@ be included after Expat's :file:`expat.h` header. It is not part of the
 
 .. c:struct:: PyExpat_CAPI
 
-   Table of function pointers exported by :mod:`pyexpat`. The capsule owns
-   this structure: treat it as read-only and do not free it. Keep a strong
-   reference to the capsule while using the table.
+   Table of function pointers exported by :mod:`pyexpat <xml.parsers.expat>`.
+   The capsule owns this structure: treat it as read-only and do not free it.
+   Keep a strong reference to the capsule while using the table.
 
    Check the compatibility fields as described under
    :c:macro:`PyExpat_CAPI_MAGIC` before using the function pointers.
@@ -43,14 +43,14 @@ be included after Expat's :file:`expat.h` header. It is not part of the
    .. c:member:: int size
 
       Size of the structure in bytes, set to ``sizeof(struct PyExpat_CAPI)``
-      by the :mod:`pyexpat` module that created the capsule.
+      by the :mod:`pyexpat <xml.parsers.expat>` module that created the capsule.
 
    .. c:member:: int MAJOR_VERSION
                  int MINOR_VERSION
                  int MICRO_VERSION
 
       Major, minor, and micro version numbers of the Expat library used by
-      :mod:`pyexpat`.
+      :mod:`pyexpat <xml.parsers.expat>`.
 
    .. c:member:: const XML_LChar *(*ErrorString)(enum XML_Error code)
                  enum XML_Error (*GetErrorCode)(XML_Parser parser)
@@ -87,7 +87,7 @@ be included after Expat's :file:`expat.h` header. It is not part of the
 
    The remaining members also point to Expat functions with the ``XML_``
    prefix. They may be ``NULL``, depending on the Expat version used by
-   :mod:`pyexpat`:
+   :mod:`pyexpat <xml.parsers.expat>`:
 
    .. c:member:: int (*SetHashSalt)(XML_Parser parser, unsigned long hash_salt)
 

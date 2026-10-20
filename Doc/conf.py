@@ -180,6 +180,26 @@ nitpick_ignore = [
     ('c:type', 'unsigned __int64'),
     ('c:type', 'double'),
     ('c:type', '_Float16'),
+    # Expat types
+    ('c:type', 'XML_Bool'),
+    ('c:type', 'XML_Char'),
+    ('c:type', 'XML_CharacterDataHandler'),
+    ('c:type', 'XML_CommentHandler'),
+    ('c:type', 'XML_DefaultHandler'),
+    ('c:type', 'XML_Encoding'),
+    ('c:type', 'XML_EndElementHandler'),
+    ('c:type', 'XML_EndNamespaceDeclHandler'),
+    ('c:type', 'XML_Error'),
+    ('c:type', 'XML_LChar'),
+    ('c:type', 'XML_Memory_Handling_Suite'),
+    ('c:type', 'XML_Parser'),
+    ('c:type', 'XML_ProcessingInstructionHandler'),
+    ('c:type', 'XML_Size'),
+    ('c:type', 'XML_StartDoctypeDeclHandler'),
+    ('c:type', 'XML_StartElementHandler'),
+    ('c:type', 'XML_StartNamespaceDeclHandler'),
+    ('c:type', 'XML_Status'),
+    ('c:type', 'XML_UnknownEncodingHandler'),
     # Standard C structures
     ('c:struct', 'in6_addr'),
     ('c:struct', 'in_addr'),
@@ -237,7 +257,7 @@ nitpick_ignore += [
     ('py:attr', '__wrapped__'),
 ]
 
-# gh-106948: Copy standard C types declared in the "c:type" domain and C
+# gh-106948: Copy C types declared in the "c:type" domain and C
 # structures declared in the "c:struct" domain to the "c:identifier" domain,
 # since "c:function" markup looks for types in the "c:identifier" domain. Use
 # list() to not iterate on items which are being added
