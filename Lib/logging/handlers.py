@@ -469,8 +469,6 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                 timeTuple = time.localtime(t + addend)
         dfn = self.rotation_filename(self.baseFilename + "." +
                                      time.strftime(self.suffix, timeTuple))
-        # Compute the next rollover time first, so that an early return or
-        # a failure below affects only this rollover.
         self.rolloverAt = self.computeRollover(currentTime)
         if os.path.exists(dfn):
             # Already rolled over.
