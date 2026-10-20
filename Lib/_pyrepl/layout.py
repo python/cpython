@@ -215,7 +215,7 @@ def layout_content_lines(
                 index_to_wrap_before += 1
                 column += char_width
 
-            if index_to_wrap_before == 0 and start < total:
+            if index_to_wrap_before == 0 and not current_prompt_width:
                 index_to_wrap_before = 1  # force progress
 
             at_line_end = (start + index_to_wrap_before) >= total

@@ -229,16 +229,29 @@ class TestLayoutContentLines(TestCase):
 
     def test_wrapping_forces_progress(self):
         # When a single character is wider than available space, force 1 char
-        prompt = _prompt("P", 1)
-        body = (ContentFragment("W", 1),)
+        prompt = _prompt("", 0)
+        body = (ContentFragment("W", 2),)
         source = _source("W", has_newline=False)
         line = ContentLine(source, prompt, body)
-        # width=2 means prompt(1) + char(1) = 2, which fits (< width would be
-        # false for width=2 since 1+1 >= 2), so it wraps but forces progress
+        # width=2 means char(2) >= width, so it wraps but forces progress
         result = layout_content_lines((line,), 2, 0)
 
         self.assertEqual(len(result.wrapped_rows), 1)
         self.assertEqual(result.wrapped_rows[0].buffer_advance, 1)
+
+    def test_prompt_wider_than_terminal(self):
+        line = _content_line("Hello", prompt=_prompt("a" * 65, 65))
+        result = layout_content_lines((line,), 20, 0)
+
+        self.assertEqual(len(result.wrapped_rows), 2)
+        first, second = result.wrapped_rows
+        self.assertEqual(first.prompt_width, 65)
+        self.assertEqual(first.fragments, ())
+        self.assertEqual(first.suffix, "\\")
+        self.assertEqual(first.buffer_advance, 0)
+        self.assertEqual(second.prompt_width, 0)
+        self.assertEqual(second.buffer_advance, 6)
+        self.assertEqual(result.layout_map.pos_to_xy(0), (0, 1))
 
     def test_layout_map_matches_wrapped_rows(self):
         line = _content_line("abc")
