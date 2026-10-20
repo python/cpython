@@ -14,6 +14,7 @@ except ImportError:
 
 import asyncio
 from test.test_asyncio import utils as test_utils
+from test import support
 from test.support import socket_helper
 
 
@@ -860,6 +861,49 @@ class StreamTests(test_utils.TestCase):
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
         self.loop.run_until_complete(run_test())
         self.assertEqual(messages, [])
+
+    @unittest.skipIf(ssl is None, 'No ssl module')
+    def test_start_tls_reversed_roles(self):
+        async def run_test():
+            accepted = self.loop.create_future()
+            async with await asyncio.start_server(
+                lambda r, w: accepted.set_result((r, w)),
+                socket_helper.HOSTv4, 0,
+            ) as server:
+                address = server.sockets[0].getsockname()
+                client_reader, client_writer = await asyncio.open_connection(
+                    *address
+                )
+                server_reader, server_writer = await accepted
+                try:
+                    await asyncio.gather(
+                        client_writer.start_tls(
+                            test_utils.simple_server_sslcontext(),
+                            server_side=True,
+                        ),
+                        server_writer.start_tls(
+                            test_utils.simple_client_sslcontext(),
+                            server_side=False,
+                        ),
+                    )
+                    client_writer.write(b"hello")
+                    self.assertEqual(
+                        await server_reader.readexactly(5), b"hello"
+                    )
+                    server_writer.write(b"world")
+                    self.assertEqual(
+                        await client_reader.readexactly(5), b"world"
+                    )
+                finally:
+                    client_writer.close()
+                    server_writer.close()
+                    await asyncio.gather(
+                        client_writer.wait_closed(), server_writer.wait_closed()
+                    )
+
+        self.loop.run_until_complete(
+            asyncio.wait_for(run_test(), support.SHORT_TIMEOUT)
+        )
 
     def test_streamwriter_start_tls_updates_reader_transport(self):
         reader = asyncio.StreamReader(loop=self.loop)
