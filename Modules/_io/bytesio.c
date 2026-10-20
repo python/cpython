@@ -670,7 +670,7 @@ _io_BytesIO_readinto_impl(bytesio *self, Py_buffer *buffer)
 
     assert(self->pos + len <= PY_SSIZE_T_MAX);
     assert(len >= 0);
-    memcpy(buffer->buf, PyBytes_AS_STRING(self->buf) + self->pos, len);
+    memmove(buffer->buf, PyBytes_AS_STRING(self->buf) + self->pos, len);
     self->pos += len;
 
     return PyLong_FromSsize_t(len);
