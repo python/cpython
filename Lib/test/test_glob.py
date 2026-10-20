@@ -425,6 +425,51 @@ class GlobTests(unittest.TestCase):
         self.assertIsNotNone(match(os.path.join('foo', 'bar.txt')))
         self.assertIsNone(match(os.path.join('foo', '.bar.txt')))
 
+    def test_translate_slow_pattern(self):
+        pattern = '*a' * 8 + '*b'
+        regex = glob.translate(pattern, seps='/')
+        self.assertIn('(?>', regex)
+        match = re.compile(regex).fullmatch
+        self.assertIsNotNone(match('a' * 8 + 'b'))
+        self.assertIsNone(match('a' * 8 + 'c'))
+
+    def test_translate_slow_pattern_with_separators(self):
+        def matches(pattern, path, *, seps='/', **kwargs):
+            regex = re.compile(glob.translate(pattern, seps=seps, **kwargs))
+            return regex.fullmatch(path) is not None
+
+        pattern = '*a*a/*b'
+        self.assertTrue(matches(pattern, 'baaa/ab'))
+        self.assertFalse(matches(pattern, 'ba/ab'))
+        self.assertFalse(matches(pattern, 'baaa/.ab'))
+        self.assertTrue(matches(pattern, 'baaa/.ab', include_hidden=True))
+
+        recursive_pattern = '**/*a*a/*b'
+        self.assertTrue(matches(recursive_pattern, 'dir/sub/baaa/ab', recursive=True))
+        self.assertFalse(matches(recursive_pattern, 'dir/.sub/baaa/ab', recursive=True))
+        self.assertTrue(matches(recursive_pattern, 'dir/.sub/baaa/ab',
+                                recursive=True, include_hidden=True))
+
+        # A negated class can match an alphabetic separator with one case
+        # policy but not the other. Keep both uses of translate() working.
+        regex = glob.translate('*[!x]*x', seps='X')
+        self.assertIsNotNone(re.fullmatch(regex, '/X.bbb\\x'))
+        self.assertIsNotNone(re.fullmatch(regex, '/.bbb\\x', re.IGNORECASE))
+
+        self.assertTrue(matches('*a*a/*b', 'baaa\\ab', seps=['/', '\\']))
+        self.assertFalse(matches('*a*a/*b', 'ba/ab', seps=['/', '\\']))
+
+        # A character class can match a separator, so it cannot always be
+        # grouped atomically with the preceding wildcard.
+        self.assertTrue(matches('*[!x]*x', 'a/x'))
+
+        # These classes cannot match a separator and can be grouped safely.
+        self.assertTrue(matches('*[ab]*c', 'xac'))
+        self.assertFalse(matches('*[ab]*c', 'xa/bc'))
+        # A caret at the start of a character class is literal in glob syntax.
+        self.assertTrue(matches('*[^a]*b', '^b'))
+        self.assertFalse(matches('*[^a]*b', 'zb'))
+
     def test_translate(self):
         def fn(pat):
             return glob.translate(pat, seps='/')
@@ -443,7 +488,7 @@ class GlobTests(unittest.TestCase):
         self.assertEqual(fn('a**'), r'(?s:a[^/]*)\z')
         self.assertEqual(fn('**b'), r'(?s:(?!\.)[^/]*b)\z')
         self.assertEqual(fn('/**/*/*.*/**'),
-                         r'(?s:/(?!\.)[^/]*/[^/.][^/]*/(?!\.)[^/]*\.[^/]*/(?!\.)[^/]*)\z')
+                         r'(?s:/(?!\.)[^/]*/[^/.][^/]*/(?!\.)(?>[^/]*?\.)[^/]*/(?!\.)[^/]*)\z')
 
     def test_translate_include_hidden(self):
         def fn(pat):
@@ -462,7 +507,7 @@ class GlobTests(unittest.TestCase):
         self.assertEqual(fn('***'), r'(?s:[^/]*)\z')
         self.assertEqual(fn('a**'), r'(?s:a[^/]*)\z')
         self.assertEqual(fn('**b'), r'(?s:[^/]*b)\z')
-        self.assertEqual(fn('/**/*/*.*/**'), r'(?s:/[^/]*/[^/]+/[^/]*\.[^/]*/[^/]*)\z')
+        self.assertEqual(fn('/**/*/*.*/**'), r'(?s:/[^/]*/[^/]+/(?>[^/]*?\.)[^/]*/[^/]*)\z')
 
     def test_translate_recursive(self):
         def fn(pat):
@@ -474,7 +519,7 @@ class GlobTests(unittest.TestCase):
         self.assertEqual(fn('***'), r'(?s:[^/]*)\z')
         self.assertEqual(fn('a**'), r'(?s:a[^/]*)\z')
         self.assertEqual(fn('**b'), r'(?s:[^/]*b)\z')
-        self.assertEqual(fn('/**/*/*.*/**'), r'(?s:/(?:.+/)?[^/]+/[^/]*\.[^/]*/.*)\z')
+        self.assertEqual(fn('/**/*/*.*/**'), r'(?s:/(?:.+/)?[^/]+/(?>[^/]*?\.)[^/]*/.*)\z')
 
     def test_translate_seps(self):
         def fn(pat):

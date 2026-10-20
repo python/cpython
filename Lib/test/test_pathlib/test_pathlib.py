@@ -549,6 +549,16 @@ class PurePathTest(unittest.TestCase):
         self.assertFalse(P('c:/a/B.Py').full_match('C:/A/*.pY', case_sensitive=True))
         self.assertTrue(P('/a/b/c.py').full_match('/A/*/*.Py', case_sensitive=False))
 
+    def test_slow_match(self):
+        P = self.cls
+        pattern = '*a' * 8 + '*b'
+        matching_path = P('a' * 8 + 'b')
+        non_matching_path = P('a' * 28)
+        self.assertTrue(matching_path.match(pattern))
+        self.assertTrue(matching_path.full_match(pattern))
+        self.assertFalse(non_matching_path.match(pattern))
+        self.assertFalse(non_matching_path.full_match(pattern))
+
     def test_match_empty(self):
         P = self.cls
         self.assertRaises(ValueError, P('a').match, '')
@@ -2981,6 +2991,17 @@ class PathTest(PurePathTest):
             list(p.glob('.'))
         with self.assertRaisesRegex(ValueError, 'Unacceptable pattern'):
             list(p.glob('./'))
+
+    def test_glob_slow_pattern(self):
+        P = self.cls
+        path = P(self.base)
+        pattern = '*a' * 8 + '*b'
+        matching_name = 'a' * 8 + 'b'
+        non_matching_name = 'a' * 28
+        matching_path = path / matching_name
+        matching_path.touch()
+        (path / non_matching_name).touch()
+        self.assertEqual(set(path.glob(pattern)), {matching_path})
 
     def test_glob_many_open_files(self):
         depth = 30

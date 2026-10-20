@@ -99,7 +99,8 @@ def translate(pat):
     """
 
     parts, star_indices = _translate(pat, '*', '.')
-    return _join_translated_parts(parts, star_indices)
+    res = _join_translated_parts(parts, star_indices)
+    return fr'(?s:{res})\z'
 
 
 _re_setops_sub = re.compile(r'([&~|])').sub
@@ -183,9 +184,15 @@ def _translate(pat, star, question_mark):
     return res, star_indices
 
 
-def _join_translated_parts(parts, star_indices):
+def _join_translated_parts(parts, star_indices, star='.*', seps=()):
     if not star_indices:
-        return fr'(?s:{"".join(parts)})\z'
+        return ''.join(parts)
+    if seps:
+        # glob has already split at each separator. Literal tokens only need
+        # checking for multi-character separators or case-insensitive uses.
+        check_literals = any(len(sep) != 1 or sep.lower() != sep.upper()
+                             for sep in seps)
+        seps = ''.join(seps)
     iter_star_indices = iter(star_indices)
     j = next(iter_star_indices)
     buffer = parts[:j]  # fixed pieces at the start
@@ -194,16 +201,27 @@ def _join_translated_parts(parts, star_indices):
     for j in iter_star_indices:
         # Now deal with STAR fixed STAR fixed ...
         # For an interior `STAR fixed` pairing, we want to do a minimal
-        # .*? match followed by `fixed`, with no possibility of backtracking.
+        # star match followed by `fixed`, with no possibility of backtracking.
         # Atomic groups ("(?>...)") allow us to spell that directly.
         # Note: people rely on the undocumented ability to join multiple
         # translate() results together via "|" to build large regexps matching
         # "one of many" shell patterns.
-        append('(?>.*?')
-        extend(parts[i:j])
-        append(')')
+        fixed = parts[i:j]
+        if seps and any(re.fullmatch(part, sep, re.DOTALL)
+                        or re.fullmatch(part, sep, re.IGNORECASE | re.DOTALL)
+                        for part in fixed
+                        if check_literals or part == '.' or part.startswith('[')
+                        for sep in seps):
+            # Unlike fnmatch stars, glob stars cannot consume separators.
+            # A character class in the fixed part may consume one, so its
+            # earliest match is not necessarily the one the suffix needs.
+            append(star)
+            extend(fixed)
+        else:
+            append(f'(?>{star}?')
+            extend(fixed)
+            append(')')
         i = j + 1
-    append('.*')
+    append(star)
     extend(parts[i:])
-    res = ''.join(buffer)
-    return fr'(?s:{res})\z'
+    return ''.join(buffer)

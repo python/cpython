@@ -1,0 +1,2 @@
+Avoid excessive backtracking in :func:`glob.translate` and the :mod:`pathlib`
+matching methods for path segments containing multiple ``*`` wildcards.
