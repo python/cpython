@@ -641,7 +641,9 @@ acallawaitable_handle_error(acallawaitableobject *aw)
         }
         int ok = 0;
         if (it->it_sentinel != NULL) {
-            ok = PyObject_RichCompareBool(it->it_sentinel, value, Py_EQ);
+            PyObject *sentinel = Py_NewRef(it->it_sentinel);
+            ok = PyObject_RichCompareBool(sentinel, value, Py_EQ);
+            Py_DECREF(sentinel);
         }
         if (ok == 0) {
             (void)_PyGen_SetStopIterationValue(value);

@@ -905,6 +905,47 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         with self.assertRaises(StopAsyncIteration):
             self.loop.run_until_complete(anext(it))
 
+    def test_aiter_callable_reentrant_sentinel_compare(self):
+        stop = False
+        destroyed = []
+        compared = []
+
+        async def produce():
+            return Result()
+
+        def fetch():
+            nonlocal stop
+            if stop:
+                raise StopAsyncIteration
+            return produce()
+
+        class Sentinel:
+            def __del__(self):
+                destroyed.append(True)
+
+            def __eq__(self, other):
+                nonlocal stop
+                stop = True
+                aw = ait.__anext__()
+                try:
+                    aw.__await__().send(None)
+                except StopAsyncIteration:
+                    pass
+                return NotImplemented
+
+        class Result:
+            def __eq__(self, other):
+                compared.append(isinstance(other, Sentinel) and not destroyed)
+                return NotImplemented
+
+        ait = aiter(fetch, Sentinel())
+        with self.assertRaises(StopIteration) as cm:
+            ait.__anext__().__await__().send(None)
+        self.assertIsInstance(cm.exception.value, Result)
+        self.assertEqual(compared, [True])
+        with self.assertRaises(StopAsyncIteration):
+            ait.__anext__().__await__().send(None)
+
     def test_aiter_callable_lazy(self):
         # The callable is only called when the awaitable is awaited
         calls = []
