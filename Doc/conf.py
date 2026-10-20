@@ -257,7 +257,7 @@ nitpick_ignore += [
     ('py:attr', '__wrapped__'),
 ]
 
-# gh-106948: Copy C types declared in the "c:type" domain and C
+# gh-106948: Copy standard C types declared in the "c:type" domain and C
 # structures declared in the "c:struct" domain to the "c:identifier" domain,
 # since "c:function" markup looks for types in the "c:identifier" domain. Use
 # list() to not iterate on items which are being added
