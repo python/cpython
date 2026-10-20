@@ -1,0 +1,2 @@
+Allow frame locals proxies' ``update()`` method to accept mappings and
+iterables of key-value pairs.
