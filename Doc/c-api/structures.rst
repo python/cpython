@@ -760,10 +760,19 @@ The following flags can be used with :c:member:`PyMemberDef.flags`:
 .. versionchanged:: 3.12
 
    The :c:macro:`!READONLY` macro was renamed to :c:macro:`Py_READONLY`.
-   The :c:macro:`!PY_AUDIT_READ` macro was renamed with the ``Py_`` prefix.
+   The :c:macro:`PY_AUDIT_READ` macro was renamed with the ``Py_`` prefix.
    The new names are now always available.
    Previously, these required ``#include "structmember.h"``.
    The header is still available and it provides the old names.
+
+.. c:macro:: PY_AUDIT_READ
+
+   Soft-deprecated alias of :c:macro:`Py_AUDIT_READ` (note capitalization of
+   the ``y``).
+   Only available with  ``#include "structmember.h"``.
+
+   .. soft-deprecated:: 3.12
+      Use :c:macro:`Py_AUDIT_READ` instead.
 
 .. _PyMemberDef-types:
 

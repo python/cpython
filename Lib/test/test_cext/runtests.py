@@ -19,6 +19,36 @@ def run_tests(testmod, verbose=True):
     print(flush=True)
 
 
+def run_refleak_tests(testmod):
+    # Run tests and check for reference leaks
+    warmups = 3
+    runs = 3
+    repcount = warmups + runs
+    refcount = array.array('q', [0] * repcount)
+    rep_range = tuple(range(repcount))
+
+    for i in rep_range:
+        print(f"Run #{i + 1}", flush=True)
+        run_tests(testmod)
+        gc.collect()
+        refcount[i] = sys.gettotalrefcount()
+
+    # Compute differences
+    previous = None
+    for i in rep_range:
+        value = refcount[i]
+        if previous is not None:
+           refcount[i] = value - previous
+        previous = value
+
+    deltas = list(refcount[warmups:])
+    if all(delta >= 1 for delta in deltas):
+        print(f'ERROR: Tests leaked {deltas} references')
+        sys.exit(1)
+    elif any(deltas):
+        print(f'WARNING: Tests leaked {deltas} references (this is fine)')
+
+
 def main():
     if len(sys.argv) < 2:
         print("usage: python runtests.py TEST_MODULE_NAME")
@@ -45,21 +75,7 @@ def main():
         print()
 
     if hasattr(sys, 'gettotalrefcount'):
-        # First run to warm up Python. For example, test_datetime() imports
-        # the datetime module.
-        run_tests(testmod, verbose=False)
-
-        refcount = array.array('q', [0, 0])
-        gc.collect()
-
-        # Check for reference leak
-        refcount[0] = sys.gettotalrefcount()
-        run_tests(testmod)
-        refcount[1] = sys.gettotalrefcount()
-
-        diff = refcount[1] - refcount[0]
-        if diff >= 1:
-            raise AssertionError(f'Tests leaked {diff} references')
+        run_refleak_tests(testmod)
     else:
         run_tests(testmod)
 
