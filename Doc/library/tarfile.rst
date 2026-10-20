@@ -169,7 +169,8 @@ Some facts and figures:
    Use this variant in combination with e.g. ``sys.stdin.buffer``, a socket
    :term:`file object` or a tape device.
    However, such a :class:`TarFile` object is limited in that it does
-   not allow random access, see :ref:`tar-examples`.  The currently
+   not allow random access, see the
+   :ref:`stream mode example <tarfile-stream-examples>`. The currently
    possible modes:
 
    +-------------+--------------------------------------------+
@@ -264,7 +265,7 @@ The :mod:`!tarfile` module defines the following exceptions:
 .. exception:: StreamError
 
    Is raised for the limitations that are typical for stream-like :class:`TarFile`
-   objects.
+   objects, such as seeking backwards or extracting a link as a file object.
 
 
 .. exception:: ExtractError
@@ -511,6 +512,10 @@ be finalized; only the internally used file object will be closed. See the
    Return a :class:`TarInfo` object for member *name*. If *name* can not be found
    in the archive, :exc:`KeyError` is raised.
 
+   Looking up a member by name can require reading the archive to the end.
+   In stream modes, use iteration instead to extract members as they are read;
+   see the :ref:`stream mode example <tarfile-stream-examples>`.
+
    .. note::
 
       If a member occurs more than once in the archive, its last occurrence is assumed
@@ -522,11 +527,14 @@ be finalized; only the internally used file object will be closed. See the
    Return the members of the archive as a list of :class:`TarInfo` objects. The
    list has the same order as the members in the archive.
 
+   Collecting all members requires reading the archive to the end. In stream
+   modes, use iteration instead if you also need to extract members.
+
 
 .. method:: TarFile.getnames()
 
    Return the members as a list of their names. It has the same order as the list
-   returned by :meth:`getmembers`.
+   returned by :meth:`getmembers`, with the same restrictions in stream modes.
 
 
 .. method:: TarFile.list(verbose=True, *, members=None)
@@ -535,6 +543,9 @@ be finalized; only the internally used file object will be closed. See the
    only the names of the members are printed. If it is :const:`True`, output
    similar to that of :program:`ls -l` is produced. If optional *members* is
    given, it must be a subset of the list returned by :meth:`getmembers`.
+
+   In stream modes, listing members advances past their data, preventing
+   subsequent extraction of those members.
 
    .. versionchanged:: 3.5
       Added the *members* parameter.
@@ -556,6 +567,9 @@ be finalized; only the internally used file object will be closed. See the
    This is done to work around two problems: A directory's modification time is
    reset each time a file is created in it. And, if a directory's permissions do
    not allow writing, extracting files to it will fail.
+
+   In stream modes, leave *members* as ``None`` or supply a generator that
+   filters the archive as it is iterated, rather than calling :meth:`getmembers`.
 
    If *numeric_owner* is :const:`True`, the uid and gid numbers from the tarfile
    are used to set the owner/group for the extracted files. Otherwise, the named
@@ -598,6 +612,10 @@ be finalized; only the internally used file object will be closed. See the
    directory using *path*. *path* may be a :term:`path-like object`.
    File attributes (owner, mtime, mode) are set unless *set_attrs* is false.
 
+   In stream modes, pass the current :class:`TarInfo` object yielded by
+   iteration. Extract it before advancing to the next member; see the
+   :ref:`stream mode example <tarfile-stream-examples>`.
+
    The *numeric_owner* and *filter* arguments are the same as
    for :meth:`extractall`.
 
@@ -631,6 +649,11 @@ be finalized; only the internally used file object will be closed. See the
    a link, an :class:`io.BufferedReader` object is returned. For all other
    existing members, :const:`None` is returned. If *member* does not appear
    in the archive, :exc:`KeyError` is raised.
+
+   In stream modes, pass the current :class:`TarInfo` object yielded by iteration
+   and read its contents before advancing to the next member. Extracting a
+   link as a file object raises :exc:`StreamError` in these modes. See
+   the :ref:`stream mode example <tarfile-stream-examples>`.
 
    .. versionchanged:: 3.3
       Return an :class:`io.BufferedReader` object.
@@ -1412,8 +1435,8 @@ How to extract an entire tar archive to the current working directory::
    tar.extractall(filter='data')
    tar.close()
 
-How to extract a subset of a tar archive with :meth:`TarFile.extractall` using
-a generator function instead of a list::
+How to extract a subset of a tar archive in stream mode with
+:meth:`TarFile.extractall` using a generator function instead of a list::
 
    import os
    import tarfile
@@ -1423,7 +1446,7 @@ a generator function instead of a list::
            if os.path.splitext(tarinfo.name)[1] == ".py":
                yield tarinfo
 
-   tar = tarfile.open("sample.tar.gz")
+   tar = tarfile.open("sample.tar.gz", "r|gz")
    tar.extractall(members=py_files(tar))
    tar.close()
 
@@ -1440,6 +1463,23 @@ How to read a gzip compressed tar archive and display some member information::
        else:
            print("something else.")
    tar.close()
+
+.. _tarfile-stream-examples:
+
+How to read file contents in a stream mode such as ``'r|gz'``. Process each
+member before advancing to the next one, passing the :class:`TarInfo` object
+yielded by iteration rather than looking up a member by name::
+
+   import tarfile
+
+   with tarfile.open("sample.tar.gz", "r|gz") as tar:
+       for member in tar:
+           if member.isfile():
+               with tar.extractfile(member) as file:
+                   print(member.name, file.read())
+
+Seeking backwards in the returned file object or reading a member after
+advancing past its data can raise :exc:`StreamError`.
 
 Writing examples
 ~~~~~~~~~~~~~~~~
