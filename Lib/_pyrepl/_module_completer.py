@@ -61,7 +61,8 @@ class ModuleCompleter:
         if not result:
             return None
         try:
-            return self.complete(*result)
+            names = self.complete(*result)
+            return [self._remove_separated_words(line, c) for c in names]
         except Exception:
             # Some unexpected error occurred, make it look like
             # no completions are available
@@ -210,6 +211,26 @@ class ModuleCompleter:
             self._curr_sys_path = sys.path[:]
             self._global_cache = list(pkgutil.iter_modules())
         return self._global_cache
+
+    def _remove_separated_words(self, line: str, completion: str) -> str:
+        """Remove completion parts imputed as separate words.
+
+        Needed because the completer insert any completion provided
+        by replacing the stem (eg. word) currently imputed, if any.
+
+        Examples:
+            - 'import foo.', 'foo.bar'    -> 'foo.bar'
+            - 'import foo  .', 'foo.bar'  -> '.bar'
+            - 'from foo import ', 'bar'   -> 'bar'
+            - 'import x.x .x.', 'x.x.x.x' -> '.x.x'
+        """
+        last_word = line.split(" ")[-1]
+        if not last_word:
+            return completion
+        index = completion.rfind(last_word)
+        if index > 0:
+            return completion[index:]
+        return completion
 
 
 class ImportParser:
