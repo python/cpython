@@ -1,4 +1,4 @@
-/* This file is included (from xmltok.c, 1-3 times depending on XML_MIN_SIZE)!
+/* This file is included (from xmltok.c, 3 times)!
                             __  __            _
                          ___\ \/ /_ __   __ _| |_
                         / _ \\  /| '_ \ / _` | __|
