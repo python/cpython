@@ -14,7 +14,9 @@ every generated input is a valid test case.  That keeps the tests usable as
 fuzz targets through each test's ``hypothesis.fuzz_one_input`` attribute.
 """
 import dataclasses
+import functools
 import io
+import itertools
 import unittest
 from collections.abc import Callable
 
@@ -62,7 +64,11 @@ max_lengths_strategy = st.lists(max_length_strategy, max_size=16)
 
 
 def _chunks(data, sizes):
-    """Split *data* at the given sizes; whatever is left is the last chunk."""
+    """Split *data* at the given sizes; whatever is left is the last chunk.
+
+    Unlike ``itertools.batched`` the pieces have different sizes, so the
+    boundaries between calls land at arbitrary positions in the stream.
+    """
     pos = 0
     for size in sizes:
         yield data[pos:pos + size]
@@ -70,8 +76,9 @@ def _chunks(data, sizes):
     yield data[pos:]
 
 
-def _cycle(values, index, default):
-    return values[index % len(values)] if values else default
+def _chunks_with(data, sizes, values, default):
+    """Pair each chunk with the next of *values*, cycling through them."""
+    return zip(_chunks(data, sizes), itertools.cycle(values or [default]))
 
 
 @dataclasses.dataclass(frozen=True)
@@ -93,8 +100,8 @@ def _bz2_backend():
     return _Backend(
         name="bz2",
         new_decompressor=bz2.BZ2Decompressor,
-        new_compressor=lambda: bz2.BZ2Compressor(1),
-        compress=lambda data: bz2.compress(data, 1),
+        new_compressor=functools.partial(bz2.BZ2Compressor, 1),
+        compress=functools.partial(bz2.compress, compresslevel=1),
         decompress=bz2.decompress,
         error=OSError,
         decompress_errors=(OSError, ValueError),
@@ -102,16 +109,20 @@ def _bz2_backend():
     )
 
 
+def _open_gzip(fp):
+    return gzip.GzipFile(fileobj=fp)
+
+
 def _gzip_backend():
     return _Backend(
         name="gzip",
-        new_decompressor=lambda: zlib._ZlibDecompressor(31),
-        new_compressor=lambda: zlib.compressobj(1, wbits=31),
-        compress=lambda data: gzip.compress(data, 1),
+        new_decompressor=functools.partial(zlib._ZlibDecompressor, 31),
+        new_compressor=functools.partial(zlib.compressobj, 1, wbits=31),
+        compress=functools.partial(gzip.compress, compresslevel=1),
         decompress=gzip.decompress,
         error=zlib.error,
         decompress_errors=(gzip.BadGzipFile, EOFError, zlib.error),
-        open_file=lambda fp: gzip.GzipFile(fileobj=fp),
+        open_file=_open_gzip,
     )
 
 
@@ -119,8 +130,8 @@ def _lzma_backend():
     return _Backend(
         name="lzma",
         new_decompressor=lzma.LZMADecompressor,
-        new_compressor=lambda: lzma.LZMACompressor(preset=0),
-        compress=lambda data: lzma.compress(data, preset=0),
+        new_compressor=functools.partial(lzma.LZMACompressor, preset=0),
+        compress=functools.partial(lzma.compress, preset=0),
         decompress=lzma.decompress,
         error=lzma.LZMAError,
         decompress_errors=(lzma.LZMAError,),
@@ -131,10 +142,10 @@ def _lzma_backend():
 def _zlib_backend(wbits):
     return _Backend(
         name=f"zlib(wbits={wbits})",
-        new_decompressor=lambda: zlib._ZlibDecompressor(wbits),
-        new_compressor=lambda: zlib.compressobj(1, wbits=wbits),
-        compress=lambda data: zlib.compress(data, 1, wbits=wbits),
-        decompress=lambda data: zlib.decompress(data, wbits=wbits),
+        new_decompressor=functools.partial(zlib._ZlibDecompressor, wbits),
+        new_compressor=functools.partial(zlib.compressobj, 1, wbits=wbits),
+        compress=functools.partial(zlib.compress, level=1, wbits=wbits),
+        decompress=functools.partial(zlib.decompress, wbits=wbits),
         error=zlib.error,
         decompress_errors=(zlib.error,),
     )
@@ -144,8 +155,8 @@ def _zstd_backend():
     return _Backend(
         name="zstd",
         new_decompressor=zstd.ZstdDecompressor,
-        new_compressor=lambda: zstd.ZstdCompressor(1),
-        compress=lambda data: zstd.compress(data, 1),
+        new_compressor=functools.partial(zstd.ZstdCompressor, 1),
+        compress=functools.partial(zstd.compress, level=1),
         decompress=zstd.decompress,
         error=zstd.ZstdError,
         decompress_errors=(zstd.ZstdError,),
@@ -153,11 +164,28 @@ def _zstd_backend():
     )
 
 
+class _StateMachine(stateful.RuleBasedStateMachine):
+    """A state machine that checks with the unittest assertion methods.
+
+    The methods are borrowed from a throwaway ``TestCase`` so that failures
+    inside rules get the same diagnostics as the rest of the test suite.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self._case = unittest.TestCase()
+
+    def __getattr__(self, name):
+        if name.startswith("assert"):
+            return getattr(self._case, name)
+        raise AttributeError(name)
+
+
 # ---------------------------------------------------------------------------
 # Incremental decompressor protocol
 # ---------------------------------------------------------------------------
 
-class _DecompressorMachine(stateful.RuleBasedStateMachine):
+class _DecompressorMachine(_StateMachine):
     """Feed one compressed stream through a decompressor in random pieces.
 
     After every call the output must be a prefix of the original data and no
@@ -181,23 +209,21 @@ class _DecompressorMachine(stateful.RuleBasedStateMachine):
 
     def _feed(self, chunk, max_length):
         if self.decomp.eof:
-            try:
+            with self.assertRaises(EOFError):
                 self.decomp.decompress(chunk, max_length)
-            except EOFError:
-                return
-            raise AssertionError("decompress() after eof did not raise")
+            return
         ret = self.decomp.decompress(chunk, max_length)
-        assert isinstance(ret, bytes)
+        self.assertIsInstance(ret, bytes)
         if max_length >= 0:
-            assert len(ret) <= max_length, (len(ret), max_length)
+            self.assertLessEqual(len(ret), max_length)
         self.out += ret
-        assert self.data.startswith(self.out)
+        self.assertStartsWith(self.data, self.out)
         if self.decomp.eof:
-            assert self.out == self.data
+            self.assertEqual(self.out, self.data)
             rest = self.stream[self.pos:]
-            assert self.decomp.unused_data + rest == self.trailer
+            self.assertEqual(self.decomp.unused_data + rest, self.trailer)
         else:
-            assert self.decomp.unused_data == b""
+            self.assertEqual(self.decomp.unused_data, b"")
 
     def _feed_next(self, n, max_length):
         chunk = self.stream[self.pos:self.pos + n]
@@ -220,15 +246,15 @@ class _DecompressorMachine(stateful.RuleBasedStateMachine):
             if self.decomp.eof:
                 break
             self._feed(b"", -1)
-        assert self.decomp.eof
-        assert self.out == self.data
+        self.assertTrue(self.decomp.eof)
+        self.assertEqual(self.out, self.data)
 
     @stateful.invariant()
     def output_is_a_prefix(self):
-        assert self.data.startswith(self.out)
-        assert isinstance(self.decomp.needs_input, bool)
+        self.assertStartsWith(self.data, self.out)
+        self.assertIsInstance(self.decomp.needs_input, bool)
         if self.decomp.eof:
-            assert self.out == self.data
+            self.assertEqual(self.out, self.data)
 
 
 class _DecompressorTests:
@@ -250,8 +276,7 @@ class _DecompressorTests:
         decomp = self.backend.new_decompressor()
         out = b""
         fed = 0
-        for i, chunk in enumerate(_chunks(stream, sizes)):
-            max_length = _cycle(max_lengths, i, -1)
+        for chunk, max_length in _chunks_with(stream, sizes, max_lengths, -1):
             if decomp.eof:
                 with self.assertRaises(EOFError):
                     decomp.decompress(chunk, max_length)
@@ -261,7 +286,7 @@ class _DecompressorTests:
             if max_length >= 0:
                 self.assertLessEqual(len(ret), max_length)
             out += ret
-            self.assertTrue(data.startswith(out))
+            self.assertStartsWith(data, out)
             yield decomp
         while not decomp.eof:
             out += decomp.decompress(b"", -1)
@@ -331,7 +356,7 @@ class _DecompressorTests:
         cut %= len(stream) + 1
         decomp = self.backend.new_decompressor()
         out = decomp.decompress(stream[:cut], -1)
-        self.assertTrue(data.startswith(out))
+        self.assertStartsWith(data, out)
         self.assertEqual(decomp.eof, cut == len(stream))
         if not decomp.eof:
             self.assertTrue(decomp.needs_input)
@@ -383,8 +408,9 @@ class _DecompressorTests:
             with self.subTest(blob=blob):
                 decomp = self.backend.new_decompressor()
                 try:
-                    for i, chunk in enumerate(_chunks(blob, sizes)):
-                        decomp.decompress(chunk, _cycle(max_lengths, i, -1))
+                    for chunk, max_length in _chunks_with(blob, sizes,
+                                                          max_lengths, -1):
+                        decomp.decompress(chunk, max_length)
                 except (self.backend.error, EOFError):
                     pass
                 try:
@@ -568,10 +594,10 @@ class ZlibFlushModeTests(unittest.TestCase):
         # stream that decompresses to the input.
         comp = zlib.compressobj(level, wbits=wbits)
         stream = b""
-        for i, chunk in enumerate(_chunks(data, sizes)):
+        for chunk, mode in _chunks_with(data, sizes, modes, None):
             stream += comp.compress(chunk)
-            if modes:
-                stream += comp.flush(getattr(zlib, _cycle(modes, i, None)))
+            if mode is not None:
+                stream += comp.flush(getattr(zlib, mode))
         stream += comp.flush()
         self.assertEqual(zlib.decompress(stream, wbits=wbits), data)
         decomp = zlib._ZlibDecompressor(wbits)
@@ -601,9 +627,8 @@ class ZstdCompressModeTests(unittest.TestCase):
         comp = zstd.ZstdCompressor(1)
         self.assertEqual(comp.last_mode, zstd.ZstdCompressor.FLUSH_FRAME)
         stream = b""
-        for i, chunk in enumerate(_chunks(data, sizes)):
-            mode = getattr(zstd.ZstdCompressor,
-                           _cycle(modes, i, "CONTINUE"))
+        for chunk, mode in _chunks_with(data, sizes, modes, "CONTINUE"):
+            mode = getattr(zstd.ZstdCompressor, mode)
             stream += comp.compress(chunk, mode)
             self.assertEqual(comp.last_mode, mode)
         stream += comp.flush()
@@ -651,15 +676,14 @@ class DecompressObjTests(unittest.TestCase):
         decomp = zlib.decompressobj(wbits)
         out = b""
         fed = 0
-        for i, chunk in enumerate(_chunks(stream, sizes)):
-            max_length = _cycle(max_lengths, i, 0)
+        for chunk, max_length in _chunks_with(stream, sizes, max_lengths, 0):
             ret = decomp.decompress(decomp.unconsumed_tail + chunk,
                                     max_length)
             fed += len(chunk)
             if max_length:
                 self.assertLessEqual(len(ret), max_length)
             out += ret
-            self.assertTrue(data.startswith(out))
+            self.assertStartsWith(data, out)
             if decomp.eof:
                 self.assertEqual(out, data)
                 self.assertEqual(decomp.unconsumed_tail, b"")
@@ -680,12 +704,12 @@ class DecompressObjTests(unittest.TestCase):
         cut %= len(stream) + 1
         decomp = zlib.decompressobj()
         out = decomp.decompress(stream[:cut])
-        self.assertTrue(data.startswith(out))
+        self.assertStartsWith(data, out)
         self.assertEqual(decomp.eof, cut == len(stream))
         # flush() on a truncated stream returns what it can without raising;
         # on a complete stream it is a no-op and may be repeated.
         out += decomp.flush()
-        self.assertTrue(data.startswith(out))
+        self.assertStartsWith(data, out)
         if cut == len(stream):
             self.assertEqual(out, data)
             self.assertTrue(decomp.eof)
@@ -753,7 +777,7 @@ members_strategy = st.lists(data_strategy, min_size=1, max_size=3)
 read_size_strategy = st.integers(0, 300) | st.just(-1)
 
 
-class _StreamReaderMachine(stateful.RuleBasedStateMachine):
+class _StreamReaderMachine(_StateMachine):
     """Compare a compressed file object against io.BytesIO on the same data.
 
     The compressed input is several concatenated streams (members, frames),
@@ -779,17 +803,17 @@ class _StreamReaderMachine(stateful.RuleBasedStateMachine):
 
     @stateful.rule(size=read_size_strategy)
     def read(self, size):
-        assert self.file.read(size) == self.oracle.read(size)
+        self.assertEqual(self.file.read(size), self.oracle.read(size))
 
     @stateful.rule(size=read_size_strategy)
     def read1(self, size):
         ret = self.file.read1(size)
         remaining = self._remaining()
-        assert remaining.startswith(ret)
+        self.assertStartsWith(remaining, ret)
         if size != 0 and remaining:
-            assert ret, "read1() returned nothing before EOF"
+            self.assertTrue(ret, "read1() returned nothing before EOF")
         if size >= 0:
-            assert len(ret) <= size
+            self.assertLessEqual(len(ret), size)
         self.oracle.seek(len(ret), io.SEEK_CUR)
 
     @stateful.rule(size=st.integers(0, 300))
@@ -797,22 +821,22 @@ class _StreamReaderMachine(stateful.RuleBasedStateMachine):
         pos = self.file.tell()
         ret = self.file.peek(size)
         remaining = self._remaining()
-        assert remaining.startswith(ret)
+        self.assertStartsWith(remaining, ret)
         if remaining:
-            assert ret, "peek() returned nothing before EOF"
-        assert self.file.tell() == pos
+            self.assertTrue(ret, "peek() returned nothing before EOF")
+        self.assertEqual(self.file.tell(), pos)
 
     @stateful.rule(size=st.integers(0, 300))
     def readinto(self, size):
         buf = bytearray(size)
         n = self.file.readinto(buf)
         expected = self.oracle.read(size)
-        assert n == len(expected)
-        assert buf[:n] == expected
+        self.assertEqual(n, len(expected))
+        self.assertEqual(buf[:n], expected)
 
     @stateful.rule()
     def readline(self):
-        assert self.file.readline() == self.oracle.readline()
+        self.assertEqual(self.file.readline(), self.oracle.readline())
 
     @stateful.rule(offset=st.integers(-10**6, 10**6),
                    whence=st.sampled_from([io.SEEK_SET, io.SEEK_CUR,
@@ -826,12 +850,12 @@ class _StreamReaderMachine(stateful.RuleBasedStateMachine):
         else:
             target = len(self.plain) + offset
         target = min(max(target, 0), len(self.plain))
-        assert self.file.seek(offset, whence) == target
+        self.assertEqual(self.file.seek(offset, whence), target)
         self.oracle.seek(target)
 
     @stateful.invariant()
     def positions_agree(self):
-        assert self.file.tell() == self.oracle.tell()
+        self.assertEqual(self.file.tell(), self.oracle.tell())
 
 
 class _StreamReaderTests:
