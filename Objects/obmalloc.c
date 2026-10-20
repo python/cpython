@@ -93,16 +93,23 @@ _PyMem_RawFree(void *Py_UNUSED(ctx), void *ptr)
 static bool count_blocks(const mi_heap_t *, const mi_heap_area_t *,
                          void *, size_t, void *);
 
-// mimalloc v3 delays returning freed memory to the OS for much longer than v2
-// did (1000 ms purge delay and 4x arena multiplier, vs 10 ms and 10x), which
-// noticeably increases peak RSS. Restore the v2 timings, which have no
-// measurable speed cost. MIMALLOC_PURGE_DELAY and MIMALLOC_ARENA_PURGE_MULT
-// still take precedence.
+// mimalloc v3 keeps freed memory resident much longer than v2 did, which
+// noticeably increases peak RSS of short-running processes:
+// - All purges use purge_delay * arena_purge_mult (1000 ms * 4 by default),
+//   while v2 purged freed pages after just purge_delay (10 ms).
+// - Delayed purges only release freed ranges of at least the minimal purge
+//   size, which is 2 MiB when transparent huge pages are detected.
+// - Abandoned full pages hold memory that is not reused promptly.
+// Use v2-like timings, purge freed ranges at page granularity, and retain full
+// pages in their owning thread. None of these has a measurable speed cost.
+// The corresponding MIMALLOC_* environment variables still take precedence.
 static void
 set_mimalloc_defaults(void)
 {
     mi_option_set_default(mi_option_purge_delay, 10);
-    mi_option_set_default(mi_option_arena_purge_mult, 10);
+    mi_option_set_default(mi_option_arena_purge_mult, 1);
+    mi_option_set_default(mi_option_arena_purge_min_size, 64);  // KiB
+    mi_option_set_default(mi_option_page_full_retain, -1);
 }
 
 #ifdef Py_GIL_DISABLED
@@ -194,22 +201,9 @@ _PyMem_InitMimalloc(PyInterpreterState *interp)
 {
     set_mimalloc_defaults();
 
-#ifdef Py_GIL_DISABLED
-    assert(page->qsbr_node.next == NULL);
-    if (page->qsbr_goal != 0) {
-        if (mi_page_all_free(page)) {
-            assert(page->qsbr_node.next == NULL);
-            _PyThreadStateImpl *tstate = tstate_from_heap(mi_page_heap(page));
-            // gh-159462: the owning tstate may differ from the current
-            // one, but the heap is always owned by the current OS thread,
-            // so the page list is not shared with other OS threads.
-            assert(mi_page_heap(page)->thread_id == _Py_ThreadId());
-            page->retire_expire = 0;
-            llist_insert_tail(&tstate->mimalloc.page_list, &page->qsbr_node);
-        }
-        else {
-            page->qsbr_goal = 0;
-        }
+    size_t base_offset = offsetof(PyObject, ob_type);
+    if (_PyMem_DebugEnabled()) {
+        base_offset += 2 * sizeof(size_t);
     }
     size_t debug_offsets[_Py_MIMALLOC_HEAP_COUNT] = {
         [_Py_MIMALLOC_HEAP_OBJECT] = base_offset,
@@ -231,7 +225,6 @@ _PyMem_InitMimalloc(PyInterpreterState *interp)
     }
     mimalloc_init_qsbr = NULL;
     return 0;
-#endif
 }
 
 void
