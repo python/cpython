@@ -255,6 +255,9 @@ def digest(key, msg, digest):
 
 
 def _compute_digest_fallback(key, msg, digest):
+    if not isinstance(key, (bytes, bytearray)):
+        raise TypeError(f"key: expected bytes or bytearray, "
+                        f"but got {type(key).__name__!r}")
     digest_cons = _get_digest_constructor(digest)
     inner = digest_cons()
     outer = digest_cons()
