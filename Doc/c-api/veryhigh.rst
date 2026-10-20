@@ -168,14 +168,15 @@ the same library that the Python runtime is using.
    this hook to provide line-editing and tab-completion features.
 
    If this pointer is ``NULL``, :c:func:`PyOS_Readline` sets it to the
-   default implementation before reading input.
+   default implementation, :c:func:`PyOS_Readline`,
+   before reading input.
 
    The returned string must be null-terminated and include the trailing
    newline, if one was read. Return an empty string if the end of the file
    is reached before any characters are read. Return ``NULL`` on failure
    or interruption; a Python exception may be set.
 
-   The result must be a string allocated by :c:func:`PyMem_RawMalloc` or
+   A non-``NULL`` result must be a string allocated by :c:func:`PyMem_RawMalloc` or
    :c:func:`PyMem_RawRealloc`.
 
    .. versionchanged:: 3.4
@@ -202,7 +203,6 @@ the same library that the Python runtime is using.
    :c:func:`PyMem_Free`. Return ``NULL`` on failure or interruption; a Python
    exception may be set.
 
-   The caller must hold an :term:`attached thread state`.
 
 
 .. c:function:: PyObject* PyRun_String(const char *str, int start, PyObject *globals, PyObject *locals)

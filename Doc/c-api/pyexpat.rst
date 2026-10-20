@@ -90,38 +90,18 @@ which must be included after Expat's :file:`expat.h` header.
       The *encodingHandlerData* argument is unused.
       Calling this handler requires an :term:`attached thread state`.
 
-   The remaining members also point to Expat functions with the ``XML_``
-   prefix. They may be ``NULL`` if the function is unavailable in the Expat
-   version used by :mod:`xml.parsers.expat`. See the linked Expat
-   documentation for minimum versions.
-
    .. c:member:: int (*SetHashSalt)(XML_Parser parser, unsigned long hash_salt)
-
-      See `XML_SetHashSalt
-      <https://libexpat.github.io/doc/api/latest/#XML_SetHashSalt>`_.
-
-   .. c:member:: XML_Bool (*SetReparseDeferralEnabled)(XML_Parser parser, XML_Bool enabled)
-
-      See `XML_SetReparseDeferralEnabled
-      <https://libexpat.github.io/doc/api/latest/#XML_SetReparseDeferralEnabled>`_.
-
-   .. c:member:: XML_Bool (*SetAllocTrackerActivationThreshold)(XML_Parser parser, unsigned long long activationThresholdBytes)
+                 XML_Bool (*SetReparseDeferralEnabled)(XML_Parser parser, XML_Bool enabled)
+                 XML_Bool (*SetAllocTrackerActivationThreshold)(XML_Parser parser, unsigned long long activationThresholdBytes)
                  XML_Bool (*SetAllocTrackerMaximumAmplification)(XML_Parser parser, float maxAmplificationFactor)
-
-      See `XML_SetAllocTrackerActivationThreshold
-      <https://libexpat.github.io/doc/api/latest/#XML_SetAllocTrackerActivationThreshold>`_
-      and `XML_SetAllocTrackerMaximumAmplification
-      <https://libexpat.github.io/doc/api/latest/#XML_SetAllocTrackerMaximumAmplification>`_.
-
-   .. c:member:: XML_Bool (*SetBillionLaughsAttackProtectionActivationThreshold)(XML_Parser parser, unsigned long long activationThresholdBytes)
+                 XML_Bool (*SetBillionLaughsAttackProtectionActivationThreshold)(XML_Parser parser, unsigned long long activationThresholdBytes)
                  XML_Bool (*SetBillionLaughsAttackProtectionMaximumAmplification)(XML_Parser parser, float maxAmplificationFactor)
+                 XML_Bool (*SetHashSalt16Bytes)(XML_Parser parser, const uint8_t entropy[16])
 
-      See `XML_SetBillionLaughsAttackProtectionActivationThreshold
-      <https://libexpat.github.io/doc/api/latest/#XML_SetBillionLaughsAttackProtectionActivationThreshold>`_
-      and `XML_SetBillionLaughsAttackProtectionMaximumAmplification
-      <https://libexpat.github.io/doc/api/latest/#XML_SetBillionLaughsAttackProtectionMaximumAmplification>`_.
+      Pointers to the corresponding Expat functions, or ``NULL`` if not
+      available in the Expat version used by :mod:`xml.parsers.expat`.
 
-   .. c:member:: XML_Bool (*SetHashSalt16Bytes)(XML_Parser parser, const uint8_t entropy[16])
-
-      See `XML_SetHashSalt16Bytes
-      <https://libexpat.github.io/doc/api/latest/#XML_SetHashSalt16Bytes>`_.
+      Member names omit the ``XML_`` prefix; for example, ``SetHashSalt``
+      exposes Expat's ``XML_SetHashSalt`` function. See the `Expat API reference
+      <https://libexpat.github.io/doc/api/latest/>`_ for their behavior
+      and the minimum Expat version they appear in.
