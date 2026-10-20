@@ -44,7 +44,7 @@ bool _mi_os_has_virtual_reserve(void) {
   return mi_os_mem_config.has_virtual_reserve;
 }
 
-bool _mi_os_canuse_thp(void) {
+bool _mi_os_has_thp(void) {
   return mi_os_mem_config.has_transparent_huge_pages;
 }
 
@@ -386,9 +386,11 @@ static void* mi_os_prim_alloc_aligned(mi_subproc_t* subproc, size_t size, size_t
   }
   else {
     // if not aligned, free it, overallocate, and unmap around it
-    #if !MI_TRACK_ASAN
+    // (define MI_NO_ALIGN_FALLBACK_WARNING to silence this benign warning, e.g. when
+    //  stderr output is checked by tests or the address space layout is unusual)
+    #if !MI_TRACK_ASAN && !defined(MI_NO_ALIGN_FALLBACK_WARNING)
     if (try_direct_alloc) {
-    //  _mi_warning_message("unable to allocate aligned OS memory directly, fall back to over-allocation (size: 0x%zx bytes, address: %p, alignment: 0x%zx, commit: %d)\n", size, p, alignment, commit);
+      _mi_warning_message("unable to allocate aligned OS memory directly, fall back to over-allocation (size: 0x%zx bytes, address: %p, alignment: 0x%zx, commit: %d)\n", size, p, alignment, commit);
     }
     #endif
     if (p != NULL) { mi_os_prim_free(subproc, p, size, (commit ? size : 0), true /* adjust so we "forget" the previous reservation */); }

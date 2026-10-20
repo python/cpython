@@ -171,9 +171,9 @@ static mi_option_desc_t mi_options[_mi_option_last] =
   { 1,   MI_OPTION_UNINIT, MI_OPTION(deprecated_visit_abandoned) },
   { 0,   MI_OPTION_UNINIT, MI_OPTION(guarded_min) },              // only used when building with MI_GUARDED: minimal rounded object size for guarded objects
   { MI_GiB, MI_OPTION_UNINIT, MI_OPTION(guarded_max) },           // only used when building with MI_GUARDED: maximal rounded object size for guarded objects
-  { 0,   MI_OPTION_UNINIT, MI_OPTION(guarded_precise) },          // disregard minimal alignment requirement to always place guarded blocks exactly in front of a guard page (=0)
+  { 0,   MI_OPTION_UNINIT, MI_OPTION(unsafe_guarded_precise) },          // disregard minimal alignment requirement to always place guarded blocks exactly in front of a guard page (=0)
   { MI_DEFAULT_GUARDED_SAMPLE_RATE,
-         MI_OPTION_UNINIT, MI_OPTION(guarded_sample_rate)},       // 1 out of N allocations in the min/max range will be guarded (=4000)
+         MI_OPTION_UNINIT, MI_OPTION(guarded_sample_rate)},       // guard an object in the min/max range about every N requested bytes (=0)
   { 0,   MI_OPTION_UNINIT, MI_OPTION(guarded_sample_seed)},
   { 10000, MI_OPTION_UNINIT, MI_OPTION(generic_collect) },        // collect theaps every N (=10000) generic allocation calls
   { 1,   MI_OPTION_UNINIT, MI_OPTION_LEGACY(page_reclaim_on_free, abandoned_reclaim_on_free) },// reclaim abandoned (small) pages on a free: -1 = disable completely, 0 = only reclaim into the originating theap, 1 = reclaim on free across theaps
@@ -668,8 +668,6 @@ mi_decl_noinline mi_block_t* _mi_block_next_is_corrupted(const mi_page_t* page, 
 // Initialize options by checking the environment
 // --------------------------------------------------------
 
-// TODO: implement ourselves to reduce dependencies on the C runtime
-
 static void mi_option_init(mi_option_desc_t* desc) {
   // Read option value from the environment
   char s[64 + 1];
@@ -701,11 +699,11 @@ static void mi_option_init(mi_option_desc_t* desc) {
       desc->init = MI_OPTION_INITIALIZED;
     }
     else {
-      char* end = buf;
-      errno = 0;
-      long value = strtol(buf, &end, 10);
-      if (errno==0 && (mi_option_has_size_in_kib(desc->option) || mi_option_has_size_in_bytes(desc->option))) {
-        // this option is interpreted in bytes.
+      const char* end = buf;
+      long value = 0;
+      const bool ok = _mi_strntol(buf, sizeof(buf), &end, &value);
+      if (ok && (mi_option_has_size_in_kib(desc->option) || mi_option_has_size_in_bytes(desc->option))) {
+        // the size is interpreted in bytes.
         size_t size = (value < 0 ? 0 : (size_t)value);
         bool overflow = false;
         if (*end == 'K') { end++; }
@@ -726,7 +724,7 @@ static void mi_option_init(mi_option_desc_t* desc) {
         }
         value = (size > LONG_MAX ? LONG_MAX : (long)size);
       }
-      if (errno==0 && *end == 0) {
+      if (ok && *end == 0) {
         mi_option_set(desc->option, value);
       }
       else {

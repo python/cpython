@@ -57,8 +57,8 @@ void _mi_prim_mem_init( mi_os_mem_config_t* config) {
   config->has_virtual_reserve = false;
 }
 
-// CPython: use the builtin allocator (dlmalloc by default) rather than requiring
-// the process to link with -sMALLOC=emmalloc.
+// Use the builtin allocator (dlmalloc by default) rather than requiring
+// the program to link with -sMALLOC=emmalloc.
 #include <emscripten/heap.h>  // emscripten_builtin_memalign, emscripten_builtin_free
 
 int _mi_prim_free(void* addr, size_t size) {

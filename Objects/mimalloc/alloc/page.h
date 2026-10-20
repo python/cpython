@@ -8,7 +8,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #ifndef MI_PAGE_H
 #define MI_PAGE_H
 
-#include <mimalloc.h>
+#include "mimalloc.h"
 #include "page-queue.h"
 
 bool       _mi_page_extend_free(mi_theap_t* theap, mi_page_t* page);

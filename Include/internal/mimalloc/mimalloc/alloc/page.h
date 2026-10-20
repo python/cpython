@@ -28,7 +28,7 @@ mi_decl_nodiscard bool _mi_page_init(mi_theap_t* theap, mi_page_t* page);
 void          _mi_page_update_stats(mi_page_t* page);
 
 void          _mi_theap_collect_retired(mi_theap_t* theap, bool force);
-void          _mi_theap_page_reclaim(mi_theap_t* theap, mi_page_t* page);
+bool          _mi_theap_page_reclaim(mi_theap_t* theap, mi_page_t* page);  // true if an empty page was freed
 #if MI_DEBUG>1
 bool          _mi_page_is_valid(mi_page_t* page);
 #endif

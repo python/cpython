@@ -25,6 +25,7 @@ char*         _mi_strnstr(char* s, size_t max_len, const char* pat);
 const char*   _mi_strchr(const char* s, char c);
 const char*   _mi_strrchr(const char* s, char c);
 bool          _mi_streq(const char* s, const char* t);
+bool          _mi_strntol(const char* s, size_t max_len, const char** end, long* result); // parses at most max_len bytes; no terminator required
 int           _mi_getenv(const char* name, char* result, size_t result_size);
 void          _mi_detect_cpu_features(void);
 
