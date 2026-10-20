@@ -1,0 +1,2 @@
+Preserve the original :exc:`SyntaxError` if allocating optional error metadata
+fails.
