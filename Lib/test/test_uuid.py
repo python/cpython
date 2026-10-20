@@ -16,7 +16,10 @@ from types import MappingProxyType
 from unittest import mock
 
 from test import support
-from test.support import force_not_colorized_test_class, import_helper, warnings_helper
+from test.support import (
+    force_not_colorized_test_class, import_helper, threading_helper,
+    warnings_helper,
+)
 from test.support.script_helper import assert_python_ok
 
 py_uuid = import_helper.import_fresh_module('uuid', blocked=['_uuid'])
@@ -1859,6 +1862,119 @@ class TestCImplementationCompat(unittest.TestCase):
                     )
         finally:
             self._reset_hooks(uuid)
+
+    @threading_helper.requires_working_threading()
+    @threading_helper.reap_threads
+    def test_concurrent_entropy_refill(self):
+        # Concurrent calls must not consume the same cached entropy. Pause one
+        # UUIDv4 call during a refill after it consumes a partial cached block,
+        # then run another call. Each thread supplies its ID as entropy, making
+        # it possible to detect reuse of the first thread's cached prefix.
+        from concurrent.futures import ThreadPoolExecutor
+        import threading
+        import uuid
+
+        entered = threading.Event()
+        resume = threading.Event()
+        local = threading.local()
+        local.id = 1
+        local.pause_refill = False
+
+        def random_func(size):
+            local.refill_size = size
+            if local.pause_refill:
+                entered.set()
+                if not resume.wait(support.SHORT_TIMEOUT):
+                    raise TimeoutError('entropy refill was not resumed')
+            return bytes([local.id]) * size
+
+        def generate(thread_id):
+            local.id = thread_id
+            local.pause_refill = thread_id == 1
+            return uuid.uuid4()
+
+        uuid._install_c_hooks(random_func=random_func, time_func=lambda: 0)
+        self.addCleanup(uuid._install_c_hooks, random_func=None, time_func=None)
+
+        # UUIDv7 consumes 10 bytes initially. Leave less than one UUIDv4's
+        # entropy cached, so the next call must combine cached and fresh bytes.
+        uuid.uuid7()
+        size = len(uuid.UUID(int=0).bytes)
+        cached = local.refill_size - 10
+        for _ in range(cached // size):
+            uuid.uuid4()
+        remaining = cached % size
+        self.assertGreater(remaining, 0)
+
+        with ThreadPoolExecutor(2) as pool:
+            pending = pool.submit(generate, 1)
+            try:
+                self.assertTrue(entered.wait(support.SHORT_TIMEOUT))
+                other = pool.submit(generate, 2).result(
+                    timeout=support.SHORT_TIMEOUT)
+            finally:
+                resume.set()
+            first = pending.result(timeout=support.SHORT_TIMEOUT)
+
+        # The waiting call reserved the cached prefix; the other call must
+        # obtain its prefix from a new entropy block instead of reusing it.
+        self.assertNotEqual(first.bytes[:remaining], other.bytes[:remaining])
+
+    @threading_helper.requires_working_threading()
+    @threading_helper.reap_threads
+    def test_concurrent_uuid7_state(self):
+        # UUIDv7 must recheck its counter if a refill lets another call advance
+        # it. Pause one call in the entropy hook and complete another first;
+        # with fixed time and entropy, the resumed call needs a higher counter.
+        # Exercise both the first UUIDv7 call and an already initialized counter.
+        from concurrent.futures import ThreadPoolExecutor
+        import threading
+        import uuid
+
+        for initialized in (False, True):
+            with self.subTest(initialized=initialized):
+                entered = threading.Event()
+                resume = threading.Event()
+                calls = []
+                lock = threading.Lock()
+                blocked_call = 2 if initialized else 1
+
+                def random_func(size):
+                    with lock:
+                        calls.append(size)
+                        call = len(calls)
+                    if call == blocked_call:
+                        entered.set()
+                        if not resume.wait(support.SHORT_TIMEOUT):
+                            raise TimeoutError('entropy refill was not resumed')
+                    # Keep time and entropy identical, so only the shared
+                    # counter can distinguish the concurrent UUIDs.
+                    return bytes(size)
+
+                uuid._install_c_hooks(random_func=random_func,
+                                      time_func=lambda: 0)
+                try:
+                    if initialized:
+                        uuid.uuid7()
+                        # Consume the remaining cache in four-byte tails,
+                        # leaving the next UUIDv7 call to trigger a refill.
+                        for _ in range((calls[0] - 10) // 4):
+                            uuid.uuid7()
+
+                    with ThreadPoolExecutor(1) as pool:
+                        pending = pool.submit(uuid.uuid7)
+                        try:
+                            self.assertTrue(entered.wait(support.SHORT_TIMEOUT))
+                            other = uuid.uuid7()
+                        finally:
+                            resume.set()
+                        first = pending.result(timeout=support.SHORT_TIMEOUT)
+
+                    # A call resumed after another UUID was generated must
+                    # advance from that UUID's state, not its stale snapshot.
+                    self.assertGreater(first, other)
+                finally:
+                    uuid._install_c_hooks(random_func=None, time_func=None)
 
     def test_exact_same_algo_uuid7(self):
         import uuid

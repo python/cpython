@@ -249,7 +249,9 @@ gen_time(uuid_state *state, PyTime_t *time)
         return PyTime_Time(time);
     }
 
-    PyObject *ret = PyObject_CallNoArgs(state->time_func);
+    PyObject *time_func = Py_NewRef(state->time_func);
+    PyObject *ret = PyObject_CallNoArgs(time_func);
+    Py_DECREF(time_func);
     if (ret == NULL) {
         return -1;
     }
@@ -284,7 +286,7 @@ gen_random_lock_held(PyObject *module, uuid_state *state, uint8_t *bytes,
         state->random_idx = RANDOM_BUF_SIZE;
     }
 
-    if (state->random_idx + size < RANDOM_BUF_SIZE) {
+    if (state->random_idx + size <= RANDOM_BUF_SIZE) {
         memcpy(bytes, state->random_buf + state->random_idx, size);
         state->random_idx += size;
     }
@@ -302,9 +304,16 @@ gen_random_lock_held(PyObject *module, uuid_state *state, uint8_t *bytes,
             size -= partial;
         }
 
+        // Reserve the cached bytes before a refill can release the module's
+        // critical section. Another call must not consume the same bytes.
+        state->random_idx = RANDOM_BUF_SIZE;
+        uint8_t random_buf[RANDOM_BUF_SIZE];
+
         if (state->random_func != NULL) {
+            PyObject *random_func = Py_NewRef(state->random_func);
             PyObject *buf = PyObject_CallOneArg(
-                state->random_func, state->random_size_int);
+                random_func, state->random_size_int);
+            Py_DECREF(random_func);
             if (buf == NULL) {
                 return -1;
             }
@@ -325,17 +334,20 @@ gen_random_lock_held(PyObject *module, uuid_state *state, uint8_t *bytes,
                 return -1;
             }
 
-            memcpy(state->random_buf, PyBytes_AsString(buf), RANDOM_BUF_SIZE);
+            memcpy(random_buf, PyBytes_AsString(buf), sizeof(random_buf));
             Py_DECREF(buf);
         }
         else {
-            // Pure Python implementation uses os.urandom() which
-            // wraps _PyOS_URandom
-            if (_PyOS_URandom(state->random_buf, RANDOM_BUF_SIZE) < 0) {
+            // _PyOS_URandom() releases the thread state. Fill a private buffer
+            // so concurrent refills cannot write into the same memory.
+            if (_PyOS_URandom(random_buf, sizeof(random_buf)) < 0) {
                 return -1;
             }
         }
 
+        // We hold the caller's module lock again after fetching entropy.
+        // Replace the cache, discarding any unused bytes from a concurrent refill.
+        memcpy(state->random_buf, random_buf, sizeof(random_buf));
         memcpy(bytes, state->random_buf, size);
         state->random_idx = size;
     }
@@ -389,9 +401,8 @@ uuid7_get_counter_and_tail(PyObject *module, uuid_state *state,
 }
 
 
-// There's code that modifies the module state (emulating global variables
-// used in the pure Python implementation.) So we're slapping a critical
-// section here to make it easier to reason about the C port of this code.
+// The module's critical section protects the cached entropy and UUIDv7 state.
+// It may be suspended during entropy fetching or a Python testing hook.
 /*[clinic input]
 @critical_section
 _uuid.uuid7
@@ -413,34 +424,45 @@ _uuid_uuid7_impl(PyObject *module)
     if (gen_time(state, &pytime) < 0) {
         return NULL;
     }
-    timestamp_ms = (uint64_t)(pytime / 1000000);
+    uint64_t last_timestamp, last_counter;
+    uint8_t last_timestamp_init;
+    do {
+        last_timestamp = state->last_timestamp_v7;
+        last_counter = state->last_counter_v7;
+        last_timestamp_init = state->last_timestamp_v7_init;
+        timestamp_ms = (uint64_t)(pytime / 1000000);
 
-    if (!state->last_timestamp_v7_init || timestamp_ms > state->last_timestamp_v7) {
-        if (uuid7_get_counter_and_tail(module, state, &counter, bytes + 12) < 0) {
-            return NULL;
-        }
-    }
-    else {
-        if (timestamp_ms < state->last_timestamp_v7) {
-            timestamp_ms = state->last_timestamp_v7 + 1;
-        }
-        // advance the 42-bit counter
-        counter = state->last_counter_v7 + 1;
-        if (counter > 0x3FFFFFFFFFF) {
-            // advance the 48-bit timestamp
-            timestamp_ms += 1;
+        if (!last_timestamp_init || timestamp_ms > last_timestamp) {
             if (uuid7_get_counter_and_tail(module, state, &counter, bytes + 12) < 0) {
                 return NULL;
             }
         }
         else {
-            // This is the common fast path, we only need 4 bytes of entropy
-            // 32-bit random data
-            if (gen_random_lock_held(module, state, bytes + 12, 4) < 0) {
-                return NULL;
+            if (timestamp_ms < last_timestamp) {
+                timestamp_ms = last_timestamp + 1;
+            }
+            // advance the 42-bit counter
+            counter = last_counter + 1;
+            if (counter > 0x3FFFFFFFFFF) {
+                // advance the 48-bit timestamp
+                timestamp_ms += 1;
+                if (uuid7_get_counter_and_tail(module, state, &counter, bytes + 12) < 0) {
+                    return NULL;
+                }
+            }
+            else {
+                // This is the common fast path, we only need 4 bytes of entropy
+                // 32-bit random data
+                if (gen_random_lock_held(module, state, bytes + 12, 4) < 0) {
+                    return NULL;
+                }
             }
         }
-    }
+        // A refill can suspend the critical section and let another call
+        // advance the state. Recompute instead of committing a stale counter.
+    } while (last_timestamp != state->last_timestamp_v7 ||
+             last_counter != state->last_counter_v7 ||
+             last_timestamp_init != state->last_timestamp_v7_init);
 
     timestamp_ms &= 0xFFFFFFFFFFFF;
     bytes[0] = (uint8_t)(timestamp_ms >> 40);
