@@ -3221,16 +3221,17 @@ static PyMethodDef PyCData_methods[] = {
  * PyObject_HashNotImplemented() makes type_ready() set __hash__ to None.
  *
  * Unfortunately, on Windows, PyObject_HashNotImplemented is imported from
- * the Python DLL, and MSVC resolves the address of an imported function in
- * a static initializer to a local thunk that can't be recognized. So, we
- * initialize the slots at runtime to load the real address from the import table.
+ * the Python DLL. MSVC resolves imported functions in static initializers to
+ * local thunks, and Clang does the same even for local aggregate initializers.
+ * Assign the hash slot explicitly at runtime to load the real address from
+ * the import table.
  */
 static PyObject *
 PyCData_create_type(PyObject *mod)
 {
     PyType_Slot slots[] = {
         {Py_tp_dealloc, PyCData_dealloc},
-        {Py_tp_hash, PyObject_HashNotImplemented},
+        {Py_tp_hash, NULL},
         {Py_tp_doc, PyDoc_STR("The common base class of all ctypes "
                               "data types.")},
         {Py_tp_traverse, PyCData_traverse},
@@ -3240,6 +3241,7 @@ PyCData_create_type(PyObject *mod)
         {Py_bf_getbuffer, PyCData_NewGetBuffer},
         {0, NULL},
     };
+    slots[1].pfunc = PyObject_HashNotImplemented;
     PyType_Spec spec = {
         .name = "_ctypes._CData",
         .basicsize = sizeof(CDataObject),
