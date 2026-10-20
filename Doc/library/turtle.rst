@@ -350,18 +350,20 @@ Move and draw
       (0.00,0.00)
 
 
-.. function:: teleport(x, y=None, *, fill_gap=False)
+.. function:: teleport(x=None, y=None, *, fill_gap=False)
 
    :param x: a number or ``None``
    :param y: a number or ``None``
    :param fill_gap: a boolean
 
-   Move turtle to an absolute position. Unlike goto(x, y), a line will not
-   be drawn. The turtle's orientation does not change. If currently
-   filling, the polygon(s) teleported from will be filled after leaving,
-   and filling will begin again after teleporting. This can be disabled
-   with fill_gap=True, which makes the imaginary line traveled during
-   teleporting act as a fill barrier like in goto(x, y).
+   Teleport, or instantly move, the turtle to an absolute position. Unlike
+   :func:`goto`, no line is drawn. If *x* or *y* is not given, that coordinate
+   is kept as it is. The turtle's heading does not change.
+
+   If the turtle is filling a shape, the shape drawn so far is finished and
+   filled before teleporting, and filling starts again at the new position.
+   Pass ``fill_gap=True`` to keep filling one shape instead. The teleport then
+   counts as an edge of the shape, as it would with :func:`goto`.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -528,12 +530,12 @@ Move and draw
               dot(size, color, /)
               dot(size, r, g, b, /)
 
-   :param size: an integer >= 1 (if given)
+   :param size: a positive integer or ``None``
    :param color: a colorstring or a numeric color tuple
 
-   Draw a circular dot with diameter *size*, using *color*.  If *size* is
-   not given, the maximum of ``pensize+4`` and ``2*pensize`` is used.
-
+   Draw a circular dot with diameter *size*, using *color*. If *size* is not
+   given, the larger of ``pensize + 4`` and ``2 * pensize`` is used. If
+   *color* is not given, the current pencolor is used.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -619,26 +621,23 @@ Move and draw
 
 .. function:: speed(speed=None)
 
-   :param speed: an integer in the range 0..10 or a speedstring (see below)
+   :param speed: an integer, a string or ``None``
 
-   Set the turtle's speed to an integer value in the range 0..10.  If no
-   argument is given, return current speed.
+   Return or set the turtle's speed. If *speed* is not given, return the
+   current speed. Otherwise set the turtle's speed to an integer from 0 to 10.
+   If *speed* is a number greater than 10 or smaller than 0.5, the speed is
+   set to 0. You can also use these names instead of numbers:
 
-   If input is a number greater than 10 or smaller than 0.5, speed is set
-   to 0.  Speedstrings are mapped to speedvalues as follows:
+   * "fastest": 0
+   * "fast": 10
+   * "normal": 6
+   * "slow": 3
+   * "slowest": 1
 
-   * "fastest":  0
-   * "fast":  10
-   * "normal":  6
-   * "slow":  3
-   * "slowest":  1
-
-   Speeds from 1 to 10 enforce increasingly faster animation of line drawing
-   and turtle turning.
-
-   Attention: *speed* = 0 means that *no* animation takes
-   place. forward/back makes turtle jump and likewise left/right make the
-   turtle turn instantly.
+   Speeds from 1 to 10 give increasingly faster animation of line drawing and
+   turtle turning. A speed of 0 means that no animation takes place:
+   :func:`forward` and :func:`back` make the turtle jump, and likewise
+   :func:`left` and :func:`right` make the turtle turn instantly.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -817,24 +816,24 @@ Drawing state
               pd()
               down()
 
-   Pull the pen down -- drawing when moving.
+   Lower the pen. The turtle draws a line when it moves.
 
 
 .. function:: penup()
               pu()
               up()
 
-   Pull the pen up -- no drawing when moving.
+   Lift the pen. The turtle does not draw when it moves.
 
 
 .. function:: pensize(width=None)
               width(width=None)
 
-   :param width: a positive number
+   :param width: a positive number or ``None``
 
-   Set the line thickness to *width* or return it.  If resizemode is set to
-   "auto" and turtleshape is a polygon, that polygon is drawn with the same line
-   thickness.  If no argument is given, the current pensize is returned.
+   Return or set the line thickness. If *width* is not given, return the
+   current pensize. If resizemode is set to "auto" and the turtle shape is a
+   polygon, that polygon is drawn with the same line thickness.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -889,7 +888,7 @@ Drawing state
 
 .. function:: isdown()
 
-   Return ``True`` if pen is down, ``False`` if it's up.
+   Return ``True`` if the pen is down, ``False`` if it's up.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -920,20 +919,20 @@ Color control
       call.
 
    ``pencolor(colorstring)``
-      Set pencolor to *colorstring*, which is a Tk color specification string,
-      such as ``"red"``, ``"yellow"``, or ``"#33cc8c"``.
+      Set the pencolor to *colorstring*, which is a Tk color specification
+      string, such as ``"red"``, ``"yellow"``, or ``"#33cc8c"``.
 
    ``pencolor((r, g, b))``
-      Set pencolor to the RGB color represented by the tuple of *r*, *g*, and
-      *b*.  Each of *r*, *g*, and *b* must be in the range 0..colormode, where
+      Set the pencolor to the RGB color represented by the tuple of *r*, *g*,
+      and *b*. Each of *r*, *g*, and *b* must be between 0 and colormode, where
       colormode is either 1.0 or 255 (see :func:`colormode`).
 
    ``pencolor(r, g, b)``
-      Set pencolor to the RGB color represented by *r*, *g*, and *b*.  Each of
-      *r*, *g*, and *b* must be in the range 0..colormode.
+      Set the pencolor to the RGB color represented by *r*, *g*, and *b*.
+      Each of *r*, *g*, and *b* must be between 0 and colormode.
 
-   If turtleshape is a polygon, the outline of that polygon is drawn with the
-   newly set pencolor.
+   If the turtle shape is a polygon, the outline of that polygon is drawn with
+   the newly set pencolor.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -972,19 +971,19 @@ Color control
       call.
 
    ``fillcolor(colorstring)``
-      Set fillcolor to *colorstring*, which is a Tk color specification string,
-      such as ``"red"``, ``"yellow"``, or ``"#33cc8c"``.
+      Set the fillcolor to *colorstring*, which is a Tk color specification
+      string, such as ``"red"``, ``"yellow"``, or ``"#33cc8c"``.
 
    ``fillcolor((r, g, b))``
-      Set fillcolor to the RGB color represented by the tuple of *r*, *g*, and
-      *b*.  Each of *r*, *g*, and *b* must be in the range 0..colormode, where
+      Set the fillcolor to the RGB color represented by the tuple of *r*, *g*,
+      and *b*. Each of *r*, *g*, and *b* must be between 0 and colormode, where
       colormode is either 1.0 or 255 (see :func:`colormode`).
 
    ``fillcolor(r, g, b)``
-      Set fillcolor to the RGB color represented by *r*, *g*, and *b*.  Each of
-      *r*, *g*, and *b* must be in the range 0..colormode.
+      Set the fillcolor to the RGB color represented by *r*, *g*, and *b*. Each
+      of *r*, *g*, and *b* must be between 0 and colormode.
 
-   If turtleshape is a polygon, the interior of that polygon is drawn
+   If the turtle shape is a polygon, the interior of that polygon is drawn
    with the newly set fillcolor.
 
    .. doctest::
@@ -1008,9 +1007,9 @@ Color control
               color(r, g, b, /)
               color(pencolor, fillcolor, /)
 
-   Return or set pencolor and fillcolor.
+   Return or set the pencolor and fillcolor.
 
-   Several input formats are allowed.  They use 0 to 3 arguments as
+   Several input formats are allowed. They use 0 to 3 arguments as
    follows:
 
    ``color()``
@@ -1019,15 +1018,15 @@ Color control
       :func:`fillcolor`.
 
    ``color(colorstring)``, ``color((r,g,b))``, ``color(r,g,b)``
-      Inputs as in :func:`pencolor`, set both, fillcolor and pencolor, to the
-      given value.
+      Inputs as in :func:`pencolor`. Set both the pencolor and the fillcolor
+      to the given value.
 
    ``color(colorstring1, colorstring2)``, ``color((r1,g1,b1), (r2,g2,b2))``
       Equivalent to ``pencolor(colorstring1)`` and ``fillcolor(colorstring2)``
       and analogously if the other input format is used.
 
-   If turtleshape is a polygon, outline and interior of that polygon is drawn
-   with the newly set colors.
+   If the turtle shape is a polygon, the outline and interior of that polygon
+   are drawn with the newly set colors.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1054,7 +1053,7 @@ Filling
 
 .. function:: filling()
 
-   Return fillstate (``True`` if filling, ``False`` else).
+   Return ``True`` if the turtle is filling, ``False`` otherwise.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1182,7 +1181,7 @@ Visibility
 
 .. function:: isvisible()
 
-   Return ``True`` if the turtle is shown, ``False`` if it's hidden.
+   Return ``True`` if the turtle is visible, ``False`` if it's hidden.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1200,13 +1199,13 @@ Appearance
 
 .. function:: shape(name=None)
 
-   :param name: a string which is a valid shapename
+   :param name: a string or ``None``
 
-   Set turtle shape to shape with given *name* or, if name is not given, return
-   name of current shape.  Shape with *name* must exist in the TurtleScreen's
-   shape dictionary.  Initially there are the following polygon shapes: "arrow",
-   "turtle", "circle", "square", "triangle", "classic".  To learn about how to
-   deal with shapes see Screen method :func:`register_shape`.
+   Set the turtle shape to the named shape. If *name* is not given, return the
+   name of the current shape. The shape must exist in the
+   :class:`TurtleScreen`'s shape dictionary. Initially there are the following
+   shapes: "arrow", "turtle", "circle", "square", "triangle" and "classic". To
+   add shapes, see the :class:`Screen` method :func:`register_shape`.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1220,19 +1219,19 @@ Appearance
 
 .. function:: resizemode(rmode=None)
 
-   :param rmode: one of the strings "auto", "user", "noresize"
+   :param rmode: a string or ``None``
 
-   Set resizemode to one of the values: "auto", "user", "noresize".  If *rmode*
-   is not given, return current resizemode.  Different resizemodes have the
+   Set the resizemode to "auto", "user" or "noresize". If *rmode* is not
+   given, return the current resizemode. The different resizemodes have the
    following effects:
 
-   - "auto": adapts the appearance of the turtle corresponding to the value of pensize.
-   - "user": adapts the appearance of the turtle according to the values of
-     stretchfactor and outlinewidth (outline), which are set by
-     :func:`shapesize`.
-   - "noresize": no adaption of the turtle's appearance takes place.
+   - "auto": the turtle is resized according to the value of :func:`pensize`.
+   - "user": the turtle is resized according to the stretch factors and
+     outline width, which are set by :func:`shapesize`.
+   - "noresize": the turtle is not resized.
 
-   ``resizemode("user")`` is called by :func:`shapesize` when used with arguments.
+   ``resizemode("user")`` is called by :func:`shapesize` when used with
+   arguments.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1247,16 +1246,23 @@ Appearance
 .. function:: shapesize(stretch_wid=None, stretch_len=None, outline=None)
               turtlesize(stretch_wid=None, stretch_len=None, outline=None)
 
-   :param stretch_wid: positive number
-   :param stretch_len: positive number
-   :param outline: positive number
+   :param stretch_wid: a positive number or ``None``
+   :param stretch_len: a positive number or ``None``
+   :param outline: a positive number or ``None``
 
-   Return or set the pen's attributes x/y-stretchfactors and/or outline.  Set
-   resizemode to "user".  If and only if resizemode is set to "user", the turtle
-   will be displayed stretched according to its stretchfactors: *stretch_wid* is
-   stretchfactor perpendicular to its orientation, *stretch_len* is
-   stretchfactor in direction of its orientation, *outline* determines the width
-   of the shape's outline.
+   Return or set the turtle's stretch factors and outline width. If no
+   arguments are given, return the current values. Otherwise set resizemode to
+   "user", so that the turtle is displayed stretched according to its stretch
+   factors:
+
+   - *stretch_wid*: the stretch factor perpendicular to the turtle's heading
+   - *stretch_len*: the stretch factor in the direction of the turtle's
+     heading
+   - *outline*: the width of the shape's outline
+
+   For example, ``shapesize(2, 1)`` makes the turtle twice as wide without
+   changing its length. If only *stretch_wid* is given, *stretch_len* is set to
+   the same value.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1456,7 +1462,6 @@ Using events
 Special Turtle methods
 ^^^^^^^^^^^^^^^^^^^^^^
 
-
 .. function:: poly()
 
    Record the vertices of a polygon drawn in the ``with turtle.poly():`` block.
@@ -1506,21 +1511,23 @@ Special Turtle methods
 
 .. function:: clone()
 
-   Create and return a clone of the turtle with same position, heading and
-   turtle properties.
+   Create and return a clone of the turtle. The clone has the same position,
+   heading and turtle properties.
 
    .. doctest::
       :skipif: _tkinter is None
 
-      >>> mick = Turtle()
-      >>> joe = mick.clone()
+      >>> leonel = Turtle()
+      >>> marco = leonel.clone()
 
 
 .. function:: getturtle()
               getpen()
 
-   Return the Turtle object itself.  Only reasonable use: as a function to
-   return the "anonymous turtle":
+   Return the Turtle object itself.
+
+   Call ``getturtle()`` to get the turtle used by functions such as
+   :func:`forward` and :func:`left`:
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1549,10 +1556,10 @@ Special Turtle methods
 
    :param size: an integer or ``None``
 
-   Set or disable undobuffer.  If *size* is an integer, an empty undobuffer of
-   given size is installed.  *size* gives the maximum number of turtle actions
-   that can be undone by the :func:`undo` method/function.  If *size* is
-   ``None``, the undobuffer is disabled.
+   Set or disable the undo buffer. If *size* is an integer, an empty undo
+   buffer of the given size is installed. *size* is the maximum number of
+   turtle actions that can be undone by :func:`undo`. If *size* is ``None``,
+   the undo buffer is disabled.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1562,54 +1569,13 @@ Special Turtle methods
 
 .. function:: undobufferentries()
 
-   Return number of entries in the undobuffer.
+   Return the number of entries in the undo buffer.
 
    .. doctest::
       :skipif: _tkinter is None
 
       >>> while undobufferentries():
       ...     undo()
-
-
-
-.. _compoundshapes:
-
-Compound shapes
-^^^^^^^^^^^^^^^
-
-To use compound turtle shapes, which consist of several polygons of different
-color, you must use the helper class :class:`Shape` explicitly as described
-below:
-
-1. Create an empty Shape object of type "compound".
-2. Add as many components to this object as desired, using the
-   :meth:`~Shape.addcomponent` method.
-
-   For example:
-
-   .. doctest::
-      :skipif: _tkinter is None
-
-      >>> s = Shape("compound")
-      >>> poly1 = ((0,0),(10,-5),(0,10),(-10,-5))
-      >>> s.addcomponent(poly1, "red", "blue")
-      >>> poly2 = ((0,0),(10,-5),(-10,-5))
-      >>> s.addcomponent(poly2, "blue", "red")
-
-3. Now add the Shape to the Screen's shapelist and use it:
-
-   .. doctest::
-      :skipif: _tkinter is None
-
-      >>> register_shape("myshape", s)
-      >>> shape("myshape")
-
-
-.. note::
-
-   The :class:`Shape` class is used internally by the :func:`register_shape`
-   method in different ways.  The application programmer has to deal with the
-   Shape class *only* when using compound shapes like shown above!
 
 
 .. _methods-of-turtlescreen-screen:
@@ -1626,6 +1592,7 @@ Most of the examples in this section refer to a TurtleScreen instance called
    :hide:
 
    >>> screen = Screen()
+
 
 Window control
 ^^^^^^^^^^^^^^
@@ -2171,6 +2138,7 @@ Screen-only methods
 
    .. versionadded:: 3.14
 
+
 .. function:: setup(width=_CFG["width"], height=_CFG["height"], startx=_CFG["leftright"], starty=_CFG["topbottom"])
 
    Set the size and position of the main window.  Default values of arguments
@@ -2213,7 +2181,6 @@ Screen-only methods
 Public classes
 --------------
 
-
 .. class:: RawTurtle(canvas)
            RawPen(canvas)
 
@@ -2236,6 +2203,7 @@ Public classes
 
    Provides screen oriented methods like :func:`bgcolor` etc. that are described
    above.
+
 
 .. class:: Screen()
 
@@ -2333,8 +2301,10 @@ How-to guides
 This section covers some typical turtle use-cases and approaches.
 
 
-Automatically begin and end filling
------------------------------------
+.. _automatically-begin-and-end-filling:
+
+How to automatically begin and end filling
+------------------------------------------
 
 Starting with Python 3.14, you can use the :func:`fill` :term:`context manager`
 instead of :func:`begin_fill` and :func:`end_fill` to automatically begin and
@@ -2358,8 +2328,44 @@ The code above is equivalent to::
    forward(200)
 
 
-Use the ``turtle`` module namespace
------------------------------------
+.. _compoundshapes:
+.. _compound-shapes:
+
+How to use compound shapes
+--------------------------
+
+To use compound turtle shapes, which consist of several polygons of different
+color, you must use the helper class :class:`Shape` explicitly as described
+below:
+
+1. Create an empty :class:`Shape` object of type "compound".
+2. Add as many components to this object as desired, using the
+   :meth:`~Shape.addcomponent` method.
+
+   For example:
+
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> s = Shape("compound")
+      >>> poly1 = ((0,0), (10,-5), (0,10), (-10,-5))
+      >>> s.addcomponent(poly1, "red", "blue")
+      >>> poly2 = ((0,0), (10,-5), (-10,-5))
+      >>> s.addcomponent(poly2, "blue", "red")
+
+3. Now add the Shape to the Screen's shapelist and use it:
+
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> register_shape("myshape", s)
+      >>> shape("myshape")
+
+
+.. _use-the-turtle-module-namespace:
+
+How to use the ``turtle`` module namespace
+------------------------------------------
 
 Using ``from turtle import *`` is convenient - but be warned that it imports a
 rather large collection of objects, and if you're doing anything but turtle
@@ -2373,8 +2379,10 @@ The solution is to use ``import turtle`` - ``fd()`` becomes
 as t`` instead.)
 
 
-Use turtle graphics in a script
--------------------------------
+.. _use-turtle-graphics-in-a-script:
+
+How to use turtle graphics in a script
+--------------------------------------
 
 It's recommended to use the ``turtle`` module namespace as described
 immediately above, for example::
@@ -2398,8 +2406,10 @@ will not exit until it is terminated, for example by closing the turtle
 graphics window.
 
 
-Use object-oriented turtle graphics
------------------------------------
+.. _use-object-oriented-turtle-graphics:
+
+How to use object-oriented turtle graphics
+------------------------------------------
 
 .. seealso:: :ref:`Explanation of the object-oriented interface <turtle-explanation>`
 
@@ -2438,8 +2448,8 @@ The turtle's screen can be customised, for example::
 
 .. _help-and-configuration:
 
-How to use help
----------------
+How to use :func:`!help`
+------------------------
 
 The public methods of the Screen and Turtle classes are documented extensively
 via docstrings.  So these can be used as online-help via the Python help
