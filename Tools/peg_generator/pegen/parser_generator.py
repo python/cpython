@@ -1,5 +1,6 @@
 import ast
 import contextlib
+import pathlib
 import re
 import sys
 from abc import abstractmethod
@@ -134,7 +135,7 @@ class ParserGenerator:
         return self._local_variable_stack[-1]
 
     @abstractmethod
-    def generate(self, filename: str) -> None:
+    def generate(self, filename: pathlib.PurePath) -> None:
         raise NotImplementedError
 
     @contextlib.contextmanager
