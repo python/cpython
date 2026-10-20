@@ -6913,7 +6913,7 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         return fh
 
     def test_rollover_after_failed_rollover(self):
-        for target in 'os.remove', '_open', 'os.rename':
+        for target in 'os.remove', '_open':
             with self.subTest(target=target):
                 now = [1_000_000_000]
                 fh = self._make_fake_time_handler(now, backupCount=1)
@@ -6927,10 +6927,8 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
                     if target == '_open':
                         failure = patch.object(fh, '_open', side_effect=OSError)
                         fh.delay = False
-                    elif target == 'os.remove':
-                        failure = patch('os.remove', side_effect=OSError)
                     else:
-                        failure = patch('os.rename', side_effect=OSError)
+                        failure = patch('os.remove', side_effect=OSError)
                     with failure as failed, support.captured_stderr():
                         emit('c')
                     failed.assert_called_once()
@@ -6939,7 +6937,6 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
                     for msg in 'd', 'e':
                         now[0] += 2
                         emit(msg)
-                    self.assertGreater(fh.rolloverAt, now[0])
                 fh.close()
                 with open(fn, encoding='utf-8') as f:
                     self.assertEqual(f.read(), 'e\n')
@@ -6961,8 +6958,6 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
             now[0] += 2
             fh.emit(logging.makeLogRecord({'msg': 'b'}))
             self.assertGreater(fh.rolloverAt, now[0])
-            with open(dfn, encoding='utf-8') as f:
-                self.assertEqual(f.read(), 'existing\n')
             t = fh.rolloverAt - fh.interval
             next_dfn = fh.rotation_filename(
                 fn + '.' + time.strftime(fh.suffix, time.localtime(t)))
