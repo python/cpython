@@ -383,6 +383,10 @@ class CLanguage(Language):
         if ("METH_O" in templates['methoddef_define'] and
             '{parser_parameters}' in templates['parser_prototype']):
             data.declarations.pop(0)
+        # A slot function receives its arguments as parameters, see
+        # parse_slot(): there is nothing to declare or parse.
+        if f.kind is SLOT:
+            data.declarations.clear()
 
         full_name = f.full_name
         template_dict = {'full_name': full_name}

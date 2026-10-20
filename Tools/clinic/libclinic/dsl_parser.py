@@ -921,7 +921,9 @@ class DSLParser:
         if self.function.kind is GETTER:
             fail("@getter methods cannot define parameters")
         if self.function.kind is SLOT:
-            fail(f"{self.function.name!r} methods cannot define parameters")
+            assert self.function.slot is not None
+            if not self.function.slot.takes_parameters:
+                fail(f"{self.function.name!r} methods cannot define parameters")
 
         self.parameter_continuation = ''
         return self.next(self.state_parameter, line)
@@ -1674,6 +1676,21 @@ class DSLParser:
                      f"parse_arg(); parameter {p.name!r} does not",
                      line_number=lineno)
 
+    def check_slot_parameters(self, func: Function) -> None:
+        """Check that the parameters of a slot method select a C slot."""
+        assert func.slot is not None
+        params = list(func.parameters.values())[1:]
+        for p in params:
+            if not p.is_positional_only():
+                fail(f"The parameters of {func.name!r} must be positional-only")
+            if p.default is not unspecified:
+                fail(f"The parameters of {func.name!r} cannot have a default value")
+        converters = [p.converter for p in params]
+        if func.slot.c_slot(converters) is None:
+            got = ', '.join(c.dsl_name() for c in converters)
+            fail(f"{func.name!r} must declare "
+                 f"{func.slot.describe_signatures()}; got ({got})")
+
     def do_post_block_processing_cleanup(self, lineno: int) -> None:
         """
         Called when processing the block is done.
@@ -1682,6 +1699,8 @@ class DSLParser:
             return
 
         func = self.function
+        if func.kind is SLOT:
+            self.check_slot_parameters(func)
         if func.kind in (SETTER, SETTER_AND_DELETER):
             # The new value is the only parameter of a setter.  The setter
             # of a deletable attribute is also called with NULL to delete it,

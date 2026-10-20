@@ -15,6 +15,7 @@ import os.path
 import re
 import sys
 import unittest
+from unittest import mock
 import warnings
 
 test_tools.skip_if_missing('clinic')
@@ -22,7 +23,8 @@ with test_tools.imports_under_tool('clinic'):
     import libclinic
     from libclinic import ClinicError, unspecified, NULL, fail
     from libclinic.converters import (
-        int_converter, object_converter, str_converter, self_converter)
+        int_converter, object_converter, str_converter, self_converter,
+        Py_ssize_t_converter)
     from libclinic.function import (
         Module, Class, Function, FunctionKind, Parameter,
         permute_optional_groups, permute_right_option_groups,
@@ -34,6 +36,7 @@ with test_tools.imports_under_tool('clinic'):
     from libclinic.block_parser import Block, BlockParser
     from libclinic.codegen import BlockPrinter, Destination
     from libclinic.dsl_parser import DSLParser
+    from libclinic.slots import SlotSpec, SLOTS
     from libclinic.cli import parse_file, Clinic
 
 
@@ -852,6 +855,52 @@ class ClinicWholeFileTest(TestCase):
         # A slot function is not stored in a PyMethodDef.
         for text in "METHODDEF", "PyDoc_", "#ifndef":
             self.assertNotIn(text, generated)
+
+    def test_slot_with_parameters_and_return_type(self):
+        # Slots which take arguments or return something else than an
+        # object are not supported yet; check the machinery with fake ones.
+        slots = {
+            '__contains__': SlotSpec('__contains__', 'int', 'int',
+                                     {(object_converter,): 'sq_contains'}),
+            '__bool__': SlotSpec('__bool__', 'int', 'int', {(): 'nb_bool'}),
+        }
+        block = """
+            /*[clinic input]
+            output everything block
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            /*[clinic input]
+            Foo.__contains__
+                value: object
+                /
+            [clinic start generated code]*/
+            /*[clinic input]
+            @critical_section
+            Foo.__bool__
+            [clinic start generated code]*/
+        """
+        with mock.patch.dict(SLOTS, slots):
+            generated = self.clinic.parse(dedent(block))
+        self.assertIn(dedent("""
+            static int
+            Foo_contains(PyObject *self, PyObject *value)
+            {
+                return Foo_contains_impl((FooObject *)self, value);
+            }
+        """), generated)
+        self.assertIn(dedent("""
+            static int
+            Foo_bool(PyObject *self)
+            {
+                int return_value = -1;
+
+                Py_BEGIN_CRITICAL_SECTION(self);
+                return_value = Foo_bool_impl((FooObject *)self);
+                Py_END_CRITICAL_SECTION();
+
+                return return_value;
+            }
+        """), generated)
 
     def test_slot_cannot_be_cloned(self):
         block = """
@@ -3304,10 +3353,46 @@ class ClinicParserTest(TestCase):
             Foo.__next__
         """, signatures_in_block=3, function_index=2)
         self.assertIs(function.kind, FunctionKind.SLOT)
-        self.assertEqual(function.slot.c_slot, "tp_iternext")
+        self.assertEqual(function.slot.name, "__next__")
         self.assertEqual(function.c_basename, "Foo_next")
         self.assertEqual(function.return_converter.type, "PyObject *")
         self.assertEqual(list(function.parameters), ["self"])
+
+    def test_slot_parameters(self):
+        slot = SlotSpec('__contains__', 'int', 'int', {
+            (Py_ssize_t_converter,): 'sq_fake',
+            (object_converter,): 'sq_contains'})
+        block = """
+            module foo
+            class Foo "FooObject *" ""
+            Foo.__contains__
+                value: {converter}
+                /
+        """
+        errors = [
+            ("Foo.__contains__",
+             "'__contains__' must declare (Py_ssize_t) for sq_fake or "
+             "(object) for sq_contains; got ()"),
+            ("Foo.__contains__\n    value: int\n    /",
+             "'__contains__' must declare"),
+            ("Foo.__contains__\n    value: object",
+             "The parameters of '__contains__' must be positional-only"),
+            ("Foo.__contains__\n    value: object = None\n    /",
+             "The parameters of '__contains__' cannot have a default value"),
+        ]
+        with mock.patch.dict(SLOTS, {'__contains__': slot}):
+            for converter in "Py_ssize_t", "object":
+                with self.subTest(converter=converter):
+                    function = self.parse_function(
+                        block.format(converter=converter),
+                        signatures_in_block=3, function_index=2)
+                    self.assertIs(function.kind, FunctionKind.SLOT)
+                    self.assertEqual(function.return_converter.type, "int")
+                    self.assertEqual(list(function.parameters), ["self", "value"])
+            for body, err in errors:
+                with self.subTest(block=body):
+                    body = 'class Foo "FooObject *" "&Foo_Type"\n' + body
+                    self.expect_failure(body, err)
 
     def test_slot_errors(self):
         cases = [
