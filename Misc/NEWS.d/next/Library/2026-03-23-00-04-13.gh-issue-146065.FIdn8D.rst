@@ -1,0 +1,2 @@
+Fix a crash in asyncio.Future iterator when send() is
+called after throw() or close().
