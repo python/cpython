@@ -700,6 +700,7 @@ class WarnTests(BaseTest):
 
     def test_skip_file_prefixes_empty_tuple_subclass(self):
         with warnings_state(self.module):
+            self.module.simplefilter("always")
             warn = warning_tests.warnings.warn
             class EmptyTuple(tuple):
                 pass
