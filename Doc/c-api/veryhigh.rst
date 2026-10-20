@@ -151,6 +151,8 @@ the same library that the Python runtime is using.
    event loops, as done in :file:`Modules/_tkinter.c` in the
    Python source code.
 
+   The function is called without an :term:`attached thread state`.
+
    .. versionchanged:: 3.12
       This function is only called from the
       :ref:`main interpreter <sub-interpreter-support>`.
@@ -166,6 +168,8 @@ the same library that the Python runtime is using.
    input from the provided standard input file, returning the
    resulting string.  For example, the :mod:`readline` module sets
    this hook to provide line-editing and tab-completion features.
+
+   The function is called without an :term:`attached thread state`.
 
    If this pointer is ``NULL``, :c:func:`PyOS_Readline` sets it to the
    default implementation, :c:func:`PyOS_Readline`,
