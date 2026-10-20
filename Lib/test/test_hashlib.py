@@ -1440,6 +1440,18 @@ class TestScrypt(unittest.TestCase):
         MAX_DKLEN = ((1 << 32) - 1) * 32  # see RFC 7914
         self.assertRaises(numeric_exc_types, scrypt, dklen=MAX_DKLEN + 1)
 
+    def test_scrypt_stale_openssl_error(self):
+        # gh-159815: a failed algorithm lookup must not leave an error in
+        # the OpenSSL error queue that a later unrelated failure reports.
+        def get_error_message():
+            with self.assertRaises(ValueError) as cm:
+                hashlib.scrypt(b'password', salt=b'salt', n=2, r=0, p=1)
+            return str(cm.exception)
+
+        expect = get_error_message()
+        self.assertRaises(ValueError, _hashlib.new, 'no_such_algorithm')
+        self.assertEqual(get_error_message(), expect)
+
 
 @threading_helper.requires_working_threading()
 class TestTSAN(unittest.TestCase):
