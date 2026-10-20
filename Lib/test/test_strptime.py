@@ -16,6 +16,21 @@ import _strptime
 
 
 class PublicStrptimeTests(unittest.TestCase):
+    def test_numeric_aliases(self):
+        for text, fmt in (
+            ('2024-02-29', '%F'), ('02/29/24', '%D'),
+            ('2024-02-29 12:34:56', '%F %T'),
+            ('2024-02-29T12:34:56Z', '%FT%TZ'),
+            ('12:34', '%R'), ('12:34:56', '%R:%S'),
+            ('2024  9', '%Y %e'), ('2024\t02\n29', '%Y%t%m%n%d'),
+            ('20240229', '%Y%t%m%n%d'),
+            ('2024-02-29 2024', '%F %Y'),
+            ('12:34:56 56', '%T %S'),
+            ('2023-02-29', '%F'), ('12:60', '%R'),
+            ('2024-02-29 2024-02-29', '%F %F'),
+        ):
+            self.assert_matches_python(text, fmt)
+
     def test_offsets_and_zone_names(self):
         offsets = ('', 'Z', '+0530', '-03:30', '+01:02:03', '-000001.000001',
                    '+01:02:03.456789', '+000000.5', '-00:00:00.5',

@@ -12,6 +12,7 @@
  * - ASCII locale month/weekday names and numeric %w/%u weekdays;
  * - %I with ASCII %p indicators, and the %k, %l, %P aliases;
  * - %z and %:z offsets with hours below 24, and terminal UTC/GMT %Z names;
+ * - numeric aliases %F, %D, %T, %R, %e and whitespace %n/%t;
  * - literal characters, %%, and ASCII whitespace.
  * Duplicate directives, mixed %Y/%y, and day-of-month without a year use the
  * fallback. So do other directives (including non-ASCII locale names and
@@ -206,6 +207,8 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
     }
     const unsigned char *data = PyUnicode_1BYTE_DATA(string);
     const unsigned char *fmt = PyUnicode_1BYTE_DATA(format);
+    const unsigned char *outer_fmt = NULL;
+    Py_ssize_t outer_length = 0, outer_pos = 0;
     Py_ssize_t length = PyUnicode_GET_LENGTH(string);
     Py_ssize_t fmt_length = PyUnicode_GET_LENGTH(format);
     *fields = (_PyTime_StrptimeFields){.year = 1900, .month = 1, .day = 1,
@@ -215,7 +218,19 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
     int ampm = -1;
     Py_ssize_t pos = 0;
 
-    for (Py_ssize_t i = 0; i < fmt_length; i++) {
+    for (Py_ssize_t i = 0; ; i++) {
+        if (i == fmt_length) {
+            if (outer_fmt == NULL) {
+                break;
+            }
+            fmt = outer_fmt;
+            fmt_length = outer_length;
+            i = outer_pos;
+            outer_fmt = NULL;
+            if (i == fmt_length) {
+                break;
+            }
+        }
         unsigned char c = fmt[i];
         /* Match regex \s, including ASCII separators U+001C through U+001F. */
         if (Py_UNICODE_ISSPACE(c)) {
@@ -240,6 +255,34 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
             return 0;
         }
         c = fmt[i];
+        const char *alias = NULL;
+        switch (c) {
+            case 'F': alias = "%Y-%m-%d"; break;
+            case 'D': alias = "%m/%d/%y"; break;
+            case 'T': alias = "%H:%M:%S"; break;
+            case 'R': alias = "%H:%M"; break;
+            case 'e': c = 'd'; break;
+        }
+        if (alias != NULL) {
+            /* These fixed expansions contain no further aliases. Parsing
+             * them in place keeps duplicate-field checks and avoids copying
+             * an arbitrarily long user format into a temporary buffer.
+             */
+            assert(outer_fmt == NULL);
+            outer_fmt = fmt;
+            outer_length = fmt_length;
+            outer_pos = i + 1;
+            fmt = (const unsigned char *)alias;
+            fmt_length = strlen(alias);
+            i = -1;
+            continue;
+        }
+        if (c == 'n' || c == 't') {
+            while (pos < length && Py_ISSPACE(data[pos])) {
+                pos++;
+            }
+            continue;
+        }
         int require_colon = 0;
         if (c == ':' && i + 1 < fmt_length && fmt[i + 1] == 'z') {
             c = fmt[++i];
