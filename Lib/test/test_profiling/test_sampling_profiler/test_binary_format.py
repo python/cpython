@@ -10,7 +10,7 @@ import unittest
 from unittest import mock
 from collections import defaultdict
 
-from test.support import captured_stderr
+from test.support import captured_stderr, import_helper
 
 try:
     import _remote_debugging
@@ -125,6 +125,47 @@ class RawCollector:
 
     def export(self, filename):
         pass
+
+
+def read_block_columns(filename):
+    """Return the (decoded size, encoding) of each column of every block."""
+    def varint(data, offset):
+        value = shift = 0
+        while True:
+            byte = data[offset]
+            offset += 1
+            value |= (byte & 0x7F) << shift
+            shift += 7
+            if byte < 0x80:
+                return value, offset
+
+    with open(filename, "rb") as raw:
+        data = raw.read()
+    sample_end = struct.unpack_from("=Q", data, 40)[0]
+    offset = 64
+    blocks = []
+    while offset < sample_end:
+        assert data[offset:offset + 4] == b"TBLK"
+        _, offset = varint(data, offset + 4)  # sample count
+        _, offset = varint(data, offset)  # base timestamp
+        offset += 3
+        columns = []
+        stored_total = 0
+        for _ in range(6):
+            decoded_size, offset = varint(data, offset)
+            encoding = data[offset]
+            offset += 1
+            if encoding == 1:
+                stored_size, offset = varint(data, offset)
+            elif encoding == 2:
+                stored_size = 1
+            else:
+                stored_size = decoded_size
+            columns.append((decoded_size, encoding))
+            stored_total += stored_size
+        offset += stored_total
+        blocks.append(columns)
+    return blocks
 
 
 def samples_to_by_thread(samples):
@@ -897,6 +938,157 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
         with self.assertRaises(TypeError):
             _remote_debugging.BinaryReader(123)
 
+    def test_writer_rejects_invalid_compression(self):
+        with self.assertRaisesRegex(ValueError, "compression"):
+            _remote_debugging.BinaryWriter(
+                "unused.bin", 1000, 0, compression=2
+            )
+
+    def test_writer_rejects_status_outside_byte_range(self):
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as file:
+            filename = file.name
+        self.temp_files.append(filename)
+
+        writer = _remote_debugging.BinaryWriter(filename, 1000, 0)
+        valid = [make_interpreter(0, [make_thread(1, [], status=1)])]
+        invalid = [make_interpreter(0, [make_thread(1, [], status=256)])]
+        writer.write_sample(valid, 1000)
+        with self.assertRaisesRegex(OverflowError, "thread status"):
+            writer.write_sample(invalid, 2000)
+        self.assertTrue(writer.limit_reached)
+        writer.write_sample(valid, 3000)
+        writer.finalize()
+        self.assertEqual(writer.total_samples, 2)
+
+    def test_writer_reports_stack_reuse(self):
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as file:
+            filename = file.name
+        self.temp_files.append(filename)
+
+        frames = [make_frame("shared.py", line, "shared") for line in range(3)]
+        sample = [make_interpreter(0, [
+            make_thread(1, frames),
+            make_thread(2, frames),
+        ])]
+        writer = _remote_debugging.BinaryWriter(filename, 1000, 0)
+        writer.write_sample(sample, 1000)
+        stats = writer.get_stats()
+        self.assertEqual(stats["reuse_records"], 1)
+        self.assertEqual(stats["total_records"], 2)
+        self.assertEqual(stats["total_samples"], 2)
+        self.assertIsInstance(stats["frame_compression_pct"], float)
+        self.assertGreaterEqual(stats["frame_compression_pct"], 0.0)
+        self.assertLessEqual(stats["frame_compression_pct"], 100.0)
+        writer.close()
+
+    def test_writer_buffered_bytes_match_flushed_bytes(self):
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as file:
+            filename = file.name
+        self.temp_files.append(filename)
+
+        frames = [make_frame("a.py", line, "f") for line in range(300)]
+        writer = _remote_debugging.BinaryWriter(filename, 1000, 0)
+        for i in range(100):
+            sample = [make_interpreter(0, [
+                make_thread(1, frames[i:i + 5], status=i % 3),
+                make_thread(2, frames[:3]),
+            ])]
+            writer.write_sample(sample, 1000 * (i + 1))
+        buffered = writer.get_stats()["bytes_written"]
+        writer.finalize()
+
+        [columns] = read_block_columns(filename)
+        self.assertEqual(buffered, sum(size for size, _ in columns))
+
+    def _write_block_spanning_file(self):
+        # A block accepts at most 4,096 streams.
+        frame = make_frame("many_threads.py", 1, "work")
+        samples = [
+            [make_interpreter(0, [make_thread(i + 1, [frame])])]
+            for i in range(4097)
+        ]
+        return samples, self.create_binary_file(samples)
+
+    def test_samples_span_multiple_blocks(self):
+        samples, filename = self._write_block_spanning_file()
+        self.assertGreaterEqual(len(read_block_columns(filename)), 2)
+
+        collector = RawCollector()
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.replay_samples(collector), len(samples))
+        self.assert_samples_equal(samples, collector)
+
+    def test_progress_follows_collected_samples(self):
+        samples, filename = self._write_block_spanning_file()
+
+        class CountingCollector:
+            received = 0
+
+            def collect(self, stack_frames, timestamps_us):
+                self.received += len(timestamps_us)
+
+        collector = CountingCollector()
+        calls = []
+        with BinaryReader(filename) as reader:
+            reader.replay_samples(
+                collector,
+                lambda current, total: calls.append(
+                    (current, collector.received)))
+        self.assertGreater(len(calls), 2)
+        for current, received in calls:
+            self.assertEqual(current, received)
+
+    def test_reader_replays_twice(self):
+        samples = [
+            [make_interpreter(0, [
+                make_thread(1, [make_frame("a.py", i % 3, "f")]),
+                make_thread(2, [make_frame("b.py", 1, "g")]),
+            ])]
+            for i in range(10)
+        ]
+        filename = self.create_binary_file(samples)
+        with BinaryReader(filename) as reader:
+            first = RawCollector()
+            second = RawCollector()
+            self.assertEqual(reader.replay_samples(first), 20)
+            self.assertEqual(reader.replay_samples(second), 20)
+            self.assertEqual(reader.get_stats()["total_samples"], 20)
+        self.assertEqual(first.by_thread, second.by_thread)
+
+    def test_writer_repeat_run_spans_interleaved_streams(self):
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as file:
+            filename = file.name
+        self.temp_files.append(filename)
+
+        idle = [make_frame("idle.py", 1, "wait")]
+        busy = [[make_frame("busy.py", 1, "even")],
+                [make_frame("busy.py", 2, "odd")]]
+        writer = _remote_debugging.BinaryWriter(filename, 1000, 0)
+        for i in range(10):
+            sample = [make_interpreter(0, [
+                make_thread(1, idle),
+                make_thread(2, busy[i % 2]),
+            ])]
+            writer.write_sample(sample, 1000 * (i + 1))
+        stats = writer.get_stats()
+        self.assertEqual(stats["repeat_records"], 1)
+        self.assertEqual(stats["repeat_samples"], 9)
+        self.assertGreater(stats["bytes_written"], 0)
+        writer.finalize()
+
+        collector = RawCollector()
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.replay_samples(collector), 20)
+            self.assertEqual(reader.get_stats()["repeat_samples"], 9)
+        idle_frames = [frame_to_dict(frame) for frame in idle]
+        self.assertEqual(
+            [sample["frames"] for sample in collector.by_thread[(0, 1)]],
+            [idle_frames] * 10)
+        self.assertEqual(
+            [sample["frames"][0]["funcname"]
+             for sample in collector.by_thread[(0, 2)]],
+            ["even", "odd"] * 5)
+
     def test_invalid_path_error_preserves_pathlib(self):
         """Missing path: OSError carries the original path object, not a string."""
         missing = pathlib.Path("/i/do/not/exist")
@@ -1194,6 +1386,7 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
 class TestBinaryFormatValidation(BinaryFormatTestBase):
     """Tests for malformed binary files."""
 
+    HDR_OFF_VERSION = 4
     HDR_OFF_SAMPLES = 28
     HDR_OFF_THREADS = 36
     HDR_OFF_STR_TABLE = 40
@@ -1261,7 +1454,8 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
         with BinaryReader(filename) as reader:
             with self.assertRaises(ValueError) as cm:
                 reader.replay_samples(RawCollector())
-            self.assertEqual(str(cm.exception), "Truncated sample data: 1 trailing bytes")
+            self.assertEqual(str(cm.exception),
+                             "Invalid sample block: truncated header")
 
     # Minimum on-disk size of one table entry (see binary_io.h).
     MIN_STRING_ENTRY_SIZE = 1
@@ -1345,6 +1539,20 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
             f"possible {max_frames}",
         )
 
+    def test_open_rejects_older_format_version(self):
+        filename = self.create_binary_file([], compression="none")
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.get_info()["version"], 2)
+        with open(filename, "r+b") as raw:
+            raw.seek(self.HDR_OFF_VERSION)
+            raw.write(struct.pack("=I", 1))
+        with self.assertRaisesRegex(
+                ValueError,
+                r"Unsupported format version 1 \(this reader supports "
+                r"version 2\)"):
+            with BinaryReader(filename):
+                pass
+
     def test_sample_count_reads_full_64_bits(self):
         """sample_count values requiring the upper 32 bits decode correctly."""
         filename = self.create_binary_file([], compression="none")
@@ -1369,6 +1577,265 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
 
                 with BinaryReader(filename) as reader:
                     self.assertEqual(reader.get_info()["sample_count"], value)
+
+    @staticmethod
+    def _varint(value):
+        out = bytearray()
+        while value >= 0x80:
+            out.append((value & 0x7F) | 0x80)
+            value >>= 7
+        out.append(value)
+        return bytes(out)
+
+    # Block column indices and encodings (see binary_io.h).
+    COLUMN_STACK_INSTRUCTIONS = 4
+    COLUMN_FRAME_IDS = 5
+    COLUMN_ZSTD = 1
+    COLUMN_CONSTANT = 2
+    MAX_BLOCK_SIZE = 1024 * 1024
+
+    def _write_single_block(self, num_samples=1, instructions=b"\x01\x00\x00",
+                            frame_ids=b"", *, header_samples=None,
+                            file_samples=None, stream_count=1,
+                            stream_table=None, stream_ids=None,
+                            residuals=None, statuses=b"", status_flags=(0, 0),
+                            frame_width=1, descriptors=None, magic=b"TBLK",
+                            truncate=None, frame_count=1):
+        """Write a file whose only block is built from the given parts.
+
+        By default every sample belongs to stream 0, has status 0 and is
+        exactly one sample interval after the previous one, and the only
+        stack is empty (STACK_REPLACE_SUFFIX 0 0). The frame table holds
+        *frame_count* frames: frame 0 is in "a.py" and frame N in "N.py".
+        *descriptors* maps a column index to (encoding, decoded size) to
+        replace its raw descriptor.
+        """
+        frames = [make_frame("a.py", 1, "f")]
+        frames += [make_frame(f"{index}.py", 1, "f")
+                   for index in range(1, frame_count)]
+        samples = [[make_interpreter(0, [make_thread(1, frames[i:i + 256])])]
+                   for i in range(0, frame_count, 256)]
+        filename = self.create_binary_file(samples, compression="none")
+        data = bytearray(pathlib.Path(filename).read_bytes())
+        sample_end = struct.unpack_from("=Q", data, self.HDR_OFF_STR_TABLE)[0]
+        if stream_table is None:
+            stream_table = b"".join(struct.pack("=QI", thread, 0)
+                                    for thread in range(1, stream_count + 1))
+        columns = (
+            stream_table,
+            b"\x00" * num_samples if stream_ids is None else stream_ids,
+            b"\x00" * num_samples if residuals is None else residuals,
+            statuses,
+            instructions,
+            frame_ids,
+        )
+        if header_samples is None:
+            header_samples = num_samples
+        block = (magic + self._varint(header_samples)
+                 + b"\x01"  # base timestamp
+                 + bytes([frame_width, *status_flags]))
+        payload = b""
+        for index, column in enumerate(columns):
+            encoding, decoded_size = (descriptors or {}).get(
+                index, (0, len(column)))
+            block += self._varint(decoded_size) + bytes([encoding])
+            if encoding == self.COLUMN_ZSTD:
+                block += self._varint(len(column))
+            if encoding == self.COLUMN_CONSTANT:
+                column = column[:1]
+            payload += column
+        block = (block + payload)[:truncate]
+        data[self.FILE_HEADER_PLACEHOLDER_SIZE:sample_end] = block
+        shift = len(block) - (sample_end - self.FILE_HEADER_PLACEHOLDER_SIZE)
+        if file_samples is None:
+            file_samples = num_samples
+        struct.pack_into("=Q", data, self.HDR_OFF_SAMPLES, file_samples)
+        struct.pack_into("=I", data, self.HDR_OFF_THREADS,
+                         max(len(stream_table) // 12, 1))
+        for offset in (self.HDR_OFF_STR_TABLE, self.HDR_OFF_FRAME_TABLE):
+            old_offset = struct.unpack_from("=Q", data, offset)[0]
+            struct.pack_into("=Q", data, offset, old_offset + shift)
+        struct.pack_into("=Q", data, len(data) - 24, len(data))
+        pathlib.Path(filename).write_bytes(data)
+        return filename
+
+    def assert_block_rejected(self, filename, message):
+        with BinaryReader(filename) as reader:
+            with self.assertRaises(ValueError) as cm:
+                reader.replay_samples(RawCollector())
+        self.assertEqual(str(cm.exception), f"Invalid sample block: {message}")
+
+    def test_replay_accepts_hand_built_block(self):
+        # STACK_REPLACE_SUFFIX 0 0, then STACK_REPEAT 2.
+        filename = self._write_single_block(3, b"\x01\x00\x00\x00\x02")
+        collector = RawCollector()
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.replay_samples(collector), 3)
+        self.assertEqual(len(collector.by_thread[(0, 1)]), 3)
+
+    def test_replay_decodes_every_frame_id_width(self):
+        # STACK_REPLACE_SUFFIX 0 1 reads one frame ID, stored in one byte
+        # plane per byte of the width, low byte first.
+        for width, frame_id in ((1, 43), (2, 299), (3, 299), (4, 299)):
+            with self.subTest(width=width):
+                filename = self._write_single_block(
+                    1, b"\x01\x00\x01", frame_id.to_bytes(width, "little"),
+                    frame_width=width, frame_count=300)
+                collector = RawCollector()
+                with BinaryReader(filename) as reader:
+                    self.assertEqual(reader.replay_samples(collector), 1)
+                frames = collector.by_thread[(0, 1)][0]["frames"]
+                self.assertEqual([frame["filename"] for frame in frames],
+                                 [f"{frame_id}.py"])
+
+    def test_replay_reads_high_frame_id_planes(self):
+        # Frame IDs 65536 and 2**24 only have a byte in the third or fourth
+        # plane; both are past the 300 frames in the table.
+        for width in (3, 4):
+            with self.subTest(width=width):
+                frame_id = 1 << (8 * (width - 1))
+                filename = self._write_single_block(
+                    1, b"\x01\x00\x01", frame_id.to_bytes(width, "little"),
+                    frame_width=width, frame_count=300)
+                self.assert_block_rejected(filename,
+                                           "frame index out of range")
+
+    def test_replay_rejects_reentrant_replay(self):
+        filename = self._write_single_block(
+            2, b"\x01\x00\x00\x00\x01")  # REPEAT 1
+
+        with BinaryReader(filename) as reader:
+            class ReentrantCollector:
+                def collect(self, stack_frames, timestamps_us):
+                    reader.replay_samples(RawCollector())
+
+            with self.assertRaisesRegex(RuntimeError, "already replaying"):
+                reader.replay_samples(ReentrantCollector())
+            # The failed replay leaves the reader usable.
+            self.assertEqual(reader.replay_samples(RawCollector()), 2)
+
+    def test_replay_rejects_invalid_block(self):
+        frames = self.COLUMN_FRAME_IDS
+        cases = [
+            # Block header
+            ("wrong magic", dict(magic=b"XBLK")),
+            # Magic, sample count and base timestamp, then 1 of 3 flag bytes
+            ("truncated header", dict(truncate=7)),
+            ("no samples", dict(header_samples=0)),
+            ("frame ID width out of range", dict(frame_width=0)),
+            ("frame ID width out of range", dict(frame_width=5)),
+            ("common and varying status flags overlap",
+             dict(status_flags=(1, 1))),
+            # Magic, sample count, base timestamp, 3 flag bytes and the
+            # first decoded size
+            ("truncated column descriptor", dict(truncate=10)),
+            ("unknown column encoding", dict(descriptors={frames: (3, 0)})),
+            ("zstd column in an uncompressed file",
+             dict(descriptors={self.COLUMN_STACK_INSTRUCTIONS:
+                               (self.COLUMN_ZSTD, 3)})),
+            ("encoded column is empty",
+             dict(descriptors={frames: (self.COLUMN_CONSTANT, 0)})),
+            ("decoded columns exceed the block limit",
+             dict(frame_ids=b"\x00",
+                  descriptors={frames: (self.COLUMN_CONSTANT,
+                                        self.MAX_BLOCK_SIZE)})),
+            # Rejected before anything is allocated for the samples
+            ("more samples than stored stream indices",
+             dict(header_samples=0xFFFFFFFF)),
+            ("column extends past the sample section", dict(truncate=-1)),
+            # Column sizes
+            ("stream table has a partial entry", dict(stream_table=b"0" * 11)),
+            ("stream count out of range", dict(stream_table=b"")),
+            ("frame ID column has a partial value",
+             dict(frame_width=2, frame_ids=b"\x00")),
+            ("status bitmaps have the wrong size", dict(status_flags=(0, 1))),
+            ("status bitmap padding is not zero",
+             dict(status_flags=(0, 1), statuses=b"\x02")),
+            # Streams and timestamps
+            ("stream table repeats a thread",
+             dict(stream_table=struct.pack("=QI", 1, 0) * 2)),
+            ("sample refers to an unknown stream", dict(stream_ids=b"\x01")),
+            ("stream index column has trailing data",
+             dict(num_samples=2, header_samples=1)),
+            ("timestamp column has trailing data",
+             dict(residuals=b"\x00\x00")),
+            ("frame index out of range",
+             dict(instructions=b"\x01\x00\x01", frame_ids=b"\x05")),
+            # Stack instructions
+            ("unknown stack instruction", dict(instructions=b"\x03")),
+            ("first stack of a stream cannot repeat",
+             dict(instructions=b"\x00\x01")),
+            ("repeat count out of range",
+             dict(num_samples=2, instructions=b"\x01\x00\x00\x00\x00")),
+            ("stack prefix out of range", dict(instructions=b"\x01\x01\x00")),
+            ("stack uses more frame IDs than stored",
+             dict(instructions=b"\x01\x00\x02", frame_ids=b"\x00")),
+            # STACK_REUSE 0 257
+            ("stack is too deep", dict(instructions=b"\x02\x00\x81\x02")),
+            ("reused stack is not stored earlier",
+             dict(instructions=b"\x02\x00\x01", frame_ids=b"\x00")),
+            # End of the block
+            ("stack instruction column has trailing data",
+             dict(instructions=b"\x01\x00\x00\x01")),
+            ("frame ID column has unused values", dict(frame_ids=b"\x00")),
+            ("stream table has an unused entry", dict(stream_count=2)),
+            ("repeat count extends past the block",
+             dict(num_samples=2, instructions=b"\x01\x00\x00\x00\x02")),
+            ("more samples than the file header declares",
+             dict(file_samples=0)),
+        ]
+        for message, kwargs in cases:
+            with self.subTest(message, **kwargs):
+                filename = self._write_single_block(**kwargs)
+                self.assert_block_rejected(filename, message)
+
+    @unittest.skipUnless(ZSTD_AVAILABLE, "zstd compression not available")
+    def test_replay_rejects_invalid_zstd_column(self):
+        zstd = import_helper.import_module("compression.zstd")
+        instructions = b"\x01\x00\x00"
+        frame = zstd.compress(
+            instructions,
+            options={zstd.CompressionParameter.checksum_flag: 1})
+        bad_checksum = frame[:-1] + bytes([frame[-1] ^ 1])
+        cases = [
+            ("Corrupted zstd frame header", instructions, len(instructions)),
+            ("zstd frame size does not match the decoded size",
+             frame, len(instructions) + 1),
+            ("zstd decompression error: ", bad_checksum, len(instructions)),
+        ]
+        for message, stored, decoded_size in cases:
+            with self.subTest(message):
+                filename = self._write_single_block(
+                    instructions=stored,
+                    descriptors={self.COLUMN_STACK_INSTRUCTIONS:
+                                 (self.COLUMN_ZSTD, decoded_size)})
+                with open(filename, "r+b") as raw:
+                    raw.seek(56)  # compression type
+                    raw.write(struct.pack("=I", 1))
+                with BinaryReader(filename) as reader:
+                    with self.assertRaises(ValueError) as cm:
+                        reader.replay_samples(RawCollector())
+                self.assertStartsWith(str(cm.exception), message)
+
+    def test_replay_propagates_callback_errors(self):
+        filename = self._write_single_block(
+            2000, b"\x01\x00\x00\x00\xcf\x0f")  # REPEAT 1999
+
+        class FailingCollector:
+            def collect(self, stack_frames, timestamps_us):
+                raise ZeroDivisionError
+
+        def failing_progress(current, total):
+            if current:
+                raise ZeroDivisionError
+
+        with BinaryReader(filename) as reader:
+            with self.assertRaises(ZeroDivisionError):
+                reader.replay_samples(FailingCollector())
+            with self.assertRaises(ZeroDivisionError):
+                reader.replay_samples(RawCollector(), failing_progress)
+            # The reader stays usable after a failed replay.
+            self.assertEqual(reader.replay_samples(RawCollector()), 2000)
 
 
 class TestBinaryEncodings(BinaryFormatTestBase):
@@ -1549,15 +2016,29 @@ class TestBinaryEncodings(BinaryFormatTestBase):
 
 
     def test_rle_long_run_splits_batches(self):
-        # Construct a single repeat record larger than the writer's buffer.
+        # Construct one block whose repeat run is longer than a replay batch.
         num_samples = 8193
         filename = self.create_binary_file([], compression="none")
         data = bytearray(pathlib.Path(filename).read_bytes())
-        record = (struct.pack("=QIB", 1, 0, 0)  # STACK_REPEAT
-                  + b"\x81\x40"  # 8193 as a varint
-                  + b"\x01\x00" * num_samples)  # delta=1, status=0
+        instructions = (b"\x01\x00\x00"  # STACK_REPLACE_SUFFIX 0 0
+                        + b"\x00\x80\x40")  # STACK_REPEAT 8192
+        record = (b"TBLK"
+                  + b"\x81\x40"  # 8193 samples as a varint
+                  + b"\x01"  # base timestamp
+                  + b"\x01\x00\x00"  # frame width, status flags
+                  + b"\x0c\x00"  # stream table: 12 raw bytes
+                  + b"\x81\x40\x02"  # stream indices: constant
+                  + b"\x81\x40\x02"  # timestamp residuals: constant
+                  + b"\x00\x00"  # status bitmaps: empty
+                  + bytes([len(instructions), 0])  # raw instructions
+                  + b"\x00\x00"  # frame IDs: empty
+                  + struct.pack("=QI", 1, 0)
+                  + b"\x00"  # every sample is in stream 0
+                  + b"\x00"  # every residual is zero
+                  + instructions)
         data[64:64] = record
         struct.pack_into("=Q", data, 12, 0)  # start timestamp
+        struct.pack_into("=Q", data, 20, 1)  # sample interval
         struct.pack_into("=Q", data, 28, num_samples)
         struct.pack_into("=I", data, 36, 1)  # thread count
         for offset in (40, 48):  # string and frame table offsets
