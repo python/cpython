@@ -37,10 +37,13 @@ Context Variables
    :meth:`ContextVar.get` when no value for the variable is found
    in the current context.
 
-   **Important:** Context Variables should be created at the top module
-   level and never in closures.  :class:`Context` objects hold strong
-   references to context variables which prevents context variables
-   from being properly garbage collected.
+   **Important:** Prefer creating context variables at module level rather
+   than in closures. A :class:`Context` holds strong references to the
+   variables that have values set in it. A variable created in a closure can
+   therefore remain alive after the closure returns, for as long as it has a
+   value in a reachable context. Repeatedly creating and setting new variables
+   in a long-lived context can accumulate variables that would otherwise be
+   garbage collected.
 
    :class:`!ContextVar`\s are :ref:`generic <generics>` over the type of
    their contained value.
