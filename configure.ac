@@ -3195,7 +3195,8 @@ AC_CHECK_HEADERS([ \
   alloca.h asm/types.h bluetooth.h conio.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
   io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/limits.h linux/memfd.h \
   linux/netfilter_ipv4.h linux/random.h linux/soundcard.h linux/sched.h \
-  linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
+  linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h \
+  poll.h process.h pthread.h pthread_np.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
   sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/pidfd.h sys/poll.h \
@@ -5586,6 +5587,8 @@ AC_CHECK_FUNCS([ \
 
 PY_CHECK_FUNC_PRIVATE([freadlink], [@%:@include <unistd.h>])
 PY_CHECK_FUNC_PRIVATE([strerror_r], [@%:@include <string.h>])
+# FreeBSD pthread_attr_get_np()
+PY_CHECK_FUNC_PRIVATE([pthread_attr_get_np], [@%:@include <pthread_np.h>])
 
 
 # os.statx uses Linux's statx function.  AIX also has a function named statx,
@@ -6005,15 +6008,17 @@ AC_CHECK_DECLS([UT_NAMESIZE],
                          [Define if you have the 'HAVE_UT_NAMESIZE' constant.])],
               [],
               [@%:@include <utmp.h>])
-# musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h
-AS_IF([test "$ac_cv_libc" != musl], [
-AC_CHECK_DECLS([PR_SET_VMA_ANON_NAME],
-              [AC_DEFINE([_Py_HAVE_PR_SET_VMA_ANON_NAME], [1],
-                         [Define if you have the 'PR_SET_VMA_ANON_NAME' constant.])],
-              [],
-              [@%:@include <linux/prctl.h>
-               @%:@include <sys/prctl.h>])
-])
+# musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h.
+# The conftest does not reliably catch this, so skip the check on musl.
+AS_CASE([$host],
+  [*-musl*], [],
+  [AC_CHECK_DECLS([PR_SET_VMA_ANON_NAME],
+                [AC_DEFINE([_Py_HAVE_PR_SET_VMA_ANON_NAME], [1],
+                           [Define if you have the 'PR_SET_VMA_ANON_NAME' constant.])],
+                [],
+                [@%:@include <linux/prctl.h>
+                 @%:@include <sys/prctl.h>])]
+)
 # check for openpty, login_tty, and forkpty
 
 AC_CHECK_FUNCS([openpty], [],

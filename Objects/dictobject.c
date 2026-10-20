@@ -2938,9 +2938,6 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
 
     PyObject *old_key;
 
-    Py_ssize_t hashpos = lookdict_index(mp->ma_keys, hash, ix);
-    assert(hashpos >= 0);
-
     STORE_USED(mp, mp->ma_used - 1);
     if (_PyDict_HasSplitTable(mp)) {
         assert(old_value == mp->ma_values->values[ix]);
@@ -2951,6 +2948,9 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
         ASSERT_CONSISTENT(mp);
     }
     else {
+        Py_ssize_t hashpos = lookdict_index(mp->ma_keys, hash, ix);
+        assert(hashpos >= 0);
+
         FT_ATOMIC_STORE_UINT32_RELAXED(mp->ma_keys->dk_version, 0);
         dictkeys_set_index(mp->ma_keys, hashpos, DKIX_DUMMY);
         if (DK_IS_UNICODE(mp->ma_keys)) {

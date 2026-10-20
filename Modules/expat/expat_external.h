@@ -169,6 +169,9 @@ typedef char XML_LChar;
 #  endif   /* XML_UNICODE */
 
 #  ifdef XML_LARGE_SIZE /* Use large integers for file/stream positions. */
+#    if defined(__clang__) || defined(__GNUC__)
+#      warning Macro XML_LARGE_SIZE is deprecated, please use the 64bit location API functions instead.
+#    endif
 typedef long long XML_Index;
 typedef unsigned long long XML_Size;
 #  else
