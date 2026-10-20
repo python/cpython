@@ -43,7 +43,7 @@ functions for creating simple modal dialogs to get a value from the user.
    The default is classic for compatibility, since the themed widgets set a
    themed background that classic widgets added in :meth:`body` would not match.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *use_ttk* parameter.
 
    .. attribute:: result
@@ -105,7 +105,7 @@ functions for creating simple modal dialogs to get a value from the user.
    :mod:`tkinter.ttk` widgets, modelled on the Tk message box; when false, from
    the classic :mod:`tkinter` widgets, modelled on ``tk_dialog``.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       The dialog is now built from the themed :mod:`tkinter.ttk` widgets by
       default, instead of the classic :mod:`tkinter` widgets.
       Added the *bitmap*, *detail* and *use_ttk* parameters.
@@ -174,7 +174,7 @@ string, an empty tuple, an empty list or ``None``.
    or an empty list if cancelled.
    The files are opened in mode *mode* (read-only ``'r'`` by default).
 
-   .. deprecated-removed:: next 3.19
+   .. deprecated-removed:: 3.16 3.19
       Opening several files at once is error-prone,
       and the returned list cannot be used in a :keyword:`with` statement.
       Iterate over the names returned by :func:`askopenfilenames`
@@ -231,7 +231,7 @@ These do not emulate the native look-and-feel of the platform.
    :mod:`tkinter.ttk` widgets; when false, from the classic :mod:`tkinter`
    widgets.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       The dialog is now built from the themed :mod:`tkinter.ttk` widgets by
       default, instead of the classic :mod:`tkinter` widgets.
       Added the *use_ttk* parameter.
@@ -301,7 +301,7 @@ These do not emulate the native look-and-feel of the platform.
    A subclass of FileDialog that creates a dialog window for selecting an
    existing file.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *use_ttk* parameter.
 
    .. method:: ok_command()
@@ -314,7 +314,7 @@ These do not emulate the native look-and-feel of the platform.
    A subclass of FileDialog that creates a dialog window for selecting a
    destination file.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *use_ttk* parameter.
 
    .. method:: ok_command()

@@ -203,7 +203,7 @@ encoding.
 When ``UTF8=ACCEPT`` is enabled (see :meth:`~IMAP4.enable`), mailbox names
 are sent as UTF-8 instead.
 
-.. versionchanged:: next
+.. versionchanged:: 3.16
    Non-ASCII mailbox names are automatically encoded as modified UTF-7.
 
 Most commands return a tuple: ``(type, [data, ...])`` where *type* is usually
@@ -228,7 +228,7 @@ or :class:`range` objects.
 For example, ``[1, (3, 5), 8]`` and ``[range(1, 6), 8]``
 are both equivalent to ``'1,3:5,8'``.
 
-.. versionchanged:: next
+.. versionchanged:: 3.16
    Added support for the structured *message_set*.
 
 Command arguments that are parenthesized lists of atoms ---
@@ -241,7 +241,7 @@ can be passed as a sequence of strings instead of a single preformatted string.
 For example, ``[r'\Seen', r'\Answered']``
 is equivalent to ``(\Seen \Answered)``.
 
-.. versionchanged:: next
+.. versionchanged:: 3.16
    Added support for passing these arguments as a sequence.
 
 .. _imap4-params:
@@ -274,7 +274,7 @@ The *params* keyword is accepted by :meth:`~IMAP4.search`,
 :meth:`~IMAP4.fetch`, :meth:`~IMAP4.sort`, :meth:`~IMAP4.thread` and
 :meth:`~IMAP4.uid`.
 
-.. versionadded:: next
+.. versionadded:: 3.16
    The *params* keyword argument.
 
 An :class:`IMAP4` instance has the following methods:
@@ -297,7 +297,7 @@ An :class:`IMAP4` instance has the following methods:
    by :rfc:`3501`; for example, serialize :mod:`email` messages using
    :class:`email.policy.SMTP`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *translate_line_endings* parameter.
 
 
@@ -340,7 +340,7 @@ An :class:`IMAP4` instance has the following methods:
    If *uid* is true, *message_set* is a set of UIDs and the ``UID COPY``
    command is used instead of ``COPY``.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *uid* parameter.
 
 
@@ -380,7 +380,7 @@ An :class:`IMAP4` instance has the following methods:
    *message_set*.  *message_set* is required in this case, and must be omitted
    otherwise.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *message_set* and *uid* parameters.
 
 
@@ -396,7 +396,7 @@ An :class:`IMAP4` instance has the following methods:
    If *params* is given, ``?`` placeholders in *message_parts* are substituted
    with the quoted parameters (see :ref:`the placeholders <imap4-params>`).
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *params* and *uid* parameters.
 
 
@@ -434,7 +434,7 @@ An :class:`IMAP4` instance has the following methods:
    a value can be ``None``.
    The server must support the ``ID`` capability.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. method:: IMAP4.idle(duration=None)
@@ -560,7 +560,7 @@ An :class:`IMAP4` instance has the following methods:
    which it need not advertise as ``AUTH=PLAIN`` in its ``CAPABILITY``
    response.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. method:: IMAP4.logout()
@@ -587,7 +587,7 @@ An :class:`IMAP4` instance has the following methods:
    If *uid* is true, *message_set* is a set of UIDs and the ``UID MOVE``
    command is used instead of ``MOVE``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. method:: IMAP4.myrights(mailbox)
@@ -694,7 +694,7 @@ An :class:`IMAP4` instance has the following methods:
       # or, letting the module quote the value (this is recommended):
       typ, msgnums = M.search(None, 'FROM ?', params=['John Smith'])
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *params* and *uid* parameters.
       ``str`` search criteria are encoded to *charset*.
 
@@ -768,7 +768,7 @@ An :class:`IMAP4` instance has the following methods:
 
    This is an ``IMAP4rev1`` extension command.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *params* and *uid* parameters.
       ``str`` search criteria are encoded to *charset*.
 
@@ -828,7 +828,7 @@ An :class:`IMAP4` instance has the following methods:
       Python 3.6, handles them if they are sent from the server, since this
       improves real-world compatibility.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *uid* parameter.
 
 .. method:: IMAP4.subscribe(mailbox)
@@ -866,7 +866,7 @@ An :class:`IMAP4` instance has the following methods:
 
    This is an ``IMAP4rev1`` extension command.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *params* and *uid* parameters.
       ``str`` search criteria are encoded to *charset*.
 
@@ -882,7 +882,7 @@ An :class:`IMAP4` instance has the following methods:
    ``THREAD`` criteria or in the ``FETCH`` parts are substituted with the quoted
    parameters (see :ref:`the placeholders <imap4-params>`).
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *params* parameter.
 
 

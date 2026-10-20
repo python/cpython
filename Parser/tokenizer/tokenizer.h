@@ -6,6 +6,19 @@
 
 struct tok_state;
 
+typedef enum {
+    _PyTokenizer_KEEP_NEWLINE,   // Preserve the original line terminator.
+    _PyTokenizer_IMPLY_NEWLINE,  // Add a missing line terminator.
+    _PyTokenizer_APPEND_NEWLINE, // Also append a blank line to terminated input.
+} _PyTokenizer_Newline;
+
+/* Reasons that the appended newline can change the token stream. */
+enum {
+    _PyTokenizer_NEWLINE_STATEMENT = 1,
+    _PyTokenizer_NEWLINE_INDENT = 2,
+    _PyTokenizer_NEWLINE_CONTINUATION = 4,
+};
+
 /* Initialize before use. metadata owns a reference released by _PyToken_Free;
    a consumer taking that reference must set metadata to NULL. */
 struct token {
@@ -21,9 +34,8 @@ struct token {
 typedef struct {
     const char *text;
     Py_ssize_t length;
-    const char *line;
-    Py_ssize_t line_length;
-    const char *end_line;
+    _PyTok_Span line_span;
+    _PyTok_Off end_line_start;
     int implicit_newline;
     int at_eof;
 } _PyToken_View;
@@ -38,6 +50,7 @@ typedef struct {
 
 typedef struct {
     int status;
+    unsigned char implicit_newline;  // _PyTokenizer_Newline
     _PyTokenizer_Diagnostic diagnostic;
     _PyTok_Loc location;
     _PyTok_Off cursor;
@@ -55,7 +68,9 @@ typedef struct {
 } _PyTokenizer_Info;
 
 /* Get replaces the initialized token, releasing its previous metadata.
-   Errors are returned as ERRORTOKEN, with or without a Python exception. */
+   Errors are returned as ERRORTOKEN, with or without a Python exception.
+   In incomplete-input mode, an unfinished string retains its token type
+   with an absent span and E_INCOMPLETE status. No Python exception is set. */
 void _PyTokenizer_Get(struct tok_state *, struct token *);
 void _PyTokenizer_Free(struct tok_state *);
 int _PyTokenizer_Traverse(struct tok_state *, visitproc, void *);
@@ -70,11 +85,14 @@ _PyToken_Free(struct token *token)
 /* Views and borrowed snapshot references remain valid until the tokenizer is
    mutated or freed. Source spans may be discarded when reading more input. */
 _PyTokenizer_Info _PyTokenizer_GetInfo(const struct tok_state *);
+int _PyTokenizer_GetStatus(const struct tok_state *);
+int _PyTokenizer_GetNewlineRequirements(const struct tok_state *);
 /* An absent token span has a nonnull empty text view. */
 const char *_PyToken_TextView(
     const struct tok_state *, const struct token *, Py_ssize_t *);
-/* Use the token from the most recent Get. text is NULL for an absent span;
-   line includes the token's complete physical line range. */
+/* Use the token from the most recent Get. An absent span has nonnull empty text.
+   line_span covers the token's complete physical line range. end_line_start
+   is the logical offset of its final physical line. */
 void _PyToken_GetView(
     const struct tok_state *tok, const struct token *token,
     _PyToken_View *view);
@@ -91,6 +109,7 @@ void _PyTokenizer_SetContext(
     struct tok_state *tok, PyObject *filename, PyObject *module);
 void _PyTokenizer_SetOptions(
     struct tok_state *tok, int extra_tokens, int type_comments);
+void _PyTokenizer_AllowIncompleteInput(struct tok_state *, int);
 void _PyTokenizer_ImplyDedents(struct tok_state *);
 int _PyTokenizer_HasTrailingStatement(const struct tok_state *);
 int _PyTokenizer_IsInteractive(const struct tok_state *);
