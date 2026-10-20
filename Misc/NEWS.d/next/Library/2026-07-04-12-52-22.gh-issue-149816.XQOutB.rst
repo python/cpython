@@ -1,0 +1,3 @@
+:mod:`hashlib`: fix a crash arising from a race condition when looking
+up an OpenSSL hash algorithm by name the first time. Patch by Bénédikt Tran.
+
