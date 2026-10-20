@@ -1,0 +1,3 @@
+Fix :func:`asyncio.as_completed` raising :exc:`RuntimeError` ("no running
+event loop") when the iterator is created outside of a running event loop and
+driven with :meth:`loop.run_until_complete() <asyncio.loop.run_until_complete>`.
