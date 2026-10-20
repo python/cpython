@@ -212,7 +212,10 @@ _PyMem_mi_page_reclaimed(mi_page_t *page)
         if (mi_page_all_free(page)) {
             assert(page->qsbr_node.next == NULL);
             _PyThreadStateImpl *tstate = tstate_from_heap(mi_page_heap(page));
-            assert(tstate == (_PyThreadStateImpl *)_PyThreadState_GET());
+            // gh-159462: the owning tstate may differ from the current
+            // one, but the heap is always owned by the current OS thread,
+            // so the page list is not shared with other OS threads.
+            assert(mi_page_heap(page)->thread_id == _Py_ThreadId());
             page->retire_expire = 0;
             llist_insert_tail(&tstate->mimalloc.page_list, &page->qsbr_node);
         }
