@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(pysqlite_complete_statement__doc__,
 "complete_statement($module, /, statement)\n"
@@ -63,13 +64,8 @@ pysqlite_complete_statement(PyObject *module, PyObject *const *args, Py_ssize_t 
         _PyArg_BadArgument("complete_statement", "argument 'statement'", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t statement_length;
-    statement = PyUnicode_AsUTF8AndSize(args[0], &statement_length);
+    statement = _PyUnicode_AsUTF8NoNUL(args[0]);
     if (statement == NULL) {
-        goto exit;
-    }
-    if (strlen(statement) != (size_t)statement_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = pysqlite_complete_statement_impl(module, statement);
@@ -211,4 +207,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=17c4e031680a5168 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=02aee45b7f9f14f0 input=a9049054013a1b77]*/

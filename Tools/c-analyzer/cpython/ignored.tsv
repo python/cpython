@@ -239,11 +239,8 @@ Modules/_decimal/_decimal.c	-	cond_map_template	-
 Modules/_decimal/_decimal.c	-	dec_signal_string	-
 Modules/_decimal/_decimal.c	-	dflt_ctx	-
 Modules/_decimal/_decimal.c	-	int_constants	-
-Modules/_decimal/_decimal.c	-	invalid_rounding_err	-
-Modules/_decimal/_decimal.c	-	invalid_signals_err	-
 Modules/_decimal/_decimal.c	-	signal_map_template	-
 Modules/_decimal/_decimal.c	-	ssize_constants	-
-Modules/_decimal/_decimal.c	-	INVALID_SIGNALDICT_ERROR_MSG	-
 Modules/_elementtree.c	-	ExpatMemoryHandler	-
 Modules/_hashopenssl.c	-	py_hashes	-
 Modules/_hacl/Hacl_Hash_SHA1.c	-	_h0	-
@@ -464,6 +461,13 @@ Modules/_testcapi/datetime.c	-	test_run_counter	-
 Modules/_testcapi/docstring.c	-	DocStringNoSignatureTest	-
 Modules/_testcapi/docstring.c	-	DocStringUnrepresentableSignatureTest	-
 Modules/_testcapi/exceptions.c	-	PyRecursingInfinitelyError_Type	-
+Modules/_testcapi/fpcast.c	-	last_set_value	-
+Modules/_testcapi/fpcast.c	-	FpcastTestType	-
+Modules/_testcapi/fpcast.c	-	FpcastCallable0	-
+Modules/_testcapi/fpcast.c	-	FpcastCallable1	-
+Modules/_testcapi/fpcast.c	-	FpcastCallable2	-
+Modules/_testcapi/fpcast.c	-	FpcastCallable3	-
+Modules/_testcapi/fpcast.c	-	FpcastCallable4	-
 Modules/_testcapi/heaptype.c	-	_testcapimodule	-
 Modules/_testcapi/mem.c	-	FmData	-
 Modules/_testcapi/mem.c	-	FmHook	-
@@ -778,6 +782,7 @@ Modules/expat/xmlrole.c	-	condSect1	-
 Modules/expat/xmlrole.c	-	condSect2	-
 Modules/expat/xmlrole.c	-	declClose	-
 Modules/expat/xmlrole.c	-	error	-
+Python/preconfig.c	-	Py_UTF8Mode	-
 
 ## other
 Modules/_io/_iomodule.c	-	_PyIO_Module	-

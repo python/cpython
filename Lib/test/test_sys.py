@@ -265,6 +265,17 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
+        # test EXIT_SUCCESS and EXIT_FAILURE constants
+        self.assertNotEqual(sys.EXIT_SUCCESS, sys.EXIT_FAILURE)
+        rc, out, err = assert_python_ok('-c', 'import sys; sys.exit(sys.EXIT_SUCCESS)')
+        self.assertEqual(rc, sys.EXIT_SUCCESS)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+        rc, out, err = assert_python_failure('-c', 'import sys; sys.exit(sys.EXIT_FAILURE)')
+        self.assertEqual(rc, sys.EXIT_FAILURE)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
         def check_exit_message(code, expected, **env_vars):
             rc, out, err = assert_python_failure('-c', code, **env_vars)
             self.assertEqual(rc, 1)
@@ -563,6 +574,38 @@ class SysModuleTest(unittest.TestCase):
             leave_g.set()
             t.join()
 
+    @support.cpython_only
+    @requires_subinterpreters
+    @threading_helper.requires_working_threading()
+    def test_current_frames_other_interpreters(self):
+        # gh-158364: sys._current_frames() would access frames of another
+        # interpreter and crash
+        import threading
+
+        entered = threading.Event()
+        left = threading.Event()
+
+        def park():
+            entered.set()
+            left.wait()
+
+        t = threading.Thread(target=park)
+        with threading_helper.start_threads([t], unlock=left.set):
+            entered.wait()
+            interp = interpreters.create()
+            try:
+                interp.exec(f"""if True:
+                    import sys
+                    import threading
+
+                    frames = sys._current_frames()
+                    assert threading.get_ident() in frames, frames
+                    assert frames[threading.get_ident()].f_globals is globals()
+                    assert {t.ident} not in frames, frames
+                    """)
+            finally:
+                interp.close()
+
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
     def test_current_exceptions(self):
@@ -628,6 +671,39 @@ class SysModuleTest(unittest.TestCase):
             # Reap the spawned thread.
             leave_g.set()
             t.join()
+
+    @support.cpython_only
+    @requires_subinterpreters
+    @threading_helper.requires_working_threading()
+    def test_current_exceptions_other_interpreters(self):
+        # gh-158364: sys._current_exceptions() would hand out exceptions of
+        # another interpreter and crash
+        import threading
+
+        entered = threading.Event()
+        left = threading.Event()
+
+        def hold():
+            # The thread has to be handling an exception, otherwise
+            # sys._current_exceptions() has nothing to report for it.
+            try:
+                raise ValueError
+            except ValueError:
+                entered.set()
+                left.wait()
+
+        t = threading.Thread(target=hold)
+        with threading_helper.start_threads([t], unlock=left.set):
+            entered.wait()
+            interp = interpreters.create()
+            try:
+                interp.exec(f"""if True:
+                    import sys
+
+                    assert {t.ident} not in sys._current_exceptions()
+                    """)
+            finally:
+                interp.close()
 
     def test_attributes(self):
         self.assertIsInstance(sys.api_version, int)
@@ -758,6 +834,16 @@ class SysModuleTest(unittest.TestCase):
         self.assertIsInstance(sys._emscripten_info.runtime, (str, type(None)))
         self.assertIsInstance(sys._emscripten_info.pthreads, bool)
         self.assertIsInstance(sys._emscripten_info.shared_memory, bool)
+
+    @unittest.skipUnless(support.is_wasi, "only available on WASI")
+    def test_wasi_info(self):
+        info = sys._wasi_info
+        self.assertIn(info.wasi_version, {'p1', 'p2', 'p3'})
+        self.assertIn('.', info.wasi_sdk_version)
+        sdk_major, _, sdk_minor = info.wasi_sdk_version.partition('.')
+        self.assertGreaterEqual(int(sdk_major), 1)
+        self.assertGreaterEqual(int(sdk_minor), 0)
+        self.assertIsInstance(info.cooperative_threads, bool)
 
     def test_43581(self):
         # Can't use sys.stdout, as this is a StringIO object when
@@ -1129,8 +1215,10 @@ class SysModuleTest(unittest.TestCase):
         # The sysconfig vars are not available on Windows.
         if sys.platform != "win32":
             with_pymalloc = sysconfig.get_config_var("WITH_PYMALLOC")
+            with_sanitizer = support.check_sanitizer(address=True, memory=True)
             self.assertIn(b"free PyDictObjects", err)
-            if with_pymalloc:
+            # ASan and MSan builds default to malloc, even with pymalloc.
+            if with_pymalloc and not with_sanitizer:
                 self.assertIn(b'Small block threshold', err)
 
         # The function has no parameter

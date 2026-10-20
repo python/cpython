@@ -1,2 +1,0 @@
-IDLE no longer applies syntax coloring to the text entered for
-:func:`input` in the Shell.
