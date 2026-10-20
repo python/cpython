@@ -158,11 +158,12 @@ hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
     size_t stack_size, guard_size;
     void *stack_addr;
     pthread_attr_t attr;
-#ifdef _Py_HAVE_PTHREAD_ATTR_GET_NP
+
     int err = pthread_attr_init(&attr);
+#ifdef _Py_HAVE_PTHREAD_ATTR_GET_NP
     err |= pthread_attr_get_np(pthread_self(), &attr);
 #else
-    int err = pthread_getattr_np(pthread_self(), &attr);
+    err |= pthread_getattr_np(pthread_self(), &attr);
 #endif
     if (err == 0) {
         err = pthread_attr_getguardsize(&attr, &guard_size);
@@ -175,6 +176,7 @@ hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
         return;
     }
 #  endif
+
     // Add some space for caller function then round to minimum page size
     // This is a guess at the top of the stack, but should be a reasonably
     // good guess if called from _PyThreadState_Attach when creating a thread.
