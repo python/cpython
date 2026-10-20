@@ -2,5 +2,3 @@
 PyDescr_NAME
 PyDescr_TYPE
 PyWrapperFlag_KEYWORDS
-# cpython/pylifecycle.h
-Py_FrozenMain
