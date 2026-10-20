@@ -25553,12 +25553,14 @@ printf "%s\n" "#define HAVE_UT_NAMESIZE 1" >>confdefs.h
 
 fi
 
-# musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h
-if test "$ac_cv_libc" != musl
-then :
-
-ac_fn_check_decl "$LINENO" "PR_SET_VMA_ANON_NAME" "ac_cv_have_decl_PR_SET_VMA_ANON_NAME" "#include <linux/prctl.h>
-               #include <sys/prctl.h>
+# musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h.
+# The conftest does not reliably catch this, so skip the check on musl.
+case $host in #(
+  *-musl*) :
+     ;; #(
+  *) :
+    ac_fn_check_decl "$LINENO" "PR_SET_VMA_ANON_NAME" "ac_cv_have_decl_PR_SET_VMA_ANON_NAME" "#include <linux/prctl.h>
+                 #include <sys/prctl.h>
 " "$ac_c_undeclared_builtin_options" "CFLAGS"
 if test "x$ac_cv_have_decl_PR_SET_VMA_ANON_NAME" = xyes
 then :
@@ -25575,8 +25577,8 @@ printf "%s\n" "#define _Py_HAVE_PR_SET_VMA_ANON_NAME 1" >>confdefs.h
 
 fi
 
-
-fi
+ ;;
+esac
 # check for openpty, login_tty, and forkpty
 
 
