@@ -93,6 +93,18 @@ _PyMem_RawFree(void *Py_UNUSED(ctx), void *ptr)
 static bool count_blocks(const mi_heap_t *, const mi_heap_area_t *,
                          void *, size_t, void *);
 
+// mimalloc v3 delays returning freed memory to the OS for much longer than v2
+// did (1000 ms purge delay and 4x arena multiplier, vs 10 ms and 10x), which
+// noticeably increases peak RSS. Restore the v2 timings, which have no
+// measurable speed cost. MIMALLOC_PURGE_DELAY and MIMALLOC_ARENA_PURGE_MULT
+// still take precedence.
+static void
+set_mimalloc_defaults(void)
+{
+    mi_option_set_default(mi_option_purge_delay, 10);
+    mi_option_set_default(mi_option_arena_purge_mult, 10);
+}
+
 #ifdef Py_GIL_DISABLED
 static _Py_thread_local struct _qsbr_shared *mimalloc_init_qsbr;
 
@@ -180,6 +192,8 @@ mi_page_qsbr_should_delay(mi_page_qsbr_t *page, mi_heap_qsbr_t *heap,
 int
 _PyMem_InitMimalloc(PyInterpreterState *interp)
 {
+    set_mimalloc_defaults();
+
     size_t base_offset = offsetof(PyObject, ob_type);
     if (_PyMem_DebugEnabled()) {
         base_offset += 2 * sizeof(size_t);
@@ -849,6 +863,8 @@ set_up_allocators_unlocked(PyMemAllocatorName allocator)
     case PYMEM_ALLOCATOR_MIMALLOC:
     case PYMEM_ALLOCATOR_MIMALLOC_DEBUG:
     {
+        set_mimalloc_defaults();
+
         PyMemAllocatorEx malloc_alloc = MIMALLOC_RAWALLOC;
         set_allocator_unlocked(PYMEM_DOMAIN_RAW, &malloc_alloc);
 
