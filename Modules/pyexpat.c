@@ -23,6 +23,16 @@ module pyexpat
 
 #define XML_COMBINED_VERSION (10000*XML_MAJOR_VERSION+100*XML_MINOR_VERSION+XML_MICRO_VERSION)
 
+#if XML_COMBINED_VERSION >= 20900
+#  define EXPAT_GetCurrentLineNumber XML_GetCurrentLineNumber64
+#  define EXPAT_GetCurrentColumnNumber XML_GetCurrentColumnNumber64
+#  define EXPAT_GetCurrentByteIndex XML_GetCurrentByteIndex64
+#else
+#  define EXPAT_GetCurrentLineNumber XML_GetCurrentLineNumber
+#  define EXPAT_GetCurrentColumnNumber XML_GetCurrentColumnNumber
+#  define EXPAT_GetCurrentByteIndex XML_GetCurrentByteIndex
+#endif
+
 static XML_Memory_Handling_Suite ExpatMemoryHandler = {
     PyObject_Malloc, PyObject_Realloc, PyObject_Free};
 
@@ -132,9 +142,10 @@ set_xml_error_attr_code(PyObject *err, enum XML_Error code)
  * false on an exception.
  */
 static int
-set_xml_error_attr_location(PyObject *err, const char *name, XML_Size value)
+set_xml_error_attr_location(PyObject *err, const char *name,
+                            unsigned long long value)
 {
-    PyObject *v = PyLong_FromSize_t((size_t)value);
+    PyObject *v = PyLong_FromUnsignedLongLong(value);
     int ok = v != NULL && PyObject_SetAttrString(err, name, v) != -1;
     Py_XDECREF(v);
     return ok;
@@ -143,15 +154,16 @@ set_xml_error_attr_location(PyObject *err, const char *name, XML_Size value)
 
 static PyObject *
 set_xml_error(pyexpat_state *state,
-              enum XML_Error code, XML_Size lineno, XML_Size column,
+              enum XML_Error code,
+              unsigned long long lineno, unsigned long long column,
               const char *errmsg)
 {
     PyObject *arg;
     if (errmsg == NULL) {
         arg = PyUnicode_FromFormat(
-            "%s: line %zu, column %zu",
+            "%s: line %llu, column %llu",
             XML_ErrorString(code),
-            (size_t)lineno, (size_t)column
+            lineno, column
         );
     }
     else {
@@ -178,8 +190,10 @@ set_xml_error(pyexpat_state *state,
     do {                                                            \
         XML_Parser parser = SELF->itself;                           \
         assert(parser != NULL);                                     \
-        XML_Size lineno = XML_GetCurrentLineNumber(parser);         \
-        XML_Size column = XML_GetCurrentColumnNumber(parser);       \
+        unsigned long long lineno                                   \
+            = EXPAT_GetCurrentLineNumber(parser);                   \
+        unsigned long long column                                   \
+            = EXPAT_GetCurrentColumnNumber(parser);                 \
         (void)set_xml_error(state, CODE, lineno, column, ERRMSG);   \
     } while (0)
 
@@ -1009,13 +1023,20 @@ pyexpat_xmlparser_GetInputContext_impl(xmlparseobject *self)
 /*[clinic end generated code: output=a88026d683fc22cc input=034df8712db68379]*/
 {
     if (self->in_callback) {
+#if XML_COMBINED_VERSION >= 20900
+        int64_t offset;
+        uint64_t size;
+        const char *buffer
+            = XML_GetInputContext64(self->itself, &offset, &size);
+#else
         int offset, size;
         const char *buffer
             = XML_GetInputContext(self->itself, &offset, &size);
+#endif
 
         if (buffer != NULL)
             return PyBytes_FromStringAndSize(buffer + offset,
-                                              size - offset);
+                                              (Py_ssize_t)(size - offset));
         else
             Py_RETURN_NONE;
     }
@@ -1598,19 +1619,19 @@ xmlparse_handler_setter(xmlparseobject *self, PyObject *v, struct HandlerInfo *h
     return 0;
 }
 
-#define INT_GETTER(name) \
+#define INT_GETTER(name, func) \
     static PyObject * \
     xmlparse_##name##_getter(xmlparseobject *self, void *closure) \
     { \
-        return PyLong_FromLong((long) XML_Get##name(self->itself)); \
+        return PyLong_FromLongLong((long long)func(self->itself)); \
     }
-INT_GETTER(ErrorCode)
-INT_GETTER(ErrorLineNumber)
-INT_GETTER(ErrorColumnNumber)
-INT_GETTER(ErrorByteIndex)
-INT_GETTER(CurrentLineNumber)
-INT_GETTER(CurrentColumnNumber)
-INT_GETTER(CurrentByteIndex)
+INT_GETTER(ErrorCode, XML_GetErrorCode)
+INT_GETTER(ErrorLineNumber, EXPAT_GetCurrentLineNumber)
+INT_GETTER(ErrorColumnNumber, EXPAT_GetCurrentColumnNumber)
+INT_GETTER(ErrorByteIndex, EXPAT_GetCurrentByteIndex)
+INT_GETTER(CurrentLineNumber, EXPAT_GetCurrentLineNumber)
+INT_GETTER(CurrentColumnNumber, EXPAT_GetCurrentColumnNumber)
+INT_GETTER(CurrentByteIndex, EXPAT_GetCurrentByteIndex)
 
 #undef INT_GETTER
 
@@ -2320,8 +2341,11 @@ pyexpat_exec(PyObject *mod)
     capi->MICRO_VERSION = XML_MICRO_VERSION;
     capi->ErrorString = XML_ErrorString;
     capi->GetErrorCode = XML_GetErrorCode;
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     capi->GetErrorColumnNumber = XML_GetErrorColumnNumber;
     capi->GetErrorLineNumber = XML_GetErrorLineNumber;
+_Py_COMP_DIAG_POP
     capi->Parse = XML_Parse;
     capi->ParserCreate_MM = XML_ParserCreate_MM;
     capi->ParserFree = XML_ParserFree;
