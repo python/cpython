@@ -613,19 +613,10 @@ class BaseSockTestsMixin:
 
 if sys.platform == 'win32':
 
-    class SelectEventLoopTests(BaseSockTestsMixin,
-                               test_utils.TestCase):
-
-        def create_event_loop(self):
-            return asyncio.SelectorEventLoop()
-
-
-    class ProactorEventLoopTests(BaseSockTestsMixin,
-                                 test_utils.TestCase):
-
-        def create_event_loop(self):
-            return asyncio.ProactorEventLoop()
-
+    class _DatagramSendToNonListeningAddressMixin:
+        # Shared by SelectEventLoopTests and ProactorEventLoopTests so that
+        # sock_recvfrom()/sock_recvfrom_into() behave identically on both
+        # event loop implementations.
 
         async def _basetest_datagram_send_to_non_listening_address(self,
                                                                    recvfrom):
@@ -634,8 +625,9 @@ if sys.platform == 'win32':
             #   https://github.com/python/cpython/issues/88906
             #   https://bugs.python.org/issue47071
             #   https://bugs.python.org/issue44743
-            # The Proactor event loop would fail to receive datagram messages
-            # after sending a message to an address that wasn't listening.
+            # Sending a datagram to an address that isn't listening can
+            # surface as a ConnectionResetError on a later receive; the
+            # socket must still be usable afterwards.
 
             def create_socket():
                 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -670,7 +662,8 @@ if sys.platform == 'win32':
 
             # this should send to an address that isn't listening
             await self.loop.sock_sendto(socket_1, b'c', addr_3)
-            self.assertEqual(await socket_1_recv_task, b'')
+            with self.assertRaises(ConnectionResetError):
+                await socket_1_recv_task
             socket_1_recv_task = self.loop.create_task(recvfrom(socket_1))
             await asyncio.sleep(0)
 
@@ -705,6 +698,22 @@ if sys.platform == 'win32':
             self.loop.run_until_complete(
                 self._basetest_datagram_send_to_non_listening_address(
                     recvfrom_into))
+
+
+    class SelectEventLoopTests(_DatagramSendToNonListeningAddressMixin,
+                               BaseSockTestsMixin,
+                               test_utils.TestCase):
+
+        def create_event_loop(self):
+            return asyncio.SelectorEventLoop()
+
+
+    class ProactorEventLoopTests(_DatagramSendToNonListeningAddressMixin,
+                                 BaseSockTestsMixin,
+                                 test_utils.TestCase):
+
+        def create_event_loop(self):
+            return asyncio.ProactorEventLoop()
 
 else:
     import selectors
