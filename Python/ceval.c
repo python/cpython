@@ -123,6 +123,29 @@ int pthread_attr_destroy(pthread_attr_t *a)
 
 #endif
 
+// Any Linux that is neither glibc nor Android (in practice, musl) cannot
+// report the main thread's stack through pthread_getattr_np().
+#if defined(__linux__) && !defined(__GLIBC__) && !defined(__ANDROID__)
+#  define _Py_STACK_QUERY_SKIPS_MAIN_THREAD 1
+#else
+#  define _Py_STACK_QUERY_SKIPS_MAIN_THREAD 0
+#endif
+
+#if _Py_STACK_QUERY_SKIPS_MAIN_THREAD
+static int
+stack_on_main_thread(void)
+{
+#  ifdef PY_HAVE_THREAD_NATIVE_ID
+    return PyThread_get_thread_native_id() == (unsigned long)getpid();
+#  else
+    // Without a thread id to compare, assume the worst and keep estimating.
+    return 1;
+#  endif
+}
+#else
+#  define stack_on_main_thread() 0
+#endif
+
 static void
 hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
 {
@@ -142,27 +165,29 @@ hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
     *top = (uintptr_t)stack_addr;
     *base = ((uintptr_t)stack_addr) - stack_size;
 #else
-    // musl supports HAVE_PTHREAD_GETATTR_NP, but the resulting stack size
-    // (on alpine at least) is much smaller than expected and imposes undue
-    // limits compared to the old stack size estimation. musl doesn't give
-    // us a way to detect it, so we have to assume any non-glibc,
-    // non-Android Linux is musl and mustn't rely on pthread_getattr_np.
 #  if defined(HAVE_PTHREAD_GETATTR_NP) && !defined(_AIX) && \
-        !defined(__NetBSD__) && \
-        (defined(__GLIBC__) || defined(__ANDROID__) || !defined(__linux__))
-    size_t stack_size, guard_size;
-    void *stack_addr;
-    pthread_attr_t attr;
-    int err = pthread_getattr_np(pthread_self(), &attr);
-    if (err == 0) {
-        err = pthread_attr_getguardsize(&attr, &guard_size);
-        err |= pthread_attr_getstack(&attr, &stack_addr, &stack_size);
-        err |= pthread_attr_destroy(&attr);
-    }
-    if (err == 0) {
-        *base = ((uintptr_t)stack_addr) + guard_size;
-        *top = (uintptr_t)stack_addr + stack_size;
-        return;
+        !defined(__NetBSD__)
+    // On musl, pthread_getattr_np() reports the real stack of a thread that
+    // the library itself created, but for the process main thread it reports
+    // musl's default thread stack size rather than the real, RLIMIT_STACK
+    // sized stack (see gh-131338).  Keep estimating the main thread's stack
+    // there, and query every other thread, whose size the estimate cannot
+    // know (see gh-159876).
+    if (!_Py_STACK_QUERY_SKIPS_MAIN_THREAD || !stack_on_main_thread()) {
+        size_t stack_size, guard_size;
+        void *stack_addr;
+        pthread_attr_t attr;
+        int err = pthread_getattr_np(pthread_self(), &attr);
+        if (err == 0) {
+            err = pthread_attr_getguardsize(&attr, &guard_size);
+            err |= pthread_attr_getstack(&attr, &stack_addr, &stack_size);
+            err |= pthread_attr_destroy(&attr);
+        }
+        if (err == 0) {
+            *base = ((uintptr_t)stack_addr) + guard_size;
+            *top = (uintptr_t)stack_addr + stack_size;
+            return;
+        }
     }
 #  endif
     // Add some space for caller function then round to minimum page size

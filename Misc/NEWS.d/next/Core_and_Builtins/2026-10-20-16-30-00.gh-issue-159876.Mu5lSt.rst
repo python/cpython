@@ -1,0 +1,5 @@
+Query the real C stack size of non-main threads on musl-based Linux again.
+The interpreter assumed a fixed ``Py_C_STACK_SIZE`` there, so a thread
+created with a smaller stack overflowed it instead of raising
+:exc:`RecursionError`.  The main thread, whose size musl does not report
+correctly, keeps using the estimate.
