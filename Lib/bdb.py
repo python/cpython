@@ -601,6 +601,13 @@ class Bdb:
 
         If frame is not specified, debugging starts from caller's frame.
         """
+
+        if self.enterframe is not None:
+            # If self.enterframe is not None, it means we are already in
+            # dispatched functions. Tracing is disabled when calling a
+            # trace function, so we just skip this set_trace() call.
+            return
+
         self.stop_trace()
         if frame is None:
             frame = sys._getframe().f_back

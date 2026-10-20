@@ -4979,6 +4979,18 @@ class PdbTestInline(unittest.TestCase):
         stdout, _ = self._run_script(script, commands)
         self.assertIn("42", stdout)
 
+    def test_nested_set_trace(self):
+        # Calling breakpoint() in pdb prompt should just be ignored.
+        script = "breakpoint()"
+        commands = """
+            breakpoint()
+            p 40 + 2
+            c
+        """
+        stdout, stderr = self._run_script(script, commands)
+        self.assertIn('42', stdout)
+        self.assertEqual(stderr, '')
+
     def test_readline_not_imported(self):
         """GH-138860
         Directly or indirectly importing readline might deadlock a subprocess
