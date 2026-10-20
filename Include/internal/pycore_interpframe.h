@@ -315,6 +315,28 @@ _PyThreadState_GetFrame(PyThreadState *tstate)
     return _PyFrame_GetFirstComplete(tstate->current_frame);
 }
 
+/* Convert between a frame with the `external` bit set and its header
+ * which lives immediately before the frame in memory. */
+static inline _PyInterpreterFrameExternal *
+_PyInterpreterFrame_GetExternal(_PyInterpreterFrame *frame)
+{
+    assert(frame->external);
+    return (_PyInterpreterFrameExternal *)((char *)frame -
+        sizeof(_PyInterpreterFrameExternal));
+}
+
+static inline _PyInterpreterFrame *
+_PyInterpreterFrameExternal_GetFrame(_PyInterpreterFrameExternal *external)
+{
+    return (_PyInterpreterFrame *)(external + 1);
+}
+
+static inline PyObject *
+_PyInterpreterFrameExternal_GetIntrospector(_PyInterpreterFrameExternal *external)
+{
+    return PyStackRef_AsPyObjectBorrow(external->introspector);
+}
+
 // Update last_profiled_frame for remote profiler frame caching.
 // Only update if we're removing the exact frame that was last profiled.
 // This avoids corrupting the cache when transient frames (called and returned

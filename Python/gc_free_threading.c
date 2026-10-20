@@ -443,6 +443,42 @@ gc_visit_stackref(_PyStackRef stackref)
     }
 }
 
+static int
+gc_visit_external_frame_object(PyObject *obj, void *arg)
+{
+    (void)arg;
+    if (obj != NULL && _PyObject_GC_IS_TRACKED(obj) && !gc_is_frozen(obj)) {
+        gc_add_refs(obj, 1);
+    }
+    return 1;
+}
+
+static void
+gc_visit_external_frame(PyInterpreterState *interp, _PyInterpreterFrame *frame,
+                        struct collection_state *state)
+{
+    _PyInterpreterFrameExternal *ext = _PyInterpreterFrame_GetExternal(frame);
+    PyObject *introspector =
+        _PyInterpreterFrameExternal_GetIntrospector(ext);
+    if (introspector == NULL ||
+        !PyUnstable_ExternalFrameIntrospector_Check(introspector))
+    {
+        state->skip_deferred_objects = 1;
+        return;
+    }
+    PyUnstable_ExternalFrameGCVisitor visitor =
+        PyUnstable_ExternalFrameIntrospector_GetGCVisitor(introspector);
+    if (visitor == NULL) {
+        PyErr_Clear();
+        state->skip_deferred_objects = 1;
+        return;
+    }
+    int res = visitor(interp, frame, gc_visit_external_frame_object, state);
+    if (res != 0) {
+        state->skip_deferred_objects = 1;
+    }
+}
+
 // Add 1 to the gc_refs for every deferred reference on each thread's stack.
 static void
 gc_visit_thread_stacks(PyInterpreterState *interp, struct collection_state *state)
@@ -457,6 +493,10 @@ gc_visit_thread_stacks(PyInterpreterState *interp, struct collection_state *stat
         for (_PyInterpreterFrame *f = p->current_frame; f != NULL; f = f->previous) {
             if (f->owner >= FRAME_OWNED_BY_INTERPRETER) {
                 continue;
+            }
+
+            if (f->external) {
+                gc_visit_external_frame(interp, f, state);
             }
 
             _PyStackRef *top = f->stackpointer;

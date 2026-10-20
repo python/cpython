@@ -156,3 +156,58 @@ PyUnstable_InterpreterFrame_GetLine(_PyInterpreterFrame *frame)
     int addr = _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
     return PyCode_Addr2Line(_PyFrame_GetCode(frame), addr);
 }
+
+/* External frame introspection (PyUnstable API) */
+
+struct _PyExternalFrameIntrospector {
+    PyObject_HEAD
+    PyUnstable_ExternalFrameGCVisitor gc_visitor;
+};
+
+static void
+external_frame_introspector_dealloc(PyObject *op)
+{
+    PyTypeObject *tp = Py_TYPE(op);
+    tp->tp_free(op);
+}
+
+PyTypeObject PyUnstable_ExternalFrameIntrospector_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "external_frame_introspector",
+    .tp_basicsize = sizeof(struct _PyExternalFrameIntrospector),
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .tp_doc = "Introspector for externally-pushed interpreter frames",
+    .tp_dealloc = external_frame_introspector_dealloc,
+    .tp_free = PyObject_Free,
+};
+
+PyObject *
+PyUnstable_ExternalFrameIntrospector_New(PyUnstable_ExternalFrameGCVisitor gc_visitor)
+{
+    if (gc_visitor == NULL) {
+        PyErr_SetString(PyExc_ValueError, "gc_visitor must not be NULL");
+        return NULL;
+    }
+    struct _PyExternalFrameIntrospector *op = PyObject_New(
+        struct _PyExternalFrameIntrospector,
+        &PyUnstable_ExternalFrameIntrospector_Type);
+    if (op == NULL) {
+        return PyErr_NoMemory();
+    }
+    op->gc_visitor = gc_visitor;
+    return (PyObject *)op;
+}
+
+PyUnstable_ExternalFrameGCVisitor
+PyUnstable_ExternalFrameIntrospector_GetGCVisitor(PyObject *introspector)
+{
+    if (introspector == NULL ||
+        !PyUnstable_ExternalFrameIntrospector_Check(introspector))
+    {
+        PyErr_Format(PyExc_TypeError,
+                     "expected external frame introspector, got %T",
+                     introspector);
+        return NULL;
+    }
+    return ((struct _PyExternalFrameIntrospector *)introspector)->gc_visitor;
+}

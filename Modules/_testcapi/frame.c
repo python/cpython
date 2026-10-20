@@ -114,6 +114,76 @@ frame_getvarstring(PyObject *self, PyObject *args)
 }
 
 
+static int
+dummy_external_gc_visitor(PyInterpreterState *interp,
+                          struct _PyInterpreterFrame *frame,
+                          gcvisitobjects_t callback, void *arg)
+{
+    (void)interp;
+    (void)frame;
+    (void)callback;
+    (void)arg;
+    return 0;
+}
+
+static PyObject *
+external_frame_introspector_new(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyUnstable_ExternalFrameIntrospector_New(dummy_external_gc_visitor);
+}
+
+static PyObject *
+external_frame_introspector_new_null(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyUnstable_ExternalFrameIntrospector_New(NULL);
+}
+
+static PyObject *
+external_frame_introspector_check(PyObject *self, PyObject *obj)
+{
+    return PyBool_FromLong(PyUnstable_ExternalFrameIntrospector_Check(obj));
+}
+
+static PyObject *
+external_frame_introspector_roundtrip(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *intro = PyUnstable_ExternalFrameIntrospector_New(
+        dummy_external_gc_visitor);
+    if (intro == NULL) {
+        return NULL;
+    }
+    if (!PyUnstable_ExternalFrameIntrospector_Check(intro)) {
+        Py_DECREF(intro);
+        PyErr_SetString(PyExc_AssertionError, "Check() failed");
+        return NULL;
+    }
+    PyUnstable_ExternalFrameGCVisitor visitor =
+        PyUnstable_ExternalFrameIntrospector_GetGCVisitor(intro);
+    if (visitor == NULL) {
+        Py_DECREF(intro);
+        return NULL;
+    }
+    if (visitor != dummy_external_gc_visitor) {
+        Py_DECREF(intro);
+        PyErr_SetString(PyExc_AssertionError, "visitor mismatch");
+        return NULL;
+    }
+    Py_DECREF(intro);
+    Py_RETURN_TRUE;
+}
+
+static PyObject *
+external_frame_introspector_get_visitor(PyObject *self, PyObject *obj)
+{
+    PyUnstable_ExternalFrameGCVisitor visitor =
+        PyUnstable_ExternalFrameIntrospector_GetGCVisitor(obj);
+    if (visitor == NULL) {
+        return NULL;
+    }
+    // Return the visitor address as an int for comparison in Python.
+    return PyLong_FromVoidPtr((void *)visitor);
+}
+
 static PyMethodDef test_methods[] = {
     {"frame_getlocals", frame_getlocals, METH_O, NULL},
     {"frame_getglobals", frame_getglobals, METH_O, NULL},
@@ -123,6 +193,16 @@ static PyMethodDef test_methods[] = {
     {"frame_new", frame_new, METH_VARARGS, NULL},
     {"frame_getvar", frame_getvar, METH_VARARGS, NULL},
     {"frame_getvarstring", frame_getvarstring, METH_VARARGS, NULL},
+    {"external_frame_introspector_new", external_frame_introspector_new,
+     METH_NOARGS, NULL},
+    {"external_frame_introspector_new_null", external_frame_introspector_new_null,
+     METH_NOARGS, NULL},
+    {"external_frame_introspector_check", external_frame_introspector_check,
+     METH_O, NULL},
+    {"external_frame_introspector_roundtrip",
+     external_frame_introspector_roundtrip, METH_NOARGS, NULL},
+    {"external_frame_introspector_get_visitor",
+     external_frame_introspector_get_visitor, METH_O, NULL},
     {NULL},
 };
 

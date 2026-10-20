@@ -1564,6 +1564,100 @@ iframe_getlasti(PyObject *self, PyObject *frame)
     return PyLong_FromLong(PyUnstable_InterpreterFrame_GetLasti(f));
 }
 
+static PyObject *external_test_visited_obj = NULL;
+static int external_test_visitor_calls = 0;
+static int external_test_callback_calls = 0;
+static int external_test_visitor_incomplete = 0;
+
+static int
+external_test_gc_visitor(PyInterpreterState *interp,
+                         struct _PyInterpreterFrame *frame,
+                         gcvisitobjects_t callback, void *arg)
+{
+    (void)interp;
+    (void)frame;
+    external_test_visitor_calls++;
+    if (external_test_visited_obj != NULL) {
+        external_test_callback_calls++;
+        callback(external_test_visited_obj, arg);
+    }
+    return external_test_visitor_incomplete;
+}
+
+static PyObject *
+external_frame_gc_test(PyObject *self, PyObject *args)
+{
+#ifdef Py_GIL_DISABLED
+    PyObject *obj;
+    int incomplete;
+    if (!PyArg_ParseTuple(args, "Oi", &obj, &incomplete)) {
+        return NULL;
+    }
+    PyObject *intro = PyUnstable_ExternalFrameIntrospector_New(
+        external_test_gc_visitor);
+    if (intro == NULL) {
+        return NULL;
+    }
+    size_t ext_size = sizeof(_PyInterpreterFrameExternal);
+    size_t total = ext_size + sizeof(_PyInterpreterFrame);
+    char *alloc = (char *)PyMem_Malloc(total);
+    if (alloc == NULL) {
+        Py_DECREF(intro);
+        return PyErr_NoMemory();
+    }
+    memset(alloc, 0, total);
+    _PyInterpreterFrameExternal *ext =
+        (_PyInterpreterFrameExternal *)alloc;
+    _PyInterpreterFrame *frame =
+        (_PyInterpreterFrame *)(alloc + ext_size);
+
+    PyThreadState *tstate = PyThreadState_Get();
+    _PyInterpreterFrame *old = tstate->current_frame;
+    frame->previous = old;
+    frame->owner = FRAME_OWNED_BY_THREAD;
+    frame->stackpointer = frame->localsplus;
+    frame->f_executable = PyStackRef_NULL;
+    frame->f_funcobj = PyStackRef_NULL;
+    ext->introspector = PyStackRef_FromPyObjectNew(intro);
+    frame->external = 1;
+
+    if (_PyInterpreterFrame_GetExternal(frame) != ext ||
+        _PyInterpreterFrameExternal_GetFrame(ext) != frame ||
+        _PyInterpreterFrameExternal_GetIntrospector(ext) != intro)
+    {
+        PyStackRef_CLEAR(ext->introspector);
+        PyMem_Free(alloc);
+        Py_DECREF(intro);
+        PyErr_SetString(PyExc_AssertionError, "external header mismatch");
+        return NULL;
+    }
+
+    external_test_visited_obj = obj;
+    external_test_visitor_calls = 0;
+    external_test_callback_calls = 0;
+    external_test_visitor_incomplete = incomplete;
+
+    tstate->current_frame = frame;
+    PyGC_Collect();
+    tstate->current_frame = old;
+
+    PyStackRef_CLEAR(ext->introspector);
+    frame->external = 0;
+    PyMem_Free(alloc);
+    Py_DECREF(intro);
+    external_test_visited_obj = NULL;
+
+    if (external_test_visitor_calls < 1) {
+        PyErr_SetString(PyExc_AssertionError, "visitor was not called");
+        return NULL;
+    }
+    return Py_BuildValue("(ii)", external_test_visitor_calls,
+                         external_test_callback_calls);
+#else
+    Py_RETURN_NONE;
+#endif
+}
+
 static PyObject *
 code_returns_only_none(PyObject *self, PyObject *arg)
 {
@@ -3378,6 +3472,7 @@ static PyMethodDef module_functions[] = {
     {"iframe_getcode", iframe_getcode, METH_O, NULL},
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
+    {"external_frame_gc_test", external_frame_gc_test, METH_VARARGS, NULL},
     {"code_returns_only_none", code_returns_only_none, METH_O, NULL},
     {"get_co_framesize", get_co_framesize, METH_O, NULL},
     {"get_co_localskinds", get_co_localskinds, METH_O, NULL},
