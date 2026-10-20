@@ -20,11 +20,12 @@ There are no plans to remove :term:`soft deprecated` APIs.
   (Contributed by Gregory P. Smith in :gh:`86519` and
   Hugo van Kemenade in :gh:`148100`.)
 
-* The following typing-related classes are :term:`soft deprecated`:
+* The following typing-related items are :term:`soft deprecated`:
 
   * :class:`typing.Optional` in favor of the dedicated union syntax
     (``X | None``)
   * :class:`types.UnionType` in favor of :class:`typing.Union` (but see below)
+  * :class:`typing.NoReturn` in favor of :class:`typing.Never`
 
   Creating :class:`typing.Union` instances using the constructor is also
   deprecated. Use the dedicated union syntax (``X | Y``) instead.
@@ -34,7 +35,6 @@ There are no plans to remove :term:`soft deprecated` APIs.
   :ref:`generic classes <generic-classes>`, and
   :ref:`generic type aliases <generic-type-aliases>` instead.
 
-* The following typing-related aliases are :term:`soft deprecated`:
+* The following typing-related alias is :term:`soft deprecated`:
 
-  * :class:`typing.NoReturn` in favor of :class:`typing.Never`
   * :class:`typing.ForwardRef` in favor of :class:`annotationlib.ForwardRef`
