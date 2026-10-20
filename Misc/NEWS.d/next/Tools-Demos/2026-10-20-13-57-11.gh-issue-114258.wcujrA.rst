@@ -1,0 +1,3 @@
+Argument Clinic now supports the ``__next__`` type slot (``tp_iternext``).
+The generated slot function forwards to the implementation function and
+acquires the critical section when ``@critical_section`` is used.

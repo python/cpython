@@ -6,7 +6,7 @@ from libclinic import fail, warn, unspecified, Sentinels
 from libclinic.function import (
     Function, Parameter, ParamTuple,
     count_required, group_to_variable_name, permute_optional_groups,
-    GETTER, SETTER, SETTER_AND_DELETER, METHOD_INIT,
+    GETTER, SETTER, SETTER_AND_DELETER, METHOD_INIT, SLOT,
     ACCESSORS, SETTERS)
 from libclinic.converter import CConverter
 from libclinic.converters import (
@@ -141,6 +141,10 @@ PARSER_PROTOTYPE_GETTER: Final[str] = libclinic.normalize_snippet("""
 PARSER_PROTOTYPE_SETTER: Final[str] = libclinic.normalize_snippet("""
     static int
     {c_basename}({self_type}{self_name}, PyObject *arg, void *Py_UNUSED(context))
+""")
+PARSER_PROTOTYPE_SLOT: Final[str] = libclinic.normalize_snippet("""
+    static {return_type}
+    {c_basename}({self_type}{self_name})
 """)
 METH_O_PROTOTYPE: Final[str] = libclinic.normalize_snippet("""
     static PyObject *
@@ -407,6 +411,11 @@ class ParseArgsCodeGen:
 
         if self.is_new_or_init() and not self.func.docstring:
             pass
+        elif self.func.kind is SLOT:
+            # A slot function is not stored in a PyMethodDef and has no
+            # docstring (the DSL parser rejects one).
+            assert not self.func.docstring
+            self.methoddef_define = ''
         elif self.func.kind is GETTER:
             # Only an accessor compiled conditionally announces itself.
             self.methoddef_define = (GETTERDEF_PROTOTYPE_DEFINE
@@ -481,6 +490,15 @@ class ParseArgsCodeGen:
             libclinic.normalize_snippet(parsearg, indent=8),
             libclinic.normalize_snippet("}}", indent=4),
         ])
+
+    def parse_slot(self) -> None:
+        """Generate the slot function.
+
+        It does not parse anything: it forwards its arguments to the impl
+        and, with @critical_section, holds the lock while doing so.
+        """
+        self.parser_prototype = PARSER_PROTOTYPE_SLOT
+        self.finish_parser_body([])
 
     def parse_accessor(self) -> None:
         """Generate the code of a getter or a setter."""
@@ -1744,7 +1762,9 @@ class ParseArgsCodeGen:
         # previous call to parser_body. this is used for an awful hack.
         self.parser_body_fields: tuple[str, ...] = ()
 
-        if self.func.kind in ACCESSORS:
+        if self.func.kind is SLOT:
+            self.parse_slot()
+        elif self.func.kind in ACCESSORS:
             self.parse_accessor()
         elif not self.parameters and not self.varpos and not self.var_keyword:
             self.parse_no_args()
