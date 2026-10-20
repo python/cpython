@@ -1,0 +1,2 @@
+Fix use-after-free when ``!tp_finalize`` changes the base class. Patch by
+Sergey Miryanov.
