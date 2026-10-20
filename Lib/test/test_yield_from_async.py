@@ -783,7 +783,7 @@ class TestPEP828Operation(unittest.TestCase):
             "f sending spam to g",
             "g received 'spam'",
             "g returning None",
-            "f caught StopAsyncIteration(None)",
+            "f caught StopAsyncIteration()",
             "g starting",
             "f sending spam to g",
             "g received 'spam'",
@@ -1695,6 +1695,18 @@ class TestPEP828Extras(unittest.TestCase):
     ``TestPEP828Operation`` or ``TestInterestingEdgeCases`` and are
     parity-checked against ``test_yield_from``.
     """
+
+    @_async_test
+    async def test_delegation_ignores_shadowed_special_methods(self):
+        async def outer(iterator):
+            yield from iterator
+
+        for name in ("__aiter__", "__anext__"):
+            with self.subTest(name=name):
+                iterator = AsAsyncIterator([1, 2])
+                setattr(iterator, name, None)
+                self.assertEqual([item async for item in outer(iterator)],
+                                 [1, 2])
 
     @_async_test
     async def test_custom_iterator_deleted_return_value(self):

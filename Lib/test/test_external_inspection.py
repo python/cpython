@@ -3697,6 +3697,58 @@ class TestFrameCaching(RemoteInspectionTestBase):
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",
     )
+    def test_generator_throw_from_different_callers(self):
+        script_body = """\
+            class ReadByte(Exception):
+                def __index__(self):
+                    return 1
+
+            class Delegate:
+                def __iter__(self):
+                    return self
+                def __next__(self):
+                    return None
+                # Block in C with the generator as the top Python frame.
+                throw = sock.recv
+
+            def delegating(iterator):
+                yield from iterator
+
+            gen = delegating(delegating(Delegate()))
+            next(gen)
+
+            def first():
+                sock.sendall(b"first")
+                gen.throw(ReadByte())
+
+            def second():
+                sock.sendall(b"second")
+                gen.throw(ReadByte())
+
+            first()
+            second()
+            """
+
+        with self._target_process(script_body) as (p, sock, make_unwinder):
+            unwinder = make_unwinder(cache_frames=True)
+            frames1 = self._sample_frames(
+                sock, unwinder, b"first", b"x", {"delegating", "first"}
+            )
+            frames2 = self._sample_frames(
+                sock, unwinder, b"second", b"x", {"delegating"}
+            )
+
+        self.assertIsNotNone(frames1)
+        self.assertIsNotNone(frames2)
+        names = [frame.funcname for frame in frames2]
+        self.assertIn("second", names)
+        self.assertNotIn("first", names)
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
     def test_cache_hit_same_stack(self):
         """Test that consecutive samples reuse cached parent frame objects.
 

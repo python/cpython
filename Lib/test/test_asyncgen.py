@@ -611,6 +611,25 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         self.loop = None
         asyncio.set_event_loop(None)
 
+    def test_async_gen_asend_exhaustion_args(self):
+        async def gen(bare_return):
+            yield 1
+            if bare_return:
+                return
+
+        async def run():
+            for bare_return in (False, True):
+                with self.subTest(bare_return=bare_return):
+                    g = gen(bare_return)
+                    self.assertEqual(await anext(g), 1)
+                    for _ in range(2):
+                        with self.assertRaises(StopAsyncIteration) as caught:
+                            await g.asend(None)
+                        self.assertEqual(caught.exception.args, ())
+                        self.assertEqual(str(caught.exception), '')
+
+        self.loop.run_until_complete(run())
+
     def check_async_iterator_anext(self, ait_class):
         with self.subTest(anext="pure-Python"):
             self._check_async_iterator_anext(ait_class, py_anext)

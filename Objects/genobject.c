@@ -388,7 +388,12 @@ static PyObject *
 gen_set_stop_iteration(PyGenObject *gen, PyObject *result)
 {
     if (PyAsyncGen_CheckExact(gen)) {
-        _PyAsyncGen_SetStopIterationValue(result);
+        if (result == Py_None) {
+            PyErr_SetNone(PyExc_StopAsyncIteration);
+        }
+        else {
+            _PyAsyncGen_SetStopIterationValue(result);
+        }
     }
     else if (result == Py_None) {
         PyErr_SetNone(PyExc_StopIteration);
@@ -684,6 +689,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
                'yield from' or awaiting on with 'await'. */
             ret = _gen_throw((PyGenObject *)yf, close_on_genexit,
                              typ, val, tb);
+            _PyThreadState_UpdateLastProfiledFrame(tstate, frame, prev);
             tstate->current_frame = prev;
             frame->previous = NULL;
         }
@@ -704,6 +710,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             frame->previous = prev;
             tstate->current_frame = frame;
             ret = PyObject_CallFunctionObjArgs(meth, typ, val, tb, NULL);
+            _PyThreadState_UpdateLastProfiledFrame(tstate, frame, prev);
             tstate->current_frame = prev;
             frame->previous = NULL;
             Py_DECREF(meth);

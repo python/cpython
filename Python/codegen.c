@@ -527,7 +527,7 @@ codegen_yield_from_async(compiler *c, location loc, expr_ty e)
     NEW_JUMP_TARGET_LABEL(c, send);
     NEW_JUMP_TARGET_LABEL(c, exit);
     NEW_JUMP_TARGET_LABEL(c, use_anext);
-    NEW_JUMP_TARGET_LABEL(c, got_coroutine);
+    NEW_JUMP_TARGET_LABEL(c, got_awaitable);
     NEW_JUMP_TARGET_LABEL(c, yield);
     NEW_JUMP_TARGET_LABEL(c, throw);
     NEW_JUMP_TARGET_LABEL(c, athrow);
@@ -538,9 +538,7 @@ codegen_yield_from_async(compiler *c, location loc, expr_ty e)
     VISIT(c, expr, e->v.YieldFrom.value);
     // Stack: [value]
 
-    ADDOP_NAME(c, loc, LOAD_ATTR, &_Py_ID(__aiter__), names);
-    ADDOP(c, loc, PUSH_NULL);
-    ADDOP_I(c, loc, CALL, 0);
+    ADDOP(c, loc, GET_AITER);
     // Stack: [aiterator]
 
     ADDOP_LOAD_CONST(c, loc, Py_None);
@@ -558,19 +556,19 @@ codegen_yield_from_async(compiler *c, location loc, expr_ty e)
     ADDOP_I(c, loc, COPY, 3);
     // Stack: [aiterator, asend_value, method, NULL, asend_value]
     ADDOP_I(c, loc, CALL, 1);
-    ADDOP_JUMP(c, loc, JUMP_NO_INTERRUPT, got_coroutine);
+    ADDOP_I(c, loc, GET_AWAITABLE, 0);
+    ADDOP_JUMP(c, loc, JUMP_NO_INTERRUPT, got_awaitable);
 
     USE_LABEL(c, use_anext);
     // Stack: [aiterator, asend_value]
     ADDOP_I(c, loc, COPY, 2);
-    ADDOP_NAME(c, loc, LOAD_ATTR, &_Py_ID(__anext__), names);
-    ADDOP(c, loc, PUSH_NULL);
-    // Stack: [aiterator, asend_value, method, NULL]
-    ADDOP_I(c, loc, CALL, 0);
-    USE_LABEL(c, got_coroutine);
-    // Stack: [aiterator, asend_value, awaitable]
+    ADDOP(c, loc, GET_ANEXT);
+    // Stack: [aiterator, asend_value, aiterator, await_iter]
+    ADDOP_I(c, loc, SWAP, 2);
+    ADDOP(c, loc, POP_TOP);
 
-    ADDOP_I(c, loc, GET_AWAITABLE, 0);
+    USE_LABEL(c, got_awaitable);
+    // Stack: [aiterator, asend_value, await_iter]
     ADDOP(c, loc, PUSH_NULL);
     ADDOP_LOAD_CONST(c, loc, Py_None);
     // Stack: [aiterator, asend_value, await_iter, NULL, None]
