@@ -5296,9 +5296,27 @@ class PdbTestReadline(unittest.TestCase):
 
 @unittest.skipIf(not pdb._pyrepl_available(), "pyrepl is not available")
 class PdbTestReadlinePyREPL(PdbTestReadline):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        directory = cls.enterClassContext(os_helper.temp_dir())
+        cls.history_file = os.path.join(directory, 'history')
+
     def _run_pty(self, script, input):
         # Override the env to make sure pyrepl is used in this test class
-        return super()._run_pty(script, input, env={**os.environ})
+        env = os.environ | {'PYTHON_HISTORY_PDB': self.history_file}
+        return super()._run_pty(script, input, env=env)
+
+    def test_history(self):
+        script = "import pdb; pdb.Pdb().set_trace()"
+        os_helper.unlink(self.history_file)
+        self._run_pty(script, b'p 6 * 7\ncontinue\n')
+        with open(self.history_file, encoding='utf-8') as file:
+            self.assertEqual(file.read().splitlines(), ['p 6 * 7', 'continue'])
+
+        # Recall 'continue', then 'p 6 * 7' in a new debugger process.
+        output = self._run_pty(script, b'\x1bOA\x1bOA\ncontinue\n')
+        self.assertIn('42', output)
 
     def test_pyrepl_used(self):
         script = textwrap.dedent("""

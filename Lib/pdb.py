@@ -86,6 +86,7 @@ import socket
 import typing
 import inspect
 import weakref
+import warnings
 import builtins
 import tempfile
 import textwrap
@@ -404,6 +405,22 @@ class PdbPyReplInput:
             )
         )
         self.readline_wrapper.get_reader().gen_colors = self.gen_colors
+        self.history_file = self._get_history_file()
+        self.readline_wrapper.set_history_length(0)
+        try:
+            self.readline_wrapper.read_history_file(self.history_file)
+        except OSError:
+            pass
+
+    @staticmethod
+    def _get_history_file():
+        """Return the pdb history path, defaulting to Python's history plus .pdb."""
+        if not sys.flags.ignore_environment:
+            history = os.environ.get("PYTHON_HISTORY_PDB")
+            if history:
+                return history
+        from site import gethistoryfile
+        return gethistoryfile() + '.pdb'
 
     def readline(self):
 
@@ -430,6 +447,10 @@ class PdbPyReplInput:
                     '... ' + ' ' * (len(self.prompt) - 4)
                 ) + '\n'
             )
+            try:
+                self.readline_wrapper.append_history_file(self.history_file)
+            except (FileNotFoundError, PermissionError, OSError) as e:
+                warnings.warn(f"failed to open the history file for writing: {e}")
             return multiline
         except EOFError:
             return 'EOF'
