@@ -632,7 +632,7 @@ class _AsCompletedIterator:
         # an exception.
         try:
             f = await self._done.get()
-        except exceptions.CancelledError:
+        except:
             self._todo_left += 1
             raise
         if f is None:
