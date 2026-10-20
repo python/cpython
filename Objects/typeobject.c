@@ -597,7 +597,7 @@ set_tp_bases(PyTypeObject *self, PyObject *bases)
 // and 0 otherwise.
 static int
 try_set_tp_bases(PyTypeObject *self, PyObject *expected,
-                PyObject *bases, PyTypeObject *base, uint64_t *gen)
+                PyObject *bases, PyTypeObject *base, uint64_t gen, bool check_gen)
 {
     ASSERT_TYPE_LOCK_HELD();
     assert(PyTuple_Check(bases));
@@ -605,7 +605,7 @@ try_set_tp_bases(PyTypeObject *self, PyObject *expected,
     int stored = 0;
     types_stop_world();
     if ((expected == NULL || self->tp_bases == expected)
-        && (gen == NULL || !types_publish_is_stale(*gen)))
+        && (!check_gen || !types_publish_is_stale(gen)))
     {
         self->tp_bases = bases;
         self->tp_base = base;
@@ -668,7 +668,7 @@ set_tp_mro(PyTypeObject *self, PyObject *mro)
 // cases the caller still owns 'mro'.
 static int
 try_set_tp_mro(PyTypeObject *self, PyObject *expected, PyObject *mro,
-              uint64_t *gen)
+              uint64_t gen, bool check_gen)
 {
     ASSERT_TYPE_LOCK_HELD();
     assert(!(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
@@ -681,7 +681,7 @@ try_set_tp_mro(PyTypeObject *self, PyObject *expected, PyObject *mro,
     if (self->tp_mro != expected) {
         res = 0;
     }
-    else if (gen != NULL && types_publish_is_stale(*gen)) {
+    else if (check_gen && types_publish_is_stale(gen)) {
         res = -1;
     }
     else {
@@ -1811,7 +1811,7 @@ mro_hierarchy_for_complete_type(PyTypeObject *type, PyObject *temp)
 
     if (res < 0) {
         // Roll back, unless tp_mro has already been replaced again.
-        if (try_set_tp_mro(type, new_mro, old_mro, NULL) == 1) {
+        if (try_set_tp_mro(type, new_mro, old_mro, 0, false) == 1) {
             Py_DECREF(new_mro);
         }
         else {
@@ -1946,7 +1946,7 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases,
     PyTypeObject *old_base = type->tp_base;
 
     if (!try_set_tp_bases(type, NULL, Py_NewRef(new_bases),
-                         (PyTypeObject *)Py_NewRef(best_base), &gen))
+                         (PyTypeObject *)Py_NewRef(best_base), gen, true))
     {
         Py_DECREF(new_bases);
         Py_DECREF(best_base);
@@ -2002,7 +2002,7 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases,
                           "", 2, 3, &cls, &new_mro, &old_mro);
         /* Do not rollback if cls has a newer version of MRO.  */
         old_mro = Py_XNewRef(old_mro);
-        if (try_set_tp_mro(cls, new_mro, old_mro, NULL) == 1) {
+        if (try_set_tp_mro(cls, new_mro, old_mro, 0, false) == 1) {
             Py_DECREF(new_mro);
         }
         else {
@@ -2013,7 +2013,7 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases,
 
   bail:
     /* Restore the old bases, unless tp_bases has been replaced again. */
-    if (try_set_tp_bases(type, new_bases, old_bases, old_base, NULL)) {
+    if (try_set_tp_bases(type, new_bases, old_bases, old_base, 0, false)) {
         Py_DECREF(new_bases);
         Py_DECREF(best_base);
     }
@@ -3703,7 +3703,7 @@ mro_internal(PyTypeObject *type, int initial, PyObject **p_old_mro)
             // released while mro_invoke() ran or while waiting to stop the
             // world, so check for reentrance and for concurrent mutation of
             // the hierarchy inside the stop-the-world.
-            res = try_set_tp_mro(type, old_mro, new_mro, &gen);
+            res = try_set_tp_mro(type, old_mro, new_mro, gen, true);
         }
         if (res == 1) {
             break;
