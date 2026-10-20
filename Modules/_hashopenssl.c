@@ -516,6 +516,12 @@ newEVPobject(PyTypeObject *type)
     return retval;
 }
 
+/*
+ * Update the digest context of 'self' with 'len' bytes from 'vp'.
+ *
+ * Return 0 on success and -1 if EVP_DigestUpdate() failed. No exception
+ * is set, so that this can be called without an attached thread state.
+ */
 static int
 EVP_hash(EVPobject *self, const void *vp, Py_ssize_t len)
 {
@@ -527,7 +533,6 @@ EVP_hash(EVPobject *self, const void *vp, Py_ssize_t len)
         else
             process = Py_SAFE_DOWNCAST(len, Py_ssize_t, unsigned int);
         if (!EVP_DigestUpdate(self->ctx, (const void*)cp, process)) {
-            notify_ssl_error_occurred();
             return -1;
         }
         len -= process;
@@ -694,8 +699,10 @@ EVP_update_impl(EVPobject *self, PyObject *obj)
 
     PyBuffer_Release(&view);
 
-    if (result == -1)
+    if (result == -1) {
+        notify_ssl_error_occurred();
         return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -1000,7 +1007,7 @@ _hashlib_HASH(PyObject *module, const char *digestname, PyObject *data_obj,
             result = EVP_hash(self, view.buf, view.len);
         }
         if (result == -1) {
-            assert(PyErr_Occurred());
+            notify_ssl_error_occurred();
             Py_CLEAR(self);
             goto exit;
         }
