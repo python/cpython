@@ -2917,3 +2917,29 @@ that may require changes to your code.
   Use warning filters to silence them or additional :meth:`!assertWarns*`
   to catch and check them.
   (Contributed by Serhiy Storchaka in :gh:`143231`.)
+
+
+Notable changes in 3.15.2
+=========================
+
+Import system
+-------------
+
+* The :gh:`83065` fix shipped in 3.15.0 made the first ``import pkg.mod``
+  in a process keep ``pkg``'s import lock held until ``pkg/mod.py`` had
+  finished executing. Other threads importing anything from ``pkg`` in that
+  window could block for the whole of ``mod``'s execution, raise
+  ``_DeadlockError``, or get a spurious "partially initialized module"
+  :exc:`ImportError`, even without any circular import. Parent packages are
+  now imported, or waited for if another thread is still initializing them,
+  *before* the submodule's own lock is taken, and a package's lock is released
+  as soon as its ``__init__`` returns; the original deadlock remains fixed.
+  As in 3.15.0, the first import of anything beneath a package waits for that
+  package's ``__init__`` to finish in whichever thread is running it, so a
+  package ``__init__`` should not block on another thread that performs such
+  an import.
+  :func:`importlib.import_module` of a module caught in a genuine cross-thread
+  circular import now returns the partially initialized module, as the
+  :keyword:`import` statement already did, instead of raising
+  ``_DeadlockError``.
+  (Contributed by Gregory P. Smith in :gh:`159963`.)

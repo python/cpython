@@ -418,64 +418,6 @@ class _ModuleLockManager:
         self._lock.release()
 
 
-def _get_module_chain(name):
-    """Return the chain of dotted-name prefixes from root to leaf.
-
-    For example: 'a.b.c' -> ['a', 'a.b', 'a.b.c']
-    """
-    parts = name.split('.')
-    return ['.'.join(parts[:i+1]) for i in range(len(parts))]
-
-
-class _HierarchicalLockManager:
-    """Manages acquisition of multiple module locks in hierarchical order.
-
-    This prevents deadlocks by ensuring all threads acquire locks in the
-    same order (parent modules before child modules).
-    """
-
-    def __init__(self, name):
-        self._name = name
-        self._module_chain = _get_module_chain(name)
-        self._locks = []
-
-    def __enter__(self):
-        try:
-            for module_name in self._module_chain:
-                # Only acquire lock if module is not already fully loaded
-                module = sys.modules.get(module_name)
-                if (module is None or
-                    getattr(getattr(module, "__spec__", None),
-                            "_initializing", False)):
-                    lock = _get_module_lock(module_name)
-                    try:
-                        lock.acquire()
-                    except _DeadlockError:
-                        if module_name == self._name:
-                            raise
-                        # The parent is being initialised by a thread that
-                        # is (transitively) waiting on a lock we hold.
-                        # Apply the same policy as _lock_unlock_module():
-                        # accept a partially-initialised parent for circular
-                        # imports rather than failing the whole chain.
-                        continue
-                    self._locks.append((module_name, lock))
-        except:
-            # __exit__ is not called when __enter__ raises (e.g. _DeadlockError
-            # on the leaf lock, or KeyboardInterrupt), so release whatever we
-            # already hold to avoid permanently leaking held module locks.
-            for module_name, lock in reversed(self._locks):
-                lock.release()
-            self._locks.clear()
-            raise
-        return self
-
-    def __exit__(self, *args, **kwargs):
-        for module_name, lock in reversed(self._locks):
-            lock.release()
-        self._locks.clear()
-
-
 # The following two functions are for consumption by Python/import.c.
 
 def _get_module_lock(name):
@@ -1256,17 +1198,17 @@ _ERR_MSG_PREFIX = 'No module named '
 
 def _find_and_load_unlocked(name, import_, *, lazy_submodule=False):
     path = None
-    sys.audit(
-        "import",
-        name,
-        path,
-        getattr(sys, "path", None),
-        getattr(sys, "meta_path", None),
-        getattr(sys, "path_hooks", None)
-    )
     parent = name.rpartition('.')[0]
     parent_spec = None
     if parent:
+        # _resolve_parents() has settled the parent, but nothing pins it in
+        # sys.modules while this thread waits for name's lock.  If it was
+        # deleted meanwhile, the first import_(parent) below imports it again
+        # (else sys.modules[parent] raises KeyError) and the second waits for
+        # another thread doing so, in case its __init__ makes this submodule
+        # importable (gh-130094).  Otherwise the second call returns at once,
+        # for this thread's own partly initialized parent or a partial parent
+        # accepted in a circular import split across threads.
         if parent not in sys.modules:
             _call_with_frames_removed(import_, parent)
         # Crazy side-effects!
@@ -1324,31 +1266,84 @@ def _find_and_load_unlocked(name, import_, *, lazy_submodule=False):
 _NEEDS_LOADING = object()
 
 
+def _is_initializing(module):
+    """Return whether *module* (a sys.modules value) is still executing."""
+    return getattr(getattr(module, '__spec__', None), '_initializing', False)
+
+
+def _resolve_parents(name, import_):
+    """Import, or wait for, the parent packages of *name*.
+
+    _find_and_load() calls this before taking name's module lock, so that no
+    thread holds a submodule's lock while waiting for its parent: ``import
+    pkg.mod`` and a pkg/__init__.py importing pkg.mod would then take the two
+    locks in opposite orders (gh-83065).  Each level's lock is released as
+    soon as that level is settled.  Holding a parent's lock through the
+    submodule's body blocks threads which need only the finished parent, and
+    causes _DeadlockError and "partially initialized module" errors with no
+    import cycle (gh-159963).
+    """
+    # Only the immediate parent has to exist, so ancestors above it are not
+    # imported here.  Wait for those another thread is still executing,
+    # outermost first: otherwise this thread could enter a chain of imports
+    # within a package from the far end while that package's __init__ is
+    # working through it, and one of the two would get a partially initialized
+    # module.  Hence an __init__ must not block on another thread importing
+    # something beneath it.
+    parts = name.split('.')
+    for i in range(1, len(parts) - 1):
+        ancestor = '.'.join(parts[:i])
+        if _is_initializing(sys.modules.get(ancestor)):
+            _lock_unlock_module(ancestor)
+    parent = name.rpartition('.')[0]
+    if parent:
+        module = sys.modules.get(parent, _NEEDS_LOADING)
+        if module is _NEEDS_LOADING or _is_initializing(module):
+            _call_with_frames_removed(import_, parent)
+
+
 def _find_and_load(name, import_, *, lazy_submodule=False):
     """Find and load the module."""
 
     # Optimization: we avoid unneeded module locking if the module
     # already exists in sys.modules and is fully initialized.
     module = sys.modules.get(name, _NEEDS_LOADING)
-    if (module is _NEEDS_LOADING or
-        getattr(getattr(module, "__spec__", None), "_initializing", False)):
-
-        if '.' in name:
-            lock_manager = _HierarchicalLockManager(name)
-        else:
-            lock_manager = _ModuleLockManager(name)
-
-        with lock_manager:
+    if module is _NEEDS_LOADING or _is_initializing(module):
+        if module is not _NEEDS_LOADING:
+            # NOTE: this relies on __spec__._initializing being set *before*
+            # the module is put in sys.modules.
+            _lock_unlock_module(name)
+            # The module is gone if the thread loading it failed.
             module = sys.modules.get(name, _NEEDS_LOADING)
-            if module is _NEEDS_LOADING:
-                return _find_and_load_unlocked(
-                    name, import_, lazy_submodule=lazy_submodule)
 
-        # Optimization: only call _bootstrap._lock_unlock_module() if
-        # module.__spec__._initializing is True.
-        # NOTE: because of this, initializing must be set *before*
-        # putting the new module in sys.modules.
-        _lock_unlock_module(name)
+        if module is _NEEDS_LOADING:
+            sys.audit(
+                "import",
+                name,
+                None,
+                getattr(sys, "path", None),
+                getattr(sys, "meta_path", None),
+                getattr(sys, "path_hooks", None)
+            )
+            _resolve_parents(name, import_)
+            lock = _get_module_lock(name)
+            try:
+                lock.acquire()
+            except _DeadlockError:
+                # A circular import split across threads.  As in
+                # _lock_unlock_module(), accept a partially initialized
+                # module if there is one.
+                module = sys.modules.get(name, _NEEDS_LOADING)
+                if module is _NEEDS_LOADING:
+                    raise
+            else:
+                try:
+                    module = sys.modules.get(name, _NEEDS_LOADING)
+                    if module is _NEEDS_LOADING:
+                        return _find_and_load_unlocked(
+                            name, import_, lazy_submodule=lazy_submodule)
+                finally:
+                    lock.release()
     else:
         # Verify the module is still in sys.modules. Another thread may have
         # removed it (due to import failure) between our sys.modules.get()

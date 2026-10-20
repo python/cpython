@@ -1,0 +1,12 @@
+Fix a regression introduced in Python 3.15.0 by the :gh:`83065` import
+deadlock fix: the first ``import pkg.mod`` in a process kept ``pkg``'s import
+lock held until ``pkg/mod.py`` had finished executing, long after ``pkg``
+itself was initialized. Two threads importing submodules of the same packages
+for the first time could therefore raise ``_DeadlockError`` or a spurious
+"partially initialized module" :exc:`ImportError`, or block one another for
+the duration of a submodule's execution, without any circular import being
+involved. Parent packages are now imported before the submodule's lock is
+taken, and a package's lock is no longer held while its submodules execute.
+:func:`importlib.import_module` of a module caught in a genuine cross-thread
+circular import now returns the partially initialized module, as the
+:keyword:`import` statement already did, instead of raising ``_DeadlockError``.
