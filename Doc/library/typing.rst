@@ -971,7 +971,7 @@ using ``[]``.
       Added :data:`Never`.
 
    .. soft-deprecated:: 3.16
-      ``NoReturn`` is deprecated, please use ``Never`` instead.
+      ``NoReturn`` is deprecated; please use ``Never`` instead.
 
 .. data:: Self
 
