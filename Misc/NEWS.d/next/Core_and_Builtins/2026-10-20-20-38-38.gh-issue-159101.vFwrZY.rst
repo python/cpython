@@ -1,2 +1,2 @@
-Fix use-after-free when ``!tp_finalize`` changes the base class. Patch by
+Fix use-after-free when :meth:`~object.__del__` changes the base class. Patch by
 Sergey Miryanov.
