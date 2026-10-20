@@ -1975,16 +1975,6 @@ hashlib_HMAC_get_hashlib_digest_name(HMACobject *self)
 #endif
 }
 
-static int
-hashlib_openssl_HMAC_update_once(PY_HMAC_CTX_TYPE *ctx, const Py_buffer *v)
-{
-    if (!PY_HMAC_update(ctx, (const unsigned char *)v->buf, (size_t)v->len)) {
-        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(PY_HMAC_update));
-        return -1;
-    }
-    return 0;
-}
-
 /* Thin wrapper around PY_HMAC_CTX_free that allows to pass a NULL 'ctx'. */
 static inline void
 hashlib_openssl_HMAC_CTX_free(PY_HMAC_CTX_TYPE *ctx)
@@ -2239,10 +2229,15 @@ _hmac_update(HMACobject *self, PyObject *obj)
     GET_BUFFER_VIEW_OR_ERROR(obj, &view, return -1);
     HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(
         self, view.len,
-        r = hashlib_openssl_HMAC_update_once(self->ctx, &view)
+        r = PY_HMAC_update(self->ctx, (const unsigned char *)view.buf,
+                           (size_t)view.len)
     );
     PyBuffer_Release(&view);
-    return r;
+    if (r == 0) {
+        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(PY_HMAC_update));
+        return -1;
+    }
+    return 0;
 }
 
 /*[clinic input]
