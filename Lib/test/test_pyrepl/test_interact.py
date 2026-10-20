@@ -37,6 +37,22 @@ class TestSimpleInteract(unittest.TestCase):
 
         multiline_input.assert_called_once_with(ANY, "primary", "secondary")
 
+    def test_ps1_str_error_uses_default_prompt(self):
+        class Prompt:
+            def __str__(self):
+                return 1 / 0
+
+        with (
+            patch.object(sys, "ps1", Prompt(), create=True),
+            patch("_pyrepl.readline._setup"),
+            patch(
+                "_pyrepl.simple_interact.multiline_input", side_effect=EOFError
+            ) as multiline_input,
+        ):
+            run_multiline_interactive_console(InteractiveColoredConsole())
+
+        multiline_input.assert_called_once_with(ANY, ">>> ", ANY)
+
     def test_multiple_statements(self):
         namespace = {}
         code = dedent("""\
