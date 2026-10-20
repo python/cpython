@@ -446,6 +446,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                 timeTuple = time.localtime(t + addend)
         dfn = self.rotation_filename(self.baseFilename + "." +
                                      time.strftime(self.suffix, timeTuple))
+        self.rolloverAt = self.computeRollover(currentTime)
         if os.path.exists(dfn):
             # Already rolled over.
             return
@@ -459,7 +460,6 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                 os.remove(s)
         if not self.delay:
             self.stream = self._open()
-        self.rolloverAt = self.computeRollover(currentTime)
 
 class WatchedFileHandler(logging.FileHandler):
     """
