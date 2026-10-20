@@ -349,6 +349,7 @@ typedef struct {
     int hour, minute, second, fraction;
     int gmtoff;  // INT_MIN means no offset was supplied.
     int yday;    // January 1 is day 1.
+    int weekday;  // Monday is 0; a supplied weekday need not agree with the date.
 } _PyTime_StrptimeFields;
 
 // Export for the '_datetime' shared extension.

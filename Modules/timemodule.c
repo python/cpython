@@ -1019,7 +1019,7 @@ time_strptime(PyObject *self, PyObject *args)
         const int values[] = {
             fields.year, fields.month, fields.day,
             fields.hour, fields.minute, fields.second,
-            _PyTime_Weekday(fields.year, fields.yday), fields.yday, -1
+            fields.weekday, fields.yday, -1
         };
         for (size_t i = 0; i < Py_ARRAY_LENGTH(values); i++) {
             PyObject *value = PyLong_FromLong(values[i]);

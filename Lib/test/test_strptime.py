@@ -1,6 +1,7 @@
 """PyUnit testing against strptime"""
 
 import unittest
+import datetime
 import time
 import locale
 import re
@@ -12,6 +13,69 @@ from test.support import skip_if_buggy_ucrt_strfptime, run_with_locales
 from datetime import date as datetime_date
 
 import _strptime
+
+
+class PublicStrptimeTests(unittest.TestCase):
+    @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP', '')
+    def test_locale_names(self):
+        for month in range(1, 13):
+            value = datetime.datetime(2024, month, 19, 13, 24, 35)
+            for fmt in ('%b %d %Y', '%B %d %Y', '%a %Y-%m-%d', '%A %Y-%m-%d'):
+                self.assert_matches_python(value.strftime(fmt), fmt)
+
+    def assert_matches_python(self, text, fmt):
+        methods = (
+            (time.strptime, _strptime._strptime_time),
+            (datetime.date.strptime,
+             lambda s, f: _strptime._strptime_datetime_date(datetime.date, s, f)),
+            (datetime.time.strptime,
+             lambda s, f: _strptime._strptime_datetime_time(datetime.time, s, f)),
+            (datetime.datetime.strptime,
+             lambda s, f: _strptime._strptime_datetime_datetime(
+                 datetime.datetime, s, f)),
+        )
+        for parse, reference in methods:
+            with self.subTest(method=parse, text=text, format=fmt):
+                try:
+                    expected = reference(text, fmt)
+                except (ValueError, re.PatternError) as error:
+                    with self.assertRaises(type(error)) as caught:
+                        parse(text, fmt)
+                    self.assertEqual(str(caught.exception), str(error))
+                else:
+                    actual = parse(text, fmt)
+                    self.assertEqual(actual, expected)
+                    if isinstance(actual, time.struct_time):
+                        self.assertEqual(actual.tm_zone, expected.tm_zone)
+                        self.assertEqual(actual.tm_gmtoff, expected.tm_gmtoff)
+                    elif isinstance(actual, (datetime.time, datetime.datetime)):
+                        self.assertEqual(actual.tzname(), expected.tzname())
+
+    @support.run_with_locale('LC_TIME', 'C')
+    def test_names_and_weekdays(self):
+        for month in range(1, 13):
+            value = datetime.datetime(2024, month, 19, 13, 24, 35)
+            for fmt in ('%b %d, %Y', '%d %B %Y',
+                        '%a, %d %b %Y %H:%M:%S GMT', '%A %Y-%m-%d'):
+                text = value.strftime(fmt)
+                for spelling in (text, text.lower(), text.upper()):
+                    self.assert_matches_python(spelling, fmt)
+        for directive in ('a', 'A', 'w', 'u'):
+            for day in range(1, 8):
+                # A supplied weekday is preserved even when it disagrees.
+                text = datetime.date(2024, 1, day).strftime('%' + directive)
+                self.assert_matches_python(text + ' 2024-02-29',
+                                           '%' + directive + ' %Y-%m-%d')
+        for text, fmt in (
+            ('2024 January 02 03', '%Y %B %m %d'),
+            ('2024 Jan January 03', '%Y %b %B %d'),
+            ('2024 Monday Tue', '%Y %A %a'),
+            ('2024 Jax 03', '%Y %b %d'),
+            ('2024 Feb 30', '%Y %b %d'),
+            ('Monday Monday', '%A %A'),
+            ('8', '%u'), ('7', '%w'),
+        ):
+            self.assert_matches_python(text, fmt)
 
 libc_ver = platform.libc_ver()
 if libc_ver[0] == 'glibc':
