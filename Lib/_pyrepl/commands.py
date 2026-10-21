@@ -20,7 +20,6 @@
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 import os
-import re
 import time
 
 # Categories of actions:
@@ -495,45 +494,11 @@ class show_history(Command):
         self.reader.invalidate_full()
 
 
-_REPL_PASTE_HINT = "press F3 (paste mode) to strip >>> and ... prompts"
-
-
 class paste_mode(Command):
     def do(self) -> None:
         r = self.reader
         r.paste_mode = not r.paste_mode
-        if r.paste_mode and getattr(r, "can_strip_repl_prompts", False):
-            r.buffer[:] = _strip_repl_prompts(r.get_unicode())
-            r.pos = len(r.buffer)
-            r.invalidate_buffer(0)
         r.invalidate_prompt()
-
-
-def _is_repl_session(data: str) -> bool:
-    return data[:3] in {">>>", "..."} and data[3:4] in {"", " ", "\r", "\n"}
-
-
-def _strip_repl_prompts(data: str) -> str:
-    lines: list[str] = []
-    statement_start = None
-    for line in re.findall(r"[^\r\n]*(?:\r\n?|\n|$)", data):
-        if _is_repl_session(line):
-            if line.startswith(">>>") or statement_start is None:
-                statement_start = len(lines)
-            lines.append(line[3:].removeprefix(" "))
-        elif statement_start is not None:
-            if line.rstrip("\r\n") == "KeyboardInterrupt":
-                # Ctrl-C leaves the abandoned input on screen with its prompts.
-                del lines[statement_start:]
-                statement_start = None
-            elif (previous := lines[-1].rstrip("\r\n")).endswith("\\"):
-                # PyREPL wraps input with a backslash and no prompt on the
-                # next screen row. Rejoin it without the display backslash.
-                lines[-1] = previous[:-1] + line
-            else:
-                # Output (including a traceback) ends the input statement.
-                statement_start = None
-    return "".join(lines)
 
 
 class perform_bracketed_paste(Command):
@@ -550,12 +515,7 @@ class perform_bracketed_paste(Command):
             s=time.time() - start,
         )
         data = data.replace(done, "")
-        if (
-            getattr(self.reader, "paste_repl_sessions", False)
-            and _is_repl_session(data)
-        ):
-            if self.reader.paste_mode:
-                data = _strip_repl_prompts(data)
-            else:
-                self.reader.error(_REPL_PASTE_HINT)
+        self.process_paste(data)
+
+    def process_paste(self, data: str) -> None:
         self.reader.insert(data)

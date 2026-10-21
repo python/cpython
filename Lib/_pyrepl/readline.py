@@ -30,6 +30,7 @@ import warnings
 from dataclasses import dataclass, field
 
 import os
+import re
 from site import gethistoryfile
 import sys
 from rlcompleter import Completer as RLCompleter
@@ -120,18 +121,22 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
         self.commands["maybe-accept"] = maybe_accept
         self.commands["backspace_dedent"] = backspace_dedent
         self.commands["backspace-dedent"] = backspace_dedent
+        self.commands["paste_mode"] = paste_mode
+        self.commands["paste-mode"] = paste_mode
+        self.commands["perform_bracketed_paste"] = perform_bracketed_paste
+        self.commands["perform-bracketed-paste"] = perform_bracketed_paste
 
     @property
     def can_strip_repl_prompts(self) -> bool:
         return (
             self.paste_repl_sessions
-            and commands._is_repl_session(self.get_unicode())
+            and _is_repl_session(self.get_unicode())
         )
 
     def get_message(self) -> str:
         message = super().get_message()
         if not message and not self.paste_mode and self.can_strip_repl_prompts:
-            return self._format_error(commands._REPL_PASTE_HINT)
+            return self._format_error(_REPL_PASTE_HINT)
         return message
 
     def get_stem(self) -> str:
@@ -287,6 +292,57 @@ def _should_auto_indent(buffer: list[str], pos: int) -> bool:
             if buffer[pos] == "#":
                 last_char = None
     return last_char == ":"
+
+
+_REPL_PASTE_HINT = "press F3 (paste mode) to strip >>> and ... prompts"
+
+
+def _is_repl_session(data: str) -> bool:
+    return data[:3] in {">>>", "..."} and data[3:4] in {"", " ", "\r", "\n"}
+
+
+def _strip_repl_prompts(data: str) -> str:
+    lines: list[str] = []
+    statement_start = None
+    for line in re.findall(r"[^\r\n]*(?:\r\n?|\n|$)", data):
+        if _is_repl_session(line):
+            if line.startswith(">>>") or statement_start is None:
+                statement_start = len(lines)
+            lines.append(line[3:].removeprefix(" "))
+        elif statement_start is not None:
+            if line.rstrip("\r\n") == "KeyboardInterrupt":
+                # Ctrl-C leaves the abandoned input on screen with its prompts.
+                del lines[statement_start:]
+                statement_start = None
+            elif (previous := lines[-1].rstrip("\r\n")).endswith("\\"):
+                # PyREPL wraps input with a backslash and no prompt on the
+                # next screen row. Rejoin it without the display backslash.
+                lines[-1] = previous[:-1] + line
+            else:
+                # Output (including a traceback) ends the input statement.
+                statement_start = None
+    return "".join(lines)
+
+
+class paste_mode(commands.paste_mode):
+    def do(self) -> None:
+        super().do()
+        r: ReadlineAlikeReader = self.reader  # type: ignore[assignment]
+        if r.paste_mode and r.can_strip_repl_prompts:
+            r.buffer[:] = _strip_repl_prompts(r.get_unicode())
+            r.pos = len(r.buffer)
+            r.invalidate_buffer(from_pos=0)
+
+
+class perform_bracketed_paste(commands.perform_bracketed_paste):
+    def process_paste(self, data: str) -> None:
+        r: ReadlineAlikeReader = self.reader  # type: ignore[assignment]
+        if r.paste_repl_sessions and _is_repl_session(data):
+            if r.paste_mode:
+                data = _strip_repl_prompts(data)
+            else:
+                r.error(_REPL_PASTE_HINT)
+        super().process_paste(data)
 
 
 class maybe_accept(commands.Command):
