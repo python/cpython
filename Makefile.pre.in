@@ -434,6 +434,7 @@ PARSER_HEADERS= \
 
 PYTHON_OBJS=	\
 		Python/_contextvars.o \
+		Python/_strptime.o \
 		Python/_warnings.o \
 		Python/Python-ast.o \
 		Python/Python-tokenize.o \

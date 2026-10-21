@@ -19,6 +19,9 @@
     <ClCompile Include="..\Modules\_tracemalloc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\_strptime.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\_warnings.c">
       <Filter>Source Files</Filter>
     </ClCompile>

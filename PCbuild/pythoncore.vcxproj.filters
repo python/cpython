@@ -1394,6 +1394,9 @@
     <ClCompile Include="..\Python\_contextvars.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\_strptime.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\_warnings.c">
       <Filter>Python</Filter>
     </ClCompile>
