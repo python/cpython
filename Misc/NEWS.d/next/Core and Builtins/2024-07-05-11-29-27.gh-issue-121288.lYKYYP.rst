@@ -1,5 +1,0 @@
-:exc:`ValueError` messages for :meth:`!list.index()`, :meth:`!range.index()`,
-:meth:`!deque.index()`, :meth:`!deque.remove()` and
-:meth:`!ShareableList.index()` no longer contain the repr of the searched
-value (which can be arbitrary large) and are consistent with error messages
-for other :meth:`!index()` and :meth:`!remove()` methods.

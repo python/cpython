@@ -1,3 +1,0 @@
-Drop support for passing additional positional arguments to
-:meth:`pathlib.PurePath.relative_to` and
-:meth:`~pathlib.PurePath.is_relative_to`.

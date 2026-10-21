@@ -39,8 +39,8 @@ def openpty():
     except ImportError:
          return master_fd, slave_fd
     try:
-        ioctl(result, I_PUSH, "ptem")
-        ioctl(result, I_PUSH, "ldterm")
+        ioctl(slave_fd, I_PUSH, "ptem")
+        ioctl(slave_fd, I_PUSH, "ldterm")
     except OSError:
         pass
     return master_fd, slave_fd

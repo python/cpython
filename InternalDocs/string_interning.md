@@ -2,6 +2,7 @@
 
 *Interned* strings are conceptually part of an interpreter-global
 *set* of interned strings, meaning that:
+
 - no two interned strings have the same content (across an interpreter);
 - two interned strings can be safely compared using pointer equality
   (Python `is`).
@@ -15,8 +16,8 @@ dynamic interning.
 
 The 256 possible one-character latin-1 strings, which can be retrieved with
 `_Py_LATIN1_CHR(c)`, are stored in statically allocated arrays,
-`_PyRuntime.static_objects.strings.ascii` and
-`_PyRuntime.static_objects.strings.latin1`.
+`_PyRuntime.static_objects.singletons.strings.ascii` and
+`_PyRuntime.static_objects.singletons.strings.latin1`.
 
 Longer singleton strings are marked in C source with `_Py_ID` (if the string
 is a valid C identifier fragment) or `_Py_STR` (if it needs a separate
@@ -51,16 +52,11 @@ The key and value of each entry in this dict reference the same object.
 
 ## Immortality and reference counting
 
-Invariant: Every immortal string is interned.
+In the GIL-enabled build interned strings may be mortal or immortal. In the
+free-threaded build, interned strings are always immortal.
 
-In practice, this means that you must not use `_Py_SetImmortal` on
-a string. (If you know it's already immortal, don't immortalize it;
-if you know it's not interned you might be immortalizing a redundant copy;
-if it's interned and mortal it needs extra processing in
-`_PyUnicode_InternImmortal`.)
-
-The converse is not true: interned strings can be mortal.
 For mortal interned strings:
+
 - the 2 references from the interned dict (key & value) are excluded from
   their refcount
 - the deallocator (`unicode_dealloc`) removes the string from the interned dict
@@ -72,7 +68,7 @@ We currently also immortalize strings contained in code objects and similar,
 specifically in the compiler and in `marshal`.
 These are “close enough” to immortal: even in use cases like hot reloading
 or `eval`-ing user input, the number of distinct identifiers and string
-constants expected to stay low.
+constants is expected to stay low.
 
 
 ## Internal API
@@ -90,6 +86,7 @@ modify in place.
 The functions take ownership of (“steal”) the reference to their argument,
 and update the argument with a *new* reference.
 This means:
+
 - They're “reference neutral”.
 - They must not be called with a borrowed reference.
 

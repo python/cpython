@@ -53,6 +53,7 @@ Slice Objects
    length *length*, and store the length of the slice in *slicelength*.  Out
    of bounds indices are clipped in a manner consistent with the handling of
    normal slices.
+   *length* must not be negative.
 
    Return ``0`` on success and ``-1`` on error with an exception set.
 
@@ -108,6 +109,10 @@ Slice Objects
    Out of bounds indices are clipped in a manner consistent with the handling
    of normal slices.
 
+   *length* must not be negative.
+   *step* must not be zero and must not be less than ``-PY_SSIZE_T_MAX``,
+   as guaranteed by :c:func:`PySlice_Unpack`.
+
    Return the length of the slice.  Always successful.  Doesn't call Python
    code.
 
@@ -116,6 +121,12 @@ Slice Objects
 
 Ellipsis Object
 ^^^^^^^^^^^^^^^
+
+
+.. c:var:: PyTypeObject PyEllipsis_Type
+
+   The type of Python :const:`Ellipsis` object.  Same as :class:`types.EllipsisType`
+   in the Python layer.
 
 
 .. c:var:: PyObject *Py_Ellipsis

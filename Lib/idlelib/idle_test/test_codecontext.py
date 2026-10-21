@@ -60,6 +60,8 @@ class CodeContextTest(unittest.TestCase):
         frame = cls.frame = Frame(root)
         text = cls.text = Text(frame)
         text.insert('1.0', code_sample)
+        # Make the text longer than the visible height, so that it can scroll.
+        text.insert('end', '\n' * (int(text['height']) + 2))
         # Need to pack for creation of code context text widget.
         frame.pack(side='left', fill='both', expand=1)
         text.grid(row=1, column=1, sticky=NSEW)
@@ -127,7 +129,7 @@ class CodeContextTest(unittest.TestCase):
         timer = self.cc.t1 = self.text.after(10000, lambda: None)
         self.cc.__del__()
         with self.assertRaises(TclError) as cm:
-            self.root.tk.call('after', 'info', timer)
+            self.root.after_info(timer)
         self.assertIn("doesn't exist", str(cm.exception))
 
     def test_reload(self):
@@ -151,7 +153,7 @@ class CodeContextTest(unittest.TestCase):
         eq(cc.context['bg'], self.highlight_cfg['background'])
         eq(cc.context.get('1.0', 'end-1c'), '')
         eq(cc.editwin.label, 'Hide Code Context')
-        eq(self.root.tk.call('after', 'info', self.cc.t1)[1], 'timer')
+        eq(self.root.after_info(self.cc.t1)[1], 'timer')
 
         # Toggle off.
         toggle()

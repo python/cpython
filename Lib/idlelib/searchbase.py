@@ -64,13 +64,29 @@ class SearchDialogBase:
         self.ent.selection_range(0, "end")
         self.ent.icursor(0)
         self.top.grab_set()
+        self.show_error('')
+        self.engine.error_handler = self.show_error
 
     def close(self, event=None):
         "Put dialog away for later use."
         if self.top:
+            self.engine.error_handler = None
             self.top.grab_release()
             self.top.transient('')
             self.top.withdraw()
+
+    def show_error(self, message, pos=None):
+        """Show message (or nothing) in red below the entries.
+
+        If pos is given, move the cursor to that position of the pattern.
+        """
+        self.error_label['text'] = message
+        if message:
+            self.bell()
+        if pos is not None:
+            self.ent.focus_set()
+            self.ent.selection_clear()
+            self.ent.icursor(pos)
 
     def create_widgets(self):
         '''Create basic 3 row x 3 col search (find) dialog.
@@ -86,14 +102,17 @@ class SearchDialogBase:
         top.wm_iconname(self.icon)
         _setup_dialog(top)
         self.top = top
-        self.frame = Frame(top, padding="5px")
+        self.frame = Frame(top, padding=5)
         self.frame.grid(sticky="nwes")
         top.grid_columnconfigure(0, weight=100)
         top.grid_rowconfigure(0, weight=100)
 
         self.row = 0
+        self.frame.grid_columnconfigure(0, pad=2, weight=0)
+        self.frame.grid_columnconfigure(1, pad=2, minsize=100, weight=100)
 
         self.create_entries()  # row 0 (and maybe 1), cols 0, 1
+        self.create_error_label()  # next row, col 1
         self.create_option_buttons()  # next row, cols 0, 1
         self.create_other_buttons()  # next row, cols 0, 1
         self.create_command_buttons()  # col 2, all rows
@@ -107,13 +126,24 @@ class SearchDialogBase:
         label = Label(self.frame, text=label_text)
         label.grid(row=self.row, column=0, sticky="nw")
         entry = Entry(self.frame, textvariable=var, exportselection=0)
-        entry.grid(row=self.row, column=1, columnspan=2, padx=4, pady=4, sticky="nwe")
+        entry.grid(row=self.row, column=1, padx=4, pady=4, sticky="nwe")
         self.row += 1
         return entry, label
 
     def create_entries(self):
         "Create one or more entry lines with make_entry."
         self.ent = self.make_entry("Find", self.engine.patvar)[0]
+
+    def create_error_label(self):
+        "Create the label for a pattern error, cleared when the pattern changes."
+        self.error_label = Label(self.frame, text=' ', foreground='red')
+        self.error_label.grid(row=self.row, column=1, sticky="nw")
+        self.row = self.row + 1
+        patvar = self.engine.patvar
+        trace = patvar.trace_add('write', lambda *args: self.show_error(''))
+        # The trace holds the dialog, remove it with the label.
+        self.error_label.bind('<Destroy>',
+                              lambda e: patvar.trace_remove('write', trace))
 
     def make_frame(self,labeltext=None):
         '''Return (frame, label).
@@ -138,7 +168,7 @@ class SearchDialogBase:
         A gridded frame from make_frame is filled with a Checkbutton
         for each pair, bound to the var, with the corresponding label.
         '''
-        frame = self.make_frame("Options")[0]
+        frame = self.make_frame("Options:")[0]
         engine = self.engine
         options = [(engine.revar, "Regular expression"),
                    (engine.casevar, "Match case"),
@@ -177,7 +207,7 @@ class SearchDialogBase:
     def create_command_buttons(self):
         "Place buttons in vertical command frame gridded on right."
         f = self.buttonframe = Frame(self.frame)
-        f.grid(row=2, column=2, padx=4, pady=4)
+        f.grid(row=0, column=2, padx=4, pady=4)
 
 
 class _searchbase(SearchDialogBase):  # htest #

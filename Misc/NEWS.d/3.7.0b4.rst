@@ -152,7 +152,7 @@ Ensure line-endings are respected when using lib2to3.
 .. section: Library
 
 Have :func:`importlib.resources.contents` and
-:meth:`importlib.abc.ResourceReader.contents` return an :term:`iterable`
+:meth:`!importlib.abc.ResourceReader.contents` return an :term:`iterable`
 instead of an :term:`iterator`.
 
 ..
@@ -235,7 +235,7 @@ End framing at the end of C implementation of :func:`pickle.Pickler.dump`.
 .. section: Library
 
 Improved error handling and fixed a reference leak in
-:func:`os.posix_spawn()`.
+:func:`os.posix_spawn`.
 
 ..
 

@@ -1,2 +1,0 @@
-Improve the :meth:`~object.__repr__` of :class:`functools.partialmethod`.
-Patch by Bénédikt Tran.

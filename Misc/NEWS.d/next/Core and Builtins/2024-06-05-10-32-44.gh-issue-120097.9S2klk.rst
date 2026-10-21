@@ -1,2 +1,0 @@
-``FrameLocalsProxy`` now subclasses ``collections.abc.Mapping`` and can be
-matched as a mapping in ``match`` statements

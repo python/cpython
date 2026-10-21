@@ -1,1 +1,0 @@
-Fix errors in calling Tkinter bindings on Windows.

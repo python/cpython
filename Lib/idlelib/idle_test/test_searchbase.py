@@ -56,6 +56,16 @@ class SearchDialogBaseTest(unittest.TestCase):
 
         self.dialog.open(text, searchphrase="hello")
         self.assertEqual(self.dialog.ent.get(), 'hello')
+
+        # While open, the dialog shows pattern errors (gh-69365).
+        self.assertEqual(self.engine.error_handler, self.dialog.show_error)
+        self.dialog.show_error('Error: spam', 1)
+        self.assertEqual(self.dialog.error_label['text'], 'Error: spam')
+        self.assertEqual(self.dialog.ent.index('insert'), 1)
+        self.engine.patvar.set('eggs')  # Editing the pattern clears it.
+        self.assertEqual(self.dialog.error_label['text'], '')
+        self.dialog.close()
+        self.assertIsNone(self.engine.error_handler)
         toplevel.update_idletasks()
         toplevel.destroy()
 
@@ -64,6 +74,7 @@ class SearchDialogBaseTest(unittest.TestCase):
         self.dialog.create_option_buttons = Func()
         self.dialog.create_other_buttons = Func()
         self.dialog.create_command_buttons = Func()
+        self.dialog.make_button = Func()
 
         self.dialog.default_command = None
         self.dialog.create_widgets()
@@ -72,6 +83,7 @@ class SearchDialogBaseTest(unittest.TestCase):
         self.assertTrue(self.dialog.create_option_buttons.called)
         self.assertTrue(self.dialog.create_other_buttons.called)
         self.assertTrue(self.dialog.create_command_buttons.called)
+        self.assertEqual(self.dialog.make_button.args, ("Close", self.dialog.close))
 
     def test_make_entry(self):
         equal = self.assertEqual
@@ -85,7 +97,7 @@ class SearchDialogBaseTest(unittest.TestCase):
         equal(int(egi['row']), 0)
         equal(int(egi['column']), 1)
         equal(int(egi['rowspan']), 1)
-        equal(int(egi['columnspan']), 2)
+        equal(int(egi['columnspan']), 1)
         equal(self.dialog.row, 1)
 
     def test_create_entries(self):
@@ -148,7 +160,10 @@ class SearchDialogBaseTest(unittest.TestCase):
     def test_create_command_buttons(self):
         self.dialog.frame = Frame(self.root)
         self.dialog.create_command_buttons()
+        grid = self.dialog.buttonframe.grid_info()
+        self.assertEqual(int(grid['row']), 0)
+        self.assertEqual(int(grid['column']), 2)
 
 
 if __name__ == '__main__':
-    unittest.main(verbosity=2, exit=2)
+    unittest.main(verbosity=2)

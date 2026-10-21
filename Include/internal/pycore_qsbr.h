@@ -11,7 +11,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "pycore_lock.h"        // PyMutex
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,18 +48,46 @@ struct _qsbr_thread_state {
     // Thread state (or NULL)
     PyThreadState *tstate;
 
-    // Used to defer advancing write sequence a fixed number of times
-    int deferrals;
+    // Number of held items added by this thread since the last write sequence
+    // advance
+    int deferred_count;
+
+    // Estimate for the amount of memory that is held by this thread since
+    // the last write sequence advance
+    size_t deferred_memory;
+
+    // Amount of memory in mimalloc pages deferred from collection.  When
+    // deferred, they are prevented from being used for a different size class
+    // and in a different thread.
+    size_t deferred_page_memory;
+
+    // True if the deferred memory frees should be processed.
+    bool should_process;
 
     // Is this thread state allocated?
     bool allocated;
     struct _qsbr_thread_state *freelist_next;
 };
 
+// Size used to pad and align the per-thread QSBR states (and the end of
+// _PyThreadStateImpl) to avoid false sharing. Apple Silicon has 128-byte cache
+// lines:
+//   $ sysctl -a hw | grep cachelinesize
+//   hw.cachelinesize: 128
+// With 64-byte padding the `seq` fields of two threads share a line and the
+// stores in _Py_qsbr_quiescent_state() contend on every eval loop back-edge.
+// Use 128 bytes for all AArch64 targets: on cores with 64-byte lines this only
+// costs 64 bytes per thread.
+#if defined(__aarch64__) || defined(_M_ARM64)
+#  define _Py_QSBR_CACHE_LINE_SIZE 128
+#else
+#  define _Py_QSBR_CACHE_LINE_SIZE 64
+#endif
+
 // Padding to avoid false sharing
 struct _qsbr_pad {
     struct _qsbr_thread_state qsbr;
-    char __padding[64 - sizeof(struct _qsbr_thread_state)];
+    char __padding[_Py_QSBR_CACHE_LINE_SIZE - sizeof(struct _qsbr_thread_state)];
 };
 
 // Per-interpreter state
@@ -71,8 +98,9 @@ struct _qsbr_shared {
     // Minimum observed read sequence of all QSBR thread states
     uint64_t rd_seq;
 
-    // Array of QSBR thread states.
+    // Array of QSBR thread states (aligned to _Py_QSBR_CACHE_LINE_SIZE).
     struct _qsbr_pad *array;
+    void *array_raw;   // raw allocation pointer (for free)
     Py_ssize_t size;
 
     // Freelist of unused _qsbr_thread_states (protected by mutex)
@@ -110,11 +138,17 @@ _Py_qbsr_goal_reached(struct _qsbr_thread_state *qsbr, uint64_t goal)
 extern uint64_t
 _Py_qsbr_advance(struct _qsbr_shared *shared);
 
-// Batches requests to advance the write sequence. This advances the write
-// sequence every N calls, which reduces overhead but increases time to
-// reclamation. Returns the new goal.
+// Return the next value for the write sequence (current plus the increment).
 extern uint64_t
-_Py_qsbr_deferred_advance(struct _qsbr_thread_state *qsbr);
+_Py_qsbr_shared_next(struct _qsbr_shared *shared);
+
+// Return true if deferred memory frees held by QSBR should be processed to
+// determine if they can be safely freed.
+static inline bool
+_Py_qsbr_should_process(struct _qsbr_thread_state *qsbr)
+{
+    return qsbr->should_process;
+}
 
 // Have the read sequences advanced to the given goal? If this returns true,
 // it safe to reclaim any memory tagged with the goal (or earlier goal).

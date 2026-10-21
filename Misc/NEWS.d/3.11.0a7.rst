@@ -181,7 +181,7 @@ to simplify clearing and deallocing frames and generators.
 .. bpo: 46968
 .. date: 2022-03-17-14-22-23
 .. nonce: 4gz4NA
-.. section: Core and Builtins
+.. section: Library
 
 Check for the existence of the "sys/auxv.h" header in :mod:`faulthandler` to
 avoid compilation problems in systems where this header doesn't exist. Patch
@@ -224,7 +224,7 @@ Kumar Aditya.
 .. nonce: ZI05b5
 .. section: Core and Builtins
 
-Improved the performance of :meth:`list.append()` and list comprehensions by
+Improved the performance of :meth:`list.append` and list comprehensions by
 optimizing for the common case, where no resize is needed. Patch by Dennis
 Sweeney.
 
@@ -243,7 +243,7 @@ reducing the number of invocations of ``memcpy``.
 .. bpo: 46829
 .. date: 2022-03-12-21-07-21
 .. nonce: cpGoPV
-.. section: Core and Builtins
+.. section: Library
 
 Deprecate passing a message into :meth:`asyncio.Future.cancel` and
 :meth:`asyncio.Task.cancel`
@@ -1127,7 +1127,7 @@ Raise more accurate and :pep:`249` compatible exceptions in :mod:`sqlite3`.
 * Don't overwrite :exc:`BufferError` with :exc:`ValueError` when conversion to
   BLOB fails.
 * Raise :exc:`~sqlite3.ProgrammingError` instead of :exc:`~sqlite3.Warning` if
-  user tries to :meth:`~sqlite3.Cursor.execute()` more than one SQL statement.
+  user tries to :meth:`~sqlite3.Cursor.execute` more than one SQL statement.
 * Raise :exc:`~sqlite3.ProgrammingError` instead of :exc:`ValueError` if an SQL
   query contains null characters.
 

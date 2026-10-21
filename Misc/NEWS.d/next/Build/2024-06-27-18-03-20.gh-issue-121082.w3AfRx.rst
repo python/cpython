@@ -1,1 +1,0 @@
-Fix build failure when the developer use ``--enable-pystats`` arguments in configuration command after #118450.

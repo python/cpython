@@ -1,1 +1,0 @@
-Fix wrong references of the :mod:`datetime` types after reloading the module.

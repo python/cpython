@@ -1,2 +1,0 @@
-Add tooling to check for changes in compiler warnings.
-Patch by Nate Ohlson.

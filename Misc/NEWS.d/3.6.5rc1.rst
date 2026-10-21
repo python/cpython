@@ -474,7 +474,7 @@ platforms with OpenSSL 1.0.2+ or inet_pton.
 .. nonce: ideco
 .. section: Library
 
-:func:`urllib.parse.urlsplit()` does not convert zone-id (scope) to lower
+:func:`urllib.parse.urlsplit` does not convert zone-id (scope) to lower
 case for scoped IPv6 addresses in hostnames now.
 
 ..

@@ -8,7 +8,7 @@ import os
 import sys
 
 from tkinter import StringVar, BooleanVar
-from tkinter.ttk import Checkbutton, Frame
+from tkinter.ttk import Checkbutton
 
 from idlelib.searchbase import SearchDialogBase
 from idlelib import searchengine
@@ -38,6 +38,20 @@ def grep(text, io=None, flist=None):
     dialog = engine._grepdialog
     searchphrase = text.get("sel.first", "sel.last")
     dialog.open(text, searchphrase, io)
+
+
+def default_glob(path):
+    """Return the initial "In files:" pattern for a file path (gh-80504).
+
+    Always include a full directory so that grep output shows which
+    directory was searched.
+    """
+    dir, base = os.path.split(path)
+    dir = os.path.abspath(dir)  # An empty dir becomes the current directory.
+    head, tail = os.path.splitext(base)
+    if not tail:
+        tail = ".py"
+    return os.path.join(dir, "*" + tail)
 
 
 def walk_error(msg):
@@ -103,11 +117,7 @@ class GrepDialog(SearchDialogBase):
             path = io.filename or ""
         else:
             path = ""
-        dir, base = os.path.split(path)
-        head, tail = os.path.splitext(base)
-        if not tail:
-            tail = ".py"
-        self.globvar.set(os.path.join(dir, "*" + tail))
+        self.globvar.set(default_glob(path))
 
     def create_entries(self):
         "Create base entry widgets and add widget for search path."
@@ -123,9 +133,8 @@ class GrepDialog(SearchDialogBase):
 
     def create_command_buttons(self):
         """Create base command buttons and add button for Search Files."""
-        f = self.buttonframe = Frame(self.frame)
-        f.grid(row=3, column=2, padx=4, pady=4)
-        self.make_button("Search", self.default_command, isdef=True)
+        SearchDialogBase.create_command_buttons(self)
+        self.make_button("Search Files", self.default_command, isdef=True)
 
     def default_command(self, event=None):
         """Grep for search pattern in file path. The default command is bound

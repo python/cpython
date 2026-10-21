@@ -1,3 +1,0 @@
-Make mimalloc includes relative to the current file to avoid embedders or
-extensions needing to include ``Internal/mimalloc`` if they are already
-including internal CPython headers.

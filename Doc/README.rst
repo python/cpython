@@ -133,8 +133,5 @@ Bugs in the content should be reported to the
 
 Bugs in the toolset should be reported to the tools themselves.
 
-You can also send a mail to the Python Documentation Team at docs@python.org,
-and we will process your request as soon as possible.
-
-If you want to help the Documentation Team, you are always welcome.  Just send
-a mail to docs@python.org.
+To help with the documentation, or report any problems, please leave a message
+on `discuss.python.org <https://discuss.python.org/c/documentation>`_.
