@@ -37,7 +37,10 @@ from .content import (
 from .layout import LayoutMap, LayoutResult, LayoutRow, WrappedRow, layout_content_lines
 from .layout import wrapped_row_end
 from .render import RenderCell, RenderLine, RenderedScreen, ScreenOverlay
-from .utils import ANSI_ESCAPE_SEQUENCE, ColorSpan, THEME, StyleRef, gen_colors
+from .utils import (
+    ANSI_ESCAPE_SEQUENCE, ColorSpan, THEME, StyleRef,
+    find_matching_delimiter, gen_colors,
+)
 from .trace import trace
 
 
@@ -304,6 +307,7 @@ class Reader:
     cxy: CursorXY = field(init=False)
     lxy: CursorXY = field(init=False)
     scheduled_commands: list[CommandName] = field(default_factory=list)
+    _matching_delimiter: tuple[int, int] | None = field(init=False)
     can_colorize: bool = False
     gen_colors: Callable[[str], Iterator[ColorSpan]] = gen_colors
     threading_hook: Callback | None = None
@@ -386,6 +390,7 @@ class Reader:
         self.input_trans = input.KeymapTranslator(
             self.keymap, invalid_cls="invalid-key", character_cls="self-insert"
         )
+        self._matching_delimiter = None
         self.layout = LayoutMap.empty()
         self.cxy = self.pos2xy()
         self.lxy = (self.pos, 0)
@@ -429,9 +434,8 @@ class Reader:
                     self,
                     reuse_full=True,
                 )
-                assert not self.last_refresh_cache.line_end_offsets or (
-                    self.last_refresh_cache.line_end_offsets[-1] >= len(self.buffer)
-                ), "Buffer modified without invalidate_buffer() call"
+                # A short screen can cache only a prefix of the buffer.
+                # get_cached_location() then falls back to a full rebuild.
             else:
                 offset, num_common_lines = self.last_refresh_cache.get_cached_location(
                     self,
@@ -602,8 +606,51 @@ class Reader:
     def get_screen_overlays(self) -> tuple[ScreenOverlay, ...]:
         return ()
 
+    def _get_matching_delimiter(self) -> tuple[int, int] | None:
+        if not self.can_colorize or self.finished:
+            return None
+        if not any(
+            0 <= i < len(self.buffer) and self.buffer[i] in "()[]{}\"'"
+            for i in (self.pos, self.pos - 1)
+        ):
+            return None
+        return find_matching_delimiter(self.get_unicode(), self.pos)
+
+    def _matching_delimiter_overlays(
+        self, base_screen: RenderedScreen
+    ) -> tuple[ScreenOverlay, ...]:
+        if (
+            self._matching_delimiter is None
+            or not self.last_refresh_cache.line_end_offsets
+        ):
+            return ()
+
+        changed_rows: dict[int, list[RenderCell]] = {}
+        start, end = self._matching_delimiter
+        for offset in range(start, end):
+            # pos_to_xy() clamps positions beyond the cached layout.
+            if offset >= self.last_refresh_cache.line_end_offsets[-1]:
+                break
+            # The delimiter's end disambiguates a wrap boundary.
+            x, y = self.layout.pos_to_xy(offset + 1)
+            cells = changed_rows.setdefault(y, list(base_screen.lines[y].cells))
+            column = 0
+            for i, cell in enumerate(cells):
+                if column == x - 1 and cell.width:
+                    cells[i] = replace(
+                        cell, style=StyleRef.from_tag("matching_delimiter")
+                    )
+                    break
+                column += cell.width
+        return tuple(
+            ScreenOverlay(y, (RenderLine.from_cells(cells),))
+            for y, cells in changed_rows.items()
+        )
+
     def compose_rendered_screen(self, base_screen: RenderedScreen) -> RenderedScreen:
-        overlays = list(self.get_screen_overlays())
+        self._matching_delimiter = self._get_matching_delimiter()
+        overlays = list(self._matching_delimiter_overlays(base_screen))
+        overlays.extend(self.get_screen_overlays())
         message_lines = self._render_message_lines()
         if message_lines:
             overlays.append(ScreenOverlay(len(base_screen.lines), message_lines))
@@ -826,6 +873,7 @@ class Reader:
             self.finished = False
             del self.buffer[:]
             self.pos = 0
+            self._matching_delimiter = None
             self.layout = LayoutMap.empty()
             self.cxy = self.pos2xy()
             self.lxy = (self.pos, 0)
@@ -892,6 +940,11 @@ class Reader:
         self.invalidate_message()
 
     def update_screen(self) -> None:
+        if (
+            not self.invalidation.needs_screen_refresh
+            and self._get_matching_delimiter() != self._matching_delimiter
+        ):
+            self.invalidate_overlay()
         if self.invalidation.is_cursor_only:
             self.update_cursor()
             self.clear_invalidation()
@@ -939,12 +992,12 @@ class Reader:
             and not self.invalidation.is_cursor_only
         ):
             self.invalidate_cursor()
+        self.finished = bool(command.finish)
         self.update_screen()
 
         if command_type is not commands.digit_arg:
             self.last_command = command_type
 
-        self.finished = bool(command.finish)
         if self.finished:
             self.console.finish()
             self.finish()

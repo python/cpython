@@ -412,6 +412,7 @@ class Syntax(ThemeSection):
     number: str = ANSIColors.YELLOW
     op: str = ANSIColors.RESET
     definition: str = ANSIColors.BOLD
+    matching_delimiter: str = ANSIColors.INTENSE_BACKGROUND_BLACK
     soft_keyword: str = ANSIColors.BOLD_BLUE
     reset: str = ANSIColors.RESET
 

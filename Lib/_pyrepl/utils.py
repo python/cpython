@@ -116,12 +116,7 @@ def unbracket(s: str, including_content: bool = False) -> str:
     return s.translate(ZERO_WIDTH_TRANS)
 
 
-def gen_colors(buffer: str) -> Iterator[ColorSpan]:
-    """Returns a list of index spans to color using the given color tag.
-
-    The input `buffer` should be a valid start of a Python code block, i.e.
-    it cannot be a block starting in the middle of a multiline string.
-    """
+def _get_token_stream(buffer: str) -> tuple[Iterator[TI], list[int]]:
     sio = StringIO(buffer)
     line_lengths = [0] + [len(line) for line in sio.readlines()]
     # make line_lengths cumulative
@@ -130,6 +125,87 @@ def gen_colors(buffer: str) -> Iterator[ColorSpan]:
 
     sio.seek(0)
     gen = tokenize.generate_tokens(sio.readline)
+    return gen, line_lengths
+
+
+def find_matching_delimiter(buffer: str, pos: int) -> tuple[int, int] | None:
+    """Return the half-open span of the partner touching the cursor."""
+    # A delimiter under the cursor takes precedence, even inside literal data.
+    candidate = next((
+        i for i in (pos, pos - 1)
+        if 0 <= i < len(buffer) and buffer[i] in "()[]{}\"'"
+    ), None)
+    if candidate is None:
+        return None
+
+    gen, line_lengths = _get_token_stream(buffer)
+    try:
+        return _find_matching_delimiter_from_token_stream(
+            gen, line_lengths, candidate
+        )
+    except SyntaxError, tokenize.TokenError:
+        # Incomplete input can still contain complete pairs.
+        return None
+
+
+def _find_matching_delimiter_from_token_stream(
+    token_generator: Iterator[TI],
+    line_lengths: list[int],
+    candidate: int,
+) -> tuple[int, int] | None:
+    brackets: list[tuple[str, int]] = []
+    strings: list[tuple[int, int]] = []
+    closing = {")": "(", "]": "[", "}": "{"}
+    for token in token_generator:
+        if token.type == T.ERRORTOKEN and token.string in {"\"", "'"}:
+            # An unfinished short string can expose apparent operators.
+            break
+        offset = line_lengths[token.start[0] - 1] + token.start[1]
+        pair = None
+        match token.type:
+            case T.STRING | T.FSTRING_START | T.TSTRING_START:
+                # Token boundaries already account for prefixes and escapes.
+                quote_index = next(
+                    i for i, c in enumerate(token.string) if c in "\"'"
+                )
+                delimiter = token.string[quote_index]
+                width = 3 if token.string.startswith(delimiter * 3, quote_index) else 1
+                opening = (offset + quote_index, offset + quote_index + width)
+                if token.type == T.STRING:
+                    end = line_lengths[token.end[0] - 1] + token.end[1]
+                    pair = (opening, (end - width, end))
+                else:
+                    strings.append(opening)
+            case T.FSTRING_END | T.TSTRING_END:
+                opening = strings.pop()
+                pair = (opening, (offset, offset + len(token.string)))
+            case T.OP if token.string in "()[]{}":
+                if token.string in "([{":
+                    brackets.append((token.string, offset))
+                elif brackets and brackets[-1][0] == closing[token.string]:
+                    _, opening_offset = brackets.pop()
+                    pair = (
+                        (opening_offset, opening_offset + 1), (offset, offset + 1)
+                    )
+                else:
+                    # Do not pair across an incorrectly nested delimiter.
+                    brackets.clear()
+        if pair is not None:
+            opening, ending = pair
+            if opening[0] <= candidate < opening[1]:
+                return ending
+            if ending[0] <= candidate < ending[1]:
+                return opening
+    return None
+
+
+def gen_colors(buffer: str) -> Iterator[ColorSpan]:
+    """Returns a list of index spans to color using the given color tag.
+
+    The input `buffer` should be a valid start of a Python code block, i.e.
+    it cannot be a block starting in the middle of a multiline string.
+    """
+    gen, line_lengths = _get_token_stream(buffer)
     last_emitted: ColorSpan | None = None
     try:
         for color in gen_colors_from_token_stream(gen, line_lengths):
