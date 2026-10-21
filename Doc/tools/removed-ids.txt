@@ -121,3 +121,6 @@ library/turtle.html: introduction
 # Wrong exception names in 'concurrent.interpreters' docs (gh-136563)
 library/concurrent.interpreters.html: concurrent.interpreters.QueueEmptyError
 library/concurrent.interpreters.html: concurrent.interpreters.QueueFullError
+
+# Removed footnote
+c-api/exceptions.html: win
