@@ -1053,6 +1053,9 @@ setup_context(Py_ssize_t stack_level,
     if (f == NULL) {
         globals = interp->sysdict;
         *filename = PyUnicode_FromString("<sys>");
+        if (*filename == NULL) {
+            return 0;
+        }
         *lineno = 0;
     }
     else {
@@ -1196,7 +1199,6 @@ warnings_warn_impl(PyObject *module, PyObject *message, PyObject *category,
                 stacklevel = 2;
             }
         } else {
-            Py_DECREF((PyObject *)skip_file_prefixes);
             skip_file_prefixes = NULL;
         }
     }
