@@ -2276,7 +2276,6 @@ dictresize(PyDictObject *mp,
         UNLOCK_KEYS(oldkeys);
         set_keys(mp, newkeys);
         dictkeys_decref(oldkeys, IS_DICT_SHARED(mp));
-        set_values(mp, NULL);
         if (oldvalues->embedded) {
             assert(oldvalues->embedded == 1);
             assert(oldvalues->valid == 1);
@@ -2285,6 +2284,7 @@ dictresize(PyDictObject *mp,
         else {
             free_values(oldvalues, IS_DICT_SHARED(mp));
         }
+        set_values(mp, NULL);
     }
     else {  // oldkeys is combined.
         if (oldkeys->dk_kind == DICT_KEYS_GENERAL) {
@@ -3160,7 +3160,6 @@ clear_lock_held(PyObject *op)
         clear_embedded_values(oldvalues, oldkeys->dk_nentries);
     }
     else {
-        set_values(mp, NULL);
         set_keys(mp, Py_EMPTY_KEYS);
         n = oldkeys->dk_nentries;
         for (i = 0; i < n; i++) {
@@ -3168,6 +3167,7 @@ clear_lock_held(PyObject *op)
             FT_ATOMIC_STORE_PTR_RELEASE(oldvalues->values[i], NULL);
             Py_XDECREF(tmp);
         }
+        set_values(mp, NULL);
         free_values(oldvalues, IS_DICT_SHARED(mp));
         dictkeys_decref(oldkeys, IS_DICT_SHARED(mp));
     }
@@ -8016,7 +8016,7 @@ PyObject_ClearManagedDict(PyObject *obj)
             clear_inline_values(_PyObject_InlineValues(obj));
             return;
         }
-        else if (FT_ATOMIC_LOAD_PTR_RELAXED(dict->ma_values) ==
+        if (FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_values) ==
                     _PyObject_InlineValues(obj)) {
             // We have a materialized object which points at the inline
             // values. We need to materialize the keys. Nothing can modify
