@@ -3,7 +3,7 @@
 
 .. module:: tokenize
    :synopsis: Lexical scanner for Python source code.
-
+`
 **Source code:** :source:`Lib/tokenize.py`
 
 --------------
@@ -43,7 +43,7 @@ The primary entry point is a :term:`generator`:
    The generator produces :class:`TokenInfo` objects.
 
    .. versionchanged:: 3.1
-      Added support for named tuples.
+      Changed to yield :class:`TokenInfo` objects instead of plain tuples.
 
    :func:`.tokenize` determines the source encoding of the file by looking for a
    UTF-8 BOM or encoding cookie, according to :pep:`263`.
@@ -73,7 +73,7 @@ The primary entry point is a :term:`generator`:
 
    .. attribute:: string
 
-      The token text as a :class:`str`, usually as it appears in the source.
+      The token text as a :class:`str`.
       For :data:`~token.STRING` tokens, this includes the quotes, any prefix,
       and escape sequences, without evaluating them.
 
@@ -95,24 +95,24 @@ The primary entry point is a :term:`generator`:
    .. attribute:: end
 
       A 2-tuple ``(erow, ecol)`` of ints specifying the exclusive end
-      position of the token, using the same coordinate conventions as
-      :attr:`start`. For a token spanning multiple lines, *erow* is the
-      final row and *ecol* is the column on that row.
+      position of the token. Rows are numbered from 1 and columns from 0.
+      For a token spanning multiple lines, *erow* is the final row and
+      *ecol* is the column on that row.
 
       For example, the name ``spam`` at the beginning of the first line
       has :attr:`start` equal to ``(1, 0)`` and :attr:`end` equal to ``(1, 4)``.
 
       For an :data:`~token.ENCODING` token, this is ``(0, 0)``.
       A :data:`~token.NEWLINE` or :data:`~token.NL` token inserted at the end
-      of input without a final newline can have an empty :attr:`string`
-      and an end column one beyond the source text.
+      of input without a final newline can have an end column one beyond
+      the source text.
 
    .. attribute:: line
 
-      A :class:`str` containing the full physical source line on which
+      A :class:`str` containing the full source line on which
       the token was found, including surrounding text and the line terminator
       if present. For a token spanning multiple lines, this can contain
-      several physical lines. It is empty for :data:`~token.ENCODING` and
+      several source lines. It is empty for :data:`~token.ENCODING` and
       :data:`~token.ENDMARKER` tokens.
 
    .. attribute:: exact_type
@@ -124,6 +124,8 @@ The primary entry point is a :term:`generator`:
       and :attr:`exact_type` equal to :data:`~token.PLUS`.
 
       .. versionadded:: 3.3
+
+   .. versionadded:: 3.1
 
 
 All constants from the :mod:`token` module are also exported from
