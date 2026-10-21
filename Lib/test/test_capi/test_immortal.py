@@ -394,6 +394,8 @@ class TestUnstableCAPI(unittest.TestCase):
         assert local_ref() is not None, "immortal generator lost its local"
         assert next(generator) is local_ref()
         next(generator)
+        if sys.argv[1] == "frozen":
+            gc.freeze()
         class Later:
             pass
         assert _testinternalcapi.has_deferred_refcount(Later)
@@ -405,7 +407,9 @@ class TestUnstableCAPI(unittest.TestCase):
         assert next(generator) is later_ref()
         generator.close()
         """
-        assert_python_ok("-c", script)
+        for state in ("normal", "frozen"):
+            with self.subTest(state=state):
+                assert_python_ok("-c", script, state)
 
     @unittest.skipUnless(Py_GIL_DISABLED, "deferred refcounting is free-threaded only")
     def test_immortalize_frame_deferred_locals(self):
@@ -430,6 +434,38 @@ class TestUnstableCAPI(unittest.TestCase):
         assert local_ref() is not None, "immortal frame lost its local"
         assert frame.f_locals["local"] is local_ref()
         frame.clear()
+        """
+        assert_python_ok("-c", script)
+
+    def test_immortalize_subinterpreters(self):
+        # Each interpreter owns and releases its frame registry independently.
+        script = """if True:
+        import _testcapi
+        import gc
+
+        code = '''if True:
+            import _testcapi
+            import gc
+            import sys
+
+            def gen():
+                yield object()
+
+            generator = gen()
+            next(generator)
+            assert _testcapi.py_immortalize(generator) == 1
+
+            def make_frame():
+                frame = sys._getframe()
+                assert _testcapi.py_immortalize(frame) == 1
+                return frame
+
+            frame = make_frame()
+            gc.collect()
+        '''
+        for _ in range(3):
+            assert _testcapi.run_in_subinterp(code) == 0
+            gc.collect()
         """
         assert_python_ok("-c", script)
 

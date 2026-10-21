@@ -25,6 +25,7 @@
 #include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
 #include "pycore_namespace.h"     // _PyNamespace_Type
 #include "pycore_object.h"        // export _Py_SwappedOp
+#include "pycore_object_stack.h"  // _PyObjectStack_Push()
 #include "pycore_optimizer.h"     // _PyUOpExecutor_Type
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
@@ -2913,47 +2914,10 @@ PyUnstable_SetImmortal(PyObject *op)
     return 1;
 }
 
-typedef struct {
-    PyObject_HEAD
-    PyObject *owner;
-} immortal_frame_root;
-
-static int
-immortal_frame_root_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    PyObject *owner = ((immortal_frame_root *)self)->owner;
-    // A frame may be tracked again when it takes ownership of its data.
-    // In that case the GC already visits its outgoing references directly.
-    if (PyObject_GC_IsTracked(owner)) {
-        return 0;
-    }
-    return Py_TYPE(owner)->tp_traverse(owner, visit, arg);
-}
-
-static void
-immortal_frame_root_dealloc(PyObject *self)
-{
-    PyObject_GC_UnTrack(self);
-    PyObject_GC_Del(self);
-}
-
-static PyTypeObject immortal_frame_root_type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    .tp_name = "_immortal_frame_root",
-    .tp_basicsize = sizeof(immortal_frame_root),
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-                Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    .tp_dealloc = immortal_frame_root_dealloc,
-    .tp_traverse = immortal_frame_root_traverse,
-};
-
 #ifndef Py_GIL_DISABLED
 static _PyInterpreterFrame *
 get_immortalized_frame(PyObject *op)
 {
-    if (Py_IS_TYPE(op, &immortal_frame_root_type)) {
-        op = ((immortal_frame_root *)op)->owner;
-    }
     if (PyGen_CheckExact(op) || PyCoro_CheckExact(op) || PyAsyncGen_CheckExact(op)) {
         PyGenObject *gen = (PyGenObject *)op;
         if (gen->gi_frame_state != FRAME_CLEARED) {
@@ -3027,6 +2991,13 @@ update_frames(PyInterpreterState *interp, PyObject *immortal)
     }
     _Py_FOR_EACH_TSTATE_END(interp);
     PyUnstable_GC_VisitObjects(update_heap_frames, immortal);
+    for (_PyObjectStackChunk *chunk = interp->gc.immortal_frames.head;
+         chunk != NULL; chunk = chunk->prev)
+    {
+        for (Py_ssize_t i = 0; i < chunk->n; i++) {
+            update_heap_frames(chunk->objs[i], immortal);
+        }
+    }
 }
 #endif
 
@@ -3058,29 +3029,26 @@ PyUnstable_Immortalize(PyObject *op)
         return 0;
     }
 
-    immortal_frame_root *root = NULL;
-    if (PyGen_CheckExact(op) || PyCoro_CheckExact(op) || PyAsyncGen_CheckExact(op) ||
-        PyFrame_Check(op) || Py_IS_TYPE(op, &immortal_frame_root_type))
-    {
-        if (PyType_Ready(&immortal_frame_root_type) < 0) {
-            return -1;
-        }
-        root = PyObject_GC_New(immortal_frame_root, &immortal_frame_root_type);
-        if (root == NULL) {
-            return -1;
-        }
-        root->owner = Py_IS_TYPE(op, &immortal_frame_root_type)
-            ? ((immortal_frame_root *)op)->owner : op;
-    }
-
     PyInterpreterState *interp = tstate->interp;
     // Stop the world so reference counts aren't prone to races.
     _PyEval_StopTheWorld(interp);
     // Another thread may have immortalized it while we were waiting.
     if (_Py_IsImmortal(op)) {
         _PyEval_StartTheWorld(interp);
-        Py_XDECREF(root);
         return 0;
+    }
+
+    if (PyGen_CheckExact(op) || PyCoro_CheckExact(op) || PyAsyncGen_CheckExact(op) ||
+        PyFrame_Check(op))
+    {
+        // Keep deferred locals visible to GC, including those acquired after
+        // a generator resumes or a frame returns. Register before changing
+        // the object so allocation failure leaves it untouched.
+        if (_PyObjectStack_Push(&interp->gc.immortal_frames, op) < 0) {
+            _PyEval_StartTheWorld(interp);
+            PyErr_NoMemory();
+            return -1;
+        }
     }
 
 #ifndef Py_GIL_DISABLED
@@ -3112,12 +3080,6 @@ PyUnstable_Immortalize(PyObject *op)
     _Py_AddRefTotal(tstate, -refcnt);
 #endif
     _Py_SetImmortalUntracked(op);
-    if (root != NULL) {
-        // Retain this tracked root for the same lifetime as its immortal
-        // owner. It keeps deferred locals visible to GC, including locals
-        // created after a generator resumes or a frame returns.
-        PyObject_GC_Track(root);
-    }
     _PyEval_StartTheWorld(interp);
     _PyObject_ASSERT(op, !PyObject_GC_IsTracked(op));
     _PyObject_ASSERT(op, _Py_IsImmortal(op));

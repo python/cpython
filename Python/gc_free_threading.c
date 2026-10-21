@@ -1056,6 +1056,21 @@ mark_reachable(PyObject *op)
     return 0;
 }
 
+static int
+mark_immortal_frames(PyInterpreterState *interp)
+{
+    for (_PyObjectStackChunk *chunk = interp->gc.immortal_frames.head;
+         chunk != NULL; chunk = chunk->prev)
+    {
+        for (Py_ssize_t i = 0; i < chunk->n; i++) {
+            if (mark_reachable(chunk->objs[i]) < 0) {
+                return -1;
+            }
+        }
+    }
+    return 0;
+}
+
 #ifdef GC_DEBUG
 static bool
 validate_alive_bits(const mi_heap_t *heap, const mi_heap_area_t *area,
@@ -1464,7 +1479,9 @@ deduce_unreachable_heap(PyInterpreterState *interp,
 
     // Transitively mark reachable objects by clearing the
     // _PyGC_BITS_UNREACHABLE flag.
-    if (gc_visit_heaps(interp, &mark_heap_visitor, &state->base) < 0) {
+    if (mark_immortal_frames(interp) < 0 ||
+        gc_visit_heaps(interp, &mark_heap_visitor, &state->base) < 0)
+    {
         // On out-of-memory, restore the refcounts and bail out.
         gc_visit_heaps(interp, &restore_refs, &state->base);
         return -1;
@@ -2677,6 +2694,8 @@ _PyGC_Fini(PyInterpreterState *interp)
     Py_CLEAR(gcstate->callbacks);
     PyMem_RawFree(gcstate->generation_stats);
     gcstate->generation_stats = NULL;
+    // Release the registry's storage, leaving the immortal objects alive.
+    _PyObjectStack_Clear(&gcstate->immortal_frames);
 
     /* We expect that none of this interpreters objects are shared
        with other interpreters.
