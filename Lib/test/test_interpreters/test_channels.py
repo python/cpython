@@ -9,7 +9,7 @@ from test.support import import_helper
 # Raise SkipTest if subinterpreters not supported.
 _channels = import_helper.import_module('_interpchannels')
 from concurrent import interpreters
-from test.support import channels
+from test.support import channels, force_not_colorized
 from .utils import _run_output, TestBase
 
 
@@ -29,6 +29,39 @@ class LowLevelTests(TestBase):
     def test_highlevel_reloaded(self):
         # See gh-115490 (https://github.com/python/cpython/issues/115490).
         importlib.reload(channels)
+
+    @force_not_colorized
+    def test_channel_id_types(self):
+        # See https://github.com/python/cpython/issues/143376.
+        code = """\
+        import _interpchannels
+        import re
+        from concurrent import interpreters
+
+        class End:
+            __slots__ = ()
+            def __new__(cls, chan=None):
+                return object.__new__(cls)
+            @property
+            def _id(self):
+                return object()
+
+        class Send(End): pass
+        class Recv(End): pass
+
+        _interpchannels._register_end_types(Send, Recv)
+        chan = _interpchannels._channel_id(_interpchannels.create(), _resolve=True)
+        interp = interpreters.create()
+        try:
+            interp.prepare_main(chan=Send(chan))
+        finally:
+            interp.close()
+        """
+
+        out, err = self.assert_python_failure("-c", code)
+        self.assertEqual(out, '')
+        errmsg = "TypeError: '_id' attribute must be an _interpchannels.ChannelID object, not object"
+        self.assertIn(errmsg, err)
 
 
 class TestChannels(TestBase):
