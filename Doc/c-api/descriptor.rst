@@ -72,6 +72,34 @@ found in the dictionary of type objects.
    methods on a type, and correspond to :class:`types.MethodDescriptorType`
    objects in Python.
 
+.. c:var:: PyTypeObject PyWrapperDescr_Type
+
+   The type object for wrapper descriptor objects created by
+   :c:func:`PyDescr_NewWrapper` and :c:func:`PyWrapper_New`.
+
+   Wrapper descriptors are used internally to expose special methods
+   such as ``__repr__`` or ``__add__``, which are implemented by type slots.
+   The type is exposed in Python as  :class:`types.WrapperDescriptorType`.
+
+
+.. `wrapperbase` & `PyWrapperFlag_KEYWORDS` show up in search and index,
+   and link here, but are only referenced in prose:
+
+.. c:struct:: wrapperbase
+   :no-typesetting:
+
+.. c:macro:: PyWrapperFlag_KEYWORDS
+   :no-typesetting:
+
+.. c:function:: PyObject* PyDescr_NewWrapper(PyTypeObject *type, struct wrapperbase *base, void *wrapped)
+
+   Create a new wrapper descriptor of type :c:var:`PyWrapperDescr_Type`.
+
+   This function is meant for internal use only; it and
+   related API (``struct wrapperbase`` and the ``PyWrapperFlag_KEYWORDS``
+   flag) are exposed publicly for backwards compatibility reasons.
+
+   See :c:func:`PyCMethod_New` for wrapping a C function.
 
 .. c:function:: PyObject* PyDescr_NewClassMethod(PyTypeObject *type, PyMethodDef *method)
 
@@ -141,31 +169,6 @@ found in the dictionary of type objects.
    :c:member:`~PyTypeObject.tp_descr_set`).
 
    .. soft-deprecated:: 3.15
-
-
-.. c:struct:: wrapperbase
-   :no-contents-entry:
-   :no-index-entry:
-   :no-typesetting:
-.. c:type:: PyObject *(*wrapperfunc)(PyObject *self, PyObject *args, void *wrapped)
-   :no-contents-entry:
-   :no-index-entry:
-   :no-typesetting:
-.. c:type:: PyObject *(*wrapperfunc_kwds)(PyObject *self, PyObject *args, void *wrapped, PyObject *kwds)
-   :no-contents-entry:
-   :no-index-entry:
-   :no-typesetting:
-.. c:macro:: PyWrapperFlag_KEYWORDS
-   :no-contents-entry:
-   :no-index-entry:
-   :no-typesetting:
-.. c:var:: PyTypeObject PyWrapperDescr_Type
-   :no-contents-entry:
-   :no-index-entry:
-   :no-typesetting:
-.. c:function:: PyObject* PyDescr_NewWrapper(PyTypeObject *type, struct wrapperbase *base, void *wrapped)
-
-   For internal use only; do not use in extensions.
 
 
 Built-in descriptors
