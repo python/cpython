@@ -3,11 +3,10 @@
  * using the SystemConfiguration framework.
  */
 
+// Need limited C API version 3.13 for Py_mod_gil
 #include "pyconfig.h"   // Py_GIL_DISABLED
-
 #ifndef Py_GIL_DISABLED
-// Need limited C API version 3.12 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
-#define Py_LIMITED_API 0x030c0000
+#  define Py_LIMITED_API 0x030d0000
 #endif
 
 #include <Python.h>
@@ -114,6 +113,7 @@ get_proxy_settings(PyObject* Py_UNUSED(mod), PyObject *Py_UNUSED(ignored))
             } else {
                 PyObject* t = cfstring_to_pystring(aString);
                 if (!t) {
+                    if (PyErr_Occurred()) goto error;
                     PyTuple_SetItem(v, i, Py_NewRef(Py_None));
                 } else {
                     PyTuple_SetItem(v, i, t);
@@ -162,6 +162,7 @@ set_proxy(PyObject* proxies, const char* proto, CFDictionaryRef proxyDict,
                 Py_DECREF(v);
                 return r;
             }
+            if (PyErr_Occurred()) return -1;
         }
 
     }
@@ -240,6 +241,7 @@ static PyMethodDef mod_methods[] = {
 
 static PyModuleDef_Slot _scproxy_slots[] = {
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

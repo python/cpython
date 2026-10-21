@@ -8,8 +8,9 @@
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_MakePendingCalls()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
 #include "pycore_pythread.h"      // _POSIX_THREADS
+#include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
 
 #ifndef DONT_HAVE_STDIO_H
 #  include <stdio.h>
@@ -20,8 +21,8 @@
 
 // Define PY_TIMEOUT_MAX constant.
 #ifdef _POSIX_THREADS
-   // PyThread_acquire_lock_timed() uses _PyTime_FromNanoseconds(us * 1000),
-   // convert microseconds to nanoseconds.
+   // PyThread_acquire_lock_timed() uses (us * 1000) to convert microseconds
+   // to nanoseconds.
 #  define PY_TIMEOUT_MAX_VALUE (LLONG_MAX / 1000)
 #elif defined (NT_THREADS)
    // WaitForSingleObject() accepts timeout in milliseconds in the range
@@ -38,7 +39,8 @@
 const long long PY_TIMEOUT_MAX = PY_TIMEOUT_MAX_VALUE;
 
 
-static void PyThread__init_thread(void); /* Forward */
+/* Forward declaration */
+static void PyThread__init_thread(void);
 
 #define initialized _PyRuntime.threads.initialized
 
@@ -68,6 +70,79 @@ PyThread_init_thread(void)
 #else
 #   error "Require native threads. See https://bugs.python.org/issue31370"
 #endif
+
+
+/*
+ * Lock support.
+ */
+
+PyThread_type_lock
+PyThread_allocate_lock(void)
+{
+    if (!initialized) {
+        PyThread_init_thread();
+    }
+
+    PyMutex *lock = (PyMutex *)PyMem_RawMalloc(sizeof(PyMutex));
+    if (lock) {
+        *lock = (PyMutex){0};
+    }
+
+    return (PyThread_type_lock)lock;
+}
+
+void
+PyThread_free_lock(PyThread_type_lock lock)
+{
+    PyMem_RawFree(lock);
+}
+
+PyLockStatus
+PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
+                            int intr_flag)
+{
+    PyTime_t timeout;  // relative timeout
+    if (microseconds >= 0) {
+        // bpo-41710: PyThread_acquire_lock_timed() cannot report timeout
+        // overflow to the caller, so clamp the timeout to
+        // [PyTime_MIN, PyTime_MAX].
+        //
+        // PyTime_MAX nanoseconds is around 292.3 years.
+        //
+        // _thread.Lock.acquire() and _thread.RLock.acquire() raise an
+        // OverflowError if microseconds is greater than PY_TIMEOUT_MAX.
+        timeout = _PyTime_FromMicrosecondsClamp(microseconds);
+    }
+    else {
+        timeout = -1;
+    }
+
+    _PyLockFlags flags = _Py_LOCK_DONT_DETACH;
+    if (intr_flag) {
+        flags |= _PY_FAIL_IF_INTERRUPTED;
+    }
+
+    return _PyMutex_LockTimed((PyMutex *)lock, timeout, flags);
+}
+
+void
+PyThread_release_lock(PyThread_type_lock lock)
+{
+    PyMutex_Unlock((PyMutex *)lock);
+}
+
+int
+_PyThread_at_fork_reinit(PyThread_type_lock *lock)
+{
+    _PyMutex_at_fork_reinit((PyMutex *)lock);
+    return 0;
+}
+
+int
+PyThread_acquire_lock(PyThread_type_lock lock, int waitflag)
+{
+    return PyThread_acquire_lock_timed(lock, waitflag ? -1 : 0, /*intr_flag=*/0);
+}
 
 
 /* return the current thread stack size */
@@ -107,7 +182,7 @@ PyThread_ParseTimeoutArg(PyObject *arg, int blocking, PY_TIMEOUT_T *timeout_p)
         return -1;
     }
 
-    _PyTime_t timeout;
+    PyTime_t timeout;
     if (_PyTime_FromSecondsObject(&timeout, arg, _PyTime_ROUND_TIMEOUT) < 0) {
         return -1;
     }
@@ -132,14 +207,14 @@ PyThread_acquire_lock_timed_with_retries(PyThread_type_lock lock,
                                          PY_TIMEOUT_T timeout)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyTime_t endtime = 0;
+    PyTime_t endtime = 0;
     if (timeout > 0) {
         endtime = _PyDeadline_Init(timeout);
     }
 
     PyLockStatus r;
     do {
-        _PyTime_t microseconds;
+        PyTime_t microseconds;
         microseconds = _PyTime_AsMicroseconds(timeout, _PyTime_ROUND_CEILING);
 
         /* first a simple non-blocking try without releasing the GIL */
@@ -259,18 +334,12 @@ PyThread_GetInfo(void)
 
 #ifdef HAVE_PTHREAD_STUBS
     value = Py_NewRef(Py_None);
-#elif defined(_POSIX_THREADS)
-#ifdef USE_SEMAPHORES
-    value = PyUnicode_FromString("semaphore");
 #else
-    value = PyUnicode_FromString("mutex+cond");
-#endif
+    value = PyUnicode_FromString("pymutex");
     if (value == NULL) {
         Py_DECREF(threadinfo);
         return NULL;
     }
-#else
-    value = Py_NewRef(Py_None);
 #endif
     PyStructSequence_SET_ITEM(threadinfo, pos++, value);
 

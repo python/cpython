@@ -33,13 +33,6 @@ PyAPI_FUNC(void) _Py_NO_RETURN Py_Exit(int);
 PyAPI_FUNC(int) Py_Main(int argc, wchar_t **argv);
 PyAPI_FUNC(int) Py_BytesMain(int argc, char **argv);
 
-/* In pathconfig.c */
-Py_DEPRECATED(3.13) PyAPI_FUNC(wchar_t *) Py_GetProgramName(void);
-Py_DEPRECATED(3.13) PyAPI_FUNC(wchar_t *) Py_GetPythonHome(void);
-Py_DEPRECATED(3.13) PyAPI_FUNC(wchar_t *) Py_GetProgramFullPath(void);
-Py_DEPRECATED(3.13) PyAPI_FUNC(wchar_t *) Py_GetPrefix(void);
-Py_DEPRECATED(3.13) PyAPI_FUNC(wchar_t *) Py_GetExecPrefix(void);
-Py_DEPRECATED(3.13) PyAPI_FUNC(wchar_t *) Py_GetPath(void);
 #ifdef MS_WINDOWS
 int _Py_CheckPython3(void);
 #endif

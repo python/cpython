@@ -20,8 +20,6 @@ import errno
 
 from queue import Empty, Full
 
-import _multiprocessing
-
 from . import connection
 from . import context
 _ForkingPickler = context.reduction.ForkingPickler
@@ -123,7 +121,7 @@ class Queue(object):
 
     def qsize(self):
         # Raises NotImplementedError on Mac OSX because of broken sem_getvalue()
-        return self._maxsize - self._sem._semlock._get_value()
+        return self._maxsize - self._sem.get_value()
 
     def empty(self):
         return not self._poll()

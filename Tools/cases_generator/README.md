@@ -13,9 +13,9 @@ What's currently here:
 - `parser.py` helper for interactions with `parsing.py`
 - `tierN_generator.py`: a couple of driver scripts to read `Python/bytecodes.c` and
   write `Python/generated_cases.c.h` (and several other files)
-- `tier2_abstract_generator.py`: reads `Python/bytecodes.c` and
-  `Python/tier2_redundancy_eliminator_bytecodes.c` and writes
-  `Python/tier2_redundancy_eliminator_cases.c.h`
+- `optimizer_generator.py`: reads `Python/bytecodes.c` and
+  `Python/optimizer_bytecodes.c` and writes
+  `Python/optimizer_cases.c.h`
 - `stack.py`: code to handle generalized stack effects
 - `cwriter.py`: code which understands tokens and how to format C code;
   main class: `CWriter`

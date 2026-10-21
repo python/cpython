@@ -1,4 +1,3 @@
-import _ctypes_test
 import ctypes
 import functools
 import gc
@@ -12,8 +11,10 @@ from ctypes import (CDLL, cdll, Structure, CFUNCTYPE,
                     c_short, c_ushort, c_int, c_uint,
                     c_long, c_longlong, c_ulonglong, c_ulong,
                     c_float, c_double, c_longdouble, py_object)
-from ctypes.util import find_library
+from ctypes.util import find_library, wrap_dll_function
 from test import support
+from test.support import import_helper
+_ctypes_test = import_helper.import_module("_ctypes_test")
 
 
 class Callbacks(unittest.TestCase):
@@ -106,7 +107,7 @@ class Callbacks(unittest.TestCase):
 
     def test_unsupported_restype_1(self):
         # Only "fundamental" result types are supported for callback
-        # functions, the type must have a non-NULL stgdict->setfunc.
+        # functions, the type must have a non-NULL stginfo->setfunc.
         # POINTER(c_double), for example, is not supported.
 
         prototype = self.functype.__func__(POINTER(c_double))
@@ -148,9 +149,10 @@ class Callbacks(unittest.TestCase):
             print(f"a={a}, b={b}, c={c}")
             return c
         dll = cdll[_ctypes_test.__file__]
-        # With no fix for i38748, the next line will raise OSError and cause the test to fail.
-        self.assertEqual(dll._test_i38748_runCallback(callback, 5, 10), 15)
-
+        with support.captured_stdout() as out:
+            # With no fix for i38748, the next line will raise OSError and cause the test to fail.
+            self.assertEqual(dll._test_i38748_runCallback(callback, 5, 10), 15)
+            self.assertEqual(out.getvalue(), "a=5, b=10, c=15\n")
 
 if hasattr(ctypes, 'WINFUNCTYPE'):
     class StdcallCallbacks(Callbacks):
@@ -322,9 +324,23 @@ class SampleCallbacksTestCase(unittest.TestCase):
 
             self.assertIsInstance(cm.unraisable.exc_value, TypeError)
             self.assertEqual(cm.unraisable.err_msg,
-                             f"Exception ignored on converting result "
+                             f"Exception ignored while converting result "
                              f"of ctypes callback function {func!r}")
             self.assertIsNone(cm.unraisable.object)
+
+    def test_narrow_int_return_widened(self):
+        # gh-156933: Narrow integers were not widened on s390x
+        CALLBACK = CFUNCTYPE(c_int)
+
+        @wrap_dll_function(CDLL(_ctypes_test.__file__))
+        def _testfunc_callback_int_to_longlong(func: CALLBACK) -> c_longlong:
+            pass
+
+        @CALLBACK
+        def cb():
+            return -1
+
+        self.assertEqual(_testfunc_callback_int_to_longlong(cb), -1)
 
 
 if __name__ == '__main__':

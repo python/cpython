@@ -8,8 +8,6 @@ Empty lines above are for good reason (testing for correct line numbers)
 from typing import Optional
 from functools import wraps
 
-__annotations__[1] = 2
-
 class C:
 
     x = 5; y: Optional['C'] = None
@@ -18,8 +16,6 @@ from typing import Tuple
 x: int = 5; y: str = x; f: Tuple[int, int]
 
 class M(type):
-
-    __annotations__['123'] = 123
     o: type = object
 
 (pars): bool = True

@@ -8,23 +8,51 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_freelist.h"
+#include "pycore_frame.h"         // FRAME_STATE_FINISHED()
+#include "pycore_interpframe_structs.h" // _PyGenObject
 
-extern PyObject *_PyGen_yf(PyGenObject *);
-extern void _PyGen_Finalize(PyObject *self);
+#include <stddef.h>               // offsetof()
+
+
+static inline
+PyGenObject *_PyGen_GetGeneratorFromFrame(_PyInterpreterFrame *frame)
+{
+    assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
+    size_t offset_in_gen = offsetof(PyGenObject, gi_iframe);
+    return (PyGenObject *)(((char *)frame) - offset_in_gen);
+}
+
+// The generator finalizer is a no-op once its frame is cleared.
+static inline int
+_PyGen_FinalizerIsNoop(PyObject *op)
+{
+    return Py_TYPE(op)->tp_finalize == PyGen_Type.tp_finalize &&
+        FRAME_STATE_FINISHED(((PyGenObject *)op)->gi_frame_state);
+}
+
+PyAPI_FUNC(PyObject *)_PyGen_yf(PyGenObject *);
+extern int _PyGen_ClearFrame(PyGenObject *self);
 
 // Export for '_asyncio' shared extension
 PyAPI_FUNC(int) _PyGen_SetStopIterationValue(PyObject *);
 
 // Export for '_asyncio' shared extension
 PyAPI_FUNC(int) _PyGen_FetchStopIterationValue(PyObject **);
+// Set the exception passed to throw(typ[, val[, tb]]).
+// Return 0 on success, -1 on failure.
+extern int _PyGen_SetException(PyObject *typ, PyObject *val, PyObject *tb);
 
-extern PyObject *_PyCoro_GetAwaitableIter(PyObject *o);
-extern PyObject *_PyAsyncGenValueWrapperNew(PyThreadState *state, PyObject *);
+PyAPI_FUNC(PyObject *)_PyCoro_GetAwaitableIter(PyObject *o);
+PyAPI_FUNC(PyObject *)_PyAsyncGenValueWrapperNew(PyThreadState *state, PyObject *);
+
+// Exported for external JIT support
+PyAPI_FUNC(PyObject *) _PyCoro_ComputeOrigin(int origin_depth, _PyInterpreterFrame *current_frame);
 
 extern PyTypeObject _PyCoroWrapper_Type;
 extern PyTypeObject _PyAsyncGenWrappedValue_Type;
 extern PyTypeObject _PyAsyncGenAThrow_Type;
+
+PyAPI_FUNC(PySendResult) _PyAsyncGenASend_Send(PyObject *iter, PyObject *arg, PyObject **result);
 
 #ifdef __cplusplus
 }

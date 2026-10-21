@@ -26,6 +26,7 @@ class PolicyAPITests(unittest.TestCase):
         'raise_on_defect':          False,
         'mangle_from_':             True,
         'message_factory':          None,
+        'verify_generated_headers': True,
         }
     # These default values are the ones set on email.policy.default.
     # If any of these defaults change, the docs must be updated.
@@ -272,7 +273,7 @@ class PolicyAPITests(unittest.TestCase):
         actual = policy.fold('Subject', 'ą' * 12)
         self.assertEqual(
             actual,
-            'Subject: \n' +
+            'Subject:\n' +
             12 * ' =?utf-8?q?=C4=85?=\n')
 
     def test_short_maxlen_error(self):
@@ -293,6 +294,35 @@ class PolicyAPITests(unittest.TestCase):
                 policy = email.policy.default.clone(max_line_length=maxlen)
                 with self.assertRaises(email.errors.HeaderParseError):
                     policy.fold("Subject", subject)
+
+    def test_verify_generated_headers(self):
+        # Turning protection off allows header injection
+        policy = email.policy.default.clone(verify_generated_headers=False)
+        for text in (
+            'Header: Value\r\nBad: Injection\r\n',
+            'Header: NoNewLine'
+        ):
+            with self.subTest(text=text):
+                message = email.message_from_string(
+                    "Header: Value\r\n\r\nBody",
+                    policy=policy,
+                )
+                class LiteralHeader(str):
+                    name = 'Header'
+                    def fold(self, **kwargs):
+                        return self
+
+                del message['Header']
+                message['Header'] = LiteralHeader(text)
+
+                self.assertEqual(
+                    message.as_string(),
+                    f"{text}\nBody",
+                )
+                self.assertEqual(
+                    message.as_bytes(),
+                    f"{text}\nBody".encode(),
+                )
 
     # XXX: Need subclassing tests.
     # For adding subclassed objects, make sure the usual rules apply (subclass

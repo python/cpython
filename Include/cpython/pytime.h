@@ -16,6 +16,10 @@ PyAPI_FUNC(int) PyTime_Monotonic(PyTime_t *result);
 PyAPI_FUNC(int) PyTime_PerfCounter(PyTime_t *result);
 PyAPI_FUNC(int) PyTime_Time(PyTime_t *result);
 
+PyAPI_FUNC(int) PyTime_MonotonicRaw(PyTime_t *result);
+PyAPI_FUNC(int) PyTime_PerfCounterRaw(PyTime_t *result);
+PyAPI_FUNC(int) PyTime_TimeRaw(PyTime_t *result);
+
 #ifdef __cplusplus
 }
 #endif

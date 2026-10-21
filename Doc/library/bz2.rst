@@ -1,13 +1,8 @@
-:mod:`bz2` --- Support for :program:`bzip2` compression
-=======================================================
+:mod:`!bz2` --- Support for :program:`bzip2` compression
+========================================================
 
 .. module:: bz2
    :synopsis: Interfaces for bzip2 compression and decompression.
-
-.. moduleauthor:: Gustavo Niemeyer <niemeyer@conectiva.com>
-.. moduleauthor:: Nadeem Vawda <nadeem.vawda@gmail.com>
-.. sectionauthor:: Gustavo Niemeyer <niemeyer@conectiva.com>
-.. sectionauthor:: Nadeem Vawda <nadeem.vawda@gmail.com>
 
 **Source code:** :source:`Lib/bz2.py`
 
@@ -16,7 +11,7 @@
 This module provides a comprehensive interface for compressing and
 decompressing data using the bzip2 compression algorithm.
 
-The :mod:`bz2` module contains:
+The :mod:`!bz2` module contains:
 
 * The :func:`.open` function and :class:`BZ2File` class for reading and
   writing compressed files.
@@ -24,6 +19,8 @@ The :mod:`bz2` module contains:
   incremental (de)compression.
 * The :func:`compress` and :func:`decompress` functions for one-shot
   (de)compression.
+
+.. include:: ../includes/optional-module.rst
 
 
 (De)compression of files
@@ -91,7 +88,7 @@ The :mod:`bz2` module contains:
    and :meth:`~io.IOBase.truncate`.
    Iteration and the :keyword:`with` statement are supported.
 
-   :class:`BZ2File` also provides the following methods:
+   :class:`BZ2File` also provides the following methods and attributes:
 
    .. method:: peek([n])
 
@@ -148,6 +145,19 @@ The :mod:`bz2` module contains:
 
       .. versionadded:: 3.3
 
+   .. attribute:: mode
+
+      ``'rb'`` for reading and ``'wb'`` for writing.
+
+      .. versionadded:: 3.13
+
+   .. attribute:: name
+
+      The bzip2 file name.  Equivalent to the :attr:`~io.FileIO.name`
+      attribute of the underlying :term:`file object`.
+
+      .. versionadded:: 3.13
+
 
    .. versionchanged:: 3.1
       Support for the :keyword:`with` statement was added.
@@ -156,7 +166,6 @@ The :mod:`bz2` module contains:
       Support was added for *filename* being a :term:`file object` instead of an
       actual filename.
 
-   .. versionchanged:: 3.3
       The ``'a'`` (append) mode was added, along with support for reading
       multi-stream files.
 
@@ -298,12 +307,42 @@ One-shot (de)compression
    .. versionchanged:: 3.3
       Support for multi-stream inputs was added.
 
+
+Miscellaneous
+-------------
+
+Information about the version of the bzip2 compression library
+actually loaded by the interpreter is available through the following
+constants.
+The version used for building the module is not available,
+because the bzip2 library does not provide it.
+
+
+.. data:: bzlib_version
+
+   The version string of the bzip2 compression library
+   actually loaded by the interpreter.
+
+   .. versionadded:: 3.16
+
+
+.. data:: bzlib_version_info
+
+   A named tuple containing the three components of the bzip2 compression
+   library version actually loaded by the interpreter:
+   *major*, *minor*, and *patch*.  All values are integers.
+   The components can also be accessed by name, so ``bz2.bzlib_version_info[0]``
+   is equivalent to ``bz2.bzlib_version_info.major`` and so on.
+
+   .. versionadded:: 3.16
+
+
 .. _bz2-usage-examples:
 
 Examples of usage
 -----------------
 
-Below are some examples of typical usage of the :mod:`bz2` module.
+Below are some examples of typical usage of the :mod:`!bz2` module.
 
 Using :func:`compress` and :func:`decompress` to demonstrate round-trip compression:
 

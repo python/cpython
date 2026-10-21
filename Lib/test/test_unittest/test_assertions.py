@@ -386,6 +386,16 @@ class TestLongMessage(unittest.TestCase):
                                '^UserWarning not triggered$',
                                '^UserWarning not triggered : oops$'])
 
+    def test_assertNotWarns(self):
+        def warn_future():
+            warnings.warn('xyz', FutureWarning, stacklevel=2)
+        self.assertMessagesCM('_assertNotWarns', (FutureWarning,),
+                              warn_future,
+                              ['^FutureWarning triggered$',
+                               '^oops$',
+                               '^FutureWarning triggered$',
+                               '^FutureWarning triggered : oops$'])
+
     def testAssertWarnsRegex(self):
         # test error not raised
         self.assertMessagesCM('assertWarnsRegex', (UserWarning, 'unused regex'),
@@ -396,11 +406,12 @@ class TestLongMessage(unittest.TestCase):
         # test warning raised but with wrong message
         def raise_wrong_message():
             warnings.warn('foo')
-        self.assertMessagesCM('assertWarnsRegex', (UserWarning, 'regex'),
-                              raise_wrong_message,
-                              ['^"regex" does not match "foo"$', '^oops$',
-                               '^"regex" does not match "foo"$',
-                               '^"regex" does not match "foo" : oops$'])
+        with self.assertWarnsRegex(UserWarning, 'foo'):
+            self.assertMessagesCM('assertWarnsRegex', (UserWarning, 'regex'),
+                                  raise_wrong_message,
+                                  ['^"regex" does not match "foo"$', '^oops$',
+                                   '^"regex" does not match "foo"$',
+                                   '^"regex" does not match "foo" : oops$'])
 
 
 if __name__ == "__main__":

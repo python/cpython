@@ -108,7 +108,7 @@ descriptors to wait until the file descriptor is ready for reading:
            #    In 1.5 seconds, 1st timer, 2nd timer and 3rd timer fires at once.
            #
            # If a timer file descriptor is signaled more than once since
-           # the last os.read() call, os.read() returns the nubmer of signaled
+           # the last os.read() call, os.read() returns the number of signaled
            # as host order of class bytes.
            print(f"Signaled events={events}")
            for fd, event in events:
