@@ -128,14 +128,22 @@ def _find_cycles(graph):
     def dfs(v):
         color[v] = GREY
         path.append(v)
-        for w in graph.get(v, ()):
-            if color[w] == WHITE:
-                dfs(w)
-            elif color[w] == GREY:            # back-edge → cycle!
-                i = path.index(w)
-                cycles.append(path[i:] + [w])  # make a copy
-        color[v] = BLACK
-        path.pop()
+        stack = [(v, iter(graph.get(v, ())))]
+        while stack:
+            v, children = stack[-1]
+            for w in children:
+                if color[w] == WHITE:
+                    color[w] = GREY
+                    path.append(w)
+                    stack.append((w, iter(graph.get(w, ()))))
+                    break
+                elif color[w] == GREY:            # back-edge → cycle!
+                    i = path.index(w)
+                    cycles.append(path[i:] + [w])  # make a copy
+            else:
+                color[v] = BLACK
+                path.pop()
+                stack.pop()
 
     for v in list(graph):
         if color[v] == WHITE:
@@ -167,14 +175,16 @@ def build_async_tree(result, task_emoji="(T)", cor_emoji=""):
         flag = task_emoji if node[0] == NodeType.TASK else cor_emoji
         return f"{flag} {labels[node]}"
 
-    def render(node, prefix="", last=True, buf=None):
-        if buf is None:
-            buf = []
-        buf.append(f"{prefix}{'└── ' if last else '├── '}{pretty(node)}")
-        new_pref = prefix + ("    " if last else "│   ")
-        kids = children.get(node, [])
-        for i, kid in enumerate(kids):
-            render(kid, new_pref, i == len(kids) - 1, buf)
+    def render(root):
+        buf = []
+        stack = [(root, "", True)]
+        while stack:
+            node, prefix, last = stack.pop()
+            buf.append(f"{prefix}{'└── ' if last else '├── '}{pretty(node)}")
+            new_pref = prefix + ("    " if last else "│   ")
+            kids = children.get(node, [])
+            for i, kid in reversed(list(enumerate(kids))):
+                stack.append((kid, new_pref, i == len(kids) - 1))
         return buf
 
     return [render(root) for root in _roots(labels, children)]
