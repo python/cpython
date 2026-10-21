@@ -2051,8 +2051,11 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             Py_UCS4 next_ch = PyUnicode_READ_CHAR(format, i);
             i++;
 
-             if (strchr("dmHIMSjUWVy", (int)next_ch) == NULL) {
-                replacement = PyUnicode_FromFormat("%%%%-%c", (char)next_ch);
+            /* Only ASCII can name a conversion: strchr() would narrow
+               anything else to a byte, so echo it back literally. */
+            if (next_ch > 127 ||
+                strchr("dmHIMSjUWVy", (int)next_ch) == NULL) {
+                replacement = PyUnicode_FromFormat("%%%%-%c", (int)next_ch);
                 if (replacement == NULL) {
                     goto Error;
                 }

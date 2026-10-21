@@ -1602,6 +1602,10 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(t.strftime("%-1"), "%-1")
         self.assertEqual(t.strftime("%--"), "%--")
         self.assertEqual(t.strftime("%-#"), "%-#")
+        # non-ASCII specifiers are unsupported too: echo without narrowing.
+        self.assertEqual(t.strftime("%-é"), "%-é")
+        self.assertEqual(t.strftime("%-Ť"), "%-Ť")  # low byte aliases 'd'
+        self.assertEqual(t.strftime("%-中"), "%-中")
 
         self.assertRaises(TypeError, t.strftime) # needs an arg
         self.assertRaises(TypeError, t.strftime, "one", "two") # too many args
