@@ -4631,21 +4631,22 @@ AC_ARG_ENABLE([loadable-sqlite-extensions],
       support loadable extensions in the sqlite3 module, see
       Doc/library/sqlite3.rst (default is no)
     ]
-  ), [
-    AS_VAR_IF([have_sqlite3_load_extension], [no], [
-      AC_MSG_RESULT([n/a])
-      AC_MSG_WARN([Your version of SQLite does not support loadable extensions])
-    ], [
-      AC_MSG_RESULT([yes])
-      AC_DEFINE(
-        [PY_SQLITE_ENABLE_LOAD_EXTENSION], [1],
-        [Define to 1 to build the sqlite module with loadable extensions support.]
-      )
-    ])
-  ], [
-    AC_MSG_RESULT([no])
-  ]
+  ), [], [enable_loadable_sqlite_extensions=no]
 )
+AS_VAR_IF([enable_loadable_sqlite_extensions], [yes], [
+  AS_VAR_IF([have_sqlite3_load_extension], [no], [
+    AC_MSG_RESULT([n/a])
+    AC_MSG_WARN([Your version of SQLite does not support loadable extensions])
+  ], [
+    AC_MSG_RESULT([yes])
+    AC_DEFINE(
+      [PY_SQLITE_ENABLE_LOAD_EXTENSION], [1],
+      [Define to 1 to build the sqlite module with loadable extensions support.]
+    )
+  ])
+], [
+  AC_MSG_RESULT([no])
+])
 
 dnl
 dnl Detect Tcl/Tk. Use pkg-config if available.
