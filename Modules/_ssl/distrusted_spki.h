@@ -138,10 +138,12 @@ static const unsigned char _distrusted_spki_em_ov_cs_ca_g3b[] = {
     0x8e, 0x8a, 0xdd, 0x77, 0xb1, 0x00, 0x64, 0xf2, 0xab, 0xe5, 0xe0, 0x50,
 };
 
-static const struct {
+typedef struct {
     const unsigned char *der;
     size_t len;
-} _distrusted_spki[] = {
+} py_distrusted_spki;
+
+static const py_distrusted_spki _distrusted_spki[] = {
     {_distrusted_spki_em_ov_tls_ca_g3b, sizeof(_distrusted_spki_em_ov_tls_ca_g3b)},
     {_distrusted_spki_em_dv_tls_ca_g3c, sizeof(_distrusted_spki_em_dv_tls_ca_g3c)},
     {_distrusted_spki_em_ev_tls_ca_g3c, sizeof(_distrusted_spki_em_ev_tls_ca_g3c)},

@@ -667,6 +667,13 @@ ssl
   the module.
   (Contributed by Serhiy Storchaka in :gh:`157513`.)
 
+* The :mod:`ssl` module now rejects TLS certificate chains that contain one of a
+  set of compromised eMudhra intermediate CA keys.  As defense in depth, the
+  connection is blocked during certificate verification even when the platform
+  root store (or a bundled trust store such as :mod:`!certifi`) still trusts the
+  issuing roots.
+  (Contributed by Christian Heimes in :gh:`160040`.)
+
 
 symtable
 --------
