@@ -714,7 +714,7 @@ _io_BytesIO_readinto_impl(bytesio *self, Py_buffer *buffer)
 
     assert(self->pos + len <= PY_SSIZE_T_MAX);
     assert(len >= 0);
-    memcpy(buffer->buf, PyBytes_AS_STRING(self->buf) + self->pos, len);
+    memmove(buffer->buf, PyBytes_AS_STRING(self->buf) + self->pos, len);
     self->pos += len;
 
     return PyLong_FromSsize_t(len);
@@ -768,13 +768,18 @@ _io_BytesIO_truncate_impl(bytesio *self, PyObject *size)
     return PyLong_FromSsize_t(new_size);
 }
 
+/*[clinic input]
+@critical_section
+_io.BytesIO.__next__ as bytesio_iternext
+[clinic start generated code]*/
+
 static PyObject *
-bytesio_iternext_lock_held(PyObject *op)
+bytesio_iternext_impl(bytesio *self)
+/*[clinic end generated code: output=f530bdee3a720d48 input=7fb3a763efe11a21]*/
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
 
     Py_ssize_t n;
-    bytesio *self = bytesio_CAST(op);
 
     CHECK_CLOSED(self);
 
@@ -784,16 +789,6 @@ bytesio_iternext_lock_held(PyObject *op)
         return NULL;
 
     return read_bytes_lock_held(self, n);
-}
-
-static PyObject *
-bytesio_iternext(PyObject *op)
-{
-    PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    ret = bytesio_iternext_lock_held(op);
-    Py_END_CRITICAL_SECTION();
-    return ret;
 }
 
 /*[clinic input]
