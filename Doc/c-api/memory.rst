@@ -224,6 +224,7 @@ zero bytes.
 
 
 .. _mem-interface:
+.. _memoryinterface:
 
 Memory Interface
 ================
