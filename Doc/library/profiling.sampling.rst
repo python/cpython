@@ -1270,8 +1270,8 @@ The :option:`--compression` option controls data compression:
 
    python -m profiling.sampling run --binary --compression=zstd -o profile.bin script.py
 
-To analyze binary profiles, use the :ref:`replay-command` to convert them to
-other formats like flame graphs or pstats output.
+To analyze binary profiles, use the :ref:`replay command <replay-command>` to convert
+them to other formats like flame graphs or pstats output.
 
 
 Record and replay workflow
