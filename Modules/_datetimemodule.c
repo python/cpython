@@ -1877,50 +1877,38 @@ make_freplacement(PyObject *object)
 }
 
 #if defined(MS_WINDOWS) || defined(__ANDROID__)
-static PyObject *
-make_dash_replacement(PyObject *object, Py_UCS4 ch, PyObject *timetuple)
+/* The documented numeric format codes for which the %- flag (no zero
+ * padding) is emulated.  Their output is digits only, so it needs no
+ * escaping before being stuffed into the format.
+ */
+static int
+is_dash_emulated(Py_UCS4 ch)
 {
-    PyObject *strftime = NULL;
-    PyObject *fmt_obj = NULL;
-    PyObject *res = NULL;
-    PyObject *stripped = NULL;
-
-    strftime = PyImport_ImportModuleAttrString("time", "strftime");
-    if (strftime == NULL) {
-        goto error;
+    switch (ch) {
+        case 'd': case 'm': case 'H': case 'I': case 'M': case 'S':
+        case 'j': case 'U': case 'W': case 'V': case 'y':
+            return 1;
+        default:
+            return 0;
     }
+}
 
-    fmt_obj = PyUnicode_FromFormat("%%%c", (char)ch);
-    if (fmt_obj == NULL) {
-        goto error;
-    }
-
-    res = PyObject_CallFunctionObjArgs(strftime, fmt_obj, timetuple, NULL);
+static PyObject *
+make_dash_replacement(PyObject *strftime, Py_UCS4 ch, PyObject *timetuple)
+{
+    assert(is_dash_emulated(ch));
+    char fmt[3] = {'%', (char)ch, '\0'};
+    PyObject *res = PyObject_CallFunction(strftime, "sO", fmt, timetuple);
     if (res == NULL) {
-        goto error;
+        return NULL;
     }
 
-    stripped = PyObject_CallMethod(res, "lstrip", "s", "0");
-    if (stripped == NULL) {
-        goto error;
-    }
-
-    if (PyUnicode_GET_LENGTH(stripped) == 0) {
-        Py_DECREF(stripped);
-        stripped = PyUnicode_FromString("0");
-    }
-
-    Py_DECREF(fmt_obj);
-    Py_DECREF(strftime);
+    PyObject *stripped = PyObject_CallMethod(res, "lstrip", "s", "0");
     Py_DECREF(res);
+    if (stripped != NULL && PyUnicode_GET_LENGTH(stripped) == 0) {
+        Py_SETREF(stripped, PyUnicode_FromString("0"));
+    }
     return stripped;
-
-error:
-    Py_XDECREF(fmt_obj);
-    Py_XDECREF(strftime);
-    Py_XDECREF(res);
-    Py_XDECREF(stripped);
-    return NULL;
 }
 #endif
 
@@ -2096,20 +2084,23 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             }
             continue;
         }
-        #if defined(MS_WINDOWS) || defined(__ANDROID__)
-        /* non-0-pad Windows and Android support */
-        else if (ch == '-' && i < flen) {
+#if defined(MS_WINDOWS) || defined(__ANDROID__)
+        else if (ch == '-' && i < flen
+                 && is_dash_emulated(PyUnicode_READ_CHAR(format, i)))
+        {
+            /* %-d etc. -> no zero padding; the platform lacks this flag */
             Py_UCS4 next_ch = PyUnicode_READ_CHAR(format, i);
             i++;
 
             Py_XDECREF(dash_replacement);
-            dash_replacement = make_dash_replacement(object, next_ch, timetuple);
+            dash_replacement = make_dash_replacement(strftime, next_ch,
+                                                     timetuple);
             if (dash_replacement == NULL) {
                 goto Error;
             }
             replacement = dash_replacement;
         }
-        #endif
+#endif
         else {
             /* percent followed by something else */
             continue;

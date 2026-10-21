@@ -1662,6 +1662,29 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             _time.strftime("m:03 d:02 y:05 %", t.timetuple()),
         )
 
+    def test_strftime_dash_flag_passthrough(self):
+        # gh-137165: The %- flag is only emulated for the documented numeric
+        # codes.  Anything else after %- is left to the platform's strftime,
+        # so check that datetime's strftime acts the same as time.strftime.
+        t = self.theclass(2005, 3, 2)
+        tt = t.timetuple()
+
+        def outcome(func, *args):
+            try:
+                return func(*args)
+            except ValueError:
+                return ValueError
+
+        for fmt in ['%-', '%-#', '%-e', '%-Y', '%-z', '%-Z', '%-%d', '%-\0',
+                    '%-é', '%-Ť', '%-中']:  # low byte of 'Ť' is 'd'
+            with self.subTest(fmt=fmt):
+                self.assertEqual(outcome(t.strftime, fmt),
+                                 outcome(_time.strftime, fmt, tt))
+
+        # Format codes handled by datetime itself still work after %-.
+        self.assertEqual(outcome(t.strftime, '%-%f'),
+                         outcome(_time.strftime, '%-000000', tt))
+
     def test_format(self):
         dt = self.theclass(2007, 9, 10)
         self.assertEqual(dt.__format__(''), str(dt))

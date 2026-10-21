@@ -296,16 +296,12 @@ def _wrap_strftime(object, format, timetuple):
                         push('{:04}'.format(year))
                         if ch == 'F':
                             push('-{:02}-{:02}'.format(*timetuple[1:3]))
-                elif ch == '-':
-                    if i < n:
-                        next_ch = format[i]
-                        i += 1
-                        if sys.platform in ['win32', 'android']:
-                            push(_make_dash_replacement(next_ch, timetuple))
-                        else:
-                            push('%-' + next_ch)
-                    else:
-                        push('%-')
+                # The platform's strftime() lacks the %- flag (no zero
+                # padding), so emulate it for the documented numeric codes.
+                elif (ch == '-' and i < n and format[i] in 'dmHIMSjUWVy' and
+                        sys.platform in ['win32', 'android']):
+                    push(_make_dash_replacement(format[i], timetuple))
+                    i += 1
                 else:
                     push('%')
                     push(ch)
