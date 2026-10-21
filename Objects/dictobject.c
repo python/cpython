@@ -3160,6 +3160,7 @@ clear_lock_held(PyObject *op)
         clear_embedded_values(oldvalues, oldkeys->dk_nentries);
     }
     else {
+        set_values(mp, NULL);
         set_keys(mp, Py_EMPTY_KEYS);
         n = oldkeys->dk_nentries;
         for (i = 0; i < n; i++) {
@@ -3167,7 +3168,6 @@ clear_lock_held(PyObject *op)
             FT_ATOMIC_STORE_PTR_RELEASE(oldvalues->values[i], NULL);
             Py_XDECREF(tmp);
         }
-        set_values(mp, NULL);
         free_values(oldvalues, IS_DICT_SHARED(mp));
         dictkeys_decref(oldkeys, IS_DICT_SHARED(mp));
     }
