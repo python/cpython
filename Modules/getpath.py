@@ -409,6 +409,10 @@ if not py_setpath:
                             if isfile(candidate):
                                 base_executable = candidate
                                 break
+                if base_executable and isfile(base_executable):
+                    # Search relative to the resolved base executable rather
+                    # than the potentially external symlink in pyvenv.cfg.
+                    executable_dir = real_executable_dir = dirname(base_executable)
             # home key found; stop iterating over lines
             break
 
