@@ -618,6 +618,7 @@ DTRACE_DEPS = \
 # pyexpat's expat library
 
 LIBEXPAT_OBJS= \
+		Modules/expat/xcs.o \
 		Modules/expat/xmlparse.o \
 		Modules/expat/xmlrole.o \
 		Modules/expat/xmltok.o
@@ -638,7 +639,7 @@ LIBEXPAT_HEADERS= \
 		Modules/expat/pyexpatns.h \
 		Modules/expat/siphash.h \
 		Modules/expat/utf8tab.h \
-		Modules/expat/xcsinc.c \
+		Modules/expat/xcs.h \
 		Modules/expat/xmlrole.h \
 		Modules/expat/xmltok.h \
 		Modules/expat/xmltok_impl.h \
@@ -1450,6 +1451,9 @@ PYTHON_HEADERS= \
 ##########################################################################
 # Build static libexpat.a
 LIBEXPAT_CFLAGS=@LIBEXPAT_CFLAGS@ $(PY_STDMODULE_CFLAGS) $(CCSHARED)
+
+Modules/expat/xcs.o: $(srcdir)/Modules/expat/xcs.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xcs.c
 
 Modules/expat/xmlparse.o: $(srcdir)/Modules/expat/xmlparse.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
 	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xmlparse.c

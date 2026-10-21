@@ -1021,7 +1021,7 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     Py_ssize_t oldsize;
 
     v = (PyTupleObject *) *pv;
-    if (v == NULL || !Py_IS_TYPE(v, &PyTuple_Type) ||
+    if (v == NULL || !Py_IS_TYPE(v, &PyTuple_Type) || newsize < 0 ||
         (Py_SIZE(v) != 0 && !_PyObject_IsUniquelyReferenced(*pv))) {
         *pv = 0;
         Py_XDECREF(v);
@@ -1048,6 +1048,14 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
         *pv = PyTuple_New(newsize);
         return *pv == NULL ? -1 : 0;
     }
+    /* Check for overflow */
+    if ((size_t)newsize > ((size_t)PY_SSIZE_T_MAX - (sizeof(PyTupleObject) -
+                sizeof(PyObject *))) / sizeof(PyObject *)) {
+        *pv = NULL;
+        Py_DECREF(v);
+        PyErr_NoMemory();
+        return -1;
+    }
 
     if (_PyObject_GC_IS_TRACKED(v)) {
         _PyObject_GC_UNTRACK(v);
@@ -1066,6 +1074,11 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
 #ifdef Py_REF_DEBUG
         _Py_DecRefTotal(_PyThreadState_GET());
 #endif
+        /* The failed reallocation leaves the original items owned by v. */
+        i = oldsize;
+        while (--i >= 0) {
+            Py_XDECREF(v->ob_item[i]);
+        }
         PyObject_GC_Del(v);
         return -1;
     }

@@ -12074,6 +12074,12 @@ then :
   printf "%s\n" "#define HAVE_PTHREAD_H 1" >>confdefs.h
 
 fi
+ac_fn_c_check_header_compile "$LINENO" "pthread_np.h" "ac_cv_header_pthread_np_h" "$ac_includes_default"
+if test "x$ac_cv_header_pthread_np_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_PTHREAD_NP_H 1" >>confdefs.h
+
+fi
 ac_fn_c_check_header_compile "$LINENO" "pty.h" "ac_cv_header_pty_h" "$ac_includes_default"
 if test "x$ac_cv_header_pty_h" = xyes
 then :
@@ -18014,34 +18020,41 @@ printf %s "checking for --enable-loadable-sqlite-extensions... " >&6; }
 if test ${enable_loadable_sqlite_extensions+y}
 then :
   enableval=$enable_loadable_sqlite_extensions;
-    if test "x$have_sqlite3_load_extension" = xno
-then :
-
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-printf "%s\n" "n/a" >&6; }
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: Your version of SQLite does not support loadable extensions" >&5
-printf "%s\n" "$as_me: WARNING: Your version of SQLite does not support loadable extensions" >&2;}
-
 else case e in #(
-  e)
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-printf "%s\n" "#define PY_SQLITE_ENABLE_LOAD_EXTENSION 1" >>confdefs.h
-
-     ;;
-esac
-fi
-
-else case e in #(
-  e)
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-
+  e) enable_loadable_sqlite_extensions=no
  ;;
 esac
 fi
 
+if test "x$enable_loadable_sqlite_extensions" = xyes
+then :
+
+  if test "x$have_sqlite3_load_extension" = xno
+then :
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+printf "%s\n" "n/a" >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: Your version of SQLite does not support loadable extensions" >&5
+printf "%s\n" "$as_me: WARNING: Your version of SQLite does not support loadable extensions" >&2;}
+
+else case e in #(
+  e)
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+printf "%s\n" "#define PY_SQLITE_ENABLE_LOAD_EXTENSION 1" >>confdefs.h
+
+   ;;
+esac
+fi
+
+else case e in #(
+  e)
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+ ;;
+esac
+fi
 
 found_tcltk=no
 for _QUERY in \
@@ -21814,6 +21827,49 @@ fi
 
 
 
+# FreeBSD pthread_attr_get_np()
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for pthread_attr_get_np" >&5
+printf %s "checking for pthread_attr_get_np... " >&6; }
+if test ${ac_cv_func_pthread_attr_get_np+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <pthread_np.h>
+int
+main (void)
+{
+void *x=pthread_attr_get_np
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_pthread_attr_get_np=yes
+else case e in #(
+  e) ac_cv_func_pthread_attr_get_np=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_pthread_attr_get_np" >&5
+printf "%s\n" "$ac_cv_func_pthread_attr_get_np" >&6; }
+  if test "x$ac_cv_func_pthread_attr_get_np" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_PTHREAD_ATTR_GET_NP 1" >>confdefs.h
+
+fi
+
+
+
+
 
 
 # os.statx uses Linux's statx function.  AIX also has a function named statx,
@@ -25504,12 +25560,14 @@ printf "%s\n" "#define HAVE_UT_NAMESIZE 1" >>confdefs.h
 
 fi
 
-# musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h
-if test "$ac_cv_libc" != musl
-then :
-
-ac_fn_check_decl "$LINENO" "PR_SET_VMA_ANON_NAME" "ac_cv_have_decl_PR_SET_VMA_ANON_NAME" "#include <linux/prctl.h>
-               #include <sys/prctl.h>
+# musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h.
+# The conftest does not reliably catch this, so skip the check on musl.
+case $host in #(
+  *-musl*) :
+     ;; #(
+  *) :
+    ac_fn_check_decl "$LINENO" "PR_SET_VMA_ANON_NAME" "ac_cv_have_decl_PR_SET_VMA_ANON_NAME" "#include <linux/prctl.h>
+                 #include <sys/prctl.h>
 " "$ac_c_undeclared_builtin_options" "CFLAGS"
 if test "x$ac_cv_have_decl_PR_SET_VMA_ANON_NAME" = xyes
 then :
@@ -25526,8 +25584,8 @@ printf "%s\n" "#define _Py_HAVE_PR_SET_VMA_ANON_NAME 1" >>confdefs.h
 
 fi
 
-
-fi
+ ;;
+esac
 # check for openpty, login_tty, and forkpty
 
 
