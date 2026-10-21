@@ -11,9 +11,9 @@ extern "C" {
 #include "pycore_object.h"        // _PyObject_GC_IS_TRACKED
 #include "pycore_structs.h"       // _PyStackRef
 
-/* Check whether an object is eligible for tuple untracking.
- * `op`: The live object to inspect.
- * Returns: True for an exact tracked tuple with no NULL or potentially tracked items.
+/* Check whether an exact tracked tuple is eligible for untracking.
+ * `op`: A live exact tuple currently tracked by the GC.
+ * Returns: True if the tuple has no NULL or potentially tracked items.
  */
 extern bool _PyTuple_CanUntrack(PyObject *op);
 extern void _PyTuple_MaybeUntrack(PyObject *);
