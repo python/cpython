@@ -988,6 +988,7 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         self.assertEqual(os.stat(restrictive_subdir).st_mode,
                           os.stat(restrictive_subdir_dst).st_mode)
 
+    @os_helper.skip_unless_working_chmod
     def test_copytree_no_copy_dir_stat(self):
         tmp_dir = self.mkdtemp()
         src_dir = os.path.join(tmp_dir, 'source')
@@ -1005,6 +1006,7 @@ class TestCopyTree(BaseTest, unittest.TestCase):
             self.assertNotEqual(mode, 0o555)
             self.assertTrue(mode & stat.S_IWUSR, oct(mode))
 
+    @os_helper.skip_unless_working_chmod
     def test_copytree_no_copy_dir_stat_keeps_file_metadata(self):
         tmp_dir = self.mkdtemp()
         src_dir = os.path.join(tmp_dir, 'source')
