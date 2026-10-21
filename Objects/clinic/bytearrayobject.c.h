@@ -133,7 +133,7 @@ bytearray_vectorcall(PyObject *type, PyObject *const *args,
     const char *encoding = NULL;
     const char *errors = NULL;
 
-    assert(Py_Is(_PyType_CAST(type), &PyByteArray_Type));
+    assert(_PyType_CAST(type)->tp_init == bytearray___init__);
     /* Make sure the type object is immutable: the generated
      * vectorcall doesn't deal e.g. with users reassigning __init__. */
     assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
@@ -1962,4 +1962,4 @@ bytearray_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl((PyByteArrayObject *)self);
 }
-/*[clinic end generated code: output=a16aaa01f1fcf5a6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3a969e8e5a854d99 input=a9049054013a1b77]*/
