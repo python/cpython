@@ -2061,6 +2061,103 @@ PyCursesWindow_New(cursesmodule_state *state,
     return (PyObject *)wo;
 }
 
+typedef struct {
+    cursesmodule_state *state;
+    PyObject *callbacks[5];
+    PyObject *exception;
+    int count;
+    int index;
+} curses_ripoffline_context;
+
+static curses_ripoffline_context ripoffline_context;
+
+static void
+PyCurses_RipofflineClear(void)
+{
+    for (int i = 0; i < ripoffline_context.count; i++) {
+        Py_CLEAR(ripoffline_context.callbacks[i]);
+    }
+    Py_CLEAR(ripoffline_context.exception);
+    ripoffline_context.state = NULL;
+    ripoffline_context.count = 0;
+    ripoffline_context.index = 0;
+}
+
+static void
+PyCurses_RipofflineSaveException(void)
+{
+    PyObject *type, *value, *traceback;
+    PyErr_Fetch(&type, &value, &traceback);
+    Py_XDECREF(type);
+    Py_XDECREF(traceback);
+    Py_XSETREF(ripoffline_context.exception, value);
+}
+
+static int
+PyCurses_RipofflineCallback(WINDOW *window, int columns)
+{
+    if (ripoffline_context.index >= ripoffline_context.count) {
+        return 0;
+    }
+    PyObject *callback = ripoffline_context.callbacks[ripoffline_context.index++];
+    PyObject *window_object = PyCursesWindow_New(
+        ripoffline_context.state, window, NULL, NULL, NULL);
+    if (window_object == NULL) {
+        PyCurses_RipofflineSaveException();
+        return 0;
+    }
+    PyObject *result = PyObject_CallFunction(callback, "Oi", window_object,
+                                             columns);
+    Py_DECREF(window_object);
+    if (result == NULL) {
+        PyCurses_RipofflineSaveException();
+        return 0;
+    }
+    Py_DECREF(result);
+    return 0;
+}
+
+static int
+PyCurses_RipofflineFinish(void)
+{
+    if (ripoffline_context.exception != NULL) {
+        PyObject *exception = ripoffline_context.exception;
+        PyErr_SetObject((PyObject *)Py_TYPE(exception), exception);
+        PyCurses_RipofflineClear();
+        return -1;
+    }
+    PyCurses_RipofflineClear();
+    return 0;
+}
+
+static PyObject *
+PyCurses_Ripoffline(PyObject *module, PyObject *args)
+{
+    int line;
+    PyObject *callback;
+    if (!PyArg_ParseTuple(args, "iO:ripoffline", &line, &callback)) {
+        return NULL;
+    }
+    if (!PyCallable_Check(callback)) {
+        PyErr_SetString(PyExc_TypeError, "callback must be callable");
+        return NULL;
+    }
+    if (ripoffline_context.count >= 5) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "ripoffline() called more than five times");
+        return NULL;
+    }
+    if (ripoffline_context.count == 0) {
+        ripoffline_context.state = get_cursesmodule_state(module);
+    }
+    if (ripoffline(line, PyCurses_RipofflineCallback) == ERR) {
+        return curses_check_err(module, ERR, "ripoffline", NULL);
+    }
+    ripoffline_context.callbacks[ripoffline_context.count++] =
+        Py_NewRef(callback);
+    Py_RETURN_NONE;
+}
+
 static void
 PyCursesWindow_dealloc(PyObject *self)
 {
@@ -6987,6 +7084,9 @@ _curses_initscr_impl(PyObject *module)
         curses_set_null_error(module, "initscr", NULL);
         return NULL;
     }
+    if (PyCurses_RipofflineFinish() < 0) {
+        return NULL;
+    }
 
     cursesmodule_state *state = get_cursesmodule_state(module);
     if (state->prescreen != NULL) {
@@ -7167,6 +7267,12 @@ _curses_newterm_impl(PyObject *module, const char *type, PyObject *fd,
     SCREEN *screen = newterm((char *)type, outfp, infp);
     if (screen == NULL) {
         curses_set_null_error(module, "newterm", NULL);
+        fclose(outfp);
+        fclose(infp);
+        return NULL;
+    }
+    if (PyCurses_RipofflineFinish() < 0) {
+        delscreen(screen);
         fclose(outfp);
         fclose(infp);
         return NULL;
@@ -9258,6 +9364,7 @@ static PyMethodDef cursesmodule_methods[] = {
     _CURSES_RESETTY_METHODDEF
     _CURSES_RESIZETERM_METHODDEF
     _CURSES_RESIZE_TERM_METHODDEF
+    {"ripoffline", (PyCFunction)PyCurses_Ripoffline, METH_VARARGS},
     _CURSES_SAVETTY_METHODDEF
     _CURSES_SCR_DUMP_METHODDEF
     _CURSES_SCR_INIT_METHODDEF
