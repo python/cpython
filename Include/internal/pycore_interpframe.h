@@ -152,6 +152,8 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
     dest->stackpointer = dest->localsplus + stacktop;
     // visited is GC bookkeeping for the current stack walk, not frame state.
     dest->visited = 0;
+    // Copies never carry the external header, so they are never external.
+    dest->external = 0;
 #ifdef Py_DEBUG
     dest->stackpointer_valid =  src->stackpointer_valid;
     dest->lltrace = src->lltrace;
@@ -208,6 +210,7 @@ _PyFrame_Initialize(
     frame->return_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->visited = 0;
+    frame->external = 0;
 #ifdef Py_DEBUG
     frame->stackpointer_valid = 1;
     frame->lltrace = 0;
@@ -463,6 +466,7 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
 #endif
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->visited = 0;
+    frame->external = 0;
 #ifdef Py_DEBUG
     frame->stackpointer_valid = 1;
     frame->lltrace = 0;

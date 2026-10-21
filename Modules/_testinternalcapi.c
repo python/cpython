@@ -1564,6 +1564,72 @@ iframe_getlasti(PyObject *self, PyObject *frame)
     return PyLong_FromLong(PyUnstable_InterpreterFrame_GetLasti(f));
 }
 
+static PyObject *
+frame_init_clears_external_bits(PyObject *self, PyObject *func)
+{
+    if (!PyFunction_Check(func)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a function");
+        return NULL;
+    }
+    PyCodeObject *code = (PyCodeObject *)((PyFunctionObject *)func)->func_code;
+    // Pre-fill with garbage so forgotten fields are caught deterministically.
+    // NOTE: co_framesize is in pointer-sized words, not bytes.
+    size_t nbytes = (size_t)code->co_framesize * sizeof(PyObject *);
+    _PyInterpreterFrame *frame = PyMem_Malloc(nbytes);
+    _PyInterpreterFrame *copy = PyMem_Malloc(nbytes);
+    if (frame == NULL || copy == NULL) {
+        PyMem_Free(frame);
+        PyMem_Free(copy);
+        return PyErr_NoMemory();
+    }
+    memset(frame, 0xFF, nbytes);
+    memset(copy, 0xFF, nbytes);
+    PyThreadState *tstate = PyThreadState_Get();
+    _PyFrame_Initialize(tstate, frame, PyStackRef_FromPyObjectNew(func),
+                        NULL, code, 0, NULL);
+    int err = 0;
+    if (frame->external) {
+        PyErr_SetString(PyExc_AssertionError,
+                        "_PyFrame_Initialize left external bit set");
+        err = 1;
+    }
+    // Release frame's owned references before copying: _PyFrame_Copy
+    // aliases strong references into the copy without creating new ones,
+    // so copying NULLs keeps teardown trivially balanced.
+    PyStackRef_CLOSE(frame->f_executable);
+    PyStackRef_CLOSE(frame->f_funcobj);
+    frame->f_executable = PyStackRef_NULL;
+    frame->f_funcobj = PyStackRef_NULL;
+    _PyFrame_Copy(frame, copy);
+    if (!err && copy->external) {
+        PyErr_SetString(PyExc_AssertionError,
+                        "_PyFrame_Copy left external bit set");
+        err = 1;
+    }
+    PyMem_Free(frame);
+    PyMem_Free(copy);
+    if (err) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+frame_no_external_frames_on_stack(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyThreadState *tstate = PyThreadState_Get();
+    for (_PyInterpreterFrame *f = tstate->current_frame;
+         f != NULL; f = f->previous)
+    {
+        if (f->external) {
+            PyErr_SetString(PyExc_AssertionError,
+                            "VM frame has external bit set");
+            return NULL;
+        }
+    }
+    Py_RETURN_NONE;
+}
+
 #ifdef Py_GIL_DISABLED
 static PyObject *external_test_visited_obj = NULL;
 static int external_test_visitor_calls = 0;
@@ -3474,6 +3540,10 @@ static PyMethodDef module_functions[] = {
     {"iframe_getcode", iframe_getcode, METH_O, NULL},
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
+    {"frame_init_clears_external_bits", frame_init_clears_external_bits,
+     METH_O, NULL},
+    {"frame_no_external_frames_on_stack", frame_no_external_frames_on_stack,
+     METH_NOARGS, NULL},
     {"external_frame_gc_test", external_frame_gc_test, METH_VARARGS, NULL},
     {"code_returns_only_none", code_returns_only_none, METH_O, NULL},
     {"get_co_framesize", get_co_framesize, METH_O, NULL},

@@ -96,6 +96,20 @@ class ExternalFrameTest(unittest.TestCase):
         self.assertGreaterEqual(calls, 1)
         self.assertGreaterEqual(cb_calls, 1)
 
+    def test_frame_init_clears_external_bits(self):
+        # VM-created frames must never carry the external bit, otherwise
+        # the GC would read a non-existent external header (segfault).
+        _testinternalcapi = import_helper.import_module('_testinternalcapi')
+        def func():
+            pass
+        self.assertIsNone(
+            _testinternalcapi.frame_init_clears_external_bits(func))
+
+    def test_no_external_frames_on_stack(self):
+        _testinternalcapi = import_helper.import_module('_testinternalcapi')
+        self.assertIsNone(
+            _testinternalcapi.frame_no_external_frames_on_stack())
+
 
 if __name__ == "__main__":
     unittest.main()
