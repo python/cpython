@@ -51,7 +51,6 @@ __floordiv__
 __ge__
 __getattr__
 __getattribute__
-__getitem__
 __gt__
 __hash__
 __iadd__

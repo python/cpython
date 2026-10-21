@@ -1500,10 +1500,17 @@ mmap_length_impl(mmap_object *self)
     return self->size;
 }
 
+/*[clinic input]
+@critical_section
+mmap.mmap.__getitem__ as mmap_item
+    i: Py_ssize_t
+    /
+[clinic start generated code]*/
+
 static PyObject *
-mmap_item_lock_held(PyObject *op, Py_ssize_t i)
+mmap_item_impl(mmap_object *self, Py_ssize_t i)
+/*[clinic end generated code: output=70bd231b581a7bc1 input=af6ad504b5fcd499]*/
 {
-    mmap_object *self = mmap_object_CAST(op);
     CHECK_VALID(NULL);
     if (i < 0 || i >= self->size) {
         PyErr_SetString(PyExc_IndexError, "mmap index out of range");
@@ -1517,19 +1524,17 @@ mmap_item_lock_held(PyObject *op, Py_ssize_t i)
     return PyBytes_FromStringAndSize(&dest, 1);
 }
 
-static PyObject *
-mmap_item(PyObject *op, Py_ssize_t i) {
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = mmap_item_lock_held(op, i);
-    Py_END_CRITICAL_SECTION();
-    return result;
-}
+/*[clinic input]
+@critical_section
+mmap.mmap.__getitem__ as mmap_subscript
+    item: object
+    /
+[clinic start generated code]*/
 
 static PyObject *
-mmap_subscript_lock_held(PyObject *op, PyObject *item)
+mmap_subscript_impl(mmap_object *self, PyObject *item)
+/*[clinic end generated code: output=cd6ccc1eb3399f98 input=72f708669823dbba]*/
 {
-    mmap_object *self = mmap_object_CAST(op);
     CHECK_VALID(NULL);
     if (PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
@@ -1587,16 +1592,6 @@ mmap_subscript_lock_held(PyObject *op, PyObject *item)
                         "mmap indices must be integers");
         return NULL;
     }
-}
-
-static PyObject *
-mmap_subscript(PyObject *op, PyObject *item)
-{
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = mmap_subscript_lock_held(op, item);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 static int

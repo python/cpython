@@ -1380,8 +1380,17 @@ valid_index(Py_ssize_t i, Py_ssize_t limit)
     return (size_t) i < (size_t) limit;
 }
 
+/*[clinic input]
+@critical_section
+_collections.deque.__getitem__ as deque_item
+    deque: dequeobject
+    i: Py_ssize_t
+    /
+[clinic start generated code]*/
+
 static PyObject *
-deque_item_lock_held(dequeobject *deque, Py_ssize_t i)
+deque_item_impl(dequeobject *deque, Py_ssize_t i)
+/*[clinic end generated code: output=52e62af1427d61ef input=89f14f06b29122a1]*/
 {
     block *b;
     PyObject *item;
@@ -1417,17 +1426,6 @@ deque_item_lock_held(dequeobject *deque, Py_ssize_t i)
     }
     item = b->data[i];
     return Py_NewRef(item);
-}
-
-static PyObject *
-deque_item(PyObject *self, Py_ssize_t i)
-{
-    dequeobject *deque = dequeobject_CAST(self);
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(deque);
-    result = deque_item_lock_held(deque, i);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 static int
