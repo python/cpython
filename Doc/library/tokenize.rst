@@ -61,34 +61,67 @@ The primary entry point is a :term:`generator`:
 
 .. class:: TokenInfo(type, string, start, end, line)
 
-   A :term:`named tuple` with five fields describing a token:
+   A :term:`named tuple` describing a token. It has five fields and an
+   additional :attr:`exact_type` property.
 
    .. attribute:: type
 
-      The token type.
+      An integer identifying the token type, as defined by the constants in
+      :mod:`token`, such as :data:`~token.NAME` and :data:`~token.STRING`.
+      Operators and delimiters have type :data:`~token.OP`; use
+      :attr:`exact_type` for their specific token type.
 
    .. attribute:: string
 
-      The token string.
+      The token text as a :class:`str`, usually as it appears in the source.
+      For :data:`~token.STRING` tokens, this includes the quotes, any prefix,
+      and escape sequences, without evaluating them.
+
+      For an :data:`~token.ENCODING` token, this is the encoding name.
+      Tokens inserted without corresponding source text can have an empty
+      string. In :data:`~token.FSTRING_MIDDLE` and
+      :data:`~token.TSTRING_MIDDLE` tokens, doubled braces are replaced by
+      single braces.
 
    .. attribute:: start
 
-      A 2-tuple ``(srow, scol)`` of ints specifying the row and column where
-      the token begins in the source.
+      A 2-tuple ``(srow, scol)`` of ints specifying the inclusive start
+      position of the token in the source. Rows are numbered from 1 and
+      columns from 0. Columns count Unicode code points; a tab counts as
+      one column, without expanding it to a tab stop.
+
+      For an :data:`~token.ENCODING` token, this is ``(0, 0)``.
 
    .. attribute:: end
 
-      A 2-tuple ``(erow, ecol)`` of ints specifying the row and column where
-      the token ends in the source.
+      A 2-tuple ``(erow, ecol)`` of ints specifying the exclusive end
+      position of the token, using the same coordinate conventions as
+      :attr:`start`. For a token spanning multiple lines, *erow* is the
+      final row and *ecol* is the column on that row.
+
+      For example, the name ``spam`` at the beginning of the first line
+      has :attr:`start` equal to ``(1, 0)`` and :attr:`end` equal to ``(1, 4)``.
+
+      For an :data:`~token.ENCODING` token, this is ``(0, 0)``.
+      A :data:`~token.NEWLINE` or :data:`~token.NL` token inserted at the end
+      of input without a final newline can have an empty :attr:`string`
+      and an end column one beyond the source text.
 
    .. attribute:: line
 
-      The physical line or lines on which the token was found.
+      A :class:`str` containing the full physical source line on which
+      the token was found, including surrounding text and the line terminator
+      if present. For a token spanning multiple lines, this can contain
+      several physical lines. It is empty for :data:`~token.ENCODING` and
+      :data:`~token.ENDMARKER` tokens.
 
    .. attribute:: exact_type
 
-      The exact operator type for :data:`~token.OP` tokens. For all other
-      token types, this equals :attr:`type`.
+      An integer identifying the specific operator type for
+      :data:`~token.OP` tokens, as defined by the constants in :mod:`token`.
+      For all other token types, this equals :attr:`type`.
+      For example, a ``+`` token has :attr:`type` equal to :data:`~token.OP`
+      and :attr:`exact_type` equal to :data:`~token.PLUS`.
 
       .. versionadded:: 3.3
 
