@@ -204,7 +204,7 @@ py_hashentry_t_destroy_value(void *entry) {
         }
         if (h->evp_nosecurity != NULL) {
             PY_EVP_MD_free(h->evp_nosecurity);
-            h->evp_nosecurity = NULL;
+            h->evp_nosecurity = NULL;x
         }
         PyMem_Free(entry);
     }
@@ -403,7 +403,10 @@ disable_fips_property(enum Py_hash_type py_ht)
     case Py_ht_evp_nosecurity:
         return 1;
     default:
-        Py_FatalError("unsupported hash type");
+        // To preserve the legacy behavior, we do not raise a fatal error here
+        // but delegate it to a regular ValueError. This should however never
+        // happen in practice since Py_hash_type is internal.
+        return -1;
     }
 }
 
@@ -415,6 +418,9 @@ py_digest_by_name(PyObject *module, const char *name, enum Py_hash_type py_ht)
     _hashlibstate *state = get_hashlib_state(module);
     py_hashentry_t *entry = _Py_hashtable_get(state->hashtable, name);
     int fips = disable_fips_property(py_ht);
+    if (fips == -1) {
+        goto finally;
+    }
 
     if (entry != NULL) {
         PY_EVP_MD **cached = fips ? &entry->evp : &entry->evp_nosecurity;
@@ -455,6 +461,8 @@ py_digest_by_name(PyObject *module, const char *name, enum Py_hash_type py_ht)
         (void)props;  // will only be used in OpenSSL 3.0 and later
         digest = PY_EVP_MD_fetch(name, props);
     }
+
+finally:
     if (digest == NULL) {
         raise_ssl_error(state->unsupported_digestmod_error,
                         "unsupported hash type %s", name);
