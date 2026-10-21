@@ -362,6 +362,16 @@ curses
   (Contributed by Serhiy Storchaka in :gh:`133031`.)
 
 
+datetime
+--------
+
+* Add the ``%Nf`` format code (where *N* is from 1 to 6) to
+  :meth:`datetime.datetime.strftime`, :meth:`datetime.time.strftime`,
+  :meth:`datetime.date.strftime`, :meth:`datetime.datetime.strptime` and
+  :meth:`datetime.time.strptime`.
+  (Contributed by Stan Ulbrych and Karoline Pauls in :gh:`157290`.)
+
+
 dbm.gnu
 -------
 
@@ -575,6 +585,17 @@ pydoc
   inherited from other classes are collapsed by default.
   (Contributed by Serhiy Storchaka in :gh:`153906`.)
 
+
+pickle
+------
+
+* Weak references (:class:`weakref.ref`), :class:`weakref.WeakMethod`,
+  :class:`weakref.WeakSet`, :class:`weakref.WeakValueDictionary` and
+  :class:`weakref.WeakKeyDictionary` can now be pickled if the weakly
+  referenced objects are strongly referenced elsewhere in the same pickle;
+  otherwise pickling raises :exc:`pickle.PicklingError`.
+  :class:`!WeakMethod` and :class:`!WeakSet` can now also be copied.
+  (Contributed by Serhiy Storchaka in :gh:`74876`.)
 
 re
 --
