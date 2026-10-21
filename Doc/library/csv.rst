@@ -67,9 +67,10 @@ The :mod:`!csv` module defines the following functions:
    dialect.  For full details about the dialect and formatting parameters, see
    section :ref:`csv-fmt-params`.
 
-   Each row read from the csv file is returned as a list of strings.  No
-   automatic data type conversion is performed unless the :data:`QUOTE_NONNUMERIC` format
-   option is specified (in which case unquoted fields are transformed into floats).
+   By default, each row read from the csv file is returned as a list of strings.
+   The :data:`QUOTE_NONNUMERIC` and :data:`QUOTE_STRINGS` quoting options convert
+   non-empty unquoted fields to floats.  The :data:`QUOTE_NOTNULL` and
+   :data:`QUOTE_STRINGS` options convert empty unquoted fields to ``None``.
 
    A short usage example::
 
