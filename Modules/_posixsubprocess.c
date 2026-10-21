@@ -436,7 +436,7 @@ _close_open_fds_safe(int start_fd, int *fds_to_keep, Py_ssize_t fds_to_keep_len)
         Py_ssize_t bytes;
         while (1) {
 #ifdef HAVE_GETDENTS64
-            bytes = getdents64(fd_dir_fd, buffer, sizeof(buffer));
+            bytes = getdents64(fd_dir_fd, (void *)buffer, sizeof(buffer));
 #else
             bytes = syscall(SYS_getdents64, fd_dir_fd,
                             (struct py_dirent64 *)buffer, sizeof(buffer));
