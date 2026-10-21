@@ -1,2 +1,0 @@
-Raise :exc:`OverflowError` when the absolute value of a dynamic printf-style
-formatting width is too large.

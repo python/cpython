@@ -1,1 +1,0 @@
-Fix copying :class:`collections.deque` subclasses with a large maximum length.

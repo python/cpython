@@ -1,3 +1,0 @@
-Fix reference cycles in :meth:`asyncio.loop.create_connection` and
-:meth:`asyncio.loop.start_tls` after a failed TLS handshake.
-Patch by Timofei Ivankov.

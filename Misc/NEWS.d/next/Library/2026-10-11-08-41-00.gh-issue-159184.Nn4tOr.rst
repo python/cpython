@@ -1,3 +1,0 @@
-Fix :func:`marshal.dumps` raising :exc:`MemoryError` for a set or frozenset
-containing several complex NaNs, which also made it impossible to write a
-:file:`.pyc` file for source code containing such a constant.

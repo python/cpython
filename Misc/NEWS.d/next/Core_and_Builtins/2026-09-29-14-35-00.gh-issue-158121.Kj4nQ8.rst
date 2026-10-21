@@ -1,2 +1,0 @@
-Fix missing :mod:`sys.monitoring` ``INSTRUCTION`` events when a ``LINE``
-callback returns :data:`sys.monitoring.DISABLE`.

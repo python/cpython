@@ -1,2 +1,0 @@
-Fix the completion list and the call tip grabbing the focus on macOS with
-Tcl/Tk 9.1.

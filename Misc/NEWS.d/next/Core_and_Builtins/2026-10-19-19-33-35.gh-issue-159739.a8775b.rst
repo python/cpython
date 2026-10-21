@@ -1,2 +1,0 @@
-Avoid a crash when an interpreter configuration string cannot be encoded as
-UTF-8.

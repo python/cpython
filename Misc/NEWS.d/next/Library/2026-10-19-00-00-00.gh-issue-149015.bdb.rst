@@ -1,2 +1,0 @@
-Fix :meth:`bdb.Bdb.clear_all_file_breaks` leaving breakpoints behind when
-multiple breakpoints are set on the same line.
