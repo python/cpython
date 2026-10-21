@@ -696,6 +696,14 @@ class ArrayMemorySliceSliceTest(unittest.TestCase,
 
 
 class OtherTest(unittest.TestCase):
+    def test_gc_cleared_view(self):
+        _testcapi = import_helper.import_module("_testcapi")
+
+        view = memoryview(bytearray(b"abc"))
+        _testcapi.clear_memoryview(view)
+        with self.assertRaisesRegex(ValueError, "released"):
+            view.tobytes()
+
     def test_cast_order(self):
         # gh-78959: cast(order=...) selects the result memory layout.
         b = bytearray(range(6))

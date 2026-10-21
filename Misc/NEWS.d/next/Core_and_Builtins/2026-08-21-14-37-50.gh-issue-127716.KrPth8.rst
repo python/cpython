@@ -1,4 +1,5 @@
-On the free-threaded build, :class:`memoryview` operations are now thread safe:
+On the free-threaded build, :class:`memoryview` lifetime and bookkeeping
+operations are now thread safe:
 an operation that reads the buffer holds the managed buffer for its duration,
 so a concurrent :meth:`~memoryview.release` can no longer free the buffer under
 it; slicing a memoryview from several threads no longer loses buffer

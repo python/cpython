@@ -823,6 +823,11 @@ static inline int
 memoryview_pin(PyMemoryViewObject *self)
 {
 #ifdef Py_GIL_DISABLED
+    if (mv_has_flag(self, _Py_MEMORYVIEW_RELEASED)) {
+        PyErr_SetString(PyExc_ValueError,
+            "operation forbidden on released memoryview object");
+        return -1;
+    }
     FT_ATOMIC_ADD_SSIZE(self->mbuf->exports, 1);
     if (BASE_INACCESSIBLE(self)) {
         mbuf_drop_export(self->mbuf);
