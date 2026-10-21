@@ -227,10 +227,6 @@ class BuildDetailsRelativePathsTests(unittest.TestCase):
             self.assertEqual(data_abs_path[part][key], abs_rel_path)
 
 
-@unittest.skipIf(
-    generate_build_details is None,
-    "Failed to import generate-build-details"
-)
 @unittest.skipIf(os.name != 'posix', 'Feature only implemented on POSIX')
 @unittest.skipIf(is_wasm32, 'Feature not available on WebAssembly builds')
 class BuildDetailsLibpythonTests(unittest.TestCase):
@@ -247,8 +243,8 @@ class BuildDetailsLibpythonTests(unittest.TestCase):
                 return config_vars[name]
             return get_config_var(name)
         with mock.patch('sysconfig.get_config_var', patched_get_config_var):
-            data = generate_build_details.generate_data(schema_version='1.0')
-        return json.loads(json.dumps(data)).get('libpython', {})
+            json_data = build_details.BuildDetails.from_interpreter().as_json()
+        return json.loads(json_data).get('libpython', {})
 
     def test_static_only(self):
         libpython = self.generate_libpython(
