@@ -11,6 +11,36 @@ preserve
 #include "pycore_runtime.h"       // _Py_SINGLETON()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
+static PyObject *
+bytearray_repeat_impl(PyByteArrayObject *self, Py_ssize_t count);
+
+static PyObject *
+bytearray_repeat(PyObject *self, Py_ssize_t count)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = bytearray_repeat_impl((PyByteArrayObject *)self, count);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static PyObject *
+bytearray_irepeat_impl(PyByteArrayObject *self, Py_ssize_t count);
+
+static PyObject *
+bytearray_irepeat(PyObject *self, Py_ssize_t count)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = bytearray_irepeat_impl((PyByteArrayObject *)self, count);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 static int
 bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
                         const char *encoding, const char *errors);
@@ -1946,4 +1976,4 @@ bytearray_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl((PyByteArrayObject *)self);
 }
-/*[clinic end generated code: output=b67d1f1e84c7ed0f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1220bfdaf2f99ea1 input=a9049054013a1b77]*/
