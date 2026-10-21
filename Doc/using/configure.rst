@@ -877,7 +877,12 @@ also be used to improve performance.
    Disable static documentation strings to reduce the memory footprint (enabled
    by default). Documentation strings defined in Python are not affected.
 
-   Don't define the ``WITH_DOC_STRINGS`` macro.
+   Don't define the :c:macro:`WITH_DOC_STRINGS` macro.
+
+   .. c:macro:: WITH_DOC_STRINGS
+
+      Define this macro to include static documentation strings in the build.
+      It is defined by default, unless :option:`--without-doc-strings` is used.
 
    See the ``PyDoc_STRVAR()`` macro.
 
