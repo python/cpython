@@ -1,12 +1,12 @@
 """Debugger basics"""
 
-import fnmatch
-import sys
-import threading
 import os
-import weakref
+import sys
 from contextlib import contextmanager
 from inspect import CO_GENERATOR, CO_COROUTINE, CO_ASYNC_GENERATOR
+lazy import fnmatch
+lazy import threading
+lazy import weakref
 
 __all__ = ["BdbQuit", "Bdb", "Breakpoint"]
 
@@ -601,6 +601,13 @@ class Bdb:
 
         If frame is not specified, debugging starts from caller's frame.
         """
+
+        if self.enterframe is not None:
+            # If self.enterframe is not None, it means we are already in
+            # dispatched functions. Tracing is disabled when calling a
+            # trace function, so we just skip this set_trace() call.
+            return
+
         self.stop_trace()
         if frame is None:
             frame = sys._getframe().f_back

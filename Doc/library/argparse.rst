@@ -2072,6 +2072,19 @@ Argument groups
       is now deprecated.
 
 
+.. class:: ArgumentGroup
+
+   The type of objects returned by :meth:`ArgumentParser.add_argument_group`.
+   Its :meth:`~ArgumentParser.add_argument` and
+   :meth:`~ArgumentParser.add_mutually_exclusive_group` methods work as on
+   :class:`ArgumentParser`.  Use :meth:`~ArgumentParser.add_argument_group`
+   to create instances.  Only the methods documented here are part of the
+   public API; other attributes and methods are implementation details.
+
+   .. versionadded:: next
+      The private ``_ArgumentGroup`` name remains as an alias.
+
+
 Mutual exclusion
 ^^^^^^^^^^^^^^^^
 
@@ -2133,6 +2146,20 @@ Mutual exclusion
       on a mutually exclusive group now raises an exception. This nesting was
       never supported, often failed to work correctly, and was unintentionally
       exposed through inheritance.
+
+
+.. class:: MutuallyExclusiveGroup
+
+   The type of objects returned by
+   :meth:`ArgumentParser.add_mutually_exclusive_group`.
+   Its :meth:`~ArgumentParser.add_argument` method works as on
+   :class:`ArgumentParser`.  Use
+   :meth:`~ArgumentParser.add_mutually_exclusive_group` to create instances.
+   Only the ``add_argument`` method documented here is part of the public API;
+   other attributes and methods are implementation details.
+
+   .. versionadded:: next
+      The private ``_MutuallyExclusiveGroup`` name remains as an alias.
 
 
 Parser defaults
