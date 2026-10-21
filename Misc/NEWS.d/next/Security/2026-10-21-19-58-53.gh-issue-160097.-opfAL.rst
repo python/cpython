@@ -1,0 +1,5 @@
+.. cve: CVE-2026-114583
+
+:func:`tarfile.tar_filter` now rejects link members whose path resolves to
+the destination directory itself, as :func:`tarfile.data_filter` already
+did.
