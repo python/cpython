@@ -1,0 +1,4 @@
+Unify :meth:`datetime.date.strftime`, :meth:`datetime.time.strftime` and
+:meth:`datetime.datetime.strftime` behavior for unsupported non-zero-padded
+(``%-``) format specifiers across platforms: unknown specifiers are now echoed
+back literally instead of raising :exc:`ValueError` or returning partial output.
