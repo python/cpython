@@ -753,7 +753,7 @@ can be overridden by the local file.
 
 .. pdbcommand:: ! statement
 
-   Execute the (one-line) *statement* in the context of the current stack frame.
+   Execute the *statement* in the context of the current stack frame.
    The exclamation point can be omitted unless the first word of the statement
    resembles a debugger command, e.g.:
 
@@ -769,6 +769,11 @@ can be overridden by the local file.
 
       (Pdb) global list_options; list_options = ['-l']
       (Pdb)
+
+   .. versionchanged:: next
+      Multiple Python statements can be entered together at a single prompt,
+      for example by pasting a block of code when using the
+      :ref:`enhanced interactive shell <tut-interac>`.
 
 .. pdbcommand:: run [args ...]
                 restart [args ...]

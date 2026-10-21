@@ -1268,6 +1268,35 @@ def test_convenience_variables():
     """
 
 
+def test_convenience_variables_multiline_offsets():
+    r"""Token replacements use absolute offsets across multiline source.
+
+    >>> debugger = pdb.Pdb(nosigint=True, readrc=False)
+    >>> source = '$x +\n  "$x" + $y\n'
+    >>> debugger._replace_convenience_variables(source)
+    '__pdb_convenience_variables["x"] +\n  "$x" + __pdb_convenience_variables["y"]\n'
+    >>> source = "$x + '''ordinary\n$x literal''' + $y\n"
+    >>> result = debugger._replace_convenience_variables(source)
+    >>> '__pdb_convenience_variables["x"]' in result and '$x literal' in result and '__pdb_convenience_variables["y"]' in result
+    True
+    >>> source = '$x +\r\n  $y\r\n'
+    >>> debugger._replace_convenience_variables(source)
+    '__pdb_convenience_variables["x"] +\r\n  __pdb_convenience_variables["y"]\r\n'
+    >>> source = 'é = 1\n$x + $y\n'
+    >>> debugger._replace_convenience_variables(source)
+    'é = 1\n__pdb_convenience_variables["x"] + __pdb_convenience_variables["y"]\n'
+    >>> source = 'f"value {$x}" + $y\n'
+    >>> debugger._replace_convenience_variables(source)
+    'f"value {__pdb_convenience_variables["x"]}" + __pdb_convenience_variables["y"]\n'
+    >>> source = 'if True:\n    $x\n    $y\n'
+    >>> debugger._replace_convenience_variables(source)
+    'if True:\n    __pdb_convenience_variables["x"]\n    __pdb_convenience_variables["y"]\n'
+    >>> source = 'value = (\n    $x +\n    1\n)\n'
+    >>> debugger._replace_convenience_variables(source)
+    'value = (\n    __pdb_convenience_variables["x"] +\n    1\n)\n'
+    """
+
+
 def test_post_mortem_chained():
     """Test post mortem traceback debugging of chained exception
 
@@ -2795,6 +2824,304 @@ def test_pdb_multiline_statement():
     (Pdb) val
     8
     (Pdb) c
+    """
+
+def test_pdb_multiple_statements():
+    r"""Multiple statements can be submitted as a single command.
+
+    >>> def test_function():
+    ...     value = 40
+    ...     debugger = pdb.Pdb(nosigint=True, readrc=False)
+    ...     debugger.set_trace(commands=[
+    ...         'class A:\n    x = value\n\nclass B(A):\n    pass\n\nB().x + 2',
+    ...         'p B().x',
+    ...         'def f():\n    return value\n\nf()',
+    ...         'value = 1\nvalue += 1\nvalue',
+    ...         '! value = 3\nvalue + 1',
+    ...         'continue',
+    ...     ])
+    ...     return value
+
+    >>> test_function()
+    42
+    40
+    40
+    2
+    4
+    3
+    """
+
+def test_pdb_multiple_statements_module():
+    r"""Module-level definitions should have ordinary qualified names.
+
+    >>> namespace = {'__name__': '__main__'}
+    >>> debugger = pdb.Pdb(nosigint=True, readrc=False)
+    >>> debugger.cmdqueue = [
+    ...     'class A:\n    pass\n\nclass B(A):\n    pass\n\nB()',
+    ...     'def f():\n    return B()\n\nf()',
+    ...     'continue',
+    ... ]
+    >>> debugger.run('pass', namespace)  # doctest: +ELLIPSIS
+    <__main__.B object at 0x...>
+    <__main__.B object at 0x...>
+    >>> namespace['A'].__qualname__
+    'A'
+    >>> namespace['B'].__qualname__
+    'B'
+    >>> namespace['f'].__qualname__
+    'f'
+    """
+
+def test_pdb_multiple_statements_errors():
+    r"""Syntax errors reject the block, and runtime errors stop execution.
+
+    >>> def test_function():
+    ...     value = 0
+    ...     debugger = pdb.Pdb(nosigint=True, readrc=False)
+    ...     debugger.set_trace(commands=[
+    ...         'value = 1\ninvalid syntax',
+    ...         'value',
+    ...         'value = 2\n1 / 0\nvalue = 3',
+    ...         'value',
+    ...         'continue',
+    ...     ])
+    ...     return value
+
+    >>> test_function()
+    *** SyntaxError: invalid syntax
+    0
+    *** ZeroDivisionError: division by zero
+    2
+    2
+    """
+
+
+def test_convenience_variables_continuation():
+    r"""Convenience variables can occur in incomplete continuation input.
+
+    >>> debugger = pdb.Pdb(nosigint=True, readrc=False)
+    >>> debugger.stdin = io.StringIO('    $x +\n    1\n)\n')
+    >>> debugger.stdout = io.StringIO()
+    >>> debugger.use_rawinput = False
+    >>> code, source, is_await = debugger._read_code('value = (')
+    >>> namespace = {'__pdb_convenience_variables': {'x': 100}}
+    >>> exec(code, namespace)
+    >>> namespace['value']
+    101
+    >>> '$x' in source
+    False
+    """
+
+
+def test_pdb_multiple_statements_closure():
+    r"""Pasted code has the same effects and output in module and function frames.
+
+    >>> def execute(source, module_scope):
+    ...     output = io.StringIO()
+    ...     debugger = pdb.Pdb(stdout=output, nosigint=True, readrc=False)
+    ...     if module_scope:
+    ...         namespace = {'__name__': '__main__', 'items': [], 'partial': None, 'locals': 42}
+    ...         debugger.cmdqueue = [source, 'continue']
+    ...         debugger.run('pass', namespace)
+    ...         return output.getvalue(), namespace['items'], namespace['partial']
+    ...     def test_function():
+    ...         items = []
+    ...         partial = None
+    ...         locals = 42
+    ...         debugger.set_trace(commands=[source, 'continue'])
+    ...         return items, partial
+    ...     items, partial = test_function()
+    ...     return output.getvalue(), items, partial
+
+    A runtime error does not repeat side effects, lose earlier assignments, or
+    execute later statements. This also applies to BaseException subclasses,
+    and the local variable named "locals" must not interfere with writeback.
+
+    >>> prefix = 'def f(): pass\nitems.append(1)\npartial = "written"\n'
+    >>> for error in ('1 / 0', 'raise KeyboardInterrupt', 'raise SystemExit(3)'):
+    ...     source = prefix + error + '\nitems.append(2)'
+    ...     module = execute(source, True)
+    ...     nested = execute(source, False)
+    ...     assert module == nested
+    ...     print(nested)
+    ('*** ZeroDivisionError: division by zero\n', [1], 'written')
+    ('*** KeyboardInterrupt\n', [1], 'written')
+    ('*** SystemExit: 3\n', [1], 'written')
+
+    Expressions in suites are displayed without changing defined bodies or
+    their docstrings.
+
+    >>> source = ('class A:\n    \'class doc\'\n    99\n'
+    ...           'for i in range(2):\n    i\n'
+    ...           'def f():\n    \'function doc\'\n    99\n    return 10\n'
+    ...           'f()\nA.__doc__\nf.__doc__\n'
+    ...           'value = lambda: 20\nvalue()')
+    >>> module = execute(source, True)
+    >>> nested = execute(source, False)
+    >>> module == nested
+    True
+    >>> print(nested[0], end='')
+    0
+    1
+    10
+    'class doc'
+    'function doc'
+    20
+    """
+
+
+
+def test_pdb_multiple_statements_actual_frames():
+    r"""Pasted blocks use the paused frame's namespace and do not leak flags.
+
+    >>> def execute(module_scope, commands, frame_builtins=None):
+    ...     output = io.StringIO()
+    ...     with redirect_stdout(output):
+    ...         debugger = pdb.Pdb(stdout=output, nosigint=True, readrc=False)
+    ...         if module_scope:
+    ...             namespace = {'__name__': '__main__', 'value': 99, 'items': [None]}
+    ...             if frame_builtins is not None:
+    ...                 namespace['__builtins__'] = frame_builtins
+    ...             debugger.cmdqueue = commands + ['continue']
+    ...             debugger.run('pass', namespace)
+    ...             return namespace, output.getvalue()
+    ...         def test_function():
+    ...             value = 40
+    ...             items = [None]
+    ...             with patch.dict(globals(), {'value': 99}):
+    ...                 debugger.set_trace(commands=commands + ['continue'])
+    ...             return sys._getframe().f_locals.copy()
+    ...         if frame_builtins is not None:
+    ...             frame_globals = dict(test_function.__globals__, __builtins__=frame_builtins)
+    ...             test_function = types.FunctionType(
+    ...                 test_function.__code__, frame_globals,
+    ...                 closure=test_function.__closure__)
+    ...         return test_function(), output.getvalue()
+
+    The nested definition must see the value assigned in the paused frame,
+    even when the module global has a different value.
+
+    >>> source = ('value: int = 4\ndef get_value():\n    return value\n'
+    ...           'observed = get_value()\nget_value()')
+    >>> for module_scope in (False, True):
+    ...     result, output = execute(module_scope, [source])
+    ...     print(result['value'], result['observed'], output == '4\n')
+    4 4 True
+    4 4 True
+
+    Annotation targets inside nested functions must not be mistaken for
+    assignments to the paused frame. Attribute and subscript target expressions
+    still run, while their annotation expressions are not evaluated.
+
+    >>> for module_scope in (False, True):
+    ...     result, _ = execute(module_scope, [
+    ...         'events = []',
+    ...         'class Target: pass\n'
+    ...             'def inner():\n'
+    ...             '    (events.append("attribute") or Target).attr: Unknown = 5\n'
+    ...             '    items[events.append("subscript") or 0]: Unknown = 6\n'
+    ...             '    value: Unknown\n    return 1\n\n'
+    ...             'class Nested:\n    value: int\n\n'
+    ...             'observed = inner()\noutside = value',
+    ...     ])
+    ...     print(result['events'], result['outside'])
+    ['attribute', 'subscript'] 40
+    ['attribute', 'subscript'] 99
+
+    Wrapper-level attribute and subscript annotations still evaluate their
+    targets when a later function forces the nested-code execution path.
+
+    >>> for module_scope in (False, True):
+    ...     result, _ = execute(module_scope, [
+    ...         'events = []',
+    ...         'class Target: pass\n'
+    ...             '(events.append("attribute") or Target).attr: Unknown = 5\n'
+    ...             'items[events.append("subscript") or 0]: Unknown = 6\n'
+    ...             'def marker(): pass',
+    ...     ])
+    ...     print(result['events'], result['Target'].attr, result['items'])
+    ['attribute', 'subscript'] 5 [6]
+    ['attribute', 'subscript'] 5 [6]
+
+    Future imports also bind their imported feature object, including aliases,
+    and replace a local with the same name.
+
+    >>> import __future__
+    >>> for module_scope in (False, True):
+    ...     result, _ = execute(module_scope, [
+    ...         "feature = 'old'",
+    ...         'from __future__ import annotations as feature\n'
+    ...             'observed = (lambda: feature.compiler_flag)()',
+    ...     ])
+    ...     print(result['feature'] is __future__.annotations,
+    ...           result['observed'] == __future__.annotations.compiler_flag)
+    True True
+    True True
+
+    Custom eager and lazy import hooks in the paused frame's builtins receive
+    the future import exactly once with its original fromlist and level.
+
+    >>> import builtins
+    >>> calls = []
+    >>> real_import = builtins.__import__
+    >>> def tracking_import(name, globals=None, locals=None, fromlist=(), level=0):
+    ...     if name == '__future__':
+    ...         calls.append((name, fromlist, level))
+    ...     return real_import(name, globals, locals, fromlist, level)
+    >>> for module_scope in (False, True):
+    ...     calls.clear()
+    ...     frame_builtins = dict(vars(builtins), __import__=tracking_import,
+    ...                           __lazy_import__=tracking_import)
+    ...     result, _ = execute(module_scope, [
+    ...         'from __future__ import annotations as feature\n'
+    ...             'observed = (lambda: feature.compiler_flag)()',
+    ...     ], frame_builtins)
+    ...     assert calls == [('__future__', ('annotations',), 0)], (module_scope, calls)
+    ...     assert result['feature'] is __future__.annotations
+    ...     assert result['observed'] == __future__.annotations.compiler_flag
+
+    Annotation-only assignment preserves the value. Future annotations affect
+    only that pasted input, and the function defined there sees the local.
+
+    >>> for module_scope in (False, True):
+    ...     result, output = execute(module_scope, [
+    ...         'value: int = 4',
+    ...         'value: str\nobserved_annotation = (lambda: value)()',
+    ...         'from __future__ import annotations\ndef g(x: Unknown):\n'
+    ...             '    return value\nobserved = g(None)',
+    ...         'def h(x: Unknown): pass',
+    ...         'p h.__annotations__',
+    ...     ])
+    ...     print(result['value'], result['observed_annotation'],
+    ...           result['observed'], result['g'].__annotations__,
+    ...           'NameError' in output)
+    4 4 4 {'x': 'Unknown'} True
+    4 4 4 {'x': 'Unknown'} True
+
+    Scratch state can also be deleted successfully without an exception.
+
+    >>> for module_scope in (False, True):
+    ...     result, _ = execute(module_scope, [
+    ...         'scratch = 123',
+    ...         'class A: pass\ndel scratch',
+    ...     ])
+    ...     print('scratch' in result)
+    False
+    False
+
+    An earlier command can create scratch state; deleting it in a pasted
+    block must persist when a later statement raises. Later statements must
+    remain unexecuted.
+
+    >>> for module_scope in (False, True):
+    ...     result, output = execute(module_scope, [
+    ...         'scratch = 123',
+    ...         'class A: pass\nitems.append(1)\ndel scratch\n1 / 0\nafter = 1',
+    ...     ])
+    ...     print('scratch' in result, 'after' in result, result['items'],
+    ...           output == '*** ZeroDivisionError: division by zero\n')
+    False False [None, 1] True
+    False False [None, 1] True
     """
 
 def test_pdb_closure():
@@ -4845,6 +5172,24 @@ def bœr():
         """
         stdout, stderr = self.run_pdb_script(script, commands)
         self.assertIn("The specified object 'C.foo' is not a function", stdout)
+
+    @unittest.skipIf(not pdb._pyrepl_available(), "pyrepl is not available")
+    def test_pyrepl_multiple_statements(self):
+        script = textwrap.dedent("""
+            def f():
+                value = 40
+                import pdb; pdb.Pdb().set_trace()
+            f()
+        """)
+        input = b"class A:\nx = value\n"
+        # Remove the auto-indent to start another top-level statement.
+        input += b"\x08\x08\x08\x08class B(A):\npass\n"
+        input += b"\x08\x08\x08\x08B().x + 2\n\n"
+        input += b"c\n"
+
+        output = run_pty(script, input)
+        self.assertIn(b'42', output)
+        self.assertNotIn(b'Error', output)
 
     def test_pyrepl_available(self):
         with patch.dict(os.environ, {"PYTHON_BASIC_REPL": "1"}):

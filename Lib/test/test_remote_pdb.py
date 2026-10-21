@@ -627,6 +627,38 @@ class PdbClientTestCase(unittest.TestCase):
             expected_state={"state": "pdb"},
         )
 
+    def test_multiple_statements_in_pdb_state(self):
+        source = "class A:\n    pass\n\nclass B(A):\n    pass\n\nB()"
+        for prefix in ("", "! "):
+            with self.subTest(prefix=prefix):
+                incoming = [
+                    ("server", {"prompt": "(Pdb) ", "state": "pdb"}),
+                    ("user", {"prompt": "(Pdb) ", "input": prefix + source}),
+                ]
+                self.do_test(
+                    incoming=incoming,
+                    expected_outgoing=[{"reply": prefix.strip() + source}],
+                    expected_state={"state": "pdb"},
+                )
+
+    def test_convenience_variable_in_multiline_pdb_input(self):
+        source = "value = (\n    $x +\n    1\n)"
+        for lines in ([source], source.splitlines()):
+            with self.subTest(lines=lines):
+                incoming = [
+                    ("server", {"prompt": "(Pdb) ", "state": "pdb"}),
+                    ("user", {"prompt": "(Pdb) ", "input": lines[0]}),
+                ]
+                incoming.extend(
+                    ("user", {"prompt": "...   ", "input": line})
+                    for line in lines[1:]
+                )
+                self.do_test(
+                    incoming=incoming,
+                    expected_outgoing=[{"reply": source}],
+                    expected_state={"state": "pdb"},
+                )
+
     def test_completion_in_interact_state(self):
         """Test requesting tab completions at a >>> prompt."""
         incoming = [
@@ -942,6 +974,25 @@ class RemotePdbTestCase(unittest.TestCase):
             # Test with syntax error
             self.pdb._run_in_python_repl("if:")
             mock_error.assert_called_once()
+
+    def test_multiple_statements(self):
+        source = "class A:\n    x = c\n\nclass B(A):\n    pass\n\nB().x"
+        self.pdb.default(source)
+        self.assertEqual(self.sockfile.get_output(), [
+            {"message": "3\n", "type": "info"},
+        ])
+        self.assertEqual(self.test_locals['B']().x, 3)
+
+    def test_multiple_statements_incomplete(self):
+        self.pdb.default("value = 1\nclass A:")
+        self.assertEqual(self.sockfile.get_output(), [
+            {"message": "SyntaxError: Incomplete command", "type": "error"},
+        ])
+        self.assertNotIn('value', self.test_locals)
+
+    def test_convenience_variable_on_continuation_line(self):
+        self.pdb.default("value = (\n    $x +\n    1\n)")
+        self.assertEqual(self.test_locals['value'], 101)
 
     def test_registering_commands(self):
         """Test registering breakpoint commands."""

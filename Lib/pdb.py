@@ -65,10 +65,12 @@ Debugger commands
 # NOTE: the actual command documentation is collected from docstrings of the
 # commands and is appended to __doc__ after the class has been defined.
 
+import __future__
 import os
 import io
 import sys
 import cmd
+import ast
 import dis
 import bdb
 import code
@@ -311,6 +313,55 @@ class _ZipTarget(_ExecutableTarget):
             __spec__=self._spec,
             __builtins__=__builtins__,
         )
+
+
+def _compile_command(source, filename='<stdin>'):
+    try:
+        return codeop.compile_command(source, filename, 'single')
+    except SyntaxError:
+        # The input may contain multiple statements, for example after a paste.
+        if codeop.compile_command(source, filename, 'exec') is None:
+            return None
+        tree = ast.parse(source, filename, 'exec')
+        return compile(ast.Interactive(tree.body), filename, 'single')
+
+
+# Match interactive execution, including expressions in compound suites,
+# without changing the bodies of functions and classes defined by the user.
+class _PdbCodeTransformer(ast.NodeTransformer):
+    def __init__(self):
+        self.annotated_names = set()
+
+    def visit_Expr(self, node):
+        display = ast.parse("__pdb_eval__['displayhook'](None)").body[0]
+        display.value.args[0] = node.value
+        return ast.copy_location(display, node)
+
+    def visit_AnnAssign(self, node):
+        if isinstance(node.target, ast.Name):
+            self.annotated_names.add(node.target.id)
+        return self.generic_visit(node)
+
+    def visit_ImportFrom(self, node):
+        if node.module != "__future__":
+            return node
+        # Preserve the import's runtime bindings as well as its flags.
+        names = tuple(alias.name for alias in node.names)
+        statements = [ast.parse(
+            f"__pdb_eval__['future'] = "
+            f"__pdb_eval__['import_future']({names!r}, "
+            f"__pdb_eval__['locals']())"
+        ).body[0]]
+        statements.extend(ast.parse(
+            f"{alias.asname or alias.name} = "
+            f"__pdb_eval__['future'].{alias.name}"
+        ).body[0] for alias in node.names)
+        return [ast.copy_location(stmt, node) for stmt in statements]
+
+    def visit_FunctionDef(self, node):
+        return node
+
+    visit_AsyncFunctionDef = visit_ClassDef = visit_FunctionDef
 
 
 class _PdbInteractiveConsole(code.InteractiveConsole):
@@ -985,9 +1036,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             returns True if the source is executed, False otherwise
         """
 
+        # At module scope, nested code can already access all names as globals.
+        if locals is globals:
+            return False
+
         # Determine if the source should be executed in closure. Only when the
         # source compiled to multiple code objects, we should use this feature.
-        # Otherwise, we can just raise an exception and normal exec will be used.
+        # Otherwise, normal exec can be used.
 
         code = compile(source, "<string>", "exec")
         if not any(isinstance(const, CodeType) for const in code.co_consts):
@@ -996,25 +1051,48 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # locals could be a proxy which does not support pop
         # copy it first to avoid modifying the original locals
         locals_copy = dict(locals)
+        original_names = set(locals_copy)
+
+        def import_future(names, scope_locals):
+            frame_builtins = globals.get("__builtins__", builtins)
+            try:
+                importer = (frame_builtins["__import__"]
+                            if isinstance(frame_builtins, dict)
+                            else frame_builtins.__import__)
+            except (KeyError, AttributeError):
+                raise ImportError("__import__ not found") from None
+            return importer("__future__", globals, scope_locals, names, 0)
 
         locals_copy["__pdb_eval__"] = {
-            "result": None,
-            "write_back": {}
+            "displayhook": self.displayhook,
+            "locals": builtins.locals,
+            "initial": locals_copy.copy(),
+            "import_future": import_future,
+            "write_back": None
         }
 
-        # If the source is an expression, we need to print its value
-        try:
-            compile(source, "<string>", "eval")
-        except SyntaxError:
-            pass
-        else:
-            source = "__pdb_eval__['result'] = " + source
+        transformer = _PdbCodeTransformer()
+        tree = transformer.visit(ast.parse(source))
+        annotated_names = transformer.annotated_names
+        compiler_flags = code.co_flags & sum(
+            getattr(__future__, name).compiler_flag
+            for name in __future__.all_feature_names
+        )
+        source = ast.unparse(tree)
+
+        # Annotated names cannot be declared nonlocal. Keep their annotations
+        # in function scope and initialize existing values before user code,
+        # since an annotation without a value must not clear a local.
+        source = "\n".join(
+            f"{name} = __pdb_eval__['initial'][{name!r}]"
+            for name in sorted(annotated_names & original_names)
+        ) + "\n" + source
 
         # Add write-back to update the locals
         source = ("try:\n" +
                   textwrap.indent(source, "  ") + "\n" +
                   "finally:\n" +
-                  "  __pdb_eval__['write_back'] = locals()")
+                  "  __pdb_eval__['write_back'] = __pdb_eval__['locals']()")
 
         # Build a closure source code with freevars from locals like:
         # def __pdb_outer():
@@ -1026,7 +1104,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         source_with_closure = ("def __pdb_outer():\n" +
                                "\n".join(f"  {var} = None" for var in locals_copy) + "\n" +
                                "  def __pdb_scope():\n" +
-                               "\n".join(f"    nonlocal {var}" for var in locals_copy) + "\n" +
+                               "\n".join(f"    nonlocal {var}" for var in locals_copy
+                                         if var not in annotated_names) + "\n" +
                                textwrap.indent(source, "    ") + "\n" +
                                "  return __pdb_scope.__code__"
                                )
@@ -1036,7 +1115,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # that to get the code object of __pdb_scope()
         ns = {}
         try:
-            exec(source_with_closure, {}, ns)
+            exec(compile(source_with_closure, "<string>", "exec",
+                         flags=compiler_flags, dont_inherit=True), {}, ns)
         except Exception:
             return False
         code = ns["__pdb_outer"]()
@@ -1045,20 +1125,21 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         try:
             exec(code, globals, locals_copy, closure=cells)
-        except Exception:
-            return False
-
-        # get the data we need from the statement
-        pdb_eval = locals_copy["__pdb_eval__"]
-
-        # __pdb_eval__ should not be updated back to locals
-        pdb_eval["write_back"].pop("__pdb_eval__")
-
-        # Write all local variables back to locals
-        locals.update(pdb_eval["write_back"])
-        eval_result = pdb_eval["result"]
-        if eval_result is not None:
-            self.message(repr(eval_result))
+        finally:
+            # Preserve assignments made before an exception, without executing
+            # the source again through the normal exec path.
+            write_back = locals_copy["__pdb_eval__"]["write_back"]
+            if write_back is not None:
+                write_back.pop("__pdb_eval__", None)
+                for name in original_names - write_back.keys():
+                    try:
+                        del locals[name]
+                    except ValueError:
+                        # Frame locals allow removing debugger-created names,
+                        # but deliberately forbid removing compiled fast locals.
+                        if not isinstance(locals, types.FrameLocalsProxyType):
+                            raise
+                locals.update(write_back)
 
         return True
 
@@ -1081,12 +1162,16 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         is_await_code = False
         code = None
         try:
-            if (code := codeop.compile_command(line + '\n', '<stdin>', 'single')) is None:
+            if (code := _compile_command(
+                self._replace_convenience_variables(line + '\n')
+            )) is None:
                 # Multi-line mode
                 with self._enable_multiline_input():
                     buffer = line
                     continue_prompt = "...   "
-                    while (code := codeop.compile_command(buffer, '<stdin>', 'single')) is None:
+                    while (code := _compile_command(
+                        self._replace_convenience_variables(buffer)
+                    )) is None:
                         if self.use_rawinput:
                             try:
                                 line = input(continue_prompt)
@@ -1121,7 +1206,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             else:
                 raise
 
-        return code, buffer, is_await_code
+        return code, self._replace_convenience_variables(buffer), is_await_code
 
     def default(self, line):
         if line[:1] == '!': line = line[1:].strip()
@@ -1159,6 +1244,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if "$" not in line:
             return line
 
+        line_starts = [0] + [m.end() for m in re.finditer("\n", line)]
         dollar_start = dollar_end = (-1, -1)
         replace_variables = []
         try:
@@ -1167,10 +1253,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 if token_type == token.OP and token_string == '$':
                     dollar_start, dollar_end = start, end
                 elif start == dollar_end and token_type == token.NAME:
-                    # line is a one-line command so we only care about column
-                    replace_variables.append((dollar_start[1], end[1], token_string))
+                    start_offset = line_starts[dollar_start[0] - 1] + dollar_start[1]
+                    end_offset = line_starts[end[0] - 1] + end[1]
+                    replace_variables.append((start_offset, end_offset, token_string))
         except tokenize.TokenError:
-            return line
+            # Incomplete input may still contain tokens that can be replaced.
+            pass
 
         if not replace_variables:
             return line
@@ -3273,8 +3361,10 @@ class _PdbServer(Pdb):
         # Unlike Pdb, don't prompt for more lines of a multi-line command.
         # The remote needs to send us the whole block in one go.
         try:
-            candidate = line.removeprefix("!") + "\n"
-            if codeop.compile_command(candidate, "<stdin>", "single") is None:
+            candidate = self._replace_convenience_variables(
+                line.removeprefix("!") + "\n"
+            )
+            if _compile_command(candidate) is None:
                 raise SyntaxError("Incomplete command")
             return super().default(candidate)
         except:
@@ -3384,7 +3474,11 @@ class _PdbClient:
             return reply
 
         prefix = ""
+        compiler = codeop.compile_command
         if self.state == "pdb":
+            def compiler(source, filename):
+                source = self.pdb_instance._replace_convenience_variables(source)
+                return _compile_command(source, filename)
             # PDB command entry mode
             cmd = self.pdb_instance.parseline(reply)[0]
             if cmd in self.pdb_commands or reply.strip() == "":
@@ -3396,13 +3490,13 @@ class _PdbClient:
                 prefix = "!"
                 reply = reply.removeprefix(prefix).lstrip()
 
-        if codeop.compile_command(reply + "\n", "<stdin>", "single") is not None:
-            # Valid single-line statement
+        if compiler(reply + "\n", "<stdin>") is not None:
+            # Complete Python input
             return prefix + reply
 
         # Otherwise, valid first line of a multi-line statement
         more_prompt = "...".ljust(len(prompt))
-        while codeop.compile_command(reply, "<stdin>", "single") is None:
+        while compiler(reply, "<stdin>") is None:
             reply += "\n" + self.read_input(more_prompt, multiline_block=True)
 
         return prefix + reply

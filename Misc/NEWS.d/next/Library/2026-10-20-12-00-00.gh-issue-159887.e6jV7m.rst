@@ -1,0 +1,3 @@
+Support entering multiple Python statements together at a single :mod:`pdb`
+prompt, including class or function definitions followed by an expression.
+Patch by Bartosz Sławecki.
