@@ -308,7 +308,8 @@ class PolicyAPITests(unittest.TestCase):
     # Pieces chosen to exercise folding: words, runs of whitespace, RFC 5322
     # specials, characters needing 2, 3 and 4 byte UTF-8 encodings, and the
     # delimiters of RFC 2047 encoded words.  The pieces cannot combine into a
-    # well-formed encoded word (there is no lone '?').
+    # well-formed encoded word (there is no lone '?'), since such text is
+    # not encoded and so does not round trip; that is gh-160148.
     _fold_pieces = hypothesis.strategies.sampled_from([
         'a', 'word', 'longwordlongwordlongword', ' ', '  ', '\t', ',', ';',
         ':', '(', ')', '<', '>', '"', '@', '\\', '.', '-', '_', '\xa0',
