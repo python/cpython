@@ -1,4 +1,5 @@
 import contextlib
+import contextvars
 import multiprocessing as mp
 import multiprocessing.process
 import multiprocessing.util
@@ -14,6 +15,34 @@ from .util import BaseTestCase, ThreadPoolMixin, setup_module
 
 
 class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
+    def test_contextvars_are_copied_for_each_task(self):
+        value = contextvars.ContextVar("value", default="default")
+
+        def read_value():
+            return value.get()
+
+        def change_value():
+            value.set("worker")
+
+        with self.executor_type(max_workers=1) as executor:
+            token = value.set("first")
+            try:
+                self.assertEqual(executor.submit(read_value).result(), "first")
+            finally:
+                value.reset(token)
+
+            self.assertEqual(executor.submit(read_value).result(), "default")
+
+            token = value.set("third")
+            try:
+                self.assertEqual(executor.submit(read_value).result(), "third")
+            finally:
+                value.reset(token)
+
+            # Changes made by one task must not leak into the next task.
+            executor.submit(change_value).result()
+            self.assertEqual(executor.submit(read_value).result(), "default")
+
     def test_map_submits_without_iteration(self):
         """Tests verifying issue 11777."""
         finished = []

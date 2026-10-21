@@ -1,0 +1,1 @@
+Fix :class:`concurrent.futures.ThreadPoolExecutor` to run each submitted callable in a copy of the submitting thread's :mod:`contextvars` context.

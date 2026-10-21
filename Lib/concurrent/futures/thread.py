@@ -6,6 +6,7 @@
 __author__ = 'Brian Quinlan (brian@sweetapp.com)'
 
 from concurrent.futures import _base
+import contextvars
 import itertools
 import queue
 import threading
@@ -54,7 +55,7 @@ class WorkerContext:
         def create_context():
             return cls(initializer, initargs)
         def resolve_task(fn, args, kwargs):
-            return (fn, args, kwargs)
+            return (contextvars.copy_context(), fn, args, kwargs)
         return create_context, resolve_task
 
     def __init__(self, initializer, initargs):
@@ -69,8 +70,8 @@ class WorkerContext:
         pass
 
     def run(self, task):
-        fn, args, kwargs = task
-        return fn(*args, **kwargs)
+        context, fn, args, kwargs = task
+        return context.run(fn, *args, **kwargs)
 
 
 class _WorkItem:

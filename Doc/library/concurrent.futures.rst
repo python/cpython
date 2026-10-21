@@ -190,6 +190,11 @@ And::
    pending jobs will raise a :exc:`~concurrent.futures.thread.BrokenThreadPool`,
    as well as any attempt to submit more jobs to the pool.
 
+   Each callable submitted with :meth:`submit` runs in a copy of the
+   :mod:`contextvars` context of the thread that submits it. Changes to
+   context-variable bindings made by a task do not affect the submitting
+   thread's context or the context used by later tasks.
+
    .. versionchanged:: 3.5
       If *max_workers* is ``None`` or
       not given, it will default to the number of processors on the machine,
@@ -218,6 +223,9 @@ And::
    .. versionchanged:: 3.13
       Default value of *max_workers* is changed to
       ``min(32, (os.process_cpu_count() or 1) + 4)``.
+
+   .. versionchanged:: 3.16
+      Tasks run in a copy of the submitting thread's context.
 
 
 .. _threadpoolexecutor-example:
