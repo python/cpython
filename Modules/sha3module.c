@@ -64,6 +64,12 @@ typedef struct {
     bool use_mutex;
     PyMutex mutex;
     Hacl_Hash_SHA3_state_t *hash_state;
+    // HACL* update functions entirely replace the state, which can lead
+    // to races on the free-threaded build. Since the kind of hash is static,
+    // we can store its corresponding metadata once.
+    uint32_t digest_size;
+    uint32_t block_size;
+    int is_shake;
 } SHA3object;
 
 #define _SHA3object_CAST(op)    ((SHA3object *)(op))
@@ -78,7 +84,8 @@ newSHA3object(PyTypeObject *type)
         return NULL;
     }
     HASHLIB_INIT_MUTEX(newobj);
-
+    newobj->hash_state = NULL; // PyObject_GC_New() does not zero memory
+    newobj->digest_size = newobj->block_size = 0;
     PyObject_GC_Track(newobj);
     return newobj;
 }
@@ -161,6 +168,11 @@ py_sha3_new_impl(PyTypeObject *type, PyObject *data_obj, int usedforsecurity,
         goto error;
     }
 
+    // set the metadata once we know that the state is valid
+    int is_shake = Hacl_Hash_SHA3_is_shake(self->hash_state);
+    self->digest_size = is_shake ? 0 : Hacl_Hash_SHA3_hash_len(self->hash_state);
+    self->block_size = Hacl_Hash_SHA3_block_len(self->hash_state);
+
     if (data) {
         GET_BUFFER_VIEW_OR_ERROR(data, &buf, goto error);
         if (buf.len >= HASHLIB_GIL_MINSIZE) {
@@ -209,7 +221,7 @@ SHA3_dealloc(PyObject *self)
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     (void)SHA3_clear(self);
-    tp->tp_free(self);
+    PyObject_GC_Del(self);
     Py_DECREF(tp);
 }
 
@@ -245,6 +257,8 @@ _sha3_sha3_224_copy_impl(SHA3object *self)
         Py_DECREF(newobj);
         return PyErr_NoMemory();
     }
+    newobj->digest_size = self->digest_size;
+    newobj->block_size = self->block_size;
     return (PyObject *)newobj;
 }
 
@@ -265,8 +279,7 @@ _sha3_sha3_224_digest_impl(SHA3object *self)
     ENTER_HASHLIB(self);
     (void)Hacl_Hash_SHA3_digest(self->hash_state, digest);
     LEAVE_HASHLIB(self);
-    return PyBytes_FromStringAndSize((const char *)digest,
-        Hacl_Hash_SHA3_hash_len(self->hash_state));
+    return PyBytes_FromStringAndSize((const char *)digest, self->digest_size);
 }
 
 
@@ -284,8 +297,7 @@ _sha3_sha3_224_hexdigest_impl(SHA3object *self)
     ENTER_HASHLIB(self);
     (void)Hacl_Hash_SHA3_digest(self->hash_state, digest);
     LEAVE_HASHLIB(self);
-    return _Py_strhex((const char *)digest,
-        Hacl_Hash_SHA3_hash_len(self->hash_state));
+    return _Py_strhex((const char *)digest, self->digest_size);
 }
 
 
@@ -337,8 +349,7 @@ static PyObject *
 SHA3_get_block_size(PyObject *op, void *Py_UNUSED(closure))
 {
     SHA3object *self = _SHA3object_CAST(op);
-    uint32_t rate = Hacl_Hash_SHA3_block_len(self->hash_state);
-    return PyLong_FromLong(rate);
+    return PyLong_FromLong(self->block_size);
 }
 
 
@@ -374,10 +385,7 @@ SHA3_get_digest_size(PyObject *op, void *Py_UNUSED(closure))
 {
     // Preserving previous behavior: variable-length algorithms return 0
     SHA3object *self = _SHA3object_CAST(op);
-    if (Hacl_Hash_SHA3_is_shake(self->hash_state))
-      return PyLong_FromLong(0);
-    else
-      return PyLong_FromLong(Hacl_Hash_SHA3_hash_len(self->hash_state));
+    return PyLong_FromLong(self->digest_size);
 }
 
 
@@ -385,7 +393,7 @@ static PyObject *
 SHA3_get_capacity_bits(PyObject *op, void *Py_UNUSED(closure))
 {
     SHA3object *self = _SHA3object_CAST(op);
-    uint32_t rate = Hacl_Hash_SHA3_block_len(self->hash_state) * 8;
+    uint32_t rate = self->block_size * 8;
     assert(rate <= 1600);
     int capacity = 1600 - rate;
     return PyLong_FromLong(capacity);
@@ -396,8 +404,7 @@ static PyObject *
 SHA3_get_rate_bits(PyObject *op, void *Py_UNUSED(closure))
 {
     SHA3object *self = _SHA3object_CAST(op);
-    uint32_t rate = Hacl_Hash_SHA3_block_len(self->hash_state) * 8;
-    return PyLong_FromLong(rate);
+    return PyLong_FromLong(self->block_size * 8);
 }
 
 static PyObject *

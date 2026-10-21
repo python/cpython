@@ -26,6 +26,7 @@ import subprocess
 import struct
 import tempfile
 import operator
+import pathlib
 import pickle
 import weakref
 import warnings
@@ -6050,6 +6051,97 @@ class TestStartMethod(unittest.TestCase):
         # gh-109706: queue.put(1) can write into the queue before queue.put(2),
         # there is no synchronization in the test.
         self.assertSetEqual(set(results), set([2, 1]))
+
+    @unittest.skipIf(os.name == "nt", "requires POSIX")
+    @support.requires_non_root_user
+    @support.subTests("mode", [
+        os.R_OK,  # read-only directory
+        os.R_OK | os.X_OK, # read-only directory
+        os.W_OK # write-only directory _without_ permissions for creating files
+    ])
+    def test_forkserver_requires_writeable_tempdir(self, mode):
+        # Regression test to ensure that the defualt start method is
+        # not 'forkserver' when the temporary directory is not writeable.
+        #
+        # See https://github.com/python/cpython/issues/155717.
+
+        cmd = '''if 1:
+            import os, tempfile
+            # We fake the read-onlyiness of /tmp (which is a fallback when
+            # the user-defined TMPDIR is not acceptable) by hardcoding the
+            # temporary directory for this specific test.
+            tempfile.tempdir = os.environ["TMPDIR"]
+
+            # Imported after patching 'tempfile' so that the default start
+            # method is deduced according to the permissions of TMPDIR.
+            import multiprocessing
+            if __name__ == "__main__":
+                print(multiprocessing.get_start_method())
+        '''
+
+        with support.os_helper.temp_dir() as root:
+            TMPDIR = pathlib.Path(root, "TMPDIR")
+            TMPDIR.mkdir(mode=mode)
+            file = pathlib.Path(TMPDIR, "file")
+            self.assertRaises(OSError, file.touch)
+            _, out, err = script_helper.assert_python_ok('-c', cmd, TMPDIR=TMPDIR)
+        self.assertEqual(out.decode().strip(), "spawn")
+
+    @unittest.skipIf(os.name == "nt", "requires POSIX")
+    @support.requires_non_root_user
+    def test_default_start_method_without_usable_tempdir(self):
+        # Neither importing multiprocessing nor determining the default
+        # start method may fail when tempfile finds no usable temporary
+        # directory at all, and the default start method must be 'spawn'.
+        #
+        # See https://github.com/python/cpython/issues/155717.
+
+        cmd = '''if 1:
+            import os, tempfile
+            # Make TMPDIR the only candidate, so that tempfile.gettempdir()
+            # raises FileNotFoundError instead of falling back to /tmp.
+            tempfile._candidate_tempdir_list = lambda: [os.environ["TMPDIR"]]
+            try:
+                tempfile.gettempdir()
+            except FileNotFoundError:
+                pass
+            else:
+                raise AssertionError("TMPDIR is usable")
+
+            import multiprocessing
+            if __name__ == "__main__":
+                print(multiprocessing.get_start_method(),
+                      multiprocessing.get_all_start_methods()[0])
+        '''
+
+        with support.os_helper.temp_dir() as root:
+            TMPDIR = pathlib.Path(root, "TMPDIR")
+            TMPDIR.mkdir(mode=os.R_OK | os.X_OK)
+            _, out, err = script_helper.assert_python_ok('-c', cmd, TMPDIR=TMPDIR)
+        self.assertEqual(out.decode().split(), ["spawn", "spawn"])
+
+    def test_import_does_not_determine_default_start_method(self):
+        # Determining the default start method requires checking that the
+        # temporary directory is writeable. That must not happen, nor may
+        # the modules it needs be loaded, when importing multiprocessing.
+        import_helper.ensure_lazy_imports(
+            "multiprocessing", {"tempfile", "shutil", "subprocess"})
+
+        cmd = '''if 1:
+            import sys
+            import multiprocessing
+            print(multiprocessing.get_start_method(allow_none=True),
+                  "tempfile" in sys.modules,
+                  multiprocessing.get_start_method(),
+                  multiprocessing.get_all_start_methods()[0])
+        '''
+        # -S: site customizations could import tempfile themselves.
+        _, out, err = script_helper.assert_python_ok('-S', '-c', cmd)
+        unset, probed, method, first = out.decode().split()
+        self.assertEqual(unset, "None")
+        self.assertEqual(probed, "False")
+        self.assertEqual(method, first)
+        self.assertIn(method, multiprocessing.get_all_start_methods())
 
 
 @unittest.skipIf(sys.platform == "win32",

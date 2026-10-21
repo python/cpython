@@ -1512,6 +1512,7 @@ _get_peer_alt_names (_sslmodulestate *state, X509 *certificate) {
 
 
   fail:
+    sk_GENERAL_NAME_pop_free(names, GENERAL_NAME_free);
     if (biobuf != NULL)
         BIO_free(biobuf);
 

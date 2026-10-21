@@ -2271,6 +2271,9 @@ PyObject *
 _Py_subscript_generic(PyThreadState* unused, PyObject *params)
 {
     params = unpack_typevartuples(params);
+    if (params == NULL) {
+        return NULL;
+    }
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->cached_objects.generic_type == NULL) {

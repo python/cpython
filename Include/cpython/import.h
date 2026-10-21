@@ -10,6 +10,8 @@ struct _inittab {
 PyAPI_DATA(struct _inittab *) PyImport_Inittab;
 PyAPI_FUNC(int) PyImport_ExtendInittab(struct _inittab *newtab);
 
+/* This structure is included verbatim in the public documentation
+   (Doc/c-api/import.rst). */
 struct _frozen {
     const char *name;                 /* ASCII encoded string */
     const unsigned char *code;
