@@ -50,6 +50,7 @@ GITBRANCH=	@GITBRANCH@
 PGO_PROF_GEN_FLAG=@PGO_PROF_GEN_FLAG@
 PGO_PROF_USE_FLAG=@PGO_PROF_USE_FLAG@
 LLVM_PROF_MERGER=@LLVM_PROF_MERGER@
+LLVM_PROF_SHOW=@LLVM_PROF_SHOW@
 LLVM_PROF_FILE=@LLVM_PROF_FILE@
 LLVM_PROF_ERR=@LLVM_PROF_ERR@
 DTRACE=         @DTRACE@
@@ -849,6 +850,7 @@ profile-run-stamp:
 	@ # FIXME: can't run for a cross build
 	$(LLVM_PROF_FILE) $(RUNSHARED) ./$(BUILDPYTHON) $(PROFILE_TASK)
 	$(LLVM_PROF_MERGER)
+	$(LLVM_PROF_SHOW)
 	# Remove profile generation binary since we are done with it.
 	$(MAKE) clean-retain-profile
 	# This is an expensive target to build and it does not have proper

@@ -937,6 +937,7 @@ LLVM_PROF_FOUND
 LLVM_PROFDATA
 LLVM_PROF_ERR
 LLVM_PROF_FILE
+LLVM_PROF_SHOW
 LLVM_PROF_MERGER
 PGO_PROF_USE_FLAG
 PGO_PROF_GEN_FLAG
@@ -9163,6 +9164,7 @@ fi
 
 
 
+
 if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}llvm-profdata", so it can be a program name with args.
 set dummy ${ac_tool_prefix}llvm-profdata; ac_word=$2
@@ -9294,6 +9296,7 @@ printf "%s\n" "$as_me: llvm-profdata found via xcrun: ${LLVM_PROFDATA}" >&6;}
   fi
 fi
 LLVM_PROF_ERR=no
+LLVM_PROF_SHOW=true
 
 case "$ac_cv_cc_name" in
   clang|icx)
@@ -9302,6 +9305,7 @@ case "$ac_cv_cc_name" in
     PGO_PROF_USE_FLAG="-fprofile-instr-use=\"\$(shell pwd)/code.profclangd\""
     LLVM_PROF_MERGER=" ${LLVM_PROFDATA} merge -output=\"\$(shell pwd)/code.profclangd\" \"\$(shell pwd)\"/*.profclangr "
     LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"\$(shell pwd)/code-%p.profclangr\""
+    LLVM_PROF_SHOW=" ${LLVM_PROFDATA} show --detailed-summary --topn=500 \"\$(shell pwd)/code.profclangd\" "
     if test $LLVM_PROF_FOUND = not-found
     then
       LLVM_PROF_ERR=yes

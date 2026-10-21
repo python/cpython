@@ -2099,6 +2099,7 @@ fi
 AC_SUBST([PGO_PROF_GEN_FLAG])
 AC_SUBST([PGO_PROF_USE_FLAG])
 AC_SUBST([LLVM_PROF_MERGER])
+AC_SUBST([LLVM_PROF_SHOW])
 AC_SUBST([LLVM_PROF_FILE])
 AC_SUBST([LLVM_PROF_ERR])
 AC_SUBST([LLVM_PROFDATA])
@@ -2123,6 +2124,7 @@ then
   fi
 fi
 LLVM_PROF_ERR=no
+LLVM_PROF_SHOW=true
 
 case "$ac_cv_cc_name" in
   clang|icx)
@@ -2135,6 +2137,10 @@ case "$ac_cv_cc_name" in
             \"\$(shell pwd)\"/*.profclangr
     ")
     LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"\$(shell pwd)/code-%p.profclangr\""
+    LLVM_PROF_SHOW=m4_normalize("
+        ${LLVM_PROFDATA} show --detailed-summary --topn=500
+            \"\$(shell pwd)/code.profclangd\"
+    ")
     if test $LLVM_PROF_FOUND = not-found
     then
       LLVM_PROF_ERR=yes
