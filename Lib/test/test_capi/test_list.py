@@ -1,8 +1,12 @@
+import threading
 import unittest
-from test.support import import_helper
 from collections import UserList
+from test.support import import_helper
+from test.support import threading_helper
+
 _testcapi = import_helper.import_module('_testcapi')
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
+
 
 NULL = None
 PY_SSIZE_T_MIN = _testcapi.PY_SSIZE_T_MIN
@@ -353,6 +357,75 @@ class CAPITest(unittest.TestCase):
     def test_uninitialized_list_repr(self):
         lst = _testlimitedcapi.list_new(3)
         self.assertEqual(repr(lst), '[<NULL>, <NULL>, <NULL>]')
+
+
+class ListWriterTests(unittest.TestCase):
+    def create_writer(self, size=0):
+        # Test PyListWriter_Create()
+        return _testcapi.PyListWriter(size)
+
+    def list_equal(self, result, expected):
+        if not isinstance(expected, list):
+            expected = list(expected)
+        self.assertEqual(result, expected)
+        self.assertEqual(type(result), list)
+
+    def check_append(self, method):
+        items = (1, 2, 3)
+        for size in (0, len(items), len(items) * 10):
+            with self.subTest(size=size):
+                writer = self.create_writer(size)
+                append = getattr(writer, method)
+                for item in items:
+                    append(item)
+                self.list_equal(writer.finish(), items)
+
+    def test_append(self):
+        # Test PyListWriter_Append()
+        self.check_append('append')
+
+    def test_append_steal(self):
+        # Test PyListWriter_AppendSteal()
+        self.check_append('append_steal')
+
+    def check_extend(self, method):
+        items = (2, 5, 7)
+        for size in (0, len(items), len(items) * 10):
+            with self.subTest(size=size):
+                writer = self.create_writer(size)
+                extend = getattr(writer, method)
+                extend(items)
+                self.list_equal(writer.finish(), items)
+
+    def test_extend(self):
+        # Test PyListWriter_Extend()
+        self.check_extend('extend')
+
+    def test_extend_array(self):
+        # Test PyListWriter_ExtendArray()
+        self.check_extend('extend_array')
+
+    def test_discard(self):
+        # Test PyListWriter_Discard(): must not leak memory
+        writer = self.create_writer()
+        writer.extend([2, 5, 7])
+        writer.discard()
+
+    @threading_helper.requires_working_threading()
+    def test_thread(self):
+        # PyListWriter can be used by multiple threads: it's up to the caller
+        # to implement a lock to prevent concurrent accesses.
+        writer = self.create_writer()
+
+        def thread_func(writer):
+            writer.append('Hello')
+            writer.extend(['World!'])
+
+        thread = threading.Thread(target=thread_func, args=(writer,))
+        thread.start()
+        threading_helper.join_thread(thread)
+
+        self.list_equal(writer.finish(), ['Hello', 'World!'])
 
 
 if __name__ == "__main__":

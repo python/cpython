@@ -103,6 +103,254 @@ test_list_api(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 
+static PyObject*
+test_list_writer(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *result = NULL;
+
+    PyObject* array[3];
+    for (Py_ssize_t i = 0; i < (Py_ssize_t)Py_ARRAY_LENGTH(array); i++) {
+        array[i] = PyLong_FromLong(i);
+        if (array[i] == NULL) {
+            for (Py_ssize_t j = 0; j <= i; j++) {
+                Py_DECREF(array[i]);
+            }
+            return NULL;
+        }
+    }
+
+    PyListWriter *writer = PyListWriter_Create(3);
+    if (writer == NULL) {
+        goto done;
+    }
+
+    for (Py_ssize_t i = 0; i < (Py_ssize_t)Py_ARRAY_LENGTH(array); i++) {
+        if (PyListWriter_Append(writer, array[i]) < 0) {
+            PyListWriter_Discard(writer);
+            goto done;
+        }
+    }
+
+    PyObject *list = PyListWriter_Finish(writer);
+    if (list == NULL) {
+        goto done;
+    }
+    assert(PyList_CheckExact(list));
+    assert(PyList_GET_SIZE(list) == 3);
+    assert(PyList_GET_ITEM(list, 0) == array[0]);
+    assert(PyList_GET_ITEM(list, 1) == array[1]);
+    assert(PyList_GET_ITEM(list, 2) == array[2]);
+    Py_DECREF(list);
+
+    result = Py_None;
+
+done:
+    for (Py_ssize_t i = 0; i < (Py_ssize_t)Py_ARRAY_LENGTH(array); i++) {
+        Py_DECREF(array[i]);
+    }
+    return result;
+}
+
+
+typedef struct {
+    PyObject_HEAD
+    PyListWriter *writer;
+} WriterObject;
+
+
+static inline int
+writer_check(WriterObject *self)
+{
+    if (self->writer == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "operation on finished/discarded writer");
+        return -1;
+    }
+    return 0;
+}
+
+
+static PyObject *
+writer_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    WriterObject *self = (WriterObject *)type->tp_alloc(type, 0);
+    if (!self) {
+        return NULL;
+    }
+    self->writer = NULL;
+    return (PyObject*)self;
+}
+
+
+// Test PyListWriter_Create()
+static int
+writer_init(PyObject *self_raw, PyObject *args, PyObject *kwargs)
+{
+    if (kwargs && PyDict_GET_SIZE(kwargs)) {
+        PyErr_Format(PyExc_TypeError,
+                     "PyListWriter() takes no keyword arguments");
+        return -1;
+    }
+
+    Py_ssize_t size = 0;
+    if (!PyArg_ParseTuple(args, "|n", &size)) {
+        return -1;
+    }
+
+    WriterObject *self = (WriterObject *)self_raw;
+    PyListWriter_Discard(self->writer);
+
+    self->writer = PyListWriter_Create(size);
+    if (self->writer == NULL) {
+        return -1;
+    }
+
+    return 0;
+}
+
+
+// Test PyListWriter_Discard()
+static void
+writer_dealloc(PyObject *self_raw)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    PyTypeObject *tp = Py_TYPE(self);
+    if (self->writer) {
+        PyListWriter_Discard(self->writer);
+    }
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+
+// Test PyListWriter_Append()
+static PyObject*
+writer_append(PyObject *self_raw, PyObject *item)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    if (PyListWriter_Append(self->writer, item) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+// Test PyListWriter_AppendSteal()
+static PyObject*
+writer_append_steal(PyObject *self_raw, PyObject *item)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    if (PyListWriter_AppendSteal(self->writer, Py_NewRef(item)) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+// Test PyListWriter_Extend()
+static PyObject*
+writer_extend(PyObject *self_raw, PyObject *iterable)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    if (PyListWriter_Extend(self->writer, iterable) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+// Test PyListWriter_ExtendArray()
+static PyObject*
+writer_extend_array(PyObject *self_raw, PyObject *tuple)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    if (!PyTuple_Check(tuple)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expect tuple, got %T", tuple);
+        return NULL;
+    }
+    PyObject **items = &PyTuple_GET_ITEM(tuple, 0);
+    Py_ssize_t len = PyTuple_GET_SIZE(tuple);
+
+    if (PyListWriter_ExtendArray(self->writer, items, len) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+// Test PyListWriter_Finish()
+static PyObject*
+writer_finish(PyObject *self_raw, PyObject *Py_UNUSED(args))
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    PyObject *list = PyListWriter_Finish(self->writer);
+    self->writer = NULL;
+    return list;
+}
+
+
+// Test PyListWriter_Discard()
+static PyObject*
+writer_discard(PyObject *self_raw, PyObject *Py_UNUSED(args))
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    PyListWriter_Discard(self->writer);
+    self->writer = NULL;
+    Py_RETURN_NONE;
+}
+
+
+static PyMethodDef writer_methods[] = {
+    {"append", _PyCFunction_CAST(writer_append), METH_O},
+    {"append_steal", _PyCFunction_CAST(writer_append_steal), METH_O},
+    {"extend", _PyCFunction_CAST(writer_extend), METH_O},
+    {"extend_array", _PyCFunction_CAST(writer_extend_array), METH_O},
+    {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},
+    {"discard", _PyCFunction_CAST(writer_discard), METH_NOARGS},
+    {NULL,              NULL}           /* sentinel */
+};
+
+static PyType_Slot Writer_Type_slots[] = {
+    {Py_tp_new, writer_new},
+    {Py_tp_init, writer_init},
+    {Py_tp_dealloc, writer_dealloc},
+    {Py_tp_methods, writer_methods},
+    {0, 0},  /* sentinel */
+};
+
+static PyType_Spec Writer_spec = {
+    .name = "_testcapi.PyListWriter",
+    .basicsize = sizeof(WriterObject),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = Writer_Type_slots,
+};
+
+
 static PyMethodDef test_methods[] = {
     {"list_get_size", list_get_size, METH_O},
     {"list_get_item", list_get_item, METH_VARARGS},
@@ -110,11 +358,26 @@ static PyMethodDef test_methods[] = {
     {"list_clear", list_clear, METH_O},
     {"list_extend", list_extend, METH_VARARGS},
     {"test_list_api", test_list_api, METH_NOARGS},
+    {"test_list_writer", test_list_writer, METH_NOARGS},
     {NULL},
 };
 
 int
 _PyTestCapi_Init_List(PyObject *m)
 {
-    return PyModule_AddFunctions(m, test_methods);
+    if (PyModule_AddFunctions(m, test_methods) < 0) {
+        return -1;
+    }
+
+    PyTypeObject *writer_type = (PyTypeObject *)PyType_FromSpec(&Writer_spec);
+    if (writer_type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(m, writer_type) < 0) {
+        Py_DECREF(writer_type);
+        return -1;
+    }
+    Py_DECREF(writer_type);
+
+    return 0;
 }

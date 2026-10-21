@@ -1,0 +1,14 @@
+Add a new :ref:`PyListWriter <pylistwriter>` C API to create a :class:`list`
+object. On Free Threading, it's more efficient than the ``PyList`` C API to
+create a :class:`list`, because it can avoid the critical section on the
+created list. Add functions:
+
+* :c:func:`PyListWriter_Create`
+* :c:func:`PyListWriter_Finish`
+* :c:func:`PyListWriter_Discard`
+* :c:func:`PyListWriter_Append`
+* :c:func:`PyListWriter_AppendSteal`
+* :c:func:`PyListWriter_Extend`
+* :c:func:`PyListWriter_ExtendArray`
+
+Patch by Victor Stinner.

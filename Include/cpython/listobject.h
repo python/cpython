@@ -51,3 +51,25 @@ PyList_SET_ITEM(PyObject *op, Py_ssize_t index, PyObject *value) {
 
 PyAPI_FUNC(int) PyList_Extend(PyObject *self, PyObject *iterable);
 PyAPI_FUNC(int) PyList_Clear(PyObject *self);
+
+
+/* --- PyListWriter API --------------------------------------------------- */
+
+typedef struct PyListWriter PyListWriter;
+
+PyAPI_FUNC(PyListWriter*) PyListWriter_Create(Py_ssize_t size);
+PyAPI_FUNC(PyObject*) PyListWriter_Finish(PyListWriter *writer);
+PyAPI_FUNC(void) PyListWriter_Discard(PyListWriter *writer);
+PyAPI_FUNC(int) PyListWriter_Append(
+    PyListWriter *writer,
+    PyObject *item);
+PyAPI_FUNC(int) PyListWriter_AppendSteal(
+    PyListWriter *writer,
+    PyObject *item);
+PyAPI_FUNC(int) PyListWriter_Extend(
+    PyListWriter *writer,
+    PyObject *iterable);
+PyAPI_FUNC(int) PyListWriter_ExtendArray(
+    PyListWriter *writer,
+    PyObject *const *items,
+    Py_ssize_t nitem);

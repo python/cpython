@@ -227,3 +227,85 @@ List Objects
 
    Return a new tuple object containing the contents of *list*; equivalent to
    ``tuple(list)``.
+
+
+.. _pylistwriter:
+
+PyListWriter
+------------
+
+The :c:type:`PyListWriter` API can be used to create a Python :class:`list`
+object.
+
+On Free Threading, it's more efficient than the ``PyList`` C API to create a
+:class:`list`, because it can avoid the critical section on the created list.
+
+.. versionadded:: next
+
+
+.. c:type:: PyListWriter
+
+   A list writer object.
+
+   The API is **not thread safe**. To share a writer with multiple threads, a
+   critical section or a lock is needed.
+
+   The instance must be destroyed by :c:func:`PyListWriter_Finish` on
+   success, or :c:func:`PyListWriter_Discard` on error.
+
+
+.. c:function:: PyListWriter* PyListWriter_Create(Py_ssize_t size)
+
+   Create a :c:type:`PyListWriter` and preallocate *size* items.
+
+   On error, set an exception and return ``NULL``.
+
+   *size* must be positive or zero.
+
+.. c:function:: PyObject* PyListWriter_Finish(PyListWriter *writer)
+
+   Finish a :c:type:`PyListWriter` created by
+   :c:func:`PyListWriter_Create`.
+
+   On success, return a Python :class:`list` object.
+   On error, set an exception and return ``NULL``.
+
+   The writer instance is invalid after the call in any case.
+   No API can be called on the writer after :c:func:`PyListWriter_Finish`.
+
+.. c:function:: void PyListWriter_Discard(PyListWriter *writer)
+
+   Discard a :c:type:`PyListWriter` created by :c:func:`PyListWriter_Create`.
+
+   Do nothing if *writer* is ``NULL``.
+
+   The writer instance is invalid after the call.
+   No API can be called on the writer after :c:func:`PyListWriter_Discard`.
+
+.. c:function:: int PyListWriter_Append(PyListWriter *writer, PyObject *item)
+
+   Append an item to the list writer.
+   Similar to :c:func:`PyList_Append`.
+
+   On success, return ``0``.
+   On error, set an exception and return ``-1``.
+
+.. c:function:: int PyListWriter_AppendSteal(PyListWriter *writer, PyObject *item)
+
+   Similar to :c:func:`PyListWriter_Append`, but steals the reference to
+   *item*.
+
+.. c:function:: int PyListWriter_Extend(PyListWriter *writer, PyObject *iterable)
+
+   Extend the list writer with the contents of *iterable*.
+   Similar to :c:func:`PyList_Extend`.
+
+   On success, return ``0``.
+   On error, set an exception and return ``-1``.
+
+.. c:function:: int PyListWriter_ExtendArray(PyListWriter *writer, PyObject *const *items, Py_ssize_t nitem)
+
+   Extend the list writer with the contents of *items*.
+
+   On success, return ``0``.
+   On error, set an exception and return ``-1``.
