@@ -859,8 +859,8 @@ class ClinicWholeFileTest(TestCase):
         # Slots which take arguments or return something else than an
         # object are not supported yet; check the machinery with them.
         slots = {
-            '__contains__': SlotSpec(return_type='int'),
-            '__bool__': SlotSpec(return_type='int'),
+            '__contains__': SlotSpec(return_converter='int'),
+            '__bool__': SlotSpec(return_converter='int'),
         }
         block = """
             /*[clinic input]
@@ -3373,7 +3373,7 @@ class ClinicParserTest(TestCase):
              "The parameters of '__getitem__' cannot have a default value"),
         ]
         supported = unsupported_special_methods - {'__getitem__'}
-        with (mock.patch.dict(SLOTS, {'__getitem__': SlotSpec(return_type='PyObject *')}),
+        with (mock.patch.dict(SLOTS, {'__getitem__': SlotSpec(return_converter='object')}),
               mock.patch.object(libclinic.dsl_parser,
                                 'unsupported_special_methods', supported)):
             for converter in "Py_ssize_t", "object":

@@ -694,7 +694,7 @@ class DSLParser:
             return int_return_converter()
         if self.kind is SLOT:
             assert self.slot is not None
-            return self.slot.return_converter()
+            return self.slot.make_return_converter()
         return CReturnConverter()
 
     def parse_cloned_function(self, names: FunctionNames, existing: str) -> None:

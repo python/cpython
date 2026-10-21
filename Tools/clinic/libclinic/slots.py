@@ -15,32 +15,29 @@ from typing import Final
 from libclinic.return_converters import CReturnConverter, return_converters
 
 
-# The return converter which declares each C return type of a slot.
-_RETURN_CONVERTERS: Final[dict[str, str]] = {
-    'PyObject *': 'object',
-    'Py_ssize_t': 'Py_ssize_t',
-    'int': 'int',
-}
-
-
 @dc.dataclass(frozen=True, slots=True, kw_only=True)
 class SlotSpec:
-    # The C return type of the slot function.
-    return_type: str
+    # The name of the return converter of the implementation function,
+    # which declares the C return type of the slot function.
+    return_converter: str
+
+    @property
+    def return_type(self) -> str:
+        """The C return type of the slot function."""
+        return self.make_return_converter().type
 
     @property
     def error_value(self) -> str:
         """The value returned by the slot function on error."""
         return 'NULL' if self.return_type.endswith('*') else '-1'
 
-    def return_converter(self) -> CReturnConverter:
-        """The return converter of the implementation function."""
-        return return_converters[_RETURN_CONVERTERS[self.return_type]]()
+    def make_return_converter(self) -> CReturnConverter:
+        return return_converters[self.return_converter]()
 
 
 # Maps the name of a special method to its slot.  A name listed here must
 # not be in dsl_parser.unsupported_special_methods.
 SLOTS: Final[dict[str, SlotSpec]] = {
-    '__next__': SlotSpec(return_type='PyObject *'),
-    '__len__': SlotSpec(return_type='Py_ssize_t'),
+    '__next__': SlotSpec(return_converter='object'),
+    '__len__': SlotSpec(return_converter='Py_ssize_t'),
 }
