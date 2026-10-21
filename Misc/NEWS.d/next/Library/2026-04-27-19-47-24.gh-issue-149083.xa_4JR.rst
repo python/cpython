@@ -1,0 +1,2 @@
+Various private sentinels in the standard library are now instances of
+:class:`sentinel`.
