@@ -213,6 +213,10 @@ nitpick_ignore = [
     ('c:macro', 'LONG_MIN'),
     # Standard C variables
     ('c:data', 'errno'),
+    # Platform-specific socket constants documented collectively as SO_*.
+    ('py:const', 'socket.SO_EXCLUSIVEADDRUSE'),
+    ('py:const', 'socket.SO_REUSEADDR'),
+    ('py:const', 'socket.SO_REUSEPORT'),
     # Standard environment variables
     ('envvar', 'BROWSER'),
     ('envvar', 'COLUMNS'),
