@@ -195,6 +195,21 @@ exit:
     return return_value;
 }
 
+static PyObject *
+bytearray_repr_impl(PyObject *op);
+
+static PyObject *
+bytearray_repr(PyObject *op)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(op);
+    return_value = bytearray_repr_impl(op);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(bytearray_find__doc__,
 "find($self, sub[, start[, end]], /)\n"
 "--\n"
@@ -1962,4 +1977,4 @@ bytearray_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl((PyByteArrayObject *)self);
 }
-/*[clinic end generated code: output=a16aaa01f1fcf5a6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5cfb062cb3307f31 input=a9049054013a1b77]*/
