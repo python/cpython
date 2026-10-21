@@ -674,8 +674,18 @@ deque___copy___impl(dequeobject *deque)
     return deque_copy_impl(deque);
 }
 
+/*[clinic input]
+@critical_section
+_collections.deque.__add__ as deque_concat
+
+    deque: dequeobject
+    other: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-deque_concat_lock_held(dequeobject *deque, PyObject *other)
+deque_concat_impl(dequeobject *deque, PyObject *other)
+/*[clinic end generated code: output=fa6c28f7752f0b28 input=1816c51a4c6c4f05]*/
 {
     PyObject *new_deque, *result;
     int rv;
@@ -704,17 +714,6 @@ deque_concat_lock_held(dequeobject *deque, PyObject *other)
     }
     Py_DECREF(result);
     return new_deque;
-}
-
-static PyObject *
-deque_concat(PyObject *self, PyObject *other)
-{
-    dequeobject *deque = dequeobject_CAST(self);
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(deque);
-    result = deque_concat_lock_held(deque, other);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 static int

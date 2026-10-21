@@ -202,6 +202,21 @@ deque___copy__(PyObject *deque, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
+static PyObject *
+deque_concat_impl(dequeobject *deque, PyObject *other);
+
+static PyObject *
+deque_concat(PyObject *deque, PyObject *other)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(deque);
+    return_value = deque_concat_impl((dequeobject *)deque, other);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(deque_clearmethod__doc__,
 "clear($self, /)\n"
 "--\n"
@@ -662,4 +677,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=fe575846d0131efd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=761d85edf8291792 input=a9049054013a1b77]*/
