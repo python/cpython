@@ -866,11 +866,8 @@ contextvar_set(PyContextVar *var, PyObject *val)
         return -1;
     }
 
-    // gh-148891: _PyHamt_Assoc can allocate HAMT nodes, which may trigger
-    // GC.  A weakref callback or finalizer could then re-enter
-    // contextvar_set, replacing ctx->ctx_vars via Py_SETREF and freeing
-    // the old HAMT while _PyHamt_Assoc is still traversing it.
-    // Prevent this by holding a strong reference to the current vars.
+    // gh-148891: _PyHamt_Assoc may allocate nodes, which may trigger GC.
+    // Bump the reference count to prevent the HAMT from being freed during traversal.
     PyHamtObject *old_vars = context_get_current_vars(ctx);
     Py_INCREF(old_vars);
     PyHamtObject *new_vars = _PyHamt_Assoc(
@@ -902,8 +899,8 @@ contextvar_del(PyContextVar *var)
         return -1;
     }
 
-    // gh-148891: same borrowed-reference hazard as contextvar_set:
-    // _PyHamt_Without allocates nodes, which may trigger GC re-entrancy.
+    // gh-148891: _PyHamt_Without may allocate nodes, which may trigger GC.
+    // Bump the reference count to prevent the HAMT from being freed during traversal.
     PyHamtObject *vars = context_get_current_vars(ctx);
     Py_INCREF(vars);
     PyHamtObject *new_vars = _PyHamt_Without(vars, (PyObject *)var);
