@@ -457,7 +457,8 @@ class _DecompressorTests:
 
 class _BZ2NeedsInputBug:
     # bz2 reports needs_input=True as soon as its input buffer is empty, even
-    # when max_length cut the output short and more of it is pending.
+    # when max_length cut the output short and more of it is pending
+    # (gh-159999).
     @unittest.expectedFailure
     @hypothesis.given(
         data=data_strategy,
@@ -470,8 +471,11 @@ class _BZ2NeedsInputBug:
 
 
 class _ZlibNeedsInputBug:
-    # zlib._ZlibDecompressor has the same needs_input problem as bz2.  One
-    # example per wbits variant: zlib wrapper, raw deflate, gzip wrapper.
+    # zlib._ZlibDecompressor has the same needs_input problem as bz2
+    # (gh-159999).  The examples depend on where the compressor puts block
+    # boundaries, so there are several: at least one must fail for each
+    # wbits variant (zlib wrapper, raw deflate, gzip wrapper) with both zlib
+    # and zlib-ng.
     @unittest.expectedFailure
     @hypothesis.given(
         data=data_strategy,
@@ -486,15 +490,20 @@ class _ZlibNeedsInputBug:
         sizes=[34],
         max_lengths=[20],
     )
+    @hypothesis.example(
+        data=b"\x00\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x03" * 2,
+        sizes=[25],
+        max_lengths=[12],
+    )
     def test_needs_input_means_drained(self, data, sizes, max_lengths):
         self._check_needs_input_means_drained(data, sizes, max_lengths)
 
 
 # liblzma reports an error when two consecutive calls can make no progress,
 # which lzma.LZMADecompressor lets through as LZMAError("Insufficient buffer
-# space") for two max_length=0 calls in a row with nothing buffered.  The
-# broad lzma tests avoid max_length=0 so that they keep checking everything
-# else; test_repeated_max_length_zero pins the bug.
+# space") for two max_length=0 calls in a row with nothing buffered
+# (gh-160000).  The broad lzma tests avoid max_length=0 so that they keep
+# checking everything else; test_repeated_max_length_zero pins the bug.
 lzma_max_length_strategy = st.integers(1, 64) | st.just(-1)
 lzma_max_lengths_strategy = st.lists(lzma_max_length_strategy, max_size=16)
 
@@ -784,7 +793,10 @@ class ZlibDecompressorZdictTests(unittest.TestCase):
 
     # _ZlibDecompressor only applies zdict up front for raw deflate; for a
     # zlib-wrapped stream it hits Z_NEED_DICT and returns NULL without
-    # setting an exception, which surfaces as SystemError.
+    # setting an exception (gh-160001).  That surfaces as SystemError in a
+    # release build and as a fatal C assertion in a debug build, so the test
+    # can only run in the former.
+    @unittest.skipIf(support.Py_DEBUG, "gh-160001 aborts debug builds")
     @unittest.expectedFailure
     @hypothesis.given(
         data=data_strategy,
