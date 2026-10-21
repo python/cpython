@@ -1771,8 +1771,9 @@ Subcommands
 
    * help_ - help for sub-parser group in help output, by default ``None``
 
-   * metavar_ - string presenting available subcommands in help; by default it
-     is ``None`` and presents subcommands in form {cmd1, cmd2, ..}
+   * metavar_ - placeholder shown in usage and the subparsers' help entry
+     instead of ``{cmd1, cmd2, ...}``; by default ``None``.
+     Individual subcommand names are unchanged.
 
    Some example usage::
 

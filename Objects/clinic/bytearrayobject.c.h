@@ -26,6 +26,52 @@ bytearray_iconcat(PyObject *self, PyObject *other)
     return return_value;
 }
 
+static PyObject *
+bytearray_repeat_impl(PyByteArrayObject *self, Py_ssize_t count);
+
+static PyObject *
+bytearray_repeat(PyObject *self, Py_ssize_t count)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = bytearray_repeat_impl((PyByteArrayObject *)self, count);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static PyObject *
+bytearray_irepeat_impl(PyByteArrayObject *self, Py_ssize_t count);
+
+static PyObject *
+bytearray_irepeat(PyObject *self, Py_ssize_t count)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = bytearray_irepeat_impl((PyByteArrayObject *)self, count);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+bytearray_setitem_impl(PyByteArrayObject *self, Py_ssize_t i,
+                       PyObject *value);
+
+static int
+bytearray_setitem(PyObject *self, Py_ssize_t i, PyObject *value)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = bytearray_setitem_impl((PyByteArrayObject *)self, i, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 static int
 bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
                         const char *encoding, const char *errors);
@@ -191,6 +237,21 @@ skip_optional:
     return_value = self;
 
 exit:
+    return return_value;
+}
+
+static PyObject *
+bytearray_repr_impl(PyObject *op);
+
+static PyObject *
+bytearray_repr(PyObject *op)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(op);
+    return_value = bytearray_repr_impl(op);
+    Py_END_CRITICAL_SECTION();
+
     return return_value;
 }
 
@@ -1961,4 +2022,4 @@ bytearray_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl((PyByteArrayObject *)self);
 }
-/*[clinic end generated code: output=7684cc5969b4b429 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f57debf4b0a990ca input=a9049054013a1b77]*/
