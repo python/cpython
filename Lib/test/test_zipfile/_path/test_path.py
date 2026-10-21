@@ -347,6 +347,21 @@ class TestPath(unittest.TestCase):
         root = Subclass(alpharep)
         assert isinstance(root / 'b', Subclass)
 
+    def test_at(self):
+        zip_file = self.enterContext(zipfile.ZipFile(io.BytesIO(), 'w'))
+        root = zipfile.Path(zip_file)
+        assert root.at == ''
+        assert (root / 'foo' / 'bar').at == 'foo/bar'
+
+    def test_str(self):
+        """
+        An unnamed zip file is indicated by ":zipfile:"
+        """
+        zip_file = self.enterContext(zipfile.ZipFile(io.BytesIO(), 'w'))
+        root = zipfile.Path(zip_file)
+        assert str(root) == ':zipfile:'
+        assert str(root / 'foo' / 'bar') == ':zipfile:/foo/bar'
+
     @pass_alpharep
     def test_filename(self, alpharep):
         root = zipfile.Path(alpharep)
