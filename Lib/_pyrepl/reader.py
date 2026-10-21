@@ -882,6 +882,7 @@ class Reader:
         pass
 
     def error(self, msg: str = "none") -> None:
+        msg = f"[ {msg} ]"
         if self.can_colorize:
             colors = _colorize.ANSIColors
             msg = f"{colors.RED}{msg}{colors.RESET}"

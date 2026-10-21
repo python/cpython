@@ -1,2 +1,2 @@
-Display error overlays in the new interactive shell without the ``!`` prefix
+Display error overlays in the new interactive shell in square brackets
 and in non-bold red when color is enabled. Patch by Bartosz Sławecki.
