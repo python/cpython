@@ -1,1 +1,0 @@
-Added docstrings to abstract ctypes.

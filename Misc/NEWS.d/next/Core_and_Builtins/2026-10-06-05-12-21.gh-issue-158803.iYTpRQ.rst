@@ -1,3 +1,0 @@
-Fix a crash in :meth:`bytes.join` and :meth:`bytearray.join` in the
-:term:`free-threaded build` when another thread concurrently mutates the
-list being joined. Patch by Christian Aurich Zanettini Martins.

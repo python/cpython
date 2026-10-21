@@ -1,6 +1,0 @@
-Fix the error handling of the HACL* routine used by :func:`hmac.new` and
-:meth:`hmac.HMAC.update`. If the maximum input length of the underlying hash
-function is exceeded, an :exc:`OverflowError` is now raised on all builds,
-instead of crashing on DEBUG builds and being silently ignored otherwise.
-Code correctness. Realistically this can only happen at implausible sizes.
-Patch by Bénédikt Tran.

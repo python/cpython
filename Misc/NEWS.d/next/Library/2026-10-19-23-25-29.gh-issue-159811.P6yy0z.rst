@@ -1,3 +1,0 @@
-Fix a crash in :mod:`hmac` when the OpenSSL routine used by
-:meth:`hmac.HMAC.update` or by :func:`hmac.new` fails on data larger
-than 2048 bytes. Patch by Bénédikt Tran.

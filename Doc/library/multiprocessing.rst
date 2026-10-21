@@ -167,7 +167,7 @@ to start a process.  These *start methods* are
     .. versionchanged:: 3.14
        This became the default start method on POSIX platforms.
 
-    .. versionchanged:: next
+    .. versionchanged:: 3.15.1
        *spawn* is now the default start method when there is no writable
        temporary directory, for example on a read-only file system.
        Previously *forkserver* remained the default there and starting a

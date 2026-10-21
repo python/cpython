@@ -1,2 +1,0 @@
-Avoid a crash if allocation fails while creating a
-:class:`string.templatelib.Template` iterator.
