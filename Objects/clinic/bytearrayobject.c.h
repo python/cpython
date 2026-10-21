@@ -12,6 +12,21 @@ preserve
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 static PyObject *
+bytearray_iconcat_impl(PyByteArrayObject *self, PyObject *other);
+
+static PyObject *
+bytearray_iconcat(PyObject *self, PyObject *other)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = bytearray_iconcat_impl((PyByteArrayObject *)self, other);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static PyObject *
 bytearray_repeat_impl(PyByteArrayObject *self, Py_ssize_t count);
 
 static PyObject *
@@ -2007,4 +2022,4 @@ bytearray_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl((PyByteArrayObject *)self);
 }
-/*[clinic end generated code: output=a1a91ef777ab985f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f57debf4b0a990ca input=a9049054013a1b77]*/
