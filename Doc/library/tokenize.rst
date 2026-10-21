@@ -3,7 +3,7 @@
 
 .. module:: tokenize
    :synopsis: Lexical scanner for Python source code.
-`
+
 **Source code:** :source:`Lib/tokenize.py`
 
 --------------
@@ -15,9 +15,8 @@ colorizers for on-screen displays.
 
 To simplify token stream handling, all :ref:`operator <operators>` and
 :ref:`delimiter <delimiters>` tokens and :data:`Ellipsis` are returned using
-the generic :data:`~token.OP` token type.  The exact
-type can be determined by checking the :attr:`TokenInfo.exact_type` property on
-the :class:`TokenInfo` returned from :func:`tokenize.tokenize`.
+the generic :data:`~token.OP` token type.
+The :attr:`TokenInfo.exact_type` property gives the exact token type.
 
 
 .. warning::
