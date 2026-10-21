@@ -833,8 +833,9 @@ Object Protocol
 
 .. c:function:: int PyUnstable_Immortalize(PyObject *op)
 
-   Marks an arbitrary object *op* :term:`immortal`, even if it is shared across
-   threads. This is intended to reduce reference counting contention in the
+   Marks an object *op* :term:`immortal`, even if it is shared across threads.
+   :class:`str` instances, including subclasses, are not made immortal.
+   This is intended to reduce reference counting contention in the
    :term:`free-threaded build` for objects shared across threads and used in
    native code.
 
@@ -847,8 +848,10 @@ Object Protocol
    counting and will never be garbage collected. If the object is GC-tracked,
    it is untracked.
 
-   Returns 1 if the object was made immortal and 0 if it was already immortal.
-   This function cannot fail.
+   Returns 1 if the object was made immortal and 0 if it was already immortal
+   or is a :class:`str` instance.
+   Returns -1 with an exception set if allocating bookkeeping for an immortal
+   frame or generator fails.
 
    .. warning::
 

@@ -256,7 +256,11 @@ test_py_set_immortal(PyObject *self, PyObject *unused)
 static PyObject *
 py_immortalize(PyObject *self, PyObject *op)
 {
-    return PyLong_FromLong(PyUnstable_Immortalize(op));
+    int result = PyUnstable_Immortalize(op);
+    if (result < 0) {
+        return NULL;
+    }
+    return PyLong_FromLong(result);
 }
 
 #ifdef Py_REF_DEBUG
