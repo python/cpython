@@ -69,7 +69,7 @@ which relays any information about the UUID's safety, using this enumeration:
    variant and version number set according to :rfc:`9562`, overriding bits in the
    given *hex*, *bytes*, *bytes_le*, *fields*, or *int*.
 
-   .. versionchanged:: 3.16
+   .. versionchanged:: next
       Passing an object other than :class:`bytes` as *bytes* or *bytes_le*
       now consistently raises :exc:`TypeError`. Previously, some invalid inputs
       raised :exc:`AssertionError` or :exc:`ValueError`.

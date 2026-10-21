@@ -1830,8 +1830,7 @@ uuid_exec(PyObject *module)
 
 #undef ADD_INT
 
-    state->uuid_type = (PyTypeObject *)PyType_FromMetaclass(
-        NULL,
+    state->uuid_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         module,
         &Uuid_spec,
         NULL

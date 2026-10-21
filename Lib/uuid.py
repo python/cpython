@@ -864,7 +864,7 @@ _last_timestamp_v7 = None
 _last_counter_v7 = 0  # 42-bit counter
 
 def _uuid7_get_counter_and_tail():
-    rand = int.from_bytes(_gen_random(10), 'big')
+    rand = int.from_bytes(_gen_random(10))
 
     # 42-bit counter with MSB set to 0
     counter = (rand >> 32) & 0x1ff_ffff_ffff

@@ -1,2 +1,2 @@
-Reimplement base UUID type, uuid4(), and uuid7() in C
-
+:mod:`uuid`: Reimplement :class:`~uuid.UUID` objects, :func:`~uuid.uuid4`,
+and :func:`~uuid.uuid7` in C.
