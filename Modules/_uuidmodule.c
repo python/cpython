@@ -1061,7 +1061,11 @@ Uuid_dealloc(PyObject *obj)
     // Only the base UUID type uses the freelist. Do not search a subclass's
     // MRO: GC may already have cleared its base type's module reference.
     PyObject *module = PyType_GetModule_DuringGC(type);
-    if (module == NULL || PyModule_GetDef(module) != &uuidmodule) {
+    if (module == NULL) {
+        goto dealloc;
+    }
+    assert(PyModule_Check(module));
+    if (PyModule_GetDef(module) != &uuidmodule) {
         goto dealloc;
     }
     uuid_state *state = get_uuid_state(module);
