@@ -1753,6 +1753,28 @@ class UuidHooks:
 
 @unittest.skipUnless(c_uuid, "requires the C _uuid module")
 class TestCImplementationCompat(unittest.TestCase):
+    def test_is_safe_lookup_error(self):
+        # Force the lazy SafeUUID lookup to fail before it is cached. The getter
+        # must propagate AttributeError and recover when the attribute returns.
+        # Run in a subprocess because using the failed lookup can crash Python.
+        assert_python_ok('-c', textwrap.dedent('''
+            import uuid
+
+            obj = uuid.UUID(int=1)
+            SafeUUID = uuid.SafeUUID
+            del uuid.SafeUUID
+            try:
+                try:
+                    obj.is_safe
+                except AttributeError as exc:
+                    assert 'SafeUUID' in str(exc)
+                else:
+                    raise AssertionError('SafeUUID lookup unexpectedly succeeded')
+            finally:
+                uuid.SafeUUID = SafeUUID
+            assert obj.is_safe is SafeUUID.unknown
+        '''))
+
     def test_compatibility(self):
         import uuid
 

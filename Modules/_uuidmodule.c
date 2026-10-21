@@ -1106,6 +1106,9 @@ Uuid_get_is_safe(PyObject *op, void *Py_UNUSED(closure))
     uuid_state *state = get_uuid_state_by_cls(Py_TYPE(self));
     if (self->is_safe == NULL) {
         PyObject *SafeUUID = get_SafeUUID(state);
+        if (SafeUUID == NULL) {
+            return NULL;
+        }
         PyObject *ret = PyObject_GetAttrString(SafeUUID, "unknown");
         Py_DECREF(SafeUUID);
         return ret;
