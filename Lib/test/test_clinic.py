@@ -4294,6 +4294,7 @@ class ClinicExternalTest(TestCase):
                 int()
                 long()
                 object()
+                Py_hash_t()
                 Py_ssize_t()
                 size_t()
                 unsigned_int()

@@ -53,7 +53,6 @@ __getattr__
 __getattribute__
 __getitem__
 __gt__
-__hash__
 __iadd__
 __iand__
 __ifloordiv__
