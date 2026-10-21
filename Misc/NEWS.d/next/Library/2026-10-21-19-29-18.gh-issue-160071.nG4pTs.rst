@@ -1,0 +1,2 @@
+Fix :meth:`gzip.GzipFile.seek` returning a stale position when forward seeking
+in write mode leaves zero padding in the write buffer.
