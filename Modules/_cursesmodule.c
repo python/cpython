@@ -8031,7 +8031,7 @@ PyCurses_Mcprint(PyObject *module, PyObject *args)
 static PyObject *
 PyCurses_Tgetent(PyObject *module, PyObject *args)
 {
-    const char *term;
+    char *term;
     if (!PyArg_ParseTuple(args, "s:tgetent", &term)) {
         return NULL;
     }
@@ -8043,7 +8043,7 @@ PyCurses_Tgetent(PyObject *module, PyObject *args)
 static PyObject *
 PyCurses_Tgetflag(PyObject *module, PyObject *args)
 {
-    const char *id;
+    char *id;
     if (!PyArg_ParseTuple(args, "s:tgetflag", &id)) {
         return NULL;
     }
@@ -8054,7 +8054,7 @@ PyCurses_Tgetflag(PyObject *module, PyObject *args)
 static PyObject *
 PyCurses_Tgetnum(PyObject *module, PyObject *args)
 {
-    const char *id;
+    char *id;
     if (!PyArg_ParseTuple(args, "s:tgetnum", &id)) {
         return NULL;
     }
@@ -8065,7 +8065,7 @@ PyCurses_Tgetnum(PyObject *module, PyObject *args)
 static PyObject *
 PyCurses_Tgetstr(PyObject *module, PyObject *args)
 {
-    const char *id;
+    char *id;
     if (!PyArg_ParseTuple(args, "s:tgetstr", &id)) {
         return NULL;
     }
@@ -8081,7 +8081,7 @@ PyCurses_Tgetstr(PyObject *module, PyObject *args)
 static PyObject *
 PyCurses_Tgoto(PyObject *module, PyObject *args)
 {
-    const char *capability;
+    char *capability;
     int col, row;
     if (!PyArg_ParseTuple(args, "sii:tgoto", &capability, &col, &row)) {
         return NULL;
