@@ -1021,7 +1021,7 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     Py_ssize_t oldsize;
 
     v = (PyTupleObject *) *pv;
-    if (v == NULL || !Py_IS_TYPE(v, &PyTuple_Type) ||
+    if (v == NULL || !Py_IS_TYPE(v, &PyTuple_Type) || newsize < 0 ||
         (Py_SIZE(v) != 0 && !_PyObject_IsUniquelyReferenced(*pv))) {
         *pv = 0;
         Py_XDECREF(v);
@@ -1047,6 +1047,14 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
         Py_DECREF(v);
         *pv = PyTuple_New(newsize);
         return *pv == NULL ? -1 : 0;
+    }
+    /* Check for overflow */
+    if ((size_t)newsize > ((size_t)PY_SSIZE_T_MAX - (sizeof(PyTupleObject) -
+                sizeof(PyObject *))) / sizeof(PyObject *)) {
+        *pv = NULL;
+        Py_DECREF(v);
+        PyErr_NoMemory();
+        return -1;
     }
 
     if (_PyObject_GC_IS_TRACKED(v)) {

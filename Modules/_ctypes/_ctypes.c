@@ -3221,16 +3221,17 @@ static PyMethodDef PyCData_methods[] = {
  * PyObject_HashNotImplemented() makes type_ready() set __hash__ to None.
  *
  * Unfortunately, on Windows, PyObject_HashNotImplemented is imported from
- * the Python DLL, and MSVC resolves the address of an imported function in
- * a static initializer to a local thunk that can't be recognized. So, we
- * initialize the slots at runtime to load the real address from the import table.
+ * the Python DLL. MSVC resolves imported functions in static initializers to
+ * local thunks, and Clang does the same even for local aggregate initializers.
+ * Assign the hash slot explicitly at runtime to load the real address from
+ * the import table.
  */
 static PyObject *
 PyCData_create_type(PyObject *mod)
 {
     PyType_Slot slots[] = {
         {Py_tp_dealloc, PyCData_dealloc},
-        {Py_tp_hash, PyObject_HashNotImplemented},
+        {Py_tp_hash, NULL},
         {Py_tp_doc, PyDoc_STR("The common base class of all ctypes "
                               "data types.")},
         {Py_tp_traverse, PyCData_traverse},
@@ -3240,6 +3241,7 @@ PyCData_create_type(PyObject *mod)
         {Py_bf_getbuffer, PyCData_NewGetBuffer},
         {0, NULL},
     };
+    slots[1].pfunc = PyObject_HashNotImplemented;
     PyType_Spec spec = {
         .name = "_ctypes._CData",
         .basicsize = sizeof(CDataObject),
@@ -5545,7 +5547,12 @@ Simple_repr(PyObject *self)
 
 static PyType_Slot pycsimple_slots[] = {
     {Py_tp_repr, &Simple_repr},
-    {Py_tp_doc, PyDoc_STR("XXX to be provided")},
+    {Py_tp_doc, PyDoc_STR("This non-public class is the base class of all "
+                          "fundamental ctypes data types.\n"
+                          "It contains the common attributes of the fundamental "
+                          "ctypes data types.\n"
+                          "_SimpleCData is a subclass of _CData, so it inherits "
+                          "their methods and attributes.")},
     {Py_tp_methods, Simple_methods},
     {Py_tp_getset, Simple_getsets},
     {Py_tp_init, Simple_init},
@@ -5986,7 +5993,19 @@ Pointer_bool(PyObject *self)
 }
 
 static PyType_Slot pycpointer_slots[] = {
-    {Py_tp_doc, (void *)PyDoc_STR("XXX to be provided")},
+    {Py_tp_doc, (void *)PyDoc_STR(
+                    "Private, abstract base class for pointers.\n"
+                    "\n"
+                    "Concrete pointer types are created by calling POINTER() "
+                    "with the type that will be pointed to; this is done "
+                    "automatically by pointer().\n"
+                    "\n"
+                    "If a pointer points to an array, its elements can be read "
+                    "and written using standard subscript and slice accesses. "
+                    "Pointer objects have no size, so len() will raise "
+                    "TypeError. Negative subscripts will read from the memory "
+                    "before the pointer (as in C), and out-of-range subscripts "
+                    "will probably crash with an access violation (if you’re lucky).")},
     {Py_tp_getset, Pointer_getsets},
     {Py_tp_init, Pointer_init},
     {Py_tp_new, Pointer_new},
