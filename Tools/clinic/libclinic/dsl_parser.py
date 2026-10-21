@@ -97,7 +97,6 @@ __rsub__
 __rtruediv__
 __rxor__
 __setattr__
-__setitem__
 __str__
 __sub__
 __truediv__

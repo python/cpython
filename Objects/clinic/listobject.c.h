@@ -25,6 +25,21 @@ list_repr(PyObject *v)
     return return_value;
 }
 
+static int
+list_ass_item_impl(PyListObject *a, Py_ssize_t i, PyObject *v);
+
+static int
+list_ass_item(PyObject *a, Py_ssize_t i, PyObject *v)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(a);
+    return_value = list_ass_item_impl((PyListObject *)a, i, v);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(list_insert__doc__,
 "insert($self, index, object, /)\n"
 "--\n"
@@ -483,4 +498,4 @@ list___reversed__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl((PyListObject *)self);
 }
-/*[clinic end generated code: output=1bf2de94b856ceed input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c7ed86d2a453ec78 input=a9049054013a1b77]*/

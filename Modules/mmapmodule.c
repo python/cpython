@@ -1597,11 +1597,20 @@ mmap_subscript(PyObject *op, PyObject *item)
     return result;
 }
 
+/*[clinic input]
+@critical_section
+mmap.mmap.__setitem__ as mmap_ass_item
+
+    i: Py_ssize_t
+    v: object
+    /
+[clinic start generated code]*/
+
 static int
-mmap_ass_item_lock_held(PyObject *op, Py_ssize_t i, PyObject *v)
+mmap_ass_item_impl(mmap_object *self, Py_ssize_t i, PyObject *v)
+/*[clinic end generated code: output=398d9d502e560f58 input=5fe8a60de3a6c39e]*/
 {
     const char *buf;
-    mmap_object *self = mmap_object_CAST(op);
 
     CHECK_VALID(-1);
     if (i < 0 || i >= self->size) {
@@ -1628,21 +1637,19 @@ mmap_ass_item_lock_held(PyObject *op, Py_ssize_t i, PyObject *v)
     return 0;
 }
 
-static int
-mmap_ass_item(PyObject *op, Py_ssize_t i, PyObject *v)
-{
-    int result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = mmap_ass_item_lock_held(op, i, v);
-    Py_END_CRITICAL_SECTION();
-    return result;
-}
+/*[clinic input]
+@critical_section
+mmap.mmap.__setitem__ as mmap_ass_subscript
+
+    item: object
+    value: object
+    /
+[clinic start generated code]*/
 
 static int
-mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
+mmap_ass_subscript_impl(mmap_object *self, PyObject *item, PyObject *value)
+/*[clinic end generated code: output=e346a1c7f35800d4 input=4827c15e710601f0]*/
 {
-    mmap_object *self = mmap_object_CAST(op);
-
     if (!is_writable(self))
         return -1;
 
@@ -1739,16 +1746,6 @@ mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
                         "mmap indices must be integer");
         return -1;
     }
-}
-
-static int
-mmap_ass_subscript(PyObject *op, PyObject *item, PyObject *value)
-{
-    int result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = mmap_ass_subscript_lock_held(op, item, value);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 static PyObject *
