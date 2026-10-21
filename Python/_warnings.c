@@ -1050,9 +1050,18 @@ setup_context(Py_ssize_t stack_level,
         }
     }
 
+    /* Initialize the output references so handle_error can Py_XDECREF them
+       even when we bail out before they are assigned. */
+    *filename = NULL;
+    *registry = NULL;
+    *module = NULL;
+
     if (f == NULL) {
         globals = interp->sysdict;
         *filename = PyUnicode_FromString("<sys>");
+        if (*filename == NULL) {
+            goto handle_error;
+        }
         *lineno = 0;
     }
     else {
@@ -1061,8 +1070,6 @@ setup_context(Py_ssize_t stack_level,
         *lineno = PyFrame_GetLineNumber(f);
         Py_DECREF(f);
     }
-
-    *module = NULL;
 
     /* Setup registry. */
     assert(globals != NULL);
@@ -1103,7 +1110,7 @@ setup_context(Py_ssize_t stack_level,
  handle_error:
     Py_XDECREF(*registry);
     Py_XDECREF(*module);
-    Py_DECREF(*filename);
+    Py_XDECREF(*filename);
     return 0;
 }
 
