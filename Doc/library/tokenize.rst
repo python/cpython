@@ -16,8 +16,8 @@ colorizers for on-screen displays.
 To simplify token stream handling, all :ref:`operator <operators>` and
 :ref:`delimiter <delimiters>` tokens and :data:`Ellipsis` are returned using
 the generic :data:`~token.OP` token type.  The exact
-type can be determined by checking the ``exact_type`` property on the
-:term:`named tuple` returned from :func:`tokenize.tokenize`.
+type can be determined by checking the :attr:`TokenInfo.exact_type` property on
+the :class:`TokenInfo` returned from :func:`tokenize.tokenize`.
 
 
 .. warning::
@@ -40,25 +40,10 @@ The primary entry point is a :term:`generator`:
    :meth:`io.IOBase.readline` method of file objects.  Each call to the
    function should return one line of input as bytes.
 
-   The generator produces 5-tuples with these members: the token type; the
-   token string; a 2-tuple ``(srow, scol)`` of ints specifying the row and
-   column where the token begins in the source; a 2-tuple ``(erow, ecol)`` of
-   ints specifying the row and column where the token ends in the source; and
-   the line on which the token was found. The line passed (the last tuple item)
-   is the *physical* line.  The 5 tuple is returned as a :term:`named tuple`
-   with the field names:
-   ``type string start end line``.
-
-   The returned :term:`named tuple` has an additional property named
-   ``exact_type`` that contains the exact operator type for
-   :data:`~token.OP` tokens.  For all other token types ``exact_type``
-   equals the named tuple ``type`` field.
+   The generator produces :class:`TokenInfo` objects.
 
    .. versionchanged:: 3.1
       Added support for named tuples.
-
-   .. versionchanged:: 3.3
-      Added support for ``exact_type``.
 
    :func:`.tokenize` determines the source encoding of the file by looking for a
    UTF-8 BOM or encoding cookie, according to :pep:`263`.
@@ -71,8 +56,42 @@ The primary entry point is a :term:`generator`:
    a single line of input. However, :func:`generate_tokens` expects *readline*
    to return a str object rather than bytes.
 
-   The result is an iterator yielding named tuples, exactly like
+   The result is an iterator yielding :class:`TokenInfo` objects, exactly like
    :func:`.tokenize`. It does not yield an :data:`~token.ENCODING` token.
+
+.. class:: TokenInfo(type, string, start, end, line)
+
+   A :term:`named tuple` with five fields describing a token:
+
+   .. attribute:: type
+
+      The token type.
+
+   .. attribute:: string
+
+      The token string.
+
+   .. attribute:: start
+
+      A 2-tuple ``(srow, scol)`` of ints specifying the row and column where
+      the token begins in the source.
+
+   .. attribute:: end
+
+      A 2-tuple ``(erow, ecol)`` of ints specifying the row and column where
+      the token ends in the source.
+
+   .. attribute:: line
+
+      The physical line or lines on which the token was found.
+
+   .. attribute:: exact_type
+
+      The exact operator type for :data:`~token.OP` tokens. For all other
+      token types, this equals :attr:`type`.
+
+      .. versionadded:: 3.3
+
 
 All constants from the :mod:`token` module are also exported from
 :mod:`!tokenize`.
