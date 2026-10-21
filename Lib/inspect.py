@@ -1419,14 +1419,19 @@ def formatargvalues(args, varargs, varkw, locals,
     argument is an optional function to format the sequence of arguments."""
     def convert(name, locals=locals,
                 formatarg=formatarg, formatvalue=formatvalue):
-        return formatarg(name) + formatvalue(locals.get(name, _deleted))
+        formatted_name = formatarg(name)
+        try:
+            value = locals[name]
+        except KeyError:
+            value = _deleted
+        return formatted_name + formatvalue(value)
     specs = []
     for i in range(len(args)):
         specs.append(convert(args[i]))
     if varargs:
-        specs.append(formatvarargs(varargs) + formatvalue(locals[varargs]))
+        specs.append(convert(varargs, formatarg=formatvarargs))
     if varkw:
-        specs.append(formatvarkw(varkw) + formatvalue(locals[varkw]))
+        specs.append(convert(varkw, formatarg=formatvarkw))
     return '(' + ', '.join(specs) + ')'
 
 def _missing_arguments(f_name, argnames, pos, values):
