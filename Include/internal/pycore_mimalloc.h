@@ -17,6 +17,9 @@
 // CPython never uses mimalloc's C++ operator new APIs, so don't define a weak
 // std::get_new_handler() (_ZSt15get_new_handlerv) in libpython.
 #  define MI_NO_CXX_NEW_HANDLER 1
+// The aligned OS allocation fallback is benign, but its warning is printed to
+// stderr and breaks tests that check output (e.g. test_cmd_line under ASan).
+#  define MI_NO_ALIGN_FALLBACK_WARNING 1
 #  ifdef Py_GIL_DISABLED
 #    define MI_PRIM_THREAD_ID   _Py_ThreadId
 #    define MI_CPYTHON 1
