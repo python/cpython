@@ -1,0 +1,8 @@
+.. date: 2026-10-20-13-15-00
+.. gh-issue: 159894
+.. nonce: 8Kp4mN
+.. release date: 2026-10-21
+.. section: Security
+
+Bump the version of :pypi:`pip` bundled in :mod:`ensurepip` to version
+26.2.2.
