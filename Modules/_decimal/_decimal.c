@@ -348,30 +348,6 @@ static const char *dec_signal_string[MPD_NUM_FLAGS] = {
     "Underflow",
 };
 
-static const char *invalid_rounding_err =
-"valid values for rounding are:\n\
-  [ROUND_CEILING, ROUND_FLOOR, ROUND_UP, ROUND_DOWN,\n\
-   ROUND_HALF_UP, ROUND_HALF_DOWN, ROUND_HALF_EVEN,\n\
-   ROUND_05UP]";
-
-static const char *invalid_signals_err =
-"valid values for signals are:\n\
-  [InvalidOperation, FloatOperation, DivisionByZero,\n\
-   Overflow, Underflow, Subnormal, Inexact, Rounded,\n\
-   Clamped]";
-
-#ifdef EXTRA_FUNCTIONALITY
-static const char *invalid_flags_err =
-"valid values for _flags or _traps are:\n\
-  signals:\n\
-    [DecIEEEInvalidOperation, DecFloatOperation, DecDivisionByZero,\n\
-     DecOverflow, DecUnderflow, DecSubnormal, DecInexact, DecRounded,\n\
-     DecClamped]\n\
-  conditions which trigger DecIEEEInvalidOperation:\n\
-    [DecInvalidOperation, DecConversionSyntax, DecDivisionImpossible,\n\
-     DecDivisionUndefined, DecFpuError, DecInvalidContext, DecMallocError]";
-#endif
-
 static int
 value_error_int(const char *mesg)
 {
@@ -442,7 +418,11 @@ exception_as_flag(decimal_state *state, PyObject *ex)
         }
     }
 
-    PyErr_SetString(PyExc_KeyError, invalid_signals_err);
+    PyErr_SetString(PyExc_KeyError,
+        "valid values for signals are:\n"
+        "  [InvalidOperation, FloatOperation, DivisionByZero,\n"
+        "   Overflow, Underflow, Subnormal, Inexact, Rounded,\n"
+        "   Clamped]");
     return DEC_INVALID_SIGNALS;
 }
 
@@ -601,7 +581,15 @@ long_as_flags(PyObject *v)
         return DEC_ERR_OCCURRED;
     }
     if (x < 0 || x > (long)MPD_Max_status) {
-        PyErr_SetString(PyExc_TypeError, invalid_flags_err);
+        PyErr_SetString(PyExc_TypeError,
+            "valid values for _flags or _traps are:\n"
+            "  signals:\n"
+            "    [DecIEEEInvalidOperation, DecFloatOperation, DecDivisionByZero,\n"
+            "     DecOverflow, DecUnderflow, DecSubnormal, DecInexact, DecRounded,\n"
+            "     DecClamped]\n"
+            "  conditions which trigger DecIEEEInvalidOperation:\n"
+            "    [DecInvalidOperation, DecConversionSyntax, DecDivisionImpossible,\n"
+            "     DecDivisionUndefined, DecFpuError, DecInvalidContext, DecMallocError]");
         return DEC_INVALID_SIGNALS;
     }
 
@@ -657,7 +645,11 @@ getround(decimal_state *state, PyObject *v)
         }
     }
 
-    return type_error_int(invalid_rounding_err);
+    return type_error_int(
+        "valid values for rounding are:\n"
+        "  [ROUND_CEILING, ROUND_FLOOR, ROUND_UP, ROUND_DOWN,\n"
+        "   ROUND_HALF_UP, ROUND_HALF_DOWN, ROUND_HALF_EVEN,\n"
+        "   ROUND_05UP]");
 }
 
 
@@ -671,7 +663,7 @@ getround(decimal_state *state, PyObject *v)
    initialized to new SignalDicts. Once a SignalDict is tied to
    a context, it cannot be deleted. */
 
-static const char *INVALID_SIGNALDICT_ERROR_MSG = "invalid signal dict";
+static const char *const INVALID_SIGNALDICT_ERROR_MSG = "invalid signal dict";
 
 static int
 signaldict_init(PyObject *self,
@@ -7756,6 +7748,104 @@ error:
     return NULL;
 }
 
+PyDoc_STRVAR(libmpdec_version_info__doc__,
+"decimal.libmpdec_version_info\n\
+\n\
+libmpdec version information as a named tuple.");
+
+static PyStructSequence_Field libmpdec_version_info_fields[] = {
+    {"major", "Major release number"},
+    {"minor", "Minor release number"},
+    {"micro", "Micro release number"},
+    {0}
+};
+
+static PyStructSequence_Desc libmpdec_version_info_desc = {
+    "decimal.libmpdec_version_info",    /* name */
+    libmpdec_version_info__doc__,       /* doc */
+    libmpdec_version_info_fields,       /* fields */
+    3
+};
+
+static PyObject *
+make_libmpdec_version_info(PyTypeObject *type, int major, int minor, int micro)
+{
+    PyObject *version;
+    int pos = 0;
+
+    version = PyStructSequence_New(type);
+    if (version == NULL) {
+        return NULL;
+    }
+
+#define SetItem(VALUE) \
+    PyStructSequence_SET_ITEM(version, pos++, VALUE); \
+    if (PyErr_Occurred()) { \
+        Py_DECREF(version); \
+        return NULL; \
+    }
+
+    SetItem(PyLong_FromLong(major))
+    SetItem(PyLong_FromLong(minor))
+    SetItem(PyLong_FromLong(micro))
+#undef SetItem
+
+    return version;
+}
+
+static PyObject *
+parse_libmpdec_version_info(PyTypeObject *type, const char *version)
+{
+    int major, minor, micro;
+    if (sscanf(version, "%d.%d.%d", &major, &minor, &micro) != 3) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "unexpected libmpdec version string %s", version);
+        return NULL;
+    }
+    return make_libmpdec_version_info(type, major, minor, micro);
+}
+
+static int
+add_version_constants(PyObject *m)
+{
+    const char *version = mpd_version();
+    if (PyModule_AddStringConstant(m, "LIBMPDEC_VERSION", MPD_VERSION) < 0) {
+        return -1;
+    }
+    PyObject *obj = PyUnicode_FromString(version);
+    if (obj == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(m, "libmpdec_version", obj) < 0 ||
+        PyModule_AddObjectRef(m, "__libmpdec_version__", obj) < 0)
+    {
+        Py_DECREF(obj);
+        return -1;
+    }
+    Py_DECREF(obj);
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&libmpdec_version_info_desc);
+    if (version_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(m, "LIBMPDEC_VERSION_INFO",
+            make_libmpdec_version_info(version_type, MPD_MAJOR_VERSION,
+                                       MPD_MINOR_VERSION,
+                                       MPD_MICRO_VERSION)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    if (PyModule_Add(m, "libmpdec_version_info",
+            parse_libmpdec_version_info(version_type, version)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    Py_DECREF(version_type);
+    return 0;
+}
+
 static int minalloc_is_set = 0;
 
 static int
@@ -8004,7 +8094,7 @@ _decimal_exec(PyObject *m)
 
     /* Add specification version number */
     CHECK_INT(PyModule_AddStringConstant(m, "SPEC_VERSION", MPD_SPEC_VERSION));
-    CHECK_INT(PyModule_AddStringConstant(m, "__libmpdec_version__", mpd_version()));
+    CHECK_INT(add_version_constants(m));
 
     return 0;
 

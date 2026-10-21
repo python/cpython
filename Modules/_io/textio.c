@@ -758,10 +758,8 @@ buffer_access_safe(textio *self)
         return NULL;
     }
 
-    /* Returning a borrowed reference is safe since TextIOWrapper methods are
-       protected by critical sections. */
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
-    return self->buffer;
+    return Py_NewRef(self->buffer);
 }
 
 static PyObject *
@@ -772,7 +770,9 @@ buffer_getattr(textio *self, PyObject *attr_name)
         return NULL;
     }
 
-    return PyObject_GetAttr(buffer, attr_name);
+    PyObject *res = PyObject_GetAttr(buffer, attr_name);
+    Py_DECREF(buffer);
+    return res;
 }
 
 static PyObject *
@@ -783,7 +783,9 @@ buffer_callmethod_noargs(textio *self, PyObject *name)
         return NULL;
     }
 
-    return PyObject_CallMethodNoArgs(buffer, name);
+    PyObject *res = PyObject_CallMethodNoArgs(buffer, name);
+    Py_DECREF(buffer);
+    return res;
 }
 
 static PyObject *
@@ -794,7 +796,9 @@ buffer_callmethod_onearg(textio *self, PyObject *name, PyObject *arg)
         return NULL;
     }
 
-    return PyObject_CallMethodOneArg(buffer, name, arg);
+    PyObject *res = PyObject_CallMethodOneArg(buffer, name, arg);
+    Py_DECREF(buffer);
+    return res;
 }
 
 static void
@@ -1644,7 +1648,7 @@ _io_TextIOWrapper_detach_impl(textio *self)
     if (buffer == NULL) {
         return NULL;
     }
-    self->buffer = NULL;
+    Py_CLEAR(self->buffer);
     self->detached = 1;
     return buffer;
 }
@@ -1868,7 +1872,12 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
 
     if (needflush) {
         PyObject *buffer = buffer_access_safe(self);
-        if (buffer == NULL || _PyFile_Flush(buffer) < 0) {
+        if (buffer == NULL) {
+            return NULL;
+        }
+        int res = _PyFile_Flush(buffer);
+        Py_DECREF(buffer);
+        if (res < 0) {
             return NULL;
         }
     }
@@ -2687,6 +2696,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
             goto fail;
         }
         res = _PyObject_CallMethod(buf, &_Py_ID(seek), "ii", 0, 2);
+        Py_DECREF(buf);
         Py_CLEAR(cookieObj);
         if (res == NULL)
             goto fail;
@@ -3277,12 +3287,17 @@ _io_TextIOWrapper_close_impl(textio *self)
     }
 }
 
+/*[clinic input]
+@critical_section
+_io.TextIOWrapper.__next__ as textiowrapper_iternext
+[clinic start generated code]*/
+
 static PyObject *
-textiowrapper_iternext_lock_held(PyObject *op)
+textiowrapper_iternext_impl(textio *self)
+/*[clinic end generated code: output=f365c4287cd43a1f input=c5b4c79faf0c98cb]*/
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     PyObject *line;
-    textio *self = textio_CAST(op);
 
     CHECK_ATTACHED(self);
 
@@ -3292,7 +3307,7 @@ textiowrapper_iternext_lock_held(PyObject *op)
         line = _textiowrapper_readline(self, -1);
     }
     else {
-        line = PyObject_CallMethodNoArgs(op, &_Py_ID(readline));
+        line = PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(readline));
         if (line && !PyUnicode_Check(line)) {
             PyErr_Format(PyExc_OSError,
                          "readline() should have returned a str object, "
@@ -3314,16 +3329,6 @@ textiowrapper_iternext_lock_held(PyObject *op)
     }
 
     return line;
-}
-
-static PyObject *
-textiowrapper_iternext(PyObject *op)
-{
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = textiowrapper_iternext_lock_held(op);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 /*[clinic input]
@@ -3441,7 +3446,7 @@ static PyObject *
 _io_TextIOWrapper_buffer_get_impl(textio *self)
 /*[clinic end generated code: output=d265a34555aa5d4b input=5951cfa148f7350a]*/
 {
-    return Py_XNewRef(buffer_access_safe(self));
+    return buffer_access_safe(self);
 }
 
 static PyMethodDef incrementalnewlinedecoder_methods[] = {
