@@ -196,6 +196,11 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
         is_android or is_apple_mobile,
         "Android and iOS run tests via a custom testbed method that doesn't ship libpython"
     )
+    @unittest.skipIf(
+        sys.platform == 'cygwin',
+        "Cygwin installs the DLL in BINDIR and the import library in LIBPL, "
+        "not in LIBDIR"
+    )
     def test_libpython_dynamic(self):
         value = self.data.get('libpython', {})
         if 'dynamic' not in value:
