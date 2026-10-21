@@ -403,11 +403,19 @@ bytearray_length(PyObject *op)
     return PyByteArray_GET_SIZE(op);
 }
 
+/*[clinic input]
+@critical_section
+bytearray.__iadd__ as bytearray_iconcat
+
+    other: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-bytearray_iconcat_lock_held(PyObject *op, PyObject *other)
+bytearray_iconcat_impl(PyByteArrayObject *self, PyObject *other)
+/*[clinic end generated code: output=ba172f2db8f7a8dd input=5b6fb07ab387084d]*/
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
-    PyByteArrayObject *self = _PyByteArray_CAST(op);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
 
     Py_buffer vo;
     if (PyObject_GetBuffer(other, &vo, PyBUF_SIMPLE) != 0) {
@@ -430,16 +438,6 @@ bytearray_iconcat_lock_held(PyObject *op, PyObject *other)
     memcpy(PyByteArray_AS_STRING(self) + size, vo.buf, vo.len);
     PyBuffer_Release(&vo);
     return Py_NewRef(self);
-}
-
-static PyObject *
-bytearray_iconcat(PyObject *op, PyObject *other)
-{
-    PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    ret = bytearray_iconcat_lock_held(op, other);
-    Py_END_CRITICAL_SECTION();
-    return ret;
 }
 
 static PyObject *
