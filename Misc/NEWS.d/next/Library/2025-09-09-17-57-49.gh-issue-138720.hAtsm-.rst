@@ -1,4 +1,0 @@
-Fix an issue where :class:`io.BufferedWriter` and :class:`io.BufferedRandom`
-had different definitions of "closed" for :meth:`~io.IOBase.close` and
-:meth:`~io.IOBase.flush` which resulted in an exception when close called
-flush but flush thought the file was already closed.

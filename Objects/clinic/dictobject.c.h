@@ -5,6 +5,21 @@ preserve
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
+static PyObject *
+dict_repr_impl(PyObject *self);
+
+static PyObject *
+dict_repr(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = dict_repr_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(dict_fromkeys__doc__,
 "fromkeys($type, iterable, value=None, /)\n"
 "--\n"
@@ -323,4 +338,22 @@ dict_values(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return dict_values_impl((PyDictObject *)self);
 }
-/*[clinic end generated code: output=9007b74432217017 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(frozendict_copy__doc__,
+"copy($self, /)\n"
+"--\n"
+"\n"
+"Return a shallow copy of the frozendict.");
+
+#define FROZENDICT_COPY_METHODDEF    \
+    {"copy", (PyCFunction)frozendict_copy, METH_NOARGS, frozendict_copy__doc__},
+
+static PyObject *
+frozendict_copy_impl(PyFrozenDictObject *self);
+
+static PyObject *
+frozendict_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return frozendict_copy_impl((PyFrozenDictObject *)self);
+}
+/*[clinic end generated code: output=46d2d00147dd7917 input=a9049054013a1b77]*/

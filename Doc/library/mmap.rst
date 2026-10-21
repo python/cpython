@@ -14,7 +14,8 @@ where :class:`bytearray` are expected; for example, you can use the :mod:`re`
 module to search through a memory-mapped file.  You can also change a single
 byte by doing ``obj[index] = 97``, or change a subsequence by assigning to a
 slice: ``obj[i1:i2] = b'...'``.  You can also read and write data starting at
-the current file position, and :meth:`seek` through the file to different positions.
+the current file position, and :meth:`~mmap.mmap.seek` through the file to
+different positions.
 
 A memory-mapped file is created by the :class:`~mmap.mmap` constructor, which is
 different on Unix and on Windows.  In either case you must provide a file
@@ -78,7 +79,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    This mode is useful to limit the number of open file handles.
    The original file can be renamed (but not deleted) after closing *fileno*.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       The *trackfd* parameter was added.
 
    .. audit-event:: mmap.__new__ fileno,length,access,offset mmap.mmap
@@ -103,7 +104,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    *prot*, if specified, gives the desired memory protection; the two most
    useful values are :const:`PROT_READ` and :const:`PROT_WRITE`, to specify
    that the pages may be read or written.  *prot* defaults to
-   :const:`PROT_READ \| PROT_WRITE`.
+   :const:`PROT_READ` \| :const:`PROT_WRITE`.
 
    *access* may be specified in lieu of *flags* and *prot* as an optional
    keyword parameter.  It is an error to specify both *flags*, *prot* and
@@ -212,7 +213,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
          Writable :term:`bytes-like object` is now accepted.
 
 
-   .. method:: flush([offset[, size]])
+   .. method:: flush([offset[, size]], *, flags=MS_SYNC)
 
       Flushes changes made to the in-memory copy of a file back to disk. Without
       use of this call there is no guarantee that changes are written back before
@@ -220,6 +221,12 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       changes to the given range of bytes will be flushed to disk; otherwise, the
       whole extent of the mapping is flushed.  *offset* must be a multiple of the
       :const:`PAGESIZE` or :const:`ALLOCATIONGRANULARITY`.
+
+      The *flags* parameter specifies the synchronization behavior.
+      *flags* must be one of the :ref:`MS_* constants <ms-constants>` available
+      on the system.
+
+      On Windows, the *flags* parameter is ignored.
 
       ``None`` is returned to indicate success.  An exception is raised when the
       call failed.
@@ -229,11 +236,14 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
          on error under Windows.  A zero value was returned on success; an
          exception was raised on error under Unix.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Allow specifying *offset* without *size*. Previously, both *offset*
          and *size* parameters were required together. Now *offset* can be
          specified alone, and the flush operation will extend from *offset*
          to the end of the mmap.
+
+      .. versionchanged:: 3.15
+         Added *flags* parameter to control synchronization behavior.
 
 
    .. method:: madvise(option[, start[, length]])
@@ -328,13 +338,24 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
       .. versionadded:: 3.13
 
+   .. method:: set_name(name, /)
+
+      Annotate the memory mapping with the given *name* for easier identification
+      in ``/proc/<pid>/maps`` if the kernel supports the feature and :option:`-X dev <-X>` is passed
+      to Python or if Python is built in :ref:`debug mode <debug-build>`.
+      The length of *name* must not exceed 67 bytes including the ``'\0'`` terminator.
+
+      .. availability:: Linux >= 5.17 (kernel built with ``CONFIG_ANON_VMA_NAME`` option)
+
+      .. versionadded:: 3.15
+
    .. method:: size()
 
       Return the length of the file, which can be larger than the size of the
       memory-mapped area.
       For an anonymous mapping, return its size.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Anonymous mappings are now supported on Unix.
 
 
@@ -366,9 +387,55 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       the mmap was created with :const:`ACCESS_READ`, then writing to it will
       raise a :exc:`TypeError` exception.
 
+.. _access-constants:
+
+ACCESS_* constants
+++++++++++++++++++
+
+.. data:: ACCESS_DEFAULT
+          ACCESS_READ
+          ACCESS_WRITE
+          ACCESS_COPY
+
+   These constants specify the access mode for a memory mapping.
+   :const:`ACCESS_READ` provides read-only access, :const:`ACCESS_WRITE`
+   provides write-through access, and :const:`ACCESS_COPY` provides
+   copy-on-write access. :const:`ACCESS_DEFAULT` defers to the *prot*
+   argument of :class:`mmap`.
+
+.. _page-size-constants:
+
+Page size constants
++++++++++++++++++++
+
+.. data:: PAGESIZE
+          ALLOCATIONGRANULARITY
+
+   :const:`PAGESIZE` is the system memory page size in bytes.
+   :const:`ALLOCATIONGRANULARITY` is the minimum alignment in bytes required
+   for the *offset* argument of :class:`mmap`. On Unix,
+   :const:`ALLOCATIONGRANULARITY` is equal to :const:`PAGESIZE`.
+
+.. _prot-constants:
+
+PROT_* constants
+++++++++++++++++
+
+.. data:: PROT_READ
+          PROT_WRITE
+          PROT_EXEC
+
+   Memory protection flags accepted by the *prot* argument of :class:`mmap`.
+   :const:`PROT_READ` allows pages to be read, :const:`PROT_WRITE` allows pages
+   to be written, and :const:`PROT_EXEC` allows pages to be executed. Values
+   can be combined using the bitwise OR operator. Not every option is present
+   on every system.
+
+   .. availability:: Unix.
+
 .. _madvise-constants:
 
-MADV_* Constants
+MADV_* constants
 ++++++++++++++++
 
 .. data:: MADV_NORMAL
@@ -405,7 +472,7 @@ MADV_* Constants
 
 .. _map-constants:
 
-MAP_* Constants
+MAP_* constants
 +++++++++++++++
 
 .. data:: MAP_SHARED
@@ -450,3 +517,22 @@ MAP_* Constants
        :data:`MAP_TPRO`, :data:`MAP_TRANSLATED_ALLOW_EXECUTE`, and
        :data:`MAP_UNIX03` constants.
 
+.. _ms-constants:
+
+MS_* constants
+++++++++++++++
+
+.. data:: MS_SYNC
+          MS_ASYNC
+          MS_INVALIDATE
+
+    These flags control the synchronization behavior for :meth:`mmap.flush`:
+
+    * :data:`MS_SYNC` - Synchronous flush: writes are scheduled and the call
+      blocks until they are physically written to storage.
+    * :data:`MS_ASYNC` - Asynchronous flush: writes are scheduled but the call
+      returns immediately without waiting for completion.
+    * :data:`MS_INVALIDATE` - Invalidate cached data: invalidates other mappings
+      of the same file so they can see the changes.
+
+    .. versionadded:: 3.15

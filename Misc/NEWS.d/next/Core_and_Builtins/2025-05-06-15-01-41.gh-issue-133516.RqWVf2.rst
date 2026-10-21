@@ -1,2 +1,0 @@
-Raise :exc:`ValueError` when constants ``True``, ``False`` or ``None`` are
-used as an identifier after NFKC normalization.

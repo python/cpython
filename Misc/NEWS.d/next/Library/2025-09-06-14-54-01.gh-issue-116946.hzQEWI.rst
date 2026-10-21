@@ -1,3 +1,0 @@
-:mod:`zlib`: the types of :func:`zlib.compressobj`
-and :func:`zlib.decompressobj` are now immutable.
-Patch by Bénédikt Tran.

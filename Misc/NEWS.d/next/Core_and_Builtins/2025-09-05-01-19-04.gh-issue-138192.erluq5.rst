@@ -1,2 +1,0 @@
-Fix :mod:`contextvars` initialization so that all subinterpreters are assigned the
-:attr:`~contextvars.Token.MISSING` value.

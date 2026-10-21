@@ -1,2 +1,0 @@
-Display and raise an exception if an extension compiled for
-non-free-threaded Python is loaded in a free-threaded interpreter.

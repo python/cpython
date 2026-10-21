@@ -1,2 +1,0 @@
-On Solaris, the :c:macro:`!Py_NAN` macro now expands to a :c:type:`!double`
-instead of a function address. Patch by Bénédikt Tran.

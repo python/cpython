@@ -1,1 +1,0 @@
-Remove non-existent :meth:`~object.__copy__`, :meth:`~object.__deepcopy__`, and :attr:`~type.__bases__` from the :meth:`~object.__dir__` entries of :class:`types.GenericAlias`.
