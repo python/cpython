@@ -2007,7 +2007,11 @@ static int
 property_clear(PyObject *self)
 {
     propertyobject *pp = (propertyobject *)self;
+    Py_CLEAR(pp->prop_get);
+    Py_CLEAR(pp->prop_set);
+    Py_CLEAR(pp->prop_del);
     Py_CLEAR(pp->prop_doc);
+    Py_CLEAR(pp->prop_name);
     return 0;
 }
 
