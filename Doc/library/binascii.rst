@@ -283,7 +283,7 @@ The :mod:`!binascii` module defines the following functions:
 
    .. versionadded:: 3.15
 
-.. function:: a2b_qp(data, header=False, strip_ws=False)
+.. function:: a2b_qp(data, header=False, *, strip_ws=False)
 
    Convert a block of quoted-printable data back to binary and return the binary
    data. More than one line may be passed at a time. If the optional argument

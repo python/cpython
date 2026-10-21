@@ -20,7 +20,7 @@ few nonprintable characters; the base64 encoding scheme available via the
 :mod:`base64` module is more compact if there are many such characters, as when
 sending a graphics file.
 
-.. function:: decode(input, output, header=False, strip_ws=False)
+.. function:: decode(input, output, header=False, *, strip_ws=False)
 
    Decode the contents of the *input* file and write the resulting decoded binary
    data to the *output* file. *input* and *output* must be :term:`binary file objects
@@ -48,7 +48,7 @@ sending a graphics file.
    as underscores as per :rfc:`1522`.
 
 
-.. function:: decodestring(s, header=False, strip_ws=False)
+.. function:: decodestring(s, header=False, *, strip_ws=False)
 
    Like :func:`decode`, except that it accepts a source :class:`bytes` and
    returns the corresponding decoded :class:`bytes`.

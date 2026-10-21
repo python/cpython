@@ -1513,7 +1513,7 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_a2b_qp__doc__,
-"a2b_qp($module, /, data, header=False, strip_ws=False)\n"
+"a2b_qp($module, /, data, header=False, *, strip_ws=False)\n"
 "--\n"
 "\n"
 "Decode a string of qp-encoded data.\n"
@@ -1566,7 +1566,7 @@ binascii_a2b_qp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     int strip_ws = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1585,11 +1585,15 @@ binascii_a2b_qp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
             goto skip_optional_pos;
         }
     }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
     strip_ws = PyObject_IsTrue(args[2]);
     if (strip_ws < 0) {
         goto exit;
     }
-skip_optional_pos:
+skip_optional_kwonly:
     return_value = binascii_a2b_qp_impl(module, &data, header, strip_ws);
 
 exit:
@@ -1699,4 +1703,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=202204ced5906f7a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ec23792754b04657 input=a9049054013a1b77]*/

@@ -109,7 +109,7 @@ def encodestring(s, quotetabs=False, header=False):
 
 
 
-def decode(input, output, header=False, strip_ws=False):
+def decode(input, output, header=False, *, strip_ws=False):
     """Read 'input', apply quoted-printable decoding, and write to 'output'.
     'input' and 'output' are binary file objects.
     If 'header' is true, decode underscore as space (per RFC 1522).
@@ -158,7 +158,7 @@ def decode(input, output, header=False, strip_ws=False):
     if new:
         output.write(new)
 
-def decodestring(s, header=False, strip_ws=False):
+def decodestring(s, header=False, *, strip_ws=False):
     if a2b_qp is not None:
         return a2b_qp(s, header=header, strip_ws=strip_ws)
     from io import BytesIO

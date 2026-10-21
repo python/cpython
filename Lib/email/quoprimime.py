@@ -229,7 +229,7 @@ def body_encode(body, maxlinelen=76, eol=NL):
 
 # BAW: I'm not sure if the intent was for the signature of this function to be
 # the same as base64MIME.decode() or not...
-def decode(encoded, eol=NL, strip_ws=True):
+def decode(encoded, eol=NL, *, strip_ws=True):
     """Decode a quoted-printable string.
 
     Lines are separated with eol, which defaults to \\n.

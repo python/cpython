@@ -2373,6 +2373,7 @@ binascii.a2b_qp
 
     data: ascii_buffer
     header: bool = False
+    *
     strip_ws: bool = False
 
 Decode a string of qp-encoded data.
@@ -2384,7 +2385,7 @@ required by RFC 2045 when decoding a quoted-printable body.
 static PyObject *
 binascii_a2b_qp_impl(PyObject *module, Py_buffer *data, int header,
                      int strip_ws)
-/*[clinic end generated code: output=7e9431376a28709d input=f637bdfb25d485a8]*/
+/*[clinic end generated code: output=7e9431376a28709d input=679b714f08932dd1]*/
 {
     Py_ssize_t in, out;
     char ch;
