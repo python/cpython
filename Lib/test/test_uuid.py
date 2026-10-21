@@ -277,6 +277,32 @@ class BaseTestUUID:
         resorted.sort()
         equal(ascending, resorted)
 
+    def test_UUID_prefixes(self):
+        # Python removes both URN components regardless of their order. Check
+        # that both implementations accept them with each UUID string format.
+        value = '12345678-1234-5678-1234-567812345678'
+        expected = self.uuid.UUID(value)
+        for prefix in ('', 'urn:', 'uuid:', 'urn:uuid:', 'uuid:urn:'):
+            for text in (value, value.replace('-', ''), '{' + value + '}'):
+                with self.subTest(prefix=prefix, text=text):
+                    self.assertEqual(self.uuid.UUID(prefix + text), expected)
+
+    def test_UUID_strip_braces(self):
+        # str.strip('{}') removes runs of either brace at both ends, without
+        # requiring matching pairs. Keep the C parser's behavior identical.
+        value = '12345678-1234-5678-1234-567812345678'
+        expected = self.uuid.UUID(value)
+        for leading in ('', '{', '}', '{{{', '}}}', '{}}{'):
+            for trailing in ('', '{', '}', '{{{', '}}}', '{}}{'):
+                with self.subTest(leading=leading, trailing=trailing):
+                    self.assertEqual(
+                        self.uuid.UUID(leading + value + trailing), expected)
+        # Braces within the UUID and inputs containing only braces are invalid.
+        for text in ('{{}}', '{}{}', value[:8] + '{}' + value[8:]):
+            with self.subTest(text=text):
+                with self.assertRaises(ValueError):
+                    self.uuid.UUID(text)
+
     def test_exceptions(self):
         badvalue = lambda f: self.assertRaises(ValueError, f)
         badtype = lambda f: self.assertRaises(TypeError, f)

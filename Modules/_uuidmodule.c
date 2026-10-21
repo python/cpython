@@ -674,7 +674,8 @@ from_hex(uuidobject *self, PyObject *hex)
 
     // Reimplement `hex = hex.replace('urn:', '').replace('uuid:', '')`
     if (size > 0 && start[0] == 'u') {
-        if (size >= 9 && strncmp(start, "urn:uuid:", 9) == 0) {
+        if (size >= 9 && (strncmp(start, "urn:uuid:", 9) == 0 ||
+                          strncmp(start, "uuid:urn:", 9) == 0)) {
             start += 9;
             size -= 9;
         }
@@ -689,11 +690,11 @@ from_hex(uuidobject *self, PyObject *hex)
     }
 
     // Reimplement `hex = hex.strip('{}')`
-    if (size >= 1 && start[0] == '{') {
+    while (size >= 1 && (start[0] == '{' || start[0] == '}')) {
         start++;
         size -= 1;
     }
-    if (size >= 1 && start[size - 1] == '}') {
+    while (size >= 1 && (start[size - 1] == '{' || start[size - 1] == '}')) {
         size -= 1;
     }
 
