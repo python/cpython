@@ -142,11 +142,12 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
 
 
 def make_paths_relative(data: dict[str, Any], config_path: str | None = None) -> None:
-    # Make base_prefix relative to the config_path directory
-    if config_path:
-        data['base_prefix'] = relative_path(data['base_prefix'],
-                                            os.path.dirname(config_path))
     base_prefix = data['base_prefix']
+    # Make base_prefix relative to the config_path directory.  The other paths
+    # are still made relative to the absolute base_prefix below.
+    if config_path:
+        data['base_prefix'] = relative_path(base_prefix,
+                                            os.path.dirname(config_path))
 
     # Update path values to make them relative to base_prefix
     PATH_KEYS = (

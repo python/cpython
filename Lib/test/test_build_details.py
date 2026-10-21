@@ -217,6 +217,24 @@ class BuildDetailsRelativePathsTests(unittest.TestCase):
         self.assertEqual(data_abs_path['base_prefix'],
                          data_rel_path['base_prefix'])
 
+        self.check_relative_paths(data_abs_path, data_rel_path)
+
+    def test_round_trip_with_config_file_path(self):
+        data_abs_path = self.build_details_absolute_paths
+        base_prefix = data_abs_path['base_prefix']
+        config_dir = os.path.join(base_prefix, 'lib', 'python3.X')
+        data_rel_path = self.build_details_absolute_paths
+        generate_build_details.make_paths_relative(
+            data_rel_path,
+            config_path=os.path.join(config_dir, 'build-details.json'),
+        )
+
+        # base_prefix is relative to the config file's directory...
+        self.assertEqual(data_rel_path['base_prefix'], os.path.join('..', '..'))
+        # ...while the other paths are still relative to base_prefix.
+        self.check_relative_paths(data_abs_path, data_rel_path)
+
+    def check_relative_paths(self, data_abs_path, data_rel_path):
         base_prefix = data_abs_path['base_prefix']
 
         top_level_keys = ('base_interpreter',)
