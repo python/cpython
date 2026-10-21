@@ -251,13 +251,6 @@ class TextWrapper:
         lines = []
         if self.width <= 0:
             raise ValueError("invalid width %r (must be > 0)" % self.width)
-        if self.max_lines is not None:
-            if self.max_lines > 1:
-                indent = self.subsequent_indent
-            else:
-                indent = self.initial_indent
-            if len(indent) + len(self.placeholder.lstrip()) > self.width:
-                raise ValueError("placeholder too large for max width")
 
         # Arrange in reverse order so items can be efficiently popped
         # from a stack of chucks.
@@ -333,6 +326,10 @@ class TextWrapper:
                                     self.width):
                                 lines[-1] = prev_line + self.placeholder
                                 break
+                        if (len(indent) + len(self.placeholder.lstrip())
+                                > self.width):
+                            raise ValueError(
+                                "placeholder too large for max width")
                         lines.append(indent + self.placeholder.lstrip())
                     break
 
