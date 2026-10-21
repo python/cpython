@@ -1132,7 +1132,7 @@ reused in custom filters:
     path (after following symlinks) would end up outside the destination.
     This raises :class:`~tarfile.OutsideDestinationError`.
   - :ref:`Refuse <tarfile-extraction-refuse>` to extract links (hard or soft)
-    whose path resolves to the destination directory itself.
+    whose name refers to the destination directory itself.
     This raises :class:`~tarfile.OutsideDestinationError`.
     Note that such files are refused even on platforms that do not support
     symbolic links.
