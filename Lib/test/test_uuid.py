@@ -503,7 +503,7 @@ class BaseTestUUID:
             for safety in self.uuid.SafeUUID
         )
         with support.swap_item(sys.modules, 'uuid', self.uuid):
-            for mapping in (dict, UserDict, MappingProxyType):
+            for mapping in (dict, frozendict, UserDict, MappingProxyType):
                 for safety_state, expected_safety in safety_states:
                     with self.subTest(mapping=mapping, state=safety_state):
                         u = self.uuid.UUID(int=0, is_safe=self.uuid.SafeUUID.safe)
@@ -514,7 +514,7 @@ class BaseTestUUID:
 
     def test_setstate_missing_int(self):
         # A missing required key must retain the mapping's KeyError and key.
-        for mapping in (dict, UserDict, MappingProxyType):
+        for mapping in (dict, frozendict, UserDict, MappingProxyType):
             with self.subTest(mapping=mapping):
                 u = self.uuid.UUID(int=1)
                 with self.assertRaises(KeyError) as cm:
