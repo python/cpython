@@ -21,39 +21,36 @@ from libclinic.converter import CConverter
 class SlotSpec:
     # The special method name, e.g. '__next__'.
     name: str
+    # The C slot which the function implements, e.g. 'tp_iternext'.
+    c_slot: str
     # The C return type of the slot function.
     return_type: str
     # The name of the return converter which declares `return_type`.
     return_converter: str
-    # Maps the converter classes of the parameters (excluding self) to
-    # the C slot.
-    signatures: dict[tuple[type[CConverter], ...], str]
+    # The converter classes of the parameters, excluding self.
+    parameters: tuple[type[CConverter], ...] = ()
 
     @property
     def error_value(self) -> str:
         """The value returned by the slot function on error."""
         return 'NULL' if self.return_type.endswith('*') else '-1'
 
-    @property
-    def takes_parameters(self) -> bool:
-        return any(self.signatures)
+    def matches(self, converters: list[CConverter]) -> bool:
+        """Return whether the parameter converters are those of the slot."""
+        return tuple(type(c) for c in converters) == self.parameters
 
-    def c_slot(self, converters: list[CConverter]) -> str | None:
-        """Return the C slot for the parameter converters, or None."""
-        classes = tuple(type(c) for c in converters)
-        return self.signatures.get(classes)
-
-    def describe_signatures(self) -> str:
-        return " or ".join(
-            f"({', '.join(c.dsl_name() for c in sig) or 'no parameters'})"
-            f" for {slot}"
-            for sig, slot in self.signatures.items())
+    def describe(self) -> str:
+        params = ', '.join(c.dsl_name() for c in self.parameters)
+        return f"({params or 'no parameters'}) for {self.c_slot}"
 
 
-# Maps the name of a special method to its slot.  A name listed here must
-# not be in dsl_parser.unsupported_special_methods.
-SLOTS: Final[dict[str, SlotSpec]] = {
-    '__next__': SlotSpec('__next__', 'PyObject *', 'object', {
-        (): 'tp_iternext',
-    }),
+# Maps the name of a special method to the slots it can implement.  A name
+# listed here must not be in dsl_parser.unsupported_special_methods.
+SLOTS: Final[dict[str, tuple[SlotSpec, ...]]] = {
+    '__next__': (
+        SlotSpec('__next__', 'tp_iternext', 'PyObject *', 'object'),
+    ),
+    '__len__': (
+        SlotSpec('__len__', 'sq_length', 'Py_ssize_t', 'Py_ssize_t'),
+    ),
 }
