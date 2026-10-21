@@ -1256,8 +1256,16 @@ mmap_mmap___exit___impl(mmap_object *self, PyObject *exc_type,
     return mmap_mmap_close_impl(self);
 }
 
+/*[clinic input]
+@critical_section
+mmap.mmap.__repr__ as mmap__repr__method
+
+    op: self(type="PyObject *")
+[clinic start generated code]*/
+
 static PyObject *
-mmap__repr__method_lock_held(PyObject *op)
+mmap__repr__method_impl(PyObject *op)
+/*[clinic end generated code: output=c896c8c4cd07228c input=a030361fbcfe851a]*/
 {
     mmap_object *mobj = mmap_object_CAST(op);
 
@@ -1299,16 +1307,6 @@ mmap__repr__method_lock_held(PyObject *op)
                                     Py_TYPE(op)->tp_name, access_str,
                                     mobj->size, mobj->pos, mobj->offset);
     }
-}
-
-static PyObject *
-mmap__repr__method(PyObject *op)
-{
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = mmap__repr__method_lock_held(op);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 #ifdef MS_WINDOWS
