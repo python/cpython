@@ -14208,8 +14208,8 @@ case $host_cpu in #(
 esac
 BASECFLAGS="$hwasan_flags -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="$hwasan_flags $LDFLAGS"
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether a program links with -fsanitize=hwaddress" >&5
-printf %s "checking whether a program links with -fsanitize=hwaddress... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether a program links with $hwasan_flags" >&5
+printf %s "checking whether a program links with $hwasan_flags... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -14228,7 +14228,7 @@ printf "%s\n" "yes" >&6; }
 else case e in #(
   e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-   as_fn_error $? "cannot link with -fsanitize=hwaddress: the compiler does not support Hardware-assisted AddressSanitizer or its runtime library is not installed; see config.log" "$LINENO" 5 ;;
+   as_fn_error $? "cannot link with $hwasan_flags: the compiler does not support HWAddressSanitizer or its runtime library is not installed; see config.log" "$LINENO" 5 ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
