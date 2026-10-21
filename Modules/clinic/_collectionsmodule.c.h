@@ -349,6 +349,21 @@ deque_count(PyObject *deque, PyObject *v)
     return return_value;
 }
 
+static int
+deque_contains_impl(dequeobject *deque, PyObject *v);
+
+static int
+deque_contains(PyObject *deque, PyObject *v)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(deque);
+    return_value = deque_contains_impl((dequeobject *)deque, v);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(deque_index__doc__,
 "index($self, value, [start, [stop]])\n"
 "--\n"
@@ -677,4 +692,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=761d85edf8291792 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fca551851f7a658e input=a9049054013a1b77]*/

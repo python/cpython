@@ -348,10 +348,18 @@ _dbm_dbm_keys_impl(dbmobject *self, PyTypeObject *cls)
     return v;
 }
 
+/*[clinic input]
+@critical_section
+_dbm.dbm.__contains__ as dbm_contains
+    arg: object
+    /
+[clinic start generated code]*/
+
 static int
-dbm_contains_lock_held(PyObject *self, PyObject *arg)
+dbm_contains_impl(dbmobject *self, PyObject *arg)
+/*[clinic end generated code: output=6c42b797ada528bc input=94134e7abf3eeb6e]*/
 {
-    dbmobject *dp = dbmobject_CAST(self);
+    dbmobject *dp = self;
     datum key, val;
     Py_ssize_t size;
 
@@ -380,16 +388,6 @@ dbm_contains_lock_held(PyObject *self, PyObject *arg)
     }
     val = dbm_fetch(dp->di_dbm, key);
     return val.dptr != NULL;
-}
-
-static int
-dbm_contains(PyObject *self, PyObject *arg)
-{
-    int result;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    result = dbm_contains_lock_held(self, arg);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 /*[clinic input]

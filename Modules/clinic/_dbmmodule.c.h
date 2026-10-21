@@ -89,6 +89,21 @@ exit:
     return return_value;
 }
 
+static int
+dbm_contains_impl(dbmobject *self, PyObject *arg);
+
+static int
+dbm_contains(PyObject *self, PyObject *arg)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = dbm_contains_impl((dbmobject *)self, arg);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_dbm_dbm_get__doc__,
 "get($self, key, default=None, /)\n"
 "--\n"
@@ -279,4 +294,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=da6b5d201f8d3853 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6ff4681a893c22ad input=a9049054013a1b77]*/

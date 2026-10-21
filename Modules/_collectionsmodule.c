@@ -1190,8 +1190,17 @@ deque_count_impl(dequeobject *deque, PyObject *v)
     return PyLong_FromSsize_t(count);
 }
 
+/*[clinic input]
+@critical_section
+_collections.deque.__contains__ as deque_contains
+    deque: dequeobject
+    v: object
+    /
+[clinic start generated code]*/
+
 static int
-deque_contains_lock_held(dequeobject *deque, PyObject *v)
+deque_contains_impl(dequeobject *deque, PyObject *v)
+/*[clinic end generated code: output=5e7718757d3063bf input=8dd115a2cdaf0f23]*/
 {
     block *b = deque->leftblock;
     Py_ssize_t index = deque->leftindex;
@@ -1220,17 +1229,6 @@ deque_contains_lock_held(dequeobject *deque, PyObject *v)
         }
     }
     return 0;
-}
-
-static int
-deque_contains(PyObject *self, PyObject *v)
-{
-    dequeobject *deque = dequeobject_CAST(self);
-    int result;
-    Py_BEGIN_CRITICAL_SECTION(deque);
-    result = deque_contains_lock_held(deque, v);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 static Py_ssize_t
