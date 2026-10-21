@@ -22,3 +22,29 @@ Pending removal in Python 3.19
     supported depending on the backend implementation of hash functions.
     Prefer passing the initial data as a positional argument for maximum
     backwards compatibility.
+
+* :mod:`http.cookies`:
+
+  * :meth:`http.cookies.Morsel.js_output` is deprecated and will be
+    removed in Python 3.19.
+
+  * :meth:`http.cookies.BaseCookie.js_output` is deprecated and will be
+    removed in Python 3.19.
+
+* :mod:`imaplib`:
+
+  * Altering :attr:`IMAP4.file <imaplib.IMAP4.file>` is now deprecated
+    and slated for removal in Python 3.19. This property is now unused
+    and changing its value does not automatically close the current file.
+
+    Before Python 3.14, this property was used to implement the corresponding
+    ``read()`` and ``readline()`` methods for :class:`~imaplib.IMAP4` but this
+    is no longer the case since then.
+
+* :mod:`tkinter`:
+
+  * :func:`tkinter.filedialog.askopenfiles` has been deprecated since Python
+    3.16.  Iterate over the names returned by
+    :func:`~tkinter.filedialog.askopenfilenames` and open them one by one
+    instead.
+    (Contributed by Serhiy Storchaka in :gh:`152638`.)

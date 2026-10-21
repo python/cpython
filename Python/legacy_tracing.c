@@ -391,8 +391,8 @@ sys_trace_jump_func(
     assert(PyCode_Check(code));
     /* We can call _Py_Instrumentation_GetLine because we always set
     * line events for tracing */
-    int to_line = _Py_Instrumentation_GetLine(code, to);
-    int from_line = _Py_Instrumentation_GetLine(code, from);
+    int to_line = _Py_Instrumentation_GetLine(code, code->_co_monitoring->lines, to);
+    int from_line = _Py_Instrumentation_GetLine(code, code->_co_monitoring->lines, from);
     if (to_line != from_line) {
         /* Will be handled by target INSTRUMENTED_LINE */
         return &_PyInstrumentation_DISABLE;

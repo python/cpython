@@ -115,7 +115,7 @@ The terms "coroutine function" and "coroutine object" are often conflated
 as coroutine.
 That can be confusing!
 In this article, coroutine specifically refers to a coroutine object, or more
-precisely, an instance of :data:`types.CoroutineType` (native coroutine).
+precisely, an instance of :class:`types.CoroutineType` (native coroutine).
 Note that coroutines can also exist as instances of
 :class:`collections.abc.Coroutine` -- a distinction that matters for type
 checking.

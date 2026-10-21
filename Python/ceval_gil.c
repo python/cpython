@@ -550,7 +550,8 @@ _PyEval_FiniGIL(PyInterpreterState *interp)
     interp->ceval.gil = NULL;
 }
 
-void
+// Function removed in Python 3.16 limited C API, but kept in the stable ABI
+PyAPI_FUNC(void)
 PyEval_InitThreads(void)
 {
     /* Do nothing: kept for backward compatibility */
@@ -1423,11 +1424,7 @@ _Py_HandlePending(PyThreadState *tstate)
 
     /* Check for asynchronous exception. */
     if ((breaker & _PY_ASYNC_EXCEPTION_BIT) != 0) {
-        _Py_unset_eval_breaker_bit(tstate, _PY_ASYNC_EXCEPTION_BIT);
-        PyObject *exc = _Py_atomic_exchange_ptr(&tstate->async_exc, NULL);
-        if (exc != NULL) {
-            _PyErr_SetNone(tstate, exc);
-            Py_DECREF(exc);
+        if (_PyEval_RaiseAsyncExc(tstate) < 0) {
             return -1;
         }
     }
@@ -1436,5 +1433,20 @@ _Py_HandlePending(PyThreadState *tstate)
     _PyRunRemoteDebugger(tstate);
 #endif
 
+    return 0;
+}
+
+int
+_PyEval_RaiseAsyncExc(PyThreadState *tstate)
+{
+    assert(tstate != NULL);
+    assert(tstate == _PyThreadState_GET());
+    _Py_unset_eval_breaker_bit(tstate, _PY_ASYNC_EXCEPTION_BIT);
+    PyObject *exc = _Py_atomic_exchange_ptr(&tstate->async_exc, NULL);
+    if (exc != NULL) {
+        _PyErr_SetNone(tstate, exc);
+        Py_DECREF(exc);
+        return -1;
+    }
     return 0;
 }

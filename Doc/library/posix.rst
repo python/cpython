@@ -36,8 +36,6 @@ Large File Support
    single: large files
    single: file; large files
 
-.. sectionauthor:: Steve Clift <clift@mail.anacapa.net>
-
 Several operating systems (including AIX and Solaris) provide
 support for files that are larger than 2 GiB from a C programming model where
 :c:expr:`int` and :c:expr:`long` are 32-bit values. This is typically accomplished

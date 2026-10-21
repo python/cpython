@@ -4,8 +4,6 @@
 .. module:: ctypes
    :synopsis: A foreign function library for Python.
 
-.. moduleauthor:: Thomas Heller <theller@python.net>
-
 **Source code:** :source:`Lib/ctypes`
 
 --------------
@@ -16,15 +14,19 @@ used to wrap these libraries in pure Python.
 
 .. include:: ../includes/optional-module.rst
 
+.. warning::
+
+   :mod:`!ctypes` provides low-level access to native libraries and the
+   process's memory, bypassing Python's safety mechanisms and allowing
+   execution of arbitrary native code.
+   Incorrect use can corrupt data and objects, reveal sensitive information,
+   cause crashes, or otherwise compromise the running process.
+
 
 .. _ctypes-ctypes-tutorial:
 
 ctypes tutorial
 ---------------
-
-Note: The code samples in this tutorial use :mod:`doctest` to make sure that
-they actually work.  Since some code samples behave differently under Linux,
-Windows, or macOS, they contain doctest directives in comments.
 
 Note: Some code samples reference the ctypes :class:`c_int` type.  On platforms
 where ``sizeof(long) == sizeof(int)`` it is an alias to :class:`c_long`.
@@ -36,13 +38,16 @@ So, you should not be confused if :class:`c_long` is printed if you would expect
 Loading dynamic link libraries
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:mod:`!ctypes` exports the *cdll*, and on Windows *windll* and *oledll*
+:mod:`!ctypes` exports the :py:data:`~ctypes.cdll`, and on Windows
+:py:data:`~ctypes.windll` and :py:data:`~ctypes.oledll`
 objects, for loading dynamic link libraries.
 
-You load libraries by accessing them as attributes of these objects. *cdll*
-loads libraries which export functions using the standard ``cdecl`` calling
-convention, while *windll* libraries call functions using the ``stdcall``
-calling convention. *oledll* also uses the ``stdcall`` calling convention, and
+You load libraries by accessing them as attributes of these objects.
+:py:data:`!cdll` loads libraries which export functions using the
+standard ``cdecl`` calling convention, while :py:data:`!windll`
+libraries call functions using the ``stdcall``
+calling convention.
+:py:data:`~oledll` also uses the ``stdcall`` calling convention, and
 assumes the functions return a Windows :c:type:`!HRESULT` error code. The error
 code is used to automatically raise an :class:`OSError` exception when the
 function call fails.
@@ -72,11 +77,13 @@ Windows appends the usual ``.dll`` file suffix automatically.
     being used by Python. Where possible, use native Python functionality,
     or else import and use the ``msvcrt`` module.
 
-On Linux, it is required to specify the filename *including* the extension to
+Other systems require the filename *including* the extension to
 load a library, so attribute access can not be used to load libraries. Either the
 :meth:`~LibraryLoader.LoadLibrary` method of the dll loaders should be used,
-or you should load the library by creating an instance of CDLL by calling
-the constructor::
+or you should load the library by creating an instance of :py:class:`CDLL`
+by calling the constructor.
+
+For example, on Linux::
 
    >>> cdll.LoadLibrary("libc.so.6")  # doctest: +LINUX
    <CDLL 'libc.so.6', handle ... at ...>
@@ -85,7 +92,14 @@ the constructor::
    <CDLL 'libc.so.6', handle ... at ...>
    >>>
 
-.. XXX Add section for macOS.
+On macOS::
+
+   >>> cdll.LoadLibrary("libc.dylib")  # doctest: +MACOS
+   <CDLL 'libc.dylib', handle ... at ...>
+   >>> libc = CDLL("libc.dylib")       # doctest: +MACOS
+   >>> libc                            # doctest: +MACOS
+   <CDLL 'libc.dylib', handle ... at ...>
+
 
 
 .. _ctypes-accessing-functions-from-loaded-dlls:
@@ -192,10 +206,8 @@ argument values::
    OSError: exception: access violation reading 0x00000020
    >>>
 
-There are, however, enough ways to crash Python with :mod:`!ctypes`, so you
-should be careful anyway.  The :mod:`faulthandler` module can be helpful in
-debugging crashes (e.g. from segmentation faults produced by erroneous C library
-calls).
+The :mod:`faulthandler` module can help debug crashes,
+such as segmentation faults produced by erroneous C library calls.
 
 ``None``, integers, bytes objects and (unicode) strings are the only native
 Python objects that can directly be used as parameters in these function calls.
@@ -215,87 +227,168 @@ Fundamental data types
 
 :mod:`!ctypes` defines a number of primitive C compatible data types:
 
-+----------------------+------------------------------------------+----------------------------+
-| ctypes type          | C type                                   | Python type                |
-+======================+==========================================+============================+
-| :class:`c_bool`      | :c:expr:`_Bool`                          | bool (1)                   |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_char`      | :c:expr:`char`                           | 1-character bytes object   |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_wchar`     | :c:type:`wchar_t`                        | 1-character string         |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_byte`      | :c:expr:`char`                           | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_ubyte`     | :c:expr:`unsigned char`                  | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_short`     | :c:expr:`short`                          | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_ushort`    | :c:expr:`unsigned short`                 | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_int`       | :c:expr:`int`                            | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_int8`      | :c:type:`int8_t`                         | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_int16`     | :c:type:`int16_t`                        | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_int32`     | :c:type:`int32_t`                        | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_int64`     | :c:type:`int64_t`                        | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_uint`      | :c:expr:`unsigned int`                   | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_uint8`     | :c:type:`uint8_t`                        | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_uint16`    | :c:type:`uint16_t`                       | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_uint32`    | :c:type:`uint32_t`                       | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_uint64`    | :c:type:`uint64_t`                       | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_long`      | :c:expr:`long`                           | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_ulong`     | :c:expr:`unsigned long`                  | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_longlong`  | :c:expr:`__int64` or :c:expr:`long long` | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_ulonglong` | :c:expr:`unsigned __int64` or            | int                        |
-|                      | :c:expr:`unsigned long long`             |                            |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_size_t`    | :c:type:`size_t`                         | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_ssize_t`   | :c:type:`ssize_t` or                     | int                        |
-|                      | :c:expr:`Py_ssize_t`                     |                            |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_time_t`    | :c:type:`time_t`                         | int                        |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_float`     | :c:expr:`float`                          | float                      |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_double`    | :c:expr:`double`                         | float                      |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_longdouble`| :c:expr:`long double`                    | float                      |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_char_p`    | :c:expr:`char *` (NUL terminated)        | bytes object or ``None``   |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_wchar_p`   | :c:expr:`wchar_t *` (NUL terminated)     | string or ``None``         |
-+----------------------+------------------------------------------+----------------------------+
-| :class:`c_void_p`    | :c:expr:`void *`                         | int or ``None``            |
-+----------------------+------------------------------------------+----------------------------+
+.. list-table::
+   :header-rows: 1
 
-(1)
-   The constructor accepts any object with a truth value.
+   * - ctypes type
+     - C type
+     - Python type
+     - :py:attr:`~_SimpleCData._type_`
+   * - :class:`c_bool`
+     - :c:expr:`_Bool`
+     - :py:class:`bool`
+     - ``'?'``
+   * - :class:`c_char`
+     - :c:expr:`char`
+     - 1-character :py:class:`bytes`
+     - ``'c'``
+   * - :class:`c_wchar`
+     - :c:type:`wchar_t`
+     - 1-character :py:class:`str`
+     - ``'u'``
+   * - :class:`c_byte`
+     - :c:expr:`char`
+     - :py:class:`int`
+     - ``'b'``
+   * - :class:`c_ubyte`
+     - :c:expr:`unsigned char`
+     - :py:class:`int`
+     - ``'B'``
+   * - :class:`c_short`
+     - :c:expr:`short`
+     - :py:class:`int`
+     - ``'h'``
+   * - :class:`c_ushort`
+     - :c:expr:`unsigned short`
+     - :py:class:`int`
+     - ``'H'``
+   * - :class:`c_int`
+     - :c:expr:`int`
+     - :py:class:`int`
+     - ``'i'`` \*
+   * - :class:`c_int8`
+     - :c:type:`int8_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_int16`
+     - :c:type:`int16_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_int32`
+     - :c:type:`int32_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_int64`
+     - :c:type:`int64_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_uint`
+     - :c:expr:`unsigned int`
+     - :py:class:`int`
+     - ``'I'`` \*
+   * - :class:`c_uint8`
+     - :c:type:`uint8_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_uint16`
+     - :c:type:`uint16_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_uint32`
+     - :c:type:`uint32_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_uint64`
+     - :c:type:`uint64_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_long`
+     - :c:expr:`long`
+     - :py:class:`int`
+     - ``'l'``
+   * - :class:`c_ulong`
+     - :c:expr:`unsigned long`
+     - :py:class:`int`
+     - ``'L'``
+   * - :class:`c_longlong`
+     - :c:expr:`long long`
+     - :py:class:`int`
+     - ``'q'`` \*
+   * - :class:`c_ulonglong`
+     - :c:expr:`unsigned long long`
+     - :py:class:`int`
+     - ``'Q'`` \*
+   * - :class:`c_size_t`
+     - :c:type:`size_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_ssize_t`
+     - :c:type:`Py_ssize_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_time_t`
+     - :c:type:`time_t`
+     - :py:class:`int`
+     - \*
+   * - :class:`c_float`
+     - :c:expr:`float`
+     - :py:class:`float`
+     - ``'f'``
+   * - :class:`c_double`
+     - :c:expr:`double`
+     - :py:class:`float`
+     - ``'d'``
+   * - :class:`c_longdouble`
+     - :c:expr:`long double`
+     - :py:class:`float`
+     - ``'g'`` \*
+   * - :class:`c_char_p`
+     - :c:expr:`char *` (NUL terminated)
+     - :py:class:`bytes` or ``None``
+     - ``'z'``
+   * - :class:`c_wchar_p`
+     - :c:expr:`wchar_t *` (NUL terminated)
+     - :py:class:`str` or ``None``
+     - ``'Z'``
+   * - :class:`c_void_p`
+     - :c:expr:`void *`
+     - :py:class:`int` or ``None``
+     - ``'P'``
+   * - :class:`py_object`
+     - :c:expr:`PyObject *`
+     - :py:class:`object`
+     - ``'O'``
+   * - :ref:`VARIANT_BOOL <ctypes-wintypes>`
+     - :c:expr:`short int`
+     - :py:class:`bool`
+     - ``'v'``
 
 Additionally, if IEC 60559 compatible complex arithmetic (Annex G) is supported
 in both C and ``libffi``, the following complex types are available:
 
-+----------------------------------+---------------------------------+-----------------+
-| ctypes type                      | C type                          | Python type     |
-+==================================+=================================+=================+
-| :class:`c_float_complex`         | :c:expr:`float complex`         | complex         |
-+----------------------------------+---------------------------------+-----------------+
-| :class:`c_double_complex`        | :c:expr:`double complex`        | complex         |
-+----------------------------------+---------------------------------+-----------------+
-| :class:`c_longdouble_complex`    | :c:expr:`long double complex`   | complex         |
-+----------------------------------+---------------------------------+-----------------+
+.. list-table::
+   :header-rows: 1
+
+   * - ctypes type
+     - C type
+     - Python type
+     - :py:attr:`~_SimpleCData._type_`
+   * - :class:`c_float_complex`
+     - :c:expr:`float complex`
+     - :py:class:`complex`
+     - ``'Zf'``
+   * - :class:`c_double_complex`
+     - :c:expr:`double complex`
+     - :py:class:`complex`
+     - ``'Zd'``
+   * - :class:`c_longdouble_complex`
+     - :c:expr:`long double complex`
+     - :py:class:`complex`
+     - ``'Zg'``
+
+.. versionchanged:: 3.15
+   The :py:attr:`~_SimpleCData._type_` types ``F``, ``D`` and ``G`` have been
+   replaced with ``Zf``, ``Zd`` and ``Zg``.
 
 
 All these types can be created by calling them with an optional initializer of
@@ -308,6 +401,16 @@ the correct type and value::
    >>> c_ushort(-3)
    c_ushort(65533)
    >>>
+
+The constructors for numeric types will convert input using
+:py:meth:`~object.__bool__`,
+:py:meth:`~object.__index__` (for ``int``),
+:py:meth:`~object.__float__` or :py:meth:`~object.__complex__`.
+This means :py:class:`~ctypes.c_bool` accepts any object with a truth value::
+
+   >>> empty_list = []
+   >>> c_bool(empty_list)
+   c_bool(False)
 
 Since these types are mutable, their value can also be changed afterwards::
 
@@ -448,7 +551,7 @@ object with an :attr:`!_as_parameter_` attribute::
    >>>
 
 If you don't want to store the instance's data in the :attr:`!_as_parameter_`
-instance variable, you could define a :class:`property` which makes the
+instance variable, you could define a :deco:`property` which makes the
 attribute available on request.
 
 
@@ -589,6 +692,48 @@ get the string representation of an error code, and *returns* an exception.
 Please note that a much more powerful error checking mechanism is available
 through the :attr:`~_CFuncPtr.errcheck` attribute;
 see the reference manual for details.
+
+
+Specifying function pointers using type annotations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. decorator:: wrap_dll_function(dll)
+   :module: ctypes.util
+
+   A :term:`decorator` that generates :attr:`~ctypes._CFuncPtr.argtypes` and
+   :attr:`~ctypes._CFuncPtr.restype` from a function signature, using the
+   :attr:`~function.__name__` of the function and its :term:`type annotations <annotation>`.
+
+   The decorated function should look like this::
+
+      @wrap_dll_function(dll_to_wrap)
+      def function_ptr_name(arg_name: ctypes_type, ...) -> ctypes_type:
+          """Optional docstring. There should be no function body."""
+
+   The body of the decorated function is ignored, and any parameters that are
+   missing type annotations are skipped. The names of the parameters are ignored
+   and do not have to match the underlying C implementation.
+
+   If the decorated function does not have a return type annotation, a
+   :exc:`ValueError` is raised. A :exc:`ValueError` is also raised if it has a
+   keyword-only, ``*args``, or ``**kwargs`` parameter, since
+   :attr:`~ctypes._CFuncPtr.argtypes` describes positional arguments only. If
+   the name of the function does not exist in *dll*, an :exc:`AttributeError`
+   is raised.
+
+   For example::
+
+      import ctypes
+      from ctypes.util import wrap_dll_function
+
+      @wrap_dll_function(ctypes.pythonapi)
+      def PyObject_GetAttrString(op: ctypes.py_object, attr: ctypes.c_char_p) -> ctypes.py_object:
+          pass
+
+      PyObject_GetAttrString(42, b"real")
+
+
+   .. versionadded:: 3.16
 
 
 .. _ctypes-passing-pointers:
@@ -852,6 +997,15 @@ Generally you only use this feature if you receive a pointer from a C function,
 and you *know* that the pointer actually points to an array instead of a single
 item.
 
+.. warning::
+
+   Because pointer objects support subscription, they implicitly support
+   :term:`iteration <iterator>`. Unless doing this in a controlled manner,
+   such as by manually calling :func:`next` on a :func:`pointer` iterator, this
+   will typically lead to infinite loops or crashes, because ctypes has no way
+   of knowing when to stop iteration. In other words, a ``pointer`` iterator
+   will infinitely yield arbitrary memory.
+
 Behind the scenes, the :func:`pointer` function does more than simply create
 pointer instances, it has to create pointer *types* first. This is done with the
 :func:`POINTER` function, which accepts any :mod:`!ctypes` type, and returns a
@@ -952,6 +1106,17 @@ In addition, if a function argument is explicitly declared to be a pointer type
 (such as ``POINTER(c_int)``) in :attr:`~_CFuncPtr.argtypes`, an object of the pointed
 type (``c_int`` in this case) can be passed to the function.  ctypes will apply
 the required :func:`byref` conversion in this case automatically.
+
+These conversions are also applied to the :attr:`!_as_parameter_` attribute of
+an object passed for a pointer argument (see
+:ref:`ctypes-calling-functions-with-own-custom-data-types`). So, for a
+``POINTER(c_int)`` argument, an object whose :attr:`!_as_parameter_` is a
+``c_int`` instance is passed by reference, and one whose :attr:`!_as_parameter_`
+is a ``c_int`` array is accepted as well.
+
+.. versionchanged:: next
+   Objects with an :attr:`!_as_parameter_` attribute now receive the same
+   implicit conversions for pointer arguments as the object they wrap.
 
 To set a POINTER type field to ``NULL``, you can assign ``None``::
 
@@ -1354,6 +1519,278 @@ is already known, on a case by case basis.
 ctypes reference
 ----------------
 
+.. _ctypes-loading-shared-libraries:
+
+Loading shared libraries
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+There are several ways to load shared libraries into the Python process.  One
+way is to instantiate :py:class:`CDLL` or one of its subclasses:
+
+
+.. class:: CDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
+
+   Represents a loaded shared library.
+
+   Functions in this library use the standard C calling convention, and are
+   assumed to return :c:expr:`int`.
+   The Python :term:`global interpreter lock` is released before calling any
+   function exported by these libraries, and reacquired afterwards.
+   For different function behavior, use a subclass: :py:class:`~ctypes.OleDLL`,
+   :py:class:`~ctypes.WinDLL`, or :py:class:`~ctypes.PyDLL`.
+
+   If you have an existing :py:attr:`handle <ctypes.CDLL._handle>` to an already
+   loaded shared library, it can be passed as the *handle* argument to wrap
+   the opened library in a new :py:class:`!CDLL` object.
+   In this case, *name* is only used to set the :py:attr:`~ctypes.CDLL._name`
+   attribute, but it may be adjusted and/or validated.
+
+   If *handle* is ``None``, the underlying platform's :manpage:`dlopen(3)` or
+   `LoadLibraryExW`_ function is used to load the library into
+   the process, and to get a handle to it.
+
+   *name* is the pathname of the shared library to open.
+   If *name* does not contain a path separator, the library is found
+   in a platform-specific way.
+
+   On Windows, the ``.DLL`` suffix may be missing. (For details, see
+   `LoadLibraryExW`_ documentation.)
+   Other platform-specific prefixes and suffixes (for example, ``lib``,
+   ``.so``, ``.dylib``, or version numbers) must be present in *name*;
+   they are not added automatically.
+   See :ref:`ctypes-finding-shared-libraries` for more information.
+
+   On non-Windows systems, *name* can  be ``None``. In this case,
+   :c:func:`!dlopen` is called with ``NULL``, which opens the main program
+   as a "library".
+   (Some systems do the same is *name* is empty; ``None``/``NULL`` is more
+   portable.)
+
+   .. admonition:: CPython implementation detail
+
+      Since CPython is linked to ``libc``, a ``None`` *name* is often used
+      to access the C standard library::
+
+         >>> printf = ctypes.CDLL(None).printf
+         >>> printf.argtypes = [ctypes.c_char_p]
+         >>> printf(b"hello\n")
+         hello
+         6
+
+      To access the Python C API, prefer :py:data:`ctypes.pythonapi` which
+      works across platforms.
+
+   The *mode* parameter can be used to specify how the library is loaded.  For
+   details, consult the :manpage:`dlopen(3)` manpage.  On Windows, *mode* is
+   ignored.  On posix systems, RTLD_NOW is always added, and is not
+   configurable.
+
+   The *use_errno* parameter, when set to true, enables a ctypes mechanism that
+   allows accessing the system :data:`errno` error number in a safe way.
+   :mod:`!ctypes` maintains a thread-local copy of the system's :data:`errno`
+   variable; if you call foreign functions created with ``use_errno=True`` then the
+   :data:`errno` value before the function call is swapped with the ctypes private
+   copy, the same happens immediately after the function call. This mechanism only
+   works for libraries that use the same C runtime library as the interpreter itself.
+   A library linked against a different C runtime (for example, a different CRT on
+   Windows) has its own :data:`errno`, which :mod:`!ctypes` cannot observe.
+
+   The function :func:`ctypes.get_errno` returns the value of the ctypes private
+   copy, and the function :func:`ctypes.set_errno` changes the ctypes private copy
+   to a new value and returns the former value.
+
+   The *use_last_error* parameter, when set to true, enables the same mechanism for
+   the Windows error code which is managed by the :func:`GetLastError` and
+   :func:`!SetLastError` Windows API functions; :func:`ctypes.get_last_error` and
+   :func:`ctypes.set_last_error` are used to request and change the ctypes private
+   copy of the windows error code.
+
+   The *winmode* parameter is used on Windows to specify how the library is loaded
+   (since *mode* is ignored). It takes any value that is valid for the Win32 API
+   `LoadLibraryExW`_ flags parameter. When omitted, the default is to use the
+   flags that result in the most secure DLL load, which avoids issues such as DLL
+   hijacking. Passing the full path to the DLL is the safest way to ensure the
+   correct library and dependencies are loaded.
+
+   On Windows creating a :class:`CDLL` instance may fail even if the DLL name
+   exists. When a dependent DLL of the loaded DLL is not found, a
+   :exc:`OSError` error is raised with the message *"[WinError 126] The
+   specified module could not be found".* This error message does not contain
+   the name of the missing DLL because the Windows API does not return this
+   information making this error hard to diagnose. To resolve this error and
+   determine which DLL is not found, you need to find the list of dependent
+   DLLs and determine which one is not found using Windows debugging and
+   tracing tools.
+
+   .. seealso::
+
+      `Microsoft DUMPBIN tool <https://learn.microsoft.com/en-us/cpp/build/reference/dumpbin-reference?view=msvc-170>`_
+      -- A tool to find DLL dependents.
+
+   .. versionchanged:: 3.8
+      Added *winmode* parameter.
+
+   .. versionchanged:: 3.12
+
+      The *name* parameter can now be a :term:`path-like object`.
+
+   Instances of this class have no public methods.  Functions exported by the
+   shared library can be accessed as attributes or by index.  Please note that
+   accessing the function through an attribute caches the result and therefore
+   accessing it repeatedly returns the same object each time.  On the other hand,
+   accessing it through an index returns a new object each time::
+
+      >>> from ctypes import CDLL
+      >>> libc = CDLL("libc.so.6")  # On Linux
+      >>> libc.time == libc.time
+      True
+      >>> libc['time'] == libc['time']
+      False
+
+   The following public attributes are available. Their name starts with an
+   underscore to not clash with exported function names:
+
+   .. attribute:: _handle
+
+      The system handle used to access the library.
+
+   .. attribute:: _name
+
+      The name of the library passed in the constructor.
+
+.. _LoadLibraryExW: https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibraryexw
+
+.. class:: OleDLL
+
+   See :py:class:`~ctypes.CDLL`, the superclass, for common information.
+
+   Functions in this library use the ``stdcall`` calling convention, and are
+   assumed to return the windows specific :class:`HRESULT` code.  :class:`HRESULT`
+   values contain information specifying whether the function call failed or
+   succeeded, together with additional error code.  If the return value signals a
+   failure, an :class:`OSError` is automatically raised.
+
+   .. availability:: Windows
+
+   .. versionchanged:: 3.3
+      :exc:`WindowsError` used to be raised,
+      which is now an alias of :exc:`OSError`.
+
+
+.. class:: WinDLL
+
+   See :py:class:`~ctypes.CDLL`, the superclass, for common information.
+
+   Functions in these libraries use the ``stdcall`` calling convention, and are
+   assumed to return :c:expr:`int` by default.
+
+   .. availability:: Windows
+
+.. class:: PyDLL
+
+   See :py:class:`~ctypes.CDLL`, the superclass, for common information.
+
+   When functions in this library are called, the
+   Python GIL is *not* released during the function call, and after the function
+   execution the Python error flag is checked. If the error flag is set, a Python
+   exception is raised.
+
+   Thus, this is only useful to call Python C API functions directly.
+
+
+.. data:: RTLD_GLOBAL
+
+   Flag to use as *mode* parameter.  On platforms where this flag is not available,
+   it is defined as the integer zero.
+
+
+.. data:: RTLD_LOCAL
+
+   Flag to use as *mode* parameter.  On platforms where this is not available, it
+   is the same as *RTLD_GLOBAL*.
+
+
+.. data:: DEFAULT_MODE
+
+   The default mode which is used to load shared libraries.  On OSX 10.3, this is
+   *RTLD_GLOBAL*, otherwise it is the same as *RTLD_LOCAL*.
+
+
+Shared libraries can also be loaded by using one of the prefabricated objects,
+which are instances of the :class:`LibraryLoader` class, either by calling the
+:meth:`~LibraryLoader.LoadLibrary` method, or by retrieving the library as
+attribute of the loader instance.
+
+.. class:: LibraryLoader(dlltype)
+
+   Class which loads shared libraries.  *dlltype* should be one of the
+   :class:`CDLL`, :class:`PyDLL`, :class:`WinDLL`, or :class:`OleDLL` types.
+
+   :meth:`!__getattr__` has special behavior: It allows loading a shared library by
+   accessing it as attribute of a library loader instance.  The result is cached,
+   so repeated attribute accesses return the same library each time.
+
+   .. method:: LoadLibrary(name)
+
+      Load a shared library into the process and return it.  This method always
+      returns a new instance of the library.
+
+
+These prefabricated library loaders are available:
+
+   .. data:: cdll
+
+      Creates :class:`CDLL` instances.
+
+
+   .. data:: windll
+
+      Creates :class:`WinDLL` instances.
+
+      .. availability:: Windows
+
+
+   .. data:: oledll
+
+      Creates :class:`OleDLL` instances.
+
+      .. availability:: Windows
+
+
+   .. data:: pydll
+
+      Creates :class:`PyDLL` instances.
+
+
+   .. data:: pythonapi
+
+      An instance of :class:`PyDLL` that exposes Python C API functions as
+      attributes.  Note that all these functions are assumed to return C
+      :c:expr:`int`, which is of course not always the truth, so you have to assign
+      the correct :attr:`!restype` attribute to use these functions.
+
+      .. note::
+
+         If the Python interpreter is statically linked, this may be ``None``.
+
+.. audit-event:: ctypes.dlopen name ctypes.LibraryLoader
+
+   Loading a library through any of these objects raises an
+   :ref:`auditing event <auditing>` ``ctypes.dlopen`` with string argument
+   ``name``, the name used to load the library.
+
+.. audit-event:: ctypes.dlsym library,name ctypes.LibraryLoader
+
+   Accessing a function on a loaded library raises an auditing event
+   ``ctypes.dlsym`` with arguments ``library`` (the library object) and ``name``
+   (the symbol's name as a string or integer).
+
+.. audit-event:: ctypes.dlsym/handle handle,name ctypes.LibraryLoader
+
+   In cases when only the library handle is available rather than the object,
+   accessing a function raises an auditing event ``ctypes.dlsym/handle`` with
+   arguments ``handle`` (the raw library handle) and ``name``.
+
 
 .. _ctypes-finding-shared-libraries:
 
@@ -1362,33 +1799,51 @@ Finding shared libraries
 
 When programming in a compiled language, shared libraries are accessed when
 compiling/linking a program, and when the program is run.
+The programmer specifies a short name; the C compiler, linker, and
+runtime dynamic library loader then interact in system-specific ways to find
+the filename of the library to load.
 
-The purpose of the :func:`~ctypes.util.find_library` function is to locate a library in a way
-similar to what the compiler or runtime loader does (on platforms with several
-versions of a shared library the most recent should be loaded), while the ctypes
-library loaders act like when a program is run, and call the runtime loader
-directly.
+While the mapping from short names to filenames is not consistently exposed
+by platforms, the :mod:`!ctypes.util` module provides a function,
+:func:`!find_library`, that attempts to match it.
+However, as backwards compatibility concerns make it difficult to adjust
+its behavior for new platforms and configurations, the function
+is :term:`soft deprecated`.
 
-The :mod:`!ctypes.util` module provides a function which can help to determine
-the library to load.
+If wrapping a shared library with :mod:`!ctypes`, consider determining the
+shared library name at development time, and hardcoding it into the wrapper
+module instead of using :func:`!find_library` to locate the library
+at runtime.
+Also consider adding a configuration option or environment variable to let
+users select a library to use, and then perhaps use :func:`!find_library`
+as a default or fallback.
 
-
-.. data:: find_library(name)
+.. function:: find_library(name)
    :module: ctypes.util
-   :noindex:
 
-   Try to find a library and return a pathname.  *name* is the library name without
-   any prefix like *lib*, suffix like ``.so``, ``.dylib`` or version number (this
-   is the form used for the posix linker option :option:`!-l`).  If no library can
-   be found, returns ``None``.
+   Try to find a library and return a pathname.
 
-The exact functionality is system dependent.
+   *name* is the "short" library name without any prefix like ``lib``,
+   suffix like ``.so``, ``.dylib`` or version number.
+   (This is the form used for the posix linker option :option:`!-l`.)
+   The result is in a format suitable for passing to :py:class:`~ctypes.CDLL`.
 
-On Linux, :func:`~ctypes.util.find_library` tries to run external programs
-(``/sbin/ldconfig``, ``gcc``, ``objdump`` and ``ld``) to find the library file.
-It returns the filename of the library file.
+   If no library can be found, return ``None``.
 
-Note that if the output of these programs does not correspond to the dynamic
+   The exact functionality is system dependent, and is *not guaranteed*
+   to match the behavior of the compiler, linker, and loader used for
+   (or by) Python.
+   It is recommended to only use this function as a default or fallback,
+
+   .. soft-deprecated:: 3.15
+
+      This function is kept for use in cases where it works, but not expected to
+      be updated for additional platforms and configurations.
+
+On Linux, :func:`!find_library` tries to run external
+programs (``/sbin/ldconfig``, ``gcc``, ``objdump`` and ``ld``) to find the
+library file.
+If the output of these programs does not correspond to the dynamic
 linker used by Python, the result of this function may be misleading.
 
 .. versionchanged:: 3.6
@@ -1406,7 +1861,7 @@ Here are some examples::
    'libbz2.so.1.0'
    >>>
 
-On macOS and Android, :func:`~ctypes.util.find_library` uses the system's
+On macOS and Android, :func:`!find_library` uses the system's
 standard naming schemes and paths to locate the library, and returns a full
 pathname if successful::
 
@@ -1421,13 +1876,29 @@ pathname if successful::
    '/System/Library/Frameworks/AGL.framework/AGL'
    >>>
 
-On Windows, :func:`~ctypes.util.find_library` searches along the system search path, and
+On Windows, :func:`!find_library` searches along the system search path, and
 returns the full pathname, but since there is no predefined naming scheme a call
 like ``find_library("c")`` will fail and return ``None``.
 
-If wrapping a shared library with :mod:`!ctypes`, it *may* be better to determine
-the shared library name at development time, and hardcode that into the wrapper
-module instead of using :func:`~ctypes.util.find_library` to locate the library at runtime.
+.. function:: find_msvcrt()
+   :module: ctypes.util
+
+   Returns the filename of the VC runtime library used by Python,
+   and by the extension modules.
+
+   If the name of the library cannot be determined, ``None`` is returned.
+   Notably, this will happen for recent versions of the VC runtime library,
+   which are not directly loadable.
+
+   If you need to free memory, for example, allocated by an extension module
+   with a call to the ``free(void *)``, it is important that you use the
+   function in the same library that allocated the memory.
+
+   .. availability:: Windows
+
+   .. soft-deprecated:: 3.16
+      This function now always returns ``None``, as there are no more
+      VC runtime DLLs that are a single file and supported by Microsoft.
 
 
 .. _ctypes-listing-loaded-shared-libraries:
@@ -1451,257 +1922,6 @@ For example, on glibc-based Linux, the return may look like::
    >>> from ctypes.util import dllist
    >>> dllist()
    ['', 'linux-vdso.so.1', '/lib/x86_64-linux-gnu/libm.so.6', '/lib/x86_64-linux-gnu/libc.so.6', ... ]
-
-.. _ctypes-loading-shared-libraries:
-
-Loading shared libraries
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-There are several ways to load shared libraries into the Python process.  One
-way is to instantiate one of the following classes:
-
-
-.. class:: CDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
-
-   Instances of this class represent loaded shared libraries. Functions in these
-   libraries use the standard C calling convention, and are assumed to return
-   :c:expr:`int`.
-
-   On Windows creating a :class:`CDLL` instance may fail even if the DLL name
-   exists. When a dependent DLL of the loaded DLL is not found, a
-   :exc:`OSError` error is raised with the message *"[WinError 126] The
-   specified module could not be found".* This error message does not contain
-   the name of the missing DLL because the Windows API does not return this
-   information making this error hard to diagnose. To resolve this error and
-   determine which DLL is not found, you need to find the list of dependent
-   DLLs and determine which one is not found using Windows debugging and
-   tracing tools.
-
-   .. versionchanged:: 3.12
-
-      The *name* parameter can now be a :term:`path-like object`.
-
-.. seealso::
-
-    `Microsoft DUMPBIN tool <https://docs.microsoft.com/cpp/build/reference/dependents>`_
-    -- A tool to find DLL dependents.
-
-
-.. class:: OleDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
-
-   Instances of this class represent loaded shared libraries,
-   functions in these libraries use the ``stdcall`` calling convention, and are
-   assumed to return the windows specific :class:`HRESULT` code.  :class:`HRESULT`
-   values contain information specifying whether the function call failed or
-   succeeded, together with additional error code.  If the return value signals a
-   failure, an :class:`OSError` is automatically raised.
-
-   .. availability:: Windows
-
-   .. versionchanged:: 3.3
-      :exc:`WindowsError` used to be raised,
-      which is now an alias of :exc:`OSError`.
-
-   .. versionchanged:: 3.12
-
-      The *name* parameter can now be a :term:`path-like object`.
-
-
-.. class:: WinDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
-
-   Instances of this class represent loaded shared libraries,
-   functions in these libraries use the ``stdcall`` calling convention, and are
-   assumed to return :c:expr:`int` by default.
-
-   .. availability:: Windows
-
-   .. versionchanged:: 3.12
-
-      The *name* parameter can now be a :term:`path-like object`.
-
-
-The Python :term:`global interpreter lock` is released before calling any
-function exported by these libraries, and reacquired afterwards.
-
-
-.. class:: PyDLL(name, mode=DEFAULT_MODE, handle=None)
-
-   Instances of this class behave like :class:`CDLL` instances, except that the
-   Python GIL is *not* released during the function call, and after the function
-   execution the Python error flag is checked. If the error flag is set, a Python
-   exception is raised.
-
-   Thus, this is only useful to call Python C api functions directly.
-
-   .. versionchanged:: 3.12
-
-      The *name* parameter can now be a :term:`path-like object`.
-
-All these classes can be instantiated by calling them with at least one
-argument, the pathname of the shared library.  If you have an existing handle to
-an already loaded shared library, it can be passed as the ``handle`` named
-parameter, otherwise the underlying platform's :c:func:`!dlopen` or
-:c:func:`!LoadLibrary` function is used to load the library into
-the process, and to get a handle to it.
-
-The *mode* parameter can be used to specify how the library is loaded.  For
-details, consult the :manpage:`dlopen(3)` manpage.  On Windows, *mode* is
-ignored.  On posix systems, RTLD_NOW is always added, and is not
-configurable.
-
-The *use_errno* parameter, when set to true, enables a ctypes mechanism that
-allows accessing the system :data:`errno` error number in a safe way.
-:mod:`!ctypes` maintains a thread-local copy of the system's :data:`errno`
-variable; if you call foreign functions created with ``use_errno=True`` then the
-:data:`errno` value before the function call is swapped with the ctypes private
-copy, the same happens immediately after the function call.
-
-The function :func:`ctypes.get_errno` returns the value of the ctypes private
-copy, and the function :func:`ctypes.set_errno` changes the ctypes private copy
-to a new value and returns the former value.
-
-The *use_last_error* parameter, when set to true, enables the same mechanism for
-the Windows error code which is managed by the :func:`GetLastError` and
-:func:`!SetLastError` Windows API functions; :func:`ctypes.get_last_error` and
-:func:`ctypes.set_last_error` are used to request and change the ctypes private
-copy of the windows error code.
-
-The *winmode* parameter is used on Windows to specify how the library is loaded
-(since *mode* is ignored). It takes any value that is valid for the Win32 API
-``LoadLibraryEx`` flags parameter. When omitted, the default is to use the
-flags that result in the most secure DLL load, which avoids issues such as DLL
-hijacking. Passing the full path to the DLL is the safest way to ensure the
-correct library and dependencies are loaded.
-
-.. versionchanged:: 3.8
-   Added *winmode* parameter.
-
-
-.. data:: RTLD_GLOBAL
-   :noindex:
-
-   Flag to use as *mode* parameter.  On platforms where this flag is not available,
-   it is defined as the integer zero.
-
-
-.. data:: RTLD_LOCAL
-   :noindex:
-
-   Flag to use as *mode* parameter.  On platforms where this is not available, it
-   is the same as *RTLD_GLOBAL*.
-
-
-.. data:: DEFAULT_MODE
-   :noindex:
-
-   The default mode which is used to load shared libraries.  On OSX 10.3, this is
-   *RTLD_GLOBAL*, otherwise it is the same as *RTLD_LOCAL*.
-
-Instances of these classes have no public methods.  Functions exported by the
-shared library can be accessed as attributes or by index.  Please note that
-accessing the function through an attribute caches the result and therefore
-accessing it repeatedly returns the same object each time.  On the other hand,
-accessing it through an index returns a new object each time::
-
-   >>> from ctypes import CDLL
-   >>> libc = CDLL("libc.so.6")  # On Linux
-   >>> libc.time == libc.time
-   True
-   >>> libc['time'] == libc['time']
-   False
-
-The following public attributes are available, their name starts with an
-underscore to not clash with exported function names:
-
-
-.. attribute:: PyDLL._handle
-
-   The system handle used to access the library.
-
-
-.. attribute:: PyDLL._name
-
-   The name of the library passed in the constructor.
-
-Shared libraries can also be loaded by using one of the prefabricated objects,
-which are instances of the :class:`LibraryLoader` class, either by calling the
-:meth:`~LibraryLoader.LoadLibrary` method, or by retrieving the library as
-attribute of the loader instance.
-
-
-.. class:: LibraryLoader(dlltype)
-
-   Class which loads shared libraries.  *dlltype* should be one of the
-   :class:`CDLL`, :class:`PyDLL`, :class:`WinDLL`, or :class:`OleDLL` types.
-
-   :meth:`!__getattr__` has special behavior: It allows loading a shared library by
-   accessing it as attribute of a library loader instance.  The result is cached,
-   so repeated attribute accesses return the same library each time.
-
-   .. method:: LoadLibrary(name)
-
-      Load a shared library into the process and return it.  This method always
-      returns a new instance of the library.
-
-
-These prefabricated library loaders are available:
-
-.. data:: cdll
-   :noindex:
-
-   Creates :class:`CDLL` instances.
-
-
-.. data:: windll
-   :noindex:
-
-   Creates :class:`WinDLL` instances.
-
-   .. availability:: Windows
-
-
-.. data:: oledll
-   :noindex:
-
-   Creates :class:`OleDLL` instances.
-
-   .. availability:: Windows
-
-
-.. data:: pydll
-   :noindex:
-
-   Creates :class:`PyDLL` instances.
-
-
-For accessing the C Python api directly, a ready-to-use Python shared library
-object is available:
-
-.. data:: pythonapi
-   :noindex:
-
-   An instance of :class:`PyDLL` that exposes Python C API functions as
-   attributes.  Note that all these functions are assumed to return C
-   :c:expr:`int`, which is of course not always the truth, so you have to assign
-   the correct :attr:`!restype` attribute to use these functions.
-
-.. audit-event:: ctypes.dlopen name ctypes.LibraryLoader
-
-   Loading a library through any of these objects raises an
-   :ref:`auditing event <auditing>` ``ctypes.dlopen`` with string argument
-   ``name``, the name used to load the library.
-
-.. audit-event:: ctypes.dlsym library,name ctypes.LibraryLoader
-
-   Accessing a function on a loaded library raises an auditing event
-   ``ctypes.dlsym`` with arguments ``library`` (the library object) and ``name``
-   (the symbol's name as a string or integer).
-
-.. audit-event:: ctypes.dlsym/handle handle,name ctypes.LibraryLoader
-
-   In cases when only the library handle is available rather than the object,
-   accessing a function raises an auditing event ``ctypes.dlsym/handle`` with
-   arguments ``handle`` (the raw library handle) and ``name``.
 
 .. _ctypes-foreign-functions:
 
@@ -1783,13 +2003,33 @@ in :mod:`!ctypes`) which inherits from the private :class:`_CFuncPtr` class:
          same callable object to check or post process the results of several
          functions.
 
-         *arguments* is a tuple containing the parameters originally passed to
-         the function call, this allows specializing the behavior on the
+         *arguments* is a tuple containing the parameters passed to the
+         function call, including any output parameters that :mod:`!ctypes`
+         created for the call; this allows specializing the behavior on the
          arguments used.
 
-      The object that this function returns will be returned from the
-      foreign function call, but it can also check the result value
-      and raise an exception if the foreign function call failed.
+      If the callable returns the *arguments* tuple it received, unchanged,
+      :mod:`!ctypes` continues its normal processing of the result, which
+      includes returning output parameters (see
+      :ref:`ctypes-function-prototypes`). Any other object returned by the
+      callable is returned from the foreign function call instead. The
+      callable can also check the result value and raise an exception if the
+      foreign function call failed.
+
+      For example, this callable raises an exception when the foreign function
+      signals failure with a negative return value, and otherwise leaves the
+      result to :mod:`!ctypes`::
+
+         def errcheck(result, func, arguments):
+             if result < 0:
+                 raise RuntimeError(f"call failed with error {result}")
+             return arguments
+
+      This one instead replaces the result, converting a C ``int`` used as a
+      boolean into a :class:`bool`::
+
+         def errcheck(result, func, arguments):
+             return result != 0
 
 
 .. audit-event:: ctypes.set_exception code foreign-functions
@@ -1843,7 +2083,11 @@ See :ref:`ctypes-callback-functions` for examples.
 .. function:: PYFUNCTYPE(restype, *argtypes)
 
    The returned function prototype creates functions that use the Python calling
-   convention.  The function will *not* release the GIL during the call.
+   convention.  Unlike :func:`CFUNCTYPE` and :func:`WINFUNCTYPE`, ctypes does
+   *not* release the GIL before calling the foreign function, so the function
+   may safely use the Python C API. Note that this does not prevent the GIL
+   from being released *during* the call.
+
 
 Function prototypes created by these factory functions can be instantiated in
 different ways, depending on the type and number of the parameters in the call:
@@ -2121,33 +2365,6 @@ Utility functions
    This function is a hook which allows implementing in-process
    COM servers with ctypes.  It is called from the DllGetClassObject function
    that the ``_ctypes`` extension dll exports.
-
-   .. availability:: Windows
-
-
-.. function:: find_library(name)
-   :module: ctypes.util
-
-   Try to find a library and return a pathname.  *name* is the library name
-   without any prefix like ``lib``, suffix like ``.so``, ``.dylib`` or version
-   number (this is the form used for the posix linker option :option:`!-l`).  If
-   no library can be found, returns ``None``.
-
-   The exact functionality is system dependent.
-
-   See :ref:`ctypes-finding-shared-libraries` for complete documentation.
-
-
-.. function:: find_msvcrt()
-   :module: ctypes.util
-
-   Returns the filename of the VC runtime library used by Python,
-   and by the extension modules.  If the name of the library cannot be
-   determined, ``None`` is returned.
-
-   If you need to free memory, for example, allocated by an extension module
-   with a call to the ``free(void *)``, it is important that you use the
-   function in the same library that allocated the memory.
 
    .. availability:: Windows
 
@@ -2454,6 +2671,28 @@ Fundamental data types
       original object return, always a new object is constructed.  The same is
       true for all other ctypes object instances.
 
+   Each subclass has a class attribute:
+
+   .. attribute:: _type_
+
+      Class attribute that contains an internal type code, as a string.
+      See :ref:`ctypes-fundamental-data-types` for a summary.
+
+      Types marked \* in the summary may be (or always are) aliases of a
+      different :class:`_SimpleCData` subclass, and will not necessarily
+      use the listed type code.
+      For example, if the platform's :c:expr:`long`, :c:expr:`long long`
+      and :c:expr:`time_t` C types are the same, then :class:`c_long`,
+      :class:`c_longlong` and :class:`c_time_t` all refer to a single class,
+      :class:`c_long`, whose :attr:`_type_` code is ``'l'``.
+      The ``'L'`` code will be unused.
+
+      .. seealso::
+
+         The :mod:`array` and :ref:`struct <type-codes>` modules,
+         as well as third-party modules like `numpy <https://numpy.org/doc/stable/reference/arrays.interface.html#object.__array_interface__>`__,
+         use similar -- but slightly different -- type codes.
+
 
 Fundamental data types, when returned as foreign function call results, or, for
 example, by retrieving structure field members or array items, are transparently
@@ -2575,6 +2814,8 @@ These are the fundamental ctypes data types:
 
    Represents the C :c:expr:`signed long long` datatype.  The constructor accepts
    an optional integer initializer; no overflow checking is done.
+   On platforms where ``sizeof(long long) == sizeof(long)`` it is an alias
+   to :class:`c_long`.
 
 
 .. class:: c_short
@@ -2586,11 +2827,15 @@ These are the fundamental ctypes data types:
 .. class:: c_size_t
 
    Represents the C :c:type:`size_t` datatype.
+   Usually an alias for another unsigned integer type.
 
 
 .. class:: c_ssize_t
 
-   Represents the C :c:type:`ssize_t` datatype.
+   Represents the :c:type:`Py_ssize_t` datatype.
+   This is a signed version of :c:type:`size_t`;
+   that is, the POSIX :c:type:`ssize_t` type.
+   Usually an alias for another integer type.
 
    .. versionadded:: 3.2
 
@@ -2598,6 +2843,7 @@ These are the fundamental ctypes data types:
 .. class:: c_time_t
 
    Represents the C :c:type:`time_t` datatype.
+   Usually an alias for another integer type.
 
    .. versionadded:: 3.12
 
@@ -2650,6 +2896,8 @@ These are the fundamental ctypes data types:
 
    Represents the C :c:expr:`unsigned long long` datatype.  The constructor
    accepts an optional integer initializer; no overflow checking is done.
+   On platforms where ``sizeof(long long) == sizeof(long)`` it is an alias
+   to :class:`c_long`.
 
 
 .. class:: c_ushort
@@ -2701,9 +2949,420 @@ These are the fundamental ctypes data types:
    .. versionchanged:: 3.14
       :class:`!py_object` is now a :term:`generic type`.
 
-The :mod:`!ctypes.wintypes` module provides quite some other Windows specific
-data types, for example :c:type:`!HWND`, :c:type:`!WPARAM`, or :c:type:`!DWORD`.
-Some useful structures like :c:type:`!MSG` or :c:type:`!RECT` are also defined.
+.. _ctypes-wintypes:
+
+Windows data types
+^^^^^^^^^^^^^^^^^^
+
+.. module:: ctypes.wintypes
+   :synopsis: Windows data types for ctypes.
+
+**Source code:** :source:`Lib/ctypes/wintypes.py`
+
+The :mod:`!ctypes.wintypes` module provides types for use with Windows APIs.
+Most are aliases for types defined in :mod:`ctypes`.
+See Microsoft's `Windows data types
+<https://learn.microsoft.com/en-us/windows/win32/winprog/windows-data-types>`_
+documentation for the corresponding C definitions.
+On non-Windows platforms, the sizes and layouts of these types may differ
+from their Windows counterparts.
+
+.. versionchanged:: 3.14
+   Added :class:`HCONV`, :class:`HCONVLIST`, :class:`HCURSOR`,
+   :class:`HDDEDATA`, :class:`HDROP`, :class:`HFILE`, :class:`HRESULT`,
+   and :class:`HSZ`.
+
+For example::
+
+   >>> from ctypes import POINTER
+   >>> from ctypes.wintypes import LPRECT, RECT, SHORT
+   >>> SHORT(-1).value
+   -1
+   >>> rect = RECT(0, 0, 100, 50)
+   >>> rect.right, rect.bottom
+   (100, 50)
+   >>> LPRECT is POINTER(RECT)
+   True
+
+
+Simple types
+~~~~~~~~~~~~
+
+The following names are aliases for fundamental :mod:`ctypes` types:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Windows types
+     - :mod:`ctypes` type
+
+   * - .. class:: BYTE
+                  BOOLEAN
+     - :class:`~ctypes.c_ubyte`
+
+   * - .. class:: CHAR
+     - :class:`~ctypes.c_char`
+
+   * - .. class:: WCHAR
+     - :class:`~ctypes.c_wchar`
+
+   * - .. class:: WORD
+                  USHORT
+                  ATOM
+                  LANGID
+     - :class:`~ctypes.c_ushort`
+
+   * - .. class:: DWORD
+                  ULONG
+                  COLORREF
+                  LCID
+                  LCTYPE
+                  LGRPID
+     - :class:`~ctypes.c_ulong`
+
+   * - .. class:: BOOL
+                  LONG
+                  HRESULT
+     - :class:`~ctypes.c_long`
+
+   * - .. class:: INT
+                  HFILE
+     - :class:`~ctypes.c_int`
+
+   * - .. class:: UINT
+     - :class:`~ctypes.c_uint`
+
+   * - .. class:: SHORT
+     - :class:`~ctypes.c_short`
+
+   * - .. class:: DOUBLE
+     - :class:`~ctypes.c_double`
+
+   * - .. class:: FLOAT
+     - :class:`~ctypes.c_float`
+
+   * - .. class:: LARGE_INTEGER
+     - :class:`~ctypes.c_longlong`
+
+   * - .. class:: ULARGE_INTEGER
+     - :class:`~ctypes.c_ulonglong`
+
+   * - .. class:: LPCSTR
+                  LPSTR
+     - :class:`~ctypes.c_char_p`
+
+   * - .. class:: LPCOLESTR
+                  LPOLESTR
+                  OLESTR
+                  LPCWSTR
+                  LPWSTR
+     - :class:`~ctypes.c_wchar_p`
+
+   * - .. class:: LPCVOID
+                  LPVOID
+     - :class:`~ctypes.c_void_p`
+
+:class:`LARGE_INTEGER` and :class:`ULARGE_INTEGER` expose an integer
+:attr:`!value` attribute, with no ``LowPart``, ``HighPart``, or ``QuadPart``
+fields.
+
+.. class:: WPARAM
+
+   An unsigned integer type with the same size as :class:`~ctypes.c_void_p`.
+
+.. class:: LPARAM
+
+   A signed integer type with the same size as :class:`~ctypes.c_void_p`.
+
+.. class:: VARIANT_BOOL
+
+   A 16-bit Boolean type whose :attr:`!value` attribute is a Python
+   :class:`bool`.  Assigning to :attr:`!value` stores ``-1`` for a true value
+   and ``0`` for a false value.
+
+
+Handle types
+~~~~~~~~~~~~
+
+.. class:: HANDLE
+
+   An alias for :class:`~ctypes.c_void_p`, used to represent Windows handles.
+
+.. class:: HACCEL
+           HBITMAP
+           HBRUSH
+           HCOLORSPACE
+           HCONV
+           HCONVLIST
+           HCURSOR
+           HDC
+           HDDEDATA
+           HDESK
+           HDROP
+           HDWP
+           HENHMETAFILE
+           HFONT
+           HGDIOBJ
+           HGLOBAL
+           HHOOK
+           HICON
+           HINSTANCE
+           HKEY
+           HKL
+           HLOCAL
+           HMENU
+           HMETAFILE
+           HMODULE
+           HMONITOR
+           HPALETTE
+           HPEN
+           HRGN
+           HRSRC
+           HSTR
+           HSZ
+           HTASK
+           HWINSTA
+           HWND
+           SC_HANDLE
+           SERVICE_STATUS_HANDLE
+
+   Aliases for :class:`HANDLE` for use with specific Windows APIs.
+   :class:`HFILE` is an alias for :class:`INT` and is listed among the
+   simple types above.
+
+
+Structures
+~~~~~~~~~~
+
+The following types are subclasses of :class:`ctypes.Structure`.
+
+.. class:: RECT
+           RECTL
+           tagRECT
+
+   A rectangle with ``left``, ``top``, ``right``, and ``bottom`` fields,
+   all of type :class:`LONG`.
+
+.. class:: SMALL_RECT
+
+   A rectangle with ``Left``, ``Top``, ``Right``, and ``Bottom`` fields,
+   all of type :class:`SHORT`.
+
+.. class:: POINT
+           POINTL
+           tagPOINT
+
+   A point with ``x`` and ``y`` fields, both of type :class:`LONG`.
+
+.. class:: SIZE
+           SIZEL
+           tagSIZE
+
+   Dimensions with ``cx`` and ``cy`` fields, both of type :class:`LONG`.
+
+.. class:: FILETIME
+
+   A file time with ``dwLowDateTime`` and ``dwHighDateTime`` fields,
+   both of type :class:`DWORD`.
+
+.. class:: MSG
+           tagMSG
+
+   A Windows message with the following fields:
+
+   .. list-table::
+      :header-rows: 1
+
+      * - Field
+        - Type
+      * - ``hWnd``
+        - :class:`HWND`
+      * - ``message``
+        - :class:`UINT`
+      * - ``wParam``
+        - :class:`WPARAM`
+      * - ``lParam``
+        - :class:`LPARAM`
+      * - ``time``
+        - :class:`DWORD`
+      * - ``pt``
+        - :class:`POINT`
+
+.. class:: WIN32_FIND_DATAA
+           WIN32_FIND_DATAW
+
+   Structures used by Windows file-search functions, with the following
+   fields.  :class:`WIN32_FIND_DATAA` uses :class:`CHAR` for its file names,
+   and :class:`WIN32_FIND_DATAW` uses :class:`WCHAR`.
+
+   .. list-table::
+      :header-rows: 1
+
+      * - Fields
+        - Type
+      * - ``dwFileAttributes``
+        - :class:`DWORD`
+      * - ``ftCreationTime``, ``ftLastAccessTime``, ``ftLastWriteTime``
+        - :class:`FILETIME`
+      * - ``nFileSizeHigh``, ``nFileSizeLow``
+        - :class:`DWORD`
+      * - ``dwReserved0``, ``dwReserved1``
+        - :class:`DWORD`
+      * - ``cFileName``
+        - An array of :data:`MAX_PATH` characters
+      * - ``cAlternateFileName``
+        - An array of 14 characters
+
+
+Pointer types
+~~~~~~~~~~~~~
+
+The following names are aliases for ``ctypes.POINTER(T)``, where *T* is the
+type in the second column:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Pointer types
+     - Referenced type
+
+   * - .. class:: LPBOOL
+                  PBOOL
+     - :class:`BOOL`
+
+   * - .. class:: PBOOLEAN
+     - :class:`BOOLEAN`
+
+   * - .. class:: LPBYTE
+                  PBYTE
+     - :class:`BYTE`
+
+   * - .. class:: PCHAR
+     - :class:`CHAR`
+
+   * - .. class:: LPCOLORREF
+     - :class:`COLORREF`
+
+   * - .. class:: LPDWORD
+                  PDWORD
+     - :class:`DWORD`
+
+   * - .. class:: LPFILETIME
+                  PFILETIME
+     - :class:`FILETIME`
+
+   * - .. class:: PFLOAT
+     - :class:`FLOAT`
+
+   * - .. class:: LPHANDLE
+                  PHANDLE
+     - :class:`HANDLE`
+
+   * - .. class:: PHKEY
+     - :class:`HKEY`
+
+   * - .. class:: LPHKL
+     - :class:`HKL`
+
+   * - .. class:: LPINT
+                  PINT
+     - :class:`INT`
+
+   * - .. class:: PLARGE_INTEGER
+     - :class:`LARGE_INTEGER`
+
+   * - .. class:: PLCID
+     - :class:`LCID`
+
+   * - .. class:: LPLONG
+                  PLONG
+     - :class:`LONG`
+
+   * - .. class:: LPMSG
+                  PMSG
+     - :class:`MSG`
+
+   * - .. class:: LPPOINT
+                  PPOINT
+     - :class:`POINT`
+
+   * - .. class:: PPOINTL
+     - :class:`POINTL`
+
+   * - .. class:: LPRECT
+                  PRECT
+     - :class:`RECT`
+
+   * - .. class:: LPRECTL
+                  PRECTL
+     - :class:`RECTL`
+
+   * - .. class:: LPSC_HANDLE
+     - :class:`SC_HANDLE`
+
+   * - .. class:: PSHORT
+     - :class:`SHORT`
+
+   * - .. class:: LPSIZE
+                  PSIZE
+     - :class:`SIZE`
+
+   * - .. class:: LPSIZEL
+                  PSIZEL
+     - :class:`SIZEL`
+
+   * - .. class:: PSMALL_RECT
+     - :class:`SMALL_RECT`
+
+   * - .. class:: LPUINT
+                  PUINT
+     - :class:`UINT`
+
+   * - .. class:: PULARGE_INTEGER
+     - :class:`ULARGE_INTEGER`
+
+   * - .. class:: PULONG
+     - :class:`ULONG`
+
+   * - .. class:: PUSHORT
+     - :class:`USHORT`
+
+   * - .. class:: PWCHAR
+     - :class:`WCHAR`
+
+   * - .. class:: LPWIN32_FIND_DATAA
+                  PWIN32_FIND_DATAA
+     - :class:`WIN32_FIND_DATAA`
+
+   * - .. class:: LPWIN32_FIND_DATAW
+                  PWIN32_FIND_DATAW
+     - :class:`WIN32_FIND_DATAW`
+
+   * - .. class:: LPWORD
+                  PWORD
+     - :class:`WORD`
+
+
+Constants and functions
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. data:: MAX_PATH
+
+   The value ``260``, used as the size of the file-name arrays in
+   :class:`WIN32_FIND_DATAA` and :class:`WIN32_FIND_DATAW`.
+
+.. function:: RGB(red, green, blue)
+
+   Return a :class:`COLORREF` value as a Python integer.  The *red*, *green*,
+   and *blue* arguments are integers from ``0`` to ``255``, specifying the
+   intensity of each color component::
+
+      >>> from ctypes.wintypes import RGB
+      >>> hex(RGB(255, 128, 0))
+      '0x80ff'
+
+
+.. currentmodule:: ctypes
 
 
 .. _ctypes-structured-data-types:
@@ -3007,6 +3666,82 @@ fields, or any other data types containing pointer type fields.
       that should be merged into a containing structure or union.
 
 
+.. decorator:: struct(*, align=None, layout=None, endian='native', pack=None)
+   :module: ctypes.util
+
+   A :term:`decorator` that allows generating structure types using an
+   annotation-based syntax, similar to the :mod:`dataclasses` module.
+
+   For example:
+
+   .. code-block:: python
+
+      from ctypes.util import struct
+      from ctypes import c_int
+
+      @struct
+      class Point:
+          x: c_int
+          y: c_int
+
+      point = Point(1, 2)
+
+   .. note::
+
+      Calling :func:`super` without arguments in methods of the decorated
+      class raises a :exc:`TypeError`. Use the two-argument form instead, for example
+      ``super(Point, self).__init__(x, y)``.
+
+   *align*, *layout*, and *pack* supply the value for the :attr:`~ctypes.Structure._align_`,
+   :attr:`~ctypes.Structure._layout_`, and :attr:`~ctypes.Structure._pack_`
+   attributes, respectively.
+
+   *endian* controls which structure class will be used as the base.
+
+   - If *endian* is ``'native'``, :class:`~ctypes.Structure` will be used.
+   - If *endian* is ``'big'``, :class:`~ctypes.BigEndianStructure` will be used.
+   - If *endian* is ``'little'``, :class:`~ctypes.LittleEndianStructure` will be used.
+
+   Any other value will raise a :class:`ValueError`.
+
+   For controlling field-specific data, wrap the annotation in :class:`typing.Annotated`
+   with :class:`CFieldInfo` as the second argument, like so:
+
+   .. code-block:: python
+
+      from typing import Annotated
+      from ctypes import c_ssize_t, c_void_p
+      from ctypes.util import struct, CFieldInfo
+
+      @struct
+      class PyObject:
+          ob_refcnt: c_ssize_t
+          ob_type: c_void_p
+
+      @struct
+      class PyHovercraftObject:
+          ob_base: Annotated[PyObject, CFieldInfo(anonymous=True)]
+
+   .. versionadded:: 3.16
+
+
+.. class:: CFieldInfo(anonymous=False, bit_width=None)
+   :module: ctypes.util
+
+   Information regarding a structure field defined by the :func:`struct`
+   decorator. This should be used in the second argument of a
+   :class:`typing.Annotated` wrapping a ctypes type.
+
+   *anonymous* specifies whether the field will be present in the
+   :attr:`~ctypes.Structure._anonymous_` attribute of the generated class.
+
+   If *bit_width* is non-``None``, the annotated field will be *bit_width*
+   number of bits in the generated structure. This is equivalent to passing
+   a third item in :attr:`~ctypes.Structure._fields_`.
+
+   .. versionadded:: 3.16
+
+
 .. _ctypes-arrays-pointers:
 
 Arrays and pointers
@@ -3022,6 +3757,8 @@ Arrays and pointers
    Array elements can be read and written using standard
    subscript and slice accesses; for slice reads, the resulting object is
    *not* itself an :class:`Array`.
+
+   Arrays are :ref:`generic <generics>` over the type of their elements.
 
 
    .. attribute:: _length_
@@ -3045,8 +3782,8 @@ Arrays and pointers
    Equivalent to ``type * length``, where *type* is a
    :mod:`!ctypes` data type and *length* an integer.
 
-   This function is :term:`soft deprecated` in favor of multiplication.
-   There are no plans to remove it.
+   .. soft-deprecated:: 3.14
+      In favor of multiplication.
 
 
 .. class:: _Pointer
@@ -3111,3 +3848,47 @@ Exceptions
    .. availability:: Windows
 
    .. versionadded:: 3.14
+
+
+Library version
+^^^^^^^^^^^^^^^
+
+The following constants are only available if :mod:`!ctypes` was built with
+libffi 3.5 or later, which is the first version providing this information.
+
+.. data:: LIBFFI_VERSION
+
+   The version string of the libffi library that was used for building
+   the module, like ``'3.5.2'``.
+   This may be different from the libffi library actually used at runtime,
+   which is available as :const:`libffi_version`.
+
+   .. versionadded:: 3.16
+
+.. data:: libffi_version
+
+   The version string of the libffi library actually loaded by the interpreter.
+
+   .. versionadded:: 3.16
+
+.. data:: LIBFFI_VERSION_INFO
+
+   A named tuple containing the three components of the libffi library
+   version that was used for building the module:
+   *major*, *minor*, and *patch*.
+   All values are integers.
+   The components can also be accessed by name,
+   so ``ctypes.LIBFFI_VERSION_INFO[0]`` is equivalent to
+   ``ctypes.LIBFFI_VERSION_INFO.major`` and so on.
+   This may be different from the libffi library actually used at runtime,
+   which is available as :const:`libffi_version_info`.
+
+   .. versionadded:: 3.16
+
+.. data:: libffi_version_info
+
+   A named tuple containing the version of the libffi library
+   actually loaded by the interpreter,
+   with the same fields as :const:`LIBFFI_VERSION_INFO`.
+
+   .. versionadded:: 3.16

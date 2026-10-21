@@ -33,7 +33,10 @@ import marshal
 _MS_WINDOWS = (sys.platform == 'win32')
 if _MS_WINDOWS:
     import nt as _os
-    import winreg
+    try:
+        import winreg
+    except ImportError:
+        winreg = None
 else:
     import posix as _os
 
@@ -634,6 +637,10 @@ def _bless_my_loader(module_globals):
     loader = module_globals.get('__loader__', None)
     spec = module_globals.get('__spec__', missing)
 
+    # The __main__ module of a script or the REPL has __spec__ set to None.
+    if spec is None and module_globals.get('__name__') == '__main__':
+        return loader
+
     if loader is None:
         if spec is missing:
             # If working with a module:
@@ -918,7 +925,7 @@ class FileLoader:
 
     def get_data(self, path):
         """Return the data from path as raw bytes."""
-        if isinstance(self, (SourceLoader, ExtensionFileLoader)):
+        if isinstance(self, (SourceLoader, SourcelessFileLoader, ExtensionFileLoader)):
             with _io.open_code(str(path)) as file:
                 return file.read()
         else:

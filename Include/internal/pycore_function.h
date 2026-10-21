@@ -27,7 +27,8 @@ _PyFunction_IsVersionValid(uint32_t version)
     return version >= FUNC_VERSION_FIRST_VALID;
 }
 
-extern uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func);
+// Exported for external JIT support
+PyAPI_FUNC(uint32_t) _PyFunction_GetVersionForCurrentState(PyFunctionObject *func);
 PyAPI_FUNC(void) _PyFunction_SetVersion(PyFunctionObject *func, uint32_t version);
 void _PyFunction_ClearCodeByVersion(uint32_t version);
 
@@ -45,6 +46,11 @@ static inline PyObject* _PyFunction_GET_BUILTINS(PyObject *func) {
 }
 #define _PyFunction_GET_BUILTINS(func) _PyFunction_GET_BUILTINS(_PyObject_CAST(func))
 
+
+/* Get the callable wrapped by a classmethod.
+   Returns a borrowed reference.
+   The caller must ensure 'cm' is a classmethod object. */
+extern PyObject *_PyClassMethod_GetFunc(PyObject *cm);
 
 /* Get the callable wrapped by a staticmethod.
    Returns a borrowed reference.

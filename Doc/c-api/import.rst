@@ -146,7 +146,7 @@ Importing Modules
       alternatives.
 
    .. versionchanged:: 3.15
-      ``__cached__`` is no longer set.
+      The ``__cached__`` attribute is no longer set.
 
 
 .. c:function:: PyObject* PyImport_ExecCodeModuleEx(const char *name, PyObject *co, const char *pathname)
@@ -170,7 +170,7 @@ Importing Modules
       :class:`~importlib.machinery.ModuleSpec` for alternatives.
 
    .. versionchanged:: 3.15
-      ``__cached__`` no longer set.
+      The ``__cached__`` attribute no longer set.
 
 
 .. c:function:: PyObject* PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co, const char *pathname, const char *cpathname)
@@ -304,6 +304,11 @@ Importing Modules
 
       Initialization function for a module built into the interpreter.
 
+      Note that the inittab uses "``PyInit``"
+      :ref:`initialization functions <extension-pyinit>`;
+      there is currently no way to include "``PyModExport_``"
+      :ref:`export hooks <extension-export-hook>`.
+
 
 .. c:function:: int PyImport_ExtendInittab(struct _inittab *newtab)
 
@@ -350,14 +355,14 @@ Importing Modules
 
    Gets the current lazy imports mode.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:function:: PyObject* PyImport_GetLazyImportsFilter()
 
    Return a :term:`strong reference` to the current lazy imports filter,
    or ``NULL`` if none exists. This function always succeeds.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:function:: int PyImport_SetLazyImportsMode(PyImport_LazyImportsMode mode)
 
@@ -366,18 +371,20 @@ Importing Modules
 
    This function always returns ``0``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:function:: int PyImport_SetLazyImportsFilter(PyObject *filter)
 
    Sets the current lazy imports filter. The *filter* should be a callable that
    will receive ``(importing_module_name, imported_module_name, [fromlist])``
-   when an import can potentially be lazy and that must return ``True`` if
-   the import should be lazy and ``False`` otherwise.
+   when an import can potentially be lazy. The ``imported_module_name`` value
+   is the resolved module name, so ``lazy from .spam import eggs`` passes
+   ``package.spam``. The callable must return ``True`` if the import should be
+   lazy and ``False`` otherwise.
 
    Return ``0`` on success and ``-1`` with an exception set otherwise.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:type:: PyImport_LazyImportsMode
 
@@ -391,12 +398,7 @@ Importing Modules
 
       Make all imports lazy by default.
 
-   .. c:enumerator:: PyImport_LAZY_NONE
-
-      Disable lazy imports entirely. Even explicit ``lazy`` statements become
-      eager imports.
-
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:function:: PyObject* PyImport_CreateModuleFromInitfunc(PyObject *spec, PyObject* (*initfunc)(void))
 
@@ -406,7 +408,7 @@ Importing Modules
 
    *spec* must be a :class:`~importlib.machinery.ModuleSpec` object.
 
-   *initfunc* must be an :ref:`initialization function <extension-export-hook>`,
+   *initfunc* must be an :ref:`initialization function <extension-pyinit>`,
    the same as for :c:func:`PyImport_AppendInittab`.
 
    On success, create and return a module object.
@@ -416,5 +418,26 @@ Importing Modules
    :py:meth:`~importlib.abc.Loader.exec_module` method.)
 
    On error, return NULL with an exception set.
+
+   For modules using :ref:`legacy single-phase initialization <single-phase-initialization>`,
+   most of the import process is done in this function, rather than in
+   extra steps that importers typically take after
+   :py:meth:`~importlib.abc.Loader.create_module`.
+   Specifically:
+
+   - The module is added to :data:`sys.modules` under the *spec*'s
+     :py:attr:`~importlib.machinery.ModuleSpec.name` as part of initialization.
+   - If a single-phase module was previously imported under the
+     same :py:attr:`~importlib.machinery.ModuleSpec.name` by this function
+     or as a built-in module (for example, one registered with
+     :c:func:`PyImport_AppendInittab`), Python may reuse the previous module's
+     contents instead of calling *initfunc* again.
+   - The module will be fully initialized by *initfunc*.
+     Calling :c:func:`PyModule_Exec` on it will have no effect, though it is
+     still recommended, in case the module later switches to
+     :ref:`multi-phase initialization <multi-phase-initialization>`.
+   - Also, if the *spec*'s :py:attr:`!name` contains dots, this name is used
+     for prepending a parent package to the new module's
+     :attr:`~module.__name__`.
 
    .. versionadded:: 3.15

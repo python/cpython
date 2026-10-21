@@ -10,6 +10,8 @@ Copyright (c) Corporation for National Research Initiatives.
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_codecs.h"        // export _PyCodec_LookupTextEncoding()
+#include "pycore_initconfig.h"    // _Py_DumpPathConfig()
 #include "pycore_interp.h"        // PyInterpreterState.codec_search_path
 #include "pycore_pyerrors.h"      // _PyErr_FormatNote()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -1171,7 +1173,8 @@ get_standard_encoding_impl(const char *encoding, int *bytelength)
             }
             if (*encoding == '-' || *encoding == '_' )
                 encoding++;
-            if (Py_TOLOWER(encoding[1]) == 'e' && encoding[2] == '\0') {
+            if (encoding[0] != '\0' &&
+                Py_TOLOWER(encoding[1]) == 'e' && encoding[2] == '\0') {
                 if (Py_TOLOWER(encoding[0]) == 'b')
                     return ENC_UTF16BE;
                 if (Py_TOLOWER(encoding[0]) == 'l')
@@ -1190,7 +1193,8 @@ get_standard_encoding_impl(const char *encoding, int *bytelength)
             }
             if (*encoding == '-' || *encoding == '_' )
                 encoding++;
-            if (Py_TOLOWER(encoding[1]) == 'e' && encoding[2] == '\0') {
+            if (encoding[0] != '\0' &&
+                Py_TOLOWER(encoding[1]) == 'e' && encoding[2] == '\0') {
                 if (Py_TOLOWER(encoding[0]) == 'b')
                     return ENC_UTF32BE;
                 if (Py_TOLOWER(encoding[0]) == 'l')
@@ -1424,19 +1428,19 @@ _PyCodec_SurrogateEscapeUnicodeEncodeError(PyObject *exc)
         return NULL;
     }
 
-    PyObject *res = PyBytes_FromStringAndSize(NULL, slen);
-    if (res == NULL) {
+    PyBytesWriter *writer = PyBytesWriter_Create(slen);
+    if (writer == NULL) {
         Py_DECREF(obj);
         return NULL;
     }
 
-    char *outp = PyBytes_AsString(res);
+    char *outp = PyBytesWriter_GetData(writer);
     for (Py_ssize_t i = start; i < end; i++) {
         Py_UCS4 ch = PyUnicode_READ_CHAR(obj, i);
         if (ch < 0xdc80 || ch > 0xdcff) {
             /* Not a UTF-8b surrogate, fail with original exception. */
             Py_DECREF(obj);
-            Py_DECREF(res);
+            PyBytesWriter_Discard(writer);
             PyErr_SetObject(PyExceptionInstance_Class(exc), exc);
             return NULL;
         }
@@ -1444,6 +1448,8 @@ _PyCodec_SurrogateEscapeUnicodeEncodeError(PyObject *exc)
     }
     Py_DECREF(obj);
 
+    PyObject *res = PyBytesWriter_Finish(writer);
+    // Py_BuildValue() propagates the exception if res is NULL
     return Py_BuildValue("(Nn)", res, end);
 }
 
@@ -1685,6 +1691,8 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
     // search functions, so this is done after everything else is initialized.
     PyObject *mod = PyImport_ImportModule("encodings");
     if (mod == NULL) {
+        PyThreadState *tstate = _PyThreadState_GET();
+        _Py_DumpPathConfig(tstate);
         return PyStatus_Error("Failed to import encodings module");
     }
     Py_DECREF(mod);

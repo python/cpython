@@ -68,6 +68,20 @@ static int _io_StringIO___init__(PyObject *self, PyObject *args, PyObject *kwarg
         return NULL; \
     }
 
+#define CHECK_INITIALIZED_INT(self) \
+    if (self->ok <= 0) { \
+        PyErr_SetString(PyExc_ValueError, \
+            "I/O operation on uninitialized object"); \
+        return -1; \
+    }
+
+#define CHECK_CLOSED_INT(self) \
+    if (self->closed) { \
+        PyErr_SetString(PyExc_ValueError, \
+            "I/O operation on closed file"); \
+        return -1; \
+    }
+
 #define ENSURE_REALIZED(self) \
     if (realize(self) < 0) { \
         return NULL; \
@@ -111,7 +125,7 @@ resize_buffer(stringio *self, size_t size)
         alloc = size + 1;
     }
 
-    if (alloc > PY_SIZE_MAX / sizeof(Py_UCS4))
+    if (alloc > SIZE_MAX / sizeof(Py_UCS4))
         goto overflow;
     new_buf = (Py_UCS4 *)PyMem_Realloc(self->buf, alloc * sizeof(Py_UCS4));
     if (new_buf == NULL) {
@@ -225,7 +239,9 @@ write_str(stringio *self, PyObject *obj)
 
     if (self->state == STATE_ACCUMULATING) {
         if (self->string_size == self->pos) {
-            if (PyUnicodeWriter_WriteStr(self->writer, decoded))
+            // gh-149046: Avoid PyUnicodeWriter_WriteStr() which calls str(obj)
+            // on str subclasses
+            if (_PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)self->writer, decoded))
                 goto fail;
             goto success;
         }
@@ -404,11 +420,18 @@ _io_StringIO_readline_impl(stringio *self, Py_ssize_t size)
     return _stringio_readline(self, size);
 }
 
+/*[clinic input]
+@critical_section
+_io.StringIO.__next__ as stringio_iternext
+[clinic start generated code]*/
+
 static PyObject *
-stringio_iternext(PyObject *op)
+stringio_iternext_impl(stringio *self)
+/*[clinic end generated code: output=51eb3991b1c79c41 input=b6cf3e73fab6b42e]*/
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+
     PyObject *line;
-    stringio *self = stringio_CAST(op);
 
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
@@ -420,7 +443,7 @@ stringio_iternext(PyObject *op)
     }
     else {
         /* XXX is subclassing StringIO really supported? */
-        line = PyObject_CallMethodNoArgs(op, &_Py_ID(readline));
+        line = PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(readline));
         if (line && !PyUnicode_Check(line)) {
             PyErr_Format(PyExc_OSError,
                          "readline() should have returned a str object, "
@@ -497,7 +520,8 @@ _io.StringIO.seek
 
 Change stream position.
 
-Seek to character offset pos relative to position indicated by whence:
+Seek to character offset pos relative to position indicated by
+whence:
     0  Start of stream (the default).  pos should be >= 0;
     1  Current position - pos must be 0;
     2  End of stream - pos must be 0.
@@ -506,7 +530,7 @@ Returns the new absolute position.
 
 static PyObject *
 _io_StringIO_seek_impl(stringio *self, Py_ssize_t pos, int whence)
-/*[clinic end generated code: output=e9e0ac9a8ae71c25 input=c75ced09343a00d7]*/
+/*[clinic end generated code: output=e9e0ac9a8ae71c25 input=ffef24668fd71a5d]*/
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
@@ -998,30 +1022,30 @@ _io_StringIO___setstate___impl(stringio *self, PyObject *state)
 /*[clinic input]
 @critical_section
 @getter
-_io.StringIO.closed
+_io.StringIO.closed -> bool
 [clinic start generated code]*/
 
-static PyObject *
+static int
 _io_StringIO_closed_get_impl(stringio *self)
-/*[clinic end generated code: output=531ddca7954331d6 input=178d2ef24395fd49]*/
+/*[clinic end generated code: output=754068c44422cafa input=ea05e89b945e721c]*/
 {
-    CHECK_INITIALIZED(self);
-    return PyBool_FromLong(self->closed);
+    CHECK_INITIALIZED_INT(self);
+    return self->closed;
 }
 
 /*[clinic input]
 @critical_section
 @getter
-_io.StringIO.line_buffering
+_io.StringIO.line_buffering -> bool
 [clinic start generated code]*/
 
-static PyObject *
+static int
 _io_StringIO_line_buffering_get_impl(stringio *self)
-/*[clinic end generated code: output=360710e0112966ae input=6a7634e7f890745e]*/
+/*[clinic end generated code: output=56c0edde9001fb37 input=326f8b3bd1feb699]*/
 {
-    CHECK_INITIALIZED(self);
-    CHECK_CLOSED(self);
-    Py_RETURN_FALSE;
+    CHECK_INITIALIZED_INT(self);
+    CHECK_CLOSED_INT(self);
+    return 0;
 }
 
 /*[clinic input]

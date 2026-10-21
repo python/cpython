@@ -4,9 +4,6 @@
 .. module:: winsound
    :synopsis: Access to the sound-playing machinery for Windows.
 
-.. moduleauthor:: Toby Dickenson <htrd90@zepler.org>
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 **Source code:** :source:`PC/winsound.c`
 
 --------------

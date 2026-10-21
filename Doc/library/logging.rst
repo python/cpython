@@ -4,9 +4,6 @@
 .. module:: logging
    :synopsis: Flexible event logging system for applications.
 
-.. moduleauthor:: Vinay Sajip <vinay_sajip@red-dove.com>
-.. sectionauthor:: Vinay Sajip <vinay_sajip@red-dove.com>
-
 **Source code:** :source:`Lib/logging/__init__.py`
 
 .. index:: pair: Errors; logging
@@ -693,7 +690,7 @@ Formatter Objects
    :param defaults: A dictionary with default values to use in custom fields.
        For example,
        ``logging.Formatter('%(ip)s %(message)s', defaults={"ip": None})``
-   :type defaults: dict[str, Any]
+   :type defaults: dict[str, typing.Any]
 
    .. versionchanged:: 3.2
       Added the *style* parameter.
