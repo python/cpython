@@ -442,11 +442,19 @@ bytearray_iconcat(PyObject *op, PyObject *other)
     return ret;
 }
 
+/*[clinic input]
+@critical_section
+bytearray.__mul__ as bytearray_repeat
+
+    count: Py_ssize_t
+    /
+[clinic start generated code]*/
+
 static PyObject *
-bytearray_repeat_lock_held(PyObject *op, Py_ssize_t count)
+bytearray_repeat_impl(PyByteArrayObject *self, Py_ssize_t count)
+/*[clinic end generated code: output=0889e9ebbe61890a input=3363528e6db1f39b]*/
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
-    PyByteArrayObject *self = _PyByteArray_CAST(op);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     if (count < 0) {
         count = 0;
     }
@@ -464,21 +472,19 @@ bytearray_repeat_lock_held(PyObject *op, Py_ssize_t count)
     return (PyObject *)result;
 }
 
-static PyObject *
-bytearray_repeat(PyObject *op, Py_ssize_t count)
-{
-    PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    ret = bytearray_repeat_lock_held(op, count);
-    Py_END_CRITICAL_SECTION();
-    return ret;
-}
+/*[clinic input]
+@critical_section
+bytearray.__imul__ as bytearray_irepeat
+
+    count: Py_ssize_t
+    /
+[clinic start generated code]*/
 
 static PyObject *
-bytearray_irepeat_lock_held(PyObject *op, Py_ssize_t count)
+bytearray_irepeat_impl(PyByteArrayObject *self, Py_ssize_t count)
+/*[clinic end generated code: output=4cfee919b3489219 input=e12991c89153490b]*/
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
-    PyByteArrayObject *self = _PyByteArray_CAST(op);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     if (count < 0) {
         count = 0;
     }
@@ -499,16 +505,6 @@ bytearray_irepeat_lock_held(PyObject *op, Py_ssize_t count)
     _PyBytes_RepeatBuffer(buf, size, buf, mysize);
 
     return Py_NewRef(self);
-}
-
-static PyObject *
-bytearray_irepeat(PyObject *op, Py_ssize_t count)
-{
-    PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    ret = bytearray_irepeat_lock_held(op, count);
-    Py_END_CRITICAL_SECTION();
-    return ret;
 }
 
 static PyObject *
@@ -1182,8 +1178,16 @@ slowpath:
     return -1;
 }
 
+/*[clinic input]
+@critical_section
+bytearray.__repr__
+
+    op: self(type="PyObject *")
+[clinic start generated code]*/
+
 static PyObject *
-bytearray_repr_lock_held(PyObject *op)
+bytearray_repr_impl(PyObject *op)
+/*[clinic end generated code: output=4086ab6928ebab1d input=d46ad3c1f3071b27]*/
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     const char *className = _PyType_Name(Py_TYPE(op));
@@ -1196,16 +1200,6 @@ bytearray_repr_lock_held(PyObject *op)
     PyObject *res = PyUnicode_FromFormat("%s(%U)", className, bytes_repr);
     Py_DECREF(bytes_repr);
     return res;
-}
-
-static PyObject *
-bytearray_repr(PyObject *op)
-{
-    PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    ret = bytearray_repr_lock_held(op);
-    Py_END_CRITICAL_SECTION();
-    return ret;
 }
 
 static PyObject *
