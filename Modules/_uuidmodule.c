@@ -19,6 +19,7 @@
 #include "pycore_long.h"          // _PyLong_AsByteArray(), _PyLong_GetOne()
 #include "pycore_pylifecycle.h"   // _PyOS_URandom()
 #include "pycore_runtime_init.h"  // _Py_ID()
+#include "pycore_strhex.h"        // _Py_strhex()
 
 #if defined(HAVE_UUID_H)
   // AIX, FreeBSD, libuuid with pkgconf
@@ -1120,11 +1121,7 @@ static PyObject *
 Uuid_get_hex(PyObject *op, void *Py_UNUSED(closure))
 {
     uuidobject *self = uuidobject_CAST(op);
-    char hex[UUID_SIZE * 2];
-    for (int i = 0; i < UUID_SIZE; i++) {
-        byte_to_hex(self->bytes[i], &hex[i * 2]);
-    }
-    return PyUnicode_FromStringAndSize(hex, sizeof(hex));
+    return _Py_strhex((const char *)self->bytes, sizeof(self->bytes));
 }
 
 static PyObject *
