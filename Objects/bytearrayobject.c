@@ -743,11 +743,21 @@ bytearray_setslice(PyByteArrayObject *self, Py_ssize_t lo, Py_ssize_t hi,
     return res;
 }
 
+/*[clinic input]
+@critical_section
+bytearray.__setitem__ as bytearray_setitem
+
+    i: Py_ssize_t
+    value: object
+    /
+[clinic start generated code]*/
+
 static int
-bytearray_setitem_lock_held(PyObject *op, Py_ssize_t i, PyObject *value)
+bytearray_setitem_impl(PyByteArrayObject *self, Py_ssize_t i,
+                       PyObject *value)
+/*[clinic end generated code: output=c8e973819dd58098 input=460a77c3d8b7268f]*/
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
-    PyByteArrayObject *self = _PyByteArray_CAST(op);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
 
     // GH-91153: We need to do this *before* the size check, in case value has a
     // nasty __index__ method that changes the size of the bytearray:
@@ -772,16 +782,6 @@ bytearray_setitem_lock_held(PyObject *op, Py_ssize_t i, PyObject *value)
     assert(0 <= ival && ival < 256);
     PyByteArray_AS_STRING(self)[i] = ival;
     return 0;
-}
-
-static int
-bytearray_setitem(PyObject *op, Py_ssize_t i, PyObject *value)
-{
-    int ret;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    ret = bytearray_setitem_lock_held(op, i, value);
-    Py_END_CRITICAL_SECTION();
-    return ret;
 }
 
 static int
@@ -1182,8 +1182,16 @@ slowpath:
     return -1;
 }
 
+/*[clinic input]
+@critical_section
+bytearray.__repr__
+
+    op: self(type="PyObject *")
+[clinic start generated code]*/
+
 static PyObject *
-bytearray_repr_lock_held(PyObject *op)
+bytearray_repr_impl(PyObject *op)
+/*[clinic end generated code: output=4086ab6928ebab1d input=d46ad3c1f3071b27]*/
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     const char *className = _PyType_Name(Py_TYPE(op));
@@ -1196,16 +1204,6 @@ bytearray_repr_lock_held(PyObject *op)
     PyObject *res = PyUnicode_FromFormat("%s(%U)", className, bytes_repr);
     Py_DECREF(bytes_repr);
     return res;
-}
-
-static PyObject *
-bytearray_repr(PyObject *op)
-{
-    PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    ret = bytearray_repr_lock_held(op);
-    Py_END_CRITICAL_SECTION();
-    return ret;
 }
 
 static PyObject *

@@ -126,6 +126,16 @@ New modules
 Improved modules
 ================
 
+argparse
+--------
+
+* :class:`~argparse.ArgumentGroup` and
+  :class:`~argparse.MutuallyExclusiveGroup`, the types returned by
+  :meth:`~argparse.ArgumentParser.add_argument_group` and
+  :meth:`~argparse.ArgumentParser.add_mutually_exclusive_group`, are now
+  public. The ``_``-prefixed names remain as aliases.
+  (Contributed by Bernát Gábor in :gh:`144812`.)
+
 asyncio
 -------
 
@@ -362,6 +372,16 @@ curses
   (Contributed by Serhiy Storchaka in :gh:`133031`.)
 
 
+datetime
+--------
+
+* Add the ``%Nf`` format code (where *N* is from 1 to 6) to
+  :meth:`datetime.datetime.strftime`, :meth:`datetime.time.strftime`,
+  :meth:`datetime.date.strftime`, :meth:`datetime.datetime.strptime` and
+  :meth:`datetime.time.strptime`.
+  (Contributed by Stan Ulbrych and Karoline Pauls in :gh:`157290`.)
+
+
 dbm.gnu
 -------
 
@@ -575,6 +595,17 @@ pydoc
   inherited from other classes are collapsed by default.
   (Contributed by Serhiy Storchaka in :gh:`153906`.)
 
+
+pickle
+------
+
+* Weak references (:class:`weakref.ref`), :class:`weakref.WeakMethod`,
+  :class:`weakref.WeakSet`, :class:`weakref.WeakValueDictionary` and
+  :class:`weakref.WeakKeyDictionary` can now be pickled if the weakly
+  referenced objects are strongly referenced elsewhere in the same pickle;
+  otherwise pickling raises :exc:`pickle.PicklingError`.
+  :class:`!WeakMethod` and :class:`!WeakSet` can now also be copied.
+  (Contributed by Serhiy Storchaka in :gh:`74876`.)
 
 re
 --
@@ -1057,6 +1088,16 @@ New deprecations
   * The ``dims`` property of ``ast.Tuple`` objects, deprecated since Python
     3.9, now issues a deprecation warning on use. This property is slated for
     removal in 3.21. Use ``ast.Tuple.elts`` instead.
+
+* :mod:`functools`:
+
+  * Using a return annotation to infer the dispatch type for
+    :func:`functools.singledispatch` or
+    :class:`functools.singledispatchmethod` now emits a
+    :exc:`DeprecationWarning` and will raise :exc:`TypeError` in Python 3.21.
+    Annotate the dispatch parameter or pass the dispatch type explicitly
+    instead.
+    (Contributed by Bartosz Sławecki in :gh:`143465`.)
 
 * :mod:`struct`:
 
