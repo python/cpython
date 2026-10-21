@@ -861,11 +861,11 @@ class ClinicWholeFileTest(TestCase):
         # object are not supported yet; check the machinery with them.
         slots = {
             '__contains__': (
-                SlotSpec(return_type='int', return_converter='int',
+                SlotSpec(return_converter='int',
                          parameters=(object_converter,)),
             ),
             '__bool__': (
-                SlotSpec(return_type='int', return_converter='int'),
+                SlotSpec(return_converter='int'),
             ),
         }
         block = """
@@ -3366,9 +3366,9 @@ class ClinicParserTest(TestCase):
         # __getitem__ is not supported yet: the parameters select the slot
         # (sq_item or mp_subscript).
         slots = (
-            SlotSpec(return_type='PyObject *', return_converter='object',
+            SlotSpec(return_converter='object',
                      parameters=(Py_ssize_t_converter,)),
-            SlotSpec(return_type='PyObject *', return_converter='object',
+            SlotSpec(return_converter='object',
                      parameters=(object_converter,)),
         )
         block = """
@@ -3396,9 +3396,9 @@ class ClinicParserTest(TestCase):
         # (tp_setattro and tp_setattr) make the error message list the
         # alternatives.
         slots = (
-            SlotSpec(return_type='int', return_converter='int',
+            SlotSpec(return_converter='int',
                      parameters=(object_converter, object_converter)),
-            SlotSpec(return_type='int', return_converter='int',
+            SlotSpec(return_converter='int',
                      parameters=(str_converter, object_converter)),
         )
         errors = [

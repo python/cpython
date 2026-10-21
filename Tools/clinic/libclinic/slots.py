@@ -15,16 +15,20 @@ import dataclasses as dc
 from typing import Final
 
 from libclinic.converter import CConverter
+from libclinic.return_converters import return_converters
 
 
 @dc.dataclass(frozen=True, slots=True, kw_only=True)
 class SlotSpec:
-    # The C return type of the slot function.
-    return_type: str
-    # The name of the return converter which declares `return_type`.
+    # The name of the return converter of the implementation function.
     return_converter: str
     # The converter classes of the parameters, excluding self.
     parameters: tuple[type[CConverter], ...] = ()
+
+    @property
+    def return_type(self) -> str:
+        """The C return type of the slot function."""
+        return return_converters[self.return_converter]().type
 
     @property
     def error_value(self) -> str:
@@ -45,9 +49,9 @@ class SlotSpec:
 # listed here must not be in dsl_parser.unsupported_special_methods.
 SLOTS: Final[dict[str, tuple[SlotSpec, ...]]] = {
     '__next__': (
-        SlotSpec(return_type='PyObject *', return_converter='object'),
+        SlotSpec(return_converter='object'),
     ),
     '__len__': (
-        SlotSpec(return_type='Py_ssize_t', return_converter='Py_ssize_t'),
+        SlotSpec(return_converter='Py_ssize_t'),
     ),
 }
