@@ -265,6 +265,26 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         # should not raise
         self.assertIsNone(transp.write(b'data'))
 
+    def test_transport_usable_after_connection_lost_and_close(self):
+        # connection_lost() marks the app transport closed, so the
+        # application's own close() afterwards (often made from its
+        # protocol's connection_lost()) must not be taken as a second
+        # close() that leaves the transport without its SSL protocol.
+        ssl_proto = self.ssl_protocol()
+        self.connection_made(ssl_proto)
+        transp = ssl_proto._app_transport
+        ssl_proto.connection_lost(None)
+        transp.close()
+
+        # should not raise, as after closing a live connection
+        self.assertIsNone(transp.write(b'data'))
+        self.assertEqual(transp.get_write_buffer_size(), 0)
+        new_proto = asyncio.Protocol()
+        transp.set_protocol(new_proto)  # as loop.sendfile()'s fallback does
+        self.assertIs(transp.get_protocol(), new_proto)
+        transp.abort()
+        self.assertTrue(transp.is_closing())
+
 
 ##############################################################################
 # Start TLS Tests
