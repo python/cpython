@@ -14,7 +14,7 @@ from _pyrepl.console import Event
 from _pyrepl.layout import LayoutMap
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
 from _pyrepl.reader import Reader
-from _colorize import default_theme
+from _colorize import ANSIColors, default_theme
 
 
 overrides = {"reset": "z", "soft_keyword": "K"}
@@ -467,11 +467,11 @@ class TestErrorMessages(TestCase):
 
         reader.handle1()
 
-        theme = default_theme.syntax
         self.assertEqual(
             reader.msg,
-            f"{theme.error}! {theme.reset}nothing to yank",
+            f"{ANSIColors.RED}nothing to yank{ANSIColors.RESET}",
         )
+        self.assertEqual(reader.screen[-1], reader.msg)
 
     def _test_error_message(
         self,
@@ -490,8 +490,8 @@ class TestErrorMessages(TestCase):
         while not reader.msg:
             reader.handle1()
 
-        self.assertEqual(reader.msg, f"! {expected}")
-        self.assertEqual(reader.screen[-1], f"! {expected}")
+        self.assertEqual(reader.msg, expected)
+        self.assertEqual(reader.screen[-1], expected)
         console.beep.assert_called_once()
 
     def test_invalid_key_message(self):
