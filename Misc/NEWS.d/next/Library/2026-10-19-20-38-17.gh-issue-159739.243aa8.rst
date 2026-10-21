@@ -1,0 +1,2 @@
+Avoid reading past the end of an encoding name when the ``surrogatepass``
+error handler receives a truncated UTF-16 or UTF-32 name.

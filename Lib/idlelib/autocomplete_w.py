@@ -185,12 +185,14 @@ class AutoCompleteWindow:
         self.autocompletewindow = acw = Toplevel(self.widget)
         acw.withdraw()
         acw.wm_overrideredirect(1)
-        try:
+        if acw._windowingsystem == 'aqua':
             # Prevent grabbing focus on macOS.
-            acw.tk.call("::tk::unsupported::MacWindowStyle", "style", acw._w,
-                        "help", "noActivates")
-        except TclError:
-            pass
+            if acw.info_patchlevel() >= (9, 1):
+                acw.update_idletasks()
+                acw.wm_attributes(stylemask='docmodal')
+            else:
+                acw.tk.call('::tk::unsupported::MacWindowStyle', 'style',
+                            acw._w, 'help', 'noActivates')
         self.scrollbar = scrollbar = Scrollbar(acw, orient=VERTICAL)
         self.listbox = listbox = Listbox(acw, yscrollcommand=scrollbar.set,
                                          exportselection=False)

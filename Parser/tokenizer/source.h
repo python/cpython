@@ -70,6 +70,10 @@ PyAPI_FUNC(void) _PyTok_SourceDiscard(_PyTok_SourceText *);
    final line. The input must not point into source storage. */
 PyAPI_FUNC(_PyTok_Off) _PyTok_SourceAppendLine(
     _PyTok_SourceText *source, const char *bytes, Py_ssize_t len);
+/* Append a line payload followed by '\n'. The payload may be empty and must
+   contain no newline. Other SourceAppendLine constraints still apply. */
+PyAPI_FUNC(_PyTok_Off) _PyTok_SourceAppendLineWithNewline(
+    _PyTok_SourceText *source, const char *bytes, Py_ssize_t len);
 /* Return borrowed bytes excluding '\n', writing the byte length to *len.
    Line numbers are 1-based and clamp to the first or final line; a trailing
    '\n' adds an empty final line. The view need not be NUL-terminated.

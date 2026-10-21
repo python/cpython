@@ -31,6 +31,7 @@
 #include "pycore_time.h"          // _PyLong_FromTime_t()
 #include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 #include "pycore_typeobject.h"    // _PyType_AddMethod()
+#include "pycore_warnings.h"      // _PyWarnings_AfterFork()
 
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"        // _PyLong_FromUid()
@@ -513,8 +514,8 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #  define HAVE_MKFIFOAT_RUNTIME __builtin_available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 #  define HAVE_MKNODAT_RUNTIME __builtin_available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 #  define HAVE_PTSNAME_R_RUNTIME __builtin_available(macOS 10.13.4, iOS 11.3, tvOS 11.3, watchOS 4.3, *)
-#  define HAVE_DUP3_RUNTIME __builtin_available(macOS 27.0, *)
-#  define HAVE_PIPE2_RUNTIME __builtin_available(macOS 27.0, *)
+#  define HAVE_DUP3_RUNTIME __builtin_available(macOS 27.0, iOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
+#  define HAVE_PIPE2_RUNTIME __builtin_available(macOS 27.0, iOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
 
 #  define HAVE_POSIX_SPAWN_SETSID_RUNTIME __builtin_available(macOS 10.15, *)
 
@@ -644,6 +645,7 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #  define HAVE_PTSNAME_R_RUNTIME 1
 #  define HAVE_DUP3_RUNTIME 1
 #  define HAVE_PIPE2_RUNTIME 1
+#  define HAVE_FREADLINK_RUNTIME 1
 #endif
 
 
@@ -721,6 +723,7 @@ PyOS_BeforeFork(void)
     _PyImport_AcquireLock(interp);
     _PyEval_StopTheWorldAll(&_PyRuntime);
     HEAD_LOCK(&_PyRuntime);
+    _PyWarnings_BeforeFork(interp);
 }
 
 void
@@ -790,6 +793,9 @@ PyOS_AfterFork_Child(void)
     // Reinitialize it before any executor cleanup can unregister JIT code.
     _Py_jit_debug_mutex = (PyMutex){0};
 #endif
+
+    // Thread-state cleanup can run finalizers that issue warnings.
+    _PyWarnings_AfterFork(tstate->interp);
 
     reset_remotedebug_data(tstate);
 

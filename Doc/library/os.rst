@@ -1479,7 +1479,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Return a pair of file descriptors ``(r, w)`` usable for reading and writing,
    respectively.
 
-   .. availability:: Unix, macOS >= 27.0, not WASI, not iOS.
+   .. availability:: Unix, macOS >= 27.0, iOS >= 27.0, not WASI.
 
    .. versionadded:: 3.3
 
@@ -5326,7 +5326,7 @@ written in Python, such as a mail server's external command delivery program.
    See the :manpage:`pidfd_getfd(2)` man page for more details.
 
    .. availability:: Linux >= 5.6, Android >= :func:`build-time <sys.getandroidapilevel>` API level 31
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. function:: plock(op, /)
 

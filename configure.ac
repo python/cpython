@@ -128,9 +128,9 @@ HAS_GIT=no-repository
 fi
 if test $HAS_GIT = found
 then
-    GITVERSION="git --git-dir \$(srcdir)/.git rev-parse --short HEAD"
-    GITTAG="git --git-dir \$(srcdir)/.git describe --all --always --dirty"
-    GITBRANCH="git --git-dir \$(srcdir)/.git name-rev --name-only HEAD"
+    GITVERSION="git --git-dir \$(srcdir)/.git --work-tree \$(srcdir) rev-parse --short HEAD"
+    GITTAG="git --git-dir \$(srcdir)/.git --work-tree \$(srcdir) describe --all --always --dirty"
+    GITBRANCH="git --git-dir \$(srcdir)/.git --work-tree \$(srcdir) name-rev --name-only HEAD"
 else
     GITVERSION=""
     GITTAG=""
@@ -439,7 +439,7 @@ if test -z "$AR"; then
 		aarch64-apple-ios*)           AR=arm64-apple-ios-ar ;;
 		x86_64-apple-ios*-simulator)  AR=x86_64-apple-ios-simulator-ar ;;
 		*)
-	esac
+    esac
 fi
 if test -z "$CC"; then
 	case "$host" in
@@ -3195,7 +3195,8 @@ AC_CHECK_HEADERS([ \
   alloca.h asm/types.h bluetooth.h conio.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
   io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/limits.h linux/memfd.h \
   linux/netfilter_ipv4.h linux/random.h linux/soundcard.h linux/sched.h \
-  linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
+  linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h \
+  poll.h process.h pthread.h pthread_np.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
   sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/pidfd.h sys/poll.h \
@@ -4630,21 +4631,22 @@ AC_ARG_ENABLE([loadable-sqlite-extensions],
       support loadable extensions in the sqlite3 module, see
       Doc/library/sqlite3.rst (default is no)
     ]
-  ), [
-    AS_VAR_IF([have_sqlite3_load_extension], [no], [
-      AC_MSG_RESULT([n/a])
-      AC_MSG_WARN([Your version of SQLite does not support loadable extensions])
-    ], [
-      AC_MSG_RESULT([yes])
-      AC_DEFINE(
-        [PY_SQLITE_ENABLE_LOAD_EXTENSION], [1],
-        [Define to 1 to build the sqlite module with loadable extensions support.]
-      )
-    ])
-  ], [
-    AC_MSG_RESULT([no])
-  ]
+  ), [], [enable_loadable_sqlite_extensions=no]
 )
+AS_VAR_IF([enable_loadable_sqlite_extensions], [yes], [
+  AS_VAR_IF([have_sqlite3_load_extension], [no], [
+    AC_MSG_RESULT([n/a])
+    AC_MSG_WARN([Your version of SQLite does not support loadable extensions])
+  ], [
+    AC_MSG_RESULT([yes])
+    AC_DEFINE(
+      [PY_SQLITE_ENABLE_LOAD_EXTENSION], [1],
+      [Define to 1 to build the sqlite module with loadable extensions support.]
+    )
+  ])
+], [
+  AC_MSG_RESULT([no])
+])
 
 dnl
 dnl Detect Tcl/Tk. Use pkg-config if available.
@@ -5586,6 +5588,8 @@ AC_CHECK_FUNCS([ \
 
 PY_CHECK_FUNC_PRIVATE([freadlink], [@%:@include <unistd.h>])
 PY_CHECK_FUNC_PRIVATE([strerror_r], [@%:@include <string.h>])
+# FreeBSD pthread_attr_get_np()
+PY_CHECK_FUNC_PRIVATE([pthread_attr_get_np], [@%:@include <pthread_np.h>])
 
 
 # os.statx uses Linux's statx function.  AIX also has a function named statx,
@@ -5605,9 +5609,24 @@ fi
 # found by configure), but either raise a compilation error (because the
 # header definition prevents usage - autoconf doesn't use the headers), or
 # raise an error if used at runtime. Force these symbols off.
-if test "$ac_sys_system" != "iOS" ; then
-  AC_CHECK_FUNCS([dup3 getentropy getgroups pipe2 system])
-fi
+# In particular, dup3 and pipe2 are available as of iOS 27 but were
+# incorrectly detected in older simulator versions.
+case "$ac_sys_system" in
+    iOS)
+        AC_MSG_CHECKING([if iOS SDK is older than 27])
+        ios_sdk_version=$(xcrun --sdk iphoneos --show-sdk-version 2>/dev/null | cut -d. -f1)
+        if test -n "$ios_sdk_version" && test "$ios_sdk_version" -ge 27; then
+            AC_MSG_RESULT([no])
+            AC_CHECK_FUNCS([dup3 pipe2])
+        else
+            AC_MSG_RESULT([yes])
+        fi
+        ;;
+    *)
+        # not iOS
+        AC_CHECK_FUNCS([dup3 getentropy getgroups pipe2 system])
+        ;;
+esac
 
 AC_CHECK_DECL([dirfd],
               [AC_DEFINE([HAVE_DIRFD], [1],
@@ -5990,15 +6009,17 @@ AC_CHECK_DECLS([UT_NAMESIZE],
                          [Define if you have the 'HAVE_UT_NAMESIZE' constant.])],
               [],
               [@%:@include <utmp.h>])
-# musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h
-AS_IF([test "$ac_cv_libc" != musl], [
-AC_CHECK_DECLS([PR_SET_VMA_ANON_NAME],
-              [AC_DEFINE([_Py_HAVE_PR_SET_VMA_ANON_NAME], [1],
-                         [Define if you have the 'PR_SET_VMA_ANON_NAME' constant.])],
-              [],
-              [@%:@include <linux/prctl.h>
-               @%:@include <sys/prctl.h>])
-])
+# musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h.
+# The conftest does not reliably catch this, so skip the check on musl.
+AS_CASE([$host],
+  [*-musl*], [],
+  [AC_CHECK_DECLS([PR_SET_VMA_ANON_NAME],
+                [AC_DEFINE([_Py_HAVE_PR_SET_VMA_ANON_NAME], [1],
+                           [Define if you have the 'PR_SET_VMA_ANON_NAME' constant.])],
+                [],
+                [@%:@include <linux/prctl.h>
+                 @%:@include <sys/prctl.h>])]
+)
 # check for openpty, login_tty, and forkpty
 
 AC_CHECK_FUNCS([openpty], [],

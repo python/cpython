@@ -652,6 +652,9 @@ format_obj(PyObject *v, Py_ssize_t argidx, PyObject *key,
         *plen = PyBytes_GET_SIZE(result);
         return result;
     }
+    else if (PyErr_Occurred()) {
+        return NULL;
+    }
     /* does it support buffer protocol? */
     if (PyObject_CheckBuffer(v)) {
         /* maybe we can avoid making a copy of the buffer object here? */
@@ -849,6 +852,10 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                     goto error;
                 }
                 if (width < 0) {
+                    if (width == PY_SSIZE_T_MIN) {
+                        FORMAT_ERROR(PyExc_OverflowError, "too big for width%s", "");
+                        goto error;
+                    }
                     flags |= F_LJUST;
                     width = -width;
                 }
@@ -2918,6 +2925,7 @@ static PyObject *
 bytes_subtype_new(PyTypeObject *, PyObject *);
 
 /*[clinic input]
+@vectorcall
 @classmethod
 bytes.__new__ as bytes_new
 
@@ -2930,7 +2938,7 @@ bytes.__new__ as bytes_new
 static PyObject *
 bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
                const char *errors)
-/*[clinic end generated code: output=1e0c471be311a425 input=f0a966d19b7262b4]*/
+/*[clinic end generated code: output=1e0c471be311a425 input=b0248d22e221a095]*/
 {
     PyObject *bytes;
     PyObject *func;
@@ -3316,6 +3324,7 @@ PyTypeObject PyBytes_Type = {
     bytes_type_alloc,                           /* tp_alloc */
     bytes_new,                                  /* tp_new */
     PyObject_Free,                              /* tp_free */
+    .tp_vectorcall = bytes_vectorcall,
     .tp_version_tag = _Py_TYPE_VERSION_BYTES,
     ._tp_iteritem = bytes_iteritem,
 };
