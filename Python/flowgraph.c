@@ -2738,9 +2738,9 @@ insert_superinstructions(cfg_builder *g)
             }
         }
     }
-    int res = remove_redundant_nops(g);
+    RETURN_IF_ERROR(remove_redundant_nops(g));
     assert(no_redundant_nops(g));
-    return res;
+    return SUCCESS;
 }
 
 #define NOT_LOCAL -1
@@ -4267,7 +4267,7 @@ _PyCompile_OptimizeCfg(PyObject *seq, PyObject *consts, int nlocals)
         goto error;
     }
 
-    if (insert_superinstructions(g) != SUCCESS) {
+    if (insert_superinstructions(g) < 0) {
         goto error;
     }
 
