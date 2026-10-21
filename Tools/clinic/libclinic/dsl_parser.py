@@ -60,7 +60,6 @@ __ifloordiv__
 __ilshift__
 __imatmul__
 __imod__
-__imul__
 __index__
 __int__
 __invert__
@@ -76,7 +75,6 @@ __lshift__
 __lt__
 __matmul__
 __mod__
-__mul__
 __neg__
 __or__
 __pos__
@@ -84,7 +82,6 @@ __pow__
 __radd__
 __rand__
 __rdivmod__
-__repr__
 __rfloordiv__
 __rlshift__
 __rmatmul__
@@ -98,7 +95,6 @@ __rsub__
 __rtruediv__
 __rxor__
 __setattr__
-__setitem__
 __str__
 __sub__
 __truediv__

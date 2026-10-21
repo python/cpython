@@ -178,23 +178,13 @@ handle (passing ``None`` as single argument to call it with a ``NULL`` pointer):
    0x1d000000
    >>>
 
-:exc:`ValueError` is raised when you call an ``stdcall`` function with the
-``cdecl`` calling convention, or vice versa::
-
-   >>> cdll.kernel32.GetModuleHandleA(None)  # doctest: +WINDOWS
-   Traceback (most recent call last):
-     File "<stdin>", line 1, in <module>
-   ValueError: Procedure probably called with not enough arguments (4 bytes missing)
-   >>>
-
-   >>> windll.msvcrt.printf(b"spam")  # doctest: +WINDOWS
-   Traceback (most recent call last):
-     File "<stdin>", line 1, in <module>
-   ValueError: Procedure probably called with too many arguments (4 bytes in excess)
-   >>>
-
-To find out the correct calling convention you have to look into the C header
-file or the documentation for the function you want to call.
+:mod:`!ctypes` cannot determine a function's calling convention or signature.
+Consult the function's C header file or documentation to choose the correct calling
+convention and set the :attr:`~_CFuncPtr.argtypes` attribute, as described in
+:ref:`ctypes-specifying-required-argument-types`. Without
+:attr:`~_CFuncPtr.argtypes`, the number of arguments is not checked. Calling a
+function with an incorrect calling convention or with incorrect arguments can
+corrupt memory or crash Python.
 
 On Windows, :mod:`!ctypes` uses win32 structured exception handling to prevent
 crashes from general protection faults when functions are called with invalid
@@ -585,6 +575,20 @@ prototype for a C function), and tries to convert the arguments to valid types::
    X 2 3.000000
    13
    >>>
+
+Setting :attr:`~_CFuncPtr.argtypes` also causes :mod:`!ctypes` to raise
+:exc:`TypeError` if too few arguments are passed::
+
+   >>> printf(b"%s %d %f\n", b"X", 2)
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: this function takes at least 4 arguments (3 given)
+
+Functions using the ``stdcall`` calling convention require exactly as many
+arguments as there are items in :attr:`~_CFuncPtr.argtypes`. Functions using
+the ``cdecl`` calling convention accept additional arguments, to support
+variadic functions. The declaration must match the function's actual signature;
+ctypes cannot verify this.
 
 If you have defined your own classes which you pass to function calls, you have
 to implement a :meth:`~_CData.from_param` class method for them to be able to use them
@@ -1563,7 +1567,7 @@ way is to instantiate :py:class:`CDLL` or one of its subclasses:
    On non-Windows systems, *name* can  be ``None``. In this case,
    :c:func:`!dlopen` is called with ``NULL``, which opens the main program
    as a "library".
-   (Some systems do the same is *name* is empty; ``None``/``NULL`` is more
+   (Some systems do the same if *name* is empty; ``None``/``NULL`` is more
    portable.)
 
    .. admonition:: CPython implementation detail
@@ -1970,10 +1974,11 @@ in :mod:`!ctypes`) which inherits from the private :class:`_CFuncPtr` class:
    .. attribute:: argtypes
 
       Assign a tuple of ctypes types to specify the argument types that the
-      function accepts.  Functions using the ``stdcall`` calling convention can
-      only be called with the same number of arguments as the length of this
-      tuple; functions using the C calling convention accept additional,
-      unspecified arguments as well.
+      function accepts. :exc:`TypeError` is raised if the function is called
+      with fewer arguments than the length of this tuple. Functions using the
+      ``stdcall`` calling convention also raise :exc:`TypeError` if called with
+      more arguments; functions using the ``cdecl`` calling convention accept
+      additional, unspecified arguments as well.
 
       When a foreign function is called, each actual argument is passed to the
       :meth:`~_CData.from_param` class method of the items in the :attr:`argtypes`
