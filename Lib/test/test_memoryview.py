@@ -579,19 +579,6 @@ class BytesMemoryviewTest(unittest.TestCase,
         view.release()
         data.clear()
 
-    def test_comparison_blocks_gc_clear_during_buffer_callback(self):
-        _testcapi = import_helper.import_module('_testcapi')
-        data = bytearray(b'abc')
-        view = memoryview(data)
-
-        class Other:
-            def __buffer__(self, flags):
-                _testcapi.clear_memoryview(view)
-                return memoryview(data)
-
-        self.assertTrue(view == Other())
-        self.assertEqual(view.tobytes(), b'abc')
-
     def test_comparison_releases_buffer_after_access(self):
         data = bytearray(b'abc')
         view = memoryview(data)
@@ -606,24 +593,6 @@ class BytesMemoryviewTest(unittest.TestCase,
         with support.catch_unraisable_exception() as cm:
             self.assertTrue(view == Other())
             self.assertIsNone(cm.unraisable)
-        data.clear()
-
-    def test_assignment_blocks_release_during_index_callback(self):
-        data = bytearray(b'abc')
-        view = memoryview(data).cast('c')
-        assert_raises = self.assertRaises
-
-        class Index:
-            def __index__(self):
-                with assert_raises(BufferError):
-                    view.release()
-                with assert_raises(BufferError):
-                    data.clear()
-                return 0
-
-        view[Index()] = b'x'
-        self.assertEqual(data, b'xbc')
-        view.release()
         data.clear()
 
     def test_assignment_releases_buffer_after_access(self):
@@ -785,6 +754,17 @@ class OtherTest(unittest.TestCase):
         _testcapi.clear_memoryview(view)
         with self.assertRaisesRegex(ValueError, "released"):
             view.tobytes()
+
+        data = bytearray(b"abc")
+        view = memoryview(data)
+
+        class Other:
+            def __buffer__(self, flags):
+                _testcapi.clear_memoryview(view)
+                return memoryview(data)
+
+        self.assertTrue(view == Other())
+        self.assertEqual(view.tobytes(), b"abc")
 
     def test_cast_order(self):
         # gh-78959: cast(order=...) selects the result memory layout.
@@ -991,6 +971,23 @@ class OtherTest(unittest.TestCase):
         with self.assertRaises(BufferError):
             m[0] = MyBool()
         self.assertEqual(m.tobytes(), b'\xff'*size)
+
+        data = bytearray(b'abc')
+        m = memoryview(data).cast('c')
+        assert_raises = self.assertRaises
+
+        class CatchingIndex:
+            def __index__(self):
+                with assert_raises(BufferError):
+                    release()
+                with assert_raises(BufferError):
+                    data.clear()
+                return 0
+
+        m[CatchingIndex()] = b'x'
+        self.assertEqual(data, b'xbc')
+        m.release()
+        data.clear()
 
     def test_buffer_reference_loop(self):
         m = memoryview(b'abc').__buffer__(0)
