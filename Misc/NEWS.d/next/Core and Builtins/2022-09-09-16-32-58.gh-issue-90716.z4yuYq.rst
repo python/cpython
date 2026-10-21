@@ -1,3 +1,0 @@
-Add _pylong.py module.  It includes asymptotically faster algorithms that
-can be used for operations on integers with many digits.  It is used by
-longobject.c to speed up some operations.

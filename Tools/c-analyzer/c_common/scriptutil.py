@@ -1,6 +1,5 @@
 import argparse
 import contextlib
-import fnmatch
 import logging
 import os
 import os.path

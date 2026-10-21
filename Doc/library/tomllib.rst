@@ -1,32 +1,41 @@
-:mod:`tomllib` --- Parse TOML files
-===================================
+:mod:`!tomllib` --- Parse TOML files
+====================================
 
 .. module:: tomllib
    :synopsis: Parse TOML files.
-
-.. versionadded:: 3.11
-
-.. moduleauthor:: Taneli Hukkinen
-.. sectionauthor:: Taneli Hukkinen
 
 **Source code:** :source:`Lib/tomllib`
 
 --------------
 
-This module provides an interface for parsing TOML (Tom's Obvious Minimal
+This module provides an interface for parsing TOML 1.1.0 (Tom's Obvious Minimal
 Language, `https://toml.io <https://toml.io/en/>`_). This module does not
 support writing TOML.
 
+.. versionadded:: 3.11
+   The module was added with support for TOML 1.0.0.
+
+.. versionchanged:: 3.15
+   Added TOML 1.1.0 support.
+   See the :ref:`What's New <whatsnew315-tomllib-1-1-0>` for details.
+
+.. warning::
+
+   Be cautious when parsing data from untrusted sources.
+   A malicious TOML string may cause the decoder to consume considerable
+   CPU and memory resources.
+   Limiting the size of data to be parsed is recommended.
+
 .. seealso::
 
-    The `Tomli-W package <https://pypi.org/project/tomli-w/>`__
+    The :pypi:`Tomli-W package <tomli-w>`
     is a TOML writer that can be used in conjunction with this module,
     providing a write API familiar to users of the standard library
     :mod:`marshal` and :mod:`pickle` modules.
 
 .. seealso::
 
-    The `TOML Kit package <https://pypi.org/project/tomlkit/>`__
+    The :pypi:`TOML Kit package <tomlkit>`
     is a style-preserving TOML library with both read and write capability.
     It is a recommended replacement for this module for editing already
     existing TOML files.
@@ -60,9 +69,36 @@ This module defines the following functions:
 
 The following exceptions are available:
 
-.. exception:: TOMLDecodeError
+.. exception:: TOMLDecodeError(msg, doc, pos)
 
-   Subclass of :exc:`ValueError`.
+   Subclass of :exc:`ValueError` with the following additional attributes:
+
+   .. attribute:: msg
+
+      The unformatted error message.
+
+   .. attribute:: doc
+
+      The TOML document being parsed.
+
+   .. attribute:: pos
+
+      The index of *doc* where parsing failed.
+
+   .. attribute:: lineno
+
+      The line corresponding to *pos*.
+
+   .. attribute:: colno
+
+      The column corresponding to *pos*.
+
+   .. versionchanged:: 3.14
+      Added the *msg*, *doc* and *pos* parameters.
+      Added the :attr:`msg`, :attr:`doc`, :attr:`pos`, :attr:`lineno` and :attr:`colno` attributes.
+
+   .. deprecated:: 3.14
+      Passing free-form positional arguments is deprecated.
 
 
 Examples
@@ -95,7 +131,7 @@ Conversion Table
 +------------------+--------------------------------------------------------------------------------------+
 | TOML             | Python                                                                               |
 +==================+======================================================================================+
-| table            | dict                                                                                 |
+| TOML document    | dict                                                                                 |
 +------------------+--------------------------------------------------------------------------------------+
 | string           | str                                                                                  |
 +------------------+--------------------------------------------------------------------------------------+
@@ -115,3 +151,54 @@ Conversion Table
 +------------------+--------------------------------------------------------------------------------------+
 | array            | list                                                                                 |
 +------------------+--------------------------------------------------------------------------------------+
+| table            | dict                                                                                 |
++------------------+--------------------------------------------------------------------------------------+
+| inline table     | dict                                                                                 |
++------------------+--------------------------------------------------------------------------------------+
+| array of tables  | list of dicts                                                                        |
++------------------+--------------------------------------------------------------------------------------+
+
+Limits and interoperability considerations
+------------------------------------------
+
+:mod:`!tomllib` places some limits on the documents it can handle,
+and it preserves details that other TOML parsers are allowed to ignore.
+When writing portable TOML files, only use features that are
+guaranteed or recommended by the standard.
+
+The implementation details listed here may change in future versions of Python.
+
+Tables/dicts
+   The TOML spec does not guarantee key/value pairs in TOML documents and
+   tables to be in any specific order.
+
+   .. impl-detail::
+      :mod:`!tomllib` loads dictionary entries in the order they appear in
+      the source.
+
+Integers
+   TOML recommends supporting integers in ``range(−2**63, 2**63)``.
+
+   .. impl-detail::
+      :mod:`!tomllib` uses :ref:`Python's limit on integer string conversion
+      <int_max_str_digits>` (4300 digits by default).
+
+Floats
+   TOML recommends supporting at least IEEE 754 binary64 values,
+   which means that numbers with more than 15 significant decimal digits
+   are likely to be rounded.
+
+   .. impl-detail::
+      :mod:`!tomllib` uses Python :class:`float` by default;
+      on many common platforms this is the recommended binary64.
+      See :data:`sys.float_info` for details.
+
+Nesting limit
+   TOML 1.1.0 does not recommend a limit on how deeply arrays and tables
+   may be nested inside one another.
+   (A limit of 100 has been proposed for a future version of TOML.)
+
+   .. impl-detail::
+      In :mod:`!tomllib`, the nesting level is mainly limited by Python's
+      :func:`recursion limit <sys.getrecursionlimit>`.
+      Note that code that calls :mod:`!tomllib` may contribute to the limit.

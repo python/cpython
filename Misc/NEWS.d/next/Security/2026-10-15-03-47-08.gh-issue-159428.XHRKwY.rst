@@ -1,0 +1,2 @@
+:mod:`mimetypes` no longer reads the files listed in :data:`mimetypes.knownfiles`
+by default on Windows, and uses only the registry.

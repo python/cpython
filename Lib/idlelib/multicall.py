@@ -52,9 +52,9 @@ else:
     _modifier_masks = (MC_CONTROL, MC_ALT, MC_SHIFT, MC_META)
 
 # a dictionary to map a modifier name into its number
-_modifier_names = dict([(name, number)
+_modifier_names = {name: number
                          for number in range(len(_modifiers))
-                         for name in _modifiers[number]])
+                         for name in _modifiers[number]}
 
 # In 3.4, if no shell window is ever open, the underlying Tk widget is
 # destroyed before .__del__ methods here are called.  The following
@@ -134,7 +134,7 @@ def expand_substates(states):
         return nb
     statelist = []
     for state in states:
-        substates = list(set(state & x for x in states))
+        substates = list({state & x for x in states})
         substates.sort(key=nbits, reverse=True)
         statelist.append(substates)
     return statelist
@@ -258,9 +258,9 @@ _types = (
 _binder_classes = (_ComplexBinder,) * 4 + (_SimpleBinder,) * (len(_types)-4)
 
 # A dictionary to map a type name into its number
-_type_names = dict([(name, number)
+_type_names = {name: number
                      for number in range(len(_types))
-                     for name in _types[number]])
+                     for name in _types[number]}
 
 _keysym_re = re.compile(r"^\w+$")
 _button_re = re.compile(r"^[1-5]$")
@@ -310,6 +310,17 @@ def _triplet_to_sequence(triplet):
     else:
         return '<'+_state_names[triplet[0]]+_types[triplet[1]][0]+'>'
 
+
+def warn_bad_binding(virtual, sequence, err):
+    # gh-55646: warn instead of crashing on an invalid key binding.
+    action = virtual[2:-2] if virtual[:2] == '<<' and virtual[-2:] == '>>' \
+             else virtual
+    print(f'Warning: ignoring invalid key binding {sequence!r} '
+          f'for {action!r}: {err}. '
+          f'Please reconfigure it in the IDLE Settings dialog.',
+          file=sys.stderr)
+
+
 _multicall_dict = {}
 def MultiCallCreator(widget):
     """Return a MultiCall class which inherits its methods from the
@@ -343,8 +354,17 @@ def MultiCallCreator(widget):
                             self.__binders[triplet[1]].unbind(triplet, ei[0])
                     ei[0] = func
                     if ei[0] is not None:
+                        bad = []
                         for triplet in ei[1]:
-                            self.__binders[triplet[1]].bind(triplet, func)
+                            try:
+                                self.__binders[triplet[1]].bind(triplet, func)
+                            except tkinter.TclError as err:
+                                warn_bad_binding(sequence,
+                                                 _triplet_to_sequence(triplet),
+                                                 err)
+                                bad.append(triplet)
+                        for triplet in bad:  # Drop the invalid sequences.
+                            ei[1].remove(triplet)
                 else:
                     self.__eventinfo[sequence] = [func, []]
             return widget.bind(self, sequence, func, add)
@@ -371,10 +391,19 @@ def MultiCallCreator(widget):
                 triplet = _parse_sequence(seq)
                 if triplet is None:
                     #print("Tkinter event_add(%s)" % seq, file=sys.__stderr__)
-                    widget.event_add(self, virtual, seq)
+                    try:
+                        widget.event_add(self, virtual, seq)
+                    except tkinter.TclError as err:
+                        warn_bad_binding(virtual, seq, err)
+                        continue  # Drop the invalid sequence.
                 else:
                     if func is not None:
-                        self.__binders[triplet[1]].bind(triplet, func)
+                        try:
+                            self.__binders[triplet[1]].bind(triplet, func)
+                        except tkinter.TclError as err:
+                            warn_bad_binding(virtual,
+                                             _triplet_to_sequence(triplet), err)
+                            continue  # Drop the invalid sequence.
                     triplets.append(triplet)
 
         def event_delete(self, virtual, *sequences):
@@ -386,10 +415,11 @@ def MultiCallCreator(widget):
                 if triplet is None:
                     #print("Tkinter event_delete: %s" % seq, file=sys.__stderr__)
                     widget.event_delete(self, virtual, seq)
-                else:
+                elif triplet in triplets:
                     if func is not None:
                         self.__binders[triplet[1]].unbind(triplet, func)
                     triplets.remove(triplet)
+                # Else the sequence is not bound; ignore it (gh-89360).
 
         def event_info(self, virtual=None):
             if virtual is None or virtual not in self.__eventinfo:
@@ -421,6 +451,8 @@ def _multi_call(parent):  # htest #
     top.geometry("+%d+%d" % (x, y + 175))
     text = MultiCallCreator(tkinter.Text)(top)
     text.pack()
+    text.focus_set()
+
     def bindseq(seq, n=[0]):
         def handler(event):
             print(seq)
@@ -439,6 +471,7 @@ def _multi_call(parent):  # htest #
     bindseq("<FocusOut>")
     bindseq("<Enter>")
     bindseq("<Leave>")
+
 
 if __name__ == "__main__":
     from unittest import main

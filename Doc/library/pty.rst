@@ -1,26 +1,24 @@
-:mod:`pty` --- Pseudo-terminal utilities
-========================================
+:mod:`!pty` --- Pseudo-terminal utilities
+=========================================
 
 .. module:: pty
-   :platform: Unix
    :synopsis: Pseudo-Terminal Handling for Unix.
-
-.. moduleauthor:: Steen Lumholt
-.. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
 **Source code:** :source:`Lib/pty.py`
 
 --------------
 
-The :mod:`pty` module defines operations for handling the pseudo-terminal
+The :mod:`!pty` module defines operations for handling the pseudo-terminal
 concept: starting another process and being able to write to and read from its
 controlling terminal programmatically.
+
+.. availability:: Unix.
 
 Pseudo-terminal handling is highly platform dependent. This code is mainly
 tested on Linux, FreeBSD, and macOS (it is supposed to work on other POSIX
 platforms but it's not been thoroughly tested).
 
-The :mod:`pty` module defines the following functions:
+The :mod:`!pty` module defines the following functions:
 
 
 .. function:: fork()
@@ -30,6 +28,14 @@ The :mod:`pty` module defines the following functions:
    *invalid*. The parent's return value is the *pid* of the child, and *fd* is a
    file descriptor connected to the child's controlling terminal (and also to the
    child's standard input and output).
+
+   The returned file descriptor *fd* is :ref:`non-inheritable <fd_inheritance>`.
+
+   .. warning:: On macOS the use of this function is unsafe when mixed with using
+      higher-level system APIs, and that includes using :mod:`urllib.request`.
+
+   .. versionchanged:: 3.15
+      The returned file descriptor is now made non-inheritable.
 
 
 .. function:: openpty()
@@ -71,7 +77,7 @@ The :mod:`pty` module defines the following functions:
 
    Return the exit status value from :func:`os.waitpid` on the child process.
 
-   :func:`waitstatus_to_exitcode` can be used to convert the exit status into
+   :func:`os.waitstatus_to_exitcode` can be used to convert the exit status into
    an exit code.
 
    .. audit-event:: pty.spawn argv pty.spawn
@@ -82,8 +88,6 @@ The :mod:`pty` module defines the following functions:
 
 Example
 -------
-
-.. sectionauthor:: Steen Lumholt
 
 The following program acts like the Unix command :manpage:`script(1)`, using a
 pseudo-terminal to record all input and output of a terminal session in a
