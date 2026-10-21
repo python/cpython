@@ -535,7 +535,7 @@ class _DayOffset:
         days_before_year = _post_epoch_days_before_year(year)
 
         d = self.d
-        if self.julian and d >= 59 and calendar.isleap(year):
+        if self.julian and d >= 60 and calendar.isleap(year):
             d += 1
 
         epoch = (days_before_year + d) * 86400
