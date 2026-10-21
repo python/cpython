@@ -28,8 +28,8 @@ Here are some of the useful functions provided by this module:
 
 # This module is in the public domain.  No warranties.
 
-__author__ = ('Ka-Ping Yee <ping@lfw.org>',
-              'Yury Selivanov <yselivanov@sprymix.com>')
+# Original authors: Ka-Ping Yee,
+#                   Yury Selivanov <yselivanov@sprymix.com>
 
 __all__ = [
     "AGEN_CLOSED",
@@ -160,6 +160,7 @@ import token
 import types
 import functools
 import builtins
+lazy import warnings
 from keyword import iskeyword
 from operator import attrgetter
 from collections import namedtuple, OrderedDict
@@ -3525,6 +3526,14 @@ def _main():
             sys.exit(error)
         else:
             print(getsource(obj))
+
+
+def __getattr__(name):
+    if name == "__author__":
+        warnings._deprecated("__author__", remove=(3, 20))
+        return ('Ka-Ping Yee',
+                'Yury Selivanov <yselivanov@sprymix.com>')  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 if __name__ == "__main__":

@@ -89,26 +89,23 @@
 #
 #    If that URL should fail, try contacting the author.
 
-__copyright__ = """
-    Copyright (c) 1999-2000, Marc-Andre Lemburg; mailto:mal@lemburg.com
-    Copyright (c) 2000-2010, eGenix.com Software GmbH; mailto:info@egenix.com
-
-    Permission to use, copy, modify, and distribute this software and its
-    documentation for any purpose and without fee or royalty is hereby granted,
-    provided that the above copyright notice appear in all copies and that
-    both that copyright notice and this permission notice appear in
-    supporting documentation or portions thereof, including modifications,
-    that you make.
-
-    EGENIX.COM SOFTWARE GMBH DISCLAIMS ALL WARRANTIES WITH REGARD TO
-    THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
-    FITNESS, IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL,
-    INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING
-    FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
-    NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
-    WITH THE USE OR PERFORMANCE OF THIS SOFTWARE !
-
-"""
+#    Copyright (c) 1999-2000, Marc-Andre Lemburg; mailto:mal@lemburg.com
+#    Copyright (c) 2000-2010, eGenix.com Software GmbH; mailto:info@egenix.com
+#
+#    Permission to use, copy, modify, and distribute this software and its
+#    documentation for any purpose and without fee or royalty is hereby granted,
+#    provided that the above copyright notice appear in all copies and that
+#    both that copyright notice and this permission notice appear in
+#    supporting documentation or portions thereof, including modifications,
+#    that you make.
+#
+#    EGENIX.COM SOFTWARE GMBH DISCLAIMS ALL WARRANTIES WITH REGARD TO
+#    THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+#    FITNESS, IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL,
+#    INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING
+#    FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+#    NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+#    WITH THE USE OR PERFORMANCE OF THIS SOFTWARE !
 
 import collections
 import os
@@ -116,6 +113,7 @@ import re
 import sys
 import functools
 import itertools
+lazy import warnings
 try:
     import _wmi
 except ImportError:
@@ -1443,11 +1441,31 @@ def _main(args: list[str] | None = None):
 
 
 def __getattr__(name):
-    if name == "__version__":
-        from warnings import _deprecated
+    if name in ("__version__", "__copyright__"):
+        warnings._deprecated(name, remove=(3, 20))
+        return {  # Do not change
+            "__version__": "1.1.0",
+            "__copyright__": """
+    Copyright (c) 1999-2000, Marc-Andre Lemburg; mailto:mal@lemburg.com
+    Copyright (c) 2000-2010, eGenix.com Software GmbH; mailto:info@egenix.com
 
-        _deprecated("__version__", remove=(3, 20))
-        return "1.1.0"  # Do not change
+    Permission to use, copy, modify, and distribute this software and its
+    documentation for any purpose and without fee or royalty is hereby granted,
+    provided that the above copyright notice appear in all copies and that
+    both that copyright notice and this permission notice appear in
+    supporting documentation or portions thereof, including modifications,
+    that you make.
+
+    EGENIX.COM SOFTWARE GMBH DISCLAIMS ALL WARRANTIES WITH REGARD TO
+    THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+    FITNESS, IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL,
+    INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING
+    FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+    NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+    WITH THE USE OR PERFORMANCE OF THIS SOFTWARE !
+
+""",
+        }[name]
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 

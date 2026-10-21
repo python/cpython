@@ -2461,7 +2461,7 @@ class TestInternalUtilities(unittest.TestCase):
                 trailing_argv0dir = trailing_curdir + [self.argv0dir]
                 self.assertIsNone(self._get_revised_path(trailing_argv0dir))
 
-    def test__get_version(self):
+    def test__get_metadata(self):
         import json
         import warnings
 
@@ -2477,15 +2477,27 @@ class TestInternalUtilities(unittest.TestCase):
         doc = pydoc.Doc()
         with warnings.catch_warnings(record=True) as w: # TODO: remove in 3.20
             warnings.simplefilter("always")
-            version = doc._get_version(json)
+            version = doc._get_metadata(json, '__version__')
             self.assertEqual(version, "2.0.9")
+            author = doc._get_metadata(json, '__author__')
+            self.assertEqual(author, "Bob Ippolito <bob@redivi.com>")
             self.assertEqual(len(w), 0)
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            version = doc._get_version(module)
+            version = doc._get_metadata(module, '__version__')
             self.assertEqual(version, "1.2.3")
             self.assertEqual(len(w), 1)
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__author__and__date__and__credits__(self):
+        msg = "is deprecated and slated for removal in Python 3.20"
+        for attr in ("__author__", "__date__", "__credits__"):
+            with self.subTest(attr=attr):
+                with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
+                    getattr(pydoc, attr)
+                self.assertEqual(cm.filename, __file__)
 
 
 def setUpModule():
