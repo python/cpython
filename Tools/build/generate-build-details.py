@@ -91,6 +91,13 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
         # The static library is only installed into LIBDIR when it is also
         # LDLIBRARY; otherwise it is only installed into LIBPL.
         static_library_dir = LIBPL if has_dynamic_library else LIBDIR
+        # In framework builds, LDLIBRARY is the path of the framework library
+        # relative to PYTHONFRAMEWORKPREFIX (e.g.
+        # Python.framework/Versions/3.X/Python), not a file in LIBDIR.
+        if sysconfig.get_config_var('PYTHONFRAMEWORK'):
+            dynamic_library_dir = sysconfig.get_config_var('PYTHONFRAMEWORKPREFIX')
+        else:
+            dynamic_library_dir = LIBDIR
     elif os.name == 'nt':
         # Windows can only use a dynamic library or a static library.
         # If it's using a dynamic library, sys.dllhandle will be set.
@@ -99,6 +106,7 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
         has_dynamic_library = hasattr(sys, 'dllhandle')
         has_static_library = not has_dynamic_library
         static_library_dir = LIBDIR
+        dynamic_library_dir = LIBDIR
     else:
         raise NotADirectoryError(f'Unknown platform: {os.name}')
 
@@ -119,7 +127,7 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
                 data['abi']['stable_abi_suffix'] = suffix
                 break
 
-        data['libpython']['dynamic'] = os.path.join(LIBDIR, LDLIBRARY)
+        data['libpython']['dynamic'] = os.path.join(dynamic_library_dir, LDLIBRARY)
         # FIXME: Not sure if windows has a different dll for the stable ABI, and
         #        even if it does, currently we don't have a way to get its name.
         if PY3LIBRARY:
