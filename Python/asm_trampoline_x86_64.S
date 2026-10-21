@@ -21,6 +21,7 @@ __Py_trampoline_func_end:
 #else
     .globl	_Py_trampoline_func_end
 _Py_trampoline_func_end:
+    .byte 0
     .section        .note.GNU-stack,"",@progbits
 #endif
 # Note for indicating the assembly code supports CET

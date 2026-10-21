@@ -1,0 +1,2 @@
+Add a byte after the ELF perf trampoline end marker so it does not share
+the following function's address, which BOLT may otherwise move.
