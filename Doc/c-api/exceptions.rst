@@ -1343,6 +1343,11 @@ OSError aliases
 The following are :term:`soft deprecated` compatibility aliases
 to :c:data:`PyExc_OSError`.
 
+.. stable-abi-note::
+
+   These pointers are part of the :ref:`Stable ABI <stable>` since the
+   version in the *S.ABI* column (or since 3.2 when *S.ABI* is empty).
+
 .. c:var:: PyObject *PyExc_EnvironmentError
 
    .. soft-deprecated:: next
