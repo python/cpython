@@ -2885,6 +2885,28 @@ get_long_lived_total(PyObject *self, PyObject *Py_UNUSED(ignored))
     return PyLong_FromInt64(PyInterpreterState_Get()->gc.long_lived_total);
 }
 
+// Return the total number of mimalloc pages on all threads' QSBR page lists.
+static PyObject *
+get_qsbr_page_list_length(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    Py_ssize_t count = 0;
+    _PyEval_StopTheWorld(interp);
+    _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
+        struct _mimalloc_thread_state *m = &((_PyThreadStateImpl *)p)->mimalloc;
+        if (!_Py_atomic_load_int(&m->initialized)) {
+            continue;
+        }
+        struct llist_node *node;
+        llist_for_each(node, &m->page_list) {
+            count++;
+        }
+    }
+    _Py_FOR_EACH_TSTATE_END(interp);
+    _PyEval_StartTheWorld(interp);
+    return PyLong_FromSsize_t(count);
+}
+
 #endif
 
 static PyObject *
@@ -3442,6 +3464,7 @@ static PyMethodDef module_functions[] = {
     {"get_tlbc", get_tlbc, METH_O, NULL},
     {"get_tlbc_id", get_tlbc_id, METH_O, NULL},
     {"get_long_lived_total", get_long_lived_total, METH_NOARGS},
+    {"get_qsbr_page_list_length", get_qsbr_page_list_length, METH_NOARGS},
 #endif
 #ifdef _Py_TIER2
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},

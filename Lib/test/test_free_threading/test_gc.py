@@ -10,6 +10,11 @@ import weakref
 from test import support
 from test.support import threading_helper
 
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
+
 
 class MyObj:
     pass
@@ -208,6 +213,86 @@ class TestGC(TestCase):
 
         with threading_helper.start_threads(threads):
             pass
+
+
+def allocate_and_free():
+    # Free enough small objects to leave many mimalloc pages empty. Empty
+    # pages in the object heaps wait on QSBR before they are freed.
+    junk = [[] for _ in range(100_000)]
+    del junk
+
+
+@threading_helper.requires_working_threading()
+@unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+class TestQSBRPageList(TestCase):
+    # gh-158972: gc.collect() should free empty pages waiting on QSBR, even
+    # if the thread that parked them is idle.
+
+    def parked_pages(self):
+        return _testinternalcapi.get_qsbr_page_list_length()
+
+    def test_gc_collect_frees_parked_pages(self):
+        gc.collect()
+        allocate_and_free()
+        parked = self.parked_pages()
+        if parked < 10:
+            self.skipTest(f"only {parked} pages were parked")
+        gc.collect()
+        self.assertLess(self.parked_pages(), parked // 4)
+
+    def test_gc_collect_frees_pages_parked_by_idle_thread(self):
+        done = threading.Lock()
+        done.acquire()
+        resume = threading.Lock()
+        resume.acquire()
+
+        def worker():
+            allocate_and_free()
+            done.release()
+            # Block without allocating so the worker doesn't free its parked
+            # pages itself.
+            resume.acquire()
+
+        t = Thread(target=worker)
+        t.start()
+        try:
+            done.acquire()
+            parked = self.parked_pages()
+            if parked < 10:
+                self.skipTest(f"only {parked} pages were parked")
+            gc.collect()
+            self.assertLess(self.parked_pages(), parked // 4)
+        finally:
+            resume.release()
+            t.join()
+
+    def test_gc_collect_while_starting_threads(self):
+        # A new thread is added to the interpreter before it initializes its
+        # mimalloc state, so the GC can see thread states without a usable
+        # page list.
+        stop = threading.Event()
+
+        def collector():
+            while not stop.is_set():
+                gc.collect()
+
+        deadline = time.monotonic() + 2.0
+
+        def starter():
+            while time.monotonic() < deadline:
+                threads = [Thread(target=lambda: None) for _ in range(16)]
+                with threading_helper.start_threads(threads):
+                    pass
+
+        c = Thread(target=collector)
+        c.start()
+        try:
+            starters = [Thread(target=starter) for _ in range(4)]
+            with threading_helper.start_threads(starters):
+                pass
+        finally:
+            stop.set()
+            c.join()
 
 
 if __name__ == "__main__":
