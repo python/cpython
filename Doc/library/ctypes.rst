@@ -708,15 +708,18 @@ Specifying function pointers using type annotations
 
       @wrap_dll_function(dll_to_wrap)
       def function_ptr_name(arg_name: ctypes_type, ...) -> ctypes_type:
-         """Optional docstring. There should be no function body."""
+          """Optional docstring. There should be no function body."""
 
    The body of the decorated function is ignored, and any parameters that are
    missing type annotations are skipped. The names of the parameters are ignored
    and do not have to match the underlying C implementation.
 
    If the decorated function does not have a return type annotation, a
-   :exc:`ValueError` is raised. If the name of the function does not exist
-   in *dll*, an :exc:`AttributeError` is raised.
+   :exc:`ValueError` is raised. A :exc:`ValueError` is also raised if it has a
+   keyword-only, ``*args``, or ``**kwargs`` parameter, since
+   :attr:`~ctypes._CFuncPtr.argtypes` describes positional arguments only. If
+   the name of the function does not exist in *dll*, an :exc:`AttributeError`
+   is raised.
 
    For example::
 
@@ -725,12 +728,12 @@ Specifying function pointers using type annotations
 
       @wrap_dll_function(ctypes.pythonapi)
       def PyObject_GetAttrString(op: ctypes.py_object, attr: ctypes.c_char_p) -> ctypes.py_object:
-         pass
+          pass
 
       PyObject_GetAttrString(42, b"real")
 
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. _ctypes-passing-pointers:
@@ -994,6 +997,15 @@ Generally you only use this feature if you receive a pointer from a C function,
 and you *know* that the pointer actually points to an array instead of a single
 item.
 
+.. warning::
+
+   Because pointer objects support subscription, they implicitly support
+   :term:`iteration <iterator>`. Unless doing this in a controlled manner,
+   such as by manually calling :func:`next` on a :func:`pointer` iterator, this
+   will typically lead to infinite loops or crashes, because ctypes has no way
+   of knowing when to stop iteration. In other words, a ``pointer`` iterator
+   will infinitely yield arbitrary memory.
+
 Behind the scenes, the :func:`pointer` function does more than simply create
 pointer instances, it has to create pointer *types* first. This is done with the
 :func:`POINTER` function, which accepts any :mod:`!ctypes` type, and returns a
@@ -1094,6 +1106,17 @@ In addition, if a function argument is explicitly declared to be a pointer type
 (such as ``POINTER(c_int)``) in :attr:`~_CFuncPtr.argtypes`, an object of the pointed
 type (``c_int`` in this case) can be passed to the function.  ctypes will apply
 the required :func:`byref` conversion in this case automatically.
+
+These conversions are also applied to the :attr:`!_as_parameter_` attribute of
+an object passed for a pointer argument (see
+:ref:`ctypes-calling-functions-with-own-custom-data-types`). So, for a
+``POINTER(c_int)`` argument, an object whose :attr:`!_as_parameter_` is a
+``c_int`` instance is passed by reference, and one whose :attr:`!_as_parameter_`
+is a ``c_int`` array is accepted as well.
+
+.. versionchanged:: next
+   Objects with an :attr:`!_as_parameter_` attribute now receive the same
+   implicit conversions for pointer arguments as the object they wrap.
 
 To set a POINTER type field to ``NULL``, you can assign ``None``::
 
@@ -1567,7 +1590,10 @@ way is to instantiate :py:class:`CDLL` or one of its subclasses:
    :mod:`!ctypes` maintains a thread-local copy of the system's :data:`errno`
    variable; if you call foreign functions created with ``use_errno=True`` then the
    :data:`errno` value before the function call is swapped with the ctypes private
-   copy, the same happens immediately after the function call.
+   copy, the same happens immediately after the function call. This mechanism only
+   works for libraries that use the same C runtime library as the interpreter itself.
+   A library linked against a different C runtime (for example, a different CRT on
+   Windows) has its own :data:`errno`, which :mod:`!ctypes` cannot observe.
 
    The function :func:`ctypes.get_errno` returns the value of the ctypes private
    copy, and the function :func:`ctypes.set_errno` changes the ctypes private copy
@@ -1742,6 +1768,10 @@ These prefabricated library loaders are available:
       attributes.  Note that all these functions are assumed to return C
       :c:expr:`int`, which is of course not always the truth, so you have to assign
       the correct :attr:`!restype` attribute to use these functions.
+
+      .. note::
+
+         If the Python interpreter is statically linked, this may be ``None``.
 
 .. audit-event:: ctypes.dlopen name ctypes.LibraryLoader
 
@@ -1973,13 +2003,33 @@ in :mod:`!ctypes`) which inherits from the private :class:`_CFuncPtr` class:
          same callable object to check or post process the results of several
          functions.
 
-         *arguments* is a tuple containing the parameters originally passed to
-         the function call, this allows specializing the behavior on the
+         *arguments* is a tuple containing the parameters passed to the
+         function call, including any output parameters that :mod:`!ctypes`
+         created for the call; this allows specializing the behavior on the
          arguments used.
 
-      The object that this function returns will be returned from the
-      foreign function call, but it can also check the result value
-      and raise an exception if the foreign function call failed.
+      If the callable returns the *arguments* tuple it received, unchanged,
+      :mod:`!ctypes` continues its normal processing of the result, which
+      includes returning output parameters (see
+      :ref:`ctypes-function-prototypes`). Any other object returned by the
+      callable is returned from the foreign function call instead. The
+      callable can also check the result value and raise an exception if the
+      foreign function call failed.
+
+      For example, this callable raises an exception when the foreign function
+      signals failure with a negative return value, and otherwise leaves the
+      result to :mod:`!ctypes`::
+
+         def errcheck(result, func, arguments):
+             if result < 0:
+                 raise RuntimeError(f"call failed with error {result}")
+             return arguments
+
+      This one instead replaces the result, converting a C ``int`` used as a
+      boolean into a :class:`bool`::
+
+         def errcheck(result, func, arguments):
+             return result != 0
 
 
 .. audit-event:: ctypes.set_exception code foreign-functions
@@ -2033,7 +2083,11 @@ See :ref:`ctypes-callback-functions` for examples.
 .. function:: PYFUNCTYPE(restype, *argtypes)
 
    The returned function prototype creates functions that use the Python calling
-   convention.  The function will *not* release the GIL during the call.
+   convention.  Unlike :func:`CFUNCTYPE` and :func:`WINFUNCTYPE`, ctypes does
+   *not* release the GIL before calling the foreign function, so the function
+   may safely use the Python C API. Note that this does not prevent the GIL
+   from being released *during* the call.
+
 
 Function prototypes created by these factory functions can be instantiated in
 different ways, depending on the type and number of the parameters in the call:
@@ -2897,10 +2951,418 @@ These are the fundamental ctypes data types:
 
 .. _ctypes-wintypes:
 
-The :mod:`!ctypes.wintypes` module provides quite some other Windows specific
-data types, for example :c:type:`!HWND`, :c:type:`!WPARAM`,
-:c:type:`!VARIANT_BOOL` or :c:type:`!DWORD`.
-Some useful structures like :c:type:`!MSG` or :c:type:`!RECT` are also defined.
+Windows data types
+^^^^^^^^^^^^^^^^^^
+
+.. module:: ctypes.wintypes
+   :synopsis: Windows data types for ctypes.
+
+**Source code:** :source:`Lib/ctypes/wintypes.py`
+
+The :mod:`!ctypes.wintypes` module provides types for use with Windows APIs.
+Most are aliases for types defined in :mod:`ctypes`.
+See Microsoft's `Windows data types
+<https://learn.microsoft.com/en-us/windows/win32/winprog/windows-data-types>`_
+documentation for the corresponding C definitions.
+On non-Windows platforms, the sizes and layouts of these types may differ
+from their Windows counterparts.
+
+.. versionchanged:: 3.14
+   Added :class:`HCONV`, :class:`HCONVLIST`, :class:`HCURSOR`,
+   :class:`HDDEDATA`, :class:`HDROP`, :class:`HFILE`, :class:`HRESULT`,
+   and :class:`HSZ`.
+
+For example::
+
+   >>> from ctypes import POINTER
+   >>> from ctypes.wintypes import LPRECT, RECT, SHORT
+   >>> SHORT(-1).value
+   -1
+   >>> rect = RECT(0, 0, 100, 50)
+   >>> rect.right, rect.bottom
+   (100, 50)
+   >>> LPRECT is POINTER(RECT)
+   True
+
+
+Simple types
+~~~~~~~~~~~~
+
+The following names are aliases for fundamental :mod:`ctypes` types:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Windows types
+     - :mod:`ctypes` type
+
+   * - .. class:: BYTE
+                  BOOLEAN
+     - :class:`~ctypes.c_ubyte`
+
+   * - .. class:: CHAR
+     - :class:`~ctypes.c_char`
+
+   * - .. class:: WCHAR
+     - :class:`~ctypes.c_wchar`
+
+   * - .. class:: WORD
+                  USHORT
+                  ATOM
+                  LANGID
+     - :class:`~ctypes.c_ushort`
+
+   * - .. class:: DWORD
+                  ULONG
+                  COLORREF
+                  LCID
+                  LCTYPE
+                  LGRPID
+     - :class:`~ctypes.c_ulong`
+
+   * - .. class:: BOOL
+                  LONG
+                  HRESULT
+     - :class:`~ctypes.c_long`
+
+   * - .. class:: INT
+                  HFILE
+     - :class:`~ctypes.c_int`
+
+   * - .. class:: UINT
+     - :class:`~ctypes.c_uint`
+
+   * - .. class:: SHORT
+     - :class:`~ctypes.c_short`
+
+   * - .. class:: DOUBLE
+     - :class:`~ctypes.c_double`
+
+   * - .. class:: FLOAT
+     - :class:`~ctypes.c_float`
+
+   * - .. class:: LARGE_INTEGER
+     - :class:`~ctypes.c_longlong`
+
+   * - .. class:: ULARGE_INTEGER
+     - :class:`~ctypes.c_ulonglong`
+
+   * - .. class:: LPCSTR
+                  LPSTR
+     - :class:`~ctypes.c_char_p`
+
+   * - .. class:: LPCOLESTR
+                  LPOLESTR
+                  OLESTR
+                  LPCWSTR
+                  LPWSTR
+     - :class:`~ctypes.c_wchar_p`
+
+   * - .. class:: LPCVOID
+                  LPVOID
+     - :class:`~ctypes.c_void_p`
+
+:class:`LARGE_INTEGER` and :class:`ULARGE_INTEGER` expose an integer
+:attr:`!value` attribute, with no ``LowPart``, ``HighPart``, or ``QuadPart``
+fields.
+
+.. class:: WPARAM
+
+   An unsigned integer type with the same size as :class:`~ctypes.c_void_p`.
+
+.. class:: LPARAM
+
+   A signed integer type with the same size as :class:`~ctypes.c_void_p`.
+
+.. class:: VARIANT_BOOL
+
+   A 16-bit Boolean type whose :attr:`!value` attribute is a Python
+   :class:`bool`.  Assigning to :attr:`!value` stores ``-1`` for a true value
+   and ``0`` for a false value.
+
+
+Handle types
+~~~~~~~~~~~~
+
+.. class:: HANDLE
+
+   An alias for :class:`~ctypes.c_void_p`, used to represent Windows handles.
+
+.. class:: HACCEL
+           HBITMAP
+           HBRUSH
+           HCOLORSPACE
+           HCONV
+           HCONVLIST
+           HCURSOR
+           HDC
+           HDDEDATA
+           HDESK
+           HDROP
+           HDWP
+           HENHMETAFILE
+           HFONT
+           HGDIOBJ
+           HGLOBAL
+           HHOOK
+           HICON
+           HINSTANCE
+           HKEY
+           HKL
+           HLOCAL
+           HMENU
+           HMETAFILE
+           HMODULE
+           HMONITOR
+           HPALETTE
+           HPEN
+           HRGN
+           HRSRC
+           HSTR
+           HSZ
+           HTASK
+           HWINSTA
+           HWND
+           SC_HANDLE
+           SERVICE_STATUS_HANDLE
+
+   Aliases for :class:`HANDLE` for use with specific Windows APIs.
+   :class:`HFILE` is an alias for :class:`INT` and is listed among the
+   simple types above.
+
+
+Structures
+~~~~~~~~~~
+
+The following types are subclasses of :class:`ctypes.Structure`.
+
+.. class:: RECT
+           RECTL
+           tagRECT
+
+   A rectangle with ``left``, ``top``, ``right``, and ``bottom`` fields,
+   all of type :class:`LONG`.
+
+.. class:: SMALL_RECT
+
+   A rectangle with ``Left``, ``Top``, ``Right``, and ``Bottom`` fields,
+   all of type :class:`SHORT`.
+
+.. class:: POINT
+           POINTL
+           tagPOINT
+
+   A point with ``x`` and ``y`` fields, both of type :class:`LONG`.
+
+.. class:: SIZE
+           SIZEL
+           tagSIZE
+
+   Dimensions with ``cx`` and ``cy`` fields, both of type :class:`LONG`.
+
+.. class:: FILETIME
+
+   A file time with ``dwLowDateTime`` and ``dwHighDateTime`` fields,
+   both of type :class:`DWORD`.
+
+.. class:: MSG
+           tagMSG
+
+   A Windows message with the following fields:
+
+   .. list-table::
+      :header-rows: 1
+
+      * - Field
+        - Type
+      * - ``hWnd``
+        - :class:`HWND`
+      * - ``message``
+        - :class:`UINT`
+      * - ``wParam``
+        - :class:`WPARAM`
+      * - ``lParam``
+        - :class:`LPARAM`
+      * - ``time``
+        - :class:`DWORD`
+      * - ``pt``
+        - :class:`POINT`
+
+.. class:: WIN32_FIND_DATAA
+           WIN32_FIND_DATAW
+
+   Structures used by Windows file-search functions, with the following
+   fields.  :class:`WIN32_FIND_DATAA` uses :class:`CHAR` for its file names,
+   and :class:`WIN32_FIND_DATAW` uses :class:`WCHAR`.
+
+   .. list-table::
+      :header-rows: 1
+
+      * - Fields
+        - Type
+      * - ``dwFileAttributes``
+        - :class:`DWORD`
+      * - ``ftCreationTime``, ``ftLastAccessTime``, ``ftLastWriteTime``
+        - :class:`FILETIME`
+      * - ``nFileSizeHigh``, ``nFileSizeLow``
+        - :class:`DWORD`
+      * - ``dwReserved0``, ``dwReserved1``
+        - :class:`DWORD`
+      * - ``cFileName``
+        - An array of :data:`MAX_PATH` characters
+      * - ``cAlternateFileName``
+        - An array of 14 characters
+
+
+Pointer types
+~~~~~~~~~~~~~
+
+The following names are aliases for ``ctypes.POINTER(T)``, where *T* is the
+type in the second column:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Pointer types
+     - Referenced type
+
+   * - .. class:: LPBOOL
+                  PBOOL
+     - :class:`BOOL`
+
+   * - .. class:: PBOOLEAN
+     - :class:`BOOLEAN`
+
+   * - .. class:: LPBYTE
+                  PBYTE
+     - :class:`BYTE`
+
+   * - .. class:: PCHAR
+     - :class:`CHAR`
+
+   * - .. class:: LPCOLORREF
+     - :class:`COLORREF`
+
+   * - .. class:: LPDWORD
+                  PDWORD
+     - :class:`DWORD`
+
+   * - .. class:: LPFILETIME
+                  PFILETIME
+     - :class:`FILETIME`
+
+   * - .. class:: PFLOAT
+     - :class:`FLOAT`
+
+   * - .. class:: LPHANDLE
+                  PHANDLE
+     - :class:`HANDLE`
+
+   * - .. class:: PHKEY
+     - :class:`HKEY`
+
+   * - .. class:: LPHKL
+     - :class:`HKL`
+
+   * - .. class:: LPINT
+                  PINT
+     - :class:`INT`
+
+   * - .. class:: PLARGE_INTEGER
+     - :class:`LARGE_INTEGER`
+
+   * - .. class:: PLCID
+     - :class:`LCID`
+
+   * - .. class:: LPLONG
+                  PLONG
+     - :class:`LONG`
+
+   * - .. class:: LPMSG
+                  PMSG
+     - :class:`MSG`
+
+   * - .. class:: LPPOINT
+                  PPOINT
+     - :class:`POINT`
+
+   * - .. class:: PPOINTL
+     - :class:`POINTL`
+
+   * - .. class:: LPRECT
+                  PRECT
+     - :class:`RECT`
+
+   * - .. class:: LPRECTL
+                  PRECTL
+     - :class:`RECTL`
+
+   * - .. class:: LPSC_HANDLE
+     - :class:`SC_HANDLE`
+
+   * - .. class:: PSHORT
+     - :class:`SHORT`
+
+   * - .. class:: LPSIZE
+                  PSIZE
+     - :class:`SIZE`
+
+   * - .. class:: LPSIZEL
+                  PSIZEL
+     - :class:`SIZEL`
+
+   * - .. class:: PSMALL_RECT
+     - :class:`SMALL_RECT`
+
+   * - .. class:: LPUINT
+                  PUINT
+     - :class:`UINT`
+
+   * - .. class:: PULARGE_INTEGER
+     - :class:`ULARGE_INTEGER`
+
+   * - .. class:: PULONG
+     - :class:`ULONG`
+
+   * - .. class:: PUSHORT
+     - :class:`USHORT`
+
+   * - .. class:: PWCHAR
+     - :class:`WCHAR`
+
+   * - .. class:: LPWIN32_FIND_DATAA
+                  PWIN32_FIND_DATAA
+     - :class:`WIN32_FIND_DATAA`
+
+   * - .. class:: LPWIN32_FIND_DATAW
+                  PWIN32_FIND_DATAW
+     - :class:`WIN32_FIND_DATAW`
+
+   * - .. class:: LPWORD
+                  PWORD
+     - :class:`WORD`
+
+
+Constants and functions
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. data:: MAX_PATH
+
+   The value ``260``, used as the size of the file-name arrays in
+   :class:`WIN32_FIND_DATAA` and :class:`WIN32_FIND_DATAW`.
+
+.. function:: RGB(red, green, blue)
+
+   Return a :class:`COLORREF` value as a Python integer.  The *red*, *green*,
+   and *blue* arguments are integers from ``0`` to ``255``, specifying the
+   intensity of each color component::
+
+      >>> from ctypes.wintypes import RGB
+      >>> hex(RGB(255, 128, 0))
+      '0x80ff'
+
+
+.. currentmodule:: ctypes
 
 
 .. _ctypes-structured-data-types:
@@ -3204,7 +3666,7 @@ fields, or any other data types containing pointer type fields.
       that should be merged into a containing structure or union.
 
 
-.. decorator:: struct(*, align=None, layout, endian='native', pack=None)
+.. decorator:: struct(*, align=None, layout=None, endian='native', pack=None)
    :module: ctypes.util
 
    A :term:`decorator` that allows generating structure types using an
@@ -3224,6 +3686,12 @@ fields, or any other data types containing pointer type fields.
 
       point = Point(1, 2)
 
+   .. note::
+
+      Calling :func:`super` without arguments in methods of the decorated
+      class raises a :exc:`TypeError`. Use the two-argument form instead, for example
+      ``super(Point, self).__init__(x, y)``.
+
    *align*, *layout*, and *pack* supply the value for the :attr:`~ctypes.Structure._align_`,
    :attr:`~ctypes.Structure._layout_`, and :attr:`~ctypes.Structure._pack_`
    attributes, respectively.
@@ -3241,16 +3709,20 @@ fields, or any other data types containing pointer type fields.
 
    .. code-block:: python
 
+      from typing import Annotated
+      from ctypes import c_ssize_t, c_void_p
+      from ctypes.util import struct, CFieldInfo
+
       @struct
       class PyObject:
-         ob_refcnt: c_ssize_t
-         ob_type: c_void_p
+          ob_refcnt: c_ssize_t
+          ob_type: c_void_p
 
       @struct
       class PyHovercraftObject:
-         ob_base: Annotated[PyObject, CFieldInfo(anonymous=True)]
+          ob_base: Annotated[PyObject, CFieldInfo(anonymous=True)]
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. class:: CFieldInfo(anonymous=False, bit_width=None)
@@ -3267,7 +3739,7 @@ fields, or any other data types containing pointer type fields.
    number of bits in the generated structure. This is equivalent to passing
    a third item in :attr:`~ctypes.Structure._fields_`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. _ctypes-arrays-pointers:
@@ -3376,3 +3848,47 @@ Exceptions
    .. availability:: Windows
 
    .. versionadded:: 3.14
+
+
+Library version
+^^^^^^^^^^^^^^^
+
+The following constants are only available if :mod:`!ctypes` was built with
+libffi 3.5 or later, which is the first version providing this information.
+
+.. data:: LIBFFI_VERSION
+
+   The version string of the libffi library that was used for building
+   the module, like ``'3.5.2'``.
+   This may be different from the libffi library actually used at runtime,
+   which is available as :const:`libffi_version`.
+
+   .. versionadded:: 3.16
+
+.. data:: libffi_version
+
+   The version string of the libffi library actually loaded by the interpreter.
+
+   .. versionadded:: 3.16
+
+.. data:: LIBFFI_VERSION_INFO
+
+   A named tuple containing the three components of the libffi library
+   version that was used for building the module:
+   *major*, *minor*, and *patch*.
+   All values are integers.
+   The components can also be accessed by name,
+   so ``ctypes.LIBFFI_VERSION_INFO[0]`` is equivalent to
+   ``ctypes.LIBFFI_VERSION_INFO.major`` and so on.
+   This may be different from the libffi library actually used at runtime,
+   which is available as :const:`libffi_version_info`.
+
+   .. versionadded:: 3.16
+
+.. data:: libffi_version_info
+
+   A named tuple containing the version of the libffi library
+   actually loaded by the interpreter,
+   with the same fields as :const:`LIBFFI_VERSION_INFO`.
+
+   .. versionadded:: 3.16
