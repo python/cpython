@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: PSF-2.0 AND (MIT OR Apache-2.0)
 # SPDX-FileCopyrightText: Copyright (c) 2015-2021 MagicStack Inc.  http://magic.io
 
-import collections
 import enum
 import warnings
 try:

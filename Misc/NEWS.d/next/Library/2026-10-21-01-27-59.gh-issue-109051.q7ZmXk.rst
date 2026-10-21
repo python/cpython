@@ -1,0 +1,4 @@
+Remove the redundant outgoing write buffer from :mod:`asyncio`
+TLS transports. Encrypted data is now written directly to the underlying
+transport, and write flow control is delegated to it. This also fixes an
+:exc:`AssertionError` when the buffer size was checked inconsistently.

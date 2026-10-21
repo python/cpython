@@ -48,7 +48,6 @@ from . import sslproto
 from . import staggered
 from . import tasks
 from . import timeouts
-from . import transports
 from . import trsock
 from .log import logger
 
