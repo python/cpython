@@ -10,6 +10,21 @@ preserve
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
+static int
+list_ass_item_impl(PyListObject *a, Py_ssize_t i, PyObject *v);
+
+static int
+list_ass_item(PyObject *a, Py_ssize_t i, PyObject *v)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(a);
+    return_value = list_ass_item_impl((PyListObject *)a, i, v);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(list_insert__doc__,
 "insert($self, index, object, /)\n"
 "--\n"
@@ -468,4 +483,4 @@ list___reversed__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl((PyListObject *)self);
 }
-/*[clinic end generated code: output=06c21b0bffbe8d84 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ef8a058598f58f7e input=a9049054013a1b77]*/

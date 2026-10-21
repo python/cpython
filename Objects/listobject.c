@@ -1189,8 +1189,19 @@ list_inplace_repeat(PyObject *_self, Py_ssize_t n)
     return ret;
 }
 
+/*[clinic input]
+@critical_section
+list.__setitem__ as list_ass_item
+
+    a: self(type="PyListObject *")
+    i: Py_ssize_t
+    v: object
+    /
+[clinic start generated code]*/
+
 static int
-list_ass_item_lock_held(PyListObject *a, Py_ssize_t i, PyObject *v)
+list_ass_item_impl(PyListObject *a, Py_ssize_t i, PyObject *v)
+/*[clinic end generated code: output=51d8b4f1790b67db input=0ba2adeaf8b3d5a0]*/
 {
     if (!valid_index(i, Py_SIZE(a))) {
         PyErr_SetString(PyExc_IndexError,
@@ -1210,17 +1221,6 @@ list_ass_item_lock_held(PyListObject *a, Py_ssize_t i, PyObject *v)
     }
     Py_DECREF(tmp);
     return 0;
-}
-
-static int
-list_ass_item(PyObject *aa, Py_ssize_t i, PyObject *v)
-{
-    int ret;
-    PyListObject *a = (PyListObject *)aa;
-    Py_BEGIN_CRITICAL_SECTION(a);
-    ret = list_ass_item_lock_held(a, i, v);
-    Py_END_CRITICAL_SECTION();
-    return ret;
 }
 
 /*[clinic input]
@@ -3796,7 +3796,7 @@ list_ass_subscript_lock_held(PyObject *_self, PyObject *item, PyObject *value)
             return -1;
         if (i < 0)
             i += PyList_GET_SIZE(self);
-        return list_ass_item_lock_held(self, i, value);
+        return list_ass_item_impl(self, i, value);
     }
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step;

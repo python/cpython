@@ -21,6 +21,21 @@ dbm_length(PyObject *self)
     return return_value;
 }
 
+static int
+dbm_ass_sub_impl(dbmobject *self, PyObject *v, PyObject *w);
+
+static int
+dbm_ass_sub(PyObject *self, PyObject *v, PyObject *w)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = dbm_ass_sub_impl((dbmobject *)self, v, w);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_dbm_dbm_close__doc__,
 "close($self, /)\n"
 "--\n"
@@ -264,4 +279,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7ae22ba4a7aeffa2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=da6b5d201f8d3853 input=a9049054013a1b77]*/
