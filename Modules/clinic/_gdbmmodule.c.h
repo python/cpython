@@ -55,6 +55,21 @@ exit:
     return return_value;
 }
 
+static int
+gdbm_ass_sub_impl(gdbmobject *self, PyObject *v, PyObject *w);
+
+static int
+gdbm_ass_sub(PyObject *self, PyObject *v, PyObject *w)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = gdbm_ass_sub_impl((gdbmobject *)self, v, w);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_gdbm_gdbm_setdefault__doc__,
 "setdefault($self, key, default=None, /)\n"
 "--\n"
@@ -416,4 +431,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=36e1ed1cc3523aeb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6f91f162b0f822d3 input=a9049054013a1b77]*/

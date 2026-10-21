@@ -82,7 +82,6 @@ __pow__
 __radd__
 __rand__
 __rdivmod__
-__repr__
 __rfloordiv__
 __rlshift__
 __rmatmul__
@@ -96,7 +95,6 @@ __rsub__
 __rtruediv__
 __rxor__
 __setattr__
-__setitem__
 __str__
 __sub__
 __truediv__

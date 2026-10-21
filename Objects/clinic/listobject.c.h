@@ -11,6 +11,21 @@ preserve
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 static PyObject *
+list_repr_impl(PyListObject *v);
+
+static PyObject *
+list_repr(PyObject *v)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(v);
+    return_value = list_repr_impl((PyListObject *)v);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static PyObject *
 list_repeat_impl(PyListObject *a, Py_ssize_t n);
 
 static PyObject *
@@ -35,6 +50,21 @@ list_inplace_repeat(PyObject *self, Py_ssize_t n)
 
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = list_inplace_repeat_impl((PyListObject *)self, n);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+list_ass_item_impl(PyListObject *a, Py_ssize_t i, PyObject *v);
+
+static int
+list_ass_item(PyObject *a, Py_ssize_t i, PyObject *v)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(a);
+    return_value = list_ass_item_impl((PyListObject *)a, i, v);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -498,4 +528,4 @@ list___reversed__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl((PyListObject *)self);
 }
-/*[clinic end generated code: output=97e152c37995e5bd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9eab9551fc4cea1c input=a9049054013a1b77]*/

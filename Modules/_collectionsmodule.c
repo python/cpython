@@ -1498,8 +1498,19 @@ deque_remove_impl(dequeobject *deque, PyObject *value)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+@critical_section
+_collections.deque.__setitem__ as deque_ass_item
+
+    deque: dequeobject
+    i: Py_ssize_t
+    v: object
+    /
+[clinic start generated code]*/
+
 static int
-deque_ass_item_lock_held(dequeobject *deque, Py_ssize_t i, PyObject *v)
+deque_ass_item_impl(dequeobject *deque, Py_ssize_t i, PyObject *v)
+/*[clinic end generated code: output=28739a830dc69ab1 input=b767e1a4972fa537]*/
 {
     block *b;
     Py_ssize_t n, len=Py_SIZE(deque), halflen=(len+1)>>1, index=i;
@@ -1528,17 +1539,6 @@ deque_ass_item_lock_held(dequeobject *deque, Py_ssize_t i, PyObject *v)
     }
     Py_SETREF(b->data[i], Py_NewRef(v));
     return 0;
-}
-
-static int
-deque_ass_item(PyObject *self, Py_ssize_t i, PyObject *v)
-{
-    dequeobject *deque = dequeobject_CAST(self);
-    int result;
-    Py_BEGIN_CRITICAL_SECTION(deque);
-    result = deque_ass_item_lock_held(deque, i, v);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 static void
