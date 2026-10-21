@@ -1,0 +1,1 @@
+Updates mimalloc to v3
