@@ -822,26 +822,17 @@ mbuf_drop_export(_PyManagedBufferObject *mbuf)
 static inline int
 memoryview_pin(PyMemoryViewObject *self)
 {
+    /* Treat operations that access self->view across callbacks as exports.
+       This prevents a callback from releasing the view while it is in use. */
 #ifdef Py_GIL_DISABLED
-    if (mv_has_flag(self, _Py_MEMORYVIEW_RELEASED)) {
-        PyErr_SetString(PyExc_ValueError,
-            "operation forbidden on released memoryview object");
-        return -1;
-    }
-    FT_ATOMIC_ADD_SSIZE(self->mbuf->exports, 1);
-    if (BASE_INACCESSIBLE(self)) {
-        mbuf_drop_export(self->mbuf);
-        PyErr_SetString(PyExc_ValueError,
-            "operation forbidden on released memoryview object");
-        return -1;
-    }
-    return 0;
+    return memoryview_add_export(self);
 #else
     if (BASE_INACCESSIBLE(self)) {
         PyErr_SetString(PyExc_ValueError,
             "operation forbidden on released memoryview object");
         return -1;
     }
+    self->exports++;
     return 0;
 #endif
 }
@@ -849,9 +840,7 @@ memoryview_pin(PyMemoryViewObject *self)
 static inline void
 memoryview_unpin(PyMemoryViewObject *self)
 {
-#ifdef Py_GIL_DISABLED
-    mbuf_drop_export(self->mbuf);
-#endif
+    FT_ATOMIC_ADD_SSIZE(self->exports, -1);
 }
 
 /* Expose a raw memory area as a view of contiguous bytes. flags can be
@@ -2954,11 +2943,11 @@ memory_subscript_pinned(PyObject *_self, PyObject *key)
 }
 
 static int
-memory_ass_sub_pinned(PyObject *_self, PyObject *key, PyObject *value)
+memory_ass_sub_pinned(PyObject *_self, PyObject *key, PyObject *value,
+                      Py_buffer *src, bool *src_acquired)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     Py_buffer *view = &(self->view);
-    Py_buffer src;
     const char *fmt;
     char *ptr;
 
@@ -3011,8 +3000,9 @@ memory_ass_sub_pinned(PyObject *_self, PyObject *key, PyObject *value)
         int ret = -1;
 
         /* rvalue must be an exporter */
-        if (PyObject_GetBuffer(value, &src, PyBUF_FULL_RO) < 0)
+        if (PyObject_GetBuffer(value, src, PyBUF_FULL_RO) < 0)
             return ret;
+        *src_acquired = true;
 
         dest = *view;
         dest.shape = &arrays[0]; dest.shape[0] = view->shape[0];
@@ -3025,10 +3015,9 @@ memory_ass_sub_pinned(PyObject *_self, PyObject *key, PyObject *value)
             goto end_block;
         dest.len = dest.shape[0] * dest.itemsize;
 
-        ret = copy_single(self, &dest, &src);
+        ret = copy_single(self, &dest, src);
 
     end_block:
-        PyBuffer_Release(&src);
         return ret;
     }
     if (is_multiindex(key)) {
@@ -3096,11 +3085,16 @@ static int
 memory_ass_sub(PyObject *_self, PyObject *key, PyObject *value)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
+    Py_buffer src;
+    bool src_acquired = false;
     if (memoryview_pin(self) < 0) {
         return -1;
     }
-    int result = memory_ass_sub_pinned(_self, key, value);
+    int result = memory_ass_sub_pinned(_self, key, value, &src, &src_acquired);
     memoryview_unpin(self);
+    if (src_acquired) {
+        PyBuffer_Release(&src);
+    }
     return result;
 }
 
@@ -3492,14 +3486,30 @@ cmp_rec(const char *p, const char *q,
     return 1;
 }
 
+struct memory_compare_state {
+    Py_buffer wbuf;
+    bool wbuf_acquired;
+    struct unpacker *unpack_v;
+    struct unpacker *unpack_w;
+};
+
+static void
+memory_compare_clear(struct memory_compare_state *state)
+{
+    if (state->wbuf_acquired) {
+        PyBuffer_Release(&state->wbuf);
+    }
+    unpacker_free(state->unpack_v);
+    unpacker_free(state->unpack_w);
+}
+
 static PyObject *
-memory_richcompare_pinned(PyObject *v, PyObject *w, int op)
+memory_richcompare_pinned(PyObject *v, PyObject *w, int op,
+                          struct memory_compare_state *state)
 {
     PyObject *res;
-    Py_buffer wbuf, *vv;
+    Py_buffer *vv;
     Py_buffer *ww = NULL;
-    struct unpacker *unpack_v = NULL;
-    struct unpacker *unpack_w = NULL;
     const char *vfmt, *wfmt;
     int equal = MV_COMPARE_NOT_IMPL;
 
@@ -3545,11 +3555,12 @@ memory_richcompare_pinned(PyObject *v, PyObject *w, int op)
         ww = VIEW_ADDR(w);
     }
     else {
-        if (PyObject_GetBuffer(w, &wbuf, PyBUF_FULL_RO) < 0) {
+        if (PyObject_GetBuffer(w, &state->wbuf, PyBUF_FULL_RO) < 0) {
             PyErr_Clear();
             goto result; /* Py_NotImplemented */
         }
-        ww = &wbuf;
+        state->wbuf_acquired = true;
+        ww = &state->wbuf;
     }
 
     if (!equiv_shape(vv, ww)) {
@@ -3569,13 +3580,13 @@ memory_richcompare_pinned(PyObject *v, PyObject *w, int op)
            incorrect results in the case of NaNs or uninitialized padding
            bytes. */
         vfmt = "_";
-        unpack_v = struct_get_unpacker(vv->format, vv->itemsize);
-        if (unpack_v == NULL) {
+        state->unpack_v = struct_get_unpacker(vv->format, vv->itemsize);
+        if (state->unpack_v == NULL) {
             equal = fix_struct_error_int();
             goto result;
         }
-        unpack_w = struct_get_unpacker(ww->format, ww->itemsize);
-        if (unpack_w == NULL) {
+        state->unpack_w = struct_get_unpacker(ww->format, ww->itemsize);
+        if (state->unpack_w == NULL) {
             equal = fix_struct_error_int();
             goto result;
         }
@@ -3583,19 +3594,19 @@ memory_richcompare_pinned(PyObject *v, PyObject *w, int op)
 
     if (vv->ndim == 0) {
         equal = unpack_cmp(vv->buf, ww->buf,
-                           vfmt, unpack_v, unpack_w);
+                           vfmt, state->unpack_v, state->unpack_w);
     }
     else if (vv->ndim == 1) {
         equal = cmp_base(vv->buf, ww->buf, vv->shape,
                          vv->strides, vv->suboffsets,
                          ww->strides, ww->suboffsets,
-                         vfmt, unpack_v, unpack_w);
+                         vfmt, state->unpack_v, state->unpack_w);
     }
     else {
         equal = cmp_rec(vv->buf, ww->buf, vv->ndim, vv->shape,
                         vv->strides, vv->suboffsets,
                         ww->strides, ww->suboffsets,
-                        vfmt, unpack_v, unpack_w);
+                        vfmt, state->unpack_v, state->unpack_w);
     }
 
 result:
@@ -3610,12 +3621,6 @@ result:
     else
         res = Py_False;
 
-    if (ww == &wbuf)
-        PyBuffer_Release(ww);
-
-    unpacker_free(unpack_v);
-    unpacker_free(unpack_w);
-
     return Py_XNewRef(res);
 }
 
@@ -3623,27 +3628,40 @@ static PyObject *
 memory_richcompare(PyObject *v, PyObject *w, int op)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)v;
+    PyMemoryViewObject *other = NULL;
+    struct memory_compare_state state = {0};
+    bool self_pinned = false;
+    bool other_pinned = false;
+    PyObject *result;
+
     if (memoryview_pin(self) < 0) {
         /* Released memoryviews still compare by identity. */
         PyErr_Clear();
-        return memory_richcompare_pinned(v, w, op);
+        goto compare;
     }
+    self_pinned = true;
 
-    PyMemoryViewObject *other = NULL;
     if (PyMemoryView_Check(w) && w != v) {
         other = (PyMemoryViewObject *)w;
         if (memoryview_pin(other) < 0) {
             PyErr_Clear();
             memoryview_unpin(self);
-            return memory_richcompare_pinned(v, w, op);
+            self_pinned = false;
+            goto compare;
         }
+        other_pinned = true;
     }
 
-    PyObject *result = memory_richcompare_pinned(v, w, op);
-    if (other != NULL) {
+compare:
+    result = memory_richcompare_pinned(v, w, op, &state);
+    if (other_pinned) {
         memoryview_unpin(other);
     }
-    memoryview_unpin(self);
+    if (self_pinned) {
+        memoryview_unpin(self);
+    }
+    /* Buffer release may invoke the exporter's Python cleanup callback. */
+    memory_compare_clear(&state);
     return result;
 }
 

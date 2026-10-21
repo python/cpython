@@ -561,6 +561,88 @@ class BaseMemorySliceSliceTests:
 class BytesMemoryviewTest(unittest.TestCase,
     BaseMemoryviewTests, BaseBytesMemoryTests):
 
+    def test_comparison_blocks_release_during_buffer_callback(self):
+        data = bytearray(b'abc')
+        view = memoryview(data)
+        assert_raises = self.assertRaises
+
+        class Other:
+            def __buffer__(self, flags):
+                with assert_raises(BufferError):
+                    view.release()
+                with assert_raises(BufferError):
+                    data.clear()
+                return memoryview(data)
+
+        self.assertTrue(view == Other())
+        self.assertEqual(view.tobytes(), b'abc')
+        view.release()
+        data.clear()
+
+    def test_comparison_blocks_gc_clear_during_buffer_callback(self):
+        _testcapi = import_helper.import_module('_testcapi')
+        data = bytearray(b'abc')
+        view = memoryview(data)
+
+        class Other:
+            def __buffer__(self, flags):
+                _testcapi.clear_memoryview(view)
+                return memoryview(data)
+
+        self.assertTrue(view == Other())
+        self.assertEqual(view.tobytes(), b'abc')
+
+    def test_comparison_releases_buffer_after_access(self):
+        data = bytearray(b'abc')
+        view = memoryview(data)
+
+        class Other:
+            def __buffer__(self, flags):
+                return view
+
+            def __release_buffer__(self, buffer):
+                buffer.release()
+
+        with support.catch_unraisable_exception() as cm:
+            self.assertTrue(view == Other())
+            self.assertIsNone(cm.unraisable)
+        data.clear()
+
+    def test_assignment_blocks_release_during_index_callback(self):
+        data = bytearray(b'abc')
+        view = memoryview(data).cast('c')
+        assert_raises = self.assertRaises
+
+        class Index:
+            def __index__(self):
+                with assert_raises(BufferError):
+                    view.release()
+                with assert_raises(BufferError):
+                    data.clear()
+                return 0
+
+        view[Index()] = b'x'
+        self.assertEqual(data, b'xbc')
+        view.release()
+        data.clear()
+
+    def test_assignment_releases_buffer_after_access(self):
+        data = bytearray(b'abc')
+        view = memoryview(data)
+
+        class Other:
+            def __buffer__(self, flags):
+                return view
+
+            def __release_buffer__(self, buffer):
+                buffer.release()
+
+        with support.catch_unraisable_exception() as cm:
+            view[:] = Other()
+            self.assertIsNone(cm.unraisable)
+        self.assertEqual(data, b'abc')
+        data.clear()
+
     def test_constructor(self):
         for tp in self._types:
             ob = tp(self._source)
@@ -824,15 +906,11 @@ class OtherTest(unittest.TestCase):
             with self.assertRaises(TypeError):
                 pickle.dumps(m, proto)
 
-    def test_use_released_memory(self):
-        # gh-92888: Previously it was possible to use a memoryview even after
-        # backing buffer is freed in certain cases. This tests that those
-        # cases raise an exception.
+    def test_release_during_operation(self):
+        # gh-92888: A callback cannot release a view while an operation uses it.
         size = 128
         def release():
             m.release()
-            nonlocal ba
-            ba = bytearray(size)
         class MyIndex:
             def __index__(self):
                 release()
@@ -846,85 +924,73 @@ class OtherTest(unittest.TestCase):
                 release()
                 return True
 
-        ba = None
         m = memoryview(bytearray(b'\xff'*size))
-        with self.assertRaises(ValueError):
+        with self.assertRaises(BufferError):
             m[MyIndex()]
 
-        ba = None
         m = memoryview(bytearray(b'\xff'*size))
-        self.assertEqual(list(m[:MyIndex()]), [255] * 4)
+        with self.assertRaises(BufferError):
+            m[:MyIndex()]
 
-        ba = None
         m = memoryview(bytearray(b'\xff'*size))
-        self.assertEqual(list(m[MyIndex():8]), [255] * 4)
+        with self.assertRaises(BufferError):
+            m[MyIndex():8]
 
-        ba = None
         m = memoryview(bytearray(b'\xff'*size)).cast('B', (64, 2))
-        with self.assertRaisesRegex(ValueError, "operation forbidden"):
+        with self.assertRaises(BufferError):
             m[MyIndex(), 0]
 
-        ba = None
         m = memoryview(bytearray(b'\xff'*size)).cast('B', (2, 64))
-        with self.assertRaisesRegex(ValueError, "operation forbidden"):
+        with self.assertRaises(BufferError):
             m[0, MyIndex()]
 
-        ba = None
         m = memoryview(bytearray(b'\xff'*size))
-        with self.assertRaisesRegex(ValueError, "operation forbidden"):
+        with self.assertRaises(BufferError):
             m[MyIndex()] = 42
-        self.assertEqual(ba[:8], b'\0'*8)
+        self.assertEqual(m.tobytes(), b'\xff'*size)
 
-        ba = None
         m = memoryview(bytearray(b'\xff'*size))
-        with self.assertRaisesRegex(ValueError, "operation forbidden"):
+        with self.assertRaises(BufferError):
             m[:MyIndex()] = b'spam'
-        self.assertEqual(ba[:8], b'\0'*8)
+        self.assertEqual(m.tobytes(), b'\xff'*size)
 
-        ba = None
         m = memoryview(bytearray(b'\xff'*size))
-        with self.assertRaisesRegex(ValueError, "operation forbidden"):
+        with self.assertRaises(BufferError):
             m[MyIndex():8] = b'spam'
-        self.assertEqual(ba[:8], b'\0'*8)
+        self.assertEqual(m.tobytes(), b'\xff'*size)
 
-        ba = None
         m = memoryview(bytearray(b'\xff'*size)).cast('B', (64, 2))
-        with self.assertRaisesRegex(ValueError, "operation forbidden"):
+        with self.assertRaises(BufferError):
             m[MyIndex(), 0] = 42
-        self.assertEqual(ba[8:16], b'\0'*8)
-        ba = None
+        self.assertEqual(m.tobytes(), b'\xff'*size)
         m = memoryview(bytearray(b'\xff'*size)).cast('B', (2, 64))
-        with self.assertRaisesRegex(ValueError, "operation forbidden"):
+        with self.assertRaises(BufferError):
             m[0, MyIndex()] = 42
-        self.assertEqual(ba[:8], b'\0'*8)
+        self.assertEqual(m.tobytes(), b'\xff'*size)
 
-        ba = None
         m = memoryview(bytearray(b'\xff'*size))
-        with self.assertRaisesRegex(ValueError, "operation forbidden"):
+        with self.assertRaises(BufferError):
             m[0] = MyIndex()
-        self.assertEqual(ba[:8], b'\0'*8)
+        self.assertEqual(m.tobytes(), b'\xff'*size)
 
         for fmt in 'bhilqnBHILQN':
             with self.subTest(fmt=fmt):
-                ba = None
                 m = memoryview(bytearray(b'\xff'*size)).cast(fmt)
-                with self.assertRaisesRegex(ValueError, "operation forbidden"):
+                with self.assertRaises(BufferError):
                     m[0] = MyIndex()
-                self.assertEqual(ba[:8], b'\0'*8)
+                self.assertEqual(m.tobytes(), b'\xff'*size)
 
         for fmt in 'fd':
             with self.subTest(fmt=fmt):
-                ba = None
                 m = memoryview(bytearray(b'\xff'*size)).cast(fmt)
-                with self.assertRaisesRegex(ValueError, "operation forbidden"):
+                with self.assertRaises(BufferError):
                     m[0] = MyFloat()
-                self.assertEqual(ba[:8], b'\0'*8)
+                self.assertEqual(m.tobytes(), b'\xff'*size)
 
-        ba = None
         m = memoryview(bytearray(b'\xff'*size)).cast('?')
-        with self.assertRaisesRegex(ValueError, "operation forbidden"):
+        with self.assertRaises(BufferError):
             m[0] = MyBool()
-        self.assertEqual(ba[:8], b'\0'*8)
+        self.assertEqual(m.tobytes(), b'\xff'*size)
 
     def test_buffer_reference_loop(self):
         m = memoryview(b'abc').__buffer__(0)
