@@ -672,10 +672,7 @@ try_set_tp_mro(PyTypeObject *self, PyObject *expected, PyObject *mro,
 {
     ASSERT_TYPE_LOCK_HELD();
     assert(!(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
-    if (mro != NULL) {
-        assert(PyTuple_CheckExact(mro));
-        PyUnstable_Object_EnableDeferredRefcount(mro);
-    }
+    assert(mro == NULL || PyTuple_CheckExact(mro));
     int res;
     types_stop_world();
     if (self->tp_mro != expected) {
@@ -685,6 +682,9 @@ try_set_tp_mro(PyTypeObject *self, PyObject *expected, PyObject *mro,
         res = -1;
     }
     else {
+        if (mro != NULL) {
+            PyUnstable_Object_EnableDeferredRefcount(mro);
+        }
         self->tp_mro = mro;
         types_publish_gen_inc();
         res = 1;
