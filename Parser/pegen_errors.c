@@ -175,7 +175,7 @@ _PyPegen_tokenize_full_source_to_check_for_errors(Parser *p) {
         // Retain the tokens this error check already reads for bounded typo
         // trials. Never treat a truncated cache as complete input.
         if (cache_tokens && p->fill < MAX_KEYWORD_TYPO_TOKENS &&
-            (p->fill == 0 || p->tokens[p->fill - 1]->type != ENDMARKER) &&
+            p->tokens[p->fill - 1]->type != ENDMARKER &&
             new_token.type != ERRORTOKEN && new_token.type != TYPE_IGNORE &&
             _PyPegen_append_token(p, &new_token) < 0)
         {
@@ -203,7 +203,7 @@ _PyPegen_tokenize_full_source_to_check_for_errors(Parser *p) {
             }
             case ENDMARKER:
                 if (cache_tokens && p->fill < MAX_KEYWORD_TYPO_TOKENS &&
-                    p->start_rule == Py_single_input && p->fill > 0 &&
+                    p->start_rule == Py_single_input &&
                     p->tokens[p->fill - 1]->type == NEWLINE)
                 {
                     // append_token inserted single input's implicit newline;

@@ -1840,6 +1840,11 @@ class TestKeywordTypoSuggestions(unittest.TestCase):
         ("void f():", "def"),
     ]
 
+    def get_syntax_error(self, source, mode="exec"):
+        with self.assertRaises(SyntaxError) as caught:
+            compile(source, "<test>", mode)
+        return caught.exception
+
     def test_keyword_suggestions_from_file(self):
         with tempfile.TemporaryDirectory() as script_dir:
             for i, (code, expected_kw) in enumerate(self.TYPO_CASES):
@@ -1863,9 +1868,8 @@ class TestKeywordTypoSuggestions(unittest.TestCase):
         for source, keyword in self.TYPO_CASES:
             for ending in ('', '\n'):
                 with self.subTest(source=source, ending=ending):
-                    with self.assertRaises(SyntaxError) as caught:
-                        compile(source + ending, "<test>", "single")
-                    self.assertEqual(caught.exception._metadata[0], keyword)
+                    error = self.get_syntax_error(source + ending, "single")
+                    self.assertEqual(error._metadata[0], keyword)
 
     def test_no_keyword_suggestion_for_comma_errors(self):
         # When the parser identifies a missing comma, don't suggest
@@ -1904,9 +1908,7 @@ print(
         ]
         for source, keyword, lineno, offset in cases:
             with self.subTest(source=source):
-                with self.assertRaises(SyntaxError) as caught:
-                    compile(source, "<test>", "exec")
-                error = caught.exception
+                error = self.get_syntax_error(source)
                 original = error.args
                 with (unittest.mock.patch("builtins.compile") as compile_mock,
                       unittest.mock.patch("builtins.open") as open_mock):
@@ -1920,15 +1922,78 @@ print(
                 self.assertEqual(error.args, original)
 
     @cpython_only
+    def test_public_fields_override_keyword_metadata(self):
+        changes = dict(filename="changed.py", msg="custom message", text="<redacted>\n",
+                       lineno=101, offset=2, end_lineno=102, end_offset=3)
+        for field, value in changes.items():
+            with self.subTest(field=field):
+                error = self.get_syntax_error("impor math")
+                setattr(error, field, value)
+                error.args = (error.msg, (error.filename, error.lineno, error.offset,
+                                         error.text, error.end_lineno, error.end_offset))
+                formatted = traceback.TracebackException.from_exception(error)
+                expected = str(value) if field in ("lineno", "end_lineno") else value
+                self.assertEqual(getattr(formatted, field), expected)
+                self.assertNotIn("Did you mean", ''.join(formatted.format_exception_only()))
+
+    @cpython_only
+    def test_keyword_metadata_avoids_custom_methods(self):
+        class CustomString(str):
+            def __eq__(self, other):
+                raise AssertionError("metadata called a custom method")
+
+            def __str__(self):
+                raise AssertionError("metadata called a custom method")
+
+        error = self.get_syntax_error("impor math")
+        suggestion, location, original = error._metadata
+        for metadata in ((), (CustomString(suggestion), location, original),
+                         (suggestion, (CustomString(location[0]), *location[1:]), original),
+                         (suggestion, location, (CustomString(original[0]), *original[1:]))):
+            with self.subTest(metadata_type=type(metadata[0]) if metadata else None):
+                error._metadata = metadata
+                formatted = ''.join(traceback.format_exception_only(error))
+                self.assertNotIn("Did you mean", formatted)
+
+    def test_keyword_hint_in_interactive_interpreter(self):
+        import code
+        with captured_output("stderr") as output:
+            code.InteractiveInterpreter().runsource("impor math", filename="user.py")
+        self.assertIn("Did you mean 'import'", output.getvalue())
+
+    @requires_subprocess()
+    def test_keyword_hint_does_not_reopen_source(self):
+        with tempfile.TemporaryDirectory() as script_dir:
+            make_script(script_dir, "sitecustomize", textwrap.dedent('''
+                import sys
+                def audit(event, args):
+                    if event == "open" and isinstance(args[0], str) and args[0].endswith("script.py"):
+                        print("source-open")
+                sys.addaudithook(audit)
+            '''))
+            counts = []
+            cases = [("= math", None), ("impor math", "import"),
+                     ("result = (one\n          adn two)", "and")]
+            for source, keyword in cases:
+                script = make_script(script_dir, "script", source)
+                _, output, error = assert_python_failure(script, PYTHONPATH=script_dir)
+                counts.append(output.count(b"source-open"))
+                if keyword is not None:
+                    self.assertIn(f"Did you mean '{keyword}'".encode(), error)
+                if keyword == "and":
+                    self.assertIn(b"line 1\n    result = (one\n", error)
+            self.assertGreater(counts[0], 0)
+            self.assertEqual(counts, [counts[0]] * len(cases))
+
+    @cpython_only
     def test_keyword_trials_do_not_repeat_warnings(self):
         import warnings
         for prefix in ("value = '\\q'\n", "from . lazy import x\n"):
             with self.subTest(prefix=prefix), warnings.catch_warnings(record=True) as caught:
                 warnings.simplefilter("always")
-                with self.assertRaises(SyntaxError) as error:
-                    compile(prefix + "impor math", "<test>", "exec")
+                error = self.get_syntax_error(prefix + "impor math")
                 self.assertEqual(len(caught), 1)
-                self.assertEqual(error.exception._metadata[0], "import")
+                self.assertEqual(error._metadata[0], "import")
 
     @cpython_only
     def test_keyword_replay_requires_complete_valid_input(self):
@@ -1936,11 +2001,8 @@ print(
                        "switch +:\n case:", "function f(=):\n pass", "(mat x)",
                        "impor math\n" + "pass\n" * 20000):
             with self.subTest(source=source):
-                with self.assertRaises(SyntaxError) as caught:
-                    compile(source, "<test>", "exec")
-                # Action errors and a cache which stopped before EOF must not
-                # count as successful repairs.
-                self.assertIsNone(caught.exception._metadata)
+                error = self.get_syntax_error(source)
+                self.assertIsNone(error._metadata)
 
     @cpython_only
     def test_keyword_replay_respects_feature_version(self):
@@ -1956,9 +2018,8 @@ print(
             for mode in ("exec", "eval", "single"):
                 source = "npt " + literal
                 with self.subTest(source=source, mode=mode):
-                    with self.assertRaises(SyntaxError) as caught:
-                        compile(source, "<test>", mode)
-                    self.assertIsNone(caught.exception._metadata)
+                    error = self.get_syntax_error(source, mode)
+                    self.assertIsNone(error._metadata)
 
     @cpython_only
     @requires_subprocess()
@@ -2015,17 +2076,15 @@ print(
             with self.subTest(digits=digits):
                 source = "x = " + "1" * digits
                 compile(source, "<test>", "exec")
-                with self.assertRaises(SyntaxError) as caught:
-                    compile("impor math\n" + source, "<test>", "exec")
-                self.assertEqual(caught.exception._metadata is not None, expected)
+                error = self.get_syntax_error("impor math\n" + source)
+                self.assertEqual(error._metadata is not None, expected)
 
     @cpython_only
     def test_keyword_trials_do_not_call_normalizer(self):
         with unittest.mock.patch("unicodedata.normalize") as normalize:
-            with self.assertRaises(SyntaxError) as caught:
-                compile("whille True:\n    café = 1", "<test>", "exec")
+            error = self.get_syntax_error("whille True:\n    café = 1")
         normalize.assert_not_called()
-        self.assertIsNone(caught.exception._metadata)
+        self.assertIsNone(error._metadata)
 
     @cpython_only
     @requires_subprocess()
@@ -2058,10 +2117,9 @@ print(
                 literal = "value = " + repr("a" * size) + "\n"
                 for source in (literal + "impor math", "impor math\n" + literal):
                     with self.subTest(size=size, typo_first=source.startswith("impor")):
-                        with self.assertRaises(SyntaxError) as caught:
-                            compile(source, "<test>", "exec")
+                        error = self.get_syntax_error(source)
                         expected = size < 256 * 1024
-                        self.assertEqual(caught.exception._metadata is not None, expected)
+                        self.assertEqual(error._metadata is not None, expected)
                         script = make_script(script_dir, "large_keyword_typo", source)
                         _, _, stderr = assert_python_failure(script)
                         self.assertEqual(b"Did you mean 'import'" in stderr, expected)
@@ -2073,10 +2131,9 @@ print(
         # Several candidates must share the budget, including failed passes.
         for count, expected in ((100, "lambda"), (2000, None)):
             source = "x = 1\n" * count + "f(" + "fron, " * 8 + "lamda x: x)"
-            with self.subTest(count=count), self.assertRaises(SyntaxError) as caught:
-                compile(source, "<test>", "exec")
-            metadata = caught.exception._metadata
-            self.assertEqual(metadata[0] if metadata else None, expected)
+            with self.subTest(count=count):
+                metadata = self.get_syntax_error(source)._metadata
+                self.assertEqual(metadata[0] if metadata else None, expected)
 
 @requires_debug_ranges()
 @force_not_colorized_test_class

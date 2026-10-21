@@ -1086,6 +1086,27 @@ class _ExceptionPrintContext:
                 yield textwrap.indent(text, indent_str, lambda line: True)
 
 
+def _syntax_error_metadata_matches(metadata, fields):
+    if type(metadata) is not tuple or len(metadata) != 3:
+        return False
+    suggestion, location, original = metadata
+    if type(suggestion) is not str or type(original) is not tuple:
+        return False
+    if len(original) != len(fields):
+        return False
+    if location is not None:
+        if type(location) is not tuple or len(location) != 5:
+            return False
+        if not all(type(value) is expected for value, expected in
+                   zip(location, (str, int, int, int, int))):
+            return False
+    # Public fields can change independently of args. Exact built-in types
+    # keep this comparison from calling user-defined equality methods.
+    return (all(type(value) is str or type(value) is int or value is None
+                for value in fields + original)
+            and fields == original)
+
+
 class TracebackException:
     """An exception ready for rendering.
 
@@ -1179,11 +1200,15 @@ class TracebackException:
             self.msg = exc_value.msg
             self._is_syntax_error = True
             metadata = getattr(exc_value, "_metadata", None)
-            if isinstance(metadata, tuple) and len(metadata) == 6:
-                (suggestion, self.text, lineno, self.offset,
-                 end_lineno, self.end_offset) = metadata
-                self.lineno = str(lineno)
-                self.end_lineno = str(end_lineno)
+            fields = (self.filename, self.msg, self.text, lno, self.offset,
+                      end_lno, self.end_offset)
+            if _syntax_error_metadata_matches(metadata, fields):
+                suggestion, location, original = metadata
+                if location is not None:
+                    (self.text, lineno, self.offset,
+                     end_lineno, self.end_offset) = location
+                    self.lineno = str(lineno)
+                    self.end_lineno = str(end_lineno)
                 self.msg = f"invalid syntax. Did you mean '{suggestion}'?"
         elif exc_type and issubclass(exc_type, ImportError) and \
                 getattr(exc_value, "name_from", None) is not None:
