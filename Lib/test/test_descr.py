@@ -2231,10 +2231,22 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         def swallow(*args): pass
         def format_impl(self, spec):
             return "hello"
+        def do_eq(obj):
+            return obj == 1
+        def do_ne(obj):
+            return obj != 1
+        def do_lt(obj):
+            return obj < 1
+        def do_le(obj):
+            return obj <= 1
+        def do_gt(obj):
+            return obj > 1
+        def do_ge(obj):
+            return obj >= 1
 
-        # It would be nice to have every special method tested here, but I'm
-        # only listing the ones I can remember outside of typeobject.c, since it
-        # does it right.
+        # It would be nice to have every special method tested here.
+        # gh-131151: the rich comparison operators used to clear any exception
+        # raised by a descriptor's __get__.
         specials = [
             ("__bytes__", bytes, hello, set(), {}),
             ("__reversed__", reversed, empty_seq, set(), {}),
@@ -2255,6 +2267,12 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             ("__ceil__", math.ceil, zero, set(), {}),
             ("__dir__", dir, empty_seq, set(), {}),
             ("__round__", round, zero, set(), {}),
+            ("__eq__", do_eq, return_true, set(), {}),
+            ("__ne__", do_ne, return_true, set(), {}),
+            ("__lt__", do_lt, return_true, set(), {}),
+            ("__le__", do_le, return_true, set(), {}),
+            ("__gt__", do_gt, return_true, set(), {}),
+            ("__ge__", do_ge, return_true, set(), {}),
             ]
 
         class Checker(object):
