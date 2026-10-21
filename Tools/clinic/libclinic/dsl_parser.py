@@ -18,7 +18,7 @@ from libclinic.function import (
     Module, Class, Property, Function, Parameter,
     FunctionKind,
     CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW,
-    GETTER, SETTER, SETTER_AND_DELETER,
+    GETTER, SETTER, SETTER_AND_DELETER, SLOT,
     ACCESSORS, SETTERS)
 from libclinic.converter import (
     converters, legacy_converters)
@@ -28,12 +28,15 @@ from libclinic.converters import (
 from libclinic.return_converters import (
     CReturnConverter, return_converters,
     int_return_converter)
+from libclinic.slots import SlotSpec, SLOTS
 from libclinic.parser import create_parser_namespace
 if TYPE_CHECKING:
     from libclinic.block_parser import Block
     from libclinic.app import Clinic
 
 
+# Special methods which Argument Clinic cannot convert.  The type slots
+# which it supports are listed in libclinic.slots.
 unsupported_special_methods: set[str] = set("""
 
 __abs__
@@ -76,7 +79,6 @@ __matmul__
 __mod__
 __mul__
 __neg__
-__next__
 __or__
 __pos__
 __pow__
@@ -265,6 +267,7 @@ class DSLParser:
     critical_section: bool
     target_critical_section: list[str]
     disable_fastcall: bool
+    slot: SlotSpec | None
     # Line of the file which is being parsed.
     line_number: int | None
     from_version_re = re.compile(r'([*/]) +\[from +(.+)\]')
@@ -312,6 +315,7 @@ class DSLParser:
         self.target_critical_section = []
         self.disable_fastcall = False
         self.vectorcall: bool = False
+        self.slot = None
         self.permit_long_summary = False
         self.permit_long_docstring_body = False
 
@@ -603,6 +607,9 @@ class DSLParser:
             fields = full_name.split(".")
             if fields[-1] == '__new__':
                 fields.pop()
+            elif fields[-1] in SLOTS:
+                # list.__repr__ -> list_repr
+                fields[-1] = fields[-1].strip('_')
             c_basename = "_".join(fields)
         if not libclinic.is_legal_py_identifier(full_name):
             fail(f"Illegal function name: {full_name!r}")
@@ -627,12 +634,23 @@ class DSLParser:
             fail("'__new__' must be a class method!")
         if self.kind in ACCESSORS and not cls:
             fail("@getter and @setter must be methods")
+        slot = SLOTS.get(name)
+        if slot is not None:
+            if self.kind is not CALLABLE:
+                fail(f"{name!r} must be a normal method; got '{self.kind}'!")
+            if not cls:
+                fail(f"{name!r} must be a method!")
+            if self.coexist:
+                fail(f"@coexist cannot be applied to {name!r}")
 
         # Normalise self.kind.
         if name == '__new__':
             self.kind = METHOD_NEW
         elif name == '__init__':
             self.kind = METHOD_INIT
+        elif slot is not None:
+            self.kind = SLOT
+            self.slot = slot
 
         # Validate @vectorcall usage.
         if self.vectorcall:
@@ -653,6 +671,9 @@ class DSLParser:
                 fail("@setter methods cannot define a return type")
             if self.kind is METHOD_INIT:
                 fail("__init__ methods cannot define a return type")
+            if self.kind is SLOT:
+                fail(f"{full_name!r} cannot define a return type; "
+                     "its type slot defines it")
             ast_input = f"def x() -> {forced_converter}: pass"
             try:
                 module_node = ast.parse(ast_input)
@@ -672,6 +693,9 @@ class DSLParser:
 
         if self.kind in {METHOD_INIT} | SETTERS:
             return int_return_converter()
+        if self.kind is SLOT:
+            assert self.slot is not None
+            return return_converters[self.slot.return_converter]()
         return CReturnConverter()
 
     def parse_cloned_function(self, names: FunctionNames, existing: str) -> None:
@@ -703,6 +727,8 @@ class DSLParser:
             "docstring_line_number": None,
             "line_number": self.line_number,
         }
+        if existing_function.kind is SLOT or self.slot is not None:
+            fail("Type slot methods cannot be cloned")
         if not (existing_function.kind is self.kind and
                 existing_function.coexist == self.coexist):
             # Allow __new__ or __init__ methods.
@@ -777,6 +803,7 @@ class DSLParser:
             forced_text_signature=self.forced_text_signature,
             line_number=self.line_number,
             vectorcall=self.vectorcall,
+            slot=self.slot,
         )
         self.add_function(func)
 
@@ -893,6 +920,10 @@ class DSLParser:
         assert self.function is not None
         if self.function.kind is GETTER:
             fail("@getter methods cannot define parameters")
+        if self.function.kind is SLOT:
+            assert self.function.slot is not None
+            if not self.function.slot.takes_parameters:
+                fail(f"{self.function.name!r} methods cannot define parameters")
 
         self.parameter_continuation = ''
         return self.next(self.state_parameter, line)
@@ -1498,6 +1529,12 @@ class DSLParser:
         assert self.function is not None
         f = self.function
         # For the following special cases, it does not make sense to render a docstring.
+        if f.kind is SLOT:
+            # A slot function has no docstring (there is no PyMethodDef).
+            if f.docstring:
+                fail(f"{f.name!r} methods cannot have a docstring",
+                     line_number=f.docstring_line_number)
+            return f.docstring
         if f.kind in {METHOD_INIT, METHOD_NEW} | ACCESSORS and not f.docstring:
             return f.docstring
 
@@ -1639,6 +1676,21 @@ class DSLParser:
                      f"parse_arg(); parameter {p.name!r} does not",
                      line_number=lineno)
 
+    def check_slot_parameters(self, func: Function) -> None:
+        """Check that the parameters of a slot method select a C slot."""
+        assert func.slot is not None
+        params = list(func.parameters.values())[1:]
+        for p in params:
+            if not p.is_positional_only():
+                fail(f"The parameters of {func.name!r} must be positional-only")
+            if p.default is not unspecified:
+                fail(f"The parameters of {func.name!r} cannot have a default value")
+        converters = [p.converter for p in params]
+        if func.slot.c_slot(converters) is None:
+            got = ', '.join(c.dsl_name() for c in converters)
+            fail(f"{func.name!r} must declare "
+                 f"{func.slot.describe_signatures()}; got ({got})")
+
     def do_post_block_processing_cleanup(self, lineno: int) -> None:
         """
         Called when processing the block is done.
@@ -1647,6 +1699,8 @@ class DSLParser:
             return
 
         func = self.function
+        if func.kind is SLOT:
+            self.check_slot_parameters(func)
         if func.kind in (SETTER, SETTER_AND_DELETER):
             # The new value is the only parameter of a setter.  The setter
             # of a deletable attribute is also called with NULL to delete it,
