@@ -1902,10 +1902,7 @@ type_check_new_bases(PyTypeObject *type, PyObject *new_bases)
 }
 
 // Checks on the new __bases__ value that depend on the current state of the
-// type hierarchy (inheritance cycles, layout compatibility).  These can run
-// Python code and release TYPE_LOCK, so they are validated optimistically:
-// the caller snapshots the publish generation before calling this and
-// the new bases are only stored if the generation is unchanged.
+// type hierarchy (inheritance cycles, layout compatibility).
 static int
 type_validate_new_bases(PyTypeObject *type, PyObject *new_bases, PyTypeObject **best_base)
 {
