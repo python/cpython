@@ -1485,22 +1485,17 @@ mmap_buffer_releasebuf(PyObject *op, Py_buffer *Py_UNUSED(view))
     Py_END_CRITICAL_SECTION();
 }
 
-static Py_ssize_t
-mmap_length_lock_held(PyObject *op)
-{
-    mmap_object *self = mmap_object_CAST(op);
-    CHECK_VALID(-1);
-    return self->size;
-}
+/*[clinic input]
+@critical_section
+mmap.mmap.__len__ as mmap_length
+[clinic start generated code]*/
 
 static Py_ssize_t
-mmap_length(PyObject *op)
+mmap_length_impl(mmap_object *self)
+/*[clinic end generated code: output=a63e62615cdd9960 input=b7bbf695dc9b2b66]*/
 {
-    Py_ssize_t result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = mmap_length_lock_held(op);
-    Py_END_CRITICAL_SECTION();
-    return result;
+    CHECK_VALID(-1);
+    return self->size;
 }
 
 static PyObject *
