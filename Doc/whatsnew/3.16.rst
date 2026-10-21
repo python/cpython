@@ -1079,6 +1079,16 @@ New deprecations
     3.9, now issues a deprecation warning on use. This property is slated for
     removal in 3.21. Use ``ast.Tuple.elts`` instead.
 
+* :mod:`functools`:
+
+  * Using a return annotation to infer the dispatch type for
+    :func:`functools.singledispatch` or
+    :class:`functools.singledispatchmethod` now emits a
+    :exc:`DeprecationWarning` and will raise :exc:`TypeError` in Python 3.21.
+    Annotate the dispatch parameter or pass the dispatch type explicitly
+    instead.
+    (Contributed by Bartosz Sławecki in :gh:`143465`.)
+
 * :mod:`struct`:
 
   * The ``'F'`` and ``'D'`` type codes, soft-deprecated since Python 3.15,
