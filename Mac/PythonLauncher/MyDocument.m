@@ -19,8 +19,8 @@
 
         // Add your subclass-specific initialization here.
         // If an error occurs here, send a [self dealloc] message and return nil.
-        script = [@"<no script>.py" retain];
-        filetype = [@"Python Script" retain];
+        script = @"<no script>.py";
+        filetype = @"Python Script";
         settings = NULL;
     }
     return self;
