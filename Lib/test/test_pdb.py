@@ -22,7 +22,7 @@ from contextlib import ExitStack, redirect_stdout
 from io import StringIO
 from test import support
 from test.support import has_socket_support, os_helper
-from test.support.import_helper import import_module
+from test.support.import_helper import ensure_lazy_imports, import_module
 from test.support.pty_helper import run_pty, FakeInput
 from test.support.script_helper import kill_python
 from unittest.mock import patch
@@ -3264,6 +3264,35 @@ def test_pdb_issue_gh_136057():
     """
 
 
+def test_pdb_until_skip_comprehension():
+    """See GH-152373
+    "until" should get over a list comprehension with a breakpoint set on it
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     lst = [i for i in range(10)]
+    ...     for i in lst: pass
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'break 3',
+    ...     'continue',
+    ...     'until',
+    ...     'continue',
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_until_skip_comprehension[0]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) break 3
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_until_skip_comprehension[0]>:3
+    (Pdb) continue
+    > <doctest test.test_pdb.test_pdb_until_skip_comprehension[0]>(3)test_function()
+    -> lst = [i for i in range(10)]
+    (Pdb) until
+    > <doctest test.test_pdb.test_pdb_until_skip_comprehension[0]>(4)test_function()
+    -> for i in lst: pass
+    (Pdb) continue
+    """
+
+
 def test_pdb_issue_gh_80731():
     """See GH-80731
 
@@ -3529,6 +3558,32 @@ class PdbTestCase(unittest.TestCase):
     def tearDown(self):
         os_helper.unlink(os_helper.TESTFN)
 
+    @support.cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports(
+            "pdb",
+            {
+                "_colorize",
+                "argparse",
+                "asyncio",
+                "glob",
+                "json",
+                "pprint",
+                "re",
+                "runpy",
+                "selectors",
+                "shlex",
+                "signal",
+                "socket",
+                "tempfile",
+                "textwrap",
+                "threading",
+                "tokenize",
+                "traceback",
+                "weakref",
+            },
+        )
+
     @unittest.skipIf(sys.flags.safe_path,
                      'PYTHONSAFEPATH changes default sys.path')
     def _run_pdb(self, pdb_args, commands,
@@ -3652,6 +3707,23 @@ def quux():
             'bœr',
             ('bœr', 5),
         )
+
+    def test_find_function_too_complex(self):
+        # gh-69919: compile() can raise more than SyntaxError.
+        self._assert_find_function(
+            b"def foo():\n    return " + b"-" * 100_000 + b"1\n"
+            b"def bar():\n    pass\n",
+            'bar',
+            ('bar', 4),
+        )
+
+    def test_compile_error_message(self):
+        p = pdb.Pdb()
+        self.assertEqual(p._compile_error_message('1 + 1'), '')
+        self.assertIn('SyntaxError', p._compile_error_message('1 +'))
+        # gh-69919: compile() can raise more than SyntaxError.
+        self.assertRegex(p._compile_error_message('-' * 100_000 + '1'),
+                         r'^(MemoryError|RecursionError|SyntaxError):')
 
     def test_print_stack_entry_uses_dynamic_line_prefix(self):
         """Test that pdb.line_prefix binding is dynamic (gh-141781)."""
@@ -4933,6 +5005,18 @@ class PdbTestInline(unittest.TestCase):
         stdout, _ = self._run_script(script, commands)
         self.assertIn("42", stdout)
 
+    def test_nested_set_trace(self):
+        # Calling breakpoint() in pdb prompt should just be ignored.
+        script = "breakpoint()"
+        commands = """
+            breakpoint()
+            p 40 + 2
+            c
+        """
+        stdout, stderr = self._run_script(script, commands)
+        self.assertIn('42', stdout)
+        self.assertEqual(stderr, '')
+
     def test_readline_not_imported(self):
         """GH-138860
         Directly or indirectly importing readline might deadlock a subprocess
@@ -4995,6 +5079,16 @@ class PdbTestColorize(unittest.TestCase):
         p = pdb.Pdb(stdout=output)
         p.set_trace(commands=['ll', 'c'])
         self.assertNotIn("\x1b", output.getvalue())
+
+    def test_list_does_not_colorize_trailing_newlines(self):
+        # Keep the marker split so it is not present in the listed source.
+        caret_newline = "^" + "J"
+        output = io.StringIO()
+        p = pdb.Pdb(stdout=output, colorize=True)
+        p.set_trace(commands=['list', 'continue'])
+        result = output.getvalue()
+        self.assertIn("\x1b", result)
+        self.assertNotIn(caret_newline, result)
 
     def test_stack_entry(self):
         output = io.StringIO()
@@ -5167,8 +5261,9 @@ class PdbTestReadline(unittest.TestCase):
 
         self.assertIn('I love Python', output)
 
-    @unittest.skipIf(sys.platform.startswith('freebsd'),
-                     '\\x08 is not interpreted as backspace on FreeBSD')
+    @unittest.skipIf(sys.platform.startswith(('freebsd', 'dragonfly', 'sunos')),
+                     '\\x08 does not remove the auto-indentation with '
+                     'GNU readline on this platform')
     def test_multiline_auto_indent(self):
         script = textwrap.dedent("""
             import pdb; pdb.Pdb().set_trace()
@@ -5207,8 +5302,9 @@ class PdbTestReadline(unittest.TestCase):
 
         self.assertIn('42', output)
 
-    @unittest.skipIf(sys.platform.startswith('freebsd'),
-                     '\\x08 is not interpreted as backspace on FreeBSD')
+    @unittest.skipIf(sys.platform.startswith(('freebsd', 'dragonfly', 'sunos')),
+                     '\\x08 does not remove the auto-indentation with '
+                     'GNU readline on this platform')
     def test_multiline_indent_completion(self):
         script = textwrap.dedent("""
             import pdb; pdb.Pdb().set_trace()

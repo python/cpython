@@ -289,6 +289,21 @@ class ListAllTests(TestBase):
         for interp1, interp2 in zip(actual, expected):
             self.assertIs(interp1, interp2)
 
+    def test_destroyed_by_gc(self):
+        # gh-155997: the interpreter is destroyed while list_all() runs.
+        interp = interpreters.create()
+        interpid = interp.id
+        cycle = []
+        cycle.append(cycle)
+        cycle.append(interp)
+        # The cycle holds the only reference, so only the collector frees it.
+        with support.disable_gc():
+            del interp, cycle
+
+        with support.gc_threshold(1):
+            ids = [i.id for i in interpreters.list_all()]
+        self.assertNotIn(interpid, ids)
+
     def test_created_with_capi(self):
         mainid, *_ = _interpreters.get_main()
         interpid1 = _interpreters.create()
@@ -815,6 +830,31 @@ class TestInterpreterClose(TestBase):
         _interpreters.destroy(interp)
         '''
         assert_python_ok('-c', code)
+
+
+class TestInterpreterContextManager(TestBase):
+
+    def test_basic(self):
+        main, = interpreters.list_all()
+        with interpreters.create() as interp:
+            self.assertIsInstance(interp, interpreters.Interpreter)
+            self.assertEqual(interpreters.list_all(), [main, interp])
+        self.assertEqual(interpreters.list_all(), [main])
+        with self.assertRaises(InterpreterNotFoundError):
+            interp.exec('pass')
+
+    def test_exception(self):
+        main, = interpreters.list_all()
+        with self.assertRaises(ZeroDivisionError):
+            with interpreters.create() as interp:
+                1/0
+        self.assertEqual(interpreters.list_all(), [main])
+
+    def test_main(self):
+        main, = interpreters.list_all()
+        with self.assertRaises(InterpreterError):
+            with main:
+                pass
 
 
 class TestInterpreterPrepareMain(TestBase):

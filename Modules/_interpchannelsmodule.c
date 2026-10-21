@@ -354,7 +354,7 @@ clear_module_state(module_state *state)
 #define ERR_CHANNEL_INTERP_CLOSED -4
 #define ERR_CHANNEL_EMPTY -5
 #define ERR_CHANNEL_NOT_EMPTY -6
-#define ERR_CHANNEL_MUTEX_INIT -7
+#define ERR_CHANNEL_MUTEX_INIT -7  // currently unused
 #define ERR_CHANNELS_MUTEX_INIT -8
 #define ERR_NO_NEXT_CHANNEL_ID -9
 #define ERR_CHANNEL_CLOSED_WAITING -10
@@ -426,10 +426,6 @@ handle_channel_error(int err, PyObject *mod, int64_t cid)
                      "channel %" PRId64 " may not be closed "
                      "if not empty (try force=True)",
                      cid);
-    }
-    else if (err == ERR_CHANNEL_MUTEX_INIT) {
-        PyErr_SetString(state->ChannelError,
-                        "can't initialize mutex for new channel");
     }
     else if (err == ERR_CHANNELS_MUTEX_INIT) {
         PyErr_SetString(state->ChannelError,
@@ -1744,7 +1740,8 @@ channel_create(_channels *channels, struct _channeldefaults defaults)
 {
     PyThread_type_lock mutex = PyThread_allocate_lock();
     if (mutex == NULL) {
-        return ERR_CHANNEL_MUTEX_INIT;
+        PyErr_NoMemory();
+        return -1;
     }
     _channel_state *chan = _channel_new(mutex, defaults);
     if (chan == NULL) {
@@ -2637,6 +2634,17 @@ done:
 static int
 _channelid_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
+    module_state *st = _get_current_module_state();
+    if (st == NULL) {
+        return -1;
+    }
+    if (!PyObject_IsInstance(obj, (PyObject *)st->ChannelIDType)) {
+        PyErr_Format(PyExc_TypeError,
+                     "'_id' attribute must be an %N object, not %T",
+                     st->ChannelIDType, obj);
+        return -1;
+    }
+
     if (_PyXIData_InitWithSize(
             data, tstate->interp, sizeof(struct _channelid_xid), obj,
             _channelid_from_xid
@@ -2938,7 +2946,8 @@ channelsmod_create(PyObject *self, PyObject *args, PyObject *kwds)
 
     int64_t cid = channel_create(&_globals.channels, defaults);
     if (cid < 0) {
-        (void)handle_channel_error(-1, self, cid);
+        // Negative `cid` can't be too big for a downcast:
+        (void)handle_channel_error((int)cid, self, cid);
         return NULL;
     }
     module_state *state = get_module_state(self);

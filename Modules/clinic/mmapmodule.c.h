@@ -9,6 +9,7 @@ preserve
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(mmap_mmap_close__doc__,
 "close($self, /)\n"
@@ -547,13 +548,8 @@ mmap_mmap_set_name(PyObject *self, PyObject *arg)
         _PyArg_BadArgument("set_name", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t name_length;
-    name = PyUnicode_AsUTF8AndSize(arg, &name_length);
+    name = _PyUnicode_AsUTF8NoNUL(arg);
     if (name == NULL) {
-        goto exit;
-    }
-    if (strlen(name) != (size_t)name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
@@ -702,6 +698,21 @@ mmap_mmap___exit__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     Py_END_CRITICAL_SECTION();
 
 exit:
+    return return_value;
+}
+
+static PyObject *
+mmap__repr__method_impl(PyObject *op);
+
+static PyObject *
+mmap__repr__method(PyObject *op)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(op);
+    return_value = mmap__repr__method_impl(op);
+    Py_END_CRITICAL_SECTION();
+
     return return_value;
 }
 
@@ -866,6 +877,51 @@ exit:
 
 #endif /* defined(HAVE_MADVISE) */
 
+static Py_ssize_t
+mmap_length_impl(mmap_object *self);
+
+static Py_ssize_t
+mmap_length(PyObject *self)
+{
+    Py_ssize_t return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = mmap_length_impl((mmap_object *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+mmap_ass_item_impl(mmap_object *self, Py_ssize_t i, PyObject *v);
+
+static int
+mmap_ass_item(PyObject *self, Py_ssize_t i, PyObject *v)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = mmap_ass_item_impl((mmap_object *)self, i, v);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+mmap_ass_subscript_impl(mmap_object *self, PyObject *item, PyObject *value);
+
+static int
+mmap_ass_subscript(PyObject *self, PyObject *item, PyObject *value)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = mmap_ass_subscript_impl((mmap_object *)self, item, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 #ifndef MMAP_MMAP_RESIZE_METHODDEF
     #define MMAP_MMAP_RESIZE_METHODDEF
 #endif /* !defined(MMAP_MMAP_RESIZE_METHODDEF) */
@@ -881,4 +937,4 @@ exit:
 #ifndef MMAP_MMAP_MADVISE_METHODDEF
     #define MMAP_MMAP_MADVISE_METHODDEF
 #endif /* !defined(MMAP_MMAP_MADVISE_METHODDEF) */
-/*[clinic end generated code: output=1122b93314aebc5c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fd4738a3d64fcb0a input=a9049054013a1b77]*/

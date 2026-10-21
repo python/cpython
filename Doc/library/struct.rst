@@ -68,6 +68,7 @@ The module defines the following exception and functions:
    Pack the values *v1*, *v2*, ... according to the format string *format* and
    write the packed bytes into the writable buffer *buffer* starting at
    position *offset*.  Note that *offset* is a required argument.
+   A negative *offset* counts from the end of *buffer*.
 
 
 .. function:: unpack(format, buffer)
@@ -84,6 +85,7 @@ The module defines the following exception and functions:
    string *format*.  The result is a tuple even if it contains exactly one
    item.  The buffer's size in bytes, starting at position *offset*, must be at
    least the size required by the format, as reflected by :func:`calcsize`.
+   A negative *offset* counts from the end of *buffer*.
 
 
 .. function:: iter_unpack(format, buffer)
@@ -283,7 +285,9 @@ platform-dependent.
 
 .. versionchanged:: 3.15
    Added support for the ``'Zf'`` and ``'Zd'`` formats.
-   ``'F'`` and ``'D'`` formats are :term:`soft deprecated`.
+
+.. versionchanged:: 3.16
+   ``'F'`` and ``'D'`` formats are deprecated.
 
 .. seealso::
 

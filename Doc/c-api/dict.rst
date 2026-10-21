@@ -107,8 +107,8 @@ Dictionary objects
 
    Insert *val* into the dictionary *p* with a key of *key*.  *key* must be
    :term:`hashable`; if it isn't, :exc:`TypeError` will be raised. Return
-   ``0`` on success or ``-1`` on failure.  This function *does not* steal a
-   reference to *val*.
+   ``0`` on success or ``-1`` on failure.
+   This function *does not* ":term:`steal`" a reference to *val*.
 
    .. note::
 
@@ -562,6 +562,15 @@ Dictionary objects
    ``PyDict_EVENT_CLEARED``, or ``PyDict_EVENT_DEALLOCATED``.
 
    .. versionadded:: 3.12
+
+.. c:macro:: PY_FOREACH_DICT_EVENT(V)
+
+   Apply the macro *V* to each suffix of :c:type:`PyDict_WatchEvent`
+   constants.
+   Currently expands to ``V(ADDED) V(MODIFIED) V(DELETED) V(CLONED)
+   V(CLEARED) V(DEALLOCATED)``.
+   The macro *V* must accept one event name and supply any punctuation
+   needed between expansions.
 
 .. c:type:: int (*PyDict_WatchCallback)(PyDict_WatchEvent event, PyObject *dict, PyObject *key, PyObject *new_value)
 

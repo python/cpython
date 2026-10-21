@@ -581,7 +581,7 @@ faulthandler_enable(void)
         handler->enabled = 1;
     }
 
-#ifdef MS_WINDOWS
+#ifdef MS_WINDOWS_DESKTOP
     assert(fatal_error.exc_handler == NULL);
     fatal_error.exc_handler = AddVectoredExceptionHandler(1, faulthandler_exc_handler);
 #endif
@@ -645,7 +645,7 @@ faulthandler_disable(void)
             faulthandler_disable_fatal_handler(handler);
         }
     }
-#ifdef MS_WINDOWS
+#ifdef MS_WINDOWS_DESKTOP
     if (fatal_error.exc_handler != NULL) {
         RemoveVectoredExceptionHandler(fatal_error.exc_handler);
         fatal_error.exc_handler = NULL;

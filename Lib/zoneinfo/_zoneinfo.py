@@ -535,7 +535,7 @@ class _DayOffset:
         days_before_year = _post_epoch_days_before_year(year)
 
         d = self.d
-        if self.julian and d >= 59 and calendar.isleap(year):
+        if self.julian and d >= 60 and calendar.isleap(year):
             d += 1
 
         epoch = (days_before_year + d) * 86400
@@ -640,11 +640,11 @@ def _parse_tz_str(tz_str):
 
     parser_re = re.compile(
         r"""
-        (?P<std>[^<0-9:.+-]+|<[a-zA-Z0-9+-]+>)
+        (?P<std>[a-zA-Z]+|<[a-zA-Z0-9+-]+>)
         (?:
             (?P<stdoff>[+-]?\d{1,3}(?::\d{2}(?::\d{2})?)?)
             (?:
-                (?P<dst>[^0-9:.+-]+|<[a-zA-Z0-9+-]+>)
+                (?P<dst>[a-zA-Z]+|<[a-zA-Z0-9+-]+>)
                 (?P<dstoff>[+-]?\d{1,3}(?::\d{2}(?::\d{2})?)?)?
             )? # dst
         )? # stdoff
@@ -720,6 +720,8 @@ def _parse_dst_start_end(dststr):
         else:
             n_is_julian = False
 
+        if re.fullmatch(r"\d{1,3}", date, re.ASCII) is None:
+            raise ValueError(f"Invalid dst start/end date: {dststr}")
         doy = int(date)
         offset = _DayOffset(doy, n_is_julian)
 

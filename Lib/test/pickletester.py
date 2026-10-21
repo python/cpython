@@ -846,6 +846,20 @@ class AbstractUnpickleTests:
                        b'q\x00oq\x01}q\x02b.').replace(b'X', xname)
             self.assert_is_copy(X(*args), self.loads(pickle2))
 
+    def test_load_bad_constructor(self):
+        # gh-154002: a TypeError raised by an old-style instance constructor
+        # during INST/OBJ unpickling propagates unchanged.  The pure-Python
+        # unpickler used to replace it with one that carried the traceback
+        # object in its args.
+        #  0: (    MARK
+        #  1: I        INT        1
+        #  4: i        INST       '__main__ BadConstructor' (MARK at 0)
+        # 28: .    STOP
+        data = b'(I1\ni__main__\nBadConstructor\n.'
+        with self.assertRaises(TypeError) as cm:
+            self.loads(data)
+        self.assertEqual(cm.exception.args, ("bad constructor",))
+
     def test_maxint64(self):
         maxint64 = (1 << 63) - 1
         data = b'I' + str(maxint64).encode("ascii") + b'\n.'
@@ -1245,6 +1259,48 @@ class AbstractUnpickleTests:
         #   11: I    INT        42
         #   15: .    STOP
         self.assertEqual(self.loads(pickled), 42)
+
+    def test_frame_ends_at_opcode_boundary(self):
+        # A frame may end exactly between two opcodes; the following opcodes
+        # are then read from outside the frame.
+        for pickled in [
+            b'\x80\x04\x95\x01\x00\x00\x00\x00\x00\x00\x00N.',  # FRAME 1, NONE, STOP
+            b'\x80\x04\x95\x00\x00\x00\x00\x00\x00\x00\x00N.',  # empty FRAME, NONE, STOP
+        ]:
+            with self.subTest(pickled=pickled):
+                self.assertIsNone(self.loads(pickled))
+
+    def test_frame_does_not_straddle_boundary(self):
+        # An opcode or its argument must not cross a frame boundary
+        # (PEP 3154).  Such a pickle must be rejected rather than silently
+        # reading past the declared frame length, which would make the
+        # meaning of the pickle diverge from its pickletools disassembly.
+        # See gh-154848.
+        for pickled in [
+            # FRAME 6; UNICODE argument read by readline() straddles the frame.
+            b'\x80\x04\x95\x06\x00\x00\x00\x00\x00\x00\x00Vhelloworld\n.',
+            # FRAME 6; BINUNICODE argument straddles the frame.
+            b'\x80\x04\x95\x06\x00\x00\x00\x00\x00\x00\x00'
+            b'X\x0a\x00\x00\x00helloworld.',
+            # FRAME 3; SHORT_BINBYTES argument straddles the frame.
+            b'\x80\x04\x95\x03\x00\x00\x00\x00\x00\x00\x00C\x0ahelloworld.',
+            # FRAME 9; GLOBAL argument (second line) straddles the frame.
+            b'\x80\x04\x95\x09\x00\x00\x00\x00\x00\x00\x00cbuiltins\nprint\n.',
+        ]:
+            self.check_unpickling_error(self.truncated_errors, pickled)
+
+    def test_nested_frame(self):
+        # A new frame must not begin before the current one has ended: here
+        # the outer frame still has data left after the inner frame header.
+        pickled = (b'\x80\x04\x95\x0c\x00\x00\x00\x00\x00\x00\x00'
+                   b'N\x95\x00\x00\x00\x00\x00\x00\x00\x00NN.')
+        self.check_unpickling_error(self.truncated_errors, pickled)
+
+        # But the inner frame header may lie inside the outer frame as long as
+        # it exactly consumes it.
+        pickled = (b'\x80\x04\x95\x0a\x00\x00\x00\x00\x00\x00\x00'
+                   b'N\x95\x00\x00\x00\x00\x00\x00\x00\x00N.')
+        self.assertIsNone(self.loads(pickled))
 
     def test_compat_unpickle(self):
         # xrange(1, 7)
@@ -1755,8 +1811,60 @@ class AbstractUnpickleTests:
             [ToBeUnpickled] * 2)
 
 
+class WeakrefTarget:
+    # Weakly referenceable, picklable, and not hashable -- the weak-only
+    # error path must not assume hashable referents.
+    __hash__ = None
+
+
 class AbstractPicklingErrorTests:
     # Subclass must define self.dumps, self.pickler.
+
+    def test_unpicklable_weakref_referent(self):
+        # Pickling a weak reference pickles its referent too, so it fails when
+        # the referent is not picklable (a lambda).
+        f = lambda: 42
+        wr = weakref.ref(f)
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                self.assertRaises(pickle.PicklingError, self.dumps, wr, proto)
+
+    def test_weakref_without_strong_ref(self):
+        # The error names the distinct referent types: bounded however many
+        # referents there are, and not requiring them to be hashable.
+        referents = [WeakrefTarget() for _ in range(5)]
+        wrs = [weakref.ref(obj) for obj in referents]
+        typename = f'{WeakrefTarget.__module__}.{WeakrefTarget.__qualname__}'
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                with self.assertRaises(pickle.PicklingError) as cm:
+                    self.dumps(wrs, proto)
+                self.assertEqual(str(cm.exception),
+                    'cannot pickle weak reference(s) whose referent(s) have no '
+                    'strong reference in the pickle: ' + typename)
+
+    def test_weakref_reused_pickler(self):
+        # Both re-initializing the pickler and clearing its memo reset the
+        # weak-only bookkeeping left by a refused dump.
+        obj = WeakrefTarget()
+        wr = weakref.ref(obj)
+        p = self.pickler(io.BytesIO())
+        self.assertRaises(pickle.PicklingError, p.dump, wr)
+        f = io.BytesIO()
+        p.__init__(f)
+        p.dump([obj, wr])
+        obj2, wr2 = pickle.loads(f.getvalue())
+        self.assertIs(wr2(), obj2)
+
+        f = io.BytesIO()
+        p = self.pickler(f)
+        self.assertRaises(pickle.PicklingError, p.dump, wr)
+        p.clear_memo()
+        f.seek(0)
+        f.truncate()
+        p.dump([obj, wr])
+        obj2, wr2 = pickle.loads(f.getvalue())
+        self.assertIs(wr2(), obj2)
 
     def test_bad_reduce_result(self):
         obj = REX([print, ()])
@@ -3528,6 +3636,53 @@ class AbstractPickleTests:
                     detail = (proto, C, B, x, y, type(y))
                     self.assertEqual(B(x), B(y), detail)
                     self.assertEqual(x.__dict__, y.__dict__, detail)
+
+    def test_weakref(self):
+        if self.py_version < (3, 16):
+            self.skipTest('not supported in Python < 3.16')
+        obj = WeakrefTarget()
+        wr = weakref.ref(obj)
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                obj2, wr2 = self.loads(self.dumps([obj, wr], proto))
+                self.assertIs(type(wr2), weakref.ref)
+                self.assertIs(wr2(), obj2)
+                # Identity holds regardless of pickling order.
+                wr2, obj2 = self.loads(self.dumps([wr, obj], proto))
+                self.assertIs(wr2(), obj2)
+
+    def test_weakref_callback(self):
+        if self.py_version < (3, 16):
+            self.skipTest('not supported in Python < 3.16')
+        # The callback is not preserved: pickling it strongly would defeat
+        # the weak-only detection.
+        obj = WeakrefTarget()
+        wr = weakref.ref(obj, lambda r: None)
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                obj2, wr2 = self.loads(self.dumps([obj, wr], proto))
+                self.assertIs(wr2(), obj2)
+                self.assertIsNone(wr2.__callback__)
+
+    def test_dead_weakref(self):
+        if self.py_version < (3, 16):
+            self.skipTest('not supported in Python < 3.16')
+        # A dead reference stays dead, and all dead references unpickle as
+        # the same object.
+        obj = WeakrefTarget()
+        wr = weakref.ref(obj)
+        obj2 = WeakrefTarget()
+        wr2 = weakref.ref(obj2)
+        del obj, obj2
+        support.gc_collect()
+        self.assertIsNone(wr())
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                a, b = self.loads(self.dumps([wr, wr2], proto))
+                self.assertIs(type(a), weakref.ref)
+                self.assertIs(a, b)
+                support.gc_collect()
+                self.assertIsNone(a())
 
     def test_newobj_overridden_new(self):
         # Test that Python class with C implemented __new__ is pickleable
