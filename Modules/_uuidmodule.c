@@ -1452,7 +1452,11 @@ Uuid_str(PyObject *self)
     uuidobject *uuid = uuidobject_CAST(self);
 
     // UUID string format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (36 chars)
-    char str[36];
+    PyObject *result = PyUnicode_New(36, 127);
+    if (result == NULL) {
+        return NULL;
+    }
+    char *str = (char *)PyUnicode_1BYTE_DATA(result);
 
     for (int i = 0; i < 4; i++) {
         byte_to_hex(uuid->bytes[i], &str[i * 2]);
@@ -1478,7 +1482,7 @@ Uuid_str(PyObject *self)
         byte_to_hex(uuid->bytes[i], &str[24 + (i - 10) * 2]);
     }
 
-    return PyUnicode_FromStringAndSize(str, sizeof(str));
+    return result;
 }
 
 static PyObject *
