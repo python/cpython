@@ -864,6 +864,10 @@ uuid
   (Contributed by Yury Selivanov in :gh:`139123`.)
 
 
+* :func:`uuid.uuid6` now has a C implementation, with a pure Python fallback.
+  (Contributed by Yury Selivanov in :gh:`160153`.)
+
+
 xml
 ---
 

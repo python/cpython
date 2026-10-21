@@ -366,6 +366,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(check_same_thread), "check_same_thread", 17);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(clamp), "clamp", 5);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(clear), "clear", 5);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(clock_seq), "clock_seq", 9);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(close), "close", 5);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(closed), "closed", 6);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(closefd), "closefd", 7);
@@ -675,6 +676,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(newlines), "newlines", 8);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(next), "next", 4);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(nlocals), "nlocals", 7);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(node), "node", 4);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(node_depth), "node_depth", 10);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(node_offset), "node_offset", 11);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(nothing), "nothing", 7);

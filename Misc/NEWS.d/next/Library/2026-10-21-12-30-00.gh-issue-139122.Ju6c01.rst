@@ -1,0 +1,3 @@
+Add a C implementation of :func:`uuid.uuid6`, preserving the pure Python
+implementation as a fallback. Generate default clock sequences from operating
+system entropy instead of the :mod:`random` module.
