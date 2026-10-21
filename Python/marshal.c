@@ -12,6 +12,7 @@
 #include "pycore_hashtable.h"        // _Py_hashtable_t
 #include "pycore_long.h"             // _PyLong_IsZero()
 #include "pycore_object.h"           // _PyObject_IsUniquelyReferenced
+#include "pycore_pyerrors.h"         // _PyErr_FormatNote()
 #include "pycore_pystate.h"          // _PyInterpreterState_GET()
 #include "pycore_setobject.h"        // _PySet_NextEntryRef()
 #include "pycore_tuple.h"            // _PyTuple_FromPairSteal
@@ -791,6 +792,10 @@ w_complex_object(PyObject *v, WFILE *p)
         }
         for (i = 0; i < n; i++) {
             w_object(PyTuple_GET_ITEM(v, i), p);
+            if (p->error) {
+                _PyErr_FormatNote("when marshalling %T item %zd", v, i);
+                return;
+            }
         }
         w_complete(v, p);
     }
@@ -800,6 +805,10 @@ w_complex_object(PyObject *v, WFILE *p)
         W_SIZE(n, p);
         for (i = 0; i < n; i++) {
             w_object(PyList_GET_ITEM(v, i), p);
+            if (p->error) {
+                _PyErr_FormatNote("when marshalling %T item %zd", v, i);
+                return;
+            }
         }
     }
     else if (PyAnyDict_CheckExact(v)) {
@@ -824,7 +833,15 @@ w_complex_object(PyObject *v, WFILE *p)
         pos = 0;
         while (PyDict_Next(v, &pos, &key, &value)) {
             w_object(key, p);
+            if (p->error) {
+                _PyErr_FormatNote("when marshalling %T key %R", v, key);
+                return;
+            }
             w_object(value, p);
+            if (p->error) {
+                _PyErr_FormatNote("when marshalling %T item %R", v, key);
+                return;
+            }
         }
         w_object((PyObject *)NULL, p);
         if (PyFrozenDict_CheckExact(v)) {
@@ -872,6 +889,7 @@ w_complex_object(PyObject *v, WFILE *p)
                                     p->version, p->allow_code);
             if (dump == NULL) {
                 p->error = true;
+                _PyErr_FormatNote("when marshalling %T element", v);
                 Py_DECREF(value);
                 break;
             }
@@ -908,6 +926,10 @@ w_complex_object(PyObject *v, WFILE *p)
             PyObject *item = PyList_GET_ITEM(items, i);
             value = PyTuple_GET_ITEM(item, 2);
             w_object(value, p);
+            if (p->error) {
+                _PyErr_FormatNote("when marshalling %T element", v);
+                break;
+            }
         }
         Py_DECREF(items);
     }
@@ -924,6 +946,19 @@ w_complex_object(PyObject *v, WFILE *p)
             p->error = true;
             return;
         }
+
+/* On write failure add a note naming the field to the exception, and jump
+   to the code_exit label. It must directly follow the w_object() call
+   for the field. */
+#define W_CHECK_FIELD(field) do {                                         \
+    if (p->error) {                                                       \
+        _PyErr_FormatNote(                                                \
+            "when marshalling " #field " of code object %U (%U, line %d)",\
+            co->co_qualname, co->co_filename, co->co_firstlineno);        \
+        goto code_exit;                                                   \
+    }                                                                     \
+} while (0)
+
         W_TYPE(TYPE_CODE, p);
         w_long(co->co_argcount, p);
         w_long(co->co_posonlyargcount, p);
@@ -931,18 +966,31 @@ w_complex_object(PyObject *v, WFILE *p)
         w_long(co->co_stacksize, p);
         w_long(co->co_flags, p);
         w_object(co_code, p);
+        W_CHECK_FIELD(co_code);
         w_object(co->co_consts, p);
+        W_CHECK_FIELD(co_consts);
         w_object(co->co_names, p);
+        W_CHECK_FIELD(co_names);
         w_object(co->co_localsplusnames, p);
+        W_CHECK_FIELD(co_localsplusnames);
         w_object(co->co_localspluskinds, p);
+        W_CHECK_FIELD(co_localspluskinds);
         w_object(co->co_filename, p);
+        W_CHECK_FIELD(co_filename);
         w_object(co->co_name, p);
+        W_CHECK_FIELD(co_name);
         w_object(co->co_qualname, p);
+        W_CHECK_FIELD(co_qualname);
         w_long(co->co_firstlineno, p);
         w_object(co->co_linetable, p);
+        W_CHECK_FIELD(co_linetable);
         w_object(co->co_exceptiontable, p);
-        Py_DECREF(co_code);
+        W_CHECK_FIELD(co_exceptiontable);
+#undef W_CHECK_FIELD
+
         w_complete(v, p);
+code_exit:
+        Py_DECREF(co_code);
     }
     else if (PyObject_CheckBuffer(v)) {
         /* Write unknown bytes-like objects as a bytes object */
@@ -969,8 +1017,20 @@ w_complex_object(PyObject *v, WFILE *p)
         PySliceObject *slice = (PySliceObject *)v;
         W_TYPE(TYPE_SLICE, p);
         w_object(slice->start, p);
+        if (p->error) {
+            _PyErr_FormatNote("when marshalling %T start", v);
+            return;
+        }
         w_object(slice->stop, p);
+        if (p->error) {
+            _PyErr_FormatNote("when marshalling %T stop", v);
+            return;
+        }
         w_object(slice->step, p);
+        if (p->error) {
+            _PyErr_FormatNote("when marshalling %T step", v);
+            return;
+        }
         w_complete(v, p);
     }
     else {
