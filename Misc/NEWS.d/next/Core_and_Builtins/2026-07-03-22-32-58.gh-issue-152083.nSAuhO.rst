@@ -1,0 +1,2 @@
+Fix a crash when an object's managed dictionary is cleared under low memory
+while an exception is set.
