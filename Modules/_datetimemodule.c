@@ -1047,10 +1047,10 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
             break;
         }
         else if (p > p_end) {
-            return 0;  // designator or NUL, not part of the time (gh-158501)
+            return 0;  // Stopped at p_end: an offset designator or NUL
         }
         else if (p == p_end) {
-            return 1;  // stray character before that boundary
+            return 1;  // Stray character just before p_end
         }
         else if (has_separator && (c == ':')) {
             if (i == 2) {
@@ -1090,7 +1090,8 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
         ++p; // skip truncated digits
     }
 
-    return p != p_end;  // stray text before an offset (gh-158501)
+    // Return 1 if there is unparsed text before p_end
+    return p != p_end;
 }
 
 static int
@@ -1125,7 +1126,7 @@ parse_isoformat_time(const char *dtstr, size_t dtlen, int *hour, int *minute,
         return rv;
     }
     else if (rv == 1) {
-        return -5;  // stray text before the offset (gh-158501)
+        return -5;  // Unparsed text after the time
     }
     else if (tzinfo_pos == p_end) {
         return 0;
