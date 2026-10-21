@@ -93,8 +93,11 @@ class ExecutorTest:
             msg="should raise a ZeroDivisionError",
         )
 
-        # pause needed for free-threading builds on Ubuntu (ARM) and Windows
-        time.sleep(1)
+        # Wait for the completing thread to release its transient reference
+        # to the exception; do not keep the referrers list alive in the loop.
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT, error=False):
+            if not gc.get_referrers(exception):
+                break
 
         self.assertFalse(
             gc.get_referrers(exception),
