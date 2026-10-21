@@ -3221,16 +3221,17 @@ static PyMethodDef PyCData_methods[] = {
  * PyObject_HashNotImplemented() makes type_ready() set __hash__ to None.
  *
  * Unfortunately, on Windows, PyObject_HashNotImplemented is imported from
- * the Python DLL, and MSVC resolves the address of an imported function in
- * a static initializer to a local thunk that can't be recognized. So, we
- * initialize the slots at runtime to load the real address from the import table.
+ * the Python DLL. MSVC resolves imported functions in static initializers to
+ * local thunks, and Clang does the same even for local aggregate initializers.
+ * Assign the hash slot explicitly at runtime to load the real address from
+ * the import table.
  */
 static PyObject *
 PyCData_create_type(PyObject *mod)
 {
     PyType_Slot slots[] = {
         {Py_tp_dealloc, PyCData_dealloc},
-        {Py_tp_hash, PyObject_HashNotImplemented},
+        {Py_tp_hash, NULL},
         {Py_tp_doc, PyDoc_STR("The common base class of all ctypes "
                               "data types.")},
         {Py_tp_traverse, PyCData_traverse},
@@ -3240,6 +3241,7 @@ PyCData_create_type(PyObject *mod)
         {Py_bf_getbuffer, PyCData_NewGetBuffer},
         {0, NULL},
     };
+    slots[1].pfunc = PyObject_HashNotImplemented;
     PyType_Spec spec = {
         .name = "_ctypes._CData",
         .basicsize = sizeof(CDataObject),
@@ -4981,8 +4983,11 @@ static PyType_Spec pycunion_spec = {
 /*
   PyCArray_Type
 */
-static int Array_ass_item_lock_held(PyObject *, Py_ssize_t, PyObject *);
-static int Array_ass_subscript(PyObject *, PyObject *, PyObject *);
+
+/*[clinic input]
+class _ctypes.Array "PyObject *" "clinic_state()->PyCArray_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b2d780e2e2dc6e8a]*/
 
 static int
 Array_init(PyObject *self, PyObject *args, PyObject *kw)
@@ -5006,7 +5011,7 @@ Array_init(PyObject *self, PyObject *args, PyObject *kw)
         for (i = 0; result >= 0 && i < n; ++i) {
             PyObject *v = PyTuple_GET_ITEM(args, i);
             assert(v != NULL);
-            result = Array_ass_item_lock_held(self, i, v);
+            result = Array_ass_item_impl(self, i, v);
         }
         Py_END_CRITICAL_SECTION();
         return result;
@@ -5190,8 +5195,19 @@ Array_subscript(PyObject *myself, PyObject *item)
     return result;
 }
 
+/*[clinic input]
+@critical_section
+_ctypes.Array.__setitem__ as Array_ass_item
+
+    myself: self
+    index: Py_ssize_t
+    value: object
+    /
+[clinic start generated code]*/
+
 static int
-Array_ass_item_lock_held(PyObject *myself, Py_ssize_t index, PyObject *value)
+Array_ass_item_impl(PyObject *myself, Py_ssize_t index, PyObject *value)
+/*[clinic end generated code: output=8fb1fd51b5b45da8 input=8b6ddb53d6377b96]*/
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(myself);
 
@@ -5225,19 +5241,19 @@ Array_ass_item_lock_held(PyObject *myself, Py_ssize_t index, PyObject *value)
                        index, size, ptr);
 }
 
-static int
-Array_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
-{
-    int result;
-    Py_BEGIN_CRITICAL_SECTION(myself);
-    result = Array_ass_item_lock_held(myself, index, value);
-    Py_END_CRITICAL_SECTION();
-    return result;
-}
+/*[clinic input]
+@critical_section
+_ctypes.Array.__setitem__ as Array_ass_subscript
 
+    myself: self
+    item: object
+    value: object
+    /
+[clinic start generated code]*/
 
 static int
-Array_ass_subscript_lock_held(PyObject *myself, PyObject *item, PyObject *value)
+Array_ass_subscript_impl(PyObject *myself, PyObject *item, PyObject *value)
+/*[clinic end generated code: output=cb9a138e4e40c5ac input=4b7aedebbb357853]*/
 {
     CDataObject *self = _CDataObject_CAST(myself);
 
@@ -5254,7 +5270,7 @@ Array_ass_subscript_lock_held(PyObject *myself, PyObject *item, PyObject *value)
             return -1;
         if (i < 0)
             i += self->b_length;
-        return Array_ass_item_lock_held(myself, i, value);
+        return Array_ass_item_impl(myself, i, value);
     }
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelen, otherlen, i;
@@ -5279,7 +5295,7 @@ Array_ass_subscript_lock_held(PyObject *myself, PyObject *item, PyObject *value)
             int result;
             if (item == NULL)
                 return -1;
-            result = Array_ass_item_lock_held(myself, cur, item);
+            result = Array_ass_item_impl(myself, cur, item);
             Py_DECREF(item);
             if (result == -1)
                 return -1;
@@ -5292,17 +5308,6 @@ Array_ass_subscript_lock_held(PyObject *myself, PyObject *item, PyObject *value)
         return -1;
     }
 }
-
-static int
-Array_ass_subscript(PyObject *myself, PyObject *item, PyObject *value)
-{
-    int result;
-    Py_BEGIN_CRITICAL_SECTION(myself);
-    result = Array_ass_subscript_lock_held(myself, item, value);
-    Py_END_CRITICAL_SECTION();
-    return result;
-}
-
 
 static Py_ssize_t
 Array_length(PyObject *myself)
@@ -5545,7 +5550,12 @@ Simple_repr(PyObject *self)
 
 static PyType_Slot pycsimple_slots[] = {
     {Py_tp_repr, &Simple_repr},
-    {Py_tp_doc, PyDoc_STR("XXX to be provided")},
+    {Py_tp_doc, PyDoc_STR("This non-public class is the base class of all "
+                          "fundamental ctypes data types.\n"
+                          "It contains the common attributes of the fundamental "
+                          "ctypes data types.\n"
+                          "_SimpleCData is a subclass of _CData, so it inherits "
+                          "their methods and attributes.")},
     {Py_tp_methods, Simple_methods},
     {Py_tp_getset, Simple_getsets},
     {Py_tp_init, Simple_init},
@@ -5617,8 +5627,24 @@ Pointer_item(PyObject *self, Py_ssize_t index)
     return res;
 }
 
+/*[clinic input]
+class _ctypes._Pointer "PyObject *" "clinic_state()->PyCPointer_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=452695db70aa7c3e]*/
+
+/*[clinic input]
+@critical_section
+_ctypes._Pointer.__setitem__ as Pointer_ass_item
+
+    myself: self
+    index: Py_ssize_t
+    value: object
+    /
+[clinic start generated code]*/
+
 static int
-Pointer_ass_item_lock_held(PyObject *myself, Py_ssize_t index, PyObject *value)
+Pointer_ass_item_impl(PyObject *myself, Py_ssize_t index, PyObject *value)
+/*[clinic end generated code: output=4503430bd55b6c69 input=344ad19b3094558c]*/
 {
     CDataObject *self = _CDataObject_CAST(myself);
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
@@ -5661,16 +5687,6 @@ Pointer_ass_item_lock_held(PyObject *myself, Py_ssize_t index, PyObject *value)
 
     return PyCData_set(st, myself, proto, stginfo->setfunc, value,
                        index, size, ((char *)deref + offset));
-}
-
-static int
-Pointer_ass_item(PyObject *self, Py_ssize_t index, PyObject *value)
-{
-    int res;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    res = Pointer_ass_item_lock_held(self, index, value);
-    Py_END_CRITICAL_SECTION();
-    return res;
 }
 
 static PyObject *
@@ -5986,7 +6002,19 @@ Pointer_bool(PyObject *self)
 }
 
 static PyType_Slot pycpointer_slots[] = {
-    {Py_tp_doc, (void *)PyDoc_STR("XXX to be provided")},
+    {Py_tp_doc, (void *)PyDoc_STR(
+                    "Private, abstract base class for pointers.\n"
+                    "\n"
+                    "Concrete pointer types are created by calling POINTER() "
+                    "with the type that will be pointed to; this is done "
+                    "automatically by pointer().\n"
+                    "\n"
+                    "If a pointer points to an array, its elements can be read "
+                    "and written using standard subscript and slice accesses. "
+                    "Pointer objects have no size, so len() will raise "
+                    "TypeError. Negative subscripts will read from the memory "
+                    "before the pointer (as in C), and out-of-range subscripts "
+                    "will probably crash with an access violation (if you’re lucky).")},
     {Py_tp_getset, Pointer_getsets},
     {Py_tp_init, Pointer_init},
     {Py_tp_new, Pointer_new},
