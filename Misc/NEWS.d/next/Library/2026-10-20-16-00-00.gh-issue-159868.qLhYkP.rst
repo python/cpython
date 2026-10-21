@@ -1,0 +1,3 @@
+Allow :meth:`!collections.UserString.startswith` and
+:meth:`!collections.UserString.endswith` to accept a
+:class:`~collections.UserString` instance as the prefix or suffix argument.
