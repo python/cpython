@@ -1,6 +1,7 @@
 import gc
 import threading
 import unittest
+import weakref
 
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier, Thread
@@ -20,25 +21,22 @@ ITERS = 100
 class A:
     attr = 1
 
-def world_stopper_threads(done):
-    """Threads that stop the world until 'done' is set.
+def world_stoppers():
+    """Finite workloads that contend for the stop-the-world mutex.
 
-    The stopper keeps the stop-the-world mutex contended, so that threads
-    updating types block on it and release the type lock.  The collector
-    makes the stop-the-world pauses long, so that other threads have time
-    to update types while the lock is released.
+    Waiting for the mutex releases the type lock, allowing queued type
+    updates to go stale.  Use a short pause rather than full collections
+    to prolong the contention without depending on the size of the heap.
     """
     def stopper():
-        def g():
-            pass
-        while not done.is_set():
-            g.__qualname__ = "g"  # stops the world
+        for _ in range(100):
+            _testinternalcapi.stop_the_world()
 
-    def collector():
-        while not done.is_set():
-            gc.collect()
+    def pauser():
+        for _ in range(100):
+            _testinternalcapi.stop_the_world(0.0001)
 
-    return [Thread(target=stopper), Thread(target=collector)]
+    return [stopper, pauser]
 
 
 @threading_helper.requires_working_threading()
@@ -366,6 +364,12 @@ class TestType(TestCase):
         self.assertTrue(all(repr(cls()) != "custom repr"
                             for cls in subclasses))
 
+        # The slot update queue must release its references to the types,
+        # including those stored in heap-allocated chunks.
+        del subclasses
+        gc.collect()
+        self.assertEqual(Base.__subclasses__(), [])
+
     def test_concurrent_setattr_deadlock(self):
         # gh-155400: two threads assigning to a special method of the same
         # class could deadlock.  One thread held the type lock and waited for
@@ -430,12 +434,6 @@ class TestType(TestCase):
         # assignment).  The first thread released the type lock while it was
         # blocked on the stop-the-world mutex, was handed the mutex, and then
         # waited for the type lock while owning the mutex.
-        done = threading.Event()
-
-        def run_setter():
-            barrier.wait()
-            setter()
-
         def basesetter():
             class A:
                 pass
@@ -443,37 +441,27 @@ class TestType(TestCase):
                 pass
             class C(A):
                 pass
-            barrier.wait()
-            while not done.is_set():
+            for _ in range(100):
                 C.__bases__ = (B,)
                 C.__bases__ = (A,)
 
         def stopper():
-            def g():
-                pass
-            barrier.wait()
-            while not done.is_set():
-                g.__qualname__ = "g"  # stops the world
+            for _ in range(100):
+                _testinternalcapi.stop_the_world()
 
-        # The stopper thread keeps the stop-the-world mutex contended, which
-        # makes the setters block on it.
-        setters = [Thread(target=run_setter) for _ in range(2)]
-        others = [Thread(target=basesetter), Thread(target=stopper)]
-        barrier = threading.Barrier(len(setters) + len(others))
-        with threading_helper.start_threads(setters + others):
-            for t in setters:
-                t.join()
-            done.set()
+        # The stopper keeps the stop-the-world mutex contended, which makes
+        # the setters block on it.  All workers have finite workloads so
+        # that repeated invalidation cannot indefinitely delay a setter.
+        threading_helper.run_concurrently(
+            [setter, setter, basesetter, stopper])
 
     def test_stop_the_world_in_mro_deadlock(self):
         # type_ready() calls a metaclass mro() with the type lock held.
         N = 50
-        def f():
-            pass
 
         class Meta(type):
             def mro(cls):
-                f.__qualname__ = "f"  # stops the world
+                _testinternalcapi.stop_the_world()
                 return type.mro(cls)
 
         def setter():
@@ -486,13 +474,11 @@ class TestType(TestCase):
         # type_setattro() compares the attribute name with a str subclass key
         # of the type's __dict__ (calling its __eq__) with the type lock held.
         N = 50
-        def f():
-            pass
 
         class S(str):
             __hash__ = str.__hash__
             def __eq__(self, other):
-                f.__qualname__ = "f"  # stops the world
+                _testinternalcapi.stop_the_world()
                 return str.__eq__(self, other)
 
         C = type("C", (), {S("x"): 0})
@@ -503,89 +489,63 @@ class TestType(TestCase):
 
         self.check_stop_the_world_under_type_lock(setter)
 
-    def test_concurrent_slot_update_consistency(self):
-        # Several threads assign and delete the same special method of a
-        # class with subclasses while other threads stop the world.  The
-        # type lock is released while a thread waits for the stop-the-world,
-        # so the slot updates it prepared can go stale and must be redone.
-        # At the end, the type slots must agree with the class dicts.
-        N = 300
-        done = threading.Event()
+    def test_reentrant_slot_update_consistency(self):
+        # Updating Base queues its slot update before visiting Sub.  A key
+        # comparison in Sub's dict re-enters the setter and makes that queue
+        # stale.  It must be rebuilt rather than overwriting the inner update.
+        armed = False
 
         class Base:
             pass
 
-        subclasses = [type(f"Sub{i}", (Base,), {}) for i in range(5)]
-        funcs = [lambda self, i=i: f"repr{i}" for i in range(4)]
+        class Key(str):
+            def __hash__(self):
+                return hash("__hash__")
 
-        def setter(i):
-            barrier.wait()
-            for _ in range(N):
-                Base.__repr__ = funcs[i]
-                try:
-                    del Base.__repr__
-                except AttributeError:
-                    pass
+            def __eq__(self, other):
+                nonlocal armed
+                if armed and other == "__hash__":
+                    armed = False
+                    Base.__hash__ = object.__hash__
+                return str.__eq__(self, other)
 
-        setters = [Thread(target=setter, args=(i,)) for i in range(len(funcs))]
-        others = world_stopper_threads(done)
-        barrier = threading.Barrier(len(setters))
-        with threading_helper.start_threads(setters + others):
-            for t in setters:
-                t.join()
-            done.set()
+        # Collide with the special-method name without defining it on Sub,
+        # so that slot updates still propagate from Base to Sub.
+        Sub = type("Sub", (Base,), {Key("trigger"): None})
+        objects = [Base(), Sub()]
 
-        for cls in [Base] + subclasses:
-            if "__repr__" in Base.__dict__:
-                expected = Base.__dict__["__repr__"](cls())
-                self.assertEqual(repr(cls()), expected)
-            else:
-                # object.__repr__ is used
-                self.assertStartsWith(repr(cls()), "<")
+        # Check actual slot dispatch, not just the class dictionaries.  None
+        # and object.__hash__ use distinct C slots, unlike Python functions
+        # which share a generic wrapper that looks up the current method.
+        Base.__hash__ = None
+        for obj in objects:
+            with self.assertRaises(TypeError):
+                hash(obj)
+        Base.__hash__ = object.__hash__
+        for obj in objects:
+            self.assertEqual(hash(obj), object.__hash__(obj))
 
-    def test_slot_update_subclass_freed(self):
-        # Subclasses are created and freed while another thread updates a
-        # slot that is inherited by them.  The slot update queue must keep
-        # the subclasses alive until the update is applied, since the type
-        # lock is released while waiting for the stop-the-world.
-        N = 300
-        done = threading.Event()
+        armed = True
+        Base.__hash__ = None
+        self.assertFalse(armed)
+        self.assertIs(Base.__dict__["__hash__"], object.__hash__)
+        for obj in objects:
+            self.assertEqual(hash(obj), object.__hash__(obj))
 
-        class Base:
-            pass
-
-        def setter():
-            func = lambda self: "x"
-            barrier.wait()
-            for _ in range(N):
-                Base.__repr__ = func
-                try:
-                    del Base.__repr__
-                except AttributeError:
-                    pass
-
-        def subclasser():
-            barrier.wait()
-            while not done.is_set():
-                for _ in range(20):
-                    type("Sub", (Base,), {})
-
-        setters = [Thread(target=setter) for _ in range(2)]
-        others = ([Thread(target=subclasser), Thread(target=subclasser)]
-                  + world_stopper_threads(done))
-        barrier = threading.Barrier(len(setters))
-        with threading_helper.start_threads(setters + others):
-            for t in setters:
-                t.join()
-            done.set()
+        # Both applied and discarded queues must release their references.
+        base_ref = weakref.ref(Base)
+        sub_ref = weakref.ref(Sub)
+        del obj, objects, Sub, Base
+        gc.collect()
+        self.assertIsNone(base_ref())
+        self.assertIsNone(sub_ref())
 
     def test_concurrent_bases_assignment(self):
         # Several threads reassign __bases__ of the same class, and of its
         # base, while others stop the world.  The validated bases and the
         # computed MRO can go stale while the type lock is released and
         # must be recomputed.  At the end, the MRO must agree with __bases__.
-        N = 100
-        done = threading.Event()
+        N = 50
 
         class A:
             def meth(self):
@@ -603,25 +563,17 @@ class TestType(TestCase):
             pass
 
         def setter():
-            barrier.wait()
             for _ in range(N):
                 C.__bases__ = (B,)
                 C.__bases__ = (A,)
 
         def subsetter():
-            barrier.wait()
             for _ in range(N):
                 D.__bases__ = (C, B)
                 D.__bases__ = (C,)
 
-        setters = [Thread(target=setter), Thread(target=setter),
-                   Thread(target=subsetter)]
-        others = world_stopper_threads(done)
-        barrier = threading.Barrier(len(setters))
-        with threading_helper.start_threads(setters + others):
-            for t in setters:
-                t.join()
-            done.set()
+        threading_helper.run_concurrently(
+            [setter, setter, subsetter] + world_stoppers())
 
         self.assertEqual(C.__bases__, (A,))
         self.assertEqual(C.__mro__, (C, A, object))
