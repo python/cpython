@@ -1,0 +1,1 @@
+tar.addfile() now sets member offsets in TarInfo objects
