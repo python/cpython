@@ -148,7 +148,6 @@ types_publish_gen_inc(void)
 #define TYPES_PUBLISH_GEN_NONE UINT64_MAX
 
 // Return true if the prepared state that was snapshotted at 'gen' is stale.
-// Must be called with the world stopped.
 static inline bool
 types_publish_is_stale(uint64_t gen)
 {
@@ -1741,10 +1740,8 @@ type_set_abstractmethods(PyObject *tp, PyObject *value, void *Py_UNUSED(closure)
     else
         type_clear_flags(type, Py_TPFLAGS_IS_ABSTRACT);
     types_start_world();
-    // Invalidate the version tag after the flag update, while TYPE_LOCK is
-    // still held: no other thread can assign a new tag before we release it.
-    // The lock may have been released while waiting for the stop-the-world,
-    // so invalidating before the update would not be enough.
+    // Invalidate the version tag after update, while TYPE_LOCK is
+    // still held.
     ASSERT_TYPE_LOCK_HELD();
     _PyType_Modified_Unlocked(type);
     END_TYPE_LOCK();
@@ -3872,12 +3869,8 @@ solid_base(PyTypeObject *type)
 // updates to perform but don't actually update the type structures.  After we
 // are finished the lookups, we stop-the-world and apply all of the updates.
 // The apply_slot_updates() code is simple and easy to confirm that it is
-// safe.
-//
-// TYPE_LOCK is a critical section and so it can be released while the lookups
-// run (they can call Python code and block on other locks) and while waiting
-// to stop the world.  The queue is therefore validated with the publish
-// generation before it is applied and rebuilt if it went stale.
+// safe.  We use publish_gen to determine if the queued updates have been
+// potentially invalidated, we re-build it in that case.
 
 typedef struct {
     PyTypeObject *type;
@@ -3992,18 +3985,6 @@ apply_slot_updates(slot_update_t *updates)
 // generation is still 'gen' (the value snapshotted before the
 // queue was built).  Returns 1 if the updates were applied and 0 if the
 // queue went stale and must be rebuilt.
-//
-// The queue was built while holding TYPE_LOCK (and, for type_setattro(),
-// the type dict mutex).  Both are critical section mutexes, so they were
-// released whenever the lookups blocked and are released while this thread
-// waits to stop the world.  Other threads can update type dicts, MROs and
-// slots in the meantime, which is what the generation check detects.
-//
-// Must be called with TYPE_LOCK held.  The lock is re-acquired when the
-// thread re-attaches after waiting for the stop-the-world mutex, so it is
-// held continuously from before the world is stopped until after it is
-// started again.  Callers rely on that to invalidate version tags after the
-// update, before any other thread can assign a new one.
 static int
 apply_type_slot_updates(slot_update_t *updates, uint64_t gen)
 {
@@ -6517,11 +6498,8 @@ _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask, unsigned long 
     types_stop_world();
     set_flags_recursive(self, mask, flags);
     types_start_world();
-    // Invalidate the version tags after the flag update, while TYPE_LOCK is
-    // still held: no other thread can assign a new tag before we release it.
-    // _PyType_Modified_Unlocked() is re-entrant and cannot run with the world
-    // stopped, and invalidating before the update would not be enough because
-    // the lock may be released while waiting for the stop-the-world.
+    // Invalidate the version tags after update, while TYPE_LOCK is
+    // still held.
     ASSERT_TYPE_LOCK_HELD();
     if (modified) {
         _PyType_Modified_Unlocked(self);
