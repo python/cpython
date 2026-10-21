@@ -8083,7 +8083,7 @@ PyCurses_Tgoto(PyObject *module, PyObject *args)
 {
     char *capability;
     int col, row;
-    if (!PyArg_ParseTuple(args, "sii:tgoto", &capability, &col, &row)) {
+    if (!PyArg_ParseTuple(args, "yii:tgoto", &capability, &col, &row)) {
         return NULL;
     }
     PyCursesStatefulSetupTermCalled(module);

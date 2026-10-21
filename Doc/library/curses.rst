@@ -1048,7 +1048,8 @@ Terminfo database
 
    Access the terminal's legacy termcap entries.  Call :func:`setupterm` first.
    ``tgetent`` returns ``0`` or ``1``; the other lookup functions return their
-   termcap value, or ``None`` when no value is available.
+   termcap value, or ``None`` when no value is available.  *capability* must be
+   a bytes object returned by :func:`tgetstr`.
 
 .. function:: mcprint(string, count)
 
