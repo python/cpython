@@ -1,0 +1,1 @@
+Implement :data:`sys._wasi_info` for exposing WASI-specific system details.

@@ -21,7 +21,7 @@ class StackBrowserTest(unittest.TestCase):
     def tearDownClass(cls):
 
         cls.root.update_idletasks()
-##        for id in cls.root.tk.call('after', 'info'):
+##        for id in cls.root.after_info():
 ##            cls.root.after_cancel(id)  # Need for EditorWindow.
         cls.root.destroy()
         del cls.root
@@ -35,6 +35,8 @@ class StackBrowserTest(unittest.TestCase):
         isi(stackviewer.sc, ScrolledCanvas)
         isi(stackviewer.item, stackviewer.StackTreeItem)
         isi(stackviewer.node, TreeNode)
+        top = stackviewer.sc.frame.winfo_toplevel()
+        self.assertEqual(top.winfo_class(), 'Idle')
 
 
 if __name__ == '__main__':

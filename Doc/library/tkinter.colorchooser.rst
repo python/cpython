@@ -15,14 +15,26 @@ the :class:`~tkinter.commondialog.Dialog` class.
 
 .. class:: Chooser(master=None, **options)
 
+   The class implementing the modal color-choosing dialog.
+   Most applications use the :func:`askcolor` convenience function rather than
+   instantiating this class directly.
+
 .. function:: askcolor(color=None, **options)
 
-   Create a color choosing dialog. A call to this method will show the window,
-   wait for the user to make a selection, and return the selected color (or
-   ``None``) to the caller.
+   Show a modal color-choosing dialog and return the chosen color.
+   *color* is the color selected when the dialog opens.
+   The return value is a tuple ``((r, g, b), hexstr)``, where ``r``, ``g`` and
+   ``b`` are the red, green and blue components as integers in the range 0–255
+   and *hexstr* is the equivalent Tk color string, such as ``'#ff8000'``.
+   If the user cancels the dialog, ``(None, None)`` is returned.
+
+   .. versionchanged:: 3.10
+      The RGB values in the returned color are now integers in the range 0–255
+      instead of floats.
 
 
 .. seealso::
 
    Module :mod:`tkinter.commondialog`
       Tkinter standard dialog module
+

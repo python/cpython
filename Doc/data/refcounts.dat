@@ -2037,6 +2037,11 @@ PySeqIter_Check:PyObject *:op:0:
 PySeqIter_New:PyObject*::+1:
 PySeqIter_New:PyObject*:seq:0:
 
+PySentinel_New:PyObject*::+1:
+PySentinel_New:const char*:name::
+PySentinel_New:const char*:module_name::
+PySentinel_New:const char*:repr::
+
 PySequence_Check:int:::
 PySequence_Check:PyObject*:o:0:
 
@@ -2259,15 +2264,6 @@ PySys_GetObject:PyObject*::0:
 PySys_GetObject:const char*:name::
 
 PySys_GetXOptions:PyObject*::0:
-
-PySys_SetArgv:void:::
-PySys_SetArgv:int:argc::
-PySys_SetArgv:wchar_t**:argv::
-
-PySys_SetArgvEx:void:::
-PySys_SetArgvEx:int:argc::
-PySys_SetArgvEx:wchar_t**:argv::
-PySys_SetArgvEx:int:updatepath::
 
 PySys_SetObject:int:::
 PySys_SetObject:const char*:name::
@@ -3079,9 +3075,6 @@ Py_ReprEnter:PyObject*:object:+1:
 
 Py_ReprLeave:void:::
 Py_ReprLeave:PyObject*:object:-1:
-
-Py_SetProgramName:void:::
-Py_SetProgramName:const wchar_t*:name::
 
 Py_XDECREF:void:::
 Py_XDECREF:PyObject*:o:-1:if o is not NULL

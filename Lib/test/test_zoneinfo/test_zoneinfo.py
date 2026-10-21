@@ -316,6 +316,18 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
                 self.assertEqual(dt.utcoffset(), offset.utcoffset, dt)
                 self.assertEqual(dt.dst(), offset.dst, dt)
 
+    def test_datetime_subclass_negative_components(self):
+        class MinusOneDateTime(datetime):
+            hour = minute = second = -1
+
+        zi = self.zone_from_key("UTC")
+        dt = MinusOneDateTime(2024, 1, 1, tzinfo=zi)
+
+        self.assertEqual(dt.utcoffset(), ZERO)
+        self.assertEqual(dt.dst(), ZERO)
+        self.assertEqual(dt.tzname(), "UTC")
+        self.assertEqual(zi.fromutc(dt), datetime(2024, 1, 1, tzinfo=zi))
+
     def test_folds_and_gaps(self):
         test_cases = []
         for key in self.zones():
@@ -1009,14 +1021,14 @@ class TZStrTest(ZoneInfoTestBase):
 
         cls._tzif_header = bytes(out)
 
-    def zone_from_tzstr(self, tzstr):
+    def zone_from_tzstr(self, tzstr, encoding="ascii"):
         """Creates a zoneinfo file following a POSIX rule."""
         zonefile = io.BytesIO(self._tzif_header)
         zonefile.seek(0, 2)
 
         # Write the footer
         zonefile.write(b"\x0A")
-        zonefile.write(tzstr.encode("ascii"))
+        zonefile.write(tzstr.encode(encoding))
         zonefile.write(b"\x0A")
 
         zonefile.seek(0)
@@ -1111,6 +1123,9 @@ class TZStrTest(ZoneInfoTestBase):
             "AAA4BBB,J1/2,J1/14",
             "AAA4BBB,J20/2,J365/2",
             "AAA4BBB,J365/2,J365/14",
+            # Leading-zero day-of-year
+            "AAA4BBB,J001/2,J065/2",
+            "AAA4BBB,001/2,065/2",
             # Extreme transition hour
             "AAA4BBB,J60/167,J300/2",
             "AAA4BBB,J60/+167,J300/2",
@@ -1142,9 +1157,21 @@ class TZStrTest(ZoneInfoTestBase):
     def test_invalid_tzstr(self):
         invalid_tzstrs = [
             "PST8PDT",  # DST but no transition specified
+            # gh-152212: the std offset is required (POSIX TZ grammar)
+            "AAA",
+            "A",
+            "AA",
+            "B",
             "+11",  # Unquoted alphanumeric
             "GMT,M3.2.0/2,M11.1.0/3",  # Transition rule but no DST
             "GMT0+11,M3.2.0/2,M11.1.0/3",  # Unquoted alphanumeric in DST
+            # Unquoted abbreviation with embedded or leading whitespace
+            "AB C3",
+            " A B 3",
+            "AAA4BB B,J60/2,J300/2",  # Embedded whitespace in DST
+            # Empty quoted abbreviation
+            "<>5",
+            "AAA4<>,M3.2.0/2,M11.1.0/3",
             "PST8PDT,M3.2.0/2",  # Only one transition rule
             # Invalid offset hours
             "AAA168",
@@ -1184,6 +1211,11 @@ class TZStrTest(ZoneInfoTestBase):
             # Invalid weekday
             "AAA4BBB,M1.1.7/2,M2.1.1/2",
             "AAA4BBB,M1.1.1/2,M2.1.7/2",
+            # Invalid Mm.w.d separator
+            "AAA4BBB,M3.2X0,M11.1.0",
+            "AAA4BBB,M3.2.0,M11.1X0",
+            "AAA4BBB,M3.2-0,M11.1.0/3",
+            "AAA4BBB,M3.2.0/2,M11.1:0",
             # Invalid numeric offset
             "AAA4BBB,-1/2,20/2",
             "AAA4BBB,1/2,-1/2",
@@ -1192,6 +1224,15 @@ class TZStrTest(ZoneInfoTestBase):
             # Invalid julian offset
             "AAA4BBB,J0/2,J20/2",
             "AAA4BBB,J20/2,J366/2",
+            # gh-152847: non-digit day-of-year
+            "AAA4BBB,J1_0,J300/2",
+            "AAA4BBB,J60/2,J30_0/2",
+            "AAA4BBB,1_0,J300/2",
+            "AAA4BBB,J+1,J300/2",
+            "AAA4BBB,J 1,J300/2",
+            "AAA4BBB, 1,J300/2",
+            "AAA4BBB,J0001,J300/2",
+            "AAA4BBB,0001,J300/2",
             # Invalid transition time
             "AAA4BBB,J60/2/3,J300/2",
             "AAA4BBB,J60/2,J300/2/3",
@@ -1221,6 +1262,24 @@ class TZStrTest(ZoneInfoTestBase):
                 tzstr_regex = re.escape(invalid_tzstr)
                 with self.assertRaisesRegex(ValueError, tzstr_regex):
                     self.zone_from_tzstr(invalid_tzstr)
+
+    def test_invalid_tzstr_non_ascii_abbr(self):
+        tzstr = "ABÀC3"
+        if self.module is py_zoneinfo:
+            expected = re.escape(tzstr)
+        else:
+            expected = re.escape(repr(tzstr.encode("utf-8")))
+        with self.assertRaisesRegex(ValueError, expected):
+            self.zone_from_tzstr(tzstr, encoding="utf-8")
+
+    def test_invalid_tzstr_non_ascii_dst_date(self):
+        tzstr = "AAA4BBB,J١,J300/2"
+        if self.module is py_zoneinfo:
+            expected = re.escape(tzstr)
+        else:
+            expected = re.escape(repr(tzstr.encode("utf-8")))
+        with self.assertRaisesRegex(ValueError, expected):
+            self.zone_from_tzstr(tzstr, encoding="utf-8")
 
     @classmethod
     def _populate_test_cases(cls):
@@ -1432,6 +1491,33 @@ class TZStrTest(ZoneInfoTestBase):
                 (datetime(2020, 11, 1, 12), AAA, NORMAL),
                 (datetime(2020, 12, 31, 23, 59, 59, 999999), AAA, NORMAL),
             )
+
+        @call
+        def _add():
+            # Julian days 58, 59 and 60 always mean February 27, February 28
+            # and March 1, including in leap years.
+            AAA = ZoneOffset("AAA", ZERO)
+            BBB = ZoneOffset("BBB", ONE_H, ONE_H)
+
+            for start, end, start_date, end_date in (
+                (58, 59, (2, 27), (2, 28)),
+                (59, 60, (2, 28), (3, 1)),
+            ):
+                tzstr = f"AAA0BBB,J{start}/12,J{end}/12"
+                cases[tzstr] = []
+                for year in (2019, 2020, 2000, 2100):
+                    start_dt = datetime(year, *start_date, 12)
+                    end_dt = datetime(year, *end_date, 12)
+                    cases[tzstr].extend((
+                        (start_dt - timedelta(seconds=1), AAA, NORMAL),
+                        (start_dt, AAA, GAP),
+                        (start_dt.replace(fold=1), BBB, GAP),
+                        (start_dt + ONE_H, BBB, NORMAL),
+                        (end_dt - ONE_H - timedelta(seconds=1), BBB, NORMAL),
+                        (end_dt - ONE_H, BBB, FOLD),
+                        ((end_dt - ONE_H).replace(fold=1), AAA, FOLD),
+                        (end_dt, AAA, NORMAL),
+                    ))
 
         @call
         def _add():

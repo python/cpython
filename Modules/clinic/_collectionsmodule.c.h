@@ -340,7 +340,7 @@ deque_index(PyObject *deque, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *v;
     Py_ssize_t start = 0;
-    Py_ssize_t stop = Py_SIZE(deque);
+    Py_ssize_t stop = PY_SSIZE_T_MAX;
 
     if (!_PyArg_CheckPositional("index", nargs, 1, 3)) {
         goto exit;
@@ -429,6 +429,21 @@ deque_remove(PyObject *deque, PyObject *value)
 
     Py_BEGIN_CRITICAL_SECTION(deque);
     return_value = deque_remove_impl((dequeobject *)deque, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+deque_ass_item_impl(dequeobject *deque, Py_ssize_t i, PyObject *v);
+
+static int
+deque_ass_item(PyObject *deque, Py_ssize_t i, PyObject *v)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(deque);
+    return_value = deque_ass_item_impl((dequeobject *)deque, i, v);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -632,4 +647,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b9d4d647c221cb9f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1bdec9485a9d40fb input=a9049054013a1b77]*/

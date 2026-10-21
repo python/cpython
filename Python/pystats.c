@@ -230,9 +230,11 @@ print_object_stats(FILE *out, ObjectStats *stats)
     fprintf(out, "Object materialize dict (str subclass): %" PRIu64 "\n", stats->dict_materialized_str_subclass);
     fprintf(out, "Object method cache hits: %" PRIu64 "\n", stats->type_cache_hits);
     fprintf(out, "Object method cache misses: %" PRIu64 "\n", stats->type_cache_misses);
-    fprintf(out, "Object method cache collisions: %" PRIu64 "\n", stats->type_cache_collisions);
+    fprintf(out, "Object method cache too big: %" PRIu64 "\n", stats->type_cache_too_big);
     fprintf(out, "Object method cache dunder hits: %" PRIu64 "\n", stats->type_cache_dunder_hits);
     fprintf(out, "Object method cache dunder misses: %" PRIu64 "\n", stats->type_cache_dunder_misses);
+    fprintf(out, "Object method cache invalidations: %" PRIu64 "\n", stats->type_cache_invalidations);
+    fprintf(out, "Object method cache resizes: %" PRIu64 "\n", stats->type_cache_resizes);
 }
 
 static void
@@ -274,6 +276,7 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
     fprintf(out, "Optimization low confidence: %" PRIu64 "\n", stats->low_confidence);
     fprintf(out, "Optimization unknown callee: %" PRIu64 "\n", stats->unknown_callee);
     fprintf(out, "Executors invalidated: %" PRIu64 "\n", stats->executors_invalidated);
+    fprintf(out, "Optimization fitness terminated: %" PRIu64 "\n", stats->fitness_terminated_traces);
 
     print_histogram(out, "Trace length", stats->trace_length_hist);
     print_histogram(out, "Trace run length", stats->trace_run_length_hist);
@@ -438,7 +441,9 @@ merge_object_stats(ObjectStats *dest, const ObjectStats *src)
     dest->type_cache_misses += src->type_cache_misses;
     dest->type_cache_dunder_hits += src->type_cache_dunder_hits;
     dest->type_cache_dunder_misses += src->type_cache_dunder_misses;
-    dest->type_cache_collisions += src->type_cache_collisions;
+    dest->type_cache_too_big += src->type_cache_too_big;
+    dest->type_cache_invalidations += src->type_cache_invalidations;
+    dest->type_cache_resizes += src->type_cache_resizes;
     dest->object_visits += src->object_visits;
 }
 

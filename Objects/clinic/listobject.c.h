@@ -10,6 +10,36 @@ preserve
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
+static PyObject *
+list_repr_impl(PyListObject *v);
+
+static PyObject *
+list_repr(PyObject *v)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(v);
+    return_value = list_repr_impl((PyListObject *)v);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+list_ass_item_impl(PyListObject *a, Py_ssize_t i, PyObject *v);
+
+static int
+list_ass_item(PyObject *a, Py_ssize_t i, PyObject *v)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(a);
+    return_value = list_ass_item_impl((PyListObject *)a, i, v);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(list_insert__doc__,
 "insert($self, index, object, /)\n"
 "--\n"
@@ -200,11 +230,11 @@ PyDoc_STRVAR(list_sort__doc__,
 "\n"
 "Sort the list in ascending order and return None.\n"
 "\n"
-"The sort is in-place (i.e. the list itself is modified) and stable (i.e. the\n"
-"order of two equal elements is maintained).\n"
+"The sort is in-place (i.e. the list itself is modified) and stable\n"
+"(i.e. the order of two equal elements is maintained).\n"
 "\n"
-"If a key function is given, apply it once to each list item and sort them,\n"
-"ascending or descending, according to their function values.\n"
+"If a key function is given, apply it once to each list item and sort\n"
+"them, ascending or descending, according to their function values.\n"
 "\n"
 "The reverse flag can be set to sort in descending order.");
 
@@ -468,4 +498,4 @@ list___reversed__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl((PyListObject *)self);
 }
-/*[clinic end generated code: output=ae13fc2b56dc27c2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c7ed86d2a453ec78 input=a9049054013a1b77]*/

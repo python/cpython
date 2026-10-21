@@ -12,6 +12,12 @@ from _ctypes import CFuncPtr as _CFuncPtr
 from _ctypes import RTLD_LOCAL, RTLD_GLOBAL
 from _ctypes import ArgumentError
 from _ctypes import SIZEOF_TIME_T
+try:
+    from _ctypes import (LIBFFI_VERSION, libffi_version,
+                         LIBFFI_VERSION_INFO, libffi_version_info)
+except ImportError:
+    # libffi < 3.5 does not provide version information.
+    pass
 from _ctypes import CField
 
 from struct import calcsize as _calcsize
@@ -206,13 +212,13 @@ if sizeof(c_longdouble) == sizeof(c_double):
 
 try:
     class c_double_complex(_SimpleCData):
-        _type_ = "D"
+        _type_ = "Zd"
     _check_size(c_double_complex)
     class c_float_complex(_SimpleCData):
-        _type_ = "F"
+        _type_ = "Zf"
     _check_size(c_float_complex)
     class c_longdouble_complex(_SimpleCData):
-        _type_ = "G"
+        _type_ = "Zg"
 except AttributeError:
     pass
 
@@ -549,11 +555,16 @@ pydll = LibraryLoader(PyDLL)
 
 if _os.name == "nt":
     pythonapi = PyDLL("python dll", None, _sys.dllhandle)
-elif _sys.platform in ["android", "cygwin"]:
+elif _sys.platform == "android":
     # These are Unix-like platforms which use a dynamically-linked libpython.
     pythonapi = PyDLL(_sysconfig.get_config_var("LDLIBRARY"))
+elif _sys.platform == "cygwin":
+    pythonapi = PyDLL(_sysconfig.get_config_var("DLLLIBRARY"))
 else:
-    pythonapi = PyDLL(None)
+    try:
+        pythonapi = PyDLL(None)
+    except OSError:
+        pythonapi = None
 
 
 if _os.name == "nt":

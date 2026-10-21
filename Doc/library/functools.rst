@@ -27,7 +27,7 @@ The :mod:`!functools` module defines the following functions:
    Returns the same as ``lru_cache(maxsize=None)``, creating a thin
    wrapper around a dictionary lookup for the function arguments.  Because it
    never needs to evict old values, this is smaller and faster than
-   :func:`lru_cache` with a size limit.
+   :deco:`lru_cache` with a size limit.
 
    For example::
 
@@ -61,7 +61,7 @@ The :mod:`!functools` module defines the following functions:
 
    Transform a method of a class into a property whose value is computed once
    and then cached as a normal attribute for the life of the instance. Similar
-   to :func:`property`, with the addition of caching. Useful for expensive
+   to :deco:`property`, with the addition of caching. Useful for expensive
    computed properties of instances that are otherwise effectively immutable.
 
    Example::
@@ -75,8 +75,8 @@ The :mod:`!functools` module defines the following functions:
            def stdev(self):
                return statistics.stdev(self._data)
 
-   The mechanics of :func:`cached_property` are somewhat different from
-   :func:`property`.  A regular property blocks attribute writes unless a
+   The mechanics of :deco:`cached_property` are somewhat different from
+   :deco:`property`.  A regular property blocks attribute writes unless a
    setter is defined. In contrast, a *cached_property* allows writes.
 
    The *cached_property* decorator only runs on lookups and only when an
@@ -108,14 +108,14 @@ The :mod:`!functools` module defines the following functions:
    (as such classes don't provide a ``__dict__`` attribute at all).
 
    If a mutable mapping is not available or if space-efficient key sharing is
-   desired, an effect similar to :func:`cached_property` can also be achieved by
-   stacking :func:`property` on top of :func:`lru_cache`. See
-   :ref:`faq-cache-method-calls` for more details on how this differs from :func:`cached_property`.
+   desired, an effect similar to :deco:`cached_property` can also be achieved by
+   stacking :deco:`property` on top of :deco:`lru_cache`. See
+   :ref:`faq-cache-method-calls` for more details on how this differs from :deco:`cached_property`.
 
    .. versionadded:: 3.8
 
    .. versionchanged:: 3.12
-      Prior to Python 3.12, ``cached_property`` included an undocumented lock to
+      Prior to Python 3.12, :deco:`!cached_property` included an undocumented lock to
       ensure that in multi-threaded usage the getter function was guaranteed to
       run only once per instance. However, the lock was per-property, not
       per-instance, which could result in unacceptably high lock contention. In
@@ -386,9 +386,9 @@ The :mod:`!functools` module defines the following functions:
    only one positional argument is provided, but there are two placeholders
    that must be filled in.
 
-   If :func:`!partial` is applied to an existing :func:`!partial` object,
-   :data:`!Placeholder` sentinels of the input object are filled in with
-   new positional arguments.
+   If :func:`!partial` is applied to an existing
+   :ref:`partial object <partial-objects>`, :data:`!Placeholder` sentinels of the
+   input object are filled in with new positional arguments.
    A placeholder can be retained by inserting a new
    :data:`!Placeholder` sentinel to the place held by a previous :data:`!Placeholder`:
 
@@ -468,7 +468,7 @@ The :mod:`!functools` module defines the following functions:
 
    Roughly equivalent to::
 
-      initial_missing = object()
+      initial_missing = sentinel('initial_missing')
 
       def reduce(function, iterable, /, initial=initial_missing):
           it = iter(iterable)
@@ -506,9 +506,24 @@ The :mod:`!functools` module defines the following functions:
       :no-typesetting:
 
    To add overloaded implementations to the function, use the :func:`!register`
-   attribute of the generic function, which can be used as a decorator.  For
-   functions annotated with types, the decorator will infer the type of the
-   first argument automatically::
+   attribute of the generic function, which can be used as a decorator.
+   Pass the dispatch type to the decorator::
+
+     >>> @fun.register(int)
+     ... def _(arg, verbose=False):
+     ...     if verbose:
+     ...         print("Strength in numbers, eh?", end=" ")
+     ...     print(arg)
+     ...
+     >>> @fun.register(list)
+     ... def _(arg, verbose=False):
+     ...     if verbose:
+     ...         print("Enumerate this:")
+     ...     for i, elem in enumerate(arg):
+     ...         print(i, elem)
+
+   As a shortcut, for functions annotated with types, the decorator can infer
+   the dispatch type without an explicit type argument::
 
      >>> @fun.register
      ... def _(arg: int, verbose=False):
@@ -516,14 +531,12 @@ The :mod:`!functools` module defines the following functions:
      ...         print("Strength in numbers, eh?", end=" ")
      ...     print(arg)
      ...
-     >>> @fun.register
-     ... def _(arg: list, verbose=False):
-     ...     if verbose:
-     ...         print("Enumerate this:")
-     ...     for i, elem in enumerate(arg):
-     ...         print(i, elem)
 
-   :class:`typing.Union` can also be used::
+   This shortcut uses the first annotation, even if it belongs to another
+   parameter or the return value. Annotate the dispatch parameter, or pass the
+   dispatch type explicitly if its annotation is not first.
+
+   :class:`typing.Union` can also be used with this shortcut::
 
     >>> @fun.register
     ... def _(arg: int | float, verbose=False):
@@ -539,16 +552,6 @@ The :mod:`!functools` module defines the following functions:
     ...     for i, elem in enumerate(arg):
     ...         print(i, elem)
     ...
-
-   For code which doesn't use type annotations, the appropriate type
-   argument can be passed explicitly to the decorator itself::
-
-     >>> @fun.register(complex)
-     ... def _(arg, verbose=False):
-     ...     if verbose:
-     ...         print("Better than complicated.", end=" ")
-     ...     print(arg.real, arg.imag)
-     ...
 
    For code that dispatches on a collections type (e.g., ``list``), but wants
    to typehint the items of the collection (e.g., ``list[int]``), the
@@ -662,6 +665,12 @@ The :mod:`!functools` module defines the following functions:
       The :func:`~singledispatch.register` attribute now supports
       :class:`typing.Union` as a type annotation.
 
+   .. deprecated:: 3.16
+      Using a return annotation to infer the dispatch type is deprecated and
+      will raise :exc:`TypeError` in Python 3.21. Annotate the dispatch
+      parameter or pass the dispatch type explicitly to :func:`!register`
+      instead.
+
 
 .. class:: singledispatchmethod(func)
 
@@ -685,6 +694,20 @@ The :mod:`!functools` module defines the following functions:
         @neg.register
         def _(self, arg: bool):
             return not arg
+
+   When *self* or *cls* is annotated, pass the dispatch type explicitly rather
+   than relying on annotation inference::
+
+    from typing import Self
+
+    class Negator:
+        @singledispatchmethod
+        def neg(self, arg):
+            raise NotImplementedError("Cannot negate a")
+
+        @neg.register(int)
+        def _(self: Self, arg: int):
+            return -arg
 
    ``@singledispatchmethod`` supports nesting with other decorators such as
    :deco:`classmethod`. Note that to allow for
@@ -732,7 +755,7 @@ The :mod:`!functools` module defines the following functions:
    function's :attr:`~function.__dict__`, i.e. the instance dictionary).
 
    To allow access to the original function for introspection and other purposes
-   (e.g. bypassing a caching decorator such as :func:`lru_cache`), this function
+   (e.g. bypassing a caching decorator such as :deco:`lru_cache`), this function
    automatically adds a ``__wrapped__`` attribute to the wrapper that refers to
    the function being wrapped.
 
