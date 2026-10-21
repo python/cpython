@@ -1,4 +1,1 @@
-# cpython/descrobject.h
-PyDescr_NAME
-PyDescr_TYPE
-PyWrapperFlag_KEYWORDS
+# Nothing here :)

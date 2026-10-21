@@ -464,10 +464,18 @@ _gdbm_gdbm_keys_impl(gdbmobject *self, PyTypeObject *cls)
     return v;
 }
 
+/*[clinic input]
+@critical_section
+_gdbm.gdbm.__contains__ as gdbm_contains
+    arg: object
+    /
+[clinic start generated code]*/
+
 static int
-gdbm_contains_lock_held(PyObject *self, PyObject *arg)
+gdbm_contains_impl(gdbmobject *self, PyObject *arg)
+/*[clinic end generated code: output=ad951f5a9f4194df input=411dc2039fdd7277]*/
 {
-    gdbmobject *dp = (gdbmobject *)self;
+    gdbmobject *dp = self;
     datum key;
     Py_ssize_t size;
     _gdbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
@@ -494,16 +502,6 @@ gdbm_contains_lock_held(PyObject *self, PyObject *arg)
         key.dsize = PyBytes_GET_SIZE(arg);
     }
     return gdbm_exists(dp->di_dbm, key);
-}
-
-static int
-gdbm_contains(PyObject *self, PyObject *arg)
-{
-    int result;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    result = gdbm_contains_lock_held(self, arg);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 /*[clinic input]

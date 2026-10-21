@@ -858,10 +858,7 @@ class ClinicWholeFileTest(TestCase):
     def test_slot_with_parameters_and_return_type(self):
         # Slots which take arguments or return something else than an
         # object are not supported yet; check the machinery with them.
-        slots = {
-            '__contains__': SlotSpec(return_converter='int'),
-            '__bool__': SlotSpec(return_converter='int'),
-        }
+        slots = {'__bool__': SlotSpec(return_converter='int')}
         block = """
             /*[clinic input]
             output everything block
@@ -3356,6 +3353,20 @@ class ClinicParserTest(TestCase):
         self.assertEqual(function.return_converter.type, "PyObject *")
         self.assertEqual(list(function.parameters), ["self"])
 
+    def test_slot_coexist_is_a_method(self):
+        # dict.__contains__ is a METH_COEXIST method, not the slot.
+        function = self.parse_function("""
+            module foo
+            class Foo "FooObject *" ""
+            @coexist
+            Foo.__contains__
+                key: object
+                /
+        """, signatures_in_block=3, function_index=2)
+        self.assertIs(function.kind, FunctionKind.CALLABLE)
+        self.assertIsNone(function.slot)
+        self.assertIn("METH_COEXIST", function.methoddef_flags)
+
     def test_slot_parameters(self):
         # The parameter of __getitem__ gives the slot (Py_ssize_t for
         # sq_item, object for mp_subscript) and is not parsed.
@@ -3392,8 +3403,6 @@ class ClinicParserTest(TestCase):
              "'__next__' must be a normal method"),
             ("@getter\nFoo.__next__",
              "'__next__' must be a normal method"),
-            ("@coexist\nFoo.__next__",
-             "@coexist cannot be applied to '__next__'"),
             ("@vectorcall\nFoo.__next__",
              "@vectorcall can only be used with __init__ and __new__"),
             ("Foo.__next__ -> int",

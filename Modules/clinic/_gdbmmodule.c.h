@@ -175,6 +175,21 @@ exit:
     return return_value;
 }
 
+static int
+gdbm_contains_impl(gdbmobject *self, PyObject *arg);
+
+static int
+gdbm_contains(PyObject *self, PyObject *arg)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = gdbm_contains_impl((gdbmobject *)self, arg);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_gdbm_gdbm_firstkey__doc__,
 "firstkey($self, /)\n"
 "--\n"
@@ -446,4 +461,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=055f33f51cc6fa81 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8cc26c8a6790ecac input=a9049054013a1b77]*/
