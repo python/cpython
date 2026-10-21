@@ -17,6 +17,7 @@ import struct
 
 from itertools import product
 from test import support
+from test.seq_tests import NativeItemsSearchTest
 from test.support import import_helper, threading_helper
 
 
@@ -948,6 +949,26 @@ class OtherTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             complex_view[0] = 1e300j
         self.assertEqual(complex_view[0], 123+321j)
+
+    def test_search_released_during_compare(self):
+        # The buffer is held while searching, so a comparison cannot release
+        # the memoryview. Leaving the with block fails if it is still held.
+        for name in 'index', 'count', '__contains__':
+            with memoryview(array.array('d', [1.0, 2.0, 3.0])) as m:
+                class Release:
+                    def __eq__(self, other):
+                        m.release()
+                        return False
+                with self.assertRaises(BufferError, msg=name):
+                    getattr(m, name)(Release())
+
+
+class SearchTest(NativeItemsSearchTest, unittest.TestCase):
+    def make_haystacks(self, fmt, raw):
+        mv = memoryview(raw).cast(fmt)
+        yield 'contiguous', mv
+        yield 'strided', mv[::3]
+        yield 'unaligned', memoryview(b'\0' + raw)[1:].cast(fmt)
 
 
 @threading_helper.requires_working_threading()

@@ -3,6 +3,7 @@ Tests common to tuple, list and UserList.UserList
 """
 
 import unittest
+import struct
 import sys
 import pickle
 from test import support
@@ -442,3 +443,78 @@ class CommonTest(unittest.TestCase):
     def test_free_after_iterating(self):
         support.check_free_after_iterating(self, iter, self.type2test)
         support.check_free_after_iterating(self, reversed, self.type2test)
+
+
+class NativeItemsSearchTest:
+    """Tests of count(), index() and "in" for 1-d buffer protocol objects.
+
+    Tests use "needle" for the value being searched for and "haystack" for
+    the object being searched.
+    """
+
+    # All the native single item formats of memoryview.
+    search_formats = ('b', 'B', 'h', 'H', 'i', 'I', 'l', 'L', 'q', 'Q',
+                      'n', 'N', 'P', 'e', 'f', 'd', 'Zf', 'Zd', '?', 'c')
+
+    def make_haystacks(self, fmt, raw):
+        """Make type-specific haystacks interpreting *raw* as *fmt*.
+
+        Subclasses make one haystack per layout under test (for example a
+        contiguous, strided or unaligned memoryview). Yield (name, haystack)
+        pairs, where name identifies the haystack in subtests.
+        """
+        raise NotImplementedError
+
+    def run_search_cases(self, check):
+        """Call check(haystack, haystack_objects, needle) for every needle
+        of every haystack, with a subtest for each haystack.
+
+        haystack_objects is the list of the items of haystack as Python
+        objects, to check results against.
+        """
+        class AlwaysEqual(int):
+            def __eq__(self, other):
+                return True
+            __hash__ = int.__hash__
+
+        nan = float('nan')
+        # Every byte value, then the doubles 0.0, -0.0, NaN and 1.0, all
+        # twice so that values are found more than once.
+        raw = (bytes(range(256)) + struct.pack('4d', 0.0, -0.0, nan, 1)) * 2
+        # Needles which may not be items of the format: of other types, out
+        # of range, or equal to items with different bytes.
+        other_needles = [0, 1, -1, 2**64, 0.0, -0.0, nan, True, False, 1.0,
+                         b'a', AlwaysEqual(5)]
+        for fmt in self.search_formats:
+            for name, haystack in self.make_haystacks(fmt, raw):
+                with self.subTest(fmt=fmt, haystack=name):
+                    haystack_objects = haystack.tolist()
+                    for needle in haystack_objects + other_needles:
+                        check(haystack, haystack_objects, needle)
+
+    def test_search_formats(self):
+        self.run_search_cases(self.check_search)
+
+    def check_search(self, haystack, haystack_objects, needle):
+        """Validate optimized search matches python object search.
+
+        Compares search results between optimized format search and python
+        rich object comparison.
+        """
+        msg = f'needle={needle!r}'
+        n = len(haystack_objects)
+        matches = [i for i, x in enumerate(haystack_objects) if x == needle]
+        self.assertEqual(haystack.count(needle), len(matches), msg)
+        self.assertEqual(needle in haystack, bool(matches), msg)
+        # index() bounds which are negative or past either end are clipped
+        # like slice bounds.
+        bounds = [(0, n), (5, -5), (-3, n), (2, n + 100), (-n - 5, n // 2)]
+        for start, stop in bounds:
+            r = range(n)[start:stop]
+            expected = [i for i in matches if i in r]
+            if expected:
+                self.assertEqual(haystack.index(needle, start, stop),
+                                 expected[0], msg)
+            else:
+                with self.assertRaises(ValueError, msg=msg):
+                    haystack.index(needle, start, stop)
