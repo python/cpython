@@ -84,7 +84,6 @@ __pow__
 __radd__
 __rand__
 __rdivmod__
-__repr__
 __rfloordiv__
 __rlshift__
 __rmatmul__
