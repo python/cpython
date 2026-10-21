@@ -384,7 +384,9 @@ class ListTest(list_tests.CommonTest):
              None, None, None, None, None, None, None, None, None,]
         del l
         support.inject_memory_error()
-        l = [None]
+        # Repeat to force a fresh ob_item allocation: entries on the small
+        # list freelists keep their buffers, so a plain [None] may succeed.
+        l = [None] * 30
         """)
         rc, _, _ = assert_python_failure("-c", code)
         if support.MS_WINDOWS:
