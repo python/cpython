@@ -11,11 +11,11 @@ import tkinter as tk
 from idlelib.idle_test.tkinter_testing_utils import run_in_tk_mainloop
 
 from idlelib.delegator import Delegator
-from idlelib.editor import fixwordbreaks
 from idlelib.percolator import Percolator
 import idlelib.pyshell
-from idlelib.pyshell import fix_x11_paste, PyShell, PyShellFileList
-from idlelib.run import fix_scaling
+from idlelib.pyshell import PyShell, PyShellFileList
+from idlelib.util import (fix_scaling, fix_word_breaks, fix_x11_paste,
+                          x11_buttons)
 import idlelib.sidebar
 from idlelib.sidebar import get_end_linenumber, get_lineno
 
@@ -57,7 +57,7 @@ class LineNumbersTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.editwin.per.close()
-        cls.root.update()
+        cls.root.update_idletasks()
         cls.root.destroy()
         del cls.text, cls.text_frame, cls.editwin, cls.root
 
@@ -317,6 +317,10 @@ class LineNumbersTest(unittest.TestCase):
         self.assertEqual(self.get_selection(), ('2.0', '5.0'))
 
     def test_scroll(self):
+        # Synchronized scrolling needs the geometry of mapped widgets.
+        self.root.deiconify()
+        self.addCleanup(self.root.withdraw)
+
         self.linenumber.show_sidebar()
         self.text.insert('1.0', 'line\n' * 100)
         self.root.update()
@@ -328,7 +332,7 @@ class LineNumbersTest(unittest.TestCase):
         self.assertEqual(self.linenumber.sidebar_text.index('@0,0'), '11.0')
 
         # Generate a mouse-wheel event and make sure it scrolled up or down.
-        # The meaning of the "delta" is OS-dependant, so this just checks for
+        # The meaning of the "delta" is OS-dependent, so this just checks for
         # any change.
         self.linenumber.sidebar_text.event_generate('<MouseWheel>',
                                                     x=0, y=0,
@@ -403,7 +407,7 @@ class ShellSidebarTest(unittest.TestCase):
         root.withdraw()
 
         fix_scaling(root)
-        fixwordbreaks(root)
+        fix_word_breaks(root)
         fix_x11_paste(root)
 
         cls.flist = flist = PyShellFileList(root)
@@ -690,15 +694,24 @@ class ShellSidebarTest(unittest.TestCase):
         last_lineno = get_end_linenumber(text)
         self.assertIsNotNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
 
-        # Scroll up using the <MouseWheel> event.
-        # The meaning delta is platform-dependant.
-        delta = -1 if sys.platform == 'darwin' else 120
-        sidebar.canvas.event_generate('<MouseWheel>', x=0, y=0, delta=delta)
+        # Simulate a mouse wheel notch with the events that Tk sends for
+        # one; the delta of a <MouseWheel> event is platform-dependent.
+        buttons = x11_buttons(sidebar.canvas)
+        delta = 1 if sidebar.canvas._windowingsystem == 'aqua' else 120
+
+        # Scroll up.
+        if buttons:
+            sidebar.canvas.event_generate('<Button-4>', x=0, y=0)
+        else:
+            sidebar.canvas.event_generate('<MouseWheel>', x=0, y=0, delta=delta)
         yield
         self.assertIsNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
 
-        # Scroll back down using the <Button-5> event.
-        sidebar.canvas.event_generate('<Button-5>', x=0, y=0)
+        # Scroll back down.
+        if buttons:
+            sidebar.canvas.event_generate('<Button-5>', x=0, y=0)
+        else:
+            sidebar.canvas.event_generate('<MouseWheel>', x=0, y=0, delta=-delta)
         yield
         self.assertIsNotNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
 
@@ -718,7 +731,7 @@ class ShellSidebarTest(unittest.TestCase):
 
         text.tag_add('sel', f'{first_line}.0', 'end-1c')
         selected_text = text.get('sel.first', 'sel.last')
-        self.assertTrue(selected_text.startswith('if True:\n'))
+        self.assertStartsWith(selected_text, 'if True:\n')
         self.assertIn('\n1\n', selected_text)
 
         text.event_generate('<<copy>>')
@@ -742,7 +755,7 @@ class ShellSidebarTest(unittest.TestCase):
 
         text.tag_add('sel', f'{first_line}.3', 'end-1c')
         selected_text = text.get('sel.first', 'sel.last')
-        self.assertTrue(selected_text.startswith('True:\n'))
+        self.assertStartsWith(selected_text, 'True:\n')
 
         selected_lines_text = text.get('sel.first linestart', 'sel.last')
         selected_lines = selected_lines_text.split('\n')

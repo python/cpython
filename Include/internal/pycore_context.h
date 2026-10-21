@@ -5,15 +5,13 @@
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_hamt.h"   /* PyHamtObject */
-
+#include "pycore_structs.h"
 
 extern PyTypeObject _PyContextTokenMissing_Type;
 
 /* runtime lifecycle */
 
 PyStatus _PyContext_Init(PyInterpreterState *);
-void _PyContext_Fini(PyInterpreterState *);
 
 
 /* other API */
@@ -21,23 +19,6 @@ void _PyContext_Fini(PyInterpreterState *);
 typedef struct {
     PyObject_HEAD
 } _PyContextTokenMissing;
-
-#ifndef WITH_FREELISTS
-// without freelists
-#  define PyContext_MAXFREELIST 0
-#endif
-
-#ifndef PyContext_MAXFREELIST
-#  define PyContext_MAXFREELIST 255
-#endif
-
-struct _Py_context_state {
-#if PyContext_MAXFREELIST > 0
-    // List of free PyContext objects
-    PyContext *freelist;
-    int numfree;
-#endif
-};
 
 struct _pycontextobject {
     PyObject_HEAD
@@ -52,9 +33,11 @@ struct _pycontextvarobject {
     PyObject_HEAD
     PyObject *var_name;
     PyObject *var_default;
+#ifndef Py_GIL_DISABLED
     PyObject *var_cached;
     uint64_t var_cached_tsid;
     uint64_t var_cached_tsver;
+#endif
     Py_hash_t var_hash;
 };
 
@@ -66,6 +49,14 @@ struct _pycontexttokenobject {
     PyObject *tok_oldval;
     int tok_used;
 };
+
+
+// _testinternalcapi.hamt() used by tests.
+// Export for '_testcapi' shared extension
+PyAPI_FUNC(PyObject*) _PyContext_NewHamtForTests(void);
+
+PyAPI_FUNC(int) _PyContext_Enter(PyThreadState *ts, PyObject *octx);
+PyAPI_FUNC(int) _PyContext_Exit(PyThreadState *ts, PyObject *octx);
 
 
 #endif /* !Py_INTERNAL_CONTEXT_H */

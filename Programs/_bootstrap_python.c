@@ -13,20 +13,8 @@
 #include "Python/frozen_modules/importlib._bootstrap.h"
 #include "Python/frozen_modules/importlib._bootstrap_external.h"
 #include "Python/frozen_modules/zipimport.h"
+#include "Python/frozen_modules/builtins.h"
 /* End includes */
-
-uint32_t _Py_next_func_version = 1;
-
-/* Empty initializer for deepfrozen modules */
-int _Py_Deepfreeze_Init(void)
-{
-    return 0;
-}
-/* Empty finalizer for deepfrozen modules */
-void
-_Py_Deepfreeze_Fini(void)
-{
-}
 
 /* Note that a negative size indicates a package. */
 
@@ -34,6 +22,7 @@ static const struct _frozen bootstrap_modules[] = {
     {"_frozen_importlib", _Py_M__importlib__bootstrap, (int)sizeof(_Py_M__importlib__bootstrap)},
     {"_frozen_importlib_external", _Py_M__importlib__bootstrap_external, (int)sizeof(_Py_M__importlib__bootstrap_external)},
     {"zipimport", _Py_M__zipimport, (int)sizeof(_Py_M__zipimport)},
+    {"_pybuiltins", _Py_M__builtins, (int)sizeof(_Py_M__builtins)},
     {0, 0, 0} /* bootstrap sentinel */
 };
 static const struct _frozen stdlib_modules[] = {
@@ -49,6 +38,7 @@ const struct _frozen *_PyImport_FrozenTest = test_modules;
 static const struct _module_alias aliases[] = {
     {"_frozen_importlib", "importlib._bootstrap"},
     {"_frozen_importlib_external", "importlib._bootstrap_external"},
+    {"_pybuiltins", "builtins"},
     {0, 0} /* aliases sentinel */
 };
 const struct _module_alias *_PyImport_FrozenAliases = aliases;
@@ -114,9 +104,6 @@ main(int argc, char **argv)
 
 error:
     PyConfig_Clear(&config);
-    if (PyStatus_IsExit(status)) {
-        return status.exitcode;
-    }
     Py_ExitStatusException(status);
 }
 

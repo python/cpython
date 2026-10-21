@@ -37,12 +37,16 @@ class TestResult(object):
     _moduleSetUpFailed = False
     def __init__(self, stream=None, descriptions=None, verbosity=None):
         self.failfast = False
+        # How much the test runner reports: 0 -- quiet, 1 -- progress dots,
+        # 2 -- test names, 3 -- also the examples of a doctest.
+        self.verbosity = 1 if verbosity is None else verbosity
         self.failures = []
         self.errors = []
         self.testsRun = 0
         self.skipped = []
         self.expectedFailures = []
         self.unexpectedSuccesses = []
+        self.collectedDurations = []
         self.shouldStop = False
         self.buffer = False
         self.tb_locals = False
@@ -157,6 +161,17 @@ class TestResult(object):
         """Called when a test was expected to fail, but succeed."""
         self.unexpectedSuccesses.append(test)
 
+    def addDuration(self, test, elapsed):
+        """Called when a test finished to run, regardless of its outcome.
+        *test* is the test case corresponding to the test method.
+        *elapsed* is the time represented in seconds, and it includes the
+        execution of cleanup functions.
+        """
+        # support for a TextTestRunner using an old TestResult class
+        if hasattr(self, "collectedDurations"):
+            # Pass test repr and not the test object itself to avoid resources leak
+            self.collectedDurations.append((str(test), elapsed))
+
     def wasSuccessful(self):
         """Tells whether or not this result was a success."""
         # The hasattr check is for test_result's OldResult test.  That
@@ -177,7 +192,10 @@ class TestResult(object):
         tb_e = traceback.TracebackException(
             exctype, value, tb,
             capture_locals=self.tb_locals, compact=True)
-        msgLines = list(tb_e.format())
+        from _colorize import can_colorize
+
+        colorize = hasattr(self, "stream") and can_colorize(file=self.stream)
+        msgLines = list(tb_e.format(colorize=colorize))
 
         if self.buffer:
             output = sys.stdout.getvalue()

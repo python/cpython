@@ -1,8 +1,8 @@
 /* Copyright (c) INRIA and Microsoft Corporation. All rights reserved.
-   Licensed under the Apache 2.0 License. */
+   Licensed under the Apache 2.0 and MIT Licenses. */
 
-#ifndef __LOWSTAR_ENDIANNESS_H
-#define __LOWSTAR_ENDIANNESS_H
+#ifndef KRML_HEADER_LOWSTAR_ENDIANNESS_H
+#define KRML_HEADER_LOWSTAR_ENDIANNESS_H
 
 #include <string.h>
 #include <inttypes.h>
@@ -77,7 +77,7 @@
 #  define le64toh(x) (x)
 
 /* ... for Windows (GCC-like, e.g. mingw or clang) */
-#elif (defined(_WIN32) || defined(_WIN64)) &&                                  \
+#elif (defined(_WIN32) || defined(_WIN64) || defined(__EMSCRIPTEN__)) &&       \
     (defined(__GNUC__) || defined(__clang__))
 
 #  define htobe16(x) __builtin_bswap16(x)
@@ -96,7 +96,8 @@
 #  define le64toh(x) (x)
 
 /* ... generic big-endian fallback code */
-#elif defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+/* ... AIX doesn't have __BYTE_ORDER__ (with XLC compiler) & is always big-endian */
+#elif (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) || defined(_AIX)
 
 /* byte swapping code inspired by:
  * https://github.com/rweather/arduinolibs/blob/master/libraries/Crypto/utility/EndianUtil.h
@@ -227,4 +228,4 @@ inline static void store64(uint8_t *b, uint64_t i) {
 #define load128_be0 load128_be
 #define store128_be0 store128_be
 
-#endif
+#endif /* KRML_HEADER_LOWSTAR_ENDIANNESS_H */

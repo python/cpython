@@ -58,8 +58,22 @@ class BoolTest(unittest.TestCase):
         self.assertEqual(-True, -1)
         self.assertEqual(abs(True), 1)
         self.assertIsNot(abs(True), True)
-        self.assertEqual(~False, -1)
-        self.assertEqual(~True, -2)
+        with self.assertWarns(DeprecationWarning):
+            # We need to put the bool in a variable, because the constant
+            # ~False is evaluated at compile time due to constant folding;
+            # consequently the DeprecationWarning would be issued during
+            # module loading and not during test execution.
+            false = False
+            self.assertEqual(~false, -1)
+        with self.assertWarns(DeprecationWarning):
+            # also check that the warning is issued in case of constant
+            # folding at compile time
+            self.assertEqual(eval("~False"), -1)
+        with self.assertWarns(DeprecationWarning):
+            true = True
+            self.assertEqual(~true, -2)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(eval("~True"), -2)
 
         self.assertEqual(False+2, 2)
         self.assertEqual(True+2, 3)
@@ -368,6 +382,10 @@ class BoolTest(unittest.TestCase):
                 return 10
             __bool__ = None
         self.assertRaises(TypeError, bool, B())
+
+        class C:
+            __len__ = None
+        self.assertRaises(TypeError, bool, C())
 
     def test_real_and_imag(self):
         self.assertEqual(True.real, 1)

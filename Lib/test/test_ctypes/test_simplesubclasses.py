@@ -1,5 +1,9 @@
 import unittest
-from ctypes import *
+from collections.abc import Hashable
+from ctypes import Structure, CFUNCTYPE, c_int, _SimpleCData, POINTER
+from ._support import (_CData, PyCSimpleType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
+                       Py_TPFLAGS_IMMUTABLETYPE)
+
 
 class MyInt(c_int):
     def __eq__(self, other):
@@ -7,7 +11,66 @@ class MyInt(c_int):
             return NotImplementedError
         return self.value == other.value
 
+
 class Test(unittest.TestCase):
+    def test_inheritance_hierarchy(self):
+        self.assertEqual(_SimpleCData.mro(), [_SimpleCData, _CData, object])
+
+        self.assertEqual(PyCSimpleType.__name__, "PyCSimpleType")
+        self.assertEqual(type(PyCSimpleType), type)
+
+        self.assertEqual(c_int.mro(), [c_int, _SimpleCData, _CData, object])
+
+    def test_type_flags(self):
+        for cls in _SimpleCData, PyCSimpleType:
+            with self.subTest(cls=cls):
+                self.assertTrue(_SimpleCData.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+                self.assertFalse(_SimpleCData.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
+
+    def test_unhashable(self):
+        # gh-78327: CData objects are mutable and must not be hashable.
+        class S(Structure):
+            _fields_ = [("a", c_int)]
+
+        for cls in c_int, S, c_int * 2, POINTER(c_int), CFUNCTYPE(None):
+            with self.subTest(cls=cls):
+                self.assertIsNone(cls.__hash__)
+                obj = cls()
+                self.assertNotIsInstance(obj, Hashable)
+                with self.assertRaisesRegex(TypeError,
+                                            f"unhashable type: '{cls.__name__}'"):
+                    hash(obj)
+
+        # Subclasses can still opt in to hashing.
+        class H(S):
+            def __hash__(self):
+                return 42
+
+        self.assertEqual(hash(H()), 42)
+        self.assertIsInstance(H(), Hashable)
+
+    def test_metaclass_details(self):
+        # Abstract classes (whose metaclass __init__ was not called) can't be
+        # instantiated directly
+        NewT = PyCSimpleType.__new__(PyCSimpleType, 'NewT', (_SimpleCData,), {})
+        for cls in _SimpleCData, NewT:
+            with self.subTest(cls=cls):
+                with self.assertRaisesRegex(TypeError, "abstract class"):
+                    obj = cls()
+
+        # Cannot call the metaclass __init__ more than once
+        class T(_SimpleCData):
+            _type_ = "i"
+        with self.assertRaisesRegex(SystemError, "already initialized"):
+            PyCSimpleType.__init__(T, 'ptr', (), {})
+
+    def test_swapped_type_creation(self):
+        cls = PyCSimpleType.__new__(PyCSimpleType, '', (), {'_type_': 'i'})
+        with self.assertRaises(TypeError):
+            PyCSimpleType.__init__(cls)
+        PyCSimpleType.__init__(cls, '', (), {'_type_': 'i'})
+        self.assertEqual(cls.__ctype_le__.__dict__.get('_type_'), 'i')
+        self.assertEqual(cls.__ctype_be__.__dict__.get('_type_'), 'i')
 
     def test_compare(self):
         self.assertEqual(MyInt(3), MyInt(3))
@@ -50,6 +113,7 @@ class Test(unittest.TestCase):
         s.x = MyInt(42)
 
         self.assertEqual(s.x, MyInt(42))
+
 
 if __name__ == "__main__":
     unittest.main()

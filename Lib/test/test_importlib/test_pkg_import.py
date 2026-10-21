@@ -39,9 +39,12 @@ class TestImport(unittest.TestCase):
         self.remove_modules()
 
     def rewrite_file(self, contents):
-        compiled_path = cache_from_source(self.module_path)
-        if os.path.exists(compiled_path):
-            os.remove(compiled_path)
+        try:
+            compiled_path = cache_from_source(self.module_path)
+            if os.path.exists(compiled_path):
+                os.remove(compiled_path)
+        except NotImplementedError:
+            pass
         with open(self.module_path, 'w', encoding='utf-8') as f:
             f.write(contents)
 
@@ -55,7 +58,7 @@ class TestImport(unittest.TestCase):
         except SyntaxError: pass
         else: raise RuntimeError('Failed to induce SyntaxError') # self.fail()?
         self.assertNotIn(self.module_name, sys.modules)
-        self.assertFalse(hasattr(sys.modules[self.package_name], 'foo'))
+        self.assertNotHasAttr(sys.modules[self.package_name], 'foo')
 
         # ...make up a variable name that isn't bound in __builtins__
         var = 'a'

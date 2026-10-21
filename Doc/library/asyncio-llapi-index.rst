@@ -19,10 +19,10 @@ Obtaining the Event Loop
       - The **preferred** function to get the running event loop.
 
     * - :func:`asyncio.get_event_loop`
-      - Get an event loop instance (running or current via the current policy).
+      - Get the running event loop or the event loop set for the current thread.
 
     * - :func:`asyncio.set_event_loop`
-      - Set the event loop as current via the current policy.
+      - Set the event loop for the current thread.
 
     * - :func:`asyncio.new_event_loop`
       - Create a new event loop.
@@ -56,10 +56,10 @@ See also the main documentation section about the
     * - :meth:`loop.close`
       - Close the event loop.
 
-    * - :meth:`loop.is_running()`
+    * - :meth:`loop.is_running`
       - Return ``True`` if the event loop is running.
 
-    * - :meth:`loop.is_closed()`
+    * - :meth:`loop.is_closed`
       - Return ``True`` if the event loop is closed.
 
     * - ``await`` :meth:`loop.shutdown_asyncgens`
@@ -96,7 +96,7 @@ See also the main documentation section about the
       - Invoke a callback *at* the given time.
 
 
-.. rubric:: Thread/Process Pool
+.. rubric:: Thread/Interpreter/Process Pool
 .. list-table::
     :widths: 50 50
     :class: full-width-table
@@ -484,40 +484,16 @@ Protocol classes can implement the following **callback methods**:
     :widths: 50 50
     :class: full-width-table
 
-    * - ``callback`` :meth:`pipe_data_received()
-        <SubprocessProtocol.pipe_data_received>`
+    * - ``callback`` :meth:`~SubprocessProtocol.pipe_data_received`
       - Called when the child process writes data into its
         *stdout* or *stderr* pipe.
 
-    * - ``callback`` :meth:`pipe_connection_lost()
-        <SubprocessProtocol.pipe_connection_lost>`
+    * - ``callback`` :meth:`~SubprocessProtocol.pipe_connection_lost`
       - Called when one of the pipes communicating with
         the child process is closed.
 
     * - ``callback`` :meth:`process_exited()
         <SubprocessProtocol.process_exited>`
-      - Called when the child process has exited.
-
-
-Event Loop Policies
-===================
-
-Policies is a low-level mechanism to alter the behavior of
-functions like :func:`asyncio.get_event_loop`.  See also
-the main :ref:`policies section <asyncio-policies>` for more
-details.
-
-
-.. rubric:: Accessing Policies
-.. list-table::
-    :widths: 50 50
-    :class: full-width-table
-
-    * - :meth:`asyncio.get_event_loop_policy`
-      - Return the current process-wide policy.
-
-    * - :meth:`asyncio.set_event_loop_policy`
-      - Set a new process-wide policy.
-
-    * - :class:`AbstractEventLoopPolicy`
-      - Base class for policy objects.
+      - Called when the child process has exited. It can be called before
+        :meth:`~SubprocessProtocol.pipe_data_received` and
+        :meth:`~SubprocessProtocol.pipe_connection_lost` methods.

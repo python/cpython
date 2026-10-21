@@ -3,6 +3,7 @@
 import concurrent.futures
 import errno
 import math
+import platform
 import socket
 import sys
 import threading
@@ -23,8 +24,12 @@ import warnings
 MOCK_ANY = mock.ANY
 
 
+class CustomError(Exception):
+    pass
+
+
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 def mock_socket_module():
@@ -145,6 +150,29 @@ class BaseEventTests(test_utils.TestCase):
                                                    socket.SOCK_STREAM,
                                                    socket.IPPROTO_TCP))
 
+    def test_interleave_addrinfos(self):
+        self.maxDiff = None
+        SIX_A = (socket.AF_INET6, 0, 0, '', ('2001:db8::1', 1))
+        SIX_B = (socket.AF_INET6, 0, 0, '', ('2001:db8::2', 2))
+        SIX_C = (socket.AF_INET6, 0, 0, '', ('2001:db8::3', 3))
+        SIX_D = (socket.AF_INET6, 0, 0, '', ('2001:db8::4', 4))
+        FOUR_A = (socket.AF_INET, 0, 0, '', ('192.0.2.1', 5))
+        FOUR_B = (socket.AF_INET, 0, 0, '', ('192.0.2.2', 6))
+        FOUR_C = (socket.AF_INET, 0, 0, '', ('192.0.2.3', 7))
+        FOUR_D = (socket.AF_INET, 0, 0, '', ('192.0.2.4', 8))
+
+        addrinfos = [SIX_A, SIX_B, SIX_C, FOUR_A, FOUR_B, FOUR_C, FOUR_D, SIX_D]
+        expected = [SIX_A, FOUR_A, SIX_B, FOUR_B, SIX_C, FOUR_C, SIX_D, FOUR_D]
+
+        self.assertEqual(expected, base_events._interleave_addrinfos(addrinfos))
+
+        expected_fafc_2 = [SIX_A, SIX_B, FOUR_A, SIX_C, FOUR_B, SIX_D, FOUR_C, FOUR_D]
+        self.assertEqual(
+            expected_fafc_2,
+            base_events._interleave_addrinfos(addrinfos, first_address_family_count=2),
+        )
+
+
 
 class BaseEventLoopTests(test_utils.TestCase):
 
@@ -231,6 +259,27 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         self.assertIsNone(self.loop._default_executor)
 
+    def test_shutdown_default_executor_timeout(self):
+        event = threading.Event()
+
+        class DummyExecutor(concurrent.futures.ThreadPoolExecutor):
+            def shutdown(self, wait=True, *, cancel_futures=False):
+                if wait:
+                    event.wait()
+
+        self.loop._process_events = mock.Mock()
+        self.loop._write_to_self = mock.Mock()
+        executor = DummyExecutor()
+        self.loop.set_default_executor(executor)
+
+        try:
+            with self.assertWarnsRegex(RuntimeWarning,
+                                       "The executor did not finishing joining"):
+                self.loop.run_until_complete(
+                    self.loop.shutdown_default_executor(timeout=0.01))
+        finally:
+            event.set()
+
     def test_call_soon(self):
         def cb():
             pass
@@ -273,7 +322,7 @@ class BaseEventLoopTests(test_utils.TestCase):
             self.loop.stop()
 
         self.loop._process_events = mock.Mock()
-        delay = 0.1
+        delay = 0.100
 
         when = self.loop.time() + delay
         self.loop.call_at(when, cb)
@@ -282,10 +331,7 @@ class BaseEventLoopTests(test_utils.TestCase):
         dt = self.loop.time() - t0
 
         # 50 ms: maximum granularity of the event loop
-        self.assertGreaterEqual(dt, delay - 0.050, dt)
-        # tolerate a difference of +800 ms because some Python buildbots
-        # are really slow
-        self.assertLessEqual(dt, 0.9, dt)
+        self.assertGreaterEqual(dt, delay - test_utils.CLOCK_RES)
         with self.assertRaises(TypeError, msg="when cannot be None"):
             self.loop.call_at(None, cb)
 
@@ -819,8 +865,8 @@ class BaseEventLoopTests(test_utils.TestCase):
             loop.close()
 
     def test_create_named_task_with_custom_factory(self):
-        def task_factory(loop, coro):
-            return asyncio.Task(coro, loop=loop)
+        def task_factory(loop, coro, **kwargs):
+            return asyncio.Task(coro, loop=loop, **kwargs)
 
         async def test():
             pass
@@ -925,6 +971,43 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop.run_forever()
         self.loop._selector.select.assert_called_once_with(0)
 
+    def test_custom_run_forever_integration(self):
+        # Test that the run_forever_setup() and run_forever_cleanup() primitives
+        # can be used to implement a custom run_forever loop.
+        self.loop._process_events = mock.Mock()
+
+        count = 0
+
+        def callback():
+            nonlocal count
+            count += 1
+
+        self.loop.call_soon(callback)
+
+        # Set up the custom event loop
+        self.loop._run_forever_setup()
+
+        # Confirm the loop has been started
+        self.assertEqual(asyncio.get_running_loop(), self.loop)
+        self.assertTrue(self.loop.is_running())
+
+        # Our custom "event loop" just iterates 10 times before exiting.
+        for i in range(10):
+            self.loop._run_once()
+
+        # Clean up the event loop
+        self.loop._run_forever_cleanup()
+
+        # Confirm the loop has been cleaned up
+        with self.assertRaises(RuntimeError):
+            asyncio.get_running_loop()
+        self.assertFalse(self.loop.is_running())
+
+        # Confirm the loop actually did run, processing events 10 times,
+        # and invoking the callback once.
+        self.assertEqual(self.loop._process_events.call_count, 10)
+        self.assertEqual(count, 1)
+
     async def leave_unfinalized_asyncgen(self):
         # Create an async generator, iterate it partially, and leave it
         # to be garbage collected.
@@ -959,6 +1042,60 @@ class BaseEventLoopTests(test_utils.TestCase):
         asyncio.create_task(iter_one())
         return status
 
+    def test_shutdown_asyncgens_reports_base_exceptions(self):
+        # gh-150866: shutdown_asyncgens silently swallowed exceptions that
+        # don't inherit from Exception raised during aclose() because the
+        # check was isinstance(result, Exception), but CancelledError inherits
+        # from BaseException.
+        self.loop._process_events = mock.Mock()
+        self.loop._write_to_self = mock.Mock()
+
+        class MyBaseException(BaseException):
+            pass
+
+        async def agen_cancel():
+            try:
+                yield 1
+            finally:
+                raise asyncio.CancelledError("agen got cancelled during cleanup")
+
+        async def agen_base():
+            try:
+                yield 1
+            finally:
+                raise MyBaseException("base exc during cleanup")
+
+        async def agen_value_error():
+            try:
+                yield 1
+            finally:
+                raise ValueError("agen failed during cleanup")
+
+        caught = []
+
+        def handler(loop, context):
+            caught.append(context['exception'])
+
+        async def main():
+            loop = asyncio.get_running_loop()
+            loop.set_exception_handler(handler)
+
+            g1 = agen_cancel()
+            g2 = agen_base()
+            g3 = agen_value_error()
+            await g1.__anext__()
+            await g2.__anext__()
+            await g3.__anext__()
+
+            await loop.shutdown_asyncgens()
+
+        self.loop.run_until_complete(main())
+        self.assertEqual(len(caught), 3)
+        self.assertEqual(
+            {type(exc) for exc in caught},
+            {asyncio.CancelledError, MyBaseException, ValueError},
+        )
+
     def test_asyncgen_finalization_by_gc(self):
         # Async generators should be finalized when garbage collected.
         self.loop._process_events = mock.Mock()
@@ -992,6 +1129,76 @@ class BaseEventLoopTests(test_utils.TestCase):
                 self.loop.run_in_executor(None, support.gc_collect))
             test_utils.run_briefly(self.loop)
             self.assertTrue(status['finalized'])
+
+    @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'no IPv6 support')
+    @patch_socket
+    def test_create_connection_happy_eyeballs(self, m_socket):
+
+        class MyProto(asyncio.Protocol):
+            pass
+
+        async def getaddrinfo(*args, **kw):
+            return [(socket.AF_INET6, 0, 0, '', ('2001:db8::1', 1)),
+                    (socket.AF_INET, 0, 0, '', ('192.0.2.1', 5))]
+
+        async def sock_connect(sock, address):
+            if address[0] == '2001:db8::1':
+                await asyncio.sleep(1)
+            sock.connect(address)
+
+        # gh-151540: use a selector event loop instead of the platform
+        # default; the Windows proactor loop would register the mocked
+        # socket with a real IOCP handle instead of the mocked
+        # _add_reader/_add_writer below.
+        loop = asyncio.SelectorEventLoop()
+        loop._add_writer = mock.Mock()
+        loop._add_writer = mock.Mock()
+        loop._add_reader = mock.Mock()
+        loop.getaddrinfo = getaddrinfo
+        loop.sock_connect = sock_connect
+
+        coro = loop.create_connection(MyProto, 'example.com', 80, happy_eyeballs_delay=0.3)
+        transport, protocol = loop.run_until_complete(coro)
+        try:
+            sock = transport._sock
+            sock.connect.assert_called_with(('192.0.2.1', 5))
+        finally:
+            transport.close()
+            test_utils.run_briefly(loop)  # allow transport to close
+            loop.close()
+
+    @patch_socket
+    def test_create_connection_happy_eyeballs_ipv4_only(self, m_socket):
+
+        class MyProto(asyncio.Protocol):
+            pass
+
+        async def getaddrinfo(*args, **kw):
+            return [(socket.AF_INET, 0, 0, '', ('192.0.2.1', 5)),
+                    (socket.AF_INET, 0, 0, '', ('192.0.2.2', 6))]
+
+        async def sock_connect(sock, address):
+            if address[0] == '192.0.2.1':
+                await asyncio.sleep(1)
+            sock.connect(address)
+
+        # gh-151540: see test_create_connection_happy_eyeballs above.
+        loop = asyncio.SelectorEventLoop()
+        loop._add_writer = mock.Mock()
+        loop._add_writer = mock.Mock()
+        loop._add_reader = mock.Mock()
+        loop.getaddrinfo = getaddrinfo
+        loop.sock_connect = sock_connect
+
+        coro = loop.create_connection(MyProto, 'example.com', 80, happy_eyeballs_delay=0.3)
+        transport, protocol = loop.run_until_complete(coro)
+        try:
+            sock = transport._sock
+            sock.connect.assert_called_with(('192.0.2.2', 6))
+        finally:
+            transport.close()
+            test_utils.run_briefly(loop)  # allow transport to close
+            loop.close()
 
 
 class MyProto(asyncio.Protocol):
@@ -1134,6 +1341,77 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
                 self.loop.run_until_complete(coro)
             self.assertTrue(sock.close.called)
 
+    def test_create_connection_sock_transport_error_closes_sock(self):
+        # gh-153133: a user-provided socket is closed if the transport is
+        # never created.
+        sock = mock.Mock()
+        sock.type = socket.SOCK_STREAM
+
+        def factory():
+            raise ZeroDivisionError
+
+        coro = self.loop.create_connection(factory, sock=sock)
+        with self.assertRaises(ZeroDivisionError):
+            self.loop.run_until_complete(coro)
+        self.assertTrue(sock.close.called)
+
+    @patch_socket
+    def test_create_connection_transport_error_closes_sock(self, m_socket):
+        # gh-153133: an internally created socket is closed if the transport
+        # is never created.
+        sock = mock.Mock()
+        m_socket.socket.return_value = sock
+
+        def getaddrinfo(*args, **kw):
+            fut = self.loop.create_future()
+            addr = (socket.AF_INET, socket.SOCK_STREAM, 0, '',
+                    ('127.0.0.1', 80))
+            fut.set_result([addr])
+            return fut
+        self.loop.getaddrinfo = getaddrinfo
+
+        async def sock_connect(sock, address):
+            return None
+
+        def factory():
+            raise ZeroDivisionError
+
+        with mock.patch.object(self.loop, 'sock_connect', sock_connect):
+            coro = self.loop.create_connection(factory, '127.0.0.1', 80)
+            with self.assertRaises(ZeroDivisionError):
+                self.loop.run_until_complete(coro)
+        self.assertTrue(sock.close.called)
+
+    @patch_socket
+    def test_create_connection_happy_eyeballs_empty_exceptions(self, m_socket):
+        # See gh-135836: Fix IndexError when Happy Eyeballs algorithm
+        # results in empty exceptions list
+
+        async def getaddrinfo(*args, **kw):
+            return [(socket.AF_INET, socket.SOCK_STREAM, 0, '', ('127.0.0.1', 80)),
+                    (socket.AF_INET6, socket.SOCK_STREAM, 0, '', ('::1', 80))]
+
+        def getaddrinfo_task(*args, **kwds):
+            return self.loop.create_task(getaddrinfo(*args, **kwds))
+
+        self.loop.getaddrinfo = getaddrinfo_task
+
+        # Mock staggered_race to return empty exceptions list
+        # This simulates the scenario where Happy Eyeballs algorithm
+        # cancels all attempts but doesn't properly collect exceptions
+        with mock.patch('asyncio.staggered.staggered_race') as mock_staggered:
+            # Return (None, []) - no winner, empty exceptions list
+            async def mock_race(coro_fns, delay, loop):
+                return None, []
+            mock_staggered.side_effect = mock_race
+
+            coro = self.loop.create_connection(
+                MyProto, 'example.com', 80, happy_eyeballs_delay=0.1)
+
+            # Should raise TimeoutError instead of IndexError
+            with self.assertRaisesRegex(TimeoutError, "create_connection failed"):
+                self.loop.run_until_complete(coro)
+
     def test_create_connection_host_port_sock(self):
         coro = self.loop.create_connection(
             MyProto, 'example.com', 80, sock=object())
@@ -1198,7 +1476,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         with sock:
             coro = self.loop.create_datagram_endpoint(MyProto, sock=sock)
             with self.assertRaisesRegex(ValueError,
-                                        'A UDP Socket was expected'):
+                                        'A datagram socket was expected'):
                 self.loop.run_until_complete(coro)
 
     def test_create_connection_no_host_port_sock(self):
@@ -1239,6 +1517,31 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.assertIsInstance(cm.exception, ExceptionGroup)
         self.assertEqual(len(cm.exception.exceptions), 1)
         self.assertIsInstance(cm.exception.exceptions[0], OSError)
+
+    @patch_socket
+    def test_create_connection_connect_non_os_err_close_err(self, m_socket):
+        # Test the case when sock_connect() raises non-OSError exception
+        # and sock.close() raises OSError.
+        async def getaddrinfo(*args, **kw):
+            return [(2, 1, 6, '', ('107.6.106.82', 80))]
+
+        def getaddrinfo_task(*args, **kwds):
+            return self.loop.create_task(getaddrinfo(*args, **kwds))
+
+        self.loop.getaddrinfo = getaddrinfo_task
+        self.loop.sock_connect = mock.Mock()
+        self.loop.sock_connect.side_effect = CustomError
+        sock = mock.Mock()
+        m_socket.socket.return_value = sock
+        sock.close.side_effect = OSError
+
+        coro = self.loop.create_connection(MyProto, 'example.com', 80)
+        self.assertRaises(
+            CustomError, self.loop.run_until_complete, coro)
+
+        coro = self.loop.create_connection(MyProto, 'example.com', 80, all_errors=True)
+        self.assertRaises(
+            CustomError, self.loop.run_until_complete, coro)
 
     def test_create_connection_multiple(self):
         async def getaddrinfo(*args, **kw):
@@ -1294,7 +1597,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         with self.assertRaises(OSError) as cm:
             self.loop.run_until_complete(coro)
 
-        self.assertTrue(str(cm.exception).startswith('Multiple exceptions: '))
+        self.assertStartsWith(str(cm.exception), 'Multiple exceptions: ')
         self.assertTrue(m_socket.socket.return_value.close.called)
 
         coro = self.loop.create_connection(
@@ -1380,6 +1683,10 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self._test_create_connection_ip_addr(m_socket, False)
 
     @patch_socket
+    @unittest.skipIf(
+        support.is_android and platform.android_ver().api_level < 23,
+        "Issue gh-71123: this fails on Android before API level 23"
+    )
     def test_create_connection_service_name(self, m_socket):
         m_socket.getaddrinfo = socket.getaddrinfo
         sock = m_socket.socket.return_value
@@ -1489,7 +1796,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             server_side=False,
             server_hostname='python.org',
             ssl_handshake_timeout=handshake_timeout,
-            ssl_shutdown_timeout=shutdown_timeout)
+            ssl_shutdown_timeout=shutdown_timeout,
+            context=ANY)
         # Next try an explicit server_hostname.
         self.loop._make_ssl_transport.reset_mock()
         coro = self.loop.create_connection(
@@ -1504,7 +1812,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             server_side=False,
             server_hostname='perl.com',
             ssl_handshake_timeout=handshake_timeout,
-            ssl_shutdown_timeout=shutdown_timeout)
+            ssl_shutdown_timeout=shutdown_timeout,
+            context=ANY)
         # Finally try an explicit empty server_hostname.
         self.loop._make_ssl_transport.reset_mock()
         coro = self.loop.create_connection(
@@ -1519,7 +1828,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
                 server_side=False,
                 server_hostname='',
                 ssl_handshake_timeout=handshake_timeout,
-                ssl_shutdown_timeout=shutdown_timeout)
+                ssl_shutdown_timeout=shutdown_timeout,
+                context=ANY)
 
     def test_create_connection_no_ssl_server_hostname_errors(self):
         # When not using ssl, server_hostname must be None.
@@ -1731,6 +2041,43 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.loop.run_until_complete(protocol.done)
         self.assertEqual('CLOSED', protocol.state)
 
+    def test_create_datagram_endpoint_transport_error_closes_sock(self):
+        # gh-156400: the socket is closed if the transport is never created.
+        sock = mock.Mock()
+        sock.type = socket.SOCK_DGRAM
+
+        def factory():
+            raise ZeroDivisionError
+
+        coro = self.loop.create_datagram_endpoint(factory, sock=sock)
+        with self.assertRaises(ZeroDivisionError):
+            self.loop.run_until_complete(coro)
+        self.assertTrue(sock.close.called)
+
+    def test_connect_read_pipe_transport_error_closes_pipe(self):
+        # gh-156400: the pipe is closed if the transport is never created.
+        pipe = mock.Mock()
+
+        def factory():
+            raise ZeroDivisionError
+
+        coro = self.loop.connect_read_pipe(factory, pipe)
+        with self.assertRaises(ZeroDivisionError):
+            self.loop.run_until_complete(coro)
+        self.assertTrue(pipe.close.called)
+
+    def test_connect_write_pipe_transport_error_closes_pipe(self):
+        # gh-156400: the pipe is closed if the transport is never created.
+        pipe = mock.Mock()
+
+        def factory():
+            raise ZeroDivisionError
+
+        coro = self.loop.connect_write_pipe(factory, pipe)
+        with self.assertRaises(ZeroDivisionError):
+            self.loop.run_until_complete(coro)
+        self.assertTrue(pipe.close.called)
+
     @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
     def test_create_datagram_endpoint_sock_unix(self):
         fut = self.loop.create_datagram_endpoint(
@@ -1897,7 +2244,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             constants.ACCEPT_RETRY_DELAY,
             # self.loop._start_serving
             mock.ANY,
-            MyProto, sock, None, None, mock.ANY, mock.ANY, mock.ANY)
+            MyProto, sock, None, None, mock.ANY, mock.ANY, mock.ANY, mock.ANY)
 
     def test_call_coroutine(self):
         async def simple_coroutine():

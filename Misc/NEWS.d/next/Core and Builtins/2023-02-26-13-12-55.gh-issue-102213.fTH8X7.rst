@@ -1,1 +1,0 @@
-Fix performance loss when accessing an object's attributes with ``__getattr__``  defined.

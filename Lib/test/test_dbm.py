@@ -6,6 +6,13 @@ import os
 from test.support import import_helper
 from test.support import os_helper
 
+
+try:
+    from dbm import sqlite3 as dbm_sqlite3
+except ImportError:
+    dbm_sqlite3 = None
+
+
 try:
     from dbm import ndbm
 except ImportError:
@@ -59,7 +66,7 @@ class AnyDBMTestCase:
         return keys
 
     def test_error(self):
-        self.assertTrue(issubclass(self.module.error, OSError))
+        self.assertIsSubclass(self.module.error, OSError)
 
     def test_anydbm_not_existing(self):
         self.assertRaises(dbm.error, dbm.open, _fname)
@@ -128,6 +135,67 @@ class AnyDBMTestCase:
         assert(f[key] == b"Python:")
         f.close()
 
+    def test_anydbm_readonly_reorganize(self):
+        self.init_db()
+        with dbm.open(_fname, 'r') as d:
+            # Early stopping.
+            if not hasattr(d, 'reorganize'):
+                self.skipTest("method reorganize not available this dbm submodule")
+
+            self.assertRaises(dbm.error, lambda: d.reorganize())
+
+    def test_anydbm_reorganize_not_changed_content(self):
+        self.init_db()
+        with dbm.open(_fname, 'c') as d:
+            # Early stopping.
+            if not hasattr(d, 'reorganize'):
+                self.skipTest("method reorganize not available this dbm submodule")
+
+            keys_before = sorted(d.keys())
+            values_before = [d[k] for k in keys_before]
+            d.reorganize()
+            keys_after = sorted(d.keys())
+            values_after = [d[k] for k in keys_before]
+            self.assertEqual(keys_before, keys_after)
+            self.assertEqual(values_before, values_after)
+
+    def test_anydbm_reorganize_decreased_size(self):
+
+        def _calculate_db_size(db_path):
+            if os.path.isfile(db_path):
+                return os.path.getsize(db_path)
+            total_size = 0
+            for root, _, filenames in os.walk(db_path):
+                for filename in filenames:
+                    file_path = os.path.join(root, filename)
+                    total_size += os.path.getsize(file_path)
+            return total_size
+
+        # This test requires relatively large databases to reliably show difference in size before and after reorganizing.
+        with dbm.open(_fname, 'n') as f:
+            # Early stopping.
+            if not hasattr(f, 'reorganize'):
+                self.skipTest("method reorganize not available this dbm submodule")
+
+            for k in self._dict:
+                f[k.encode('ascii')] = self._dict[k] * 100000
+            db_keys = list(f.keys())
+
+        # Make sure to calculate size of database only after file is closed to ensure file content are flushed to disk.
+        size_before = _calculate_db_size(os.path.dirname(_fname))
+
+        # Delete some elements from the start of the database.
+        keys_to_delete = db_keys[:len(db_keys) // 2]
+        with dbm.open(_fname, 'c') as f:
+            for k in keys_to_delete:
+                del f[k]
+            f.reorganize()
+
+        # Make sure to calculate size of database only after file is closed to ensure file content are flushed to disk.
+        size_after = _calculate_db_size(os.path.dirname(_fname))
+
+        self.assertLess(size_after, size_before)
+
     def test_open_with_bytes(self):
         dbm.open(os.fsencode(_fname), "c").close()
 
@@ -154,6 +222,21 @@ class AnyDBMTestCase:
                 self.assertEqual(d[k], v)
             self.assertNotIn(b'xxx', d)
             self.assertRaises(KeyError, lambda: d[b'xxx'])
+
+    def test_clear(self):
+        with dbm.open(_fname, 'c') as d:
+            self.assertEqual(d.keys(), [])
+            a = [(b'a', b'b'), (b'12345678910', b'019237410982340912840198242')]
+            for k, v in a:
+                d[k] = v
+            for k, _ in a:
+                self.assertIn(k, d)
+            self.assertEqual(len(d), len(a))
+
+            d.clear()
+            self.assertEqual(len(d), 0)
+            for k, _ in a:
+                self.assertNotIn(k, d)
 
     def setUp(self):
         self.addCleanup(setattr, dbm, '_defaultmod', dbm._defaultmod)
@@ -191,12 +274,34 @@ class WhichDBTestCase(unittest.TestCase):
     @unittest.skipUnless(ndbm, reason='Test requires ndbm')
     def test_whichdb_ndbm(self):
         # Issue 17198: check that ndbm which is referenced in whichdb is defined
-        with open(_fname + '.db', 'wb'): pass
+        with open(_fname + '.db', 'wb') as f:
+            f.write(b'spam')
         _bytes_fname = os.fsencode(_fname)
         fnames = [_fname, os_helper.FakePath(_fname),
                   _bytes_fname, os_helper.FakePath(_bytes_fname)]
         for path in fnames:
             self.assertIsNone(self.dbm.whichdb(path))
+
+    @unittest.skipUnless(dbm_sqlite3, reason='Test requires dbm.sqlite3')
+    def test_whichdb_sqlite3(self):
+        # Databases created by dbm.sqlite3 are detected correctly.
+        with dbm_sqlite3.open(_fname, "c") as db:
+            db["key"] = "value"
+        self.assertEqual(self.dbm.whichdb(_fname), "dbm.sqlite3")
+
+    @unittest.skipUnless(dbm_sqlite3, reason='Test requires dbm.sqlite3')
+    def test_whichdb_sqlite3_existing_db(self):
+        # Existing sqlite3 databases are detected correctly.
+        sqlite3 = import_helper.import_module("sqlite3")
+        try:
+            # Create an empty database.
+            with sqlite3.connect(_fname) as cx:
+                cx.execute("CREATE TABLE dummy(database)")
+                cx.commit()
+        finally:
+            cx.close()
+        self.assertEqual(self.dbm.whichdb(_fname), "dbm.sqlite3")
+
 
     def setUp(self):
         self.addCleanup(cleaunup_test_dir)
