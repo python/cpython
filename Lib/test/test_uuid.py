@@ -533,8 +533,9 @@ class BaseTestUUID:
         for bad_key in ('int', 'is_safe'):
             with self.subTest(key=bad_key):
                 u = self.uuid.UUID(int=1)
+                state = State(int=2, is_safe=0)
                 with self.assertRaisesRegex(RuntimeError, 'lookup failed'):
-                    u.__setstate__(State(int=2, is_safe=0))
+                    u.__setstate__(state)
 
     def test_setstate_contains_error(self):
         class State(dict):
@@ -543,8 +544,9 @@ class BaseTestUUID:
 
         # Errors checking for the optional key must propagate as well.
         u = self.uuid.UUID(int=1)
+        state = State(int=2)
         with self.assertRaisesRegex(RuntimeError, 'membership test failed'):
-            u.__setstate__(State(int=2))
+            u.__setstate__(state)
 
     def test_setstate_invalid_is_safe(self):
         u = self.uuid.UUID(int=0)
@@ -1748,9 +1750,9 @@ class UuidHooks:
         self._inc_by = inc_by
         self._rnd = random.Random(seed)
 
-    def random_func (self, size) :
+    def random_func(self, size):
         ret = b''
-        for _ in range(size) :
+        for _ in range(size):
             ret += self._rnd.getrandbits(8).to_bytes(1, 'big')
         return ret
 
