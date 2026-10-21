@@ -118,7 +118,6 @@ req_template = """
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-
 def make_cert_key(cmdlineargs, hostname, sign=False, extra_san='',
                   ext='req_x509_extensions_full', key='rsa:3072'):
     print("creating cert for " + hostname)
@@ -230,6 +229,56 @@ def write_cert_reference(path):
         print(refdata, file=f)
 
 
+# eMudhra intermediate on the _ssl distrusted list, its secp384r1 key is 4.
+# See https://emudhra.we-have-a-problem.com/
+DISTRUSTED_INTERMEDIATE = 'distrusted_intermediate.pem'
+DISTRUSTED_INTERMEDIATE_KEY = 'distrusted_intermediate.key'
+
+
+def make_distrusted_spki_cert(cmdlineargs):
+    # leaf signed by the distrusted intermediate, chains to distrusted_root.pem
+    print("creating distrusted-SPKI test cert")
+    tempnames = []
+    for i in range(4):
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            tempnames.append(f.name)
+    req_file, key_file, csr_file, cert_file = tempnames
+    try:
+        req = req_template.format(
+            hostname='localhost',
+            extra_san='',
+            startdate=startdate,
+            enddate=cmdlineargs.enddate,
+            days=cmdlineargs.days
+        )
+        with open(req_file, 'w') as f:
+            f.write(req)
+        # ECC leaf to match the ECC intermediate
+        check_call(['openssl', 'req', '-new', '-nodes', '-days', cmdlineargs.days,
+                    '-newkey', 'param:secp384r1.pem', '-keyout', key_file,
+                    '-config', req_file, '-out', csr_file])
+        # sign with the distrusted intermediate, not the test CA
+        check_call(['openssl', 'ca', '-config', req_file,
+                    '-extensions', 'req_x509_extensions_full',
+                    '-cert', DISTRUSTED_INTERMEDIATE, '-keyfile', DISTRUSTED_INTERMEDIATE_KEY,
+                    '-out', cert_file, '-outdir', 'cadir',
+                    '-policy', 'policy_anything', '-batch', '-infiles', csr_file])
+        with open(key_file) as f:
+            key = f.read()
+        with open(cert_file) as f:
+            cert = f.read()
+        with open(DISTRUSTED_INTERMEDIATE) as f:
+            intermediate = f.read()
+        # server sends leaf + intermediate, client trusts the root
+        with open('distrusted_keycert.pem', 'w') as f:
+            f.write(key)
+            f.write(cert)
+            f.write(intermediate)
+    finally:
+        for name in tempnames:
+            os.remove(name)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Make the custom certificate and private key files used by test_ssl and friends.')
     parser.add_argument('--days', default=days_default)
@@ -319,6 +368,8 @@ if __name__ == '__main__':
     with open('nosan.pem', 'w') as f:
         f.write(key)
         f.write(cert)
+
+    make_distrusted_spki_cert(cmdlineargs)
 
     unmake_ca()
     print("Writing out reference data for Lib/test/test_ssl.py and Lib/test/test_asyncio/utils.py")
