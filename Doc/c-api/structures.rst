@@ -610,6 +610,18 @@ definition with the same method name.
    type checking.
 
 
+.. c:function:: PyTypeObject *PyCFunction_GET_CLASS(PyObject *func)
+
+   Return a :term:`borrowed reference` to the defining class of *func* if
+   its :c:member:`~PyMethodDef.ml_flags` includes :c:macro:`METH_METHOD`.
+   Otherwise, return ``NULL`` without setting an exception.
+
+   *func* must be a C function object and must not be ``NULL``.
+   This function does not perform error or type checking.
+
+   .. versionadded:: 3.9
+
+
 Accessing attributes of extension types
 ---------------------------------------
 
@@ -773,6 +785,16 @@ The following flags can be used with :c:member:`PyMemberDef.flags`:
 
    .. soft-deprecated:: 3.12
       Use :c:macro:`Py_AUDIT_READ` instead.
+
+
+.. c:macro:: PY_WRITE_RESTRICTED
+
+   A member flag that has no effect, retained solely for backwards compatibility.
+   This is only available with ``#include "structmember.h"``.
+
+   .. soft-deprecated:: next
+      Omit this flag instead.
+
 
 .. _PyMemberDef-types:
 

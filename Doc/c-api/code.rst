@@ -176,6 +176,14 @@ bound into a function.
 
    .. versionadded:: 3.12
 
+.. c:macro:: PY_FOREACH_CODE_EVENT(V)
+
+   Apply the macro *V* to each suffix of :c:type:`PyCodeEvent`
+   constants.
+   Currently expands to ``V(CREATE) V(DESTROY)``.
+   The macro *V* must accept one event name and supply any punctuation
+   needed between expansions.
+
 .. c:type:: int (*PyCode_WatchCallback)(PyCodeEvent event, PyCodeObject* co)
 
    Type of a code object watcher callback function.
