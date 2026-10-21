@@ -17,7 +17,7 @@ import stat
 import sys
 import zipfile
 
-from ._functools import save_method_args
+from ._functools import none_as, save_method_args
 from .glob import Translator
 
 __all__ = ['Path']
@@ -276,7 +276,7 @@ class Path:
     resolve to the zipfile.
 
     >>> str(path)
-    'mem/abcde.zip/'
+    'mem/abcde.zip'
     >>> path.name
     'abcde.zip'
     >>> path.filename == pathlib.Path('mem/abcde.zip')
@@ -434,7 +434,8 @@ class Path:
         return posixpath.relpath(str(self), str(other.joinpath(*extra)))
 
     def __str__(self):
-        return posixpath.join(self.root.filename, self.at)
+        root = none_as(self.root.filename, ':zipfile:')
+        return posixpath.join(root, self.at) if self.at else root
 
     def __repr__(self):
         return self.__repr.format(self=self)
