@@ -1975,11 +1975,11 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases,
            add to all new_bases */
         remove_all_subclasses(type, old_bases);
         res = add_all_subclasses(type, new_bases);
+        /* This also clears the VALID_VERSION flag of 'type' and all its
+           subclasses. */
         if (update_all_slots(type) < 0) {
             goto bail;
         }
-        /* Clear the VALID_VERSION flag of 'type' and all its subclasses. */
-        _PyType_Modified_Unlocked(type);
     }
     else {
         res = 0;
@@ -6732,15 +6732,16 @@ update_slot_after_setattr(PyTypeObject *type, PyObject *name)
     for (;;) {
         uint64_t gen = types_publish_gen();
         res = update_slot(type, name, &queued_updates);
-        int done = 1;
-        if (res == 0 && !slot_update_is_empty(&queued_updates)) {
-            done = apply_type_slot_updates(&queued_updates, gen);
+        if (res < 0 || slot_update_is_empty(&queued_updates)) {
+            break;
         }
-        slot_update_clear(&queued_updates, &chunk);
-        if (res < 0 || done) {
+        if (apply_type_slot_updates(&queued_updates, gen)) {
             break;
         }
         // The queue went stale while TYPE_LOCK was released, build it again.
+        // Nothing was published, so it does not matter if dropping the
+        // references here runs type_dealloc() and releases TYPE_LOCK.
+        slot_update_clear(&queued_updates, &chunk);
     }
     if (res == 0) {
         // Invalidate again, after the slots are updated and while TYPE_LOCK
@@ -6750,6 +6751,11 @@ update_slot_after_setattr(PyTypeObject *type, PyObject *name)
         ASSERT_TYPE_LOCK_HELD();
         _PyType_Modified_Unlocked(type);
     }
+    // Drop the references only now.  If one of them is the last reference
+    // to a queued subclass, type_dealloc() takes TYPE_LOCK again, which
+    // releases it until it is re-acquired.  That must not happen between
+    // publishing the slots and invalidating the version tags above.
+    slot_update_clear(&queued_updates, &chunk);
     return res;
 #else
     update_slot(type, name, NULL);
@@ -12208,7 +12214,8 @@ fixup_slot_dispatchers(PyTypeObject *type)
 
 #ifdef Py_GIL_DISABLED
 
-// Called when __bases__ is re-assigned.
+// Called when __bases__ is re-assigned.  Also clears the VALID_VERSION
+// flag of 'type' and all its subclasses.
 static int
 update_all_slots(PyTypeObject* type)
 {
@@ -12226,22 +12233,28 @@ update_all_slots(PyTypeObject* type)
                 return -1;
             }
         }
-        int done = 1;
-        if (!slot_update_is_empty(&queued_updates)) {
-            done = apply_type_slot_updates(&queued_updates, gen);
+        if (slot_update_is_empty(&queued_updates)) {
+            break;
         }
-        slot_update_clear(&queued_updates, NULL);
-        if (done) {
+        if (apply_type_slot_updates(&queued_updates, gen)) {
             break;
         }
         // The queue went stale while TYPE_LOCK was released, build it again.
+        // Nothing was published, so it does not matter if dropping the
+        // references here runs type_dealloc() and releases TYPE_LOCK.
+        slot_update_clear(&queued_updates, NULL);
     }
+    // Invalidate the version tags while TYPE_LOCK is still held, before
+    // dropping the references: see update_slot_after_setattr().
+    _PyType_Modified_Unlocked(type);
+    slot_update_clear(&queued_updates, NULL);
     return 0;
 }
 
 #else
 
-// Called when __bases__ is re-assigned.
+// Called when __bases__ is re-assigned.  Also clears the VALID_VERSION
+// flag of 'type' and all its subclasses.
 static int
 update_all_slots(PyTypeObject* type)
 {
@@ -12250,6 +12263,7 @@ update_all_slots(PyTypeObject* type)
         /* update_slot returns int but can't actually fail in this case*/
         update_slot(type, p->name_strobj, NULL);
     }
+    _PyType_Modified_Unlocked(type);
     return 0;
 }
 
