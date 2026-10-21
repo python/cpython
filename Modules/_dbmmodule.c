@@ -224,12 +224,22 @@ dbm_subscript(PyObject *self, PyObject *key)
     return result;
 }
 
+/*[clinic input]
+@critical_section
+_dbm.dbm.__setitem__ as dbm_ass_sub
+
+    v: object
+    w: object
+    /
+[clinic start generated code]*/
+
 static int
-dbm_ass_sub_lock_held(PyObject *self, PyObject *v, PyObject *w)
+dbm_ass_sub_impl(dbmobject *self, PyObject *v, PyObject *w)
+/*[clinic end generated code: output=33e861810d1fd44a input=4f10cc93a02142ee]*/
 {
     datum krec, drec;
     Py_ssize_t tmp_size;
-    dbmobject *dp = dbmobject_CAST(self);
+    dbmobject *dp = self;
 
     if ( !PyArg_Parse(v, "s#", &krec.dptr, &tmp_size) ) {
         PyErr_SetString(PyExc_TypeError,
@@ -277,16 +287,6 @@ dbm_ass_sub_lock_held(PyObject *self, PyObject *v, PyObject *w)
         return -1;
     }
     return 0;
-}
-
-static int
-dbm_ass_sub(PyObject *self, PyObject *v, PyObject *w)
-{
-    int result;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    result = dbm_ass_sub_lock_held(self, v, w);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 /*[clinic input]
