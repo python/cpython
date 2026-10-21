@@ -678,6 +678,11 @@ always available. Unless explicitly noted otherwise, all variables are read-only
         - :option:`-X context_aware_warnings <-X>` and
           :envvar:`PYTHON_CONTEXT_AWARE_WARNINGS`
 
+      * - .. attribute:: flags.lazy_imports
+        - :option:`-X lazy_imports <-X>` and :envvar:`PYTHON_LAZY_IMPORTS`
+          (``1`` for ``all``, ``-1`` otherwise; not changed by
+          :func:`set_lazy_imports`)
+
 
    .. versionchanged:: 3.2
       Added ``quiet`` attribute for the new :option:`-q` flag.
@@ -713,6 +718,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. versionchanged:: 3.14
       Added the ``context_aware_warnings`` attribute.
+
+   .. versionchanged:: 3.15
+      Added the ``lazy_imports`` attribute.
 
 
 .. data:: float_info
@@ -2431,6 +2439,26 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. versionadded:: 3.2
 
+
+.. data:: EXIT_SUCCESS
+
+    An int you can use to indicate your program ended gracefully.
+
+    .. code-block:: python
+
+        sys.exit(sys.EXIT_SUCCESS)
+
+    .. versionadded:: 3.16
+
+.. data:: EXIT_FAILURE
+
+    An int you can use to indicate your program encountered an error.
+
+    .. code-block:: python
+
+        sys.exit(sys.EXIT_FAILURE)
+
+    .. versionadded:: 3.16
 
 .. rubric:: Citations
 

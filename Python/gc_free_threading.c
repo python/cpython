@@ -2123,6 +2123,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
         int err = gc_mark_alive_from_roots(interp, state);
         if (err < 0) {
             _PyEval_StartTheWorld(interp);
+            cleanup_worklist(&state->objs_to_decref);
             PyErr_NoMemory();
             return;
         }
@@ -2133,6 +2134,9 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     int err = deduce_unreachable_heap(interp, state);
     if (err < 0) {
         _PyEval_StartTheWorld(interp);
+        cleanup_worklist(&state->unreachable);
+        cleanup_worklist(&state->legacy_finalizers);
+        cleanup_worklist(&state->objs_to_decref);
         PyErr_NoMemory();
         return;
     }
@@ -2412,9 +2416,10 @@ visit_get_referrers(const mi_heap_t *heap, const mi_heap_area_t *area,
         return true;
     }
     if (Py_TYPE(op)->tp_traverse(op, referrersvisit, arg->objs)) {
-        if (_PyObjectStack_Push(&arg->results, Py_NewRef(op)) < 0) {
+        if (_PyObjectStack_Push(&arg->results, op) < 0) {
             return false;
         }
+        Py_INCREF(op);
     }
 
     return true;
@@ -2459,9 +2464,10 @@ visit_get_objects(const mi_heap_t *heap, const mi_heap_area_t *area,
     }
 
     struct get_objects_args *arg = (struct get_objects_args *)args;
-    if (_PyObjectStack_Push(&arg->objects, Py_NewRef(op)) < 0) {
+    if (_PyObjectStack_Push(&arg->objects, op) < 0) {
         return false;
     }
+    Py_INCREF(op);
     return true;
 }
 

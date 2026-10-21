@@ -307,7 +307,7 @@ class AddrlistClass:
                 if self.pos < fieldlen and self.field[self.pos] == ';':
                     self.pos += 1
                     break
-                returnlist = returnlist + self.getaddress()
+                returnlist.extend(self.getaddress())
 
         elif self.field[self.pos] == '<':
             # Address is a phrase then a route addr
