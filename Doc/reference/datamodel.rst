@@ -1879,6 +1879,7 @@ occurred in a
    .. versionchanged:: 3.7
       This attribute is now writable
 
+.. _slice-objects:
 
 Slice objects
 ^^^^^^^^^^^^^
