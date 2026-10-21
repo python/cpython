@@ -560,7 +560,7 @@ class OperatorTestCase:
         self.assertEqual(operator.ixor     (c, 5), "ixor")
         self.assertEqual(operator.iconcat  (c, c), "iadd")
 
-    def test_concat(self):
+    def test_concat_subclasses(self):
         operator = self.module
 
         # Simple cases:
