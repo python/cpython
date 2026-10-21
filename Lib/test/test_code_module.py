@@ -5,6 +5,7 @@ import unittest
 from textwrap import dedent
 from contextlib import ExitStack
 from unittest import mock
+from test.support import cpython_only
 from test.support import force_not_colorized_test_class
 from test.support import import_helper
 
@@ -37,6 +38,10 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
     def setUp(self):
         self.console = code.InteractiveConsole()
         self.mock_sys()
+
+    @cpython_only
+    def test_lazy_import(self):
+        import_helper.ensure_lazy_imports("code", {"traceback"})
 
     def test_ps1(self):
         self.infunc.side_effect = [
