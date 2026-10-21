@@ -380,6 +380,26 @@ class _DecompressorTests:
     def test_repeated_max_length_zero(self, data, count):
         self._check_repeated_max_length_zero(data, count)
 
+    def _check_max_length_zero_with_pending_output(self, data, count):
+        # The same, but with a whole stream buffered and its output pending.
+        decomp = self.backend.new_decompressor()
+        self.assertEqual(decomp.decompress(self.backend.compress(data), 0),
+                         b"")
+        for _ in range(count):
+            if decomp.eof:
+                break
+            self.assertEqual(decomp.decompress(b"", 0), b"")
+        if not decomp.eof:
+            self.assertEqual(decomp.decompress(b"", -1), data)
+        self.assertTrue(decomp.eof)
+
+    @hypothesis.given(data=data_strategy, count=st.integers(1, 20))
+    @hypothesis.example(data=b"", count=1)
+    @hypothesis.example(data=b"\x00", count=16)
+    @hypothesis.example(data=b"spam" * 10, count=20)
+    def test_max_length_zero_with_pending_output(self, data, count):
+        self._check_max_length_zero_with_pending_output(data, count)
+
     @hypothesis.given(data=data_strategy, cut=st.integers(0, 10**6))
     @hypothesis.example(data=b"", cut=0)
     @hypothesis.example(data=b"", cut=10**6)
@@ -502,8 +522,10 @@ class _ZlibNeedsInputBug:
 # liblzma reports an error when two consecutive calls can make no progress,
 # which lzma.LZMADecompressor lets through as LZMAError("Insufficient buffer
 # space") for two max_length=0 calls in a row with nothing buffered
-# (gh-160000).  The broad lzma tests avoid max_length=0 so that they keep
-# checking everything else; test_repeated_max_length_zero pins the bug.
+# (gh-160000), and on the fourth such call when output is pending.  The
+# broad lzma tests avoid max_length=0 so that they keep checking everything
+# else; test_repeated_max_length_zero and
+# test_max_length_zero_with_pending_output pin the bug.
 lzma_max_length_strategy = st.integers(1, 64) | st.just(-1)
 lzma_max_lengths_strategy = st.lists(lzma_max_length_strategy, max_size=16)
 
@@ -541,6 +563,23 @@ class _LZMAMaxLengthZeroBug:
     @hypothesis.example(data=b"", count=2)
     def test_repeated_max_length_zero(self, data, count):
         self._check_repeated_max_length_zero(data, count)
+
+    @unittest.expectedFailure
+    @hypothesis.given(data=data_strategy, count=st.integers(1, 20))
+    @hypothesis.example(data=b"\x00", count=16)
+    def test_max_length_zero_with_pending_output(self, data, count):
+        self._check_max_length_zero_with_pending_output(data, count)
+
+
+class _ZstdMaxLengthZeroBug:
+    # libzstd refuses the 16th consecutive call that makes no progress, and
+    # ZstdDecompressor calls it even for max_length=0, so sixteen such calls
+    # with output pending raise ZstdError.
+    @unittest.expectedFailure
+    @hypothesis.given(data=data_strategy, count=st.integers(1, 20))
+    @hypothesis.example(data=b"\x00", count=16)
+    def test_max_length_zero_with_pending_output(self, data, count):
+        self._check_max_length_zero_with_pending_output(data, count)
 
 
 class LZMADecompressorMachine(_DecompressorMachine):
@@ -581,7 +620,8 @@ class RawDeflateDecompressorTests(_ZlibNeedsInputBug, _DecompressorTests,
 
 
 @support.requires_zstd()
-class ZstdDecompressorTests(_DecompressorTests, unittest.TestCase):
+class ZstdDecompressorTests(_ZstdMaxLengthZeroBug, _DecompressorTests,
+                            unittest.TestCase):
     backend = _zstd_backend()
 
 
