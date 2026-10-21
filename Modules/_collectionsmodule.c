@@ -819,8 +819,18 @@ deque_clearmethod_impl(dequeobject *deque)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+@critical_section
+_collections.deque.__imul__ as deque_inplace_repeat
+
+    deque: dequeobject
+    n: Py_ssize_t
+    /
+[clinic start generated code]*/
+
 static PyObject *
-deque_inplace_repeat_lock_held(dequeobject *deque, Py_ssize_t n)
+deque_inplace_repeat_impl(dequeobject *deque, Py_ssize_t n)
+/*[clinic end generated code: output=e9052495a8eb46f9 input=0ebbaedad03b8abf]*/
 {
     Py_ssize_t i, m, size;
     PyObject *seq;
@@ -897,17 +907,6 @@ deque_inplace_repeat_lock_held(dequeobject *deque, Py_ssize_t n)
 }
 
 static PyObject *
-deque_inplace_repeat(PyObject *self, Py_ssize_t n)
-{
-    dequeobject *deque = dequeobject_CAST(self);
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(deque);
-    result = deque_inplace_repeat_lock_held(deque, n);
-    Py_END_CRITICAL_SECTION();
-    return result;
-}
-
-static PyObject *
 deque_repeat(PyObject *self, Py_ssize_t n)
 {
     dequeobject *deque = dequeobject_CAST(self);
@@ -921,7 +920,7 @@ deque_repeat(PyObject *self, Py_ssize_t n)
         return NULL;
     // It's safe to not acquire the per-object lock for new_deque; it's
     // invisible to other threads.
-    rv = deque_inplace_repeat_lock_held(new_deque, n);
+    rv = deque_inplace_repeat_impl(new_deque, n);
     Py_DECREF(new_deque);
     return rv;
 }

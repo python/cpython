@@ -226,6 +226,21 @@ deque_clearmethod(PyObject *deque, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
+static PyObject *
+deque_inplace_repeat_impl(dequeobject *deque, Py_ssize_t n);
+
+static PyObject *
+deque_inplace_repeat(PyObject *deque, Py_ssize_t n)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(deque);
+    return_value = deque_inplace_repeat_impl((dequeobject *)deque, n);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(deque_rotate__doc__,
 "rotate($self, n=1, /)\n"
 "--\n"
@@ -647,4 +662,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1bdec9485a9d40fb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fe575846d0131efd input=a9049054013a1b77]*/

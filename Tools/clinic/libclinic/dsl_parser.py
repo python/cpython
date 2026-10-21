@@ -60,7 +60,6 @@ __ifloordiv__
 __ilshift__
 __imatmul__
 __imod__
-__imul__
 __index__
 __int__
 __invert__
@@ -76,7 +75,6 @@ __lshift__
 __lt__
 __matmul__
 __mod__
-__mul__
 __neg__
 __or__
 __pos__
