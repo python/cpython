@@ -4003,32 +4003,30 @@ memoryiter_next(PyObject *self)
 
     if (it->it_index >= it->it_length) {
         /* Preserve StopIteration for exhausted iterators over released views. */
+#ifndef Py_GIL_DISABLED
+        /* Like list and tuple iterators, keep the reference in the
+           free-threaded build: clearing it here races with other threads
+           that are still using seq. */
         it->it_seq = NULL;
         Py_DECREF(seq);
+#endif
         return NULL;
     }
 
-#ifdef Py_GIL_DISABLED
-    /* Keep seq alive if another thread exhausts the iterator. */
-    Py_INCREF(seq);
-#endif
-
-    PyObject *result = NULL;
-    if (memoryview_pin(seq) == 0) {
-        Py_buffer *view = &seq->view;
-        char *ptr = (char *)view->buf;
-
-        ptr += view->strides[0] * it->it_index++;
-        ptr = ADJUST_PTR(ptr, view->suboffsets, 0);
-        if (ptr != NULL) {
-            result = unpack_single(seq, ptr, it->it_fmt);
-        }
-        memoryview_unpin(seq);
+    _PyManagedBufferObject *mbuf = memoryview_pin(seq);
+    if (mbuf == NULL) {
+        return NULL;
     }
+    Py_buffer *view = &seq->view;
+    char *ptr = (char *)view->buf;
 
-#ifdef Py_GIL_DISABLED
-    Py_DECREF(seq);
-#endif
+    ptr += view->strides[0] * it->it_index++;
+    ptr = ADJUST_PTR(ptr, view->suboffsets, 0);
+    PyObject *result = NULL;
+    if (ptr != NULL) {
+        result = unpack_single(seq, ptr, it->it_fmt);
+    }
+    memoryview_unpin(mbuf);
     return result;
 }
 
