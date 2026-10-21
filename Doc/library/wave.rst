@@ -309,6 +309,7 @@ Wave_write Objects
       .. versionchanged:: 3.15
          Added optional item *format* to the *tuple*.
 
+
    .. method:: getparams()
 
       Return a :func:`~collections.namedtuple`
