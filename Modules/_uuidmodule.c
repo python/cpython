@@ -1487,20 +1487,13 @@ Uuid_str(PyObject *self)
 static PyObject *
 Uuid_repr(PyObject *self)
 {
-    PyObject *str_obj = Uuid_str(self);
-    if (str_obj == NULL) {
-        return NULL;
-    }
-
     // Get the class name (sadly can't use tp_name -- we don't need the full name)
     PyObject *cls_name = PyObject_GetAttrString((PyObject *)Py_TYPE(self), "__name__");
     if (cls_name == NULL) {
-        Py_DECREF(str_obj);
         return NULL;
     }
 
-    PyObject *repr = PyUnicode_FromFormat("%U('%U')", cls_name, str_obj);
-    Py_DECREF(str_obj);
+    PyObject *repr = PyUnicode_FromFormat("%U('%S')", cls_name, self);
     Py_DECREF(cls_name);
     return repr;
 }

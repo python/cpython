@@ -303,6 +303,14 @@ class BaseTestUUID:
                 with self.assertRaises(ValueError):
                     self.uuid.UUID(text)
 
+    def test_repr_subclass_str(self):
+        # repr() must call the subclass's __str__, as the Python version does.
+        class CustomUUID(self.uuid.UUID):
+            def __str__(self):
+                return 'custom uuid'
+
+        self.assertEqual(repr(CustomUUID(int=1)), "CustomUUID('custom uuid')")
+
     def test_exceptions(self):
         badvalue = lambda f: self.assertRaises(ValueError, f)
         badtype = lambda f: self.assertRaises(TypeError, f)
