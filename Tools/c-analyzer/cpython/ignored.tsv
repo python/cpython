@@ -257,7 +257,6 @@ Modules/_sre/sre.c	pattern_repr	flag_names	-
 # XXX I'm pretty sure this is actually constant:
 Modules/_sre/sre_targets.h	-	sre_targets	-
 Modules/_sre.c	pattern_repr	flag_names	-
-Modules/_ssl/distrusted_spki.h	-	_distrusted_spki	-
 Modules/_struct.c	-	bigendian_table	-
 Modules/_struct.c	-	lilendian_table	-
 Modules/_struct.c	-	native_table	-

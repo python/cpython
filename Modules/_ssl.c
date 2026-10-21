@@ -67,6 +67,7 @@
 /* Include OpenSSL header files */
 #include "openssl/rsa.h"
 #include "openssl/crypto.h"
+#include "openssl/evp.h"
 #include "openssl/x509.h"
 #include "openssl/x509v3.h"
 #include "openssl/pem.h"
@@ -3373,40 +3374,55 @@ static PyType_Spec PySSLSocket_spec = {
 
 #include "_ssl/distrusted_spki.h"
 
-/* True if the cert's SPKI is on the distrusted list */
+/* Returns 1 if the SHA-256 of the cert's SPKI is on the distrusted list,
+   0 if not (okay), -1 on an internal error. */
 static int
 _cert_has_distrusted_spki(X509 *cert)
 {
     unsigned char *spki = NULL;
     int spki_len = i2d_X509_PUBKEY(X509_get_X509_PUBKEY(cert), &spki);
     if (spki_len <= 0 || spki == NULL) {
-        return 0;
+        return -1;
     }
 
-    int distrusted = 0;
+    unsigned char digest[EVP_MAX_MD_SIZE];
+    unsigned int digest_len = 0;
+    int ok = EVP_Digest(spki, (size_t)spki_len, digest, &digest_len,
+                        EVP_sha256(), NULL);
+    OPENSSL_free(spki);
+    if (!ok || digest_len != sizeof(_distrusted_spki[0])) {
+        return -1;
+    }
+
     for (size_t i = 0; i < Py_ARRAY_LENGTH(_distrusted_spki); i++) {
-        if ((size_t)spki_len == _distrusted_spki[i].len
-            && memcmp(spki, _distrusted_spki[i].der, _distrusted_spki[i].len) == 0)
-        {
-            distrusted = 1;
-            break;
+        if (memcmp(digest, _distrusted_spki[i], sizeof(_distrusted_spki[i])) == 0) {
+            return 1;
         }
     }
-    OPENSSL_free(spki);
-    return distrusted;
+    return 0;
 }
 
-/* Verify callback, called once per cert.  Reject distrusted SPKIs, otherwise
- * keep OpenSSL's result. */
+/* Verify callback, called once per cert. Reject distrusted SPKIs. */
 static int
 _ssl_verify_callback(int preverify_ok, X509_STORE_CTX *x509_ctx)
 {
     X509 *cert = X509_STORE_CTX_get_current_cert(x509_ctx);
-    if (cert != NULL && _cert_has_distrusted_spki(cert)) {
+    if (cert == NULL) {
+        return preverify_ok;
+    }
+    switch (_cert_has_distrusted_spki(cert)) {
+    case 0:
+        /* okay: not on the distrusted list */
+        return preverify_ok;
+    case 1:
+        /* rejected: public key is on the distrusted list */
         X509_STORE_CTX_set_error(x509_ctx, X509_V_ERR_CERT_REJECTED);
         return 0;
+    default:
+        /* internal error */
+        X509_STORE_CTX_set_error(x509_ctx, X509_V_ERR_UNSPECIFIED);
+        return 0;
     }
-    return preverify_ok;
 }
 
 static int
