@@ -1271,6 +1271,16 @@ class TestDateOnly(unittest.TestCase):
                 self.assertEqual(expected, got)
                 self.assertIs(type(got), date)
 
+    def test_strptime_whitespace(self):
+        whitespace = (' ', '\t\n\r\v\f', '\x1c', '\xa0', '\u2003', '\u202f')
+        for input_space in whitespace:
+            for format_space in whitespace:
+                with self.subTest(input_space=input_space,
+                                  format_space=format_space):
+                    text = input_space.join(('2024', '02', '29'))
+                    fmt = format_space.join(('%Y', '%m', '%d'))
+                    self.assertEqual(date.strptime(text, fmt), date(2024, 2, 29))
+
     def test_strptime_single_digit(self):
         # bpo-34903: Check that single digit dates are allowed.
         strptime = date.strptime
@@ -3181,6 +3191,17 @@ class TestDateTime(TestDate):
         with self.assertRaises(ValueError): strptime("-000", "%z")
         with self.assertRaises(ValueError): strptime("z", "%z")
 
+    def test_strptime_whitespace(self):
+        whitespace = (' ', '\t\n\r\v\f', '\x1c', '\xa0', '\u2003', '\u202f')
+        for input_space in whitespace:
+            for format_space in whitespace:
+                with self.subTest(input_space=input_space,
+                                  format_space=format_space):
+                    text = input_space.join(('2024-02-29', '12:34:56'))
+                    fmt = format_space.join(('%Y-%m-%d', '%H:%M:%S'))
+                    self.assertEqual(self.theclass.strptime(text, fmt),
+                                     self.theclass(2024, 2, 29, 12, 34, 56))
+
     def test_strptime_numeric_fallback(self):
         cases = (
             ('2024\0-02-29', '%Y\0-%m-%d', (2024, 2, 29)),
@@ -4402,6 +4423,17 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
                 got = self.theclass.strptime(string, format)
                 self.assertEqual(expected, got)
                 self.assertIs(type(got), self.theclass)
+
+    def test_strptime_whitespace(self):
+        whitespace = (' ', '\t\n\r\v\f', '\x1c', '\xa0', '\u2003', '\u202f')
+        for input_space in whitespace:
+            for format_space in whitespace:
+                with self.subTest(input_space=input_space,
+                                  format_space=format_space):
+                    text = input_space.join(('12', '34', '56'))
+                    fmt = format_space.join(('%H', '%M', '%S'))
+                    self.assertEqual(self.theclass.strptime(text, fmt),
+                                     self.theclass(12, 34, 56))
 
     def test_strptime_tz(self):
         strptime = self.theclass.strptime

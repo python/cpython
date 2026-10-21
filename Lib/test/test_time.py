@@ -371,6 +371,17 @@ class TimeTestCase(unittest.TestCase):
                 self.fail("conversion specifier %r failed with '%s' input." %
                           (format, strf_output))
 
+    def test_strptime_whitespace(self):
+        whitespace = (' ', '\t\n\r\v\f', '\x1c', '\xa0', '\u2003', '\u202f')
+        for input_space in whitespace:
+            for format_space in whitespace:
+                with self.subTest(input_space=input_space,
+                                  format_space=format_space):
+                    text = input_space.join(('2024-02-29', '12:34:56'))
+                    fmt = format_space.join(('%Y-%m-%d', '%H:%M:%S'))
+                    self.assertEqual(time.strptime(text, fmt),
+                                     (2024, 2, 29, 12, 34, 56, 3, 60, -1))
+
     def test_strptime_numeric_calendar(self):
         cases = (
             ('0001-01-01', 1, 1, 1, 0, 1),

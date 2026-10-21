@@ -5882,7 +5882,7 @@ datetime_datetime_strptime_impl(PyTypeObject *type, PyObject *string,
         if (tzinfo == NULL) {
             return NULL;
         }
-        PyObject *result = new_datetime_subclass_ex(
+        PyObject *result = new_datetime_ex(
             fields.year, fields.month, fields.day,
             fields.hour, fields.minute, fields.second, fields.fraction,
             tzinfo, type);

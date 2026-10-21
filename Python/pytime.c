@@ -1448,13 +1448,6 @@ strptime_digits(const unsigned char *data, Py_ssize_t length, Py_ssize_t pos,
 }
 
 static int
-strptime_space(unsigned char c)
-{
-    return c == ' ' || c == '\t' || c == '\n' || c == '\r' ||
-           c == '\f' || c == '\v';
-}
-
-static int
 strptime_offset(const unsigned char *data, Py_ssize_t length, Py_ssize_t pos,
                 _PyTime_StrptimeFields *fields)
 {
@@ -1466,7 +1459,7 @@ strptime_offset(const unsigned char *data, Py_ssize_t length, Py_ssize_t pos,
         fields->gmtoff = 0;
         return 1;
     }
-    /* Offsets containing seconds or fractions use the Python parser. */
+    /* Offsets containing seconds or fractions fall back to _strptime.py. */
     if ((remaining != 5 && remaining != 6) ||
         (data[pos] != '+' && data[pos] != '-')) {
         return 0;
@@ -1496,6 +1489,29 @@ strptime_offset(const unsigned char *data, Py_ssize_t length, Py_ssize_t pos,
 int
 _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fields)
 {
+    enum {
+        YEAR = 1U << 0,
+        SHORT_YEAR = 1U << 1,
+        MONTH = 1U << 2,
+        DAY = 1U << 3,
+        HOUR = 1U << 4,
+        MINUTE = 1U << 5,
+        SECOND = 1U << 6,
+        FRACTION = 1U << 7,
+        OFFSET = 1U << 8,
+        ANY_YEAR = YEAR | SHORT_YEAR,
+    };
+    static const unsigned short directive_bits[128] = {
+        ['Y'] = YEAR,
+        ['y'] = SHORT_YEAR,
+        ['m'] = MONTH,
+        ['d'] = DAY,
+        ['H'] = HOUR,
+        ['M'] = MINUTE,
+        ['S'] = SECOND,
+        ['f'] = FRACTION,
+        ['z'] = OFFSET,
+    };
     /* String subclasses and non-ASCII input retain Python's behavior. */
     if (!PyUnicode_CheckExact(string) || !PyUnicode_CheckExact(format) ||
         !PyUnicode_IS_ASCII(string) || !PyUnicode_IS_ASCII(format)) {
@@ -1511,16 +1527,16 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
 
     for (Py_ssize_t i = 0; i < fmt_length; i++) {
         unsigned char c = fmt[i];
-        if (strptime_space(c)) {
-            if (pos == length || !strptime_space(data[pos])) {
+        if (Py_ISSPACE(c)) {
+            if (pos == length || !Py_ISSPACE(data[pos])) {
                 return 0;
             }
-            while (i + 1 < fmt_length && strptime_space(fmt[i + 1])) {
+            while (i + 1 < fmt_length && Py_ISSPACE(fmt[i + 1])) {
                 i++;
             }
             do {
                 pos++;
-            } while (pos < length && strptime_space(data[pos]));
+            } while (pos < length && Py_ISSPACE(data[pos]));
             continue;
         }
         if (c != '%') {
@@ -1541,12 +1557,10 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
         }
 
         /* Reject duplicate groups, aliases, and locale-dependent directives. */
-        const char *directives = "YymdHMSfz";
-        const char *directive = strchr(directives, c);
-        if (directive == NULL || c == '\0') {
+        unsigned int bit = directive_bits[c];
+        if (bit == 0) {
             return 0;
         }
-        unsigned int bit = 1U << (directive - directives);
         if (seen & bit) {
             return 0;
         }
@@ -1620,7 +1634,7 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
                 fields->second = value;
                 break;
             case 'f':
-                while (count++ < 6) {
+                for (; count < 6; count++) {
                     value *= 10;
                 }
                 fields->fraction = value;
@@ -1638,8 +1652,8 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
         month_days += leap;
     }
     /* Mixed %Y/%y and day-without-year diagnostics belong to Python. */
-    if (pos != length || (seen & 3) == 3 ||
-        ((seen & (1U << 3)) && !(seen & 3)) ||
+    if (pos != length || (seen & ANY_YEAR) == ANY_YEAR ||
+        ((seen & DAY) && !(seen & ANY_YEAR)) ||
         fields->year < 1 ||
         fields->day > month_days) {
         return 0;
