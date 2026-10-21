@@ -19,10 +19,6 @@ from libclinic.converter import CConverter
 
 @dc.dataclass(frozen=True, slots=True, kw_only=True)
 class SlotSpec:
-    # The special method name, e.g. '__next__'.
-    name: str
-    # The C slot which the function implements, e.g. 'tp_iternext'.
-    c_slot: str
     # The C return type of the slot function.
     return_type: str
     # The name of the return converter which declares `return_type`.
@@ -40,19 +36,18 @@ class SlotSpec:
         return tuple(type(c) for c in converters) == self.parameters
 
     def describe(self) -> str:
+        """The parameters of the slot as they are declared in the DSL."""
         params = ', '.join(c.dsl_name() for c in self.parameters)
-        return f"({params or 'no parameters'}) for {self.c_slot}"
+        return f"({params or 'no parameters'})"
 
 
 # Maps the name of a special method to the slots it can implement.  A name
 # listed here must not be in dsl_parser.unsupported_special_methods.
 SLOTS: Final[dict[str, tuple[SlotSpec, ...]]] = {
     '__next__': (
-        SlotSpec(name='__next__', c_slot='tp_iternext',
-                 return_type='PyObject *', return_converter='object'),
+        SlotSpec(return_type='PyObject *', return_converter='object'),
     ),
     '__len__': (
-        SlotSpec(name='__len__', c_slot='sq_length',
-                 return_type='Py_ssize_t', return_converter='Py_ssize_t'),
+        SlotSpec(return_type='Py_ssize_t', return_converter='Py_ssize_t'),
     ),
 }
