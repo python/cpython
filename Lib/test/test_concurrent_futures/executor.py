@@ -1,6 +1,8 @@
+import gc
 import itertools
 import threading
 import time
+import types
 import weakref
 from concurrent import futures
 from operator import add
@@ -92,6 +94,22 @@ class ExecutorTest:
         self.assertEqual(next(i), (1, 0))
         self.assertRaises(StopIteration, next, i)
         self.assertRaises(StopIteration, next, i)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    @support.cpython_only
+    def test_map_exception_refcycle(self):
+        # The iterator's frame that re-raises the exception must not keep
+        # a reference to it, or the exception and its traceback stay alive
+        # until the next garbage collection.
+        i = self.executor.map(raiser, [ValueError])
+        try:
+            next(i)
+        except ValueError as e:
+            exc = e
+        code = futures._base._MapResultIterator.__next__.__code__
+        frames = [r for r in gc.get_referrers(exc)
+                  if isinstance(r, types.FrameType) and r.f_code is code]
+        self.assertEqual(frames, [])
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_map_timeout_from_callable(self):
