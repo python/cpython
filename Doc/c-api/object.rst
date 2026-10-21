@@ -825,8 +825,6 @@ Object Protocol
    It is a fast operation that does not stop other threads. To immortalize an
    object that may already be shared, use :c:func:`PyUnstable_Immortalize`.
    Returns 1 if the object was made immortal and returns 0 if it was not.
-   Objects that are not uniquely referenced, are already immortal, or are
-   :class:`str` instances are not made immortal.
    This function cannot fail.
 
    .. versionadded:: 3.15

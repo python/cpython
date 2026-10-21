@@ -41,6 +41,24 @@ class TestUnstableCAPI(unittest.TestCase):
         """
         assert_python_ok("-c", script)
 
+    def test_immortalize_dict_merge(self):
+        import_helper.import_module('_testlimitedcapi')
+        script = """if True:
+        import _testcapi
+        import _testlimitedcapi
+        import gc
+
+        mapping = {}
+        assert _testcapi.py_immortalize(mapping) == 1
+        assert not gc.is_tracked(mapping)
+        # Both no-op and nonempty merges accept an untracked immortal dict.
+        assert _testlimitedcapi.dict_update(mapping, {}) == 0
+        assert _testlimitedcapi.dict_update(mapping, {"item": []}) == 0
+        assert _testlimitedcapi.dict_merge(mapping, {"other": 42}, 1) == 0
+        assert mapping == {"item": [], "other": 42}
+        """
+        assert_python_ok("-c", script)
+
     @unittest.skipIf(Py_GIL_DISABLED, "mortal stack reference optimization is GIL-only")
     def test_immortalize_updates_live_frames(self):
         script = """if True:

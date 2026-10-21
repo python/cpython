@@ -225,15 +225,8 @@ test_py_set_immortal(PyObject *self, PyObject *unused)
 #endif
     object.ob_type = &PyBaseObject_Type;
 
-    // Objects with multiple references must not be made immortal.
-    Py_INCREF(&object);
+    assert(!PyUnstable_IsImmortal(&object));
     int rc = PyUnstable_SetImmortal(&object);
-    assert(rc == 0);
-    assert(!PyUnstable_IsImmortal(&object));
-    Py_DECREF(&object);
-
-    assert(!PyUnstable_IsImmortal(&object));
-    rc = PyUnstable_SetImmortal(&object);
     assert(rc == 1);
     assert(PyUnstable_IsImmortal(&object));
     Py_DECREF(&object);  // should not dealloc

@@ -2936,7 +2936,7 @@ get_immortalized_frame(PyObject *op)
 static void
 update_frame_ref(_PyStackRef *ref, PyObject *immortal)
 {
-#if !defined(Py_STACKREF_DEBUG) || defined(Py_GIL_DISABLED)
+#ifndef Py_STACKREF_DEBUG
     if (!PyStackRef_IsNullOrInt(*ref) &&
         PyStackRef_AsPyObjectBorrow(*ref) == immortal)
     {

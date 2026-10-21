@@ -1245,6 +1245,12 @@ C API changes
 New features
 ------------
 
+* Add :c:func:`PyUnstable_Immortalize` to make already shared objects
+  :term:`immortal`. In free-threaded builds, the function stops other threads
+  while immortalizing the object. :class:`str` instances are not supported.
+  Immortalized objects are not deallocated at interpreter shutdown.
+  (Contributed by Peter Bierma.)
+
 * Add :c:func:`Py_HashBuffer` to the limited C API.
   (Contributed by Victor Stinner in :gh:`148233`.)
 
