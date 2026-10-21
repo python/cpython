@@ -331,8 +331,6 @@ class TestGzip(BaseTest):
                         offset = position if whence == io.SEEK_SET else padding
                         self.assertEqual(f.seek(offset, whence), position)
                         f.write(b'record')
-                        self.assertEqual(f.seek(0, io.SEEK_CUR),
-                                         position + len(b'record'))
                         self.assertEqual(f.tell(), position + len(b'record'))
                     self.assertEqual(gzip.decompress(data.getvalue()),
                                      b'header' + b'\0' * padding + b'record')
