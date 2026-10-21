@@ -3552,11 +3552,11 @@ AS_CASE([$host_cpu],
 )
 BASECFLAGS="$hwasan_flags -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="$hwasan_flags $LDFLAGS"
-AC_MSG_CHECKING([whether a program links with -fsanitize=hwaddress])
+AC_MSG_CHECKING([whether a program links with $hwasan_flags])
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
   [AC_MSG_RESULT([yes])],
   [AC_MSG_RESULT([no])
-   AC_MSG_ERROR([cannot link with -fsanitize=hwaddress: the compiler does not support Hardware-assisted AddressSanitizer or its runtime library is not installed; see config.log])])
+   AC_MSG_ERROR([cannot link with $hwasan_flags: the compiler does not support HWAddressSanitizer or its runtime library is not installed; see config.log])])
 ],
 [AC_MSG_RESULT([no])])
 
