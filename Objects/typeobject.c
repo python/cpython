@@ -2035,15 +2035,27 @@ type_set_bases(PyObject *tp, PyObject *new_bases, void *Py_UNUSED(closure))
     if (type_check_new_bases(type, new_bases) < 0) {
         return -1;
     }
+    // Create a fresh bases tuple to store.  Its identity tells whether
+    // tp_bases was replaced again while TYPE_LOCK was released or due to
+    // re-entrancy from the mro() call.
+    Py_ssize_t n = PyTuple_GET_SIZE(new_bases);
+    PyObject *bases = PyTuple_New(n);
+    if (bases == NULL) {
+        return -1;
+    }
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyTuple_SET_ITEM(bases, i, Py_NewRef(PyTuple_GET_ITEM(new_bases, i)));
+    }
     BEGIN_TYPE_LOCK();
     do {
         uint64_t gen = types_publish_gen();
-        res = type_validate_new_bases(type, new_bases, &best_base);
+        res = type_validate_new_bases(type, bases, &best_base);
         if (res == 0) {
-            res = type_set_bases_unlocked(type, new_bases, best_base, gen);
+            res = type_set_bases_unlocked(type, bases, best_base, gen);
         }
     } while (res == 1);
     END_TYPE_LOCK();
+    Py_DECREF(bases);
     return res;
 }
 
