@@ -4476,7 +4476,7 @@ PyListWriter_AppendSteal(PyListWriter *writer, PyObject *item)
     Py_ssize_t len = Py_SIZE(list);
     Py_ssize_t allocated = list->allocated;
     if (len < allocated) {
-        PyList_SET_ITEM(list, len, item);
+        list->ob_item[len] = item;
         Py_SET_SIZE(list, len + 1);
         return 0;
     }
