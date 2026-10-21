@@ -1,0 +1,4 @@
+Make :program:`configure` fail early with a clear error when a
+``--with-*-sanitizer`` option is used but a program cannot be linked with
+the corresponding ``-fsanitize`` flag, for example because the sanitizer
+runtime library is not installed.
