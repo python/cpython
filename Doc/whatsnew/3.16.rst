@@ -1295,6 +1295,17 @@ New features
 * Add :c:func:`Py_HashBuffer` to the limited C API.
   (Contributed by Victor Stinner in :gh:`148233`.)
 
+* Add a new :ref:`PyFrozenSetWriter <pyfrozensetwriter>` C API to create
+  a :class:`frozenset` object. Add functions:
+
+  * :c:func:`PyFrozenSetWriter_Create`
+  * :c:func:`PyFrozenSetWriter_Finish`
+  * :c:func:`PyFrozenSetWriter_Discard`
+  * :c:func:`PyFrozenSetWriter_Add`
+  * :c:func:`PyFrozenSetWriter_Update`
+
+  (Contributed by Victor Stinner in :gh:`160147`.)
+
 * Add :c:macro:`Py_SETREF` and :c:macro:`Py_XSETREF` macros to the limited C
   API.
   (Contributed by Nathan Goldbaum and Victor Stinner in :gh:`158842`.)

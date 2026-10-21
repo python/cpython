@@ -3223,3 +3223,87 @@ static PyTypeObject _PySetDummy_Type = {
 };
 
 static PyObject _dummy_struct = _PyObject_HEAD_INIT(&_PySetDummy_Type);
+
+
+// --- PyFrozenSetWriter API ------------------------------------------------
+
+#ifndef NDEBUG
+static int
+frozsetwriter_check_consistency(PyFrozenSetWriter *writer)
+{
+    assert(writer != NULL);
+    PyObject *frozenset = _PyObject_CAST(writer);
+    // Don't test _PyObject_IsUniquelyReferenced() since a frozenset writer
+    // can be shared between multiple threads with external locking.
+    assert(Py_REFCNT(frozenset) == 1);
+    assert(!_PyObject_GC_IS_TRACKED(frozenset));
+    return 1;
+}
+#endif
+
+
+PyFrozenSetWriter*
+PyFrozenSetWriter_Create(void)
+{
+    PyObject *frozenset = make_new_set_untracked(&PyFrozenSet_Type, NULL);
+    if (frozenset == NULL) {
+        return NULL;
+    }
+
+    PyFrozenSetWriter *writer = (PyFrozenSetWriter*)frozenset;
+    assert(frozsetwriter_check_consistency(writer));
+    return writer;
+}
+
+
+void
+PyFrozenSetWriter_Discard(PyFrozenSetWriter *writer)
+{
+    if (writer == NULL) {
+        return;
+    }
+
+    assert(frozsetwriter_check_consistency(writer));
+    PyObject *frozenset = _PyObject_CAST(writer);
+    Py_DECREF(frozenset);
+}
+
+
+PyObject*
+PyFrozenSetWriter_Finish(PyFrozenSetWriter *writer)
+{
+    assert(frozsetwriter_check_consistency(writer));
+    PySetObject *frozenset = _PySet_CAST(writer);
+
+    // Now that the frozenset is fully initialized, it's safe to track it in
+    // the GC. Track the frozenset if at least one item is tracked by the GC.
+    Py_ssize_t pos = 0;
+    setentry *entry;
+    while (set_next(frozenset, &pos, &entry)) {
+        PyObject *item = entry->key;
+        if (_PyObject_IS_GC(item) && _PyObject_GC_IS_TRACKED(item)) {
+            _PyObject_GC_TRACK(frozenset);
+            break;
+        }
+    }
+
+    return _PyObject_CAST(frozenset);
+}
+
+
+int
+PyFrozenSetWriter_Add(PyFrozenSetWriter *writer, PyObject *item)
+{
+    assert(frozsetwriter_check_consistency(writer));
+    PySetObject *frozenset = _PySet_CAST(writer);
+    return set_add_key(frozenset, item);
+}
+
+
+int
+PyFrozenSetWriter_Update(PyFrozenSetWriter *writer, PyObject *iterable)
+{
+    assert(frozsetwriter_check_consistency(writer));
+    PySetObject *frozenset = _PySet_CAST(writer);
+    return set_update_local(frozenset, iterable);
+}

@@ -1,12 +1,16 @@
+import gc
+import threading
 import unittest
 
 from test.support import import_helper
+from test.support import threading_helper
 
 # Skip this test if the _testcapi, _testlimitedcapi or _testinternalcapi
 # modules aren't available.
 _testcapi = import_helper.import_module('_testcapi')
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 _testinternalcapi = import_helper.import_module('_testinternalcapi')
+
 
 class set_subclass(set):
     pass
@@ -271,6 +275,75 @@ class TestInternalCAPI(BaseSetTests, unittest.TestCase):
         with self.assertRaises(SystemError):
             set_next(object(), 0)
         # CRASHES: set_next(NULL, 0)
+
+
+class FrozenSetWriterTests(unittest.TestCase):
+    def create_writer(self):
+        # Test PyFrozenSetWriter_Create()
+        return _testcapi.PyFrozenSetWriter()
+
+    def frozenset_equal(self, result, expected):
+        if not isinstance(expected, frozenset):
+            expected = frozenset(expected)
+        self.assertEqual(result, expected)
+        self.assertEqual(type(result), frozenset)
+
+    def test_append(self):
+        # Test PyFrozenSetWriter_Append()
+        items = (1, 2, 3)
+        writer = self.create_writer()
+        for item in items:
+            writer.add(item)
+        self.frozenset_equal(writer.finish(), items)
+
+    def test_update(self):
+        # Test PyFrozenSetWriter_Update()
+        writer = self.create_writer()
+        writer.update((2, 5))
+        writer.update((5, 7))
+        self.frozenset_equal(writer.finish(), {2, 5, 7})
+
+    def test_finish(self):
+        # Test PyFrozenSetWriter_Finish(): track the frozenset in the GC if at
+        # least one item is tracked by the GC
+        writer = self.create_writer()
+        writer.update([2, 5, 7])
+        self.assertFalse(gc.is_tracked(writer.finish()))
+
+        class MyObject:
+            pass
+
+        obj = MyObject()
+        writer = self.create_writer()
+        writer.add(obj)
+        self.assertTrue(gc.is_tracked(writer.finish()))
+
+        # test again, now using PyFrozenSetWriter_Update()
+        writer = self.create_writer()
+        writer.update([obj])
+        self.assertTrue(gc.is_tracked(writer.finish()))
+
+    def test_discard(self):
+        # Test PyFrozenSetWriter_Discard(): must not leak memory
+        writer = self.create_writer()
+        writer.update([2, 5, 7])
+        writer.discard()
+
+    @threading_helper.requires_working_threading()
+    def test_thread(self):
+        # PyFrozenSetWriter can be used by multiple threads: it's up to the caller
+        # to implement a lock to prevent concurrent accesses.
+        writer = self.create_writer()
+
+        def thread_func(writer):
+            writer.add('Hello')
+            writer.update(['World!'])
+
+        thread = threading.Thread(target=thread_func, args=(writer,))
+        thread.start()
+        threading_helper.join_thread(thread)
+
+        self.frozenset_equal(writer.finish(), {'Hello', 'World!'})
 
 
 if __name__ == "__main__":
