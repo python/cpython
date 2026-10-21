@@ -974,6 +974,53 @@ See also :ref:`specifying-ambiguous-arguments`. The supported values are:
      usage: PROG [-h] foo [foo ...]
      PROG: error: the following arguments are required: foo
 
+.. _argparse.REMAINDER:
+
+* ``argparse.REMAINDER``. Remaining command-line arguments are gathered into a
+  list, including strings that look like options. This is useful for forwarding
+  arguments to another command. A common pattern is a final positional argument
+  after a command name; options for the outer parser must precede that command::
+
+     >>> parser = argparse.ArgumentParser()
+     >>> parser.add_argument('--foo')
+     >>> parser.add_argument('command')
+     >>> parser.add_argument('args', nargs=argparse.REMAINDER)
+     >>> parser.parse_args('--foo B cmd --foo C'.split())
+     Namespace(foo='B', command='cmd', args=['--foo', 'C'])
+     >>> parser.parse_args(['cmd'])
+     Namespace(foo=None, command='cmd', args=[])
+
+  When the remainder is the first positional argument, leading options are still
+  parsed normally. It starts with the first positional value, or with ``--``.
+  In a subparser, the subcommand name has already been consumed by the parent
+  parser and does not start the remainder. Any ``--`` consumed by the remainder
+  is retained::
+
+     >>> parser = argparse.ArgumentParser()
+     >>> parser.add_argument('args', nargs=argparse.REMAINDER)
+     >>> parser.parse_args(['--', '--foo', 'B'])
+     Namespace(args=['--', '--foo', 'B'])
+
+  For an optional argument, supply the option separately from its values::
+
+     >>> parser = argparse.ArgumentParser()
+     >>> parser.add_argument('--forward', nargs=argparse.REMAINDER)
+     >>> parser.parse_args('--forward --foo B --'.split())
+     Namespace(forward=['--foo', 'B', '--'])
+     >>> parser.parse_args(['--forward'])
+     Namespace(forward=[])
+
+  An attached value such as ``--forward=value`` supplies only that value;
+  subsequent arguments are parsed normally.
+
+  .. versionchanged:: 3.15
+     Optional arguments with ``nargs=argparse.REMAINDER`` consume ``--`` and
+     subsequent arguments instead of stopping at ``--``.
+
+  With the default ``'store'`` action, an empty positional remainder ignores
+  default_ and produces ``[]``. The choices_ restriction is not applied to the
+  remainder.
+
 If the ``nargs`` keyword argument is not provided, the number of arguments consumed
 is determined by the action_.  Generally this means a single command-line argument
 will be consumed and a single item (not a list) will be produced.
@@ -2327,8 +2374,9 @@ Intermixed parsing
 
    These parsers do not support all the :mod:`!argparse` features, and will raise
    exceptions if unsupported features are used.  In particular, subparsers,
-   and mutually exclusive groups that include both
-   optionals and positionals are not supported.
+   positional arguments with
+   :ref:`nargs=argparse.REMAINDER <argparse.REMAINDER>`, and mutually exclusive
+   groups that include both optionals and positionals are not supported.
 
    The following example shows the difference between
    :meth:`~ArgumentParser.parse_known_args` and
