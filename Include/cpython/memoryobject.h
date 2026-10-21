@@ -29,7 +29,7 @@ typedef struct {
     _PyManagedBufferObject *mbuf; /* managed buffer */
     Py_hash_t hash;               /* hash value for read-only views */
     int flags;                    /* state flags */
-    Py_ssize_t exports;           /* buffer re-exports and active operations */
+    Py_ssize_t exports;           /* number of buffer re-exports */
     Py_buffer view;               /* private copy of the exporter's view */
     PyObject *weakreflist;
     Py_ssize_t ob_array[1];       /* shape, strides, suboffsets */
