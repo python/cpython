@@ -143,13 +143,17 @@ types_publish_gen_inc(void)
     _Py_atomic_add_uint64(&interp->types.publish_gen, 1);
 }
 
+// Passed as 'gen' to the try_set_tp_*() helpers to store without checking
+// the publish generation.
+#define TYPES_PUBLISH_GEN_NONE UINT64_MAX
+
 // Return true if the prepared state that was snapshotted at 'gen' is stale.
 // Must be called with the world stopped.
 static inline bool
 types_publish_is_stale(uint64_t gen)
 {
     assert(types_world_is_stopped());
-    return types_publish_gen() != gen;
+    return gen != TYPES_PUBLISH_GEN_NONE && types_publish_gen() != gen;
 }
 
 #else
@@ -165,6 +169,7 @@ types_publish_is_stale(uint64_t gen)
 #define types_world_is_stopped() 1
 #define types_stop_world()
 #define types_start_world()
+#define TYPES_PUBLISH_GEN_NONE 0
 #define types_publish_gen() 0
 #define types_publish_gen_inc()
 #define types_publish_is_stale(gen) 0
@@ -593,28 +598,35 @@ set_tp_bases(PyTypeObject *self, PyObject *bases)
     self->tp_bases = bases;
 }
 
-// Replace tp_bases and tp_base of a type.  Returns 1 on success,
-// and 0 otherwise.
+// Replace tp_bases and tp_base of a type with the world stopped.  Returns 1
+// on success, 0 if tp_bases is no longer 'expected' (NULL matches anything)
+// and -1 if the publish generation is no longer 'gen' (pass
+// TYPES_PUBLISH_GEN_NONE to skip that check).  In the last two cases the
+// caller still owns 'bases' and 'base'.
 static int
 try_set_tp_bases(PyTypeObject *self, PyObject *expected,
-                PyObject *bases, PyTypeObject *base, uint64_t gen, bool check_gen)
+                PyObject *bases, PyTypeObject *base, uint64_t gen)
 {
     ASSERT_TYPE_LOCK_HELD();
     assert(PyTuple_Check(bases));
     assert(!(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
-    int stored = 0;
+    int res;
     types_stop_world();
-    if ((expected == NULL || self->tp_bases == expected)
-        && (!check_gen || !types_publish_is_stale(gen)))
-    {
+    if (expected != NULL && self->tp_bases != expected) {
+        res = 0;
+    }
+    else if (types_publish_is_stale(gen)) {
+        res = -1;
+    }
+    else {
         self->tp_bases = bases;
         self->tp_base = base;
         types_publish_gen_inc();
-        stored = 1;
+        res = 1;
     }
     types_start_world();
     ASSERT_TYPE_LOCK_HELD();
-    return stored;
+    return res;
 }
 
 static inline void
@@ -663,12 +675,13 @@ set_tp_mro(PyTypeObject *self, PyObject *mro)
     self->tp_mro = mro;
 }
 
-// Replace tp_mro with the world stopped.  Returns 1 on success, 0 if tp_mro
-// is no longer "expected", and -1 if the generation changed.  In the last two
-// cases the caller still owns 'mro'.
+// Replace tp_mro of a type with the world stopped.  Returns 1 on success, 0
+// if tp_mro is no longer 'expected' and -1 if the publish generation is no
+// longer 'gen' (pass TYPES_PUBLISH_GEN_NONE to skip that check).  In the
+// last two cases the caller still owns 'mro'.
 static int
 try_set_tp_mro(PyTypeObject *self, PyObject *expected, PyObject *mro,
-              uint64_t gen, bool check_gen)
+              uint64_t gen)
 {
     ASSERT_TYPE_LOCK_HELD();
     assert(!(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
@@ -678,7 +691,7 @@ try_set_tp_mro(PyTypeObject *self, PyObject *expected, PyObject *mro,
     if (self->tp_mro != expected) {
         res = 0;
     }
-    else if (check_gen && types_publish_is_stale(gen)) {
+    else if (types_publish_is_stale(gen)) {
         res = -1;
     }
     else {
@@ -1811,7 +1824,7 @@ mro_hierarchy_for_complete_type(PyTypeObject *type, PyObject *temp)
 
     if (res < 0) {
         // Roll back, unless tp_mro has already been replaced again.
-        if (try_set_tp_mro(type, new_mro, old_mro, 0, false) == 1) {
+        if (try_set_tp_mro(type, new_mro, old_mro, TYPES_PUBLISH_GEN_NONE) == 1) {
             Py_DECREF(new_mro);
         }
         else {
@@ -1945,8 +1958,8 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases,
     assert(old_bases != NULL);
     PyTypeObject *old_base = type->tp_base;
 
-    if (!try_set_tp_bases(type, NULL, Py_NewRef(new_bases),
-                         (PyTypeObject *)Py_NewRef(best_base), gen, true))
+    if (try_set_tp_bases(type, NULL, Py_NewRef(new_bases),
+                         (PyTypeObject *)Py_NewRef(best_base), gen) != 1)
     {
         Py_DECREF(new_bases);
         Py_DECREF(best_base);
@@ -2002,7 +2015,7 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases,
                           "", 2, 3, &cls, &new_mro, &old_mro);
         /* Do not rollback if cls has a newer version of MRO.  */
         old_mro = Py_XNewRef(old_mro);
-        if (try_set_tp_mro(cls, new_mro, old_mro, 0, false) == 1) {
+        if (try_set_tp_mro(cls, new_mro, old_mro, TYPES_PUBLISH_GEN_NONE) == 1) {
             Py_DECREF(new_mro);
         }
         else {
@@ -2013,7 +2026,9 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases,
 
   bail:
     /* Restore the old bases, unless tp_bases has been replaced again. */
-    if (try_set_tp_bases(type, new_bases, old_bases, old_base, 0, false)) {
+    if (try_set_tp_bases(type, new_bases, old_bases, old_base,
+                         TYPES_PUBLISH_GEN_NONE) == 1)
+    {
         Py_DECREF(new_bases);
         Py_DECREF(best_base);
     }
@@ -3715,7 +3730,7 @@ mro_internal(PyTypeObject *type, int initial, PyObject **p_old_mro)
             // released while mro_invoke() ran or while waiting to stop the
             // world, so check for reentrance and for concurrent mutation of
             // the hierarchy inside the stop-the-world.
-            res = try_set_tp_mro(type, old_mro, new_mro, gen, true);
+            res = try_set_tp_mro(type, old_mro, new_mro, gen);
         }
         if (res == 1) {
             break;
