@@ -1,0 +1,3 @@
+Fix :func:`inspect.formatargvalues` raising :exc:`KeyError` for deleted
+arguments, including ``*args`` and ``**kwargs``, by displaying ``<deleted>``.
+Patch by Ezio Melotti and Furkan Onder.
