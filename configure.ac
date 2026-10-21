@@ -2212,6 +2212,13 @@ if test "$Py_BOLT" = 'true' ; then
       CFLAGS_NODIST="$CFLAGS_NODIST -fno-reorder-blocks-and-partition"
   ])
 
+  # BOLT rejects binaries with Cortex-A53 erratum 843419 workaround veneers,
+  # see https://github.com/llvm/llvm-project/pull/187955
+  # GCC only: Clang neither accepts the flag nor adds the workaround on Linux.
+  AX_CHECK_COMPILE_FLAG([-mno-fix-cortex-a53-843419],[
+      LDFLAGS_NODIST="$LDFLAGS_NODIST -mno-fix-cortex-a53-843419"
+  ], [], [-Werror])
+
   # These flags are required for bolt to work:
   LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,--emit-relocs"
 
@@ -2288,6 +2295,12 @@ AC_ARG_VAR(
 AC_MSG_CHECKING([BOLT_APPLY_FLAGS])
 if test -z "${BOLT_APPLY_FLAGS}"
 then
+  dnl The frame optimizer is only implemented for x86. BOLT 22 and newer
+  dnl refuse to run it on other architectures.
+  AS_CASE([$host_cpu],
+    [x86_64], [bolt_frame_opt_flags="-frame-opt=hot"],
+    [bolt_frame_opt_flags=""]
+  )
   AS_VAR_SET(
     [BOLT_APPLY_FLAGS],
     [m4_normalize("
@@ -2305,7 +2318,7 @@ then
      -indirect-call-promotion=all
      -dyno-stats
      -use-gnu-stack
-     -frame-opt=hot
+     ${bolt_frame_opt_flags}
    ")]
   )
 fi

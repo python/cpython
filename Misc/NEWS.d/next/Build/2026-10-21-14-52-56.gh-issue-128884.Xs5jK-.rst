@@ -1,0 +1,3 @@
+Fix ``--enable-bolt`` build failures on AArch64 with recent LLVM: pass
+``-frame-opt=hot`` only on x86 and link with ``-mno-fix-cortex-a53-843419``
+when supported. Patch by Donghee Na.
