@@ -322,7 +322,7 @@ class TestGzip(BaseTest):
 
     def test_seek_write_return_value(self):
         for whence in (io.SEEK_SET, io.SEEK_CUR):
-            for padding in (16, 1024 * 1024):
+            for padding in (16, gzip._WRITE_BUFFER_SIZE + 16):
                 with self.subTest(whence=whence, padding=padding):
                     data = io.BytesIO()
                     with gzip.GzipFile(fileobj=data, mode='wb') as f:
