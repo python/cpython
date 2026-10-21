@@ -40,8 +40,8 @@
 
   Here's a list of currently unsupported functions:
 
-  del_curterm mcprint mvcur restartterm
-    ripoffline set_curterm setterm
+    del_curterm mvcur restartterm
+    set_curterm setterm
   tgetent tgetflag tgetnum tgetstr tgoto tputs
   vidattr vidputs
 
@@ -2090,7 +2090,12 @@ PyCurses_RipofflineSaveException(void)
     PyErr_Fetch(&type, &value, &traceback);
     Py_XDECREF(type);
     Py_XDECREF(traceback);
-    Py_XSETREF(ripoffline_context.exception, value);
+    if (ripoffline_context.exception == NULL) {
+        ripoffline_context.exception = value;
+    }
+    else {
+        Py_XDECREF(value);
+    }
 }
 
 static int
@@ -2143,7 +2148,8 @@ PyCurses_Ripoffline(PyObject *module, PyObject *args)
         return NULL;
     }
     if (ripoffline_context.count >= 5) {
-        PyErr_SetString(PyExc_RuntimeError,
+        cursesmodule_state *state = get_cursesmodule_state(module);
+        PyErr_SetString(state->error,
                         "ripoffline() called more than five times");
         return NULL;
     }
