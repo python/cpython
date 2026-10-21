@@ -2719,6 +2719,12 @@ insert_superinstructions(cfg_builder *g)
                         make_super_instruction(inst, &b->b_instr[i + 1], LOAD_FAST_LOAD_FAST);
                     }
                     break;
+                case LOAD_FAST_BORROW:
+                    if (nextop == LOAD_FAST_BORROW) {
+                        make_super_instruction(inst, &b->b_instr[i + 1],
+                                               LOAD_FAST_BORROW_LOAD_FAST_BORROW);
+                    }
+                    break;
                 case STORE_FAST:
                     switch (nextop) {
                         case LOAD_FAST:
@@ -3834,8 +3840,6 @@ _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
     RETURN_IF_ERROR(
         add_checks_for_loads_of_uninitialized_variables(
             g->g_entryblock, nlocals, nparams));
-    RETURN_IF_ERROR(insert_superinstructions(g));
-
     RETURN_IF_ERROR(push_cold_blocks_to_end(g));
     RETURN_IF_ERROR(resolve_line_numbers(g, firstlineno));
     // temporarily remove assert. See https://github.com/python/cpython/issues/125845
@@ -4162,6 +4166,11 @@ _PyCfg_OptimizedCfgToInstructionSequence(cfg_builder *g,
      */
     RETURN_IF_ERROR(optimize_load_fast(g));
 
+    /* Superinstructions are inserted after optimize_load_fast() so that a
+     * LOAD_FAST which can be borrowed is converted to LOAD_FAST_BORROW
+     * instead of being fused into a STORE_FAST_LOAD_FAST. */
+    RETURN_IF_ERROR(insert_superinstructions(g));
+
     /* Can't modify the bytecode after computing jump offsets. */
     if (_PyCfg_ToInstructionSequence(g, seq) < 0) {
         return ERROR;
@@ -4255,6 +4264,10 @@ _PyCompile_OptimizeCfg(PyObject *seq, PyObject *consts, int nlocals)
     }
 
     if (optimize_load_fast(g) != SUCCESS) {
+        goto error;
+    }
+
+    if (insert_superinstructions(g) != SUCCESS) {
         goto error;
     }
 
