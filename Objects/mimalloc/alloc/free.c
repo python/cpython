@@ -107,10 +107,11 @@ void mi_free_block_mt(mi_page_t* page, mi_block_t* block, bool was_guarded, bool
   do {
     mi_block_set_next(page, block, mi_tf_block(tf_old));
     tf_new = mi_tf_create(block, true);
-  } while (!mi_atomic_cas_weak_acq_rel(&page->xthread_free, &tf_old, tf_new));
+  } while(!mi_atomic_cas_weak_acq_rel(&page->xthread_free, &tf_old, tf_new));
 
   // and atomically try to collect the page if it was abandoned
-  const bool is_newly_owned = mi_tf_is_owned(tf_new) && !mi_tf_is_owned(tf_old);
+  mi_assert_internal(mi_tf_is_owned(tf_new));
+  const bool is_newly_owned = !mi_tf_is_owned(tf_old); // && mi_tf_is_owned(tf_new)
   if (is_newly_owned) {
     mi_assert_internal(mi_page_is_abandoned(page));
     // mi_assert_internal(!mi_page_is_abandoned_mapped(page));
@@ -216,7 +217,7 @@ static mi_decl_forceinline bool mi_ptr_page_is_valid_ex(const void* p, const cha
 {
   MI_UNUSED_RELEASE(msg); MI_UNUSED(free_small);
   #if MI_DEBUG
-  if mi_unlikely(!mi_is_aligned(p,MI_SIZE_SIZE) && !mi_option_is_enabled(mi_option_guarded_precise)) {
+  if mi_unlikely(!mi_is_aligned(p,MI_SIZE_SIZE) && !mi_option_is_enabled(mi_option_unsafe_guarded_precise)) {
     _mi_error_message(EINVAL, "%s: invalid (unaligned) pointer: %p\n", msg, p);
     return false;
   }
@@ -399,15 +400,15 @@ void mi_free_size(void* p, size_t size) mi_attr_noexcept {
     mi_assert(p!=NULL);
     const mi_block_t* block = _mi_page_ptr_unalign(page, p);
     const size_t usable = _mi_page_usable_size(page,p);
+    const bool is_guarded = mi_block_ptr_is_guarded(block,p);  // guarded blocks are always in a non-small page
     if mi_unlikely(size > usable) {
-      const bool is_guarded = mi_block_ptr_is_guarded(block,p);
       if (!is_guarded) {
         _mi_error_message(EINVAL, "pointer %p is freed with 'mi_free_size' but the size %zu is greater than the usable size %zu\n", p, size, usable);
         mi_free(p);
         return;
       }
     }
-    else if mi_unlikely(size <= MI_SMALL_SIZE_MAX && !mi_page_is_small(page)) {
+    else if mi_unlikely(size <= MI_SMALL_SIZE_MAX && !mi_page_is_small(page) && !is_guarded) {
       _mi_error_message(EINVAL, "pointer %p is freed with 'mi_free_size' with size %zu (<= MI_SMALL_SIZE_MAX), but it was allocated in a non-small page with block size %zu -- maybe a mismatched delete operator?\n", p, size, mi_page_block_size(page));
       mi_free(p);
       return;
@@ -466,19 +467,29 @@ bool mi_cfree(void* p) mi_attr_noexcept {
 // 3. if it went to < 7/8th used, re-abandon to be mapped (so it can be found by theaps looking for free pages)
 // --------------------------------------------------------------------------------------------
 
-// Consume an empty page, either freeing it or leaving it abandoned until its grace period ends.
+// Consume an empty page, reclaiming delayed pages if this thread has a theap for their heap.
 static bool mi_abandoned_page_collect_empty(mi_page_t* page)
 {
   if (!mi_page_all_free(page)) return false;
   const bool should_delay = _mi_page_qsbr_should_delay(page);
   // first remove it from the abandoned pages in the arena (if mapped, this might wait for any readers to finish)
   _mi_arenas_page_unabandon(page,NULL);
-  if (!should_delay) {
+  if mi_likely(!should_delay) {
     _mi_page_qsbr_clear(page);
     _mi_arenas_page_free(page,NULL);
   }
   else {
-    _mi_arenas_page_abandon(page,NULL);
+    mi_heap_t* const heap = mi_page_heap(page);
+    mi_theap_t* const theap = mi_heap_theap(heap);
+    if (theap != NULL) {
+      // reclaim such that it gets part of the theap's qsbr list.
+      _mi_theap_page_reclaim(theap, page);
+    }
+    else {
+      mi_assert_internal(false);
+      // abandon as empty; it can only be collected by _mi_heap_collect_abandoned at this point
+      _mi_arenas_page_abandon(page,NULL);
+    }
   }
   return true;
 }

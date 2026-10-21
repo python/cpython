@@ -450,7 +450,7 @@ mi_block_t* _mi_page_free_collect_partly(mi_page_t* page, mi_block_t* head) {
 ----------------------------------------------------------- */
 
 // called from `mi_free` on a reclaim, and fresh_alloc if we get an abandoned page
-void _mi_theap_page_reclaim(mi_theap_t* theap, mi_page_t* page)
+bool _mi_theap_page_reclaim(mi_theap_t* theap, mi_page_t* page)
 {
   mi_assert_internal(mi_is_aligned(mi_page_slice_start(page), MI_PAGE_ALIGN));
   mi_assert_internal(mi_ptr_page(mi_page_start(page))==page);
@@ -463,8 +463,8 @@ void _mi_theap_page_reclaim(mi_theap_t* theap, mi_page_t* page)
   mi_page_queue_t* pq = mi_theap_page_queue_of(theap, page);
   mi_page_queue_push_at_end(theap, pq, page);
   if (!mi_page_all_free(page)) { _mi_page_qsbr_clear(page); }
-  else if (!_mi_page_qsbr_is_clear(page)) { mi_page_qsbr_enqueue(page, theap); }
   mi_assert_expensive(_mi_page_is_valid(page));
+  return (mi_page_all_free(page) && _mi_page_free(page, pq));
 }
 
 void _mi_page_abandon(mi_page_t* page, mi_page_queue_t* pq) {
@@ -488,13 +488,17 @@ mi_page_t* _mi_page_fresh_alloc(mi_theap_t* theap, mi_page_queue_t* pq, size_t b
   mi_assert_internal(mi_theap_contains_queue(theap, pq));
   mi_assert_internal(page_alignment > 0 || block_size > MI_LARGE_MAX_OBJ_SIZE || block_size == pq->block_size);
   #endif
-  mi_page_t* page = _mi_arenas_page_alloc(theap, block_size, page_alignment);
-  if (page == NULL) {
-    // out-of-memory
-    return NULL;
-  }
-  if (mi_page_is_abandoned(page)) {
-    _mi_theap_page_reclaim(theap, page);
+  mi_page_t* page;
+  bool reclaimed;
+  do {
+    page = _mi_arenas_page_alloc(theap, block_size, page_alignment);
+    if (page == NULL) {
+      // out-of-memory
+      return NULL;
+    }
+    reclaimed = mi_page_is_abandoned(page);
+  } while (reclaimed && _mi_theap_page_reclaim(theap, page));
+  if (reclaimed) {
     if (!mi_page_immediate_available(page)) {
       if (mi_page_is_expandable(page)) {
         if (!_mi_page_extend_free(theap, page)) {

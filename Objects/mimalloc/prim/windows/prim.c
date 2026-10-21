@@ -1207,6 +1207,7 @@ extern "C" {
   }
 
   void _mi_prim_thread_associate_default_theap(mi_theap_t* theap) {
+    mi_assert_internal(mi_fls_key != (DWORD)(-1));
     FlsSetValue(mi_fls_key, theap);
   }
 #else

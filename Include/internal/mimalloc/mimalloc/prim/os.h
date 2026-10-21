@@ -21,7 +21,7 @@ size_t        _mi_os_guard_page_size(void);
 size_t        _mi_os_good_alloc_size(size_t size);
 bool          _mi_os_has_overcommit(void);
 bool          _mi_os_has_virtual_reserve(void);
-bool          _mi_os_canuse_thp(void);
+bool          _mi_os_has_thp(void);
 size_t        _mi_os_virtual_address_bits(void);
 size_t        _mi_os_minimal_purge_size(void);
 
@@ -49,6 +49,7 @@ void*         _mi_os_alloc_aligned_at_offset(mi_subproc_t* subproc, size_t size,
 
 void*         _mi_os_get_aligned_hint(size_t try_alignment, size_t size);
 bool          _mi_os_canuse_large_page(size_t size, size_t alignment);
+
 size_t        _mi_os_large_page_size(void);
 void*         _mi_os_alloc_huge_os_pages(mi_subproc_t* subproc, size_t pages, int numa_node, mi_msecs_t max_secs, size_t* pages_reserved, size_t* psize, mi_memid_t* memid);
 

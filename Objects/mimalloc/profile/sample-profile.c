@@ -44,6 +44,10 @@ mi_decl_noinline mi_decl_restrict void* _mi_theap_malloc_sampled(mi_theap_t* the
     }
     return _mi_malloc_generic_no_sample(theap,size,zero,ppage);
   }
+  // never sample allocations made by a profiler `on_alloc` callback (e.g. by `backtrace`) to avoid recursion
+  if mi_unlikely(theap->tld->in_profiler) {
+    return _mi_malloc_generic_no_sample(theap,size,zero,ppage);
+  }
 
   // update countdown and total accummulated requested bytes since the last sample
   mi_assert_internal(!_mi_is_empty_theap(theap));
@@ -122,6 +126,15 @@ static mi_profiler_t* mi_theap_get_enabled_profiler(const mi_theap_t* theap) {
 // Profile an allocation
 //-----------------------------------------------------------------------------
 
+// call `on_alloc`; allocations made by the profiler itself (e.g. by `backtrace`) are not sampled
+static size_t mi_profiler_on_alloc(mi_theap_t* theap, mi_profiler_t* prof, mi_profiler_sample_data_t* data, void* p, size_t req_size, uint64_t requested_since_last_sample) {
+  mi_tld_t* const tld = theap->tld;
+  tld->in_profiler = true;
+  const size_t new_sample_rate = (*prof->on_alloc)(prof, data, p, req_size, theap->profile_sample_rate, requested_since_last_sample, mi_theap_heap(theap));
+  tld->in_profiler = false;
+  return new_sample_rate;
+}
+
 mi_decl_noinline mi_decl_restrict void* _mi_theap_malloc_profiled(mi_theap_t* theap, size_t size, uint64_t requested_since_last_sample, bool zero, mi_page_t** ppage) mi_attr_noexcept
 {
   mi_assert_internal(theap!=NULL);
@@ -140,7 +153,7 @@ mi_decl_noinline mi_decl_restrict void* _mi_theap_malloc_profiled(mi_theap_t* th
     if (p==NULL) { return p; }
     if (prof->on_alloc!=NULL) {
       // we are just allocation profiling (not heap profiling as on_free == NULL)
-      new_sample_rate = (*prof->on_alloc)(prof, NULL /* no data */, p, req_size, theap->profile_sample_rate, requested_since_last_sample, mi_theap_heap(theap) );
+      new_sample_rate = mi_profiler_on_alloc(theap, prof, NULL /* no data */, p, req_size, requested_since_last_sample);
     }
   }
   else {
@@ -172,7 +185,7 @@ mi_decl_noinline mi_decl_restrict void* _mi_theap_malloc_profiled(mi_theap_t* th
 
     // and call the profiler on_alloc
     if (prof->on_alloc!=NULL) {
-      new_sample_rate = (*prof->on_alloc)(prof, sample_data, p, req_size, theap->profile_sample_rate, requested_since_last_sample, mi_theap_heap(theap) );
+      new_sample_rate = mi_profiler_on_alloc(theap, prof, sample_data, p, req_size, requested_since_last_sample);
     }
   }
   if (new_sample_rate!=0 && new_sample_rate != (size_t)theap->profile_sample_rate) {

@@ -220,7 +220,7 @@ mi_theap_t* mi_theap_set_default(mi_theap_t* theap) {
 
 static void mi_theap_options_init(mi_theap_t* theap, mi_heap_t* heap) {
   theap->allow_page_reclaim = (mi_heap_reclaim_on_free(heap) >= 0);
-  theap->allow_page_abandon = (mi_option_get(mi_option_page_full_retain) >= 0 && !mi_heap_qsbr_is_enabled(heap));
+  theap->allow_page_abandon = (mi_option_get(mi_option_page_full_retain) >= 0); // nowadays qsbr pages can be abandoned: && !mi_heap_qsbr_is_enabled(heap));
   theap->page_full_retain = mi_option_get_clamp(mi_option_page_full_retain, -1, 32);
   theap->is_detached = (theap->tld->thread_id == MI_THREADID_DETACHED);
 }
@@ -235,6 +235,7 @@ void _mi_theap_init(mi_theap_t* theap, mi_heap_t* heap, mi_tld_t* tld)
   mi_memcpy_aligned(theap, &_mi_theap_empty, sizeof(mi_theap_t));
   theap->memid = memid;
   theap->tld   = tld;  // avoid reading the thread-local tld during initialization
+  theap->profile_never = false;  // only set for the empty and meta theaps (see `mi_theap_profile_never`)
   mi_atomic_store_release(&theap->refcount,1);
   mi_atomic_store_ptr_release(mi_subproc_t,&theap->subproc,heap->subproc);
   mi_assert_internal(theap->stats.size == sizeof(mi_stats_t));

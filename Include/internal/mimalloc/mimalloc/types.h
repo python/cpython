@@ -215,9 +215,9 @@ terms of the MIT license. A copy of the license can be found in the file
   #define MI_ARENA_SLICE_SHIFT              MI_SMALL_PAGE_SHIFT
   #elif MI_SECURE>=5 && __APPLE__ && MI_ARCH_ARM64
   #define MI_ARENA_SLICE_SHIFT              (17)                        // 128 KiB to not waste too much due to 16 KiB guard pages
-  #elif MI_SECURE>=5 && defined(PAGE_SIZE) && !defined(__wasi__)     // PAGE_SIZE is not a preprocessor constant on WASI
+  #elif MI_SECURE>=5 && defined(PAGE_SIZE) && !defined(__wasi__)        // see issue #1440
     #if PAGE_SIZE >= 16*MI_KiB
-    #define MI_ARENA_SLICE_SHIFT            (17)
+    #define MI_ARENA_SLICE_SHIFT            (17)                        // 128 KiB to not waste too much due to 16 KiB guard pages
     #endif
   #endif
   #ifndef MI_ARENA_SLICE_SHIFT
@@ -477,7 +477,7 @@ static inline mi_used_t mi_xused_used_reset(mi_used_t xused) { xused.used_alloc 
 //   that case the `xthreadid` is 0 or 4 (4 is for abandoned pages that
 //   are in the `pages_abandoned` lists of an arena, these are called "mapped" abandoned pages).
 // - page flags are in the bottom 3 bits of `xthread_id` for the fast path in `mi_free`.
-// - The layout below is optimized for `alloc/free.c:mi_free` and `alloc/alloc.c:mi_page_alloc`
+// - The layout below is optimized for `alloc/free.c:mi_free` and `alloc/alloc.c:mi_page_alloc` -- do not change it without careful consideration.
 
 typedef struct mi_page_s {
   #if (MI_PAGE_META_IS_ALIGNED)
@@ -485,14 +485,14 @@ typedef struct mi_page_s {
   #endif
   _Atomic(mi_threadid_t)    xthread_id;        // thread this page belongs to. (= `theap->thread_id (or 0 or 4 if abandoned) | page_flags`)
   mi_block_t*               free;              // list of available free blocks (`malloc` allocates from this list)
+  mi_block_t*               local_free;        // list of deferred free blocks by this thread (migrates to `free`)
+  size_t                    block_size;        // const: size available in each block (always `>0`)
   mi_used_t                 xused;             // number of blocks in use (including blocks in `thread_free`) (and the allocated count for statistics)
   #if MI_SIZE_SIZE < 8
   uint16_t                  xlast_used;        // for statistics; on 64-bit platforms it is in bits 32..47 of xused.
   uint16_t                  xlast_alloc;       // for sampling; on 64-bit platforms it is in bits 48..63 of xused.
   #endif
-  mi_block_t*               local_free;        // list of deferred free blocks by this thread (migrates to `free`)
 
-  size_t                    block_size;        // const: size available in each block (always `>0`)
   size_t                    page_offset;       // const: relative offset from the page to the start of the blocks
   uint16_t                  capacity;          // number of blocks committed
   uint16_t                  reserved;          // number of blocks reserved in memory
@@ -656,7 +656,7 @@ struct mi_theap_s {
   bool                  allow_page_reclaim;                  // `true` if this theap can reclaim abandoned pages
   bool                  allow_page_abandon;                  // `true` if this theap can abandon pages to reduce memory footprint
   bool                  is_detached;                         // `true` if `tld->thread_id == MI_THREADID_DETACHED`
-  bool                  profile_disabled;                    // if `true`, this theap is permanently excluded from profiling
+  bool                  profile_never;                       // if `true`, this theap is never profiled (only the empty and meta theaps)
 
   // sampling
   size_t                sample_countdown;                    // sample countdown in requested bytes (don't change the field order; see `internal.h:mi_theap_get_free_small_page`)
@@ -809,6 +809,7 @@ struct mi_tld_s {
   mi_theap_t*           theaps;               // list of theaps in this thread (so we can abandon all when the thread terminates)
   mi_lock_t             theaps_lock;          // lock as the theaps list is sometimes accessed from another thread (on `mi_heap_free`)
   bool                  recurse;              // true if deferred was called; used to prevent infinite recursion.
+  bool                  in_profiler;          // true while in a profiler `on_alloc` callback; nested allocations are not sampled
   bool                  is_in_threadpool;     // true if this thread is part of a threadpool (and can run arbitrary tasks)
   mi_memid_t            memid;                // provenance of the tld memory itself (meta or OS)
 };

@@ -20,8 +20,8 @@ size_t        _mi_theap_set_profile_sample_rate(mi_theap_t* theap, size_t sample
 // permanently exclude a theap from profiling (mirrors `mi_heap_profile_disable` but at the theap level);
 // used for detached/meta theaps used to bootstrap thread/theap metadata, since sampling those can call
 // back into the profiler while allocating on a not yet (re-)initialized thread, causing deadlock.
-static inline void mi_theap_profile_disable(mi_theap_t* theap) {
-  theap->profile_disabled = true;
+static inline void mi_theap_profile_never(mi_theap_t* theap) {
+  theap->profile_never = true;
   theap->profile_sample_rate = 0;
   theap->profile_sample_countdown = 0;
 }

@@ -73,14 +73,22 @@ terms of the MIT license. A copy of the license can be found in the file
 #endif
 
 #if defined(__GNUC__) || defined(__clang__)
-#define mi_unlikely(x)     (__builtin_expect(!!(x),false))
-#define mi_likely(x)       (__builtin_expect(!!(x),true))
+#define mi_unlikely(x)          (__builtin_expect(!!(x),false))
+#define mi_likely(x)            (__builtin_expect(!!(x),true))
 #elif (defined(__cplusplus) && (__cplusplus >= 202002L)) || (defined(_MSVC_LANG) && _MSVC_LANG >= 202002L)
-#define mi_unlikely(x)     (x) [[unlikely]]
-#define mi_likely(x)       (x) [[likely]]
+#define mi_unlikely(x)          (x) [[unlikely]]
+#define mi_likely(x)            (x) [[likely]]
 #else
-#define mi_unlikely(x)     (x)
-#define mi_likely(x)       (x)
+#define mi_unlikely(x)          (x)
+#define mi_likely(x)            (x)
+#endif
+
+#if (defined(__GNUC__) && (__GNUC__ >= 4)) || defined(__clang__)
+#define mi_prefetch_write(p)    __builtin_prefetch(p, 1, 3)
+#define mi_prefetch_read(p)     __builtin_prefetch(p, 0, 3)
+#else
+#define mi_prefetch_write(p)
+#define mi_prefetch_read(p)
 #endif
 
 #if (defined(__GNUC__) && (__GNUC__ >= 7)) || defined(__clang__)

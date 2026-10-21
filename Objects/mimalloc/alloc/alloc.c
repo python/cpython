@@ -733,7 +733,7 @@ mi_decl_nodiscard static mi_decl_restrict char* mi_theap_realpath(mi_theap_t* xt
 #include <unistd.h>  // pathconf
 
 static size_t mi_path_max(void) {
-  static _Atomic(size_t) path_max = 0;
+  static _Atomic(size_t) path_max; // = 0
   size_t pmax = mi_atomic_load_acquire(&path_max);
   if (pmax == 0) {
     long m = 0;

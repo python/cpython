@@ -13,5 +13,5 @@
   > wpr -start src\prim\windows\etw-mimalloc.wprp -filemode
   > <my mimalloc program>
   > wpr -stop test.etl
-  ``` 
+  ```
   and then open `test.etl` in the Windows Performance Analyzer (WPA).

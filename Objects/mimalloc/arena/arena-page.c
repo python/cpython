@@ -917,11 +917,23 @@ static bool mi_abandoned_page_unown(mi_page_t* page, mi_theap_t* current_theapx)
     mi_assert_internal(mi_tf_is_owned(tf_old));
     while mi_unlikely(mi_tf_block(tf_old) != NULL) {
       _mi_page_free_collect(page, false);  // update used
-      if (mi_page_all_free(page) && !_mi_page_qsbr_should_delay(page)) {
-        _mi_page_qsbr_clear(page);
-        _mi_arenas_page_unabandon(page, current_theapx);
-        _mi_arenas_page_free(page, current_theapx);
-        return true;
+      if (mi_page_all_free(page)) {
+        if (!_mi_page_qsbr_should_delay(page)) {
+          _mi_page_qsbr_clear(page);
+          _mi_arenas_page_unabandon(page, current_theapx);
+          _mi_arenas_page_free(page, current_theapx);
+          return true;
+        }
+        #if MI_QSBR
+        else if (page->memid.memkind == MI_MEM_ARENA &&
+                 !mi_page_is_singleton(page) && !mi_page_is_abandoned_mapped(page))
+        {
+          // if empty and qsbr delayed, we re-abandon to mapped so it can be reused
+          _mi_arenas_page_unabandon(page, current_theapx);
+          _mi_arenas_page_abandon(page, current_theapx);   // cannot recurse due to `!mi_page_is_abandoned_mapped(page)`
+          return false;
+        }
+        #endif
       }
       tf_old = mi_atomic_load_relaxed(&page->xthread_free);
     }
@@ -954,7 +966,7 @@ void _mi_arenas_page_abandon(mi_page_t* page, mi_theap_t* current_theapx) {
   mi_heap_t* heap = mi_page_heap(page);
   if (page->memid.memkind==MI_MEM_ARENA && !mi_page_is_full(page)
       #if MI_QSBR
-      && !mi_page_is_singleton(page)
+      && !mi_page_is_singleton(page) // an arena singleton has size > MI_LARGE_MAX_OBJ_SIZE and bin==MI_BIN_HUGE
       #endif
      ) {
     // make available for allocations

@@ -101,7 +101,7 @@ mi_decl_restrict void* _mi_theap_malloc_guarded(mi_theap_t* theap, size_t size, 
     return NULL;
   }
   const size_t os_page_size = _mi_os_page_size();
-  const size_t obj_size = (mi_option_is_enabled(mi_option_guarded_precise) ? size : mi_align_up(size, MI_MAX_ALIGN_SIZE));
+  const size_t obj_size = (mi_option_is_enabled(mi_option_unsafe_guarded_precise) ? size : mi_align_up(size, MI_MAX_ALIGN_SIZE));
   const size_t bsize    = mi_align_up(mi_align_up(obj_size, MI_MAX_ALIGN_SIZE) + sizeof(mi_block_t), MI_MAX_ALIGN_SIZE);
   const size_t req_size = mi_align_up(bsize + os_page_size, os_page_size);
   // const size_t threshold = mi_theap_disable_profiler(theap);

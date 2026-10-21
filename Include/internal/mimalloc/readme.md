@@ -6,7 +6,7 @@ if you control all sources).
 - [`mimalloc-new-delete.h`](mimalloc-new-delete.h): Global C++ `new` and `delete` overrides. Include this header in a single (!) source file in your project.
 - [`mimalloc-stats.h`](mimalloc-stats.h): Statistics types and APIs for allocator statistics.
 - [`mimalloc-profile.h`](mimalloc-profile.h): Allocation profiling callbacks, sampling controls, and the built-in pprof profiler API.
-- [`mimalloc`](mimalloc): Internal allocator headers. 
+- [`mimalloc`](mimalloc): Internal allocator headers.
   See in particular [`types.h`](mimalloc/types.h) for the type definitions of all
   internal mimalloc data structures.
-  
+

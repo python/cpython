@@ -194,7 +194,7 @@ mi_subproc_id_t mi_subproc_new(void) {
   mi_assert_internal(parent->theap_meta->tld!=NULL);
   mi_assert_internal(parent->theap_meta->tld->thread_id == MI_THREADID_DETACHED);
   _mi_theap_init(theap_meta,heap_main,parent->theap_meta->tld /* detached tld */);
-  mi_theap_profile_disable(theap_meta);  // permanently exclude from profiling, see `mi_theap_profile_disable`
+  mi_theap_profile_never(theap_meta);  // permanently exclude from profiling, see `mi_theap_profile_never`
   subproc->theap_meta = theap_meta;
 
   return _mi_subproc_to_id(subproc);
