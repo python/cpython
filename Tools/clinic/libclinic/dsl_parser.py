@@ -85,7 +85,6 @@ __pow__
 __radd__
 __rand__
 __rdivmod__
-__repr__
 __rfloordiv__
 __rlshift__
 __rmatmul__
@@ -920,10 +919,6 @@ class DSLParser:
         assert self.function is not None
         if self.function.kind is GETTER:
             fail("@getter methods cannot define parameters")
-        if self.function.kind is SLOT:
-            assert self.function.slot is not None
-            if not self.function.slot.takes_parameters:
-                fail(f"{self.function.name!r} methods cannot define parameters")
 
         self.parameter_continuation = ''
         return self.next(self.state_parameter, line)
@@ -1680,6 +1675,8 @@ class DSLParser:
         """Check that the parameters of a slot method select a C slot."""
         assert func.slot is not None
         params = list(func.parameters.values())[1:]
+        if params and not func.slot.takes_parameters:
+            fail(f"{func.name!r} methods cannot define parameters")
         for p in params:
             if not p.is_positional_only():
                 fail(f"The parameters of {func.name!r} must be positional-only")

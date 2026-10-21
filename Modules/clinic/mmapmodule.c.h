@@ -701,6 +701,21 @@ exit:
     return return_value;
 }
 
+static PyObject *
+mmap__repr__method_impl(PyObject *op);
+
+static PyObject *
+mmap__repr__method(PyObject *op)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(op);
+    return_value = mmap__repr__method_impl(op);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(mmap_mmap___sizeof____doc__,
@@ -877,4 +892,4 @@ exit:
 #ifndef MMAP_MMAP_MADVISE_METHODDEF
     #define MMAP_MMAP_MADVISE_METHODDEF
 #endif /* !defined(MMAP_MMAP_MADVISE_METHODDEF) */
-/*[clinic end generated code: output=d2ae0d1d754f51cc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=664297064075b598 input=a9049054013a1b77]*/

@@ -56,4 +56,7 @@ SLOTS: Final[dict[str, SlotSpec]] = {
     '__next__': SlotSpec('__next__', 'PyObject *', 'object', {
         (): 'tp_iternext',
     }),
+    '__repr__': SlotSpec('__repr__', 'PyObject *', 'object', {
+        (): 'tp_repr',
+    }),
 }
