@@ -277,11 +277,21 @@ class TestMemoryViewRaces(unittest.TestCase):
             self.ensure_exporter_free(buf)
 
     def test_iterator_exhaustion_drops_last_reference(self):
-        def loop():
-            for _ in range(ROUNDS * ITERS):
-                self.assertEqual(list(iter(memoryview(b"ab"))), [97, 98])
+        for _ in range(ROUNDS):
+            data = bytearray(range(64))
+            iterator = iter(memoryview(data))
+            values = []
+            lock = threading.Lock()
 
-        threading_helper.run_concurrently(loop, nthreads=NTHREADS)
+            def consume():
+                local = list(iterator)
+                with lock:
+                    values.extend(local)
+
+            threading_helper.run_concurrently(consume, nthreads=NTHREADS)
+            self.assertEqual(sorted(values), list(data))
+            data.extend(b"x")
+            self.assertRaises(StopIteration, next, iterator)
 
     def test_concurrent_hash(self):
         for _ in range(ROUNDS):
