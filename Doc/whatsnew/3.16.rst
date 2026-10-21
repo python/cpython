@@ -1249,7 +1249,7 @@ New features
   :term:`immortal`. In free-threaded builds, the function stops other threads
   while immortalizing the object. :class:`str` instances are not supported.
   Immortalized objects are not deallocated at interpreter shutdown.
-  (Contributed by Peter Bierma.)
+  (Contributed by Peter Bierma in :gh:`150865`.)
 
 * Add :c:func:`Py_HashBuffer` to the limited C API.
   (Contributed by Victor Stinner in :gh:`148233`.)
