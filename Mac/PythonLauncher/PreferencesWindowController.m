@@ -93,24 +93,24 @@
 };
 
 // NSComboBoxDataSource protocol
-- (unsigned int)comboBox:(NSComboBox *)aComboBox indexOfItemWithStringValue:(NSString *)aString
+- (NSUInteger)comboBox:(NSComboBox *)aComboBox indexOfItemWithStringValue:(NSString *)aString
 {
 	NSArray *interp_list = [settings interpreters];
-    unsigned int rv = [interp_list indexOfObjectIdenticalTo: aString];
+    NSUInteger rv = [interp_list indexOfObjectIdenticalTo: aString];
 	return rv;
 }
 
-- (id)comboBox:(NSComboBox *)aComboBox objectValueForItemAtIndex:(int)index
+- (id)comboBox:(NSComboBox *)aComboBox objectValueForItemAtIndex:(NSInteger)index
 {
 	NSArray *interp_list = [settings interpreters];
     id rv = [interp_list objectAtIndex: index];
 	return rv;
 }
 
-- (int)numberOfItemsInComboBox:(NSComboBox *)aComboBox
+- (NSUInteger)numberOfItemsInComboBox:(NSComboBox *)aComboBox
 {
 	NSArray *interp_list = [settings interpreters];
-    int rv = [interp_list count];
+    NSUInteger rv = [interp_list count];
 	return rv;
 }
 
