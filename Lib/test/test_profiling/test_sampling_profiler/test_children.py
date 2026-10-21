@@ -625,8 +625,7 @@ class TestIsPythonProcess(unittest.TestCase):
         )
 
         try:
-            if sys.platform == "linux":
-                _wait_for_process_exec(proc, "sleep", SHORT_TIMEOUT)
+            _wait_for_process_exec(proc, "sleep", SHORT_TIMEOUT)
 
             self.assertFalse(
                 is_python_process(proc.pid),
