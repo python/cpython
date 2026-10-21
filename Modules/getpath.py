@@ -412,7 +412,15 @@ if not py_setpath:
                 if base_executable and isfile(base_executable):
                     # Search relative to the resolved base executable rather
                     # than the potentially external symlink in pyvenv.cfg.
-                    executable_dir = real_executable_dir = dirname(base_executable)
+                    # If nothing there locates a standard library (e.g. a
+                    # launcher binary stored outside the installation that
+                    # 'home' points into), keep searching from 'home'.
+                    base_executable_dir = dirname(base_executable)
+                    if (
+                        isfile(joinpath(base_executable_dir, BUILDDIR_TXT))
+                        or search_up(base_executable_dir, ZIP_LANDMARK, *STDLIB_LANDMARKS)
+                    ):
+                        executable_dir = real_executable_dir = base_executable_dir
             # home key found; stop iterating over lines
             break
 
