@@ -618,9 +618,13 @@ class ImportSideEffectTests(unittest.TestCase, VirtualEnvironmentMixin):
             ))
         """)
 
-        # Use _get_preferred_schemes to find the system scheme, in case we are in a virtual environment
+        # Use the base interpreter's scheme and prefixes, even when running
+        # inside a virtual environment.
         system_scheme_name = sysconfig._get_preferred_schemes()['prefix']
-        system_paths = sysconfig.get_paths(system_scheme_name)
+        system_paths = sysconfig.get_paths(system_scheme_name, vars={
+            'base': sys.base_prefix,
+            'platbase': sys.base_exec_prefix,
+        })
 
         with self.venv(system_site_packages=False) as venv:
             sys_path = json.loads(venv.run('-c', script).stdout)
