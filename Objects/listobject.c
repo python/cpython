@@ -4400,6 +4400,7 @@ listwriter_check_consistency(PyListWriter *writer)
     // Don't test _PyObject_IsUniquelyReferenced() since a list writer can
     // be shared between multiple threads with external locking.
     assert(Py_REFCNT(list) == 1);
+    assert(!_PyObject_GC_IS_TRACKED(list));
     return 1;
 }
 #endif
@@ -4418,6 +4419,7 @@ PyListWriter_Create(Py_ssize_t size)
         return NULL;
     }
     Py_SET_SIZE(list, 0);
+    _PyObject_GC_UNTRACK(list);
 
     PyListWriter *writer = (PyListWriter*)list;
     assert(listwriter_check_consistency(writer));
@@ -4453,6 +4455,8 @@ PyListWriter_Finish(PyListWriter *writer)
     }
 #endif
 
+    // Now that the list is fully initialized, it's safe to track it in the GC
+    _PyObject_GC_TRACK(list);
     return _PyObject_CAST(list);
 }
 
