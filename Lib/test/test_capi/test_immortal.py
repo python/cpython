@@ -1,5 +1,5 @@
 import unittest
-from test.support import Py_DEBUG, Py_GIL_DISABLED, import_helper, threading_helper
+from test.support import Py_DEBUG, Py_GIL_DISABLED, import_helper, threading_helper, skip_if_sanitizer
 from test.support.script_helper import assert_python_ok
 
 _testcapi = import_helper.import_module('_testcapi')
@@ -271,6 +271,7 @@ class TestUnstableCAPI(unittest.TestCase):
             with self.subTest(state=state):
                 assert_python_ok("-c", script, state)
 
+    @skip_if_sanitizer(thread=True)
     def test_arbitrary_immortalization(self):
         # This test stresses immortalizing a multitude of objects
         import textwrap
