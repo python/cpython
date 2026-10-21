@@ -559,8 +559,8 @@ raise RuntimeError("Intentional import failure")
         t2 = threading.Thread(target=run, args=(stmt2,), daemon=True)
 
         def hold():
-            # One-shot: if a broken interpreter makes thread 1's import fail,
-            # thread 2 may re-run the same code; don't wait on ourselves.
+            # One-shot: if thread 1's import fails, thread 2 may re-run the
+            # same code; it must not wait on itself.
             if t2.ident is not None:
                 return
             t2.start()
@@ -620,8 +620,7 @@ raise RuntimeError("Intentional import failure")
         # gh-159963: the first `import pkg.mod` in a process also imports pkg.
         # Once pkg/__init__.py has finished, pkg's module lock must not stay
         # held while mod's body runs; otherwise every thread that began
-        # waiting for pkg is blocked for the whole of mod's body as well
-        # (the threaded tests below show what that leads to).
+        # waiting for pkg is blocked for the whole of mod's body as well.
         self._setup_package_tree({
             "unheld_pkg/__init__.py": "",
             "unheld_pkg/mod.py": (
@@ -729,9 +728,9 @@ raise RuntimeError("Intentional import failure")
         # Thread 2: `import b.leaf`, where b/__init__.py needs a, started
         # while thread 1 is still inside a/__init__.py.
         # Dependencies are a.leaf -> b.leaf -> b -> a; `a` needs nothing, so
-        # there is no cycle and either order works in one thread.  This
-        # failed with _DeadlockError when the importer of a.leaf kept a's
-        # lock for the duration of a/leaf.py.
+        # there is no cycle and either order works in one thread.  If the
+        # importer of a.leaf kept a's lock for the duration of a/leaf.py,
+        # this would raise _DeadlockError.
         errors = self._run_two_first_imports(
             {
                 "sib_a/__init__.py": "import sib_sync; sib_sync.hold()\n",
@@ -750,8 +749,8 @@ raise RuntimeError("Intentional import failure")
 
     def test_concurrent_first_imports_no_partial_module(self):
         # Dependencies are a.leaf -> b -> a, again with no cycle.  Thread 1
-        # finds b in sys.modules and waits for it, so what it got when it
-        # kept a's lock during a/leaf.py was not _DeadlockError but "cannot
+        # finds b in sys.modules and waits for it, so if it kept a's lock
+        # during a/leaf.py it would get not _DeadlockError but "cannot
         # import name 'X' from partially initialized module 'b'".
         errors = self._run_two_first_imports(
             {
@@ -795,14 +794,14 @@ raise RuntimeError("Intentional import failure")
                 self.assertEqual(errors, [])
 
     def test_concurrent_first_imports_of_nested_packages(self):
-        # As above but one level down: thread 1 does `import g.sub.leaf`;
+        # The same one level down: thread 1 does `import g.sub.leaf`;
         # g/sub/__init__.py needs module c; c needs g.  Thread 2 imports c
-        # while thread 1 is still inside g/__init__.py.  No cycle.  This
-        # failed with "cannot import name 'X' from partially initialized
-        # module" when g's lock was still held by thread 1 while it ran
-        # g/sub/__init__.py, because thread 2 (holding c, waiting for g)
-        # then looked deadlocked to thread 1.  Releasing ancestor locks only
-        # just before the *leaf* body would not be enough to fix this one.
+        # while thread 1 is still inside g/__init__.py.  No cycle.  If
+        # thread 1 still held g's lock while it ran g/sub/__init__.py,
+        # thread 2 (holding c, waiting for g) would look deadlocked to it
+        # and it would get "cannot import name 'X' from partially
+        # initialized module".  So g's lock must be released before any
+        # package beneath it executes, not only before the leaf's body.
         errors = self._run_two_first_imports(
             {
                 "nest_g/__init__.py": "import nest_sync; nest_sync.hold()\n",
@@ -847,7 +846,8 @@ raise RuntimeError("Intentional import failure")
         self.assertEqual(sys.modules["topw_g"].X, 1)
 
     def test_import_module_of_initializing_submodule_waits_for_it_only(self):
-        # The flip side of the test above: pkg/__init__.py has *already*
+        # The converse of waiting for an initializing ancestor before
+        # loading a submodule: pkg/__init__.py has *already*
         # imported pkg.leaf and then blocks on thread 2 (any non-import
         # wait).  Thread 2, started while pkg/leaf.py is still executing,
         # asks for pkg.leaf via importlib.  It must get it as soon as leaf.py
@@ -872,7 +872,7 @@ raise RuntimeError("Intentional import failure")
         # X`.  Thread 1 is inside x.py (holding ax.x's lock) when thread 2's
         # `import by.y` reaches y.py and blocks on ax.x.  Thread 1 then asks
         # for by.y and is the one to detect the cycle.  The import statement
-        # has always resolved this by handing thread 1 the partially
+        # resolves this by handing thread 1 the partially
         # initialized by.y (import.c -> _lock_unlock_module());
         # importlib.import_module() must do the same rather than raise
         # _DeadlockError into x.py.

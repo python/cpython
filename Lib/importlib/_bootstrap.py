@@ -1201,14 +1201,12 @@ def _find_and_load_unlocked(name, import_, *, lazy_submodule=False):
     parent = name.rpartition('.')[0]
     parent_spec = None
     if parent:
-        # _resolve_parents() has settled the parent, but nothing pins it in
-        # sys.modules while this thread waits for name's lock.  If it was
-        # deleted meanwhile, the first import_(parent) below imports it again
-        # (else sys.modules[parent] raises KeyError) and the second waits for
-        # another thread doing so, in case its __init__ makes this submodule
-        # importable (gh-130094).  Otherwise the second call returns at once,
-        # for this thread's own partly initialized parent or a partial parent
-        # accepted in a circular import split across threads.
+        # _resolve_parents() has normally imported the parent already.  It can
+        # be missing again by now if its import failed in another thread or
+        # something removed it from sys.modules; it is then imported afresh,
+        # like any other module that is not in sys.modules.  That import runs
+        # while holding name's lock, the lock order _resolve_parents() exists
+        # to avoid; it is tolerated here because the case is so rare.
         if parent not in sys.modules:
             _call_with_frames_removed(import_, parent)
         # Crazy side-effects!
@@ -1275,26 +1273,20 @@ def _resolve_parents(name, import_):
     """Import, or wait for, the parent packages of *name*.
 
     _find_and_load() calls this before taking name's module lock, so that no
-    thread holds a submodule's lock while waiting for its parent: ``import
-    pkg.mod`` and a pkg/__init__.py importing pkg.mod would then take the two
-    locks in opposite orders (gh-83065).  Each level's lock is released as
-    soon as that level is settled.  Holding a parent's lock through the
-    submodule's body blocks threads which need only the finished parent, and
-    causes _DeadlockError and "partially initialized module" errors with no
-    import cycle (gh-159963).
+    thread holds a submodule's lock while waiting for its parent.  This avoids
+    the deadlocks and import errors of gh-83065 and gh-159963.
     """
-    # Only the immediate parent has to exist, so ancestors above it are not
-    # imported here.  Wait for those another thread is still executing,
-    # outermost first: otherwise this thread could enter a chain of imports
-    # within a package from the far end while that package's __init__ is
-    # working through it, and one of the two would get a partially initialized
-    # module.  Hence an __init__ must not block on another thread importing
-    # something beneath it.
+    # Wait for each ancestor package that another thread is still
+    # initializing, outermost first.  Importing beneath a package while its
+    # __init__ is part way through its own imports could give one of the two
+    # threads a partially initialized module.  Missing ancestors are not
+    # imported: only the immediate parent has to exist.
     parts = name.split('.')
     for i in range(1, len(parts) - 1):
         ancestor = '.'.join(parts[:i])
         if _is_initializing(sys.modules.get(ancestor)):
             _lock_unlock_module(ancestor)
+    # Import the immediate parent, or wait for it likewise.
     parent = name.rpartition('.')[0]
     if parent:
         module = sys.modules.get(parent, _NEEDS_LOADING)
