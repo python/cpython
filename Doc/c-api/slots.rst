@@ -48,7 +48,9 @@ Entries of the slots array use the following structure:
     typedef struct {
         uint16_t sl_id;
         uint16_t sl_flags;
-        uint32_t _reserved;  // must be 0
+        union {
+            uint32_t sl_reserved;  // must be 0
+        };
         union {
             void *sl_ptr;
             void (*sl_func)(void);

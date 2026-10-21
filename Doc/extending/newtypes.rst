@@ -15,6 +15,7 @@ Here is the definition of :c:type:`PyTypeObject`, with some fields only used in
 :ref:`debug builds <debug-build>` omitted:
 
 .. literalinclude:: ../includes/typestruct.h
+   :end-at: } PyTypeObject;
 
 
 Now that's a *lot* of methods.  Don't worry too much though -- if you have
@@ -285,7 +286,7 @@ be read-only or read-write.  The structures in the table are defined as::
    typedef struct PyMemberDef {
        const char *name;
        int         type;
-       int         offset;
+       Py_ssize_t  offset;
        int         flags;
        const char *doc;
    } PyMemberDef;
