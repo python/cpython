@@ -35,6 +35,7 @@
 #include "pycore_typevarobject.h" // _PyTypeAlias_Type
 #include "pycore_stackref.h"      // PyStackRef_FromPyObjectSteal
 #include "pycore_unionobject.h"   // _PyUnion_Type
+#include "pycore_uniqueid.h"      // _PyObject_MergePerThreadRefcounts()
 
 
 #ifdef Py_LIMITED_API
@@ -2908,6 +2909,90 @@ PyUnstable_SetImmortal(PyObject *op)
         return 0;
     }
     _Py_SetImmortal(op);
+    return 1;
+}
+
+static void
+update_frame_locals(_PyInterpreterFrame *frame, PyObject *immortal)
+{
+    // Ignore shim frames
+    if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
+        return;
+    }
+    _PyStackRef *locals = _PyFrame_GetLocalsArray(frame);
+    _PyStackRef *stackpointer = frame->stackpointer;
+    while (stackpointer > locals) {
+        stackpointer--;
+        if (PyStackRef_IsNullOrInt(*stackpointer)) {
+            continue;
+        }
+
+        PyObject *op = PyStackRef_AsPyObjectBorrow(*stackpointer);
+        if (op != immortal) {
+            continue;
+        }
+
+        if ((stackpointer->bits & Py_TAG_REFCNT) == 0) {
+            stackpointer->bits = ((uintptr_t)immortal) | Py_TAG_REFCNT;
+        }
+#ifndef Py_GIL_DISABLED
+        assert(!PyStackRef_RefcountOnObject(*stackpointer));
+#endif
+    }
+}
+
+static void
+update_frames(PyThreadState *tstate, PyObject *immortal)
+{
+    _PyInterpreterFrame *frame = _PyThreadState_GetFrame(tstate);
+    while (frame != NULL) {
+        update_frame_locals(frame, immortal);
+        frame = frame->previous;
+    }
+}
+
+int
+PyUnstable_Immortalize(PyObject *op)
+{
+    assert(op != NULL);
+    PyThreadState *tstate = _PyThreadState_GET();
+    _Py_EnsureTstateNotNULL(tstate);
+
+    if (_Py_IsImmortal(op)) {
+        // We don't want to track objects that are already immortal
+        return 0;
+    }
+
+    PyInterpreterState *interp = tstate->interp;
+    // Stop the world so reference counts aren't prone to races.
+    _PyEval_StopTheWorld(interp);
+
+    // The stack references think that the object is mortal, we need to
+    // fix that.
+    //update_frames(tstate, op);
+
+    if (PyObject_GC_IsTracked(op)) {
+        _PyObject_GC_UNTRACK(op);
+    }
+
+#ifdef Py_GIL_DISABLED
+    //_PyObject_MergePerThreadRefcounts((_PyThreadStateImpl *)tstate);
+    //_PyGC_DisableDeferredRefcount(op);
+    //_PyObject_ASSERT(op, !_PyObject_HasDeferredRefcount(op));
+#endif
+
+#ifdef Py_REF_DEBUG
+    // Remove the old references so the reftotal isn't affected.
+    //Py_ssize_t refcnt = Py_REFCNT(op) - 1;
+    //for (Py_ssize_t i = 0; i < refcnt; ++i) {
+    //    _Py_DECREF_DecRefTotal();
+    //}
+#endif
+    _Py_SetImmortalUntracked(op);
+    _PyEval_StartTheWorld(interp);
+    _PyObject_ASSERT(op, !PyObject_GC_IsTracked(op));
+    _PyObject_ASSERT(op, _Py_IsImmortal(op));
+
     return 1;
 }
 

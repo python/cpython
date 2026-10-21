@@ -439,6 +439,7 @@ PyAPI_FUNC(void) PyUnstable_EnableTryIncRef(PyObject *);
 PyAPI_FUNC(int) PyUnstable_Object_IsUniquelyReferenced(PyObject *);
 
 PyAPI_FUNC(int) PyUnstable_SetImmortal(PyObject *op);
+PyAPI_FUNC(int) PyUnstable_Immortalize(PyObject *op);
 
 #if defined(Py_GIL_DISABLED)
 PyAPI_FUNC(uintptr_t) _Py_GetThreadLocal_Addr(void);

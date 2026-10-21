@@ -344,6 +344,10 @@ extern void _PyGC_VisitObjectsWorldStopped(PyInterpreterState *interp,
                                            gcvisitobjects_t callback, void *arg);
 #endif
 
+#ifdef Py_GIL_DISABLED
+extern void _PyGC_DisableDeferredRefcount(PyObject *op);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

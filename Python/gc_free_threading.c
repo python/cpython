@@ -273,9 +273,10 @@ frame_disable_deferred_refcounting(_PyInterpreterFrame *frame)
     }
 }
 
-static void
-disable_deferred_refcounting(PyObject *op)
+void
+_PyGC_DisableDeferredRefcount(PyObject *op)
 {
+    assert(_PyInterpreterState_GET()->stoptheworld.world_stopped);
     if (_PyObject_HasDeferredRefcount(op)) {
         op->ob_gc_bits &= ~_PyGC_BITS_DEFERRED;
         op->ob_ref_shared -= _Py_REF_SHARED(_Py_REF_DEFERRED, 0);
@@ -285,7 +286,12 @@ disable_deferred_refcounting(PyObject *op)
         // should also be disabled when we turn off deferred refcounting.
         _PyObject_DisablePerThreadRefcounting(op);
     }
+}
 
+static void
+disable_deferred_refcounting(PyObject *op)
+{
+    _PyGC_DisableDeferredRefcount(op);
     // Generators and frame objects may contain deferred references to other
     // objects. If the pointed-to objects are part of cyclic trash, we may
     // have disabled deferred refcounting on them and need to ensure that we

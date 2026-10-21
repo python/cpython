@@ -822,7 +822,38 @@ Object Protocol
 
    This function is intended to be used soon after *op* is created, by the code that
    creates it, such as in the object's :c:member:`~PyTypeObject.tp_new` slot.
+   It is a fast operation that does not stop other threads. To immortalize an
+   object that may already be shared, use :c:func:`PyUnstable_Immortalize`.
    Returns 1 if the object was made immortal and returns 0 if it was not.
+   Objects that are not uniquely referenced, are already immortal, or are
+   :class:`str` instances are not made immortal.
    This function cannot fail.
 
    .. versionadded:: 3.15
+
+.. c:function:: int PyUnstable_Immortalize(PyObject *op)
+
+   Marks an arbitrary object *op* :term:`immortal`, even if it is shared across
+   threads. This is intended to reduce reference counting contention in the
+   :term:`free-threaded build` for objects shared across threads and used in
+   native code.
+
+   This is a slow operation. In the free-threaded build, it stops all other
+   threads in the interpreter while immortalizing the object. For newly created,
+   uniquely referenced objects, prefer :c:func:`PyUnstable_SetImmortal`.
+
+   This is a one-way process: objects can only be made immortal; they cannot be
+   made mortal once again. Immortal objects do not participate in reference
+   counting and will never be garbage collected. If the object is GC-tracked,
+   it is untracked.
+
+   Returns 1 if the object was made immortal and 0 if it was already immortal.
+   This function cannot fail.
+
+   .. warning::
+
+      Immortalizing GC-tracked objects (and other objects on the heap) will
+      result in them being leaked for the remainder of the process, as immortal
+      objects are not deallocated at interpreter shutdown.
+
+   .. versionadded:: next
