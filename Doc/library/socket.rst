@@ -637,6 +637,11 @@ The AF_* and SOCK_* constants are now :class:`AddressFamily` and
 
    .. versionadded:: 3.6
 
+   .. deprecated-removed:: next 3.21
+      ``ALG_SET_PUBKEY``, ``ALG_OP_SIGN`` and ``ALG_OP_VERIFY``.
+      They are libkcapi's own values and were never defined by the Linux kernel,
+      which uses the value of ``ALG_SET_PUBKEY`` for ``ALG_SET_DRBG_ENTROPY``.
+
 
 .. data:: AF_VSOCK
           IOCTL_VM_SOCKETS_GET_LOCAL_CID
