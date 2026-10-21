@@ -974,10 +974,7 @@ class _ThreadedChildWatcher:
                     # child processes (si_code == CLD_STOPPED). Consume the stop
                     # notification so we wait for actual process termination.
                     if res.si_code == os.CLD_STOPPED:
-                        try:
-                            os.waitid(os.P_PID, expected_pid, os.WSTOPPED | os.WNOHANG)
-                        except ChildProcessError:
-                            pass
+                        os.waitid(os.P_PID, expected_pid, os.WSTOPPED | os.WNOHANG)
                         continue
                     break
             except ChildProcessError:
