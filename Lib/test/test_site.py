@@ -627,6 +627,19 @@ class ImportSideEffectTests(unittest.TestCase, VirtualEnvironmentMixin):
         self.assertNotIn(system_paths['purelib'], sys_path)
         self.assertNotIn(system_paths['platlib'], sys_path)
 
+        # site.py only adds site directories that exist on disk
+        # (addsitedir guards on os.path.isdir), so the system
+        # site-packages can only be detected when the directories exist,
+        # e.g. with an installed Python. Skip on in-tree builds where the
+        # nominal install directories were never created (gh-128779).
+        system_site_packages = {system_paths['purelib'],
+                                system_paths['platlib']}
+        if not all(map(os.path.isdir, system_site_packages)):
+            self.skipTest(
+                f"system site-packages directories do not exist: "
+                f"{sorted(system_site_packages)}"
+            )
+
         with self.venv(system_site_packages=True) as venv:
             sys_path = json.loads(venv.run('-c', script).stdout)
         self.assertIn(system_paths['purelib'], sys_path)
