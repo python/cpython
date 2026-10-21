@@ -648,7 +648,7 @@ deque_copy_impl(dequeobject *deque)
         result = PyObject_CallOneArg((PyObject *)(Py_TYPE(deque)),
                                      (PyObject *)deque);
     else
-        result = PyObject_CallFunction((PyObject *)(Py_TYPE(deque)), "Oi",
+        result = PyObject_CallFunction((PyObject *)(Py_TYPE(deque)), "On",
                                        deque, old_deque->maxlen, NULL);
     if (result != NULL && !PyObject_TypeCheck(result, state->deque_type)) {
         PyErr_Format(PyExc_TypeError,

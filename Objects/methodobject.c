@@ -48,8 +48,7 @@ PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *c
 {
     /* Figure out correct vectorcall function to use */
     vectorcallfunc vectorcall;
-    switch (ml->ml_flags & (METH_VARARGS | METH_FASTCALL | METH_NOARGS |
-                            METH_O | METH_KEYWORDS | METH_METHOD))
+    switch (ml->ml_flags & _Py_METH_CALL_FLAGS)
     {
         case METH_VARARGS:
         case METH_VARARGS | METH_KEYWORDS:

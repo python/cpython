@@ -70,6 +70,50 @@ class SslProtoHandshakeTests(test_utils.TestCase):
             sslproto.SSLProtocol(self.loop, app_proto, sslcontext, waiter,
                                  ssl_handshake_timeout=-10)
 
+    def test_check_hostname_accepts_server_hostname(self):
+        # Supplying a server_hostname succeeds with check_hostname enabled.
+        sslcontext = test_utils.simple_client_sslcontext(disable_verify=False)
+        sslcontext.check_hostname = True
+        app_proto = mock.Mock()
+        waiter = mock.Mock()
+
+        # No ValueError is raised from SSLProtocol with 'server_hostname'.
+        ssl_proto = sslproto.SSLProtocol(self.loop, app_proto, sslcontext, waiter,
+                             server_hostname='example.org')
+        self.addCleanup(ssl_proto._app_transport.close)
+
+    @support.subTests("server_hostname", [None, ''])
+    def test_check_hostname_requires_server_hostname(self, server_hostname):
+        # A caller-supplied context asking for hostname checking used to be
+        # taken through wrap_bio() with no name to check against, verifying
+        # the certificate chain but never the peer's identity.
+        # loop.start_tls() defaults server_hostname to None, and
+        # loop.create_connection() turns server_hostname='' into None here,
+        # so both reached that state.
+        sslcontext = test_utils.simple_client_sslcontext(disable_verify=False)
+        sslcontext.check_hostname = True
+        app_proto = mock.Mock()
+        waiter = mock.Mock()
+
+        # Supplying an empty server_hostname fails with check_hostname enabled.
+        with self.assertRaisesRegex(
+                ValueError,
+                'check_hostname requires server_hostname'):
+            sslproto.SSLProtocol(self.loop, app_proto, sslcontext,
+                                 waiter,
+                                 server_hostname=server_hostname)
+
+        # Disabling check_hostname allows for an empty or unset server_hostname.
+        sslcontext.check_hostname = False
+
+        ssl_proto = sslproto.SSLProtocol(self.loop, app_proto, sslcontext, waiter)
+        self.addCleanup(ssl_proto._app_transport.close)
+
+        ssl_proto = sslproto.SSLProtocol(self.loop, app_proto, sslcontext,
+                             waiter,
+                             server_hostname=server_hostname)
+        self.addCleanup(ssl_proto._app_transport.close)
+
     def test_eof_received_waiter(self):
         waiter = self.loop.create_future()
         ssl_proto = self.ssl_protocol(waiter=waiter)
@@ -787,6 +831,68 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
         # server knows why the handshake failed.
         self.assertIsInstance(server_err, ssl.SSLError)
         self.assertIn('ALERT_UNKNOWN_CA', server_err.reason or '')
+
+    def test_create_connection_ssl_failed_certificate_no_cycles(self):
+        # gh-159049
+        sslctx = test_utils.simple_server_sslcontext()
+        client_sslctx = test_utils.simple_client_sslcontext(
+            disable_verify=False)
+        transports = []
+
+        def server(sock):
+            try:
+                sock.start_tls(sslctx, server_side=True)
+            except OSError:
+                pass
+
+        connection_made = sslproto.SSLProtocol.connection_made
+
+        def remember_transport(proto, tr):
+            transports.append(weakref.ref(tr))
+            connection_made(proto, tr)
+
+        async def conn(addr):
+            try:
+                await self.loop.create_connection(
+                    asyncio.Protocol, *addr,
+                    ssl=client_sslctx, server_hostname='')
+            except ssl.SSLCertVerificationError:
+                pass
+
+        support.gc_collect()
+        with (self.tcp_server(server) as srv, support.disable_gc(),
+              mock.patch.object(sslproto.SSLProtocol, 'connection_made',
+                                remember_transport)):
+            self.loop.run_until_complete(conn(srv.addr))
+            self.assertEqual([tr() for tr in transports], [None])
+
+    def test_start_tls_failed_certificate_no_cycles(self):
+        # gh-159049
+        sslctx = test_utils.simple_server_sslcontext()
+        client_sslctx = test_utils.simple_client_sslcontext(
+            disable_verify=False)
+        transports = []
+
+        def server(sock):
+            try:
+                sock.start_tls(sslctx, server_side=True)
+            except OSError:
+                pass
+
+        async def client(addr):
+            tr, proto = await self.loop.create_connection(
+                asyncio.Protocol, *addr)
+            transports.append(weakref.ref(tr))
+            try:
+                await self.loop.start_tls(
+                    tr, proto, client_sslctx, server_hostname='')
+            except ssl.SSLCertVerificationError:
+                pass
+
+        support.gc_collect()
+        with self.tcp_server(server) as srv, support.disable_gc():
+            self.loop.run_until_complete(client(srv.addr))
+            self.assertEqual([tr() for tr in transports], [None])
 
     def test_create_server_ssl_failed_handshake_sends_alert(self):
         # gh-98078: when the handshake fails, the server must send the

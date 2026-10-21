@@ -1,0 +1,1 @@
+Fix a reference leak when :c:func:`_PyTuple_Resize` fails.

@@ -553,6 +553,9 @@ class Counter(dict):
     or multiset.  Elements are stored as dictionary keys and their counts
     are stored as dictionary values.
 
+    When constructed from a Mapping or Counter, the original object's
+    values will be used as the initial counts.
+
     >>> c = Counter('abcdeabcdabcaba')  # count elements from a string
 
     >>> c.most_common(3)                # three most common elements
@@ -1533,6 +1536,8 @@ class UserString(_collections_abc.Sequence):
         return self.data.encode(encoding, errors)
 
     def endswith(self, suffix, start=0, end=_sys.maxsize):
+        if isinstance(suffix, UserString):
+            suffix = suffix.data
         return self.data.endswith(suffix, start, end)
 
     def expandtabs(self, tabsize=8):
@@ -1643,6 +1648,8 @@ class UserString(_collections_abc.Sequence):
         return self.data.splitlines(keepends)
 
     def startswith(self, prefix, start=0, end=_sys.maxsize):
+        if isinstance(prefix, UserString):
+            prefix = prefix.data
         return self.data.startswith(prefix, start, end)
 
     def strip(self, chars=None):
