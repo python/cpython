@@ -2917,26 +2917,3 @@ that may require changes to your code.
   Use warning filters to silence them or additional :meth:`!assertWarns*`
   to catch and check them.
   (Contributed by Serhiy Storchaka in :gh:`143231`.)
-
-
-Notable changes in 3.15.2
-=========================
-
-Import system
--------------
-
-* Parent packages are now imported, or waited for if another thread is still
-  initializing them, *before* the lock needed to import a submodule is taken.
-  A package's lock is released as soon as its ``__init__`` returns.
-  This fixes a potential for deadlock or import errors when two threads are
-  simultaneously executing nested ``import package.submodule`` imports.
-  This issue was introduced in 3.15.0 while fixing a *different* import
-  parallelism lock ordering deadlock in :gh:`83065`.
-  The first import of anything beneath a package waits for that package's
-  ``__init__`` to finish in whichever thread is running it, so a package
-  ``__init__`` should not block on another thread that performs such an
-  import.
-  :func:`importlib.import_module` now returns the partially initialized
-  module in a circular import split across threads, as the :keyword:`import`
-  statement already did, instead of raising ``_DeadlockError``.
-  (Contributed by Gregory P. Smith in :gh:`159963`.)
