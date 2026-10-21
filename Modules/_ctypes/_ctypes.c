@@ -4382,7 +4382,7 @@ _build_callargs(ctypes_state *st, PyCFuncPtrObject *self, PyObject *argtypes,
     callargs = PyTuple_New(len); /* the argument tuple we build */
     if (callargs == NULL)
         return NULL;
-    if (!_validate_paramflags(st, Py_TYPE(self), argtypes)) {
+    if (!_validate_paramflags(st, Py_TYPE(self), paramflags, argtypes)) {
         PyErr_SetString(PyExc_TypeError,
                         "the current argument is invalid");
         goto error;
