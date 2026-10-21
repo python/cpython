@@ -40,6 +40,10 @@ class SlotSpec:
 SLOTS: Final[dict[str, SlotSpec]] = {
     '__next__': SlotSpec(return_converter='object'),
     '__len__': SlotSpec(return_converter='Py_ssize_t'),
+    '__add__': SlotSpec(return_converter='object'),
+    '__iadd__': SlotSpec(return_converter='object'),
+    '__mul__': SlotSpec(return_converter='object'),
+    '__imul__': SlotSpec(return_converter='object'),
     '__repr__': SlotSpec(return_converter='object'),
     '__contains__': SlotSpec(return_converter='int'),
     '__setitem__': SlotSpec(return_converter='int'),

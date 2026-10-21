@@ -40,7 +40,6 @@ if TYPE_CHECKING:
 unsupported_special_methods: set[str] = set("""
 
 __abs__
-__add__
 __and__
 __call__
 __delitem__
@@ -54,13 +53,11 @@ __getattribute__
 __getitem__
 __gt__
 __hash__
-__iadd__
 __iand__
 __ifloordiv__
 __ilshift__
 __imatmul__
 __imod__
-__imul__
 __index__
 __int__
 __invert__
@@ -76,7 +73,6 @@ __lshift__
 __lt__
 __matmul__
 __mod__
-__mul__
 __neg__
 __or__
 __pos__
