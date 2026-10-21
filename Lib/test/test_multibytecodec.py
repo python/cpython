@@ -43,6 +43,18 @@ class Test_MultibyteCodec(unittest.TestCase):
         for enc in ALL_CJKENCODINGS:
             self.assertEqual('abcd'.encode(enc), b'abcd')
 
+    def test_nonbmp_pair_modifier(self):
+        cases = [('big5hkscs', '\u00ca', '\u0304')]
+        cases.extend((encoding, '\u304b', '\u309a') for encoding in (
+            'euc_jis_2004', 'euc_jisx0213', 'shift_jis_2004', 'shift_jisx0213',
+            'iso2022_jp_2004', 'iso2022_jp_3'))
+        for encoding, base, modifier in cases:
+            with self.subTest(encoding=encoding):
+                pair = base + modifier
+                self.assertEqual(pair.encode(encoding).decode(encoding), pair)
+                nonbmp = base + chr(0x10000 + ord(modifier))
+                self.assertRaises(UnicodeEncodeError, nonbmp.encode, encoding)
+
     def test_errorcallback_longindex(self):
         dec = codecs.getdecoder('euc-kr')
         myreplace  = lambda exc: ('', sys.maxsize+1)
