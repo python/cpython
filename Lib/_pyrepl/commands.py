@@ -496,9 +496,8 @@ class show_history(Command):
 
 class paste_mode(Command):
     def do(self) -> None:
-        r = self.reader
-        r.paste_mode = not r.paste_mode
-        r.invalidate_prompt()
+        self.reader.paste_mode = not self.reader.paste_mode
+        self.reader.invalidate_prompt()
 
 
 class perform_bracketed_paste(Command):
