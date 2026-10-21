@@ -1,0 +1,6 @@
+:mod:`ssl` now rejects TLS certificate chains that contain any of a set of
+compromised eMudhra intermediate CA keys.  A built-in denylist of the affected
+:rfc:`5280` ``SubjectPublicKeyInfo`` values is enforced during certificate
+verification, mirroring the mitigation added to other TLS stacks.  The denylist
+matches on the public key, so it also covers the cross-signed certificates that
+reuse one of the distrusted keys.
