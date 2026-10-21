@@ -6,6 +6,21 @@ preserve
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
+static Py_ssize_t
+dbm_length_impl(dbmobject *self);
+
+static Py_ssize_t
+dbm_length(PyObject *self)
+{
+    Py_ssize_t return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = dbm_length_impl((dbmobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_dbm_dbm_close__doc__,
 "close($self, /)\n"
 "--\n"
@@ -249,4 +264,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f9d904af4ea43d1d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7ae22ba4a7aeffa2 input=a9049054013a1b77]*/
