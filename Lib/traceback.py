@@ -1611,7 +1611,11 @@ class TracebackException:
                     )
                 else:
                     yield '    {}\n'.format(ltext)
-        msg = self.msg or "<no detail available>"
+        try:
+            if not (msg := self.msg):
+                msg = "<no detail available>"
+        except TypeError:
+            pass
         yield "{}{}{}: {}{}{}{}\n".format(
             theme.type,
             stype,

@@ -1693,7 +1693,9 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
     if (mod == NULL) {
         PyThreadState *tstate = _PyThreadState_GET();
         _Py_DumpPathConfig(tstate);
-        return PyStatus_Error("Failed to import encodings module");
+        return PyStatus_Error("Failed to import encodings module. "
+                              "Your environment probably has misconfigured variables! "
+                              "Please check PYTHONHOME otherwise refer to `--help-env`");
     }
     Py_DECREF(mod);
 
