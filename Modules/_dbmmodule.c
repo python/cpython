@@ -145,10 +145,16 @@ dbm_length_impl(dbmobject *self)
     return dp->di_size;
 }
 
+/*[clinic input]
+@critical_section
+_dbm.dbm.__bool__ as dbm_bool
+[clinic start generated code]*/
+
 static int
-dbm_bool_lock_held(PyObject *self)
+dbm_bool_impl(dbmobject *self)
+/*[clinic end generated code: output=b550ce1ae52d6ad1 input=212af765b6e60719]*/
 {
-    dbmobject *dp = dbmobject_CAST(self);
+    dbmobject *dp = self;
     _dbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
     assert(state != NULL);
 
@@ -175,16 +181,6 @@ dbm_bool_lock_held(PyObject *self)
     }
     /* Non-empty. Don't cache the length since we don't know. */
     return 1;
-}
-
-static int
-dbm_bool(PyObject *self)
-{
-    int result;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    result = dbm_bool_lock_held(self);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 static PyObject *

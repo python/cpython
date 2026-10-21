@@ -858,10 +858,7 @@ class ClinicWholeFileTest(TestCase):
     def test_slot_with_parameters_and_return_type(self):
         # Slots which take arguments or return something else than an
         # object are not supported yet; check the machinery with them.
-        slots = {
-            '__contains__': SlotSpec(return_converter='int'),
-            '__bool__': SlotSpec(return_converter='int'),
-        }
+        slots = {'__contains__': SlotSpec(return_converter='int')}
         block = """
             /*[clinic input]
             output everything block

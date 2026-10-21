@@ -189,10 +189,16 @@ gdbm_length_impl(gdbmobject *self)
     return dp->di_size;
 }
 
+/*[clinic input]
+@critical_section
+_gdbm.gdbm.__bool__ as gdbm_bool
+[clinic start generated code]*/
+
 static int
-gdbm_bool_lock_held(PyObject *op)
+gdbm_bool_impl(gdbmobject *self)
+/*[clinic end generated code: output=91316ca18acb945c input=bf2878ff5e311848]*/
 {
-    gdbmobject *dp = _gdbmobject_CAST(op);
+    gdbmobject *dp = self;
     _gdbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
     if (dp->di_dbm == NULL) {
         PyErr_SetString(state->gdbm_error, "GDBM object has already been closed");
@@ -217,16 +223,6 @@ gdbm_bool_lock_held(PyObject *op)
     /* Non-empty. Don't cache the length since we don't know. */
     free(key.dptr);
     return 1;
-}
-
-static int
-gdbm_bool(PyObject *op)
-{
-    int result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = gdbm_bool_lock_held(op);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 // Wrapper function for PyArg_Parse(o, "s#", &d.dptr, &d.size).

@@ -21,6 +21,21 @@ gdbm_length(PyObject *self)
     return return_value;
 }
 
+static int
+gdbm_bool_impl(gdbmobject *self);
+
+static int
+gdbm_bool(PyObject *self)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = gdbm_bool_impl((gdbmobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_gdbm_gdbm_get__doc__,
 "get($self, key, default=None, /)\n"
 "--\n"
@@ -416,4 +431,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=36e1ed1cc3523aeb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=554c7c952a77058f input=a9049054013a1b77]*/
