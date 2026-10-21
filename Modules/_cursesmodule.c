@@ -41,7 +41,7 @@
   Here's a list of currently unsupported functions:
 
   del_curterm mcprint mvcur restartterm
-  ripoffline set_curterm setterm
+    ripoffline set_curterm setterm
   tgetent tgetflag tgetnum tgetstr tgoto tputs
   vidattr vidputs
 
@@ -7880,6 +7880,111 @@ _curses_putp_impl(PyObject *module, const char *string)
     return curses_check_err(module, putp(string), "putp", NULL);
 }
 
+static PyObject *
+PyCurses_Mcprint(PyObject *module, PyObject *args)
+{
+    const char *text;
+    Py_ssize_t length;
+    int count;
+    if (!PyArg_ParseTuple(args, "s#i:mcprint", &text, &length, &count)) {
+        return NULL;
+    }
+    PyCursesStatefulInitialised(module);
+    return curses_check_err(module, mcprint((char *)text, count),
+                            "mcprint", NULL);
+}
+
+#if defined(HAVE_TERM_H) && !defined(STRICT_SYSV_CURSES)
+static PyObject *
+PyCurses_Tgetent(PyObject *module, PyObject *args)
+{
+    const char *term;
+    if (!PyArg_ParseTuple(args, "s:tgetent", &term)) {
+        return NULL;
+    }
+    PyCursesStatefulSetupTermCalled(module);
+    char buffer[2048];
+    return PyLong_FromLong(tgetent(buffer, term));
+}
+
+static PyObject *
+PyCurses_Tgetflag(PyObject *module, PyObject *args)
+{
+    const char *id;
+    if (!PyArg_ParseTuple(args, "s:tgetflag", &id)) {
+        return NULL;
+    }
+    PyCursesStatefulSetupTermCalled(module);
+    return PyLong_FromLong(tgetflag(id));
+}
+
+static PyObject *
+PyCurses_Tgetnum(PyObject *module, PyObject *args)
+{
+    const char *id;
+    if (!PyArg_ParseTuple(args, "s:tgetnum", &id)) {
+        return NULL;
+    }
+    PyCursesStatefulSetupTermCalled(module);
+    return PyLong_FromLong(tgetnum(id));
+}
+
+static PyObject *
+PyCurses_Tgetstr(PyObject *module, PyObject *args)
+{
+    const char *id;
+    if (!PyArg_ParseTuple(args, "s:tgetstr", &id)) {
+        return NULL;
+    }
+    PyCursesStatefulSetupTermCalled(module);
+    char *area = NULL;
+    char *result = tgetstr(id, &area);
+    if (result == NULL || result == (char *)-1) {
+        Py_RETURN_NONE;
+    }
+    return PyBytes_FromString(result);
+}
+
+static PyObject *
+PyCurses_Tgoto(PyObject *module, PyObject *args)
+{
+    const char *capability;
+    int col, row;
+    if (!PyArg_ParseTuple(args, "sii:tgoto", &capability, &col, &row)) {
+        return NULL;
+    }
+    PyCursesStatefulSetupTermCalled(module);
+    char *result = tgoto(capability, col, row);
+    if (result == NULL || result == (char *)-1) {
+        Py_RETURN_NONE;
+    }
+    return PyBytes_FromString(result);
+}
+#endif
+
+static PyObject *
+PyCurses_Vidattr(PyObject *module, PyObject *args)
+{
+    unsigned long attrs;
+    if (!PyArg_ParseTuple(args, "k:vidattr", &attrs)) {
+        return NULL;
+    }
+    PyCursesStatefulInitialised(module);
+    return curses_check_err(module, vidattr((chtype)attrs), "vidattr", NULL);
+}
+
+static PyObject *
+PyCurses_Vidputs(PyObject *module, PyObject *args)
+{
+    unsigned long attrs;
+    if (!PyArg_ParseTuple(args, "k:vidputs", &attrs)) {
+        return NULL;
+    }
+    PyCursesStatefulInitialised(module);
+    return curses_check_err(module, vidputs((chtype)attrs, putchar),
+                            "vidputs", NULL);
+}
+
 /*[clinic input]
 _curses.qiflush
 
@@ -9116,6 +9221,7 @@ static PyMethodDef cursesmodule_methods[] = {
     _CURSES_KILLCHAR_METHODDEF
     _CURSES_KILLWCHAR_METHODDEF
     _CURSES_LONGNAME_METHODDEF
+    {"mcprint", (PyCFunction)PyCurses_Mcprint, METH_VARARGS},
     _CURSES_META_METHODDEF
     _CURSES_MOUSEINTERVAL_METHODDEF
     _CURSES_MOUSEMASK_METHODDEF
@@ -9135,6 +9241,15 @@ static PyMethodDef cursesmodule_methods[] = {
     _CURSES_PAIR_CONTENT_METHODDEF
     _CURSES_PAIR_NUMBER_METHODDEF
     _CURSES_PUTP_METHODDEF
+    {"vidattr", (PyCFunction)PyCurses_Vidattr, METH_VARARGS},
+    {"vidputs", (PyCFunction)PyCurses_Vidputs, METH_VARARGS},
+#if defined(HAVE_TERM_H) && !defined(STRICT_SYSV_CURSES)
+    {"tgetent", (PyCFunction)PyCurses_Tgetent, METH_VARARGS},
+    {"tgetflag", (PyCFunction)PyCurses_Tgetflag, METH_VARARGS},
+    {"tgetnum", (PyCFunction)PyCurses_Tgetnum, METH_VARARGS},
+    {"tgetstr", (PyCFunction)PyCurses_Tgetstr, METH_VARARGS},
+    {"tgoto", (PyCFunction)PyCurses_Tgoto, METH_VARARGS},
+#endif
     _CURSES_QIFLUSH_METHODDEF
     _CURSES_RAW_METHODDEF
     _CURSES_RESET_COLOR_PAIRS_METHODDEF

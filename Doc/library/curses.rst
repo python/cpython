@@ -1040,6 +1040,25 @@ Terminfo database
 
    :func:`setupterm` (or :func:`initscr`) must be called first.
 
+.. function:: tgetent(term)
+.. function:: tgetflag(id)
+.. function:: tgetnum(id)
+.. function:: tgetstr(id)
+.. function:: tgoto(capability, col, row)
+
+   Access the terminal's legacy termcap entries.  Call :func:`setupterm` first.
+   ``tgetent`` returns ``0`` or ``1``; the other lookup functions return their
+   termcap value, or ``None`` when no value is available.
+
+.. function:: mcprint(string, count)
+
+   Send *count* copies of *string* to the terminal printer.
+
+.. function:: vidattr(attrs)
+.. function:: vidputs(attrs)
+
+   Set the terminal video attributes represented by *attrs*.
+
 
 Utilities
 ~~~~~~~~~

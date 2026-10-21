@@ -1882,6 +1882,35 @@ class TestCurses(unittest.TestCase):
 
         curses.newpad(50, 50)
 
+    @requires_curses_func('mcprint')
+    def test_mcprint(self):
+        try:
+            result = curses.mcprint('x', 1)
+        except curses.error:
+            pass
+        else:
+            self.assertIsNone(result)
+
+    @requires_curses_func('tgetent')
+    def test_termcap_functions(self):
+        self.assertIn(curses.tgetent(os.environ.get('TERM', 'unknown')), (0, 1))
+        self.assertIsInstance(curses.tgetflag('am'), int)
+        self.assertIsInstance(curses.tgetnum('co'), int)
+        value = curses.tgetstr('cl')
+        if value is None:
+            self.assertIsNone(value)
+        else:
+            self.assertIsInstance(value, bytes)
+            self.assertIsInstance(curses.tgoto(value, 0, 0), bytes)
+
+    @requires_curses_func('vidattr')
+    def test_video_attributes(self):
+        for function in curses.vidattr, curses.vidputs:
+            try:
+                self.assertIsNone(function(curses.A_NORMAL))
+            except curses.error:
+                pass
+
     def test_env_queries(self):
         self.assertIsInstance(curses.termname(), bytes)
         self.assertIsInstance(curses.longname(), bytes)
