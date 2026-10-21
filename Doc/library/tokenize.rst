@@ -63,6 +63,8 @@ The primary entry point is a :term:`generator`:
    A :term:`named tuple` describing a token. It has five fields and an
    additional :attr:`exact_type` property.
 
+   .. versionadded:: 3.1
+
    .. attribute:: type
 
       An integer identifying the token type, as defined by the constants in
@@ -123,8 +125,6 @@ The primary entry point is a :term:`generator`:
       and :attr:`exact_type` equal to :data:`~token.PLUS`.
 
       .. versionadded:: 3.3
-
-   .. versionadded:: 3.1
 
 
 All constants from the :mod:`token` module are also exported from
