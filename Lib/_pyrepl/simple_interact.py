@@ -138,7 +138,9 @@ def run_multiline_interactive_console(
             ps1 = getattr(sys, "ps1", ">>> ")
             ps2 = getattr(sys, "ps2", "... ")
             try:
-                statement = multiline_input(more_lines, ps1, ps2)
+                statement = multiline_input(
+                    more_lines, ps1, ps2, paste_repl_sessions=True,
+                )
             except EOFError:
                 break
 
@@ -148,6 +150,8 @@ def run_multiline_interactive_console(
             input_name = f"<python-input-{input_n}>"
             more = console.push(_strip_final_indent(statement), filename=input_name, _symbol="single")  # type: ignore[call-arg]
             assert not more
+            if getattr(console, "unexecuted_statements", False):
+                _get_reader().error("code after exception did not run")
             try:
                 append_history_file()
             except (FileNotFoundError, PermissionError, OSError) as e:

@@ -24,6 +24,29 @@ details.  Function keys provide some additional functionality.
 makes pasting larger blocks of code easier. Press :kbd:`F3` to return to
 the regular prompt.
 
+In terminals that support bracketed paste, a pasted session starting with
+``>>>`` or ``...`` shows a hint while paste mode is off.  The hint remains
+while the buffer is recognized as a session.  Pressing :kbd:`F3` enters paste mode
+and removes prompts and output from the current buffer.  Wrapped input lines
+are rejoined, and input abandoned with :kbd:`Control-C` is omitted.
+Review and edit the code, then press :kbd:`F3` again and :kbd:`Enter` to run it.
+
+Pasting a session into existing input shows the hint temporarily, even inside
+a string.  If paste mode is already active, each pasted session is stripped
+automatically, including when inserting into existing input.
+Pasting into an :func:`input` prompt or :mod:`pdb` leaves the text unchanged.
+
+The pasted code runs as one block.  An unhandled exception stops execution,
+so statements after it do not run, even if the copied session continued
+after the exception.  When an error leaves later statements in the input
+unexecuted, a message below the next prompt reports this.  This also applies
+to typed input.  You can inspect the traceback, then copy and paste the
+remaining lines, including their ``...`` prompts.
+Expression results from earlier statements are not displayed through
+:func:`sys.displayhook`, so updates to ``_`` can differ from entering each
+statement separately.  Output that looks like a prompted input line can be
+mistaken for code.
+
 When using the new interactive shell, exit the shell by typing :kbd:`exit`
 or :kbd:`quit`. Adding call parentheses after those commands is not
 required.

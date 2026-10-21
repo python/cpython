@@ -67,6 +67,27 @@ class TestSimpleInteract(unittest.TestCase):
         self.assertIn('Exception: foobar', f.getvalue())
         self.assertNotIn('spam&eggs', f.getvalue())
 
+    def test_unexecuted_statements(self):
+        console = InteractiveColoredConsole()
+        cases = (
+            ("1 / 0\nafter = True", True),
+            ("if True:\n    1 / 0\nafter = True", True),
+            ("1 / 0; after = True", True),
+            ("before = True\n1 / 0", False),
+            ("1 / 0\n# No remaining statements", False),
+            ("try:\n    1 / 0\nexcept ZeroDivisionError:\n    pass\nafter = True", False),
+            ("before = True\nreturn\nafter = True", True),
+            ("before = True", False),
+            ("", False),
+        )
+        for source, expected in cases:
+            with (
+                self.subTest(source=source),
+                contextlib.redirect_stderr(io.StringIO()),
+            ):
+                self.assertFalse(console.runsource(source))
+                self.assertEqual(console.unexecuted_statements, expected)
+
     def test_empty(self):
         namespace = {}
         code = ""
