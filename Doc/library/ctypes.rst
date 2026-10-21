@@ -1510,7 +1510,7 @@ way is to instantiate :py:class:`CDLL` or one of its subclasses:
    On non-Windows systems, *name* can  be ``None``. In this case,
    :c:func:`!dlopen` is called with ``NULL``, which opens the main program
    as a "library".
-   (Some systems do the same is *name* is empty; ``None``/``NULL`` is more
+   (Some systems do the same if *name* is empty; ``None``/``NULL`` is more
    portable.)
 
    .. admonition:: CPython implementation detail
