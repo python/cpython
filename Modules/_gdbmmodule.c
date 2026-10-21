@@ -136,10 +136,16 @@ gdbm_dealloc(PyObject *op)
     Py_DECREF(tp);
 }
 
+/*[clinic input]
+@critical_section
+_gdbm.gdbm.__len__ as gdbm_length
+[clinic start generated code]*/
+
 static Py_ssize_t
-gdbm_length_lock_held(PyObject *op)
+gdbm_length_impl(gdbmobject *self)
+/*[clinic end generated code: output=3ccb956974ed73b5 input=57878f60d264ed98]*/
 {
-    gdbmobject *dp = _gdbmobject_CAST(op);
+    gdbmobject *dp = self;
     _gdbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
     if (dp->di_dbm == NULL) {
         PyErr_SetString(state->gdbm_error, "GDBM object has already been closed");
@@ -181,16 +187,6 @@ gdbm_length_lock_held(PyObject *op)
 #endif
     }
     return dp->di_size;
-}
-
-static Py_ssize_t
-gdbm_length(PyObject *op)
-{
-    Py_ssize_t result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = gdbm_length_lock_held(op);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 static int
