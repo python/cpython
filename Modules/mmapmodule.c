@@ -1256,8 +1256,16 @@ mmap_mmap___exit___impl(mmap_object *self, PyObject *exc_type,
     return mmap_mmap_close_impl(self);
 }
 
+/*[clinic input]
+@critical_section
+mmap.mmap.__repr__ as mmap__repr__method
+
+    op: self(type="PyObject *")
+[clinic start generated code]*/
+
 static PyObject *
-mmap__repr__method_lock_held(PyObject *op)
+mmap__repr__method_impl(PyObject *op)
+/*[clinic end generated code: output=c896c8c4cd07228c input=a030361fbcfe851a]*/
 {
     mmap_object *mobj = mmap_object_CAST(op);
 
@@ -1299,16 +1307,6 @@ mmap__repr__method_lock_held(PyObject *op)
                                     Py_TYPE(op)->tp_name, access_str,
                                     mobj->size, mobj->pos, mobj->offset);
     }
-}
-
-static PyObject *
-mmap__repr__method(PyObject *op)
-{
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = mmap__repr__method_lock_held(op);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 #ifdef MS_WINDOWS
@@ -1487,22 +1485,17 @@ mmap_buffer_releasebuf(PyObject *op, Py_buffer *Py_UNUSED(view))
     Py_END_CRITICAL_SECTION();
 }
 
-static Py_ssize_t
-mmap_length_lock_held(PyObject *op)
-{
-    mmap_object *self = mmap_object_CAST(op);
-    CHECK_VALID(-1);
-    return self->size;
-}
+/*[clinic input]
+@critical_section
+mmap.mmap.__len__ as mmap_length
+[clinic start generated code]*/
 
 static Py_ssize_t
-mmap_length(PyObject *op)
+mmap_length_impl(mmap_object *self)
+/*[clinic end generated code: output=a63e62615cdd9960 input=b7bbf695dc9b2b66]*/
 {
-    Py_ssize_t result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = mmap_length_lock_held(op);
-    Py_END_CRITICAL_SECTION();
-    return result;
+    CHECK_VALID(-1);
+    return self->size;
 }
 
 static PyObject *
@@ -1604,11 +1597,20 @@ mmap_subscript(PyObject *op, PyObject *item)
     return result;
 }
 
+/*[clinic input]
+@critical_section
+mmap.mmap.__setitem__ as mmap_ass_item
+
+    i: Py_ssize_t
+    v: object
+    /
+[clinic start generated code]*/
+
 static int
-mmap_ass_item_lock_held(PyObject *op, Py_ssize_t i, PyObject *v)
+mmap_ass_item_impl(mmap_object *self, Py_ssize_t i, PyObject *v)
+/*[clinic end generated code: output=398d9d502e560f58 input=5fe8a60de3a6c39e]*/
 {
     const char *buf;
-    mmap_object *self = mmap_object_CAST(op);
 
     CHECK_VALID(-1);
     if (i < 0 || i >= self->size) {
@@ -1635,38 +1637,27 @@ mmap_ass_item_lock_held(PyObject *op, Py_ssize_t i, PyObject *v)
     return 0;
 }
 
-static int
-mmap_ass_item(PyObject *op, Py_ssize_t i, PyObject *v)
-{
-    int result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = mmap_ass_item_lock_held(op, i, v);
-    Py_END_CRITICAL_SECTION();
-    return result;
-}
+/*[clinic input]
+@critical_section
+mmap.mmap.__setitem__ as mmap_ass_subscript
+
+    item: object
+    value: object
+    /
+[clinic start generated code]*/
 
 static int
-mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
+mmap_ass_subscript_impl(mmap_object *self, PyObject *item, PyObject *value)
+/*[clinic end generated code: output=e346a1c7f35800d4 input=4827c15e710601f0]*/
 {
-    mmap_object *self = mmap_object_CAST(op);
-    CHECK_VALID(-1);
-
     if (!is_writable(self))
         return -1;
 
     if (PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
-        Py_ssize_t v;
-
         if (i == -1 && PyErr_Occurred())
             return -1;
-        if (i < 0)
-            i += self->size;
-        if (i < 0 || i >= self->size) {
-            PyErr_SetString(PyExc_IndexError,
-                            "mmap index out of range");
-            return -1;
-        }
+
         if (value == NULL) {
             PyErr_SetString(PyExc_TypeError,
                             "mmap doesn't support item deletion");
@@ -1677,7 +1668,7 @@ mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
                             "mmap item value must be an int");
             return -1;
         }
-        v = PyNumber_AsSsize_t(value, PyExc_TypeError);
+        Py_ssize_t v = PyNumber_AsSsize_t(value, PyExc_TypeError);
         if (v == -1 && PyErr_Occurred())
             return -1;
         if (v < 0 || v > 255) {
@@ -1686,7 +1677,18 @@ mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
                             "in range(0, 256)");
             return -1;
         }
+
+        /* Converting item or value above may have run arbitrary code
+         * (e.g. __index__) that resized or closed the mmap, so bounds
+         * are only checked now, against the current size. */
         CHECK_VALID(-1);
+        if (i < 0)
+            i += self->size;
+        if (i < 0 || i >= self->size) {
+            PyErr_SetString(PyExc_IndexError,
+                            "mmap index out of range");
+            return -1;
+        }
 
         char v_char = (char) v;
         if (safe_byte_copy(self->data + i, &v_char) < 0) {
@@ -1701,7 +1703,6 @@ mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
         if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return -1;
         }
-        slicelen = PySlice_AdjustIndices(self->size, &start, &stop, step);
         if (value == NULL) {
             PyErr_SetString(PyExc_TypeError,
                 "mmap object doesn't support slice deletion");
@@ -1709,6 +1710,12 @@ mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
         }
         if (PyObject_GetBuffer(value, &vbuf, PyBUF_SIMPLE) < 0)
             return -1;
+
+        /* Acquiring the buffer above may have run arbitrary code (e.g. a
+         * __buffer__ method) that resized or closed this mmap, so the slice bounds
+         * are only computed now, against the current size. */
+        CHECK_VALID_OR_RELEASE(-1, vbuf);
+        slicelen = PySlice_AdjustIndices(self->size, &start, &stop, step);
         if (vbuf.len != slicelen) {
             PyErr_SetString(PyExc_IndexError,
                 "mmap slice assignment is wrong size");
@@ -1716,7 +1723,6 @@ mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
             return -1;
         }
 
-        CHECK_VALID_OR_RELEASE(-1, vbuf);
         int result = 0;
         if (slicelen == 0) {
         }
@@ -1740,16 +1746,6 @@ mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
                         "mmap indices must be integer");
         return -1;
     }
-}
-
-static int
-mmap_ass_subscript(PyObject *op, PyObject *item, PyObject *value)
-{
-    int result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = mmap_ass_subscript_lock_held(op, item, value);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 static PyObject *

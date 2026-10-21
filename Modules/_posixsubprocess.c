@@ -84,22 +84,6 @@ module _posixsubprocess
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=c62211df27cf7334]*/
 
-/*[python input]
-class pid_t_converter(CConverter):
-    type = 'pid_t'
-    format_unit = '" _Py_PARSE_PID "'
-
-    def parse_arg(self, argname, displayname, *, limited_capi):
-        return self.format_code("""
-            {paramname} = PyLong_AsPid({argname});
-            if ({paramname} == -1 && PyErr_Occurred()) {{{{
-                goto exit;
-            }}}}
-            """,
-            argname=argname)
-[python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=c94349aa1aad151d]*/
-
 #include "clinic/_posixsubprocess.c.h"
 
 /* Convert ASCII to a positive int, no libc call. no overflow. -1 on error. */
@@ -368,7 +352,8 @@ _close_range_except(int start_fd,
                     int (*closer)(int, int))
 {
     if (end_fd == -1) {
-        end_fd = Py_MIN(safe_get_max_fd(), INT_MAX);
+        end_fd = safe_get_max_fd();
+        end_fd = Py_MIN(end_fd, INT_MAX);
     }
     Py_ssize_t keep_seq_idx;
     /* As fds_to_keep is sorted we can loop through the list closing

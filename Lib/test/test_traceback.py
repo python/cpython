@@ -587,6 +587,13 @@ class TracebackCases(unittest.TestCase):
         output = traceback.format_exception_only(Exception("projector"))
         self.assertEqual(output, ["Exception: projector\n"])
 
+    @support.subTests("arg", [NotImplemented, "invalid syntax"])
+    def test_format_syntax_error_message(self, arg):
+        exc = SyntaxError(arg)
+        lines = traceback.format_exception_only(type(exc), exc)
+        result = "".join(lines)
+        self.assertIn(str(arg), result)
+
     def test_exception_is_None(self):
         NONE_EXC_STRING = 'NoneType: None\n'
         excfile = StringIO()
@@ -3904,7 +3911,7 @@ class TestTracebackException(unittest.TestCase):
     def test_dont_swallow_cause_or_context_of_falsey_exception(self):
         # see gh-132308: Ensure that __cause__ or __context__ attributes of exceptions
         # that evaluate as falsey are included in the output. For falsey term,
-        # see https://docs.python.org/3/library/stdtypes.html#truth-value-testing.
+        # see https://docs.python.org/3/builtins/stdtypes.html#truth-value-testing.
 
         try:
             raise FalseyException from KeyError
@@ -4123,7 +4130,7 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
     def test_dont_swallow_subexceptions_of_falsey_exceptiongroup(self):
         # see gh-132308: Ensure that subexceptions of exception groups
         # that evaluate as falsey are displayed in the output. For falsey term,
-        # see https://docs.python.org/3/library/stdtypes.html#truth-value-testing.
+        # see https://docs.python.org/3/builtins/stdtypes.html#truth-value-testing.
 
         try:
             raise FalseyExceptionGroup("Gih", (KeyError(), NameError()))
@@ -5108,6 +5115,32 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
 
         actual = self.get_suggestion(func)
         self.assertIn("forget to import '_io'", actual)
+
+    def test_name_error_with_bad_getattr(self):
+        class A:
+            def __getattr__(self, x):
+                spam
+
+        actual = self.get_suggestion(A(), "eggs")
+        self.assertIn("name 'spam' is not defined", actual)
+
+    def test_name_error_with_bad_getattribute(self):
+
+        class A:
+            def __getattribute__(self, x):
+                spam
+
+        actual = self.get_suggestion(A(), "eggs")
+        self.assertIn("name 'spam' is not defined", actual)
+
+    def test_name_error_with_bad_property(self):
+        class A:
+            @property
+            def eggs(self):
+                eggs
+
+        actual = self.get_suggestion(A(), "eggs")
+        self.assertIn("name 'eggs' is not defined", actual)
 
 
 

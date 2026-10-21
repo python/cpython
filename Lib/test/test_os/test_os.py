@@ -24,6 +24,7 @@ import sys
 import sysconfig
 import tempfile
 import textwrap
+import threading
 import time
 import types
 import unittest
@@ -35,6 +36,7 @@ from test.support import socket_helper
 from test.support import infinite_recursion
 from test.support import requires_root_user
 from test.support import requires_non_root_user
+from test.support import threading_helper
 from test.support import warnings_helper
 from platform import win32_is_iot
 from .utils import create_file
@@ -5349,6 +5351,84 @@ class TestScandir(unittest.TestCase):
         list(iterator)
         with self.check_no_resource_warning():
             del iterator
+
+    def test_no_resource_warning_when_open_fails(self):
+        # gh-152754: a scandir() call that never opened a directory owns
+        # nothing, and must not report an unclosed iterator.
+        self.create_file("file.txt")
+        missing = os.path.join(self.path, "missing")
+        not_a_dir = os.path.join(self.path, "file.txt")
+        for path in (missing, not_a_dir):
+            with self.subTest(path=path):
+                with self.check_no_resource_warning():
+                    with self.assertRaises(OSError):
+                        os.scandir(path)
+
+
+@threading_helper.requires_working_threading()
+class ScandirThreadingTest(unittest.TestCase):
+    # gh-152754: an os.scandir() iterator shared between threads must not crash.
+
+    if support.check_sanitizer(thread=True):
+        SCANDIR_NUMITEMS = 200
+        SCANDIR_N_NEXT = 2
+        SCANDIR_N_CLOSE = 2
+        SCANDIR_REPEAT = 10
+    else:
+        SCANDIR_NUMITEMS = 1000
+        SCANDIR_N_NEXT = 6
+        SCANDIR_N_CLOSE = 3
+        SCANDIR_REPEAT = 20
+
+    def setUp(self):
+        self.dir = os.path.realpath(os_helper.TESTFN)
+        self.addCleanup(os_helper.rmtree, self.dir)
+        os.mkdir(self.dir)
+        self.names = set()
+        for i in range(self.SCANDIR_NUMITEMS):
+            name = f"f{i}"
+            create_file(os.path.join(self.dir, name))
+            self.names.add(name)
+
+    def test_close_racing_next(self):
+        # One thread's next() racing another's close() must not crash.
+        def nexter():
+            for _ in self.it:
+                pass
+
+        def closer():
+            self.it.close()
+
+        funcs = [nexter] * self.SCANDIR_N_NEXT + [closer] * self.SCANDIR_N_CLOSE
+        for _ in range(self.SCANDIR_REPEAT):
+            self.it = os.scandir(self.dir)
+            try:
+                threading_helper.run_concurrently(funcs)
+            finally:
+                self.it.close()
+
+    def test_shared_next(self):
+        # Threads sharing one iterator must not crash or lose entries: every
+        # entry must be handed to exactly one thread.
+        expected = sorted(self.names)
+        nthreads = self.SCANDIR_N_NEXT + self.SCANDIR_N_CLOSE
+
+        for _ in range(self.SCANDIR_REPEAT):
+            self.it = os.scandir(self.dir)
+            results = []
+            results_lock = threading.Lock()
+
+            def worker():
+                local = [entry.name for entry in self.it]
+                with results_lock:
+                    results.extend(local)
+
+            try:
+                threading_helper.run_concurrently([worker] * nthreads)
+            finally:
+                self.it.close()
+
+            self.assertEqual(sorted(results), expected)
 
 
 class TestPEP519(unittest.TestCase):

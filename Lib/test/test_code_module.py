@@ -5,6 +5,7 @@ import unittest
 from textwrap import dedent
 from contextlib import ExitStack
 from unittest import mock
+from test.support import cpython_only
 from test.support import force_not_colorized_test_class
 from test.support import import_helper
 
@@ -37,6 +38,10 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
     def setUp(self):
         self.console = code.InteractiveConsole()
         self.mock_sys()
+
+    @cpython_only
+    def test_lazy_import(self):
+        import_helper.ensure_lazy_imports("code", {"traceback"})
 
     def test_ps1(self):
         self.infunc.side_effect = [
@@ -138,6 +143,17 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         self.assertIs(type(self.sysmod.last_value), UnicodeEncodeError)
         self.assertIsNone(self.sysmod.last_traceback)
         self.assertIsNone(self.sysmod.last_value.__traceback__)
+        self.assertIs(self.sysmod.last_exc, self.sysmod.last_value)
+
+    def test_compile_error(self):
+        # Any error raised by compile() must be reported (gh-69919).
+        self.infunc.side_effect = ['-' * 100_000 + '1', EOFError('Finished')]
+        self.console.interact()
+        output = ''.join(''.join(call[1]) for call in self.stderr.method_calls)
+        output = output[output.index('(InteractiveConsole)'):]
+        output = output[output.index('\n') + 1:]
+        self.assertRegex(output, r'^(MemoryError|RecursionError): ')
+        self.assertIn(self.sysmod.last_type, (MemoryError, RecursionError))
         self.assertIs(self.sysmod.last_exc, self.sysmod.last_value)
 
     def test_sysexcepthook(self):

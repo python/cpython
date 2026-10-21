@@ -67,45 +67,44 @@ Debugger commands
 
 import os
 import io
-import re
 import sys
 import cmd
-import bdb
 import dis
+import bdb
 import code
-import glob
-import json
 import stat
 import token
 import types
 import atexit
 import codeop
-import pprint
-import signal
-import socket
 import typing
-import asyncio
 import inspect
-import weakref
 import builtins
-import tempfile
-import textwrap
-import tokenize
 import itertools
-import traceback
 import linecache
-import selectors
-import threading
-import _colorize
 
 from contextlib import ExitStack, closing, contextmanager
 from types import CodeType
 from warnings import deprecated
 
-try:
-    import _pyrepl.utils
-except ModuleNotFoundError:
-    _pyrepl = None
+lazy import _colorize
+lazy import argparse
+lazy import asyncio
+lazy import glob
+lazy import json
+lazy import pprint
+lazy import re
+lazy import runpy
+lazy import selectors
+lazy import shlex
+lazy import signal
+lazy import socket
+lazy import tempfile
+lazy import textwrap
+lazy import threading
+lazy import tokenize
+lazy import traceback
+lazy import weakref
 
 
 class Restart(Exception):
@@ -155,7 +154,7 @@ def find_function(funcname, filename):
             if funcdef:
                 try:
                     code = compile(funcdef, filename, 'exec')
-                except SyntaxError:
+                except Exception:
                     continue
                 # We should always be able to find the code object here
                 funccode = next(c for c in code.co_consts if
@@ -246,7 +245,6 @@ class _ModuleTarget(_ExecutableTarget):
     def __init__(self, target):
         self._target = target
 
-        import runpy
         try:
             _, self._spec, self._code = runpy._get_module_details(self._target)
         except ImportError as e:
@@ -281,8 +279,6 @@ class _ModuleTarget(_ExecutableTarget):
 
 class _ZipTarget(_ExecutableTarget):
     def __init__(self, target):
-        import runpy
-
         self._target = os.path.realpath(target)
         sys.path.insert(0, self._target)
         try:
@@ -465,6 +461,7 @@ class PdbPyReplInput:
             return None
 
     def gen_colors(self, buffer):
+        import _pyrepl.utils
         from _pyrepl.utils import ColorSpan, Span
 
         if not buffer.strip():
@@ -902,6 +899,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self._chained_exception_index = 0
 
     def _get_asyncio_task(self):
+        # If asyncio has never been imported there cannot be a running task,
+        # so skip the import rather than pay for it on every interaction.
+        if 'asyncio' not in sys.modules:
+            return None
         try:
             task = asyncio.current_task()
         except RuntimeError:
@@ -1266,7 +1267,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         return False
 
     def _colorize_code(self, code):
-        if self.colorize and _pyrepl:
+        if self.colorize:
+            try:
+                import _pyrepl.utils
+            except ModuleNotFoundError:
+                return code
             colors = list(_pyrepl.utils.gen_colors(code))
             chars, _ = _pyrepl.utils.disp_str(code, colors=colors, force_color=True)
             code = "".join(chars)
@@ -2084,7 +2089,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                        'e.g. "python -m pdb myscript.py"')
             return
         if arg:
-            import shlex
             argv0 = sys.argv[0:1]
             try:
                 sys.argv = shlex.split(arg)
@@ -2435,9 +2439,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 s += '->'
             elif lineno == exc_lineno:
                 s += '>>'
+            # Strip the trailing newline before colorizing: the colorizer
+            # renders control characters (like '\n') in caret notation, so a
+            # later rstrip() could not remove the resulting '^J'.
+            line = line.rstrip()
             if self.colorize:
                 line = self._colorize_code(line)
-            self.message(s + '\t' + line.rstrip())
+            self.message(s + '\t' + line)
 
     def do_whatis(self, arg):
         """whatis expression
@@ -2772,7 +2780,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """Return the error message as string if compiling `expr` fails."""
         try:
             compile(expr, "<stdin>", "eval")
-        except SyntaxError as exc:
+        except Exception as exc:
             return _rstr(self._format_exc(exc))
         return ""
 
@@ -3778,9 +3786,7 @@ def parse_args():
     # "python -m pdb -m foo -p 1" should pass "-p 1" to "foo".
     # "python -m pdb foo.py -m bar" should pass "-m bar" to "foo.py".
     # "python -m pdb -m foo -m bar" should pass "-m bar" to "foo".
-    # This require some customized parsing logic to find the actual debug target.
-
-    import argparse
+    # This requires some customized parsing logic to find the actual debug target.
 
     parser = argparse.ArgumentParser(
         usage="%(prog)s [-h] [-c command] (-m module | -p pid | pyfile) [args ...]",
