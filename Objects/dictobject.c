@@ -3772,21 +3772,19 @@ error:
     return NULL;
 }
 
+/*[clinic input]
+@critical_section
+dict.__repr__
+
+    self: self(type="PyObject *")
+[clinic start generated code]*/
+
 static PyObject *
-dict_repr_lock_held(PyObject *self)
+dict_repr_impl(PyObject *self)
+/*[clinic end generated code: output=059263af818a321d input=f9c423cbdf534674]*/
 {
     ASSERT_DICT_LOCKED((PyDictObject *)self);
     return anydict_repr_impl(self);
-}
-
-static PyObject *
-dict_repr(PyObject *self)
-{
-    PyObject *res;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    res = dict_repr_lock_held(self);
-    Py_END_CRITICAL_SECTION();
-    return res;
 }
 
 static Py_ssize_t

@@ -632,9 +632,21 @@ list_dealloc(PyObject *self)
     }
 }
 
+/*[clinic input]
+@critical_section
+list.__repr__
+
+    v: self(type="PyListObject *")
+[clinic start generated code]*/
+
 static PyObject *
 list_repr_impl(PyListObject *v)
+/*[clinic end generated code: output=c5ffe3b9cfee36ce input=f4b85c550d11de32]*/
 {
+    if (PyList_GET_SIZE(v) == 0) {
+        return PyUnicode_FromString("[]");
+    }
+
     int res = Py_ReprEnter((PyObject*)v);
     if (res != 0) {
         return (res > 0 ? PyUnicode_FromString("[...]") : NULL);
@@ -685,20 +697,6 @@ error:
     PyUnicodeWriter_Discard(writer);
     Py_ReprLeave((PyObject *)v);
     return NULL;
-}
-
-static PyObject *
-list_repr(PyObject *self)
-{
-    if (PyList_GET_SIZE(self) == 0) {
-        return PyUnicode_FromString("[]");
-    }
-    PyListObject *v = (PyListObject *)self;
-    PyObject *ret = NULL;
-    Py_BEGIN_CRITICAL_SECTION(v);
-    ret = list_repr_impl(v);
-    Py_END_CRITICAL_SECTION();
-    return ret;
 }
 
 static Py_ssize_t
