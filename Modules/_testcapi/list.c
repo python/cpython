@@ -103,55 +103,6 @@ test_list_api(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 
-static PyObject*
-test_list_writer(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *result = NULL;
-
-    PyObject* array[3];
-    for (Py_ssize_t i = 0; i < (Py_ssize_t)Py_ARRAY_LENGTH(array); i++) {
-        array[i] = PyLong_FromLong(i);
-        if (array[i] == NULL) {
-            for (Py_ssize_t j = 0; j <= i; j++) {
-                Py_DECREF(array[i]);
-            }
-            return NULL;
-        }
-    }
-
-    PyListWriter *writer = PyListWriter_Create(3);
-    if (writer == NULL) {
-        goto done;
-    }
-
-    for (Py_ssize_t i = 0; i < (Py_ssize_t)Py_ARRAY_LENGTH(array); i++) {
-        if (PyListWriter_Append(writer, array[i]) < 0) {
-            PyListWriter_Discard(writer);
-            goto done;
-        }
-    }
-
-    PyObject *list = PyListWriter_Finish(writer);
-    if (list == NULL) {
-        goto done;
-    }
-    assert(PyList_CheckExact(list));
-    assert(PyList_GET_SIZE(list) == 3);
-    assert(PyList_GET_ITEM(list, 0) == array[0]);
-    assert(PyList_GET_ITEM(list, 1) == array[1]);
-    assert(PyList_GET_ITEM(list, 2) == array[2]);
-    Py_DECREF(list);
-
-    result = Py_None;
-
-done:
-    for (Py_ssize_t i = 0; i < (Py_ssize_t)Py_ARRAY_LENGTH(array); i++) {
-        Py_DECREF(array[i]);
-    }
-    return result;
-}
-
-
 typedef struct {
     PyObject_HEAD
     PyListWriter *writer;
@@ -358,7 +309,6 @@ static PyMethodDef test_methods[] = {
     {"list_clear", list_clear, METH_O},
     {"list_extend", list_extend, METH_VARARGS},
     {"test_list_api", test_list_api, METH_NOARGS},
-    {"test_list_writer", test_list_writer, METH_NOARGS},
     {NULL},
 };
 
