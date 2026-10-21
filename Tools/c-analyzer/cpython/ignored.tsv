@@ -48,8 +48,7 @@ Objects/unicodeobject.c	_init_global_state	initialized	-
 Modules/getbuildinfo.c	-	buildinfo	-
 Modules/getbuildinfo.c	-	initialized	-
 Python/getversion.c	-	initialized	-
-Python/getversion.c	-	static_version	-
-Python/getversion.c	-	heap_version	-
+Python/getversion.c	-	version	-
 
 ## public C-API - set during first init
 Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
@@ -240,11 +239,8 @@ Modules/_decimal/_decimal.c	-	cond_map_template	-
 Modules/_decimal/_decimal.c	-	dec_signal_string	-
 Modules/_decimal/_decimal.c	-	dflt_ctx	-
 Modules/_decimal/_decimal.c	-	int_constants	-
-Modules/_decimal/_decimal.c	-	invalid_rounding_err	-
-Modules/_decimal/_decimal.c	-	invalid_signals_err	-
 Modules/_decimal/_decimal.c	-	signal_map_template	-
 Modules/_decimal/_decimal.c	-	ssize_constants	-
-Modules/_decimal/_decimal.c	-	INVALID_SIGNALDICT_ERROR_MSG	-
 Modules/_elementtree.c	-	ExpatMemoryHandler	-
 Modules/_hashopenssl.c	-	py_hashes	-
 Modules/_hacl/Hacl_Hash_SHA1.c	-	_h0	-

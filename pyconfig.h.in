@@ -1138,6 +1138,9 @@
 /* Define to 1 if you have the 'pthread_kill' function. */
 #undef HAVE_PTHREAD_KILL
 
+/* Define to 1 if you have the <pthread_np.h> header file. */
+#undef HAVE_PTHREAD_NP_H
+
 /* Define to 1 if you have the 'pthread_setname_np' function. */
 #undef HAVE_PTHREAD_SETNAME_NP
 
@@ -2201,6 +2204,9 @@
 /* Defined if _Float16 C type is supported */
 #undef _Py_HAVE_FLOAT16
 
+/* Define if you have the 'freadlink' function. */
+#undef _Py_HAVE_FREADLINK
+
 /* Define if you have a working iconv() function. */
 #undef _Py_HAVE_ICONV
 
@@ -2210,6 +2216,9 @@
 
 /* Define if you have the 'PR_SET_VMA_ANON_NAME' constant. */
 #undef _Py_HAVE_PR_SET_VMA_ANON_NAME
+
+/* Define if you have the 'pthread_attr_get_np' function. */
+#undef _Py_HAVE_PTHREAD_ATTR_GET_NP
 
 /* Define if you have the 'sinpi' function. */
 #undef _Py_HAVE_SINPI

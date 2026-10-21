@@ -487,11 +487,14 @@ the following constants:
 
    The version string of the zlib library actually loaded by the interpreter.
 
+   Prefer :const:`!zlib_version` over its :const:`!ZLIB_RUNTIME_VERSION` alias.
+
    .. versionadded:: 3.3
       The :const:`!ZLIB_RUNTIME_VERSION` constant.
 
-   .. versionadded:: next
-      The :const:`!zlib_version` alias.
+   .. versionadded:: 3.16
+      The :const:`!zlib_version` constant; :const:`!ZLIB_RUNTIME_VERSION` is now
+      an alias for it.
 
 
 .. data:: ZLIB_VERSION_INFO
@@ -505,7 +508,7 @@ the following constants:
    This may be different from the zlib library actually used at runtime, which
    is available as :const:`zlib_version_info`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. data:: zlib_version_info
@@ -514,7 +517,7 @@ the following constants:
    actually loaded by the interpreter,
    with the same fields as :const:`ZLIB_VERSION_INFO`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 The following constants are only present if zlib-ng was used to build
@@ -536,7 +539,7 @@ the module:
    version that was used for building the module:
    *major*, *minor*, and *revision*.  All values are integers.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. seealso::

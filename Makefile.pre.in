@@ -618,6 +618,7 @@ DTRACE_DEPS = \
 # pyexpat's expat library
 
 LIBEXPAT_OBJS= \
+		Modules/expat/xcs.o \
 		Modules/expat/xmlparse.o \
 		Modules/expat/xmlrole.o \
 		Modules/expat/xmltok.o
@@ -638,7 +639,7 @@ LIBEXPAT_HEADERS= \
 		Modules/expat/pyexpatns.h \
 		Modules/expat/siphash.h \
 		Modules/expat/utf8tab.h \
-		Modules/expat/xcsinc.c \
+		Modules/expat/xcs.h \
 		Modules/expat/xmlrole.h \
 		Modules/expat/xmltok.h \
 		Modules/expat/xmltok_impl.h \
@@ -1450,6 +1451,9 @@ PYTHON_HEADERS= \
 ##########################################################################
 # Build static libexpat.a
 LIBEXPAT_CFLAGS=@LIBEXPAT_CFLAGS@ $(PY_STDMODULE_CFLAGS) $(CCSHARED)
+
+Modules/expat/xcs.o: $(srcdir)/Modules/expat/xcs.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xcs.c
 
 Modules/expat/xmlparse.o: $(srcdir)/Modules/expat/xmlparse.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
 	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xmlparse.c
@@ -2286,7 +2290,9 @@ testuniversal: all
 # Run the test suite on the iOS simulator. Must be run on a macOS machine with
 # a full Xcode install that has an iPhone SE (3rd edition) simulator available.
 # This must be run *after* a `make install` has completed the build. The
-# `--with-framework-name` argument *cannot* be used when configuring the build.
+# testbed is configured for the framework name used to configure the build;
+# that name is expected to be `Python`, optionally followed by uppercased ABI
+# flags (e.g., `PythonT`).
 XCFOLDER:=iOSTestbed.$(MULTIARCH).$(shell date +%s).$$PPID
 .PHONY: testios
 testios:
@@ -2296,10 +2302,6 @@ testios:
 	fi
 	@if test "$(findstring -iphonesimulator,$(MULTIARCH))" != "-iphonesimulator"; then \
 		echo "Cannot run the iOS testbed for non-simulator builds."; \
-		exit 1;\
-	fi
-	@if test $(PYTHONFRAMEWORK) != "Python"; then \
-		echo "Cannot run the iOS testbed with a non-default framework name."; \
 		exit 1;\
 	fi
 	@if ! test -d $(PYTHONFRAMEWORKPREFIX); then \

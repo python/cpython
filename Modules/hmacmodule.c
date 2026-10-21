@@ -379,16 +379,17 @@ narrow_hmac_hash_kind(hmacmodule_state *state, HMAC_Hash_Kind kind)
  *
  * If 'code' represents a successful operation, this returns 0.
  * Otherwise, this sets an appropriate exception and returns -1.
+ *
+ * The caller must have an attached thread state.
  */
 static int
 _hacl_convert_errno(hacl_errno_t code)
 {
-    assert(PyGILState_GetThisThreadState() != NULL);
+    assert(PyThreadState_GetUnchecked() != NULL);
     if (code == Hacl_Streaming_Types_Success) {
         return 0;
     }
 
-    PyGILState_STATE gstate = PyGILState_Ensure();
     switch (code) {
         case Hacl_Streaming_Types_InvalidAlgorithm: {
             PyErr_SetString(PyExc_ValueError, "invalid HACL* algorithm");
@@ -413,7 +414,6 @@ _hacl_convert_errno(hacl_errno_t code)
             break;
         }
     }
-    PyGILState_Release(gstate);
     return -1;
 }
 
@@ -449,39 +449,33 @@ _hacl_hmac_state_free(HACL_HMAC_state *state)
 /*
  * Call the HACL* HMAC-HASH update function on the given data.
  *
- * On DEBUG builds, the update() call is verified.
- *
- * Return 0 on success; otherwise, set an exception and return -1 on failure.
+ * Return the HACL* exit code. No exception is set, so that this
+ * can be called without an attached thread state or with a lock held.
 */
-static int
+static hacl_errno_t
 _hacl_hmac_state_update_once(HACL_HMAC_state *state,
                              uint8_t *buf, uint32_t len)
 {
-#ifndef NDEBUG
-    hacl_errno_t code = Hacl_Streaming_HMAC_update(state, buf, len);
-    return _hacl_convert_errno(code);
-#else
-    (void)Hacl_Streaming_HMAC_update(state, buf, len);
-    return 0;
-#endif
+    return Hacl_Streaming_HMAC_update(state, buf, len);
 }
 
 /*
  * Perform the HMAC-HASH update() operation in a streaming fashion.
  *
- * On DEBUG builds, each update() call is verified.
- *
- * Return 0 on success; otherwise, set an exception and return -1 on failure.
+ * Return the HACL* exit code. No exception is set, so that this
+ * can be called without an attached thread state or with a lock held.
+ * Use _hacl_convert_errno() afterwards to set an appropriate exception.
  */
-static int
+static hacl_errno_t
 _hacl_hmac_state_update(HACL_HMAC_state *state, uint8_t *buf, Py_ssize_t len)
 {
     assert(len >= 0);
 #ifdef Py_HMAC_SSIZE_LARGER_THAN_UINT32
     while (len > UINT32_MAX_AS_SSIZE_T) {
-        if (_hacl_hmac_state_update_once(state, buf, UINT32_MAX) < 0) {
-            assert(PyErr_Occurred());
-            return -1;
+        hacl_errno_t code = _hacl_hmac_state_update_once(state, buf,
+                                                         UINT32_MAX);
+        if (code != Hacl_Streaming_Types_Success) {
+            return code;
         }
         buf += UINT32_MAX;
         len -= UINT32_MAX;
@@ -786,18 +780,16 @@ _hmac_new_impl(PyObject *module, PyObject *keyobj, PyObject *msgobj,
         GET_BUFFER_VIEW_OR_ERROR(msgobj, &msg, goto error);
         /* Do not use self->mutex here as this is the constructor
          * where it is not yet possible to have concurrent access. */
+        hacl_errno_t code;
         HASHLIB_EXTERNAL_INSTRUCTIONS_UNLOCKED(
             msg.len,
-            rc = _hacl_hmac_state_update(self->state, msg.buf, msg.len)
+            code = _hacl_hmac_state_update(self->state, msg.buf, msg.len)
         );
         PyBuffer_Release(&msg);
-#ifndef NDEBUG
+        rc = _hacl_convert_errno(code);
         if (rc < 0) {
             goto error;
         }
-#else
-        (void)rc;
-#endif
     }
     assert(rc == 0);
     return (PyObject *)self;
@@ -889,15 +881,15 @@ static PyObject *
 _hmac_HMAC_update_impl(HMACObject *self, PyObject *msgobj)
 /*[clinic end generated code: output=962134ada5e55985 input=7c0ea830efb03367]*/
 {
-    int rc = 0;
+    hacl_errno_t code;
     Py_buffer msg;
     GET_BUFFER_VIEW_OR_ERROUT(msgobj, &msg);
     HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(
         self, msg.len,
-        rc = _hacl_hmac_state_update(self->state, msg.buf, msg.len)
+        code = _hacl_hmac_state_update(self->state, msg.buf, msg.len)
     );
     PyBuffer_Release(&msg);
-    return rc < 0 ? NULL : Py_None;
+    return _hacl_convert_errno(code) < 0 ? NULL : Py_None;
 }
 
 /*
