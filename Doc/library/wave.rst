@@ -69,8 +69,6 @@ The :mod:`!wave` module defines the following function and exception:
 
    Format code for uncompressed PCM audio.
 
-   .. versionadded:: 3.15
-
 
 .. data:: WAVE_FORMAT_IEEE_FLOAT
 
@@ -83,7 +81,7 @@ The :mod:`!wave` module defines the following function and exception:
 
    Format code for WAVE extensible headers.
 
-   .. versionadded:: 3.15
+   .. versionadded:: 3.12
 
 
 .. _wave-read-objects:
