@@ -51,7 +51,6 @@ source file by including the header ``"Python.h"``.
    newtypes_tutorial.rst
    newtypes.rst
    building.rst
-   windows.rst
    embedding.rst
 
 

@@ -37,3 +37,11 @@ https://setuptools.pypa.io/en/latest/setuptools.html.
 
 The :mod:`distutils` module, which was included in the standard library
 until Python 3.12, is now maintained as part of Setuptools.
+
+
+.. c:macro:: Py_NO_LINK_LIB
+
+   Turn off the implicit, ``#pragma``-based linkage with the Python
+   library, performed inside CPython header files.
+
+   .. versionadded:: 3.14
