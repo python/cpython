@@ -1,7 +1,7 @@
 .. _tut-io:
 
 ****************
-Input and Output
+Input and output
 ****************
 
 There are several ways to present the output of a program; data can be printed
@@ -11,11 +11,11 @@ discuss some of the possibilities.
 
 .. _tut-formatting:
 
-Fancier Output Formatting
+Fancier output formatting
 =========================
 
 So far we've encountered two ways of writing values: *expression statements* and
-the :func:`print` function.  (A third way is using the :meth:`write` method
+the :func:`print` function.  (A third way is using the :meth:`~io.TextIOBase.write` method
 of file objects; the standard output file can be referenced as ``sys.stdout``.
 See the Library Reference for more information on this.)
 
@@ -37,15 +37,22 @@ printing space-separated values. There are several ways to format output.
 * The :meth:`str.format` method of strings requires more manual
   effort.  You'll still use ``{`` and ``}`` to mark where a variable
   will be substituted and can provide detailed formatting directives,
-  but you'll also need to provide the information to be formatted.
+  but you'll also need to provide the information to be formatted. In the following code
+  block there are two examples of how to format variables:
+
 
   ::
 
      >>> yes_votes = 42_572_654
-     >>> no_votes = 43_132_495
-     >>> percentage = yes_votes / (yes_votes + no_votes)
+     >>> total_votes = 85_705_149
+     >>> percentage = yes_votes / total_votes
      >>> '{:-9} YES votes  {:2.2%}'.format(yes_votes, percentage)
      ' 42572654 YES votes  49.67%'
+
+  Notice how the ``yes_votes`` are padded with spaces and a negative sign only for negative numbers.
+  The example also prints ``percentage`` multiplied by 100, with 2 decimal
+  places and followed by a percent sign (see :ref:`formatspec` for details).
+
 
 * Finally, you can do all the string handling yourself by using string slicing and
   concatenation operations to create any layout you can imagine.  The
@@ -80,23 +87,31 @@ Some examples::
    >>> print(s)
    The value of x is 32.5, and y is 40000...
    >>> # The repr() of a string adds string quotes and backslashes:
-   ... hello = 'hello, world\n'
+   >>> hello = 'hello, world\n'
    >>> hellos = repr(hello)
    >>> print(hellos)
    'hello, world\n'
    >>> # The argument to repr() may be any Python object:
-   ... repr((x, y, ('spam', 'eggs')))
+   >>> repr((x, y, ('spam', 'eggs')))
    "(32.5, 40000, ('spam', 'eggs'))"
 
-The :mod:`string` module contains a :class:`~string.Template` class that offers
-yet another way to substitute values into strings, using placeholders like
-``$x`` and replacing them with values from a dictionary, but offers much less
-control of the formatting.
+The :mod:`string` module contains support for a simple templating approach
+based upon regular expressions, via :class:`string.Template`.
+This offers yet another way to substitute values into strings,
+using placeholders like ``$x`` and replacing them with values from a dictionary.
+This syntax is easy to use, although it offers much less control for formatting.
 
+.. index::
+   single: formatted string literal
+   single: interpolated string literal
+   single: string; formatted literal
+   single: string; interpolated literal
+   single: f-string
+   single: fstring
 
 .. _tut-f-strings:
 
-Formatted String Literals
+Formatted string literals
 -------------------------
 
 :ref:`Formatted string literals <f-strings>` (also called f-strings for
@@ -148,7 +163,7 @@ the reference guide for the :ref:`formatspec`.
 
 .. _tut-string-format:
 
-The String format() Method
+The string format() method
 --------------------------
 
 Basic usage of the :meth:`str.format` method looks like this::
@@ -197,7 +212,12 @@ notation. ::
    Jack: 4098; Sjoerd: 4127; Dcab: 8637678
 
 This is particularly useful in combination with the built-in function
-:func:`vars`, which returns a dictionary containing all local variables.
+:func:`vars`, which returns a dictionary containing all local variables::
+
+   >>> table = {k: str(v) for k, v in vars().items()}
+   >>> message = " ".join([f'{k}: ' + '{' + k +'};' for k in table.keys()])
+   >>> print(message.format(**table))
+   __name__: __main__; __doc__: None; __package__: None; __loader__: ...
 
 As an example, the following lines produce a tidily aligned
 set of columns giving integers and their squares and cubes::
@@ -220,7 +240,7 @@ For a complete overview of string formatting with :meth:`str.format`, see
 :ref:`formatstrings`.
 
 
-Manual String Formatting
+Manual string formatting
 ------------------------
 
 Here's the same table of squares and cubes, formatted manually::
@@ -267,9 +287,11 @@ left with zeros.  It understands about plus and minus signs::
 Old string formatting
 ---------------------
 
-The % operator (modulo) can also be used for string formatting. Given ``'string'
-% values``, instances of ``%`` in ``string`` are replaced with zero or more
-elements of ``values``. This operation is commonly known as string
+The % operator (modulo) can also be used for string formatting.
+Given ``format % values`` (where *format* is a string),
+``%`` conversion specifications in *format* are replaced with
+zero or more elements of *values*.
+This operation is commonly known as string
 interpolation. For example::
 
    >>> import math
@@ -281,20 +303,19 @@ More information can be found in the :ref:`old-string-formatting` section.
 
 .. _tut-files:
 
-Reading and Writing Files
+Reading and writing files
 =========================
 
 .. index::
-   builtin: open
-   object: file
+   pair: built-in function; open
+   pair: object; file
 
 :func:`open` returns a :term:`file object`, and is most commonly used with
-two positional arguments and one keyword argument:
-``open(filename, mode, encoding=None)``
+two positional arguments: ``open(filename, mode)``
 
 ::
 
-   >>> f = open('workfile', 'w', encoding="utf-8")
+   >>> f = open('workfile', 'w')
 
 .. XXX str(f) is <io.TextIOWrapper object at 0x82e8dc4>
 
@@ -312,10 +333,7 @@ omitted.
 
 Normally, files are opened in :dfn:`text mode`, that means, you read and write
 strings from and to the file, which are encoded in a specific *encoding*.
-If *encoding* is not specified, the default is platform dependent
-(see :func:`open`).
-Because UTF-8 is the modern de-facto standard, ``encoding="utf-8"`` is
-recommended unless you know that you need to use a different encoding.
+If *encoding* is not specified, the default is UTF-8 (see :func:`open`).
 Appending a ``'b'`` to the mode opens the file in :dfn:`binary mode`.
 Binary mode data is read and written as :class:`bytes` objects.
 You can not specify *encoding* when opening file in binary mode.
@@ -334,7 +352,7 @@ after its suite finishes, even if an exception is raised at some
 point.  Using :keyword:`!with` is also much shorter than writing
 equivalent :keyword:`try`\ -\ :keyword:`finally` blocks::
 
-    >>> with open('workfile', encoding="utf-8") as f:
+    >>> with open('workfile') as f:
     ...     read_data = f.read()
 
     >>> # We can check that the file has been automatically closed.
@@ -367,7 +385,7 @@ automatically fail. ::
 
 .. _tut-filemethods:
 
-Methods of File Objects
+Methods of file objects
 -----------------------
 
 The rest of the examples in this section will assume that a file object called
@@ -456,8 +474,8 @@ to the very file end with ``seek(0, 2)``) and the only valid *offset* values are
 those returned from the ``f.tell()``, or zero. Any other *offset* value produces
 undefined behaviour.
 
-File objects have some additional methods, such as :meth:`~file.isatty` and
-:meth:`~file.truncate` which are less frequently used; consult the Library
+File objects have some additional methods, such as :meth:`~io.IOBase.isatty` and
+:meth:`~io.IOBase.truncate` which are less frequently used; consult the Library
 Reference for a complete guide to file objects.
 
 
@@ -466,10 +484,10 @@ Reference for a complete guide to file objects.
 Saving structured data with :mod:`json`
 ---------------------------------------
 
-.. index:: module: json
+.. index:: pair: module; json
 
 Strings can easily be written to and read from a file.  Numbers take a bit more
-effort, since the :meth:`read` method only returns strings, which will have to
+effort, since the :meth:`~io.TextIOBase.read` method only returns strings, which will have to
 be passed to a function like :func:`int`, which takes a string like ``'123'``
 and returns its numeric value 123.  When you want to save more complex data
 types like nested lists and dictionaries, parsing and serializing by hand
@@ -510,8 +528,8 @@ To decode the object again, if ``f`` is a :term:`binary file` or
    x = json.load(f)
 
 .. note::
-   JSON files must be encoded in UTF-8. Use ``encoding="utf-8"`` when opening
-   JSON file as a :term:`text file` for both of reading and writing.
+   JSON files must be encoded in UTF-8, the default encoding for
+   :term:`text files <text file>`.
 
 This simple serialization technique can handle lists and dictionaries, but
 serializing arbitrary class instances in JSON requires a bit of extra effort.

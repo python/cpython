@@ -1,6 +1,8 @@
 import sqlite3 as sqlite
 import unittest
 
+from .util import memory_database
+
 
 class BackupTests(unittest.TestCase):
     def setUp(self):
@@ -32,34 +34,32 @@ class BackupTests(unittest.TestCase):
             self.cx.backup(self.cx)
 
     def test_bad_target_closed_connection(self):
-        bck = sqlite.connect(':memory:')
-        bck.close()
-        with self.assertRaises(sqlite.ProgrammingError):
-            self.cx.backup(bck)
+        with memory_database() as bck:
+            bck.close()
+            with self.assertRaises(sqlite.ProgrammingError):
+                self.cx.backup(bck)
 
     def test_bad_source_closed_connection(self):
-        bck = sqlite.connect(':memory:')
-        source = sqlite.connect(":memory:")
-        source.close()
-        with self.assertRaises(sqlite.ProgrammingError):
-            source.backup(bck)
+        with memory_database() as bck:
+            source = sqlite.connect(":memory:")
+            source.close()
+            with self.assertRaises(sqlite.ProgrammingError):
+                source.backup(bck)
 
     def test_bad_target_in_transaction(self):
-        bck = sqlite.connect(':memory:')
-        bck.execute('CREATE TABLE bar (key INTEGER)')
-        bck.executemany('INSERT INTO bar (key) VALUES (?)', [(3,), (4,)])
-        with self.assertRaises(sqlite.OperationalError) as cm:
-            self.cx.backup(bck)
-        if sqlite.sqlite_version_info < (3, 8, 8):
-            self.assertEqual(str(cm.exception), 'target is in transaction')
+        with memory_database() as bck:
+            bck.execute('CREATE TABLE bar (key INTEGER)')
+            bck.executemany('INSERT INTO bar (key) VALUES (?)', [(3,), (4,)])
+            with self.assertRaises(sqlite.OperationalError) as cm:
+                self.cx.backup(bck)
 
     def test_keyword_only_args(self):
         with self.assertRaises(TypeError):
-            with sqlite.connect(':memory:') as bck:
+            with memory_database() as bck:
                 self.cx.backup(bck, 1)
 
     def test_simple(self):
-        with sqlite.connect(':memory:') as bck:
+        with memory_database() as bck:
             self.cx.backup(bck)
             self.verify_backup(bck)
 
@@ -69,7 +69,7 @@ class BackupTests(unittest.TestCase):
         def progress(status, remaining, total):
             journal.append(status)
 
-        with sqlite.connect(':memory:') as bck:
+        with memory_database() as bck:
             self.cx.backup(bck, pages=1, progress=progress)
             self.verify_backup(bck)
 
@@ -83,7 +83,7 @@ class BackupTests(unittest.TestCase):
         def progress(status, remaining, total):
             journal.append(remaining)
 
-        with sqlite.connect(':memory:') as bck:
+        with memory_database() as bck:
             self.cx.backup(bck, progress=progress)
             self.verify_backup(bck)
 
@@ -96,7 +96,7 @@ class BackupTests(unittest.TestCase):
         def progress(status, remaining, total):
             journal.append(remaining)
 
-        with sqlite.connect(':memory:') as bck:
+        with memory_database() as bck:
             self.cx.backup(bck, pages=-1, progress=progress)
             self.verify_backup(bck)
 
@@ -105,7 +105,7 @@ class BackupTests(unittest.TestCase):
 
     def test_non_callable_progress(self):
         with self.assertRaises(TypeError) as cm:
-            with sqlite.connect(':memory:') as bck:
+            with memory_database() as bck:
                 self.cx.backup(bck, pages=1, progress='bar')
         self.assertEqual(str(cm.exception), 'progress argument must be a callable')
 
@@ -118,7 +118,7 @@ class BackupTests(unittest.TestCase):
                 self.cx.commit()
             journal.append(remaining)
 
-        with sqlite.connect(':memory:') as bck:
+        with memory_database() as bck:
             self.cx.backup(bck, pages=1, progress=progress)
             self.verify_backup(bck)
 
@@ -137,17 +137,17 @@ class BackupTests(unittest.TestCase):
             raise SystemError('nearly out of space')
 
         with self.assertRaises(SystemError) as err:
-            with sqlite.connect(':memory:') as bck:
+            with memory_database() as bck:
                 self.cx.backup(bck, progress=progress)
         self.assertEqual(str(err.exception), 'nearly out of space')
 
     def test_database_source_name(self):
-        with sqlite.connect(':memory:') as bck:
+        with memory_database() as bck:
             self.cx.backup(bck, name='main')
-        with sqlite.connect(':memory:') as bck:
+        with memory_database() as bck:
             self.cx.backup(bck, name='temp')
         with self.assertRaises(sqlite.OperationalError) as cm:
-            with sqlite.connect(':memory:') as bck:
+            with memory_database() as bck:
                 self.cx.backup(bck, name='non-existing')
         self.assertIn("unknown database", str(cm.exception))
 
@@ -155,7 +155,7 @@ class BackupTests(unittest.TestCase):
         self.cx.execute('CREATE TABLE attached_db.foo (key INTEGER)')
         self.cx.executemany('INSERT INTO attached_db.foo (key) VALUES (?)', [(3,), (4,)])
         self.cx.commit()
-        with sqlite.connect(':memory:') as bck:
+        with memory_database() as bck:
             self.cx.backup(bck, name='attached_db')
             self.verify_backup(bck)
 

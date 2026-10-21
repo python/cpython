@@ -92,10 +92,10 @@ class ViewFrame(Frame):
         color_config(text)
         text.focus_set()
 
-        self.button_ok = button_ok = Button(
+        self.button_ok = Button(
                 self, text='Close', command=self.ok, takefocus=False)
         self.textframe.pack(side='top', expand=True, fill='both')
-        button_ok.pack(side='bottom')
+        self.button_ok.pack(side='bottom')
 
     def ok(self, event=None):
         """Dismiss text viewer dialog."""
@@ -127,10 +127,8 @@ class ViewWindow(Toplevel):
         self.geometry(f'=750x500+{x}+{y}')
 
         self.title(title)
-        self.viewframe = ViewFrame(self, contents, wrap=wrap)
         self.protocol("WM_DELETE_WINDOW", self.ok)
-        self.button_ok = button_ok = Button(self, text='Close',
-                                            command=self.ok, takefocus=False)
+        self.viewframe = ViewFrame(self, contents, wrap=wrap)
         self.viewframe.pack(side='top', expand=True, fill='both')
 
         self.is_modal = modal
@@ -169,7 +167,7 @@ def view_file(parent, title, filename, encoding, modal=True, wrap='word',
     with contents of the file.
     """
     try:
-        with open(filename, 'r', encoding=encoding) as file:
+        with open(filename, encoding=encoding) as file:
             contents = file.read()
     except OSError:
         showerror(title='File Load Error',

@@ -26,7 +26,6 @@
 #ifndef PSYCOPG_MICROPROTOCOLS_H
 #define PSYCOPG_MICROPROTOCOLS_H 1
 
-#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
 /** exported functions **/

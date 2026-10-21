@@ -1,15 +1,18 @@
 import inspect
-import time
 import types
 import unittest
+
+from test.support import import_helper
 
 from unittest.mock import (
     call, _Call, create_autospec, MagicMock,
     Mock, ANY, _CallList, patch, PropertyMock, _callable
 )
 
+from dataclasses import dataclass, field, InitVar
 from datetime import datetime
 from functools import partial
+from typing import ClassVar
 
 class SomeClass(object):
     def one(self, a, b): pass
@@ -927,8 +930,10 @@ class SpecSignatureTest(unittest.TestCase):
 
 
     def test_autospec_on_bound_builtin_function(self):
-        meth = types.MethodType(time.ctime, time.time())
-        self.assertIsInstance(meth(), str)
+        _testcapi = import_helper.import_module('_testcapi')
+        # This function is defined without a signature.
+        meth = types.MethodType(_testcapi.docstring_no_signature, object())
+        self.assertIsNone(meth())
         mocked = create_autospec(meth)
 
         # no signature, so no spec to check against
@@ -949,7 +954,25 @@ class SpecSignatureTest(unittest.TestCase):
 
         proxy = Foo()
         autospec = create_autospec(proxy)
-        self.assertFalse(hasattr(autospec, '__name__'))
+        self.assertNotHasAttr(autospec, '__name__')
+
+
+    def test_autospec_signature_staticmethod(self):
+        class Foo:
+            @staticmethod
+            def static_method(a, b=10, *, c): pass
+
+        mock = create_autospec(Foo.__dict__['static_method'])
+        self.assertEqual(inspect.signature(Foo.static_method), inspect.signature(mock))
+
+
+    def test_autospec_signature_classmethod(self):
+        class Foo:
+            @classmethod
+            def class_method(cls, a, b=10, *, c): pass
+
+        mock = create_autospec(Foo.__dict__['class_method'])
+        self.assertEqual(inspect.signature(Foo.class_method), inspect.signature(mock))
 
 
     def test_spec_inspect_signature(self):
@@ -1016,6 +1039,97 @@ class SpecSignatureTest(unittest.TestCase):
         self.assertEqual(mock.mock_calls, [])
         self.assertEqual(rv.mock_calls, [])
 
+    def test_dataclass_post_init(self):
+        @dataclass
+        class WithPostInit:
+            a: int = field(init=False)
+            b: int = field(init=False)
+            def __post_init__(self):
+                self.a = 1
+                self.b = 2
+
+        for mock in [
+            create_autospec(WithPostInit, instance=True),
+            create_autospec(WithPostInit()),
+        ]:
+            with self.subTest(mock=mock):
+                self.assertIsInstance(mock, WithPostInit)
+                self.assertIsInstance(mock.a, int)
+                self.assertIsInstance(mock.b, int)
+
+        # Classes do not have these fields:
+        mock = create_autospec(WithPostInit)
+        msg = "Mock object has no attribute"
+        with self.assertRaisesRegex(AttributeError, msg):
+            mock.a
+        with self.assertRaisesRegex(AttributeError, msg):
+            mock.b
+
+    def test_dataclass_default(self):
+        @dataclass
+        class WithDefault:
+            a: int
+            b: int = 0
+
+        for mock in [
+            create_autospec(WithDefault, instance=True),
+            create_autospec(WithDefault(1)),
+        ]:
+            with self.subTest(mock=mock):
+                self.assertIsInstance(mock, WithDefault)
+                self.assertIsInstance(mock.a, int)
+                self.assertIsInstance(mock.b, int)
+
+    def test_dataclass_with_method(self):
+        @dataclass
+        class WithMethod:
+            a: int
+            def b(self) -> int:
+                return 1  # pragma: no cover
+
+        for mock in [
+            create_autospec(WithMethod, instance=True),
+            create_autospec(WithMethod(1)),
+        ]:
+            with self.subTest(mock=mock):
+                self.assertIsInstance(mock, WithMethod)
+                self.assertIsInstance(mock.a, int)
+                mock.b.assert_not_called()
+
+    def test_dataclass_with_non_fields(self):
+        @dataclass
+        class WithNonFields:
+            a: ClassVar[int]
+            b: InitVar[int]
+
+        msg = "Mock object has no attribute"
+        for mock in [
+            create_autospec(WithNonFields, instance=True),
+            create_autospec(WithNonFields(1)),
+        ]:
+            with self.subTest(mock=mock):
+                self.assertIsInstance(mock, WithNonFields)
+                with self.assertRaisesRegex(AttributeError, msg):
+                    mock.a
+                with self.assertRaisesRegex(AttributeError, msg):
+                    mock.b
+
+    def test_dataclass_special_attrs(self):
+        @dataclass
+        class Description:
+            name: str
+
+        for mock in [
+            create_autospec(Description, instance=True),
+            create_autospec(Description(1)),
+        ]:
+            with self.subTest(mock=mock):
+                self.assertIsInstance(mock, Description)
+                self.assertIs(mock.__class__, Description)
+                self.assertIsInstance(mock.__dataclass_fields__, MagicMock)
+                self.assertIsInstance(mock.__dataclass_params__, MagicMock)
+                self.assertIsInstance(mock.__match_args__, MagicMock)
+                self.assertIsInstance(mock.__hash__, MagicMock)
 
 class TestCallList(unittest.TestCase):
 
@@ -1077,7 +1191,7 @@ class TestCallList(unittest.TestCase):
             p.stop()
 
 
-    def test_propertymock_returnvalue(self):
+    def test_propertymock_bare(self):
         m = MagicMock()
         p = PropertyMock()
         type(m).foo = p
@@ -1086,6 +1200,35 @@ class TestCallList(unittest.TestCase):
         p.assert_called_once_with()
         self.assertIsInstance(returned, MagicMock)
         self.assertNotIsInstance(returned, PropertyMock)
+
+
+    def test_propertymock_returnvalue(self):
+        m = MagicMock()
+        p = PropertyMock(return_value=42)
+        type(m).foo = p
+
+        returned = m.foo
+        p.assert_called_once_with()
+        self.assertEqual(returned, 42)
+        self.assertNotIsInstance(returned, PropertyMock)
+
+
+    def test_propertymock_side_effect(self):
+        m = MagicMock()
+        p = PropertyMock(side_effect=ValueError)
+        type(m).foo = p
+
+        with self.assertRaises(ValueError):
+            m.foo
+        p.assert_called_once_with()
+
+
+    def test_propertymock_attach(self):
+        m = Mock()
+        p = PropertyMock()
+        type(m).foo = p
+        m.attach_mock(p, 'foo')
+        self.assertEqual(m.mock_calls, [])
 
 
 class TestCallablePredicate(unittest.TestCase):
