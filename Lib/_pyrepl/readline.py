@@ -111,6 +111,7 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
     # Instance fields
     config: ReadlineConfig
     more_lines: MoreLinesCallable | None = None
+    paste_repl_sessions: bool = False
     last_used_indentation: str | None = None
 
     def __post_init__(self) -> None:
@@ -119,6 +120,19 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
         self.commands["maybe-accept"] = maybe_accept
         self.commands["backspace_dedent"] = backspace_dedent
         self.commands["backspace-dedent"] = backspace_dedent
+
+    @property
+    def can_strip_repl_prompts(self) -> bool:
+        return (
+            self.paste_repl_sessions
+            and commands._is_repl_session(self.get_unicode())
+        )
+
+    def get_message(self) -> str:
+        message = super().get_message()
+        if not message and not self.paste_mode and self.can_strip_repl_prompts:
+            return self._format_error(commands._REPL_PASTE_HINT)
+        return message
 
     def get_stem(self) -> str:
         b = self.buffer
@@ -382,15 +396,23 @@ class _ReadlineWrapper:
         sys.audit("builtins.input/result", result)
         return result
 
-    def multiline_input(self, more_lines: MoreLinesCallable, ps1: str, ps2: str) -> str:
+    def multiline_input(
+        self,
+        more_lines: MoreLinesCallable,
+        ps1: str,
+        ps2: str,
+        *,
+        paste_repl_sessions: bool = False,
+    ) -> str:
         """Read an input on possibly multiple lines, asking for more
         lines as long as 'more_lines(unicodetext)' returns an object whose
         boolean value is true.
         """
         reader = self.get_reader()
-        saved = reader.more_lines
+        saved = reader.more_lines, reader.paste_repl_sessions
         try:
             reader.more_lines = more_lines
+            reader.paste_repl_sessions = paste_repl_sessions
             reader.ps1 = ps1
             reader.ps2 = ps1
             reader.ps3 = ps2
@@ -398,7 +420,7 @@ class _ReadlineWrapper:
             with warnings.catch_warnings(action="ignore"):
                 return reader.readline()
         finally:
-            reader.more_lines = saved
+            reader.more_lines, reader.paste_repl_sessions = saved
             reader.paste_mode = False
 
     def parse_and_bind(self, string: str) -> None:

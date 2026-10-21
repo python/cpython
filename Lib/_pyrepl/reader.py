@@ -581,12 +581,16 @@ class Reader:
             for row in wrapped_rows
         ]
 
+    def get_message(self) -> str:
+        return self.msg
+
     def _render_message_lines(self) -> tuple[RenderLine, ...]:
-        if not self.msg:
+        message = self.get_message()
+        if not message:
             return ()
         width = self.console.width
         render_lines: list[RenderLine] = []
-        for message_line in self.msg.split("\n"):
+        for message_line in message.split("\n"):
             line = RenderLine.from_rendered_text(message_line)
             if not line.cells:
                 render_lines.append(line)
@@ -882,13 +886,16 @@ class Reader:
         # self.error(f"[debug] {msg}")
         pass
 
-    def error(self, msg: str = "none") -> None:
+    def _format_error(self, msg: str) -> str:
         error_prefix = self.error_prefix
         if self.can_colorize:
             t = THEME()
             error_prefix = f"{t.error}{error_prefix}{t.reset}"
+        return error_prefix + msg
+
+    def error(self, msg: str = "none") -> None:
         self.console.beep()
-        self.msg = error_prefix + msg
+        self.msg = self._format_error(msg)
         self.invalidate_message()
 
     def update_screen(self) -> None:
