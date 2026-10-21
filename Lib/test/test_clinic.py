@@ -23,8 +23,7 @@ with test_tools.imports_under_tool('clinic'):
     import libclinic
     from libclinic import ClinicError, unspecified, NULL, fail
     from libclinic.converters import (
-        int_converter, object_converter, str_converter, self_converter,
-        Py_ssize_t_converter)
+        int_converter, object_converter, str_converter, self_converter)
     from libclinic.function import (
         Module, Class, Function, FunctionKind, Parameter,
         permute_optional_groups, permute_right_option_groups,
@@ -860,13 +859,8 @@ class ClinicWholeFileTest(TestCase):
         # Slots which take arguments or return something else than an
         # object are not supported yet; check the machinery with them.
         slots = {
-            '__contains__': (
-                SlotSpec(return_converter='int',
-                         parameters=(object_converter,)),
-            ),
-            '__bool__': (
-                SlotSpec(return_converter='int'),
-            ),
+            '__contains__': SlotSpec(return_type='int'),
+            '__bool__': SlotSpec(return_type='int'),
         }
         block = """
             /*[clinic input]
@@ -3357,20 +3351,14 @@ class ClinicParserTest(TestCase):
             Foo.__next__
         """, signatures_in_block=3, function_index=2)
         self.assertIs(function.kind, FunctionKind.SLOT)
-        self.assertIs(function.slot, SLOTS["__next__"][0])
+        self.assertIs(function.slot, SLOTS["__next__"])
         self.assertEqual(function.c_basename, "Foo_next")
         self.assertEqual(function.return_converter.type, "PyObject *")
         self.assertEqual(list(function.parameters), ["self"])
 
     def test_slot_parameters(self):
-        # __getitem__ is not supported yet: the parameters select the slot
-        # (sq_item or mp_subscript).
-        slots = (
-            SlotSpec(return_converter='object',
-                     parameters=(Py_ssize_t_converter,)),
-            SlotSpec(return_converter='object',
-                     parameters=(object_converter,)),
-        )
+        # __getitem__ is not supported yet; its parameter gives the slot
+        # (Py_ssize_t for sq_item, object for mp_subscript) and is not parsed.
         block = """
             module foo
             class Foo "FooObject *" ""
@@ -3378,44 +3366,23 @@ class ClinicParserTest(TestCase):
                 key: {converter}
                 /
         """
+        errors = [
+            ("Foo.__getitem__\n    key: object",
+             "The parameters of '__getitem__' must be positional-only"),
+            ("Foo.__getitem__\n    key: object = None\n    /",
+             "The parameters of '__getitem__' cannot have a default value"),
+        ]
         supported = unsupported_special_methods - {'__getitem__'}
-        with (mock.patch.dict(SLOTS, {'__getitem__': slots}),
+        with (mock.patch.dict(SLOTS, {'__getitem__': SlotSpec(return_type='PyObject *')}),
               mock.patch.object(libclinic.dsl_parser,
                                 'unsupported_special_methods', supported)):
-            for converter, slot in zip(("Py_ssize_t", "object"), slots):
+            for converter in "Py_ssize_t", "object":
                 with self.subTest(converter=converter):
                     function = self.parse_function(
                         block.format(converter=converter),
                         signatures_in_block=3, function_index=2)
                     self.assertIs(function.kind, FunctionKind.SLOT)
-                    self.assertIs(function.slot, slot)
                     self.assertEqual(list(function.parameters), ["self", "key"])
-
-    def test_slot_parameter_errors(self):
-        # __setattr__ is not planned to be supported; its two slots
-        # (tp_setattro and tp_setattr) make the error message list the
-        # alternatives.
-        slots = (
-            SlotSpec(return_converter='int',
-                     parameters=(object_converter, object_converter)),
-            SlotSpec(return_converter='int',
-                     parameters=(str_converter, object_converter)),
-        )
-        errors = [
-            ("Foo.__setattr__",
-             "'__setattr__' must declare (object, object) or (str, object); "
-             "got ()"),
-            ("Foo.__setattr__\n    name: int\n    value: object\n    /",
-             "'__setattr__' must declare"),
-            ("Foo.__setattr__\n    name: object\n    value: object",
-             "The parameters of '__setattr__' must be positional-only"),
-            ("Foo.__setattr__\n    name: object\n    value: object = None\n    /",
-             "The parameters of '__setattr__' cannot have a default value"),
-        ]
-        supported = unsupported_special_methods - {'__setattr__'}
-        with (mock.patch.dict(SLOTS, {'__setattr__': slots}),
-              mock.patch.object(libclinic.dsl_parser,
-                                'unsupported_special_methods', supported)):
             for body, err in errors:
                 with self.subTest(block=body):
                     body = 'class Foo "FooObject *" "&Foo_Type"\n' + body
@@ -3433,8 +3400,6 @@ class ClinicParserTest(TestCase):
              "@coexist cannot be applied to '__next__'"),
             ("@vectorcall\nFoo.__next__",
              "@vectorcall can only be used with __init__ and __new__"),
-            ("Foo.__next__\n    a: int",
-             "'__next__' methods cannot define parameters"),
             ("Foo.__next__ -> int",
              "'Foo.__next__' cannot define a return type"),
             ("Foo.__next__\n\nReturn the next item.",

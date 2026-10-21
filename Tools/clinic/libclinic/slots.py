@@ -5,53 +5,42 @@ wrapper with the C signature of the slot, which forwards its arguments to
 the implementation function.  The wrapper is the place where
 ``@critical_section`` acquires the lock.
 
-The parameters declared in the DSL only select the C signature; they must be
-positional-only, without a default value. When a special method maps to
-several slots (``__getitem__`` is ``sq_item`` or ``mp_subscript``),
-the converters of its parameters determine which one it implements.
+The parameters declared in the DSL only give the C signature of the slot;
+they must be positional-only, without a default value.
 """
 from __future__ import annotations
 import dataclasses as dc
 from typing import Final
 
-from libclinic.converter import CConverter
-from libclinic.return_converters import return_converters
+from libclinic.return_converters import CReturnConverter, return_converters
+
+
+# The return converter which declares each C return type of a slot.
+_RETURN_CONVERTERS: Final[dict[str, str]] = {
+    'PyObject *': 'object',
+    'Py_ssize_t': 'Py_ssize_t',
+    'int': 'int',
+}
 
 
 @dc.dataclass(frozen=True, slots=True, kw_only=True)
 class SlotSpec:
-    # The name of the return converter of the implementation function.
-    return_converter: str
-    # The converter classes of the parameters, excluding self.
-    parameters: tuple[type[CConverter], ...] = ()
-
-    @property
-    def return_type(self) -> str:
-        """The C return type of the slot function."""
-        return return_converters[self.return_converter]().type
+    # The C return type of the slot function.
+    return_type: str
 
     @property
     def error_value(self) -> str:
         """The value returned by the slot function on error."""
         return 'NULL' if self.return_type.endswith('*') else '-1'
 
-    def matches(self, converters: list[CConverter]) -> bool:
-        """Return whether the parameter converters are those of the slot."""
-        return tuple(type(c) for c in converters) == self.parameters
-
-    def describe(self) -> str:
-        """The parameters of the slot as they are declared in the DSL."""
-        params = ', '.join(c.dsl_name() for c in self.parameters)
-        return f"({params or 'no parameters'})"
+    def return_converter(self) -> CReturnConverter:
+        """The return converter of the implementation function."""
+        return return_converters[_RETURN_CONVERTERS[self.return_type]]()
 
 
-# Maps the name of a special method to the slots it can implement.  A name
-# listed here must not be in dsl_parser.unsupported_special_methods.
-SLOTS: Final[dict[str, tuple[SlotSpec, ...]]] = {
-    '__next__': (
-        SlotSpec(return_converter='object'),
-    ),
-    '__len__': (
-        SlotSpec(return_converter='Py_ssize_t'),
-    ),
+# Maps the name of a special method to its slot.  A name listed here must
+# not be in dsl_parser.unsupported_special_methods.
+SLOTS: Final[dict[str, SlotSpec]] = {
+    '__next__': SlotSpec(return_type='PyObject *'),
+    '__len__': SlotSpec(return_type='Py_ssize_t'),
 }

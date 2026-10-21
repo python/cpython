@@ -266,8 +266,7 @@ class DSLParser:
     critical_section: bool
     target_critical_section: list[str]
     disable_fastcall: bool
-    # The slots which the function can implement (see libclinic.slots).
-    slots: tuple[SlotSpec, ...]
+    slot: SlotSpec | None
     # Line of the file which is being parsed.
     line_number: int | None
     from_version_re = re.compile(r'([*/]) +\[from +(.+)\]')
@@ -315,7 +314,7 @@ class DSLParser:
         self.target_critical_section = []
         self.disable_fastcall = False
         self.vectorcall: bool = False
-        self.slots = ()
+        self.slot = None
         self.permit_long_summary = False
         self.permit_long_docstring_body = False
 
@@ -634,8 +633,8 @@ class DSLParser:
             fail("'__new__' must be a class method!")
         if self.kind in ACCESSORS and not cls:
             fail("@getter and @setter must be methods")
-        slots = SLOTS.get(name, ())
-        if slots:
+        slot = SLOTS.get(name)
+        if slot is not None:
             if self.kind is not CALLABLE:
                 fail(f"{name!r} must be a normal method; got '{self.kind}'!")
             if not cls:
@@ -648,9 +647,9 @@ class DSLParser:
             self.kind = METHOD_NEW
         elif name == '__init__':
             self.kind = METHOD_INIT
-        elif slots:
+        elif slot is not None:
             self.kind = SLOT
-            self.slots = slots
+            self.slot = slot
 
         # Validate @vectorcall usage.
         if self.vectorcall:
@@ -694,8 +693,8 @@ class DSLParser:
         if self.kind in {METHOD_INIT} | SETTERS:
             return int_return_converter()
         if self.kind is SLOT:
-            # Every slot of a special method has the same return type.
-            return return_converters[self.slots[0].return_converter]()
+            assert self.slot is not None
+            return self.slot.return_converter()
         return CReturnConverter()
 
     def parse_cloned_function(self, names: FunctionNames, existing: str) -> None:
@@ -727,7 +726,7 @@ class DSLParser:
             "docstring_line_number": None,
             "line_number": self.line_number,
         }
-        if existing_function.kind is SLOT or self.slots:
+        if existing_function.kind is SLOT or self.slot is not None:
             fail("Type slot methods cannot be cloned")
         if not (existing_function.kind is self.kind and
                 existing_function.coexist == self.coexist):
@@ -803,9 +802,7 @@ class DSLParser:
             forced_text_signature=self.forced_text_signature,
             line_number=self.line_number,
             vectorcall=self.vectorcall,
-            # Replaced by the slot which the parameters select, see
-            # check_slot_parameters().
-            slot=self.slots[0] if self.slots else None,
+            slot=self.slot,
         )
         self.add_function(func)
 
@@ -922,10 +919,6 @@ class DSLParser:
         assert self.function is not None
         if self.function.kind is GETTER:
             fail("@getter methods cannot define parameters")
-        if self.function.kind is SLOT:
-            if not any(slot.parameters for slot in self.slots):
-                fail(f"{self.function.name!r} methods cannot define parameters")
-
         self.parameter_continuation = ''
         return self.next(self.state_parameter, line)
 
@@ -1678,22 +1671,12 @@ class DSLParser:
                      line_number=lineno)
 
     def check_slot_parameters(self, func: Function) -> None:
-        """Select the slot which the parameters of a slot method implement."""
-        params = list(func.parameters.values())[1:]
-        for p in params:
+        """Check that the parameters of a slot method fit a C signature."""
+        for p in list(func.parameters.values())[1:]:
             if not p.is_positional_only():
                 fail(f"The parameters of {func.name!r} must be positional-only")
             if p.default is not unspecified:
                 fail(f"The parameters of {func.name!r} cannot have a default value")
-        converters = [p.converter for p in params]
-        for slot in self.slots:
-            if slot.matches(converters):
-                func.slot = slot
-                return
-        got = ', '.join(c.dsl_name() for c in converters)
-        fail(f"{func.name!r} must declare "
-             f"{' or '.join(slot.describe() for slot in self.slots)}; "
-             f"got ({got})")
 
     def do_post_block_processing_cleanup(self, lineno: int) -> None:
         """
