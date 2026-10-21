@@ -1273,34 +1273,25 @@ Exception types
 OSError aliases
 ---------------
 
-The following are a compatibility aliases to :c:data:`PyExc_OSError`.
+The following are :term:`soft deprecated` compatibility aliases
+to :c:data:`PyExc_OSError`.
 
-.. versionchanged:: 3.3
-   These aliases used to be separate exception types.
+.. c:var:: PyObject *PyExc_EnvironmentError
 
-.. list-table::
-   :align: left
-   :widths: auto
-   :header-rows: 1
+   .. soft-deprecated:: next
+      Use :c:data:`PyExc_OSError` instead.
 
-   * * C name
-     * Python name
-     * Notes
-   * * .. c:var:: PyObject *PyExc_EnvironmentError
-     * :exc:`OSError`
-     *
-   * * .. c:var:: PyObject *PyExc_IOError
-     * :exc:`OSError`
-     *
-   * * .. c:var:: PyObject *PyExc_WindowsError
-     * :exc:`OSError`
-     * [win]_
+.. c:var:: PyObject *PyExc_IOError
 
-Notes:
+   .. soft-deprecated:: next
+      Use :c:data:`PyExc_OSError` instead.
 
-.. [win]
-   :c:var:`!PyExc_WindowsError` is only defined on Windows; protect code that
-   uses this by testing that the preprocessor macro ``MS_WINDOWS`` is defined.
+.. c:var:: PyObject *PyExc_WindowsError
+
+   .. availability:: Windows
+
+   .. soft-deprecated:: next
+      Use :c:data:`PyExc_OSError` instead.
 
 
 .. _standardwarningcategories:
