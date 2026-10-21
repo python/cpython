@@ -197,6 +197,21 @@ class TestUtils(TestCase):
                     ]
                     self.assertEqual(actual, expected)
 
+    def test_gen_colors_match_after_dedent(self):
+        for subject in ("-1", "value"):
+            for separator in ("", "\n", "# comment\n"):
+                code = (
+                    "if x:\n    pass\n"
+                    f"{separator}match {subject}:\n    case _: pass"
+                )
+                with self.subTest(code=code):
+                    actual = [
+                        code[color.span.start:color.span.end + 1]
+                        for color in gen_colors(code)
+                        if color.tag == "soft_keyword"
+                    ]
+                    self.assertEqual(actual, ["match", "case", "_"])
+
     def test_gen_colors_soft_keyword_names_in_brackets(self):
         for opening, closing in ("()", "[]", "{}"):
             for name in ("match", "case"):

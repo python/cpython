@@ -266,14 +266,14 @@ def is_soft_keyword_used(*tokens: TI | None) -> bool:
     trace("is_soft_keyword_used{t}", t=tokens)
     match tokens:
         case (
-            None | TI(T.NEWLINE | T.NL | T.INDENT) | TI(string=":"),
+            None | TI(T.NEWLINE | T.NL | T.INDENT | T.DEDENT) | TI(string=":"),
             TI(string="match"),
             TI(T.NUMBER | T.STRING | T.FSTRING_START | T.TSTRING_START)
             | TI(T.OP, string="(" | "*" | "-" | "+" | "[" | "{" | "~" | "...")
         ):
             return True
         case (
-            None | TI(T.NEWLINE | T.NL | T.INDENT) | TI(string=":"),
+            None | TI(T.NEWLINE | T.NL | T.INDENT | T.DEDENT) | TI(string=":"),
             TI(string="match"),
             TI(T.NAME, string=s)
         ):
