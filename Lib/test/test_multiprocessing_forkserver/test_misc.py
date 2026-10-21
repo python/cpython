@@ -1,10 +1,9 @@
 import os
 import re
 import unittest
-from test.support import os_helper
 from multiprocessing.util import _SUN_PATH_MAX
 from test._test_multiprocessing import install_tests_in_module_dict
-from test.support import script_helper
+from test.support import os_helper, script_helper
 
 install_tests_in_module_dict(globals(), 'forkserver', exclude_types=True)
 
