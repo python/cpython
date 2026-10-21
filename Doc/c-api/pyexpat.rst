@@ -19,13 +19,8 @@ which must be included after Expat's :file:`expat.h` header.
 
    The string identifying the layout of :c:struct:`PyExpat_CAPI`.
    Before using the function pointers in the structure, check that
-   its ``magic`` member compares equal to this string using ``strcmp()``,
-   its ``size`` member is at least :c:expr:`sizeof(struct PyExpat_CAPI)`, and its
-   :c:member:`PyExpat_CAPI.MAJOR_VERSION`, :c:member:`PyExpat_CAPI.MINOR_VERSION`,
-   and :c:member:`PyExpat_CAPI.MICRO_VERSION` members equal the
-   ``XML_MAJOR_VERSION``, ``XML_MINOR_VERSION``, and ``XML_MICRO_VERSION``
-   macros, respectively, from the :file:`expat.h` header used to build the
-   extension.
+   its ``magic`` member compares equal to this string using ``strcmp()``
+   and  its ``size`` member is at least :c:expr:`sizeof(struct PyExpat_CAPI)`.
 
 
 .. c:struct:: PyExpat_CAPI
