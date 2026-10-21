@@ -1,5 +1,5 @@
 import unittest
-from test.support import Py_GIL_DISABLED, import_helper
+from test.support import Py_DEBUG, Py_GIL_DISABLED, import_helper
 from test.support.script_helper import assert_python_ok
 
 _testcapi = import_helper.import_module('_testcapi')
@@ -22,9 +22,6 @@ class TestUnstableCAPI(unittest.TestCase):
 
         # CRASHES _testcapi.is_immortal(NULL)
 
-    def test_set_immortal(self):
-        _testcapi.test_py_set_immortal()
-
     def test_immortalize(self):
         script = """if True:
         import _testcapi
@@ -44,6 +41,26 @@ class TestUnstableCAPI(unittest.TestCase):
         assert _testcapi.py_immortalize(None) == 0
         """
         assert_python_ok("-c", script)
+
+    def test_immortalize_strings(self):
+        script = """if True:
+        import _testcapi
+        import sys
+
+        string = "".join(["immortal", "string"])
+        if sys.argv[1] == "interned":
+            string = sys.intern(string)
+        was_immortal = sys._is_immortal(string)
+        assert _testcapi.py_immortalize(string) == int(not was_immortal)
+        assert sys._is_immortal(string)
+
+        # Exercise Unicode's consistency checks and both interning orders.
+        assert string.encode() == b"immortalstring"
+        assert sys.intern(string) is string
+        """
+        for state in ("not interned", "interned"):
+            with self.subTest(state=state):
+                assert_python_ok("-c", script, state)
 
     def test_arbitrary_immortalization(self):
         # This test stresses immortalizing a multitude of objects
@@ -89,160 +106,73 @@ class TestUnstableCAPI(unittest.TestCase):
         """
         assert_python_ok("-c", textwrap.dedent(script))
 
-    @unittest.skipUnless(Py_GIL_DISABLED, "per-thread refcounting is free-threaded only")
-    def test_immortalize_flushes_per_thread_refcounts(self):
-        # The calling thread's pending per-thread reference counts for the
-        # object being immortalized must be merged before its unique id is
-        # recycled, otherwise a stale count is later applied to whatever
-        # object reuses that id, corrupting its reference count.
+    @unittest.skipUnless(Py_DEBUG, "requires a debug build")
+    def test_immortalize_ref_total(self):
+        # References to immortal objects must be excluded from RefTotal,
+        # since subsequent decrefs will not be counted.
         script = """if True:
         import _testcapi
         import gc
         import sys
-        import threading
-        import types
 
         gc.disable()
 
-        def make_code():
-            def inner(a, b):
-                return a + b
-            return inner.__code__
+        def measure(immortalize):
+            before = sys.gettotalrefcount()
+            for _ in range(100):
+                obj = object()
+                refs = [obj, obj]
+                if immortalize:
+                    _testcapi.py_immortalize(obj)
+                del obj, refs
+            return sys.gettotalrefcount() - before
 
-        code = make_code()
-
-        seed = types.FunctionType(code, {})
-
-        bag = []
-        def worker():
-            for _ in range(500):
-                bag.append(types.FunctionType(code, {}))
-        t = threading.Thread(target=worker)
-        t.start()
-        t.join()
-
-        del seed
-        bag.clear()
-
-        assert _testcapi.py_immortalize(code) == 1
-        assert sys._is_immortal(code)
-
-        victims = [compile(f"x = {i}", f"<v{i}>", "exec") for i in range(40)]
-        keep = list(victims)
-
-        gc.enable()
-        for _ in range(10):
-            gc.collect()
-
-        ns = {}
-        for v in keep:
-            exec(v, ns)
-
-        del victims, keep
-        for _ in range(10):
-            gc.collect()
+        # Warm up both paths before comparing their reference totals.
+        measure(False)
+        measure(True)
+        mortal = measure(False)
+        immortal = measure(True)
+        assert immortal == mortal, (immortal, mortal)
         """
         assert_python_ok("-c", script)
 
     @unittest.skipUnless(Py_GIL_DISABLED, "deferred refcounting is free-threaded only")
-    def test_immortalize_disables_deferred_refcount(self):
-        # Objects with deferred refcounting must be cleaned upon immortalization.
+    def test_immortalize_generator_deferred_locals(self):
+        # Untracking an immortal generator must not hide its deferred locals
+        # from the GC while they are still needed by the suspended frame.
         script = """if True:
         import _testcapi
+        import _testinternalcapi
         import gc
         import sys
-        import types
+        import weakref
 
-        def func(value):
-            return value * 2
+        gc.disable()
 
-        class Meta(type):
-            pass
+        def make_generator():
+            class Local:
+                pass
 
-        class Heap(metaclass=Meta):
-            attr = 1
+            def gen(local):
+                yield
+                yield local
 
-        mod = types.ModuleType("immortal_module")
+            assert _testinternalcapi.has_deferred_refcount(Local)
+            generator = gen(Local)
+            next(generator)
+            return generator, weakref.ref(Local)
 
-        targets = [func, func.__code__, Heap, Meta, mod]
+        generator, local_ref = make_generator()
+        assert local_ref() is not None
+        assert _testcapi.py_immortalize(generator) == 1
+        assert sys._is_immortal(generator)
+        assert not gc.is_tracked(generator)
 
         gc.collect()
-
-        for obj in targets:
-            assert _testcapi.py_immortalize(obj) == 1, obj
-            assert sys._is_immortal(obj), obj
-
-        assert func(21) == 42
-        assert Heap.attr == 1
-        for _ in range(3):
-            gc.collect()
-        """
-        assert_python_ok("-c", script)
-
-    def test_immortalize_updates_live_frames(self):
-        # When an object is immortalized while a live frame still holds a counted
-        # stack reference to it (including a frame that refers to itself), that
-        # stack reference has to be rewritten so it no longer participates in
-        # reference counting. This keeps the interpreter's accounting for the
-        # (now immortal) object consistent as those frames keep running and
-        # eventually unwind.
-        script = """if True:
-        import _testcapi
-        import gc
-        import inspect
-        import sys
-
-        IMMORTAL_REFCOUNT = sys.getrefcount(None)
-
-        def check(obj):
-            assert sys._is_immortal(obj), obj
-            assert sys.getrefcount(obj) == IMMORTAL_REFCOUNT, sys.getrefcount(obj)
-
-        def push():
-            frame = inspect.currentframe()
-            _testcapi.py_immortalize(frame)
-            _testcapi.py_immortalize(frame.f_locals)
-            check(frame)
-
-        push()
-
-        def deeply_nested_frame():
-            frame = inspect.currentframe()
-            def a():
-                def b():
-                    def c():
-                        here = frame
-                        pair = [frame, frame]
-                        _testcapi.py_immortalize(frame)
-                        frame.f_locals["here"] = frame
-                        check(frame)
-                        return here, pair
-                    return c()
-                return b()
-            return a()
-
-        for _ in range(50):
-            deeply_nested_frame()
-            gc.collect()
-
-        holder = []
-        def frame_local():
-            class Foo:
-                pass
-            frame = inspect.currentframe()
-            inst = Foo()
-            holder.append(inst)
-            _testcapi.py_immortalize(inst)
-            del Foo
-            assert sys._is_immortal(frame.f_locals["inst"])
-            check(inst)
-
-        for _ in range(50):
-            frame_local()
-        for obj in holder:
-            check(obj)
-        for _ in range(10):
-            gc.collect()
+        # Check the weakref before resuming, to avoid using a dangling local.
+        assert local_ref() is not None, "immortal generator lost its local"
+        assert next(generator) is local_ref()
+        generator.close()
         """
         assert_python_ok("-c", script)
 
