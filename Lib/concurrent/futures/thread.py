@@ -41,6 +41,7 @@ if hasattr(os, 'register_at_fork'):
     os.register_at_fork(before=_global_shutdown_lock.acquire,
                         after_in_child=_global_shutdown_lock._at_fork_reinit,
                         after_in_parent=_global_shutdown_lock.release)
+    os.register_at_fork(after_in_child=_threads_queues.clear)
 
 
 class WorkerContext:

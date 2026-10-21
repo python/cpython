@@ -6,7 +6,132 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+
+PyDoc_STRVAR(function___annotate____doc__,
+"Get the code object for a function.");
+
+static PyObject *
+function___annotate___get_impl(PyFunctionObject *self);
+
+static PyObject *
+function___annotate___get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___annotate___get_impl((PyFunctionObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+function___annotate___set_impl(PyFunctionObject *self, PyObject *value);
+
+static int
+function___annotate___set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
+{
+    int return_value = -1;
+    PyObject *value;
+
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '__annotate__' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
+    value = arg;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___annotate___set_impl((PyFunctionObject *)self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(function___annotations____doc__,
+"Dict of annotations in a function object.");
+
+static PyObject *
+function___annotations___get_impl(PyFunctionObject *self);
+
+static PyObject *
+function___annotations___get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___annotations___get_impl((PyFunctionObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+function___annotations___set_impl(PyFunctionObject *self, PyObject *value);
+
+static int
+function___annotations___set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
+{
+    int return_value = -1;
+    PyObject *value = NULL;
+
+    if (arg != NULL) {
+        value = arg;
+    }
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___annotations___set_impl((PyFunctionObject *)self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(function___type_params____doc__,
+"Get the declared type parameters for a function.");
+
+static PyObject *
+function___type_params___get_impl(PyFunctionObject *self);
+
+static PyObject *
+function___type_params___get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___type_params___get_impl((PyFunctionObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+function___type_params___set_impl(PyFunctionObject *self, PyObject *value);
+
+static int
+function___type_params___set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
+{
+    int return_value = -1;
+    PyObject *value;
+
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '__type_params__' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
+    if (!PyTuple_Check(arg)) {
+        PyErr_Format(PyExc_TypeError, "attribute '__type_params__' must be tuple, not %T", arg);
+        goto exit;
+    }
+    value = arg;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___type_params___set_impl((PyFunctionObject *)self, value);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(func_new__doc__,
 "function(code, globals, name=None, argdefs=None, closure=None,\n"
@@ -43,9 +168,11 @@ func_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(code), &_Py_ID(globals), &_Py_ID(name), &_Py_ID(argdefs), &_Py_ID(closure), &_Py_ID(kwdefaults), },
     };
     #undef NUM_KEYWORDS
@@ -73,7 +200,8 @@ func_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *closure = Py_None;
     PyObject *kwdefaults = Py_None;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 2, 6, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 6, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -115,4 +243,10 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=10947342188f38a9 input=a9049054013a1b77]*/
+#define FUNCTION___ANNOTATE___GETSETDEF {"__annotate__", (getter)function___annotate___get, (setter)function___annotate___set, function___annotate____doc__},
+
+#define FUNCTION___ANNOTATIONS___GETSETDEF {"__annotations__", (getter)function___annotations___get, (setter)function___annotations___set, function___annotations____doc__},
+
+#define FUNCTION___TYPE_PARAMS___GETSETDEF {"__type_params__", (getter)function___type_params___get, (setter)function___type_params___set, function___type_params____doc__},
+
+/*[clinic end generated code: output=b722bea4e9d8b8be input=a9049054013a1b77]*/

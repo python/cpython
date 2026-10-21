@@ -466,7 +466,7 @@ class TestWeakSet(unittest.TestCase):
             self.assertIsNot(dup, s)
             self.assertIs(dup.x, s.x)
             self.assertIs(dup.z, s.z)
-            self.assertFalse(hasattr(dup, 'y'))
+            self.assertNotHasAttr(dup, 'y')
 
             dup = copy.deepcopy(s)
             self.assertIsInstance(dup, cls)
@@ -476,7 +476,7 @@ class TestWeakSet(unittest.TestCase):
             self.assertIsNot(dup.x, s.x)
             self.assertEqual(dup.z, s.z)
             self.assertIsNot(dup.z, s.z)
-            self.assertFalse(hasattr(dup, 'y'))
+            self.assertNotHasAttr(dup, 'y')
 
 
 if __name__ == "__main__":

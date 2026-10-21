@@ -9,7 +9,7 @@ SCRIPT_NAME = 'Tools/build/generate_re_casefix.py'
 
 def update_file(file, content):
     try:
-        with open(file, 'r', encoding='utf-8') as fobj:
+        with open(file, encoding='utf-8') as fobj:
             if fobj.read() == content:
                 return False
     except (OSError, ValueError):
@@ -50,7 +50,7 @@ def main(outfile='Lib/re/_casefix.py'):
     # List of codes of lowercased characters which have the same uppercase.
     equivalent_lower_codes = [sorted(t)
                               for s in equivalent_chars
-                              for t in [set(ord(c.lower()) for c in s)]
+                              for t in [{ord(c.lower()) for c in s}]
                               if len(t) > 1]
 
     bad_codes = []

@@ -1,10 +1,12 @@
 import copy
+import gc
 import os
 import pickle
 import re
 import textwrap
 import time
 import unittest
+from test import support
 from test.support import script_helper
 
 
@@ -42,7 +44,7 @@ class StructSeqTest(unittest.TestCase):
         # os.stat() gives a complicated struct sequence.
         st = os.stat(__file__)
         rep = repr(st)
-        self.assertTrue(rep.startswith("os.stat_result"))
+        self.assertStartsWith(rep, "os.stat_result")
         self.assertIn("st_mode=", rep)
         self.assertIn("st_ino=", rep)
         self.assertIn("st_dev=", rep)
@@ -307,7 +309,7 @@ class StructSeqTest(unittest.TestCase):
         self.assertEqual(t5.tm_mon, 2)
 
         # named invisible fields
-        self.assertTrue(hasattr(t, 'tm_zone'), f"{t} has no attribute 'tm_zone'")
+        self.assertHasAttr(t, 'tm_zone')
         with self.assertRaisesRegex(AttributeError, 'readonly attribute'):
             t.tm_zone = 'some other zone'
         self.assertEqual(t2.tm_zone, t.tm_zone)
@@ -350,11 +352,22 @@ class StructSeqTest(unittest.TestCase):
         # was cleared first, the structseq instance would crash in the
         # destructor.
         script_helper.assert_python_ok("-c", textwrap.dedent(r"""
-            import time
-            t = time.gmtime()
-            type(t).refcyle = t
+            import os
+            t = os.stat('.')
+            type(t).refcycle = t
         """))
 
+    def test_replace_gc_tracked(self):
+        # Verify that __replace__ results are properly GC-tracked
+        time_struct = time.gmtime(0)
+        lst = []
+        replaced_struct = time_struct.__replace__(tm_year=lst)
+        lst.append(replaced_struct)
+
+        self.assertTrue(gc.is_tracked(replaced_struct))
+
+    def test_struct_time_type_immutable(self):
+        support.check_immutable_type(self, type(time.gmtime()))
 
 if __name__ == "__main__":
     unittest.main()

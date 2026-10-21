@@ -1,5 +1,5 @@
-#ifndef Py_AUDIT_H
-#define Py_AUDIT_H
+#ifndef _Py_AUDIT_H
+#define _Py_AUDIT_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -18,13 +18,13 @@ PyAPI_FUNC(int) PySys_AuditTuple(
 
 
 #ifndef Py_LIMITED_API
-#  define Py_CPYTHON_AUDIT_H
+#  define _Py_CPYTHON_AUDIT_H
 #  include "cpython/audit.h"
-#  undef Py_CPYTHON_AUDIT_H
+#  undef _Py_CPYTHON_AUDIT_H
 #endif
 
 
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_AUDIT_H */
+#endif /* !_Py_AUDIT_H */

@@ -5,8 +5,8 @@ import unittest
 from textwrap import dedent
 from contextlib import ExitStack
 from unittest import mock
+from test.support import force_not_colorized_test_class
 from test.support import import_helper
-
 
 code = import_helper.import_module('code')
 
@@ -30,6 +30,7 @@ class MockSys:
         del self.sysmod.ps2
 
 
+@force_not_colorized_test_class
 class TestInteractiveConsole(unittest.TestCase, MockSys):
     maxDiff = None
 
@@ -38,20 +39,48 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         self.mock_sys()
 
     def test_ps1(self):
-        self.infunc.side_effect = EOFError('Finished')
+        self.infunc.side_effect = [
+            "import code",
+            "code.sys.ps1",
+            EOFError('Finished')
+        ]
         self.console.interact()
-        self.assertEqual(self.sysmod.ps1, '>>> ')
+        output = ''.join(''.join(call[1]) for call in self.stdout.method_calls)
+        self.assertIn('>>> ', output)
+        self.assertNotHasAttr(self.sysmod, 'ps1')
+
+        self.infunc.side_effect = [
+            "import code",
+            "code.sys.ps1",
+            EOFError('Finished')
+        ]
         self.sysmod.ps1 = 'custom1> '
         self.console.interact()
+        output = ''.join(''.join(call[1]) for call in self.stdout.method_calls)
+        self.assertIn('custom1> ', output)
         self.assertEqual(self.sysmod.ps1, 'custom1> ')
 
     def test_ps2(self):
-        self.infunc.side_effect = EOFError('Finished')
+        self.infunc.side_effect = [
+            "import code",
+            "code.sys.ps2",
+            EOFError('Finished')
+        ]
         self.console.interact()
-        self.assertEqual(self.sysmod.ps2, '... ')
-        self.sysmod.ps1 = 'custom2> '
+        output = ''.join(''.join(call[1]) for call in self.stdout.method_calls)
+        self.assertIn('... ', output)
+        self.assertNotHasAttr(self.sysmod, 'ps2')
+
+        self.infunc.side_effect = [
+            "import code",
+            "code.sys.ps2",
+            EOFError('Finished')
+        ]
+        self.sysmod.ps2 = 'custom2> '
         self.console.interact()
-        self.assertEqual(self.sysmod.ps1, 'custom2> ')
+        output = ''.join(''.join(call[1]) for call in self.stdout.method_calls)
+        self.assertIn('custom2> ', output)
+        self.assertEqual(self.sysmod.ps2, 'custom2> ')
 
     def test_console_stderr(self):
         self.infunc.side_effect = ["'antioch'", "", EOFError('Finished')]
@@ -104,11 +133,22 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         output = ''.join(''.join(call[1]) for call in self.stderr.method_calls)
         output = output[output.index('(InteractiveConsole)'):]
         output = output[output.index('\n') + 1:]
-        self.assertTrue(output.startswith('UnicodeEncodeError: '), output)
+        self.assertStartsWith(output, 'UnicodeEncodeError: ')
         self.assertIs(self.sysmod.last_type, UnicodeEncodeError)
         self.assertIs(type(self.sysmod.last_value), UnicodeEncodeError)
         self.assertIsNone(self.sysmod.last_traceback)
         self.assertIsNone(self.sysmod.last_value.__traceback__)
+        self.assertIs(self.sysmod.last_exc, self.sysmod.last_value)
+
+    def test_compile_error(self):
+        # Any error raised by compile() must be reported (gh-69919).
+        self.infunc.side_effect = ['-' * 100_000 + '1', EOFError('Finished')]
+        self.console.interact()
+        output = ''.join(''.join(call[1]) for call in self.stderr.method_calls)
+        output = output[output.index('(InteractiveConsole)'):]
+        output = output[output.index('\n') + 1:]
+        self.assertRegex(output, r'^(MemoryError|RecursionError): ')
+        self.assertIn(self.sysmod.last_type, (MemoryError, RecursionError))
         self.assertIs(self.sysmod.last_exc, self.sysmod.last_value)
 
     def test_sysexcepthook(self):

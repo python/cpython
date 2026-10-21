@@ -24,7 +24,7 @@ typedef PyObject *(*PyCFunctionFastWithKeywords) (PyObject *,
                                                   PyObject *const *, Py_ssize_t,
                                                   PyObject *);
 typedef PyObject *(*PyCMethod)(PyObject *, PyTypeObject *, PyObject *const *,
-                               size_t, PyObject *);
+                               Py_ssize_t, PyObject *);
 
 // For backwards compatibility. `METH_FASTCALL` was added to the stable API in
 // 3.10 alongside `_PyCFunctionFastWithKeywords` and `_PyCFunctionFast`.
@@ -33,7 +33,7 @@ typedef PyObject *(*PyCMethod)(PyObject *, PyTypeObject *, PyObject *const *,
 typedef PyCFunctionFast _PyCFunctionFast;
 typedef PyCFunctionFastWithKeywords _PyCFunctionFastWithKeywords;
 
-// Cast an function to the PyCFunction type to use it with PyMethodDef.
+// Cast a function to the PyCFunction type to use it with PyMethodDef.
 //
 // This macro can be used to prevent compiler warnings if the first parameter
 // uses a different pointer type than PyObject* (ex: METH_VARARGS and METH_O
@@ -49,8 +49,17 @@ typedef PyCFunctionFastWithKeywords _PyCFunctionFastWithKeywords;
 // used to prevent a compiler warning. If the function has a single parameter,
 // it triggers an undefined behavior when Python calls it with 2 parameters
 // (bpo-33012).
-#define _PyCFunction_CAST(func) \
-    _Py_CAST(PyCFunction, _Py_CAST(void(*)(void), (func)))
+#define _PyCFunction_CAST(func)                         \
+    _Py_FUNC_CAST(PyCFunction, func)
+// The macros below are given for semantic convenience, allowing users
+// to see whether a cast to suppress an undefined behavior is necessary.
+// Note: At runtime, the original function signature must be respected.
+#define _PyCFunctionFast_CAST(func)                     \
+    _Py_FUNC_CAST(PyCFunctionFast, func)
+#define _PyCFunctionWithKeywords_CAST(func)             \
+    _Py_FUNC_CAST(PyCFunctionWithKeywords, func)
+#define _PyCFunctionFastWithKeywords_CAST(func)         \
+    _Py_FUNC_CAST(PyCFunctionFastWithKeywords, func)
 
 PyAPI_FUNC(PyCFunction) PyCFunction_GetFunction(PyObject *);
 PyAPI_FUNC(PyObject *) PyCFunction_GetSelf(PyObject *);

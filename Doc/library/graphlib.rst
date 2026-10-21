@@ -106,6 +106,14 @@
       function, the graph cannot be modified, and therefore no more nodes can be
       added using :meth:`~TopologicalSorter.add`.
 
+      A :exc:`ValueError` will be raised if the sort has been started by
+      :meth:`~.static_order` or :meth:`~.get_ready`.
+
+      .. versionchanged:: 3.14
+
+         ``prepare()`` can now be called more than once as long as the sort has
+         not started. Previously this raised :exc:`ValueError`.
+
    .. method:: is_active()
 
       Returns ``True`` if more progress can be made and ``False`` otherwise.
@@ -196,7 +204,7 @@
 
 Exceptions
 ----------
-The :mod:`graphlib` module defines the following exception classes:
+The :mod:`!graphlib` module defines the following exception classes:
 
 .. exception:: CycleError
 

@@ -5,12 +5,12 @@ import os
 import shlex
 import subprocess
 import sys
-from typing import Any
+from typing import Any, Iterator
 
 from test import support
 
 from .utils import (
-    StrPath, StrJSON, TestTuple, TestFilter, FilterTuple, FilterDict)
+    StrPath, StrJSON, TestTuple, TestName, TestFilter, FilterTuple, FilterDict)
 
 
 class JsonFileType:
@@ -28,7 +28,7 @@ class JsonFile:
     file: int | None
     file_type: str
 
-    def configure_subprocess(self, popen_kwargs: dict) -> None:
+    def configure_subprocess(self, popen_kwargs: dict[str, Any]) -> None:
         match self.file_type:
             case JsonFileType.UNIX_FD:
                 # Unix file descriptor
@@ -41,8 +41,8 @@ class JsonFile:
                 popen_kwargs['startupinfo'] = startupinfo
 
     @contextlib.contextmanager
-    def inherit_subprocess(self):
-        if self.file_type == JsonFileType.WINDOWS_HANDLE:
+    def inherit_subprocess(self) -> Iterator[None]:
+        if sys.platform == 'win32' and self.file_type == JsonFileType.WINDOWS_HANDLE:
             os.set_handle_inheritable(self.file, True)
             try:
                 yield
@@ -96,40 +96,60 @@ class RunTests:
     coverage: bool
     memory_limit: str | None
     gc_threshold: int | None
-    use_resources: tuple[str, ...]
+    use_resources: dict[str, str | None]
     python_cmd: tuple[str, ...] | None
     randomize: bool
     random_seed: int | str
+    parallel_threads: int | None
+    single_process_per_case: bool
+    case_groups: tuple[tuple[TestName, tuple[TestName, ...]], ...] | None
 
     def copy(self, **override) -> 'RunTests':
         state = dataclasses.asdict(self)
         state.update(override)
         return RunTests(**state)
 
-    def create_worker_runtests(self, **override):
-        state = dataclasses.asdict(self)
+    def create_worker_runtests(self, **override) -> WorkerRunTests:
+        # Drop the large fields *before* converting: asdict() copies them
+        # deeply, which is expensive when the whole run has many cases.
+        state = dataclasses.asdict(
+            dataclasses.replace(self, tests=(), case_groups=None))
         state.update(override)
         return WorkerRunTests(**state)
 
-    def get_match_tests(self, test_name) -> FilterTuple | None:
+    def get_match_tests(self, test_name: TestName) -> FilterTuple | None:
         if self.match_tests_dict is not None:
             return self.match_tests_dict.get(test_name, None)
         else:
             return None
 
-    def get_jobs(self):
+    def get_jobs(self) -> int | None:
         # Number of run_single_test() calls needed to run all tests.
         # None means that there is not bound limit (--forever option).
         if self.forever:
             return None
         return len(self.tests)
 
-    def iter_tests(self):
+    def iter_tests(self) -> Iterator[TestName]:
         if self.forever:
             while True:
                 yield from self.tests
         else:
             yield from self.tests
+
+    def iter_case_groups(self) -> Iterator[tuple[TestName, tuple[TestName, ...]]]:
+        """
+        Yield (module_name, case_ids) pairs. All case_ids in a group
+        must run sequentially on the same worker thread.
+        """
+        if self.case_groups is None:
+            for name in self.iter_tests():
+                yield (name, (name,))
+        elif self.forever:
+            while True:
+                yield from self.case_groups
+        else:
+            yield from self.case_groups
 
     def json_file_use_stdout(self) -> bool:
         # Use STDOUT in two cases:
@@ -158,7 +178,7 @@ class RunTests:
         if '-u' not in python_opts:
             cmd.append('-u')  # Unbuffered stdout and stderr
         if self.coverage:
-            cmd.append("-Xpresite=test.cov")
+            cmd.append("-Xpresite=test.cov:enable")
         return cmd
 
     def bisect_cmd_args(self) -> list[str]:
@@ -178,12 +198,21 @@ class RunTests:
         if self.gc_threshold:
             args.append(f"--threshold={self.gc_threshold}")
         if self.use_resources:
-            args.extend(("-u", ','.join(self.use_resources)))
+            simple = ','.join(resource
+                              for resource, value in self.use_resources.items()
+                              if value is None)
+            if simple:
+                args.extend(("-u", simple))
+            for resource, value in self.use_resources.items():
+                if value is not None:
+                    args.extend(("-u", f"{resource}={value}"))
         if self.python_cmd:
             cmd = shlex.join(self.python_cmd)
             args.extend(("--python", cmd))
         if self.randomize:
             args.append(f"--randomize")
+        if self.parallel_threads:
+            args.append(f"--parallel-threads={self.parallel_threads}")
         args.append(f"--randseed={self.random_seed}")
         return args
 

@@ -1,8 +1,10 @@
 /* Test Vectorcall in the limited API */
 
-// Need limited C API version 3.12 for PyObject_Vectorcall()
 #include "pyconfig.h"   // Py_GIL_DISABLED
-#if !defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
+#ifdef Py_GIL_DISABLED
+   // Cannot test the limited C API
+#else
+   // Need limited C API version 3.12 for PyObject_Vectorcall()
 #  define Py_LIMITED_API 0x030c0000
 #endif
 
@@ -30,7 +32,7 @@ LimitedVectorCallClass_vectorcall(PyObject *callable,
 }
 
 static PyObject *
-LimitedVectorCallClass_new(PyTypeObject *tp, PyTypeObject *a, PyTypeObject *kw)
+LimitedVectorCallClass_new(PyTypeObject *tp, PyObject *a, PyObject *kw)
 {
     PyObject *self = ((allocfunc)PyType_GetSlot(tp, Py_tp_alloc))(tp, 0);
     if (!self) {
@@ -182,7 +184,7 @@ typedef struct {
 } LimitedRelativeVectorCallStruct;
 
 static PyObject *
-LimitedRelativeVectorCallClass_new(PyTypeObject *tp, PyTypeObject *a, PyTypeObject *kw)
+LimitedRelativeVectorCallClass_new(PyTypeObject *tp, PyObject *a, PyObject *kw)
 {
     PyObject *self = ((allocfunc)PyType_GetSlot(tp, Py_tp_alloc))(tp, 0);
     if (!self) {

@@ -21,7 +21,7 @@ class TestResponse(unittest.TestCase):
     def test_with(self):
         addbase = urllib.response.addbase(self.fp)
 
-        self.assertIsInstance(addbase, tempfile._TemporaryFileWrapper)
+        self.assertIsInstance(addbase, tempfile.TemporaryFileWrapper)
 
         def f():
             with addbase as spam:
@@ -48,6 +48,7 @@ class TestResponse(unittest.TestCase):
         info = urllib.response.addinfo(self.fp, self.test_headers)
         self.assertEqual(info.info(), self.test_headers)
         self.assertEqual(info.headers, self.test_headers)
+        info.close()
 
     def test_addinfourl(self):
         url = "http://www.python.org"
@@ -60,6 +61,7 @@ class TestResponse(unittest.TestCase):
         self.assertEqual(infourl.headers, self.test_headers)
         self.assertEqual(infourl.url, url)
         self.assertEqual(infourl.status, code)
+        infourl.close()
 
     def tearDown(self):
         self.sock.close()
