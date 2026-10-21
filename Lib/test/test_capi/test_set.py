@@ -1,12 +1,16 @@
+import gc
+import threading
 import unittest
 
 from test.support import import_helper
+from test.support import threading_helper
 
 # Skip this test if the _testcapi, _testlimitedcapi or _testinternalcapi
 # modules aren't available.
 _testcapi = import_helper.import_module('_testcapi')
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 _testinternalcapi = import_helper.import_module('_testinternalcapi')
+
 
 class set_subclass(set):
     pass
@@ -271,6 +275,219 @@ class TestInternalCAPI(BaseSetTests, unittest.TestCase):
         with self.assertRaises(SystemError):
             set_next(object(), 0)
         # CRASHES: set_next(NULL, 0)
+
+
+class BaseSetBuilderTests:
+    PySet_MINSIZE = _testcapi.PySet_MINSIZE
+    UNHASHABLE = [1, 2, 3]
+    SET_TYPE = None
+
+    def create_builder(self, size=0):
+        # Test PySetBuilder_CreateSet() or PySetBuilder_CreateFrozenSet()
+        return _testcapi.PySetBuilder(self.SET_TYPE, size)
+
+    def set_equal(self, result, expected):
+        if not isinstance(expected, self.SET_TYPE):
+            expected = self.SET_TYPE(expected)
+        self.assertEqual(result, expected)
+        self.assertEqual(type(result), self.SET_TYPE)
+
+    def assert_unhashable(self):
+        err_msg = f"unhashable type: '{type(self.UNHASHABLE).__name__}'"
+        return self.assertRaisesRegex(TypeError, err_msg)
+
+    def test_empty(self):
+        _set_get_table_size = _testcapi._set_get_table_size
+
+        for size in (0, 1024):
+            with self.subTest(size=size):
+                builder = self.create_builder(size)
+                empty_tuple = ()
+                builder.update(empty_tuple)
+                builder.update_array(empty_tuple)
+                builder.update_array_steal(empty_tuple)
+                result = builder.finish()
+                self.assertEqual(result, self.SET_TYPE())
+                self.assertEqual(_set_get_table_size(result),
+                                 self.PySet_MINSIZE)
+
+    def test_get_table_set(self):
+        # Test size parameter of PySetBuilder_CreateSet()
+        # or PySetBuilder_CreateFrozenSet()
+        PySet_MINSIZE = self.PySet_MINSIZE
+
+        def check_table_size(size, table_size):
+            builder = self.create_builder(size)
+            self.assertEqual(builder.get_table_size(), table_size)
+
+        check_table_size(0, PySet_MINSIZE)
+        check_table_size(PySet_MINSIZE // 2, PySet_MINSIZE)
+        check_table_size(PySet_MINSIZE - 1, PySet_MINSIZE * 2)
+        check_table_size(PySet_MINSIZE, PySet_MINSIZE * 4)
+        check_table_size(2 ** 15 - 1, 2 ** 16)
+
+    def create_items(self, nitem):
+        # Use mortal (and unique) objects to be able to detect reference leaks
+        return tuple(object() for _ in range(nitem))
+
+    def check_add_method(self, add_method):
+        items = self.create_items(self.PySet_MINSIZE * 2 - 1)
+        for prealloc in (0, len(items) // 2, len(items), len(items) * 10):
+            with self.subTest(prealloc=prealloc):
+                builder = self.create_builder()
+                add = getattr(builder, add_method)
+                for item in items:
+                    add(item)
+                self.set_equal(builder.finish(), items)
+
+        # Test error (unhashable type)
+        builder = self.create_builder(0)
+        builder.update('abc')
+        add = getattr(builder, add_method)
+        with self.assert_unhashable():
+            add(self.UNHASHABLE)
+        self.set_equal(builder.finish(), 'abc')
+
+    def test_add(self):
+        # Test PySetBuilder_Add()
+        self.check_add_method('add')
+
+    def test_add_steal(self):
+        # Test PySetBuilder_AddSteal()
+        self.check_add_method('add_steal')
+
+    def check_update_method(self, update_method):
+        items = self.create_items(self.PySet_MINSIZE - 1)
+        items2 = self.create_items(self.PySet_MINSIZE - 1)
+        common = self.create_items(self.PySet_MINSIZE - 1)
+        expected = set(items) | set(items2) | set(common)
+        total = len(expected)
+        self.assertEqual(total, len(items) + len(items2) + len(common))
+        empty = ()
+
+        for prealloc in (0, total // 2, total, total * 10):
+            with self.subTest(prealloc=prealloc):
+                builder = self.create_builder(prealloc)
+                update = getattr(builder, update_method)
+                update(items + common)
+                update(common + items2)
+                update(empty)  # test nitem=0
+                self.set_equal(builder.finish(), expected)
+
+        # Test error path: first or last item is not hashable
+        for first in (True, False):
+            with self.subTest(first=first):
+                if first:
+                    items_error = (self.UNHASHABLE, *items)
+                    expected = ()
+                else:
+                    items_error = (*items, self.UNHASHABLE)
+                    expected = items
+                builder = self.create_builder(0)
+                update = getattr(builder, update_method)
+                with self.assert_unhashable():
+                    update(items_error)
+                self.set_equal(builder.finish(), expected)
+
+    def test_update(self):
+        # Test PySetBuilder_Update()
+        self.check_update_method('update')
+
+    def test_update_array(self):
+        # Test PySetBuilder_UpdateArray()
+        self.check_update_method('update_array')
+
+    def test_update_array_steal(self):
+        # Test PySetBuilder_UpdateArraySteal()
+        self.check_update_method('update_array_steal')
+
+    def test_finish(self):
+        # Test PySetBuilder_Finish(): only track the set/frozenset object
+        # in the GC if at least one item is tracked by the GC
+
+        # Integers are not tracked by the GC
+        items = [2, 5, 7]
+        self.assertTrue(all(not gc.is_tracked(item) for item in items))
+        builder = self.create_builder()
+        builder.update(items)
+        self.assertFalse(gc.is_tracked(builder.finish()))
+
+        # Create an object tracked by the GC
+        class MyObject:
+            pass
+        obj = MyObject()
+        self.assertTrue(gc.is_tracked(obj))
+
+        builder = self.create_builder()
+        builder.add(obj)
+        self.assertTrue(gc.is_tracked(builder.finish()))
+
+        # test again, now using PySetBuilder_Update()
+        builder = self.create_builder()
+        builder.update([obj])
+        self.assertTrue(gc.is_tracked(builder.finish()))
+
+    def test_finish_shrink(self):
+        # Check that PySetBuilder_Finish() shrinks the table
+        # if the set/frozenset table is way too big
+        _set_get_table_size = _testcapi._set_get_table_size
+
+        builder = self.create_builder(1024)
+        builder.update([1])
+        result = builder.finish()
+        self.set_equal(result, [1])
+        self.assertEqual(_set_get_table_size(result), self.PySet_MINSIZE)
+
+        items = self.create_items(127)
+        builder = self.create_builder(len(items) * 100)
+        builder.update(items)
+        result = builder.finish()
+        self.set_equal(result, items)
+        self.assertEqual(_set_get_table_size(result), 256)
+
+    def test_discard(self):
+        # Test PySetBuilder_Discard(): must not leak memory
+
+        builder = self.create_builder(0)
+        builder.discard()
+
+        for prealloc in (0, 3, 100):
+            for items in (
+                (),          # empty
+                [2, 5, 7],   # use the small table
+                range(100),  # allocate a new table
+            ):
+                with self.subTest(prealloc=prealloc, items=items):
+                    builder = self.create_builder(prealloc)
+                    builder.update(items)
+                    builder.discard()
+
+    @threading_helper.requires_working_threading()
+    def test_thread(self):
+        # PySetBuilder can be used by multiple threads: it's up to the caller
+        # to implement a lock to prevent concurrent accesses.
+        builder = self.create_builder()
+
+        def thread_func(builder):
+            builder.add('a')
+            builder.add_steal('b')
+            builder.update(('c',))
+            builder.update_array(('d',))
+            builder.update_array_steal(('e',))
+
+        thread = threading.Thread(target=thread_func, args=(builder,))
+        thread.start()
+        threading_helper.join_thread(thread)
+
+        self.set_equal(builder.finish(), 'abcde')
+
+
+class SetBuilderTests(BaseSetBuilderTests, unittest.TestCase):
+    SET_TYPE = set
+
+
+class FrozenSetBuilderTests(BaseSetBuilderTests, unittest.TestCase):
+    SET_TYPE = frozenset
 
 
 if __name__ == "__main__":

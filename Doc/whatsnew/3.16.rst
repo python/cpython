@@ -1584,6 +1584,21 @@ New features
 * Add :c:func:`Py_HashBuffer` to the limited C API.
   (Contributed by Victor Stinner in :gh:`148233`.)
 
+* Add a new :ref:`PySetBuilder <pysetbuilder>` C API to create
+  a :class:`set` object or a :class:`frozenset` object. Add functions:
+
+  * :c:func:`PySetBuilder_CreateSet`
+  * :c:func:`PySetBuilder_CreateFrozenSet`
+  * :c:func:`PySetBuilder_Finish`
+  * :c:func:`PySetBuilder_Discard`
+  * :c:func:`PySetBuilder_Add`
+  * :c:func:`PySetBuilder_AddSteal`
+  * :c:func:`PySetBuilder_Update`
+  * :c:func:`PySetBuilder_UpdateArray`
+  * :c:func:`PySetBuilder_UpdateArraySteal`
+
+  (Contributed by Victor Stinner in :gh:`160147`.)
+
 * Add :c:macro:`Py_SETREF` and :c:macro:`Py_XSETREF` macros to the limited C
   API.
   (Contributed by Nathan Goldbaum and Victor Stinner in :gh:`158842`.)

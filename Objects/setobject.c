@@ -3262,3 +3262,218 @@ static PyTypeObject _PySetDummy_Type = {
 };
 
 static PyObject _dummy_struct = _PyObject_HEAD_INIT(&_PySetDummy_Type);
+
+
+// --- PySetBuilder API ------------------------------------------------
+
+#ifndef NDEBUG
+static int
+setbuilder_check_consistency(PySetBuilder *builder)
+{
+    assert(builder != NULL);
+    PyObject *set = _PyObject_CAST(builder);
+    assert(PyAnySet_CheckExact(set));
+    // Don't test _PyObject_IsUniquelyReferenced() since a set builder
+    // can be shared between multiple threads with external locking.
+    assert(Py_REFCNT(set) == 1);
+    assert(!_PyObject_GC_IS_TRACKED(set));
+    return 1;
+}
+#endif
+
+
+static PySetBuilder*
+setbuilder_create(PyTypeObject *type, Py_ssize_t size)
+{
+    if (size < 0) {
+        PyErr_SetString(PyExc_ValueError, "size must be >= 0");
+        return NULL;
+    }
+
+    PyObject *obj = make_new_set_untracked(type, NULL);
+    if (obj == NULL) {
+        return NULL;
+    }
+    PySetObject *self = _PySet_CAST(obj);
+
+    if (size > 0 && size * 5 >= self->mask * 3) {
+        if (set_table_resize(self, size * 2) != 0) {
+            Py_DECREF(self);
+            return NULL;
+        }
+    }
+
+    PySetBuilder *builder = (PySetBuilder*)self;
+    assert(setbuilder_check_consistency(builder));
+    return builder;
+}
+
+
+PySetBuilder*
+PySetBuilder_CreateSet(Py_ssize_t size)
+{
+    return setbuilder_create(&PySet_Type, size);
+}
+
+
+PySetBuilder*
+PySetBuilder_CreateFrozenSet(Py_ssize_t size)
+{
+    return setbuilder_create(&PyFrozenSet_Type, size);
+}
+
+
+void
+PySetBuilder_Discard(PySetBuilder *builder)
+{
+    if (builder == NULL) {
+        return;
+    }
+
+    assert(setbuilder_check_consistency(builder));
+    PyObject *set = _PyObject_CAST(builder);
+    Py_DECREF(set);
+}
+
+
+PyObject*
+PySetBuilder_Finish(PySetBuilder *builder)
+{
+    assert(setbuilder_check_consistency(builder));
+    PySetObject *set = _PySet_CAST(builder);
+
+    // If the set table is too big (waste memory), make the table
+    // smaller. For example, PySetBuilder_Create() argument was way too
+    // big.
+    Py_ssize_t table_size = set->mask + 1;
+    // set_add_entry_takeref() allocates a table of used*4 for table smaller
+    // than 50,000 items. So check for table_size / 8.
+    if (set->used < table_size / 8
+        && set->table != set->smalltable)
+    {
+        if (set_table_resize(set, set->used * 2) != 0) {
+            PySetBuilder_Discard(builder);
+            return NULL;
+        }
+        assert((set->mask + 1) != table_size);
+    }
+
+    // Now that the set is fully initialized, it's safe to track it in
+    // the GC. Track the set if at least one item is tracked by the GC.
+    Py_ssize_t pos = 0;
+    setentry *entry;
+    while (set_next(set, &pos, &entry)) {
+        PyObject *item = entry->key;
+        if (_PyObject_GC_MAY_BE_TRACKED(item)) {
+            _PyObject_GC_TRACK(set);
+            break;
+        }
+    }
+
+    return _PyObject_CAST(set);
+}
+
+
+int
+PySetBuilder_AddSteal(PySetBuilder *builder, PyObject *item)
+{
+    assert(setbuilder_check_consistency(builder));
+
+    Py_hash_t hash = PyObject_Hash(item);
+    if (hash == -1) {
+        set_unhashable_type(item);
+        Py_DECREF(item);
+        return -1;
+    }
+
+    PySetObject *set = _PySet_CAST(builder);
+    return set_add_entry_takeref(set, item, hash);
+}
+
+
+int
+PySetBuilder_Add(PySetBuilder *builder, PyObject *item)
+{
+    return PySetBuilder_AddSteal(builder, Py_NewRef(item));
+}
+
+
+int
+PySetBuilder_Update(PySetBuilder *builder, PyObject *iterable)
+{
+    assert(setbuilder_check_consistency(builder));
+    PySetObject *set = _PySet_CAST(builder);
+    return set_update_local(set, iterable);
+}
+
+
+// Force inlining to optimize "if (steal)" at build time
+static inline Py_ALWAYS_INLINE int
+setbuilder_update_array(PySetBuilder *builder,
+                             PyObject *const *items, Py_ssize_t nitem,
+                             int steal)
+{
+    if (nitem < 0) {
+        PyErr_SetString(PyExc_ValueError, "nitem must be >= 0");
+        return -1;
+    }
+
+#define CLEANUP(START) \
+        if (steal) { \
+            for (Py_ssize_t j = (START); j < nitem; j++) { \
+                Py_DECREF(items[j]); \
+            } \
+        }
+
+    assert(setbuilder_check_consistency(builder));
+    PySetObject *set = _PySet_CAST(builder);
+
+    /* Do one big resize at the start, rather than
+     * incrementally resizing as we insert new keys.
+     */
+    if ((set->fill + nitem) * 5 >= set->mask * 3) {
+        if (set_table_resize(set, (set->used + nitem) * 2) != 0) {
+            CLEANUP(0);
+            return -1;
+        }
+    }
+
+    for (Py_ssize_t i = 0; i < nitem; i++) {
+        PyObject *item = items[i];
+
+        Py_hash_t hash = PyObject_Hash(item);
+        if (hash == -1) {
+            set_unhashable_type(item);
+            // CLEANUP() calls Py_DECREF(item)
+            CLEANUP(i);
+            return -1;
+        }
+
+        if (!steal) {
+            item = Py_NewRef(item);
+        }
+        if (set_add_entry_takeref(set, item, hash) < 0) {
+            CLEANUP(i);
+            return -1;
+        }
+    }
+    return 0;
+
+#undef CLEANUP
+}
+
+
+int
+PySetBuilder_UpdateArray(PySetBuilder *builder,
+                              PyObject *const *items, Py_ssize_t nitem)
+{
+    return setbuilder_update_array(builder, items, nitem, 0);
+}
+
+
+int
+PySetBuilder_UpdateArraySteal(PySetBuilder *builder,
+                                   PyObject *const *items, Py_ssize_t nitem)
+{
+    return setbuilder_update_array(builder, items, nitem, 1);
+}
