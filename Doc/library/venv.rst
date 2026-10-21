@@ -144,6 +144,8 @@ The command, if run with ``-h``, will show the available options::
 .. option:: --prompt <PROMPT>
 
    Provides an alternative prompt prefix for this environment.
+   Depending on the operating system, the prompt string may be
+   evaluated by the shell.
 
 .. option:: --upgrade-deps
 
