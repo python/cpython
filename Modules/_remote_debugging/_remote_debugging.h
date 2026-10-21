@@ -193,6 +193,9 @@ typedef enum _WIN32_THREADSTATE {
  * ============================================================================ */
 
 struct _Py_AsyncioModuleDebugOffsets {
+    char cookie[8] _Py_NONSTRING;
+    uint64_t version;
+    uint64_t size;
     struct _asyncio_task_object {
         uint64_t size;
         uint64_t task_name;
@@ -712,7 +715,6 @@ iterate_interpreters(
  * ASYNCIO FUNCTION DECLARATIONS
  * ============================================================================ */
 
-extern uintptr_t _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle);
 extern int read_async_debug(RemoteUnwinderObject *unwinder);
 extern int ensure_async_debug_offsets(RemoteUnwinderObject *unwinder);
 

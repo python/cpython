@@ -31,8 +31,8 @@
 #define FIELD_SIZE(type, member) sizeof(((type *)0)->member)
 
 enum {
-    PY_REMOTE_DEBUG_OFFSETS_TOTAL_SIZE = 888,
-    PY_REMOTE_ASYNC_DEBUG_OFFSETS_TOTAL_SIZE = 104,
+    PY_REMOTE_DEBUG_OFFSETS_TOTAL_SIZE = 896,
+    PY_REMOTE_ASYNC_DEBUG_OFFSETS_TOTAL_SIZE = 128,
 };
 
 /*
@@ -256,7 +256,8 @@ validate_fixed_field(
  * the unwinder, so no validation is needed for them.
  */
 #define PY_REMOTE_DEBUG_RUNTIME_STATE_FIELDS(APPLY, buffer_size) \
-    APPLY(runtime_state, interpreters_head, sizeof(uintptr_t), _Alignof(uintptr_t), buffer_size)
+    APPLY(runtime_state, interpreters_head, sizeof(uintptr_t), _Alignof(uintptr_t), buffer_size); \
+    APPLY(runtime_state, asyncio_debug_offsets, sizeof(uintptr_t), _Alignof(uintptr_t), buffer_size)
 
 /* current_exception also covers the adjacent exc_info pointer. */
 #define PY_REMOTE_DEBUG_THREAD_STATE_FIELDS(APPLY, buffer_size) \
@@ -471,8 +472,34 @@ _PyRemoteDebug_ValidateDebugOffsetsLayout(struct _Py_DebugOffsets *debug_offsets
 /* Called once when AsyncioDebug is loaded, before any task inspection uses it. */
 static inline int
 _PyRemoteDebug_ValidateAsyncDebugOffsets(
-    struct _Py_AsyncioModuleDebugOffsets *debug_offsets)
+    struct _Py_AsyncioModuleDebugOffsets *debug_offsets,
+    uint64_t runtime_version)
 {
+    if (memcmp(debug_offsets->cookie, _Py_AsyncioDebug_Cookie,
+               sizeof(debug_offsets->cookie)) != 0)
+    {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "Invalid AsyncioDebug offsets: bad cookie");
+        return -1;
+    }
+    /* The table must come from the same build as the runtime. */
+    if (debug_offsets->version != runtime_version) {
+        PyErr_Format(
+            PyExc_RuntimeError,
+            "Invalid AsyncioDebug offsets: version %#llx does not match "
+            "runtime version %#llx",
+            (unsigned long long)debug_offsets->version,
+            (unsigned long long)runtime_version);
+        return -1;
+    }
+    if (debug_offsets->size < sizeof(*debug_offsets)) {
+        PyErr_Format(
+            PyExc_RuntimeError,
+            "Invalid AsyncioDebug offsets: size %llu is smaller than %zu",
+            (unsigned long long)debug_offsets->size,
+            sizeof(*debug_offsets));
+        return -1;
+    }
     PY_REMOTE_DEBUG_VALIDATE_READ_SECTION(asyncio_task_object, SIZEOF_TASK_OBJ);
     PY_REMOTE_DEBUG_TASK_OBJECT_FIELDS(
         PY_REMOTE_DEBUG_VALIDATE_FIELD,

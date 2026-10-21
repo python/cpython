@@ -146,6 +146,11 @@ struct pyruntimestate {
      */
     _Py_DebugOffsets debug_offsets;
 
+    /* Address of the _asyncio module's debug offsets table, or NULL until the
+       module is initialized. Debuggers locate this field through
+       debug_offsets.runtime_state.asyncio_debug_offsets. */
+    void *asyncio_debug_offsets;
+
     /* Has been initialized to a safe state.
 
        In order to be effective, this must be set to 0 during or right
