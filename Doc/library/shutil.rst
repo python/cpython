@@ -242,7 +242,7 @@ Directory and files operations
 
 .. function:: copytree(src, dst, symlinks=False, ignore=None, \
               copy_function=copy2, ignore_dangling_symlinks=False, \
-              dirs_exist_ok=False)
+              dirs_exist_ok=False, copy_dir_stat=True)
 
    Recursively copy an entire directory tree rooted at *src* to a directory
    named *dst* and return the destination directory.  All intermediate
@@ -250,6 +250,10 @@ Directory and files operations
 
    Permissions and times of directories are copied with :func:`copystat`,
    individual files are copied using :func:`~shutil.copy2`.
+
+   If *copy_dir_stat* is false, permissions and times of directories are
+   not copied, e.g. to copy a read-only tree into a writable one.  It
+   defaults to true.  File metadata is always handled by *copy_function*.
 
    If *symlinks* is true, symbolic links in the source tree are represented as
    symbolic links in the new tree and the metadata of the original links will
@@ -305,6 +309,9 @@ Directory and files operations
 
    .. versionchanged:: 3.8
       Added the *dirs_exist_ok* parameter.
+
+   .. versionchanged:: 3.16
+      Added the *copy_dir_stat* parameter.
 
 .. function:: rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None)
 
