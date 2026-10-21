@@ -2110,6 +2110,8 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
 
     process_delayed_frees(interp, state);
 
+    _PyMem_FreeParkedQSBRPages(interp);
+
     #ifdef GC_ENABLE_MARK_ALIVE
     // If gc.freeze() was used, it seems likely that doing this "mark alive"
     // pass will not be a performance win.  Typically the majority of alive
