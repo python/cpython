@@ -667,11 +667,13 @@ ssl
   the module.
   (Contributed by Serhiy Storchaka in :gh:`157513`.)
 
-* The :mod:`ssl` module now rejects TLS certificate chains that contain one of a
-  set of compromised eMudhra intermediate CA keys.  As defense in depth, the
-  connection is blocked during certificate verification even when the platform
-  root store (or a bundled trust store such as :mod:`!certifi`) still trusts the
-  issuing roots.
+* As an extraordinary measure and last line of defense, the :mod:`ssl` module
+  now rejects TLS certificate chains that contain one of a set of compromised
+  eMudhra intermediate CA keys.  Removing trust is primarily the job of the
+  platform root store; this denylist only blocks connections during certificate
+  verification while that update has not yet reached the OS, a container image,
+  or a bundled trust store in various Python packages.  Keys are added to the
+  denylist only under a very high threshold.
   (Contributed by Christian Heimes in :gh:`160040`.)
 
 

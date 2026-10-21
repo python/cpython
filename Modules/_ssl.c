@@ -3406,6 +3406,10 @@ _cert_has_distrusted_spki(X509 *cert)
 static int
 _ssl_verify_callback(int preverify_ok, X509_STORE_CTX *x509_ctx)
 {
+    /* Don't override an error OpenSSL already reported for this certificate. */
+    if (!preverify_ok) {
+        return preverify_ok;
+    }
     X509 *cert = X509_STORE_CTX_get_current_cert(x509_ctx);
     if (cert == NULL) {
         return preverify_ok;

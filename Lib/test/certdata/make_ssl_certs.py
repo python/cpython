@@ -232,18 +232,35 @@ def write_cert_reference(path):
 # eMudhra intermediate on the _ssl distrusted list, its secp384r1 key is 4.
 # See https://emudhra.we-have-a-problem.com/
 DISTRUSTED_INTERMEDIATE = 'distrusted_intermediate.pem'
-DISTRUSTED_INTERMEDIATE_KEY = 'distrusted_intermediate.key'
+
+# ASN.1 template for the intermediate's compromised key: secp384r1 scalar 4.
+# openssl derives the public key when the SEC1 structure omits it.
+distrusted_key_template = """
+    asn1 = SEQUENCE:eckey
+    [eckey]
+    version = INTEGER:1
+    priv = FORMAT:HEX,OCTETSTRING:{scalar}
+    params = EXPLICIT:0,OID:secp384r1
+    """
 
 
 def make_distrusted_spki_cert(cmdlineargs):
     # leaf signed by the distrusted intermediate, chains to distrusted_root.pem
     print("creating distrusted-SPKI test cert")
     tempnames = []
-    for i in range(4):
+    for i in range(7):
         with tempfile.NamedTemporaryFile(delete=False) as f:
             tempnames.append(f.name)
-    req_file, key_file, csr_file, cert_file = tempnames
+    req_file, key_file, csr_file, cert_file, cakey_conf, cakey_der, cakey_file = tempnames
     try:
+        # recreate the intermediate's key (secp384r1 scalar 4) on the fly
+        with open(cakey_conf, 'w') as f:
+            f.write(distrusted_key_template.format(scalar='00' * 47 + '04'))
+        check_call(['openssl', 'asn1parse', '-genconf', cakey_conf,
+                    '-out', cakey_der, '-noout'])
+        check_call(['openssl', 'pkey', '-in', cakey_der,
+                    '-inform', 'DER', '-out', cakey_file])
+
         req = req_template.format(
             hostname='localhost',
             extra_san='',
@@ -260,7 +277,7 @@ def make_distrusted_spki_cert(cmdlineargs):
         # sign with the distrusted intermediate, not the test CA
         check_call(['openssl', 'ca', '-config', req_file,
                     '-extensions', 'req_x509_extensions_full',
-                    '-cert', DISTRUSTED_INTERMEDIATE, '-keyfile', DISTRUSTED_INTERMEDIATE_KEY,
+                    '-cert', DISTRUSTED_INTERMEDIATE, '-keyfile', cakey_file,
                     '-out', cert_file, '-outdir', 'cadir',
                     '-policy', 'policy_anything', '-batch', '-infiles', csr_file])
         with open(key_file) as f:

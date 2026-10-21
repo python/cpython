@@ -2,18 +2,26 @@
  *
  * Verification rejects any chain with a cert whose SPKI SHA-256 digest is in
  * the _distrusted_spki table.  We match the key, not a cert fingerprint, so
- * cross-signs that reuse the key are blocked too.  To block another key, add
- * its digest.
+ * cross-signs that reuse the key are blocked too.
  *
- * Compute a cert's SPKI SHA-256 digest bytes with OpenSSL:
+ * This is an extraordinary measure and last line of defense.  Removing trust is
+ * primarily the job of the platform root store. This list only blocks keys while
+ * that update is still propagating to the OS, container images, or root CAs
+ * bundled in Python packages.  The threshold for adding an entry is very high.
+  *
+ * See https://github.com/python/cpython/issues/160040 for the eMudhra discussion.
+ *
+ * To block another key, add the SHA-256 digest bytes of its SPKI:
  *
  *     $ openssl x509 -in cert.pem -noout -pubkey | openssl pkey -pubin -outform DER | openssl dgst -sha256 -binary | xxd -i
  */
 #ifndef Py_SSL_DISTRUSTED_SPKI_H
 #define Py_SSL_DISTRUSTED_SPKI_H
 
-/* Compromised eMudhra intermediates, https://emudhra.we-have-a-problem.com/ */
-static const unsigned char _distrusted_spki[][32] = {
+#include "openssl/sha.h"
+
+static const unsigned char _distrusted_spki[][SHA256_DIGEST_LENGTH] = {
+    /* Compromised eMudhra intermediates, https://emudhra.we-have-a-problem.com/ */
     /* CN=EM OV TLS CA - G3B,O=eMudhra BV,C=NL */
     {
         0x43, 0xbf, 0xfa, 0x19, 0xd6, 0xef, 0x65, 0x14, 0x51, 0xf6, 0x84, 0x1e,
