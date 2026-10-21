@@ -340,7 +340,10 @@ void _mi_arenas_free(mi_subproc_t* subproc, void* p, size_t size, mi_memid_t mem
   }
 
   // try to purge expired decommits
-  // mi_arenas_try_purge(false, false, NULL);
+  // CPython: purge on free as in mimalloc v2; otherwise freed memory is only
+  // purged on periodic theap collects and stays resident long after its purge
+  // delay expired, which increases peak RSS of short-running processes.
+  mi_arenas_try_purge(false, false, subproc, 0);
 }
 
 // Purge the arenas; if `force_purge` is true, amenable parts are purged even if not yet expired
