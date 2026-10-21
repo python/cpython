@@ -374,10 +374,9 @@ class TestUnstableCAPI(unittest.TestCase):
             def gen(local):
                 yield
                 yield local
-                class Later:
-                    pass
-                yield weakref.ref(Later)
-                yield Later
+                later = yield
+                yield weakref.ref(later)
+                yield later
 
             assert _testinternalcapi.has_deferred_refcount(Local)
             generator = gen(Local)
@@ -394,7 +393,13 @@ class TestUnstableCAPI(unittest.TestCase):
         # Check the weakref before resuming, to avoid using a dangling local.
         assert local_ref() is not None, "immortal generator lost its local"
         assert next(generator) is local_ref()
-        later_ref = next(generator)
+        next(generator)
+        class Later:
+            pass
+        assert _testinternalcapi.has_deferred_refcount(Later)
+        # send() stores a new deferred reference after immortalization.
+        later_ref = generator.send(Later)
+        del Later
         gc.collect()
         assert later_ref() is not None, "resumed immortal generator lost its local"
         assert next(generator) is later_ref()
@@ -413,14 +418,17 @@ class TestUnstableCAPI(unittest.TestCase):
         def make_frame():
             frame = sys._getframe()
             assert _testcapi.py_immortalize(frame) == 1
-            class Local:
-                pass
-            return frame, weakref.ref(Local)
+            # LOAD_GLOBAL creates a deferred reference after immortalization.
+            local = Local
+            return frame, weakref.ref(local)
 
+        class Local:
+            pass
         frame, local_ref = make_frame()
+        del Local
         gc.collect()
         assert local_ref() is not None, "immortal frame lost its local"
-        assert frame.f_locals["Local"] is local_ref()
+        assert frame.f_locals["local"] is local_ref()
         frame.clear()
         """
         assert_python_ok("-c", script)
