@@ -1,0 +1,2 @@
+Fix :class:`configparser.ExtendedInterpolation` to include the offending
+reference in the error message for a reference containing multiple colons.

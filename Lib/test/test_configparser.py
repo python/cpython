@@ -1354,8 +1354,13 @@ class ConfigParserTestCaseExtendedInterpolation(BasicTestCase, unittest.TestCase
             cf['interpolation fail']['case2']
         with self.assertRaises(configparser.InterpolationMissingOptionError):
             cf['interpolation fail']['case3']
-        with self.assertRaises(configparser.InterpolationSyntaxError):
-            cf['interpolation fail']['case4']
+        for suffix in ('', ' trailing text'):
+            with self.subTest(suffix=suffix):
+                cf['interpolation fail']['case4'] = '${i:like:colon:characters}' + suffix
+                with self.assertRaises(configparser.InterpolationSyntaxError) as cm:
+                    cf['interpolation fail']['case4']
+                self.assertEqual(str(cm.exception),
+                    "More than one ':' found: '${i:like:colon:characters}'")
         with self.assertRaises(configparser.InterpolationSyntaxError):
             cf['interpolation fail']['case5']
         with self.assertRaises(ValueError):
