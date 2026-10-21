@@ -204,7 +204,7 @@ py_hashentry_t_destroy_value(void *entry) {
         }
         if (h->evp_nosecurity != NULL) {
             PY_EVP_MD_free(h->evp_nosecurity);
-            h->evp_nosecurity = NULL;x
+            h->evp_nosecurity = NULL;
         }
         PyMem_Free(entry);
     }
