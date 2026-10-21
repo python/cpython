@@ -605,7 +605,7 @@ class DSLParser:
             fields = full_name.split(".")
             if fields[-1] == '__new__':
                 fields.pop()
-            elif fields[-1] in SLOTS:
+            elif fields[-1] in SLOTS and not self.coexist:
                 # list.__repr__ -> list_repr
                 fields[-1] = fields[-1].strip('_')
             c_basename = "_".join(fields)
@@ -632,14 +632,14 @@ class DSLParser:
             fail("'__new__' must be a class method!")
         if self.kind in ACCESSORS and not cls:
             fail("@getter and @setter must be methods")
-        slot = SLOTS.get(name)
+        # A @coexist method named like a slot is a method which coexists
+        # with the slot (e.g. dict.__contains__), not the slot itself.
+        slot = None if self.coexist else SLOTS.get(name)
         if slot is not None:
             if self.kind is not CALLABLE:
                 fail(f"{name!r} must be a normal method; got '{self.kind}'!")
             if not cls:
                 fail(f"{name!r} must be a method!")
-            if self.coexist:
-                fail(f"@coexist cannot be applied to {name!r}")
 
         # Normalise self.kind.
         if name == '__new__':

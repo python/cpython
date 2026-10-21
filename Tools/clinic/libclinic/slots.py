@@ -36,9 +36,11 @@ class SlotSpec:
 
 
 # Maps the name of a special method to its slot.  A name listed here must
-# not be in dsl_parser.unsupported_special_methods.
+# not be in dsl_parser.unsupported_special_methods.  A @coexist method of
+# the same name is not a slot (see dsl_parser.normalize_function_kind()).
 SLOTS: Final[dict[str, SlotSpec]] = {
     '__next__': SlotSpec(return_converter='object'),
     '__len__': SlotSpec(return_converter='Py_ssize_t'),
+    '__contains__': SlotSpec(return_converter='int'),
     '__setitem__': SlotSpec(return_converter='int'),
 }
