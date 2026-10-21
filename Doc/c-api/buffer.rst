@@ -258,7 +258,9 @@ readonly, format
 
    .. c:macro:: PyBUF_WRITEABLE
 
-      This is a :term:`soft deprecated` alias to :c:macro:`PyBUF_WRITABLE`.
+      This is an alias to :c:macro:`PyBUF_WRITABLE`.
+
+      .. soft-deprecated:: 3.13
 
    .. c:macro:: PyBUF_FORMAT
 

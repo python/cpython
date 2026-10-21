@@ -23,7 +23,7 @@ from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
                           requires_subprocess, os_helper)
 from test.support.os_helper import TESTFN, temp_dir, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure, make_script
-from test.support.import_helper import forget
+from test.support.import_helper import ensure_lazy_imports, forget
 from test.support import force_not_colorized, force_not_colorized_test_class
 
 import json
@@ -206,7 +206,7 @@ class TracebackCases(unittest.TestCase):
                 sys.setrecursionlimit(15)
 
                 def f():
-                    ref(lambda: 0, [])
+                    ref(lambda: 0, ord)
                     f()
 
                 try:
@@ -586,6 +586,13 @@ class TracebackCases(unittest.TestCase):
     def test_format_exception_only_exc(self):
         output = traceback.format_exception_only(Exception("projector"))
         self.assertEqual(output, ["Exception: projector\n"])
+
+    @support.subTests("arg", [NotImplemented, "invalid syntax"])
+    def test_format_syntax_error_message(self, arg):
+        exc = SyntaxError(arg)
+        lines = traceback.format_exception_only(type(exc), exc)
+        result = "".join(lines)
+        self.assertIn(str(arg), result)
 
     def test_exception_is_None(self):
         NONE_EXC_STRING = 'NoneType: None\n'
@@ -1815,6 +1822,18 @@ class TestKeywordTypoSuggestions(unittest.TestCase):
         ("[x for x\nin range(3)\nof x]", "if"),
         ("[123 fur x\nin range(3)\nif x]", "for"),
         ("for x im n:\n  pass", "in"),
+        ("mach x:", "match"),
+        ("math x:", "match"),
+        ("match 1:\n  cse 1:", "case"),
+        ("typ x = int", "type"),
+        ("typed x = int", "type"),
+        ("lazi import x", "lazy"),
+        ("lezi import x", "lazy"),
+        ("switch x:\n case:", "match"),
+        ("delete x", "del"),
+        ("function f():", "def"),
+        ("func f():", "def"),
+        ("void f():", "def"),
     ]
 
     def test_keyword_suggestions_from_file(self):
@@ -3892,7 +3911,7 @@ class TestTracebackException(unittest.TestCase):
     def test_dont_swallow_cause_or_context_of_falsey_exception(self):
         # see gh-132308: Ensure that __cause__ or __context__ attributes of exceptions
         # that evaluate as falsey are included in the output. For falsey term,
-        # see https://docs.python.org/3/library/stdtypes.html#truth-value-testing.
+        # see https://docs.python.org/3/builtins/stdtypes.html#truth-value-testing.
 
         try:
             raise FalseyException from KeyError
@@ -4111,7 +4130,7 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
     def test_dont_swallow_subexceptions_of_falsey_exceptiongroup(self):
         # see gh-132308: Ensure that subexceptions of exception groups
         # that evaluate as falsey are displayed in the output. For falsey term,
-        # see https://docs.python.org/3/library/stdtypes.html#truth-value-testing.
+        # see https://docs.python.org/3/builtins/stdtypes.html#truth-value-testing.
 
         try:
             raise FalseyExceptionGroup("Gih", (KeyError(), NameError()))
@@ -4565,6 +4584,98 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
         actual = self.get_suggestion(Outer(), 'target')
         self.assertIn("'.normal.target'", actual)
 
+    @force_not_colorized
+    def test_cross_language(self):
+        cases = [
+            # (type, attr, hint_attr)
+            (list, 'push', 'append'),
+            (list, 'concat', 'extend'),
+            (list, 'addAll', 'extend'),
+            (str, 'toUpperCase', 'upper'),
+            (str, 'toLowerCase', 'lower'),
+            (str, 'trimStart', 'lstrip'),
+            (str, 'trimEnd', 'rstrip'),
+            (dict, 'keySet', 'keys'),
+            (dict, 'entrySet', 'items'),
+            (dict, 'entries', 'items'),
+            (dict, 'putAll', 'update'),
+        ]
+        for test_type, attr, hint_attr in cases:
+            with self.subTest(type=test_type.__name__, attr=attr):
+                obj = test_type()
+                actual = self.get_suggestion(obj, attr)
+                self.assertEndsWith(actual, f"Did you mean '.{hint_attr}'?")
+
+        cases = [
+            # (type, attr, hint)
+            (list, 'contains', "Use 'x in list'."),
+            (list, 'add', "Did you mean to use a 'set' object?"),
+            (dict, 'put', "Use d[k] = v."),
+        ]
+        for test_type, attr, expected in cases:
+            with self.subTest(type=test_type, attr=attr):
+                obj = test_type()
+                actual = self.get_suggestion(obj, attr)
+                self.assertEndsWith(actual, expected)
+
+    @force_not_colorized
+    def test_cross_language_levenshtein_fallback(self):
+        # When no cross-language entry exists, Levenshtein still works
+        # (e.g., trim->strip is not in the table but Levenshtein catches it)
+        actual = self.get_suggestion('', 'trim')
+        self.assertIn("strip", actual)
+
+    @force_not_colorized
+    def test_cross_language_no_hint_for_unknown_attr(self):
+        actual = self.get_suggestion([], 'completely_unknown_method')
+        self.assertNotIn("Did you mean", actual)
+
+    @force_not_colorized
+    def test_cross_language_works_for_subclasses(self):
+        # isinstance() check means subclasses also get hints
+        class MyList(list):
+            pass
+        actual = self.get_suggestion(MyList(), 'push')
+        self.assertEndsWith(actual, "Did you mean '.append'?")
+
+        class MyDict(dict):
+            pass
+        actual = self.get_suggestion(MyDict(), 'keySet')
+        self.assertEndsWith(actual, "Did you mean '.keys'?")
+
+    @force_not_colorized
+    def test_cross_language_mutable_on_immutable(self):
+        # Mutable method on immutable type suggests the mutable counterpart
+        cases = [
+            (tuple, 'append', "Did you mean to use a 'list' object?"),
+            (tuple, 'extend', "Did you mean to use a 'list' object?"),
+            (tuple, 'insert', "Did you mean to use a 'list' object?"),
+            (tuple, 'remove', "Did you mean to use a 'list' object?"),
+            (frozenset, 'add', "Did you mean to use a 'set' object?"),
+            (frozenset, 'discard', "Did you mean to use a 'set' object?"),
+            (frozenset, 'remove', "Did you mean to use a 'set' object?"),
+            (frozenset, 'update', "Did you mean to use a 'set' object?"),
+            (frozendict, 'update', "Did you mean to use a 'dict' object?"),
+            (tuple, 'clear', "Did you mean to use a 'list' object?"),
+            (frozenset, 'clear', "Did you mean to use a 'set' object?"),
+            (frozendict, 'clear', "Did you mean to use a 'dict' object?"),
+        ]
+        for test_type, attr, expected in cases:
+            with self.subTest(type=test_type.__name__, attr=attr):
+                obj = test_type()
+                actual = self.get_suggestion(obj, attr)
+                self.assertEndsWith(actual, expected)
+
+    @force_not_colorized
+    def test_cross_language_float_bitwise(self):
+        # Bitwise operators on float suggest using int
+        cases = ['__or__', '__and__', '__xor__', '__lshift__', '__rshift__']
+        for attr in cases:
+            with self.subTest(attr=attr):
+                actual = self.get_suggestion(1.0, attr)
+                self.assertIn("'int'", actual)
+                self.assertIn("Bitwise operators", actual)
+
     def make_module(self, code):
         tmpdir = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, tmpdir)
@@ -5004,6 +5115,32 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
 
         actual = self.get_suggestion(func)
         self.assertIn("forget to import '_io'", actual)
+
+    def test_name_error_with_bad_getattr(self):
+        class A:
+            def __getattr__(self, x):
+                spam
+
+        actual = self.get_suggestion(A(), "eggs")
+        self.assertIn("name 'spam' is not defined", actual)
+
+    def test_name_error_with_bad_getattribute(self):
+
+        class A:
+            def __getattribute__(self, x):
+                spam
+
+        actual = self.get_suggestion(A(), "eggs")
+        self.assertIn("name 'spam' is not defined", actual)
+
+    def test_name_error_with_bad_property(self):
+        class A:
+            @property
+            def eggs(self):
+                eggs
+
+        actual = self.get_suggestion(A(), "eggs")
+        self.assertIn("name 'eggs' is not defined", actual)
 
 
 
@@ -5507,11 +5644,11 @@ class TestLazyImportSuggestions(unittest.TestCase):
 
     def test_attribute_error_does_not_reify_lazy_imports(self):
         """Printing an AttributeError should not trigger lazy import reification."""
-        # pkg.bar prints "BAR_MODULE_LOADED" when imported.
+        # lazypkg.bar prints "BAR_MODULE_LOADED" when imported.
         # If lazy import is reified during suggestion computation, we'll see it.
         code = textwrap.dedent("""
-            lazy import test.test_lazy_import.data.pkg.bar
-            test.test_lazy_import.data.pkg.nonexistent
+            lazy import test.test_lazy_import.data.lazypkg
+            test.test_lazy_import.data.lazypkg.nonexistent
         """)
         rc, stdout, stderr = assert_python_failure('-c', code)
         self.assertNotIn(b"BAR_MODULE_LOADED", stdout)
@@ -5520,9 +5657,9 @@ class TestLazyImportSuggestions(unittest.TestCase):
         """Formatting a traceback should not trigger lazy import reification."""
         code = textwrap.dedent("""
             import traceback
-            lazy import test.test_lazy_import.data.pkg.bar
+            lazy import test.test_lazy_import.data.lazypkg
             try:
-                test.test_lazy_import.data.pkg.nonexistent
+                test.test_lazy_import.data.lazypkg.nonexistent
             except AttributeError:
                 traceback.format_exc()
             print("OK")
@@ -5534,13 +5671,19 @@ class TestLazyImportSuggestions(unittest.TestCase):
     def test_suggestion_still_works_for_non_lazy_attributes(self):
         """Suggestions should still work for non-lazy module attributes."""
         code = textwrap.dedent("""
-            lazy import test.test_lazy_import.data.pkg.bar
+            lazy import test.test_lazy_import.data.lazypkg
             # Typo for __name__
-            test.test_lazy_import.data.pkg.__nme__
+            test.test_lazy_import.data.lazypkg.__nme__
         """)
         rc, stdout, stderr = assert_python_failure('-c', code)
         self.assertIn(b"__name__", stderr)
         self.assertNotIn(b"BAR_MODULE_LOADED", stdout)
+
+
+class LazyImportTest(unittest.TestCase):
+    @support.cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("traceback", {"_colorize"})
 
 
 if __name__ == "__main__":

@@ -27,6 +27,10 @@ class CycleFoundException(Exception):
 # ─── indexing helpers ───────────────────────────────────────────
 def _format_stack_entry(elem: str|FrameInfo) -> str:
     if not isinstance(elem, str):
+        if elem.location is None:
+            if elem.filename in ("", "~"):
+                return f"{elem.funcname}"
+            return f"{elem.funcname} {elem.filename}"
         if elem.location.lineno == 0 and elem.filename == "":
             return f"{elem.funcname}"
         else:
@@ -190,8 +194,7 @@ def build_task_table(result):
             # Build coroutine stack string
             frames = [frame for coro in task_info.coroutine_stack
                      for frame in coro.call_stack]
-            coro_stack = " -> ".join(_format_stack_entry(x).split(" ")[0]
-                                   for x in frames)
+            coro_stack = " -> ".join(x.funcname for x in frames)
 
             # Handle tasks with no awaiters
             if not task_info.awaited_by:
@@ -202,8 +205,7 @@ def build_task_table(result):
             # Handle tasks with awaiters
             for coro_info in task_info.awaited_by:
                 parent_id = coro_info.task_name
-                awaiter_frames = [_format_stack_entry(x).split(" ")[0]
-                                for x in coro_info.call_stack]
+                awaiter_frames = [x.funcname for x in coro_info.call_stack]
                 awaiter_chain = " -> ".join(awaiter_frames)
                 awaiter_name = id2name.get(parent_id, "Unknown")
                 parent_id_str = (hex(parent_id) if isinstance(parent_id, int)
@@ -231,27 +233,38 @@ def exit_with_permission_help_text():
     print(
         "Error: The specified process cannot be attached to due to insufficient permissions.\n"
         "See the Python documentation for details on required privileges and troubleshooting:\n"
-        "https://docs.python.org/3.14/howto/remote_debugging.html#permission-requirements\n"
+        "https://docs.python.org/3/howto/remote_debugging.html#permission-requirements\n",
+        file=sys.stderr,
     )
     sys.exit(1)
 
 
-def _get_awaited_by_tasks(pid: int) -> list:
-    try:
-        return get_all_awaited_by(pid)
-    except RuntimeError as e:
-        while e.__context__ is not None:
-            e = e.__context__
-        print(f"Error retrieving tasks: {e}")
-        sys.exit(1)
-    except PermissionError:
-        exit_with_permission_help_text()
+_TRANSIENT_ERRORS = (RuntimeError, OSError, UnicodeDecodeError, MemoryError)
 
 
-def display_awaited_by_tasks_table(pid: int) -> None:
+def _get_awaited_by_tasks(pid: int, retries: int = 3) -> list:
+    for attempt in range(retries + 1):
+        try:
+            return get_all_awaited_by(pid)
+        except PermissionError:
+            exit_with_permission_help_text()
+        except ProcessLookupError:
+            print(f"Error: process {pid} not found.", file=sys.stderr)
+            sys.exit(1)
+        except _TRANSIENT_ERRORS as e:
+            if attempt < retries:
+                continue
+            if isinstance(e, RuntimeError):
+                while e.__context__ is not None:
+                    e = e.__context__
+            print(f"Error retrieving tasks: {e}", file=sys.stderr)
+            sys.exit(1)
+
+
+def display_awaited_by_tasks_table(pid: int, retries: int = 3) -> None:
     """Build and print a table of all pending tasks under `pid`."""
 
-    tasks = _get_awaited_by_tasks(pid)
+    tasks = _get_awaited_by_tasks(pid, retries=retries)
     table = build_task_table(tasks)
     # Print the table in a simple tabular format
     print(
@@ -262,10 +275,10 @@ def display_awaited_by_tasks_table(pid: int) -> None:
         print(f"{row[0]:<10} {row[1]:<20} {row[2]:<20} {row[3]:<50} {row[4]:<50} {row[5]:<15} {row[6]:<15}")
 
 
-def display_awaited_by_tasks_tree(pid: int) -> None:
+def display_awaited_by_tasks_tree(pid: int, retries: int = 3) -> None:
     """Build and print a tree of all pending tasks under `pid`."""
 
-    tasks = _get_awaited_by_tasks(pid)
+    tasks = _get_awaited_by_tasks(pid, retries=retries)
     try:
         result = build_async_tree(tasks)
     except CycleFoundException as e:

@@ -268,7 +268,8 @@ PyDoc_STRVAR(OrderedDict_popitem__doc__,
 "\n"
 "Remove and return a (key, value) pair from the dictionary.\n"
 "\n"
-"Pairs are returned in LIFO order if last is true or FIFO order if false.");
+"Pairs are returned in LIFO order if last is true or FIFO order if\n"
+"false.");
 
 #define ORDEREDDICT_POPITEM_METHODDEF    \
     {"popitem", _PyCFunction_CAST(OrderedDict_popitem), METH_FASTCALL|METH_KEYWORDS, OrderedDict_popitem__doc__},
@@ -451,4 +452,19 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7bc997ca7900f06f input=a9049054013a1b77]*/
+
+static PyObject *
+odictiter_iternext_impl(PyObject *self);
+
+static PyObject *
+odictiter_iternext(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = odictiter_iternext_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+/*[clinic end generated code: output=b729b3f1d40afcd9 input=a9049054013a1b77]*/
