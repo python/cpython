@@ -276,8 +276,10 @@ These have the same issues as the :meth:`WeakKeyDictionary.keyrefs` method.
 
    A :class:`!WeakSet` can be pickled if the elements are strongly
    referenced elsewhere in the same pickle (see :class:`ref`).
-   A copy or a deep copy shares the elements with the original;
-   user-defined attributes are copied or deep-copied.
+   A shallow copy contains the same elements as the original.
+   A deep copy refers to the deep copies of the elements,
+   so they must be deep-copied together with it;
+   its user-defined attributes are deep-copied.
 
    .. versionchanged:: next
       :class:`!WeakSet` can now be pickled and copied.
@@ -314,7 +316,9 @@ These have the same issues as the :meth:`WeakKeyDictionary.keyrefs` method.
    A :class:`!WeakMethod` can be copied,
    and pickled if the object the method is bound to is strongly referenced
    elsewhere in the same pickle (see :class:`ref`).
-   A copy or a deep copy is an equal weak method to the same object.
+   A copy is an equal weak method bound to the same object.
+   A deep copy is bound to the deep copy of the object,
+   so it must be deep-copied together with it.
 
    .. versionadded:: 3.4
 

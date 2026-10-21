@@ -193,6 +193,17 @@ concurrent.futures
   (Contributed by xzmeng and Serhiy Storchaka in :gh:`108518`.)
 
 
+copyreg
+-------
+
+* Add :class:`copyreg.Proxy`, a wrapper that is pickled as the wrapped object.
+  Reduction functions can use it to pickle objects
+  to which the reconstructed object only holds weak references.
+  The wrapped object must be strongly referenced elsewhere in the same pickle;
+  otherwise pickling raises :exc:`pickle.PicklingError`.
+  (Contributed by Serhiy Storchaka in :gh:`74876`.)
+
+
 csv
 ---
 

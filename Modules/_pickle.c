@@ -188,6 +188,9 @@ typedef struct {
     /* copyreg._inverted_registry, {code: (module_name, function_name)} */
     PyObject *inverted_registry;
 
+    /* copyreg.Proxy */
+    PyObject *Proxy_type;
+
     /* Import mappings for compatibility with Python 2.x */
 
     /* _compat_pickle.NAME_MAPPING,
@@ -254,6 +257,7 @@ _Pickle_ClearState(PickleState *st)
     Py_CLEAR(st->extension_registry);
     Py_CLEAR(st->extension_cache);
     Py_CLEAR(st->inverted_registry);
+    Py_CLEAR(st->Proxy_type);
     Py_CLEAR(st->name_mapping_2to3);
     Py_CLEAR(st->import_mapping_2to3);
     Py_CLEAR(st->name_mapping_3to2);
@@ -320,6 +324,9 @@ _Pickle_InitState(PickleState *st)
                      "not %.200s", Py_TYPE(st->extension_cache)->tp_name);
         goto error;
     }
+    st->Proxy_type = PyObject_GetAttrString(copyreg, "Proxy");
+    if (!st->Proxy_type)
+        goto error;
     Py_CLEAR(copyreg);
 
     /* Load the 2.x -> 3.x stdlib module mapping tables */
@@ -4658,75 +4665,26 @@ memo_clear_weak_only(PicklerObject *self, Py_ssize_t *value)
     }
 }
 
-/* Pickle a weakref.ref as weakref.ref(referent).  The referent is pickled
-   *weakly* (no anchoring) and tagged weak-only only after its whole subtree,
+/* A copyreg.Proxy is pickled as its wrapped object, pickled *weakly* (no
+   anchoring).  The object is tagged weak-only only after its whole subtree,
    so a strong cycle inside it cannot anchor it.  See Lib/pickle.py. */
 static int
-save_weakref(PickleState *st, PicklerObject *self, PyObject *obj)
+save_proxy(PickleState *st, PicklerObject *self, PyObject *obj)
 {
-    const char tuple1_op = TUPLE1;
-    const char tuple_op = TUPLE;
-    const char mark_op = MARK;
-    const char reduce_op = REDUCE;
-    const char pop_op = POP;
-    int status = -1;
-
-    PyObject *referent;
-    if (PyWeakref_GetRef(obj, &referent) < 0)
+    PyObject *wrapped = PyObject_GetAttrString(obj, "obj");
+    if (wrapped == NULL)
         return -1;
-    if (referent == NULL) {
-        /* All dead references are interchangeable: pickle by name as the
-           weakref._dead_ref singleton. */
-        const char global_op = GLOBAL;
-        const char dead_ref_name[] = "weakref\n_dead_ref\n";
-        if (_Pickler_Write(self, &global_op, 1) < 0 ||
-            _Pickler_Write(self, dead_ref_name, sizeof(dead_ref_name) - 1) < 0)
-        {
-            return -1;
-        }
-        return 0;
-    }
 
-    /* Py_TYPE(obj) is exactly weakref.ref, the reconstructor. */
-    if (save(st, self, (PyObject *)Py_TYPE(obj), 0) < 0)
-        goto done;
-
-    /* A referent already in the memo is anchored or already tracked;
+    /* An object already in the memo is anchored or already tracked;
        otherwise it is tagged below, until a strong save of it. */
-    int anchored = PyMemoTable_Get(self->memo, referent) != NULL;
-
-    /* Build the 1-tuple (referent,); TUPLE1 needs protocol 2. */
-    if (self->proto < 2 && _Pickler_Write(self, &mark_op, 1) < 0)
-        goto done;
-
-    if (save_object(st, self, referent, 0, 1) < 0)
-        goto done;
-
-    if (!anchored) {
-        Py_ssize_t *value = PyMemoTable_Get(self->memo, referent);
+    int anchored = PyMemoTable_Get(self->memo, wrapped) != NULL;
+    int status = save_object(st, self, wrapped, 0, 1);
+    if (status == 0 && !anchored) {
+        Py_ssize_t *value = PyMemoTable_Get(self->memo, wrapped);
         if (value != NULL)
             memo_set_weak_only(self, value);
     }
-
-    if (_Pickler_Write(self, self->proto >= 2 ? &tuple1_op : &tuple_op, 1) < 0 ||
-        _Pickler_Write(self, &reduce_op, 1) < 0)
-        goto done;
-
-    /* The referent's subtree may have pickled this very (cached) weakref
-       already; reuse the memoized one. */
-    if (PyMemoTable_Get(self->memo, obj)) {
-        if (_Pickler_Write(self, &pop_op, 1) < 0)
-            goto done;
-        if (memo_get(st, self, obj) < 0)
-            goto done;
-    }
-    else if (memo_put(st, self, obj) < 0) {
-        goto done;
-    }
-    status = 0;
-
-  done:
-    Py_DECREF(referent);
+    Py_DECREF(wrapped);
     return status;
 }
 
@@ -4778,8 +4736,8 @@ weak_only_type_names(PicklerObject *self)
     return NULL;
 }
 
-/* `weak` is true only for save_weakref's immediate save of its referent; it
-   does not propagate to nested saves.  All other callers go through save(). */
+/* `weak` is true only for save_proxy's immediate save of the wrapped object;
+   it does not propagate to nested saves.  All other callers go through save(). */
 static int
 save_object(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save,
             int weak)
@@ -4850,8 +4808,8 @@ save_object(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save,
         return -1;
     }
 
-    if (PyWeakref_CheckRefExact(obj)) {
-        status = save_weakref(st, self, obj);
+    if (type == (PyTypeObject *)st->Proxy_type) {
+        status = save_proxy(st, self, obj);
         goto done;
     }
 
@@ -8474,6 +8432,7 @@ pickle_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->PicklingError);
     Py_VISIT(st->UnpicklingError);
     Py_VISIT(st->dispatch_table);
+    Py_VISIT(st->Proxy_type);
     Py_VISIT(st->extension_registry);
     Py_VISIT(st->extension_cache);
     Py_VISIT(st->inverted_registry);
