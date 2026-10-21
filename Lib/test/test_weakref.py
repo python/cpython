@@ -610,6 +610,20 @@ class ReferencesTestCase(TestBase):
         self.assertEqual(p + 1.0, 3.0)
         self.assertEqual(1.0 + p, 3.0)  # this used to SEGV
 
+    def test_dead_proxy_operand_does_not_leak(self):
+        dead = weakref.proxy(Object(2))
+        gc_collect()
+        for operation in (operator.add, operator.eq, lambda a, b: pow(a, 2, b)):
+            with self.subTest(operation=operation):
+                live = Object(1)
+                ref = weakref.ref(live)
+                proxy = weakref.proxy(live)
+                with self.assertRaises(ReferenceError):
+                    operation(proxy, dead)
+                del live
+                gc_collect()
+                self.assertIsNone(ref())
+
     def test_callbacks_protected(self):
         # Callbacks protected from already-set exceptions?
         # Regression test for SF bug #478534.
