@@ -866,8 +866,8 @@ contextvar_set(PyContextVar *var, PyObject *val)
         return -1;
     }
 
-    // gh-148891: _PyHamt_Assoc may allocate nodes, which may trigger GC.
-    // Bump the reference count to prevent the HAMT from being freed during traversal.
+    // gh-148891: Make a strong reference so a GC during _PyHamt_Assoc will
+    // not free the HAMT during traversal.
     PyHamtObject *old_vars = context_get_current_vars(ctx);
     Py_INCREF(old_vars);
     PyHamtObject *new_vars = _PyHamt_Assoc(
@@ -899,8 +899,8 @@ contextvar_del(PyContextVar *var)
         return -1;
     }
 
-    // gh-148891: _PyHamt_Without may allocate nodes, which may trigger GC.
-    // Bump the reference count to prevent the HAMT from being freed during traversal.
+    // gh-148891: Make a strong reference so a GC during _PyHamt_Without will
+    // not free the HAMT during traversal.
     PyHamtObject *vars = context_get_current_vars(ctx);
     Py_INCREF(vars);
     PyHamtObject *new_vars = _PyHamt_Without(vars, (PyObject *)var);
