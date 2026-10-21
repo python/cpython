@@ -191,6 +191,26 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
         with open(value['static'], 'rb') as f:
             self.assertEqual(f.read(8), b'!<arch>\n')
 
+    @needs_installed_python
+    @unittest.skipIf(
+        is_android or is_apple_mobile,
+        "Android and iOS run tests via a custom testbed method that doesn't ship libpython"
+    )
+    @unittest.skipIf(
+        sys.platform == 'cygwin',
+        "Cygwin installs the DLL in BINDIR and the import library in LIBPL, "
+        "not in LIBDIR"
+    )
+    def test_libpython_dynamic(self):
+        value = self.data.get('libpython', {})
+        if 'dynamic' not in value:
+            self.skipTest("No dynamic libpython")
+
+        if sysconfig._installation_is_relocated():
+            self.skipTest("Installation is relocated")
+
+        self.assertTrue(os.path.isfile(value['dynamic']))
+
 
 @unittest.skipIf(
     generate_build_details is None,
@@ -321,8 +341,14 @@ class BuildDetailsLibpythonTests(unittest.TestCase):
         # a libpython3.X.a symlink to the framework's shared library instead.
         libpython = self.generate_libpython(
             LDLIBRARY='Python.framework/Versions/3.X/Python',
-            STATIC_LIBPYTHON=1, PYTHONFRAMEWORK='Python')
+            STATIC_LIBPYTHON=1, PYTHONFRAMEWORK='Python',
+            PYTHONFRAMEWORKPREFIX='/Library/Frameworks')
         self.assertNotIn('static', libpython)
+        # The dynamic library is the framework binary, which is installed at
+        # PYTHONFRAMEWORKPREFIX/LDLIBRARY.
+        self.assertEqual(
+            libpython['dynamic'],
+            '/Library/Frameworks/Python.framework/Versions/3.X/Python')
 
 
 if __name__ == '__main__':
