@@ -1,0 +1,4 @@
+:func:`statistics.variance` and :func:`statistics.pvariance` now raise
+:exc:`ValueError` when the data contains infinity or NaN, instead of returning
+a non-finite and possibly negative result.  This matches the behavior of
+:func:`statistics.stdev` and :func:`statistics.pstdev`.

@@ -562,6 +562,9 @@ def variance(data, xbar=None):
     T, ss, c, n = _ss(data, xbar)
     if n < 2:
         raise StatisticsError('variance requires at least two data points')
+    if not isinstance(ss, Fraction):
+        # A non-Fraction sum of squares means inf or nan is in the data.
+        raise ValueError('inf or nan encountered in data')
     return _convert(ss / (n - 1), T)
 
 
@@ -605,6 +608,9 @@ def pvariance(data, mu=None):
     T, ss, c, n = _ss(data, mu)
     if n < 1:
         raise StatisticsError('pvariance requires at least one data point')
+    if not isinstance(ss, Fraction):
+        # A non-Fraction sum of squares means inf or nan is in the data.
+        raise ValueError('inf or nan encountered in data')
     return _convert(ss / n, T)
 
 
