@@ -96,25 +96,13 @@ bound into a function.
 
     Return the line number of the instruction that occurs on or before
     ``byte_offset`` and ends after it.  This is ``O(N)`` in the number of
-    instructions in the code object, so it is not suitable for iterating over
+    instructions in the code object, so it is not performant for iterating over
     all the line numbers in a code object.
 
     If you just need the line number of a frame, use :c:func:`PyFrame_GetLineNumber` instead.
 
-    To iterate efficiently over the line numbers in a code object, use the
-    private, unstable line-table iteration APIs declared in the private header
-    ``Include/internal/pycore_code.h``:
-
-    * ``_PyCode_InitAddressRange`` initializes a ``PyCodeAddressRange`` for a code object.
-    * ``_PyLineTable_NextAddressRange`` advances the range to the next
-      line-number entry.
-    * ``_PyLineTable_PreviousAddressRange`` retreats the range to the
-      previous entry.
-
-    .. warning::
-       These functions are **internal and not a public C-API**.  They are
-       declared in a private header, may change or be removed without notice,
-       and are not exported as stable symbols.
+    For efficiently iterating over the line numbers in a code object, use :pep:`the API described in PEP 626
+    <0626#out-of-process-debuggers-and-profilers>`.
 
 .. c:function:: int PyCode_Addr2Location(PyObject *co, int byte_offset, int *start_line, int *start_column, int *end_line, int *end_column)
 
