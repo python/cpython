@@ -450,7 +450,6 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
         NULL
     );
     if (self->tlbc_cache == NULL) {
-        _Py_hashtable_destroy(self->code_object_cache);
         PyErr_NoMemory();
         set_exception_cause(self, PyExc_MemoryError, "Failed to create TLBC cache");
         return -1;
