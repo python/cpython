@@ -2113,6 +2113,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
         int err = gc_mark_alive_from_roots(interp, state);
         if (err < 0) {
             _PyEval_StartTheWorld(interp);
+            cleanup_worklist(&state->objs_to_decref);
             PyErr_NoMemory();
             return;
         }
@@ -2123,6 +2124,9 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     int err = deduce_unreachable_heap(interp, state);
     if (err < 0) {
         _PyEval_StartTheWorld(interp);
+        cleanup_worklist(&state->unreachable);
+        cleanup_worklist(&state->legacy_finalizers);
+        cleanup_worklist(&state->objs_to_decref);
         PyErr_NoMemory();
         return;
     }
