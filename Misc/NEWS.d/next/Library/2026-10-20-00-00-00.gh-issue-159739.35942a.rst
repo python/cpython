@@ -1,0 +1,1 @@
+Improve performance when parsing email address groups with many members.
