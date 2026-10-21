@@ -4,6 +4,7 @@ import io
 import os
 import textwrap
 import unittest
+from typing import ClassVar
 
 from test import support
 from test.support import os_helper
@@ -102,10 +103,10 @@ class BasicTestCase(CfgParserTestCaseClass):
         E.sort()
         eq(L, E)
         L = cf['Spacey Bar From The Beginning'].items()
-        L = sorted(list(L))
+        L = sorted(L)
         eq(L, F)
         L = cf.items()
-        L = sorted(list(L))
+        L = sorted(L)
         self.assertEqual(len(L), len(E))
         for name, section in L:
             eq(name, section.name)
@@ -293,37 +294,37 @@ class BasicTestCase(CfgParserTestCaseClass):
         # and sections are now removed.
 
     def test_basic(self):
-        config_string = """\
+        config_string = f"""\
 [Foo Bar]
-foo{0[0]}bar1
+foo{self.delimiters[0]}bar1
 [Spacey Bar]
-foo {0[0]} bar2
+foo {self.delimiters[0]} bar2
 [Spacey Bar From The Beginning]
-  foo {0[0]} bar3
-  baz {0[0]} qwe
+  foo {self.delimiters[0]} bar3
+  baz {self.delimiters[0]} qwe
 [Commented Bar]
-foo{0[1]} bar4 {1[1]} comment
-baz{0[0]}qwe {1[0]}another one
+foo{self.delimiters[1]} bar4 {self.comment_prefixes[1]} comment
+baz{self.delimiters[0]}qwe {self.comment_prefixes[0]}another one
 [Long Line]
-foo{0[1]} this line is much, much longer than my editor
+foo{self.delimiters[1]} this line is much, much longer than my editor
    likes it.
 [Section\\with$weird%characters[\t]
 [Internationalized Stuff]
-foo[bg]{0[1]} Bulgarian
-foo{0[0]}Default
-foo[en]{0[0]}English
-foo[de]{0[0]}Deutsch
+foo[bg]{self.delimiters[1]} Bulgarian
+foo{self.delimiters[0]}Default
+foo[en]{self.delimiters[0]}English
+foo[de]{self.delimiters[0]}Deutsch
 [Spaces]
-key with spaces {0[1]} value
-another with spaces {0[0]} splat!
+key with spaces {self.delimiters[1]} value
+another with spaces {self.delimiters[0]} splat!
 [Types]
-int {0[1]} 42
-float {0[0]} 0.44
-boolean {0[0]} NO
-123 {0[1]} strange but acceptable
+int {self.delimiters[1]} 42
+float {self.delimiters[0]} 0.44
+boolean {self.delimiters[0]} NO
+123 {self.delimiters[1]} strange but acceptable
 [This One Has A ] In It]
-  forks {0[0]} spoons
-""".format(self.delimiters, self.comment_prefixes)
+  forks {self.delimiters[0]} spoons
+"""
         if self.allow_no_value:
             config_string += (
                 "[NoValue]\n"
@@ -333,31 +334,31 @@ boolean {0[0]} NO
         self.basic_test(cf)
         if self.strict:
             with self.assertRaises(configparser.DuplicateOptionError):
-                cf.read_string(textwrap.dedent("""\
+                cf.read_string(textwrap.dedent(f"""\
                     [Duplicate Options Here]
-                    option {0[0]} with a value
-                    option {0[1]} with another value
-                """.format(self.delimiters)))
+                    option {self.delimiters[0]} with a value
+                    option {self.delimiters[1]} with another value
+                """))
             with self.assertRaises(configparser.DuplicateSectionError):
-                cf.read_string(textwrap.dedent("""\
+                cf.read_string(textwrap.dedent(f"""\
                     [And Now For Something]
-                    completely different {0[0]} True
+                    completely different {self.delimiters[0]} True
                     [And Now For Something]
-                    the larch {0[1]} 1
-                """.format(self.delimiters)))
+                    the larch {self.delimiters[1]} 1
+                """))
         else:
-            cf.read_string(textwrap.dedent("""\
+            cf.read_string(textwrap.dedent(f"""\
                 [Duplicate Options Here]
-                option {0[0]} with a value
-                option {0[1]} with another value
-            """.format(self.delimiters)))
+                option {self.delimiters[0]} with a value
+                option {self.delimiters[1]} with another value
+            """))
 
-            cf.read_string(textwrap.dedent("""\
+            cf.read_string(textwrap.dedent(f"""\
                 [And Now For Something]
-                completely different {0[0]} True
+                completely different {self.delimiters[0]} True
                 [And Now For Something]
-                the larch {0[1]} 1
-            """.format(self.delimiters)))
+                the larch {self.delimiters[1]} 1
+            """))
 
     @support.subTests('data', [
         'foo bar=baz',
@@ -491,14 +492,14 @@ boolean {0[0]} NO
 
         # SF bug #432369:
         cf = self.fromstring(
-            "[MySection]\nOption{} first line   \n\tsecond line   \n".format(
-                self.delimiters[0]))
+            f"[MySection]\nOption{self.delimiters[0]} first line   \n"
+            "\tsecond line   \n")
         eq(cf.options("MySection"), ["option"])
         eq(cf.get("MySection", "Option"), "first line\nsecond line")
 
         # SF bug #561822:
         cf = self.fromstring("[section]\n"
-                             "nekey{}nevalue\n".format(self.delimiters[0]),
+                             f"nekey{self.delimiters[0]}nevalue\n",
                              defaults={"key":"value"})
         self.assertTrue(cf.has_option("section", "Key"))
 
@@ -532,14 +533,14 @@ boolean {0[0]} NO
 
         # SF bug #432369:
         cf = self.fromstring(
-            "[MySection]\nOption{} first line   \n\tsecond line   \n".format(
-                self.delimiters[0]))
+            f"[MySection]\nOption{self.delimiters[0]} first line   \n"
+            "\tsecond line   \n")
         eq(cf["MySection"].keys(), {"option"})
         eq(cf["MySection"]["Option"], "first line\nsecond line")
 
         # SF bug #561822:
         cf = self.fromstring("[section]\n"
-                             "nekey{}nevalue\n".format(self.delimiters[0]),
+                             f"nekey{self.delimiters[0]}nevalue\n",
                              defaults={"key":"value"})
         self.assertTrue("Key" in cf["section"])
 
@@ -568,10 +569,10 @@ boolean {0[0]} NO
         cf = self.newconfig()
         self.parse_error(cf, configparser.ParsingError,
                          "[Foo]\n"
-                         "{}val-without-opt-name\n".format(self.delimiters[0]))
+                         f"{self.delimiters[0]}val-without-opt-name\n")
         self.parse_error(cf, configparser.ParsingError,
                          "[Foo]\n"
-                         "{}val-without-opt-name\n".format(self.delimiters[1]))
+                         f"{self.delimiters[1]}val-without-opt-name\n")
         e = self.parse_error(cf, configparser.MissingSectionHeaderError,
                              "No Section!\n")
         self.assertEqual(e.args, ('<???>', 1, "No Section!\n"))
@@ -624,33 +625,33 @@ boolean {0[0]} NO
         except exc as e:
             return e
         else:
-            self.fail("expected exception type %s.%s"
-                      % (exc.__module__, exc.__qualname__))
+            self.fail(
+                f"expected exception type {exc.__module__}.{exc.__qualname__}")
 
     def test_boolean(self):
         cf = self.fromstring(
             "[BOOLTEST]\n"
-            "T1{equals}1\n"
-            "T2{equals}TRUE\n"
-            "T3{equals}True\n"
-            "T4{equals}oN\n"
-            "T5{equals}yes\n"
-            "F1{equals}0\n"
-            "F2{equals}FALSE\n"
-            "F3{equals}False\n"
-            "F4{equals}oFF\n"
-            "F5{equals}nO\n"
-            "E1{equals}2\n"
-            "E2{equals}foo\n"
-            "E3{equals}-1\n"
-            "E4{equals}0.1\n"
-            "E5{equals}FALSE AND MORE".format(equals=self.delimiters[0])
+            f"T1{self.delimiters[0]}1\n"
+            f"T2{self.delimiters[0]}TRUE\n"
+            f"T3{self.delimiters[0]}True\n"
+            f"T4{self.delimiters[0]}oN\n"
+            f"T5{self.delimiters[0]}yes\n"
+            f"F1{self.delimiters[0]}0\n"
+            f"F2{self.delimiters[0]}FALSE\n"
+            f"F3{self.delimiters[0]}False\n"
+            f"F4{self.delimiters[0]}oFF\n"
+            f"F5{self.delimiters[0]}nO\n"
+            f"E1{self.delimiters[0]}2\n"
+            f"E2{self.delimiters[0]}foo\n"
+            f"E3{self.delimiters[0]}-1\n"
+            f"E4{self.delimiters[0]}0.1\n"
+            f"E5{self.delimiters[0]}FALSE AND MORE"
             )
         for x in range(1, 5):
-            self.assertTrue(cf.getboolean('BOOLTEST', 't%d' % x))
-            self.assertFalse(cf.getboolean('BOOLTEST', 'f%d' % x))
+            self.assertTrue(cf.getboolean('BOOLTEST', f't{x}'))
+            self.assertFalse(cf.getboolean('BOOLTEST', f'f{x}'))
             self.assertRaises(ValueError,
-                              cf.getboolean, 'BOOLTEST', 'e%d' % x)
+                              cf.getboolean, 'BOOLTEST', f'e{x}')
 
     def test_weird_errors(self):
         cf = self.newconfig()
@@ -701,18 +702,19 @@ boolean {0[0]} NO
     def test_write(self):
         config_string = (
             "[Long Line]\n"
-            "foo{0[0]} this line is much, much longer than my editor\n"
+            f"foo{self.delimiters[0]} this line is much, much longer "
+            "than my editor\n"
             "   likes it.\n"
-            "[{default_section}]\n"
-            "foo{0[1]} another very\n"
+            f"[{self.default_section}]\n"
+            f"foo{self.delimiters[1]} another very\n"
             " long line\n"
             "[Long Line - With Comments!]\n"
-            "test {0[1]} we        {comment} can\n"
-            "            also      {comment} place\n"
-            "            comments  {comment} in\n"
-            "            multiline {comment} values"
-            "\n".format(self.delimiters, comment=self.comment_prefixes[0],
-                        default_section=self.default_section)
+            f"test {self.delimiters[1]} we        "
+            f"{self.comment_prefixes[0]} can\n"
+            f"            also      {self.comment_prefixes[0]} place\n"
+            f"            comments  {self.comment_prefixes[0]} in\n"
+            f"            multiline {self.comment_prefixes[0]} values"
+            "\n"
             )
         if self.allow_no_value:
             config_string += (
@@ -726,23 +728,23 @@ boolean {0[0]} NO
             cf.write(output, space_around_delimiters=space_around_delimiters)
             delimiter = self.delimiters[0]
             if space_around_delimiters:
-                delimiter = " {} ".format(delimiter)
+                delimiter = f" {delimiter} "
             expect_string = (
-                "[{default_section}]\n"
-                "foo{equals}another very\n"
+                f"[{self.default_section}]\n"
+                f"foo{delimiter}another very\n"
                 "\tlong line\n"
                 "\n"
                 "[Long Line]\n"
-                "foo{equals}this line is much, much longer than my editor\n"
+                f"foo{delimiter}this line is much, much longer "
+                "than my editor\n"
                 "\tlikes it.\n"
                 "\n"
                 "[Long Line - With Comments!]\n"
-                "test{equals}we\n"
+                f"test{delimiter}we\n"
                 "\talso\n"
                 "\tcomments\n"
                 "\tmultiline\n"
-                "\n".format(equals=delimiter,
-                            default_section=self.default_section)
+                "\n"
                 )
             if self.allow_no_value:
                 expect_string += (
@@ -754,7 +756,7 @@ boolean {0[0]} NO
 
     def test_set_string_types(self):
         cf = self.fromstring("[sect]\n"
-                             "option1{eq}foo\n".format(eq=self.delimiters[0]))
+                             f"option1{self.delimiters[0]}foo\n")
         # Check that we don't get an exception when setting values in
         # an existing section using strings:
         class mystr(str):
@@ -820,37 +822,41 @@ boolean {0[0]} NO
     def get_interpolation_config(self):
         return self.fromstring(
             "[Foo]\n"
-            "bar{equals}something %(with1)s interpolation (1 step)\n"
-            "bar9{equals}something %(with9)s lots of interpolation (9 steps)\n"
-            "bar10{equals}something %(with10)s lots of interpolation (10 steps)\n"
-            "bar11{equals}something %(with11)s lots of interpolation (11 steps)\n"
-            "with11{equals}%(with10)s\n"
-            "with10{equals}%(with9)s\n"
-            "with9{equals}%(with8)s\n"
-            "with8{equals}%(With7)s\n"
-            "with7{equals}%(WITH6)s\n"
-            "with6{equals}%(with5)s\n"
-            "With5{equals}%(with4)s\n"
-            "WITH4{equals}%(with3)s\n"
-            "with3{equals}%(with2)s\n"
-            "with2{equals}%(with1)s\n"
-            "with1{equals}with\n"
+            f"bar{self.delimiters[0]}something %(with1)s "
+            "interpolation (1 step)\n"
+            f"bar9{self.delimiters[0]}something %(with9)s "
+            "lots of interpolation (9 steps)\n"
+            f"bar10{self.delimiters[0]}something %(with10)s "
+            "lots of interpolation (10 steps)\n"
+            f"bar11{self.delimiters[0]}something %(with11)s "
+            "lots of interpolation (11 steps)\n"
+            f"with11{self.delimiters[0]}%(with10)s\n"
+            f"with10{self.delimiters[0]}%(with9)s\n"
+            f"with9{self.delimiters[0]}%(with8)s\n"
+            f"with8{self.delimiters[0]}%(With7)s\n"
+            f"with7{self.delimiters[0]}%(WITH6)s\n"
+            f"with6{self.delimiters[0]}%(with5)s\n"
+            f"With5{self.delimiters[0]}%(with4)s\n"
+            f"WITH4{self.delimiters[0]}%(with3)s\n"
+            f"with3{self.delimiters[0]}%(with2)s\n"
+            f"with2{self.delimiters[0]}%(with1)s\n"
+            f"with1{self.delimiters[0]}with\n"
             "\n"
             "[Mutual Recursion]\n"
-            "foo{equals}%(bar)s\n"
-            "bar{equals}%(foo)s\n"
+            f"foo{self.delimiters[0]}%(bar)s\n"
+            f"bar{self.delimiters[0]}%(foo)s\n"
             "\n"
             "[Interpolation Error]\n"
             # no definition for 'reference'
-            "name{equals}%(reference)s\n".format(equals=self.delimiters[0]))
+            f"name{self.delimiters[0]}%(reference)s\n")
 
     def check_items_config(self, expected):
-        cf = self.fromstring("""
+        cf = self.fromstring(f"""
             [section]
-            name {0[0]} %(value)s
-            key{0[1]} |%(name)s|
-            getdefault{0[1]} |%(default)s|
-        """.format(self.delimiters), defaults={"default": "<default>"})
+            name {self.delimiters[0]} %(value)s
+            key{self.delimiters[1]} |%(name)s|
+            getdefault{self.delimiters[1]} |%(default)s|
+        """, defaults={"default": "<default>"})
         L = list(cf.items("section", vars={'value': 'value'}))
         L.sort()
         self.assertEqual(L, expected)
@@ -858,14 +864,14 @@ boolean {0[0]} NO
             cf.items("no such section")
 
     def test_popitem(self):
-        cf = self.fromstring("""
+        cf = self.fromstring(f"""
             [section1]
-            name1 {0[0]} value1
+            name1 {self.delimiters[0]} value1
             [section2]
-            name2 {0[0]} value2
+            name2 {self.delimiters[0]} value2
             [section3]
-            name3 {0[0]} value3
-        """.format(self.delimiters), defaults={"default": "<default>"})
+            name3 {self.delimiters[0]} value3
+        """, defaults={"default": "<default>"})
         self.assertEqual(cf.popitem()[0], 'section1')
         self.assertEqual(cf.popitem()[0], 'section2')
         self.assertEqual(cf.popitem()[0], 'section3')
@@ -885,14 +891,14 @@ boolean {0[0]} NO
         self.assertEqual(set(cf[self.default_section].keys()), {'foo'})
 
     def test_setitem(self):
-        cf = self.fromstring("""
+        cf = self.fromstring(f"""
             [section1]
-            name1 {0[0]} value1
+            name1 {self.delimiters[0]} value1
             [section2]
-            name2 {0[0]} value2
+            name2 {self.delimiters[0]} value2
             [section3]
-            name3 {0[0]} value3
-        """.format(self.delimiters), defaults={"nameD": "valueD"})
+            name3 {self.delimiters[0]} value3
+        """, defaults={"nameD": "valueD"})
         self.assertEqual(set(cf['section1'].keys()), {'name1', 'named'})
         self.assertEqual(set(cf['section2'].keys()), {'name2', 'named'})
         self.assertEqual(set(cf['section3'].keys()), {'name3', 'named'})
@@ -926,10 +932,10 @@ boolean {0[0]} NO
         if self.allow_no_value:
             self.skipTest('if no_value is allowed, ParsingError is not raised')
 
-        invalid = textwrap.dedent("""\
+        invalid = textwrap.dedent(f"""\
             [DEFAULT]
-            test {0} test
-            invalid""".format(self.delimiters[0])
+            test {self.delimiters[0]} test
+            invalid"""
         )
         cf = self.newconfig()
         with self.assertRaises(configparser.ParsingError):
@@ -979,18 +985,17 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
     def test_safe_interpolation(self):
         # See https://bugs.python.org/issue511737
         cf = self.fromstring("[section]\n"
-                             "option1{eq}xxx\n"
-                             "option2{eq}%(option1)s/xxx\n"
-                             "ok{eq}%(option1)s/%%s\n"
-                             "not_ok{eq}%(option2)s/%%s".format(
-                                 eq=self.delimiters[0]))
+                             f"option1{self.delimiters[0]}xxx\n"
+                             f"option2{self.delimiters[0]}%(option1)s/xxx\n"
+                             f"ok{self.delimiters[0]}%(option1)s/%%s\n"
+                             f"not_ok{self.delimiters[0]}%(option2)s/%%s")
         self.assertEqual(cf.get("section", "ok"), "xxx/%s")
         if self.interpolation == configparser._UNSET:
             self.assertEqual(cf.get("section", "not_ok"), "xxx/xxx/%s")
 
     def test_set_malformatted_interpolation(self):
         cf = self.fromstring("[sect]\n"
-                             "option1{eq}foo\n".format(eq=self.delimiters[0]))
+                             f"option1{self.delimiters[0]}foo\n")
 
         self.assertEqual(cf.get('sect', "option1"), "foo")
 
@@ -1006,7 +1011,7 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
 
     def test_set_nonstring_types(self):
         cf = self.fromstring("[sect]\n"
-                             "option1{eq}foo\n".format(eq=self.delimiters[0]))
+                             f"option1{self.delimiters[0]}foo\n")
         # Check that we get a TypeError when setting non-string values
         # in an existing section:
         self.assertRaises(TypeError, cf.set, "sect", "option1", 1)
@@ -1070,9 +1075,8 @@ class ConfigParserTestCaseNoInterpolation(BasicTestCase, unittest.TestCase):
 class ConfigParserTestCaseInvalidInterpolationType(unittest.TestCase):
     def test_error_on_wrong_type_for_interpolation(self):
         for value in [configparser.ExtendedInterpolation,  42,  "a string"]:
-            with self.subTest(value=value):
-                with self.assertRaises(TypeError):
-                    configparser.ConfigParser(interpolation=value)
+            with self.subTest(value=value), self.assertRaises(TypeError):
+                configparser.ConfigParser(interpolation=value)
 
 
 class ConfigParserTestCaseNonStandardDelimiters(ConfigParserTestCase):
@@ -1094,10 +1098,10 @@ class MultilineValuesTestCase(BasicTestCase, unittest.TestCase):
     def setUp(self):
         cf = self.newconfig()
         for i in range(100):
-            s = 'section{}'.format(i)
+            s = f'section{i}'
             cf.add_section(s)
             for j in range(10):
-                cf.set(s, 'lovely_spam{}'.format(j), self.wonderful_spam)
+                cf.set(s, f'lovely_spam{j}', self.wonderful_spam)
         with open(os_helper.TESTFN, 'w', encoding="utf-8") as f:
             cf.write(f)
 
@@ -1409,8 +1413,8 @@ class RawConfigParserNoValueAndExtendedInterpolationTest(
 
 class ConfigParserTestCaseTrickyFile(CfgParserTestCaseClass, unittest.TestCase):
     config_class = configparser.ConfigParser
-    delimiters = {'='}
-    comment_prefixes = {'#'}
+    delimiters: ClassVar[set[str]] = {'='}
+    comment_prefixes: ClassVar[set[str]] = {'#'}
     allow_no_value = True
 
     def test_cfgparser_dot_3(self):
@@ -1419,8 +1423,8 @@ class ConfigParserTestCaseTrickyFile(CfgParserTestCaseClass, unittest.TestCase):
         self.assertEqual(len(cf.read(tricky, encoding='utf-8')), 1)
         self.assertEqual(cf.sections(), ['strange',
                                          'corruption',
-                                         'yeah, sections can be '
-                                         'indented as well',
+                                         ('yeah, sections can be '
+                                          'indented as well'),
                                          'another one!',
                                          'no values here',
                                          'tricky interpolation',
@@ -1694,7 +1698,7 @@ class CoverageOneHundredTestCase(unittest.TestCase):
         self.assertEqual(error.section, 'section')
 
     def test_parsing_error(self):
-        with self.assertRaises(TypeError) as cm:
+        with self.assertRaises(TypeError):
             configparser.ParsingError()
         error = configparser.ParsingError(source='source')
         self.assertEqual(error.source, 'source')
@@ -2221,7 +2225,8 @@ class SectionlessTestCase(unittest.TestCase):
         c = 3
         """)
 
-        self.assertEqual(set([configparser.UNNAMED_SECTION, 'sect1']), set(cfg1.sections()))
+        self.assertEqual({configparser.UNNAMED_SECTION, 'sect1'},
+                         set(cfg1.sections()))
         self.assertEqual('1', cfg1[configparser.UNNAMED_SECTION]['a'])
         self.assertEqual('2', cfg1[configparser.UNNAMED_SECTION]['b'])
         self.assertEqual('3', cfg1['sect1']['c'])
@@ -2343,7 +2348,8 @@ class ReDoSTestCase(unittest.TestCase):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        support.check__all__(self, configparser, not_exported={"Error"})
+        support.check__all__(self, configparser,
+                             not_exported={"Error", "TYPE_CHECKING"})
 
 
 if __name__ == '__main__':
