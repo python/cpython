@@ -17,7 +17,7 @@ from typing import Final
 from libclinic.converter import CConverter
 
 
-@dc.dataclass(frozen=True, slots=True)
+@dc.dataclass(frozen=True, slots=True, kw_only=True)
 class SlotSpec:
     # The special method name, e.g. '__next__'.
     name: str
@@ -48,9 +48,11 @@ class SlotSpec:
 # listed here must not be in dsl_parser.unsupported_special_methods.
 SLOTS: Final[dict[str, tuple[SlotSpec, ...]]] = {
     '__next__': (
-        SlotSpec('__next__', 'tp_iternext', 'PyObject *', 'object'),
+        SlotSpec(name='__next__', c_slot='tp_iternext',
+                 return_type='PyObject *', return_converter='object'),
     ),
     '__len__': (
-        SlotSpec('__len__', 'sq_length', 'Py_ssize_t', 'Py_ssize_t'),
+        SlotSpec(name='__len__', c_slot='sq_length',
+                 return_type='Py_ssize_t', return_converter='Py_ssize_t'),
     ),
 }

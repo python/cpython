@@ -860,9 +860,15 @@ class ClinicWholeFileTest(TestCase):
         # Slots which take arguments or return something else than an
         # object are not supported yet; check the machinery with them.
         slots = {
-            '__contains__': (SlotSpec('__contains__', 'sq_contains', 'int',
-                                      'int', (object_converter,)),),
-            '__bool__': (SlotSpec('__bool__', 'nb_bool', 'int', 'int'),),
+            '__contains__': (
+                SlotSpec(name='__contains__', c_slot='sq_contains',
+                         return_type='int', return_converter='int',
+                         parameters=(object_converter,)),
+            ),
+            '__bool__': (
+                SlotSpec(name='__bool__', c_slot='nb_bool',
+                         return_type='int', return_converter='int'),
+            ),
         }
         block = """
             /*[clinic input]
@@ -3361,10 +3367,12 @@ class ClinicParserTest(TestCase):
     def test_slot_parameters(self):
         # __getitem__ is not supported yet: the parameters select the slot.
         slots = (
-            SlotSpec('__getitem__', 'sq_item', 'PyObject *', 'object',
-                     (Py_ssize_t_converter,)),
-            SlotSpec('__getitem__', 'mp_subscript', 'PyObject *', 'object',
-                     (object_converter,)),
+            SlotSpec(name='__getitem__', c_slot='sq_item',
+                     return_type='PyObject *', return_converter='object',
+                     parameters=(Py_ssize_t_converter,)),
+            SlotSpec(name='__getitem__', c_slot='mp_subscript',
+                     return_type='PyObject *', return_converter='object',
+                     parameters=(object_converter,)),
         )
         block = """
             module foo
@@ -3390,10 +3398,12 @@ class ClinicParserTest(TestCase):
         # __setattr__ is not planned to be supported; its two slots make
         # the error message list the alternatives.
         slots = (
-            SlotSpec('__setattr__', 'tp_setattro', 'int', 'int',
-                     (object_converter, object_converter)),
-            SlotSpec('__setattr__', 'tp_setattr', 'int', 'int',
-                     (str_converter, object_converter)),
+            SlotSpec(name='__setattr__', c_slot='tp_setattro',
+                     return_type='int', return_converter='int',
+                     parameters=(object_converter, object_converter)),
+            SlotSpec(name='__setattr__', c_slot='tp_setattr',
+                     return_type='int', return_converter='int',
+                     parameters=(str_converter, object_converter)),
         )
         errors = [
             ("Foo.__setattr__",
