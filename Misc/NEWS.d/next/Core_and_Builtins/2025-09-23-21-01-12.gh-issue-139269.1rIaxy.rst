@@ -1,1 +1,0 @@
-Fix undefined behavior when using unaligned store in JIT's ``patch_*`` functions.

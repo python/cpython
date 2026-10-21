@@ -161,6 +161,7 @@ struct ast_state {
     PyObject *__module__;
     PyObject *_attributes;
     PyObject *_fields;
+    PyObject *abstract_types;
     PyObject *alias_type;
     PyObject *annotation;
     PyObject *arg;
@@ -205,6 +206,7 @@ struct ast_state {
     PyObject *id;
     PyObject *ifs;
     PyObject *is_async;
+    PyObject *is_lazy;
     PyObject *items;
     PyObject *iter;
     PyObject *key;

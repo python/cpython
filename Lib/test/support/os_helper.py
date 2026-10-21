@@ -1,6 +1,7 @@
 import collections.abc
 import contextlib
 import errno
+import functools
 import logging
 import os
 import re
@@ -12,6 +13,8 @@ import unittest
 import warnings
 
 from test import support
+if support.MS_WINDOWS:
+    import _winapi
 
 
 # Filename used for testing
@@ -433,7 +436,10 @@ if sys.platform.startswith("win"):
                           file=sys.__stderr__)
                     mode = 0
                 if stat.S_ISDIR(mode):
-                    _waitfor(_rmtree_inner, fullname, waitall=True)
+                    # Do not follow junctions, which os.lstat() reports
+                    # as directories.
+                    if not os.path.isjunction(fullname):
+                        _waitfor(_rmtree_inner, fullname, waitall=True)
                     _force_run(fullname, os.rmdir, fullname)
                 else:
                     _force_run(fullname, os.unlink, fullname)
@@ -467,12 +473,23 @@ else:
 
         def _rmtree_inner(path):
             from test.support import _force_run
+            # Clear file flags (e.g. UF_IMMUTABLE, UF_NOUNLINK on BSD).
+            if hasattr(os, 'chflags'):
+                try:
+                    os.chflags(path, 0)
+                except OSError:
+                    pass
             for name in _force_run(path, os.listdir, path):
                 fullname = os.path.join(path, name)
                 try:
                     mode = os.lstat(fullname).st_mode
                 except OSError:
                     mode = 0
+                if hasattr(os, 'lchflags'):
+                    try:
+                        os.lchflags(fullname, 0)
+                    except OSError:
+                        pass
                 if stat.S_ISDIR(mode):
                     _rmtree_inner(fullname)
                     _force_run(path, os.rmdir, fullname)
@@ -795,38 +812,116 @@ class EnvironmentVarGuard(collections.abc.MutableMapping):
         os.environ = self._environ
 
 
+def without_source_date_epoch(fxn):
+    """Runs function with SOURCE_DATE_EPOCH unset."""
+    @functools.wraps(fxn)
+    def wrapper(*args, **kwargs):
+        with EnvironmentVarGuard() as env:
+            env.unset('SOURCE_DATE_EPOCH')
+            return fxn(*args, **kwargs)
+    return wrapper
+
+
+_MISSING = sentinel("MISSING")
+
+def with_source_date_epoch(fxn=_MISSING, *, epoch=123456789):
+    """Runs function with SOURCE_DATE_EPOCH set to *epoch*."""
+    if fxn is _MISSING:
+        return functools.partial(with_source_date_epoch, epoch=epoch)
+
+    @functools.wraps(fxn)
+    def wrapper(*args, **kwargs):
+        with EnvironmentVarGuard() as env:
+            env['SOURCE_DATE_EPOCH'] = str(epoch)
+            return fxn(*args, **kwargs)
+    return wrapper
+
+
+# Run tests with SOURCE_DATE_EPOCH set or unset explicitly.
+class SourceDateEpochTestMeta(type(unittest.TestCase)):
+    def __new__(mcls, name, bases, dct, *, source_date_epoch):
+        cls = super().__new__(mcls, name, bases, dct)
+
+        for attr in dir(cls):
+            if attr.startswith('test_'):
+                meth = getattr(cls, attr)
+                if source_date_epoch:
+                    wrapper = with_source_date_epoch(meth)
+                else:
+                    wrapper = without_source_date_epoch(meth)
+                setattr(cls, attr, wrapper)
+
+        return cls
+
+
 try:
     if support.MS_WINDOWS:
-        import ctypes
+        import ctypes.util
         kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
-
-        ERROR_FILE_NOT_FOUND = 2
-        DDD_REMOVE_DEFINITION = 2
-        DDD_EXACT_MATCH_ON_REMOVE = 4
-        DDD_NO_BROADCAST_SYSTEM = 8
     else:
         raise AttributeError
 except (ImportError, AttributeError):
     def subst_drive(path):
         raise unittest.SkipTest('ctypes or kernel32 is not available')
+
+    def handle_count():
+        return 0
 else:
+    ERROR_FILE_NOT_FOUND = 2
+    DDD_REMOVE_DEFINITION = 2
+    DDD_EXACT_MATCH_ON_REMOVE = 4
+    DDD_NO_BROADCAST_SYSTEM = 8
+
+    @ctypes.util.wrap_dll_function(kernel32)
+    def DefineDosDeviceW(
+        dwFlags: ctypes.wintypes.DWORD,
+        lpDeviceName: ctypes.c_wchar_p,
+        lpTargetPath: ctypes.c_wchar_p,
+    ) -> ctypes.wintypes.BOOL:
+        pass
+
+    @ctypes.util.wrap_dll_function(kernel32)
+    def QueryDosDeviceW(
+        lpDeviceName: ctypes.c_wchar_p,
+        lpTargetPath: ctypes.c_wchar_p,
+        ucchMax: ctypes.wintypes.DWORD,
+    ) -> ctypes.wintypes.DWORD:
+        pass
+
     @contextlib.contextmanager
     def subst_drive(path):
         """Temporarily yield a substitute drive for a given path."""
         for c in reversed(string.ascii_uppercase):
             drive = f'{c}:'
-            if (not kernel32.QueryDosDeviceW(drive, None, 0) and
+            if (not QueryDosDeviceW(drive, None, 0) and
                     ctypes.get_last_error() == ERROR_FILE_NOT_FOUND):
                 break
         else:
             raise unittest.SkipTest('no available logical drive')
-        if not kernel32.DefineDosDeviceW(
-                DDD_NO_BROADCAST_SYSTEM, drive, path):
+
+        if not DefineDosDeviceW(DDD_NO_BROADCAST_SYSTEM, drive, path):
             raise ctypes.WinError(ctypes.get_last_error())
+
         try:
             yield drive
         finally:
-            if not kernel32.DefineDosDeviceW(
-                    DDD_REMOVE_DEFINITION | DDD_EXACT_MATCH_ON_REMOVE,
-                    drive, path):
+            flags = DDD_REMOVE_DEFINITION | DDD_EXACT_MATCH_ON_REMOVE
+            if not DefineDosDeviceW(flags, drive, path):
                 raise ctypes.WinError(ctypes.get_last_error())
+
+    @ctypes.util.wrap_dll_function(kernel32)
+    def GetProcessHandleCount(khProcess: ctypes.wintypes.HANDLE,
+                              pdwHandleCount: ctypes.wintypes.LPDWORD) -> ctypes.wintypes.BOOL:
+        pass
+
+    del kernel32
+
+    def handle_count():
+        # Pseudo-handle that doesn't need to be closed
+        hproc = _winapi.GetCurrentProcess()
+
+        handle_count = ctypes.wintypes.DWORD()
+        if not GetProcessHandleCount(hproc, ctypes.byref(handle_count)):
+            raise ctypes.WinError(ctypes.get_last_error())
+
+        return handle_count.value

@@ -1,2 +1,0 @@
-Convert ``_json`` module to use Argument Clinic.
-Patched by Yoonho Hann.

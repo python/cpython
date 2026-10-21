@@ -1,1 +1,0 @@
-Improve error message when trying to iterate a Tk widget, image or font.

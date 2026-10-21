@@ -6,7 +6,7 @@
 #include "pycore_tstate.h"
 #include "pycore_initconfig.h"      // _PyStatus_OK()
 #include "pycore_uop_metadata.h"    // _PyOpcode_uop_name
-#include "pycore_uop_ids.h"         // MAX_UOP_ID
+#include "pycore_uop_ids.h"         // MAX_UOP_REGS_ID
 #include "pycore_pystate.h"         // _PyThreadState_GET()
 #include "pycore_runtime.h"         // NUM_GENERATIONS
 
@@ -33,8 +33,8 @@ _PyStats_GetLocal(void)
 #endif
 
 
-#if PYSTATS_MAX_UOP_ID < MAX_UOP_ID
-#error "Not enough space allocated for pystats. Increase PYSTATS_MAX_UOP_ID to at least MAX_UOP_ID"
+#if PYSTATS_MAX_UOP_ID < MAX_UOP_REGS_ID
+#error "Not enough space allocated for pystats. Increase PYSTATS_MAX_UOP_ID to at least MAX_UOP_REGS_ID"
 #endif
 
 #define ADD_STAT_TO_DICT(res, field) \
@@ -230,9 +230,11 @@ print_object_stats(FILE *out, ObjectStats *stats)
     fprintf(out, "Object materialize dict (str subclass): %" PRIu64 "\n", stats->dict_materialized_str_subclass);
     fprintf(out, "Object method cache hits: %" PRIu64 "\n", stats->type_cache_hits);
     fprintf(out, "Object method cache misses: %" PRIu64 "\n", stats->type_cache_misses);
-    fprintf(out, "Object method cache collisions: %" PRIu64 "\n", stats->type_cache_collisions);
+    fprintf(out, "Object method cache too big: %" PRIu64 "\n", stats->type_cache_too_big);
     fprintf(out, "Object method cache dunder hits: %" PRIu64 "\n", stats->type_cache_dunder_hits);
     fprintf(out, "Object method cache dunder misses: %" PRIu64 "\n", stats->type_cache_dunder_misses);
+    fprintf(out, "Object method cache invalidations: %" PRIu64 "\n", stats->type_cache_invalidations);
+    fprintf(out, "Object method cache resizes: %" PRIu64 "\n", stats->type_cache_resizes);
 }
 
 static void
@@ -274,6 +276,7 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
     fprintf(out, "Optimization low confidence: %" PRIu64 "\n", stats->low_confidence);
     fprintf(out, "Optimization unknown callee: %" PRIu64 "\n", stats->unknown_callee);
     fprintf(out, "Executors invalidated: %" PRIu64 "\n", stats->executors_invalidated);
+    fprintf(out, "Optimization fitness terminated: %" PRIu64 "\n", stats->fitness_terminated_traces);
 
     print_histogram(out, "Trace length", stats->trace_length_hist);
     print_histogram(out, "Trace run length", stats->trace_run_length_hist);
@@ -285,7 +288,7 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
             stats->optimizer_failure_reason_no_memory);
     fprintf(out, "Optimizer remove globals builtins changed: %" PRIu64 "\n", stats->remove_globals_builtins_changed);
     fprintf(out, "Optimizer remove globals incorrect keys: %" PRIu64 "\n", stats->remove_globals_incorrect_keys);
-    for (int i = 0; i <= MAX_UOP_ID; i++) {
+    for (int i = 0; i <= MAX_UOP_REGS_ID; i++) {
         if (stats->opcode[i].execution_count) {
             fprintf(out, "uops[%s].execution_count : %" PRIu64 "\n", _PyUOpName(i), stats->opcode[i].execution_count);
         }
@@ -304,15 +307,15 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
         }
     }
 
-    for (int i = 1; i <= MAX_UOP_ID; i++){
-        for (int j = 1; j <= MAX_UOP_ID; j++) {
+    for (int i = 1; i <= MAX_UOP_REGS_ID; i++){
+        for (int j = 1; j <= MAX_UOP_REGS_ID; j++) {
             if (stats->opcode[i].pair_count[j]) {
                 fprintf(out, "uop[%s].pair_count[%s] : %" PRIu64 "\n",
                         _PyOpcode_uop_name[i], _PyOpcode_uop_name[j], stats->opcode[i].pair_count[j]);
             }
         }
     }
-    for (int i = 0; i < MAX_UOP_ID; i++) {
+    for (int i = 0; i < MAX_UOP_REGS_ID; i++) {
         if (stats->error_in_opcode[i]) {
             fprintf(
                 out,
@@ -438,7 +441,9 @@ merge_object_stats(ObjectStats *dest, const ObjectStats *src)
     dest->type_cache_misses += src->type_cache_misses;
     dest->type_cache_dunder_hits += src->type_cache_dunder_hits;
     dest->type_cache_dunder_misses += src->type_cache_dunder_misses;
-    dest->type_cache_collisions += src->type_cache_collisions;
+    dest->type_cache_too_big += src->type_cache_too_big;
+    dest->type_cache_invalidations += src->type_cache_invalidations;
+    dest->type_cache_resizes += src->type_cache_resizes;
     dest->object_visits += src->object_visits;
 }
 

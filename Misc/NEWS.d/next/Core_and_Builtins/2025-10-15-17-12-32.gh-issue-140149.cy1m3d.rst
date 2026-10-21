@@ -1,2 +1,0 @@
-Speed up parsing bytes literals concatenation by using PyBytesWriter API and
-a single memory allocation (about 3x faster).

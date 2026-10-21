@@ -12,6 +12,7 @@
 
 // Blocks output buffer wrappers
 #include "pycore_blocks_output_buffer.h"
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_STORE_CHAR_RELAXED
 
 #if OUTPUT_BUFFER_MAX_BLOCK_SIZE > UINT32_MAX
     #error "The maximum block size accepted by libbzip2 is UINT32_MAX."
@@ -107,6 +108,7 @@ typedef struct {
 typedef struct {
     PyObject_HEAD
     bz_stream bzs;
+    int bzerror;
     char eof;           /* Py_T_BOOL expects a char */
     PyObject *unused_data;
     char needs_input;
@@ -434,10 +436,13 @@ decompress_buf(BZ2Decompressor *d, Py_ssize_t max_length)
 
         d->bzs_avail_in_real += bzs->avail_in;
 
-        if (catch_bz2_error(bzret))
+        if (catch_bz2_error(bzret)) {
+            d->bzerror = bzret;
+            FT_ATOMIC_STORE_CHAR_RELAXED(d->needs_input, 0);
             goto error;
+        }
         if (bzret == BZ_STREAM_END) {
-            d->eof = 1;
+            FT_ATOMIC_STORE_CHAR_RELAXED(d->eof, 1);
             break;
         } else if (d->bzs_avail_in_real == 0) {
             break;
@@ -521,20 +526,22 @@ decompress(BZ2Decompressor *d, char *data, size_t len, Py_ssize_t max_length)
     }
 
     if (d->eof) {
-        d->needs_input = 0;
+        FT_ATOMIC_STORE_CHAR_RELAXED(d->needs_input, 0);
         if (d->bzs_avail_in_real > 0) {
-            Py_XSETREF(d->unused_data,
-                      PyBytes_FromStringAndSize(bzs->next_in, d->bzs_avail_in_real));
-            if (d->unused_data == NULL)
+            PyObject *unused_data = PyBytes_FromStringAndSize(
+                bzs->next_in, d->bzs_avail_in_real);
+            if (unused_data == NULL) {
                 goto error;
+            }
+            Py_XSETREF(d->unused_data, unused_data);
         }
     }
     else if (d->bzs_avail_in_real == 0) {
         bzs->next_in = NULL;
-        d->needs_input = 1;
+        FT_ATOMIC_STORE_CHAR_RELAXED(d->needs_input, 1);
     }
     else {
-        d->needs_input = 0;
+        FT_ATOMIC_STORE_CHAR_RELAXED(d->needs_input, 0);
 
         /* If we did not use the input buffer, we now have
            to copy the tail from the caller's buffer into the
@@ -568,12 +575,12 @@ decompress(BZ2Decompressor *d, char *data, size_t len, Py_ssize_t max_length)
     return result;
 
 error:
+    bzs->next_in = NULL;
     Py_XDECREF(result);
     return NULL;
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 _bz2.BZ2Decompressor.decompress
 
     data: Py_buffer
@@ -581,32 +588,40 @@ _bz2.BZ2Decompressor.decompress
 
 Decompress *data*, returning uncompressed data as bytes.
 
-If *max_length* is nonnegative, returns at most *max_length* bytes of
-decompressed data. If this limit is reached and further output can be
-produced, *self.needs_input* will be set to ``False``. In this case, the next
-call to *decompress()* may provide *data* as b'' to obtain more of the output.
+If *max_length* is nonnegative, returns at most *max_length* bytes
+of decompressed data.  If this limit is reached and further output
+can be produced, *self.needs_input* will be set to ``False``.  In
+this case, the next call to *decompress()* may provide *data* as b''
+to obtain more of the output.
 
-If all of the input data was decompressed and returned (either because this
-was less than *max_length* bytes, or because *max_length* was negative),
-*self.needs_input* will be set to True.
+If all of the input data was decompressed and returned (either
+because this was less than *max_length* bytes, or because
+*max_length* was negative), *self.needs_input* will be set to True.
 
-Attempting to decompress data after the end of stream is reached raises an
-EOFError.  Any data found after the end of the stream is ignored and saved in
-the unused_data attribute.
+Attempting to decompress data after the end of stream is reached
+raises an EOFError.  Any data found after the end of the stream is
+ignored and saved in the unused_data attribute.
 [clinic start generated code]*/
 
 static PyObject *
 _bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data,
                                      Py_ssize_t max_length)
-/*[clinic end generated code: output=23e41045deb240a3 input=3703e78f91757655]*/
+/*[clinic end generated code: output=23e41045deb240a3 input=7f68faa9ff7a1b51]*/
 {
     PyObject *result = NULL;
 
     PyMutex_Lock(&self->mutex);
-    if (self->eof)
+    if (self->eof) {
         PyErr_SetString(PyExc_EOFError, "End of stream already reached");
-    else
+    }
+    else if (self->bzerror) {
+        // Re-entering BZ2_bzDecompress() after an error can write out of bounds.
+        PyErr_SetString(PyExc_ValueError,
+                        "Decompressor is unusable after a previous error");
+    }
+    else {
         result = decompress(self, data->buf, data->len, max_length);
+    }
     PyMutex_Unlock(&self->mutex);
     return result;
 }
@@ -634,6 +649,7 @@ _bz2_BZ2Decompressor_impl(PyTypeObject *type)
     }
 
     self->mutex = (PyMutex){0};
+    self->bzerror = 0;
     self->needs_input = 1;
     self->bzs_avail_in_real = 0;
     self->input_buffer = NULL;
@@ -682,11 +698,29 @@ PyDoc_STRVAR(BZ2Decompressor_unused_data__doc__,
 PyDoc_STRVAR(BZ2Decompressor_needs_input_doc,
 "True if more input is needed before more decompressed data can be produced.");
 
+static PyObject *
+BZ2Decompressor_unused_data_get(PyObject *op, void *Py_UNUSED(ignored))
+{
+    BZ2Decompressor *self = _BZ2Decompressor_CAST(op);
+    if (!FT_ATOMIC_LOAD_CHAR_RELAXED(self->eof)) {
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    }
+    PyMutex_Lock(&self->mutex);
+    assert(self->unused_data != NULL);
+    PyObject *result = Py_NewRef(self->unused_data);
+    PyMutex_Unlock(&self->mutex);
+    return result;
+}
+
+static PyGetSetDef BZ2Decompressor_getset[] = {
+    {"unused_data", BZ2Decompressor_unused_data_get, NULL,
+     BZ2Decompressor_unused_data__doc__},
+    {NULL},
+};
+
 static PyMemberDef BZ2Decompressor_members[] = {
     {"eof", Py_T_BOOL, offsetof(BZ2Decompressor, eof),
      Py_READONLY, BZ2Decompressor_eof__doc__},
-    {"unused_data", Py_T_OBJECT_EX, offsetof(BZ2Decompressor, unused_data),
-     Py_READONLY, BZ2Decompressor_unused_data__doc__},
     {"needs_input", Py_T_BOOL, offsetof(BZ2Decompressor, needs_input), Py_READONLY,
      BZ2Decompressor_needs_input_doc},
     {NULL}
@@ -697,6 +731,7 @@ static PyType_Slot bz2_decompressor_type_slots[] = {
     {Py_tp_methods, BZ2Decompressor_methods},
     {Py_tp_doc, (char *)_bz2_BZ2Decompressor__doc__},
     {Py_tp_members, BZ2Decompressor_members},
+    {Py_tp_getset, BZ2Decompressor_getset},
     {Py_tp_new, _bz2_BZ2Decompressor},
     {0, 0}
 };
@@ -711,6 +746,61 @@ static PyType_Spec bz2_decompressor_type_spec = {
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = bz2_decompressor_type_slots,
 };
+
+
+PyDoc_STRVAR(bzlib_version_info__doc__,
+"_bz2.bzlib_version_info\n\
+\n\
+Bzlib version information as a named tuple.");
+
+static PyStructSequence_Field bzlib_version_info_fields[] = {
+    {"major", "Major release number"},
+    {"minor", "Minor release number"},
+    {"patch", "Patch release number"},
+    {0}
+};
+
+static PyStructSequence_Desc bzlib_version_info_desc = {
+    "_bz2.bzlib_version_info",        /* name */
+    bzlib_version_info__doc__,        /* doc */
+    bzlib_version_info_fields,        /* fields */
+    3
+};
+
+/* BZ2_bzlibVersion() returns a string with a trailing suffix, for example
+   "1.0.8, 13-Jul-2019" for bzip2 or "1.1.0-libbz2-rs-sys-0.2.5" for
+   libbz2-rs.  sscanf() stops at the suffix; components which were not
+   parsed are left zero.  This is deliberate -- a zero is more useful
+   here than a hard error. */
+static PyObject *
+make_bzlib_version_info(PyTypeObject *type, const char *string)
+{
+    PyObject *version;
+    int pos = 0;
+    unsigned int major = 0, minor = 0, patch = 0;
+
+    sscanf(string, "%u.%u.%u", &major, &minor, &patch);
+
+    version = PyStructSequence_New(type);
+    if (version == NULL) {
+        return NULL;
+    }
+
+#define SetIntItem(VALUE) \
+    PyStructSequence_SET_ITEM(version, pos++, PyLong_FromUnsignedLong(VALUE)); \
+    if (PyErr_Occurred()) { \
+        Py_DECREF(version); \
+        return NULL; \
+    }
+
+    SetIntItem(major)
+    SetIntItem(minor)
+    SetIntItem(patch)
+#undef SetIntItem
+
+    return version;
+}
+
 
 /* Module initialization. */
 
@@ -736,6 +826,24 @@ _bz2_exec(PyObject *module)
         return -1;
     }
 
+    /* bzlib_version */
+    if (PyModule_Add(module, "bzlib_version",
+            PyUnicode_FromString(BZ2_bzlibVersion())) < 0)
+    {
+        return -1;
+    }
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&bzlib_version_info_desc);
+    if (version_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(module, "bzlib_version_info",
+            make_bzlib_version_info(version_type, BZ2_bzlibVersion())) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    Py_DECREF(version_type);
     return 0;
 }
 
@@ -764,6 +872,7 @@ _bz2_free(void *module)
 }
 
 static struct PyModuleDef_Slot _bz2_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _bz2_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

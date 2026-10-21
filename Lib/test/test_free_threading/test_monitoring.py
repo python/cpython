@@ -1,6 +1,7 @@
 """Tests monitoring, sys.settrace, and sys.setprofile in a multi-threaded
 environment to verify things are thread-safe in a free-threaded build"""
 
+import dis
 import sys
 import threading
 import time
@@ -35,10 +36,10 @@ class InstrumentationMultiThreadedMixin:
             return n
         return self.work(n - 1, funcs) + self.work(n - 2, funcs)
 
-    def start_work(self, n, funcs):
+    def start_work(self, n, funcs, barrier):
         # With the GIL builds we need to make sure that the hooks have
         # a chance to run as it's possible to run w/o releasing the GIL.
-        time.sleep(0.1)
+        barrier.wait()
         self.work(n, funcs)
 
     def after_test(self):
@@ -53,14 +54,16 @@ class InstrumentationMultiThreadedMixin:
             exec("def f(): pass", x)
             funcs.append(x["f"])
 
+        barrier = Barrier(self.thread_count + 1)
         threads = []
         for i in range(self.thread_count):
             # Each thread gets a copy of the func list to avoid contention
-            t = Thread(target=self.start_work, args=(self.fib, list(funcs)))
+            t = Thread(target=self.start_work, args=(self.fib, list(funcs), barrier))
             t.start()
             threads.append(t)
 
         self.after_threads()
+        barrier.wait()
 
         while True:
             any_alive = False
@@ -73,6 +76,9 @@ class InstrumentationMultiThreadedMixin:
                 break
 
             self.during_threads()
+            # Sleep to avoid setting monitoring events too rapidly and
+            # overflowing the global version counter
+            time.sleep(0.0001)
 
         self.after_test()
 
@@ -117,7 +123,6 @@ class MonitoringMultiThreaded(
     def setUp(self):
         super().setUp()
         self.set = False
-        self.called = False
         monitoring.register_callback(
             self.tool_id, monitoring.events.LINE, self.callback
         )
@@ -127,10 +132,7 @@ class MonitoringMultiThreaded(
         super().tearDown()
 
     def callback(self, *args):
-        self.called = True
-
-    def after_test(self):
-        self.assertTrue(self.called)
+        pass
 
     def during_threads(self):
         if self.set:
@@ -148,16 +150,11 @@ class SetTraceMultiThreaded(InstrumentationMultiThreadedMixin, TestCase):
 
     def setUp(self):
         self.set = False
-        self.called = False
-
-    def after_test(self):
-        self.assertTrue(self.called)
 
     def tearDown(self):
         sys.settrace(None)
 
     def trace_func(self, frame, event, arg):
-        self.called = True
         return self.trace_func
 
     def during_threads(self):
@@ -174,16 +171,11 @@ class SetProfileMultiThreaded(InstrumentationMultiThreadedMixin, TestCase):
 
     def setUp(self):
         self.set = False
-        self.called = False
-
-    def after_test(self):
-        self.assertTrue(self.called)
 
     def tearDown(self):
         sys.setprofile(None)
 
     def trace_func(self, frame, event, arg):
-        self.called = True
         return self.trace_func
 
     def during_threads(self):
@@ -200,16 +192,11 @@ class SetProfileAllThreadsMultiThreaded(InstrumentationMultiThreadedMixin, TestC
 
     def setUp(self):
         self.set = False
-        self.called = False
-
-    def after_test(self):
-        self.assertTrue(self.called)
 
     def tearDown(self):
         threading.setprofile_all_threads(None)
 
     def trace_func(self, frame, event, arg):
-        self.called = True
         return self.trace_func
 
     def during_threads(self):
@@ -265,6 +252,62 @@ class TraceBuf:
 
 @threading_helper.requires_working_threading()
 class MonitoringMisc(MonitoringTestMixin, TestCase):
+    def test_disable_line_keeps_instruction_events(self):
+        def func(x):
+            a = x + 1
+            b = a * 2
+            return b
+
+        code = func.__code__
+        expected = [instr.offset for instr in dis.get_instructions(func)
+                    if instr.opname != "RESUME"]
+        # Two threads, each with two lists of instruction offsets (one per call).
+        # Check that disabling LINE preserves INSTRUCTION events in every
+        # thread-local bytecode copy, including on subsequent calls.
+        records = [[[], []] for _ in range(2)]
+        local = threading.local()
+        ready = Barrier(len(records) + 1)
+        start = threading.Event()
+
+        def worker(calls):
+            # Create each thread's bytecode copy before enabling monitoring.
+            func(1)
+            ready.wait()
+            start.wait()
+            for instructions in calls:
+                local.instructions = instructions
+                func(1)
+
+        def instruction(code, offset):
+            local.instructions.append(offset)
+
+        def line(code, lineno):
+            return monitoring.DISABLE
+
+        threads = [Thread(target=worker, args=(calls,)) for calls in records]
+        try:
+            with threading_helper.start_threads(threads, unlock=start.set):
+                ready.wait()
+                monitoring.register_callback(
+                    self.tool_id, monitoring.events.INSTRUCTION, instruction)
+                monitoring.register_callback(
+                    self.tool_id, monitoring.events.LINE, line)
+                monitoring.set_local_events(
+                    self.tool_id, code,
+                    monitoring.events.INSTRUCTION | monitoring.events.LINE)
+                start.set()
+        finally:
+            monitoring.set_local_events(self.tool_id, code, 0)
+            monitoring.register_callback(
+                self.tool_id, monitoring.events.INSTRUCTION, None)
+            monitoring.register_callback(
+                self.tool_id, monitoring.events.LINE, None)
+            monitoring.restart_events()
+
+        for calls in records:
+            for instructions in calls:
+                self.assertEqual(instructions, expected)
+
     def register_callback(self, barrier):
         barrier.wait()
 

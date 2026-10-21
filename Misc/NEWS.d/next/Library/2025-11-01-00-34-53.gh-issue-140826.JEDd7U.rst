@@ -1,2 +1,0 @@
-Now :class:`!winreg.HKEYType` objects are compared by their underlying Windows
-registry handle value instead of their object identity.

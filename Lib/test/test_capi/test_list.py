@@ -350,6 +350,10 @@ class CAPITest(unittest.TestCase):
         # CRASHES list_extend(NULL, [])
         # CRASHES list_extend([], NULL)
 
+    def test_uninitialized_list_repr(self):
+        lst = _testlimitedcapi.list_new(3)
+        self.assertEqual(repr(lst), '[<NULL>, <NULL>, <NULL>]')
+
 
 if __name__ == "__main__":
     unittest.main()
