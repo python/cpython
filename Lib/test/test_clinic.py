@@ -3372,7 +3372,7 @@ class ClinicParserTest(TestCase):
             ("Foo.__getitem__\n    key: object = None\n    /",
              "The parameters of '__getitem__' cannot have a default value"),
         ]
-        for converter in "Py_ssize_t", "object":
+        for converter in ["Py_ssize_t", "object"]:
             with self.subTest(converter=converter):
                 function = self.parse_function(
                     block.format(converter=converter),

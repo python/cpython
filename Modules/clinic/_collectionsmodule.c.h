@@ -449,6 +449,21 @@ deque_remove(PyObject *deque, PyObject *value)
     return return_value;
 }
 
+static int
+deque_ass_item_impl(dequeobject *deque, Py_ssize_t i, PyObject *v);
+
+static int
+deque_ass_item(PyObject *deque, Py_ssize_t i, PyObject *v)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(deque);
+    return_value = deque_ass_item_impl((dequeobject *)deque, i, v);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(deque___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
@@ -647,4 +662,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4c362ea1fe477edf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=818aa11ff5139a7a input=a9049054013a1b77]*/

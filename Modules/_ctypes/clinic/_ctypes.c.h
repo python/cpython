@@ -777,6 +777,36 @@ Array_subscript(PyObject *myself, PyObject *item)
 }
 
 static int
+Array_ass_item_impl(PyObject *myself, Py_ssize_t index, PyObject *value);
+
+static int
+Array_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(myself);
+    return_value = Array_ass_item_impl(myself, index, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+Array_ass_subscript_impl(PyObject *myself, PyObject *item, PyObject *value);
+
+static int
+Array_ass_subscript(PyObject *myself, PyObject *item, PyObject *value)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(myself);
+    return_value = Array_ass_subscript_impl(myself, item, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
 _ctypes_Simple_value_set_impl(CDataObject *self, PyObject *value);
 
 static int
@@ -849,6 +879,21 @@ Pointer_item(PyObject *myself, Py_ssize_t index)
 
     return return_value;
 }
+
+static int
+Pointer_ass_item_impl(PyObject *myself, Py_ssize_t index, PyObject *value);
+
+static int
+Pointer_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(myself);
+    return_value = Pointer_ass_item_impl(myself, index, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
 #define _CTYPES_CTYPE_TYPE___POINTER_TYPE___GETSETDEF {"__pointer_type__", (getter)_ctypes_CType_Type___pointer_type___get, (setter)_ctypes_CType_Type___pointer_type___set, NULL},
 
 #define _CTYPES_PYCARRAYTYPE_TYPE_RAW_GETSETDEF {"raw", (getter)_ctypes_PyCArrayType_Type_raw_get, (setter)_ctypes_PyCArrayType_Type_raw_set, NULL},
@@ -863,4 +908,4 @@ Pointer_item(PyObject *myself, Py_ssize_t index)
 
 #define _CTYPES_SIMPLE_VALUE_GETSETDEF {"value", (getter)_ctypes_Simple_value_get, (setter)_ctypes_Simple_value_set, NULL},
 
-/*[clinic end generated code: output=a6b5a6ff6c6db097 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8fc24edc31ab60b5 input=a9049054013a1b77]*/
