@@ -1,7 +1,3 @@
-# cpython/descrobject.h
-PyDescr_NAME
-PyDescr_TYPE
-PyWrapperFlag_KEYWORDS
 # Deprecated and removed in 3.16; will not be documented on older versions
 Py_FileSystemDefaultEncodeErrors
 Py_FileSystemDefaultEncoding
