@@ -3,4 +3,4 @@
 # Python versions.
 [targets]
 wasi-sdk = 34
-host-triple = "wasm32-wasip1"
+host-triple = "wasm32-wasip3"
