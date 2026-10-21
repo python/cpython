@@ -451,6 +451,15 @@ class _DecompressorTests:
                         sizes=[], max_lengths=[])
     def test_invalid_input(self, garbage, data, index, byte, sizes,
                            max_lengths):
+        self._check_invalid_input(garbage, data, index, byte, sizes,
+                                  max_lengths)
+
+    def _skip_invalid_blob(self, blob):
+        # Hook for a known bug: a mixin may rule out inputs that crash.
+        return False
+
+    def _check_invalid_input(self, garbage, data, index, byte, sizes,
+                             max_lengths):
         stream = self.backend.compress(data)
         index %= len(stream) + 1
         if index == len(stream):
@@ -458,6 +467,8 @@ class _DecompressorTests:
         else:
             corrupted = stream[:index] + bytes([byte]) + stream[index + 1:]
         for blob in (garbage, corrupted):
+            if self._skip_invalid_blob(blob):
+                continue
             with self.subTest(blob=blob):
                 decomp = self.backend.new_decompressor()
                 try:
@@ -517,6 +528,36 @@ class _ZlibNeedsInputBug:
     )
     def test_needs_input_means_drained(self, data, sizes, max_lengths):
         self._check_needs_input_means_drained(data, sizes, max_lengths)
+
+
+def _zlib_fdict_header(blob):
+    # A valid zlib header whose FDICT flag is set.
+    return (len(blob) >= 2 and blob[0] & 0x0f == 8 and blob[0] >> 4 <= 7
+            and int.from_bytes(blob[:2]) % 31 == 0 and bool(blob[1] & 0x20))
+
+
+class _ZlibNeedsDictBug:
+    # zlib._ZlibDecompressor returns NULL without an exception when inflate
+    # asks for a preset dictionary (gh-160001).  Any zlib-wrapped input whose
+    # header has FDICT set gets there, so random invalid input would hit it,
+    # and in a debug build the missing exception is a fatal C assertion.
+    # test_invalid_input leaves those inputs out; test_fdict_header pins the
+    # bug and can only run in a release build.
+    def _skip_invalid_blob(self, blob):
+        return _zlib_fdict_header(blob)
+
+    @unittest.skipIf(support.Py_DEBUG, "gh-160001 aborts debug builds")
+    @unittest.expectedFailure
+    @hypothesis.given(data=st.binary(max_size=64))
+    @hypothesis.example(data=b"")
+    @hypothesis.example(data=b"\x00\x00\x00\x01\x03\x00")
+    def test_fdict_header(self, data):
+        # zlib.decompressobj raises zlib.error for the same input.
+        stream = b"\x78\xbb" + data
+        with self.assertRaises(zlib.error):
+            zlib.decompressobj().decompress(stream)
+        with self.assertRaises(zlib.error):
+            zlib._ZlibDecompressor().decompress(stream)
 
 
 # liblzma reports an error when two consecutive calls can make no progress,
@@ -608,8 +649,8 @@ class LZMADecompressorTests(_LZMAMaxLengthZeroBug, _DecompressorTests,
 
 
 @support.requires_zlib()
-class ZlibDecompressorTests(_ZlibNeedsInputBug, _DecompressorTests,
-                            unittest.TestCase):
+class ZlibDecompressorTests(_ZlibNeedsInputBug, _ZlibNeedsDictBug,
+                            _DecompressorTests, unittest.TestCase):
     backend = _zlib_backend(15)
 
 
