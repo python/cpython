@@ -1,0 +1,3 @@
+Fix :meth:`wave.Wave_write.setparams` rejecting valid changes from PCM to IEEE
+float when the previously configured sample width is incompatible with the new
+format.
