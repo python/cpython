@@ -804,7 +804,7 @@ jisx0213_encoder(const MultibyteCodec *codec, const Py_UCS4 *data,
 
     case 2: /* second character of unicode pair */
         if (data[1] != 0) { /* Don't consume null char as part of pair */
-            coded = find_pairencmap((ucs2_t)data[0], (ucs2_t)data[1],
+            coded = find_pairencmap((ucs2_t)data[0], data[1],
                                     jisx0213_pair_encmap, JISX0213_ENCPAIRS);
             if (coded != DBCINV) {
                 return coded;
