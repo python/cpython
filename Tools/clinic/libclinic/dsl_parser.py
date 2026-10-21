@@ -72,7 +72,6 @@ __iter__
 __itruediv__
 __ixor__
 __le__
-__len__
 __lshift__
 __lt__
 __matmul__
@@ -99,7 +98,6 @@ __rsub__
 __rtruediv__
 __rxor__
 __setattr__
-__setitem__
 __str__
 __sub__
 __truediv__
@@ -695,7 +693,7 @@ class DSLParser:
             return int_return_converter()
         if self.kind is SLOT:
             assert self.slot is not None
-            return return_converters[self.slot.return_converter]()
+            return self.slot.make_return_converter()
         return CReturnConverter()
 
     def parse_cloned_function(self, names: FunctionNames, existing: str) -> None:
@@ -920,11 +918,6 @@ class DSLParser:
         assert self.function is not None
         if self.function.kind is GETTER:
             fail("@getter methods cannot define parameters")
-        if self.function.kind is SLOT:
-            assert self.function.slot is not None
-            if not self.function.slot.takes_parameters:
-                fail(f"{self.function.name!r} methods cannot define parameters")
-
         self.parameter_continuation = ''
         return self.next(self.state_parameter, line)
 
@@ -1677,19 +1670,12 @@ class DSLParser:
                      line_number=lineno)
 
     def check_slot_parameters(self, func: Function) -> None:
-        """Check that the parameters of a slot method select a C slot."""
-        assert func.slot is not None
-        params = list(func.parameters.values())[1:]
-        for p in params:
+        """Check that the parameters of a slot method fit a C signature."""
+        for p in list(func.parameters.values())[1:]:
             if not p.is_positional_only():
                 fail(f"The parameters of {func.name!r} must be positional-only")
             if p.default is not unspecified:
                 fail(f"The parameters of {func.name!r} cannot have a default value")
-        converters = [p.converter for p in params]
-        if func.slot.c_slot(converters) is None:
-            got = ', '.join(c.dsl_name() for c in converters)
-            fail(f"{func.name!r} must declare "
-                 f"{func.slot.describe_signatures()}; got ({got})")
 
     def do_post_block_processing_cleanup(self, lineno: int) -> None:
         """
