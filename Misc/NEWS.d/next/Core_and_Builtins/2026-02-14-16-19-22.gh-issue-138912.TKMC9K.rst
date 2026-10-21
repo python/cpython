@@ -1,2 +1,0 @@
-Add fast path for :keyword:`match` class patterns without any sub-patterns
-to improve performance by ~15%.

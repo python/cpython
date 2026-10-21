@@ -17,9 +17,7 @@ extern "C" {
 #define _Py_MAX_UNICODE 0x10ffff
 
 
-// Export for '_multibytecodec' shared extension. _PyUnicodeWriter_CanWrite()
-// calls this function when assertions are enabled.
-PyAPI_FUNC(int) _PyUnicode_IsModifiable(PyObject *unicode);
+extern int _PyUnicode_IsModifiable(PyObject *unicode);
 extern void _PyUnicodeWriter_InitWithBuffer(
     _PyUnicodeWriter *writer,
     PyObject *buffer);
@@ -468,7 +466,7 @@ extern void _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **);
 extern void _PyUnicode_ClearInterned(PyInterpreterState *interp);
 
 // Like PyUnicode_AsUTF8(), but check for embedded null characters.
-// Export for '_sqlite3' shared extension.
+// Export for '_sqlite3' shared extension, and for Argument Clinic code.
 PyAPI_FUNC(const char *) _PyUnicode_AsUTF8NoNUL(PyObject *);
 
 

@@ -1,2 +1,0 @@
-Fix a crash in :func:`contextvars.ContextVar.set` when memory allocation
-fails.

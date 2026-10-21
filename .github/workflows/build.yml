@@ -346,18 +346,28 @@ jobs:
         run: python3 Platforms/Android ci --fast-ci ${{ matrix.arch }}-linux-android
 
   build-ios:
-    name: iOS
+    name: >-
+      iOS
+      ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
     needs: build-context
     if: needs.build-context.outputs.run-ios == 'true'
     timeout-minutes: 60
     runs-on: macos-26
+    strategy:
+      fail-fast: false
+      matrix:
+        free-threading:
+        - false
+        - true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Build and test
-        run: python3 Platforms/Apple ci iOS --fast-ci
+        run: >-
+          python3 Platforms/Apple ci iOS --fast-ci
+          ${{ fromJSON(matrix.free-threading) && '--abiflags t' || '' }}
 
   build-emscripten:
     name: 'Emscripten'
@@ -481,53 +491,6 @@ jobs:
     if: fromJSON(needs.build-context.outputs.run-tests)
     uses: ./.github/workflows/reusable-test-lazy-imports-all.yml
 
-  build-asan:
-    name: 'Address sanitizer'
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
-    needs: build-context
-    if: needs.build-context.outputs.run-ubuntu == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-26.04]
-    env:
-      OPENSSL_VER: 3.5.9
-      PYTHONSTRICTEXTENSIONBUILD: 1
-      ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
-    steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      with:
-        persist-credentials: false
-    - name: Runner image version
-      run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
-    - name: Register gcc problem matcher
-      run: echo "::add-matcher::.github/problem-matchers/gcc.json"
-    - name: Install dependencies
-      run: sudo ./.github/workflows/posix-deps-apt.sh
-    - name: Configure OpenSSL env vars
-      run: |
-        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
-        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> "$GITHUB_ENV"
-        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> "$GITHUB_ENV"
-    - name: 'Restore OpenSSL build'
-      id: cache-openssl
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-      with:
-        path: ./multissl/openssl/${{ env.OPENSSL_VER }}
-        key: ${{ matrix.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
-    - name: Install OpenSSL
-      if: steps.cache-openssl.outputs.cache-hit != 'true'
-      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
-    - name: Configure CPython
-      run: ./configure --config-cache --with-address-sanitizer --without-pymalloc --with-openssl="$OPENSSL_DIR"
-    - name: Build CPython
-      run: make -j4
-    - name: Display build info
-      run: make pythoninfo
-    - name: Tests
-      run: xvfb-run make ci
-
   build-san:
     # ${{ '' } is a hack to nest jobs under the same sidebar category.
     name: Sanitizers${{ '' }}  # zizmor: ignore[obfuscation]
@@ -544,8 +507,14 @@ jobs:
         sanitizer:
         - TSan
         include:
+        - check-name: Address
+          sanitizer: ASan
+          free-threading: false
         - check-name: Undefined behavior
           sanitizer: UBSan
+          free-threading: false
+        - check-name: Memory
+          sanitizer: MSan
           free-threading: false
     uses: ./.github/workflows/reusable-san.yml
     with:
@@ -654,7 +623,6 @@ jobs:
     - build-wasi
     - test-hypothesis
     - test-lazy-imports-all
-    - build-asan
     - build-san
     - cross-build-linux
     - cifuzz
@@ -701,7 +669,6 @@ jobs:
             build-ubuntu-installed,
             build-ubuntu-ssltests,
             test-hypothesis,
-            build-asan,
             build-san,
             cross-build-linux,
             '

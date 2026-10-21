@@ -45,6 +45,9 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(native), "<native>", 8);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(str_replace_inf), "1e309", 5);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(type_params), ".type_params", 12);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(unknown_file), "<unknown file>", 14);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(unknown_function), "<unknown function>", 18);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(unreadable_frame), "<unreadable frame>", 18);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_STR(utf_8), "utf-8", 5);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(AGEN_CLOSED), "AGEN_CLOSED", 11);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(AGEN_CREATED), "AGEN_CREATED", 12);
@@ -670,6 +673,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(nlocals), "nlocals", 7);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(node_depth), "node_depth", 10);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(node_offset), "node_offset", 11);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(nothing), "nothing", 7);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(ns), "ns", 2);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(nstype), "nstype", 6);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(nt), "nt", 2);

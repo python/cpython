@@ -4153,7 +4153,9 @@ static char*
 wstr_to_utf8(PyInitConfig *config, wchar_t *wstr)
 {
     char *utf8;
-    int res = _Py_EncodeUTF8Ex(wstr, &utf8, NULL, NULL, 1, _Py_ERROR_STRICT);
+    size_t utf8_len;
+    int res = _Py_EncodeUTF8(wstr, &utf8, &utf8_len,
+                             NULL, 1, _Py_ERROR_STRICT);
     if (res == -2) {
         initconfig_set_error(config, "encoding error");
         return NULL;
@@ -4164,7 +4166,7 @@ wstr_to_utf8(PyInitConfig *config, wchar_t *wstr)
     }
 
     // Copy to use the malloc() memory allocator
-    size_t size = strlen(utf8) + 1;
+    size_t size = utf8_len + 1;
     char *str = malloc(size);
     if (str == NULL) {
         PyMem_RawFree(utf8);
@@ -4323,12 +4325,13 @@ utf8_to_wstr(PyInitConfig *config, const char *str)
 {
     wchar_t *wstr;
     size_t wlen;
-    int res = _Py_DecodeUTF8Ex(str, strlen(str), &wstr, &wlen, NULL, _Py_ERROR_STRICT);
-    if (res == -2) {
+    int res = _Py_DecodeUTF8(str, strlen(str), &wstr, &wlen, _Py_ERROR_STRICT);
+    if (res == _Py_CODEC_DECODE_ERROR) {
         initconfig_set_error(config, "decoding error");
         return NULL;
     }
     if (res < 0) {
+        assert(res == _Py_CODEC_MEMORY_ERROR);
         config->status = _PyStatus_NO_MEMORY();
         return NULL;
     }
@@ -4365,14 +4368,17 @@ PyInitConfig_SetStr(PyInitConfig *config, const char *name, const char* value)
 
     if (value == NULL && spec->type != PyConfig_MEMBER_WSTR_OPT) {
         initconfig_set_error(config, "config option string cannot be NULL");
+        return -1;
     }
 
     wchar_t **member = raw_member;
 
-    *member = utf8_to_wstr(config, value);
-    if (*member == NULL) {
+    wchar_t *wstr = utf8_to_wstr(config, value);
+    if (wstr == NULL) {
         return -1;
     }
+    free(*member);
+    *member = wstr;
     return 0;
 }
 

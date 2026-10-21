@@ -2925,9 +2925,9 @@ delete_index_from_values(PyDictValues *values, Py_ssize_t ix)
     assert(i < size);
     size--;
     for (; i < size; i++) {
-        array[i] = array[i+1];
+        FT_ATOMIC_STORE_UINT8_RELAXED(array[i], array[i+1]);
     }
-    values->size = size;
+    FT_ATOMIC_STORE_UINT8_RELEASE(values->size, size);
 }
 
 static void
@@ -2937,9 +2937,6 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
     assert(can_modify_dict(mp));
 
     PyObject *old_key;
-
-    Py_ssize_t hashpos = lookdict_index(mp->ma_keys, hash, ix);
-    assert(hashpos >= 0);
 
     STORE_USED(mp, mp->ma_used - 1);
     if (_PyDict_HasSplitTable(mp)) {
@@ -2951,6 +2948,9 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
         ASSERT_CONSISTENT(mp);
     }
     else {
+        Py_ssize_t hashpos = lookdict_index(mp->ma_keys, hash, ix);
+        assert(hashpos >= 0);
+
         FT_ATOMIC_STORE_UINT32_RELAXED(mp->ma_keys->dk_version, 0);
         dictkeys_set_index(mp->ma_keys, hashpos, DKIX_DUMMY);
         if (DK_IS_UNICODE(mp->ma_keys)) {
@@ -3122,7 +3122,7 @@ clear_embedded_values(PyDictValues *values, Py_ssize_t nentries)
         refs[i] = values->values[i];
         FT_ATOMIC_STORE_PTR_RELEASE(values->values[i], NULL);
     }
-    values->size = 0;
+    FT_ATOMIC_STORE_UINT8_RELEASE(values->size, 0);
     for (Py_ssize_t i = 0; i < nentries; i++) {
         Py_XDECREF(refs[i]);
     }
@@ -4269,12 +4269,12 @@ dict_dict_merge(PyDictObject *mp, PyDictObject *other, int override, PyObject **
 
     while (_PyDict_Next((PyObject*)other, &pos, &key, &value, &hash)) {
         int err = 0;
-        Py_INCREF(key);
-        Py_INCREF(value);
         if (override == 1) {
             err = insertdict(mp, Py_NewRef(key), hash, Py_NewRef(value));
         }
         else {
+            Py_INCREF(key);
+            Py_INCREF(value);
             err = _PyDict_Contains_KnownHash((PyObject *)mp, key, hash);
             if (err == 0) {
                 err = insertdict(mp, Py_NewRef(key), hash, Py_NewRef(value));
@@ -4287,9 +4287,9 @@ dict_dict_merge(PyDictObject *mp, PyDictObject *other, int override, PyObject **
                 }
                 err = 0;
             }
+            Py_DECREF(value);
+            Py_DECREF(key);
         }
-        Py_DECREF(value);
-        Py_DECREF(key);
         if (err != 0)
             return -1;
 
@@ -4497,7 +4497,7 @@ copy_lock_held_untracked(PyObject *o, int as_frozendict)
         else {
             d = dict_new_untracked(&PyDict_Type);
         }
-        assert(!_PyObject_GC_IS_TRACKED(d));
+        assert(d == NULL || !_PyObject_GC_IS_TRACKED(d));
         return d;
     }
 
@@ -5632,6 +5632,7 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
     used = GET_USED(dict);
     di->di_used = used;
     di->len = used;
+    di->di_result = NULL;
     if (itertype == &PyDictRevIterKey_Type ||
          itertype == &PyDictRevIterItem_Type ||
          itertype == &PyDictRevIterValue_Type) {
@@ -5645,6 +5646,10 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
     else {
         di->di_pos = 0;
     }
+    /* gh-152107: track before allocating di_result. A dictiter with a NULL
+       di_result is a valid state for dictiter_traverse()/dictiter_dealloc(),
+       so a failure of the allocation below can safely DECREF a tracked di. */
+    _PyObject_GC_TRACK(di);
     if (itertype == &PyDictIterItem_Type ||
         itertype == &PyDictRevIterItem_Type) {
         di->di_result = _PyTuple_FromPairSteal(Py_None, Py_None);
@@ -5653,10 +5658,6 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
             return NULL;
         }
     }
-    else {
-        di->di_result = NULL;
-    }
-    _PyObject_GC_TRACK(di);
     return (PyObject *)di;
 }
 
@@ -6102,9 +6103,14 @@ dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
         // We're racing against writes to the order from delete_index_from_values, but
         // single threaded can suffer from concurrent modification to those as well and
         // can have either duplicated or skipped attributes, so we strive to do no better
-        // here.
-        int index = get_index_from_order(d, i);
+        // here. Use the same values snapshot as the size load above.
+        uint8_t *order = get_insertion_order_array(values);
+        int index = _Py_atomic_load_uint8_relaxed(&order[i]);
         PyObject *value = _Py_atomic_load_ptr(&values->values[index]);
+        if (value == NULL) {
+            // Deletion clears the slot before decrementing values->size.
+            goto try_locked;
+        }
         if (acquire_key_value(&DK_UNICODE_ENTRIES(k)[index].me_key, value,
                                &values->values[index], out_key, out_value) < 0) {
             goto try_locked;

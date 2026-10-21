@@ -1783,17 +1783,19 @@ inline static int
 normalize_century(void)
 {
     static int cache = -1;
-    if (cache < 0) {
+    int res = FT_ATOMIC_LOAD_INT_RELAXED(cache);
+    if (res < 0) {
         char year[5];
         struct tm date = {
             .tm_year = -1801,
             .tm_mon = 0,
             .tm_mday = 1
         };
-        cache = (strftime(year, sizeof(year), "%Y", &date) &&
-                 strcmp(year, "0099") != 0);
+        res = (strftime(year, sizeof(year), "%Y", &date) &&
+               strcmp(year, "0099") != 0);
+        FT_ATOMIC_STORE_INT_RELAXED(cache, res);
     }
-    return cache;
+    return res;
 }
 
 static PyObject *
@@ -1968,6 +1970,29 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                     goto Error;
             }
             replacement = freplacement;
+        }
+        else if (ch >= '1' && ch <= '6'
+                 && i < flen && PyUnicode_READ_CHAR(format, i) == 'f')
+        {
+            /* %Nf -> first N digits of microseconds */
+            i++;
+            if (freplacement == NULL) {
+                freplacement = make_freplacement(object);
+                if (freplacement == NULL) {
+                    goto Error;
+                }
+            }
+            if (PyUnicodeWriter_WriteSubstring(writer, format, start, end) < 0) {
+                goto Error;
+            }
+            start = i;
+            Py_ssize_t precision = ch - '0';
+            if (PyUnicodeWriter_WriteSubstring(writer, freplacement,
+                                               0, precision) < 0)
+            {
+                goto Error;
+            }
+            continue;
         }
         else if (normalize_century()
                  && (ch == 'Y' || ch == 'G' || ch == 'F' || ch == 'C'))
