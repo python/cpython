@@ -321,7 +321,8 @@ class BuildDetailsLibpythonTests(unittest.TestCase):
             STATIC_LIBPYTHON=1, PYTHONFRAMEWORK='Python',
             PYTHONFRAMEWORKPREFIX='/Library/Frameworks')
         self.assertNotIn('static', libpython)
-        # The framework library isn't in LIBDIR.
+        # The dynamic library is the framework binary, which is installed at
+        # PYTHONFRAMEWORKPREFIX/LDLIBRARY.
         self.assertEqual(
             libpython['dynamic'],
             '/Library/Frameworks/Python.framework/Versions/3.X/Python')
