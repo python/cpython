@@ -1,0 +1,2 @@
+Now, :opcode:`LOAD_FAST`; :opcode:`POP_TOP`, and :opcode:`LOAD_FAST_BORROW`;
+:opcode:`POP_TOP` pairs become :opcode:`NOPs <NOP>`.
