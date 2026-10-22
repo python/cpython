@@ -305,7 +305,8 @@ On Free Threading, it's more efficient than the ``PyList`` C API to create a
 
 .. c:function:: int PyListWriter_ExtendArray(PyListWriter *writer, PyObject *const *items, Py_ssize_t nitem)
 
-   Extend the list writer with the contents of *items*.
+   Extend the list writer with the contents of *items*: copy references from
+   *items* to the list writer.
 
    On success, return ``0``.
    On error, set an exception and return ``-1``.
