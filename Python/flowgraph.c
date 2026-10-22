@@ -4161,14 +4161,17 @@ _PyCfg_OptimizedCfgToInstructionSequence(cfg_builder *g,
     RETURN_IF_ERROR(normalize_jumps(g));
     assert(no_redundant_jumps(g));
 
-    /* Can't modify the bytecode after inserting instructions that produce
-     * borrowed references.
+    /* After this point the bytecode may only be modified in ways that
+     * preserve the borrowed references computed here.
+     *
+     * NOTE: keep the passes below in sync with _PyCompile_OptimizeCfg().
      */
     RETURN_IF_ERROR(optimize_load_fast(g));
 
     /* Superinstructions are inserted after optimize_load_fast() so that a
      * LOAD_FAST which can be borrowed is converted to LOAD_FAST_BORROW
-     * instead of being fused into a STORE_FAST_LOAD_FAST. */
+     * instead of being fused into a STORE_FAST_LOAD_FAST. Fusing adjacent
+     * instructions does not change which references are borrowed. */
     RETURN_IF_ERROR(insert_superinstructions(g));
 
     /* Can't modify the bytecode after computing jump offsets. */
@@ -4263,6 +4266,7 @@ _PyCompile_OptimizeCfg(PyObject *seq, PyObject *consts, int nlocals)
         goto error;
     }
 
+    /* NOTE: keep in sync with _PyCfg_OptimizedCfgToInstructionSequence(). */
     if (optimize_load_fast(g) != SUCCESS) {
         goto error;
     }
