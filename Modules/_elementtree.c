@@ -4285,6 +4285,9 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
     if (events_to_report == Py_None) {
         /* default is "end" only */
         self->end_event_obj = PyUnicode_FromString("end");
+        if (self->end_event_obj == NULL) {
+            return NULL;
+        }
         Py_RETURN_NONE;
     }
 
