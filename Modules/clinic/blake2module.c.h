@@ -26,6 +26,17 @@ py_blake2b_new_impl(PyTypeObject *type, PyObject *data_obj, int digest_size,
                     int inner_size, int last_node, int usedforsecurity,
                     PyObject *string);
 
+// Emit compiler warnings when we get to Python 3.21.
+#if PY_VERSION_HEX >= 0x031500C0
+#  error "Update the clinic input of '_blake2.blake2b.__new__'."
+#elif PY_VERSION_HEX >= 0x031500A0
+#  ifdef _MSC_VER
+#    pragma message ("Update the clinic input of '_blake2.blake2b.__new__'.")
+#  else
+#    warning "Update the clinic input of '_blake2.blake2b.__new__'."
+#  endif
+#endif
+
 static PyObject *
 py_blake2b_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
@@ -128,6 +139,12 @@ skip_optional_pos:
         }
     }
     if (fastargs[5]) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing the argument 'fanout' to _blake2.blake2b() is "
+                "deprecated. It will be removed in Python 3.21.", 1))
+        {
+            goto exit;
+        }
         fanout = PyLong_AsInt(fastargs[5]);
         if (fanout == -1 && PyErr_Occurred()) {
             goto exit;
@@ -137,6 +154,12 @@ skip_optional_pos:
         }
     }
     if (fastargs[6]) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing the argument 'depth' to _blake2.blake2b() is deprecated."
+                " It will be removed in Python 3.21.", 1))
+        {
+            goto exit;
+        }
         depth = PyLong_AsInt(fastargs[6]);
         if (depth == -1 && PyErr_Occurred()) {
             goto exit;
@@ -146,6 +169,12 @@ skip_optional_pos:
         }
     }
     if (fastargs[7]) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing the argument 'leaf_size' to _blake2.blake2b() is "
+                "deprecated. It will be removed in Python 3.21.", 1))
+        {
+            goto exit;
+        }
         if (!_PyLong_UnsignedLong_Converter(fastargs[7], &leaf_size)) {
             goto exit;
         }
@@ -154,6 +183,12 @@ skip_optional_pos:
         }
     }
     if (fastargs[8]) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing the argument 'node_offset' to _blake2.blake2b() is "
+                "deprecated. It will be removed in Python 3.21.", 1))
+        {
+            goto exit;
+        }
         if (!_PyLong_UnsignedLongLong_Converter(fastargs[8], &node_offset)) {
             goto exit;
         }
@@ -162,6 +197,12 @@ skip_optional_pos:
         }
     }
     if (fastargs[9]) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing the argument 'node_depth' to _blake2.blake2b() is "
+                "deprecated. It will be removed in Python 3.21.", 1))
+        {
+            goto exit;
+        }
         node_depth = PyLong_AsInt(fastargs[9]);
         if (node_depth == -1 && PyErr_Occurred()) {
             goto exit;
@@ -171,6 +212,12 @@ skip_optional_pos:
         }
     }
     if (fastargs[10]) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing the argument 'inner_size' to _blake2.blake2b() is "
+                "deprecated. It will be removed in Python 3.21.", 1))
+        {
+            goto exit;
+        }
         inner_size = PyLong_AsInt(fastargs[10]);
         if (inner_size == -1 && PyErr_Occurred()) {
             goto exit;
@@ -180,6 +227,12 @@ skip_optional_pos:
         }
     }
     if (fastargs[11]) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing the argument 'last_node' to _blake2.blake2b() is "
+                "deprecated. It will be removed in Python 3.21.", 1))
+        {
+            goto exit;
+        }
         last_node = PyObject_IsTrue(fastargs[11]);
         if (last_node < 0) {
             goto exit;
@@ -234,6 +287,17 @@ py_blake2s_new_impl(PyTypeObject *type, PyObject *data_obj, int digest_size,
                     unsigned long long node_offset, int node_depth,
                     int inner_size, int last_node, int usedforsecurity,
                     PyObject *string);
+
+// Emit compiler warnings when we get to Python 3.21.
+#if PY_VERSION_HEX >= 0x031500C0
+#  error "Update the clinic input of '_blake2.blake2s.__new__'."
+#elif PY_VERSION_HEX >= 0x031500A0
+#  ifdef _MSC_VER
+#    pragma message ("Update the clinic input of '_blake2.blake2s.__new__'.")
+#  else
+#    warning "Update the clinic input of '_blake2.blake2s.__new__'."
+#  endif
+#endif
 
 static PyObject *
 py_blake2s_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
@@ -337,6 +401,12 @@ skip_optional_pos:
         }
     }
     if (fastargs[5]) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing the argument 'fanout' to _blake2.blake2s() is "
+                "deprecated. It will be removed in Python 3.21.", 1))
+        {
+            goto exit;
+        }
         fanout = PyLong_AsInt(fastargs[5]);
         if (fanout == -1 && PyErr_Occurred()) {
             goto exit;
@@ -346,6 +416,12 @@ skip_optional_pos:
         }
     }
     if (fastargs[6]) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing the argument 'depth' to _blake2.blake2s() is deprecated."
+                " It will be removed in Python 3.21.", 1))
+        {
+            goto exit;
+        }
         depth = PyLong_AsInt(fastargs[6]);
         if (depth == -1 && PyErr_Occurred()) {
             goto exit;
@@ -355,6 +431,12 @@ skip_optional_pos:
         }
     }
     if (fastargs[7]) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing the argument 'leaf_size' to _blake2.blake2s() is "
+                "deprecated. It will be removed in Python 3.21.", 1))
+        {
+            goto exit;
+        }
         if (!_PyLong_UnsignedLong_Converter(fastargs[7], &leaf_size)) {
             goto exit;
         }
@@ -363,6 +445,12 @@ skip_optional_pos:
         }
     }
     if (fastargs[8]) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing the argument 'node_offset' to _blake2.blake2s() is "
+                "deprecated. It will be removed in Python 3.21.", 1))
+        {
+            goto exit;
+        }
         if (!_PyLong_UnsignedLongLong_Converter(fastargs[8], &node_offset)) {
             goto exit;
         }
@@ -371,6 +459,12 @@ skip_optional_pos:
         }
     }
     if (fastargs[9]) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing the argument 'node_depth' to _blake2.blake2s() is "
+                "deprecated. It will be removed in Python 3.21.", 1))
+        {
+            goto exit;
+        }
         node_depth = PyLong_AsInt(fastargs[9]);
         if (node_depth == -1 && PyErr_Occurred()) {
             goto exit;
@@ -380,6 +474,12 @@ skip_optional_pos:
         }
     }
     if (fastargs[10]) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing the argument 'inner_size' to _blake2.blake2s() is "
+                "deprecated. It will be removed in Python 3.21.", 1))
+        {
+            goto exit;
+        }
         inner_size = PyLong_AsInt(fastargs[10]);
         if (inner_size == -1 && PyErr_Occurred()) {
             goto exit;
@@ -389,6 +489,12 @@ skip_optional_pos:
         }
     }
     if (fastargs[11]) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing the argument 'last_node' to _blake2.blake2s() is "
+                "deprecated. It will be removed in Python 3.21.", 1))
+        {
+            goto exit;
+        }
         last_node = PyObject_IsTrue(fastargs[11]);
         if (last_node < 0) {
             goto exit;
@@ -506,4 +612,4 @@ _blake2_blake2b_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _blake2_blake2b_hexdigest_impl((Blake2Object *)self);
 }
-/*[clinic end generated code: output=5f76c18211cd7f8f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=02670545d7f300f6 input=a9049054013a1b77]*/

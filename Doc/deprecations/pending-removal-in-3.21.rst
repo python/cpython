@@ -27,6 +27,14 @@ Pending removal in Python 3.21
     parameter or pass the dispatch type explicitly instead.
     (Contributed by Bartosz Sławecki in :gh:`143465`.)
 
+* :mod:`hashlib`:
+
+  * The tree hashing parameters of :func:`~hashlib.blake2b` and
+    :func:`~hashlib.blake2s`, namely *fanout*, *depth*, *leaf_size*,
+    *node_offset*, *node_depth*, *inner_size* and *last_node*, are
+    deprecated since Python 3.16 and slated for removal in Python 3.21.
+    (Contributed by Bénédikt Tran in :gh:`160333`.)
+
 * :mod:`struct`:
 
   * Soft-deprecated since Python 3.15, using ``'F'`` and ``'D'`` type codes are now

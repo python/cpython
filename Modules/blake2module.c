@@ -673,13 +673,13 @@ _blake2.blake2b.__new__ as py_blake2b_new
     key: Py_buffer = b''
     salt: Py_buffer = b''
     person: Py_buffer = b''
-    fanout: int = 1
-    depth: int = 1
-    leaf_size: unsigned_long = 0
-    node_offset: unsigned_long_long = 0
-    node_depth: int = 0
-    inner_size: int = 0
-    last_node: bool = False
+    [until 3.21] fanout: int = 1
+    [until 3.21] depth: int = 1
+    [until 3.21] leaf_size: unsigned_long = 0
+    [until 3.21] node_offset: unsigned_long_long = 0
+    [until 3.21] node_depth: int = 0
+    [until 3.21] inner_size: int = 0
+    [until 3.21] last_node: bool = False
     usedforsecurity: bool = True
     string: object(c_default="NULL") = None
 
@@ -693,7 +693,7 @@ py_blake2b_new_impl(PyTypeObject *type, PyObject *data_obj, int digest_size,
                     unsigned long long node_offset, int node_depth,
                     int inner_size, int last_node, int usedforsecurity,
                     PyObject *string)
-/*[clinic end generated code: output=de64bd850606b6a0 input=32832fb37d13c03d]*/
+/*[clinic end generated code: output=de64bd850606b6a0 input=6b22e77641eaf479]*/
 {
     PyObject *data;
     if (_Py_hashlib_data_argument(&data, data_obj, string) < 0) {
@@ -713,13 +713,13 @@ _blake2.blake2s.__new__ as py_blake2s_new
     key: Py_buffer = b''
     salt: Py_buffer = b''
     person: Py_buffer = b''
-    fanout: int = 1
-    depth: int = 1
-    leaf_size: unsigned_long = 0
-    node_offset: unsigned_long_long = 0
-    node_depth: int = 0
-    inner_size: int = 0
-    last_node: bool = False
+    [until 3.21] fanout: int = 1
+    [until 3.21] depth: int = 1
+    [until 3.21] leaf_size: unsigned_long = 0
+    [until 3.21] node_offset: unsigned_long_long = 0
+    [until 3.21] node_depth: int = 0
+    [until 3.21] inner_size: int = 0
+    [until 3.21] last_node: bool = False
     usedforsecurity: bool = True
     string: object(c_default="NULL") = None
 
@@ -733,7 +733,7 @@ py_blake2s_new_impl(PyTypeObject *type, PyObject *data_obj, int digest_size,
                     unsigned long long node_offset, int node_depth,
                     int inner_size, int last_node, int usedforsecurity,
                     PyObject *string)
-/*[clinic end generated code: output=582a0c4295cc3a3c input=da467fc9dae646bb]*/
+/*[clinic end generated code: output=582a0c4295cc3a3c input=d02f308a331f607f]*/
 {
     PyObject *data;
     if (_Py_hashlib_data_argument(&data, data_obj, string) < 0) {

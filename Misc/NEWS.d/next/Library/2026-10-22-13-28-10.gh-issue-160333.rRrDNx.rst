@@ -1,0 +1,4 @@
+:mod:`hashlib`: Passing the tree hashing parameters *fanout*, *depth*,
+*leaf_size*, *node_offset*, *node_depth*, *inner_size* and *last_node* to
+:func:`~hashlib.blake2b` and :func:`~hashlib.blake2s` is now deprecated and
+slated for removal in Python 3.21. Patch by Bénédikt Tran.

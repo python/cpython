@@ -26,6 +26,7 @@ from test.support import hashlib_helper
 from test.support.import_helper import import_fresh_module
 from test.support import requires_resource
 from test.support import threading_helper
+from test.support import warnings_helper
 from http.client import HTTPException
 
 
@@ -123,6 +124,27 @@ DEPRECATED_STRING_PARAMETER = re.escape(
     "use the 'data' keyword parameter or pass the data "
     "to hash as a positional argument instead"
 )
+
+
+def deprecated_blake2_tree_parameter(hash_name, name):
+    return re.escape(
+        f"Passing the argument {name!r} to _blake2.{hash_name}() is "
+        "deprecated. It will be removed in Python 3.21."
+    )
+
+
+BLAKE2_TREE_PARAMETERS = (
+    'fanout', 'depth', 'leaf_size', 'node_offset',
+    'node_depth', 'inner_size', 'last_node',
+)
+
+
+def check_blake2_tree_parameters_deprecated(hash_name):
+    # each tree hashing parameter emits its own warning
+    return warnings_helper.check_warnings(*(
+        (deprecated_blake2_tree_parameter(hash_name, name), DeprecationWarning)
+        for name in BLAKE2_TREE_PARAMETERS
+    ))
 
 
 class HashLibTestCase(unittest.TestCase):
@@ -865,53 +887,84 @@ class HashLibTestCase(unittest.TestCase):
         self.assertEqual(constructor().hexdigest(),
                          constructor(key=b'').hexdigest())
 
+        hash_name = constructor.__name__
+        msg = deprecated_blake2_tree_parameter(hash_name, 'fanout')
         for i in range(0, 256):
-            constructor(fanout=i)
-        self.assertRaises(ValueError, constructor, fanout=-1)
-        self.assertRaises(ValueError, constructor, fanout=256)
+            with self.assertWarnsRegex(DeprecationWarning, msg):
+                constructor(fanout=i)
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            self.assertRaises(ValueError, constructor, fanout=-1)
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            self.assertRaises(ValueError, constructor, fanout=256)
 
+        msg = deprecated_blake2_tree_parameter(hash_name, 'depth')
         for i in range(1, 256):
-            constructor(depth=i)
-        self.assertRaises(ValueError, constructor, depth=-1)
-        self.assertRaises(ValueError, constructor, depth=0)
-        self.assertRaises(ValueError, constructor, depth=256)
+            with self.assertWarnsRegex(DeprecationWarning, msg):
+                constructor(depth=i)
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            self.assertRaises(ValueError, constructor, depth=-1)
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            self.assertRaises(ValueError, constructor, depth=0)
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            self.assertRaises(ValueError, constructor, depth=256)
 
+        msg = deprecated_blake2_tree_parameter(hash_name, 'node_depth')
         for i in range(0, 256):
-            constructor(node_depth=i)
-        self.assertRaises(ValueError, constructor, node_depth=-1)
-        self.assertRaises(ValueError, constructor, node_depth=256)
+            with self.assertWarnsRegex(DeprecationWarning, msg):
+                constructor(node_depth=i)
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            self.assertRaises(ValueError, constructor, node_depth=-1)
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            self.assertRaises(ValueError, constructor, node_depth=256)
 
+        msg = deprecated_blake2_tree_parameter(hash_name, 'inner_size')
         for i in range(0, digest_size + 1):
-            constructor(inner_size=i)
-        self.assertRaises(ValueError, constructor, inner_size=-1)
-        self.assertRaises(ValueError, constructor, inner_size=digest_size+1)
+            with self.assertWarnsRegex(DeprecationWarning, msg):
+                constructor(inner_size=i)
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            self.assertRaises(ValueError, constructor, inner_size=-1)
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            self.assertRaises(ValueError, constructor,
+                              inner_size=digest_size+1)
 
-        constructor(leaf_size=0)
-        constructor(leaf_size=(1<<32)-1)
-        self.assertRaises(ValueError, constructor, leaf_size=-1)
-        self.assertRaises(OverflowError, constructor, leaf_size=1<<32)
+        msg = deprecated_blake2_tree_parameter(hash_name, 'leaf_size')
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            constructor(leaf_size=0)
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            constructor(leaf_size=(1<<32)-1)
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            self.assertRaises(ValueError, constructor, leaf_size=-1)
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            self.assertRaises(OverflowError, constructor, leaf_size=1<<32)
 
-        constructor(node_offset=0)
-        constructor(node_offset=max_offset)
-        self.assertRaises(ValueError, constructor, node_offset=-1)
-        self.assertRaises(OverflowError, constructor, node_offset=max_offset+1)
+        msg = deprecated_blake2_tree_parameter(hash_name, 'node_offset')
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            constructor(node_offset=0)
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            constructor(node_offset=max_offset)
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            self.assertRaises(ValueError, constructor, node_offset=-1)
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            self.assertRaises(OverflowError, constructor,
+                              node_offset=max_offset+1)
 
         self.assertRaises(TypeError, constructor, '')
 
-        constructor(
-            b'',
-            key=b'',
-            salt=b'',
-            person=b'',
-            digest_size=17,
-            fanout=1,
-            depth=1,
-            leaf_size=256,
-            node_offset=512,
-            node_depth=1,
-            inner_size=7,
-            last_node=True
-        )
+        with check_blake2_tree_parameters_deprecated(hash_name):
+            constructor(
+                b'',
+                key=b'',
+                salt=b'',
+                person=b'',
+                digest_size=17,
+                fanout=1,
+                depth=1,
+                leaf_size=256,
+                node_offset=512,
+                node_depth=1,
+                inner_size=7,
+                last_node=True
+            )
 
     def blake2_rfc7693(self, constructor, md_len, in_len):
         def selftest_seq(length, seed):
@@ -960,19 +1013,20 @@ class HashLibTestCase(unittest.TestCase):
     def test_case_blake2b_all_parameters(self):
         # This checks that all the parameters work in general, and also that
         # parameter byte order doesn't get confused on big endian platforms.
-        self.check('blake2b', b"foo",
-          "920568b0c5873b2f0ab67bedb6cf1b2b",
-          digest_size=16,
-          key=b"bar",
-          salt=b"baz",
-          person=b"bing",
-          fanout=2,
-          depth=3,
-          leaf_size=4,
-          node_offset=5,
-          node_depth=6,
-          inner_size=7,
-          last_node=True)
+        with check_blake2_tree_parameters_deprecated('blake2b'):
+            self.check('blake2b', b"foo",
+              "920568b0c5873b2f0ab67bedb6cf1b2b",
+              digest_size=16,
+              key=b"bar",
+              salt=b"baz",
+              person=b"bing",
+              fanout=2,
+              depth=3,
+              leaf_size=4,
+              node_offset=5,
+              node_depth=6,
+              inner_size=7,
+              last_node=True)
 
     @requires_blake2
     def test_blake2b_vectors(self):
@@ -1003,25 +1057,55 @@ class HashLibTestCase(unittest.TestCase):
     def test_case_blake2s_all_parameters(self):
         # This checks that all the parameters work in general, and also that
         # parameter byte order doesn't get confused on big endian platforms.
-        self.check('blake2s', b"foo",
-          "bf2a8f7fe3c555012a6f8046e646bc75",
-          digest_size=16,
-          key=b"bar",
-          salt=b"baz",
-          person=b"bing",
-          fanout=2,
-          depth=3,
-          leaf_size=4,
-          node_offset=5,
-          node_depth=6,
-          inner_size=7,
-          last_node=True)
+        with check_blake2_tree_parameters_deprecated('blake2s'):
+            self.check('blake2s', b"foo",
+              "bf2a8f7fe3c555012a6f8046e646bc75",
+              digest_size=16,
+              key=b"bar",
+              salt=b"baz",
+              person=b"bing",
+              fanout=2,
+              depth=3,
+              leaf_size=4,
+              node_offset=5,
+              node_depth=6,
+              inner_size=7,
+              last_node=True)
 
     @requires_blake2
     def test_blake2s_vectors(self):
         for msg, key, md in read_vectors('blake2s'):
             key = bytes.fromhex(key)
             self.check('blake2s', msg, md, key=key)
+
+    @requires_blake2
+    @support.subTests("name", ["blake2b", "blake2s"])
+    @support.subTests("parameter, value", [
+        ("fanout", 1),
+        ("depth", 1),
+        ("leaf_size", 0),
+        ("node_offset", 0),
+        ("node_depth", 0),
+        ("inner_size", 0),
+        ("last_node", False),
+    ])
+    def test_blake2_tree_parameter_deprecated(self, name, parameter, value):
+        constructor = getattr(hashlib, name)
+        msg = deprecated_blake2_tree_parameter(name, parameter)
+        kwargs = {parameter: value}
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            constructor(**kwargs)
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            hashlib.new(name, **kwargs)
+
+    @requires_blake2
+    @support.subTests("name", ["blake2b", "blake2s"])
+    def test_blake2_tree_parameters_omitted(self, name):
+        constructor = getattr(hashlib, name)
+        with warnings_helper.check_no_warnings(self,
+                                               category=DeprecationWarning):
+            constructor(b'data', digest_size=16, key=b'key')
+            hashlib.new(name, b'data', digest_size=16, key=b'key')
 
     @requires_sha3
     def test_case_sha3_224_0(self):

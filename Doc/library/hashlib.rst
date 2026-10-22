@@ -452,35 +452,6 @@ BLAKE2s     32         32       8         8
 
 These sizes are available as module `constants`_ described below.
 
-Constructor functions also accept the following tree hashing parameters:
-
-* *fanout*: fanout (0 to 255, 0 if unlimited, 1 in sequential mode).
-
-* *depth*: maximal depth of tree (1 to 255, 255 if unlimited, 1 in
-  sequential mode).
-
-* *leaf_size*: maximal byte length of leaf (0 to ``2**32-1``, 0 if unlimited or in
-  sequential mode).
-
-* *node_offset*: node offset (0 to ``2**64-1`` for BLAKE2b, 0 to ``2**48-1`` for
-  BLAKE2s, 0 for the first, leftmost, leaf, or in sequential mode).
-
-* *node_depth*: node depth (0 to 255, 0 for leaves, or in sequential mode).
-
-* *inner_size*: inner digest size (0 to 64 for BLAKE2b, 0 to 32 for
-  BLAKE2s, 0 in sequential mode).
-
-* *last_node*: boolean indicating whether the processed node is the last
-  one (``False`` for sequential mode).
-
-.. figure:: hashlib-blake2-tree.png
-   :alt: Explanation of tree mode parameters.
-   :class: invert-in-dark-mode
-
-See section 2.10 in `BLAKE2 specification
-<https://www.blake2.net/blake2_20130129.pdf>`_ for comprehensive review of tree
-hashing.
-
 
 Constants
 ^^^^^^^^^
@@ -738,6 +709,42 @@ keys from a single one.
     rbPb15S/Z9t+agffno5wuhB77VbRi6F9Iv2qIxU7WHw=
     >>> print(b64encode(mac_key).decode('utf-8'))
     G9GtHFE1YluXY1zWPlYk1e/nWfu0WSEb0KRcjhDeP/o=
+
+
+Tree hashing
+^^^^^^^^^^^^
+
+.. deprecated-removed:: next 3.21
+   The tree hashing parameters are deprecated.
+
+Constructor functions also accept the following tree hashing parameters:
+
+* *fanout*: fanout (0 to 255, 0 if unlimited, 1 in sequential mode).
+
+* *depth*: maximal depth of tree (1 to 255, 255 if unlimited, 1 in
+  sequential mode).
+
+* *leaf_size*: maximal byte length of leaf (0 to ``2**32-1``, 0 if unlimited or in
+  sequential mode).
+
+* *node_offset*: node offset (0 to ``2**64-1`` for BLAKE2b, 0 to ``2**48-1`` for
+  BLAKE2s, 0 for the first, leftmost, leaf, or in sequential mode).
+
+* *node_depth*: node depth (0 to 255, 0 for leaves, or in sequential mode).
+
+* *inner_size*: inner digest size (0 to 64 for BLAKE2b, 0 to 32 for
+  BLAKE2s, 0 in sequential mode).
+
+* *last_node*: boolean indicating whether the processed node is the last
+  one (``False`` for sequential mode).
+
+.. figure:: hashlib-blake2-tree.png
+   :alt: Explanation of tree mode parameters.
+   :class: invert-in-dark-mode
+
+See section 2.10 in `BLAKE2 specification
+<https://www.blake2.net/blake2_20130129.pdf>`_ for comprehensive review of tree
+hashing.
 
 Tree mode
 """""""""
