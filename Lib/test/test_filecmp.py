@@ -7,6 +7,7 @@ import stat
 import tempfile
 import unittest
 
+from pathlib import Path
 from test import support
 from test.support import os_helper
 from unittest.mock import patch
@@ -408,12 +409,11 @@ class DirCmpImplementationTests(unittest.TestCase):
         self.caseinsensitive = os.path.normcase('A') == os.path.normcase('a')
         data = 'Contents of file go here.\n'
 
-        os.mkdir(self.dir)
+        Path(self.dir).mkdir(parents=True, exist_ok=True)
         subdir_path = os.path.join(self.dir, 'subdir')
-        os.mkdir(subdir_path)
+        Path(subdir_path).mkdir(parents=True, exist_ok=True)
         dir_file_path = os.path.join(self.dir, "file")
-        with open(dir_file_path, 'w', encoding="utf-8") as output:
-            output.write(data)
+        Path(dir_file_path).write_text(data, encoding="utf-8")
 
         for d in (self.dir_same, self.dir_same_shallow,
                 self.dir_diff, self.dir_diff_file):
