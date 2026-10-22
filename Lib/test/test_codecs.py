@@ -3251,6 +3251,27 @@ class TransformCodecTest(unittest.TestCase):
         # Missing "begin" line
         self.assertRaises(ValueError, codecs.decode, b"", "uu-codec")
 
+    def test_uu_begin_line(self):
+        # Only a "begin <octal mode> [<filename>]" line starts the encoded
+        # data; other lines starting with "begin" are leading text.
+        block = codecs.encode(b"data", "uu-codec")
+        other = codecs.encode(b"other", "uu-codec").partition(b"\n")[2]
+        for line in (b"begin 666 name", b"begin 0 name with spaces",
+                     b"begin 644 name\r", b"begin 666"):
+            with self.subTest(line=line):
+                encoded = line + b"\n" + other
+                self.assertEqual(codecs.decode(encoded + block, "uu-codec"),
+                                 b"other")
+        for line in (b"beginning of the text", b"begin", b"begin ",
+                     b"begin mode name", b"begin 888 name",
+                     b"beginx 666 name", b"begin-base64 666 name"):
+            with self.subTest(line=line):
+                encoded = line + b"\n" + other
+                self.assertRaises(ValueError, codecs.decode,
+                                  encoded, "uu-codec")
+                self.assertEqual(codecs.decode(encoded + block, "uu-codec"),
+                                 b"data")
+
 
 # The codec system tries to add notes to exceptions in order to ensure
 # the error mentions the operation being performed and the codec involved.
