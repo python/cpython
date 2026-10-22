@@ -1090,6 +1090,76 @@ class TestGetmoduleFrameOwner(unittest.TestCase):
             for object in (frame, traceback):
                 self.assertIs(inspect.getmodule(object), self.module)
 
+            # An unrelated miss scans the registry and can replace that entry.
+            self.assertIsNone(inspect.getmodule(
+                compile('pass', '<inspect-unrelated-miss>', 'exec')))
+            for object in (frame, traceback):
+                self.assertIs(inspect.getmodule(object), other)
+
+            # Bare code uses the filename map, including entries populated
+            # by an earlier frame lookup.
+            inspect.modulesbyfile.clear()
+            inspect._filesbymodname.clear()
+            self.assertIs(inspect.getmodule(frame.f_code), other)
+            inspect.modulesbyfile.clear()
+            inspect._filesbymodname.clear()
+            self.assertIs(inspect.getmodule(frame), self.module)
+            self.assertIs(inspect.getmodule(frame.f_code), self.module)
+
+    def test_static_filename_with_module_getattr_avoids_scan(self):
+        def module_getattr(name):
+            self.fail(f'unexpected module attribute lookup: {name}')
+
+        self.module.__getattr__ = module_getattr
+        frame, traceback = self.capture()
+
+        class NoScanDict(dict):
+            def copy(self):
+                raise AssertionError('registered frame scanned sys.modules')
+
+        with unittest.mock.patch.object(sys, 'modules', NoScanDict(sys.modules)):
+            for object in (frame, traceback):
+                inspect.modulesbyfile.clear()
+                inspect._filesbymodname.clear()
+                self.assertIs(inspect.getmodule(object), self.module)
+
+    def test_filename_supplied_by_module_getattr_falls_back(self):
+        del self.module.__file__
+
+        def module_getattr(name):
+            if name == '__file__':
+                return self.module.source
+            raise AttributeError(name)
+
+        self.module.__getattr__ = module_getattr
+        for suffix in ('.dynamic', '.changed'):
+            self.module.source = self.filename + suffix
+            frame, traceback = self.capture(filename=self.module.source)
+            for object in (frame, traceback):
+                inspect.modulesbyfile.clear()
+                inspect._filesbymodname.clear()
+                self.assertIs(inspect.getmodule(object), self.module)
+
+    def test_loader_supplied_by_module_getattr(self):
+        self.module.__file__ = self.filename + 'c'
+        del self.module.__loader__
+        loader = object()
+        requested = []
+
+        def module_getattr(name):
+            requested.append(name)
+            if name == '__loader__':
+                return loader
+            raise AttributeError(name)
+
+        self.module.__getattr__ = module_getattr
+        frame, traceback = self.capture()
+        for obj in (frame, traceback):
+            inspect.modulesbyfile.clear()
+            inspect._filesbymodname.clear()
+            self.assertIs(inspect.getmodule(obj), self.module)
+        self.assertIn('__loader__', requested)
+
     def test_unregistered_namespace_uses_filename_fallback(self):
         namespace = {'__name__': self.module.__name__}
         frame, traceback = self.capture(namespace)

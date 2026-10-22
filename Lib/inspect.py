@@ -936,16 +936,17 @@ def _getframemodule(frame, filename):
     if type(name) is not str:
         return None
     module = sys.modules.get(name)
-    # Leave dynamic module metadata to the existing filename fallback.
-    if (type(module) is not types.ModuleType or
-            module.__dict__ is not namespace or '__getattr__' in namespace or
-            type(namespace.get('__file__')) is not str):
+    # Leave module subclasses and dynamically supplied filenames to the fallback.
+    if (type(module) is not types.ModuleType
+        or module.__dict__ is not namespace
+        or type(namespace.get('__file__')) is not str):
         return None
     try:
         if filename == getabsfile(module):
             return module
-    except (TypeError, FileNotFoundError):
+    except FileNotFoundError, TypeError:
         pass
+    return None
 
 
 def getmodule(object, _filename=None):
@@ -965,8 +966,12 @@ def getmodule(object, _filename=None):
         return None
     if file in modulesbyfile:
         return sys.modules.get(modulesbyfile[file])
-    frame = object if isframe(object) else (
-        object.tb_frame if istraceback(object) else None)
+    if isframe(object):
+        frame = object
+    elif istraceback(object):
+        frame = object.tb_frame
+    else:
+        frame = None
     if frame is not None and (
             _filename is None or _filename == frame.f_code.co_filename):
         module = _getframemodule(frame, file)
