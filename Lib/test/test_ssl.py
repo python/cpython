@@ -2115,6 +2115,15 @@ class ECHTests(unittest.TestCase):
         self.assertIsNone(ctx.set_ech_config(self.ECH_CONFIG))
 
     @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    def test_mixed_ech_config_versions(self):
+        ctx = make_test_context()
+        supported = self.ECH_CONFIG[2:]
+        unsupported = b'\xff\xff\x00\x01\x00'
+        for entries in (unsupported + supported, supported + unsupported):
+            config = len(entries).to_bytes(2, 'big') + entries
+            self.assertIsNone(ctx.set_ech_config(config))
+
+    @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
     def test_status_before_handshake(self):
         ctx = make_test_context()
         for configured in (False, True):
@@ -2167,6 +2176,19 @@ class ECHTests(unittest.TestCase):
         client, server, *_ = connected_bio_pair(client_ctx, server_ctx, hostname)
         self.assertEqual(client.selected_alpn_protocol(), 'h2')
         self.assertEqual(server.selected_alpn_protocol(), 'h2')
+
+    @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    def test_outer_alpn_without_ech_config(self):
+        for options in (0, ssl.OP_ECH_GREASE):
+            client_ctx, server_ctx, hostname = testing_context()
+            client_ctx.options |= options
+            client_ctx.set_alpn_protocols(['h2'])
+            client_ctx.set_outer_alpn_protocols(['http/1.1'])
+            server_ctx.set_alpn_protocols(['h2', 'http/1.1'])
+            client, server, *_ = connected_bio_pair(
+                client_ctx, server_ctx, hostname)
+            self.assertEqual(client.selected_alpn_protocol(), 'h2')
+            self.assertEqual(server.selected_alpn_protocol(), 'h2')
 
     @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
     def test_grease(self):

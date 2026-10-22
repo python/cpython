@@ -942,6 +942,23 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
         return NULL;
     }
 
+#ifdef HAVE_OPENSSL_ECH
+    if (socket_type == PY_SSL_CLIENT) {
+        char *inner_sni = NULL, *outer_sni = NULL;
+        int status = SSL_ech_get1_status(self->ssl, &inner_sni, &outer_sni);
+        OPENSSL_free(inner_sni);
+        OPENSSL_free(outer_sni);
+        /* OpenSSL also applies outer ALPN to ordinary and GREASE handshakes. */
+        if ((status == SSL_ECH_STATUS_NOT_CONFIGURED ||
+             status == SSL_ECH_STATUS_GREASE) &&
+            SSL_ech_set1_outer_alpn_protos(self->ssl, NULL, 0) != 1) {
+            _setSSLError(get_state_ctx(sslctx), NULL, 0, __FILE__, __LINE__);
+            Py_DECREF(self);
+            return NULL;
+        }
+    }
+#endif
+
     if (socket_type == PY_SSL_SERVER) {
 #define SID_CTX "Python"
         /* Set the session id context (server-side only) */
@@ -5220,8 +5237,33 @@ _ssl__SSLContext_set_ech_config_impl(PySSLContext *self,
         return NULL;
     }
     OSSL_ECHSTORE *store = NULL;
-    BIO *config_bio = BIO_new_mem_buf(ech_config->buf, ech_config->len);
+    BIO *config_bio = BIO_new(BIO_s_mem());
     if (config_bio == NULL) {
+        goto fail;
+    }
+    const unsigned char *config = ech_config->buf;
+    int config_len = (int)ech_config->len;
+    if (config_len >= 2 && ((config[0] << 8) | config[1]) == config_len - 2) {
+        config += 2;
+        config_len -= 2;
+        /* OpenSSL only recognizes binary input with a supported first entry. */
+        while (config_len >= 4 &&
+               ((config[0] << 8) | config[1]) != OSSL_ECH_RFC9849_VERSION) {
+            int entry_len = 4 + ((config[2] << 8) | config[3]);
+            if (entry_len > config_len) {
+                break;
+            }
+            config += entry_len;
+            config_len -= entry_len;
+        }
+        unsigned char length[2] = {
+            (unsigned char)(config_len >> 8), (unsigned char)config_len
+        };
+        if (BIO_write(config_bio, length, sizeof(length)) != sizeof(length)) {
+            goto fail;
+        }
+    }
+    if (BIO_write(config_bio, config, config_len) != config_len) {
         goto fail;
     }
     store = OSSL_ECHSTORE_new(NULL, NULL);
