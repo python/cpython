@@ -1,0 +1,2 @@
+Reduce the size of parser memo entries on 64-bit platforms by reordering
+fields to remove padding. Patch by Shamil Abdulaev.
