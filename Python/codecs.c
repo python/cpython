@@ -272,9 +272,9 @@ PyObject *codec_getitem(const char *encoding, int index)
     codecs = _PyCodec_Lookup(encoding);
     if (codecs == NULL)
         return NULL;
-    v = PyTuple_GET_ITEM(codecs, index);
+    v = Py_NewRef(PyTuple_GET_ITEM(codecs, index));
     Py_DECREF(codecs);
-    return Py_NewRef(v);
+    return v;
 }
 
 /* Helper functions to create an incremental codec. */
@@ -1693,7 +1693,9 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
     if (mod == NULL) {
         PyThreadState *tstate = _PyThreadState_GET();
         _Py_DumpPathConfig(tstate);
-        return PyStatus_Error("Failed to import encodings module");
+        return PyStatus_Error("Failed to import encodings module. "
+                              "Your environment probably has misconfigured variables! "
+                              "Please check PYTHONHOME otherwise refer to `--help-env`");
     }
     Py_DECREF(mod);
 
