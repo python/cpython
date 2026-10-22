@@ -438,6 +438,42 @@ class TestStateful(unittest.TestCase):
         self.assertEqual(output, self.expected_reset)
         self.assertEqual(encoder.encode('', final=True), b'')
 
+    def test_streamwriter_reset(self):
+        stream = io.BytesIO()
+        writer = codecs.getwriter(self.encoding)(stream)
+        writer.reset()
+        self.assertEqual(stream.getvalue(), b'')
+        writer.write(self.text)
+        self.assertEqual(stream.getvalue(), self.expected)
+        writer.reset()
+        self.assertEqual(stream.getvalue(), self.expected_reset)
+        writer.reset()
+        self.assertEqual(stream.getvalue(), self.expected_reset)
+        writer.write(self.text)
+        writer.reset()
+        self.assertEqual(stream.getvalue(), self.expected_reset * 2)
+
+    def test_streamwriter_seek0(self):
+        # The reset sequence is written before the stream is rewound.
+        info = codecs.lookup(self.encoding)
+        for wrap in (
+            info.streamwriter,
+            lambda stream: codecs.StreamReaderWriter(
+                stream, info.streamreader, info.streamwriter),
+            lambda stream: codecs.EncodedFile(stream, 'utf-8', self.encoding),
+        ):
+            stream = io.BytesIO()
+            writer = wrap(stream)
+            text = self.text
+            if isinstance(writer, codecs.StreamRecoder):
+                text = text.encode()
+            writer.write(text)
+            writer.seek(0)
+            self.assertEqual(stream.tell(), 0)
+            self.assertEqual(stream.getvalue(), self.expected_reset)
+            writer.write(text)
+            self.assertEqual(stream.getvalue(), self.expected_reset)
+
 class TestHZStateful(TestStateful):
     text = '\u804a\u804a'
     encoding = 'hz'

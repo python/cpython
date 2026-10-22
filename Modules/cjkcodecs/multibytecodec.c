@@ -1857,13 +1857,17 @@ _multibytecodec_MultibyteStreamWriter_reset_impl(MultibyteStreamWriterObject *se
                                                  PyTypeObject *cls)
 /*[clinic end generated code: output=32ef224c2a38aa3d input=28af6a9cd38d1979]*/
 {
-    PyObject *pwrt;
+    PyObject *pwrt, *pending;
 
-    if (!self->pending)
-        Py_RETURN_NONE;
+    /* even without pending characters, a stateful codec may have to
+     * write a sequence that returns the output to its initial state */
+    pending = self->pending;
+    if (pending == NULL) {
+        pending = Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_STR);
+    }
 
     pwrt = multibytecodec_encode(self->codec, &self->state,
-                    self->pending, NULL, self->errors,
+                    pending, NULL, self->errors,
                     MBENC_FLUSH | MBENC_RESET);
     /* some pending buffer can be truncated when UnicodeEncodeError is
      * raised on 'strict' mode. but, 'reset' method is designed to
@@ -1886,6 +1890,7 @@ _multibytecodec_MultibyteStreamWriter_reset_impl(MultibyteStreamWriterObject *se
             Py_DECREF(pwrt);
             return NULL;
         }
+        Py_DECREF(wr);
     }
     Py_DECREF(pwrt);
 
