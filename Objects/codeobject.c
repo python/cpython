@@ -561,6 +561,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     /* not set */
     co->co_weakreflist = NULL;
     co->co_extra = NULL;
+    co->_co_localsplus_dedup = _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN;
     co->_co_cached = NULL;
     co->co_executors = NULL;
 

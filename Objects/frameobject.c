@@ -94,20 +94,62 @@ framelocalsproxy_hasval(_PyInterpreterFrame *frame, PyCodeObject *co, int i)
     return true;
 }
 
+/* *seen is NULL when dedup is known to be unnecessary.
+   Otherwise it maps each localsplus name to Py_True if a value was already
+   kept, or Py_False if the name was only seen on an empty slot. An empty
+   slot must not count as the kept value, but it still proves the name is
+   repeated, so it is recorded while _co_localsplus_dedup is unknown.
+   Returns -1 if the map cannot be created. */
 static int
-framelocalsproxy_is_first_occurrence(PyObject *seen, PyObject *name)
+framelocalsproxy_prepare_dedup(PyCodeObject *co, PyObject **seen)
 {
-    int found = PySet_Contains(seen, name);
-    if (found < 0) {
-        return -1;
-    }
-    if (found) {
+    *seen = NULL;
+    if (co->_co_localsplus_dedup == _PYCODE_LOCALSPLUS_DEDUP_UNIQUE) {
         return 0;
     }
-    if (PySet_Add(seen, name) < 0) {
+    *seen = PyDict_New();
+    if (*seen == NULL) {
         return -1;
     }
-    return 1;
+    return 0;
+}
+
+/* Returns 1 if this slot's value should be kept, 0 if not, -1 on error.
+   An empty slot is skipped once _co_localsplus_dedup is known. A repeated
+   name stores _PYCODE_LOCALSPLUS_DEDUP_NEEDED. UNIQUE is stored by the
+   caller only after the walk finishes without one. */
+static int
+framelocalsproxy_visit_name(PyCodeObject *co, int i, PyObject *seen,
+                            int has_value)
+{
+    if (seen == NULL) {
+        return has_value;
+    }
+    if (!has_value &&
+        co->_co_localsplus_dedup != _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN) {
+        return 0;
+    }
+    PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+    PyObject *prev = PyDict_GetItemWithError(seen, name);
+    if (prev == NULL) {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+        if (PyDict_SetItem(seen, name, has_value ? Py_True : Py_False) < 0) {
+            return -1;
+        }
+        return has_value;
+    }
+    else {
+        co->_co_localsplus_dedup = _PYCODE_LOCALSPLUS_DEDUP_NEEDED;
+        if (!has_value || prev == Py_True) {
+            return 0;
+        }
+        if (PyDict_SetItem(seen, name, Py_True) < 0) {
+            return -1;
+        }
+        return 1;
+    }
 }
 
 static int
@@ -397,27 +439,30 @@ framelocalsproxy_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
         return NULL;
     }
     // An inlined comprehension cell can share a name with a free var.
-    PyObject *seen = PySet_New(NULL);
-    if (seen == NULL) {
+    // Assume dedup may be needed until a walk of seen shows otherwise.
+    PyObject *seen = NULL;
+    if (framelocalsproxy_prepare_dedup(co, &seen) < 0) {
         Py_DECREF(names);
         return NULL;
     }
 
     for (int i = 0; i < co->co_nlocalsplus; i++) {
-        if (framelocalsproxy_hasval(frame->f_frame, co, i)) {
+        int has = framelocalsproxy_hasval(frame->f_frame, co, i);
+        int emit = framelocalsproxy_visit_name(co, i, seen, has);
+        if (emit < 0) {
+            goto error;
+        }
+        if (emit) {
             PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-            int first = framelocalsproxy_is_first_occurrence(seen, name);
-            if (first < 0) {
+            if (PyList_Append(names, name) < 0) {
                 goto error;
-            }
-            if (first) {
-                if (PyList_Append(names, name) < 0) {
-                    goto error;
-                }
             }
         }
     }
-    Py_DECREF(seen);
+    if (co->_co_localsplus_dedup == _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN) {
+        co->_co_localsplus_dedup = _PYCODE_LOCALSPLUS_DEDUP_UNIQUE;
+    }
+    Py_XDECREF(seen);
 
     // Iterate through the extra locals
     if (frame->f_extra_locals) {
@@ -438,7 +483,7 @@ framelocalsproxy_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
     return names;
 
 error:
-    Py_DECREF(seen);
+    Py_XDECREF(seen);
     Py_DECREF(names);
     return NULL;
 }
@@ -622,30 +667,30 @@ framelocalsproxy_values(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (values == NULL) {
         return NULL;
     }
-    PyObject *seen = PySet_New(NULL);
-    if (seen == NULL) {
+    PyObject *seen = NULL;
+    if (framelocalsproxy_prepare_dedup(co, &seen) < 0) {
         Py_DECREF(values);
         return NULL;
     }
 
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
-        if (value) {
-            PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-            int first = framelocalsproxy_is_first_occurrence(seen, name);
-            if (first == 1) {
-                if (PyList_Append(values, value) < 0) {
-                    Py_DECREF(value);
-                    goto error;
-                }
-            }
-            Py_DECREF(value);
-            if (first < 0) {
-                goto error;
-            }
+        int has = value != NULL;
+        int emit = framelocalsproxy_visit_name(co, i, seen, has);
+        if (emit < 0) {
+            Py_XDECREF(value);
+            goto error;
         }
+        if (emit && PyList_Append(values, value) < 0) {
+            Py_DECREF(value);
+            goto error;
+        }
+        Py_XDECREF(value);
     }
-    Py_DECREF(seen);
+    if (co->_co_localsplus_dedup == _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN) {
+        co->_co_localsplus_dedup = _PYCODE_LOCALSPLUS_DEDUP_UNIQUE;
+    }
+    Py_XDECREF(seen);
 
     // Iterate through the extra locals
     if (frame->f_extra_locals) {
@@ -663,7 +708,7 @@ framelocalsproxy_values(PyObject *self, PyObject *Py_UNUSED(ignored))
     return values;
 
 error:
-    Py_DECREF(seen);
+    Py_XDECREF(seen);
     Py_DECREF(values);
     return NULL;
 }
@@ -677,36 +722,37 @@ framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (items == NULL) {
         return NULL;
     }
-    PyObject *seen = PySet_New(NULL);
-    if (seen == NULL) {
+    PyObject *seen = NULL;
+    if (framelocalsproxy_prepare_dedup(co, &seen) < 0) {
         Py_DECREF(items);
         return NULL;
     }
 
     for (int i = 0; i < co->co_nlocalsplus; i++) {
-        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
-
-        if (value) {
-            int first = framelocalsproxy_is_first_occurrence(seen, name);
-            if (first == 1) {
-                PyObject *pair = _PyTuple_FromPairSteal(Py_NewRef(name), value);
-                if (pair == NULL) {
-                    goto error;
-                }
-                if (_PyList_AppendTakeRef((PyListObject *)items, pair) < 0) {
-                    goto error;
-                }
-            }
-            else {
-                Py_DECREF(value);
-                if (first < 0) {
-                    goto error;
-                }
-            }
+        int has = value != NULL;
+        int emit = framelocalsproxy_visit_name(co, i, seen, has);
+        if (emit < 0) {
+            Py_XDECREF(value);
+            goto error;
+        }
+        if (!emit) {
+            Py_XDECREF(value);
+            continue;
+        }
+        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+        PyObject *pair = _PyTuple_FromPairSteal(Py_NewRef(name), value);
+        if (pair == NULL) {
+            goto error;
+        }
+        if (_PyList_AppendTakeRef((PyListObject *)items, pair) < 0) {
+            goto error;
         }
     }
-    Py_DECREF(seen);
+    if (co->_co_localsplus_dedup == _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN) {
+        co->_co_localsplus_dedup = _PYCODE_LOCALSPLUS_DEDUP_UNIQUE;
+    }
+    Py_XDECREF(seen);
     seen = NULL;
 
     // Iterate through the extra locals
@@ -746,24 +792,25 @@ framelocalsproxy_length(PyObject *self)
         size += PyDict_Size(frame->f_extra_locals);
     }
 
-    PyObject *seen = PySet_New(NULL);
-    if (seen == NULL) {
+    PyObject *seen = NULL;
+    if (framelocalsproxy_prepare_dedup(co, &seen) < 0) {
         return -1;
     }
     for (int i = 0; i < co->co_nlocalsplus; i++) {
-        if (framelocalsproxy_hasval(frame->f_frame, co, i)) {
-            PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-            int first = framelocalsproxy_is_first_occurrence(seen, name);
-            if (first < 0) {
-                Py_DECREF(seen);
-                return -1;
-            }
-            else if (first) {
-                size++;
-            }
+        int has = framelocalsproxy_hasval(frame->f_frame, co, i);
+        int emit = framelocalsproxy_visit_name(co, i, seen, has);
+        if (emit < 0) {
+            Py_XDECREF(seen);
+            return -1;
+        }
+        if (emit) {
+            size++;
         }
     }
-    Py_DECREF(seen);
+    if (co->_co_localsplus_dedup == _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN) {
+        co->_co_localsplus_dedup = _PYCODE_LOCALSPLUS_DEDUP_UNIQUE;
+    }
+    Py_XDECREF(seen);
     return size;
 }
 

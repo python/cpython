@@ -273,6 +273,11 @@ extern PyObject* _PyCode_GetCellvars(PyCodeObject *);
 extern PyObject* _PyCode_GetFreevars(PyCodeObject *);
 extern PyObject* _PyCode_GetCode(PyCodeObject *);
 
+/* co->_co_localsplus_dedup. Learned by FrameLocalsProxy from its seen map. */
+#define _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN 0
+#define _PYCODE_LOCALSPLUS_DEDUP_UNIQUE  1
+#define _PYCODE_LOCALSPLUS_DEDUP_NEEDED  2
+
 /** API for initializing the line number tables. */
 PyAPI_FUNC(int) _PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds);
 
