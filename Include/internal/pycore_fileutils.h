@@ -5,10 +5,12 @@ extern "C" {
 #endif
 
 #ifndef Py_BUILD_CORE
-#  error "Py_BUILD_CORE must be defined to include this header"
+#  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include <locale.h>   /* struct lconv */
+#include <locale.h>               // struct lconv
+#include "pycore_interp_structs.h" // _Py_error_handler
+
 
 /* A routine to check if a file descriptor can be select()-ed. */
 #ifdef _MSC_VER
@@ -18,43 +20,25 @@ extern "C" {
     #define _PyIsSelectable_fd(FD) ((unsigned int)(FD) < (unsigned int)FD_SETSIZE)
 #endif
 
-struct _fileutils_state {
-    int force_ascii;
-};
-
-typedef enum {
-    _Py_ERROR_UNKNOWN=0,
-    _Py_ERROR_STRICT,
-    _Py_ERROR_SURROGATEESCAPE,
-    _Py_ERROR_REPLACE,
-    _Py_ERROR_IGNORE,
-    _Py_ERROR_BACKSLASHREPLACE,
-    _Py_ERROR_SURROGATEPASS,
-    _Py_ERROR_XMLCHARREFREPLACE,
-    _Py_ERROR_OTHER
-} _Py_error_handler;
-
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(_Py_error_handler) _Py_GetErrorHandler(const char *errors);
 
-PyAPI_FUNC(int) _Py_DecodeLocaleEx(
+// Export for '_testinternalcapi' shared extension
+PyAPI_FUNC(int) _Py_DecodeLocale(
     const char *arg,
     wchar_t **wstr,
     size_t *wlen,
-    const char **reason,
     int current_locale,
     _Py_error_handler errors);
 
-PyAPI_FUNC(int) _Py_EncodeLocaleEx(
+// Export for '_testinternalcapi' shared extension
+PyAPI_FUNC(int) _Py_EncodeLocale(
     const wchar_t *text,
     char **str,
+    size_t *output_length,
     size_t *error_pos,
-    const char **reason,
     int current_locale,
     _Py_error_handler errors);
-
-extern char* _Py_EncodeLocaleRaw(
-    const wchar_t *text,
-    size_t *error_pos);
 
 extern PyObject* _Py_device_encoding(int);
 
@@ -97,22 +81,27 @@ struct _Py_stat_struct {
 #  define _Py_stat_struct stat
 #endif
 
+// Export for 'mmap' shared extension
 PyAPI_FUNC(int) _Py_fstat(
     int fd,
     struct _Py_stat_struct *status);
 
+// Export for 'mmap' shared extension
 PyAPI_FUNC(int) _Py_fstat_noraise(
     int fd,
     struct _Py_stat_struct *status);
 
+// Export for '_tkinter' shared extension
 PyAPI_FUNC(int) _Py_stat(
     PyObject *path,
     struct stat *status);
 
-extern int _Py_open(
+// Export for 'select' shared extension (Solaris newDevPollObject())
+PyAPI_FUNC(int) _Py_open(
     const char *pathname,
     int flags);
 
+// Export for '_posixsubprocess' shared extension
 PyAPI_FUNC(int) _Py_open_noraise(
     const char *pathname,
     int flags);
@@ -126,11 +115,13 @@ extern Py_ssize_t _Py_read(
     void *buf,
     size_t count);
 
-extern Py_ssize_t _Py_write(
+// Export for 'select' shared extension (Solaris devpoll_flush())
+PyAPI_FUNC(Py_ssize_t) _Py_write(
     int fd,
     const void *buf,
     size_t count);
 
+// Export for '_posixsubprocess' shared extension
 PyAPI_FUNC(Py_ssize_t) _Py_write_noraise(
     int fd,
     const void *buf,
@@ -162,12 +153,15 @@ extern wchar_t* _Py_wgetcwd(
 
 extern int _Py_get_inheritable(int fd);
 
+// Export for '_socket' shared extension
 PyAPI_FUNC(int) _Py_set_inheritable(int fd, int inheritable,
                                     int *atomic_flag_works);
 
+// Export for '_posixsubprocess' shared extension
 PyAPI_FUNC(int) _Py_set_inheritable_async_safe(int fd, int inheritable,
                                                int *atomic_flag_works);
 
+// Export for '_socket' shared extension
 PyAPI_FUNC(int) _Py_dup(int fd);
 
 extern int _Py_get_blocking(int fd);
@@ -177,6 +171,7 @@ extern int _Py_set_blocking(int fd, int blocking);
 #ifdef MS_WINDOWS
 extern void* _Py_get_osfhandle_noraise(int fd);
 
+// Export for '_testconsole' shared extension
 PyAPI_FUNC(void*) _Py_get_osfhandle(int fd);
 
 extern int _Py_open_osfhandle_noraise(void *handle, int flags);
@@ -190,21 +185,23 @@ extern int _Py_open_osfhandle(void *handle, int flags);
      ? _PyStatus_ERR("cannot decode " NAME) \
      : _PyStatus_NO_MEMORY()
 
-extern int _Py_HasFileSystemDefaultEncodeErrors;
+#define _Py_CODEC_MEMORY_ERROR -1
+#define _Py_CODEC_DECODE_ERROR -2
+#define _Py_CODEC_ENCODE_ERROR -2
+#define _Py_CODEC_UNSUPPORTED_ERROR_HANDLER -3
 
-extern int _Py_DecodeUTF8Ex(
+extern int _Py_DecodeUTF8(
     const char *arg,
     Py_ssize_t arglen,
     wchar_t **wstr,
     size_t *wlen,
-    const char **reason,
     _Py_error_handler errors);
 
-extern int _Py_EncodeUTF8Ex(
+extern int _Py_EncodeUTF8(
     const wchar_t *text,
     char **str,
+    size_t *output_length,
     size_t *error_pos,
-    const char **reason,
     int raw_malloc,
     _Py_error_handler errors);
 
@@ -231,6 +228,7 @@ extern int _Py_GetLocaleconvNumeric(
     PyObject **decimal_point,
     PyObject **thousands_sep);
 
+// Export for '_posixsubprocess' (on macOS)
 PyAPI_FUNC(void) _Py_closerange(int first, int last);
 
 extern wchar_t* _Py_GetLocaleEncoding(void);
@@ -259,16 +257,22 @@ extern int _Py_add_relfile(wchar_t *dirname,
                            const wchar_t *relfile,
                            size_t bufsize);
 extern size_t _Py_find_basename(const wchar_t *filename);
+
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(wchar_t*) _Py_normpath(wchar_t *path, Py_ssize_t size);
+
+extern wchar_t *_Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t *length);
 
 // The Windows Games API family does not provide these functions
 // so provide our own implementations. Remove them in case they get added
 // to the Games API family
 #if defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP)
-#include <winerror.h>
+#include <winerror.h>             // HRESULT
 
 extern HRESULT PathCchSkipRoot(const wchar_t *pszPath, const wchar_t **ppszRootEnd);
 #endif /* defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP) */
+
+extern void _Py_skiproot(const wchar_t *path, Py_ssize_t size, Py_ssize_t *drvsize, Py_ssize_t *rootsize);
 
 // Macros to protect CRT calls against instant termination when passed an
 // invalid parameter (bpo-23524). IPH stands for Invalid Parameter Handler.
@@ -291,6 +295,34 @@ extern HRESULT PathCchSkipRoot(const wchar_t *pszPath, const wchar_t **ppszRootE
 #  define _Py_BEGIN_SUPPRESS_IPH
 #  define _Py_END_SUPPRESS_IPH
 #endif /* _MSC_VER >= 1900 */
+
+// Export for 'select' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_FileDescriptor_Converter(PyObject *, void *);
+
+#ifdef MS_WINDOWS
+/* Windows uses long long for offsets */
+typedef long long Py_off_t;
+#else
+typedef off_t Py_off_t;
+#endif
+
+// Export for '_ssl' and 'zlib' shared extensions (Argument Clinic code)
+PyAPI_FUNC(int) _Py_Off_t_Converter(PyObject *, void *);
+
+// Export for test_peg_generator
+PyAPI_FUNC(char*) _Py_UniversalNewlineFgetsWithSize(char *, int, FILE*, PyObject *, size_t*);
+
+extern int _PyFile_Flush(PyObject *);
+
+#ifndef MS_WINDOWS
+extern int _Py_GetTicksPerSecond(long *ticks_per_second);
+#endif
+
+// Export for '_testcapi' shared extension
+PyAPI_FUNC(int) _Py_IsValidFD(int fd);
+
+// Export for '_remote_debugging' shared extension
+PyAPI_FUNC(PyObject*) _Py_strerror(int code);
 
 #ifdef __cplusplus
 }

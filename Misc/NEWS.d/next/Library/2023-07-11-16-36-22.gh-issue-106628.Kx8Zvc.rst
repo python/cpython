@@ -1,2 +1,0 @@
-Speed up parsing of emails by about 20% by not compiling a new regular
-expression for every single email.

@@ -1,5 +1,0 @@
-Deprecate two methods of creating :class:`typing.TypedDict` classes with 0
-fields using the functional syntax: ``TD = TypedDict("TD")`` and
-``TD = TypedDict("TD", None)``. Both will be disallowed in Python 3.15. To create a
-``TypedDict`` class with 0 fields, either use ``class TD(TypedDict): pass``
-or ``TD = TypedDict("TD", {})``.

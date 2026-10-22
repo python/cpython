@@ -1,2 +1,0 @@
-Replace ``assert`` statements with ``raise RuntimeError`` in
-:mod:`threading`, so that ``_DummyThread`` cannot be joined even with ``-OO``.
