@@ -262,26 +262,19 @@ static void _CallPythonObject(ctypes_state *st,
                any pointer it contains must reference memory the caller keeps
                alive - the same contract C imposes. */
             assert(!narrow);
-            int ok = 0;
-            if (CDataObject_Check(st, result)) {
-                int is_inst = PyObject_IsInstance(result, restype_obj);
-                if (is_inst < 0) {
-                    /* Discard this failure; the TypeError raised below is the
-                       more useful report and only one can be shown. */
-                    PyErr_Clear();
-                }
-                else if (is_inst) {
-                    CDataObject *cd = (CDataObject *)result;
-                    Py_BEGIN_CRITICAL_SECTION(cd);
-                    memcpy(mem, cd->b_ptr, restype->size);
-                    Py_END_CRITICAL_SECTION();
-                    ok = 1;
-                }
+            /* Use a real subtype check rather than PyObject_IsInstance():
+               a metaclass __instancecheck__ could otherwise accept an object
+               whose buffer is smaller than restype->size. */
+            if (PyObject_TypeCheck(result, (PyTypeObject *)restype_obj)) {
+                /* restype_obj is a struct or union type (enforced in
+                   _ctypes_alloc_callback), so its instances are CData. */
+                assert(CDataObject_Check(st, result));
+                CDataObject *cd = (CDataObject *)result;
+                Py_BEGIN_CRITICAL_SECTION(cd);
+                memcpy(mem, cd->b_ptr, restype->size);
+                Py_END_CRITICAL_SECTION();
             }
-            if (!ok) {
-                /* Zero the buffer so the C caller sees deterministic zeros
-                   rather than uninitialised memory. */
-                memset(mem, 0, restype->size);
+            else {
                 PyErr_Format(PyExc_TypeError,
                              "ctypes callback function returned unexpected "
                              "type %T", result);
@@ -476,6 +469,11 @@ CThunkObject *_ctypes_alloc_callback(ctypes_state *st,
             PyErr_SetString(PyExc_TypeError,
                             "invalid result type for callback function");
             goto error;
+        }
+        if (info->setfunc == NULL) {
+            /* The cif built below depends on the struct/union layout, so
+               _fields_ must not be (re)assigned after this point. */
+            stginfo_set_dict_final(info);
         }
         p->setfunc = info->setfunc;
         p->ffi_restype = &info->ffi_type_pointer;
