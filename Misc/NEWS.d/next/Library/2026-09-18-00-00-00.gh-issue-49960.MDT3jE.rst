@@ -1,0 +1,3 @@
+:mod:`ctypes` callback functions can now return structures and unions by
+value. Previously only "simple" types could be returned, and any other result
+type raised :exc:`TypeError`.
