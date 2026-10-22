@@ -3477,21 +3477,14 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
         return NULL;
     }
 
-    // gh-151722: If cls constructor returns a frozendict which is tracked by
-    // the GC, create a frozendict copy which is not tracked by the GC.
-    //
-    // gh-155176: Since frozendicts whose contents can never be tracked by the
-    // GC are left untracked, being untracked no longer implies that d is
-    // private: also make a copy if d is not uniquely referenced, otherwise
-    // inserting keys below would mutate an object visible elsewhere.
+    // If cls constructor returns a frozendict, create a frozendict copy which
+    // is not tracked by the GC.
     //
     // At the function exit, return cls(fd) where fd is a frozendict.
     //
     // Untracking the frozendict requires tracking again the frozendict on
     // error which is more complicated. It's easier to work on a copy.
-    if (PyFrozenDict_Check(d)
-        && (_PyObject_GC_IS_TRACKED(d)
-            || !_PyObject_IsUniquelyReferenced(d))) {
+    if (cls != (PyObject*)&PyFrozenDict_Type && PyFrozenDict_Check(d)) {
         need_copy = 1;
 
         PyObject *copy = frozendict_new_untracked(&PyFrozenDict_Type);
