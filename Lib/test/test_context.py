@@ -336,6 +336,19 @@ class ContextTest(unittest.TestCase):
         contextvars.copy_context().run(fun)
         self.assertEqual(c.get(), [])
 
+    @isolated_context
+    def test_reset_with_reentrant_finalizer(self):
+        var = contextvars.ContextVar('var')
+        var.set('original')
+
+        class Reenter:
+            def __del__(self):
+                var.set('finalizer')
+
+        token = var.set(Reenter())
+        var.reset(token)
+        self.assertEqual(var.get(), 'finalizer')
+
     def test_context_copy_1(self):
         ctx1 = contextvars.Context()
         c = contextvars.ContextVar('c', default=42)

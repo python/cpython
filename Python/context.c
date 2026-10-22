@@ -872,13 +872,13 @@ contextvar_set(PyContextVar *var, PyObject *val)
         return -1;
     }
 
-    context_set_vars(ctx, new_vars);
-
 #ifndef Py_GIL_DISABLED
     var->var_cached = val;  /* borrow */
     var->var_cached_tsid = ts->id;
     var->var_cached_tsver = ts->context_ver;
 #endif
+    /* Releasing the old variables may run a finalizer that updates the cache. */
+    context_set_vars(ctx, new_vars);
     return 0;
 }
 
