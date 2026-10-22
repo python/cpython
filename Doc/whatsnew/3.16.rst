@@ -717,6 +717,11 @@ pickle
   :class:`!WeakMethod` and :class:`!WeakSet` can now also be copied.
   (Contributed by Serhiy Storchaka in :gh:`74876`.)
 
+* Weak reference proxies (:func:`weakref.proxy`) are now pickled and copied
+  as proxies, not as their referents.
+  The referent must be strongly referenced elsewhere in the same pickle.
+  (Contributed by Serhiy Storchaka in :gh:`62268`.)
+
 quopri
 ------
 
@@ -1514,6 +1519,16 @@ that may require changes to your code.
   opening a pipe in a read-write binary mode (``'r+b'`` or ``'w+b'``) now
   raises :exc:`io.UnsupportedOperation` unless buffering is disabled.
   (Contributed by An Long in :gh:`86768`.)
+
+* Weak reference proxies (:func:`weakref.proxy`) are now pickled and copied
+  as proxies, not as their referents.
+  Pickling a proxy now raises :exc:`pickle.PicklingError`
+  if the referent is not strongly referenced elsewhere in the same pickle,
+  and a deep copy of a proxy made without its referent
+  refers to a discarded copy.
+  To get the former behavior, pickle or copy the referent instead
+  of the proxy.
+  (Contributed by Serhiy Storchaka in :gh:`62268`.)
 
 
 Build changes

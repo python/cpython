@@ -1,0 +1,4 @@
+Weak reference proxies (:func:`weakref.proxy`) are now pickled and copied
+as proxies, not as their referents.
+The referent must be strongly referenced elsewhere in the same pickle;
+otherwise pickling raises :exc:`pickle.PicklingError`.

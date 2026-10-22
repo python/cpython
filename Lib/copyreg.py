@@ -74,11 +74,14 @@ def pickle_super(obj):
 
 pickle(super, pickle_super)
 
-from _weakref import ref as _ref
+from _weakref import (ref as _ref, proxy as _proxy, ProxyType as _ProxyType,
+                      CallableProxyType as _CallableProxyType,
+                      _getreferent)
 
-# All dead weak references are interchangeable, so they are pickled as
-# references to this set.  It is unpickled as a new set which dies with
-# the unpickler's memo, and all dead references as the same reference.
+# All dead weak references and proxies are interchangeable, so they are
+# pickled as references to this set.  It is unpickled as a new set which
+# dies with the unpickler's memo, and all dead references as the same
+# reference.
 _dead_referent = set()
 
 def pickle_weakref(r):
@@ -88,6 +91,15 @@ def pickle_weakref(r):
     return _ref, (Proxy(obj),)
 
 pickle(_ref, pickle_weakref)
+
+def pickle_weakproxy(p):
+    obj = _getreferent(p)
+    if obj is None:
+        return _proxy, (_dead_referent,)
+    return _proxy, (Proxy(obj),)
+
+pickle(_ProxyType, pickle_weakproxy)
+pickle(_CallableProxyType, pickle_weakproxy)
 
 # Support for pickling new-style objects
 

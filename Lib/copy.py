@@ -51,6 +51,7 @@ __getstate__() and __setstate__().  See the documentation for module
 
 import types
 import weakref
+from _weakref import _getreferent
 from copyreg import dispatch_table, Proxy
 
 class Error(Exception):
@@ -106,7 +107,8 @@ _copy_atomic_types = frozenset({types.NoneType, int, float, bool, complex, str, 
           bytes, frozendict, frozenset, type, range, slice, property,
           types.BuiltinFunctionType, types.EllipsisType,
           types.NotImplementedType, types.FunctionType, types.CodeType,
-          weakref.ref, super})
+          weakref.ref, weakref.ProxyType, weakref.CallableProxyType,
+          super})
 _copy_builtin_containers = frozenset({list, dict, set, bytearray})
 
 def deepcopy(x, memo=None):
@@ -226,6 +228,13 @@ d[types.MethodType] = _deepcopy_method
 def _deepcopy_proxy(x, memo, deepcopy=deepcopy):
     return deepcopy(x.obj, memo)
 d[Proxy] = _deepcopy_proxy
+
+def _deepcopy_weakproxy(x, memo, deepcopy=deepcopy, proxy=weakref.proxy):
+    obj = _getreferent(x)
+    if obj is None:
+        return x
+    return proxy(deepcopy(obj, memo))
+d[weakref.ProxyType] = d[weakref.CallableProxyType] = _deepcopy_weakproxy
 
 del d
 

@@ -167,12 +167,23 @@ See :ref:`__slots__ documentation <slots>` for details.
    Accessing an attribute of the proxy object after the referent is
    garbage collected raises :exc:`ReferenceError`.
 
+   A proxy can be pickled if the referent is strongly referenced elsewhere in
+   the same pickle (see :class:`ref`).
+   The unpickled proxy refers to the unpickled referent.
+   A shallow copy of a proxy is the proxy itself.
+   A deep copy refers to the deep copy of the referent,
+   so it must be deep-copied together with it.
+
    .. versionchanged:: 3.8
       Extended the operator support on proxy objects to include the matrix
       multiplication operators ``@`` and ``@=``.
 
    .. versionchanged:: 3.16
       Raise :exc:`!TypeError` if *callback* is not callable or ``None``.
+
+   .. versionchanged:: next
+      Proxies are now pickled and copied as proxies,
+      not as their referents.
 
 
 .. function:: getweakrefcount(object)
