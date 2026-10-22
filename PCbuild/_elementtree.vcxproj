@@ -113,11 +113,13 @@
     <ClInclude Include="..\Modules\expat\pyexpatns.h" />
     <ClInclude Include="..\Modules\expat\utf8tab.h" />
     <ClInclude Include="..\Modules\expat\winconfig.h" />
+    <ClInclude Include="..\Modules\expat\xcs.h" />
     <ClInclude Include="..\Modules\expat\xmlrole.h" />
     <ClInclude Include="..\Modules\expat\xmltok.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_elementtree.c" />
+    <ClCompile Include="..\Modules\expat\xcs.c" />
     <ClCompile Include="..\Modules\expat\xmlparse.c" />
     <ClCompile Include="..\Modules\expat\xmlrole.c" />
     <ClCompile Include="..\Modules\expat\xmltok.c" />
