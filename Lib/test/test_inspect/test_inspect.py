@@ -1076,6 +1076,8 @@ class TestGetmoduleFrameOwner(unittest.TestCase):
         with unittest.mock.patch.object(sys, 'modules', NoScanDict(sys.modules)):
             for object in (frame, traceback):
                 with self.subTest(object=type(object)):
+                    inspect.modulesbyfile.clear()
+                    inspect._filesbymodname.clear()
                     self.assertIs(inspect.getmodule(object), self.module)
                     self.assertIs(inspect.getmodule(object, self.filename),
                                   self.module)
