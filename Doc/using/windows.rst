@@ -281,7 +281,8 @@ and debugging symbols. It is intended for contributors or users who need
 these additional files for testing or debugging Python.
 
 ``PythonEmbed`` provides a minimal embeddable distribution for
-applications that bundle Python rather than for interactive use.
+applications that bundle Python rather than for interactive use. It
+would normally be used with the ``--target`` option described below.
 
 To see the available runtime variants, run::
 
