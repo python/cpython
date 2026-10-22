@@ -644,6 +644,15 @@ shlex
   (Contributed by Jay Berry in :gh:`148846`.)
 
 
+shutil
+------
+
+* Add keyword-only *copy_dir_stat* parameter to :func:`shutil.copytree`:
+  set it to false to skip copying directory metadata with
+  :func:`shutil.copystat`, e.g. when copying a read-only tree.
+  (Contributed by Łukasz Langa in :gh:`89721`.)
+
+
 socket
 ------
 

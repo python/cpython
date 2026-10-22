@@ -996,15 +996,20 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         os.makedirs(sub_dir)
         dst_dir = os.path.join(tmp_dir, 'destination')
         self.addCleanup(shutil.rmtree, tmp_dir)
+        old_time = 1_000_000_000  # 2001-09-09, far from "now"
         for path in (sub_dir, src_dir):
+            os.utime(path, (old_time, old_time))
             os.chmod(path, 0o555)
             self.addCleanup(os.chmod, path, 0o700)
 
         shutil.copytree(src_dir, dst_dir, copy_dir_stat=False)
-        for path in (dst_dir, os.path.join(dst_dir, 'sub')):
-            mode = stat.S_IMODE(os.stat(path).st_mode)
+        for src_path, dst_path in ((src_dir, dst_dir),
+                                   (sub_dir, os.path.join(dst_dir, 'sub'))):
+            mode = stat.S_IMODE(os.stat(dst_path).st_mode)
             self.assertNotEqual(mode, 0o555)
             self.assertTrue(mode & stat.S_IWUSR, oct(mode))
+            self.assertNotEqual(os.stat(src_path).st_mtime,
+                                os.stat(dst_path).st_mtime)
 
     @os_helper.skip_unless_working_chmod
     def test_copytree_no_copy_dir_stat_keeps_file_metadata(self):

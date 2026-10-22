@@ -600,13 +600,14 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
                     if srcentry.is_dir():
                         copytree(srcobj, dstname, symlinks, ignore,
                                  copy_function, ignore_dangling_symlinks,
-                                 dirs_exist_ok, copy_dir_stat)
+                                 dirs_exist_ok,
+                                 copy_dir_stat=copy_dir_stat)
                     else:
                         copy_function(srcobj, dstname)
             elif srcentry.is_dir():
                 copytree(srcobj, dstname, symlinks, ignore, copy_function,
                          ignore_dangling_symlinks, dirs_exist_ok,
-                         copy_dir_stat)
+                         copy_dir_stat=copy_dir_stat)
             else:
                 # Will raise a SpecialFileError for unsupported file types
                 copy_function(srcobj, dstname)
@@ -629,7 +630,7 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
 
 def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
              ignore_dangling_symlinks=False, dirs_exist_ok=False,
-             copy_dir_stat=True):
+             *, copy_dir_stat=True):
     """Recursively copy a directory tree and return the destination directory.
 
     If exception(s) occur, an Error is raised with a list of reasons.
@@ -668,10 +669,11 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     within the `dst` tree will be overwritten by corresponding files from the
     `src` tree.
 
-    If copy_dir_stat is false, permissions and times of the copied
-    directories are not copied, e.g. to copy a read-only tree into a
-    writable one. It defaults to true. File metadata is always handled
-    by copy_function.
+    If copy_dir_stat is false, directory metadata is not copied with
+    copystat(), e.g. to copy a read-only tree into a writable one. It
+    defaults to true. Note that file metadata is always handled by
+    copy_function: use e.g. `copy_function=shutil.copyfile` to skip
+    that as well.
     """
     sys.audit("shutil.copytree", src, dst)
     with os.scandir(src) as itr:
