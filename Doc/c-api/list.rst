@@ -292,8 +292,8 @@ On Free Threading, it's more efficient than the ``PyList`` C API to create a
 
 .. c:function:: int PyListWriter_AppendSteal(PyListWriter *writer, PyObject *item)
 
-   Similar to :c:func:`PyListWriter_Append`, but steals the reference to
-   *item*.
+   Similar to :c:func:`PyListWriter_Append`, but :term:`steals <steal>` the
+   reference to *item*, instead of creating a new :ref:`strong reference`.
 
 .. c:function:: int PyListWriter_Extend(PyListWriter *writer, PyObject *iterable)
 
@@ -310,3 +310,13 @@ On Free Threading, it's more efficient than the ``PyList`` C API to create a
 
    On success, return ``0``.
    On error, set an exception and return ``-1``.
+
+.. c:function:: int PyListWriter_ExtendArraySteal(PyListWriter *writer, PyObject *const *items, Py_ssize_t nitem)
+
+   Similar to :c:func:`PyListWriter_ExtendArray`, but :term:`steal` references
+   instead of copying references.
+
+   On success, return ``0``.
+   On error, set an exception and return ``-1``.
+
+   On error, all *items* references are also cleared.

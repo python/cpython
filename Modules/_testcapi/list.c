@@ -246,6 +246,34 @@ writer_extend_array(PyObject *self_raw, PyObject *tuple)
 }
 
 
+// Test PyListWriter_ExtendArraySteal()
+static PyObject*
+writer_extend_array_steal(PyObject *self_raw, PyObject *tuple)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    if (!PyTuple_Check(tuple)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expect tuple, got %T", tuple);
+        return NULL;
+    }
+    PyObject **items = &PyTuple_GET_ITEM(tuple, 0);
+    Py_ssize_t len = PyTuple_GET_SIZE(tuple);
+
+    for (Py_ssize_t i = 0; i < len; i++) {
+        Py_INCREF(items[i]);
+    }
+
+    if (PyListWriter_ExtendArraySteal(self->writer, items, len) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
 // Test PyListWriter_Finish()
 static PyObject*
 writer_finish(PyObject *self_raw, PyObject *Py_UNUSED(args))
@@ -281,6 +309,7 @@ static PyMethodDef writer_methods[] = {
     {"append_steal", _PyCFunction_CAST(writer_append_steal), METH_O},
     {"extend", _PyCFunction_CAST(writer_extend), METH_O},
     {"extend_array", _PyCFunction_CAST(writer_extend_array), METH_O},
+    {"extend_array_steal", _PyCFunction_CAST(writer_extend_array_steal), METH_O},
     {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},
     {"discard", _PyCFunction_CAST(writer_discard), METH_NOARGS},
     {NULL,              NULL}           /* sentinel */

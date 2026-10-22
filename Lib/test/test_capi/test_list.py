@@ -370,8 +370,13 @@ class ListWriterTests(unittest.TestCase):
         self.assertEqual(result, expected)
         self.assertEqual(type(result), list)
 
+    def create_items(self, nitem):
+        # Call object() to create unique objects. Don't use small integers
+        # which are immortal (and so would not check for reference leaks).
+        return tuple(object() for i in range(nitem))
+
     def check_append(self, method):
-        items = (1, 2, 3)
+        items = self.create_items(3)
         for size in (0, len(items), len(items) * 10):
             with self.subTest(size=size):
                 writer = self.create_writer(size)
@@ -389,7 +394,7 @@ class ListWriterTests(unittest.TestCase):
         self.check_append('append_steal')
 
     def check_extend(self, method):
-        items = (2, 5, 7)
+        items = self.create_items(5)
         for size in (0, len(items), len(items) * 10):
             with self.subTest(size=size):
                 writer = self.create_writer(size)
@@ -404,6 +409,10 @@ class ListWriterTests(unittest.TestCase):
     def test_extend_array(self):
         # Test PyListWriter_ExtendArray()
         self.check_extend('extend_array')
+
+    def test_extend_array_steal(self):
+        # Test PyListWriter_ExtendArraySteal()
+        self.check_extend('extend_array_steal')
 
     def test_discard(self):
         # Test PyListWriter_Discard(): must not leak memory

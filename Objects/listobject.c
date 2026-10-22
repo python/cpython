@@ -4584,9 +4584,10 @@ PyListWriter_Extend(PyListWriter *writer, PyObject *iterable)
 }
 
 
-int
-PyListWriter_ExtendArray(PyListWriter *writer,
-                         PyObject *const *items, Py_ssize_t nitem)
+static int
+listwriter_extend_array(PyListWriter *writer,
+                        PyObject *const *items, Py_ssize_t nitem,
+                        int steal)
 {
     assert(listwriter_check_consistency(writer));
     assert(nitem >= 0);
@@ -4597,6 +4598,11 @@ PyListWriter_ExtendArray(PyListWriter *writer,
     Py_ssize_t new_size = size + nitem;
     if (new_size > allocated) {
         if (listwriter_resize(writer, new_size) < 0) {
+            if (steal) {
+                for (Py_ssize_t i = 0; i < nitem; i++) {
+                    Py_DECREF(items[i]);
+                }
+            }
             return -1;
         }
     }
@@ -4605,8 +4611,29 @@ PyListWriter_ExtendArray(PyListWriter *writer,
     }
 
     PyObject **list_items = &list->ob_item[size];
-    for (Py_ssize_t i = 0; i < nitem; i++) {
-        list_items[i] = Py_NewRef(items[i]);
+    if (steal) {
+        memcpy(list_items, items, nitem * sizeof(PyObject*));
+    }
+    else {
+        for (Py_ssize_t i = 0; i < nitem; i++) {
+            list_items[i] = Py_NewRef(items[i]);
+        }
     }
     return 0;
+}
+
+
+int
+PyListWriter_ExtendArray(PyListWriter *writer,
+                         PyObject *const *items, Py_ssize_t nitem)
+{
+    return listwriter_extend_array(writer, items, nitem, 0);
+}
+
+
+int
+PyListWriter_ExtendArraySteal(PyListWriter *writer,
+                              PyObject *const *items, Py_ssize_t nitem)
+{
+    return listwriter_extend_array(writer, items, nitem, 1);
 }

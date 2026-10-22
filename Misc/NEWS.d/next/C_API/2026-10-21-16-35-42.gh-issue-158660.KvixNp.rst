@@ -10,5 +10,6 @@ created list. Add functions:
 * :c:func:`PyListWriter_AppendSteal`
 * :c:func:`PyListWriter_Extend`
 * :c:func:`PyListWriter_ExtendArray`
+* :c:func:`PyListWriter_ExtendArraySteal`
 
 Patch by Victor Stinner.
