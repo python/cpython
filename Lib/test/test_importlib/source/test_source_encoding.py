@@ -1,4 +1,4 @@
-from .. import util
+from test.test_importlib import util
 
 machinery = util.import_importlib('importlib.machinery')
 
@@ -23,7 +23,7 @@ class EncodingTest:
 
     PEP 263 specifies how that can change on a per-file basis. Either the first
     or second line can contain the encoding line [encoding first line]
-    encoding second line]. If the file has the BOM marker it is considered UTF-8
+    [encoding second line]. If the file has the BOM marker it is considered UTF-8
     implicitly [BOM]. If any encoding is specified it must be UTF-8, else it is
     an error [BOM and utf-8][BOM conflict].
 
@@ -102,19 +102,6 @@ class EncodingTestPEP451(EncodingTest):
  ) = util.test_both(EncodingTestPEP451, machinery=machinery)
 
 
-class EncodingTestPEP302(EncodingTest):
-
-    def load(self, loader):
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            return loader.load_module(self.module_name)
-
-
-(Frozen_EncodingTestPEP302,
- Source_EncodingTestPEP302
- ) = util.test_both(EncodingTestPEP302, machinery=machinery)
-
-
 class LineEndingTest:
 
     r"""Source written with the three types of line endings (\n, \r\n, \r)
@@ -156,19 +143,6 @@ class LineEndingTestPEP451(LineEndingTest):
 (Frozen_LineEndingTestPEP451,
  Source_LineEndingTestPEP451
  ) = util.test_both(LineEndingTestPEP451, machinery=machinery)
-
-
-class LineEndingTestPEP302(LineEndingTest):
-
-    def load(self, loader, module_name):
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            return loader.load_module(module_name)
-
-
-(Frozen_LineEndingTestPEP302,
- Source_LineEndingTestPEP302
- ) = util.test_both(LineEndingTestPEP302, machinery=machinery)
 
 
 if __name__ == '__main__':

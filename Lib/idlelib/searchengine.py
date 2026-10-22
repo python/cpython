@@ -2,7 +2,7 @@
 import re
 
 from tkinter import StringVar, BooleanVar, TclError
-import tkinter.messagebox as tkMessageBox
+from tkinter import messagebox
 
 def get(root):
     '''Return the singleton SearchEngine instance for the process.
@@ -31,6 +31,7 @@ class SearchEngine:
         self.wordvar = BooleanVar(root, False)   # match whole word?
         self.wrapvar = BooleanVar(root, True)   # wrap around buffer?
         self.backvar = BooleanVar(root, False)   # search backwards?
+        self.error_handler = None  # Set by an open dialog, see report_error.
 
     # Access methods
 
@@ -69,7 +70,7 @@ class SearchEngine:
         if not self.isre():  # if True, see setcookedpat
             pat = re.escape(pat)
         if self.isword():
-            pat = r"\b%s\b" % pat
+            pat = r"\b(?:%s)\b" % pat
         return pat
 
     def getprog(self):
@@ -78,28 +79,40 @@ class SearchEngine:
         if not pat:
             self.report_error(pat, "Empty regular expression")
             return None
-        pat = self.getcookedpat()
         flags = 0
         if not self.iscase():
             flags = flags | re.IGNORECASE
+        if self.isre():
+            # Check the pattern as typed, so that an error is reported
+            # at the right position.
+            try:
+                re.compile(pat, flags)
+            except re.PatternError as e:
+                self.report_error(pat, e.msg, e.pos)
+                return None
         try:
-            prog = re.compile(pat, flags)
-        except re.error as what:
-            args = what.args
-            msg = args[0]
-            col = args[1] if len(args) >= 2 else -1
-            self.report_error(pat, msg, col)
+            return re.compile(self.getcookedpat(), flags)
+        except re.PatternError as e:
+            msg = e.msg
+            if msg.startswith('global flags not at the start'):
+                msg = ('global flags like (?i) cannot be used '
+                       'with the "Whole word" option')
+            self.report_error(pat, msg)
             return None
-        return prog
 
-    def report_error(self, pat, msg, col=-1):
-        # Derived class could override this with something fancier
+    def report_error(self, pat, msg, col=None):
+        "Show msg in the open dialog, if any, else in a message box."
+        if self.error_handler is not None:
+            if col is not None:
+                msg = f"{msg} at position {col}"
+            self.error_handler("Error: " + str(msg), col)
+            return
         msg = "Error: " + str(msg)
         if pat:
             msg = msg + "\nPattern: " + str(pat)
-        if col >= 0:
+        if col is not None:
             msg = msg + "\nOffset: " + str(col)
-        tkMessageBox.showerror("Regular expression error",
+        messagebox.showerror("Regular expression error",
                                msg, master=self.root)
 
     def search_text(self, text, prog=None, ok=0):
@@ -168,7 +181,7 @@ class SearchEngine:
         wrapped = 0
         startline = line
         chars = text.get("%d.0" % line, "%d.0" % (line+1))
-        while 1:
+        while True:
             m = search_reverse(prog, chars[:-1], col)
             if m:
                 if ok or m.start() < col:
