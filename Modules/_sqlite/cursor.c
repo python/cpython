@@ -701,8 +701,7 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
                 PyObject *item = PyTuple_GET_ITEM(parameters, i);
                 current_param = Py_NewRef(item);
             } else if (PyList_CheckExact(parameters)) {
-                PyObject *item = PyList_GetItem(parameters, i);
-                current_param = Py_XNewRef(item);
+                current_param = PyList_GetItemRef(parameters, i);
             } else {
                 current_param = PySequence_GetItem(parameters, i);
             }
