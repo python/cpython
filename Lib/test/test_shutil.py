@@ -988,6 +988,47 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         self.assertEqual(os.stat(restrictive_subdir).st_mode,
                           os.stat(restrictive_subdir_dst).st_mode)
 
+    @os_helper.skip_unless_working_chmod
+    def test_copytree_no_copy_dir_stat(self):
+        tmp_dir = self.mkdtemp()
+        src_dir = os.path.join(tmp_dir, 'source')
+        sub_dir = os.path.join(src_dir, 'sub')
+        os.makedirs(sub_dir)
+        dst_dir = os.path.join(tmp_dir, 'destination')
+        self.addCleanup(shutil.rmtree, tmp_dir)
+        old_time = 1_000_000_000  # 2001-09-09, far from "now"
+        for path in (sub_dir, src_dir):
+            os.utime(path, (old_time, old_time))
+            os.chmod(path, 0o555)
+            self.addCleanup(os.chmod, path, 0o700)
+
+        shutil.copytree(src_dir, dst_dir, copy_dir_stat=False)
+        for src_path, dst_path in ((src_dir, dst_dir),
+                                   (sub_dir, os.path.join(dst_dir, 'sub'))):
+            mode = stat.S_IMODE(os.stat(dst_path).st_mode)
+            self.assertNotEqual(mode, 0o555)
+            self.assertTrue(mode & stat.S_IWUSR, oct(mode))
+            self.assertNotEqual(os.stat(src_path).st_mtime,
+                                os.stat(dst_path).st_mtime)
+
+    @os_helper.skip_unless_working_chmod
+    def test_copytree_no_copy_dir_stat_keeps_file_metadata(self):
+        tmp_dir = self.mkdtemp()
+        src_dir = os.path.join(tmp_dir, 'source')
+        os.mkdir(src_dir)
+        dst_dir = os.path.join(tmp_dir, 'destination')
+        self.addCleanup(shutil.rmtree, tmp_dir)
+
+        create_file((src_dir, 'restricted.txt'), '123')
+        os.chmod(os.path.join(src_dir, 'restricted.txt'), 0o600)
+        os.chmod(src_dir, 0o555)
+        self.addCleanup(os.chmod, src_dir, 0o700)
+
+        shutil.copytree(src_dir, dst_dir, copy_dir_stat=False)
+        self.assertNotEqual(stat.S_IMODE(os.stat(dst_dir).st_mode), 0o555)
+        self.assertEqual(os.stat(os.path.join(src_dir, 'restricted.txt')).st_mode,
+                          os.stat(os.path.join(dst_dir, 'restricted.txt')).st_mode)
+
     @unittest.mock.patch('os.chmod')
     def test_copytree_winerror(self, mock_patch):
         # When copying to VFAT, copystat() raises OSError. On Windows, the
