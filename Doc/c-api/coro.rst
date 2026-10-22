@@ -23,7 +23,8 @@ return.
 
 .. c:function:: int PyCoro_CheckExact(PyObject *ob)
 
-   Return true if *ob*'s type is *PyCoro_Type*; *ob* must not be *NULL*.
+   Return true if *ob*'s type is :c:type:`PyCoro_Type`; *ob* must not be ``NULL``.
+   This function always succeeds.
 
 
 .. c:function:: PyObject* PyCoro_New(PyFrameObject *frame, PyObject *name, PyObject *qualname)
@@ -31,4 +32,10 @@ return.
    Create and return a new coroutine object based on the *frame* object,
    with ``__name__`` and ``__qualname__`` set to *name* and *qualname*.
    A reference to *frame* is stolen by this function.  The *frame* argument
-   must not be *NULL*.
+   must not be ``NULL``.
+
+   .. deprecated-removed:: 3.16 3.18
+
+      This function has not been used since 3.10.
+      It is also impossible to construct a proper *frame*
+      object to call this function.
