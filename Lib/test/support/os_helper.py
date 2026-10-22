@@ -688,6 +688,24 @@ def fd_count():
         except FileNotFoundError:
             pass
 
+    if sys.platform == "freebsd" and fd_count._dev_fd_mounted:
+        # Check if /dev/fd/ fdescfs file system is mounted. By default, it's
+        # not mounted and /dev/fd/ always contains 3 files (0, 1, 2).
+        try:
+            dirfd = os.open("/dev/fd", os.O_RDONLY)
+            try:
+                if os.path.exists(f"/dev/fd/{dirfd}"):
+                    names = list(os.scandir(dirfd))
+                    # Don't count dirfd
+                    return len(names) - 1
+                else:
+                    # fdescfs is not mounted
+                    fd_count._dev_fd_mounted = False
+            finally:
+                os.close(dirfd)
+        except FileNotFoundError:
+            pass
+
     MAXFD = 256
     if hasattr(os, 'sysconf'):
         try:
@@ -734,6 +752,9 @@ def fd_count():
                 msvcrt.CrtSetReportMode(report_type, old_modes[report_type])
 
     return count
+
+# On FreeBSD, flag set to False if /dev/fd/ is not mounted as fdescfs
+fd_count._dev_fd_mounted = True
 
 
 if hasattr(os, "umask"):
