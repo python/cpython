@@ -5712,11 +5712,18 @@ class TestPostHandshakeAuth(unittest.TestCase):
     def test_internal_chain_server_resumed_session(self):
         # A session resumed from a ticket stores the client's certificate
         # but not the chain it was sent with.
+        for version in ssl.TLSVersion.TLSv1_2, ssl.TLSVersion.TLSv1_3:
+            if not has_tls_version(version):
+                continue
+            with self.subTest(version=version.name):
+                self.check_chain_server_resumed_session(version)
+
+    def check_chain_server_resumed_session(self, version):
         client_context, server_context, hostname = testing_context()
         client_context.load_cert_chain(SIGNED_CERTFILE)
         server_context.verify_mode = ssl.CERT_REQUIRED
-        # TODO: sessions aren't compatible with TLSv1.3 yet
-        client_context.maximum_version = ssl.TLSVersion.TLSv1_2
+        client_context.minimum_version = version
+        client_context.maximum_version = version
 
         server = ThreadedEchoServer(context=server_context, chatty=False)
         with server:
@@ -5725,6 +5732,11 @@ class TestPostHandshakeAuth(unittest.TestCase):
                 server_hostname=hostname
             ) as s:
                 s.connect((HOST, server.port))
+                s.write(b'UNVERIFIEDCHAIN\n')
+                res = s.recv(1024)
+                self.assertEqual(res, b'\x02\n')
+                # TLS 1.3 sends the ticket after the handshake, so only
+                # get the session once data was received.
                 session = s.session
                 self.assertTrue(session.has_ticket)
             with client_context.wrap_socket(
