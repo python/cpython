@@ -1,3 +1,4 @@
+.. cve: CVE-2026-115559
+
 :meth:`imaplib.IMAP4.starttls` now rejects unexpected plaintext buffered after
 the STARTTLS response, preventing it from being processed as TLS-protected data.
-This fixes :cve:`2026-115559`.
