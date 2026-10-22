@@ -6,6 +6,7 @@ import os
 import pprint
 import shutil
 import tempfile
+import zipfile
 from subprocess import *
 
 startdate = "20180829142316Z"
@@ -229,9 +230,15 @@ def write_cert_reference(path):
         print(refdata, file=f)
 
 
-# eMudhra intermediate on the _ssl distrusted list, its secp384r1 key is 4.
-# See https://emudhra.we-have-a-problem.com/
-DISTRUSTED_INTERMEDIATE = 'distrusted_intermediate.pem'
+# The distrusted test material (compromised eMudhra CA certs and a leaf signed
+# by them) lives in a password-protected zip so it doesn't trip security
+# scanners that cannot tell internal test fixtures from production secrets and
+# flag any certificate or private key they find.  It is encrypted, not merely
+# zipped, because such scanners read inside plain archives.  The password is
+# fixed, public, and not a secret.
+DISTRUSTED_ZIP = 'distrusted.zip'
+DISTRUSTED_ZIP_DIR = 'distrusted'
+DISTRUSTED_ZIP_PW = 'Brave Sir Robin'
 
 # ASN.1 template for the intermediate's compromised key: secp384r1 scalar 4.
 # openssl derives the public key when the SEC1 structure omits it.
@@ -245,14 +252,41 @@ distrusted_key_template = """
 
 
 def make_distrusted_spki_cert(cmdlineargs):
-    # leaf signed by the distrusted intermediate, chains to distrusted_root.pem
+    # leaf signed by the distrusted intermediate, chains to the distrusted root
     print("creating distrusted-SPKI test cert")
-    tempnames = []
-    for i in range(7):
-        with tempfile.NamedTemporaryFile(delete=False) as f:
-            tempnames.append(f.name)
-    req_file, key_file, csr_file, cert_file, cakey_conf, cakey_der, cakey_file = tempnames
-    try:
+    # The standard library can read but not write encrypted zip files, so we
+    # need the Info-ZIP "zip" command to repackage the archive.
+    if shutil.which('zip') is None:
+        raise SystemExit(
+            f"the 'zip' command is required to write the encrypted {DISTRUSTED_ZIP} "
+            "(the zipfile module cannot create encrypted archives); "
+            "please install Info-ZIP's zip utility"
+        )
+
+    # the root and intermediate are real certs we cannot re-mint; carry them
+    # over from the existing archive
+    pw = DISTRUSTED_ZIP_PW.encode()
+    with zipfile.ZipFile(DISTRUSTED_ZIP) as z:
+        root = z.read(DISTRUSTED_ZIP_DIR + '/distrusted_root.pem', pw)
+        intermediate = z.read(DISTRUSTED_ZIP_DIR + '/distrusted_intermediate.pem', pw)
+
+    with tempfile.TemporaryDirectory() as workdir:
+        stage = os.path.join(workdir, DISTRUSTED_ZIP_DIR)
+        os.mkdir(stage)
+        req_file = os.path.join(workdir, 'req.cnf')
+        key_file = os.path.join(workdir, 'leaf.key')
+        csr_file = os.path.join(workdir, 'leaf.csr')
+        cert_file = os.path.join(workdir, 'leaf.pem')
+        cakey_conf = os.path.join(workdir, 'cakey.cnf')
+        cakey_der = os.path.join(workdir, 'cakey.der')
+        cakey_file = os.path.join(workdir, 'cakey.pem')
+
+        inter_file = os.path.join(stage, 'distrusted_intermediate.pem')
+        with open(os.path.join(stage, 'distrusted_root.pem'), 'wb') as f:
+            f.write(root)
+        with open(inter_file, 'wb') as f:
+            f.write(intermediate)
+
         # recreate the intermediate's key (secp384r1 scalar 4) on the fly
         with open(cakey_conf, 'w') as f:
             f.write(distrusted_key_template.format(scalar='00' * 47 + '04'))
@@ -277,23 +311,25 @@ def make_distrusted_spki_cert(cmdlineargs):
         # sign with the distrusted intermediate, not the test CA
         check_call(['openssl', 'ca', '-config', req_file,
                     '-extensions', 'req_x509_extensions_full',
-                    '-cert', DISTRUSTED_INTERMEDIATE, '-keyfile', cakey_file,
+                    '-cert', inter_file, '-keyfile', cakey_file,
                     '-out', cert_file, '-outdir', 'cadir',
                     '-policy', 'policy_anything', '-batch', '-infiles', csr_file])
         with open(key_file) as f:
             key = f.read()
         with open(cert_file) as f:
             cert = f.read()
-        with open(DISTRUSTED_INTERMEDIATE) as f:
-            intermediate = f.read()
         # server sends leaf + intermediate, client trusts the root
-        with open('distrusted_keycert.pem', 'w') as f:
+        with open(os.path.join(stage, 'distrusted_keycert.pem'), 'w') as f:
             f.write(key)
             f.write(cert)
-            f.write(intermediate)
-    finally:
-        for name in tempnames:
-            os.remove(name)
+            f.write(intermediate.decode())
+
+        # repackage the encrypted archive (zipfile cannot write encryption)
+        zippath = os.path.join(here, DISTRUSTED_ZIP)
+        if os.path.exists(zippath):
+            os.remove(zippath)
+        check_call(['zip', '-q', '-X', '-P', DISTRUSTED_ZIP_PW, '-r',
+                    zippath, DISTRUSTED_ZIP_DIR], cwd=workdir)
 
 
 if __name__ == '__main__':

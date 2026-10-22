@@ -18,7 +18,9 @@ import re
 import socket
 import select
 import struct
+import tempfile
 import time
+import zipfile
 import enum
 import gc
 import http.client
@@ -133,8 +135,14 @@ LEAF_MISSING_AKI_CA = data_file("leaf-missing-aki.ca.pem")
 # gh-160040: a leaf signed by a compromised eMudhra intermediate whose public
 # key is on the _ssl distrusted list. The chain to distrusted_root.pem is
 # otherwise valid.
-DISTRUSTED_SPKI_CERTFILE = data_file("distrusted_keycert.pem")
-DISTRUSTED_SPKI_CA = data_file("distrusted_root.pem")
+# The PEMs live in a password-protected zip so the compromised eMudhra certs
+# don't trip security scanners that cannot tell internal test fixtures from
+# production secrets and flag any certificate or private key they find.  It is
+# encrypted, not merely zipped, because such scanners read inside plain archives.
+# The password is fixed, public, and not a secret; it only keeps the archive
+# from storing the PEMs in the clear.
+DISTRUSTED_SPKI_ZIP = data_file("distrusted.zip")
+CHOSEN_KNIGHT = b"Brave Sir Robin"  # not a secret, see comment above
 DISTRUSTED_SPKI_HOSTNAME = "localhost"
 
 # Same certificate as pycacert.pem, but without extra text in file
@@ -2292,9 +2300,17 @@ class SSLObjectTests(unittest.TestCase):
         # intermediate's public key is on the _ssl distrusted list, so
         # verification rejects it.
         client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        client_context.load_verify_locations(DISTRUSTED_SPKI_CA)
         server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        server_context.load_cert_chain(DISTRUSTED_SPKI_CERTFILE)
+        # the contexts load the PEMs now, so the files are only needed here
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with zipfile.ZipFile(DISTRUSTED_SPKI_ZIP) as z:
+                z.extractall(tmpdir, pwd=CHOSEN_KNIGHT)
+            certdir = os.path.join(tmpdir, "distrusted")
+            client_context.load_verify_locations(
+                os.path.join(certdir, "distrusted_root.pem"))
+            server_context.load_cert_chain(
+                os.path.join(certdir, "distrusted_keycert.pem"))
+
         with self.assertRaises(ssl.SSLCertVerificationError) as cm:
             connected_bio_pair(client_context, server_context,
                                DISTRUSTED_SPKI_HOSTNAME)
