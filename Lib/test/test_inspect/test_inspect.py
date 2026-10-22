@@ -1155,11 +1155,22 @@ class TestGetmoduleFrameOwner(unittest.TestCase):
             @property
             def __file__(self):
                 return self.source
+        # Do not leave a shadow value that LOAD_ATTR_MODULE can read instead
+        # of the property when attribute access specializes.
+        del self.module.__dict__['__file__']
         self.module.__class__ = DynamicModule
-        self.module.source = self.filename + '.dynamic'
-        frame, traceback = self.capture(filename=self.module.source)
-        for object in (frame, traceback):
-            self.assertIs(inspect.getmodule(object), self.module)
+        for suffix in ('.dynamic', '.changed'):
+            with self.subTest(suffix=suffix):
+                self.module.source = self.filename + suffix
+                frame, traceback = self.capture(filename=self.module.source)
+                # Exercise warmed attribute access as well as cold caches.
+                for _ in range(100):
+                    self.assertEqual(inspect.getfile(self.module),
+                                     self.module.source)
+                for object in (frame, traceback):
+                    inspect.modulesbyfile.clear()
+                    inspect._filesbymodname.clear()
+                    self.assertIs(inspect.getmodule(object), self.module)
 
     def test_sourceless_import(self):
         import py_compile
