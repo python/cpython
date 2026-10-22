@@ -1131,6 +1131,11 @@ reused in custom filters:
   - :ref:`Refuse <tarfile-extraction-refuse>` to extract files whose absolute
     path (after following symlinks) would end up outside the destination.
     This raises :class:`~tarfile.OutsideDestinationError`.
+  - :ref:`Refuse <tarfile-extraction-refuse>` to extract links (hard or soft)
+    whose name refers to the destination directory itself.
+    This raises :class:`~tarfile.OutsideDestinationError`.
+    Note that such files are refused even on platforms that do not support
+    symbolic links.
   - Clear high mode bits (setuid, setgid, sticky) and group/other write bits
     (:const:`~stat.S_IWGRP` | :const:`~stat.S_IWOTH`).
 
