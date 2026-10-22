@@ -1176,6 +1176,9 @@ class IMAP4:
             ssl_context = ssl._create_stdlib_context()
         typ, dat = self._simple_command(name)
         if typ == 'OK':
+            if any(self._readbuf):
+                raise self.abort('unexpected data after STARTTLS response')
+            self._readbuf = []
             self._close_imaplib_file()
             self.sock = ssl_context.wrap_socket(self.sock,
                                                 server_hostname=self.host)
