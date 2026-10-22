@@ -16,7 +16,6 @@ import os
 import sys
 import socket
 import struct
-import tempfile
 import time
 
 
@@ -51,7 +50,7 @@ _MAX_PIPE_ATTEMPTS = 100
 default_family = 'AF_INET'
 families = ['AF_INET']
 
-if hasattr(socket, 'AF_UNIX'):
+if hasattr(socket, 'AF_UNIX') and sys.platform != 'cygwin':
     default_family = 'AF_UNIX'
     families += ['AF_UNIX']
 
@@ -77,7 +76,12 @@ def arbitrary_address(family):
     if family == 'AF_INET':
         return ('localhost', 0)
     elif family == 'AF_UNIX':
-        return tempfile.mktemp(prefix='sock-', dir=util.get_temp_dir())
+        # NOTE: util.get_temp_dir() is a 0o700 per-process directory.
+        # A mktemp-style ToC vs ToU concern is not important as bind()
+        # surfaces the extremely unlikely collision as EADDRINUSE.
+        suffix = os.urandom(util._TMPSOCK_SUFFIXLEN // 2).hex()
+        return os.path.join(util.get_temp_dir(),
+                            f"{util._TMPSOCK_PREFIX}{suffix}")
     elif family == 'AF_PIPE':
         return (r'\\.\pipe\pyc-%d-%d-%s' %
                 (os.getpid(), next(_mmap_counter), os.urandom(8).hex()))

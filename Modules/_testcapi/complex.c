@@ -76,7 +76,6 @@ _py_c_abs(PyObject *Py_UNUSED(module), PyObject* obj)
         return NULL;
     }
 
-    errno = 0;
     res = _Py_c_abs(complex);
     return Py_BuildValue("di", res, errno);
 }

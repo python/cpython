@@ -5,6 +5,7 @@ extern "C" {
 #endif
 
 
+#if !defined(_Py_OPAQUE_PYOBJECT)
 /*
 Immortalization:
 
@@ -90,14 +91,16 @@ check by comparing the reference count field to the minimum immortality refcount
 #  define _Py_REF_SHARED(refcnt, flags) \
               (((refcnt) << _Py_REF_SHARED_SHIFT) + (flags))
 #endif  // Py_GIL_DISABLED
-
+#endif  // _Py_OPAQUE_PYOBJECT
 
 // Py_REFCNT() implementation for the stable ABI
 PyAPI_FUNC(Py_ssize_t) Py_REFCNT(PyObject *ob);
 
 #if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030e0000
     // Stable ABI implements Py_REFCNT() as a function call
-    // on limited C API version 3.14 and newer.
+    // on limited C API version 3.14 and newer, and on abi3t.
+#elif defined(_Py_OPAQUE_PYOBJECT)
+    // Py_REFCNT() is also a function call in abi3t.
 #else
     static inline Py_ssize_t _Py_REFCNT(PyObject *ob) {
     #if !defined(Py_GIL_DISABLED)
@@ -150,9 +153,10 @@ PyAPI_FUNC(void) _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt);
 
 static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
     assert(refcnt >= 0);
-#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030d0000
+#if (defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030d0000) \
+    || defined(_Py_OPAQUE_PYOBJECT)
     // Stable ABI implements Py_SET_REFCNT() as a function call
-    // on limited C API version 3.13 and newer.
+    // on limited C API version 3.13 and newer, and abi3t.
     _Py_SetRefcnt(ob, refcnt);
 #else
     // This immortal check is for code that is unaware of immortal objects.
@@ -191,7 +195,7 @@ static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
         ob->ob_ref_shared = _Py_REF_SHARED(refcnt, _Py_REF_MERGED);
     }
 #endif  // Py_GIL_DISABLED
-#endif  // Py_LIMITED_API+0 < 0x030d0000
+#endif  // Py_LIMITED_API
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_SET_REFCNT(ob, refcnt) Py_SET_REFCNT(_PyObject_CAST(ob), (refcnt))
@@ -250,10 +254,11 @@ PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
 static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 {
-#if defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))
+#if (defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))) \
+    || defined(_Py_OPAQUE_PYOBJECT)
     // Stable ABI implements Py_INCREF() as a function call on limited C API
-    // version 3.12 and newer, and on Python built in debug mode. _Py_IncRef()
-    // was added to Python 3.10.0a7, use Py_IncRef() on older Python versions.
+    // version 3.12 and newer, abi3t, and on Python built in debug mode.
+    // _Py_IncRef() was added to Python 3.10.0a7, use Py_IncRef() on older versions.
     // Py_IncRef() accepts NULL whereas _Py_IncRef() doesn't.
 #  if Py_LIMITED_API+0 >= 0x030a00A7
     _Py_IncRef(op);
@@ -305,8 +310,8 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 #  define Py_INCREF(op) Py_INCREF(_PyObject_CAST(op))
 #endif
 
-
-#if !defined(Py_LIMITED_API) && defined(Py_GIL_DISABLED)
+#if !defined(Py_LIMITED_API)
+#if defined(Py_GIL_DISABLED)
 // Implements Py_DECREF on objects not owned by the current thread.
 PyAPI_FUNC(void) _Py_DecRefShared(PyObject *);
 PyAPI_FUNC(void) _Py_DecRefSharedDebug(PyObject *, const char *, int);
@@ -316,12 +321,14 @@ PyAPI_FUNC(void) _Py_DecRefSharedDebug(PyObject *, const char *, int);
 // zero. Otherwise, the thread gives up ownership and merges the reference
 // count fields.
 PyAPI_FUNC(void) _Py_MergeZeroLocalRefcount(PyObject *);
-#endif
+#endif  // Py_GIL_DISABLED
+#endif  // Py_LIMITED_API
 
-#if defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))
+#if (defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))) \
+    || defined(_Py_OPAQUE_PYOBJECT)
 // Stable ABI implements Py_DECREF() as a function call on limited C API
-// version 3.12 and newer, and on Python built in debug mode. _Py_DecRef() was
-// added to Python 3.10.0a7, use Py_DecRef() on older Python versions.
+// version 3.12 and newer, abi3t, and on Python built in debug mode.
+// _Py_DecRef() was added to Python 3.10.0a7, use Py_DecRef() on older versions.
 // Py_DecRef() accepts NULL whereas _Py_DecRef() doesn't.
 static inline void Py_DECREF(PyObject *op) {
 #  if Py_LIMITED_API+0 >= 0x030a00A7
@@ -471,13 +478,26 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
  * and so avoid type punning. Otherwise, use memcpy() which causes type erasure
  * and so prevents the compiler to reuse an old cached 'op' value after
  * Py_CLEAR().
+ *
+ * On C++11 and newer, use "auto". On MSVC, check also _MSVC_LANG since
+ * __cplusplus is 199711L unless the /Zc:__cplusplus flag is used.
  */
 #ifdef _Py_TYPEOF
 #define Py_CLEAR(op) \
     do { \
-        _Py_TYPEOF(op)* _tmp_op_ptr = &(op); \
+        _Py_TYPEOF(&(op)) _tmp_op_ptr = &(op); \
         _Py_TYPEOF(op) _tmp_old_op = (*_tmp_op_ptr); \
-        if (_tmp_old_op != NULL) { \
+        if (_tmp_old_op != _Py_NULL) { \
+            *_tmp_op_ptr = _Py_NULL; \
+            Py_DECREF(_tmp_old_op); \
+        } \
+    } while (0)
+#elif defined(__cplusplus) && (__cplusplus >= 201103L ||  _MSVC_LANG >= 201103L)
+#define Py_CLEAR(op) \
+    do { \
+        auto _tmp_op_ptr = &(op); \
+        auto _tmp_old_op = (*_tmp_op_ptr); \
+        if (_tmp_old_op != _Py_NULL) { \
             *_tmp_op_ptr = _Py_NULL; \
             Py_DECREF(_tmp_old_op); \
         } \
@@ -487,11 +507,92 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
     do { \
         PyObject **_tmp_op_ptr = _Py_CAST(PyObject**, &(op)); \
         PyObject *_tmp_old_op = (*_tmp_op_ptr); \
-        if (_tmp_old_op != NULL) { \
+        if (_tmp_old_op != _Py_NULL) { \
             PyObject *_null_ptr = _Py_NULL; \
             memcpy(_tmp_op_ptr, &_null_ptr, sizeof(PyObject*)); \
             Py_DECREF(_tmp_old_op); \
         } \
+    } while (0)
+#endif
+
+
+/* Safely decref `dst` and set `dst` to `src`.
+ *
+ * As in case of Py_CLEAR "the obvious" code can be deadly:
+ *
+ *     Py_DECREF(dst);
+ *     dst = src;
+ *
+ * The safe way is:
+ *
+ *      Py_SETREF(dst, src);
+ *
+ * That arranges to set `dst` to `src` _before_ decref'ing, so that any code
+ * triggered as a side-effect of `dst` getting torn down no longer believes
+ * `dst` points to a valid object.
+ *
+ * Temporary variables are used to only evaluate macro arguments once and so
+ * avoid the duplication of side effects. _Py_TYPEOF(), C++ auto, or memcpy()
+ * is used to avoid a miscompilation caused by type punning. See Py_CLEAR()
+ * comment for implementation details about type punning.
+ *
+ * The memcpy() implementation does not emit a compiler warning if 'src' has
+ * not the same type than 'src': any pointer type is accepted for 'src'.
+ */
+#ifdef _Py_TYPEOF
+#define Py_SETREF(dst, src) \
+    do { \
+        _Py_TYPEOF(&(dst)) _tmp_dst_ptr = &(dst); \
+        _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
+        *_tmp_dst_ptr = (src); \
+        Py_DECREF(_tmp_old_dst); \
+    } while (0)
+#elif defined(__cplusplus) && (__cplusplus >= 201103L ||  _MSVC_LANG >= 201103L)
+#define Py_SETREF(dst, src) \
+    do { \
+        auto _tmp_dst_ptr = &(dst); \
+        auto _tmp_old_dst = (*_tmp_dst_ptr); \
+        *_tmp_dst_ptr = (src); \
+        Py_DECREF(_tmp_old_dst); \
+    } while (0)
+#else
+#define Py_SETREF(dst, src) \
+    do { \
+        PyObject **_tmp_dst_ptr = _Py_CAST(PyObject**, &(dst)); \
+        PyObject *_tmp_old_dst = (*_tmp_dst_ptr); \
+        PyObject *_tmp_src = _PyObject_CAST(src); \
+        memcpy(_tmp_dst_ptr, &_tmp_src, sizeof(PyObject*)); \
+        Py_DECREF(_tmp_old_dst); \
+    } while (0)
+#endif
+
+/* Py_XSETREF() is a variant of Py_SETREF() that uses Py_XDECREF() instead of
+ * Py_DECREF().
+ */
+#ifdef _Py_TYPEOF
+#define Py_XSETREF(dst, src) \
+    do { \
+        _Py_TYPEOF(&(dst)) _tmp_dst_ptr = &(dst); \
+        _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
+        *_tmp_dst_ptr = (src); \
+        Py_XDECREF(_tmp_old_dst); \
+    } while (0)
+#elif defined(__cplusplus) && (__cplusplus >= 201103L ||  _MSVC_LANG >= 201103L)
+#define Py_XSETREF(dst, src) \
+    do { \
+        auto _tmp_dst_ptr = &(dst); \
+        auto _tmp_old_dst = (*_tmp_dst_ptr); \
+        *_tmp_dst_ptr = (src); \
+        Py_XDECREF(_tmp_old_dst); \
+    } while (0)
+#else
+#define Py_XSETREF(dst, src) \
+    do { \
+        PyObject **_tmp_dst_ptr = _Py_CAST(PyObject**, &(dst)); \
+        PyObject *_tmp_old_dst = (*_tmp_dst_ptr); \
+        PyObject *_tmp_src = _PyObject_CAST(src); \
+        memcpy(_tmp_dst_ptr, &_tmp_src, sizeof(PyObject*)); \
+        Py_XDECREF(_tmp_old_dst); \
     } while (0)
 #endif
 

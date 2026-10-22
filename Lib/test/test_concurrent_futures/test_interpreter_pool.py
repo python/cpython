@@ -129,12 +129,12 @@ class InterpreterPoolExecutorTest(
             """
         os.write(w, b'\0')
 
-        executor = self.executor_type(initializer=initscript)
-        before_init = os.read(r, 100)
-        fut = executor.submit(script)
-        after_init = read_msg(r)
-        fut.result()
-        after_run = read_msg(r)
+        with self.executor_type(initializer=initscript) as executor:
+            before_init = os.read(r, 100)
+            fut = executor.submit(script)
+            after_init = read_msg(r)
+            fut.result()
+            after_run = read_msg(r)
 
         self.assertEqual(before_init, b'\0')
         self.assertEqual(after_init, msg1)
@@ -150,11 +150,11 @@ class InterpreterPoolExecutorTest(
         r, w = self.pipe()
         os.write(w, b'\0')
 
-        executor = self.executor_type(
-                initializer=write_msg, initargs=(w, msg))
-        before = os.read(r, 100)
-        executor.submit(mul, 10, 10)
-        after = read_msg(r)
+        with self.executor_type(
+                initializer=write_msg, initargs=(w, msg)) as executor:
+            before = os.read(r, 100)
+            executor.submit(mul, 10, 10)
+            after = read_msg(r)
 
         self.assertEqual(before, b'\0')
         self.assertEqual(after, msg)
@@ -260,11 +260,10 @@ class InterpreterPoolExecutorTest(
             import os
             os.write({w}, __name__.encode('utf-8') + b'\\0')
             """
-        executor = self.executor_type()
-
-        fut = executor.submit(script)
-        res = fut.result()
-        after = read_msg(r)
+        with self.executor_type() as executor:
+            fut = executor.submit(script)
+            res = fut.result()
+            after = read_msg(r)
 
         self.assertEqual(after, b'__main__')
         self.assertIs(res, None)
@@ -278,25 +277,24 @@ class InterpreterPoolExecutorTest(
             spam += 1
             return spam
 
-        executor = self.executor_type()
+        with self.executor_type() as executor:
+            fut = executor.submit(task1)
+            with self.assertRaises(_interpreters.NotShareableError):
+                fut.result()
 
-        fut = executor.submit(task1)
-        with self.assertRaises(_interpreters.NotShareableError):
-            fut.result()
-
-        fut = executor.submit(task2)
-        with self.assertRaises(_interpreters.NotShareableError):
-            fut.result()
+            fut = executor.submit(task2)
+            with self.assertRaises(_interpreters.NotShareableError):
+                fut.result()
 
     def test_submit_local_instance(self):
         class Spam:
             def __init__(self):
                 self.value = True
 
-        executor = self.executor_type()
-        fut = executor.submit(Spam)
-        with self.assertRaises(_interpreters.NotShareableError):
-            fut.result()
+        with self.executor_type() as executor:
+            fut = executor.submit(Spam)
+            with self.assertRaises(_interpreters.NotShareableError):
+                fut.result()
 
     def test_submit_instance_method(self):
         class Spam:
@@ -304,15 +302,15 @@ class InterpreterPoolExecutorTest(
                 return True
         spam = Spam()
 
-        executor = self.executor_type()
-        fut = executor.submit(spam.run)
-        with self.assertRaises(_interpreters.NotShareableError):
-            fut.result()
+        with self.executor_type() as executor:
+            fut = executor.submit(spam.run)
+            with self.assertRaises(_interpreters.NotShareableError):
+                fut.result()
 
     def test_submit_func_globals(self):
-        executor = self.executor_type()
-        fut = executor.submit(get_current_name)
-        name = fut.result()
+        with self.executor_type() as executor:
+            fut = executor.submit(get_current_name)
+            name = fut.result()
 
         self.assertEqual(name, __name__)
         self.assertNotEqual(name, '__main__')
@@ -518,16 +516,16 @@ class AsyncioTest(InterpretersMixin, testasyncio_utils.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # Most uses of asyncio will implicitly call set_event_loop_policy()
-        # with the default policy if a policy hasn't been set already.
+        # Most uses of asyncio will implicitly set a thread event loop
+        # if one hasn't been set already.
         # If that happens in a test, like here, we'll end up with a failure
         # when --fail-env-changed is used.  That's why the other tests that
-        # use asyncio are careful to set the policy back to None and why
+        # use asyncio are careful to set the loop back to None and why
         # we're careful to do so here.  We also validate that no other
-        # tests left a policy in place, just in case.
-        policy = support.maybe_get_event_loop_policy()
-        assert policy is None, policy
-        cls.addClassCleanup(lambda: asyncio.events._set_event_loop_policy(None))
+        # tests left a loop in place, just in case.
+        loop = support.maybe_get_event_loop()
+        assert loop is None, loop
+        cls.addClassCleanup(lambda: asyncio.set_event_loop(None))
 
     def setUp(self):
         super().setUp()

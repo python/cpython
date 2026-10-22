@@ -15,6 +15,7 @@
 #include "pycore_pybuffer.h"      // _PyBuffer_ReleaseInInterpreterAndRawFree()
 #include "pycore_pylifecycle.h"   // _PyInterpreterConfig_AsDict()
 #include "pycore_pystate.h"       // _PyInterpreterState_IsRunningMain()
+#include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
 
@@ -143,7 +144,7 @@ xibufferview_from_buffer(PyTypeObject *cls, Py_buffer *view, int64_t interpid)
 
     Py_buffer *copied = PyMem_RawMalloc(sizeof(Py_buffer));
     if (copied == NULL) {
-        return NULL;
+        return PyErr_NoMemory();
     }
     /* This steals the view->obj reference  */
     *copied = *view;
@@ -151,7 +152,7 @@ xibufferview_from_buffer(PyTypeObject *cls, Py_buffer *view, int64_t interpid)
     xibufferview *self = PyObject_Malloc(sizeof(xibufferview));
     if (self == NULL) {
         PyMem_RawFree(copied);
-        return NULL;
+        return PyErr_NoMemory();
     }
     PyObject_Init(&self->base, cls);
     *self = (xibufferview){
@@ -276,6 +277,7 @@ _pybuffer_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
     struct xibuffer *view = PyMem_RawMalloc(sizeof(struct xibuffer));
     if (view == NULL) {
+        PyErr_NoMemory();
         return -1;
     }
     view->used = 0;
@@ -796,30 +798,37 @@ get_summary(PyInterpreterState *interp)
         Py_DECREF(idobj);
         return NULL;
     }
-    PyObject *res = PyTuple_Pack(2, idobj, whenceobj);
-    Py_DECREF(idobj);
-    Py_DECREF(whenceobj);
-    return res;
+    return _PyTuple_FromPairSteal(idobj, whenceobj);
 }
 
 
-// Not converted to Argument Clinic because the function uses ``**kwargs``.
-static PyObject *
-interp_new_config(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    const char *name = NULL;
-    if (!PyArg_ParseTuple(args, "|s:" MODULE_NAME_STR ".new_config", &name))
-    {
-        return NULL;
-    }
-    PyObject *overrides = kwds;
+/*[clinic input]
+_interpreters.new_config
 
+    name: str(c_default="NULL") = 'isolated'
+    /
+    **overrides: dict
+
+Return a representation of a new PyInterpreterConfig.
+
+The name determines the initial values of the config.  Supported named
+configs are: default, isolated, legacy, and empty.
+
+Any keyword arguments are set on the corresponding config fields,
+overriding the initial values.
+[clinic start generated code]*/
+
+static PyObject *
+_interpreters_new_config_impl(PyObject *module, const char *name,
+                              PyObject *overrides)
+/*[clinic end generated code: output=90ca53e5c8f66e31 input=67a5a2832894a72b]*/
+{
     PyInterpreterConfig config;
     if (init_named_config(&config, name) < 0) {
         return NULL;
     }
 
-    if (overrides != NULL && PyDict_GET_SIZE(overrides) > 0) {
+    if (PyDict_GET_SIZE(overrides) > 0) {
         if (_PyInterpreterConfig_UpdateFromDict(&config, overrides) < 0) {
             return NULL;
         }
@@ -834,18 +843,6 @@ interp_new_config(PyObject *self, PyObject *args, PyObject *kwds)
     Py_DECREF(dict);
     return configobj;
 }
-
-PyDoc_STRVAR(new_config_doc,
-"new_config($module, name='isolated', /, **overrides)\n\
---\n\
-\n\
-Return a representation of a new PyInterpreterConfig.\n\
-\n\
-The name determines the initial values of the config.  Supported named\n\
-configs are: default, isolated, legacy, and empty.\n\
-\n\
-Any keyword arguments are set on the corresponding config fields,\n\
-overriding the initial values.");
 
 
 /*[clinic input]
@@ -1221,7 +1218,8 @@ _interpreters.run_func
 Execute the body of the provided function in the identified interpreter.
 
 Code objects are also supported.  In both cases, closures and args
-are not supported.  Methods and other callables are not supported either.
+are not supported.  Methods and other callables are not supported
+either.
 
 (See _interpreters.exec().)
 [clinic start generated code]*/
@@ -1229,7 +1227,7 @@ are not supported.  Methods and other callables are not supported either.
 static PyObject *
 _interpreters_run_func_impl(PyObject *module, PyObject *id, PyObject *func,
                             PyObject *shared, int restricted)
-/*[clinic end generated code: output=131f7202ca4a0c5e input=2d62bb9b9eaf4948]*/
+/*[clinic end generated code: output=131f7202ca4a0c5e input=162b29823b33d5cc]*/
 {
 #define FUNCNAME MODULE_NAME_STR ".run_func"
     PyThreadState *tstate = _PyThreadState_GET();
@@ -1376,6 +1374,7 @@ _interpreters_is_running_impl(PyObject *module, PyObject *id, int restricted)
 
 
 /*[clinic input]
+@permit_long_summary
 _interpreters.get_config
     id: object
     *
@@ -1386,7 +1385,7 @@ Return a representation of the config used to initialize the interpreter.
 
 static PyObject *
 _interpreters_get_config_impl(PyObject *module, PyObject *id, int restricted)
-/*[clinic end generated code: output=56773353b9b7224a input=59519a01c22d96d1]*/
+/*[clinic end generated code: output=56773353b9b7224a input=8272d9ea9e4fb42a]*/
 {
     if (id == Py_None) {
         id = NULL;
@@ -1492,19 +1491,19 @@ _interpreters_decref_impl(PyObject *module, PyObject *id, int restricted)
 
 
 /*[clinic input]
-@permit_long_docstring_body
 _interpreters.capture_exception
     exc as exc_arg: object = None
 
 Return a snapshot of an exception.
 
-If "exc" is None then the current exception, if any, is used (but not cleared).
-The returned snapshot is the same as what _interpreters.exec() returns.
+If "exc" is None then the current exception, if any, is used (but not
+cleared).  The returned snapshot is the same as what
+_interpreters.exec() returns.
 [clinic start generated code]*/
 
 static PyObject *
 _interpreters_capture_exception_impl(PyObject *module, PyObject *exc_arg)
-/*[clinic end generated code: output=ef3f5393ef9c88a6 input=6c4dcb78fb722217]*/
+/*[clinic end generated code: output=ef3f5393ef9c88a6 input=4e6289f8f2a47b5b]*/
 {
     PyObject *exc = exc_arg;
     if (exc == NULL || exc == Py_None) {
@@ -1541,7 +1540,9 @@ _interpreters_capture_exception_impl(PyObject *module, PyObject *exc_arg)
     }
 
 finally:
-    _PyXI_FreeExcInfo(info);
+    if (info != NULL) {
+        _PyXI_FreeExcInfo(info);
+    }
     if (exc != exc_arg) {
         if (PyErr_Occurred()) {
             PyErr_SetRaisedException(exc);
@@ -1555,8 +1556,7 @@ finally:
 
 
 static PyMethodDef module_functions[] = {
-    {"new_config",                _PyCFunction_CAST(interp_new_config),
-     METH_VARARGS | METH_KEYWORDS, new_config_doc},
+    _INTERPRETERS_NEW_CONFIG_METHODDEF
 
     _INTERPRETERS_CREATE_METHODDEF
     _INTERPRETERS_DESTROY_METHODDEF

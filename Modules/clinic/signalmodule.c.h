@@ -138,11 +138,12 @@ PyDoc_STRVAR(signal_signal__doc__,
 "Set the action for the given signal.\n"
 "\n"
 "The action can be SIG_DFL, SIG_IGN, or a callable Python object.\n"
-"The previous action is returned.  See getsignal() for possible return values.\n"
+"The previous action is returned.  See getsignal() for possible return\n"
+"values.\n"
 "\n"
 "*** IMPORTANT NOTICE ***\n"
-"A signal handler function is called with two arguments:\n"
-"the first is the signal number, the second is the interrupted stack frame.");
+"A signal handler function is called with two arguments: the first is\n"
+"the signal number, the second is the interrupted stack frame.");
 
 #define SIGNAL_SIGNAL_METHODDEF    \
     {"signal", _PyCFunction_CAST(signal_signal), METH_FASTCALL, signal_signal__doc__},
@@ -362,8 +363,8 @@ PyDoc_STRVAR(signal_setitimer__doc__,
 "\n"
 "Sets given itimer (one of ITIMER_REAL, ITIMER_VIRTUAL or ITIMER_PROF).\n"
 "\n"
-"The timer will fire after value seconds and after that every interval seconds.\n"
-"The itimer can be cleared by setting seconds to zero.\n"
+"The timer will fire after value seconds and after that every interval\n"
+"seconds.  The itimer can be cleared by setting seconds to zero.\n"
 "\n"
 "Returns old values as a tuple: (delay, interval).");
 
@@ -508,8 +509,8 @@ PyDoc_STRVAR(signal_sigwait__doc__,
 "Wait for a signal.\n"
 "\n"
 "Suspend execution of the calling thread until the delivery of one of the\n"
-"signals specified in the signal set sigset.  The function accepts the signal\n"
-"and returns the signal number.");
+"signals specified in the signal set sigset.  The function accepts the\n"
+"signal and returns the signal number.");
 
 #define SIGNAL_SIGWAIT_METHODDEF    \
     {"sigwait", (PyCFunction)signal_sigwait, METH_O, signal_sigwait__doc__},
@@ -688,7 +689,7 @@ exit:
 
 #endif /* defined(HAVE_PTHREAD_KILL) */
 
-#if (defined(__linux__) && defined(__NR_pidfd_send_signal) && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
+#if (defined(HAVE_PIDFD_SEND_SIGNAL) || (defined(__linux__) && defined(__NR_pidfd_send_signal) && !(defined(__ANDROID__) && __ANDROID_API__ < 31)))
 
 PyDoc_STRVAR(signal_pidfd_send_signal__doc__,
 "pidfd_send_signal($module, pidfd, signalnum, siginfo=None, flags=0, /)\n"
@@ -701,7 +702,7 @@ PyDoc_STRVAR(signal_pidfd_send_signal__doc__,
 
 static PyObject *
 signal_pidfd_send_signal_impl(PyObject *module, int pidfd, int signalnum,
-                              PyObject *siginfo, int flags);
+                              PyObject *siginfo, unsigned int flags);
 
 static PyObject *
 signal_pidfd_send_signal(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -710,7 +711,7 @@ signal_pidfd_send_signal(PyObject *module, PyObject *const *args, Py_ssize_t nar
     int pidfd;
     int signalnum;
     PyObject *siginfo = Py_None;
-    int flags = 0;
+    unsigned int flags = 0;
 
     if (!_PyArg_CheckPositional("pidfd_send_signal", nargs, 2, 4)) {
         goto exit;
@@ -730,9 +731,21 @@ signal_pidfd_send_signal(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 4) {
         goto skip_optional;
     }
-    flags = PyLong_AsInt(args[3]);
-    if (flags == -1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[3], &flags, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
 skip_optional:
     return_value = signal_pidfd_send_signal_impl(module, pidfd, signalnum, siginfo, flags);
@@ -741,7 +754,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(__linux__) && defined(__NR_pidfd_send_signal) && !(defined(__ANDROID__) && __ANDROID_API__ < 31)) */
+#endif /* (defined(HAVE_PIDFD_SEND_SIGNAL) || (defined(__linux__) && defined(__NR_pidfd_send_signal) && !(defined(__ANDROID__) && __ANDROID_API__ < 31))) */
 
 #ifndef SIGNAL_ALARM_METHODDEF
     #define SIGNAL_ALARM_METHODDEF
@@ -794,4 +807,4 @@ exit:
 #ifndef SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
     #define SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
 #endif /* !defined(SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF) */
-/*[clinic end generated code: output=42e20d118435d7fa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2a04ec31f49b1c93 input=a9049054013a1b77]*/

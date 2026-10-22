@@ -1,5 +1,0 @@
-asyncio: Fix :func:`asyncio.Server.serve_forever` shutdown regression. Since
-3.12, cancelling ``serve_forever()`` could hang waiting for a handler blocked
-on a read from a client that never closed (effectively requiring two
-interrupts to stop); the shutdown sequence now ensures client streams are
-closed so ``serve_forever()`` exits promptly and handlers observe EOF.

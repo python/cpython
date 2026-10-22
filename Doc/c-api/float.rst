@@ -86,8 +86,7 @@ Floating-Point Objects
    It is equivalent to the :c:macro:`!INFINITY` macro from the C11 standard
    ``<math.h>`` header.
 
-   .. deprecated:: 3.15
-      The macro is :term:`soft deprecated`.
+   .. soft-deprecated:: 3.15
 
 
 .. c:macro:: Py_NAN
@@ -103,8 +102,7 @@ Floating-Point Objects
 
    Equivalent to :c:macro:`!INFINITY`.
 
-   .. deprecated:: 3.14
-      The macro is :term:`soft deprecated`.
+   .. soft-deprecated:: 3.14
 
 
 .. c:macro:: Py_MATH_E
@@ -161,8 +159,8 @@ Floating-Point Objects
    that is, it is normal, subnormal or zero, but not infinite or NaN.
    Return ``0`` otherwise.
 
-   .. deprecated:: 3.14
-      The macro is :term:`soft deprecated`.  Use :c:macro:`!isfinite` instead.
+   .. soft-deprecated:: 3.14
+      Use :c:macro:`!isfinite` instead.
 
 
 .. c:macro:: Py_IS_INFINITY(X)
@@ -170,8 +168,8 @@ Floating-Point Objects
    Return ``1`` if the given floating-point number *X* is positive or negative
    infinity.  Return ``0`` otherwise.
 
-   .. deprecated:: 3.14
-      The macro is :term:`soft deprecated`.  Use :c:macro:`!isinf` instead.
+   .. soft-deprecated:: 3.14
+      Use :c:macro:`!isinf` instead.
 
 
 .. c:macro:: Py_IS_NAN(X)
@@ -179,8 +177,8 @@ Floating-Point Objects
    Return ``1`` if the given floating-point number *X* is a not-a-number (NaN)
    value.  Return ``0`` otherwise.
 
-   .. deprecated:: 3.14
-      The macro is :term:`soft deprecated`.  Use :c:macro:`!isnan` instead.
+   .. soft-deprecated:: 3.14
+      Use :c:macro:`!isnan` instead.
 
 
 Pack and Unpack functions
@@ -216,7 +214,7 @@ Pack functions
 The pack routines write 2, 4 or 8 bytes, starting at *p*. *le* is an
 :c:expr:`int` argument, non-zero if you want the bytes string in little-endian
 format (exponent last, at ``p+1``, ``p+3``, or ``p+6`` and ``p+7``), zero if you
-want big-endian format (exponent first, at *p*). Use the :c:macro:`!PY_LITTLE_ENDIAN`
+want big-endian format (exponent first, at *p*). Use the :c:macro:`PY_LITTLE_ENDIAN`
 constant to select the native endian: it is equal to ``0`` on big
 endian processor, or ``1`` on little endian processor.
 
@@ -235,9 +233,6 @@ most likely :exc:`OverflowError`).
 
    Pack a C double as the IEEE 754 binary64 double precision format.
 
-   .. impl-detail::
-      This function always succeeds in CPython.
-
 
 Unpack functions
 ^^^^^^^^^^^^^^^^
@@ -245,16 +240,13 @@ Unpack functions
 The unpack routines read 2, 4 or 8 bytes, starting at *p*.  *le* is an
 :c:expr:`int` argument, non-zero if the bytes string is in little-endian format
 (exponent last, at ``p+1``, ``p+3`` or ``p+6`` and ``p+7``), zero if big-endian
-(exponent first, at *p*). Use the :c:macro:`!PY_LITTLE_ENDIAN` constant to
+(exponent first, at *p*). Use the :c:macro:`PY_LITTLE_ENDIAN` constant to
 select the native endian: it is equal to ``0`` on big endian processor, or ``1``
 on little endian processor.
 
 Return value: The unpacked double.  On error, this is ``-1.0`` and
 :c:func:`PyErr_Occurred` is true (and an exception is set, most likely
 :exc:`OverflowError`).
-
-.. impl-detail::
-    These functions always succeed in CPython.
 
 .. c:function:: double PyFloat_Unpack2(const char *p, int le)
 

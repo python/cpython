@@ -49,6 +49,10 @@ extern "C" {
     _Py_atomic_load_uint16_relaxed(&value)
 #define FT_ATOMIC_LOAD_UINT32_RELAXED(value) \
     _Py_atomic_load_uint32_relaxed(&value)
+#define FT_ATOMIC_LOAD_UINT64_ACQUIRE(value) \
+    _Py_atomic_load_uint64_acquire(&value)
+#define FT_ATOMIC_LOAD_UINT64_RELAXED(value) \
+    _Py_atomic_load_uint64_relaxed(&value)
 #define FT_ATOMIC_LOAD_ULONG_RELAXED(value) \
     _Py_atomic_load_ulong_relaxed(&value)
 #define FT_ATOMIC_STORE_PTR_RELAXED(value, new_value) \
@@ -65,12 +69,20 @@ extern "C" {
     _Py_atomic_store_ssize_relaxed(&value, new_value)
 #define FT_ATOMIC_STORE_SSIZE_RELEASE(value, new_value) \
     _Py_atomic_store_ssize_release(&value, new_value)
+#define FT_ATOMIC_STORE_UINT8_RELEASE(value, new_value) \
+    _Py_atomic_store_uint8_release(&value, new_value)
 #define FT_ATOMIC_STORE_UINT8_RELAXED(value, new_value) \
     _Py_atomic_store_uint8_relaxed(&value, new_value)
 #define FT_ATOMIC_STORE_UINT16_RELAXED(value, new_value) \
     _Py_atomic_store_uint16_relaxed(&value, new_value)
 #define FT_ATOMIC_STORE_UINT32_RELAXED(value, new_value) \
     _Py_atomic_store_uint32_relaxed(&value, new_value)
+#define FT_ATOMIC_AND_UINT64(value, new_value) \
+    (void)_Py_atomic_and_uint64(&value, new_value)
+#define FT_ATOMIC_OR_UINT64(value, new_value) \
+    (void)_Py_atomic_or_uint64(&value, new_value)
+#define FT_ATOMIC_ADD_UINT64(value, new_value) \
+    (void)_Py_atomic_add_uint64(&value, new_value)
 #define FT_ATOMIC_STORE_CHAR_RELAXED(value, new_value) \
     _Py_atomic_store_char_relaxed(&value, new_value)
 #define FT_ATOMIC_LOAD_CHAR_RELAXED(value) \
@@ -128,6 +140,7 @@ extern "C" {
 #define FT_ATOMIC_ADD_SSIZE(value, new_value) \
     (void)_Py_atomic_add_ssize(&value, new_value)
 #define FT_MUTEX_LOCK(lock) PyMutex_Lock(lock)
+#define FT_MUTEX_LOCK_FLAGS(lock, flags) PyMutex_LockFlags(lock, flags)
 #define FT_MUTEX_UNLOCK(lock) PyMutex_Unlock(lock)
 
 #else
@@ -146,6 +159,8 @@ extern "C" {
 #define FT_ATOMIC_LOAD_UINT8_RELAXED(value) value
 #define FT_ATOMIC_LOAD_UINT16_RELAXED(value) value
 #define FT_ATOMIC_LOAD_UINT32_RELAXED(value) value
+#define FT_ATOMIC_LOAD_UINT64_ACQUIRE(value) value
+#define FT_ATOMIC_LOAD_UINT64_RELAXED(value) value
 #define FT_ATOMIC_LOAD_ULONG_RELAXED(value) value
 #define FT_ATOMIC_STORE_PTR_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_STORE_PTR_RELEASE(value, new_value) value = new_value
@@ -154,9 +169,13 @@ extern "C" {
 #define FT_ATOMIC_STORE_INT8_RELEASE(value, new_value) value = new_value
 #define FT_ATOMIC_STORE_SSIZE_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_STORE_SSIZE_RELEASE(value, new_value) value = new_value
+#define FT_ATOMIC_STORE_UINT8_RELEASE(value, new_value) value = new_value
 #define FT_ATOMIC_STORE_UINT8_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_STORE_UINT16_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_STORE_UINT32_RELAXED(value, new_value) value = new_value
+#define FT_ATOMIC_AND_UINT64(value, new_value) (void)(value &= new_value)
+#define FT_ATOMIC_OR_UINT64(value, new_value) (void)(value |= new_value)
+#define FT_ATOMIC_ADD_UINT64(value, new_value) (void)(value += new_value)
 #define FT_ATOMIC_LOAD_CHAR_RELAXED(value) value
 #define FT_ATOMIC_STORE_CHAR_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_LOAD_UCHAR_RELAXED(value) value
@@ -186,6 +205,7 @@ extern "C" {
 #define FT_ATOMIC_STORE_ULLONG_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_ADD_SSIZE(value, new_value) (void)(value += new_value)
 #define FT_MUTEX_LOCK(lock) do {} while (0)
+#define FT_MUTEX_LOCK_FLAGS(lock, flags) do {} while (0)
 #define FT_MUTEX_UNLOCK(lock) do {} while (0)
 
 #endif

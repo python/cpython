@@ -833,6 +833,8 @@ class ItimerTest(unittest.TestCase):
     # Issue 3864, unknown if this affects earlier versions of freebsd also
     @unittest.skipIf(sys.platform in ('netbsd5',) or is_apple_mobile,
         'itimer not reliable (does not mix well with threading) on some BSDs.')
+    @unittest.skipIf(sys.platform == 'cygwin',
+                     "Cygwin doesn't support ITIMER_VIRTUAL")
     def test_itimer_virtual(self):
         self.itimer = signal.ITIMER_VIRTUAL
         signal.signal(signal.SIGVTALRM, self.sig_vtalrm)
@@ -850,6 +852,8 @@ class ItimerTest(unittest.TestCase):
         # and the handler should have been called
         self.assertEqual(self.hndl_called, True)
 
+    @unittest.skipIf(sys.platform == 'cygwin',
+                     "Cygwin doesn't support ITIMER_PROF")
     def test_itimer_prof(self):
         self.itimer = signal.ITIMER_PROF
         signal.signal(signal.SIGPROF, self.sig_prof)

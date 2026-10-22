@@ -46,7 +46,8 @@ def _supports_sched():
     try:
         posix.sched_getscheduler(0)
     except OSError as e:
-        if e.errno == errno.ENOSYS:
+        # DragonFly BSD requires privileges to use the scheduler API.
+        if e.errno in (errno.ENOSYS, errno.EPERM):
             return False
     return True
 
@@ -70,7 +71,7 @@ class PosixTester(unittest.TestCase):
         NO_ARG_FUNCTIONS = [ "ctermid", "getcwd", "getcwdb", "uname",
                              "times", "getloadavg",
                              "getegid", "geteuid", "getgid", "getgroups",
-                             "getpid", "getpgrp", "getppid", "getuid", "sync",
+                             "getpid", "getpgrp", "getppid", "getuid",
                            ]
 
         for name in NO_ARG_FUNCTIONS:
@@ -79,6 +80,13 @@ class PosixTester(unittest.TestCase):
                 with self.subTest(name):
                     posix_func()
                     self.assertRaises(TypeError, posix_func, 1)
+
+    # gh-102184: sync() can block for a long time.
+    @support.requires_resource('walltime')
+    @unittest.skipUnless(hasattr(posix, 'sync'), 'test needs posix.sync()')
+    def test_sync(self):
+        posix.sync()
+        self.assertRaises(TypeError, posix.sync, 1)
 
     @unittest.skipUnless(hasattr(posix, 'getresuid'),
                          'test needs posix.getresuid()')
@@ -99,6 +107,10 @@ class PosixTester(unittest.TestCase):
     @unittest.skipUnless(hasattr(posix, 'setresuid'),
                          'test needs posix.setresuid()')
     def test_setresuid(self):
+        # Android blocks this function for non-root users regardless of the arguments.
+        if support.is_android and os.getuid() != 0:
+            self.assertRaises(PermissionError, posix.setresuid, -1, -1, -1)
+            return
         current_user_ids = posix.getresuid()
         self.assertIsNone(posix.setresuid(*current_user_ids))
         # -1 means don't change that value.
@@ -116,6 +128,10 @@ class PosixTester(unittest.TestCase):
     @unittest.skipUnless(hasattr(posix, 'setresgid'),
                          'test needs posix.setresgid()')
     def test_setresgid(self):
+        # Android blocks this function for non-root users regardless of the arguments.
+        if support.is_android and os.getuid() != 0:
+            self.assertRaises(PermissionError, posix.setresgid, -1, -1, -1)
+            return
         current_group_ids = posix.getresgid()
         self.assertIsNone(posix.setresgid(*current_group_ids))
         # -1 means don't change that value.
@@ -142,8 +158,8 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(TypeError, posix.initgroups, "foo", 3, object())
 
         # If a non-privileged user invokes it, it should fail with OSError
-        # EPERM.
-        if os.getuid() != 0:
+        # EPERM. On Cygwin, initgroups(name, 13) does not fail.
+        if os.getuid() != 0 and sys.platform != 'cygwin':
             try:
                 name = pwd.getpwuid(posix.getuid()).pw_name
             except KeyError:
@@ -415,8 +431,10 @@ class PosixTester(unittest.TestCase):
             if inst.errno == errno.EINVAL and sys.platform.startswith(
                 ('sunos', 'freebsd', 'openbsd', 'gnukfreebsd')):
                 raise unittest.SkipTest("test may fail on ZFS filesystems")
-            elif inst.errno == errno.EOPNOTSUPP and sys.platform.startswith("netbsd"):
-                raise unittest.SkipTest("test may fail on FFS filesystems")
+            elif inst.errno == errno.EOPNOTSUPP:
+                # ZFS on FreeBSD, FFS on NetBSD, etc.
+                raise unittest.SkipTest(
+                    "the file system does not support posix_fallocate()")
             else:
                 raise
         finally:
@@ -597,7 +615,9 @@ class PosixTester(unittest.TestCase):
             posix.sysconf(1.23)
 
         arg_max = posix.sysconf("SC_ARG_MAX")
-        self.assertGreater(arg_max, 0)
+        # SC_ARG_MAX is -1 on Cygwin
+        if sys.platform != 'cygwin':
+            self.assertGreater(arg_max, 0)
         self.assertEqual(
             posix.sysconf(posix.sysconf_names["SC_ARG_MAX"]), arg_max)
 
@@ -819,8 +839,7 @@ class PosixTester(unittest.TestCase):
         # a special case for NODEV, on others this is just an implementation
         # artifact.
         if (hasattr(posix, 'NODEV') and
-            sys.platform.startswith(('linux', 'macos', 'freebsd', 'dragonfly',
-                                     'sunos'))):
+            sys.platform.startswith(('linux', 'macos', 'freebsd', 'sunos'))):
             NODEV = posix.NODEV
             self.assertEqual(posix.major(NODEV), NODEV)
             self.assertEqual(posix.minor(NODEV), NODEV)
@@ -899,7 +918,9 @@ class PosixTester(unittest.TestCase):
             self.assertRaises(OSError, chown_func, first_param, 0, -1)
             check_stat(uid, gid)
             if hasattr(os, 'getgroups'):
-                if 0 not in os.getgroups():
+                # Also check the effective gid, which the kernel
+                # accepts for chown even if not in getgroups().
+                if 0 not in os.getgroups() and os.getegid() != 0:
                     self.assertRaises(OSError, chown_func, first_param, -1, 0)
                     check_stat(uid, gid)
         # test illegal types
@@ -1309,8 +1330,8 @@ class PosixTester(unittest.TestCase):
     @unittest.skipUnless(hasattr(pwd, 'getpwuid'), "test needs pwd.getpwuid()")
     @unittest.skipUnless(hasattr(os, 'getuid'), "test needs os.getuid()")
     def test_getgrouplist(self):
-        user = pwd.getpwuid(os.getuid())[0]
-        group = pwd.getpwuid(os.getuid())[3]
+        user = pwd.getpwuid(os.getuid()).pw_name
+        group = pwd.getpwuid(os.getuid()).pw_gid
         self.assertIn(group, posix.getgrouplist(user, group))
 
 
@@ -1447,6 +1468,7 @@ class PosixTester(unittest.TestCase):
         del sched_priority, param  # should not crash
         support.gc_collect()  # just to be sure
 
+    @requires_sched
     @unittest.skipUnless(hasattr(posix, "sched_rr_get_interval"), "no function")
     def test_sched_rr_get_interval(self):
         try:
@@ -1601,6 +1623,34 @@ class PosixTester(unittest.TestCase):
             self.skipTest(f"pidfd_open syscall blocked: {cm.exception!r}")
         self.assertEqual(cm.exception.errno, errno.EINVAL)
         os.close(os.pidfd_open(os.getpid(), 0))
+
+    @unittest.skipUnless(hasattr(os, "pidfd_getfd"), "pidfd_getfd unavailable")
+    def test_pidfd_getfd(self):
+        fd = os.open(__file__, os.O_RDONLY)
+        self.addCleanup(os.close, fd)
+        pidfd = os.pidfd_open(os.getpid(), 0)
+        self.addCleanup(os.close, pidfd)
+        try:
+            dupfd = os.pidfd_getfd(pidfd, fd)
+        except OSError as exc:
+            if exc.errno == errno.ENOSYS:
+                self.skipTest("system does not support pidfd_getfd")
+            if isinstance(exc, PermissionError):
+                self.skipTest(f"pidfd_getfd syscall blocked: {exc!r}")
+            raise
+        self.addCleanup(os.close, dupfd)
+
+        self.assertFalse(os.get_inheritable(dupfd))     # PEP 446
+        self.assertEqual(os.fstat(fd), os.fstat(dupfd))
+
+        with self.assertRaises(OSError) as cm:
+            os.pidfd_getfd(-1, 0)
+        self.assertEqual(cm.exception.errno, errno.EBADF)
+
+        with self.assertRaises(OSError) as cm:
+            bad_fd = os_helper.make_bad_fd()
+            os.pidfd_getfd(pidfd, bad_fd)
+        self.assertEqual(cm.exception.errno, errno.EBADF)
 
     @os_helper.skip_unless_hardlink
     @os_helper.skip_unless_symlink
@@ -1781,8 +1831,8 @@ class TestPosixDirFd(unittest.TestCase):
                 self.skipTest('posix.link(): %s' % e)
             self.addCleanup(posix.unlink, fulllinkname)
             # should have same inodes
-            self.assertEqual(posix.stat(fullname)[1],
-                posix.stat(fulllinkname)[1])
+            self.assertEqual(posix.stat(fullname).st_ino,
+                             posix.stat(fulllinkname).st_ino)
 
     @unittest.skipUnless(os.mkdir in os.supports_dir_fd, "test needs dir_fd support in os.mkdir()")
     def test_mkdir_dir_fd(self):
@@ -1830,6 +1880,76 @@ class TestPosixDirFd(unittest.TestCase):
             os.symlink('symlink', fullname)
             self.addCleanup(posix.unlink, fullname)
             self.assertEqual(posix.readlink(name, dir_fd=dir_fd), 'symlink')
+
+
+    _support_readlink_with_fd = (
+        hasattr(os, 'readlink')
+        and os.readlink in os.supports_fd
+    )
+
+    def _open_symlink_as_fd(self, path):
+        open_flags = os.O_RDONLY
+        if hasattr(os, "O_SYMLINK"):  # macOS/iOS
+            open_flags |= os.O_SYMLINK
+        elif hasattr(os, "O_NOFOLLOW") and hasattr(os, "O_PATH"):  # Linux/Android
+            open_flags |= os.O_NOFOLLOW | os.O_PATH
+        else:
+            self.fail("lacking open flags for this test")
+        return os.open(path, open_flags)
+
+    @unittest.skipUnless(_support_readlink_with_fd,
+                         "feature not supported on this platform")
+    def test_readlink_with_fd(self):
+        with self.prepare() as (dir_fd, name, fullname):
+            os.symlink("symlink", fullname)
+            self.addCleanup(posix.unlink, fullname)
+            fd = self._open_symlink_as_fd(fullname)
+            self.addCleanup(os.close, fd)
+            self.assertEqual(os.readlink(fd), "symlink")
+
+    @unittest.skipUnless(_support_readlink_with_fd,
+                         "feature not supported on this platform")
+    def test_readlink_with_fd_not_referring_to_symlink_throws(self):
+        with self.prepare_file() as (dir_fd, name, fullname):
+            fd = os.open(fullname, os.O_RDONLY)
+            self.addCleanup(os.close, fd)
+            # on Linux/Android, readlinkat("", fd, ...) fails with ENOENT, which
+            # Python translates to a FileNotFoundError, a subclass of OSError.
+            # On macOS, freadlink(fd, ...) fails with EINVAL, which gets raised
+            # as a OSError.
+            # So catching OSError here covers both cases.
+            with self.assertRaises(OSError):
+                os.readlink(fd)
+
+    @unittest.skipUnless(_support_readlink_with_fd,
+                         "feature not supported on this platform")
+    def test_readlink_with_fd_throws_if_both_fd_and_dir_fd_are_given(self):
+        with self.prepare() as (dir_fd, name, fullname):
+            os.symlink("symlink", fullname)
+            self.addCleanup(posix.unlink, fullname)
+            fd = self._open_symlink_as_fd(fullname)
+            self.addCleanup(os.close, fd)
+            with self.assertRaises(ValueError):
+                os.readlink(fd, dir_fd=dir_fd)
+
+    @unittest.skipIf(_support_readlink_with_fd,
+                     "feature is supported on this platform")
+    def test_readlink_with_fd_throws_not_implemented_error(self):
+        # on unsupported platforms, we may not even be able to get a
+        # file descriptor for a symlink, so use a fd for an ordinary file
+        os_helper.create_empty_file(os_helper.TESTFN)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        fd = os.open(os_helper.TESTFN, os.O_RDONLY)
+        self.addCleanup(os.close, fd)
+        with self.assertRaises(NotImplementedError):
+            os.readlink(fd)
+
+    @unittest.skipUnless(sys.platform in ["linux", "android", "darwin", "ios"],
+                         "feature not supported on this platform")
+    @support.requires_mac_ver(13, 0)
+    @support.requires_ios_ver(16, 0)
+    def test_readlink_is_marked_as_supports_fd(self):
+        self.assertIn(os.readlink, os.supports_fd)
 
     @unittest.skipUnless(os.rename in os.supports_dir_fd, "test needs dir_fd support in os.rename()")
     def test_rename_dir_fd(self):
@@ -1943,6 +2063,14 @@ class _PosixSpawnMixin:
         # directories in the $PATH that are not accessible.
         except (FileNotFoundError, PermissionError) as exc:
             self.assertEqual(exc.filename, no_such_executable)
+
+            # On Cygwin, os.posix_spawn() creates a child process even if the
+            # executable doesn't exist. We have to reap this process.
+            if sys.platform == 'cygwin':
+                for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+                    pid, status = os.waitpid(-1, os.WNOHANG)
+                    if pid != 0:
+                        break
         else:
             pid2, status = os.waitpid(pid, 0)
             self.assertEqual(pid2, pid)
@@ -2345,6 +2473,22 @@ class TestPosixWeaklinking(unittest.TestCase):
             self.assertNotHasAttr(os, "pwritev")
             self.assertNotHasAttr(os, "preadv")
 
+    def test_pipe2(self):
+        self._verify_available("HAVE_PIPE2")
+        if self.mac_ver >= (27, 0):
+            self.assertHasAttr(os, "pipe2")
+        else:
+            self.assertNotHasAttr(os, "pipe2")
+
+    def test_dup3(self):
+        self._verify_available("HAVE_DUP3")
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        # Must not crash even when dup3 unavailable at runtime.
+        # os.dup2 returns fd2 (here w); do not double-close.
+        os.dup2(r, w, inheritable=False)
+
     def test_stat(self):
         self._verify_available("HAVE_FSTATAT")
         if self.mac_ver >= (10, 10):
@@ -2545,6 +2689,17 @@ class TestPosixWeaklinking(unittest.TestCase):
 
             with self.assertRaisesRegex(NotImplementedError, "dir_fd unavailable"):
                 os.readlink("path",  dir_fd=0)
+
+    def test_freadlink(self):
+        self._verify_available("HAVE_FREADLINK")
+        if self.mac_ver >= (13, 0):
+            self.assertIn("HAVE_FREADLINK", posix._have_functions)
+
+        else:
+            self.assertNotIn("HAVE_FREADLINK", posix._have_functions)
+            errmsg = "readlink cannot read file descriptors on this platform"
+            with self.assertRaisesRegex(NotImplementedError, errmsg):
+                os.readlink(0)
 
     def test_symlink(self):
         self._verify_available("HAVE_SYMLINKAT")

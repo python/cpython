@@ -12,7 +12,7 @@ This module defines an object type which can compactly represent an array of
 basic values: characters, integers, floating-point numbers, complex numbers.  Arrays are mutable :term:`sequence`
 types and behave very much like lists, except that the type of objects stored in
 them is constrained.  The type is specified at object creation time by using a
-:dfn:`type code`, which is a single character.  The following type codes are
+:dfn:`type code`.  The following type codes are
 defined:
 
 +-----------+--------------------+-------------------+-----------------------+-------+
@@ -22,9 +22,7 @@ defined:
 +-----------+--------------------+-------------------+-----------------------+-------+
 | ``'B'``   | unsigned char      | int               | 1                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
-| ``'u'``   | wchar_t            | Unicode character | 2                     | \(1)  |
-+-----------+--------------------+-------------------+-----------------------+-------+
-| ``'w'``   | Py_UCS4            | Unicode character | 4                     | \(2)  |
+| ``'w'``   | Py_UCS4            | Unicode character | 4                     | \(1)  |
 +-----------+--------------------+-------------------+-----------------------+-------+
 | ``'h'``   | signed short       | int               | 2                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
@@ -42,34 +40,34 @@ defined:
 +-----------+--------------------+-------------------+-----------------------+-------+
 | ``'Q'``   | unsigned long long | int               | 8                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
+| ``'e'``   | _Float16           | float             | 2                     | \(2)  |
++-----------+--------------------+-------------------+-----------------------+-------+
 | ``'f'``   | float              | float             | 4                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
 | ``'d'``   | double             | float             | 8                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
-| ``'F'``   | float complex      | complex           | 8                     | \(3)  |
+| ``'Zf'``  | float complex      | complex           | 8                     | \(3)  |
 +-----------+--------------------+-------------------+-----------------------+-------+
-| ``'D'``   | double complex     | complex           | 16                    | \(3)  |
+| ``'Zd'``  | double complex     | complex           | 16                    | \(3)  |
 +-----------+--------------------+-------------------+-----------------------+-------+
 
 
 Notes:
 
 (1)
-   It can be 16 bits or 32 bits depending on the platform.
-
-   .. versionchanged:: 3.9
-      ``array('u')`` now uses :c:type:`wchar_t` as C type instead of deprecated
-      ``Py_UNICODE``. This change doesn't affect its behavior because
-      ``Py_UNICODE`` is alias of :c:type:`wchar_t` since Python 3.3.
-
-   .. deprecated-removed:: 3.3 3.16
-      Please migrate to ``'w'`` typecode.
-
-(2)
    .. versionadded:: 3.13
 
+(2)
+   The IEEE 754 binary16 "half precision" type was introduced in the 2008
+   revision of the `IEEE 754 standard <ieee 754 standard_>`_.
+   This type is not widely supported by C compilers.  It's available
+   as :c:expr:`_Float16` type, if the compiler supports the Annex H
+   of the C23 standard.
+
+   .. versionadded:: 3.15
+
 (3)
-   Complex types (``F`` and ``D``) are available unconditionally,
+   Complex types (``Zf`` and ``Zd``) are available unconditionally,
    regardless on support for complex types (the Annex G of the C11 standard)
    by the C compiler.
    As specified in the C11 standard, each complex type is represented by a
@@ -80,7 +78,7 @@ Notes:
 .. seealso::
 
    The :ref:`ctypes <ctypes-fundamental-data-types>` and
-   :ref:`struct <format-characters>` modules,
+   :ref:`struct <type-codes>` modules,
    as well as third-party modules like `numpy <https://numpy.org/doc/stable/reference/arrays.interface.html#object.__array_interface__>`__,
    use similar -- but slightly different -- type codes.
 
@@ -94,7 +92,10 @@ The module defines the following item:
 
 .. data:: typecodes
 
-   A string with all available type codes.
+   A tuple with all available type codes.
+
+   .. versionchanged:: 3.15
+      The type changed from :class:`str` to :class:`tuple`.
 
 
 The module defines the following type:
@@ -119,6 +120,8 @@ The module defines the following type:
    value must be an array object with the same type code; in all other cases,
    :exc:`TypeError` is raised. Array objects also implement the buffer interface,
    and may be used wherever :term:`bytes-like objects <bytes-like object>` are supported.
+
+   Arrays are :ref:`generic <generics>` over the type of their contents.
 
    .. audit-event:: array.__new__ typecode,initializer array.array
 
@@ -206,7 +209,7 @@ The module defines the following type:
    .. method:: fromunicode(ustr, /)
 
       Extends this array with data from the given Unicode string.
-      The array must have type code ``'u'`` or ``'w'``; otherwise a :exc:`ValueError` is raised.
+      The array must have type code ``'w'``; otherwise a :exc:`ValueError` is raised.
       Use ``array.frombytes(unicodestring.encode(enc))`` to append Unicode data to an
       array of some other type.
 
@@ -274,7 +277,7 @@ The module defines the following type:
 
    .. method:: tounicode()
 
-      Convert the array to a Unicode string.  The array must have a type ``'u'`` or ``'w'``;
+      Convert the array to a Unicode string.  The array must have a type ``'w'``;
       otherwise a :exc:`ValueError` is raised. Use ``array.tobytes().decode(enc)`` to
       obtain a Unicode string from an array of some other type.
 
@@ -282,7 +285,7 @@ The module defines the following type:
 The string representation of array objects has the form
 ``array(typecode, initializer)``.
 The *initializer* is omitted if the array is empty, otherwise it is
-a Unicode string if the *typecode* is ``'u'`` or ``'w'``, otherwise it is
+a Unicode string if the *typecode* is ``'w'``, otherwise it is
 a list of numbers.
 The string representation is guaranteed to be able to be converted back to an
 array with the same type and value using :func:`eval`, so long as the
@@ -304,3 +307,5 @@ Examples::
 
    `NumPy <https://numpy.org/>`_
       The NumPy package defines another array type.
+
+.. _ieee 754 standard: https://en.wikipedia.org/wiki/IEEE_754-2008_revision

@@ -176,6 +176,14 @@ bound into a function.
 
    .. versionadded:: 3.12
 
+.. c:macro:: PY_FOREACH_CODE_EVENT(V)
+
+   Apply the macro *V* to each suffix of :c:type:`PyCodeEvent`
+   constants.
+   Currently expands to ``V(CREATE) V(DESTROY)``.
+   The macro *V* must accept one event name and supply any punctuation
+   needed between expansions.
+
 .. c:type:: int (*PyCode_WatchCallback)(PyCodeEvent event, PyCodeObject* co)
 
    Type of a code object watcher callback function.
@@ -212,13 +220,15 @@ bound into a function.
 
 .. c:function:: PyObject *PyCode_Optimize(PyObject *code, PyObject *consts, PyObject *names, PyObject *lnotab_obj)
 
-   This is a :term:`soft deprecated` function that does nothing.
+   This is a function that does nothing.
 
    Prior to Python 3.10, this function would perform basic optimizations to a
    code object.
 
    .. versionchanged:: 3.10
       This function now does nothing.
+
+   .. soft-deprecated:: 3.13
 
 
 .. _c_codeobject_flags:

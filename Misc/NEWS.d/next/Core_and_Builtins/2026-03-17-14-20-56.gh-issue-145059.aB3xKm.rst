@@ -1,1 +1,0 @@
-Fixed ``sys.lazy_modules`` to include lazy modules without submodules. Patch by Bartosz Sławecki.

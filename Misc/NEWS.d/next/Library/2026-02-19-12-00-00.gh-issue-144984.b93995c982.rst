@@ -1,3 +1,0 @@
-Fix crash in :meth:`xml.parsers.expat.xmlparser.ExternalEntityParserCreate`
-when an allocation fails. The error paths could dereference NULL ``handlers``
-and double-decrement the parent parser's reference count.

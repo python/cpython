@@ -245,7 +245,7 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
     test_repr_deep = mapping_tests.TestHashMappingProtocol.test_repr_deep
 
     def test_mixed_or(self):
-        for t in UserDict, dict, types.MappingProxyType:
+        for t in UserDict, dict, frozendict, types.MappingProxyType:
             with self.subTest(t.__name__):
                 u = UserDict({0: 'a', 1: 'b'}) | t({1: 'c', 2: 'd'})
                 self.assertEqual(u, {0: 'a', 1: 'c', 2: 'd'})
@@ -276,7 +276,7 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
         self.assertIs(type(u), UserDictSubclass)
 
     def test_mixed_ior(self):
-        for t in UserDict, dict, types.MappingProxyType:
+        for t in UserDict, dict, frozendict, types.MappingProxyType:
             with self.subTest(t.__name__):
                 u = u2 = UserDict({0: 'a', 1: 'b'})
                 u |= t({1: 'c', 2: 'd'})

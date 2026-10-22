@@ -1,3 +1,0 @@
-On Windows, :func:`sysconfig.get_platform` now gets the platform from the
-``_sysconfig`` module instead of parsing :data:`sys.version` string. Patch
-by Victor Stinner.

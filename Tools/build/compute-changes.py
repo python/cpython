@@ -99,6 +99,9 @@ LIBRARY_FUZZER_PATHS = frozenset({
     Path("Modules/pyexpat.c"),
     # zipfile
     Path("Lib/zipfile/"),
+    # zoneinfo
+    Path("Lib/zoneinfo/"),
+    Path("Modules/_zoneinfo.c"),
 })
 
 
@@ -114,7 +117,6 @@ class Outputs:
     run_tests: bool = False
     run_ubuntu: bool = False
     run_wasi: bool = False
-    run_windows_msi: bool = False
     run_windows_tests: bool = False
 
 
@@ -156,9 +158,6 @@ def compute_changes() -> None:
 
     if outputs.run_docs:
         print("Build documentation")
-
-    if outputs.run_windows_msi:
-        print("Build Windows MSI")
 
     print(outputs)
 
@@ -220,7 +219,6 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
     run_ci_fuzz_stdlib = False
     run_docs = False
     run_windows_tests = False
-    run_windows_msi = False
 
     platforms_changed = set()
     has_platform_specific_change = True
@@ -235,15 +233,12 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
                 run_tests = run_ci_fuzz = run_ci_fuzz_stdlib = run_windows_tests = True
                 has_platform_specific_change = False
                 continue
-            if file.name == "reusable-docs.yml":
+            if file.name in ("reusable-docs.yml", "reusable-check-html-ids.yml"):
                 run_docs = True
                 continue
             if file.name == "reusable-windows.yml":
                 run_tests = True
                 run_windows_tests = True
-                continue
-            if file.name == "reusable-windows-msi.yml":
-                run_windows_msi = True
                 continue
             if file.name == "reusable-macos.yml":
                 run_tests = True
@@ -285,10 +280,6 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
         if doc_file:
             run_docs = True
 
-        # Check for changed MSI installer-related files
-        if file.parts[:2] == ("Tools", "msi"):
-            run_windows_msi = True
-
     # Check which platform specific tests to run
     if run_tests:
         if not has_platform_specific_change or not platforms_changed:
@@ -324,7 +315,6 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
         run_tests=run_tests,
         run_ubuntu=run_ubuntu,
         run_wasi=run_wasi,
-        run_windows_msi=run_windows_msi,
         run_windows_tests=run_windows_tests,
     )
 
@@ -339,7 +329,6 @@ def process_target_branch(outputs: Outputs, git_branch: str) -> Outputs:
 
     if os.environ.get("GITHUB_EVENT_NAME", "").lower() == "workflow_dispatch":
         outputs.run_docs = True
-        outputs.run_windows_msi = True
 
     return outputs
 
