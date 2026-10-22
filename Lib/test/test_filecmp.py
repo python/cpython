@@ -1,11 +1,11 @@
 import filecmp
+import io
 import os
 import re
 import shutil
+import stat
 import tempfile
 import unittest
-import stat
-import io
 
 from test import support
 from test.support import os_helper
