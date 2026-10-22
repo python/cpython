@@ -1,3 +1,4 @@
+import itertools
 import platform
 import re
 import unittest
@@ -773,9 +774,10 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
     @unittest.skipIf(is_android or is_apple_mobile,
                      'Android and iOS do not ship python-config')
     @requires_subprocess()
-    def test_python_config_sh_prefix_with_spaces(self):
+    def test_python_config_sh_prefix_special_characters(self):
         # gh-159819: the shell variant of python-config must report the
-        # directory it was installed to even if that path contains spaces.
+        # directory it was installed to even if that path contains spaces or
+        # characters special to the shell, sed or echo.
         if is_python_build():
             script = os.path.join(_PROJECT_BASE, 'python-config')
         else:
@@ -788,32 +790,51 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
             if f.readline().rstrip() != '#!/bin/sh':
                 self.skipTest('python-config is not the shell script variant')
 
-        with temp_dir() as tmpdir:
-            prefix = os.path.realpath(os.path.join(tmpdir, 'path with spaces'))
-            bindir = os.path.join(prefix, 'bin')
-            os.mkdir(prefix)
-            os.mkdir(bindir)
-            copy = os.path.join(bindir, 'python-config')
-            shutil.copyfile(script, copy)
+        with open(script, encoding='utf-8') as f:
+            script_text = f.read()
+        makefile_vars = _parse_makefile(sysconfig.get_makefile_filename())
+        configured_prefix = makefile_vars['prefix']
 
-            def check(option, expected):
-                proc = subprocess.run(['/bin/sh', copy, option],
-                                      capture_output=True, text=True)
-                self.assertEqual(proc.returncode, 0, proc.stderr)
-                self.assertEqual(proc.stdout.rstrip('\n'), expected)
-                self.assertEqual(proc.stderr, '')
+        def check(script_copy, option, expected):
+            proc = subprocess.run(['/bin/sh', script_copy, option],
+                                  capture_output=True, text=True)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertEqual(proc.stdout.rstrip('\n'), expected)
+            self.assertEqual(proc.stderr, '')
 
-            check('--prefix', prefix)
-            check('--exec-prefix', prefix)
+        # '#', '&' and '\' were special to the sed replacement, and '\c' makes
+        # some echo implementations stop printing.
+        names = ['path with spaces', 'path#with&amp', r'back\slash\cdir']
+        # The configured prefix is also matched literally.  Simulate a build
+        # configured with special characters in its prefix by substituting
+        # them into a copy of the script.
+        fake_prefixes = [None]
+        if configured_prefix != '/':
+            fake_prefixes.append('/conf#with&special\\chars')
+        for name, fake_prefix in itertools.product(names, fake_prefixes):
+            with (self.subTest(name=name, configured_prefix=fake_prefix),
+                  temp_dir() as tmpdir):
+                prefix = os.path.realpath(os.path.join(tmpdir, name))
+                bindir = os.path.join(prefix, 'bin')
+                os.mkdir(prefix)
+                os.mkdir(bindir)
+                script_copy = os.path.join(bindir, 'python-config')
+                text = script_text
+                if fake_prefix is not None:
+                    text = text.replace(configured_prefix, fake_prefix)
+                with open(script_copy, 'w', encoding='utf-8') as f:
+                    f.write(text)
 
-            # The script rewrites the configured include directory by
-            # replacing the configured prefix with the actual one.
-            makefile_vars = _parse_makefile(sysconfig.get_makefile_filename())
-            includedir = makefile_vars['INCLUDEDIR'].replace(
-                makefile_vars['prefix'], prefix, 1)
-            incdir = os.path.join(includedir, 'python{VERSION}{ABIFLAGS}'
-                                  .format_map(makefile_vars))
-            check('--includes', f'-I{incdir} -I{incdir}')
+                check(script_copy, '--prefix', prefix)
+                check(script_copy, '--exec-prefix', prefix)
+
+                # The script rewrites the configured include directory by
+                # replacing the configured prefix with the actual one.
+                includedir = makefile_vars['INCLUDEDIR'].replace(
+                    configured_prefix, prefix, 1)
+                incdir = os.path.join(includedir, 'python{VERSION}{ABIFLAGS}'
+                                      .format_map(makefile_vars))
+                check(script_copy, '--includes', f'-I{incdir} -I{incdir}')
 
     def test_parse_config_h(self):
         config = textwrap.dedent('''

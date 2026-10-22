@@ -7,9 +7,9 @@ exit_with_usage ()
     local usage
     usage="Usage: $0 --prefix|--exec-prefix|--includes|--libs|--cflags|--ldflags|--extension-suffix|--help|--abiflags|--configdir|--embed"
     if [ "$1" -eq 0 ]; then
-        echo "$usage"
+        printf '%s\n' "$usage"
     else
-        echo "$usage" >&2
+        printf '%s\n' "$usage" >&2
     fi
     exit $1
 }
@@ -29,11 +29,11 @@ installed_prefix ()
           RESULT=$(readlink -f "$RESULT")
         fi
     fi
-    echo "$RESULT"
+    printf '%s\n' "$RESULT"
 }
 
 prefix_real=$(installed_prefix "$0") || {
-    echo "$0: cannot determine the installation prefix" >&2
+    printf '%s\n' "$0: cannot determine the installation prefix" >&2
     exit 1
 }
 
@@ -105,35 +105,35 @@ for ARG in "$@"
 do
     case "$ARG" in
         --prefix)
-            echo "$prefix_real"
+            printf '%s\n' "$prefix_real"
         ;;
         --exec-prefix)
-            echo "$exec_prefix_real"
+            printf '%s\n' "$exec_prefix_real"
         ;;
         --includes)
-            echo "$INCDIR $PLATINCDIR"
+            printf '%s\n' "$INCDIR $PLATINCDIR"
         ;;
         --cflags)
-            echo "$INCDIR $PLATINCDIR $BASECFLAGS $CFLAGS $OPT"
+            printf '%s\n' "$INCDIR $PLATINCDIR $BASECFLAGS $CFLAGS $OPT"
         ;;
         --libs)
-            echo "$LIBS"
+            printf '%s\n' "$LIBS"
         ;;
         --ldflags)
             LIBPLUSED=
             if [ "$PY_ENABLE_SHARED" = "0" ] ; then
                 LIBPLUSED="-L$LIBPL"
             fi
-            echo "$LIBPLUSED -L$libdir $LIBS"
+            printf '%s\n' "$LIBPLUSED -L$libdir $LIBS"
         ;;
         --extension-suffix)
-            echo "$SO"
+            printf '%s\n' "$SO"
         ;;
         --abiflags)
-            echo "$ABIFLAGS"
+            printf '%s\n' "$ABIFLAGS"
         ;;
         --configdir)
-            echo "$LIBPL"
+            printf '%s\n' "$LIBPL"
         ;;
 esac
 done
