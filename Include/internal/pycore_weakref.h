@@ -90,7 +90,7 @@ static inline PyObject* _PyWeakref_GET_REF(PyObject *ref_obj)
         // clear_weakref() was called
         return NULL;
     }
-    if (Py_INCREF(obj)) {
+    if (_Py_TryIncref(obj)) {
         return obj;
     }
     return NULL;
