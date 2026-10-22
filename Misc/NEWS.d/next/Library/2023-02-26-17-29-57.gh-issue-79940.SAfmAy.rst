@@ -1,2 +1,0 @@
-Add :func:`inspect.getasyncgenstate` and :func:`inspect.getasyncgenlocals`.
-Patch by Thomas Krennwallner.

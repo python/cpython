@@ -1,1 +1,0 @@
-Fixed ``stacktop`` value on tracing entries to avoid corruption on garbage collection.

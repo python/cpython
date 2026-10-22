@@ -37,7 +37,12 @@ typecode_to_type = {
 #
 
 def _new_value(type_):
-    size = ctypes.sizeof(type_)
+    try:
+        size = ctypes.sizeof(type_)
+    except TypeError as e:
+        raise TypeError("bad typecode (must be a ctypes type or one of "
+                        "c, b, B, u, h, H, i, I, l, L, q, Q, f or d)") from e
+
     wrapper = heap.BufferWrapper(size)
     return rebuild_ctype(type_, wrapper, None)
 

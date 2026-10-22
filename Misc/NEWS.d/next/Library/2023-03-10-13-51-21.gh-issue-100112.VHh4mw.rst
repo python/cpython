@@ -1,1 +1,0 @@
-:meth:`asyncio.Task.get_coro` now always returns a coroutine when wrapping an awaitable object. Patch by Kumar Aditya.
