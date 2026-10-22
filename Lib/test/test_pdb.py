@@ -535,12 +535,12 @@ def test_pdb_breakpoint_in_package():
     (Pdb) multiprocessing.util.is_abstract_socket_namespace
     *** NameError: name 'multiprocessing' is not defined. Did you forget to import 'multiprocessing'?
     (Pdb) break multiprocessing.util.is_abstract_socket_namespace
-    Breakpoint 1 at .../multiprocessing/util.py:...
+    Breakpoint 1 at ...util.py:...
     (Pdb) continue
-    > .../multiprocessing/util.py(...)is_abstract_socket_namespace()
+    > ...util.py(...)is_abstract_socket_namespace()
     -> if not address:
     (Pdb) clear 1
-    Deleted breakpoint 1 at .../multiprocessing/util.py:...
+    Deleted breakpoint 1 at ...util.py:...
     (Pdb) continue
     """
 
