@@ -332,3 +332,11 @@ int __syscall_ioctl(int fd, int request, void* varargs) {
     }
     return syscall_ioctl_orig(fd, request, varargs);
 }
+
+EM_JS(void, _PyEM_InitFileSystems_js, (void), {
+    FS.filesystems ??= { NODEFS };
+})
+
+__attribute__((constructor)) void _PyEM_InitFileSystems(void) {
+    _PyEM_InitFileSystems_js();
+}
