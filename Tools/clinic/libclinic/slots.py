@@ -38,8 +38,13 @@ class SlotSpec:
 # Maps the name of a special method to its slot.  A name listed here must
 # not be in dsl_parser.unsupported_special_methods.
 SLOTS: Final[dict[str, SlotSpec]] = {
-    '__next__': SlotSpec(return_converter='object'),
+    '__add__': SlotSpec(return_converter='object'),
+    '__contains__': SlotSpec(return_converter='int'),
+    '__iadd__': SlotSpec(return_converter='object'),
+    '__imul__': SlotSpec(return_converter='object'),
     '__len__': SlotSpec(return_converter='Py_ssize_t'),
+    '__mul__': SlotSpec(return_converter='object'),
+    '__next__': SlotSpec(return_converter='object'),
     '__repr__': SlotSpec(return_converter='object'),
     '__setitem__': SlotSpec(return_converter='int'),
 }

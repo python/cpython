@@ -3638,6 +3638,8 @@ class AbstractPickleTests:
                     self.assertEqual(x.__dict__, y.__dict__, detail)
 
     def test_weakref(self):
+        if self.py_version < (3, 16):
+            self.skipTest('not supported in Python < 3.16')
         obj = WeakrefTarget()
         wr = weakref.ref(obj)
         for proto in protocols:
@@ -3650,6 +3652,8 @@ class AbstractPickleTests:
                 self.assertIs(wr2(), obj2)
 
     def test_weakref_callback(self):
+        if self.py_version < (3, 16):
+            self.skipTest('not supported in Python < 3.16')
         # The callback is not preserved: pickling it strongly would defeat
         # the weak-only detection.
         obj = WeakrefTarget()
@@ -3661,6 +3665,8 @@ class AbstractPickleTests:
                 self.assertIsNone(wr2.__callback__)
 
     def test_dead_weakref(self):
+        if self.py_version < (3, 16):
+            self.skipTest('not supported in Python < 3.16')
         # A dead reference stays dead, and all dead references unpickle as
         # the same object.
         obj = WeakrefTarget()
