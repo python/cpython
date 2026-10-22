@@ -220,12 +220,17 @@ _ssl__SSLSocket_set_outer_server_name(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     const char *outer_server_name;
 
-    if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("set_outer_server_name", "argument", "str", arg);
-        goto exit;
+    if (arg == Py_None) {
+        outer_server_name = NULL;
     }
-    outer_server_name = _PyUnicode_AsUTF8NoNUL(arg);
-    if (outer_server_name == NULL) {
+    else if (PyUnicode_Check(arg)) {
+        outer_server_name = _PyUnicode_AsUTF8NoNUL(arg);
+        if (outer_server_name == NULL) {
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("set_outer_server_name", "argument", "str or None", arg);
         goto exit;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
@@ -2149,7 +2154,8 @@ PyDoc_STRVAR(_ssl__SSLContext_set_ech_config__doc__,
 "\n"
 "Set the ECH configuration on the SSL context.\n"
 "\n"
-"The echconfig parameter should be a bytes-like object containing the raw ECH configuration.");
+"ech_config must be a bytes-like object containing the raw ECH\n"
+"configuration.");
 
 #define _SSL__SSLCONTEXT_SET_ECH_CONFIG_METHODDEF    \
     {"set_ech_config", (PyCFunction)_ssl__SSLContext_set_ech_config, METH_O, _ssl__SSLContext_set_ech_config__doc__},
@@ -3234,4 +3240,4 @@ exit:
 
 #define _SSL_SSLSESSION_HAS_TICKET_GETSETDEF {"has_ticket", (getter)_ssl_SSLSession_has_ticket_get, (setter)NULL, _ssl_SSLSession_has_ticket__doc__},
 
-/*[clinic end generated code: output=58f15684911456f5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e19d2f93856ff3df input=a9049054013a1b77]*/

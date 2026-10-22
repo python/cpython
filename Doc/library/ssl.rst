@@ -869,6 +869,40 @@ Constants
 
    .. versionadded:: 3.12
 
+.. data:: OP_ECH_GREASE
+
+   Include a GREASE ECH extension in ClientHello messages when ECH is not
+   being attempted. This can elicit an ECH retry configuration from a server.
+
+   Only available when :data:`HAS_ECH` is ``True``.
+
+   .. versionadded:: next
+
+.. data:: OP_ECH_TRIALDECRYPT
+
+   Attempt server-side ECH decryption with all available ECH keys, rather
+   than only those with a matching configuration identifier.
+
+   Only available when :data:`HAS_ECH` is ``True``.
+
+   .. versionadded:: next
+
+.. data:: OP_ECH_IGNORE_CID
+
+   Use a random ECH configuration identifier in client connections.
+
+   Only available when :data:`HAS_ECH` is ``True``.
+
+   .. versionadded:: next
+
+.. data:: OP_ECH_GREASE_RETRY_CONFIG
+
+   Include GREASE entries in the ECH retry configurations sent by a server.
+
+   Only available when :data:`HAS_ECH` is ``True``.
+
+   .. versionadded:: next
+
 .. data:: HAS_ALPN
 
    Whether the OpenSSL library has built-in support for the *Application-Layer
@@ -964,6 +998,13 @@ Constants
 
    .. versionadded:: 3.14
 
+.. data:: HAS_ECH
+
+   Whether the OpenSSL library has built-in support for Encrypted Client
+   Hello (ECH). This requires OpenSSL 4.0 or later with ECH enabled.
+
+   .. versionadded:: next
+
 .. data:: CHANNEL_BINDING_TYPES
 
    List of supported TLS channel binding types.  Strings in this list
@@ -1036,6 +1077,12 @@ Constants
 
    :class:`enum.IntEnum` collection of Encrypted Client Hello (ECH) statuses
    returned by :meth:`SSLSocket.get_ech_status`.
+
+   .. versionadded:: next
+
+.. attribute:: ECHStatus.ECH_STATUS_GREASE_ECH
+
+   The client sent a GREASE ECH extension and received a retry configuration.
 
    .. versionadded:: next
 
@@ -1377,10 +1424,13 @@ SSL sockets also have the following additional methods and attributes:
 
 .. method:: SSLSocket.get_ech_retry_config()
 
-   When the status returned by :meth:`SSLSocket.get_ech_status` after completion of the
-   handshake is :data:`ECHStatus.ECH_STATUS_GREASE_ECH`, this method returns the
-   configuration value provided by the server to be used for a new connection using
-   ECH.
+   Return the server's ECH retry configuration as :class:`bytes`, or empty
+   bytes if no retry configuration is available. When the status returned by
+   :meth:`SSLSocket.get_ech_status` after the handshake is
+   :attr:`ECHStatus.ECH_STATUS_GREASE_ECH`, the configuration can be used
+   for a new connection using ECH.
+
+   Raise :exc:`NotImplementedError` if :data:`HAS_ECH` is ``False``.
 
    .. versionadded:: next
 
@@ -1388,6 +1438,8 @@ SSL sockets also have the following additional methods and attributes:
 
    Gets the status of Encrypted Client Hello (ECH) processing. Returns an
    :class:`ECHStatus` instance.
+
+   Raise :exc:`NotImplementedError` if :data:`HAS_ECH` is ``False``.
 
    .. versionadded:: next
 
@@ -1467,8 +1519,10 @@ SSL sockets also have the following additional methods and attributes:
 
    Hostname of the server name used in the outer ClientHello when Encrypted Client
    Hello (ECH) is used: :class:`str` type, or ``None`` for server-side socket or
-   if the outer server name was not specified in the constructor or the ECH
-   configuration.
+   if no outer server name is available.
+
+   Raise :exc:`NotImplementedError` if :data:`HAS_ECH` is ``False`` and the
+   socket has an SSL wrapper.
 
    .. versionadded:: next
 
@@ -1852,15 +1906,14 @@ to speed up repeated connections from the same clients.
 
    Sets an Encrypted Client Hello (ECH) configuration, which may be discovered from
    an HTTPS resource record in DNS or from :meth:`SSLSocket.get_ech_retry_config`.
-   Multiple calls to this functions will accumulate the set of values available for
-   a connection.
+   Each call replaces the context's previous configuration.
 
    If the input value provided contains no suitable value (e.g. if it only contains
    ECH configuration versions that are not supported), an :class:`SSLError` will be
    raised.
 
-   The ech_config parameter should be a bytes-like object containing the raw ECH
-   configuration.
+   The *ech_config* parameter should be a :term:`bytes-like object` containing
+   a binary-encoded ECHConfigList.
 
    This method will raise :exc:`NotImplementedError` if :data:`HAS_ECH` is ``False``.
 
@@ -1891,16 +1944,6 @@ to speed up repeated connections from the same clients.
    handshake in the outer ClientHello when ECH is used. The *protocols*
    argument accepts the same values as for
    :meth:`~SSLContext.set_alpn_protocols`.
-
-   This method will raise :exc:`NotImplementedError` if :data:`HAS_ECH` is
-   ``False``.
-
-   .. versionadded:: next
-
-.. method:: SSLContext.set_outer_server_hostname(server_hostname)
-
-   Specify which hostname the socket should advertise during the TLS
-   handshake in the outer ClientHello when ECH is used.
 
    This method will raise :exc:`NotImplementedError` if :data:`HAS_ECH` is
    ``False``.
@@ -3051,50 +3094,61 @@ of TLS/SSL. Some new TLS 1.3 features are not yet available.
 - TLS 1.3 features like early data, deferred TLS client cert request,
   and rekeying are not supported yet.
 
+.. _ssl-encrypted-client-hello:
+
 Encrypted Client Hello
 ^^^^^^^^^^^^^^^^^^^^^^
 
 .. versionadded:: next
 
-Encrypted Client Hello (ECH) allows for encrypting values that have previously only been
-included unencrypted in the ClientHello records when establishing a TLS connection. To use
-ECH it is necessary to provide configuration values that contain a version, algorithm
-parameters, the public key to use for HPKE encryption and the "public_name" that is by
-default used for the unencrypted (outer) SNI when ECH is attempted. These configuration
-values may be discovered through DNS or through the "retry config" mechanism.
+Encrypted Client Hello (ECH) encrypts values in the ClientHello record sent when
+establishing a TLS connection. It requires an ECHConfigList containing algorithm
+parameters, a public key, and a public name used in the unencrypted outer
+ClientHello. ECH requires OpenSSL 4.0 or later with ECH enabled; check
+:data:`HAS_ECH` before using it.
 
-The following example assumes that you have discovered a set of ECH configuration values
-from DNS, or *ech_configs* may be an empty list to rely on the "retry config" mechanism::
+Configuration values may be discovered through DNS or through the server's
+retry configuration. The following example accepts a binary-encoded
+ECHConfigList discovered through DNS. If none is supplied, it enables ECH
+GREASE to request a retry configuration from the server::
 
     import socket
     import ssl
 
 
-    def connect_with_tls_ech(hostname: str, ech_configs: List[str],
-                         use_retry_config: bool=True) -> ssl.SSLSocket:
+    def connect_with_tls_ech(hostname, ech_config=None, use_retry_config=True):
         context = ssl.create_default_context()
-        for ech_config in ech_configs:
+        if ech_config is not None:
             context.set_ech_config(ech_config)
-        with socket.create_connection((hostname, 443)) as sock:
-            with context.wrap_socket(sock, server_hostname=hostname) as ssock:
-                if (ssock.get_ech_status == ECHStatus.ECH_STATUS_GREASE_ECH
-                        and use_retry_config):
-                    return connect_with_ech(hostname, [ssock.get_ech_retry_config()],
-                                            False)
-                return ssock
+        else:
+            context.options |= ssl.OP_ECH_GREASE
+        sock = socket.create_connection((hostname, 443))
+        try:
+            ssock = context.wrap_socket(sock, server_hostname=hostname)
+        except BaseException:
+            sock.close()
+            raise
+        if (use_retry_config
+                and ssock.get_ech_status()
+                == ssl.ECHStatus.ECH_STATUS_GREASE_ECH):
+            try:
+                retry_config = ssock.get_ech_retry_config()
+            finally:
+                ssock.close()
+            return connect_with_tls_ech(hostname, retry_config, False)
+        return ssock
 
     hostname = "www.python.org"
-    ech_configs = []  # Replace with a call to a function to lookup
-                      # ECH configurations in DNS
+    ech_config = None  # Replace with an ECHConfigList discovered through DNS.
 
-    ssock = connect_with_tls_ech(hostname, ech_configs)
+    with connect_with_tls_ech(hostname, ech_config) as ssock:
+        print(ssock.get_ech_status())
 
 The following classes, methods, and attributes will be useful for using ECH:
 
  - :class:`ECHStatus`
  - :meth:`SSLContext.set_ech_config`
  - :meth:`SSLContext.set_outer_alpn_protocols`
- - :meth:`SSLContext.set_outer_server_hostname`
  - :meth:`SSLSocket.get_ech_status`
  - :meth:`SSLSocket.get_ech_retry_config`
 

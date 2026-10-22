@@ -76,8 +76,9 @@
 #include "openssl/bio.h"
 #include "openssl/dh.h"
 
-#ifdef HAVE_OPENSSL_ECH
-#include "openssl/ech.h"
+#if OPENSSL_VERSION_NUMBER >= 0x40000000L && !defined(OPENSSL_NO_ECH)
+#  define HAVE_OPENSSL_ECH 1
+#  include "openssl/ech.h"
 #endif
 
 #ifndef OPENSSL_THREADS
@@ -2136,44 +2137,10 @@ _ssl__SSLSocket_get_ech_status_impl(PySSLSocket *self)
         Py_RETURN_NONE;
     }
     int status = SSL_ech_get1_status(self->ssl, &inner_sni, &outer_sni);
-	PyObject *v, *retval = PyTuple_New(3);
-    if (retval == NULL) {
-        goto fail;
-    }
-    PyTuple_SET_ITEM(retval, 0, PyLong_FromLong(status));
-    if (inner_sni != NULL) {
-        v = PyUnicode_FromString(inner_sni);
-        if (v == NULL) {
-            goto fail;
-        }
-        PyTuple_SET_ITEM(retval, 1, v);
-        OPENSSL_free(inner_sni);
-    }
-    else {
-        PyTuple_SET_ITEM(retval, 1, Py_None);
-        Py_INCREF(Py_None);
-    }
-    if (outer_sni != NULL) {
-        v = PyUnicode_FromString(outer_sni);
-        if (v == NULL) {
-            goto fail;
-        }
-        PyTuple_SET_ITEM(retval, 2, v);
-        OPENSSL_free(outer_sni);
-    }
-    else {
-        PyTuple_SET_ITEM(retval, 2, Py_None);
-        Py_INCREF(Py_None);
-    }
-    return retval;
-fail:
-    if (inner_sni != NULL) {
-        OPENSSL_free(inner_sni);
-    }
-    if (outer_sni != NULL) {
-        OPENSSL_free(outer_sni);
-    }
-    return NULL;
+    PyObject *result = Py_BuildValue("(izz)", status, inner_sni, outer_sni);
+    OPENSSL_free(inner_sni);
+    OPENSSL_free(outer_sni);
+    return result;
 #else
     PyErr_SetString(PyExc_NotImplementedError, "OpenSSL does not have ECH support");
     return NULL;
@@ -2193,13 +2160,15 @@ _ssl__SSLSocket_get_ech_retry_config_impl(PySSLSocket *self)
     if (self->ssl == NULL) {
         Py_RETURN_NONE;
     }
-    unsigned char *ec;
-    size_t eclen;
-    if (SSL_ech_get1_retry_config(self->ssl, &ec, &eclen) != 1) {
+    unsigned char *config = NULL;
+    size_t config_len;
+    if (SSL_ech_get1_retry_config(self->ssl, &config, &config_len) != 1) {
         _setSSLError(get_state_sock(self), NULL, 0, __FILE__, __LINE__);
         return NULL;
     }
-    return PyBytes_FromStringAndSize((char *)ec, eclen);
+    PyObject *result = PyBytes_FromStringAndSize((char *)config, config_len);
+    OPENSSL_free(config);
+    return result;
 #else
     PyErr_SetString(PyExc_NotImplementedError, "OpenSSL does not have ECH support");
     return NULL;
@@ -2210,14 +2179,14 @@ _ssl__SSLSocket_get_ech_retry_config_impl(PySSLSocket *self)
 @critical_section
 _ssl._SSLSocket.set_outer_server_name
 
-    outer_server_name: str
+    outer_server_name: str(accept={str, NoneType})
     /
 [clinic start generated code]*/
 
 static PyObject *
 _ssl__SSLSocket_set_outer_server_name_impl(PySSLSocket *self,
                                            const char *outer_server_name)
-/*[clinic end generated code: output=24e7c6b7b3c2ce84 input=d527943943ffbdf3]*/
+/*[clinic end generated code: output=24e7c6b7b3c2ce84 input=8d1d96628e11b2fd]*/
 {
 #ifdef HAVE_OPENSSL_ECH
     if (self->ssl == NULL) {
@@ -4095,17 +4064,11 @@ _ssl__SSLContext__set_outer_alpn_protocols_impl(PySSLContext *self,
             "protocols longer than %u bytes", UINT_MAX);
         return NULL;
     }
-    PyMem_Free(self->alpn_protocols);
-    self->alpn_protocols = PyMem_Malloc(protos->len);
-    if (!self->alpn_protocols) {
-        return PyErr_NoMemory();
-    }
-    memcpy(self->alpn_protocols, protos->buf, protos->len);
-    self->alpn_protocols_len = (unsigned int)protos->len;
-    if (SSL_CTX_ech_set1_outer_alpn_protos(self->ctx, self->alpn_protocols,
-                                           self->alpn_protocols_len))
-    {
-        return PyErr_NoMemory();
+    if (SSL_CTX_ech_set1_outer_alpn_protos(self->ctx,
+                                         protos->len ? protos->buf : NULL,
+                                         protos->len) != 1) {
+        _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
+        return NULL;
     }
     Py_RETURN_NONE;
 #else
@@ -5257,42 +5220,44 @@ _ssl._SSLContext.set_ech_config
 
 Set the ECH configuration on the SSL context.
 
-The echconfig parameter should be a bytes-like object containing the raw ECH configuration.
+ech_config must be a bytes-like object containing the raw ECH
+configuration.
 [clinic start generated code]*/
 
 static PyObject *
 _ssl__SSLContext_set_ech_config_impl(PySSLContext *self,
                                      Py_buffer *ech_config)
-/*[clinic end generated code: output=cea53188b338cf80 input=3ef0514cae6ab6ee]*/
+/*[clinic end generated code: output=cea53188b338cf80 input=3943e5aff04a583e]*/
 {
 #ifdef HAVE_OPENSSL_ECH
-    BIO *es_in = BIO_new_mem_buf(ech_config->buf, ech_config->len);
-    OSSL_ECHSTORE *es;
-    if (es_in == NULL) {
+    if (ech_config->len > INT_MAX) {
+        PyErr_Format(PyExc_OverflowError,
+                     "ECH configuration longer than %d bytes", INT_MAX);
+        return NULL;
+    }
+    OSSL_ECHSTORE *store = NULL;
+    BIO *config_bio = BIO_new_mem_buf(ech_config->buf, ech_config->len);
+    if (config_bio == NULL) {
         goto fail;
     }
-    es = OSSL_ECHSTORE_new(NULL, NULL));
-    if (es == NULL) {
+    store = OSSL_ECHSTORE_new(NULL, NULL);
+    if (store == NULL) {
         goto fail;
     }
-    if (OSSL_ECHSTORE_read_echconfiglist(es, es_in) != 1) {
+    if (OSSL_ECHSTORE_read_echconfiglist(store, config_bio) != 1) {
         goto fail;
     }
-    if (SSL_CTX_set1_echstore(self->ctx, es) != 1) {
+    if (SSL_CTX_set1_echstore(self->ctx, store) != 1) {
         goto fail;
     }
-    OSSL_ECHSTORE_free(es);
-    BIO_free_all(es_in);
-    PyBuffer_Release(ech_config);
+    OSSL_ECHSTORE_free(store);
+    BIO_free(config_bio);
     Py_RETURN_NONE;
+
 fail:
     _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
-    if (es != NULL) {
-        OSSL_ECHSTORE_free(es);
-    }
-    if (es_in != NULL) {
-        BIO_free_all(es_in);
-    }
+    OSSL_ECHSTORE_free(store);
+    BIO_free(config_bio);
     return NULL;
 #else
     PyErr_SetString(PyExc_NotImplementedError, "OpenSSL does not have ECH support");
@@ -7411,10 +7376,10 @@ sslmodule_init_constants(PyObject *m)
     addbool(m, "HAS_PHA", 0);
 #endif
 
-#ifdef OPENSSL_NO_ECH
-    addbool(m, "HAS_ECH", 0);
-#else
+#ifdef HAVE_OPENSSL_ECH
     addbool(m, "HAS_ECH", 1);
+#else
+    addbool(m, "HAS_ECH", 0);
 #endif
 
 #undef addbool

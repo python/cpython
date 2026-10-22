@@ -116,7 +116,8 @@ from _ssl import get_sigalgs
 
 from _ssl import (
     HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN, HAS_SSLv2, HAS_SSLv3, HAS_TLSv1,
-    HAS_TLSv1_1, HAS_TLSv1_2, HAS_TLSv1_3, HAS_PSK, HAS_PSK_TLS13, HAS_PHA
+    HAS_TLSv1_1, HAS_TLSv1_2, HAS_TLSv1_3, HAS_PSK, HAS_PSK_TLS13, HAS_PHA,
+    HAS_ECH
 )
 from _ssl import _DEFAULT_CIPHERS, _OPENSSL_API_VERSION
 
@@ -522,11 +523,11 @@ class SSLContext(_SSLContext):
             self.sni_callback = shim_cb
 
     def set_alpn_protocols(self, alpn_protocols):
-        protos = encode_alpn_protocol_list(alpn_protocols)
+        protos = _encode_alpn_protocol_list(alpn_protocols)
         self._set_alpn_protocols(protos)
 
     def set_outer_alpn_protocols(self, alpn_protocols):
-        protos = encode_alpn_protocol_list(alpn_protocols)
+        protos = _encode_alpn_protocol_list(alpn_protocols)
         self._set_outer_alpn_protocols(protos)
 
     def _load_windows_store_certs(self, storename, purpose):
@@ -1003,7 +1004,12 @@ class SSLObject:
         return self._sslobj.verify_client_post_handshake()
 
     def get_ech_status(self):
+        """Return the status of Encrypted Client Hello processing."""
         return ECHStatus(self._sslobj.get_ech_status()[0])
+
+    def get_ech_retry_config(self):
+        """Return the server's ECH retry configuration as bytes."""
+        return self._sslobj.get_ech_retry_config()
 
 
 def _sslcopydoc(func):
@@ -1031,14 +1037,11 @@ class SSLSocket(socket):
     @classmethod
     def _create(cls, sock, server_side=False, do_handshake_on_connect=True,
                 suppress_ragged_eofs=True, server_hostname=None,
-                context=None, session=None, outer_server_hostname=None):
+                context=None, session=None):
         if sock.getsockopt(SOL_SOCKET, SO_TYPE) != SOCK_STREAM:
             raise NotImplementedError("only stream sockets are supported")
         _check_sslobject_params(server_side=server_side, context=context,
                                 server_hostname=server_hostname, session=session)
-        if server_side and outer_server_hostname:
-            raise ValueError("outer_server_hostname can only be specified "
-                             "in client mode")
 
         sock_timeout = sock.gettimeout()
         kwargs = dict(
@@ -1137,7 +1140,8 @@ class SSLSocket(socket):
     @property
     def outer_server_hostname(self):
         """The server name used in the outer ClientHello."""
-        return self._sslobj.get_ech_status()[2]
+        if self._sslobj is not None:
+            return self._sslobj.get_ech_status()[2]
 
     @property
     @_sslcopydoc
@@ -1440,8 +1444,15 @@ class SSLSocket(socket):
         else:
             raise ValueError("No SSL wrapper around " + str(self))
 
+    @_sslcopydoc
     def get_ech_status(self):
-        return ECHStatus(self._sslobj.get_ech_status()[0])
+        if self._sslobj is not None:
+            return ECHStatus(self._sslobj.get_ech_status()[0])
+
+    @_sslcopydoc
+    def get_ech_retry_config(self):
+        if self._sslobj is not None:
+            return self._sslobj.get_ech_retry_config()
 
     def _real_close(self):
         self._sslobj = None
@@ -1610,7 +1621,8 @@ def get_server_certificate(addr, ssl_version=PROTOCOL_TLS_CLIENT,
 def get_protocol_name(protocol_code):
     return _PROTOCOL_NAMES.get(protocol_code, '<unknown>')
 
-def encode_alpn_protocol_list(alpn_protocols):
+
+def _encode_alpn_protocol_list(alpn_protocols):
     protos = bytearray()
     for protocol in alpn_protocols:
         b = bytes(protocol, 'ascii')

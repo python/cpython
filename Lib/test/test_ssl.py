@@ -441,6 +441,7 @@ class BasicSocketTests(unittest.TestCase):
         self.assertEqual(ssl.HAS_ECDH, True)
         self.assertIsInstance(ssl.HAS_TLSv1_2, bool)
         self.assertEqual(ssl.HAS_TLSv1_3, True)
+        self.assertIsInstance(ssl.HAS_ECH, bool)
         ssl.OP_NO_SSLv2
         ssl.OP_NO_SSLv3
         ssl.OP_NO_TLSv1
@@ -2041,6 +2042,185 @@ class ContextTests(unittest.TestCase):
         ctx = make_test_context(server_side=True)
         def psk_server_callback(*args, _=ctx, **kwargs): ...
         ctx.set_psk_server_callback(psk_server_callback)
+
+
+class ECHTests(unittest.TestCase):
+    # An ECHConfigList for localhost using X25519, HKDF-SHA256 and AES-128-GCM.
+    ECH_CONFIG = bytes.fromhex(
+        '003c fe0d 0038 db 0020 0020'
+        '696c2bdc8e1cfa03453ed9bf8c3adee2e676835c8746af33c10994b8e603405c'
+        '0004 0001 0001 00 09 6c6f63616c686f7374 0000'
+    )
+
+    def make_ssl_objects(self, context):
+        obj = context.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
+                               server_hostname='localhost')
+        sock, peer = socket.socketpair()
+        self.addCleanup(sock.close)
+        self.addCleanup(peer.close)
+        ssock = context.wrap_socket(sock, server_hostname='localhost',
+                                    do_handshake_on_connect=False)
+        self.addCleanup(ssock.close)
+        return obj, ssock
+
+    @unittest.skipIf(ssl.HAS_ECH, 'requires OpenSSL without ECH')
+    def test_not_implemented(self):
+        ctx = make_test_context()
+        self.assertFalse(ssl.ECHStatus.__members__)
+        with self.assertRaises(NotImplementedError):
+            ctx.set_ech_config(self.ECH_CONFIG)
+        with self.assertRaises(NotImplementedError):
+            ctx.set_outer_alpn_protocols(['h2'])
+        for obj in self.make_ssl_objects(ctx):
+            with self.subTest(type=type(obj)):
+                with self.assertRaises(NotImplementedError):
+                    obj.get_ech_status()
+                with self.assertRaises(NotImplementedError):
+                    obj.get_ech_retry_config()
+                with self.assertRaises(NotImplementedError):
+                    obj.outer_server_hostname
+                with self.assertRaises(NotImplementedError):
+                    obj._sslobj.set_outer_server_name('localhost')
+
+    def test_socket_without_ssl_object(self):
+        ctx = make_test_context()
+        with ctx.wrap_socket(socket.socket()) as sock:
+            self.assertIsNone(sock.outer_server_hostname)
+            self.assertIsNone(sock.get_ech_status())
+            self.assertIsNone(sock.get_ech_retry_config())
+        self.assertIsNone(sock.outer_server_hostname)
+        self.assertIsNone(sock.get_ech_status())
+        self.assertIsNone(sock.get_ech_retry_config())
+
+    @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    def test_set_ech_config(self):
+        ctx = make_test_context()
+        for config in (self.ECH_CONFIG, bytearray(self.ECH_CONFIG),
+                       memoryview(self.ECH_CONFIG)):
+            with self.subTest(type=type(config)):
+                self.assertIsNone(ctx.set_ech_config(config))
+        config = bytearray(self.ECH_CONFIG)
+        ctx.set_ech_config(config)
+        config.clear()  # The input buffer must have been released.
+        for config in (None, 'config', 42):
+            with self.subTest(config=config):
+                self.assertRaises(TypeError, ctx.set_ech_config, config)
+        for config in (b'', b'\x00', b'\x00\x00', b'invalid',
+                       self.ECH_CONFIG[:-1]):
+            with self.subTest(config=config):
+                self.assertRaises(ssl.SSLError, ctx.set_ech_config, config)
+        self.assertIsNone(ctx.set_ech_config(self.ECH_CONFIG))
+
+    @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    def test_status_before_handshake(self):
+        ctx = make_test_context()
+        for configured in (False, True):
+            if configured:
+                ctx.set_ech_config(self.ECH_CONFIG)
+                expected = ssl.ECHStatus.ECH_STATUS_NOT_TRIED
+            else:
+                expected = ssl.ECHStatus.ECH_STATUS_NOT_CONFIGURED
+            for obj in self.make_ssl_objects(ctx):
+                with self.subTest(configured=configured, type=type(obj)):
+                    status = obj.get_ech_status()
+                    self.assertIsInstance(status, ssl.ECHStatus)
+                    self.assertEqual(status, expected)
+                    self.assertEqual(obj._sslobj.get_ech_status(),
+                                     (expected, None, None))
+                    self.assertIsNone(obj.outer_server_hostname)
+                    self.assertEqual(obj.get_ech_retry_config(), b'')
+
+    @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    def test_set_outer_server_name(self):
+        ctx = make_test_context()
+        ctx.set_ech_config(self.ECH_CONFIG)
+        for obj in self.make_ssl_objects(ctx):
+            setter = obj._sslobj.set_outer_server_name
+            self.assertIsNone(setter('localhost'))
+            self.assertIsNone(setter(None))
+            self.assertRaises(TypeError, setter, 42)
+            self.assertRaises(ValueError, setter, 'host\x00name')
+
+    @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    def test_set_outer_alpn_protocols(self):
+        ctx = make_test_context()
+        for protocols in (['h2'], ['h2', 'http/1.1'], []):
+            with self.subTest(protocols=protocols):
+                self.assertIsNone(ctx.set_outer_alpn_protocols(protocols))
+        for protocols in ([''], ['a' * 256]):
+            self.assertRaises(ssl.SSLError,
+                              ctx.set_outer_alpn_protocols, protocols)
+        self.assertRaises(UnicodeEncodeError,
+                          ctx.set_outer_alpn_protocols, ['non-ascii-\u00e9'])
+        self.assertRaises(TypeError, ctx.set_outer_alpn_protocols, [42])
+
+    @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    def test_outer_alpn_does_not_replace_inner(self):
+        client_ctx, server_ctx, hostname = testing_context()
+        for ctx in (client_ctx, server_ctx):
+            ctx.set_alpn_protocols(['h2'])
+            ctx.set_outer_alpn_protocols(['http/1.1'])
+        client_ctx.set_outer_alpn_protocols([])
+        client, server, *_ = connected_bio_pair(client_ctx, server_ctx, hostname)
+        self.assertEqual(client.selected_alpn_protocol(), 'h2')
+        self.assertEqual(server.selected_alpn_protocol(), 'h2')
+
+    @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    def test_grease(self):
+        client_ctx, server_ctx, hostname = testing_context()
+        client_ctx.options |= ssl.OP_ECH_GREASE
+        client, server, *_ = connected_bio_pair(client_ctx, server_ctx, hostname)
+        self.assertEqual(client.get_ech_status(),
+                         ssl.ECHStatus.ECH_STATUS_GREASE)
+        self.assertIsNone(client.outer_server_hostname)
+        self.assertEqual(client.get_ech_retry_config(), b'')
+        self.assertEqual(server.get_ech_status(),
+                         ssl.ECHStatus.ECH_STATUS_NOT_CONFIGURED)
+
+    def make_rejected_client(self):
+        client_ctx, server_ctx, hostname = testing_context()
+        client_ctx.set_ech_config(self.ECH_CONFIG)
+        c_in, c_out = ssl.MemoryBIO(), ssl.MemoryBIO()
+        s_in, s_out = ssl.MemoryBIO(), ssl.MemoryBIO()
+        client = client_ctx.wrap_bio(c_in, c_out, server_hostname=hostname)
+        server = server_ctx.wrap_bio(s_in, s_out, server_side=True)
+        with self.assertRaisesRegex(ssl.SSLError, 'ECH_REQUIRED'):
+            for _ in range(5):
+                with contextlib.suppress(ssl.SSLWantReadError):
+                    client.do_handshake()
+                s_in.write(c_out.read())
+                with contextlib.suppress(ssl.SSLWantReadError):
+                    server.do_handshake()
+                c_in.write(s_out.read())
+        return client
+
+    @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    def test_rejected_ech(self):
+        client = self.make_rejected_client()
+        self.assertEqual(client.get_ech_status(), ssl.ECHStatus.ECH_STATUS_FAILED)
+        self.assertEqual(client._sslobj.get_ech_status(),
+                         (ssl.ECHStatus.ECH_STATUS_FAILED,
+                          'localhost', 'localhost'))
+        self.assertEqual(client.outer_server_hostname, 'localhost')
+        self.assertEqual(client.get_ech_retry_config(), b'')
+
+    @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    @support.nomemtest
+    def test_status_allocation_failure(self):
+        import _testcapi
+
+        client = self.make_rejected_client()
+        get_status = client._sslobj.get_ech_status
+        failures = 0
+        for fail_at in range(10):
+            try:
+                _testcapi.call_with_nomemory(fail_at, fail_at + 1, get_status)
+            except MemoryError:
+                failures += 1
+            self.assertEqual(get_status(),
+                             (ssl.ECHStatus.ECH_STATUS_FAILED,
+                              'localhost', 'localhost'))
+        self.assertGreaterEqual(failures, 2)
 
 
 class SSLErrorTests(unittest.TestCase):

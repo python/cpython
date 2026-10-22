@@ -688,6 +688,18 @@ sqlite3
 ssl
 ---
 
+* Added support for :ref:`Encrypted Client Hello <ssl-encrypted-client-hello>`
+  (ECH) with OpenSSL 4.0 or later. Clients can use
+  :meth:`~ssl.SSLContext.set_ech_config` to supply an ECHConfigList discovered
+  through DNS, for example using a third-party library such as ``dnspython``
+  to query HTTPS or SVCB records. Clients can also enable
+  :data:`~ssl.OP_ECH_GREASE` and retrieve a server's retry configuration
+  with :meth:`~ssl.SSLSocket.get_ech_retry_config` for a subsequent connection.
+  :data:`~ssl.HAS_ECH` indicates whether ECH is available, and
+  :meth:`~ssl.SSLSocket.get_ech_status` reports the status as an
+  :class:`~ssl.ECHStatus` member.
+  (Contributed by Iain R. Learmonth and Peter Bierma in :gh:`89730`.)
+
 * :const:`ssl.OPENSSL_VERSION_INFO` is now a named tuple.
   Added :const:`~ssl.OPENSSL_API_VERSION_INFO` which provides information
   about the version of the OpenSSL library that was used for building
