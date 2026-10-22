@@ -1,1 +1,0 @@
-Deprecate :class:`collections.abc.ByteString`

@@ -2,11 +2,8 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(float_is_integer__doc__,
 "is_integer($self, /)\n"
@@ -169,6 +166,19 @@ PyDoc_STRVAR(float_fromhex__doc__,
 #define FLOAT_FROMHEX_METHODDEF    \
     {"fromhex", (PyCFunction)float_fromhex, METH_O|METH_CLASS, float_fromhex__doc__},
 
+static PyObject *
+float_fromhex_impl(PyTypeObject *type, PyObject *string);
+
+static PyObject *
+float_fromhex(PyObject *type, PyObject *string)
+{
+    PyObject *return_value = NULL;
+
+    return_value = float_fromhex_impl((PyTypeObject *)type, string);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(float_as_integer_ratio__doc__,
 "as_integer_ratio($self, /)\n"
 "--\n"
@@ -201,7 +211,7 @@ PyDoc_STRVAR(float_new__doc__,
 "float(x=0, /)\n"
 "--\n"
 "\n"
-"Convert a string or number to a floating point number, if possible.");
+"Convert a string or number to a floating-point number, if possible.");
 
 static PyObject *
 float_new_impl(PyTypeObject *type, PyObject *x);
@@ -228,6 +238,57 @@ skip_optional:
     return_value = float_new_impl(type, x);
 
 exit:
+    return return_value;
+}
+
+static PyObject *
+float_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *x = NULL;
+
+    assert(Py_Is(_PyType_CAST(type), &PyFloat_Type));
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (!_PyArg_NoKwnames("float", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("float", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    x = args[0];
+skip_optional:
+    return_value = float_new_impl(_PyType_CAST(type), x);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(float_from_number__doc__,
+"from_number($type, number, /)\n"
+"--\n"
+"\n"
+"Convert real number to a floating-point number.");
+
+#define FLOAT_FROM_NUMBER_METHODDEF    \
+    {"from_number", (PyCFunction)float_from_number, METH_O|METH_CLASS, float_from_number__doc__},
+
+static PyObject *
+float_from_number_impl(PyTypeObject *type, PyObject *number);
+
+static PyObject *
+float_from_number(PyObject *type, PyObject *number)
+{
+    PyObject *return_value = NULL;
+
+    return_value = float_from_number_impl((PyTypeObject *)type, number);
+
     return return_value;
 }
 
@@ -259,9 +320,9 @@ PyDoc_STRVAR(float___getformat____doc__,
 "\n"
 "It exists mainly to be used in Python\'s test suite.\n"
 "\n"
-"This function returns whichever of \'unknown\', \'IEEE, big-endian\' or \'IEEE,\n"
-"little-endian\' best describes the format of floating point numbers used by the\n"
-"C type named by typestr.");
+"This function returns whichever of \'IEEE, big-endian\' or \'IEEE,\n"
+"little-endian\' best describes the format of floating-point numbers\n"
+"used by the C type named by typestr.");
 
 #define FLOAT___GETFORMAT___METHODDEF    \
     {"__getformat__", (PyCFunction)float___getformat__, METH_O|METH_CLASS, float___getformat____doc__},
@@ -270,7 +331,7 @@ static PyObject *
 float___getformat___impl(PyTypeObject *type, const char *typestr);
 
 static PyObject *
-float___getformat__(PyTypeObject *type, PyObject *arg)
+float___getformat__(PyObject *type, PyObject *arg)
 {
     PyObject *return_value = NULL;
     const char *typestr;
@@ -279,16 +340,11 @@ float___getformat__(PyTypeObject *type, PyObject *arg)
         _PyArg_BadArgument("__getformat__", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t typestr_length;
-    typestr = PyUnicode_AsUTF8AndSize(arg, &typestr_length);
+    typestr = _PyUnicode_AsUTF8NoNUL(arg);
     if (typestr == NULL) {
         goto exit;
     }
-    if (strlen(typestr) != (size_t)typestr_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
-    return_value = float___getformat___impl(type, typestr);
+    return_value = float___getformat___impl((PyTypeObject *)type, typestr);
 
 exit:
     return return_value;
@@ -316,13 +372,10 @@ float___format__(PyObject *self, PyObject *arg)
         _PyArg_BadArgument("__format__", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
-        goto exit;
-    }
     format_spec = arg;
     return_value = float___format___impl(self, format_spec);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ea329577074911b9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=95aaa6d7174f9e40 input=a9049054013a1b77]*/

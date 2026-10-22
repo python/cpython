@@ -1,3 +1,0 @@
-When creating zip files using :mod:`zipfile`, ``os.altsep``, if not ``None``,
-will always be treated as a path separator even when it is not ``/``.
-Patch by Carey Metcalfe.

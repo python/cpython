@@ -1,6 +1,7 @@
 import unittest
-from ctypes import *
-from test.test_ctypes import need_symbol
+from ctypes import (create_string_buffer, create_unicode_buffer,
+                    sizeof, byref, c_char, c_wchar)
+
 
 class StringArrayTestCase(unittest.TestCase):
     def test(self):
@@ -25,8 +26,8 @@ class StringArrayTestCase(unittest.TestCase):
         self.assertRaises(ValueError, setattr, buf, "value", b"aaaaaaaa")
         self.assertRaises(TypeError, setattr, buf, "value", 42)
 
-    def test_c_buffer_value(self):
-        buf = c_buffer(32)
+    def test_create_string_buffer_value(self):
+        buf = create_string_buffer(32)
 
         buf.value = b"Hello, World"
         self.assertEqual(buf.value, b"Hello, World")
@@ -35,8 +36,8 @@ class StringArrayTestCase(unittest.TestCase):
         self.assertRaises(TypeError, setattr, buf, "value", memoryview(b"abc"))
         self.assertRaises(ValueError, setattr, buf, "raw", memoryview(b"x" * 100))
 
-    def test_c_buffer_raw(self):
-        buf = c_buffer(32)
+    def test_create_string_buffer_raw(self):
+        buf = create_string_buffer(32)
 
         buf.raw = memoryview(b"Hello, World")
         self.assertEqual(buf.value, b"Hello, World")
@@ -46,13 +47,10 @@ class StringArrayTestCase(unittest.TestCase):
     def test_param_1(self):
         BUF = c_char * 4
         buf = BUF()
-##        print c_char_p.from_param(buf)
 
     def test_param_2(self):
         BUF = c_char * 4
         buf = BUF()
-##        print BUF.from_param(c_char_p("python"))
-##        print BUF.from_param(BUF(*"pyth"))
 
     def test_del_segfault(self):
         BUF = c_char * 4
@@ -61,7 +59,6 @@ class StringArrayTestCase(unittest.TestCase):
             del buf.raw
 
 
-@need_symbol('c_wchar')
 class WStringArrayTestCase(unittest.TestCase):
     def test(self):
         BUF = c_wchar * 4
@@ -86,49 +83,41 @@ class WStringArrayTestCase(unittest.TestCase):
         self.assertEqual(w.value, u)
 
 
-@need_symbol('c_wchar')
 class WStringTestCase(unittest.TestCase):
     def test_wchar(self):
         c_wchar("x")
         repr(byref(c_wchar("x")))
         c_wchar("x")
 
-
-    @unittest.skip('test disabled')
     def test_basic_wstrings(self):
-        cs = c_wstring("abcdef")
-
-        # XXX This behaviour is about to change:
-        # len returns the size of the internal buffer in bytes.
-        # This includes the terminating NUL character.
-        self.assertEqual(sizeof(cs), 14)
-
-        # The value property is the string up to the first terminating NUL.
+        cs = create_unicode_buffer("abcdef")
         self.assertEqual(cs.value, "abcdef")
-        self.assertEqual(c_wstring("abc\000def").value, "abc")
 
-        self.assertEqual(c_wstring("abc\000def").value, "abc")
+        # value can be changed
+        cs.value = "abc"
+        self.assertEqual(cs.value, "abc")
 
-        # The raw property is the total buffer contents:
-        self.assertEqual(cs.raw, "abcdef\000")
-        self.assertEqual(c_wstring("abc\000def").raw, "abc\000def\000")
+        # string is truncated at NUL character
+        cs.value = "def\0z"
+        self.assertEqual(cs.value, "def")
 
-        # We can change the value:
-        cs.value = "ab"
-        self.assertEqual(cs.value, "ab")
-        self.assertEqual(cs.raw, "ab\000\000\000\000\000")
+        self.assertEqual(create_unicode_buffer("abc\0def").value, "abc")
 
-        self.assertRaises(TypeError, c_wstring, "123")
-        self.assertRaises(ValueError, c_wstring, 0)
+        # created with an empty string
+        cs = create_unicode_buffer(3)
+        self.assertEqual(cs.value, "")
 
-    @unittest.skip('test disabled')
+        cs.value = "abc"
+        self.assertEqual(cs.value, "abc")
+
     def test_toolong(self):
-        cs = c_wstring("abcdef")
-        # Much too long string:
-        self.assertRaises(ValueError, setattr, cs, "value", "123456789012345")
+        cs = create_unicode_buffer("abc")
+        with self.assertRaises(ValueError):
+            cs.value = "abcdef"
 
-        # One char too long values:
-        self.assertRaises(ValueError, setattr, cs, "value", "1234567")
+        cs = create_unicode_buffer(4)
+        with self.assertRaises(ValueError):
+            cs.value = "abcdef"
 
 
 def run_test(rep, msg, func, arg):

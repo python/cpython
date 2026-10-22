@@ -1,2 +1,0 @@
-Support reading SOCKS proxy configuration from macOS System Configuration.
-Patch by Sam Schott.

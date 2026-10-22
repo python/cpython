@@ -1,2 +1,0 @@
-Improve performance of :meth:`pathlib.Path.glob` by using
-:data:`re.IGNORECASE` to implement case-insensitive matching.

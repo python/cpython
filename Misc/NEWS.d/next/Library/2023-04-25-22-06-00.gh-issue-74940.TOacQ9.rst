@@ -1,2 +1,0 @@
-The C.UTF-8 locale is no longer converted to en_US.UTF-8, enabling the use
-of UTF-8 encoding on systems which have no locales installed.

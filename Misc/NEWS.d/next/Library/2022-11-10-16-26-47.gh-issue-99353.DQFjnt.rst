@@ -1,3 +1,0 @@
-Respect the :class:`http.client.HTTPConnection` ``.debuglevel`` flag
-in :class:`urllib.request.AbstractHTTPHandler` when its constructor
-parameter ``debuglevel`` is not set. And do the same for ``*HTTPS*``.

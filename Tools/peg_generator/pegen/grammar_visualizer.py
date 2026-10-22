@@ -1,6 +1,8 @@
 import argparse
+import pathlib
 import sys
-from typing import Any, Callable, Iterator
+from collections.abc import Callable, Iterator
+from typing import Any
 
 from pegen.build import build_parser
 from pegen.grammar import Grammar, Rule
@@ -8,7 +10,7 @@ from pegen.grammar import Grammar, Rule
 argparser = argparse.ArgumentParser(
     prog="pegen", description="Pretty print the AST for a given PEG grammar"
 )
-argparser.add_argument("filename", help="Grammar description")
+argparser.add_argument("filename", type=pathlib.Path, help="Grammar description")
 
 
 class ASTGrammarPrinter:
@@ -29,7 +31,6 @@ class ASTGrammarPrinter:
             printer(self.print_nodes_recursively(rule))
 
     def print_nodes_recursively(self, node: Rule, prefix: str = "", istail: bool = True) -> str:
-
         children = list(self.children(node))
         value = self.name(node)
 
@@ -53,7 +54,7 @@ def main() -> None:
     try:
         grammar, parser, tokenizer = build_parser(args.filename)
     except Exception as err:
-        print("ERROR: Failed to parse grammar file", file=sys.stderr)
+        print("ERROR: Failed to parse grammar file", err, file=sys.stderr)
         sys.exit(1)
 
     visitor = ASTGrammarPrinter()

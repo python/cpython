@@ -1,5 +1,0 @@
-Create a new ``Lib/_pydatetime.py`` file that defines the Python version of
-the ``datetime`` module, and make ``datetime`` import the contents of the
-new library only if the C implementation is missing. Currently, the full
-Python implementation is defined and then deleted if the C implementation is
-not available, slowing down ``import datetime`` unnecessarily.

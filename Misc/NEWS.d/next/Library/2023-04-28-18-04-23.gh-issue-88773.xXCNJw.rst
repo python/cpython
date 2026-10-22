@@ -1,1 +1,0 @@
-Added :func:`turtle.teleport` to the :mod:`turtle` module to move a turtle to a new point without tracing a line, visible or invisible.  Patch by Liam Gersten.

@@ -2,14 +2,17 @@
 
 import sys
 import unittest
+from test import support
 from test.support import cpython_only
 from test.support.os_helper import TESTFN, unlink
 from test.support import check_free_after_iterating, ALWAYS_EQ, NEVER_EQ
+from test.support import BrokenIter
 import pickle
 import collections.abc
 import functools
 import contextlib
 import builtins
+import traceback
 
 # Test result of triple loop (too big to inline)
 TRIPLETS = [(0, 0, 0), (0, 0, 1), (0, 0, 2),
@@ -91,7 +94,7 @@ class CallableIterClass:
         i = self.i
         self.i = i + 1
         if i > 100:
-            raise IndexError # Emergency stop
+            raise IndexError  # stops the iteration
         return i
 
 class EmptyIterClass:
@@ -247,6 +250,71 @@ class TestCase(unittest.TestCase):
         self.assertEqual(list(empit), [5, 6])
         self.assertEqual(list(a), [0, 1, 2, 3, 4, 5, 6])
 
+    @support.refcount_test
+    def test_seq_class_reentrant_exhaustion(self):
+        # gh-156310: a re-entrant next() from inside __getitem__ (or from
+        # __del__ of the IndexError instance) that exhausts the iterator
+        # used to make the outer next() DECREF the sequence a second time.
+        it = None
+
+        class ReentrantGetItem:
+            def __init__(self):
+                self.calls = 0
+
+            def __getitem__(self, i):
+                self.calls += 1
+                if self.calls == 1:
+                    for _ in it:
+                        pass
+                raise IndexError(i)
+
+        seq = ReentrantGetItem()
+        refcount = sys.getrefcount(seq)
+        it = iter(seq)
+        self.assertEqual(list(it), [])
+        del it
+        support.gc_collect()
+        self.assertEqual(sys.getrefcount(seq), refcount)
+
+        class ReentrantIndexError(IndexError):
+            def __del__(self):
+                try:
+                    next(it)
+                except StopIteration:
+                    pass
+
+        class RaiseReentrant:
+            def __getitem__(self, i):
+                raise ReentrantIndexError(i)
+
+        seq = RaiseReentrant()
+        refcount = sys.getrefcount(seq)
+        it = iter(seq)
+        self.assertEqual(list(it), [])
+        del it
+        support.gc_collect()
+        self.assertEqual(sys.getrefcount(seq), refcount)
+
+        # An outer __getitem__ that succeeds after a re-entrant next()
+        # exhausted the iterator must not revive it.
+        class ReviveGetItem:
+            def __init__(self):
+                self.calls = 0
+
+            def __getitem__(self, i):
+                self.calls += 1
+                if self.calls == 1:
+                    for _ in it:
+                        pass
+                if i >= 3:
+                    raise IndexError(i)
+                return i
+
+        it = iter(ReviveGetItem())
+        self.assertEqual(next(it), 0)
+        self.assertEqual(list(it), [])
+        self.assertEqual(it.__length_hint__(), 0)
+
     def test_reduce_mutating_builtins_iter(self):
         # This is a reproducer of issue #101765
         # where iter `__reduce__` calls could lead to a segfault or SystemError
@@ -302,7 +370,7 @@ class TestCase(unittest.TestCase):
             # listiter_reduce_general
             self.assertEqual(
                 run("reversed", orig["reversed"](list(range(8)))),
-                (iter, ([],))
+                (reversed, ([],))
             )
 
             for case in types:
@@ -347,6 +415,97 @@ class TestCase(unittest.TestCase):
             state[0] = i+1
             return i
         self.check_iterator(iter(spam, 20), list(range(10)), pickle=False)
+
+    # Test iter() with the stop value passed by keyword
+    def test_iter_keyword_stop(self):
+        self.check_iterator(iter(CallableIterClass(), stop_value=10), list(range(10)))
+
+    # Test iter() with the exception argument
+    def test_iter_exception(self):
+        self.check_iterator(iter(CallableIterClass(), stop_exception=IndexError),
+                            list(range(101)))
+
+    def test_iter_exception_tuple(self):
+        self.check_iterator(
+            iter(CallableIterClass(), stop_exception=(ZeroDivisionError, IndexError)),
+            list(range(101)))
+
+    # Test iter() with both the stop value and the exception argument
+    def test_iter_exception_and_stop(self):
+        self.check_iterator(iter(CallableIterClass(), 10, stop_exception=IndexError),
+                            list(range(10)))
+        self.check_iterator(iter(CallableIterClass(), 200, stop_exception=IndexError),
+                            list(range(101)))
+
+    # A leaking StopIteration is replaced with RuntimeError (see PEP 479)
+    def test_iter_exception_stop_iteration_leak(self):
+        def spam():
+            raise StopIteration
+        it = iter(spam, stop_exception=IndexError)
+        with self.assertRaisesRegex(RuntimeError,
+                                    'callable raised StopIteration') as cm:
+            next(it)
+        self.assertIsInstance(cm.exception.__cause__, StopIteration)
+        # but if it matches stop_exception, it stops the iteration
+        it = iter(spam, stop_exception=(IndexError, StopIteration))
+        self.assertRaises(StopIteration, next, it)
+
+    # Other exceptions are propagated
+    def test_iter_exception_not_matching(self):
+        def spam():
+            raise ZeroDivisionError
+        it = iter(spam, stop_exception=IndexError)
+        self.assertRaises(ZeroDivisionError, next, it)
+
+    def test_iter_exception_errors(self):
+        self.assertRaises(TypeError, iter, [1, 2], stop_exception=IndexError)
+        self.assertRaises(TypeError, iter, len, stop_exception=42)
+        self.assertRaises(TypeError, iter, len, stop_exception=(IndexError, 42))
+        self.assertRaises(TypeError, iter, len, stop_exception=IndexError())
+
+    # StopIteration is the default stop exception
+    def test_iter_exception_stop_iteration(self):
+        def spam(state=[0]):
+            i = state[0]
+            if i == 10:
+                raise StopIteration
+            state[0] = i+1
+            return i
+        self.check_iterator(iter(spam, stop_exception=StopIteration),
+                            list(range(10)), pickle=False)
+
+    def test_calliter_reduce(self):
+        c = CallableIterClass()
+        # The form without the stop exception is pickled as iter(c, stop)
+        self.assertEqual(iter(c, 10).__reduce__(), (iter, (c, 10)))
+        self.assertEqual(iter(c, 10, stop_exception=StopIteration).__reduce__(),
+                         (iter, (c, 10)))
+        self.assertEqual(iter(c, 10, stop_exception=()).__reduce__(),
+                         (iter, (c, None), ((10,), ())))
+        self.assertEqual(iter(c, stop_exception=StopIteration).__reduce__(),
+                         (iter, (c, None), ((), StopIteration)))
+        self.assertEqual(iter(c, stop_exception=IndexError).__reduce__(),
+                         (iter, (c, None), ((), IndexError)))
+        self.assertEqual(iter(c, 10, stop_exception=IndexError).__reduce__(),
+                         (iter, (c, None), ((10,), IndexError)))
+
+    def test_calliter_setstate(self):
+        c = CallableIterClass()
+        it = iter(c, stop_exception=IndexError)
+        self.assertRaises(TypeError, it.__setstate__, 42)
+        self.assertRaises(TypeError, it.__setstate__, ((), IndexError, ()))
+        self.assertRaises(TypeError, it.__setstate__, ([], IndexError))
+        self.assertRaises(TypeError, it.__setstate__, ((1, 2), IndexError))
+        self.assertRaises(TypeError, it.__setstate__, ((), 42))
+        self.assertRaises(TypeError, it.__setstate__, ((), None))
+        it.__setstate__(((10,), StopIteration))
+        self.assertEqual(it.__reduce__(), (iter, (c, 10)))
+        it.__setstate__(((10,), ()))
+        self.assertEqual(it.__reduce__(), (iter, (c, None), ((10,), ())))
+        it.__setstate__(((), IndexError))
+        self.assertEqual(it.__reduce__(), (iter, (c, None), ((), IndexError)))
+        it.__setstate__(((10,), StopIteration))
+        self.assertEqual(list(it), list(range(10)))
 
     def test_iter_function_concealing_reentrant_exhaustion(self):
         # gh-101892: Test two-argument iter() with a function that
@@ -1142,6 +1301,46 @@ class TestCase(unittest.TestCase):
         for typ in (DefaultIterClass, NoIterClass):
             self.assertRaises(TypeError, iter, typ())
         self.assertRaises(ZeroDivisionError, iter, BadIterableClass())
+
+    def test_exception_locations(self):
+        # The location of an exception raised from __init__ or
+        # __next__ should be the iterator expression
+
+        def init_raises():
+            try:
+                for x in BrokenIter(init_raises=True):
+                    pass
+            except Exception as e:
+                return e
+
+        def next_raises():
+            try:
+                for x in BrokenIter(next_raises=True):
+                    pass
+            except Exception as e:
+                return e
+
+        def iter_raises():
+            try:
+                for x in BrokenIter(iter_raises=True):
+                    pass
+            except Exception as e:
+                return e
+
+        for func, expected in [(init_raises, "BrokenIter(init_raises=True)"),
+                               (next_raises, "BrokenIter(next_raises=True)"),
+                               (iter_raises, "BrokenIter(iter_raises=True)"),
+                              ]:
+            with self.subTest(func):
+                exc = func()
+                f = traceback.extract_tb(exc.__traceback__)[0]
+                indent = 16
+                co = func.__code__
+                self.assertEqual(f.lineno, co.co_firstlineno + 2)
+                self.assertEqual(f.end_lineno, co.co_firstlineno + 2)
+                self.assertEqual(f.line[f.colno - indent : f.end_colno - indent],
+                                 expected)
+
 
 
 if __name__ == "__main__":

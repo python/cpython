@@ -1,1 +1,0 @@
-update curses textbox to additionally handle backspace using the ``curses.ascii.DEL`` key press.

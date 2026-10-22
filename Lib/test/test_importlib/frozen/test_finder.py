@@ -2,11 +2,8 @@ from test.test_importlib import abc, util
 
 machinery = util.import_importlib('importlib.machinery')
 
-import _imp
-import marshal
 import os.path
 import unittest
-import warnings
 
 from test.support import import_helper, REPO_ROOT, STDLIB_DIR
 
