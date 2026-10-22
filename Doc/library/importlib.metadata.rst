@@ -760,21 +760,21 @@ documented here supplies objects from the other hierarchy.
 
 The backport settles most of this on the consumer's behalf, substituting its
 own class for each object it recognizes, such as a :class:`!PathDistribution`,
-a :class:`PackagePath`, or an :class:`email.message.Message`. It cannot do so
-for an arbitrary :class:`Distribution` subclass from a custom provider, having
-no way to reconstruct that subclass. Such an object is passed through
-unchanged, and the backport emits a :exc:`UserWarning` reporting the
-unrecognized subclass.
+a :class:`PackagePath`, or an :class:`email.message.Message`. It has no way to
+reconstruct an arbitrary :class:`Distribution` subclass from a custom
+provider, so it passes such an object through unchanged. That serves the
+consumer as long as the object presents the whole interface; where the class
+omits a member the interface requires, the backport emits a
+:exc:`UserWarning` naming what is missing.
 
-A passed-through object still serves the consumer, provided it implements the
-whole interface rather than part of it. So, when writing a custom provider:
+So, when writing a custom provider:
 
 * Supply objects that present the whole interface, not part of it. Deriving
   from :class:`Distribution`, as the example above does, achieves this: the
   base class builds the rest of the interface on
-  :meth:`~Distribution.read_text` and :meth:`~Distribution.locate_file`. A
-  provider that assembles its objects some other way supplies every member
-  itself.
+  :meth:`~Distribution.read_text` and :meth:`~Distribution.locate_file`, and
+  such a provider draws no warning. A provider that assembles its objects
+  some other way supplies every member itself.
 * Where the provider itself consumes metadata, and in the guidance offered to
   its users, rely on the object satisfying that interface rather than on its
   type. The backport publishes ``IDistribution``, ``IPackagePath``, and
