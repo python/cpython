@@ -841,6 +841,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(strict), "strict", 6);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(strict_mode), "strict_mode", 11);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(string), "string", 6);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(strip_ws), "strip_ws", 8);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(sub_key), "sub_key", 7);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(subcalls), "subcalls", 8);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(symmetric_difference_update), "symmetric_difference_update", 27);
