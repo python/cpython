@@ -996,6 +996,16 @@ class LongTest(unittest.TestCase):
         self.assertEqual(v.bit_count(), 2)
         self.assertEqual(v >> size, 5)
 
+    @support.cpython_only
+    def test_huge_lshift_overflow(self):
+        # The number of digits of the result doesn't fit in Py_ssize_t.
+        for a in 1, -1, 1 << SHIFT, -1 << SHIFT, 1 << 10*SHIFT:
+            for ndigits in range(sys.maxsize - 12, sys.maxsize + 1):
+                for shift in ndigits*SHIFT - 1, ndigits*SHIFT:
+                    with self.subTest(a=a, shift=shift):
+                        with self.assertRaises(OverflowError):
+                            a << shift
+
     def test_huge_rshift(self):
         huge_shift = 1 << 1000
         self.assertEqual(42 >> huge_shift, 0)
