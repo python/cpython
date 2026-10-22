@@ -1,0 +1,2 @@
+Improve import time of :mod:`pdb`, :mod:`bdb` and :mod:`code` by lazily
+importing several dependencies.

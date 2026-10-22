@@ -1,5 +1,6 @@
 """Tests for tasks.py."""
 
+import _thread
 import collections
 import contextlib
 import contextvars
@@ -20,6 +21,7 @@ from asyncio import futures
 from asyncio import tasks
 from test.test_asyncio import utils as test_utils
 from test import support
+from test.support import threading_helper
 from test.support.script_helper import assert_python_ok
 
 
@@ -1700,6 +1702,46 @@ class BaseTaskTests:
                     )
                     self.assertCountEqual(results, (0, 1, 2, 3))
 
+    def test_as_completed_async_iterator_cancelled_anext(self):
+        async def main():
+            loop = asyncio.get_running_loop()
+            a = loop.create_future()
+            b = loop.create_future()
+            iterator = asyncio.as_completed([a, b])
+
+            waiter = asyncio.create_task(anext(iterator))
+            await asyncio.sleep(0)
+            waiter.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await waiter
+
+            a.set_result('a')
+            b.set_result('b')
+            return [await f async for f in iterator]
+
+        results = self.loop.run_until_complete(main())
+        self.assertCountEqual(results, ['a', 'b'])
+
+    def test_as_completed_plain_iterator_cancelled_wait(self):
+        async def main():
+            loop = asyncio.get_running_loop()
+            a = loop.create_future()
+            b = loop.create_future()
+            iterator = asyncio.as_completed([a, b])
+
+            waiter = asyncio.create_task(next(iterator))
+            await asyncio.sleep(0)
+            waiter.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await waiter
+
+            a.set_result('a')
+            b.set_result('b')
+            return [await c for c in iterator]
+
+        results = self.loop.run_until_complete(main())
+        self.assertCountEqual(results, ['a', 'b'])
+
     def test_as_completed_reverse_wait(self):
         # Tests the plain iterator style of as_completed iteration to
         # ensure that the first future awaited resolves to the first
@@ -1800,6 +1842,22 @@ class BaseTaskTests:
         with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
             futs = asyncio.as_completed([a])
             list(futs)
+
+    def test_as_completed_outside_running_loop(self):
+        # gh-157856: as_completed() must not require a running event loop
+        # when the iterator is created, only when it is driven.
+        loop = self.new_test_loop()
+        self.addCleanup(asyncio.set_event_loop, None)
+        asyncio.set_event_loop(loop)
+
+        async def coro(v):
+            await asyncio.sleep(0)
+            return v
+
+        tasks = [loop.create_task(coro(v)) for v in (1, 2)]
+        futs = asyncio.as_completed(tasks)
+        results = [loop.run_until_complete(f) for f in futs]
+        self.assertEqual(sorted(results), [1, 2])
 
     def test_as_completed_coroutine_use_running_loop(self):
         loop = self.new_test_loop()
@@ -3094,6 +3152,39 @@ class CTask_CFuture_Tests(BaseTaskTests, SetMethodsTest,
     Future = getattr(futures, '_CFuture', None)
     all_tasks = getattr(tasks, '_c_all_tasks', None)
     current_task = staticmethod(getattr(tasks, '_c_current_task', None))
+
+    @threading_helper.requires_working_threading()
+    def test_task_created_during_thread_state_clear(self):
+        loop = self.loop
+        task = None
+        var = contextvars.ContextVar('var')
+        # Avoid recreating the thread state's context after it is cleared.
+        task_context = contextvars.Context()
+
+        async def noop():
+            pass
+
+        class CreatesTaskOnClear:
+            def __del__(self):
+                nonlocal task
+                task = loop.create_task(noop(), context=task_context)
+
+        def create_finalizer():
+            # gh-159041: Run the finalizer when PyThreadState_Clear()
+            # clears the thread's context.
+            var.set(CreatesTaskOnClear())
+
+        # threading.Thread owns its Context, so use _thread to make the
+        # Context lifetime match the thread state's lifetime.
+        handle = _thread.start_joinable_thread(create_finalizer)
+        handle.join(support.SHORT_TIMEOUT)
+        self.assertTrue(handle.is_done(), 'thread failed to exit')
+        self.assertIsNotNone(task)
+
+        try:
+            self.assertEqual(self.all_tasks(loop), {task})
+        finally:
+            loop.run_until_complete(task)
 
     def test_del__log_destroy_pending_segfault(self):
         async def coro():
