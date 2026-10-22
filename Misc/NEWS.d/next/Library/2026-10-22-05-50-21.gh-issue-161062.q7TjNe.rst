@@ -1,0 +1,4 @@
+Fix a crash in the :term:`free-threaded build` when multiple threads
+concurrently read the :attr:`~xml.etree.ElementTree.Element.text` or
+:attr:`~xml.etree.ElementTree.Element.tail` attribute of a freshly parsed
+:class:`xml.etree.ElementTree.Element` for the first time.
