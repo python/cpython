@@ -2982,7 +2982,7 @@ EM_JS(int, emscripten_set_up_async_input_device_js, (void), {
         await sleep(5);
         return bufs[(idx ++) % 3];
     });
-    return !!Module.Py_EmscriptenStackSwitching;
+    return !!Module._Py_EmscriptenStackSwitching;
 });
 
 static PyObject *

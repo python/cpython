@@ -65,7 +65,7 @@ EM_JS(void, _PyEmscripten_BeforeMain_js, (void), {
     // promising() needs the raw export; _main may be a JS wrapper around it.
     const main = WebAssembly.promising(wasmExports.__main_argc_argv);
     _main = (...args) => {
-        Module.Py_EmscriptenStackSwitching = true;
+        Module._Py_EmscriptenStackSwitching = true;
         (async () => {
             const ret = await main(...args);
             Module.onExit?.(ret);
@@ -156,7 +156,7 @@ _Static_assert(sizeof(__wasi_iovec_t) == IOVEC_T_SIZE,
 // instead of blocking when main() runs under WebAssembly.promising, which
 // Programs/emscripten_beforemain.c arranges for the interpreter. An embedder
 // running its own promising entry point opts in with
-//     Module.Py_EmscriptenStackSwitching = true;
+//     Module._Py_EmscriptenStackSwitching = true;
 // Otherwise these calls keep their synchronous behavior.
 EM_JS_MACROS(__externref_t, __maybe_fd_read_async, (
     __wasi_fd_t fd,
@@ -164,7 +164,7 @@ EM_JS_MACROS(__externref_t, __maybe_fd_read_async, (
     size_t iovcnt,
     __wasi_size_t *nread
 ), {
-    if (!Module.Py_EmscriptenStackSwitching) {
+    if (!Module._Py_EmscriptenStackSwitching) {
         return null;
     }
     var stream;
@@ -248,7 +248,7 @@ _Static_assert(offsetof(struct pollfd, revents) == 6, "Unepxected pollfd struct 
 _Static_assert(sizeof(struct pollfd) == 8, "Unepxected pollfd struct layout");
 
 EM_JS_MACROS(__externref_t, __maybe_poll_async, (intptr_t fds, int nfds, int timeout), {
-    if (!Module.Py_EmscriptenStackSwitching) {
+    if (!Module._Py_EmscriptenStackSwitching) {
         return null;
     }
     return (async function() {
