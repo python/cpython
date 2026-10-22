@@ -91,7 +91,6 @@ __rsub__
 __rtruediv__
 __rxor__
 __setattr__
-__str__
 __sub__
 __truediv__
 __xor__
