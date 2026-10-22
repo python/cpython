@@ -909,6 +909,30 @@ raise RuntimeError("Intentional import failure")
         self.assertEqual(errors, [])
         self.assertEqual(sys.modules["stall_pkg.leaf"].X, 1)
 
+    def test_parent_removed_before_submodule_is_loaded(self):
+        # The parent package leaves sys.modules after it was imported but
+        # before the submodule is loaded, as when its import failed in
+        # another thread.  The parent must be imported again rather than
+        # the submodule's import failing with KeyError.
+        self._setup_package_tree({
+            "gone_pkg/__init__.py": "",
+            "gone_pkg/mod.py": "X = 1\n",
+        })
+        resolve_parents = importlib._bootstrap._resolve_parents
+        removed = []
+
+        def removing_resolve_parents(name, import_):
+            resolve_parents(name, import_)
+            if name == "gone_pkg.mod":
+                removed.append(sys.modules.pop("gone_pkg"))
+
+        with support.swap_attr(importlib._bootstrap, "_resolve_parents",
+                               removing_resolve_parents):
+            import gone_pkg.mod
+        self.assertEqual(len(removed), 1)
+        self.assertIsNot(sys.modules["gone_pkg"], removed[0])
+        self.assertEqual(sys.modules["gone_pkg"].mod.X, 1)
+
     def test_waiter_retries_after_failed_submodule_import(self):
         # Thread 2 waits for thread 1's import of pkg.mod, whose first
         # execution then fails.  Thread 2 must load pkg.mod itself and not
