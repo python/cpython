@@ -317,6 +317,10 @@ typedef struct {
     SSL_CTX *ctx;
     unsigned char *alpn_protocols;
     unsigned int alpn_protocols_len;
+#ifdef HAVE_OPENSSL_ECH
+    unsigned char *outer_alpn_protocols;
+    unsigned int outer_alpn_protocols_len;
+#endif
     PyObject *set_sni_cb;
     int check_hostname;
     int protocol;
@@ -456,6 +460,9 @@ PyDoc_STRVAR(SSLWantWriteError_doc,
 PyDoc_STRVAR(SSLSyscallError_doc,
 "System error when attempting SSL operation.");
 
+PyDoc_STRVAR(SSLECHRejectedError_doc,
+"SSL/TLS handshake failed because the server rejected Encrypted Client Hello.");
+
 PyDoc_STRVAR(SSLEOFError_doc,
 "SSL/TLS connection terminated abruptly.");
 
@@ -490,6 +497,7 @@ fill_and_set_sslerror(_sslmodulestate *state,
 {
     PyObject *err_value = NULL, *reason_obj = NULL, *lib_obj = NULL;
     PyObject *verify_obj = NULL, *verify_code_obj = NULL;
+    PyObject *retry_obj = NULL;
     PyObject *init_value, *msg, *key;
     PyUnicodeWriter *writer = NULL;
 
@@ -634,11 +642,32 @@ fill_and_set_sslerror(_sslmodulestate *state,
             goto fail;
     }
 
+#ifdef HAVE_OPENSSL_ECH
+    if ((sslsock != NULL) && (type == state->PySSLECHRejectedErrorObject)) {
+        unsigned char *config = NULL;
+        size_t config_len = 0;
+
+        /* OpenSSL only releases retry configurations once the outer
+         * handshake has authenticated the server; otherwise report none. */
+        if (SSL_ech_get1_retry_config(sslsock->ssl, &config, &config_len) != 1) {
+            config = NULL;
+            config_len = 0;
+        }
+        retry_obj = PyBytes_FromStringAndSize((const char *)config, config_len);
+        OPENSSL_free(config);
+        if (retry_obj == NULL)
+            goto fail;
+        if (PyObject_SetAttr(err_value, state->str_retry_config, retry_obj))
+            goto fail;
+    }
+#endif
+
     PyErr_SetObject(type, err_value);
 fail:
     Py_XDECREF(err_value);
     Py_XDECREF(verify_code_obj);
     Py_XDECREF(verify_obj);
+    Py_XDECREF(retry_obj);
     PyUnicodeWriter_Discard(writer);
 }
 
@@ -743,6 +772,12 @@ PySSL_SetError(PySSLSocket *sslsock, _PySSLError err, PyObject *exc,
                     ERR_GET_REASON(e) == SSL_R_CERTIFICATE_VERIFY_FAILED) {
                 type = state->PySSLCertVerificationErrorObject;
             }
+#ifdef HAVE_OPENSSL_ECH
+            if (ERR_GET_LIB(e) == ERR_LIB_SSL &&
+                    ERR_GET_REASON(e) == SSL_R_ECH_REQUIRED) {
+                type = state->PySSLECHRejectedErrorObject;
+            }
+#endif
 #if defined(SSL_R_UNEXPECTED_EOF_WHILE_READING)
             /* OpenSSL 3.0 changed transport EOF from SSL_ERROR_SYSCALL with
              * zero return value to SSL_ERROR_SSL with a special error code. */
@@ -2183,6 +2218,59 @@ _ssl__SSLSocket_get_ech_retry_config_impl(PySSLSocket *self)
     return result;
 }
 
+static OSSL_ECHSTORE *ech_store_from_config(_sslmodulestate *state,
+                                            Py_buffer *ech_config);
+
+/*[clinic input]
+@critical_section
+_ssl._SSLSocket.set_ech_config
+
+    ech_config: Py_buffer
+    /
+
+Set the ECH configuration for this connection.
+
+This replaces any configuration inherited from the context and
+must be called before the handshake starts.
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_set_ech_config_impl(PySSLSocket *self, Py_buffer *ech_config)
+/*[clinic end generated code: output=c9d2639cc222eae9 input=c331e306213d39d9]*/
+{
+    if (self->socket_type != PY_SSL_CLIENT) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Cannot set ECH configuration for server-side SSLSocket.");
+        return NULL;
+    }
+    if (!SSL_in_before(self->ssl)) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Cannot set ECH configuration after handshake.");
+        return NULL;
+    }
+    _sslmodulestate *state = get_state_sock(self);
+    OSSL_ECHSTORE *store = ech_store_from_config(state, ech_config);
+    if (store == NULL) {
+        return NULL;
+    }
+    int result = SSL_set1_echstore(self->ssl, store);
+    OSSL_ECHSTORE_free(store);
+    if (result != 1) {
+        _setSSLError(state, NULL, 0, __FILE__, __LINE__);
+        return NULL;
+    }
+    /* Restore the outer ALPN cleared when this socket was created without
+     * an ECH configuration. */
+    PySSLContext *ctx = self->ctx;
+    if (ctx->outer_alpn_protocols != NULL
+        && SSL_ech_set1_outer_alpn_protos(self->ssl, ctx->outer_alpn_protocols,
+                                          ctx->outer_alpn_protocols_len) != 1) {
+        _setSSLError(state, NULL, 0, __FILE__, __LINE__);
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 /*[clinic input]
 @critical_section
 _ssl._SSLSocket.set_outer_server_name
@@ -3443,6 +3531,7 @@ static PyMethodDef PySSLMethods[] = {
     _SSL__SSLSOCKET_SHUTDOWN_METHODDEF
     _SSL__SSLSOCKET_VERIFY_CLIENT_POST_HANDSHAKE_METHODDEF
     _SSL__SSLSOCKET_GET_ECH_STATUS_METHODDEF
+    _SSL__SSLSOCKET_SET_ECH_CONFIG_METHODDEF
     _SSL__SSLSOCKET_SET_OUTER_SERVER_NAME_METHODDEF
     _SSL__SSLSOCKET_GET_ECH_RETRY_CONFIG_METHODDEF
     _SSL__SSLSOCKET_GET_UNVERIFIED_CHAIN_METHODDEF
@@ -3604,6 +3693,10 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     self->keylog_filename = NULL;
     self->keylog_bio = NULL;
     self->alpn_protocols = NULL;
+#ifdef HAVE_OPENSSL_ECH
+    self->outer_alpn_protocols = NULL;
+    self->outer_alpn_protocols_len = 0;
+#endif
     self->set_sni_cb = NULL;
     self->state = get_ssl_state(module);
 #ifndef OPENSSL_NO_PSK
@@ -3756,6 +3849,9 @@ context_dealloc(PyObject *op)
     SSL_CTX_set_tlsext_servername_callback(self->ctx, NULL);
     SSL_CTX_free(self->ctx);
     PyMem_FREE(self->alpn_protocols);
+#ifdef HAVE_OPENSSL_ECH
+    PyMem_Free(self->outer_alpn_protocols);
+#endif
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -4068,9 +4164,20 @@ _ssl__SSLContext__set_outer_alpn_protocols_impl(PySSLContext *self,
             "protocols longer than %u bytes", UINT_MAX);
         return NULL;
     }
+    PyMem_Free(self->outer_alpn_protocols);
+    self->outer_alpn_protocols = NULL;
+    self->outer_alpn_protocols_len = 0;
+    if (protos->len) {
+        self->outer_alpn_protocols = PyMem_Malloc(protos->len);
+        if (!self->outer_alpn_protocols) {
+            return PyErr_NoMemory();
+        }
+        memcpy(self->outer_alpn_protocols, protos->buf, protos->len);
+        self->outer_alpn_protocols_len = (unsigned int)protos->len;
+    }
     if (SSL_CTX_ech_set1_outer_alpn_protos(self->ctx,
-                                           protos->len ? protos->buf : NULL,
-                                           protos->len) != 1) {
+                                           self->outer_alpn_protocols,
+                                           self->outer_alpn_protocols_len) != 1) {
         _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
         return NULL;
     }
@@ -5213,23 +5320,12 @@ _ssl__SSLContext_set_default_verify_paths_impl(PySSLContext *self)
 }
 
 #ifdef HAVE_OPENSSL_ECH
-/*[clinic input]
-@critical_section
-_ssl._SSLContext.set_ech_config
-
-    ech_config: Py_buffer
-    /
-
-Set the ECH configuration on the SSL context.
-
-ech_config must be a bytes-like object containing the raw ECH
-configuration.
-[clinic start generated code]*/
-
-static PyObject *
-_ssl__SSLContext_set_ech_config_impl(PySSLContext *self,
-                                     Py_buffer *ech_config)
-/*[clinic end generated code: output=cea53188b338cf80 input=3943e5aff04a583e]*/
+/* Parse an ECHConfigList into a new store, reading each entry separately so
+ * entries this OpenSSL build cannot use (unsupported HPKE suites, mandatory
+ * extensions) are skipped rather than rejecting the whole list. Return NULL
+ * with a Python exception set. */
+static OSSL_ECHSTORE *
+ech_store_from_config(_sslmodulestate *state, Py_buffer *ech_config)
 {
     if (ech_config->len > INT_MAX) {
         PyErr_Format(PyExc_OverflowError,
@@ -5250,7 +5346,6 @@ _ssl__SSLContext_set_ech_config_impl(PySSLContext *self,
     if (config_len >= 2 && ((config[0] << 8) | config[1]) == config_len - 2) {
         config += 2;
         config_len -= 2;
-        /* Read entries separately so unsupported ones do not reject the list. */
         while (config_len >= 4) {
             int entry_len = 4 + ((config[2] << 8) | config[3]);
             if (entry_len > config_len) {
@@ -5302,21 +5397,48 @@ _ssl__SSLContext_set_ech_config_impl(PySSLContext *self,
         ERR_raise(ERR_LIB_SSL, ERR_R_PASSED_INVALID_ARGUMENT);
         goto fail;
     }
-    PyMutex_Lock(&self->tstate_mutex);
-    int result = SSL_CTX_set1_echstore(self->ctx, store);
-    PyMutex_Unlock(&self->tstate_mutex);
-    if (result != 1) {
-        goto fail;
-    }
-    OSSL_ECHSTORE_free(store);
     BIO_free(config_bio);
-    Py_RETURN_NONE;
+    return store;
 
 fail:
-    _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
+    _setSSLError(state, NULL, 0, __FILE__, __LINE__);
     OSSL_ECHSTORE_free(store);
     BIO_free(config_bio);
     return NULL;
+}
+
+/*[clinic input]
+@critical_section
+_ssl._SSLContext.set_ech_config
+
+    ech_config: Py_buffer
+    /
+
+Set the ECH configuration on the SSL context.
+
+ech_config must be a bytes-like object containing the raw ECH
+configuration.
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLContext_set_ech_config_impl(PySSLContext *self,
+                                     Py_buffer *ech_config)
+/*[clinic end generated code: output=cea53188b338cf80 input=3943e5aff04a583e]*/
+{
+    OSSL_ECHSTORE *store = ech_store_from_config(get_state_ctx(self),
+                                                 ech_config);
+    if (store == NULL) {
+        return NULL;
+    }
+    PyMutex_Lock(&self->tstate_mutex);
+    int result = SSL_CTX_set1_echstore(self->ctx, store);
+    PyMutex_Unlock(&self->tstate_mutex);
+    OSSL_ECHSTORE_free(store);
+    if (result != 1) {
+        _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 static int
@@ -7226,6 +7348,13 @@ do {                                                                        \
         SSLEOFError_doc,
         state->PySSLErrorObject
     );
+
+    add_exception(
+        state->PySSLECHRejectedErrorObject,
+        "SSLECHRejectedError",
+        SSLECHRejectedError_doc,
+        state->PySSLErrorObject
+    );
 #undef add_exception
 
     return 0;
@@ -7782,6 +7911,10 @@ sslmodule_init_strings(PyObject *module)
     if (state->str_verify_code == NULL) {
         return -1;
     }
+    state->str_retry_config = PyUnicode_InternFromString("retry_config");
+    if (state->str_retry_config == NULL) {
+        return -1;
+    }
     return 0;
 }
 
@@ -7829,6 +7962,7 @@ sslmodule_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(state->PySSLWantWriteErrorObject);
     Py_VISIT(state->PySSLSyscallErrorObject);
     Py_VISIT(state->PySSLEOFErrorObject);
+    Py_VISIT(state->PySSLECHRejectedErrorObject);
     Py_VISIT(state->err_codes_to_names);
     Py_VISIT(state->lib_codes_to_names);
     Py_VISIT(state->Sock_Type);
@@ -7853,6 +7987,7 @@ sslmodule_clear(PyObject *m)
     Py_CLEAR(state->PySSLWantWriteErrorObject);
     Py_CLEAR(state->PySSLSyscallErrorObject);
     Py_CLEAR(state->PySSLEOFErrorObject);
+    Py_CLEAR(state->PySSLECHRejectedErrorObject);
     Py_CLEAR(state->err_codes_to_names);
     Py_CLEAR(state->lib_codes_to_names);
     Py_CLEAR(state->Sock_Type);
@@ -7860,6 +7995,7 @@ sslmodule_clear(PyObject *m)
     Py_CLEAR(state->str_reason);
     Py_CLEAR(state->str_verify_code);
     Py_CLEAR(state->str_verify_message);
+    Py_CLEAR(state->str_retry_config);
     return 0;
 }
 

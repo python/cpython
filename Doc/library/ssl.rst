@@ -321,6 +321,23 @@ Exceptions
 
       A human readable string of the verification error.
 
+.. exception:: SSLECHRejectedError
+
+   A subclass of :exc:`SSLError` raised when the handshake fails because the
+   server rejected :ref:`Encrypted Client Hello <ssl-encrypted-client-hello>`.
+   The connection cannot be used. If :attr:`retry_config` is not empty, the
+   client may retry once with a new connection using that configuration.
+
+   This exception is only raised when :data:`HAS_ECH` is ``True``.
+
+   .. attribute:: retry_config
+
+      The server's ECH retry configuration as a binary-encoded ECHConfigList,
+      or empty :class:`bytes` if the server did not provide one or the server
+      could not be authenticated under the outer server name.
+
+   .. versionadded:: next
+
 .. exception:: CertificateError
 
    An alias for :exc:`SSLCertVerificationError`.
@@ -1430,7 +1447,10 @@ SSL sockets also have the following additional methods and attributes:
    bytes if no retry configuration is available. When the status returned by
    :meth:`SSLSocket.get_ech_status` after the handshake is
    :attr:`ECHStatus.ECH_STATUS_GREASE_ECH`, the configuration can be used
-   for a new connection using ECH.
+   for a new connection using ECH. When the server rejects a real ECH
+   attempt, the handshake raises :exc:`SSLECHRejectedError`, which carries
+   the same configuration in its :attr:`~SSLECHRejectedError.retry_config`
+   attribute.
 
    Only available when :data:`HAS_ECH` is ``True``.
 
@@ -1440,6 +1460,26 @@ SSL sockets also have the following additional methods and attributes:
 
    Gets the status of Encrypted Client Hello (ECH) processing. Returns an
    :class:`ECHStatus` instance.
+
+   Only available when :data:`HAS_ECH` is ``True``.
+
+   .. versionadded:: next
+
+.. method:: SSLSocket.set_ech_config(ech_config)
+
+   Set the Encrypted Client Hello (ECH) configuration for this connection
+   only, replacing any configuration set on the context with
+   :meth:`SSLContext.set_ech_config`. The *ech_config* parameter accepts the
+   same values. Unlike the context's configuration, which applies to every
+   connection made from it, a connection's configuration is only used by that
+   connection and can therefore be chosen per destination host, which is how
+   ECH configurations are published in DNS.
+
+   The configuration must be set before the handshake starts, so this is
+   mostly useful with ``do_handshake_on_connect=False`` or on a socket that
+   is not connected yet. :meth:`SSLContext.wrap_socket` and
+   :meth:`SSLContext.wrap_bio` accept the configuration as their *ech_config*
+   argument instead.
 
    Only available when :data:`HAS_ECH` is ``True``.
 
@@ -1932,6 +1972,14 @@ to speed up repeated connections from the same clients.
    an HTTPS resource record in DNS or from :meth:`SSLSocket.get_ech_retry_config`.
    Each call replaces the context's previous configuration.
 
+   The configuration applies to every connection made from the context, and a
+   server that cannot decrypt it rejects the connection with
+   :exc:`SSLECHRejectedError`. Because ECH configurations are published per
+   host, a context with a configuration should only be used for connections to
+   the hosts that publish it. To use a configuration for a single connection,
+   pass it as the *ech_config* argument of :meth:`wrap_socket` or
+   :meth:`wrap_bio` instead.
+
    If the input value provided contains no suitable value (e.g. if it only contains
    ECH configuration versions that are not supported), an :class:`SSLError` will be
    raised.
@@ -2080,7 +2128,7 @@ to speed up repeated connections from the same clients.
 
 .. method:: SSLContext.wrap_socket(sock, server_side=False, \
       do_handshake_on_connect=True, suppress_ragged_eofs=True, \
-      server_hostname=None, session=None)
+      server_hostname=None, session=None, ech_config=None)
 
    Wrap an existing Python socket *sock* and return an instance of
    :attr:`SSLContext.sslsocket_class` (default :class:`SSLSocket`). The
@@ -2121,6 +2169,10 @@ to speed up repeated connections from the same clients.
 
    *session*, see :attr:`~SSLSocket.session`.
 
+   *ech_config*, see :meth:`SSLSocket.set_ech_config`. Specifying
+   *ech_config* will raise a :exc:`ValueError` if *server_side* is true, and
+   a :exc:`NotImplementedError` if :data:`HAS_ECH` is ``False``.
+
    To wrap an :class:`SSLSocket` in another :class:`SSLSocket`, use
    :meth:`SSLContext.wrap_bio`.
 
@@ -2135,6 +2187,9 @@ to speed up repeated connections from the same clients.
       The method returns an instance of :attr:`SSLContext.sslsocket_class`
       instead of hard-coded :class:`SSLSocket`.
 
+   .. versionchanged:: next
+      *ech_config* argument was added.
+
 .. attribute:: SSLContext.sslsocket_class
 
    The return type of :meth:`SSLContext.wrap_socket`, defaults to
@@ -2145,16 +2200,17 @@ to speed up repeated connections from the same clients.
    .. versionadded:: 3.7
 
 .. method:: SSLContext.wrap_bio(incoming, outgoing, server_side=False, \
-                                server_hostname=None, session=None)
+                                server_hostname=None, session=None, \
+                                ech_config=None)
 
    Wrap the BIO objects *incoming* and *outgoing* and return an instance of
    :attr:`SSLContext.sslobject_class` (default :class:`SSLObject`). The SSL
    routines will read input data from the incoming BIO and write data to the
    outgoing BIO.
 
-   The *server_side*, *server_hostname* and *session* parameters have the
-   same meaning as in :meth:`SSLContext.wrap_socket`, and are validated in
-   the same way: in particular a :exc:`ValueError` is raised when
+   The *server_side*, *server_hostname*, *session* and *ech_config*
+   parameters have the same meaning as in :meth:`SSLContext.wrap_socket`,
+   and are validated in the same way: in particular a :exc:`ValueError` is raised when
    :attr:`~SSLContext.check_hostname` is enabled but no *server_hostname* is
    given, since there would be no name to match the peer's certificate
    against.
@@ -2172,6 +2228,9 @@ to speed up repeated connections from the same clients.
       a context with :attr:`~SSLContext.check_hostname` enabled and no
       *server_hostname* was accepted, and verified the certificate chain but
       never the peer's identity.
+
+   .. versionchanged:: next
+      *ech_config* argument was added.
 
 .. attribute:: SSLContext.sslobject_class
 
@@ -2891,6 +2950,7 @@ provided.
    - :meth:`~SSLSocket.verify_client_post_handshake`
    - :meth:`~SSLSocket.unwrap`
    - :meth:`~SSLSocket.get_channel_binding`
+   - :meth:`~SSLSocket.set_ech_config`
    - :meth:`~SSLSocket.get_ech_retry_config`
    - :meth:`~SSLSocket.get_ech_status`
    - :meth:`~SSLSocket.version`
@@ -3132,51 +3192,51 @@ ClientHello. ECH requires OpenSSL 4.0 or later with ECH enabled; check
 
 Servers can load a PEM file containing their ECH private key and configuration
 with :meth:`SSLContext.load_ech_keys`. Clients use the corresponding public
-ECHConfigList with :meth:`SSLContext.set_ech_config`.
+ECHConfigList, published in DNS for each host, as the *ech_config* argument of
+:meth:`SSLContext.wrap_socket` or :meth:`SSLContext.wrap_bio`, or for every
+connection from a context with :meth:`SSLContext.set_ech_config`.
 
-Configuration values may be discovered through DNS or through the server's
-retry configuration. The following example accepts a binary-encoded
-ECHConfigList discovered through DNS. If none is supplied, it enables ECH
-GREASE to request a retry configuration from the server::
+A server that has rotated its ECH keys rejects the connection and provides a
+retry configuration, which the handshake raises as
+:exc:`SSLECHRejectedError`. The following example accepts a binary-encoded
+ECHConfigList discovered through DNS and retries once with the server's retry
+configuration. If no configuration is supplied, it enables ECH GREASE, which a
+server may answer with a retry configuration for a later connection::
 
     import socket
     import ssl
 
 
-    def connect_with_tls_ech(hostname, ech_config=None, use_retry_config=True):
+    def connect_with_tls_ech(hostname, ech_config=None, retry=True):
         context = ssl.create_default_context()
-        if ech_config is not None:
-            context.set_ech_config(ech_config)
-        else:
+        if ech_config is None:
             context.options |= ssl.OP_ECH_GREASE
         sock = socket.create_connection((hostname, 443))
         try:
-            ssock = context.wrap_socket(sock, server_hostname=hostname)
-        except BaseException:
-            sock.close()
+            return context.wrap_socket(sock, server_hostname=hostname,
+                                       ech_config=ech_config)
+        except ssl.SSLECHRejectedError as exc:
+            if retry and exc.retry_config:
+                return connect_with_tls_ech(hostname, exc.retry_config,
+                                            retry=False)
             raise
-        if (use_retry_config
-                and ssock.get_ech_status()
-                == ssl.ECHStatus.ECH_STATUS_GREASE_ECH):
-            try:
-                retry_config = ssock.get_ech_retry_config()
-            finally:
-                ssock.close()
-            return connect_with_tls_ech(hostname, retry_config, False)
-        return ssock
 
     hostname = "www.python.org"
     ech_config = None  # Replace with an ECHConfigList discovered through DNS.
 
     with connect_with_tls_ech(hostname, ech_config) as ssock:
         print(ssock.get_ech_status())
+        if ssock.get_ech_status() == ssl.ECHStatus.ECH_STATUS_GREASE_ECH:
+            print("retry configuration:", ssock.get_ech_retry_config())
 
 The following classes, methods, and attributes will be useful for using ECH:
 
  - :class:`ECHStatus`
+ - :exc:`SSLECHRejectedError`
  - :meth:`SSLContext.load_ech_keys`
  - :meth:`SSLContext.set_ech_config`
  - :meth:`SSLContext.set_outer_alpn_protocols`
+ - :meth:`SSLSocket.set_ech_config`
  - :meth:`SSLSocket.get_ech_status`
  - :meth:`SSLSocket.get_ech_retry_config`
 

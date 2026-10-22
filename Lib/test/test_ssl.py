@@ -2078,9 +2078,11 @@ class ECHTests(unittest.TestCase):
             with self.subTest(module=module):
                 self.assertEqual(bool(names), ssl.HAS_ECH)
 
+        self.assertTrue(issubclass(ssl.SSLECHRejectedError, ssl.SSLError))
         context_methods = ('set_ech_config', 'load_ech_keys',
                            '_set_outer_alpn_protocols')
-        socket_methods = ('get_ech_status', 'get_ech_retry_config')
+        socket_methods = ('set_ech_config', 'get_ech_status',
+                          'get_ech_retry_config')
         for owner, names in (
             (_ssl._SSLContext, context_methods),
             (ssl.SSLContext, (*context_methods, 'set_outer_alpn_protocols')),
@@ -2131,13 +2133,151 @@ class ECHTests(unittest.TestCase):
             config = len(entries).to_bytes(2, 'big') + entries
             self.assertIsNone(ctx.set_ech_config(config))
 
-    def read_ech_key_and_config(self):
+    def read_ech_key_and_config(self, filename='ech.pem'):
         # Generated with:
         # openssl ech -public_name public.example -suite 0x20,1,1
-        with open(data_file('ech.pem'), 'rb') as f:
+        # ech-localhost.pem uses -public_name localhost, so that the test
+        # certificate also authenticates the outer ClientHello.
+        with open(data_file(filename), 'rb') as f:
             key, config = f.read().split(b'-----BEGIN ECHCONFIG-----')
         config = base64.b64decode(config.split(b'-----END ECHCONFIG-----')[0])
         return key, config
+
+    def stale_config(self, config):
+        # A config whose HPKE public key the server does not have.
+        stale = bytearray(config)
+        stale[11] ^= 1
+        return bytes(stale)
+
+    def handshake_bio_pair(self, client, server, c_in, c_out, s_in, s_out):
+        for _ in range(5):
+            with contextlib.suppress(ssl.SSLWantReadError):
+                client.do_handshake()
+            s_in.write(c_out.read())
+            with contextlib.suppress(ssl.SSLWantReadError):
+                server.do_handshake()
+            c_in.write(s_out.read())
+
+    def echo_server_thread(self, server_ctx, sock):
+        def serve():
+            try:
+                with server_ctx.wrap_socket(sock, server_side=True) as ssock:
+                    ssock.sendall(ssock.recv(1024))
+            except OSError:
+                pass
+            finally:
+                sock.close()
+        thread = threading.Thread(target=serve)
+        thread.start()
+        self.addCleanup(thread.join)
+
+    @requires_ech_x25519
+    def test_connection_ech_config(self):
+        key, config = self.read_ech_key_and_config('ech-localhost.pem')
+        client_ctx, server_ctx, hostname = testing_context()
+        server_ctx.load_ech_keys(data_file('ech-localhost.pem'))
+        # The context has a configuration the server cannot decrypt; the
+        # connection's configuration must replace it.
+        client_ctx.set_ech_config(self.stale_config(config))
+        for ctx_config in (False, True):
+            with self.subTest(context_configured=ctx_config):
+                if not ctx_config:
+                    client_ctx, _, hostname = testing_context()
+                c_in, c_out = ssl.MemoryBIO(), ssl.MemoryBIO()
+                s_in, s_out = ssl.MemoryBIO(), ssl.MemoryBIO()
+                client = client_ctx.wrap_bio(c_in, c_out, server_hostname=hostname,
+                                             ech_config=config)
+                server = server_ctx.wrap_bio(s_in, s_out, server_side=True)
+                self.handshake_bio_pair(client, server, c_in, c_out, s_in, s_out)
+                for obj in (client, server):
+                    self.assertEqual(obj.get_ech_status(),
+                                     ssl.ECHStatus.ECH_STATUS_SUCCESS)
+                with self.assertRaisesRegex(ValueError, 'after handshake'):
+                    client.set_ech_config(config)
+
+        with self.assertRaisesRegex(ValueError, 'client mode'):
+            server_ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
+                                server_side=True, ech_config=config)
+        with socket.socket() as sock:
+            with self.assertRaisesRegex(ValueError, 'client mode'):
+                server_ctx.wrap_socket(sock, server_side=True,
+                                       ech_config=config)
+        obj = client_ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
+                                  server_hostname=hostname)
+        self.assertRaises(TypeError, obj.set_ech_config, 'config')
+        self.assertRaises(ssl.SSLError, obj.set_ech_config, b'invalid')
+        self.assertIsNone(obj.set_ech_config(bytearray(config)))
+
+        # An unconnected socket applies the configuration when connecting.
+        with client_ctx.wrap_socket(socket.socket(), server_hostname=hostname,
+                                    ech_config=config) as sock:
+            self.assertIs(sock._ech_config, config)
+            sock.set_ech_config(bytearray(config))
+            self.assertEqual(sock._ech_config, config)
+
+    @requires_ech_x25519
+    def test_rejected_ech_retry_config(self):
+        key, config = self.read_ech_key_and_config('ech-localhost.pem')
+        stale = self.stale_config(config)
+        client_ctx, server_ctx, hostname = testing_context()
+        server_ctx.load_ech_keys(data_file('ech-localhost.pem'))
+
+        c_in, c_out = ssl.MemoryBIO(), ssl.MemoryBIO()
+        s_in, s_out = ssl.MemoryBIO(), ssl.MemoryBIO()
+        client = client_ctx.wrap_bio(c_in, c_out, server_hostname=hostname,
+                                     ech_config=stale)
+        server = server_ctx.wrap_bio(s_in, s_out, server_side=True)
+        with self.assertRaises(ssl.SSLECHRejectedError) as cm:
+            self.handshake_bio_pair(client, server, c_in, c_out, s_in, s_out)
+        self.assertEqual(cm.exception.reason, 'ECH_REQUIRED')
+        self.assertEqual(cm.exception.retry_config, config)
+        self.assertEqual(client.get_ech_status(),
+                         ssl.ECHStatus.ECH_STATUS_FAILED_ECH)
+        self.assertEqual(client.get_ech_retry_config(), config)
+
+        # The retry configuration from the exception must be usable for a
+        # new connection, even though wrap_socket() closed the first one.
+        sock, peer = socket.socketpair()
+        sock.settimeout(support.SHORT_TIMEOUT)
+        self.echo_server_thread(server_ctx, peer)
+        with self.assertRaises(ssl.SSLECHRejectedError) as cm:
+            client_ctx.wrap_socket(sock, server_hostname=hostname,
+                                   ech_config=stale)
+        self.assertEqual(cm.exception.retry_config, config)
+        sock, peer = socket.socketpair()
+        sock.settimeout(support.SHORT_TIMEOUT)
+        self.echo_server_thread(server_ctx, peer)
+        with client_ctx.wrap_socket(sock, server_hostname=hostname,
+                                    ech_config=cm.exception.retry_config) as ssock:
+            self.assertEqual(ssock.get_ech_status(),
+                             ssl.ECHStatus.ECH_STATUS_SUCCESS)
+            ssock.sendall(b'hello')
+            self.assertEqual(ssock.recv(1024), b'hello')
+
+    @requires_ech_x25519
+    def test_outer_alpn_with_connection_ech_config(self):
+        key, config = self.read_ech_key_and_config('ech-localhost.pem')
+        client_ctx, server_ctx, hostname = testing_context()
+        server_ctx.load_ech_keys(data_file('ech-localhost.pem'))
+        client_ctx.set_alpn_protocols(['h2'])
+        client_ctx.set_outer_alpn_protocols(['http/1.1'])
+        server_ctx.set_alpn_protocols(['h2', 'http/1.1'])
+        for current, expected in ((config, 'h2'),
+                                  (self.stale_config(config), 'http/1.1')):
+            with self.subTest(expected=expected):
+                c_in, c_out = ssl.MemoryBIO(), ssl.MemoryBIO()
+                s_in, s_out = ssl.MemoryBIO(), ssl.MemoryBIO()
+                client = client_ctx.wrap_bio(c_in, c_out, server_hostname=hostname,
+                                             ech_config=current)
+                server = server_ctx.wrap_bio(s_in, s_out, server_side=True)
+                # When the server rejects ECH it only ever saw the outer
+                # ClientHello, so it selects from the outer ALPN. OpenSSL's
+                # client then aborts because that choice is not in its
+                # inner list, so only the server's view is checked here.
+                with contextlib.suppress(ssl.SSLError):
+                    self.handshake_bio_pair(client, server,
+                                            c_in, c_out, s_in, s_out)
+                self.assertEqual(server.selected_alpn_protocol(), expected)
 
     @requires_ech_x25519
     def test_load_ech_keys(self):
@@ -2306,14 +2446,11 @@ class ECHTests(unittest.TestCase):
         s_in, s_out = ssl.MemoryBIO(), ssl.MemoryBIO()
         client = client_ctx.wrap_bio(c_in, c_out, server_hostname=hostname)
         server = server_ctx.wrap_bio(s_in, s_out, server_side=True)
-        with self.assertRaisesRegex(ssl.SSLError, 'ECH_REQUIRED'):
-            for _ in range(5):
-                with contextlib.suppress(ssl.SSLWantReadError):
-                    client.do_handshake()
-                s_in.write(c_out.read())
-                with contextlib.suppress(ssl.SSLWantReadError):
-                    server.do_handshake()
-                c_in.write(s_out.read())
+        with self.assertRaisesRegex(ssl.SSLECHRejectedError,
+                                    'ECH_REQUIRED') as cm:
+            self.handshake_bio_pair(client, server, c_in, c_out, s_in, s_out)
+        # A server without ECH sends no retry configuration.
+        self.assertEqual(cm.exception.retry_config, b'')
         return client
 
     @requires_ech_x25519

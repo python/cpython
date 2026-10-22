@@ -212,6 +212,47 @@ _ssl__SSLSocket_get_ech_retry_config(PyObject *self, PyObject *Py_UNUSED(ignored
 
 #if defined(HAVE_OPENSSL_ECH)
 
+PyDoc_STRVAR(_ssl__SSLSocket_set_ech_config__doc__,
+"set_ech_config($self, ech_config, /)\n"
+"--\n"
+"\n"
+"Set the ECH configuration for this connection.\n"
+"\n"
+"This replaces any configuration inherited from the context and\n"
+"must be called before the handshake starts.");
+
+#define _SSL__SSLSOCKET_SET_ECH_CONFIG_METHODDEF    \
+    {"set_ech_config", (PyCFunction)_ssl__SSLSocket_set_ech_config, METH_O, _ssl__SSLSocket_set_ech_config__doc__},
+
+static PyObject *
+_ssl__SSLSocket_set_ech_config_impl(PySSLSocket *self, Py_buffer *ech_config);
+
+static PyObject *
+_ssl__SSLSocket_set_ech_config(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_buffer ech_config = {NULL, NULL};
+
+    if (PyObject_GetBuffer(arg, &ech_config, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_set_ech_config_impl((PySSLSocket *)self, &ech_config);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    /* Cleanup for ech_config */
+    if (ech_config.obj) {
+       PyBuffer_Release(&ech_config);
+    }
+
+    return return_value;
+}
+
+#endif /* defined(HAVE_OPENSSL_ECH) */
+
+#if defined(HAVE_OPENSSL_ECH)
+
 PyDoc_STRVAR(_ssl__SSLSocket_set_outer_server_name__doc__,
 "set_outer_server_name($self, outer_server_name, /)\n"
 "--\n"
@@ -3289,6 +3330,10 @@ exit:
     #define _SSL__SSLSOCKET_GET_ECH_RETRY_CONFIG_METHODDEF
 #endif /* !defined(_SSL__SSLSOCKET_GET_ECH_RETRY_CONFIG_METHODDEF) */
 
+#ifndef _SSL__SSLSOCKET_SET_ECH_CONFIG_METHODDEF
+    #define _SSL__SSLSOCKET_SET_ECH_CONFIG_METHODDEF
+#endif /* !defined(_SSL__SSLSOCKET_SET_ECH_CONFIG_METHODDEF) */
+
 #ifndef _SSL__SSLSOCKET_SET_OUTER_SERVER_NAME_METHODDEF
     #define _SSL__SSLSOCKET_SET_OUTER_SERVER_NAME_METHODDEF
 #endif /* !defined(_SSL__SSLSOCKET_SET_OUTER_SERVER_NAME_METHODDEF) */
@@ -3364,4 +3409,4 @@ exit:
 
 #define _SSL_SSLSESSION_HAS_TICKET_GETSETDEF {"has_ticket", (getter)_ssl_SSLSession_has_ticket_get, (setter)NULL, _ssl_SSLSession_has_ticket__doc__},
 
-/*[clinic end generated code: output=3078af6ab6373911 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c0d1443b798ac9a1 input=a9049054013a1b77]*/

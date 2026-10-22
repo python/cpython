@@ -107,7 +107,8 @@ from _ssl import OPENSSL_API_VERSION_INFO
 from _ssl import _SSLContext, MemoryBIO, SSLSession
 from _ssl import (
     SSLError, SSLZeroReturnError, SSLWantReadError, SSLWantWriteError,
-    SSLSyscallError, SSLEOFError, SSLCertVerificationError
+    SSLSyscallError, SSLEOFError, SSLCertVerificationError,
+    SSLECHRejectedError
     )
 from _ssl import txt2obj as _txt2obj, nid2obj as _nid2obj
 from _ssl import RAND_status, RAND_add, RAND_bytes
@@ -381,7 +382,8 @@ def _ipaddress_match(cert_ipaddress, host_ip):
     return ip == host_ip
 
 
-def _check_sslobject_params(server_side, context=None, server_hostname=None, session=None):
+def _check_sslobject_params(server_side, context=None, server_hostname=None,
+                            session=None, ech_config=None):
     """Raises a ValueError if SSLObject._create() parameters aren't valid.
     """
     if server_side:
@@ -391,6 +393,11 @@ def _check_sslobject_params(server_side, context=None, server_hostname=None, ses
         if session is not None:
             raise ValueError("session can only be specified in "
                              "client mode")
+        if ech_config is not None:
+            raise ValueError("ech_config can only be specified in "
+                             "client mode")
+    if ech_config is not None and not HAS_ECH:
+        raise NotImplementedError("ECH is not supported by the OpenSSL library")
     if context.check_hostname and not server_hostname:
         raise ValueError("check_hostname requires server_hostname")
 
@@ -471,7 +478,7 @@ class SSLContext(_SSLContext):
     def wrap_socket(self, sock, server_side=False,
                     do_handshake_on_connect=True,
                     suppress_ragged_eofs=True,
-                    server_hostname=None, session=None):
+                    server_hostname=None, session=None, ech_config=None):
         # SSLSocket class handles server_hostname encoding before it calls
         # ctx._wrap_socket()
         return self.sslsocket_class._create(
@@ -481,17 +488,18 @@ class SSLContext(_SSLContext):
             suppress_ragged_eofs=suppress_ragged_eofs,
             server_hostname=server_hostname,
             context=self,
-            session=session
+            session=session,
+            ech_config=ech_config,
         )
 
     def wrap_bio(self, incoming, outgoing, server_side=False,
-                 server_hostname=None, session=None):
+                 server_hostname=None, session=None, ech_config=None):
         # Need to encode server_hostname here because _wrap_bio() can only
         # handle ASCII str.
         return self.sslobject_class._create(
             incoming, outgoing, server_side=server_side,
             server_hostname=self._encode_hostname(server_hostname),
-            session=session, context=self,
+            session=session, context=self, ech_config=ech_config,
         )
 
     def set_npn_protocols(self, npn_protocols):
@@ -830,15 +838,19 @@ class SSLObject:
 
     @classmethod
     def _create(cls, incoming, outgoing, server_side=False,
-                 server_hostname=None, session=None, context=None):
+                 server_hostname=None, session=None, context=None,
+                 ech_config=None):
         _check_sslobject_params(server_side=server_side, context=context,
-                                server_hostname=server_hostname, session=session)
+                                server_hostname=server_hostname,
+                                session=session, ech_config=ech_config)
         self = cls.__new__(cls)
         sslobj = context._wrap_bio(
             incoming, outgoing, server_side=server_side,
             server_hostname=server_hostname,
             owner=self, session=session
         )
+        if ech_config is not None:
+            sslobj.set_ech_config(ech_config)
         self._sslobj = sslobj
         return self
 
@@ -1007,6 +1019,14 @@ class SSLObject:
         return self._sslobj.verify_client_post_handshake()
 
     if HAS_ECH:
+        def set_ech_config(self, ech_config):
+            """Set the ECH configuration for this connection.
+
+            This replaces any configuration inherited from the context
+            and must be called before the handshake starts.
+            """
+            self._sslobj.set_ech_config(ech_config)
+
         def get_ech_status(self):
             """Return the status of Encrypted Client Hello processing."""
             return ECHStatus(self._sslobj.get_ech_status()[0])
@@ -1041,11 +1061,12 @@ class SSLSocket(socket):
     @classmethod
     def _create(cls, sock, server_side=False, do_handshake_on_connect=True,
                 suppress_ragged_eofs=True, server_hostname=None,
-                context=None, session=None):
+                context=None, session=None, ech_config=None):
         if sock.getsockopt(SOL_SOCKET, SO_TYPE) != SOCK_STREAM:
             raise NotImplementedError("only stream sockets are supported")
         _check_sslobject_params(server_side=server_side, context=context,
-                                server_hostname=server_hostname, session=session)
+                                server_hostname=server_hostname,
+                                session=session, ech_config=ech_config)
 
         sock_timeout = sock.gettimeout()
         kwargs = dict(
@@ -1059,6 +1080,7 @@ class SSLSocket(socket):
         try:
             self._context = context
             self._session = session
+            self._ech_config = ech_config
             self._closed = False
             self._sslobj = None
             self.server_side = server_side
@@ -1117,6 +1139,8 @@ class SSLSocket(socket):
                     self, server_side, self.server_hostname,
                     owner=self, session=self._session,
                 )
+                if self._ech_config is not None:
+                    self._sslobj.set_ech_config(self._ech_config)
                 if do_handshake_on_connect:
                     timeout = self.gettimeout()
                     if timeout == 0.0:
@@ -1451,6 +1475,12 @@ class SSLSocket(socket):
 
     if HAS_ECH:
         @_sslcopydoc
+        def set_ech_config(self, ech_config):
+            self._ech_config = ech_config
+            if self._sslobj is not None:
+                self._sslobj.set_ech_config(ech_config)
+
+        @_sslcopydoc
         def get_ech_status(self):
             if self._sslobj is not None:
                 return ECHStatus(self._sslobj.get_ech_status()[0])
@@ -1487,6 +1517,8 @@ class SSLSocket(socket):
             owner=self, session=self._session
         )
         try:
+            if self._ech_config is not None:
+                self._sslobj.set_ech_config(self._ech_config)
             if connect_ex:
                 rc = super().connect_ex(addr)
             else:
