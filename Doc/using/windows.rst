@@ -274,6 +274,7 @@ Ranges are not supported for installation.
 
 CPython publishes multiple runtime variants. For most users,
 ``PythonCore`` is recommended and provides the standard CPython runtime.
+Tags without any prefix are treated as ``PythonCore\<TAG>``.
 
 ``PythonTest`` includes the standard runtime together with the test suite
 and debugging symbols. It is intended for contributors or users who need
