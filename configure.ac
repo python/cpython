@@ -1594,6 +1594,21 @@ if test "x$enable_profiling" = xyes; then
   LDFLAGS="-pg $LDFLAGS"
 fi
 
+AC_MSG_CHECKING([for --enable-relocatable])
+AC_ARG_ENABLE([relocatable],
+  AS_HELP_STRING([--enable-relocatable],
+                 [enable experimental relocatable build support (default is no)]),
+  [], [enable_relocatable=no])
+AS_CASE([$enable_relocatable],
+  [yes|no], [],
+  [AC_MSG_ERROR([--enable-relocatable must be yes or no])])
+AC_MSG_RESULT([$enable_relocatable])
+AS_VAR_IF([enable_relocatable], [yes], [
+  AC_DEFINE([Py_ENABLE_RELOCATABLE], [1],
+            [Define if --enable-relocatable is used.])
+])
+AC_SUBST([RELOCATABLE], [$enable_relocatable])
+
 AC_MSG_CHECKING([LDLIBRARY])
 
 # Apple framework builds need more magic. LDLIBRARY is the dynamic

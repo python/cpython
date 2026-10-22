@@ -960,6 +960,7 @@ LINK_PYTHON_DEPS
 LIBRARY_DEPS
 HOSTRUNNER
 NODE
+RELOCATABLE
 STATIC_LIBPYTHON
 GNULD
 EXPORTSFROM
@@ -1107,6 +1108,7 @@ enable_shared
 with_static_libpython
 enable_static_libpython_for_interpreter
 enable_profiling
+enable_relocatable
 enable_gil
 with_pydebug
 with_trace_refs
@@ -1859,6 +1861,8 @@ Optional Features:
                           library)
   --enable-profiling      enable C-level code profiling with gprof (default is
                           no)
+  --enable-relocatable    enable experimental relocatable build support
+                          (default is no)
   --disable-gil           enable support for running without the GIL (default
                           is no)
   --enable-pystats        enable internal statistics gathering (default is no)
@@ -7936,6 +7940,36 @@ if test "x$enable_profiling" = xyes; then
   BASECFLAGS="-pg $BASECFLAGS"
   LDFLAGS="-pg $LDFLAGS"
 fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-relocatable" >&5
+printf %s "checking for --enable-relocatable... " >&6; }
+# Check whether --enable-relocatable was given.
+if test ${enable_relocatable+y}
+then :
+  enableval=$enable_relocatable;
+else case e in #(
+  e) enable_relocatable=no ;;
+esac
+fi
+
+case $enable_relocatable in #(
+  yes|no) :
+     ;; #(
+  *) :
+    as_fn_error $? "--enable-relocatable must be yes or no" "$LINENO" 5 ;;
+esac
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_relocatable" >&5
+printf "%s\n" "$enable_relocatable" >&6; }
+if test "x$enable_relocatable" = xyes
+then :
+
+
+printf "%s\n" "#define Py_ENABLE_RELOCATABLE 1" >>confdefs.h
+
+
+fi
+RELOCATABLE=$enable_relocatable
+
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking LDLIBRARY" >&5
 printf %s "checking LDLIBRARY... " >&6; }

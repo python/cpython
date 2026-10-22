@@ -1073,6 +1073,17 @@ Linker options
 
    Enable building a shared Python library: ``libpython`` (default is no).
 
+.. option:: --enable-relocatable
+
+   Enable experimental support for relocatable builds (default is no).
+   This option currently has no effect on the build.
+
+   .. warning::
+
+      This feature is under active development. Do not use it in production.
+
+   .. versionadded:: 3.16
+
 .. option:: --without-static-libpython
 
    Do not build ``libpythonMAJOR.MINOR.a`` and do not install ``python.o``

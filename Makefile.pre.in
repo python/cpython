@@ -60,6 +60,7 @@ DSYMUTIL=       @DSYMUTIL@
 DSYMUTIL_PATH=  @DSYMUTIL_PATH@
 
 GNULD=		@GNULD@
+RELOCATABLE=	@RELOCATABLE@
 
 # Shell used by make (some versions default to the login shell, which is bad)
 SHELL=		/bin/sh -e

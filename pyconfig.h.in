@@ -1880,6 +1880,9 @@
 /* Define if you want to build an interpreter with many run-time checks. */
 #undef Py_DEBUG
 
+/* Define if --enable-relocatable is used. */
+#undef Py_ENABLE_RELOCATABLE
+
 /* Defined if Python is built as a shared library. */
 #undef Py_ENABLE_SHARED
 
