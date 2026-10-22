@@ -573,6 +573,47 @@ class _Pickler:
         return GET + repr(i).encode("ascii") + b'\n'
 
     def save(self, obj, save_persistent_id=True, weak=False):
+        self._drive(self._save(obj, save_persistent_id, weak))
+
+    def _drive(self, gen):
+        # Run a save generator, and every save it requests, on an explicit
+        # stack instead of the Python call stack, so that deeply nested data
+        # is not limited by the recursion limit (gh-47369).  A generator
+        # yields either a tuple of save() arguments, to have that object
+        # saved before it resumes, or another save generator to run first.
+        # An exception is thrown back into the requesting generator, so it
+        # propagates (and collects notes) exactly as through recursive calls.
+        own_save = type(self).save is _Pickler.save
+        stack = [gen]
+        exc = None
+        while stack:
+            try:
+                if exc is None:
+                    req = next(stack[-1])
+                else:
+                    req, exc = stack[-1].throw(exc), None
+            except StopIteration:
+                stack.pop()
+                exc = None
+                continue
+            except BaseException as e:
+                stack.pop()
+                if not stack:
+                    raise
+                exc = e
+                continue
+            if type(req) is not tuple:
+                stack.append(req)
+            elif own_save:
+                stack.append(self._save(*req))
+            else:
+                # A subclass overrides save(): call it, as before.
+                try:
+                    self.save(*req)
+                except BaseException as e:
+                    exc = e
+
+    def _save(self, obj, save_persistent_id=True, weak=False):
         self.framer.commit_frame()
 
         # Check for persistent id (defined by a subclass)
@@ -601,7 +642,11 @@ class _Pickler:
             t = type(obj)
             f = self.dispatch.get(t)
             if f is not None:
-                f(self, obj)  # Call unbound method with explicit self
+                g = self._gen_dispatch.get(f)
+                if g is not None:
+                    yield g(self, obj)
+                else:
+                    f(self, obj)  # Call unbound method with explicit self
                 return
 
             # Check private dispatch table if any, or else
@@ -644,7 +689,7 @@ class _Pickler:
                                     "must contain 2 through 6 elements")
 
             # Save the reduce() output and finally memoize the object
-            self.save_reduce(obj=obj, *rv)
+            yield self._save_reduce_req(*rv, obj=obj)
         except BaseException as exc:
             exc.add_note(f'when serializing {_T(obj)} object')
             raise
@@ -674,15 +719,28 @@ class _Pickler:
     def save_reduce(self, func, args, state=None, listitems=None,
                     dictitems=None, state_setter=None, *, obj=None):
         # This API is called by some subclasses
+        self._drive(self._save_reduce(func, args, state, listitems,
+                                      dictitems, state_setter, obj=obj))
 
+    def _save_reduce_req(self, *args, **kwargs):
+        # The generator that saves a reduce tuple, honouring a save_reduce()
+        # override in a subclass.
+        if type(self).save_reduce is _Pickler.save_reduce:
+            return self._save_reduce(*args, **kwargs)
+        return self._call_save_reduce(*args, **kwargs)
+
+    def _call_save_reduce(self, *args, **kwargs):
+        self.save_reduce(*args, **kwargs)
+        yield from ()
+
+    def _save_reduce(self, func, args, state=None, listitems=None,
+                     dictitems=None, state_setter=None, *, obj=None):
         if not callable(func):
             raise PicklingError(f"first item of the tuple returned by __reduce__ "
                                 f"must be callable, not {_T(func)}")
         if not isinstance(args, tuple):
             raise PicklingError(f"second item of the tuple returned by __reduce__ "
                                 f"must be a tuple, not {_T(args)}")
-
-        save = self.save
         write = self.write
 
         func_name = getattr(func, "__name__", "")
@@ -695,13 +753,13 @@ class _Pickler:
                                     f"must be {obj.__class__!r}, not {cls!r}")
             if self.proto >= 4:
                 try:
-                    save(cls)
+                    yield (cls,)
                 except BaseException as exc:
                     exc.add_note(f'when serializing {_T(obj)} class')
                     raise
                 try:
-                    save(args)
-                    save(kwargs)
+                    yield (args,)
+                    yield (kwargs,)
                 except BaseException as exc:
                     exc.add_note(f'when serializing {_T(obj)} __new__ arguments')
                     raise
@@ -709,11 +767,11 @@ class _Pickler:
             else:
                 func = partial(cls.__new__, cls, *args, **kwargs)
                 try:
-                    save(func)
+                    yield (func,)
                 except BaseException as exc:
                     exc.add_note(f'when serializing {_T(obj)} reconstructor')
                     raise
-                save(())
+                yield ((),)
                 write(REDUCE)
         elif self.proto >= 2 and func_name == "__newobj__":
             # A __reduce__ implementation can direct protocol 2 or newer to
@@ -750,24 +808,24 @@ class _Pickler:
                                     f"must be {obj.__class__!r}, not {cls!r}")
             args = args[1:]
             try:
-                save(cls)
+                yield (cls,)
             except BaseException as exc:
                 exc.add_note(f'when serializing {_T(obj)} class')
                 raise
             try:
-                save(args)
+                yield (args,)
             except BaseException as exc:
                 exc.add_note(f'when serializing {_T(obj)} __new__ arguments')
                 raise
             write(NEWOBJ)
         else:
             try:
-                save(func)
+                yield (func,)
             except BaseException as exc:
                 exc.add_note(f'when serializing {_T(obj)} reconstructor')
                 raise
             try:
-                save(args)
+                yield (args,)
             except BaseException as exc:
                 exc.add_note(f'when serializing {_T(obj)} reconstructor arguments')
                 raise
@@ -788,15 +846,15 @@ class _Pickler:
         # items and dict items (as (key, value) tuples), or None.
 
         if listitems is not None:
-            self._batch_appends(listitems, obj)
+            yield from self._batch_appends_gen(listitems, obj)
 
         if dictitems is not None:
-            self._batch_setitems(dictitems, obj)
+            yield from self._batch_setitems_gen(dictitems, obj)
 
         if state is not None:
             if state_setter is None:
                 try:
-                    save(state)
+                    yield (state,)
                 except BaseException as exc:
                     exc.add_note(f'when serializing {_T(obj)} state')
                     raise
@@ -807,13 +865,13 @@ class _Pickler:
                 # First, push state_setter and its tuple of expected arguments
                 # (obj, state) onto the stack.
                 try:
-                    save(state_setter)
+                    yield (state_setter,)
                 except BaseException as exc:
                     exc.add_note(f'when serializing {_T(obj)} state setter')
                     raise
-                save(obj)  # simple BINGET opcode as obj is already memoized.
+                yield (obj,)  # simple BINGET opcode as obj is already memoized.
                 try:
-                    save(state)
+                    yield (state,)
                 except BaseException as exc:
                     exc.add_note(f'when serializing {_T(obj)} state')
                     raise
@@ -979,6 +1037,9 @@ class _Pickler:
     dispatch[str] = save_str
 
     def save_tuple(self, obj):
+        self._drive(self._save_tuple(obj))
+
+    def _save_tuple(self, obj):
         if not obj: # tuple is empty
             if self.bin:
                 self.write(EMPTY_TUPLE)
@@ -987,12 +1048,11 @@ class _Pickler:
             return
 
         n = len(obj)
-        save = self.save
         memo = self.memo
         if n <= 3 and self.proto >= 2:
             for i, element in enumerate(obj):
                 try:
-                    save(element)
+                    yield (element,)
                 except BaseException as exc:
                     exc.add_note(f'when serializing {_T(obj)} item {i}')
                     raise
@@ -1011,7 +1071,7 @@ class _Pickler:
         write(MARK)
         for i, element in enumerate(obj):
             try:
-                save(element)
+                yield (element,)
             except BaseException as exc:
                 exc.add_note(f'when serializing {_T(obj)} item {i}')
                 raise
@@ -1038,27 +1098,32 @@ class _Pickler:
     dispatch[tuple] = save_tuple
 
     def save_list(self, obj):
+        self._drive(self._save_list(obj))
+
+    def _save_list(self, obj):
         if self.bin:
             self.write(EMPTY_LIST)
         else:   # proto 0 -- can't use EMPTY_LIST
             self.write(MARK + LIST)
 
         self.memoize(obj)
-        self._batch_appends(obj, obj)
+        yield from self._batch_appends_gen(obj, obj)
 
     dispatch[list] = save_list
 
     _BATCHSIZE = 1000
 
     def _batch_appends(self, items, obj):
+        self._drive(self._batch_appends_gen(items, obj))
+
+    def _batch_appends_gen(self, items, obj):
         # Helper to batch up APPENDS sequences
-        save = self.save
         write = self.write
 
         if not self.bin:
             for i, x in enumerate(items):
                 try:
-                    save(x)
+                    yield (x,)
                 except BaseException as exc:
                     exc.add_note(f'when serializing {_T(obj)} item {i}')
                     raise
@@ -1072,14 +1137,14 @@ class _Pickler:
                 write(MARK)
                 for i, x in enumerate(batch, start):
                     try:
-                        save(x)
+                        yield (x,)
                     except BaseException as exc:
                         exc.add_note(f'when serializing {_T(obj)} item {i}')
                         raise
                 write(APPENDS)
             else:
                 try:
-                    save(batch[0])
+                    yield (batch[0],)
                 except BaseException as exc:
                     exc.add_note(f'when serializing {_T(obj)} item {start}')
                     raise
@@ -1087,26 +1152,31 @@ class _Pickler:
             start += batch_len
 
     def save_dict(self, obj):
+        self._drive(self._save_dict(obj))
+
+    def _save_dict(self, obj):
         if self.bin:
             self.write(EMPTY_DICT)
         else:   # proto 0 -- can't use EMPTY_DICT
             self.write(MARK + DICT)
 
         self.memoize(obj)
-        self._batch_setitems(obj.items(), obj)
+        yield from self._batch_setitems_gen(obj.items(), obj)
 
     dispatch[dict] = save_dict
 
     def _batch_setitems(self, items, obj):
+        self._drive(self._batch_setitems_gen(items, obj))
+
+    def _batch_setitems_gen(self, items, obj):
         # Helper to batch up SETITEMS sequences; proto >= 1 only
-        save = self.save
         write = self.write
 
         if not self.bin:
             for k, v in items:
-                save(k)
+                yield (k,)
                 try:
-                    save(v)
+                    yield (v,)
                 except BaseException as exc:
                     exc.add_note(f'when serializing {_T(obj)} item {k!r}')
                     raise
@@ -1117,29 +1187,31 @@ class _Pickler:
             if len(batch) != 1:
                 write(MARK)
                 for k, v in batch:
-                    save(k)
+                    yield (k,)
                     try:
-                        save(v)
+                        yield (v,)
                     except BaseException as exc:
                         exc.add_note(f'when serializing {_T(obj)} item {k!r}')
                         raise
                 write(SETITEMS)
             else:
                 k, v = batch[0]
-                save(k)
+                yield (k,)
                 try:
-                    save(v)
+                    yield (v,)
                 except BaseException as exc:
                     exc.add_note(f'when serializing {_T(obj)} item {k!r}')
                     raise
                 write(SETITEM)
 
     def save_set(self, obj):
-        save = self.save
+        self._drive(self._save_set(obj))
+
+    def _save_set(self, obj):
         write = self.write
 
         if self.proto < 4:
-            self.save_reduce(set, (list(obj),), obj=obj)
+            yield self._save_reduce_req(set, (list(obj),), obj=obj)
             return
 
         write(EMPTY_SET)
@@ -1149,7 +1221,7 @@ class _Pickler:
             write(MARK)
             try:
                 for item in batch:
-                    save(item)
+                    yield (item,)
             except BaseException as exc:
                 exc.add_note(f'when serializing {_T(obj)} element')
                 raise
@@ -1157,17 +1229,19 @@ class _Pickler:
     dispatch[set] = save_set
 
     def save_frozenset(self, obj):
-        save = self.save
+        self._drive(self._save_frozenset(obj))
+
+    def _save_frozenset(self, obj):
         write = self.write
 
         if self.proto < 4:
-            self.save_reduce(frozenset, (list(obj),), obj=obj)
+            yield self._save_reduce_req(frozenset, (list(obj),), obj=obj)
             return
 
         write(MARK)
         try:
             for item in obj:
-                save(item)
+                yield (item,)
         except BaseException as exc:
             exc.add_note(f'when serializing {_T(obj)} element')
             raise
@@ -1287,6 +1361,9 @@ class _Pickler:
     dispatch[type] = save_type
 
     def save_weakref(self, obj):
+        self._drive(self._save_weakref(obj))
+
+    def _save_weakref(self, obj):
         # Reconstruct as weakref.ref(referent).  The referent is saved
         # *weakly* (no anchoring, see save()) and tagged weak-only only after
         # its whole subtree, so a strong cycle inside it cannot anchor it.
@@ -1296,17 +1373,15 @@ class _Pickler:
             # weakref._dead_ref singleton.
             self.write(GLOBAL + b'weakref\n_dead_ref\n')
             return
-
-        save = self.save
         write = self.write
-        save(weakref.ref)
+        yield (weakref.ref,)
         # A referent already in the memo is anchored or already tracked;
         # otherwise it is tagged below, until a strong save of it.
         anchored = id(referent) in self.memo
         # Build the 1-tuple (referent,); TUPLE1 needs protocol 2.
         if self.proto < 2:
             write(MARK)
-        save(referent, weak=True)
+        yield (referent, True, True)  # save(referent, weak=True)
         if not anchored and id(referent) in self.memo:
             self._weak_only.add(id(referent))
         write(TUPLE1 if self.proto >= 2 else TUPLE)
@@ -1319,6 +1394,18 @@ class _Pickler:
             self.memoize(obj)
 
     dispatch[weakref.ReferenceType] = save_weakref
+
+    # Generator versions of the container savers, run by _drive() without
+    # nesting Python calls.  A dispatch entry that a subclass replaces is
+    # called directly instead.
+    _gen_dispatch = {
+        save_tuple: _save_tuple,
+        save_list: _save_list,
+        save_dict: _save_dict,
+        save_set: _save_set,
+        save_frozenset: _save_frozenset,
+        save_weakref: _save_weakref,
+    }
 
 
 # Unpickling machinery
