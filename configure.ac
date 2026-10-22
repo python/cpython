@@ -2212,6 +2212,24 @@ if test "$Py_BOLT" = 'true' ; then
       CFLAGS_NODIST="$CFLAGS_NODIST -fno-reorder-blocks-and-partition"
   ])
 
+  # BOLT rejects binaries with Cortex-A53 erratum 843419 workaround veneers,
+  # see https://github.com/llvm/llvm-project/pull/187955
+  # Check explicit flags here to provide a friendlier error. Recent BOLT
+  # versions reject workaround veneers by default, including those
+  # from compiler defaults, so we do not perform exhaustive detection.
+  AS_CASE([$host_cpu], [aarch64*], [
+    AS_CASE(["$CC $CFLAGS $CPPFLAGS $CFLAGS_NODIST $LDFLAGS $LDFLAGS_NODIST $LIBS"],
+      [*-mfix-cortex-a53-843419*|*--fix-cortex-a53-843419*], [
+      AC_MSG_ERROR([--enable-bolt is incompatible with the Cortex-A53 erratum 843419 workaround.
+BOLT does not preserve protection against this erratum. Its output must not run
+on affected Cortex-A53 processors, including during the build.
+If the generated binaries will never run on affected processors, disable the
+workaround explicitly. With GCC, configure with
+LDFLAGS_NODIST="-mno-fix-cortex-a53-843419". Also remove any explicit
+-mfix-cortex-a53-843419 or -Wl,--fix-cortex-a53-843419 flags.])
+    ])
+  ])
+
   # These flags are required for bolt to work:
   LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,--emit-relocs"
 
@@ -2449,7 +2467,7 @@ AS_CASE([$ac_sys_system],
     dnl Include file system support
     AS_VAR_APPEND([LINKFORSHARED], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY,ERRNO_CODES"])
-    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,_PyGILState_GetThisThreadState"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,_PyGILState_GetThisThreadState,NODEFS"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sSTACK_SIZE=5MB"])
     dnl Avoid bugs in JS fallback string decoding path
     AS_VAR_APPEND([LINKFORSHARED], [" -sTEXTDECODER=2"])
@@ -5488,6 +5506,7 @@ fi
 dnl Platform-specific C and header files.
 PLATFORM_HEADERS=
 PLATFORM_OBJS=
+PLATFORM_MAIN_OBJS=
 
 AS_CASE([$ac_sys_system],
   [Emscripten], [
@@ -5495,6 +5514,7 @@ AS_CASE([$ac_sys_system],
     AS_VAR_APPEND([CFLAGS_NODIST], [" -mgc"])
 
     AS_VAR_IF([enable_emscripten_syscalls], [yes], [
+      AS_VAR_APPEND([PLATFORM_MAIN_OBJS], [' Programs/emscripten_beforemain.o'])
       AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_syscalls.o'])
     ])
     AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h'])
@@ -5506,6 +5526,7 @@ AS_CASE([$ac_sys_system],
 )
 AC_SUBST([PLATFORM_HEADERS])
 AC_SUBST([PLATFORM_OBJS])
+AC_SUBST([PLATFORM_MAIN_OBJS])
 
 # -I${DLINCLDIR} is added to the compile rule for importdl.o
 AC_SUBST([DLINCLDIR])

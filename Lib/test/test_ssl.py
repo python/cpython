@@ -5927,7 +5927,11 @@ class TestPreHandshakeClose(unittest.TestCase):
                     self.listener.close()
             except OSError:
                 pass
-            self.join()
+            timeout = support.SHORT_TIMEOUT
+            self.join(timeout=timeout)
+            if self.is_alive():
+                raise AssertionError("failed to join the server thread "
+                                     f"in {timeout} seconds")
             self.wrap_error = None  # avoid dangling references
 
         def start(self):
@@ -6133,28 +6137,30 @@ class TestPreHandshakeClose(unittest.TestCase):
                 call_after_accept=call_after_accept,
                 name="non_tls_http_RST_responder",
                 timeout=timeout)
-        self.enterContext(server)  # starts it & unittest.TestCase stops it.
-        # Redundant; call_after_accept sets SO_LINGER on the accepted conn.
-        set_socket_so_linger_on_with_zero_timeout(server.listener)
 
-        connection = SynchronizedHTTPSConnection(
-                server.listener.getsockname()[0],
-                port=server.port,
-                context=ssl.create_default_context(),
-                timeout=timeout,
-        )
+        with server:
+            # Redundant; call_after_accept sets SO_LINGER on the accepted conn.
+            set_socket_so_linger_on_with_zero_timeout(server.listener)
 
-        # There are lots of reasons this raises as desired, long before this
-        # test was added. Sending the request requires a successful TLS wrapped
-        # socket; that fails if the connection is broken. It may seem pointless
-        # to test this. It serves as an illustration of something that we never
-        # want to happen... properly not happening.
-        with warnings_helper.check_no_resource_warning(self), \
-                self.assertRaises(OSError):
-            connection.request("HEAD", "/test", headers={"Host": "localhost"})
-            response = connection.getresponse()
+            connection = SynchronizedHTTPSConnection(
+                    server.listener.getsockname()[0],
+                    port=server.port,
+                    context=ssl.create_default_context(),
+                    timeout=timeout,
+            )
 
-        server.join()
+            # There are lots of reasons this raises as desired, long before this
+            # test was added. Sending the request requires a successful TLS wrapped
+            # socket; that fails if the connection is broken. It may seem pointless
+            # to test this. It serves as an illustration of something that we never
+            # want to happen... properly not happening.
+            with warnings_helper.check_no_resource_warning(self), \
+                    self.assertRaises(OSError):
+                try:
+                    connection.request("HEAD", "/test", headers={"Host": "localhost"})
+                    response = connection.getresponse()
+                finally:
+                    connection.close()
 
 
 class TestEnumerations(unittest.TestCase):

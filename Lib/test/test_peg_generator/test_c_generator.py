@@ -277,6 +277,15 @@ class TestCGenerator(unittest.TestCase):
         self.assertEqual(lowerer.prepare_rule(atom).signature.return_type, "expr_ty")
         self.assertEqual(lowerer.prepare_rule(start), expected)
 
+    def test_keywords_are_numbered_once(self):
+        generator = self.make_generator("""
+            start: keywords | "soft" "soft"
+            keywords: 'if' NAME | 'if' NUMBER | 'else' NAME | 'pass' | 'else' 'pass'
+        """)
+        generator.prepare(PurePath("example.gram"))
+        self.assertEqual(generator.keywords, {"if": 500, "else": 501, "pass": 502})
+        self.assertEqual(generator.soft_keywords, {"soft"})
+
 
 if __name__ == "__main__":
     unittest.main()
