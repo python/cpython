@@ -156,6 +156,8 @@ _ssl__SSLSocket_get_unverified_chain(PyObject *self, PyObject *Py_UNUSED(ignored
     return return_value;
 }
 
+#if defined(HAVE_OPENSSL_ECH)
+
 PyDoc_STRVAR(_ssl__SSLSocket_get_ech_status__doc__,
 "get_ech_status($self, /)\n"
 "--\n"
@@ -179,6 +181,10 @@ _ssl__SSLSocket_get_ech_status(PyObject *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
+#endif /* defined(HAVE_OPENSSL_ECH) */
+
+#if defined(HAVE_OPENSSL_ECH)
+
 PyDoc_STRVAR(_ssl__SSLSocket_get_ech_retry_config__doc__,
 "get_ech_retry_config($self, /)\n"
 "--\n"
@@ -201,6 +207,10 @@ _ssl__SSLSocket_get_ech_retry_config(PyObject *self, PyObject *Py_UNUSED(ignored
 
     return return_value;
 }
+
+#endif /* defined(HAVE_OPENSSL_ECH) */
+
+#if defined(HAVE_OPENSSL_ECH)
 
 PyDoc_STRVAR(_ssl__SSLSocket_set_outer_server_name__doc__,
 "set_outer_server_name($self, outer_server_name, /)\n"
@@ -240,6 +250,8 @@ _ssl__SSLSocket_set_outer_server_name(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
+
+#endif /* defined(HAVE_OPENSSL_ECH) */
 
 PyDoc_STRVAR(_ssl__SSLSocket_shared_ciphers__doc__,
 "shared_ciphers($self, /)\n"
@@ -1274,6 +1286,8 @@ exit:
     return return_value;
 }
 
+#if defined(HAVE_OPENSSL_ECH)
+
 PyDoc_STRVAR(_ssl__SSLContext__set_outer_alpn_protocols__doc__,
 "_set_outer_alpn_protocols($self, protos, /)\n"
 "--\n"
@@ -1307,6 +1321,8 @@ exit:
 
     return return_value;
 }
+
+#endif /* defined(HAVE_OPENSSL_ECH) */
 
 static int
 _ssl__SSLContext_verify_mode_get_impl(PySSLContext *self);
@@ -2148,6 +2164,8 @@ _ssl__SSLContext_set_default_verify_paths(PyObject *self, PyObject *Py_UNUSED(ig
     return return_value;
 }
 
+#if defined(HAVE_OPENSSL_ECH)
+
 PyDoc_STRVAR(_ssl__SSLContext_set_ech_config__doc__,
 "set_ech_config($self, ech_config, /)\n"
 "--\n"
@@ -2185,6 +2203,8 @@ exit:
 
     return return_value;
 }
+
+#endif /* defined(HAVE_OPENSSL_ECH) */
 
 PyDoc_STRVAR(_ssl__SSLContext_set_ecdh_curve__doc__,
 "set_ecdh_curve($self, name, /)\n"
@@ -3181,9 +3201,29 @@ exit:
 
 #endif /* defined(_MSC_VER) */
 
+#ifndef _SSL__SSLSOCKET_GET_ECH_STATUS_METHODDEF
+    #define _SSL__SSLSOCKET_GET_ECH_STATUS_METHODDEF
+#endif /* !defined(_SSL__SSLSOCKET_GET_ECH_STATUS_METHODDEF) */
+
+#ifndef _SSL__SSLSOCKET_GET_ECH_RETRY_CONFIG_METHODDEF
+    #define _SSL__SSLSOCKET_GET_ECH_RETRY_CONFIG_METHODDEF
+#endif /* !defined(_SSL__SSLSOCKET_GET_ECH_RETRY_CONFIG_METHODDEF) */
+
+#ifndef _SSL__SSLSOCKET_SET_OUTER_SERVER_NAME_METHODDEF
+    #define _SSL__SSLSOCKET_SET_OUTER_SERVER_NAME_METHODDEF
+#endif /* !defined(_SSL__SSLSOCKET_SET_OUTER_SERVER_NAME_METHODDEF) */
+
 #ifndef _SSL__SSLSOCKET_SENDFILE_METHODDEF
     #define _SSL__SSLSOCKET_SENDFILE_METHODDEF
 #endif /* !defined(_SSL__SSLSOCKET_SENDFILE_METHODDEF) */
+
+#ifndef _SSL__SSLCONTEXT__SET_OUTER_ALPN_PROTOCOLS_METHODDEF
+    #define _SSL__SSLCONTEXT__SET_OUTER_ALPN_PROTOCOLS_METHODDEF
+#endif /* !defined(_SSL__SSLCONTEXT__SET_OUTER_ALPN_PROTOCOLS_METHODDEF) */
+
+#ifndef _SSL__SSLCONTEXT_SET_ECH_CONFIG_METHODDEF
+    #define _SSL__SSLCONTEXT_SET_ECH_CONFIG_METHODDEF
+#endif /* !defined(_SSL__SSLCONTEXT_SET_ECH_CONFIG_METHODDEF) */
 
 #ifndef _SSL_ENUM_CERTIFICATES_METHODDEF
     #define _SSL_ENUM_CERTIFICATES_METHODDEF
@@ -3240,4 +3280,4 @@ exit:
 
 #define _SSL_SSLSESSION_HAS_TICKET_GETSETDEF {"has_ticket", (getter)_ssl_SSLSession_has_ticket_get, (setter)NULL, _ssl_SSLSession_has_ticket__doc__},
 
-/*[clinic end generated code: output=e19d2f93856ff3df input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c2e4b98c8e04a32a input=a9049054013a1b77]*/

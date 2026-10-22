@@ -151,10 +151,11 @@ _IntEnum._convert_(
     lambda name: name.startswith('CERT_'),
     source=_ssl)
 
-_IntEnum._convert_(
-    'ECHStatus', __name__,
-    lambda name: name.startswith('ECH_STATUS_'),
-    source=_ssl)
+if HAS_ECH:
+    _IntEnum._convert_(
+        'ECHStatus', __name__,
+        lambda name: name.startswith('ECH_STATUS_'),
+        source=_ssl)
 
 PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_TLS
 _PROTOCOL_NAMES = frozendict({
@@ -526,9 +527,10 @@ class SSLContext(_SSLContext):
         protos = _encode_alpn_protocol_list(alpn_protocols)
         self._set_alpn_protocols(protos)
 
-    def set_outer_alpn_protocols(self, alpn_protocols):
-        protos = _encode_alpn_protocol_list(alpn_protocols)
-        self._set_outer_alpn_protocols(protos)
+    if HAS_ECH:
+        def set_outer_alpn_protocols(self, alpn_protocols):
+            protos = _encode_alpn_protocol_list(alpn_protocols)
+            self._set_outer_alpn_protocols(protos)
 
     def _load_windows_store_certs(self, storename, purpose):
         try:
@@ -849,10 +851,11 @@ class SSLObject:
     def context(self, ctx):
         self._sslobj.context = ctx
 
-    @property
-    def outer_server_hostname(self):
-        """The server name used in the outer ClientHello."""
-        return self._sslobj.get_ech_status()[2]
+    if HAS_ECH:
+        @property
+        def outer_server_hostname(self):
+            """The server name used in the outer ClientHello."""
+            return self._sslobj.get_ech_status()[2]
 
     @property
     def session(self):
@@ -1003,13 +1006,14 @@ class SSLObject:
     def verify_client_post_handshake(self):
         return self._sslobj.verify_client_post_handshake()
 
-    def get_ech_status(self):
-        """Return the status of Encrypted Client Hello processing."""
-        return ECHStatus(self._sslobj.get_ech_status()[0])
+    if HAS_ECH:
+        def get_ech_status(self):
+            """Return the status of Encrypted Client Hello processing."""
+            return ECHStatus(self._sslobj.get_ech_status()[0])
 
-    def get_ech_retry_config(self):
-        """Return the server's ECH retry configuration as bytes."""
-        return self._sslobj.get_ech_retry_config()
+        def get_ech_retry_config(self):
+            """Return the server's ECH retry configuration as bytes."""
+            return self._sslobj.get_ech_retry_config()
 
 
 def _sslcopydoc(func):
@@ -1137,11 +1141,12 @@ class SSLSocket(socket):
         self._context = ctx
         self._sslobj.context = ctx
 
-    @property
-    def outer_server_hostname(self):
-        """The server name used in the outer ClientHello."""
-        if self._sslobj is not None:
-            return self._sslobj.get_ech_status()[2]
+    if HAS_ECH:
+        @property
+        def outer_server_hostname(self):
+            """The server name used in the outer ClientHello."""
+            if self._sslobj is not None:
+                return self._sslobj.get_ech_status()[2]
 
     @property
     @_sslcopydoc
@@ -1444,15 +1449,16 @@ class SSLSocket(socket):
         else:
             raise ValueError("No SSL wrapper around " + str(self))
 
-    @_sslcopydoc
-    def get_ech_status(self):
-        if self._sslobj is not None:
-            return ECHStatus(self._sslobj.get_ech_status()[0])
+    if HAS_ECH:
+        @_sslcopydoc
+        def get_ech_status(self):
+            if self._sslobj is not None:
+                return ECHStatus(self._sslobj.get_ech_status()[0])
 
-    @_sslcopydoc
-    def get_ech_retry_config(self):
-        if self._sslobj is not None:
-            return self._sslobj.get_ech_retry_config()
+        @_sslcopydoc
+        def get_ech_retry_config(self):
+            if self._sslobj is not None:
+                return self._sslobj.get_ech_retry_config()
 
     def _real_close(self):
         self._sslobj = None

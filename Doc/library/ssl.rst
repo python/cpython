@@ -1078,6 +1078,8 @@ Constants
    :class:`enum.IntEnum` collection of Encrypted Client Hello (ECH) statuses
    returned by :meth:`SSLSocket.get_ech_status`.
 
+   Only available when :data:`HAS_ECH` is ``True``.
+
    .. versionadded:: next
 
 .. attribute:: ECHStatus.ECH_STATUS_GREASE_ECH
@@ -1430,7 +1432,7 @@ SSL sockets also have the following additional methods and attributes:
    :attr:`ECHStatus.ECH_STATUS_GREASE_ECH`, the configuration can be used
    for a new connection using ECH.
 
-   Raise :exc:`NotImplementedError` if :data:`HAS_ECH` is ``False``.
+   Only available when :data:`HAS_ECH` is ``True``.
 
    .. versionadded:: next
 
@@ -1439,7 +1441,7 @@ SSL sockets also have the following additional methods and attributes:
    Gets the status of Encrypted Client Hello (ECH) processing. Returns an
    :class:`ECHStatus` instance.
 
-   Raise :exc:`NotImplementedError` if :data:`HAS_ECH` is ``False``.
+   Only available when :data:`HAS_ECH` is ``True``.
 
    .. versionadded:: next
 
@@ -1521,8 +1523,7 @@ SSL sockets also have the following additional methods and attributes:
    Hello (ECH) is used: :class:`str` type, or ``None`` for server-side socket or
    if no outer server name is available.
 
-   Raise :exc:`NotImplementedError` if :data:`HAS_ECH` is ``False`` and the
-   socket has an SSL wrapper.
+   Only available when :data:`HAS_ECH` is ``True``.
 
    .. versionadded:: next
 
@@ -1915,7 +1916,7 @@ to speed up repeated connections from the same clients.
    The *ech_config* parameter should be a :term:`bytes-like object` containing
    a binary-encoded ECHConfigList.
 
-   This method will raise :exc:`NotImplementedError` if :data:`HAS_ECH` is ``False``.
+   Only available when :data:`HAS_ECH` is ``True``.
 
    .. versionadded:: next
 
@@ -1945,8 +1946,7 @@ to speed up repeated connections from the same clients.
    argument accepts the same values as for
    :meth:`~SSLContext.set_alpn_protocols`.
 
-   This method will raise :exc:`NotImplementedError` if :data:`HAS_ECH` is
-   ``False``.
+   Only available when :data:`HAS_ECH` is ``True``.
 
    .. versionadded:: next
 

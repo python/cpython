@@ -2063,25 +2063,28 @@ class ECHTests(unittest.TestCase):
         self.addCleanup(ssock.close)
         return obj, ssock
 
-    @unittest.skipIf(ssl.HAS_ECH, 'requires OpenSSL without ECH')
-    def test_not_implemented(self):
-        ctx = make_test_context()
-        self.assertFalse(ssl.ECHStatus.__members__)
-        with self.assertRaises(NotImplementedError):
-            ctx.set_ech_config(self.ECH_CONFIG)
-        with self.assertRaises(NotImplementedError):
-            ctx.set_outer_alpn_protocols(['h2'])
-        for obj in self.make_ssl_objects(ctx):
-            with self.subTest(type=type(obj)):
-                with self.assertRaises(NotImplementedError):
-                    obj.get_ech_status()
-                with self.assertRaises(NotImplementedError):
-                    obj.get_ech_retry_config()
-                with self.assertRaises(NotImplementedError):
-                    obj.outer_server_hostname
-                with self.assertRaises(NotImplementedError):
-                    obj._sslobj.set_outer_server_name('localhost')
+    def test_availability(self):
+        self.assertEqual(hasattr(ssl, 'ECHStatus'), ssl.HAS_ECH)
+        for module in (ssl, _ssl):
+            names = [name for name in dir(module)
+                     if name.startswith(('ECH_STATUS_', 'OP_ECH_'))]
+            with self.subTest(module=module):
+                self.assertEqual(bool(names), ssl.HAS_ECH)
 
+        context_methods = ('set_ech_config', '_set_outer_alpn_protocols')
+        socket_methods = ('get_ech_status', 'get_ech_retry_config')
+        for owner, names in (
+            (_ssl._SSLContext, context_methods),
+            (ssl.SSLContext, (*context_methods, 'set_outer_alpn_protocols')),
+            (_ssl._SSLSocket, (*socket_methods, 'set_outer_server_name')),
+            (ssl.SSLObject, (*socket_methods, 'outer_server_hostname')),
+            (ssl.SSLSocket, (*socket_methods, 'outer_server_hostname')),
+        ):
+            for name in names:
+                with self.subTest(owner=owner, name=name):
+                    self.assertEqual(hasattr(owner, name), ssl.HAS_ECH)
+
+    @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
     def test_socket_without_ssl_object(self):
         ctx = make_test_context()
         with ctx.wrap_socket(socket.socket()) as sock:

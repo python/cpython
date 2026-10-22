@@ -2122,6 +2122,7 @@ cipher_to_dict(const SSL_CIPHER *cipher)
        );
 }
 
+#ifdef HAVE_OPENSSL_ECH
 /*[clinic input]
 @critical_section
 _ssl._SSLSocket.get_ech_status
@@ -2131,7 +2132,6 @@ static PyObject *
 _ssl__SSLSocket_get_ech_status_impl(PySSLSocket *self)
 /*[clinic end generated code: output=263bf7fc7888e2d6 input=71320052d6f2a10f]*/
 {
-#ifdef HAVE_OPENSSL_ECH
     char *inner_sni = NULL, *outer_sni = NULL;
     if (self->ssl == NULL) {
         Py_RETURN_NONE;
@@ -2141,10 +2141,6 @@ _ssl__SSLSocket_get_ech_status_impl(PySSLSocket *self)
     OPENSSL_free(inner_sni);
     OPENSSL_free(outer_sni);
     return result;
-#else
-    PyErr_SetString(PyExc_NotImplementedError, "OpenSSL does not have ECH support");
-    return NULL;
-#endif
 }
 
 /*[clinic input]
@@ -2156,7 +2152,6 @@ static PyObject *
 _ssl__SSLSocket_get_ech_retry_config_impl(PySSLSocket *self)
 /*[clinic end generated code: output=967da2032df9a37a input=0e51b545e93f43ba]*/
 {
-#ifdef HAVE_OPENSSL_ECH
     if (self->ssl == NULL) {
         Py_RETURN_NONE;
     }
@@ -2169,10 +2164,6 @@ _ssl__SSLSocket_get_ech_retry_config_impl(PySSLSocket *self)
     PyObject *result = PyBytes_FromStringAndSize((char *)config, config_len);
     OPENSSL_free(config);
     return result;
-#else
-    PyErr_SetString(PyExc_NotImplementedError, "OpenSSL does not have ECH support");
-    return NULL;
-#endif
 }
 
 /*[clinic input]
@@ -2188,7 +2179,6 @@ _ssl__SSLSocket_set_outer_server_name_impl(PySSLSocket *self,
                                            const char *outer_server_name)
 /*[clinic end generated code: output=24e7c6b7b3c2ce84 input=8d1d96628e11b2fd]*/
 {
-#ifdef HAVE_OPENSSL_ECH
     if (self->ssl == NULL) {
         Py_RETURN_NONE;
     }
@@ -2205,11 +2195,8 @@ _ssl__SSLSocket_set_outer_server_name_impl(PySSLSocket *self,
         return NULL;
     }
     Py_RETURN_NONE;
-#else
-    PyErr_SetString(PyExc_NotImplementedError, "OpenSSL does not have ECH support");
-    return NULL;
-#endif
 }
+#endif /* HAVE_OPENSSL_ECH */
 
 /*[clinic input]
 @critical_section
@@ -4046,6 +4033,7 @@ _ssl__SSLContext__set_alpn_protocols_impl(PySSLContext *self,
     Py_RETURN_NONE;
 }
 
+#ifdef HAVE_OPENSSL_ECH
 /*[clinic input]
 @critical_section
 _ssl._SSLContext._set_outer_alpn_protocols
@@ -4058,7 +4046,6 @@ _ssl__SSLContext__set_outer_alpn_protocols_impl(PySSLContext *self,
                                                 Py_buffer *protos)
 /*[clinic end generated code: output=823aea95e8dea835 input=b6ddf7d0791afd0e]*/
 {
-#ifdef HAVE_OPENSSL_ECH
     if ((size_t)protos->len > UINT_MAX) {
         PyErr_Format(PyExc_OverflowError,
             "protocols longer than %u bytes", UINT_MAX);
@@ -4071,11 +4058,8 @@ _ssl__SSLContext__set_outer_alpn_protocols_impl(PySSLContext *self,
         return NULL;
     }
     Py_RETURN_NONE;
-#else
-    PyErr_SetString(PyExc_NotImplementedError, "OpenSSL does not have ECH support");
-    return NULL;
-#endif
 }
+#endif /* HAVE_OPENSSL_ECH */
 
 /*[clinic input]
 @critical_section
@@ -5211,6 +5195,7 @@ _ssl__SSLContext_set_default_verify_paths_impl(PySSLContext *self)
     Py_RETURN_NONE;
 }
 
+#ifdef HAVE_OPENSSL_ECH
 /*[clinic input]
 @critical_section
 _ssl._SSLContext.set_ech_config
@@ -5229,7 +5214,6 @@ _ssl__SSLContext_set_ech_config_impl(PySSLContext *self,
                                      Py_buffer *ech_config)
 /*[clinic end generated code: output=cea53188b338cf80 input=3943e5aff04a583e]*/
 {
-#ifdef HAVE_OPENSSL_ECH
     if (ech_config->len > INT_MAX) {
         PyErr_Format(PyExc_OverflowError,
                      "ECH configuration longer than %d bytes", INT_MAX);
@@ -5259,11 +5243,8 @@ fail:
     OSSL_ECHSTORE_free(store);
     BIO_free(config_bio);
     return NULL;
-#else
-    PyErr_SetString(PyExc_NotImplementedError, "OpenSSL does not have ECH support");
-    return NULL;
-#endif
 }
+#endif /* HAVE_OPENSSL_ECH */
 
 /*[clinic input]
 @critical_section
