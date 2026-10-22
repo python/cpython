@@ -58,6 +58,8 @@ Available make targets are:
 * "venv", which creates a virtual environment with all necessary tools
   installed.
 
+* "lock", which regenerates the pinned dependencies in ``pylock.toml``.
+
 * "html", which builds standalone HTML files for offline viewing.
 
 * "htmlview", which re-uses the "html" builder, but then opens the main page
@@ -80,7 +82,8 @@ Available make targets are:
 
 * "text", which builds a plain text file for each source file.
 
-* "texinfo", which builds Texinfo source files.
+* "texinfo", which builds Texinfo source files as input to ``makeinfo`` to
+  produce Info documents.
 
 * "epub", which builds an EPUB document, suitable to be viewed on e-book
   readers.
