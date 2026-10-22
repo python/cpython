@@ -5343,6 +5343,8 @@ ech_store_from_config(_sslmodulestate *state, Py_buffer *ech_config)
     }
     const unsigned char *config = ech_config->buf;
     int config_len = (int)ech_config->len;
+    // RFC 9849 says that clients have to skip unknown entries, so we have to do
+    // this extra parsing step ourselves.
     if (config_len >= 2 && ((config[0] << 8) | config[1]) == config_len - 2) {
         config += 2;
         config_len -= 2;
@@ -5468,7 +5470,7 @@ load_ech_keys(SSL_CTX *ctx, BIO *bio, int for_retry,
         || OSSL_ECHSTORE_num_keys(store, &new_keys) != 1) {
         goto end;
     }
-    // OpenSSL may match a key already in the store. Require a new match.
+    // OpenSSL may match a key already in the store. We want to to require a new match.
     if (new_keys <= old_keys) {
         ERR_raise(ERR_LIB_SSL, SSL_R_PRIVATE_KEY_MISMATCH);
         goto end;
