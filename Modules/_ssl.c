@@ -2007,12 +2007,9 @@ _ssl__SSLSocket_get_unverified_chain_impl(PySSLSocket *self)
     else if (chain == NULL) {
         Py_RETURN_NONE;
     }
-    if (chain == NULL) {
-        retval = PyList_New(0);
-    }
-    else {
-        retval = _PySSL_CertificateFromX509Stack(self->ctx->state, chain, 1);
-    }
+    retval = chain == NULL
+        ? PyList_New(0)
+        : _PySSL_CertificateFromX509Stack(self->ctx->state, chain, 1);
     if (retval == NULL) {
         X509_free(peer);
         return NULL;
