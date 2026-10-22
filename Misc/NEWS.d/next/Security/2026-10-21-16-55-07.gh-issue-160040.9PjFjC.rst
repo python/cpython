@@ -1,3 +1,5 @@
+.. cve: CVE-2026-115557
+
 :mod:`ssl` now rejects TLS certificate chains that contain any of a set of
 compromised eMudhra intermediate CA keys.  This is an extraordinary measure and
 a last line of defense: removing trust is primarily the job of the platform root
