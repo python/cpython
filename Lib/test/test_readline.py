@@ -242,6 +242,21 @@ class TestReadline(unittest.TestCase):
                                               TERM='xterm-256color')
         self.assertEqual(stdout, b'')
 
+    def test_reimport(self):
+        script = textwrap.dedent("""
+            import readline
+            import sys
+
+            default_delims = readline.get_completer_delims()
+            for _ in range(2):
+                del sys.modules["readline"]
+                import readline
+                assert readline.get_completer_delims() == default_delims
+                readline.set_completer_delims(" \\t\\n")
+                assert readline.get_completer_delims() == " \\t\\n"
+        """)
+        assert_python_ok('-c', script)
+
     def test_backend(self):
         self.assertIn(readline.backend, ("readline", "editline"))
 

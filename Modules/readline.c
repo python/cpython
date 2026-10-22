@@ -1602,13 +1602,15 @@ setup_readline(readlinestate *mod_state)
     /* Set our completion function */
     rl_attempted_completion_function = flex_complete;
     /* Set Python word break characters */
-    completer_word_break_characters =
+    char *break_chars =
         strdup(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?");
         /* All nonalphanums except '.' */
 
-    if (!completer_word_break_characters) {
+    if (!break_chars) {
         goto error;
     }
+    free(completer_word_break_characters);
+    completer_word_break_characters = break_chars;
 #ifdef WITH_EDITLINE
     // libedit uses rl_basic_word_break_characters instead of
     // rl_completer_word_break_characters as complete delimiter
