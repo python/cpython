@@ -31,8 +31,8 @@
 
 typedef struct _memo {
     int type;
-    void *node;
     int mark;
+    void *node;
     struct _memo *next;
 } Memo;
 
