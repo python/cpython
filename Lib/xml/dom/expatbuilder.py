@@ -20,7 +20,12 @@ This avoids all the overhead of SAX and pulldom to gain performance.
 #      speedup since pyexpat can break up character data into multiple
 #      callbacks even though we set the buffer_text attribute on the
 #      parser.  This also gives us the advantage that we don't need a
-#      separate normalization pass.
+#      separate normalization pass.  The pieces are collected in a list
+#      and joined once the run of character data ends (see
+#      ._flush_text()), since a run can arrive in a great many
+#      callbacks (pyexpat flushes its buffer before every other
+#      handler) and copying the accumulated text on each of them
+#      would be quadratic.
 #
 #   -  Determining that a node exists is done using an identity comparison
 #      with None rather than a truth test; this avoids searching for and
@@ -170,6 +175,10 @@ class ExpatBuilder:
         self.curNode = self.document
         self._elem_info = self.document._elem_info
         self._cdata = False
+        # Text node currently being extended and the pieces of its data
+        # which have not been joined yet; see _flush_text().
+        self._text_node = None
+        self._text_parts = None
 
     def install(self, parser):
         """Install the callbacks needed to build the DOM into the parser."""
@@ -262,42 +271,56 @@ class ExpatBuilder:
         if not (self._elem_info or self._filter):
             self._finish_end_element = id
 
+    def _flush_text(self):
+        # Join the pieces of the current run of character data into
+        # its Text node.  This must be called before anything else is
+        # added to the tree after the Text node, and before the tree is
+        # handed to a filter.
+        node = self._text_node
+        if node is not None:
+            node.data = ''.join(self._text_parts)
+            self._text_node = None
+            self._text_parts = None
+
     def pi_handler(self, target, data):
+        self._flush_text()
         node = self.document.createProcessingInstruction(target, data)
         _append_child(self.curNode, node)
         if self._filter and self._filter.acceptNode(node) == FILTER_REJECT:
             self.curNode.removeChild(node)
 
     def character_data_handler_cdata(self, data):
-        childNodes = self.curNode.childNodes
-        if self._cdata:
-            if (  self._cdata_continue
-                  and childNodes[-1].nodeType == CDATA_SECTION_NODE):
-                childNodes[-1].appendData(data)
-                return
-            node = self.document.createCDATASection(data)
-            self._cdata_continue = True
-        elif childNodes and childNodes[-1].nodeType == TEXT_NODE:
-            node = childNodes[-1]
-            value = node.data + data
-            node.data = value
+        if not self._cdata:
+            self.character_data_handler(data)
             return
+        # Flushing here rather than in start_cdata_section_handler()
+        # keeps an empty CDATA section, which adds no node, from ending
+        # the run of character data around it.
+        self._flush_text()
+        childNodes = self.curNode.childNodes
+        if (  self._cdata_continue
+              and childNodes[-1].nodeType == CDATA_SECTION_NODE):
+            childNodes[-1].appendData(data)
+            return
+        node = self.document.createCDATASection(data)
+        self._cdata_continue = True
+        _append_child(self.curNode, node)
+
+    def character_data_handler(self, data):
+        if self._text_node is not None:
+            self._text_parts.append(data)
+            return
+        childNodes = self.curNode.childNodes
+        if childNodes and childNodes[-1].nodeType == TEXT_NODE:
+            node = childNodes[-1]
+            self._text_parts = [node.data, data]
         else:
             node = minidom.Text()
             node.data = data
             node.ownerDocument = self.document
-        _append_child(self.curNode, node)
-
-    def character_data_handler(self, data):
-        childNodes = self.curNode.childNodes
-        if childNodes and childNodes[-1].nodeType == TEXT_NODE:
-            node = childNodes[-1]
-            node.data = node.data + data
-            return
-        node = minidom.Text()
-        node.data = node.data + data
-        node.ownerDocument = self.document
-        _append_child(self.curNode, node)
+            _append_child(self.curNode, node)
+            self._text_parts = [data]
+        self._text_node = node
 
     def entity_decl_handler(self, entityName, is_parameter_entity, value,
                             base, systemId, publicId, notationName):
@@ -324,6 +347,7 @@ class ExpatBuilder:
             del self.document.doctype.notations._seq[-1]
 
     def comment_handler(self, data):
+        self._flush_text()
         node = self.document.createComment(data)
         _append_child(self.curNode, node)
         if self._filter and self._filter.acceptNode(node) == FILTER_REJECT:
@@ -347,6 +371,7 @@ class ExpatBuilder:
         self.start_element_handler(name, attributes)
 
     def start_element_handler(self, name, attributes):
+        self._flush_text()
         node = self.document.createElement(name)
         _append_child(self.curNode, node)
         self.curNode = node
@@ -389,6 +414,7 @@ class ExpatBuilder:
     # be changed to match.
     #
     def end_element_handler(self, name):
+        self._flush_text()
         curNode = self.curNode
         self.curNode = curNode.parentNode
         self._finish_end_element(curNode)
@@ -734,6 +760,7 @@ class Namespaces:
         self._ns_ordered_prefixes.append((prefix, uri))
 
     def start_element_handler(self, name, attributes):
+        self._flush_text()
         if ' ' in name:
             uri, localname, prefix, qname = _parse_ns_name(self, name)
         else:
@@ -789,6 +816,7 @@ class Namespaces:
         # it needs to be changed as well.
         #
         def end_element_handler(self, name):
+            self._flush_text()
             curNode = self.curNode
             if ' ' in name:
                 uri, localname, prefix, qname = _parse_ns_name(self, name)
