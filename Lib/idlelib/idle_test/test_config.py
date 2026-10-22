@@ -85,8 +85,8 @@ class IdleConfParserTest(unittest.TestCase):
         self.assertEqual(parser.sections(), [])
 
     def test_load_file(self):
-        # Borrow test/cfgparser.1 from test_configparser.
-        config_path = findfile('cfgparser.1')
+        # Borrow test/configdata/cfgparser.1 from test_configparser.
+        config_path = findfile('cfgparser.1', subdir='configdata')
         parser = config.IdleConfParser(config_path)
         parser.Load()
 
@@ -159,19 +159,6 @@ class IdleUserConfParserTest(unittest.TestCase):
         self.assertFalse(parser.IsEmpty())
         self.assertCountEqual(parser.sections(), ['Foo'])
 
-    def test_remove_file(self):
-        with tempfile.TemporaryDirectory() as tdir:
-            path = os.path.join(tdir, 'test.cfg')
-            parser = self.new_parser(path)
-            parser.RemoveFile()  # Should not raise exception.
-
-            parser.AddSection('Foo')
-            parser.SetOption('Foo', 'bar', 'true')
-            parser.Save()
-            self.assertTrue(os.path.exists(path))
-            parser.RemoveFile()
-            self.assertFalse(os.path.exists(path))
-
     def test_save(self):
         with tempfile.TemporaryDirectory() as tdir:
             path = os.path.join(tdir, 'test.cfg')
@@ -204,7 +191,7 @@ class IdleConfTest(unittest.TestCase):
             idle_dir = os.path.abspath(sys.path[0])
         for ctype in conf.config_types:
             config_path = os.path.join(idle_dir, '../config-%s.def' % ctype)
-            with open(config_path, 'r') as f:
+            with open(config_path) as f:
                 cls.config_string[ctype] = f.read()
 
         cls.orig_warn = config._warn
@@ -233,7 +220,7 @@ class IdleConfTest(unittest.TestCase):
 
     @unittest.skipIf(sys.platform.startswith('win'), 'this is test for unix system')
     def test_get_user_cfg_dir_unix(self):
-        "Test to get user config directory under unix"
+        # Test to get user config directory under unix.
         conf = self.new_config(_utest=True)
 
         # Check normal way should success
@@ -256,7 +243,7 @@ class IdleConfTest(unittest.TestCase):
 
     @unittest.skipIf(not sys.platform.startswith('win'), 'this is test for Windows system')
     def test_get_user_cfg_dir_windows(self):
-        "Test to get user config directory under Windows"
+        # Test to get user config directory under Windows.
         conf = self.new_config(_utest=True)
 
         # Check normal way should success
@@ -287,8 +274,8 @@ class IdleConfTest(unittest.TestCase):
                 conf.CreateConfigHandlers()
 
         # Check keys are equal
-        self.assertCountEqual(conf.defaultCfg.keys(), conf.config_types)
-        self.assertCountEqual(conf.userCfg.keys(), conf.config_types)
+        self.assertCountEqual(conf.defaultCfg, conf.config_types)
+        self.assertCountEqual(conf.userCfg, conf.config_types)
 
         # Check conf parser are correct type
         for default_parser in conf.defaultCfg.values():
@@ -297,18 +284,18 @@ class IdleConfTest(unittest.TestCase):
             self.assertIsInstance(user_parser, config.IdleUserConfParser)
 
         # Check config path are correct
-        for config_type, parser in conf.defaultCfg.items():
+        for cfg_type, parser in conf.defaultCfg.items():
             self.assertEqual(parser.file,
-                             os.path.join(idle_dir, 'config-%s.def' % config_type))
-        for config_type, parser in conf.userCfg.items():
+                             os.path.join(idle_dir, f'config-{cfg_type}.def'))
+        for cfg_type, parser in conf.userCfg.items():
             self.assertEqual(parser.file,
-                             os.path.join(conf.userdir, 'config-%s.cfg' % config_type))
+                             os.path.join(conf.userdir or '#', f'config-{cfg_type}.cfg'))
 
     def test_load_cfg_files(self):
         conf = self.new_config(_utest=True)
 
-        # Borrow test/cfgparser.1 from test_configparser.
-        config_path = findfile('cfgparser.1')
+        # Borrow test/configdata/cfgparser.1 from test_configparser.
+        config_path = findfile('cfgparser.1', subdir='configdata')
         conf.defaultCfg['foo'] = config.IdleConfParser(config_path)
         conf.userCfg['foo'] = config.IdleUserConfParser(config_path)
 
@@ -324,6 +311,49 @@ class IdleConfTest(unittest.TestCase):
         # Check userCfg is loaded
         eq(conf.userCfg['foo'].Get('Foo Bar', 'foo'), 'newbar')
         eq(conf.userCfg['foo'].GetOptionList('Foo Bar'), ['foo'])
+
+    def test_load_cfg_files_bad_format(self):
+        # gh-66172: rename an unparsable user file and save the exception.
+        conf = self.new_config(_utest=True)
+        tmpdir = tempfile.TemporaryDirectory()
+        self.addCleanup(tmpdir.cleanup)
+        confpath = os.path.join(tmpdir.name, 'config-extensions.cfg')
+        with open(confpath, 'w') as f:
+            f.write('enable=1\n')  # No section header.
+        conf.defaultCfg['foo'] = config.IdleConfParser('')  # Empty, valid.
+        conf.userCfg['foo'] = config.IdleUserConfParser(confpath)
+
+        self.assertIsNone(conf.file_load_error_message())
+        conf.LoadCfgFiles()  # Must not raise.
+
+        self.assertEqual(len(conf.file_load_errors), 1)
+        file, err = conf.file_load_errors[0]
+        self.assertEqual(file, confpath)
+        # The bad file is moved aside, not left to be overwritten or deleted.
+        self.assertFalse(os.path.exists(confpath))
+        with open(confpath + '.bad') as f:
+            self.assertEqual(f.read(), 'enable=1\n')
+        message = conf.file_load_error_message()
+        self.assertIn(confpath, message)
+        self.assertIn('MissingSectionHeaderError', message)
+
+    def test_load_cfg_files_bad_encoding(self):
+        # gh-66172: a file that is not valid UTF-8 is handled like a bad parse.
+        conf = self.new_config(_utest=True)
+        tmpdir = tempfile.TemporaryDirectory()
+        self.addCleanup(tmpdir.cleanup)
+        confpath = os.path.join(tmpdir.name, 'config-main.cfg')
+        with open(confpath, 'wb') as f:
+            f.write(b'[Section]\nkey = \xff\n')  # Invalid UTF-8.
+        conf.defaultCfg['foo'] = config.IdleConfParser('')  # Empty, valid.
+        conf.userCfg['foo'] = config.IdleUserConfParser(confpath)
+
+        conf.LoadCfgFiles()  # Must not raise.
+
+        self.assertEqual(len(conf.file_load_errors), 1)
+        self.assertIsInstance(conf.file_load_errors[0][1], UnicodeDecodeError)
+        self.assertFalse(os.path.exists(confpath))
+        self.assertTrue(os.path.exists(confpath + '.bad'))
 
     def test_save_user_cfg_files(self):
         conf = self.mock_config()
@@ -373,10 +403,6 @@ class IdleConfTest(unittest.TestCase):
         eq = self.assertEqual
         eq(conf.GetHighlight('IDLE Classic', 'normal'), {'foreground': '#000000',
                                                          'background': '#ffffff'})
-        eq(conf.GetHighlight('IDLE Classic', 'normal', 'fg'), '#000000')
-        eq(conf.GetHighlight('IDLE Classic', 'normal', 'bg'), '#ffffff')
-        with self.assertRaises(config.InvalidFgBg):
-            conf.GetHighlight('IDLE Classic', 'normal', 'fb')
 
         # Test cursor (this background should be normal-background)
         eq(conf.GetHighlight('IDLE Classic', 'cursor'), {'foreground': 'black',
@@ -390,7 +416,7 @@ class IdleConfTest(unittest.TestCase):
                                                        'background': '#171717'})
 
     def test_get_theme_dict(self):
-        "XXX: NOT YET DONE"
+        # TODO: finish.
         conf = self.mock_config()
 
         # These two should be the same
@@ -471,9 +497,6 @@ class IdleConfTest(unittest.TestCase):
         self.assertEqual(idleConf.GetExtensionKeys('ZzDummy'),
            {'<<z-in>>': ['<Control-Shift-KeyRelease-Insert>']})
         userextn.remove_section('ZzDummy')
-# need option key test
-##        key = ['<Option-Key-2>'] if sys.platform == 'darwin' else ['<Alt-Key-2>']
-##        eq(conf.GetExtensionKeys('ZoomHeight'), {'<<zoom-height>>': key})
 
     def test_get_extension_bindings(self):
         userextn.read_string('''
@@ -508,24 +531,32 @@ class IdleConfTest(unittest.TestCase):
     def test_get_current_keyset(self):
         current_platform = sys.platform
         conf = self.mock_config()
+        try:
+            # Ensure that platform isn't darwin
+            sys.platform = 'some-linux'
+            self.assertEqual(conf.GetCurrentKeySet(),
+                             conf.GetKeySet(conf.CurrentKeys()))
 
-        # Ensure that platform isn't darwin
-        sys.platform = 'some-linux'
-        self.assertEqual(conf.GetCurrentKeySet(), conf.GetKeySet(conf.CurrentKeys()))
-
-        # This should not be the same, since replace <Alt- to <Option-.
-        # Above depended on config-extensions.def having Alt keys,
-        # which is no longer true.
-        # sys.platform = 'darwin'
-        # self.assertNotEqual(conf.GetCurrentKeySet(), conf.GetKeySet(conf.CurrentKeys()))
-
-        # Restore platform
-        sys.platform = current_platform
+            # On darwin, '<Alt-' is replaced with '<Option-'.  Add an
+            # extension binding, as the default key sets have no Alt keys.
+            conf.defaultCfg['extensions'].add_section('Foobar')
+            conf.defaultCfg['extensions'].add_section('Foobar_cfgBindings')
+            conf.defaultCfg['extensions'].set('Foobar', 'enable', 'True')
+            conf.defaultCfg['extensions'].set('Foobar_cfgBindings', 'newfoo',
+                                              '<Alt-Shift-Key-F12>')
+            self.assertEqual(conf.GetKeySet(conf.CurrentKeys())['<<newfoo>>'],
+                             ['<Alt-Shift-Key-F12>'])
+            sys.platform = 'darwin'
+            self.assertEqual(conf.GetCurrentKeySet()['<<newfoo>>'],
+                             ['<Option-Shift-Key-F12>'])
+        finally:
+            # Restore platform
+            sys.platform = current_platform
 
     def test_get_keyset(self):
         conf = self.mock_config()
 
-        # Conflic with key set, should be disable to ''
+        # Conflict with key set, should be disable to ''
         conf.defaultCfg['extensions'].add_section('Foobar')
         conf.defaultCfg['extensions'].add_section('Foobar_cfgBindings')
         conf.defaultCfg['extensions'].set('Foobar', 'enable', 'True')
@@ -779,8 +810,29 @@ class ChangesTest(unittest.TestCase):
         changes = self.changes
         changes.add_option('main', 'Indent', 'use-spaces', '1')
         # save_option returns False; cfg_type_changed remains False.
+        self.assertFalse(changes.save_all())
+        self.assertFalse(usermain.has_option('Indent', 'use-spaces'))
+        self.assertEqual(changes, self.empty)
 
-    # TODO: test that save_all calls usercfg Saves.
+    def test_save_all_saves_files(self):
+        eq = self.assertEqual
+        changes = self.changes
+        for config in testcfg.values():
+            config.Save = Func()
+        try:
+            # 'main', 'highlight' and 'keys' are saved even if unchanged.
+            self.assertFalse(changes.save_all())
+            eq([testcfg[cfgtype].Save.called
+                for cfgtype in ('main', 'highlight', 'keys', 'extensions')],
+               [1, 1, 1, 0])
+            # A changed configuration type is saved too.
+            changes.add_option('extensions', 'Esec', 'eitem', 'eval')
+            self.assertTrue(changes.save_all())
+            eq(testcfg['extensions'].Save.called, 1)
+        finally:
+            for config in testcfg.values():
+                del config.Save
+            userextn.remove_section('Esec')
 
     def test_delete_section(self):
         changes = self.load()

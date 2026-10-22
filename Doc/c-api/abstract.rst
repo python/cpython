@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _abstract:
 
@@ -18,9 +18,9 @@ but whose items have not been set to some non-\ ``NULL`` value yet.
 .. toctree::
 
    object.rst
+   call.rst
    number.rst
    sequence.rst
    mapping.rst
    iter.rst
    buffer.rst
-   objbuffer.rst

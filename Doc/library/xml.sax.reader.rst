@@ -1,11 +1,8 @@
-:mod:`xml.sax.xmlreader` --- Interface for XML parsers
-======================================================
+:mod:`!xml.sax.xmlreader` --- Interface for XML parsers
+=======================================================
 
 .. module:: xml.sax.xmlreader
    :synopsis: Interface which SAX-compliant XML parsers must implement.
-
-.. moduleauthor:: Lars Marius Garshol <larsga@garshol.priv.no>
-.. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
 
 **Source code:** :source:`Lib/xml/sax/xmlreader.py`
 
@@ -102,12 +99,16 @@ The :class:`XMLReader` interface supports the following methods:
 
    Process an input source, producing SAX events. The *source* object can be a
    system identifier (a string identifying the input source -- typically a file
-   name or a URL), a file-like object, or an :class:`InputSource` object. When
+   name or a URL), a :class:`pathlib.Path` or :term:`path-like <path-like object>`
+   object, or an :class:`InputSource` object. When
    :meth:`parse` returns, the input is completely processed, and the parser object
    can be discarded or reset.
 
    .. versionchanged:: 3.5
       Added support of character streams.
+
+   .. versionchanged:: 3.8
+      Added support of path-like objects.
 
 
 .. method:: XMLReader.getContentHandler()
@@ -213,6 +214,15 @@ Instances of :class:`IncrementalParser` offer the following additional methods:
    Assume the end of the document. That will check well-formedness conditions that
    can be checked only at the end, invoke handlers, and may clean up resources
    allocated during parsing.
+
+
+.. method:: IncrementalParser.prepareParser(source)
+
+   Prepare the parser for parsing *source*, an
+   :class:`InputSource` instance.
+   It is called by :meth:`~XMLReader.parse` before feeding the data.
+   The parser implementation must override this method;
+   the default implementation raises :exc:`NotImplementedError`.
 
 
 .. method:: IncrementalParser.reset()

@@ -3,9 +3,12 @@ A library of useful helper classes to the SAX classes, for the
 convenience of application and driver writers.
 """
 
-import os, urllib.parse, urllib.request
-import io
 import codecs
+import io
+import os
+import sys
+lazy import urllib.parse
+lazy import urllib.request
 from . import handler
 from . import xmlreader
 
@@ -56,8 +59,7 @@ def quoteattr(data, entities={}):
     the optional entities parameter.  The keys and values must all be
     strings; each key will be replaced with its corresponding value.
     """
-    entities = entities.copy()
-    entities.update({'\n': '&#10;', '\r': '&#13;', '\t':'&#9;'})
+    entities = {**entities, '\n': '&#10;', '\r': '&#13;', '\t':'&#9;'}
     data = escape(data, entities)
     if '"' in data:
         if "'" in data:
@@ -71,7 +73,6 @@ def quoteattr(data, entities={}):
 
 def _gettextwriter(out, encoding):
     if out is None:
-        import sys
         return sys.stdout
 
     if isinstance(out, io.TextIOBase):
@@ -111,6 +112,7 @@ def _gettextwriter(out, encoding):
                             write_through=True)
 
 class XMLGenerator(handler.ContentHandler):
+    """Content handler which writes the events back as an XML document."""
 
     def __init__(self, out=None, encoding="iso-8859-1", short_empty_elements=False):
         handler.ContentHandler.__init__(self)
@@ -187,9 +189,9 @@ class XMLGenerator(handler.ContentHandler):
 
         for prefix, uri in self._undeclared_ns_maps:
             if prefix:
-                self._write(' xmlns:%s="%s"' % (prefix, uri))
+                self._write(' xmlns:%s=%s' % (prefix, quoteattr(uri)))
             else:
-                self._write(' xmlns="%s"' % uri)
+                self._write(' xmlns=%s' % quoteattr(uri))
         self._undeclared_ns_maps = []
 
         for (name, value) in attrs.items():
@@ -340,6 +342,8 @@ def prepare_input_source(source, base=""):
     """This function takes an InputSource and an optional base URL and
     returns a fully resolved InputSource object ready for reading."""
 
+    if isinstance(source, os.PathLike):
+        source = os.fspath(source)
     if isinstance(source, str):
         source = xmlreader.InputSource(source)
     elif hasattr(source, "read"):

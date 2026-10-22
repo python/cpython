@@ -30,7 +30,8 @@ This avoids all the overhead of SAX and pulldom to gain performance.
 from xml.dom import xmlbuilder, minidom, Node
 from xml.dom import EMPTY_NAMESPACE, EMPTY_PREFIX, XMLNS_NAMESPACE
 from xml.parsers import expat
-from xml.dom.minidom import _append_child, _set_attribute_node
+from xml.dom.minidom import (_append_child, _set_attribute_node,
+                            _XML_WHITESPACE)
 from xml.dom.NodeFilter import NodeFilter
 
 TEXT_NODE = Node.TEXT_NODE
@@ -159,7 +160,6 @@ class ExpatBuilder:
             self._intern_setdefault = self._parser.intern.setdefault
             self._parser.buffer_text = True
             self._parser.ordered_attributes = True
-            self._parser.specified_attributes = True
             self.install(self._parser)
         return self._parser
 
@@ -200,15 +200,12 @@ class ExpatBuilder:
         parser = self.getParser()
         first_buffer = True
         try:
-            while 1:
-                buffer = file.read(16*1024)
-                if not buffer:
-                    break
-                parser.Parse(buffer, 0)
+            while buffer := file.read(16*1024):
+                parser.Parse(buffer, False)
                 if first_buffer and self.document.documentElement:
                     self._setup_subset(buffer)
                 first_buffer = False
-            parser.Parse("", True)
+            parser.Parse(b"", True)
         except ParseEscape:
             pass
         doc = self.document
@@ -355,11 +352,13 @@ class ExpatBuilder:
         self.curNode = node
 
         if attributes:
+            specified = self.getParser().GetSpecifiedAttributeCount()
             for i in range(0, len(attributes), 2):
                 a = minidom.Attr(attributes[i], EMPTY_NAMESPACE,
                                  None, EMPTY_PREFIX)
                 value = attributes[i+1]
                 a.value = value
+                a.specified = i < specified
                 a.ownerDocument = self.document
                 _set_attribute_node(node, a)
 
@@ -415,7 +414,8 @@ class ExpatBuilder:
         # whitespace.
         L = []
         for child in node.childNodes:
-            if child.nodeType == TEXT_NODE and not child.data.strip():
+            if (child.nodeType == TEXT_NODE
+                    and not child.data.strip(_XML_WHITESPACE)):
                 L.append(child)
 
         # Remove ignorable whitespace from the tree.
@@ -637,7 +637,7 @@ class FragmentBuilder(ExpatBuilder):
         nsattrs = self._getNSattrs() # get ns decls from node's ancestors
         document = _FRAGMENT_BUILDER_TEMPLATE % (ident, subset, nsattrs)
         try:
-            parser.Parse(document, 1)
+            parser.Parse(document, True)
         except:
             self.reset()
             raise
@@ -697,7 +697,7 @@ class FragmentBuilder(ExpatBuilder):
             self.fragment = self.document.createDocumentFragment()
             self.curNode = self.fragment
             try:
-                parser.Parse(self._source, 1)
+                parser.Parse(self._source, True)
             finally:
                 self.curNode = old_cur_node
                 self.document = old_document
@@ -763,6 +763,7 @@ class Namespaces:
             node._ensure_attributes()
             _attrs = node._attrs
             _attrsNS = node._attrsNS
+            specified = self.getParser().GetSpecifiedAttributeCount()
             for i in range(0, len(attributes), 2):
                 aname = attributes[i]
                 value = attributes[i+1]
@@ -778,6 +779,7 @@ class Namespaces:
                     _attrsNS[(EMPTY_NAMESPACE, aname)] = a
                 a.ownerDocument = self.document
                 a.value = value
+                a.specified = i < specified
                 a.ownerElement = node
 
     if __debug__:

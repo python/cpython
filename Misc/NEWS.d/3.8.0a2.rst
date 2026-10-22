@@ -4,7 +4,7 @@
 .. release date: 2019-02-25
 .. section: Core and Builtins
 
-Raise a :exc:`SyntaxError` when assigning a value to `__debug__` with the
+Raise a :exc:`SyntaxError` when assigning a value to ``__debug__`` with the
 Assignment Operator. Contributed by Stéphane Wirtel and Pablo Galindo.
 
 ..
@@ -24,7 +24,7 @@ updated, there was an unnecessary call to update slots.
 .. nonce: oLhL2v
 .. section: Core and Builtins
 
-The error message emmited when returning invalid types from ``__fspath__``
+The error message emitted when returning invalid types from ``__fspath__``
 in interfaces that allow passing :class:`~os.PathLike` objects has been
 improved and now it does explain the origin of the error.
 
@@ -202,7 +202,7 @@ the mean and standard deviation of measurement data as single entity.
 .. nonce: V88MCD
 .. section: Library
 
-Added statistics.fmean() as a faster, floating point variant of the existing
+Added statistics.fmean() as a faster, floating-point variant of the existing
 mean() function.
 
 ..
@@ -356,7 +356,7 @@ Add *headers* optional keyword-only parameter to
 .. section: Library
 
 Fix C implementation of pickle.loads to use importlib's locking mechanisms,
-and thereby avoid using partially-loaded modules. Patch by Tim Burgess.
+and thereby avoid using partially loaded modules. Patch by Tim Burgess.
 
 ..
 

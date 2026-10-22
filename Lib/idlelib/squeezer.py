@@ -6,7 +6,7 @@ Worse, this can cause IDLE to become very slow, even to the point of being
 completely unusable.
 
 This extension will automatically replace long texts with a small button.
-Double-cliking this button will remove it and insert the original text instead.
+Double-clicking this button will remove it and insert the original text instead.
 Middle-clicking will copy the text to the clipboard. Right-clicking will open
 the text in a separate viewing window.
 
@@ -15,11 +15,9 @@ output written to the standard error stream ("stderr"), such as exception
 messages and their tracebacks.
 """
 import re
-import weakref
 
 import tkinter as tk
-from tkinter.font import Font
-import tkinter.messagebox as tkMessageBox
+from tkinter import messagebox
 
 from idlelib.config import idleConf
 from idlelib.textview import view_text
@@ -149,7 +147,7 @@ class ExpandingButton(tk.Button):
         if self.is_dangerous is None:
             self.set_is_dangerous()
         if self.is_dangerous:
-            confirm = tkMessageBox.askokcancel(
+            confirm = messagebox.askokcancel(
                 title="Expand huge output?",
                 message="\n\n".join([
                     "The squeezed output is very long: %d lines, %d chars.",
@@ -157,13 +155,15 @@ class ExpandingButton(tk.Button):
                     "It is recommended to view or copy the output instead.",
                     "Really expand?"
                 ]) % (self.numoflines, len(self.s)),
-                default=tkMessageBox.CANCEL,
+                default=messagebox.CANCEL,
                 parent=self.text)
             if not confirm:
                 return "break"
 
-        self.base_text.insert(self.text.index(self), self.s, self.tags)
+        index = self.text.index(self)
+        self.base_text.insert(index, self.s, self.tags)
         self.base_text.delete(self)
+        self.editwin.on_squeezed_expand(index, self.s, self.tags)
         self.squeezer.expandingbuttons.remove(self)
 
     def copy(self, event=None):
@@ -203,8 +203,6 @@ class Squeezer:
     This avoids IDLE's shell slowing down considerably, and even becoming
     completely unresponsive, when very long outputs are written.
     """
-    _instance_weakref = None
-
     @classmethod
     def reload(cls):
         """Load class variables from config."""
@@ -212,14 +210,6 @@ class Squeezer:
             "main", "PyShell", "auto-squeeze-min-lines",
             type="int", default=50,
         )
-
-        # Loading the font info requires a Tk root. IDLE doesn't rely
-        # on Tkinter's "default root", so the instance will reload
-        # font info using its editor windows's Tk root.
-        if cls._instance_weakref is not None:
-            instance = cls._instance_weakref()
-            if instance is not None:
-                instance.load_font()
 
     def __init__(self, editwin):
         """Initialize settings for Squeezer.
@@ -240,9 +230,6 @@ class Squeezer:
         # actually a wrapper for the actual Text widget. Squeezer,
         # however, needs to make such changes.
         self.base_text = editwin.per.bottom
-
-        Squeezer._instance_weakref = weakref.ref(self)
-        self.load_font()
 
         # Twice the text widget's border width and internal padding;
         # pre-calculated here for the get_line_width() method.
@@ -298,31 +285,12 @@ class Squeezer:
 
         Tabs are considered tabwidth characters long.
         """
-        linewidth = self.get_line_width()
-        return count_lines_with_wrapping(s, linewidth)
+        return count_lines_with_wrapping(s, self.editwin.width)
 
-    def get_line_width(self):
-        # The maximum line length in pixels: The width of the text
-        # widget, minus twice the border width and internal padding.
-        linewidth_pixels = \
-            self.base_text.winfo_width() - self.window_width_delta
+    def squeeze_current_text(self):
+        """Squeeze the text block where the insertion cursor is.
 
-        # Divide the width of the Text widget by the font width,
-        # which is taken to be the width of '0' (zero).
-        # http://www.tcl.tk/man/tcl8.6/TkCmd/text.htm#M21
-        return linewidth_pixels // self.zero_char_width
-
-    def load_font(self):
-        text = self.base_text
-        self.zero_char_width = \
-            Font(text, font=text.cget('font')).measure('0')
-
-    def squeeze_current_text_event(self, event):
-        """squeeze-current-text event handler
-
-        Squeeze the block of text inside which contains the "insert" cursor.
-
-        If the insert cursor is not in a squeezable block of text, give the
+        If the cursor is not in a squeezable block of text, give the
         user a small warning and do nothing.
         """
         # Set tag_name to the first valid tag found on the "insert" cursor.
