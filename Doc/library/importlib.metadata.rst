@@ -736,50 +736,53 @@ The ``DatabaseDistribution`` may also provide other metadata files, like
 ``RECORD`` (required for :attr:`!Distribution.files`) or override the
 implementation of :attr:`!Distribution.files`. See the source for more inspiration.
 
-Because ``DatabaseDistribution`` derives from :class:`Distribution` as defined
-here, consumers that use the :pypi:`importlib_metadata` backport instead of
-this module receive objects from a hierarchy they do not expect. See
-:ref:`metadata-backport-caveats`.
+``DatabaseDistribution`` derives from :class:`Distribution` as defined here,
+which has consequences for consumers that use the :pypi:`importlib_metadata`
+backport instead of this module. See :ref:`metadata-backport-providers`.
+
 
 .. _metadata-backport-caveats:
 
 Caveats for backports
----------------------
+=====================
 
 The :pypi:`importlib_metadata` package backports this module and supplies its
 own :class:`!Distribution`, :class:`!PackagePath`, and metadata classes. Those
 classes are separate from the ones in :mod:`!importlib.metadata`; neither set
-derives from the other.
+derives from the other. Both libraries discover distributions by querying the
+finders on :data:`sys.meta_path`, so one custom provider serves consumers of
+both and has no say in which of the two a given consumer uses.
 
-A custom provider has no say in which of the two a consumer uses. Both
-libraries discover distributions by querying the finders on
-:data:`sys.meta_path`, so a single provider installed there serves both. A
-consumer calling ``importlib_metadata.distributions()`` expects that package's
-objects, but a provider deriving from the :class:`Distribution` class
-documented here supplies objects from the other hierarchy.
+For consumers
+-------------
 
-The backport settles most of this on the consumer's behalf, substituting its
-own class for each object it recognizes, such as a :class:`!PathDistribution`,
-a :class:`PackagePath`, or an :class:`email.message.Message`. It has no way to
-reconstruct an arbitrary :class:`Distribution` subclass from a custom
-provider, so it passes such an object through unchanged. That serves the
-consumer as long as the object presents the whole interface; where the class
-omits a member the interface requires, the backport emits a
-:exc:`UserWarning` naming what is missing.
+A consumer calling ``importlib_metadata.distributions()`` expects that
+package's objects, but a custom provider may supply objects from the hierarchy
+documented here. The backport settles most of this on the consumer's behalf,
+substituting its own class for each object it recognizes, such as a
+:class:`!PathDistribution`, a :class:`PackagePath`, or an
+:class:`email.message.Message`. It has no way to reconstruct an arbitrary
+:class:`Distribution` subclass from a custom provider, so it passes such an
+object through unchanged.
 
-So, when writing a custom provider:
+Rely on an object satisfying the interface rather than on its type, and do not
+test it with :func:`isinstance` against a concrete class. The backport
+publishes ``IDistribution``, ``IPackagePath``, and ``PackageMetadata``
+protocols for this purpose, which the classes of both libraries satisfy.
+Import them from the backport; this module does not present them yet.
 
-* Supply objects that present the whole interface, not part of it. Deriving
-  from :class:`Distribution`, as the example above does, achieves this: the
-  base class builds the rest of the interface on
-  :meth:`~Distribution.read_text` and :meth:`~Distribution.locate_file`, and
-  such a provider draws no warning. A provider that assembles its objects
-  some other way supplies every member itself.
-* Where the provider itself consumes metadata, and in the guidance offered to
-  its users, rely on the object satisfying that interface rather than on its
-  type. The backport publishes ``IDistribution``, ``IPackagePath``, and
-  ``PackageMetadata`` protocols for this purpose, which both its classes and
-  the ones documented here satisfy.
+.. _metadata-backport-providers:
+
+For custom providers
+--------------------
+
+A provider's objects reach consumers of both libraries, so supply objects that
+present the whole interface, not part of it. Deriving from
+:class:`Distribution`, as the example above does, achieves this: the base
+class builds the rest of the interface on :meth:`~Distribution.read_text` and
+:meth:`~Distribution.locate_file`. Where a class omits a member the interface
+requires, the backport emits a :exc:`UserWarning` naming what is missing; a
+provider presenting the whole interface draws no warning.
 
 Deriving from whichever of the two libraries happens to be importable is not a
 general answer. A provider cannot know whether a consumer will import the
