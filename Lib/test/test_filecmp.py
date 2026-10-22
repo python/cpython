@@ -95,6 +95,7 @@ class FileCompareTestCase(unittest.TestCase):
         res2 = filecmp.cmp(self.name, self.name_same, shallow=False)
         self.assertTrue(res2)
 
+
 class DirCompareTestCase(unittest.TestCase):
     def setUp(self):
         tmpdir = tempfile.gettempdir()
