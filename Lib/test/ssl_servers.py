@@ -14,7 +14,7 @@ from test.support import socket_helper
 here = os.path.dirname(__file__)
 
 HOST = socket_helper.HOST
-CERTFILE = os.path.join(here, 'keycert.pem')
+CERTFILE = os.path.join(here, 'certdata', 'keycert.pem')
 
 # This one's based on HTTPServer, which is based on socketserver
 
@@ -61,7 +61,7 @@ class RootedHTTPRequestHandler(SimpleHTTPRequestHandler):
 
         """
         # abandon query parameters
-        path = urllib.parse.urlparse(path)[2]
+        path = urllib.parse.urlparse(path).path
         path = os.path.normpath(urllib.parse.unquote(path))
         words = path.split('/')
         words = filter(None, words)

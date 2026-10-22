@@ -13,20 +13,6 @@ extern "C" {
 #include "pycore_global_strings.h"  // _Py_DECLARE_STR()
 #include "pycore_pyarena.h"         // PyArena
 
-
-#ifdef Py_DEBUG
-#define _PYPEGEN_NSTATISTICS 2000
-#endif
-
-struct _parser_runtime_state {
-#ifdef Py_DEBUG
-    long memo_statistics[_PYPEGEN_NSTATISTICS];
-#else
-    int _not_used;
-#endif
-    struct _expr dummy_name;
-};
-
 _Py_DECLARE_STR(empty, "")
 #define _parser_runtime_state_INIT \
     { \
@@ -41,12 +27,17 @@ _Py_DECLARE_STR(empty, "")
         }, \
     }
 
+/* The caller must initialize *incomplete to NULL if supplied. A returned AST
+   can also return an owned exception there for a missing line terminator.
+   Validate the AST before reporting that exception. */
 extern struct _mod* _PyParser_ASTFromString(
     const char *str,
     PyObject* filename,
     int mode,
     PyCompilerFlags *flags,
-    PyArena *arena);
+    PyArena *arena,
+    PyObject *module,
+    PyObject **incomplete);
 
 extern struct _mod* _PyParser_ASTFromFile(
     FILE *fp,
@@ -58,7 +49,17 @@ extern struct _mod* _PyParser_ASTFromFile(
     PyCompilerFlags *flags,
     int *errcode,
     PyArena *arena);
-
+extern struct _mod* _PyParser_InteractiveASTFromFile(
+    FILE *fp,
+    PyObject *filename_ob,
+    const char *enc,
+    int mode,
+    const char *ps1,
+    const char *ps2,
+    PyCompilerFlags *flags,
+    int *errcode,
+    PyObject **interactive_src,
+    PyArena *arena);
 
 #ifdef __cplusplus
 }

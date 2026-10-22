@@ -28,12 +28,25 @@ def recursive_repr(fillvalue='...'):
         wrapper.__doc__ = getattr(user_function, '__doc__')
         wrapper.__name__ = getattr(user_function, '__name__')
         wrapper.__qualname__ = getattr(user_function, '__qualname__')
-        wrapper.__annotations__ = getattr(user_function, '__annotations__', {})
+        wrapper.__annotate__ = getattr(user_function, '__annotate__', None)
+        wrapper.__type_params__ = getattr(user_function, '__type_params__', ())
+        wrapper.__wrapped__ = user_function
         return wrapper
 
     return decorating_function
 
 class Repr:
+    _lookup = {
+        'tuple': 'builtins',
+        'list': 'builtins',
+        'array': 'array',
+        'set': 'builtins',
+        'frozenset': 'builtins',
+        'deque': 'collections',
+        'dict': 'builtins',
+        'str': 'builtins',
+        'int': 'builtins'
+    }
 
     def __init__(
         self, *, maxlevel=6, maxtuple=6, maxlist=6, maxarray=5, maxdict=4,
@@ -58,14 +71,24 @@ class Repr:
         return self.repr1(x, self.maxlevel)
 
     def repr1(self, x, level):
-        typename = type(x).__name__
+        cls = type(x)
+        typename = cls.__name__
+
         if ' ' in typename:
             parts = typename.split()
             typename = '_'.join(parts)
-        if hasattr(self, 'repr_' + typename):
-            return getattr(self, 'repr_' + typename)(x, level)
-        else:
-            return self.repr_instance(x, level)
+
+        method = getattr(self, 'repr_' + typename, None)
+        if method:
+            # not defined in this class
+            if typename not in self._lookup:
+                return method(x, level)
+            module = getattr(cls, '__module__', None)
+            # defined in this class and is the module intended
+            if module == self._lookup[typename]:
+                return method(x, level)
+
+        return self.repr_instance(x, level)
 
     def _join(self, pieces, level):
         if self.indent is None:
@@ -158,7 +181,22 @@ class Repr:
         return s
 
     def repr_int(self, x, level):
-        s = builtins.repr(x) # XXX Hope this isn't too slow...
+        try:
+            s = builtins.repr(x)
+        except ValueError as exc:
+            assert 'sys.set_int_max_str_digits()' in str(exc)
+            # Those imports must be deferred due to Python's build system
+            # where the reprlib module is imported before the math module.
+            import math, sys
+            # Integers with more than sys.get_int_max_str_digits() digits
+            # are rendered differently as their repr() raises a ValueError.
+            # See https://github.com/python/cpython/issues/135487.
+            k = 1 + int(math.log10(abs(x)))
+            # Note: math.log10(abs(x)) may be overestimated or underestimated,
+            # but for simplicity, we do not compute the exact number of digits.
+            max_digits = sys.get_int_max_str_digits()
+            return (f'<{x.__class__.__name__} instance with roughly {k} '
+                    f'digits (limit at {max_digits}) at 0x{id(x):x}>')
         if len(s) > self.maxlong:
             i = max(0, (self.maxlong-3)//2)
             j = max(0, self.maxlong-3-i)

@@ -1,6 +1,16 @@
 Intro
 =====
 
+**************************************************************************
+Note: this document was written long ago, before PEP 442 (safe object
+finalization) was implemented.  While that has changed some things, this
+document is still mostly accurate. Just note that the rules being discussed
+here apply to the unreachable set of objects *after* non-legacy finalizers
+have been called.  Also, the clearing of weakrefs has been changed to happen
+later in the collection (after running finalizers but before tp_clear is
+called).
+**************************************************************************
+
 The basic rule for dealing with weakref callbacks (and __del__ methods too,
 for that matter) during cyclic gc:
 

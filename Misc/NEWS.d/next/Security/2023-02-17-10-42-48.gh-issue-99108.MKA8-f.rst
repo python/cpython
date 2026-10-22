@@ -1,2 +1,0 @@
-Replace builtin hashlib implementations of MD5 and SHA1 with verified ones
-from the HACL* project.

@@ -414,9 +414,9 @@ DECODER(hz)
         Py_UCS4 decoded;
 
         if (c == '~') {
+            REQUIRE_INBUF(2);
             unsigned char c2 = INBYTE2;
 
-            REQUIRE_INBUF(2);
             if (c2 == '~' && state->c[CN_STATE_OFFSET] == 0)
                 OUTCHAR('~');
             else if (c2 == '{' && state->c[CN_STATE_OFFSET] == 0)
@@ -453,14 +453,14 @@ DECODER(hz)
 }
 
 
-BEGIN_MAPPINGS_LIST
+BEGIN_MAPPINGS_LIST(4)
   MAPPING_DECONLY(gb2312)
   MAPPING_DECONLY(gbkext)
   MAPPING_ENCONLY(gbcommon)
   MAPPING_ENCDEC(gb18030ext)
 END_MAPPINGS_LIST
 
-BEGIN_CODECS_LIST
+BEGIN_CODECS_LIST(4)
   CODEC_STATELESS(gb2312)
   CODEC_STATELESS(gbk)
   CODEC_STATELESS(gb18030)
