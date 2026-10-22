@@ -595,6 +595,90 @@ class TestInterpreterStack(IsTestBase):
         self.assertEqual(inspect.formatargvalues(args, varargs, varkw, locals),
                          '(x=11, y=14)')
 
+        def return_current_frame(x):
+            return inspect.currentframe()
+
+        self.assertEqual(inspect.formatargvalues(
+            *inspect.getargvalues(return_current_frame(5))), '(x=5)')
+        self.assertEqual(inspect.formatargvalues(
+            *inspect.getargvalues(return_current_frame(9))), '(x=9)')
+
+    # See issue-61448
+    def test_formatargvalues_deleted_args(self):
+        def fun(a, b, x, y):
+            del b, y
+            return inspect.currentframe()
+
+        args = inspect.getargvalues(fun(2, 4, 8, 16))
+        self.assertEqual(inspect.formatargvalues(*args),
+                         '(a=2, b=<deleted>, x=8, y=<deleted>)')
+
+    def test_formatargvalues_deleted_argument_kinds(self):
+        cases = (
+            ((), "(x=None, a=2, k=4, *args=(3,), **kwargs={'z': 5})"),
+            (('x',),
+             "(x=<deleted>, a=2, k=4, *args=(3,), **kwargs={'z': 5})"),
+            (('a',),
+             "(x=None, a=<deleted>, k=4, *args=(3,), **kwargs={'z': 5})"),
+            (('k',),
+             "(x=None, a=2, k=<deleted>, *args=(3,), **kwargs={'z': 5})"),
+            (('args',),
+             "(x=None, a=2, k=4, *args=<deleted>, **kwargs={'z': 5})"),
+            (('kwargs',),
+             '(x=None, a=2, k=4, *args=(3,), **kwargs=<deleted>)'),
+            (('x', 'a', 'k', 'args', 'kwargs'),
+             '(x=<deleted>, a=<deleted>, k=<deleted>, '
+             '*args=<deleted>, **kwargs=<deleted>)'),
+        )
+        for deleted, expected in cases:
+            with self.subTest(deleted=deleted):
+                def fun(x, /, a, *args, k, **kwargs):
+                    if 'x' in deleted:
+                        del x
+                    if 'a' in deleted:
+                        del a
+                    if 'k' in deleted:
+                        del k
+                    if 'args' in deleted:
+                        del args
+                    if 'kwargs' in deleted:
+                        del kwargs
+                    return inspect.currentframe()
+
+                frame = fun(None, 2, 3, k=4, z=5)
+                try:
+                    self.assertEqual(inspect.formatargvalues(
+                        *inspect.getargvalues(frame)), expected)
+                finally:
+                    frame.clear()
+
+    def test_formatargvalues_mapping_lookup(self):
+        class LookupDict(dict):
+            def __getitem__(self, name):
+                return super().__getitem__(name) + 1
+
+        for args, varargs, varkw, name in (
+            (['x'], None, None, 'x'),
+            ([], 'args', None, '*args'),
+            ([], None, 'kwargs', '**kwargs'),
+        ):
+            with self.subTest(name=name):
+                values = collections.defaultdict(lambda: 42)
+                self.assertEqual(inspect.formatargvalues(
+                    args, varargs, varkw, values), f'({name}=42)')
+                values = LookupDict({name.lstrip('*'): 5})
+                self.assertEqual(inspect.formatargvalues(
+                    args, varargs, varkw, values), f'({name}=6)')
+
+    def test_formatargvalues_deleted_custom_formatters(self):
+        self.assertEqual(inspect.formatargvalues(
+            ['x'], 'args', 'kwargs', {},
+            formatarg=lambda name: name.upper(),
+            formatvarargs=lambda name: '*' + name.upper(),
+            formatvarkw=lambda name: '**' + name.upper(),
+            formatvalue=lambda value: ':' + repr(value)),
+            '(X:<deleted>, *ARGS:<deleted>, **KWARGS:<deleted>)')
+
     def test_previous_frame(self):
         args, varargs, varkw, locals = inspect.getargvalues(mod.fr.f_back)
         self.assertEqual(args, ['a', 'b', 'c', 'd', 'e', 'f'])
@@ -3556,6 +3640,48 @@ class TestSignatureObject(unittest.TestCase):
 
         self.assertEqual(str(inspect.signature(funclike)), '(marker)')
 
+    @cpython_only
+    def test_signature_functionlike_invalid_names(self):
+        # The code object of a function-like object is not guaranteed
+        # to have valid parameter names, so they must be validated.
+        def func(a, b):
+            pass
+
+        class funclike:
+            __name__ = func.__name__
+            __code__ = func.__code__.replace(co_varnames=('a', '$b'))
+            __annotations__ = {}
+            __defaults__ = None
+            __kwdefaults__ = None
+
+            def __call__(self, *args):
+                pass
+
+        with self.assertRaisesRegex(ValueError,
+                                    'is not a valid parameter name'):
+            inspect.signature(funclike())
+
+    def test_signature_parameter_cls_subclass(self):
+        # A Signature subclass can override _parameter_cls with a
+        # Parameter subclass that has its own constructor.
+        class MyParameter(inspect.Parameter):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.extra = 'spam'
+
+        class MySignature(inspect.Signature):
+            _parameter_cls = MyParameter
+
+        def f(a, /, b=1, *args, c, d=2, **kwargs):
+            pass
+
+        sig = MySignature.from_callable(f)
+        self.assertEqual(len(sig.parameters), 6)
+        for param in sig.parameters.values():
+            self.assertIs(type(param), MyParameter)
+            self.assertEqual(param.extra, 'spam')
+        self.assertEqual(sig, inspect.signature(f))
+
     def test_signature_on_method(self):
         class Test:
             def __init__(*args):
@@ -5656,6 +5782,20 @@ class TestParameterObject(unittest.TestCase):
         self.assertEqual(param.kind, inspect.Parameter.POSITIONAL_ONLY)
         self.assertEqual(param.name, 'implicit0')
 
+    @cpython_only
+    def test_signature_from_code_unusual_names(self):
+        def f(a, b): pass
+        f.__code__ = f.__code__.replace(co_varnames=('.0', 'b'))
+        sig = inspect.signature(f)
+        self.assertEqual(list(sig.parameters), ['implicit0', 'b'])
+        self.assertEqual(sig.parameters['implicit0'].kind,
+                         inspect.Parameter.POSITIONAL_ONLY)
+
+        f.__code__ = f.__code__.replace(co_varnames=('if', 'b'))
+        with self.assertRaisesRegex(ValueError,
+                                    'is not a valid parameter name'):
+            inspect.signature(f)
+
     def test_signature_parameter_immutability(self):
         p = inspect.Parameter('spam', kind=inspect.Parameter.KEYWORD_ONLY)
 
@@ -6173,7 +6313,7 @@ class TestSignatureDefinitions(unittest.TestCase):
         needs_groups = {"range", "slice", "getattr", "next"}
         no_signature |= needs_groups
         # These have unrepresentable parameter default values of NULL
-        unsupported_signature = {"aiter", "iter", "dir", "vars"}
+        unsupported_signature = {"iter", "dir", "vars"}
         # These need *args support in Argument Clinic
         needs_varargs = {"min", "max", "__build_class__"}
         no_signature |= needs_varargs

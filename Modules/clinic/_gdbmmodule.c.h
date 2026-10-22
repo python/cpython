@@ -4,6 +4,22 @@ preserve
 
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
+
+static Py_ssize_t
+gdbm_length_impl(gdbmobject *self);
+
+static Py_ssize_t
+gdbm_length(PyObject *self)
+{
+    Py_ssize_t return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = gdbm_length_impl((gdbmobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_gdbm_gdbm_get__doc__,
 "get($self, key, default=None, /)\n"
@@ -36,6 +52,21 @@ skip_optional:
     return_value = _gdbm_gdbm_get_impl((gdbmobject *)self, key, default_value);
 
 exit:
+    return return_value;
+}
+
+static int
+gdbm_ass_sub_impl(gdbmobject *self, PyObject *v, PyObject *w);
+
+static int
+gdbm_ass_sub(PyObject *self, PyObject *v, PyObject *w)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = gdbm_ass_sub_impl((gdbmobject *)self, v, w);
+    Py_END_CRITICAL_SECTION();
+
     return return_value;
 }
 
@@ -129,6 +160,21 @@ exit:
     return return_value;
 }
 
+static int
+gdbm_contains_impl(gdbmobject *self, PyObject *arg);
+
+static int
+gdbm_contains(PyObject *self, PyObject *arg)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = gdbm_contains_impl((gdbmobject *)self, arg);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_gdbm_gdbm_firstkey__doc__,
 "firstkey($self, /)\n"
 "--\n"
@@ -193,7 +239,7 @@ _gdbm_gdbm_nextkey(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_
     if (!_PyArg_NoKwnames("nextkey", kwnames)) {
         goto exit;
     }
-    if (!_PyArg_ParseStack(args, nargs, "s#:nextkey",
+    if (!PyArg_ParseArray(args, nargs, "s#:nextkey",
         &key, &key_length)) {
         goto exit;
     }
@@ -383,13 +429,8 @@ dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("open", "argument 2", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t flags_length;
-    flags = PyUnicode_AsUTF8AndSize(args[1], &flags_length);
+    flags = _PyUnicode_AsUTF8NoNUL(args[1]);
     if (flags == NULL) {
-        goto exit;
-    }
-    if (strlen(flags) != (size_t)flags_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (nargs < 3) {
@@ -405,4 +446,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=841b16bd11ef0066 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=10c193b33298877a input=a9049054013a1b77]*/

@@ -478,8 +478,9 @@ later:
 
 /*[clinic input]
 class OrderedDict "PyODictObject *" "&PyODict_Type"
+class odictiter "PyObject *" "&PyODictIter_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ca0641cf6143d4af]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ae5599eeb14d29ae]*/
 
 
 typedef struct _odictnode _ODictNode;
@@ -1804,10 +1805,16 @@ odictiter_nextkey(odictiterobject *di)
     return res;
 }
 
+/*[clinic input]
+@critical_section
+odictiter.__next__ as odictiter_iternext
+[clinic start generated code]*/
+
 static PyObject *
-odictiter_iternext_lock_held(PyObject *op)
+odictiter_iternext_impl(PyObject *self)
+/*[clinic end generated code: output=71aef8eec9e1a133 input=bc8bec6c85481b93]*/
 {
-    odictiterobject *di = (odictiterobject*)op;
+    odictiterobject *di = (odictiterobject*)self;
     PyObject *result, *value;
     PyObject *key = odictiter_nextkey(di);  /* new reference */
 
@@ -1860,16 +1867,6 @@ error:
     Py_CLEAR(di->di_current);
     Py_CLEAR(di->di_odict);
     return NULL;
-}
-
-static PyObject *
-odictiter_iternext(PyObject *op)
-{
-    PyObject *res;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    res = odictiter_iternext_lock_held(op);
-    Py_END_CRITICAL_SECTION();
-    return res;
 }
 
 
@@ -1941,22 +1938,21 @@ odictiter_new(PyODictObject *od, int kind)
     odictiterobject *di;
     _ODictNode *node;
     int reversed = kind & _odict_ITER_REVERSED;
-
-    di = PyObject_GC_New(odictiterobject, &PyODictIter_Type);
-    if (di == NULL)
-        return NULL;
+    PyObject *result = NULL;
 
     if ((kind & _odict_ITER_ITEMS) == _odict_ITER_ITEMS) {
-        di->di_result = _PyTuple_FromPairSteal(Py_None, Py_None);
-        if (di->di_result == NULL) {
-            Py_DECREF(di);
+        result = _PyTuple_FromPairSteal(Py_None, Py_None);
+        if (result == NULL) {
             return NULL;
         }
     }
-    else {
-        di->di_result = NULL;
+    di = PyObject_GC_New(odictiterobject, &PyODictIter_Type);
+    if (di == NULL) {
+        Py_XDECREF(result);
+        return NULL;
     }
 
+    di->di_result = result;
     di->kind = kind;
     Py_BEGIN_CRITICAL_SECTION(od);
     node = reversed ? _odict_LAST(od) : _odict_FIRST(od);

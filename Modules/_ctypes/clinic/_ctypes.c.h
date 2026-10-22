@@ -5,6 +5,7 @@ preserve
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(_ctypes_CType_Type___sizeof____doc__,
 "__sizeof__($self, /)\n"
@@ -240,13 +241,8 @@ CDataType_in_dll(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ss
         _PyArg_BadArgument("in_dll", "argument 2", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t name_length;
-    name = PyUnicode_AsUTF8AndSize(args[1], &name_length);
+    name = _PyUnicode_AsUTF8NoNUL(args[1]);
     if (name == NULL) {
-        goto exit;
-    }
-    if (strlen(name) != (size_t)name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = CDataType_in_dll_impl(type, cls, dll, name);
@@ -609,7 +605,7 @@ _ctypes_PyCData___setstate__(PyObject *myself, PyObject *const *args, Py_ssize_t
     const char *data;
     Py_ssize_t data_length;
 
-    if (!_PyArg_ParseStack(args, nargs, "O!s#:__setstate__",
+    if (!PyArg_ParseArray(args, nargs, "O!s#:__setstate__",
         &PyDict_Type, &dict, &data, &data_length)) {
         goto exit;
     }
@@ -751,6 +747,36 @@ _ctypes_CFuncPtr_argtypes_get(PyObject *self, void *Py_UNUSED(context))
 }
 
 static int
+Array_ass_item_impl(PyObject *myself, Py_ssize_t index, PyObject *value);
+
+static int
+Array_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(myself);
+    return_value = Array_ass_item_impl(myself, index, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+Array_ass_subscript_impl(PyObject *myself, PyObject *item, PyObject *value);
+
+static int
+Array_ass_subscript(PyObject *myself, PyObject *item, PyObject *value)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(myself);
+    return_value = Array_ass_subscript_impl(myself, item, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
 _ctypes_Simple_value_set_impl(CDataObject *self, PyObject *value);
 
 static int
@@ -808,6 +834,21 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     }
     return Simple_from_outparm_impl(self, cls);
 }
+
+static int
+Pointer_ass_item_impl(PyObject *myself, Py_ssize_t index, PyObject *value);
+
+static int
+Pointer_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(myself);
+    return_value = Pointer_ass_item_impl(myself, index, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
 #define _CTYPES_CTYPE_TYPE___POINTER_TYPE___GETSETDEF {"__pointer_type__", (getter)_ctypes_CType_Type___pointer_type___get, (setter)_ctypes_CType_Type___pointer_type___set, NULL},
 
 #define _CTYPES_PYCARRAYTYPE_TYPE_RAW_GETSETDEF {"raw", (getter)_ctypes_PyCArrayType_Type_raw_get, (setter)_ctypes_PyCArrayType_Type_raw_set, NULL},
@@ -822,4 +863,4 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
 
 #define _CTYPES_SIMPLE_VALUE_GETSETDEF {"value", (getter)_ctypes_Simple_value_get, (setter)_ctypes_Simple_value_set, NULL},
 
-/*[clinic end generated code: output=1d81035cd8b2015d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f01123efc29f8ae0 input=a9049054013a1b77]*/

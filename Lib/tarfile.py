@@ -453,8 +453,12 @@ class _Stream:
                                          self.zlib.DEF_MEM_LEVEL,
                                          0)
         if mtime is None:
-            mtime = int(time.time())
-        timestamp = struct.pack("<L", mtime)
+            mtime = time.time()
+        # gh-133998: substitute 0 for an out-of-range mtime and coerce to int,
+        # mirroring gzip (RFC 1952), so struct.pack cannot raise struct.error.
+        if not 0 <= mtime < 2**32:
+            mtime = 0
+        timestamp = struct.pack("<L", int(mtime))
         self.__write(b"\037\213\010\010" + timestamp + b"\002\377")
         if self.name.endswith(".gz"):
             self.name = self.name[:-3]
@@ -661,13 +665,15 @@ class _FileInFile(object):
        object.
     """
 
-    def __init__(self, fileobj, offset, size, name, blockinfo=None):
+    def __init__(self, fileobj, offset, size, name, blockinfo=None,
+            exception=OSError):
         self.fileobj = fileobj
         self.offset = offset
         self.size = size
         self.position = 0
         self.name = name
         self.closed = False
+        self.exception = exception
 
         if blockinfo is None:
             blockinfo = [(0, size)]
@@ -744,7 +750,10 @@ class _FileInFile(object):
             length = min(size, stop - self.position)
             if data:
                 self.fileobj.seek(offset + (self.position - start))
-                b = self.fileobj.read(length)
+                try:
+                    b = self.fileobj.read(length)
+                except self.exception as e:
+                    raise ReadError(f"invalid compressed data: {e}") from e
                 if len(b) != length:
                     raise ReadError("unexpected end of data")
                 buf += b
@@ -767,7 +776,8 @@ class ExFileObject(io.BufferedReader):
 
     def __init__(self, tarfile, tarinfo):
         fileobj = _FileInFile(tarfile.fileobj, tarinfo.offset_data,
-                tarinfo.size, tarinfo.name, tarinfo.sparse)
+                tarinfo.size, tarinfo.name, tarinfo.sparse,
+                exception=tarfile.exception)
         super().__init__(fileobj)
 #class ExFileObject
 
@@ -1129,7 +1139,7 @@ class TarInfo(object):
         # be represented in ASCII encoding.
         for name, hname, length in (
                 ("name", "path", LENGTH_NAME), ("linkname", "linkpath", LENGTH_LINK),
-                ("uname", "uname", 32), ("gname", "gname", 32)):
+                ("uname", "uname", 31), ("gname", "gname", 31)):
 
             if hname in pax_headers:
                 # The pax header has priority.
@@ -1173,6 +1183,9 @@ class TarInfo(object):
         else:
             buf = b""
 
+        # The owner names in the base header must be NUL-terminated.
+        info["uname"] = info["uname"][:31]
+        info["gname"] = info["gname"][:31]
         return buf + self._create_header(info, USTAR_FORMAT, "ascii", "replace")
 
     @classmethod
@@ -1797,6 +1810,12 @@ class TarFile(object):
 
     fileobject = ExFileObject   # The file-object for extractfile().
 
+    exception = OSError         # The exception raised by the underlying
+                                 # fileobj.read() on corrupt compressed
+                                 # data past the header (see gzopen() etc.
+                                 # for the more specific exception types
+                                 # used by each compression format).
+
     extraction_filter = None    # The default filter for extraction.
 
     def __init__(self, name=None, mode="r", fileobj=None, format=None,
@@ -2042,6 +2061,7 @@ class TarFile(object):
 
         try:
             from gzip import GzipFile
+            import zlib
         except ImportError:
             raise CompressionError("gzip module is not available") from None
 
@@ -2064,6 +2084,7 @@ class TarFile(object):
             fileobj.close()
             raise
         t._extfileobj = False
+        t.exception = zlib.error
         return t
 
     @classmethod
@@ -2120,6 +2141,7 @@ class TarFile(object):
             fileobj.close()
             raise
         t._extfileobj = False
+        t.exception = LZMAError
         return t
 
     @classmethod
@@ -2155,6 +2177,7 @@ class TarFile(object):
             fileobj.close()
             raise
         t._extfileobj = False
+        t.exception = ZstdError
         return t
 
     # All *open() methods are registered here.
@@ -2433,11 +2456,14 @@ class TarFile(object):
             raise ValueError("fileobj not provided for non zero-size regular file")
 
         tarinfo = copy.copy(tarinfo)
-
+        # get current offset
+        tarinfo.offset = self.offset
         buf = tarinfo.tobuf(self.format, self.encoding, self.errors)
         self.fileobj.write(buf)
         self.offset += len(buf)
+        # add original offset to block size
         bufsize=self.copybufsize
+        tarinfo.offset_data = self.offset
         # If there's data to follow, append it.
         if fileobj is not None:
             copyfileobj(fileobj, self.fileobj, tarinfo.size, bufsize=bufsize)

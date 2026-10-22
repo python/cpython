@@ -1258,6 +1258,9 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
             goto done;
         }
         tmp = PyUnicode_FromOrdinal(x);
+        if (tmp == NULL) {
+            goto done;
+        }
         inumeric_chars = 0;
         n_digits = 1;
         maxchar = Py_MAX(maxchar, (Py_UCS4)x);
@@ -1349,6 +1352,7 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
     if (n_total == -1) {
         goto done;
     }
+    assert(n_total >= 1);
 
     /* Allocate the memory. */
     if (_PyUnicodeWriter_Prepare(writer, n_total, maxchar) == -1)
@@ -1503,6 +1507,7 @@ format_float_internal(PyObject *value,
     if (n_total == -1) {
         goto done;
     }
+    assert(n_total >= 1);
 
     /* Allocate the memory. */
     if (_PyUnicodeWriter_Prepare(writer, n_total, maxchar) == -1)
@@ -1714,6 +1719,7 @@ format_complex_internal(PyObject *value,
     /* Add 1 for the 'j', and optionally 2 for parens. */
     calc_padding(n_re_total + n_im_total + 1 + add_parens * 2,
                  format->width, format->align, &lpad, &rpad, &total);
+    assert(total >= 1);
 
     if (lpad || rpad)
         maxchar = Py_MAX(maxchar, format->fill_char);

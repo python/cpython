@@ -1,0 +1,2 @@
+:mod:`ctypes` data types now set :meth:`~object.__hash__` to ``None``, so
+:class:`collections.abc.Hashable` checks report them correctly.

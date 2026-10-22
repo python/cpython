@@ -110,7 +110,7 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionadded:: 3.10
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *stop_value* and *stop_exception* parameters.
 
 .. function:: all(iterable, /)
@@ -1241,7 +1241,7 @@ are always available.  They are listed here in alphabetical order.
       for item in iter(input_queue.get_nowait, stop_exception=queue.Empty):
           process_item(item)
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *stop_exception* parameter
       and allowed passing *stop_value* by keyword.
 

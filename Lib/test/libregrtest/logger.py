@@ -29,11 +29,12 @@ class Logger:
         if self.get_mem_usage is not None:
             mem = self.get_mem_usage()
             if mem:
-                mib = mem / (1024*1024)
-                if mib >= 1024:
-                    line = f"mem: {mib / 1024:.1f} GiB {line}"
-                else:
-                    line = f"mem: {mib:.1f} MiB {line}"
+                qty = mem / (1024*1024)
+                unit = 'MiB'
+                if qty >= 1024:
+                    qty = qty / 1024
+                    unit = 'GiB'
+                line = f"mem: {qty:6.1f} {unit} {line}"
 
         # Add the system load prefix: "load avg: 1.80 "
         load_avg = self.get_load_avg()
