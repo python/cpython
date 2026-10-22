@@ -1513,7 +1513,9 @@ done:
         if (begidx == NULL || endidx == NULL) {
             Py_XDECREF(begidx);
             Py_XDECREF(endidx);
-            PyErr_Clear();
+            PyErr_FormatUnraisable("Exception ignored while preparing "
+                                   "readline completion");
+            rl_attempted_completion_over = 1;
             PyGILState_Release(gilstate);
             return NULL;
         }

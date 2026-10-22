@@ -1229,8 +1229,11 @@ dtrace_function_entry(_PyInterpreterFrame *frame)
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
     PyErr_SetRaisedException(exc);
-    if (filename == NULL || funcname == NULL) {
-        return;
+    if (filename == NULL) {
+        filename = "<unknown>";
+    }
+    if (funcname == NULL) {
+        funcname = "<unknown>";
     }
     lineno = PyUnstable_InterpreterFrame_GetLine(frame);
 
@@ -1249,8 +1252,11 @@ dtrace_function_return(_PyInterpreterFrame *frame)
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
     PyErr_SetRaisedException(exc);
-    if (filename == NULL || funcname == NULL) {
-        return;
+    if (filename == NULL) {
+        filename = "<unknown>";
+    }
+    if (funcname == NULL) {
+        funcname = "<unknown>";
     }
     lineno = PyUnstable_InterpreterFrame_GetLine(frame);
 
