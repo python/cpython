@@ -24,7 +24,6 @@ import unittest
 import sqlite3 as sqlite
 from contextlib import contextmanager
 
-from test.support import LOOPBACK_TIMEOUT
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok
 
@@ -32,15 +31,14 @@ from .util import memory_database
 from .util import MemoryDatabaseMixin
 
 
-TIMEOUT = LOOPBACK_TIMEOUT / 10
-
-
 class TransactionTests(unittest.TestCase):
     def setUp(self):
-        self.con1 = sqlite.connect(TESTFN, timeout=TIMEOUT)
+        # We can disable the busy handlers, since we control
+        # the order of SQLite C API operations.
+        self.con1 = sqlite.connect(TESTFN, timeout=0)
         self.cur1 = self.con1.cursor()
 
-        self.con2 = sqlite.connect(TESTFN, timeout=TIMEOUT)
+        self.con2 = sqlite.connect(TESTFN, timeout=0)
         self.cur2 = self.con2.cursor()
 
     def tearDown(self):
@@ -120,10 +118,8 @@ class TransactionTests(unittest.TestCase):
             self.cur2.execute("insert into test(i) values (5)")
 
     def test_locking(self):
-        """
-        This tests the improved concurrency with pysqlite 2.3.4. You needed
-        to roll back con2 before you could commit con1.
-        """
+        # This tests the improved concurrency with pysqlite 2.3.4. You needed
+        # to roll back con2 before you could commit con1.
         self.cur1.execute("create table test(i)")
         self.cur1.execute("insert into test(i) values (5)")
         with self.assertRaises(sqlite.OperationalError):
@@ -393,10 +389,25 @@ class AutocommitAttribute(unittest.TestCase):
 
     def test_autocommit_setget_invalid(self):
         msg = "autocommit must be True, False, or.*LEGACY"
-        for mode in "a", 12, (), None:
+        for mode in "a", 12, (), None, 2**1000, -2**1000:
             with self.subTest(mode=mode):
                 with self.assertRaisesRegex(ValueError, msg):
                     sqlite.connect(":memory:", autocommit=mode)
+                with memory_database() as cx:
+                    with self.assertRaisesRegex(ValueError, msg):
+                        cx.autocommit = mode
+                    # a failed assignment does not change the value
+                    self.assertEqual(cx.autocommit,
+                                     sqlite.LEGACY_TRANSACTION_CONTROL)
+
+    def test_autocommit_delete(self):
+        with memory_database() as cx:
+            cx.autocommit = False
+            with self.assertRaisesRegex(AttributeError,
+                                        "cannot delete autocommit attribute"):
+                del cx.autocommit
+            # a failed deletion does not change the value
+            self.assertIs(cx.autocommit, False)
 
     def test_autocommit_disabled(self):
         expected = [

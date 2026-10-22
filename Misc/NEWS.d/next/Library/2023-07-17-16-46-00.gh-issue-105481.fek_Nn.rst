@@ -1,1 +1,0 @@
-The various opcode lists in the :mod:`dis` module are now generated from bytecodes.c instead of explicitly constructed in opcode.py.
