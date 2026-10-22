@@ -5182,6 +5182,26 @@ class AbstractPickleModuleTests:
 
         self.check_dumps_loads_oob_buffers(dumps, loads)
 
+    def test_load_large_from_file_without_readinto(self):
+        # gh-158841: large data is read by chunks of increasing size.
+        class BytesSubclass(bytes):
+            pass
+
+        obj = 'B' * (3 << 20)
+        for proto in range(1, pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                data = self.dumps(obj, proto)
+                self.assertEqual(self.load(MinimalIO(data)), obj)
+
+                f = MinimalIO(data)
+                f.read = lambda n, read=f.read: BytesSubclass(read(n))
+                self.assertEqual(self.load(f), obj)
+
+                f = MinimalIO(data)
+                f.read = lambda n, read=f.read: read(n // 2 if n > 1000 else n)
+                with self.assertRaises((pickle.UnpicklingError, EOFError)):
+                    self.load(f)
+
 
 class AbstractPersistentPicklerTests:
 
