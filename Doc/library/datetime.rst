@@ -180,11 +180,13 @@ Objects of the :class:`date` type are always naive.
 
 An object of type :class:`.time` or :class:`.datetime` may be aware or naive.
 
-A :class:`.datetime` object ``d`` is aware if ``d.utcoffset()`` does not return
-``None``. Otherwise, ``d`` is naive.
+A :class:`.datetime` object ``d`` is aware if
+:meth:`d.utcoffset() <datetime.utcoffset>` does not return ``None``.
+Otherwise, ``d`` is naive.
 
-A :class:`.time` object ``t`` is aware if ``t.utcoffset()`` does not return
-``None``. Otherwise, ``t`` is naive.
+A :class:`.time` object ``t`` is aware if
+:meth:`t.utcoffset() <time.utcoffset>` does not return ``None``.
+Otherwise, ``t`` is naive.
 
 The distinction between aware and naive doesn't apply to :class:`timedelta`
 objects.
