@@ -1,0 +1,4 @@
+Fix a regression where attribute access on a :class:`types.ModuleType`
+subclass could bypass a data descriptor defined on the subclass. The
+``LOAD_ATTR_MODULE`` specialization guarded on ``tp_getattro``, which
+subclasses inherit, and then read the module dictionary directly.
