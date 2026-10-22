@@ -832,9 +832,9 @@ class StreamReaderTruncationBug(unittest.TestCase):
 
 class PunycodeIncrementalBug(unittest.TestCase):
     """The punycode incremental codecs encode and decode each chunk on its
-    own, so anything fed in more than one piece comes out wrong (noted in
-    passing in gh-64331).  Punycode is left out of the chunked tests above
-    as a whole-string codec."""
+    own, so anything fed in more than one piece comes out wrong
+    (gh-160308).  Punycode is left out of the chunked tests above as a
+    whole-string codec."""
 
     # Two non-empty ASCII chunks give two "-" terminated labels where the
     # whole string gives one.
