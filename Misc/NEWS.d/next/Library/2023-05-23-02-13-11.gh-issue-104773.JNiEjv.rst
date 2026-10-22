@@ -1,2 +1,0 @@
-:pep:`594`: Remove the :mod:`!imghdr` module, deprecated in Python 3.11.
-Patch by Victor Stinner.

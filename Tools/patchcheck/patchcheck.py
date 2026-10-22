@@ -1,29 +1,25 @@
 #!/usr/bin/env python3
 """Check proposed changes for common issues."""
-import re
 import sys
-import shutil
 import os.path
 import subprocess
 import sysconfig
 
-import reindent
-import untabify
+
+def get_python_source_dir():
+    src_dir = sysconfig.get_config_var('abs_srcdir')
+    if not src_dir:
+        src_dir = sysconfig.get_config_var('srcdir')
+    return os.path.abspath(src_dir)
 
 
-# Excluded directories which are copies of external libraries:
-# don't check their coding style
-EXCLUDE_DIRS = [
-    os.path.join('Modules', '_decimal', 'libmpdec'),
-    os.path.join('Modules', 'expat'),
-    os.path.join('Modules', 'zlib'),
-    ]
-SRCDIR = sysconfig.get_config_var('srcdir')
+SRCDIR = get_python_source_dir()
 
 
 def n_files_str(count):
     """Return 'N file(s)' with the proper plurality on 'file'."""
-    return "{} file{}".format(count, "s" if count != 1 else "")
+    s = "s" if count != 1 else ""
+    return f"{count} file{s}"
 
 
 def status(message, modal=False, info=None):
@@ -57,19 +53,43 @@ def get_git_branch():
 
 
 def get_git_upstream_remote():
-    """Get the remote name to use for upstream branches
-
-    Uses "upstream" if it exists, "origin" otherwise
     """
-    cmd = "git remote get-url upstream".split()
-    try:
-        subprocess.check_output(cmd,
-                                stderr=subprocess.DEVNULL,
-                                cwd=SRCDIR,
-                                encoding='UTF-8')
-    except subprocess.CalledProcessError:
-        return "origin"
-    return "upstream"
+    Get the remote name to use for upstream branches
+
+    Check for presence of "https://github.com/python/cpython" remote URL.
+    If only one is found, return that remote name. If multiple are found,
+    check for and return "upstream", "origin", or "python", in that
+    order. Raise an error if no valid matches are found.
+    """
+    cmd = "git remote -v".split()
+    output = subprocess.check_output(
+        cmd,
+        stderr=subprocess.DEVNULL,
+        cwd=SRCDIR,
+        encoding="UTF-8"
+    )
+    # Filter to desired remotes, accounting for potential uppercasing
+    filtered_remotes = {
+        remote.split("\t")[0].lower() for remote in output.split('\n')
+        if "python/cpython" in remote.lower() and remote.endswith("(fetch)")
+    }
+    if len(filtered_remotes) == 1:
+        [remote] = filtered_remotes
+        return remote
+    for remote_name in ["upstream", "origin", "python"]:
+        if remote_name in filtered_remotes:
+            return remote_name
+    remotes_found = "\n".join(
+        {remote for remote in output.split('\n') if remote.endswith("(fetch)")}
+    )
+    raise ValueError(
+        f"Patchcheck was unable to find an unambiguous upstream remote, "
+        f"with URL matching 'https://github.com/python/cpython'. "
+        f"For help creating an upstream remote, see Dev Guide: "
+        f"https://devguide.python.org/getting-started/"
+        f"git-boot-camp/#cloning-a-forked-cpython-repository "
+        f"\nRemotes found: \n{remotes_found}"
+        )
 
 
 def get_git_remote_default_branch(remote_name):
@@ -77,7 +97,7 @@ def get_git_remote_default_branch(remote_name):
 
     It is typically called 'main', but may differ
     """
-    cmd = "git remote show {}".format(remote_name).split()
+    cmd = f"git remote show {remote_name}".split()
     env = os.environ.copy()
     env['LANG'] = 'C'
     try:
@@ -147,83 +167,7 @@ def changed_files(base_branch=None):
     else:
         sys.exit('need a git checkout to get modified files')
 
-    filenames2 = []
-    for filename in filenames:
-        # Normalize the path to be able to match using .startswith()
-        filename = os.path.normpath(filename)
-        if any(filename.startswith(path) for path in EXCLUDE_DIRS):
-            # Exclude the file
-            continue
-        filenames2.append(filename)
-
-    return filenames2
-
-
-def report_modified_files(file_paths):
-    count = len(file_paths)
-    if count == 0:
-        return n_files_str(count)
-    else:
-        lines = ["{}:".format(n_files_str(count))]
-        for path in file_paths:
-            lines.append("  {}".format(path))
-        return "\n".join(lines)
-
-
-#: Python files that have tabs by design:
-_PYTHON_FILES_WITH_TABS = frozenset({
-    'Tools/c-analyzer/cpython/_parser.py',
-})
-
-
-@status("Fixing Python file whitespace", info=report_modified_files)
-def normalize_whitespace(file_paths):
-    """Make sure that the whitespace for .py files have been normalized."""
-    reindent.makebackup = False  # No need to create backups.
-    fixed = [
-        path for path in file_paths
-        if (
-            path.endswith('.py')
-            and path not in _PYTHON_FILES_WITH_TABS
-            and reindent.check(os.path.join(SRCDIR, path))
-        )
-    ]
-    return fixed
-
-
-@status("Fixing C file whitespace", info=report_modified_files)
-def normalize_c_whitespace(file_paths):
-    """Report if any C files """
-    fixed = []
-    for path in file_paths:
-        abspath = os.path.join(SRCDIR, path)
-        with open(abspath, 'r') as f:
-            if '\t' not in f.read():
-                continue
-        untabify.process(abspath, 8, verbose=False)
-        fixed.append(path)
-    return fixed
-
-
-ws_re = re.compile(br'\s+(\r?\n)$')
-
-@status("Fixing docs whitespace", info=report_modified_files)
-def normalize_docs_whitespace(file_paths):
-    fixed = []
-    for path in file_paths:
-        abspath = os.path.join(SRCDIR, path)
-        try:
-            with open(abspath, 'rb') as f:
-                lines = f.readlines()
-            new_lines = [ws_re.sub(br'\1', line) for line in lines]
-            if new_lines != lines:
-                shutil.copyfile(abspath, abspath + '.bak')
-                with open(abspath, 'wb') as f:
-                    f.writelines(new_lines)
-                fixed.append(path)
-        except Exception as err:
-            print('Cannot fix %s: %s' % (path, err))
-    return fixed
+    return list(map(os.path.normpath, filenames))
 
 
 @status("Docs modified", modal=True)
@@ -232,17 +176,12 @@ def docs_modified(file_paths):
     return bool(file_paths)
 
 
-@status("Misc/ACKS updated", modal=True)
-def credit_given(file_paths):
-    """Check if Misc/ACKS has been changed."""
-    return os.path.join('Misc', 'ACKS') in file_paths
-
-
 @status("Misc/NEWS.d updated with `blurb`", modal=True)
 def reported_news(file_paths):
     """Check if Misc/NEWS.d has been changed."""
     return any(p.startswith(os.path.join('Misc', 'NEWS.d', 'next'))
                for p in file_paths)
+
 
 @status("configure regenerated", modal=True, info=str)
 def regenerated_configure(file_paths):
@@ -252,6 +191,7 @@ def regenerated_configure(file_paths):
     else:
         return "not needed"
 
+
 @status("pyconfig.h.in regenerated", modal=True, info=str)
 def regenerated_pyconfig_h_in(file_paths):
     """Check if pyconfig.h.in has been regenerated."""
@@ -260,45 +200,15 @@ def regenerated_pyconfig_h_in(file_paths):
     else:
         return "not needed"
 
-def ci(pull_request):
-    if pull_request == 'false':
-        print('Not a pull request; skipping')
-        return
-    base_branch = get_base_branch()
-    file_paths = changed_files(base_branch)
-    python_files = [fn for fn in file_paths if fn.endswith('.py')]
-    c_files = [fn for fn in file_paths if fn.endswith(('.c', '.h'))]
-    doc_files = [fn for fn in file_paths if fn.startswith('Doc') and
-                 fn.endswith(('.rst', '.inc'))]
-    fixed = []
-    fixed.extend(normalize_whitespace(python_files))
-    fixed.extend(normalize_c_whitespace(c_files))
-    fixed.extend(normalize_docs_whitespace(doc_files))
-    if not fixed:
-        print('No whitespace issues found')
-    else:
-        print(f'Please fix the {len(fixed)} file(s) with whitespace issues')
-        print('(on UNIX you can run `make patchcheck` to make the fixes)')
-        sys.exit(1)
 
 def main():
     base_branch = get_base_branch()
     file_paths = changed_files(base_branch)
-    python_files = [fn for fn in file_paths if fn.endswith('.py')]
-    c_files = [fn for fn in file_paths if fn.endswith(('.c', '.h'))]
-    doc_files = [fn for fn in file_paths if fn.startswith('Doc') and
-                 fn.endswith(('.rst', '.inc'))]
+    has_doc_files = any(fn for fn in file_paths if fn.startswith('Doc') and
+                        fn.endswith(('.rst', '.inc')))
     misc_files = {p for p in file_paths if p.startswith('Misc')}
-    # PEP 8 whitespace rules enforcement.
-    normalize_whitespace(python_files)
-    # C rules enforcement.
-    normalize_c_whitespace(c_files)
-    # Doc whitespace enforcement.
-    normalize_docs_whitespace(doc_files)
     # Docs updated.
-    docs_modified(doc_files)
-    # Misc/ACKS changed.
-    credit_given(misc_files)
+    docs_modified(has_doc_files)
     # Misc/NEWS changed.
     reported_news(misc_files)
     # Regenerated configure, if necessary.
@@ -307,19 +217,14 @@ def main():
     regenerated_pyconfig_h_in(file_paths)
 
     # Test suite run and passed.
-    if python_files or c_files:
-        end = " and check for refleaks?" if c_files else "?"
-        print()
-        print("Did you run the test suite" + end)
+    has_c_files = any(fn for fn in file_paths if fn.endswith(('.c', '.h')))
+    has_python_files = any(fn for fn in file_paths if fn.endswith('.py'))
+    print()
+    if has_c_files:
+        print("Did you run the test suite and check for refleaks?")
+    elif has_python_files:
+        print("Did you run the test suite?")
 
 
 if __name__ == '__main__':
-    import argparse
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--ci',
-                        help='Perform pass/fail checks')
-    args = parser.parse_args()
-    if args.ci:
-        ci(args.ci)
-    else:
-        main()
+    main()
