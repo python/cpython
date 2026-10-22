@@ -3770,6 +3770,10 @@ class TestDateTime(TestDate):
             '2009-04-19T12:30:45.400 +02:30',  # Space between ms and timezone (gh-130959)
             '2009-04-19T12:30:45.400 ',        # Trailing space (gh-130959)
             '2009-04-19T12:30:45. 400',        # Space before fraction (gh-130959)
+            '2009-04-19T12:30x+05:00',         # Stray text before offset (gh-158501)
+            '2009-04-19T12:30:45 +02:00',      # Space before offset (gh-158501)
+            '2009-04-19T12:30:45.123456 junk Z',  # Stray text before Z (gh-158501)
+            '20090419T1230:Z',                 # Stray separator before Z (gh-158501)
             '2009-04-19T12:30:45+00:90:00', # Time zone field out from range
             '2009-04-19T12:30:45+00:00:90', # Time zone field out from range
             '2009-04-19T12:30:45-00:90:00', # Time zone field out from range
@@ -5094,6 +5098,10 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             '12:30:45.400 +02:30',      # Space between ms and timezone (gh-130959)
             '12:30:45.400 ',            # Trailing space (gh-130959)
             '12:30:45. 400',            # Space before fraction (gh-130959)
+            '12:30x+05:00',             # Stray text before offset (gh-158501)
+            '12:30:45 +02:00',          # Space before offset (gh-158501)
+            '12:30:45.123456 junk Z',   # Stray text before Z (gh-158501)
+            '1230:Z',                   # Stray separator before Z (gh-158501)
             '24:00:00.000001',          # Has non-zero microseconds on 24:00
             '24:00:01.000000',          # Has non-zero seconds on 24:00
             '24:01:00.000000',          # Has non-zero minutes on 24:00
