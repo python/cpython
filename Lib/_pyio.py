@@ -528,7 +528,7 @@ class IOBase(metaclass=abc.ABCMeta):
                     return 1
                 n = (readahead.find(b"\n") + 1) or len(readahead)
                 if size >= 0:
-                    n = min(n, size)
+                    n = min(n, size - len(res))
                 return n
         else:
             def nreadahead():
