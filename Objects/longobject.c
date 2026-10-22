@@ -5527,7 +5527,9 @@ long_lshift_int64(PyLongObject *a, int64_t shiftby)
         return PyLong_FromLong(0);
     }
 #if PY_SSIZE_T_MAX <= INT64_MAX / PyLong_SHIFT
-    if (shiftby > (int64_t)PY_SSIZE_T_MAX * PyLong_SHIFT) {
+    /* Keep wordshift <= MAX_LONG_DIGITS, so that oldsize + wordshift
+       cannot overflow Py_ssize_t in long_lshift1(). */
+    if (shiftby > (int64_t)MAX_LONG_DIGITS * PyLong_SHIFT) {
         PyErr_SetString(PyExc_OverflowError,
                         "too many digits in integer");
         return NULL;
