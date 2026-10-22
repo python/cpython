@@ -942,7 +942,9 @@ double_round(double x, int ndigits) {
     _Py_SET_53BIT_PRECISION_START;
     rounded = _Py_dg_strtod(mybuf, NULL);
     _Py_SET_53BIT_PRECISION_END;
-    if (errno == ERANGE && fabs(rounded) >= 1.)
+    if (errno == ENOMEM)
+        PyErr_NoMemory();
+    else if (errno == ERANGE && fabs(rounded) >= 1.)
         PyErr_SetString(PyExc_OverflowError,
                         "rounded value too large to represent");
     else
