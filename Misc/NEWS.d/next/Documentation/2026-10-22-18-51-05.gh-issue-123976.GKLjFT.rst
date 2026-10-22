@@ -1,2 +1,3 @@
-Document how custom ``importlib.metadata`` providers interact with the
-``importlib_metadata`` backport.
+Document the ``IDistribution``, ``IPackagePath``, and ``PackageMetadata``
+protocols shared with the ``importlib_metadata`` backport, and how custom
+providers and consumers of ``importlib.metadata`` should use them.

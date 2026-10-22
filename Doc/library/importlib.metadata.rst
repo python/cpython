@@ -237,11 +237,12 @@ Distribution metadata
 
 .. class:: PackageMetadata
 
-   A concrete implementation of the
-   `PackageMetadata protocol <https://importlib-metadata.readthedocs.io/en/latest/api.html#importlib_metadata.PackageMetadata>`_.
+   A protocol describing the interface distribution metadata presents. The
+   :pypi:`importlib_metadata` backport presents the same protocol; see
+   :ref:`metadata-backport-caveats`.
 
-   In addition to providing the defined protocol methods and attributes, subscripting
-   the instance is equivalent to calling the :meth:`!get` method.
+   In addition to the protocol methods and attributes, subscripting an
+   instance is equivalent to calling the :meth:`!get` method.
 
 Every `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_
 includes some metadata, which you can extract using the :func:`!metadata` function::
@@ -331,6 +332,13 @@ Distribution files
     A protocol representing a minimal subset of :class:`pathlib.Path` that allows to
     check if it ``exists()``, to traverse using ``joinpath()`` and ``parent``,
     and to retrieve data using ``read_text()`` and ``read_bytes()``.
+
+.. class:: IPackagePath
+
+    A protocol describing the interface a :class:`PackagePath` presents. See
+    :ref:`metadata-backport-caveats`.
+
+    .. versionadded:: 3.16
 
 The :func:`!files` function takes a
 `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_
@@ -544,6 +552,17 @@ The same applies for :func:`entry_points` and :func:`files`.
 
       A shortcut for ``distribution.locate_file(filename).read_text()``.
 
+.. class:: IDistribution
+
+   A protocol describing the interface a :class:`Distribution` presents.
+
+   A consumer that targets this protocol, rather than a concrete class, works
+   with distributions from either this module or the
+   :pypi:`importlib_metadata` backport, however they were supplied. See
+   :ref:`metadata-backport-caveats`.
+
+   .. versionadded:: 3.16
+
 .. _distribution-discovery:
 
 Distribution Discovery
@@ -748,10 +767,15 @@ Caveats for backports
 
 The :pypi:`importlib_metadata` package backports this module and supplies its
 own :class:`!Distribution`, :class:`!PackagePath`, and metadata classes. Those
-classes are separate from the ones in :mod:`!importlib.metadata`; neither set
-derives from the other. Both libraries discover distributions by querying the
-finders on :data:`sys.meta_path`, so one custom provider serves consumers of
-both and has no say in which of the two a given consumer uses.
+classes are separate from the ones here; neither set derives from the other.
+Both libraries discover distributions by querying the finders on
+:data:`sys.meta_path`, so one custom provider serves consumers of both and has
+no say in which of the two a given consumer uses.
+
+Both libraries present the same protocols, :class:`IDistribution`,
+:class:`IPackagePath`, and :class:`PackageMetadata`, and the classes of both
+satisfy them. Those protocols, rather than any concrete class, are the
+interface to write against.
 
 For consumers
 -------------
@@ -765,11 +789,10 @@ substituting its own class for each object it recognizes, such as a
 :class:`Distribution` subclass from a custom provider, so it passes such an
 object through unchanged.
 
-Rely on an object satisfying the interface rather than on its type, and do not
-test it with :func:`isinstance` against a concrete class. The backport
-publishes ``IDistribution``, ``IPackagePath``, and ``PackageMetadata``
-protocols for this purpose, which the classes of both libraries satisfy.
-Import them from the backport; this module does not present them yet.
+Annotate against the protocols, then, and do not test an object with
+:func:`isinstance` against a concrete class. Code that needs the protocols on
+earlier Python versions can import them from the backport, which presents them
+there too.
 
 .. _metadata-backport-providers:
 
@@ -777,12 +800,12 @@ For custom providers
 --------------------
 
 A provider's objects reach consumers of both libraries, so supply objects that
-present the whole interface, not part of it. Deriving from
+satisfy :class:`IDistribution` whole, not in part. Deriving from
 :class:`Distribution`, as the example above does, achieves this: the base
 class builds the rest of the interface on :meth:`~Distribution.read_text` and
-:meth:`~Distribution.locate_file`. Where a class omits a member the interface
+:meth:`~Distribution.locate_file`. Where a class omits a member the protocol
 requires, the backport emits a :exc:`UserWarning` naming what is missing; a
-provider presenting the whole interface draws no warning.
+provider satisfying the protocol whole draws no warning.
 
 Deriving from whichever of the two libraries happens to be importable is not a
 general answer. A provider cannot know whether a consumer will import the
