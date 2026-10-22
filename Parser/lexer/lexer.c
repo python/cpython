@@ -447,11 +447,12 @@ _PyLexer_get_normal(struct tok_state *tok, ftstring_state *current, struct token
         if (tok->level > 0) {
             tok->level--;
             int opening = tok->parenstack[tok->level];
-            if (!tok->tok_extra_tokens && !((opening == '(' && c == ')') ||
-                                            (opening == '[' && c == ']') ||
-                                            (opening == '{' && c == '}'))) {
+            if (!((opening == '(' && c == ')') ||
+                  (opening == '[' && c == ']') ||
+                  (opening == '{' && c == '}'))) {
                 /* Do not match a closer against the brace that opened the
-                 * current replacement field. */
+                 * current replacement field.  The f-string state relies on
+                 * that brace, so this is checked even with extra tokens. */
                 if (current != NULL && opening == '{') {
                     int bracket_depth =
                         _PyLexer_FTStringBracketDepth(tok, current);
@@ -461,7 +462,10 @@ _PyLexer_get_normal(struct tok_state *tok, ftstring_state *current, struct token
                             _PyLexer_StringPrefix(current->kind), c));
                     }
                 }
-                if (tok->parenlinenostack[tok->level] != tok->lineno) {
+                if (tok->tok_extra_tokens) {
+                    /* Allow other mismatched brackets. */
+                }
+                else if (tok->parenlinenostack[tok->level] != tok->lineno) {
                     return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
                             "closing parenthesis '%c' does not match "
                             "opening parenthesis '%c' on line %d",
