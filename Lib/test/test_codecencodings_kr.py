@@ -71,6 +71,8 @@ class Test_EUCKR(multibytecodec_support.TestBase, unittest.TestCase):
                             continue
                         accepted += 1
                         self.assertEqual(s.encode('euc_kr'), b)
+        # Of the 11172 Hangul syllables, KS X 1001 encodes 2350 in 2 bytes;
+        # only the rest may be written as make-up sequences.
         self.assertEqual(accepted, 11172 - 2350)
 
 class Test_JOHAB(multibytecodec_support.TestBase, unittest.TestCase):
