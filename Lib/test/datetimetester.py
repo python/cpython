@@ -1462,6 +1462,15 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             self.assertRaises(OverflowError, self.theclass.fromtimestamp,
                               insane)
 
+    def test_fromtimestamp_large_year(self):
+        timestamp = 67_767_976_249_084_800  # Year 2147483648.
+        try:
+            year = _time.localtime(timestamp).tm_year
+        except (OverflowError, OSError):
+            self.skipTest('timestamp out of range on this platform')
+        with self.assertRaisesRegex(ValueError, rf'\b{year}\b'):
+            self.theclass.fromtimestamp(timestamp)
+
     def test_fromtimestamp_with_none_arg(self):
         # See gh-120268 for more details
         with self.assertRaises(TypeError):

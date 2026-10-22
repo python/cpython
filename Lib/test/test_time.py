@@ -21,10 +21,11 @@ except ImportError:
 
 from test.support import skip_if_buggy_ucrt_strfptime, SuppressCrashReport
 
-# Max year is only limited by the size of C int.
+# Years are limited by the range of struct tm's int tm_year field.
 SIZEOF_INT = sysconfig.get_config_var('SIZEOF_INT') or 4
-TIME_MAXYEAR = (1 << 8 * SIZEOF_INT - 1) - 1
-TIME_MINYEAR = -TIME_MAXYEAR - 1 + 1900
+C_INT_MAX = (1 << 8 * SIZEOF_INT - 1) - 1
+TIME_MAXYEAR = C_INT_MAX + 1900
+TIME_MINYEAR = -C_INT_MAX - 1 + 1900
 
 SEC_TO_US = 10 ** 6
 US_TO_NS = 10 ** 3
@@ -167,6 +168,8 @@ class TimeTestCase(unittest.TestCase):
                 else:
                     year = result.tm_year
                 self.assertEqual(year, 2**31)
+                if convert is time.localtime:
+                    self.assertEqual(time.asctime(result), time.ctime(timestamp))
 
     def test_conversions(self):
         self.assertEqual(time.ctime(self.t),
@@ -413,7 +416,7 @@ class TimeTestCase(unittest.TestCase):
     def test_asctime(self):
         time.asctime(time.gmtime(self.t))
 
-        # Max year is only limited by the size of C int.
+        # The year offset must fit into a C int.
         for bigyear in TIME_MAXYEAR, TIME_MINYEAR:
             asc = time.asctime((bigyear, 6, 1) + (0,) * 6)
             self.assertEqual(asc[-len(str(bigyear)):], str(bigyear))
@@ -784,7 +787,7 @@ class _Test4dYear:
     def test_large_year(self):
         self.assertEqual(self.yearstr(12345).lstrip('+'), '12345')
         self.assertEqual(self.yearstr(123456789).lstrip('+'), '123456789')
-        self.assertEqual(self.yearstr(TIME_MAXYEAR).lstrip('+'), str(TIME_MAXYEAR))
+        self.assertEqual(self.yearstr(C_INT_MAX).lstrip('+'), str(C_INT_MAX))
         self.assertRaises(OverflowError, self.yearstr, TIME_MAXYEAR + 1)
 
     def test_negative(self):
