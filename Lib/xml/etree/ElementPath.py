@@ -48,7 +48,7 @@
 # --------------------------------------------------------------------
 
 # Licensed to PSF under a Contributor Agreement.
-# See http://www.python.org/psf/license for licensing details.
+# See https://www.python.org/psf/license for licensing details.
 
 ##
 # Implementation module for XPath support.  There's usually no reason
@@ -226,7 +226,6 @@ def prepare_parent(next, token):
 
 def prepare_predicate(next, token):
     # FIXME: replace with real parser!!! refs:
-    # http://effbot.org/zone/simple-iterator-parser.htm
     # http://javascript.crockford.com/tdop/tdop.html
     signature = []
     predicate = []
@@ -325,15 +324,22 @@ def prepare_predicate(next, token):
                 index = -1
         def select(context, result):
             parent_map = get_parent_map(context)
+            cache = {}
             for elem in result:
                 try:
                     parent = parent_map[elem]
+                except KeyError:
+                    continue
+                key = (parent, elem.tag)
+                if key not in cache:
                     # FIXME: what if the selector is "*" ?
-                    elems = list(parent.findall(elem.tag))
-                    if elems[index] is elem:
-                        yield elem
-                except (IndexError, KeyError):
-                    pass
+                    elems = parent.findall(elem.tag)
+                    try:
+                        cache[key] = elems[index]
+                    except IndexError:
+                        cache[key] = None
+                if cache[key] is elem:
+                    yield elem
         return select
     raise SyntaxError("invalid predicate")
 
@@ -417,6 +423,8 @@ def findall(elem, path, namespaces=None):
 def findtext(elem, path, default=None, namespaces=None):
     try:
         elem = next(iterfind(elem, path, namespaces))
-        return elem.text or ""
+        if elem.text is None:
+            return ""
+        return elem.text
     except StopIteration:
         return default

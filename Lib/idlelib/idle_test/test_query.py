@@ -1,4 +1,4 @@
-"""Test query, coverage 93%).
+"""Test query, coverage 93%.
 
 Non-gui tests for Query, SectionName, ModuleName, and HelpSource use
 dummy versions that extract the non-gui methods and add other needed
@@ -134,10 +134,10 @@ class ModuleNameTest(unittest.TestCase):
 
     def test_good_module_name(self):
         dialog = self.Dummy_ModuleName('idlelib')
-        self.assertTrue(dialog.entry_ok().endswith('__init__.py'))
+        self.assertEndsWith(dialog.entry_ok(), '__init__.py')
         self.assertEqual(dialog.entry_error['text'], '')
-        dialog = self.Dummy_ModuleName('os.path')
-        self.assertTrue(dialog.entry_ok().endswith('path.py'))
+        dialog = self.Dummy_ModuleName('idlelib.idle')
+        self.assertEndsWith(dialog.entry_ok(), 'idle.py')
         self.assertEqual(dialog.entry_error['text'], '')
 
 
@@ -280,10 +280,19 @@ class CustomRunCLIargsokTest(unittest.TestCase):
         dialog = self.Dummy_CustomRun(' ')
         self.assertEqual(dialog.cli_args_ok(), [])
 
+    @unittest.skipIf(sys.platform == 'win32', 'not an error on Windows')
     def test_invalid_args(self):
         dialog = self.Dummy_CustomRun("'no-closing-quote")
         self.assertEqual(dialog.cli_args_ok(), None)
         self.assertIn('No closing', dialog.entry_error['text'])
+
+    @unittest.skipUnless(sys.platform == 'win32', 'Windows only')
+    def test_windows_args(self):
+        # gh-93016: backslashes are not escapes on Windows.
+        dialog = self.Dummy_CustomRun(r'c:\Users "c:\Program Files"')
+        self.assertEqual(dialog.cli_args_ok(),
+                         [r'c:\Users', r'c:\Program Files'])
+        self.assertEqual(dialog.entry_error['text'], '')
 
     def test_good_args(self):
         args = ['-n', '10', '--verbose', '-p', '/path', '--name']
@@ -389,7 +398,7 @@ class ModulenameGuiTest(unittest.TestCase):
         self.assertEqual(dialog.text0, 'idlelib')
         self.assertEqual(dialog.entry.get(), 'idlelib')
         dialog.button_ok.invoke()
-        self.assertTrue(dialog.result.endswith('__init__.py'))
+        self.assertEndsWith(dialog.result, '__init__.py')
         root.destroy()
 
 
@@ -444,8 +453,14 @@ class CustomRunGuiTest(unittest.TestCase):
         dialog.entry.insert(END, ' c')
         dialog.button_ok.invoke()
         self.assertEqual(dialog.result, (['a', 'b=1', 'c'], True))
+        # gh-93016: arguments with spaces and backslashes round-trip.
+        args = ['a b', r'c:\dir\x']
+        dialog =  query.CustomRun(root, 'Title', cli_args=args, _utest=True)
+        self.assertNotIn('{', dialog.entry.get())
+        dialog.button_ok.invoke()
+        self.assertEqual(dialog.result, (args, True))
         root.destroy()
 
 
 if __name__ == '__main__':
-    unittest.main(verbosity=2, exit=False)
+    unittest.main(verbosity=2)
