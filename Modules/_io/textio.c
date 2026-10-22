@@ -336,8 +336,11 @@ _PyIncrementalNewlineDecoder_decode(PyObject *myself,
 
     /* decode input (with the eventual \r from a previous pass) */
     if (self->decoder != Py_None) {
-        output = PyObject_CallMethodObjArgs(self->decoder,
+        /* The wrapper can be reinitialized by a decoding callback. */
+        PyObject *decoder = Py_NewRef(self->decoder);
+        output = PyObject_CallMethodObjArgs(decoder,
             &_Py_ID(decode), input, final ? Py_True : Py_False, NULL);
+        Py_DECREF(decoder);
     }
     else {
         output = Py_NewRef(input);
@@ -1006,11 +1009,17 @@ _textiowrapper_decode(_PyIO_State *state, PyObject *decoder, PyObject *bytes,
 {
     PyObject *chars;
 
+    if (decoder == NULL) {
+        return _unsupported(state, "not readable");
+    }
+    /* A codec callback may replace the wrapper's decoder. */
+    Py_INCREF(decoder);
     if (Py_IS_TYPE(decoder, state->PyIncrementalNewlineDecoder_Type))
         chars = _PyIncrementalNewlineDecoder_decode(decoder, bytes, eof);
     else
         chars = PyObject_CallMethodObjArgs(decoder, &_Py_ID(decode), bytes,
                                            eof ? Py_True : Py_False, NULL);
+    Py_DECREF(decoder);
 
     if (check_decoded(chars) < 0)
         // check_decoded already decreases refcount
@@ -1813,7 +1822,10 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         self->encoding_start_of_stream = 0;
     }
     else {
-        b = PyObject_CallMethodOneArg(self->encoder, &_Py_ID(encode), text);
+        /* A codec callback may reconfigure the stream. */
+        PyObject *encoder = Py_NewRef(self->encoder);
+        b = PyObject_CallMethodOneArg(encoder, &_Py_ID(encode), text);
+        Py_DECREF(encoder);
     }
 
     Py_DECREF(text);
@@ -2053,8 +2065,9 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
     if (decoded_chars == NULL)
         goto fail;
 
-    textiowrapper_set_decoded_chars(self, decoded_chars);
+    /* The old chunk's finalizer can clear the new chunk. */
     nchars = PyUnicode_GET_LENGTH(decoded_chars);
+    textiowrapper_set_decoded_chars(self, decoded_chars);
     if (nchars > 0)
         self->b2cratio = (double) nbytes / nchars;
     else
@@ -2126,15 +2139,9 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
             return NULL;
         }
 
-        _PyIO_State *state = self->state;
-        if (Py_IS_TYPE(self->decoder, state->PyIncrementalNewlineDecoder_Type))
-            decoded = _PyIncrementalNewlineDecoder_decode(self->decoder,
-                                                          bytes, 1);
-        else
-            decoded = PyObject_CallMethodObjArgs(
-                self->decoder, &_Py_ID(decode), bytes, Py_True, NULL);
+        decoded = _textiowrapper_decode(self->state, self->decoder, bytes, 1);
         Py_DECREF(bytes);
-        if (check_decoded(decoded) < 0)
+        if (decoded == NULL)
             goto fail;
 
         result = textiowrapper_get_decoded_chars(self, -1);

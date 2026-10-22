@@ -1668,6 +1668,17 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
             wrapper.write('x')
             self.assertRaisesRegex(ValueError, "detached", wrapper.read)
 
+    def test_read_reinitialized_as_write_only(self):
+        class Buffer(self.BytesIO):
+            def read(self, size=-1):
+                stream.__init__(writer, encoding="ascii")
+                return b"a"
+
+        with (self.BufferedWriter(self.BytesIO()) as writer,
+              self.TextIOWrapper(Buffer(), encoding="ascii") as stream):
+            with self.assertRaises(self.UnsupportedOperation):
+                stream.read()
+
     def test_reentrant_detach_during_read(self):
         # gh-157363, gh-157364: The buffer must stay alive until its active
         # read operation returns.
