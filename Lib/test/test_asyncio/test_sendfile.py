@@ -1,6 +1,7 @@
 """Tests for sendfile functionality."""
 
 import asyncio
+import errno
 import os
 import socket
 import sys
@@ -21,7 +22,7 @@ except ImportError:
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class MySendfileProto(asyncio.Protocol):
@@ -36,25 +37,29 @@ class MySendfileProto(asyncio.Protocol):
         self.data = bytearray()
         self.close_after = close_after
 
+    def _assert_state(self, *expected):
+        if self.state not in expected:
+            raise AssertionError(f'state: {self.state!r}, expected: {expected!r}')
+
     def connection_made(self, transport):
         self.transport = transport
-        assert self.state == 'INITIAL', self.state
+        self._assert_state('INITIAL')
         self.state = 'CONNECTED'
         if self.connected:
             self.connected.set_result(None)
 
     def eof_received(self):
-        assert self.state == 'CONNECTED', self.state
+        self._assert_state('CONNECTED')
         self.state = 'EOF'
 
     def connection_lost(self, exc):
-        assert self.state in ('CONNECTED', 'EOF'), self.state
+        self._assert_state('CONNECTED', 'EOF')
         self.state = 'CLOSED'
         if self.done:
             self.done.set_result(None)
 
     def data_received(self, data):
-        assert self.state == 'CONNECTED', self.state
+        self._assert_state('CONNECTED')
         self.nbytes += len(data)
         self.data.extend(data)
         super().data_received(data)
@@ -88,11 +93,17 @@ class MyProto(asyncio.Protocol):
 
 class SendfileBase:
 
-      # 128 KiB plus small unaligned to buffer chunk
-    DATA = b"SendfileBaseData" * (1024 * 8 + 1)
-
+    # Linux >= 6.10 seems buffering up to 17 pages of data.
+    # So DATA should be large enough to make this test reliable even with a
+    # 64 KiB page configuration.
+    DATA = b"x" * (1024 * 17 * 64 + 1)
     # Reduce socket buffer size to test on relative small data sets.
-    BUF_SIZE = 4 * 1024   # 4 KiB
+    if sys.platform.startswith('dragonfly'):
+        # A smaller buffer makes every window update wait 100 ms for the
+        # delayed ACK timer.
+        BUF_SIZE = 32 * 1024  # 32 KiB
+    else:
+        BUF_SIZE = 4 * 1024   # 4 KiB
 
     def create_event_loop(self):
         raise NotImplementedError
@@ -222,6 +233,61 @@ class SockSendfileMixin(SendfileBase):
         self.assertEqual(ret, 0)
         self.assertEqual(self.file.tell(), 0)
 
+    def check_sock_sendfile_offset(self, data, offset, force_fallback=False):
+        sock, proto = self.prepare_socksendfile()
+        with tempfile.TemporaryFile() as f:
+            f.write(data)
+            f.flush()
+            self.assertEqual(f.tell(), len(data))
+
+            if force_fallback:
+                async def _sock_sendfile_fail(sock, file, offset, count):
+                    raise asyncio.exceptions.SendfileNotAvailableError()
+                with support.swap_attr(self.loop, '_sock_sendfile_native', _sock_sendfile_fail):
+                    ret = self.run_loop(self.loop.sock_sendfile(sock, f, offset, None))
+            else:
+                ret = self.run_loop(self.loop.sock_sendfile(sock, f, offset, None))
+
+            self.assertEqual(f.tell(), len(data))
+
+        sock.close()
+        self.run_loop(proto.wait_closed())
+
+        self.assertEqual(ret, len(data) - offset)
+
+
+    def test_sock_sendfile_offset(self):
+        data = b'abcdef'
+        for offset in (0, len(data) // 2, len(data)):
+            for force_fallback in (False, True):
+                with self.subTest(offset=offset, force_fallback=force_fallback):
+                    self.check_sock_sendfile_offset(data, offset, force_fallback)
+
+    def check_sendfile_offset(self, offset, fallback):
+        srv_proto, cli_proto = self.prepare_sendfile()
+        self.file.seek(123)
+        coro = self.loop.sendfile(cli_proto.transport, self.file, offset, fallback=fallback)
+        try:
+            ret = self.run_loop(coro)
+        except asyncio.SendfileNotAvailableError:
+            if fallback:
+                raise
+            cli_proto.transport.close()
+            self.run_loop(srv_proto.done)
+            return
+        cli_proto.transport.close()
+        self.run_loop(srv_proto.done)
+        self.assertEqual(ret, len(self.DATA) - offset)
+        self.assertEqual(srv_proto.nbytes, len(self.DATA) - offset)
+        self.assertEqual(srv_proto.data, self.DATA[offset:])
+        self.assertEqual(self.file.tell(), len(self.DATA))
+
+    def test_sendfile_offset(self):
+        for offset in (0, len(self.DATA) // 2, len(self.DATA)):
+            for fallback in (False, True):
+                with self.subTest(offset=offset, fallback=fallback):
+                    self.check_sendfile_offset(offset, fallback)
+
     def test_sock_sendfile_mix_with_regular_send(self):
         buf = b"mix_regular_send" * (4 * 1024)  # 64 KiB
         sock, proto = self.prepare_socksendfile()
@@ -309,6 +375,47 @@ class SendfileMixin(SendfileBase):
         self.assertEqual(srv_proto.nbytes, len(self.DATA))
         self.assertEqual(srv_proto.data, self.DATA)
         self.assertEqual(self.file.tell(), len(self.DATA))
+
+    def test_sendfile_cancel_empty_waiter(self):
+        for reading in (True, False):
+            with self.subTest(reading=reading):
+                srv_proto, cli_proto = self.prepare_sendfile()
+                transport = cli_proto.transport
+                if not reading:
+                    transport.pause_reading()
+                waiter = self.loop.create_future()
+
+                def make_empty_waiter():
+                    transport._empty_waiter = waiter
+                    return waiter
+
+                with mock.patch.object(transport, '_make_empty_waiter',
+                                       side_effect=make_empty_waiter):
+                    task = self.loop.create_task(
+                        self.loop.sendfile(transport, self.file))
+                    test_utils.run_briefly(self.loop)
+                    self.assertIs(transport._empty_waiter, waiter)
+                    self.assertFalse(waiter.done())
+                    self.assertFalse(transport.is_reading())
+                    task.cancel()
+                    with self.assertRaises(asyncio.CancelledError):
+                        self.run_loop(task)
+
+                try:
+                    self.assertIsNone(transport._empty_waiter)
+                    self.assertEqual(transport.is_reading(), reading)
+                    if isinstance(self.loop, asyncio.SelectorEventLoop):
+                        self.assertIs(
+                            self.loop._transports[transport._sock_fd],
+                            transport)
+                finally:
+                    transport._reset_empty_waiter()
+
+                ret = self.run_loop(self.loop.sendfile(transport, self.file))
+                transport.close()
+                self.run_loop(srv_proto.done)
+                self.assertEqual(ret, len(self.DATA))
+                self.assertEqual(srv_proto.data, self.DATA)
 
     def test_sendfile_force_fallback(self):
         srv_proto, cli_proto = self.prepare_sendfile()
@@ -461,8 +568,11 @@ class SendfileMixin(SendfileBase):
 
         self.assertTrue(1024 <= srv_proto.nbytes < len(self.DATA),
                         srv_proto.nbytes)
-        self.assertTrue(1024 <= self.file.tell() < len(self.DATA),
-                        self.file.tell())
+        if not (sys.platform == 'win32'
+                and isinstance(self.loop, asyncio.ProactorEventLoop)):
+            # On Windows, Proactor uses transmitFile, which does not update tell()
+            self.assertTrue(1024 <= self.file.tell() < len(self.DATA),
+                            self.file.tell())
         self.assertTrue(cli_proto.transport.is_closing())
 
     def test_sendfile_fallback_close_peer_in_the_middle_of_receiving(self):
@@ -476,8 +586,17 @@ class SendfileMixin(SendfileBase):
 
         srv_proto, cli_proto = self.prepare_sendfile(close_after=1024)
         with self.assertRaises(ConnectionError):
-            self.run_loop(
-                self.loop.sendfile(cli_proto.transport, self.file))
+            try:
+                self.run_loop(
+                    self.loop.sendfile(cli_proto.transport, self.file))
+            except OSError as e:
+                # macOS may raise OSError of EPROTOTYPE when writing to a
+                # socket that is in the process of closing down.
+                if e.errno == errno.EPROTOTYPE and sys.platform == "darwin":
+                    raise ConnectionError
+                else:
+                    raise
+
         self.run_loop(srv_proto.done)
 
         self.assertTrue(1024 <= srv_proto.nbytes < len(self.DATA),
@@ -507,7 +626,8 @@ class SendfileMixin(SendfileBase):
         transport = mock.Mock()
         transport.is_closing.side_effect = lambda: False
         transport._sendfile_compatible = constants._SendfileMode.FALLBACK
-        with self.assertRaisesRegex(RuntimeError, 'fallback is disabled'):
+        with self.assertRaisesRegex(asyncio.SendfileNotAvailableError,
+                                    'fallback is disabled'):
             self.loop.run_until_complete(
                 self.loop.sendfile(transport, None, fallback=False))
 
@@ -561,3 +681,7 @@ else:
 
         def create_event_loop(self):
             return asyncio.SelectorEventLoop(selectors.SelectSelector())
+
+
+if __name__ == '__main__':
+    unittest.main()

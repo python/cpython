@@ -24,7 +24,7 @@ HSV: Hue, Saturation, Value
 __all__ = ["rgb_to_yiq","yiq_to_rgb","rgb_to_hls","hls_to_rgb",
            "rgb_to_hsv","hsv_to_rgb"]
 
-# Some floating point constants
+# Some floating-point constants
 
 ONE_THIRD = 1.0/3.0
 ONE_SIXTH = 1.0/6.0
@@ -83,7 +83,7 @@ def rgb_to_hls(r, g, b):
     if l <= 0.5:
         s = rangec / sumc
     else:
-        s = rangec / (2.0-sumc)
+        s = rangec / (2.0-maxc-minc)  # Not always 2.0-sumc: gh-106498.
     rc = (maxc-r) / rangec
     gc = (maxc-g) / rangec
     bc = (maxc-b) / rangec

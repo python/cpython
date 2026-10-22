@@ -5,15 +5,12 @@
 Set Objects
 -----------
 
-.. sectionauthor:: Raymond D. Hettinger <python@rcn.com>
-
-
 .. index::
-   object: set
-   object: frozenset
+   pair: object; set
+   pair: object; frozenset
 
 This section details the public API for :class:`set` and :class:`frozenset`
-objects.  Any functionality not listed below is best accessed using the either
+objects.  Any functionality not listed below is best accessed using either
 the abstract object protocol (including :c:func:`PyObject_CallMethod`,
 :c:func:`PyObject_RichCompareBool`, :c:func:`PyObject_Hash`,
 :c:func:`PyObject_Repr`, :c:func:`PyObject_IsTrue`, :c:func:`PyObject_Print`, and
@@ -31,7 +28,7 @@ the abstract object protocol (including :c:func:`PyObject_CallMethod`,
    in that it is a fixed size for small sets (much like tuple storage) and will
    point to a separate, variable sized block of memory for medium and large sized
    sets (much like list storage). None of the fields of this structure should be
-   considered public and are subject to change.  All access should be done through
+   considered public and all are subject to change.  All access should be done through
    the documented API rather than by manipulating the values in the structure.
 
 
@@ -92,6 +89,11 @@ the constructor functions work with any iterable Python object.
    actually iterable.  The constructor is also useful for copying a set
    (``c=set(s)``).
 
+   .. note::
+
+      The operation is atomic on :term:`free threading <free-threaded build>`
+      when *iterable* is a :class:`set`, :class:`frozenset`, :class:`dict` or :class:`frozendict`.
+
 
 .. c:function:: PyObject* PyFrozenSet_New(PyObject *iterable)
 
@@ -100,6 +102,11 @@ the constructor functions work with any iterable Python object.
    set on success or ``NULL`` on failure.  Raise :exc:`TypeError` if *iterable* is
    not actually iterable.
 
+   .. note::
+
+      The operation is atomic on :term:`free threading <free-threaded build>`
+      when *iterable* is a :class:`set`, :class:`frozenset`, :class:`dict` or :class:`frozendict`.
+
 
 The following functions and macros are available for instances of :class:`set`
 or :class:`frozenset` or instances of their subtypes.
@@ -107,10 +114,10 @@ or :class:`frozenset` or instances of their subtypes.
 
 .. c:function:: Py_ssize_t PySet_Size(PyObject *anyset)
 
-   .. index:: builtin: len
+   .. index:: pair: built-in function; len
 
    Return the length of a :class:`set` or :class:`frozenset` object. Equivalent to
-   ``len(anyset)``.  Raises a :exc:`PyExc_SystemError` if *anyset* is not a
+   ``len(anyset)``.  Raises a :exc:`SystemError` if *anyset* is not a
    :class:`set`, :class:`frozenset`, or an instance of a subtype.
 
 
@@ -122,21 +129,31 @@ or :class:`frozenset` or instances of their subtypes.
 .. c:function:: int PySet_Contains(PyObject *anyset, PyObject *key)
 
    Return ``1`` if found, ``0`` if not found, and ``-1`` if an error is encountered.  Unlike
-   the Python :meth:`__contains__` method, this function does not automatically
+   the Python :meth:`~object.__contains__` method, this function does not automatically
    convert unhashable sets into temporary frozensets.  Raise a :exc:`TypeError` if
-   the *key* is unhashable. Raise :exc:`PyExc_SystemError` if *anyset* is not a
+   the *key* is unhashable. Raise :exc:`SystemError` if *anyset* is not a
    :class:`set`, :class:`frozenset`, or an instance of a subtype.
 
+   .. note::
+
+      The operation is atomic on :term:`free threading <free-threaded build>`
+      when *key* is :class:`str`, :class:`int`, :class:`float`, :class:`bool` or :class:`bytes`.
 
 .. c:function:: int PySet_Add(PyObject *set, PyObject *key)
 
    Add *key* to a :class:`set` instance.  Also works with :class:`frozenset`
-   instances (like :c:func:`PyTuple_SetItem` it can be used to fill-in the values
+   instances (like :c:func:`PyTuple_SetItem` it can be used to fill in the values
    of brand new frozensets before they are exposed to other code).  Return ``0`` on
    success or ``-1`` on failure. Raise a :exc:`TypeError` if the *key* is
    unhashable. Raise a :exc:`MemoryError` if there is no room to grow.  Raise a
    :exc:`SystemError` if *set* is not an instance of :class:`set` or its
    subtype.
+
+   .. note::
+
+      The operation is atomic on :term:`free threading <free-threaded build>`
+      when *key* is :class:`str`, :class:`int`, :class:`float`, :class:`bool` or :class:`bytes`.
+
 
 
 The following functions are available for instances of :class:`set` or its
@@ -149,8 +166,13 @@ subtypes but not for instances of :class:`frozenset` or its subtypes.
    error is encountered.  Does not raise :exc:`KeyError` for missing keys.  Raise a
    :exc:`TypeError` if the *key* is unhashable.  Unlike the Python :meth:`~set.discard`
    method, this function does not automatically convert unhashable sets into
-   temporary frozensets. Raise :exc:`PyExc_SystemError` if *set* is not an
+   temporary frozensets. Raise :exc:`SystemError` if *set* is not an
    instance of :class:`set` or its subtype.
+
+   .. note::
+
+      The operation is atomic on :term:`free threading <free-threaded build>`
+      when *key* is :class:`str`, :class:`int`, :class:`float`, :class:`bool` or :class:`bytes`.
 
 
 .. c:function:: PyObject* PySet_Pop(PyObject *set)
@@ -163,4 +185,31 @@ subtypes but not for instances of :class:`frozenset` or its subtypes.
 
 .. c:function:: int PySet_Clear(PyObject *set)
 
-   Empty an existing set of all elements.
+   Empty an existing set of all elements. Return ``0`` on
+   success. Return ``-1`` and raise :exc:`SystemError` if *set* is not an instance of
+   :class:`set` or its subtype.
+
+   .. note::
+
+      In the :term:`free-threaded build`, the set is emptied before its entries
+      are cleared, so other threads will observe an empty set rather than
+      intermediate states.
+
+
+Deprecated API
+^^^^^^^^^^^^^^
+
+.. c:macro:: PySet_MINSIZE
+
+   A constant representing the size of an internal
+   preallocated table inside :c:type:`PySetObject` instances.
+
+   This is documented solely for completeness, as there are no guarantees
+   that a given version of CPython uses preallocated tables with a fixed
+   size.
+   In code that does not deal with unstable set internals,
+   :c:macro:`!PySet_MINSIZE` can be replaced with a small constant like ``8``.
+
+   If looking for the size of a set, use :c:func:`PySet_Size` instead.
+
+   .. soft-deprecated:: 3.14

@@ -239,7 +239,7 @@ class SimpleXMLRPCDispatcher:
 
         see http://www.xmlrpc.com/discuss/msgReader$1208"""
 
-        self.funcs.update({'system.multicall' : self.system_multicall})
+        self.funcs['system.multicall'] = self.system_multicall
 
     def _marshaled_dispatch(self, data, dispatch_method = None, path = None):
         """Dispatches an XML-RPC method from marshalled (XML) data.
@@ -268,17 +268,11 @@ class SimpleXMLRPCDispatcher:
         except Fault as fault:
             response = dumps(fault, allow_none=self.allow_none,
                              encoding=self.encoding)
-        except:
-            # report exception back to server
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            try:
-                response = dumps(
-                    Fault(1, "%s:%s" % (exc_type, exc_value)),
-                    encoding=self.encoding, allow_none=self.allow_none,
-                    )
-            finally:
-                # Break reference cycle
-                exc_type = exc_value = exc_tb = None
+        except BaseException as exc:
+            response = dumps(
+                Fault(1, "%s:%s" % (type(exc), exc)),
+                encoding=self.encoding, allow_none=self.allow_none,
+                )
 
         return response.encode(self.encoding, 'xmlcharrefreplace')
 
@@ -368,16 +362,11 @@ class SimpleXMLRPCDispatcher:
                     {'faultCode' : fault.faultCode,
                      'faultString' : fault.faultString}
                     )
-            except:
-                exc_type, exc_value, exc_tb = sys.exc_info()
-                try:
-                    results.append(
-                        {'faultCode' : 1,
-                         'faultString' : "%s:%s" % (exc_type, exc_value)}
-                        )
-                finally:
-                    # Break reference cycle
-                    exc_type = exc_value = exc_tb = None
+            except BaseException as exc:
+                results.append(
+                    {'faultCode' : 1,
+                     'faultString' : "%s:%s" % (type(exc), exc)}
+                    )
         return results
 
     def _dispatch(self, method, params):
@@ -589,6 +578,7 @@ class SimpleXMLRPCServer(socketserver.TCPServer,
     """
 
     allow_reuse_address = True
+    allow_reuse_port = False
 
     # Warning: this is for debugging purposes only! Never set this to True in
     # production code, as will be sending out sensitive information (exception
@@ -634,19 +624,14 @@ class MultiPathXMLRPCServer(SimpleXMLRPCServer):
         try:
             response = self.dispatchers[path]._marshaled_dispatch(
                data, dispatch_method, path)
-        except:
+        except BaseException as exc:
             # report low level exception back to server
             # (each dispatcher should have handled their own
             # exceptions)
-            exc_type, exc_value = sys.exc_info()[:2]
-            try:
-                response = dumps(
-                    Fault(1, "%s:%s" % (exc_type, exc_value)),
-                    encoding=self.encoding, allow_none=self.allow_none)
-                response = response.encode(self.encoding, 'xmlcharrefreplace')
-            finally:
-                # Break reference cycle
-                exc_type = exc_value = None
+            response = dumps(
+                Fault(1, "%s:%s" % (type(exc), exc)),
+                encoding=self.encoding, allow_none=self.allow_none)
+            response = response.encode(self.encoding, 'xmlcharrefreplace')
         return response
 
 class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):
@@ -736,9 +721,7 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
                                 r'RFC[- ]?(\d+)|'
                                 r'PEP[- ]?(\d+)|'
                                 r'(self\.)?((?:\w|\.)+))\b')
-        while 1:
-            match = pattern.search(text, here)
-            if not match: break
+        while match := pattern.search(text, here):
             start, end = match.span()
             results.append(escape(text[here:start]))
 
@@ -747,10 +730,10 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
                 url = escape(all).replace('"', '&quot;')
                 results.append('<a href="%s">%s</a>' % (url, url))
             elif rfc:
-                url = 'http://www.rfc-editor.org/rfc/rfc%d.txt' % int(rfc)
+                url = 'https://www.rfc-editor.org/rfc/rfc%d.txt' % int(rfc)
                 results.append('<a href="%s">%s</a>' % (url, escape(all)))
             elif pep:
-                url = 'https://www.python.org/dev/peps/pep-%04d/' % int(pep)
+                url = 'https://peps.python.org/pep-%04d/' % int(pep)
                 results.append('<a href="%s">%s</a>' % (url, escape(all)))
             elif text[end:end+1] == '(':
                 results.append(self.namelink(name, methods, funcs, classes))
@@ -769,7 +752,7 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
         anchor = (cl and cl.__name__ or '') + '-' + name
         note = ''
 
-        title = '<a name="%s"><strong>%s</strong></a>' % (
+        title = '<a id="%s"><strong>%s</strong></a>' % (
             self.escape(anchor), self.escape(name))
 
         if callable(object):
@@ -783,13 +766,13 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
         else:
             docstring = pydoc.getdoc(object)
 
-        decl = title + argspec + (note and self.grey(
-               '<font face="helvetica, arial">%s</font>' % note))
+        decl = title + argspec + (note and
+               '<span class="note">%s</span>' % note)
 
         doc = self.markup(
             docstring, self.preformat, funcs, classes, methods)
-        doc = doc and '<dd><tt>%s</tt></dd>' % doc
-        return '<dl><dt>%s</dt>%s</dl>\n' % (decl, doc)
+        doc = doc and '<dd class="docstring">%s</dd>' % doc
+        return '<dl class="doc"><dt>%s</dt>%s</dl>\n' % (decl, doc)
 
     def docserver(self, server_name, package_documentation, methods):
         """Produce HTML documentation for an XML-RPC server."""
@@ -800,12 +783,11 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
             fdict[value] = fdict[key]
 
         server_name = self.escape(server_name)
-        head = '<big><big><strong>%s</strong></big></big>' % server_name
-        result = self.heading(head)
+        result = self.heading(server_name)
 
         doc = self.markup(package_documentation, self.preformat, fdict)
-        doc = doc and '<tt>%s</tt>' % doc
-        result = result + '<p>%s</p>\n' % doc
+        doc = doc and '<div class="docstring">%s</div>\n' % doc
+        result = result + doc
 
         contents = []
         method_items = sorted(methods.items())
@@ -824,12 +806,15 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
             '<link rel="stylesheet" type="text/css" href="%s">' %
             css_path)
         return '''\
-<!DOCTYPE>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Python: %s</title>
-%s</head><body>%s</body></html>''' % (title, css_link, contents)
+%s</head><body>
+%s
+</body></html>''' % (title, css_link, contents)
 
 class XMLRPCDocGenerator:
     """Generates documentation for an XML-RPC server.
