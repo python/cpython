@@ -505,26 +505,23 @@ bytearray_irepeat_impl(PyByteArrayObject *self, Py_ssize_t count)
     return Py_NewRef(self);
 }
 
+/*[clinic input]
+@critical_section
+bytearray.__getitem__ as bytearray_getitem
+    i: Py_ssize_t
+    /
+[clinic start generated code]*/
+
 static PyObject *
-bytearray_getitem_lock_held(PyObject *op, Py_ssize_t i)
+bytearray_getitem_impl(PyByteArrayObject *self, Py_ssize_t i)
+/*[clinic end generated code: output=743cb7a5f892f7ed input=f90e2c70f80e2917]*/
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
-    PyByteArrayObject *self = _PyByteArray_CAST(op);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     if (i < 0 || i >= Py_SIZE(self)) {
         PyErr_SetString(PyExc_IndexError, "bytearray index out of range");
         return NULL;
     }
     return _PyLong_FromUnsignedChar((unsigned char)(self->ob_start[i]));
-}
-
-static PyObject *
-bytearray_getitem(PyObject *op, Py_ssize_t i)
-{
-    PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    ret = bytearray_getitem_lock_held(op, i);
-    Py_END_CRITICAL_SECTION();
-    return ret;
 }
 
 static PyObject *

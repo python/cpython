@@ -56,6 +56,21 @@ bytearray_irepeat(PyObject *self, Py_ssize_t count)
     return return_value;
 }
 
+static PyObject *
+bytearray_getitem_impl(PyByteArrayObject *self, Py_ssize_t i);
+
+static PyObject *
+bytearray_getitem(PyObject *self, Py_ssize_t i)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = bytearray_getitem_impl((PyByteArrayObject *)self, i);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 static int
 bytearray_setitem_impl(PyByteArrayObject *self, Py_ssize_t i,
                        PyObject *value);
@@ -2022,4 +2037,4 @@ bytearray_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl((PyByteArrayObject *)self);
 }
-/*[clinic end generated code: output=f57debf4b0a990ca input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fbd9a012eb61b372 input=a9049054013a1b77]*/

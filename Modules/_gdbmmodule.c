@@ -250,12 +250,20 @@ parse_datum(PyObject *o, datum *d, const char *failmsg)
     return 1;
 }
 
+/*[clinic input]
+@critical_section
+_gdbm.gdbm.__getitem__ as gdbm_subscript
+    key: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-gdbm_subscript_lock_held(PyObject *op, PyObject *key)
+gdbm_subscript_impl(gdbmobject *self, PyObject *key)
+/*[clinic end generated code: output=e96388d53678e967 input=8324d90d97ae98f0]*/
 {
     PyObject *v;
     datum drec, krec;
-    gdbmobject *dp = _gdbmobject_CAST(op);
+    gdbmobject *dp = self;
     _gdbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
 
     if (!parse_datum(key, &krec, NULL)) {
@@ -274,16 +282,6 @@ gdbm_subscript_lock_held(PyObject *op, PyObject *key)
     v = PyBytes_FromStringAndSize(drec.dptr, drec.dsize);
     free(drec.dptr);
     return v;
-}
-
-static PyObject *
-gdbm_subscript(PyObject *op, PyObject *key)
-{
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = gdbm_subscript_lock_held(op, key);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 /*[clinic input]
