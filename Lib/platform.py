@@ -532,7 +532,7 @@ def ios_ver(system="", release="", model="", is_simulator=False):
     If values can't be determined, they are set to values provided as
     parameters.
     """
-    if sys.platform == "ios":
+    if sys.platform in {"ios", "tvos", "visionos", "watchos"}:
         import _ios_support
         result = _ios_support.get_platform_ios()
         if result is not None:
@@ -1026,7 +1026,7 @@ def uname():
         release = android_ver().release
 
     # Normalize responses on Apple mobile platforms
-    if sys.platform in {'ios', 'tvos', 'visionos', 'watchos'}:
+    if sys.platform in {"ios", "tvos", "visionos", "watchos"}:
         system, release, _, _ = ios_ver()
 
     vals = system, node, release, version, machine
@@ -1315,7 +1315,7 @@ def platform(aliased=False, terse=False):
 
     if system == 'Darwin':
         # macOS and iOS both report as a "Darwin" kernel
-        if sys.platform in {'ios', 'tvos', 'visionos', 'watchos'}:
+        if sys.platform in {"ios", "tvos", "visionos", "watchos"}:
             system, release, _, _ = ios_ver()
         else:
             macos_release = mac_ver()[0]
