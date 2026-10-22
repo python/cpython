@@ -268,6 +268,23 @@ static int test_repeated_init_exec(void)
     return 0;
 }
 
+
+static int test_interpreter_clear_and_delete(void)
+{
+    assert(main_argc == 3);
+    _testembed_initialize();
+    if (PyRun_SimpleString(main_argv[2]) < 0) {
+        return 1;
+    }
+
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState_Clear(interp);
+    PyThreadState_Swap(NULL);
+    PyInterpreterState_Delete(interp);
+    // The interpreter has already been deleted, so don't call Py_FinalizeEx().
+    return 0;
+}
+
 /****************************************************************************
  * Test the Py_Initialize(Ex) convenience/compatibility wrappers
  ***************************************************************************/
@@ -2357,6 +2374,58 @@ static int test_repeated_init_and_inittab(void)
     return 0;
 }
 
+// Two different single-phase init functions for the same module name.
+static int cmfi_initfunc_a_calls = 0;
+static int cmfi_initfunc_b_calls = 0;
+
+static PyModuleDef cmfi_same_name_a_def = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "same_name",
+    .m_size = -1,
+};
+
+static PyModuleDef cmfi_same_name_b_def = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "same_name",
+    .m_size = -1,
+};
+
+static PyObject*
+PyInit_cmfi_same_name_a(void)
+{
+    cmfi_initfunc_a_calls++;
+    PyObject *mod = PyModule_Create(&cmfi_same_name_a_def);
+    if (mod == NULL || PyModule_AddStringConstant(mod, "which", "A") < 0) {
+        Py_XDECREF(mod);
+        return NULL;
+    }
+    return mod;
+}
+
+static PyObject*
+PyInit_cmfi_same_name_b(void)
+{
+    cmfi_initfunc_b_calls++;
+    PyObject *mod = PyModule_Create(&cmfi_same_name_b_def);
+    if (mod == NULL || PyModule_AddStringConstant(mod, "which", "B") < 0) {
+        Py_XDECREF(mod);
+        return NULL;
+    }
+    return mod;
+}
+
+static PyObject*
+create_same_name_b(PyObject* self, PyObject* spec)
+{
+    return PyImport_CreateModuleFromInitfunc(spec, PyInit_cmfi_same_name_b);
+}
+
+static PyObject*
+initfunc_calls(PyObject* self, PyObject* Py_UNUSED(args))
+{
+    return Py_BuildValue("(ii)", cmfi_initfunc_a_calls, cmfi_initfunc_b_calls);
+}
+
 // A single-phase init submodule that only knows its short name,
 // like pybind11's PYBIND11_MODULE(sp_submod, m) would.
 static PyModuleDef cmfi_sp_submod_def = {
@@ -2406,6 +2475,10 @@ create_module(PyObject* self, PyObject* spec)
         Py_DECREF(name);
         return PyImport_CreateModuleFromInitfunc(spec, PyInit_embedded_ext);
     }
+    if (PyUnicode_EqualToUTF8(name, "same_name")) {
+        Py_DECREF(name);
+        return PyImport_CreateModuleFromInitfunc(spec, PyInit_cmfi_same_name_a);
+    }
     if (PyUnicode_EqualToUTF8(name, "sp_pkg")) {
         Py_DECREF(name);
         return PyImport_CreateModuleFromInitfunc(spec, PyInit_cmfi_sp_pkg);
@@ -2430,6 +2503,8 @@ exec_module(PyObject* self, PyObject* mod)
 
 static PyMethodDef create_static_module_methods[] = {
     {"create_module", create_module, METH_O, NULL},
+    {"create_same_name_b", create_same_name_b, METH_O, NULL},
+    {"initfunc_calls", initfunc_calls, METH_NOARGS, NULL},
     {"exec_module", exec_module, METH_O, NULL},
     {NULL}
 };
@@ -2461,6 +2536,12 @@ test_create_module_from_initfunc(void)
         L"import embedded_ext;"
         L"print(embedded_ext);"
         L"print(f'{embedded_ext.executed=}');"
+        // Same name, different initfuncs: the first one wins
+        L"spec = spec_from_loader('same_name', StaticExtensionImporter);"
+        L"a = create_static_module.create_module(spec);"
+        L"b = create_static_module.create_same_name_b(spec);"
+        L"print(f'{a.which=} {b.which=} {a is b=}');"
+        L"print(f'{create_static_module.initfunc_calls()=}');"
         // Single-phase submodule whose init only knows its short name
         L"import sp_pkg.sp_submod;"
         L"print(sp_pkg.sp_submod);"
@@ -2493,7 +2574,10 @@ test_create_module_from_initfunc(void)
         "       return None\n"
         "   @staticmethod\n"
         "   def create_module(spec):\n"
-        "       return create_static_module.create_module(spec)\n"
+        "       mod = create_static_module.create_module(spec)\n"
+        "       print(f'created {spec.name}: '\n"
+        "             f'in sys.modules={spec.name in sys.modules}')\n"
+        "       return mod\n"
         "   @staticmethod\n"
         "   def exec_module(module):\n"
         "       create_static_module.exec_module(module)\n"
@@ -3001,6 +3085,7 @@ struct TestCase
 static struct TestCase TestCases[] = {
     // Python initialization
     {"test_repeated_init_exec", test_repeated_init_exec},
+    {"test_interpreter_clear_and_delete", test_interpreter_clear_and_delete},
     {"test_repeated_simple_init", test_repeated_simple_init},
     {"test_forced_io_encoding", test_forced_io_encoding},
     {"test_import_in_subinterpreters", test_import_in_subinterpreters},

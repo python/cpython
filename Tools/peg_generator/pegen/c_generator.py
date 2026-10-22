@@ -1,6 +1,6 @@
 """Prepare a complete C parser description and emit it."""
 
-import os.path
+import pathlib
 from typing import IO
 
 from pegen import grammar
@@ -76,11 +76,11 @@ class CParserGenerator(ParserGenerator):
         self.debug = debug
         self.skip_actions = skip_actions
 
-    def generate(self, filename: str) -> None:
+    def generate(self, filename: pathlib.PurePath) -> None:
         parser = self.prepare(filename)
         CParserEmitter(parser, self.file).emit()
 
-    def prepare(self, filename: str) -> CParser:
+    def prepare(self, filename: pathlib.PurePath) -> CParser:
         self.collect_rules()
         lowerer = self.callmakervisitor.make_lowerer()
         rules = tuple(
@@ -93,7 +93,7 @@ class CParserGenerator(ParserGenerator):
         if subheader := self.grammar.metas.get("subheader", ""):
             headers.append(subheader)
         return CParser(
-            source_name=os.path.basename(filename),
+            source_name=filename.name,
             headers=tuple(headers),
             keyword_groups=self._prepare_keywords(),
             soft_keywords=tuple(sorted(self.soft_keywords)),

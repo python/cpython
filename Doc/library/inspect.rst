@@ -319,6 +319,8 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 +-----------------+-------------------+---------------------------+
 |                 | __self__          | instance to which a       |
 |                 |                   | method is bound, or       |
+|                 |                   | module object a function  |
+|                 |                   | was defined in, or        |
 |                 |                   | ``None``                  |
 +-----------------+-------------------+---------------------------+
 
@@ -1344,6 +1346,11 @@ Classes and functions
    Format a pretty argument spec from the four values returned by
    :func:`getargvalues`.  The format\* arguments are the corresponding optional
    formatting functions that are called to turn names and values into strings.
+
+   Arguments whose names are absent from *locals*, including ``*`` and ``**``
+   arguments, are displayed with a value of ``<deleted>``. A custom *formatvalue*
+   function receives a placeholder object whose :func:`repr` is ``<deleted>``
+   for these arguments.
 
    .. note::
       This function was inadvertently marked as deprecated in Python 3.5.
