@@ -358,6 +358,7 @@
     <ClInclude Include="..\Include\internal\mimalloc\mimalloc\prim.h" />
     <ClInclude Include="..\Include\internal\mimalloc\mimalloc\track.h" />
     <ClInclude Include="..\Include\internal\mimalloc\mimalloc\types.h" />
+    <ClInclude Include="..\Include\internal\mimalloc\mimalloc-stats.h" />
     <ClInclude Include="..\Include\internal\mimalloc\mimalloc.h" />
     <ClInclude Include="..\Include\modsupport.h" />
     <ClInclude Include="..\Include\moduleobject.h" />

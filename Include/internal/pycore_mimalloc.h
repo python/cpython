@@ -22,10 +22,16 @@ typedef enum {
 #ifdef WITH_MIMALLOC
 #  ifdef Py_GIL_DISABLED
 #    define MI_PRIM_THREAD_ID   _Py_ThreadId
+#    define MI_VISIT_ABANDONED  1
 #  endif
 #  define MI_DEBUG_UNINIT     PYMEM_CLEANBYTE
 #  define MI_DEBUG_FREED      PYMEM_DEADBYTE
 #  define MI_DEBUG_PADDING    PYMEM_FORBIDDENBYTE
+// Do not use transparent huge pages (THP). They increase RSS on Linux.
+// See https://github.com/microsoft/mimalloc/blob/v2.5.2/readme.md#environment-options
+#  define MI_NO_THP 1
+// Do not use guarded allocations. The free-threaded GC does not support their block layout.
+#  define MI_GUARDED 0
 #ifdef Py_DEBUG
 #  define MI_DEBUG 2
 #else
@@ -52,9 +58,11 @@ extern "C++" {
 
 #ifdef Py_GIL_DISABLED
 struct _mimalloc_interp_state {
-    // When exiting, threads place any segments with live blocks in this
-    // shared pool for other threads to claim and reuse.
-    mi_abandoned_pool_t abandoned_pool;
+    // When exiting, threads abandon any segments with live blocks. The
+    // abandoned segments are tracked per mimalloc sub-process so that other
+    // threads of the same interpreter can claim and reuse them, and so that
+    // the GC can visit them.
+    mi_subproc_t *subproc;
 };
 
 struct _mimalloc_thread_state {
