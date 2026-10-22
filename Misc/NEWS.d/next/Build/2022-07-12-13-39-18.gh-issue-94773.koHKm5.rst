@@ -1,2 +1,0 @@
-``deepfreeze.py`` now supports code object with frozensets that contain
-incompatible, unsortable types.

@@ -1,5 +1,0 @@
-:meth:`~datetime.datetime.utcfromtimestamp` no longer attempts to resolve
-``fold`` in the pure Python implementation, since the fold is never 1 in UTC.
-In addition to being slightly faster in the common case, this also prevents
-some errors when the timestamp is close to :attr:`datetime.min
-<datetime.datetime.min>`.  Patch by Paul Ganssle.

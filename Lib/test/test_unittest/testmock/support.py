@@ -14,3 +14,14 @@ class SomeClass(object):
 
 class X(object):
     pass
+
+# A standin for weurkzeug.local.LocalProxy - issue 119600
+def _inaccessible(*args, **kwargs):
+    raise AttributeError
+
+
+class OpaqueProxy:
+    __getattribute__ = _inaccessible
+
+
+g = OpaqueProxy()
