@@ -2212,13 +2212,6 @@ if test "$Py_BOLT" = 'true' ; then
       CFLAGS_NODIST="$CFLAGS_NODIST -fno-reorder-blocks-and-partition"
   ])
 
-  # BOLT rejects binaries with Cortex-A53 erratum 843419 workaround veneers,
-  # see https://github.com/llvm/llvm-project/pull/187955
-  # GCC only: Clang neither accepts the flag nor adds the workaround on Linux.
-  AX_CHECK_COMPILE_FLAG([-mno-fix-cortex-a53-843419],[
-      LDFLAGS_NODIST="$LDFLAGS_NODIST -mno-fix-cortex-a53-843419"
-  ], [], [-Werror])
-
   # These flags are required for bolt to work:
   LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,--emit-relocs"
 

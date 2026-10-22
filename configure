@@ -9495,53 +9495,6 @@ esac
 fi
 
 
-  # BOLT rejects binaries with Cortex-A53 erratum 843419 workaround veneers,
-  # see https://github.com/llvm/llvm-project/pull/187955
-  # GCC only: Clang neither accepts the flag nor adds the workaround on Linux.
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mno-fix-cortex-a53-843419" >&5
-printf %s "checking whether C compiler accepts -mno-fix-cortex-a53-843419... " >&6; }
-if test ${ax_cv_check_cflags__Werror__mno_fix_cortex_a53_843419+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e)
-  ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS -Werror -mno-fix-cortex-a53-843419"
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  ax_cv_check_cflags__Werror__mno_fix_cortex_a53_843419=yes
-else case e in #(
-  e) ax_cv_check_cflags__Werror__mno_fix_cortex_a53_843419=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-  CFLAGS=$ax_check_save_flags ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mno_fix_cortex_a53_843419" >&5
-printf "%s\n" "$ax_cv_check_cflags__Werror__mno_fix_cortex_a53_843419" >&6; }
-if test "x$ax_cv_check_cflags__Werror__mno_fix_cortex_a53_843419" = xyes
-then :
-
-      LDFLAGS_NODIST="$LDFLAGS_NODIST -mno-fix-cortex-a53-843419"
-
-else case e in #(
-  e) : ;;
-esac
-fi
-
-
   # These flags are required for bolt to work:
   LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,--emit-relocs"
 
