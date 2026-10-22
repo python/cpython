@@ -1,0 +1,2 @@
+Document how custom ``importlib.metadata`` providers interact with the
+``importlib_metadata`` backport.
