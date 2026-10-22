@@ -1,1 +1,0 @@
-Search in some strings (platform dependent i.e [U+0xFFFF, U+0x0100] on Windows or [U+0xFFFFFFFF, U+0x00010000] on Linux 64-bit) are now up to 10 times faster.

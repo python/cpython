@@ -1,0 +1,6 @@
+Fix :func:`binascii.a2b_qp` and :mod:`quopri` discarding the character after
+a ``=`` that does not start a valid escape: ``b'==41'`` now decodes to
+``b'=A'``, as in the :mod:`email` package. Add a keyword-only *strip_ws*
+parameter to :func:`binascii.a2b_qp`, :func:`quopri.decode` and
+:func:`quopri.decodestring` to strip trailing whitespace from each line, as
+required by :rfc:`2045`.

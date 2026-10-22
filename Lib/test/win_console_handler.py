@@ -15,7 +15,7 @@ import mmap
 import sys
 
 # Function prototype for the handler function. Returns BOOL, takes a DWORD.
-HandlerRoutine = WINFUNCTYPE(wintypes.BOOL, wintypes.DWORD)
+HANDLER_ROUTINE = WINFUNCTYPE(wintypes.BOOL, wintypes.DWORD)
 
 def _ctrl_handler(sig):
     """Handle a sig event and return 0 to terminate the process"""
@@ -27,12 +27,13 @@ def _ctrl_handler(sig):
         print("UNKNOWN EVENT")
     return 0
 
-ctrl_handler = HandlerRoutine(_ctrl_handler)
+ctrl_handler = HANDLER_ROUTINE(_ctrl_handler)
 
 
-SetConsoleCtrlHandler = ctypes.windll.kernel32.SetConsoleCtrlHandler
-SetConsoleCtrlHandler.argtypes = (HandlerRoutine, wintypes.BOOL)
-SetConsoleCtrlHandler.restype = wintypes.BOOL
+@ctypes.util.wrap_dll_function(ctypes.windll.kernel32)
+def SetConsoleCtrlHandler(HandlerRoutine: HANDLER_ROUTINE,
+                          Add: wintypes.BOOL) -> wintypes.BOOL:
+    pass
 
 if __name__ == "__main__":
     # Add our console control handling function with value 1
