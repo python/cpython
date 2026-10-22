@@ -1,0 +1,1 @@
+Improve :class:`importlib.abc.TraversableResources`'s documentation.
