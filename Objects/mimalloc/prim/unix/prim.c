@@ -124,7 +124,7 @@ static bool unix_detect_overcommit(void) {
   #if defined(__linux__)
     int fd = mi_prim_open("/proc/sys/vm/overcommit_memory", O_RDONLY);
     if (fd >= 0) {
-      char buf[32] = {0};
+      char buf[32] = {0};  // CPython: zero-initialize to avoid an MSAN report
       ssize_t nread = mi_prim_read(fd, &buf, sizeof(buf));
       mi_prim_close(fd);
       // <https://www.kernel.org/doc/Documentation/vm/overcommit-accounting>
@@ -871,6 +871,7 @@ bool _mi_prim_random_buf(void* buf, size_t buf_len) {
 #elif defined(__ANDROID__) || defined(__DragonFly__) || \
       defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || \
       defined(__sun) || \
+      defined(__CYGWIN__) /* CPython: gh-148461 */ || \
       (defined(__APPLE__) && (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_7))
 
 bool _mi_prim_random_buf(void* buf, size_t buf_len) {
