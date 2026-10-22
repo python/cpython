@@ -1,0 +1,1 @@
+Fix :meth:`io.BytesIO.truncate` when converting its size argument closes the stream or exports its buffer.
