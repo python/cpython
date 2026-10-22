@@ -2,11 +2,8 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_runtime.h"     // _Py_SINGLETON()
-#endif
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
-#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_io__IOBase_seek__doc__,
 "seek($self, offset, whence=os.SEEK_SET, /)\n"
@@ -41,26 +38,13 @@ static PyObject *
 _io__IOBase_seek(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "seek",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     int offset;
     int whence = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("seek", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("seek", nargs, 1, 2)) {
         goto exit;
     }
     offset = PyLong_AsInt(args[0]);
@@ -68,13 +52,13 @@ _io__IOBase_seek(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ss
         goto exit;
     }
     if (nargs < 2) {
-        goto skip_optional_posonly;
+        goto skip_optional;
     }
     whence = PyLong_AsInt(args[1]);
     if (whence == -1 && PyErr_Occurred()) {
         goto exit;
     }
-skip_optional_posonly:
+skip_optional:
     return_value = _io__IOBase_seek_impl(self, cls, offset, whence);
 
 exit:
@@ -119,32 +103,19 @@ static PyObject *
 _io__IOBase_truncate(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "truncate",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *size = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("truncate", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("truncate", nargs, 0, 1)) {
         goto exit;
     }
     if (nargs < 1) {
-        goto skip_optional_posonly;
+        goto skip_optional;
     }
     size = args[0];
-skip_optional_posonly:
+skip_optional:
     return_value = _io__IOBase_truncate_impl(self, cls, size);
 
 exit:
@@ -169,6 +140,96 @@ static PyObject *
 _io__IOBase_flush(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__IOBase_flush_impl(self);
+}
+
+PyDoc_STRVAR(_io__IOBase_closed__doc__,
+"True if the file is closed.");
+
+static int
+_io__IOBase_closed_get_impl(PyObject *self);
+
+static PyObject *
+_io__IOBase_closed_get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = _io__IOBase_closed_get_impl(self);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_io__IOBase__checkClosed__doc__,
+"_checkClosed($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO__IOBASE__CHECKCLOSED_METHODDEF    \
+    {"_checkClosed", (PyCFunction)_io__IOBase__checkClosed, METH_NOARGS, _io__IOBase__checkClosed__doc__},
+
+static PyObject *
+_io__IOBase__checkClosed_impl(PyObject *self);
+
+static PyObject *
+_io__IOBase__checkClosed(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io__IOBase__checkClosed_impl(self);
+}
+
+PyDoc_STRVAR(_io__IOBase__checkSeekable__doc__,
+"_checkSeekable($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO__IOBASE__CHECKSEEKABLE_METHODDEF    \
+    {"_checkSeekable", (PyCFunction)_io__IOBase__checkSeekable, METH_NOARGS, _io__IOBase__checkSeekable__doc__},
+
+static PyObject *
+_io__IOBase__checkSeekable_impl(PyObject *self);
+
+static PyObject *
+_io__IOBase__checkSeekable(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io__IOBase__checkSeekable_impl(self);
+}
+
+PyDoc_STRVAR(_io__IOBase__checkReadable__doc__,
+"_checkReadable($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO__IOBASE__CHECKREADABLE_METHODDEF    \
+    {"_checkReadable", (PyCFunction)_io__IOBase__checkReadable, METH_NOARGS, _io__IOBase__checkReadable__doc__},
+
+static PyObject *
+_io__IOBase__checkReadable_impl(PyObject *self);
+
+static PyObject *
+_io__IOBase__checkReadable(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io__IOBase__checkReadable_impl(self);
+}
+
+PyDoc_STRVAR(_io__IOBase__checkWritable__doc__,
+"_checkWritable($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO__IOBASE__CHECKWRITABLE_METHODDEF    \
+    {"_checkWritable", (PyCFunction)_io__IOBase__checkWritable, METH_NOARGS, _io__IOBase__checkWritable__doc__},
+
+static PyObject *
+_io__IOBase__checkWritable_impl(PyObject *self);
+
+static PyObject *
+_io__IOBase__checkWritable(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io__IOBase__checkWritable_impl(self);
 }
 
 PyDoc_STRVAR(_io__IOBase_close__doc__,
@@ -250,6 +311,55 @@ static PyObject *
 _io__IOBase_writable(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__IOBase_writable_impl(self);
+}
+
+PyDoc_STRVAR(_io__IOBase___enter____doc__,
+"__enter__($self, /)\n"
+"--\n"
+"\n"
+"Context management protocol.  Returns the stream itself.");
+
+#define _IO__IOBASE___ENTER___METHODDEF    \
+    {"__enter__", (PyCFunction)_io__IOBase___enter__, METH_NOARGS, _io__IOBase___enter____doc__},
+
+static PyObject *
+_io__IOBase___enter___impl(PyObject *self);
+
+static PyObject *
+_io__IOBase___enter__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io__IOBase___enter___impl(self);
+}
+
+PyDoc_STRVAR(_io__IOBase___exit____doc__,
+"__exit__($self, /, *args)\n"
+"--\n"
+"\n"
+"Context management protocol.  Calls close().");
+
+#define _IO__IOBASE___EXIT___METHODDEF    \
+    {"__exit__", _PyCFunction_CAST(_io__IOBase___exit__), METH_FASTCALL, _io__IOBase___exit____doc__},
+
+static PyObject *
+_io__IOBase___exit___impl(PyObject *self, PyObject *args);
+
+static PyObject *
+_io__IOBase___exit__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *__clinic_args = NULL;
+
+    __clinic_args = PyTuple_FromArray(args, nargs);
+    if (__clinic_args == NULL) {
+        goto exit;
+    }
+    return_value = _io__IOBase___exit___impl(self, __clinic_args);
+
+exit:
+    /* Cleanup for args */
+    Py_XDECREF(__clinic_args);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_io__IOBase_fileno__doc__,
@@ -445,4 +555,22 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=28c06bb6db32c096 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_io__RawIOBase_readinto__doc__,
+"readinto($self, buffer, /)\n"
+"--\n"
+"\n");
+
+#define _IO__RAWIOBASE_READINTO_METHODDEF    \
+    {"readinto", (PyCFunction)_io__RawIOBase_readinto, METH_O, _io__RawIOBase_readinto__doc__},
+
+PyDoc_STRVAR(_io__RawIOBase_write__doc__,
+"write($self, buffer, /)\n"
+"--\n"
+"\n");
+
+#define _IO__RAWIOBASE_WRITE_METHODDEF    \
+    {"write", (PyCFunction)_io__RawIOBase_write, METH_O, _io__RawIOBase_write__doc__},
+#define _IO__IOBASE_CLOSED_GETSETDEF {"closed", (getter)_io__IOBase_closed_get, (setter)NULL, _io__IOBase_closed__doc__},
+
+/*[clinic end generated code: output=fd729b0ef2ad52b8 input=a9049054013a1b77]*/

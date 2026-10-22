@@ -8,7 +8,6 @@ if sys.platform != 'win32':  # pragma: no cover
 import _overlapped
 import _winapi
 import errno
-from functools import partial
 import math
 import msvcrt
 import socket
@@ -460,21 +459,17 @@ class IocpProactor:
         try:
             return ov.getresult()
         except OSError as exc:
+            # ERROR_PORT_UNREACHABLE is reported by WSARecvFrom when the
+            # same socket was previously used to send to an address that
+            # isn't listening (gh-91227). Surface it as a
+            # ConnectionResetError, like the other recoverable codes here,
+            # so it propagates to the caller the same way a plain
+            # socket.recvfrom() already does on SelectorEventLoop, instead
+            # of being silently swallowed.
             if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
-                                _overlapped.ERROR_OPERATION_ABORTED):
+                                _overlapped.ERROR_OPERATION_ABORTED,
+                                _overlapped.ERROR_PORT_UNREACHABLE):
                 raise ConnectionResetError(*exc.args)
-            else:
-                raise
-
-    @classmethod
-    def _finish_recvfrom(cls, trans, key, ov, *, empty_result):
-        try:
-            return cls.finish_socket_func(trans, key, ov)
-        except OSError as exc:
-            # WSARecvFrom will report ERROR_PORT_UNREACHABLE when the same
-            # socket is used to send to an address that is not listening.
-            if exc.winerror == _overlapped.ERROR_PORT_UNREACHABLE:
-                return empty_result, None
             else:
                 raise
 
@@ -512,19 +507,17 @@ class IocpProactor:
         except BrokenPipeError:
             return self._result((b'', None))
 
-        return self._register(ov, conn, partial(self._finish_recvfrom,
-                                                empty_result=b''))
+        return self._register(ov, conn, self.finish_socket_func)
 
-    def recvfrom_into(self, conn, buf, flags=0):
+    def recvfrom_into(self, conn, buf, nbytes=0):
         self._register_with_iocp(conn)
         ov = _overlapped.Overlapped(NULL)
         try:
-            ov.WSARecvFromInto(conn.fileno(), buf, flags)
+            ov.WSARecvFromInto(conn.fileno(), buf, nbytes)
         except BrokenPipeError:
             return self._result((0, None))
 
-        return self._register(ov, conn, partial(self._finish_recvfrom,
-                                                empty_result=0))
+        return self._register(ov, conn, self.finish_socket_func)
 
     def sendto(self, conn, buf, flags=0, addr=None):
         self._register_with_iocp(conn)
@@ -760,6 +753,46 @@ class IocpProactor:
         s.settimeout(0)
         return s
 
+    def _process_completion_status(self, status):
+        """Process a single status from the completion port.
+
+        A caller that waits on the completion port itself can pass each
+        status it receives here.
+        """
+        err, transferred, key, address = status
+        try:
+            f, ov, obj, callback = self._cache.pop(address)
+        except KeyError:
+            if self._loop.get_debug():
+                self._loop.call_exception_handler({
+                    'message': ('GetQueuedCompletionStatus() returned an '
+                                'unexpected event'),
+                    'status': ('err=%s transferred=%s key=%#x address=%#x'
+                               % (err, transferred, key, address)),
+                })
+
+            # key is either zero, or it is used to return a pipe
+            # handle which should be closed to avoid a leak.
+            if key not in (0, _overlapped.INVALID_HANDLE_VALUE):
+                _winapi.CloseHandle(key)
+            return
+
+        if obj in self._stopped_serving:
+            f.cancel()
+        # Don't call the callback if _register() already read the result or
+        # if the overlapped has been cancelled
+        elif not f.done():
+            try:
+                value = callback(transferred, key, ov)
+            except OSError as e:
+                f.set_exception(e)
+                self._results.append(f)
+            else:
+                f.set_result(value)
+                self._results.append(f)
+            finally:
+                f = None
+
     def _poll(self, timeout=None):
         if timeout is None:
             ms = INFINITE
@@ -778,39 +811,8 @@ class IocpProactor:
                 break
             ms = 0
 
-            err, transferred, key, address = status
-            try:
-                f, ov, obj, callback = self._cache.pop(address)
-            except KeyError:
-                if self._loop.get_debug():
-                    self._loop.call_exception_handler({
-                        'message': ('GetQueuedCompletionStatus() returned an '
-                                    'unexpected event'),
-                        'status': ('err=%s transferred=%s key=%#x address=%#x'
-                                   % (err, transferred, key, address)),
-                    })
-
-                # key is either zero, or it is used to return a pipe
-                # handle which should be closed to avoid a leak.
-                if key not in (0, _overlapped.INVALID_HANDLE_VALUE):
-                    _winapi.CloseHandle(key)
-                continue
-
-            if obj in self._stopped_serving:
-                f.cancel()
-            # Don't call the callback if _register() already read the result or
-            # if the overlapped has been cancelled
-            elif not f.done():
-                try:
-                    value = callback(transferred, key, ov)
-                except OSError as e:
-                    f.set_exception(e)
-                    self._results.append(f)
-                else:
-                    f.set_result(value)
-                    self._results.append(f)
-                finally:
-                    f = None
+            # gh-154971: split out so custom event loops can call it directly
+            self._process_completion_status(status)
 
         # Remove unregistered futures
         for ov in self._unregistered:

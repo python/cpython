@@ -4,6 +4,7 @@ import sys
 from dataclasses import dataclass
 
 lazy import functools
+lazy import inspect
 lazy import shutil
 lazy import subprocess
 
@@ -412,53 +413,12 @@ elif os.name == "posix":
                    _get_soname(_findLib_gcc(name)) or _get_soname(_findLib_ld(name))
 
 
-# Listing loaded libraries on other systems will try to use
-# functions common to Linux and a few other Unix-like systems.
-# See the following for several platforms' documentation of the same API:
-# https://man7.org/linux/man-pages/man3/dl_iterate_phdr.3.html
-# https://man.freebsd.org/cgi/man.cgi?query=dl_iterate_phdr
-# https://man.openbsd.org/dl_iterate_phdr
-# https://docs.oracle.com/cd/E88353_01/html/E37843/dl-iterate-phdr-3c.html
-if (os.name == "posix" and
-    sys.platform not in {"darwin", "ios", "tvos", "watchos"}):
-    import ctypes
-    if hasattr((_libc := ctypes.CDLL(None)), "dl_iterate_phdr"):
-
-        class _dl_phdr_info(ctypes.Structure):
-            _fields_ = [
-                ("dlpi_addr", ctypes.c_void_p),
-                ("dlpi_name", ctypes.c_char_p),
-                ("dlpi_phdr", ctypes.c_void_p),
-                ("dlpi_phnum", ctypes.c_ushort),
-            ]
-
-        _dl_phdr_callback = ctypes.CFUNCTYPE(
-            ctypes.c_int,
-            ctypes.POINTER(_dl_phdr_info),
-            ctypes.c_size_t,
-            ctypes.POINTER(ctypes.py_object),
-        )
-
-        @_dl_phdr_callback
-        def _info_callback(info, _size, data):
-            libraries = data.contents.value
-            name = os.fsdecode(info.contents.dlpi_name)
-            libraries.append(name)
-            return 0
-
-        _dl_iterate_phdr = _libc["dl_iterate_phdr"]
-        _dl_iterate_phdr.argtypes = [
-            _dl_phdr_callback,
-            ctypes.POINTER(ctypes.py_object),
-        ]
-        _dl_iterate_phdr.restype = ctypes.c_int
-
-        def dllist():
-            """Return a list of loaded shared libraries in the current process."""
-            libraries = []
-            _dl_iterate_phdr(_info_callback,
-                             ctypes.byref(ctypes.py_object(libraries)))
-            return libraries
+# On platforms which provide dl_iterate_phdr(), dllist() is implemented
+# in _ctypes.
+try:
+    from _ctypes import dllist as dllist
+except ImportError:
+    pass
 
 
 @dataclass(slots=True, frozen=True)
@@ -550,6 +510,13 @@ def wrap_dll_function(dll):
         except KeyError as error:
             raise ValueError(f"{name!r} missing return type annotation") from error
 
+        for param in inspect.signature(func).parameters.values():
+            if param.kind not in (param.POSITIONAL_ONLY,
+                                  param.POSITIONAL_OR_KEYWORD):
+                raise ValueError(f"{name!r} has non-positional parameter "
+                                 f"{param.name!r}; argtypes describes "
+                                 f"positional arguments only")
+
         ptr.restype = restype
         ptr.argtypes = tuple(annotations.values())
         functools.update_wrapper(ptr, func, updated=())
@@ -558,55 +525,8 @@ def wrap_dll_function(dll):
 
     return decorator
 
-################################################################
-# test code
-
 def test():
-    from ctypes import cdll
-    if os.name == "nt":
-        print(cdll.msvcrt)
-        print(cdll.load("msvcrt"))
-        print(find_library("msvcrt"))
-
-    if os.name == "posix":
-        # find and load_version
-        print(find_library("m"))
-        print(find_library("c"))
-        print(find_library("bz2"))
-
-        # load
-        if sys.platform == "darwin":
-            print(cdll.LoadLibrary("libm.dylib"))
-            print(cdll.LoadLibrary("libcrypto.dylib"))
-            print(cdll.LoadLibrary("libSystem.dylib"))
-            print(cdll.LoadLibrary("System.framework/System"))
-        # issue-26439 - fix broken test call for AIX
-        elif sys.platform.startswith("aix"):
-            from ctypes import CDLL
-            if sys.maxsize < 2**32:
-                print(f"Using CDLL(name, os.RTLD_MEMBER): {CDLL('libc.a(shr.o)', os.RTLD_MEMBER)}")
-                print(f"Using cdll.LoadLibrary(): {cdll.LoadLibrary('libc.a(shr.o)')}")
-                # librpm.so is only available as 32-bit shared library
-                print(find_library("rpm"))
-                print(cdll.LoadLibrary("librpm.so"))
-            else:
-                print(f"Using CDLL(name, os.RTLD_MEMBER): {CDLL('libc.a(shr_64.o)', os.RTLD_MEMBER)}")
-                print(f"Using cdll.LoadLibrary(): {cdll.LoadLibrary('libc.a(shr_64.o)')}")
-            print(f"crypt\t:: {find_library('crypt')}")
-            print(f"crypt\t:: {cdll.LoadLibrary(find_library('crypt'))}")
-            print(f"crypto\t:: {find_library('crypto')}")
-            print(f"crypto\t:: {cdll.LoadLibrary(find_library('crypto'))}")
-        else:
-            print(cdll.LoadLibrary("libm.so"))
-            print(cdll.LoadLibrary("libcrypt.so"))
-            print(find_library("crypt"))
-
-    try:
-        dllist
-    except NameError:
-        print('dllist() not available')
-    else:
-        print(dllist())
-
-if __name__ == "__main__":
-    test()
+    """
+    This function is a no-op and is soft-deprecated since Python 3.16.
+    Do not use.
+    """

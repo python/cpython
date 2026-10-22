@@ -41,7 +41,8 @@ notify_func_watchers(PyInterpreterState *interp, PyFunction_WatchEvent event,
             if (cb(event, func, new_value) < 0) {
                 PyErr_FormatUnraisable(
                     "Exception ignored in %s watcher callback for function %U at %p",
-                    func_event_name(event), func->func_qualname, func);
+                    func_event_name(event),
+                    FT_ATOMIC_LOAD_PTR_ACQUIRE(func->func_qualname), func);
             }
         }
         i++;
@@ -349,20 +350,6 @@ func_clear_version(PyInterpreterState *interp, PyFunctionObject *func)
     func->func_version = FUNC_VERSION_CLEARED;
 }
 
-// Called when any of the critical function attributes are changed
-static void
-_PyFunction_ClearVersion(PyFunctionObject *func)
-{
-    if (func->func_version < FUNC_VERSION_FIRST_VALID) {
-        // Version was never set or has already been cleared.
-        return;
-    }
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyEval_StopTheWorld(interp);
-    func_clear_version(interp, func);
-    _PyEval_StartTheWorld(interp);
-}
-
 void
 _PyFunction_ClearCodeByVersion(uint32_t version)
 {
@@ -419,7 +406,7 @@ PyFunction_GetModule(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_module;
+    return PyFunction_GET_MODULE(op);
 }
 
 PyObject *
@@ -448,10 +435,15 @@ PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
         PyErr_SetString(PyExc_SystemError, "non-tuple default args");
         return -1;
     }
-    handle_func_event(PyFunction_EVENT_MODIFY_DEFAULTS,
-                      (PyFunctionObject *) op, defaults);
-    _PyFunction_ClearVersion((PyFunctionObject *)op);
-    Py_XSETREF(((PyFunctionObject *)op)->func_defaults, defaults);
+    PyFunctionObject *func = (PyFunctionObject *)op;
+    handle_func_event(PyFunction_EVENT_MODIFY_DEFAULTS, func, defaults);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    func_clear_version(interp, func);
+    PyObject *old_defaults = func->func_defaults;
+    func->func_defaults = defaults;
+    _PyEval_StartTheWorld(interp);
+    Py_XDECREF(old_defaults);
     return 0;
 }
 
@@ -459,8 +451,11 @@ void
 PyFunction_SetVectorcall(PyFunctionObject *func, vectorcallfunc vectorcall)
 {
     assert(func != NULL);
-    _PyFunction_ClearVersion(func);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    func_clear_version(interp, func);
     func->vectorcall = vectorcall;
+    _PyEval_StartTheWorld(interp);
 }
 
 PyObject *
@@ -490,10 +485,15 @@ PyFunction_SetKwDefaults(PyObject *op, PyObject *defaults)
                         "non-dict keyword only default args");
         return -1;
     }
-    handle_func_event(PyFunction_EVENT_MODIFY_KWDEFAULTS,
-                      (PyFunctionObject *) op, defaults);
-    _PyFunction_ClearVersion((PyFunctionObject *)op);
-    Py_XSETREF(((PyFunctionObject *)op)->func_kwdefaults, defaults);
+    PyFunctionObject *func = (PyFunctionObject *)op;
+    handle_func_event(PyFunction_EVENT_MODIFY_KWDEFAULTS, func, defaults);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    func_clear_version(interp, func);
+    PyObject *old_kwdefaults = func->func_kwdefaults;
+    func->func_kwdefaults = defaults;
+    _PyEval_StartTheWorld(interp);
+    Py_XDECREF(old_kwdefaults);
     return 0;
 }
 
@@ -525,14 +525,40 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
                      Py_TYPE(closure)->tp_name);
         return -1;
     }
-    _PyFunction_ClearVersion((PyFunctionObject *)op);
-    Py_XSETREF(((PyFunctionObject *)op)->func_closure, closure);
+    PyFunctionObject *func = (PyFunctionObject *)op;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    func_clear_version(interp, func);
+    PyObject *old_closure = func->func_closure;
+    func->func_closure = closure;
+    _PyEval_StartTheWorld(interp);
+    Py_XDECREF(old_closure);
     return 0;
+}
+
+static void
+func_set_annotations_and_annotate(PyFunctionObject *op, PyObject *annotations,
+                                  PyObject *annotate)
+{
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+    // Care is needed, finalizers can run when references are dropped.  Store
+    // both new values before dropping references to the old.
+    PyObject *old_annotations = op->func_annotations;
+    PyObject *old_annotate = op->func_annotate;
+    FT_ATOMIC_STORE_PTR_RELEASE(op->func_annotations, annotations);
+    FT_ATOMIC_STORE_PTR_RELEASE(op->func_annotate, annotate);
+    if (old_annotations != NULL && !_Py_IsImmortal(old_annotations)) {
+        _PyObject_XDecRefDelayed(old_annotations);
+    }
+    if (old_annotate != NULL && !_Py_IsImmortal(old_annotate)) {
+        _PyObject_XDecRefDelayed(old_annotate);
+    }
 }
 
 static PyObject *
 func_get_annotation_dict(PyFunctionObject *op)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     if (op->func_annotations == NULL) {
         if (op->func_annotate == NULL || !PyCallable_Check(op->func_annotate)) {
             Py_RETURN_NONE;
@@ -549,7 +575,7 @@ func_get_annotation_dict(PyFunctionObject *op)
             Py_DECREF(ann_dict);
             return NULL;
         }
-        Py_XSETREF(op->func_annotations, ann_dict);
+        _PyObject_XSetRefDelayed(&op->func_annotations, ann_dict);
         return ann_dict;
     }
     if (PyTuple_CheckExact(op->func_annotations)) {
@@ -571,7 +597,7 @@ func_get_annotation_dict(PyFunctionObject *op)
                 return NULL;
             }
         }
-        Py_SETREF(op->func_annotations, ann_dict);
+        _PyObject_XSetRefDelayed(&op->func_annotations, ann_dict);
     }
     assert(PyDict_Check(op->func_annotations));
     return op->func_annotations;
@@ -584,7 +610,11 @@ PyFunction_GetAnnotations(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return func_get_annotation_dict((PyFunctionObject *)op);
+    PyObject *d;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    d = func_get_annotation_dict((PyFunctionObject *)op);
+    Py_END_CRITICAL_SECTION();
+    return d;
 }
 
 int
@@ -605,8 +635,9 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
         return -1;
     }
     PyFunctionObject *func = (PyFunctionObject *)op;
-    Py_XSETREF(func->func_annotations, annotations);
-    Py_CLEAR(func->func_annotate);
+    Py_BEGIN_CRITICAL_SECTION(func);
+    func_set_annotations_and_annotate(func, annotations, NULL);
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -616,9 +647,7 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
 
 static PyMemberDef func_memberlist[] = {
     {"__closure__",   _Py_T_OBJECT,     OFF(func_closure), Py_READONLY},
-    {"__doc__",       _Py_T_OBJECT,     OFF(func_doc), 0},
     {"__globals__",   _Py_T_OBJECT,     OFF(func_globals), Py_READONLY},
-    {"__module__",    _Py_T_OBJECT,     OFF(func_module), 0},
     {"__builtins__",  _Py_T_OBJECT,     OFF(func_builtins), Py_READONLY},
     {NULL}  /* Sentinel */
 };
@@ -663,11 +692,11 @@ func_set_code(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
     Py_ssize_t nclosure = (op->func_closure == NULL ? 0 :
                                         PyTuple_GET_SIZE(op->func_closure));
     if (nclosure != nfree) {
+        PyObject *name = FT_ATOMIC_LOAD_PTR_ACQUIRE(op->func_name);
         PyErr_Format(PyExc_ValueError,
                      "%U() requires a code object with %zd free vars,"
                      " not %d",
-                     op->func_name,
-                     nclosure, nfree);
+                     name, nclosure, nfree);
         return -1;
     }
 
@@ -685,8 +714,13 @@ func_set_code(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
     }
 
     handle_func_event(PyFunction_EVENT_MODIFY_CODE, op, value);
-    _PyFunction_ClearVersion(op);
-    Py_XSETREF(op->func_code, Py_NewRef(value));
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    func_clear_version(interp, op);
+    PyObject *old_code = op->func_code;
+    op->func_code = Py_NewRef(value);
+    _PyEval_StartTheWorld(interp);
+    Py_XDECREF(old_code);
     return 0;
 }
 
@@ -694,7 +728,8 @@ static PyObject *
 func_get_name(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
-    return Py_NewRef(op->func_name);
+    PyObject *name = FT_ATOMIC_LOAD_PTR_ACQUIRE(op->func_name);
+    return Py_NewRef(name);
 }
 
 static int
@@ -708,7 +743,9 @@ func_set_name(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
                         "__name__ must be set to a string object");
         return -1;
     }
-    Py_XSETREF(op->func_name, Py_NewRef(value));
+    Py_BEGIN_CRITICAL_SECTION(op);
+    _PyObject_XSetRefDelayed(&op->func_name, Py_NewRef(value));
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -716,7 +753,8 @@ static PyObject *
 func_get_qualname(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
-    return Py_NewRef(op->func_qualname);
+    PyObject *qualname = FT_ATOMIC_LOAD_PTR_ACQUIRE(op->func_qualname);
+    return Py_NewRef(qualname);
 }
 
 static int
@@ -731,7 +769,53 @@ func_set_qualname(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
         return -1;
     }
     handle_func_event(PyFunction_EVENT_MODIFY_QUALNAME, (PyFunctionObject *) op, value);
-    Py_XSETREF(op->func_qualname, Py_NewRef(value));
+    Py_BEGIN_CRITICAL_SECTION(op);
+    _PyObject_XSetRefDelayed(&op->func_qualname, Py_NewRef(value));
+    Py_END_CRITICAL_SECTION();
+    return 0;
+}
+
+static PyObject *
+func_get_doc(PyObject *self, void *Py_UNUSED(ignored))
+{
+    PyFunctionObject *op = _PyFunction_CAST(self);
+    PyObject *doc = FT_ATOMIC_LOAD_PTR_ACQUIRE(op->func_doc);
+    if (doc == NULL) {
+        doc = Py_None;
+    }
+    return Py_NewRef(doc);
+}
+
+static int
+func_set_doc(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
+{
+    /* Legal to del f.__doc__ or to set it to any object. */
+    PyFunctionObject *op = _PyFunction_CAST(self);
+    Py_BEGIN_CRITICAL_SECTION(op);
+    _PyObject_XSetRefDelayed(&op->func_doc, Py_XNewRef(value));
+    Py_END_CRITICAL_SECTION();
+    return 0;
+}
+
+static PyObject *
+func_get_module(PyObject *self, void *Py_UNUSED(ignored))
+{
+    PyFunctionObject *op = _PyFunction_CAST(self);
+    PyObject *module = FT_ATOMIC_LOAD_PTR_ACQUIRE(op->func_module);
+    if (module == NULL) {
+        module = Py_None;
+    }
+    return Py_NewRef(module);
+}
+
+static int
+func_set_module(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
+{
+    /* Legal to del f.__module__ or to set it to any object. */
+    PyFunctionObject *op = _PyFunction_CAST(self);
+    Py_BEGIN_CRITICAL_SECTION(op);
+    _PyObject_XSetRefDelayed(&op->func_module, Py_XNewRef(value));
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -772,8 +856,13 @@ func_set_defaults(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
     }
 
     handle_func_event(PyFunction_EVENT_MODIFY_DEFAULTS, op, value);
-    _PyFunction_ClearVersion(op);
-    Py_XSETREF(op->func_defaults, Py_XNewRef(value));
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    func_clear_version(interp, op);
+    PyObject *old_defaults = op->func_defaults;
+    op->func_defaults = Py_XNewRef(value);
+    _PyEval_StartTheWorld(interp);
+    Py_XDECREF(old_defaults);
     return 0;
 }
 
@@ -815,8 +904,13 @@ func_set_kwdefaults(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
     }
 
     handle_func_event(PyFunction_EVENT_MODIFY_KWDEFAULTS, op, value);
-    _PyFunction_ClearVersion(op);
-    Py_XSETREF(op->func_kwdefaults, Py_XNewRef(value));
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    func_clear_version(interp, op);
+    PyObject *old_kwdefaults = op->func_kwdefaults;
+    op->func_kwdefaults = Py_XNewRef(value);
+    _PyEval_StartTheWorld(interp);
+    Py_XDECREF(old_kwdefaults);
     return 0;
 }
 
@@ -848,18 +942,12 @@ static int
 function___annotate___set_impl(PyFunctionObject *self, PyObject *value)
 /*[clinic end generated code: output=05b7dfc07ada66cd input=eb6225e358d97448]*/
 {
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-            "__annotate__ cannot be deleted");
-        return -1;
-    }
     if (Py_IsNone(value)) {
-        Py_XSETREF(self->func_annotate, value);
+        _PyObject_XSetRefDelayed(&self->func_annotate, Py_NewRef(value));
         return 0;
     }
     else if (PyCallable_Check(value)) {
-        Py_XSETREF(self->func_annotate, Py_XNewRef(value));
-        Py_CLEAR(self->func_annotations);
+        func_set_annotations_and_annotate(self, NULL, Py_NewRef(value));
         return 0;
     }
     else {
@@ -884,9 +972,10 @@ function___annotations___get_impl(PyFunctionObject *self)
     PyObject *d = NULL;
     if (self->func_annotations == NULL &&
         (self->func_annotate == NULL || !PyCallable_Check(self->func_annotate))) {
-        self->func_annotations = PyDict_New();
-        if (self->func_annotations == NULL)
+        PyObject *ann_dict = PyDict_New();
+        if (ann_dict == NULL)
             return NULL;
+        FT_ATOMIC_STORE_PTR_RELEASE(self->func_annotations, ann_dict);
     }
     d = func_get_annotation_dict(self);
     return Py_XNewRef(d);
@@ -895,12 +984,13 @@ function___annotations___get_impl(PyFunctionObject *self)
 /*[clinic input]
 @critical_section
 @setter
+@deleter
 function.__annotations__
 [clinic start generated code]*/
 
 static int
 function___annotations___set_impl(PyFunctionObject *self, PyObject *value)
-/*[clinic end generated code: output=a61795d4a95eede4 input=5302641f686f0463]*/
+/*[clinic end generated code: output=a61795d4a95eede4 input=71f6a58c00ac6745]*/
 {
     if (value == Py_None)
         value = NULL;
@@ -912,8 +1002,7 @@ function___annotations___set_impl(PyFunctionObject *self, PyObject *value)
             "__annotations__ must be set to a dict object");
         return -1;
     }
-    Py_XSETREF(self->func_annotations, Py_XNewRef(value));
-    Py_CLEAR(self->func_annotate);
+    func_set_annotations_and_annotate(self, Py_XNewRef(value), NULL);
     return 0;
 }
 
@@ -941,19 +1030,13 @@ function___type_params___get_impl(PyFunctionObject *self)
 @critical_section
 @setter
 function.__type_params__
+    value: object(subclass_of='&PyTuple_Type')
 [clinic start generated code]*/
 
 static int
 function___type_params___set_impl(PyFunctionObject *self, PyObject *value)
-/*[clinic end generated code: output=038b4cda220e56fb input=3862fbd4db2b70e8]*/
+/*[clinic end generated code: output=038b4cda220e56fb input=e848b79ec6fec497]*/
 {
-    /* Not legal to del f.__type_params__ or to set it to anything
-     * other than a tuple object. */
-    if (value == NULL || !PyTuple_Check(value)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "__type_params__ must be set to a tuple");
-        return -1;
-    }
     Py_XSETREF(self->func_typeparams, Py_NewRef(value));
     return 0;
 }
@@ -976,6 +1059,8 @@ static PyGetSetDef func_getsetlist[] = {
     FUNCTION___ANNOTATIONS___GETSETDEF
     FUNCTION___ANNOTATE___GETSETDEF
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
+    {"__doc__", func_get_doc, func_set_doc},
+    {"__module__", func_get_module, func_set_module},
     {"__name__", func_get_name, func_set_name},
     {"__qualname__", func_get_qualname, func_set_qualname},
     FUNCTION___TYPE_PARAMS___GETSETDEF
@@ -1147,8 +1232,8 @@ static PyObject*
 func_repr(PyObject *self)
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
-    return PyUnicode_FromFormat("<function %U at %p>",
-                                op->func_qualname, op);
+    PyObject *qualname = FT_ATOMIC_LOAD_PTR_ACQUIRE(op->func_qualname);
+    return PyUnicode_FromFormat("<function %U at %p>", qualname, op);
 }
 
 static int
