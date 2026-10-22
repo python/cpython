@@ -1,0 +1,1 @@
+Update mimalloc version from 2.1.2 to 2.5.2. Patch by Donghee Na.
