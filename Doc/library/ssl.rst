@@ -1296,12 +1296,20 @@ SSL sockets also have the following additional methods and attributes:
    If certificate verification was disabled method acts the same as
    :meth:`~SSLSocket.get_unverified_chain`.
 
+   The verified chain is not stored with a session, so the list is empty
+   when the session was resumed (see :attr:`~SSLSocket.session_reused`).
+
    .. versionadded:: 3.13
 
 .. method:: SSLSocket.get_unverified_chain()
 
    Returns raw certificate chain provided by the other
    end of the SSL channel as a list of DER-encoded bytes.
+
+   No certificates are exchanged when a session is resumed (see
+   :attr:`~SSLSocket.session_reused`); the list then holds what was stored
+   with the session, which for a session resumed from a ticket on the
+   server side is the peer's own certificate only.
 
    .. versionadded:: 3.13
 

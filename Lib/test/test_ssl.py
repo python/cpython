@@ -3017,11 +3017,19 @@ class ThreadedEchoServer(threading.Thread):
                         cert = self.sslconn.getpeercert()
                         self.write(repr(cert).encode("us-ascii") + b"\n")
                     elif stripped == b'VERIFIEDCHAIN':
-                        certs = self.sslconn._sslobj.get_verified_chain()
-                        self.write(len(certs).to_bytes(1, "big") + b"\n")
+                        try:
+                            certs = self.sslconn.get_verified_chain()
+                        except Exception as e:
+                            self.write(repr(e).encode("us-ascii") + b"\n")
+                        else:
+                            self.write(len(certs).to_bytes(1, "big") + b"\n")
                     elif stripped == b'UNVERIFIEDCHAIN':
-                        certs = self.sslconn._sslobj.get_unverified_chain()
-                        self.write(len(certs).to_bytes(1, "big") + b"\n")
+                        try:
+                            certs = self.sslconn.get_unverified_chain()
+                        except Exception as e:
+                            self.write(repr(e).encode("us-ascii") + b"\n")
+                        else:
+                            self.write(len(certs).to_bytes(1, "big") + b"\n")
                     else:
                         if (support.verbose and
                             self.server.connectionchatty):
@@ -5700,6 +5708,50 @@ class TestPostHandshakeAuth(unittest.TestCase):
                 s.write(b'UNVERIFIEDCHAIN\n')
                 res = s.recv(1024)
                 self.assertEqual(res, b'\x02\n')
+
+    def test_internal_chain_server_resumed_session(self):
+        # A session resumed from a ticket stores the client's certificate
+        # but not the chain it was sent with.
+        client_context, server_context, hostname = testing_context()
+        client_context.load_cert_chain(SIGNED_CERTFILE)
+        server_context.verify_mode = ssl.CERT_REQUIRED
+        # TODO: sessions aren't compatible with TLSv1.3 yet
+        client_context.maximum_version = ssl.TLSVersion.TLSv1_2
+
+        server = ThreadedEchoServer(context=server_context, chatty=False)
+        with server:
+            with client_context.wrap_socket(
+                socket.socket(),
+                server_hostname=hostname
+            ) as s:
+                s.connect((HOST, server.port))
+                session = s.session
+                self.assertTrue(session.has_ticket)
+            with client_context.wrap_socket(
+                socket.socket(),
+                server_hostname=hostname,
+                session=session
+            ) as s:
+                s.connect((HOST, server.port))
+                self.assertTrue(s.session_reused)
+                s.write(b'UNVERIFIEDCHAIN\n')
+                res = s.recv(1024)
+                self.assertEqual(res, b'\x01\n')
+
+    def test_internal_chain_server_no_client_cert(self):
+        client_context, server_context, hostname = testing_context()
+        server_context.verify_mode = ssl.CERT_OPTIONAL
+
+        server = ThreadedEchoServer(context=server_context, chatty=False)
+        with server:
+            with client_context.wrap_socket(
+                socket.socket(),
+                server_hostname=hostname
+            ) as s:
+                s.connect((HOST, server.port))
+                s.write(b'UNVERIFIEDCHAIN\n')
+                res = s.recv(1024)
+                self.assertEqual(res, b'\x00\n')
 
 
 class TestSSLDebug(unittest.TestCase):
