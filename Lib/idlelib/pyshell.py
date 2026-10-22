@@ -3,6 +3,10 @@
 import sys
 if __name__ == "__main__":
     sys.modules['idlelib.pyshell'] = sys.modules['__main__']
+    if __spec__ is not None and not sys.flags.safe_path:
+        # Remove the current directory, prepended by "python -m", so that
+        # user files do not shadow IDLE's imports (gh-70331).
+        del sys.path[0]
 
 try:
     from tkinter import *
@@ -11,15 +15,9 @@ except ImportError:
           "Your Python may not be configured for Tk. **", file=sys.__stderr__)
     raise SystemExit(1)
 
-# Valid arguments for the ...Awareness call below are defined in the following.
-# https://msdn.microsoft.com/en-us/library/windows/desktop/dn280512(v=vs.85).aspx
 if sys.platform == 'win32':
-    try:
-        import ctypes
-        PROCESS_SYSTEM_DPI_AWARE = 1  # Int required.
-        ctypes.OleDLL('shcore').SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE)
-    except (ImportError, AttributeError, OSError):
-        pass
+    from idlelib.util import fix_win_hidpi
+    fix_win_hidpi()
 
 from tkinter import messagebox
 
@@ -28,7 +26,6 @@ import itertools
 import linecache
 import os
 import os.path
-from platform import python_version
 import re
 import socket
 import subprocess
@@ -43,13 +40,14 @@ from idlelib.config import idleConf
 from idlelib.delegator import Delegator
 from idlelib import debugger
 from idlelib import debugger_r
-from idlelib.editor import EditorWindow, fixwordbreaks
+from idlelib.editor import EditorWindow
 from idlelib.filelist import FileList
 from idlelib.outwin import OutputWindow
 from idlelib import replace
 from idlelib import rpc
 from idlelib.run import idle_formatwarning, StdInputFile, StdOutputFile
 from idlelib.undo import UndoDelegator
+from idlelib.util import fix_word_breaks
 
 # Default for testing; defaults to True in main() for running.
 use_subprocess = False
@@ -133,8 +131,8 @@ class PyShellEditorWindow(EditorWindow):
     def __init__(self, *args):
         self.breakpoints = []
         EditorWindow.__init__(self, *args)
-        self.text.bind("<<set-breakpoint-here>>", self.set_breakpoint_here)
-        self.text.bind("<<clear-breakpoint-here>>", self.clear_breakpoint_here)
+        self.text.bind("<<set-breakpoint>>", self.set_breakpoint_event)
+        self.text.bind("<<clear-breakpoint>>", self.clear_breakpoint_event)
         self.text.bind("<<open-python-shell>>", self.flist.open_shell)
 
         #TODO: don't read/write this from/to .idlerc when testing
@@ -155,8 +153,8 @@ class PyShellEditorWindow(EditorWindow):
         ("Copy", "<<copy>>", "rmenu_check_copy"),
         ("Paste", "<<paste>>", "rmenu_check_paste"),
         (None, None, None),
-        ("Set Breakpoint", "<<set-breakpoint-here>>", None),
-        ("Clear Breakpoint", "<<clear-breakpoint-here>>", None)
+        ("Set Breakpoint", "<<set-breakpoint>>", None),
+        ("Clear Breakpoint", "<<clear-breakpoint>>", None)
     ]
 
     def color_breakpoint_text(self, color=True):
@@ -181,11 +179,11 @@ class PyShellEditorWindow(EditorWindow):
             self.breakpoints.append(lineno)
         try:    # update the subprocess debugger
             debug = self.flist.pyshell.interp.debugger
-            debug.set_breakpoint_here(filename, lineno)
+            debug.set_breakpoint(filename, lineno)
         except: # but debugger may not be active right now....
             pass
 
-    def set_breakpoint_here(self, event=None):
+    def set_breakpoint_event(self, event=None):
         text = self.text
         filename = self.io.filename
         if not filename:
@@ -194,7 +192,7 @@ class PyShellEditorWindow(EditorWindow):
         lineno = int(float(text.index("insert")))
         self.set_breakpoint(lineno)
 
-    def clear_breakpoint_here(self, event=None):
+    def clear_breakpoint_event(self, event=None):
         text = self.text
         filename = self.io.filename
         if not filename:
@@ -209,7 +207,7 @@ class PyShellEditorWindow(EditorWindow):
                         "insert lineend +1char")
         try:
             debug = self.flist.pyshell.interp.debugger
-            debug.clear_breakpoint_here(filename, lineno)
+            debug.clear_breakpoint(filename, lineno)
         except:
             pass
 
@@ -249,12 +247,13 @@ class PyShellEditorWindow(EditorWindow):
         breaks = self.breakpoints
         filename = self.io.filename
         try:
-            with open(self.breakpointPath, "r") as fp:
+            with open(self.breakpointPath,
+                      encoding='utf-8', errors='replace') as fp:
                 lines = fp.readlines()
         except OSError:
             lines = []
         try:
-            with open(self.breakpointPath, "w") as new_file:
+            with open(self.breakpointPath, "w", encoding='utf-8') as new_file:
                 for line in lines:
                     if not line.startswith(filename + '='):
                         new_file.write(line)
@@ -279,7 +278,8 @@ class PyShellEditorWindow(EditorWindow):
         if filename is None:
             return
         if os.path.isfile(self.breakpointPath):
-            with open(self.breakpointPath, "r") as fp:
+            with open(self.breakpointPath,
+                      encoding='utf-8', errors='replace') as fp:
                 lines = fp.readlines()
             for line in lines:
                 if line.startswith(filename + '='):
@@ -339,9 +339,13 @@ class PyShellFileList(FileList):
 
 class ModifiedColorDelegator(ColorDelegator):
     "Extend base class: colorizer for the shell window itself"
+    reading = False  # True while the user enters input for input().
+
     def recolorize_main(self):
-        self.tag_remove("TODO", "1.0", "iomark")
-        self.tag_add("SYNC", "1.0", "iomark")
+        # Do not colorize output, nor input for input() (gh-64007).
+        end = "end" if self.reading else "iomark"
+        self.tag_remove("TODO", "1.0", end)
+        self.tag_add("SYNC", "1.0", end)
         ColorDelegator.recolorize_main(self)
 
     def removecolors(self):
@@ -412,6 +416,17 @@ def restart_line(width, filename):  # See bpo-38141.
         return tag[:-2]  # Remove ' ='.
 
 
+def fix_user_path(path):
+    """Return path without the idlelib directory (gh-134300).
+
+    That directory is on sys.path when idle.py is run as a script.
+    Otherwise user code could import idlelib submodules as top-level
+    modules, such as "import help".
+    """
+    idlelib_dir = os.path.dirname(os.path.abspath(__file__))
+    return [p for p in path if p != idlelib_dir]
+
+
 class ModifiedInterpreter(InteractiveInterpreter):
 
     def __init__(self, tkconsole):
@@ -430,7 +445,9 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def spawn_subprocess(self):
         if self.subprocess_arglist is None:
             self.subprocess_arglist = self.build_subprocess_arglist()
-        self.rpcsubproc = subprocess.Popen(self.subprocess_arglist)
+        # gh-127060: Disable traceback colors
+        env = dict(os.environ, TERM='dumb')
+        self.rpcsubproc = subprocess.Popen(self.subprocess_arglist, env=env)
 
     def build_subprocess_arglist(self):
         assert (self.port!=0), (
@@ -441,8 +458,11 @@ class ModifiedInterpreter(InteractiveInterpreter):
         # run from the IDLE source directory.
         del_exitf = idleConf.GetOption('main', 'General', 'delete-exitfunc',
                                        default=False, type='bool')
-        command = "__import__('idlelib.run').run.main(%r)" % (del_exitf,)
-        return [sys.executable] + w + ["-c", command, str(self.port)]
+        command = f"__import__('idlelib.run').run.main({del_exitf!r})"
+        # -P keeps the current directory off sys.path, so that user files
+        # do not shadow run's imports (gh-70331).  transfer_path() sets
+        # sys.path later.
+        return [sys.executable, '-P'] + w + ["-c", command, str(self.port)]
 
     def start_subprocess(self):
         addr = (HOST, self.port)
@@ -503,7 +523,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.rpcclt.close()
         self.terminate_subprocess()
         console = self.tkconsole
-        was_executing = console.executing
         console.executing = False
         self.spawn_subprocess()
         try:
@@ -571,12 +590,13 @@ class ModifiedInterpreter(InteractiveInterpreter):
             path.extend(sys.path)
         else:
             path = sys.path
+        path = fix_user_path(path)  # gh-134300
 
         self.runcommand("""if 1:
         import sys as _sys
-        _sys.path = %r
+        _sys.path = {!r}
         del _sys
-        \n""" % (path,))
+        \n""".format(path))
 
     active_seq = None
 
@@ -647,7 +667,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             return
         item = debugobj_r.StubObjectTreeItem(self.rpcclt, oid)
         from idlelib.tree import ScrolledCanvas, TreeNode
-        top = Toplevel(self.tkconsole.root)
+        top = Toplevel(self.tkconsole.root, class_='Idle')
         theme = idleConf.CurrentTheme()
         background = idleConf.GetHighlight(theme, 'normal')['background']
         sc = ScrolledCanvas(top, bg=background, highlightthickness=0)
@@ -673,7 +693,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
                               + source + "\ndel __file__")
         try:
             code = compile(source, filename, "exec")
-        except (OverflowError, SyntaxError):
+        except Exception:
             self.tkconsole.resetoutput()
             print('*** Error in script or command!\n'
                  'Traceback (most recent call last):',
@@ -685,6 +705,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
     def runsource(self, source):
         "Extend base class method: Stuff the source in the line cache first"
+        # Remove the highlighting of a previous syntax error (gh-93966).
+        self.tkconsole.text.tag_remove("ERROR", "1.0", "end")
         filename = self.stuffsource(source)
         # at the moment, InteractiveInterpreter expects str
         assert isinstance(source, str)
@@ -703,16 +725,16 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def prepend_syspath(self, filename):
         "Prepend sys.path with file's directory if not already included"
         self.runcommand("""if 1:
-            _filename = %r
+            _filename = {!r}
             import sys as _sys
             from os.path import dirname as _dirname
             _dir = _dirname(_filename)
             if not _dir in _sys.path:
                 _sys.path.insert(0, _dir)
             del _filename, _sys, _dirname, _dir
-            \n""" % (filename,))
+            \n""".format(filename))
 
-    def showsyntaxerror(self, filename=None):
+    def showsyntaxerror(self, filename=None, **kwargs):
         """Override Interactive Interpreter method: Use Colorizing
 
         Color the offending position instead of printing it and pointing at it
@@ -721,21 +743,24 @@ class ModifiedInterpreter(InteractiveInterpreter):
         """
         tkconsole = self.tkconsole
         text = tkconsole.text
-        text.tag_remove("ERROR", "1.0", "end")
         type, value, tb = sys.exc_info()
-        msg = getattr(value, 'msg', '') or value or "<no detail available>"
-        lineno = getattr(value, 'lineno', '') or 1
-        offset = getattr(value, 'offset', '') or 0
+        if not issubclass(type, SyntaxError):
+            tkconsole.resetoutput()
+            InteractiveInterpreter.showsyntaxerror(self, filename, **kwargs)
+            tkconsole.showprompt()
+            return
+        msg = value.msg or "<no detail available>"
+        lineno = value.lineno or 1
+        offset = value.offset or 0
         if offset == 0:
             lineno += 1 #mark end of offending line
         if lineno == 1:
-            pos = "iomark + %d chars" % (offset-1)
+            pos = f"iomark + {offset-1} chars"
         else:
-            pos = "iomark linestart + %d lines + %d chars" % \
-                  (lineno-1, offset-1)
+            pos = f"iomark linestart + {lineno-1} lines + {offset-1} chars"
         tkconsole.colorize_syntax_error(text, pos)
         tkconsole.resetoutput()
-        self.write("SyntaxError: %s\n" % msg)
+        self.write(f"{type.__name__}: {msg}\n")
         tkconsole.showprompt()
 
     def showtraceback(self):
@@ -747,10 +772,11 @@ class ModifiedInterpreter(InteractiveInterpreter):
             self.tkconsole.open_stack_viewer()
 
     def checklinecache(self):
-        c = linecache.cache
-        for key in list(c.keys()):
+        "Remove keys other than '<pyshell#n>'."
+        cache = linecache.cache
+        for key in list(cache):  # Iterate list because mutate cache.
             if key[:1] + key[-1:] != "<>":
-                del c[key]
+                del cache[key]
 
     def runcommand(self, code):
         "Run the code without invoking the debugger"
@@ -842,9 +868,10 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
 
 class PyShell(OutputWindow):
+    is_shell = True
     from idlelib.squeezer import Squeezer
 
-    shell_title = "IDLE Shell " + python_version()
+    shell_title = "IDLE Shell"
 
     # Override classes
     ColorDelegator = ModifiedColorDelegator
@@ -880,14 +907,13 @@ class PyShell(OutputWindow):
     from idlelib.sidebar import ShellSidebar
 
     def __init__(self, flist=None):
-        if use_subprocess:
-            ms = self.menu_specs
-            if ms[2][0] != "shell":
-                ms.insert(2, ("shell", "She_ll"))
+        ms = self.menu_specs
+        if ms[2][0] != "shell":
+            ms.insert(2, ("shell", "She_ll"))
         self.interp = ModifiedInterpreter(self)
-        if flist is None:
+        if flist is None:  # TODO possible? root and flist in main.
             root = Tk()
-            fixwordbreaks(root)
+            fix_word_breaks(root)
             root.withdraw()
             flist = PyShellFileList(root)
 
@@ -900,7 +926,6 @@ class PyShell(OutputWindow):
         self.indentwidth = 4
 
         self.sys_ps1 = sys.ps1 if hasattr(sys, 'ps1') else '>>>\n'
-        self.prompt_last_line = self.sys_ps1.split('\n')[-1]
         self.prompt = self.sys_ps1  # Changes when debug active
 
         text = self.text
@@ -956,6 +981,11 @@ class PyShell(OutputWindow):
         # events generated in Tcl/Tk to go through this delegator.
         self.text.insert = self.per.top.insert
         self.per.insertfilter(UserInputTaggingDelegator())
+
+        if not use_subprocess:
+            # Menu options "View Last Restart" and "Restart Shell" are disabled
+            self.update_menu_state("shell", 0, "disabled")
+            self.update_menu_state("shell", 1, "disabled")
 
     def ResetFont(self):
         super().ResetFont()
@@ -1085,6 +1115,7 @@ class PyShell(OutputWindow):
 
     def debug_menu_postcommand(self):
         state = 'disabled' if self.executing else 'normal'
+        self.update_menu_state('debug', '*ebugger', state)
         self.update_menu_state('debug', '*tack*iewer', state)
 
     def beginexecuting(self):
@@ -1136,8 +1167,7 @@ class PyShell(OutputWindow):
     def short_title(self):
         return self.shell_title
 
-    COPYRIGHT = \
-          'Type "help", "copyright", "credits" or "license()" for more information.'
+    SPLASHLINE = 'Enter "help" below or click "Help" above for more information.'
 
     def begin(self):
         self.text.mark_set("iomark", "insert")
@@ -1156,7 +1186,7 @@ class PyShell(OutputWindow):
             sys.displayhook = rpc.displayhook
 
         self.write("Python %s on %s\n%s\n%s" %
-                   (sys.version, sys.platform, self.COPYRIGHT, nosub))
+                   (sys.version, sys.platform, self.SPLASHLINE, nosub))
         self.text.focus_force()
         self.showprompt()
         # User code should use separate default Tk root window
@@ -1175,9 +1205,13 @@ class PyShell(OutputWindow):
         save = self.reading
         try:
             self.reading = True
+            # Input is not Python code (gh-64007).
+            self.color.reading = True
+            self.color.removecolors()
             self.top.mainloop()  # nested mainloop()
         finally:
             self.reading = save
+            self.color.reading = save
         if self._stop_readline_flag:
             self._stop_readline_flag = False
             return ""
@@ -1350,7 +1384,7 @@ class PyShell(OutputWindow):
             self.text.see("insert")
             self.text.undo_block_stop()
 
-    _last_newline_re = re.compile(r"[ \t]*(\n[ \t]*)?\Z")
+    _last_newline_re = re.compile(r"[ \t]*(\n[ \t]*)?\z")
     def runit(self):
         index_before = self.text.index("end-2c")
         line = self.text.get("iomark", "end-1c")
@@ -1363,19 +1397,19 @@ class PyShell(OutputWindow):
                 self.text.tag_remove(self.user_input_insert_tags, index_before)
             self.shell_sidebar.update_sidebar()
 
-    def open_stack_viewer(self, event=None):
+    def open_stack_viewer(self, event=None):  # -n mode only
         if self.interp.rpcclt:
             return self.interp.remote_stack_viewer()
+
+        from idlelib.stackviewer import StackBrowser
         try:
-            sys.last_traceback
+            StackBrowser(self.root, sys.last_exc, self.flist)
         except:
             messagebox.showerror("No stack trace",
                 "There is no stack trace yet.\n"
-                "(sys.last_traceback is not defined)",
+                "(sys.last_exc is not defined)",
                 parent=self.text)
-            return
-        from idlelib.stackviewer import StackBrowser
-        StackBrowser(self.root, self.flist)
+        return None
 
     def view_restart_mark(self, event=None):
         self.text.see("iomark")
@@ -1418,13 +1452,24 @@ class PyShell(OutputWindow):
         self.ctip.remove_calltip_window()
 
     def write(self, s, tags=()):
+        text = self.text
+        # Move the prompt (the "console" tag on the preceding newline)
+        # after output which comes while it is shown (gh-75512).
+        at_prompt = (s and tags in ("stdout", "stderr")
+                     and not self.executing and not self.reading)
+        if at_prompt:
+            text.tag_remove("console", "iomark-1c")
+            text.tag_remove("stdin", "iomark-1c")
         try:
-            self.text.mark_gravity("iomark", "right")
+            text.mark_gravity("iomark", "right")
             count = OutputWindow.write(self, s, tags, "iomark")
-            self.text.mark_gravity("iomark", "left")
+            text.mark_gravity("iomark", "left")
         except:
             raise ###pass  # ### 11Aug07 KBK if we are expecting exceptions
                            # let's find out what they are and be specific.
+        if at_prompt and s.endswith('\n'):
+            text.tag_add("console", "iomark-1c")
+            self.shell_sidebar.update_sidebar()
         if self.canceled:
             self.canceled = False
             if not use_subprocess:
@@ -1450,17 +1495,6 @@ class PyShell(OutputWindow):
 
     def on_squeezed_expand(self, index, text, tags):
         self.shell_sidebar.update_sidebar()
-
-
-def fix_x11_paste(root):
-    "Make paste replace selection on x11.  See issue #5124."
-    if root._windowingsystem == 'x11':
-        for cls in 'Text', 'Entry', 'Spinbox':
-            root.bind_class(
-                cls,
-                '<<Paste>>',
-                'catch {%W delete sel.first sel.last}\n' +
-                        root.bind_class(cls, '<<Paste>>'))
 
 
 usage_msg = """\
@@ -1522,6 +1556,7 @@ def main():
     from platform import system
     from idlelib import testing  # bool value
     from idlelib import macosx
+    from idlelib.util import fix_scaling, fix_x11_paste
 
     global flist, root, use_subprocess
 
@@ -1536,7 +1571,7 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "c:deihnr:st:")
     except getopt.error as msg:
-        print("Error: %s\n%s" % (msg, usage_msg), file=sys.stderr)
+        print(f"Error: {msg}\n{usage_msg}", file=sys.stderr)
         sys.exit(2)
     for o, a in opts:
         if o == '-c':
@@ -1607,8 +1642,13 @@ def main():
         NoDefaultRoot()
     root = Tk(className="Idle")
     root.withdraw()
-    from idlelib.run import fix_scaling
     fix_scaling(root)
+
+    # Warn about configuration files that could not be parsed (gh-66172).
+    config_error = idleConf.file_load_error_message()
+    if config_error:
+        messagebox.showwarning('IDLE Configuration Warning', config_error,
+                               parent=root)
 
     # set application icon
     icondir = os.path.join(os.path.dirname(__file__), 'Icons')
@@ -1629,7 +1669,7 @@ def main():
         root.wm_iconphoto(True, *icons)
 
     # start editor and/or shell windows:
-    fixwordbreaks(root)
+    fix_word_breaks(root)
     fix_x11_paste(root)
     flist = PyShellFileList(root)
     macosx.setupApp(root, flist)
@@ -1666,11 +1706,15 @@ def main():
         if filename and os.path.isfile(filename):
             shell.interp.execfile(filename)
     if cmd or script:
+        # Let the startup file finish first: the command or script
+        # is to run after it, in its namespace (gh-68453).
+        while shell.executing:
+            root.update()
         shell.interp.runcommand("""if 1:
             import sys as _sys
-            _sys.argv = %r
+            _sys.argv = {!r}
             del _sys
-            \n""" % (sys.argv,))
+            \n""".format(sys.argv))
         if cmd:
             shell.interp.execsource(cmd)
         elif script:
@@ -1692,6 +1736,7 @@ def main():
         root.mainloop()
     root.destroy()
     capture_warnings(False)
+
 
 if __name__ == "__main__":
     main()

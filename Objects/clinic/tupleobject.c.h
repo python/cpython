@@ -2,11 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(tuple_index__doc__,
 "index($self, value, start=0, stop=sys.maxsize, /)\n"
@@ -24,7 +20,7 @@ tuple_index_impl(PyTupleObject *self, PyObject *value, Py_ssize_t start,
                  Py_ssize_t stop);
 
 static PyObject *
-tuple_index(PyTupleObject *self, PyObject *const *args, Py_ssize_t nargs)
+tuple_index(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *value;
@@ -48,7 +44,7 @@ tuple_index(PyTupleObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
-    return_value = tuple_index_impl(self, value, start, stop);
+    return_value = tuple_index_impl((PyTupleObject *)self, value, start, stop);
 
 exit:
     return return_value;
@@ -62,6 +58,19 @@ PyDoc_STRVAR(tuple_count__doc__,
 
 #define TUPLE_COUNT_METHODDEF    \
     {"count", (PyCFunction)tuple_count, METH_O, tuple_count__doc__},
+
+static PyObject *
+tuple_count_impl(PyTupleObject *self, PyObject *value);
+
+static PyObject *
+tuple_count(PyObject *self, PyObject *value)
+{
+    PyObject *return_value = NULL;
+
+    return_value = tuple_count_impl((PyTupleObject *)self, value);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(tuple_new__doc__,
 "tuple(iterable=(), /)\n"
@@ -102,6 +111,35 @@ exit:
     return return_value;
 }
 
+static PyObject *
+tuple_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *iterable = NULL;
+
+    assert(Py_Is(_PyType_CAST(type), &PyTuple_Type));
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (!_PyArg_NoKwnames("tuple", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("tuple", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    iterable = args[0];
+skip_optional:
+    return_value = tuple_new_impl(_PyType_CAST(type), iterable);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(tuple___getnewargs____doc__,
 "__getnewargs__($self, /)\n"
 "--\n"
@@ -114,8 +152,8 @@ static PyObject *
 tuple___getnewargs___impl(PyTupleObject *self);
 
 static PyObject *
-tuple___getnewargs__(PyTupleObject *self, PyObject *Py_UNUSED(ignored))
+tuple___getnewargs__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return tuple___getnewargs___impl(self);
+    return tuple___getnewargs___impl((PyTupleObject *)self);
 }
-/*[clinic end generated code: output=48a9e0834b300ac3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=69cab12f1ecb03e9 input=a9049054013a1b77]*/

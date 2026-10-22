@@ -4,6 +4,8 @@
 
 typedef struct {
     PyObject_VAR_HEAD
+    /* Cached hash.  Initially set to -1. */
+    Py_hash_t ob_hash;
     /* ob_item contains space for 'ob_size' elements.
        Items must normally not be NULL, except during construction when
        the tuple is not yet visible outside the function that builds it. */
@@ -11,7 +13,6 @@ typedef struct {
 } PyTupleObject;
 
 PyAPI_FUNC(int) _PyTuple_Resize(PyObject **, Py_ssize_t);
-PyAPI_FUNC(void) _PyTuple_MaybeUntrack(PyObject *);
 
 /* Cast argument to PyTupleObject* type. */
 #define _PyTuple_CAST(op) \
@@ -31,9 +32,13 @@ static inline Py_ssize_t PyTuple_GET_SIZE(PyObject *op) {
 static inline void
 PyTuple_SET_ITEM(PyObject *op, Py_ssize_t index, PyObject *value) {
     PyTupleObject *tuple = _PyTuple_CAST(op);
+    assert(0 <= index);
+    assert(index < Py_SIZE(tuple));
     tuple->ob_item[index] = value;
 }
 #define PyTuple_SET_ITEM(op, index, value) \
     PyTuple_SET_ITEM(_PyObject_CAST(op), (index), _PyObject_CAST(value))
 
-PyAPI_FUNC(void) _PyTuple_DebugMallocStats(FILE *out);
+PyAPI_FUNC(PyObject*) PyTuple_FromArray(
+    PyObject *const *array,
+    Py_ssize_t size);

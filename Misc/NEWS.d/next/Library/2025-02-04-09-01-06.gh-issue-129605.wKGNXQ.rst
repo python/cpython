@@ -1,0 +1,1 @@
+Improve exception handling when computing suggestions in traceback.py. This fixes a bug that could cause PyREPL to exit unexpectedly.
