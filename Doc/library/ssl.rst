@@ -1749,12 +1749,16 @@ to speed up repeated connections from the same clients.
 
    .. versionadded:: 3.4
 
-.. method:: SSLContext.load_ech_keys(keyfile, *, for_retry=True)
+.. method:: SSLContext.load_ech_keys(keyfile, password=None, *, for_retry=True)
 
    Load a server's Encrypted Client Hello (ECH) private key and configuration.
-   The *keyfile* must be the path to a PEM file containing an unencrypted
-   private key followed by its matching ECHConfigList. Load the server's TLS
+   The *keyfile* must be the path to a PEM file containing a private key
+   followed by its matching ECHConfigList. Load the server's TLS
    certificate and private key separately with :meth:`load_cert_chain`.
+
+   The *password* argument is used to decrypt encrypted private keys. It accepts
+   a string, bytes, bytearray, or a callable returning one of those types, as in
+   :meth:`load_cert_chain`. Passwords are never requested interactively.
 
    Each call adds keys and configurations to those already loaded into the
    context. If *for_retry* is true, the new configurations are included in

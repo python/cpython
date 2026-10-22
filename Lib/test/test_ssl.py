@@ -2318,6 +2318,23 @@ class ECHTests(unittest.TestCase):
                          ssl.ECHStatus.ECH_STATUS_SUCCESS)
 
     @requires_ech_x25519
+    def test_load_ech_keys_password(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        # ech.pem's key encrypted with:
+        # openssl pkey -in ech.pem -aes-256-cbc -passout pass:somepass
+        filename = data_file('ech-encrypted.pem')
+        for password in (KEY_PASSWORD, lambda: KEY_PASSWORD):
+            self.assertIsNone(ctx.load_ech_keys(filename, password=password))
+
+        def password_error():
+            raise ValueError('password callback failed')
+
+        with self.assertRaisesRegex(ValueError, 'password callback failed'):
+            ctx.load_ech_keys(filename, password=password_error)
+        self.assertIsNone(ctx.load_ech_keys(data_file('ech.pem'),
+                                          password=password_error))
+
+    @requires_ech_x25519
     def test_ech_handshake(self):
         key, config = self.read_ech_key_and_config()
         other_config = bytearray(config)

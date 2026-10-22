@@ -5442,20 +5442,14 @@ _ssl__SSLContext_set_ech_config_impl(PySSLContext *self,
 }
 
 static int
-ech_password_callback(char *buf, int size, int rwflag, void *userdata)
-{
-    /* ECH key files must be unencrypted. Never prompt for a password. */
-    return -1;
-}
-
-static int
-load_ech_keys(SSL_CTX *ctx, BIO *bio, int for_retry)
+load_ech_keys(SSL_CTX *ctx, BIO *bio, int for_retry,
+              _PySSLPasswordInfo *pw_info)
 {
     int result = 0;
     int old_keys, new_keys;
     OSSL_ECHSTORE *store = NULL;
     EVP_PKEY *key = PEM_read_bio_PrivateKey(bio, NULL,
-                                            ech_password_callback, NULL);
+                                            _password_callback, pw_info);
     if (key == NULL) {
         goto end;
     }
@@ -5488,60 +5482,80 @@ end:
 }
 
 /*[clinic input]
-@critical_section
 _ssl._SSLContext.load_ech_keys
 
     keyfile: object
+    password: object = None
     *
     for_retry: bool = True
 
 Load server ECH keys and configurations from a PEM file.
 
-The file must contain an unencrypted private key followed by its
-ECHConfigList.
+The file must contain a private key followed by its ECHConfigList.
+The password argument may be a string, bytes, bytearray, or a
+callable returning one of those types. It is only needed for
+encrypted keys.
 If for_retry is true, advertise the configurations in ECH retry
 responses.
 [clinic start generated code]*/
 
 static PyObject *
 _ssl__SSLContext_load_ech_keys_impl(PySSLContext *self, PyObject *keyfile,
-                                    int for_retry)
-/*[clinic end generated code: output=8de2cc58ce2f8077 input=3e6617d346227acd]*/
+                                    PyObject *password, int for_retry)
+/*[clinic end generated code: output=73b9b4832b89f40d input=016a625a1505de4a]*/
 {
     PyObject *keyfile_bytes;
+    PyObject *ret = NULL;
+    _PySSLPasswordInfo pw_info = { NULL, NULL, NULL, 0, 0 };
     if (!PyUnicode_FSConverter(keyfile, &keyfile_bytes)) {
         return NULL;
+    }
+    if (password != Py_None) {
+        if (PyCallable_Check(password)) {
+            pw_info.callable = password;
+        } else if (!_pwinfo_set(&pw_info, password,
+                                "password should be a string or callable")) {
+            goto done;
+        }
     }
     const char *filename = PyBytes_AS_STRING(keyfile_bytes);
     int result = 0;
     int open_failed = 0;
 
     ERR_clear_error();
-    PySSL_BEGIN_ALLOW_THREADS(self)
+    PyMutex_Lock(&self->tstate_mutex);
+    PySSL_BEGIN_ALLOW_THREADS_S(pw_info.thread_state);
     errno = 0;
     BIO *bio = BIO_new_file(filename, "rb");
     if (bio == NULL) {
         open_failed = 1;
     }
     else {
-        result = load_ech_keys(self->ctx, bio, for_retry);
+        result = load_ech_keys(self->ctx, bio, for_retry, &pw_info);
         BIO_free(bio);
     }
-    PySSL_END_ALLOW_THREADS(self)
+    PySSL_END_ALLOW_THREADS_S(pw_info.thread_state);
+    PyMutex_Unlock(&self->tstate_mutex);
 
     if (result != 1) {
-        if (open_failed && errno != 0) {
+        if (pw_info.error) {
+            /* The password callback has already set the exception. */
+            ERR_clear_error();
+        }
+        else if (open_failed && errno != 0) {
             PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, keyfile);
             ERR_clear_error();
         }
         else {
             _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
         }
-        Py_DECREF(keyfile_bytes);
-        return NULL;
+        goto done;
     }
+    ret = Py_NewRef(Py_None);
+done:
+    PyMem_Free(pw_info.password);
     Py_DECREF(keyfile_bytes);
-    Py_RETURN_NONE;
+    return ret;
 }
 #endif /* HAVE_OPENSSL_ECH */
 

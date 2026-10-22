@@ -2250,13 +2250,15 @@ exit:
 #if defined(HAVE_OPENSSL_ECH)
 
 PyDoc_STRVAR(_ssl__SSLContext_load_ech_keys__doc__,
-"load_ech_keys($self, /, keyfile, *, for_retry=True)\n"
+"load_ech_keys($self, /, keyfile, password=None, *, for_retry=True)\n"
 "--\n"
 "\n"
 "Load server ECH keys and configurations from a PEM file.\n"
 "\n"
-"The file must contain an unencrypted private key followed by its\n"
-"ECHConfigList.\n"
+"The file must contain a private key followed by its ECHConfigList.\n"
+"The password argument may be a string, bytes, bytearray, or a\n"
+"callable returning one of those types. It is only needed for\n"
+"encrypted keys.\n"
 "If for_retry is true, advertise the configurations in ECH retry\n"
 "responses.");
 
@@ -2265,7 +2267,7 @@ PyDoc_STRVAR(_ssl__SSLContext_load_ech_keys__doc__,
 
 static PyObject *
 _ssl__SSLContext_load_ech_keys_impl(PySSLContext *self, PyObject *keyfile,
-                                    int for_retry);
+                                    PyObject *password, int for_retry);
 
 static PyObject *
 _ssl__SSLContext_load_ech_keys(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -2273,7 +2275,7 @@ _ssl__SSLContext_load_ech_keys(PyObject *self, PyObject *const *args, Py_ssize_t
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -2282,7 +2284,7 @@ _ssl__SSLContext_load_ech_keys(PyObject *self, PyObject *const *args, Py_ssize_t
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(keyfile), &_Py_ID(for_retry), },
+        .ob_item = { &_Py_ID(keyfile), &_Py_ID(password), &_Py_ID(for_retry), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2291,35 +2293,44 @@ _ssl__SSLContext_load_ech_keys(PyObject *self, PyObject *const *args, Py_ssize_t
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"keyfile", "for_retry", NULL};
+    static const char * const _keywords[] = {"keyfile", "password", "for_retry", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "load_ech_keys",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *keyfile;
+    PyObject *password = Py_None;
     int for_retry = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     keyfile = args[0];
     if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[1]) {
+        password = args[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    for_retry = PyObject_IsTrue(args[1]);
+    for_retry = PyObject_IsTrue(args[2]);
     if (for_retry < 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _ssl__SSLContext_load_ech_keys_impl((PySSLContext *)self, keyfile, for_retry);
-    Py_END_CRITICAL_SECTION();
+    return_value = _ssl__SSLContext_load_ech_keys_impl((PySSLContext *)self, keyfile, password, for_retry);
 
 exit:
     return return_value;
@@ -3409,4 +3420,4 @@ exit:
 
 #define _SSL_SSLSESSION_HAS_TICKET_GETSETDEF {"has_ticket", (getter)_ssl_SSLSession_has_ticket_get, (setter)NULL, _ssl_SSLSession_has_ticket__doc__},
 
-/*[clinic end generated code: output=c0d1443b798ac9a1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=25bebcfb2c509fd3 input=a9049054013a1b77]*/
