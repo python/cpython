@@ -1768,6 +1768,12 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         Py_DECREF(text);
         if (newtext == NULL)
             return NULL;
+        if (!PyUnicode_Check(newtext)) {
+            PyErr_Format(PyExc_TypeError,
+                         "replace() should return a str, not %T", newtext);
+            Py_DECREF(newtext);
+            return NULL;
+        }
         text = newtext;
     }
 
