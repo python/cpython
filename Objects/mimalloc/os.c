@@ -276,6 +276,7 @@ static void* mi_os_prim_alloc_aligned(size_t size, size_t alignment, bool commit
   else {
     // if not aligned, free it, overallocate, and unmap around it
     #if !MI_TRACK_ASAN
+    // CPython: downgraded from _mi_warning_message, the warning is noisy in the test suite (gh-112027)
     _mi_verbose_message("unable to allocate aligned OS memory directly, fall back to over-allocation (size: 0x%zx bytes, address: %p, alignment: 0x%zx, commit: %d)\n", size, p, alignment, commit);
     #endif
     if (p != NULL) { mi_os_prim_free(p, size, (commit ? size : 0)); }
