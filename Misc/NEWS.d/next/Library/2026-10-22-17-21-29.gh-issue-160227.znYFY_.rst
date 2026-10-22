@@ -1,0 +1,4 @@
+The :mod:`ipaddress` module now treats ``192.88.99.2/32`` (6a44 relay
+anycast address, :rfc:`6751`) as not globally reachable (``is_global`` is
+``False`` and ``is_private`` is ``True``), conforming with the IANA IPv4
+Special-Purpose Address Registry.

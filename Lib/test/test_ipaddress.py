@@ -2409,6 +2409,17 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertTrue(ipaddress.ip_address('192.0.0.9').is_global)
         self.assertTrue(ipaddress.ip_address('192.0.0.10').is_global)
         self.assertFalse(ipaddress.ip_address('192.0.0.255').is_global)
+        # gh-160227: conform with RFC 6751
+        self.assertFalse(ipaddress.ip_address('192.88.99.2').is_global)
+        self.assertTrue(ipaddress.ip_address('192.88.99.2').is_private)
+        self.assertTrue(ipaddress.ip_address('192.88.99.1').is_global)
+        self.assertFalse(ipaddress.ip_address('192.88.99.1').is_private)
+        self.assertTrue(ipaddress.ip_address('192.88.99.3').is_global)
+        self.assertFalse(ipaddress.ip_address('192.88.99.3').is_private)
+        self.assertFalse(ipaddress.ip_address('::ffff:192.88.99.2').is_global)
+        self.assertTrue(ipaddress.ip_address('::ffff:192.88.99.2').is_private)
+        self.assertTrue(ipaddress.ip_address('::ffff:192.88.99.1').is_global)
+        self.assertFalse(ipaddress.ip_address('::ffff:192.88.99.1').is_private)
 
         self.assertEqual(True,
                          ipaddress.ip_address('169.254.100.200').is_link_local)
@@ -2437,6 +2448,10 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(False, ipaddress.ip_network("192.0.0.9/32").is_private)
         self.assertEqual(True, ipaddress.ip_network("192.0.0.170/31").is_private)
         self.assertEqual(True, ipaddress.ip_network("192.0.2.0/24").is_private)
+        self.assertEqual(True, ipaddress.ip_network("192.88.99.2/32").is_private)
+        self.assertEqual(False, ipaddress.ip_network("192.88.99.2/32").is_global)
+        self.assertEqual(False, ipaddress.ip_network("192.88.99.0/24").is_private)
+        self.assertEqual(True, ipaddress.ip_network("192.88.99.0/24").is_global)
         self.assertEqual(True, ipaddress.ip_network("192.168.0.0/16").is_private)
         self.assertEqual(True, ipaddress.ip_network("198.18.0.0/15").is_private)
         self.assertEqual(True, ipaddress.ip_network("198.51.100.0/24").is_private)
