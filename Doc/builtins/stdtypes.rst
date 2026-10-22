@@ -2572,7 +2572,7 @@ expression support in the :mod:`re` module).
    The whitespace characters are `as defined by Unicode
    <https://www.unicode.org/reports/tr44/#White_Space>`_.
 
-   .. versionchanged:: 3.9
+   .. versionchanged:: 3.16
       Previously used a different definition of whitespace characters,
       which included the additional characters ``\x1c``, ``\x1d``,
       ``\x1e``, and ``\x1f``.

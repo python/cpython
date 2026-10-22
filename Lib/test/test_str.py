@@ -760,13 +760,13 @@ class StrTest(string_tests.StringLikeTest,
 
     @support.requires_resource('cpu')
     def test_isspace_invariant(self):
-        '''
-        Before Python 3.9, `str.isspace` used a certain formula
+        """
+        Before Python 3.16, `str.isspace` used a certain formula
         combining the General Category and the Bidirectional Class.
 
-        Since Python 3.9, we use the White_Space property that Unicode
+        Since Python 3.16, we use the White_Space property that Unicode
         now provides.  Check that these differ only on U+001C..U+001F .
-        '''
+        """
         for codepoint in range(sys.maxunicode + 1):
             char = chr(codepoint)
             bidirectional = unicodedata.bidirectional(char)
@@ -849,7 +849,7 @@ class StrTest(string_tests.StringLikeTest,
             self.assertTrue(ch.isnumeric(), '{!a} is numeric.'.format(ch))
 
     def test_bytes_consistency(self):
-        '''Check str and bytes agree on character properties within ASCII.'''
+        """Check str and bytes agree on character properties within ASCII."""
         for codepoint in range(0x80):
             char = chr(codepoint)
             byte = bytes([codepoint])
