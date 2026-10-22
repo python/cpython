@@ -989,7 +989,9 @@ datetime and time
 * :meth:`datetime.datetime.strptime`, :meth:`datetime.date.strptime`,
   :meth:`datetime.time.strptime`, and :func:`time.strptime` are faster
   for common numeric formats such as ``%Y-%m-%d`` and
-  ``%Y-%m-%d %H:%M:%S``.
+  ``%Y-%m-%d %H:%M:%S``. The optimization also covers ASCII month and
+  weekday names, 12-hour clocks, UTC offsets, numeric format aliases,
+  and ordinal and week dates.
   (Contributed by Paul Ganssle in :gh:`158252`, based on work by
   Stan Ulbrych.)
 
