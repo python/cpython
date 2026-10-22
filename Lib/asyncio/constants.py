@@ -1,3 +1,7 @@
+# Contains code from https://github.com/MagicStack/uvloop/tree/v0.16.0
+# SPDX-License-Identifier: PSF-2.0 AND (MIT OR Apache-2.0)
+# SPDX-FileCopyrightText: Copyright (c) 2015-2021 MagicStack Inc.  http://magic.io
+
 import enum
 
 # After the connection is lost, log warnings after this many write()s.
@@ -25,6 +29,9 @@ SENDFILE_FALLBACK_READBUFFER_SIZE = 1024 * 256
 
 FLOW_CONTROL_HIGH_WATER_SSL_READ = 256  # KiB
 FLOW_CONTROL_HIGH_WATER_SSL_WRITE = 512  # KiB
+
+# Default timeout for joining the threads in the threadpool
+THREAD_JOIN_TIMEOUT = 300
 
 # The enum should be here to break circular dependencies between
 # base_events and sslproto

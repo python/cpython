@@ -1,8 +1,6 @@
 #ifndef Py_UNICODEOBJECT_H
 #define Py_UNICODEOBJECT_H
 
-#include <stdarg.h>               // va_list
-
 /*
 
 Unicode implementation based on original code by Fredrik Lundh,
@@ -55,8 +53,6 @@ Copyright (c) Corporation for National Research Initiatives.
  * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  * -------------------------------------------------------------------- */
 
-#include <ctype.h>
-
 /* === Internal API ======================================================= */
 
 /* --- Internal Unicode Format -------------------------------------------- */
@@ -68,13 +64,9 @@ Copyright (c) Corporation for National Research Initiatives.
 #error Must define SIZEOF_WCHAR_T
 #endif
 
+/* Soft-deprecated defines */
 #define Py_UNICODE_SIZE SIZEOF_WCHAR_T
-
-/* If wchar_t can be used for UCS-4 storage, set Py_UNICODE_WIDE.
-   Otherwise, Unicode strings are stored as UCS-2 (with limited support
-   for UTF-16) */
-
-#if Py_UNICODE_SIZE >= 4
+#if SIZEOF_WCHAR_T >= 4
 #define Py_UNICODE_WIDE
 #endif
 
@@ -93,10 +85,6 @@ Copyright (c) Corporation for National Research Initiatives.
 # endif
 #endif
 
-#ifdef HAVE_WCHAR_H
-#  include <wchar.h>
-#endif
-
 /* Py_UCS4 and Py_UCS2 are typedefs for the respective
    unicode representations. */
 typedef uint32_t Py_UCS4;
@@ -113,7 +101,7 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 
 #define PyUnicode_Check(op) \
     PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_UNICODE_SUBCLASS)
-#define PyUnicode_CheckExact(op) Py_IS_TYPE(op, &PyUnicode_Type)
+#define PyUnicode_CheckExact(op) Py_IS_TYPE((op), &PyUnicode_Type)
 
 /* --- Constants ---------------------------------------------------------- */
 
@@ -349,63 +337,10 @@ PyAPI_FUNC(PyObject*) PyUnicode_Decode(
     const char *errors          /* error handling */
     );
 
-/* Decode a Unicode object unicode and return the result as Python
-   object.
-
-   This API is DEPRECATED. The only supported standard encoding is rot13.
-   Use PyCodec_Decode() to decode with rot13 and non-standard codecs
-   that decode from str. */
-
-Py_DEPRECATED(3.6) PyAPI_FUNC(PyObject*) PyUnicode_AsDecodedObject(
-    PyObject *unicode,          /* Unicode object */
-    const char *encoding,       /* encoding */
-    const char *errors          /* error handling */
-    );
-
-/* Decode a Unicode object unicode and return the result as Unicode
-   object.
-
-   This API is DEPRECATED. The only supported standard encoding is rot13.
-   Use PyCodec_Decode() to decode with rot13 and non-standard codecs
-   that decode from str to str. */
-
-Py_DEPRECATED(3.6) PyAPI_FUNC(PyObject*) PyUnicode_AsDecodedUnicode(
-    PyObject *unicode,          /* Unicode object */
-    const char *encoding,       /* encoding */
-    const char *errors          /* error handling */
-    );
-
-/* Encodes a Unicode object and returns the result as Python
-   object.
-
-   This API is DEPRECATED.  It is superseded by PyUnicode_AsEncodedString()
-   since all standard encodings (except rot13) encode str to bytes.
-   Use PyCodec_Encode() for encoding with rot13 and non-standard codecs
-   that encode form str to non-bytes. */
-
-Py_DEPRECATED(3.6) PyAPI_FUNC(PyObject*) PyUnicode_AsEncodedObject(
-    PyObject *unicode,          /* Unicode object */
-    const char *encoding,       /* encoding */
-    const char *errors          /* error handling */
-    );
-
 /* Encodes a Unicode object and returns the result as Python string
    object. */
 
 PyAPI_FUNC(PyObject*) PyUnicode_AsEncodedString(
-    PyObject *unicode,          /* Unicode object */
-    const char *encoding,       /* encoding */
-    const char *errors          /* error handling */
-    );
-
-/* Encodes a Unicode object and returns the result as Unicode
-   object.
-
-   This API is DEPRECATED.  The only supported standard encodings is rot13.
-   Use PyCodec_Encode() to encode with rot13 and non-standard codecs
-   that encode from str to str. */
-
-Py_DEPRECATED(3.6) PyAPI_FUNC(PyObject*) PyUnicode_AsEncodedUnicode(
     PyObject *unicode,          /* Unicode object */
     const char *encoding,       /* encoding */
     const char *errors          /* error handling */
@@ -626,7 +561,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsLatin1String(
 
 /* --- ASCII Codecs -------------------------------------------------------
 
-   Only 7-bit ASCII data is excepted. All other codes generate errors.
+   Only 7-bit ASCII data is expected. All other codes generate errors.
 
 */
 
@@ -755,38 +690,22 @@ PyAPI_FUNC(int) PyUnicode_FSConverter(PyObject*, void*);
 
 PyAPI_FUNC(int) PyUnicode_FSDecoder(PyObject*, void*);
 
-/* Decode a null-terminated string using Py_FileSystemDefaultEncoding
-   and the "surrogateescape" error handler.
+/* Decode a null-terminated string from the Python filesystem encoding
+   and error handler.
 
-   If Py_FileSystemDefaultEncoding is not set, fall back to the locale
-   encoding.
-
-   Use PyUnicode_DecodeFSDefaultAndSize() if the string length is known.
-*/
-
+   If the string length is known, use PyUnicode_DecodeFSDefaultAndSize(). */
 PyAPI_FUNC(PyObject*) PyUnicode_DecodeFSDefault(
     const char *s               /* encoded string */
     );
 
-/* Decode a string using Py_FileSystemDefaultEncoding
-   and the "surrogateescape" error handler.
-
-   If Py_FileSystemDefaultEncoding is not set, fall back to the locale
-   encoding.
-*/
-
+/* Decode a string from the Python filesystem encoding and error handler. */
 PyAPI_FUNC(PyObject*) PyUnicode_DecodeFSDefaultAndSize(
     const char *s,               /* encoded string */
     Py_ssize_t size              /* size */
     );
 
-/* Encode a Unicode object to Py_FileSystemDefaultEncoding with the
-   "surrogateescape" error handler, and return bytes.
-
-   If Py_FileSystemDefaultEncoding is not set, fall back to the locale
-   encoding.
-*/
-
+/* Encode a Unicode object to the Python filesystem encoding and error handler.
+   Return bytes. */
 PyAPI_FUNC(PyObject*) PyUnicode_EncodeFSDefault(
     PyObject *unicode
     );
@@ -980,6 +899,19 @@ PyAPI_FUNC(int) PyUnicode_CompareWithASCIIString(
     PyObject *left,
     const char *right           /* ASCII-encoded string */
     );
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030D0000
+/* Compare a Unicode object with UTF-8 encoded C string.
+   Return 1 if they are equal, or 0 otherwise.
+   This function does not raise exceptions. */
+
+PyAPI_FUNC(int) PyUnicode_EqualToUTF8(PyObject *, const char *);
+PyAPI_FUNC(int) PyUnicode_EqualToUTF8AndSize(PyObject *, const char *, Py_ssize_t);
+#endif
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
+PyAPI_FUNC(int) PyUnicode_Equal(PyObject *str1, PyObject *str2);
+#endif
 
 /* Rich compare two strings and return one of the following:
 
