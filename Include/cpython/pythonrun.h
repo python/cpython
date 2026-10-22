@@ -3,19 +3,9 @@
 #endif
 
 PyAPI_FUNC(int) PyRun_SimpleStringFlags(const char *, PyCompilerFlags *);
-PyAPI_FUNC(int) _PyRun_SimpleFileObject(
-    FILE *fp,
-    PyObject *filename,
-    int closeit,
-    PyCompilerFlags *flags);
 PyAPI_FUNC(int) PyRun_AnyFileExFlags(
     FILE *fp,
     const char *filename,       /* decoded from the filesystem encoding */
-    int closeit,
-    PyCompilerFlags *flags);
-PyAPI_FUNC(int) _PyRun_AnyFileObject(
-    FILE *fp,
-    PyObject *filename,
     int closeit,
     PyCompilerFlags *flags);
 PyAPI_FUNC(int) PyRun_SimpleFileExFlags(
@@ -35,10 +25,6 @@ PyAPI_FUNC(int) PyRun_InteractiveLoopFlags(
     FILE *fp,
     const char *filename,       /* decoded from the filesystem encoding */
     PyCompilerFlags *flags);
-PyAPI_FUNC(int) _PyRun_InteractiveLoopObject(
-    FILE *fp,
-    PyObject *filename,
-    PyCompilerFlags *flags);
 
 
 PyAPI_FUNC(PyObject *) PyRun_StringFlags(const char *, int, PyObject *,
@@ -54,6 +40,11 @@ PyAPI_FUNC(PyObject *) PyRun_FileExFlags(
     PyCompilerFlags *flags);
 
 
+PyAPI_FUNC(PyObject *) Py_CompileStringFlags(
+    const char *str,
+    const char *filename,
+    int start,
+    PyCompilerFlags *flags);
 PyAPI_FUNC(PyObject *) Py_CompileStringExFlags(
     const char *str,
     const char *filename,       /* decoded from the filesystem encoding */
@@ -68,15 +59,6 @@ PyAPI_FUNC(PyObject *) Py_CompileStringObject(
 
 #define Py_CompileString(str, p, s) Py_CompileStringExFlags((str), (p), (s), NULL, -1)
 #define Py_CompileStringFlags(str, p, s, f) Py_CompileStringExFlags((str), (p), (s), (f), -1)
-
-
-PyAPI_FUNC(const char *) _Py_SourceAsString(
-    PyObject *cmd,
-    const char *funcname,
-    const char *what,
-    PyCompilerFlags *cf,
-    PyObject **cmd_copy);
-
 
 /* A function flavor is also exported by libpython. It is required when
     libpython is accessed directly rather than using header files which defines
@@ -114,8 +96,6 @@ PyAPI_FUNC(PyObject *) PyRun_FileFlags(FILE *fp, const char *p, int s, PyObject 
 #define PyRun_FileFlags(fp, p, s, g, l, flags) \
     PyRun_FileExFlags((fp), (p), (s), (g), (l), 0, (flags))
 
-
 /* Stuff with no proper home (yet) */
 PyAPI_FUNC(char *) PyOS_Readline(FILE *, FILE *, const char *);
-PyAPI_DATA(PyThreadState*) _PyOS_ReadlineTState;
 PyAPI_DATA(char) *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *);

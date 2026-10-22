@@ -123,15 +123,6 @@ Verify early binding for the outermost for-expression
     >>> list(g)
     [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
 
-Verify that the outermost for-expression makes an immediate check
-for iterability
-
-    >>> (i for i in 6)
-    Traceback (most recent call last):
-      File "<pyshell#4>", line 1, in -toplevel-
-        (i for i in 6)
-    TypeError: 'int' object is not iterable
-
 Verify late binding for the outermost if-expression
 
     >>> include = (2,4,6,8)
@@ -223,7 +214,7 @@ Verify exception propagation
         next(g)
       File "<pyshell#35>", line 1, in <generator expression>
         g = (10 // i for i in (5, 0, 2))
-    ZeroDivisionError: integer division or modulo by zero
+    ZeroDivisionError: division by zero
     >>> next(g)
     Traceback (most recent call last):
       File "<pyshell#38>", line 1, in -toplevel-

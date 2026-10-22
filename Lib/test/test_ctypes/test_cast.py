@@ -1,10 +1,11 @@
-from ctypes import *
-from test.test_ctypes import need_symbol
-import unittest
 import sys
+import unittest
+from ctypes import (Structure, Union, POINTER, cast, sizeof, addressof,
+                    c_void_p, c_char_p, c_wchar_p,
+                    c_byte, c_short, c_int)
+
 
 class Test(unittest.TestCase):
-
     def test_array2pointer(self):
         array = (c_int * 3)(42, 17, 2)
 
@@ -12,7 +13,7 @@ class Test(unittest.TestCase):
         ptr = cast(array, POINTER(c_int))
         self.assertEqual([ptr[i] for i in range(3)], [42, 17, 2])
 
-        if 2*sizeof(c_short) == sizeof(c_int):
+        if 2 * sizeof(c_short) == sizeof(c_int):
             ptr = cast(array, POINTER(c_short))
             if sys.byteorder == "little":
                 self.assertEqual([ptr[i] for i in range(6)],
@@ -76,11 +77,10 @@ class Test(unittest.TestCase):
         self.assertEqual(cast(cast(s, c_void_p), c_char_p).value,
                              b"hiho")
 
-    @need_symbol('c_wchar_p')
     def test_wchar_p(self):
         s = c_wchar_p("hiho")
         self.assertEqual(cast(cast(s, c_void_p), c_wchar_p).value,
-                             "hiho")
+                         "hiho")
 
     def test_bad_type_arg(self):
         # The type argument must be a ctypes pointer type.
@@ -94,6 +94,7 @@ class Test(unittest.TestCase):
         class MyUnion(Union):
             _fields_ = [("a", c_int)]
         self.assertRaises(TypeError, cast, array, MyUnion)
+
 
 if __name__ == "__main__":
     unittest.main()

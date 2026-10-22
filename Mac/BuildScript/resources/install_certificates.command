@@ -1,4 +1,8 @@
 #!/bin/sh
+# Installing into the global environment is the point; ensure that the user
+# hasn't configured pip to always require a virtual environment.
+unset PIP_REQUIRE_VENV
+unset PIP_REQUIRE_VIRTUALENV
 
 /Library/Frameworks/Python.framework/Versions/@PYVER@/bin/python@PYVER@ << "EOF"
 
@@ -25,7 +29,8 @@ def main():
 
     print(" -- pip install --upgrade certifi")
     subprocess.check_call([sys.executable,
-        "-E", "-s", "-m", "pip", "install", "--upgrade", "certifi"])
+        "-E", "-s", "-m", "pip", "install", "--upgrade", "certifi",
+        "--disable-pip-version-check"])
 
     import certifi
 

@@ -1,5 +1,0 @@
-Fix a case where re-entrant imports could corrupt the import deadlock
-detection code and cause a :exc:`KeyError` to be raised out of
-:mod:`importlib/_bootstrap`.  In addition to the straightforward cases, this
-could also happen when garbage collection leads to a warning being emitted --
-as happens when it collects an open socket or file)
