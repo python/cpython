@@ -1,0 +1,5 @@
+Fix entering a combining character in the lower-right cell of
+:class:`curses.textpad.Textbox`:
+it no longer takes a cell of its own,
+pushing its base character off the window.
+In insert mode, a combining character no longer shifts the following text.
