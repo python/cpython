@@ -437,6 +437,8 @@ class DirCmpImplementationTests(unittest.TestCase):
                     encoding="utf-8") as output:
             output.write('Different contents.\n')
 
+    # Test dircmp behavior when os.stat raises OSError on specific files.
+    # Structure contains 'error_trigger_file.txt' in both directories.
     def test_dircmp_os_errors_in_processing(self):
         trigger_file = "error_trigger_file.txt"
         for d in (self.dir, self.dir_same):
@@ -455,6 +457,9 @@ class DirCmpImplementationTests(unittest.TestCase):
             dc = filecmp.dircmp(self.dir, self.dir_same)
             self.assertIn(trigger_file, dc.common_funny)
 
+    # Test common_funny layout with regular files, directories, and sockets.
+    # 'diff_type.txt' is a directory in one path and a regular file in another.
+    # 'funny_type.txt' simulates a socket using stat.S_IFSOCK.
     def test_dircmp_different_types_and_funny_types(self):
         file_diff_type = "diff_type.txt"
         file_funny_type = "funny_type.txt"
@@ -488,6 +493,9 @@ class DirCmpImplementationTests(unittest.TestCase):
             self.assertIn(file_diff_type, dc.common_funny)
             self.assertIn(file_funny_type, dc.common_funny)
 
+    # Test phase4_closure and report() output for common funny files.
+    # Modifies os.stat for 'funny_report_file.txt' to return a socket type,
+    # and patches filecmp._cmp to return an error status (2) for 'funny_file_trigger.txt'.
     def test_dircmp_closure_and_report_funnies(self):
         deep_dir_1 = os.path.join(self.dir, "subdir", "deep_folder")
         deep_dir_2 = os.path.join(self.dir_same, "subdir", "deep_folder")
