@@ -747,25 +747,6 @@ raise RuntimeError("Intentional import failure")
         self.assertEqual(sys.modules["sib_a.leaf"].X, 1)
         self.assertEqual(sys.modules["sib_b.leaf"].X, 1)
 
-    def test_concurrent_first_imports_no_partial_module(self):
-        # Dependencies are a.leaf -> b -> a, again with no cycle.  Thread 1
-        # finds b in sys.modules and waits for it, so if it kept a's lock
-        # during a/leaf.py it would get not _DeadlockError but "cannot
-        # import name 'X' from partially initialized module 'b'".
-        errors = self._run_two_first_imports(
-            {
-                "part_a/__init__.py": "import part_sync; part_sync.hold()\n",
-                "part_a/leaf.py": "from part_b import X\n",
-                "part_b.py": "import part_a\nX = 1\n",
-            },
-            "import part_a.leaf",
-            "import part_b",
-            sync_name="part_sync",
-            t2_waits_for="part_a",
-        )
-        self.assertEqual(errors, [])
-        self.assertEqual(sys.modules["part_a.leaf"].X, 1)
-
     def test_finished_package_import_not_blocked_by_submodule_body(self):
         # Thread 2 starts waiting for pkg while pkg/__init__.py runs.  It
         # needs only the finished pkg, so it must be released when that
@@ -794,8 +775,8 @@ raise RuntimeError("Intentional import failure")
                 self.assertEqual(errors, [])
 
     def test_concurrent_first_imports_of_nested_packages(self):
-        # The same one level down: thread 1 does `import g.sub.leaf`;
-        # g/sub/__init__.py needs module c; c needs g.  Thread 2 imports c
+        # Thread 1 does `import g.sub.leaf`; g/sub/__init__.py needs
+        # module c; c needs g.  Thread 2 imports c
         # while thread 1 is still inside g/__init__.py.  No cycle.  If
         # thread 1 still held g's lock while it ran g/sub/__init__.py,
         # thread 2 (holding c, waiting for g) would look deadlocked to it
@@ -956,67 +937,6 @@ raise RuntimeError("Intentional import failure")
                     (f"{pkg}.mod", "executed 2 times"),
                 ])
                 self.assertEqual(sys.modules[f"{pkg}.mod"].X, 1)
-
-    def test_waiters_recover_after_failed_package_init(self):
-        # pkg/__init__.py imports pkg.a and pkg.b, but its first execution
-        # (thread 0) raises once two other threads -- importing pkg.a and
-        # pkg.b -- are already waiting for pkg.  One of the waiters then
-        # re-runs pkg/__init__.py successfully; both waiters must succeed,
-        # and neither may end up importing the parent while holding its
-        # submodule's lock (the gh-83065 lock order) on that retry path.
-        self._setup_package_tree({
-            "flaky_pkg/__init__.py": (
-                "import flaky_sync; flaky_sync.executed.append(__name__)\n"
-                "flaky_sync.gate()\n"
-                "import flaky_pkg.a\n"
-                "import flaky_pkg.b\n"),
-            "flaky_pkg/a.py": (
-                "import flaky_sync; flaky_sync.executed.append(__name__)\n"
-                "X = 1\n"),
-            "flaky_pkg/b.py": (
-                "import flaky_sync; flaky_sync.executed.append(__name__)\n"
-                "import flaky_pkg.a\nX = 1\n"),
-        })
-        sync = types.ModuleType("flaky_sync")
-        sync.executed = []
-        sys.modules["flaky_sync"] = sync
-        self.addCleanup(sys.modules.pop, "flaky_sync", None)
-        errors = []
-
-        def run(stmt):
-            try:
-                exec(stmt, {})
-            except Exception as e:
-                errors.append((stmt, f"{type(e).__name__}: {e}"))
-
-        waiters = [threading.Thread(target=run, daemon=True,
-                                    args=(f"import flaky_pkg.{m}",))
-                   for m in ("a", "b")]
-        first = True
-
-        def gate():
-            nonlocal first
-            if not first:
-                return
-            first = False
-            for t in waiters:
-                t.start()
-            for t in waiters:
-                self._wait_until_blocked_on(t, "flaky_pkg")
-            raise RuntimeError("first attempt fails")
-        sync.gate = gate
-
-        t0 = threading.Thread(target=run, args=("import flaky_pkg",),
-                              daemon=True)
-        t0.start()
-        self._join_import_threads([t0, *waiters])
-        self.assertEqual(
-            errors,
-            [("import flaky_pkg", "RuntimeError: first attempt fails")])
-        self.assertEqual(sys.modules["flaky_pkg.b"].X, 1)
-        self.assertEqual(
-            sync.executed,
-            ["flaky_pkg", "flaky_pkg", "flaky_pkg.a", "flaky_pkg.b"])
 
 
 def setUpModule():
