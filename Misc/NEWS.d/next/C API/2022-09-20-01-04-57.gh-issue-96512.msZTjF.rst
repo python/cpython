@@ -1,2 +1,0 @@
-Configuration for the :ref:`integer string conversion length limitation
-<int_max_str_digits>` now lives in the PyConfig C API struct.

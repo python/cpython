@@ -1,11 +1,8 @@
-:mod:`email.headerregistry`: Custom Header Objects
---------------------------------------------------
+:mod:`!email.headerregistry`: Custom Header Objects
+---------------------------------------------------
 
 .. module:: email.headerregistry
    :synopsis: Automatic Parsing of headers based on the field name
-
-.. moduleauthor:: R. David Murray <rdmurray@bitdance.com>
-.. sectionauthor:: R. David Murray <rdmurray@bitdance.com>
 
 **Source code:** :source:`Lib/email/headerregistry.py`
 
@@ -43,7 +40,7 @@ headers.
 
    *name* and *value* are passed to ``BaseHeader`` from the
    :attr:`~email.policy.EmailPolicy.header_factory` call.  The string value of
-   any header object is the *value* fully decoded to unicode.
+   any header object is the *value* fully decoded to a string.
 
    This base class defines the following read-only properties:
 
@@ -96,11 +93,12 @@ headers.
    ``kwds`` is a dictionary containing one pre-initialized key, ``defects``.
    ``defects`` is an empty list.  The parse method should append any detected
    defects to this list.  On return, the ``kwds`` dictionary *must* contain
-   values for at least the keys ``decoded`` and ``defects``.  ``decoded``
-   should be the string value for the header (that is, the header value fully
-   decoded to unicode).  The parse method should assume that *string* may
+   values for at least the keys ``decoded``, ``defects`` and ``parse_tree``.
+   ``decoded`` should be the string value for the header (that is, the header
+   value fully decoded to a string). ``parse_tree`` is set to the parse tree obtained
+   from parsing the header. The parse method should assume that *string* may
    contain content-transfer-encoded parts, but should correctly handle all valid
-   unicode characters as well so that it can parse un-encoded header values.
+   Unicode characters as well so that it can parse un-encoded header values.
 
    ``BaseHeader``'s ``__new__`` then creates the header instance, and calls its
    ``init`` method.  The specialized class only needs to provide an ``init``
@@ -128,7 +126,7 @@ headers.
    mechanism for encoding non-ASCII text as ASCII characters within a header
    value.  When a *value* containing encoded words is passed to the
    constructor, the ``UnstructuredHeader`` parser converts such encoded words
-   into unicode, following the :rfc:`2047` rules for unstructured text.  The
+   into a string, following the :rfc:`2047` rules for unstructured text.  The
    parser uses heuristics to attempt to decode certain non-compliant encoded
    words.  Defects are registered in such cases, as well as defects for issues
    such as invalid characters within the encoded words or the non-encoded text.
@@ -153,7 +151,7 @@ headers.
       specified as ``-0000`` (indicating it is in UTC but contains no
       information about the source timezone), then :attr:`.datetime` will be a
       naive :class:`~datetime.datetime`.  If a specific timezone offset is
-      found (including `+0000`), then :attr:`.datetime` will contain an aware
+      found (including ``+0000``), then :attr:`.datetime` will contain an aware
       ``datetime`` that uses :class:`datetime.timezone` to record the timezone
       offset.
 
@@ -205,8 +203,8 @@ headers.
       the list of addresses is "flattened" into a one dimensional list).
 
    The ``decoded`` value of the header will have all encoded words decoded to
-   unicode.  :class:`~encodings.idna` encoded domain names are also decoded to
-   unicode.  The ``decoded`` value is set by :ref:`joining <meth-str-join>` the
+   a string.  :class:`~encodings.idna` encoded domain names are also decoded to
+   a string.  The ``decoded`` value is set by :ref:`joining <meth-str-join>` the
    :class:`str` value of the elements of the ``groups`` attribute with ``',
    '``.
 
@@ -269,6 +267,10 @@ variant, :attr:`~.BaseHeader.max_count` is set to 1.
 
        A dictionary mapping parameter names to parameter values.
 
+       .. versionchanged:: 3.15
+          It is now a :class:`frozendict` instead of a
+          :class:`types.MappingProxyType`.
+
 
 .. class:: ContentTypeHeader
 
@@ -294,7 +296,7 @@ variant, :attr:`~.BaseHeader.max_count` is set to 1.
        ``inline`` and ``attachment`` are the only valid values in common use.
 
 
-.. class:: ContentTransferEncoding
+.. class:: ContentTransferEncodingHeader
 
    Handles the :mailheader:`Content-Transfer-Encoding` header.
 
@@ -317,7 +319,7 @@ variant, :attr:`~.BaseHeader.max_count` is set to 1.
     class.  When *use_default_map* is ``True`` (the default), the standard
     mapping of header names to classes is copied in to the registry during
     initialization.  *base_class* is always the last class in the generated
-    class's ``__bases__`` list.
+    class's :class:`~type.__bases__` list.
 
     The default mappings are:
 
@@ -390,7 +392,7 @@ construct structured values to assign to specific headers.
    *domain*, in which case *username* and *domain* will be parsed from the
    *addr_spec*.  An *addr_spec* must be a properly RFC quoted string; if it is
    not ``Address`` will raise an error.  Unicode characters are allowed and
-   will be property encoded when serialized.  However, per the RFCs, unicode is
+   will be property encoded when serialized.  However, per the RFCs, Unicode is
    *not* allowed in the username portion of the address.
 
    .. attribute:: display_name

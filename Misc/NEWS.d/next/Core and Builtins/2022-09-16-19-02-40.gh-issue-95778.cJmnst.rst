@@ -1,3 +1,0 @@
-When :exc:`ValueError` is raised if an integer is larger than the limit,
-mention the :func:`sys.set_int_max_str_digits` function in the error message.
-Patch by Victor Stinner.

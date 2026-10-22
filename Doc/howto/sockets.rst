@@ -4,9 +4,6 @@
   Socket Programming HOWTO
 ****************************
 
-:Author: Gordon McMillan
-
-
 .. topic:: Abstract
 
    Sockets are used nearly everywhere, but are one of the most severely
@@ -100,8 +97,8 @@ mainloop of the web server::
        (clientsocket, address) = serversocket.accept()
        # now do something with the clientsocket
        # in this case, we'll pretend this is a threaded server
-       ct = client_thread(clientsocket)
-       ct.run()
+       ct = make_client_thread(clientsocket)
+       ct.start()
 
 There's actually 3 general ways in which this loop could work - dispatching a
 thread to handle ``clientsocket``, create a new process to handle

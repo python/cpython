@@ -1,1 +1,0 @@
-The :class:`tempfile.NamedTemporaryFile` function has a new optional parameter *delete_on_close*

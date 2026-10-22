@@ -1,3 +1,0 @@
-Remove the ``Tools/demo/`` directory which contained old demo scripts. A copy
-can be found in the `old-demos project
-<https://github.com/gvanrossum/old-demos>`_.  Patch by Victor Stinner.

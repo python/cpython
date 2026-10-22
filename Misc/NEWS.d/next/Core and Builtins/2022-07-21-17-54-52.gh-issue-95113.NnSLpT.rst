@@ -1,4 +1,0 @@
-Replace all ``EXTENDED_ARG_QUICK`` instructions with basic
-:opcode:`EXTENDED_ARG` instructions in unquickened code. Consumers of
-non-adaptive bytecode should be able to handle extended arguments the same
-way they were handled in CPython 3.10 and older.

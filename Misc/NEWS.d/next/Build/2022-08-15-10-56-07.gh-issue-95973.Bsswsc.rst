@@ -1,2 +1,0 @@
-Add a new ``--with-dsymutil`` configure option to to link debug information
-in macOS. Patch by Pablo Galindo.

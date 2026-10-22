@@ -1,2 +1,0 @@
-Add ``match_args``, ``kw_only``, ``slots``, and ``weakref_slot`` to
-``_DataclassParams``.

@@ -1,3 +1,0 @@
-Remove the ``configure --with-cxx-main`` build option: it didn't work for
-many years. Remove the ``MAINCC`` variable from ``configure`` and
-``Makefile``. Patch by Victor Stinner.

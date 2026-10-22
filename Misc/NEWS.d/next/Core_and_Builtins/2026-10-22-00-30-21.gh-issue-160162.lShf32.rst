@@ -1,0 +1,3 @@
+Fix a crash on 32-bit platforms when left shifting an :class:`int` by a
+count close to ``sys.maxsize * sys.int_info.bits_per_digit``.
+:exc:`OverflowError` is now raised, as for other too large counts.

@@ -1,1 +1,0 @@
-Fix ``test_embed`` for out-of-tree builds. Patch by Kumar Aditya.

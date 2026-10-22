@@ -1,2 +1,0 @@
-:mod:`dataclass` now uses :func:`inspect.get_annotations` to examine the
-annotations on class objects.

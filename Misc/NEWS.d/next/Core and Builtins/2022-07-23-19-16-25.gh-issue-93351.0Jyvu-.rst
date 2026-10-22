@@ -1,3 +1,0 @@
-:class:`ast.AST` node positions are now validated when provided to
-:func:`compile` and other related functions. If invalid positions are
-detected, a :exc:`ValueError` will be raised.

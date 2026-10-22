@@ -1,2 +1,0 @@
-Accessing the :attr:`pathlib.PurePath.parents` sequence of an absolute path
-using negative index values produced incorrect results.
