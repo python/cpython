@@ -1835,6 +1835,45 @@ class DictTest(unittest.TestCase):
         d = x.__dict__
         d.clear()
 
+    def test_clear_reentrant_detached_split(self):
+        # gh-158198 follow-up: dict.clear() on a detached split-table dict
+        # must not expose (Py_EMPTY_KEYS, non-NULL ma_values) to a
+        # finalizer.  A reentrant insert must see a consistent empty dict.
+        class MyObj: pass
+        class Reinsert:
+            def __del__(self):
+                d['reentrant'] = 1
+
+        x = MyObj()
+        x.a = Reinsert()
+        x.b = 'other'
+
+        d = x.__dict__
+        # Detach: the old dict becomes a heap-allocated split table
+        # (ma_values non-NULL, embedded == 0).
+        x.__dict__ = {}
+        d.clear()
+        self.assertEqual(d, {'reentrant': 1})
+
+    def test_clear_reentrant_detached_split_update(self):
+        # Same as above but with a reentrant update large enough to force
+        # a resize.  On the buggy code this frees the values array that
+        # clear() is still iterating over (use-after-free / segfault).
+        class MyObj: pass
+        other = {f'k{i}': i for i in range(20)}
+        class Reinsert:
+            def __del__(self):
+                d.update(other)
+
+        x = MyObj()
+        x.a = Reinsert()
+        x.b = 'other'
+
+        d = x.__dict__
+        x.__dict__ = {}
+        d.clear()
+        self.assertEqual(d, other)
+
 
 class CAPITest(unittest.TestCase):
 

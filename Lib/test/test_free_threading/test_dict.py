@@ -5,7 +5,7 @@ import weakref
 
 from ast import Or
 from functools import partial
-from threading import Barrier, Thread
+from threading import Barrier, Event, Thread
 from unittest import TestCase
 
 try:
@@ -436,6 +436,45 @@ class TestDict(TestCase):
                 leave.wait()
 
         threading_helper.run_concurrently([reader, writer])
+
+    def test_racing_dealloc_and_split_dict_resize(self):
+        # gh-158198: an object's inline-values __dict__ escapes to another
+        # thread, which converts it to a combined table (by adding a non-str
+        # key) while the owning thread drops the last reference to the object.
+        NATTRS = 20
+
+        class C:
+            def __init__(self):
+                for i in range(NATTRS):
+                    setattr(self, f"a{i}", i)
+
+        def make_pair():
+            slot = [None]
+            done = Event()
+
+            def owner():
+                try:
+                    for j in range(2000):
+                        o = C()
+                        for i in range(NATTRS):
+                            self.assertEqual(getattr(o, f"a{i}"), i)
+                        slot[0] = o.__dict__
+                        for _ in range(j % 16):
+                            pass
+                        del o
+                finally:
+                    done.set()
+
+            def converter():
+                while not done.is_set():
+                    d = slot[0]
+                    if d is not None:
+                        d[0] = 0
+                        slot[0] = None
+
+            return [owner, converter]
+
+        threading_helper.run_concurrently(make_pair() + make_pair())
 
     def test_racing_dict_update_and_method_lookup_with_inline_values(self):
         # gh-149816: sub-case 108
