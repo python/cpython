@@ -1,0 +1,6 @@
+Fix the shell version of :program:`python3-config` (used on all POSIX
+platforms except macOS) when the installation prefix contains spaces or
+other characters special to the shell or :program:`sed`: it printed an
+empty ``--prefix`` and wrong ``--includes``/``--ldflags`` paths while
+exiting successfully. The script now also exits with status 1 if it cannot
+determine its installation prefix.
