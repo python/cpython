@@ -1,6 +1,9 @@
 .. cve: CVE-2026-115514
 
 Fix the EUC-KR decoder to reject the 8-byte Hangul make-up sequence for
-syllables that KS X 1001 encodes in 2 bytes, so that decoded names re-encode
-to the same bytes and :mod:`tarfile` extraction filters cannot be bypassed
-through symlinks on hosts using the EUC-KR filesystem encoding.
+syllables that KS X 1001 encodes in 2 bytes. Previously such input decoded
+to a string that re-encoded to different bytes, so on hosts using EUC-KR as
+the filesystem encoding a path or symlink target read from disk could resolve
+differently in Python than in the operating system. In particular, this
+allowed the :mod:`tarfile` extraction filters to approve a symlink chain that
+leads outside the destination directory.
