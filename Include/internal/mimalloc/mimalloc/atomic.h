@@ -52,7 +52,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #include <stdatomic.h>
 #define  mi_atomic(name)          atomic_##name
 #define  mi_memory_order(name)    memory_order_##name
-#if (__STDC_VERSION__ >= 201710L) // c17, see issue #735
+#if (_Py_STDC_VERSION >= 201710L) // c17, see issue #735
  #define MI_ATOMIC_VAR_INIT(x)    x
 #elif !defined(ATOMIC_VAR_INIT)
  #define MI_ATOMIC_VAR_INIT(x)    x
