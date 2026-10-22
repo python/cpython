@@ -531,14 +531,13 @@ raise RuntimeError("Intentional import failure")
 
     def _run_two_first_imports(self, files, stmt1, stmt2, *,
                                sync_name, t2_waits_for):
-        """Thread 1 runs *stmt1*.  Something it executes calls
-        ``<sync_name>.hold()``, which starts thread 2 on *stmt2* and returns
-        only once thread 2 is blocked on the module lock of *t2_waits_for*
-        (any module lock if None).  Module code may also call
-        ``<sync_name>.join_t2()`` to wait for thread 2 to finish.
-        Returns a list of (what, problem) pairs; empty means both imports
-        succeeded and no module body ran more than once.
-        """
+        # Thread 1 runs stmt1.  Something it executes calls
+        # <sync_name>.hold(), which starts thread 2 on stmt2 and returns
+        # only once thread 2 is blocked on the module lock of t2_waits_for
+        # (any module lock if None).  Module code may also call
+        # <sync_name>.join_t2() to wait for thread 2 to finish.
+        # Returns a list of (what, problem) pairs; empty means both imports
+        # succeeded and no module body ran more than once.
         # list.append() is atomic, on free-threaded builds too.
         count = f"import {sync_name}; {sync_name}.executed.append(__name__)\n"
         self._setup_package_tree({relpath: count + source

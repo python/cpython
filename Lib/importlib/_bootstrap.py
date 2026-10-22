@@ -1264,18 +1264,17 @@ def _find_and_load_unlocked(name, import_, *, lazy_submodule=False):
 _NEEDS_LOADING = object()
 
 
+# Return whether module (a sys.modules value) is still executing.
 def _is_initializing(module):
-    """Return whether *module* (a sys.modules value) is still executing."""
     return getattr(getattr(module, '__spec__', None), '_initializing', False)
 
 
+# Import, or wait for, the parent packages of name.
+#
+# _find_and_load() calls this before taking name's module lock, so that no
+# thread holds a submodule's lock while waiting for its parent.  This avoids
+# the deadlocks and import errors of gh-83065 and gh-159963.
 def _resolve_parents(name, import_):
-    """Import, or wait for, the parent packages of *name*.
-
-    _find_and_load() calls this before taking name's module lock, so that no
-    thread holds a submodule's lock while waiting for its parent.  This avoids
-    the deadlocks and import errors of gh-83065 and gh-159963.
-    """
     # Wait for each ancestor package that another thread is still
     # initializing, outermost first.  Importing beneath a package while its
     # __init__ is part way through its own imports could give one of the two
