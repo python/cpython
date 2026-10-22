@@ -5705,6 +5705,28 @@ static PyMethodDef dictiter_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
+/* Mark the iterator as exhausted.  In the free-threaded build an iterator
+   may be advanced by several threads at once, each holding a borrowed
+   pointer to di_dict, so the iterator keeps its reference to the dict until
+   it is deallocated (as list and tuple iterators do) and records exhaustion
+   by setting di_pos to DICTITER_EXHAUSTED.  This is distinct from -1, the
+   starting position of a reverse iterator over an empty dict. */
+#ifdef Py_GIL_DISABLED
+#define DICTITER_EXHAUSTED PY_SSIZE_T_MIN
+#endif
+
+static void
+dictiter_set_exhausted(dictiterobject *di, PyDictObject *d)
+{
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_store_ssize_relaxed(&di->di_pos, DICTITER_EXHAUSTED);
+    _Py_atomic_store_ssize_relaxed(&di->len, 0);
+#else
+    di->di_dict = NULL;
+    Py_DECREF(d);
+#endif
+}
+
 #ifdef Py_GIL_DISABLED
 
 static int
@@ -5970,6 +5992,11 @@ dictiter_iternextitem_lock_held(PyDictObject *d, PyObject *self,
     assert (PyAnyDict_Check(d));
     ASSERT_DICT_LOCKED(d);
 
+    i = FT_ATOMIC_LOAD_SSIZE_RELAXED(di->di_pos);
+    if (i < 0) {
+        return -1;  /* exhausted */
+    }
+
     if (di->di_used != d->ma_used) {
         PyErr_SetString(PyExc_RuntimeError,
                         "dictionary changed size during iteration");
@@ -5977,9 +6004,6 @@ dictiter_iternextitem_lock_held(PyDictObject *d, PyObject *self,
         return -1;
     }
 
-    i = FT_ATOMIC_LOAD_SSIZE_RELAXED(di->di_pos);
-
-    assert(i >= 0);
     if (_PyDict_HasSplitTable(d)) {
         if (i >= d->ma_used)
             goto fail;
@@ -6030,8 +6054,7 @@ dictiter_iternextitem_lock_held(PyDictObject *d, PyObject *self,
     return 0;
 
 fail:
-    di->di_dict = NULL;
-    Py_DECREF(d);
+    dictiter_set_exhausted(di, d);
     return -1;
 }
 
@@ -6075,6 +6098,11 @@ dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
 
     assert (PyAnyDict_Check(d));
 
+    i = _Py_atomic_load_ssize_relaxed(&di->di_pos);
+    if (i == DICTITER_EXHAUSTED) {
+        return -1;
+    }
+
     if (di->di_used != _Py_atomic_load_ssize_relaxed(&d->ma_used)) {
         PyErr_SetString(PyExc_RuntimeError,
                         "dictionary changed size during iteration");
@@ -6084,9 +6112,7 @@ dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
 
     ensure_shared_on_read(d);
 
-    i = _Py_atomic_load_ssize_relaxed(&di->di_pos);
     k = _Py_atomic_load_ptr_acquire(&d->ma_keys);
-    assert(i >= 0);
     if (_PyDict_HasSplitTable(d)) {
         PyDictValues *values = _Py_atomic_load_ptr_consume(&d->ma_values);
         if (values == NULL) {
@@ -6165,8 +6191,7 @@ concurrent_modification:
                     "dictionary keys changed during iteration");
 
 fail:
-    di->di_dict = NULL;
-    Py_DECREF(d);
+    dictiter_set_exhausted(di, d);
     return -1;
 
 try_locked:
@@ -6268,6 +6293,12 @@ dictreviter_iter_lock_held(PyDictObject *d, PyObject *self)
     assert (PyAnyDict_Check(d));
     ASSERT_DICT_LOCKED(d);
 
+#ifdef Py_GIL_DISABLED
+    if (di->di_pos == DICTITER_EXHAUSTED) {
+        return NULL;
+    }
+#endif
+
     if (di->di_used != d->ma_used) {
         PyErr_SetString(PyExc_RuntimeError,
                          "dictionary changed size during iteration");
@@ -6354,8 +6385,7 @@ dictreviter_iter_lock_held(PyDictObject *d, PyObject *self)
     }
 
 fail:
-    di->di_dict = NULL;
-    Py_DECREF(d);
+    dictiter_set_exhausted(di, d);
     return NULL;
 }
 
