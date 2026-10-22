@@ -752,7 +752,7 @@ mmap_mmap_write_impl(mmap_object *self, Py_buffer *data)
 
     CHECK_VALID(NULL);
     PyObject *result;
-    if (safe_memcpy(self->data + self->pos, data->buf, data->len) < 0) {
+    if (safe_memmove(self->data + self->pos, data->buf, data->len) < 0) {
         result = NULL;
     }
     else {
@@ -1722,7 +1722,7 @@ mmap_ass_subscript_impl(mmap_object *self, PyObject *item, PyObject *value)
         if (slicelen == 0) {
         }
         else if (step == 1) {
-            if (safe_memcpy(self->data + start, vbuf.buf, slicelen) < 0) {
+            if (safe_memmove(self->data + start, vbuf.buf, slicelen) < 0) {
                 result = -1;
             }
         }

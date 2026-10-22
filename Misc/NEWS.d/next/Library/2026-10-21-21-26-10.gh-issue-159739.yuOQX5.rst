@@ -1,0 +1,1 @@
+Fix overlapping writes and contiguous slice assignments to :class:`mmap.mmap` objects.

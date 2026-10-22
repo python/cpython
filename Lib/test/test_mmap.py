@@ -795,6 +795,18 @@ class MmapTests(unittest.TestCase):
         gc_collect()
         self.assertIs(wr(), None)
 
+    def test_write_overlapping_memoryview(self):
+        data = bytes(range(256)) * 16
+        expected = data[:1] + data[:-1]
+        with mmap.mmap(-1, len(data)) as mm, memoryview(mm) as view:
+            mm[:] = data
+            mm.seek(1)
+            self.assertEqual(mm.write(view[:-1]), len(data) - 1)
+            self.assertEqual(mm[:], expected)
+            mm[:] = data
+            mm[1:] = view[:-1]
+            self.assertEqual(mm[:], expected)
+
     def test_write_returning_the_number_of_bytes_written(self):
         mm = mmap.mmap(-1, 16)
         self.assertEqual(mm.write(b""), 0)
