@@ -36,6 +36,21 @@ gdbm_bool(PyObject *self)
     return return_value;
 }
 
+static PyObject *
+gdbm_subscript_impl(gdbmobject *self, PyObject *key);
+
+static PyObject *
+gdbm_subscript(PyObject *self, PyObject *key)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = gdbm_subscript_impl((gdbmobject *)self, key);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_gdbm_gdbm_get__doc__,
 "get($self, key, default=None, /)\n"
 "--\n"
@@ -67,6 +82,21 @@ skip_optional:
     return_value = _gdbm_gdbm_get_impl((gdbmobject *)self, key, default_value);
 
 exit:
+    return return_value;
+}
+
+static int
+gdbm_ass_sub_impl(gdbmobject *self, PyObject *v, PyObject *w);
+
+static int
+gdbm_ass_sub(PyObject *self, PyObject *v, PyObject *w)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = gdbm_ass_sub_impl((gdbmobject *)self, v, w);
+    Py_END_CRITICAL_SECTION();
+
     return return_value;
 }
 
@@ -157,6 +187,21 @@ _gdbm_gdbm_keys(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssi
     Py_END_CRITICAL_SECTION();
 
 exit:
+    return return_value;
+}
+
+static int
+gdbm_contains_impl(gdbmobject *self, PyObject *arg);
+
+static int
+gdbm_contains(PyObject *self, PyObject *arg)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = gdbm_contains_impl((gdbmobject *)self, arg);
+    Py_END_CRITICAL_SECTION();
+
     return return_value;
 }
 
@@ -431,4 +476,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=554c7c952a77058f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f4c81f6e2181a474 input=a9049054013a1b77]*/

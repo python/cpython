@@ -3772,21 +3772,19 @@ error:
     return NULL;
 }
 
+/*[clinic input]
+@critical_section
+dict.__repr__
+
+    self: self(type="PyObject *")
+[clinic start generated code]*/
+
 static PyObject *
-dict_repr_lock_held(PyObject *self)
+dict_repr_impl(PyObject *self)
+/*[clinic end generated code: output=059263af818a321d input=f9c423cbdf534674]*/
 {
     ASSERT_DICT_LOCKED((PyDictObject *)self);
     return anydict_repr_impl(self);
-}
-
-static PyObject *
-dict_repr(PyObject *self)
-{
-    PyObject *res;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    res = dict_repr_lock_held(self);
-    Py_END_CRITICAL_SECTION();
-    return res;
 }
 
 static Py_ssize_t
@@ -8476,16 +8474,26 @@ frozendict_hash(PyObject *op)
     PyDictObject *mp = _PyAnyDict_CAST(op);
     Py_uhash_t hash = 0;
 
+    /* Hashing a value recurses back into frozendict_hash() when that value
+       is itself a frozendict, so guard the descent to raise RecursionError
+       rather than overflow the C stack on a deeply nested frozendict.  Keys
+       are safe: their hashes are already computed at construction time. */
+    if (_Py_EnterRecursiveCall(" while hashing a frozendict")) {
+        return -1;
+    }
+
     PyObject *value;  // borrowed ref
     Py_ssize_t pos = 0;
     Py_hash_t key_hash;
     while (_PyDict_Next(op, &pos, NULL, &value, &key_hash)) {
         Py_hash_t pair_hash = frozendict_pair_hash(key_hash, value);
         if (pair_hash == -1) {
+            _Py_LeaveRecursiveCall();
             return -1;
         }
         hash ^= _shuffle_bits(pair_hash);
     }
+    _Py_LeaveRecursiveCall();
 
     /* Factor in the number of active entries */
     hash ^= ((Py_uhash_t)mp->ma_used + 1) * 1927868237UL;

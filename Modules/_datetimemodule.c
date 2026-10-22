@@ -1046,8 +1046,11 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
             }
             break;
         }
-        else if (p >= p_end) {
-            return c != '\0';
+        else if (p > p_end) {
+            return 0;  // Stopped at p_end: an offset designator or NUL
+        }
+        else if (p == p_end) {
+            return 1;  // Stray character just before p_end
         }
         else if (has_separator && (c == ':')) {
             if (i == 2) {
@@ -1087,8 +1090,8 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
         ++p; // skip truncated digits
     }
 
-    // Return 1 if it's not the end of the string
-    return *p != '\0';
+    // Return 1 if there is unparsed text before p_end
+    return p != p_end;
 }
 
 static int
@@ -1122,15 +1125,11 @@ parse_isoformat_time(const char *dtstr, size_t dtlen, int *hour, int *minute,
     if (rv < 0) {
         return rv;
     }
+    else if (rv == 1) {
+        return -5;  // Unparsed text after the time
+    }
     else if (tzinfo_pos == p_end) {
-        // We know that there's no time zone, so if there's stuff at the
-        // end of the string it's an error.
-        if (rv == 1) {
-            return -5;
-        }
-        else {
-            return 0;
-        }
+        return 0;
     }
 
     // Special case UTC / Zulu time.
