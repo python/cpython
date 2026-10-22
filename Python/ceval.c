@@ -79,6 +79,7 @@ _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int margin_count)
 #include "emscripten/stack.h"
 
 #define pthread_attr_t workaround_pthread_attr_t
+#define pthread_attr_init workaround_pthread_attr_init
 #define pthread_getattr_np workaround_pthread_getattr_np
 #define pthread_attr_getguardsize workaround_pthread_attr_getguardsize
 #define pthread_attr_getstack workaround_pthread_attr_getstack
@@ -90,6 +91,11 @@ typedef struct {
 } pthread_attr_t;
 
 extern __attribute__((__visibility__("hidden"))) unsigned __default_guardsize;
+
+int pthread_attr_init(pthread_attr_t *a)
+{
+	return 0;
+}
 
 // Modified version of pthread_getattr_np from the upstream PR.
 
@@ -158,11 +164,12 @@ hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
     size_t stack_size, guard_size;
     void *stack_addr;
     pthread_attr_t attr;
-#ifdef _Py_HAVE_PTHREAD_ATTR_GET_NP
+
     int err = pthread_attr_init(&attr);
+#ifdef _Py_HAVE_PTHREAD_ATTR_GET_NP
     err |= pthread_attr_get_np(pthread_self(), &attr);
 #else
-    int err = pthread_getattr_np(pthread_self(), &attr);
+    err |= pthread_getattr_np(pthread_self(), &attr);
 #endif
     if (err == 0) {
         err = pthread_attr_getguardsize(&attr, &guard_size);
@@ -175,6 +182,7 @@ hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
         return;
     }
 #  endif
+
     // Add some space for caller function then round to minimum page size
     // This is a guess at the top of the stack, but should be a reasonably
     // good guess if called from _PyThreadState_Attach when creating a thread.
