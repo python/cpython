@@ -14,6 +14,7 @@ from test.support import threading_helper
 from test.support import warnings_helper
 from test.support import asyncore
 import array
+import base64
 import re
 import socket
 import select
@@ -2071,7 +2072,8 @@ class ECHTests(unittest.TestCase):
             with self.subTest(module=module):
                 self.assertEqual(bool(names), ssl.HAS_ECH)
 
-        context_methods = ('set_ech_config', '_set_outer_alpn_protocols')
+        context_methods = ('set_ech_config', 'load_ech_keys',
+                           '_set_outer_alpn_protocols')
         socket_methods = ('get_ech_status', 'get_ech_retry_config')
         for owner, names in (
             (_ssl._SSLContext, context_methods),
@@ -2122,6 +2124,95 @@ class ECHTests(unittest.TestCase):
         for entries in (unsupported + supported, supported + unsupported):
             config = len(entries).to_bytes(2, 'big') + entries
             self.assertIsNone(ctx.set_ech_config(config))
+
+    def read_ech_key_and_config(self):
+        # Generated with:
+        # openssl ech -public_name public.example -suite 0x20,1,1
+        with open(data_file('ech.pem'), 'rb') as f:
+            key, config = f.read().split(b'-----BEGIN ECHCONFIG-----')
+        config = base64.b64decode(config.split(b'-----END ECHCONFIG-----')[0])
+        return key, config
+
+    @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    def test_load_ech_keys(self):
+        client_ctx, ctx, hostname = testing_context()
+        filename = data_file('ech.pem')
+        for path in (filename, os.fsencode(filename),
+                     os_helper.FakePath(filename)):
+            self.assertIsNone(ctx.load_ech_keys(path))
+        self.assertRaises(TypeError, ctx.load_ech_keys, None)
+        self.assertRaises(ValueError, ctx.load_ech_keys, 'key\x00file')
+        with self.assertRaises(OSError) as cm:
+            ctx.load_ech_keys(NONEXISTINGKEY)
+        self.assertEqual(cm.exception.errno, errno.ENOENT)
+        self.assertEqual(cm.exception.filename, NONEXISTINGKEY)
+
+        key, config = self.read_ech_key_and_config()
+        public = (b'-----BEGIN ECHCONFIG-----\n' + base64.b64encode(config)
+                  + b'\n-----END ECHCONFIG-----\n')
+        mismatched = bytearray(config)
+        mismatched[11] ^= 1  # Change one bit of the HPKE public key.
+        mismatched = (key + b'-----BEGIN ECHCONFIG-----\n'
+                      + base64.b64encode(mismatched)
+                      + b'\n-----END ECHCONFIG-----\n')
+        with open(ONLYKEY_PROTECTED, 'rb') as f:
+            encrypted = f.read() + public
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        for pem in (b'invalid', public, mismatched, encrypted):
+            with self.subTest(pem=pem):
+                with open(os_helper.TESTFN, 'wb') as f:
+                    f.write(pem)
+                self.assertRaises(ssl.SSLError, ctx.load_ech_keys,
+                                  os_helper.TESTFN)
+        # Failed loads must leave the previously loaded keys usable.
+        client_ctx.minimum_version = ssl.TLSVersion.TLSv1_3
+        client_ctx.set_ech_config(config)
+        client, server, *_ = connected_bio_pair(client_ctx, ctx, hostname)
+        self.assertEqual(client.get_ech_status(),
+                         ssl.ECHStatus.ECH_STATUS_SUCCESS)
+
+    @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    def test_ech_handshake(self):
+        key, config = self.read_ech_key_and_config()
+        other_config = bytearray(config)
+        other_config[6] ^= 1  # A different config_id using the same key.
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with open(os_helper.TESTFN, 'wb') as f:
+            f.write(key + b'-----BEGIN ECHCONFIG-----\n'
+                    + base64.b64encode(other_config)
+                    + b'\n-----END ECHCONFIG-----\n')
+        client_ctx, server_ctx, hostname = testing_context()
+        client_ctx.minimum_version = ssl.TLSVersion.TLSv1_3
+        server_ctx.load_ech_keys(data_file('ech.pem'), for_retry=False)
+        server_ctx.load_ech_keys(os_helper.TESTFN)
+        # Both the old and newly appended configurations must work.
+        for current_config in (config, other_config):
+            with self.subTest(config_id=current_config[6]):
+                client_ctx.set_ech_config(current_config)
+                seen_names = []
+
+                def sni_callback(obj, name, ctx):
+                    seen_names.append(name)
+
+                server_ctx.sni_callback = sni_callback
+                client, server, c_in, c_out, s_in, s_out = connected_bio_pair(
+                    client_ctx, server_ctx, hostname)
+                for obj in (client, server):
+                    self.assertEqual(obj.get_ech_status(),
+                                     ssl.ECHStatus.ECH_STATUS_SUCCESS)
+                    self.assertEqual(obj.outer_server_hostname,
+                                     'public.example')
+                self.assertEqual(seen_names, [hostname])
+                client.write(b'hello')
+                s_in.write(c_out.read())
+                self.assertEqual(server.read(), b'hello')
+                server.write(b'world')
+                c_in.write(s_out.read())
+                self.assertEqual(client.read(), b'world')
+        client_ctx, _, hostname = testing_context()
+        client_ctx.options |= ssl.OP_ECH_GREASE
+        client, server, *_ = connected_bio_pair(client_ctx, server_ctx, hostname)
+        self.assertEqual(client.get_ech_retry_config(), bytes(other_config))
 
     @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
     def test_status_before_handshake(self):

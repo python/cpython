@@ -465,6 +465,7 @@ _PyUnicode_InitStaticStrings(PyInterpreterState *interp) {
         offsetof(struct _Py_global_strings, identifiers._py_fold._ascii.ob_base),
         offsetof(struct _Py_global_strings, identifiers._py_foldspaces._ascii.ob_base),
         offsetof(struct _Py_global_strings, identifiers._py_follow_symlinks._ascii.ob_base),
+        offsetof(struct _Py_global_strings, identifiers._py_for_retry._ascii.ob_base),
         offsetof(struct _Py_global_strings, identifiers._py_format._ascii.ob_base),
         offsetof(struct _Py_global_strings, identifiers._py_format_spec._ascii.ob_base),
         offsetof(struct _Py_global_strings, identifiers._py_frame_buffer._ascii.ob_base),

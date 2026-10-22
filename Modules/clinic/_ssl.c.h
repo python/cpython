@@ -2206,6 +2206,86 @@ exit:
 
 #endif /* defined(HAVE_OPENSSL_ECH) */
 
+#if defined(HAVE_OPENSSL_ECH)
+
+PyDoc_STRVAR(_ssl__SSLContext_load_ech_keys__doc__,
+"load_ech_keys($self, /, keyfile, *, for_retry=True)\n"
+"--\n"
+"\n"
+"Load server ECH keys and configurations from a PEM file.\n"
+"\n"
+"The file must contain an unencrypted private key followed by its\n"
+"ECHConfigList.\n"
+"If for_retry is true, advertise the configurations in ECH retry\n"
+"responses.");
+
+#define _SSL__SSLCONTEXT_LOAD_ECH_KEYS_METHODDEF    \
+    {"load_ech_keys", _PyCFunction_CAST(_ssl__SSLContext_load_ech_keys), METH_FASTCALL|METH_KEYWORDS, _ssl__SSLContext_load_ech_keys__doc__},
+
+static PyObject *
+_ssl__SSLContext_load_ech_keys_impl(PySSLContext *self, PyObject *keyfile,
+                                    int for_retry);
+
+static PyObject *
+_ssl__SSLContext_load_ech_keys(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(keyfile), &_Py_ID(for_retry), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"keyfile", "for_retry", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "load_ech_keys",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *keyfile;
+    int for_retry = 1;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    keyfile = args[0];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    for_retry = PyObject_IsTrue(args[1]);
+    if (for_retry < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_load_ech_keys_impl((PySSLContext *)self, keyfile, for_retry);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_OPENSSL_ECH) */
+
 PyDoc_STRVAR(_ssl__SSLContext_set_ecdh_curve__doc__,
 "set_ecdh_curve($self, name, /)\n"
 "--\n"
@@ -3225,6 +3305,10 @@ exit:
     #define _SSL__SSLCONTEXT_SET_ECH_CONFIG_METHODDEF
 #endif /* !defined(_SSL__SSLCONTEXT_SET_ECH_CONFIG_METHODDEF) */
 
+#ifndef _SSL__SSLCONTEXT_LOAD_ECH_KEYS_METHODDEF
+    #define _SSL__SSLCONTEXT_LOAD_ECH_KEYS_METHODDEF
+#endif /* !defined(_SSL__SSLCONTEXT_LOAD_ECH_KEYS_METHODDEF) */
+
 #ifndef _SSL_ENUM_CERTIFICATES_METHODDEF
     #define _SSL_ENUM_CERTIFICATES_METHODDEF
 #endif /* !defined(_SSL_ENUM_CERTIFICATES_METHODDEF) */
@@ -3280,4 +3364,4 @@ exit:
 
 #define _SSL_SSLSESSION_HAS_TICKET_GETSETDEF {"has_ticket", (getter)_ssl_SSLSession_has_ticket_get, (setter)NULL, _ssl_SSLSession_has_ticket__doc__},
 
-/*[clinic end generated code: output=c2e4b98c8e04a32a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3078af6ab6373911 input=a9049054013a1b77]*/

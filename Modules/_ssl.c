@@ -5273,7 +5273,10 @@ _ssl__SSLContext_set_ech_config_impl(PySSLContext *self,
     if (OSSL_ECHSTORE_read_echconfiglist(store, config_bio) != 1) {
         goto fail;
     }
-    if (SSL_CTX_set1_echstore(self->ctx, store) != 1) {
+    PyMutex_Lock(&self->tstate_mutex);
+    int result = SSL_CTX_set1_echstore(self->ctx, store);
+    PyMutex_Unlock(&self->tstate_mutex);
+    if (result != 1) {
         goto fail;
     }
     OSSL_ECHSTORE_free(store);
@@ -5285,6 +5288,109 @@ fail:
     OSSL_ECHSTORE_free(store);
     BIO_free(config_bio);
     return NULL;
+}
+
+static int
+ech_password_callback(char *buf, int size, int rwflag, void *userdata)
+{
+    /* ECH key files must be unencrypted. Never prompt for a password. */
+    return -1;
+}
+
+static int
+load_ech_keys(SSL_CTX *ctx, BIO *bio, int for_retry)
+{
+    int result = 0;
+    int old_keys, new_keys;
+    OSSL_ECHSTORE *store = NULL;
+    EVP_PKEY *key = PEM_read_bio_PrivateKey(bio, NULL,
+                                           ech_password_callback, NULL);
+    if (key == NULL) {
+        goto end;
+    }
+    store = SSL_CTX_get1_echstore(ctx);
+    if (store == NULL) {
+        if (ERR_peek_error() != 0) {
+            goto end;
+        }
+        store = OSSL_ECHSTORE_new(NULL, NULL);
+        if (store == NULL) {
+            goto end;
+        }
+    }
+    if (OSSL_ECHSTORE_num_keys(store, &old_keys) != 1 ||
+        OSSL_ECHSTORE_set1_key_and_read_pem(store, key, bio, for_retry) != 1 ||
+        OSSL_ECHSTORE_num_keys(store, &new_keys) != 1) {
+        goto end;
+    }
+    /* OpenSSL may match a key already in the store. Require a new match. */
+    if (new_keys <= old_keys) {
+        ERR_raise(ERR_LIB_SSL, SSL_R_PRIVATE_KEY_MISMATCH);
+        goto end;
+    }
+    result = SSL_CTX_set1_echstore(ctx, store);
+
+end:
+    EVP_PKEY_free(key);
+    OSSL_ECHSTORE_free(store);
+    return result;
+}
+
+/*[clinic input]
+@critical_section
+_ssl._SSLContext.load_ech_keys
+
+    keyfile: object
+    *
+    for_retry: bool = True
+
+Load server ECH keys and configurations from a PEM file.
+
+The file must contain an unencrypted private key followed by its
+ECHConfigList.
+If for_retry is true, advertise the configurations in ECH retry
+responses.
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLContext_load_ech_keys_impl(PySSLContext *self, PyObject *keyfile,
+                                    int for_retry)
+/*[clinic end generated code: output=8de2cc58ce2f8077 input=3e6617d346227acd]*/
+{
+    PyObject *keyfile_bytes;
+    if (!PyUnicode_FSConverter(keyfile, &keyfile_bytes)) {
+        return NULL;
+    }
+    const char *filename = PyBytes_AS_STRING(keyfile_bytes);
+    int result = 0;
+    int open_failed = 0;
+
+    ERR_clear_error();
+    PySSL_BEGIN_ALLOW_THREADS(self)
+    errno = 0;
+    BIO *bio = BIO_new_file(filename, "rb");
+    if (bio == NULL) {
+        open_failed = 1;
+    }
+    else {
+        result = load_ech_keys(self->ctx, bio, for_retry);
+        BIO_free(bio);
+    }
+    PySSL_END_ALLOW_THREADS(self)
+
+    if (result != 1) {
+        if (open_failed && errno != 0) {
+            PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, keyfile);
+            ERR_clear_error();
+        }
+        else {
+            _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
+        }
+        Py_DECREF(keyfile_bytes);
+        return NULL;
+    }
+    Py_DECREF(keyfile_bytes);
+    Py_RETURN_NONE;
 }
 #endif /* HAVE_OPENSSL_ECH */
 
@@ -5968,6 +6074,7 @@ static struct PyMethodDef context_methods[] = {
     _SSL__SSLCONTEXT_SET_DEFAULT_VERIFY_PATHS_METHODDEF
     _SSL__SSLCONTEXT_SET_ECDH_CURVE_METHODDEF
     _SSL__SSLCONTEXT_SET_ECH_CONFIG_METHODDEF
+    _SSL__SSLCONTEXT_LOAD_ECH_KEYS_METHODDEF
     _SSL__SSLCONTEXT__SET_OUTER_ALPN_PROTOCOLS_METHODDEF
     _SSL__SSLCONTEXT_CERT_STORE_STATS_METHODDEF
     _SSL__SSLCONTEXT_GET_CA_CERTS_METHODDEF

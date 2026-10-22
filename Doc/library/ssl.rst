@@ -1709,6 +1709,29 @@ to speed up repeated connections from the same clients.
 
    .. versionadded:: 3.4
 
+.. method:: SSLContext.load_ech_keys(keyfile, *, for_retry=True)
+
+   Load a server's Encrypted Client Hello (ECH) private key and configuration.
+   The *keyfile* must be the path to a PEM file containing an unencrypted
+   private key followed by its matching ECHConfigList. Load the server's TLS
+   certificate and private key separately with :meth:`load_cert_chain`.
+
+   Each call adds keys and configurations to those already loaded into the
+   context. If *for_retry* is true, the new configurations are included in
+   ECH retry configurations sent to clients.
+
+   Configure ECH keys on the initial server context before accepting
+   connections. After successful ECH decryption, :attr:`sni_callback`
+   receives the inner server name.
+
+   Invalid or missing keys or configurations, or a key that does not match
+   its configuration, raise :exc:`SSLError`. File access errors raise
+   :exc:`OSError`.
+
+   Only available when :data:`HAS_ECH` is ``True``.
+
+   .. versionadded:: next
+
 .. method:: SSLContext.load_verify_locations(cafile=None, capath=None, cadata=None)
 
    Load a set of "certification authority" (CA) certificates used to validate
@@ -3107,6 +3130,10 @@ parameters, a public key, and a public name used in the unencrypted outer
 ClientHello. ECH requires OpenSSL 4.0 or later with ECH enabled; check
 :data:`HAS_ECH` before using it.
 
+Servers can load a PEM file containing their ECH private key and configuration
+with :meth:`SSLContext.load_ech_keys`. Clients use the corresponding public
+ECHConfigList with :meth:`SSLContext.set_ech_config`.
+
 Configuration values may be discovered through DNS or through the server's
 retry configuration. The following example accepts a binary-encoded
 ECHConfigList discovered through DNS. If none is supplied, it enables ECH
@@ -3147,6 +3174,7 @@ GREASE to request a retry configuration from the server::
 The following classes, methods, and attributes will be useful for using ECH:
 
  - :class:`ECHStatus`
+ - :meth:`SSLContext.load_ech_keys`
  - :meth:`SSLContext.set_ech_config`
  - :meth:`SSLContext.set_outer_alpn_protocols`
  - :meth:`SSLSocket.get_ech_status`

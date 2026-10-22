@@ -501,6 +501,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(fold), "fold", 4);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(foldspaces), "foldspaces", 10);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(follow_symlinks), "follow_symlinks", 15);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(for_retry), "for_retry", 9);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(format), "format", 6);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(format_spec), "format_spec", 11);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(frame_buffer), "frame_buffer", 12);

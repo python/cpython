@@ -695,6 +695,8 @@ ssl
   to query HTTPS or SVCB records. Clients can also enable
   :data:`~ssl.OP_ECH_GREASE` and retrieve a server's retry configuration
   with :meth:`~ssl.SSLSocket.get_ech_retry_config` for a subsequent connection.
+  Servers can use :meth:`~ssl.SSLContext.load_ech_keys` to load ECH private
+  keys and their configurations from PEM files.
   :data:`~ssl.HAS_ECH` indicates whether ECH is available, and
   :meth:`~ssl.SSLSocket.get_ech_status` reports the status as an
   :class:`~ssl.ECHStatus` member.
