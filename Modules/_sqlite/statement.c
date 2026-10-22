@@ -104,7 +104,10 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
 
 error:
     assert(PyErr_Occurred());
-    if (sqlite3_finalize(stmt) != SQLITE_OK) {
+    pysqlite_db_mutex_enter(db);
+    rc = sqlite3_finalize(stmt);
+    pysqlite_db_mutex_leave(db);
+    if (rc != SQLITE_OK) {
         PyObject *exc = PyErr_GetRaisedException();
         PyErr_SetString(connection->InternalError, "cannot finalize statement");
         _PyErr_ChainExceptions1(exc);

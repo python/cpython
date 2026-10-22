@@ -61,4 +61,43 @@ pysqlite_set_ref(PyObject *owner, PyObject **field, PyObject *value)
     Py_XDECREF(old);
 }
 
+/* SQLite calls the user-defined callbacks, which acquire the GIL, with the
+ * database connection mutex held.  To keep that lock order, a thread must
+ * never block on the connection mutex while holding the GIL: enter the mutex
+ * with these helpers around SQLite API calls that take it and are made with
+ * the GIL held.  The mutex is recursive, and it is NULL unless SQLite is in
+ * serialized threading mode.
+ *
+ * Do not call back into Python code while holding the mutex: it could wait
+ * for another thread that is blocked on the same mutex. */
+static inline void
+pysqlite_mutex_enter(sqlite3_mutex *mutex)
+{
+    if (mutex != NULL && sqlite3_mutex_try(mutex) != SQLITE_OK) {
+        Py_BEGIN_ALLOW_THREADS
+        sqlite3_mutex_enter(mutex);
+        Py_END_ALLOW_THREADS
+    }
+}
+
+static inline void
+pysqlite_mutex_leave(sqlite3_mutex *mutex)
+{
+    if (mutex != NULL) {
+        sqlite3_mutex_leave(mutex);
+    }
+}
+
+static inline void
+pysqlite_db_mutex_enter(sqlite3 *db)
+{
+    pysqlite_mutex_enter(sqlite3_db_mutex(db));
+}
+
+static inline void
+pysqlite_db_mutex_leave(sqlite3 *db)
+{
+    pysqlite_mutex_leave(sqlite3_db_mutex(db));
+}
+
 #endif

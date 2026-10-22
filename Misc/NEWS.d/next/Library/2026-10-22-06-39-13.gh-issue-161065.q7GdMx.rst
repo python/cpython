@@ -1,0 +1,4 @@
+Fix a deadlock in :mod:`sqlite3` when a connection created with
+``check_same_thread=False`` is used from several threads at once and has a
+Python callback registered, such as a user-defined function, aggregate,
+collation, authorizer, progress handler or trace callback.

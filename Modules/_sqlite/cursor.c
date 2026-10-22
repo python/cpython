@@ -246,6 +246,8 @@ pysqlite_build_row_cast_map(pysqlite_Cursor* self)
         return -1;
     }
 
+    sqlite3 *db = self->connection->db;
+    pysqlite_db_mutex_enter(db);
     for (i = 0; i < sqlite3_column_count(self->statement->st); i++) {
         converter = NULL;
 
@@ -253,8 +255,7 @@ pysqlite_build_row_cast_map(pysqlite_Cursor* self)
             const char *colname = sqlite3_column_name(self->statement->st, i);
             if (colname == NULL) {
                 PyErr_NoMemory();
-                Py_CLEAR(self->row_cast_map);
-                return -1;
+                goto error;
             }
             const char *type_start = NULL;
             for (pos = colname; *pos != 0; pos++) {
@@ -266,8 +267,7 @@ pysqlite_build_row_cast_map(pysqlite_Cursor* self)
                     converter = _pysqlite_get_converter(state, type_start,
                                                         pos - type_start);
                     if (!converter && PyErr_Occurred()) {
-                        Py_CLEAR(self->row_cast_map);
-                        return -1;
+                        goto error;
                     }
                     break;
                 }
@@ -287,8 +287,7 @@ pysqlite_build_row_cast_map(pysqlite_Cursor* self)
                         converter = _pysqlite_get_converter(state, decltype,
                                                             pos - decltype);
                         if (!converter && PyErr_Occurred()) {
-                            Py_CLEAR(self->row_cast_map);
-                            return -1;
+                            goto error;
                         }
                         break;
                     }
@@ -300,12 +299,17 @@ pysqlite_build_row_cast_map(pysqlite_Cursor* self)
                                converter ? converter : Py_None);
         Py_XDECREF(converter);
         if (rc != 0) {
-            Py_CLEAR(self->row_cast_map);
-            return -1;
+            goto error;
         }
     }
+    pysqlite_db_mutex_leave(db);
 
     return 0;
+
+error:
+    pysqlite_db_mutex_leave(db);
+    Py_CLEAR(self->row_cast_map);
+    return -1;
 }
 
 static PyObject *
@@ -359,6 +363,10 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
         return NULL;
 
     sqlite3 *db = self->connection->db;
+    // Hold the connection mutex once for the whole row instead of letting each
+    // sqlite3_column_*() call take it.  Converters and the text factory run
+    // Python code, so the mutex is released around those calls.
+    pysqlite_db_mutex_enter(db);
     for (i = 0; i < numcols; i++) {
         if (self->connection->detect_types
                 && self->row_cast_map != NULL
@@ -391,13 +399,13 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                 if (item == NULL) {
                     goto error;
                 }
+                pysqlite_db_mutex_leave(db);
                 converted = PyObject_CallOneArg(converter, item);
                 Py_DECREF(item);
+                pysqlite_db_mutex_enter(db);
             }
         } else {
-            Py_BEGIN_ALLOW_THREADS
             coltype = sqlite3_column_type(self->statement->st, i);
-            Py_END_ALLOW_THREADS
             if (coltype == SQLITE_NULL) {
                 converted = Py_NewRef(Py_None);
             } else if (coltype == SQLITE_INTEGER) {
@@ -443,7 +451,15 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                 } else if (factory == (PyObject*)&PyByteArray_Type) {
                     converted = PyByteArray_FromStringAndSize(text, nbytes);
                 } else {
-                    converted = PyObject_CallFunction(factory, "y#", text, nbytes);
+                    PyObject *item = PyBytes_FromStringAndSize(text, nbytes);
+                    if (item == NULL) {
+                        Py_DECREF(factory);
+                        goto error;
+                    }
+                    pysqlite_db_mutex_leave(db);
+                    converted = PyObject_CallOneArg(factory, item);
+                    Py_DECREF(item);
+                    pysqlite_db_mutex_enter(db);
                 }
                 Py_DECREF(factory);
             } else {
@@ -464,13 +480,17 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
         }
         PyTuple_SET_ITEM(row, i, converted);
     }
+    pysqlite_db_mutex_leave(db);
 
-    if (PyErr_Occurred())
-        goto error;
+    if (PyErr_Occurred()) {
+        Py_DECREF(row);
+        return NULL;
+    }
 
     return row;
 
 error:
+    pysqlite_db_mutex_leave(db);
     Py_DECREF(row);
     return NULL;
 }
@@ -554,8 +574,8 @@ stmt_step(sqlite3_stmt *statement)
 }
 
 static int
-bind_param(pysqlite_state *state, pysqlite_Statement *self, int pos,
-           PyObject *parameter)
+bind_param(pysqlite_state *state, pysqlite_Statement *self,
+           sqlite3_mutex *mutex, int pos, PyObject *parameter)
 {
     int rc = SQLITE_OK;
     const char *string;
@@ -563,7 +583,9 @@ bind_param(pysqlite_state *state, pysqlite_Statement *self, int pos,
     parameter_type paramtype;
 
     if (parameter == Py_None) {
+        pysqlite_mutex_enter(mutex);
         rc = sqlite3_bind_null(self->st, pos);
+        pysqlite_mutex_leave(mutex);
         goto final;
     }
 
@@ -588,16 +610,22 @@ bind_param(pysqlite_state *state, pysqlite_Statement *self, int pos,
     switch (paramtype) {
         case TYPE_LONG: {
             sqlite_int64 value = _pysqlite_long_as_int64(parameter);
-            rc = (value == -1 && PyErr_Occurred())
-                ? SQLITE_ERROR
-                : sqlite3_bind_int64(self->st, pos, value);
+            if (value == -1 && PyErr_Occurred()) {
+                return SQLITE_ERROR;
+            }
+            pysqlite_mutex_enter(mutex);
+            rc = sqlite3_bind_int64(self->st, pos, value);
+            pysqlite_mutex_leave(mutex);
             break;
         }
         case TYPE_FLOAT: {
             double value = PyFloat_AsDouble(parameter);
-            rc = (value == -1 && PyErr_Occurred())
-                ? SQLITE_ERROR
-                : sqlite3_bind_double(self->st, pos, value);
+            if (value == -1 && PyErr_Occurred()) {
+                return SQLITE_ERROR;
+            }
+            pysqlite_mutex_enter(mutex);
+            rc = sqlite3_bind_double(self->st, pos, value);
+            pysqlite_mutex_leave(mutex);
             break;
         }
         case TYPE_UNICODE:
@@ -610,7 +638,9 @@ bind_param(pysqlite_state *state, pysqlite_Statement *self, int pos,
                                 "string longer than INT_MAX bytes");
                 return SQLITE_ERROR;
             }
+            pysqlite_mutex_enter(mutex);
             rc = sqlite3_bind_text(self->st, pos, string, (int)buflen, SQLITE_TRANSIENT);
+            pysqlite_mutex_leave(mutex);
             break;
         case TYPE_BUFFER: {
             Py_buffer view;
@@ -623,7 +653,9 @@ bind_param(pysqlite_state *state, pysqlite_Statement *self, int pos,
                 PyBuffer_Release(&view);
                 return SQLITE_ERROR;
             }
+            pysqlite_mutex_enter(mutex);
             rc = sqlite3_bind_blob(self->st, pos, view.buf, (int)view.len, SQLITE_TRANSIENT);
+            pysqlite_mutex_leave(mutex);
             PyBuffer_Release(&view);
             break;
         }
@@ -654,9 +686,25 @@ need_adapt(pysqlite_state *state, PyObject *obj)
     }
 }
 
+/* Return 1 if binding the parameters cannot call back into Python code,
+ * that is if they are a tuple of objects that need no adaptation. */
+static inline int
+simple_parameters(pysqlite_state *state, PyObject *parameters)
+{
+    if (!PyTuple_CheckExact(parameters)) {
+        return 0;
+    }
+    for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(parameters); i++) {
+        if (need_adapt(state, PyTuple_GET_ITEM(parameters, i))) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 static void
 bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
-                PyObject *parameters)
+                sqlite3_mutex *mutex, PyObject *parameters)
 {
     PyObject* current_param;
     PyObject* adapted;
@@ -666,9 +714,7 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
     int num_params_needed;
     Py_ssize_t num_params;
 
-    Py_BEGIN_ALLOW_THREADS
     num_params_needed = sqlite3_bind_parameter_count(self->st);
-    Py_END_ALLOW_THREADS
 
     if (PyTuple_CheckExact(parameters) || PyList_CheckExact(parameters) || (!PyDict_Check(parameters) && PySequence_Check(parameters))) {
         /* parameters passed as sequence */
@@ -725,7 +771,7 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
                 }
             }
 
-            rc = bind_param(state, self, i + 1, adapted);
+            rc = bind_param(state, self, mutex, i + 1, adapted);
             Py_DECREF(adapted);
 
             if (rc != SQLITE_OK) {
@@ -777,7 +823,7 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
                 }
             }
 
-            rc = bind_param(state, self, i, adapted);
+            rc = bind_param(state, self, mutex, i, adapted);
             Py_DECREF(adapted);
 
             if (rc != SQLITE_OK) {
@@ -866,6 +912,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     }
 
     pysqlite_state *state = self->connection->state;
+    sqlite3 *db = self->connection->db;
     if (multiple && sqlite3_stmt_readonly(self->statement->st)) {
         PyErr_SetString(state->ProgrammingError,
                         "executemany() can only execute DML statements.");
@@ -904,7 +951,18 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
             break;
         }
 
-        bind_parameters(state, self->statement, parameters);
+        // Holding the mutex once for all parameters is cheaper, but it must
+        // not be held while an adapter runs Python code, so parameters that
+        // may need one take it around each sqlite3_bind_*() call instead.
+        sqlite3_mutex *mutex = sqlite3_db_mutex(db);
+        if (simple_parameters(state, parameters)) {
+            pysqlite_mutex_enter(mutex);
+            bind_parameters(state, self->statement, NULL, parameters);
+            pysqlite_mutex_leave(mutex);
+        }
+        else {
+            bind_parameters(state, self->statement, mutex, parameters);
+        }
         if (PyErr_Occurred()) {
             goto error;
         }
@@ -940,12 +998,15 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
             }
             for (i = 0; i < numcols; i++) {
                 const char *colname;
+                pysqlite_db_mutex_enter(db);
                 colname = sqlite3_column_name(self->statement->st, i);
                 if (colname == NULL) {
+                    pysqlite_db_mutex_leave(db);
                     PyErr_NoMemory();
                     goto error;
                 }
                 column_name = _pysqlite_build_column_name(self, colname);
+                pysqlite_db_mutex_leave(db);
                 if (column_name == NULL) {
                     goto error;
                 }
