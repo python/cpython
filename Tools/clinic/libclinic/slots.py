@@ -42,6 +42,7 @@ SLOTS: Final[dict[str, SlotSpec]] = {
     '__bool__': SlotSpec(return_converter='int'),
     '__contains__': SlotSpec(return_converter='int'),
     '__getitem__': SlotSpec(return_converter='object'),
+    '__hash__': SlotSpec(return_converter='Py_hash_t'),
     '__iadd__': SlotSpec(return_converter='object'),
     '__imul__': SlotSpec(return_converter='object'),
     '__len__': SlotSpec(return_converter='Py_ssize_t'),
