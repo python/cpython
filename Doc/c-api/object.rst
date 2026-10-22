@@ -846,10 +846,10 @@ Object Protocol
    counting and will never be garbage collected. If the object is GC-tracked,
    it is untracked.
 
-   Returns 1 if the object was made immortal and 0 if it was already immortal
-   or is a :class:`str` instance.
-   Returns -1 with an exception set if allocating bookkeeping for an immortal
-   frame or generator fails.
+   Returns 1 if the object was made immortal and 0 if the object cannot be made
+   immortal (such as when the object is already immortal).
+   Returns -1 with an exception set upon failure.
+
 
    .. warning::
 
