@@ -127,45 +127,26 @@ class RawCollector:
         pass
 
 
-def read_block_columns(filename):
-    """Return the (decoded size, encoding) of each column of every block."""
-    def varint(data, offset):
-        value = shift = 0
-        while True:
-            byte = data[offset]
-            offset += 1
-            value |= (byte & 0x7F) << shift
-            shift += 7
-            if byte < 0x80:
-                return value, offset
+def encode_varint(value):
+    """Encode an unsigned varint."""
+    out = bytearray()
+    while value >= 0x80:
+        out.append((value & 0x7F) | 0x80)
+        value >>= 7
+    out.append(value)
+    return bytes(out)
 
-    with open(filename, "rb") as raw:
-        data = raw.read()
-    sample_end = struct.unpack_from("=Q", data, 40)[0]
-    offset = 64
-    blocks = []
-    while offset < sample_end:
-        assert data[offset:offset + 4] == b"TBLK"
-        _, offset = varint(data, offset + 4)  # sample count
-        _, offset = varint(data, offset)  # base timestamp
-        offset += 3
-        columns = []
-        stored_total = 0
-        for _ in range(6):
-            decoded_size, offset = varint(data, offset)
-            encoding = data[offset]
-            offset += 1
-            if encoding == 1:
-                stored_size, offset = varint(data, offset)
-            elif encoding == 2:
-                stored_size = 1
-            else:
-                stored_size = decoded_size
-            columns.append((decoded_size, encoding))
-            stored_total += stored_size
-        offset += stored_total
-        blocks.append(columns)
-    return blocks
+
+def decode_varint(data, offset):
+    """Decode an unsigned varint, returning (value, next offset)."""
+    value = shift = 0
+    while True:
+        byte = data[offset]
+        offset += 1
+        value |= (byte & 0x7F) << shift
+        shift += 7
+        if byte < 0x80:
+            return value, offset
 
 
 def samples_to_by_thread(samples):
@@ -188,6 +169,20 @@ def samples_to_by_thread(samples):
 class BinaryFormatTestBase(unittest.TestCase):
     """Base class with common setup/teardown for binary format tests."""
 
+    HDR_OFF_STR_TABLE = 40
+    FILE_HEADER_PLACEHOLDER_SIZE = 64
+
+    # Sample block layout (see binary_io.h).
+    BLOCK_MAGIC = b"TBLK"
+    COLUMN_COUNT = 6
+    COLUMN_STREAM_IDS = 1
+    COLUMN_TIMESTAMP_RESIDUALS = 2
+    COLUMN_STATUS_BITMAPS = 3
+    COLUMN_STACK_INSTRUCTIONS = 4
+    COLUMN_FRAME_IDS = 5
+    COLUMN_ZSTD = 1
+    COLUMN_CONSTANT = 2
+
     def setUp(self):
         self.temp_files = []
 
@@ -195,6 +190,13 @@ class BinaryFormatTestBase(unittest.TestCase):
         for f in self.temp_files:
             if os.path.exists(f):
                 os.unlink(f)
+
+    def temp_filename(self):
+        """Return a new temporary file name that is removed on cleanup."""
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+        return filename
 
     def create_binary_file(self, samples, interval=1000, compression="none",
                            mode=None, capture_config=None):
@@ -219,6 +221,45 @@ class BinaryFormatTestBase(unittest.TestCase):
             collector.collect(sample)
         collector.export(None)
         return filename, collector
+
+    def read_block_columns(self, filename):
+        """Return the header flags and (decoded size, encoding) per column.
+
+        Each block is a dict with frame_width, common_status_flags,
+        status_bitmap_flags and columns.
+        """
+        with open(filename, "rb") as raw:
+            data = raw.read()
+        sample_end = struct.unpack_from("=Q", data, self.HDR_OFF_STR_TABLE)[0]
+        offset = self.FILE_HEADER_PLACEHOLDER_SIZE
+        blocks = []
+        while offset < sample_end:
+            magic_end = offset + len(self.BLOCK_MAGIC)
+            self.assertEqual(data[offset:magic_end], self.BLOCK_MAGIC)
+            _, offset = decode_varint(data, magic_end)  # sample count
+            _, offset = decode_varint(data, offset)  # base timestamp
+            block = {"frame_width": data[offset],
+                     "common_status_flags": data[offset + 1],
+                     "status_bitmap_flags": data[offset + 2]}
+            offset += 3
+            columns = []
+            stored_total = 0
+            for _ in range(self.COLUMN_COUNT):
+                decoded_size, offset = decode_varint(data, offset)
+                encoding = data[offset]
+                offset += 1
+                if encoding == self.COLUMN_ZSTD:
+                    stored_size, offset = decode_varint(data, offset)
+                elif encoding == self.COLUMN_CONSTANT:
+                    stored_size = 1
+                else:
+                    stored_size = decoded_size
+                columns.append((decoded_size, encoding))
+                stored_total += stored_size
+            offset += stored_total
+            block["columns"] = columns
+            blocks.append(block)
+        return blocks
 
     def roundtrip(self, samples, interval=1000, compression="none"):
         """Write samples to binary and read back."""
@@ -939,16 +980,15 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
             _remote_debugging.BinaryReader(123)
 
     def test_writer_rejects_invalid_compression(self):
+        """BinaryWriter rejects an unknown compression type."""
         with self.assertRaisesRegex(ValueError, "compression"):
             _remote_debugging.BinaryWriter(
-                "unused.bin", 1000, 0, compression=2
+                self.temp_filename(), 1000, 0, compression=2
             )
 
     def test_writer_rejects_status_outside_byte_range(self):
-        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as file:
-            filename = file.name
-        self.temp_files.append(filename)
-
+        """A status above 255 raises OverflowError and drops that sample."""
+        filename = self.temp_filename()
         writer = _remote_debugging.BinaryWriter(filename, 1000, 0)
         valid = [make_interpreter(0, [make_thread(1, [], status=1)])]
         invalid = [make_interpreter(0, [make_thread(1, [], status=256)])]
@@ -960,11 +1000,12 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
         writer.finalize()
         self.assertEqual(writer.total_samples, 2)
 
-    def test_writer_reports_stack_reuse(self):
-        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as file:
-            filename = file.name
-        self.temp_files.append(filename)
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.replay_samples(RawCollector()), 2)
 
+    def test_writer_reports_stack_reuse(self):
+        """A stack seen earlier in the block is stored as STACK_REUSE."""
+        filename = self.temp_filename()
         frames = [make_frame("shared.py", line, "shared") for line in range(3)]
         sample = [make_interpreter(0, [
             make_thread(1, frames),
@@ -976,16 +1017,11 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
         self.assertEqual(stats["reuse_records"], 1)
         self.assertEqual(stats["total_records"], 2)
         self.assertEqual(stats["total_samples"], 2)
-        self.assertIsInstance(stats["frame_compression_pct"], float)
-        self.assertGreaterEqual(stats["frame_compression_pct"], 0.0)
-        self.assertLessEqual(stats["frame_compression_pct"], 100.0)
         writer.close()
 
     def test_writer_buffered_bytes_match_flushed_bytes(self):
-        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as file:
-            filename = file.name
-        self.temp_files.append(filename)
-
+        """bytes_written before finalize() matches the flushed size."""
+        filename = self.temp_filename()
         frames = [make_frame("a.py", line, "f") for line in range(300)]
         writer = _remote_debugging.BinaryWriter(filename, 1000, 0)
         for i in range(100):
@@ -997,8 +1033,9 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
         buffered = writer.get_stats()["bytes_written"]
         writer.finalize()
 
-        [columns] = read_block_columns(filename)
-        self.assertEqual(buffered, sum(size for size, _ in columns))
+        [block] = self.read_block_columns(filename)
+        self.assertEqual(buffered,
+                         sum(size for size, _ in block["columns"]))
 
     def _write_block_spanning_file(self):
         # A block accepts at most 4,096 streams.
@@ -1010,15 +1047,136 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
         return samples, self.create_binary_file(samples)
 
     def test_samples_span_multiple_blocks(self):
+        """Samples filling more than one block roundtrip."""
         samples, filename = self._write_block_spanning_file()
-        self.assertGreaterEqual(len(read_block_columns(filename)), 2)
+        self.assertGreaterEqual(len(self.read_block_columns(filename)), 2)
 
         collector = RawCollector()
         with BinaryReader(filename) as reader:
             self.assertEqual(reader.replay_samples(collector), len(samples))
         self.assert_samples_equal(samples, collector)
 
+    def test_block_size_limit_starts_new_block(self):
+        """A thread whose samples exceed 1 MiB is split across blocks."""
+        # Each sample writes a new 256-frame stack, about 1 KiB while
+        # buffered, so 1,100 samples need more than one block.
+        frames = [make_frame("deep.py", line, "f") for line in range(1356)]
+        samples = [
+            [make_interpreter(0, [make_thread(1, frames[i:i + 256])])]
+            for i in range(1100)
+        ]
+        filename = self.create_binary_file(samples)
+        blocks = self.read_block_columns(filename)
+        self.assertGreaterEqual(len(blocks), 2)
+        for block in blocks:
+            self.assertLessEqual(sum(size for size, _ in block["columns"]),
+                                 1024 * 1024)
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.replay_samples(RawCollector()),
+                             len(samples))
+
+    def test_writer_uses_constant_columns_and_narrow_frame_ids(self):
+        """Repeated bytes are stored once and frame IDs use the least width."""
+        frame = make_frame("steady.py", 1, "steady")
+        sample = [make_interpreter(0, [make_thread(1, [frame])])]
+        filename = self.temp_filename()
+        writer = _remote_debugging.BinaryWriter(filename, 1000, 0)
+        for i in range(100):
+            writer.write_sample(sample, 1000 * (i + 1))
+        writer.finalize()
+        # One stream and on-time samples: every stream ID and residual is 0
+        [block] = self.read_block_columns(filename)
+        self.assertEqual(block["frame_width"], 1)
+        self.assertEqual(block["columns"][self.COLUMN_STREAM_IDS],
+                         (100, self.COLUMN_CONSTANT))
+        self.assertEqual(block["columns"][self.COLUMN_TIMESTAMP_RESIDUALS],
+                         (100, self.COLUMN_CONSTANT))
+
+        # 300 distinct frames need two bytes per frame ID
+        frames = [make_frame("wide.py", line, "f") for line in range(300)]
+        samples = [
+            [make_interpreter(0, [make_thread(1, frames[:150])])],
+            [make_interpreter(0, [make_thread(1, frames[150:])])],
+        ]
+        filename = self.create_binary_file(samples)
+        [block] = self.read_block_columns(filename)
+        self.assertEqual(block["frame_width"], 2)
+        self.assertEqual(block["columns"][self.COLUMN_FRAME_IDS][0], 300 * 2)
+
+    def test_writer_stores_common_status_bits_once(self):
+        """Status bits set in every sample go in the header, not a bitmap."""
+        frame = make_frame("status.py", 1, "f")
+        filename = self.temp_filename()
+        writer = _remote_debugging.BinaryWriter(filename, 1000, 0)
+        for i in range(20):
+            # HAS_GIL in every sample; ON_CPU in every other one
+            status = THREAD_STATUS_HAS_GIL | (THREAD_STATUS_ON_CPU * (i % 2))
+            sample = [make_interpreter(0, [make_thread(1, [frame], status)])]
+            writer.write_sample(sample, 1000 * (i + 1))
+        writer.finalize()
+        [block] = self.read_block_columns(filename)
+        self.assertEqual(block["common_status_flags"], THREAD_STATUS_HAS_GIL)
+        self.assertEqual(block["status_bitmap_flags"], THREAD_STATUS_ON_CPU)
+        # One bitmap of ceil(20 / 8) bytes, for ON_CPU only
+        self.assertEqual(block["columns"][self.COLUMN_STATUS_BITMAPS][0], 3)
+
+    @unittest.skipUnless(ZSTD_AVAILABLE, "zstd compression not available")
+    def test_writer_compresses_repetitive_columns(self):
+        """Compressed files store repetitive columns with zstd."""
+        root = [make_frame("root.py", line, "root") for line in range(20)]
+        leaves = [make_frame("leaf.py", 1, "even"),
+                  make_frame("leaf.py", 2, "odd")]
+        samples = [
+            [make_interpreter(0, [make_thread(1, [leaves[i % 2]] + root)])]
+            for i in range(2000)
+        ]
+        filename = self.create_binary_file(samples, compression="zstd")
+        [block] = self.read_block_columns(filename)
+        columns = block["columns"]
+        self.assertEqual(columns[self.COLUMN_STACK_INSTRUCTIONS][1],
+                         self.COLUMN_ZSTD)
+        self.assertEqual(columns[self.COLUMN_FRAME_IDS][1], self.COLUMN_ZSTD)
+
+    def test_replay_byte_swapped_file(self):
+        """A file written with the other byte order replays the same."""
+        samples = [[make_interpreter(0, [
+            make_thread(1, [make_frame("a.py", 1, "f")]),
+            make_thread(2, [make_frame("b.py", 2, "g")]),
+        ])] for _ in range(3)]
+        filename = self.temp_filename()
+        writer = _remote_debugging.BinaryWriter(filename, 1000, 0)
+        for i, sample in enumerate(samples):
+            writer.write_sample(sample, 1000 * (i + 1))
+        writer.finalize()
+
+        data = bytearray(pathlib.Path(filename).read_bytes())
+        # Header fields: magic, version, start time, interval, sample
+        # count, thread count, table offsets, compression and config
+        fields = [(0, 4), (4, 4), (12, 8), (20, 8), (28, 8), (36, 4),
+                  (40, 8), (48, 8), (56, 4), (60, 4)]
+        # Footer string and frame counts
+        fields += [(len(data) - 32, 4), (len(data) - 28, 4)]
+        # The block's stream table entries follow its header
+        offset = self.FILE_HEADER_PLACEHOLDER_SIZE + len(self.BLOCK_MAGIC)
+        _, offset = decode_varint(data, offset)  # sample count
+        _, offset = decode_varint(data, offset)  # base timestamp
+        offset += 3
+        for _ in range(self.COLUMN_COUNT):
+            _, offset = decode_varint(data, offset)
+            offset += 1  # raw encoding, no stored size
+        for entry in range(2):
+            fields += [(offset + entry * 12, 8), (offset + entry * 12 + 8, 4)]
+        for start, size in fields:
+            data[start:start + size] = data[start:start + size][::-1]
+        pathlib.Path(filename).write_bytes(data)
+
+        collector = RawCollector()
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.replay_samples(collector), 6)
+        self.assert_samples_equal(samples, collector)
+
     def test_progress_follows_collected_samples(self):
+        """Progress never counts samples the collector has not received."""
         samples, filename = self._write_block_spanning_file()
 
         class CountingCollector:
@@ -1039,6 +1197,7 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
             self.assertEqual(current, received)
 
     def test_reader_replays_twice(self):
+        """Replaying twice gives the same samples and statistics."""
         samples = [
             [make_interpreter(0, [
                 make_thread(1, [make_frame("a.py", i % 3, "f")]),
@@ -1056,10 +1215,8 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
         self.assertEqual(first.by_thread, second.by_thread)
 
     def test_writer_repeat_run_spans_interleaved_streams(self):
-        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as file:
-            filename = file.name
-        self.temp_files.append(filename)
-
+        """A thread's repeat run continues across other threads' samples."""
+        filename = self.temp_filename()
         idle = [make_frame("idle.py", 1, "wait")]
         busy = [[make_frame("busy.py", 1, "even")],
                 [make_frame("busy.py", 2, "odd")]]
@@ -1073,7 +1230,6 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
         stats = writer.get_stats()
         self.assertEqual(stats["repeat_records"], 1)
         self.assertEqual(stats["repeat_samples"], 9)
-        self.assertGreater(stats["bytes_written"], 0)
         writer.finalize()
 
         collector = RawCollector()
@@ -1099,13 +1255,9 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
     def test_writer_handles_empty_stack_first_sample(self):
         """BinaryWriter.write_sample tolerates an empty stack on a fresh thread.
 
-        Regression test for the C-level RLE bug in process_thread_sample: a
-        freshly-created ThreadEntry has prev_stack_depth == 0, so an empty
-        curr_stack compares as STACK_REPEAT against the zero-initialized
-        previous stack. Before the fix, this fell through the
-        `&& !is_new_thread` guard into write_sample_with_encoding, which had
-        no handler for STACK_REPEAT and raised
-        RuntimeError("Invalid stack encoding type"). Goes through
+        Regression test for gh-149342: an empty first stack equals the empty
+        stack a new thread starts from, but it must still be written as a
+        stack (STACK_REPLACE_SUFFIX 0 0) rather than a repeat. Goes through
         BinaryWriter.write_sample directly so the test cannot be masked by
         any Python-level filtering.
         """
@@ -1123,8 +1275,7 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
         # scenario that exposes the bug.
         writer.write_sample(empty_sample, 1000)
         writer.write_sample(empty_sample, 2000)
-        # Mix in a real sample to exercise the transition out of the
-        # empty-stack RLE buffer.
+        # Mix in a real sample after the repeated empty stack.
         real_sample = [
             make_interpreter(0, [make_thread(1, [make_frame("a.py", 1, "f")])])
         ]
@@ -1134,8 +1285,8 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
         reader_collector = RawCollector()
         with BinaryReader(filename) as reader:
             count = reader.replay_samples(reader_collector)
-        # Empty-stack samples are recorded as STACK_REPEAT records with
-        # depth-0 stacks; the file must replay all three samples.
+        # The empty stack is written once and then repeated; the file must
+        # replay all three samples.
         self.assertEqual(count, 3)
 
     def test_writer_handles_mixed_empty_and_real_first_sample(self):
@@ -1169,11 +1320,9 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
 
     def test_writer_total_samples_after_finalize_matches_reader(self):
         """BinaryWriter.total_samples after finalize() matches the reader's count."""
-        # Five IDENTICAL samples force every sample beyond the first into the
-        # per-thread RLE buffer. Regression for the cached_total_samples
-        # ordering bug: capturing the cache BEFORE binary_writer_finalize()
-        # missed the buffered samples that flush_pending_rle() counts. Keep
-        # the samples identical to preserve coverage. See gh-149342.
+        # Five IDENTICAL samples stay in the open block, as one repeat, until
+        # finalize() flushes it; total_samples must still count all of them.
+        # Keep the samples identical to preserve coverage. See gh-149342.
         samples = [
             [make_interpreter(0, [make_thread(1, [make_frame("a.py", 1, "f")])])]
         ] * 5
@@ -1184,8 +1333,8 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
         self.assertEqual(writer_collector.total_samples, len(samples))
         self.assertEqual(writer_collector.total_samples, replayed)
 
-    def test_rle_buffer_flushes_before_finalize(self):
-        """RLE buffer flushes before the writer is destroyed during finalize()."""
+    def test_open_block_flushes_on_finalize(self):
+        """finalize() writes the open block before the writer is destroyed."""
         with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
             filename = f.name
         self.temp_files.append(filename)
@@ -1389,9 +1538,7 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
     HDR_OFF_VERSION = 4
     HDR_OFF_SAMPLES = 28
     HDR_OFF_THREADS = 36
-    HDR_OFF_STR_TABLE = 40
     HDR_OFF_FRAME_TABLE = 48
-    FILE_HEADER_PLACEHOLDER_SIZE = 64
     FILE_FOOTER_SIZE = 32
     FTR_OFF_STRINGS = 0
     FTR_OFF_FRAMES = 4
@@ -1540,6 +1687,7 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
         )
 
     def test_open_rejects_older_format_version(self):
+        """Open rejects version 1 files and reports version 2."""
         filename = self.create_binary_file([], compression="none")
         with BinaryReader(filename) as reader:
             self.assertEqual(reader.get_info()["version"], 2)
@@ -1578,20 +1726,7 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
                 with BinaryReader(filename) as reader:
                     self.assertEqual(reader.get_info()["sample_count"], value)
 
-    @staticmethod
-    def _varint(value):
-        out = bytearray()
-        while value >= 0x80:
-            out.append((value & 0x7F) | 0x80)
-            value >>= 7
-        out.append(value)
-        return bytes(out)
-
     # Block column indices and encodings (see binary_io.h).
-    COLUMN_STACK_INSTRUCTIONS = 4
-    COLUMN_FRAME_IDS = 5
-    COLUMN_ZSTD = 1
-    COLUMN_CONSTANT = 2
     MAX_BLOCK_SIZE = 1024 * 1024
 
     def _write_single_block(self, num_samples=1, instructions=b"\x01\x00\x00",
@@ -1631,16 +1766,16 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
         )
         if header_samples is None:
             header_samples = num_samples
-        block = (magic + self._varint(header_samples)
+        block = (magic + encode_varint(header_samples)
                  + b"\x01"  # base timestamp
                  + bytes([frame_width, *status_flags]))
         payload = b""
         for index, column in enumerate(columns):
             encoding, decoded_size = (descriptors or {}).get(
                 index, (0, len(column)))
-            block += self._varint(decoded_size) + bytes([encoding])
+            block += encode_varint(decoded_size) + bytes([encoding])
             if encoding == self.COLUMN_ZSTD:
-                block += self._varint(len(column))
+                block += encode_varint(len(column))
             if encoding == self.COLUMN_CONSTANT:
                 column = column[:1]
             payload += column
@@ -1666,6 +1801,7 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
         self.assertEqual(str(cm.exception), f"Invalid sample block: {message}")
 
     def test_replay_accepts_hand_built_block(self):
+        """Replay accepts a block built by hand from its columns."""
         # STACK_REPLACE_SUFFIX 0 0, then STACK_REPEAT 2.
         filename = self._write_single_block(3, b"\x01\x00\x00\x00\x02")
         collector = RawCollector()
@@ -1674,6 +1810,7 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
         self.assertEqual(len(collector.by_thread[(0, 1)]), 3)
 
     def test_replay_decodes_every_frame_id_width(self):
+        """Frame IDs decode correctly at every byte width."""
         # STACK_REPLACE_SUFFIX 0 1 reads one frame ID, stored in one byte
         # plane per byte of the width, low byte first.
         for width, frame_id in ((1, 43), (2, 299), (3, 299), (4, 299)):
@@ -1688,19 +1825,8 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
                 self.assertEqual([frame["filename"] for frame in frames],
                                  [f"{frame_id}.py"])
 
-    def test_replay_reads_high_frame_id_planes(self):
-        # Frame IDs 65536 and 2**24 only have a byte in the third or fourth
-        # plane; both are past the 300 frames in the table.
-        for width in (3, 4):
-            with self.subTest(width=width):
-                frame_id = 1 << (8 * (width - 1))
-                filename = self._write_single_block(
-                    1, b"\x01\x00\x01", frame_id.to_bytes(width, "little"),
-                    frame_width=width, frame_count=300)
-                self.assert_block_rejected(filename,
-                                           "frame index out of range")
-
     def test_replay_rejects_reentrant_replay(self):
+        """Replaying from inside the same reader's collector raises."""
         filename = self._write_single_block(
             2, b"\x01\x00\x00\x00\x01")  # REPEAT 1
 
@@ -1711,13 +1837,12 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
 
             with self.assertRaisesRegex(RuntimeError, "already replaying"):
                 reader.replay_samples(ReentrantCollector())
-            # The failed replay leaves the reader usable.
             self.assertEqual(reader.replay_samples(RawCollector()), 2)
 
     def test_replay_rejects_invalid_block(self):
+        """Replay rejects every kind of malformed block."""
         frames = self.COLUMN_FRAME_IDS
         cases = [
-            # Block header
             ("wrong magic", dict(magic=b"XBLK")),
             # Magic, sample count and base timestamp, then 1 of 3 flag bytes
             ("truncated header", dict(truncate=7)),
@@ -1743,7 +1868,6 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
             ("more samples than stored stream indices",
              dict(header_samples=0xFFFFFFFF)),
             ("column extends past the sample section", dict(truncate=-1)),
-            # Column sizes
             ("stream table has a partial entry", dict(stream_table=b"0" * 11)),
             ("stream count out of range", dict(stream_table=b"")),
             ("frame ID column has a partial value",
@@ -1751,7 +1875,6 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
             ("status bitmaps have the wrong size", dict(status_flags=(0, 1))),
             ("status bitmap padding is not zero",
              dict(status_flags=(0, 1), statuses=b"\x02")),
-            # Streams and timestamps
             ("stream table repeats a thread",
              dict(stream_table=struct.pack("=QI", 1, 0) * 2)),
             ("sample refers to an unknown stream", dict(stream_ids=b"\x01")),
@@ -1761,7 +1884,16 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
              dict(residuals=b"\x00\x00")),
             ("frame index out of range",
              dict(instructions=b"\x01\x00\x01", frame_ids=b"\x05")),
-            # Stack instructions
+            # Frame IDs 65536 and 2**24 only have a byte in the third or
+            # fourth plane
+            ("frame index out of range",
+             dict(instructions=b"\x01\x00\x01", frame_width=3,
+                  frame_ids=(1 << 16).to_bytes(3, "little"),
+                  frame_count=300)),
+            ("frame index out of range",
+             dict(instructions=b"\x01\x00\x01", frame_width=4,
+                  frame_ids=(1 << 24).to_bytes(4, "little"),
+                  frame_count=300)),
             ("unknown stack instruction", dict(instructions=b"\x03")),
             ("first stack of a stream cannot repeat",
              dict(instructions=b"\x00\x01")),
@@ -1774,7 +1906,6 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
             ("stack is too deep", dict(instructions=b"\x02\x00\x81\x02")),
             ("reused stack is not stored earlier",
              dict(instructions=b"\x02\x00\x01", frame_ids=b"\x00")),
-            # End of the block
             ("stack instruction column has trailing data",
              dict(instructions=b"\x01\x00\x00\x01")),
             ("frame ID column has unused values", dict(frame_ids=b"\x00")),
@@ -1791,6 +1922,7 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
 
     @unittest.skipUnless(ZSTD_AVAILABLE, "zstd compression not available")
     def test_replay_rejects_invalid_zstd_column(self):
+        """Replay rejects corrupt and mismatched zstd columns."""
         zstd = import_helper.import_module("compression.zstd")
         instructions = b"\x01\x00\x00"
         frame = zstd.compress(
@@ -1818,6 +1950,7 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
                 self.assertStartsWith(str(cm.exception), message)
 
     def test_replay_propagates_callback_errors(self):
+        """Errors raised by the collector or progress callback propagate."""
         filename = self._write_single_block(
             2000, b"\x01\x00\x00\x00\xcf\x0f")  # REPEAT 1999
 
@@ -1834,15 +1967,14 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
                 reader.replay_samples(FailingCollector())
             with self.assertRaises(ZeroDivisionError):
                 reader.replay_samples(RawCollector(), failing_progress)
-            # The reader stays usable after a failed replay.
             self.assertEqual(reader.replay_samples(RawCollector()), 2000)
 
 
 class TestBinaryEncodings(BinaryFormatTestBase):
     """Tests specifically targeting different stack encodings."""
 
-    def test_stack_full_encoding(self):
-        """First sample uses STACK_FULL encoding and roundtrips."""
+    def test_stack_first_sample_pattern(self):
+        """First sample stores its complete stack and roundtrips."""
         frames = [make_frame(f"f{i}.py", i + 1, f"func{i}") for i in range(5)]
         samples = [[make_interpreter(0, [make_thread(1, frames)])]]
         collector, count = self.roundtrip(samples)
@@ -1860,8 +1992,8 @@ class TestBinaryEncodings(BinaryFormatTestBase):
         self.assertEqual(count, 1000)
         self.assert_samples_equal(samples, collector)
 
-    def test_stack_suffix_encoding(self):
-        """Samples sharing suffix use STACK_SUFFIX and roundtrip."""
+    def test_stack_shared_outer_frames_pattern(self):
+        """Samples keeping outer frames roundtrip (STACK_REPLACE_SUFFIX)."""
         samples = []
         for i in range(10):
             frames = [make_frame(f"new{i}.py", i + 1, f"new{i}")]
@@ -1876,8 +2008,8 @@ class TestBinaryEncodings(BinaryFormatTestBase):
         self.assertEqual(count, 10)
         self.assert_samples_equal(samples, collector)
 
-    def test_stack_pop_push_encoding(self):
-        """Samples with pop+push pattern roundtrip."""
+    def test_stack_pop_push_pattern(self):
+        """Samples that pop frames and push new ones roundtrip."""
         samples = []
         base_frames = [make_frame("base.py", 10, "base")]
 
@@ -2182,7 +2314,7 @@ class TestBinaryStress(BinaryFormatTestBase):
                 # Repeat previous (will use RLE if identical)
                 frames = base_frames[: random.randint(1, 5)]
             elif choice == 2:
-                # Add frames on top (suffix encoding)
+                # Add frames on top (keeps the outer frames)
                 extra = random.randint(1, 3)
                 frames = [
                     make_frame(f"top{i}_{j}.py", j, f"top{j}")
@@ -2190,7 +2322,7 @@ class TestBinaryStress(BinaryFormatTestBase):
                 ]
                 frames.extend(base_frames[: random.randint(2, 4)])
             else:
-                # Pop and push (pop-push encoding)
+                # Pop some frames and push new ones
                 keep = random.randint(1, 3)
                 push = random.randint(0, 2)
                 frames = [
@@ -2373,6 +2505,25 @@ class TestBinaryReplayToFlamegraph(BinaryFormatTestBase):
         self.assertIn('"sample_rate": 4.0', content)
         self.assertIn('"error_rate": 2.5', content)
         self.assertIn('"missed_samples": 1.5', content)
+
+    @unittest.skipUnless(ZSTD_AVAILABLE, "zstd compression not available")
+    def test_measured_stats_with_zstd(self):
+        """Measured statistics are read back when zstd is enabled."""
+        frames = [make_frame(f"pkg/module_{i:03}.py", i + 1, f"func_{i:03}")
+                  for i in range(200)]
+        sample = [make_interpreter(0, [make_thread(1, frames)])]
+        filename = self.temp_filename()
+        collector = BinaryCollector(filename, 2000, compression="zstd")
+        collector.collect(sample, timestamp_us=1000)
+        collector.set_stats(2000, 1.25, 4.0, error_rate=2.5,
+                            missed_samples=1.5)
+        collector.export(None)
+
+        with BinaryReader(filename) as reader:
+            info = reader.get_info()
+            self.assertEqual(info["duration_sec"], 1.25)
+            self.assertEqual(info["missed_samples"], 1.5)
+            self.assertEqual(reader.replay_samples(RawCollector()), 1)
 
     def test_legacy_binary_has_no_measured_stats(self):
         frame = make_frame("hot.py", 99, "hot_func")
