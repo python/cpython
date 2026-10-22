@@ -1,5 +1,7 @@
 import unittest
 from weakref import WeakSet
+import copy
+import pickle
 import string
 from collections import UserString as ustr
 from collections.abc import Set, MutableSet
@@ -14,6 +16,12 @@ class Foo:
 class RefCycle:
     def __init__(self):
         self.cycle = self
+
+class WeakSetSubclass(WeakSet):
+    pass
+
+class WeakSetWithSlots(WeakSet):
+    __slots__ = ('x', 'y')
 
 
 class TestWeakSet(unittest.TestCase):
@@ -37,7 +45,7 @@ class TestWeakSet(unittest.TestCase):
     def test_methods(self):
         weaksetmethods = dir(WeakSet)
         for method in dir(set):
-            if method == 'test_c_api' or method.startswith('_'):
+            if method.startswith('_'):
                 continue
             self.assertIn(method, weaksetmethods,
                          "WeakSet missing method " + method)
@@ -446,6 +454,58 @@ class TestWeakSet(unittest.TestCase):
     def test_abc(self):
         self.assertIsInstance(self.s, Set)
         self.assertIsInstance(self.s, MutableSet)
+
+    def test_copying(self):
+        for cls in WeakSet, WeakSetWithSlots:
+            s = cls(self.items)
+            s.x = ['x']
+            s.z = ['z']
+
+            dup = copy.copy(s)
+            self.assertIsInstance(dup, cls)
+            self.assertEqual(dup, s)
+            self.assertIsNot(dup, s)
+            self.assertIs(dup.x, s.x)
+            self.assertIs(dup.z, s.z)
+            self.assertNotHasAttr(dup, 'y')
+
+            dup = copy.deepcopy(s)
+            self.assertIsInstance(dup, cls)
+            self.assertEqual(dup, s)
+            self.assertIsNot(dup, s)
+            self.assertEqual(dup.x, s.x)
+            self.assertIsNot(dup.x, s.x)
+            self.assertEqual(dup.z, s.z)
+            self.assertIsNot(dup.z, s.z)
+            self.assertNotHasAttr(dup, 'y')
+
+    def test_pickling(self):
+        for cls in WeakSet, WeakSetWithSlots:
+            s = cls(self.items)
+            # 'x' is a slot attribute in WeakSetWithSlots and a dict
+            # attribute in WeakSet; 'z' is a dict attribute; 'y' stays unset.
+            s.x = ['x']
+            s.z = ['z']
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(proto=proto, cls=cls):
+                    # The elements must be strongly referenced elsewhere
+                    # in the pickle.
+                    dup, items = pickle.loads(
+                        pickle.dumps((s, self.items), proto))
+                    self.assertIsInstance(dup, cls)
+                    self.assertEqual(dup, WeakSet(items))
+                    self.assertEqual(dup.x, ['x'])
+                    self.assertEqual(dup.z, ['z'])
+                    self.assertNotHasAttr(dup, 'y')
+                    # The elements are shared with the strongly-pickled copy.
+                    self.assertEqual(set(map(id, dup)), set(map(id, items)))
+
+    def test_pickling_without_strong_ref(self):
+        # An element with no strong reference in the pickle is refused.
+        s = WeakSet(self.items)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.assertRaises(pickle.PicklingError):
+                pickle.dumps(s, proto)
 
 
 if __name__ == "__main__":

@@ -1,2 +1,0 @@
-Remove the ``Py_FORCE_DOUBLE()`` macro. It was used by the ``Py_IS_INFINITY()``
-macro. Patch by Victor Stinner.

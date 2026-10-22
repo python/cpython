@@ -1,1 +1,0 @@
-Fix reference leak from descr_check. Patch by Dong-hee Na.

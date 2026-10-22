@@ -1,2 +1,0 @@
-:meth:`shutil.get_terminal_size` now falls back to sane values if the column
-or line count are 0.
