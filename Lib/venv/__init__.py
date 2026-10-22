@@ -6,6 +6,7 @@ Licensed to the PSF under a contributor agreement.
 """
 import logging
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -531,10 +532,10 @@ class EnvBuilder:
             # fallbacks to POSIX shell compliant quote
             quote = shlex.quote
 
-        replacements = {key: quote(s) for key, s in replacements.items()}
-        for key, quoted in replacements.items():
-            text = text.replace(key, quoted)
-        return text
+        # Only match placeholders in the template itself. A replacement
+        # value can contain text that looks like another placeholder.
+        return re.sub('|'.join(replacements),
+                      lambda match: quote(replacements[match[0]]), text)
 
     def install_scripts(self, context, path):
         """
