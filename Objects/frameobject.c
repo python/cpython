@@ -104,7 +104,8 @@ static int
 framelocalsproxy_prepare_dedup(PyCodeObject *co, PyObject **seen)
 {
     *seen = NULL;
-    if (co->_co_localsplus_dedup == _PYCODE_LOCALSPLUS_DEDUP_UNIQUE) {
+    if (FT_ATOMIC_LOAD_CHAR_RELAXED(co->_co_localsplus_dedup) ==
+            _PYCODE_LOCALSPLUS_DEDUP_UNIQUE) {
         return 0;
     }
     *seen = PyDict_New();
@@ -126,7 +127,8 @@ framelocalsproxy_visit_name(PyCodeObject *co, int i, PyObject *seen,
         return has_value;
     }
     if (!has_value &&
-        co->_co_localsplus_dedup != _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN) {
+        FT_ATOMIC_LOAD_CHAR_RELAXED(co->_co_localsplus_dedup) !=
+            _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN) {
         return 0;
     }
     PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
@@ -141,7 +143,8 @@ framelocalsproxy_visit_name(PyCodeObject *co, int i, PyObject *seen,
         return has_value;
     }
     else {
-        co->_co_localsplus_dedup = _PYCODE_LOCALSPLUS_DEDUP_NEEDED;
+        FT_ATOMIC_STORE_CHAR_RELAXED(co->_co_localsplus_dedup,
+                                     _PYCODE_LOCALSPLUS_DEDUP_NEEDED);
         if (!has_value || prev == Py_True) {
             return 0;
         }
@@ -459,8 +462,10 @@ framelocalsproxy_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
             }
         }
     }
-    if (co->_co_localsplus_dedup == _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN) {
-        co->_co_localsplus_dedup = _PYCODE_LOCALSPLUS_DEDUP_UNIQUE;
+    if (FT_ATOMIC_LOAD_CHAR_RELAXED(co->_co_localsplus_dedup) ==
+            _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN) {
+        FT_ATOMIC_STORE_CHAR_RELAXED(co->_co_localsplus_dedup,
+                                     _PYCODE_LOCALSPLUS_DEDUP_UNIQUE);
     }
     Py_XDECREF(seen);
 
@@ -687,8 +692,10 @@ framelocalsproxy_values(PyObject *self, PyObject *Py_UNUSED(ignored))
         }
         Py_XDECREF(value);
     }
-    if (co->_co_localsplus_dedup == _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN) {
-        co->_co_localsplus_dedup = _PYCODE_LOCALSPLUS_DEDUP_UNIQUE;
+    if (FT_ATOMIC_LOAD_CHAR_RELAXED(co->_co_localsplus_dedup) ==
+            _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN) {
+        FT_ATOMIC_STORE_CHAR_RELAXED(co->_co_localsplus_dedup,
+                                     _PYCODE_LOCALSPLUS_DEDUP_UNIQUE);
     }
     Py_XDECREF(seen);
 
@@ -749,8 +756,10 @@ framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
             goto error;
         }
     }
-    if (co->_co_localsplus_dedup == _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN) {
-        co->_co_localsplus_dedup = _PYCODE_LOCALSPLUS_DEDUP_UNIQUE;
+    if (FT_ATOMIC_LOAD_CHAR_RELAXED(co->_co_localsplus_dedup) ==
+            _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN) {
+        FT_ATOMIC_STORE_CHAR_RELAXED(co->_co_localsplus_dedup,
+                                     _PYCODE_LOCALSPLUS_DEDUP_UNIQUE);
     }
     Py_XDECREF(seen);
     seen = NULL;
@@ -807,8 +816,10 @@ framelocalsproxy_length(PyObject *self)
             size++;
         }
     }
-    if (co->_co_localsplus_dedup == _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN) {
-        co->_co_localsplus_dedup = _PYCODE_LOCALSPLUS_DEDUP_UNIQUE;
+    if (FT_ATOMIC_LOAD_CHAR_RELAXED(co->_co_localsplus_dedup) ==
+            _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN) {
+        FT_ATOMIC_STORE_CHAR_RELAXED(co->_co_localsplus_dedup,
+                                     _PYCODE_LOCALSPLUS_DEDUP_UNIQUE);
     }
     Py_XDECREF(seen);
     return size;
