@@ -738,7 +738,8 @@ class MultibyteSurrogateescapeBug(unittest.TestCase):
     """An incomplete sequence of three or four bytes at the end of the
     input makes the incremental decoder drop whatever follows the first
     escaped byte, where the stateless decoder escapes that byte and carries
-    on.  Carved out of the chunked decoding tests above by _decode_errors."""
+    on (gh-160307).  Carved out of the chunked decoding tests above by
+    _decode_errors."""
 
     @unittest.expectedFailure
     @hypothesis.given(
