@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
 #
-# Use this script to update the vendored mimalloc sources from a local
-# checkout of the upstream mimalloc repository.
+# Use this script to update the vendored mimalloc sources.
 #
 # The sources in src/ are copied to Objects/mimalloc/ and the headers in
 # include/ are copied to Include/internal/mimalloc/. Files that no longer exist
-# upstream are removed. Only files tracked by git in the mimalloc checkout are
-# copied, so build output and other local files are ignored.
+# upstream are removed.
 #
 # CPython-specific configuration lives in Include/internal/pycore_mimalloc.h,
-# which this script does not touch.
+# which this script does not touch. Changes carried on top of the upstream
+# sources must be re-applied after refreshing.
 
 set -e
 set -o pipefail
@@ -19,61 +18,58 @@ if [[ "${BASH_VERSINFO[0]}" -lt 4 ]]; then
   exit 1
 fi
 
-if [[ $1 == "" ]]; then
-  echo "Usage: $0 path-to-mimalloc-directory"
-  echo ""
-  echo "  path-to-mimalloc-directory should be a local git checkout of a"
-  echo "  https://github.com/microsoft/mimalloc/ repo (dev3 branch), with the"
-  echo "  revision to vendor checked out."
-  exit 1
-fi
+# Update this when updating to a new version after verifying that the changes
+# the update brings in are good. The ref can be a commit hash or a release tag
+# (e.g. "v3.6.0"); mimalloc v3.6 has not been released yet, so this is a commit
+# on the dev3 branch.
+expected_mimalloc_ref="1ff2382f943e52a4c8e0762291d92f961d4a2d23"
+expected_mimalloc_sha256="0000000000000000000000000000000000000000000000000000000000000000"
 
-mimalloc_dir="$(realpath "$1")"
 objects_dir="$(realpath "$(dirname -- "${BASH_SOURCE[0]}")")"
 cpython_dir="$(realpath "$objects_dir/../..")"
 include_dir="$cpython_dir/Include/internal/mimalloc"
 script_name="$(basename -- "${BASH_SOURCE[0]}")"
 
+tmp_dir="$(mktemp -d)"
+trap 'rm -rf "$tmp_dir"' EXIT
+
+# Step 1: download and verify the mimalloc sources
+
+url="https://github.com/microsoft/mimalloc/archive/${expected_mimalloc_ref}.tar.gz"
+curl --fail --location "$url" > "$tmp_dir/mimalloc.tar.gz"
+actual_sha256=$(sha256sum "$tmp_dir/mimalloc.tar.gz" | cut -d' ' -f1)
+if [[ "$actual_sha256" != "$expected_mimalloc_sha256" ]]; then
+  echo "error: SHA-256 mismatch for $url" >&2
+  echo "  expected: $expected_mimalloc_sha256" >&2
+  echo "  actual:   $actual_sha256" >&2
+  echo "Update expected_mimalloc_sha256 after verifying the download." >&2
+  exit 1
+fi
+
+# The top-level directory in the archive depends on the ref (mimalloc-<hash>
+# for a commit, mimalloc-<version> for a tag), so strip it.
+mimalloc_dir="$tmp_dir/mimalloc"
+mkdir "$mimalloc_dir"
+tar xzf "$tmp_dir/mimalloc.tar.gz" -C "$mimalloc_dir" --strip-components 1
 if [[ ! -f "$mimalloc_dir/src/static.c" || ! -f "$mimalloc_dir/include/mimalloc.h" ]]; then
-  echo "error: '$mimalloc_dir' does not look like a mimalloc checkout" >&2
-  echo "(expected src/static.c and include/mimalloc.h)" >&2
-  exit 1
-fi
-if [[ ! -f "$cpython_dir/Include/internal/pycore_mimalloc.h" ]]; then
-  echo "error: '$cpython_dir' does not look like a CPython checkout" >&2
+  echo "error: $url does not look like a mimalloc source archive" >&2
   exit 1
 fi
 
-rev=$(git -C "$mimalloc_dir" rev-parse HEAD)
-describe=$(git -C "$mimalloc_dir" describe --tags --always 2>/dev/null || echo "$rev")
-if [[ -n "$(git -C "$mimalloc_dir" status --porcelain -- src include LICENSE)" ]]; then
-  echo "WARNING: '$mimalloc_dir' has uncommitted changes in src/, include/" >&2
-  echo "or LICENSE; the working tree contents will be vendored." >&2
-fi
-
-# Step 1: remove the currently vendored files (keeping this script)
+# Step 2: remove the currently vendored files (keeping this script)
 
 find "$objects_dir" -type f ! -name "$script_name" -delete
 find "$objects_dir" -mindepth 1 -type d -empty -delete
 rm -rf "$include_dir"
 mkdir -p "$include_dir"
 
-# Step 2: copy the tracked upstream files
+# Step 3: copy the upstream files
 
-copy_tree() {
-  local src_subdir="$1" dest_dir="$2" f rel
-  while IFS= read -r -d '' f; do
-    rel="${f#"$src_subdir"/}"
-    mkdir -p "$dest_dir/$(dirname -- "$rel")"
-    cp "$mimalloc_dir/$f" "$dest_dir/$rel"
-  done < <(git -C "$mimalloc_dir" ls-files -z -- "$src_subdir")
-}
-
-copy_tree src "$objects_dir"
-copy_tree include "$include_dir"
+cp -R "$mimalloc_dir/src/." "$objects_dir/"
+cp -R "$mimalloc_dir/include/." "$include_dir/"
 cp "$mimalloc_dir/LICENSE" "$objects_dir/LICENSE"
 
-# Step 3: sanity checks
+# Step 4: sanity checks
 
 cd "$cpython_dir"
 
@@ -96,9 +92,10 @@ if [[ -n "$deep_files" ]]; then
   echo "$deep_files" | sed 's/^/  /' >&2
 fi
 
-echo "Updated mimalloc to $describe ($rev)."
+echo "Updated mimalloc to ${expected_mimalloc_ref}."
 echo
 git status --short -- Objects/mimalloc Include/internal/mimalloc
 echo
-echo "Review the changes, rebuild, and commit with a message such as:"
-echo "  Update vendored mimalloc to $describe"
+echo "Re-apply any changes carried on top of the upstream sources, review the"
+echo "changes, rebuild, and commit with a message such as:"
+echo "  Update vendored mimalloc to ${expected_mimalloc_ref}"
