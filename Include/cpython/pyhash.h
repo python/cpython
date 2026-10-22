@@ -50,5 +50,3 @@ _Py_HashPointer(const void *ptr)
 }
 
 PyAPI_FUNC(Py_hash_t) PyObject_GenericHash(PyObject *);
-
-PyAPI_FUNC(Py_hash_t) Py_HashBuffer(const void *ptr, Py_ssize_t len);

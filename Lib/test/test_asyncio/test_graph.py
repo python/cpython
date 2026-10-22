@@ -148,6 +148,163 @@ class CallStackTestBase:
             'async generator CallStackTestBase.test_stack_async_gen.<locals>.gen()',
             stack_for_gen_nested_call[1])
 
+    async def test_stack_anext(self):
+        # anext() without a default returns the __anext__() coroutine
+        # itself, so nothing is inserted between it and main().
+
+        loop = asyncio.get_running_loop()
+        blocker = loop.create_future()
+
+        async def inner():
+            await blocker
+
+        class AIter:
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                await inner()
+                return 1
+
+        async def main():
+            await anext(AIter())
+
+        task = asyncio.create_task(main(), name='anext task')
+        await asyncio.sleep(0)
+        try:
+            stack = capture_test_stack(fut=task)
+        finally:
+            blocker.set_result(None)
+            await task
+
+        self.assertEqual(stack[0], [
+            'T<anext task>',
+            [
+                'a inner',
+                'a __anext__',
+                'a main',
+            ],
+            []
+        ])
+
+    async def test_stack_anext_default(self):
+        # anext() with a default wraps the awaitable in a coroutine, so the
+        # call graph of a suspended task sees through it into __anext__().
+
+        loop = asyncio.get_running_loop()
+        blocker = loop.create_future()
+
+        async def inner():
+            await blocker
+
+        class AIter:
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                await inner()
+                return 1
+
+        async def main():
+            await anext(AIter(), None)
+
+        task = asyncio.create_task(main(), name='anext task')
+        await asyncio.sleep(0)
+        try:
+            stack = capture_test_stack(fut=task)
+        finally:
+            blocker.set_result(None)
+            await task
+
+        self.assertEqual(stack[0], [
+            'T<anext task>',
+            [
+                'a inner',
+                'a __anext__',
+                'a _anext_with_default',
+                'a main',
+            ],
+            []
+        ])
+
+    async def test_stack_aiter(self):
+        # The one-argument form of aiter() returns the object's own
+        # iterator, so it adds no frame of its own to the call graph.
+
+        loop = asyncio.get_running_loop()
+        blocker = loop.create_future()
+
+        async def inner():
+            await blocker
+
+        class AIter:
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                await inner()
+                return 1
+
+        async def main():
+            async for _ in aiter(AIter()):
+                break
+
+        task = asyncio.create_task(main(), name='aiter task')
+        await asyncio.sleep(0)
+        try:
+            stack = capture_test_stack(fut=task)
+        finally:
+            blocker.set_result(None)
+            await task
+
+        self.assertEqual(stack[0], [
+            'T<aiter task>',
+            [
+                'a inner',
+                'a __anext__',
+                'a main',
+            ],
+            []
+        ])
+
+    async def test_stack_aiter_callable(self):
+        # aiter(callable, ...) returns an iterator whose __anext__() is a
+        # coroutine, so the call graph of a suspended task sees through it
+        # into the awaited result of the callable.
+
+        loop = asyncio.get_running_loop()
+        blocker = loop.create_future()
+
+        async def inner():
+            await blocker
+
+        async def spam():
+            await inner()
+            return 1
+
+        async def main():
+            async for _ in aiter(spam, 1):
+                pass
+
+        task = asyncio.create_task(main(), name='aiter task')
+        await asyncio.sleep(0)
+        try:
+            stack = capture_test_stack(fut=task)
+        finally:
+            blocker.set_result(None)
+            await task
+
+        self.assertEqual(stack[0], [
+            'T<aiter task>',
+            [
+                'a inner',
+                'a spam',
+                'a __anext__',
+                'a main',
+            ],
+            []
+        ])
+
     def test_ag_frame_used_for_async_generator(self):
         # Regression test for gh-148736: the ag_await branch of
         # _build_graph_for_future must read ag_frame, not cr_frame.
@@ -172,6 +329,33 @@ class CallStackTestBase:
             loop.close()
 
         self.assertEqual(len(result.call_stack), 2)
+
+    async def test_stack_wait_for_non_positive_timeout(self):
+        # gh-157058: wait_for(fut, 0) must still record the waiter
+        cleanup = asyncio.Future()
+
+        async def worker():
+            try:
+                await asyncio.Future()
+            finally:
+                await cleanup
+
+        async def probe(t):
+            await asyncio.wait_for(t, 0)
+
+        t = asyncio.ensure_future(worker())
+        p = asyncio.create_task(probe(t), name='probe')
+        for _ in range(5):
+            await asyncio.sleep(0)
+
+        stack = capture_test_stack(fut=t)
+
+        cleanup.set_result(None)
+        await asyncio.gather(p, t, return_exceptions=True)
+
+        self.assertEqual(stack[0][2], [
+            ['T<probe>', ['a _cancel_and_wait', 'a wait_for', 'a probe'], []],
+        ])
 
     async def test_stack_gather(self):
 
@@ -201,6 +385,29 @@ class CallStackTestBase:
                 ['T<anon>', ['a main', 'a test_stack_gather'], []]
             ]
         ])
+
+    async def test_stack_gather_survivor(self):
+        # gh-157213: a child that outlives gather() must not be shown as awaited
+
+        async def fail():
+            raise ValueError
+
+        async def survivor():
+            await asyncio.Future()
+
+        t = asyncio.create_task(survivor(), name='survivor')
+        with self.assertRaises(ValueError):
+            await asyncio.gather(t, fail())
+
+        self.assertEqual(capture_test_stack(fut=t)[0], [
+            'T<survivor>',
+            ['a survivor'],
+            []
+        ])
+
+        t.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            await t
 
     async def test_stack_shield(self):
 
@@ -592,6 +799,26 @@ class CallStackTestBase:
 
         await main()
         self.assertRegex(output[0], r'in generator [\w.<>]+\.gen\(\)')
+
+    async def test_capture_call_graph_generator_keeps_caller_frames(self):
+        # gh-156988: sync gen should not clear the call chain
+        stack = None
+
+        def gen():
+            nonlocal stack
+            graph = asyncio.capture_call_graph()
+            stack = [entry.frame.f_code.co_name for entry in graph.call_stack]
+            yield
+
+        def middle():
+            for _ in gen():
+                pass
+
+        async def main():
+            middle()
+
+        await main()
+        self.assertEqual(stack[:3], ['gen', 'middle', 'main'])
 
 
 @unittest.skipIf(

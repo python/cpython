@@ -76,10 +76,10 @@ Lib/test/data/*
 Apple/iOS/Frameworks/
 Apple/iOS/Resources/Info.plist
 Apple/testbed/build
-Apple/testbed/Python.xcframework/*/bin
-Apple/testbed/Python.xcframework/*/include
-Apple/testbed/Python.xcframework/*/lib
-Apple/testbed/Python.xcframework/*/Python.framework
+Platforms/Apple/testbed/Python*.xcframework/*/bin
+Platforms/Apple/testbed/Python*.xcframework/*/include
+Platforms/Apple/testbed/Python*.xcframework/*/lib
+Platforms/Apple/testbed/Python*.xcframework/*/Python*.framework
 Apple/testbed/*Testbed.xcodeproj/project.xcworkspace
 Apple/testbed/*Testbed.xcodeproj/xcuserdata
 Mac/Makefile
@@ -178,8 +178,13 @@ Python/frozen_modules/MANIFEST
 /python
 !/Python/
 
-# People's custom https://docs.anthropic.com/en/docs/claude-code/memory configs.
-/.claude/
+# Local AI agent scratch state (per-PR and per-branch notebooks, sandbox
+# experiments) and personal agent overrides, none of which are committed.
+/do-not-commit/
+/.claude/pr-*
+/.claude/branch-*
+/.claude/sandbox/
+AGENTS.local.md
 CLAUDE.local.md
 
 #### main branch only stuff below this line, things to backport go above. ####

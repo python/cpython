@@ -5,7 +5,9 @@ from threading import Thread
 import time
 from unittest import TestCase
 import gc
+import weakref
 
+from test import support
 from test.support import threading_helper
 
 
@@ -94,6 +96,39 @@ class TestGC(TestCase):
         thread = Thread(target=evil)
         thread.start()
         thread.join()
+
+    def test_merge_brc_queue_of_detached_thread(self):
+        # GH-157838: objects queued for merging by a thread that is detached
+        # (blocked in a lock acquire, sleep, etc.) are merged and freed on its
+        # behalf instead of staying alive until it runs Python code again.
+        lock = threading.Lock()
+        lock.acquire()
+        ready = threading.Event()
+        objs = []
+
+        def worker():
+            # Objects owned by this thread; only the list holds a reference.
+            objs.extend(MyObj() for _ in range(100))
+            ready.set()
+            lock.acquire()  # block while detached
+
+        thread = Thread(target=worker)
+        thread.start()
+        try:
+            ready.wait()
+            # The worker may not have detached yet when the first objects
+            # are dropped; keep trying until one is freed immediately.
+            for _ in support.sleeping_retry(support.SHORT_TIMEOUT, error=False):
+                obj = objs.pop()
+                wr = weakref.ref(obj)
+                del obj
+                if wr() is None:
+                    break
+            else:
+                self.fail("object not freed while owning thread was detached")
+        finally:
+            lock.release()
+            thread.join()
 
     def test_gc_callbacks_race_with_mutation(self):
         def collect():

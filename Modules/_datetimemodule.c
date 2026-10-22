@@ -1046,8 +1046,11 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
             }
             break;
         }
-        else if (p >= p_end) {
-            return c != '\0';
+        else if (p > p_end) {
+            return 0;  // Stopped at p_end: an offset designator or NUL
+        }
+        else if (p == p_end) {
+            return 1;  // Stray character just before p_end
         }
         else if (has_separator && (c == ':')) {
             if (i == 2) {
@@ -1087,8 +1090,8 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
         ++p; // skip truncated digits
     }
 
-    // Return 1 if it's not the end of the string
-    return *p != '\0';
+    // Return 1 if there is unparsed text before p_end
+    return p != p_end;
 }
 
 static int
@@ -1122,15 +1125,11 @@ parse_isoformat_time(const char *dtstr, size_t dtlen, int *hour, int *minute,
     if (rv < 0) {
         return rv;
     }
+    else if (rv == 1) {
+        return -5;  // Unparsed text after the time
+    }
     else if (tzinfo_pos == p_end) {
-        // We know that there's no time zone, so if there's stuff at the
-        // end of the string it's an error.
-        if (rv == 1) {
-            return -5;
-        }
-        else {
-            return 0;
-        }
+        return 0;
     }
 
     // Special case UTC / Zulu time.
@@ -1783,17 +1782,19 @@ inline static int
 normalize_century(void)
 {
     static int cache = -1;
-    if (cache < 0) {
+    int res = FT_ATOMIC_LOAD_INT_RELAXED(cache);
+    if (res < 0) {
         char year[5];
         struct tm date = {
             .tm_year = -1801,
             .tm_mon = 0,
             .tm_mday = 1
         };
-        cache = (strftime(year, sizeof(year), "%Y", &date) &&
-                 strcmp(year, "0099") != 0);
+        res = (strftime(year, sizeof(year), "%Y", &date) &&
+               strcmp(year, "0099") != 0);
+        FT_ATOMIC_STORE_INT_RELAXED(cache, res);
     }
-    return cache;
+    return res;
 }
 
 static PyObject *
@@ -1968,6 +1969,29 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                     goto Error;
             }
             replacement = freplacement;
+        }
+        else if (ch >= '1' && ch <= '6'
+                 && i < flen && PyUnicode_READ_CHAR(format, i) == 'f')
+        {
+            /* %Nf -> first N digits of microseconds */
+            i++;
+            if (freplacement == NULL) {
+                freplacement = make_freplacement(object);
+                if (freplacement == NULL) {
+                    goto Error;
+                }
+            }
+            if (PyUnicodeWriter_WriteSubstring(writer, format, start, end) < 0) {
+                goto Error;
+            }
+            start = i;
+            Py_ssize_t precision = ch - '0';
+            if (PyUnicodeWriter_WriteSubstring(writer, freplacement,
+                                               0, precision) < 0)
+            {
+                goto Error;
+            }
+            continue;
         }
         else if (normalize_century()
                  && (ch == 'Y' || ch == 'G' || ch == 'F' || ch == 'C'))
@@ -5051,22 +5075,33 @@ time_richcompare(PyObject *self, PyObject *other, int op)
     }
     /* The hard case: both aware with different UTC offsets */
     else if (offset1 != Py_None && offset2 != Py_None) {
-        int offsecs1, offsecs2;
+        long long norm_us1, norm_us2;
         assert(offset1 != offset2); /* else last "if" handled it */
-        offsecs1 = TIME_GET_HOUR(self) * 3600 +
-                   TIME_GET_MINUTE(self) * 60 +
-                   TIME_GET_SECOND(self) -
-                   GET_TD_DAYS(offset1) * 86400 -
-                   GET_TD_SECONDS(offset1);
-        offsecs2 = TIME_GET_HOUR(other) * 3600 +
-                   TIME_GET_MINUTE(other) * 60 +
-                   TIME_GET_SECOND(other) -
-                   GET_TD_DAYS(offset2) * 86400 -
-                   GET_TD_SECONDS(offset2);
-        diff = offsecs1 - offsecs2;
-        if (diff == 0)
-            diff = TIME_GET_MICROSECOND(self) -
-                   TIME_GET_MICROSECOND(other);
+        norm_us1 =
+            ((TIME_GET_HOUR(self) * 3600 +
+              TIME_GET_MINUTE(self) * 60 +
+              TIME_GET_SECOND(self)) * 1000000LL +
+             TIME_GET_MICROSECOND(self)) -
+            ((GET_TD_DAYS(offset1) * 86400LL +
+              GET_TD_SECONDS(offset1)) * 1000000LL +
+             GET_TD_MICROSECONDS(offset1));
+        norm_us2 =
+            ((TIME_GET_HOUR(other) * 3600 +
+              TIME_GET_MINUTE(other) * 60 +
+              TIME_GET_SECOND(other)) * 1000000LL +
+             TIME_GET_MICROSECOND(other)) -
+            ((GET_TD_DAYS(offset2) * 86400LL +
+              GET_TD_SECONDS(offset2)) * 1000000LL +
+             GET_TD_MICROSECONDS(offset2));
+        if (norm_us1 < norm_us2) {
+            diff = -1;
+        }
+        else if (norm_us1 > norm_us2) {
+            diff = 1;
+        }
+        else {
+            diff = 0;
+        }
         result = diff_to_bool(diff, op);
     }
     else if (op == Py_EQ) {

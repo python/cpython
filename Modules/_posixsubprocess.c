@@ -352,7 +352,8 @@ _close_range_except(int start_fd,
                     int (*closer)(int, int))
 {
     if (end_fd == -1) {
-        end_fd = Py_MIN(safe_get_max_fd(), INT_MAX);
+        end_fd = safe_get_max_fd();
+        end_fd = Py_MIN(end_fd, INT_MAX);
     }
     Py_ssize_t keep_seq_idx;
     /* As fds_to_keep is sorted we can loop through the list closing

@@ -165,6 +165,11 @@ _contains_disallowed_url_pchar_re = re.compile('[\x00-\x20\x7f]')
 # to prevent http header injection.
 _contains_disallowed_method_pchar_re = re.compile('[\x00-\x1f]')
 
+# RFC 9112: Content-Length = 1*DIGIT and chunk-size = 1*HEXDIG.
+# int() is more permissive, so we match against the grammar before calling it.
+_is_legal_content_length = re.compile(r'[0-9]+').fullmatch
+_is_legal_chunk_size = re.compile(rb'[0-9a-fA-F]+').fullmatch
+
 # We always set the Content-Length header for these methods because some
 # servers will otherwise respond with a 411
 _METHODS_EXPECTING_BODY = {'PATCH', 'POST', 'PUT'}
@@ -392,14 +397,12 @@ class HTTPResponse(io.BufferedIOBase):
         # NOTE: RFC 2616, S4.4, #3 says we ignore this if tr_enc is "chunked"
         self.length = None
         length = self.headers.get("content-length")
-        if length and not self.chunked:
-            try:
-                self.length = int(length)
-            except ValueError:
-                self.length = None
-            else:
-                if self.length < 0:  # ignore nonsensical negative lengths
-                    self.length = None
+        if length is not None:
+            # RFC 9112, section 5.1: optional whitespace (SP / HTAB) around
+            # the field value is not part of the value.
+            length = length.strip(' \t')
+        if length and not self.chunked and _is_legal_content_length(length):
+            self.length = int(length)
         else:
             self.length = None
 
@@ -566,7 +569,10 @@ class HTTPResponse(io.BufferedIOBase):
         i = line.find(b";")
         if i >= 0:
             line = line[:i] # strip chunk-extensions
+        line = line.rstrip()
         try:
+            if not _is_legal_chunk_size(line):
+                raise ValueError("invalid chunk size")
             return int(line, 16)
         except ValueError:
             # close the connection as protocol synchronisation is
@@ -1013,7 +1019,7 @@ class HTTPConnection:
         headers = [connect]
         for header, value in self._tunnel_headers.items():
             header_bytes = header.encode("latin-1")
-            value_bytes = value.encode("latin-1")
+            value_bytes = str(value).encode("latin-1")
             if not _is_legal_header_name(header_bytes):
                 raise ValueError('Invalid header name %r' % (header_bytes,))
             if _is_illegal_header_value(value_bytes):
