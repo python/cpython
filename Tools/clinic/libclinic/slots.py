@@ -39,7 +39,9 @@ class SlotSpec:
 # not be in dsl_parser.unsupported_special_methods.
 SLOTS: Final[dict[str, SlotSpec]] = {
     '__add__': SlotSpec(return_converter='object'),
+    '__bool__': SlotSpec(return_converter='int'),
     '__contains__': SlotSpec(return_converter='int'),
+    '__getitem__': SlotSpec(return_converter='object'),
     '__hash__': SlotSpec(return_converter='Py_hash_t'),
     '__iadd__': SlotSpec(return_converter='object'),
     '__imul__': SlotSpec(return_converter='object'),
