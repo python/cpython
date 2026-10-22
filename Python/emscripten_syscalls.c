@@ -334,7 +334,7 @@ int __syscall_ioctl(int fd, int request, void* varargs) {
 }
 
 EM_JS(void, _PyEM_InitFileSystems_js, (void), {
-    FS.filesystems ??= { NODEFS };
+    FS.filesystems ||= { NODEFS };
 })
 
 __attribute__((constructor)) void _PyEM_InitFileSystems(void) {
