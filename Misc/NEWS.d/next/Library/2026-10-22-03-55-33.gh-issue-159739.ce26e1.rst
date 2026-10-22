@@ -1,0 +1,3 @@
+Fix :func:`time.gmtime`, :func:`time.localtime`, and :func:`time.ctime`
+returning a negative year for large timestamps on platforms that support
+them.

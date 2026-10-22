@@ -153,6 +153,21 @@ class TimeTestCase(unittest.TestCase):
             self.assertRaises(OSError,
                               time.clock_settime, time.CLOCK_MONOTONIC, 0)
 
+    def test_large_timestamp_year(self):
+        # 2147483648-06-29 00:00:00 UTC, away from local year boundaries.
+        timestamp = 67_767_976_249_084_800
+        for convert in (time.gmtime, time.localtime, time.ctime):
+            with self.subTest(convert=convert):
+                try:
+                    result = convert(timestamp)
+                except (OverflowError, OSError):
+                    self.skipTest('timestamp out of range on this platform')
+                if isinstance(result, str):
+                    year = int(result.rsplit(' ', 1)[-1])
+                else:
+                    year = result.tm_year
+                self.assertEqual(year, 2**31)
+
     def test_conversions(self):
         self.assertEqual(time.ctime(self.t),
                          time.asctime(time.localtime(self.t)))

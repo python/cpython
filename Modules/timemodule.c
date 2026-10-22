@@ -487,7 +487,7 @@ tmtotuple(time_module_state *state, struct tm *p
 #define SET(INDEX, VAL) \
     SET_ITEM((INDEX), PyLong_FromLong((long) (VAL)))
 
-    SET(0, p->tm_year + 1900);
+    SET_ITEM(0, PyLong_FromLongLong((long long)p->tm_year + 1900));
     SET(1, p->tm_mon + 1);         /* Want January == 1 */
     SET(2, p->tm_mday);
     SET(3, p->tm_hour);
@@ -1041,12 +1041,12 @@ _asctime(struct tm *timeptr)
         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     };
     return PyUnicode_FromFormat(
-        "%s %s%3d %.2d:%.2d:%.2d %d",
+        "%s %s%3d %.2d:%.2d:%.2d %lld",
         wday_name[timeptr->tm_wday],
         mon_name[timeptr->tm_mon],
         timeptr->tm_mday, timeptr->tm_hour,
         timeptr->tm_min, timeptr->tm_sec,
-        1900 + timeptr->tm_year);
+        (long long)timeptr->tm_year + 1900);
 }
 
 /*[clinic input]
