@@ -767,8 +767,9 @@ class RoundTripBugs(unittest.TestCase):
 
     # The ISO-2022 encoders pass U+001B through as a bare ESC byte, which
     # their own decoders then reject or misread as an escape sequence;
-    # iso2022_kr does the same with its shift characters U+000E and U+000F.
-    # The control character goes last, where it never forms a sequence.
+    # iso2022_kr does the same with its shift characters U+000E and U+000F
+    # (gh-160302).  The control character goes last, where it never forms
+    # a sequence.
     @unittest.expectedFailure
     @hypothesis.given(
         case=st.sampled_from(sorted(ISO2022_ENCODINGS)).flatmap(
