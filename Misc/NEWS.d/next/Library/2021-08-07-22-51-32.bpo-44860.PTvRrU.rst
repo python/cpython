@@ -1,2 +1,0 @@
-Fix the ``posix_user`` scheme in :mod:`sysconfig` to not depend on
-:data:`sys.platlibdir`.

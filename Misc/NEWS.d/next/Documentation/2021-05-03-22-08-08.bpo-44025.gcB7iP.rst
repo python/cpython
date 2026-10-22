@@ -1,1 +1,0 @@
-Clarify when '_' in match statements is a keyword, and when not.

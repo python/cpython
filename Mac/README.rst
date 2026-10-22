@@ -10,6 +10,19 @@ Python on macOS README
 This document provides a quick overview of some macOS specific features in
 the Python distribution.
 
+Compilers for building on macOS
+===============================
+
+The core developers primarily test builds on macOS with Apple's compiler tools,
+either Xcode or the Command Line Tools.  For these we only support building with
+a compiler that includes an SDK that targets the OS on the build machine, that is
+the version of Xcode that shipped with the OS version or one newer.
+
+For example, for macOS 12 we support Xcode 13 and Xcode 14 (or the corresponding
+Command Line Tools).
+
+Building with other compilers, such as GCC, likely works, but is not actively supported.
+
 macOS specific arguments to configure
 =====================================
 
@@ -187,6 +200,16 @@ a ``python3.x-32`` binary and use the value of ``sys.executable`` as the
 Likewise, use ``python3.x-intel64`` to force execution in ``x86_64`` mode
 with ``universal2`` binaries.
 
+3. How do I specify binary universal wheels
+-------------------------------------------
+
+Binary wheels can also be universal. The platform tag name used to identify
+universal binary wheels differs from the naming scheme used when configuring a
+universal build with ``--with-universal-archs``. See the Python Packaging User
+Guide for details on the `packaging platform compatibility tags used on macOS
+<https://packaging.python.org/en/latest/specifications/platform-compatibility-tags/#macos>`_.
+
+
 Building and using a framework-based Python on macOS
 ====================================================
 
@@ -296,7 +319,7 @@ How do I create a binary distribution?
 Download and unpack the source release from https://www.python.org/download/.
 Go to the directory ``Mac/BuildScript``. There you will find a script
 ``build-installer.py`` that does all the work. This will download and build
-a number of 3rd-party libaries, configures and builds a framework Python,
+a number of 3rd-party libraries, configures and builds a framework Python,
 installs it, creates the installer package files and then packs this in a
 DMG image.  The script also builds an HTML copy of the current Python
 documentation set for this release for inclusion in the framework.  The
@@ -334,9 +357,9 @@ The configure script sometimes emits warnings like the one below::
    configure: WARNING: libintl.h:     section "Present But Cannot Be Compiled"
    configure: WARNING: libintl.h: proceeding with the preprocessor's result
    configure: WARNING: libintl.h: in the future, the compiler will take precedence
-   configure: WARNING:     ## --------------------------------------- ##
-   configure: WARNING:     ## Report this to https://bugs.python.org/ ##
-   configure: WARNING:     ## --------------------------------------- ##
+   configure: WARNING:     ## -------------------------------------------------------- ##
+   configure: WARNING:     ## Report this to https://github.com/python/cpython/issues/ ##
+   configure: WARNING:     ## -------------------------------------------------------- ##
 
 This almost always means you are trying to build a universal binary for
 Python and have libraries in ``/usr/local`` that don't contain the required

@@ -1,3 +1,0 @@
-Update the vendored copy of libexpat to 2.4.1 (from 2.2.8) to get the fix
-for the CVE-2013-0340 "Billion Laughs" vulnerability. This copy is most used
-on Windows and macOS.

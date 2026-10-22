@@ -1,3 +1,0 @@
-:mod:`base64` RFC references were updated to point to :rfc:`4648`; a section
-was added to point users to the new "security considerations" section of the
-RFC.

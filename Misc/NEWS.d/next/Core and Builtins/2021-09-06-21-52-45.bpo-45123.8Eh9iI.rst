@@ -1,3 +1,0 @@
-Fix PyAiter_Check to only check for the __anext__ presence (not for
-__aiter__). Rename PyAiter_Check to PyAIter_Check, PyObject_GetAiter ->
-PyObject_GetAIter.

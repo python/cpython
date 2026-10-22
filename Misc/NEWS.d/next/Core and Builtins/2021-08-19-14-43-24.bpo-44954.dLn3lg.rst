@@ -1,2 +1,0 @@
-Fixed a corner case bug where the result of ``float.fromhex('0x.8p-1074')``
-was rounded the wrong way.

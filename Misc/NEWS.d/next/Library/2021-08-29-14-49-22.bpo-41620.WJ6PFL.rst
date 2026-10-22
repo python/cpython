@@ -1,3 +1,0 @@
-:meth:`~unittest.TestCase.run` now always return a
-:class:`~unittest.TestResult` instance. Previously it returned ``None`` if
-the test class or method was decorated with a skipping decorator.

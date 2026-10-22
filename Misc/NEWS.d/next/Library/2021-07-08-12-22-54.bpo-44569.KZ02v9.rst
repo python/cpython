@@ -1,3 +1,0 @@
-Added the :func:`StackSummary.format_frame` function in :mod:`traceback`.
-This allows users to customize the way individual lines are formatted in
-tracebacks without re-implementing logic to handle recursive tracebacks.

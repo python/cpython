@@ -1,1 +1,0 @@
-Fixes that test classes decorated with ``@hashlib_helper.requires_hashdigest`` were skipped all the time.
