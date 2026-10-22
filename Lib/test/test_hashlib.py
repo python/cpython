@@ -26,6 +26,7 @@ from test.support import hashlib_helper
 from test.support.import_helper import import_fresh_module
 from test.support import requires_resource
 from test.support import threading_helper
+from test.support import warnings_helper
 from http.client import HTTPException
 
 
@@ -123,6 +124,14 @@ DEPRECATED_STRING_PARAMETER = re.escape(
     "use the 'data' keyword parameter or pass the data "
     "to hash as a positional argument instead"
 )
+
+
+def deprecated_blake2_unkeyed_parameter(name):
+    return re.escape(
+        f"the {name!r} keyword parameter is deprecated for unkeyed "
+        "hashing since Python 3.16 and slated for removal in Python 3.21; "
+        f"use a non-empty 'key' or omit {name!r}"
+    )
 
 
 class HashLibTestCase(unittest.TestCase):
@@ -839,16 +848,26 @@ class HashLibTestCase(unittest.TestCase):
     def check_blake2(self, constructor, salt_size, person_size, key_size,
                      digest_size, max_offset):
         self.assertEqual(constructor.SALT_SIZE, salt_size)
+        msg = deprecated_blake2_unkeyed_parameter('salt')
         for i in range(salt_size + 1):
-            constructor(salt=b'a' * i)
+            with self.assertWarnsRegex(DeprecationWarning, msg):
+                constructor(salt=b'a' * i)
+            constructor(key=b'k', salt=b'a' * i)
         salt = b'a' * (salt_size + 1)
-        self.assertRaises(ValueError, constructor, salt=salt)
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            self.assertRaises(ValueError, constructor, salt=salt)
+        self.assertRaises(ValueError, constructor, key=b'k', salt=salt)
 
         self.assertEqual(constructor.PERSON_SIZE, person_size)
+        msg = deprecated_blake2_unkeyed_parameter('person')
         for i in range(person_size+1):
-            constructor(person=b'a' * i)
+            with self.assertWarnsRegex(DeprecationWarning, msg):
+                constructor(person=b'a' * i)
+            constructor(key=b'k', person=b'a' * i)
         person = b'a' * (person_size + 1)
-        self.assertRaises(ValueError, constructor, person=person)
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            self.assertRaises(ValueError, constructor, person=person)
+        self.assertRaises(ValueError, constructor, key=b'k', person=person)
 
         self.assertEqual(constructor.MAX_DIGEST_SIZE, digest_size)
         for i in range(1, digest_size + 1):
@@ -898,20 +917,26 @@ class HashLibTestCase(unittest.TestCase):
 
         self.assertRaises(TypeError, constructor, '')
 
-        constructor(
-            b'',
-            key=b'',
-            salt=b'',
-            person=b'',
-            digest_size=17,
-            fanout=1,
-            depth=1,
-            leaf_size=256,
-            node_offset=512,
-            node_depth=1,
-            inner_size=7,
-            last_node=True
-        )
+        salt_msg = deprecated_blake2_unkeyed_parameter('salt')
+        person_msg = deprecated_blake2_unkeyed_parameter('person')
+        with warnings_helper.check_warnings(
+            (salt_msg, DeprecationWarning),
+            (person_msg, DeprecationWarning),
+        ):
+            constructor(
+                b'',
+                key=b'',
+                salt=b'',
+                person=b'',
+                digest_size=17,
+                fanout=1,
+                depth=1,
+                leaf_size=256,
+                node_offset=512,
+                node_depth=1,
+                inner_size=7,
+                last_node=True
+            )
 
     def blake2_rfc7693(self, constructor, md_len, in_len):
         def selftest_seq(length, seed):
@@ -1022,6 +1047,47 @@ class HashLibTestCase(unittest.TestCase):
         for msg, key, md in read_vectors('blake2s'):
             key = bytes.fromhex(key)
             self.check('blake2s', msg, md, key=key)
+
+    @requires_blake2
+    @support.subTests("name", ["blake2b", "blake2s"])
+    @support.subTests("parameter", ["salt", "person"])
+    @support.subTests("value", [b'', b'x'])
+    @support.subTests("key", [None, b''])
+    def test_blake2_unkeyed_parameter_deprecated(self, name, parameter,
+                                                 value, key):
+        constructor = getattr(hashlib, name)
+        msg = deprecated_blake2_unkeyed_parameter(parameter)
+        kwargs = {parameter: value}
+        if key is not None:
+            kwargs['key'] = key
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            constructor(**kwargs)
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            hashlib.new(name, **kwargs)
+
+    @requires_blake2
+    @support.subTests("name", ["blake2b", "blake2s"])
+    @support.subTests("parameter", ["salt", "person"])
+    @support.subTests("value", [b'', b'x'])
+    def test_blake2_keyed_parameter_not_deprecated(self, name, parameter,
+                                                   value):
+        constructor = getattr(hashlib, name)
+        kwargs = {'key': b'key', parameter: value}
+        with warnings_helper.check_no_warnings(self,
+                                               category=DeprecationWarning):
+            constructor(**kwargs)
+            hashlib.new(name, **kwargs)
+
+    @requires_blake2
+    @support.subTests("name", ["blake2b", "blake2s"])
+    @support.subTests("key", [None, b''])
+    def test_blake2_unkeyed_parameters_omitted(self, name, key):
+        constructor = getattr(hashlib, name)
+        kwargs = {} if key is None else {'key': key}
+        with warnings_helper.check_no_warnings(self,
+                                               category=DeprecationWarning):
+            constructor(b'data', **kwargs)
+            hashlib.new(name, b'data', **kwargs)
 
     @requires_sha3
     def test_case_sha3_224_0(self):

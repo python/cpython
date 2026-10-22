@@ -450,6 +450,10 @@ BLAKE2s     32         32       8         8
     example, ``b'salt'`` and ``b'salt\x00'`` is the same value. (This is not
     the case for *key*.)
 
+.. deprecated-removed:: next 3.21
+   Passing *salt* or *person* with an empty or omitted *key* is deprecated.
+
+
 These sizes are available as module `constants`_ described below.
 
 Constructor functions also accept the following tree hashing parameters:

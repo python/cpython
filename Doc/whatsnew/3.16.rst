@@ -1154,6 +1154,14 @@ New deprecations
     instead.
     (Contributed by Bartosz Sławecki in :gh:`143465`.)
 
+* :mod:`hashlib`:
+
+  * Passing *salt* or *person* to :func:`~hashlib.blake2b` and
+    :func:`~hashlib.blake2s` with an empty or omitted *key* is deprecated
+    since Python 3.16 and slated for removal in Python 3.21. Keyed hashing
+    still accepts these parameters.
+    (Contributed by Bénédikt Tran in :gh:`160333`.)
+
 * :mod:`struct`:
 
   * The ``'F'`` and ``'D'`` type codes, soft-deprecated since Python 3.15,

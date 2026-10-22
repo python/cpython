@@ -561,6 +561,44 @@ error:
     return -1;
 }
 
+/*
+ * Emit a DeprecationWarning for a parameter given without a key.
+ *
+ * Return 0 on success; otherwise, set an exception and return -1.
+ */
+static int
+blake2_warn_unkeyed_parameter(const char *name)
+{
+    return PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                            "the '%s' keyword parameter is deprecated for "
+                            "unkeyed hashing since Python 3.16 and slated "
+                            "for removal in Python 3.21; use a non-empty "
+                            "'key' or omit '%s'", name, name);
+}
+
+/*
+ * Check the salt and personalization parameters for unkeyed hashing.
+ *
+ * Omitting 'key' is not given or empty when using 'salt' or 'person'
+ * emits a deprecation warning.
+ *
+ * Return 0 on success; otherwise, set an exception and return -1.
+ */
+static int
+blake2_check_unkeyed_parameters(Py_buffer *key, Py_buffer *salt,
+                                Py_buffer *person)
+{
+    if (key->obj != NULL && key->len > 0) {
+        return 0;
+    }
+    if (salt->obj != NULL && blake2_warn_unkeyed_parameter("salt") < 0) {
+        return -1;
+    }
+    if (person->obj != NULL && blake2_warn_unkeyed_parameter("person") < 0) {
+        return -1;
+    }
+    return 0;
+}
 
 static PyObject *
 py_blake2_new(PyTypeObject *type, PyObject *data, int digest_size,
@@ -570,6 +608,10 @@ py_blake2_new(PyTypeObject *type, PyObject *data, int digest_size,
               int inner_size, int last_node, int usedforsecurity)
 {
     Blake2Object *self = NULL;
+
+    if (blake2_check_unkeyed_parameters(key, salt, person) < 0) {
+        return NULL;
+    }
 
     self = new_Blake2Object(type);
     if (self == NULL) {
