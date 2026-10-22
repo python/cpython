@@ -20,4 +20,38 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
+"""
+The sqlite3 extension module provides a DB-API 2.0 (PEP 249) compliant
+interface to the SQLite library, and requires SQLite 3.15.2 or newer.
+
+To use the module, start by creating a database Connection object:
+
+    import sqlite3
+    cx = sqlite3.connect("test.db")  # test.db will be created or opened
+
+The special path name ":memory:" can be provided to connect to a transient
+in-memory database:
+
+    cx = sqlite3.connect(":memory:")  # connect to a database in RAM
+
+Once a connection has been established, create a Cursor object and call
+its execute() method to perform SQL queries:
+
+    cu = cx.cursor()
+
+    # create a table
+    cu.execute("create table lang(name, first_appeared)")
+
+    # insert values into a table
+    cu.execute("insert into lang values (?, ?)", ("C", 1972))
+
+    # execute a query and iterate over the result
+    for row in cu.execute("select * from lang"):
+        print(row)
+
+    cx.close()
+
+The sqlite3 module is written by Gerhard Häring <gh@ghaering.de>.
+"""
+
 from sqlite3.dbapi2 import *

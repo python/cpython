@@ -119,6 +119,7 @@ class StatisticDiff:
 
 def _compare_grouped_stats(old_group, new_group):
     statistics = []
+    old_group = dict(old_group)
     for traceback, stat in new_group.items():
         previous = old_group.pop(traceback, None)
         if previous is not None:
@@ -226,7 +227,7 @@ class Traceback(Sequence):
         return str(self[0])
 
     def __repr__(self):
-        s = "<Traceback %r" % tuple(self)
+        s = f"<Traceback {tuple(self)}"
         if self._total_nframe is None:
             s += ">"
         else:
@@ -478,7 +479,7 @@ class Snapshot:
         if key_type not in ('traceback', 'filename', 'lineno'):
             raise ValueError("unknown key_type: %r" % (key_type,))
         if cumulative and key_type not in ('lineno', 'filename'):
-            raise ValueError("cumulative mode cannot by used "
+            raise ValueError("cumulative mode cannot be used "
                              "with key type %r" % key_type)
 
         stats = {}

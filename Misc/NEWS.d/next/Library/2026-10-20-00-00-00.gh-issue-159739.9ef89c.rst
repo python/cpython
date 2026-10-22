@@ -1,0 +1,2 @@
+Fix allocation error handling in the fallback implementation of
+``getaddrinfo()``.

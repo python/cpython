@@ -1,1 +1,0 @@
-Added ``files()`` function to importlib.resources with support for subdirectories in package data, matching backport in importlib_resources 1.5.

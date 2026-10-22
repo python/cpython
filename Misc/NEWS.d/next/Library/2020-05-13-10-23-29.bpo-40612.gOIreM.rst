@@ -1,2 +1,0 @@
-Fix edge cases in SyntaxError formatting. If the offset is <= 0, no caret is printed.
-If the offset is > line length, the caret is printed pointing just after the last character.

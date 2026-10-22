@@ -1,15 +1,23 @@
-"Test run, coverage 42%."
+"Test run, coverage 54%."
 
 from idlelib import run
+import io
+import signal
+import sys
+import threading
+import time
+from test import support
+from test.support import captured_output, captured_stderr
 import unittest
 from unittest import mock
-from test.support import captured_stderr
+import idlelib
+from idlelib.idle_test.mock_idle import Func
+from test.support import force_not_colorized
 
-import io
-import sys
+idlelib.testing = True  # Use {} for executing test user code.
 
 
-class RunTest(unittest.TestCase):
+class ExceptionTest(unittest.TestCase):
 
     def test_print_exception_unhashable(self):
         class UnhashableException(Exception):
@@ -25,8 +33,7 @@ class RunTest(unittest.TestCase):
                 raise ex1
             except UnhashableException:
                 with captured_stderr() as output:
-                    with mock.patch.object(run,
-                                           'cleanup_traceback') as ct:
+                    with mock.patch.object(run, 'cleanup_traceback') as ct:
                         ct.side_effect = lambda t, e: t
                         run.print_exception()
 
@@ -35,6 +42,148 @@ class RunTest(unittest.TestCase):
         self.assertIn('UnhashableException: ex2', tb[3])
         self.assertIn('UnhashableException: ex1', tb[10])
 
+    data = (('1/0', ZeroDivisionError, "division by zero\n"),
+            ('abc', NameError, "name 'abc' is not defined. "
+                               "Did you mean: 'abs'? "
+                               "Or did you forget to import 'abc'?\n"),
+            ('int.reel', AttributeError,
+                 "type object 'int' has no attribute 'reel'. "
+                 "Did you mean '.real' instead of '.reel'?\n"),  # More in 3.15.
+            (r'raise NameError("123\n456")', NameError, "123\n456\n"),
+            )
+
+    @force_not_colorized
+    def test_get_message(self):
+        for code, exc, msg in self.data:
+            with self.subTest(code=code):
+                try:
+                    exec(compile(code, '', 'exec'))
+                except exc:
+                    typ, val, tb = sys.exc_info()
+                    actual = run.get_message_lines(typ, val, tb)[0]
+                    expect = f'{exc.__name__}: {msg}'
+                    self.assertEqual(actual, expect)
+
+    @force_not_colorized
+    @mock.patch.object(run, 'cleanup_traceback',
+                       new_callable=lambda: (lambda t, e: None))
+    def test_get_multiple_message(self, mock):
+        d = self.data
+        data2 = ((d[0], d[1]),
+                 (d[1], d[2]),
+                 (d[2], d[3]),
+                 (d[3], d[0]),
+                 (d[1], d[3]),
+                 (d[0], d[2]))
+        subtests = 0
+        for (code1, exc1, msg1), (code2, exc2, msg2) in data2:
+            with self.subTest(codes=(code1,code2)):
+                try:
+                    exec(compile(code1, '', 'exec'))
+                except exc1:
+                    try:
+                        exec(compile(code2, '', 'exec'))
+                    except exc2:
+                        with captured_stderr() as output:
+                            run.print_exception()
+                        actual = output.getvalue()
+                        self.assertIn(msg1, actual)
+                        self.assertIn(msg2, actual)
+                        subtests += 1
+        self.assertEqual(subtests, len(data2))  # All subtests ran?
+
+    def _capture_exception(self):
+        """Call run.print_exception() and return its stderr output."""
+        with captured_stderr() as output:
+            with mock.patch.object(run, 'cleanup_traceback') as ct:
+                ct.side_effect = lambda t, e: t
+                run.print_exception()
+        return output.getvalue()
+
+    @force_not_colorized
+    def test_print_exception_group_nested(self):
+        try:
+            try:
+                raise ExceptionGroup('inner', [ValueError('v1')])
+            except ExceptionGroup as inner:
+                raise ExceptionGroup('outer', [inner, TypeError('t1')])
+        except ExceptionGroup:
+            tb = self._capture_exception()
+
+        self.assertIn('ExceptionGroup: outer (2 sub-exceptions)', tb)
+        self.assertIn('ExceptionGroup: inner', tb)
+        self.assertIn('ValueError: v1', tb)
+        self.assertIn('TypeError: t1', tb)
+        # Verify tree structure characters.
+        self.assertIn('+-+---------------- 1 ----------------', tb)
+        self.assertIn('+---------------- 2 ----------------', tb)
+        self.assertIn('+------------------------------------', tb)
+
+    @force_not_colorized
+    def test_print_exception_group_chaining(self):
+        # __cause__ on a sub-exception exercises the prefixed
+        # chaining-message path (margin chars on separator lines).
+        sub = TypeError('t1')
+        sub.__cause__ = ValueError('original')
+        try:
+            raise ExceptionGroup('eg1', [sub])
+        except ExceptionGroup:
+            tb = self._capture_exception()
+        self.assertIn('ValueError: original', tb)
+        self.assertIn('| The above exception was the direct cause', tb)
+        self.assertIn('ExceptionGroup: eg1', tb)
+
+        # __context__ (implicit chaining) on a sub-exception.
+        sub = TypeError('t2')
+        sub.__context__ = ValueError('first')
+        try:
+            raise ExceptionGroup('eg2', [sub])
+        except ExceptionGroup:
+            tb = self._capture_exception()
+        self.assertIn('ValueError: first', tb)
+        self.assertIn('| During handling of the above exception', tb)
+        self.assertIn('ExceptionGroup: eg2', tb)
+
+    @force_not_colorized
+    def test_print_exception_group_seen(self):
+        shared = ValueError('shared')
+        try:
+            raise ExceptionGroup('eg', [shared, shared])
+        except ExceptionGroup:
+            tb = self._capture_exception()
+
+        self.assertIn('ValueError: shared', tb)
+        self.assertIn('<exception ValueError has printed>', tb)
+
+    @force_not_colorized
+    def test_print_exception_group_max_width(self):
+        excs = [ValueError(f'v{i}') for i in range(20)]
+        try:
+            raise ExceptionGroup('eg', excs)
+        except ExceptionGroup:
+            tb = self._capture_exception()
+
+        self.assertIn('+---------------- 15 ----------------', tb)
+        self.assertIn('+---------------- ... ----------------', tb)
+        self.assertIn('and 5 more exceptions', tb)
+        self.assertNotIn('+---------------- 16 ----------------', tb)
+
+    @force_not_colorized
+    def test_print_exception_group_max_depth(self):
+        def make_nested(depth):
+            if depth == 0:
+                return ValueError('leaf')
+            return ExceptionGroup(f'level{depth}',
+                                  [make_nested(depth - 1)])
+
+        try:
+            raise make_nested(15)
+        except ExceptionGroup:
+            tb = self._capture_exception()
+
+        self.assertIn('... (max_group_depth is 10)', tb)
+        self.assertIn('ExceptionGroup: level15', tb)
+        self.assertNotIn('ValueError: leaf', tb)
 
 # StdioFile tests.
 
@@ -282,7 +431,8 @@ class StdOutputFilesTest(unittest.TestCase):
         self.assertRaises(TypeError, f.close, 1)
 
 
-class TestSysRecursionLimitWrappers(unittest.TestCase):
+class RecursionLimitTest(unittest.TestCase):
+    # Test (un)install_recursionlimit_wrappers and fixdoc.
 
     def test_bad_setrecursionlimit_calls(self):
         run.install_recursionlimit_wrappers()
@@ -296,12 +446,12 @@ class TestSysRecursionLimitWrappers(unittest.TestCase):
         run.install_recursionlimit_wrappers()
         self.addCleanup(run.uninstall_recursionlimit_wrappers)
 
-        # check that setting the recursion limit works
+        # Check that setting the recursion limit works.
         orig_reclimit = sys.getrecursionlimit()
         self.addCleanup(sys.setrecursionlimit, orig_reclimit)
         sys.setrecursionlimit(orig_reclimit + 3)
 
-        # check that the new limit is returned by sys.getrecursionlimit()
+        # Check that the new limit is returned by sys.getrecursionlimit().
         new_reclimit = sys.getrecursionlimit()
         self.assertEqual(new_reclimit, orig_reclimit + 3)
 
@@ -313,12 +463,103 @@ class TestSysRecursionLimitWrappers(unittest.TestCase):
         self.assertEqual(new_reclimit, orig_reclimit)
 
     def test_fixdoc(self):
+        # Put here until better place for miscellaneous test.
         def func(): "docstring"
         run.fixdoc(func, "more")
         self.assertEqual(func.__doc__, "docstring\n\nmore")
         func.__doc__ = None
         run.fixdoc(func, "more")
         self.assertEqual(func.__doc__, "more")
+
+
+class HandleErrorTest(unittest.TestCase):
+    # Method of MyRPCServer
+    def test_fatal_error(self):
+        eq = self.assertEqual
+        with captured_output('__stderr__') as err,\
+             mock.patch('idlelib.run.thread.interrupt_main',
+                        new_callable=Func) as func:
+            try:
+                raise EOFError
+            except EOFError:
+                run.MyRPCServer.handle_error(None, 'abc', '123')
+            eq(run.exit_now, True)
+            run.exit_now = False
+            eq(err.getvalue(), '')
+
+            try:
+                raise IndexError
+            except IndexError:
+                run.MyRPCServer.handle_error(None, 'abc', '123')
+            eq(run.quitting, True)
+            run.quitting = False
+            msg = err.getvalue()
+            self.assertIn('abc', msg)
+            self.assertIn('123', msg)
+            self.assertIn('IndexError', msg)
+            eq(func.called, 2)
+
+
+class ExecRuncodeTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.addClassCleanup(setattr,run,'print_exception',run.print_exception)
+        cls.prt = Func()  # Need reference.
+        run.print_exception = cls.prt
+        mockrpc = mock.Mock()
+        mockrpc.console.getvar = Func(result=False)
+        cls.ex = run.Executive(mockrpc)
+
+    @classmethod
+    def tearDownClass(cls):
+        assert sys.excepthook == sys.__excepthook__
+
+    def test_exceptions(self):
+        ex = self.ex
+        ex.runcode('1/0')
+        self.assertIs(ex.user_exc_info[0], ZeroDivisionError)
+
+        self.addCleanup(setattr, sys, 'excepthook', sys.__excepthook__)
+        sys.excepthook = lambda t, e, tb: run.print_exception(t)
+        ex.runcode('1/0')
+        self.assertIs(self.prt.args[0], ZeroDivisionError)
+
+        sys.excepthook = lambda: None
+        ex.runcode('1/0')
+        t, e, tb = ex.user_exc_info
+        self.assertIs(t, TypeError)
+        self.assertTrue(isinstance(e.__context__, ZeroDivisionError))
+
+
+class InterruptTest(unittest.TestCase):
+
+    def setUp(self):
+        self.ex = run.Executive(mock.Mock(sendlock=threading.Lock()))
+        self.addCleanup(setattr, run, 'interruptible', run.interruptible)
+        run.interruptible = True
+
+    @unittest.skipIf(signal.getsignal(signal.SIGINT)
+                     in (signal.SIG_DFL, signal.SIG_IGN, None),
+                     'SIGINT is not handled by Python')
+    def test_interrupt_blocking_call(self):
+        # gh-74112: interrupt the main thread blocked in time.sleep().
+        timer = threading.Timer(0.1, self.ex.interrupt_the_server)
+        self.addCleanup(timer.join)
+        start = time.monotonic()
+        with self.assertRaises(KeyboardInterrupt):
+            # On a loaded machine the signal can arrive before the main
+            # thread reaches time.sleep(), so start the timer in the block.
+            timer.start()
+            time.sleep(support.SHORT_TIMEOUT)
+        self.assertLess(time.monotonic() - start, support.SHORT_TIMEOUT / 2)
+
+    def test_interrupt_ignored(self):
+        old_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
+        self.addCleanup(signal.signal, signal.SIGINT, old_handler)
+        with mock.patch.object(run.thread, 'interrupt_main') as interrupt_main:
+            self.ex.interrupt_the_server()
+        interrupt_main.assert_called_once_with()
 
 
 if __name__ == '__main__':

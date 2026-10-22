@@ -19,15 +19,17 @@ Subclass HelpSource gets menu item and path for additions to Help menu.
 # HelpSource was extracted from configHelpSourceEdit.py (temporarily
 # config_help.py), with darwin code moved from ok to path_ok.
 
-import importlib
+import importlib.util, importlib.abc
 import os
-import shlex
 from sys import executable, platform  # Platform is set for one test.
 
 from tkinter import Toplevel, StringVar, BooleanVar, W, E, S
 from tkinter.ttk import Frame, Button, Entry, Label, Checkbutton
 from tkinter import filedialog
 from tkinter.font import Font
+from tkinter.simpledialog import _setup_dialog
+
+from idlelib.util import split_cli_args, join_cli_args
 
 class Query(Toplevel):
     """Base class for getting verified answer from a user.
@@ -57,15 +59,11 @@ class Query(Toplevel):
         self.withdraw()  # Hide while configuring, especially geometry.
         self.title(title)
         self.transient(parent)
-        self.grab_set()
+        if not _utest:  # Otherwise fail when directly run unittest.
+            self.grab_set()
 
-        windowingsystem = self.tk.call('tk', 'windowingsystem')
-        if windowingsystem == 'aqua':
-            try:
-                self.tk.call('::tk::unsupported::MacWindowStyle', 'style',
-                             self._w, 'moveableModal', '')
-            except:
-                pass
+        _setup_dialog(self)
+        if self._windowingsystem == 'aqua':
             self.bind("<Command-.>", self.cancel)
         self.bind('<Key-Escape>', self.cancel)
         self.protocol("WM_DELETE_WINDOW", self.cancel)
@@ -86,6 +84,7 @@ class Query(Toplevel):
 
         if not _utest:
             self.deiconify()  # Unhide now that geometry set.
+            self.entry.focus_set()
             self.wait_window()
 
     def create_widgets(self, ok_text='OK'):  # Do not replace.
@@ -103,7 +102,6 @@ class Query(Toplevel):
                            text=self.message)
         self.entryvar = StringVar(self, self.text0)
         self.entry = Entry(frame, width=30, textvariable=self.entryvar)
-        self.entry.focus_set()
         self.error_font = Font(name='TkCaptionFont',
                                exists=True, root=self.parent)
         self.entry_error = Label(frame, text=' ', foreground='red',
@@ -209,17 +207,23 @@ class ModuleName(Query):
             self.showerror(str(msg))
             return None
         if spec is None:
-            self.showerror("module not found")
+            self.showerror("module not found.")
             return None
         if not isinstance(spec.loader, importlib.abc.SourceLoader):
-            self.showerror("not a source-based module")
+            self.showerror("not a source-based module.")
             return None
         try:
             file_path = spec.loader.get_filename(name)
         except AttributeError:
-            self.showerror("loader does not support get_filename",
-                      parent=self)
+            self.showerror("loader does not support get_filename.")
             return None
+        except ImportError:
+            # Some special modules require this (e.g. os.path)
+            try:
+                file_path = spec.loader.get_filename()
+            except TypeError:
+                self.showerror("loader failed to get filename.")
+                return None
         return file_path
 
 
@@ -286,8 +290,6 @@ class HelpSource(Query):
     def browse_file(self):
         filetypes = [
             ("HTML Files", "*.htm *.html", "TEXT"),
-            ("PDF Files", "*.pdf", "TEXT"),
-            ("Windows Help Files", "*.chm"),
             ("Text Files", "*.txt", "TEXT"),
             ("All Files", "*")]
         path = self.pathvar.get()
@@ -331,6 +333,7 @@ class HelpSource(Query):
         path = self.path_ok()
         return None if name is None or path is None else (name, path)
 
+
 class CustomRun(Query):
     """Get settings for custom run of module.
 
@@ -343,12 +346,11 @@ class CustomRun(Query):
                  _htest=False, _utest=False):
         """cli_args is a list of strings.
 
-        The list is assigned to the default Entry StringVar.
-        The strings are displayed joined by ' ' for display.
+        The strings are quoted and joined for display in the Entry.
         """
         message = 'Command Line Arguments for sys.argv:'
         super().__init__(
-                parent, title, message, text0=cli_args,
+                parent, title, message, text0=join_cli_args(cli_args),
                 _htest=_htest, _utest=_utest)
 
     def create_extra(self):
@@ -365,17 +367,17 @@ class CustomRun(Query):
                              sticky='we')
 
     def cli_args_ok(self):
-        "Validity check and parsing for command line arguments."
+        "Return command line arg list or None if error."
         cli_string = self.entry.get().strip()
         try:
-            cli_args = shlex.split(cli_string, posix=True)
+            cli_args = split_cli_args(cli_string)
         except ValueError as err:
             self.showerror(str(err))
             return None
         return cli_args
 
     def entry_ok(self):
-        "Return apparently valid (cli_args, restart) or None"
+        "Return apparently valid (cli_args, restart) or None."
         cli_args = self.cli_args_ok()
         restart = self.restartvar.get()
         return None if cli_args is None else (cli_args, restart)

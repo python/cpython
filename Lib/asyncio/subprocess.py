@@ -1,7 +1,6 @@
 __all__ = 'create_subprocess_exec', 'create_subprocess_shell'
 
 import subprocess
-import warnings
 
 from . import events
 from . import protocols
@@ -82,6 +81,9 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
                 self._stdin_closed.set_result(None)
             else:
                 self._stdin_closed.set_exception(exc)
+                # Since calling `wait_closed()` is not mandatory,
+                # we shouldn't log the traceback if this is not awaited.
+                self._stdin_closed._log_traceback = False
             return
         if fd == 1:
             reader = self.stdout
@@ -122,6 +124,11 @@ class Process:
         self.stdout = protocol.stdout
         self.stderr = protocol.stderr
         self.pid = transport.get_pid()
+        self._communication_started = False
+        self._input = None
+        self._input_written = False
+        self._stdout_buf = bytearray()
+        self._stderr_buf = bytearray()
 
     def __repr__(self):
         return f'<{self.__class__.__name__} {self.pid}>'
@@ -145,14 +152,18 @@ class Process:
 
     async def _feed_stdin(self, input):
         debug = self._loop.get_debug()
-        self.stdin.write(input)
-        if debug:
-            logger.debug(
-                '%r communicate: feed stdin (%s bytes)', self, len(input))
         try:
+            if input is not None and not self._input_written:
+                self.stdin.write(input)
+                self._input_written = True
+                if debug:
+                    logger.debug(
+                        '%r communicate: feed stdin (%s bytes)', self, len(input))
+
             await self.stdin.drain()
         except (BrokenPipeError, ConnectionResetError) as exc:
-            # communicate() ignores BrokenPipeError and ConnectionResetError
+            # communicate() ignores BrokenPipeError and ConnectionResetError.
+            # write() and drain() can raise these exceptions.
             if debug:
                 logger.debug('%r communicate: stdin got %r', self, exc)
 
@@ -167,22 +178,33 @@ class Process:
         transport = self._transport.get_pipe_transport(fd)
         if fd == 2:
             stream = self.stderr
+            buf = self._stderr_buf
         else:
             assert fd == 1
             stream = self.stdout
+            buf = self._stdout_buf
         if self._loop.get_debug():
             name = 'stdout' if fd == 1 else 'stderr'
             logger.debug('%r communicate: read %s', self, name)
-        output = await stream.read()
+        # Append each block to the persistent buffer as soon as it is
+        # read so that no output is lost if this coroutine is cancelled.
+        while block := await stream.read(stream._limit):
+            buf += block
         if self._loop.get_debug():
             name = 'stdout' if fd == 1 else 'stderr'
             logger.debug('%r communicate: close %s', self, name)
         transport.close()
-        return output
 
     async def communicate(self, input=None):
-        if input is not None:
-            stdin = self._feed_stdin(input)
+        if self._communication_started:
+            if input:
+                raise ValueError(
+                    "Cannot send input after starting communication")
+        else:
+            self._input = input
+            self._communication_started = True
+        if self.stdin is not None:
+            stdin = self._feed_stdin(self._input)
         else:
             stdin = self._noop()
         if self.stdout is not None:
@@ -193,24 +215,22 @@ class Process:
             stderr = self._read_stream(2)
         else:
             stderr = self._noop()
-        stdin, stdout, stderr = await tasks.gather(stdin, stdout, stderr,
-                                                   loop=self._loop)
+        await tasks.gather(stdin, stdout, stderr)
         await self.wait()
+        if self.stdout is not None:
+            stdout = self._stdout_buf.take_bytes()
+        else:
+            stdout = None
+        if self.stderr is not None:
+            stderr = self._stderr_buf.take_bytes()
+        else:
+            stderr = None
         return (stdout, stderr)
 
 
 async def create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None,
-                                  loop=None, limit=streams._DEFAULT_LIMIT,
-                                  **kwds):
-    if loop is None:
-        loop = events.get_event_loop()
-    else:
-        warnings.warn("The loop argument is deprecated since Python 3.8 "
-                      "and scheduled for removal in Python 3.10.",
-                      DeprecationWarning,
-                      stacklevel=2
-        )
-
+                                  limit=streams._DEFAULT_LIMIT, **kwds):
+    loop = events.get_running_loop()
     protocol_factory = lambda: SubprocessStreamProtocol(limit=limit,
                                                         loop=loop)
     transport, protocol = await loop.subprocess_shell(
@@ -221,16 +241,9 @@ async def create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None,
 
 
 async def create_subprocess_exec(program, *args, stdin=None, stdout=None,
-                                 stderr=None, loop=None,
-                                 limit=streams._DEFAULT_LIMIT, **kwds):
-    if loop is None:
-        loop = events.get_event_loop()
-    else:
-        warnings.warn("The loop argument is deprecated since Python 3.8 "
-                      "and scheduled for removal in Python 3.10.",
-                      DeprecationWarning,
-                      stacklevel=2
-        )
+                                 stderr=None, limit=streams._DEFAULT_LIMIT,
+                                 **kwds):
+    loop = events.get_running_loop()
     protocol_factory = lambda: SubprocessStreamProtocol(limit=limit,
                                                         loop=loop)
     transport, protocol = await loop.subprocess_exec(

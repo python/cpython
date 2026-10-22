@@ -11,9 +11,10 @@ TODO: Specify command line arguments in a dialog box.
 """
 import os
 import tabnanny
+import time
 import tokenize
 
-import tkinter.messagebox as tkMessageBox
+from tkinter import messagebox
 
 from idlelib.config import idleConf
 from idlelib import macosx
@@ -42,9 +43,7 @@ class ScriptBinding:
         self.root = self.editwin.root
         # cli_args is list of strings that extends sys.argv
         self.cli_args = []
-
-        if macosx.isCocoaTk():
-            self.editwin.text_frame.bind('<<run-module-event-2>>', self._run_module_event)
+        self.perf = 0.0    # Workaround for macOS 11 Uni2; see bpo-42508.
 
     def check_module_event(self, event):
         if isinstance(self.editwin, outwin.OutputWindow):
@@ -94,37 +93,27 @@ class ScriptBinding:
         try:
             # If successful, return the compiled code
             return compile(source, filename, "exec")
-        except (SyntaxError, OverflowError, ValueError) as value:
-            msg = getattr(value, 'msg', '') or value or "<no detail available>"
-            lineno = getattr(value, 'lineno', '') or 1
-            offset = getattr(value, 'offset', '') or 0
+        except SyntaxError as value:
+            msg = value.msg or "<no detail available>"
+            lineno = value.lineno or 1
+            offset = value.offset or 0
             if offset == 0:
                 lineno += 1  #mark end of offending line
             pos = "0.0 + %d lines + %d chars" % (lineno-1, offset-1)
             editwin.colorize_syntax_error(text, pos)
-            self.errorbox("SyntaxError", "%-20s" % msg)
+            self.errorbox(type(value).__name__, msg)
+            return False
+        except Exception as value:
+            msg = str(value) or "<no detail available>"
+            self.errorbox(type(value).__name__, msg)
             return False
         finally:
             shell.set_warning_stream(saved_stream)
 
-    def run_module_event(self, event):
-        if macosx.isCocoaTk():
-            # Tk-Cocoa in MacOSX is broken until at least
-            # Tk 8.5.9, and without this rather
-            # crude workaround IDLE would hang when a user
-            # tries to run a module using the keyboard shortcut
-            # (the menu item works fine).
-            self.editwin.text_frame.after(200,
-                lambda: self.editwin.text_frame.event_generate(
-                        '<<run-module-event-2>>'))
-            return 'break'
-        else:
-            return self._run_module_event(event)
-
     def run_custom_event(self, event):
-        return self._run_module_event(event, customize=True)
+        return self.run_module_event(event, customize=True)
 
-    def _run_module_event(self, event, *, customize=False):
+    def run_module_event(self, event, *, customize=False):
         """Run the module after setting up the environment.
 
         First check the syntax.  Next get customization.  If OK, make
@@ -133,6 +122,8 @@ class ScriptBinding:
         module being executed and also add that directory to its
         sys.path if not already included.
         """
+        if macosx.isCocoaTk() and (time.perf_counter() - self.perf < .05):
+            return 'break'
         if isinstance(self.editwin, outwin.OutputWindow):
             self.editwin.text.bell()
             return 'break'
@@ -152,6 +143,10 @@ class ScriptBinding:
                 return 'break'
         self.cli_args, restart = run_args if customize else ([], True)
         interp = self.shell.interp
+        if self.shell.executing and not restart:
+            # Cannot run without restarting the busy shell (gh-82183).
+            interp.display_executing_dialog()
+            return 'break'
         if pyshell.use_subprocess and restart:
             interp.restart_subprocess(
                     with_cwd=False, filename=filename)
@@ -208,16 +203,17 @@ class ScriptBinding:
 
     def ask_save_dialog(self):
         msg = "Source Must Be Saved\n" + 5*' ' + "OK to Save?"
-        confirm = tkMessageBox.askokcancel(title="Save Before Run or Check",
+        confirm = messagebox.askokcancel(title="Save Before Run or Check",
                                            message=msg,
-                                           default=tkMessageBox.OK,
+                                           default=messagebox.OK,
                                            parent=self.editwin.text)
         return confirm
 
     def errorbox(self, title, message):
         # XXX This should really be a function of EditorWindow...
-        tkMessageBox.showerror(title, message, parent=self.editwin.text)
+        messagebox.showerror(title, message, parent=self.editwin.text)
         self.editwin.text.focus_set()
+        self.perf = time.perf_counter()
 
 
 if __name__ == "__main__":

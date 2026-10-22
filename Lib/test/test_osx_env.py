@@ -2,7 +2,7 @@
 Test suite for OS X interpreter environment variables.
 """
 
-from test.support import EnvironmentVarGuard
+from test.support.os_helper import EnvironmentVarGuard
 import subprocess
 import sys
 import sysconfig
