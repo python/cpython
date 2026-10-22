@@ -420,13 +420,18 @@ _io_StringIO_readline_impl(stringio *self, Py_ssize_t size)
     return _stringio_readline(self, size);
 }
 
+/*[clinic input]
+@critical_section
+_io.StringIO.__next__ as stringio_iternext
+[clinic start generated code]*/
+
 static PyObject *
-stringio_iternext_lock_held(PyObject *op)
+stringio_iternext_impl(stringio *self)
+/*[clinic end generated code: output=51eb3991b1c79c41 input=b6cf3e73fab6b42e]*/
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
 
     PyObject *line;
-    stringio *self = stringio_CAST(op);
 
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
@@ -438,7 +443,7 @@ stringio_iternext_lock_held(PyObject *op)
     }
     else {
         /* XXX is subclassing StringIO really supported? */
-        line = PyObject_CallMethodNoArgs(op, &_Py_ID(readline));
+        line = PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(readline));
         if (line && !PyUnicode_Check(line)) {
             PyErr_Format(PyExc_OSError,
                          "readline() should have returned a str object, "
@@ -458,16 +463,6 @@ stringio_iternext_lock_held(PyObject *op)
     }
 
     return line;
-}
-
-static PyObject *
-stringio_iternext(PyObject *op)
-{
-    PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    ret = stringio_iternext_lock_held(op);
-    Py_END_CRITICAL_SECTION();
-    return ret;
 }
 
 /*[clinic input]

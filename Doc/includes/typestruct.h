@@ -93,3 +93,7 @@ typedef struct _typeobject {
      */
     uint16_t tp_versions_used;
 } PyTypeObject;
+
+/* Private fields are intentionally omitted.
+ * Keep them excluded when updating this definition.
+ */

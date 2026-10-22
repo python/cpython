@@ -136,10 +136,16 @@ gdbm_dealloc(PyObject *op)
     Py_DECREF(tp);
 }
 
+/*[clinic input]
+@critical_section
+_gdbm.gdbm.__len__ as gdbm_length
+[clinic start generated code]*/
+
 static Py_ssize_t
-gdbm_length_lock_held(PyObject *op)
+gdbm_length_impl(gdbmobject *self)
+/*[clinic end generated code: output=3ccb956974ed73b5 input=57878f60d264ed98]*/
 {
-    gdbmobject *dp = _gdbmobject_CAST(op);
+    gdbmobject *dp = self;
     _gdbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
     if (dp->di_dbm == NULL) {
         PyErr_SetString(state->gdbm_error, "GDBM object has already been closed");
@@ -181,16 +187,6 @@ gdbm_length_lock_held(PyObject *op)
 #endif
     }
     return dp->di_size;
-}
-
-static Py_ssize_t
-gdbm_length(PyObject *op)
-{
-    Py_ssize_t result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = gdbm_length_lock_held(op);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 static int
@@ -314,12 +310,22 @@ _gdbm_gdbm_get_impl(gdbmobject *self, PyObject *key, PyObject *default_value)
     return res;
 }
 
+/*[clinic input]
+@critical_section
+_gdbm.gdbm.__setitem__ as gdbm_ass_sub
+
+    v: object
+    w: object
+    /
+[clinic start generated code]*/
+
 static int
-gdbm_ass_sub_lock_held(PyObject *op, PyObject *v, PyObject *w)
+gdbm_ass_sub_impl(gdbmobject *self, PyObject *v, PyObject *w)
+/*[clinic end generated code: output=b46cce6ffa309dab input=fbd980f3b49e2f91]*/
 {
     datum krec, drec;
     const char *failmsg = "gdbm mappings have bytes or string indices only";
-    gdbmobject *dp = _gdbmobject_CAST(op);
+    gdbmobject *dp = self;
     _gdbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
 
     if (!parse_datum(v, &krec, failmsg)) {
@@ -358,16 +364,6 @@ gdbm_ass_sub_lock_held(PyObject *op, PyObject *v, PyObject *w)
         }
     }
     return 0;
-}
-
-static int
-gdbm_ass_sub(PyObject *op, PyObject *v, PyObject *w)
-{
-    int result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = gdbm_ass_sub_lock_held(op, v, w);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 /*[clinic input]
@@ -470,10 +466,18 @@ _gdbm_gdbm_keys_impl(gdbmobject *self, PyTypeObject *cls)
     return v;
 }
 
+/*[clinic input]
+@critical_section
+_gdbm.gdbm.__contains__ as gdbm_contains
+    arg: object
+    /
+[clinic start generated code]*/
+
 static int
-gdbm_contains_lock_held(PyObject *self, PyObject *arg)
+gdbm_contains_impl(gdbmobject *self, PyObject *arg)
+/*[clinic end generated code: output=ad951f5a9f4194df input=411dc2039fdd7277]*/
 {
-    gdbmobject *dp = (gdbmobject *)self;
+    gdbmobject *dp = self;
     datum key;
     Py_ssize_t size;
     _gdbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
@@ -500,16 +504,6 @@ gdbm_contains_lock_held(PyObject *self, PyObject *arg)
         key.dsize = PyBytes_GET_SIZE(arg);
     }
     return gdbm_exists(dp->di_dbm, key);
-}
-
-static int
-gdbm_contains(PyObject *self, PyObject *arg)
-{
-    int result;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    result = gdbm_contains_lock_held(self, arg);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 /*[clinic input]
