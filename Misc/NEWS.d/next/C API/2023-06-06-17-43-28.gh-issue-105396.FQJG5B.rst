@@ -1,3 +1,0 @@
-Deprecate the :c:func:`PyImport_ImportModuleNoBlock` function which is just
-an alias to :c:func:`PyImport_ImportModule` since Python 3.3. Patch by
-Victor Stinner.

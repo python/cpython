@@ -1,2 +1,0 @@
-Tokenize separately ``NUMBER`` and ``NAME`` tokens that are not ambiguous. Patch
-by Pablo Galindo.

@@ -21,6 +21,10 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "connection.h"
 #include "statement.h"
 #include "cursor.h"
@@ -28,6 +32,7 @@
 #include "microprotocols.h"
 #include "row.h"
 #include "blob.h"
+#include "util.h"
 
 #if SQLITE_VERSION_NUMBER < 3015002
 #error "SQLite 3.15.2 or higher required"
@@ -42,38 +47,30 @@ module _sqlite3
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=81e330492d57488e]*/
 
-// NB: This needs to be in sync with the Connection.__init__ docstring.
-PyDoc_STRVAR(module_connect_doc,
-"connect($module, /, database, timeout=5.0, detect_types=0,\n"
-"        isolation_level='', check_same_thread=True,\n"
-"        factory=ConnectionType, cached_statements=128, uri=False, *,\n"
-"        autocommit=sqlite3.LEGACY_TRANSACTION_CONTROL)\n"
-"--\n"
-"\n"
-"Opens a connection to the SQLite database file database.\n"
-"\n"
-"You can use \":memory:\" to open a database connection to a database that resides\n"
-"in RAM instead of on disk.");
-
-#define PYSQLITE_CONNECT_METHODDEF    \
-    {"connect", _PyCFunction_CAST(module_connect), METH_FASTCALL|METH_KEYWORDS, module_connect_doc},
+/*
+ * We create 'clinic/_sqlite3.connect.c.h' in connection.c, in order to
+ * keep the signatures of sqlite3.Connection.__init__ and
+ * sqlite3.connect() synchronised.
+ */
+#include "clinic/_sqlite3.connect.c.h"
 
 static PyObject *
-module_connect(PyObject *module, PyObject *const *args, Py_ssize_t nargsf,
-               PyObject *kwnames)
+pysqlite_connect(PyObject *module, PyObject *const *args, Py_ssize_t nargsf,
+                 PyObject *kwnames)
 {
     pysqlite_state *state = pysqlite_get_state(module);
     PyObject *factory = (PyObject *)state->ConnectionType;
 
-    static const int FACTORY_POS = 5;
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    if (nargs > FACTORY_POS) {
-        factory = args[FACTORY_POS];
+    if (nargs > 1) {
+        PyErr_Format(PyExc_TypeError,
+            "connect() takes at most 1 positional arguments (%zd given)", nargs);
+        return NULL;
     }
-    else if (kwnames != NULL) {
+    if (kwnames != NULL) {
         for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(kwnames); i++) {
             PyObject *item = PyTuple_GET_ITEM(kwnames, i);  // borrowed ref.
-            if (PyUnicode_CompareWithASCIIString(item, "factory") == 0) {
+            if (PyUnicode_EqualToUTF8(item, "factory")) {
                 factory = args[nargs + i];
                 break;
             }
@@ -226,7 +223,7 @@ static int
 load_functools_lru_cache(PyObject *module)
 {
     pysqlite_state *state = pysqlite_get_state(module);
-    state->lru_cache = _PyImport_GetModuleAttrString("functools", "lru_cache");
+    state->lru_cache = PyImport_ImportModuleAttrString("functools", "lru_cache");
     if (state->lru_cache == NULL) {
         return -1;
     }
@@ -236,7 +233,7 @@ load_functools_lru_cache(PyObject *module)
 static PyMethodDef module_methods[] = {
     PYSQLITE_ADAPT_METHODDEF
     PYSQLITE_COMPLETE_STATEMENT_METHODDEF
-    PYSQLITE_CONNECT_METHODDEF
+    {"connect", _PyCFunction_CAST(pysqlite_connect), METH_FASTCALL|METH_KEYWORDS, pysqlite_connect__doc__},
     PYSQLITE_ENABLE_CALLBACK_TRACE_METHODDEF
     PYSQLITE_REGISTER_ADAPTER_METHODDEF
     PYSQLITE_REGISTER_CONVERTER_METHODDEF
@@ -406,6 +403,121 @@ pysqlite_error_name(int rc)
     }
     // No error code matched.
     return NULL;
+}
+
+static int
+add_keyword_tuple(PyObject *module)
+{
+#if SQLITE_VERSION_NUMBER >= 3024000
+    int count = sqlite3_keyword_count();
+    PyObject *keywords = PyTuple_New(count);
+    if (keywords == NULL) {
+        return -1;
+    }
+    for (int i = 0; i < count; i++) {
+        const char *keyword;
+        int size;
+        int result = sqlite3_keyword_name(i, &keyword, &size);
+        if (result != SQLITE_OK) {
+            pysqlite_state *state = pysqlite_get_state(module);
+            set_error_from_code(state, result);
+            goto error;
+        }
+        PyObject *kwd = PyUnicode_FromStringAndSize(keyword, size);
+        if (!kwd) {
+            goto error;
+        }
+        PyTuple_SET_ITEM(keywords, i, kwd);
+    }
+    return PyModule_Add(module, "SQLITE_KEYWORDS", keywords);
+
+error:
+    Py_DECREF(keywords);
+    return -1;
+#else
+    return 0;
+#endif
+}
+
+PyDoc_STRVAR(sqlite_version_info__doc__,
+"_sqlite3.sqlite_version_info\n\
+\n\
+SQLite version information as a named tuple.");
+
+static PyStructSequence_Field sqlite_version_info_fields[] = {
+    {"major", "Major release number"},
+    {"minor", "Minor release number"},
+    {"patch", "Patch release number"},
+    {0}
+};
+
+static PyStructSequence_Desc sqlite_version_info_desc = {
+    "_sqlite3.sqlite_version_info",     /* name */
+    sqlite_version_info__doc__,         /* doc */
+    sqlite_version_info_fields,         /* fields */
+    3
+};
+
+static PyObject *
+make_sqlite_version_info(PyTypeObject *type, int number)
+{
+    PyObject *version;
+    int pos = 0;
+    int major = number / 1000000;
+    int minor = (number % 1000000) / 1000;
+    int patch = number % 1000;
+
+    version = PyStructSequence_New(type);
+    if (version == NULL) {
+        return NULL;
+    }
+
+#define SetItem(VALUE) \
+    PyStructSequence_SET_ITEM(version, pos++, VALUE); \
+    if (PyErr_Occurred()) { \
+        Py_DECREF(version); \
+        return NULL; \
+    }
+
+    SetItem(PyLong_FromLong(major))
+    SetItem(PyLong_FromLong(minor))
+    SetItem(PyLong_FromLong(patch))
+#undef SetItem
+
+    return version;
+}
+
+static int
+add_version_constants(PyObject *module)
+{
+    if (PyModule_AddStringMacro(module, SQLITE_VERSION) < 0) {
+        return -1;
+    }
+    if (PyModule_AddStringConstant(module, "sqlite_version",
+                                   sqlite3_libversion()) < 0)
+    {
+        return -1;
+    }
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&sqlite_version_info_desc);
+    if (version_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(module, "SQLITE_VERSION_INFO",
+            make_sqlite_version_info(version_type, SQLITE_VERSION_NUMBER)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    if (PyModule_Add(module, "sqlite_version_info",
+            make_sqlite_version_info(version_type,
+                                     sqlite3_libversion_number())) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    Py_DECREF(version_type);
+    return 0;
 }
 
 static int
@@ -611,7 +723,7 @@ module_clear(PyObject *module)
 static void
 module_free(void *module)
 {
-    module_clear((PyObject *)module);
+    (void)module_clear((PyObject *)module);
 }
 
 #define ADD_TYPE(module, type)                 \
@@ -706,11 +818,11 @@ module_exec(PyObject *module)
         goto error;
     }
 
-    if (PyModule_AddStringConstant(module, "_deprecated_version", PYSQLITE_VERSION) < 0) {
+    if (add_keyword_tuple(module) < 0) {
         goto error;
     }
 
-    if (PyModule_AddStringConstant(module, "sqlite_version", sqlite3_libversion())) {
+    if (add_version_constants(module) < 0) {
         goto error;
     }
 
@@ -743,13 +855,14 @@ module_exec(PyObject *module)
     return 0;
 
 error:
-    sqlite3_shutdown();
     return -1;
 }
 
 static struct PyModuleDef_Slot module_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 

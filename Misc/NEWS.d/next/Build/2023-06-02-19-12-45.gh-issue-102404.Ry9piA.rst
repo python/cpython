@@ -1,2 +1,0 @@
-Document how to perform a WASI build on Linux. Also add
-Tools/wasm/build_wasi.sh as a reference implementation of the docs.

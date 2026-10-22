@@ -20,6 +20,7 @@ from tkinter import *
 from tkinter.ttk import Frame, Scrollbar
 
 from idlelib.config import idleConf
+from idlelib.util import bind_wheel, wheel_event
 from idlelib import zoomheight
 
 ICONDIR = "Icons"
@@ -56,32 +57,10 @@ def listicons(icondir=ICONDIR):
             column = 0
     root.images = images
 
-def wheel_event(event, widget=None):
-    """Handle scrollwheel event.
-
-    For wheel up, event.delta = 120*n on Windows, -1*n on darwin,
-    where n can be > 1 if one scrolls fast.  Flicking the wheel
-    generates up to maybe 20 events with n up to 10 or more 1.
-    Macs use wheel down (delta = 1*n) to scroll up, so positive
-    delta means to scroll up on both systems.
-
-    X-11 sends Control-Button-4,5 events instead.
-
-    The widget parameter is needed so browser label bindings can pass
-    the underlying canvas.
-
-    This function depends on widget.yview to not be overridden by
-    a subclass.
-    """
-    up = {EventType.MouseWheel: event.delta > 0,
-          EventType.ButtonPress: event.num == 4}
-    lines = -5 if up[event.type] else 5
-    widget = event.widget if widget is None else widget
-    widget.yview(SCROLL, lines, 'units')
-    return 'break'
-
 
 class TreeNode:
+
+    dy = 0
 
     def __init__(self, canvas, parent, item):
         self.canvas = canvas
@@ -199,23 +178,22 @@ class TreeNode:
 
     def draw(self, x, y):
         # XXX This hard-codes too many geometry constants!
-        dy = 20
         self.x, self.y = x, y
         self.drawicon()
         self.drawtext()
         if self.state != 'expanded':
-            return y + dy
+            return y + TreeNode.dy
         # draw children
         if not self.children:
             sublist = self.item._GetSubList()
             if not sublist:
                 # _IsExpandable() was mistaken; that's allowed
-                return y+17
+                return y + TreeNode.dy
             for item in sublist:
                 child = self.__class__(self.canvas, self, item)
                 self.children.append(child)
         cx = x+20
-        cy = y + dy
+        cy = y + TreeNode.dy
         cylast = 0
         for child in self.children:
             cylast = cy
@@ -284,10 +262,13 @@ class TreeNode:
                                        anchor="nw", window=self.label)
         self.label.bind("<1>", self.select_or_edit)
         self.label.bind("<Double-1>", self.flip)
-        self.label.bind("<MouseWheel>", lambda e: wheel_event(e, self.canvas))
-        self.label.bind("<Button-4>", lambda e: wheel_event(e, self.canvas))
-        self.label.bind("<Button-5>", lambda e: wheel_event(e, self.canvas))
+        bind_wheel(self.label, lambda e: wheel_event(e, self.canvas))
         self.text_id = id
+        if TreeNode.dy == 0:
+            # The first row doesn't matter what the dy is, just measure its
+            # size to get the value of the subsequent dy
+            coords = self.canvas.bbox(id)
+            TreeNode.dy = max(20, coords[3] - coords[1] - 3)
 
     def select_or_edit(self, event=None):
         if self.selected and self.item.IsEditable():
@@ -459,9 +440,7 @@ class ScrolledCanvas:
         self.canvas.bind("<Key-Next>", self.page_down)
         self.canvas.bind("<Key-Up>", self.unit_up)
         self.canvas.bind("<Key-Down>", self.unit_down)
-        self.canvas.bind("<MouseWheel>", wheel_event)
-        self.canvas.bind("<Button-4>", wheel_event)
-        self.canvas.bind("<Button-5>", wheel_event)
+        bind_wheel(self.canvas, wheel_event)
         #if isinstance(master, Toplevel) or isinstance(master, Tk):
         self.canvas.bind("<Alt-Key-2>", self.zoom_height)
         self.canvas.focus_set()
@@ -491,6 +470,7 @@ def _tree_widget(parent):  # htest #
     item = FileTreeItem(ICONDIR)
     node = TreeNode(sc.canvas, None, item)
     node.expand()
+
 
 if __name__ == '__main__':
     from unittest import main
