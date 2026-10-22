@@ -283,11 +283,10 @@ Programs/_bootstrap_python.c  @ericsnowcurrently @FFY00
 Programs/python.c             @ericsnowcurrently @FFY00
 
 # JIT
-.github/workflows/jit.yml     @savannahostrowski
-Include/internal/pycore_jit.h @brandtbucher @savannahostrowski @diegorusso
-Python/jit.c                  @brandtbucher @savannahostrowski @diegorusso
-Tools/jit/                    @brandtbucher @savannahostrowski @diegorusso
-InternalDocs/jit.md           @brandtbucher @savannahostrowski @diegorusso @AA-Turner
+Include/internal/pycore_jit.h @brandtbucher @diegorusso
+Python/jit.c                  @brandtbucher @diegorusso
+Tools/jit/                    @brandtbucher @diegorusso
+InternalDocs/jit.md           @brandtbucher @diegorusso @AA-Turner
 
 # Lazy imports (PEP 810)
 .github/workflows/reusable-test-lazy-imports-all.yml    @yhg1s @DinoV @pablogsal
@@ -297,9 +296,9 @@ Lib/test/test_lazy_import                               @yhg1s @DinoV @pablogsal
 
 # Micro-op / μop / Tier 2 Optimiser
 Python/optimizer.c            @markshannon @Fidget-Spinner
-Python/optimizer_analysis.c   @markshannon @tomasr8 @Fidget-Spinner @savannahostrowski
-Python/optimizer_bytecodes.c  @markshannon @tomasr8 @Fidget-Spinner @savannahostrowski
-Python/optimizer_symbols.c    @markshannon @tomasr8 @Fidget-Spinner @savannahostrowski
+Python/optimizer_analysis.c   @markshannon @tomasr8 @Fidget-Spinner
+Python/optimizer_bytecodes.c  @markshannon @tomasr8 @Fidget-Spinner
+Python/optimizer_symbols.c    @markshannon @tomasr8 @Fidget-Spinner
 
 # Parser, Lexer, and Grammar
 Grammar/python.gram           @pablogsal @lysnikolaou

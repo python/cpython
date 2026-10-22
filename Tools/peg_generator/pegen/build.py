@@ -70,7 +70,7 @@ def fixup_build_ext(cmd: Incomplete) -> None:
 
 
 def compile_c_extension(
-    generated_source_path: str,
+    generated_source_path: pathlib.Path,
     build_dir: str | None = None,
     verbose: bool = False,
     keep_asserts: bool = True,
@@ -101,8 +101,7 @@ def compile_c_extension(
     if verbose:
         setuptools.logging.set_threshold(logging.DEBUG)
 
-    source_file_path = pathlib.Path(generated_source_path)
-    extension_name = source_file_path.stem
+    extension_name = generated_source_path.stem
     extra_compile_args = get_extra_flags("CFLAGS", "PY_CFLAGS_NODIST")
     extra_compile_args.append("-DPy_BUILD_CORE_MODULE")
     # Define _Py_TEST_PEGEN to not call PyAST_Validate() in Parser/pegen.c
@@ -122,39 +121,39 @@ def compile_c_extension(
                 extra_link_args.append("-fno-lto")
 
     common_sources = [
-        str(MOD_DIR.parent.parent.parent / "Python" / "Python-ast.c"),
-        str(MOD_DIR.parent.parent.parent / "Python" / "asdl.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "lexer.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "layout.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "number.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "state.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "string.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "decoder.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "api.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "reader.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "helpers.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "pegen.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "pegen_errors.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "action_helpers.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "string_parser.c"),
-        str(MOD_DIR.parent / "peg_extension" / "peg_extension.c"),
+        MOD_DIR.parent.parent.parent / "Python" / "Python-ast.c",
+        MOD_DIR.parent.parent.parent / "Python" / "asdl.c",
+        MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "lexer.c",
+        MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "layout.c",
+        MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "number.c",
+        MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "state.c",
+        MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "string.c",
+        MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "decoder.c",
+        MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "api.c",
+        MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "reader.c",
+        MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "helpers.c",
+        MOD_DIR.parent.parent.parent / "Parser" / "pegen.c",
+        MOD_DIR.parent.parent.parent / "Parser" / "pegen_errors.c",
+        MOD_DIR.parent.parent.parent / "Parser" / "action_helpers.c",
+        MOD_DIR.parent.parent.parent / "Parser" / "string_parser.c",
+        MOD_DIR.parent / "peg_extension" / "peg_extension.c",
     ]
     include_dirs = [
-        str(MOD_DIR.parent.parent.parent / "Include" / "internal"),
-        str(MOD_DIR.parent.parent.parent / "Include" / "internal" / "mimalloc"),
-        str(MOD_DIR.parent.parent.parent / "Parser"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "lexer"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer"),
+        MOD_DIR.parent.parent.parent / "Include" / "internal",
+        MOD_DIR.parent.parent.parent / "Include" / "internal" / "mimalloc",
+        MOD_DIR.parent.parent.parent / "Parser",
+        MOD_DIR.parent.parent.parent / "Parser" / "lexer",
+        MOD_DIR.parent.parent.parent / "Parser" / "tokenizer",
     ]
-    library_dirs: list[str] = []
+    library_dirs: list[pathlib.Path] = []
     if sys.platform == "win32":
         # HACK: The location of pyconfig.h has moved within our build, and
         # setuptools hasn't updated for it yet. So add the path manually for now
-        include_dirs.append(str(pathlib.Path(sysconfig.get_config_h_filename()).parent))
+        include_dirs.append(pathlib.Path(sysconfig.get_config_h_filename()).parent)
         if sysconfig.is_python_build():
             # HACK: Our output directory for free-threaded builds has moved, and so
             # tests running in-tree require our sys.executable directory for libs
-            library_dirs.append(str(pathlib.Path(sys.executable).parent))
+            library_dirs.append(pathlib.Path(sys.executable).parent)
     sources = [generated_source_path]
     extension = Extension(
         extension_name,
@@ -166,9 +165,9 @@ def compile_c_extension(
     cmd = dist.get_command_obj("build_ext")
     assert isinstance(cmd, setuptools.command.build_ext.build_ext)
     fixup_build_ext(cmd)
-    cmd.build_lib = str(source_file_path.parent)
-    cmd.include_dirs = include_dirs
-    cmd.library_dirs = library_dirs
+    cmd.build_lib = str(generated_source_path.parent)
+    cmd.include_dirs = [str(d) for d in include_dirs]
+    cmd.library_dirs = [str(d) for d in library_dirs]
     if build_dir:
         cmd.build_temp = build_dir
     cmd.ensure_finalized()
@@ -247,7 +246,7 @@ def compile_c_extension(
 
 
 def build_parser(
-    grammar_file: str, verbose_tokenizer: bool = False, verbose_parser: bool = False
+    grammar_file: pathlib.Path, verbose_tokenizer: bool = False, verbose_parser: bool = False
 ) -> tuple[Grammar, Parser, Tokenizer]:
     with open(grammar_file) as file:
         tokenizer = Tokenizer(tokenize.generate_tokens(file.readline), verbose=verbose_tokenizer)
@@ -255,7 +254,7 @@ def build_parser(
         grammar = parser.start()
 
         if not grammar:
-            raise parser.make_syntax_error(grammar_file)
+            raise parser.make_syntax_error(str(grammar_file))
 
     return grammar, parser, tokenizer
 
@@ -291,9 +290,9 @@ def generate_token_definitions(tokens: IO[str]) -> TokenDefinitions:
 
 def build_c_generator(
     grammar: Grammar,
-    grammar_file: str,
-    tokens_file: str,
-    output_file: str,
+    grammar_file: pathlib.Path,
+    tokens_file: pathlib.Path,
+    output_file: pathlib.Path,
     compile_extension: bool = False,
     verbose_c_extension: bool = False,
     keep_asserts_in_extension: bool = True,
@@ -320,8 +319,8 @@ def build_c_generator(
 
 def build_python_generator(
     grammar: Grammar,
-    grammar_file: str,
-    output_file: str,
+    grammar_file: pathlib.Path,
+    output_file: pathlib.Path,
     skip_actions: bool = False,
 ) -> ParserGenerator:
     with open(output_file, "w") as file:
@@ -331,9 +330,9 @@ def build_python_generator(
 
 
 def build_c_parser_and_generator(
-    grammar_file: str,
-    tokens_file: str,
-    output_file: str,
+    grammar_file: pathlib.Path,
+    tokens_file: pathlib.Path,
+    output_file: pathlib.Path,
     compile_extension: bool = False,
     verbose_tokenizer: bool = False,
     verbose_parser: bool = False,
@@ -375,8 +374,8 @@ def build_c_parser_and_generator(
 
 
 def build_python_parser_and_generator(
-    grammar_file: str,
-    output_file: str,
+    grammar_file: pathlib.Path,
+    output_file: pathlib.Path,
     verbose_tokenizer: bool = False,
     verbose_parser: bool = False,
     skip_actions: bool = False,
