@@ -2,6 +2,9 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
+
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(_multiprocessing_closesocket__doc__,
@@ -21,7 +24,8 @@ _multiprocessing_closesocket(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HANDLE handle;
 
-    if (!PyArg_Parse(arg, ""F_HANDLE":closesocket", &handle)) {
+    handle = PyLong_AsVoidPtr(arg);
+    if (!handle && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _multiprocessing_closesocket_impl(module, handle);
@@ -52,8 +56,15 @@ _multiprocessing_recv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     HANDLE handle;
     int size;
 
-    if (!_PyArg_ParseStack(args, nargs, ""F_HANDLE"i:recv",
-        &handle, &size)) {
+    if (!_PyArg_CheckPositional("recv", nargs, 2, 2)) {
+        goto exit;
+    }
+    handle = PyLong_AsVoidPtr(args[0]);
+    if (!handle && PyErr_Occurred()) {
+        goto exit;
+    }
+    size = PyLong_AsInt(args[1]);
+    if (size == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _multiprocessing_recv_impl(module, handle, size);
@@ -84,8 +95,14 @@ _multiprocessing_send(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     HANDLE handle;
     Py_buffer buf = {NULL, NULL};
 
-    if (!_PyArg_ParseStack(args, nargs, ""F_HANDLE"y*:send",
-        &handle, &buf)) {
+    if (!_PyArg_CheckPositional("send", nargs, 2, 2)) {
+        goto exit;
+    }
+    handle = PyLong_AsVoidPtr(args[0]);
+    if (!handle && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &buf, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
     return_value = _multiprocessing_send_impl(module, handle, &buf);
@@ -122,13 +139,8 @@ _multiprocessing_sem_unlink(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("sem_unlink", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t name_length;
-    name = PyUnicode_AsUTF8AndSize(arg, &name_length);
+    name = _PyUnicode_AsUTF8NoNUL(arg);
     if (name == NULL) {
-        goto exit;
-    }
-    if (strlen(name) != (size_t)name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _multiprocessing_sem_unlink_impl(module, name);
@@ -148,4 +160,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEND_METHODDEF
     #define _MULTIPROCESSING_SEND_METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEND_METHODDEF) */
-/*[clinic end generated code: output=d3bbf69de578db7b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f5147f6a6e2cbd17 input=a9049054013a1b77]*/

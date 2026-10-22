@@ -1,3 +1,0 @@
-Add an optional keyword *shutdown_timeout* parameter to the
-:class:`multiprocessing.BaseManager` constructor. Kill the process if
-terminate() takes longer than the timeout. Patch by Victor Stinner.

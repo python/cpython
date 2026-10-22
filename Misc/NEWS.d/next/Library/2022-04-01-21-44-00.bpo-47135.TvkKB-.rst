@@ -1,1 +1,0 @@
-:meth:`decimal.localcontext` now accepts context attributes via keyword arguments

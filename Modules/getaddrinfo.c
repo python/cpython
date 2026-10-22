@@ -51,7 +51,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
-#include <ctype.h>
 #include <unistd.h>
 
 #include "addrinfo.h"
@@ -60,6 +59,9 @@
 #if defined(__KAME__) && defined(ENABLE_IPV6)
 # define FAITH
 #endif
+
+#ifdef HAVE_NETDB_H
+#define HAVE_GETADDRINFO 1
 
 #define SUCCESS 0
 #define GAI_ANY 0
@@ -169,7 +171,10 @@ if (pai->ai_flags & AI_CANONNAME) {\
     char *p;\
     if (((ai) = (struct addrinfo *)malloc(sizeof(struct addrinfo) +\
                                           ((gai_afd)->a_socklen)))\
-        == NULL) goto free;\
+        == NULL) {\
+        error = EAI_MEMORY;\
+        goto free;\
+    }\
     memcpy(ai, pai, sizeof(struct addrinfo));\
     (ai)->ai_addr = (struct sockaddr *)((ai) + 1);\
     memset((ai)->ai_addr, 0, (gai_afd)->a_socklen);\
@@ -184,7 +189,10 @@ if (pai->ai_flags & AI_CANONNAME) {\
     char *p;\
     if (((ai) = (struct addrinfo *)malloc(sizeof(struct addrinfo) +\
                                           ((gai_afd)->a_socklen)))\
-        == NULL) goto free;\
+        == NULL) {\
+        error = EAI_MEMORY;\
+        goto free;\
+    }\
     memcpy(ai, pai, sizeof(struct addrinfo));\
     (ai)->ai_addr = (struct sockaddr *)((ai) + 1);\
     memset((ai)->ai_addr, 0, (gai_afd)->a_socklen);\
@@ -225,8 +233,9 @@ str_isnumber(const char *p)
 {
     unsigned char *q = (unsigned char *)p;
     while (*q) {
-        if (! isdigit(*q))
+        if (!Py_ISDIGIT(*q)) {
             return NO;
+        }
         q++;
     }
     return YES;
@@ -339,10 +348,18 @@ getaddrinfo(const char*hostname, const char*servname,
                 pai->ai_socktype = SOCK_DGRAM;
                 pai->ai_protocol = IPPROTO_UDP;
             }
-            port = htons((u_short)atoi(servname));
+            long maybe_port = strtol(servname, NULL, 10);
+            if (maybe_port < 0 || maybe_port > 0xffff) {
+                ERR(EAI_SERVICE);
+            }
+            port = htons((u_short)maybe_port);
         } else {
             struct servent *sp;
             const char *proto;
+
+            if (pai->ai_flags & AI_NUMERICSERV) {
+                ERR(EAI_NONAME);
+            }
 
             proto = NULL;
             switch (pai->ai_socktype) {
@@ -402,8 +419,8 @@ getaddrinfo(const char*hostname, const char*servname,
                  */
             }
             cur = cur->ai_next;
+            top = sentinel.ai_next;
         }
-        top = sentinel.ai_next;
         if (top)
             goto good;
         else
@@ -452,7 +469,10 @@ getaddrinfo(const char*hostname, const char*servname,
                  * translation function, and it looks strange
                  * that we do addr->name translation here.
                  */
-                get_name(pton, &gai_afdl[i], &top, pton, pai, port);
+                error = get_name(pton, &gai_afdl[i], &top, pton, pai, port);
+                if (error != SUCCESS) {
+                    goto free;
+                }
                 goto good;
             } else
                 ERR(EAI_FAMILY);                        /*xxx*/
@@ -481,13 +501,8 @@ getaddrinfo(const char*hostname, const char*servname,
 }
 
 static int
-get_name(addr, gai_afd, res, numaddr, pai, port0)
-    const char *addr;
-    struct gai_afd *gai_afd;
-    struct addrinfo **res;
-    char *numaddr;
-    struct addrinfo *pai;
-    int port0;
+get_name(const char *addr, struct gai_afd *gai_afd, struct addrinfo **res,
+         char *numaddr, struct addrinfo *pai, int port0)
 {
     u_short port = port0 & 0xffff;
     struct hostent *hp;
@@ -527,12 +542,8 @@ get_name(addr, gai_afd, res, numaddr, pai, port0)
 }
 
 static int
-get_addr(hostname, af, res, pai, port0)
-    const char *hostname;
-    int af;
-    struct addrinfo **res;
-    struct addrinfo *pai;
-    int port0;
+get_addr(const char *hostname, int af, struct addrinfo **res,
+         struct addrinfo *pai, int port0)
 {
     u_short port = port0 & 0xffff;
     struct addrinfo sentinel;
@@ -636,3 +647,5 @@ get_addr(hostname, af, res, pai, port0)
     *res = NULL;
     return error;
 }
+
+#endif // HAVE_NETDB_H

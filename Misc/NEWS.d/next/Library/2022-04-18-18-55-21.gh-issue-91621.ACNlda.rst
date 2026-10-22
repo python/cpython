@@ -1,1 +1,0 @@
-Fix :func:`typing.get_type_hints` for :class:`collections.abc.Callable`. Patch by Shantanu Jain.

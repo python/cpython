@@ -1,5 +1,0 @@
-In ``concurrent.futures.process.ProcessPoolExecutor`` disallow the "fork"
-multiprocessing start method when the new ``max_tasks_per_child`` feature is
-used as the mix of threads+fork can hang the child processes. Default to
-using the safe "spawn" start method in that circumstance if no
-``mp_context`` was supplied.

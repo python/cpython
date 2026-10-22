@@ -1,1 +1,0 @@
-Replace the ``f_lasti`` member of the internal ``_PyInterpreterFrame`` structure with a ``prev_instr`` pointer, which reduces overhead in the main interpreter loop. The ``f_lasti`` attribute of Python-layer frame objects is preserved for backward-compatibility.

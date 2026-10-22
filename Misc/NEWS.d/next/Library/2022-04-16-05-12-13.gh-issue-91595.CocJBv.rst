@@ -1,1 +1,0 @@
-Fix the comparison of character and integer inside :func:`Tools.gdb.libpython.write_repr`. Patch by Yu Liu.

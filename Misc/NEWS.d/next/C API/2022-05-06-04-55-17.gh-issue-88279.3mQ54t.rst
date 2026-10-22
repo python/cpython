@@ -1,2 +1,0 @@
-Deprecate the C functions: :c:func:`PySys_SetArgv`,
-:c:func:`PySys_SetArgvEx`, :c:func:`PySys_SetPath`. Patch by Victor Stinner.

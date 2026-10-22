@@ -1,1 +1,0 @@
-All positional-or-keyword parameters to ``ABCMeta.__new__`` are now positional-only to avoid conflicts with keyword arguments to be passed to :meth:`__init_subclass__`.
