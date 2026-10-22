@@ -1,17 +1,24 @@
 import gc
 import sys
+import doctest
 import unittest
 import collections
 import weakref
 import operator
 import contextlib
 import copy
+import pickle
 import threading
 import time
 import random
+import textwrap
 
 from test import support
 from test.support import script_helper, ALWAYS_EQ
+from test.support import gc_collect
+from test.support import import_helper
+from test.support import threading_helper
+from test.support import is_wasi, Py_DEBUG
 
 # Used in ReferencesTestCase.test_ref_created_during_del() .
 ref_from_del = None
@@ -38,6 +45,14 @@ def create_function():
 
 def create_bound_method():
     return C().method
+
+
+class WeakValueDictionaryWithSlots(weakref.WeakValueDictionary):
+    __slots__ = ('x', 'y')
+
+
+class WeakKeyDictionaryWithSlots(weakref.WeakKeyDictionary):
+    __slots__ = ('x', 'y')
 
 
 class Object:
@@ -76,7 +91,7 @@ class TestBase(unittest.TestCase):
 
 
 @contextlib.contextmanager
-def collect_in_thread(period=0.0001):
+def collect_in_thread(period=0.005):
     """
     Ensure GC collections happen in a different thread, at a high frequency.
     """
@@ -113,14 +128,73 @@ class ReferencesTestCase(TestBase):
         del o
         repr(wr)
 
+    @support.cpython_only
+    def test_ref_repr(self):
+        obj = C()
+        ref = weakref.ref(obj)
+        regex = (
+            rf"<weakref at 0x[0-9a-fA-F]+; "
+            rf"to '{'' if __name__ == '__main__' else C.__module__ + '.'}{C.__qualname__}' "
+            rf"at 0x[0-9a-fA-F]+>"
+        )
+        self.assertRegex(repr(ref), regex)
+
+        obj = None
+        gc_collect()
+        self.assertRegex(repr(ref),
+                         rf'<weakref at 0x[0-9a-fA-F]+; dead>')
+
+        # test type with __name__
+        class WithName:
+            @property
+            def __name__(self):
+                return "custom_name"
+
+        obj2 = WithName()
+        ref2 = weakref.ref(obj2)
+        regex = (
+            rf"<weakref at 0x[0-9a-fA-F]+; "
+            rf"to '{'' if __name__ == '__main__' else WithName.__module__ + '.'}"
+            rf"{WithName.__qualname__}' "
+            rf"at 0x[0-9a-fA-F]+ +\(custom_name\)>"
+        )
+        self.assertRegex(repr(ref2), regex)
+
+    def test_repr_failure_gh99184(self):
+        class MyConfig(dict):
+            def __getattr__(self, x):
+                return self[x]
+
+        obj = MyConfig(offset=5)
+        obj_weakref = weakref.ref(obj)
+
+        self.assertIn('MyConfig', repr(obj_weakref))
+        self.assertIn('MyConfig', str(obj_weakref))
+
+    def test_repr_name_lookup_error(self):
+        # An error raised while looking up __name__ propagates.
+        class BadName:
+            @property
+            def __name__(self):
+                raise ZeroDivisionError
+
+        obj = BadName()
+        with self.assertRaises(ZeroDivisionError):
+            repr(weakref.ref(obj))
+
     def test_basic_callback(self):
         self.check_basic_callback(C)
         self.check_basic_callback(create_function)
         self.check_basic_callback(create_bound_method)
 
+    def test_non_callable_callback(self):
+        c = C()
+        self.assertRaises(TypeError, weakref.ref, c, 42)
+        self.assertRaises(TypeError, weakref.proxy, c, 42)
+
     @support.cpython_only
     def test_cfunction(self):
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
         create_cfunction = _testcapi.create_cfunction
         f = create_cfunction()
         wr = weakref.ref(f)
@@ -135,6 +209,7 @@ class ReferencesTestCase(TestBase):
         ref1 = weakref.ref(o, self.callback)
         ref2 = weakref.ref(o, self.callback)
         del o
+        gc_collect()  # For PyPy or other GCs.
         self.assertIsNone(ref1(), "expected reference to be invalidated")
         self.assertIsNone(ref2(), "expected reference to be invalidated")
         self.assertEqual(self.cbcalled, 2,
@@ -168,14 +243,33 @@ class ReferencesTestCase(TestBase):
         ref1 = weakref.proxy(o, self.callback)
         ref2 = weakref.proxy(o, self.callback)
         del o
+        gc_collect()  # For PyPy or other GCs.
 
         def check(proxy):
             proxy.bar
 
         self.assertRaises(ReferenceError, check, ref1)
         self.assertRaises(ReferenceError, check, ref2)
-        self.assertRaises(ReferenceError, bool, weakref.proxy(C()))
+        ref3 = weakref.proxy(C())
+        gc_collect()  # For PyPy or other GCs.
+        self.assertRaises(ReferenceError, bool, ref3)
         self.assertEqual(self.cbcalled, 2)
+
+    @support.cpython_only
+    def test_proxy_repr(self):
+        obj = C()
+        ref = weakref.proxy(obj, self.callback)
+        regex = (
+            rf"<weakproxy at 0x[0-9a-fA-F]+; "
+            rf"to '{'' if __name__ == '__main__' else C.__module__ + '.'}{C.__qualname__}' "
+            rf"at 0x[0-9a-fA-F]+>"
+        )
+        self.assertRegex(repr(ref), regex)
+
+        obj = None
+        gc_collect()
+        self.assertRegex(repr(ref),
+                         rf'<weakproxy at 0x[0-9a-fA-F]+; dead>')
 
     def check_basic_ref(self, factory):
         o = factory()
@@ -191,6 +285,7 @@ class ReferencesTestCase(TestBase):
         o = factory()
         ref = weakref.ref(o, self.callback)
         del o
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(self.cbcalled, 1,
                      "callback did not properly set 'cbcalled'")
         self.assertIsNone(ref(),
@@ -215,6 +310,7 @@ class ReferencesTestCase(TestBase):
         self.assertEqual(weakref.getweakrefcount(o), 2,
                      "wrong weak ref count for object")
         del proxy
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(weakref.getweakrefcount(o), 1,
                      "wrong weak ref count for object after deleting proxy")
 
@@ -361,7 +457,7 @@ class ReferencesTestCase(TestBase):
         self.assertEqual(proxy.foo, 2,
                      "proxy does not reflect attribute modification")
         del o.foo
-        self.assertFalse(hasattr(proxy, 'foo'),
+        self.assertNotHasAttr(proxy, 'foo',
                      "proxy does not reflect attribute removal")
 
         proxy.foo = 1
@@ -371,7 +467,7 @@ class ReferencesTestCase(TestBase):
         self.assertEqual(o.foo, 2,
             "object does not reflect attribute modification via proxy")
         del proxy.foo
-        self.assertFalse(hasattr(o, 'foo'),
+        self.assertNotHasAttr(o, 'foo',
                      "object does not reflect attribute removal via proxy")
 
     def test_proxy_deletion(self):
@@ -410,6 +506,36 @@ class ReferencesTestCase(TestBase):
             # without keeping a reference to the real object, so it
             # can be killed in the middle of the call
             "blech" in p
+
+    def test_proxy_next(self):
+        arr = [4, 5, 6]
+        def iterator_func():
+            yield from arr
+        it = iterator_func()
+
+        class IteratesWeakly:
+            def __iter__(self):
+                return weakref.proxy(it)
+
+        weak_it = IteratesWeakly()
+
+        # Calls proxy.__next__
+        self.assertEqual(list(weak_it), [4, 5, 6])
+
+    def test_proxy_bad_next(self):
+        # bpo-44720: PyIter_Next() shouldn't be called if the reference
+        # isn't an iterator.
+
+        not_an_iterator = lambda: 0
+
+        class A:
+            def __iter__(self):
+                return weakref.proxy(not_an_iterator)
+        a = A()
+
+        msg = "Weakref proxy referenced a non-iterator"
+        with self.assertRaisesRegex(TypeError, msg):
+            list(a)
 
     def test_proxy_reversed(self):
         class MyObj:
@@ -450,6 +576,7 @@ class ReferencesTestCase(TestBase):
                      "got wrong number of weak reference objects")
 
         del ref1, ref2, proxy1, proxy2
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(weakref.getweakrefcount(o), 0,
                      "weak reference objects not unlinked from"
                      " referent when discarded.")
@@ -463,6 +590,7 @@ class ReferencesTestCase(TestBase):
         ref1 = weakref.ref(o, self.callback)
         ref2 = weakref.ref(o, self.callback)
         del ref1
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(weakref.getweakrefs(o), [ref2],
                      "list of refs does not match")
 
@@ -470,10 +598,12 @@ class ReferencesTestCase(TestBase):
         ref1 = weakref.ref(o, self.callback)
         ref2 = weakref.ref(o, self.callback)
         del ref2
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(weakref.getweakrefs(o), [ref1],
                      "list of refs does not match")
 
         del ref1
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(weakref.getweakrefs(o), [],
                      "list of refs not cleared")
 
@@ -488,6 +618,20 @@ class ReferencesTestCase(TestBase):
         p = weakref.proxy(f)
         self.assertEqual(p + 1.0, 3.0)
         self.assertEqual(1.0 + p, 3.0)  # this used to SEGV
+
+    def test_dead_proxy_operand_does_not_leak(self):
+        dead = weakref.proxy(Object(2))
+        gc_collect()
+        for operation in (operator.add, operator.eq, lambda a, b: pow(a, 2, b)):
+            with self.subTest(operation=operation):
+                live = Object(1)
+                ref = weakref.ref(live)
+                proxy = weakref.proxy(live)
+                with self.assertRaises(ReferenceError):
+                    operation(proxy, dead)
+                del live
+                gc_collect()
+                self.assertIsNone(ref())
 
     def test_callbacks_protected(self):
         # Callbacks protected from already-set exceptions?
@@ -554,7 +698,7 @@ class ReferencesTestCase(TestBase):
         # deallocation of c2.
         del c2
 
-    def test_callback_in_cycle_1(self):
+    def test_callback_in_cycle(self):
         import gc
 
         class J(object):
@@ -594,40 +738,11 @@ class ReferencesTestCase(TestBase):
         del I, J, II
         gc.collect()
 
-    def test_callback_in_cycle_2(self):
+    def test_callback_reachable_one_way(self):
         import gc
 
-        # This is just like test_callback_in_cycle_1, except that II is an
-        # old-style class.  The symptom is different then:  an instance of an
-        # old-style class looks in its own __dict__ first.  'J' happens to
-        # get cleared from I.__dict__ before 'wr', and 'J' was never in II's
-        # __dict__, so the attribute isn't found.  The difference is that
-        # the old-style II doesn't have a NULL __mro__ (it doesn't have any
-        # __mro__), so no segfault occurs.  Instead it got:
-        #    test_callback_in_cycle_2 (__main__.ReferencesTestCase) ...
-        #    Exception exceptions.AttributeError:
-        #   "II instance has no attribute 'J'" in <bound method II.acallback
-        #       of <?.II instance at 0x00B9B4B8>> ignored
-
-        class J(object):
-            pass
-
-        class II:
-            def acallback(self, ignore):
-                self.J
-
-        I = II()
-        I.J = J
-        I.wr = weakref.ref(J, I.acallback)
-
-        del I, J, II
-        gc.collect()
-
-    def test_callback_in_cycle_3(self):
-        import gc
-
-        # This one broke the first patch that fixed the last two.  In this
-        # case, the objects reachable from the callback aren't also reachable
+        # This one broke the first patch that fixed the previous test. In this case,
+        # the objects reachable from the callback aren't also reachable
         # from the object (c1) *triggering* the callback:  you can get to
         # c1 from c2, but not vice-versa.  The result was that c2's __dict__
         # got tp_clear'ed by the time the c2.cb callback got invoked.
@@ -647,10 +762,10 @@ class ReferencesTestCase(TestBase):
         del c1, c2
         gc.collect()
 
-    def test_callback_in_cycle_4(self):
+    def test_callback_different_classes(self):
         import gc
 
-        # Like test_callback_in_cycle_3, except c2 and c1 have different
+        # Like test_callback_reachable_one_way, except c2 and c1 have different
         # classes.  c2's class (C) isn't reachable from c1 then, so protecting
         # objects reachable from the dying object (c1) isn't enough to stop
         # c2's class (C) from getting tp_clear'ed before c2.cb is invoked.
@@ -889,6 +1004,7 @@ class ReferencesTestCase(TestBase):
         self.assertEqual(hash(a), hash(42))
         self.assertRaises(TypeError, hash, b)
 
+    @unittest.skipIf(is_wasi and Py_DEBUG, "requires deep stack")
     def test_trashcan_16602(self):
         # Issue #16602: when a weakref's target was part of a long
         # deallocation chain, the trashcan mechanism could delay clearing
@@ -942,6 +1058,57 @@ class ReferencesTestCase(TestBase):
         del x
         support.gc_collect()
 
+    @support.nomemtest
+    def test_no_memory_when_clearing(self):
+        # gh-118331: Make sure we do not raise an exception from the destructor
+        # when clearing weakrefs if allocating the intermediate tuple fails.
+        code = textwrap.dedent("""
+        import weakref
+        from test import support
+
+        class TestObj:
+            pass
+
+        def callback(obj):
+            pass
+
+        obj = TestObj()
+        # The choice of 50 is arbitrary, but must be large enough to ensure
+        # the allocation won't be serviced by the free list.
+        wrs = [weakref.ref(obj, callback) for _ in range(50)]
+        support.inject_memory_error()
+        del obj
+        """).strip()
+        res, _ = script_helper.run_python_until_end("-c", code)
+        stderr = res.err.decode("ascii", "backslashreplace")
+        self.assertNotRegex(stderr, "_Py_Dealloc: Deallocator of type 'TestObj'")
+
+    def test_clearing_weakrefs_in_gc(self):
+        # This test checks that when finalizers are called:
+        # 1. weakrefs with callbacks have been cleared
+        # 2. weakrefs without callbacks have not been cleared
+        errors = []
+        def test():
+            class Class:
+                def __init__(self):
+                    self._self = self
+                    self.wr1 = weakref.ref(Class, lambda x: None)
+                    self.wr2 = weakref.ref(Class)
+
+                def __del__(self):
+                    # we can't use assert* here, because gc will swallow
+                    # exceptions
+                    if self.wr1() is not None:
+                        errors.append("weakref with callback as cleared")
+                    if self.wr2() is not Class:
+                        errors.append("weakref without callback was cleared")
+
+            Class()
+
+        test()
+        gc.collect()
+        self.assertEqual(errors, [])
+
 
 class SubclassableWeakrefTestCase(TestBase):
 
@@ -959,6 +1126,7 @@ class SubclassableWeakrefTestCase(TestBase):
         self.assertTrue(mr.called)
         self.assertEqual(mr.value, 24)
         del o
+        gc_collect()  # For PyPy or other GCs.
         self.assertIsNone(mr())
         self.assertTrue(mr.called)
 
@@ -1005,7 +1173,7 @@ class SubclassableWeakrefTestCase(TestBase):
         self.assertEqual(r.slot1, "abc")
         self.assertEqual(r.slot2, "def")
         self.assertEqual(r.meth(), "abcdef")
-        self.assertFalse(hasattr(r, "__dict__"))
+        self.assertNotHasAttr(r, "__dict__")
 
     def test_subclass_refs_with_cycle(self):
         """Confirm https://bugs.python.org/issue3100 is fixed."""
@@ -1182,10 +1350,65 @@ class WeakMethodTestCase(unittest.TestCase):
         # If it wasn't hashed when alive, a dead WeakMethod cannot be hashed.
         self.assertRaises(TypeError, hash, c)
 
+    def test_pickle(self):
+        # The bound method is rebuilt on unpickling, bound to the same
+        # restored instance regardless of pickling order.  A callback does
+        # not prevent pickling.
+        o = Object(1)
+        r = weakref.WeakMethod(o.some_method, lambda arg: None)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                o2, r2 = pickle.loads(pickle.dumps([o, r], proto))
+                self.assertIsInstance(r2, weakref.WeakMethod)
+                self.assertIs(r2().__self__, o2)
+                self.assertEqual(r2()(), 4)
+                r2, o2 = pickle.loads(pickle.dumps([r, o], proto))
+                self.assertIs(r2().__self__, o2)
+                self.assertEqual(r2()(), 4)
+
+    def test_pickle_dead(self):
+        # A WeakMethod to a dead object (or a dead method) cannot be pickled.
+        o = Object(1)
+        r = weakref.WeakMethod(o.some_method)
+        del o
+        gc.collect()
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                self.assertRaises(TypeError, pickle.dumps, r, proto)
+
+    def test_pickle_without_strong_ref(self):
+        # As for weakref.ref, an instance with no strong reference in the
+        # pickle is refused.
+        o = Object(1)
+        r = weakref.WeakMethod(o.some_method)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                self.assertRaises(pickle.PicklingError, pickle.dumps, r, proto)
+
+    def test_copy(self):
+        # Copying rebuilds an equal weak method bound to the same instance
+        # (weak references are atomic under copy).
+        o = Object(1)
+        r = weakref.WeakMethod(o.some_method)
+        for copyfunc in copy.copy, copy.deepcopy:
+            with self.subTest(copyfunc=copyfunc):
+                r2 = copyfunc(r)
+                self.assertIsInstance(r2, weakref.WeakMethod)
+                self.assertIsNot(r2, r)
+                self.assertEqual(r2, r)
+                self.assertIs(r2().__self__, o)
+                self.assertEqual(r2()(), 4)
+
 
 class MappingTestCase(TestBase):
 
     COUNT = 10
+
+    if support.check_sanitizer(thread=True) and support.Py_GIL_DISABLED:
+        # Reduce iteration count to get acceptable latency
+        NUM_THREADED_ITERATIONS = 1000
+    else:
+        NUM_THREADED_ITERATIONS = 100000
 
     def check_len_cycles(self, dict_type, cons):
         N = 20
@@ -1261,15 +1484,18 @@ class MappingTestCase(TestBase):
         del items1, items2
         self.assertEqual(len(dict), self.COUNT)
         del objects[0]
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(len(dict), self.COUNT - 1,
                      "deleting object did not cause dictionary update")
         del objects, o
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(len(dict), 0,
                      "deleting the values did not clear the dictionary")
         # regression on SF bug #447152:
         dict = weakref.WeakValueDictionary()
         self.assertRaises(KeyError, dict.__getitem__, 1)
         dict[2] = C()
+        gc_collect()  # For PyPy or other GCs.
         self.assertRaises(KeyError, dict.__getitem__, 2)
 
     def test_weak_keys(self):
@@ -1290,9 +1516,11 @@ class MappingTestCase(TestBase):
         del items1, items2
         self.assertEqual(len(dict), self.COUNT)
         del objects[0]
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(len(dict), (self.COUNT - 1),
                      "deleting object did not cause dictionary update")
         del objects, o
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(len(dict), 0,
                      "deleting the keys did not clear the dictionary")
         o = Object(42)
@@ -1425,7 +1653,7 @@ class MappingTestCase(TestBase):
         o = Object(123456)
         with testcontext():
             n = len(dict)
-            # Since underlaying dict is ordered, first item is popped
+            # Since underlying dict is ordered, first item is popped
             dict.pop(next(dict.keys()))
             self.assertEqual(len(dict), n - 1)
             dict[o] = o
@@ -1511,8 +1739,8 @@ class MappingTestCase(TestBase):
         dict2 = weakref.WeakKeyDictionary(dict)
         self.assertEqual(dict[o], 364)
 
-    def make_weak_keyed_dict(self):
-        dict = weakref.WeakKeyDictionary()
+    def make_weak_keyed_dict(self, cls=weakref.WeakKeyDictionary):
+        dict = cls()
         objects = list(map(Object, range(self.COUNT)))
         for o in objects:
             dict[o] = o.arg
@@ -1541,12 +1769,58 @@ class MappingTestCase(TestBase):
             self.assertEqual(list(d.keys()), [kw])
             self.assertEqual(d[kw], o)
 
-    def make_weak_valued_dict(self):
-        dict = weakref.WeakValueDictionary()
+    def make_weak_valued_dict(self, cls=weakref.WeakValueDictionary):
+        dict = cls()
         objects = list(map(Object, range(self.COUNT)))
         for o in objects:
             dict[o.arg] = o
         return dict, objects
+
+    def test_pickling(self):
+        # The weak values/keys must be strongly referenced elsewhere in the
+        # pickle.  'x' is a slot attribute in the *WithSlots subclasses and a
+        # dict attribute in the bases; 'z' is a dict attribute; 'y' stays
+        # unset.
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            for cls in weakref.WeakValueDictionary, WeakValueDictionaryWithSlots:
+                with self.subTest(proto=proto, cls=cls):
+                    d, objects = self.make_weak_valued_dict(cls)
+                    d.x = ['x']
+                    d.z = ['z']
+                    d2, objects2 = pickle.loads(pickle.dumps((d, objects),
+                                                             proto))
+                    self.assertIsInstance(d2, cls)
+                    self.assertEqual(dict(d2), dict(d))
+                    self.assertEqual(set(map(id, d2.values())),
+                                     set(map(id, objects2)))
+                    self.assertEqual(d2.x, ['x'])
+                    self.assertEqual(d2.z, ['z'])
+                    self.assertNotHasAttr(d2, 'y')
+
+            for cls in weakref.WeakKeyDictionary, WeakKeyDictionaryWithSlots:
+                with self.subTest(proto=proto, cls=cls):
+                    d, objects = self.make_weak_keyed_dict(cls)
+                    d.x = ['x']
+                    d.z = ['z']
+                    d2, objects2 = pickle.loads(pickle.dumps((d, objects),
+                                                             proto))
+                    self.assertIsInstance(d2, cls)
+                    self.assertEqual(dict(d2), dict(d))
+                    self.assertEqual(set(map(id, d2.keys())),
+                                     set(map(id, objects2)))
+                    self.assertEqual(d2.x, ['x'])
+                    self.assertEqual(d2.z, ['z'])
+                    self.assertNotHasAttr(d2, 'y')
+
+    def test_pickling_without_strong_ref(self):
+        # A key/value with no strong reference in the pickle is refused.
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            d, objects = self.make_weak_valued_dict()
+            with self.assertRaises(pickle.PicklingError):
+                pickle.dumps(d, proto)
+            d, objects = self.make_weak_keyed_dict()
+            with self.assertRaises(pickle.PicklingError):
+                pickle.dumps(d, proto)
 
     def check_popitem(self, klass, key1, value1, key2, value2):
         weakdict = klass()
@@ -1675,6 +1949,11 @@ class MappingTestCase(TestBase):
     def test_weak_keyed_dict_update(self):
         self.check_update(weakref.WeakKeyDictionary,
                           {C(): 1, C(): 2, C(): 3})
+        d = weakref.WeakKeyDictionary()
+        msg = ("Keyword arguments are not supported: "
+               "cannot create weak reference to 'str' object")
+        with self.assertRaisesRegex(TypeError, msg):
+            d.update(k='v')
 
     def test_weak_keyed_delitem(self):
         d = weakref.WeakKeyDictionary()
@@ -1791,6 +2070,7 @@ class MappingTestCase(TestBase):
         for o in objs:
             count += 1
             del d[o]
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(len(d), 0)
         self.assertEqual(count, 2)
 
@@ -1802,33 +2082,55 @@ class MappingTestCase(TestBase):
         dict = weakref.WeakKeyDictionary()
         self.assertRegex(repr(dict), '<WeakKeyDictionary at 0x.*>')
 
+    @threading_helper.requires_working_threading()
     def test_threaded_weak_valued_setdefault(self):
         d = weakref.WeakValueDictionary()
         with collect_in_thread():
-            for i in range(100000):
+            for i in range(self.NUM_THREADED_ITERATIONS):
                 x = d.setdefault(10, RefCycle())
                 self.assertIsNot(x, None)  # we never put None in there!
                 del x
 
+    @threading_helper.requires_working_threading()
     def test_threaded_weak_valued_pop(self):
         d = weakref.WeakValueDictionary()
         with collect_in_thread():
-            for i in range(100000):
+            for i in range(self.NUM_THREADED_ITERATIONS):
                 d[10] = RefCycle()
                 x = d.pop(10, 10)
                 self.assertIsNot(x, None)  # we never put None in there!
 
+    @threading_helper.requires_working_threading()
     def test_threaded_weak_valued_consistency(self):
         # Issue #28427: old keys should not remove new values from
         # WeakValueDictionary when collecting from another thread.
         d = weakref.WeakValueDictionary()
         with collect_in_thread():
-            for i in range(200000):
+            for i in range(2 * self.NUM_THREADED_ITERATIONS):
                 o = RefCycle()
                 d[10] = o
                 # o is still alive, so the dict can't be empty
                 self.assertEqual(len(d), 1)
                 o = None  # lose ref
+
+    @support.cpython_only
+    def test_weak_valued_consistency(self):
+        # A single-threaded, deterministic repro for issue #28427: old keys
+        # should not remove new values from WeakValueDictionary. This relies on
+        # an implementation detail of CPython's WeakValueDictionary (its
+        # underlying dictionary of KeyedRefs) to reproduce the issue.
+        d = weakref.WeakValueDictionary()
+        with support.disable_gc():
+            d[10] = RefCycle()
+            # Keep the KeyedRef alive after it's replaced so that GC will invoke
+            # the callback.
+            wr = d.data[10]
+            # Replace the value with something that isn't cyclic garbage
+            o = RefCycle()
+            d[10] = o
+            # Trigger GC, which will invoke the callback for `wr`
+            gc.collect()
+            self.assertEqual(len(d), 1)
 
     def check_threaded_weak_dict_copy(self, type_, deepcopy):
         # `type_` should be either WeakKeyDictionary or WeakValueDictionary.
@@ -1891,21 +2193,29 @@ class MappingTestCase(TestBase):
         if exc:
             raise exc[0]
 
+    @threading_helper.requires_working_threading()
+    @support.requires_resource('cpu')
     def test_threaded_weak_key_dict_copy(self):
         # Issue #35615: Weakref keys or values getting GC'ed during dict
         # copying should not result in a crash.
         self.check_threaded_weak_dict_copy(weakref.WeakKeyDictionary, False)
 
+    @threading_helper.requires_working_threading()
+    @support.requires_resource('cpu')
     def test_threaded_weak_key_dict_deepcopy(self):
         # Issue #35615: Weakref keys or values getting GC'ed during dict
         # copying should not result in a crash.
         self.check_threaded_weak_dict_copy(weakref.WeakKeyDictionary, True)
 
+    @threading_helper.requires_working_threading()
+    @support.requires_resource('cpu')
     def test_threaded_weak_value_dict_copy(self):
         # Issue #35615: Weakref keys or values getting GC'ed during dict
         # copying should not result in a crash.
         self.check_threaded_weak_dict_copy(weakref.WeakValueDictionary, False)
 
+    @threading_helper.requires_working_threading()
+    @support.requires_resource('cpu')
     def test_threaded_weak_value_dict_deepcopy(self):
         # Issue #35615: Weakref keys or values getting GC'ed during dict
         # copying should not result in a crash.
@@ -2097,8 +2407,20 @@ class FinalizeTestCase(unittest.TestCase):
         self.assertTrue(b'ZeroDivisionError' in err)
 
 
+class ModuleTestCase(unittest.TestCase):
+    def test_names(self):
+        for name in ('ReferenceType', 'ProxyType', 'CallableProxyType',
+                     'WeakMethod', 'WeakSet', 'WeakKeyDictionary', 'WeakValueDictionary'):
+            obj = getattr(weakref, name)
+            if name != 'WeakSet':
+                self.assertEqual(obj.__module__, 'weakref')
+            self.assertEqual(obj.__name__, name)
+            self.assertEqual(obj.__qualname__, name)
+
+
 libreftest = """ Doctest for examples in the library reference: weakref.rst
 
+>>> from test.support import gc_collect
 >>> import weakref
 >>> class Dict(dict):
 ...     pass
@@ -2118,6 +2440,7 @@ True
 >>> o is o2
 True
 >>> del o, o2
+>>> gc_collect()  # For PyPy or other GCs.
 >>> print(r())
 None
 
@@ -2170,6 +2493,7 @@ True
 >>> id2obj(a_id) is a
 True
 >>> del a
+>>> gc_collect()  # For PyPy or other GCs.
 >>> try:
 ...     id2obj(a_id)
 ... except KeyError:
@@ -2182,18 +2506,10 @@ OK
 
 __test__ = {'libreftest' : libreftest}
 
-def test_main():
-    support.run_unittest(
-        ReferencesTestCase,
-        WeakMethodTestCase,
-        MappingTestCase,
-        WeakValueDictionaryTestCase,
-        WeakKeyDictionaryTestCase,
-        SubclassableWeakrefTestCase,
-        FinalizeTestCase,
-        )
-    support.run_doctest(sys.modules[__name__])
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
 
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

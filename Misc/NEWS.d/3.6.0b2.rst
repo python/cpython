@@ -215,7 +215,7 @@ memcpy().
 .. nonce: e5xc1i
 .. section: Core and Builtins
 
-Fix dict.pop() for splitted dictionary when trying to remove a "pending key"
+Fix dict.pop() for split dictionary when trying to remove a "pending key"
 (Not yet inserted in split-table). Patch by Xiang Zhang.
 
 ..
@@ -460,7 +460,7 @@ In the traceback module, restore the formatting of exception messages like
 .. nonce: 3UhyPo
 .. section: Library
 
-Allow falsy values to be used for msg parameter of subTest().
+Allow false values to be used for msg parameter of subTest().
 
 ..
 
