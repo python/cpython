@@ -3658,10 +3658,12 @@ list___sizeof___impl(PyListObject *self)
 {
     size_t res = _PyObject_SIZE(Py_TYPE(self));
 #ifdef Py_GIL_DISABLED
-    PyObject **ob_item = _Py_atomic_load_ptr(&self->ob_item);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    PyObject **ob_item = self->ob_item;
     if (ob_item != NULL) {
         res += list_capacity(ob_item) * sizeof(PyObject *);
     }
+    Py_END_CRITICAL_SECTION();
 #else
     res += (size_t)self->allocated * sizeof(PyObject *);
 #endif
