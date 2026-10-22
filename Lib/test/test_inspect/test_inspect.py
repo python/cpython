@@ -832,6 +832,20 @@ class TestRetrievingSourceCode(GetSourceBase):
         # Check filename override
         self.assertEqual(inspect.getmodule(None, modfile), mod)
 
+    def test_getmodule_bytecode_filename(self):
+        # gh-92041: a code object compiled with a bytecode module's
+        # __file__ as its filename resolves to the module.
+        with tempfile.TemporaryDirectory() as d:
+            source = os.path.join(d, 'example.py')
+            with open(source, 'w') as f:
+                f.write('pass\n')
+            module = types.ModuleType('_inspect_bytecode_example')
+            module.__file__ = source + 'c'
+            with unittest.mock.patch.dict(sys.modules,
+                                          {module.__name__: module}):
+                code = compile('pass', module.__file__, 'exec')
+                self.assertIs(inspect.getmodule(code), module)
+
     def test_getmodule_file_not_found(self):
         # See bpo-45406
         def _getabsfile(obj, _filename):
