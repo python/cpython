@@ -5749,6 +5749,10 @@ class TestPostHandshakeAuth(unittest.TestCase):
                 s.write(b'UNVERIFIEDCHAIN\n')
                 res = s.recv(1024)
                 self.assertEqual(res, b'\x01\n')
+                # The verified chain is not stored with the session at all.
+                s.write(b'VERIFIEDCHAIN\n')
+                res = s.recv(1024)
+                self.assertEqual(res, b'\x00\n')
 
     def test_internal_chain_server_no_client_cert(self):
         client_context, server_context, hostname = testing_context()
