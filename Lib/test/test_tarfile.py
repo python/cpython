@@ -3971,8 +3971,10 @@ class TestExtractionFilters(unittest.TestCase):
                 t.linkname = '.'
                 arc.tar_w.addfile(t)
 
-            with self.check_context(arc.open(), 'data'):
-                self.expect_exception(tarfile.OutsideDestinationError)
+            for filter in 'tar', 'data':
+                with self.subTest(name=name, filter=filter):
+                    with self.check_context(arc.open(), filter):
+                        self.expect_exception(tarfile.OutsideDestinationError)
 
     @symlink_test
     @os_helper.skip_unless_symlink
