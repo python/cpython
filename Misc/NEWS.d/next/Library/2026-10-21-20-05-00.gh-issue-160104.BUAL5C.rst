@@ -1,0 +1,6 @@
+Synchronized :class:`zipfile.Path` with :pypi:`zipp` 4.1.2.
+:meth:`zipfile.Path.iterdir` now raises :exc:`NotADirectoryError` instead of
+:exc:`ValueError` when the path does not reference a directory. Character
+classes in :meth:`!zipfile.Path.glob` and :meth:`!zipfile.Path.rglob` patterns
+now follow shell-style semantics, treating a leading ``!`` as negation and
+``^`` as a literal, and no longer match path separators.

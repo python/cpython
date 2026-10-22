@@ -14,7 +14,6 @@ import pathlib
 import posixpath
 import re
 import stat
-import sys
 import zipfile
 
 from ._functools import none_as, save_method_args
@@ -66,7 +65,7 @@ def _ancestry(path):
     path = path.rstrip(posixpath.sep)
     while path.rstrip(posixpath.sep):
         yield path
-        path, tail = posixpath.split(path)
+        path, _tail = posixpath.split(path)
 
 
 _dedupe = dict.fromkeys
@@ -156,10 +155,7 @@ class CompleteDirs(InitializedState, zipfile.ZipFile):
             return cls(source)
 
         # Only allow for FastLookup when supplied zipfile is read-only
-        if 'r' not in source.mode:
-            cls = CompleteDirs
-
-        source.__class__ = cls
+        source.__class__ = cls if 'r' in source.mode else CompleteDirs
         return source
 
     @classmethod
@@ -195,12 +191,7 @@ class FastLookup(CompleteDirs):
 
 
 def _extract_text_encoding(encoding=None, *args, **kwargs):
-    # compute stack level so that the caller of the caller sees any warning.
-    is_pypy = sys.implementation.name == 'pypy'
-    # PyPy no longer special cased after 7.3.19 (or maybe 7.3.18)
-    # See jaraco/zipp#143
-    is_old_pypi = is_pypy and sys.pypy_version_info < (7, 3, 19)
-    stack_level = 3 + is_old_pypi
+    stack_level = 3
     return io.text_encoding(encoding, stack_level), args, kwargs
 
 
@@ -403,7 +394,7 @@ class Path:
 
     def iterdir(self):
         if not self.is_dir():
-            raise ValueError("Can't listdir a file")
+            raise NotADirectoryError("Can't listdir a file")
         subs = map(self._next, self.root.namelist())
         return filter(self._is_child, subs)
 
