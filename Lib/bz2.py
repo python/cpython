@@ -24,6 +24,9 @@ _MODE_READ     = 1
 # Value 2 no longer used
 _MODE_WRITE    = 3
 
+# Every bzip2 stream starts with one of these, "BZh" and the block size.
+_STREAM_MAGIC = tuple(b"BZh%d" % level for level in range(1, 10))
+
 
 class BZ2File(_streams.BaseStream):
 
@@ -91,7 +94,8 @@ class BZ2File(_streams.BaseStream):
 
         if self._mode == _MODE_READ:
             raw = _streams.DecompressReader(self._fp,
-                BZ2Decompressor, trailing_error=OSError)
+                BZ2Decompressor, trailing_error=OSError,
+                stream_magic=_STREAM_MAGIC)
             self._buffer = io.BufferedReader(raw)
         else:
             self._pos = 0
@@ -342,10 +346,11 @@ def decompress(data):
         try:
             res = decomp.decompress(data)
         except OSError:
-            if results:
-                break  # Leftover data is not a valid bzip2 stream; ignore it.
-            else:
+            if not results:
                 raise  # Error on the first iteration; bail out.
+            if data.startswith(_STREAM_MAGIC):
+                raise  # Leftover data is a damaged bzip2 stream; bail out.
+            break  # Leftover data is not a valid bzip2 stream; ignore it.
         results.append(res)
         if not decomp.eof:
             raise ValueError("Compressed data ended before the "
