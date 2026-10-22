@@ -311,7 +311,8 @@ Directory and files operations
    .. index:: single: directory; deleting
 
    Delete an entire directory tree; *path* must point to a directory (but not a
-   symbolic link to a directory).  If *ignore_errors* is true, errors resulting
+   symbolic link to a directory, with or without a trailing path separator).
+   If *ignore_errors* is true, errors resulting
    from failed removals will be ignored; if false or omitted, such errors are
    handled by calling a handler specified by *onexc* or *onerror* or, if both
    are omitted, exceptions are propagated to the caller.
@@ -366,6 +367,12 @@ Directory and files operations
       but the top-level path.
       Exceptions other than :exc:`OSError` and subclasses of :exc:`!OSError`
       are now always propagated to the caller.
+
+   .. versionchanged:: next
+      A symbolic link to a directory is now also refused when *path* has a
+      trailing path separator, instead of deleting the contents of the
+      directory it points to.  Error handlers receive *path* without
+      trailing separators.
 
    .. attribute:: rmtree.avoids_symlink_attacks
 

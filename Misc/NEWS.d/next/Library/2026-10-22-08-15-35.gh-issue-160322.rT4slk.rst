@@ -1,0 +1,3 @@
+Fix :func:`shutil.rmtree` deleting the contents of the target directory when
+given a symbolic link to a directory with a trailing path separator.  It now
+fails like it does for the link without the separator.

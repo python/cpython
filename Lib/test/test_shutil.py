@@ -233,6 +233,42 @@ class TestRmTree(BaseTest, unittest.TestCase):
         self.assertIsInstance(errors[0][2], OSError)
 
     @os_helper.skip_unless_symlink
+    def test_rmtree_fails_on_symlink_with_trailing_sep(self):
+        tmp = self.mkdtemp()
+        dir_ = os.path.join(tmp, 'dir')
+        os.mkdir(dir_)
+        create_file(os.path.join(dir_, 'file'), 'foo')
+        link = os.path.join(tmp, 'link')
+        os.symlink(dir_, link)
+        for path in (link + os.sep, link + os.sep * 2,
+                     os.fsencode(link + os.sep)):
+            with self.subTest(path=path):
+                self.assertRaises(OSError, shutil.rmtree, path)
+                self.assertTrue(os.path.exists(os.path.join(dir_, 'file')))
+                self.assertTrue(os.path.lexists(link))
+        errors = []
+        def onexc(*args):
+            errors.append(args)
+        shutil.rmtree(link + os.sep, onexc=onexc)
+        self.assertEqual(len(errors), 1)
+        self.assertIs(errors[0][0], os.path.islink)
+        self.assertEqual(errors[0][1], link)
+        self.assertIsInstance(errors[0][2], OSError)
+        self.assertTrue(os.path.exists(os.path.join(dir_, 'file')))
+
+    def test_rmtree_works_with_trailing_sep(self):
+        tmp = self.mkdtemp()
+        victim = os.path.join(tmp, 'killme')
+        os.mkdir(victim)
+        create_file(os.path.join(victim, 'somefile'), 'foo')
+        shutil.rmtree(victim + os.sep)
+        self.assertFalse(os.path.lexists(victim))
+        os.mkdir(victim)
+        create_file(os.path.join(victim, 'somefile'), 'foo')
+        shutil.rmtree(os.fsencode(victim + os.sep * 2))
+        self.assertFalse(os.path.lexists(victim))
+
+    @os_helper.skip_unless_symlink
     def test_rmtree_works_on_symlinks(self):
         tmp = self.mkdtemp()
         dir1 = os.path.join(tmp, 'dir1')

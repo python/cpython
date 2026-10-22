@@ -847,6 +847,16 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None,
     """
 
     sys.audit("shutil.rmtree", path, dir_fd)
+    # Strip trailing separators: "link/" names the target of a symlink, which
+    # would defeat the symlink check and delete the target's contents.
+    fspath = os.fspath(path)
+    drive, root, tail = os.path.splitroot(fspath)
+    seps = os.sep + (os.altsep or '')
+    if isinstance(fspath, bytes):
+        seps = os.fsencode(seps)
+    stripped = tail.rstrip(seps)
+    if stripped != tail:
+        path = drive + root + stripped
     if ignore_errors:
         def onexc(*args, **kwargs):
             pass
