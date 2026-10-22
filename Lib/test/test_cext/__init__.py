@@ -175,7 +175,7 @@ class TestPublicCpp(BaseTests, unittest.TestCase):
         self.check_build('_test_cppext_abi3t', abi3t=True)
 
 
-class TestInteralC(BaseTests, unittest.TestCase):
+class TestInternalC(BaseTests, unittest.TestCase):
     LANGUAGE = 'C'
     TEST_INTERNAL_C_API = True
 
@@ -184,7 +184,7 @@ class TestInteralC(BaseTests, unittest.TestCase):
         self.check_build('_test_cext_internal')
 
 
-class TestInteralCpp(BaseTests, unittest.TestCase):
+class TestInternalCpp(BaseTests, unittest.TestCase):
     LANGUAGE = 'C++'
     TEST_INTERNAL_C_API = True
 
