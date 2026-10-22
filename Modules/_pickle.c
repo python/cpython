@@ -7615,6 +7615,7 @@ _pickle_UnpicklerMemoProxy_clear_impl(UnpicklerMemoProxyObject *self)
     self->unpickler->memo = _Unpickler_NewMemo(self->unpickler->memo_size);
     if (self->unpickler->memo == NULL)
         return NULL;
+    self->unpickler->memo_len = 0;
     Py_RETURN_NONE;
 }
 
