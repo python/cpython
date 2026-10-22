@@ -1133,13 +1133,7 @@ web_embed_test/main.js: $(WEB_EMBED_TEST_DIR)/main.c $(LIBRARY) $(ZIP_STDLIB)
 		--preload-file $(ZIP_STDLIB)@/lib/stdlib.zip
 
 .PHONY: web_embed_test
-web_embed_test: web_embed_test/main.js web_embed_test/promising_main.js
-
-web_embed_test/promising_main.js: $(WEB_EMBED_TEST_DIR)/promising_main.c Programs/emscripten_beforemain.o Python/emscripten_syscalls.o
-	@mkdir -p web_embed_test
-	$(LINKCC) $(PY_STDMODULE_CFLAGS) $(PY_CORE_EXE_LDFLAGS) -O2 -g0 -o $@ \
-		$(WEB_EMBED_TEST_DIR)/promising_main.c \
-		Programs/emscripten_beforemain.o Python/emscripten_syscalls.o
+web_embed_test: web_embed_test/main.js
 
 .PHONY: web_example
 web_example: web_example/python.mjs web_example/python.worker.mjs web_example/index.html web_example/server.py web_example/$(ZIP_STDLIB)

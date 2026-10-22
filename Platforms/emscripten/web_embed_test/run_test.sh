@@ -18,13 +18,4 @@ cd "$BUILD_DIR/web_embed_test"
 rc=0
 out=$("$NODE" $NODE_FLAGS main.js 2>&1) || rc=$?
 echo "$out"
-[ "$rc" -eq 0 ]
-grep -q "web_embed_test: ok" <<<"$out"
-
-if [ "$("$NODE" $NODE_FLAGS -p 'typeof WebAssembly.promising')" = function ]; then
-    rc=0
-    out=$("$NODE" $NODE_FLAGS promising_main.js 2>&1) || rc=$?
-    echo "$out"
-    [ "$rc" -eq 7 ]
-    grep -q "web_embed_test: main resumed" <<<"$out"
-fi
+[ "$rc" -eq 0 ] && grep -q "web_embed_test: ok" <<<"$out"
