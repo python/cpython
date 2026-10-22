@@ -180,6 +180,7 @@ typedef struct {
     PyObject *random_func;
     PyObject *random_size_int;
     PyObject *time_func;
+    PyObject *node_func;
 
     // A freelist for uuid objects -- 15-20% performance boost.
     uuidobject *freelist;
@@ -423,7 +424,8 @@ uuid6_get_node(uuid_state *state, uint64_t *result)
         Py_BEGIN_CRITICAL_SECTION_MUTEX(&state->node_mutex);
         node_id = _Py_atomic_load_uint64_relaxed(&state->node_id);
         if (node_id == NODE_NOT_INITIALIZED) {
-            PyObject *getnode = get_uuidmod_attr("getnode");
+            PyObject *getnode = state->node_func != NULL
+                ? Py_NewRef(state->node_func) : get_uuidmod_attr("getnode");
             PyObject *value = NULL;
             if (getnode != NULL) {
                 value = PyObject_CallNoArgs(getnode);
@@ -655,13 +657,14 @@ _uuid._install_c_hooks
     *
     random_func: object
     time_func: object
+    node_func: object = None
 
 [clinic start generated code]*/
 
 static PyObject *
 _uuid__install_c_hooks_impl(PyObject *module, PyObject *random_func,
-                            PyObject *time_func)
-/*[clinic end generated code: output=884aa6e91b2ea832 input=6c5017297067e2ea]*/
+                            PyObject *time_func, PyObject *node_func)
+/*[clinic end generated code: output=e742978b99d5a2ea input=beb6f73390b31d93]*/
 {
     uuid_state *state = get_uuid_state(module);
 
@@ -671,6 +674,8 @@ _uuid__install_c_hooks_impl(PyObject *module, PyObject *random_func,
     state->last_timestamp_v6_init = 0;
     state->last_timestamp_v7_init = 0;
     Py_BEGIN_CRITICAL_SECTION_MUTEX(&state->node_mutex);
+    Py_XSETREF(state->node_func,
+               node_func == Py_None ? NULL : Py_NewRef(node_func));
     _Py_atomic_store_uint64_relaxed(&state->node_id, NODE_NOT_INITIALIZED);
     Py_END_CRITICAL_SECTION();
 
@@ -1923,6 +1928,7 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->uint128_max);
     Py_VISIT(state->random_func);
     Py_VISIT(state->time_func);
+    Py_VISIT(state->node_func);
     Py_VISIT(state->random_size_int);
     return 0;
 }
@@ -1937,6 +1943,7 @@ module_clear(PyObject *mod)
     Py_CLEAR(state->uint128_max);
     Py_CLEAR(state->random_func);
     Py_CLEAR(state->time_func);
+    Py_CLEAR(state->node_func);
     Py_CLEAR(state->random_size_int);
 
     if (state->freelist != NULL) {
@@ -2019,6 +2026,7 @@ uuid_exec(PyObject *module)
     state->random_last_pid = uuid_getpid();
 
     state->time_func = NULL;
+    state->node_func = NULL;
     state->random_func = NULL;
     state->random_size_int = PyLong_FromSize_t((Py_ssize_t)RANDOM_BUF_SIZE);
     if (state->random_size_int == NULL) {

@@ -113,6 +113,7 @@ _RFC_4122_VERSION_8_FLAGS = ((8 << 76) | (0x8000 << 48))
 
 _random_hook = None
 _time_hook = None
+_node_hook = None
 
 
 def _gen_random(size):
@@ -129,13 +130,21 @@ def _gen_time():
         return _time_hook()
 
 
-def _install_py_hooks(*, random_func, time_func):
+def _gen_node():
+    if _node_hook is None:
+        return getnode()
+    return _node_hook()
+
+
+def _install_py_hooks(*, random_func, time_func, node_func=None):
     global _random_hook
     global _time_hook
+    global _node_hook
     global _last_timestamp_v7
     global _last_timestamp_v6
     _random_hook = random_func
     _time_hook = time_func
+    _node_hook = node_func
     # Reset timestamps for repeatability of tests.
     _last_timestamp_v7 = None
     _last_timestamp_v6 = None
@@ -848,7 +857,7 @@ def uuid6(node=None, clock_seq=None):
     time_lo = timestamp & 0x0fff  # keep 12 bits and clear version bits
     clock_s = clock_seq & 0x3fff  # keep 14 bits and clear variant bits
     if node is None:
-        node = getnode()
+        node = _gen_node()
     # --- 32 + 16 ---   -- 4 --   -- 12 --  -- 2 --   -- 14 ---    48
     # time_hi_and_mid | version | time_lo | variant | clock_seq | node
     int_uuid_6 = time_hi_and_mid << 80

@@ -690,6 +690,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(nlocals)
         STRUCT_FOR_ID(node)
         STRUCT_FOR_ID(node_depth)
+        STRUCT_FOR_ID(node_func)
         STRUCT_FOR_ID(node_offset)
         STRUCT_FOR_ID(nothing)
         STRUCT_FOR_ID(ns)

@@ -135,7 +135,7 @@ _uuid_uuid7(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_uuid__install_c_hooks__doc__,
-"_install_c_hooks($module, /, *, random_func, time_func)\n"
+"_install_c_hooks($module, /, *, random_func, time_func, node_func=None)\n"
 "--\n"
 "\n");
 
@@ -144,7 +144,7 @@ PyDoc_STRVAR(_uuid__install_c_hooks__doc__,
 
 static PyObject *
 _uuid__install_c_hooks_impl(PyObject *module, PyObject *random_func,
-                            PyObject *time_func);
+                            PyObject *time_func, PyObject *node_func);
 
 static PyObject *
 _uuid__install_c_hooks(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -152,7 +152,7 @@ _uuid__install_c_hooks(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -161,7 +161,7 @@ _uuid__install_c_hooks(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(random_func), &_Py_ID(time_func), },
+        .ob_item = { &_Py_ID(random_func), &_Py_ID(time_func), &_Py_ID(node_func), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -170,16 +170,18 @@ _uuid__install_c_hooks(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"random_func", "time_func", NULL};
+    static const char * const _keywords[] = {"random_func", "time_func", "node_func", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "_install_c_hooks",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyObject *random_func;
     PyObject *time_func;
+    PyObject *node_func = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 0, /*minkw*/ 2, /*varpos*/ 0, argsbuf);
@@ -188,8 +190,13 @@ _uuid__install_c_hooks(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     }
     random_func = args[0];
     time_func = args[1];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    node_func = args[2];
+skip_optional_kwonly:
     Py_BEGIN_CRITICAL_SECTION(module);
-    return_value = _uuid__install_c_hooks_impl(module, random_func, time_func);
+    return_value = _uuid__install_c_hooks_impl(module, random_func, time_func, node_func);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -371,4 +378,4 @@ _uuid_UUID___setstate__(PyObject *self, PyObject *state)
 
     return return_value;
 }
-/*[clinic end generated code: output=bcbc0aee86c47e82 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e836f3b61a0fec26 input=a9049054013a1b77]*/

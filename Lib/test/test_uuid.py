@@ -898,20 +898,19 @@ class BaseTestUUID:
             equal(str(u), v)
 
     @contextlib.contextmanager
-    def _uuid6_hooks(self, nanoseconds, *, random_func=None):
+    def _uuid6_hooks(self, nanoseconds, *, random_func=None, node_func=None):
         time_func = nanoseconds if callable(nanoseconds) else lambda: nanoseconds
-        with support.swap_item(sys.modules, 'uuid', self.uuid):
-            self.uuid._install_py_hooks(random_func=random_func,
-                                        time_func=time_func)
+        self.uuid._install_py_hooks(random_func=random_func,
+                                    time_func=time_func, node_func=node_func)
+        if self.is_c_uuid:
+            self.uuid._install_c_hooks(random_func=random_func,
+                                       time_func=time_func, node_func=node_func)
+        try:
+            yield
+        finally:
+            self.uuid._install_py_hooks(random_func=None, time_func=None)
             if self.is_c_uuid:
-                self.uuid._install_c_hooks(random_func=random_func,
-                                           time_func=time_func)
-            try:
-                yield
-            finally:
-                self.uuid._install_py_hooks(random_func=None, time_func=None)
-                if self.is_c_uuid:
-                    self.uuid._install_c_hooks(random_func=None, time_func=None)
+                self.uuid._install_c_hooks(random_func=None, time_func=None)
 
     def test_uuid6(self):
         equal = self.assertEqual
@@ -928,10 +927,8 @@ class BaseTestUUID:
             data = (fake_clock_seq | 0xc000).to_bytes(2, 'big')
             return (data * ((size + 1) // 2))[:size]
 
-        with (
-            self._uuid6_hooks(fake_nanoseconds, random_func=random_func),
-            mock.patch.object(self.uuid, 'getnode', return_value=fake_node_value),
-        ):
+        with self._uuid6_hooks(fake_nanoseconds, random_func=random_func,
+                              node_func=lambda: fake_node_value):
             u = self.uuid.uuid6()
             equal(u.variant, self.uuid.RFC_4122)
             equal(u.version, 6)
@@ -1069,11 +1066,13 @@ class BaseTestUUID:
             with self.assertRaises(RuntimeError) as cm:
                 self.uuid.uuid6(node=0)
             self.assertIs(cm.exception, error)
-        with self._uuid6_hooks(0):
-            with mock.patch.object(self.uuid, 'getnode', side_effect=error):
-                with self.assertRaises(RuntimeError) as cm:
-                    self.uuid.uuid6(clock_seq=0)
-                self.assertIs(cm.exception, error)
+        def node_func():
+            raise error
+
+        with self._uuid6_hooks(0, node_func=node_func):
+            with self.assertRaises(RuntimeError) as cm:
+                self.uuid.uuid6(clock_seq=0)
+            self.assertIs(cm.exception, error)
 
     def test_uuid6_monotonicity(self):
         # Repeated and backward clock readings must still advance the timestamp.
@@ -1918,17 +1917,20 @@ class TestCImplementationCompat(unittest.TestCase):
         self.assertEqual(len(all_ps), len(all_us))
         self.assertEqual(len(all_ps), len(uuids))
 
-    def _install_hooks(self, uuid_mod, *, start_at=0, inc_by=0, seed=0):
+    def _install_hooks(self, uuid_mod, *, start_at=0, inc_by=0, seed=0,
+                       node_func=None):
         py_hooks = UuidHooks(start_at=start_at, inc_by=inc_by, seed=seed)
         uuid_mod._install_py_hooks(
             random_func=py_hooks.random_func,
-            time_func=py_hooks.time_func
+            time_func=py_hooks.time_func,
+            node_func=node_func,
         )
 
         c_hooks = UuidHooks(start_at=start_at, inc_by=inc_by, seed=seed)
         uuid_mod._install_c_hooks(
             random_func=c_hooks.random_func,
-            time_func=c_hooks.time_func
+            time_func=c_hooks.time_func,
+            node_func=node_func,
         )
 
     def _reset_hooks(self, uuid_mod):
@@ -1943,19 +1945,19 @@ class TestCImplementationCompat(unittest.TestCase):
 
         values = (None, 0, -1, (1 << 100) | 0x123456789abc)
         try:
-            with mock.patch.object(uuid, 'getnode', return_value=0x123456789abc):
-                for start_at in (-1001, 0, 1672533296123456789):
-                    for inc_by in (-101, 0, 101, 1000000):
-                        for node, clock_seq in product(values, repeat=2):
-                            self._install_hooks(uuid, start_at=start_at,
-                                                inc_by=inc_by)
-                            with self.subTest(start=start_at, inc=inc_by,
-                                              node=node, clock_seq=clock_seq):
-                                for _ in range(200):
-                                    self.assertEqual(
-                                        uuid._py_uuid6(node, clock_seq).bytes,
-                                        uuid._c_uuid6(node, clock_seq).bytes,
-                                    )
+            for start_at in (-1001, 0, 1672533296123456789):
+                for inc_by in (-101, 0, 101, 1000000):
+                    for node, clock_seq in product(values, repeat=2):
+                        self._install_hooks(uuid, start_at=start_at,
+                                            inc_by=inc_by,
+                                            node_func=lambda: 0x123456789abc)
+                        with self.subTest(start=start_at, inc=inc_by,
+                                          node=node, clock_seq=clock_seq):
+                            for _ in range(200):
+                                self.assertEqual(
+                                    uuid._py_uuid6(node, clock_seq).bytes,
+                                    uuid._c_uuid6(node, clock_seq).bytes,
+                                )
         finally:
             self._reset_hooks(uuid)
 
@@ -1988,36 +1990,37 @@ class TestCImplementationCompat(unittest.TestCase):
         self.addCleanup(uuid._install_c_hooks, random_func=None, time_func=None)
         for node in (0, -1):
             with self.subTest(node=node):
-                uuid._install_c_hooks(random_func=None, time_func=None)
-                with mock.patch.object(uuid, 'getnode', return_value=node) as getnode:
-                    self.assertEqual(uuid.uuid6(clock_seq=0).node,
-                                     node & 0xffffffffffff)
-                    self.assertEqual(uuid.uuid6(node=42, clock_seq=0).node, 42)
-                    self.assertEqual(uuid.uuid6(clock_seq=0).node,
-                                     node & 0xffffffffffff)
-                    getnode.assert_called_once_with()
+                getnode = mock.Mock(return_value=node)
+                uuid._install_c_hooks(random_func=None, time_func=None,
+                                      node_func=getnode)
+                self.assertEqual(uuid.uuid6(clock_seq=0).node,
+                                 node & 0xffffffffffff)
+                self.assertEqual(uuid.uuid6(node=42, clock_seq=0).node, 42)
+                self.assertEqual(uuid.uuid6(clock_seq=0).node,
+                                 node & 0xffffffffffff)
+                getnode.assert_called_once_with()
 
     def test_uuid6_node_cache_error(self):
         # A failed lookup must leave the cache empty so the next call can retry.
         import uuid
 
-        uuid._install_c_hooks(random_func=None, time_func=None)
         self.addCleanup(uuid._install_c_hooks, random_func=None, time_func=None)
         error = RuntimeError('node lookup failed')
-        with mock.patch.object(uuid, 'getnode', side_effect=[error, 42]) as getnode:
-            with self.assertRaises(RuntimeError) as cm:
-                uuid.uuid6(clock_seq=0)
-            self.assertIs(cm.exception, error)
-            self.assertEqual(uuid.uuid6(clock_seq=0).node, 42)
-            self.assertEqual(uuid.uuid6(clock_seq=0).node, 42)
-            self.assertEqual(getnode.call_count, 2)
+        getnode = mock.Mock(side_effect=[error, 42])
+        uuid._install_c_hooks(random_func=None, time_func=None,
+                              node_func=getnode)
+        with self.assertRaises(RuntimeError) as cm:
+            uuid.uuid6(clock_seq=0)
+        self.assertIs(cm.exception, error)
+        self.assertEqual(uuid.uuid6(clock_seq=0).node, 42)
+        self.assertEqual(uuid.uuid6(clock_seq=0).node, 42)
+        self.assertEqual(getnode.call_count, 2)
 
     def test_uuid6_node_cache_reentrant(self):
         # getnode() can reenter uuid6(). The recursive call initializes the cache;
         # the outer call must reuse that value without deadlocking or replacing it.
         import uuid
 
-        uuid._install_c_hooks(random_func=None, time_func=None)
         self.addCleanup(uuid._install_c_hooks, random_func=None, time_func=None)
         recursive = False
 
@@ -2029,8 +2032,9 @@ class TestCImplementationCompat(unittest.TestCase):
                 return 22
             return 11
 
-        with mock.patch.object(uuid, 'getnode', side_effect=getnode):
-            self.assertEqual(uuid.uuid6(clock_seq=0).node, 11)
+        uuid._install_c_hooks(random_func=None, time_func=None,
+                              node_func=getnode)
+        self.assertEqual(uuid.uuid6(clock_seq=0).node, 11)
 
     @threading_helper.requires_working_threading()
     @threading_helper.reap_threads
@@ -2057,17 +2061,17 @@ class TestCImplementationCompat(unittest.TestCase):
             local.id = 1
             return uuid.uuid6(clock_seq=0)
 
-        uuid._install_c_hooks(random_func=None, time_func=None)
+        uuid._install_c_hooks(random_func=None, time_func=None,
+                              node_func=getnode)
         self.addCleanup(uuid._install_c_hooks, random_func=None, time_func=None)
-        with mock.patch.object(uuid, 'getnode', side_effect=getnode):
-            with ThreadPoolExecutor(1) as pool:
-                pending = pool.submit(generate)
-                try:
-                    self.assertTrue(entered.wait(support.SHORT_TIMEOUT))
-                    other = uuid.uuid6(clock_seq=0)
-                finally:
-                    resume.set()
-                first = pending.result(timeout=support.SHORT_TIMEOUT)
+        with ThreadPoolExecutor(1) as pool:
+            pending = pool.submit(generate)
+            try:
+                self.assertTrue(entered.wait(support.SHORT_TIMEOUT))
+                other = uuid.uuid6(clock_seq=0)
+            finally:
+                resume.set()
+            first = pending.result(timeout=support.SHORT_TIMEOUT)
         self.assertEqual(first.node, 2)
         self.assertEqual(other.node, 2)
 
