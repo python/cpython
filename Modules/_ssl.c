@@ -5241,36 +5241,66 @@ _ssl__SSLContext_set_ech_config_impl(PySSLContext *self,
     if (config_bio == NULL) {
         goto fail;
     }
+    store = OSSL_ECHSTORE_new(NULL, NULL);
+    if (store == NULL) {
+        goto fail;
+    }
     const unsigned char *config = ech_config->buf;
     int config_len = (int)ech_config->len;
     if (config_len >= 2 && ((config[0] << 8) | config[1]) == config_len - 2) {
         config += 2;
         config_len -= 2;
-        /* OpenSSL only recognizes binary input with a supported first entry. */
-        while (config_len >= 4 &&
-               ((config[0] << 8) | config[1]) != OSSL_ECH_RFC9849_VERSION) {
+        /* Read entries separately so unsupported ones do not reject the list. */
+        while (config_len >= 4) {
             int entry_len = 4 + ((config[2] << 8) | config[3]);
             if (entry_len > config_len) {
                 break;
             }
+            if (((config[0] << 8) | config[1]) == OSSL_ECH_RFC9849_VERSION) {
+                unsigned char length[2] = {
+                    (unsigned char)(entry_len >> 8), (unsigned char)entry_len
+                };
+                if (BIO_reset(config_bio) != 1 ||
+                    BIO_write(config_bio, length, sizeof(length)) != sizeof(length) ||
+                    BIO_write(config_bio, config, entry_len) != entry_len) {
+                    goto fail;
+                }
+                ERR_clear_error();
+                if (OSSL_ECHSTORE_read_echconfiglist(store, config_bio) != 1) {
+                    unsigned long err = ERR_peek_error();
+                    /* Unsupported HPKE suites may first raise provider errors. */
+                    while (ERR_GET_LIB(err) == ERR_LIB_PROV &&
+                           !ERR_FATAL_ERROR(err)) {
+                        ERR_get_error();
+                        err = ERR_peek_error();
+                    }
+                    /* Ignore unsupported suites and mandatory extensions,
+                     * preserving malformed input and fatal errors. */
+                    if (ERR_GET_LIB(err) != ERR_LIB_SSL ||
+                        ERR_GET_REASON(err) != ERR_R_PASSED_INVALID_ARGUMENT) {
+                        goto fail;
+                    }
+                }
+                ERR_clear_error();
+            }
             config += entry_len;
             config_len -= entry_len;
         }
-        unsigned char length[2] = {
-            (unsigned char)(config_len >> 8), (unsigned char)config_len
-        };
-        if (BIO_write(config_bio, length, sizeof(length)) != sizeof(length)) {
+        if (config_len != 0) {
+            ERR_raise(ERR_LIB_SSL, SSL_R_ECH_DECODE_ERROR);
             goto fail;
         }
     }
-    if (BIO_write(config_bio, config, config_len) != config_len) {
+    else if (BIO_write(config_bio, config, config_len) != config_len ||
+             OSSL_ECHSTORE_read_echconfiglist(store, config_bio) != 1) {
         goto fail;
     }
-    store = OSSL_ECHSTORE_new(NULL, NULL);
-    if (store == NULL) {
+    int num_entries;
+    if (OSSL_ECHSTORE_num_entries(store, &num_entries) != 1) {
         goto fail;
     }
-    if (OSSL_ECHSTORE_read_echconfiglist(store, config_bio) != 1) {
+    if (num_entries == 0) {
+        ERR_raise(ERR_LIB_SSL, ERR_R_PASSED_INVALID_ARGUMENT);
         goto fail;
     }
     PyMutex_Lock(&self->tstate_mutex);

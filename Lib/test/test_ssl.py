@@ -2046,6 +2046,12 @@ class ContextTests(unittest.TestCase):
 
 
 class ECHTests(unittest.TestCase):
+    requires_ech_x25519 = unittest.skipUnless(
+        ssl.HAS_ECH
+        and 'x25519' in ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT).get_groups(),
+        'requires ECH with X25519',
+    )
+
     # An ECHConfigList for localhost using X25519, HKDF-SHA256 and AES-128-GCM.
     ECH_CONFIG = bytes.fromhex(
         '003c fe0d 0038 db 0020 0020'
@@ -2097,7 +2103,7 @@ class ECHTests(unittest.TestCase):
         self.assertIsNone(sock.get_ech_status())
         self.assertIsNone(sock.get_ech_retry_config())
 
-    @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    @requires_ech_x25519
     def test_set_ech_config(self):
         ctx = make_test_context()
         for config in (self.ECH_CONFIG, bytearray(self.ECH_CONFIG),
@@ -2116,7 +2122,7 @@ class ECHTests(unittest.TestCase):
                 self.assertRaises(ssl.SSLError, ctx.set_ech_config, config)
         self.assertIsNone(ctx.set_ech_config(self.ECH_CONFIG))
 
-    @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    @requires_ech_x25519
     def test_mixed_ech_config_versions(self):
         ctx = make_test_context()
         supported = self.ECH_CONFIG[2:]
@@ -2133,7 +2139,7 @@ class ECHTests(unittest.TestCase):
         config = base64.b64decode(config.split(b'-----END ECHCONFIG-----')[0])
         return key, config
 
-    @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    @requires_ech_x25519
     def test_load_ech_keys(self):
         client_ctx, ctx, hostname = testing_context()
         filename = data_file('ech.pem')
@@ -2171,7 +2177,7 @@ class ECHTests(unittest.TestCase):
         self.assertEqual(client.get_ech_status(),
                          ssl.ECHStatus.ECH_STATUS_SUCCESS)
 
-    @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    @requires_ech_x25519
     def test_ech_handshake(self):
         key, config = self.read_ech_key_and_config()
         other_config = bytearray(config)
@@ -2214,7 +2220,7 @@ class ECHTests(unittest.TestCase):
         client, server, *_ = connected_bio_pair(client_ctx, server_ctx, hostname)
         self.assertEqual(client.get_ech_retry_config(), bytes(other_config))
 
-    @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    @requires_ech_x25519
     def test_status_before_handshake(self):
         ctx = make_test_context()
         for configured in (False, True):
@@ -2233,7 +2239,7 @@ class ECHTests(unittest.TestCase):
                     self.assertIsNone(obj.outer_server_hostname)
                     self.assertEqual(obj.get_ech_retry_config(), b'')
 
-    @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    @requires_ech_x25519
     def test_set_outer_server_name(self):
         ctx = make_test_context()
         ctx.set_ech_config(self.ECH_CONFIG)
@@ -2310,7 +2316,7 @@ class ECHTests(unittest.TestCase):
                 c_in.write(s_out.read())
         return client
 
-    @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    @requires_ech_x25519
     def test_rejected_ech(self):
         client = self.make_rejected_client()
         self.assertEqual(client.get_ech_status(), ssl.ECHStatus.ECH_STATUS_FAILED)
@@ -2320,7 +2326,7 @@ class ECHTests(unittest.TestCase):
         self.assertEqual(client.outer_server_hostname, 'localhost')
         self.assertEqual(client.get_ech_retry_config(), b'')
 
-    @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    @requires_ech_x25519
     @support.nomemtest
     def test_status_allocation_failure(self):
         import _testcapi
