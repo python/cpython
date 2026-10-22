@@ -175,15 +175,12 @@ class TestSealable(unittest.TestCase):
         # https://bugs.python.org/issue45156
         class Foo:
             foo = 0
-            def bar1(self):
-                return 1
-            def bar2(self):
-                return 2
+            def bar1(self): pass
+            def bar2(self): pass
 
             class Baz:
                 baz = 3
-                def ban(self):
-                    return 4
+                def ban(self): pass
 
         for spec_set in (True, False):
             with self.subTest(spec_set=spec_set):
