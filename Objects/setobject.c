@@ -753,8 +753,16 @@ set_dealloc(PyObject *self)
     Py_TYPE(so)->tp_free(so);
 }
 
+/*[clinic input]
+@critical_section
+set.__repr__
+
+    so: setobject
+[clinic start generated code]*/
+
 static PyObject *
-set_repr_lock_held(PySetObject *so)
+set_repr_impl(PySetObject *so)
+/*[clinic end generated code: output=5dfbb5e7f7c947ad input=f6743ec76163d7b3]*/
 {
     PyObject *result=NULL, *keys, *listrepr, *tmp;
     int status = Py_ReprEnter((PyObject*)so);
@@ -804,17 +812,6 @@ set_repr_lock_held(PySetObject *so)
     Py_DECREF(listrepr);
 done:
     Py_ReprLeave((PyObject*)so);
-    return result;
-}
-
-static PyObject *
-set_repr(PyObject *self)
-{
-    PySetObject *so = _PySet_CAST(self);
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(so);
-    result = set_repr_lock_held(so);
-    Py_END_CRITICAL_SECTION();
     return result;
 }
 

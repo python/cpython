@@ -563,6 +563,15 @@ Dictionary objects
 
    .. versionadded:: 3.12
 
+.. c:macro:: PY_FOREACH_DICT_EVENT(V)
+
+   Apply the macro *V* to each suffix of :c:type:`PyDict_WatchEvent`
+   constants.
+   Currently expands to ``V(ADDED) V(MODIFIED) V(DELETED) V(CLONED)
+   V(CLEARED) V(DEALLOCATED)``.
+   The macro *V* must accept one event name and supply any punctuation
+   needed between expansions.
+
 .. c:type:: int (*PyDict_WatchCallback)(PyDict_WatchEvent event, PyObject *dict, PyObject *key, PyObject *new_value)
 
    Type of a dict watcher callback function.
