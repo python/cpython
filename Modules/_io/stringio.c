@@ -146,22 +146,24 @@ resize_buffer(stringio *self, size_t size)
 static PyObject *
 make_intermediate(stringio *self)
 {
-    PyObject *intermediate = PyUnicodeWriter_Finish(self->writer);
-    self->writer = NULL;
-    self->state = STATE_REALIZED;
-    if (intermediate == NULL)
+    /* Create the new writer first: if this fails, the object keeps its
+       contents. */
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL)
         return NULL;
 
-    self->writer = PyUnicodeWriter_Create(0);
-    if (self->writer == NULL) {
-        Py_DECREF(intermediate);
+    PyObject *intermediate = PyUnicodeWriter_Finish(self->writer);
+    self->writer = writer;
+    if (intermediate == NULL) {
+        /* The contents are lost, the new writer is empty. */
+        self->string_size = 0;
         return NULL;
     }
     if (PyUnicodeWriter_WriteStr(self->writer, intermediate)) {
         Py_DECREF(intermediate);
+        self->string_size = 0;
         return NULL;
     }
-    self->state = STATE_ACCUMULATING;
     return intermediate;
 }
 
@@ -174,23 +176,27 @@ realize(stringio *self)
     if (self->state == STATE_REALIZED)
         return 0;
     assert(self->state == STATE_ACCUMULATING);
+
+    /* Allocate the internal buffer first: if this fails, the object stays
+       in the accumulating state and keeps its contents. */
+    if (resize_buffer(self, self->string_size) < 0)
+        return -1;
     self->state = STATE_REALIZED;
 
     intermediate = PyUnicodeWriter_Finish(self->writer);
     self->writer = NULL;
-    if (intermediate == NULL)
-        return -1;
-
-    /* Append the intermediate string to the internal buffer.
-       The length should be equal to the current cursor position.
-     */
-    len = PyUnicode_GET_LENGTH(intermediate);
-    if (resize_buffer(self, len) < 0) {
-        Py_DECREF(intermediate);
+    if (intermediate == NULL) {
+        /* The contents are lost, the internal buffer contains nothing. */
+        self->string_size = 0;
         return -1;
     }
+
+    /* Copy the intermediate string to the internal buffer. */
+    len = PyUnicode_GET_LENGTH(intermediate);
+    assert(len == self->string_size);
     if (!PyUnicode_AsUCS4(intermediate, self->buf, len, 0)) {
         Py_DECREF(intermediate);
+        self->string_size = 0;
         return -1;
     }
 
