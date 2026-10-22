@@ -1,1 +1,0 @@
-Remove no longer necessary code from c locale coercion tests

@@ -1,2 +1,0 @@
-Improve highlight config sample with example shell interaction and better
-labels for shell elements.

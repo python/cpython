@@ -1,1 +1,0 @@
-Cleanup ``config.py`` by inlining ``RemoveFile`` and simplifying the handling of ``file`` in ``CreateConfigHandlers``.

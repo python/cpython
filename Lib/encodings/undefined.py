@@ -1,6 +1,6 @@
 """ Python 'undefined' Codec
 
-    This codec will always raise a ValueError exception when being
+    This codec will always raise a UnicodeError exception when being
     used. It is intended for use by the site.py file to switch off
     automatic string to Unicode coercion.
 

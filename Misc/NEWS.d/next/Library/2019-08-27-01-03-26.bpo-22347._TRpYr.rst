@@ -1,2 +1,0 @@
-Update mimetypes.guess_type to allow proper parsing of URLs with only a host name.
-Patch by Dong-hee Na.

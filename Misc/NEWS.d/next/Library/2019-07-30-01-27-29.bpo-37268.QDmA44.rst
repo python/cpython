@@ -1,2 +1,0 @@
-The :mod:`parser` module is deprecated and will be removed in future
-versions of Python.

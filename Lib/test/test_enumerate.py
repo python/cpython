@@ -2,8 +2,12 @@ import unittest
 import operator
 import sys
 import pickle
+import gc
+import threading
+
 
 from test import support
+from test.support import threading_helper
 
 class G:
     'Sequence using __getitem__'
@@ -127,12 +131,36 @@ class EnumerateTestCase(unittest.TestCase, PickleTest):
         self.assertRaises(TypeError, self.enum, 'abc', 'a') # wrong type
         self.assertRaises(TypeError, self.enum, 'abc', 2, 3) # too many arguments
 
+    def test_kwargs(self):
+        self.assertEqual(list(self.enum(iterable=Ig(self.seq))), self.res)
+        expected = list(self.enum(Ig(self.seq), 0))
+        self.assertEqual(list(self.enum(iterable=Ig(self.seq), start=0)),
+                         expected)
+        self.assertEqual(list(self.enum(start=0, iterable=Ig(self.seq))),
+                         expected)
+        self.assertRaises(TypeError, self.enum, iterable=[], x=3)
+        self.assertRaises(TypeError, self.enum, start=0, x=3)
+        self.assertRaises(TypeError, self.enum, x=0, y=3)
+        self.assertRaises(TypeError, self.enum, x=0)
+
     @support.cpython_only
     def test_tuple_reuse(self):
         # Tests an implementation detail where tuple is reused
         # whenever nothing else holds a reference to it
         self.assertEqual(len(set(map(id, list(enumerate(self.seq))))), len(self.seq))
         self.assertEqual(len(set(map(id, enumerate(self.seq)))), min(1,len(self.seq)))
+
+    @support.cpython_only
+    def test_enumerate_result_gc(self):
+        # bpo-42536: enumerate's tuple-reuse speed trick breaks the GC's
+        # assumptions about what can be untracked. Make sure we re-track result
+        # tuples whenever we reuse them.
+        it = self.enum([[]])
+        gc.collect()
+        # That GC collection probably untracked the recycled internal result
+        # tuple, which is initialized to (None, None). Make sure it's re-tracked
+        # when it's mutated and returned from __next__:
+        self.assertTrue(gc.is_tracked(next(it)))
 
 class MyEnum(enumerate):
     pass
@@ -253,16 +281,41 @@ class EnumerateStartTestCase(EnumerateTestCase):
 
 
 class TestStart(EnumerateStartTestCase):
+    def enum(self, iterable, start=11):
+        return enumerate(iterable, start=start)
 
-    enum = lambda self, i: enumerate(i, start=11)
     seq, res = 'abc', [(11, 'a'), (12, 'b'), (13, 'c')]
 
 
 class TestLongStart(EnumerateStartTestCase):
+    def enum(self, iterable, start=sys.maxsize + 1):
+        return enumerate(iterable, start=start)
 
-    enum = lambda self, i: enumerate(i, start=sys.maxsize+1)
     seq, res = 'abc', [(sys.maxsize+1,'a'), (sys.maxsize+2,'b'),
                        (sys.maxsize+3,'c')]
+
+
+@threading_helper.requires_working_threading()
+class TestThreadSafety(EnumerateStartTestCase):
+    def test_thread_safety_while_iterating(self):
+        # gh-153932: calling reduce while iterating should pass with TSAN
+
+        en = enumerate(range(10_000))
+        stop = threading.Event()
+
+        def advance():
+            for _ in en:
+                pass
+            stop.set()
+
+        def read():
+            while not stop.is_set():
+                en.__reduce__()
+
+        threads = [threading.Thread(target=advance), threading.Thread(target=read)]
+
+        with threading_helper.start_threads(threads):
+            pass
 
 
 if __name__ == "__main__":

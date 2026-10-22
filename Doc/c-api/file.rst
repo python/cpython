@@ -2,13 +2,13 @@
 
 .. _fileobjects:
 
-File Objects
+File objects
 ------------
 
-.. index:: object: file
+.. index:: pair: object; file
 
 These APIs are a minimal emulation of the Python 2 C API for built-in file
-objects, which used to rely on the buffered I/O (:c:type:`FILE\*`) support
+objects, which used to rely on the buffered I/O (:c:expr:`FILE*`) support
 from the C standard library.  In Python 3, files and streams use the new
 :mod:`io` module, which defines several layers over the low-level unbuffered
 I/O of the operating system.  The functions described below are
@@ -17,13 +17,13 @@ error reporting in the interpreter; third-party code is advised to access
 the :mod:`io` APIs instead.
 
 
-.. c:function:: PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const char *encoding, const char *errors, const char *newline, int closefd)
+.. c:function:: PyObject* PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const char *encoding, const char *errors, const char *newline, int closefd)
 
    Create a Python file object from the file descriptor of an already
    opened file *fd*.  The arguments *name*, *encoding*, *errors* and *newline*
-   can be *NULL* to use the defaults; *buffering* can be *-1* to use the
+   can be ``NULL`` to use the defaults; *buffering* can be *-1* to use the
    default. *name* is ignored and kept for backward compatibility. Return
-   *NULL* on failure. For a more comprehensive description of the arguments,
+   ``NULL`` on failure. For a more comprehensive description of the arguments,
    please refer to the :func:`io.open` function documentation.
 
    .. warning::
@@ -38,7 +38,7 @@ the :mod:`io` APIs instead.
 
 .. c:function:: int PyObject_AsFileDescriptor(PyObject *p)
 
-   Return the file descriptor associated with *p* as an :c:type:`int`.  If the
+   Return the file descriptor associated with *p* as an :c:expr:`int`.  If the
    object is an integer, its value is returned.  If not, the
    object's :meth:`~io.IOBase.fileno` method is called if it exists; the
    method must return an integer, which is returned as the file descriptor
@@ -60,13 +60,42 @@ the :mod:`io` APIs instead.
    raised if the end of the file is reached immediately.
 
 
+.. c:function:: char* Py_UniversalNewlineFgets(char *buf, int n, FILE *stream, PyObject *fobj)
+
+   Read a line from the C stream *stream* into the buffer *buf*, like the
+   C standard library function :c:func:`!fgets`, but treating all of ``\n``,
+   ``\r`` and ``\r\n`` as line endings (see :term:`universal newlines`).
+   Any ``\r`` or ``\r\n`` read from the stream is stored in *buf* as a
+   single ``\n``.
+
+   At most ``n - 1`` characters are stored in *buf*; reading stops after a
+   newline has been stored or when the end of the file is reached.
+   The result is always null-terminated.
+   *stream* should be opened in binary mode, so that the C library does not
+   perform its own newline translation.
+
+   Return *buf* on success.
+   Return ``NULL`` if no characters could be read, because *stream* is at
+   end of file, a read error occurred, or *n* is less than 2.
+   Like :c:func:`!fgets`, this function does not distinguish between end of
+   file and a read error, and it does not set an exception.
+
+   *fobj* exists only for backward compatibility and must be ``NULL``.
+
+
 .. c:function:: int PyFile_SetOpenCodeHook(Py_OpenCodeHookFunction handler)
 
    Overrides the normal behavior of :func:`io.open_code` to pass its parameter
    through the provided handler.
 
-   The handler is a function of type :c:type:`PyObject *(\*)(PyObject *path,
-   void *userData)`, where *path* is guaranteed to be :c:type:`PyUnicodeObject`.
+   The *handler* is a function of type:
+
+   .. c:namespace:: NULL
+   .. c:type:: PyObject * (*Py_OpenCodeHookFunction)(PyObject *, void *)
+
+      Equivalent of :c:expr:`PyObject *(\*)(PyObject *path,
+      void *userData)`, where *path* is guaranteed to be
+      :c:type:`PyUnicodeObject`.
 
    The *userData* pointer is passed into the hook function. Since hook
    functions may be called from different runtimes, this pointer should not
@@ -82,21 +111,81 @@ the :mod:`io` APIs instead.
 
    This function is safe to call before :c:func:`Py_Initialize`.
 
+   .. audit-event:: setopencodehook "" c.PyFile_SetOpenCodeHook
+
    .. versionadded:: 3.8
 
+
+.. c:function:: PyObject *PyFile_OpenCodeObject(PyObject *path)
+
+   Open *path* with the mode ``'rb'``. *path* must be a Python :class:`str`
+   object. The behavior of this function may be overridden by
+   :c:func:`PyFile_SetOpenCodeHook` to allow for some preprocessing of the
+   text.
+
+   This is analogous to :func:`io.open_code` in Python.
+
+   On success, this function returns a :term:`strong reference` to a Python
+   file object. On failure, this function returns ``NULL`` with an exception
+   set.
+
+   .. versionadded:: 3.8
+
+
+.. c:function:: PyObject *PyFile_OpenCode(const char *path)
+
+   Similar to :c:func:`PyFile_OpenCodeObject`, but *path* is a
+   UTF-8 encoded :c:expr:`const char*`.
+
+   .. versionadded:: 3.8
 
 
 .. c:function:: int PyFile_WriteObject(PyObject *obj, PyObject *p, int flags)
 
-   .. index:: single: Py_PRINT_RAW
+   .. index:: single: Py_PRINT_RAW (C macro)
 
    Write object *obj* to file object *p*.  The only supported flag for *flags* is
-   :const:`Py_PRINT_RAW`; if given, the :func:`str` of the object is written
-   instead of the :func:`repr`.  Return ``0`` on success or ``-1`` on failure; the
-   appropriate exception will be set.
+   :c:macro:`Py_PRINT_RAW`; if given, the :func:`str` of the object is written
+   instead of the :func:`repr`.
 
+   If *obj* is ``NULL``, write the string ``"<NULL>"``.
+
+   Return ``0`` on success or ``-1`` on failure; the
+   appropriate exception will be set.
 
 .. c:function:: int PyFile_WriteString(const char *s, PyObject *p)
 
    Write string *s* to file object *p*.  Return ``0`` on success or ``-1`` on
    failure; the appropriate exception will be set.
+
+
+Soft-deprecated API
+^^^^^^^^^^^^^^^^^^^
+
+These are APIs that were included in Python's C API
+by mistake. They are documented solely for completeness; use other
+``PyFile*`` APIs instead.
+
+
+.. c:function:: PyObject *PyFile_NewStdPrinter(int fd)
+
+   Use :c:func:`PyFile_FromFd` with defaults (``fd, NULL, "w", -1, NULL, NULL, NULL, 0``) instead.
+
+   .. soft-deprecated:: 3.15
+
+
+.. c:var:: PyTypeObject PyStdPrinter_Type
+
+   Type of file-like objects used internally at Python startup when :py:mod:`io` is
+   not yet available.
+   Use Python :py:func:`open` or :c:func:`PyFile_FromFd` to create file objects instead.
+
+   .. soft-deprecated:: 3.15
+
+
+.. c:macro:: PY_STDIOTEXTMODE
+
+   The string literal ``"b"``, used to open files in binary mode.
+   Exposed for backwards compatibility only.
+
+   .. soft-deprecated:: next

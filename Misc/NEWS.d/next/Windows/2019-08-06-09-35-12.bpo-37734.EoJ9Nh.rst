@@ -1,1 +1,0 @@
-Fix use of registry values to launch Python from Microsoft Store app.

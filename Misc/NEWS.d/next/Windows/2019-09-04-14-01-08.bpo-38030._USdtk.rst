@@ -1,1 +1,0 @@
-Fixes :func:`os.stat` failing for block devices on Windows

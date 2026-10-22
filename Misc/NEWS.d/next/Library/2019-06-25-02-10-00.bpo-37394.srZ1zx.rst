@@ -1,2 +1,0 @@
-Fix a bug that was causing the :mod:`queue` module to fail if the
-accelerator module was not available. Patch by Pablo Galindo.

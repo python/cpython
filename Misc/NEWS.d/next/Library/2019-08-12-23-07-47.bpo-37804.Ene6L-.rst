@@ -1,2 +1,0 @@
-Remove the deprecated method `threading.Thread.isAlive()`. Patch by Dong-hee
-Na.

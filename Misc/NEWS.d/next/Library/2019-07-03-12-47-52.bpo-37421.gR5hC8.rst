@@ -1,4 +1,0 @@
-Fix :func:`multiprocessing.util.get_temp_dir` finalizer: clear also the
-'tempdir' configuration of the current process, so next call to
-``get_temp_dir()`` will create a new temporary directory, rather than
-reusing the removed temporary directory.

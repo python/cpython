@@ -1,9 +1,11 @@
-from test import support
-gdbm = support.import_module("dbm.gnu") #skip if not supported
-import unittest
 import os
-from test.support import TESTFN, TESTFN_NONASCII, unlink
+import unittest
+from test import support
+from test.support import cpython_only, import_helper
+from test.support.os_helper import (TESTFN, TESTFN_NONASCII, FakePath,
+                                    create_empty_file, temp_dir, unlink)
 
+gdbm = import_helper.import_module("dbm.gnu")  # skip if not supported
 
 filename = TESTFN
 
@@ -11,12 +13,7 @@ class TestGdbm(unittest.TestCase):
     @staticmethod
     def setUpClass():
         if support.verbose:
-            try:
-                from _gdbm import _GDBM_VERSION as version
-            except ImportError:
-                pass
-            else:
-                print(f"gdbm version: {version}")
+            print(f"gdbm version: {gdbm.gdbm_version}")
 
     def setUp(self):
         self.g = None
@@ -25,6 +22,41 @@ class TestGdbm(unittest.TestCase):
         if self.g is not None:
             self.g.close()
         unlink(filename)
+
+    @cpython_only
+    def _test_gdbm_version(self, v):
+        self.assertIsInstance(v[:], tuple)
+        self.assertEqual(len(v), 3)
+        self.assertIsInstance(v[0], int)
+        self.assertIsInstance(v[1], int)
+        self.assertIsInstance(v[2], int)
+        self.assertIsInstance(v.major, int)
+        self.assertIsInstance(v.minor, int)
+        self.assertIsInstance(v.patch, int)
+        self.assertEqual(v[0], v.major)
+        self.assertEqual(v[1], v.minor)
+        self.assertEqual(v[2], v.patch)
+        self.assertGreaterEqual(v.major, 1)
+        self.assertGreaterEqual(v.minor, 0)
+        self.assertGreaterEqual(v.patch, 0)
+
+    @unittest.skipUnless(hasattr(gdbm, 'GDBM_VERSION_INFO'),
+                         'requires gdbm >= 1.9')
+    def test_gdbm_version(self):
+        if support.verbose:
+            print(f'GDBM_VERSION_INFO = {gdbm.GDBM_VERSION_INFO}', flush=True)
+            print(f'gdbm_version_info = {gdbm.gdbm_version_info}', flush=True)
+        self._test_gdbm_version(gdbm.GDBM_VERSION_INFO)
+        self._test_gdbm_version(gdbm.gdbm_version_info)
+        self.assertEqual(gdbm.GDBM_VERSION_INFO[0], gdbm.gdbm_version_info[0])
+        v = gdbm.gdbm_version_info
+        self.assertIsInstance(gdbm.gdbm_version, str)
+        self.assertStartsWith(gdbm.gdbm_version, 'GDBM version %d.%d' % v[:2])
+
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
+        self.g = gdbm.open(filename, 'c')
+        support.check_disallow_instantiation(self, type(self.g))
 
     def test_key_methods(self):
         self.g = gdbm.open(filename, 'c')
@@ -111,6 +143,20 @@ class TestGdbm(unittest.TestCase):
         self.assertEqual(str(cm.exception),
                          "GDBM object has already been closed")
 
+    def test_bool_empty(self):
+        with gdbm.open(filename, 'c') as db:
+            self.assertFalse(bool(db))
+
+    def test_bool_not_empty(self):
+        with gdbm.open(filename, 'c') as db:
+            db['a'] = 'b'
+            self.assertTrue(bool(db))
+
+    def test_bool_on_closed_db_raises(self):
+        with gdbm.open(filename, 'c') as db:
+            db['a'] = 'b'
+        self.assertRaises(gdbm.error, bool, db)
+
     def test_bytes(self):
         with gdbm.open(filename, 'c') as db:
             db[b'bytes key \xbd'] = b'bytes value \xbd'
@@ -161,6 +207,39 @@ class TestGdbm(unittest.TestCase):
             gdbm.open(nonexisting_file)
         self.assertIn(nonexisting_file, str(cm.exception))
         self.assertEqual(cm.exception.filename, nonexisting_file)
+
+    def test_open_with_pathlib_path(self):
+        gdbm.open(FakePath(filename), "c").close()
+
+    def test_open_with_bytes_path(self):
+        gdbm.open(os.fsencode(filename), "c").close()
+
+    def test_open_with_pathlib_bytes_path(self):
+        gdbm.open(FakePath(os.fsencode(filename)), "c").close()
+
+    def test_clear(self):
+        kvs = [('foo', 'bar'), ('1234', '5678')]
+        with gdbm.open(filename, 'c') as db:
+            for k, v in kvs:
+                db[k] = v
+                self.assertIn(k, db)
+            self.assertEqual(len(db), len(kvs))
+
+            db.clear()
+            for k, v in kvs:
+                self.assertNotIn(k, db)
+            self.assertEqual(len(db), 0)
+
+    @support.run_with_locale(
+        'LC_ALL',
+        'fr_FR.iso88591', 'ja_JP.sjis', 'zh_CN.gbk',
+        'fr_FR.utf8', 'en_US.utf8',
+        '',
+    )
+    def test_localized_error(self):
+        with temp_dir() as d:
+            create_empty_file(os.path.join(d, 'test'))
+            self.assertRaises(gdbm.error, gdbm.open, filename, 'r')
 
 
 if __name__ == '__main__':

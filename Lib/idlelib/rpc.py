@@ -125,7 +125,7 @@ request_queue = queue.Queue(0)
 response_queue = queue.Queue(0)
 
 
-class SocketIO(object):
+class SocketIO:
 
     nextseq = 0
 
@@ -139,6 +139,12 @@ class SocketIO(object):
         self.objtable = objtable
         self.responses = {}
         self.cvars = {}
+        self.sendlock = threading.Lock()
+        # Receive buffer state.  A new connection must not inherit a
+        # partially received packet from the old one (gh-89544).
+        self.buff = b''
+        self.bufneed = 4
+        self.bufstate = 0 # meaning: 0 => reading count; 1 => reading data
 
     def close(self):
         sock = self.sock
@@ -158,8 +164,8 @@ class SocketIO(object):
             s = s + " " + str(a)
         print(s, file=sys.__stderr__)
 
-    def register(self, oid, object):
-        self.objtable[oid] = object
+    def register(self, oid, object_):
+        self.objtable[oid] = object_
 
     def unregister(self, oid):
         try:
@@ -174,7 +180,7 @@ class SocketIO(object):
         except TypeError:
             return ("ERROR", "Bad request format")
         if oid not in self.objtable:
-            return ("ERROR", "Unknown object id: %r" % (oid,))
+            return ("ERROR", f"Unknown object id: {oid!r}")
         obj = self.objtable[oid]
         if methodname == "__methods__":
             methods = {}
@@ -185,7 +191,7 @@ class SocketIO(object):
             _getattributes(obj, attributes)
             return ("OK", attributes)
         if not hasattr(obj, methodname):
-            return ("ERROR", "Unsupported method name: %r" % (methodname,))
+            return ("ERROR", f"Unsupported method name: {methodname!r}")
         method = getattr(obj, methodname)
         try:
             if how == 'CALL':
@@ -307,22 +313,27 @@ class SocketIO(object):
         self.debug("_getresponse:myseq:", myseq)
         if threading.current_thread() is self.sockthread:
             # this thread does all reading of requests or responses
-            while 1:
+            while True:
                 response = self.pollresponse(myseq, wait)
                 if response is not None:
                     return response
         else:
             # wait for notification from socket handling thread
             cvar = self.cvars[myseq]
-            cvar.acquire()
-            while myseq not in self.responses:
-                cvar.wait()
-            response = self.responses[myseq]
-            self.debug("_getresponse:%s: thread woke up: response: %s" %
-                       (myseq, response))
-            del self.responses[myseq]
-            del self.cvars[myseq]
-            cvar.release()
+            with cvar:
+                try:
+                    while myseq not in self.responses:
+                        cvar.wait()
+                except BaseException:
+                    # Interrupted; a late response will be discarded.
+                    del self.cvars[myseq]
+                    self.responses.pop(myseq, None)
+                    raise
+                response = self.responses[myseq]
+                self.debug("_getresponse:%s: thread woke up: response: %s" %
+                           (myseq, response))
+                del self.responses[myseq]
+                del self.cvars[myseq]
             return response
 
     def newseq(self):
@@ -337,17 +348,14 @@ class SocketIO(object):
             print("Cannot pickle:", repr(message), file=sys.__stderr__)
             raise
         s = struct.pack("<i", len(s)) + s
-        while len(s) > 0:
-            try:
-                r, w, x = select.select([], [self.sock], [])
-                n = self.sock.send(s[:BUFSIZE])
-            except (AttributeError, TypeError):
-                raise OSError("socket no longer exists")
-            s = s[n:]
-
-    buff = b''
-    bufneed = 4
-    bufstate = 0 # meaning: 0 => reading count; 1 => reading data
+        with self.sendlock:
+            while len(s) > 0:
+                try:
+                    r, w, x = select.select([], [self.sock], [])
+                    n = self.sock.send(s[:BUFSIZE])
+                except (AttributeError, TypeError):
+                    raise OSError("socket no longer exists")
+                s = s[n:]
 
     def pollpacket(self, wait):
         self._stage0()
@@ -417,7 +425,7 @@ class SocketIO(object):
         self.responses and notify the owning thread.
 
         """
-        while 1:
+        while True:
             # send queued response if there is one available
             try:
                 qmsg = response_queue.get(0)
@@ -486,7 +494,7 @@ class SocketIO(object):
 
 #----------------- end class SocketIO --------------------
 
-class RemoteObject(object):
+class RemoteObject:
     # Token mix-in class
     pass
 
@@ -497,7 +505,7 @@ def remoteref(obj):
     return RemoteProxy(oid)
 
 
-class RemoteProxy(object):
+class RemoteProxy:
 
     def __init__(self, oid):
         self.oid = oid
@@ -547,7 +555,7 @@ class RPCClient(SocketIO):
         return RPCProxy(self, oid)
 
 
-class RPCProxy(object):
+class RPCProxy:
 
     __methods = None
     __attributes = None
@@ -596,7 +604,7 @@ def _getattributes(obj, attributes):
             attributes[name] = 1
 
 
-class MethodProxy(object):
+class MethodProxy:
 
     def __init__(self, sockio, oid, name):
         self.sockio = sockio

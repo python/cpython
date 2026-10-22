@@ -1,4 +1,0 @@
-Return :exc:`NotImplemented` in Python implementation of ``__eq__`` for
-:class:`~datetime.timedelta` and :class:`~datetime.time` when the other
-object being compared is not of the same type to match C implementation.
-Patch by Karthikeyan Singaravelan.
