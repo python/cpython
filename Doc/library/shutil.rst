@@ -325,6 +325,12 @@ Directory and files operations
    handled by calling a handler specified by *onexc* or *onerror* or, if both
    are omitted, exceptions are propagated to the caller.
 
+   If *path* is a symbolic link to a directory followed by a trailing path
+   separator, such as ``'link/'``, the operating system resolves the link, so
+   :func:`!rmtree` deletes the contents of the directory it points to and then
+   fails to remove *path* itself.  :class:`pathlib.Path` strips trailing
+   separators, so ``rmtree(Path('link/'))`` refuses the link as usual.
+
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>`.
 
