@@ -795,7 +795,7 @@ class RoundTripBugs(unittest.TestCase):
         self._check_round_trip("euc_kr", prefix + "\u3164" + suffix)
 
     # iso2022_jp_3 encodes with the JIS X 0213:2000 table but decodes with
-    # the 2004 one, where the same code point means U+9B1C.
+    # the 2004 one, where the same code point means U+9B1C (gh-160306).
     @unittest.expectedFailure
     @hypothesis.given(prefix=ascii_text, suffix=ascii_text)
     @hypothesis.example(prefix="", suffix="")
