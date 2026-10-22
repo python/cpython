@@ -39,7 +39,7 @@ def _init_tk_type():
             _tk_type = "xquartz"
         elif 'aqua' not in ws:
             _tk_type = "other"
-        elif 'AppKit' in root.tk.call('winfo', 'server', '.'):
+        elif 'AppKit' in root.winfo_server():
             _tk_type = "cocoa"
         else:
             _tk_type = "carbon"
@@ -174,9 +174,8 @@ def overrideRootMenu(root, flist):
     del mainmenu.menudefs[-3][1][0:2]
     menubar = Menu(root)
     root.configure(menu=menubar)
-    menudict = {}
 
-    menudict['window'] = menu = Menu(menubar, name='window', tearoff=0)
+    menu = Menu(menubar, name='window', tearoff=0)
     menubar.add_cascade(label='Window', menu=menu, underline=0)
 
     def postwindowsmenu(menu=menu):
@@ -222,12 +221,11 @@ def overrideRootMenu(root, flist):
         # The binding above doesn't reliably work on all versions of Tk
         # on macOS. Adding command definition below does seem to do the
         # right thing for now.
-        root.createcommand('exit', flist.close_all_callback)
+        root.createcommand('::tk::mac::Quit', flist.close_all_callback)
 
     if isCarbonTk():
         # for Carbon AquaTk, replace the default Tk apple menu
-        menudict['application'] = menu = Menu(menubar, name='apple',
-                                              tearoff=0)
+        menu = Menu(menubar, name='apple', tearoff=0)
         menubar.add_cascade(label='IDLE', menu=menu)
         mainmenu.menudefs.insert(0,
             ('application', [
