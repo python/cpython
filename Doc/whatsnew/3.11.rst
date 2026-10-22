@@ -767,6 +767,9 @@ functools
 
   (Contributed by Yurii Karabas in :issue:`46014`.)
 
+* :class:`functools.singledispatchmethod` exposes members 'registry' and
+  'dispatch'. (Contributed by Weipeng Hong in :issue:`42943`.)
+
 
 .. _whatsnew311-gzip:
 

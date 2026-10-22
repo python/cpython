@@ -1142,6 +1142,14 @@ class _singledispatchmethod_get:
     def register(self):
         return self._unbound.register
 
+    @property
+    def dispatch(self):
+        return self._unbound.dispatcher.dispatch
+
+    @property
+    def registry(self):
+        return self._unbound.dispatcher.registry
+
 
 ################################################################################
 ### cached_property() - property result cached as instance attribute
