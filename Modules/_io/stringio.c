@@ -1,6 +1,7 @@
 #include "Python.h"
 #include <stddef.h>               // offsetof()
 #include "pycore_object.h"
+#include "pycore_unicodeobject.h" // _PyUnicode_ResizeCompact()
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 #include "_iomodule.h"
 
@@ -143,14 +144,39 @@ resize_buffer(stringio *self, size_t size)
     return -1;
 }
 
+/* Shrink the buffer of the writer to its contents, so that the following
+   PyUnicodeWriter_Finish() has nothing to allocate and cannot fail.
+   If this fails, the writer is unchanged. */
+static int
+shrink_writer(stringio *self)
+{
+    _PyUnicodeWriter *writer = (_PyUnicodeWriter *)self->writer;
+    if (writer->readonly || writer->buffer == NULL
+        || writer->pos == 0 || writer->pos == writer->size)
+    {
+        return 0;
+    }
+    PyObject *buffer = _PyUnicode_ResizeCompact(writer->buffer, writer->pos);
+    if (buffer == NULL) {
+        return -1;
+    }
+    writer->buffer = NULL;
+    _PyUnicodeWriter_SetBuffer(writer, buffer);
+    return 0;
+}
+
 static PyObject *
 make_intermediate(stringio *self)
 {
-    /* Create the new writer first: if this fails, the object keeps its
-       contents. */
+    /* Create the new writer and shrink the old one first: if this fails,
+       the object keeps its contents. */
     PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
     if (writer == NULL)
         return NULL;
+    if (shrink_writer(self) < 0) {
+        PyUnicodeWriter_Discard(writer);
+        return NULL;
+    }
 
     PyObject *intermediate = PyUnicodeWriter_Finish(self->writer);
     self->writer = writer;
@@ -177,9 +203,12 @@ realize(stringio *self)
         return 0;
     assert(self->state == STATE_ACCUMULATING);
 
-    /* Allocate the internal buffer first: if this fails, the object stays
-       in the accumulating state and keeps its contents. */
+    /* Allocate the internal buffer and shrink the writer first: if this
+       fails, the object stays in the accumulating state and keeps its
+       contents. */
     if (resize_buffer(self, self->string_size) < 0)
+        return -1;
+    if (shrink_writer(self) < 0)
         return -1;
     self->state = STATE_REALIZED;
 
@@ -364,7 +393,9 @@ _io_StringIO_read_impl(stringio *self, Py_ssize_t size)
     /* Optimization for seek(0); read() */
     if (self->state == STATE_ACCUMULATING && self->pos == 0 && size == n) {
         PyObject *result = make_intermediate(self);
-        self->pos = self->string_size;
+        if (result != NULL) {
+            self->pos = self->string_size;
+        }
         return result;
     }
 

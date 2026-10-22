@@ -1161,14 +1161,13 @@ class CStringIOTest(PyStringIOTest):
                         pass
                     else:
                         continue
-                    # The contents are either intact or lost, never garbage.
-                    value = memio.getvalue()
-                    self.assertIn(value, (text, ""))
-                    self.assertEqual(memio.seek(0, 2), len(value))
+                    # The contents are unchanged.
+                    self.assertEqual(memio.getvalue(), text)
+                    self.assertEqual(memio.seek(0, 2), len(text))
                     memio.seek(0)
-                    self.assertEqual(memio.readline(), value)
+                    self.assertEqual(memio.readline(), text)
                     memio.write("!")
-                    self.assertEqual(memio.getvalue(), value + "!")
+                    self.assertEqual(memio.getvalue(), text + "!")
 
 
 class CStringIOPickleTest(PyStringIOPickleTest):
