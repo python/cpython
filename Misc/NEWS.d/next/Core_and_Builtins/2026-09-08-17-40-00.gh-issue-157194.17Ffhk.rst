@@ -1,0 +1,4 @@
+Fix a data race in the free-threaded build, reported by ThreadSanitizer,
+between the specializer reading an instruction opcode and another thread
+writing it. Only reachable when thread-local bytecode is disabled with
+``-X tlbc=0``, which makes threads share one copy of the bytecode.
