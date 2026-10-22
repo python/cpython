@@ -15,6 +15,10 @@ class Test_ISO2022_JP(multibytecodec_support.TestBase, unittest.TestCase):
     tstring = multibytecodec_support.load_teststring('iso2022_jp')
     codectests = COMMON_CODEC_TESTS + (
         (b'ab\x1BNdef', 'replace', 'ab\x1BNdef'),
+        # there is no G1 in this encoding
+        (b'ab\x1B$)Bdef', 'strict', None),
+        (b'ab\x1B)Jdef', 'strict', None),
+        (b'ab\x1B)Bdef', 'strict', None),
     )
 
 class Test_ISO2022_JP2(multibytecodec_support.TestBase, unittest.TestCase):
@@ -22,6 +26,14 @@ class Test_ISO2022_JP2(multibytecodec_support.TestBase, unittest.TestCase):
     tstring = multibytecodec_support.load_teststring('iso2022_jp')
     codectests = COMMON_CODEC_TESTS + (
         (b'ab\x1BNdef', 'replace', 'abdef'),
+        # a charset can only be designated to its own plane
+        (b'\x1B.A\x1BNi', 'strict', '\xe9'),
+        (b'\x1B$(C\x30\x21\x1B(B', 'strict', '\uac00'),
+        (b'ab\x1B(Adef', 'strict', None),
+        (b'ab\x1B(Fdef', 'strict', None),
+        (b'ab\x1B.J\x1BNdef', 'strict', None),
+        (b'ab\x1B.Bdef', 'strict', None),
+        (b'ab\x1B$)Cdef', 'strict', None),
     )
 
 class Test_ISO2022_JP3(multibytecodec_support.TestBase, unittest.TestCase):
@@ -75,6 +87,12 @@ class Test_ISO2022_KR(multibytecodec_support.TestBase, unittest.TestCase):
     tstring = multibytecodec_support.load_teststring('iso2022_kr')
     codectests = COMMON_CODEC_TESTS + (
         (b'ab\x1BNdef', 'replace', 'ab\x1BNdef'),
+        # KS X 1001 can only be designated to G1
+        (b'\x1B$)C\x0E\x30\x21\x0Fdef', 'strict', '\uac00def'),
+        (b'ab\x1B$(Cdefg', 'strict', None),
+        (b'ab\x1B$Cdefg', 'strict', None),
+        (b'ab\x1B)Bdefg', 'strict', None),
+        (b'ab\x1B$(Cdefg', 'replace', 'ab\ufffddefg'),
     )
 
     # iso2022_kr.txt cannot be used to test "chunk coding": the escape

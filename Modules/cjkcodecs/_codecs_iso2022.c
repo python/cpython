@@ -382,16 +382,21 @@ iso2022processesc(const MultibyteCodec *codec, MultibyteCodec_State *state,
         return esclen;
     }
 
-    /* raise error when the charset is not designated for this encoding */
+    /* raise error when the charset is not designated to this plane for
+     * this encoding (ASCII is only ever designated to G0) */
     if (charset != CHARSET_ASCII) {
         const struct iso2022_designation *dsg;
 
         for (dsg = CONFIG_DESIGNATIONS; dsg->mark; dsg++) {
-            if (dsg->mark == charset)
+            if (dsg->mark == charset && dsg->plane == designation) {
                 break;
+            }
         }
         if (!dsg->mark)
             return esclen;
+    }
+    else if (designation != 0) {
+        return esclen;
     }
 
     STATE_SETG(designation, charset);
