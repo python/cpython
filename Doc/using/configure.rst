@@ -763,6 +763,24 @@ also be used to improve performance.
    BOLT versions before LLVM 16 are known to crash BOLT under some scenarios.
    Use of LLVM 16 or newer for BOLT optimization is strongly encouraged.
 
+   BOLT does not preserve protection against Cortex-A53 erratum 843419. Binaries
+   processed by BOLT must not run on processors affected by this erratum,
+   including during the build. On AArch64, :program:`configure` reports an error
+   if build flags explicitly request the workaround. Recent BOLT versions reject
+   workaround veneers by default during the build, including when the workaround
+   is enabled by compiler defaults.
+
+   If none of the generated executables or shared libraries will run on affected
+   processors, disable the workaround explicitly. For GCC toolchains that enable
+   it by default, pass ``-mno-fix-cortex-a53-843419`` through
+   :envvar:`LDFLAGS_NODIST`::
+
+      LDFLAGS_NODIST="-mno-fix-cortex-a53-843419" ./configure --enable-bolt
+
+   Remove any explicit ``-mfix-cortex-a53-843419`` or
+   ``-Wl,--fix-cortex-a53-843419`` flags from the build configuration. The GCC
+   option does not override explicit linker flags.
+
    The :envvar:`!BOLT_INSTRUMENT_FLAGS` and :envvar:`!BOLT_APPLY_FLAGS`
    :program:`configure` variables can be defined to override the default set of
    arguments for :program:`llvm-bolt` to instrument and apply BOLT data to
