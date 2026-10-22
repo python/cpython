@@ -278,6 +278,7 @@ write_bytes_lock_held(bytesio *self, PyObject *b)
             goto done;
         }
     }
+    assert(_PyBytes_IsMutable(self->buf));
 
     if (self->pos > self->string_size) {
         /* In case of overseek, pad with null bytes the buffer region between
