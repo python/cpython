@@ -22,7 +22,7 @@ function rootDirsToMount(Module) {
 function mountDirectories(Module) {
   for (const dir of rootDirsToMount(Module)) {
     Module.FS.mkdirTree(dir);
-    Module.FS.mount(Module.FS.filesystems.NODEFS, { root: dir }, dir);
+    Module.FS.mount(Module.NODEFS, { root: dir }, dir);
   }
 }
 
