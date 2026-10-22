@@ -716,6 +716,24 @@ class LookupTests(unittest.TestCase):
             self.assertEqual("x".encode(variant), "x".encode(encoding))
 
 
+# The expected failures below each generate only inputs that are known to
+# fail, so that they start passing as a whole once the bug is fixed.
+
+# Printable ASCII, which every codec below encodes to itself.
+printable_ascii = st.characters(min_codepoint=0x20, max_codepoint=0x7e)
+ascii_text = st.text(alphabet=printable_ascii, max_size=32)
+ascii_bytes = st.binary(max_size=32).map(lambda b: bytes(c & 0x7f for c in b))
+
+
+def _incomplete_long_sequence(encoding):
+    # The first two bytes of a three- or four-byte sequence, where the
+    # second byte is ASCII: the stateless decoder escapes the first byte
+    # and decodes the second as itself.
+    if encoding == "gb18030":
+        return st.tuples(st.integers(0x81, 0xfe), st.integers(0x30, 0x39))
+    return st.tuples(st.just(0x8f), st.integers(0, 0x7f))
+
+
 class MultibyteSurrogateescapeBug(unittest.TestCase):
     """An incomplete sequence of three or four bytes at the end of the
     input makes the incremental decoder drop whatever follows the first
@@ -724,12 +742,15 @@ class MultibyteSurrogateescapeBug(unittest.TestCase):
 
     @unittest.expectedFailure
     @hypothesis.given(
-        encoding=st.sampled_from(sorted(LONG_SEQUENCE_ENCODINGS)),
-        data=data)
-    @hypothesis.example(encoding="gb18030", data=b"\x80" b"6")
-    @hypothesis.example(encoding="euc_jp", data=b"\x8f\x00")
-    @hypothesis.example(encoding="euc_jis_2004", data=b"\xa8\x8fl")
-    def test_trailing_bytes_after_escape(self, encoding, data):
+        case=st.sampled_from(sorted(LONG_SEQUENCE_ENCODINGS)).flatmap(
+            lambda e: st.tuples(st.just(e), ascii_bytes,
+                                _incomplete_long_sequence(e))))
+    @hypothesis.example(case=("gb18030", b"", (0x80, ord("6"))))
+    @hypothesis.example(case=("euc_jp", b"a", (0x8f, 0)))
+    @hypothesis.example(case=("euc_jis_2004", b"", (0x8f, ord("l"))))
+    def test_trailing_bytes_after_escape(self, case):
+        encoding, prefix, tail = case
+        data = prefix + bytes(tail)
         expected = _outcome(lambda: data.decode(encoding, "surrogateescape"))
         decoder = codecs.getincrementaldecoder(encoding)("surrogateescape")
         self.assertEqual(_outcome(lambda: decoder.decode(data, True)),
@@ -741,44 +762,45 @@ class RoundTripBugs(unittest.TestCase):
     ENCODE_ONLY_CHARACTERS for how the round-trip tests avoid them."""
 
     def _check_round_trip(self, encoding, text):
-        try:
-            encoded = text.encode(encoding)
-        except UnicodeEncodeError:
-            return
+        encoded = text.encode(encoding)
         self.assertEqual(encoded.decode(encoding), text)
 
     # The ISO-2022 encoders pass U+001B through as a bare ESC byte, which
     # their own decoders then reject or misread as an escape sequence;
     # iso2022_kr does the same with its shift characters U+000E and U+000F.
+    # The control character goes last, where it never forms a sequence.
     @unittest.expectedFailure
-    @hypothesis.given(encoding=st.sampled_from(sorted(ISO2022_ENCODINGS)),
-                      text=text)
-    @hypothesis.example(encoding="iso2022_jp", text="\x1b")
-    @hypothesis.example(encoding="iso2022_jp_2004", text="\x1b\xa0")
-    @hypothesis.example(encoding="iso2022_kr", text="a\x1b\uac00")
-    @hypothesis.example(encoding="iso2022_kr", text="\x0e")
-    @hypothesis.example(encoding="iso2022_kr", text="a\x0f\uac00")
-    def test_iso2022_escape(self, encoding, text):
-        self._check_round_trip(encoding, text)
+    @hypothesis.given(
+        case=st.sampled_from(sorted(ISO2022_ENCODINGS)).flatmap(
+            lambda e: st.tuples(
+                st.just(e), ascii_text,
+                st.sampled_from(ENCODE_ONLY_CHARACTERS[e]))))
+    @hypothesis.example(case=("iso2022_jp", "", "\x1b"))
+    @hypothesis.example(case=("iso2022_jp_2004", "a", "\x1b"))
+    @hypothesis.example(case=("iso2022_kr", "", "\x0e"))
+    @hypothesis.example(case=("iso2022_kr", "a", "\x0f"))
+    def test_iso2022_escape(self, case):
+        encoding, prefix, control = case
+        self._check_round_trip(encoding, prefix + control)
 
     # euc_kr encodes the Hangul filler U+3164 as the two bytes that start
     # an eight-byte composed syllable, and will not decode them alone
     # (gh-101863, closed as not a bug; recorded here as the asymmetry it is).
     @unittest.expectedFailure
-    @hypothesis.given(text=text)
-    @hypothesis.example(text="\u3164")
-    @hypothesis.example(text="a\u3164\uac00")
-    def test_euc_kr_filler(self, text):
-        self._check_round_trip("euc_kr", text)
+    @hypothesis.given(prefix=ascii_text, suffix=ascii_text)
+    @hypothesis.example(prefix="", suffix="")
+    @hypothesis.example(prefix="a", suffix="b")
+    def test_euc_kr_filler(self, prefix, suffix):
+        self._check_round_trip("euc_kr", prefix + "\u3164" + suffix)
 
     # iso2022_jp_3 encodes with the JIS X 0213:2000 table but decodes with
     # the 2004 one, where the same code point means U+9B1C.
     @unittest.expectedFailure
-    @hypothesis.given(text=text)
-    @hypothesis.example(text="\u9b1d")
-    @hypothesis.example(text="a\u9b1d\u3042")
-    def test_iso2022_jp_3_mapping(self, text):
-        self._check_round_trip("iso2022_jp_3", text)
+    @hypothesis.given(prefix=ascii_text, suffix=ascii_text)
+    @hypothesis.example(prefix="", suffix="")
+    @hypothesis.example(prefix="a", suffix="b")
+    def test_iso2022_jp_3_mapping(self, prefix, suffix):
+        self._check_round_trip("iso2022_jp_3", prefix + "\u9b1d" + suffix)
 
 
 class StreamReaderTruncationBug(unittest.TestCase):
@@ -790,7 +812,10 @@ class StreamReaderTruncationBug(unittest.TestCase):
     @hypothesis.given(
         encoding=st.sampled_from(["utf_8", "utf_16_le", "utf_32_be",
                                   "utf_16", "raw_unicode_escape"]),
-        text=text, errors=st.sampled_from(["strict", "replace"]))
+        # No backslashes: raw_unicode_escape leaves them alone, and an even
+        # number in front of the chopped escape turns it into literal text.
+        text=text.map(lambda s: s.replace("\\", "")),
+        errors=st.sampled_from(["strict", "replace"]))
     @hypothesis.example(encoding="utf_8", text="", errors="strict")
     @hypothesis.example(encoding="utf_8", text="a", errors="replace")
     @hypothesis.example(encoding="utf_16", text="\u3042", errors="strict")
@@ -809,15 +834,18 @@ class PunycodeIncrementalBug(unittest.TestCase):
     passing in gh-64331).  Punycode is left out of the chunked tests above
     as a whole-string codec."""
 
+    # Two non-empty ASCII chunks give two "-" terminated labels where the
+    # whole string gives one.
     @unittest.expectedFailure
-    @hypothesis.given(text=text, sizes=sizes)
-    @hypothesis.example(text="ab", sizes=[1])
-    @hypothesis.example(text="b\xfccher", sizes=[2, 2])
-    def test_chunked_encode(self, text, sizes):
+    @hypothesis.given(
+        head=st.text(alphabet=printable_ascii, min_size=1, max_size=32),
+        tail=st.text(alphabet=printable_ascii, min_size=1, max_size=32))
+    @hypothesis.example(head="a", tail="b")
+    @hypothesis.example(head="b\xfc", tail="cher")
+    def test_chunked_encode(self, head, tail):
         encoder = codecs.getincrementalencoder("punycode")()
-        parts = [encoder.encode(chunk) for chunk in _chunks(text, sizes)]
-        parts.append(encoder.encode("", final=True))
-        self.assertEqual(b"".join(parts), text.encode("punycode"))
+        chunked = encoder.encode(head) + encoder.encode(tail, final=True)
+        self.assertEqual(chunked, (head + tail).encode("punycode"))
 
 
 if __name__ == "__main__":
