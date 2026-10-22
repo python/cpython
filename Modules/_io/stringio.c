@@ -68,6 +68,20 @@ static int _io_StringIO___init__(PyObject *self, PyObject *args, PyObject *kwarg
         return NULL; \
     }
 
+#define CHECK_INITIALIZED_INT(self) \
+    if (self->ok <= 0) { \
+        PyErr_SetString(PyExc_ValueError, \
+            "I/O operation on uninitialized object"); \
+        return -1; \
+    }
+
+#define CHECK_CLOSED_INT(self) \
+    if (self->closed) { \
+        PyErr_SetString(PyExc_ValueError, \
+            "I/O operation on closed file"); \
+        return -1; \
+    }
+
 #define ENSURE_REALIZED(self) \
     if (realize(self) < 0) { \
         return NULL; \
@@ -406,11 +420,18 @@ _io_StringIO_readline_impl(stringio *self, Py_ssize_t size)
     return _stringio_readline(self, size);
 }
 
+/*[clinic input]
+@critical_section
+_io.StringIO.__next__ as stringio_iternext
+[clinic start generated code]*/
+
 static PyObject *
-stringio_iternext(PyObject *op)
+stringio_iternext_impl(stringio *self)
+/*[clinic end generated code: output=51eb3991b1c79c41 input=b6cf3e73fab6b42e]*/
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+
     PyObject *line;
-    stringio *self = stringio_CAST(op);
 
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
@@ -422,7 +443,7 @@ stringio_iternext(PyObject *op)
     }
     else {
         /* XXX is subclassing StringIO really supported? */
-        line = PyObject_CallMethodNoArgs(op, &_Py_ID(readline));
+        line = PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(readline));
         if (line && !PyUnicode_Check(line)) {
             PyErr_Format(PyExc_OSError,
                          "readline() should have returned a str object, "
@@ -1001,30 +1022,30 @@ _io_StringIO___setstate___impl(stringio *self, PyObject *state)
 /*[clinic input]
 @critical_section
 @getter
-_io.StringIO.closed
+_io.StringIO.closed -> bool
 [clinic start generated code]*/
 
-static PyObject *
+static int
 _io_StringIO_closed_get_impl(stringio *self)
-/*[clinic end generated code: output=531ddca7954331d6 input=178d2ef24395fd49]*/
+/*[clinic end generated code: output=754068c44422cafa input=ea05e89b945e721c]*/
 {
-    CHECK_INITIALIZED(self);
-    return PyBool_FromLong(self->closed);
+    CHECK_INITIALIZED_INT(self);
+    return self->closed;
 }
 
 /*[clinic input]
 @critical_section
 @getter
-_io.StringIO.line_buffering
+_io.StringIO.line_buffering -> bool
 [clinic start generated code]*/
 
-static PyObject *
+static int
 _io_StringIO_line_buffering_get_impl(stringio *self)
-/*[clinic end generated code: output=360710e0112966ae input=6a7634e7f890745e]*/
+/*[clinic end generated code: output=56c0edde9001fb37 input=326f8b3bd1feb699]*/
 {
-    CHECK_INITIALIZED(self);
-    CHECK_CLOSED(self);
-    Py_RETURN_FALSE;
+    CHECK_INITIALIZED_INT(self);
+    CHECK_CLOSED_INT(self);
+    return 0;
 }
 
 /*[clinic input]

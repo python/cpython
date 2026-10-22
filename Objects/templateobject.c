@@ -226,6 +226,8 @@ template_iter(PyObject *op)
     if (iter == NULL) {
         return NULL;
     }
+    iter->stringsiter = NULL;
+    iter->interpolationsiter = NULL;
 
     PyObject *stringsiter = PyObject_GetIter(self->strings);
     if (stringsiter == NULL) {

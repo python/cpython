@@ -4,18 +4,96 @@ preserve
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #  include "pycore_gc.h"          // PyGC_Head
-#  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_runtime.h"       // _Py_SINGLETON()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
+
+static PyObject *
+bytearray_iconcat_impl(PyByteArrayObject *self, PyObject *other);
+
+static PyObject *
+bytearray_iconcat(PyObject *self, PyObject *other)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = bytearray_iconcat_impl((PyByteArrayObject *)self, other);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static PyObject *
+bytearray_repeat_impl(PyByteArrayObject *self, Py_ssize_t count);
+
+static PyObject *
+bytearray_repeat(PyObject *self, Py_ssize_t count)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = bytearray_repeat_impl((PyByteArrayObject *)self, count);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static PyObject *
+bytearray_irepeat_impl(PyByteArrayObject *self, Py_ssize_t count);
+
+static PyObject *
+bytearray_irepeat(PyObject *self, Py_ssize_t count)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = bytearray_irepeat_impl((PyByteArrayObject *)self, count);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static PyObject *
+bytearray_getitem_impl(PyByteArrayObject *self, Py_ssize_t i);
+
+static PyObject *
+bytearray_getitem(PyObject *self, Py_ssize_t i)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = bytearray_getitem_impl((PyByteArrayObject *)self, i);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+bytearray_setitem_impl(PyByteArrayObject *self, Py_ssize_t i,
+                       PyObject *value);
+
+static int
+bytearray_setitem(PyObject *self, Py_ssize_t i, PyObject *value)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = bytearray_setitem_impl((PyByteArrayObject *)self, i, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
 
 static int
 bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
                         const char *encoding, const char *errors);
 
 static int
-bytearray___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+bytearray___init___helper(PyObject *self, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     int return_value = -1;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -47,13 +125,12 @@ bytearray___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     #undef KWTUPLE
     PyObject *argsbuf[3];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
+    Py_ssize_t noptargs = nargs + nkw - 0;
     PyObject *arg = NULL;
     const char *encoding = NULL;
     const char *errors = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -72,13 +149,8 @@ bytearray___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             _PyArg_BadArgument("bytearray", "argument 'encoding'", "str", fastargs[1]);
             goto exit;
         }
-        Py_ssize_t encoding_length;
-        encoding = PyUnicode_AsUTF8AndSize(fastargs[1], &encoding_length);
+        encoding = _PyUnicode_AsUTF8NoNUL(fastargs[1]);
         if (encoding == NULL) {
-            goto exit;
-        }
-        if (strlen(encoding) != (size_t)encoding_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -89,19 +161,112 @@ bytearray___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         _PyArg_BadArgument("bytearray", "argument 'errors'", "str", fastargs[2]);
         goto exit;
     }
-    Py_ssize_t errors_length;
-    errors = PyUnicode_AsUTF8AndSize(fastargs[2], &errors_length);
+    errors = _PyUnicode_AsUTF8NoNUL(fastargs[2]);
     if (errors == NULL) {
-        goto exit;
-    }
-    if (strlen(errors) != (size_t)errors_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_pos:
     return_value = bytearray___init___impl((PyByteArrayObject *)self, arg, encoding, errors);
 
 exit:
+    return return_value;
+}
+
+static int
+bytearray___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    return bytearray___init___helper(self, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+bytearray_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *self;
+    int _result;
+    PyObject *arg = NULL;
+    const char *encoding = NULL;
+    const char *errors = NULL;
+
+    assert(Py_Is(_PyType_CAST(type), &PyByteArray_Type));
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (kwnames != NULL || nargs > 3) {
+        self = _PyType_CAST(type)->tp_new(_PyType_CAST(type),
+            (PyObject *)&_Py_SINGLETON(tuple_empty), NULL);
+        if (self == NULL) {
+            return NULL;
+        }
+        _result = bytearray___init___helper(self, args, nargs,
+            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+            NULL, kwnames);
+        if (_result != 0) {
+            Py_DECREF(self);
+            return NULL;
+        }
+        return self;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    arg = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("bytearray", "argument 'encoding'", "str", args[1]);
+        goto exit;
+    }
+    encoding = _PyUnicode_AsUTF8NoNUL(args[1]);
+    if (encoding == NULL) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!PyUnicode_Check(args[2])) {
+        _PyArg_BadArgument("bytearray", "argument 'errors'", "str", args[2]);
+        goto exit;
+    }
+    errors = _PyUnicode_AsUTF8NoNUL(args[2]);
+    if (errors == NULL) {
+        goto exit;
+    }
+skip_optional:
+    self = _PyType_CAST(type)->tp_new(_PyType_CAST(type),
+        (PyObject *)&_Py_SINGLETON(tuple_empty), NULL);
+    if (self == NULL) {
+        goto exit;
+    }
+    _result = bytearray___init___impl((PyByteArrayObject *)self, arg, encoding, errors);
+    if (_result != 0) {
+        Py_DECREF(self);
+        goto exit;
+    }
+    return_value = self;
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+bytearray_repr_impl(PyObject *op);
+
+static PyObject *
+bytearray_repr(PyObject *op)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(op);
+    return_value = bytearray_repr_impl(op);
+    Py_END_CRITICAL_SECTION();
+
     return return_value;
 }
 
@@ -1542,13 +1707,8 @@ bytearray_decode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
             _PyArg_BadArgument("decode", "argument 'encoding'", "str", args[0]);
             goto exit;
         }
-        Py_ssize_t encoding_length;
-        encoding = PyUnicode_AsUTF8AndSize(args[0], &encoding_length);
+        encoding = _PyUnicode_AsUTF8NoNUL(args[0]);
         if (encoding == NULL) {
-            goto exit;
-        }
-        if (strlen(encoding) != (size_t)encoding_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -1559,13 +1719,8 @@ bytearray_decode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
         _PyArg_BadArgument("decode", "argument 'errors'", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t errors_length;
-    errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+    errors = _PyUnicode_AsUTF8NoNUL(args[1]);
     if (errors == NULL) {
-        goto exit;
-    }
-    if (strlen(errors) != (size_t)errors_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_pos:
@@ -1882,4 +2037,4 @@ bytearray_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl((PyByteArrayObject *)self);
 }
-/*[clinic end generated code: output=6dc315d35de3e670 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fbd9a012eb61b372 input=a9049054013a1b77]*/

@@ -247,21 +247,23 @@ def collect_urandom(info_add):
 def collect_os(info_add):
     import os
 
-    def format_attr(attr, value):
-        if attr in ('supports_follow_symlinks', 'supports_fd',
-                    'supports_effective_ids'):
-            return str(sorted(func.__name__ for func in value))
-        else:
-            return value
-
-    attributes = (
+    plain_attributes = (
         'name',
         'supports_bytes_environ',
+    )
+    copy_attributes(info_add, os, 'os.%s', plain_attributes)
+
+    def format_set_of_functions(attr, value):
+        return str(sorted(func.__name__ for func in value))
+
+    supports_attributes = (
+        'supports_dir_fd',
         'supports_effective_ids',
         'supports_fd',
         'supports_follow_symlinks',
     )
-    copy_attributes(info_add, os, 'os.%s', attributes, formatter=format_attr)
+    copy_attributes(info_add, os, 'os.%s', supports_attributes,
+                    formatter=format_set_of_functions)
 
     for func in (
         'cpu_count',
@@ -427,27 +429,13 @@ def collect_readline(info_add):
     except ImportError:
         return
 
-    def format_attr(attr, value):
-        if isinstance(value, int):
-            return "%#x" % value
-        else:
-            return value
-
     attributes = (
-        "_READLINE_VERSION",
-        "_READLINE_RUNTIME_VERSION",
-        "_READLINE_LIBRARY_VERSION",
+        "backend",
+        "READLINE_VERSION_INFO",
+        "readline_version_info",
+        "readline_version",
     )
-    copy_attributes(info_add, readline, 'readline.%s', attributes,
-                    formatter=format_attr)
-
-    if not hasattr(readline, "_READLINE_LIBRARY_VERSION"):
-        # _READLINE_LIBRARY_VERSION has been added to CPython 3.7
-        doc = getattr(readline, '__doc__', '')
-        if 'libedit readline' in doc:
-            info_add('readline.library', 'libedit readline')
-        elif 'GNU readline' in doc:
-            info_add('readline.library', 'GNU readline')
+    copy_attributes(info_add, readline, 'readline.%s', attributes)
 
 
 def run_command(cmd, check=True, **kwargs):
@@ -505,7 +493,7 @@ def collect_tkinter(info_add):
     except ImportError:
         pass
     else:
-        attributes = ('TK_VERSION', 'TCL_VERSION')
+        attributes = ('TK_PATCH_LEVEL', 'TCL_PATCH_LEVEL')
         copy_attributes(info_add, _tkinter, 'tkinter.%s', attributes)
 
     try:
@@ -570,6 +558,7 @@ def collect_sysconfig(info_add):
 
     for name in (
         'ABIFLAGS',
+        'ALT_SOABI',
         'ANDROID_API_LEVEL',
         'CC',
         'CCSHARED',
@@ -595,6 +584,7 @@ def collect_sysconfig(info_add):
         'Py_REMOTE_DEBUG',
         'SHELL',
         'SOABI',
+        'SOABI_PLATFORM',
         'TEST_MODULES',
         'VAPTH',
         'abs_builddir',
@@ -608,14 +598,6 @@ def collect_sysconfig(info_add):
             continue
         value = normalize_text(value)
         info_add('sysconfig[%s]' % name, value)
-
-    PY_CFLAGS = sysconfig.get_config_var('PY_CFLAGS')
-    NDEBUG = (PY_CFLAGS and '-DNDEBUG' in PY_CFLAGS)
-    if NDEBUG:
-        text = 'ignore assertions (macro defined)'
-    else:
-        text= 'build assertions (macro not defined)'
-    info_add('build.NDEBUG',text)
 
     for name in (
         'WITH_DOC_STRINGS',
@@ -652,6 +634,7 @@ def collect_ssl(info_add):
     attributes = (
         'OPENSSL_VERSION',
         'OPENSSL_VERSION_INFO',
+        'OPENSSL_API_VERSION_INFO',
         'HAS_SNI',
         'OP_ALL',
         'OP_NO_TLSv1_1',
@@ -707,7 +690,7 @@ def collect_sqlite(info_add):
     except ImportError:
         return
 
-    attributes = ('sqlite_version',)
+    attributes = ('SQLITE_VERSION', 'sqlite_version')
     copy_attributes(info_add, sqlite3, 'sqlite3.%s', attributes)
 
 
@@ -717,8 +700,28 @@ def collect_zlib(info_add):
     except ImportError:
         return
 
-    attributes = ('ZLIB_VERSION', 'ZLIB_RUNTIME_VERSION', 'ZLIBNG_VERSION')
+    attributes = ('ZLIB_VERSION', 'zlib_version', 'ZLIBNG_VERSION')
     copy_attributes(info_add, zlib, 'zlib.%s', attributes)
+
+
+def collect_bz2(info_add):
+    try:
+        import _bz2
+    except ImportError:
+        return
+
+    attributes = ('bzlib_version',)
+    copy_attributes(info_add, _bz2, 'bz2.%s', attributes)
+
+
+def collect_lzma(info_add):
+    try:
+        import _lzma
+    except ImportError:
+        return
+
+    attributes = ('LZMA_VERSION', 'lzma_version')
+    copy_attributes(info_add, _lzma, 'lzma.%s', attributes)
 
 
 def collect_zstd(info_add):
@@ -727,8 +730,18 @@ def collect_zstd(info_add):
     except ImportError:
         return
 
-    attributes = ('zstd_version',)
+    attributes = ('ZSTD_VERSION', 'zstd_version')
     copy_attributes(info_add, _zstd, 'zstd.%s', attributes)
+
+
+def collect_ctypes(info_add):
+    try:
+        import _ctypes
+    except ImportError:
+        return
+
+    attributes = ('LIBFFI_VERSION', 'libffi_version')
+    copy_attributes(info_add, _ctypes, 'ctypes.%s', attributes)
 
 
 def collect_expat(info_add):
@@ -737,7 +750,7 @@ def collect_expat(info_add):
     except ImportError:
         return
 
-    attributes = ('EXPAT_VERSION',)
+    attributes = ('EXPAT_VERSION', 'VERSION_INFO', 'version_info')
     copy_attributes(info_add, expat, 'expat.%s', attributes)
 
 
@@ -747,7 +760,7 @@ def collect_decimal(info_add):
     except ImportError:
         return
 
-    attributes = ('__libmpdec_version__',)
+    attributes = ('LIBMPDEC_VERSION', 'libmpdec_version')
     copy_attributes(info_add, _decimal, '_decimal.%s', attributes)
 
 
@@ -842,6 +855,8 @@ def collect_support(info_add):
              support.check_sanitizer(memory=True))
     info_add('support.check_sanitizer(ub=True)',
              support.check_sanitizer(ub=True))
+    info_add('support.built_with_c_assertions',
+             support.built_with_c_assertions())
 
 
 def collect_support_os_helper(info_add):
@@ -891,18 +906,17 @@ def collect_support_threading_helper(info_add):
     copy_attributes(info_add, threading_helper, 'support_threading_helper.%s', attributes)
 
 
-def collect_cc(info_add):
+def get_compiler_version(sysconfig_var):
     import sysconfig
-
-    CC = sysconfig.get_config_var('CC')
-    if not CC:
+    program = sysconfig.get_config_var(sysconfig_var)
+    if not program:
         return
 
     try:
         import shlex
-        args = shlex.split(CC)
+        args = shlex.split(program)
     except ImportError:
-        args = CC.split()
+        args = program.split()
     args.append('--version')
 
     stdout = run_command(args)
@@ -916,16 +930,42 @@ def collect_cc(info_add):
 
     text = first_line(stdout)
     text = normalize_text(text)
-    info_add('CC.version', text)
+    if text:
+        text = f'[{program}] {text}'
+    return text
+
+
+def collect_cc(info_add):
+    # C compiler
+    version = get_compiler_version('CC')
+    if version:
+        info_add('CC.version', version)
+
+    # C++ compiler
+    version = get_compiler_version('CXX')
+    if version:
+        info_add('CXX.version', version)
+
+
+def collect_ndbm(info_add):
+    try:
+        import _dbm
+    except ImportError:
+        return
+
+    attributes = ('library', 'GDBM_VERSION_INFO', 'gdbm_version',
+                  'BDB_VERSION', 'bdb_version')
+    copy_attributes(info_add, _dbm, 'ndbm.%s', attributes)
 
 
 def collect_gdbm(info_add):
     try:
-        from _gdbm import _GDBM_VERSION
+        import _gdbm
     except ImportError:
         return
 
-    info_add('gdbm.GDBM_VERSION', '.'.join(map(str, _GDBM_VERSION)))
+    attributes = ('GDBM_VERSION_INFO', 'gdbm_version')
+    copy_attributes(info_add, _gdbm, 'gdbm.%s', attributes)
 
 
 def collect_get_config(info_add):
@@ -995,7 +1035,7 @@ def collect_windows(info_add):
     # windows.RtlAreLongPathsEnabled: RtlAreLongPathsEnabled()
     # windows.is_admin: IsUserAnAdmin()
     try:
-        import ctypes
+        import ctypes.util
         if not hasattr(ctypes, 'WinDLL'):
             raise ImportError
     except ImportError:
@@ -1004,20 +1044,19 @@ def collect_windows(info_add):
         ntdll = ctypes.WinDLL('ntdll')
         BOOLEAN = ctypes.c_ubyte
         try:
-            RtlAreLongPathsEnabled = ntdll.RtlAreLongPathsEnabled
+            @ctypes.util.wrap_dll_function(ntdll)
+            def RtlAreLongPathsEnabled() -> BOOLEAN:
+                pass
         except AttributeError:
             res = '<function not available>'
         else:
-            RtlAreLongPathsEnabled.restype = BOOLEAN
-            RtlAreLongPathsEnabled.argtypes = ()
             res = bool(RtlAreLongPathsEnabled())
         info_add('windows.RtlAreLongPathsEnabled', res)
 
-        shell32 = ctypes.windll.shell32
-        IsUserAnAdmin = shell32.IsUserAnAdmin
-        IsUserAnAdmin.restype = BOOLEAN
-        IsUserAnAdmin.argtypes = ()
-        info_add('windows.is_admin', IsUserAnAdmin())
+        @ctypes.util.wrap_dll_function(ctypes.windll.shell32)
+        def IsUserAnAdmin() -> BOOLEAN:
+            pass
+        info_add('windows.is_admin', bool(IsUserAnAdmin()))
 
     try:
         import _winapi
@@ -1316,6 +1355,12 @@ def collect_system(info_add):
             info_add('system.hardware', hardware)
 
 
+def collect_importlib(info_add):
+    import importlib.machinery
+    info_add('importlib.extension_suffixes',
+             importlib.machinery.EXTENSION_SUFFIXES)
+
+
 def collect_info(info):
     error = False
     info_add = info.add
@@ -1327,16 +1372,20 @@ def collect_info(info):
         collect_urandom,
 
         collect_builtins,
+        collect_bz2,
         collect_cc,
         collect_curses,
         collect_datetime,
         collect_decimal,
+        collect_ctypes,
         collect_expat,
         collect_fips,
         collect_gdb,
+        collect_ndbm,
         collect_gdbm,
         collect_get_config,
         collect_locale,
+        collect_lzma,
         collect_os,
         collect_platform,
         collect_pwd,
@@ -1358,6 +1407,7 @@ def collect_info(info):
         collect_zstd,
         collect_libregrtest_utils,
         collect_system,
+        collect_importlib,
 
         # Collecting from tests should be last as they have side effects.
         collect_test_socket,

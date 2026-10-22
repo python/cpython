@@ -11,21 +11,28 @@
 --------------
 
 The :mod:`!tkinter.ttk` module provides access to the Tk themed widget set,
-introduced in Tk 8.5. It provides additional benefits including anti-aliased font
-rendering under X11 and window transparency (requiring a composition
-window manager on X11).
+introduced in Tk 8.5.
+Its widgets adapt their appearance to the platform's native theme,
+giving an application a better and more consistent look and feel
+than the classic :mod:`tkinter` widgets, whose appearance is fixed.
 
 The basic idea for :mod:`!tkinter.ttk` is to separate, to the extent possible,
 the code implementing a widget's behavior from the code implementing its
 appearance.
+
+Ttk widgets are used just like the classic :mod:`tkinter` widgets
+and share the same machinery:
+the widget hierarchy, the geometry managers, variable coupling and event binding.
+Those foundational concepts are covered in the :mod:`tkinter` documentation
+and are not repeated here.
 
 .. versionadded:: 3.1
 
 
 .. seealso::
 
-   `Tk Widget Styling Support <https://core.tcl.tk/tips/doc/trunk/tip/48.md>`_
-      A document introducing theming support for Tk
+   `Tk Widget Styling Support (TIP #48) <https://tip.tcl-lang.org/48.html>`_
+      The Tcl Improvement Proposal that introduced the themed widget styling engine.
 
 
 Using Ttk
@@ -47,19 +54,20 @@ That code causes several :mod:`!tkinter.ttk` widgets (:class:`Button`,
 :class:`Scrollbar` and :class:`Spinbox`) to
 automatically replace the Tk widgets.
 
+.. note::
+
+   Overriding the classic widgets with ``from tkinter.ttk import *``
+   is convenient for adapting existing code,
+   but new code is usually clearer if it imports the module
+   as ``from tkinter import ttk`` and refers to the themed widgets explicitly,
+   such as ``ttk.Button``.
+
 This has the direct benefit of using the new widgets which gives a better look
 and feel across platforms; however, the replacement widgets are not completely
 compatible.
-The main difference is that widget options such as "fg", "bg" and others
+The main difference is that widget options such as ``fg``, ``bg`` and others
 related to widget styling are no longer present in Ttk widgets.
 Instead, use the :class:`ttk.Style <Style>` class for improved styling effects.
-
-
-.. seealso::
-
-   `Converting existing applications to use Tile widgets <https://tktable.sourceforge.net/tile/doc/converting.txt>`_
-     A monograph (using Tcl terminology) about differences typically
-     encountered when moving applications to use the new widgets.
 
 
 Ttk widgets
@@ -71,7 +79,7 @@ Ttk comes with 18 widgets, twelve of which already existed in tkinter:
 :class:`Radiobutton`, :class:`Scale`, :class:`Scrollbar`, and :class:`Spinbox`.
 The other six are new: :class:`Combobox`, :class:`Notebook`,
 :class:`Progressbar`, :class:`Separator`, :class:`Sizegrip` and
-:class:`Treeview`. And all them are subclasses of :class:`Widget`.
+:class:`Treeview`. All of them are subclasses of :class:`Widget`.
 
 Using the Ttk widgets gives the application an improved look and feel.
 As discussed above, there are differences in how the styling is coded.
@@ -1230,7 +1238,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: before_item(item, *, hidden=False, recurse=True)
@@ -1245,7 +1253,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: depth(item)
@@ -1254,7 +1262,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: haschildren(item)
@@ -1263,7 +1271,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: visible(item)
@@ -1274,7 +1282,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: size(item, *, hidden=False, recurse=False)
@@ -1288,7 +1296,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: range(first, last, *, hidden=False, recurse=True)
@@ -1299,7 +1307,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: identifier(item, index)
@@ -1309,7 +1317,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: current()
@@ -1320,7 +1328,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: expand(*items, recurse=False)
@@ -1331,7 +1339,7 @@ ttk.Treeview
       Use ``''`` for the root item.
       ``expand(item)`` is equivalent to ``item(item, open=True)``.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: collapse(*items, recurse=False)
@@ -1342,7 +1350,7 @@ ttk.Treeview
       Use ``''`` for the root item.
       ``collapse(item)`` is equivalent to ``item(item, open=False)``.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: hide(*items, recurse=False)
@@ -1354,7 +1362,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: unhide(*items, recurse=False)
@@ -1366,7 +1374,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: detached(item=None)
@@ -1380,7 +1388,7 @@ ttk.Treeview
 
       Requires Tk 9.0 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: detached_all()
@@ -1390,7 +1398,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: cellfocus(cell=None)
@@ -1403,7 +1411,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: sort(parent, *, column=None, command=None, dictionary=False, integer=False, real=False, nocase=False, decreasing=False, ignoreempty=False, recurse=False)
@@ -1422,7 +1430,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: search(parent, pattern, *, columns=None, start=None, stop=None, dictionary=False, integer=False, real=False, nocase=False, glob=False, regexp=False, backwards=False, hidden=False, recurse=False, wraparound=False)
@@ -1447,7 +1455,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: search_all(parent, pattern, **kwargs)
@@ -1457,7 +1465,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: search_cell(parent, pattern, **kwargs)
@@ -1468,7 +1476,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: search_all_cells(parent, pattern, **kwargs)
@@ -1479,7 +1487,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: cellselection()
@@ -1491,7 +1499,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: cellselection_set(*cells)
@@ -1502,7 +1510,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: cellselection_add(*cells)
@@ -1511,7 +1519,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: cellselection_remove(*cells)
@@ -1520,7 +1528,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: cellselection_set_range(first, last, *, hidden=True, recurse=True)
@@ -1534,7 +1542,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: cellselection_add_range(first, last, *, hidden=True, recurse=True)
@@ -1545,7 +1553,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: cellselection_remove_range(first, last, *, hidden=True, recurse=True)
@@ -1555,7 +1563,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: cellselection_anchor(cell=None)
@@ -1567,7 +1575,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: cellselection_includes(*cells)
@@ -1576,7 +1584,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: cellselection_present()
@@ -1585,7 +1593,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: tag_cell_add(tagname, *cells)
@@ -1596,7 +1604,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: tag_cell_remove(tagname, *cells)
@@ -1606,7 +1614,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: tag_cell_has(tagname, cell=None)
@@ -1618,7 +1626,7 @@ ttk.Treeview
 
       Requires Tk 9.1 or newer.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
 
    .. method:: see(item)
@@ -1730,8 +1738,13 @@ If you don't know the class name of a widget, use the method
 
 .. seealso::
 
-   `Tcl'2004 conference presentation <https://tktable.sourceforge.net/tile/tile-tcl2004.pdf>`_
-      This document explains how the theme engine works
+   `Introduction to the Tk theme engine <https://www.tcl-lang.org/man/tcl9.0/TkCmd/ttk_intro.html>`_
+      The ``ttk::intro`` man page explains how the theme engine works.
+
+   `The Tile Widget Set <https://tktable.sourceforge.net/tile/tile-tcl2004.pdf>`_
+      Joe English's 2004 paper introducing the theme engine
+      (then the separate *Tile* extension),
+      with diagrams of how elements and layouts make up a widget's appearance.
 
 
 .. class:: Style
@@ -2029,7 +2042,7 @@ If you don't know the class name of a widget, use the method
       Returns a tuple of all styles in *themename*.
       If *themename* is not given, the current theme is used.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
       Availability: Tk 9.0.
 

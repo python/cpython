@@ -18,23 +18,28 @@ try:
 except ImportError:
     _ZLIB_SUPPORTED = False
 
+# bz2, lzma and compression.zstd are pure Python wrappers whose only
+# importable dependency that may be missing is the extension module they
+# wrap.  Probe those extensions directly instead: it gives the same answer
+# without executing the wrappers, which shutil only needs when an archive
+# is actually created or extracted.
 try:
-    import bz2
-    del bz2
+    import _bz2
+    del _bz2
     _BZ2_SUPPORTED = True
 except ImportError:
     _BZ2_SUPPORTED = False
 
 try:
-    import lzma
-    del lzma
+    import _lzma
+    del _lzma
     _LZMA_SUPPORTED = True
 except ImportError:
     _LZMA_SUPPORTED = False
 
 try:
-    from compression import zstd
-    del zstd
+    import _zstd
+    del _zstd
     _ZSTD_SUPPORTED = True
 except ImportError:
     _ZSTD_SUPPORTED = False
@@ -292,8 +297,11 @@ def copyfile(src, dst, *, follow_symlinks=True):
     if _samefile(src, dst):
         raise SameFileError("{!r} and {!r} are the same file".format(src, dst))
 
+    copy_symlink = not follow_symlinks and _islink(src)
     file_size = 0
     for i, fn in enumerate([src, dst]):
+        if copy_symlink and i == 0:
+            continue
         try:
             st = _stat(fn)
         except OSError:
@@ -315,7 +323,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
             if _WINDOWS and i == 0:
                 file_size = st.st_size
 
-    if not follow_symlinks and _islink(src):
+    if copy_symlink:
         os.symlink(os.readlink(src), dst)
     else:
         with open(src, 'rb') as fsrc:
@@ -753,6 +761,7 @@ def _rmtree_safe_fd_step(stack, onexc):
     #   save a call to os.lstat() when walking subdirectories.
     func, dirfd, path, orig_entry = stack.pop()
     name = path if orig_entry is None else orig_entry.name
+    parent_fd = None if func is os.close else dirfd
     try:
         if func is os.close:
             os.close(dirfd)
@@ -800,14 +809,14 @@ def _rmtree_safe_fd_step(stack, onexc):
             except FileNotFoundError:
                 continue
             except OSError as err:
-                onexc(os.unlink, fullname, err)
+                onexc(os.unlink, fullname, err, direntry=entry, dir_fd=topfd)
     except FileNotFoundError as err:
         if orig_entry is None or func is os.close:
             err.filename = path
-            onexc(func, path, err)
+            onexc(func, path, err, direntry=orig_entry, dir_fd=parent_fd)
     except OSError as err:
         err.filename = path
-        onexc(func, path, err)
+        onexc(func, path, err, direntry=orig_entry, dir_fd=parent_fd)
 
 _use_fd_functions = ({os.open, os.stat, os.unlink, os.rmdir} <=
                      os.supports_dir_fd and
@@ -815,7 +824,8 @@ _use_fd_functions = ({os.open, os.stat, os.unlink, os.rmdir} <=
                      os.stat in os.supports_follow_symlinks)
 _rmtree_impl = _rmtree_safe_fd if _use_fd_functions else _rmtree_unsafe
 
-def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
+def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None,
+           _onexc_kwargs=False):
     """Recursively delete a directory tree.
 
     If dir_fd is not None, it should be a file descriptor open to a directory;
@@ -838,24 +848,29 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
 
     sys.audit("shutil.rmtree", path, dir_fd)
     if ignore_errors:
-        def onexc(*args):
+        def onexc(*args, **kwargs):
             pass
     elif onerror is None and onexc is None:
-        def onexc(*args):
+        def onexc(*args, **kwargs):
             raise
     elif onexc is None:
         if onerror is None:
-            def onexc(*args):
+            def onexc(*args, **kwargs):
                 raise
         else:
             # delegate to onerror
-            def onexc(*args):
+            def onexc(*args, **kwargs):
                 func, path, exc = args
                 if exc is None:
                     exc_info = None, None, None
                 else:
                     exc_info = type(exc), exc, exc.__traceback__
                 return onerror(func, path, exc_info)
+    elif not _onexc_kwargs:
+        # Only the internal caller in tempfile asks for the extra arguments.
+        _onexc = onexc
+        def onexc(func, path, err, **kwargs):
+            return _onexc(func, path, err)
 
     _rmtree_impl(path, dir_fd, onexc)
 
@@ -980,7 +995,7 @@ def _get_gid(name):
     except KeyError:
         result = None
     if result is not None:
-        return result[2]
+        return result.gr_gid
     return None
 
 def _get_uid(name):
@@ -998,7 +1013,7 @@ def _get_uid(name):
     except KeyError:
         result = None
     if result is not None:
-        return result[2]
+        return result.pw_uid
     return None
 
 def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,

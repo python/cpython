@@ -12,6 +12,15 @@ TEST_SLICES = {
     "iOS": "ios-arm64_x86_64-simulator",
 }
 
+# The checked-in testbed is a template. Any file containing this placeholder
+# is rewritten by `clone`, replacing the placeholder with the (uppercased)
+# ABI flags of the framework being installed. The placeholder is constructed
+# so that it doesn't appear literally in this file.
+ABIFLAGS_PLACEHOLDER = "{{" + "abiflags" + "}}"
+
+FRAMEWORK_NAME_RE = re.compile(r"Python([A-Z]*)")
+
+
 DECODE_ARGS = ("UTF-8", "backslashreplace")
 
 # The system log prefixes each line:
@@ -88,10 +97,18 @@ def xcode_test(location: Path, platform: str, simulator: str, verbose: bool):
         test_env["TEST_RUNNER_GITHUB_ACTIONS"] = os.environ["GITHUB_ACTIONS"]
 
     print("Running test project...")
-    # Test execution *can't* be run -quiet; verbose mode
-    # is how we see the output of the test output.
+    # Test execution *can't* be run -quiet; verbose mode is how we see the
+    # output of the test output. However, we don't need test diagnostics -
+    # they're large, and the context they contain generally isn't helpful for
+    # CPython tests.
     process = subprocess.Popen(
-        ["xcodebuild", "test-without-building"] + args,
+        [
+            "xcodebuild",
+            "test-without-building",
+            "-collect-test-diagnostics",
+            "never",
+        ]
+        + args,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         env=test_env,
@@ -119,37 +136,156 @@ def copy(src, tgt):
         shutil.copytree(src, tgt, symlinks=True)
 
 
+def framework_name(abiflags: str) -> str:
+    """The name of the Python framework for the given ABI flags."""
+    return f"Python{abiflags.upper()}"
+
+
+def is_template(location: Path) -> bool:
+    """Is the testbed at the given location an unexpanded template?
+
+    A template's XCframework `Info.plist` still contains the literal
+    ABIFLAGS_PLACEHOLDER; once expanded, the placeholder is gone.
+    """
+    info_plist = location / "Python.xcframework/Info.plist"
+    return (
+        info_plist.is_file()
+        and ABIFLAGS_PLACEHOLDER.encode() in info_plist.read_bytes()
+    )
+
+
+def abiflags_from_framework(framework: Path) -> str:
+    """Infer the (lowercase) ABI flags from a `--framework` path.
+
+    `framework` may be a `Python{FLAGS}.xcframework`, or a directory
+    containing a single simulator-slice `Python{FLAGS}.framework`.
+
+    Raises ValueError if the ABI flags can't be determined.
+    """
+    if framework.suffix == ".xcframework":
+        match = FRAMEWORK_NAME_RE.fullmatch(framework.stem)
+        if not match:
+            raise ValueError(f"{framework} is not a valid Python XCframework.")
+        return match.group(1).lower()
+
+    candidates = sorted(
+        path
+        for path in framework.glob("Python*.framework")
+        if FRAMEWORK_NAME_RE.fullmatch(path.stem)
+    )
+    if len(candidates) != 1:
+        raise ValueError(
+            f"Expected exactly one Python framework in {framework}; "
+            f"found {len(candidates)}."
+        )
+    return FRAMEWORK_NAME_RE.fullmatch(candidates[0].stem).group(1).lower()
+
+
+def find_xcframework(location: Path) -> Path:
+    """Find the Python XCframework in a testbed project.
+
+    Raises ValueError if more than one XCframework is found.
+    """
+    candidates = sorted(
+        path
+        for path in location.glob("Python*.xcframework")
+        if re.fullmatch(r"Python[A-Z]*\.xcframework", path.name)
+    )
+    if len(candidates) != 1:
+        raise ValueError(
+            f"Expected exactly one Python XCframework in {location}; "
+            f"found {len(candidates)}."
+        )
+    return candidates[0]
+
+
+def expand_template(location: Path, abiflags: str) -> None:
+    """Expand the ABI flags placeholder in a cloned testbed template.
+
+    The placeholder is replaced in the content of every template file, then
+    any file or directory whose name contains the placeholder is renamed.
+    Symlinks are neither followed nor modified.
+    """
+    placeholder = ABIFLAGS_PLACEHOLDER
+    replacement = abiflags.upper()
+    for path in location.rglob("*"):
+        if (
+            path.suffix in {".m", ".pbxproj", ".plist"}
+            and path.is_file()
+            and not path.is_symlink()
+        ):
+            content = path.read_text(encoding="utf-8")
+            if placeholder in content:
+                path.write_text(
+                    content.replace(placeholder, replacement),
+                    encoding="utf-8",
+                )
+
+
 def clone_testbed(
     source: Path,
     target: Path,
-    framework: Path,
+    framework: Path | None,
     platform: str,
     apps: list[Path],
 ) -> None:
     if target.exists():
         print(f"{target} already exists; aborting without creating project.")
         sys.exit(10)
+    source_is_template = is_template(source)
+    try:
+        orig_xc_framework_path = find_xcframework(source)
+    except ValueError as e:
+        print(e)
+        sys.exit(15)
+    fw_name = orig_xc_framework_path.stem
 
     if framework is None:
-        if not (
-            source / "Python.xcframework" / TEST_SLICES[platform] / "bin"
-        ).is_dir():
+        # No --framework; we must be cloning an an already-expanded testbed.
+        # Raise an error if we're not.
+        if source_is_template:
             print(
-                f"The testbed being cloned ({source}) does not contain "
-                "a framework with slices. Re-run with --framework"
+                "The initial testbed clone must provide a framework. "
+                "Re-run using --framework."
             )
             sys.exit(11)
+        else:
+            # Look at the simulator slice in the existing framework; if
+            # it's a live framework, it will have a `bin` directory.
+            slice_path = orig_xc_framework_path / TEST_SLICES[platform]
+            if not (slice_path / "bin").is_dir():
+                print(
+                    f"The testbed being cloned ({source}) does not contain "
+                    "a framework with slices. Re-run with --framework"
+                )
+                sys.exit(11)
+
     else:
         if not framework.is_dir():
             print(f"{framework} does not exist.")
             sys.exit(12)
+
+        if source_is_template:
+            # Initial testbed clone; the target framework name is
+            # taken directly from the provided framework, not the
+            # existing framework in the testbed.
+            try:
+                abiflags = abiflags_from_framework(framework)
+            except ValueError as e:
+                print(e)
+                sys.exit(13)
+
+            fw_name = framework_name(abiflags)
+
         elif not (
-            framework.suffix == ".xcframework"
-            or (framework / "Python.framework").is_dir()
+            framework.name == f"{fw_name}.xcframework"
+            or (framework / f"{fw_name}.framework").is_dir()
         ):
+            # Re-cloning an already-expanded testbed: the ABI for the
+            # new framework must match the existing testbed.
             print(
-                f"{framework} is not an XCframework, "
-                f"or a simulator slice of a framework build."
+                f"{framework} is not a {fw_name}.xcframework, "
+                f"or a simulator slice of a {fw_name}.framework build."
             )
             sys.exit(13)
 
@@ -171,9 +307,23 @@ def clone_testbed(
 
     print(" done")
 
-    orig_xc_framework_path = source / "Python.xcframework"
-    xc_framework_path = target / "Python.xcframework"
+    xc_framework_path = target / f"{fw_name}.xcframework"
     test_framework_path = xc_framework_path / TEST_SLICES[platform]
+
+    if source_is_template:
+        # Unless an XCframework is being symlinked in, the testbed uses a copy
+        # of the template XCframework (either as-is, or with a simulator slice
+        # installed into it); that copy requires expansion.
+        if framework.suffix != ".xcframework":
+            shutil.copytree(
+                orig_xc_framework_path,
+                xc_framework_path,
+                symlinks=True,
+            )
+        print(f"  Expanding template for {fw_name}...", end="")
+        expand_template(target, abiflags)
+        print(" done")
+
     if framework is not None:
         if framework.suffix == ".xcframework":
             print("  Installing XCFramework...", end="")
@@ -185,9 +335,18 @@ def clone_testbed(
             print("  Installing simulator framework...", end="")
             # We're only installing a slice of a framework; we need
             # to do a full tree copy to make sure we don't damage
-            # symlinked content.
-            shutil.copytree(orig_xc_framework_path, xc_framework_path)
-            if test_framework_path.is_dir():
+            # symlinked content. If this is an initial template clone,
+            # this copy has already been done as part of rolling out
+            # the template.
+            if not source_is_template:
+                shutil.copytree(
+                    orig_xc_framework_path, xc_framework_path, symlinks=True
+                )
+
+            if (
+                test_framework_path.is_dir()
+                and not test_framework_path.is_symlink()
+            ):
                 shutil.rmtree(test_framework_path)
             else:
                 test_framework_path.unlink(missing_ok=True)
@@ -223,7 +382,7 @@ def clone_testbed(
             # Simulator framework is a relative symlink. Rewrite the symlink
             # relative to the new location.
             orig_test_framework_path = (
-                source / "Python.XCframework" / test_framework_path.readlink()
+                orig_xc_framework_path / test_framework_path.readlink()
             ).resolve()
             test_framework_path.unlink()
             test_framework_path.symlink_to(
@@ -271,8 +430,14 @@ def run_testbed(
     update_test_plan(location, platform, args)
     print(" done.")
 
+    # xcodebuild doesn't guarantee that the CoreSimulatorService daemon is
+    # running prior to using a simulator, but calling `xcrun simctl list` does.
+    # Determining the default simulator that *would* be used is a cheap action;
+    # so use that as a way to ensure that the CoreSimulatorService daemon is
+    # running.
+    default_simulator = select_simulator_device(platform)
     if simulator is None:
-        simulator = select_simulator_device(platform)
+        simulator = default_simulator
     print(f"Running test on {simulator}")
 
     xcode_test(
@@ -313,7 +478,9 @@ def main():
         "--framework",
         help=(
             "The location of the XCFramework (or simulator-only slice of an "
-            "XCFramework) to use when running the testbed"
+            "XCFramework) to use when running the testbed. The framework's "
+            "ABI flags (e.g., free-threaded, debug) are inferred from its "
+            "name."
         ),
     )
     clone.add_argument(
@@ -394,12 +561,17 @@ def main():
         )
     elif context.subcommand == "run":
         if test_args:
+            try:
+                xc_framework_path = find_xcframework(Path(__file__).parent)
+            except ValueError:
+                xc_framework_path = None
+
             if not (
-                Path(__file__).parent
-                / "Python.xcframework"
-                / TEST_SLICES[context.platform]
-                / "bin"
-            ).is_dir():
+                xc_framework_path
+                and (
+                    xc_framework_path / TEST_SLICES[context.platform] / "bin"
+                ).is_dir()
+            ):
                 print(
                     "Testbed does not contain a compiled Python framework. "
                     f"Use `python {sys.argv[0]} clone ...` to create a "

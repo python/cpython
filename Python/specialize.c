@@ -3,6 +3,7 @@
 #include "opcode.h"
 
 #include "pycore_bytesobject.h"   // _PyBytes_Concat
+#include "pycore_call.h"          // _Py_METH_CALL_FLAGS
 #include "pycore_code.h"
 #include "pycore_critical_section.h"
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
@@ -1457,6 +1458,14 @@ _Py_Specialize_LoadGlobal(
     PyObject *globals, PyObject *builtins,
     _Py_CODEUNIT *instr, PyObject *name)
 {
+#ifdef Py_GIL_DISABLED
+    if (PyMutex_IsLocked(&globals->ob_mutex) || PyMutex_IsLocked(&builtins->ob_mutex)) {
+        // Skip specialization if either dictionary is locked to avoid lock
+        // contention.
+        unspecialize(instr);
+        return;
+    }
+#endif
     Py_BEGIN_CRITICAL_SECTION2(globals, builtins);
     specialize_load_global_lock_held(globals, builtins, instr, name);
     Py_END_CRITICAL_SECTION2();
@@ -1702,9 +1711,7 @@ static int
 specialize_method_descriptor(PyMethodDescrObject *descr, PyObject *self_or_null,
                              _Py_CODEUNIT *instr, int nargs)
 {
-    switch (descr->d_method->ml_flags &
-        (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O |
-        METH_KEYWORDS | METH_METHOD)) {
+    switch (descr->d_method->ml_flags & _Py_METH_CALL_FLAGS) {
         case METH_NOARGS: {
             if (nargs != 1) {
                 SPECIALIZATION_FAIL(CALL, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
@@ -1824,9 +1831,7 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OTHER);
         return 1;
     }
-    switch (PyCFunction_GET_FLAGS(callable) &
-        (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O |
-        METH_KEYWORDS | METH_METHOD)) {
+    switch (PyCFunction_GET_FLAGS(callable) & _Py_METH_CALL_FLAGS) {
         case METH_O: {
             if (nargs != 1) {
                 SPECIALIZATION_FAIL(CALL, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
@@ -2340,7 +2345,7 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
     assert(_PyOpcode_Caches[BINARY_OP] == INLINE_CACHE_ENTRIES_BINARY_OP);
 
     _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(instr + 1);
-    if (instr->op.code == BINARY_OP_EXTEND) {
+    if (FT_ATOMIC_LOAD_UINT8_RELAXED(instr->op.code) == BINARY_OP_EXTEND) {
         write_ptr(cache->external_cache, NULL);
     }
 
@@ -2946,7 +2951,8 @@ _Py_Specialize_GetIter(_PyStackRef iterable, _Py_CODEUNIT *instr)
 void
 _Py_Specialize_Resume(_Py_CODEUNIT *instr, PyThreadState *tstate, _PyInterpreterFrame *frame)
 {
-    if (tstate->tracing == 0 && instr->op.code == RESUME) {
+    if (tstate->tracing == 0 &&
+        FT_ATOMIC_LOAD_UINT8_RELAXED(instr->op.code) == RESUME) {
         if (tstate->interp->jit) {
             PyCodeObject *co = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             if (co != NULL &&
