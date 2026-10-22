@@ -1,0 +1,8 @@
+Adds support for Encrypted Client Hello (ECH) to the ssl module. Clients may
+use the options exposed to establish TLS connections using ECH. Third-party
+libraries like ``dnspython`` can be used to query for HTTPS and SVCB records
+that contain the public keys required to use ECH with specific servers. If
+no public key is available, an option is available to "GREASE" the
+connection, and it is possible to retrieve the public key from the retry
+configuration sent by servers that support ECH as they terminate the initial
+connection.
