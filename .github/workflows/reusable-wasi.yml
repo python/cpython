@@ -16,7 +16,6 @@ jobs:
     timeout-minutes: 60
     env:
       WASMTIME_VERSION: 48.0.2
-      CROSS_BUILD_WASI: cross-build/wasm32-wasip1
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
@@ -65,4 +64,6 @@ jobs:
     - name: "Display build info of the host/WASI Python"
       run: python3 Platforms/WASI pythoninfo-host
     - name: "Test"
-      run: make --directory "${CROSS_BUILD_WASI}" test
+      run: |
+        CROSS_BUILD_WASI=$(python3 Platforms/WASI path)
+        make --directory "${CROSS_BUILD_WASI}" test
