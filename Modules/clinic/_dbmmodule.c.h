@@ -21,6 +21,21 @@ dbm_length(PyObject *self)
     return return_value;
 }
 
+static int
+dbm_bool_impl(dbmobject *self);
+
+static int
+dbm_bool(PyObject *self)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = dbm_bool_impl((dbmobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 static PyObject *
 dbm_subscript_impl(dbmobject *self, PyObject *key);
 
@@ -309,4 +324,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=23fc8f92cd569b86 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4fa1cc840de2abd3 input=a9049054013a1b77]*/
