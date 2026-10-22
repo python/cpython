@@ -128,7 +128,7 @@ struct _object {
     _Py_ANONYMOUS union {
 #if SIZEOF_VOID_P > 4
         int64_t ob_refcnt_full; /* This field is needed for efficient initialization with Clang on ARM */
-        struct {
+        _Py_ANONYMOUS struct {
 #  if PY_BIG_ENDIAN
             uint16_t ob_flags;
             uint16_t ob_overflow;
