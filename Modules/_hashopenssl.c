@@ -693,43 +693,46 @@ static PY_EVP_MD *
 get_openssl_evp_md_by_utf8name(_hashlibstate *state, const char *name,
                                Py_hash_type py_ht)
 {
-    PY_EVP_MD *digest = NULL, *other_digest = NULL;
+    PY_EVP_MD *digest = NULL, *fresh = NULL;
     py_hashentry_t *entry = _Py_hashtable_get(state->hashtable, name);
+    int fips = !disable_fips_property(py_ht);
 
     if (entry != NULL) {
-        if (!disable_fips_property(py_ht)) {
-            digest = FT_ATOMIC_LOAD_PTR_RELAXED(entry->evp);
-            if (digest == NULL) {
-                digest = PY_EVP_MD_fetch(entry->ossl_name, NULL);
-#ifdef Py_GIL_DISABLED
-                // exchange just in case another thread did same thing at same time
-                other_digest = _Py_atomic_exchange_ptr(&entry->evp, (void *)digest);
-#else
-                entry->evp = digest;
-#endif
+        PY_EVP_MD **cached = fips ? &entry->evp : &entry->evp_nosecurity;
+        digest = FT_ATOMIC_LOAD_PTR_RELAXED(*cached);
+        if (digest == NULL) {
+            fresh = PY_EVP_MD_fetch(entry->ossl_name, fips ? NULL : "-fips");
+            if (fresh != NULL) {
+                /*
+                 * Publish a freshly fetched digest into the cache exactly once.
+                 *
+                 * On the first publication, 'cached' adopts the 'fresh' ref.
+                 * If another thread wins the race, 'fresh' is released and
+                 * the cached digest is used instead.
+                 *
+                 * See https://github.com/python/cpython/issues/128657
+                 * and https://github.com/python/cpython/issues/149816.
+                 */
+                PY_EVP_MD *expected = NULL;
+                if (_Py_atomic_compare_exchange_ptr(cached, &expected, (void *)fresh)) {
+                    digest = fresh;         // we won: 'cached' now owns the fresh digest
+                }
+                else {
+                    PY_EVP_MD_free(fresh);  // we lost: discard the fresh digest
+                    digest = expected;      // reuse the winner's digest
+                }
             }
         }
-        else {
-            digest = FT_ATOMIC_LOAD_PTR_RELAXED(entry->evp_nosecurity);
-            if (digest == NULL) {
-                digest = PY_EVP_MD_fetch(entry->ossl_name, "-fips");
-#ifdef Py_GIL_DISABLED
-                // exchange just in case another thread did same thing at same time
-                other_digest = _Py_atomic_exchange_ptr(&entry->evp_nosecurity, (void *)digest);
-#else
-                entry->evp_nosecurity = digest;
-#endif
-            }
-        }
-        // if another thread same thing at same time make sure we got same ptr
-        assert(other_digest == NULL || other_digest == digest);
-        if (digest != NULL && other_digest == NULL) {
+        /* Hand the caller its own reference; the cache keeps its own. Valid
+         * whether `digest` was already cached, freshly published by this
+         * thread, or published by a thread that won the race. */
+        if (digest != NULL) {
             PY_EVP_MD_up_ref(digest);
         }
     }
     else {
         // Fall back for looking up an unindexed OpenSSL specific name.
-        const char *props = disable_fips_property(py_ht) ? "-fips" : NULL;
+        const char *props = fips ? NULL : "-fips";
         (void)props;  // will only be used in OpenSSL 3.0 and later
         digest = PY_EVP_MD_fetch(name, props);
     }

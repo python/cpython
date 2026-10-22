@@ -73,6 +73,79 @@ _testfunc_cbk_large_struct(Test in, void (*func)(Test))
 }
 
 /*
+ * gh-49960: callbacks returning structs and unions by value.
+ *
+ * Each of these exercises a different ABI return class, since struct
+ * return conventions are highly platform-specific:
+ *   - SmallRet:  small integer struct, returned in registers
+ *   - Test:      >8 bytes (reused from above), returned via hidden pointer
+ *   - FloatRet:  all-float struct, SSE class on x86-64 / HFA on AArch64
+ *   - UnionRet:  union
+ *   - PtrRet:    struct containing a pointer
+ */
+
+typedef struct {
+    int a;
+    int b;
+} SmallRet;
+
+EXPORT(SmallRet)
+_testfunc_cbk_ret_small_struct(SmallRet (*func)(void))
+{
+    return func();
+}
+
+/* Returns a scalar derived from the struct, so a test can prove the bytes
+   actually reached the C caller rather than only round-tripping in Python. */
+EXPORT(long)
+_testfunc_cbk_ret_small_struct_sum(SmallRet (*func)(void))
+{
+    SmallRet s = func();
+    return (long)s.a + (long)s.b;
+}
+
+EXPORT(Test)
+_testfunc_cbk_ret_large_struct(Test (*func)(void))
+{
+    return func();
+}
+
+typedef struct {
+    double x;
+    double y;
+} FloatRet;
+
+EXPORT(FloatRet)
+_testfunc_cbk_ret_float_struct(FloatRet (*func)(void))
+{
+    return func();
+}
+
+typedef union {
+    int i;
+    float f;
+} UnionRet;
+
+EXPORT(UnionRet)
+_testfunc_cbk_ret_union(UnionRet (*func)(void))
+{
+    return func();
+}
+
+/* Struct containing a pointer, for the documented pointer-lifetime contract:
+   the struct is copied by value, so the pointed-to memory must outlive the
+   callback. */
+typedef struct {
+    const char *s;
+} PtrRet;
+
+EXPORT(PtrRet)
+_testfunc_cbk_ret_ptr_struct(PtrRet (*func)(void))
+{
+    return func();
+}
+
+/*
  * See issue 29565. Update a structure passed by value;
  * the caller should not see any change.
  */

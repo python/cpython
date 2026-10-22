@@ -180,6 +180,7 @@ Python/frozen_modules/MANIFEST
 
 # Local AI agent scratch state (per-PR and per-branch notebooks, sandbox
 # experiments) and personal agent overrides, none of which are committed.
+/do-not-commit/
 /.claude/pr-*
 /.claude/branch-*
 /.claude/sandbox/

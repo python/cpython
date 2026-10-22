@@ -942,6 +942,9 @@
     <ClInclude Include="..\Include\internal\mimalloc\mimalloc.h">
       <Filter>Include\internal\mimalloc</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\mimalloc\mimalloc-stats.h">
+      <Filter>Include\internal\mimalloc</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\mimalloc\mimalloc\atomic.h">
       <Filter>Include\internal\mimalloc</Filter>
     </ClInclude>
