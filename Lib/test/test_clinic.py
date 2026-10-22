@@ -34,6 +34,7 @@ with test_tools.imports_under_tool('clinic'):
     from libclinic.block_parser import Block, BlockParser
     from libclinic.codegen import BlockPrinter, Destination
     from libclinic.dsl_parser import DSLParser
+    from libclinic.slots import SLOTS
     from libclinic.cli import parse_file, Clinic
 
 
@@ -806,6 +807,106 @@ class ClinicWholeFileTest(TestCase):
             [clinic start generated code]*/
         """
         self.expect_failure(block, err, lineno=4)
+
+    def test_slot_next(self):
+        block = """
+            /*[clinic input]
+            output everything block
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            /*[clinic input]
+            Foo.__next__
+            [clinic start generated code]*/
+            /*[clinic input]
+            @critical_section
+            Foo.__next__ as foo_iternext
+            [clinic start generated code]*/
+            #ifdef CONDITION
+            /*[clinic input]
+            Foo.__next__ as foo_iternext_cond
+            [clinic start generated code]*/
+            #endif
+        """
+        generated = self.clinic.parse(dedent(block))
+        self.assertIn(dedent("""
+            static PyObject *
+            Foo_next(PyObject *self)
+            {
+                return Foo_next_impl((FooObject *)self);
+            }
+        """), generated)
+        self.assertIn(dedent("""
+            static PyObject *
+            foo_iternext(PyObject *self)
+            {
+                PyObject *return_value = NULL;
+
+                Py_BEGIN_CRITICAL_SECTION(self);
+                return_value = foo_iternext_impl((FooObject *)self);
+                Py_END_CRITICAL_SECTION();
+
+                return return_value;
+            }
+        """), generated)
+        self.assertIn("#if defined(CONDITION)\n\nstatic PyObject *\n"
+                      "foo_iternext_cond_impl(FooObject *self);", generated)
+        # A slot function is not stored in a PyMethodDef.
+        for text in "METHODDEF", "PyDoc_", "#ifndef":
+            self.assertNotIn(text, generated)
+
+    def test_slot_with_parameters_and_return_type(self):
+        # Check the machinery with slots which take arguments or return
+        # something else than an object.
+        block = """
+            /*[clinic input]
+            output everything block
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            /*[clinic input]
+            Foo.__contains__
+                value: object
+                /
+            [clinic start generated code]*/
+            /*[clinic input]
+            @critical_section
+            Foo.__bool__
+            [clinic start generated code]*/
+        """
+        generated = self.clinic.parse(dedent(block))
+        self.assertIn(dedent("""
+            static int
+            Foo_contains(PyObject *self, PyObject *value)
+            {
+                return Foo_contains_impl((FooObject *)self, value);
+            }
+        """), generated)
+        self.assertIn(dedent("""
+            static int
+            Foo_bool(PyObject *self)
+            {
+                int return_value = -1;
+
+                Py_BEGIN_CRITICAL_SECTION(self);
+                return_value = Foo_bool_impl((FooObject *)self);
+                Py_END_CRITICAL_SECTION();
+
+                return return_value;
+            }
+        """), generated)
+
+    def test_slot_cannot_be_cloned(self):
+        block = """
+            /*[clinic input]
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            /*[clinic input]
+            Foo.__next__
+            [clinic start generated code]*/
+            /*[clinic input]
+            Foo.other = Foo.__next__
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, "Type slot methods cannot be cloned", lineno=8)
 
     def test_getset_in_ifdef(self):
         block = """
@@ -3237,6 +3338,80 @@ class ClinicParserTest(TestCase):
                                   f"a normal callable")
                 self.expect_failure(block, expected_error, lineno=3)
 
+    def test_slot_next(self):
+        function = self.parse_function("""
+            module foo
+            class Foo "FooObject *" ""
+            Foo.__next__
+        """, signatures_in_block=3, function_index=2)
+        self.assertIs(function.kind, FunctionKind.SLOT)
+        self.assertIs(function.slot, SLOTS["__next__"])
+        self.assertEqual(function.c_basename, "Foo_next")
+        self.assertEqual(function.return_converter.type, "PyObject *")
+        self.assertEqual(list(function.parameters), ["self"])
+
+    def test_slot_coexist_is_a_method(self):
+        # dict.__contains__ is a METH_COEXIST method, not the slot.
+        function = self.parse_function("""
+            module foo
+            class Foo "FooObject *" ""
+            @coexist
+            Foo.__contains__
+                key: object
+                /
+        """, signatures_in_block=3, function_index=2)
+        self.assertIs(function.kind, FunctionKind.CALLABLE)
+        self.assertIsNone(function.slot)
+        self.assertIn("METH_COEXIST", function.methoddef_flags)
+
+    def test_slot_parameters(self):
+        # The parameter of __getitem__ gives the slot (Py_ssize_t for
+        # sq_item, object for mp_subscript) and is not parsed.
+        block = """
+            module foo
+            class Foo "FooObject *" ""
+            Foo.__getitem__
+                key: {converter}
+                /
+        """
+        errors = [
+            ("Foo.__getitem__\n    key: object",
+             "The parameters of '__getitem__' must be positional-only"),
+            ("Foo.__getitem__\n    key: object = None\n    /",
+             "The parameters of '__getitem__' cannot have a default value"),
+        ]
+        for converter in ["Py_ssize_t", "object"]:
+            with self.subTest(converter=converter):
+                function = self.parse_function(
+                    block.format(converter=converter),
+                    signatures_in_block=3, function_index=2)
+                self.assertIs(function.kind, FunctionKind.SLOT)
+                self.assertEqual(list(function.parameters), ["self", "key"])
+        for body, err in errors:
+            with self.subTest(block=body):
+                body = 'class Foo "FooObject *" "&Foo_Type"\n' + body
+                self.expect_failure(body, err)
+
+    def test_slot_errors(self):
+        cases = [
+            ("module foo\nfoo.__next__",
+             "'__next__' must be a method!"),
+            ("@classmethod\nFoo.__next__",
+             "'__next__' must be a normal method"),
+            ("@getter\nFoo.__next__",
+             "'__next__' must be a normal method"),
+            ("@vectorcall\nFoo.__next__",
+             "@vectorcall can only be used with __init__ and __new__"),
+            ("Foo.__next__ -> int",
+             "'Foo.__next__' cannot define a return type"),
+            ("Foo.__next__\n\nReturn the next item.",
+             "'__next__' methods cannot have a docstring"),
+        ]
+        for block, err in cases:
+            with self.subTest(block=block):
+                block = 'class Foo "FooObject *" "&Foo_Type"\n' + block
+                self.expect_failure(block, err)
+
     def test_deleter_without_setter(self):
         block = """
             module foo
@@ -3479,10 +3654,10 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=2)
 
     def test_cannot_convert_special_method(self):
-        err = "'__len__' is a special method and cannot be converted"
+        err = "'__iter__' is a special method and cannot be converted"
         block = """
             class T "" ""
-            T.__len__
+            T.__iter__
         """
         self.expect_failure(block, err, lineno=1)
 
@@ -4121,6 +4296,7 @@ class ClinicExternalTest(TestCase):
                 int()
                 long()
                 object()
+                Py_hash_t()
                 Py_ssize_t()
                 size_t()
                 unsigned_int()

@@ -319,6 +319,22 @@ class IOTest:
         with self.open(os_helper.TESTFN, "r", encoding="utf-8") as f:
             self.assertRaises(TypeError, f.readline, 5.3)
 
+    def test_readline_limit_with_short_read(self):
+        class Reader(self.IOBase):
+            data = b"abcdef"
+
+            def peek(self, size):
+                return self.data
+
+            def read(self, size):
+                data = self.data[:min(size, 2)]
+                self.data = self.data[len(data):]
+                return data
+
+        reader = Reader()
+        self.assertEqual(reader.readline(3), b"abc")
+        self.assertEqual(reader.data, b"def")
+
     def test_readline_nonsizeable(self):
         # Issue #30061
         # Crash when readline() returns an object without __len__

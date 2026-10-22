@@ -148,6 +148,45 @@ class CallStackTestBase:
             'async generator CallStackTestBase.test_stack_async_gen.<locals>.gen()',
             stack_for_gen_nested_call[1])
 
+    async def test_stack_anext(self):
+        # anext() without a default returns the __anext__() coroutine
+        # itself, so nothing is inserted between it and main().
+
+        loop = asyncio.get_running_loop()
+        blocker = loop.create_future()
+
+        async def inner():
+            await blocker
+
+        class AIter:
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                await inner()
+                return 1
+
+        async def main():
+            await anext(AIter())
+
+        task = asyncio.create_task(main(), name='anext task')
+        await asyncio.sleep(0)
+        try:
+            stack = capture_test_stack(fut=task)
+        finally:
+            blocker.set_result(None)
+            await task
+
+        self.assertEqual(stack[0], [
+            'T<anext task>',
+            [
+                'a inner',
+                'a __anext__',
+                'a main',
+            ],
+            []
+        ])
+
     async def test_stack_anext_default(self):
         # anext() with a default wraps the awaitable in a coroutine, so the
         # call graph of a suspended task sees through it into __anext__().
@@ -183,6 +222,84 @@ class CallStackTestBase:
                 'a inner',
                 'a __anext__',
                 'a _anext_with_default',
+                'a main',
+            ],
+            []
+        ])
+
+    async def test_stack_aiter(self):
+        # The one-argument form of aiter() returns the object's own
+        # iterator, so it adds no frame of its own to the call graph.
+
+        loop = asyncio.get_running_loop()
+        blocker = loop.create_future()
+
+        async def inner():
+            await blocker
+
+        class AIter:
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                await inner()
+                return 1
+
+        async def main():
+            async for _ in aiter(AIter()):
+                break
+
+        task = asyncio.create_task(main(), name='aiter task')
+        await asyncio.sleep(0)
+        try:
+            stack = capture_test_stack(fut=task)
+        finally:
+            blocker.set_result(None)
+            await task
+
+        self.assertEqual(stack[0], [
+            'T<aiter task>',
+            [
+                'a inner',
+                'a __anext__',
+                'a main',
+            ],
+            []
+        ])
+
+    async def test_stack_aiter_callable(self):
+        # aiter(callable, ...) returns an iterator whose __anext__() is a
+        # coroutine, so the call graph of a suspended task sees through it
+        # into the awaited result of the callable.
+
+        loop = asyncio.get_running_loop()
+        blocker = loop.create_future()
+
+        async def inner():
+            await blocker
+
+        async def spam():
+            await inner()
+            return 1
+
+        async def main():
+            async for _ in aiter(spam, 1):
+                pass
+
+        task = asyncio.create_task(main(), name='aiter task')
+        await asyncio.sleep(0)
+        try:
+            stack = capture_test_stack(fut=task)
+        finally:
+            blocker.set_result(None)
+            await task
+
+        self.assertEqual(stack[0], [
+            'T<aiter task>',
+            [
+                'a inner',
+                'a spam',
+                'a __anext__',
                 'a main',
             ],
             []

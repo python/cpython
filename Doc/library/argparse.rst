@@ -789,6 +789,9 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args('--foo --bar'.split())
     Namespace(foo=True, bar=False, baz=True)
 
+  These defaults apply when the options are absent. They can be overridden
+  by default_ or argument_default_.
+
 * ``'append'`` - This appends each argument value to a list.
   It is useful for allowing an option to be specified multiple times.
   If the default value is a non-empty list, the parsed value for the option
@@ -1016,10 +1019,8 @@ default
 
 All optional arguments and some positional arguments may be omitted at the
 command line.  The ``default`` keyword argument of
-:meth:`~ArgumentParser.add_argument`, whose value defaults to ``None``,
-specifies what value should be used if the command-line argument is not present.
-For optional arguments, the ``default`` value is used when the option string
-was not present at the command line::
+:meth:`~ArgumentParser.add_argument` specifies what value should be used if the
+command-line argument is not present. For example::
 
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument('--foo', default=42)
@@ -1027,6 +1028,11 @@ was not present at the command line::
    Namespace(foo='2')
    >>> parser.parse_args([])
    Namespace(foo=42)
+
+If ``default`` is omitted, :meth:`~ArgumentParser.add_argument` uses a value
+previously set for the dest_ with :meth:`~ArgumentParser.set_defaults`, or
+otherwise a non-``None`` argument_default_. If neither is set, the action's
+own default is used.
 
 If the target namespace already has an attribute set, the action *default*
 will not overwrite it::
@@ -1771,8 +1777,9 @@ Subcommands
 
    * help_ - help for sub-parser group in help output, by default ``None``
 
-   * metavar_ - string presenting available subcommands in help; by default it
-     is ``None`` and presents subcommands in form {cmd1, cmd2, ..}
+   * metavar_ - placeholder shown in usage and the subparsers' help entry
+     instead of ``{cmd1, cmd2, ...}``; by default ``None``.
+     Individual subcommand names are unchanged.
 
    Some example usage::
 
@@ -2072,6 +2079,19 @@ Argument groups
       is now deprecated.
 
 
+.. class:: ArgumentGroup
+
+   The type of objects returned by :meth:`ArgumentParser.add_argument_group`.
+   Its :meth:`~ArgumentParser.add_argument` and
+   :meth:`~ArgumentParser.add_mutually_exclusive_group` methods work as on
+   :class:`ArgumentParser`.  Use :meth:`~ArgumentParser.add_argument_group`
+   to create instances.  Only the methods documented here are part of the
+   public API; other attributes and methods are implementation details.
+
+   .. versionadded:: next
+      The private ``_ArgumentGroup`` name remains as an alias.
+
+
 Mutual exclusion
 ^^^^^^^^^^^^^^^^
 
@@ -2133,6 +2153,20 @@ Mutual exclusion
       on a mutually exclusive group now raises an exception. This nesting was
       never supported, often failed to work correctly, and was unintentionally
       exposed through inheritance.
+
+
+.. class:: MutuallyExclusiveGroup
+
+   The type of objects returned by
+   :meth:`ArgumentParser.add_mutually_exclusive_group`.
+   Its :meth:`~ArgumentParser.add_argument` method works as on
+   :class:`ArgumentParser`.  Use
+   :meth:`~ArgumentParser.add_mutually_exclusive_group` to create instances.
+   Only the ``add_argument`` method documented here is part of the public API;
+   other attributes and methods are implementation details.
+
+   .. versionadded:: next
+      The private ``_MutuallyExclusiveGroup`` name remains as an alias.
 
 
 Parser defaults
