@@ -406,10 +406,13 @@ register_maps(PyObject *module)
 
 #ifdef USING_BINARY_PAIR_SEARCH
 static DBCHAR
-find_pairencmap(ucs2_t body, ucs2_t modifier,
+find_pairencmap(ucs2_t body, Py_UCS4 modifier,
                 const struct pair_encodemap *haystack, int haystacksize)
 {
     int pos, min, max;
+    if (modifier > 0xffff) {
+        return DBCINV;
+    }
     Py_UCS4 value = body << 16 | modifier;
 
     min = 0;

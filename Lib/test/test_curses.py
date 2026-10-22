@@ -2728,6 +2728,46 @@ class TestCurses(unittest.TestCase):
             self.assertEqual(box.gather(), text + ' ')
 
     @requires_wide_build
+    def test_textbox_combining_fill_last_cell(self):
+        # A combining mark typed into the lower-right cell joins its base.
+        for text in [
+            'abe\u0301',        # COMBINING ACUTE ACCENT
+            'ab\u0e01\u0e31',   # THAI CHARACTER MAI HAN-AKAT, combining() == 0
+            'abx\u20dd',        # COMBINING ENCLOSING CIRCLE, combining() == 0
+        ]:
+            with self.subTest(text=text):
+                if not self._encodable(text):
+                    self.skipTest('the locale cannot encode %r' % text)
+                box, win = self._make_textbox(1, 3, stripspaces=False)
+                for ch in text:
+                    box.do_command(ch)
+                self.assertEqual(box.gather(), text)
+
+    @requires_wide_build
+    def test_textbox_combining_typed_over(self):
+        # A combining mark joins the character typed just before it.
+        text = 'e\u0301'
+        if not self._encodable(text):
+            self.skipTest('the locale cannot encode %r' % text)
+        for insert_mode, x, expected in [
+            (False, 0, 'e\u0301bc'),
+            (False, 1, 'ae\u0301c'),
+            (False, 2, 'abe\u0301'),
+            (True, 0, 'e\u0301ab'),
+            (True, 1, 'ae\u0301b'),
+            (True, 2, 'abe\u0301'),
+        ]:
+            with self.subTest(insert_mode=insert_mode, x=x):
+                box, win = self._make_textbox(1, 3, stripspaces=False)
+                for ch in 'abc':
+                    box.do_command(ch)
+                box.insert_mode = insert_mode
+                win.move(0, x)
+                for ch in text:
+                    box.do_command(ch)
+                self.assertEqual(box.gather(), expected)
+
+    @requires_wide_build
     def test_textbox_double_width(self):
         # A double-width (East Asian) character occupies two cells.  gather()
         # reads a whole line at a time so that the second cell, which holds
