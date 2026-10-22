@@ -1,2 +1,0 @@
-Fix a bug in :mod:`sqlite3` where an exception could be overwritten in the
-:meth:`collation <sqlite3.Connection.create_collation>` callback.

@@ -1,3 +1,0 @@
-Simplify and speed up interpreter for f-strings. Removes ``FORMAT_VALUE``
-opcode. Add ``CONVERT_VALUE``, ``FORMAT_SIMPLE`` and ``FORMAT_WITH_SPEC``
-opcode. Compiler emits more efficient sequence for each format expression.
