@@ -789,6 +789,9 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args('--foo --bar'.split())
     Namespace(foo=True, bar=False, baz=True)
 
+  These defaults apply when the options are absent. They can be overridden
+  by default_ or argument_default_.
+
 * ``'append'`` - This appends each argument value to a list.
   It is useful for allowing an option to be specified multiple times.
   If the default value is a non-empty list, the parsed value for the option
@@ -1016,10 +1019,8 @@ default
 
 All optional arguments and some positional arguments may be omitted at the
 command line.  The ``default`` keyword argument of
-:meth:`~ArgumentParser.add_argument`, whose value defaults to ``None``,
-specifies what value should be used if the command-line argument is not present.
-For optional arguments, the ``default`` value is used when the option string
-was not present at the command line::
+:meth:`~ArgumentParser.add_argument` specifies what value should be used if the
+command-line argument is not present. For example::
 
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument('--foo', default=42)
@@ -1027,6 +1028,11 @@ was not present at the command line::
    Namespace(foo='2')
    >>> parser.parse_args([])
    Namespace(foo=42)
+
+If ``default`` is omitted, :meth:`~ArgumentParser.add_argument` uses a value
+previously set for the dest_ with :meth:`~ArgumentParser.set_defaults`, or
+otherwise a non-``None`` argument_default_. If neither is set, the action's
+own default is used.
 
 If the target namespace already has an attribute set, the action *default*
 will not overwrite it::
