@@ -4442,6 +4442,9 @@ PyListWriter_Create(Py_ssize_t size)
         return NULL;
     }
     assert(Py_SIZE(list) == 0);
+    // In release mode, list items are uninitialized pointers which is safe,
+    // since the list object is not tracked by the GC, and the writer caller
+    // must initialize all items.
 
 #ifdef Py_DEBUG
     // In debug mode, set all items to NULL to be able to check that they are
