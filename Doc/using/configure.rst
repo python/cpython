@@ -171,6 +171,8 @@ platform-specific modules like :mod:`winreg` are not listed here.
    SQLite 3.15.2 is now required for :mod:`sqlite3`.
 
 
+.. _generated-files:
+
 Generated files
 ===============
 
@@ -1516,11 +1518,8 @@ Main Makefile targets
 .. make-target:: make regen-all
 
    Regenerate (almost) all generated files. These include (but are not
-   limited to) bytecode cases, and parser generator file.
-   ``make regen-stdlib-module-names``, ``make regen-limited-abi``,
-   ``make regen-configure``, ``make regen-sbom`` and
-   ``make regen-unicodedata`` must be run
-   separately for the remaining `generated files <#generated-files>`_.
+   limited to) bytecode cases, and parser generator files. See
+   :ref:`generated-files` for the targets that must be run separately.
 
 
 C extensions
