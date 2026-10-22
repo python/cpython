@@ -949,9 +949,9 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
         OPENSSL_free(inner_sni);
         OPENSSL_free(outer_sni);
         /* OpenSSL also applies outer ALPN to ordinary and GREASE handshakes. */
-        if ((status == SSL_ECH_STATUS_NOT_CONFIGURED ||
-             status == SSL_ECH_STATUS_GREASE) &&
-            SSL_ech_set1_outer_alpn_protos(self->ssl, NULL, 0) != 1) {
+        if ((status == SSL_ECH_STATUS_NOT_CONFIGURED
+             || status == SSL_ECH_STATUS_GREASE)
+             && SSL_ech_set1_outer_alpn_protos(self->ssl, NULL, 0) != 1) {
             _setSSLError(get_state_ctx(sslctx), NULL, 0, __FILE__, __LINE__);
             Py_DECREF(self);
             return NULL;
@@ -4069,8 +4069,8 @@ _ssl__SSLContext__set_outer_alpn_protocols_impl(PySSLContext *self,
         return NULL;
     }
     if (SSL_CTX_ech_set1_outer_alpn_protos(self->ctx,
-                                         protos->len ? protos->buf : NULL,
-                                         protos->len) != 1) {
+                                           protos->len ? protos->buf : NULL,
+                                           protos->len) != 1) {
         _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
         return NULL;
     }
@@ -5260,24 +5260,23 @@ _ssl__SSLContext_set_ech_config_impl(PySSLContext *self,
                 unsigned char length[2] = {
                     (unsigned char)(entry_len >> 8), (unsigned char)entry_len
                 };
-                if (BIO_reset(config_bio) != 1 ||
-                    BIO_write(config_bio, length, sizeof(length)) != sizeof(length) ||
-                    BIO_write(config_bio, config, entry_len) != entry_len) {
+                if (BIO_reset(config_bio) != 1
+                    || BIO_write(config_bio, length, sizeof(length)) != sizeof(length)
+                    || BIO_write(config_bio, config, entry_len) != entry_len) {
                     goto fail;
                 }
                 ERR_clear_error();
                 if (OSSL_ECHSTORE_read_echconfiglist(store, config_bio) != 1) {
                     unsigned long err = ERR_peek_error();
                     /* Unsupported HPKE suites may first raise provider errors. */
-                    while (ERR_GET_LIB(err) == ERR_LIB_PROV &&
-                           !ERR_FATAL_ERROR(err)) {
+                    while (ERR_GET_LIB(err) == ERR_LIB_PROV && !ERR_FATAL_ERROR(err)) {
                         ERR_get_error();
                         err = ERR_peek_error();
                     }
                     /* Ignore unsupported suites and mandatory extensions,
                      * preserving malformed input and fatal errors. */
-                    if (ERR_GET_LIB(err) != ERR_LIB_SSL ||
-                        ERR_GET_REASON(err) != ERR_R_PASSED_INVALID_ARGUMENT) {
+                    if (ERR_GET_LIB(err) != ERR_LIB_SSL
+                        || ERR_GET_REASON(err) != ERR_R_PASSED_INVALID_ARGUMENT) {
                         goto fail;
                     }
                 }
@@ -5291,8 +5290,8 @@ _ssl__SSLContext_set_ech_config_impl(PySSLContext *self,
             goto fail;
         }
     }
-    else if (BIO_write(config_bio, config, config_len) != config_len ||
-             OSSL_ECHSTORE_read_echconfiglist(store, config_bio) != 1) {
+    else if (BIO_write(config_bio, config, config_len) != config_len
+             || OSSL_ECHSTORE_read_echconfiglist(store, config_bio) != 1) {
         goto fail;
     }
     int num_entries;
@@ -5334,7 +5333,7 @@ load_ech_keys(SSL_CTX *ctx, BIO *bio, int for_retry)
     int old_keys, new_keys;
     OSSL_ECHSTORE *store = NULL;
     EVP_PKEY *key = PEM_read_bio_PrivateKey(bio, NULL,
-                                           ech_password_callback, NULL);
+                                            ech_password_callback, NULL);
     if (key == NULL) {
         goto end;
     }
@@ -5348,12 +5347,12 @@ load_ech_keys(SSL_CTX *ctx, BIO *bio, int for_retry)
             goto end;
         }
     }
-    if (OSSL_ECHSTORE_num_keys(store, &old_keys) != 1 ||
-        OSSL_ECHSTORE_set1_key_and_read_pem(store, key, bio, for_retry) != 1 ||
-        OSSL_ECHSTORE_num_keys(store, &new_keys) != 1) {
+    if (OSSL_ECHSTORE_num_keys(store, &old_keys) != 1
+        || OSSL_ECHSTORE_set1_key_and_read_pem(store, key, bio, for_retry) != 1
+        || OSSL_ECHSTORE_num_keys(store, &new_keys) != 1) {
         goto end;
     }
-    /* OpenSSL may match a key already in the store. Require a new match. */
+    // OpenSSL may match a key already in the store. Require a new match.
     if (new_keys <= old_keys) {
         ERR_raise(ERR_LIB_SSL, SSL_R_PRIVATE_KEY_MISMATCH);
         goto end;
