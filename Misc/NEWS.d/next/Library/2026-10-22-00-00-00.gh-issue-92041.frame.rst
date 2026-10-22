@@ -1,0 +1,3 @@
+Speed up :func:`inspect.getmodule` for frames and tracebacks whose globals
+belong to a registered module with a matching filename. The globals owner
+takes precedence over unrelated modules sharing the same filename.
