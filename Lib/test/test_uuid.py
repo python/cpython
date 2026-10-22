@@ -898,12 +898,11 @@ class BaseTestUUID:
             equal(str(u), v)
 
     @contextlib.contextmanager
-    def _mock_uuid6_time(self, nanoseconds, *, random_func=None):
+    def _uuid6_hooks(self, nanoseconds, *, random_func=None):
         time_func = nanoseconds if callable(nanoseconds) else lambda: nanoseconds
-        with (mock.patch('time.time_ns', side_effect=time_func),
-              mock.patch.object(self.uuid, '_last_timestamp_v6', None),
-              support.swap_item(sys.modules, 'uuid', self.uuid)):
-            self.uuid._install_py_hooks(random_func=random_func, time_func=None)
+        with support.swap_item(sys.modules, 'uuid', self.uuid):
+            self.uuid._install_py_hooks(random_func=random_func,
+                                       time_func=time_func)
             if self.is_c_uuid:
                 self.uuid._install_c_hooks(random_func=random_func,
                                            time_func=time_func)
@@ -930,7 +929,7 @@ class BaseTestUUID:
             return (data * ((size + 1) // 2))[:size]
 
         with (
-            self._mock_uuid6_time(fake_nanoseconds, random_func=random_func),
+            self._uuid6_hooks(fake_nanoseconds, random_func=random_func),
             mock.patch.object(self.uuid, 'getnode', return_value=fake_node_value),
         ):
             u = self.uuid.uuid6()
@@ -967,7 +966,7 @@ class BaseTestUUID:
         fake_nanoseconds = (timestamp - 0x1b21dd21_3814_000) * 100
 
         def gen():
-            with self._mock_uuid6_time(fake_nanoseconds):
+            with self._uuid6_hooks(fake_nanoseconds):
                 return self.uuid.uuid6(node=0, clock_seq=None)
 
         # By the birthday paradox, sampling N = 1024 UUIDs with identical
@@ -1066,11 +1065,11 @@ class BaseTestUUID:
         def random_func(size):
             raise error
 
-        with self._mock_uuid6_time(0, random_func=random_func):
+        with self._uuid6_hooks(0, random_func=random_func):
             with self.assertRaises(RuntimeError) as cm:
                 self.uuid.uuid6(node=0)
             self.assertIs(cm.exception, error)
-        with self._mock_uuid6_time(0):
+        with self._uuid6_hooks(0):
             with mock.patch.object(self.uuid, 'getnode', side_effect=error):
                 with self.assertRaises(RuntimeError) as cm:
                     self.uuid.uuid6(clock_seq=0)
@@ -1079,7 +1078,7 @@ class BaseTestUUID:
     def test_uuid6_monotonicity(self):
         # Repeated and backward clock readings must still advance the timestamp.
         readings = iter((1000, 1000, -1))
-        with self._mock_uuid6_time(lambda: next(readings)):
+        with self._uuid6_hooks(lambda: next(readings)):
             values = [self.uuid.uuid6(node=0, clock_seq=0) for _ in range(3)]
         self.assertEqual(values[1].time, values[0].time + 1)
         self.assertEqual(values[2].time, values[1].time + 1)
@@ -1094,7 +1093,7 @@ class BaseTestUUID:
         node = 0x9f6bdeced846
         clock_seq = (3 << 12) | 0x3c8
 
-        with self._mock_uuid6_time(fake_nanoseconds):
+        with self._uuid6_hooks(fake_nanoseconds):
             u = self.uuid.uuid6(node=node, clock_seq=clock_seq)
             equal(str(u).upper(), '1EC9414C-232A-6B00-B3C8-9F6BDECED846')
             #   32          16      4      12       2      14         48
