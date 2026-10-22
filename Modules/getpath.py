@@ -633,13 +633,13 @@ else:
             exec_prefix = prefix
         if not exec_prefix and prefix and isdir(joinpath(prefix, PLATSTDLIB_LANDMARK)):
             exec_prefix = prefix
-        if not exec_prefix and executable_dir:
-            exec_prefix = search_up(executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
         if not exec_prefix and base_executable_dir and base_executable_dir != executable_dir:
             # The venv's resolved base executable may live under a separate
             # exec_prefix (e.g. ./configure --exec-prefix) even when the
             # stdlib was found from 'home'.
             exec_prefix = search_up(base_executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
+        if not exec_prefix and executable_dir:
+            exec_prefix = search_up(executable_dir, PLATSTDLIB_LANDMARK, test=isdir
         if not exec_prefix and EXEC_PREFIX:
             exec_prefix = EXEC_PREFIX
         if not exec_prefix or not isdir(joinpath(exec_prefix, PLATSTDLIB_LANDMARK)):
