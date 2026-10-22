@@ -902,7 +902,7 @@ class BaseTestUUID:
         time_func = nanoseconds if callable(nanoseconds) else lambda: nanoseconds
         with support.swap_item(sys.modules, 'uuid', self.uuid):
             self.uuid._install_py_hooks(random_func=random_func,
-                                       time_func=time_func)
+                                        time_func=time_func)
             if self.is_c_uuid:
                 self.uuid._install_c_hooks(random_func=random_func,
                                            time_func=time_func)
