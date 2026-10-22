@@ -11,7 +11,7 @@ is None.
 
 Here is an array of string pointers:
 
->>> from ctypes import *
+>>> from ctypes import Structure, c_int, c_char_p
 >>> array = (c_char_p * 5)()
 >>> print(array._objects)
 None
@@ -51,17 +51,16 @@ of 'x' ('_b_base_' is either None, or the root object owning the memory block):
 >>> x.array._b_base_._objects
 {'0:2': b'spam spam spam'}
 >>>
-
 '''
 
-import unittest, doctest
+import doctest
+import unittest
 
-import test.test_ctypes.test_objects
 
-class TestCase(unittest.TestCase):
-    def test(self):
-        failures, tests = doctest.testmod(test.test_ctypes.test_objects)
-        self.assertFalse(failures, 'doctests failed, see output above')
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
+
 
 if __name__ == '__main__':
-    doctest.testmod(test.test_ctypes.test_objects)
+    unittest.main()

@@ -7,7 +7,7 @@ Here are a few examples of how to use the :mod:`email` package to read, write,
 and send simple email messages, as well as more complex MIME messages.
 
 First, let's see how to create and send a simple text message (both the
-text content and the addresses may contain unicode characters):
+text content and the addresses may contain Unicode characters):
 
 .. literalinclude:: ../includes/email-simple.py
 
@@ -55,11 +55,11 @@ Up to the prompt, the output from the above is:
 
     To: Penelope Pussycat <penelope@example.com>, Fabrette Pussycat <fabrette@example.com>
     From: Pepé Le Pew <pepe@example.com>
-    Subject: Ayons asperges pour le déjeuner
+    Subject: Pourquoi pas des asperges pour ce midi ?
 
     Salut!
 
-    Cela ressemble à un excellent recipie[1] déjeuner.
+    Cette recette [1] sera sûrement un très bon repas.
 
 
 .. rubric:: Footnotes
