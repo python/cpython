@@ -5208,7 +5208,6 @@ class ThreadedTests(unittest.TestCase):
 
         client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         client_context.check_hostname = False
-        client_context.verify_mode = ssl.CERT_NONE
         client_context.maximum_version = ssl.TLSVersion.TLSv1_2
         client_context.set_ciphers('PSK')
         client_context.set_psk_client_callback(lambda hint: (None, psk))
@@ -5288,7 +5287,6 @@ class ThreadedTests(unittest.TestCase):
 
         client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         client_context.check_hostname = False
-        client_context.verify_mode = ssl.CERT_NONE
         client_context.minimum_version = ssl.TLSVersion.TLSv1_3
         client_context.set_ciphers('PSK')
         client_context.set_psk_client_callback(client_callback)
@@ -5302,6 +5300,7 @@ class ThreadedTests(unittest.TestCase):
         with server:
             with client_context.wrap_socket(socket.socket()) as s:
                 s.connect((HOST, server.port))
+                self.assertTrue(s.session_reused)
 
     @support.skip_if_sanitizer("gh-150191: OpenSSL races on SSL->rwstate and "
                                "the socket BIO flags with concurrent read "
