@@ -9780,7 +9780,14 @@ printf "%s\n" "$BOLT_INSTRUMENT_FLAGS" >&6; }
 printf %s "checking BOLT_APPLY_FLAGS... " >&6; }
 if test -z "${BOLT_APPLY_FLAGS}"
 then
-  BOLT_APPLY_FLAGS=" ${BOLT_COMMON_FLAGS} -reorder-blocks=ext-tsp -reorder-functions=cdsort -split-functions -icf=0 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=none -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot "
+      case $host_cpu in #(
+  x86_64) :
+    bolt_frame_opt_flags="-frame-opt=hot" ;; #(
+  *) :
+    bolt_frame_opt_flags=""
+   ;;
+esac
+  BOLT_APPLY_FLAGS=" ${BOLT_COMMON_FLAGS} -reorder-blocks=ext-tsp -reorder-functions=cdsort -split-functions -icf=0 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=none -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack ${bolt_frame_opt_flags} "
 
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $BOLT_APPLY_FLAGS" >&5
@@ -14159,6 +14166,31 @@ then :
 printf "%s\n" "$withval" >&6; }
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=address $LDFLAGS"
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether a program links with -fsanitize=address" >&5
+printf %s "checking whether a program links with -fsanitize=address... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+else case e in #(
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+   as_fn_error $? "cannot link with -fsanitize=address: the compiler does not support AddressSanitizer or its runtime library is not installed; see config.log" "$LINENO" 5 ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
 
 else case e in #(
   e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -14187,17 +14219,11 @@ case $host_cpu in #(
   *) :
      ;;
 esac
-as_CACHEVAR=`printf "%s\n" "ax_cv_check_cflags__$hwasan_flags" | sed "$as_sed_sh"`
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts $hwasan_flags" >&5
-printf %s "checking whether C compiler accepts $hwasan_flags... " >&6; }
-if eval test \${$as_CACHEVAR+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e)
-  ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  $hwasan_flags"
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+BASECFLAGS="$hwasan_flags -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="$hwasan_flags $LDFLAGS"
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether a program links with $hwasan_flags" >&5
+printf %s "checking whether a program links with $hwasan_flags... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
@@ -14208,31 +14234,18 @@ main (void)
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
-  eval "$as_CACHEVAR=yes"
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
 else case e in #(
-  e) eval "$as_CACHEVAR=no" ;;
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+   as_fn_error $? "cannot link with $hwasan_flags: the compiler does not support HWAddressSanitizer or its runtime library is not installed; see config.log" "$LINENO" 5 ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-  CFLAGS=$ax_check_save_flags ;;
-esac
-fi
-eval ac_res=\$$as_CACHEVAR
-	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-printf "%s\n" "$ac_res" >&6; }
-if eval test \"x\$"$as_CACHEVAR"\" = x"yes"
-then :
-
-BASECFLAGS="$hwasan_flags -fno-omit-frame-pointer $BASECFLAGS"
-LDFLAGS="$hwasan_flags $LDFLAGS"
-
-else case e in #(
-  e) as_fn_error $? "The selected compiler doesn't support hardware address sanitizer" "$LINENO" 5 ;;
-esac
-fi
-
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
 
 else case e in #(
   e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -14250,16 +14263,11 @@ then :
   withval=$with_memory_sanitizer;
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
 printf "%s\n" "$withval" >&6; }
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fsanitize=memory" >&5
-printf %s "checking whether C compiler accepts -fsanitize=memory... " >&6; }
-if test ${ax_cv_check_cflags___fsanitize_memory+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e)
-  ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -fsanitize=memory"
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether a program links with -fsanitize=memory" >&5
+printf %s "checking whether a program links with -fsanitize=memory... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
@@ -14270,30 +14278,18 @@ main (void)
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
-  ax_cv_check_cflags___fsanitize_memory=yes
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
 else case e in #(
-  e) ax_cv_check_cflags___fsanitize_memory=no ;;
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+   as_fn_error $? "cannot link with -fsanitize=memory: the compiler does not support MemorySanitizer or its runtime library is not installed; see config.log" "$LINENO" 5 ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-  CFLAGS=$ax_check_save_flags ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___fsanitize_memory" >&5
-printf "%s\n" "$ax_cv_check_cflags___fsanitize_memory" >&6; }
-if test "x$ax_cv_check_cflags___fsanitize_memory" = xyes
-then :
-
-BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
-LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
-
-else case e in #(
-  e) as_fn_error $? "The selected compiler doesn't support memory sanitizer" "$LINENO" 5 ;;
-esac
-fi
-
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
 
 else case e in #(
   e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -14314,6 +14310,31 @@ printf "%s\n" "$withval" >&6; }
 BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
 LDFLAGS="-fsanitize=undefined $LDFLAGS"
 with_ubsan="yes"
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether a program links with -fsanitize=undefined" >&5
+printf %s "checking whether a program links with -fsanitize=undefined... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+else case e in #(
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+   as_fn_error $? "cannot link with -fsanitize=undefined: the compiler does not support UndefinedBehaviorSanitizer or its runtime library is not installed; see config.log" "$LINENO" 5 ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
 
 else case e in #(
   e)
@@ -14337,6 +14358,31 @@ printf "%s\n" "$withval" >&6; }
 BASECFLAGS="-fsanitize=thread $BASECFLAGS"
 LDFLAGS="-fsanitize=thread $LDFLAGS"
 with_tsan="yes"
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether a program links with -fsanitize=thread" >&5
+printf %s "checking whether a program links with -fsanitize=thread... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+else case e in #(
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+   as_fn_error $? "cannot link with -fsanitize=thread: the compiler does not support ThreadSanitizer or its runtime library is not installed; see config.log" "$LINENO" 5 ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
 
 else case e in #(
   e)
@@ -16293,8 +16339,8 @@ if test "x$ac_cv_lib_ffi_ffi_call" = xyes
 then :
 
                 have_libffi=yes
-        LIBFFI_CFLAGS="-I${SDKROOT}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"
-        LIBFFI_LIBS="-lffi"
+        LIBFFI_CFLAGS=${LIBFFI_CFLAGS-"-I${SDKROOT}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"}
+        LIBFFI_LIBS=${LIBFFI_LIBS-"-lffi"}
 
 fi
 

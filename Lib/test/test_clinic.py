@@ -15,7 +15,6 @@ import os.path
 import re
 import sys
 import unittest
-from unittest import mock
 import warnings
 
 test_tools.skip_if_missing('clinic')
@@ -23,8 +22,7 @@ with test_tools.imports_under_tool('clinic'):
     import libclinic
     from libclinic import ClinicError, unspecified, NULL, fail
     from libclinic.converters import (
-        int_converter, object_converter, str_converter, self_converter,
-        Py_ssize_t_converter)
+        int_converter, object_converter, str_converter, self_converter)
     from libclinic.function import (
         Module, Class, Function, FunctionKind, Parameter,
         permute_optional_groups, permute_right_option_groups,
@@ -36,7 +34,7 @@ with test_tools.imports_under_tool('clinic'):
     from libclinic.block_parser import Block, BlockParser
     from libclinic.codegen import BlockPrinter, Destination
     from libclinic.dsl_parser import DSLParser
-    from libclinic.slots import SlotSpec, SLOTS
+    from libclinic.slots import SLOTS
     from libclinic.cli import parse_file, Clinic
 
 
@@ -857,13 +855,8 @@ class ClinicWholeFileTest(TestCase):
             self.assertNotIn(text, generated)
 
     def test_slot_with_parameters_and_return_type(self):
-        # Slots which take arguments or return something else than an
-        # object are not supported yet; check the machinery with fake ones.
-        slots = {
-            '__contains__': SlotSpec('__contains__', 'int', 'int',
-                                     {(object_converter,): 'sq_contains'}),
-            '__bool__': SlotSpec('__bool__', 'int', 'int', {(): 'nb_bool'}),
-        }
+        # Check the machinery with slots which take arguments or return
+        # something else than an object.
         block = """
             /*[clinic input]
             output everything block
@@ -879,8 +872,7 @@ class ClinicWholeFileTest(TestCase):
             Foo.__bool__
             [clinic start generated code]*/
         """
-        with mock.patch.dict(SLOTS, slots):
-            generated = self.clinic.parse(dedent(block))
+        generated = self.clinic.parse(dedent(block))
         self.assertIn(dedent("""
             static int
             Foo_contains(PyObject *self, PyObject *value)
@@ -3353,46 +3345,52 @@ class ClinicParserTest(TestCase):
             Foo.__next__
         """, signatures_in_block=3, function_index=2)
         self.assertIs(function.kind, FunctionKind.SLOT)
-        self.assertEqual(function.slot.name, "__next__")
+        self.assertIs(function.slot, SLOTS["__next__"])
         self.assertEqual(function.c_basename, "Foo_next")
         self.assertEqual(function.return_converter.type, "PyObject *")
         self.assertEqual(list(function.parameters), ["self"])
 
+    def test_slot_coexist_is_a_method(self):
+        # dict.__contains__ is a METH_COEXIST method, not the slot.
+        function = self.parse_function("""
+            module foo
+            class Foo "FooObject *" ""
+            @coexist
+            Foo.__contains__
+                key: object
+                /
+        """, signatures_in_block=3, function_index=2)
+        self.assertIs(function.kind, FunctionKind.CALLABLE)
+        self.assertIsNone(function.slot)
+        self.assertIn("METH_COEXIST", function.methoddef_flags)
+
     def test_slot_parameters(self):
-        slot = SlotSpec('__contains__', 'int', 'int', {
-            (Py_ssize_t_converter,): 'sq_fake',
-            (object_converter,): 'sq_contains'})
+        # The parameter of __getitem__ gives the slot (Py_ssize_t for
+        # sq_item, object for mp_subscript) and is not parsed.
         block = """
             module foo
             class Foo "FooObject *" ""
-            Foo.__contains__
-                value: {converter}
+            Foo.__getitem__
+                key: {converter}
                 /
         """
         errors = [
-            ("Foo.__contains__",
-             "'__contains__' must declare (Py_ssize_t) for sq_fake or "
-             "(object) for sq_contains; got ()"),
-            ("Foo.__contains__\n    value: int\n    /",
-             "'__contains__' must declare"),
-            ("Foo.__contains__\n    value: object",
-             "The parameters of '__contains__' must be positional-only"),
-            ("Foo.__contains__\n    value: object = None\n    /",
-             "The parameters of '__contains__' cannot have a default value"),
+            ("Foo.__getitem__\n    key: object",
+             "The parameters of '__getitem__' must be positional-only"),
+            ("Foo.__getitem__\n    key: object = None\n    /",
+             "The parameters of '__getitem__' cannot have a default value"),
         ]
-        with mock.patch.dict(SLOTS, {'__contains__': slot}):
-            for converter in "Py_ssize_t", "object":
-                with self.subTest(converter=converter):
-                    function = self.parse_function(
-                        block.format(converter=converter),
-                        signatures_in_block=3, function_index=2)
-                    self.assertIs(function.kind, FunctionKind.SLOT)
-                    self.assertEqual(function.return_converter.type, "int")
-                    self.assertEqual(list(function.parameters), ["self", "value"])
-            for body, err in errors:
-                with self.subTest(block=body):
-                    body = 'class Foo "FooObject *" "&Foo_Type"\n' + body
-                    self.expect_failure(body, err)
+        for converter in ["Py_ssize_t", "object"]:
+            with self.subTest(converter=converter):
+                function = self.parse_function(
+                    block.format(converter=converter),
+                    signatures_in_block=3, function_index=2)
+                self.assertIs(function.kind, FunctionKind.SLOT)
+                self.assertEqual(list(function.parameters), ["self", "key"])
+        for body, err in errors:
+            with self.subTest(block=body):
+                body = 'class Foo "FooObject *" "&Foo_Type"\n' + body
+                self.expect_failure(body, err)
 
     def test_slot_errors(self):
         cases = [
@@ -3402,12 +3400,8 @@ class ClinicParserTest(TestCase):
              "'__next__' must be a normal method"),
             ("@getter\nFoo.__next__",
              "'__next__' must be a normal method"),
-            ("@coexist\nFoo.__next__",
-             "@coexist cannot be applied to '__next__'"),
             ("@vectorcall\nFoo.__next__",
              "@vectorcall can only be used with __init__ and __new__"),
-            ("Foo.__next__\n    a: int",
-             "'__next__' methods cannot define parameters"),
             ("Foo.__next__ -> int",
              "'Foo.__next__' cannot define a return type"),
             ("Foo.__next__\n\nReturn the next item.",
@@ -3660,10 +3654,10 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=2)
 
     def test_cannot_convert_special_method(self):
-        err = "'__len__' is a special method and cannot be converted"
+        err = "'__iter__' is a special method and cannot be converted"
         block = """
             class T "" ""
-            T.__len__
+            T.__iter__
         """
         self.expect_failure(block, err, lineno=1)
 
@@ -4302,6 +4296,7 @@ class ClinicExternalTest(TestCase):
                 int()
                 long()
                 object()
+                Py_hash_t()
                 Py_ssize_t()
                 size_t()
                 unsigned_int()

@@ -4983,8 +4983,11 @@ static PyType_Spec pycunion_spec = {
 /*
   PyCArray_Type
 */
-static int Array_ass_item_lock_held(PyObject *, Py_ssize_t, PyObject *);
-static int Array_ass_subscript(PyObject *, PyObject *, PyObject *);
+
+/*[clinic input]
+class _ctypes.Array "PyObject *" "clinic_state()->PyCArray_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b2d780e2e2dc6e8a]*/
 
 static int
 Array_init(PyObject *self, PyObject *args, PyObject *kw)
@@ -5008,7 +5011,7 @@ Array_init(PyObject *self, PyObject *args, PyObject *kw)
         for (i = 0; result >= 0 && i < n; ++i) {
             PyObject *v = PyTuple_GET_ITEM(args, i);
             assert(v != NULL);
-            result = Array_ass_item_lock_held(self, i, v);
+            result = Array_ass_item_impl(self, i, v);
         }
         Py_END_CRITICAL_SECTION();
         return result;
@@ -5023,8 +5026,17 @@ Array_init(PyObject *self, PyObject *args, PyObject *kw)
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+_ctypes.Array.__getitem__ as Array_item
+    myself: self
+    index: Py_ssize_t
+    /
+[clinic start generated code]*/
+
 static PyObject *
-Array_item_lock_held(PyObject *myself, Py_ssize_t index)
+Array_item_impl(PyObject *myself, Py_ssize_t index)
+/*[clinic end generated code: output=d038162d727d7d9b input=68fa9889c77bb8c9]*/
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(myself);
 
@@ -5053,18 +5065,17 @@ Array_item_lock_held(PyObject *myself, Py_ssize_t index)
                        index, size, self->b_ptr + offset);
 }
 
-static PyObject *
-Array_item(PyObject *myself, Py_ssize_t index)
-{
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(myself);
-    result = Array_item_lock_held(myself, index);
-    Py_END_CRITICAL_SECTION();
-    return result;
-}
+/*[clinic input]
+@critical_section
+_ctypes.Array.__getitem__ as Array_subscript
+    myself: self
+    item: object
+    /
+[clinic start generated code]*/
 
 static PyObject *
-Array_subscript_lock_held(PyObject *myself, PyObject *item)
+Array_subscript_impl(PyObject *myself, PyObject *item)
+/*[clinic end generated code: output=5c88d612ad5c8a1a input=510935495a857cac]*/
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(myself);
 
@@ -5077,7 +5088,7 @@ Array_subscript_lock_held(PyObject *myself, PyObject *item)
             return NULL;
         if (i < 0)
             i += self->b_length;
-        return Array_item_lock_held(myself, i);
+        return Array_item_impl(myself, i);
     }
     else if (PySlice_Check(item)) {
         PyObject *proto;
@@ -5165,7 +5176,7 @@ Array_subscript_lock_held(PyObject *myself, PyObject *item)
 
         for (cur = start, i = 0; i < slicelen;
              cur += step, i++) {
-            PyObject *v = Array_item_lock_held(myself, cur);
+            PyObject *v = Array_item_impl(myself, cur);
             if (v == NULL) {
                 Py_DECREF(np);
                 return NULL;
@@ -5182,18 +5193,19 @@ Array_subscript_lock_held(PyObject *myself, PyObject *item)
 }
 
 
-static PyObject *
-Array_subscript(PyObject *myself, PyObject *item)
-{
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(myself);
-    result = Array_subscript_lock_held(myself, item);
-    Py_END_CRITICAL_SECTION();
-    return result;
-}
+/*[clinic input]
+@critical_section
+_ctypes.Array.__setitem__ as Array_ass_item
+
+    myself: self
+    index: Py_ssize_t
+    value: object
+    /
+[clinic start generated code]*/
 
 static int
-Array_ass_item_lock_held(PyObject *myself, Py_ssize_t index, PyObject *value)
+Array_ass_item_impl(PyObject *myself, Py_ssize_t index, PyObject *value)
+/*[clinic end generated code: output=8fb1fd51b5b45da8 input=8b6ddb53d6377b96]*/
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(myself);
 
@@ -5227,19 +5239,19 @@ Array_ass_item_lock_held(PyObject *myself, Py_ssize_t index, PyObject *value)
                        index, size, ptr);
 }
 
-static int
-Array_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
-{
-    int result;
-    Py_BEGIN_CRITICAL_SECTION(myself);
-    result = Array_ass_item_lock_held(myself, index, value);
-    Py_END_CRITICAL_SECTION();
-    return result;
-}
+/*[clinic input]
+@critical_section
+_ctypes.Array.__setitem__ as Array_ass_subscript
 
+    myself: self
+    item: object
+    value: object
+    /
+[clinic start generated code]*/
 
 static int
-Array_ass_subscript_lock_held(PyObject *myself, PyObject *item, PyObject *value)
+Array_ass_subscript_impl(PyObject *myself, PyObject *item, PyObject *value)
+/*[clinic end generated code: output=cb9a138e4e40c5ac input=4b7aedebbb357853]*/
 {
     CDataObject *self = _CDataObject_CAST(myself);
 
@@ -5256,7 +5268,7 @@ Array_ass_subscript_lock_held(PyObject *myself, PyObject *item, PyObject *value)
             return -1;
         if (i < 0)
             i += self->b_length;
-        return Array_ass_item_lock_held(myself, i, value);
+        return Array_ass_item_impl(myself, i, value);
     }
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelen, otherlen, i;
@@ -5281,7 +5293,7 @@ Array_ass_subscript_lock_held(PyObject *myself, PyObject *item, PyObject *value)
             int result;
             if (item == NULL)
                 return -1;
-            result = Array_ass_item_lock_held(myself, cur, item);
+            result = Array_ass_item_impl(myself, cur, item);
             Py_DECREF(item);
             if (result == -1)
                 return -1;
@@ -5294,17 +5306,6 @@ Array_ass_subscript_lock_held(PyObject *myself, PyObject *item, PyObject *value)
         return -1;
     }
 }
-
-static int
-Array_ass_subscript(PyObject *myself, PyObject *item, PyObject *value)
-{
-    int result;
-    Py_BEGIN_CRITICAL_SECTION(myself);
-    result = Array_ass_subscript_lock_held(myself, item, value);
-    Py_END_CRITICAL_SECTION();
-    return result;
-}
-
 
 static Py_ssize_t
 Array_length(PyObject *myself)
@@ -5574,8 +5575,22 @@ static PyType_Spec pycsimple_spec = {
 /*
   PyCPointer_Type
 */
+/*[clinic input]
+class _ctypes._Pointer "PyObject *" "clinic_state()->PyCPointer_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=452695db70aa7c3e]*/
+
+/*[clinic input]
+@critical_section
+_ctypes._Pointer.__getitem__ as Pointer_item
+    myself: self
+    index: Py_ssize_t
+    /
+[clinic start generated code]*/
+
 static PyObject *
-Pointer_item_lock_held(PyObject *myself, Py_ssize_t index)
+Pointer_item_impl(PyObject *myself, Py_ssize_t index)
+/*[clinic end generated code: output=4ae9d566e8038853 input=17943427cd04ed08]*/
 {
     CDataObject *self = _CDataObject_CAST(myself);
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
@@ -5614,18 +5629,19 @@ Pointer_item_lock_held(PyObject *myself, Py_ssize_t index)
                        index, size, (char *)((char *)deref + offset));
 }
 
-static PyObject *
-Pointer_item(PyObject *self, Py_ssize_t index)
-{
-    PyObject *res;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    res = Pointer_item_lock_held(self, index);
-    Py_END_CRITICAL_SECTION();
-    return res;
-}
+/*[clinic input]
+@critical_section
+_ctypes._Pointer.__setitem__ as Pointer_ass_item
+
+    myself: self
+    index: Py_ssize_t
+    value: object
+    /
+[clinic start generated code]*/
 
 static int
-Pointer_ass_item_lock_held(PyObject *myself, Py_ssize_t index, PyObject *value)
+Pointer_ass_item_impl(PyObject *myself, Py_ssize_t index, PyObject *value)
+/*[clinic end generated code: output=4503430bd55b6c69 input=344ad19b3094558c]*/
 {
     CDataObject *self = _CDataObject_CAST(myself);
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
@@ -5668,16 +5684,6 @@ Pointer_ass_item_lock_held(PyObject *myself, Py_ssize_t index, PyObject *value)
 
     return PyCData_set(st, myself, proto, stginfo->setfunc, value,
                        index, size, ((char *)deref + offset));
-}
-
-static int
-Pointer_ass_item(PyObject *self, Py_ssize_t index, PyObject *value)
-{
-    int res;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    res = Pointer_ass_item_lock_held(self, index, value);
-    Py_END_CRITICAL_SECTION();
-    return res;
 }
 
 static PyObject *
@@ -5815,7 +5821,7 @@ copy_pointer_to_list_lock_held(PyObject *myself, PyObject *np, Py_ssize_t len,
     Py_ssize_t i;
     size_t cur;
     for (cur = start, i = 0; i < len; cur += step, i++) {
-        PyObject *v = Pointer_item_lock_held(myself, cur);
+        PyObject *v = Pointer_item_impl(myself, cur);
         if (!v) {
             return -1;
         }
