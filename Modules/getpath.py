@@ -639,7 +639,7 @@ else:
             # stdlib was found from 'home'.
             exec_prefix = search_up(base_executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
         if not exec_prefix and executable_dir:
-            exec_prefix = search_up(executable_dir, PLATSTDLIB_LANDMARK, test=isdir
+            exec_prefix = search_up(executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
         if not exec_prefix and EXEC_PREFIX:
             exec_prefix = EXEC_PREFIX
         if not exec_prefix or not isdir(joinpath(exec_prefix, PLATSTDLIB_LANDMARK)):

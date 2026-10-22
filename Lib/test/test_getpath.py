@@ -577,6 +577,7 @@ class MockGetPathTests(unittest.TestCase):
         )
         actual = getpath(ns, expected)
         self.assertEqual(expected, actual)
+
     def test_venv_non_installed_zip_path_posix(self):
         "Test a venv created from non-installed python has correct zip path."""
         ns = MockPosixNamespace(
