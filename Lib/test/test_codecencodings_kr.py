@@ -47,7 +47,31 @@ class Test_EUCKR(multibytecodec_support.TestBase, unittest.TestCase):
         (b"\xa4\xd4\xa4\xb6\xa4\xd0\xa4\xff", "replace", '\ufffd\u6e21\ub544\u572d\ufffd'),
         (b"\xa4\xd4\xff\xa4\xd4\xa4\xb6\xa4\xd0\xa4\xd4", "replace", '\ufffd\ufffd\ufffd\uc4d4'),
         (b"\xc1\xc4", "strict", "\uc894"),
+
+        # make-up sequences for syllables that KS X 1001 encodes directly
+        (b"\xa4\xd4\xa4\xa1\xa4\xbf\xa4\xd4", "strict", None),
+        (b"\xa4\xd4\xa4\xa1\xa4\xbf\xa4\xd4", "replace", "\ufffd"),
+        (b"\xa4\xd4\xa4\xa1\xa4\xbf\xa4\xd4x", "ignore", "x"),
+        (b"\xa4\xd4\xa4\xa1\xa4\xbf\xa4\xd4x", "replace", "\ufffdx"),
+        (b"\xa4\xd4\xa4\xbe\xa4\xd3\xa4\xbe", "strict", "\ud7a3"),
     )
+
+    def test_makeup_sequence_roundtrip(self):
+        accepted = 0
+        for cho in range(0xa1, 0xd5):
+            for jung in range(0xa1, 0xd5):
+                for jong in range(0xa1, 0xd5):
+                    b = bytes([0xa4, 0xd4, 0xa4, cho, 0xa4, jung, 0xa4, jong])
+                    with self.subTest(b=b):
+                        try:
+                            s = b.decode('euc_kr')
+                        except UnicodeDecodeError:
+                            s = b.decode('euc_kr', 'surrogateescape')
+                            self.assertEqual(s.encode('euc_kr', 'surrogateescape'), b)
+                            continue
+                        accepted += 1
+                        self.assertEqual(s.encode('euc_kr'), b)
+        self.assertEqual(accepted, 11172 - 2350)
 
 class Test_JOHAB(multibytecodec_support.TestBase, unittest.TestCase):
     encoding = 'johab'
