@@ -2675,15 +2675,17 @@ class CTokenizeTest(TestCase):
         )
 
     def test_tolerant_fstring_closer_at_expression_entry_depth(self):
-        source = "f'1:{]]{}}r}''"
-        for extra_tokens, position in ((False, (1, 6)), (True, (1, 7))):
-            with self.subTest(extra_tokens=extra_tokens):
-                with self.assertRaises(tokenize.TokenError) as caught:
-                    self._get_tokens(source, extra_tokens=extra_tokens)
-                self.assertEqual(
-                    caught.exception.args,
-                    ("f-string: unmatched ']'", position),
-                )
+        cases = [
+            ("f'1:{]]{}}r}''", ("f-string: unmatched ']'", (1, 6))),
+            ("f'{]a'", ("f-string: unmatched ']'", (1, 4))),
+            ("t'{\nx)'", ("t-string: unmatched ')'", (2, 2))),
+        ]
+        for source, error in cases:
+            for extra_tokens in (False, True):
+                with self.subTest(source=source, extra_tokens=extra_tokens):
+                    with self.assertRaises(tokenize.TokenError) as caught:
+                        self._get_tokens(source, extra_tokens=extra_tokens)
+                    self.assertEqual(caught.exception.args, error)
 
     def test_int(self):
 
