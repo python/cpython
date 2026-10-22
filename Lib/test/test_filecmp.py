@@ -518,8 +518,10 @@ class DirCmpImplementationTests(unittest.TestCase):
                 return 2
             return original_cmp(a, b, sh)
 
-        with patch("os.stat", side_effect=fake_stat_for_report), \
-            patch("filecmp._cmp", side_effect=fake_private_cmp):
+        with (
+            patch("os.stat", side_effect=fake_stat_for_report),
+            patch("filecmp._cmp", side_effect=fake_private_cmp),
+        ):
 
             dc = filecmp.dircmp(self.dir, self.dir_same)
             _ = dc.subdirs
