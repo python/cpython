@@ -878,6 +878,7 @@ TRUE
 MACHDEP_OBJS
 DYNLOADFILE
 DLINCLDIR
+PLATFORM_MAIN_OBJS
 PLATFORM_OBJS
 PLATFORM_HEADERS
 DTRACE_OBJS
@@ -20434,6 +20435,7 @@ fi
 
 PLATFORM_HEADERS=
 PLATFORM_OBJS=
+PLATFORM_MAIN_OBJS=
 
 case $ac_sys_system in #(
   Emscripten) :
@@ -20444,6 +20446,7 @@ case $ac_sys_system in #(
     if test "x$enable_emscripten_syscalls" = xyes
 then :
 
+      as_fn_append PLATFORM_MAIN_OBJS ' Programs/emscripten_beforemain.o'
       as_fn_append PLATFORM_OBJS ' Python/emscripten_syscalls.o'
 
 fi
@@ -20457,6 +20460,7 @@ fi
   *) :
      ;;
 esac
+
 
 
 
