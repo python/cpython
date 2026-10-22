@@ -807,6 +807,20 @@ class MmapTests(unittest.TestCase):
             mm[1:] = view[:-1]
             self.assertEqual(mm[:], expected)
 
+    def test_extended_slice_overlapping_memoryview(self):
+        data = b'abcdefghijkl'
+        for step in (-3, -2, -1, 2, 3):
+            target = slice(None, None, step)
+            size = len(data[target])
+            for offset in (0, len(data) - size):
+                with self.subTest(step=step, offset=offset):
+                    expected = bytearray(data)
+                    expected[target] = data[offset:offset + size]
+                    with mmap.mmap(-1, len(data)) as mm, memoryview(mm) as view:
+                        mm[:] = data
+                        mm[target] = view[offset:offset + size]
+                        self.assertEqual(mm[:], expected)
+
     def test_write_returning_the_number_of_bytes_written(self):
         mm = mmap.mmap(-1, 16)
         self.assertEqual(mm.write(b""), 0)

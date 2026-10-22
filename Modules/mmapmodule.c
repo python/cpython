@@ -1727,10 +1727,21 @@ mmap_ass_subscript_impl(mmap_object *self, PyObject *item, PyObject *value)
             }
         }
         else {
-            if (safe_copy_from_slice(self->data, (char *)vbuf.buf, start, step,
-                                     slicelen) < 0)
-            {
+            /* The source may overlap the destination, so copy it before
+               assigning to the extended slice. */
+            char *source = PyMem_Malloc(slicelen);
+            if (source == NULL) {
+                PyErr_NoMemory();
                 result = -1;
+            }
+            else {
+                if (safe_memcpy(source, vbuf.buf, slicelen) < 0 ||
+                    safe_copy_from_slice(self->data, source, start, step,
+                                         slicelen) < 0)
+                {
+                    result = -1;
+                }
+                PyMem_Free(source);
             }
         }
         PyBuffer_Release(&vbuf);
