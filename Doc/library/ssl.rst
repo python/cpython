@@ -1297,7 +1297,7 @@ SSL sockets also have the following additional methods and attributes:
    :meth:`~SSLSocket.get_unverified_chain`.
 
    The verified chain is not stored with a session, so the list is empty
-   when the session was resumed (see :attr:`~SSLSocket.session_reused`).
+   when the session is resumed (see :attr:`~SSLSocket.session_reused`).
 
    .. versionadded:: 3.13
 
