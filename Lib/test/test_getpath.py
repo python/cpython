@@ -508,6 +508,40 @@ class MockGetPathTests(unittest.TestCase):
         actual = getpath(ns, expected)
         self.assertEqual(expected, actual)
 
+    def test_venv_symlink_to_separate_exec_prefix_posix(self):
+        "Test a venv whose base executable lives under a separate exec_prefix."
+        ns = MockPosixNamespace(
+            argv0="/venv/bin/python",
+            PREFIX="/usr",
+            EXEC_PREFIX="/usr",
+        )
+        ns.add_known_xfile("/exec/bin/python")
+        ns.add_known_xfile("/runtime/bin/python")
+        ns.add_known_link("/runtime/bin/python", "/exec/bin/python")
+        ns.add_known_xfile("/venv/bin/python")
+        ns.add_known_link("/venv/bin/python", "/runtime/bin/python")
+        ns.add_known_file("/runtime/lib/python9.8/os.py")
+        ns.add_known_dir("/exec/lib/python9.8/lib-dynload")
+        ns.add_known_file("/venv/pyvenv.cfg", [
+            "home = /runtime/bin",
+        ])
+        expected = dict(
+            executable="/venv/bin/python",
+            prefix="/venv",
+            exec_prefix="/venv",
+            base_executable="/exec/bin/python",
+            base_prefix="/runtime",
+            base_exec_prefix="/exec",
+            module_search_paths_set=1,
+            module_search_paths=[
+                "/runtime/lib/python98.zip",
+                "/runtime/lib/python9.8",
+                "/exec/lib/python9.8/lib-dynload",
+            ],
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
+
     def test_venv_non_installed_zip_path_posix(self):
         "Test a venv created from non-installed python has correct zip path."""
         ns = MockPosixNamespace(

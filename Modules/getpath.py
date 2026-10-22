@@ -232,6 +232,7 @@ stdlib_dir = config.get('stdlib_dir')
 stdlib_dir_was_set_in_config = bool(stdlib_dir)
 
 real_executable_dir = None
+base_executable_dir = None
 platstdlib_dir = None
 stdlib_zip = None
 
@@ -415,6 +416,8 @@ if not py_setpath:
                     # If nothing there locates a standard library (e.g. a
                     # launcher binary stored outside the installation that
                     # 'home' points into), keep searching from 'home'.
+                    # base_executable_dir is still used to find platform
+                    # dependent libraries (exec_prefix) in that case.
                     base_executable_dir = dirname(base_executable)
                     if (
                         isfile(joinpath(base_executable_dir, BUILDDIR_TXT))
@@ -632,6 +635,11 @@ else:
             exec_prefix = prefix
         if not exec_prefix and executable_dir:
             exec_prefix = search_up(executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
+        if not exec_prefix and base_executable_dir and base_executable_dir != executable_dir:
+            # The venv's resolved base executable may live under a separate
+            # exec_prefix (e.g. ./configure --exec-prefix) even when the
+            # stdlib was found from 'home'.
+            exec_prefix = search_up(base_executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
         if not exec_prefix and EXEC_PREFIX:
             exec_prefix = EXEC_PREFIX
         if not exec_prefix or not isdir(joinpath(exec_prefix, PLATSTDLIB_LANDMARK)):
