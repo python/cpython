@@ -892,6 +892,36 @@ mmap_length(PyObject *self)
     return return_value;
 }
 
+static PyObject *
+mmap_item_impl(mmap_object *self, Py_ssize_t i);
+
+static PyObject *
+mmap_item(PyObject *self, Py_ssize_t i)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = mmap_item_impl((mmap_object *)self, i);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static PyObject *
+mmap_subscript_impl(mmap_object *self, PyObject *item);
+
+static PyObject *
+mmap_subscript(PyObject *self, PyObject *item)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = mmap_subscript_impl((mmap_object *)self, item);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 static int
 mmap_ass_item_impl(mmap_object *self, Py_ssize_t i, PyObject *v);
 
@@ -937,4 +967,4 @@ mmap_ass_subscript(PyObject *self, PyObject *item, PyObject *value)
 #ifndef MMAP_MMAP_MADVISE_METHODDEF
     #define MMAP_MMAP_MADVISE_METHODDEF
 #endif /* !defined(MMAP_MMAP_MADVISE_METHODDEF) */
-/*[clinic end generated code: output=fd4738a3d64fcb0a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=90a906cde591ab92 input=a9049054013a1b77]*/
