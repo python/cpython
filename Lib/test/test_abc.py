@@ -7,11 +7,12 @@
 """Unit tests for abc.py."""
 
 import unittest
+import weakref
 
 import abc
 import _py_abc
 from inspect import isabstract
-from test.support import warnings_helper
+from test.support import gc_collect, warnings_helper
 
 def test_factory(abc_ABCMeta, abc_get_cache_token):
     class TestLegacyAPI(unittest.TestCase):
@@ -379,6 +380,33 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             self.assertIsSubclass(str, (A,))
             self.assertIsSubclass(C, A)
             self.assertIsSubclass(C, (A,))
+
+        def test_instancecheck_class_changes_in_subclasscheck(self):
+            class Original:
+                def __getattribute__(self, name):
+                    if name == '__class__':
+                        return int
+                    return object.__getattribute__(self, name)
+
+            class Replacement:
+                pass
+
+            instance = Original()
+            original = weakref.ref(Original)
+            del Original
+
+            class Meta(abc_ABCMeta):
+                def __subclasscheck__(cls, candidate):
+                    if candidate is int:
+                        instance.__class__ = Replacement
+                        gc_collect()
+                        self.assertIsNotNone(original())
+                    return False
+
+            class Interface(metaclass=Meta):
+                pass
+
+            self.assertNotIsInstance(instance, Interface)
 
         def test_instancecheck_no_class(self):
             # gh-153772: __instancecheck__ must fall back to type(instance)
