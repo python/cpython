@@ -2355,7 +2355,9 @@ class SectionlessTestCase(unittest.TestCase):
         cfg1.write(output)
         cfg2 = self.fromstring(output.getvalue())
 
-        # self.assertEqual(set([configparser.UNNAMED_SECTION, 'sect1']), set(cfg2.sections()))
+        # self.assertEqual(
+        #     set([configparser.UNNAMED_SECTION, 'sect1']), set(cfg2.sections())
+        # )
         self.assertEqual('1', cfg2[configparser.UNNAMED_SECTION]['a'])
         self.assertEqual('2', cfg2[configparser.UNNAMED_SECTION]['b'])
         self.assertEqual('3', cfg2['sect1']['c'])
