@@ -1299,6 +1299,14 @@ Build changes
 
   (Contributed by Stan Ulbrych, Florian Mayer and AnnaAr321 in :gh:`156049`.)
 
+* Remove SIMD support for the HACL\* implementation of BLAKE-2 used by
+  :mod:`hashlib` and :mod:`hmac`. The vectorized implementations were only
+  enabled on some x86-64 platforms and caused build failures on many others.
+  The :program:`configure` script no longer checks for the compiler flags
+  needed to build them.
+
+  (Contributed by Bénédikt Tran in :gh:`160333`.)
+
 
 C API changes
 =============

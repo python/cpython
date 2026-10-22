@@ -38,6 +38,11 @@ fi
 
 # Step 1: copy files
 
+# The SIMD implementations of BLAKE-2 (Hacl_Hash_Blake2b_Simd256.c and
+# Hacl_Hash_Blake2s_Simd128.c) are not vendored. Their headers are kept
+# because Hacl_Streaming_HMAC.c includes them unconditionally; the SIMD
+# code paths of Hacl_Streaming_HMAC.c are not compiled since neither
+# HACL_CAN_COMPILE_VEC128 nor HACL_CAN_COMPILE_VEC256 is defined.
 declare -a dist_files
 dist_files=(
   Hacl_Streaming_Types.h
@@ -74,8 +79,6 @@ dist_files=(
   Hacl_Hash_SHA3.c
   Hacl_Hash_Blake2b.c
   Hacl_Hash_Blake2s.c
-  Hacl_Hash_Blake2b_Simd256.c
-  Hacl_Hash_Blake2s_Simd128.c
 # Cryptographic Primitives (sources)
   Hacl_HMAC.c
   Hacl_Streaming_HMAC.c
