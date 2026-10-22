@@ -158,6 +158,9 @@ class Runner:
         self._state = _State.INITIALIZED
 
     def _on_sigint(self, signum, frame, main_task):
+        # This runs as a Python signal handler, in the main thread between
+        # bytecodes with the GIL held, not as a C async-signal handler, so
+        # the synchronous Task.cancel() below is safe (see gh-158902).
         self._interrupt_count += 1
         if self._interrupt_count == 1 and not main_task.done():
             main_task.cancel()
