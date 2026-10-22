@@ -1,0 +1,2 @@
+Fix a reference leak when the value of a type alias is evaluated
+recursively or concurrently.
