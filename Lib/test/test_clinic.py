@@ -15,7 +15,6 @@ import os.path
 import re
 import sys
 import unittest
-from unittest import mock
 import warnings
 
 test_tools.skip_if_missing('clinic')
@@ -34,8 +33,8 @@ with test_tools.imports_under_tool('clinic'):
     from libclinic.return_converters import return_converters, int_return_converter
     from libclinic.block_parser import Block, BlockParser
     from libclinic.codegen import BlockPrinter, Destination
-    from libclinic.dsl_parser import DSLParser, unsupported_special_methods
-    from libclinic.slots import SlotSpec, SLOTS
+    from libclinic.dsl_parser import DSLParser
+    from libclinic.slots import SLOTS
     from libclinic.cli import parse_file, Clinic
 
 
@@ -856,9 +855,8 @@ class ClinicWholeFileTest(TestCase):
             self.assertNotIn(text, generated)
 
     def test_slot_with_parameters_and_return_type(self):
-        # Slots which take arguments or return something else than an
-        # object are not supported yet; check the machinery with them.
-        slots = {'__bool__': SlotSpec(return_converter='int')}
+        # Check the machinery with slots which take arguments or return
+        # something else than an object.
         block = """
             /*[clinic input]
             output everything block
@@ -874,8 +872,7 @@ class ClinicWholeFileTest(TestCase):
             Foo.__bool__
             [clinic start generated code]*/
         """
-        with mock.patch.dict(SLOTS, slots):
-            generated = self.clinic.parse(dedent(block))
+        generated = self.clinic.parse(dedent(block))
         self.assertIn(dedent("""
             static int
             Foo_contains(PyObject *self, PyObject *value)
@@ -3368,8 +3365,8 @@ class ClinicParserTest(TestCase):
         self.assertIn("METH_COEXIST", function.methoddef_flags)
 
     def test_slot_parameters(self):
-        # __getitem__ is not supported yet; its parameter gives the slot
-        # (Py_ssize_t for sq_item, object for mp_subscript) and is not parsed.
+        # The parameter of __getitem__ gives the slot (Py_ssize_t for
+        # sq_item, object for mp_subscript) and is not parsed.
         block = """
             module foo
             class Foo "FooObject *" ""
@@ -3383,21 +3380,17 @@ class ClinicParserTest(TestCase):
             ("Foo.__getitem__\n    key: object = None\n    /",
              "The parameters of '__getitem__' cannot have a default value"),
         ]
-        supported = unsupported_special_methods - {'__getitem__'}
-        with (mock.patch.dict(SLOTS, {'__getitem__': SlotSpec(return_converter='object')}),
-              mock.patch.object(libclinic.dsl_parser,
-                                'unsupported_special_methods', supported)):
-            for converter in "Py_ssize_t", "object":
-                with self.subTest(converter=converter):
-                    function = self.parse_function(
-                        block.format(converter=converter),
-                        signatures_in_block=3, function_index=2)
-                    self.assertIs(function.kind, FunctionKind.SLOT)
-                    self.assertEqual(list(function.parameters), ["self", "key"])
-            for body, err in errors:
-                with self.subTest(block=body):
-                    body = 'class Foo "FooObject *" "&Foo_Type"\n' + body
-                    self.expect_failure(body, err)
+        for converter in ["Py_ssize_t", "object"]:
+            with self.subTest(converter=converter):
+                function = self.parse_function(
+                    block.format(converter=converter),
+                    signatures_in_block=3, function_index=2)
+                self.assertIs(function.kind, FunctionKind.SLOT)
+                self.assertEqual(list(function.parameters), ["self", "key"])
+        for body, err in errors:
+            with self.subTest(block=body):
+                body = 'class Foo "FooObject *" "&Foo_Type"\n' + body
+                self.expect_failure(body, err)
 
     def test_slot_errors(self):
         cases = [
@@ -4303,6 +4296,7 @@ class ClinicExternalTest(TestCase):
                 int()
                 long()
                 object()
+                Py_hash_t()
                 Py_ssize_t()
                 size_t()
                 unsigned_int()

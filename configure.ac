@@ -2288,6 +2288,12 @@ AC_ARG_VAR(
 AC_MSG_CHECKING([BOLT_APPLY_FLAGS])
 if test -z "${BOLT_APPLY_FLAGS}"
 then
+  dnl The frame optimizer is only implemented for x86. BOLT 22 and newer
+  dnl refuse to run it on other architectures.
+  AS_CASE([$host_cpu],
+    [x86_64], [bolt_frame_opt_flags="-frame-opt=hot"],
+    [bolt_frame_opt_flags=""]
+  )
   AS_VAR_SET(
     [BOLT_APPLY_FLAGS],
     [m4_normalize("
@@ -2305,7 +2311,7 @@ then
      -indirect-call-promotion=all
      -dyno-stats
      -use-gnu-stack
-     -frame-opt=hot
+     ${bolt_frame_opt_flags}
    ")]
   )
 fi
