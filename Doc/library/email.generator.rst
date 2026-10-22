@@ -1,5 +1,5 @@
-:mod:`email.generator`: Generating MIME documents
--------------------------------------------------
+:mod:`!email.generator`: Generating MIME documents
+--------------------------------------------------
 
 .. module:: email.generator
    :synopsis: Generate flat text email messages from a message structure.
@@ -232,7 +232,7 @@ a formatted string representation of a message object.  For more detail, see
 :mod:`email.message`.
 
 
-The :mod:`email.generator` module also provides a derived class,
+The :mod:`!email.generator` module also provides a derived class,
 :class:`DecodedGenerator`, which is like the :class:`Generator` base class,
 except that non-\ :mimetype:`text` parts are not serialized, but are instead
 represented in the output stream by a string derived from a template filled
@@ -274,9 +274,9 @@ in with information about the part.
 .. rubric:: Footnotes
 
 .. [#] This statement assumes that you use the appropriate setting for
-       ``unixfrom``, and that there are no :mod:`policy` settings calling for
+       ``unixfrom``, and that there are no :mod:`email.policy` settings calling for
        automatic adjustments (for example,
-       :attr:`~email.policy.Policy.refold_source` must be ``none``, which is
+       :attr:`~email.policy.EmailPolicy.refold_source` must be ``none``, which is
        *not* the default).  It is also not 100% true, since if the message
        does not conform to the RFC standards occasionally information about the
        exact original text is lost during parsing error recovery.  It is a goal

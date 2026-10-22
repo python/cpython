@@ -62,14 +62,15 @@ const char * const _PyParser_TokenNames[] = {
     "COLONEQUAL",
     "EXCLAMATION",
     "OP",
-    "AWAIT",
-    "ASYNC",
     "TYPE_IGNORE",
     "TYPE_COMMENT",
     "SOFT_KEYWORD",
     "FSTRING_START",
     "FSTRING_MIDDLE",
     "FSTRING_END",
+    "TSTRING_START",
+    "TSTRING_MIDDLE",
+    "TSTRING_END",
     "COMMENT",
     "NL",
     "<ERRORTOKEN>",
@@ -112,7 +113,7 @@ _PyToken_OneChar(int c1)
 }
 
 int
-_PyToken_TwoChars(int c1, int c2)
+_PyToken_TwoChars(int c1, int c2, int BARRY_AS_BDFL)
 {
     switch (c1) {
     case '!':
@@ -162,7 +163,7 @@ _PyToken_TwoChars(int c1, int c2)
         switch (c2) {
         case '<': return LEFTSHIFT;
         case '=': return LESSEQUAL;
-        case '>': return NOTEQUAL;
+        case '>': return BARRY_AS_BDFL ? NOTEQUAL : OP;
         }
         break;
     case '=':
