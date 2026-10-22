@@ -1,2 +1,0 @@
-Adds a grammar to lib2to3.pygram that contains exec as a function not as
-statement.

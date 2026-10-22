@@ -1,1 +1,0 @@
-Add a :exc:`~gzip.BadGzipFile` exception to the :mod:`gzip` module.

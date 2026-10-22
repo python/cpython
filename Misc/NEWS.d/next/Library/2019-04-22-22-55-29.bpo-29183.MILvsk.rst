@@ -1,3 +1,0 @@
-Fix double exceptions in :class:`wsgiref.handlers.BaseHandler` by calling
-its :meth:`~wsgiref.handlers.BaseHandler.close` method only when no
-exception is raised.

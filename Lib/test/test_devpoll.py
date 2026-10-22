@@ -2,11 +2,12 @@
 
 # Initial tests are copied as is from "test_poll.py"
 
+import errno
 import os
 import random
 import select
 import unittest
-from test.support import run_unittest, cpython_only
+from test.support import cpython_only
 
 if not hasattr(select, 'devpoll') :
     raise unittest.SkipTest('test works only on Solaris OS family')
@@ -109,8 +110,17 @@ class DevPollTests(unittest.TestCase):
         # operations must fail with ValueError("I/O operation on closed ...")
         self.assertRaises(ValueError, devpoll.modify, fd, select.POLLIN)
         self.assertRaises(ValueError, devpoll.poll)
-        self.assertRaises(ValueError, devpoll.register, fd, fd, select.POLLIN)
+        self.assertRaises(ValueError, devpoll.register, fd, select.POLLIN)
         self.assertRaises(ValueError, devpoll.unregister, fd)
+
+    def test_close_error(self):
+        # gh-146205: close() should raise OSError if underlying fd is invalid
+        devpoll = select.devpoll()
+        fd = devpoll.fileno()
+        os.close(fd)
+        with self.assertRaises(OSError) as cm:
+            devpoll.close()
+        self.assertEqual(cm.exception.errno, errno.EBADF)
 
     def test_fd_non_inheritable(self):
         devpoll = select.devpoll()
@@ -122,9 +132,9 @@ class DevPollTests(unittest.TestCase):
         w, r = os.pipe()
         pollster.register(w)
         # Issue #17919
-        self.assertRaises(OverflowError, pollster.register, 0, -1)
+        self.assertRaises(ValueError, pollster.register, 0, -1)
         self.assertRaises(OverflowError, pollster.register, 0, 1 << 64)
-        self.assertRaises(OverflowError, pollster.modify, 1, -1)
+        self.assertRaises(ValueError, pollster.modify, 1, -1)
         self.assertRaises(OverflowError, pollster.modify, 1, 1 << 64)
 
     @cpython_only
@@ -138,8 +148,5 @@ class DevPollTests(unittest.TestCase):
         self.assertRaises(OverflowError, pollster.modify, 1, USHRT_MAX + 1)
 
 
-def test_main():
-    run_unittest(DevPollTests)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

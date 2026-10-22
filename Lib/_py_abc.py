@@ -32,7 +32,7 @@ class ABCMeta(type):
     #       external code.
     _abc_invalidation_counter = 0
 
-    def __new__(mcls, name, bases, namespace, **kwargs):
+    def __new__(mcls, name, bases, namespace, /, **kwargs):
         cls = super().__new__(mcls, name, bases, namespace, **kwargs)
         # Compute set of abstract method names
         abstracts = {name
@@ -92,7 +92,12 @@ class ABCMeta(type):
     def __instancecheck__(cls, instance):
         """Override for isinstance(instance, cls)."""
         # Inline the cache checking
-        subclass = instance.__class__
+        try:
+            subclass = instance.__class__
+        except AttributeError:
+            # Fall back to the type when the instance has no __class__,
+            # matching the behaviour of the built-in isinstance() (gh-153772).
+            subclass = type(instance)
         if subclass in cls._abc_cache:
             return True
         subtype = type(instance)
