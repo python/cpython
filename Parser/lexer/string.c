@@ -21,6 +21,15 @@ string_error_token(struct tok_state *tok, struct token *token,
     return type;
 }
 
+static int
+incomplete_string_token(struct tok_state *tok, struct token *token,
+                        int type, _PyTok_Off start, _PyTok_Loc location)
+{
+    string_error_token(tok, token, start, location);
+    tok->done = E_INCOMPLETE;
+    return type;
+}
+
 int
 _PyLexer_record_ftstring_comment(struct tok_state *tok, ftstring_state *state,
                                  _PyTok_Off start, _PyTok_Off end)
@@ -337,6 +346,10 @@ _PyLexer_scan_string(struct tok_state *tok, struct token *token, int c)
             if (tok_failed(tok)) {
                 return MAKE_TOKEN(ERRORTOKEN);
             }
+            if (c == EOF && tok->allow_incomplete_input) {
+                return incomplete_string_token(tok, token, STRING,
+                                               tok->start, tok->start_loc);
+            }
             int end_lineno = tok->lineno;
             _PyTok_Loc location = tok->start_loc;
             const char *line = _PyTok_SourcePointer(
@@ -449,6 +462,10 @@ _PyLexer_get_ftstring(struct tok_state *tok, ftstring_state *current, struct tok
         if (c == EOF || (quote_size == 1 && c == '\n')) {
             if (tok_failed(tok)) {
                 return MAKE_TOKEN(ERRORTOKEN);
+            }
+            if (c == EOF && tok->allow_incomplete_input) {
+                return incomplete_string_token(tok, token,
+                    FTSTRING_MIDDLE(current), current->start, current->start_loc);
             }
 
             if (in_format_spec && c == '\n') {

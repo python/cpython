@@ -39,6 +39,8 @@ typedef struct _memo {
 typedef struct {
     int type;
     // Text required by grammar actions or helpers; otherwise NULL.
+    // An unfinished string token also has NULL text. Its grammar action
+    // requests more input only if the token is valid at that position.
     PyObject *bytes;
     int level;
     int is_raw;
@@ -86,7 +88,8 @@ typedef struct {
     int n_keyword_lists;
     int start_rule;
     int *errcode;
-    int parsing_started;
+    unsigned char parsing_started;
+    unsigned char input_exhausted;
     PyObject* normalize;
     int starting_lineno;
     int starting_col_offset;
@@ -210,6 +213,7 @@ typedef enum {
 // Error handling functions and APIs
 int _Pypegen_raise_decode_error(Parser *p);
 int _Pypegen_tokenizer_error(Parser *p);
+void *_PyPegen_raise_incomplete_input(Parser *p);
 void *_PyPegen_raise_error(Parser *p, PyObject *errtype, int use_mark, const char *errmsg, ...);
 void *_PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
                                           Py_ssize_t lineno, Py_ssize_t col_offset,
@@ -422,7 +426,7 @@ mod_ty _PyPegen_run_parser_from_file_pointer(FILE *, int, PyObject *, const char
                                     const char *, const char *, PyCompilerFlags *, int *, PyObject **,
                                     PyArena *);
 void *_PyPegen_run_parser(Parser *);
-mod_ty _PyPegen_run_parser_from_string(const char *, int, PyObject *, PyCompilerFlags *, PyArena *, PyObject *);
+mod_ty _PyPegen_run_parser_from_string(const char *, int, PyObject *, PyCompilerFlags *, PyArena *, PyObject *, PyObject **);
 asdl_stmt_seq *_PyPegen_interactive_exit(Parser *);
 
 // Generated function in parse.c - function definition in python.gram

@@ -962,6 +962,12 @@ class CBytesIOTest(PyBytesIOTest):
     ioclass = io.BytesIO
     UnsupportedOperation = io.UnsupportedOperation
 
+    def test_readinto_overlapping_buffer(self):
+        with self.ioclass(b'abcd') as stream:
+            with stream.getbuffer()[1:] as target:
+                self.assertEqual(stream.readinto(target), 3)
+            self.assertEqual(stream.getvalue(), b'aabc')
+
     def test_getstate(self):
         memio = self.ioclass()
         state = memio.__getstate__()

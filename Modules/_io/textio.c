@@ -3287,12 +3287,17 @@ _io_TextIOWrapper_close_impl(textio *self)
     }
 }
 
+/*[clinic input]
+@critical_section
+_io.TextIOWrapper.__next__ as textiowrapper_iternext
+[clinic start generated code]*/
+
 static PyObject *
-textiowrapper_iternext_lock_held(PyObject *op)
+textiowrapper_iternext_impl(textio *self)
+/*[clinic end generated code: output=f365c4287cd43a1f input=c5b4c79faf0c98cb]*/
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     PyObject *line;
-    textio *self = textio_CAST(op);
 
     CHECK_ATTACHED(self);
 
@@ -3302,7 +3307,7 @@ textiowrapper_iternext_lock_held(PyObject *op)
         line = _textiowrapper_readline(self, -1);
     }
     else {
-        line = PyObject_CallMethodNoArgs(op, &_Py_ID(readline));
+        line = PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(readline));
         if (line && !PyUnicode_Check(line)) {
             PyErr_Format(PyExc_OSError,
                          "readline() should have returned a str object, "
@@ -3324,16 +3329,6 @@ textiowrapper_iternext_lock_held(PyObject *op)
     }
 
     return line;
-}
-
-static PyObject *
-textiowrapper_iternext(PyObject *op)
-{
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = textiowrapper_iternext_lock_held(op);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 /*[clinic input]

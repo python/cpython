@@ -208,6 +208,7 @@ class BasicWrapTestCase(unittest.TestCase):
             ctypes.c_void_p,
             ctypes.c_int,  # PyCSimpleType
             POINT,  # CDataType
+            POINTER(c_int),  # PyCPointerType
         ):
             with self.subTest(c_type=c_type):
                 with self.assertRaises(RecursionError):

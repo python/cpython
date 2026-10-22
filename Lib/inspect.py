@@ -441,7 +441,8 @@ def isbuiltin(object):
     Built-in functions and methods provide these attributes:
         __doc__         documentation string
         __name__        original name of this function or method
-        __self__        instance to which a method is bound, or None"""
+        __self__        instance to which a method is bound, or module object
+                        a function was defined in, or None"""
     return isinstance(object, types.BuiltinFunctionType)
 
 def ismethodwrapper(object):
@@ -1396,6 +1397,14 @@ def formatannotationrelativeto(object):
         return formatannotation(annotation, module)
     return _formatannotation
 
+# A placeholder with <deleted> as repr (using a string would have '<deleted>'
+# with quotes). This is used in formatargvalues function.
+class _Deleted:
+    def __repr__(self):
+        return '<deleted>'
+
+_deleted = _Deleted()
+del _Deleted
 
 def formatargvalues(args, varargs, varkw, locals,
                     formatarg=str,
@@ -1410,14 +1419,19 @@ def formatargvalues(args, varargs, varkw, locals,
     argument is an optional function to format the sequence of arguments."""
     def convert(name, locals=locals,
                 formatarg=formatarg, formatvalue=formatvalue):
-        return formatarg(name) + formatvalue(locals[name])
+        formatted_name = formatarg(name)
+        try:
+            value = locals[name]
+        except KeyError:
+            value = _deleted
+        return formatted_name + formatvalue(value)
     specs = []
     for i in range(len(args)):
         specs.append(convert(args[i]))
     if varargs:
-        specs.append(formatvarargs(varargs) + formatvalue(locals[varargs]))
+        specs.append(convert(varargs, formatarg=formatvarargs))
     if varkw:
-        specs.append(formatvarkw(varkw) + formatvalue(locals[varkw]))
+        specs.append(convert(varkw, formatarg=formatvarkw))
     return '(' + ', '.join(specs) + ')'
 
 def _missing_arguments(f_name, argnames, pos, values):

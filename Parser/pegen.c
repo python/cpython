@@ -247,22 +247,25 @@ static int
 initialize_token(Parser *p, Token *parser_token, struct token *new_token, int token_type) {
     assert(parser_token != NULL);
 
-    Py_ssize_t length;
-    const char *text = _PyToken_TextView(p->tok, new_token, &length);
-    parser_token->type = token_type == NAME
-        ? _get_keyword_or_name_type(p, text, length) : token_type;
-    if (token_needs_text(parser_token->type)) {
-        parser_token->bytes = PyBytes_FromStringAndSize(text, length);
-        if (parser_token->bytes == NULL) {
-            return -1;
+    parser_token->type = token_type;
+    parser_token->bytes = NULL;
+    if (token_needs_text(token_type) && new_token->span.start >= 0) {
+        Py_ssize_t length;
+        const char *text = _PyToken_TextView(p->tok, new_token, &length);
+        if (token_type == NAME) {
+            parser_token->type = _get_keyword_or_name_type(p, text, length);
         }
-        if (_PyArena_AddPyObject(p->arena, parser_token->bytes) < 0) {
-            Py_DECREF(parser_token->bytes);
-            return -1;
+        // A name reclassified as a keyword does not need its text.
+        if (parser_token->type == token_type) {
+            parser_token->bytes = PyBytes_FromStringAndSize(text, length);
+            if (parser_token->bytes == NULL) {
+                return -1;
+            }
+            if (_PyArena_AddPyObject(p->arena, parser_token->bytes) < 0) {
+                Py_DECREF(parser_token->bytes);
+                return -1;
+            }
         }
-    }
-    else {
-        parser_token->bytes = NULL;
     }
 
     parser_token->metadata = NULL;
@@ -287,7 +290,7 @@ initialize_token(Parser *p, Token *parser_token, struct token *new_token, int to
 
     p->fill += 1;
 
-    if (token_type == ERRORTOKEN && _PyTokenizer_GetInfo(p->tok).status == E_DECODE) {
+    if (token_type == ERRORTOKEN && _PyTokenizer_GetStatus(p->tok) == E_DECODE) {
         return _Pypegen_raise_decode_error(p);
     }
 
@@ -352,6 +355,13 @@ _PyPegen_fill_token(Parser *p)
     }
 
     int type = new_token.type;
+    // EOF can finish an ordinary token. Only a boundary token means that
+    // the grammar requested input beyond the last physical line.
+    if (type == ENDMARKER ||
+        (type == DEDENT && (p->flags & PyPARSE_ALLOW_INCOMPLETE_INPUT) &&
+         _PyTokenizer_GetStatus(p->tok) == E_EOF)) {
+        p->input_exhausted = 1;
+    }
 
     // If we have reached the end and we are in single input mode we need to insert a newline and reset the parsing
     if (p->start_rule == Py_single_input && type == ENDMARKER && p->parsing_started) {
@@ -953,6 +963,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     }
     assert(tok != NULL);
     _PyTokenizer_SetOptions(tok, 0, (flags & PyPARSE_TYPE_COMMENTS) > 0);
+    _PyTokenizer_AllowIncompleteInput(tok, flags & PyPARSE_ALLOW_INCOMPLETE_INPUT);
     p->tok = tok;
     p->keywords = NULL;
     p->n_keyword_lists = -1;
@@ -998,6 +1009,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
 #endif
     p->level = 0;
     p->call_invalid_rules = 0;
+    p->input_exhausted = 0;
     p->last_stmt_location.lineno = 0;
     p->last_stmt_location.col_offset = 0;
     p->last_stmt_location.end_lineno = 0;
@@ -1035,14 +1047,10 @@ reset_parser_state_for_error_pass(Parser *p)
         p->tokens[i]->memo_mask = 0;
     }
     p->mark = 0;
+    p->flags &= ~PyPARSE_ALLOW_INCOMPLETE_INPUT;
+    _PyTokenizer_AllowIncompleteInput(p->tok, 0);
     p->call_invalid_rules = 1;
     _PyTokenizer_StopInteractive(p->tok);
-}
-
-static inline int
-_is_end_of_source(Parser *p) {
-    int err = _PyTokenizer_GetInfo(p->tok).status;
-    return err == E_EOF || err == E_EOFS || err == E_EOLS;
 }
 
 static void
@@ -1075,6 +1083,7 @@ _PyPegen_set_syntax_error_metadata(Parser *p) {
     );
     if (!metadata) {
         PyErr_Clear();
+        PyErr_SetRaisedException(exc);
         return;
     }
     PySyntaxErrorObject *syntax_error = (PySyntaxErrorObject *)exc;
@@ -1095,12 +1104,14 @@ _PyPegen_run_parser(Parser *p)
         return NULL;
     }
     if (res == NULL) {
-        if ((p->flags & PyPARSE_ALLOW_INCOMPLETE_INPUT) &&  _is_end_of_source(p)) {
-            PyErr_Clear();
-            return _PyPegen_raise_error(p, PyExc_IncompleteInputError, 0, "incomplete input");
-        }
-        if (PyErr_Occurred() && !PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+        if (PyErr_Occurred() &&
+            (PyErr_ExceptionMatches(PyExc_IncompleteInputError) ||
+             !PyErr_ExceptionMatches(PyExc_SyntaxError))) {
             return NULL;
+        }
+        if ((p->flags & PyPARSE_ALLOW_INCOMPLETE_INPUT) &&
+            p->input_exhausted && !PyErr_Occurred()) {
+            return _PyPegen_raise_incomplete_input(p);
         }
        // Make a second parser pass. In this pass we activate heavier and slower checks
         // to produce better error messages and more complete diagnostics. Extra "invalid_*"
@@ -1194,16 +1205,21 @@ error:
 
 mod_ty
 _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filename_ob,
-                       PyCompilerFlags *flags, PyArena *arena, PyObject *module)
+                       PyCompilerFlags *flags, PyArena *arena, PyObject *module,
+                       PyObject **incomplete)
 {
-    int exec_input = start_rule == Py_file_input;
+    _PyTokenizer_Newline newline_mode = start_rule == Py_file_input
+        ? _PyTokenizer_IMPLY_NEWLINE : _PyTokenizer_KEEP_NEWLINE;
     int parser_flags = compute_parser_flags(flags);
+    if (parser_flags & PyPARSE_ALLOW_INCOMPLETE_INPUT) {
+        newline_mode = _PyTokenizer_APPEND_NEWLINE;
+    }
 
     struct tok_state *tok;
     if (flags != NULL && flags->cf_flags & PyCF_IGNORE_COOKIE) {
-        tok = _PyTokenizer_FromUTF8(str, exec_input, 0);
+        tok = _PyTokenizer_FromUTF8(str, newline_mode, 0);
     } else {
-        tok = _PyTokenizer_FromString(str, exec_input, 0);
+        tok = _PyTokenizer_FromString(str, newline_mode, 0);
     }
     if (tok == NULL) {
         if (PyErr_Occurred()) {
@@ -1231,6 +1247,22 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
     }
 
     result = _PyPegen_run_parser(p);
+    if (result != NULL && (parser_flags & PyPARSE_ALLOW_INCOMPLETE_INPUT)) {
+        int needs_newline = _PyTokenizer_GetNewlineRequirements(tok);
+        if ((needs_newline & _PyTokenizer_NEWLINE_CONTINUATION) ||
+            (start_rule != Py_file_input &&
+             (needs_newline & _PyTokenizer_NEWLINE_INDENT)) ||
+            (start_rule == Py_single_input && p->input_exhausted &&
+             (needs_newline & _PyTokenizer_NEWLINE_STATEMENT))) {
+            _PyPegen_raise_incomplete_input(p);
+            if (incomplete != NULL && PyErr_ExceptionMatches(PyExc_IncompleteInputError)) {
+                *incomplete = PyErr_GetRaisedException();
+            }
+            else {
+                result = NULL;
+            }
+        }
+    }
     _PyPegen_Parser_Free(p);
 
 error:
