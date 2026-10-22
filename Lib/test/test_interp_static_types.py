@@ -4,13 +4,11 @@ from test.support import import_helper
 # Raise SkipTest if subinterpreters not supported.
 import_helper.import_module('_interpreters')
 from concurrent import interpreters
-from .utils import TestBase
-
 
 xxsubtype = import_helper.import_module('xxsubtype')
 
 
-class TestStaticTypeCache(TestBase):
+class TestStaticTypeCache(unittest.TestCase):
 
     def test_subinterp_no_crash(self):
         # gh-158203: Static extension types registered via PyType_Ready()
@@ -52,5 +50,4 @@ for name in dir(xxsubtype.spamlist):
 
 
 if __name__ == '__main__':
-    # Test needs to be a package, so we can do relative imports.
     unittest.main()
