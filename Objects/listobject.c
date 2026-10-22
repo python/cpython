@@ -299,30 +299,48 @@ PyList_New(Py_ssize_t size)
     return (PyObject *) op;
 }
 
+// Similar to PyList_New() but don't initialize memory and do not track
+// the newly created list in the garbage collector.
+//
+// The list is initialized with a size of 0.
+//
+// size must be >= 0.
 static PyObject *
 list_new_prealloc(Py_ssize_t size)
 {
-    assert(size > 0);
-    PyListObject *op = (PyListObject *) PyList_New(0);
+    // The caller is responsible to check the size
+    assert(size >= 0);
+
+    PyListObject *op = _Py_FREELIST_POP(PyListObject, lists);
     if (op == NULL) {
-        return NULL;
+        op = PyObject_GC_New(PyListObject, &PyList_Type);
+        if (op == NULL) {
+            return NULL;
+        }
     }
-    assert(op->ob_item == NULL);
+
+    if (size <= 0) {
+        op->ob_item = NULL;
+    }
+    else {
 #ifdef Py_GIL_DISABLED
-    _PyListArray *array = list_allocate_array(size);
-    if (array == NULL) {
-        Py_DECREF(op);
-        return PyErr_NoMemory();
-    }
-    op->ob_item = array->ob_item;
+        _PyListArray *array = list_allocate_array(size);
+        if (array == NULL) {
+            Py_DECREF(op);
+            return PyErr_NoMemory();
+        }
+        op->ob_item = array->ob_item;
 #else
-    op->ob_item = PyMem_New(PyObject *, size);
-    if (op->ob_item == NULL) {
-        Py_DECREF(op);
-        return PyErr_NoMemory();
-    }
+        op->ob_item = (PyObject **) PyMem_Malloc(size * sizeof(PyObject *));
 #endif
+        if (op->ob_item == NULL) {
+            Py_DECREF(op);
+            return PyErr_NoMemory();
+        }
+    }
+    Py_SET_SIZE(op, 0);
     op->allocated = size;
+
     return (PyObject *) op;
 }
 
@@ -766,6 +784,7 @@ list_slice_lock_held(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
         dest[i] = Py_NewRef(v);
     }
     Py_SET_SIZE(np, len);
+    _PyObject_GC_TRACK(np);
     return (PyObject *)np;
 }
 
@@ -848,6 +867,7 @@ list_concat_lock_held(PyListObject *a, PyListObject *b)
         dest[i] = Py_NewRef(v);
     }
     Py_SET_SIZE(np, size);
+    _PyObject_GC_TRACK(np);
     return (PyObject *)np;
 }
 
@@ -918,6 +938,7 @@ list_repeat_impl(PyListObject *a, Py_ssize_t n)
     }
 
     Py_SET_SIZE(np, output_size);
+    _PyObject_GC_TRACK(np);
     return (PyObject *) np;
 }
 
@@ -3723,6 +3744,7 @@ list_slice_step_lock_held(PyListObject *a, Py_ssize_t start, Py_ssize_t step, Py
         dest[i] = Py_NewRef(v);
     }
     Py_SET_SIZE(np, len);
+    _PyObject_GC_TRACK(np);
     return (PyObject *)np;
 }
 
@@ -4415,12 +4437,17 @@ PyListWriter_Create(Py_ssize_t size)
         return NULL;
     }
 
-    PyObject *list = PyList_New(size);
+    PyObject *list = list_new_prealloc(size);
     if (list == NULL) {
         return NULL;
     }
-    Py_SET_SIZE(list, 0);
-    _PyObject_GC_UNTRACK(list);
+    assert(Py_SIZE(list) == 0);
+
+#ifdef Py_DEBUG
+    // In debug mode, set all items to NULL to be able to check that they are
+    // non-NULL in PyListWriter_Finish().
+    memset(_PyList_CAST(list)->ob_item, 0, size * sizeof(PyObject*));
+#endif
 
     PyListWriter *writer = (PyListWriter*)list;
     assert(listwriter_check_consistency(writer));
