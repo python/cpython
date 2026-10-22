@@ -1,0 +1,4 @@
+The :mod:`curses` types and exceptions now report their public module in
+:attr:`~type.__module__`, :func:`repr` and :func:`help` -- for example
+``curses.window`` instead of ``_curses.window`` and ``curses.panel.error``
+instead of ``_curses_panel.error``.

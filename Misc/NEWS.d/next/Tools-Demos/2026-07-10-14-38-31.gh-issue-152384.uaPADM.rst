@@ -1,0 +1,8 @@
+The CPython Pixi packages are now all accessible at the same
+``Tools/pixi-packages`` subdirectory, rather than at
+``Tools/pixi-packages/{variant}`` as before. Variants are now selected not
+via subdirectory but via ``flags``; see
+https://pixi.prefix.dev/latest/concepts/package_specifications/#extras-and-flags
+for usage instructions. The ``tsan-freethreading`` variant has been renamed
+to ``tsan_freethreading``, while the ``default``, ``asan``, and
+``freethreading`` variants retain their previous names.

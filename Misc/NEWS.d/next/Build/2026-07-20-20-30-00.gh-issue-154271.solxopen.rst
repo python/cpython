@@ -1,0 +1,4 @@
+Define ``_XOPEN_SOURCE=600`` on Solaris and illumos, so that on illumos the
+socket module is built with :meth:`~socket.socket.sendmsg`,
+:meth:`~socket.socket.recvmsg` and the ``CMSG_*`` helpers.  This also
+enables the ``forkserver`` :mod:`multiprocessing` start method.

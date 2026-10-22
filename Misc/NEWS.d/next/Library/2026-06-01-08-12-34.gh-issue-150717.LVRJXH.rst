@@ -1,0 +1,2 @@
+Avoid an unnecessary per-call memory allocation when matching :mod:`re`
+patterns that have no capturing groups. Patch by Bernát Gábor.

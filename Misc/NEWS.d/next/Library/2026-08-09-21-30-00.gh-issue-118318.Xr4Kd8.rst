@@ -1,0 +1,5 @@
+Remove the ``write_c14n()`` method of :class:`xml.etree.ElementTree.ElementTree`
+and the support of ``method="c14n"`` in :meth:`~xml.etree.ElementTree.ElementTree.write`
+and :func:`~xml.etree.ElementTree.tostring`.  They never worked and always
+raised :exc:`ValueError`.  Use :func:`xml.etree.ElementTree.canonicalize`
+instead.

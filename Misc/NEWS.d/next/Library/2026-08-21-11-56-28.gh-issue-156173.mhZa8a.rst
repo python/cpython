@@ -1,0 +1,2 @@
+Calling :meth:`zlib.Decompress.flush` on invalid compressed data now
+raises :exc:`zlib.error` instead of being silently ignored.

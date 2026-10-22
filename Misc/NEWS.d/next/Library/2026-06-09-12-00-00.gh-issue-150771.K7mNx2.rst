@@ -1,0 +1,4 @@
+Fix :mod:`email` messages created with ``shift_jis`` or ``euc-jp`` charsets.
+``set_content()`` now stores the payload using the output charset
+(``iso-2022-jp``) so printing the message no longer raises
+:exc:`UnicodeEncodeError`.

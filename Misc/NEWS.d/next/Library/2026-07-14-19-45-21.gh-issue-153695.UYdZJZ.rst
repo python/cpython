@@ -1,0 +1,2 @@
+Hashing a :class:`sqlite3.Row` that contains an unhashable value now raises
+:exc:`TypeError` instead of :exc:`SystemError`. Patch by tonghuaroot.

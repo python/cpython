@@ -1,0 +1,3 @@
+Fixed :mod:`pdb` remote attaching (``python -m pdb -p PID``) sending an
+empty prompt to the client instead of ``(Pdb)`` when the target process has
+an interactive terminal.

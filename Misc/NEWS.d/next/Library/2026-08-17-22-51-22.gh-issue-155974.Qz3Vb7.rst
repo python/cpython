@@ -1,0 +1,4 @@
+Fix a regression in Python 3.15: :meth:`~curses.window.addstr`,
+:meth:`~curses.window.addnstr`, :meth:`~curses.window.insstr` and
+:meth:`~curses.window.insnstr` again restore the window attributes when the
+write fails, instead of leaving the temporary *attr* applied.

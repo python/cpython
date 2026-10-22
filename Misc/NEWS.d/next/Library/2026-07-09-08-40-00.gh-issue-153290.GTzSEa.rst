@@ -1,0 +1,3 @@
+Fix a data race on the free-threaded build when :meth:`!io.BytesIO.__setstate__`
+installs the instance dictionary while another thread concurrently calls a
+method on the same object.

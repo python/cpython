@@ -1,0 +1,3 @@
+Fix :meth:`datetime.datetime.fromisoformat` raising :exc:`AssertionError`
+instead of :exc:`ValueError` for an out-of-range month combined with a
+``24:00`` time.

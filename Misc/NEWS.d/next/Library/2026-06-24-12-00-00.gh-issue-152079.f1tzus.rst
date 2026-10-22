@@ -1,0 +1,3 @@
+Fix :meth:`datetime.datetime.fromisoformat` in the C implementation dropping
+the sub-second part of a UTC offset whose whole-second part is zero, matching
+the pure-Python implementation.

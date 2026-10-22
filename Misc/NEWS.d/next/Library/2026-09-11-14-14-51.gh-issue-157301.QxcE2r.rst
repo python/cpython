@@ -1,0 +1,2 @@
+Fix :class:`asyncio.Task` hanging the event loop when an eager start fails
+to enter the task's context.

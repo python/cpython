@@ -1,0 +1,4 @@
+Fix crashes in :class:`sqlite3.Connection` when deleting the
+:attr:`~sqlite3.Connection.autocommit` attribute or setting it to an integer
+which does not fit in C :c:expr:`long`.
+Both now raise an exception.

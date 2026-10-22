@@ -1,0 +1,3 @@
+Fix :func:`concurrent.interpreters.list_all`.  It failed if an interpreter
+was destroyed during the call, in particular by a garbage collection which
+finalized the object owning the last reference to it.

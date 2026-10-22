@@ -1,0 +1,8 @@
+Add the :class:`curses.complexstr` type, an immutable string of styled
+character cells (the counterpart of :class:`curses.complexchar`), and the
+:mod:`curses` window method :meth:`~curses.window.in_wchstr` that returns one.
+The string-cell methods :meth:`~curses.window.addstr`,
+:meth:`~curses.window.addnstr`, :meth:`~curses.window.insstr` and
+:meth:`~curses.window.insnstr` now also accept a :class:`~curses.complexstr`.
+Like :class:`curses.complexchar`, it works whether or not Python was built
+against a wide-character-aware curses library.

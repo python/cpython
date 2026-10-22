@@ -1,0 +1,2 @@
+Removed :meth:`!symtable.Class.get_methods` which has been deprecated since
+3.14.

@@ -1,0 +1,1 @@
+Fix merging of :class:`collections.defaultdict` and :class:`frozendict`.

@@ -1,0 +1,5 @@
+:class:`curses.textpad.Textbox` now lets the lower-right cell of the window be
+edited.  Writing it with :meth:`~curses.window.addch` would move the cursor
+past the end of the window, raising an error and scrolling a scrollable window,
+so it is now written with :meth:`~curses.window.insch`, which keeps the cursor
+in place.

@@ -1,0 +1,2 @@
+Fix two crashes in :mod:`tkinter` and :mod:`socket` modules initialization
+under a memory pressure. Sets missing :exc:`MemoryError`.

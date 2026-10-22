@@ -1,0 +1,3 @@
+Set the ``WM_CLASS`` window property of IDLE's windows to ``Idle`` on X11,
+so that window managers group and label them correctly instead of using the
+default ``Toplevel``.

@@ -1,0 +1,3 @@
+Fix :func:`math.isqrt` returning an incorrect result for arguments not
+less than 2**64 that are instances of an :class:`int` subclass with an
+overridden comparison operator.

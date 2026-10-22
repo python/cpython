@@ -1,0 +1,3 @@
+The ``readprofile`` method of :class:`tkinter.Tk` now reads the user's
+profile scripts using the encoding declared in the file, instead of the
+locale encoding.

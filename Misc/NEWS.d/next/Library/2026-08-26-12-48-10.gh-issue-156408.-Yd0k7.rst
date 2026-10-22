@@ -1,0 +1,2 @@
+Fix :func:`asyncio.print_call_graph` raising :exc:`AttributeError` when
+called on a task that has already finished.

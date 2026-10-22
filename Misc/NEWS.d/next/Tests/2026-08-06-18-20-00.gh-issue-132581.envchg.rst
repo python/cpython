@@ -1,0 +1,4 @@
+The list of tests which altered the execution environment now includes the
+reasons why the environment was considered altered, for example an unraisable
+exception or a modified :data:`sys.path`.  The final result no longer repeats
+the same state twice (like ``ENV CHANGED then ENV CHANGED``).

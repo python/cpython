@@ -1,0 +1,3 @@
+Fix a hang in ``profiling.sampling run --blocking`` on Windows when the
+target process exits. The profiler now finalizes binary profiles instead of
+continuing to sample the exited process.

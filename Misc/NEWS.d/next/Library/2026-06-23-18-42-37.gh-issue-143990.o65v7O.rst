@@ -1,0 +1,6 @@
+:class:`tkinter.font.Font` can now wrap a font description without creating a
+new named font, by passing it as *font* with ``exists=True`` and no *name*.
+This avoids a loss of precision in :meth:`~tkinter.font.Font.actual`,
+:meth:`~tkinter.font.Font.measure` and :meth:`~tkinter.font.Font.metrics`.
+Keyword options now override the corresponding settings of the given *font*
+instead of being ignored.

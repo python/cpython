@@ -1,0 +1,3 @@
+Fix ``tarfile.TarFile.zstopen`` to close the underlying zstd file object
+when opening the tar archive is interrupted by a :exc:`BaseException`
+subclass such as :exc:`KeyboardInterrupt`.

@@ -1,0 +1,2 @@
+Prevent :mod:`readline` from overriding the ``COLUMNS`` and ``LINES``
+environment variables, as values are not updated on terminal resize.

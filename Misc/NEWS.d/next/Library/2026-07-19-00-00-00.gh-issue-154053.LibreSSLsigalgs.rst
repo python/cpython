@@ -1,0 +1,4 @@
+Fix compilation of the :mod:`ssl` module against LibreSSL, which does not
+provide ``SSL_CTX_set1_sigalgs_list()`` and ``SSL_CTX_set1_client_sigalgs_list()``.
+The :meth:`!set_server_sigalgs` and :meth:`!set_client_sigalgs` methods of
+:class:`ssl.SSLContext` now raise :exc:`NotImplementedError` on LibreSSL.

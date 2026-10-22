@@ -1,0 +1,2 @@
+Fix :mod:`asyncio` losing a connection twice when ``resume_writing()``
+closes the transport.

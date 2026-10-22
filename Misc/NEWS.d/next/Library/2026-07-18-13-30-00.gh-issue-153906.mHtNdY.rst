@@ -1,0 +1,4 @@
+Modernize the HTML output of :mod:`pydoc`: use semantic HTML5 markup and
+a new style sheet based on the python-docs-theme used by docs.python.org,
+with dark mode support.  Class members inherited from other classes are
+now collapsed by default.

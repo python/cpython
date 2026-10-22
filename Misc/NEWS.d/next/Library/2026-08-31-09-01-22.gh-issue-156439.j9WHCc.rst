@@ -1,0 +1,3 @@
+:func:`socket.if_nametoindex` and :func:`socket.if_indextoname` are now
+available on platforms that provide them but not
+``if_nameindex``, such as Android before API level 24.

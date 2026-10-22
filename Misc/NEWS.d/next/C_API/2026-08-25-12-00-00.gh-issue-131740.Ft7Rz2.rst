@@ -1,0 +1,3 @@
+On the free-threaded build, :c:func:`PyUnstable_GC_VisitObjects` now also
+visits frozen objects (objects moved to the permanent generation by
+:func:`gc.freeze`), matching the behavior of the default build.

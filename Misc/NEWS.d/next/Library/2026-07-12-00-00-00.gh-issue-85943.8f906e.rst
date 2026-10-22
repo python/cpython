@@ -1,0 +1,4 @@
+Fix :mod:`struct` functions raising :exc:`BytesWarning` under the ``-bb``
+command line option when a :class:`str` format is used after an equal
+:class:`bytes` format (or vice versa).  The internal format cache no longer
+mixes :class:`str` and :class:`bytes` keys.

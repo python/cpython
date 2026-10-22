@@ -1,0 +1,3 @@
+Fix :func:`imaplib.Time2Internaldate` to use the local timezone offset for
+``time.struct_time`` values with ``tm_gmtoff`` set to ``None``, as returned by
+``datetime.datetime.timetuple()``. Contributed by Xiao Yuan.

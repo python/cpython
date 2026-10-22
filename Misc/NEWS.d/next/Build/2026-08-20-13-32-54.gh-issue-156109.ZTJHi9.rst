@@ -1,0 +1,5 @@
+iOS builds may now be configured without a framework, producing a static
+``libpython`` for embedding in an app binary. Such a build cannot load extension
+modules at runtime, and requires ``MODULE_BUILDTYPE=static`` and
+``--disable-test-modules`` to be requested explicitly. A shared iOS build must
+still be a framework build.

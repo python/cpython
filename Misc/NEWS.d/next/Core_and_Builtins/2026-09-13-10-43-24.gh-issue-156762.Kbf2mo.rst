@@ -1,0 +1,4 @@
+Fix undefined behaviour in :class:`operator.methodcaller`: its
+:c:member:`~PyTypeObject.tp_clear` slot function returned ``void`` instead of
+``int``, so the garbage collector called it through an incompatible function
+type. Patched by Shamil Abdulaev.

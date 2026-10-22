@@ -1,0 +1,3 @@
+Fix a rare crash in the IDLE editor when the completion window is closed:
+deleting a key binding for a sequence that is not bound to the virtual
+event is now ignored instead of raising a ``ValueError``.

@@ -1,0 +1,2 @@
+On Linux, regrtest now logs the total memory usage of all Python processes.
+Read the private memory in ``/proc/pid/smaps``. Patch by Victor Stinner.

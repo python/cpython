@@ -1,0 +1,2 @@
+Speed up the parser by letting memoization lookups that cannot match return
+immediately.

@@ -60,9 +60,11 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         self._pending_write = 0
         self._conn_lost = 0
         self._closing = False  # Set when close() called.
+        self._called_connection_lost = False
         self._eof_written = False
+        self._empty_waiter = None
         if self._server is not None:
-            self._server._attach()
+            self._server._attach(self)
         self._loop.call_soon(self._protocol.connection_made, self)
         if waiter is not None:
             # only wake up the waiter when connection_made() has been called
@@ -103,8 +105,9 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         if self._closing:
             return
         self._closing = True
-        self._conn_lost += 1
         if not self._buffer and self._write_fut is None:
+            # Nothing left to flush: no more data will be sent.
+            self._conn_lost += 1
             self._loop.call_soon(self._call_connection_lost, None)
         if self._read_fut is not None:
             self._read_fut.cancel()
@@ -113,7 +116,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
     def __del__(self, _warn=warnings.warn):
         if self._sock is not None:
             _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
-            self.close()
+            self._sock.close()
 
     def _fatal_error(self, exc, message='Fatal error on pipe transport'):
         try:
@@ -136,7 +139,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
                 self._empty_waiter.set_result(None)
             else:
                 self._empty_waiter.set_exception(exc)
-        if self._closing:
+        if self._closing and self._called_connection_lost:
             return
         self._closing = True
         self._conn_lost += 1
@@ -151,6 +154,8 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         self._loop.call_soon(self._call_connection_lost, exc)
 
     def _call_connection_lost(self, exc):
+        if self._called_connection_lost:
+            return
         try:
             self._protocol.connection_lost(exc)
         finally:
@@ -158,14 +163,15 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             # end then it may fail with ERROR_NETNAME_DELETED if we
             # just close our end.  First calling shutdown() seems to
             # cure it, but maybe using DisconnectEx() would be better.
-            if hasattr(self._sock, 'shutdown'):
+            if hasattr(self._sock, 'shutdown') and self._sock.fileno() != -1:
                 self._sock.shutdown(socket.SHUT_RDWR)
             self._sock.close()
             self._sock = None
             server = self._server
             if server is not None:
-                server._detach()
+                server._detach(self)
                 self._server = None
+            self._called_connection_lost = True
 
     def get_write_buffer_size(self):
         size = self._pending_write
@@ -221,7 +227,7 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         length = self._pending_data_length
         self._pending_data_length = -1
         if length > -1:
-            # Call the protocol methode after calling _loop_reading(),
+            # Call the protocol method after calling _loop_reading(),
             # since the protocol can decide to pause reading again.
             self._loop.call_soon(self._data_received, self._data[:length], length)
 
@@ -284,7 +290,8 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
                         # we got end-of-file so no need to reschedule a new read
                         return
 
-                    data = self._data[:length]
+                    # It's a new slice so make it immutable so protocols upstream don't have problems
+                    data = bytes(memoryview(self._data)[:length])
                 else:
                     # the future will be replaced by next proactor.recv call
                     fut.cancel()
@@ -325,10 +332,6 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
     """Transport for write pipes."""
 
     _start_tls_compatible = True
-
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
-        self._empty_waiter = None
 
     def write(self, data):
         if not isinstance(data, (bytes, bytearray, memoryview)):
@@ -384,6 +387,7 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
                 self._buffer = None
             if not data:
                 if self._closing:
+                    self._conn_lost += 1
                     self._loop.call_soon(self._call_connection_lost, None)
                 if self._eof_written:
                     self._sock.shutdown(socket.SHUT_WR)
@@ -452,12 +456,15 @@ class _ProactorWritePipeTransport(_ProactorBaseWritePipeTransport):
             self.close()
 
 
-class _ProactorDatagramTransport(_ProactorBasePipeTransport):
+class _ProactorDatagramTransport(_ProactorBasePipeTransport,
+                                 transports.DatagramTransport):
     max_size = 256 * 1024
+    _header_size = 8
+
     def __init__(self, loop, sock, protocol, address=None,
                  waiter=None, extra=None):
         self._address = address
-        self._empty_waiter = None
+        self._buffer_size = 0
         # We don't need to call _protocol.connection_made() since our base
         # constructor does it for us.
         super().__init__(loop, sock, protocol, waiter=waiter, extra=extra)
@@ -470,18 +477,20 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
         _set_socket_extra(self, sock)
 
     def get_write_buffer_size(self):
-        return sum(len(data) for data, _ in self._buffer)
+        return self._buffer_size
 
     def abort(self):
         self._force_close(None)
+
+    def _force_close(self, exc):
+        # The base class drops the buffer; the size is tracked separately.
+        self._buffer_size = 0
+        super()._force_close(exc)
 
     def sendto(self, data, addr=None):
         if not isinstance(data, (bytes, bytearray, memoryview)):
             raise TypeError('data argument must be bytes-like object (%r)',
                             type(data))
-
-        if not data:
-            return
 
         if self._address is not None and addr not in (None, self._address):
             raise ValueError(
@@ -495,6 +504,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
 
         # Ensure that what we buffer is immutable.
         self._buffer.append((bytes(data), addr))
+        self._buffer_size += len(data) + self._header_size
 
         if self._write_fut is None:
             # No current write operations are active, kick one off
@@ -506,6 +516,8 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
     def _loop_writing(self, fut=None):
         try:
             if self._conn_lost:
+                # No more data will be sent: either everything buffered has
+                # already been flushed, or _force_close() dropped it.
                 return
 
             assert fut is self._write_fut
@@ -514,13 +526,15 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
                 # We are in a _loop_writing() done callback, get the result
                 fut.result()
 
-            if not self._buffer or (self._conn_lost and self._address):
-                # The connection has been closed
+            if not self._buffer:
+                # Everything buffered has been sent
                 if self._closing:
+                    self._conn_lost += 1
                     self._loop.call_soon(self._call_connection_lost, None)
                 return
 
             data, addr = self._buffer.popleft()
+            self._buffer_size -= len(data) + self._header_size
             if self._address is not None:
                 self._write_fut = self._loop._proactor.send(self._sock,
                                                             data)
@@ -530,6 +544,27 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
                                                               addr=addr)
         except OSError as exc:
             self._protocol.error_received(exc)
+            # error_received() is arbitrary protocol code: it may have sent
+            # (scheduling a write of its own, directly or via call_soon()),
+            # closed, or aborted the transport.
+            if self._buffer or self._closing:
+                # Either data is still queued, or a close() is waiting on
+                # the write loop to drain it and call connection_lost().
+                # This write failed, so there is no completion callback
+                # pending to re-enter the loop -- schedule one (gh-156698).
+                def write_next():
+                    # error_received() may have scheduled a write of its own,
+                    # directly or with call_soon(); its completion callback
+                    # will drain the rest of the buffer.
+                    if self._write_fut is None:
+                        self._loop_writing()
+
+                self._loop.call_soon(write_next)
+            else:
+                # Nothing left to write, so a paused protocol has to be
+                # resumed here: the next entry into _loop_writing() returns
+                # early on an empty buffer without doing it.
+                self._maybe_resume_protocol()
         except Exception as exc:
             self._fatal_error(exc, 'Fatal write error on datagram transport')
         else:
@@ -539,34 +574,35 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
     def _loop_reading(self, fut=None):
         data = None
         try:
-            if self._conn_lost:
+            if self._closing:
                 return
 
-            assert self._read_fut is fut or (self._read_fut is None and
-                                             self._closing)
+            assert self._read_fut is fut
 
             self._read_fut = None
             if fut is not None:
                 res = fut.result()
-
-                if self._closing:
-                    # since close() has been called we ignore any read data
-                    data = None
-                    return
 
                 if self._address is not None:
                     data, addr = res, self._address
                 else:
                     data, addr = res
 
-            if self._conn_lost:
-                return
             if self._address is not None:
                 self._read_fut = self._loop._proactor.recv(self._sock,
                                                            self.max_size)
             else:
                 self._read_fut = self._loop._proactor.recvfrom(self._sock,
                                                                self.max_size)
+        except ConnectionResetError as exc:
+            # WSARecvFrom() reports a stale ICMP port unreachable
+            # notification as a synchronous ConnectionResetError when the
+            # same socket was used to send to an address that is not
+            # listening.  This is transient, so reschedule the read loop
+            # instead of leaving it dead.
+            self._protocol.error_received(exc)
+            if not self._closing:
+                self._loop.call_soon(self._loop_reading)
         except OSError as exc:
             self._protocol.error_received(exc)
         except exceptions.CancelledError:
@@ -634,7 +670,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
             signal.set_wakeup_fd(self._csock.fileno())
 
     def _make_socket_transport(self, sock, protocol, waiter=None,
-                               extra=None, server=None):
+                               extra=None, server=None, context=None):
         return _ProactorSocketTransport(self, sock, protocol, waiter,
                                         extra, server)
 
@@ -642,11 +678,13 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
             self, rawsock, protocol, sslcontext, waiter=None,
             *, server_side=False, server_hostname=None,
             extra=None, server=None,
-            ssl_handshake_timeout=None):
+            ssl_handshake_timeout=None,
+            ssl_shutdown_timeout=None, context=None):
         ssl_protocol = sslproto.SSLProtocol(
                 self, protocol, sslcontext, waiter,
                 server_side, server_hostname,
-                ssl_handshake_timeout=ssl_handshake_timeout)
+                ssl_handshake_timeout=ssl_handshake_timeout,
+                ssl_shutdown_timeout=ssl_shutdown_timeout)
         _ProactorSocketTransport(self, rawsock, ssl_protocol,
                                  extra=extra, server=server)
         return ssl_protocol._app_transport
@@ -697,10 +735,24 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
     async def sock_recv_into(self, sock, buf):
         return await self._proactor.recv_into(sock, buf)
 
+    async def sock_recvfrom(self, sock, bufsize):
+        return await self._proactor.recvfrom(sock, bufsize)
+
+    async def sock_recvfrom_into(self, sock, buf, nbytes=0):
+        if not nbytes:
+            nbytes = len(buf)
+
+        return await self._proactor.recvfrom_into(sock, buf, nbytes)
+
     async def sock_sendall(self, sock, data):
         return await self._proactor.send(sock, data)
 
+    async def sock_sendto(self, sock, data, address):
+        return await self._proactor.sendto(sock, data, 0, address)
+
     async def sock_connect(self, sock, address):
+        if self._debug and sock.gettimeout() != 0:
+            raise ValueError("the socket must be non-blocking")
         return await self._proactor.connect(sock, address)
 
     async def sock_accept(self, sock):
@@ -709,7 +761,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
     async def _sock_sendfile_native(self, sock, file, offset, count):
         try:
             fileno = file.fileno()
-        except (AttributeError, io.UnsupportedOperation) as err:
+        except (AttributeError, io.UnsupportedOperation):
             raise exceptions.SendfileNotAvailableError("not a regular file")
         try:
             fsize = os.fstat(fileno).st_size
@@ -732,14 +784,13 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                 offset += blocksize
                 total_sent += blocksize
         finally:
-            if total_sent > 0:
-                file.seek(offset)
+            file.seek(offset)
 
     async def _sendfile_native(self, transp, file, offset, count):
         resume_reading = transp.is_reading()
         transp.pause_reading()
-        await transp._make_empty_waiter()
         try:
+            await transp._make_empty_waiter()
             return await self.sock_sendfile(transp._sock, file, offset, count,
                                             fallback=False)
         finally:
@@ -812,7 +863,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
 
     def _start_serving(self, protocol_factory, sock,
                        sslcontext=None, server=None, backlog=100,
-                       ssl_handshake_timeout=None):
+                       ssl_handshake_timeout=None,
+                       ssl_shutdown_timeout=None, context=None):
 
         def loop(f=None):
             try:
@@ -826,7 +878,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                         self._make_ssl_transport(
                             conn, protocol, sslcontext, server_side=True,
                             extra={'peername': addr}, server=server,
-                            ssl_handshake_timeout=ssl_handshake_timeout)
+                            ssl_handshake_timeout=ssl_handshake_timeout,
+                            ssl_shutdown_timeout=ssl_shutdown_timeout)
                     else:
                         self._make_socket_transport(
                             conn, protocol,

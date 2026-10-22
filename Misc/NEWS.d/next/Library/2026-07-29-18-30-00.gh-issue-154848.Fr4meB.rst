@@ -1,0 +1,6 @@
+The :mod:`pickle` C accelerator now enforces frame boundaries when
+unpickling, as the pure Python implementation already did.  An argument that
+straddles a frame boundary, or a frame that begins before the previous one has
+ended, now raises :exc:`pickle.UnpicklingError` instead of
+being silently read across the boundary.  This prevents the loaded data from
+diverging from the :mod:`pickletools` disassembly of the same pickle.

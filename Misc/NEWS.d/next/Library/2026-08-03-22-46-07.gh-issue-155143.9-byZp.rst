@@ -1,0 +1,2 @@
+Fix :func:`asyncio.shield` leaking the calling task via the await-graph and
+callbacks when called on a future that never resolves.

@@ -1,0 +1,5 @@
+:meth:`ElementTree.write() <xml.etree.ElementTree.ElementTree.write>`,
+:func:`~xml.etree.ElementTree.tostring` and
+:func:`~xml.etree.ElementTree.tostringlist` now support the *standalone*
+parameter, the value of the standalone document declaration
+in the XML declaration.

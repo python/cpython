@@ -1,0 +1,2 @@
+Fix transport cleanup when cancelling :meth:`asyncio.loop.sendfile` while
+waiting for the write buffer to drain in the native implementation.

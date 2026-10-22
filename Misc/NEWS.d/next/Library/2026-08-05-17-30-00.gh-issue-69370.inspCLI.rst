@@ -1,0 +1,4 @@
+:program:`python -m inspect --details` no longer fails with
+:exc:`UnicodeEncodeError` if the path of the module contains characters
+unencodable in the encoding of :data:`sys.stdout`.  Such characters are now
+escaped with backslashes.

@@ -1,0 +1,4 @@
+:meth:`!winfo_exists`, :meth:`!winfo_ismapped` and :meth:`!winfo_viewable`
+methods of :mod:`tkinter` widgets and :meth:`!edit_modified` of
+:class:`tkinter.Text` now return a :class:`bool` instead of an integer or,
+depending on ``wantobjects``, a string.

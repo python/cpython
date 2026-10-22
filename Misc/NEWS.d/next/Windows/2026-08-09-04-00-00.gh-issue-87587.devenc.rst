@@ -1,0 +1,4 @@
+:func:`os.device_encoding` on Windows now returns the code page of any
+console file descriptor, not only 0, 1 and 2, and returns ``None`` for other
+character devices like ``NUL``.  The UTF-8 code page is now reported as
+``"utf-8"`` instead of ``"cp65001"``.

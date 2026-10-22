@@ -1,0 +1,2 @@
+Output from a thread printed in the IDLE Shell while a statement is being
+entered no longer takes over the prompt of the statement.

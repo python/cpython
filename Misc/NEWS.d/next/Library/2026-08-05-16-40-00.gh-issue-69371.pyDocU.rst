@@ -1,0 +1,5 @@
+Fix :mod:`pydoc` for modules whose path contains undecodable bytes.
+:func:`!pydoc.writedoc` and the pydoc HTTP server no longer fail with
+:exc:`UnicodeEncodeError`: the file URL is now percent-encoded using the
+filesystem encoding, and characters unencodable in the generated HTML page
+are escaped with backslashes.

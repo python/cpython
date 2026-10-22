@@ -1,0 +1,2 @@
+Fix a crash when thread state creation fails before the thread state is fully
+initialized.

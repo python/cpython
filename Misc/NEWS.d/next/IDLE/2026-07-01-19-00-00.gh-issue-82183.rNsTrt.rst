@@ -1,0 +1,3 @@
+When the shell is busy running code, using "Run... Customized" with "Restart
+shell" unchecked now reports that the shell is executing instead of
+restarting it anyway.

@@ -1,0 +1,2 @@
+Fix a crash in the perf trampoline when a code object has a name or filename
+that cannot be encoded to UTF-8. Patched by Shamil Abdulaev.

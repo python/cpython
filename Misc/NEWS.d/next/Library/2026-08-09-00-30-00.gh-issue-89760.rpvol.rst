@@ -1,0 +1,2 @@
+Fix :func:`os.path.realpath` on Windows: the ``\\?\`` prefix is no longer
+stripped from a volume GUID path, which made the result invalid.

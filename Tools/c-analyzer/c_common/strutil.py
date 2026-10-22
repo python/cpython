@@ -26,7 +26,7 @@ def parse_entries(entries, *, ignoresep=None):
                     # We read the entire file here to ensure the file
                     # gets closed sooner rather than later.  Note that
                     # the file would stay open if this iterator is never
-                    # exchausted.
+                    # exhausted.
                     lines = infile.read().splitlines()
                 for line in _iter_significant_lines(lines):
                     yield line, filename

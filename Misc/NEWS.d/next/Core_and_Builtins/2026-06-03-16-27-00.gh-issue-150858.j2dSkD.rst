@@ -1,0 +1,1 @@
+Fix a data race while changing ``__qualname__`` of a type concurrently on free-threaded builds.

@@ -1,0 +1,2 @@
+:c:func:`_Py_c_abs` no longer sets :c:data:`errno` to zero on success, but
+rather leaves it unchanged.  Patch by Sergey B Kirpichev.

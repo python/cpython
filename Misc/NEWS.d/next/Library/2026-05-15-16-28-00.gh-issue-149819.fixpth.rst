@@ -1,0 +1,4 @@
+Fix regression in :func:`site.addsitedir` where ``.pth`` files were no
+longer processed in Python subprocesses. This happened because
+:func:`site.main` seeded ``known_paths`` with entries inherited from
+the parent process, causing ``addsitedir`` to skip ``.pth`` processing.

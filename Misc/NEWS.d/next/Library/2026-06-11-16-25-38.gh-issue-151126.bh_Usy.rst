@@ -1,0 +1,2 @@
+Fix a crash when :exc:`MemoryError` in :func:`!os._path_splitroot`
+was not set properly.

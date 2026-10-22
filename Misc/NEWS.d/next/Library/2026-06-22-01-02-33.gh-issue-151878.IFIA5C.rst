@@ -1,0 +1,3 @@
+Add the :meth:`!validate` method to the :class:`tkinter.Entry` and
+:class:`tkinter.Spinbox` widgets, forcing an evaluation of the validation
+command.

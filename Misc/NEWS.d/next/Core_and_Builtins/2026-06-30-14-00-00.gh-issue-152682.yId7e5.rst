@@ -1,0 +1,3 @@
+Fix NULL pointer dereference in :func:`compile` when a reserved name (e.g.
+``__classdict__``) is used as a type parameter name and memory allocation
+fails while formatting the error message.

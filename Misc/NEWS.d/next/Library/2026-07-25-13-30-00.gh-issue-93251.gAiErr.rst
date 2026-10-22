@@ -1,0 +1,4 @@
+Fix :exc:`UnicodeDecodeError` in :mod:`socket` functions
+(such as :func:`~socket.getaddrinfo` and :func:`~socket.gethostbyaddr`)
+when the localized error message of the C library is not UTF-8:
+decode it from the locale encoding.

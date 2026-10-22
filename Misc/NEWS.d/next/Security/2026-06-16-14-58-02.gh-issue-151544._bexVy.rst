@@ -1,0 +1,4 @@
+:file:`Modules/Setup.local` is no longer used as a landmark to discover
+whether Python is running in a source tree, as it could potentially affect
+actual installs. The :file:`pybuilddir.txt` file is now the sole indicator
+of running in a source tree.

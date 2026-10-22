@@ -1,0 +1,2 @@
+Disallow all access in :mod:`urllib.robotparser` if the ``robots.txt`` file
+is unreachable due to server or network errors.

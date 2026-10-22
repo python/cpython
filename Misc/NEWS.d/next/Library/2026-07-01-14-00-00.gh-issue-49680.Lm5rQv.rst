@@ -1,0 +1,4 @@
+Add the *translate_line_endings* parameter to :meth:`imaplib.IMAP4.append`.
+By default line endings in the message are translated to CRLF, as before;
+passing ``False`` sends the message literal exactly as given, preserving
+bare CR or LF octets.

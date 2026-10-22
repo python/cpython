@@ -1,0 +1,3 @@
+Improved error message when specifying non-type base classes in
+:c:macro:`Py_tp_bases`, :c:macro:`Py_tp_base`, and *bases* argument to
+:c:func:`PyType_FromMetaclass` and other ``PyType_From*`` functions.

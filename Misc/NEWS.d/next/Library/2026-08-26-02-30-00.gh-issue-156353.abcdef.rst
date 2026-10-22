@@ -1,0 +1,1 @@
+Fix :mod:`configparser` parsing when using whitespace in *delimiters*.

@@ -1,0 +1,1 @@
+Use the Windows API ``GetFileSizeEx()`` for memory mapped files, rather than the older ``GetFileSize()``.

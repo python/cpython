@@ -1,0 +1,2 @@
+The usage message printed by ``python -m tabnanny`` when no arguments are
+given now suggests ``python -m`` instead of the source file.

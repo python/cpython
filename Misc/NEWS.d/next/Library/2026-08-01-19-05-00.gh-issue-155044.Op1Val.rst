@@ -1,0 +1,1 @@
+:class:`optparse.Values` objects now support :func:`copy.replace`.

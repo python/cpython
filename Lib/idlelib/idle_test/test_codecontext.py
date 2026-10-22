@@ -127,7 +127,7 @@ class CodeContextTest(unittest.TestCase):
         timer = self.cc.t1 = self.text.after(10000, lambda: None)
         self.cc.__del__()
         with self.assertRaises(TclError) as cm:
-            self.root.tk.call('after', 'info', timer)
+            self.root.after_info(timer)
         self.assertIn("doesn't exist", str(cm.exception))
 
     def test_reload(self):
@@ -151,7 +151,7 @@ class CodeContextTest(unittest.TestCase):
         eq(cc.context['bg'], self.highlight_cfg['background'])
         eq(cc.context.get('1.0', 'end-1c'), '')
         eq(cc.editwin.label, 'Hide Code Context')
-        eq(self.root.tk.call('after', 'info', self.cc.t1)[1], 'timer')
+        eq(self.root.after_info(self.cc.t1)[1], 'timer')
 
         # Toggle off.
         toggle()
