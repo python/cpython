@@ -1,0 +1,2 @@
+Fix :class:`lzma.LZMADecompressor` raising :exc:`LZMAError` on repeated
+``decompress(b'', max_length=0)`` calls.
