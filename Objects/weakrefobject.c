@@ -7,6 +7,13 @@
 #include "pycore_pystate.h"
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
+/*[clinic input]
+class weakref "PyWeakReference *" "&_PyWeakref_RefType"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ad66c8b0acee6ad9]*/
+
+#include "clinic/weakrefobject.c.h"
+
 #ifdef Py_GIL_DISABLED
 /*
  * Thread-safety for free-threaded builds
@@ -186,8 +193,14 @@ weakref_vectorcall(PyObject *self, PyObject *const *args,
     return obj;
 }
 
+/*[clinic input]
+@critical_section
+weakref.__hash__
+[clinic start generated code]*/
+
 static Py_hash_t
-weakref_hash_lock_held(PyWeakReference *self)
+weakref_hash_impl(PyWeakReference *self)
+/*[clinic end generated code: output=4904eacaabf902c9 input=703596f4b120e47c]*/
 {
     if (self->hash != -1)
         return self->hash;
@@ -199,17 +212,6 @@ weakref_hash_lock_held(PyWeakReference *self)
     self->hash = PyObject_Hash(obj);
     Py_DECREF(obj);
     return self->hash;
-}
-
-static Py_hash_t
-weakref_hash(PyObject *op)
-{
-    PyWeakReference *self = _PyWeakref_CAST(op);
-    Py_hash_t hash;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    hash = weakref_hash_lock_held(self);
-    Py_END_CRITICAL_SECTION();
-    return hash;
 }
 
 static PyObject *
