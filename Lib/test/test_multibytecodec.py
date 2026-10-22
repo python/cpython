@@ -43,6 +43,18 @@ class Test_MultibyteCodec(unittest.TestCase):
         for enc in ALL_CJKENCODINGS:
             self.assertEqual('abcd'.encode(enc), b'abcd')
 
+    def test_nonbmp_pair_modifier(self):
+        cases = [('big5hkscs', '\u00ca', '\u0304')]
+        cases.extend((encoding, '\u304b', '\u309a') for encoding in (
+            'euc_jis_2004', 'euc_jisx0213', 'shift_jis_2004', 'shift_jisx0213',
+            'iso2022_jp_2004', 'iso2022_jp_3'))
+        for encoding, base, modifier in cases:
+            with self.subTest(encoding=encoding):
+                pair = base + modifier
+                self.assertEqual(pair.encode(encoding).decode(encoding), pair)
+                nonbmp = base + chr(0x10000 + ord(modifier))
+                self.assertRaises(UnicodeEncodeError, nonbmp.encode, encoding)
+
     def test_errorcallback_longindex(self):
         dec = codecs.getdecoder('euc-kr')
         myreplace  = lambda exc: ('', sys.maxsize+1)
@@ -264,6 +276,15 @@ class Test_IncrementalDecoder(unittest.TestCase):
         self.assertEqual(decoder.decode(ESC + b'$'), '')
         self.assertRaises(UnicodeDecodeError, decoder.decode, b'', True)
         self.assertEqual(decoder.decode(b'B@$'), '\u4e16')
+
+    def test_hz_keep_buffer(self):
+        # A trailing '~' shouldn't read past the end of the input.
+        decoder = codecs.getincrementaldecoder('hz')()
+        self.assertEqual(decoder.decode(b'~'), '')
+        self.assertRaises(UnicodeDecodeError, decoder.decode, b'', True)
+        self.assertEqual(decoder.decode(b'~'), '~')
+        self.assertEqual(decoder.decode(b'~'), '')
+        self.assertEqual(decoder.decode(b'\n', True), '')
 
     def test_decode_unicode(self):
         # Trying to decode a unicode string should raise a TypeError

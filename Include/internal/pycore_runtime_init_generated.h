@@ -1329,6 +1329,9 @@ extern "C" {
     INIT_STR(native, "<native>"), \
     INIT_STR(str_replace_inf, "1e309"), \
     INIT_STR(type_params, ".type_params"), \
+    INIT_STR(unknown_file, "<unknown file>"), \
+    INIT_STR(unknown_function, "<unknown function>"), \
+    INIT_STR(unreadable_frame, "<unreadable frame>"), \
     INIT_STR(utf_8, "utf-8"), \
 }
 
@@ -1621,6 +1624,7 @@ extern "C" {
     INIT_ID(byte_size), \
     INIT_ID(byteorder), \
     INIT_ID(bytes), \
+    INIT_ID(bytes_le), \
     INIT_ID(bytes_per_sep), \
     INIT_ID(c_call), \
     INIT_ID(c_exception), \
@@ -1641,6 +1645,7 @@ extern "C" {
     INIT_ID(canonical), \
     INIT_ID(capath), \
     INIT_ID(capitals), \
+    INIT_ID(capture_features), \
     INIT_ID(category), \
     INIT_ID(cb_type), \
     INIT_ID(certfile), \
@@ -1691,6 +1696,7 @@ extern "C" {
     INIT_ID(ctx), \
     INIT_ID(cwd), \
     INIT_ID(d_parameter_type), \
+    INIT_ID(daemon), \
     INIT_ID(data), \
     INIT_ID(database), \
     INIT_ID(date), \
@@ -1773,7 +1779,9 @@ extern "C" {
     INIT_ID(filter), \
     INIT_ID(filters), \
     INIT_ID(final), \
+    INIT_ID(finalizer), \
     INIT_ID(find_class), \
+    INIT_ID(firstiter), \
     INIT_ID(fix_imports), \
     INIT_ID(flags), \
     INIT_ID(flush), \
@@ -1791,6 +1799,7 @@ extern "C" {
     INIT_ID(fset), \
     INIT_ID(fullerror), \
     INIT_ID(func), \
+    INIT_ID(function), \
     INIT_ID(future), \
     INIT_ID(gc), \
     INIT_ID(generation), \
@@ -1810,6 +1819,7 @@ extern "C" {
     INIT_ID(hash_name), \
     INIT_ID(header), \
     INIT_ID(headers), \
+    INIT_ID(hex), \
     INIT_ID(hi), \
     INIT_ID(hook), \
     INIT_ID(host), \
@@ -1843,6 +1853,7 @@ extern "C" {
     INIT_ID(insert_comments), \
     INIT_ID(insert_pis), \
     INIT_ID(instructions), \
+    INIT_ID(int), \
     INIT_ID(intern), \
     INIT_ID(intersection), \
     INIT_ID(interval), \
@@ -1850,6 +1861,7 @@ extern "C" {
     INIT_ID(is_compress), \
     INIT_ID(is_raw), \
     INIT_ID(is_running), \
+    INIT_ID(is_safe), \
     INIT_ID(is_struct), \
     INIT_ID(isatty), \
     INIT_ID(isinstance), \
@@ -1952,6 +1964,7 @@ extern "C" {
     INIT_ID(nlocals), \
     INIT_ID(node_depth), \
     INIT_ID(node_offset), \
+    INIT_ID(nothing), \
     INIT_ID(ns), \
     INIT_ID(nstype), \
     INIT_ID(nt), \
@@ -2022,6 +2035,7 @@ extern "C" {
     INIT_ID(query), \
     INIT_ID(queuetype), \
     INIT_ID(quotetabs), \
+    INIT_ID(random_func), \
     INIT_ID(raw), \
     INIT_ID(read), \
     INIT_ID(read1), \
@@ -2114,6 +2128,7 @@ extern "C" {
     INIT_ID(strict), \
     INIT_ID(strict_mode), \
     INIT_ID(string), \
+    INIT_ID(strip_ws), \
     INIT_ID(sub_key), \
     INIT_ID(subcalls), \
     INIT_ID(symmetric_difference_update), \
@@ -2136,6 +2151,7 @@ extern "C" {
     INIT_ID(threading), \
     INIT_ID(throw), \
     INIT_ID(time), \
+    INIT_ID(time_func), \
     INIT_ID(timeout), \
     INIT_ID(timer), \
     INIT_ID(times), \

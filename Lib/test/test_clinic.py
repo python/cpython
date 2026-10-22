@@ -34,6 +34,7 @@ with test_tools.imports_under_tool('clinic'):
     from libclinic.block_parser import Block, BlockParser
     from libclinic.codegen import BlockPrinter, Destination
     from libclinic.dsl_parser import DSLParser
+    from libclinic.slots import SLOTS
     from libclinic.cli import parse_file, Clinic
 
 
@@ -379,20 +380,19 @@ class ClinicWholeFileTest(TestCase):
         """
         self.expect_failure(block, err, lineno=6)
 
-    def test_double_star_after_var_keyword(self):
-        err = "Function 'my_test_func' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+    def test_parameter_after_var_keyword(self):
+        err = "parameters cannot follow var-keyword parameter: 'invalid_arg: object'"
         block = """
             /*[clinic input]
             my_test_func
 
-                pos_arg: object
                 **kwds: dict
-                **
+                invalid_arg: object
             [clinic start generated code]*/
         """
         self.expect_failure(block, err, lineno=5)
 
-    def test_var_keyword_after_star(self):
+    def test_double_star_without_name(self):
         err = "Function 'my_test_func' has an invalid parameter declaration: '**'"
         block = """
             /*[clinic input]
@@ -400,7 +400,6 @@ class ClinicWholeFileTest(TestCase):
 
                 pos_arg: object
                 **
-                **kwds: dict
             [clinic start generated code]*/
         """
         self.expect_failure(block, err, lineno=5)
@@ -808,6 +807,106 @@ class ClinicWholeFileTest(TestCase):
             [clinic start generated code]*/
         """
         self.expect_failure(block, err, lineno=4)
+
+    def test_slot_next(self):
+        block = """
+            /*[clinic input]
+            output everything block
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            /*[clinic input]
+            Foo.__next__
+            [clinic start generated code]*/
+            /*[clinic input]
+            @critical_section
+            Foo.__next__ as foo_iternext
+            [clinic start generated code]*/
+            #ifdef CONDITION
+            /*[clinic input]
+            Foo.__next__ as foo_iternext_cond
+            [clinic start generated code]*/
+            #endif
+        """
+        generated = self.clinic.parse(dedent(block))
+        self.assertIn(dedent("""
+            static PyObject *
+            Foo_next(PyObject *self)
+            {
+                return Foo_next_impl((FooObject *)self);
+            }
+        """), generated)
+        self.assertIn(dedent("""
+            static PyObject *
+            foo_iternext(PyObject *self)
+            {
+                PyObject *return_value = NULL;
+
+                Py_BEGIN_CRITICAL_SECTION(self);
+                return_value = foo_iternext_impl((FooObject *)self);
+                Py_END_CRITICAL_SECTION();
+
+                return return_value;
+            }
+        """), generated)
+        self.assertIn("#if defined(CONDITION)\n\nstatic PyObject *\n"
+                      "foo_iternext_cond_impl(FooObject *self);", generated)
+        # A slot function is not stored in a PyMethodDef.
+        for text in "METHODDEF", "PyDoc_", "#ifndef":
+            self.assertNotIn(text, generated)
+
+    def test_slot_with_parameters_and_return_type(self):
+        # Check the machinery with slots which take arguments or return
+        # something else than an object.
+        block = """
+            /*[clinic input]
+            output everything block
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            /*[clinic input]
+            Foo.__contains__
+                value: object
+                /
+            [clinic start generated code]*/
+            /*[clinic input]
+            @critical_section
+            Foo.__bool__
+            [clinic start generated code]*/
+        """
+        generated = self.clinic.parse(dedent(block))
+        self.assertIn(dedent("""
+            static int
+            Foo_contains(PyObject *self, PyObject *value)
+            {
+                return Foo_contains_impl((FooObject *)self, value);
+            }
+        """), generated)
+        self.assertIn(dedent("""
+            static int
+            Foo_bool(PyObject *self)
+            {
+                int return_value = -1;
+
+                Py_BEGIN_CRITICAL_SECTION(self);
+                return_value = Foo_bool_impl((FooObject *)self);
+                Py_END_CRITICAL_SECTION();
+
+                return return_value;
+            }
+        """), generated)
+
+    def test_slot_cannot_be_cloned(self):
+        block = """
+            /*[clinic input]
+            class Foo "FooObject *" "&Foo_Type"
+            [clinic start generated code]*/
+            /*[clinic input]
+            Foo.__next__
+            [clinic start generated code]*/
+            /*[clinic input]
+            Foo.other = Foo.__next__
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, "Type slot methods cannot be cloned", lineno=8)
 
     def test_getset_in_ifdef(self):
         block = """
@@ -2106,6 +2205,64 @@ class ClinicParserTest(TestCase):
         err = "Function 'empty_group' has a ']' without a matching '['"
         self.expect_failure(block, err)
 
+    def test_disallowed_grouping__varpos(self):
+        err = "cannot use optional groups with a var-positional parameter"
+        block = """
+            module foo
+            foo.bar
+                [
+                a: int
+                ]
+                *args: tuple
+        """
+        self.expect_failure(block, err, lineno=5)
+        block = """
+            module foo
+            foo.bar
+                a: int
+                *args: tuple
+                [
+                b: int
+                ]
+        """
+        self.expect_failure(block, err, lineno=4)
+
+    def test_disallowed_grouping__parameter_after_group(self):
+        # Only positional-only parameters can follow an optional group.
+        group_err = ("You cannot use optional groups ('[' and ']') unless all "
+                     "parameters are positional-only ('/')")
+        kwds_err = ("cannot use a var-keyword parameter with pos-or-keyword "
+                    "or keyword-only parameters")
+        dataset = (("""
+            module foo
+            foo.bar
+                [
+                a: int
+                b: int
+                ]
+                y: int
+        """, group_err), ("""
+            module foo
+            foo.bar
+                [
+                a: int
+                b: int
+                ]
+                *
+                y: int
+        """, group_err), ("""
+            module foo
+            foo.bar
+                [
+                a: int
+                b: int
+                ]
+                **kwds: dict
+        """, kwds_err))
+        for block, err in dataset:
+            with self.subTest(block=block):
+                self.expect_failure(block, err)
+
     def test_disallowed_grouping__must_be_position_only(self):
         dataset = ("""
             with_kwds
@@ -2117,11 +2274,6 @@ class ClinicParserTest(TestCase):
             with_kwds
                 [
                 a: object
-                ]
-        """, """
-            with_kwds
-                [
-                **kwds: dict
                 ]
         """)
         err = (
@@ -2632,38 +2784,50 @@ class ClinicParserTest(TestCase):
         block = """
             module foo
             foo.bar
-               x: int
-               y: int
                **kwds: dict
-               z: int
                /
         """
-        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        err = "parameters cannot follow var-keyword parameter: '/'"
         self.expect_failure(block, err)
 
     def test_star_after_var_keyword(self):
         block = """
             module foo
             foo.bar
-               x: int
-               y: int
                **kwds: dict
-               z: int
                *
         """
-        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        err = "parameters cannot follow var-keyword parameter: '*'"
         self.expect_failure(block, err)
 
     def test_parameter_after_var_keyword(self):
         block = """
             module foo
             foo.bar
-               x: int
-               y: int
                **kwds: dict
                z: int
         """
-        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        err = "parameters cannot follow var-keyword parameter: 'z: int'"
+        self.expect_failure(block, err)
+
+    def test_group_with_var_keyword(self):
+        block = """
+            with_kwds
+                [
+                **kwds: dict
+                ]
+        """
+        err = "A var-keyword parameter cannot be in an optional group."
+        self.expect_failure(block, err)
+
+    def test_group_with_var_positional(self):
+        block = """
+            with_varpos
+                [
+                *args: tuple
+                ]
+        """
+        err = "A var-positional parameter cannot be in an optional group."
         self.expect_failure(block, err)
 
     def test_depr_star_must_come_after_slash(self):
@@ -2755,7 +2919,7 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=3)
 
     def test_parameters_no_more_than_one_var_keyword(self):
-        err = "Encountered parameter line when not expecting parameters: **var_keyword_2: dict"
+        err = "parameters cannot follow var-keyword parameter: '**var_keyword_2: dict'"
         block = """
             module foo
             foo.bar
@@ -3174,6 +3338,80 @@ class ClinicParserTest(TestCase):
                                   f"a normal callable")
                 self.expect_failure(block, expected_error, lineno=3)
 
+    def test_slot_next(self):
+        function = self.parse_function("""
+            module foo
+            class Foo "FooObject *" ""
+            Foo.__next__
+        """, signatures_in_block=3, function_index=2)
+        self.assertIs(function.kind, FunctionKind.SLOT)
+        self.assertIs(function.slot, SLOTS["__next__"])
+        self.assertEqual(function.c_basename, "Foo_next")
+        self.assertEqual(function.return_converter.type, "PyObject *")
+        self.assertEqual(list(function.parameters), ["self"])
+
+    def test_slot_coexist_is_a_method(self):
+        # dict.__contains__ is a METH_COEXIST method, not the slot.
+        function = self.parse_function("""
+            module foo
+            class Foo "FooObject *" ""
+            @coexist
+            Foo.__contains__
+                key: object
+                /
+        """, signatures_in_block=3, function_index=2)
+        self.assertIs(function.kind, FunctionKind.CALLABLE)
+        self.assertIsNone(function.slot)
+        self.assertIn("METH_COEXIST", function.methoddef_flags)
+
+    def test_slot_parameters(self):
+        # The parameter of __getitem__ gives the slot (Py_ssize_t for
+        # sq_item, object for mp_subscript) and is not parsed.
+        block = """
+            module foo
+            class Foo "FooObject *" ""
+            Foo.__getitem__
+                key: {converter}
+                /
+        """
+        errors = [
+            ("Foo.__getitem__\n    key: object",
+             "The parameters of '__getitem__' must be positional-only"),
+            ("Foo.__getitem__\n    key: object = None\n    /",
+             "The parameters of '__getitem__' cannot have a default value"),
+        ]
+        for converter in ["Py_ssize_t", "object"]:
+            with self.subTest(converter=converter):
+                function = self.parse_function(
+                    block.format(converter=converter),
+                    signatures_in_block=3, function_index=2)
+                self.assertIs(function.kind, FunctionKind.SLOT)
+                self.assertEqual(list(function.parameters), ["self", "key"])
+        for body, err in errors:
+            with self.subTest(block=body):
+                body = 'class Foo "FooObject *" "&Foo_Type"\n' + body
+                self.expect_failure(body, err)
+
+    def test_slot_errors(self):
+        cases = [
+            ("module foo\nfoo.__next__",
+             "'__next__' must be a method!"),
+            ("@classmethod\nFoo.__next__",
+             "'__next__' must be a normal method"),
+            ("@getter\nFoo.__next__",
+             "'__next__' must be a normal method"),
+            ("@vectorcall\nFoo.__next__",
+             "@vectorcall can only be used with __init__ and __new__"),
+            ("Foo.__next__ -> int",
+             "'Foo.__next__' cannot define a return type"),
+            ("Foo.__next__\n\nReturn the next item.",
+             "'__next__' methods cannot have a docstring"),
+        ]
+        for block, err in cases:
+            with self.subTest(block=block):
+                block = 'class Foo "FooObject *" "&Foo_Type"\n' + block
+                self.expect_failure(block, err)
+
     def test_deleter_without_setter(self):
         block = """
             module foo
@@ -3416,10 +3654,10 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=2)
 
     def test_cannot_convert_special_method(self):
-        err = "'__len__' is a special method and cannot be converted"
+        err = "'__iter__' is a special method and cannot be converted"
         block = """
             class T "" ""
-            T.__len__
+            T.__iter__
         """
         self.expect_failure(block, err, lineno=1)
 
@@ -3565,7 +3803,8 @@ class ClinicParserTest(TestCase):
                x: int
                **kwds: dict
         """
-        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        err = ("Function 'bar' cannot use a var-keyword parameter with "
+               "pos-or-keyword or keyword-only parameters.")
         self.expect_failure(block, err)
 
     def test_var_keyword_with_kw_only(self):
@@ -3578,7 +3817,8 @@ class ClinicParserTest(TestCase):
                y: int
                **kwds: dict
         """
-        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        err = ("Function 'bar' cannot use a var-keyword parameter with "
+               "pos-or-keyword or keyword-only parameters.")
         self.expect_failure(block, err)
 
     def test_var_keyword_with_pos_or_kw_and_kw_only(self):
@@ -3592,7 +3832,8 @@ class ClinicParserTest(TestCase):
                z: int
                **kwds: dict
         """
-        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        err = ("Function 'bar' cannot use a var-keyword parameter with "
+               "pos-or-keyword or keyword-only parameters.")
         self.expect_failure(block, err)
 
     def test_allow_negative_accepted_by_py_ssize_t_converter_only(self):
@@ -4014,6 +4255,7 @@ class ClinicExternalTest(TestCase):
             "DWORD",
             "fildes",
             "float",
+            "gid_t",
             "HANDLE",
             "int",
             "long",
@@ -4032,6 +4274,7 @@ class ClinicExternalTest(TestCase):
             "size_t",
             "slice_index",
             "str",
+            "uid_t",
             "uint16",
             "uint32",
             "uint64",
@@ -4053,6 +4296,7 @@ class ClinicExternalTest(TestCase):
                 int()
                 long()
                 object()
+                Py_hash_t()
                 Py_ssize_t()
                 size_t()
                 unsigned_int()
@@ -5112,7 +5356,7 @@ class ClinicFunctionalTest(unittest.TestCase):
         cls = ac_tester.TestClass
         obj = cls()
         fn = obj.defclass_posonly_varpos
-        errmsg = 'takes at least 2 positional arguments'
+        errmsg = 'expected at least 2 arguments'
         self.assertRaisesRegex(TypeError, errmsg, fn)
         self.assertRaisesRegex(TypeError, errmsg, fn, 1)
         self.assertEqual(fn(1, 2), (cls, 1, 2, ()))
@@ -5597,7 +5841,8 @@ class VectorcallFunctionalTest(unittest.TestCase):
             return cls, partial(cls.__init__, cls(1))
 
         entry_points = [
-            through_new(enumerate),   # the only non-test @vectorcall function
+            through_new(enumerate),
+            through_new(float),
             through_new(ac_tester.VcNew),
             through_new(ac_tester.VcNewBase),
             through_new(ac_tester.VcKwOnly),

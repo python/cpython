@@ -397,7 +397,9 @@ def get_build_info():
 
     # --with-address-sanitizer
     sanitizers = []
-    if support.check_sanitizer(address=True):
+    if support.check_sanitizer(hwaddress=True):
+        sanitizers.append("HWASAN")
+    elif support.check_sanitizer(address=True):
         sanitizers.append("ASAN")
     # --with-memory-sanitizer
     if support.check_sanitizer(memory=True):

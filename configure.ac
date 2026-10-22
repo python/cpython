@@ -73,6 +73,12 @@ AC_DEFUN([PY_CHECK_FUNC],
   AS_VAR_POPDEF([py_define])
 ])
 
+dnl PY_CHECK_FUNC_PRIVATE(FUNCTION, [INCLUDES], [AC_DEFINE-VAR])
+dnl Similar to PY_CHECK_FUNC but define macro _Py_HAVE_xxx instead of HAVE_xxx
+AC_DEFUN([PY_CHECK_FUNC_PRIVATE],
+[ PY_CHECK_FUNC([$1], [$2], m4_ifblank([$3], [[_Py_HAVE_]m4_toupper($1)], [$3]))
+])
+
 dnl PY_CHECK_LIB(LIBRARY, FUNCTION, [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND], [OTHER-LIBRARIES])
 dnl Like AC_CHECK_LIB() but does not modify LIBS
 AC_DEFUN([PY_CHECK_LIB],
@@ -122,9 +128,9 @@ HAS_GIT=no-repository
 fi
 if test $HAS_GIT = found
 then
-    GITVERSION="git --git-dir \$(srcdir)/.git rev-parse --short HEAD"
-    GITTAG="git --git-dir \$(srcdir)/.git describe --all --always --dirty"
-    GITBRANCH="git --git-dir \$(srcdir)/.git name-rev --name-only HEAD"
+    GITVERSION="git --git-dir \$(srcdir)/.git --work-tree \$(srcdir) rev-parse --short HEAD"
+    GITTAG="git --git-dir \$(srcdir)/.git --work-tree \$(srcdir) describe --all --always --dirty"
+    GITBRANCH="git --git-dir \$(srcdir)/.git --work-tree \$(srcdir) name-rev --name-only HEAD"
 else
     GITVERSION=""
     GITTAG=""
@@ -433,7 +439,7 @@ if test -z "$AR"; then
 		aarch64-apple-ios*)           AR=arm64-apple-ios-ar ;;
 		x86_64-apple-ios*-simulator)  AR=x86_64-apple-ios-simulator-ar ;;
 		*)
-	esac
+    esac
 fi
 if test -z "$CC"; then
 	case "$host" in
@@ -1140,7 +1146,7 @@ AC_CACHE_CHECK([for GCC compatible compiler],
                [ac_cv_gcc_compat=yes],
                [ac_cv_gcc_compat=no])])
 
-AC_SUBST([CXX])
+AC_ARG_VAR([CXX], [C++ compiler command])
 
 preset_cxx="$CXX"
 if test -z "$CXX"
@@ -2282,6 +2288,12 @@ AC_ARG_VAR(
 AC_MSG_CHECKING([BOLT_APPLY_FLAGS])
 if test -z "${BOLT_APPLY_FLAGS}"
 then
+  dnl The frame optimizer is only implemented for x86. BOLT 22 and newer
+  dnl refuse to run it on other architectures.
+  AS_CASE([$host_cpu],
+    [x86_64], [bolt_frame_opt_flags="-frame-opt=hot"],
+    [bolt_frame_opt_flags=""]
+  )
   AS_VAR_SET(
     [BOLT_APPLY_FLAGS],
     [m4_normalize("
@@ -2299,7 +2311,7 @@ then
      -indirect-call-promotion=all
      -dyno-stats
      -use-gnu-stack
-     -frame-opt=hot
+     ${bolt_frame_opt_flags}
    ")]
   )
 fi
@@ -2434,13 +2446,10 @@ AS_CASE([$ac_sys_system],
     dnl Start with 20 MB and allow to grow
     AS_VAR_APPEND([LINKFORSHARED], [" -sALLOW_MEMORY_GROWTH -sINITIAL_MEMORY=20971520"])
 
-    dnl map int64_t and uint64_t to JS bigint
-    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sWASM_BIGINT"])
-
     dnl Include file system support
     AS_VAR_APPEND([LINKFORSHARED], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY,ERRNO_CODES"])
-    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,_PyGILState_GetThisThreadState,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,_PyGILState_GetThisThreadState"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sSTACK_SIZE=5MB"])
     dnl Avoid bugs in JS fallback string decoding path
     AS_VAR_APPEND([LINKFORSHARED], [" -sTEXTDECODER=2"])
@@ -3192,7 +3201,8 @@ AC_CHECK_HEADERS([ \
   alloca.h asm/types.h bluetooth.h conio.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
   io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/limits.h linux/memfd.h \
   linux/netfilter_ipv4.h linux/random.h linux/soundcard.h linux/sched.h \
-  linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
+  linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h \
+  poll.h process.h pthread.h pthread_np.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
   sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/pidfd.h sys/poll.h \
@@ -3523,8 +3533,37 @@ AC_ARG_WITH([address_sanitizer],
 AC_MSG_RESULT([$withval])
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=address $LDFLAGS"
-# ASan works by controlling memory allocation, our own malloc interferes.
-with_pymalloc="no"
+AC_MSG_CHECKING([whether a program links with -fsanitize=address])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+  [AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no])
+   AC_MSG_ERROR([cannot link with -fsanitize=address: the compiler does not support AddressSanitizer or its runtime library is not installed; see config.log])])
+],
+[AC_MSG_RESULT([no])])
+
+AC_MSG_CHECKING([for --with-hwaddress-sanitizer])
+AC_ARG_WITH(
+  [hwaddress_sanitizer],
+  [AS_HELP_STRING(
+    [--with-hwaddress-sanitizer],
+    [enable HWAddressSanitizer memory error detector, 'hwasan' (default is no)]
+  )],
+[
+AC_MSG_RESULT([$withval])
+hwasan_flags="-fsanitize=hwaddress"
+# x86-64 lacks address tagging, so HWASan needs the page aliasing mode there.
+# See gh-156049 and
+# https://clang.llvm.org/docs/HardwareAssistedAddressSanitizerDesign.html#supported-architectures
+AS_CASE([$host_cpu],
+  [x86_64|amd64], [hwasan_flags="$hwasan_flags -fsanitize-hwaddress-experimental-aliasing"]
+)
+BASECFLAGS="$hwasan_flags -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="$hwasan_flags $LDFLAGS"
+AC_MSG_CHECKING([whether a program links with $hwasan_flags])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+  [AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no])
+   AC_MSG_ERROR([cannot link with $hwasan_flags: the compiler does not support HWAddressSanitizer or its runtime library is not installed; see config.log])])
 ],
 [AC_MSG_RESULT([no])])
 
@@ -3537,12 +3576,13 @@ AC_ARG_WITH(
   )],
 [
 AC_MSG_RESULT([$withval])
-AX_CHECK_COMPILE_FLAG([-fsanitize=memory],[
 BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
-],[AC_MSG_ERROR([The selected compiler doesn't support memory sanitizer])])
-# MSan works by controlling memory allocation, our own malloc interferes.
-with_pymalloc="no"
+AC_MSG_CHECKING([whether a program links with -fsanitize=memory])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+  [AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no])
+   AC_MSG_ERROR([cannot link with -fsanitize=memory: the compiler does not support MemorySanitizer or its runtime library is not installed; see config.log])])
 ],
 [AC_MSG_RESULT([no])])
 
@@ -3558,6 +3598,11 @@ AC_MSG_RESULT([$withval])
 BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
 LDFLAGS="-fsanitize=undefined $LDFLAGS"
 with_ubsan="yes"
+AC_MSG_CHECKING([whether a program links with -fsanitize=undefined])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+  [AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no])
+   AC_MSG_ERROR([cannot link with -fsanitize=undefined: the compiler does not support UndefinedBehaviorSanitizer or its runtime library is not installed; see config.log])])
 ],
 [
 AC_MSG_RESULT([no])
@@ -3576,6 +3621,11 @@ AC_MSG_RESULT([$withval])
 BASECFLAGS="-fsanitize=thread $BASECFLAGS"
 LDFLAGS="-fsanitize=thread $LDFLAGS"
 with_tsan="yes"
+AC_MSG_CHECKING([whether a program links with -fsanitize=thread])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+  [AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no])
+   AC_MSG_ERROR([cannot link with -fsanitize=thread: the compiler does not support ThreadSanitizer or its runtime library is not installed; see config.log])])
 ],
 [
 AC_MSG_RESULT([no])
@@ -3989,7 +4039,7 @@ if test "$py_have_iconv" = yes; then
     ])
   ])
   if test "$ac_cv_have_iconv" != no; then
-    AC_DEFINE([HAVE_ICONV], [1],
+    AC_DEFINE([_Py_HAVE_ICONV], [1],
               [Define if you have a working iconv() function.])
     if test "$ac_cv_have_iconv" = -liconv; then
       LIBS="-liconv $LIBS"
@@ -4374,8 +4424,8 @@ AS_VAR_IF([ac_sys_system], [Darwin], [
       AC_CHECK_LIB([ffi], [ffi_call], [
         dnl use ffi from SDK root
         have_libffi=yes
-        LIBFFI_CFLAGS="-I${SDKROOT}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"
-        LIBFFI_LIBS="-lffi"
+        LIBFFI_CFLAGS=${LIBFFI_CFLAGS-"-I${SDKROOT}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"}
+        LIBFFI_LIBS=${LIBFFI_LIBS-"-lffi"}
       ])
     ])
   ])
@@ -4455,7 +4505,7 @@ int main(void)
     {
         return 2;
     }
-    ffi_arg rc;
+    ffi_arg rc = 0;
     ffi_call(&cif, FFI_FN(z_is_expected), &rc, values);
     return !rc;
 }
@@ -4608,21 +4658,22 @@ AC_ARG_ENABLE([loadable-sqlite-extensions],
       support loadable extensions in the sqlite3 module, see
       Doc/library/sqlite3.rst (default is no)
     ]
-  ), [
-    AS_VAR_IF([have_sqlite3_load_extension], [no], [
-      AC_MSG_RESULT([n/a])
-      AC_MSG_WARN([Your version of SQLite does not support loadable extensions])
-    ], [
-      AC_MSG_RESULT([yes])
-      AC_DEFINE(
-        [PY_SQLITE_ENABLE_LOAD_EXTENSION], [1],
-        [Define to 1 to build the sqlite module with loadable extensions support.]
-      )
-    ])
-  ], [
-    AC_MSG_RESULT([no])
-  ]
+  ), [], [enable_loadable_sqlite_extensions=no]
 )
+AS_VAR_IF([enable_loadable_sqlite_extensions], [yes], [
+  AS_VAR_IF([have_sqlite3_load_extension], [no], [
+    AC_MSG_RESULT([n/a])
+    AC_MSG_WARN([Your version of SQLite does not support loadable extensions])
+  ], [
+    AC_MSG_RESULT([yes])
+    AC_DEFINE(
+      [PY_SQLITE_ENABLE_LOAD_EXTENSION], [1],
+      [Define to 1 to build the sqlite module with loadable extensions support.]
+    )
+  ])
+], [
+  AC_MSG_RESULT([no])
+])
 
 dnl
 dnl Detect Tcl/Tk. Use pkg-config if available.
@@ -4733,6 +4784,15 @@ AS_CASE([$ac_cv_search_dbm_open],
 )
 AC_MSG_RESULT([$have_ndbm ($dbm_ndbm)])
 
+dnl gdbm's ndbm.h includes gdbm.h; libgdbm is then needed for the version info.
+AC_CACHE_CHECK([whether ndbm.h is provided by gdbm], [ac_cv_ndbm_h_is_gdbm],
+               [AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+                 #include <ndbm.h>
+                 #ifndef _GDBM_H_
+                 #error "not gdbm"
+                 #endif
+               ]])], [ac_cv_ndbm_h_is_gdbm=yes], [ac_cv_ndbm_h_is_gdbm=no])])
+
 dnl "gdbm-ndbm.h" and "gdbm/ndbm.h" are both normalized to "gdbm_ndbm_h"
 AC_CACHE_CHECK([for gdbm/ndbm.h], [ac_cv_header_gdbm_slash_ndbm_h],
                [AC_PREPROC_IFELSE([AC_LANG_SOURCE([@%:@include <gdbm/ndbm.h>])],
@@ -4815,6 +4875,7 @@ for db in $with_dbmliborder; do
       if test "$have_ndbm" = yes; then
         DBM_CFLAGS="-DUSE_NDBM"
         DBM_LIBS="$dbm_ndbm"
+        AS_VAR_IF([ac_cv_ndbm_h_is_gdbm], [yes], [DBM_LIBS="$DBM_LIBS $GDBM_LIBS"])
         have_dbm=yes
         break
       fi
@@ -4822,7 +4883,7 @@ for db in $with_dbmliborder; do
     gdbm)
       if test "$have_gdbm_compat" = yes; then
         DBM_CFLAGS="-DUSE_GDBM_COMPAT"
-        DBM_LIBS="-lgdbm_compat"
+        DBM_LIBS="-lgdbm_compat $GDBM_LIBS"
         have_dbm=yes
         break
       fi
@@ -5430,11 +5491,17 @@ PLATFORM_OBJS=
 
 AS_CASE([$ac_sys_system],
   [Emscripten], [
-    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_trampoline_wasm.o'])
+    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o Python/wasm_trampoline.o'])
+    AS_VAR_APPEND([CFLAGS_NODIST], [" -mgc"])
+
     AS_VAR_IF([enable_emscripten_syscalls], [yes], [
       AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_syscalls.o'])
     ])
-    AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'])
+    AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h'])
+  ],
+  [WASI], [
+    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/wasm_trampoline.o'])
+    AS_VAR_APPEND([CFLAGS_NODIST], [" -mgc"])
   ],
 )
 AC_SUBST([PLATFORM_HEADERS])
@@ -5546,6 +5613,12 @@ AC_CHECK_FUNCS([ \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
 ])
 
+PY_CHECK_FUNC_PRIVATE([freadlink], [@%:@include <unistd.h>])
+PY_CHECK_FUNC_PRIVATE([strerror_r], [@%:@include <string.h>])
+# FreeBSD pthread_attr_get_np()
+PY_CHECK_FUNC_PRIVATE([pthread_attr_get_np], [@%:@include <pthread_np.h>])
+
+
 # os.statx uses Linux's statx function.  AIX also has a function named statx,
 # but it's unrelated.  Check only on Linux (including Android).
 AS_CASE([$ac_sys_system],
@@ -5563,9 +5636,24 @@ fi
 # found by configure), but either raise a compilation error (because the
 # header definition prevents usage - autoconf doesn't use the headers), or
 # raise an error if used at runtime. Force these symbols off.
-if test "$ac_sys_system" != "iOS" ; then
-  AC_CHECK_FUNCS([dup3 getentropy getgroups pipe2 system])
-fi
+# In particular, dup3 and pipe2 are available as of iOS 27 but were
+# incorrectly detected in older simulator versions.
+case "$ac_sys_system" in
+    iOS)
+        AC_MSG_CHECKING([if iOS SDK is older than 27])
+        ios_sdk_version=$(xcrun --sdk iphoneos --show-sdk-version 2>/dev/null | cut -d. -f1)
+        if test -n "$ios_sdk_version" && test "$ios_sdk_version" -ge 27; then
+            AC_MSG_RESULT([no])
+            AC_CHECK_FUNCS([dup3 pipe2])
+        else
+            AC_MSG_RESULT([yes])
+        fi
+        ;;
+    *)
+        # not iOS
+        AC_CHECK_FUNCS([dup3 getentropy getgroups pipe2 system])
+        ;;
+esac
 
 AC_CHECK_DECL([dirfd],
               [AC_DEFINE([HAVE_DIRFD], [1],
@@ -5948,15 +6036,17 @@ AC_CHECK_DECLS([UT_NAMESIZE],
                          [Define if you have the 'HAVE_UT_NAMESIZE' constant.])],
               [],
               [@%:@include <utmp.h>])
-# musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h
-AS_IF([test "$ac_cv_libc" != musl], [
-AC_CHECK_DECLS([PR_SET_VMA_ANON_NAME],
-              [AC_DEFINE([_Py_HAVE_PR_SET_VMA_ANON_NAME], [1],
-                         [Define if you have the 'PR_SET_VMA_ANON_NAME' constant.])],
-              [],
-              [@%:@include <linux/prctl.h>
-               @%:@include <sys/prctl.h>])
-])
+# musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h.
+# The conftest does not reliably catch this, so skip the check on musl.
+AS_CASE([$host],
+  [*-musl*], [],
+  [AC_CHECK_DECLS([PR_SET_VMA_ANON_NAME],
+                [AC_DEFINE([_Py_HAVE_PR_SET_VMA_ANON_NAME], [1],
+                           [Define if you have the 'PR_SET_VMA_ANON_NAME' constant.])],
+                [],
+                [@%:@include <linux/prctl.h>
+                 @%:@include <sys/prctl.h>])]
+)
 # check for openpty, login_tty, and forkpty
 
 AC_CHECK_FUNCS([openpty], [],
@@ -6552,7 +6642,13 @@ AC_CHECK_FUNCS(
   [AC_MSG_ERROR([Python requires C99 compatible libm])]
 )
 
-AC_CHECK_FUNCS_ONCE(acospi asinpi atanpi atan2pi cospi sinpi tanpi)
+PY_CHECK_FUNC_PRIVATE([acospi], [@%:@include <math.h>])
+PY_CHECK_FUNC_PRIVATE([asinpi], [@%:@include <math.h>])
+PY_CHECK_FUNC_PRIVATE([atanpi], [@%:@include <math.h>])
+PY_CHECK_FUNC_PRIVATE([atan2pi], [@%:@include <math.h>])
+PY_CHECK_FUNC_PRIVATE([cospi], [@%:@include <math.h>])
+PY_CHECK_FUNC_PRIVATE([sinpi], [@%:@include <math.h>])
+PY_CHECK_FUNC_PRIVATE([tanpi], [@%:@include <math.h>])
 LIBS=$LIBS_SAVE
 
 dnl For multiprocessing module, check that sem_open
@@ -7417,16 +7513,18 @@ then
 fi
 
 dnl PY_CHECK_CURSES_FUNC(FUNCTION)
+dnl Link, not just compile: a header can declare a function that the library
+dnl lacks, for example term_attrs() in the narrow ncurses library.
 AC_DEFUN([PY_CHECK_CURSES_FUNC],
 [ AS_VAR_PUSHDEF([py_var], [ac_cv_lib_curses_$1])
   AS_VAR_PUSHDEF([py_define], [HAVE_CURSES_]m4_toupper($1))
   AC_CACHE_CHECK(
     [for curses function $1],
     [py_var],
-    [AC_COMPILE_IFELSE(
+    [AC_LINK_IFELSE(
       [AC_LANG_PROGRAM(_CURSES_INCLUDES, [
         #ifndef $1
-        void *x=$1
+        void * volatile x = (void *)$1; (void)x;
         #endif
       ])],
       [AS_VAR_SET([py_var], [yes])],

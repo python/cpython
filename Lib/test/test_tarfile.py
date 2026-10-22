@@ -1204,6 +1204,72 @@ class GzipBrokenHeaderCorrectException(GzipTest, unittest.TestCase):
             tarfile.open(fileobj=f, mode='r|gz')
 
 
+class FileInFileExceptionWrappingTest(unittest.TestCase):
+    """
+    See: https://github.com/python/cpython/issues/156057
+
+    _FileInFile.read() must wrap whatever exception type its
+    underlying fileobj.read() raises for corrupt compressed data,
+    using the exception class attribute each TarFile.*open()
+    classmethod configures, in tarfile.ReadError -- and must not
+    swallow an exception of an unconfigured type.
+    """
+
+    class _FakeFileobj:
+        def __init__(self, exc):
+            self.exc = exc
+
+        def seek(self, position):
+            pass
+
+        def read(self, size):
+            raise self.exc
+
+    def test_wraps_configured_exception_type(self):
+        class Boom(Exception):
+            pass
+
+        fif = tarfile._FileInFile(
+            self._FakeFileobj(Boom("simulated corrupt compressed data")),
+            offset=0, size=10, name="member", exception=Boom)
+        with self.assertRaises(tarfile.ReadError):
+            fif.read()
+
+    def test_does_not_wrap_unconfigured_exception_type(self):
+        class Boom(Exception):
+            pass
+
+        class Unrelated(Exception):
+            pass
+
+        fif = tarfile._FileInFile(
+            self._FakeFileobj(Unrelated("not the configured exception type")),
+            offset=0, size=10, name="member", exception=Boom)
+        with self.assertRaises(Unrelated):
+            fif.read()
+
+
+@support.requires_gzip()
+class GzipExtractfileWrapsCompressionErrorTest(unittest.TestCase):
+    """
+    See: https://github.com/python/cpython/issues/156057
+
+    Confirms the real gzopen() -> ExFileObject -> _FileInFile wiring:
+    a zlib.error raised while reading a member's compressed data past
+    the header surfaces as tarfile.ReadError, not the raw zlib.error.
+    """
+
+    def test_extractfile_read_wraps_zlib_error(self):
+        with tarfile.open(gzipname, mode='r:gz') as tar:
+            tarinfo = tar.getmember("ustar/regtype")
+            with tar.extractfile(tarinfo) as fobj:
+                with unittest.mock.patch.object(
+                        tar.fileobj, "read",
+                        side_effect=zlib.error("simulated corrupt data")):
+                    with self.assertRaises(tarfile.ReadError):
+                        fobj.read()
+
+
 class MemberReadTest(ReadTest, unittest.TestCase):
 
     def _test_member(self, tarinfo, chksum=None, **kwargs):
@@ -1634,6 +1700,29 @@ class WriteTest(WriteTestBase, unittest.TestCase):
 
     prefix = "w:"
 
+    def test_addfile_sets_offsets(self):
+        # gh-150075: addfile() must set offset and offset_data on the
+        # TarInfo stored in the archive so they match a subsequent read.
+        data = b"data"
+
+        with tarfile.open(tmpname, self.mode) as tar:
+            t1 = tarfile.TarInfo("test1.txt")
+            t1.size = len(data)
+            tar.addfile(t1, io.BytesIO(data))
+
+            t2 = tarfile.TarInfo("test2.txt")
+            t2.size = len(data)
+            tar.addfile(t2, io.BytesIO(data))
+
+            write_members = tar.getmembers()
+
+        with tarfile.open(tmpname) as tar:
+            read_members = tar.getmembers()
+
+        for w, r in zip(write_members, read_members):
+            self.assertEqual(w.offset, r.offset)
+            self.assertEqual(w.offset_data, r.offset_data)
+
     def test_100_char_name(self):
         # The name field in a tar header stores strings of at most 100 chars.
         # If a string is shorter than 100 chars it has to be padded with '\0',
@@ -2050,6 +2139,44 @@ class GzipStreamWriteTest(GzipTest, StreamWriteTest):
             fobj.read()
             self.assertEqual(fobj.mtime, 0)
 
+    def test_create_with_mtime_out_of_range(self):
+        # gh-133998: an mtime outside the gzip header's 32-bit range is
+        # stored as 0 rather than raising struct.error.
+        self.addCleanup(os_helper.unlink, tmpname)
+        for mtime in (-1, 2**32):
+            with self.subTest(mtime=mtime):
+                tarfile.open(tmpname, self.mode, mtime=mtime).close()
+                with self.open(tmpname, 'r') as fobj:
+                    fobj.read()
+                    self.assertEqual(fobj.mtime, 0)
+
+    def test_create_with_mtime_at_boundary(self):
+        # gh-133998: the largest in-range mtime is preserved, not clamped.
+        mtime = 2**32 - 1
+        tarfile.open(tmpname, self.mode, mtime=mtime).close()
+        with self.open(tmpname, 'r') as fobj:
+            fobj.read()
+            self.assertEqual(fobj.mtime, mtime)
+
+    def test_create_with_out_of_range_clock(self):
+        # gh-133998: an out-of-range system clock (mtime defaulting to
+        # time.time()) is stored as 0 rather than raising struct.error.
+        for clock in (-1, 2**32):
+            with self.subTest(clock=clock):
+                with unittest.mock.patch('time.time', return_value=float(clock)):
+                    tarfile.open(tmpname, self.mode).close()
+                with self.open(tmpname, 'r') as fobj:
+                    fobj.read()
+                    self.assertEqual(fobj.mtime, 0)
+                os_helper.unlink(tmpname)
+
+    def test_create_with_float_mtime(self):
+        # gh-133998: a float mtime is truncated like gzip, not rejected.
+        tarfile.open(tmpname, self.mode, mtime=123456789.9).close()
+        with self.open(tmpname, 'r') as fobj:
+            fobj.read()
+            self.assertEqual(fobj.mtime, 123456789)
+
     def test_create_without_mtime(self):
         before = int(time.time())
         tarfile.open(tmpname, self.mode).close()
@@ -2455,6 +2582,43 @@ class HardlinkTest(unittest.TestCase):
 
 
 class PaxWriteTest(GNUWriteTest):
+
+    def test_100_byte_names(self):
+        for field, offset in (("name", 0), ("linkname", 157)):
+            with self.subTest(field=field):
+                name = "a" * 100
+                tarinfo = tarfile.TarInfo("test")
+                if field == "linkname":
+                    tarinfo.type = tarfile.SYMTYPE
+                setattr(tarinfo, field, name)
+                header = tarinfo.tobuf(format=tarfile.PAX_FORMAT)
+                self.assertEqual(len(header), tarfile.BLOCKSIZE)
+                self.assertEqual(header[offset:offset + 100],
+                                 name.encode("ascii"))
+                with tarfile.open(fileobj=io.BytesIO(header)) as tar:
+                    member = tar.next()
+                    self.assertEqual(getattr(member, field), name)
+                    self.assertEqual(member.pax_headers, {})
+
+    def test_owner_names(self):
+        for field, offset in (("uname", 265), ("gname", 297)):
+            for length in (0, 31, 32, 33, 40):
+                with self.subTest(field=field, length=length):
+                    name = "a" * length
+                    tarinfo = tarfile.TarInfo("test")
+                    setattr(tarinfo, field, name)
+                    header = tarinfo.tobuf(format=tarfile.PAX_FORMAT)
+                    # The base header must leave room for a NUL terminator.
+                    base_header = header[-tarfile.BLOCKSIZE:]
+                    self.assertEqual(base_header[offset:offset + 32],
+                                     name[:31].encode().ljust(32, b"\0"))
+                    with tarfile.open(fileobj=io.BytesIO(header)) as tar:
+                        member = tar.next()
+                        self.assertEqual(getattr(member, field), name)
+                        if length > 31:
+                            self.assertEqual(member.pax_headers[field], name)
+                        else:
+                            self.assertNotIn(field, member.pax_headers)
 
     def _test(self, name, link=None):
         # See GNUWriteTest.

@@ -338,6 +338,16 @@ class TypeCommentTests(unittest.TestCase):
         tree = self.classic_parse(ignores)
         self.assertEqual(tree.type_ignores, [])
 
+    def test_many_ignores(self):
+        comment_count = 25
+        tags = [f"[tag_{index}]" for index in range(comment_count)]
+        source = "".join(f"pass  # type: ignore{tag}\n" for tag in tags)
+        for tree in self.parse_all(source):
+            self.assertEqual(
+                [(item.lineno, item.tag) for item in tree.type_ignores],
+                list(enumerate(tags, start=1)),
+            )
+
     def test_longargs(self):
         for tree in self.parse_all(longargs, minver=8):
             for t in tree.body:

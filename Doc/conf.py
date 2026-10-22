@@ -180,6 +180,26 @@ nitpick_ignore = [
     ('c:type', 'unsigned __int64'),
     ('c:type', 'double'),
     ('c:type', '_Float16'),
+    # Expat types
+    ('c:type', 'XML_Bool'),
+    ('c:type', 'XML_Char'),
+    ('c:type', 'XML_CharacterDataHandler'),
+    ('c:type', 'XML_CommentHandler'),
+    ('c:type', 'XML_DefaultHandler'),
+    ('c:type', 'XML_Encoding'),
+    ('c:type', 'XML_EndElementHandler'),
+    ('c:type', 'XML_EndNamespaceDeclHandler'),
+    ('c:type', 'XML_Error'),
+    ('c:type', 'XML_LChar'),
+    ('c:type', 'XML_Memory_Handling_Suite'),
+    ('c:type', 'XML_Parser'),
+    ('c:type', 'XML_ProcessingInstructionHandler'),
+    ('c:type', 'XML_Size'),
+    ('c:type', 'XML_StartDoctypeDeclHandler'),
+    ('c:type', 'XML_StartElementHandler'),
+    ('c:type', 'XML_StartNamespaceDeclHandler'),
+    ('c:type', 'XML_Status'),
+    ('c:type', 'XML_UnknownEncodingHandler'),
     # Standard C structures
     ('c:struct', 'in6_addr'),
     ('c:struct', 'in_addr'),
@@ -194,6 +214,10 @@ nitpick_ignore = [
     ('c:macro', 'LONG_MIN'),
     # Standard C variables
     ('c:data', 'errno'),
+    # Platform-specific socket constants documented collectively as SO_*.
+    ('py:const', 'socket.SO_EXCLUSIVEADDRUSE'),
+    ('py:const', 'socket.SO_REUSEADDR'),
+    ('py:const', 'socket.SO_REUSEPORT'),
     # Standard environment variables
     ('envvar', 'BROWSER'),
     ('envvar', 'COLUMNS'),
@@ -469,6 +493,10 @@ epub_exclude_files = (
 # https://github.com/sphinx-doc/sphinx/issues/12359
 epub_use_index = False
 
+# The default depth of 3 lists over a thousand entries, which makes the
+# table of contents hard to navigate in e-book readers
+epub_tocdepth = 2
+
 # translation tag
 # ---------------
 
@@ -635,6 +663,8 @@ rediraffe_redirects = {
     "library/exceptions.rst": "builtins/exceptions.rst",
     "library/threadsafety.rst": "builtins/threadsafety.rst",
     "library/time-complexity.rst": "builtins/time-complexity.rst",
+    # Renamed to tkinter.dialogs.rst in GH-151656
+    "library/dialog.rst": "library/tkinter.dialogs.rst",
 }
 
 # Refuse to run the doctest builder under a mismatched Python

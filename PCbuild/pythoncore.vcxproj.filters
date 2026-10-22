@@ -321,16 +321,10 @@
     <ClInclude Include="..\Objects\unicodetype_db.h">
       <Filter>Objects</Filter>
     </ClInclude>
-    <ClInclude Include="..\Parser\lexer\lexer.h">
-      <Filter>Parser</Filter>
-    </ClInclude>
     <ClInclude Include="..\Parser\lexer\state.h">
       <Filter>Parser</Filter>
     </ClInclude>
     <ClInclude Include="..\Parser\lexer\lexer_internal.h">
-      <Filter>Parser</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Parser\tokenizer\cursor.h">
       <Filter>Parser</Filter>
     </ClInclude>
     <ClInclude Include="..\Parser\tokenizer\reader.h">
@@ -948,6 +942,9 @@
     <ClInclude Include="..\Include\internal\mimalloc\mimalloc.h">
       <Filter>Include\internal\mimalloc</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\mimalloc\mimalloc-stats.h">
+      <Filter>Include\internal\mimalloc</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\mimalloc\mimalloc\atomic.h">
       <Filter>Include\internal\mimalloc</Filter>
     </ClInclude>
@@ -1355,6 +1352,9 @@
     <ClCompile Include="..\Parser\lexer\lexer.c">
       <Filter>Parser</Filter>
     </ClCompile>
+    <ClCompile Include="..\Parser\lexer\layout.c">
+      <Filter>Parser</Filter>
+    </ClCompile>
     <ClCompile Include="..\Parser\lexer\number.c">
       <Filter>Parser</Filter>
     </ClCompile>
@@ -1362,9 +1362,6 @@
       <Filter>Parser</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\lexer\state.c">
-      <Filter>Parser</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Parser\tokenizer\cursor.c">
       <Filter>Parser</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\tokenizer\source.c">

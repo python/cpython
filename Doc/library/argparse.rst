@@ -791,9 +791,9 @@ how the command-line arguments should be handled. The supplied actions are:
 
 * ``'append'`` - This appends each argument value to a list.
   It is useful for allowing an option to be specified multiple times.
-  If the default value is a non-empty list, the parsed value will start
-  with the default list's elements and any values from the command line
-  will be appended after those default values. Example usage::
+  If the default value is a non-empty list, the parsed value for the option
+  will start with the default list's elements and any values from the
+  command line will be appended after those default values. Example usage::
 
     >>> parser = argparse.ArgumentParser()
     >>> parser.add_argument('--foo', action='append', default=['0'])
@@ -818,12 +818,16 @@ how the command-line arguments should be handled. The supplied actions are:
   value ``'+'`` or ``'*'``.
   Note that when nargs_ is ``None`` (the default) or ``'?'``, each
   character of the argument string will be appended to the list.
+  If the default value is a non-empty list, the parsed value for the option
+  will start with the default list's elements and any values from the
+  command line will be appended after those default values.
   Example usage::
 
     >>> parser = argparse.ArgumentParser()
-    >>> parser.add_argument("--foo", action="extend", nargs="+", type=str)
+    >>> parser.add_argument("--foo", action="extend", nargs="+", type=str,
+    ...                     default=["d1"])
     >>> parser.parse_args(["--foo", "f1", "--foo", "f2", "f3", "f4"])
-    Namespace(foo=['f1', 'f2', 'f3', 'f4'])
+    Namespace(foo=['d1', 'f1', 'f2', 'f3', 'f4'])
 
   .. versionadded:: 3.8
 
@@ -1689,7 +1693,7 @@ The Namespace object
    :class:`!Namespace` objects support :func:`copy.replace`,
    which returns a copy of the object with the specified attributes replaced.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added support for :func:`copy.replace`.
 
    This class is deliberately simple, just an :class:`object` subclass with a
@@ -1767,8 +1771,9 @@ Subcommands
 
    * help_ - help for sub-parser group in help output, by default ``None``
 
-   * metavar_ - string presenting available subcommands in help; by default it
-     is ``None`` and presents subcommands in form {cmd1, cmd2, ..}
+   * metavar_ - placeholder shown in usage and the subparsers' help entry
+     instead of ``{cmd1, cmd2, ...}``; by default ``None``.
+     Individual subcommand names are unchanged.
 
    Some example usage::
 
@@ -2068,6 +2073,19 @@ Argument groups
       is now deprecated.
 
 
+.. class:: ArgumentGroup
+
+   The type of objects returned by :meth:`ArgumentParser.add_argument_group`.
+   Its :meth:`~ArgumentParser.add_argument` and
+   :meth:`~ArgumentParser.add_mutually_exclusive_group` methods work as on
+   :class:`ArgumentParser`.  Use :meth:`~ArgumentParser.add_argument_group`
+   to create instances.  Only the methods documented here are part of the
+   public API; other attributes and methods are implementation details.
+
+   .. versionadded:: next
+      The private ``_ArgumentGroup`` name remains as an alias.
+
+
 Mutual exclusion
 ^^^^^^^^^^^^^^^^
 
@@ -2099,7 +2117,7 @@ Mutual exclusion
      >>> group.add_argument('--bar', action='store_false')
      >>> parser.parse_args([])
      usage: PROG [-h] (--foo | --bar)
-     PROG: error: one of the arguments --foo --bar is required
+     PROG: error: one of the following arguments is required: --foo, --bar
 
    Note that currently mutually exclusive argument groups do not support the
    *title* and *description* arguments of
@@ -2129,6 +2147,20 @@ Mutual exclusion
       on a mutually exclusive group now raises an exception. This nesting was
       never supported, often failed to work correctly, and was unintentionally
       exposed through inheritance.
+
+
+.. class:: MutuallyExclusiveGroup
+
+   The type of objects returned by
+   :meth:`ArgumentParser.add_mutually_exclusive_group`.
+   Its :meth:`~ArgumentParser.add_argument` method works as on
+   :class:`ArgumentParser`.  Use
+   :meth:`~ArgumentParser.add_mutually_exclusive_group` to create instances.
+   Only the ``add_argument`` method documented here is part of the public API;
+   other attributes and methods are implementation details.
+
+   .. versionadded:: next
+      The private ``_MutuallyExclusiveGroup`` name remains as an alias.
 
 
 Parser defaults

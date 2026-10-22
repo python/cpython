@@ -3,6 +3,7 @@ import difflib
 import io
 import textwrap
 import unittest
+from pathlib import PurePath
 
 from test import test_tools
 from typing import Dict, Any
@@ -12,7 +13,7 @@ test_tools.skip_if_missing("peg_generator")
 with test_tools.imports_under_tool("peg_generator"):
     from pegen.grammar_parser import GeneratedParser as GrammarParser
     from pegen.testutil import parse_string, generate_parser, make_parser
-    from pegen.grammar import GrammarVisitor, GrammarError, Grammar
+    from pegen.grammar import GrammarVisitor, GrammarError, Grammar, RuleKind
     from pegen.grammar_visualizer import ASTGrammarPrinter
     from pegen.parser import Parser
     from pegen.parser_generator import compute_nullables, compute_left_recursives
@@ -537,6 +538,29 @@ class TestPegen(unittest.TestCase):
         self.assertTrue(rules["start"].left_recursive)
         self.assertFalse(rules["sign"].left_recursive)
 
+    def test_helper_rule_kinds_do_not_depend_on_names(self) -> None:
+        grammar = parse_string("""
+            start: NAME* NUMBER+ ','.NAME+
+        """, GrammarParser)
+        generator = PythonParserGenerator(grammar, io.StringIO())
+        generator.collect_rules()
+        helpers = [
+            rule for rule in generator.all_rules.values()
+            if rule is not grammar.rules["start"]
+        ]
+        self.assertCountEqual(
+            [rule.kind for rule in helpers],
+            [RuleKind.LOOP0, RuleKind.LOOP1, RuleKind.LOOP0, RuleKind.GATHER],
+        )
+        for rule in helpers:
+            is_loop, is_gather = rule.is_loop(), rule.is_gather()
+            rule.name = "renamed"
+            self.assertEqual(rule.is_loop(), is_loop)
+            self.assertEqual(rule.is_gather(), is_gather)
+        grammar.rules["start"].name = "_loop1_name_only"
+        self.assertFalse(grammar.rules["start"].is_loop())
+        self.assertFalse(grammar.rules["start"].is_gather())
+
     def test_mutually_left_recursive(self) -> None:
         grammar_source = """
         start: foo 'E'
@@ -550,7 +574,7 @@ class TestPegen(unittest.TestCase):
         self.assertFalse(rules["start"].left_recursive)
         self.assertTrue(rules["foo"].left_recursive)
         self.assertTrue(rules["bar"].left_recursive)
-        genr.generate("<string>")
+        genr.generate(PurePath("<string>"))
         ns: Dict[str, Any] = {}
         exec(out.getvalue(), ns)
         parser_class: Type[Parser] = ns["GeneratedParser"]
@@ -647,7 +671,7 @@ class TestPegen(unittest.TestCase):
         grammar: Grammar = parse_string(grammar_source, GrammarParser)
         out = io.StringIO()
         genr = PythonParserGenerator(grammar, out)
-        genr.generate("<string>")
+        genr.generate(PurePath("<string>"))
         ns: Dict[str, Any] = {}
         exec(out.getvalue(), ns)
         parser_class = ns["GeneratedParser"]
@@ -879,7 +903,7 @@ class TestPegen(unittest.TestCase):
         genr = PythonParserGenerator(
             grammar, out, unreachable_formatting="This is a test"
         )
-        genr.generate("<string>")
+        genr.generate(PurePath("<string>"))
         self.assertIn("This is a test", out.getvalue())
 
     def test_unreachable_implicit1(self) -> None:
@@ -892,7 +916,7 @@ class TestPegen(unittest.TestCase):
         genr = PythonParserGenerator(
             grammar, out, unreachable_formatting="This is a test"
         )
-        genr.generate("<string>")
+        genr.generate(PurePath("<string>"))
         self.assertIn("This is a test", out.getvalue())
 
     def test_unreachable_implicit2(self) -> None:
@@ -905,7 +929,7 @@ class TestPegen(unittest.TestCase):
         genr = PythonParserGenerator(
             grammar, out, unreachable_formatting="This is a test"
         )
-        genr.generate("<string>")
+        genr.generate(PurePath("<string>"))
         self.assertIn("This is a test", out.getvalue())
 
     def test_unreachable_implicit3(self) -> None:
@@ -918,7 +942,7 @@ class TestPegen(unittest.TestCase):
         genr = PythonParserGenerator(
             grammar, out, unreachable_formatting="This is a test"
         )
-        genr.generate("<string>")
+        genr.generate(PurePath("<string>"))
         self.assertNotIn("This is a test", out.getvalue())
 
     def test_locations_in_alt_action_and_group(self) -> None:

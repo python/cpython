@@ -2,12 +2,10 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_runtime.h"     // _Py_SINGLETON()
-#endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
-#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(_ctypes_CType_Type___sizeof____doc__,
 "__sizeof__($self, /)\n"
@@ -76,25 +74,12 @@ static PyObject *
 CDataType_from_address(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "from_address",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *value;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("from_address", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("from_address", nargs, 1, 1)) {
         goto exit;
     }
     value = args[0];
@@ -123,31 +108,18 @@ static PyObject *
 CDataType_from_buffer(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "from_buffer",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *obj;
     Py_ssize_t offset = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("from_buffer", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("from_buffer", nargs, 1, 2)) {
         goto exit;
     }
     obj = args[0];
     if (nargs < 2) {
-        goto skip_optional_posonly;
+        goto skip_optional;
     }
     {
         Py_ssize_t ival = -1;
@@ -166,7 +138,7 @@ CDataType_from_buffer(PyObject *type, PyTypeObject *cls, PyObject *const *args, 
             goto exit;
         }
     }
-skip_optional_posonly:
+skip_optional:
     return_value = CDataType_from_buffer_impl(type, cls, obj, offset);
 
 exit:
@@ -192,33 +164,20 @@ static PyObject *
 CDataType_from_buffer_copy(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "from_buffer_copy",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     Py_buffer buffer = {NULL, NULL};
     Py_ssize_t offset = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("from_buffer_copy", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("from_buffer_copy", nargs, 1, 2)) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &buffer, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
     if (nargs < 2) {
-        goto skip_optional_posonly;
+        goto skip_optional;
     }
     {
         Py_ssize_t ival = -1;
@@ -237,7 +196,7 @@ CDataType_from_buffer_copy(PyObject *type, PyTypeObject *cls, PyObject *const *a
             goto exit;
         }
     }
-skip_optional_posonly:
+skip_optional:
     return_value = CDataType_from_buffer_copy_impl(type, cls, &buffer, offset);
 
 exit:
@@ -268,26 +227,13 @@ static PyObject *
 CDataType_in_dll(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "in_dll",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *dll;
     const char *name;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("in_dll", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("in_dll", nargs, 2, 2)) {
         goto exit;
     }
     dll = args[0];
@@ -295,13 +241,8 @@ CDataType_in_dll(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ss
         _PyArg_BadArgument("in_dll", "argument 2", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t name_length;
-    name = PyUnicode_AsUTF8AndSize(args[1], &name_length);
+    name = _PyUnicode_AsUTF8NoNUL(args[1]);
     if (name == NULL) {
-        goto exit;
-    }
-    if (strlen(name) != (size_t)name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = CDataType_in_dll_impl(type, cls, dll, name);
@@ -326,25 +267,12 @@ static PyObject *
 CDataType_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "from_param",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *value;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("from_param", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("from_param", nargs, 1, 1)) {
         goto exit;
     }
     value = args[0];
@@ -370,25 +298,12 @@ static PyObject *
 PyCPointerType_set_type(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "set_type",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *type;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("set_type", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("set_type", nargs, 1, 1)) {
         goto exit;
     }
     type = args[0];
@@ -415,25 +330,12 @@ static PyObject *
 PyCPointerType_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "from_param",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *value;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("from_param", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("from_param", nargs, 1, 1)) {
         goto exit;
     }
     value = args[0];
@@ -548,25 +450,12 @@ static PyObject *
 c_wchar_p_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "from_param",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *value;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("from_param", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("from_param", nargs, 1, 1)) {
         goto exit;
     }
     value = args[0];
@@ -591,25 +480,12 @@ static PyObject *
 c_char_p_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "from_param",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *value;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("from_param", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("from_param", nargs, 1, 1)) {
         goto exit;
     }
     value = args[0];
@@ -634,25 +510,12 @@ static PyObject *
 c_void_p_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "from_param",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *value;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("from_param", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("from_param", nargs, 1, 1)) {
         goto exit;
     }
     value = args[0];
@@ -679,25 +542,12 @@ static PyObject *
 PyCSimpleType_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "from_param",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *value;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("from_param", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("from_param", nargs, 1, 1)) {
         goto exit;
     }
     value = args[0];
@@ -755,7 +605,7 @@ _ctypes_PyCData___setstate__(PyObject *myself, PyObject *const *args, Py_ssize_t
     const char *data;
     Py_ssize_t data_length;
 
-    if (!_PyArg_ParseStack(args, nargs, "O!s#:__setstate__",
+    if (!PyArg_ParseArray(args, nargs, "O!s#:__setstate__",
         &PyDict_Type, &dict, &data, &data_length)) {
         goto exit;
     }
@@ -896,6 +746,66 @@ _ctypes_CFuncPtr_argtypes_get(PyObject *self, void *Py_UNUSED(context))
     return return_value;
 }
 
+static PyObject *
+Array_item_impl(PyObject *myself, Py_ssize_t index);
+
+static PyObject *
+Array_item(PyObject *myself, Py_ssize_t index)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(myself);
+    return_value = Array_item_impl(myself, index);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static PyObject *
+Array_subscript_impl(PyObject *myself, PyObject *item);
+
+static PyObject *
+Array_subscript(PyObject *myself, PyObject *item)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(myself);
+    return_value = Array_subscript_impl(myself, item);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+Array_ass_item_impl(PyObject *myself, Py_ssize_t index, PyObject *value);
+
+static int
+Array_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(myself);
+    return_value = Array_ass_item_impl(myself, index, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+Array_ass_subscript_impl(PyObject *myself, PyObject *item, PyObject *value);
+
+static int
+Array_ass_subscript(PyObject *myself, PyObject *item, PyObject *value)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(myself);
+    return_value = Array_ass_subscript_impl(myself, item, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 static int
 _ctypes_Simple_value_set_impl(CDataObject *self, PyObject *value);
 
@@ -954,6 +864,36 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     }
     return Simple_from_outparm_impl(self, cls);
 }
+
+static PyObject *
+Pointer_item_impl(PyObject *myself, Py_ssize_t index);
+
+static PyObject *
+Pointer_item(PyObject *myself, Py_ssize_t index)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(myself);
+    return_value = Pointer_item_impl(myself, index);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+Pointer_ass_item_impl(PyObject *myself, Py_ssize_t index, PyObject *value);
+
+static int
+Pointer_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(myself);
+    return_value = Pointer_ass_item_impl(myself, index, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
 #define _CTYPES_CTYPE_TYPE___POINTER_TYPE___GETSETDEF {"__pointer_type__", (getter)_ctypes_CType_Type___pointer_type___get, (setter)_ctypes_CType_Type___pointer_type___set, NULL},
 
 #define _CTYPES_PYCARRAYTYPE_TYPE_RAW_GETSETDEF {"raw", (getter)_ctypes_PyCArrayType_Type_raw_get, (setter)_ctypes_PyCArrayType_Type_raw_set, NULL},
@@ -968,4 +908,4 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
 
 #define _CTYPES_SIMPLE_VALUE_GETSETDEF {"value", (getter)_ctypes_Simple_value_get, (setter)_ctypes_Simple_value_set, NULL},
 
-/*[clinic end generated code: output=1d322c90c81649fd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8fc24edc31ab60b5 input=a9049054013a1b77]*/
