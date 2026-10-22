@@ -1293,9 +1293,9 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         if (tok->level > 0) {
             tok->level--;
             int opening = tok->parenstack[tok->level];
-            if (!tok->tok_extra_tokens && !((opening == '(' && c == ')') ||
-                                            (opening == '[' && c == ']') ||
-                                            (opening == '{' && c == '}'))) {
+            if (!((opening == '(' && c == ')') ||
+                  (opening == '[' && c == ']') ||
+                  (opening == '{' && c == '}'))) {
                 /* If the opening bracket belongs to an f-string's expression
                 part (e.g. f"{)}") and the closing bracket is an arbitrary
                 nested expression, then instead of matching a different
@@ -1309,7 +1309,10 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                             "%c-string: unmatched '%c'", TOK_GET_STRING_PREFIX(tok), c));
                     }
                 }
-                if (tok->parenlinenostack[tok->level] != tok->lineno) {
+                if (tok->tok_extra_tokens) {
+                    /* Allow other mismatched brackets. */
+                }
+                else if (tok->parenlinenostack[tok->level] != tok->lineno) {
                     return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
                             "closing parenthesis '%c' does not match "
                             "opening parenthesis '%c' on line %d",
