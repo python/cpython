@@ -1,0 +1,4 @@
+Allow setting :class:`uuid.UUID` attributes ``int`` and ``is_safe`` through
+:meth:`object.__setattr__` and :c:func:`PyObject_GenericSetAttr`, restoring
+compatibility with libraries that construct UUIDs without calling their
+initializer. Ordinary attribute assignment remains blocked.

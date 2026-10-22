@@ -43,6 +43,36 @@ class BaseTestUUID:
     uuid = None
     is_c_uuid = False
 
+    def test_generic_setattr(self):
+        # Libraries such as Pydantic bypass __init__ and set UUID slots directly.
+        # Exercise that construction path for the base type and a subclass.
+        class UUIDSubclass(self.uuid.UUID):
+            pass
+
+        class IntSubclass(int):
+            pass
+
+        for cls in (self.uuid.UUID, UUIDSubclass):
+            for value in (0, 1, 1 << 127, (1 << 128) - 1,
+                          0x123456789abcdef0123456789abcdef0, IntSubclass(42)):
+                with self.subTest(cls=cls, value=value):
+                    u = cls.__new__(cls)
+                    object.__setattr__(u, 'int', value)
+                    object.__setattr__(u, 'is_safe', self.uuid.SafeUUID.safe)
+                    self.assertEqual(u.int, value)
+                    self.assertEqual(u.bytes, value.to_bytes(16, 'big'))
+                    self.assertEqual(u, self.uuid.UUID(int=value))
+                    self.assertIs(u.is_safe, self.uuid.SafeUUID.safe)
+                    # Replacing the integer must invalidate an already cached hash.
+                    hash(u)
+                    object.__setattr__(u, 'int', 2)
+                    self.assertEqual(hash(u), hash(self.uuid.UUID(int=2)))
+                    self.assertEqual(u.int, 2)
+                    with self.assertRaises(TypeError):
+                        u.int = value
+                    with self.assertRaises(TypeError):
+                        u.is_safe = self.uuid.SafeUUID.unknown
+
     def test_nil_uuid(self):
         nil_uuid = self.uuid.NIL
 
@@ -1763,6 +1793,31 @@ class UuidHooks:
 
 @unittest.skipUnless(c_uuid, "requires the C _uuid module")
 class TestCImplementationCompat(unittest.TestCase):
+    def test_int_setter_errors(self):
+        # Reject invalid integers without changing the UUID's bytes or cached hash,
+        # even when an int subclass bypasses the preliminary range comparison.
+        import uuid
+
+        class LargeInt(int):
+            def __gt__(self, other):
+                return False
+
+        u = uuid.UUID(int=42)
+        original_hash = hash(u)
+        for value, error in ((None, TypeError), ('42', TypeError),
+                             (1.5, TypeError), (-1, ValueError),
+                             (1 << 128, ValueError),
+                             (LargeInt(1 << 128), OverflowError)):
+            with self.subTest(value=value):
+                with self.assertRaises(error):
+                    object.__setattr__(u, 'int', value)
+                self.assertEqual(u.int, 42)
+                self.assertEqual(hash(u), original_hash)
+        for name in ('int', 'is_safe'):
+            with self.subTest(name=name):
+                with self.assertRaises(AttributeError):
+                    object.__delattr__(u, name)
+
     def test_is_safe_lookup_error(self):
         # Force the lazy SafeUUID lookup to fail before it is cached. The getter
         # must propagate AttributeError and recover when the attribute returns.
