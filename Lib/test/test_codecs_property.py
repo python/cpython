@@ -808,7 +808,8 @@ class RoundTripBugs(unittest.TestCase):
 class StreamReaderTruncationBug(unittest.TestCase):
     """StreamReader.read() never tells the decoder that the stream has
     ended, so an incomplete trailing sequence is silently dropped instead
-    of raising (or being replaced), as it is everywhere else (gh-56717)."""
+    of raising (or being replaced), as it is everywhere else (gh-160309,
+    the same mechanism as gh-56717)."""
 
     @unittest.expectedFailure
     @hypothesis.given(
