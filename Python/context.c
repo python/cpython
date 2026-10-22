@@ -169,8 +169,8 @@ notify_context_watchers(PyThreadState *ts, PyContextEvent event, PyObject *ctx)
         assert(i < CONTEXT_MAX_WATCHERS);
         if (bits & 1) {
             PyContext_WatchCallback cb = interp->context_watchers[i];
-            assert(cb != NULL);
-            if (cb(event, ctx) < 0) {
+            // A previous callback may have cleared this watcher.
+            if (cb != NULL && cb(event, ctx) < 0) {
                 PyErr_FormatUnraisable(
                     "Exception ignored in %s watcher callback for %R",
                     context_event_name(event), ctx);
