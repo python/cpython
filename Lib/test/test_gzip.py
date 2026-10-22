@@ -6,6 +6,7 @@ import functools
 import gc
 import io
 import os
+import stat
 import struct
 import sys
 import unittest
@@ -1196,6 +1197,26 @@ class TestCommandLine(unittest.TestCase):
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
+    @os_helper.skip_unless_symlink
+    @create_and_remove_directory(TEMPDIR)
+    def test_decompress_does_not_follow_outfile_symlink(self):
+        gzipname = os.path.join(TEMPDIR, 'testgzip.gz')
+        outname = os.path.join(TEMPDIR, 'testgzip')
+        target = os.path.join(TEMPDIR, 'target')
+        with gzip.open(gzipname, mode='wb') as fp:
+            fp.write(self.data)
+        with open(target, 'wb') as fp:
+            fp.write(b'precious')
+        os.symlink(target, outname)
+
+        assert_python_ok('-m', 'gzip', '-d', gzipname)
+
+        self.assertFalse(os.path.islink(outname))
+        with open(outname, 'rb') as fp:
+            self.assertEqual(fp.read(), self.data)
+        with open(target, 'rb') as fp:
+            self.assertEqual(fp.read(), b'precious')
+
     def test_decompress_infile_outfile_error(self):
         rc, out, err = assert_python_failure('-m', 'gzip', '-d', 'thisisatest.out')
         self.assertEqual(b"filename doesn't end in .gz: 'thisisatest.out'", err.strip())
@@ -1245,6 +1266,62 @@ class TestCommandLine(unittest.TestCase):
                 self.assertEqual(err, b'')
                 os.remove(gzipname)
                 self.assertFalse(os.path.exists(gzipname))
+
+    @os_helper.skip_unless_symlink
+    @create_and_remove_directory(TEMPDIR)
+    def test_compress_does_not_follow_outfile_symlink(self):
+        local_testgzip = os.path.join(TEMPDIR, 'testgzip')
+        gzipname = local_testgzip + '.gz'
+        target = os.path.join(TEMPDIR, 'target')
+        with open(local_testgzip, 'wb') as fp:
+            fp.write(self.data)
+        with open(target, 'wb') as fp:
+            fp.write(b'precious')
+        os.symlink(target, gzipname)
+
+        assert_python_ok('-m', 'gzip', local_testgzip)
+
+        self.assertFalse(os.path.islink(gzipname))
+        with gzip.open(gzipname, 'rb') as fp:
+            self.assertEqual(fp.read(), self.data)
+        with open(target, 'rb') as fp:
+            self.assertEqual(fp.read(), b'precious')
+
+    @unittest.skipUnless(os.name == 'posix', 'requires POSIX file permissions')
+    @os_helper.skip_unless_working_chmod
+    @create_and_remove_directory(TEMPDIR)
+    def test_infile_outfile_permissions(self):
+        local_testgzip = os.path.join(TEMPDIR, 'testgzip')
+        gzipname = local_testgzip + '.gz'
+
+        def create_old_output(filename):
+            # An existing output file is replaced, it does not keep its mode.
+            os_helper.unlink(filename)
+            with open(filename, 'wb') as fp:
+                fp.write(b'old content' * 100)
+            os.chmod(filename, 0o644)
+
+        for mode in 0o400, 0o600, 0o640, 0o666:
+            expected = mode & ~0o022
+            with self.subTest(mode=oct(mode)), os_helper.temp_umask(0o022):
+                os_helper.unlink(local_testgzip)
+                with open(local_testgzip, 'wb') as fp:
+                    fp.write(self.data)
+                os.chmod(local_testgzip, mode)
+                create_old_output(gzipname)
+
+                assert_python_ok('-m', 'gzip', local_testgzip)
+                self.assertEqual(stat.S_IMODE(os.stat(gzipname).st_mode),
+                                 expected)
+                with gzip.open(gzipname) as fp:
+                    self.assertEqual(fp.read(), self.data)
+
+                create_old_output(local_testgzip)
+                assert_python_ok('-m', 'gzip', '-d', gzipname)
+                self.assertEqual(stat.S_IMODE(os.stat(local_testgzip).st_mode),
+                                 expected)
+                with open(local_testgzip, 'rb') as fp:
+                    self.assertEqual(fp.read(), self.data)
 
     def test_compress_fast_best_are_exclusive(self):
         rc, out, err = assert_python_failure('-m', 'gzip', '--fast', '--best')
