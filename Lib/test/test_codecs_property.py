@@ -762,7 +762,8 @@ class RoundTripBugs(unittest.TestCase):
         self._check_round_trip(encoding, text)
 
     # euc_kr encodes the Hangul filler U+3164 as the two bytes that start
-    # an eight-byte composed syllable, and will not decode them alone.
+    # an eight-byte composed syllable, and will not decode them alone
+    # (gh-101863, closed as not a bug; recorded here as the asymmetry it is).
     @unittest.expectedFailure
     @hypothesis.given(text=text)
     @hypothesis.example(text="\u3164")
@@ -783,7 +784,7 @@ class RoundTripBugs(unittest.TestCase):
 class StreamReaderTruncationBug(unittest.TestCase):
     """StreamReader.read() never tells the decoder that the stream has
     ended, so an incomplete trailing sequence is silently dropped instead
-    of raising (or being replaced), as it is everywhere else."""
+    of raising (or being replaced), as it is everywhere else (gh-56717)."""
 
     @unittest.expectedFailure
     @hypothesis.given(
@@ -804,8 +805,9 @@ class StreamReaderTruncationBug(unittest.TestCase):
 
 class PunycodeIncrementalBug(unittest.TestCase):
     """The punycode incremental codecs encode and decode each chunk on its
-    own, so anything fed in more than one piece comes out wrong.  Punycode
-    is left out of the chunked tests above as a whole-string codec."""
+    own, so anything fed in more than one piece comes out wrong (noted in
+    passing in gh-64331).  Punycode is left out of the chunked tests above
+    as a whole-string codec."""
 
     @unittest.expectedFailure
     @hypothesis.given(text=text, sizes=sizes)
