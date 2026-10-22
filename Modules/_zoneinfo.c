@@ -2438,29 +2438,35 @@ remove_from_strong_cache(zoneinfo_state *state, StrongCacheNode *node)
 static StrongCacheNode *
 find_in_strong_cache(zoneinfo_state *state, PyObject *const key)
 {
-    // A key's __eq__ can re-enter and clear the cache during the comparison,
-    // freeing nodes; treat such a mutation as a miss (gh-142782).
-    size_t version = state->strong_cache_version;
-    const StrongCacheNode *node = state->ZONEINFO_STRONG_CACHE;
-    while (node != NULL) {
-        PyObject *node_key = Py_NewRef(node->key);
-        const StrongCacheNode *next = node->next;
-        int rv = PyObject_RichCompareBool(key, node_key, Py_EQ);
-        Py_DECREF(node_key);
-        if (rv < 0) {
+    // A key's __eq__ can re-enter and mutate the strong cache during the
+    // comparison, freeing nodes.  If that happens, restart the scan so the
+    // result reflects the mutated cache: a key that is still cached is found
+    // rather than reported as a miss (which would re-insert a duplicate
+    // entry), and a miss is reported only after a full scan with no concurrent
+    // mutation (gh-142782).
+    while (1) {
+        size_t version = state->strong_cache_version;
+        const StrongCacheNode *node = state->ZONEINFO_STRONG_CACHE;
+        while (node != NULL) {
+            PyObject *node_key = Py_NewRef(node->key);
+            const StrongCacheNode *next = node->next;
+            int rv = PyObject_RichCompareBool(key, node_key, Py_EQ);
+            Py_DECREF(node_key);
+            if (rv < 0) {
+                return NULL;
+            }
+            if (state->strong_cache_version != version) {
+                break;
+            }
+            if (rv) {
+                return (StrongCacheNode *)node;
+            }
+            node = next;
+        }
+        if (state->strong_cache_version == version) {
             return NULL;
         }
-        if (state->strong_cache_version != version) {
-            return NULL;
-        }
-        if (rv) {
-            return (StrongCacheNode *)node;
-        }
-
-        node = next;
     }
-
-    return NULL;
 }
 
 /* Ejects a given key from the class's strong cache, if applicable.

@@ -1686,6 +1686,30 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
         self.assertEqual(str(zone1), "America/Los_Angeles")
         self.assertEqual(str(zone2), "America/Los_Angeles")
 
+    def test_strong_cache_reentrant_clear_unrelated(self):
+        # gh-142782: a key whose __eq__ clears an unrelated zone during a
+        # strong-cache lookup must not leave a stale duplicate entry for the
+        # requested key, so clearing that key afterwards really drops it.
+        klass = self.klass
+
+        class Key(str):
+            def __new__(cls, value):
+                self = super().__new__(cls, value)
+                self.armed = True
+                return self
+            def __eq__(self, other):
+                if self.armed:
+                    self.armed = False
+                    klass.clear_cache(only_keys=("Europe/Dublin",))
+                return super().__eq__(other)
+            __hash__ = str.__hash__
+
+        klass("Europe/Dublin")
+        original = klass("America/Los_Angeles")
+        klass(Key("America/Los_Angeles"))
+        klass.clear_cache(only_keys=("America/Los_Angeles",))
+        self.assertIsNot(klass("America/Los_Angeles"), original)
+
 
 class CZoneInfoCacheTest(ZoneInfoCacheTest):
     module = c_zoneinfo
