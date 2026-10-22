@@ -1766,6 +1766,9 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
         PyObject *vmId = PyUnicode_FromWideChar(guidStr, -1);
         res = RpcStringFreeW(&guidStr);
         assert(res == RPC_S_OK);
+        if (vmId == NULL) {
+            return 0;
+        }
 
         res = UuidToStringW(&a->ServiceId, &guidStr);
         if (res != RPC_S_OK) {
