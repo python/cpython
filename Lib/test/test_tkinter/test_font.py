@@ -2,6 +2,7 @@ import collections.abc
 import unittest
 import tkinter
 from tkinter import font
+from test import support
 from test.support import requires, gc_collect, ALWAYS_EQ
 from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import AbstractTkTest, AbstractDefaultRootTest
@@ -364,13 +365,10 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
 
 
 class TestModule(unittest.TestCase):
-    def test_deprecated__version__(self):
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "'__version__' is deprecated and slated for removal in Python 3.20",
-        ) as cm:
-            getattr(font, "__version__")
-        self.assertEqual(cm.filename, __file__)
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, font, "__version__", remove=(3, 20),
+        )
 
 
 if __name__ == "__main__":

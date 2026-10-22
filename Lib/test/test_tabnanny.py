@@ -12,6 +12,7 @@ import tabnanny
 import tokenize
 import tempfile
 import textwrap
+from test import support
 from test.support import captured_stderr, captured_stdout, script_helper
 from test.support.os_helper import unlink
 
@@ -355,13 +356,10 @@ class TestCommandLine(TestCase):
 
 
 class TestModule(TestCase):
-    def test_deprecated__version__(self):
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "'__version__' is deprecated and slated for removal in Python 3.20",
-        ) as cm:
-            getattr(tabnanny, "__version__")
-        self.assertEqual(cm.filename, __file__)
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, tabnanny, "__version__", remove=(3, 20),
+        )
 
 
 if __name__ == "__main__":

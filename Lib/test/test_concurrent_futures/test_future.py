@@ -341,15 +341,12 @@ class FutureTests(BaseTestCase):
 
 
 class TestModule(unittest.TestCase):
-    def test_deprecated__author__(self):
+    def test_deprecated_module_attributes(self):
         for mod in (futures, futures.process, futures.thread):
             with self.subTest(mod=mod.__name__):
-                with self.assertWarnsRegex(
-                    DeprecationWarning,
-                    "'__author__' is deprecated and slated for removal in Python 3.20",
-                ) as cm:
-                    getattr(mod, "__author__")
-                self.assertEqual(cm.filename, __file__)
+                support.check_deprecated_module_attributes(
+                    self, mod, "__author__", remove=(3, 20),
+                )
 
 
 def setUpModule():

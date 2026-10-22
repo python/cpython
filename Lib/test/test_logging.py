@@ -7587,13 +7587,11 @@ class MiscTestCase(unittest.TestCase):
 
 
 class TestModule(unittest.TestCase):
-    def test_deprecated__version__and__date__and__author__(self):
-        msg = "is deprecated and slated for removal in Python 3.20"
-        for attr in ("__version__", "__date__", "__author__"):
-            with self.subTest(attr=attr):
-                with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
-                    getattr(logging, attr)
-                self.assertEqual(cm.filename, __file__)
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, logging, "__version__", "__date__", "__author__",
+            remove=(3, 20),
+        )
 
 
 # Set the locale to the platform-dependent default.  I have no idea

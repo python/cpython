@@ -36,6 +36,7 @@ try:
 except ImportError:
     ThreadPoolExecutor = None
 
+from test import support
 from test.support import cpython_only, import_helper
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
 from test.support import run_no_yield_async_fn, EqualToForwardRef
@@ -43,7 +44,6 @@ from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN, TESTFN_UNDECODABLE, temp_cwd
 from test.support.script_helper import assert_python_ok, assert_python_failure, kill_python
 from test.support import has_subprocess_support
-from test import support
 
 from test.test_inspect import inspect_fodder as mod
 from test.test_inspect import inspect_fodder2 as mod2
@@ -6974,13 +6974,10 @@ class TestRepl(unittest.TestCase):
 
 
 class TestModule(unittest.TestCase):
-    def test_deprecated__author__(self):
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "'__author__' is deprecated and slated for removal in Python 3.20",
-        ) as cm:
-            getattr(inspect, "__author__")
-        self.assertEqual(cm.filename, __file__)
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, inspect, "__author__", remove=(3, 20),
+        )
 
 
 if __name__ == "__main__":

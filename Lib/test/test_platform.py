@@ -841,13 +841,10 @@ class CommandLineTest(unittest.TestCase):
 
 
 class TestModule(unittest.TestCase):
-    def test_deprecated__copyright__(self):
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "'__copyright__' is deprecated and slated for removal in Python 3.20",
-        ) as cm:
-            getattr(platform, "__copyright__")
-        self.assertEqual(cm.filename, __file__)
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, platform, "__copyright__", remove=(3, 20),
+        )
 
 
 if __name__ == '__main__':

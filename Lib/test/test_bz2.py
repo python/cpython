@@ -1250,13 +1250,10 @@ class MiscTests(unittest.TestCase):
 
 
 class TestModule(unittest.TestCase):
-    def test_deprecated__author__(self):
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "'__author__' is deprecated and slated for removal in Python 3.20",
-        ) as cm:
-            getattr(bz2, "__author__")
-        self.assertEqual(cm.filename, __file__)
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, bz2, "__author__", remove=(3, 20),
+        )
 
 
 def tearDownModule():

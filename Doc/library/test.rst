@@ -1082,6 +1082,14 @@ The :mod:`!test.support` module defines the following functions:
 
    .. versionadded:: 3.6
 
+
+.. function:: check_deprecated_module_attributes(test_case, module, *names, remove)
+
+   Assert that accessing each attribute in *names* on *module* emits a
+   :exc:`DeprecationWarning` naming the attribute and the Python version
+   *remove*, given as a ``(major, minor)`` tuple, in which it will be removed.
+
+
 .. function:: skip_if_broken_multiprocessing_synchronize()
 
    Skip tests if the :mod:`multiprocessing.synchronize` module is missing, if

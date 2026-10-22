@@ -1943,6 +1943,24 @@ def check__all__(test_case, module, name_of_module=None, extra=(),
     test_case.assertCountEqual(module.__all__, expected)
 
 
+def check_deprecated_module_attributes(test_case, module, *names, remove):
+    """Assert that accessing each of 'names' on 'module' emits a
+    DeprecationWarning naming the attribute and the Python version 'remove',
+    given as a (major, minor) tuple, in which it will be removed.
+    """
+    major, minor = remove
+    for name in names:
+        with test_case.subTest(name=name):
+            with test_case.assertWarns(DeprecationWarning) as cm:
+                getattr(module, name)
+            test_case.assertEqual(
+                str(cm.warning),
+                f"{name!r} is deprecated and slated for removal "
+                f"in Python {major}.{minor}",
+            )
+            test_case.assertEqual(cm.filename, __file__)
+
+
 def suppress_msvcrt_asserts(verbose=False):
     try:
         import msvcrt

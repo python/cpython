@@ -24,6 +24,7 @@ import shutil
 import sys
 from urllib.error import URLError
 import urllib.request
+from test import support
 from test.support import os_helper
 from test.support import findfile, check__all__
 from test.support.os_helper import FakePath, TESTFN
@@ -1590,15 +1591,12 @@ class TestModuleAll(unittest.TestCase):
 
 
 class TestModule(unittest.TestCase):
-    def test_deprecated__version__and__date__(self):
+    def test_deprecated_module_attributes(self):
         for module in (sax.expatreader, sax.handler):
             with self.subTest(module=module):
-                with self.assertWarnsRegex(
-                    DeprecationWarning,
-                    "'version' is deprecated and slated for removal in Python 3.20",
-                ) as cm:
-                    getattr(module, "version")
-                self.assertEqual(cm.filename, __file__)
+                support.check_deprecated_module_attributes(
+                    self, module, "version", remove=(3, 20),
+                )
 
 
 if __name__ == "__main__":
