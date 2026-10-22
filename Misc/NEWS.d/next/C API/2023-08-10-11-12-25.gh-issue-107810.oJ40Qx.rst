@@ -1,1 +1,0 @@
-Improve :exc:`DeprecationWarning` for uses of :c:type:`PyType_Spec` with metaclasses that have custom ``tp_new``.

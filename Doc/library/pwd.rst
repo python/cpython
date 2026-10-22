@@ -1,8 +1,7 @@
-:mod:`pwd` --- The password database
-====================================
+:mod:`!pwd` --- The password database
+=====================================
 
 .. module:: pwd
-   :platform: Unix
    :synopsis: The password database (getpwnam() and friends).
 
 --------------
@@ -10,7 +9,7 @@
 This module provides access to the Unix user account and password database.  It
 is available on all Unix versions.
 
-.. include:: ../includes/wasm-notavail.rst
+.. availability:: Unix, not WASI, not iOS.
 
 Password database entries are reported as a tuple-like object, whose attributes
 correspond to the members of the ``passwd`` structure (Attribute field below,

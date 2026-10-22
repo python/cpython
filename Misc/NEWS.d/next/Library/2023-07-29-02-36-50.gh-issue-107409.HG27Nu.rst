@@ -1,1 +1,0 @@
-Set :attr:`!__wrapped__` attribute in :func:`reprlib.recursive_repr`.

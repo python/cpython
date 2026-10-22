@@ -1,4 +1,0 @@
-It is now possible to deprecate passing keyword arguments for
-keyword-or-positional parameters with Argument Clinic, using the new ``/
-[from X.Y]`` syntax. (To be read as *"positional-only from Python version
-X.Y"*.) See :ref:`clinic-howto-deprecate-keyword` for more information.

@@ -1,1 +1,0 @@
-:opcode:`LOAD_CLOSURE` is now a pseudo-op.

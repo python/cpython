@@ -1,4 +1,5 @@
 #include "parts.h"
+#include "util.h"
 
 static Py_ssize_t
 get_code_extra_index(PyInterpreterState* interp) {
@@ -46,7 +47,6 @@ static PyObject *
 test_code_extra(PyObject* self, PyObject *Py_UNUSED(callable))
 {
     PyObject *result = NULL;
-    PyObject *test_module = NULL;
     PyObject *test_func = NULL;
 
     // Get or initialize interpreter-specific code object storage index
@@ -61,11 +61,8 @@ test_code_extra(PyObject* self, PyObject *Py_UNUSED(callable))
 
     // Get a function to test with
     // This can be any Python function. Use `test.test_misc.testfunction`.
-    test_module = PyImport_ImportModule("test.test_capi.test_misc");
-    if (!test_module) {
-        goto finally;
-    }
-    test_func = PyObject_GetAttrString(test_module, "testfunction");
+    test_func = PyImport_ImportModuleAttrString("test.test_capi.test_misc",
+                                                "testfunction");
     if (!test_func) {
         goto finally;
     }
@@ -75,7 +72,7 @@ test_code_extra(PyObject* self, PyObject *Py_UNUSED(callable))
     }
 
     // Check the value is initially NULL
-    void *extra;
+    void *extra = UNINITIALIZED_PTR;
     int res = PyUnstable_Code_GetExtra(test_func_code, code_extra_index, &extra);
     if (res < 0) {
         goto finally;
@@ -88,6 +85,7 @@ test_code_extra(PyObject* self, PyObject *Py_UNUSED(callable))
         goto finally;
     }
     // Assert it was set correctly
+    extra = UNINITIALIZED_PTR;
     res = PyUnstable_Code_GetExtra(test_func_code, code_extra_index, &extra);
     if (res < 0) {
         goto finally;
@@ -100,7 +98,6 @@ test_code_extra(PyObject* self, PyObject *Py_UNUSED(callable))
     }
     result = Py_NewRef(Py_None);
 finally:
-    Py_XDECREF(test_module);
     Py_XDECREF(test_func);
     return result;
 }

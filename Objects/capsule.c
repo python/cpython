@@ -1,6 +1,11 @@
 /* Wrap void * pointers to be passed between C modules */
 
 #include "Python.h"
+#include "pycore_capsule.h"       // export _PyCapsule_SetTraverse()
+#include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_pymem.h"         // _PyMem_Strdup()
+
 
 /* Internal structure of PyCapsule */
 typedef struct {
@@ -13,6 +18,8 @@ typedef struct {
     inquiry clear_func;
 } PyCapsule;
 
+
+#define _PyCapsule_CAST(op)     ((PyCapsule *)(op))
 
 
 static int
@@ -71,7 +78,7 @@ PyCapsule_New(void *pointer, const char *name, PyCapsule_Destructor destructor)
     capsule->destructor = destructor;
     capsule->traverse_func = NULL;
     capsule->clear_func = NULL;
-    // Only track the capsule if _PyCapsule_SetTraverse() is called
+    // Only track the object by the GC when _PyCapsule_SetTraverse() is called
 
     return (PyObject *)capsule;
 }
@@ -204,8 +211,14 @@ _PyCapsule_SetTraverse(PyObject *op, traverseproc traverse_func, inquiry clear_f
     }
     PyCapsule *capsule = (PyCapsule *)op;
 
-    if (!PyObject_GC_IsTracked(op)) {
-        PyObject_GC_Track(op);
+    if (traverse_func == NULL || clear_func == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "_PyCapsule_SetTraverse() called with NULL callback");
+        return -1;
+    }
+
+    if (!_PyObject_GC_IS_TRACKED(op)) {
+        _PyObject_GC_TRACK(op);
     }
 
     capsule->traverse_func = traverse_func;
@@ -215,58 +228,58 @@ _PyCapsule_SetTraverse(PyObject *op, traverseproc traverse_func, inquiry clear_f
 
 
 void *
-PyCapsule_Import(const char *name, int no_block)
+PyCapsule_Import(const char *name, int Py_UNUSED(no_block))
 {
     PyObject *object = NULL;
     void *return_value = NULL;
-    char *trace;
-    size_t name_length = (strlen(name) + 1) * sizeof(char);
-    char *name_dup = (char *)PyMem_Malloc(name_length);
+    char *name_dup = _PyMem_Strdup(name);
 
     if (!name_dup) {
         return PyErr_NoMemory();
     }
 
-    memcpy(name_dup, name, name_length);
-
-    trace = name_dup;
-    while (trace) {
+    char *trace = name_dup;
+    while (1) {
         char *dot = strchr(trace, '.');
         if (dot) {
-            *dot++ = '\0';
+            *dot = '\0';
         }
-
-        if (object == NULL) {
-            object = PyImport_ImportModule(trace);
-            if (!object) {
-                PyErr_Format(PyExc_ImportError, "PyCapsule_Import could not import module \"%s\"", trace);
+        if (object) {
+            PyObject *attr;
+            if (PyObject_GetOptionalAttrString(object, trace, &attr) < 0) {
+                Py_CLEAR(object);
+                break;
             }
-        } else {
-            PyObject *object2 = PyObject_GetAttrString(object, trace);
-            Py_SETREF(object, object2);
+            Py_SETREF(object, attr);
         }
-        if (!object) {
-            goto EXIT;
+        if (!dot) {
+            // We are done
+            break;
         }
 
-        trace = dot;
+        if (!object) {
+            object = PyImport_ImportModule(name_dup);
+            if (!object) {
+                break;
+            }
+        }
+        *dot = '.';
+        trace = dot + 1;
     }
 
     /* compare attribute name to module.name by hand */
     if (PyCapsule_IsValid(object, name)) {
         PyCapsule *capsule = (PyCapsule *)object;
         return_value = capsule->pointer;
-    } else {
+    }
+    else if (!PyErr_Occurred()) {
         PyErr_Format(PyExc_AttributeError,
             "PyCapsule_Import \"%s\" is not valid",
             name);
     }
 
-EXIT:
     Py_XDECREF(object);
-    if (name_dup) {
-        PyMem_Free(name_dup);
-    }
+    PyMem_Free(name_dup);
     return return_value;
 }
 
@@ -274,7 +287,7 @@ EXIT:
 static void
 capsule_dealloc(PyObject *op)
 {
-    PyCapsule *capsule = (PyCapsule *)op;
+    PyCapsule *capsule = _PyCapsule_CAST(op);
     PyObject_GC_UnTrack(op);
     if (capsule->destructor) {
         capsule->destructor(op);
@@ -286,7 +299,7 @@ capsule_dealloc(PyObject *op)
 static PyObject *
 capsule_repr(PyObject *o)
 {
-    PyCapsule *capsule = (PyCapsule *)o;
+    PyCapsule *capsule = _PyCapsule_CAST(o);
     const char *name;
     const char *quote;
 
@@ -304,26 +317,27 @@ capsule_repr(PyObject *o)
 
 
 static int
-capsule_traverse(PyCapsule *capsule, visitproc visit, void *arg)
+capsule_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    if (capsule->traverse_func) {
-        return capsule->traverse_func((PyObject*)capsule, visit, arg);
+    // Capsule object is only tracked by the GC
+    // if _PyCapsule_SetTraverse() is called, but
+    // this can still be manually triggered by gc.get_referents()
+    PyCapsule *capsule = _PyCapsule_CAST(self);
+    if (capsule->traverse_func != NULL) {
+        return capsule->traverse_func(self, visit, arg);
     }
-    else {
-        return 0;
-    }
+    return 0;
 }
 
 
 static int
-capsule_clear(PyCapsule *capsule)
+capsule_clear(PyObject *self)
 {
-    if (capsule->clear_func) {
-        return capsule->clear_func((PyObject*)capsule);
-    }
-    else {
-        return 0;
-    }
+    // Capsule object is only tracked by the GC
+    // if _PyCapsule_SetTraverse() is called
+    PyCapsule *capsule = _PyCapsule_CAST(self);
+    assert(capsule->clear_func != NULL);
+    return capsule->clear_func(self);
 }
 
 
@@ -346,8 +360,8 @@ PyTypeObject PyCapsule_Type = {
     .tp_dealloc = capsule_dealloc,
     .tp_repr = capsule_repr,
     .tp_doc = PyCapsule_Type__doc__,
-    .tp_traverse = (traverseproc)capsule_traverse,
-    .tp_clear = (inquiry)capsule_clear,
+    .tp_traverse = capsule_traverse,
+    .tp_clear = capsule_clear,
 };
 
 

@@ -13,6 +13,7 @@ from test.test_unittest.support import (
     LoggingResult,
     ResultWithNoStartTestRunStopTestRun,
 )
+from test.support.testcase import ExceptionIsLikeMixin
 
 
 def resultFactory(*_):
@@ -106,6 +107,7 @@ class TestCleanUp(unittest.TestCase):
         self.assertTrue(test.doCleanups())
         self.assertEqual(cleanups, [(2, (), {}), (1, (1, 2, 3), dict(four='hello', five='goodbye'))])
 
+    @support.force_not_colorized
     def testCleanUpWithErrors(self):
         class TestableTest(unittest.TestCase):
             def testNothing(self):
@@ -249,6 +251,7 @@ class TestCleanUp(unittest.TestCase):
         self.assertEqual(test._cleanups, [])
 
 
+@support.force_not_colorized_test_class
 class TestClassCleanup(unittest.TestCase):
     def test_addClassCleanUp(self):
         class TestableTest(unittest.TestCase):
@@ -601,7 +604,8 @@ class TestClassCleanup(unittest.TestCase):
         self.assertIn("\nNO TESTS RAN\n", runner.stream.getvalue())
 
 
-class TestModuleCleanUp(unittest.TestCase):
+@support.force_not_colorized_test_class
+class TestModuleCleanUp(ExceptionIsLikeMixin, unittest.TestCase):
     def test_add_and_do_ModuleCleanup(self):
         module_cleanups = []
 
@@ -643,10 +647,49 @@ class TestModuleCleanUp(unittest.TestCase):
                          [(module_cleanup_good, (1, 2, 3),
                            dict(four='hello', five='goodbye')),
                           (module_cleanup_bad, (), {})])
-        with self.assertRaises(CustomError) as e:
+        with self.assertRaises(Exception) as e:
             unittest.case.doModuleCleanups()
-        self.assertEqual(str(e.exception), 'CleanUpExc')
+        self.assertExceptionIsLike(e.exception,
+                ExceptionGroup('module cleanup failed',
+                               [CustomError('CleanUpExc')]))
         self.assertEqual(unittest.case._module_cleanups, [])
+
+    def test_doModuleCleanup_with_multiple_errors_in_addModuleCleanup(self):
+        def module_cleanup_bad1():
+            raise TypeError('CleanUpExc1')
+
+        def module_cleanup_bad2():
+            raise ValueError('CleanUpExc2')
+
+        class Module:
+            unittest.addModuleCleanup(module_cleanup_bad1)
+            unittest.addModuleCleanup(module_cleanup_bad2)
+        with self.assertRaises(ExceptionGroup) as e:
+            unittest.case.doModuleCleanups()
+        self.assertExceptionIsLike(e.exception,
+                ExceptionGroup('module cleanup failed', [
+                    ValueError('CleanUpExc2'),
+                    TypeError('CleanUpExc1'),
+                ]))
+
+    def test_doModuleCleanup_with_exception_group_in_addModuleCleanup(self):
+        def module_cleanup_bad():
+            raise ExceptionGroup('CleanUpExc', [
+                ValueError('CleanUpExc2'),
+                TypeError('CleanUpExc1'),
+            ])
+
+        class Module:
+            unittest.addModuleCleanup(module_cleanup_bad)
+        with self.assertRaises(ExceptionGroup) as e:
+            unittest.case.doModuleCleanups()
+        self.assertExceptionIsLike(e.exception,
+                ExceptionGroup('module cleanup failed', [
+                    ExceptionGroup('CleanUpExc', [
+                        ValueError('CleanUpExc2'),
+                        TypeError('CleanUpExc1'),
+                    ]),
+                ]))
 
     def test_addModuleCleanup_arg_errors(self):
         cleanups = []
@@ -868,9 +911,11 @@ class TestModuleCleanUp(unittest.TestCase):
         ordering = []
         blowUp = True
         suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestableTest)
-        with self.assertRaises(CustomError) as cm:
+        with self.assertRaises(Exception) as cm:
             suite.debug()
-        self.assertEqual(str(cm.exception), 'CleanUpExc')
+        self.assertExceptionIsLike(cm.exception,
+                ExceptionGroup('module cleanup failed',
+                               [CustomError('CleanUpExc')]))
         self.assertEqual(ordering, ['setUpModule', 'setUpClass', 'test',
                                     'tearDownClass', 'tearDownModule', 'cleanup_exc'])
         self.assertEqual(unittest.case._module_cleanups, [])
@@ -1318,6 +1363,36 @@ class Test_TextTestRunner(unittest.TestCase):
         expectedresult = (runner.stream, DESCRIPTIONS, VERBOSITY)
         self.assertEqual(runner._makeResult(), expectedresult)
 
+    def test_verbosity_set_on_result(self):
+        class Suite:
+            def __call__(self, result):
+                pass
+
+        for verbosity in range(4):
+            with self.subTest(verbosity=verbosity):
+                runner = unittest.TextTestRunner(io.StringIO(),
+                                                 verbosity=verbosity)
+                result = runner.run(Suite())
+                self.assertEqual(result.verbosity, verbosity)
+
+    def test_verbosity_set_on_filtering_result(self):
+        # A result class is free to filter the verbosity which its
+        # constructor gets, as test.libregrtest does.
+        class FilteringResult(unittest.TextTestResult):
+            def __init__(self, stream, descriptions, verbosity):
+                super().__init__(stream, descriptions,
+                                 2 if verbosity else 0)
+
+        class Suite:
+            def __call__(self, result):
+                pass
+
+        runner = unittest.TextTestRunner(io.StringIO(), verbosity=3,
+                                         resultclass=FilteringResult)
+        result = runner.run(Suite())
+        self.assertEqual(result.verbosity, 3)
+
+    @support.force_not_colorized
     @support.requires_subprocess()
     def test_warnings(self):
         """
