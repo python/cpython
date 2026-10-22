@@ -314,6 +314,87 @@ class TestDict(TestCase):
 
         threading_helper.run_concurrently([writer, reader, reader])
 
+    def test_racing_split_dict_iteration_and_delete(self):
+        # Each reader owns its iterator. Mortal values exercise reference
+        # acquisition as well as the concurrent clearing of value slots.
+        class C:
+            pass
+
+        names = [f"a{i}" for i in range(8)]
+        obj = C()
+        for i, name in enumerate(names):
+            setattr(obj, name, [i])
+        d = obj.__dict__
+
+        def delattr_writer():
+            for _ in range(50):
+                for i, name in enumerate(names):
+                    delattr(obj, name)
+                    setattr(obj, name, [i])
+
+        def delitem_writer():
+            for _ in range(50):
+                for i, name in enumerate(names):
+                    del d[name]
+                    d[name] = [i]
+
+        def clear_writer():
+            for _ in range(50):
+                d.clear()
+                for i, name in enumerate(names):
+                    setattr(obj, name, [i])
+
+        def reader(view):
+            for _ in range(200):
+                try:
+                    for _ in view():
+                        pass
+                except RuntimeError:
+                    pass
+
+        for writer in (delattr_writer, delitem_writer, clear_writer):
+            for view in (d.values, d.items, d.keys):
+                with self.subTest(writer=writer.__name__, view=view.__name__):
+                    threading_helper.run_concurrently(
+                        [writer, partial(reader, view), partial(reader, view)])
+                    self.assertEqual(d, {name: [i] for i, name in enumerate(names)})
+
+    def test_racing_nonembedded_split_dict_iteration_and_delete(self):
+        class C:
+            pass
+
+        names = [f"a{i}" for i in range(8)]
+        # Populate shared keys without populating the copied dict's order
+        # array, so the writer also initializes previously unused order bytes.
+        template = C()
+        for i, name in enumerate(names):
+            setattr(template, name, [i])
+
+        def writer():
+            for _ in range(50):
+                for i, name in enumerate(names):
+                    d.pop(name, None)
+                    d[name] = [i]
+
+        def reader(view):
+            for _ in range(200):
+                try:
+                    for _ in view():
+                        pass
+                except RuntimeError:
+                    pass
+
+        for view_name in ("values", "items", "keys"):
+            with self.subTest(view=view_name):
+                obj = C()
+                obj.a0 = [0]
+                # Copying a split dict gives it heap-backed values.
+                d = obj.__dict__.copy()
+                view = getattr(d, view_name)
+                threading_helper.run_concurrently(
+                    [writer, partial(reader, view), partial(reader, view)])
+                self.assertEqual(d, {name: [i] for i, name in enumerate(names)})
+
     def test_racing_dict_update_and_method_lookup(self):
         # gh-144295: test race between dict modifications and method lookups.
         # Uses BytesIO because the race requires a type without Py_TPFLAGS_INLINE_VALUES

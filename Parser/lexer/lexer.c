@@ -235,6 +235,11 @@ _PyLexer_get_normal(struct tok_state *tok, ftstring_state *current, struct token
                 return type;
             }
         }
+        if (tok->implicit_newline == _PyTokenizer_IMPLY_NEWLINE &&
+            tok->layout.depth > 0) {
+            // Ending this comment lets the next line dedent the suite.
+            tok->needs_newline |= _PyTokenizer_NEWLINE_STATEMENT;
+        }
         if (tok->tok_extra_tokens) {
             tok_backup(tok, c);  /* don't eat the newline or EOF */
             p_start = comment;
@@ -516,7 +521,7 @@ _PyTokenizer_Get(struct tok_state *tok, struct token *token)
             Py_UNREACHABLE();
         }
     }
-    if (tok_failed(tok)) {
+    if (tok_failed(tok) && tok->done != E_INCOMPLETE) {
         result = ERRORTOKEN;
     }
     token->type = result;

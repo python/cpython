@@ -1202,12 +1202,13 @@ class EventLoopTestsMixin:
                                             '(?i)certificate.verify.failed'):
                     self.loop.run_until_complete(f_c)
 
-            # execute the loop to log the connection error
-            test_utils.run_briefly(self.loop)
+            # close connection: wait until the server-side transport of the
+            # failed handshake is closed as well, otherwise its socket may
+            # still be open when the loop is closed (gh-159123).
+            server.close()
+            self.loop.run_until_complete(server.wait_closed())
 
-        # close connection
         self.assertIsNone(proto.transport)
-        server.close()
 
     @socket_helper.skip_unless_bind_unix_socket
     @unittest.skipIf(ssl is None, 'No ssl module')
@@ -1232,12 +1233,13 @@ class EventLoopTestsMixin:
                                             '(?i)certificate.verify.failed'):
                     self.loop.run_until_complete(f_c)
 
-            # execute the loop to log the connection error
-            test_utils.run_briefly(self.loop)
+            # close connection: wait until the server-side transport of the
+            # failed handshake is closed as well, otherwise its socket may
+            # still be open when the loop is closed (gh-159123).
+            server.close()
+            self.loop.run_until_complete(server.wait_closed())
 
-        # close connection
         self.assertIsNone(proto.transport)
-        server.close()
 
     @unittest.skipIf(ssl is None, 'No ssl module')
     def test_create_server_ssl_match_failed(self):
@@ -1268,10 +1270,14 @@ class EventLoopTestsMixin:
                 with self.assertRaisesRegex(ssl.CertificateError, regex):
                     self.loop.run_until_complete(f_c)
 
-        # close connection
+            # close connection: wait until the server-side transport of the
+            # failed handshake is closed as well, otherwise its socket may
+            # still be open when the loop is closed (gh-159123).
+            server.close()
+            self.loop.run_until_complete(server.wait_closed())
+
         # transport is None because TLS ALERT aborted the handshake
         self.assertIsNone(proto.transport)
-        server.close()
 
     @socket_helper.skip_unless_bind_unix_socket
     @unittest.skipIf(ssl is None, 'No ssl module')
@@ -1523,8 +1529,17 @@ class EventLoopTestsMixin:
 
             _received_datagram = None
 
+            def connection_made(self, transport):
+                self.errors = []
+                self.error_received_event = loop.create_future()
+
             def datagram_received(self, data, addr):
                 self._received_datagram.set_result(data)
+
+            def error_received(self, exc):
+                self.errors.append(exc)
+                if not self.error_received_event.done():
+                    self.error_received_event.set_result(None)
 
             async def wait_for_datagram_received(self):
                 self._received_datagram = loop.create_future()
@@ -1579,6 +1594,15 @@ class EventLoopTestsMixin:
         self.assertEqual(loop.run_until_complete(
             protocol_1.wait_for_datagram_received()
         ), b'd')
+
+        if sys.platform == 'win32':
+            # The bad send to addr_3 should be surfaced to the protocol
+            # via error_received() instead of being silently dropped,
+            # while transport_1 keeps working as shown above.
+            loop.run_until_complete(
+                asyncio.wait_for(protocol_1.error_received_event, 10))
+            self.assertTrue(protocol_1.errors)
+            self.assertIsInstance(protocol_1.errors[0], ConnectionResetError)
 
         transport_1.close()
         transport_2.close()

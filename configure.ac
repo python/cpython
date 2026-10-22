@@ -2288,6 +2288,12 @@ AC_ARG_VAR(
 AC_MSG_CHECKING([BOLT_APPLY_FLAGS])
 if test -z "${BOLT_APPLY_FLAGS}"
 then
+  dnl The frame optimizer is only implemented for x86. BOLT 22 and newer
+  dnl refuse to run it on other architectures.
+  AS_CASE([$host_cpu],
+    [x86_64], [bolt_frame_opt_flags="-frame-opt=hot"],
+    [bolt_frame_opt_flags=""]
+  )
   AS_VAR_SET(
     [BOLT_APPLY_FLAGS],
     [m4_normalize("
@@ -2305,7 +2311,7 @@ then
      -indirect-call-promotion=all
      -dyno-stats
      -use-gnu-stack
-     -frame-opt=hot
+     ${bolt_frame_opt_flags}
    ")]
   )
 fi
@@ -3195,7 +3201,8 @@ AC_CHECK_HEADERS([ \
   alloca.h asm/types.h bluetooth.h conio.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
   io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/limits.h linux/memfd.h \
   linux/netfilter_ipv4.h linux/random.h linux/soundcard.h linux/sched.h \
-  linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
+  linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h \
+  poll.h process.h pthread.h pthread_np.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
   sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/pidfd.h sys/poll.h \
@@ -3526,6 +3533,11 @@ AC_ARG_WITH([address_sanitizer],
 AC_MSG_RESULT([$withval])
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=address $LDFLAGS"
+AC_MSG_CHECKING([whether a program links with -fsanitize=address])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+  [AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no])
+   AC_MSG_ERROR([cannot link with -fsanitize=address: the compiler does not support AddressSanitizer or its runtime library is not installed; see config.log])])
 ],
 [AC_MSG_RESULT([no])])
 
@@ -3545,10 +3557,13 @@ hwasan_flags="-fsanitize=hwaddress"
 AS_CASE([$host_cpu],
   [x86_64|amd64], [hwasan_flags="$hwasan_flags -fsanitize-hwaddress-experimental-aliasing"]
 )
-AX_CHECK_COMPILE_FLAG([$hwasan_flags],[
 BASECFLAGS="$hwasan_flags -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="$hwasan_flags $LDFLAGS"
-],[AC_MSG_ERROR([The selected compiler doesn't support hardware address sanitizer])])
+AC_MSG_CHECKING([whether a program links with $hwasan_flags])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+  [AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no])
+   AC_MSG_ERROR([cannot link with $hwasan_flags: the compiler does not support HWAddressSanitizer or its runtime library is not installed; see config.log])])
 ],
 [AC_MSG_RESULT([no])])
 
@@ -3561,10 +3576,13 @@ AC_ARG_WITH(
   )],
 [
 AC_MSG_RESULT([$withval])
-AX_CHECK_COMPILE_FLAG([-fsanitize=memory],[
 BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
-],[AC_MSG_ERROR([The selected compiler doesn't support memory sanitizer])])
+AC_MSG_CHECKING([whether a program links with -fsanitize=memory])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+  [AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no])
+   AC_MSG_ERROR([cannot link with -fsanitize=memory: the compiler does not support MemorySanitizer or its runtime library is not installed; see config.log])])
 ],
 [AC_MSG_RESULT([no])])
 
@@ -3580,6 +3598,11 @@ AC_MSG_RESULT([$withval])
 BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
 LDFLAGS="-fsanitize=undefined $LDFLAGS"
 with_ubsan="yes"
+AC_MSG_CHECKING([whether a program links with -fsanitize=undefined])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+  [AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no])
+   AC_MSG_ERROR([cannot link with -fsanitize=undefined: the compiler does not support UndefinedBehaviorSanitizer or its runtime library is not installed; see config.log])])
 ],
 [
 AC_MSG_RESULT([no])
@@ -3598,6 +3621,11 @@ AC_MSG_RESULT([$withval])
 BASECFLAGS="-fsanitize=thread $BASECFLAGS"
 LDFLAGS="-fsanitize=thread $LDFLAGS"
 with_tsan="yes"
+AC_MSG_CHECKING([whether a program links with -fsanitize=thread])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+  [AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no])
+   AC_MSG_ERROR([cannot link with -fsanitize=thread: the compiler does not support ThreadSanitizer or its runtime library is not installed; see config.log])])
 ],
 [
 AC_MSG_RESULT([no])
@@ -4396,8 +4424,8 @@ AS_VAR_IF([ac_sys_system], [Darwin], [
       AC_CHECK_LIB([ffi], [ffi_call], [
         dnl use ffi from SDK root
         have_libffi=yes
-        LIBFFI_CFLAGS="-I${SDKROOT}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"
-        LIBFFI_LIBS="-lffi"
+        LIBFFI_CFLAGS=${LIBFFI_CFLAGS-"-I${SDKROOT}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"}
+        LIBFFI_LIBS=${LIBFFI_LIBS-"-lffi"}
       ])
     ])
   ])
@@ -4630,21 +4658,22 @@ AC_ARG_ENABLE([loadable-sqlite-extensions],
       support loadable extensions in the sqlite3 module, see
       Doc/library/sqlite3.rst (default is no)
     ]
-  ), [
-    AS_VAR_IF([have_sqlite3_load_extension], [no], [
-      AC_MSG_RESULT([n/a])
-      AC_MSG_WARN([Your version of SQLite does not support loadable extensions])
-    ], [
-      AC_MSG_RESULT([yes])
-      AC_DEFINE(
-        [PY_SQLITE_ENABLE_LOAD_EXTENSION], [1],
-        [Define to 1 to build the sqlite module with loadable extensions support.]
-      )
-    ])
-  ], [
-    AC_MSG_RESULT([no])
-  ]
+  ), [], [enable_loadable_sqlite_extensions=no]
 )
+AS_VAR_IF([enable_loadable_sqlite_extensions], [yes], [
+  AS_VAR_IF([have_sqlite3_load_extension], [no], [
+    AC_MSG_RESULT([n/a])
+    AC_MSG_WARN([Your version of SQLite does not support loadable extensions])
+  ], [
+    AC_MSG_RESULT([yes])
+    AC_DEFINE(
+      [PY_SQLITE_ENABLE_LOAD_EXTENSION], [1],
+      [Define to 1 to build the sqlite module with loadable extensions support.]
+    )
+  ])
+], [
+  AC_MSG_RESULT([no])
+])
 
 dnl
 dnl Detect Tcl/Tk. Use pkg-config if available.
@@ -5586,6 +5615,8 @@ AC_CHECK_FUNCS([ \
 
 PY_CHECK_FUNC_PRIVATE([freadlink], [@%:@include <unistd.h>])
 PY_CHECK_FUNC_PRIVATE([strerror_r], [@%:@include <string.h>])
+# FreeBSD pthread_attr_get_np()
+PY_CHECK_FUNC_PRIVATE([pthread_attr_get_np], [@%:@include <pthread_np.h>])
 
 
 # os.statx uses Linux's statx function.  AIX also has a function named statx,
@@ -6005,15 +6036,17 @@ AC_CHECK_DECLS([UT_NAMESIZE],
                          [Define if you have the 'HAVE_UT_NAMESIZE' constant.])],
               [],
               [@%:@include <utmp.h>])
-# musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h
-AS_IF([test "$ac_cv_libc" != musl], [
-AC_CHECK_DECLS([PR_SET_VMA_ANON_NAME],
-              [AC_DEFINE([_Py_HAVE_PR_SET_VMA_ANON_NAME], [1],
-                         [Define if you have the 'PR_SET_VMA_ANON_NAME' constant.])],
-              [],
-              [@%:@include <linux/prctl.h>
-               @%:@include <sys/prctl.h>])
-])
+# musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h.
+# The conftest does not reliably catch this, so skip the check on musl.
+AS_CASE([$host],
+  [*-musl*], [],
+  [AC_CHECK_DECLS([PR_SET_VMA_ANON_NAME],
+                [AC_DEFINE([_Py_HAVE_PR_SET_VMA_ANON_NAME], [1],
+                           [Define if you have the 'PR_SET_VMA_ANON_NAME' constant.])],
+                [],
+                [@%:@include <linux/prctl.h>
+                 @%:@include <sys/prctl.h>])]
+)
 # check for openpty, login_tty, and forkpty
 
 AC_CHECK_FUNCS([openpty], [],
