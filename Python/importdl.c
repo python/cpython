@@ -29,7 +29,6 @@ static const struct hook_prefixes nonascii_prefixes = {
 static PyObject *
 get_encoded_name(PyObject *name, const struct hook_prefixes **hook_prefixes) {
     PyObject *tmp;
-    PyObject *modname = NULL;
     Py_ssize_t name_len, lastdot;
 
     /* Get the short name (substring after last dot) */
@@ -51,31 +50,32 @@ get_encoded_name(PyObject *name, const struct hook_prefixes **hook_prefixes) {
     }
 
     /* Encode to ASCII or Punycode, as needed */
+    PyObject *encoded;
     if (PyUnicode_IS_ASCII(name)) {
         *hook_prefixes = &ascii_only_prefixes;
-        modname = PyUnicode_AsASCIIString(name);
+        encoded = PyUnicode_AsASCIIString(name);
     } else {
         *hook_prefixes = &nonascii_prefixes;
-        PyObject *encoded = PyUnicode_AsEncodedString(name, "punycode", NULL);
-        if (encoded == NULL) {
-            goto error;
-        }
+        encoded = PyUnicode_AsEncodedString(name, "punycode", NULL);
+    }
+    if (encoded == NULL) {
+        goto error;
+    }
 
-        /* Call encoded.replace('-', '_') */
-        modname = PyObject_VectorcallMethod(
-            &_Py_ID(replace),
-            (PyObject*[3]) {
-                encoded,
-                (PyObject *)&_Py_SINGLETON(bytes_characters)['-'],
-                (PyObject *)&_Py_SINGLETON(bytes_characters)['_'],
-            },
-            3 | PY_VECTORCALL_ARGUMENTS_OFFSET,
-            NULL);
-        Py_CLEAR(encoded);
+    /* Call encoded.replace('-', '_') */
+    PyObject *modname = PyObject_VectorcallMethod(
+        &_Py_ID(replace),
+        (PyObject*[3]) {
+            encoded,
+            (PyObject *)&_Py_SINGLETON(bytes_characters)['-'],
+            (PyObject *)&_Py_SINGLETON(bytes_characters)['_'],
+        },
+        3 | PY_VECTORCALL_ARGUMENTS_OFFSET,
+        NULL);
+    Py_CLEAR(encoded);
 
-        if (modname == NULL) {
-            goto error;
-        }
+    if (modname == NULL) {
+        goto error;
     }
 
     Py_DECREF(name);
