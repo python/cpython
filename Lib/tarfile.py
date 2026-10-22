@@ -854,6 +854,12 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
                                    strict=os.path.ALLOW_MISSING)
     if os.path.commonpath([target_path, dest_path]) != dest_path:
         raise OutsideDestinationError(member, target_path)
+    # A link member named after the destination directory itself
+    # would replace it with a (sym)link, redirecting the destination
+    # for all subsequent members.
+    if ((member.islnk() or member.issym())
+            and os.path.normpath(name) == os.curdir):
+        raise OutsideDestinationError(member, target_path)
     # Limit permissions (no high bits, and go-w)
     mode = member.mode
     if mode is not None:
@@ -889,11 +895,6 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
         if member.islnk() or member.issym():
             if os.path.isabs(member.linkname):
                 raise AbsoluteLinkError(member)
-            # A link member that resolves to the destination directory itself
-            # would replace it with a (sym)link, redirecting the destination
-            # for all subsequent members.
-            if target_path == dest_path:
-                raise OutsideDestinationError(member, target_path)
             normalized = os.path.normpath(member.linkname)
             if normalized != member.linkname:
                 new_attrs['linkname'] = normalized
