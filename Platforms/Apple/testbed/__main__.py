@@ -489,6 +489,12 @@ def main():
         if (Path(__file__).parent / f"{platform}Testbed").is_dir()
     ]
 
+    def platform_name(value):
+        """Return the canonical spelling for a platform name."""
+        return {p.lower(): p for p in available_platforms}.get(
+            value.lower(), value
+        )
+
     parser = argparse.ArgumentParser(
         description=(
             "Manages the process of testing an Apple Python project "
@@ -519,6 +525,7 @@ def main():
         dest="platform",
         choices=available_platforms,
         default=available_platforms[0],
+        type=platform_name,
         help=f"The platform to target (default: {available_platforms[0]})",
     )
     clone.add_argument(
@@ -551,6 +558,7 @@ def main():
         dest="platform",
         choices=available_platforms,
         default=available_platforms[0],
+        type=platform_name,
         help=f"The platform to target (default: {available_platforms[0]})",
     )
     run.add_argument(

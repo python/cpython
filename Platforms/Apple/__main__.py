@@ -115,6 +115,11 @@ ABIFLAG_CONFIGURE_ARGS: dict[str, list[str]] = {
 }
 
 
+def platform_name(value):
+    """Return the canonical spelling for a platform name."""
+    return {p.lower(): p for p in HOSTS.keys()}.get(value.lower(), value)
+
+
 def validate_abiflags(value: str) -> str:
     """Validate an `--abiflags` value (for use as an argparse type)."""
     known = "".join(ABIFLAG_CONFIGURE_ARGS)
@@ -1054,6 +1059,7 @@ def parse_args() -> argparse.Namespace:
         cmd.add_argument(
             "platform",
             choices=HOSTS.keys(),
+            type=platform_name,
             help="The target platform to build",
         )
 

@@ -72,6 +72,7 @@ Lib/test/data/*
 /_bootstrap_python
 /Makefile
 /Makefile.pre
+/AppleTestbed.*
 Platforms/Apple/iOS/Frameworks/*
 Platforms/Apple/iOS/Resources/Info.plist
 Platforms/Apple/testbed/Python*.xcframework/*/bin
