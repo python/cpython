@@ -789,11 +789,14 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args('--foo --bar'.split())
     Namespace(foo=True, bar=False, baz=True)
 
+  These defaults apply when the options are absent. They can be overridden
+  by default_ or argument_default_.
+
 * ``'append'`` - This appends each argument value to a list.
   It is useful for allowing an option to be specified multiple times.
-  If the default value is a non-empty list, the parsed value will start
-  with the default list's elements and any values from the command line
-  will be appended after those default values. Example usage::
+  If the default value is a non-empty list, the parsed value for the option
+  will start with the default list's elements and any values from the
+  command line will be appended after those default values. Example usage::
 
     >>> parser = argparse.ArgumentParser()
     >>> parser.add_argument('--foo', action='append', default=['0'])
@@ -818,12 +821,16 @@ how the command-line arguments should be handled. The supplied actions are:
   value ``'+'`` or ``'*'``.
   Note that when nargs_ is ``None`` (the default) or ``'?'``, each
   character of the argument string will be appended to the list.
+  If the default value is a non-empty list, the parsed value for the option
+  will start with the default list's elements and any values from the
+  command line will be appended after those default values.
   Example usage::
 
     >>> parser = argparse.ArgumentParser()
-    >>> parser.add_argument("--foo", action="extend", nargs="+", type=str)
+    >>> parser.add_argument("--foo", action="extend", nargs="+", type=str,
+    ...                     default=["d1"])
     >>> parser.parse_args(["--foo", "f1", "--foo", "f2", "f3", "f4"])
-    Namespace(foo=['f1', 'f2', 'f3', 'f4'])
+    Namespace(foo=['d1', 'f1', 'f2', 'f3', 'f4'])
 
   .. versionadded:: 3.8
 
@@ -835,7 +842,9 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args(['-vvv'])
     Namespace(verbose=3)
 
-  Note, the *default* will be ``None`` unless explicitly set to *0*.
+  Unless explicitly set, the *default* will be ``None``. If the default
+  value is a non-zero number, the count starts from that number rather
+  than from zero.
 
 * ``'help'`` - This prints a complete help message for all the options in the
   current parser and then exits. By default a help action is automatically
@@ -1010,10 +1019,8 @@ default
 
 All optional arguments and some positional arguments may be omitted at the
 command line.  The ``default`` keyword argument of
-:meth:`~ArgumentParser.add_argument`, whose value defaults to ``None``,
-specifies what value should be used if the command-line argument is not present.
-For optional arguments, the ``default`` value is used when the option string
-was not present at the command line::
+:meth:`~ArgumentParser.add_argument` specifies what value should be used if the
+command-line argument is not present. For example::
 
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument('--foo', default=42)
@@ -1021,6 +1028,11 @@ was not present at the command line::
    Namespace(foo='2')
    >>> parser.parse_args([])
    Namespace(foo=42)
+
+If ``default`` is omitted, :meth:`~ArgumentParser.add_argument` uses a value
+previously set for the dest_ with :meth:`~ArgumentParser.set_defaults`, or
+otherwise a non-``None`` argument_default_. If neither is set, the action's
+own default is used.
 
 If the target namespace already has an attribute set, the action *default*
 will not overwrite it::
@@ -1564,12 +1576,12 @@ it exits and prints the error along with a usage message::
    >>> # invalid option
    >>> parser.parse_args(['--bar'])
    usage: PROG [-h] [--foo FOO] [bar]
-   PROG: error: no such option: --bar
+   PROG: error: unrecognized arguments: --bar
 
    >>> # wrong number of arguments
    >>> parser.parse_args(['spam', 'badger'])
    usage: PROG [-h] [--foo FOO] [bar]
-   PROG: error: extra arguments found: badger
+   PROG: error: unrecognized arguments: badger
 
 
 Arguments containing ``-``
@@ -1606,7 +1618,7 @@ there are no options in the parser that look like negative numbers::
    >>> # negative number options present, so -2 is an option
    >>> parser.parse_args(['-2'])
    usage: PROG [-h] [-1 ONE] [foo]
-   PROG: error: no such option: -2
+   PROG: error: unrecognized arguments: -2
 
    >>> # negative number options present, so both -1s are options
    >>> parser.parse_args(['-1', '-1'])
@@ -1623,6 +1635,11 @@ argument::
 
 See also :ref:`the argparse howto on ambiguous arguments <specifying-ambiguous-arguments>`
 for more details.
+
+.. versionchanged:: 3.14
+   Negative-number matching was expanded to include numbers in scientific
+   notation (``-2.5e-6``), numbers containing underscores (``-1_234.5``),
+   and complex numbers (``-1.2e-3j``).
 
 .. _prefix-matching:
 
@@ -1682,7 +1699,7 @@ The Namespace object
    :class:`!Namespace` objects support :func:`copy.replace`,
    which returns a copy of the object with the specified attributes replaced.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added support for :func:`copy.replace`.
 
    This class is deliberately simple, just an :class:`object` subclass with a
@@ -1760,8 +1777,9 @@ Subcommands
 
    * help_ - help for sub-parser group in help output, by default ``None``
 
-   * metavar_ - string presenting available subcommands in help; by default it
-     is ``None`` and presents subcommands in form {cmd1, cmd2, ..}
+   * metavar_ - placeholder shown in usage and the subparsers' help entry
+     instead of ``{cmd1, cmd2, ...}``; by default ``None``.
+     Individual subcommand names are unchanged.
 
    Some example usage::
 
@@ -2061,6 +2079,19 @@ Argument groups
       is now deprecated.
 
 
+.. class:: ArgumentGroup
+
+   The type of objects returned by :meth:`ArgumentParser.add_argument_group`.
+   Its :meth:`~ArgumentParser.add_argument` and
+   :meth:`~ArgumentParser.add_mutually_exclusive_group` methods work as on
+   :class:`ArgumentParser`.  Use :meth:`~ArgumentParser.add_argument_group`
+   to create instances.  Only the methods documented here are part of the
+   public API; other attributes and methods are implementation details.
+
+   .. versionadded:: next
+      The private ``_ArgumentGroup`` name remains as an alias.
+
+
 Mutual exclusion
 ^^^^^^^^^^^^^^^^
 
@@ -2092,7 +2123,7 @@ Mutual exclusion
      >>> group.add_argument('--bar', action='store_false')
      >>> parser.parse_args([])
      usage: PROG [-h] (--foo | --bar)
-     PROG: error: one of the arguments --foo --bar is required
+     PROG: error: one of the following arguments is required: --foo, --bar
 
    Note that currently mutually exclusive argument groups do not support the
    *title* and *description* arguments of
@@ -2122,6 +2153,20 @@ Mutual exclusion
       on a mutually exclusive group now raises an exception. This nesting was
       never supported, often failed to work correctly, and was unintentionally
       exposed through inheritance.
+
+
+.. class:: MutuallyExclusiveGroup
+
+   The type of objects returned by
+   :meth:`ArgumentParser.add_mutually_exclusive_group`.
+   Its :meth:`~ArgumentParser.add_argument` method works as on
+   :class:`ArgumentParser`.  Use
+   :meth:`~ArgumentParser.add_mutually_exclusive_group` to create instances.
+   Only the ``add_argument`` method documented here is part of the public API;
+   other attributes and methods are implementation details.
+
+   .. versionadded:: next
+      The private ``_MutuallyExclusiveGroup`` name remains as an alias.
 
 
 Parser defaults

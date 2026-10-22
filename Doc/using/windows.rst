@@ -272,6 +272,27 @@ New runtime versions may be added using ``py install``. One or more tags may be
 specified, and the special tag ``default`` may be used to select the default.
 Ranges are not supported for installation.
 
+CPython publishes multiple runtime variants. For most users,
+``PythonCore`` is recommended and provides the standard CPython runtime.
+Tags without any prefix are treated as ``PythonCore\<TAG>``.
+
+``PythonTest`` includes the standard runtime together with the test suite
+and debugging symbols. It is intended for contributors or users who need
+these additional files for testing or debugging Python.
+
+``PythonEmbed`` provides a minimal embeddable distribution for
+applications that bundle Python rather than for interactive use. It
+would normally be used with the ``--target`` option described below.
+
+To see the available runtime variants, run::
+
+   py list --online
+
+To install a specific variant, include it in the tag passed to
+``py install``::
+
+   py install PythonTest\3.14
+
 The ``--source=<URL>`` option allows overriding the online index that is used to
 obtain runtimes. This may be used with an offline index, as shown in
 :ref:`pymanager-offline`.
@@ -283,8 +304,8 @@ Passing ``--update`` will replace existing installs if the new version is newer.
 Otherwise, they will be left. If no tags are provided with ``--update``, all
 installs managed by the Python install manager will be updated if newer versions
 are available. Updates will remove any modifications made to the install,
-including globally installed packages, but virtual environments will continue to
-work.
+including globally installed packages, but will leave ``site-packages`` and
+``Scripts`` directories as is.  Virtual environments are also unaffected.
 
 Passing ``--dry-run`` will generate output and logs, but will not modify any
 installs.
@@ -382,7 +403,6 @@ again. To completely clean up all Python runtimes, run with ``--purge`` before
 uninstalling the Python install manager.
 
 .. _pymanager-config:
-.. _customization:
 .. _customizing-default-python-versions:
 .. _customization-via-ini-files:
 .. _launcher-ini:
@@ -400,8 +420,9 @@ override all other settings, but not every option is available.
 This section will describe the defaults, but be aware that modified or
 overridden installs may resolve settings differently.
 
-A global configuration file may be configured by an administrator, and would be
-read first. The user configuration file is stored at
+A global configuration file may be configured by an
+:ref:`administrator <pymanager-admin-config>`
+and would be read first. The user configuration file is stored at
 :file:`%AppData%\\Python\\pymanager.json`
 (note that this location is under ``Roaming``, not ``Local``) and is read next,
 overwriting any settings from earlier files. An additional configuration file
@@ -943,6 +964,37 @@ checking for that feed.
    }
 
 
+Proxy settings
+--------------
+
+.. versionadded:: 26.4
+
+By default, the Python install manager will use your system-wide proxy settings,
+including automatic authentication. For most users, this behaves the same as
+your browser and other applications.
+
+To override the settings, use the ``NO_PROXY``, ``HTTP_PROXY`` and
+``HTTPS_PROXY`` environment variables. These should be set in the terminal
+session before using the Python install manager. Other applications may also
+use the variables, so use caution before setting them globally for your entire
+machine.
+
+Setting ``NO_PROXY`` to any non-empty value will disable the use of any proxy.
+Use this to bypass your system's default proxy setting and attempt to access the
+index server directly.
+
+Setting ``HTTPS_PROXY`` to a string like ``example.com:8080`` will connect to
+that proxy server for all HTTPS connections. For the default index, all
+connections will be using HTTPS, and so this is the usual setting to override.
+
+The ``HTTP_PROXY`` variable may be needed if you are using a private index
+server that does not use encrypted connections, but does require the default
+proxy server to be overridden. It follows the same format as ``HTTPS_PROXY``.
+
+Credentials may be embedded in either setting, however, when ``HTTPS_PROXY`` has
+credentials embedded they will be used in preference to other credentials. Only
+one set of credentials will be used for both types of proxy.
+
 .. _pymanager-troubleshoot:
 
 Troubleshooting
@@ -1226,6 +1278,10 @@ for the 64-bit version, `www.nuget.org/packages/pythonx86
 `www.nuget.org/packages/pythonarm64
 <https://www.nuget.org/packages/pythonarm64>`_ for the ARM64 version
 
+Resolve error ``Unable to find package 'python'`` from a misconfigured ``nuget.config`` using::
+
+   nuget.exe sources add -Name "nuget.org" -source "https://api.nuget.org/v3/index.json"
+
 Free-threaded packages
 ----------------------
 
@@ -1310,14 +1366,15 @@ UTF-8 mode
    Python UTF-8 mode is now enabled by default (:pep:`686`).
 
 Windows still uses legacy encodings for the system encoding (the ANSI Code
-Page).  Python uses it for the default encoding of text files (e.g.
-:func:`locale.getencoding`).
+Page).  When the :ref:`Python UTF-8 Mode <utf8-mode>` is disabled, Python
+uses the ANSI Code Page as the default encoding of text files, as
+returned by :func:`locale.getencoding`.
 
 This may cause issues because UTF-8 is widely used on the internet
 and most Unix systems, including WSL (Windows Subsystem for Linux).
 
-The :ref:`Python UTF-8 Mode <utf8-mode>`, enabled by default, can help by
-changing the default text encoding to UTF-8.
+The :ref:`Python UTF-8 Mode <utf8-mode>`, enabled by default, ignores the
+system encoding and uses UTF-8 as the default text encoding.
 When the :ref:`UTF-8 mode <utf8-mode>` is enabled, you can still use the
 system encoding (the ANSI Code Page) via the "mbcs" codec.
 

@@ -24,26 +24,21 @@ extern "C" {
 PyAPI_FUNC(_Py_error_handler) _Py_GetErrorHandler(const char *errors);
 
 // Export for '_testinternalcapi' shared extension
-PyAPI_FUNC(int) _Py_DecodeLocaleEx(
+PyAPI_FUNC(int) _Py_DecodeLocale(
     const char *arg,
     wchar_t **wstr,
     size_t *wlen,
-    const char **reason,
     int current_locale,
     _Py_error_handler errors);
 
 // Export for '_testinternalcapi' shared extension
-PyAPI_FUNC(int) _Py_EncodeLocaleEx(
+PyAPI_FUNC(int) _Py_EncodeLocale(
     const wchar_t *text,
     char **str,
+    size_t *output_length,
     size_t *error_pos,
-    const char **reason,
     int current_locale,
     _Py_error_handler errors);
-
-extern char* _Py_EncodeLocaleRaw(
-    const wchar_t *text,
-    size_t *error_pos);
 
 extern PyObject* _Py_device_encoding(int);
 
@@ -190,21 +185,23 @@ extern int _Py_open_osfhandle(void *handle, int flags);
      ? _PyStatus_ERR("cannot decode " NAME) \
      : _PyStatus_NO_MEMORY()
 
-extern int _Py_HasFileSystemDefaultEncodeErrors;
+#define _Py_CODEC_MEMORY_ERROR -1
+#define _Py_CODEC_DECODE_ERROR -2
+#define _Py_CODEC_ENCODE_ERROR -2
+#define _Py_CODEC_UNSUPPORTED_ERROR_HANDLER -3
 
-extern int _Py_DecodeUTF8Ex(
+extern int _Py_DecodeUTF8(
     const char *arg,
     Py_ssize_t arglen,
     wchar_t **wstr,
     size_t *wlen,
-    const char **reason,
     _Py_error_handler errors);
 
-extern int _Py_EncodeUTF8Ex(
+extern int _Py_EncodeUTF8(
     const wchar_t *text,
     char **str,
+    size_t *output_length,
     size_t *error_pos,
-    const char **reason,
     int raw_malloc,
     _Py_error_handler errors);
 
@@ -302,6 +299,16 @@ extern void _Py_skiproot(const wchar_t *path, Py_ssize_t size, Py_ssize_t *drvsi
 // Export for 'select' shared extension (Argument Clinic code)
 PyAPI_FUNC(int) _PyLong_FileDescriptor_Converter(PyObject *, void *);
 
+#ifdef MS_WINDOWS
+/* Windows uses long long for offsets */
+typedef long long Py_off_t;
+#else
+typedef off_t Py_off_t;
+#endif
+
+// Export for '_ssl' and 'zlib' shared extensions (Argument Clinic code)
+PyAPI_FUNC(int) _Py_Off_t_Converter(PyObject *, void *);
+
 // Export for test_peg_generator
 PyAPI_FUNC(char*) _Py_UniversalNewlineFgetsWithSize(char *, int, FILE*, PyObject *, size_t*);
 
@@ -313,6 +320,9 @@ extern int _Py_GetTicksPerSecond(long *ticks_per_second);
 
 // Export for '_testcapi' shared extension
 PyAPI_FUNC(int) _Py_IsValidFD(int fd);
+
+// Export for '_remote_debugging' shared extension
+PyAPI_FUNC(PyObject*) _Py_strerror(int code);
 
 #ifdef __cplusplus
 }

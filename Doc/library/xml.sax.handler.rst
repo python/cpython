@@ -72,12 +72,15 @@ for the feature and property names.
      optionally do not report original prefixed names (default).
    | access: (parsing) read-only; (not parsing) read/write
 
+   The parser based on :mod:`xml.parsers.expat` does not support this feature.
+
 
 .. data:: feature_string_interning
 
    | value: ``"http://xml.org/sax/features/string-interning"``
    | true: All element names, prefixes, attribute names, Namespace URIs, and
-     local names are interned using the built-in intern function.
+     local names are interned in a dictionary
+     (see :data:`property_interning_dict`).
    | false: Names are not necessarily interned, although they may be (default).
    | access: (parsing) read-only; (not parsing) read/write
 
@@ -89,6 +92,9 @@ for the feature and property names.
      external-parameter-entities).
    | false: Do not report validation errors.
    | access: (parsing) read-only; (not parsing) read/write
+
+   The parser based on :mod:`xml.parsers.expat` does not support this feature,
+   because Expat is a non-validating parser.
 
 
 .. data:: feature_external_ges
@@ -116,6 +122,8 @@ for the feature and property names.
      DTD subset.
    | access: (parsing) read-only; (not parsing) read/write
 
+   The parser based on :mod:`xml.parsers.expat` does not support this feature.
+
 
 .. data:: all_features
 
@@ -125,7 +133,7 @@ for the feature and property names.
 .. data:: property_lexical_handler
 
    | value: ``"http://xml.org/sax/properties/lexical-handler"``
-   | data type: xml.sax.handler.LexicalHandler (not supported in Python 2)
+   | data type: :class:`~xml.sax.handler.LexicalHandler`
    | description: An optional extension handler for lexical events like
      comments.
    | access: read/write
@@ -134,19 +142,24 @@ for the feature and property names.
 .. data:: property_declaration_handler
 
    | value: ``"http://xml.org/sax/properties/declaration-handler"``
-   | data type: xml.sax.sax2lib.DeclHandler (not supported in Python 2)
+   | data type: an object implementing the SAX2 ``DeclHandler`` interface
    | description: An optional extension handler for DTD-related events other
      than notations and unparsed entities.
    | access: read/write
+
+   No parser in the standard library supports this property,
+   and the standard library provides no such handler.
 
 
 .. data:: property_dom_node
 
    | value: ``"http://xml.org/sax/properties/dom-node"``
-   | data type: org.w3c.dom.Node (not supported in Python 2)
+   | data type: :class:`xml.dom.Node`
    | description: When parsing, the current DOM node being visited if this is
      a DOM iterator; when not parsing, the root DOM node for iteration.
    | access: (parsing) read-only; (not parsing) read/write
+
+   No parser in the standard library supports this property.
 
 
 .. data:: property_xml_string
@@ -155,7 +168,28 @@ for the feature and property names.
    | data type: Bytes
    | description: The literal string of characters that was the source for the
      current event.
-   | access: read-only
+   | access: read-only, and only during a handler callback
+
+
+.. data:: property_encoding
+
+   | value: ``"http://www.python.org/sax/properties/encoding"``
+   | data type: String
+   | description: The name of the encoding to assume for input data.
+   | access: read/write
+
+   No parser in the standard library supports this property.
+
+
+.. data:: property_interning_dict
+
+   | value: ``"http://www.python.org/sax/properties/interning-dict"``
+   | data type: Dictionary
+   | description: The dictionary used to intern names,
+     or ``None`` if names are not interned.
+     Setting it enables interning, as does the
+     :data:`feature_string_interning` feature.
+   | access: read/write
 
 
 .. data:: all_properties
