@@ -917,6 +917,40 @@ class CPythonOrderedDictSideEffects:
         msg = "OrderedDict mutated during iteration"
         self.assertRaisesRegex(RuntimeError, msg, od.copy)
 
+    def test_issue142637_clear_in_key_eq(self):
+        # gh-142637: looking up a key must not crash when its __eq__ clears
+        # the dict, which replaces the keys being looked up.
+        class Original:
+            def __hash__(self):
+                return 1
+        class Trigger:
+            def __hash__(self):
+                return 1
+            def __eq__(self, other):
+                od.clear()
+                return True
+
+        def delitem():
+            del od[Trigger()]
+
+        operations = {
+            'del': delitem,
+            'pop': lambda: od.pop(Trigger()),
+            'move_to_end': lambda: od.move_to_end(Trigger()),
+        }
+        for name, operation in operations.items():
+            with self.subTest(operation=name):
+                od = self.OrderedDict()
+                od[Original()] = None
+                # Like for a dict, the key is not found once the dict is cleared.
+                self.assertRaises(KeyError, operation)
+                self.assertEqual(len(od), 0)
+
+        od = self.OrderedDict()
+        od[Original()] = None
+        od[Trigger()] = 'value'
+        self.assertEqual(list(od.values()), ['value'])
+
 
 @unittest.skipUnless(c_coll, 'requires the C version of the collections module')
 class CPythonOrderedDictTests(OrderedDictTests,

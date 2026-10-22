@@ -538,7 +538,6 @@ _odict_get_index_raw(PyODictObject *od, PyObject *key, Py_hash_t hash)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(od);
     PyObject *value = NULL;
-    PyDictKeysObject *keys = ((PyDictObject *)od)->ma_keys;
     Py_ssize_t ix;
 #ifdef Py_GIL_DISABLED
     ix = _Py_dict_lookup_threadsafe((PyDictObject *)od, key, hash, &value);
@@ -547,7 +546,9 @@ _odict_get_index_raw(PyODictObject *od, PyObject *key, Py_hash_t hash)
     ix = _Py_dict_lookup((PyDictObject *)od, key, hash, &value);
 #endif
     if (ix == DKIX_EMPTY) {
-        return keys->dk_nentries;  /* index of new entry */
+        /* A re-entrant __eq__ may have replaced the keys during the lookup,
+           so they must be read again here. */
+        return ((PyDictObject *)od)->ma_keys->dk_nentries;  /* index of new entry */
     }
     if (ix < 0)
         return -1;
@@ -602,17 +603,25 @@ _odict_get_index(PyODictObject *od, PyObject *key, Py_hash_t hash)
     PyDictKeysObject *keys;
 
     assert(key != NULL);
-    keys = ((PyDictObject *)od)->ma_keys;
+    for (;;) {
+        keys = ((PyDictObject *)od)->ma_keys;
 
-    /* Ensure od_fast_nodes and dk_entries are in sync. */
-    if (od->od_resize_sentinel != keys ||
-        od->od_fast_nodes_size != (ONE << (keys->dk_log2_size))) {
-        int resize_res = _odict_resize(od);
-        if (resize_res < 0)
-            return -1;
+        /* Ensure od_fast_nodes and dk_entries are in sync. */
+        if (od->od_resize_sentinel != keys ||
+            od->od_fast_nodes_size != (ONE << (keys->dk_log2_size))) {
+            int resize_res = _odict_resize(od);
+            if (resize_res < 0)
+                return -1;
+        }
+
+        Py_ssize_t index = _odict_get_index_raw(od, key, hash);
+        if (index < 0 || keys == ((PyDictObject *)od)->ma_keys) {
+            return index;
+        }
+        /* The keys were replaced while looking up the key, e.g. by a
+           re-entrant __eq__ clearing the dict: od_fast_nodes no longer
+           matches them, so synchronize it and look the key up again. */
     }
-
-    return _odict_get_index_raw(od, key, hash);
 }
 
 /* Returns NULL if there was some error or the key was not found. */
