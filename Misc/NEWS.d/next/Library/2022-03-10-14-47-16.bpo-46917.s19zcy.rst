@@ -1,1 +1,0 @@
-The :data:`math.nan` value is now always available. Patch by Victor Stinner.

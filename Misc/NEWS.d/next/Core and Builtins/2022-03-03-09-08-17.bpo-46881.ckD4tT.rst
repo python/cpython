@@ -1,1 +1,0 @@
-Statically allocate and initialize the latin1 characters.

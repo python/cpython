@@ -1,0 +1,2 @@
+#!/bin/sh
+xcrun --sdk iphonesimulator${IOS_SDK_VERSION} strip -arch arm64 "$@"

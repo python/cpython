@@ -2,6 +2,70 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
+
+static Py_ssize_t
+dbm_length_impl(dbmobject *self);
+
+static Py_ssize_t
+dbm_length(PyObject *self)
+{
+    Py_ssize_t return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = dbm_length_impl((dbmobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+dbm_bool_impl(dbmobject *self);
+
+static int
+dbm_bool(PyObject *self)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = dbm_bool_impl((dbmobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static PyObject *
+dbm_subscript_impl(dbmobject *self, PyObject *key);
+
+static PyObject *
+dbm_subscript(PyObject *self, PyObject *key)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = dbm_subscript_impl((dbmobject *)self, key);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+dbm_ass_sub_impl(dbmobject *self, PyObject *v, PyObject *w);
+
+static int
+dbm_ass_sub(PyObject *self, PyObject *v, PyObject *w)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = dbm_ass_sub_impl((dbmobject *)self, v, w);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_dbm_dbm_close__doc__,
 "close($self, /)\n"
 "--\n"
@@ -15,9 +79,15 @@ static PyObject *
 _dbm_dbm_close_impl(dbmobject *self);
 
 static PyObject *
-_dbm_dbm_close(dbmobject *self, PyObject *Py_UNUSED(ignored))
+_dbm_dbm_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _dbm_dbm_close_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _dbm_dbm_close_impl((dbmobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_dbm_dbm_keys__doc__,
@@ -27,25 +97,40 @@ PyDoc_STRVAR(_dbm_dbm_keys__doc__,
 "Return a list of all keys in the database.");
 
 #define _DBM_DBM_KEYS_METHODDEF    \
-    {"keys", (PyCFunction)(void(*)(void))_dbm_dbm_keys, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _dbm_dbm_keys__doc__},
+    {"keys", _PyCFunction_CAST(_dbm_dbm_keys), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _dbm_dbm_keys__doc__},
 
 static PyObject *
 _dbm_dbm_keys_impl(dbmobject *self, PyTypeObject *cls);
 
 static PyObject *
-_dbm_dbm_keys(dbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_dbm_dbm_keys(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":keys", _keywords, 0};
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "keys() takes no arguments");
         goto exit;
     }
-    return_value = _dbm_dbm_keys_impl(self, cls);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _dbm_dbm_keys_impl((dbmobject *)self, cls);
+    Py_END_CRITICAL_SECTION();
 
 exit:
+    return return_value;
+}
+
+static int
+dbm_contains_impl(dbmobject *self, PyObject *arg);
+
+static int
+dbm_contains(PyObject *self, PyObject *arg)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = dbm_contains_impl((dbmobject *)self, arg);
+    Py_END_CRITICAL_SECTION();
+
     return return_value;
 }
 
@@ -56,27 +141,30 @@ PyDoc_STRVAR(_dbm_dbm_get__doc__,
 "Return the value for key if present, otherwise default.");
 
 #define _DBM_DBM_GET_METHODDEF    \
-    {"get", (PyCFunction)(void(*)(void))_dbm_dbm_get, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _dbm_dbm_get__doc__},
+    {"get", _PyCFunction_CAST(_dbm_dbm_get), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _dbm_dbm_get__doc__},
 
 static PyObject *
 _dbm_dbm_get_impl(dbmobject *self, PyTypeObject *cls, const char *key,
                   Py_ssize_t key_length, PyObject *default_value);
 
 static PyObject *
-_dbm_dbm_get(dbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_dbm_dbm_get(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {"s#|O:get", _keywords, 0};
     const char *key;
     Py_ssize_t key_length;
     PyObject *default_value = Py_None;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+    if (!_PyArg_NoKwnames("get", kwnames)) {
+        goto exit;
+    }
+    if (!PyArg_ParseArray(args, nargs, "s#|O:get",
         &key, &key_length, &default_value)) {
         goto exit;
     }
-    return_value = _dbm_dbm_get_impl(self, cls, key, key_length, default_value);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _dbm_dbm_get_impl((dbmobject *)self, cls, key, key_length, default_value);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -88,32 +176,94 @@ PyDoc_STRVAR(_dbm_dbm_setdefault__doc__,
 "\n"
 "Return the value for key if present, otherwise default.\n"
 "\n"
-"If key is not in the database, it is inserted with default as the value.");
+"If key is not in the database, it is inserted with default as the\n"
+"value.");
 
 #define _DBM_DBM_SETDEFAULT_METHODDEF    \
-    {"setdefault", (PyCFunction)(void(*)(void))_dbm_dbm_setdefault, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _dbm_dbm_setdefault__doc__},
+    {"setdefault", _PyCFunction_CAST(_dbm_dbm_setdefault), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _dbm_dbm_setdefault__doc__},
 
 static PyObject *
 _dbm_dbm_setdefault_impl(dbmobject *self, PyTypeObject *cls, const char *key,
                          Py_ssize_t key_length, PyObject *default_value);
 
 static PyObject *
-_dbm_dbm_setdefault(dbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_dbm_dbm_setdefault(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {"s#|O:setdefault", _keywords, 0};
     const char *key;
     Py_ssize_t key_length;
     PyObject *default_value = NULL;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+    if (!_PyArg_NoKwnames("setdefault", kwnames)) {
+        goto exit;
+    }
+    if (!PyArg_ParseArray(args, nargs, "s#|O:setdefault",
         &key, &key_length, &default_value)) {
         goto exit;
     }
-    return_value = _dbm_dbm_setdefault_impl(self, cls, key, key_length, default_value);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _dbm_dbm_setdefault_impl((dbmobject *)self, cls, key, key_length, default_value);
+    Py_END_CRITICAL_SECTION();
 
 exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_dbm_dbm_clear__doc__,
+"clear($self, /)\n"
+"--\n"
+"\n"
+"Remove all items from the database.");
+
+#define _DBM_DBM_CLEAR_METHODDEF    \
+    {"clear", _PyCFunction_CAST(_dbm_dbm_clear), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _dbm_dbm_clear__doc__},
+
+static PyObject *
+_dbm_dbm_clear_impl(dbmobject *self, PyTypeObject *cls);
+
+static PyObject *
+_dbm_dbm_clear(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "clear() takes no arguments");
+        goto exit;
+    }
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _dbm_dbm_clear_impl((dbmobject *)self, cls);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_dbm_dbm___exit____doc__,
+"__exit__($self, /, *exc_info)\n"
+"--\n"
+"\n"
+"Close the database.");
+
+#define _DBM_DBM___EXIT___METHODDEF    \
+    {"__exit__", _PyCFunction_CAST(_dbm_dbm___exit__), METH_FASTCALL, _dbm_dbm___exit____doc__},
+
+static PyObject *
+_dbm_dbm___exit___impl(dbmobject *self, PyObject * const *exc_info,
+                       Py_ssize_t exc_info_length);
+
+static PyObject *
+_dbm_dbm___exit__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject * const *exc_info;
+    Py_ssize_t exc_info_length;
+
+    exc_info = args;
+    exc_info_length = nargs;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _dbm_dbm___exit___impl((dbmobject *)self, exc_info, exc_info_length);
+    Py_END_CRITICAL_SECTION();
+
     return return_value;
 }
 
@@ -132,7 +282,7 @@ PyDoc_STRVAR(dbmopen__doc__,
 "    (e.g. os.O_RDWR).");
 
 #define DBMOPEN_METHODDEF    \
-    {"open", (PyCFunction)(void(*)(void))dbmopen, METH_FASTCALL, dbmopen__doc__},
+    {"open", _PyCFunction_CAST(dbmopen), METH_FASTCALL, dbmopen__doc__},
 
 static PyObject *
 dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
@@ -157,19 +307,14 @@ dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("open", "argument 2", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t flags_length;
-    flags = PyUnicode_AsUTF8AndSize(args[1], &flags_length);
+    flags = _PyUnicode_AsUTF8NoNUL(args[1]);
     if (flags == NULL) {
-        goto exit;
-    }
-    if (strlen(flags) != (size_t)flags_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (nargs < 3) {
         goto skip_optional;
     }
-    mode = _PyLong_AsInt(args[2]);
+    mode = PyLong_AsInt(args[2]);
     if (mode == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -179,4 +324,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=32ef6c0f8f2d3db9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4fa1cc840de2abd3 input=a9049054013a1b77]*/

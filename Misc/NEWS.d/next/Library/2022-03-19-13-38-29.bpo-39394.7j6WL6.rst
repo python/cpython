@@ -1,2 +1,0 @@
-A warning about inline flags not at the start of the regular expression now
-contains the position of the flag.
