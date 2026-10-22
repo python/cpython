@@ -244,6 +244,10 @@ ctypes
   implicitly converted when passed for a :func:`~ctypes.POINTER` argument.
   (Contributed by Peter Bierma in :gh:`71990`.)
 
+* :ref:`Callback functions <ctypes-callback-functions>` can now return
+  :class:`~ctypes.Structure` and :class:`~ctypes.Union` instances by value.
+  (Contributed by Russell Keith-Magee in :gh:`49960`.)
+
 
 curses
 ------
