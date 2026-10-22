@@ -1354,85 +1354,67 @@ _asyncio_Future__asyncio_awaited_by_get_impl(FutureObj *self)
 /*[clinic input]
 @critical_section
 @getter
-_asyncio.Future._asyncio_future_blocking
+_asyncio.Future._asyncio_future_blocking -> bool
 [clinic start generated code]*/
 
-static PyObject *
+static int
 _asyncio_Future__asyncio_future_blocking_get_impl(FutureObj *self)
-/*[clinic end generated code: output=a558a2c51e38823b input=58da92efc03b617d]*/
+/*[clinic end generated code: output=32944de3df031979 input=2a51a0cf31a96826]*/
 {
-    if (future_is_alive(self) && self->fut_blocking) {
-        Py_RETURN_TRUE;
-    }
-    else {
-        Py_RETURN_FALSE;
-    }
+    return future_is_alive(self) && self->fut_blocking;
 }
 
 /*[clinic input]
 @critical_section
 @setter
 _asyncio.Future._asyncio_future_blocking
+    value: bool
 [clinic start generated code]*/
 
 static int
-_asyncio_Future__asyncio_future_blocking_set_impl(FutureObj *self,
-                                                  PyObject *value)
-/*[clinic end generated code: output=0686d1cb024a7453 input=3fd4a5f95df788b7]*/
-
+_asyncio_Future__asyncio_future_blocking_set_impl(FutureObj *self, int value)
+/*[clinic end generated code: output=be2d5cb1cad6dd30 input=81780cb7b89f28e1]*/
 {
     if (future_ensure_alive(self)) {
         return -1;
     }
-
-    int is_true = PyObject_IsTrue(value);
-    if (is_true < 0) {
-        return -1;
-    }
-    self->fut_blocking = is_true;
+    self->fut_blocking = value;
     return 0;
 }
 
 /*[clinic input]
 @critical_section
 @getter
-_asyncio.Future._log_traceback
+_asyncio.Future._log_traceback -> bool
 [clinic start generated code]*/
 
-static PyObject *
+static int
 _asyncio_Future__log_traceback_get_impl(FutureObj *self)
-/*[clinic end generated code: output=2724433b238593c7 input=91e5144ea4117d8e]*/
+/*[clinic end generated code: output=ba1356634182ac25 input=50f4db8eca9d1fb4]*/
 {
-    asyncio_state *state = get_asyncio_state_by_def((PyObject *)self);
-    ENSURE_FUTURE_ALIVE(state, self)
-    if (self->fut_log_tb) {
-        Py_RETURN_TRUE;
+    if (future_ensure_alive(self)) {
+        return -1;
     }
-    else {
-        Py_RETURN_FALSE;
-    }
+    return self->fut_log_tb;
 }
 
 /*[clinic input]
 @critical_section
 @setter
 _asyncio.Future._log_traceback
+    value: bool
 [clinic start generated code]*/
 
 static int
-_asyncio_Future__log_traceback_set_impl(FutureObj *self, PyObject *value)
-/*[clinic end generated code: output=9ce8e19504f42f54 input=30ac8217754b08c2]*/
+_asyncio_Future__log_traceback_set_impl(FutureObj *self, int value)
+/*[clinic end generated code: output=ad84ae67ef80e3ad input=30c0f841c945c73f]*/
 {
-    int is_true = PyObject_IsTrue(value);
-    if (is_true < 0) {
-        return -1;
-    }
-    if (is_true) {
+    if (value) {
         PyErr_SetString(PyExc_ValueError,
                         "_log_traceback can only be set to False");
         return -1;
     }
-    self->fut_log_tb = is_true;
+    self->fut_log_tb = value;
     return 0;
 }
 /*[clinic input]
@@ -1813,10 +1795,9 @@ FutureIter_dealloc(PyObject *it)
 }
 
 static PySendResult
-FutureIter_am_send_lock_held(futureiterobject *it, PyObject **result)
+FutureIter_am_send_lock_held(FutureObj *fut, PyObject **result)
 {
     PyObject *res;
-    FutureObj *fut = it->future;
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(fut);
 
     *result = NULL;
@@ -1847,11 +1828,24 @@ FutureIter_am_send(PyObject *op,
                    PyObject **result)
 {
     futureiterobject *it = (futureiterobject*)op;
+
+    FutureObj *fut;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    fut = (FutureObj*)Py_XNewRef(it->future);
+    Py_END_CRITICAL_SECTION();
+
+    if (fut == NULL) {
+        PyErr_SetNone(PyExc_StopIteration);
+        *result = NULL;
+        return PYGEN_ERROR;
+    }
+
     /* arg is unused, see the comment on FutureIter_send for clarification */
     PySendResult res;
-    Py_BEGIN_CRITICAL_SECTION(it->future);
-    res = FutureIter_am_send_lock_held(it, result);
+    Py_BEGIN_CRITICAL_SECTION(fut);
+    res = FutureIter_am_send_lock_held(fut, result);
     Py_END_CRITICAL_SECTION();
+    Py_DECREF(fut);
     return res;
 }
 
@@ -1945,7 +1939,9 @@ FutureIter_throw(PyObject *op, PyObject *const *args, Py_ssize_t nargs)
         goto fail;
     }
 
+    Py_BEGIN_CRITICAL_SECTION(self);
     Py_CLEAR(self->future);
+    Py_END_CRITICAL_SECTION();
 
     PyErr_Restore(type, val, tb);
 
@@ -1958,19 +1954,22 @@ FutureIter_throw(PyObject *op, PyObject *const *args, Py_ssize_t nargs)
     return NULL;
 }
 
+static PyObject *
+FutureIter_close(PyObject *self, PyObject *arg)
+{
+    futureiterobject *it = (futureiterobject*)self;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    Py_CLEAR(it->future);
+    Py_END_CRITICAL_SECTION();
+    Py_RETURN_NONE;
+}
+
 static int
 FutureIter_clear(PyObject *op)
 {
     futureiterobject *it = (futureiterobject*)op;
     Py_CLEAR(it->future);
     return 0;
-}
-
-static PyObject *
-FutureIter_close(PyObject *self, PyObject *arg)
-{
-    (void)FutureIter_clear(self);
-    Py_RETURN_NONE;
 }
 
 static int
@@ -2312,6 +2311,13 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
         if (self->task_context == NULL) {
             return -1;
         }
+    } else if (!PyContext_CheckExact(context)) {
+        // gh-157301: the passed value must be a contextvars.Context
+        self->task_log_destroy_pending = 0;
+        PyErr_Format(PyExc_TypeError,
+                     "a contextvars.Context was expected, got %T",
+                     context);
+        return -1;
     } else {
         Py_XSETREF(self->task_context, Py_NewRef(context));
     }
@@ -2413,36 +2419,28 @@ TaskObj_traverse(PyObject *op, visitproc visit, void *arg)
 /*[clinic input]
 @critical_section
 @getter
-_asyncio.Task._log_destroy_pending
+_asyncio.Task._log_destroy_pending -> bool
 [clinic start generated code]*/
 
-static PyObject *
+static int
 _asyncio_Task__log_destroy_pending_get_impl(TaskObj *self)
-/*[clinic end generated code: output=e6c2a47d029ac93b input=17127298cd4c720b]*/
+/*[clinic end generated code: output=98b5f7bad24a2381 input=a87002bdf72e380b]*/
 {
-    if (self->task_log_destroy_pending) {
-        Py_RETURN_TRUE;
-    }
-    else {
-        Py_RETURN_FALSE;
-    }
+    return self->task_log_destroy_pending;
 }
 
 /*[clinic input]
 @critical_section
 @setter
 _asyncio.Task._log_destroy_pending
+    value: bool
 [clinic start generated code]*/
 
 static int
-_asyncio_Task__log_destroy_pending_set_impl(TaskObj *self, PyObject *value)
-/*[clinic end generated code: output=7ebc030bb92ec5ce input=49b759c97d1216a4]*/
+_asyncio_Task__log_destroy_pending_set_impl(TaskObj *self, int value)
+/*[clinic end generated code: output=132bbf2b4c627777 input=533fea7776daa075]*/
 {
-    int is_true = PyObject_IsTrue(value);
-    if (is_true < 0) {
-        return -1;
-    }
-    self->task_log_destroy_pending = is_true;
+    self->task_log_destroy_pending = value;
     return 0;
 }
 
@@ -3051,8 +3049,13 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
     if (task->task_must_cancel) {
         assert(exc != Py_None);
 
-        if (!exc || !PyErr_GivenExceptionMatches(exc, state->asyncio_CancelledError)) {
-            /* exc was not a CancelledError */
+        /* Replace exc with a CancelledError unless it already is one, or
+        it is SystemExit/KeyboardInterrupt, which must propagate
+        unchanged (gh-108549). */
+        if (!exc ||
+            (!PyErr_GivenExceptionMatches(exc, state->asyncio_CancelledError) &&
+            !PyErr_GivenExceptionMatches(exc, PyExc_KeyboardInterrupt) &&
+            !PyErr_GivenExceptionMatches(exc, PyExc_SystemExit))) {
             exc = create_cancelled_error(state, (FutureObj*)task);
 
             if (!exc) {
@@ -3453,7 +3456,13 @@ task_eager_start(_PyThreadStateImpl *ts, asyncio_state *state, TaskObj *task)
     // it will continue as a regular (non-eager) asyncio task
     register_task(ts, task);
 
+    assert(PyContext_CheckExact(task->task_context));
     if (_PyContext_Enter(&ts->base, task->task_context) == -1) {
+        // gh-157301: a failed enter must not leave the task current and registered
+        task->task_log_destroy_pending = 0;
+        PyObject *curtask = swap_current_task(ts, task->task_loop, prevtask);
+        Py_XDECREF(curtask);
+        unregister_task(task);
         Py_DECREF(prevtask);
         return -1;
     }

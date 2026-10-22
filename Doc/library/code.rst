@@ -92,7 +92,7 @@ Interactive Interpreter Objects
    *symbol* is ``'single'``.  One of several things can happen:
 
    * The input is incorrect; :func:`compile_command` raised an exception
-     (:exc:`SyntaxError` or :exc:`OverflowError`).  A syntax traceback will be
+     (usually :exc:`SyntaxError`).  A syntax traceback will be
      printed by calling the :meth:`showsyntaxerror` method.  :meth:`runsource`
      returns ``False``.
 

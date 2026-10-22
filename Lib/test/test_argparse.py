@@ -3246,6 +3246,20 @@ class TestGroupConstructor(TestCase):
                                  'argument groups cannot be nested',
                                  g.add_argument_group)
 
+    def test_group_types(self):
+        parser = argparse.ArgumentParser()
+        group = parser.add_argument_group()
+        self.assertIs(type(group), argparse.ArgumentGroup)
+        self.assertIs(type(parser.add_mutually_exclusive_group()),
+                      argparse.MutuallyExclusiveGroup)
+        self.assertIs(type(group.add_mutually_exclusive_group()),
+                      argparse.MutuallyExclusiveGroup)
+
+    def test_private_aliases(self):
+        self.assertIs(argparse._ArgumentGroup, argparse.ArgumentGroup)
+        self.assertIs(argparse._MutuallyExclusiveGroup,
+                      argparse.MutuallyExclusiveGroup)
+
 # ===================
 # Parent parser tests
 # ===================
@@ -6866,7 +6880,7 @@ class TestIntermixedArgs(TestCase):
         args = parser.parse_intermixed_args('1 --foo 2'.split())
         self.assertEqual(NS(badger=['1', '2'], foo=True, spam=None), args)
         self.assertRaisesRegex(argparse.ArgumentError,
-                'one of the arguments --foo --spam is required',
+                'one of the following arguments is required: --foo, --spam',
                 parser.parse_intermixed_args, '1 2'.split())
         self.assertEqual(group.required, True)
 
@@ -6882,7 +6896,7 @@ class TestIntermixedArgs(TestCase):
         args = parser.parse_intermixed_args(['a', 'b'])
         self.assertEqual(NS(foo=False, spam=None, badger=['a', 'b']), args)
         self.assertRaisesRegex(argparse.ArgumentError,
-                'one of the arguments --foo --spam badger is required',
+                'one of the following arguments is required: --foo, --spam, badger',
                 parser.parse_intermixed_args, [])
         self.assertRaisesRegex(argparse.ArgumentError,
                 'argument badger: not allowed with argument --foo',
@@ -7258,7 +7272,7 @@ class TestExitOnError(TestCase):
         group.add_argument('--bar')
         group.add_argument('--baz')
         self.assertRaisesRegex(argparse.ArgumentError,
-                               'one of the arguments --bar --baz is required',
+                               'one of the following arguments is required: --bar, --baz',
                                self.parser.parse_args, [])
 
     def test_conflicting_mutually_exclusive_args_optional_with_metavar(self):

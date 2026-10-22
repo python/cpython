@@ -35,6 +35,10 @@
 
 #define T_HANDLE T_POINTER
 
+#ifndef HasOverlappedIoCompleted
+#define HasOverlappedIoCompleted(lpOverlapped) (lpOverlapped)->Internal != STATUS_PENDING
+#endif
+
 /*[python input]
 class pointer_converter(CConverter):
     format_unit = '"F_POINTER"'
@@ -51,9 +55,6 @@ class pointer_converter(CConverter):
 class OVERLAPPED_converter(pointer_converter):
     type = 'OVERLAPPED *'
 
-class HANDLE_converter(pointer_converter):
-    type = 'HANDLE'
-
 class ULONG_PTR_converter(pointer_converter):
     type = 'ULONG_PTR'
 
@@ -66,13 +67,8 @@ class ULONG_PTR_converter(pointer_converter):
             """,
             argname=argname)
 
-class DWORD_converter(unsigned_long_converter):
-    type = 'DWORD'
-
-class BOOL_converter(int_converter):
-    type = 'BOOL'
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=436f4440630a304c]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=e3b1c126cba99725]*/
 
 /*[clinic input]
 module _overlapped
@@ -359,6 +355,9 @@ _overlapped_RegisterWaitWithQueue_impl(PyObject *module, HANDLE Object,
                                        DWORD Milliseconds)
 /*[clinic end generated code: output=c2ace732e447fe45 input=2dd4efee44abe8ee]*/
 {
+#ifndef MS_WINDOWS_DESKTOP
+    return NULL;
+#else
     HANDLE NewWaitObject;
     struct PostCallbackData data = {CompletionPort, Overlapped}, *pdata;
 
@@ -381,6 +380,7 @@ _overlapped_RegisterWaitWithQueue_impl(PyObject *module, HANDLE Object,
     }
 
     return Py_BuildValue(F_HANDLE, NewWaitObject);
+#endif
 }
 
 /*[clinic input]
@@ -396,6 +396,9 @@ static PyObject *
 _overlapped_UnregisterWait_impl(PyObject *module, HANDLE WaitHandle)
 /*[clinic end generated code: output=ec90cd955a9a617d input=a56709544cb2df0f]*/
 {
+#ifndef MS_WINDOWS_DESKTOP
+    Py_RETURN_NONE;
+#else
     BOOL ret;
 
     Py_BEGIN_ALLOW_THREADS
@@ -405,6 +408,7 @@ _overlapped_UnregisterWait_impl(PyObject *module, HANDLE WaitHandle)
     if (!ret)
         return SetFromWindowsErr(0);
     Py_RETURN_NONE;
+#endif
 }
 
 /*[clinic input]
@@ -422,6 +426,9 @@ _overlapped_UnregisterWaitEx_impl(PyObject *module, HANDLE WaitHandle,
                                   HANDLE Event)
 /*[clinic end generated code: output=2e3d84c1d5f65b92 input=953cddc1de50fab9]*/
 {
+#ifndef MS_WINDOWS_DESKTOP
+    Py_RETURN_NONE;
+#else
     BOOL ret;
 
     Py_BEGIN_ALLOW_THREADS
@@ -431,6 +438,7 @@ _overlapped_UnregisterWaitEx_impl(PyObject *module, HANDLE WaitHandle,
     if (!ret)
         return SetFromWindowsErr(0);
     Py_RETURN_NONE;
+#endif
 }
 
 /*

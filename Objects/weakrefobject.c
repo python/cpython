@@ -7,6 +7,13 @@
 #include "pycore_pystate.h"
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
+/*[clinic input]
+class weakref "PyWeakReference *" "&_PyWeakref_RefType"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ad66c8b0acee6ad9]*/
+
+#include "clinic/weakrefobject.c.h"
+
 #ifdef Py_GIL_DISABLED
 /*
  * Thread-safety for free-threaded builds
@@ -186,8 +193,14 @@ weakref_vectorcall(PyObject *self, PyObject *const *args,
     return obj;
 }
 
+/*[clinic input]
+@critical_section
+weakref.__hash__
+[clinic start generated code]*/
+
 static Py_hash_t
-weakref_hash_lock_held(PyWeakReference *self)
+weakref_hash_impl(PyWeakReference *self)
+/*[clinic end generated code: output=4904eacaabf902c9 input=703596f4b120e47c]*/
 {
     if (self->hash != -1)
         return self->hash;
@@ -201,17 +214,6 @@ weakref_hash_lock_held(PyWeakReference *self)
     return self->hash;
 }
 
-static Py_hash_t
-weakref_hash(PyObject *op)
-{
-    PyWeakReference *self = _PyWeakref_CAST(op);
-    Py_hash_t hash;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    hash = weakref_hash_lock_held(self);
-    Py_END_CRITICAL_SECTION();
-    return hash;
-}
-
 static PyObject *
 weakref_repr(PyObject *self)
 {
@@ -221,6 +223,10 @@ weakref_repr(PyObject *self)
     }
 
     PyObject *name = _PyObject_LookupSpecial(obj, &_Py_ID(__name__));
+    if (name == NULL && PyErr_Occurred()) {
+        Py_DECREF(obj);
+        return NULL;
+    }
     PyObject *repr;
     if (name == NULL || !PyUnicode_Check(name)) {
         repr = PyUnicode_FromFormat(
@@ -539,19 +545,26 @@ proxy_check_ref(PyObject *obj)
 }
 
 
-/* If a parameter is a proxy, check that it is still "live" and wrap it,
- * replacing the original value with the raw object.  Raises ReferenceError
- * if the param is a dead proxy.
+/* Return a new reference to a live proxy's referent, or to the object itself
+ * if it is not a proxy. Raise ReferenceError for a dead proxy.
  */
+static PyObject *
+proxy_unwrap(PyObject *obj)
+{
+    if (PyWeakref_CheckProxy(obj)) {
+        PyObject *referent = _PyWeakref_GET_REF(obj);
+        if (!proxy_check_ref(referent)) {
+            return NULL;
+        }
+        return referent;
+    }
+    return Py_NewRef(obj);
+}
+
 #define UNWRAP(o) \
-        if (PyWeakref_CheckProxy(o)) { \
-            o = _PyWeakref_GET_REF(o); \
-            if (!proxy_check_ref(o)) { \
-                return NULL; \
-            } \
-        } \
-        else { \
-            Py_INCREF(o); \
+        o = proxy_unwrap(o); \
+        if (o == NULL) { \
+            return NULL; \
         }
 
 #define WRAP_UNARY(method, generic) \
@@ -567,7 +580,11 @@ proxy_check_ref(PyObject *obj)
     static PyObject * \
     method(PyObject *x, PyObject *y) { \
         UNWRAP(x); \
-        UNWRAP(y); \
+        y = proxy_unwrap(y); \
+        if (y == NULL) { \
+            Py_DECREF(x); \
+            return NULL; \
+        } \
         PyObject* res = generic(x, y); \
         Py_DECREF(x); \
         Py_DECREF(y); \
@@ -581,9 +598,18 @@ proxy_check_ref(PyObject *obj)
     static PyObject * \
     method(PyObject *proxy, PyObject *v, PyObject *w) { \
         UNWRAP(proxy); \
-        UNWRAP(v); \
+        v = proxy_unwrap(v); \
+        if (v == NULL) { \
+            Py_DECREF(proxy); \
+            return NULL; \
+        } \
         if (w != NULL) { \
-            UNWRAP(w); \
+            w = proxy_unwrap(w); \
+            if (w == NULL) { \
+                Py_DECREF(proxy); \
+                Py_DECREF(v); \
+                return NULL; \
+            } \
         } \
         PyObject* res = generic(proxy, v, w); \
         Py_DECREF(proxy); \
@@ -644,7 +670,11 @@ static PyObject *
 proxy_richcompare(PyObject *proxy, PyObject *v, int op)
 {
     UNWRAP(proxy);
-    UNWRAP(v);
+    v = proxy_unwrap(v);
+    if (v == NULL) {
+        Py_DECREF(proxy);
+        return NULL;
+    }
     PyObject* res = PyObject_RichCompare(proxy, v, op);
     Py_DECREF(proxy);
     Py_DECREF(v);

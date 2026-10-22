@@ -165,11 +165,13 @@ test suite, thanks to the :option:`-m` option: :program:`python -m test`. Under
 the hood, it uses :mod:`!test.regrtest`; the call :program:`python -m
 test.regrtest` used in previous Python versions still works.  Running the
 script by itself automatically starts running all regression tests in the
-:mod:`!test` package. It does this by finding all modules in the package whose
-name starts with ``test_``, importing them, and executing the function
-:func:`test_main` if present or loading the tests via
-unittest.TestLoader.loadTestsFromModule if ``test_main`` does not exist.  The
-names of tests to execute may also be passed to the script. Specifying a single
+:mod:`!test` package. It does this by finding modules and packages whose names
+start with ``test_``, importing each one, and loading its tests with
+:meth:`unittest.TestLoader.loadTestsFromModule`. See the
+:ref:`load_tests protocol <load_tests-protocol>` for how a module or package
+can customize what is loaded. Defining a module-level ``test_main()`` function
+is not supported and causes the test to fail. The names of tests to
+execute may also be passed to the script. Specifying a single
 regression test (:program:`python -m test test_spam`) will minimize output and
 only print whether the test passed or failed.
 
@@ -232,9 +234,10 @@ The :mod:`!test.support` module defines the following constants:
 
 .. data:: verbose
 
-   ``True`` when verbose output is enabled. Should be checked when more
-   detailed information is desired about a running test. *verbose* is set by
-   :mod:`test.regrtest`.
+   How verbose the output is: the number of :option:`!-v` options which
+   :mod:`test.regrtest` was run with, and therefore ``0`` when verbose output
+   is not enabled.  Should be checked when more detailed information is
+   desired about a running test.
 
 
 .. data:: is_jython
@@ -503,7 +506,8 @@ The :mod:`!test.support` module defines the following functions:
 
 .. function:: with_pymalloc()
 
-   Return :const:`_testcapi.WITH_PYMALLOC`.
+   Return ``True`` if Python was built with :ref:`pymalloc <pymalloc>` enabled
+   and is not a :term:`free-threaded build`.
 
 
 .. function:: requires(resource, msg=None)
@@ -881,9 +885,11 @@ The :mod:`!test.support` module defines the following functions:
 
 .. function:: reap_children()
 
-   Use this at the end of ``test_main`` whenever sub-processes are started.
-   This will help ensure that no extra children (zombies) stick around to
-   hog resources and create problems when looking for refleaks.
+   Call this from :meth:`~unittest.TestCase.setUp`,
+   :meth:`~unittest.TestCase.tearDown`, or ``tearDownModule()`` in tests
+   that start subprocesses. This will help ensure that no extra children
+   (zombies) stick around to hog resources and create problems when looking
+   for refleaks.
 
 
 .. function:: get_attribute(obj, name)
@@ -1083,7 +1089,7 @@ The :mod:`!test.support` module defines the following functions:
 
 .. function:: skip_if_broken_multiprocessing_synchronize()
 
-   Skip tests if the :mod:`multiprocessing.synchronize` module is missing, if
+   Skip tests if the :mod:`!multiprocessing.synchronize` module is missing, if
    there is no available semaphore implementation, or if creating a lock raises
    an :exc:`OSError`.
 
@@ -1255,7 +1261,7 @@ script execution tests.
    doesn't have an obvious home with Python's current home finding logic.
 
    Setting :envvar:`PYTHONHOME` is one way to get most of the testsuite to run
-   in that situation.  :envvar:`PYTHONPATH` or :envvar:`PYTHONUSERSITE` are
+   in that situation.  :envvar:`PYTHONPATH` or :envvar:`PYTHONNOUSERSITE` are
    other common environment variables that might impact whether or not the
    interpreter can start.
 
@@ -1703,8 +1709,8 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
 
    This function imports and returns a fresh copy of the named Python module
    by removing the named module from ``sys.modules`` before doing the import.
-   Note that unlike :func:`reload`, the original module is not affected by
-   this operation.
+   Note that unlike :func:`importlib.reload`, the original module is not
+   affected by this operation.
 
    *fresh* is an iterable of additional module names that are also removed
    from the ``sys.modules`` cache before doing the import.
@@ -1866,17 +1872,10 @@ The :mod:`!test.support.warnings_helper` module provides support for warnings te
 
    In this case all warnings are caught and no errors are raised.
 
-   On entry to the context manager, a :class:`WarningRecorder` instance is
-   returned. The underlying warnings list from
-   :func:`~warnings.catch_warnings` is available via the recorder object's
-   :attr:`warnings` attribute.  As a convenience, the attributes of the object
-   representing the most recent warning can also be accessed directly through
-   the recorder object (see example below).  If no warning has been raised,
-   then any of the attributes that would otherwise be expected on an object
-   representing a warning will return ``None``.
-
-   The recorder object also has a :meth:`reset` method, which clears the
-   warnings list.
+   On entry to the context manager, a :class:`WarningsRecorder` instance is
+   returned. The recorded warnings are available via its
+   :attr:`~WarningsRecorder.warnings` attribute, and its
+   :meth:`~WarningsRecorder.reset` method discards previously recorded warnings.
 
    The context manager is designed to be used like this::
 
@@ -1893,11 +1892,11 @@ The :mod:`!test.support.warnings_helper` module provides support for warnings te
 
       with check_warnings(quiet=True) as w:
           warnings.warn("foo")
-          assert str(w.args[0]) == "foo"
+          assert str(w.message) == "foo"
           warnings.warn("bar")
-          assert str(w.args[0]) == "bar"
-          assert str(w.warnings[0].args[0]) == "foo"
-          assert str(w.warnings[1].args[0]) == "bar"
+          assert str(w.message) == "bar"
+          assert str(w.warnings[0].message) == "foo"
+          assert str(w.warnings[1].message) == "bar"
           w.reset()
           assert len(w.warnings) == 0
 
@@ -1909,7 +1908,22 @@ The :mod:`!test.support.warnings_helper` module provides support for warnings te
       New optional arguments *filters* and *quiet*.
 
 
-.. class:: WarningsRecorder()
+.. class:: WarningsRecorder(warnings_list)
 
-   Class used to record warnings for unit tests. See documentation of
-   :func:`check_warnings` above for more details.
+   Class used to record warnings for unit tests. Wraps the warnings list
+   returned by :func:`warnings.catch_warnings` when recording is enabled.
+   :func:`check_warnings` returns an instance of this class.
+
+   As a convenience, the attributes of the object representing the most recent
+   warning can also be accessed directly through the recorder object.
+   If no warning has been raised since the recorder was created or last reset,
+   these attributes return ``None``.
+
+   .. attribute:: warnings
+
+      A list of warnings recorded since the recorder was created or last reset.
+
+   .. method:: reset()
+
+      Discard previously recorded warnings from the recorder's view.
+      The underlying warnings list is not modified.
