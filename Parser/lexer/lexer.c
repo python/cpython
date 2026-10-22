@@ -1294,8 +1294,8 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             tok->level--;
             int opening = tok->parenstack[tok->level];
             if (!((opening == '(' && c == ')') ||
-                 (opening == '[' && c == ']') ||
-                 (opening == '{' && c == '}'))) {
+                  (opening == '[' && c == ']') ||
+                  (opening == '{' && c == '}'))) {
                 /* If the opening bracket belongs to an f-string's expression
                 part (e.g. f"{)}") and the closing bracket is an arbitrary
                 nested expression, then instead of matching a different
