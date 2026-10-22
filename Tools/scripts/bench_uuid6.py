@@ -12,7 +12,6 @@ The benchmark retains all unique UUIDs and can consume substantial memory.
 """
 
 import argparse
-from concurrent.futures import ThreadPoolExecutor
 import json
 import subprocess
 import sys
@@ -22,6 +21,8 @@ import time
 
 
 def measure(implementation, seconds, threads, fixed_fields):
+    from concurrent.futures import ThreadPoolExecutor
+
     if implementation == 'python':
         from test.support.import_helper import import_fresh_module
         uuid = import_fresh_module('uuid', blocked=['_uuid'])
