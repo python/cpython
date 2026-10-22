@@ -1,0 +1,3 @@
+:func:`curses.set_term` and :meth:`curses.screen.use` now update
+:data:`curses.LINES`, :data:`curses.COLS`, :data:`curses.COLORS`
+and :data:`curses.COLOR_PAIRS` for the current screen.

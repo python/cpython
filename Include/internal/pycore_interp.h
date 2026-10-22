@@ -8,217 +8,100 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include <stdbool.h>
-
-#include "pycore_atomic.h"        // _Py_atomic_address
-#include "pycore_ast_state.h"     // struct ast_state
-#include "pycore_context.h"       // struct _Py_context_state
-#include "pycore_dict.h"          // struct _Py_dict_state
-#include "pycore_exceptions.h"    // struct _Py_exc_state
-#include "pycore_floatobject.h"   // struct _Py_float_state
-#include "pycore_genobject.h"     // struct _Py_async_gen_state
-#include "pycore_gil.h"           // struct _gil_runtime_state
-#include "pycore_gc.h"            // struct _gc_runtime_state
-#include "pycore_list.h"          // struct _Py_list_state
-#include "pycore_tuple.h"         // struct _Py_tuple_state
-#include "pycore_typeobject.h"    // struct type_cache
-#include "pycore_unicodeobject.h" // struct _Py_unicode_state
-#include "pycore_warnings.h"      // struct _warnings_runtime_state
-
-struct _pending_calls {
-    PyThread_type_lock lock;
-    /* Request for running pending calls. */
-    _Py_atomic_int calls_to_do;
-    /* Request for looking at the `async_exc` field of the current
-       thread state.
-       Guarded by the GIL. */
-    int async_exc;
-#define NPENDINGCALLS 32
-    struct {
-        int (*func)(void *);
-        void *arg;
-    } calls[NPENDINGCALLS];
-    int first;
-    int last;
-};
-
-struct _ceval_state {
-    int recursion_limit;
-    /* This single variable consolidates all requests to break out of
-       the fast path in the eval loop. */
-    _Py_atomic_int eval_breaker;
-    /* Request for dropping the GIL */
-    _Py_atomic_int gil_drop_request;
-    struct _pending_calls pending;
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-    struct _gil_runtime_state gil;
-#endif
-};
-
-
-// atexit state
-typedef struct {
-    PyObject *func;
-    PyObject *args;
-    PyObject *kwargs;
-} atexit_callback;
-
-struct atexit_state {
-    atexit_callback **callbacks;
-    int ncallbacks;
-    int callback_len;
-};
+#include "pycore_interp_structs.h" // PyInterpreterState
 
 
 /* interpreter state */
 
-/* PyInterpreterState holds the global state for one of the runtime's
-   interpreters.  Typically the initial (main) interpreter is the only one.
-
-   The PyInterpreterState typedef is in Include/pystate.h.
-   */
-struct _is {
-
-    struct _is *next;
-
-    struct pythreads {
-        uint64_t next_unique_id;
-        /* The linked list of threads, newest first. */
-        struct _ts *head;
-        /* Used in Modules/_threadmodule.c. */
-        long count;
-        /* Support for runtime thread stack size tuning.
-           A value of 0 means using the platform's default stack size
-           or the size specified by the THREAD_STACK_SIZE macro. */
-        /* Used in Python/thread.c. */
-        size_t stacksize;
-    } threads;
-
-    /* Reference to the _PyRuntime global variable. This field exists
-       to not have to pass runtime in addition to tstate to a function.
-       Get runtime from tstate: tstate->interp->runtime. */
-    struct pyruntimestate *runtime;
-
-    int64_t id;
-    int64_t id_refcount;
-    int requires_idref;
-    PyThread_type_lock id_mutex;
-
-    /* Has been initialized to a safe state.
-
-       In order to be effective, this must be set to 0 during or right
-       after allocation. */
-    int _initialized;
-    int finalizing;
-
-    /* Was this interpreter statically allocated? */
-    bool _static;
-
-    struct _ceval_state ceval;
-    struct _gc_runtime_state gc;
-
-    // sys.modules dictionary
-    PyObject *modules;
-    PyObject *modules_by_index;
-    // Dictionary of the sys module
-    PyObject *sysdict;
-    // Dictionary of the builtins module
-    PyObject *builtins;
-    // importlib module
-    PyObject *importlib;
-    // override for config->use_frozen_modules (for tests)
-    // (-1: "off", 1: "on", 0: no override)
-    int override_frozen_modules;
-
-    PyObject *codec_search_path;
-    PyObject *codec_search_cache;
-    PyObject *codec_error_registry;
-    int codecs_initialized;
-
-    PyConfig config;
-#ifdef HAVE_DLOPEN
-    int dlopenflags;
-#endif
-
-    PyObject *dict;  /* Stores per-interpreter state */
-
-    PyObject *builtins_copy;
-    PyObject *import_func;
-    // Initialized to _PyEval_EvalFrameDefault().
-    _PyFrameEvalFunction eval_frame;
-
-    Py_ssize_t co_extra_user_count;
-    freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
-
-#ifdef HAVE_FORK
-    PyObject *before_forkers;
-    PyObject *after_forkers_parent;
-    PyObject *after_forkers_child;
-#endif
-
-    struct _warnings_runtime_state warnings;
-    struct atexit_state atexit;
-
-    PyObject *audit_hooks;
-
-    struct _Py_unicode_state unicode;
-    struct _Py_float_state float_state;
-    /* Using a cache is very effective since typically only a single slice is
-       created and then deleted again. */
-    PySliceObject *slice_cache;
-
-    struct _Py_tuple_state tuple;
-    struct _Py_list_state list;
-    struct _Py_dict_state dict_state;
-    struct _Py_async_gen_state async_gen;
-    struct _Py_context_state context;
-    struct _Py_exc_state exc_state;
-
-    struct ast_state ast;
-    struct type_cache type_cache;
-
-    /* The following fields are here to avoid allocation during init.
-       The data is exposed through PyInterpreterState pointer fields.
-       These fields should not be accessed directly outside of init.
-
-       All other PyInterpreterState pointer fields are populated when
-       needed and default to NULL.
-
-       For now there are some exceptions to that rule, which require
-       allocation during init.  These will be addressed on a case-by-case
-       basis.  Also see _PyRuntimeState regarding the various mutex fields.
-       */
-
-    /* the initial PyInterpreterState.threads.head */
-    struct _ts _initial_thread;
-};
+#define _PyInterpreterState_WHENCE_NOTSET -1
+#define _PyInterpreterState_WHENCE_UNKNOWN 0
+#define _PyInterpreterState_WHENCE_RUNTIME 1
+#define _PyInterpreterState_WHENCE_LEGACY_CAPI 2
+#define _PyInterpreterState_WHENCE_CAPI 3
+#define _PyInterpreterState_WHENCE_XI 4
+#define _PyInterpreterState_WHENCE_STDLIB 5
+#define _PyInterpreterState_WHENCE_MAX 5
 
 
 /* other API */
 
-extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
 extern void _PyInterpreterState_Clear(PyThreadState *tstate);
 
+static inline PyThreadState*
+_PyInterpreterState_GetFinalizing(PyInterpreterState *interp) {
+    return (PyThreadState*)_Py_atomic_load_ptr_relaxed(&interp->_finalizing);
+}
 
-/* cross-interpreter data registry */
+static inline unsigned long
+_PyInterpreterState_GetFinalizingID(PyInterpreterState *interp) {
+    return _Py_atomic_load_ulong_relaxed(&interp->_finalizing_id);
+}
 
-/* For now we use a global registry of shareable classes.  An
-   alternative would be to add a tp_* slot for a class's
-   crossinterpdatafunc. It would be simpler and more efficient. */
+static inline void
+_PyInterpreterState_SetFinalizing(PyInterpreterState *interp, PyThreadState *tstate) {
+    _Py_atomic_store_ptr_relaxed(&interp->_finalizing, tstate);
+    if (tstate == NULL) {
+        _Py_atomic_store_ulong_relaxed(&interp->_finalizing_id, 0);
+    }
+    else {
+        // XXX Re-enable this assert once gh-109860 is fixed.
+        //assert(tstate->thread_id == PyThread_get_thread_ident());
+        _Py_atomic_store_ulong_relaxed(&interp->_finalizing_id,
+                                       tstate->thread_id);
+    }
+}
 
-struct _xidregitem;
 
-struct _xidregitem {
-    PyTypeObject *cls;
-    crossinterpdatafunc getdata;
-    struct _xidregitem *next;
-};
+// Exports for the _testinternalcapi module.
+PyAPI_FUNC(int64_t) _PyInterpreterState_ObjectToID(PyObject *);
+PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpID(int64_t);
+PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpIDObject(PyObject *);
+PyAPI_FUNC(void) _PyInterpreterState_IDIncref(PyInterpreterState *);
+PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
 
-PyAPI_FUNC(struct _is*) _PyInterpreterState_LookUpID(int64_t);
+PyAPI_FUNC(int) _PyInterpreterState_IsReady(PyInterpreterState *interp);
 
-PyAPI_FUNC(int) _PyInterpreterState_IDInitref(struct _is *);
-PyAPI_FUNC(int) _PyInterpreterState_IDIncref(struct _is *);
-PyAPI_FUNC(void) _PyInterpreterState_IDDecref(struct _is *);
+PyAPI_FUNC(long) _PyInterpreterState_GetWhence(PyInterpreterState *interp);
+extern void _PyInterpreterState_SetWhence(
+    PyInterpreterState *interp,
+    long whence);
+
+/*
+Runtime Feature Flags
+
+Each flag indicate whether or not a specific runtime feature
+is available in a given context.  For example, forking the process
+might not be allowed in the current interpreter (i.e. os.fork() would fail).
+*/
+
+/* Set if the interpreter share obmalloc runtime state
+   with the main interpreter. */
+#define Py_RTFLAGS_USE_MAIN_OBMALLOC (1UL << 5)
+
+/* Set if import should check a module for subinterpreter support. */
+#define Py_RTFLAGS_MULTI_INTERP_EXTENSIONS (1UL << 8)
+
+/* Set if threads are allowed. */
+#define Py_RTFLAGS_THREADS (1UL << 10)
+
+/* Set if daemon threads are allowed. */
+#define Py_RTFLAGS_DAEMON_THREADS (1UL << 11)
+
+/* Set if os.fork() is allowed. */
+#define Py_RTFLAGS_FORK (1UL << 15)
+
+/* Set if os.exec*() is allowed. */
+#define Py_RTFLAGS_EXEC (1UL << 16)
+
+extern int _PyInterpreterState_HasFeature(PyInterpreterState *interp,
+                                          unsigned long feature);
+
+PyAPI_FUNC(PyStatus) _PyInterpreterState_New(
+    PyThreadState *tstate,
+    PyInterpreterState **pinterp);
+
+extern const PyConfig* _PyInterpreterState_GetConfig(
+    PyInterpreterState *interp);
 
 #ifdef __cplusplus
 }

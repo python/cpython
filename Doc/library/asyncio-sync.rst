@@ -28,6 +28,7 @@ asyncio has the following basic synchronization primitives:
 * :class:`Condition`
 * :class:`Semaphore`
 * :class:`BoundedSemaphore`
+* :class:`Barrier`
 
 
 ---------
@@ -66,7 +67,8 @@ Lock
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
 
-   .. coroutinemethod:: acquire()
+   .. method:: acquire()
+      :async:
 
       Acquire the lock.
 
@@ -136,7 +138,8 @@ Event
 
       asyncio.run(main())
 
-   .. coroutinemethod:: wait()
+   .. method:: wait()
+      :async:
 
       Wait until the event is set.
 
@@ -154,7 +157,7 @@ Event
 
       Clear (unset) the event.
 
-      Tasks awaiting on :meth:`~Event.wait` will now block until the
+      Subsequent tasks awaiting on :meth:`~Event.wait` will now block until the
       :meth:`~Event.set` method is called again.
 
    .. method:: is_set()
@@ -206,7 +209,8 @@ Condition
        finally:
            cond.release()
 
-   .. coroutinemethod:: acquire()
+   .. method:: acquire()
+      :async:
 
       Acquire the underlying lock.
 
@@ -215,8 +219,8 @@ Condition
 
    .. method:: notify(n=1)
 
-      Wake up at most *n* tasks (1 by default) waiting on this
-      condition.  The method is no-op if no tasks are waiting.
+      Wake up *n* tasks (1 by default) waiting on this
+      condition.  If fewer than *n* tasks are waiting they are all awakened.
 
       The lock must be acquired before this method is called and
       released shortly after.  If called with an *unlocked* lock
@@ -244,7 +248,8 @@ Condition
       When invoked on an unlocked lock, a :exc:`RuntimeError` is
       raised.
 
-   .. coroutinemethod:: wait()
+   .. method:: wait()
+      :async:
 
       Wait until notified.
 
@@ -256,12 +261,19 @@ Condition
       Once awakened, the Condition re-acquires its lock and this method
       returns ``True``.
 
-   .. coroutinemethod:: wait_for(predicate)
+      Note that a task *may* return from this call spuriously,
+      which is why the caller should always re-check the state
+      and be prepared to :meth:`~Condition.wait` again. For this reason, you may
+      prefer to use :meth:`~Condition.wait_for` instead.
+
+   .. method:: wait_for(predicate)
+      :async:
 
       Wait until a predicate becomes *true*.
 
       The predicate must be a callable which result will be
-      interpreted as a boolean value.  The final value is the
+      interpreted as a boolean value.  The method will repeatedly
+      :meth:`~Condition.wait` until the predicate evaluates to *true*. The final value is the
       return value.
 
 
@@ -305,7 +317,8 @@ Semaphore
        finally:
            sem.release()
 
-   .. coroutinemethod:: acquire()
+   .. method:: acquire()
+      :async:
 
       Acquire a semaphore.
 
@@ -339,6 +352,118 @@ BoundedSemaphore
 
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
+
+
+Barrier
+=======
+
+.. class:: Barrier(parties)
+
+   A barrier object.  Not thread-safe.
+
+   A barrier is a simple synchronization primitive that allows to block until
+   *parties* number of tasks are waiting on it.
+   Tasks can wait on the :meth:`~Barrier.wait` method and would be blocked until
+   the specified number of tasks end up waiting on :meth:`~Barrier.wait`.
+   At that point all of the waiting tasks would unblock simultaneously.
+
+   :keyword:`async with` can be used as an alternative to awaiting on
+   :meth:`~Barrier.wait`.
+
+   The barrier can be reused any number of times.
+
+   .. _asyncio_example_barrier:
+
+   Example::
+
+      async def example_barrier():
+         # barrier with 3 parties
+         b = asyncio.Barrier(3)
+
+         # create 2 new waiting tasks
+         asyncio.create_task(b.wait())
+         asyncio.create_task(b.wait())
+
+         await asyncio.sleep(0)
+         print(b)
+
+         # The third .wait() call passes the barrier
+         await b.wait()
+         print(b)
+         print("barrier passed")
+
+         await asyncio.sleep(0)
+         print(b)
+
+      asyncio.run(example_barrier())
+
+   Result of this example is::
+
+      <asyncio.locks.Barrier object at 0x... [filling, waiters:2/3]>
+      <asyncio.locks.Barrier object at 0x... [draining, waiters:0/3]>
+      barrier passed
+      <asyncio.locks.Barrier object at 0x... [filling, waiters:0/3]>
+
+   .. versionadded:: 3.11
+
+   .. method:: wait()
+      :async:
+
+      Pass the barrier. When all the tasks party to the barrier have called
+      this function, they are all unblocked simultaneously.
+
+      When a waiting or blocked task in the barrier is cancelled,
+      this task exits the barrier which stays in the same state.
+      If the state of the barrier is "filling", the number of waiting task
+      decreases by 1.
+
+      The return value is an integer in the range of 0 to ``parties-1``, different
+      for each task. This can be used to select a task to do some special
+      housekeeping, e.g.::
+
+         ...
+         async with barrier as position:
+            if position == 0:
+               # Only one task prints this
+               print('End of *draining phase*')
+
+      This method may raise a :class:`BrokenBarrierError` exception if the
+      barrier is broken or reset while a task is waiting.
+      It could raise a :exc:`CancelledError` if a task is cancelled.
+
+   .. method:: reset()
+      :async:
+
+      Return the barrier to the default, empty state.  Any tasks waiting on it
+      will receive the :class:`BrokenBarrierError` exception.
+
+      If a barrier is broken it may be better to just leave it and create a new one.
+
+   .. method:: abort()
+      :async:
+
+      Put the barrier into a broken state.  This causes any active or future
+      calls to :meth:`~Barrier.wait` to fail with the :class:`BrokenBarrierError`.
+      Use this for example if one of the tasks needs to abort, to avoid infinite
+      waiting tasks.
+
+   .. attribute:: parties
+
+      The number of tasks required to pass the barrier.
+
+   .. attribute:: n_waiting
+
+      The number of tasks currently waiting in the barrier while filling.
+
+   .. attribute:: broken
+
+      A boolean that is ``True`` if the barrier is in the broken state.
+
+
+.. exception:: BrokenBarrierError
+
+   This exception, a subclass of :exc:`RuntimeError`, is raised when the
+   :class:`Barrier` object is reset or broken.
 
 ---------
 

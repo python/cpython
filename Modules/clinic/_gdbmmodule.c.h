@@ -2,6 +2,55 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
+
+static Py_ssize_t
+gdbm_length_impl(gdbmobject *self);
+
+static Py_ssize_t
+gdbm_length(PyObject *self)
+{
+    Py_ssize_t return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = gdbm_length_impl((gdbmobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+gdbm_bool_impl(gdbmobject *self);
+
+static int
+gdbm_bool(PyObject *self)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = gdbm_bool_impl((gdbmobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static PyObject *
+gdbm_subscript_impl(gdbmobject *self, PyObject *key);
+
+static PyObject *
+gdbm_subscript(PyObject *self, PyObject *key)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = gdbm_subscript_impl((gdbmobject *)self, key);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_gdbm_gdbm_get__doc__,
 "get($self, key, default=None, /)\n"
 "--\n"
@@ -9,13 +58,13 @@ PyDoc_STRVAR(_gdbm_gdbm_get__doc__,
 "Get the value for key, or default if not present.");
 
 #define _GDBM_GDBM_GET_METHODDEF    \
-    {"get", (PyCFunction)(void(*)(void))_gdbm_gdbm_get, METH_FASTCALL, _gdbm_gdbm_get__doc__},
+    {"get", _PyCFunction_CAST(_gdbm_gdbm_get), METH_FASTCALL, _gdbm_gdbm_get__doc__},
 
 static PyObject *
 _gdbm_gdbm_get_impl(gdbmobject *self, PyObject *key, PyObject *default_value);
 
 static PyObject *
-_gdbm_gdbm_get(gdbmobject *self, PyObject *const *args, Py_ssize_t nargs)
+_gdbm_gdbm_get(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *key;
@@ -30,9 +79,24 @@ _gdbm_gdbm_get(gdbmobject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     default_value = args[1];
 skip_optional:
-    return_value = _gdbm_gdbm_get_impl(self, key, default_value);
+    return_value = _gdbm_gdbm_get_impl((gdbmobject *)self, key, default_value);
 
 exit:
+    return return_value;
+}
+
+static int
+gdbm_ass_sub_impl(gdbmobject *self, PyObject *v, PyObject *w);
+
+static int
+gdbm_ass_sub(PyObject *self, PyObject *v, PyObject *w)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = gdbm_ass_sub_impl((gdbmobject *)self, v, w);
+    Py_END_CRITICAL_SECTION();
+
     return return_value;
 }
 
@@ -43,14 +107,14 @@ PyDoc_STRVAR(_gdbm_gdbm_setdefault__doc__,
 "Get value for key, or set it to default and return default if not present.");
 
 #define _GDBM_GDBM_SETDEFAULT_METHODDEF    \
-    {"setdefault", (PyCFunction)(void(*)(void))_gdbm_gdbm_setdefault, METH_FASTCALL, _gdbm_gdbm_setdefault__doc__},
+    {"setdefault", _PyCFunction_CAST(_gdbm_gdbm_setdefault), METH_FASTCALL, _gdbm_gdbm_setdefault__doc__},
 
 static PyObject *
 _gdbm_gdbm_setdefault_impl(gdbmobject *self, PyObject *key,
                            PyObject *default_value);
 
 static PyObject *
-_gdbm_gdbm_setdefault(gdbmobject *self, PyObject *const *args, Py_ssize_t nargs)
+_gdbm_gdbm_setdefault(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *key;
@@ -65,7 +129,9 @@ _gdbm_gdbm_setdefault(gdbmobject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     default_value = args[1];
 skip_optional:
-    return_value = _gdbm_gdbm_setdefault_impl(self, key, default_value);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _gdbm_gdbm_setdefault_impl((gdbmobject *)self, key, default_value);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -84,9 +150,15 @@ static PyObject *
 _gdbm_gdbm_close_impl(gdbmobject *self);
 
 static PyObject *
-_gdbm_gdbm_close(gdbmobject *self, PyObject *Py_UNUSED(ignored))
+_gdbm_gdbm_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _gdbm_gdbm_close_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _gdbm_gdbm_close_impl((gdbmobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_gdbm_gdbm_keys__doc__,
@@ -96,25 +168,40 @@ PyDoc_STRVAR(_gdbm_gdbm_keys__doc__,
 "Get a list of all keys in the database.");
 
 #define _GDBM_GDBM_KEYS_METHODDEF    \
-    {"keys", (PyCFunction)(void(*)(void))_gdbm_gdbm_keys, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_keys__doc__},
+    {"keys", _PyCFunction_CAST(_gdbm_gdbm_keys), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_keys__doc__},
 
 static PyObject *
 _gdbm_gdbm_keys_impl(gdbmobject *self, PyTypeObject *cls);
 
 static PyObject *
-_gdbm_gdbm_keys(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_gdbm_gdbm_keys(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":keys", _keywords, 0};
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "keys() takes no arguments");
         goto exit;
     }
-    return_value = _gdbm_gdbm_keys_impl(self, cls);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _gdbm_gdbm_keys_impl((gdbmobject *)self, cls);
+    Py_END_CRITICAL_SECTION();
 
 exit:
+    return return_value;
+}
+
+static int
+gdbm_contains_impl(gdbmobject *self, PyObject *arg);
+
+static int
+gdbm_contains(PyObject *self, PyObject *arg)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = gdbm_contains_impl((gdbmobject *)self, arg);
+    Py_END_CRITICAL_SECTION();
+
     return return_value;
 }
 
@@ -124,28 +211,28 @@ PyDoc_STRVAR(_gdbm_gdbm_firstkey__doc__,
 "\n"
 "Return the starting key for the traversal.\n"
 "\n"
-"It\'s possible to loop over every key in the database using this method\n"
-"and the nextkey() method.  The traversal is ordered by GDBM\'s internal\n"
-"hash values, and won\'t be sorted by the key values.");
+"It\'s possible to loop over every key in the database using this\n"
+"method and the nextkey() method.  The traversal is ordered by GDBM\'s\n"
+"internal hash values, and won\'t be sorted by the key values.");
 
 #define _GDBM_GDBM_FIRSTKEY_METHODDEF    \
-    {"firstkey", (PyCFunction)(void(*)(void))_gdbm_gdbm_firstkey, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_firstkey__doc__},
+    {"firstkey", _PyCFunction_CAST(_gdbm_gdbm_firstkey), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_firstkey__doc__},
 
 static PyObject *
 _gdbm_gdbm_firstkey_impl(gdbmobject *self, PyTypeObject *cls);
 
 static PyObject *
-_gdbm_gdbm_firstkey(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_gdbm_gdbm_firstkey(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":firstkey", _keywords, 0};
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "firstkey() takes no arguments");
         goto exit;
     }
-    return_value = _gdbm_gdbm_firstkey_impl(self, cls);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _gdbm_gdbm_firstkey_impl((gdbmobject *)self, cls);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -157,8 +244,8 @@ PyDoc_STRVAR(_gdbm_gdbm_nextkey__doc__,
 "\n"
 "Returns the key that follows key in the traversal.\n"
 "\n"
-"The following code prints every key in the database db, without having\n"
-"to create a list in memory that contains them all:\n"
+"The following code prints every key in the database db, without\n"
+"having to create a list in memory that contains them all:\n"
 "\n"
 "      k = db.firstkey()\n"
 "      while k is not None:\n"
@@ -166,26 +253,29 @@ PyDoc_STRVAR(_gdbm_gdbm_nextkey__doc__,
 "          k = db.nextkey(k)");
 
 #define _GDBM_GDBM_NEXTKEY_METHODDEF    \
-    {"nextkey", (PyCFunction)(void(*)(void))_gdbm_gdbm_nextkey, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_nextkey__doc__},
+    {"nextkey", _PyCFunction_CAST(_gdbm_gdbm_nextkey), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_nextkey__doc__},
 
 static PyObject *
 _gdbm_gdbm_nextkey_impl(gdbmobject *self, PyTypeObject *cls, const char *key,
                         Py_ssize_t key_length);
 
 static PyObject *
-_gdbm_gdbm_nextkey(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_gdbm_gdbm_nextkey(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {"s#:nextkey", _keywords, 0};
     const char *key;
     Py_ssize_t key_length;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+    if (!_PyArg_NoKwnames("nextkey", kwnames)) {
+        goto exit;
+    }
+    if (!PyArg_ParseArray(args, nargs, "s#:nextkey",
         &key, &key_length)) {
         goto exit;
     }
-    return_value = _gdbm_gdbm_nextkey_impl(self, cls, key, key_length);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _gdbm_gdbm_nextkey_impl((gdbmobject *)self, cls, key, key_length);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -199,28 +289,28 @@ PyDoc_STRVAR(_gdbm_gdbm_reorganize__doc__,
 "\n"
 "If you have carried out a lot of deletions and would like to shrink\n"
 "the space used by the GDBM file, this routine will reorganize the\n"
-"database.  GDBM will not shorten the length of a database file except\n"
-"by using this reorganization; otherwise, deleted file space will be\n"
-"kept and reused as new (key,value) pairs are added.");
+"database.  GDBM will not shorten the length of a database file\n"
+"except by using this reorganization; otherwise, deleted file space\n"
+"will be kept and reused as new (key,value) pairs are added.");
 
 #define _GDBM_GDBM_REORGANIZE_METHODDEF    \
-    {"reorganize", (PyCFunction)(void(*)(void))_gdbm_gdbm_reorganize, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_reorganize__doc__},
+    {"reorganize", _PyCFunction_CAST(_gdbm_gdbm_reorganize), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_reorganize__doc__},
 
 static PyObject *
 _gdbm_gdbm_reorganize_impl(gdbmobject *self, PyTypeObject *cls);
 
 static PyObject *
-_gdbm_gdbm_reorganize(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_gdbm_gdbm_reorganize(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":reorganize", _keywords, 0};
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "reorganize() takes no arguments");
         goto exit;
     }
-    return_value = _gdbm_gdbm_reorganize_impl(self, cls);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _gdbm_gdbm_reorganize_impl((gdbmobject *)self, cls);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -236,25 +326,83 @@ PyDoc_STRVAR(_gdbm_gdbm_sync__doc__,
 "any unwritten data to be written to the disk.");
 
 #define _GDBM_GDBM_SYNC_METHODDEF    \
-    {"sync", (PyCFunction)(void(*)(void))_gdbm_gdbm_sync, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_sync__doc__},
+    {"sync", _PyCFunction_CAST(_gdbm_gdbm_sync), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_sync__doc__},
 
 static PyObject *
 _gdbm_gdbm_sync_impl(gdbmobject *self, PyTypeObject *cls);
 
 static PyObject *
-_gdbm_gdbm_sync(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_gdbm_gdbm_sync(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":sync", _keywords, 0};
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "sync() takes no arguments");
         goto exit;
     }
-    return_value = _gdbm_gdbm_sync_impl(self, cls);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _gdbm_gdbm_sync_impl((gdbmobject *)self, cls);
+    Py_END_CRITICAL_SECTION();
 
 exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_gdbm_gdbm_clear__doc__,
+"clear($self, /)\n"
+"--\n"
+"\n"
+"Remove all items from the database.");
+
+#define _GDBM_GDBM_CLEAR_METHODDEF    \
+    {"clear", _PyCFunction_CAST(_gdbm_gdbm_clear), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_clear__doc__},
+
+static PyObject *
+_gdbm_gdbm_clear_impl(gdbmobject *self, PyTypeObject *cls);
+
+static PyObject *
+_gdbm_gdbm_clear(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "clear() takes no arguments");
+        goto exit;
+    }
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _gdbm_gdbm_clear_impl((gdbmobject *)self, cls);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_gdbm_gdbm___exit____doc__,
+"__exit__($self, /, *exc_info)\n"
+"--\n"
+"\n"
+"Close the database.");
+
+#define _GDBM_GDBM___EXIT___METHODDEF    \
+    {"__exit__", _PyCFunction_CAST(_gdbm_gdbm___exit__), METH_FASTCALL, _gdbm_gdbm___exit____doc__},
+
+static PyObject *
+_gdbm_gdbm___exit___impl(gdbmobject *self, PyObject * const *exc_info,
+                         Py_ssize_t exc_info_length);
+
+static PyObject *
+_gdbm_gdbm___exit__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject * const *exc_info;
+    Py_ssize_t exc_info_length;
+
+    exc_info = args;
+    exc_info_length = nargs;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _gdbm_gdbm___exit___impl((gdbmobject *)self, exc_info, exc_info_length);
+    Py_END_CRITICAL_SECTION();
+
     return return_value;
 }
 
@@ -286,7 +434,7 @@ PyDoc_STRVAR(dbmopen__doc__,
 "when the database has to be created.  It defaults to octal 0o666.");
 
 #define DBMOPEN_METHODDEF    \
-    {"open", (PyCFunction)(void(*)(void))dbmopen, METH_FASTCALL, dbmopen__doc__},
+    {"open", _PyCFunction_CAST(dbmopen), METH_FASTCALL, dbmopen__doc__},
 
 static PyObject *
 dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
@@ -311,19 +459,14 @@ dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("open", "argument 2", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t flags_length;
-    flags = PyUnicode_AsUTF8AndSize(args[1], &flags_length);
+    flags = _PyUnicode_AsUTF8NoNUL(args[1]);
     if (flags == NULL) {
-        goto exit;
-    }
-    if (strlen(flags) != (size_t)flags_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (nargs < 3) {
         goto skip_optional;
     }
-    mode = _PyLong_AsInt(args[2]);
+    mode = PyLong_AsInt(args[2]);
     if (mode == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -333,4 +476,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=63c507f93d84a3a4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f4c81f6e2181a474 input=a9049054013a1b77]*/
