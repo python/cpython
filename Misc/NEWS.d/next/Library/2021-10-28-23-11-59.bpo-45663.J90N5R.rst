@@ -1,2 +1,0 @@
-Fix :func:`dataclasses.is_dataclass` for dataclasses which are subclasses of
-:class:`types.GenericAlias`.

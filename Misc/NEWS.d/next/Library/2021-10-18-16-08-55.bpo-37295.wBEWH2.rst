@@ -1,1 +1,0 @@
-Optimize :func:`math.comb` and :func:`math.perm`.

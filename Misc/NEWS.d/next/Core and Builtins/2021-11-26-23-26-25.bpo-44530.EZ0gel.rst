@@ -1,2 +1,0 @@
-Reverts a change to the ``code.__new__`` :ref:`audit event <audit-events>`
-from an earlier prerelease.

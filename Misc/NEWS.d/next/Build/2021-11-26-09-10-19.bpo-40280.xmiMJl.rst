@@ -1,3 +1,0 @@
-``configure`` now checks for functions ``fork1, getegid,
-geteuid, getgid, getppid, getuid, opendir, pipe, system, wait,
-ttyname``.

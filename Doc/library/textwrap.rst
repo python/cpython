@@ -1,17 +1,14 @@
-:mod:`textwrap` --- Text wrapping and filling
-=============================================
+:mod:`!textwrap` --- Text wrapping and filling
+==============================================
 
 .. module:: textwrap
    :synopsis: Text wrapping and filling
-
-.. moduleauthor:: Greg Ward <gward@python.net>
-.. sectionauthor:: Greg Ward <gward@python.net>
 
 **Source code:** :source:`Lib/textwrap.py`
 
 --------------
 
-The :mod:`textwrap` module provides some convenience functions,
+The :mod:`!textwrap` module provides some convenience functions,
 as well as :class:`TextWrapper`, the class that does all the work.
 If you're just wrapping or filling one or two text strings, the convenience
 functions should be good enough; otherwise, you should use an instance of
@@ -21,7 +18,8 @@ functions should be good enough; otherwise, you should use an instance of
                    subsequent_indent="", expand_tabs=True, \
                    replace_whitespace=True, fix_sentence_endings=False, \
                    break_long_words=True, drop_whitespace=True, \
-                   break_on_hyphens=True, tabsize=8, max_lines=None)
+                   break_on_hyphens=True, tabsize=8, max_lines=None, \
+                   placeholder=' [...]')
 
    Wraps the single paragraph in *text* (a string) so every line is at most
    *width* characters long.  Returns a list of output lines, without final
@@ -39,7 +37,7 @@ functions should be good enough; otherwise, you should use an instance of
                    replace_whitespace=True, fix_sentence_endings=False, \
                    break_long_words=True, drop_whitespace=True, \
                    break_on_hyphens=True, tabsize=8, \
-                   max_lines=None)
+                   max_lines=None, placeholder=' [...]')
 
    Wraps the single paragraph in *text*, and returns a single string containing the
    wrapped paragraph.  :func:`fill` is shorthand for  ::
@@ -59,7 +57,7 @@ functions should be good enough; otherwise, you should use an instance of
    First the whitespace in *text* is collapsed (all whitespace is replaced by
    single spaces).  If the result fits in the *width*, it is returned.
    Otherwise, enough words are dropped from the end so that the remaining words
-   plus the :attr:`placeholder` fit within :attr:`width`::
+   plus the *placeholder* fit within *width*::
 
       >>> textwrap.shorten("Hello  world!", width=12)
       'Hello world!'
@@ -101,6 +99,10 @@ functions should be good enough; otherwise, you should use an instance of
           print(repr(s))          # prints '    hello\n      world\n    '
           print(repr(dedent(s)))  # prints 'hello\n  world\n'
 
+   .. versionchanged:: 3.14
+      The :func:`!dedent` function now correctly normalizes blank lines containing
+      only whitespace characters. Previously, the implementation only normalized
+      blank lines containing tabs and spaces.
 
 .. function:: indent(text, prefix, predicate=None)
 
@@ -153,7 +155,7 @@ hyphenated words; only then will long words be broken if necessary, unless
       wrapper = TextWrapper()
       wrapper.initial_indent = "* "
 
-   You can re-use the same :class:`TextWrapper` object many times, and you can
+   You can reuse the same :class:`TextWrapper` object many times, and you can
    change any of its options through direct assignment to instance attributes
    between uses.
 
@@ -172,7 +174,7 @@ hyphenated words; only then will long words be broken if necessary, unless
    .. attribute:: expand_tabs
 
       (default: ``True``) If true, then all tab characters in *text* will be
-      expanded to spaces using the :meth:`expandtabs` method of *text*.
+      expanded to spaces using the :meth:`~str.expandtabs` method of *text*.
 
 
    .. attribute:: tabsize
@@ -237,7 +239,7 @@ hyphenated words; only then will long words be broken if necessary, unless
       However, the sentence detection algorithm is imperfect: it assumes that a
       sentence ending consists of a lowercase letter followed by one of ``'.'``,
       ``'!'``, or ``'?'``, possibly followed by one of ``'"'`` or ``"'"``,
-      followed by a space.  One problem with this is algorithm is that it is
+      followed by a space.  One problem with this algorithm is that it is
       unable to detect the difference between "Dr." in ::
 
          [...] Dr. Frankenstein's monster [...]

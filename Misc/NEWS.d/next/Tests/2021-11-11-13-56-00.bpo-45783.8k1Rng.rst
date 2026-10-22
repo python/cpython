@@ -1,1 +1,0 @@
-The test for the freeze tool now handles file moves and deletions.

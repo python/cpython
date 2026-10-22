@@ -1,2 +1,0 @@
-:mod:`sqlite` C callbacks now use unraisable exceptions if callback
-tracebacks are enabled. Patch by Erlend E. Aasland.
