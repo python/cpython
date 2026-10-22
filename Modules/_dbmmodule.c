@@ -28,7 +28,12 @@
   static const char which_dbm[] = "GNU gdbm";
 #elif defined(USE_NDBM)
   #include <ndbm.h>
+  #ifdef _GDBM_H_
+  /* ndbm.h is the GDBM compatibility interface. */
   static const char which_dbm[] = "GNU gdbm";
+  #else
+  static const char which_dbm[] = "ndbm";
+  #endif
 #elif defined(USE_BERKDB)
   #ifndef DB_DBM_HSEARCH
     #define DB_DBM_HSEARCH 1
@@ -111,10 +116,16 @@ dbm_dealloc(PyObject *self)
     Py_DECREF(tp);
 }
 
+/*[clinic input]
+@critical_section
+_dbm.dbm.__len__ as dbm_length
+[clinic start generated code]*/
+
 static Py_ssize_t
-dbm_length_lock_held(PyObject *self)
+dbm_length_impl(dbmobject *self)
+/*[clinic end generated code: output=d7ea9510562e5f86 input=f912d65e9b06fef5]*/
 {
-    dbmobject *dp = dbmobject_CAST(self);
+    dbmobject *dp = self;
     _dbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
     assert(state != NULL);
     if (dp->di_dbm == NULL) {
@@ -132,16 +143,6 @@ dbm_length_lock_held(PyObject *self)
         dp->di_size = size;
     }
     return dp->di_size;
-}
-
-static Py_ssize_t
-dbm_length(PyObject *self)
-{
-    Py_ssize_t result;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    result = dbm_length_lock_held(self);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 static int
@@ -223,12 +224,22 @@ dbm_subscript(PyObject *self, PyObject *key)
     return result;
 }
 
+/*[clinic input]
+@critical_section
+_dbm.dbm.__setitem__ as dbm_ass_sub
+
+    v: object
+    w: object
+    /
+[clinic start generated code]*/
+
 static int
-dbm_ass_sub_lock_held(PyObject *self, PyObject *v, PyObject *w)
+dbm_ass_sub_impl(dbmobject *self, PyObject *v, PyObject *w)
+/*[clinic end generated code: output=33e861810d1fd44a input=4f10cc93a02142ee]*/
 {
     datum krec, drec;
     Py_ssize_t tmp_size;
-    dbmobject *dp = dbmobject_CAST(self);
+    dbmobject *dp = self;
 
     if ( !PyArg_Parse(v, "s#", &krec.dptr, &tmp_size) ) {
         PyErr_SetString(PyExc_TypeError,
@@ -276,16 +287,6 @@ dbm_ass_sub_lock_held(PyObject *self, PyObject *v, PyObject *w)
         return -1;
     }
     return 0;
-}
-
-static int
-dbm_ass_sub(PyObject *self, PyObject *v, PyObject *w)
-{
-    int result;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    result = dbm_ass_sub_lock_held(self, v, w);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 /*[clinic input]
@@ -347,10 +348,18 @@ _dbm_dbm_keys_impl(dbmobject *self, PyTypeObject *cls)
     return v;
 }
 
+/*[clinic input]
+@critical_section
+_dbm.dbm.__contains__ as dbm_contains
+    arg: object
+    /
+[clinic start generated code]*/
+
 static int
-dbm_contains_lock_held(PyObject *self, PyObject *arg)
+dbm_contains_impl(dbmobject *self, PyObject *arg)
+/*[clinic end generated code: output=6c42b797ada528bc input=94134e7abf3eeb6e]*/
 {
-    dbmobject *dp = dbmobject_CAST(self);
+    dbmobject *dp = self;
     datum key, val;
     Py_ssize_t size;
 
@@ -379,16 +388,6 @@ dbm_contains_lock_held(PyObject *self, PyObject *arg)
     }
     val = dbm_fetch(dp->di_dbm, key);
     return val.dptr != NULL;
-}
-
-static int
-dbm_contains(PyObject *self, PyObject *arg)
-{
-    int result;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    result = dbm_contains_lock_held(self, arg);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 /*[clinic input]
@@ -513,15 +512,21 @@ dbm__enter__(PyObject *self, PyObject *Py_UNUSED(dummy))
     return Py_NewRef(self);
 }
 
+/*[clinic input]
+@critical_section
+_dbm.dbm.__exit__
+
+    *exc_info: array
+
+Close the database.
+[clinic start generated code]*/
+
 static PyObject *
-dbm__exit__(PyObject *self, PyObject *Py_UNUSED(args))
+_dbm_dbm___exit___impl(dbmobject *self, PyObject * const *exc_info,
+                       Py_ssize_t exc_info_length)
+/*[clinic end generated code: output=f9549bf513b3285d input=340d8190b6fb0f15]*/
 {
-    PyObject *result;
-    dbmobject *dp = dbmobject_CAST(self);
-    Py_BEGIN_CRITICAL_SECTION(self);
-    result = _dbm_dbm_close_impl(dp);
-    Py_END_CRITICAL_SECTION();
-    return result;
+    return _dbm_dbm_close_impl(self);
 }
 
 static PyMethodDef dbm_methods[] = {
@@ -531,7 +536,7 @@ static PyMethodDef dbm_methods[] = {
     _DBM_DBM_SETDEFAULT_METHODDEF
     _DBM_DBM_CLEAR_METHODDEF
     {"__enter__", dbm__enter__, METH_NOARGS, NULL},
-    {"__exit__",  dbm__exit__, METH_VARARGS, NULL},
+    _DBM_DBM___EXIT___METHODDEF
     {NULL,  NULL}           /* sentinel */
 };
 
@@ -628,6 +633,136 @@ static PyMethodDef dbmmodule_methods[] = {
     { 0, 0 },
 };
 
+#if defined(GDBM_VERSION_MAJOR) || defined(DB_VERSION_MAJOR)
+static PyStructSequence_Field version_info_fields[] = {
+    {"major", "Major release number"},
+    {"minor", "Minor release number"},
+    {"patch", "Patch release number"},
+    {0}
+};
+
+static PyObject *
+make_version_info(PyTypeObject *type, int major, int minor, int patch)
+{
+    PyObject *version;
+    int pos = 0;
+
+    version = PyStructSequence_New(type);
+    if (version == NULL) {
+        return NULL;
+    }
+
+#define SetItem(VALUE) \
+    PyStructSequence_SET_ITEM(version, pos++, VALUE); \
+    if (PyErr_Occurred()) { \
+        Py_DECREF(version); \
+        return NULL; \
+    }
+
+    SetItem(PyLong_FromLong(major))
+    SetItem(PyLong_FromLong(minor))
+    SetItem(PyLong_FromLong(patch))
+#undef SetItem
+
+    return version;
+}
+#endif
+
+#if defined(GDBM_VERSION_MAJOR)
+PyDoc_STRVAR(gdbm_version_info__doc__,
+"_dbm.gdbm_version_info\n\
+\n\
+GDBM version information as a named tuple.");
+
+static PyStructSequence_Desc gdbm_version_info_desc = {
+    "_dbm.gdbm_version_info",       /* name */
+    gdbm_version_info__doc__,       /* doc */
+    version_info_fields,            /* fields */
+    3
+};
+
+static int
+add_version_constants(PyObject *module)
+{
+    if (PyModule_AddStringConstant(module, "gdbm_version", gdbm_version) < 0) {
+        return -1;
+    }
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&gdbm_version_info_desc);
+    if (version_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(module, "GDBM_VERSION_INFO",
+            make_version_info(version_type, GDBM_VERSION_MAJOR,
+                              GDBM_VERSION_MINOR, GDBM_VERSION_PATCH)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    if (PyModule_Add(module, "gdbm_version_info",
+            make_version_info(version_type, gdbm_version_number[0],
+                              gdbm_version_number[1],
+                              gdbm_version_number[2])) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    Py_DECREF(version_type);
+    return 0;
+}
+#elif defined(DB_VERSION_MAJOR)
+PyDoc_STRVAR(bdb_version_info__doc__,
+"_dbm.bdb_version_info\n\
+\n\
+Berkeley DB version information as a named tuple.");
+
+static PyStructSequence_Desc bdb_version_info_desc = {
+    "_dbm.bdb_version_info",         /* name */
+    bdb_version_info__doc__,         /* doc */
+    version_info_fields,            /* fields */
+    3
+};
+
+static int
+add_version_constants(PyObject *module)
+{
+    int major, minor, patch;
+    const char *version = db_version(&major, &minor, &patch);
+    if (PyModule_AddStringConstant(module, "BDB_VERSION", DB_VERSION_STRING) < 0) {
+        return -1;
+    }
+    if (PyModule_AddStringConstant(module, "bdb_version", version) < 0) {
+        return -1;
+    }
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&bdb_version_info_desc);
+    if (version_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(module, "BDB_VERSION_INFO",
+            make_version_info(version_type, DB_VERSION_MAJOR,
+                              DB_VERSION_MINOR, DB_VERSION_PATCH)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    if (PyModule_Add(module, "bdb_version_info",
+            make_version_info(version_type, major, minor, patch)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    Py_DECREF(version_type);
+    return 0;
+}
+#else
+static int
+add_version_constants(PyObject *module)
+{
+    return 0;
+}
+#endif
+
 static int
 _dbm_exec(PyObject *module)
 {
@@ -642,6 +777,9 @@ _dbm_exec(PyObject *module)
         return -1;
     }
     if (PyModule_AddStringConstant(module, "library", which_dbm) < 0) {
+        return -1;
+    }
+    if (add_version_constants(module) < 0) {
         return -1;
     }
     if (PyModule_AddType(module, (PyTypeObject *)state->dbm_error) < 0) {

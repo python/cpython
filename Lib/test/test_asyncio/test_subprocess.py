@@ -3,6 +3,7 @@ import shlex
 import signal
 import sys
 import textwrap
+import threading
 import unittest
 import warnings
 from unittest import mock
@@ -1161,6 +1162,63 @@ if sys.platform != 'win32':
                 self.assertEqual(await proc.wait(), -signal.SIGKILL)
 
             self.loop.run_until_complete(run())
+
+        @unittest.skipUnless(hasattr(os, 'waitid'), 'needs os.waitid()')
+        @unittest.skipUnless(hasattr(signal, 'SIGSTOP'), 'needs SIGSTOP')
+        def test_stopped_child_does_not_block_event_loop(self):
+            # gh-158287: on macOS, waitid() with WEXITED incorrectly reports
+            # stopped children (si_code == CLD_STOPPED). The child watcher
+            # must not mistake this for process termination and attempt to reap
+            # the child with waitpid(), which blocks the event loop thread.
+            proc = None
+            timed_out = False
+
+            def watchdog():
+                nonlocal timed_out
+                timed_out = True
+                # If the event loop gets stuck in waitpid() because of this bug,
+                # killing the child process unblocks waitpid() so the test fails
+                # instead of hanging indefinitely.
+                if proc is not None:
+                    if hasattr(signal, 'SIGCONT'):
+                        try:
+                            os.kill(proc.pid, signal.SIGCONT)
+                        except ProcessLookupError:
+                            pass
+                    try:
+                        os.kill(proc.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+
+            timer = threading.Timer(support.SHORT_TIMEOUT, watchdog)
+            timer.start()
+            try:
+                async def run():
+                    nonlocal proc
+                    proc = await asyncio.create_subprocess_exec(*PROGRAM_BLOCKED)
+                    try:
+                        proc.send_signal(signal.SIGSTOP)
+                        # Verify event loop remains responsive while child is stopped
+                        for _ in range(3):
+                            await asyncio.sleep(0.05)
+                        self.assertFalse(timed_out, "event loop was blocked by stopped child")
+                        self.assertIsNone(proc.returncode)
+                    finally:
+                        if hasattr(signal, 'SIGCONT'):
+                            try:
+                                proc.send_signal(signal.SIGCONT)
+                            except ProcessLookupError:
+                                pass
+                        try:
+                            proc.kill()
+                        except ProcessLookupError:
+                            pass
+                        await proc.wait()
+
+                self.loop.run_until_complete(run())
+            finally:
+                timer.cancel()
+                timer.join()
 
     @unittest.skipUnless(
         unix_events.can_use_pidfd(),

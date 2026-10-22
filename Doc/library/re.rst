@@ -316,7 +316,7 @@ The special characters are:
       :exc:`FutureWarning` is raised if a character set contains constructs
       that will change semantically in the future.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added support for nested sets and the set operators ``--``, ``&&``
       and ``||``.
 
@@ -614,7 +614,7 @@ character ``'$'``.
 
       Matches ``[0-9]`` if the :py:const:`~re.ASCII` flag is used.
 
-      __ https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-4/#G124142
+      __ https://www.unicode.org/versions/Unicode18.0.0/core-spec/chapter-4/#G124142
 
    For 8-bit (bytes) patterns:
       Matches any decimal digit in the ASCII character set;
@@ -718,13 +718,13 @@ character ``'$'``.
    This is only recognized in Unicode (str) patterns.
    In bytes patterns it is an error.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 ``\P{...}``
    Matches any character which does *not* have the given Unicode property.
    This is the opposite of ``\p``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. index:: single: \z; in regular expressions
            single: \Z; in regular expressions

@@ -275,6 +275,19 @@ class CAPITest(unittest.TestCase):
             obj = MyObj()
             _testinternalcapi.incref_decref_delayed(obj)
 
+    def test_decref_delayed_immortal(self):
+        # _PyObject_XDecRefDelayed() must handle immortal objects, including
+        # objects that become immortal after they were queued.  The GC
+        # processes the queue with the world stopped.
+        import gc
+        _testinternalcapi.incref_decref_delayed(None)
+        gc.collect()
+
+        s = ''.join(['decref', '_delayed', '_immortal'])
+        _testinternalcapi.incref_decref_delayed(s)
+        s = sys.intern(s)
+        gc.collect()
+
     def test_is_unique_temporary(self):
         self.assertTrue(_testcapi.pyobject_is_unique_temporary(object()))
         obj = object()
@@ -340,6 +353,21 @@ class CAPITest(unittest.TestCase):
         # test NULL object
         output = self.pyobject_dump(NULL)
         self.assertRegex(output, r'<object at .* is freed>')
+
+
+class RefTracerTest(unittest.TestCase):
+    @support.requires_resource('cpu')
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
+    def test_destroy_traced_for_trashcan_deferred_objects(self):
+        depth = 200_000
+        chain = None
+        for _ in range(depth):
+            chain = [chain]
+        _testcapi.start_counting_list_destroys()
+        del chain
+        destroys = _testcapi.stop_counting_list_destroys()
+        self.assertEqual(destroys, depth)
 
 
 if __name__ == "__main__":

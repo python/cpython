@@ -1,8 +1,13 @@
 "Test editor, coverage 53%."
 
 from idlelib import editor
+import os
+import tempfile
+import types
 import unittest
+from pathlib import Path
 from collections import namedtuple
+from unittest import mock
 from test.support import requires
 from tkinter import Tk, Text
 
@@ -29,6 +34,38 @@ class EditorWindowTest(unittest.TestCase):
         e = Editor(root=self.root)
         self.assertEqual(e.root, self.root)
         e._close()
+
+    def test_apply_bindings_caps_lock(self):
+        # gh-56596: Caps Lock changes the case of letter keysyms, so the
+        # sequences are bound with both cases.
+        e = Editor(root=self.root)
+        try:
+            e.apply_bindings({'<<spam>>': ('<Control-Key-s>', '<Key-F1>'),
+                              '<<eggs>>': ('<Control-Key-x><Alt-Shift-Key-S>',),
+                              '<<ham>>': ('<Control-Key-h>', '<Control-Key-H>')})
+            self.assertEqual(set(e.text.event_info('<<spam>>')),
+                             {'<Control-KeyPress-s>', '<Control-KeyPress-S>',
+                              '<KeyPress-F1>'})
+            # Existing variants are not added again.
+            self.assertEqual(e.text.event_info('<<ham>>'),
+                             ('<Control-KeyPress-h>', '<Control-KeyPress-H>'))
+            self.assertEqual(set(e.text.event_info('<<eggs>>')),
+                             {'<Control-Key-x><Shift-Alt-Key-S>',
+                              '<Control-Key-X><Shift-Alt-Key-s>'})
+        finally:
+            e._close()
+
+    def test_set_width_zero_char_width(self):
+        # A zero-width '0' must not raise ZeroDivisionError (gh-90304).
+        e = Editor(root=self.root)
+        try:
+            with mock.patch.object(editor, 'Font') as MockFont:
+                MockFont.return_value.measure.return_value = 0
+                e.set_width()
+            self.assertEqual(e.width,
+                             e.text.tk.getint(e.text.cget('width')))
+        finally:
+            e._close()
 
 
 class GetLineIndentTest(unittest.TestCase):
@@ -212,6 +249,9 @@ class IndentSearcherTest(unittest.TestCase):
 
 
 class RMenuTest(unittest.TestCase):
+    # Test selection-rclick interaction in right_click_event and
+    # rmenu_check_copy(cut) status settings.  These are part of the rmenu
+    # functions common to all text windows with context windows.
 
     @classmethod
     def setUpClass(cls):
@@ -219,11 +259,13 @@ class RMenuTest(unittest.TestCase):
         cls.root = Tk()
         cls.root.withdraw()
         cls.window = Editor(root=cls.root)
+        cls.text = cls.window.text
+        cls.window.rmenu = cls.DummyRMenu
 
     @classmethod
     def tearDownClass(cls):
         cls.window._close()
-        del cls.window
+        del cls.window, cls.text
         cls.root.update_idletasks()
         for id in cls.root.after_info():
             cls.root.after_cancel(id)
@@ -233,8 +275,130 @@ class RMenuTest(unittest.TestCase):
     class DummyRMenu:
         def tk_popup(x, y): pass
 
-    def test_rclick(self):
-        pass
+    def click(self):
+        """Simulate a right click at(text pixel 0,0).
+        """
+        Event = namedtuple('Event', ['x', 'y', 'x_root', 'y_root'])
+        event = Event(0, 0, 0, 0)
+        self.assertEqual(self.window.right_menu_event(event), 'break')
+        # This assertion should be moved to a new method that also
+        # text that dummy rmenu.tk_popup is called.
+
+    def test_rclick_not_in_a_selection(self):
+        # Like left click, 'insert' moves to click and any selection is deleted.
+        eq = self.assertEqual
+        text = self.text
+        insert(text, 'one two three')
+        # Selection exists but not clicked.
+        text.tag_add('sel', '1.4', '1.7')  # 'two' selected.
+        text.mark_set('insert', '1.7')  # Outside of selection.
+        self.click()
+        eq(text.tag_ranges('sel'), ())
+        eq(text.index('insert'), '1.0')
+        # No selection to click, same result.
+        text.mark_set('insert', '1.8')
+        index = self.click()
+        eq(text.tag_ranges('sel'), ())
+        eq(text.index('insert'), '1.0')
+
+    def test_rclick_inside_selection(self):
+        # Unlike left click, selection is not deleted.
+        eq = self.assertEqual
+        text = self.text
+        insert(text, 'one two three')  # 'insert' at 1.13.
+        # The selection contains the clicked character.
+        text.tag_add('sel', '1.0', '1.3')  # Select 'one'.
+        text.mark_set('insert', '1.3')  # If select rightward, 'insert' at 1.3.
+        self.click()
+        eq((text.index('sel.first'), text.index('sel.last')), ('1.0', '1.3'))
+        eq(text.index('insert'), '1.3')
+
+    def test_rmenu_check_copy(self):
+        # copy and cut only valid for click inside selection.
+        eq = self.assertEqual
+        text = self.text
+        insert(text, 'one two three')
+        eq(self.window.rmenu_check_copy(), 'disabled')
+        eq(self.window.rmenu_check_cut(), 'disabled')
+        text.tag_add('sel', '1.0', '1.3')  # Includes '1.0' click.
+        eq(self.window.rmenu_check_copy(), 'normal')
+        eq(self.window.rmenu_check_cut(), 'normal')
+
+
+class LastMtimeTest(unittest.TestCase):
+    # Exercise last_mtime as an unbound method on a stub; no GUI needed.
+
+    def test_existing_file_returns_mtime(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, 'f.py')
+            Path(p).touch()
+            stub = types.SimpleNamespace(io=types.SimpleNamespace(filename=p))
+            self.assertEqual(Editor.last_mtime(stub), os.path.getmtime(p))
+
+    def test_deleted_file_returns_none(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, 'gone.py')
+            Path(p).touch()
+            os.remove(p)
+            stub = types.SimpleNamespace(io=types.SimpleNamespace(filename=p))
+            self.assertIsNone(Editor.last_mtime(stub))
+
+    def test_not_yet_created_filename(self):
+        # __init__ calls last_mtime() before self.mtime is set, so last_mtime()
+        # must not read self.mtime (the stub has no mtime attribute).
+        stub = types.SimpleNamespace(
+            io=types.SimpleNamespace(filename='/no/such/file.py'))
+        self.assertIsNone(Editor.last_mtime(stub))
+
+    def test_no_filename_returns_none(self):
+        stub = types.SimpleNamespace(io=types.SimpleNamespace(filename=None))
+        self.assertIsNone(Editor.last_mtime(stub))
+
+
+class DeletedFileEventTest(unittest.TestCase):
+    # Exercise the deleted-file handling as unbound methods; dialog is mocked.
+
+    def make_stub(self):
+        return types.SimpleNamespace(
+            mtime=1.0,
+            text=None,
+            io=types.SimpleNamespace(filename='/gone.py', save_as=mock.Mock()),
+            close=mock.Mock(),
+            set_saved=mock.Mock(),
+            deleted_file_event=mock.Mock(),
+            askyesno=mock.Mock(),
+            last_mtime=lambda: None)
+
+    def test_focus_in_routes_deleted_to_dialog(self):
+        stub = self.make_stub()
+        Editor.focus_in_event(stub, 'event')
+        stub.deleted_file_event.assert_called_once_with('event')
+        stub.askyesno.assert_not_called()
+
+    def _run_choice(self, choice):
+        stub = self.make_stub()
+        with mock.patch.object(editor.simpledialog, 'SimpleDialog') as SD:
+            SD.return_value.go.return_value = choice
+            Editor.deleted_file_event(stub, 'event')
+        return stub
+
+    def test_close_choice_closes_window(self):
+        stub = self._run_choice(0)
+        self.assertTrue(stub.close.called)
+        # mtime is cleared before Close so the queued FocusIn does not reprompt.
+        self.assertIsNone(stub.mtime)
+
+    def test_save_as_choice_clears_mtime_and_saves(self):
+        stub = self._run_choice(1)
+        stub.io.save_as.assert_called_once_with('event')
+        # A cancelled Save As leaves mtime None so it does not reprompt.
+        self.assertIsNone(stub.mtime)
+
+    def test_ignore_choice_clears_mtime(self):
+        stub = self._run_choice(2)
+        self.assertIsNone(stub.mtime)
+        stub.io.save_as.assert_not_called()
+        stub.set_saved.assert_not_called()
 
 
 if __name__ == '__main__':
