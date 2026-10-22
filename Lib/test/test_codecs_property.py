@@ -5,6 +5,10 @@ error-handler interfaces on generated input and compare against the stateless
 one-shot codec functions, which the other codec tests treat as the reference.
 With Hypothesis installed the input is generated; without it, only the
 explicit examples run.
+
+Inputs that are known to fail are pinned as expected-failure examples on
+the test they belong to, with the issue number as the reason, and are kept
+out of the generated input until the bug is fixed.
 """
 
 import codecs
@@ -15,6 +19,12 @@ import unittest
 
 from test.support.hypothesis_helper import hypothesis
 from test.test_codecs import all_unicode_encodings, bytes_transform_encodings
+
+try:
+    import _multibytecodec
+except ImportError:
+    # Then none of the CJK codecs is available either.
+    _multibytecodec = None
 
 st = hypothesis.strategies
 
@@ -39,22 +49,29 @@ WHOLE_STRING_ENCODINGS = frozenset({"idna", "punycode"})
 # order mark; the incremental decoder refuses the input instead.
 BOM_ENCODINGS = frozenset({"utf_16", "utf_32"})
 
-# Implemented by Modules/cjkcodecs; they share one decoder loop.
+# Implemented by Modules/cjkcodecs; they share one decoder loop and have
+# their own stream reader and writer.
 MULTIBYTE_ENCODINGS = frozenset(
     e for e in UNICODE_ENCODINGS
-    if codecs.lookup(e).incrementaldecoder.__module__ == f"encodings.{e}"
-    and "_multibytecodec" in repr(codecs.lookup(e).incrementaldecoder.__mro__))
+    if _multibytecodec is not None
+    and issubclass(codecs.lookup(e).incrementaldecoder,
+                   _multibytecodec.MultibyteIncrementalDecoder))
 
 ISO2022_ENCODINGS = frozenset(e for e in UNICODE_ENCODINGS
                               if e.startswith("iso2022"))
 
-# The multibyte codecs with sequences longer than two bytes; see
-# MultibyteSurrogateescapeBug.
+# The multibyte codecs with sequences longer than two bytes; see the
+# expected-failure examples on test_decode_in_chunks (gh-160307).
 LONG_SEQUENCE_ENCODINGS = frozenset(
     {"euc_jp", "euc_jis_2004", "euc_jisx0213", "gb18030"})
 
 INCREMENTAL_ENCODINGS = tuple(e for e in UNICODE_ENCODINGS
                               if e not in WHOLE_STRING_ENCODINGS)
+
+# The codecs whose StreamReader is the pure Python one from the codecs
+# module, as opposed to the multibyte codecs' own.
+PYTHON_READER_ENCODINGS = tuple(e for e in INCREMENTAL_ENCODINGS
+                                if e not in MULTIBYTE_ENCODINGS)
 
 DECODE_ERRORS = ("strict", "ignore", "replace", "backslashreplace",
                  "surrogateescape")
@@ -70,16 +87,18 @@ NON_INJECTIVE_ENCODINGS = frozenset(
     {"idna", "raw_unicode_escape", "cp932", "cp950", "euc_jp", "shift_jis"})
 
 # Characters an encoder accepts although its decoder cannot give them back;
-# each is pinned under expectedFailure in RoundTripBugs and kept out of the
-# generated text until fixed.
+# each is pinned as an expected-failure example on test_encode_decode and
+# kept out of the generated text until fixed.
 ENCODE_ONLY_CHARACTERS = {
     # A bare ESC, which the decoders take as the start of a sequence, and
-    # for iso2022_kr the SO and SI shift characters as well.
+    # for iso2022_kr the SO and SI shift characters as well (gh-160302).
     **dict.fromkeys(ISO2022_ENCODINGS, "\x1b"),
     "iso2022_kr": "\x1b\x0e\x0f",
-    # The Hangul filler, which the decoder only accepts inside a sequence.
+    # The Hangul filler, which the decoder only accepts inside a sequence
+    # (gh-101863).
     "euc_kr": "\u3164",
-    # Encoded with the JIS X 0213:2000 table but decoded with the 2004 one.
+    # Encoded with the JIS X 0213:2000 table but decoded with the 2004 one
+    # (gh-160306).
     "iso2022_jp_3": "\u9b1d",
 }
 
@@ -102,12 +121,12 @@ def _lossless_bytes(encoding):
 
 # surrogateescape round trips wherever decoding is injective on bytes and
 # the codec is a superset of ASCII.  Multibyte codecs can have duplicate
-# two-byte sequences, and the escape codecs rewrite backslashes.
+# two-byte sequences, and raw_unicode_escape raises on a truncated \u
+# escape, whose bytes are ASCII and so cannot be escaped either.
 SURROGATEESCAPE_ENCODINGS = tuple(
     e for e in UNICODE_ENCODINGS
     if e not in MULTIBYTE_ENCODINGS | WHOLE_STRING_ENCODINGS
-    and e not in ("unicode_escape", "raw_unicode_escape", "utf_7")
-    and _lossless_bytes(e))
+    and e != "raw_unicode_escape" and _lossless_bytes(e))
 
 
 text = st.text(max_size=64)
@@ -117,6 +136,7 @@ text_with_surrogates = st.text(
     alphabet=st.characters() | surrogates, max_size=64)
 data = st.binary(max_size=64)
 sizes = st.lists(st.integers(0, 8), max_size=16)
+read_sizes = st.lists(st.integers(-1, 8), max_size=16)
 incremental_encoding = st.sampled_from(INCREMENTAL_ENCODINGS)
 
 
@@ -152,7 +172,7 @@ def _with_bom(encoding, data, big_endian):
 
 def _decode_errors(encoding):
     # These decoders drop input after an incomplete trailing sequence
-    # under surrogateescape; pinned by MultibyteSurrogateescapeBug.
+    # under surrogateescape (gh-160307); pinned on test_decode_in_chunks.
     if encoding in LONG_SEQUENCE_ENCODINGS:
         return tuple(e for e in DECODE_ERRORS if e != "surrogateescape")
     return DECODE_ERRORS
@@ -215,6 +235,30 @@ class IncrementalCodecTests(unittest.TestCase):
                         sizes=[1], big_endian=False)
     @hypothesis.example(case=("unicode_escape", "strict"), data=b"\\u00e9\\",
                         sizes=[3, 2], big_endian=False)
+    # gh-160307: after escaping the first byte of an incomplete three- or
+    # four-byte sequence at the end of the input, these decoders drop the
+    # bytes that follow it.  The EUC codecs do this for 0x8f followed by
+    # any ASCII byte, gb18030 for any byte above 0x7f followed by a digit.
+    @hypothesis.example(case=("gb18030", "surrogateescape"), data=b"\x806",
+                        sizes=[], big_endian=False).xfail(
+                            reason="gh-160307", raises=AssertionError)
+    @hypothesis.example(case=("gb18030", "surrogateescape"), data=b"a\x819",
+                        sizes=[1], big_endian=False).xfail(
+                            reason="gh-160307", raises=AssertionError)
+    @hypothesis.example(case=("euc_jp", "surrogateescape"), data=b"a\x8f\x00",
+                        sizes=[1], big_endian=False).xfail(
+                            reason="gh-160307", raises=AssertionError)
+    @hypothesis.example(case=("euc_jis_2004", "surrogateescape"),
+                        data=b"\x8fl", sizes=[], big_endian=False).xfail(
+                            reason="gh-160307", raises=AssertionError)
+    @hypothesis.example(case=("euc_jisx0213", "surrogateescape"),
+                        data=b"\x8fA", sizes=[1], big_endian=False).xfail(
+                            reason="gh-160307", raises=AssertionError)
+    # gh-160308: the punycode incremental decoder decodes each chunk on
+    # its own.
+    @hypothesis.example(case=("punycode", "strict"), data=b"ab-", sizes=[1],
+                        big_endian=False).xfail(
+                            reason="gh-160308", raises=AssertionError)
     def test_decode_in_chunks(self, case, data, sizes, big_endian):
         encoding, errors = case
         data = _with_bom(encoding, data, big_endian)
@@ -240,6 +284,13 @@ class IncrementalCodecTests(unittest.TestCase):
                         sizes=[1, 1])
     @hypothesis.example(case=("ascii", "namereplace", "\xe9"), sizes=[])
     @hypothesis.example(case=("cp437", "ignore", "a\u4e2db"), sizes=[2])
+    # gh-160308: the punycode incremental encoder encodes each chunk on
+    # its own, so two chunks give two "-" terminated labels.
+    @hypothesis.example(case=("punycode", "strict", "ab"), sizes=[1]).xfail(
+        reason="gh-160308", raises=AssertionError)
+    @hypothesis.example(case=("punycode", "strict", "b\xfccher"),
+                        sizes=[2]).xfail(
+                            reason="gh-160308", raises=AssertionError)
     def test_encode_in_chunks(self, case, sizes):
         encoding, errors, text = case
         expected = _outcome(lambda: text.encode(encoding, errors))
@@ -305,7 +356,7 @@ class IncrementalCodecTests(unittest.TestCase):
         self.assertIsInstance(state[0], bytes)
         self.assertIsInstance(state[1], int)
         if not state[1]:
-            # Nothing but buffered bytes: feeding them to a fresh decoder
+            # Nothing but buffered bytes: after a reset, feeding them back
             # gives no output and reproduces the state.
             decoder.setstate((b"", 0))
             self.assertEqual(decoder.decode(state[0]), "")
@@ -368,6 +419,16 @@ class IncrementalCodecTests(unittest.TestCase):
                 decoder.decode(data, final=True)
 
 
+# html.unescape resolves "&" sequences, reads references to the C1 range
+# as cp1252 and drops references to the other control characters and to
+# noncharacters, so none of those can be in text that is to come back
+# from xmlcharrefreplace.
+xml_safe_text = st.text(
+    alphabet=st.characters(exclude_categories=["Cc", "Cn", "Cs"],
+                           exclude_characters="&"),
+    max_size=64)
+
+
 class RoundTripTests(unittest.TestCase):
 
     @hypothesis.given(case=round_trip_case)
@@ -380,6 +441,29 @@ class RoundTripTests(unittest.TestCase):
     @hypothesis.example(case=("punycode", "b\xfccher"))
     @hypothesis.example(case=("idna", "b\xfccher.example"))
     @hypothesis.example(case=("unicode_escape", "\\n\n\u20ac"))
+    # gh-160302: the ISO-2022 encoders write U+001B as a bare ESC byte,
+    # which their decoders reject or read as the start of a sequence;
+    # iso2022_kr does the same with the shift characters U+000E and U+000F.
+    @hypothesis.example(case=("iso2022_jp", "\x1b")).xfail(
+        reason="gh-160302", raises=(AssertionError, UnicodeDecodeError))
+    @hypothesis.example(case=("iso2022_jp_2004", "\x1b\xa0")).xfail(
+        reason="gh-160302", raises=(AssertionError, UnicodeDecodeError))
+    @hypothesis.example(case=("iso2022_kr", "\x0e")).xfail(
+        reason="gh-160302", raises=(AssertionError, UnicodeDecodeError))
+    @hypothesis.example(case=("iso2022_kr", "a\x0f")).xfail(
+        reason="gh-160302", raises=(AssertionError, UnicodeDecodeError))
+    # gh-101863 (closed as not a bug): euc_kr encodes the Hangul filler
+    # U+3164 as the two bytes that start an eight-byte composed syllable,
+    # and will not decode them on their own.
+    @hypothesis.example(case=("euc_kr", "\u3164")).xfail(
+        reason="gh-101863", raises=UnicodeDecodeError)
+    @hypothesis.example(case=("euc_kr", "a\u3164b")).xfail(
+        reason="gh-101863", raises=UnicodeDecodeError)
+    # gh-160306: iso2022_jp_3 encodes with the JIS X 0213:2000 table but
+    # decodes with the 2004 one, where the same code point means U+9B1C,
+    # which the 2000 table then cannot encode again.
+    @hypothesis.example(case=("iso2022_jp_3", "\u9b1d")).xfail(
+        reason="gh-160306", raises=(AssertionError, UnicodeEncodeError))
     def test_encode_decode(self, case):
         encoding, text = case
         try:
@@ -432,13 +516,10 @@ class RoundTripTests(unittest.TestCase):
         self.assertEqual(as_ascii.decode("unicode_escape"), text)
 
     @hypothesis.given(case=handler_encoding.flatmap(
-        # html.unescape maps "&" sequences and treats the C1 controls as
-        # cp1252, so keep both out of the text.
-        lambda e: st.tuples(st.just(e), _round_trip_text(e, text.map(
-            lambda s: "".join(c for c in s
-                              if c != "&" and not "\x80" <= c <= "\x9f"))))))
+        lambda e: st.tuples(st.just(e), _round_trip_text(e, xml_safe_text))))
     @hypothesis.example(case=("ascii", ""))
     @hypothesis.example(case=("ascii", "a<\xe9>\u20ac\U0001f600"))
+    @hypothesis.example(case=("ascii", "\ufdcf\ufdf0\ufffd"))
     @hypothesis.example(case=("utf_7", "+\u20ac-"))
     @hypothesis.example(case=("shift_jis_2004", "\u3042\u20ac"))
     @hypothesis.example(case=("iso2022_kr", "\uac00\u20ac"))
@@ -460,14 +541,15 @@ class RoundTripTests(unittest.TestCase):
     @hypothesis.example(text="")
     @hypothesis.example(text="\\\n\x00\xe9\u20ac\ud800\U0001f600")
     def test_unicode_escape_with_surrogates(self, text):
-        for encoding in ("unicode_escape", "raw_unicode_escape"):
-            with self.subTest(encoding=encoding):
-                encoded = text.encode(encoding)
-                self.assertEqual(encoded.decode(encoding),
-                                 text.encode(encoding).decode(encoding))
+        # Both escape codecs accept lone surrogates.  unicode_escape writes
+        # ASCII and gives anything back; raw_unicode_escape only escapes
+        # what is not Latin-1, so it gives back text without backslashes.
         encoded = text.encode("unicode_escape")
         self.assertTrue(encoded.isascii())
         self.assertEqual(encoded.decode("unicode_escape"), text)
+        raw_text = text.replace("\\", "")
+        encoded = raw_text.encode("raw_unicode_escape")
+        self.assertEqual(encoded.decode("raw_unicode_escape"), raw_text)
 
     @hypothesis.given(encoding=st.sampled_from(bytes_transform_encodings),
                       data=data)
@@ -489,9 +571,16 @@ class RoundTripTests(unittest.TestCase):
         self.assertEqual(codecs.encode(encoded, "rot_13"), text)
 
 
+# U+FFFE marks an undefined byte in a decoding table.
 UNDEFINED = "\ufffe"
 decoding_table = st.lists(
     st.characters() | st.just(UNDEFINED), min_size=256, max_size=256,
+).map("".join)
+# An injective table, so that encoding inverts decoding.  charmap_build
+# skips the undefined marker, so it cannot be an entry here.
+encoding_table = st.lists(
+    st.characters(exclude_characters=UNDEFINED), min_size=256, max_size=256,
+    unique=True,
 ).map("".join)
 
 
@@ -541,18 +630,16 @@ class CharmapTests(unittest.TestCase):
             _outcome(lambda: codecs.charmap_decode(data, errors, mapping)),
             _outcome(lambda: codecs.charmap_decode(data, errors, table)))
 
-    @hypothesis.given(
-        table=st.lists(st.characters(), min_size=256, max_size=256,
-                       unique=True).map("".join),
-        indices=st.lists(st.integers(0, 255), max_size=32),
-        errors=st.sampled_from(ENCODE_ERRORS))
+    @hypothesis.given(table=encoding_table,
+                      indices=st.lists(st.integers(0, 255), max_size=32),
+                      errors=st.sampled_from(ENCODE_ERRORS))
     @hypothesis.example(table="".join(map(chr, range(256))), indices=[],
                         errors="strict")
     @hypothesis.example(table="".join(map(chr, range(256, 512))),
                         indices=[0, 255, 1], errors="strict")
     def test_encode_inverts_table(self, table, indices, errors):
-        # With an injective table, encoding characters from the table gives
-        # back their positions, through both kinds of encoding map.
+        # Encoding characters from the table gives back their positions,
+        # through both kinds of encoding map.
         text = "".join(table[i] for i in indices)
         expected = bytes(indices)
         built = codecs.charmap_build(table)
@@ -564,11 +651,8 @@ class CharmapTests(unittest.TestCase):
         self.assertEqual(codecs.charmap_decode(expected, "strict", table),
                          (text, len(expected)))
 
-    @hypothesis.given(
-        table=st.lists(st.characters(), min_size=256, max_size=256,
-                       unique=True).map("".join),
-        text=text_with_surrogates,
-        errors=st.sampled_from(ENCODE_ERRORS))
+    @hypothesis.given(table=encoding_table, text=text_with_surrogates,
+                      errors=st.sampled_from(ENCODE_ERRORS))
     @hypothesis.example(table="".join(map(chr, range(256))), text="\u20ac",
                         errors="strict")
     @hypothesis.example(table="".join(map(chr, range(256))),
@@ -590,12 +674,21 @@ line_text = st.text(
     alphabet=st.sampled_from("ab \n\r\x0b\x0c\x1c\x1d\x1e\x85\u2028\u2029"),
     max_size=64)
 
+# Complete encoded text, with the error handler the reader will be given.
+# Nothing else is generated: StreamReader never tells the decoder that the
+# stream has ended, so an incomplete trailing sequence is dropped instead
+# of reported (gh-160309, the same mechanism as gh-56717); the
+# expected-failure examples on test_reader_matches_decode pin that.
+reader_case = incremental_encoding.flatmap(
+    lambda e: st.tuples(st.just(e), st.sampled_from(DECODE_ERRORS),
+                        _round_trip_text(e).map(
+                            lambda s: s.encode(e, "replace"))))
+
 
 class StreamTests(unittest.TestCase):
 
     @hypothesis.given(encoding=incremental_encoding, text=text,
-                      write_sizes=sizes,
-                      read_sizes=st.lists(st.integers(-1, 8), max_size=16))
+                      write_sizes=sizes, read_sizes=read_sizes)
     @hypothesis.example(encoding="utf_8", text="", write_sizes=[],
                         read_sizes=[])
     @hypothesis.example(encoding="utf_8", text="a\u20ac\U0001f600",
@@ -606,8 +699,12 @@ class StreamTests(unittest.TestCase):
                         read_sizes=[3])
     @hypothesis.example(encoding="iso2022_jp", text="\u3042a\u3044",
                         write_sizes=[1, 1], read_sizes=[1, 1, 1])
+    @hypothesis.example(encoding="big5hkscs", text="\u00ca\u0304",
+                        write_sizes=[], read_sizes=[1, 1])
     def test_writer_then_reader(self, encoding, text, write_sizes,
                                 read_sizes):
+        # The size passed to read() is a number of bytes, so a read may
+        # well return more characters than that.
         try:
             expected = text.encode(encoding).decode(encoding)
         except UnicodeError:
@@ -621,12 +718,77 @@ class StreamTests(unittest.TestCase):
         stream.seek(0)
         reader = codecs.getreader(encoding)(stream)
         parts = [reader.read(n) for n in read_sizes]
-        for n, part in zip(read_sizes, parts):
-            if n >= 0:
-                self.assertLessEqual(len(part), n)
         parts.append(reader.read())
         self.assertEqual("".join(parts), expected)
         self.assertEqual(reader.read(), "")
+
+    @hypothesis.given(case=reader_case, read_sizes=read_sizes)
+    @hypothesis.example(case=("utf_8", "strict", b""), read_sizes=[])
+    @hypothesis.example(case=("utf_8", "replace", b"a\xe2\x82\xac"),
+                        read_sizes=[1, 2])
+    @hypothesis.example(case=("utf_16", "strict", b"\xff\xfea\x00"),
+                        read_sizes=[1])
+    @hypothesis.example(case=("euc_jp", "ignore", b"\xa4\xa2a"),
+                        read_sizes=[1, 1])
+    @hypothesis.example(case=("unicode_escape", "strict", b"a\\u00e9"),
+                        read_sizes=[2])
+    # gh-160309: a chopped trailing character is dropped rather than
+    # reported, whatever the error handler.
+    @hypothesis.example(case=("utf_8", "strict", b"ab\xe2"),
+                        read_sizes=[]).xfail(
+                            reason="gh-160309", raises=AssertionError)
+    @hypothesis.example(case=("utf_8", "replace", b"a\xe2\x82"),
+                        read_sizes=[1]).xfail(
+                            reason="gh-160309", raises=AssertionError)
+    @hypothesis.example(case=("utf_16", "strict", b"\xff\xfeB"),
+                        read_sizes=[]).xfail(
+                            reason="gh-160309", raises=AssertionError)
+    @hypothesis.example(case=("utf_32_be", "replace", b"\x00\x000"),
+                        read_sizes=[2]).xfail(
+                            reason="gh-160309", raises=AssertionError)
+    @hypothesis.example(case=("raw_unicode_escape", "strict", b"a\\u30"),
+                        read_sizes=[]).xfail(
+                            reason="gh-160309", raises=AssertionError)
+    def test_reader_matches_decode(self, case, read_sizes):
+        encoding, errors, data = case
+        expected = _outcome(lambda: data.decode(encoding, errors))
+
+        def read_all():
+            reader = codecs.getreader(encoding)(io.BytesIO(data), errors)
+            parts = [reader.read(n) for n in read_sizes]
+            parts.append(reader.read())
+            return "".join(parts)
+
+        self.assertEqual(_outcome(read_all), expected)
+
+    @hypothesis.given(
+        encoding=st.sampled_from(PYTHON_READER_ENCODINGS), text=text,
+        reads=st.lists(st.tuples(st.sampled_from([-1, 1, 2, 3, 8]),
+                                 st.integers(0, 8)), max_size=16))
+    @hypothesis.example(encoding="utf_8", text="", reads=[])
+    @hypothesis.example(encoding="utf_8", text="a\u20ac\U0001f600b",
+                        reads=[(1, 2), (-1, 0), (8, 1), (1, 8)])
+    @hypothesis.example(encoding="utf_16", text="a\u20acb",
+                        reads=[(1, 1), (3, 2)])
+    @hypothesis.example(encoding="utf_7", text="a\xe9\xe9b",
+                        reads=[(1, 3), (2, 1)])
+    @hypothesis.example(encoding="unicode_escape", text="\\a\u20ac",
+                        reads=[(1, 1), (1, 1)])
+    def test_reader_read_chars(self, encoding, text, reads):
+        # Asked for a number of characters, the Python StreamReader keeps
+        # reading until it has them, however many bytes it takes at a time
+        # (the multibyte codecs' readers only take a byte count).
+        try:
+            expected = text.encode(encoding).decode(encoding)
+        except UnicodeError:
+            return
+        reader = codecs.getreader(encoding)(io.BytesIO(text.encode(encoding)))
+        remaining = expected
+        for size, chars in reads:
+            part = reader.read(size, chars)
+            self.assertEqual(part, remaining[:chars])
+            remaining = remaining[len(part):]
+        self.assertEqual(reader.read(), remaining)
 
     @hypothesis.given(text=line_text, keepends=st.booleans())
     @hypothesis.example(text="", keepends=True)
@@ -714,141 +876,6 @@ class LookupTests(unittest.TestCase):
                          encodings.normalize_encoding(encoding))
         if encoding != "rot_13":
             self.assertEqual("x".encode(variant), "x".encode(encoding))
-
-
-# The expected failures below each generate only inputs that are known to
-# fail, so that they start passing as a whole once the bug is fixed.
-
-# Printable ASCII, which every codec below encodes to itself.
-printable_ascii = st.characters(min_codepoint=0x20, max_codepoint=0x7e)
-ascii_text = st.text(alphabet=printable_ascii, max_size=32)
-ascii_bytes = st.binary(max_size=32).map(lambda b: bytes(c & 0x7f for c in b))
-
-
-def _incomplete_long_sequence(encoding):
-    # The first two bytes of a three- or four-byte sequence, where the
-    # second byte is ASCII: the stateless decoder escapes the first byte
-    # and decodes the second as itself.
-    if encoding == "gb18030":
-        return st.tuples(st.integers(0x81, 0xfe), st.integers(0x30, 0x39))
-    return st.tuples(st.just(0x8f), st.integers(0, 0x7f))
-
-
-class MultibyteSurrogateescapeBug(unittest.TestCase):
-    """An incomplete sequence of three or four bytes at the end of the
-    input makes the incremental decoder drop whatever follows the first
-    escaped byte, where the stateless decoder escapes that byte and carries
-    on (gh-160307).  Carved out of the chunked decoding tests above by
-    _decode_errors."""
-
-    @unittest.expectedFailure
-    @hypothesis.given(
-        case=st.sampled_from(sorted(LONG_SEQUENCE_ENCODINGS)).flatmap(
-            lambda e: st.tuples(st.just(e), ascii_bytes,
-                                _incomplete_long_sequence(e))))
-    @hypothesis.example(case=("gb18030", b"", (0x80, ord("6"))))
-    @hypothesis.example(case=("euc_jp", b"a", (0x8f, 0)))
-    @hypothesis.example(case=("euc_jis_2004", b"", (0x8f, ord("l"))))
-    def test_trailing_bytes_after_escape(self, case):
-        encoding, prefix, tail = case
-        data = prefix + bytes(tail)
-        expected = _outcome(lambda: data.decode(encoding, "surrogateescape"))
-        decoder = codecs.getincrementaldecoder(encoding)("surrogateescape")
-        self.assertEqual(_outcome(lambda: decoder.decode(data, True)),
-                         expected)
-
-
-class RoundTripBugs(unittest.TestCase):
-    """Characters an encoder accepts but its decoder cannot give back; see
-    ENCODE_ONLY_CHARACTERS for how the round-trip tests avoid them."""
-
-    def _check_round_trip(self, encoding, text):
-        encoded = text.encode(encoding)
-        self.assertEqual(encoded.decode(encoding), text)
-
-    # The ISO-2022 encoders pass U+001B through as a bare ESC byte, which
-    # their own decoders then reject or misread as an escape sequence;
-    # iso2022_kr does the same with its shift characters U+000E and U+000F
-    # (gh-160302).  The control character goes last, where it never forms
-    # a sequence.
-    @unittest.expectedFailure
-    @hypothesis.given(
-        case=st.sampled_from(sorted(ISO2022_ENCODINGS)).flatmap(
-            lambda e: st.tuples(
-                st.just(e), ascii_text,
-                st.sampled_from(ENCODE_ONLY_CHARACTERS[e]))))
-    @hypothesis.example(case=("iso2022_jp", "", "\x1b"))
-    @hypothesis.example(case=("iso2022_jp_2004", "a", "\x1b"))
-    @hypothesis.example(case=("iso2022_kr", "", "\x0e"))
-    @hypothesis.example(case=("iso2022_kr", "a", "\x0f"))
-    def test_iso2022_escape(self, case):
-        encoding, prefix, control = case
-        self._check_round_trip(encoding, prefix + control)
-
-    # euc_kr encodes the Hangul filler U+3164 as the two bytes that start
-    # an eight-byte composed syllable, and will not decode them alone
-    # (gh-101863, closed as not a bug; recorded here as the asymmetry it is).
-    @unittest.expectedFailure
-    @hypothesis.given(prefix=ascii_text, suffix=ascii_text)
-    @hypothesis.example(prefix="", suffix="")
-    @hypothesis.example(prefix="a", suffix="b")
-    def test_euc_kr_filler(self, prefix, suffix):
-        self._check_round_trip("euc_kr", prefix + "\u3164" + suffix)
-
-    # iso2022_jp_3 encodes with the JIS X 0213:2000 table but decodes with
-    # the 2004 one, where the same code point means U+9B1C (gh-160306).
-    @unittest.expectedFailure
-    @hypothesis.given(prefix=ascii_text, suffix=ascii_text)
-    @hypothesis.example(prefix="", suffix="")
-    @hypothesis.example(prefix="a", suffix="b")
-    def test_iso2022_jp_3_mapping(self, prefix, suffix):
-        self._check_round_trip("iso2022_jp_3", prefix + "\u9b1d" + suffix)
-
-
-class StreamReaderTruncationBug(unittest.TestCase):
-    """StreamReader.read() never tells the decoder that the stream has
-    ended, so an incomplete trailing sequence is silently dropped instead
-    of raising (or being replaced), as it is everywhere else (gh-160309,
-    the same mechanism as gh-56717)."""
-
-    @unittest.expectedFailure
-    @hypothesis.given(
-        encoding=st.sampled_from(["utf_8", "utf_16_le", "utf_32_be",
-                                  "utf_16", "raw_unicode_escape"]),
-        # No backslashes: raw_unicode_escape leaves them alone, and an even
-        # number in front of the chopped escape turns it into literal text.
-        text=text.map(lambda s: s.replace("\\", "")),
-        errors=st.sampled_from(["strict", "replace"]))
-    @hypothesis.example(encoding="utf_8", text="", errors="strict")
-    @hypothesis.example(encoding="utf_8", text="a", errors="replace")
-    @hypothesis.example(encoding="utf_16", text="\u3042", errors="strict")
-    def test_read_reports_truncated_input(self, encoding, text, errors):
-        # Chop the last byte off a character that takes more than one.
-        encoded = (text + "\u3042").encode(encoding)[:-1]
-        expected = _outcome(lambda: encoded.decode(encoding, errors))
-        reader = codecs.getreader(encoding)(io.BytesIO(encoded), errors)
-        self.assertEqual(_outcome(lambda: reader.read() + reader.read()),
-                         expected)
-
-
-class PunycodeIncrementalBug(unittest.TestCase):
-    """The punycode incremental codecs encode and decode each chunk on its
-    own, so anything fed in more than one piece comes out wrong
-    (gh-160308).  Punycode is left out of the chunked tests above as a
-    whole-string codec."""
-
-    # Two non-empty ASCII chunks give two "-" terminated labels where the
-    # whole string gives one.
-    @unittest.expectedFailure
-    @hypothesis.given(
-        head=st.text(alphabet=printable_ascii, min_size=1, max_size=32),
-        tail=st.text(alphabet=printable_ascii, min_size=1, max_size=32))
-    @hypothesis.example(head="a", tail="b")
-    @hypothesis.example(head="b\xfc", tail="cher")
-    def test_chunked_encode(self, head, tail):
-        encoder = codecs.getincrementalencoder("punycode")()
-        chunked = encoder.encode(head) + encoder.encode(tail, final=True)
-        self.assertEqual(chunked, (head + tail).encode("punycode"))
 
 
 if __name__ == "__main__":
