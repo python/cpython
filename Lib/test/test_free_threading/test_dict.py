@@ -476,7 +476,7 @@ class TestDict(TestCase):
 
         threading_helper.run_concurrently(make_pair() + make_pair())
 
-     def test_racing_dict_update_and_method_lookup_with_inline_values(self):
+    def test_racing_dict_update_and_method_lookup_with_inline_values(self):
         # gh-149816: sub-case 108
         # The race below checks that a detached dict is still valid
         # when racing setattr with __dict__ replacement
@@ -531,7 +531,6 @@ class TestDict(TestCase):
         REPLACER_THREADS = 8
         CHURN_SIZE = 512
         race(ITER_TIMES, CHURN_SIZE, APPENDER_THREADS, REPLACER_THREADS)
-
 
 if __name__ == "__main__":
     unittest.main()
