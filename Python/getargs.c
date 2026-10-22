@@ -125,18 +125,6 @@ _PyArg_ParseTuple_SizeT(PyObject *args, const char *format, ...)
 
 
 int
-_PyArg_ParseStack(PyObject *const *args, Py_ssize_t nargs, const char *format, ...)
-{
-    int retval;
-    va_list va;
-
-    va_start(va, format);
-    retval = vgetargs1_impl(NULL, args, nargs, format, &va, 0);
-    va_end(va);
-    return retval;
-}
-
-int
 PyArg_ParseArray(PyObject *const *args, Py_ssize_t nargs, const char *format, ...)
 {
     va_list va;
