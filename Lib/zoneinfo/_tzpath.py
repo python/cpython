@@ -2,7 +2,7 @@ import os
 import sysconfig
 
 
-def reset_tzpath(to=None):
+def _reset_tzpath(to=None, stacklevel=4):
     global TZPATH
 
     tzpaths = to
@@ -13,22 +13,34 @@ def reset_tzpath(to=None):
                 + f"not {type(tzpaths)}: {tzpaths!r}"
             )
 
+        tzpaths = [os.fspath(p) for p in tzpaths]
+        if not all(isinstance(p, str) for p in tzpaths):
+            raise TypeError(
+                "All elements of a tzpath sequence must be strings or "
+                "os.PathLike objects which convert to strings."
+            )
+
         if not all(map(os.path.isabs, tzpaths)):
             raise ValueError(_get_invalid_paths_message(tzpaths))
         base_tzpath = tzpaths
     else:
         env_var = os.environ.get("PYTHONTZPATH", None)
-        if env_var is not None:
-            base_tzpath = _parse_python_tzpath(env_var)
-        else:
-            base_tzpath = _parse_python_tzpath(
-                sysconfig.get_config_var("TZPATH")
-            )
+        if env_var is None:
+            env_var = sysconfig.get_config_var("TZPATH")
+        base_tzpath = _parse_python_tzpath(env_var, stacklevel)
 
     TZPATH = tuple(base_tzpath)
 
 
-def _parse_python_tzpath(env_var):
+def reset_tzpath(to=None):
+    """Reset global TZPATH."""
+    # We need `_reset_tzpath` helper function because it produces a warning,
+    # it is used as both a module-level call and a public API.
+    # This is how we equalize the stacklevel for both calls.
+    _reset_tzpath(to)
+
+
+def _parse_python_tzpath(env_var, stacklevel):
     if not env_var:
         return ()
 
@@ -45,6 +57,7 @@ def _parse_python_tzpath(env_var):
             "Invalid paths specified in PYTHONTZPATH environment variable. "
             + msg,
             InvalidTZPathWarning,
+            stacklevel=stacklevel,
         )
 
     return new_tzpath
@@ -98,6 +111,17 @@ def _validate_tzfile_path(path, _base=_TEST_PATH):
             f"ZoneInfo keys must refer to subdirectories of TZPATH, got: {path}"
         )
 
+    # load_tzdata() joins the last "/"-separated component of the key to the
+    # tzdata package directory on its own.  On Windows a component with a
+    # drive or root, such as "C:\\file" in "America/C:\\file", would replace
+    # that directory instead of being looked up inside it.
+    for component in path.split("/"):
+        drive, root, _ = os.path.splitroot(component)
+        if drive or root:
+            raise ValueError(
+                f"ZoneInfo keys must not contain drives or roots, got: {path}"
+            )
+
 
 del _TEST_PATH
 
@@ -118,7 +142,8 @@ def available_timezones():
     # Start with loading from the tzdata package if it exists: this has a
     # pre-assembled list of zones that only requires opening one file.
     try:
-        with resources.files("tzdata").joinpath("zones").open("r") as f:
+        zones_file = resources.files("tzdata").joinpath("zones")
+        with zones_file.open("r", encoding="utf-8") as f:
             for zone in f:
                 zone = zone.strip()
                 if zone:
@@ -163,6 +188,10 @@ def available_timezones():
         # posixrules is a special symlink-only time zone where it exists, it
         # should not be included in the output
         valid_zones.remove("posixrules")
+    if "localtime" in valid_zones:
+        # localtime is a special symlink-only time zone where it exists, it
+        # should not be included in the output
+        valid_zones.remove("localtime")
 
     return valid_zones
 
@@ -172,4 +201,4 @@ class InvalidTZPathWarning(RuntimeWarning):
 
 
 TZPATH = ()
-reset_tzpath()
+_reset_tzpath(stacklevel=5)

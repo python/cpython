@@ -140,8 +140,10 @@ zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''')
     @withpythonimplementation
     def test_decodestring_double_equals(self):
         # Issue 21511 - Ensure that byte string is compared to byte string
-        # instead of int byte value
-        decoded_value, encoded_value = (b"123=four", b"123==four")
+        # instead of int byte value.
+        # A stray "=" not starting a valid escape is left in place, so the
+        # following "=four" is decoded as a fresh (invalid) escape too.
+        decoded_value, encoded_value = (b"123==four", b"123==four")
         self.assertEqual(quopri.decodestring(encoded_value), decoded_value)
 
     @withpythonimplementation
@@ -170,6 +172,30 @@ zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''')
         for p, e in self.ESTRINGS:
             self.assertEqual(quopri.encodestring(p, quotetabs=True), e)
             self.assertEqual(quopri.decodestring(e), p)
+
+    @withpythonimplementation
+    def test_decode_strip_ws(self):
+        # By default trailing whitespace is kept; with strip_ws it is
+        # removed at the end of a line (RFC 2045), while encoded whitespace
+        # (=20/=09) is preserved.
+        self.assertEqual(quopri.decodestring(b"foo   \n"), b"foo   \n")
+        self.assertEqual(quopri.decodestring(b"foo   \n", strip_ws=True), b"foo\n")
+        self.assertEqual(quopri.decodestring(b"a b \nc\n", strip_ws=True), b"a b\nc\n")
+        self.assertEqual(quopri.decodestring(b"a=20  \n", strip_ws=True), b"a \n")
+        self.assertEqual(quopri.decodestring(b"= \n", strip_ws=True), b"")
+        self.assertEqual(quopri.decodestring(b"foo =\n", strip_ws=True), b"foo ")
+        self.assertEqual(quopri.decodestring(b"foo  \r\n", strip_ws=True), b"foo\r\n")
+        # A bare CR is not a line separator, so whitespace before it is kept.
+        self.assertEqual(quopri.decodestring(b"foo \rbar", strip_ws=True), b"foo \rbar")
+
+    @withpythonimplementation
+    def test_decode_soft_line_break(self):
+        # A "=" at the end of a line is a soft line break, for both "\n" and
+        # "\r\n" line endings; other line endings are preserved as-is.
+        self.assertEqual(quopri.decodestring(b"=\nAB"), b"AB")
+        self.assertEqual(quopri.decodestring(b"=\r\nAB"), b"AB")
+        self.assertEqual(quopri.decodestring(b"foo=\r\nbar"), b"foobar")
+        self.assertEqual(quopri.decodestring(b"foo\r\nbar"), b"foo\r\nbar")
 
     @withpythonimplementation
     def test_encode_header(self):
