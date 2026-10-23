@@ -7456,9 +7456,7 @@ _PyDict_SetItem_LockHeld(PyDictObject *dict, PyObject *name, PyObject *value)
     }
 }
 
-// Called with either the object's lock or the dict's lock held
-// depending on whether or not a dict has been materialized for
-// the object.
+// Called with either the object's lock held to insert into inline values.
 static int
 store_instance_attr_lock_held(PyObject *obj, PyDictValues *values,
                               PyObject *name, PyObject *value)
