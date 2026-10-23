@@ -2020,6 +2020,7 @@ class ThreadTests(BaseTest):
 
     def setUp(self):
         super().setUp()
+        self.enterContext(self.module.catch_warnings())
         self.module.resetwarnings()
 
     @unittest.skipIf(not ENABLE_THREAD_TESTS,
