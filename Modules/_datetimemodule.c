@@ -1688,6 +1688,9 @@ static PyObject *
 tzinfo_from_strptime_results(const _PyTime_StrptimeFields *fields,
                              PyObject *string)
 {
+    /* As in _strptime.py, a name without a numeric offset leaves the result
+     * naive. Only pass the name to the timezone constructor when %z is present.
+     */
     if (!fields->zone_length || fields->gmtoff == INT_MIN) {
         return tzinfo_from_isoformat_results(fields->gmtoff != INT_MIN,
                                             fields->gmtoff,

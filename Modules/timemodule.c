@@ -1020,6 +1020,9 @@ time_strptime(PyObject *self, PyObject *args)
         if (weekday < 0) {
             weekday = _PyTime_Weekday(fields.year, fields.yday);
         }
+        /* Only UTC and GMT names are parsed here; neither observes DST.
+         * Numeric offsets don't supply DST information.
+         */
         const int values[] = {
             fields.year, fields.month, fields.day,
             fields.hour, fields.minute, fields.second,

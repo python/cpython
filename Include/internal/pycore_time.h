@@ -348,9 +348,11 @@ typedef struct {
     int year, month, day;
     int hour, minute, second, fraction;
     int gmtoff;  // INT_MIN means no offset was supplied.
-    int gmtoff_fraction;
+    int gmtoff_fraction;  // Microseconds, with the same sign as gmtoff.
     Py_ssize_t zone_start, zone_length;  // Original spelling of a %Z name.
-    int yday;    // January 1 is day 1.
+    // January 1 is day 1. A %j spill retains the original day of year,
+    // which need not agree with the resulting calendar date.
+    int yday;
     // Monday is 0; a supplied weekday need not agree with the date.
     // If negative, the caller must compute it from year and yday if needed.
     int weekday;

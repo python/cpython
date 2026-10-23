@@ -1,6 +1,8 @@
 """PyUnit testing against strptime"""
 
 import unittest
+from unittest import mock
+from contextlib import nullcontext
 import datetime
 import time
 import locale
@@ -9,13 +11,118 @@ import os
 import platform
 import sys
 from test import support
-from test.support import skip_if_buggy_ucrt_strfptime, run_with_locales
+from test.support import (
+    skip_if_buggy_ucrt_strfptime, run_with_locales, warnings_helper,
+)
+from test.support.hypothesis_helper import hypothesis
 from datetime import date as datetime_date
 
 import _strptime
 
 
+_strptime_formats = hypothesis.strategies.lists(
+    hypothesis.strategies.sampled_from((
+        '%Y', '%y', '%m', '%d', '%H', '%M', '%S', '%f', '%b', '%B',
+        '%a', '%A', '%w', '%u', '%I', '%p', '%k', '%l', '%P',
+        '%z', '%:z', '%Z', '%F', '%D', '%T', '%R', '%e', '%n', '%t',
+        '%j', '%U', '%W', '%G', '%V', '%%',
+        '-', '/', ':', '.', ' ', '\t', '\n', '\x1c', 'T', 'Z', '年',
+    )), max_size=8,
+).map(''.join)
+
+
 class PublicStrptimeTests(unittest.TestCase):
+    def assert_matches_python(self, text, fmt, *, accelerated=False):
+        methods = (
+            (time.strptime, '_strptime_time', None),
+            (datetime.date.strptime, '_strptime_datetime_date', datetime.date),
+            (datetime.time.strptime, '_strptime_datetime_time', datetime.time),
+            (datetime.datetime.strptime, '_strptime_datetime_datetime',
+             datetime.datetime),
+        )
+        for parse, fallback, cls in methods:
+            message = f'{parse.__qualname__}({text!r}, {fmt!r})'
+            reference = getattr(_strptime, fallback)
+            args = (text, fmt) if cls is None else (cls, text, fmt)
+            try:
+                expected = reference(*args)
+            except (ValueError, re.PatternError, OverflowError) as error:
+                self.assertFalse(accelerated, message)
+                with self.assertRaises(type(error), msg=message) as caught:
+                    parse(text, fmt)
+                self.assertEqual(str(caught.exception), str(error), message)
+            else:
+                # Guard against accidentally falling back for every input.
+                # This mock can be removed if implementation changes make
+                # patching the fallback impractical; keep the comparisons.
+                guard = mock.patch.object(
+                    _strptime, fallback, autospec=True,
+                    side_effect=AssertionError('used the Python parser'),
+                ) if accelerated else nullcontext()
+                with guard:
+                    actual = parse(text, fmt)
+                self.assertEqual(actual, expected, message)
+                if isinstance(actual, time.struct_time):
+                    self.assertEqual(actual.tm_zone, expected.tm_zone, message)
+                    self.assertEqual(actual.tm_gmtoff, expected.tm_gmtoff,
+                                     message)
+                elif isinstance(actual, (datetime.time, datetime.datetime)):
+                    self.assertEqual(actual.tzname(), expected.tzname(), message)
+
+    @support.cpython_only
+    @support.run_with_locale('LC_TIME', 'C')
+    def test_accelerated_formats(self):
+        for text, fmt in (
+            ('2024-02-29 12:34:56.123456', '%Y-%m-%d %H:%M:%S.%f'),
+            ('Jan 02 2024', '%b %d %Y'),
+            ('Tuesday 2024 January 02', '%A %Y %B %d'),
+            ('Tue 2024-01-02', '%a %Y-%m-%d'),
+            ('12 PM', '%I %p'), ('12', '%I'), (' 1 pm', '%l %P'),
+            (' 1', '%k'), ('2024  2', '%Y %e'),
+            ('+01:02:03.456789', '%:z'), ('-000001.5', '%z'),
+            ('UTC', '%Z'), ('+0530 gMt', '%z %Z'),
+            ('2024-02-29 12:34:56', '%F %T'),
+            ('02/29/24 12:34', '%D %R'),
+            ('2024\t02\n29', '%Y%t%m%n%d'),
+            ('2023 366', '%Y %j'),
+            ('2024 00 0', '%Y %W %w'),
+            ('2024 01 1', '%Y %U %u'),
+            ('2020-W53-7', '%G-W%V-%u'),
+        ):
+            self.assert_matches_python(text, fmt, accelerated=True)
+
+    # Missing-year formats deliberately exercise the deprecated behavior.
+    @support.run_with_locale('LC_TIME', 'C')
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
+    @hypothesis.given(value=hypothesis.strategies.datetimes(),
+                      fmt=_strptime_formats)
+    @hypothesis.example(value=datetime.datetime(2024, 2, 29, 13, 24, 35),
+                        fmt='%Y%m%d%H%M%S')
+    @hypothesis.example(value=datetime.datetime(2021, 1, 1), fmt='%G-W%V-%u')
+    @hypothesis.example(value=datetime.datetime(2024, 2, 29, 13, 24, 35),
+                        fmt='%a %d %B %Y %I:%M:%S %p')
+    def test_strftime_output_matches_python(self, value, fmt):
+        try:
+            text = value.strftime(fmt)
+        except ValueError:
+            # Some strptime directives are unsupported by the platform's
+            # strftime. Arbitrary input tests still exercise their parsing.
+            hypothesis.reject()
+        self.assert_matches_python(text, fmt)
+
+    @support.run_with_locale('LC_TIME', 'C')
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
+    @hypothesis.given(text=hypothesis.strategies.text(max_size=80),
+                      fmt=_strptime_formats)
+    @hypothesis.example(text='2024\x1c 112', fmt='%Y\x1c%d%m')
+    @hypothesis.example(text='34\x1c 123', fmt='%M%n%H%S')
+    @hypothesis.example(text='2023 366', fmt='%Y %j')
+    @hypothesis.example(text='2024 01 02 1', fmt='%Y %U %W %u')
+    @hypothesis.example(text='+01:0203', fmt='%z')
+    @hypothesis.example(text='1 pM', fmt='%I %p')
+    def test_arbitrary_input_matches_python(self, text, fmt):
+        self.assert_matches_python(text, fmt)
+
     def test_inferred_weekday(self):
         for text, fmt in (
             ('0001-01-01', '%Y-%m-%d'),
@@ -133,34 +240,6 @@ class PublicStrptimeTests(unittest.TestCase):
             value = datetime.datetime(2024, month, 19, 13, 24, 35)
             for fmt in ('%b %d %Y', '%B %d %Y', '%a %Y-%m-%d', '%A %Y-%m-%d'):
                 self.assert_matches_python(value.strftime(fmt), fmt)
-
-    def assert_matches_python(self, text, fmt):
-        methods = (
-            (time.strptime, _strptime._strptime_time),
-            (datetime.date.strptime,
-             lambda s, f: _strptime._strptime_datetime_date(datetime.date, s, f)),
-            (datetime.time.strptime,
-             lambda s, f: _strptime._strptime_datetime_time(datetime.time, s, f)),
-            (datetime.datetime.strptime,
-             lambda s, f: _strptime._strptime_datetime_datetime(
-                 datetime.datetime, s, f)),
-        )
-        for parse, reference in methods:
-            with self.subTest(method=parse, text=text, format=fmt):
-                try:
-                    expected = reference(text, fmt)
-                except (ValueError, re.PatternError) as error:
-                    with self.assertRaises(type(error)) as caught:
-                        parse(text, fmt)
-                    self.assertEqual(str(caught.exception), str(error))
-                else:
-                    actual = parse(text, fmt)
-                    self.assertEqual(actual, expected)
-                    if isinstance(actual, time.struct_time):
-                        self.assertEqual(actual.tm_zone, expected.tm_zone)
-                        self.assertEqual(actual.tm_gmtoff, expected.tm_gmtoff)
-                    elif isinstance(actual, (datetime.time, datetime.datetime)):
-                        self.assertEqual(actual.tzname(), expected.tzname())
 
     @support.run_with_locale('LC_TIME', 'C')
     def test_names_and_weekdays(self):

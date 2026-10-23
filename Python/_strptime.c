@@ -36,50 +36,73 @@ strptime_digits(const unsigned char *data, Py_ssize_t length, Py_ssize_t pos,
     return count >= minimum ? count : 0;
 }
 
-static int
-strptime_name(const unsigned char *data, Py_ssize_t length, Py_ssize_t pos,
-              unsigned char directive, int *value)
+/* Return the normalized ASCII name's length, or 0 if fallback is needed. */
+static inline size_t
+strptime_locale_name(unsigned char directive, int index,
+                     char *name, size_t capacity)
 {
 #ifdef HAVE_STRFTIME
     /* Read the current locale without keeping a cache across setlocale().
      * Non-ASCII names retain Python's decoding and Unicode case handling.
-     * As in TimeRE, prefer the longest match, then the first equal name.
+     */
+    int month = directive == 'b' || directive == 'B';
+    char format[] = {'%', directive, '\0'};
+    /* Match calendar's localized names and LocaleTime.__calc_am_pm:
+     * 2001 starts on a Monday, and the AM/PM sample hours are 1 and 22.
+     */
+    struct tm tm = {.tm_year = 101, .tm_mday = 1,
+                    .tm_mon = month ? index : 0,
+                    .tm_wday = month ? 0 : (index + 1) % 7,
+                    .tm_hour = index == 0 ? 1 : 22};
+    size_t size = strftime(name, capacity, format, &tm);
+    for (size_t j = 0; j < size; j++) {
+        if ((unsigned char)name[j] >= 128) {
+            return 0;
+        }
+    }
+    if (directive == 'p') {
+        while (size && Py_UNICODE_ISSPACE(name[size - 1])) {
+            size--;
+        }
+        size_t start = 0;
+        while (start < size && Py_UNICODE_ISSPACE(name[start])) {
+            start++;
+        }
+        size -= start;
+        if (start) {
+            memmove(name, name + start, size);
+        }
+        /* Empty indicators have special defaulting rules in Python. */
+    }
+    return size;
+#else
+    return 0;
+#endif
+}
+
+static int
+strptime_ampm_supported(void)
+{
+    char name[256];
+    return strptime_locale_name('p', 0, name, sizeof(name)) != 0 &&
+           strptime_locale_name('p', 1, name, sizeof(name)) != 0;
+}
+
+static int
+strptime_name(const unsigned char *data, Py_ssize_t length, Py_ssize_t pos,
+              unsigned char directive, int *value)
+{
+    /* Prefer the longest match, then the first equal name, as in TimeRE.
+     * For %p, the last equal name wins: _strptime checks for PM first.
      */
     int month = directive == 'b' || directive == 'B';
     int count = month ? 12 : directive == 'p' ? 2 : 7;
-    char format[] = {'%', directive, '\0'};
     int matched = 0;
     for (int i = 0; i < count; i++) {
-        struct tm tm = {.tm_year = 101, .tm_mday = 1,
-                        .tm_mon = month ? i : 0,
-                        .tm_wday = month ? 0 : (i + 1) % 7,
-                        .tm_hour = i == 0 ? 1 : 22};
         char name[256];
-        size_t size = strftime(name, sizeof(name), format, &tm);
+        size_t size = strptime_locale_name(directive, i, name, sizeof(name));
         if (size == 0) {
             return 0;
-        }
-        for (size_t j = 0; j < size; j++) {
-            if ((unsigned char)name[j] >= 128) {
-                return 0;
-            }
-        }
-        char *start = name;
-        if (directive == 'p') {
-            while (size && Py_UNICODE_ISSPACE(start[size - 1])) {
-                size--;
-            }
-            while (size && Py_UNICODE_ISSPACE(*start)) {
-                start++;
-                size--;
-            }
-            /* Empty indicators have special defaulting rules in Python. */
-            if (size == 0) {
-                return 0;
-            }
-        }
-        if (data == NULL) {
-            continue;
         }
         if (size < (size_t)matched ||
             (size == (size_t)matched && directive != 'p') ||
@@ -88,7 +111,7 @@ strptime_name(const unsigned char *data, Py_ssize_t length, Py_ssize_t pos,
         }
         size_t j;
         for (j = 0; j < size; j++) {
-            if (Py_TOLOWER(data[pos + j]) != Py_TOLOWER(start[j])) {
+            if (Py_TOLOWER(data[pos + j]) != Py_TOLOWER(name[j])) {
                 break;
             }
         }
@@ -97,10 +120,17 @@ strptime_name(const unsigned char *data, Py_ssize_t length, Py_ssize_t pos,
             *value = month ? i + 1 : i;
         }
     }
-    return data == NULL ? 1 : matched;
-#else
-    return 0;
-#endif
+    return matched;
+}
+
+static const int days_before_month[] = {
+    0, 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365
+};
+
+static int
+strptime_is_leap(int year)
+{
+    return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
 }
 
 static int
@@ -122,17 +152,20 @@ strptime_date_from_ordinal(int ordinal, _PyTime_StrptimeFields *fields)
     fields->year = lower;
     fields->yday = ordinal - _PyTime_DaysBeforeYear(lower);
     fields->day = fields->yday;
-    int leap = lower % 4 == 0 && (lower % 100 != 0 || lower % 400 == 0);
-    static const int month_days[] = {31, 28, 31, 30, 31, 30,
-                                     31, 31, 30, 31, 30, 31};
+    int leap = strptime_is_leap(lower);
     for (fields->month = 1; fields->month < 12; fields->month++) {
-        int days = month_days[fields->month - 1] + (fields->month == 2 && leap);
+        int days = days_before_month[fields->month + 1] -
+                   days_before_month[fields->month] +
+                   (fields->month == 2 && leap);
         if (fields->day <= days) {
             break;
         }
         fields->day -= days;
     }
     if (fields->weekday < 0) {
+        /* A %j spill into the next year later restores the original yday.
+         * Compute the weekday now, while the ordinal still identifies it.
+         */
         fields->weekday = (ordinal - 1) % 7;
     }
     return 1;
@@ -145,6 +178,9 @@ strptime_iso_start(int year)
     return _PyTime_DaysBeforeYear(year) + 4 - _PyTime_Weekday(year, 4);
 }
 
+/* Return the number of characters consumed (0 for an empty offset),
+ * or -1 if the Python parser is needed.
+ */
 static int
 strptime_offset(const unsigned char *data, Py_ssize_t length, Py_ssize_t pos,
                 int require_colon, _PyTime_StrptimeFields *fields)
@@ -194,6 +230,7 @@ strptime_offset(const unsigned char *data, Py_ssize_t length, Py_ssize_t pos,
         }
     }
     else {
+        /* strptime_digits may have stored one digit before failing. */
         seconds = 0;
     }
     fields->gmtoff = sign * (hours * 3600 + minutes * 60 + seconds);
@@ -397,12 +434,8 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
                  * tzset state, DST rules and regex backtracking.
                  */
                 if (i != fmt_length - 1 || length - pos != 3 ||
-                    !((Py_TOLOWER(data[pos]) == 'u' &&
-                       Py_TOLOWER(data[pos + 1]) == 't' &&
-                       Py_TOLOWER(data[pos + 2]) == 'c') ||
-                      (Py_TOLOWER(data[pos]) == 'g' &&
-                       Py_TOLOWER(data[pos + 1]) == 'm' &&
-                       Py_TOLOWER(data[pos + 2]) == 't'))) {
+                    (PyOS_strnicmp((const char *)data + pos, "utc", 3) != 0 &&
+                     PyOS_strnicmp((const char *)data + pos, "gmt", 3) != 0)) {
                     return 0;
                 }
                 fields->zone_start = pos;
@@ -558,7 +591,7 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
         }
     }
     if (hour12) {
-        if (ampm < 0 && !strptime_name(NULL, 0, 0, 'p', &ampm)) {
+        if (ampm < 0 && !strptime_ampm_supported()) {
             return 0;
         }
         fields->hour = fields->hour % 12 + (ampm == 1 ? 12 : 0);
@@ -610,11 +643,7 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
         }
         fields->yday = julian;
     }
-    static const int days_before_month[] = {
-        0, 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365
-    };
-    int leap = fields->year % 4 == 0 &&
-               (fields->year % 100 != 0 || fields->year % 400 == 0);
+    int leap = strptime_is_leap(fields->year);
     int month_days = days_before_month[fields->month + 1] -
                      days_before_month[fields->month];
     if (fields->month == 2) {
