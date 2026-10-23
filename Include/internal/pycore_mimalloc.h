@@ -20,6 +20,8 @@
 // The aligned OS allocation fallback is benign, but its warning is printed to
 // stderr and breaks tests that check output (e.g. test_cmd_line under ASan).
 #  define MI_NO_ALIGN_FALLBACK_WARNING 1
+// Necessary to reduce overall max code size
+#  define MI_ARENA_PURGE_ON_FREE 1
 #  ifdef Py_GIL_DISABLED
 #    define MI_PRIM_THREAD_ID   _Py_ThreadId
 #    define MI_CPYTHON 1
