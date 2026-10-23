@@ -236,7 +236,8 @@ Py_SetPath(const wchar_t *path)
 }
 
 
-void
+// Function removed from Python 3.16 limited C API, but kept in the stable ABI
+PyAPI_FUNC(void)
 Py_SetPythonHome(const wchar_t *home)
 {
     int has_value = home && home[0];
@@ -254,7 +255,8 @@ Py_SetPythonHome(const wchar_t *home)
 }
 
 
-void
+// Function removed from Python 3.16 limited C API, but kept in the stable ABI
+PyAPI_FUNC(void)
 Py_SetProgramName(const wchar_t *program_name)
 {
     int has_value = program_name && program_name[0];
@@ -272,7 +274,8 @@ Py_SetProgramName(const wchar_t *program_name)
 }
 
 
-wchar_t *
+/* removed in 3.15, but kept for stable ABI compatibility */
+PyAPI_FUNC(wchar_t *)
 Py_GetPath(void)
 {
     /* If the user has provided a path, return that */
@@ -284,7 +287,7 @@ Py_GetPath(void)
 }
 
 
-wchar_t *
+PyAPI_FUNC(wchar_t *)
 _Py_GetStdlibDir(void)
 {
     wchar_t *stdlib_dir = _Py_path_config.stdlib_dir;
@@ -295,35 +298,40 @@ _Py_GetStdlibDir(void)
 }
 
 
-wchar_t *
+/* removed in 3.15, but kept for stable ABI compatibility */
+PyAPI_FUNC(wchar_t *)
 Py_GetPrefix(void)
 {
     return _Py_path_config.prefix;
 }
 
 
-wchar_t *
+/* removed in 3.15, but kept for stable ABI compatibility */
+PyAPI_FUNC(wchar_t *)
 Py_GetExecPrefix(void)
 {
     return _Py_path_config.exec_prefix;
 }
 
 
-wchar_t *
+/* removed in 3.15, but kept for stable ABI compatibility */
+PyAPI_FUNC(wchar_t *)
 Py_GetProgramFullPath(void)
 {
     return _Py_path_config.program_full_path;
 }
 
 
-wchar_t*
+/* removed in 3.15, but kept for stable ABI compatibility */
+PyAPI_FUNC(wchar_t *)
 Py_GetPythonHome(void)
 {
     return _Py_path_config.home;
 }
 
 
-wchar_t *
+/* removed in 3.15, but kept for stable ABI compatibility */
+PyAPI_FUNC(wchar_t *)
 Py_GetProgramName(void)
 {
     return _Py_path_config.program_name;

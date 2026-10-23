@@ -1,3 +1,4 @@
+import _locale
 from _locale import (setlocale, LC_ALL, LC_CTYPE, LC_NUMERIC, LC_TIME, localeconv, Error)
 try:
     from _locale import (RADIXCHAR, THOUSEP, nl_langinfo)
@@ -6,8 +7,9 @@ except ImportError:
 
 import locale
 import sys
+import unicodedata
 import unittest
-from platform import uname
+from platform import uname, libc_ver
 
 from test import support
 
@@ -89,6 +91,9 @@ known_alt_digits = {
     'ar_AE': (100, {0: '\u0660', 10: '\u0661\u0660', 99: '\u0669\u0669'}),
     'bn_IN': (100, {0: '\u09e6', 10: '\u09e7\u09e6', 99: '\u09ef\u09ef'}),
 }
+if sys.platform == 'cygwin':
+    count, samples = known_alt_digits['ja_JP']
+    known_alt_digits['ja_JP'] = (101, samples)
 
 known_era = {
     'C': (0, ''),
@@ -137,10 +142,7 @@ class _LocaleTests(unittest.TestCase):
             return True
 
     @unittest.skipUnless(nl_langinfo, "nl_langinfo is not available")
-    @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "musl libc issue on Emscripten, bpo-46390"
-    )
+    @unittest.skipIf(support.linked_to_musl(), "musl libc issue, bpo-46390")
     def test_lc_numeric_nl_langinfo(self):
         # Test nl_langinfo against known values
         tested = False
@@ -158,10 +160,7 @@ class _LocaleTests(unittest.TestCase):
         if not tested:
             self.skipTest('no suitable locales')
 
-    @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "musl libc issue on Emscripten, bpo-46390"
-    )
+    @unittest.skipIf(support.linked_to_musl(), "musl libc issue, bpo-46390")
     def test_lc_numeric_localeconv(self):
         # Test localeconv against known values
         tested = False
@@ -210,10 +209,7 @@ class _LocaleTests(unittest.TestCase):
 
     @unittest.skipUnless(nl_langinfo, "nl_langinfo is not available")
     @unittest.skipUnless(hasattr(locale, 'ALT_DIGITS'), "requires locale.ALT_DIGITS")
-    @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "musl libc issue on Emscripten, bpo-46390"
-    )
+    @unittest.skipIf(support.linked_to_musl(), "musl libc issue, bpo-46390")
     def test_alt_digits_nl_langinfo(self):
         # Test nl_langinfo(ALT_DIGITS)
         tested = False
@@ -245,10 +241,7 @@ class _LocaleTests(unittest.TestCase):
 
     @unittest.skipUnless(nl_langinfo, "nl_langinfo is not available")
     @unittest.skipUnless(hasattr(locale, 'ERA'), "requires locale.ERA")
-    @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "musl libc issue on Emscripten, bpo-46390"
-    )
+    @unittest.skipIf(support.linked_to_musl(), "musl libc issue, bpo-46390")
     def test_era_nl_langinfo(self):
         # Test nl_langinfo(ERA)
         tested = False
@@ -279,6 +272,79 @@ class _LocaleTests(unittest.TestCase):
                     tested = True
         if not tested:
             self.skipTest('no suitable locales')
+
+    @unittest.skipUnless(nl_langinfo, "nl_langinfo is not available")
+    @unittest.skipUnless(libc_ver()[0] == 'glibc',
+                         "wide nl_langinfo variants are glibc-specific")
+    def test_nl_langinfo_encoding_independent(self):
+        # gh-152905: The LC_TIME text items are decoded independently of the
+        # LC_CTYPE encoding (on glibc via the wide nl_langinfo variants), so
+        # the same locale in different encodings yields identical strings.
+        # ERA has no wide variant and is not tested.
+        self.addCleanup(setlocale, LC_TIME, setlocale(LC_TIME))
+
+        names = [f'MON_{i}' for i in range(1, 13)]
+        names += [f'ABMON_{i}' for i in range(1, 13)]
+        names += [f'DAY_{i}' for i in range(1, 8)]
+        names += [f'ABDAY_{i}' for i in range(1, 8)]
+        names += ['AM_STR', 'PM_STR', 'D_T_FMT', 'D_FMT', 'T_FMT']
+        names += [name for name in ('T_FMT_AMPM', 'ERA_D_FMT', 'ERA_D_T_FMT',
+                                    'ERA_T_FMT', 'ALT_DIGITS', '_DATE_FMT')
+                  if hasattr(_locale, name)]
+        items = [(name, getattr(_locale, name)) for name in names]
+
+        # Legacy (non-UTF-8) locales, compared against their UTF-8 variant.
+        legacy_locales = [
+            'en_US.ISO8859-1',
+            'es_ES.ISO8859-1',
+            'fr_FR.ISO8859-1',
+            'de_DE.ISO8859-1',
+            'pl_PL.ISO8859-2',
+            'mt_MT.ISO8859-3',
+            'ar_SA.ISO8859-6',
+            'el_GR.ISO8859-7',
+            'he_IL.ISO8859-8',
+            'tr_TR.ISO8859-9',
+            'lt_LT.ISO8859-13',
+            'cy_GB.ISO8859-14',
+            'et_EE.ISO8859-15',
+            'uk_UA.KOI8-U',
+            'bg_BG.CP1251',
+            'ja_JP.EUC-JP',
+            'ko_KR.EUC-KR',
+            'zh_CN.GB2312',
+            'zh_TW.BIG5',
+            'th_TH.TIS-620',
+        ]
+
+        # An 8-bit locale substitutes an equivalent for a space it cannot
+        # encode (e.g. es_ES has U+202F in UTF-8 but U+00A0 in ISO-8859-1),
+        # so fold spaces before comparing.
+        def fold_spaces(s):
+            return ''.join(' ' if unicodedata.category(c) == 'Zs' else c
+                           for c in s)
+
+        tested = False
+        for legacy_locale in legacy_locales:
+            locs = (legacy_locale.partition('.')[0] + '.UTF-8', legacy_locale)
+            values = []
+            for loc in locs:
+                try:
+                    setlocale(LC_TIME, loc)
+                except Error:
+                    break
+                values.append({name: nl_langinfo(item) for name, item in items})
+            if len(values) < 2:
+                continue
+            tested = True
+
+            # The result must not depend on the locale encoding.
+            for name, item in items:
+                with self.subTest(locales=locs, name=name):
+                    self.assertEqual(fold_spaces(values[0][name]),
+                                     fold_spaces(values[1][name]))
+        if not tested:
+            self.skipTest('no suitable locale pairs')
 
     def test_float_parsing(self):
         # Bug #1391872: Test whether float parsing is okay on European

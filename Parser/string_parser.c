@@ -2,7 +2,6 @@
 #include "pycore_bytesobject.h"   // _PyBytes_DecodeEscape()
 #include "pycore_unicodeobject.h" // _PyUnicode_DecodeUnicodeEscapeInternal()
 
-#include "lexer/state.h"
 #include "pegen.h"
 #include "string_parser.h"
 
@@ -19,7 +18,8 @@ warn_invalid_escape_sequence(Parser *p, const char* buffer, const char *first_in
         return 0;
     }
     unsigned char c = (unsigned char)*first_invalid_escape;
-    if ((t->type == FSTRING_MIDDLE || t->type == FSTRING_END) && (c == '{' || c == '}')) {
+    if ((t->type == FSTRING_MIDDLE || t->type == FSTRING_END || t->type == TSTRING_MIDDLE || t->type == TSTRING_END)
+            && (c == '{' || c == '}')) {
         // in this case the tokenizer has already emitted a warning,
         // see Parser/tokenizer/helpers.c:warn_invalid_escape_sequence
         return 0;
@@ -69,7 +69,7 @@ warn_invalid_escape_sequence(Parser *p, const char* buffer, const char *first_in
     char first_quote = 0;
     if (lineno == t->lineno) {
         int quote_count = 0;
-        char* tok = PyBytes_AsString(t->bytes);
+        const char* tok = PyBytes_AsString(t->bytes);
         for (int i = 0; i < PyBytes_Size(t->bytes); i++) {
             if (tok[i] == '\'' || tok[i] == '\"') {
                 if (quote_count == 0) {
@@ -86,8 +86,9 @@ warn_invalid_escape_sequence(Parser *p, const char* buffer, const char *first_in
         col_offset += quote_count;
     }
 
-    if (PyErr_WarnExplicitObject(category, msg, p->tok->filename,
-                                 lineno, NULL, NULL) < 0) {
+    _PyTokenizer_Info info = _PyTokenizer_GetInfo(p->tok);
+    if (PyErr_WarnExplicitObject(category, msg, info.filename,
+                                 lineno, info.module, NULL) < 0) {
         if (PyErr_ExceptionMatches(category)) {
             /* Replace the Syntax/DeprecationWarning exception with a SyntaxError
                to get a more accurate error report */
@@ -134,8 +135,6 @@ static PyObject *
 decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
 {
     PyObject *v;
-    PyObject *u;
-    char *buf;
     char *p;
     const char *end;
 
@@ -143,22 +142,20 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
     if (len > (size_t)PY_SSIZE_T_MAX / 6) {
         return NULL;
     }
-    /* "ä" (2 bytes) may become "\U000000E4" (10 bytes), or 1:5
-       "\ä" (3 bytes) may become "\u005c\U000000E4" (16 bytes), or ~1:6 */
-    u = PyBytes_FromStringAndSize((char *)NULL, (Py_ssize_t)len * 6);
-    if (u == NULL) {
-        return NULL;
+    /* "ä" (2 bytes) may become "\U000000E4" (10 bytes), or 1:5.
+     * "\ä" (3 bytes) may become "\u005c\U000000E4" (16 bytes), or ~1:6. */
+    Py_ssize_t alloc = (Py_ssize_t)len * 6;
+    char *buf = PyMem_Malloc(alloc);
+    if (buf == NULL) {
+        return PyErr_NoMemory();
     }
-    p = buf = PyBytes_AsString(u);
-    if (p == NULL) {
-        return NULL;
-    }
+    p = buf;
     end = s + len;
     while (s < end) {
         if (*s == '\\') {
             *p++ = *s++;
             if (s >= end || *s & 0x80) {
-                strcpy(p, "u005c");
+                memcpy(p, "u005c", 5);
                 p += 5;
                 if (s >= end) {
                     break;
@@ -173,19 +170,20 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
             Py_ssize_t i;
             w = decode_utf8(&s, end);
             if (w == NULL) {
-                Py_DECREF(u);
+                PyMem_Free(buf);
                 return NULL;
             }
             kind = PyUnicode_KIND(w);
             data = PyUnicode_DATA(w);
             w_len = PyUnicode_GET_LENGTH(w);
             for (i = 0; i < w_len; i++) {
+                // sprintf() writes a null byte: the buffer is large enough
+                // for that thanks to the overallocation.
+                assert((p + 11 - buf) <= alloc);
                 Py_UCS4 chr = PyUnicode_READ(kind, data, i);
                 sprintf(p, "\\U%08x", chr);
                 p += 10;
             }
-            /* Should be impossible to overflow */
-            assert(p - buf <= PyBytes_GET_SIZE(u));
             Py_DECREF(w);
         }
         else {
@@ -193,37 +191,42 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
         }
     }
     len = (size_t)(p - buf);
-    s = buf;
 
-    const char *first_invalid_escape;
-    v = _PyUnicode_DecodeUnicodeEscapeInternal(s, (Py_ssize_t)len, NULL, NULL, &first_invalid_escape);
+    int first_invalid_escape_char;
+    const char *first_invalid_escape_ptr;
+    v = _PyUnicode_DecodeUnicodeEscapeInternal2(buf, (Py_ssize_t)len, NULL, NULL,
+                                                &first_invalid_escape_char,
+                                                &first_invalid_escape_ptr);
 
     // HACK: later we can simply pass the line no, since we don't preserve the tokens
     // when we are decoding the string but we preserve the line numbers.
-    if (v != NULL && first_invalid_escape != NULL && t != NULL) {
-        if (warn_invalid_escape_sequence(parser, s, first_invalid_escape, t) < 0) {
-            /* We have not decref u before because first_invalid_escape points
-               inside u. */
-            Py_XDECREF(u);
+    if (v != NULL && first_invalid_escape_ptr != NULL && t != NULL) {
+        if (warn_invalid_escape_sequence(parser, buf, first_invalid_escape_ptr, t) < 0) {
+            /* We have not deallocated the buffer before because
+             * first_invalid_escape_ptr points inside buf. */
+            PyMem_Free(buf);
             Py_DECREF(v);
             return NULL;
         }
     }
-    Py_XDECREF(u);
+    PyMem_Free(buf);
     return v;
 }
 
 static PyObject *
 decode_bytes_with_escapes(Parser *p, const char *s, Py_ssize_t len, Token *t)
 {
-    const char *first_invalid_escape;
-    PyObject *result = _PyBytes_DecodeEscape(s, len, NULL, &first_invalid_escape);
+    int first_invalid_escape_char;
+    const char *first_invalid_escape_ptr;
+    PyObject *result = _PyBytes_DecodeEscape2(s, len, NULL,
+                                              &first_invalid_escape_char,
+                                              &first_invalid_escape_ptr);
     if (result == NULL) {
         return NULL;
     }
 
-    if (first_invalid_escape != NULL) {
-        if (warn_invalid_escape_sequence(p, s, first_invalid_escape, t) < 0) {
+    if (first_invalid_escape_ptr != NULL) {
+        if (warn_invalid_escape_sequence(p, s, first_invalid_escape_ptr, t) < 0) {
             Py_DECREF(result);
             return NULL;
         }

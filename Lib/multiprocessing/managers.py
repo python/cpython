@@ -1059,12 +1059,14 @@ class IteratorProxy(BaseProxy):
 
 
 class AcquirerProxy(BaseProxy):
-    _exposed_ = ('acquire', 'release')
+    _exposed_ = ('acquire', 'release', 'locked')
     def acquire(self, blocking=True, timeout=None):
         args = (blocking,) if timeout is None else (blocking, timeout)
         return self._callmethod('acquire', args)
     def release(self):
         return self._callmethod('release')
+    def locked(self):
+        return self._callmethod('locked')
     def __enter__(self):
         return self._callmethod('acquire')
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -1072,7 +1074,7 @@ class AcquirerProxy(BaseProxy):
 
 
 class ConditionProxy(AcquirerProxy):
-    _exposed_ = ('acquire', 'release', 'wait', 'notify', 'notify_all')
+    _exposed_ = ('acquire', 'release', 'locked', 'wait', 'notify', 'notify_all')
     def wait(self, timeout=None):
         return self._callmethod('wait', (timeout,))
     def notify(self, n=1):
@@ -1292,9 +1294,9 @@ if HAS_SHMEM:
     class _SharedMemoryTracker:
         "Manages one or more shared memory segments."
 
-        def __init__(self, name, segment_names=[]):
+        def __init__(self, name, segment_names=None):
             self.shared_memory_context_name = name
-            self.segment_names = segment_names
+            self.segment_names = [] if segment_names is None else segment_names
 
         def register_segment(self, segment_name):
             "Adds the supplied shared memory block name to tracker."

@@ -149,6 +149,8 @@ def skip_unless_bind_unix_socket(test):
     """Decorator for tests requiring a functional bind() for unix sockets."""
     if not hasattr(socket, 'AF_UNIX'):
         return unittest.skip('No UNIX Sockets')(test)
+    if sys.platform == 'cygwin':
+        return unittest.skip('UNIX sockets hang on Cygwin')(test)
     global _bind_nix_socket_error
     if _bind_nix_socket_error is None:
         from .os_helper import TESTFN, unlink
@@ -259,6 +261,10 @@ def transient_internet(resource_name, *, timeout=_NOT_SET, errnos=()):
             #        raise OSError('socket error', msg) from msg
             elif len(a) >= 2 and isinstance(a[1], OSError):
                 err = a[1]
+            # The error can also be wrapped as __cause__:
+            #    raise URLError(f"ftp error: {exp}") from exp
+            elif isinstance(err, urllib.error.URLError) and err.__cause__:
+                err = err.__cause__
             else:
                 break
         filter_error(err)

@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_descrobject.h"   // _PyMember_GetOffset()
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_object.h"        // _Py_TryIncrefCompare(), FT_ATOMIC_*()
 #include "pycore_critical_section.h"
@@ -20,6 +21,17 @@ member_get_object(const char *addr, const char *obj_addr, PyMemberDef *l)
     return v;
 }
 
+void *
+_PyMember_GetOffset(PyObject *obj, PyMemberDef *mp)
+{
+    unsigned char *addr = (unsigned char *)obj + mp->offset;
+    if (mp->flags & _Py_AFTER_ITEMS) {
+        PyTypeObject *type = Py_TYPE(obj);
+        addr += _Py_SIZE_ROUND_UP(Py_SIZE(obj) * type->tp_itemsize, SIZEOF_VOID_P);
+    }
+    return addr;
+}
+
 PyObject *
 PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
 {
@@ -31,7 +43,7 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         return NULL;
     }
 
-    const char* addr = obj_addr + l->offset;
+    const void *addr = _PyMember_GetOffset((PyObject *)obj_addr, l);
     switch (l->type) {
     case Py_T_BOOL:
         v = PyBool_FromLong(FT_ATOMIC_LOAD_CHAR_RELAXED(*(char*)addr));
@@ -80,15 +92,27 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         v = PyUnicode_FromString((char*)addr);
         break;
     case Py_T_CHAR: {
-        char char_val = FT_ATOMIC_LOAD_CHAR_RELAXED(*addr);
+        char char_val = FT_ATOMIC_LOAD_CHAR_RELAXED(*(char*)addr);
         v = PyUnicode_FromStringAndSize(&char_val, 1);
         break;
     }
     case _Py_T_OBJECT:
-        v = *(PyObject **)addr;
-        if (v == NULL)
+        v = FT_ATOMIC_LOAD_PTR(*(PyObject **) addr);
+        if (v != NULL) {
+#ifdef Py_GIL_DISABLED
+            if (!_Py_TryIncrefCompare((PyObject **) addr, v)) {
+                Py_BEGIN_CRITICAL_SECTION((PyObject *) obj_addr);
+                v = FT_ATOMIC_LOAD_PTR(*(PyObject **) addr);
+                Py_XINCREF(v);
+                Py_END_CRITICAL_SECTION();
+            }
+#else
+            Py_INCREF(v);
+#endif
+        }
+        if (v == NULL) {
             v = Py_None;
-        Py_INCREF(v);
+        }
         break;
     case Py_T_OBJECT_EX:
         v = member_get_object(addr, obj_addr, l);
@@ -139,29 +163,18 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         return -1;
     }
 
-#ifdef Py_GIL_DISABLED
-    PyObject *obj = (PyObject *) addr;
-#endif
-    addr += l->offset;
+    PyObject *obj = (PyObject *)addr;
+    addr = _PyMember_GetOffset(obj, l);
 
     if ((l->flags & Py_READONLY))
     {
         PyErr_SetString(PyExc_AttributeError, "readonly attribute");
         return -1;
     }
-    if (v == NULL) {
-        if (l->type == Py_T_OBJECT_EX) {
-            /* Check if the attribute is set. */
-            if (*(PyObject **)addr == NULL) {
-                PyErr_SetString(PyExc_AttributeError, l->name);
-                return -1;
-            }
-        }
-        else if (l->type != _Py_T_OBJECT) {
-            PyErr_SetString(PyExc_TypeError,
-                            "can't delete numeric/char attribute");
-            return -1;
-        }
+    if (v == NULL && l->type != Py_T_OBJECT_EX && l->type != _Py_T_OBJECT) {
+        PyErr_SetString(PyExc_TypeError,
+                        "can't delete numeric/char attribute");
+        return -1;
     }
     switch (l->type) {
     case Py_T_BOOL:{
@@ -312,6 +325,15 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         oldv = *(PyObject **)addr;
         FT_ATOMIC_STORE_PTR_RELEASE(*(PyObject **)addr, Py_XNewRef(v));
         Py_END_CRITICAL_SECTION();
+        if (v == NULL && oldv == NULL && l->type == Py_T_OBJECT_EX) {
+            // Raise an exception when attempting to delete an already deleted
+            // attribute.
+            // Differently from Py_T_OBJECT_EX, _Py_T_OBJECT does not raise an
+            // exception here (PyMember_GetOne will return Py_None instead of
+            // NULL).
+            PyErr_SetString(PyExc_AttributeError, l->name);
+            return -1;
+        }
         Py_XDECREF(oldv);
         break;
     case Py_T_CHAR: {

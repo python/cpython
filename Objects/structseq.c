@@ -12,7 +12,8 @@
 #include "pycore_modsupport.h"    // _PyArg_NoPositional()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_structseq.h"     // PyStructSequence_InitType()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_tuple.h"         // _PyTuple_RESET_HASH_CACHE()
+#include "pycore_typeobject.h"    // _PyStaticType_FiniBuiltin()
 
 static const char visible_length_key[] = "n_sequence_fields";
 static const char real_length_key[] = "n_fields";
@@ -27,7 +28,11 @@ static Py_ssize_t
 get_type_attr_as_size(PyTypeObject *tp, PyObject *name)
 {
     PyObject *v = PyDict_GetItemWithError(_PyType_GetDict(tp), name);
-    if (v == NULL && !PyErr_Occurred()) {
+
+    if (v == NULL) {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
         PyErr_Format(PyExc_TypeError,
                      "Missed attribute '%U' of type %s",
                      name, tp->tp_name);
@@ -72,6 +77,7 @@ PyStructSequence_New(PyTypeObject *type)
     obj = PyObject_GC_NewVar(PyStructSequence, type, size);
     if (obj == NULL)
         return NULL;
+    _PyTuple_RESET_HASH_CACHE(obj);
     /* Hack the size of the variable object, so invisible fields don't appear
      to Python code. */
     Py_SET_SIZE(obj, vsize);
@@ -334,8 +340,9 @@ error:
 
 
 static PyObject *
-structseq_reduce(PyStructSequence* self, PyObject *Py_UNUSED(ignored))
+structseq_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    PyStructSequence *self = (PyStructSequence*)op;
     PyObject* tup = NULL;
     PyObject* dict = NULL;
     PyObject* result;
@@ -350,7 +357,7 @@ structseq_reduce(PyStructSequence* self, PyObject *Py_UNUSED(ignored))
     if (n_unnamed_fields < 0) {
         return NULL;
     }
-    tup = _PyTuple_FromArray(self->ob_item, n_visible_fields);
+    tup = PyTuple_FromArray(self->ob_item, n_visible_fields);
     if (!tup)
         goto error;
 
@@ -378,15 +385,20 @@ error:
 }
 
 
+/*[clinic input]
+structseq.__replace__
+
+    **changes: dict
+
+Return a copy with new values for the specified fields.
+[clinic start generated code]*/
+
 static PyObject *
-structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
+structseq___replace___impl(PyStructSequence *self, PyObject *changes)
+/*[clinic end generated code: output=d90566015d93695f input=bf709d26db77afd6]*/
 {
     PyStructSequence *result = NULL;
     Py_ssize_t n_fields, n_unnamed_fields, i;
-
-    if (!_PyArg_NoPositional("__replace__", args)) {
-        return NULL;
-    }
 
     n_fields = REAL_SIZE(self);
     if (n_fields < 0) {
@@ -409,38 +421,30 @@ structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
 
-    if (kwargs != NULL) {
-        // We do not support types with unnamed fields, so we can iterate over
-        // i >= n_visible_fields case without slicing with (i - n_unnamed_fields).
-        for (i = 0; i < n_fields; ++i) {
-            PyObject *ob;
-            if (PyDict_PopString(kwargs, Py_TYPE(self)->tp_members[i].name,
-                                 &ob) < 0) {
-                goto error;
-            }
-            if (ob == NULL) {
-                ob = Py_NewRef(self->ob_item[i]);
-            }
-            result->ob_item[i] = ob;
-        }
-        // Check if there are any unexpected fields.
-        if (PyDict_GET_SIZE(kwargs) > 0) {
-            PyObject *names = PyDict_Keys(kwargs);
-            if (names) {
-                PyErr_Format(PyExc_TypeError, "Got unexpected field name(s): %R", names);
-                Py_DECREF(names);
-            }
+    // We do not support types with unnamed fields, so we can iterate over
+    // i >= n_visible_fields case without slicing with (i - n_unnamed_fields).
+    for (i = 0; i < n_fields; ++i) {
+        PyObject *ob;
+        if (PyDict_PopString(changes, Py_TYPE(self)->tp_members[i].name,
+                             &ob) < 0) {
             goto error;
         }
-    }
-    else
-    {
-        // Just create a copy of the original.
-        for (i = 0; i < n_fields; ++i) {
-            result->ob_item[i] = Py_NewRef(self->ob_item[i]);
+        if (ob == NULL) {
+            ob = Py_NewRef(self->ob_item[i]);
         }
+        result->ob_item[i] = ob;
+    }
+    // Check if there are any unexpected fields.
+    if (PyDict_GET_SIZE(changes) > 0) {
+        PyObject *names = PyDict_Keys(changes);
+        if (names) {
+            PyErr_Format(PyExc_TypeError, "Got unexpected field name(s): %R", names);
+            Py_DECREF(names);
+        }
+        goto error;
     }
 
+    _PyObject_GC_TRACK(result);
     return (PyObject *)result;
 
 error:
@@ -449,10 +453,8 @@ error:
 }
 
 static PyMethodDef structseq_methods[] = {
-    {"__reduce__", (PyCFunction)structseq_reduce, METH_NOARGS, NULL},
-    {"__replace__", _PyCFunction_CAST(structseq_replace), METH_VARARGS | METH_KEYWORDS,
-     PyDoc_STR("__replace__($self, /, **changes)\n--\n\n"
-        "Return a copy of the structure with new values for the specified fields.")},
+    {"__reduce__", structseq_reduce, METH_NOARGS, NULL},
+    STRUCTSEQ___REPLACE___METHODDEF
     {NULL, NULL}  // sentinel
 };
 
@@ -511,7 +513,8 @@ initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
     }
 
     if (_PyTuple_Resize(&keys, k) == -1) {
-        goto error;
+        assert(keys == NULL);
+        return -1;
     }
 
     if (PyDict_SetItemString(dict, match_args_key, keys) < 0) {

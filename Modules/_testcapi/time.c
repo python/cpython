@@ -5,8 +5,7 @@ static int
 pytime_from_nanoseconds(PyTime_t *tp, PyObject *obj)
 {
     if (!PyLong_Check(obj)) {
-        PyErr_Format(PyExc_TypeError, "expect int, got %s",
-                     Py_TYPE(obj)->tp_name);
+        PyErr_Format(PyExc_TypeError, "expect int, got %T", obj);
         return -1;
     }
 

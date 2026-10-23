@@ -1,2 +1,0 @@
-Make sure that the location of branch targets in ``match`` cases is in the
-body, not the pattern.

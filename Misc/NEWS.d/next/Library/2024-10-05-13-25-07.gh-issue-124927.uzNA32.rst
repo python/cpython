@@ -1,1 +1,0 @@
-Non-printing characters are now properly handled in the new REPL.

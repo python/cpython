@@ -70,6 +70,7 @@
     <ProjectGuid>{01FDF29A-40A1-46DF-84F5-85EBBD2A2410}</ProjectGuid>
     <RootNamespace>_testclinic_limited</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <SupportPGO>false</SupportPGO>
   </PropertyGroup>
   <Import Project="python.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

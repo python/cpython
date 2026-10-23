@@ -10,11 +10,15 @@ Copyright (c) Corporation for National Research Initiatives.
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_codecs.h"        // export _PyCodec_LookupTextEncoding()
+#include "pycore_initconfig.h"    // _Py_DumpPathConfig()
 #include "pycore_interp.h"        // PyInterpreterState.codec_search_path
-#include "pycore_lock.h"          // PyMutex
 #include "pycore_pyerrors.h"      // _PyErr_FormatNote()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
+#include "pycore_unicodeobject.h" // _PyUnicode_InternMortal()
+#include "pycore_pyatomic_ft_wrappers.h"
 
 static const char *codecs_builtin_error_handlers[] = {
     "strict", "ignore", "replace",
@@ -38,13 +42,10 @@ int PyCodec_Register(PyObject *search_function)
         PyErr_SetString(PyExc_TypeError, "argument must be callable");
         goto onError;
     }
-#ifdef Py_GIL_DISABLED
-    PyMutex_Lock(&interp->codecs.search_path_mutex);
-#endif
+    FT_MUTEX_LOCK(&interp->codecs.search_path_mutex);
     int ret = PyList_Append(interp->codecs.search_path, search_function);
-#ifdef Py_GIL_DISABLED
-    PyMutex_Unlock(&interp->codecs.search_path_mutex);
-#endif
+    FT_MUTEX_UNLOCK(&interp->codecs.search_path_mutex);
+
     return ret;
 
  onError:
@@ -63,41 +64,33 @@ PyCodec_Unregister(PyObject *search_function)
 
     PyObject *codec_search_path = interp->codecs.search_path;
     assert(PyList_CheckExact(codec_search_path));
+    FT_MUTEX_LOCK(&interp->codecs.search_path_mutex);
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(codec_search_path); i++) {
-#ifdef Py_GIL_DISABLED
-        PyMutex_Lock(&interp->codecs.search_path_mutex);
-#endif
-        PyObject *item = PyList_GetItemRef(codec_search_path, i);
-        int ret = 1;
-        if (item == search_function) {
-            // We hold a reference to the item, so its destructor can't run
-            // while we hold search_path_mutex.
-            ret = PyList_SetSlice(codec_search_path, i, i+1, NULL);
-        }
-#ifdef Py_GIL_DISABLED
-        PyMutex_Unlock(&interp->codecs.search_path_mutex);
-#endif
-        Py_DECREF(item);
-        if (ret != 1) {
+        if (PyList_GET_ITEM(codec_search_path, i) == search_function) {
+            // Keep the function alive until after releasing the mutex.
+            Py_INCREF(search_function);
+            int ret = PyList_SetSlice(codec_search_path, i, i+1, NULL);
+            FT_MUTEX_UNLOCK(&interp->codecs.search_path_mutex);
+            Py_DECREF(search_function);
             assert(interp->codecs.search_cache != NULL);
             assert(PyDict_CheckExact(interp->codecs.search_cache));
             PyDict_Clear(interp->codecs.search_cache);
             return ret;
         }
     }
+    FT_MUTEX_UNLOCK(&interp->codecs.search_path_mutex);
     return 0;
 }
 
-extern int _Py_normalize_encoding(const char *, char *, size_t);
+/* Convert a string to a normalized Python string: all ASCII letters are
+   converted to lower case, spaces are replaced with hyphens. */
 
-/* Convert a string to a normalized Python string(decoded from UTF-8): all characters are
-   converted to lower case, spaces and hyphens are replaced with underscores. */
-
-static
-PyObject *normalizestring(const char *string)
+static PyObject*
+normalizestring(const char *string)
 {
+    size_t i;
     size_t len = strlen(string);
-    char *encoding;
+    char *p;
     PyObject *v;
 
     if (len > PY_SSIZE_T_MAX) {
@@ -105,28 +98,30 @@ PyObject *normalizestring(const char *string)
         return NULL;
     }
 
-    encoding = PyMem_Malloc(len + 1);
-    if (encoding == NULL)
+    p = PyMem_Malloc(len + 1);
+    if (p == NULL)
         return PyErr_NoMemory();
-
-    if (!_Py_normalize_encoding(string, encoding, len + 1))
-    {
-        PyErr_SetString(PyExc_RuntimeError, "_Py_normalize_encoding() failed");
-        PyMem_Free(encoding);
-        return NULL;
+    for (i = 0; i < len; i++) {
+        char ch = string[i];
+        if (ch == ' ')
+            ch = '-';
+        else
+            ch = Py_TOLOWER(Py_CHARMASK(ch));
+        p[i] = ch;
     }
-
-    v = PyUnicode_FromString(encoding);
-    PyMem_Free(encoding);
+    p[i] = '\0';
+    v = PyUnicode_FromString(p);
+    PyMem_Free(p);
     return v;
 }
 
 /* Lookup the given encoding and return a tuple providing the codec
    facilities.
 
-   The encoding string is looked up converted to all lower-case
-   characters. This makes encodings looked up through this mechanism
-   effectively case-insensitive.
+   ASCII letters in the encoding string is looked up converted to all
+   lower case. This makes encodings looked up through this mechanism
+   effectively case-insensitive. Spaces are replaced with hyphens for
+   names like "US ASCII" and "ISO 8859-1".
 
    If no codec is found, a LookupError is set and NULL returned.
 
@@ -147,8 +142,8 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     assert(interp->codecs.initialized);
 
     /* Convert the encoding to a normalized Python string: all
-       characters are converted to lower case, spaces and hyphens are
-       replaced with underscores. */
+       ASCII letters are converted to lower case, spaces are
+       replaced with hyphens. */
     PyObject *v = normalizestring(encoding);
     if (v == NULL) {
         return NULL;
@@ -274,9 +269,9 @@ PyObject *codec_getitem(const char *encoding, int index)
     codecs = _PyCodec_Lookup(encoding);
     if (codecs == NULL)
         return NULL;
-    v = PyTuple_GET_ITEM(codecs, index);
+    v = Py_NewRef(PyTuple_GET_ITEM(codecs, index));
     Py_DECREF(codecs);
-    return Py_NewRef(v);
+    return v;
 }
 
 /* Helper functions to create an incremental codec. */
@@ -538,11 +533,19 @@ PyObject * _PyCodec_LookupTextEncoding(const char *encoding,
             Py_DECREF(attr);
             if (is_text_codec <= 0) {
                 Py_DECREF(codec);
-                if (!is_text_codec)
-                    PyErr_Format(PyExc_LookupError,
-                                 "'%.400s' is not a text encoding; "
-                                 "use %s to handle arbitrary codecs",
-                                 encoding, alternate_command);
+                if (!is_text_codec) {
+                    if (alternate_command != NULL) {
+                        PyErr_Format(PyExc_LookupError,
+                                     "'%.400s' is not a text encoding; "
+                                     "use %s to handle arbitrary codecs",
+                                     encoding, alternate_command);
+                    }
+                    else {
+                        PyErr_Format(PyExc_LookupError,
+                                     "'%.400s' is not a text encoding",
+                                     encoding);
+                    }
+                }
                 return NULL;
             }
         }
@@ -1167,7 +1170,8 @@ get_standard_encoding_impl(const char *encoding, int *bytelength)
             }
             if (*encoding == '-' || *encoding == '_' )
                 encoding++;
-            if (Py_TOLOWER(encoding[1]) == 'e' && encoding[2] == '\0') {
+            if (encoding[0] != '\0' &&
+                Py_TOLOWER(encoding[1]) == 'e' && encoding[2] == '\0') {
                 if (Py_TOLOWER(encoding[0]) == 'b')
                     return ENC_UTF16BE;
                 if (Py_TOLOWER(encoding[0]) == 'l')
@@ -1186,7 +1190,8 @@ get_standard_encoding_impl(const char *encoding, int *bytelength)
             }
             if (*encoding == '-' || *encoding == '_' )
                 encoding++;
-            if (Py_TOLOWER(encoding[1]) == 'e' && encoding[2] == '\0') {
+            if (encoding[0] != '\0' &&
+                Py_TOLOWER(encoding[1]) == 'e' && encoding[2] == '\0') {
                 if (Py_TOLOWER(encoding[0]) == 'b')
                     return ENC_UTF32BE;
                 if (Py_TOLOWER(encoding[0]) == 'l')
@@ -1194,7 +1199,7 @@ get_standard_encoding_impl(const char *encoding, int *bytelength)
             }
         }
     }
-    else if (strcmp(encoding, "CP_UTF8") == 0) {
+    else if (strcmp(encoding, "cp65001") == 0) {
         *bytelength = 3;
         return ENC_UTF8;
     }
@@ -1420,19 +1425,19 @@ _PyCodec_SurrogateEscapeUnicodeEncodeError(PyObject *exc)
         return NULL;
     }
 
-    PyObject *res = PyBytes_FromStringAndSize(NULL, slen);
-    if (res == NULL) {
+    PyBytesWriter *writer = PyBytesWriter_Create(slen);
+    if (writer == NULL) {
         Py_DECREF(obj);
         return NULL;
     }
 
-    char *outp = PyBytes_AsString(res);
+    char *outp = PyBytesWriter_GetData(writer);
     for (Py_ssize_t i = start; i < end; i++) {
         Py_UCS4 ch = PyUnicode_READ_CHAR(obj, i);
         if (ch < 0xdc80 || ch > 0xdcff) {
             /* Not a UTF-8b surrogate, fail with original exception. */
             Py_DECREF(obj);
-            Py_DECREF(res);
+            PyBytesWriter_Discard(writer);
             PyErr_SetObject(PyExceptionInstance_Class(exc), exc);
             return NULL;
         }
@@ -1440,6 +1445,8 @@ _PyCodec_SurrogateEscapeUnicodeEncodeError(PyObject *exc)
     }
     Py_DECREF(obj);
 
+    PyObject *res = PyBytesWriter_Finish(writer);
+    // Py_BuildValue() propagates the exception if res is NULL
     return Py_BuildValue("(Nn)", res, end);
 }
 
@@ -1681,7 +1688,11 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
     // search functions, so this is done after everything else is initialized.
     PyObject *mod = PyImport_ImportModule("encodings");
     if (mod == NULL) {
-        return PyStatus_Error("Failed to import encodings module");
+        PyThreadState *tstate = _PyThreadState_GET();
+        _Py_DumpPathConfig(tstate);
+        return PyStatus_Error("Failed to import encodings module. "
+                              "Your environment probably has misconfigured variables! "
+                              "Please check PYTHONHOME otherwise refer to `--help-env`");
     }
     Py_DECREF(mod);
 

@@ -1,1 +1,0 @@
-``<tab>`` at the beginning of the line in :mod:`pdb` multi-line input will fill in a 4-space indentation now, instead of inserting a ``\t`` character.

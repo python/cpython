@@ -80,7 +80,10 @@ opmap = {pattern.replace("\\", "") or "\\": op for op, pattern in operators.item
 
 # Macros
 macro = r"#.*\n"
-CMACRO = "CMACRO"
+CMACRO_IF = "CMACRO_IF"
+CMACRO_ELSE = "CMACRO_ELSE"
+CMACRO_ENDIF = "CMACRO_ENDIF"
+CMACRO_OTHER = "CMACRO_OTHER"
 
 id_re = r"[a-zA-Z_][0-9a-zA-Z_]*"
 IDENTIFIER = "IDENTIFIER"
@@ -227,7 +230,6 @@ annotations = {
     "register",
     "replaced",
     "pure",
-    "split",
     "replicate",
     "tier1",
     "tier2",
@@ -293,6 +295,7 @@ def tokenize(src: str, line: int = 1, filename: str = "") -> Iterator[Token]:
     linestart = -1
     for m in matcher.finditer(src):
         start, end = m.span()
+        macro_body = ""
         text = m.group(0)
         if text in keywords:
             kind = keywords[text]
@@ -317,7 +320,15 @@ def tokenize(src: str, line: int = 1, filename: str = "") -> Iterator[Token]:
         elif text[0] == "'":
             kind = CHARACTER
         elif text[0] == "#":
-            kind = CMACRO
+            macro_body = text[1:].strip()
+            if macro_body.startswith("if"):
+                kind = CMACRO_IF
+            elif macro_body.startswith("else"):
+                kind = CMACRO_ELSE
+            elif macro_body.startswith("endif"):
+                kind = CMACRO_ENDIF
+            else:
+                kind = CMACRO_OTHER
         elif text[0] == "/" and text[1] in "/*":
             kind = COMMENT
         else:
@@ -339,7 +350,7 @@ def tokenize(src: str, line: int = 1, filename: str = "") -> Iterator[Token]:
                 line += newlines
         else:
             begin = line, start - linestart
-            if kind == CMACRO:
+            if macro_body:
                 linestart = end
                 line += 1
         if kind != "\n":

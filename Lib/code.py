@@ -7,8 +7,8 @@
 
 import builtins
 import sys
-import traceback
 from codeop import CommandCompiler, compile_command
+lazy import traceback
 
 __all__ = ["InteractiveInterpreter", "InteractiveConsole", "interact",
            "compile_command"]
@@ -44,8 +44,8 @@ class InteractiveInterpreter:
         One of several things can happen:
 
         1) The input is incorrect; compile_command() raised an
-        exception (SyntaxError or OverflowError).  A syntax traceback
-        will be printed by calling the showsyntaxerror() method.
+        exception (usually SyntaxError).  A syntax traceback will be
+        printed by calling the showsyntaxerror() method.
 
         2) The input is incomplete, and more input is required;
         compile_command() returned None.  Nothing happens.
@@ -62,7 +62,7 @@ class InteractiveInterpreter:
         """
         try:
             code = self.compile(source, filename, symbol)
-        except (OverflowError, SyntaxError, ValueError):
+        except Exception:
             # Case 1
             self.showsyntaxerror(filename, source=source)
             return False
@@ -224,7 +224,7 @@ class InteractiveConsole(InteractiveInterpreter):
             sys.ps1 = ">>> "
             delete_ps1_after = True
         try:
-            _ps2 = sys.ps2
+            sys.ps2
             delete_ps2_after = False
         except AttributeError:
             sys.ps2 = "... "

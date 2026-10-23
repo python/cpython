@@ -36,6 +36,22 @@
 #define NCURSES_OPAQUE 0
 #endif
 
+/* PDCurses exposes its ncurses-compatible mouse API, the one this module uses,
+   only when this is defined before the curses header is included below.
+   Ignored by other curses implementations. */
+#ifndef PDC_NCMOUSE
+#  define PDC_NCMOUSE
+#endif
+
+/* On Solaris/illumos, the SVr4 <curses.h> does "typedef char bool;", which
+   clashes with C's bool from <stdbool.h>.  Define _BOOL to suppress it, and
+   include <stdbool.h> for the bool the header then needs.  ncurses ignores
+   _BOOL. */
+#if defined(__sun) && !defined(_BOOL)
+#  include <stdbool.h>
+#  define _BOOL
+#endif
+
 #if defined(HAVE_NCURSESW_NCURSES_H)
 #  include <ncursesw/ncurses.h>
 #elif defined(HAVE_NCURSESW_CURSES_H)
@@ -75,11 +91,22 @@ extern "C" {
 
 /* Type declarations */
 
-typedef struct {
+typedef struct PyCursesWindowObject {
     PyObject_HEAD
     WINDOW *win;
     char *encoding;
+    struct PyCursesWindowObject *orig;
+    PyObject *screen;        /* the screen the window belongs to, or NULL,
+                                kept alive for the lifetime of the window */
 } PyCursesWindowObject;
+
+typedef struct {
+    PyObject_HEAD
+    SCREEN *screen;          /* NULL after the screen has been deleted */
+    FILE *outfp;             /* owned output stream, or NULL */
+    FILE *infp;              /* owned input stream, or NULL */
+    PyObject *stdscr_win;    /* the screen's standard window, or NULL */
+} PyCursesScreenObject;
 
 #define PyCurses_CAPSULE_NAME "_curses._C_API"
 
@@ -107,6 +134,13 @@ static void **PyCurses_API;
 /* general error messages */
 static const char catchall_ERR[]  = "curses function returned ERR";
 static const char catchall_NULL[] = "curses function returned NULL";
+
+#if defined(CURSES_MODULE) || defined(CURSES_PANEL_MODULE)
+/* Error messages shared by the curses package */
+#  define CURSES_ERROR_FORMAT           "%s() returned %s"
+#  define CURSES_ERROR_VERBOSE_FORMAT   "%s() (called by %s()) returned %s"
+#  define CURSES_ERROR_MUST_CALL_FORMAT "must call %s() first"
+#endif
 
 #ifdef __cplusplus
 }

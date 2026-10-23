@@ -24,14 +24,16 @@ you're working through IDLE, you can import this test module and call test()
 with the corresponding argument.
 """
 
+import contextlib
+import logging
 import math
 import os, sys
 import operator
-import warnings
 import pickle, copy
 import unittest
 import numbers
 import locale
+from test import support
 from test.support import (is_resource_enabled,
                           requires_IEEE_754, requires_docstrings,
                           check_disallow_instantiation)
@@ -44,6 +46,7 @@ from test.support import warnings_helper
 import random
 import inspect
 import threading
+import contextvars
 
 
 if sys.platform == 'darwin':
@@ -980,6 +983,7 @@ class FormatTest:
             ('.0f', '0e-2', '0'),
             ('.0f', '3.14159265', '3'),
             ('.1f', '3.14159265', '3.1'),
+            ('.01f', '3.14159265', '3.1'), # leading zero in precision
             ('.4f', '3.14159265', '3.1416'),
             ('.6f', '3.14159265', '3.141593'),
             ('.7f', '3.14159265', '3.1415926'), # round-half-even!
@@ -1065,6 +1069,7 @@ class FormatTest:
             ('8,', '123456', ' 123,456'),
             ('08,', '123456', '0,123,456'), # special case: extra 0 needed
             ('+08,', '123456', '+123,456'), # but not if there's a sign
+            ('008,', '123456', '0,123,456'), # leading zero in width
             (' 08,', '123456', ' 123,456'),
             ('08,', '-123456', '-123,456'),
             ('+09,', '123456', '+0,123,456'),
@@ -1081,6 +1086,20 @@ class FormatTest:
             (',%', '123.456789', '12,345.6789%'),
             (',e', '123456', '1.23456e+5'),
             (',E', '123456', '1.23456E+5'),
+            # ... with '_' instead
+            ('_', '1234567', '1_234_567'),
+            ('07_', '1234.56', '1_234.56'),
+            ('_', '1.23456789', '1.23456789'),
+            ('_%', '123.456789', '12_345.6789%'),
+            # and now for something completely different...
+            ('.,', '1.23456789', '1.234,567,89'),
+            ('._', '1.23456789', '1.234_567_89'),
+            ('.6_f', '12345.23456789', '12345.234_568'),
+            (',._%', '123.456789', '12,345.678_9%'),
+            (',._e', '123456', '1.234_56e+5'),
+            (',.4_e', '123456', '1.234_6e+5'),
+            (',.3_e', '123456', '1.235e+5'),
+            (',._E', '123456', '1.234_56E+5'),
 
             # negative zero: default behavior
             ('.1f', '-0', '-0.0'),
@@ -1153,6 +1172,10 @@ class FormatTest:
 
         # bytes format argument
         self.assertRaises(TypeError, Decimal(1).__format__, b'-020')
+
+        # precision or fractional part separator should follow after dot
+        self.assertRaises(ValueError, format, Decimal(1), '.f')
+        self.assertRaises(ValueError, format, Decimal(1), '._6f')
 
     def test_negative_zero_format_directed_rounding(self):
         with self.decimal.localcontext() as ctx:
@@ -1725,8 +1748,13 @@ class ThreadingTest:
         self.finish1 = threading.Event()
         self.finish2 = threading.Event()
 
-        th1 = threading.Thread(target=thfunc1, args=(self,))
-        th2 = threading.Thread(target=thfunc2, args=(self,))
+        # This test wants to start threads with an empty context, no matter
+        # the setting of sys.flags.thread_inherit_context.  We pass the
+        # 'context' argument explicitly with an empty context instance.
+        th1 = threading.Thread(target=thfunc1, args=(self,),
+                               context=contextvars.Context())
+        th2 = threading.Thread(target=thfunc2, args=(self,),
+                               context=contextvars.Context())
 
         th1.start()
         th2.start()
@@ -2585,6 +2613,37 @@ class PyUsabilityTest(UsabilityTest, unittest.TestCase):
         sys.set_int_max_str_digits(self._previous_int_limit)
         super().tearDown()
 
+    def test_helper__is_less_than_pow10a_use_str_slow_path(self):
+        # Test the "slow" path of _is_less_than_pow10a_use_str().
+        a, b = 2, 7
+
+        # Choose q1, q2 such that len(str(q1)) <= a < len(str(q2))
+        # and q1.bit_length() == q2.bit_length() == b to check that
+        # we cover the "slow" path correctly even for small values.
+        q1, q2 = 95, 105
+        b1, b2 = q1.bit_length(), q2.bit_length()
+
+        self.assertEqual(b1, b)
+        self.assertEqual(b2, b)
+
+        # ensure that the first "fast" check doesn't hold
+        self.assertGreaterEqual(b, a * self.decimal._LOG_10_BASE_2_LO)
+        # ensure that the second "fast" check doesn't hold
+        self.assertLess(b, 1 + a * self.decimal._LOG_10_BASE_2_HI)
+
+        cond_q1, str_q1 = self.decimal._is_less_than_pow10a_use_str(q1, a)
+        self.assertTrue(cond_q1)
+        self.assertIsNotNone(str_q1)
+
+        cond_q2, str_q2 = self.decimal._is_less_than_pow10a_use_str(q2, a)
+        self.assertFalse(cond_q2)
+        self.assertIsNotNone(str_q2)
+
+    def test_helper__is_less_than_pow10a(self):
+        # TODO(picnixz): find a simple test case with custom ulp_order.
+        pass
+
+
 class PythonAPItests:
 
     def test_abc(self):
@@ -3043,6 +3102,41 @@ class ContextAPItests:
         k2 = set(d.flags.keys())
         self.assertEqual(k1, k2)
         self.assertEqual(c.flags, d.flags)
+
+    def test_replace(self):
+        Context = self.decimal.Context
+        Inexact = self.decimal.Inexact
+        Overflow = self.decimal.Overflow
+        ROUND_UP = self.decimal.ROUND_UP
+
+        c = Context(prec=10, Emin=-99, capitals=0)
+        c.flags[Inexact] = True
+        d = copy.replace(c, prec=20, rounding=ROUND_UP)
+        self.assertEqual(d.prec, 20)
+        self.assertEqual(d.rounding, ROUND_UP)
+        # Not replaced attributes are inherited from the original context.
+        self.assertEqual(d.Emin, -99)
+        self.assertEqual(d.capitals, 0)
+        self.assertEqual(d.Emax, c.Emax)
+        self.assertEqual(d.clamp, c.clamp)
+        self.assertTrue(d.flags[Inexact])
+        self.assertEqual(d.traps, c.traps)
+        # The copy is deep and the original context is left unchanged.
+        self.assertIsNot(d.flags, c.flags)
+        self.assertIsNot(d.traps, c.traps)
+        self.assertEqual(c.prec, 10)
+        self.assertEqual(c.rounding, Context().rounding)
+
+        # As in the constructor, flags and traps can be given as a list.
+        d = copy.replace(c, flags=[Overflow])
+        self.assertTrue(d.flags[Overflow])
+        self.assertFalse(d.flags[Inexact])
+
+        self.assertRaises(TypeError, copy.replace, c, prek=1)
+        self.assertRaises(TypeError, copy.replace, c, prec='spam')
+        # Unlike in the constructor, None is not a valid value.
+        self.assertRaises(TypeError, copy.replace, c, prec=None)
+        self.assertRaises(TypeError, copy.replace, c, flags=None)
 
     def test__clamp(self):
         # In Python 3.2, the private attribute `_clamp` was made
@@ -3737,6 +3831,13 @@ class ContextWithStatement:
         self.assertRaises(TypeError, self.decimal.localcontext, Emin="")
         self.assertRaises(TypeError, self.decimal.localcontext, Emax="")
 
+        # None is not a valid value for any of these attributes.
+        for name in ('prec', 'rounding', 'Emin', 'Emax', 'capitals', 'clamp',
+                     'flags', 'traps'):
+            with self.subTest(name=name):
+                self.assertRaises(TypeError, self.decimal.localcontext,
+                                  **{name: None})
+
     def test_local_context_kwargs_does_not_overwrite_existing_argument(self):
         ctx = self.decimal.getcontext()
         orig_prec = ctx.prec
@@ -3937,15 +4038,21 @@ class ContextFlags:
         d.update(c.flags)
         self.assertEqual(d, c.flags)
         self.assertEqual(c.flags, d)
+        self.assertEqual(frozendict(d), c.flags)
+        self.assertEqual(c.flags, frozendict(d))
 
         d[Inexact] = True
         self.assertNotEqual(d, c.flags)
         self.assertNotEqual(c.flags, d)
+        self.assertNotEqual(frozendict(d), c.flags)
+        self.assertNotEqual(c.flags, frozendict(d))
 
         # Invalid SignalDict
         d = {Inexact:False}
         self.assertNotEqual(d, c.flags)
         self.assertNotEqual(c.flags, d)
+        self.assertNotEqual(frozendict(d), c.flags)
+        self.assertNotEqual(c.flags, frozendict(d))
 
         d = ["xyz"]
         self.assertNotEqual(d, c.flags)
@@ -4115,6 +4222,15 @@ class ContextFlags:
 @requires_cdecimal
 class CContextFlags(ContextFlags, unittest.TestCase):
     decimal = C
+
+    def test_signaldict_repr(self):
+        Context = self.decimal.Context
+        ctx = Context(prec=7)
+        mapping = ctx.flags
+        del ctx
+        with self.assertRaisesRegex(ValueError, 'invalid signal dict'):
+            repr(mapping)
+
 class PyContextFlags(ContextFlags, unittest.TestCase):
     decimal = P
 
@@ -4247,7 +4363,7 @@ class ContextInputValidation:
 
         # Attributes cannot be deleted
         for attr in ['prec', 'Emax', 'Emin', 'rounding', 'capitals', 'clamp',
-                     'flags', 'traps']:
+                     'flags', 'traps', '_allcr', '_flags', '_traps']:
             self.assertRaises(AttributeError, c.__delattr__, attr)
 
         # Invalid attributes
@@ -4387,6 +4503,51 @@ class CContextSubclassing(ContextSubclassing, unittest.TestCase):
 class PyContextSubclassing(ContextSubclassing, unittest.TestCase):
     decimal = P
 
+class IEEEContexts:
+
+    def test_ieee_context(self):
+        # issue 8786: Add support for IEEE 754 contexts to decimal module.
+        IEEEContext = self.decimal.IEEEContext
+
+        def assert_rest(self, context):
+            self.assertEqual(context.clamp, 1)
+            assert_signals(self, context, 'traps', [])
+            assert_signals(self, context, 'flags', [])
+
+        c = IEEEContext(32)
+        self.assertEqual(c.prec, 7)
+        self.assertEqual(c.Emax, 96)
+        self.assertEqual(c.Emin, -95)
+        assert_rest(self, c)
+
+        c = IEEEContext(64)
+        self.assertEqual(c.prec, 16)
+        self.assertEqual(c.Emax, 384)
+        self.assertEqual(c.Emin, -383)
+        assert_rest(self, c)
+
+        c = IEEEContext(128)
+        self.assertEqual(c.prec, 34)
+        self.assertEqual(c.Emax, 6144)
+        self.assertEqual(c.Emin, -6143)
+        assert_rest(self, c)
+
+        # Invalid values
+        self.assertRaises(ValueError, IEEEContext, -1)
+        self.assertRaises(ValueError, IEEEContext, 123)
+        self.assertRaises(ValueError, IEEEContext, 1024)
+
+    def test_constants(self):
+        # IEEEContext
+        IEEE_CONTEXT_MAX_BITS = self.decimal.IEEE_CONTEXT_MAX_BITS
+        self.assertIn(IEEE_CONTEXT_MAX_BITS, {256, 512})
+
+@requires_cdecimal
+class CIEEEContexts(IEEEContexts, unittest.TestCase):
+    decimal = C
+class PyIEEEContexts(IEEEContexts, unittest.TestCase):
+    decimal = P
+
 @skip_if_extra_functionality
 @requires_cdecimal
 class CheckAttributes(unittest.TestCase):
@@ -4398,14 +4559,20 @@ class CheckAttributes(unittest.TestCase):
         self.assertEqual(C.MAX_EMAX, P.MAX_EMAX)
         self.assertEqual(C.MIN_EMIN, P.MIN_EMIN)
         self.assertEqual(C.MIN_ETINY, P.MIN_ETINY)
+        self.assertEqual(C.IEEE_CONTEXT_MAX_BITS, P.IEEE_CONTEXT_MAX_BITS)
 
         self.assertTrue(C.HAVE_THREADS is True or C.HAVE_THREADS is False)
         self.assertTrue(P.HAVE_THREADS is True or P.HAVE_THREADS is False)
 
-        self.assertEqual(C.__version__, P.__version__)
+        self.assertEqual(C.SPEC_VERSION, P.SPEC_VERSION)
 
-        self.assertLessEqual(set(dir(C)), set(dir(P)))
-        self.assertEqual([n for n in dir(C) if n[:2] != '__'], sorted(P.__all__))
+        # Information about the libmpdec library, specific to the C module.
+        libmpdec_names = {'LIBMPDEC_VERSION', 'LIBMPDEC_VERSION_INFO',
+                          'libmpdec_version', 'libmpdec_version_info'}
+        self.assertLessEqual(set(dir(C)) - libmpdec_names, set(dir(P)))
+        self.assertEqual([n for n in dir(C)
+                          if n[:2] != '__' and n not in libmpdec_names],
+                         sorted(P.__all__))
 
     def test_context_attributes(self):
 
@@ -4420,6 +4587,15 @@ class CheckAttributes(unittest.TestCase):
         self.assertEqual(set(x) - set(y), set())
 
 class Coverage:
+
+    @contextlib.contextmanager
+    def unbound_context(self, prec=None, Emax=None, Emin=None):
+        with self.decimal.localcontext() as c:
+            c.prec = self.decimal.MAX_PREC if prec is None else prec
+            c.Emax = self.decimal.MAX_EMAX if Emax is None else Emax
+            c.Emin = self.decimal.MIN_EMIN if Emin is None else Emin
+            c.traps[self.decimal.Inexact] = 1
+            yield c
 
     def test_adjusted(self):
         Decimal = self.decimal.Decimal
@@ -4481,12 +4657,10 @@ class Coverage:
             self.assertIs(Decimal("NaN").fma(7, 1).is_nan(), True)
             # three arg power
             self.assertEqual(pow(Decimal(10), 2, 7), 2)
+            self.assertEqual(pow(10, Decimal(2), 7), 2)
             if self.decimal == C:
-                self.assertEqual(pow(10, Decimal(2), 7), 2)
                 self.assertEqual(pow(10, 2, Decimal(7)), 2)
             else:
-                # XXX: Three-arg power doesn't use __rpow__.
-                self.assertRaises(TypeError, pow, 10, Decimal(2), 7)
                 # XXX: There is no special method to dispatch on the
                 # third arg of three-arg power.
                 self.assertRaises(TypeError, pow, 10, 2, Decimal(7))
@@ -4589,6 +4763,22 @@ class Coverage:
             self.assertTrue(q.is_infinite() and r.is_nan())
             self.assertTrue(c.flags[InvalidOperation] and
                             c.flags[DivisionByZero])
+
+    def test_divide_unbound_context(self):
+        with self.unbound_context() as c:
+            x = self.decimal.Decimal('1')
+            y = x // 1  # should be fast
+
+    def test_remainder_near(self):
+        L = 1000
+        limit = sys.get_int_max_str_digits()
+        sys.set_int_max_str_digits(L)
+        self.addCleanup(sys.set_int_max_str_digits, limit)
+
+        with self.unbound_context(prec=2 * L) as c:
+            self.assertEqual(c.prec, 2 * L)
+            x = self.decimal.Decimal(f'1e{L}')
+            y = x.remainder_near(1)  # must not raise a ValueError
 
     def test_power(self):
         Decimal = self.decimal.Decimal
@@ -4884,48 +5074,20 @@ class CFunctionality(unittest.TestCase):
     """Extra functionality in _decimal"""
 
     @requires_extra_functionality
-    def test_c_ieee_context(self):
-        # issue 8786: Add support for IEEE 754 contexts to decimal module.
-        IEEEContext = C.IEEEContext
-        DECIMAL32 = C.DECIMAL32
-        DECIMAL64 = C.DECIMAL64
-        DECIMAL128 = C.DECIMAL128
-
-        def assert_rest(self, context):
-            self.assertEqual(context.clamp, 1)
-            assert_signals(self, context, 'traps', [])
-            assert_signals(self, context, 'flags', [])
-
-        c = IEEEContext(DECIMAL32)
-        self.assertEqual(c.prec, 7)
-        self.assertEqual(c.Emax, 96)
-        self.assertEqual(c.Emin, -95)
-        assert_rest(self, c)
-
-        c = IEEEContext(DECIMAL64)
-        self.assertEqual(c.prec, 16)
-        self.assertEqual(c.Emax, 384)
-        self.assertEqual(c.Emin, -383)
-        assert_rest(self, c)
-
-        c = IEEEContext(DECIMAL128)
-        self.assertEqual(c.prec, 34)
-        self.assertEqual(c.Emax, 6144)
-        self.assertEqual(c.Emin, -6143)
-        assert_rest(self, c)
-
-        # Invalid values
-        self.assertRaises(OverflowError, IEEEContext, 2**63)
-        self.assertRaises(ValueError, IEEEContext, -1)
-        self.assertRaises(ValueError, IEEEContext, 1024)
-
-    @requires_extra_functionality
     def test_c_context(self):
         Context = C.Context
 
         c = Context(flags=C.DecClamped, traps=C.DecRounded)
         self.assertEqual(c._flags, C.DecClamped)
         self.assertEqual(c._traps, C.DecRounded)
+
+    @requires_extra_functionality
+    def test_c_context_apply(self):
+        c = C.Context(prec=3)
+        self.assertEqual(c.apply(C.Decimal('1.23456')), C.Decimal('1.23'))
+        # A higher precision won't see them as equal.
+        c = C.Context(prec=5)
+        self.assertNotEqual(c.apply(C.Decimal('1.23456')), C.Decimal('1.23'))
 
     @requires_extra_functionality
     def test_constants(self):
@@ -4938,12 +5100,6 @@ class CFunctionality(unittest.TestCase):
             C.DecFloatOperation, C.DecOverflow, C.DecRounded,
             C.DecSubnormal, C.DecUnderflow
         )
-
-        # IEEEContext
-        self.assertEqual(C.DECIMAL32, 32)
-        self.assertEqual(C.DECIMAL64, 64)
-        self.assertEqual(C.DECIMAL128, 128)
-        self.assertEqual(C.IEEE_CONTEXT_MAX_BITS, 512)
 
         # Conditions
         for i, v in enumerate(cond):
@@ -4964,6 +5120,38 @@ class CFunctionality(unittest.TestCase):
 
         self.assertEqual(C.DecTraps,
                          C.DecErrors|C.DecOverflow|C.DecUnderflow)
+
+@requires_cdecimal
+class CVersion(unittest.TestCase):
+    """Information about the libmpdec library in _decimal"""
+
+    def _test_libmpdec_version(self, v, string):
+        self.assertIsInstance(v[:], tuple)
+        self.assertEqual(len(v), 3)
+        self.assertIsInstance(v[0], int)
+        self.assertIsInstance(v[1], int)
+        self.assertIsInstance(v[2], int)
+        self.assertIsInstance(v.major, int)
+        self.assertIsInstance(v.minor, int)
+        self.assertIsInstance(v.micro, int)
+        self.assertEqual(v[0], v.major)
+        self.assertEqual(v[1], v.minor)
+        self.assertEqual(v[2], v.micro)
+        self.assertGreaterEqual(v.major, 2)
+        self.assertGreaterEqual(v.minor, 0)
+        self.assertGreaterEqual(v.micro, 0)
+        self.assertEqual(string, '%d.%d.%d' % v)
+
+    def test_libmpdec_version(self):
+        if support.verbose:
+            print(f'LIBMPDEC_VERSION = {C.LIBMPDEC_VERSION}', flush=True)
+            print(f'libmpdec_version = {C.libmpdec_version}', flush=True)
+            print(f'LIBMPDEC_VERSION_INFO = {C.LIBMPDEC_VERSION_INFO}', flush=True)
+            print(f'libmpdec_version_info = {C.libmpdec_version_info}', flush=True)
+        self._test_libmpdec_version(C.LIBMPDEC_VERSION_INFO, C.LIBMPDEC_VERSION)
+        self._test_libmpdec_version(C.libmpdec_version_info, C.libmpdec_version)
+        self.assertEqual(C.LIBMPDEC_VERSION_INFO[0], C.libmpdec_version_info[0])
+        self.assertIs(C.libmpdec_version, C.__libmpdec_version__)
 
 @requires_cdecimal
 class CWhitebox(unittest.TestCase):
@@ -5713,8 +5901,7 @@ class CWhitebox(unittest.TestCase):
         )
         for tp in types:
             with self.subTest(tp=tp):
-                with self.assertRaisesRegex(TypeError, "immutable"):
-                    tp.foo = 1
+                support.check_immutable_type(self, tp)
 
     def test_c_disallow_instantiation(self):
         ContextManager = type(C.localcontext())
@@ -5901,6 +6088,23 @@ class SignatureTest(unittest.TestCase):
         doit('Context')
 
 
+class TestModule:
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(self.decimal, "__version__")
+        self.assertEqual(cm.filename, __file__)
+
+
+@requires_cdecimal
+class CTestModule(TestModule, unittest.TestCase):
+    decimal = C
+class PyTestModule(TestModule, unittest.TestCase):
+    decimal = P
+
+
 def load_tests(loader, tests, pattern):
     if TODO_TESTS is not None:
         # Run only Arithmetic tests
@@ -5955,8 +6159,9 @@ def tearDownModule():
     if C: C.setcontext(ORIGINAL_CONTEXT[C].copy())
     P.setcontext(ORIGINAL_CONTEXT[P].copy())
     if not C:
-        warnings.warn('C tests skipped: no module named _decimal.',
-                      UserWarning)
+        logging.getLogger(__name__).warning(
+            'C tests skipped: no module named _decimal.'
+        )
     if not orig_sys_decimal is sys.modules['decimal']:
         raise TestFailed("Internal error: unbalanced number of changes to "
                          "sys.modules['decimal'].")

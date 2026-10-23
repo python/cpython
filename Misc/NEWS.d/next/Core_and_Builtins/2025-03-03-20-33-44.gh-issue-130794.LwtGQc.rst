@@ -1,2 +1,0 @@
-Fix memory leak in the :term:`free threaded <free threading>` build when
-resizing a shared list or dictionary from multiple short-lived threads.

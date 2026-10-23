@@ -147,12 +147,12 @@ class GeneratedParser(Parser):
 
     @memoize
     def rule(self) -> Optional[Rule]:
-        # rule: rulename memoflag? ":" alts NEWLINE INDENT more_alts DEDENT | rulename memoflag? ":" NEWLINE INDENT more_alts DEDENT | rulename memoflag? ":" alts NEWLINE
+        # rule: rulename flags? ":" alts NEWLINE INDENT more_alts DEDENT | rulename flags? ":" NEWLINE INDENT more_alts DEDENT | rulename flags? ":" alts NEWLINE
         mark = self._mark()
         if (
             (rulename := self.rulename())
             and
-            (opt := self.memoflag(),)
+            (flags := self.flags(),)
             and
             (literal := self.expect(":"))
             and
@@ -166,12 +166,12 @@ class GeneratedParser(Parser):
             and
             (_dedent := self.expect('DEDENT'))
         ):
-            return Rule ( rulename [0] , rulename [1] , Rhs ( alts . alts + more_alts . alts ) , memo = opt )
+            return Rule ( rulename [0] , rulename [1] , Rhs ( alts . alts + more_alts . alts ) , flags = flags )
         self._reset(mark)
         if (
             (rulename := self.rulename())
             and
-            (opt := self.memoflag(),)
+            (flags := self.flags(),)
             and
             (literal := self.expect(":"))
             and
@@ -183,12 +183,12 @@ class GeneratedParser(Parser):
             and
             (_dedent := self.expect('DEDENT'))
         ):
-            return Rule ( rulename [0] , rulename [1] , more_alts , memo = opt )
+            return Rule ( rulename [0] , rulename [1] , more_alts , flags = flags )
         self._reset(mark)
         if (
             (rulename := self.rulename())
             and
-            (opt := self.memoflag(),)
+            (flags := self.flags(),)
             and
             (literal := self.expect(":"))
             and
@@ -196,7 +196,7 @@ class GeneratedParser(Parser):
             and
             (_newline := self.expect('NEWLINE'))
         ):
-            return Rule ( rulename [0] , rulename [1] , alts , memo = opt )
+            return Rule ( rulename [0] , rulename [1] , alts , flags = flags )
         self._reset(mark)
         return None
 
@@ -219,17 +219,28 @@ class GeneratedParser(Parser):
         return None
 
     @memoize
-    def memoflag(self) -> Optional[str]:
-        # memoflag: '(' "memo" ')'
+    def flags(self) -> Optional[frozenset [str]]:
+        # flags: '(' ','.flag+ ')'
         mark = self._mark()
         if (
             (literal := self.expect('('))
             and
-            (literal_1 := self.expect("memo"))
+            (a := self._gather_2())
             and
-            (literal_2 := self.expect(')'))
+            (literal_1 := self.expect(')'))
         ):
-            return "memo"
+            return frozenset ( a )
+        self._reset(mark)
+        return None
+
+    @memoize
+    def flag(self) -> Optional[str]:
+        # flag: NAME
+        mark = self._mark()
+        if (
+            (name := self.name())
+        ):
+            return name . string
         self._reset(mark)
         return None
 
@@ -661,8 +672,38 @@ class GeneratedParser(Parser):
         self._reset(mark)
         return None
 
+    @memoize
+    def _loop0_1(self) -> Optional[Any]:
+        # _loop0_1: ',' flag
+        mark = self._mark()
+        children = []
+        while (
+            (literal := self.expect(','))
+            and
+            (elem := self.flag())
+        ):
+            children.append(elem)
+            mark = self._mark()
+        self._reset(mark)
+        return children
+
+    @memoize
+    def _gather_2(self) -> Optional[Any]:
+        # _gather_2: flag _loop0_1
+        mark = self._mark()
+        if (
+            (elem := self.flag())
+            is not None
+            and
+            (seq := self._loop0_1())
+            is not None
+        ):
+            return [elem] + seq
+        self._reset(mark)
+        return None
+
     KEYWORDS = ()
-    SOFT_KEYWORDS = ('memo',)
+    SOFT_KEYWORDS = ()
 
 
 if __name__ == '__main__':

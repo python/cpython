@@ -3,8 +3,6 @@
 This module provides an implementation of the HeaderRegistry API.
 The implementation is designed to flexibly follow RFC5322 rules.
 """
-from types import MappingProxyType
-
 from email import utils
 from email import errors
 from email import _header_value_parser as parser
@@ -462,7 +460,7 @@ class ParameterizedMIMEHeader:
 
     @property
     def params(self):
-        return MappingProxyType(self._params)
+        return frozendict(self._params)
 
 
 class ContentTypeHeader(ParameterizedMIMEHeader):
@@ -534,6 +532,18 @@ class MessageIDHeader:
         kwds['defects'].extend(parse_tree.all_defects)
 
 
+class ReferencesHeader:
+
+    max_count = 1
+    value_parser = staticmethod(parser.parse_message_ids)
+
+    @classmethod
+    def parse(cls, value, kwds):
+        kwds['parse_tree'] = parse_tree = cls.value_parser(value)
+        kwds['decoded'] = str(parse_tree)
+        kwds['defects'].extend(parse_tree.all_defects)
+
+
 # The header factory #
 
 _default_header_map = {
@@ -557,6 +567,8 @@ _default_header_map = {
     'content-disposition':          ContentDispositionHeader,
     'content-transfer-encoding':    ContentTransferEncodingHeader,
     'message-id':                   MessageIDHeader,
+    'in-reply-to':                  ReferencesHeader,
+    'references':                   ReferencesHeader,
     }
 
 class HeaderRegistry:

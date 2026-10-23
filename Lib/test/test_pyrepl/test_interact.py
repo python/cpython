@@ -1,5 +1,6 @@
 import contextlib
 import io
+import warnings
 import unittest
 from unittest.mock import patch
 from textwrap import dedent
@@ -58,7 +59,7 @@ class TestSimpleInteract(unittest.TestCase):
         console = InteractiveColoredConsole()
         code = dedent("""\
         raise Exception('foobar')
-        print('spam&eggs')
+        print('spam', 'eggs', sep='&')
         """)
         f = io.StringIO()
         with contextlib.redirect_stderr(f):
@@ -112,7 +113,7 @@ class TestSimpleInteract(unittest.TestCase):
         r = """
     def f(x, x): ...
              ^
-SyntaxError: duplicate argument 'x' in function definition"""
+SyntaxError: duplicate parameter 'x' in function definition"""
         self.assertIn(r, f.getvalue())
 
     def test_runsource_shows_syntax_error_for_failed_compilation(self):
@@ -129,6 +130,17 @@ SyntaxError: duplicate argument 'x' in function definition"""
         with patch.object(console, "showsyntaxerror") as mock_showsyntaxerror:
             console.runsource(source)
             mock_showsyntaxerror.assert_called_once()
+
+    @force_not_colorized
+    def test_runsource_compile_error(self):
+        # Any error raised by compile() is reported (gh-69919).
+        console = InteractiveColoredConsole()
+        source = '-' * 100_000 + '1'
+        f = io.StringIO()
+        with contextlib.redirect_stderr(f):
+            result = console.runsource(source)
+        self.assertFalse(result)
+        self.assertRegex(f.getvalue(), r'^(MemoryError|RecursionError): ')
 
     def test_runsource_survives_null_bytes(self):
         console = InteractiveColoredConsole()
@@ -178,6 +190,12 @@ class TestMoreLines(unittest.TestCase):
     def test_invalid_syntax_single_line(self):
         namespace = {}
         code = "if foo"
+        console = InteractiveColoredConsole(namespace, filename="<stdin>")
+        self.assertFalse(_more_lines(console, code))
+
+    def test_compile_error_single_line(self):
+        namespace = {}
+        code = '-' * 100_000 + '1'  # MemoryError or RecursionError
         console = InteractiveColoredConsole(namespace, filename="<stdin>")
         self.assertFalse(_more_lines(console, code))
 
@@ -273,3 +291,28 @@ class TestMoreLines(unittest.TestCase):
         code = "if foo:"
         console = InteractiveColoredConsole(namespace, filename="<stdin>")
         self.assertTrue(_more_lines(console, code))
+
+
+class TestWarnings(unittest.TestCase):
+    def test_pep_765_warning(self):
+        """
+        Test that a SyntaxWarning emitted from the
+        AST optimizer is only shown once in the REPL.
+        """
+        # gh-131927
+        console = InteractiveColoredConsole()
+        code = dedent("""\
+        def f():
+            try:
+                return 1
+            finally:
+                return 2
+        """)
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            console.runsource(code)
+
+        count = sum("'return' in a 'finally' block" in str(w.message)
+                    for w in caught)
+        self.assertEqual(count, 1)

@@ -3,8 +3,7 @@ import sys
 import textwrap
 from test import list_tests, support
 from test.support import cpython_only
-from test.support.import_helper import import_module
-from test.support.script_helper import assert_python_failure
+from test.support.script_helper import assert_python_failure, assert_python_ok
 import pickle
 import unittest
 
@@ -117,6 +116,19 @@ class ListTest(list_tests.CommonTest):
             lst * size
         with self.assertRaises((MemoryError, OverflowError)):
             lst *= size
+
+    def test_repr_mutate(self):
+        class Obj:
+            @staticmethod
+            def __repr__():
+                try:
+                    mylist.pop()
+                except IndexError:
+                    pass
+                return 'obj'
+
+        mylist = [Obj() for _ in range(5)]
+        self.assertEqual(repr(mylist), '[obj, obj, obj]')
 
     def test_repr_large(self):
         # Check the repr of large list objects
@@ -232,7 +244,7 @@ class ListTest(list_tests.CommonTest):
 
         list1 = [X()]
         list2 = [Y()]
-        self.assertTrue(list1 == list2)
+        self.assertFalse(list1 == list2)
 
         list3 = [Z()]
         list4 = [1]
@@ -248,6 +260,54 @@ class ListTest(list_tests.CommonTest):
         a = [[evil()]]
         with self.assertRaises(TypeError):
             a[0] < a
+
+    def test_richcompare_stale_element_list_vitem(self):
+        # gh-148442: list_richcompare_impl must use the captured vitem for
+        # the final ordering comparison, not re-read list1's slot after __eq__
+        # may have mutated it.
+        #
+        # x.__eq__(0) puts AlwaysLT() into list1[0] and returns False.
+        class AlwaysLT:
+            def __eq__(self, other: object) -> bool:
+                return False
+
+            def __gt__(self, other: object) -> bool:
+                return False
+
+        class Mutating:
+            def __eq__(self, other: object) -> bool:
+                list1[0] = AlwaysLT()
+                return False
+
+            def __gt__(self, other: object) -> bool:
+                return True
+
+        list1 = [Mutating(), 0]
+        list2 = [0, 0]
+        self.assertTrue(list1 > list2)
+
+    def test_richcompare_stale_element_list_witem(self):
+        # gh-148442: list_richcompare_impl must use the captured witem for
+        # the final ordering comparison, not re-read list2's slot after __eq__
+        # may have mutated it.
+        #
+        # x.__eq__(0) puts AlwaysGT() into list2[0] and returns False.
+        class AlwaysGT:
+            pass
+
+        class Mutating:
+            def __eq__(self, other: object) -> bool:
+                list2[0] = AlwaysGT()
+                return False
+
+            def __gt__(self, other: object) -> bool:
+                if isinstance(other, AlwaysGT):
+                    return False  # pretend AlwaysGT beats us
+                return True       # beat everything else (including 0)
+
+        list1 = [Mutating(), 0]
+        list2 = [0, 0]
+        self.assertTrue(list1 > list2)
 
     def test_list_index_modifing_operand(self):
         # See gh-120384
@@ -313,16 +373,16 @@ class ListTest(list_tests.CommonTest):
             a.append(4)
             self.assertEqual(list(it), [])
 
-    @support.cpython_only
+    @support.nomemtest
     def test_no_memory(self):
         # gh-118331: Make sure we don't crash if list allocation fails
-        import_module("_testcapi")
         code = textwrap.dedent("""
-        import _testcapi, sys
+        from test import support
+        import sys
         # Prime the freelist
         l = [None]
         del l
-        _testcapi.set_nomemory(0)
+        support.inject_memory_error()
         l = [None]
         """)
         rc, _, _ = assert_python_failure("-c", code)
@@ -331,6 +391,43 @@ class ListTest(list_tests.CommonTest):
             self.assertNotEqual(rc, 0xC0000005)
         else:
             self.assertNotEqual(rc, -int(signal.SIGSEGV))
+
+    def test_deopt_from_append_list(self):
+        # gh-132011: it used to crash, because
+        # of `CALL_LIST_APPEND` specialization failure.
+        code = textwrap.dedent("""
+            import _testinternalcapi
+
+            l = []
+            def lappend(l, x, y):
+                l.append((x, y))
+            for x in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                lappend(l, None, None)
+            try:
+                lappend(list, None, None)
+            except TypeError:
+                pass
+            else:
+                raise AssertionError
+        """)
+
+        rc, _, _ = assert_python_ok("-c", code)
+        self.assertEqual(rc, 0)
+
+    def test_list_overwrite_local(self):
+        """Test that overwriting the last reference to the
+           iterable doesn't prematurely free the iterable"""
+
+        def foo(x):
+            self.assertEqual(sys.getrefcount(x), 1)
+            r = 0
+            for i in x:
+                r += i
+                x = None
+            return r
+
+        self.assertEqual(foo(list(range(10))), 45)
+
 
 if __name__ == "__main__":
     unittest.main()

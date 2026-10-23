@@ -13,8 +13,8 @@
 
 #include <Python.h>
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-#  include "../_complex.h"        // csqrt()
+#if defined(_Py_FFI_SUPPORT_C_COMPLEX)
+#  include <complex.h>            // csqrt()
 #  undef I                        // for _ctypes_test_generated.c.h
 #endif
 #include <stdio.h>                // printf()
@@ -63,6 +63,79 @@ _testfunc_cbk_large_struct(Test in, void (*func)(Test))
 }
 
 /*
+ * gh-49960: callbacks returning structs and unions by value.
+ *
+ * Each of these exercises a different ABI return class, since struct
+ * return conventions are highly platform-specific:
+ *   - SmallRet:  small integer struct, returned in registers
+ *   - Test:      >8 bytes (reused from above), returned via hidden pointer
+ *   - FloatRet:  all-float struct, SSE class on x86-64 / HFA on AArch64
+ *   - UnionRet:  union
+ *   - PtrRet:    struct containing a pointer
+ */
+
+typedef struct {
+    int a;
+    int b;
+} SmallRet;
+
+EXPORT(SmallRet)
+_testfunc_cbk_ret_small_struct(SmallRet (*func)(void))
+{
+    return func();
+}
+
+/* Returns a scalar derived from the struct, so a test can prove the bytes
+   actually reached the C caller rather than only round-tripping in Python. */
+EXPORT(long)
+_testfunc_cbk_ret_small_struct_sum(SmallRet (*func)(void))
+{
+    SmallRet s = func();
+    return (long)s.a + (long)s.b;
+}
+
+EXPORT(Test)
+_testfunc_cbk_ret_large_struct(Test (*func)(void))
+{
+    return func();
+}
+
+typedef struct {
+    double x;
+    double y;
+} FloatRet;
+
+EXPORT(FloatRet)
+_testfunc_cbk_ret_float_struct(FloatRet (*func)(void))
+{
+    return func();
+}
+
+typedef union {
+    int i;
+    float f;
+} UnionRet;
+
+EXPORT(UnionRet)
+_testfunc_cbk_ret_union(UnionRet (*func)(void))
+{
+    return func();
+}
+
+/* Struct containing a pointer, for the documented pointer-lifetime contract:
+   the struct is copied by value, so the pointed-to memory must outlive the
+   callback. */
+typedef struct {
+    const char *s;
+} PtrRet;
+
+EXPORT(PtrRet)
+_testfunc_cbk_ret_ptr_struct(PtrRet (*func)(void))
+{
+    return func();
+}
+
+/*
  * See issue 29565. Update a structure passed by value;
  * the caller should not see any change.
  */
@@ -81,7 +154,7 @@ typedef struct {
 } TestReg;
 
 
-EXPORT(TestReg) last_tfrsuv_arg = {0};
+_Py_thread_local TestReg last_tfrsuv_arg = {0};
 
 
 EXPORT(void)
@@ -436,7 +509,7 @@ EXPORT(char *)my_strtok(char *token, const char *delim)
     return strtok(token, delim);
 }
 
-EXPORT(char *)my_strchr(const char *s, int c)
+EXPORT(const char *) my_strchr(const char *s, int c)
 {
     return strchr(s, c);
 }
@@ -447,7 +520,7 @@ EXPORT(double) my_sqrt(double a)
     return sqrt(a);
 }
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
+#if defined(_Py_FFI_SUPPORT_C_COMPLEX)
 EXPORT(double complex) my_csqrt(double complex a)
 {
     return csqrt(a);
@@ -628,6 +701,11 @@ EXPORT(long long) _testfunc_callback_q_qf(long long value,
     return sum;
 }
 
+EXPORT(long long) _testfunc_callback_int_to_longlong(int (*func)(void))
+{
+    return func();
+}
+
 typedef struct {
     char *name;
     char *value;
@@ -741,8 +819,8 @@ EXPORT(void) _py_func(void)
 {
 }
 
-EXPORT(long long) last_tf_arg_s = 0;
-EXPORT(unsigned long long) last_tf_arg_u = 0;
+_Py_thread_local long long last_tf_arg_s = 0;
+_Py_thread_local unsigned long long last_tf_arg_u = 0;
 
 struct BITS {
     signed int A: 1, B:2, C:3, D:4, E: 5, F: 6, G: 7, H: 8, I: 9;
@@ -827,10 +905,24 @@ EXPORT(int) unpack_bitfields_msvc(struct BITS_msvc *bits, char name)
 }
 #endif
 
+PyObject *get_last_tf_arg_s(PyObject *self, PyObject *noargs)
+{
+    return PyLong_FromLongLong(last_tf_arg_s);
+}
+
+PyObject *get_last_tf_arg_u(PyObject *self, PyObject *noargs)
+{
+    return PyLong_FromUnsignedLongLong(last_tf_arg_u);
+}
+
+EXPORT(TestReg) get_last_tfrsuv_arg(void)
+{
+    return last_tfrsuv_arg;
+}
+
 static PyMethodDef module_methods[] = {
-/*      {"get_last_tf_arg_s", get_last_tf_arg_s, METH_NOARGS},
+    {"get_last_tf_arg_s", get_last_tf_arg_s, METH_NOARGS},
     {"get_last_tf_arg_u", get_last_tf_arg_u, METH_NOARGS},
-*/
     {"func_si", py_func_si, METH_VARARGS},
     {"func", py_func, METH_NOARGS},
     {"get_generated_test_data", get_generated_test_data, METH_O},
@@ -965,13 +1057,10 @@ EXPORT(RECT) ReturnRect(int i, RECT ar, RECT* br, POINT cp, RECT dr,
     {
     case 0:
         return ar;
-        break;
     case 1:
         return dr;
-        break;
     case 2:
         return gr;
-        break;
 
     }
     return ar;

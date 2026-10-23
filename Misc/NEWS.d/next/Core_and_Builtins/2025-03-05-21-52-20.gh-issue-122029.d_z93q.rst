@@ -1,1 +1,0 @@
-:func:`sys.setprofile` and :func:`sys.settrace` will not generate a ``c_call`` event for ``INSTRUMENTED_CALL_FUNCTION_EX`` if the callable is a method with a C function wrapped, because we do not generate ``c_return`` event in such case.

@@ -4,11 +4,18 @@ Simple implementation of JoinablePath, for use in pathlib tests.
 
 import ntpath
 import os.path
-import pathlib.types
 import posixpath
 
+from . import is_pypi
 
-class LexicalPath(pathlib.types._JoinablePath):
+if is_pypi:
+    from pathlib_abc import vfspath, _JoinablePath
+else:
+    from pathlib.types import _JoinablePath
+    from pathlib._os import vfspath
+
+
+class LexicalPath(_JoinablePath):
     __slots__ = ('_segments',)
     parser = os.path
 
@@ -16,20 +23,20 @@ class LexicalPath(pathlib.types._JoinablePath):
         self._segments = pathsegments
 
     def __hash__(self):
-        return hash(str(self))
+        return hash(vfspath(self))
 
     def __eq__(self, other):
         if not isinstance(other, LexicalPath):
             return NotImplemented
-        return str(self) == str(other)
+        return vfspath(self) == vfspath(other)
 
-    def __str__(self):
+    def __vfspath__(self):
         if not self._segments:
             return ''
         return self.parser.join(*self._segments)
 
     def __repr__(self):
-        return f'{type(self).__name__}({str(self)!r})'
+        return f'{type(self).__name__}({vfspath(self)!r})'
 
     def with_segments(self, *pathsegments):
         return type(self)(*pathsegments)

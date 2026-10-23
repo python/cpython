@@ -1,2 +1,0 @@
-Fix the ``platform._sys_version()`` method when ``__DATE__`` is undefined at
-buildtime by changing default buildtime datetime string to the UNIX epoch.

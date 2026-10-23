@@ -1,1 +1,0 @@
-Add validation for numeric response data in poplib.POP3.stat() method

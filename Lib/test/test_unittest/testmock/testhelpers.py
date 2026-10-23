@@ -1,7 +1,8 @@
 import inspect
-import time
 import types
 import unittest
+
+from test.support import import_helper
 
 from unittest.mock import (
     call, _Call, create_autospec, MagicMock,
@@ -929,8 +930,10 @@ class SpecSignatureTest(unittest.TestCase):
 
 
     def test_autospec_on_bound_builtin_function(self):
-        meth = types.MethodType(time.ctime, time.time())
-        self.assertIsInstance(meth(), str)
+        _testcapi = import_helper.import_module('_testcapi')
+        # This function is defined without a signature.
+        meth = types.MethodType(_testcapi.docstring_no_signature, object())
+        self.assertIsNone(meth())
         mocked = create_autospec(meth)
 
         # no signature, so no spec to check against
@@ -1050,6 +1053,7 @@ class SpecSignatureTest(unittest.TestCase):
             create_autospec(WithPostInit()),
         ]:
             with self.subTest(mock=mock):
+                self.assertIsInstance(mock, WithPostInit)
                 self.assertIsInstance(mock.a, int)
                 self.assertIsInstance(mock.b, int)
 
@@ -1072,6 +1076,7 @@ class SpecSignatureTest(unittest.TestCase):
             create_autospec(WithDefault(1)),
         ]:
             with self.subTest(mock=mock):
+                self.assertIsInstance(mock, WithDefault)
                 self.assertIsInstance(mock.a, int)
                 self.assertIsInstance(mock.b, int)
 
@@ -1087,6 +1092,7 @@ class SpecSignatureTest(unittest.TestCase):
             create_autospec(WithMethod(1)),
         ]:
             with self.subTest(mock=mock):
+                self.assertIsInstance(mock, WithMethod)
                 self.assertIsInstance(mock.a, int)
                 mock.b.assert_not_called()
 
@@ -1102,10 +1108,28 @@ class SpecSignatureTest(unittest.TestCase):
             create_autospec(WithNonFields(1)),
         ]:
             with self.subTest(mock=mock):
+                self.assertIsInstance(mock, WithNonFields)
                 with self.assertRaisesRegex(AttributeError, msg):
                     mock.a
                 with self.assertRaisesRegex(AttributeError, msg):
                     mock.b
+
+    def test_dataclass_special_attrs(self):
+        @dataclass
+        class Description:
+            name: str
+
+        for mock in [
+            create_autospec(Description, instance=True),
+            create_autospec(Description(1)),
+        ]:
+            with self.subTest(mock=mock):
+                self.assertIsInstance(mock, Description)
+                self.assertIs(mock.__class__, Description)
+                self.assertIsInstance(mock.__dataclass_fields__, MagicMock)
+                self.assertIsInstance(mock.__dataclass_params__, MagicMock)
+                self.assertIsInstance(mock.__match_args__, MagicMock)
+                self.assertIsInstance(mock.__hash__, MagicMock)
 
 class TestCallList(unittest.TestCase):
 

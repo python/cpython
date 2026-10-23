@@ -3,6 +3,8 @@
 # Script initially imported from:
 # https://github.com/FFY00/python-instrospection/blob/main/python_introspection/scripts/generate-build-details.py
 
+from __future__ import annotations
+
 import argparse
 import collections
 import importlib.machinery
@@ -10,26 +12,24 @@ import json
 import os
 import sys
 import sysconfig
-import traceback
-import warnings
+
+TYPE_CHECKING = False
+if TYPE_CHECKING:
+    from typing import Any
 
 
-if False:  # TYPE_CHECKING
-    pass
-
-
-def version_info_to_dict(obj):  # (object) -> dict[str, Any]
+def version_info_to_dict(obj: sys._version_info) -> dict[str, Any]:
     field_names = ('major', 'minor', 'micro', 'releaselevel', 'serial')
     return {field: getattr(obj, field) for field in field_names}
 
 
-def get_dict_key(container, key):  # (dict[str, Any], str) -> dict[str, Any]
+def get_dict_key(container: dict[str, Any], key: str) -> dict[str, Any]:
     for part in key.split('.'):
         container = container[part]
     return container
 
 
-def generate_data(schema_version):
+def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
     """Generate the build-details.json data (PEP 739).
 
     :param schema_version: The schema version of the data we want to generate.
@@ -38,7 +38,9 @@ def generate_data(schema_version):
     if schema_version != '1.0':
         raise ValueError(f'Unsupported schema_version: {schema_version}')
 
-    data = collections.defaultdict(lambda: collections.defaultdict(dict))
+    data: collections.defaultdict[str, Any] = collections.defaultdict(
+        lambda: collections.defaultdict(dict),
+    )
 
     data['schema_version'] = schema_version
 
@@ -46,14 +48,16 @@ def generate_data(schema_version):
     #data['base_interpreter'] = sys._base_executable
     data['base_interpreter'] = os.path.join(
         sysconfig.get_path('scripts'),
-        'python' + sysconfig.get_config_var('VERSION'),
+        "python"
+        + sysconfig.get_config_var('LDVERSION')
+        + sysconfig.get_config_var('EXE'),
     )
     data['platform'] = sysconfig.get_platform()
 
     data['language']['version'] = sysconfig.get_python_version()
     data['language']['version_info'] = version_info_to_dict(sys.version_info)
 
-    data['implementation'] = vars(sys.implementation)
+    data['implementation'] = vars(sys.implementation).copy()
     data['implementation']['version'] = version_info_to_dict(sys.implementation.version)
     # Fix cross-compilation
     if '_multiarch' in data['implementation']:
@@ -68,19 +72,34 @@ def generate_data(schema_version):
     data['suffixes']['extensions'] = importlib.machinery.EXTENSION_SUFFIXES
 
     LIBDIR = sysconfig.get_config_var('LIBDIR')
+    LIBPL = sysconfig.get_config_var('LIBPL')
     LDLIBRARY = sysconfig.get_config_var('LDLIBRARY')
     LIBRARY = sysconfig.get_config_var('LIBRARY')
     PY3LIBRARY = sysconfig.get_config_var('PY3LIBRARY')
     LIBPYTHON = sysconfig.get_config_var('LIBPYTHON')
     LIBPC = sysconfig.get_config_var('LIBPC')
-    INCLUDEDIR = sysconfig.get_config_var('INCLUDEDIR')
+    INCLUDEPY = sysconfig.get_config_var('INCLUDEPY')
 
     if os.name == 'posix':
         # On POSIX, LIBRARY is always the static library, while LDLIBRARY is the
         # dynamic library if enabled, otherwise it's the static library.
         # If LIBRARY != LDLIBRARY, support for the dynamic library is enabled.
         has_dynamic_library = LDLIBRARY != LIBRARY
-        has_static_library = sysconfig.get_config_var('STATIC_LIBPYTHON')
+        # Framework builds don't install the static library (see libainstall).
+        has_static_library = (
+            sysconfig.get_config_var('STATIC_LIBPYTHON')
+            and not sysconfig.get_config_var('PYTHONFRAMEWORK')
+        )
+        # The static library is only installed into LIBDIR when it is also
+        # LDLIBRARY; otherwise it is only installed into LIBPL.
+        static_library_dir = LIBPL if has_dynamic_library else LIBDIR
+        # In framework builds, LDLIBRARY is the path of the framework library
+        # relative to PYTHONFRAMEWORKPREFIX (e.g.
+        # Python.framework/Versions/3.X/Python), not a file in LIBDIR.
+        if sysconfig.get_config_var('PYTHONFRAMEWORK'):
+            dynamic_library_dir = sysconfig.get_config_var('PYTHONFRAMEWORKPREFIX')
+        else:
+            dynamic_library_dir = LIBDIR
     elif os.name == 'nt':
         # Windows can only use a dynamic library or a static library.
         # If it's using a dynamic library, sys.dllhandle will be set.
@@ -88,6 +107,8 @@ def generate_data(schema_version):
         # More context: https://github.com/python/cpython/issues/110234
         has_dynamic_library = hasattr(sys, 'dllhandle')
         has_static_library = not has_dynamic_library
+        static_library_dir = LIBDIR
+        dynamic_library_dir = LIBDIR
     else:
         raise NotADirectoryError(f'Unknown platform: {os.name}')
 
@@ -102,13 +123,13 @@ def generate_data(schema_version):
         data['abi']['extension_suffix'] = sysconfig.get_config_var('EXT_SUFFIX')
 
         # EXTENSION_SUFFIXES has been constant for a long time, and currently we
-        # don't have a better information source to find the  stable ABI suffix.
+        # don't have a better information source to find the stable ABI suffix.
         for suffix in importlib.machinery.EXTENSION_SUFFIXES:
             if suffix.startswith('.abi'):
                 data['abi']['stable_abi_suffix'] = suffix
                 break
 
-        data['libpython']['dynamic'] = os.path.join(LIBDIR, LDLIBRARY)
+        data['libpython']['dynamic'] = os.path.join(dynamic_library_dir, LDLIBRARY)
         # FIXME: Not sure if windows has a different dll for the stable ABI, and
         #        even if it does, currently we don't have a way to get its name.
         if PY3LIBRARY:
@@ -119,46 +140,65 @@ def generate_data(schema_version):
         data['libpython']['link_extensions'] = bool(LIBPYTHON)
 
     if has_static_library:
-        data['libpython']['static'] = os.path.join(LIBDIR, LIBRARY)
+        data['libpython']['static'] = os.path.join(static_library_dir, LIBRARY)
 
-    data['c_api']['include'] = INCLUDEDIR
+    data['c_api']['headers'] = INCLUDEPY
     if LIBPC:
         data['c_api']['pkgconfig_path'] = LIBPC
 
     return data
 
 
-def make_paths_relative(data, config_path=None):  # (dict[str, Any], str | None) -> None
-    # Make base_prefix relative to the config_path directory
+def make_paths_relative(data: dict[str, Any], config_path: str | None = None) -> None:
+    base_prefix = data['base_prefix']
+    # Make base_prefix relative to the config_path directory.  The other paths
+    # are still made relative to the absolute base_prefix below.
     if config_path:
-        data['base_prefix'] = os.path.relpath(data['base_prefix'], os.path.dirname(config_path))
+        data['base_prefix'] = relative_path(base_prefix,
+                                            os.path.dirname(config_path))
+
     # Update path values to make them relative to base_prefix
-    PATH_KEYS = [
+    PATH_KEYS = (
         'base_interpreter',
         'libpython.dynamic',
         'libpython.dynamic_stableabi',
         'libpython.static',
         'c_api.headers',
         'c_api.pkgconfig_path',
-    ]
+    )
     for entry in PATH_KEYS:
-        parent, _, child = entry.rpartition('.')
+        *parents, child = entry.split('.')
         # Get the key container object
         try:
             container = data
-            for part in parent.split('.'):
+            for part in parents:
                 container = container[part]
+            if child not in container:
+                raise KeyError(child)
             current_path = container[child]
         except KeyError:
             continue
         # Get the relative path
-        new_path = os.path.relpath(current_path, data['base_prefix'])
+        new_path = relative_path(current_path, base_prefix)
         # Join '.' so that the path is formated as './path' instead of 'path'
         new_path = os.path.join('.', new_path)
         container[child] = new_path
 
 
-def main():  # () -> None
+def relative_path(path: str, base: str) -> str:
+    if os.name != 'nt':
+        return os.path.relpath(path, base)
+
+    # There are no relative paths between drives on Windows.
+    path_drv, _ = os.path.splitdrive(path)
+    base_drv, _ = os.path.splitdrive(base)
+    if path_drv.lower() == base_drv.lower():
+        return os.path.relpath(path, base)
+
+    return path
+
+
+def main() -> None:
     parser = argparse.ArgumentParser(exit_on_error=False)
     parser.add_argument('location')
     parser.add_argument(
@@ -184,8 +224,9 @@ def main():  # () -> None
         make_paths_relative(data, args.config_file_path)
 
     json_output = json.dumps(data, indent=2)
-    with open(args.location, 'w') as f:
-        print(json_output, file=f)
+    with open(args.location, 'w', encoding='utf-8') as f:
+        f.write(json_output)
+        f.write('\n')
 
 
 if __name__ == '__main__':
