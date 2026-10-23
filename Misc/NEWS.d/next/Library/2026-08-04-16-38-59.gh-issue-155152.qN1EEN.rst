@@ -1,2 +1,1 @@
-Prevent unexpectedly slow imports and excessive CPU usage for some ZIP
-archives that use Zstandard compression.
+Improve performance of some :mod:`zipimport` archives that use Zstandard compression.
