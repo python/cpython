@@ -39,28 +39,31 @@ import sys as _sys
 import types as _types
 from io import StringIO as _StringIO
 
+lazy import _colorize
+
 __all__ = ["pprint","pformat","isreadable","isrecursive","saferepr",
            "PrettyPrinter", "pp"]
 
 
 def pprint(object, stream=None, indent=1, width=80, depth=None, *,
            compact=False, expand=False, sort_dicts=True,
-           underscore_numbers=False):
+           underscore_numbers=False, color=None):
     """Pretty-print a Python object to a stream [default is sys.stdout]."""
     printer = PrettyPrinter(
         stream=stream, indent=indent, width=width, depth=depth,
         compact=compact, expand=expand, sort_dicts=sort_dicts,
-        underscore_numbers=underscore_numbers)
+        underscore_numbers=underscore_numbers, color=color)
     printer.pprint(object)
 
 
 def pformat(object, indent=1, width=80, depth=None, *,
             compact=False, expand=False, sort_dicts=True,
-            underscore_numbers=False):
+            underscore_numbers=False, color=False):
     """Format a Python object into a pretty-printed representation."""
     return PrettyPrinter(indent=indent, width=width, depth=depth,
                          compact=compact, expand=expand, sort_dicts=sort_dicts,
-                         underscore_numbers=underscore_numbers).pformat(object)
+                         underscore_numbers=underscore_numbers,
+                         color=color).pformat(object)
 
 
 def pp(object, *args, sort_dicts=False, **kwargs):
@@ -114,7 +117,7 @@ def _safe_tuple(t):
 class PrettyPrinter:
     def __init__(self, indent=1, width=80, depth=None, stream=None, *,
                  compact=False, expand=False, sort_dicts=True,
-                 underscore_numbers=False):
+                 underscore_numbers=False, color=None):
         """Handle pretty printing operations onto a stream using a set of
         configured parameters.
 
@@ -168,16 +171,26 @@ class PrettyPrinter:
         self._expand = bool(expand)
         self._sort_dicts = sort_dicts
         self._underscore_numbers = underscore_numbers
+        self._color = color
 
     def pprint(self, object):
         if self._stream is not None:
-            self._format(object, self._stream, 0, 0, {}, 0)
+            color = self._color
+            if color is None:
+                color = _colorize.can_colorize(file=self._stream)
+            stream = _StringIO() if color else self._stream
+            self._format(object, stream, 0, 0, {}, 0)
+            if color:
+                self._stream.write(_colorize.colorize_python(stream.getvalue()))
             self._stream.write("\n")
 
     def pformat(self, object):
         sio = _StringIO()
         self._format(object, sio, 0, 0, {}, 0)
-        return sio.getvalue()
+        result = sio.getvalue()
+        if self._color:
+            result = _colorize.colorize_python(result)
+        return result
 
     def isrecursive(self, object):
         return self.format(object, {}, 0, 0)[2]
