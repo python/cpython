@@ -810,6 +810,12 @@ class DequeWithBadIter(deque):
 
 class TestSubclass(unittest.TestCase):
 
+    def test_copy_maxlen(self):
+        original = Deque('abc', maxlen=support.MAX_Py_ssize_t)
+        copied = original.copy()
+        self.assertEqual(copied, original)
+        self.assertEqual(copied.maxlen, original.maxlen)
+
     def test_basics(self):
         d = Deque(range(25))
         d.__init__(range(200))

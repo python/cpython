@@ -23,6 +23,8 @@ init([files]) -- parse a list of files, default knownfiles (on Windows, the
 read_mime_types(file) -- parse one file, return a dictionary or None
 """
 
+import sys
+
 try:
     from _winapi import _mimetypes_read_windows_registry
 except ImportError:
@@ -40,17 +42,23 @@ __all__ = [
     "suffix_map", "encodings_map", "types_map", "common_types"
 ]
 
-knownfiles = [
-    "/etc/mime.types",
-    "/etc/httpd/mime.types",                    # Mac OS X
-    "/etc/httpd/conf/mime.types",               # Apache
-    "/etc/apache/mime.types",                   # Apache 1
-    "/etc/apache2/mime.types",                  # Apache 2
-    "/usr/local/etc/httpd/conf/mime.types",
-    "/usr/local/lib/netscape/mime.types",
-    "/usr/local/etc/httpd/conf/mime.types",     # Apache 1.2
-    "/usr/local/etc/mime.types",                # Apache 1.3
-    ]
+if sys.platform == "win32":
+    # The default paths would resolve to the root of the current drive on Windows
+    # (e.g. C:\etc\mime.types), which unprivileged users can usually create.
+    # Only the registry is used by default.
+    knownfiles = []
+else:
+    knownfiles = [
+        "/etc/mime.types",
+        "/etc/httpd/mime.types",                    # Mac OS X
+        "/etc/httpd/conf/mime.types",               # Apache
+        "/etc/apache/mime.types",                   # Apache 1
+        "/etc/apache2/mime.types",                  # Apache 2
+        "/usr/local/etc/httpd/conf/mime.types",
+        "/usr/local/lib/netscape/mime.types",
+        "/usr/local/etc/httpd/conf/mime.types",     # Apache 1.2
+        "/usr/local/etc/mime.types",                # Apache 1.3
+        ]
 
 inited = False
 _db = None

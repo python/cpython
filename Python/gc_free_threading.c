@@ -399,16 +399,17 @@ gc_visit_heaps_lock_held(PyInterpreterState *interp, mi_block_visit_fun *visitor
         }
     }
 
-    // visit blocks in the per-interpreter abandoned pool (from dead threads)
-    mi_abandoned_pool_t *pool = &interp->mimalloc.abandoned_pool;
+    // visit blocks in abandoned segments (from dead threads) of the
+    // per-interpreter mimalloc sub-process.
+    mi_subproc_t *subproc = interp->mimalloc.subproc;
     arg->offset = offset_base;
-    if (!_mi_abandoned_pool_visit_blocks(pool, _Py_MIMALLOC_HEAP_GC, true,
-                                         visitor, arg)) {
+    if (!mi_abandoned_visit_blocks(subproc, _Py_MIMALLOC_HEAP_GC, true,
+                                   visitor, arg)) {
         return -1;
     }
     arg->offset = offset_pre;
-    if (!_mi_abandoned_pool_visit_blocks(pool, _Py_MIMALLOC_HEAP_GC_PRE, true,
-                                         visitor, arg)) {
+    if (!mi_abandoned_visit_blocks(subproc, _Py_MIMALLOC_HEAP_GC_PRE, true,
+                                   visitor, arg)) {
         return -1;
     }
     return 0;
@@ -548,7 +549,7 @@ static_assert(BUFFER_HI < BUFFER_SIZE &&
     #define PREFETCH_T1(ptr)  __builtin_prefetch(ptr, 0, 2)
     #define PREFETCH_T2(ptr)  __builtin_prefetch(ptr, 0, 1)
     #define PREFETCH_NTA(ptr)  __builtin_prefetch(ptr, 0, 0)
-#elif defined(_MSC_VER) && (defined(_M_X64) || defined(_M_I86)) && !defined(_M_ARM64EC)
+#elif defined(_MSC_VER) && (defined(_M_X64) || defined(_M_IX86)) && !defined(_M_ARM64EC)
     #include <mmintrin.h>
     #define PREFETCH_T0(ptr)  _mm_prefetch((const char*)(ptr), _MM_HINT_T0)
     #define PREFETCH_T1(ptr)  _mm_prefetch((const char*)(ptr), _MM_HINT_T1)
@@ -2113,6 +2114,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
         int err = gc_mark_alive_from_roots(interp, state);
         if (err < 0) {
             _PyEval_StartTheWorld(interp);
+            cleanup_worklist(&state->objs_to_decref);
             PyErr_NoMemory();
             return;
         }
@@ -2123,6 +2125,9 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     int err = deduce_unreachable_heap(interp, state);
     if (err < 0) {
         _PyEval_StartTheWorld(interp);
+        cleanup_worklist(&state->unreachable);
+        cleanup_worklist(&state->legacy_finalizers);
+        cleanup_worklist(&state->objs_to_decref);
         PyErr_NoMemory();
         return;
     }
@@ -2389,9 +2394,10 @@ visit_get_referrers(const mi_heap_t *heap, const mi_heap_area_t *area,
         return true;
     }
     if (Py_TYPE(op)->tp_traverse(op, referrersvisit, arg->objs)) {
-        if (_PyObjectStack_Push(&arg->results, Py_NewRef(op)) < 0) {
+        if (_PyObjectStack_Push(&arg->results, op) < 0) {
             return false;
         }
+        Py_INCREF(op);
     }
 
     return true;
@@ -2436,9 +2442,10 @@ visit_get_objects(const mi_heap_t *heap, const mi_heap_area_t *area,
     }
 
     struct get_objects_args *arg = (struct get_objects_args *)args;
-    if (_PyObjectStack_Push(&arg->objects, Py_NewRef(op)) < 0) {
+    if (_PyObjectStack_Push(&arg->objects, op) < 0) {
         return false;
     }
+    Py_INCREF(op);
     return true;
 }
 

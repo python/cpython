@@ -62,59 +62,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "stringlib/undef.h"
 
 
-/* Copy an ASCII or latin1 char* string into a Python Unicode string.
-
-   WARNING: The function doesn't copy the terminating null character and
-   doesn't check the maximum character (may write a latin1 character in an
-   ASCII string). */
-static void
-unicode_write_cstr(PyObject *unicode, Py_ssize_t index,
-                   const char *str, Py_ssize_t len)
-{
-    int kind = PyUnicode_KIND(unicode);
-    const void *data = PyUnicode_DATA(unicode);
-    const char *end = str + len;
-
-    assert(index + len <= PyUnicode_GET_LENGTH(unicode));
-    switch (kind) {
-    case PyUnicode_1BYTE_KIND: {
-#ifdef Py_DEBUG
-        if (PyUnicode_IS_ASCII(unicode)) {
-            Py_UCS4 maxchar = ucs1lib_find_max_char(
-                (const Py_UCS1*)str,
-                (const Py_UCS1*)str + len);
-            assert(maxchar < 128);
-        }
-#endif
-        memcpy((char *) data + index, str, len);
-        break;
-    }
-    case PyUnicode_2BYTE_KIND: {
-        Py_UCS2 *start = (Py_UCS2 *)data + index;
-        Py_UCS2 *ucs2 = start;
-
-        for (; str < end; ++ucs2, ++str)
-            *ucs2 = (Py_UCS2)*str;
-
-        assert((ucs2 - start) <= PyUnicode_GET_LENGTH(unicode));
-        break;
-    }
-    case PyUnicode_4BYTE_KIND: {
-        Py_UCS4 *start = (Py_UCS4 *)data + index;
-        Py_UCS4 *ucs4 = start;
-
-        for (; str < end; ++ucs4, ++str)
-            *ucs4 = (Py_UCS4)*str;
-
-        assert((ucs4 - start) <= PyUnicode_GET_LENGTH(unicode));
-        break;
-    }
-    default:
-        Py_UNREACHABLE();
-    }
-}
-
-
 static inline void
 _PyUnicodeWriter_Update(_PyUnicodeWriter *writer)
 {
@@ -199,10 +146,13 @@ void PyUnicodeWriter_Discard(PyUnicodeWriter *writer)
 void
 _PyUnicodeWriter_InitWithBuffer(_PyUnicodeWriter *writer, PyObject *buffer)
 {
+    assert(PyUnstable_Object_IsUniquelyReferenced(buffer));
+
     memset(writer, 0, sizeof(*writer));
     writer->buffer = buffer;
     _PyUnicodeWriter_Update(writer);
     writer->min_length = writer->size;
+    assert(_PyUnicodeWriter_CanWrite(writer));
 }
 
 
@@ -350,6 +300,8 @@ _PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer, PyObject *str)
         if (_PyUnicodeWriter_PrepareInternal(writer, len, maxchar) == -1)
             return -1;
     }
+
+    assert(_PyUnicodeWriter_CanWrite(writer));
     _PyUnicode_FastCopyCharacters(writer->buffer, writer->pos,
                                   str, 0, len);
     writer->pos += len;
@@ -428,6 +380,7 @@ _PyUnicodeWriter_WriteSubstring(_PyUnicodeWriter *writer, PyObject *str,
     if (_PyUnicodeWriter_Prepare(writer, len, maxchar) < 0) {
         return -1;
     }
+    assert(_PyUnicodeWriter_CanWrite(writer));
 
     _PyUnicode_FastCopyCharacters(writer->buffer, writer->pos,
                                   str, start, len);
@@ -485,8 +438,10 @@ _PyUnicodeWriter_WriteASCIIString(_PyUnicodeWriter *writer,
         return 0;
     }
 
-    if (_PyUnicodeWriter_Prepare(writer, len, 127) == -1)
+    if (_PyUnicodeWriter_Prepare(writer, len, 127) == -1) {
         return -1;
+    }
+    assert(_PyUnicodeWriter_CanWrite(writer));
 
     switch (writer->kind)
     {
@@ -586,12 +541,43 @@ int
 _PyUnicodeWriter_WriteLatin1String(_PyUnicodeWriter *writer,
                                    const char *str, Py_ssize_t len)
 {
-    Py_UCS4 maxchar;
+    if (len == 0) {
+        return 0;
+    }
 
-    maxchar = ucs1lib_find_max_char((const Py_UCS1*)str, (const Py_UCS1*)str + len);
-    if (_PyUnicodeWriter_Prepare(writer, len, maxchar) == -1)
+    const Py_UCS1 *ucs1 = (const Py_UCS1 *)str;
+    Py_UCS4 maxchar = ucs1lib_find_max_char(ucs1, ucs1 + len);
+    if (_PyUnicodeWriter_Prepare(writer, len, maxchar) < 0) {
         return -1;
-    unicode_write_cstr(writer->buffer, writer->pos, str, len);
+    }
+    assert(_PyUnicodeWriter_CanWrite(writer));
+
+    Py_ssize_t index = writer->pos;
+    switch (writer->kind) {
+    case PyUnicode_1BYTE_KIND: {
+        memcpy((Py_UCS1 *)writer->data + index, ucs1, len);
+        break;
+    }
+    case PyUnicode_2BYTE_KIND: {
+        Py_UCS2 *ucs2 = (Py_UCS2 *)writer->data + index;
+        const Py_UCS1 *end = ucs1 + len;
+        for (; ucs1 < end; ++ucs2, ++ucs1) {
+            *ucs2 = (Py_UCS2)*ucs1;
+        }
+        break;
+    }
+    case PyUnicode_4BYTE_KIND: {
+        Py_UCS4 *ucs4 = (Py_UCS4 *)writer->data + index;
+        const Py_UCS1 *end = ucs1 + len;
+        for (; ucs1 < end; ++ucs4, ++ucs1) {
+            *ucs4 = (Py_UCS4)*ucs1;
+        }
+        break;
+    }
+    default:
+        Py_UNREACHABLE();
+    }
+
     writer->pos += len;
     return 0;
 }

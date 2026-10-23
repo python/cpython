@@ -1086,7 +1086,11 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
         if (PyByteArray_Resize((PyObject *)self, size) < 0) goto fail;
         if (PyBuffer_ToContiguous(PyByteArray_AS_STRING(self),
             &view, size, 'C') < 0)
+        {
+            /* Don't expose the uninitialized bytes: reset to empty */
+            (void)PyByteArray_Resize((PyObject *)self, 0);
             goto fail;
+        }
         PyBuffer_Release(&view);
         return 0;
     fail:
@@ -1114,6 +1118,8 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
             }
             int rc = _getbytevalue(items[i], &value);
             if (!rc) {
+                /* Don't expose the uninitialized bytes: reset to empty */
+                (void)PyByteArray_Resize((PyObject *)self, 0);
                 return -1;
             }
             s[i] = value;

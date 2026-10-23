@@ -3,6 +3,11 @@
 #include "ceval.h"
 #include "pycore_long.h"
 
+#ifdef HAVE_PTHREAD_NP_H
+#  include <pthread_np.h>         // pthread_attr_get_np()
+#endif
+
+
 int
 Py_GetRecursionLimit(void)
 {
@@ -159,13 +164,18 @@ hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
     // limits compared to the old stack size estimation. musl doesn't give
     // us a way to detect it, so we have to assume any non-glibc,
     // non-Android Linux is musl and mustn't rely on pthread_getattr_np.
-#  if defined(HAVE_PTHREAD_GETATTR_NP) && !defined(_AIX) && \
-        !defined(__NetBSD__) && \
-        (defined(__GLIBC__) || defined(__ANDROID__) || !defined(__linux__))
+#  if (defined(HAVE_PTHREAD_GETATTR_NP) || defined(_Py_HAVE_PTHREAD_ATTR_GET_NP)) \
+        && !defined(_AIX) && !defined(__NetBSD__) \
+        && (defined(__GLIBC__) || defined(__ANDROID__) || !defined(__linux__))
     size_t stack_size, guard_size;
     void *stack_addr;
     pthread_attr_t attr;
+#ifdef _Py_HAVE_PTHREAD_ATTR_GET_NP
+    int err = pthread_attr_init(&attr);
+    err |= pthread_attr_get_np(pthread_self(), &attr);
+#else
     int err = pthread_getattr_np(pthread_self(), &attr);
+#endif
     if (err == 0) {
         err = pthread_attr_getguardsize(&attr, &guard_size);
         err |= pthread_attr_getstack(&attr, &stack_addr, &stack_size);
@@ -1189,8 +1199,16 @@ dtrace_function_entry(_PyInterpreterFrame *frame)
     int lineno;
 
     PyCodeObject *code = _PyFrame_GetCode(frame);
+    PyObject *exc = PyErr_GetRaisedException();
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
+    PyErr_SetRaisedException(exc);
+    if (filename == NULL) {
+        filename = "<unknown>";
+    }
+    if (funcname == NULL) {
+        funcname = "<unknown>";
+    }
     lineno = PyUnstable_InterpreterFrame_GetLine(frame);
 
     PyDTrace_FUNCTION_ENTRY(filename, funcname, lineno);
@@ -1204,8 +1222,16 @@ dtrace_function_return(_PyInterpreterFrame *frame)
     int lineno;
 
     PyCodeObject *code = _PyFrame_GetCode(frame);
+    PyObject *exc = PyErr_GetRaisedException();
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
+    PyErr_SetRaisedException(exc);
+    if (filename == NULL) {
+        filename = "<unknown>";
+    }
+    if (funcname == NULL) {
+        funcname = "<unknown>";
+    }
     lineno = PyUnstable_InterpreterFrame_GetLine(frame);
 
     PyDTrace_FUNCTION_RETURN(filename, funcname, lineno);

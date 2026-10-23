@@ -461,15 +461,11 @@ class DictTest(unittest.TestCase):
 
     @support.nomemtest
     def test_copy_empty_no_memory(self):
-        import _testcapi
         d = {}
         d_copy = d.copy
         with self.assertRaises(MemoryError):
-            try:
-                _testcapi.set_nomemory(0)
+            with support.inject_memory_error_cm():
                 d_copy()
-            finally:
-                _testcapi.remove_mem_hooks()
 
     def test_get(self):
         d = {}
@@ -1975,6 +1971,21 @@ class FrozenDictTests(unittest.TestCase):
 
         fd = frozendict(x=[1], y=[2])
         with self.assertRaisesRegex(TypeError, "unhashable type: 'list'"):
+            hash(fd)
+
+    @support.skip_if_huge_c_stack(500_000)
+    @support.skip_wasi_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
+    def test_hash_deeply_nested(self):
+        # This should raise a RecursionError and not crash.
+        # Nesting through *values*: unlike keys, values are not hashed at
+        # construction time, so hashing recurses the full depth.
+        # See https://github.com/python/cpython/issues/154318.
+        fd = frozendict({0: 0})
+        for _ in range(500_000):
+            fd = frozendict({0: fd})
+        with self.assertRaisesRegex(RecursionError,
+                                    "while hashing a frozendict"):
             hash(fd)
 
     @support.cpython_only

@@ -1,7 +1,9 @@
 import sys
+import threading
 import unittest
 from test import support
 from test.support import import_helper
+from test.support import threading_helper
 
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 _testcapi = import_helper.import_module('_testcapi')
@@ -57,10 +59,12 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(fromstringandsize(b'abc'), b'abc')
         self.assertEqual(fromstringandsize(b'abc', 2), b'ab')
         self.assertEqual(fromstringandsize(b'abc\0def'), b'abc\0def')
-        self.assertEqual(fromstringandsize(b'a'), b'a')
-        self.assertEqual(fromstringandsize(b'a', 1), b'a')
-        self.assertEqual(fromstringandsize(b'', 0), b'')
-        self.assertEqual(fromstringandsize(NULL, 0), b'')
+
+        # Return singleton for 0 or 1 bytes
+        self.assertIs(fromstringandsize(b'', 0), b'')
+        self.assertIs(fromstringandsize(NULL, 0), b'')
+        self.assertIs(fromstringandsize(b'a', 1), b'a')
+
         self.assertEqual(len(fromstringandsize(NULL, 3)), 3)
         self.assertRaises((MemoryError, OverflowError),
                           fromstringandsize, NULL, PY_SSIZE_T_MAX)
@@ -75,7 +79,10 @@ class CAPITest(unittest.TestCase):
         fromstring = _testlimitedcapi.bytes_fromstring
 
         self.assertEqual(fromstring(b'abc\0def'), b'abc')
-        self.assertEqual(fromstring(b''), b'')
+
+        # Return singleton for 0 or 1 bytes
+        self.assertIs(fromstring(b''), b'')
+        self.assertIs(fromstring(b'a'), b'a')
 
         # CRASHES fromstring(NULL)
 
@@ -235,39 +242,60 @@ class CAPITest(unittest.TestCase):
         """Test _PyBytes_Resize()"""
         _resize = _testcapi.bytes_resize
 
-        def resize(obj, size, new):
-            result = _resize(obj, size, new)
-            if 1 <= len(result):
-                if new or size != len(obj):
-                    # gh-156995: Make sure that the result is a fresh object.
-                    # Previously, _PyBytes_Resize(&obj, 1) returned a singleton
-                    # if _PyObject_IsUniquelyReferenced() is false.
-                    self.assertEqual(sys.getrefcount(result), 1)
-                    self.assertFalse(sys._is_immortal(result))
-            else:
+        def assert_is_fresh_copy(result, refcnt, is_new_obj):
+            self.assertEqual(refcnt, 1)
+            self.assertTrue(is_new_obj)
+            self.assertFalse(sys._is_immortal(result))
+
+        def resize(obj, size, new, compute_hash=False):
+            old_size = len(obj)
+            result, refcnt, is_new_obj = _resize(obj, size, new,
+                                                 compute_hash=compute_hash)
+
+            if size == old_size:
+                # Return the same object unchanged
+                self.assertFalse(is_new_obj)
+            elif old_size == 0:
+                assert_is_fresh_copy(result, refcnt, is_new_obj)
+            elif size == 0:
                 # check that the result is the empty bytes string singleton
+                self.assertEqual(result, b'')
                 self.assertTrue(sys._is_immortal(result))
+                self.assertTrue(is_new_obj)
+            elif (not new) or compute_hash:
+                # gh-156995: Make sure that the result is a fresh object.
+                # Previously, _PyBytes_Resize(&obj, 1) returned a singleton
+                # if _PyObject_IsUniquelyReferenced() is false.
+                assert_is_fresh_copy(result, refcnt, is_new_obj)
+            else:
+                # An in-place resize can return the same memory address, or
+                # not. 'is_new_obj' cannot be tested.
+                self.assertEqual(refcnt, 1)
+                self.assertFalse(sys._is_immortal(result))
+
             return result
 
         for new in True, False:
-            with self.subTest(new=new):
-                self.assertEqual(resize(b'abc', 0, new), b'')
-                self.assertEqual(resize(b'abc', 1, new), b'a')
-                self.assertEqual(resize(b'abc', 2, new), b'ab')
-                self.assertEqual(resize(b'abc', 3, new), b'abc')
-                b = resize(b'abc', 4, new)
-                self.assertEqual(len(b), 4)
-                self.assertEqual(b[:3], b'abc')
+            for compute_hash in True, False:
+                with self.subTest(new=new, compute_hash=compute_hash):
+                    self.assertEqual(resize(b'abc', 0, new, compute_hash), b'')
+                    self.assertEqual(resize(b'abc', 1, new, compute_hash), b'a')
+                    self.assertEqual(resize(b'abc', 2, new, compute_hash), b'ab')
+                    self.assertEqual(resize(b'abc', 3, new, compute_hash), b'abc')
 
-                self.assertEqual(resize(b'a', 0, new), b'')
-                self.assertEqual(resize(b'a', 1, new), b'a')
-                b = resize(b'a', 2, new)
-                self.assertEqual(len(b), 2)
-                self.assertEqual(b[:1], b'a')
+                    b = resize(b'abc', 4, new, compute_hash)
+                    self.assertEqual(len(b), 4)
+                    self.assertEqual(b[:3], b'abc')
 
-                self.assertEqual(resize(b'', 0, new), b'')
-                self.assertEqual(len(resize(b'', 1, new)), 1)
-                self.assertEqual(len(resize(b'', 2, new)), 2)
+                    self.assertEqual(resize(b'a', 0, new, compute_hash), b'')
+                    self.assertEqual(resize(b'a', 1, new, compute_hash), b'a')
+                    b = resize(b'a', 2, new, compute_hash)
+                    self.assertEqual(len(b), 2)
+                    self.assertEqual(b[:1], b'a')
+
+                    self.assertEqual(resize(b'', 0, new, compute_hash), b'')
+                    self.assertEqual(len(resize(b'', 1, new, compute_hash)), 1)
+                    self.assertEqual(len(resize(b'', 2, new, compute_hash)), 2)
 
         self.assertRaises(SystemError, resize, b'abc', -1, False)
         self.assertRaises(SystemError, resize, bytearray(b'abc'), 3, False)
@@ -318,6 +346,10 @@ class CAPITest(unittest.TestCase):
 
 class BaseWriterTest:
     RESULT_TYPE = NotImplementedError
+    SMALL_BUFFER = 11  # bytes
+    assert SMALL_BUFFER < _testcapi.PyBytesWriter_small_buffer
+    LARGE_BUFFER = _testcapi.PyBytesWriter_small_buffer + 17  # bytes
+    NEW_BYTE = b'\xff'
 
     def create_writer(self, alloc=0, string=b''):
         raise NotImplementedError
@@ -334,23 +366,60 @@ class BaseWriterTest:
         self.assertEqual(writer.get_size(), 0)
         self.bytes_equal(writer.finish(), b'')
 
-        writer = self.create_writer(3, b'abc')
+        writer = self.create_writer(3)
+        writer.write(0, b'abc')
         self.assertEqual(writer.get_size(), 3)
         self.bytes_equal(writer.finish(), b'abc')
 
+    @unittest.skipUnless(support.Py_DEBUG, 'need Py_DEBUG')
+    def test_get_data(self):
+        # Test PyBytesWriter_GetData()
+        writer = self.create_writer(6)
+        NEW_BYTE = self.NEW_BYTE
+        self.assertEqual(writer.get_data(), NEW_BYTE * 6)
+        writer.write(0, b'abc')
+        self.assertEqual(writer.get_data(), b'abc' + NEW_BYTE * 3)
+        writer.write(3, b'123')
+        self.assertEqual(writer.get_data(), b'abc123')
+
+        # Switch from small buffer to large buffer
+        small, large = self.SMALL_BUFFER, self.LARGE_BUFFER
+        writer = self.create_writer(small)
+        self.assertEqual(writer.get_data(), NEW_BYTE * small)
+        writer.write(0, b's' * small)
+        self.assertEqual(writer.get_data(), b's' * small)
+        writer.resize(large)
+        self.assertEqual(writer.get_data(), b's' * small + NEW_BYTE * (large - small))
+        writer.write(small, b'L' * (large - small))
+        self.assertEqual(writer.get_data(), b's' * small + b'L' * (large - small))
+
+        # Resize large buffer
+        small, large = self.SMALL_BUFFER, self.LARGE_BUFFER
+        writer = self.create_writer(large)
+        self.assertEqual(writer.get_data(), NEW_BYTE * large)
+        writer.write(0, b'L' * large)
+        self.assertEqual(writer.get_data(), b'L' * large)
+        writer.resize(large + 10)
+        self.assertEqual(writer.get_data(), b'L' * large + NEW_BYTE * 10)
+        writer.write(large, b'#' * 10)
+        self.assertEqual(writer.get_data(), b'L' * large + b'#' * 10)
+
     def test_finish_with_size(self):
         # Test PyBytesWriter_FinishWithSize()
-        writer = self.create_writer(10, b'abcdef')
+        writer = self.create_writer(10)
+        writer.write(0, b'abc123')
         self.assertEqual(writer.get_size(), 10)
         self.bytes_equal(writer.finish_with_size(3), b'abc')
 
         # Error if the size is negative
-        writer = self.create_writer(3, b'abc')
+        writer = self.create_writer(3, )
+        writer.write(0, b'abc')
         with self.assertRaises(ValueError):
             writer.finish_with_size(-3)
 
         # Error if the requested size is larger than the allocated size
-        writer = self.create_writer(3, b'abc')
+        writer = self.create_writer(3)
+        writer.write(0, b'abc')
         with self.assertRaises(ValueError):
             writer.finish_with_size(4)
 
@@ -368,52 +437,121 @@ class BaseWriterTest:
     def test_resize(self):
         # Test PyBytesWriter_Resize()
         writer = self.create_writer()
-        writer.resize(len(b'number=123456'), b'number=123456')
-        writer.resize(len(b'number=123456'), b'')
-        self.assertEqual(writer.get_size(), len(b'number=123456'))
-        self.bytes_equal(writer.finish(), b'number=123456')
+        writer.resize(len(b'hello'))
+        writer.write(0, b'hello')
+        self.bytes_equal(writer.finish(), b'hello')
 
         writer = self.create_writer()
-        writer.resize(0, b'')
-        writer.resize(len(b'number=123456'), b'number=123456')
-        self.bytes_equal(writer.finish(), b'number=123456')
+        writer.resize(0)  # noop
+        writer.resize(len(b'number'))
+        writer.write(0, b'number')
+        writer.resize(len(b'number='))
+        writer.write(len(b'number'), b'=')
+        writer.resize(len(b'number=123'), )
+        writer.write(len(b'number='), b'123')
+        writer.resize(len(b'number=123'))  # noop
+        self.bytes_equal(writer.finish(), b'number=123')
 
+        # Switch from small buffer to large buffer
         writer = self.create_writer()
-        writer.resize(len(b'number='), b'number=')
-        writer.resize(len(b'number=123456'), b'123456')
-        self.bytes_equal(writer.finish(), b'number=123456')
+        small, large = self.SMALL_BUFFER, self.LARGE_BUFFER
+        writer.resize(small)
+        writer.write(0, b's' * small)
+        writer.resize(large)
+        writer.write(small, b'L' * (large - small))
+        self.bytes_equal(writer.finish(),
+                         b's' * small + b'L' * (large - small))
 
+        # Make sure that it's possible to write after a resize to zero
+        # when a bytes/bytearray object is allocated.
         writer = self.create_writer()
-        writer.resize(len(b'number='), b'number=')
-        writer.resize(len(b'number='), b'')
-        writer.resize(len(b'number=123456'), b'123456')
-        self.bytes_equal(writer.finish(), b'number=123456')
+        writer.resize(self.LARGE_BUFFER)
+        writer.resize(0)
+        writer.write_bytes(b'abc', 3)
+        self.bytes_equal(writer.finish(), b'abc')
 
-        writer = self.create_writer()
-        writer.resize(len(b'number'), b'number')
-        writer.resize(len(b'number='), b'=')
-        writer.resize(len(b'number=123'), b'123')
-        writer.resize(len(b'number=123456'), b'456')
-        self.bytes_equal(writer.finish(), b'number=123456')
+        # invalid size
+        for size in (self.SMALL_BUFFER, self.LARGE_BUFFER):
+            with self.subTest(size=size):
+                writer = self.create_writer()
+                writer.write_bytes(b'x' * size, -1)
+                with self.assertRaisesRegex(ValueError, 'size must be >= 0'):
+                    writer.resize(-1)
+                with self.assertRaises((MemoryError, OverflowError)):
+                    writer.resize(_testcapi.PY_SSIZE_T_MAX)
+                self.bytes_equal(writer.finish(), b'x' * size)
 
     @support.nomemtest
     def test_resize_error(self):
-        small_buffer = _testcapi.PyBytesWriter_small_buffer
-        init = b'x' * (small_buffer * 2)
-        writer = self.create_writer(len(init), init)
+        # Test PyBytesWriter_Resize() error
+        init = b'x' * self.LARGE_BUFFER
+        writer = self.create_writer(len(init))
+        writer.write(0, init)
         size = len(init) + 100
-        try:
-            with self.assertRaises(MemoryError):
-                _testcapi.set_nomemory(0)
-                writer.resize(size, b'')
-        finally:
-            _testcapi.remove_mem_hooks()
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
+                writer.resize(size)
         suffix = b'still working'
         writer.write_bytes(suffix, -1)
         self.bytes_equal(writer.finish(), init + suffix)
 
         # Note: PyBytesWriter_Resize() leaves the buffer unchanged (no resize)
         # if the new size is smaller than the allocated size
+
+    def test_grow(self):
+        # Test PyBytesWriter_Grow()
+        writer = self.create_writer(0)
+        writer.grow(len(b'number=123'))
+        writer.write(0, b'number=123')
+        self.bytes_equal(writer.finish(), b'number=123')
+
+        writer = self.create_writer()
+        writer.grow(0)  # noop
+        writer.grow(len(b'number'))
+        writer.write(0, b'number')
+        writer.grow(len(b'='))
+        writer.write(len(b'number'), b'=')
+        writer.grow(len(b'123'), )
+        writer.write(len(b'number='), b'123')
+        writer.grow(0)  # noop
+        self.bytes_equal(writer.finish(), b'number=123')
+
+        # Switch from small buffer to large buffer
+        writer = self.create_writer()
+        small, large = self.SMALL_BUFFER, self.LARGE_BUFFER
+        writer.grow(small)
+        writer.write(0, b's' * small)
+        writer.grow(large - small)
+        writer.write(small, b'L' * (large - small))
+        self.bytes_equal(writer.finish(),
+                         b's' * small + b'L' * (large - small))
+
+        # invalid size
+        for size in (self.SMALL_BUFFER, self.LARGE_BUFFER):
+            with self.subTest(size=size):
+                writer = self.create_writer()
+                writer.write_bytes(b'x' * size, -1)
+                with self.assertRaisesRegex(ValueError, 'invalid size'):
+                    writer.grow(-size - 1)
+                with self.assertRaises(MemoryError):
+                    writer.grow(_testcapi.PY_SSIZE_T_MAX)
+                self.bytes_equal(writer.finish(), b'x' * size)
+
+    @support.nomemtest
+    def test_grow_error(self):
+        # Test PyBytesWriter_Grow() error
+        init = b'x' * self.LARGE_BUFFER
+        writer = self.create_writer(len(init))
+        writer.write(0, init)
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
+                writer.grow(100)
+        suffix = b'still working'
+        writer.write_bytes(suffix, -1)
+        self.bytes_equal(writer.finish(), init + suffix)
+
+        # Note: PyBytesWriter_Grow() leaves the buffer unchanged (no resize)
+        # if grow is negative.
 
     def test_format_i(self):
         # Test PyBytesWriter_Format()
@@ -423,8 +561,16 @@ class BaseWriterTest:
 
         writer = self.create_writer()
         writer.format_i(b'x=%i, ', 123)
-        writer.format_i(b'y=%i', 456)
+        writer.format_i(b'y=%d', 456)
         self.bytes_equal(writer.finish(), b'x=123, y=456')
+
+        # Test invalid format: "%t" is invalid, stop the parser and copy
+        # remaining bytes
+        writer = self.create_writer()
+        writer.write_bytes(b'prefix ', -1)
+        writer.format_i(b'y=%._ t %i', 0)
+        writer.write_bytes(b'.', 1)
+        self.bytes_equal(writer.finish(), b'prefix y=%._ t %i.')
 
     def test_format_s(self):
         # Test PyBytesWriter_Format()
@@ -432,47 +578,85 @@ class BaseWriterTest:
         writer.format_s(b's=%s', b'Hello World')
         self.bytes_equal(writer.finish(), b's=Hello World')
 
+        # Test precision
+        writer = self.create_writer()
+        writer.format_s(b'%.6s', b'Monty Python')
+        writer.format_s(b'%.20s', b'3.0')
+        self.bytes_equal(writer.finish(), b'Monty 3.0')
+
     @support.nomemtest
     def test_format_s_memory_error(self):
         writer = self.create_writer()
-        s = b'x' * 500
+        s = b'x' * self.LARGE_BUFFER
         with self.assertRaises(MemoryError):
-            try:
-                _testcapi.set_nomemory(0, 0)
-                writer.format_s(b's=%s', s)
-            finally:
-                _testcapi.remove_mem_hooks()
+            _testcapi.call_with_nomemory(0, 0, writer.format_s, b's=%s', s)
         writer.write_bytes(b'after', -1)
         self.bytes_equal(writer.finish(), b'after')
+
+    @threading_helper.requires_working_threading()
+    def test_thread(self):
+        # PyBytesWriter can be used by multiple threads: it's up to the caller
+        # to implement a lock to prevent concurrent accesses.
+        writer = self.create_writer(0)
+        size = None
+        data = None
+
+        def thread_func(writer, LARGE_BUFFER):
+            nonlocal size, data
+
+            # create a bytes object for the buffer
+            writer.write_bytes(b'x' * LARGE_BUFFER, LARGE_BUFFER)
+
+            # so we can check a write with a bytes object
+            writer.write_bytes(b'yz', 2)
+            writer.format_i(b'i=%i', 5)
+            writer.resize(10)
+            data = writer.get_data()
+            size = writer.get_size()
+
+        thread = threading.Thread(target=thread_func,
+                                  args=(writer, self.LARGE_BUFFER))
+        thread.start()
+        threading_helper.join_thread(thread)
+
+        self.assertEqual(size, 10)
+        self.assertEqual(data, b'x' * 10)
+        self.bytes_equal(writer.finish(), b'x' * 10)
 
 
 class BytesWriterTest(BaseWriterTest, unittest.TestCase):
     RESULT_TYPE = bytes
 
-    def create_writer(self, alloc=0, string=b''):
+    def create_writer(self, size=0):
         # Test PyBytesWriter_Create()
-        return _testcapi.PyBytesWriter(alloc, string, 0)
+        return _testcapi.PyBytesWriter(size, 0)
 
     # Only PyBytesWriter_Create() returns singletons
     def test_singletons(self):
         empty = b''
         singletons = {ch: bytes((ch,)) for ch in range(256)}
-        small_buffer = _testcapi.PyBytesWriter_small_buffer
 
         writer = self.create_writer()
         self.assertIs(writer.finish(), empty)
 
-        # Test writer larger than small_buffer
+        # Large buffer
         writer = self.create_writer()
-        unused_text = b'x' * (small_buffer * 2)
+        unused_text = b'x' * self.LARGE_BUFFER
         writer.write_bytes(unused_text, len(unused_text))
         self.assertIs(writer.finish_with_size(0), empty)
 
+        # Large buffer with resize
+        writer = self.create_writer()
+        unused_text = b'x' * self.LARGE_BUFFER
+        writer.write_bytes(unused_text, len(unused_text))
+        writer.resize(0)
+        self.assertIs(writer.finish(), empty)
+
         for ch in range(256):
-            text = bytes((ch,))
+            byte = bytes((ch,))
 
             writer = self.create_writer()
-            writer.write_bytes(text, 1)
+            writer.write_bytes(byte, len(byte))
             self.assertIs(writer.finish(), singletons[ch])
 
     def test_example_abc(self):
@@ -488,9 +672,9 @@ class BytesWriterTest(BaseWriterTest, unittest.TestCase):
 class ByteArrayWriterTest(BaseWriterTest, unittest.TestCase):
     RESULT_TYPE = bytearray
 
-    def create_writer(self, alloc=0, string=b''):
+    def create_writer(self, size=0):
         # Test private _PyBytesWriter_CreateByteArray()
-        return _testcapi.PyBytesWriter(alloc, string, 1)
+        return _testcapi.PyBytesWriter(size, 1)
 
 
 if __name__ == "__main__":

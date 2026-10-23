@@ -903,6 +903,7 @@ winreg_CreateKey_impl(PyObject *module, HKEY key, const wchar_t *sub_key)
     }
     if (PySys_Audit("winreg.OpenKey/result", "n",
                     (Py_ssize_t)retKey) < 0) {
+        RegCloseKey(retKey);
         return NULL;
     }
     return retKey;
@@ -955,6 +956,7 @@ winreg_CreateKeyEx_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
     }
     if (PySys_Audit("winreg.OpenKey/result", "n",
                     (Py_ssize_t)retKey) < 0) {
+        RegCloseKey(retKey);
         return NULL;
     }
     return retKey;
@@ -1401,6 +1403,7 @@ winreg_OpenKey_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
     }
     if (PySys_Audit("winreg.OpenKey/result", "n",
                     (Py_ssize_t)retKey) < 0) {
+        RegCloseKey(retKey);
         return NULL;
     }
     return retKey;

@@ -51,16 +51,10 @@ class Indexable:
 
 
 @contextlib.contextmanager
-def inject_memory_error(testcase, start):
-    # Raise SkipTest if _testcapi extension module is missing
-    _testcapi = import_helper.import_module('_testcapi')
-
+def inject_memory_error(testcase, start=0):
     with testcase.assertRaises(MemoryError):
-        try:
-            _testcapi.set_nomemory(start)
+        with support.inject_memory_error_cm(start):
             yield
-        finally:
-            _testcapi.remove_mem_hooks()
 
 
 class BaseBytesTest:
@@ -901,6 +895,19 @@ class BaseBytesTest:
             b = self.type2test(b'%*b')
             b % (_testcapi.PY_SSIZE_T_MAX, b'abc')
 
+    def test_mod_bytes_lookup_error(self):
+        # An error raised while looking up __bytes__ propagates.
+        class BadBytes:
+            @property
+            def __bytes__(self):
+                raise ZeroDivisionError
+            def __buffer__(self, flags):
+                return memoryview(b'abc')
+
+        b = self.type2test(b'%b')
+        with self.assertRaises(ZeroDivisionError):
+            b % BadBytes()
+
     def test_imod(self):
         b = self.type2test(b'hello, %b!')
         orig = b
@@ -1594,7 +1601,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
                     del ba[:offset]
                 else:
                     expected = ba.copy()
-                with inject_memory_error(self, 0):
+                with inject_memory_error(self):
                     ba.resize(1024)
                 self.assertEqual(ba, expected)
 
@@ -1605,7 +1612,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
                     del ba[:offset]
                 else:
                     expected = ba.copy()
-                with inject_memory_error(self, 0):
+                with inject_memory_error(self):
                     ba.resize(1)
                 self.assertEqual(ba, expected)
 
@@ -1678,21 +1685,20 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         # gh-157242: If bytearray.take_bytes() fails (MemoryError),
         # the bytearray must be left unchanged.
 
-        for logical_offset, to_take, mem_errors in (
+        for logical_offset, to_take, start_list in (
             (True, 5, (0, 1)),
             (False, 5, (0, 1)),
             (True, None, (0,)),
         ):
-            for mem_error in mem_errors:
-                with self.subTest(logical_offset=logical_offset,
-                                  to_take=to_take, mem_error=mem_error):
+            for start in start_list:
+                with self.subTest(logical_offset=logical_offset, start=start):
                     ba = bytearray(b'0123456789')
                     if logical_offset:
                         expected = ba[3:]
                         del ba[:3]
                     else:
                         expected = ba.copy()
-                    with inject_memory_error(self, mem_error):
+                    with inject_memory_error(self, start):
                         ba.take_bytes(to_take)
                     self.assertEqual(ba, expected)
 
@@ -2397,6 +2403,16 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         with memoryview(a):
             self.assertRaises(BufferError, a.__init__, "x", "ascii")
         self.assertEqual(a, b"")
+
+    def test_reinit_error(self):
+        # A failed __init__() must not leave uninitialized bytes in the
+        # object: it must be empty afterwards.
+        for source in ([256] * 100, (-1,) * 100, [0] * 50 + [1000],
+                       (1, 2, 1 << 100)):
+            with self.subTest(source=source):
+                a = bytearray(b"abc")
+                self.assertRaises(ValueError, a.__init__, source)
+                self.assertEqual(a, b"")
 
 
 class AssortedBytesTest(unittest.TestCase):

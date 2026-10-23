@@ -73,7 +73,7 @@ __all__ = [
     "in_systemd_nspawn_sync_suppressed",
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
     "reset_code", "on_github_actions",
-    "requires_root_user", "requires_non_root_user",
+    "requires_root_user", "requires_non_root_user", "built_with_c_assertions",
     ]
 
 
@@ -1536,10 +1536,10 @@ def set_environment_altered(reason):
 
 
 def reap_children():
-    """Use this function at the end of test_main() whenever sub-processes
-    are started.  This will help ensure that no extra children (zombies)
-    stick around to hog resources and create problems when looking
-    for refleaks.
+    """Call this from setUp(), tearDown(), or tearDownModule() in tests
+    that start subprocesses.  This will help ensure that no extra children
+    (zombies) stick around to hog resources and create problems when
+    looking for refleaks.
     """
     # Need os.waitpid(-1, os.WNOHANG): Windows is not supported
     if not (hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG')):
@@ -3443,3 +3443,48 @@ def skip_on_low_desktop_heap_memory_subprocess(returncode):
     if returncode == STATUS_DLL_INIT_FAILED:
         raise unittest.SkipTest('gh-150436: DLL init failed, likely because '
                                 'of low desktop heap memory')
+
+
+def built_with_c_assertions():
+    """Check if Python was built with C assertions (assert())."""
+    try:
+        import _testlimitedcapi
+    except ImportError:
+        return Py_DEBUG
+    else:
+        return bool(_testlimitedcapi._py_getbuiltwithassert())
+
+
+def inject_memory_error(start=0, stop=0):
+    """
+    Memory allocation fails after 'start' allocation requests, and until 'stop'
+    allocation requests except when 'stop' is negative or equal to 0 (default)
+    in which case allocation failures never stop.
+
+    Raise SkipTest if the _testcapi extension module is missing
+    """
+    try:
+        import _testcapi
+    except ImportError:
+        raise unittest.SkipTest("_testcapi required")
+
+    _testcapi.set_nomemory(start, stop)
+
+
+@contextlib.contextmanager
+def inject_memory_error_cm(start=0, stop=0):
+    """
+    Similar to inject_memory_error() but can be used as a context manager.
+
+    Raise SkipTest if the _testcapi extension module is missing
+    """
+    try:
+        import _testcapi
+    except ImportError:
+        raise unittest.SkipTest("_testcapi required")
+
+    try:
+        _testcapi.set_nomemory(start, stop)
+        yield
+    finally:
+        _testcapi.remove_mem_hooks()

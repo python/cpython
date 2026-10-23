@@ -2581,6 +2581,9 @@ get_crossinterp_data(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     else {
         mode = PyUnicode_AsUTF8(modeobj);
+        if (mode == NULL) {
+            return NULL;
+        }
         if (strlen(mode) == 0) {
             mode = "xidata";
         }
@@ -3499,6 +3502,10 @@ module_exec(PyObject *module)
         return 1;
     }
     PyModule_AddObject(module, "SelfInterruptingContextManager", (PyObject *)&SelfInterruptingContextManager_Type);
+
+    if (PyModule_AddIntMacro(module, _Py_MAX_UNICODE) < 0) {
+        return 1;
+    }
 
     return 0;
 }

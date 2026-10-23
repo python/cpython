@@ -1576,6 +1576,7 @@ _get_peer_alt_names (_sslmodulestate *state, X509 *certificate) {
 
 
   fail:
+    sk_GENERAL_NAME_pop_free(names, GENERAL_NAME_free);
     if (biobuf != NULL)
         BIO_free(biobuf);
 
@@ -2017,31 +2018,37 @@ _ssl__SSLSocket_get_unverified_chain_impl(PySSLSocket *self)
 /*[clinic end generated code: output=5acdae414e13f913 input=079f8ff5c205cb3b]*/
 {
     PyObject *retval;
+    X509 *peer = NULL;
     /* borrowed reference */
-    /* TODO: include SSL_get_peer_certificate() for server-side sockets */
     STACK_OF(X509) *chain = SSL_get_peer_cert_chain(self->ssl);
-    if (chain == NULL) {
+    /* OpenSSL does not include the peer cert in the chain for server side
+     * connections, so the chain alone does not tell whether the client sent
+     * a certificate: the chain is empty when it did not, and NULL when the
+     * session was resumed from a ticket (which stores the peer cert only). */
+    if (self->socket_type == PY_SSL_SERVER) {
+        peer = SSL_get_peer_certificate(self->ssl);
+        if (peer == NULL) {
+            Py_RETURN_NONE;
+        }
+    }
+    else if (chain == NULL) {
         Py_RETURN_NONE;
     }
-    retval = _PySSL_CertificateFromX509Stack(self->ctx->state, chain, 1);
+    retval = chain == NULL
+        ? PyList_New(0)
+        : _PySSL_CertificateFromX509Stack(self->ctx->state, chain, 1);
     if (retval == NULL) {
+        X509_free(peer);
         return NULL;
     }
-    /* OpenSSL does not include peer cert for server side connections */
-    if (self->socket_type == PY_SSL_SERVER) {
-        PyObject *peerobj = NULL;
-        X509 *peer = SSL_get_peer_certificate(self->ssl);
-
-        if (peer == NULL) {
-            peerobj = Py_NewRef(Py_None);
-        } else {
-            /* consume X509 reference on success */
-            peerobj = _PySSL_CertificateFromX509(self->ctx->state, peer, 0);
-            if (peerobj == NULL) {
-                X509_free(peer);
-                Py_DECREF(retval);
-                return NULL;
-            }
+    if (peer != NULL) {
+        /* consume X509 reference on success */
+        PyObject *peerobj = _PySSL_CertificateFromX509(self->ctx->state,
+                                                       peer, 0);
+        if (peerobj == NULL) {
+            X509_free(peer);
+            Py_DECREF(retval);
+            return NULL;
         }
         int res = PyList_Insert(retval, 0, peerobj);
         Py_DECREF(peerobj);
@@ -2224,7 +2231,9 @@ _ssl__SSLSocket_group_impl(PySSLSocket *self)
 #if OPENSSL_VERSION_NUMBER >= 0x30200000L
     const char *group_name;
 
-    if (self->ssl == NULL) {
+    // OpenSSL issue: SSL_get0_group_name(...) crashes if no session exists.
+    // See https://github.com/openssl/openssl/issues/32379.
+    if (self->ssl == NULL || SSL_get_session(self->ssl) == NULL) {
         Py_RETURN_NONE;
     }
     group_name = SSL_get0_group_name(self->ssl);
