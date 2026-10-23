@@ -249,6 +249,19 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
         ['U'] = WEEK,
         ['G'] = ISO_YEAR,
         ['V'] = ISO_WEEK,
+        /* Equivalent directives share the duplicate-field checks. */
+        ['b'] = MONTH,
+        ['B'] = MONTH,
+        ['e'] = DAY,
+        ['k'] = HOUR,
+        ['I'] = HOUR,
+        ['l'] = HOUR,
+        ['a'] = WEEKDAY,
+        ['A'] = WEEKDAY,
+        ['u'] = WEEKDAY,
+        ['P'] = AMPM,
+        [':'] = OFFSET,
+        ['W'] = WEEK,
     };
     /* String subclasses and non-ASCII input retain Python's behavior. */
     if (!PyUnicode_CheckExact(string) || !PyUnicode_CheckExact(format) ||
@@ -308,145 +321,144 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
             return 0;
         }
         c = fmt[i];
-        const char *alias = NULL;
-        switch (c) {
-            case 'F': alias = "%Y-%m-%d"; break;
-            case 'D': alias = "%m/%d/%y"; break;
-            case 'T': alias = "%H:%M:%S"; break;
-            case 'R': alias = "%H:%M"; break;
-            case 'e': c = 'd'; break;
-        }
-        if (alias != NULL) {
-            /* These fixed expansions contain no further aliases. Parsing
-             * them in place keeps duplicate-field checks and avoids copying
-             * an arbitrarily long user format into a temporary buffer.
-             */
-            assert(outer_fmt == NULL);
-            outer_fmt = fmt;
-            outer_length = fmt_length;
-            outer_pos = i + 1;
-            fmt = (const unsigned char *)alias;
-            fmt_length = strlen(alias);
-            i = -1;
-            continue;
-        }
-        if (c == 'n' || c == 't') {
-            while (pos < length && Py_UNICODE_ISSPACE(data[pos])) {
-                pos++;
-            }
-            continue;
-        }
-        int require_colon = 0;
-        if (c == ':' && i + 1 < fmt_length && fmt[i + 1] == 'z') {
-            c = fmt[++i];
-            require_colon = 1;
-        }
-        if (c == 'k') {
-            c = 'H';
-        }
-        else if (c == 'l') {
-            c = 'I';
-        }
-        else if (c == 'P') {
-            c = 'p';
-        }
-        if (c == '%') {
-            if (pos == length || data[pos++] != '%') {
-                return 0;
-            }
-            continue;
-        }
-
-        /* Mixed spellings of the same field retain Python's precedence. */
-        unsigned char field = c;
-        if (c == 'b' || c == 'B') {
-            field = 'm';
-        }
-        else if (c == 'a' || c == 'A' || c == 'u') {
-            field = 'w';
-        }
-        else if (c == 'I') {
-            field = 'H';
-        }
-        else if (c == 'W') {
-            field = 'U';
-        }
-        unsigned int bit = directive_bits[field];
-        if (bit == 0) {
-            return 0;
-        }
+        unsigned int bit = directive_bits[c];
         if (seen & bit) {
             return 0;
         }
         seen |= bit;
 
-        if (c == 'b' || c == 'B' || c == 'a' || c == 'A' || c == 'p') {
-            int value;
-            int count = strptime_name(data, length, pos, c, &value);
-            if (count == 0) {
-                return 0;
-            }
-            pos += count;
-            if (field == 'm') {
-                fields->month = value;
-            }
-            else if (c == 'p') {
-                ampm = value;
-            }
-            else {
-                fields->weekday = value;
-            }
-            continue;
-        }
-
-        if (c == 'Z') {
-            /* Local timezone names and nonterminal names retain Python's
-             * tzset state, DST rules and regex backtracking.
-             */
-            if (i != fmt_length - 1 || length - pos != 3 ||
-                !((Py_TOLOWER(data[pos]) == 'u' &&
-                   Py_TOLOWER(data[pos + 1]) == 't' &&
-                   Py_TOLOWER(data[pos + 2]) == 'c') ||
-                  (Py_TOLOWER(data[pos]) == 'g' &&
-                   Py_TOLOWER(data[pos + 1]) == 'm' &&
-                   Py_TOLOWER(data[pos + 2]) == 't'))) {
-                return 0;
-            }
-            fields->zone_start = pos;
-            fields->zone_length = 3;
-            pos = length;
-            continue;
-        }
-        if (c == 'z') {
-            int count = strptime_offset(data, length, pos, require_colon, fields);
-            if (count < 0) {
-                return 0;
-            }
-            pos += count;
-            continue;
-        }
-
+        /* Dispatch once: numeric fields don't need to test for names,
+         * aliases or timezone spellings before parsing their digits.
+         */
         int minimum = 1;
         int maximum = 2;
-        if (c == 'Y' || c == 'G') {
-            minimum = maximum = 4;
-        }
-        else if (c == 'y') {
-            minimum = maximum = 2;
-        }
-        else if (c == 'f') {
-            maximum = 6;
-        }
-        else if (c == 'j') {
-            maximum = 3;
-        }
-        else if (field == 'w') {
-            maximum = 1;
-        }
-        else if ((c == 'd' || c == 'H' || c == 'I') &&
-                 pos < length && data[pos] == ' ') {
-            pos++;
-            maximum = 1;
+        switch (c) {
+            case 'Y':
+            case 'G':
+                minimum = maximum = 4;
+                break;
+            case 'y':
+                minimum = maximum = 2;
+                break;
+            case 'f':
+                maximum = 6;
+                break;
+            case 'j':
+                maximum = 3;
+                break;
+            case 'w':
+            case 'u':
+                maximum = 1;
+                break;
+            case 'd':
+            case 'e':
+            case 'H':
+            case 'k':
+            case 'I':
+            case 'l':
+                if (pos < length && data[pos] == ' ') {
+                    pos++;
+                    maximum = 1;
+                }
+                break;
+            case 'm':
+            case 'M':
+            case 'S':
+            case 'U':
+            case 'W':
+            case 'V':
+                break;
+            case 'b':
+            case 'B':
+            case 'a':
+            case 'A':
+            case 'p':
+            case 'P': {
+                int value;
+                int count = strptime_name(data, length, pos,
+                                          c == 'P' ? 'p' : c, &value);
+                if (count == 0) {
+                    return 0;
+                }
+                pos += count;
+                if (bit == MONTH) {
+                    fields->month = value;
+                }
+                else if (bit == AMPM) {
+                    ampm = value;
+                }
+                else {
+                    fields->weekday = value;
+                }
+                continue;
+            }
+            case 'Z':
+                /* Local timezone names and nonterminal names retain Python's
+                 * tzset state, DST rules and regex backtracking.
+                 */
+                if (i != fmt_length - 1 || length - pos != 3 ||
+                    !((Py_TOLOWER(data[pos]) == 'u' &&
+                       Py_TOLOWER(data[pos + 1]) == 't' &&
+                       Py_TOLOWER(data[pos + 2]) == 'c') ||
+                      (Py_TOLOWER(data[pos]) == 'g' &&
+                       Py_TOLOWER(data[pos + 1]) == 'm' &&
+                       Py_TOLOWER(data[pos + 2]) == 't'))) {
+                    return 0;
+                }
+                fields->zone_start = pos;
+                fields->zone_length = 3;
+                pos = length;
+                continue;
+            case ':':
+                if (++i == fmt_length || fmt[i] != 'z') {
+                    return 0;
+                }
+                _Py_FALLTHROUGH;
+            case 'z': {
+                int count = strptime_offset(data, length, pos, c == ':', fields);
+                if (count < 0) {
+                    return 0;
+                }
+                pos += count;
+                continue;
+            }
+            case 'F':
+            case 'D':
+            case 'T':
+            case 'R': {
+                const char *alias;
+                switch (c) {
+                    case 'F': alias = "%Y-%m-%d"; break;
+                    case 'D': alias = "%m/%d/%y"; break;
+                    case 'T': alias = "%H:%M:%S"; break;
+                    default: alias = "%H:%M"; break;
+                }
+                /* These fixed expansions contain no further aliases. Parsing
+                 * them in place keeps duplicate-field checks and avoids copying
+                 * an arbitrarily long user format into a temporary buffer.
+                 */
+                assert(outer_fmt == NULL);
+                outer_fmt = fmt;
+                outer_length = fmt_length;
+                outer_pos = i + 1;
+                fmt = (const unsigned char *)alias;
+                fmt_length = strlen(alias);
+                i = -1;
+                continue;
+            }
+            case 'n':
+            case 't':
+                while (pos < length && Py_UNICODE_ISSPACE(data[pos])) {
+                    pos++;
+                }
+                continue;
+            case '%':
+                if (pos == length || data[pos++] != '%') {
+                    return 0;
+                }
+                continue;
+            default:
+                return 0;
         }
         int value;
         int count = strptime_digits(data, length, pos, minimum, maximum, &value);
@@ -480,6 +492,7 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
                 iso_week = value;
                 break;
             case 'I':
+            case 'l':
                 if (value < 1 || value > 12) {
                     return 0;
                 }
@@ -511,12 +524,14 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
                 fields->month = value;
                 break;
             case 'd':
+            case 'e':
                 if (value < 1 || value > 31) {
                     return 0;
                 }
                 fields->day = value;
                 break;
             case 'H':
+            case 'k':
                 if (value > 23) {
                     return 0;
                 }
@@ -611,9 +626,6 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
     if (!have_julian) {
         fields->yday = days_before_month[fields->month] + fields->day +
                        (fields->month > 2 && leap);
-    }
-    if (fields->weekday < 0) {
-        fields->weekday = _PyTime_Weekday(fields->year, fields->yday);
     }
     return 1;
 }

@@ -16,6 +16,34 @@ import _strptime
 
 
 class PublicStrptimeTests(unittest.TestCase):
+    def test_inferred_weekday(self):
+        for text, fmt in (
+            ('0001-01-01', '%Y-%m-%d'),
+            ('2024-02-29', '%Y-%m-%d'),
+            ('9999-12-31', '%Y-%m-%d'),
+            ('2023 366', '%Y %j'),
+            ('2024 00 0', '%Y %W %w'),
+        ):
+            self.assert_matches_python(text, fmt)
+
+    @support.run_with_locale('LC_TIME', 'C')
+    def test_mixed_directive_spellings(self):
+        groups = (
+            (('m', '01'), ('b', 'Feb'), ('B', 'March')),
+            (('d', '01'), ('e', ' 2')),
+            (('H', '13'), ('k', '14'), ('I', '03'), ('l', ' 4')),
+            (('w', '0'), ('u', '1'), ('a', 'Tue'), ('A', 'Wednesday')),
+            (('p', 'AM'), ('P', 'PM')),
+            (('z', '+0100'), (':z', '+02:00')),
+            (('U', '01'), ('W', '02')),
+        )
+        for group in groups:
+            for first, first_text in group:
+                for second, second_text in group:
+                    self.assert_matches_python(
+                        f'2024 {first_text} {second_text}',
+                        f'%Y %{first} %{second}')
+
     def test_week_and_ordinal_dates(self):
         for year in (1, 4, 100, 400, 1900, 1999, 2000, 2004, 2020, 9999):
             for day in (1, 28, 59, 60, 61, 365, 366, 367):

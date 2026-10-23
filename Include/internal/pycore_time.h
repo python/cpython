@@ -351,7 +351,9 @@ typedef struct {
     int gmtoff_fraction;
     Py_ssize_t zone_start, zone_length;  // Original spelling of a %Z name.
     int yday;    // January 1 is day 1.
-    int weekday;  // Monday is 0; a supplied weekday need not agree with the date.
+    // Monday is 0; a supplied weekday need not agree with the date.
+    // If negative, the caller must compute it from year and yday if needed.
+    int weekday;
 } _PyTime_StrptimeFields;
 
 // Export for the '_datetime' shared extension.

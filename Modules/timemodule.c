@@ -1016,10 +1016,14 @@ time_strptime(PyObject *self, PyObject *args)
         if (result == NULL) {
             return NULL;
         }
+        int weekday = fields.weekday;
+        if (weekday < 0) {
+            weekday = _PyTime_Weekday(fields.year, fields.yday);
+        }
         const int values[] = {
             fields.year, fields.month, fields.day,
             fields.hour, fields.minute, fields.second,
-            fields.weekday, fields.yday, fields.zone_length ? 0 : -1
+            weekday, fields.yday, fields.zone_length ? 0 : -1
         };
         for (size_t i = 0; i < Py_ARRAY_LENGTH(values); i++) {
             PyObject *value = PyLong_FromLong(values[i]);
