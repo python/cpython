@@ -529,6 +529,15 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeUnicodeEscape(
     const char *errors          /* error handling */
     );
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03100000
+PyAPI_FUNC(PyObject*) PyUnicode_DecodeUnicodeEscapeStateful(
+    const char *string,         /* Unicode-Escape encoded string */
+    Py_ssize_t length,          /* size of string */
+    const char *errors,         /* error handling */
+    Py_ssize_t *consumed        /* bytes consumed */
+);
+#endif
+
 PyAPI_FUNC(PyObject*) PyUnicode_AsUnicodeEscapeString(
     PyObject *unicode           /* Unicode object */
     );
@@ -540,6 +549,15 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeRawUnicodeEscape(
     Py_ssize_t length,          /* size of string */
     const char *errors          /* error handling */
     );
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03100000
+PyAPI_FUNC(PyObject*) PyUnicode_DecodeRawUnicodeEscapeStateful(
+    const char *string,         /* Raw-Unicode-Escape encoded string */
+    Py_ssize_t length,          /* size of string */
+    const char *errors,         /* error handling */
+    Py_ssize_t *consumed        /* bytes consumed */
+);
+#endif
 
 PyAPI_FUNC(PyObject*) PyUnicode_AsRawUnicodeEscapeString(
     PyObject *unicode           /* Unicode object */

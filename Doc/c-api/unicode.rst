@@ -1250,6 +1250,18 @@ These are the "Unicode Escape" codec APIs:
    string *str*.  Return ``NULL`` if an exception was raised by the codec.
 
 
+.. c:function:: PyObject* PyUnicode_DecodeUnicodeEscapeStateful(const char *s, \
+                              Py_ssize_t size, const char *errors, \
+                              Py_ssize_t *consumed)
+
+   If *consumed* is ``NULL``, behave like :c:func:`PyUnicode_DecodeUnicodeEscape`.
+   If *consumed* is not ``NULL``, trailing incomplete escape sequences will not
+   be treated as an error. Those bytes will not be decoded and the number of
+   bytes that have been decoded will be stored in *consumed*.
+
+   .. versionadded:: 3.16
+
+
 .. c:function:: PyObject* PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
 
    Encode a Unicode object using Unicode-Escape and return the result as a
@@ -1268,6 +1280,18 @@ These are the "Raw Unicode Escape" codec APIs:
 
    Create a Unicode object by decoding *size* bytes of the Raw-Unicode-Escape
    encoded string *str*.  Return ``NULL`` if an exception was raised by the codec.
+
+
+.. c:function:: PyObject* PyUnicode_DecodeRawUnicodeEscapeStateful(const char *s, \
+                              Py_ssize_t size, const char *errors, \
+                              Py_ssize_t *consumed)
+
+   If *consumed* is ``NULL``, behave like :c:func:`PyUnicode_DecodeRawUnicodeEscape`.
+   If *consumed* is not ``NULL``, trailing incomplete escape sequences will not
+   be treated as an error. Those bytes will not be decoded and the number of
+   bytes that have been decoded will be stored in *consumed*.
+
+   .. versionadded:: 3.16
 
 
 .. c:function:: PyObject* PyUnicode_AsRawUnicodeEscapeString(PyObject *unicode)
