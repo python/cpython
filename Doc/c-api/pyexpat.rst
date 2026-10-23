@@ -23,9 +23,6 @@ state:
    if (!(
         strcmp(capi->magic, PyExpat_CAPI_MAGIC) == 0
         && (size_t)capi->size >= sizeof(struct PyExpat_CAPI)
-        && capi->MAJOR_VERSION == XML_MAJOR_VERSION
-        && capi->MINOR_VERSION == XML_MINOR_VERSION
-        && capi->MICRO_VERSION == XML_MICRO_VERSION
    )) {
        PyErr_SetString(PyExc_ImportError, "pyexpat version is incompatible");
        goto error;
