@@ -820,6 +820,18 @@ VOID_HANDLER(StartDoctypeDecl,
 
 VOID_HANDLER(EndDoctypeDecl, (void *userData), ("()"))
 
+/* check that the current function is not called from within a handler */
+#define CHECK_NOT_IN_HANDLER(PARSER, FUNCNAME)              \
+    do {                                                    \
+        if (PARSER->in_callback) {                          \
+            PyErr_SetString(PyExc_RuntimeError,             \
+                            "cannot call " FUNCNAME "() "   \
+                            "from within a handler");       \
+            return NULL;                                    \
+        }                                                   \
+    } while (0)
+
+
 /* ---------------------------------------------------------------- */
 /*[clinic input]
 class pyexpat.xmlparser "xmlparseobject *" "&Xmlparsetype"
@@ -900,6 +912,9 @@ pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyTypeObject *cls,
                              PyObject *data, int isfinal)
 /*[clinic end generated code: output=8faffe07fe1f862a input=f8f3ba4eadf837e5]*/
 {
+    // avoid re-entrant calls to XML_Parse()
+    CHECK_NOT_IN_HANDLER(self, "Parse");
+
     const char *s;
     Py_ssize_t slen;
     Py_buffer view;
@@ -1001,6 +1016,9 @@ pyexpat_xmlparser_ParseFile_impl(xmlparseobject *self, PyTypeObject *cls,
                                  PyObject *file)
 /*[clinic end generated code: output=34780a094c8ca3ae input=c96030cf5e4f577e]*/
 {
+    // avoid re-entrant calls to XML_GetBuffer() or XML_ParseBuffer()
+    CHECK_NOT_IN_HANDLER(self, "ParseFile");
+
     int rv = 1;
     PyObject *readmethod = NULL;
 
