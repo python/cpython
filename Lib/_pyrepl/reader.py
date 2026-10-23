@@ -884,8 +884,8 @@ class Reader:
     def error(self, msg: str = "none") -> None:
         msg = f"[ {msg} ]"
         if self.can_colorize:
-            colors = _colorize.ANSIColors
-            msg = f"{colors.RED}{msg}{colors.RESET}"
+            t = THEME()
+            msg = f"{t.error}{msg}{t.reset}"
         self.console.beep()
         self.msg = msg
         self.invalidate_message()
