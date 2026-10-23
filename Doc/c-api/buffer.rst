@@ -284,19 +284,38 @@ The flags that control the logical structure of the memory are listed
 in decreasing order of complexity. Note that each flag contains all bits
 of the flags below it.
 
-.. tabularcolumns:: |p{0.35\linewidth}|l|l|l|
+.. stable-abi-note::
 
-+-----------------------------+-------+---------+------------+
-|  Request                    | shape | strides | suboffsets |
-+=============================+=======+=========+============+
-| .. c:macro:: PyBUF_INDIRECT |  yes  |   yes   | if needed  |
-+-----------------------------+-------+---------+------------+
-| .. c:macro:: PyBUF_STRIDES  |  yes  |   yes   |    NULL    |
-+-----------------------------+-------+---------+------------+
-| .. c:macro:: PyBUF_ND       |  yes  |   NULL  |    NULL    |
-+-----------------------------+-------+---------+------------+
-| .. c:macro:: PyBUF_SIMPLE   |  NULL |   NULL  |    NULL    |
-+-----------------------------+-------+---------+------------+
+   These values are available when compiling for the
+   :ref:`Stable ABI <stable>` since version 3.11.
+
+.. omit-stable-abi-notes::
+
+   .. list-table::
+      :align: left
+      :widths: auto
+      :header-rows: 1
+
+      * - Request
+        - shape
+        - strides
+        - suboffsets
+      * - .. c:macro:: PyBUF_INDIRECT
+        - yes
+        - yes
+        - if needed
+      * - .. c:macro:: PyBUF_STRIDES
+        - yes
+        - yes
+        - NULL
+      * - .. c:macro:: PyBUF_ND
+        - yes
+        - NULL
+        - NULL
+      * - .. c:macro:: PyBUF_SIMPLE
+        - NULL
+        - NULL
+        - NULL
 
 
 .. index:: contiguous, C-contiguous, Fortran contiguous
