@@ -14966,14 +14966,15 @@ static PyObject *
 unicodeiter_next(PyObject *op)
 {
     unicodeiterobject *it = (unicodeiterobject *)op;
-    PyObject *seq;
 
     assert(it != NULL);
-#ifdef Py_GIL_DISABLED
-    seq = _Py_atomic_load_ptr(&it->it_seq);
-#else
-    seq = it->it_seq;
-#endif
+    /* it_seq is set once at construction and, in free-threaded builds,
+     * released only in unicodeiter_dealloc() -- never here -- so reading
+     * it needs no atomic/critical-section protection: a thread calling
+     * next() always holds its own reference to `it`, which is exactly
+     * what keeps dealloc() from running concurrently. This mirrors
+     * listiter_next()/tupleiter_next(). */
+    PyObject *seq = it->it_seq;
     if (seq == NULL)
         return NULL;
     assert(_PyUnicode_CHECK(seq));
@@ -14987,12 +14988,10 @@ unicodeiter_next(PyObject *op)
         return unicode_char(chr);
     }
 
-#ifdef Py_GIL_DISABLED
-    seq = _Py_atomic_exchange_ptr(&it->it_seq, NULL);
-#else
+#ifndef Py_GIL_DISABLED
     it->it_seq = NULL;
+    Py_DECREF(seq);
 #endif
-    Py_XDECREF(seq);
     return NULL;
 }
 
@@ -15001,11 +15000,7 @@ unicode_ascii_iter_next(PyObject *op)
 {
     unicodeiterobject *it = (unicodeiterobject *)op;
     assert(it != NULL);
-#ifdef Py_GIL_DISABLED
-    PyObject *seq = _Py_atomic_load_ptr(&it->it_seq);
-#else
-    PyObject *seq = it->it_seq;
-#endif
+    PyObject *seq = it->it_seq;  /* see unicodeiter_next() for why this is safe unsynchronized */
     if (seq == NULL) {
         return NULL;
     }
@@ -15021,12 +15016,10 @@ unicode_ascii_iter_next(PyObject *op)
         return (PyObject*)&_Py_SINGLETON(strings).ascii[chr];
     }
 
-#ifdef Py_GIL_DISABLED
-    seq = _Py_atomic_exchange_ptr(&it->it_seq, NULL);
-#else
+#ifndef Py_GIL_DISABLED
     it->it_seq = NULL;
+    Py_DECREF(seq);
 #endif
-    Py_XDECREF(seq);
     return NULL;
 }
 
@@ -15035,22 +15028,14 @@ unicodeiter_len(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     unicodeiterobject *it = (unicodeiterobject *)op;
     Py_ssize_t len = 0;
-#ifdef Py_GIL_DISABLED
-    PyObject *seq;
-    Py_BEGIN_CRITICAL_SECTION(it);
-    seq = Py_XNewRef(it->it_seq);
-    Py_END_CRITICAL_SECTION();
+    PyObject *seq = it->it_seq;
     if (seq != NULL) {
         Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
         Py_ssize_t seq_len = PyUnicode_GET_LENGTH(seq);
-        if (index < seq_len)
+        if (index < seq_len) {
             len = seq_len - index;
-        Py_DECREF(seq);
+        }
     }
-#else
-    if (it->it_seq)
-        len = PyUnicode_GET_LENGTH(it->it_seq) - it->it_index;
-#endif
     return PyLong_FromSsize_t(len);
 }
 
@@ -15066,27 +15051,13 @@ unicodeiter_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
      * call must be before access of iterator pointers.
      * see issue #101765 */
 
-#ifdef Py_GIL_DISABLED
-    PyObject *seq;
-    Py_ssize_t index;
-    Py_BEGIN_CRITICAL_SECTION(it);
-    seq = Py_XNewRef(it->it_seq);
-    index = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
-    Py_END_CRITICAL_SECTION();
-
+    PyObject *seq = it->it_seq;
     if (seq != NULL) {
+        Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
         if (index < PyUnicode_GET_LENGTH(seq)) {
-            PyObject *result = Py_BuildValue("N(O)n", iter, seq, index);
-            Py_DECREF(seq);
-            return result;
+            return Py_BuildValue("N(O)n", iter, seq, index);
         }
-        Py_DECREF(seq);
     }
-#else
-    if (it->it_seq != NULL) {
-        return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
-    }
-#endif
 
     PyObject *u = _PyUnicode_GetEmpty();
     if (u == NULL) {
@@ -15105,12 +15076,25 @@ unicodeiter_setstate(PyObject *op, PyObject *state)
     Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
-    if (it->it_seq != NULL) {
-        if (index < 0)
-            index = 0;
-        else if (index > PyUnicode_GET_LENGTH(it->it_seq))
-            index = PyUnicode_GET_LENGTH(it->it_seq); /* iterator truncated */
-        FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index);
+    PyObject *seq = it->it_seq;
+    if (seq != NULL) {
+        /* A permanently exhausted iterator must stay exhausted: in
+         * free-threaded builds it_seq is never cleared on exhaustion
+         * (see unicodeiter_next()), so unlike the GIL build we can't
+         * use "it_seq == NULL" to detect that. Use the index instead:
+         * once it has reached the sequence length, refuse to move it
+         * backwards. Without this check, __setstate__() could "revive"
+         * an exhausted iterator -- the same bug reported against list
+         * and tuple iterators in gh-129139. */
+        Py_ssize_t cur_index = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
+        Py_ssize_t len = PyUnicode_GET_LENGTH(seq);
+        if (cur_index < len) {
+            if (index < 0)
+                index = 0;
+            else if (index > len)
+                index = len; /* iterator truncated */
+            FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index);
+        }
     }
     Py_RETURN_NONE;
 }

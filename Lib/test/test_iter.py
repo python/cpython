@@ -1137,6 +1137,34 @@ class TestCase(unittest.TestCase):
         self.assertEqual(next(it), 0)
         self.assertEqual(next(it), 1)
 
+    @cpython_only
+    def test_exhausted_str_iter_setstate_does_not_revive(self):
+        # gh-153928: a str iterator exhausted by normal iteration must stay
+        # exhausted, even if __setstate__() is called afterwards (as pickle
+        # does when restoring one). In free-threaded builds, the iterator's
+        # reference to the string is kept until the iterator itself is
+        # deallocated rather than dropped on exhaustion (to avoid racing
+        # with other threads also exhausting it -- see unicodeiter_next()),
+        # so __setstate__() can no longer rely on it_seq being NULL to
+        # detect "already permanently exhausted". See also gh-129139, the
+        # same bug for list/tuple iterators.
+        s = "hello"
+        it = iter(s)
+        self.assertEqual(list(it), list(s))
+        with self.assertRaises(StopIteration):
+            next(it)
+        it.__setstate__(2)
+        with self.assertRaises(StopIteration):
+            next(it)
+
+        # same invariant via a real pickle round-trip
+        it2 = iter(s)
+        for _ in s:
+            next(it2)
+        it3 = pickle.loads(pickle.dumps(it2))
+        with self.assertRaises(StopIteration):
+            next(it3)
+
     def test_free_after_iterating(self):
         check_free_after_iterating(self, iter, SequenceClass, (0,))
 
