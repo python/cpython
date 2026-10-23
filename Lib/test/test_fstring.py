@@ -1074,6 +1074,24 @@ except Exception:
                              r"'\N{GREEK CAPITAL LETTER DELTA'",
                              ])
 
+    def test_invalid_escape_location(self):
+        cases = [
+            (r'f"\xZZ"', (1, 3, 1, 7)),
+            (r'f"{x}\xZZ"', (1, 6, 1, 10)),
+            (r'f"a{x}b\N{NOPE}{y}"', (1, 7, 1, 16)),
+            (r'f"ok" f"\xZZ"', (1, 9, 1, 13)),
+            ('f"""\\xZZ\nabc"""', (1, 5, 2, 4)),
+            ('f"""abc\ndef\\xZZ"""', (1, 5, 2, 8)),
+            ('x = (1,\n  f"\\xZZ")', (2, 5, 2, 9)),
+        ]
+        for source, location in cases:
+            with self.subTest(source=source):
+                with self.assertRaisesRegex(SyntaxError, r'\(unicode error\)') as cm:
+                    compile(source, '<string>', 'exec')
+                error = cm.exception
+                self.assertEqual((error.lineno, error.offset,
+                                  error.end_lineno, error.end_offset), location)
+
     def test_backslashes_in_expression_part(self):
         self.assertEqual(f"{(
                         1 +
