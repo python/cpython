@@ -180,8 +180,8 @@ next_prepared(struct tok_state *tok, _PyTok_Chunk *chunk)
     chunk->data = (char *)_PyTok_SourceSpanView(
         &tok->source, line, &chunk->len);
     chunk->ownership = _PYTOK_CHUNK_BORROWED;
-    chunk->implicit_newline = line.end == tail.end &&
-        tok->reader->prepared_final_newline_is_implicit;
+    chunk->implicit_newline = line.end == tail.end
+        ? tok->reader->prepared_final_newline : 0;
     return _PYTOK_READ_LINE;
 }
 
