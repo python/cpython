@@ -57,7 +57,8 @@ def compile_dir(dir, maxlevels=None, ddir=None, force=False,
     maxlevels: maximum recursion level (default `sys.getrecursionlimit()`)
     ddir:      the directory that will be prepended to the path to the
                file as it is compiled into each byte-code file.
-    force:     if True, force compilation, even if timestamps are up-to-date
+    force:     if True, force compilation, even if timestamps or source hashes
+               are up-to-date
     quiet:     full output with False or 0, errors only with 1,
                no output with 2
     legacy:    if True, produce legacy pyc paths instead of PEP 3147 paths
@@ -140,7 +141,8 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
     fullname:  the file to byte-compile
     ddir:      if given, the directory name compiled in to the
                byte-code file.
-    force:     if True, force compilation, even if timestamps are up-to-date
+    force:     if True, force compilation, even if timestamps or source hashes
+               are up-to-date
     quiet:     full output with False or 0, errors only with 1,
                no output with 2
     legacy:    if True, produce legacy pyc paths instead of PEP 3147 paths
@@ -353,7 +355,8 @@ def main():
                               'if `-l` and `-r` options are specified, '
                               'then `-r` takes precedence.'))
     parser.add_argument('-f', action='store_true', dest='force',
-                        help='force rebuild even if timestamps are up to date')
+                        help='force rebuild even if timestamps or source hashes '
+                             'are up to date')
     parser.add_argument('-q', action='count', dest='quiet', default=0,
                         help='output only error messages; `-qq` will suppress '
                              'the error messages as well.')

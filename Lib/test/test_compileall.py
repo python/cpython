@@ -87,6 +87,14 @@ class CompileallTestsBase:
                               st.st_size & 0xFFFF_FFFF)
         return data, compare
 
+    def checked_hash_metadata(self):
+        with open(self.bc_path, 'rb') as file:
+            data = file.read(16)
+        with open(self.source_path, 'rb') as file:
+            source_hash = importlib.util.source_hash(file.read())
+        compare = struct.pack('<4sL', importlib.util.MAGIC_NUMBER, 0b11)
+        return data, compare + source_hash
+
     def test_year_2038_mtime_compilation(self):
         # Test to make sure we can handle mtimes larger than what a 32-bit
         # signed number can hold as part of bpo-34990
@@ -149,6 +157,20 @@ class CompileallTestsBase:
                                            invalidation_mode=mode)
                 compile.assert_not_called()
 
+    def test_default_invalidation_mode(self):
+        # Test that default mode is checked-hash if SOURCE_DATE_EPOCH set and
+        # timestamp otherwise, and an up-to-date .pyc is not recompiled
+        # in either case.
+        compileall.compile_dir(self.directory, quiet=True, force=True)
+        if os.environ.get('SOURCE_DATE_EPOCH'):
+            self.assertEqual(*self.checked_hash_metadata())
+        else:
+            self.assertEqual(*self.timestamp_metadata())
+
+        with mock.patch('compileall.py_compile.compile') as compile:
+            compileall.compile_dir(self.directory, quiet=True)
+        compile.assert_not_called()
+
     def test_hash_mismatch(self):
         # Test a hash-based .pyc whose hash does not match the source
         # leads to a new .pyc.
@@ -159,10 +181,7 @@ class CompileallTestsBase:
             file.write(b'\xff' * 8)
         compileall.compile_dir(self.directory, quiet=True,
                                invalidation_mode=mode)
-        with open(self.source_path, 'rb') as file:
-            source_hash = importlib.util.source_hash(file.read())
-        with open(self.bc_path, 'rb') as file:
-            self.assertEqual(file.read(16)[8:], source_hash)
+        self.assertEqual(*self.checked_hash_metadata())
 
     def test_compile_files(self):
         # Test compiling a single file, and complete directory
