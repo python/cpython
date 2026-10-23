@@ -22,7 +22,7 @@ import unittest
 from test import support
 from test.support import _4G, bigmemtest
 from test.support import hashlib_helper
-from test.support.import_helper import import_fresh_module
+from test.support.import_helper import ensure_lazy_imports, import_fresh_module
 from test.support import requires_resource
 from test.support import threading_helper
 from http.client import HTTPException
@@ -1432,6 +1432,12 @@ class TestScrypt(unittest.TestCase):
         self.assertRaises(ValueError, scrypt, dklen=0)
         MAX_DKLEN = ((1 << 32) - 1) * 32  # see RFC 7914
         self.assertRaises(numeric_exc_types, scrypt, dklen=MAX_DKLEN + 1)
+
+
+class LazyImportTest(unittest.TestCase):
+    @support.cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("hashlib", {"io"})
 
 
 if __name__ == "__main__":
