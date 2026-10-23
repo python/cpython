@@ -1,2 +1,3 @@
-Fix :mod:`zipfile` to correctly read Zstandard-compressed archive members
-that could previously be truncated or incorrectly rejected.
+Fix :mod:`zipfile` reading of Zstandard-compressed archive members containing
+multiple frames, which could previously return truncated data or raise a
+spurious CRC error.

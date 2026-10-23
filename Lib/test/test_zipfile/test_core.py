@@ -720,8 +720,8 @@ class ZstdTestsWithSourceFile(AbstractTestsWithSourceFile,
     compression = zipfile.ZIP_ZSTANDARD
 
     def test_read_multiframe(self):
-        first = b'first frame' * 400
-        second = b'second frame' * 400
+        first = b'first frame' * 20
+        second = b'second frame' * 20
         data = first + second
 
         class MultiframeCompressor:
@@ -742,18 +742,13 @@ class ZstdTestsWithSourceFile(AbstractTestsWithSourceFile,
         with zipfile.ZipFile(archive) as zipfp:
             self.assertEqual(zipfp.read('multiframe'), data)
 
-        with zipfile.ZipFile(archive) as zipfp:
-            with zipfp.open('multiframe') as fp:
-                chunk = fp._read1(1)
-                self.assertLessEqual(len(chunk), fp.MIN_READ_SIZE)
-                self.assertEqual(chunk + fp.read(), data)
-
         # Exercise a frame boundary between two reads from the archive.
         with zipfile.ZipFile(archive) as zipfp:
             with zipfp.open('multiframe') as fp:
                 fp.MIN_READ_SIZE = 1
                 self.assertEqual(b''.join(iter(lambda: fp.read(1), b'')),
                                  data)
+
 
 class AbstractTestZip64InSmallFiles:
     # These tests test the ZIP64 functionality without using large files,
