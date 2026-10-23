@@ -61,7 +61,7 @@ class GitHubActionsReporter(Reporter):
 
     @staticmethod
     def enabled() -> bool:
-        return "GITHUB_STEP_SUMMARY" in os.environ
+        return bool(os.environ.get("GITHUB_STEP_SUMMARY"))
 
     def run_started(self, runtests: RunTests) -> None:
         self.runtests = runtests
