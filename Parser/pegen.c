@@ -332,10 +332,7 @@ _resize_tokens_array(Parser *p) {
 // atom followed by a token that cannot start or continue a binary/postfix
 // expression is a complete expression, so it is built directly instead of
 // descending the whole chain. Returns 1 if it produced a result (stored
-// in *result), 0 to fall through to the rule's alternatives. The second
-// token is only examined when the first is NAME/NUMBER: the chain fills
-// it too in that case, so error reporting (which keys off p->fill)
-// observes an identical token fill state.
+// in *result), 0 to fall through to the rule's alternatives.
 int
 _PyPegen_atom_fast_path(Parser *p, void *result)
 {
