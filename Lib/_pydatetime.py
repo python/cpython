@@ -299,7 +299,8 @@ def _wrap_strftime(object, format, timetuple):
                 # The platform's strftime() lacks the %- flag (no zero
                 # padding), so emulate it for the documented numeric codes.
                 elif (ch == '-' and i < n and format[i] in 'dmHIMSjUWVy' and
-                        sys.platform in ['win32', 'android']):
+                        (sys.platform in ('win32', 'android') or
+                         sys.platform.startswith('openbsd'))):
                     push(_make_dash_replacement(format[i], timetuple))
                     i += 1
                 else:

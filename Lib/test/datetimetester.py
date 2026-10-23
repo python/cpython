@@ -1600,7 +1600,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(t.strftime('x'*1000), 'x'*1000) # SF bug #1556784
 
         # See gh-137165
-        if platform.system() in ('Darwin', 'iOS', 'FreeBSD'):
+        if platform.system() in ('Darwin', 'iOS', 'FreeBSD', 'NetBSD'):
             self.assertEqual(t.strftime("m:%-m d:%-d y:%-y"), "m:3 d:2 y:05")
         else:
             if platform.system() == 'Windows':
@@ -4165,6 +4165,15 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
 
         # gh-85432: The parameter was named "fmt" in the pure-Python impl.
         t.strftime(format="%f")
+
+    def test_strftime_dash_flag_12_hour(self):
+        # gh-137165: Midnight and noon are both 12 in the 12-hour clock.
+        for hour, expected in ((0, '12'), (1, '1'), (12, '12'),
+                               (13, '1'), (23, '11')):
+            with self.subTest(hour=hour):
+                t = self.theclass(hour)
+                self.assertEqual(t.strftime('%-I'), expected)
+                self.assertEqual(t.strftime('%I'), expected.zfill(2))
 
     def test_strftime_special(self):
         t = self.theclass(1, 2, 3, 4)

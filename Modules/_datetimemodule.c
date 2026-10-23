@@ -1876,7 +1876,7 @@ make_freplacement(PyObject *object)
     return PyUnicode_FromString(freplacement);
 }
 
-#if defined(MS_WINDOWS) || defined(__ANDROID__)
+#if defined(MS_WINDOWS) || defined(__ANDROID__) || defined(__OpenBSD__)
 /* The documented numeric format codes for which the %- flag (no zero
  * padding) is emulated.  Their output is digits only, so it needs no
  * escaping before being stuffed into the format.
@@ -2084,7 +2084,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             }
             continue;
         }
-#if defined(MS_WINDOWS) || defined(__ANDROID__)
+#if defined(MS_WINDOWS) || defined(__ANDROID__) || defined(__OpenBSD__)
         else if (ch == '-' && i < flen
                  && is_dash_emulated(PyUnicode_READ_CHAR(format, i)))
         {
