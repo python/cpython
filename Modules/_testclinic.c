@@ -24,7 +24,6 @@ custom_converter(PyObject *obj, custom_t *val)
 /* Forward declarations for vectorcall types, needed because
  * clinic/_testclinic.c.h is included before the type definitions. */
 static PyTypeObject VcNew_Type;
-static PyTypeObject VcInit_Type;
 static PyTypeObject VcNewBase_Type;
 static PyTypeObject VcKwOnly_Type;
 #include "clinic/_testclinic.c.h"
@@ -2539,7 +2538,7 @@ static PyTypeObject VcNew_Type = {
  * in both the helper body and the vectorcall fast-path inner block. */
 
 /*[clinic input]
-class _testclinic.VcInit "PyObject *" "&VcInit_Type"
+class _testclinic.VcInit "PyObject *" ""
 @vectorcall
 @critical_section
 _testclinic.VcInit.__init__ as vc_posorkw_init
@@ -2550,19 +2549,24 @@ _testclinic.VcInit.__init__ as vc_posorkw_init
 
 static int
 vc_posorkw_init_impl(PyObject *self, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=6018424ba9fb0744 input=7a4513f78dd42b57]*/
+/*[clinic end generated code: output=6018424ba9fb0744 input=f0c7a84428d5b33d]*/
 {
     return 0;
 }
 
-static PyTypeObject VcInit_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "_testclinic.VcInit",
-    .tp_basicsize = sizeof(PyObject),
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_new = PyType_GenericNew,
-    .tp_init = vc_posorkw_init,
-    .tp_vectorcall = vc_posorkw_vectorcall,
+/* Heap type: the generated vectorcall can't name the type object. */
+static PyType_Slot VcInit_slots[] = {
+    {Py_tp_new, PyType_GenericNew},
+    {Py_tp_init, vc_posorkw_init},
+    {Py_tp_vectorcall, vc_posorkw_vectorcall},
+    {0, NULL},
+};
+
+static PyType_Spec VcInit_spec = {
+    .name = "_testclinic.VcInit",
+    .basicsize = sizeof(PyObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
+    .slots = VcInit_slots,
 };
 
 
@@ -2880,7 +2884,8 @@ PyInit__testclinic(void)
     if (PyModule_AddType(m, &VcNew_Type) < 0) {
         goto error;
     }
-    if (PyModule_AddType(m, &VcInit_Type) < 0) {
+    if (PyModule_Add(m, "VcInit",
+                     PyType_FromModuleAndSpec(m, &VcInit_spec, NULL)) < 0) {
         goto error;
     }
     if (PyModule_AddType(m, &VcNewBase_Type) < 0) {
