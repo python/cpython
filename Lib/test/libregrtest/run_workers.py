@@ -16,6 +16,7 @@ from test import support
 from test.support import os_helper, MS_WINDOWS
 
 from .logger import Logger
+from .reporter import Reporter
 from .result import TestResult, State
 from .results import TestResults
 from .runtests import RunTests, WorkerRunTests, JsonFile, JsonFileType
@@ -499,13 +500,15 @@ def get_running(workers: list[WorkerThread]) -> str | None:
 
 class RunWorkers:
     def __init__(self, num_workers: int, runtests: RunTests,
-                 logger: Logger, results: TestResults) -> None:
+                 logger: Logger, results: TestResults,
+                 reporter: Reporter) -> None:
         self.num_workers = num_workers
         self.runtests = runtests
         self.logger = logger
         self.log = logger.log
         self.display_progress = logger.display_progress
         self.results: TestResults = results
+        self.reporter = reporter
         self.live_worker_count = 0
 
         self.output: queue.Queue[QueueContent] = queue.Queue()
@@ -624,6 +627,8 @@ class RunWorkers:
             stdout = mp_result.worker_stdout
             if stdout:
                 print(stdout, flush=True)
+        # Report after the output: env changed warnings, crash traceback
+        self.reporter.test_result(result)
 
         return result
 

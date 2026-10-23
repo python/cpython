@@ -64,6 +64,8 @@ jobs:
     - name: Verify excluded tests still need exclusion
       run: |
         set -euo pipefail
+        # Failures are expected here, don't report them to the job summary
+        unset GITHUB_STEP_SUMMARY
         unexpected_passes=()
         while IFS= read -r test_name; do
           [ -n "$test_name" ] || continue

@@ -22,6 +22,7 @@ import sysconfig
 import tempfile
 import threading
 import textwrap
+import types
 import unittest
 import unittest.mock
 from xml.etree import ElementTree
@@ -37,7 +38,9 @@ from test.libregrtest import main
 from test.libregrtest import setup
 from test.libregrtest import utils
 from test.libregrtest.filter import get_match_tests, match_test
-from test.libregrtest.result import TestStats
+from test.libregrtest.reporter import GitHubActionsReporter
+from test.libregrtest.result import State, TestResult, TestStats
+from test.libregrtest.results import TestResults
 from test.libregrtest.utils import normalize_test_name
 
 if not support.has_subprocess_support:
@@ -627,6 +630,10 @@ class BaseTestCase(unittest.TestCase):
 
         self.tmptestdir = tempfile.mkdtemp()
         self.addCleanup(os_helper.rmtree, self.tmptestdir)
+
+        # Don't report the failures of the tests to the CI running this test
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        env.unset('GITHUB_STEP_SUMMARY')
 
     def create_test(self, name=None, code=None):
         if not name:
@@ -1638,6 +1645,35 @@ class ArgsTestCase(BaseTestCase):
                                               match=None,
                                               success=True),
                                   stats=2)
+
+    def test_reporter(self):
+        code = textwrap.dedent("""
+            import os, unittest
+
+            class Tests(unittest.TestCase):
+                def test_fail(self):
+                    self.fail()
+        """)
+        fail = self.create_test('reporter_fail', code)
+        crash = self.create_test('reporter_crash',
+                                 code.replace('self.fail()', 'os._exit(1)'))
+        summary = os.path.join(self.tmptestdir, 'summary.md')
+        env = dict(os.environ, GITHUB_STEP_SUMMARY=summary)
+
+        def reported(*args, exitcode=EXITCODE_BAD_TEST):
+            output = self.run_tests('-j1', *args, env=env, exitcode=exitcode)
+            return re.findall(r'^::error file=.*,title=(\w+)', output,
+                              re.MULTILINE)
+
+        self.assertEqual(reported(self.create_test(), exitcode=0), [])
+        self.assertFalse(os.path.exists(summary))
+        # Quiet mode doesn't print the failure, but reports it
+        self.assertEqual(reported(fail), ['test_fail'])
+        # Only the re-run is reported
+        self.assertEqual(reported('--rerun', fail, crash),
+                         ['test_fail', crash])
+        with open(summary, encoding='utf-8') as fp:
+            self.assertIn('2 test files and 1 test case failed', fp.read())
 
     def test_rerun_fail(self):
         # FAILURE then FAILURE
@@ -2946,7 +2982,73 @@ class TestUtils(unittest.TestCase):
                          'valid t\xe9xt \u20ac')
 
 
-from test.libregrtest.results import TestResults
+class GitHubActionsReporterTestCase(unittest.TestCase):
+    def setUp(self):
+        self.reporter = GitHubActionsReporter()
+        self.reporter.run_started(types.SimpleNamespace(
+            final_run=True, fail_env_changed=True, test_dir=None))
+
+    def test_test_case_failed(self):
+        stdlib_dir = os.path.dirname(os.__file__)
+        traceback = textwrap.dedent(f"""\
+            Traceback (most recent call last):
+              File "{stdlib_dir}/test/test_x.py", line 3, in test_x
+                helper()
+              File "{stdlib_dir}/helper.py", line 9, in helper
+                raise ValueError('50%')
+            ValueError: 50%
+            more
+        """)
+        stream = io.StringIO()
+        self.reporter.test_case_failed('test_x (a: b, c)', traceback, stream)
+        self.assertEqual(
+            stream.getvalue(),
+            '::error file=Lib/test/test_x.py,line=3,'
+            'title=test_x (a%3A b%2C c)::ValueError: 50%25%0Amore\n')
+
+    def test_test_result(self):
+        result = TestResult('test_x', state=State.ENV_CHANGED,
+                            env_changed_reasons=['dangling thread'])
+        with support.captured_stdout() as stdout:
+            self.reporter.test_result(result)
+        self.assertEqual(stdout.getvalue(),
+                         '::error title=test_x::'
+                         'test_x failed (env changed)%0Adangling thread\n')
+
+    def test_summary(self):
+        results = TestResults()
+        results.rerun_results = [
+            TestResult('test_x', state=State.FAILED,
+                       failures=[('test_a (<T>)',
+                                  'Traceback\nAssertionError\n')]),
+            TestResult('test_y', state=State.ENV_CHANGED,
+                       env_changed_reasons=['dangling thread']),
+        ]
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with os_helper.EnvironmentVarGuard() as env:
+            env['GITHUB_STEP_SUMMARY'] = os_helper.TESTFN
+            self.reporter.summary(results, 'FAILURE')
+        with open(os_helper.TESTFN, encoding='utf-8') as fp:
+            summary = fp.read()
+        self.assertEqual(summary, textwrap.dedent("""\
+            ## FAILURE: 2 test files and 1 test case failed
+
+            ### test_x failed (1 failure)
+
+            <details open><summary>test_a (&lt;T&gt;)</summary>
+
+            ```pytb
+            Traceback
+            AssertionError
+            ```
+
+            </details>
+
+            ### test_y failed (env changed)
+
+            - dangling thread
+
+        """))
 
 
 class TestColorized(unittest.TestCase):
