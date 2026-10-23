@@ -53,6 +53,11 @@ except ImportError:
 st = hypothesis.strategies
 stateful = hypothesis.stateful
 
+# The expected-failure examples below name these at class definition
+# time, whether or not the module is available.
+LZMAError = lzma.LZMAError if lzma is not None else Exception
+ZstdError = zstd.ZstdError if zstd is not None else Exception
+
 
 def _repeat(pair):
     chunk, count = pair
@@ -290,6 +295,37 @@ class _DecompressorMachine(_StateMachine):
             self.assertEqual(self.out, self.data)
 
 
+def _invalid_input_test(*examples, garbage=st.binary(max_size=256)):
+    # Invalid input: random bytes, or a valid stream with one byte replaced
+    # or with its end cut off.  The only acceptable outcomes are success or
+    # the backend's own error type.  Built by a function so that a backend
+    # with a known bug can narrow the garbage and add its own examples.
+    @hypothesis.given(
+        garbage=garbage,
+        data=data_strategy,
+        index=st.integers(0, 10**6),
+        byte=st.integers(0, 255),
+        sizes=chunk_sizes_strategy,
+        max_lengths=max_lengths_strategy,
+    )
+    @hypothesis.example(garbage=b"", data=b"", index=0, byte=0, sizes=[],
+                        max_lengths=[])
+    @hypothesis.example(garbage=b"\xff" * 20, data=b"", index=0, byte=0,
+                        sizes=[1], max_lengths=[0])
+    @hypothesis.example(garbage=b"", data=b"abc" * 30, index=10**6, byte=0,
+                        sizes=[3], max_lengths=[1, -1])
+    @hypothesis.example(garbage=b"", data=b"abc" * 30, index=5, byte=255,
+                        sizes=[], max_lengths=[])
+    def test_invalid_input(self, garbage, data, index, byte, sizes,
+                           max_lengths):
+        self._check_invalid_input(garbage, data, index, byte, sizes,
+                                  max_lengths)
+
+    for example in examples:
+        test_invalid_input = example(test_invalid_input)
+    return test_invalid_input
+
+
 class _DecompressorTests:
     """Deterministic companions to the state machine, replayable by the stub.
 
@@ -430,32 +466,11 @@ class _DecompressorTests:
         self.assertTrue(decomp.eof)
         self.assertEqual(decomp.unused_data, b"")
 
-    # Invalid input: random bytes, or a valid stream with one byte replaced
-    # or with its end cut off.  The only acceptable outcomes are success or
-    # the backend's own error type.
-    @hypothesis.given(
-        garbage=st.binary(max_size=256),
-        data=data_strategy,
-        index=st.integers(0, 10**6),
-        byte=st.integers(0, 255),
-        sizes=chunk_sizes_strategy,
-        max_lengths=max_lengths_strategy,
-    )
-    @hypothesis.example(garbage=b"", data=b"", index=0, byte=0, sizes=[],
-                        max_lengths=[])
-    @hypothesis.example(garbage=b"\xff" * 20, data=b"", index=0, byte=0,
-                        sizes=[1], max_lengths=[0])
-    @hypothesis.example(garbage=b"", data=b"abc" * 30, index=10**6, byte=0,
-                        sizes=[3], max_lengths=[1, -1])
-    @hypothesis.example(garbage=b"", data=b"abc" * 30, index=5, byte=255,
-                        sizes=[], max_lengths=[])
-    def test_invalid_input(self, garbage, data, index, byte, sizes,
-                           max_lengths):
-        self._check_invalid_input(garbage, data, index, byte, sizes,
-                                  max_lengths)
+    test_invalid_input = _invalid_input_test()
 
-    def _skip_invalid_blob(self, blob):
-        # Hook for a known bug: a mixin may rule out inputs that crash.
+    def _skip_corrupted_blob(self, blob):
+        # Hook for a known bug: a backend may rule out a corruption that
+        # crashes.
         return False
 
     def _check_invalid_input(self, garbage, data, index, byte, sizes,
@@ -466,68 +481,53 @@ class _DecompressorTests:
             corrupted = stream[:byte % (len(stream) + 1)]
         else:
             corrupted = stream[:index] + bytes([byte]) + stream[index + 1:]
-        for blob in (garbage, corrupted):
-            if self._skip_invalid_blob(blob):
-                continue
-            with self.subTest(blob=blob):
-                decomp = self.backend.new_decompressor()
-                try:
-                    for chunk, max_length in _chunks_with(blob, sizes,
-                                                          max_lengths, -1):
-                        decomp.decompress(chunk, max_length)
-                except (self.backend.error, EOFError):
-                    pass
-                try:
-                    self.backend.decompress(blob)
-                except self.backend.decompress_errors:
-                    pass
+        blobs = [garbage]
+        if not self._skip_corrupted_blob(corrupted):
+            blobs.append(corrupted)
+        for blob in blobs:
+            decomp = self.backend.new_decompressor()
+            try:
+                for chunk, max_length in _chunks_with(blob, sizes,
+                                                      max_lengths, -1):
+                    decomp.decompress(chunk, max_length)
+            except (self.backend.error, EOFError):
+                pass
+            try:
+                self.backend.decompress(blob)
+            except self.backend.decompress_errors:
+                pass
 
 
-# Known bugs, as mixins that override the affected test for one backend.
-# They go first in the bases so that they win over _DecompressorTests.
+# Known bugs.  A backend with one gets its own version of the affected
+# test: the generated input leaves out what is known to fail, and the
+# expected-failure examples pin it, so that the test fails again once the
+# bug is fixed and the carve-out can go.
 
-class _BZ2NeedsInputBug:
-    # bz2 reports needs_input=True as soon as its input buffer is empty, even
-    # when max_length cut the output short and more of it is pending
-    # (gh-159999).
-    @unittest.expectedFailure
-    @hypothesis.given(
-        data=data_strategy,
-        sizes=chunk_sizes_strategy,
-        max_lengths=max_lengths_strategy,
-    )
-    @hypothesis.example(data=b"\x00\x10 0@" * 2, sizes=[40], max_lengths=[0])
+def _needs_input_test(*examples):
+    # test_needs_input_means_drained for bz2 and zlib._ZlibDecompressor,
+    # which report needs_input=True as soon as their input buffer is empty,
+    # even when max_length cut the output short and more of it is pending
+    # (gh-159999).  Until that is fixed every generated call is unlimited,
+    # the case they get right, and the examples pin the rest.  The zlib
+    # examples depend on where the compressor puts block boundaries, so
+    # each has been checked to fail with both zlib and zlib-ng.
+    @hypothesis.given(data=data_strategy, sizes=chunk_sizes_strategy,
+                      max_lengths=st.just([]))
+    @hypothesis.example(data=b"", sizes=[], max_lengths=[])
+    @hypothesis.example(data=b"abc" * 50, sizes=[10] * 10, max_lengths=[])
     def test_needs_input_means_drained(self, data, sizes, max_lengths):
         self._check_needs_input_means_drained(data, sizes, max_lengths)
 
+    for example in examples:
+        test_needs_input_means_drained = example(
+            test_needs_input_means_drained)
+    return test_needs_input_means_drained
 
-class _ZlibNeedsInputBug:
-    # zlib._ZlibDecompressor has the same needs_input problem as bz2
-    # (gh-159999).  The examples depend on where the compressor puts block
-    # boundaries, so there are several: at least one must fail for each
-    # wbits variant (zlib wrapper, raw deflate, gzip wrapper) with both zlib
-    # and zlib-ng.
-    @unittest.expectedFailure
-    @hypothesis.given(
-        data=data_strategy,
-        sizes=chunk_sizes_strategy,
-        max_lengths=max_lengths_strategy,
-    )
-    @hypothesis.example(data=b"\x00", sizes=[4], max_lengths=[0])
-    @hypothesis.example(data=b"\x00" * 21, sizes=[], max_lengths=[2])
-    @hypothesis.example(
-        data=b"\x00\x00\x00\x01\x00\x00\x02\x00\x00\x03\x00\x00"
-             b"\x90\x00\x90\x90\x90\x91\x90" * 2,
-        sizes=[34],
-        max_lengths=[20],
-    )
-    @hypothesis.example(
-        data=b"\x00\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x03" * 2,
-        sizes=[25],
-        max_lengths=[12],
-    )
-    def test_needs_input_means_drained(self, data, sizes, max_lengths):
-        self._check_needs_input_means_drained(data, sizes, max_lengths)
+
+def _needs_input_example(data, sizes, max_lengths):
+    return hypothesis.example(
+        data=data, sizes=sizes, max_lengths=max_lengths,
+    ).xfail(reason="gh-159999", raises=AssertionError)
 
 
 def _zlib_fdict_header(blob):
@@ -536,47 +536,52 @@ def _zlib_fdict_header(blob):
             and int.from_bytes(blob[:2]) % 31 == 0 and bool(blob[1] & 0x20))
 
 
-class _ZlibNeedsDictBug:
+def _without_fdict(blob):
+    # Clear the FDICT flag of a zlib header, keeping its check bits valid.
+    if not _zlib_fdict_header(blob):
+        return blob
+    flg = blob[1] & 0xc0
+    flg |= (31 - (blob[0] * 256 + flg) % 31) % 31
+    return bytes([blob[0], flg]) + blob[2:]
+
+
+def _unless_debug_build(example):
+    # gh-160001 is a fatal C assertion in a debug build, so its examples
+    # can only be registered in a release build.
+    if support.Py_DEBUG:
+        return lambda test: test
+    return example
+
+
+def _fdict_example(garbage):
     # zlib._ZlibDecompressor returns NULL without an exception when inflate
-    # asks for a preset dictionary (gh-160001).  Any zlib-wrapped input whose
-    # header has FDICT set gets there, so random invalid input would hit it,
-    # and in a debug build the missing exception is a fatal C assertion.
-    # test_invalid_input leaves those inputs out; test_fdict_header pins the
-    # bug and can only run in a release build.
-    def _skip_invalid_blob(self, blob):
-        return _zlib_fdict_header(blob)
-
-    @unittest.skipIf(support.Py_DEBUG, "gh-160001 aborts debug builds")
-    @unittest.expectedFailure
-    @hypothesis.given(data=st.binary(max_size=64))
-    @hypothesis.example(data=b"")
-    @hypothesis.example(data=b"\x00\x00\x00\x01\x03\x00")
-    def test_fdict_header(self, data):
-        # zlib.decompressobj raises zlib.error for the same input.
-        stream = b"\x78\xbb" + data
-        with self.assertRaises(zlib.error):
-            zlib.decompressobj().decompress(stream)
-        with self.assertRaises(zlib.error):
-            zlib._ZlibDecompressor().decompress(stream)
+    # asks for a preset dictionary (gh-160001), which any zlib header with
+    # FDICT set followed by a dictionary id does; SystemError in a release
+    # build.  zlib.decompressobj raises zlib.error for the same input.
+    return _unless_debug_build(hypothesis.example(
+        garbage=garbage, data=b"", index=0, byte=0, sizes=[], max_lengths=[],
+    ).xfail(reason="gh-160001", raises=SystemError))
 
 
-# liblzma reports an error when two consecutive calls can make no progress,
-# which lzma.LZMADecompressor lets through as LZMAError("Insufficient buffer
-# space") for two max_length=0 calls in a row with nothing buffered
-# (gh-160000), and on the fourth such call when output is pending.  The
-# broad lzma tests avoid max_length=0 so that they keep checking everything
-# else; test_repeated_max_length_zero and
-# test_max_length_zero_with_pending_output pin the bug.
-lzma_max_length_strategy = st.integers(1, 64) | st.just(-1)
-lzma_max_lengths_strategy = st.lists(lzma_max_length_strategy, max_size=16)
+# liblzma and libzstd report an error when consecutive calls make no
+# progress, which the decompressors let through for max_length=0 calls in
+# a row: lzma.LZMADecompressor on the second with nothing buffered
+# (gh-160000) and on the fourth with output pending, ZstdDecompressor on
+# the sixteenth with output pending (gh-160121).  The broad tests for
+# those two backends avoid max_length=0 so that they keep checking
+# everything else, the tests about it stop short of the failing call, and
+# the expected-failure examples pin it.
+nonzero_max_length_strategy = st.integers(1, 64) | st.just(-1)
+nonzero_max_lengths_strategy = st.lists(nonzero_max_length_strategy,
+                                        max_size=16)
 
 
-class _LZMAMaxLengthZeroBug:
+class _NoMaxLengthZeroTests:
     @hypothesis.given(
         data=data_strategy,
         trailer=trailer_strategy,
         sizes=chunk_sizes_strategy,
-        max_lengths=lzma_max_lengths_strategy,
+        max_lengths=nonzero_max_lengths_strategy,
     )
     @hypothesis.example(data=b"", trailer=b"", sizes=[], max_lengths=[])
     @hypothesis.example(data=b"", trailer=b"tail", sizes=[1, 1, 1],
@@ -591,7 +596,7 @@ class _LZMAMaxLengthZeroBug:
     @hypothesis.given(
         data=data_strategy,
         sizes=chunk_sizes_strategy,
-        max_lengths=lzma_max_lengths_strategy,
+        max_lengths=nonzero_max_lengths_strategy,
     )
     @hypothesis.example(data=b"", sizes=[], max_lengths=[])
     @hypothesis.example(data=b"abc" * 50, sizes=[10] * 10,
@@ -599,69 +604,101 @@ class _LZMAMaxLengthZeroBug:
     def test_needs_input_means_drained(self, data, sizes, max_lengths):
         self._check_needs_input_means_drained(data, sizes, max_lengths)
 
-    @unittest.expectedFailure
-    @hypothesis.given(data=data_strategy, count=st.integers(1, 4))
-    @hypothesis.example(data=b"", count=2)
+
+class _LZMAMaxLengthZeroTests(_NoMaxLengthZeroTests):
+    @hypothesis.given(data=data_strategy, count=st.just(1))
+    @hypothesis.example(data=b"", count=1)
+    @hypothesis.example(data=b"spam" * 10, count=1)
+    @hypothesis.example(data=b"", count=2).xfail(
+        reason="gh-160000", raises=LZMAError)
+    @hypothesis.example(data=b"spam" * 10, count=3).xfail(
+        reason="gh-160000", raises=LZMAError)
     def test_repeated_max_length_zero(self, data, count):
         self._check_repeated_max_length_zero(data, count)
 
-    @unittest.expectedFailure
-    @hypothesis.given(data=data_strategy, count=st.integers(1, 20))
-    @hypothesis.example(data=b"\x00", count=16)
+    @hypothesis.given(data=data_strategy, count=st.integers(1, 3))
+    @hypothesis.example(data=b"", count=1)
+    @hypothesis.example(data=b"\x00", count=3)
+    @hypothesis.example(data=b"\x00", count=4).xfail(
+        reason="gh-160121", raises=LZMAError)
+    @hypothesis.example(data=b"spam" * 10, count=20).xfail(
+        reason="gh-160121", raises=LZMAError)
     def test_max_length_zero_with_pending_output(self, data, count):
         self._check_max_length_zero_with_pending_output(data, count)
 
 
-class _ZstdMaxLengthZeroBug:
-    # libzstd refuses the 16th consecutive call that makes no progress, and
-    # ZstdDecompressor calls it even for max_length=0, so sixteen such calls
-    # with output pending raise ZstdError.
-    @unittest.expectedFailure
-    @hypothesis.given(data=data_strategy, count=st.integers(1, 20))
-    @hypothesis.example(data=b"\x00", count=16)
+class _ZstdMaxLengthZeroTests(_NoMaxLengthZeroTests):
+    @hypothesis.given(data=data_strategy, count=st.integers(1, 15))
+    @hypothesis.example(data=b"", count=1)
+    @hypothesis.example(data=b"\x00", count=15)
+    @hypothesis.example(data=b"\x00", count=16).xfail(
+        reason="gh-160121", raises=ZstdError)
+    @hypothesis.example(data=b"spam" * 10, count=20).xfail(
+        reason="gh-160121", raises=ZstdError)
     def test_max_length_zero_with_pending_output(self, data, count):
         self._check_max_length_zero_with_pending_output(data, count)
 
 
-class LZMADecompressorMachine(_DecompressorMachine):
-    # See lzma_max_length_strategy above.
-    @stateful.rule(n=st.integers(0, 64), max_length=lzma_max_length_strategy)
+class NoMaxLengthZeroDecompressorMachine(_DecompressorMachine):
+    # See nonzero_max_length_strategy above.
+    @stateful.rule(n=st.integers(0, 64),
+                   max_length=nonzero_max_length_strategy)
     def feed(self, n, max_length):
         self._feed_next(n, max_length)
 
 
 @support.requires_bz2()
-class BZ2DecompressorTests(_BZ2NeedsInputBug, _DecompressorTests,
-                           unittest.TestCase):
+class BZ2DecompressorTests(_DecompressorTests, unittest.TestCase):
     backend = _bz2_backend()
+    test_needs_input_means_drained = _needs_input_test(
+        _needs_input_example(b"\x00\x10 0@" * 2, [40], [0]))
 
 
 @support.requires_gzip()
-class GzipDecompressorTests(_ZlibNeedsInputBug, _DecompressorTests,
-                            unittest.TestCase):
+class GzipDecompressorTests(_DecompressorTests, unittest.TestCase):
     backend = _gzip_backend()
+    # The gzip header takes ten bytes, so a chunk of twelve leaves two
+    # bytes of deflate data.
+    test_needs_input_means_drained = _needs_input_test(
+        _needs_input_example(b"\x00", [12], [0]),
+        _needs_input_example(b"ab" * 40, [13], [1]))
 
 
 @support.requires_lzma()
-class LZMADecompressorTests(_LZMAMaxLengthZeroBug, _DecompressorTests,
+class LZMADecompressorTests(_LZMAMaxLengthZeroTests, _DecompressorTests,
                             unittest.TestCase):
     backend = _lzma_backend()
 
 
 @support.requires_zlib()
-class ZlibDecompressorTests(_ZlibNeedsInputBug, _ZlibNeedsDictBug,
-                            _DecompressorTests, unittest.TestCase):
+class ZlibDecompressorTests(_DecompressorTests, unittest.TestCase):
     backend = _zlib_backend(15)
+    test_needs_input_means_drained = _needs_input_test(
+        _needs_input_example(b"\x00", [4], [0]),
+        _needs_input_example(b"ab" * 40, [5], [1]))
+
+    # Random invalid input would hit gh-160001 (see _fdict_example) with
+    # any FDICT header, so generated garbage has the flag cleared, a
+    # flipped byte that sets it is left out, and the examples pin the bug.
+    def _skip_corrupted_blob(self, blob):
+        return _zlib_fdict_header(blob)
+
+    test_invalid_input = _invalid_input_test(
+        _fdict_example(b"\x78\xbb\x00\x00\x00\x01\x03\x00"),
+        _fdict_example(b"\x78\xbb\xff\xff\xff\xff"),
+        garbage=st.binary(max_size=256).map(_without_fdict))
 
 
 @support.requires_zlib()
-class RawDeflateDecompressorTests(_ZlibNeedsInputBug, _DecompressorTests,
-                                  unittest.TestCase):
+class RawDeflateDecompressorTests(_DecompressorTests, unittest.TestCase):
     backend = _zlib_backend(-15)
+    test_needs_input_means_drained = _needs_input_test(
+        _needs_input_example(b"\x00", [2], [0]),
+        _needs_input_example(b"\x00" * 21, [1], [2]))
 
 
 @support.requires_zstd()
-class ZstdDecompressorTests(_ZstdMaxLengthZeroBug, _DecompressorTests,
+class ZstdDecompressorTests(_ZstdMaxLengthZeroTests, _DecompressorTests,
                             unittest.TestCase):
     backend = _zstd_backend()
 
@@ -673,8 +710,8 @@ GzipDecompressorMachineTest = _machine_test(
     "GzipDecompressorMachine", _DecompressorMachine, _gzip_backend,
     support.requires_gzip())
 LZMADecompressorMachineTest = _machine_test(
-    "LZMADecompressorMachine", LZMADecompressorMachine, _lzma_backend,
-    support.requires_lzma())
+    "LZMADecompressorMachine", NoMaxLengthZeroDecompressorMachine,
+    _lzma_backend, support.requires_lzma())
 ZlibDecompressorMachineTest = _machine_test(
     "ZlibDecompressorMachine", _DecompressorMachine,
     functools.partial(_zlib_backend, 15), support.requires_zlib())
@@ -682,8 +719,8 @@ RawDeflateDecompressorMachineTest = _machine_test(
     "RawDeflateDecompressorMachine", _DecompressorMachine,
     functools.partial(_zlib_backend, -15), support.requires_zlib())
 ZstdDecompressorMachineTest = _machine_test(
-    "ZstdDecompressorMachine", _DecompressorMachine, _zstd_backend,
-    support.requires_zstd())
+    "ZstdDecompressorMachine", NoMaxLengthZeroDecompressorMachine,
+    _zstd_backend, support.requires_zstd())
 
 
 # ---------------------------------------------------------------------------
@@ -844,51 +881,44 @@ class DecompressObjTests(unittest.TestCase):
                         level=9)
     def test_zdict_round_trip(self, data, zdict, level):
         for wbits in (15, -15):
-            with self.subTest(wbits=wbits):
-                comp = zlib.compressobj(level, wbits=wbits, zdict=zdict)
-                stream = comp.compress(data) + comp.flush()
-                decomp = zlib.decompressobj(wbits, zdict=zdict)
-                self.assertEqual(decomp.decompress(stream), data)
-                self.assertTrue(decomp.eof)
+            comp = zlib.compressobj(level, wbits=wbits, zdict=zdict)
+            stream = comp.compress(data) + comp.flush()
+            decomp = zlib.decompressobj(wbits, zdict=zdict)
+            self.assertEqual(decomp.decompress(stream), data)
+            self.assertTrue(decomp.eof)
+
+
+def _zdict_example(data, zdict, level, wbits):
+    example = hypothesis.example(data=data, zdict=zdict, level=level,
+                                 wbits=wbits)
+    if wbits > 0:
+        return _unless_debug_build(
+            example.xfail(reason="gh-160001", raises=SystemError))
+    return example
 
 
 @support.requires_zlib()
 class ZlibDecompressorZdictTests(unittest.TestCase):
-    def _check_round_trip(self, data, zdict, level, wbits):
+    # _ZlibDecompressor only applies zdict up front for raw deflate; for a
+    # zlib-wrapped stream it hits Z_NEED_DICT and returns NULL without
+    # setting an exception (gh-160001).  Only raw deflate is generated;
+    # the expected-failure examples pin the wrapper.
+    @hypothesis.given(
+        data=data_strategy,
+        zdict=st.binary(min_size=1, max_size=256),
+        level=st.integers(0, 9),
+        wbits=st.just(-15),
+    )
+    @_zdict_example(b"", b"\x00", 0, -15)
+    @_zdict_example(b"hello world" * 10, b"hello world", 9, -15)
+    @_zdict_example(b"", b"\x00", 0, 15)
+    @_zdict_example(b"hello world" * 10, b"hello world", 9, 15)
+    def test_round_trip(self, data, zdict, level, wbits):
         comp = zlib.compressobj(level, wbits=wbits, zdict=zdict)
         stream = comp.compress(data) + comp.flush()
         decomp = zlib._ZlibDecompressor(wbits, zdict=zdict)
         self.assertEqual(decomp.decompress(stream), data)
         self.assertTrue(decomp.eof)
-
-    @hypothesis.given(
-        data=data_strategy,
-        zdict=st.binary(min_size=1, max_size=256),
-        level=st.integers(0, 9),
-    )
-    @hypothesis.example(data=b"", zdict=b"\x00", level=0)
-    @hypothesis.example(data=b"hello world" * 10, zdict=b"hello world",
-                        level=9)
-    def test_raw_deflate(self, data, zdict, level):
-        self._check_round_trip(data, zdict, level, -15)
-
-    # _ZlibDecompressor only applies zdict up front for raw deflate; for a
-    # zlib-wrapped stream it hits Z_NEED_DICT and returns NULL without
-    # setting an exception (gh-160001).  That surfaces as SystemError in a
-    # release build and as a fatal C assertion in a debug build, so the test
-    # can only run in the former.
-    @unittest.skipIf(support.Py_DEBUG, "gh-160001 aborts debug builds")
-    @unittest.expectedFailure
-    @hypothesis.given(
-        data=data_strategy,
-        zdict=st.binary(min_size=1, max_size=256),
-        level=st.integers(0, 9),
-    )
-    @hypothesis.example(data=b"", zdict=b"\x00", level=0)
-    @hypothesis.example(data=b"hello world" * 10, zdict=b"hello world",
-                        level=9)
-    def test_zlib_wrapper(self, data, zdict, level):
-        self._check_round_trip(data, zdict, level, 15)
 
 
 # ---------------------------------------------------------------------------
