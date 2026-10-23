@@ -1076,6 +1076,52 @@ class CBytesIOTest(PyBytesIOTest):
         memio = self.ioclass(ba)
         self.assertEqual(sys.getrefcount(ba), old_rc)
 
+    def test_cow_hashed(self):
+        # A buffer which was exposed to Python code and hashed must not be
+        # modified in place, even if BytesIO holds the only reference to it:
+        # it would keep the cached hash of its old contents.
+        def write(memio):
+            memio.seek(0)
+            memio.write(b"efgh")
+        def getbuffer(memio):
+            with memio.getbuffer() as view:
+                view[:] = b"efgh"
+        def truncate(memio):
+            memio.truncate(2)
+            memio.seek(0)
+            memio.write(b"efgh")
+        def getvalue(memio):
+            return memio.getvalue()
+        def read(memio):
+            memio.seek(0)
+            return memio.read()
+        def peek(memio):
+            memio.seek(0)
+            return memio.peek(4)
+        for mutation in write, getbuffer, truncate:
+            for expose in getvalue, read, peek:
+                with self.subTest(mutation=mutation.__name__,
+                                  expose=expose.__name__):
+                    memio = self.ioclass()
+                    memio.write(b"abcd")
+                    # Shrink the overallocated buffer to the exact size,
+                    # so read() and peek() can return it without copying.
+                    memio.getvalue()
+                    hash(expose(memio))
+                    mutation(memio)
+                    self.assertEqual(memio.getvalue(), b"efgh")
+                    self.assertEqual(hash(memio.getvalue()), hash(b"efgh"))
+                    self.assertIn(memio.getvalue(), {b"efgh"})
+
+            with self.subTest(mutation=mutation.__name__, expose="__init__"):
+                initial = bytes(bytearray(b"abcd"))
+                hash(initial)
+                memio = self.ioclass(initial)
+                del initial
+                mutation(memio)
+                self.assertEqual(memio.getvalue(), b"efgh")
+                self.assertEqual(hash(memio.getvalue()), hash(b"efgh"))
+
     def test_write_with_export(self):
         memio = self.ioclass(b"abcd")
         memio.seek(2)
