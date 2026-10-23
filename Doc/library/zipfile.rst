@@ -722,6 +722,10 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
 
    Enumerate the children of the current directory.
 
+   .. versionchanged:: 3.16
+      Raises :exc:`NotADirectoryError` when the current context does not
+      reference a directory. Previously, it raised :exc:`ValueError`.
+
 .. method:: Path.is_dir()
 
    Return ``True`` if the current context references a directory.

@@ -924,11 +924,24 @@ use them.
    C99 doesn't define such a thing directly (size_t is an unsigned integral type).
    See :pep:`353` for details.
 
+
+.. c:macro:: Py_INVALID_SIZE
+
+   A constant of type :c:type:`Py_ssize_t` with value ``-1``, representing an
+   invalid size.
+
+
 .. c:macro:: PY_SSIZE_T_MAX
              PY_SSIZE_T_MIN
 
    The limit values (largest positive one and smallest negative one,
    respecitvely) of type :c:type:`Py_ssize_t`.
+
+
+.. c:macro:: PY_DWORD_MAX
+
+   The maximum value of the Windows ``DWORD`` type.
+   Expands to ``0xffffffff`` on all platforms.
 
 
 .. _api-exceptions:
