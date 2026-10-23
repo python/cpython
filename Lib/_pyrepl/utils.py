@@ -3,7 +3,6 @@ import re
 import unicodedata
 import _colorize
 
-from _colorize import ColorSpan
 from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import NamedTuple, Self
@@ -75,7 +74,7 @@ def unbracket(s: str, including_content: bool = False) -> str:
 
 def iter_display_chars(
     buffer: str,
-    colors: list[ColorSpan] | None = None,
+    colors: list[_colorize.ColorSpan] | None = None,
     start_index: int = 0,
 ) -> Iterator[StyledChar]:
     """Yield visible display characters with widths and semantic color tags.
@@ -130,7 +129,7 @@ def iter_display_chars(
 
 def disp_str(
     buffer: str,
-    colors: list[ColorSpan] | None = None,
+    colors: list[_colorize.ColorSpan] | None = None,
     start_index: int = 0,
     force_color: bool = False,
 ) -> tuple[CharBuffer, CharWidths]:
@@ -158,7 +157,7 @@ def disp_str(
     (['a', ' ', '=', ' ', '9'], [1, 1, 1, 1, 1])
 
     >>> line = "while 1:"
-    >>> colors = list(utils.gen_colors(line))
+    >>> colors = list(_colorize.gen_colors(line))
     >>> utils.disp_str(line, colors=colors)
     (['\x1b[1;34mw', 'h', 'i', 'l', 'e\x1b[0m', ' ', '1', ':'], [1, 1, 1, 1, 1, 1, 1, 1])
 

@@ -1,6 +1,7 @@
+from _colorize import ColorSpan
 from dataclasses import dataclass
 
-from .utils import ColorSpan, StyleRef, THEME, iter_display_chars, unbracket, wlen
+from .utils import StyleRef, THEME, iter_display_chars, unbracket, wlen
 
 
 @dataclass(frozen=True, slots=True)

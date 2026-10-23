@@ -461,8 +461,7 @@ class PdbPyReplInput:
             return None
 
     def gen_colors(self, buffer):
-        import _pyrepl.utils
-        from _pyrepl.utils import ColorSpan, Span
+        from _colorize import ColorSpan, Span, gen_colors
 
         if not buffer.strip():
             return
@@ -479,7 +478,7 @@ class PdbPyReplInput:
             redact_length = leading_spaces + len(leading_text)
             buffer = ' ' * redact_length + buffer[redact_length:]
 
-        yield from _pyrepl.utils.gen_colors(buffer)
+        yield from gen_colors(buffer)
 
 
 class Pdb(bdb.Bdb, cmd.Cmd):
@@ -1268,12 +1267,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def _colorize_code(self, code):
         if self.colorize:
+            from _colorize import gen_colors
             try:
-                import _pyrepl.utils
+                from _pyrepl.utils import disp_str
             except ModuleNotFoundError:
                 return code
-            colors = list(_pyrepl.utils.gen_colors(code))
-            chars, _ = _pyrepl.utils.disp_str(code, colors=colors, force_color=True)
+            colors = list(gen_colors(code))
+            chars, _ = disp_str(code, colors=colors, force_color=True)
             code = "".join(chars)
         return code
 
