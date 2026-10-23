@@ -994,7 +994,9 @@ class _TestProcess(BaseTestCase):
         self.assertEqual(proc2.exitcode, 0)
 
         proc.join()
-        self.assertTrue(evt.is_set())
+        # After SIGKILL, join() can return (exitcode 255) as soon as the
+        # status pipe is closed, before the orphaned child has run.
+        self.assertTrue(evt.wait(support.SHORT_TIMEOUT))
         self.assertIn(proc.exitcode, (0, 255))
 
     def test_forkserver_sigint(self):
