@@ -2246,12 +2246,13 @@ to speed up repeated connections from the same clients.
       - the PSK is only offered to the server, which may decline it and
         authenticate with a certificate instead.  That certificate is checked
         according to :attr:`~SSLContext.verify_mode`, so a client relying on
-        the PSK to authenticate the server must not set it to
-        :const:`CERT_NONE`.  A PSK handshake does not need any CA
-        certificates to be loaded when using :const:`CERT_REQUIRED`.
-        :attr:`SSLSocket.session_reused` is true if the PSK was used.
+        the PSK to authenticate the server should not set it to
+        :const:`CERT_NONE`, or should check :attr:`SSLSocket.session_reused`,
+        which is true if the PSK was used.  A PSK handshake does not need any
+        CA certificates to be loaded when using :const:`CERT_REQUIRED`.
       - a zero length PSK does not reject the connection, it only means that
-        no PSK is offered.
+        no PSK is offered.  An exception raised by the callback has the same
+        effect.
       - the PSK is used with the SHA-256 handshake digest, so a server can
         only accept it with a cipher suite that uses SHA-256.
 
@@ -2302,12 +2303,16 @@ to speed up repeated connections from the same clients.
       When using TLS 1.3:
 
       - the ``identity_hint`` parameter is not sent to the client.
-      - a zero length PSK only declines the client's PSK.  If a certificate
-        was loaded with :meth:`~SSLContext.load_cert_chain`, the handshake
-        continues with certificate authentication instead of failing, so a
-        server relying on the PSK to authenticate clients should not load one,
-        or should check :attr:`SSLSocket.session_reused`, which is true if the
-        PSK was used.
+      - a zero length PSK, or an exception raised by the callback, only
+        declines the client's PSK.  If a certificate was loaded with
+        :meth:`~SSLContext.load_cert_chain`, the handshake continues with
+        certificate authentication instead of failing, so a server relying on
+        the PSK to authenticate clients should not load one, or should check
+        :attr:`SSLSocket.session_reused`, which is true if the PSK was used.
+      - the PSK can only be accepted with a cipher suite that uses SHA-256.
+        When a certificate is loaded, OpenSSL's default TLS 1.3 cipher suite
+        order selects a SHA-384 suite instead, so the PSK is declined even if
+        it matches.
 
    Example usage::
 
