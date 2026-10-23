@@ -293,7 +293,7 @@ On Free Threading, it's more efficient than the ``PyList`` C API to create a
 .. c:function:: int PyListWriter_AppendSteal(PyListWriter *writer, PyObject *item)
 
    Similar to :c:func:`PyListWriter_Append`, but :term:`steals <steal>` the
-   reference to *item*, instead of creating a new :ref:`strong reference`.
+   reference to *item*, instead of creating a new :term:`strong reference`.
 
 .. c:function:: int PyListWriter_Extend(PyListWriter *writer, PyObject *iterable)
 
