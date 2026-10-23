@@ -1,0 +1,3 @@
+Fix crashes in :mod:`xml.parsers.expat` when a character data callback
+disables buffering or clears another handler during a flush, or when interning
+an attribute name changes :attr:`~xml.parsers.expat.xmlparser.ordered_attributes`.
