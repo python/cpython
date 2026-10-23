@@ -20,6 +20,12 @@ __all__ = ["asynccontextmanager", "contextmanager", "closing", "nullcontext",
            "chdir"]
 
 
+try:
+    from _contextlib import _setup_genmgr_ctx
+except ImportError:
+    _setup_genmgr_ctx = None
+
+
 class AbstractContextManager(abc.ABC):
 
     """An abstract base class for context managers."""
@@ -168,6 +174,7 @@ class _GeneratorContextManagerBase:
     """Shared functionality for @contextmanager and @asynccontextmanager."""
 
     def __init__(self, func, args, kwds):
+        self.exc_context = None
         self.gen = func(*args, **kwds)
         self.func, self.args, self.kwds = func, args, kwds
         # Issue 19330: ensure context manager instances have good docstrings
@@ -196,6 +203,8 @@ class _GeneratorContextManager(
     """Helper for @contextmanager decorator."""
 
     def __enter__(self):
+        # store the exception context on enter so it can be restored on exit
+        self.exc_context = sys.exception()
         # do not keep args and kwds alive unnecessarily
         # they are only needed for recreation, which is not possible anymore
         del self.args, self.kwds, self.func
@@ -205,6 +214,9 @@ class _GeneratorContextManager(
         raise RuntimeError("generator didn't yield")
 
     def __exit__(self, typ, value, traceback):
+        # don't keep the stored exception alive unnecessarily
+        exc_context = self.exc_context
+        self.exc_context = None
         if typ is None:
             # Faster way to run next(self.gen) and check for StopIteration:
             for _ in self.gen:
@@ -219,6 +231,20 @@ class _GeneratorContextManager(
                 # tell if we get the same exception back
                 value = typ()
             try:
+                # Throw the current exception into the generator so it can
+                # handle it.
+                # Once the generator handles the thrown exception, the
+                # exception context within it should revert back to what it was
+                # before its "yield" statement (ie. what it was in self.__enter__).
+                # However, since we're still currently handling the exception
+                # that we throw into the generator here, the exception context
+                # in the generator wouldn't change.
+                # To work around this, we forcefully set the current exception
+                # context to be what it was just before the generator's yield
+                # statement before throwing the current exception into it.
+                # (see gh-111676).
+                if _setup_genmgr_ctx is not None:
+                    _setup_genmgr_ctx(exc_context)
                 self.gen.throw(value)
             except StopIteration as exc:
                 # Suppress StopIteration *unless* it's the same exception that
