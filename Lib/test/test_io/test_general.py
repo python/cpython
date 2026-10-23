@@ -1378,6 +1378,11 @@ class CMiscIOTest(MiscIOTest, CTestCase):
             from test.support import SuppressCrashReport
 
             # Mock I/O that blocks daemon thread in Raw I/O write.
+            #
+            # BufferedIO holds a lock while doing I/O operations. Use a
+            # threading Event to simulate a thread doing a slow I/O which holds
+            # the lock on sys.stdout, sys.stderr blocking normal cleanup of
+            # those streams during interpreter finalization.
             class GatedRaw(io.RawIOBase):
                 name = '<{stream_name}>'
 
