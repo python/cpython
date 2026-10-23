@@ -1,10 +1,9 @@
 import collections
 import types
 import unittest
-from test import support
 from test.support import (skip_emscripten_stack_overflow,
                           skip_wasi_stack_overflow, run_with_limited_c_stack,
-                          exceeds_recursion_limit)
+                          exceeds_recursion_limit, nomemtest)
 
 class TestExceptionGroupTypeHierarchy(unittest.TestCase):
     def test_exception_group_types(self):
@@ -131,7 +130,7 @@ class InstanceCreation(unittest.TestCase):
             type(MyBEG("eg", [ValueError(12), KeyboardInterrupt(42)])),
             MyBEG)
 
-    @support.nomemtest
+    @nomemtest
     def test_no_memory(self):
         import _testcapi
         # A tuple of exceptions is not copied, so the first allocation
