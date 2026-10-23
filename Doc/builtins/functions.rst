@@ -537,6 +537,9 @@ are always available.  They are listed here in alphabetical order.
    Create a new dictionary.  The :class:`dict` object is the dictionary class.
    See also :ref:`typesmapping` for documentation about this class.
 
+   Iterating over a dictionary yields its keys; use :meth:`dict.items` to
+   iterate over key-value pairs.
+
    For other containers see the built-in :class:`frozendict`, :class:`list`,
    :class:`set`, and :class:`tuple` classes, as well as the :mod:`collections` module.
 
