@@ -50,6 +50,7 @@ GITBRANCH=	@GITBRANCH@
 PGO_PROF_GEN_FLAG=@PGO_PROF_GEN_FLAG@
 PGO_PROF_USE_FLAG=@PGO_PROF_USE_FLAG@
 LLVM_PROF_MERGER=@LLVM_PROF_MERGER@
+LLVM_PROF_SHOW=@LLVM_PROF_SHOW@
 LLVM_PROF_FILE=@LLVM_PROF_FILE@
 LLVM_PROF_ERR=@LLVM_PROF_ERR@
 DTRACE=         @DTRACE@
@@ -216,6 +217,12 @@ MACOSX_DEPLOYMENT_TARGET=@CONFIGURE_MACOSX_DEPLOYMENT_TARGET@
 IPHONEOS_DEPLOYMENT_TARGET=@IPHONEOS_DEPLOYMENT_TARGET@
 
 BUILD_DETAILS=@BUILD_DETAILS@
+
+# visionOS Deployment target is *actually* used during the build, by the
+# compiler shims; export.
+XROS_DEPLOYMENT_TARGET=@XROS_DEPLOYMENT_TARGET@
+@EXPORT_XROS_DEPLOYMENT_TARGET@export XROS_DEPLOYMENT_TARGET
+
 
 # Option to install to strip binaries
 STRIPFLAG=-s
@@ -391,6 +398,7 @@ PEGEN_OBJS=		\
 		Parser/pegen_errors.o \
 		Parser/action_helpers.o \
 		Parser/parser.o \
+		Parser/parser_invalid.o \
 		Parser/string_parser.o \
 		Parser/peg_api.o
 
@@ -435,6 +443,7 @@ PARSER_HEADERS= \
 
 PYTHON_OBJS=	\
 		Python/_contextvars.o \
+		Python/_strptime.o \
 		Python/_warnings.o \
 		Python/Python-ast.o \
 		Python/Python-tokenize.o \
@@ -850,6 +859,7 @@ profile-run-stamp:
 	@ # FIXME: can't run for a cross build
 	$(LLVM_PROF_FILE) $(RUNSHARED) ./$(BUILDPYTHON) $(PROFILE_TASK)
 	$(LLVM_PROF_MERGER)
+	$(LLVM_PROF_SHOW)
 	# Remove profile generation binary since we are done with it.
 	$(MAKE) clean-retain-profile
 	# This is an expensive target to build and it does not have proper
@@ -1978,6 +1988,7 @@ regen-pegen:
 		$(srcdir)/Grammar/Tokens \
 		-o $(srcdir)/Parser/parser.c.new
 	$(UPDATE_FILE) --create $(srcdir)/Parser/parser.c $(srcdir)/Parser/parser.c.new
+	$(UPDATE_FILE) --create $(srcdir)/Parser/parser_invalid.c $(srcdir)/Parser/parser_invalid.c.new
 
 .PHONY: regen-ast
 regen-ast:
@@ -2309,30 +2320,31 @@ testuniversal: all
 	$(RUNSHARED) /usr/libexec/oah/translate \
 		./$(BUILDPYTHON) -E -m test -j 0 -u all $(TESTOPTS)
 
-# Run the test suite on the iOS simulator. Must be run on a macOS machine with
-# a full Xcode install that has an iPhone SE (3rd edition) simulator available.
+# Run the test suite on an Apple Mobile (i.e., iOS/tvOS/watchOS/visionOS)
+# device simulator. Must be run on a macOS machine with a full Xcode install
+# that has an SE-class simulator available for the chosen platform.
 # This must be run *after* a `make install` has completed the build. The
 # testbed is configured for the framework name used to configure the build;
 # that name is expected to be `Python`, optionally followed by uppercased ABI
 # flags (e.g., `PythonT`).
-XCFOLDER:=iOSTestbed.$(MULTIARCH).$(shell date +%s).$$PPID
+XCFOLDER:=AppleTestbed.$(MULTIARCH).$(shell date +%s).$$PPID
 .PHONY: testios
 testios:
-	@if test "$(MACHDEP)" != "ios"; then \
-		echo "Cannot run the iOS testbed for a non-iOS build."; \
+	@if test "$(MACHDEP)" != "ios" -a "$(MACHDEP)" != "tvos" -a "$(MACHDEP)" != "visionos" -a "$(MACHDEP)" != "watchos" ; then \
+		echo "Cannot run the Apple mobile testbed for a $(MACHDEP) build."; \
 		exit 1;\
 	fi
-	@if test "$(findstring -iphonesimulator,$(MULTIARCH))" != "-iphonesimulator"; then \
-		echo "Cannot run the iOS testbed for non-simulator builds."; \
+	@if test "$(findstring simulator,$(MULTIARCH))" != "simulator"; then \
+		echo "Cannot run the Apple mobile testbed for non-simulator builds."; \
 		exit 1;\
 	fi
 	@if ! test -d $(PYTHONFRAMEWORKPREFIX); then \
-		echo "Cannot find a finalized iOS Python.framework. Have you run 'make install' to finalize the framework build?"; \
+		echo "Cannot find a finalized Python.framework. Have you run 'make install' to finalize the framework build?"; \
 		exit 1;\
 	fi
 
 	# Clone the testbed project into the XCFOLDER
-	$(PYTHON_FOR_BUILD) $(srcdir)/Platforms/Apple/testbed clone --framework $(PYTHONFRAMEWORKPREFIX) "$(XCFOLDER)"
+	$(PYTHON_FOR_BUILD) $(srcdir)/Platforms/Apple/testbed clone --platform $(MACHDEP) --framework $(PYTHONFRAMEWORKPREFIX) "$(XCFOLDER)"
 
 	# Run the testbed project
 	$(PYTHON_FOR_BUILD) "$(XCFOLDER)" run --verbose -- test -uall --single-process --rerun -W --pythoninfo

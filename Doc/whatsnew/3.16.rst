@@ -392,6 +392,10 @@ datetime
   :meth:`datetime.time.strptime`.
   (Contributed by Stan Ulbrych and Karoline Pauls in :gh:`157290`.)
 
+* Add :attr:`datetime.timezone.name`, the *name* passed to the constructor,
+  or ``None`` if no name was passed.
+  (Contributed by Stan Ulbrych in :gh:`131210`.)
+
 
 dbm.gnu
 -------
@@ -982,6 +986,16 @@ zlib
 
 Optimizations
 =============
+
+datetime and time
+-----------------
+
+* :meth:`datetime.datetime.strptime`, :meth:`datetime.date.strptime`,
+  :meth:`datetime.time.strptime`, and :func:`time.strptime` are faster
+  for common numeric formats such as ``%Y-%m-%d`` and
+  ``%Y-%m-%d %H:%M:%S``.
+  (Contributed by Paul Ganssle in :gh:`158252`, based on work by
+  Stan Ulbrych.)
 
 re
 --

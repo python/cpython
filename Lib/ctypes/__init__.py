@@ -447,9 +447,9 @@ class CDLL(object):
 
     else:
         def _load_library(self, name, mode, handle, winmode):
-            # If the filename that has been provided is an iOS/tvOS/watchOS
-            # .fwork file, dereference the location to the true origin of the
-            # binary.
+            # If the filename that has been provided is an iOS, tvOS, visionOS
+            # or watchOS .fwork file, dereference the location to the true
+            # origin of the binary.
             if name and name.endswith(".fwork"):
                 with open(name) as f:
                     name = _os.path.join(
