@@ -1181,31 +1181,52 @@ class TestGrammarVisualizer(unittest.TestCase):
 
         # Test memo-only rule
         simple_rule = rules['simple_rule']
-        self.assertTrue('memo' in simple_rule.flags,
+        self.assertTrue(simple_rule.memo,
                         "simple_rule should have memo")
         self.assertEqual(simple_rule.flags, frozenset(['memo']),
                         f"simple_rule flags should be {'memo'}, got {simple_rule.flags}")
 
         # Test multi-flag rule
         multi_flag_rule = rules['multi_flag_rule']
-        self.assertTrue('memo' in simple_rule.flags,
+        self.assertTrue(multi_flag_rule.memo,
                         "multi_flag_rule should have memo")
         self.assertEqual(multi_flag_rule.flags, frozenset({'memo', 'custom', 'test'}),
                         f"multi_flag_rule flags should contain memo, custom, test, got {multi_flag_rule.flags}")
 
         # Test single custom flag rule
         single_custom_rule = rules['single_custom_flag']
-        self.assertFalse('memo' not in simple_rule.flags,
+        self.assertFalse(single_custom_rule.memo,
                          "single_custom_flag should not have memo")
         self.assertEqual(single_custom_rule.flags, frozenset(['custom']),
                         f"single_custom_flag flags should be {'custom'}, got {single_custom_rule.flags}")
 
         # Test no flags rule
         no_flags_rule = rules['no_flags_rule']
-        self.assertFalse('memo' not in simple_rule.flags,
+        self.assertFalse(no_flags_rule.memo,
                          "no_flags_rule should not have memo")
         self.assertEqual(no_flags_rule.flags, frozenset(),
                         f"no_flags_rule flags should be the empty set, got {no_flags_rule.flags}")
+
+        for rule in rules.values():
+            self.assertIsNone(rule.fastpath)
+
+    def test_rule_fastpath_flags(self) -> None:
+        for rule_type in ("", "[expr_ty]"):
+            for memo in (False, True):
+                with self.subTest(rule_type=rule_type, memo=memo):
+                    flags = "fastpath=custom_fastpath"
+                    if memo:
+                        flags = "memo, " + flags
+                    grammar_source = f"start{rule_type} ({flags}): NAME\n"
+                    rule = parse_string(grammar_source, GrammarParser).rules["start"]
+                    self.assertEqual(rule.fastpath, "custom_fastpath")
+                    self.assertIs(rule.memo, memo)
+
+    def test_rule_fastpath_requires_function(self) -> None:
+        with self.assertRaisesRegex(
+            ValueError, "rule 'start': fastpath flag needs a function"
+        ):
+            parse_string("start (fastpath): NAME\n", GrammarParser)
 
 
 class TestGrammarIncludes(unittest.TestCase):

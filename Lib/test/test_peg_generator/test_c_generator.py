@@ -63,7 +63,7 @@ class TestCGenerator(unittest.TestCase):
             @modulename 'sample'
             @bytecode '1'
             start[mod_ty]: expr_without_invalid 'pass' "zsoft" "asoft" ('bb' | 'aa')* ENDMARKER
-            expr_without_invalid[expr_ty] (memo): name=expr [NUMBER] { name }
+            expr_without_invalid[expr_ty] (memo, fastpath=custom_fastpath): name=expr [NUMBER] { name }
             expr[expr_ty]: expr '+' NAME | NAME
         """)
         generator.debug = True
@@ -86,6 +86,8 @@ class TestCGenerator(unittest.TestCase):
             rule.name = "changed"
             rule.type = "changed_type"
             rule.flags = frozenset()
+            rule.memo = False
+            rule.fastpath = None
             rule.rhs.alts[0].action = "changed_action"
             rule.rhs.alts.clear()
         generator.rules.clear()

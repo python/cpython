@@ -90,6 +90,17 @@ class Rule:
         self.type = type
         self.rhs = rhs
         self.flags = flags or frozenset()
+        self.memo = "memo" in self.flags
+        self.fastpath: str | None = None
+        for flag in self.flags:
+            name, _, function = flag.partition("=")
+            if name == "fastpath":
+                if not function:
+                    raise ValueError(
+                        f"rule {self.name!r}: fastpath flag needs a function"
+                    )
+                self.fastpath = function
+                break
         self.kind = kind
         # The included grammar file that defines this rule, relative to the
         # root grammar file's directory, or None for the root grammar file itself.
