@@ -128,8 +128,10 @@ _PyPegen_join_names_with_dot(Parser *p, expr_ty first_name, expr_ty second_name)
     if (!uni) {
         return NULL;
     }
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyUnicode_InternImmortal(interp, &uni);
+    if (p->keyword_trial == NULL) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        _PyUnicode_InternImmortal(interp, &uni);
+    }
     if (_PyArena_AddPyObject(p->arena, uni) < 0) {
         Py_DECREF(uni);
         return NULL;
@@ -986,6 +988,7 @@ _PyPegen_raise_error_for_missing_comma(Parser *p, expr_ty a, expr_ty b)
     if (p->tokens[p->mark - 1]->level == 0) {
         return NULL;
     }
+    p->missing_comma = 1;
     // For multi-line expressions (like string concatenations), point to the
     // last line instead of the first for a more helpful error message.
     // Use a->col_offset as the starting column since all strings in the
@@ -2072,7 +2075,7 @@ _warn_relative_import_of_lazy(Parser *p, asdl_seq *dots, expr_ty module)
     // the module name is insignificant, so this is parsed exactly like
     // `from .lazy import x` (an import of the relative module "lazy"), but it
     // is most likely a transposition of `lazy from . import x` (PEP 810).
-    if (p->call_invalid_rules) {
+    if (p->call_invalid_rules || p->keyword_trial != NULL) {
         return 0;
     }
 
@@ -2134,7 +2137,9 @@ _PyPegen_checked_from_import(Parser *p, asdl_seq *dots, expr_ty module_name,
             alias_ty alias = asdl_seq_GET(names, i);
             if (PyUnicode_CompareWithASCIIString(alias->name, "barry_as_FLUFL") == 0) {
                 p->flags |= PyPARSE_BARRY_AS_BDFL;
-                p->tok->barry_as_bdfl = 1;
+                if (p->keyword_trial == NULL) {
+                    p->tok->barry_as_bdfl = 1;
+                }
             }
         }
     }
@@ -2149,24 +2154,4 @@ _PyPegen_checked_from_import(Parser *p, asdl_seq *dots, expr_ty module_name,
     }
     return _PyAST_ImportFrom(module, names, level, lazy_token ? 1 : 0, lineno,
                              col_offset, end_lineno, end_col_offset, arena);
-}
-
-asdl_stmt_seq*
-_PyPegen_register_stmts(Parser *p, asdl_stmt_seq* stmts) {
-    if (!p->call_invalid_rules) {
-        return stmts;
-    }
-    Py_ssize_t len = asdl_seq_LEN(stmts);
-    if (len == 0) {
-        return stmts;
-    }
-    stmt_ty last_stmt = asdl_seq_GET(stmts, len - 1);
-    if (p->last_stmt_location.lineno > last_stmt->lineno) {
-        return stmts;
-    }
-    p->last_stmt_location.lineno = last_stmt->lineno;
-    p->last_stmt_location.col_offset = last_stmt->col_offset;
-    p->last_stmt_location.end_lineno = last_stmt->end_lineno;
-    p->last_stmt_location.end_col_offset = last_stmt->end_col_offset;
-    return stmts;
 }

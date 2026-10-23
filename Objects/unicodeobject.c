@@ -6548,7 +6548,8 @@ _PyUnicode_DecodeUnicodeEscapeInternal2(const char *s,
                                const char *errors,
                                Py_ssize_t *consumed,
                                int *first_invalid_escape_char,
-                               const char **first_invalid_escape_ptr)
+                               const char **first_invalid_escape_ptr,
+                               bool allow_callbacks)
 {
     const char *starts = s;
     const char *initial_starts = starts;
@@ -6708,6 +6709,10 @@ _PyUnicode_DecodeUnicodeEscapeInternal2(const char *s,
 
             /* \N{name} */
         case 'N':
+            if (!allow_callbacks) {
+                message = "named Unicode escapes are disabled";
+                goto error;
+            }
             ucnhash_capi = _PyUnicode_GetNameCAPI();
             if (ucnhash_capi == NULL) {
                 PyErr_SetString(
@@ -6767,6 +6772,14 @@ _PyUnicode_DecodeUnicodeEscapeInternal2(const char *s,
         }
       error:;
         Py_ssize_t endinpos = s-starts;
+        if (!allow_callbacks) {
+            make_decode_exception(&exc, "unicodeescape", starts, end - starts,
+                                  startinpos, endinpos, message);
+            if (exc != NULL) {
+                PyErr_SetObject(PyExc_UnicodeDecodeError, exc);
+            }
+            goto onError;
+        }
         writer.min_length = end - s + writer.pos;
         if (unicode_decode_call_errorhandler_writer(
                 errors, &errorHandler,
@@ -6803,7 +6816,8 @@ _PyUnicode_DecodeUnicodeEscapeStateful(const char *s,
     PyObject *result = _PyUnicode_DecodeUnicodeEscapeInternal2(s, size, errors,
                                                       consumed,
                                                       &first_invalid_escape_char,
-                                                      &first_invalid_escape_ptr);
+                                                      &first_invalid_escape_ptr,
+                                                      true);
     if (result == NULL)
         return NULL;
     if (first_invalid_escape_char != -1) {

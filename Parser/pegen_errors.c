@@ -104,6 +104,11 @@ _Pypegen_tokenizer_error(Parser *p)
 int
 _Pypegen_raise_decode_error(Parser *p)
 {
+    if (p->keyword_trial != NULL) {
+        // A trial can reject a literal without creating a syntax exception.
+        p->error_indicator = 1;
+        return -1;
+    }
     assert(PyErr_Occurred());
     const char *errtype = NULL;
     if (PyErr_ExceptionMatches(PyExc_UnicodeError)) {
@@ -154,11 +159,31 @@ _PyPegen_tokenize_full_source_to_check_for_errors(Parser *p) {
     Py_ssize_t current_err_line = current_token->lineno;
 
     int ret = 0;
+    int cache_tokens = 1;
     struct token new_token;
     _PyToken_Init(&new_token);
 
     for (;;) {
         _PyTokenizer_Get(p->tok, &new_token);
+        if (cache_tokens &&
+            _PyTokenizer_GetInfo(p->tok).input_span.end > MAX_KEYWORD_TYPO_BYTES)
+        {
+            // Logical offsets include discarded input in file mode. Stop
+            // before copying a large token into the parser's arena.
+            cache_tokens = 0;
+        }
+        // Retain the tokens this error check already reads for bounded typo
+        // trials. Never treat a truncated cache as complete input.
+        if (cache_tokens && p->fill < MAX_KEYWORD_TYPO_TOKENS &&
+            p->tokens[p->fill - 1]->type != ENDMARKER &&
+            new_token.type != ERRORTOKEN && new_token.type != TYPE_IGNORE &&
+            _PyPegen_append_token(p, &new_token) < 0)
+        {
+            // Caching is optional; its allocation failures must not replace
+            // the syntax error we are already reporting.
+            PyErr_Clear();
+            cache_tokens = 0;
+        }
         switch (new_token.type) {
             case ERRORTOKEN: {
                 if (PyErr_Occurred()) {
@@ -177,6 +202,14 @@ _PyPegen_tokenize_full_source_to_check_for_errors(Parser *p) {
                 break;
             }
             case ENDMARKER:
+                if (cache_tokens && p->fill < MAX_KEYWORD_TYPO_TOKENS &&
+                    p->start_rule == Py_single_input &&
+                    p->tokens[p->fill - 1]->type == NEWLINE)
+                {
+                    // append_token inserted single input's implicit newline;
+                    // retain any pending dedents and the actual end marker.
+                    continue;
+                }
                 break;
             default:
                 continue;
@@ -204,6 +237,19 @@ exit:
 void *
 _PyPegen_raise_error(Parser *p, PyObject *errtype, int use_mark, const char *errmsg, ...)
 {
+    if (p->keyword_trial != NULL) {
+        if (errtype == PyExc_IndentationError) {
+            int mark = p->mark;
+            while (mark < p->fill && (p->tokens[mark]->type == DEDENT ||
+                                      p->tokens[mark]->type == NEWLINE)) {
+                mark++;
+            }
+            p->keyword_trial->incomplete_suite =
+                mark < p->fill && p->tokens[mark]->type == ENDMARKER;
+        }
+        p->error_indicator = 1;
+        return NULL;
+    }
     // Bail out if we already have an error set.
     if (p->error_indicator && PyErr_Occurred()) {
         return NULL;
@@ -268,6 +314,10 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
                                     Py_ssize_t end_lineno, Py_ssize_t end_col_offset,
                                     const char *errmsg, va_list va)
 {
+    if (p->keyword_trial != NULL) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     // Bail out if we already have an error set.
     if (p->error_indicator && PyErr_Occurred()) {
         return NULL;

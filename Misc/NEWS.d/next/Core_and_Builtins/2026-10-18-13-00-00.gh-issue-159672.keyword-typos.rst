@@ -1,0 +1,3 @@
+The parser now generates keyword typo suggestions from cached tokens. The
+:mod:`traceback` formatter displays these suggestions without source
+recompilation.

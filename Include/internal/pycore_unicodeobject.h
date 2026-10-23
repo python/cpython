@@ -337,10 +337,11 @@ PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscapeInternal2(
     int *first_invalid_escape_char, /* on return, if not -1, contain the first
                                        invalid escaped char (<= 0xff) or invalid
                                        octal escape (> 0xff) in string. */
-    const char **first_invalid_escape_ptr); /* on return, if not NULL, may
+    const char **first_invalid_escape_ptr, /* on return, if not NULL, may
                                         point to the first invalid escaped
                                         char in string.
                                         May be NULL if errors is not NULL. */
+    bool allow_callbacks); /* Allow named escapes and registered error handlers. */
 
 /* --- Raw-Unicode-Escape Codecs ---------------------------------------------- */
 

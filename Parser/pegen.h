@@ -29,6 +29,10 @@
 
 #define CURRENT_POS (-5)
 
+// Error-only token replay is bounded independently of the source length.
+#define MAX_KEYWORD_TYPO_TOKENS 32768
+#define MAX_KEYWORD_TYPO_BYTES (256 * 1024)
+
 typedef struct _memo {
     int type;
     int mark;
@@ -69,11 +73,10 @@ typedef struct {
 } growable_comment_array;
 
 typedef struct {
-    int lineno;
-    int col_offset;
-    int end_lineno;
-    int end_col_offset;
-} location;
+    int budget;
+    int furthest;
+    int incomplete_suite;
+} KeywordTrial;
 
 typedef struct _identifier_cache_entry IdentifierCacheEntry;
 
@@ -100,8 +103,9 @@ typedef struct {
     Token *known_err_token;
     int level;
     int call_invalid_rules;
+    int missing_comma;
+    KeywordTrial *keyword_trial;
     int debug;
-    location last_stmt_location;
     IdentifierCacheEntry *identifier_cache;
     PyThreadState *tstate;
     // Cached copy of tstate->c_stack_soft_limit offset by one margin toward
@@ -109,9 +113,11 @@ typedef struct {
     uintptr_t stack_soft_limit;
 } Parser;
 
+int _PyPegen_stack_exhausted_slow(Parser *p);
+
 // C-stack exhaustion check run on every rule entry. The fast path compares
 // the machine stack pointer against the soft limit cached in the Parser;
-// only when the stack is nearly exhausted is the full check called.
+// trials force the slow path to account for their rule budget.
 static inline int
 _PyPegen_stack_exhausted(Parser *p)
 {
@@ -123,7 +129,7 @@ _PyPegen_stack_exhausted(Parser *p)
         assert(!_Py_ReachedRecursionLimitWithMargin(p->tstate, 1));
         return 0;
     }
-    return _Py_ReachedRecursionLimitWithMargin(p->tstate, 1);
+    return _PyPegen_stack_exhausted_slow(p);
 }
 
 typedef struct {
@@ -193,6 +199,7 @@ expr_ty _PyPegen_soft_keyword_token(Parser *p);
 expr_ty _PyPegen_fstring_middle_token(Parser* p);
 Token *_PyPegen_get_last_nonnwhitespace_token(Parser *);
 int _PyPegen_fill_token(Parser *p);
+int _PyPegen_append_token(Parser *p, struct token *token);
 // Return -1 on failure, leaving the buffer and capacity unchanged.
 int _PyPegen_grow_loop_buffer(void ***buffer, Py_ssize_t *capacity);
 expr_ty _PyPegen_name_token(Parser *p);
@@ -415,12 +422,10 @@ stmt_ty _PyPegen_checked_from_import(Parser *p, asdl_seq *dots, expr_ty module_n
                                      asdl_alias_seq *names, expr_ty lazy_token, int lineno,
                                      int col_offset, int end_lineno, int end_col_offset,
                                      PyArena *arena);
-asdl_stmt_seq* _PyPegen_register_stmts(Parser *p, asdl_stmt_seq* stmts);
-stmt_ty _PyPegen_register_stmt(Parser *p, stmt_ty s);
 
 // Parser API
 
-Parser *_PyPegen_Parser_New(struct tok_state *, int, int, int, int *, const char*, PyArena *);
+Parser *_PyPegen_Parser_New(struct tok_state *, int, int, int, int *, PyArena *);
 void _PyPegen_Parser_Free(Parser *);
 mod_ty _PyPegen_run_parser_from_file_pointer(FILE *, int, PyObject *, const char *,
                                     const char *, const char *, PyCompilerFlags *, int *, PyObject **,

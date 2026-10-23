@@ -12,9 +12,8 @@
 static int
 warn_invalid_escape_sequence(Parser *p, const char* buffer, const char *first_invalid_escape, Token *t)
 {
-    if (p->call_invalid_rules) {
-        // Do not report warnings if we are in the second pass of the parser
-        // to avoid showing the warning twice.
+    if (p->call_invalid_rules || p->keyword_trial != NULL) {
+        // Error passes and keyword trials must not repeat parser warnings.
         return 0;
     }
     unsigned char c = (unsigned char)*first_invalid_escape;
@@ -196,7 +195,11 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
     const char *first_invalid_escape_ptr;
     v = _PyUnicode_DecodeUnicodeEscapeInternal2(buf, (Py_ssize_t)len, NULL, NULL,
                                                 &first_invalid_escape_char,
-                                                &first_invalid_escape_ptr);
+                                                &first_invalid_escape_ptr,
+                                                parser->keyword_trial == NULL);
+    if (v == NULL && parser->keyword_trial != NULL) {
+        parser->error_indicator = 1;
+    }
 
     // HACK: later we can simply pass the line no, since we don't preserve the tokens
     // when we are decoding the string but we preserve the line numbers.
