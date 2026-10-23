@@ -2276,7 +2276,6 @@ dictresize(PyDictObject *mp,
         UNLOCK_KEYS(oldkeys);
         set_keys(mp, newkeys);
         dictkeys_decref(oldkeys, IS_DICT_SHARED(mp));
-        set_values(mp, NULL);
         if (oldvalues->embedded) {
             assert(oldvalues->embedded == 1);
             assert(oldvalues->valid == 1);
@@ -2285,6 +2284,7 @@ dictresize(PyDictObject *mp,
         else {
             free_values(oldvalues, IS_DICT_SHARED(mp));
         }
+        set_values(mp, NULL);
     }
     else {  // oldkeys is combined.
         if (oldkeys->dk_kind == DICT_KEYS_GENERAL) {
@@ -7572,17 +7572,25 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyObject *name, PyObject *value)
 {
     PyDictValues *values = _PyObject_InlineValues(obj);
     if (!FT_ATOMIC_LOAD_UINT8(values->valid)) {
-        PyDictObject *dict = _PyObject_GetManagedDict(obj);
+        PyDictObject *dict;
+        int res;
+#ifdef Py_GIL_DISABLED
+        Py_BEGIN_CRITICAL_SECTION(obj);
+#endif
+        dict = _PyObject_GetManagedDict(obj);
+        Py_XINCREF(dict);
+#ifdef Py_GIL_DISABLED
+        Py_END_CRITICAL_SECTION();
+#endif
         if (dict == NULL) {
             dict = (PyDictObject *)PyObject_GenericGetDict(obj, NULL);
             if (dict == NULL) {
                 return -1;
             }
-            int res = store_instance_attr_dict(obj, dict, name, value);
-            Py_DECREF(dict);
-            return res;
         }
-        return store_instance_attr_dict(obj, dict, name, value);
+        res = store_instance_attr_dict(obj, dict, name, value);
+        Py_DECREF(dict);
+        return res;
     }
 
 #ifdef Py_GIL_DISABLED
@@ -8016,7 +8024,7 @@ PyObject_ClearManagedDict(PyObject *obj)
             clear_inline_values(_PyObject_InlineValues(obj));
             return;
         }
-        else if (FT_ATOMIC_LOAD_PTR_RELAXED(dict->ma_values) ==
+        if (FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_values) ==
                     _PyObject_InlineValues(obj)) {
             // We have a materialized object which points at the inline
             // values. We need to materialize the keys. Nothing can modify

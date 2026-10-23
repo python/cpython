@@ -625,10 +625,10 @@ class _TestProcess(BaseTestCase):
             # On the Gentoo buildbot waitpid() often seems to block forever.
             # We use alarm() to interrupt it if it blocks for too long.
             def handler(*args):
-                raise RuntimeError('join took too long: %s' % p)
+                raise RuntimeError(f'join took longer than {timeout} seconds: {p}')
             old_handler = signal.signal(signal.SIGALRM, handler)
             try:
-                signal.alarm(10)
+                signal.alarm(int(timeout))
                 self.assertEqual(join(), None)
             finally:
                 signal.alarm(0)

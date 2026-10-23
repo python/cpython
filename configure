@@ -878,6 +878,7 @@ TRUE
 MACHDEP_OBJS
 DYNLOADFILE
 DLINCLDIR
+PLATFORM_MAIN_OBJS
 PLATFORM_OBJS
 PLATFORM_HEADERS
 DTRACE_OBJS
@@ -9495,6 +9496,33 @@ esac
 fi
 
 
+  # BOLT rejects binaries with Cortex-A53 erratum 843419 workaround veneers,
+  # see https://github.com/llvm/llvm-project/pull/187955
+  # Check explicit flags here to provide a friendlier error. Recent BOLT
+  # versions reject workaround veneers by default, including those
+  # from compiler defaults, so we do not perform exhaustive detection.
+  case $host_cpu in #(
+  aarch64*) :
+
+    case "$CC $CFLAGS $CPPFLAGS $CFLAGS_NODIST $LDFLAGS $LDFLAGS_NODIST $LIBS" in #(
+  *-mfix-cortex-a53-843419*|*--fix-cortex-a53-843419*) :
+
+      as_fn_error $? "--enable-bolt is incompatible with the Cortex-A53 erratum 843419 workaround.
+BOLT does not preserve protection against this erratum. Its output must not run
+on affected Cortex-A53 processors, including during the build.
+If the generated binaries will never run on affected processors, disable the
+workaround explicitly. With GCC, configure with
+LDFLAGS_NODIST=\"-mno-fix-cortex-a53-843419\". Also remove any explicit
+-mfix-cortex-a53-843419 or -Wl,--fix-cortex-a53-843419 flags." "$LINENO" 5
+     ;; #(
+  *) :
+     ;;
+esac
+   ;; #(
+  *) :
+     ;;
+esac
+
   # These flags are required for bolt to work:
   LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,--emit-relocs"
 
@@ -9983,7 +10011,7 @@ fi
 
         as_fn_append LINKFORSHARED " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
     as_fn_append LINKFORSHARED " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY,ERRNO_CODES"
-    as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,_PyGILState_GetThisThreadState"
+    as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,_PyGILState_GetThisThreadState,NODEFS"
     as_fn_append LINKFORSHARED " -sSTACK_SIZE=5MB"
         as_fn_append LINKFORSHARED " -sTEXTDECODER=2"
 
@@ -20434,6 +20462,7 @@ fi
 
 PLATFORM_HEADERS=
 PLATFORM_OBJS=
+PLATFORM_MAIN_OBJS=
 
 case $ac_sys_system in #(
   Emscripten) :
@@ -20444,6 +20473,7 @@ case $ac_sys_system in #(
     if test "x$enable_emscripten_syscalls" = xyes
 then :
 
+      as_fn_append PLATFORM_MAIN_OBJS ' Programs/emscripten_beforemain.o'
       as_fn_append PLATFORM_OBJS ' Python/emscripten_syscalls.o'
 
 fi
@@ -20457,6 +20487,7 @@ fi
   *) :
      ;;
 esac
+
 
 
 
