@@ -1,6 +1,7 @@
 """Prepare a complete C parser description and emit it."""
 
 import pathlib
+import re
 from typing import IO
 
 from pegen import grammar
@@ -67,8 +68,10 @@ class CParserGenerator(ParserGenerator):
         file: IO[str] | None,
         debug: bool = False,
         skip_actions: bool = False,
+        included_files: dict[pathlib.Path, IO[str]] | None = None,
     ):
         super().__init__(grammar, set(tokens.values()), file)
+        self.included_files = included_files or {}
         self.callmakervisitor: CCallMakerVisitor = CCallMakerVisitor(
             self, exact_tokens, non_exact_tokens
         )
@@ -77,14 +80,25 @@ class CParserGenerator(ParserGenerator):
         self.skip_actions = skip_actions
 
     def generate(self, filename: pathlib.PurePath) -> None:
+        sources = {rule.source for rule in self.rules.values() if rule.source is not None}
+        if missing := sources - self.included_files.keys():
+            raise grammar.GrammarError(
+                "No output file for the rules of "
+                + ", ".join(f"'{source}'" for source in sorted(missing))
+            )
         parser = self.prepare(filename)
         CParserEmitter(parser, self.file).emit()
+        for source, file in self.included_files.items():
+            CParserEmitter(parser, file, source).emit()
 
     def prepare(self, filename: pathlib.PurePath) -> CParser:
         self.collect_rules()
         lowerer = self.callmakervisitor.make_lowerer()
+        shared = self._shared_rules()
         rules = tuple(
-            lowerer.prepare_rule(rule, skip_actions=self.skip_actions)
+            lowerer.prepare_rule(
+                rule, skip_actions=self.skip_actions, shared=rule.name in shared
+            )
             for rule in self.all_rules.values()
         )
         headers = []
@@ -107,6 +121,29 @@ class CParserGenerator(ParserGenerator):
         if not self._collected:
             super().collect_rules()
             self._collected = True
+
+    def _shared_rules(self) -> set[str]:
+        # Rules called from a rule (or its actions) whose code goes in
+        # another C file.
+        shared = set()
+        for rule in self.all_rules.values():
+            collector = _NameCollector()
+            collector.visit(rule)
+            for name in collector.names:
+                callee = self.all_rules.get(name)
+                if callee is None or callee.source == rule.source:
+                    continue
+                # Artificial rules are only reused within one grammar file.
+                assert name in self.rules, f"{name} is used outside its grammar file"
+                shared.add(name)
+        # The trailer is C code in the root file that calls rules by their
+        # function name (the default one calls start_rule()).
+        trailer = self.grammar.metas.get("trailer", EXTENSION_SUFFIX) or ""
+        for name in _RULE_CALL.findall(trailer):
+            callee = self.rules.get(name)
+            if callee is not None and callee.source is not None:
+                shared.add(name)
+        return shared
 
     def _prepare_keywords(self) -> tuple[tuple[tuple[str, int], ...], ...]:
         if not self.keywords:
@@ -132,3 +169,20 @@ class CParserGenerator(ParserGenerator):
         if trailer := self.grammar.metas.get("trailer", EXTENSION_SUFFIX):
             return trailer.rstrip("\n") % dict(mode=mode, modulename=modulename)
         return None
+
+
+# A call to a rule's C function, as written in actions and the trailer.
+_RULE_CALL = re.compile(r"\b(\w+)_rule\b")
+
+
+class _NameCollector(grammar.GrammarVisitor):
+    def __init__(self) -> None:
+        self.names: set[str] = set()
+
+    def visit_NameLeaf(self, node: grammar.NameLeaf) -> None:
+        self.names.add(node.value)
+
+    def visit_Alt(self, node: grammar.Alt) -> None:
+        if node.action:
+            self.names.update(_RULE_CALL.findall(node.action))
+        self.generic_visit(node)

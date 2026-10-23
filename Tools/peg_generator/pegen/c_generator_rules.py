@@ -97,7 +97,7 @@ class CRuleEmitter:
             self._print(f"// {line}")
         if rule.left_recursive and rule.leader:
             self._print(f"static {result_type} {signature.name}_raw(Parser *);")
-        self._print(f"static {result_type}")
+        self._print(f"Py_LOCAL_SYMBOL {result_type}" if rule.shared else f"static {result_type}")
         self._print(f"{signature.name}_rule(Parser *p)")
         if rule.left_recursive and rule.leader:
             self._emit_left_recursive_wrapper()

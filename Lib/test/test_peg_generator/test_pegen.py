@@ -3,16 +3,18 @@ import difflib
 import io
 import textwrap
 import unittest
-from pathlib import PurePath
+from pathlib import Path, PurePath
 
 from test import test_tools
+from test.support import os_helper
 from typing import Dict, Any
 from tokenize import TokenInfo, NAME, NEWLINE, NUMBER, OP
 
 test_tools.skip_if_missing("peg_generator")
 with test_tools.imports_under_tool("peg_generator"):
+    from pegen.build import build_parser
     from pegen.grammar_parser import GeneratedParser as GrammarParser
-    from pegen.testutil import parse_string, generate_parser, make_parser
+    from pegen.testutil import parse_string, generate_parser, make_parser, run_parser
     from pegen.grammar import GrammarVisitor, GrammarError, Grammar, RuleKind
     from pegen.grammar_visualizer import ASTGrammarPrinter
     from pegen.parser import Parser
@@ -1204,3 +1206,120 @@ class TestGrammarVisualizer(unittest.TestCase):
                          "no_flags_rule should not have memo")
         self.assertEqual(no_flags_rule.flags, frozenset(),
                         f"no_flags_rule flags should be the empty set, got {no_flags_rule.flags}")
+
+
+class TestGrammarIncludes(unittest.TestCase):
+    def setUp(self) -> None:
+        self.tmp_dir = self.enterContext(os_helper.temp_dir())
+
+    def write(self, name: str, source: str) -> Path:
+        path = Path(self.tmp_dir, name)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(textwrap.dedent(source))
+        return path
+
+    def test_included_rules_are_appended_in_order(self) -> None:
+        main = self.write("main.gram", """\
+            @subheader "# subheader"
+            @include "first.gram"
+            @include "sub/second.gram"
+            start: a b c d NEWLINE
+            a: 'a'
+            """)
+        self.write("first.gram", """\
+            @include "third.gram"
+            b: 'b'
+            """)
+        self.write("third.gram", "c: 'c'\n")
+        self.write("sub/second.gram", "d: 'd'\n")
+        grammar, _, _ = build_parser(main)
+        self.assertEqual(list(grammar.rules), ["start", "a", "b", "c", "d"])
+        self.assertEqual(grammar.metas, {"subheader": "# subheader"})
+        self.assertEqual(grammar.includes, [])
+        parser_class = generate_parser(grammar)
+        self.assertIsNotNone(parse_string("a b c d\n", parser_class))
+
+    def test_repeated_rule_in_included_file(self) -> None:
+        main = self.write("main.gram", """\
+            @include "other.gram"
+            start: a NEWLINE
+            a: 'a'
+            """)
+        other = self.write("other.gram", "a: 'b'\n")
+        with self.assertRaises(GrammarError) as cm:
+            build_parser(main)
+        self.assertEqual(
+            str(cm.exception),
+            f"Repeated rule 'a' in '{other.resolve()}' (first defined in '{main}')",
+        )
+
+    def test_circular_include(self) -> None:
+        main = self.write("main.gram", """\
+            @include "other.gram"
+            start: NEWLINE
+            """)
+        self.write("other.gram", """\
+            @include "main.gram"
+            a: 'a'
+            """)
+        with self.assertRaisesRegex(GrammarError, "Circular @include"):
+            build_parser(main)
+
+    def test_file_included_twice(self) -> None:
+        main = self.write("main.gram", """\
+            @include "a.gram"
+            @include "b.gram"
+            start: a b NEWLINE
+            """)
+        a = self.write("a.gram", """\
+            @include "common.gram"
+            a: common
+            """)
+        b = self.write("b.gram", """\
+            @include "common.gram"
+            b: common
+            """)
+        common = self.write("common.gram", "common: NAME\n")
+        with self.assertRaises(GrammarError) as cm:
+            build_parser(main)
+        self.assertEqual(
+            str(cm.exception),
+            f"'{common.resolve()}' is included more than once: "
+            f"from '{a.resolve()}' and from '{b.resolve()}'",
+        )
+
+    def test_current_source_context_restores_previous_source(self) -> None:
+        grammar = parse_string("start: NAME\n", GrammarParser)
+        generator = PythonParserGenerator(grammar, io.StringIO())
+        outer, inner = Path("outer.gram"), Path("inner.gram")
+        with generator.current_source_context(outer):
+            with self.assertRaises(ValueError):
+                with generator.current_source_context(inner):
+                    self.assertEqual(generator.current_source, inner)
+                    raise ValueError
+            self.assertEqual(generator.current_source, outer)
+        self.assertIsNone(generator.current_source)
+
+    def test_included_file_cannot_define_metas(self) -> None:
+        main = self.write("main.gram", """\
+            @include "other.gram"
+            start: NEWLINE
+            """)
+        self.write("other.gram", """\
+            @trailer "# trailer"
+            a: 'a'
+            """)
+        with self.assertRaisesRegex(GrammarError, "cannot define metas: @trailer"):
+            build_parser(main)
+
+    def test_unresolved_include(self) -> None:
+        # Running GrammarParser directly leaves the includes unresolved.
+        grammar_source = textwrap.dedent("""
+        @include "other.gram"
+        start: NEWLINE
+        """)
+        grammar = run_parser(io.StringIO(grammar_source), GrammarParser)
+        self.assertEqual(grammar.includes, ["other.gram"])
+        self.assertEqual(grammar.metas, {})
+        with self.assertRaisesRegex(GrammarError, "Unresolved @include of 'other.gram'"):
+            generate_parser(grammar)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pathlib
 from collections.abc import Iterable, Iterator, Set
 from enum import Enum, auto
 from typing import Any
@@ -35,7 +36,16 @@ class Grammar:
                 raise GrammarError(f"Repeated rule {rule.name!r}")
             all_rules[rule.name] = rule
         self.rules = all_rules
-        self.metas = dict(metas)
+        # "@include" can appear more than once, so it is kept apart from the
+        # other metas.
+        metas = list(metas)
+        self.includes: list[str] = []
+        for name, value in metas:
+            if name == "include":
+                if value is None:
+                    raise GrammarError("@include requires a file name")
+                self.includes.append(value)
+        self.metas = {name: value for name, value in metas if name != "include"}
 
     def __str__(self) -> str:
         return "\n".join(str(rule) for name, rule in self.rules.items())
@@ -74,12 +84,16 @@ class Rule:
         flags: frozenset[str] | None = None,
         *,
         kind: RuleKind = RuleKind.NORMAL,
+        source: pathlib.Path | None = None,
     ):
         self.name = name
         self.type = type
         self.rhs = rhs
         self.flags = flags or frozenset()
         self.kind = kind
+        # The included grammar file that defines this rule, relative to the
+        # root grammar file's directory, or None for the root grammar file itself.
+        self.source: pathlib.Path | None = source
         self.left_recursive = False
         self.leader = False
 
