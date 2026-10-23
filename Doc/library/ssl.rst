@@ -2221,8 +2221,8 @@ to speed up repeated connections from the same clients.
    Client-identity is an optional string which may be used by the server to
    select a corresponding PSK for the client. The string must be less than or
    equal to ``256`` octets when UTF-8 encoded. PSK is a
-   :term:`bytes-like object` representing the pre-shared key. Return a zero
-   length PSK to reject the connection.
+   :term:`bytes-like object` representing the pre-shared key. With TLS 1.2
+   and earlier, return a zero length PSK to reject the connection.
 
    Setting ``callback`` to :const:`None` removes any existing callback.
 
@@ -2231,12 +2231,23 @@ to speed up repeated connections from the same clients.
 
       - the ``hint`` parameter is always :const:`None`.
       - client-identity must be a non-empty string.
+      - the PSK is only offered to the server, which may decline it and
+        authenticate with a certificate instead.  That certificate is checked
+        according to :attr:`~SSLContext.verify_mode`, so a client relying on
+        the PSK to authenticate the server should not set it to
+        :const:`CERT_NONE`, or should check :attr:`SSLSocket.session_reused`,
+        which is true if the PSK was used.  A PSK handshake does not need any
+        CA certificates to be loaded when using :const:`CERT_REQUIRED`.
+      - a zero length PSK does not reject the connection, it only means that
+        no PSK is offered.  An exception raised by the callback has the same
+        effect.
+      - the PSK is used with the SHA-256 handshake digest, so a server can
+        only accept it with a cipher suite that uses SHA-256.
 
    Example usage::
 
       context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
       context.check_hostname = False
-      context.verify_mode = ssl.CERT_NONE
       context.maximum_version = ssl.TLSVersion.TLSv1_2
       context.set_ciphers('PSK')
 
@@ -2268,7 +2279,7 @@ to speed up repeated connections from the same clients.
    The ``identity`` parameter is an optional identity sent by the client which can
    be used to select a corresponding PSK.
    The return value is a :term:`bytes-like object` representing the pre-shared key.
-   Return a zero length PSK to reject the connection.
+   With TLS 1.2 and earlier, return a zero length PSK to reject the connection.
 
    Setting ``callback`` to :const:`None` removes any existing callback.
 
@@ -2277,7 +2288,19 @@ to speed up repeated connections from the same clients.
    UTF-8 encoded.
 
    .. note::
-      When using TLS 1.3 the ``identity_hint`` parameter is not sent to the client.
+      When using TLS 1.3:
+
+      - the ``identity_hint`` parameter is not sent to the client.
+      - a zero length PSK, or an exception raised by the callback, only
+        declines the client's PSK.  If a certificate was loaded with
+        :meth:`~SSLContext.load_cert_chain`, the handshake continues with
+        certificate authentication instead of failing, so a server relying on
+        the PSK to authenticate clients should not load one, or should check
+        :attr:`SSLSocket.session_reused`, which is true if the PSK was used.
+      - the PSK can only be accepted with a cipher suite that uses SHA-256.
+        When a certificate is loaded, OpenSSL's default TLS 1.3 cipher suite
+        order selects a SHA-384 suite instead, so the PSK is declined even if
+        it matches.
 
    Example usage::
 
