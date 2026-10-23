@@ -267,6 +267,22 @@ class StrTest(string_tests.StringLikeTest,
             pass
         self.checkequal(3, MyStr('aaa'), 'count', 'a')
 
+    def test_find_adaptive_nonbmp(self):
+        # The adaptive path in Objects/stringlib/fastsearch.h needs a haystack
+        # of at least 2500 characters and a needle of at least 100, with the
+        # needle at least a third of the haystack. test_adaptive_find only
+        # uses ASCII, so the UCS4 variant of adaptive_find never ran.
+        a, b = '\U0001d11e', '\U0001d11f'
+        for N in 1000, 10_000:
+            A, B = a * N, b * N
+            haystack = A + A + B + A + A
+            needle = A + B + B + A
+            self.assertEqual(haystack.find(needle), -1)
+            self.assertEqual(haystack.count(needle), 0)
+            combined = haystack + needle
+            self.assertEqual(combined.find(needle), len(haystack))
+            self.assertEqual(combined.count(needle), 1)
+
     def test_find(self):
         string_tests.StringLikeTest.test_find(self)
         # test implementation details of the memchr fast path
