@@ -1759,6 +1759,8 @@ to speed up repeated connections from the same clients.
    context. If *for_retry* is true, the new configurations are included in
    ECH retry configurations sent to clients.
 
+   Raises :exc:`SSLError` if the context uses :data:`PROTOCOL_TLS_CLIENT`.
+
    Only available when :data:`HAS_ECH` is ``True``.
 
    .. versionadded:: next
@@ -1977,6 +1979,8 @@ to speed up repeated connections from the same clients.
 
    The *ech_config* parameter should be a :term:`bytes-like object` containing
    an ECHConfigList in binary or Base64 encoding.
+
+   Raises :exc:`SSLError` if the context uses :data:`PROTOCOL_TLS_SERVER`.
 
    Only available when :data:`HAS_ECH` is ``True``.
 

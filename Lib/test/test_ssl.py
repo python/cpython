@@ -2130,6 +2130,18 @@ class ECHTests(unittest.TestCase):
         self.assertIsNone(ctx.set_ech_config(base64.b64encode(self.ECH_CONFIG)))
 
     @requires_ech_x25519
+    def test_context_roles(self):
+        client_ctx, server_ctx, _ = testing_context()
+        with self.assertRaisesRegex(ssl.SSLError, 'PROTOCOL_TLS_SERVER'):
+            server_ctx.set_ech_config(self.ECH_CONFIG)
+        with self.assertRaisesRegex(ssl.SSLError, 'PROTOCOL_TLS_CLIENT'):
+            client_ctx.load_ech_keys(data_file('ech.pem'))
+        with warnings_helper.check_warnings():
+            ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        self.assertIsNone(ctx.set_ech_config(self.ECH_CONFIG))
+        self.assertIsNone(ctx.load_ech_keys(data_file('ech.pem')))
+
+    @requires_ech_x25519
     def test_mixed_ech_config_versions(self):
         ctx = make_test_context()
         supported = self.ECH_CONFIG[2:]

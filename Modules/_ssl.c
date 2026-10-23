@@ -5380,6 +5380,12 @@ _ssl__SSLContext_set_ech_config_impl(PySSLContext *self,
                                      Py_buffer *ech_config)
 /*[clinic end generated code: output=cea53188b338cf80 input=69016efcb2cd1ed2]*/
 {
+    if (self->protocol == PY_SSL_VERSION_TLS_SERVER) {
+        _setSSLError(get_state_ctx(self),
+                     "Cannot set ECH configuration on a "
+                     "PROTOCOL_TLS_SERVER context", 0, __FILE__, __LINE__);
+        return NULL;
+    }
     OSSL_ECHSTORE *store = ech_store_from_config(get_state_ctx(self),
                                                  ech_config);
     if (store == NULL) {
@@ -5459,6 +5465,12 @@ _ssl__SSLContext_load_ech_keys_impl(PySSLContext *self, PyObject *keyfile,
                                     PyObject *password, int for_retry)
 /*[clinic end generated code: output=73b9b4832b89f40d input=016a625a1505de4a]*/
 {
+    if (self->protocol == PY_SSL_VERSION_TLS_CLIENT) {
+        _setSSLError(get_state_ctx(self),
+                     "Cannot load ECH keys into a "
+                     "PROTOCOL_TLS_CLIENT context", 0, __FILE__, __LINE__);
+        return NULL;
+    }
     PyObject *keyfile_bytes;
     PyObject *ret = NULL;
     _PySSLPasswordInfo pw_info = { NULL, NULL, NULL, 0, 0 };
