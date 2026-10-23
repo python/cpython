@@ -3467,7 +3467,19 @@ static PyObject *
 _io_TextIOWrapper_buffer_get_impl(textio *self)
 /*[clinic end generated code: output=d265a34555aa5d4b input=5951cfa148f7350a]*/
 {
-    return buffer_access_safe(self);
+    if (self->buffer == NULL) {
+        if (self->ok <= 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "I/O operation on uninitialized object");
+            return NULL;
+        }
+        /* Detached: the attribute is None, as it was while it was a member
+           descriptor (gh-160427). Raising here broke hasattr() in 3.14.9. */
+        Py_RETURN_NONE;
+    }
+
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+    return Py_NewRef(self->buffer);
 }
 
 static PyMethodDef incrementalnewlinedecoder_methods[] = {

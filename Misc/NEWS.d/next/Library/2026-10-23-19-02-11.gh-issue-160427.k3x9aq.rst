@@ -1,0 +1,4 @@
+Fix ``io.TextIOWrapper.buffer`` to return ``None`` after the wrapper has been
+detached, instead of raising :exc:`ValueError`.  This restores the behaviour of
+Python 3.14.8 and earlier, and stops :func:`hasattr` from raising when called on
+a detached wrapper.

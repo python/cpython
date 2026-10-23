@@ -260,6 +260,10 @@ class TextIOWrapperTest:
         self.assertFalse(t.line_buffering)
         self.assertFalse(t.write_through)
 
+        # The attribute is None once detached, not an error (gh-160427).
+        self.assertIsNone(t.buffer)
+        self.assertTrue(hasattr(t, "buffer"))
+
     def test_repr(self):
         raw = self.BytesIO("hello".encode("utf-8"))
         b = self.BufferedReader(raw)
@@ -1710,9 +1714,9 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
                     self.BufferedReader(raw), encoding="utf-8")
                 method = getattr(wrapper, method_name)
                 self.assertEqual(method(), "ab\n")
-                with self.assertRaisesRegex(ValueError,
-                                            "underlying buffer has been detached"):
-                    getattr(wrapper, 'buffer')
+                # gh-160427: once detached the attribute is None, not an
+                # error; the read above still had to complete safely.
+                self.assertIsNone(wrapper.buffer)
 
     def test_reentrant_seek_during_tell(self):
         # gh-153539: reading short of _CHUNK_SIZE leaves residual bytes in the
