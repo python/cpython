@@ -3396,12 +3396,15 @@ _cert_has_distrusted_spki(X509 *cert)
     int ok = EVP_Digest(spki, (size_t)spki_len, digest, &digest_len,
                         EVP_sha256(), NULL);
     OPENSSL_free(spki);
-    if (!ok || digest_len != sizeof(_distrusted_spki[0])) {
+    assert(sizeof(_distrusted_spki[0]) == SHA256_DIGEST_LENGTH);
+    if (!ok
+        || digest_len != SHA256_DIGEST_LENGTH
+        || sizeof(_distrusted_spki[0]) != SHA256_DIGEST_LENGTH) {
         return -1;
     }
 
     for (size_t i = 0; i < Py_ARRAY_LENGTH(_distrusted_spki); i++) {
-        if (memcmp(digest, _distrusted_spki[i], sizeof(_distrusted_spki[i])) == 0) {
+        if (memcmp(digest, _distrusted_spki[i], SHA256_DIGEST_LENGTH) == 0) {
             return 1;
         }
     }
