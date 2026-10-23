@@ -319,8 +319,9 @@ The :c:member:`~PyTypeObject.tp_traverse` handler must have the following type:
    :ref:`separate section <duringgc-functions>` below.
 
    If an error occurs during traversal, ignore it and return 0.
-   If ``tp_traverse`` fails to visit some strong references, objects
-   may become unreachable and waste memory, but correctness won't be affected.
+   If ``tp_traverse`` fails to visit some strong references, garbage reference
+   cycles involving the skipped references will not be reliably broken,
+   but correctness won't be affected.
    For example, if traversal requires a lock that cannot be acquired promptly,
    skip the traversal.
    The garbage collector will visit your object again in a future pass.
