@@ -1,0 +1,6 @@
+# Reproducer for build-helper coupling (not part of the branch)
+*static*
+include $(srcdir)/Modules/_frozenuser.mk
+MODULE__FROZENUSER_DEPS=Modules/_frozenuser_data.h
+_frozenuser _frozenuser.c -IModules
+_getpathuser _getpathuser.c
