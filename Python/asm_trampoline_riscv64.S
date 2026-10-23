@@ -1,4 +1,5 @@
-    .text
+/* CPython copies this template into executable memory. */
+    .section .rodata
     .globl	_Py_trampoline_func_start
 _Py_trampoline_func_start:
     addi    sp,sp,-16
@@ -9,5 +10,4 @@ _Py_trampoline_func_start:
     jr      ra
     .globl	_Py_trampoline_func_end
 _Py_trampoline_func_end:
-    .byte 0
     .section        .note.GNU-stack,"",@progbits

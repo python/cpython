@@ -1,4 +1,9 @@
+/* CPython copies this template into executable memory. */
+#if defined(__ELF__)
+    .section .rodata
+#else
     .text
+#endif
 #ifdef __x86_64__
 #if defined(__APPLE__)
     .globl	__Py_trampoline_func_start
@@ -21,7 +26,6 @@ __Py_trampoline_func_end:
 #else
     .globl	_Py_trampoline_func_end
 _Py_trampoline_func_end:
-    .byte 0
     .section        .note.GNU-stack,"",@progbits
 #endif
 # Note for indicating the assembly code supports CET
