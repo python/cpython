@@ -1,7 +1,8 @@
 import inspect
-import time
 import types
 import unittest
+
+from test.support import import_helper
 
 from unittest.mock import (
     call, _Call, create_autospec, MagicMock,
@@ -929,8 +930,10 @@ class SpecSignatureTest(unittest.TestCase):
 
 
     def test_autospec_on_bound_builtin_function(self):
-        meth = types.MethodType(time.ctime, time.time())
-        self.assertIsInstance(meth(), str)
+        _testcapi = import_helper.import_module('_testcapi')
+        # This function is defined without a signature.
+        meth = types.MethodType(_testcapi.docstring_no_signature, object())
+        self.assertIsNone(meth())
         mocked = create_autospec(meth)
 
         # no signature, so no spec to check against
@@ -1162,7 +1165,9 @@ class TestCallList(unittest.TestCase):
         mock.foo.bar().baz('fish', cat='dog')
 
         expected = (
-            "[call(1, 2), call.foo(a=3), call.foo.bar(),"
+            "[call(1, 2),\n"
+            " call.foo(a=3),\n"
+            " call.foo.bar(),\n"
             " call.foo.bar().baz('fish', cat='dog')]"
         )
         self.assertEqual(str(mock.mock_calls), expected)

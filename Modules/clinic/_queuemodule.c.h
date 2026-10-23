@@ -44,8 +44,9 @@ PyDoc_STRVAR(_queue_SimpleQueue_put__doc__,
 "\n"
 "Put the item on the queue.\n"
 "\n"
-"The optional \'block\' and \'timeout\' arguments are ignored, as this method\n"
-"never blocks.  They are provided for compatibility with the Queue class.");
+"The optional \'block\' and \'timeout\' arguments are ignored, as this\n"
+"method never blocks.  They are provided for compatibility with the\n"
+"Queue class.");
 
 #define _QUEUE_SIMPLEQUEUE_PUT_METHODDEF    \
     {"put", _PyCFunction_CAST(_queue_SimpleQueue_put), METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_put__doc__},
@@ -188,10 +189,11 @@ PyDoc_STRVAR(_queue_SimpleQueue_get__doc__,
 "\n"
 "Remove and return an item from the queue.\n"
 "\n"
-"If optional args \'block\' is true and \'timeout\' is None (the default),\n"
-"block if necessary until an item is available. If \'timeout\' is\n"
-"a non-negative number, it blocks at most \'timeout\' seconds and raises\n"
-"the Empty exception if no item was available within that time.\n"
+"If optional args \'block\' is true and \'timeout\' is None (the\n"
+"default), block if necessary until an item is available.  If\n"
+"\'timeout\' is a non-negative number, it blocks at most \'timeout\'\n"
+"seconds and raises the Empty exception if no item was available\n"
+"within that time.\n"
 "Otherwise (\'block\' is false), return an item if one is immediately\n"
 "available, else raise the Empty exception (\'timeout\' is ignored\n"
 "in that case).");
@@ -388,4 +390,4 @@ _queue_SimpleQueue___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4af5d1b1ea31ac7d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8219fe2f2ed5f068 input=a9049054013a1b77]*/

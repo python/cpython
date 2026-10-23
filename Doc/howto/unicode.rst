@@ -4,8 +4,6 @@
   Unicode HOWTO
 *****************
 
-:Release: 1.12
-
 This HOWTO discusses Python's support for the Unicode specification
 for representing textual data, and explains various problems that
 people commonly encounter when trying to work with Unicode.

@@ -22,6 +22,7 @@ if __name__ == "__main__":
     __path__ = [str(Path(__file__).resolve().parent)]
 
 from .support.appxmanifest import *
+from .support.builddetails import *
 from .support.catalog import *
 from .support.constants import *
 from .support.filesets import *
@@ -32,7 +33,8 @@ from .support.props import *
 from .support.pymanager import *
 from .support.nuspec import *
 
-TEST_PYDS_ONLY = FileStemSet("xxlimited", "xxlimited_35", "_ctypes_test", "_test*")
+TEST_PYDS_ONLY = FileStemSet("xxlimited",  "xxlimited_3_13", "xxlimited_35",
+                             "_ctypes_test", "_test*")
 TEST_DLLS_ONLY = set()
 TEST_DIRS_ONLY = FileNameSet("test", "tests")
 
@@ -314,6 +316,9 @@ def get_layout(ns):
             yield dest, src
 
     for dest, src in get_appx_layout(ns):
+        yield dest, src
+
+    for dest, src in get_builddetails(ns):
         yield dest, src
 
     if ns.include_cat:

@@ -4,8 +4,6 @@
 Logging HOWTO
 =============
 
-:Author: Vinay Sajip <vinay_sajip at red-dove dot com>
-
 .. _logging-basic-tutorial:
 
 .. currentmodule:: logging

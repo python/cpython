@@ -238,7 +238,7 @@ are not available.
 .. c:function:: void PyCriticalSection_BeginMutex(PyCriticalSection *c, PyMutex *m);
                 void PyCriticalSection2_BeginMutex(PyCriticalSection2 *c, PyMutex *m1, PyMutex *m2);
 
-   .. (These need to be in a separate section without a Stable ABI anotation.)
+   .. (These need to be in a separate section without a Stable ABI annotation.)
 
    To be used only as in the macro expansions
    listed :ref:`earlier in this section <critical-section-macros>`.
@@ -262,6 +262,22 @@ These APIs are obsolete since Python 3.13 with the introduction of
 .. c:type:: PyThread_type_lock
 
    A pointer to a mutual exclusion lock.
+
+
+.. c:macro:: PY_TIMEOUT_T
+
+   A :term:`soft deprecated` alias to :c:expr:`long long`, the integer
+   type used for the timeout argument of :c:func:`PyThread_acquire_lock_timed`.
+
+   .. soft-deprecated:: next
+
+.. c:var:: const long long PY_TIMEOUT_MAX
+
+   The maximum timeout, in microseconds, supported by
+   :c:func:`PyThread_acquire_lock_timed`.
+
+   .. note::
+      This differs from :data:`_thread.TIMEOUT_MAX`, which is expressed in seconds.
 
 
 .. c:type:: PyLockStatus

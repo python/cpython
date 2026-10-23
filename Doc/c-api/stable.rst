@@ -114,7 +114,7 @@ versions of Python.
 
 All functions in Stable ABI are present as functions in Python's shared
 library, not solely as macros.
-This makes them usable are usable from languages that don't use the C
+This makes them usable in languages that don't use the C
 preprocessor, including Python's :py:mod:`ctypes`.
 
 

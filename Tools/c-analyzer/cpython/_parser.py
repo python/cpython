@@ -63,7 +63,6 @@ EXCLUDED = format_conf_lines([
     'Python/dynload_hpux.c',           # dl.h
     'Python/emscripten_signal.c',
     'Python/emscripten_syscalls.c',
-    'Python/emscripten_trampoline_inner.c',
     'Python/thread_pthread.h',
     'Python/thread_pthread_stubs.h',
 
@@ -117,8 +116,6 @@ INCL_DIRS = format_tsv_lines([
     ('*', './Include'),
     ('*', './Include/internal'),
     ('*', './Include/internal/mimalloc'),
-
-    ('Modules/_decimal/**/*.c', 'Modules/_decimal/libmpdec'),
 
     ('Modules/_elementtree.c', 'Modules/expat'),
     ('Modules/pyexpat.c', 'Modules/expat'),
@@ -279,8 +276,6 @@ MACROS = format_tsv_lines([
     # ('Modules/_dbmmodule.c', 'USE_BERKDB', '1'),
 
     # See: setup.py
-    ('Modules/_decimal/**/*.c', 'CONFIG_64', '1'),
-    ('Modules/_decimal/**/*.c', 'ASM', '1'),
     ('Modules/expat/xmlparse.c', 'HAVE_EXPAT_CONFIG_H', '1'),
     ('Modules/expat/xmlparse.c', 'XML_POOR_ENTROPY', '1'),
     ('Modules/_dbmmodule.c', 'HAVE_GDBM_DASH_NDBM_H', '1'),
@@ -314,6 +309,7 @@ MAX_SIZES = {
     # default: (10_000, 200)
     # First match wins.
     _abs('Modules/_ctypes/ctypes.h'): (5_000, 500),
+    _abs('Modules/_cursesmodule.c'): (20_000, 300),
     _abs('Modules/_datetimemodule.c'): (20_000, 300),
     _abs('Modules/_hacl/*.c'): (200_000, 500),
     _abs('Modules/posixmodule.c'): (20_000, 500),
@@ -321,7 +317,8 @@ MAX_SIZES = {
     _abs('Modules/_remote_debugging/debug_offsets_validation.h'): (25_000, 1000),
     _abs('Modules/_remote_debugging/*.h'): (20_000, 1000),
     _abs('Modules/_testcapimodule.c'): (20_000, 400),
-    _abs('Modules/expat/expat.h'): (10_000, 400),
+    _abs('Modules/_testclinic.c'): (20_000, 400),
+    _abs('Modules/expat/expat.h'): (10_000, 500),
     _abs('Objects/stringlib/unicode_format.h'): (10_000, 400),
     _abs('Objects/typeobject.c'): (380_000, 13_000),
     _abs('Python/compile.c'): (20_000, 500),
@@ -337,6 +334,8 @@ MAX_SIZES = {
     _abs('Include/internal/pycore_opcode.h'): (10_000, 1000),
     _abs('Include/internal/pycore_global_strings.h'): (5_000, 1000),
     _abs('Include/internal/pycore_runtime_init_generated.h'): (5_000, 1000),
+    _abs('Include/internal/pycore_unicodeobject_generated.h'): (100_000, 1500),
+    _abs('Python/Python-ast.c'): (20_000, 500),
     _abs('Python/deepfreeze/*.c'): (20_000, 500),
     _abs('Python/frozen_modules/*.h'): (20_000, 500),
     _abs('Python/opcode_targets.h'): (10_000, 500),
@@ -347,7 +346,7 @@ MAX_SIZES = {
     _abs('Modules/_ssl_data_300.h'): (80_000, 10_000),
     _abs('Modules/_ssl_data_111.h'): (80_000, 10_000),
     _abs('Modules/cjkcodecs/mappings_*.h'): (160_000, 2_000),
-    _abs('Modules/clinic/_testclinic.c.h'): (125_000, 5_000),
+    _abs('Modules/clinic/_testclinic.c.h'): (180_000, 5_500),
     _abs('Modules/unicodedata_db.h'): (180_000, 3_000),
     _abs('Modules/unicodename_db.h'): (1_200_000, 15_000),
     _abs('Objects/unicodetype_db.h'): (240_000, 3_000),

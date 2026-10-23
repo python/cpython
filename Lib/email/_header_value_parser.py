@@ -166,6 +166,14 @@ class TokenList(list):
             comments.extend(token.comments)
         return comments
 
+    def contains_token_type(self, *token_types):
+        if self.token_type in token_types:
+            return True
+        for t in self:
+            if t.contains_token_type(*token_types):
+                return True
+        return False
+
     def fold(self, *, policy):
         return _refold_parse_tree(self, policy=policy)
 
@@ -933,6 +941,9 @@ class Terminal(str):
     def comments(self):
         return []
 
+    def contains_token_type(self, *token_types):
+        return self.token_type in token_types
+
     def __getnewargs__(self):
         return(str(self), self.token_type)
 
@@ -1461,6 +1472,16 @@ def get_phrase(value):
         else:
             try:
                 token, value = get_word(value)
+                if (token[0].token_type == 'encoded-word'
+                    and phrase
+                    and phrase[-1].token_type == 'atom'
+                    and len(phrase[-1]) > 1
+                    and phrase[-1][-2].token_type == 'encoded-word'
+                    and phrase[-1][-1].token_type == 'cfws'
+                    and not phrase[-1][-1].comments
+                ):
+                    # linear ws between ews needs special handing...
+                    phrase[-1][-1] = EWWhiteSpaceTerminal(phrase[-1], 'fws')
             except errors.HeaderParseError:
                 if value[0] in CFWS_LEADER:
                     token, value = get_cfws(value)
@@ -2527,7 +2548,7 @@ def get_parameter(value):
         else:
             try:
                 token, rest = get_extended_attrtext(inner_value)
-            except:
+            except errors.HeaderParseError:
                 pass
             else:
                 if not rest:
@@ -2906,7 +2927,7 @@ def _refold_with_ew(parse_tree, lines, maxlen, encoding, *, policy):
             continue
         tstr = str(part)
         if not want_encoding:
-            if part.token_type in ('ptext', 'vtext'):
+            if part.token_type == 'ptext' or part.contains_token_type('vtext'):
                 # Encode if tstr contains special characters.
                 want_encoding = not SPECIALSNL.isdisjoint(tstr)
             else:
