@@ -2208,10 +2208,11 @@ _ssl__SSLSocket_get_ech_retry_config_impl(PySSLSocket *self)
         Py_RETURN_NONE;
     }
     unsigned char *config = NULL;
-    size_t config_len;
+    size_t config_len = 0;
     if (SSL_ech_get1_retry_config(self->ssl, &config, &config_len) != 1) {
-        _setSSLError(get_state_sock(self), NULL, 0, __FILE__, __LINE__);
-        return NULL;
+        // OpenSSL does not release unauthenticated retry configurations.
+        ERR_clear_error();
+        config_len = 0;
     }
     PyObject *result = PyBytes_FromStringAndSize((char *)config, config_len);
     OPENSSL_free(config);
