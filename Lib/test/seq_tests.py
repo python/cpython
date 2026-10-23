@@ -448,8 +448,8 @@ class CommonTest(unittest.TestCase):
 class NativeItemsSearchTest:
     """Tests of count(), index() and "in" for 1-d buffer protocol objects.
 
-    Tests use "needle" for the value being searched for and "haystack" for
-    the object being searched.
+    Tests use "needle" for the value being looked for and "haystack" for
+    where to search.
     """
 
     # All the native single item formats of memoryview.

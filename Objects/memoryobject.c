@@ -1147,17 +1147,13 @@ typedef enum {
     NEEDLE_PACKED,           /* the value was packed into the needle */
 } needle_result;
 
-/* Check whether the items of view can be compared with value by their bytes.
+/* Check whether the items of view can be value compared by their bytes.
 
    They can when the items are in a native integer format and value is an
-   exact int or a bool: two such integers are equal exactly when their bytes
-   are equal. This is not so for floats (0.0 == -0.0) or for int subclasses,
-   which can override __eq__(). The items must also be C-contiguous and
-   aligned, since the stringlib search reads them as uint8_t to uint64_t.
-
-   Return NEEDLE_PACKED with value packed into *needle, NEEDLE_NO_MATCH if
-   value is out of range for the format so that no item can equal it, or
-   NEEDLE_COMPARE_OBJECTS if the items have to be compared as objects. */
+   exact int or a bool. This is not so for floats (0.0 == -0.0) or for int
+   subclasses, which can override __eq__(). The items must also be
+   C-contiguous and aligned, since the stringlib search reads them as uint8_t
+   to uint64_t. */
 static needle_result
 pack_needle(const Py_buffer *view, PyObject *value, item_needle *needle)
 {
@@ -1245,11 +1241,7 @@ compare_item(const Py_buffer *view, const char *fmt, Py_ssize_t i,
     return cmp;
 }
 
-/* Get the buffer of obj for searching. Return -1 with an exception set on
-   error, including when the buffer does not have exactly one dimension, with
-   the errors memoryview.index() has always raised for that, or when its
-   format is not supported, even if it has no items. Set *fmt to the format
-   for compare_item().
+/* Get the buffer of obj for searching. Set *fmt for compare_item().
 
    The caller holds the buffer for the whole search, so a comparison which
    tries to resize obj or release it raises BufferError instead of leaving
