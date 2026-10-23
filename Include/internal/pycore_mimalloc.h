@@ -32,7 +32,7 @@ typedef enum {
 #  define MI_NO_THP 1
 // Do not use guarded allocations. The free-threaded GC does not support their block layout.
 #  define MI_GUARDED 0
-// Use 16 KiB pages instead of 64 KiB pages. 
+// Use 16 KiB pages instead of 64 KiB pages.
 // Original value was 16.
 #  define MI_SEGMENT_SLICE_SHIFT 14
 #ifdef Py_DEBUG
