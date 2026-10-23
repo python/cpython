@@ -498,6 +498,42 @@ Pegen has some special grammatical elements and rules:
     reporting incorrect locations due to the invalid rules).
   - The order of the alternatives involving invalid rules matter
     (like any rule in PEG).
+  - These rules live in [`Grammar/invalid.gram`](../Grammar/invalid.gram),
+    which is included from [`Grammar/python.gram`](../Grammar/python.gram).
+
+A grammar can be split into several files with the `@include` meta, which
+takes a file name relative to the including file:
+
+```
+@include "invalid.gram"
+```
+
+The rules of each included file are appended, in order, to the rules of the
+including file, so the parser is the same as if the files were concatenated.
+Included files may themselves use `@include`, but may not define other metas
+(such as `@trailer`), and a rule can only be defined in one of the files.
+Includes are resolved by `pegen.build.build_parser()`, which every pegen
+command uses to load a grammar file. A grammar parsed some other way must be
+passed to `pegen.build.resolve_includes()` before generating a parser from it;
+otherwise the generator refuses it.
+
+The C generator emits the rules of each included file into a separate C file,
+with the included file's name appended: for `invalid.gram` that is
+[`Parser/parser_invalid.c`](../Parser/parser_invalid.c). An included file in a
+subdirectory of the root grammar file's directory gets its C file in the same
+subdirectory of the output's directory (`sub/extra.gram` gives
+`Parser/sub/parser_extra.c`); included files outside that directory are
+rejected. This keeps the generated files smaller, and lets them be compiled
+separately. The keyword tables and the `@trailer` code are only in the main C
+file, while the `@header` and `@subheader` code is copied into every C file,
+so it must not define non-`static` functions or variables (they would be defined
+more than once). Rules that are called from another C file, including rules of
+included files that the trailer or a C action calls, can't be `static`; the
+generated code gives them a `_PyPegen_` prefix with a `#define`, since CPython
+requires that prefix on its non-static symbols, and marks them
+`Py_LOCAL_SYMBOL` so that they aren't exported from the shared library. Helper
+rules (for groups, repetitions and so on)
+are never shared between files: each C file gets its own `static` copy.
 
 Tokenization
 ------------

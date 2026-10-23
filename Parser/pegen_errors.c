@@ -278,10 +278,17 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     PyObject *tmp = NULL;
     p->error_indicator = 1;
     _PyTokenizer_Info info = _PyTokenizer_GetInfo(p->tok);
-    _PyTok_Loc location = info.diagnostic.location.lineno != 0
-        ? info.diagnostic.location : info.location;
-    _PyTok_Span text_span = info.diagnostic.location.lineno != 0
-        ? info.diagnostic.text_span : info.line_span;
+    _PyTok_Loc location = info.location;
+    _PyTok_Span text_span = info.line_span;
+
+    if (errtype == PyExc_IncompleteInputError &&
+        info.diagnostic.location.lineno != 0) {
+        location = info.diagnostic.location;
+        text_span = info.diagnostic.text_span;
+        lineno = end_lineno = location.lineno;
+        col_offset = location.byte_col;
+        end_col_offset = -1;
+    }
 
     if (end_lineno == CURRENT_POS) {
         end_lineno = location.lineno;
@@ -346,7 +353,13 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     }
 
     if (end_col_offset > 0) {
-        end_col_number = _PyPegen_byte_offset_to_character_offset(error_line, end_col_offset);
+        PyObject *end_line = end_lineno != lineno && _PyTokenizer_RetainedSource(p->tok) != NULL
+            ? get_error_line_from_source(p, end_lineno) : Py_NewRef(error_line);
+        if (end_line == NULL) {
+            goto error;
+        }
+        end_col_number = _PyPegen_byte_offset_to_character_offset(end_line, end_col_offset);
+        Py_DECREF(end_line);
         if (end_col_number < 0) {
             goto error;
         }

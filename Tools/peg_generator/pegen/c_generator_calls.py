@@ -1,6 +1,7 @@
 """Discover calls and helper rules, then prepare rules from resolved calls."""
 
 import ast
+import pathlib
 import re
 from collections.abc import Callable, Mapping
 from dataclasses import replace
@@ -119,7 +120,7 @@ class CCallMakerVisitor(GrammarVisitor):
         self._exact_tokens = exact_tokens
         self._non_exact_tokens = non_exact_tokens
         self._token_types = {name: token_type for token_type, name in tokens.items()}
-        self._helper_cache: dict[tuple[type, str], str] = {}
+        self._helper_cache: dict[tuple[pathlib.Path | None, type, str], str] = {}
         self._calls: dict[NamedItem, tuple[Item, FunctionCall]] = {}
 
     def visit(self, node: Any, *args: Any, **kwargs: Any) -> FunctionCall:
@@ -330,7 +331,9 @@ class CCallMakerVisitor(GrammarVisitor):
 
     def _resolve_artificial_rule(self, node: _HelperNode) -> CRuleSignature:
         # Preserve helper reuse and numbering from the fixed-point traversal.
-        key = (type(node), str(node))
+        # Helpers are only reused within one grammar file, so that each
+        # generated C file has its own (static) copy.
+        key = (self._registry.current_source, type(node), str(node))
         if (name := self._helper_cache.get(key)) is None:
             match node:
                 case Rhs():
@@ -455,7 +458,9 @@ class CCallLowerer:
                 i = j
             self._prefixes[rule.name] = tuple(prefixes)
 
-    def prepare_rule(self, rule: Rule, *, skip_actions: bool = False) -> CRule:
+    def prepare_rule(
+        self, rule: Rule, *, skip_actions: bool = False, shared: bool = False
+    ) -> CRule:
         if (signature := self._signatures.get(rule.name)) is None:
             raise RuntimeError(f"Rule {rule.name!r} was not discovered")
         rhs = rule.flatten()
@@ -480,6 +485,8 @@ class CCallLowerer:
             disable_invalid_rules=rule.name.endswith("without_invalid"),
             prefixes=self._prefixes.get(rule.name, ()),
             first_set_dispatch=None if is_loop else self._first_set_dispatch(rhs),
+            source=rule.source,
+            shared=shared,
         )
 
     def _loop_check(self, alt: Alt) -> FunctionCall | None:

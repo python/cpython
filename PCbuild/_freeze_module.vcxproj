@@ -175,6 +175,7 @@
     <ClCompile Include="..\Objects\weakrefobject.c" />
     <ClCompile Include="..\Parser\myreadline.c" />
     <ClCompile Include="..\Parser\parser.c" />
+    <ClCompile Include="..\Parser\parser_invalid.c" />
     <ClCompile Include="..\Parser\peg_api.c" />
     <ClCompile Include="..\Parser\pegen.c" />
     <ClCompile Include="..\Parser\pegen_errors.c" />

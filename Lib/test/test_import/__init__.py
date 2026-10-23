@@ -1264,6 +1264,13 @@ os.does_not_exist
                 origin = "a\x00b"
             _imp.create_dynamic(Spec2())
 
+
+    def test_create_dynamic_no_origin(self):
+        with self.assertRaisesRegex(AttributeError, "no attribute 'origin'"):
+            class Spec:
+                name = "abc"
+            _imp.create_dynamic(Spec())
+
     def test_create_builtin(self):
         class Spec:
             pass
@@ -1273,7 +1280,7 @@ os.does_not_exist
         self.assertIs(_imp.create_builtin(spec), sys)
 
         spec.name = None
-        with self.assertRaisesRegex(TypeError, 'name must be string, not NoneType'):
+        with self.assertRaisesRegex(TypeError, 'module name must be a string, not NoneType'):
             _imp.create_builtin(spec)
 
         # gh-142029
@@ -1283,7 +1290,7 @@ os.does_not_exist
 
         # gh-142029
         spec.name = ""
-        with self.assertRaisesRegex(ValueError, 'name must not be empty'):
+        with self.assertRaisesRegex(ValueError, 'module name must not be empty'):
             _imp.create_builtin(spec)
 
     def test_filter_syntax_warnings_by_module(self):
