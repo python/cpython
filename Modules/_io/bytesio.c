@@ -710,6 +710,8 @@ _io_BytesIO_truncate_impl(bytesio *self, PyObject *size)
                          "negative size value %zd", new_size);
             return NULL;
         }
+        CHECK_CLOSED(self);
+        CHECK_EXPORTS(self);
     }
 
     if (new_size < self->string_size) {

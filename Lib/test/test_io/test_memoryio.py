@@ -859,6 +859,28 @@ class CBytesIOTest(PyBytesIOTest):
     ioclass = io.BytesIO
     UnsupportedOperation = io.UnsupportedOperation
 
+    def test_truncate_size_changes_stream(self):
+        class Size:
+            def __init__(self, action):
+                self.action = action
+
+            def __index__(self):
+                self.result = self.action()
+                return 0
+
+        stream = self.ioclass(b'abc')
+        with self.assertRaises(ValueError):
+            stream.truncate(Size(stream.close))
+
+        with self.ioclass(b'abc') as stream:
+            size = Size(stream.getbuffer)
+            try:
+                with self.assertRaises(BufferError):
+                    stream.truncate(size)
+                self.assertEqual(stream.getvalue(), b'abc')
+            finally:
+                size.result.release()
+
     def test_readinto_overlapping_buffer(self):
         with self.ioclass(b'abcd') as stream:
             with stream.getbuffer()[1:] as target:
