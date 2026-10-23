@@ -1488,6 +1488,12 @@ decompress_buf(ZlibDecompressor *self, Py_ssize_t max_length)
 
     int err = Z_OK;
 
+    /* With max_length == 0 there is no room for output.  Don't call into
+       zlib: any input is kept in the input buffer for the next call. */
+    if (max_length == 0) {
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    }
+
     /* When sys.maxsize is passed as default use DEF_BUF_SIZE as start buffer.
        In this particular case the data may not necessarily be very big, so
        it is better to grow dynamically.*/
