@@ -13,16 +13,6 @@
 
 #include <Python.h>
 
-#ifdef thread_local
-#  define _Py_thread_local thread_local
-#elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__)
-#  define _Py_thread_local _Thread_local
-#elif defined(_MSC_VER)  /* AKA NT_THREADS */
-#  define _Py_thread_local __declspec(thread)
-#elif defined(__GNUC__)  /* includes clang */
-#  define _Py_thread_local __thread
-#endif
-
 #if defined(_Py_FFI_SUPPORT_C_COMPLEX)
 #  include <complex.h>            // csqrt()
 #  undef I                        // for _ctypes_test_generated.c.h
