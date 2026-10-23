@@ -2367,16 +2367,20 @@ this is invalid python code
         if not os.path.exists(source_libpython):
             self.skipTest(f'{source_libpython!r} does not exist')
 
-        with os_helper.temp_dir() as lib_dir:
-            copied_libpython = os.path.join(lib_dir, instsoname)
+        with os_helper.temp_dir(os_helper.TESTFN) as lib_dir:
+            copied_libpython = os.path.abspath(
+                os.path.join(lib_dir, instsoname))
             shutil.copy2(source_libpython, copied_libpython)
             if ldlibrary != instsoname:
                 os.symlink(instsoname, os.path.join(lib_dir, ldlibrary))
 
             env = os.environ.copy()
-            ld_library_path = env.get('LD_LIBRARY_PATH')
-            env['LD_LIBRARY_PATH'] = lib_dir if not ld_library_path else (
-                lib_dir + os.pathsep + ld_library_path)
+            # Preload the copy even when `RPATH` overrides `LD_LIBRARY_PATH`.
+            # Use a relative path to avoid spaces or colons in parent directories.
+            preload = os.path.join(os.curdir, lib_dir, instsoname)
+            ld_preload = env.get('LD_PRELOAD')
+            env['LD_PRELOAD'] = preload if not ld_preload else (
+                preload + os.pathsep + ld_preload)
 
             self._run_remote_exec_with_deleted_mapping(copied_libpython,
                                                        env=env)
