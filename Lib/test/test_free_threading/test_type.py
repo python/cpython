@@ -540,6 +540,29 @@ class TestType(TestCase):
         self.assertIsNone(base_ref())
         self.assertIsNone(sub_ref())
 
+    def test_reentrant_mro_always_publishes(self):
+        # A custom mro() that updates a slot on every call must not make
+        # the __bases__ assignment retry forever.
+        class Other:
+            pass
+
+        class Meta(type):
+            def mro(cls):
+                Other.__repr__ = lambda self: "x"
+                return type.mro(cls)
+
+        class A:
+            pass
+
+        class B:
+            pass
+
+        class C(A, metaclass=Meta):
+            pass
+
+        C.__bases__ = (B,)
+        self.assertEqual(C.__mro__, (C, B, object))
+
     def test_concurrent_bases_assignment(self):
         # Several threads reassign __bases__ of the same class, and of its
         # base, while others stop the world.  The validated bases and the

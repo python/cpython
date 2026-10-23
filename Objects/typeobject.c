@@ -3700,43 +3700,38 @@ mro_internal(PyTypeObject *type, int initial, PyObject **p_old_mro)
        Don't let old_mro be GC'ed and its address be reused for
        another object, like (suddenly!) a new tp_mro.  */
     old_mro = Py_XNewRef(lookup_tp_mro(type));
-    for (;;) {
-        uint64_t gen = types_publish_gen();
-        new_mro = mro_invoke(type);  /* might cause reentrance */
-        if (new_mro == NULL) {
-            Py_XDECREF(old_mro);
-            return -1;
-        }
-        int res;
-        if (initial) {
-            // The type has not been revealed to other threads yet, so only
-            // same-thread reentrance can have replaced tp_mro.
-            if (lookup_tp_mro(type) == old_mro) {
-                set_tp_mro(type, new_mro);
-                res = 1;
-            }
-            else {
-                res = 0;
-            }
+    new_mro = mro_invoke(type);  /* might cause reentrance */
+    if (new_mro == NULL) {
+        Py_XDECREF(old_mro);
+        return -1;
+    }
+    int res;
+    if (initial) {
+        // The type has not been revealed to other threads yet, so only
+        // same-thread reentrance can have replaced tp_mro.
+        if (lookup_tp_mro(type) == old_mro) {
+            set_tp_mro(type, new_mro);
+            res = 1;
         }
         else {
-            // Store with the world stopped.  TYPE_LOCK may have been
-            // released while mro_invoke() ran or while waiting to stop the
-            // world, so check for reentrance and for concurrent mutation of
-            // the hierarchy inside the stop-the-world.
-            res = try_set_tp_mro(type, old_mro, new_mro, gen);
+            res = 0;
         }
-        if (res == 1) {
-            break;
-        }
+    }
+    else {
+        // Store with the world stopped.  TYPE_LOCK may have been released
+        // while mro_invoke() ran, so check for reentrance inside the
+        // stop-the-world.  The publish generation is deliberately not
+        // checked: mro() can itself update types (assign a slot, for
+        // example) and the result is stored anyway, as on the default
+        // build.
+        res = try_set_tp_mro(type, old_mro, new_mro, TYPES_PUBLISH_GEN_NONE);
+        assert(res != -1);
+    }
+    if (res == 0) {
+        /* reentrance: tp_mro was replaced by someone else */
         Py_DECREF(new_mro);
-        if (res == 0) {
-            /* reentrance: tp_mro was replaced by someone else */
-            Py_XDECREF(old_mro);
-            return 0;
-        }
-        /* stale: another thread changed the hierarchy, compute again */
-        assert(res == -1);
+        Py_XDECREF(old_mro);
+        return 0;
     }
     /* Drop our temporary reference.  The reference previously owned by
        the type is now owned by this function and transferred below. */
