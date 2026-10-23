@@ -4449,7 +4449,9 @@ PyListWriter_Create(Py_ssize_t size)
 #ifdef Py_DEBUG
     // In debug mode, set all items to NULL to be able to check that they are
     // non-NULL in PyListWriter_Finish().
-    memset(_PyList_CAST(list)->ob_item, 0, size * sizeof(PyObject*));
+    if (1 <= size) {
+        memset(_PyList_CAST(list)->ob_item, 0, size * sizeof(PyObject*));
+    }
 #endif
 
     PyListWriter *writer = (PyListWriter*)list;
