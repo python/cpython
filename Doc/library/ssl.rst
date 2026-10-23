@@ -1106,9 +1106,75 @@ Constants
 
    .. versionadded:: next
 
+.. attribute:: ECHStatus.ECH_STATUS_SUCCESS
+
+   ECH was accepted without a certificate verification error.
+
+   .. versionadded:: next
+
+.. attribute:: ECHStatus.ECH_STATUS_FAILED
+
+   An internal or protocol error occurred, or ECH was rejected without a retry
+   configuration.
+
+   .. versionadded:: next
+
+.. attribute:: ECHStatus.ECH_STATUS_FAILED_ECH
+
+   ECH was rejected and the server supplied an authenticated retry
+   configuration.
+
+   .. versionadded:: next
+
+.. attribute:: ECHStatus.ECH_STATUS_BAD_NAME
+
+   ECH was accepted, but verification of the peer's certificate failed.
+
+   .. versionadded:: next
+
+.. attribute:: ECHStatus.ECH_STATUS_FAILED_ECH_BAD_NAME
+
+   ECH was rejected and a retry configuration was received, but certificate
+   verification for the outer server name failed. The retry configuration
+   must not be used.
+
+   .. versionadded:: next
+
+.. attribute:: ECHStatus.ECH_STATUS_NOT_TRIED
+
+   ECH is configured but has not been attempted (such as before the
+   handshake starts).
+
+   .. versionadded:: next
+
+.. attribute:: ECHStatus.ECH_STATUS_NOT_CONFIGURED
+
+   No ECH configuration is set for this connection.
+
+   .. versionadded:: next
+
+.. attribute:: ECHStatus.ECH_STATUS_GREASE
+
+   ECH GREASE is enabled or was used, but no retry configuration was received.
+
+   .. versionadded:: next
+
 .. attribute:: ECHStatus.ECH_STATUS_GREASE_ECH
 
    The client sent a GREASE ECH extension and received a retry configuration.
+
+   .. versionadded:: next
+
+.. attribute:: ECHStatus.ECH_STATUS_BACKEND
+
+   The server received a ClientHello marked as an inner ClientHello, as used
+   by a backend server in an ECH split deployment.
+
+   .. versionadded:: next
+
+.. attribute:: ECHStatus.ECH_STATUS_BAD_CALL
+
+   Invalid arguments were supplied to OpenSSL's ECH status API.
 
    .. versionadded:: next
 
@@ -1451,7 +1517,10 @@ SSL sockets also have the following additional methods and attributes:
 .. method:: SSLSocket.get_ech_retry_config()
 
    Return the server's ECH retry configuration as :class:`bytes`, or ``b""``
-   if no retry configuration is available.
+   if no usable retry configuration is available.
+
+   Return ``None`` if the socket has no underlying SSL object, such as before
+   it connects or after it is closed.
 
    Only available when :data:`HAS_ECH` is ``True``.
 
@@ -1459,8 +1528,11 @@ SSL sockets also have the following additional methods and attributes:
 
 .. method:: SSLSocket.get_ech_status()
 
-   Gets the status of Encrypted Client Hello (ECH) processing. Returns an
+   Return the status of Encrypted Client Hello (ECH) processing as an
    :class:`ECHStatus` instance.
+
+   Return ``None`` if the socket has no underlying SSL object, such as before
+   it connects or after it is closed.
 
    Only available when :data:`HAS_ECH` is ``True``.
 
@@ -1555,9 +1627,9 @@ SSL sockets also have the following additional methods and attributes:
 
 .. attribute:: SSLSocket.outer_server_hostname
 
-   Hostname of the server name used in the outer ClientHello when Encrypted Client
-   Hello (ECH) is used, or ``None`` for server-side socket or if no outer
-   server name is available.
+   The server name used in the outer ClientHello when Encrypted Client Hello
+   (ECH) is used, as a :class:`str`. Available on both client-side and
+   server-side sockets. Returns ``None`` if no outer server name is available.
 
    Only available when :data:`HAS_ECH` is ``True``.
 
