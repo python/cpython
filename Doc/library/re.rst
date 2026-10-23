@@ -1,3 +1,5 @@
+:tocdepth: 3
+
 :mod:`!re` --- Regular expression operations
 ============================================
 
@@ -91,13 +93,16 @@ repetition to an inner repetition, parentheses may be used. For example,
 the expression ``(?:a{6})*`` matches any multiple of six ``'a'`` characters.
 
 
+Special characters
+^^^^^^^^^^^^^^^^^^
+
 The special characters are:
 
 .. index:: single: . (dot); in regular expressions
    :name: re-syntax-dot
 
 ``.``
-^^^^^
+"""""
 
 (Dot.)  In the default mode, this matches any character except a newline.  If
 the :const:`DOTALL` flag has been specified, this matches any character
@@ -107,7 +112,7 @@ including a newline.  ``(?s:.)`` matches any character regardless of flags.
    :name: re-syntax-caret
 
 ``^``
-^^^^^
+"""""
 
 (Caret.)  Matches the start of the string, and in :const:`MULTILINE` mode also
 matches immediately after each newline.
@@ -117,7 +122,7 @@ matches immediately after each newline.
    :name: re-syntax-dollar
 
 ``$``
-^^^^^
+"""""
 
 Matches the end of the string or just before the newline at the end of the
 string, and in :const:`MULTILINE` mode also matches before a newline.  ``foo``
@@ -132,7 +137,7 @@ the newline, and one at the end of the string.
    :name: re-syntax-asterisk
 
 ``*``
-^^^^^
+"""""
 
 Causes the resulting RE to match 0 or more repetitions of the preceding RE, as
 many repetitions as are possible.  ``ab*`` will match 'a', 'ab', or 'a' followed
@@ -143,7 +148,7 @@ by any number of 'b's.
    :name: re-syntax-plus
 
 ``+``
-^^^^^
+"""""
 
 Causes the resulting RE to match 1 or more repetitions of the preceding RE.
 ``ab+`` will match 'a' followed by any non-zero number of 'b's; it will not
@@ -154,7 +159,7 @@ match just 'a'.
    :name: re-syntax-question-mark
 
 ``?``
-^^^^^
+"""""
 
 Causes the resulting RE to match 0 or 1 repetitions of the preceding RE.
 ``ab?`` will match either 'a' or 'ab'.
@@ -167,7 +172,7 @@ Causes the resulting RE to match 0 or 1 repetitions of the preceding RE.
    :name: re-syntax-non-greedy-quantifiers
 
 ``*?``, ``+?``, ``??``
-^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""
 
 The ``'*'``, ``'+'``, and ``'?'`` quantifiers are all :dfn:`greedy`; they match
 as much text as possible.  Sometimes this behaviour isn't desired; if the RE
@@ -185,7 +190,7 @@ only ``'<a>'``.
    :name: re-syntax-possessive-quantifiers
 
 ``*+``, ``++``, ``?+``
-^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""
 
 Like the ``'*'``, ``'+'``, and ``'?'`` quantifiers, those where ``'+'`` is
 appended also match as many times as possible.
@@ -210,7 +215,7 @@ and ``(?>x?)`` correspondingly.
    :name: re-syntax-curly-brackets
 
 ``{m}``
-^^^^^^^
+"""""""
 
 Specifies that exactly *m* copies of the previous RE should be matched; fewer
 matches cause the entire RE not to match.  For example, ``a{6}`` will match
@@ -218,7 +223,7 @@ exactly six ``'a'`` characters, but not five.
 
 
 ``{m,n}``
-^^^^^^^^^
+"""""""""
 
 Causes the resulting RE to match from *m* to *n* repetitions of the preceding
 RE, attempting to match as many repetitions as possible.  For example,
@@ -230,7 +235,7 @@ modifier would be confused with the previously described form.
 
 
 ``{m,n}?``
-^^^^^^^^^^
+""""""""""
 
 Causes the resulting RE to match from *m* to *n* repetitions of the preceding
 RE, attempting to match as *few* repetitions as possible.  This is the
@@ -240,7 +245,7 @@ while ``a{3,5}?`` will only match 3 characters.
 
 
 ``{m,n}+``
-^^^^^^^^^^
+""""""""""
 
 Causes the resulting RE to match from *m* to *n* repetitions of the
 preceding RE, attempting to match as many repetitions as possible
@@ -261,7 +266,7 @@ by backtracking and then the final 2 ``'a'``\ s are matched by the final
    :name: re-syntax-backslash
 
 ``\``
-^^^^^
+"""""
 
 Either escapes special characters (permitting you to match characters like
 ``'*'``, ``'?'``, and so forth), or signals a special sequence; special
@@ -281,7 +286,7 @@ raw strings for all but the simplest expressions.
    :name: re-syntax-square-brackets
 
 ``[]``
-^^^^^^
+""""""
 
 Used to indicate a set of characters.  In a set:
 
@@ -378,7 +383,7 @@ Used to indicate a set of characters.  In a set:
    :name: re-syntax-vertical-bar
 
 ``|``
-^^^^^
+"""""
 
 ``A|B``, where *A* and *B* can be arbitrary REs, creates a regular expression that
 will match either *A* or *B*.  An arbitrary number of REs can be separated by the
@@ -396,7 +401,7 @@ character class, as in ``[|]``.
    :name: re-syntax-parentheses
 
 ``(...)``
-^^^^^^^^^
+"""""""""
 
 Matches whatever regular expression is inside the parentheses, and indicates the
 start and end of a group; the contents of a group can be retrieved after a match
@@ -409,7 +414,7 @@ use ``\(`` or ``\)``, or enclose them inside a character class: ``[(]``, ``[)]``
    :name: re-syntax-extension
 
 ``(?...)``
-^^^^^^^^^^
+""""""""""
 
 This is an extension notation (a ``'?'`` following a ``'('`` is not meaningful
 otherwise).  The first character after the ``'?'`` determines what the meaning
@@ -421,7 +426,7 @@ currently supported extensions.
 .. _re-syntax-inline-flags:
 
 ``(?aiLmsux)``
-^^^^^^^^^^^^^^
+""""""""""""""
 
 (One or more letters from the set
 ``'a'``, ``'i'``, ``'L'``, ``'m'``, ``'s'``, ``'u'``, ``'x'``.)
@@ -450,7 +455,7 @@ Flags should be used first in the expression string.
    :name: re-syntax-non-capturing
 
 ``(?:...)``
-^^^^^^^^^^^
+"""""""""""
 
 A non-capturing version of regular parentheses.  Matches whatever regular
 expression is inside the parentheses, but the substring matched by the group
@@ -461,7 +466,7 @@ pattern.
 .. _re-syntax-inline-flags-group:
 
 ``(?aiLmsux-imsx:...)``
-^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""
 
 (Zero or more letters from the set
 ``'a'``, ``'i'``, ``'L'``, ``'m'``, ``'s'``, ``'u'``, ``'x'``,
@@ -499,7 +504,7 @@ original matching mode is restored outside of the group.
    :name: re-syntax-atomic-group
 
 ``(?>...)``
-^^^^^^^^^^^
+"""""""""""
 
 Attempts to match ``...`` as if it was a separate regular expression, and
 if successful, continues to match the rest of the pattern following it.
@@ -520,7 +525,7 @@ no stack point before it, the entire expression would thus fail to match.
    :name: re-syntax-named-capture
 
 ``(?P<name>...)``
-^^^^^^^^^^^^^^^^^
+"""""""""""""""""
 
 Similar to regular parentheses, but the substring matched by the group is
 accessible via the symbolic group name *name*.  Group names must be valid
@@ -555,7 +560,7 @@ single or double quotes):
    :name: re-syntax-named-backreference
 
 ``(?P=name)``
-^^^^^^^^^^^^^
+"""""""""""""
 
 A backreference to a named group; it matches whatever text was matched by the
 earlier group named *name*.
@@ -565,7 +570,7 @@ earlier group named *name*.
    :name: re-syntax-comment
 
 ``(?#...)``
-^^^^^^^^^^^
+"""""""""""
 
 A comment; the contents of the parentheses are simply ignored.
 
@@ -574,7 +579,7 @@ A comment; the contents of the parentheses are simply ignored.
    :name: re-syntax-lookahead
 
 ``(?=...)``
-^^^^^^^^^^^
+"""""""""""
 
 Matches if ``...`` matches next, but doesn't consume any of the string.  This is
 called a :dfn:`lookahead assertion`.  For example, ``Isaac (?=Asimov)`` will match
@@ -585,7 +590,7 @@ called a :dfn:`lookahead assertion`.  For example, ``Isaac (?=Asimov)`` will mat
    :name: re-syntax-negative-lookahead
 
 ``(?!...)``
-^^^^^^^^^^^
+"""""""""""
 
 Matches if ``...`` doesn't match next.  This is a :dfn:`negative lookahead assertion`.
 For example, ``Isaac (?!Asimov)`` will match ``'Isaac '`` only if it's *not*
@@ -596,7 +601,7 @@ followed by ``'Asimov'``.
    :name: re-syntax-lookbehind
 
 ``(?<=...)``
-^^^^^^^^^^^^
+""""""""""""
 
 Matches if the current position in the string is preceded by a match for ``...``
 that ends at the current position.  This is called a :dfn:`positive lookbehind
@@ -627,7 +632,7 @@ This example looks for a word following a hyphen:
    :name: re-syntax-negative-lookbehind
 
 ``(?<!...)``
-^^^^^^^^^^^^
+""""""""""""
 
 Matches if the current position in the string is not preceded by a match for
 ``...``.  This is called a :dfn:`negative lookbehind assertion`.  Similar to
@@ -641,7 +646,7 @@ match at the beginning of the string being searched.
 .. index:: single: (?(; in regular expressions
 
 ``(?(id/name)yes-pattern|no-pattern)``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""""
 
 Will try to match with ``yes-pattern`` if the group with given *id* or
 *name* exists, and with ``no-pattern`` if it doesn't. ``no-pattern`` is
@@ -659,6 +664,9 @@ match ``'<user@host.com'`` nor ``'user@host.com>'`` in their entirety
 
 .. _re-special-sequences:
 
+Special sequences
+^^^^^^^^^^^^^^^^^
+
 The special sequences consist of ``'\'`` and a character from the list below.
 If the ordinary character is not an ASCII digit or an ASCII letter, then the
 resulting RE will match the second character.  For example, ``\$`` matches the
@@ -669,7 +677,7 @@ character ``'$'``.
    :name: re-syntax-special-group-reference
 
 ``\number``
-^^^^^^^^^^^
+"""""""""""
 
 Matches the contents of the group of the same number.  Groups are numbered
 starting from 1.  For example, ``(.+) \1`` matches ``'the the'`` or ``'55 55'``,
@@ -685,7 +693,7 @@ characters.
    :name: re-syntax-special-start
 
 ``\A``
-^^^^^^
+""""""
 
 Matches only at the start of the string.
 
@@ -694,7 +702,7 @@ Matches only at the start of the string.
    :name: re-syntax-special-word-boundary
 
 ``\b``
-^^^^^^
+""""""
 
 Matches the empty string, but only at the beginning or end of a word.
 A word is defined as a sequence of word characters.
@@ -719,7 +727,7 @@ if the :py:const:`~re.LOCALE` flag is used.
    :name: re-syntax-special-inside-word
 
 ``\B``
-^^^^^^
+""""""
 
 Matches the empty string,
 but only when it is *not* at the beginning or end of a word.
@@ -739,7 +747,7 @@ if the :py:const:`~re.LOCALE` flag is used.
    :name: re-syntax-special-digits
 
 ``\d``
-^^^^^^
+""""""
 
 For Unicode (str) patterns:
    Matches any Unicode decimal digit
@@ -758,7 +766,7 @@ For 8-bit (bytes) patterns:
    :name: re-syntax-special-non-digits
 
 ``\D``
-^^^^^^
+""""""
 
 Matches any character which is not a decimal digit.
 This is the opposite of ``\d``.
@@ -769,7 +777,7 @@ Matches ``[^0-9]`` if the :py:const:`~re.ASCII` flag is used.
    :name: re-syntax-special-whitespace
 
 ``\s``
-^^^^^^
+""""""
 
 For Unicode (str) patterns:
    Matches Unicode whitespace characters (as defined by :py:meth:`str.isspace`).
@@ -787,7 +795,7 @@ For 8-bit (bytes) patterns:
    :name: re-syntax-special-non-whitespace
 
 ``\S``
-^^^^^^
+""""""
 
 Matches any character which is not a whitespace character. This is
 the opposite of ``\s``.
@@ -798,7 +806,7 @@ Matches ``[^ \t\n\r\f\v]`` if the :py:const:`~re.ASCII` flag is used.
    :name: re-syntax-special-word
 
 ``\w``
-^^^^^^
+""""""
 
 For Unicode (str) patterns:
    Matches Unicode word characters;
@@ -818,7 +826,7 @@ For 8-bit (bytes) patterns:
    :name: re-syntax-special-non-word
 
 ``\W``
-^^^^^^
+""""""
 
 Matches any character which is not a word character.
 This is the opposite of ``\w``.
@@ -837,7 +845,7 @@ nor the underscore.
    :name: re-syntax-special-unicode-property
 
 ``\p{property=value}``, ``\p{value}``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""
 
 Matches any character with the given Unicode property
 (see `Unicode Technical Standard #18
@@ -876,7 +884,7 @@ In bytes patterns it is an error.
 
 
 ``\P{...}``
-^^^^^^^^^^^
+"""""""""""
 
 Matches any character which does *not* have the given Unicode property.
 This is the opposite of ``\p``.
@@ -889,7 +897,7 @@ This is the opposite of ``\p``.
    :name: re-syntax-special-end
 
 ``\z``
-^^^^^^
+""""""
 
 Matches only at the end of the string.
 
@@ -897,7 +905,7 @@ Matches only at the end of the string.
 
 
 ``\Z``
-^^^^^^
+""""""
 
 The same as ``\z``.  For compatibility with old Python versions.
 
@@ -917,7 +925,7 @@ The same as ``\z``.  For compatibility with old Python versions.
    :name: re-syntax-standard-escapes
 
 Standard escapes
-^^^^^^^^^^^^^^^^
+""""""""""""""""
 
 Most of the :ref:`escape sequences <escape-sequences>` supported by Python
 string literals are also accepted by the regular expression parser::
