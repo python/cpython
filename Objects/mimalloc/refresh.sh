@@ -22,8 +22,8 @@ fi
 # the update brings in are good. The ref can be a commit hash or a release tag
 # (e.g. "v3.6.0"); mimalloc v3.6 has not been released yet, so this is a commit
 # on the dev3 branch.
-expected_mimalloc_ref="1ff2382f943e52a4c8e0762291d92f961d4a2d23"
-expected_mimalloc_sha256="0000000000000000000000000000000000000000000000000000000000000000"
+expected_mimalloc_ref="caaf3bc41494e6b58ab32ed9c851b3c8b61a8f82"
+expected_mimalloc_sha256="d6bed4bad2fe8aea63f4ab25cabce5275aef6f2f9386266ff686ceb1eabe15bb"
 
 objects_dir="$(realpath "$(dirname -- "${BASH_SOURCE[0]}")")"
 cpython_dir="$(realpath "$objects_dir/../..")"

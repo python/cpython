@@ -98,13 +98,14 @@ static inline void** mi_prim_thread_pointer(void) {
 #elif defined(__GNUC__) && !defined(__CYGWIN__)
   #if defined(__aarch64__)
   static inline void** mi_prim_thread_pointer(void) {
-    void** tcb;
+    // Use a 64-bit temporary: on arm64_32 (ILP32), pointers are 32 bits but system registers are 64 bits.
+    uint64_t tp;
     #if defined(__APPLE__) // M1, issue rgb(62, 76, 62)
-    __asm__ ("mrs %0, tpidrro_el0\n\tbic %0, %0, #7" : "=r" (tcb));
+    __asm__ ("mrs %0, tpidrro_el0\n\tbic %0, %0, #7" : "=r" (tp));
     #else
-    __asm__ ("mrs %0, tpidr_el0" : "=r" (tcb));
+    __asm__ ("mrs %0, tpidr_el0" : "=r" (tp));
     #endif
-    return tcb;
+    return (void**)((uintptr_t)tp);
   }
   #elif defined(__riscv)
   static inline void** mi_prim_thread_pointer(void) {
