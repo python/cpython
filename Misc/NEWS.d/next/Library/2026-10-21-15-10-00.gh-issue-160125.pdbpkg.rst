@@ -1,0 +1,3 @@
+Support setting breakpoints with the :mod:`pdb` ``break`` and ``tbreak``
+commands using ``package.module.function`` names when the module has not been
+imported in the current namespace.
