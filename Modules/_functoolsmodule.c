@@ -138,6 +138,34 @@ typedef struct {
     vectorcallfunc vectorcall;
 } partialobject;
 
+typedef struct {
+    PyObject *fn;
+    PyObject *args;
+    PyObject *kw;
+    PyObject *placeholder;
+    Py_ssize_t phcount;
+} partial_snapshot;
+
+static void
+partial_snapshot_init(partialobject *pto, partial_snapshot *snapshot)
+{
+    Py_BEGIN_CRITICAL_SECTION(pto);
+    snapshot->fn = Py_NewRef(pto->fn);
+    snapshot->args = Py_NewRef(pto->args);
+    snapshot->kw = Py_NewRef(pto->kw);
+    snapshot->placeholder = pto->placeholder;
+    snapshot->phcount = pto->phcount;
+    Py_END_CRITICAL_SECTION();
+}
+
+static void
+partial_snapshot_clear(partial_snapshot *snapshot)
+{
+    Py_DECREF(snapshot->fn);
+    Py_DECREF(snapshot->args);
+    Py_DECREF(snapshot->kw);
+}
+
 // cast a PyObject pointer PTR to a partialobject pointer (no type checks)
 #define partialobject_CAST(op)  ((partialobject *)(op))
 
@@ -158,19 +186,56 @@ get_functools_state_by_type(PyTypeObject *type)
 
 // Not converted to argument clinic, because of `*args, **kwargs` arguments.
 static PyObject *
+partial_new_from(PyTypeObject *type, PyObject *args, PyObject *kw,
+                 PyObject *func, PyObject *pto_args, PyObject *pto_kw,
+                 Py_ssize_t pto_phcount);
+
+static PyObject *
 partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
-    PyObject *func, *pto_args, *new_args, *pto_kw, *phold;
-    partialobject *pto;
-    Py_ssize_t pto_phcount = 0;
-    Py_ssize_t new_nargs = PyTuple_GET_SIZE(args) - 1;
-
-    if (new_nargs < 0) {
+    if (PyTuple_GET_SIZE(args) == 0) {
         PyErr_SetString(PyExc_TypeError,
                         "type 'partial' takes at least one argument");
         return NULL;
     }
-    func = PyTuple_GET_ITEM(args, 0);
+    _functools_state *state = get_functools_state_by_type(type);
+    if (state == NULL) {
+        return NULL;
+    }
+    PyObject *func = PyTuple_GET_ITEM(args, 0);
+    PyObject *inner_func = NULL, *inner_args = NULL, *inner_kw = NULL;
+    Py_ssize_t phcount = 0;
+    if (PyObject_TypeCheck(func, state->partial_type)) {
+        partialobject *part = partialobject_CAST(func);
+        Py_BEGIN_CRITICAL_SECTION(part);
+        if (part->dict == NULL) {
+            inner_func = Py_NewRef(part->fn);
+            inner_args = Py_NewRef(part->args);
+            inner_kw = Py_NewRef(part->kw);
+            phcount = part->phcount;
+            assert(PyTuple_Check(inner_args));
+            assert(PyDict_Check(inner_kw));
+        }
+        Py_END_CRITICAL_SECTION();
+    }
+    PyObject *result = partial_new_from(type, args, kw,
+                                        inner_func ? inner_func : func,
+                                        inner_args, inner_kw, phcount);
+    Py_XDECREF(inner_func);
+    Py_XDECREF(inner_args);
+    Py_XDECREF(inner_kw);
+    return result;
+}
+
+static PyObject *
+partial_new_from(PyTypeObject *type, PyObject *args, PyObject *kw,
+                 PyObject *func, PyObject *pto_args, PyObject *pto_kw,
+                 Py_ssize_t pto_phcount)
+{
+    PyObject *new_args, *phold;
+    partialobject *pto;
+    Py_ssize_t new_nargs = PyTuple_GET_SIZE(args) - 1;
+
     if (!PyCallable_Check(func)) {
         PyErr_SetString(PyExc_TypeError,
                         "the first argument must be callable");
@@ -200,25 +265,6 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
                                 "Placeholder cannot be passed as a keyword argument");
                 return NULL;
             }
-        }
-    }
-
-    /* check wrapped function / object */
-    pto_args = pto_kw = NULL;
-    int res = PyObject_TypeCheck(func, state->partial_type);
-    if (res == -1) {
-        return NULL;
-    }
-    if (res == 1) {
-        // We can use its underlying function directly and merge the arguments.
-        partialobject *part = (partialobject *)func;
-        if (part->dict == NULL) {
-            pto_args = part->args;
-            pto_kw = part->kw;
-            func = part->fn;
-            pto_phcount = part->phcount;
-            assert(PyTuple_Check(pto_args));
-            assert(PyDict_Check(pto_kw));
         }
     }
 
@@ -369,23 +415,24 @@ static PyObject *
 partial_vectorcall(PyObject *self, PyObject *const *args,
                    size_t nargsf, PyObject *kwnames)
 {
-    partialobject *pto = partialobject_CAST(self);;
     PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
 
+    partial_snapshot snapshot;
+    partial_snapshot_init(partialobject_CAST(self), &snapshot);
+    PyObject *partial_function = snapshot.fn;
+    PyObject *partial_args = snapshot.args;
+    PyObject *partial_keywords = snapshot.kw;
+    Py_ssize_t pto_phcount = snapshot.phcount;
+    PyObject *result = NULL;
+
     /* Placeholder check */
-    Py_ssize_t pto_phcount = pto->phcount;
     if (nargs < pto_phcount) {
         PyErr_Format(PyExc_TypeError,
                      "missing positional arguments in 'partial' call; "
                      "expected at least %zd, got %zd", pto_phcount, nargs);
-        return NULL;
+        goto done;
     }
-
-    PyObject *result = NULL;
-    PyObject *partial_function = Py_NewRef(pto->fn);
-    PyObject *partial_args = Py_NewRef(pto->args);
-    PyObject *partial_keywords = Py_NewRef(pto->kw);
 
     PyObject **pto_args = _PyTuple_ITEMS(partial_args);
     Py_ssize_t pto_nargs = PyTuple_GET_SIZE(partial_args);
@@ -533,7 +580,7 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
     if (pto_phcount) {
         Py_ssize_t j = 0;       // New args index
         for (Py_ssize_t i = 0; i < pto_nargs; i++) {
-            if (pto_args[i] == pto->placeholder) {
+            if (pto_args[i] == snapshot.placeholder) {
                 stack[i] = args[j];
                 j += 1;
             }
@@ -564,9 +611,7 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
     }
 
  done:
-    Py_DECREF(partial_function);
-    Py_DECREF(partial_args);
-    Py_DECREF(partial_keywords);
+    partial_snapshot_clear(&snapshot);
     return result;
 }
 
@@ -574,6 +619,10 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
 static void
 partial_setvectorcall(partialobject *pto)
 {
+#ifdef Py_GIL_DISABLED
+    /* Dispatch reads this slot before acquiring the partial's lock. */
+    pto->vectorcall = partial_vectorcall;
+#else
     if (PyVectorcall_Function(pto->fn) == NULL) {
         /* Don't use vectorcall if the underlying function doesn't support it */
         pto->vectorcall = NULL;
@@ -584,20 +633,35 @@ partial_setvectorcall(partialobject *pto)
     else {
         pto->vectorcall = partial_vectorcall;
     }
+#endif
 }
 
 
 // Not converted to argument clinic, because of `*args, **kwargs` arguments.
 static PyObject *
+partial_call_from_snapshot(partial_snapshot *snapshot, PyObject *args,
+                           PyObject *kwargs);
+
+static PyObject *
 partial_call(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    partialobject *pto = partialobject_CAST(self);
-    assert(PyCallable_Check(pto->fn));
-    assert(PyTuple_Check(pto->args));
-    assert(PyDict_Check(pto->kw));
+    partial_snapshot snapshot;
+    partial_snapshot_init(partialobject_CAST(self), &snapshot);
+    PyObject *result = partial_call_from_snapshot(&snapshot, args, kwargs);
+    partial_snapshot_clear(&snapshot);
+    return result;
+}
+
+static PyObject *
+partial_call_from_snapshot(partial_snapshot *snapshot, PyObject *args,
+                           PyObject *kwargs)
+{
+    assert(PyCallable_Check(snapshot->fn));
+    assert(PyTuple_Check(snapshot->args));
+    assert(PyDict_Check(snapshot->kw));
 
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t pto_phcount = pto->phcount;
+    Py_ssize_t pto_phcount = snapshot->phcount;
     if (nargs < pto_phcount) {
         PyErr_Format(PyExc_TypeError,
                      "missing positional arguments in 'partial' call; "
@@ -607,7 +671,7 @@ partial_call(PyObject *self, PyObject *args, PyObject *kwargs)
 
     /* Merge keywords */
     PyObject *tot_kw;
-    if (PyDict_GET_SIZE(pto->kw) == 0) {
+    if (PyDict_GET_SIZE(snapshot->kw) == 0) {
         /* kwargs can be NULL */
         tot_kw = Py_XNewRef(kwargs);
     }
@@ -615,7 +679,7 @@ partial_call(PyObject *self, PyObject *args, PyObject *kwargs)
         /* bpo-27840, bpo-29318: dictionary of keyword parameters must be
            copied, because a function using "**kwargs" can modify the
            dictionary. */
-        tot_kw = PyDict_Copy(pto->kw);
+        tot_kw = PyDict_Copy(snapshot->kw);
         if (tot_kw == NULL) {
             return NULL;
         }
@@ -631,7 +695,7 @@ partial_call(PyObject *self, PyObject *args, PyObject *kwargs)
     /* Merge positional arguments */
     PyObject *tot_args;
     if (pto_phcount) {
-        Py_ssize_t pto_nargs = PyTuple_GET_SIZE(pto->args);
+        Py_ssize_t pto_nargs = PyTuple_GET_SIZE(snapshot->args);
         Py_ssize_t tot_nargs = pto_nargs + nargs - pto_phcount;
         assert(tot_nargs >= 0);
         tot_args = PyTuple_New(tot_nargs);
@@ -639,12 +703,12 @@ partial_call(PyObject *self, PyObject *args, PyObject *kwargs)
             Py_XDECREF(tot_kw);
             return NULL;
         }
-        PyObject *pto_args = pto->args;
+        PyObject *pto_args = snapshot->args;
         PyObject *item;
         Py_ssize_t j = 0;   // New args index
         for (Py_ssize_t i = 0; i < pto_nargs; i++) {
             item = PyTuple_GET_ITEM(pto_args, i);
-            if (item == pto->placeholder) {
+            if (item == snapshot->placeholder) {
                 item = PyTuple_GET_ITEM(args, j);
                 j += 1;
             }
@@ -661,14 +725,14 @@ partial_call(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     else {
         /* Note: tupleconcat() is optimized for empty tuples */
-        tot_args = PySequence_Concat(pto->args, args);
+        tot_args = PySequence_Concat(snapshot->args, args);
         if (tot_args == NULL) {
             Py_XDECREF(tot_kw);
             return NULL;
         }
     }
 
-    PyObject *res = PyObject_Call(pto->fn, tot_args, tot_kw);
+    PyObject *res = PyObject_Call(snapshot->fn, tot_args, tot_kw);
     Py_DECREF(tot_args);
     Py_XDECREF(tot_kw);
     return res;
@@ -721,9 +785,12 @@ partial_repr(PyObject *self)
         return PyUnicode_FromString("...");
     }
     /* Reference arguments in case they change */
-    PyObject *fn = Py_NewRef(pto->fn);
-    PyObject *args = Py_NewRef(pto->args);
-    PyObject *kw = Py_NewRef(pto->kw);
+    PyObject *fn, *args, *kw;
+    Py_BEGIN_CRITICAL_SECTION(pto);
+    fn = Py_NewRef(pto->fn);
+    args = Py_NewRef(pto->args);
+    kw = Py_NewRef(pto->kw);
+    Py_END_CRITICAL_SECTION();
     assert(PyTuple_Check(args));
     assert(PyDict_Check(kw));
 
@@ -792,9 +859,20 @@ static PyObject *
 partial_reduce(PyObject *self, PyObject *Py_UNUSED(args))
 {
     partialobject *pto = partialobject_CAST(self);
-    return Py_BuildValue("O(O)(OOOO)", Py_TYPE(pto), pto->fn, pto->fn,
-                         pto->args, pto->kw,
-                         pto->dict ? pto->dict : Py_None);
+    PyObject *fn, *fnargs, *kw, *dict;
+    Py_BEGIN_CRITICAL_SECTION(pto);
+    fn = Py_NewRef(pto->fn);
+    fnargs = Py_NewRef(pto->args);
+    kw = Py_NewRef(pto->kw);
+    dict = pto->dict ? Py_NewRef(pto->dict) : Py_NewRef(Py_None);
+    Py_END_CRITICAL_SECTION();
+    PyObject *result = Py_BuildValue("O(O)(OOOO)", Py_TYPE(pto), fn, fn,
+                                    fnargs, kw, dict);
+    Py_DECREF(fn);
+    Py_DECREF(fnargs);
+    Py_DECREF(kw);
+    Py_DECREF(dict);
+    return result;
 }
 
 static PyObject *
@@ -853,12 +931,30 @@ partial_setstate(PyObject *self, PyObject *state)
         dict = NULL;
     else
         Py_INCREF(dict);
-    Py_SETREF(pto->fn, Py_NewRef(fn));
-    Py_SETREF(pto->args, fnargs);
-    Py_SETREF(pto->kw, kw);
+    PyObject *new_fn = Py_NewRef(fn);
+    PyObject *old_fn, *old_args, *old_kw, *old_dict;
+    Py_BEGIN_CRITICAL_SECTION(pto);
+    old_fn = pto->fn;
+    old_args = pto->args;
+    old_kw = pto->kw;
+    old_dict = pto->dict;
+    /* Member descriptors acquire these pointers with optimistic atomic loads. */
+    FT_ATOMIC_STORE_PTR_RELEASE(pto->fn, new_fn);
+    FT_ATOMIC_STORE_PTR_RELEASE(pto->args, fnargs);
+    FT_ATOMIC_STORE_PTR_RELEASE(pto->kw, kw);
     pto->phcount = phcount;
-    Py_XSETREF(pto->dict, dict);
+    FT_ATOMIC_STORE_PTR_RELEASE(pto->dict, dict);
+#ifndef Py_GIL_DISABLED
     partial_setvectorcall(pto);
+#endif
+    Py_END_CRITICAL_SECTION();
+
+    /* Finalizers can re-enter the partial, so publish the whole state first. */
+    Py_DECREF(old_fn);
+    Py_DECREF(old_args);
+    Py_DECREF(old_kw);
+    /* Generic attribute lookup may still be using the displaced dictionary. */
+    _PyObject_XDecRefDelayed(old_dict);
     Py_RETURN_NONE;
 }
 
