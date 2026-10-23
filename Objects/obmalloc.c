@@ -109,7 +109,7 @@ set_mimalloc_defaults(void)
     mi_option_set_default(mi_option_purge_delay, 10);
     mi_option_set_default(mi_option_arena_purge_mult, 1);
     mi_option_set_default(mi_option_arena_purge_min_size, 64);  // KiB
-    mi_option_set_default(mi_option_page_full_retain, 2);
+    mi_option_set_default(mi_option_page_full_retain, -1);
 }
 
 #ifdef Py_GIL_DISABLED
