@@ -1876,10 +1876,11 @@ make_freplacement(PyObject *object)
     return PyUnicode_FromString(freplacement);
 }
 
-#if defined(MS_WINDOWS) || defined(__ANDROID__) || defined(__OpenBSD__)
 /* The documented numeric format codes for which the %- flag (no zero
- * padding) is emulated.  Their output is digits only, so it needs no
- * escaping before being stuffed into the format.
+ * padding) is emulated on all platforms, so behavior is consistent.
+ * Some libcs lack the flag (Windows, Android, OpenBSD), others ignore
+ * it for %-y (Apple, FreeBSD, NetBSD).  Their output is digits only,
+ * so it needs no escaping before being stuffed into the format.
  */
 static int
 is_dash_emulated(Py_UCS4 ch)
@@ -1910,7 +1911,6 @@ make_dash_replacement(PyObject *strftime, Py_UCS4 ch, PyObject *timetuple)
     }
     return stripped;
 }
-#endif
 
 /* I sure don't want to reproduce the strftime code from the time module,
  * so this imports the module and calls it.  All the hair is due to
@@ -2084,11 +2084,10 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             }
             continue;
         }
-#if defined(MS_WINDOWS) || defined(__ANDROID__) || defined(__OpenBSD__)
         else if (ch == '-' && i < flen
                  && is_dash_emulated(PyUnicode_READ_CHAR(format, i)))
         {
-            /* %-d etc. -> no zero padding; the platform lacks this flag */
+            /* %-d etc. -> no zero padding, emulated on all platforms */
             Py_UCS4 next_ch = PyUnicode_READ_CHAR(format, i);
             i++;
 
@@ -2100,7 +2099,6 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             }
             replacement = dash_replacement;
         }
-#endif
         else {
             /* percent followed by something else */
             continue;

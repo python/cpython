@@ -2919,15 +2919,16 @@ Notes:
    for  formats ``%d``, ``%m``, ``%H``, ``%I``, ``%M``, ``%S``, ``%j``, ``%U``,
    ``%W``, and ``%V``. Format ``%y`` does require a leading zero.
 
-   When used with the :meth:`~.datetime.strftime` method, leading zeroes
-   are included by default for formats ``%d``, ``%m``, ``%H``, ``%I``,
-   ``%M``, ``%S``, ``%j``, ``%U``, ``%W``, ``%V`` and ``%y``.
-   The ``%-`` flag (for example, ``%-d``) will produce non-zero-padded
-   output, except for ``%-y`` on Apple platforms, FreeBSD and NetBSD,
-   which is still zero-padded.
+   For formatting with the :meth:`~.datetime.strftime` method, leading
+   zeroes are included by default for formats ``%d``, ``%m``, ``%H``,
+   ``%I``, ``%M``, ``%S``, ``%j``, ``%U``, ``%W``, ``%V`` and ``%y``.
+   The ``%-`` flag (for example, ``%-d``) produces non-zero-padded
+   output on all platforms.
 
    .. versionchanged:: 3.16
-      Support for the ``%-`` flag was added on Windows, Android and OpenBSD.
+      The ``%-`` flag is now supported on all platforms.  It is emulated
+      where the platform C library lacks it, including on Windows, Android
+      and OpenBSD, and for ``%-y`` on Apple platforms, FreeBSD and NetBSD.
 
 (10)
    When parsing a month and day using :meth:`~.datetime.strptime`, always

@@ -15,7 +15,6 @@ import sys
 import textwrap
 import unittest
 import warnings
-import platform
 
 from array import array
 
@@ -1599,13 +1598,14 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(t.strftime(""), "") # SF bug #761337
         self.assertEqual(t.strftime('x'*1000), 'x'*1000) # SF bug #1556784
 
-        # See gh-137165
-        if platform.system() in ('Darwin', 'iOS', 'FreeBSD', 'NetBSD'):
-            self.assertEqual(t.strftime("m:%-m d:%-d y:%-y"), "m:3 d:2 y:05")
-        else:
-            if platform.system() == 'Windows':
-                self.assertEqual(t.strftime("m:%#m d:%#d y:%#y"), "m:3 d:2 y:5")
-            self.assertEqual(t.strftime("m:%-m d:%-d y:%-y"), "m:3 d:2 y:5")
+        # gh-137165: The %- flag (no zero padding) is emulated for the
+        # documented numeric codes on all platforms, so expectations are
+        # the same everywhere.  In particular, %-y gives "5" here even
+        # though Apple, FreeBSD and NetBSD libcs still zero-pad it natively.
+        self.assertEqual(t.strftime("m:%-m d:%-d y:%-y"), "m:3 d:2 y:5")
+        if sys.platform == 'win32':
+            # Windows' native %# flag still passes through to the platform.
+            self.assertEqual(t.strftime("m:%#m d:%#d y:%#y"), "m:3 d:2 y:5")
 
         self.assertEqual(t.strftime("%-j. %-U. %-W. %-V."), "61. 9. 9. 9.")
 
@@ -4149,9 +4149,9 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         # A naive object replaces %z, %:z and %Z with empty strings.
         self.assertEqual(t.strftime("'%z' '%:z' '%Z'"), "'' '' ''")
 
-        # See gh-137165
+        # gh-137165: %-H, %-M and %-S are emulated on all platforms.
         self.assertEqual(t.strftime('%-H %-M %-S %f'), "1 2 3 000004")
-        if platform.system() == 'Windows':
+        if sys.platform == 'win32':
             self.assertEqual(t.strftime('%#H %#M %#S %f'), "1 2 3 000004")
 
         t_zero = self.theclass(0, 0, 0, 4)

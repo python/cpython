@@ -296,11 +296,11 @@ def _wrap_strftime(object, format, timetuple):
                         push('{:04}'.format(year))
                         if ch == 'F':
                             push('-{:02}-{:02}'.format(*timetuple[1:3]))
-                # The platform's strftime() lacks the %- flag (no zero
-                # padding), so emulate it for the documented numeric codes.
-                elif (ch == '-' and i < n and format[i] in 'dmHIMSjUWVy' and
-                        (sys.platform in ('win32', 'android') or
-                         sys.platform.startswith('openbsd'))):
+                # Emulate the %- flag (no zero padding) for the documented
+                # numeric codes, so behavior is consistent on all platforms.
+                # Some libcs lack the flag (Windows, Android, OpenBSD),
+                # others ignore it for %-y (Apple, FreeBSD, NetBSD).
+                elif ch == '-' and i < n and format[i] in 'dmHIMSjUWVy':
                     push(_make_dash_replacement(format[i], timetuple))
                     i += 1
                 else:
