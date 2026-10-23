@@ -285,7 +285,7 @@ ZipFile objects
       Added support for specifying member name encoding for reading
       metadata in the zipfile's directory and file headers.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Deleting a writable, open :class:`zipfile.ZipFile` now emits a
       :exc:`ResourceWarning`. Use as a :term:`context manager` or call
       :meth:`~zipfile.ZipFile.close` explicitly.
@@ -578,7 +578,7 @@ ZipFile objects
       :class:`ZipInfo` to :meth:`repack` to ensure the data is removed
       regardless of how the entry was written.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. method:: ZipFile.repack(removed=None, *, \
@@ -641,7 +641,7 @@ ZipFile objects
       recommended to provide the *removed* argument for better reliability and
       performance.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 The following data attributes are also available:
@@ -721,6 +721,10 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
 .. method:: Path.iterdir()
 
    Enumerate the children of the current directory.
+
+   .. versionchanged:: 3.16
+      Raises :exc:`NotADirectoryError` when the current context does not
+      reference a directory. Previously, it raised :exc:`ValueError`.
 
 .. method:: Path.is_dir()
 

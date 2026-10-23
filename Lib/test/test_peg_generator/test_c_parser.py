@@ -18,6 +18,7 @@ if support.check_cflags_pgo():
 
 test_tools.skip_if_missing("peg_generator")
 with test_tools.imports_under_tool("peg_generator"):
+    from pegen.build import build_parser
     from pegen.grammar_parser import GeneratedParser as GrammarParser
     from pegen.testutil import (
         parse_string,
@@ -139,6 +140,9 @@ class TestCParser(unittest.TestCase):
 
     def run_test(self, grammar_source, test_source):
         self.build_extension(grammar_source)
+        self.run_extension_test(test_source)
+
+    def run_extension_test(self, test_source):
         test_source = textwrap.indent(textwrap.dedent(test_source), 8 * " ")
         assert_python_ok(
             "-c",
@@ -673,6 +677,36 @@ class TestCParser(unittest.TestCase):
         self.check_input_strings_for_grammar(valid_cases, invalid_cases)
         """
         self.run_test(grammar_source, test_source)
+
+    def test_included_grammar_file(self) -> None:
+        # The rules of an included grammar file are compiled from a separate
+        # C file, in the same subdirectory as the grammar file; rules call
+        # each other across the two files.
+        grammar_dir = self.enterContext(os_helper.temp_dir())
+        with open(os.path.join(grammar_dir, "main.gram"), "w") as f:
+            f.write(textwrap.dedent("""\
+                @include "errors/invalid.gram"
+                start: stmt+ NEWLINE? ENDMARKER
+                stmt: invalid_stmt | NAME '=' expr
+                expr: NAME | NUMBER
+                """))
+        os.mkdir(os.path.join(grammar_dir, "errors"))
+        with open(os.path.join(grammar_dir, "errors", "invalid.gram"), "w") as f:
+            f.write(textwrap.dedent("""\
+                invalid_stmt: expr '==' expr { RAISE_SYNTAX_ERROR("use '=' to assign") }
+                """))
+        grammar, _, _ = build_parser(Path(grammar_dir, "main.gram"))
+        generate_parser_c_extension(grammar, Path('.'), library_dir=self.library_dir)
+        self.assertTrue(os.path.exists(os.path.join("errors", "parse_invalid.c")))
+        self.run_extension_test("""
+        self.check_input_strings_for_grammar(
+            valid_cases=["a = b", "a = 1"],
+            invalid_cases=["a =", "a == "],
+        )
+        with self.assertRaises(SyntaxError) as e:
+            parse.parse_string("a == b", mode=0)
+        self.assertIn("use '=' to assign", str(e.exception))
+        """)
 
     def test_forced(self) -> None:
         grammar_source = """

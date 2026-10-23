@@ -1,3 +1,0 @@
-Fix a crash in :c:func:`PyErr_GivenExceptionMatches` when evaluating deeply
-nested exception tuples. The recursion is now bounded, and exceeding the
-limit is reported as an unraisable exception.

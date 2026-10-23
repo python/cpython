@@ -6,6 +6,7 @@ import pickle
 import sys
 import threading
 import time
+import tracemalloc
 import unittest
 import warnings
 import weakref
@@ -1448,6 +1449,41 @@ def _to_memoryview(buf):
 class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
     shutdown_error = "LookupError: unknown encoding: ascii"
 
+    def test_write_newline_replace_returns_non_string(self):
+        class Text(str):
+            def replace(self, *args):
+                return None
+
+        with self.TextIOWrapper(self.BytesIO(), newline='\r\n') as stream:
+            with self.assertRaisesRegex(TypeError, 'replace.*str'):
+                stream.write(Text('a\n'))
+
+    def test_write_newline_replace_changes_stream(self):
+        def fail_init(stream, buffer):
+            with self.assertRaises(LookupError):
+                stream.__init__(buffer, encoding='nonexistent-encoding')
+
+        actions = (
+            (lambda stream, buffer: stream.close(), ValueError, 'closed'),
+            (lambda stream, buffer: stream.detach(), ValueError, 'detached'),
+            (lambda stream, buffer: stream.__init__(buffer),
+             self.UnsupportedOperation, 'not writable'),
+            (fail_init, ValueError, 'uninitialized'),
+        )
+        for action, error, message in actions:
+            with self.subTest(message=message):
+                with (self.BytesIO() as raw,
+                      self.BufferedReader(self.BytesIO()) as readonly):
+                    stream = self.TextIOWrapper(raw, newline='\r\n')
+
+                    class Text(str):
+                        def replace(self, *args):
+                            action(stream, readonly)
+                            return 'a\r\n'
+
+                    with self.assertRaisesRegex(error, message):
+                        stream.write(Text('a\n'))
+
     def test_chunk_size(self):
         t = self.TextIOWrapper(self.BytesIO(), encoding="utf-8")
         self.assertGreater(t._CHUNK_SIZE, 0)
@@ -1544,6 +1580,21 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
         t.write("ghi")
         t.write("x"*chunk_size)
         self.assertEqual([b"abcdef", b"ghi", b"x"*chunk_size], buf._write_stack)
+
+    def test_write_empty_no_memory_growth(self):
+        # gh-151814: Writing empty string should have stable memory usage.
+        t = self.TextIOWrapper(self.BytesIO())
+        nwrites = 200_000
+        tracemalloc.start()
+        try:
+            for _ in range(nwrites):
+                t.write("")
+            _, peak = tracemalloc.get_traced_memory()
+        finally:
+            tracemalloc.stop()
+
+        # No longer leaks several bytes per write.
+        self.assertLess(peak, nwrites)
 
     def test_issue119506(self):
         chunk_size = 8192
