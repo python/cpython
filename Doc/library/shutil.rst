@@ -64,8 +64,8 @@ Directory and files operations
 
    The destination location must be writable; otherwise, an :exc:`OSError`
    exception will be raised. If *dst* already exists, it will be replaced.
-   Special files such as character or block devices and pipes cannot be
-   copied with this function.
+   Special files such as character or block devices, pipes, and sockets cannot
+   be copied with this function.
 
    If *follow_symlinks* is false and *src* is a symbolic link,
    a new symbolic link will be created instead of copying the
@@ -87,10 +87,13 @@ Directory and files operations
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
+   .. versionchanged:: 3.15
+      :exc:`SpecialFileError` is now also raised for sockets and device files.
+
 .. exception:: SpecialFileError
 
    This exception is raised when :func:`copyfile` or :func:`copytree` attempt
-   to copy a named pipe.
+   to copy a named pipe, socket, or device file.
 
    .. versionadded:: 2.7
 
@@ -239,7 +242,7 @@ Directory and files operations
 
 .. function:: copytree(src, dst, symlinks=False, ignore=None, \
               copy_function=copy2, ignore_dangling_symlinks=False, \
-              dirs_exist_ok=False)
+              dirs_exist_ok=False, *, copy_dir_stat=True)
 
    Recursively copy an entire directory tree rooted at *src* to a directory
    named *dst* and return the destination directory.  All intermediate
@@ -247,6 +250,12 @@ Directory and files operations
 
    Permissions and times of directories are copied with :func:`copystat`,
    individual files are copied using :func:`~shutil.copy2`.
+
+   If *copy_dir_stat* is false, directory metadata is not copied with
+   :func:`copystat`, e.g. to copy a read-only tree into a writable one.
+   It defaults to true.  Note that file metadata is always handled by
+   *copy_function*: use e.g. ``copy_function=shutil.copyfile`` to skip
+   that as well.
 
    If *symlinks* is true, symbolic links in the source tree are represented as
    symbolic links in the new tree and the metadata of the original links will
@@ -303,6 +312,9 @@ Directory and files operations
    .. versionchanged:: 3.8
       Added the *dirs_exist_ok* parameter.
 
+   .. versionchanged:: 3.16
+      Added the *copy_dir_stat* parameter.
+
 .. function:: rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None)
 
    .. index:: single: directory; deleting
@@ -312,6 +324,12 @@ Directory and files operations
    from failed removals will be ignored; if false or omitted, such errors are
    handled by calling a handler specified by *onexc* or *onerror* or, if both
    are omitted, exceptions are propagated to the caller.
+
+   If *path* is a symbolic link to a directory followed by a trailing path
+   separator, such as ``'link/'``, the operating system resolves the link, so
+   :func:`!rmtree` deletes the contents of the directory it points to and then
+   fails to remove *path* itself.  :class:`pathlib.Path` strips trailing
+   separators, so ``rmtree(Path('link/'))`` refuses the link as usual.
 
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>`.

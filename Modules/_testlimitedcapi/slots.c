@@ -1,3 +1,4 @@
+// Need limited C API version 3.15 for PyType_FromSlots()
 #define Py_LIMITED_API 0x030f0000
 
 #include "parts.h"
@@ -607,6 +608,47 @@ module_from_null_slot(PyObject* Py_UNUSED(module), PyObject *args)
     }, spec);
 }
 
+
+
+static PyObject *
+type_from_base_slots(
+    PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    PyObject *base = NULL;
+    PyObject *bases = NULL;
+    if (!PyArg_ParseTupleAndKeywords(
+        args, kwargs, "|OO",
+        (char*[]){"base", "bases", NULL},
+        &base, &bases))
+    {
+        return NULL;
+    }
+
+    PySlot empty_slots[] = {
+        PySlot_END
+    };
+
+    PySlot base_slots[] = {
+        PySlot_DATA(Py_tp_base, base),
+        PySlot_END
+    };
+
+    PySlot bases_slots[] = {
+        PySlot_DATA(Py_tp_bases, bases),
+        PySlot_END
+    };
+
+    PySlot slots[] = {
+        PySlot_STATIC_DATA(Py_tp_name, "_testcapi.HeapCTypeWithBases"),
+        PySlot_UINT64(Py_tp_flags, Py_TPFLAGS_BASETYPE),
+        PySlot_DATA(Py_slot_subslots, base ? base_slots: empty_slots),
+        PySlot_DATA(Py_slot_subslots, bases ? bases_slots: empty_slots),
+        PySlot_END
+    };
+
+    return PyType_FromSlots(slots);
+}
+
 static PyMethodDef _TestMethods[] = {
     {"type_from_slots", type_from_slots, METH_VARARGS},
     {"module_from_gil_slot", module_from_gil_slot, METH_VARARGS},
@@ -614,6 +656,8 @@ static PyMethodDef _TestMethods[] = {
     {"type_from_null_spec_slot", type_from_null_spec_slot, METH_VARARGS},
     {"module_from_slots", module_from_slots, METH_VARARGS},
     {"module_from_null_slot", module_from_null_slot, METH_VARARGS},
+    {"type_from_base_slots", _PyCFunction_CAST(type_from_base_slots),
+     METH_VARARGS | METH_KEYWORDS},
     {NULL},
 };
 static PyMethodDef *TestMethods = _TestMethods;

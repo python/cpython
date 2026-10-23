@@ -40,6 +40,10 @@ Pending removal in Python 3.18
   * :c:func:`!_PyUnicodeWriter_PrepareKind`: (no replacement).
   * :c:func:`!_Py_HashPointer`: use :c:func:`Py_HashPointer`.
   * :c:func:`!_Py_fopen_obj`: use :c:func:`Py_fopen`.
+  * :c:func:`PyGen_New`: (no replacement).
+  * :c:func:`PyGen_NewWithQualName`: (no replacement).
+  * :c:func:`PyCoro_New`: (no replacement).
+  * :c:func:`PyAsyncGen_New`: (no replacement).
 
   The `pythoncapi-compat project
   <https://github.com/python/pythoncapi-compat/>`__ can be used to get

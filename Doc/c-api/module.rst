@@ -128,9 +128,8 @@ Module Objects
    The returned buffer is only valid until the module's :py:attr:`~module.__file__` attribute
    is reassigned or the module is destroyed.
 
-   .. deprecated:: 3.2
-      :c:func:`PyModule_GetFilename` raises :exc:`UnicodeEncodeError` on
-      unencodable filenames, use :c:func:`PyModule_GetFilenameObject` instead.
+   :c:func:`PyModule_GetFilename` raises :exc:`UnicodeEncodeError` on
+   unencodable filenames, use :c:func:`PyModule_GetFilenameObject` instead.
 
 
 .. _c_module_slots:
@@ -247,6 +246,15 @@ Feature slots
    If ``Py_mod_multiple_interpreters`` is not specified, the import
    machinery defaults to ``Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED``.
 
+   For historical reasons, the values are declared as pointers (``void *``).
+   When using :c:type:`PySlot` arrays, use :c:macro:`PySlot_DATA` for
+   :c:macro:`!Py_mod_multiple_interpreters`:
+
+   .. code-block:: c
+
+      PySlot_DATA(Py_mod_multiple_interpreters,
+                  Py_MOD_PER_INTERPRETER_GIL_SUPPORTED)
+
    .. versionadded:: 3.12
 
 .. c:macro:: Py_mod_gil
@@ -271,6 +279,14 @@ Feature slots
 
    If ``Py_mod_gil`` is not specified, the import machinery defaults to
    ``Py_MOD_GIL_USED``.
+
+   For historical reasons, the values are declared as pointers (``void *``).
+   When using :c:type:`PySlot` arrays, use :c:macro:`PySlot_DATA` for
+   :c:macro:`!Py_mod_gil`:
+
+   .. code-block:: c
+
+      PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED)
 
    .. versionadded:: 3.13
 
@@ -471,7 +487,7 @@ defining the module state.
 
    .. versionadded:: 3.15
 
-      Use :c:member:`PyModuleDef.m_size` instead to support previous versions.
+      Use :c:member:`PyModuleDef.m_traverse` instead to support previous versions.
 
 .. c:macro:: Py_mod_state_clear
 
@@ -836,7 +852,7 @@ struct:
 
    .. versionadded:: 3.5
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.15
 
       Prefer :c:func:`PyModule_FromSlotsAndSpec` in new code.
 
@@ -860,7 +876,7 @@ struct:
 
    .. versionadded:: 3.5
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.15
 
       Prefer :c:func:`PyModule_FromSlotsAndSpec` in new code.
 
@@ -870,7 +886,7 @@ struct:
 
    .. versionadded:: 3.5
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.15
 
       To run a module's own execution slots, prefer :c:func:`PyModule_Exec`,
       which works on modules that were not created from a
@@ -957,8 +973,8 @@ or code that creates modules dynamically.
 
 .. c:function:: int PyModule_Add(PyObject *module, const char *name, PyObject *value)
 
-   Similar to :c:func:`PyModule_AddObjectRef`, but "steals" a reference
-   to *value*.
+   Similar to :c:func:`PyModule_AddObjectRef`, but ":term:`steals <steal>`"
+   a reference to *value* (even on error).
    It can be called with a result of function that returns a new reference
    without bothering to check its result or even saving it to a variable.
 
@@ -973,8 +989,8 @@ or code that creates modules dynamically.
 
 .. c:function:: int PyModule_AddObject(PyObject *module, const char *name, PyObject *value)
 
-   Similar to :c:func:`PyModule_AddObjectRef`, but steals a reference to
-   *value* on success (if it returns ``0``).
+   Similar to :c:func:`PyModule_AddObjectRef`, but :term:`steals <steal>`
+   a reference to *value* on success (if it returns ``0``).
 
    The new :c:func:`PyModule_Add` or :c:func:`PyModule_AddObjectRef`
    functions are recommended, since it is

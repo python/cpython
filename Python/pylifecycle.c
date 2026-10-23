@@ -11,7 +11,7 @@
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
 #include "pycore_floatobject.h"   // _PyFloat_InitTypes()
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
-#include "pycore_global_objects_fini_generated.h"  // _PyStaticObjects_CheckRefcnt()
+#include "pycore_global_objects_fini_generated.h"  // _PyStaticObjects_CheckAll()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interpolation.h" // _PyInterpolation_InitTypes()
 #include "pycore_long.h"          // _PyLong_InitTypes()
@@ -429,7 +429,8 @@ interpreter_update_config(PyThreadState *tstate, int only_update_path_config)
         }
     }
 
-    tstate->interp->long_state.max_str_digits = config->int_max_str_digits;
+    _Py_atomic_store_int(&tstate->interp->long_state.max_str_digits,
+                         config->int_max_str_digits);
 
     // Update the sys module for the new configuration
     if (_PySys_UpdateConfig(tstate) < 0) {
@@ -921,6 +922,16 @@ pycore_init_builtins(PyThreadState *tstate)
 
     if (_PyBuiltins_AddExceptions(bimod) < 0) {
         return _PyStatus_ERR("failed to add exceptions to builtins");
+    }
+
+    /* The Python-implemented builtins live in the frozen _pybuiltins module.
+       Programs/_freeze_module has no frozen modules (it's what creates
+       them) and opts out via _install_importlib, like the import system. */
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    if (config->_install_importlib) {
+        if (_PyBuiltin_InitPythonFunctions(builtins_dict) < 0) {
+            return _PyStatus_ERR("failed to add Python-implemented builtins");
+        }
     }
 
     interp->builtins_copy = PyDict_Copy(interp->builtins);
@@ -2103,7 +2114,7 @@ finalize_interp_types(PyInterpreterState *interp)
 #endif
 
 #ifdef Py_DEBUG
-    _PyStaticObjects_CheckRefcnt(interp);
+    _PyStaticObjects_CheckAll(interp);
 #endif
 }
 
@@ -3069,7 +3080,18 @@ create_stdio(const PyConfig *config, PyObject* io,
     newline = "\n";
 #endif
 
-    PyObject *encoding_str = PyUnicode_FromWideChar(encoding, -1);
+    PyObject *encoding_str;
+    if (encoding != NULL) {
+        encoding_str = PyUnicode_FromWideChar(encoding, -1);
+    }
+    else {
+        /* gh-86427: use the encoding of the device. */
+        encoding_str = _Py_device_encoding(fd);
+        if (encoding_str == Py_None) {
+            Py_DECREF(encoding_str);
+            encoding_str = _Py_GetLocaleEncodingObject();
+        }
+    }
     if (encoding_str == NULL) {
         Py_CLEAR(buf);
         goto error;
@@ -3731,7 +3753,9 @@ fatal_error(int fd, int header, const char *prefix, const char *msg,
        This function already did its best to display a traceback.
        Disable faulthandler to prevent writing a second traceback
        on abort(). */
-    _PyFaulthandler_Fini();
+    if (has_tstate_and_gil) {
+        _PyFaulthandler_Fini();
+    }
 
     /* Check if the current Python thread hold the GIL */
     if (has_tstate_and_gil) {
@@ -3806,10 +3830,9 @@ _Py_FatalRefcountErrorFunc(const char *func, const char *msg)
 void _Py_NO_RETURN
 Py_ExitStatusException(PyStatus status)
 {
-    if (_PyStatus_IS_EXIT(status)) {
-        exit(status.exitcode);
-    }
-    else if (_PyStatus_IS_ERROR(status)) {
+    assert(!_PyStatus_IS_EXIT(status));
+
+    if (_PyStatus_IS_ERROR(status)) {
         fatal_error(fileno(stderr), 1, status.func, status.err_msg, 1);
     }
     else {
@@ -3824,8 +3847,8 @@ handle_thread_shutdown_exception(PyThreadState *tstate)
     assert(tstate != NULL);
     assert(_PyErr_Occurred(tstate));
     PyInterpreterState *interp = tstate->interp;
-    assert(interp->threads.head != NULL);
     _PyEval_StopTheWorld(interp);
+    assert(interp->threads.head != NULL);
 
     // We don't have to worry about locking this because the
     // world is stopped.

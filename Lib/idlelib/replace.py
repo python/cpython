@@ -122,12 +122,13 @@ class ReplaceDialog(SearchDialogBase):
     def replace_all(self, event=None):
         """Handle the Replace All button.
 
-        Search text for occurrences of the Find value and replace
-        each of them.  The 'wrap around' value controls the start
-        point for searching.  If wrap isn't set, then the searching
-        starts at the first occurrence after the current selection;
-        if wrap is set, the replacement starts at the first line.
-        The replacement is always done top-to-bottom in the text.
+        Search text for occurrences of the Find value and replace each
+        of them.  The 'wrap around' and direction values control which
+        occurrences are replaced.  With wrap around, every occurrence is
+        replaced.  Without it, a forward search replaces occurrences from
+        the current position to the end of the text, and a backward search
+        replaces occurrences from the beginning of the text to the current
+        position.  The replacement is always done top-to-bottom.
         """
         prog = self.engine.getprog()
         if not prog:
@@ -142,7 +143,16 @@ class ReplaceDialog(SearchDialogBase):
         text.tag_remove("hit", "1.0", "end")
         line = res[0]
         col = res[1].start()
+        # For a backward search without wrap, replace top-to-bottom from
+        # the start of the text down to the first match at or above the
+        # current position (gh-71956).  A mark tracks that stop point.
+        stop = None
         if self.engine.iswrap():
+            line = 1
+            col = 0
+        elif self.engine.isback():
+            stop = "replace_all_stop"
+            text.mark_set(stop, "%d.%d" % (line, res[1].end()))
             line = 1
             col = 0
         ok = True
@@ -152,12 +162,13 @@ class ReplaceDialog(SearchDialogBase):
         while res := self.engine.search_forward(
                 text, prog, line, col, wrap=False, ok=ok):
             line, m = res
-            chars = text.get("%d.0" % line, "%d.0" % (line+1))
+            i, j = m.span()
+            if stop is not None and text.compare("%d.%d" % (line, i), ">=", stop):
+                break
             orig = m.group()
             new = self._replace_expand(m, repl)
             if new is None:
                 break
-            i, j = m.span()
             first = "%d.%d" % (line, i)
             last = "%d.%d" % (line, j)
             if new == orig:
@@ -170,6 +181,8 @@ class ReplaceDialog(SearchDialogBase):
                     text.insert(first, new, self.insert_tags)
             col = i + len(new)
             ok = False
+        if stop is not None:
+            text.mark_unset(stop)
         text.undo_block_stop()
         if first and last:
             self.show_hit(first, last)

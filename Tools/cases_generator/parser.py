@@ -20,7 +20,6 @@ from parsing import (  # noqa: F401
     MacroIfStmt,
 )
 
-import pprint
 
 CodeDef = InstDef | LabelDef
 

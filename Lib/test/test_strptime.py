@@ -236,7 +236,8 @@ class StrptimeTests(unittest.TestCase):
             directive = bad_format[1:].rstrip()
             with (self.subTest(format=bad_format),
                   self.assertRaisesRegex(ValueError,
-                    f"'{re.escape(directive)}' is a bad directive in format ")):
+                    f"{re.escape(repr(directive))} is a bad directive "
+                    f"in format ")):
                 _strptime._strptime_time("2005", bad_format)
 
         msg_week_no_year_or_weekday = r"ISO week directive '%V' must be used with " \
@@ -302,6 +303,11 @@ class StrptimeTests(unittest.TestCase):
     def test_unconverteddata(self):
         # Check ValueError is raised when there is unconverted data
         self.assertRaises(ValueError, _strptime._strptime_time, "10 12", "%m")
+
+        # gh-141540: a trailing newline must be visible in the message
+        with self.assertRaisesRegex(ValueError,
+                                    r"unconverted data remains: '\\n'"):
+            _strptime._strptime_time("2001-02-03\n", "%Y-%m-%d")
 
     def roundtrip(self, fmt, position, time_tuple=None):
         """Helper fxn in testing."""
@@ -451,7 +457,8 @@ class StrptimeTests(unittest.TestCase):
 
         with self.assertRaises(ValueError) as err:
             _strptime._strptime("-01:3030", "%z")
-        self.assertEqual("Inconsistent use of : in -01:3030", str(err.exception))
+        self.assertEqual("Inconsistent use of : in '-01:3030'",
+                         str(err.exception))
         with self.assertRaises(ValueError) as err:
             _strptime._strptime("-01:3030", "%:z")
         self.assertEqual("Missing colon in %:z before '30', got '-01:3030'",
