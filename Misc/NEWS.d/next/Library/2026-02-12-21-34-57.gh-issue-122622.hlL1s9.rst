@@ -1,0 +1,3 @@
+Add ``sys._preexec`` hook that is called with the command line string
+before each statement is executed in the interactive REPL. This allows
+external tools to implement features such as shell integration.
