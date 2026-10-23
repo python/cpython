@@ -87,7 +87,7 @@ non-working commands.
 When you first install a runtime, you will likely be prompted to add a directory
 to your :envvar:`PATH`. This is optional, if you prefer to use the ``py``
 command, but is offered for those who prefer the full range of aliases (such
-as ``python3.14.exe``) to be available. The directory will be
+as |python_x_dot_y_exe_literal|) to be available. The directory will be
 :file:`%LocalAppData%\\Python\\bin` by default, but may be customized by an
 administrator. Click Start and search for "Edit environment variables for your
 account" for the system settings page to add the path.
@@ -158,9 +158,9 @@ version, potentially with the platform. For compatibility, the ``V:`` may be
 omitted in cases where the tag refers to an official release and starts with
 ``3``.
 
-.. code::
+.. parsed-literal::
 
-   $> py -V:3.14 ...
+   $> py -V:|version| ...
    $> py -V:3-arm64 ...
 
 Runtimes from other distributors may require the *company* to be included as
@@ -252,9 +252,9 @@ source. Passing either of these options will search the online index for
 runtimes that can be installed. The result shown by ``py list --online --one
 <TAG>`` will match the runtime that would be installed by ``py install <TAG>``.
 
-.. code::
+.. parsed-literal::
 
-   $> py list --online 3.14
+   $> py list --online |version|
 
 For compatibility with the old launcher, the ``--list``, ``--list-paths``,
 ``-0`` and ``-0p`` commands (e.g. ``py -0p``) are retained. They do not allow
@@ -289,9 +289,11 @@ To see the available runtime variants, run::
    py list --online
 
 To install a specific variant, include it in the tag passed to
-``py install``::
+``py install``:
 
-   py install PythonTest\3.14
+.. parsed-literal::
+
+   py install PythonTest\\\ |version|
 
 The ``--source=<URL>`` option allows overriding the online index that is used to
 obtain runtimes. This may be used with an offline index, as shown in
@@ -312,7 +314,7 @@ installs.
 
 Passing ``--refresh`` will update all registrations for installed runtimes. This
 will recreate Start menu shortcuts, registry keys, and global aliases (such as
-``python3.14.exe`` or for any installed scripts). These are automatically
+|python_x_dot_y_exe_literal| or for any installed scripts). These are automatically
 refreshed on installation of any runtime, but may need to be manually refreshed
 after installing packages.
 
@@ -456,10 +458,10 @@ customization.
    * - ``default_platform``
      - ``PYTHON_MANAGER_DEFAULT_PLATFORM``
      - The preferred default platform to launch or install.
-       This is treated as a suffix to the specified tag, such that ``py -V:3.14``
-       would prefer an install for ``3.14-64`` if it exists
+       This is treated as a suffix to the specified tag, such that |py_v_x_dot_y_literal|
+       would prefer an install for |x_dot_y_64_literal| if it exists
        (and ``default_platform`` is ``-64``),
-       but will use ``3.14`` if no tagged install exists.
+       but will use |x_dot_y_literal| if no tagged install exists.
 
    * - ``logs_dir``
      - ``PYTHON_MANAGER_LOGS``
@@ -531,7 +533,7 @@ customization.
 
    * - ``global_dir``
      - (none)
-     - Specify the directory where global commands (such as ``python3.14.exe``
+     - Specify the directory where global commands (such as |python_x_dot_y_exe_literal|
        and ``pip.exe``) are stored.
        This directory should be added to your :envvar:`PATH` to make the
        commands available from your terminal.
@@ -858,16 +860,16 @@ Installing free-threaded binaries
 Pre-built distributions of the free-threaded build are available
 by installing tags with the ``t`` suffix.
 
-.. code::
+.. parsed-literal::
 
-   $> py install 3.14t
-   $> py install 3.14t-arm64
-   $> py install 3.14t-32
+   $> py install |version|\ t
+   $> py install |version|\ t-arm64
+   $> py install |version|\ t-32
 
 This will install and register as normal. If you have no other runtimes
 installed, then ``python`` will launch this one. Otherwise, you will need to use
-``py -V:3.14t ...`` or, if you have added the global aliases directory to your
-:envvar:`PATH` environment variable, the ``python3.14t.exe`` commands.
+|py_v_x_dot_y_t_literal| or, if you have added the global aliases directory to your
+:envvar:`PATH` environment variable, the |python_x_dot_y_t_exe_literal| commands.
 
 
 .. _pymanager-index-signatures:
@@ -1152,14 +1154,14 @@ directly accessed by end-users.
 To install an embedded distribution, we recommend using ``py install`` with the
 ``--target`` option:
 
-.. code::
+.. parsed-literal::
 
-   $> py install 3.14-embed --target=<directory>
+   $> py install |version|-embed --target=<directory>
 
 When extracted, the embedded distribution is (almost) fully isolated from the
 user's system, including environment variables, system registry settings, and
 installed packages. The standard library is included as pre-compiled and
-optimized ``.pyc`` files in a ZIP, and ``python3.dll``, ``python313.dll``,
+optimized ``.pyc`` files in a ZIP, and ``python3.dll``, |python_xy_dll_literal|,
 ``python.exe`` and ``pythonw.exe`` are all provided. Tcl/tk (including all
 dependents, such as Idle), pip and the Python documentation are not included.
 
@@ -1293,7 +1295,7 @@ for the 64-bit version, `pythonx86-freethreaded
 <https://www.nuget.org/packages/pythonx86-freethreaded>`_ for the 32-bit
 version, and `pythonarm64-freethreaded
 <https://www.nuget.org/packages/pythonarm64-freethreaded>`_ for the ARM64
-version. These packages contain both the ``python3.13t.exe`` and
+version. These packages contain both the |python_x_dot_y_t_exe_literal| and
 ``python.exe`` entry points, both of which run free threaded.
 
 
@@ -1467,7 +1469,7 @@ following advice will prevent conflicts with other installations:
   environment variables, and also ignore :mod:`site` unless ``import site`` is
   listed.
 
-* If you are loading :file:`python3.dll` or :file:`python37.dll` in your own
+* If you are loading :file:`python3.dll` or |python_xy_dll_literal| in your own
   executable, explicitly set :c:member:`PyConfig.module_search_paths` before
   :c:func:`Py_InitializeFromConfig`.
 
