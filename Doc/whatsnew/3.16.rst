@@ -244,6 +244,10 @@ ctypes
   implicitly converted when passed for a :func:`~ctypes.POINTER` argument.
   (Contributed by Peter Bierma in :gh:`71990`.)
 
+* :ref:`Callback functions <ctypes-callback-functions>` can now return
+  :class:`~ctypes.Structure` and :class:`~ctypes.Union` instances by value.
+  (Contributed by Russell Keith-Magee in :gh:`49960`.)
+
 
 curses
 ------
@@ -661,6 +665,15 @@ shlex
   (Contributed by Jay Berry in :gh:`148846`.)
 
 
+shutil
+------
+
+* Add keyword-only *copy_dir_stat* parameter to :func:`shutil.copytree`:
+  set it to false to skip copying directory metadata with
+  :func:`shutil.copystat`, e.g. when copying a read-only tree.
+  (Contributed by Łukasz Langa in :gh:`89721`.)
+
+
 socket
 ------
 
@@ -969,6 +982,16 @@ zlib
 
 Optimizations
 =============
+
+datetime and time
+-----------------
+
+* :meth:`datetime.datetime.strptime`, :meth:`datetime.date.strptime`,
+  :meth:`datetime.time.strptime`, and :func:`time.strptime` are faster
+  for common numeric formats such as ``%Y-%m-%d`` and
+  ``%Y-%m-%d %H:%M:%S``.
+  (Contributed by Paul Ganssle in :gh:`158252`, based on work by
+  Stan Ulbrych.)
 
 re
 --

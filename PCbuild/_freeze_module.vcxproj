@@ -194,6 +194,7 @@
     <ClCompile Include="..\PC\invalid_parameter_handler.c" />
     <ClCompile Include="..\PC\msvcrtmodule.c" />
     <ClCompile Include="..\PC\winreg.c" />
+    <ClCompile Include="..\Python\_strptime.c" />
     <ClCompile Include="..\Python\_warnings.c" />
     <ClCompile Include="..\Python\asdl.c" />
     <ClCompile Include="..\Python\assemble.c" />

@@ -5,7 +5,7 @@ import weakref
 
 from ast import Or
 from functools import partial
-from threading import Barrier, Thread
+from threading import Barrier, Event, Thread
 from unittest import TestCase
 
 try:
@@ -436,6 +436,101 @@ class TestDict(TestCase):
                 leave.wait()
 
         threading_helper.run_concurrently([reader, writer])
+
+    def test_racing_dealloc_and_split_dict_resize(self):
+        # gh-158198: an object's inline-values __dict__ escapes to another
+        # thread, which converts it to a combined table (by adding a non-str
+        # key) while the owning thread drops the last reference to the object.
+        NATTRS = 20
+
+        class C:
+            def __init__(self):
+                for i in range(NATTRS):
+                    setattr(self, f"a{i}", i)
+
+        def make_pair():
+            slot = [None]
+            done = Event()
+
+            def owner():
+                try:
+                    for j in range(2000):
+                        o = C()
+                        for i in range(NATTRS):
+                            self.assertEqual(getattr(o, f"a{i}"), i)
+                        slot[0] = o.__dict__
+                        for _ in range(j % 16):
+                            pass
+                        del o
+                finally:
+                    done.set()
+
+            def converter():
+                while not done.is_set():
+                    d = slot[0]
+                    if d is not None:
+                        d[0] = 0
+                        slot[0] = None
+
+            return [owner, converter]
+
+        threading_helper.run_concurrently(make_pair() + make_pair())
+
+    def test_racing_dict_update_and_method_lookup_with_inline_values(self):
+        # gh-149816: sub-case 108
+        # The race below checks that a detached dict is still valid
+        # when racing setattr with __dict__ replacement
+        class Target:
+            pass
+
+        def appender(obj: Target, start: Barrier, iter_times: int) -> None:
+            start.wait()
+            index = 0
+            for _ in range(iter_times):
+                setattr(obj, f"probe_{index}", index)
+                index += 1
+                time.sleep(0)
+
+        def replacer(obj: Target, start: Barrier, iter_times: int, churn_size: int) -> None:
+            start.wait()
+            for _ in range(iter_times):
+                old_dict = obj.__dict__
+                obj.__dict__ = {}
+                del old_dict
+                time.sleep(0)
+                # create a list of dicts to trigger a realloc of the dict's table
+                # and ensure that the old dict is not used after it is deleted
+                realloc_trigger_list = [{"k": j} for j in range(churn_size)]
+                del realloc_trigger_list
+
+        def race(iter_times: int,
+                 churn_size: int,
+                 appender_threads: int,
+                 replacer_threads: int) -> None:
+            obj = Target()
+            setattr(obj, "origin", 0)
+            _ = obj.__dict__  # Access __dict__ to ensure it's initialized
+
+            start = Barrier(appender_threads + replacer_threads)
+            threads = []
+            for _ in range(appender_threads):
+                threads.append(Thread(target=appender, args=(obj, start, iter_times),
+                                      name="appender"))
+            for _ in range(replacer_threads):
+                threads.append(Thread(target=replacer, args=(obj, start, iter_times, churn_size),
+                                      name="replacer"))
+
+            with threading_helper.catch_threading_exception() as cm:
+                with threading_helper.start_threads(threads):
+                    pass
+                if cm.exc_type is not None:
+                    raise cm.exc_value
+
+        ITER_TIMES = 2_000
+        APPENDER_THREADS = 8
+        REPLACER_THREADS = 8
+        CHURN_SIZE = 512
+        race(ITER_TIMES, CHURN_SIZE, APPENDER_THREADS, REPLACER_THREADS)
 
 if __name__ == "__main__":
     unittest.main()
