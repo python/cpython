@@ -2460,6 +2460,40 @@ PyInit_cmfi_sp_pkg(void)
     return PyModuleDef_Init(&cmfi_sp_pkg_def);
 }
 
+
+// Modules with non-ASCII names: multi-phase init is supported,
+// single-phase init is not.
+static PyModuleDef_Slot cmfi_nonascii_mp_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL},
+};
+
+static PyModuleDef cmfi_nonascii_mp_def = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "nonascii_mp_\xf0\x9f\x90\x8d",
+    .m_size = 0,
+    .m_slots = cmfi_nonascii_mp_slots,
+};
+
+static PyObject*
+PyInit_cmfi_nonascii_mp(void)
+{
+    return PyModuleDef_Init(&cmfi_nonascii_mp_def);
+}
+
+static PyModuleDef cmfi_nonascii_sp_def = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "nonascii_sp_\xf0\x9f\x90\x8d",
+    .m_size = -1,
+};
+
+static PyObject*
+PyInit_cmfi_nonascii_sp(void)
+{
+    return PyModule_Create(&cmfi_nonascii_sp_def);
+}
+
 static PyObject*
 create_module(PyObject* self, PyObject* spec)
 {
@@ -2486,6 +2520,14 @@ create_module(PyObject* self, PyObject* spec)
     if (PyUnicode_EqualToUTF8(name, "sp_pkg.sp_submod")) {
         Py_DECREF(name);
         return PyImport_CreateModuleFromInitfunc(spec, PyInit_cmfi_sp_submod);
+    }
+    if (PyUnicode_EqualToUTF8(name, "nonascii_mp_\xf0\x9f\x90\x8d")) {
+        Py_DECREF(name);
+        return PyImport_CreateModuleFromInitfunc(spec, PyInit_cmfi_nonascii_mp);
+    }
+    if (PyUnicode_EqualToUTF8(name, "nonascii_sp_\xf0\x9f\x90\x8d")) {
+        Py_DECREF(name);
+        return PyImport_CreateModuleFromInitfunc(spec, PyInit_cmfi_nonascii_sp);
     }
     PyErr_Format(PyExc_LookupError, "static module %R not found", name);
     Py_DECREF(name);
@@ -2548,6 +2590,11 @@ test_create_module_from_initfunc(void)
         L"print(f'{sp_pkg.sp_submod.__name__=}');"
         L"print(f'{sys.modules[\"sp_pkg.sp_submod\"] is sp_pkg.sp_submod=}');"
         L"print(f'{\"sp_submod\" in sys.modules=}');"
+        // Non-ASCII names: multi-phase init works, single-phase init doesn't
+        L"import importlib;"
+        L"mp = importlib.import_module('nonascii_mp_\\N{SNAKE}');"
+        L"print(f'{ascii(mp.__name__)=} {mp.executed=}');"
+        L"try_import('nonascii_sp_\\N{SNAKE}');"
     };
     PyConfig config;
     if (PyImport_AppendInittab("create_static_module",
@@ -2568,7 +2615,10 @@ test_create_module_from_initfunc(void)
         "   @classmethod\n"
         "   def find_spec(cls, fullname, path, target=None):\n"
         "       if fullname in {'my_test_extension', 'embedded_ext',\n"
-        "                       'sp_pkg', 'sp_pkg.sp_submod'}:\n"
+        "                       'sp_pkg', 'sp_pkg.sp_submod',\n"
+        "                       'nonascii_mp_\\N{SNAKE}',\n"
+        "                       'nonascii_sp_\\N{SNAKE}',\n"
+        "       }:\n"
         "           return spec_from_loader(fullname, cls, origin=cls._ORIGIN,\n"
         "                                   is_package=(fullname == 'sp_pkg'))\n"
         "       return None\n"
@@ -2583,6 +2633,13 @@ test_create_module_from_initfunc(void)
         "       create_static_module.exec_module(module)\n"
         "       module.executed = 'yes'\n"
         "sys.meta_path.append(StaticExtensionImporter)\n"
+        "def try_import(name):\n"
+        "   try:\n"
+        "       importlib.import_module(name)\n"
+        "   except SystemError as exc:\n"
+        "       print(f'SystemError: {ascii(str(exc))}')\n"
+        "   else:\n"
+        "       print(f'no SystemError for {ascii(name)}!')\n"
     );
     if (result < 0) {
         fprintf(stderr, "PyRun_SimpleString() failed\n");

@@ -293,6 +293,12 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             "sp_pkg.sp_submod.__name__='sp_pkg.sp_submod'\n"
             "sys.modules[\"sp_pkg.sp_submod\"] is sp_pkg.sp_submod=True\n"
             "\"sp_submod\" in sys.modules=False\n"
+            # Module with non-ASCII name. (The SystemError shows the internal
+            # punycode-encoded name: not ideal, but also not horrible.)
+            "created nonascii_mp_\N{SNAKE}: in sys.modules=False\n"
+            "ascii(mp.__name__)=\"'nonascii_mp_\\\\U0001f40d'\" mp.executed='yes'\n"
+            "SystemError: 'initialization of nonascii_sp__rf17k "
+            "did not return PyModuleDef'\n"
         )
 
     def test_inittab_submodule_multiphase(self):
