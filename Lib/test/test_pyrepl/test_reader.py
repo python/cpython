@@ -14,7 +14,7 @@ from _pyrepl.console import Event
 from _pyrepl.layout import LayoutMap
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
 from _pyrepl.reader import Reader
-from _colorize import ANSIColors, default_theme
+from _colorize import default_theme
 
 
 overrides = {"reset": "z", "soft_keyword": "K"}
@@ -467,9 +467,10 @@ class TestErrorMessages(TestCase):
 
         reader.handle1()
 
+        theme = default_theme.syntax
         self.assertEqual(
             reader.msg,
-            f"{ANSIColors.RED}[ nothing to yank ]{ANSIColors.RESET}",
+            f"{theme.error}[ nothing to yank ]{theme.reset}",
         )
         self.assertEqual(reader.screen[-1], reader.msg)
 
