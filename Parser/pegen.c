@@ -1083,6 +1083,7 @@ _PyPegen_set_syntax_error_metadata(Parser *p) {
     );
     if (!metadata) {
         PyErr_Clear();
+        PyErr_SetRaisedException(exc);
         return;
     }
     PySyntaxErrorObject *syntax_error = (PySyntaxErrorObject *)exc;

@@ -715,9 +715,6 @@ de_instrument_line(PyCodeObject *code, _Py_CODEUNIT *bytecode, _PyCoMonitoringDa
     }
     _PyCoLineInstrumentationData *lines = monitoring->lines;
     int original_opcode = _PyCode_GetOriginalOpcode(lines, i);
-    if (original_opcode == INSTRUMENTED_INSTRUCTION) {
-        set_original_opcode(lines, i, monitoring->per_instruction_opcodes[i]);
-    }
     CHECK(original_opcode != 0);
     CHECK(original_opcode == _PyOpcode_Deopt[original_opcode]);
     FT_ATOMIC_STORE_UINT8(instr->op.code, original_opcode);
@@ -882,7 +879,15 @@ remove_line_tools(PyCodeObject * code, int offset, int tools)
         should_de_instrument = ((single_tool & tools) == single_tool);
     }
     if (should_de_instrument) {
+        /* Restore all thread-local bytecodes before updating the shared
+         * original opcode. */
         MODIFY_BYTECODE(code, de_instrument_line, monitoring, offset);
+        if (_PyCode_GetOriginalOpcode(monitoring->lines, offset) ==
+            INSTRUMENTED_INSTRUCTION)
+        {
+            set_original_opcode(monitoring->lines, offset,
+                                monitoring->per_instruction_opcodes[offset]);
+        }
     }
 }
 
@@ -1424,6 +1429,11 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
     uint8_t original_opcode;
 done:
     original_opcode = _PyCode_GetOriginalOpcode(line_data, i);
+    if (instr->op.code == INSTRUMENTED_INSTRUCTION) {
+        /* A LINE callback may have disabled the last LINE tool while
+         * leaving INSTRUCTION monitoring enabled. */
+        original_opcode = INSTRUMENTED_INSTRUCTION;
+    }
     assert(original_opcode != 0);
     assert(original_opcode != INSTRUMENTED_LINE);
     assert(_PyOpcode_Deopt[original_opcode] == original_opcode);

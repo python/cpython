@@ -1,5 +1,6 @@
 import ast
 import contextlib
+import pathlib
 import re
 import sys
 from abc import abstractmethod
@@ -61,8 +62,9 @@ class KeywordCollectorVisitor(GrammarVisitor):
     def visit_StringLeaf(self, node: StringLeaf) -> None:
         val = ast.literal_eval(node.value)
         if re.match(r"[a-zA-Z_]\w*\Z", val):  # This is a keyword
-            if node.value.endswith("'") and node.value not in self.keywords:
-                self.keywords[val] = self.generator.keyword_type()
+            if node.value.endswith("'"):
+                if val not in self.keywords:
+                    self.keywords[val] = self.generator.keyword_type()
             else:
                 return self.soft_keywords.add(node.value.replace('"', ""))
 
@@ -134,7 +136,7 @@ class ParserGenerator:
         return self._local_variable_stack[-1]
 
     @abstractmethod
-    def generate(self, filename: str) -> None:
+    def generate(self, filename: pathlib.PurePath) -> None:
         raise NotImplementedError
 
     @contextlib.contextmanager
