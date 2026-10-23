@@ -39,11 +39,12 @@ typedef struct _memo {
 typedef struct {
     int type;
     // Text required by grammar actions or helpers; otherwise NULL.
-    // An unfinished string token also has NULL text. Its grammar action
-    // requests more input only if the token is valid at that position.
+    // Unfinished f-string and t-string middle tokens retain their text so
+    // their grammar action can check escapes before requesting more input.
     PyObject *bytes;
     int level;
-    int is_raw;
+    unsigned char is_raw;
+    unsigned char is_incomplete;
     int lineno, col_offset, end_lineno, end_col_offset;
     Memo *memo;
     // Filter over the rule types present in `memo` (bit `type & 63` is set

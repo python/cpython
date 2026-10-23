@@ -279,6 +279,7 @@ initialize_token(Parser *p, Token *parser_token, struct token *new_token, int to
 
     parser_token->level = new_token->level;
     parser_token->is_raw = new_token->is_raw;
+    parser_token->is_incomplete = new_token->is_incomplete;
     parser_token->lineno = new_token->start_loc.lineno;
     parser_token->col_offset = new_token->end_loc.lineno == p->starting_lineno
         ? p->starting_col_offset + new_token->start_loc.byte_col

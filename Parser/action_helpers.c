@@ -1507,7 +1507,14 @@ expr_ty _PyPegen_decoded_constant_from_token(Parser* p, Token* tok) {
 
     PyObject* str = _PyPegen_decode_string(p, is_raw, bstr, bsize, tok);
     if (str == NULL) {
+        if ((p->flags & PyPARSE_ALLOW_INCOMPLETE_INPUT) || tok->is_incomplete) {
+            _Pypegen_raise_decode_error(p);
+        }
         return NULL;
+    }
+    if (tok->is_incomplete) {
+        Py_DECREF(str);
+        return _PyPegen_raise_incomplete_input(p);
     }
     if (_PyArena_AddPyObject(p->arena, str) < 0) {
         Py_DECREF(str);
@@ -1523,6 +1530,21 @@ expr_ty _PyPegen_constant_from_token(Parser* p, Token* tok) {
         return _PyPegen_raise_incomplete_input(p);
     }
     const char *bstr = PyBytes_AS_STRING(tok->bytes);
+    Py_ssize_t bsize = PyBytes_GET_SIZE(tok->bytes);
+    if (((p->flags & PyPARSE_ALLOW_INCOMPLETE_INPUT) || tok->is_incomplete) &&
+        !tok->is_raw && memchr(bstr, '\\', bsize) != NULL) {
+        // Check escapes before the string is complete, without emitting warnings.
+        PyObject *decoded = _PyPegen_decode_string(
+            p, 0, bstr, bsize, tok->is_incomplete ? tok : NULL);
+        if (decoded == NULL) {
+            _Pypegen_raise_decode_error(p);
+            return NULL;
+        }
+        Py_DECREF(decoded);
+    }
+    if (tok->is_incomplete) {
+        return _PyPegen_raise_incomplete_input(p);
+    }
     PyObject* str = PyUnicode_FromString(bstr);
     if (str == NULL) {
         return NULL;
