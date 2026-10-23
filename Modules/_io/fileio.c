@@ -275,7 +275,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 #elif !defined(MS_WINDOWS)
     int *atomic_flag_works = NULL;
 #endif
-    int fstat_result;
+    int fstat_result = -1;
     int async_err = 0;
 
 #ifdef Py_DEBUG
@@ -403,9 +403,18 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
         goto error;
     }
 
+    PyMem_Free(self->stat_atopen);
+    self->stat_atopen = PyMem_New(struct _Py_stat_struct, 1);
+    if (self->stat_atopen == NULL) {
+        PyErr_NoMemory();
+        goto error;
+    }
     if (fd >= 0) {
         self->fd = fd;
         self->closefd = closefd;
+        Py_BEGIN_ALLOW_THREADS
+        fstat_result = _Py_fstat_noraise(self->fd, self->stat_atopen);
+        Py_END_ALLOW_THREADS
     }
     else {
         self->closefd = 1;
@@ -424,6 +433,10 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 #else
                 self->fd = open(name, flags, 0666);
 #endif
+                if (self->fd >= 0) {
+                    fstat_result = _Py_fstat_noraise(self->fd,
+                                                     self->stat_atopen);
+                }
                 Py_END_ALLOW_THREADS
             } while (self->fd < 0 && errno == EINTR &&
                      !(async_err = PyErr_CheckSignals()));
@@ -465,6 +478,9 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
                 }
                 goto error;
             }
+            Py_BEGIN_ALLOW_THREADS
+            fstat_result = _Py_fstat_noraise(self->fd, self->stat_atopen);
+            Py_END_ALLOW_THREADS
         }
         fd_is_own = 1;
 
@@ -474,15 +490,6 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 #endif
     }
 
-    PyMem_Free(self->stat_atopen);
-    self->stat_atopen = PyMem_New(struct _Py_stat_struct, 1);
-    if (self->stat_atopen == NULL) {
-        PyErr_NoMemory();
-        goto error;
-    }
-    Py_BEGIN_ALLOW_THREADS
-    fstat_result = _Py_fstat_noraise(self->fd, self->stat_atopen);
-    Py_END_ALLOW_THREADS
     if (fstat_result < 0) {
         /* Tolerate fstat() errors other than EBADF.  See Issue #25717, where
         an anonymous file on a Virtual Box shared folder filesystem would
@@ -837,24 +844,43 @@ _io_FileIO_readall_impl(fileio *self, PyTypeObject *cls)
             }
         }
 
-        n = _Py_read(self->fd,
-                     (char*)PyBytesWriter_GetData(writer) + bytes_read,
-                     bufsize - bytes_read);
+        /* Fill the buffer in one GIL release: usually both the data and the
+           read() that finds EOF. */
+        char *buf = PyBytesWriter_GetData(writer);
+        int fd = self->fd;
+        int err;
+        Py_BEGIN_ALLOW_THREADS
+        do {
+            n = _Py_read_noraise(fd, buf + bytes_read, bufsize - bytes_read);
+            if (n > 0) {
+                bytes_read += n;
+            }
+        } while (n > 0 && bytes_read < (Py_ssize_t)bufsize);
+        err = errno;
+        Py_END_ALLOW_THREADS
 
         if (n == 0)
             break;
         if (n == -1) {
-            if (errno == EAGAIN) {
-                PyErr_Clear();
+            if (err == EINTR) {
+                /* PEP 475: retry unless a signal handler raised. */
+                if (PyErr_CheckSignals() < 0) {
+                    PyBytesWriter_Discard(writer);
+                    return NULL;
+                }
+                continue;
+            }
+            if (err == EAGAIN) {
                 if (bytes_read > 0)
                     break;
                 PyBytesWriter_Discard(writer);
                 Py_RETURN_NONE;
             }
+            errno = err;
+            PyErr_SetFromErrno(PyExc_OSError);
             PyBytesWriter_Discard(writer);
             return NULL;
         }
-        bytes_read += n;
     }
 
     return PyBytesWriter_FinishWithSize(writer, bytes_read);
