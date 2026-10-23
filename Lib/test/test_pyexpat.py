@@ -13,7 +13,7 @@ import traceback
 from io import BytesIO
 from test import support
 from test.support import import_helper, os_helper
-
+from unittest import mock
 from xml.parsers import expat
 from xml.parsers.expat import errors
 
