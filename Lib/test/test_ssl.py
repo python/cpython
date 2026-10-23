@@ -2133,6 +2133,22 @@ class ECHTests(unittest.TestCase):
             config = len(entries).to_bytes(2, 'big') + entries
             self.assertIsNone(ctx.set_ech_config(config))
 
+    @requires_ech_x25519
+    def test_mixed_ech_config_unsupported_suites(self):
+        ctx = make_test_context()
+        supported = self.ECH_CONFIG[2:]
+        for algorithm, offset in (('KEM', 5), ('KDF', 43), ('AEAD', 45)):
+            unsupported = bytearray(supported)
+            unsupported[offset:offset + 2] = b'\xff\xff'
+            with self.subTest(algorithm=algorithm):
+                config = len(unsupported).to_bytes(2, 'big') + unsupported
+                self.assertRaises(ssl.SSLError, ctx.set_ech_config, config)
+                for entries in (unsupported + supported,
+                                supported + unsupported):
+                    with self.subTest(entries=entries):
+                        config = len(entries).to_bytes(2, 'big') + entries
+                        self.assertIsNone(ctx.set_ech_config(config))
+
     def read_ech_key_and_config(self, filename='ech.pem'):
         # Generated with:
         # openssl ech -public_name public.example -suite 0x20,1,1

@@ -5320,10 +5320,6 @@ _ssl__SSLContext_set_default_verify_paths_impl(PySSLContext *self)
 }
 
 #ifdef HAVE_OPENSSL_ECH
-/* Parse an ECHConfigList into a new store, reading each entry separately so
- * entries this OpenSSL build cannot use (unsupported HPKE suites, mandatory
- * extensions) are skipped rather than rejecting the whole list. Return NULL
- * with a Python exception set. */
 static OSSL_ECHSTORE *
 ech_store_from_config(_sslmodulestate *state, Py_buffer *ech_config)
 {
@@ -5365,13 +5361,11 @@ ech_store_from_config(_sslmodulestate *state, Py_buffer *ech_config)
                 ERR_clear_error();
                 if (OSSL_ECHSTORE_read_echconfiglist(store, config_bio) != 1) {
                     unsigned long err = ERR_peek_error();
-                    /* Unsupported HPKE suites may first raise provider errors. */
                     while (ERR_GET_LIB(err) == ERR_LIB_PROV && !ERR_FATAL_ERROR(err)) {
                         ERR_get_error();
                         err = ERR_peek_error();
                     }
-                    /* Ignore unsupported suites and mandatory extensions,
-                     * preserving malformed input and fatal errors. */
+                    // This is a workaround until OpenSSL can skip unusable entries itself.
                     if (ERR_GET_LIB(err) != ERR_LIB_SSL
                         || ERR_GET_REASON(err) != ERR_R_PASSED_INVALID_ARGUMENT) {
                         goto fail;
