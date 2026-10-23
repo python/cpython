@@ -32,7 +32,7 @@ Functions
 
 .. function:: pp(object, stream=None, indent=1, width=80, depth=None, *, \
                  compact=False, expand=False, sort_dicts=False, \
-                 underscore_numbers=False)
+                 underscore_numbers=False, color=None)
 
    Prints the formatted representation of *object*, followed by a newline.
    This function may be used in the interactive interpreter
@@ -88,6 +88,15 @@ Functions
       integers will be formatted with the ``_`` character for a thousands separator,
       otherwise underscores are not displayed (the default).
 
+   :param color:
+      Whether to syntax highlight the output using ANSI escape sequences.
+      If ``None`` (the default), color is enabled when the *stream* and
+      :ref:`environment variables <using-on-controlling-color>` permit.
+      If ``True``, color is always enabled.
+      If ``False``, color is always disabled.
+      Added escape sequences do not count towards *width*.
+   :type color: bool | None
+
    >>> import pprint
    >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
    >>> stuff.insert(0, stuff)
@@ -101,24 +110,37 @@ Functions
 
    .. versionadded:: 3.8
 
+   .. versionchanged:: 3.16
+      Added the *color* parameter.
+
 
 .. function:: pprint(object, stream=None, indent=1, width=80, depth=None, *, \
                      compact=False, expand=False, sort_dicts=True, \
-                     underscore_numbers=False)
+                     underscore_numbers=False, color=None)
 
    Alias for :func:`~pprint.pp` with *sort_dicts* set to ``True`` by default,
    which would automatically sort the dictionaries' keys,
    you might want to use :func:`~pprint.pp` instead where it is ``False`` by default.
 
+   .. versionchanged:: 3.16
+      Added the *color* parameter.
+
 
 .. function:: pformat(object, indent=1, width=80, depth=None, *, \
                       compact=False, expand=False, sort_dicts=True, \
-                      underscore_numbers=False)
+                      underscore_numbers=False, color=False)
 
    Return the formatted representation of *object* as a string.  *indent*,
    *width*, *depth*, *compact*, *expand*, *sort_dicts* and *underscore_numbers* are
    passed to the :class:`PrettyPrinter` constructor as formatting parameters
    and their meanings are as described in the documentation above.
+
+   If *color* is ``True``, the returned string is syntax highlighted using ANSI
+   escape sequences. If ``False`` (the default) or ``None``, the returned string
+   contains no added color escape sequences.
+
+   .. versionchanged:: 3.16
+      Added the *color* parameter.
 
 
 .. function:: isreadable(object)
@@ -161,7 +183,7 @@ PrettyPrinter Objects
 
 .. class:: PrettyPrinter(indent=1, width=80, depth=None, stream=None, *, \
                          compact=False, expand=False, sort_dicts=True, \
-                         underscore_numbers=False)
+                         underscore_numbers=False, color=None)
 
    Construct a :class:`PrettyPrinter` instance.
 
@@ -223,6 +245,9 @@ PrettyPrinter Objects
    .. versionchanged:: 3.15
       Added the *expand* parameter.
 
+   .. versionchanged:: 3.16
+      Added the *color* parameter.
+
 
 :class:`PrettyPrinter` instances have the following methods:
 
@@ -231,6 +256,8 @@ PrettyPrinter Objects
 
    Return the formatted representation of *object*.  This takes into account the
    options passed to the :class:`PrettyPrinter` constructor.
+   Color is enabled only when the constructor's *color* argument is ``True``;
+   ``None`` (the default) and ``False`` disable color in the returned string.
 
 
 .. method:: PrettyPrinter.pprint(object)

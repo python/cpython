@@ -188,5 +188,35 @@ class TestColorizeFunction(unittest.TestCase):
                 self.assertEqual(_colorize.can_colorize(file=file), False)
 
 
+class TestColorizePython(unittest.TestCase):
+
+    def test_token_colors(self):
+        theme = _colorize.Syntax.no_colors().copy_with(
+            string='<string>', number='<number>',
+            keyword_constant='<constant>', op='<op>', reset='</>',
+        )
+        source = " [42, 'caf\N{LATIN SMALL LETTER E WITH ACUTE}', None] \n"
+        expected = (
+            " <op>[</><number>42</><op>,</> "
+            "<string>'caf\N{LATIN SMALL LETTER E WITH ACUTE}'</><op>,</> "
+            "<constant>None</><op>]</> \n"
+        )
+        self.assertEqual(_colorize.colorize_python(source, theme=theme),
+                         expected)
+
+    def test_current_theme(self):
+        syntax = _colorize.Syntax.no_colors().copy_with(
+            number='<number>', reset='</>',
+        )
+        theme = _colorize.default_theme.copy_with(syntax=syntax)
+        with unittest.mock.patch.object(_colorize, '_theme', theme):
+            self.assertEqual(_colorize.colorize_python('42'), '<number>42</>')
+
+    def test_unencodable_source(self):
+        for source in ("['spam', \ud800]", "['spam', \udfff]"):
+            with self.subTest(source=source):
+                self.assertEqual(_colorize.colorize_python(source), source)
+
+
 if __name__ == "__main__":
     unittest.main()

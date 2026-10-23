@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import _colorize
 import collections
 import contextlib
 import dataclasses
@@ -10,10 +11,12 @@ import random
 import re
 import types
 import unittest
+import unittest.mock
 from collections.abc import ItemsView, KeysView, Mapping, MappingView, ValuesView
 
 from test.support import cpython_only
 from test.support.import_helper import ensure_lazy_imports
+from test.support.os_helper import EnvironmentVarGuard
 
 # list, tuple and dict subclasses that do or don't overwrite __repr__
 class list2(list):
@@ -2072,6 +2075,93 @@ dict_items([
     'lazy dog '
 )""",
         )
+
+
+class ColorTestCase(unittest.TestCase):
+
+    def test_color_pprint(self):
+        obj = {'a': 'value', 'b': 42, 'c': None}
+        expected = "{'a': 'value', 'b': 42, 'c': None}\n"
+        for env_vars, auto_color in (
+            ({}, False),
+            ({'FORCE_COLOR': '1'}, True),
+            ({'NO_COLOR': '1'}, False),
+            ({'FORCE_COLOR': '1', 'NO_COLOR': '1'}, False),
+        ):
+            for printer in (pprint.pp, pprint.pprint, pprint.PrettyPrinter):
+                for kwargs, use_color in (
+                    ({}, auto_color),
+                    ({'color': None}, auto_color),
+                    ({'color': True}, True),
+                    ({'color': False}, False),
+                ):
+                    with (
+                        self.subTest(printer=printer, env=env_vars, **kwargs),
+                        EnvironmentVarGuard() as env,
+                    ):
+                        env.unset('PYTHON_COLORS', 'FORCE_COLOR', 'NO_COLOR',
+                                  'TERM')
+                        env.update(env_vars)
+                        stream = io.StringIO()
+                        if printer is pprint.PrettyPrinter:
+                            printer(stream=stream, **kwargs).pprint(obj)
+                        else:
+                            printer(obj, stream=stream, **kwargs)
+                        result = stream.getvalue()
+                        self.assertEqual('\x1b[' in result, use_color)
+                        self.assertEqual(_colorize.decolor(result), expected)
+
+    def test_color_uses_stream(self):
+        for use_color in (False, True):
+            with (self.subTest(color=use_color),
+                  unittest.mock.patch('_colorize.can_colorize',
+                                      return_value=use_color) as can_colorize):
+                stream = io.StringIO()
+                pprint.pprint(42, stream=stream)
+                can_colorize.assert_called_once_with(file=stream)
+                result = stream.getvalue()
+                self.assertEqual('\x1b[' in result, use_color)
+                self.assertEqual(_colorize.decolor(result), '42\n')
+
+    def test_color_pformat(self):
+        obj = ['value', 42, None]
+        expected = "['value', 42, None]"
+        with unittest.mock.patch('_colorize.can_colorize', return_value=True):
+            for formatter in (pprint.pformat, pprint.PrettyPrinter):
+                for kwargs, use_color in (
+                    ({}, False),
+                    ({'color': None}, False),
+                    ({'color': False}, False),
+                    ({'color': True}, True),
+                ):
+                    with self.subTest(formatter=formatter, **kwargs):
+                        if formatter is pprint.PrettyPrinter:
+                            result = formatter(**kwargs).pformat(obj)
+                        else:
+                            result = formatter(obj, **kwargs)
+                        self.assertEqual('\x1b[' in result, use_color)
+                        self.assertEqual(_colorize.decolor(result), expected)
+
+    def test_color_preserves_formatting(self):
+        obj = {'name': 'caf\N{LATIN SMALL LETTER E WITH ACUTE}',
+               'numbers': [1000, 2000, 3000], 'object': object()}
+        obj['recursive'] = obj
+        for kwargs in (
+            {'width': 20},
+            {'width': 20, 'depth': 1},
+            {'width': 40, 'compact': True},
+            {'width': 40, 'expand': True, 'indent': 4},
+            {'width': 20, 'underscore_numbers': True},
+        ):
+            with self.subTest(**kwargs):
+                plain = pprint.pformat(obj, color=False, **kwargs)
+                colored = pprint.pformat(obj, color=True, **kwargs)
+                self.assertIn('\x1b[', colored)
+                self.assertEqual(_colorize.decolor(colored), plain)
+                stream = io.StringIO()
+                pprint.pprint(obj, stream=stream, color=True, **kwargs)
+                self.assertEqual(_colorize.decolor(stream.getvalue()),
+                                 plain + '\n')
 
 
 class DottedPrettyPrinter(pprint.PrettyPrinter):

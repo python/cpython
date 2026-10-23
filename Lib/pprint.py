@@ -149,6 +149,12 @@ class PrettyPrinter:
         underscore_numbers
             If true, digit groups are separated with underscores.
 
+        color
+            If None, pprint uses color when the stream and environment permit.
+            In this case, pformat disables color.
+            If true, pprint and pformat always use color.
+            If false, color is disabled.
+
         """
         indent = int(indent)
         width = int(width)
