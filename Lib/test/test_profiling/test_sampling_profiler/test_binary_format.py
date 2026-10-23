@@ -1175,26 +1175,20 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
             self.assertEqual(reader.replay_samples(collector), 6)
         self.assert_samples_equal(samples, collector)
 
-    def test_progress_follows_collected_samples(self):
-        """Progress never counts samples the collector has not received."""
+    def test_progress_updates_across_blocks(self):
+        """Progress is reported at fixed intervals across block boundaries."""
         samples, filename = self._write_block_spanning_file()
-
-        class CountingCollector:
-            received = 0
-
-            def collect(self, stack_frames, timestamps_us):
-                self.received += len(timestamps_us)
-
-        collector = CountingCollector()
         calls = []
         with BinaryReader(filename) as reader:
             reader.replay_samples(
-                collector,
-                lambda current, total: calls.append(
-                    (current, collector.received)))
-        self.assertGreater(len(calls), 2)
-        for current, received in calls:
-            self.assertEqual(current, received)
+                RawCollector(),
+                lambda current, total: calls.append((current, total)))
+        total = len(samples)
+        self.assertEqual(
+            calls,
+            [(0, total), (1000, total), (2000, total), (3000, total),
+             (4000, total), (total, total)],
+        )
 
     def test_reader_replays_twice(self):
         """Replaying twice gives the same samples and statistics."""

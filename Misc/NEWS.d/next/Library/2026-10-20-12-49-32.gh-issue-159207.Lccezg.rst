@@ -1,2 +1,3 @@
 The :mod:`profiling.sampling` binary output format now stores samples in
-independent blocks.
+independent blocks. This is a breaking format change: Python 3.16 does not
+support reading profiles written in the previous format.

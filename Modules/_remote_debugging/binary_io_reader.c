@@ -1498,7 +1498,6 @@ replay_block(BinaryReader *reader, RemoteDebuggingState *state,
             reader->sample_count - (uint64_t)*replayed) {
         return block_error("more samples than the file header declares");
     }
-    Py_ssize_t first_sample = *replayed;
     int result = 0;
     for (uint32_t sample = 0; sample < block->header.sample_count; sample++) {
         if (replay_sample(reader, state, collector, block, sample) < 0) {
@@ -1507,6 +1506,12 @@ replay_block(BinaryReader *reader, RemoteDebuggingState *state,
         }
         (*replayed)++;
         reader->stats.total_samples++;
+        if (*replayed % PROGRESS_CALLBACK_INTERVAL == 0 &&
+            invoke_progress_callback(progress_callback, *replayed,
+                                     reader->sample_count) < 0) {
+            result = -1;
+            break;
+        }
     }
     if (result == 0) {
         result = validate_block_consumed(reader, block);
@@ -1522,14 +1527,6 @@ replay_block(BinaryReader *reader, RemoteDebuggingState *state,
         Py_CLEAR(stream->batch);
     }
 
-    /* Report progress once the block's samples reached the collector. */
-    if (result == 0 &&
-        *replayed / PROGRESS_CALLBACK_INTERVAL !=
-            first_sample / PROGRESS_CALLBACK_INTERVAL &&
-        invoke_progress_callback(progress_callback, *replayed,
-                                 reader->sample_count) < 0) {
-        result = -1;
-    }
     return result;
 }
 
