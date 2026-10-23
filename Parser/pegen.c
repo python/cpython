@@ -328,11 +328,12 @@ _resize_tokens_array(Parser *p) {
 }
 
 // Fast path attached to the expression precedence chain's entry rules.
-// A bare NAME/NUMBER
-// atom followed by a token that cannot start or continue a binary/postfix
-// expression is a complete expression, so it is built directly instead of
-// descending the whole chain. Returns 1 if it produced a result (stored
-// in *result), 0 to fall through to the rule's alternatives.
+// A bare NAME/NUMBER atom followed by a token that cannot start or
+// continue a binary/postfix expression is a complete expression, so it is
+// built directly instead of descending the whole chain.
+//
+// Returns 1 if it produced a result (stored in *result), 0 to fall through to
+// the rule's alternatives.
 int
 _PyPegen_atom_fast_path(Parser *p, void *result)
 {
