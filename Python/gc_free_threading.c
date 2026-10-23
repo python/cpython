@@ -80,6 +80,8 @@ struct collection_state {
     Py_ssize_t uncollectable;
     Py_ssize_t candidates;
     Py_ssize_t long_lived_total;
+    bool has_finalizer_work;
+    bool has_weakref_work;
     struct worklist unreachable;
     struct worklist legacy_finalizers;
     struct worklist wrcb_to_call;
@@ -1215,6 +1217,12 @@ scan_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
             worklist_push(&state->legacy_finalizers, op);
         }
         else {
+            if (Py_TYPE(op)->tp_finalize != NULL) {
+                state->has_finalizer_work = true;
+            }
+            if (PyWeakref_Check(op) || _PyType_SUPPORTS_WEAKREFS(Py_TYPE(op))) {
+                state->has_weakref_work = true;
+            }
             worklist_push(&state->unreachable, op);
         }
         // It is possible this object will be resurrected but
@@ -2163,7 +2171,10 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     }
 
     // Find weakref callbacks and pending finalizers (but do not call them).
-    bool has_finalizers = prepare_finalization(state, &needs_resurrection_check);
+    bool has_finalizers = false;
+    if (state->has_finalizer_work || state->has_weakref_work) {
+        has_finalizers = prepare_finalization(state, &needs_resurrection_check);
+    }
     if (needs_resurrection_check) {
         _PyEval_StartTheWorld(interp);
 
@@ -2186,7 +2197,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     // Otherwise, keep other threads paused so the unreachable set stays valid.
     // Clear free lists in all threads
     _PyGC_ClearAllFreeLists(interp);
-    if (err == 0) {
+    if (err == 0 && state->has_weakref_work) {
         clear_weakrefs(state);
     }
     // Record the number of live GC objects

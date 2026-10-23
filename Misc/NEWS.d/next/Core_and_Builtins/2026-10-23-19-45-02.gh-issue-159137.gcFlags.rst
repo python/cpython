@@ -1,0 +1,2 @@
+Skip finalizer preparation and weakref cleanup in the free-threaded garbage
+collector when unreachable objects require neither phase.
