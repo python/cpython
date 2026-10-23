@@ -1,2 +1,0 @@
-Change the default of ``suggest_on_error`` to ``True`` in
-``argparse.ArgumentParser``.

@@ -25,6 +25,9 @@ PyAPI_FUNC(PyStatus) Py_PreInitializeFromArgs(
 PyAPI_FUNC(PyStatus) Py_InitializeFromConfig(
     const PyConfig *config);
 
+// Python 3.8 provisional API (PEP 587)
+PyAPI_FUNC(PyStatus) _Py_InitializeMain(void);
+
 PyAPI_FUNC(int) Py_RunMain(void);
 
 

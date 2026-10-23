@@ -104,10 +104,10 @@ import sys
 import traceback
 import types
 import unittest
-from io import StringIO, IncrementalNewlineDecoder
+from io import StringIO, TextIOWrapper, BytesIO
 from collections import namedtuple
-import _colorize  # Used in doctests
-from _colorize import ANSIColors, can_colorize
+lazy import _colorize  # Used in doctests
+lazy from _colorize import ANSIColors, can_colorize
 
 
 class TestResults(namedtuple('TestResults', 'failed attempted')):
@@ -237,10 +237,6 @@ def _normalize_module(module, depth=2):
     else:
         raise TypeError("Expected a module, string, or None")
 
-def _newline_convert(data):
-    # The IO module provides a handy decoder for universal newline conversion
-    return IncrementalNewlineDecoder(None, True).decode(data, True)
-
 def _load_testfile(filename, package, module_relative, encoding):
     if module_relative:
         package = _normalize_module(package, 3)
@@ -252,10 +248,9 @@ def _load_testfile(filename, package, module_relative, encoding):
                 pass
         if hasattr(loader, 'get_data'):
             file_contents = loader.get_data(filename)
-            file_contents = file_contents.decode(encoding)
             # get_data() opens files as 'rb', so one must do the equivalent
             # conversion as universal newlines would do.
-            return _newline_convert(file_contents), filename
+            return TextIOWrapper(BytesIO(file_contents), encoding=encoding, newline=None).read(), filename
     with open(filename, encoding=encoding) as f:
         return f.read(), filename
 
@@ -290,7 +285,8 @@ class _SpoofOut(StringIO):
         return result
 
     def truncate(self, size=None):
-        self.seek(size)
+        if size is not None:
+            self.seek(size)
         StringIO.truncate(self)
 
 # Worst-case linear-time ellipsis matching.
@@ -927,7 +923,7 @@ class DocTestFinder:
         # given object's docstring.
         try:
             file = inspect.getsourcefile(obj)
-        except TypeError:
+        except (TypeError, OSError):
             source_lines = None
         else:
             if not file:
@@ -1172,12 +1168,50 @@ class DocTestFinder:
                 if pat.match(source_lines[lineno]):
                     return lineno
 
+        # Handle __test__ string doctests formatted as triple-quoted
+        # strings. Find a non-blank line in the test string and match it
+        # in the source, verifying subsequent lines also match to handle
+        # duplicate lines.
+        if isinstance(obj, str) and source_lines is not None:
+            obj_lines = obj.splitlines(keepends=True)
+            # Skip the first line (may be on same line as opening quotes)
+            # and any blank lines to find a meaningful line to match.
+            start_index = 1
+            while (start_index < len(obj_lines)
+                   and not obj_lines[start_index].strip()):
+                start_index += 1
+            if start_index < len(obj_lines):
+                target_line = obj_lines[start_index]
+                for lineno, source_line in enumerate(source_lines):
+                    if source_line == target_line:
+                        # Verify subsequent lines also match
+                        for i in range(start_index + 1, len(obj_lines) - 1):
+                            source_idx = lineno + i - start_index
+                            if source_idx >= len(source_lines):
+                                break
+                            if obj_lines[i] != source_lines[source_idx]:
+                                break
+                        else:
+                            return lineno - start_index
+
         # We couldn't find the line number.
         return None
 
 ######################################################################
 ## 5. DocTest Runner
 ######################################################################
+
+def _make_output_function(stream):
+    """Return a function writing to *stream*, whatever it can encode."""
+    encoding = getattr(stream, 'encoding', None)
+    if encoding is None or encoding.lower() == 'utf-8':
+        return stream.write
+    def out(s):
+        # Use backslashreplace error handling on write
+        s = str(s.encode(encoding, 'backslashreplace'), encoding)
+        stream.write(s)
+    return out
+
 
 class DocTestRunner:
     """
@@ -1539,14 +1573,7 @@ class DocTestRunner:
 
         save_stdout = sys.stdout
         if out is None:
-            encoding = save_stdout.encoding
-            if encoding is None or encoding.lower() == 'utf-8':
-                out = save_stdout.write
-            else:
-                # Use backslashreplace error handling on write
-                def out(s):
-                    s = str(s.encode(encoding, 'backslashreplace'), encoding)
-                    save_stdout.write(s)
+            out = _make_output_function(save_stdout)
         sys.stdout = self._fakeout
 
         # Patch pdb.set_trace to restore sys.stdout during interactive
@@ -1747,7 +1774,7 @@ class OutputChecker:
                           '', want)
             # If a line in got contains only spaces, then remove the
             # spaces.
-            got = re.sub(r'(?m)^[^\S\n]+$', '', got)
+            got = re.sub(r'(?m)^[\s--\n]+$', '', got)
             if got == want:
                 return True
 
@@ -2300,6 +2327,9 @@ class _DocTestCaseRunner(DocTestRunner):
         unittest.case._addSkip(self._test_result, self._subTest(), '')
 
     def report_success(self, out, test, example, got):
+        # Report "ok" if verbose, to close what report_start() opened.  A
+        # failed or skipped example is reported by the test result instead.
+        super().report_success(out, test, example, got)
         self._test_result.addSubTest(self._test_case, self._subTest(), None)
 
     def report_unexpected_exception(self, out, test, example, exc_info):
@@ -2379,10 +2409,23 @@ class DocTestCase(unittest.TestCase):
         if getattr(result, 'failfast', False):
             optionflags |= FAIL_FAST
 
+        # Report every example only if the test runner is asked for more than
+        # the test names it reports at verbosity 2.  Write them to its stream,
+        # so that they are not swallowed by result.buffer.
+        verbose = getattr(result, 'verbosity', 1) >= 3
+        stream = getattr(result, 'stream', None)
+        out = None
+        if verbose and stream is not None:
+            out = _make_output_function(stream)
+            if test.examples and not getattr(result, '_newline', True):
+                # End the line which startTest() left open.
+                out('\n')
+                result._newline = True
+
         runner = _DocTestCaseRunner(optionflags=optionflags,
-                               checker=self._dt_checker, verbose=False,
+                               checker=self._dt_checker, verbose=verbose,
                                test_case=self, test_result=result)
-        results = runner.run(test, clear_globs=False)
+        results = runner.run(test, out=out, clear_globs=False)
         if results.skipped == results.attempted:
             raise unittest.SkipTest("all examples were skipped")
 
@@ -2930,7 +2973,7 @@ __test__ = {"_TestClass": _TestClass,
 def _test():
     import argparse
 
-    parser = argparse.ArgumentParser(description="doctest runner", color=True)
+    parser = argparse.ArgumentParser(description="doctest runner")
     parser.add_argument('-v', '--verbose', action='store_true', default=False,
                         help='print very verbose output for all tests')
     parser.add_argument('-o', '--option', action='append',
@@ -2940,8 +2983,8 @@ def _test():
                               ' than once to apply multiple options'))
     parser.add_argument('-f', '--fail-fast', action='store_true',
                         help=('stop running tests after first failure (this'
-                              ' is a shorthand for -o FAIL_FAST, and is'
-                              ' in addition to any other -o options)'))
+                              ' is a shorthand for `-o FAIL_FAST`, and is'
+                              ' in addition to any other `-o` options)'))
     parser.add_argument('file', nargs='+',
                         help='file containing the tests to run')
     args = parser.parse_args()

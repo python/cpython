@@ -455,7 +455,7 @@ _PyBytes_GetXIDataWrapped(PyThreadState *tstate,
         return NULL;
     }
     if (size < sizeof(_PyBytes_data_t)) {
-        PyErr_Format(PyExc_ValueError, "expected size >= %d, got %d",
+        PyErr_Format(PyExc_ValueError, "expected size >= %zu, got %zu",
                      sizeof(_PyBytes_data_t), size);
         return NULL;
     }
@@ -657,6 +657,7 @@ _tuple_shared(PyThreadState *tstate, PyObject *obj, xidata_fallback_t fallback,
     shared->items = (_PyXIData_t **) PyMem_Calloc(shared->len, sizeof(_PyXIData_t *));
     if (shared->items == NULL) {
         PyErr_NoMemory();
+        PyMem_RawFree(shared);
         return -1;
     }
 

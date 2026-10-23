@@ -11,12 +11,19 @@ it is not, please report that through the
 [issue tracker](https://github.com/python/cpython/issues).
 
 
+General Resources
+---
+
+- [Source Code Structure](structure.md)
+
 Compiling Python Source Code
 ---
 
 - [Guide to the parser](parser.md)
 
 - [Compiler Design](compiler.md)
+
+- [Inlined comprehensions](inlined_comprehensions.md)
 
 - [Changing Python's Grammar](changing_grammar.md)
 
@@ -29,12 +36,12 @@ Runtime Objects
 
 - [Frames](frames.md)
 
-- [String Interning](string_interning.md)
-
 Program Execution
 ---
 
 - [The Bytecode Interpreter](interpreter.md)
+
+- [Stack references (_PyStackRef)](stackrefs.md)
 
 - [The JIT](jit.md)
 
@@ -45,6 +52,14 @@ Program Execution
 - [Quiescent-State Based Reclamation (QSBR)](qsbr.md)
 
 - [Stack protection](stack_protection.md)
+
+Built-in Types
+---
+
+- [String Interning](string_interning.md)
+
+- [List sort algorithm](../Objects/listsort.txt)
+  <!-- (kept at the original location outside this directory) -->
 
 Modules
 ---

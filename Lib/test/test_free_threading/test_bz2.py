@@ -42,11 +42,22 @@ class TestBZ2(unittest.TestCase):
             data = bz2d.decompress(compressed, chunk_size)
             self.assertEqual(len(data), chunk_size)
             output.append(data)
+            # Read attributes concurrently with other threads decompressing
+            self.assertIsInstance(bz2d.eof, bool)
+            self.assertIsInstance(bz2d.needs_input, bool)
+            self.assertIsInstance(bz2d.unused_data, bytes)
 
         run_concurrently(worker_func=worker, nthreads=NTHREADS)
         self.assertEqual(len(output), NTHREADS)
         # Verify the expected chunks (order doesn't matter due to append race)
         self.assertEqual(set(output), set(chunks))
+        self.assertTrue(bz2d.eof)
+        self.assertFalse(bz2d.needs_input)
+        # Each thread added full compressed data to the buffer, but only 1 copy
+        # is consumed to produce the output. The rest remains as unused_data.
+        self.assertEqual(
+            len(bz2d.unused_data), len(compressed) * (NTHREADS - 1)
+        )
 
 
 if __name__ == "__main__":

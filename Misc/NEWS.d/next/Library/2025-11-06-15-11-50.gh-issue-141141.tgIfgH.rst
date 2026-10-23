@@ -1,1 +1,0 @@
-Fix a thread safety issue with :func:`base64.b85decode`. Contributed by Benel Tayar.

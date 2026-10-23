@@ -1,1 +1,0 @@
-Warn when the WASI SDK version doesn't match what's supported.

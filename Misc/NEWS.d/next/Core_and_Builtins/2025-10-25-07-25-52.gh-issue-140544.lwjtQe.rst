@@ -1,1 +1,0 @@
-Speed up accessing interpreter state by caching it in a thread local variable. Patch by Kumar Aditya.

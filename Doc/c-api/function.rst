@@ -14,6 +14,10 @@ There are a few functions specific to Python functions.
 
    The C structure used for functions.
 
+   In the free-threaded build, direct access to mutable fields requires
+   synchronization if another thread may modify the function. See
+   :ref:`freethreading-extensions-howto`.
+
 
 .. c:var:: PyTypeObject PyFunction_Type
 
@@ -71,6 +75,11 @@ There are a few functions specific to Python functions.
    This is normally a :class:`string <str>` containing the module name,
    but can be set to any other object by Python code.
 
+   In the free-threaded build, if the attribute may be modified concurrently,
+   convert the borrowed reference to a strong reference with :c:func:`Py_XNewRef`
+   immediately, before calling any other Python API. The same applies to
+   :c:func:`PyFunction_GET_MODULE`.
+
 
 .. c:function:: PyObject* PyFunction_GetDefaults(PyObject *op)
 
@@ -100,6 +109,15 @@ There are a few functions specific to Python functions.
 
    Return the keyword-only argument default values of the function object *op*. This can be a
    dictionary of arguments or ``NULL``.
+
+
+.. c:function:: int PyFunction_SetKwDefaults(PyObject *op, PyObject *defaults)
+
+   Set the keyword-only argument default values of the function object *op*.
+   *defaults* must be a dictionary of keyword-only arguments or ``Py_None``.
+
+   This function returns ``0`` on success, and returns ``-1`` with an exception
+   set on failure.
 
 
 .. c:function:: PyObject* PyFunction_GetClosure(PyObject *op)
@@ -178,6 +196,15 @@ There are a few functions specific to Python functions.
     - ``PyFunction_PYFUNC_EVENT_MODIFY_QUALNAME``
 
    .. versionadded:: 3.15
+
+.. c:macro:: PY_FOREACH_FUNC_EVENT(V)
+
+   Apply the macro *V* to each suffix of :c:type:`PyFunction_WatchEvent`
+   constants.
+   Currently expands to ``V(CREATE) V(DESTROY) V(MODIFY_CODE)
+   V(MODIFY_DEFAULTS) V(MODIFY_KWDEFAULTS) V(MODIFY_QUALNAME)``.
+   The macro *V* must accept one event name and supply any punctuation
+   needed between expansions.
 
 .. c:type:: int (*PyFunction_WatchCallback)(PyFunction_WatchEvent event, PyFunctionObject *func, PyObject *new_value)
 

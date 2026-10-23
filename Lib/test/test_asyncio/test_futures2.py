@@ -7,7 +7,7 @@ from asyncio import tasks
 
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class FutureTests:
@@ -27,6 +27,26 @@ class FutureTests:
                 self.assertEqual(tb.count("await future"), 1)
             else:
                 self.fail('TypeError was not raised')
+
+    async def test_future_traceback_preserved_after_suppress(self):
+        async def raise_exc():
+            raise TypeError(42)
+
+        future = self.cls(raise_exc())
+        try:
+            await future
+        except TypeError:
+            pass
+
+        try:
+            await future
+        except TypeError as e:
+            tb = ''.join(traceback.format_tb(e.__traceback__))
+            self.assertIn('raise_exc', tb,
+                'Original raise site lost after first result() call')
+        else:
+            self.fail('TypeError was not raised')
+
 
     async def test_task_exc_handler_correct_context(self):
         # see https://github.com/python/cpython/issues/96704

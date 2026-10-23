@@ -109,12 +109,18 @@ class EventCollectorNoNormalize(EventCollector):
 
 class TestCaseBase(unittest.TestCase):
 
-    def get_collector(self):
-        return EventCollector(convert_charrefs=False)
+    def get_collector(self, convert_charrefs=False):
+        return EventCollector(convert_charrefs=convert_charrefs)
 
-    def _run_check(self, source, expected_events, collector=None):
+    def _run_check(self, source, expected_events,
+                   *, collector=None, convert_charrefs=False):
         if collector is None:
-            collector = self.get_collector()
+            collector = self.get_collector(convert_charrefs=convert_charrefs)
+            if isinstance(source, str):
+                # Also feed the whole string at once, not just character by
+                # character (below), to exercise different input buffering.
+                self._run_check([source], expected_events,
+                                convert_charrefs=convert_charrefs)
         parser = collector
         for s in source:
             parser.feed(s)
@@ -128,7 +134,7 @@ class TestCaseBase(unittest.TestCase):
 
     def _run_check_extra(self, source, events):
         self._run_check(source, events,
-                        EventCollectorExtra(convert_charrefs=False))
+            collector=EventCollectorExtra(convert_charrefs=False))
 
 
 class HTMLParserTestCase(TestCaseBase):
@@ -187,10 +193,87 @@ text
         ])
 
     def test_unclosed_entityref(self):
-        self._run_check("&entityref foo", [
-            ("entityref", "entityref"),
-            ("data", " foo"),
-            ])
+        self._run_check('&gt &lt;', [('entityref', 'gt'), ('data', ' '), ('entityref', 'lt')],
+                        convert_charrefs=False)
+        self._run_check('&gt &lt;', [('data', '> <')], convert_charrefs=True)
+
+        self._run_check('&undefined &lt;',
+                        [('entityref', 'undefined'), ('data', ' '), ('entityref', 'lt')],
+                        convert_charrefs=False)
+        self._run_check('&undefined &lt;', [('data', '&undefined <')],
+                        convert_charrefs=True)
+
+        self._run_check('&gtundefined &lt;',
+                        [('entityref', 'gtundefined'), ('data', ' '), ('entityref', 'lt')],
+                        convert_charrefs=False)
+        self._run_check('&gtundefined &lt;', [('data', '>undefined <')],
+                        convert_charrefs=True)
+
+        self._run_check('& &lt;', [('data', '& '), ('entityref', 'lt')],
+                        convert_charrefs=False)
+        self._run_check('& &lt;', [('data', '& <')], convert_charrefs=True)
+
+    def test_eof_in_entityref(self):
+        self._run_check('&gt', [('entityref', 'gt')], convert_charrefs=False)
+        self._run_check('&gt', [('data', '>')], convert_charrefs=True)
+
+        self._run_check('&g', [('entityref', 'g')], convert_charrefs=False)
+        self._run_check('&g', [('data', '&g')], convert_charrefs=True)
+
+        self._run_check('&undefined', [('entityref', 'undefined')],
+                        convert_charrefs=False)
+        self._run_check('&undefined', [('data', '&undefined')],
+                        convert_charrefs=True)
+
+        self._run_check('&gtundefined', [('entityref', 'gtundefined')],
+                        convert_charrefs=False)
+        self._run_check('&gtundefined', [('data', '>undefined')],
+                        convert_charrefs=True)
+
+        self._run_check('&', [('data', '&')], convert_charrefs=False)
+        self._run_check('&', [('data', '&')], convert_charrefs=True)
+
+    def test_unclosed_charref(self):
+        self._run_check('&#123 &lt;', [('charref', '123'), ('data', ' '), ('entityref', 'lt')],
+                        convert_charrefs=False)
+        self._run_check('&#123 &lt;', [('data', '{ <')], convert_charrefs=True)
+        self._run_check('&#xab &lt;', [('charref', 'xab'), ('data', ' '), ('entityref', 'lt')],
+                        convert_charrefs=False)
+        self._run_check('&#xab &lt;', [('data', '\xab <')], convert_charrefs=True)
+
+        self._run_check('&#123456789 &lt;',
+                        [('charref', '123456789'), ('data', ' '), ('entityref', 'lt')],
+                        convert_charrefs=False)
+        self._run_check('&#123456789 &lt;', [('data', '\ufffd <')],
+                        convert_charrefs=True)
+        self._run_check('&#x123456789 &lt;',
+                        [('charref', 'x123456789'), ('data', ' '), ('entityref', 'lt')],
+                        convert_charrefs=False)
+        self._run_check('&#x123456789 &lt;', [('data', '\ufffd <')],
+                        convert_charrefs=True)
+
+        self._run_check('&# &lt;', [('data', '&# '), ('entityref', 'lt')], convert_charrefs=False)
+        self._run_check('&# &lt;', [('data', '&# <')], convert_charrefs=True)
+        self._run_check('&#x &lt;', [('data', '&#x '), ('entityref', 'lt')], convert_charrefs=False)
+        self._run_check('&#x &lt;', [('data', '&#x <')], convert_charrefs=True)
+
+    def test_eof_in_charref(self):
+        self._run_check('&#123', [('charref', '123')], convert_charrefs=False)
+        self._run_check('&#123', [('data', '{')], convert_charrefs=True)
+        self._run_check('&#xab', [('charref', 'xab')], convert_charrefs=False)
+        self._run_check('&#xab', [('data', '\xab')], convert_charrefs=True)
+
+        self._run_check('&#123456789', [('charref', '123456789')],
+                        convert_charrefs=False)
+        self._run_check('&#123456789', [('data', '\ufffd')], convert_charrefs=True)
+        self._run_check('&#x123456789', [('charref', 'x123456789')],
+                        convert_charrefs=False)
+        self._run_check('&#x123456789', [('data', '\ufffd')], convert_charrefs=True)
+
+        self._run_check('&#', [('data', '&#')], convert_charrefs=False)
+        self._run_check('&#', [('data', '&#')], convert_charrefs=True)
+        self._run_check('&#x', [('data', '&#x')], convert_charrefs=False)
+        self._run_check('&#x', [('data', '&#x')], convert_charrefs=True)
 
     def test_bad_nesting(self):
         # Strangely, this *is* supposed to test that overlapping
@@ -515,6 +598,9 @@ text
                 '<!-- <!-- nested --> -->'
                 '<!--<!-->'
                 '<!--<!--!>'
+                # abruptly closed empty comment must not swallow later text
+                '<!-->x-->'
+                '<!--->y-->'
         )
         expected = [('comment', " I'm a valid comment "),
                     ('comment', 'me too!'),
@@ -535,6 +621,8 @@ text
                     ('comment', ' <!-- nested '), ('data', ' -->'),
                     ('comment', '<!'),
                     ('comment', '<!'),
+                    ('comment', ''), ('data', 'x-->'),
+                    ('comment', ''), ('data', 'y-->'),
         ]
         self._run_check(html, expected)
 
@@ -762,20 +850,6 @@ text
         ]
         self._run_check(html, expected)
 
-    def test_EOF_in_charref(self):
-        # see #17802
-        # This test checks that the UnboundLocalError reported in the issue
-        # is not raised, however I'm not sure the returned values are correct.
-        # Maybe HTMLParser should use self.unescape for these
-        data = [
-            ('a&', [('data', 'a&')]),
-            ('a&b', [('data', 'ab')]),
-            ('a&b ', [('data', 'a'), ('entityref', 'b'), ('data', ' ')]),
-            ('a&b;', [('data', 'a'), ('entityref', 'b')]),
-        ]
-        for html, expected in data:
-            self._run_check(html, expected)
-
     def test_eof_in_comments(self):
         data = [
             ('<!--', [('comment', '')]),
@@ -966,6 +1040,26 @@ text
         check("</$" * 15 * n)
         check("<![CDATA[" * 9 * n)
         check("<!doctype" * 35 * n)
+
+    @support.requires_resource('cpu')
+    def test_incremental_no_quadratic_complexity(self):
+        # An unterminated construct fed in many small chunks used to take
+        # quadratic time, both to rescan and to concatenate the buffer.
+        # Now it takes a fraction of a second.
+        def check(prefix, chunk, suffix):
+            parser = html.parser.HTMLParser()
+            parser.feed(prefix)
+            for _ in range(200_000):
+                parser.feed(chunk)
+            parser.feed(suffix)
+            parser.close()
+        chunk = "a" * 64
+        check("<!--", chunk, "-->")       # comment
+        check("<?", chunk, ">")           # processing instruction
+        check("<!doctype ", chunk, ">")   # doctype
+        check("<![CDATA[", chunk, "]]>")  # CDATA section
+        check("<a href='", chunk, "'>")   # start tag
+        check("<script>", chunk, "</script>")  # RAWTEXT element
 
 
 class AttributesTestCase(TestCaseBase):

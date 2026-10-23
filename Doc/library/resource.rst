@@ -2,11 +2,7 @@
 ===============================================
 
 .. module:: resource
-   :platform: Unix
    :synopsis: An interface to provide resource usage information on the current process.
-
-.. moduleauthor:: Jeremy Hylton <jeremy@alum.mit.edu>
-.. sectionauthor:: Jeremy Hylton <jeremy@alum.mit.edu>
 
 --------------
 
@@ -356,9 +352,9 @@ These functions are used to retrieve resource usage information:
       print(getrusage(RUSAGE_SELF))
 
    The fields of the return value each describe how a particular system resource
-   has been used, e.g. amount of time spent running is user mode or number of times
+   has been used, e.g. amount of time spent running in user mode or number of times
    the process was swapped out of main memory. Some values are dependent on the
-   clock tick internal, e.g. the amount of memory the process is using.
+   clock tick interval, e.g. the amount of memory the process is using.
 
    For backward compatibility, the return value is also accessible as a tuple of 16
    elements.

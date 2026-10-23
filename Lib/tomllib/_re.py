@@ -10,16 +10,20 @@ import re
 
 TYPE_CHECKING = False
 if TYPE_CHECKING:
-    from typing import Any
+    from typing import Any, Final
 
     from ._types import ParseFloat
 
-# E.g.
-# - 00:32:00.999999
-# - 00:32:00
-_TIME_RE_STR = r"([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])(?:\.([0-9]{1,6})[0-9]*)?"
+_TIME_RE_STR: Final = r"""
+([01][0-9]|2[0-3])             # hours
+:([0-5][0-9])                  # minutes
+(?:
+    :([0-5][0-9])              # optional seconds
+    (?:\.([0-9]{1,6})[0-9]*)?  # optional fractions of a second
+)?
+"""
 
-RE_NUMBER = re.compile(
+RE_NUMBER: Final = re.compile(
     r"""
 0
 (?:
@@ -38,8 +42,8 @@ RE_NUMBER = re.compile(
 """,
     flags=re.VERBOSE,
 )
-RE_LOCALTIME = re.compile(_TIME_RE_STR)
-RE_DATETIME = re.compile(
+RE_LOCALTIME: Final = re.compile(_TIME_RE_STR, flags=re.VERBOSE)
+RE_DATETIME: Final = re.compile(
     rf"""
 ([0-9]{{4}})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])  # date, e.g. 1988-10-27
 (?:
@@ -74,7 +78,8 @@ def match_to_datetime(match: re.Match[str]) -> datetime | date:
     year, month, day = int(year_str), int(month_str), int(day_str)
     if hour_str is None:
         return date(year, month, day)
-    hour, minute, sec = int(hour_str), int(minute_str), int(sec_str)
+    hour, minute = int(hour_str), int(minute_str)
+    sec = int(sec_str) if sec_str else 0
     micros = int(micros_str.ljust(6, "0")) if micros_str else 0
     if offset_sign_str:
         tz: tzinfo | None = cached_tz(
@@ -103,8 +108,9 @@ def cached_tz(hour_str: str, minute_str: str, sign_str: str) -> timezone:
 
 def match_to_localtime(match: re.Match[str]) -> time:
     hour_str, minute_str, sec_str, micros_str = match.groups()
+    sec = int(sec_str) if sec_str else 0
     micros = int(micros_str.ljust(6, "0")) if micros_str else 0
-    return time(int(hour_str), int(minute_str), int(sec_str), micros)
+    return time(int(hour_str), int(minute_str), sec, micros)
 
 
 def match_to_number(match: re.Match[str], parse_float: ParseFloat) -> Any:

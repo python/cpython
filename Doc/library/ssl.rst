@@ -4,9 +4,6 @@
 .. module:: ssl
    :synopsis: TLS/SSL wrapper for socket objects
 
-.. moduleauthor:: Bill Janssen <bill.janssen@gmail.com>
-.. sectionauthor::  Bill Janssen <bill.janssen@gmail.com>
-
 **Source code:** :source:`Lib/ssl.py`
 
 .. index:: single: OpenSSL; (use in module ssl)
@@ -70,7 +67,7 @@ by SSL sockets created through the :meth:`SSLContext.wrap_socket` method.
    Use of deprecated constants and functions result in deprecation warnings.
 
 
-Functions, Constants, and Exceptions
+Functions, constants, and exceptions
 ------------------------------------
 
 
@@ -130,7 +127,7 @@ purposes.
                                      cafile=None, capath=None, cadata=None)
 
    Return a new :class:`SSLContext` object with default settings for
-   the given *purpose*.  The settings are chosen by the :mod:`ssl` module,
+   the given *purpose*.  The settings are chosen by the :mod:`!ssl` module,
    and usually represent a higher security level than when calling the
    :class:`SSLContext` constructor directly.
 
@@ -149,9 +146,9 @@ purposes.
    *cadata* is given) or uses :meth:`SSLContext.load_default_certs` to load
    default CA certificates.
 
-   When :attr:`~SSLContext.keylog_filename` is supported and the environment
-   variable :envvar:`SSLKEYLOGFILE` is set, :func:`create_default_context`
-   enables key logging.
+   When the environment variable :envvar:`!SSLKEYLOGFILE` is set,
+   :func:`create_default_context` enables key logging by setting
+   :attr:`~SSLContext.keylog_filename` to the variable's value.
 
    The default settings for this context include
    :data:`VERIFY_X509_PARTIAL_CHAIN` and :data:`VERIFY_X509_STRICT`.
@@ -377,7 +374,7 @@ Certificate handling
 
 .. function:: cert_time_to_seconds(cert_time)
 
-   Return the time in seconds since the Epoch, given the ``cert_time``
+   Return the time in seconds since the epoch, given the ``cert_time``
    string representing the "notBefore" or "notAfter" date from a
    certificate in ``"%b %d %H:%M:%S %Y %Z"`` strptime format (C
    locale).
@@ -387,12 +384,12 @@ Certificate handling
    .. doctest:: newcontext
 
       >>> import ssl
+      >>> import datetime as dt
       >>> timestamp = ssl.cert_time_to_seconds("Jan  5 09:34:43 2018 GMT")
       >>> timestamp  # doctest: +SKIP
       1515144883
-      >>> from datetime import datetime
-      >>> print(datetime.utcfromtimestamp(timestamp))  # doctest: +SKIP
-      2018-01-05 09:34:43
+      >>> print(dt.datetime.fromtimestamp(timestamp, dt.UTC))  # doctest: +SKIP
+      2018-01-05 09:34:43+00:00
 
    "notBefore" or "notAfter" dates must use GMT (:rfc:`5280`).
 
@@ -985,13 +982,25 @@ Constants
 
 .. data:: OPENSSL_VERSION_INFO
 
-   A tuple of five integers representing version information about the
-   OpenSSL library::
+   A named tuple of five integers representing version information about the
+   OpenSSL library loaded by the interpreter:
+   *major*, *minor*, *fix*, *patch* and *status*::
 
     >>> ssl.OPENSSL_VERSION_INFO
-    (1, 0, 2, 11, 15)
+    ssl.OPENSSL_VERSION_INFO(major=3, minor=0, fix=0, patch=13, status=0)
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.16
+      It is now a named tuple.
+
+.. data:: OPENSSL_API_VERSION_INFO
+
+   A named tuple containing the version of the OpenSSL library that was used
+   for building the module, with the same fields as :const:`OPENSSL_VERSION_INFO`.
+   This may be different from the OpenSSL library actually used at runtime.
+
+   .. versionadded:: 3.16
 
 .. data:: OPENSSL_VERSION_NUMBER
 
@@ -1075,7 +1084,7 @@ Constants
       :attr:`TLSVersion.TLSv1_3` are deprecated.
 
 
-SSL Sockets
+SSL sockets
 -----------
 
 .. class:: SSLSocket(socket.socket)
@@ -1124,7 +1133,7 @@ SSL Sockets
       :meth:`SSLContext.wrap_socket` to wrap a socket.
 
    .. versionchanged:: 3.7
-      :class:`SSLSocket` instances must to created with
+      :class:`SSLSocket` instances must be created with
       :meth:`~SSLContext.wrap_socket`. In earlier versions, it was possible
       to create instances directly. This was never documented or officially
       supported.
@@ -1287,12 +1296,20 @@ SSL sockets also have the following additional methods and attributes:
    If certificate verification was disabled method acts the same as
    :meth:`~SSLSocket.get_unverified_chain`.
 
+   The verified chain is not stored with a session, so the list is empty
+   when the session is resumed (see :attr:`~SSLSocket.session_reused`).
+
    .. versionadded:: 3.13
 
 .. method:: SSLSocket.get_unverified_chain()
 
    Returns raw certificate chain provided by the other
    end of the SSL channel as a list of DER-encoded bytes.
+
+   No certificates are exchanged when a session is resumed (see
+   :attr:`~SSLSocket.session_reused`); the list then holds what was stored
+   with the session, which for a session resumed from a ticket on the
+   server side is the peer's own certificate only.
 
    .. versionadded:: 3.13
 
@@ -1465,7 +1482,7 @@ SSL sockets also have the following additional methods and attributes:
    .. versionadded:: 3.6
 
 
-SSL Contexts
+SSL contexts
 ------------
 
 .. versionadded:: 3.2
@@ -1510,7 +1527,7 @@ to speed up repeated connections from the same clients.
       TLS 1.3.
 
    .. seealso::
-      :func:`create_default_context` lets the :mod:`ssl` module choose
+      :func:`create_default_context` lets the :mod:`!ssl` module choose
       security settings for a given purpose.
 
    .. versionchanged:: 3.6
@@ -1850,6 +1867,12 @@ to speed up repeated connections from the same clients.
    :class:`SSLContext` representing a certificate chain that matches the server
    name.
 
+   If the callback assigns a new context to :attr:`SSLSocket.context`, any
+   further ClientHello message on the same connection (for example after a
+   TLS 1.3 HelloRetryRequest) is dispatched to the new context's
+   *sni_callback*, if it has one; the original callback is not called again
+   for that connection.
+
    Due to the early negotiation phase of the TLS connection, only limited
    methods and attributes are usable like
    :meth:`SSLSocket.selected_alpn_protocol` and :attr:`SSLSocket.context`.
@@ -1873,6 +1896,11 @@ to speed up repeated connections from the same clients.
    had OPENSSL_NO_TLSEXT defined when it was built.
 
    .. versionadded:: 3.7
+
+   .. versionchanged:: 3.16
+      After the callback assigns a new :attr:`SSLSocket.context`, later
+      ClientHello messages on the connection are dispatched to the new
+      context's *sni_callback*.
 
 .. method:: SSLContext.set_servername_callback(server_name_callback)
 
@@ -1995,7 +2023,11 @@ to speed up repeated connections from the same clients.
    outgoing BIO.
 
    The *server_side*, *server_hostname* and *session* parameters have the
-   same meaning as in :meth:`SSLContext.wrap_socket`.
+   same meaning as in :meth:`SSLContext.wrap_socket`, and are validated in
+   the same way: in particular a :exc:`ValueError` is raised when
+   :attr:`~SSLContext.check_hostname` is enabled but no *server_hostname* is
+   given, since there would be no name to match the peer's certificate
+   against.
 
    .. versionchanged:: 3.6
       *session* argument was added.
@@ -2003,6 +2035,13 @@ to speed up repeated connections from the same clients.
    .. versionchanged:: 3.7
       The method returns an instance of :attr:`SSLContext.sslobject_class`
       instead of hard-coded :class:`SSLObject`.
+
+   .. versionchanged:: 3.16
+      The *server_side*, *server_hostname* and *session* parameters are now
+      validated as :meth:`SSLContext.wrap_socket` validates them. Previously
+      a context with :attr:`~SSLContext.check_hostname` enabled and no
+      *server_hostname* was accepted, and verified the certificate chain but
+      never the peer's identity.
 
 .. attribute:: SSLContext.sslobject_class
 
@@ -2079,7 +2118,7 @@ to speed up repeated connections from the same clients.
    :attr:`~SSLContext.minimum_version` and
    :attr:`SSLContext.options` all affect the supported SSL
    and TLS versions of the context. The implementation does not prevent
-   invalid combination. For example a context with
+   invalid combinations. For example a context with
    :attr:`OP_NO_TLSv1_2` in :attr:`~SSLContext.options` and
    :attr:`~SSLContext.maximum_version` set to :attr:`TLSVersion.TLSv1_2`
    will not be able to establish a TLS 1.2 connection.
@@ -2202,8 +2241,8 @@ to speed up repeated connections from the same clients.
    Client-identity is an optional string which may be used by the server to
    select a corresponding PSK for the client. The string must be less than or
    equal to ``256`` octets when UTF-8 encoded. PSK is a
-   :term:`bytes-like object` representing the pre-shared key. Return a zero
-   length PSK to reject the connection.
+   :term:`bytes-like object` representing the pre-shared key. With TLS 1.2
+   and earlier, return a zero length PSK to reject the connection.
 
    Setting ``callback`` to :const:`None` removes any existing callback.
 
@@ -2212,12 +2251,23 @@ to speed up repeated connections from the same clients.
 
       - the ``hint`` parameter is always :const:`None`.
       - client-identity must be a non-empty string.
+      - the PSK is only offered to the server, which may decline it and
+        authenticate with a certificate instead.  That certificate is checked
+        according to :attr:`~SSLContext.verify_mode`, so a client relying on
+        the PSK to authenticate the server should not set it to
+        :const:`CERT_NONE`, or should check :attr:`SSLSocket.session_reused`,
+        which is true if the PSK was used.  A PSK handshake does not need any
+        CA certificates to be loaded when using :const:`CERT_REQUIRED`.
+      - a zero length PSK does not reject the connection, it only means that
+        no PSK is offered.  An exception raised by the callback has the same
+        effect.
+      - the PSK is used with the SHA-256 handshake digest, so a server can
+        only accept it with a cipher suite that uses SHA-256.
 
    Example usage::
 
       context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
       context.check_hostname = False
-      context.verify_mode = ssl.CERT_NONE
       context.maximum_version = ssl.TLSVersion.TLSv1_2
       context.set_ciphers('PSK')
 
@@ -2249,7 +2299,7 @@ to speed up repeated connections from the same clients.
    The ``identity`` parameter is an optional identity sent by the client which can
    be used to select a corresponding PSK.
    The return value is a :term:`bytes-like object` representing the pre-shared key.
-   Return a zero length PSK to reject the connection.
+   With TLS 1.2 and earlier, return a zero length PSK to reject the connection.
 
    Setting ``callback`` to :const:`None` removes any existing callback.
 
@@ -2258,7 +2308,19 @@ to speed up repeated connections from the same clients.
    UTF-8 encoded.
 
    .. note::
-      When using TLS 1.3 the ``identity_hint`` parameter is not sent to the client.
+      When using TLS 1.3:
+
+      - the ``identity_hint`` parameter is not sent to the client.
+      - a zero length PSK, or an exception raised by the callback, only
+        declines the client's PSK.  If a certificate was loaded with
+        :meth:`~SSLContext.load_cert_chain`, the handshake continues with
+        certificate authentication instead of failing, so a server relying on
+        the PSK to authenticate clients should not load one, or should check
+        :attr:`SSLSocket.session_reused`, which is true if the PSK was used.
+      - the PSK can only be accepted with a cipher suite that uses SHA-256.
+        When a certificate is loaded, OpenSSL's default TLS 1.3 cipher suite
+        order selects a SHA-384 suite instead, so the PSK is declined even if
+        it matches.
 
    Example usage::
 
@@ -2656,7 +2718,7 @@ thus several things you need to be aware of:
    as well.
 
 
-Memory BIO Support
+Memory BIO support
 ------------------
 
 .. versionadded:: 3.5
@@ -2882,11 +2944,11 @@ disabled by default.
 ::
 
    >>> client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-   >>> client_context.minimum_version = ssl.TLSVersion.TLSv1_3
+   >>> client_context.minimum_version = ssl.TLSVersion.TLSv1_2
    >>> client_context.maximum_version = ssl.TLSVersion.TLSv1_3
 
 
-The SSL context created above will only allow TLSv1.3 and later (if
+The SSL client context created above will only allow TLSv1.2 and TLSv1.3 (if
 supported by your system) connections to a server. :const:`PROTOCOL_TLS_CLIENT`
 implies certificate validation and hostname checks by default. You have to
 load certificates into the context.
@@ -2959,16 +3021,16 @@ of TLS/SSL. Some new TLS 1.3 features are not yet available.
        Steve Kent
 
    :rfc:`RFC 4086: Randomness Requirements for Security <4086>`
-       Donald E., Jeffrey I. Schiller
+       Donald E. Eastlake, Jeffrey I. Schiller, Steve Crocker
 
    :rfc:`RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile <5280>`
-       D. Cooper
+       David Cooper et al.
 
    :rfc:`RFC 5246: The Transport Layer Security (TLS) Protocol Version 1.2 <5246>`
-       T. Dierks et. al.
+       Tim Dierks and Eric Rescorla.
 
    :rfc:`RFC 6066: Transport Layer Security (TLS) Extensions <6066>`
-       D. Eastlake
+       Donald E. Eastlake
 
    `IANA TLS: Transport Layer Security (TLS) Parameters <https://www.iana.org/assignments/tls-parameters/tls-parameters.xml>`_
        IANA

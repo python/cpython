@@ -1,3 +1,0 @@
-:mod:`xml.parsers.expat`: Fix a memory leak that could affect users with
-:meth:`~xml.parsers.expat.xmlparser.ElementDeclHandler` set to a custom
-element declaration handler. Patch by Sebastian Pipping.

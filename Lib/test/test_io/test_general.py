@@ -125,6 +125,7 @@ class IOTest:
             self.assertRaises(exc, fp.readline)
         with self.open(os_helper.TESTFN, "wb", buffering=0) as fp:
             self.assertRaises(exc, fp.read)
+            self.assertRaises(exc, fp.readall)
             self.assertRaises(exc, fp.readline)
         with self.open(os_helper.TESTFN, "rb", buffering=0) as fp:
             self.assertRaises(exc, fp.write, b"blah")
@@ -317,6 +318,22 @@ class IOTest:
             self.assertRaises(TypeError, f.readline, 5.3)
         with self.open(os_helper.TESTFN, "r", encoding="utf-8") as f:
             self.assertRaises(TypeError, f.readline, 5.3)
+
+    def test_readline_limit_with_short_read(self):
+        class Reader(self.IOBase):
+            data = b"abcdef"
+
+            def peek(self, size):
+                return self.data
+
+            def read(self, size):
+                data = self.data[:min(size, 2)]
+                self.data = self.data[len(data):]
+                return data
+
+        reader = Reader()
+        self.assertEqual(reader.readline(3), b"abc")
+        self.assertEqual(reader.data, b"def")
 
     def test_readline_nonsizeable(self):
         # Issue #30061
@@ -607,6 +624,25 @@ class IOTest:
         for bad_size in (2147483647, sys.maxsize, -1, -1000):
             with self.assertRaises(ValueError):
                 Misbehaved(bad_size).read()
+
+    def test_RawIOBase_read_gh60107(self):
+        # gh-60107: Ensure a "Raw I/O" which keeps a reference to the
+        # mutable memory doesn't allow making a mutable bytes.
+        class RawIOKeepsReference(self.MockRawIOWithoutRead):
+            def __init__(self, *args, **kwargs):
+                self.buf = None
+                super().__init__(*args, **kwargs)
+
+            def readinto(self, buf):
+                # buf is the bytearray so keeping a reference to it doesn't keep
+                # the memory alive; a memoryview does.
+                self.buf = memoryview(buf)
+                buf[0:4] = self._read_stack.pop()
+                return 3
+
+        with self.assertRaises(BufferError):
+            rawio = RawIOKeepsReference([b"1234"])
+            rawio.read(4)
 
     def test_types_have_dict(self):
         test = (
