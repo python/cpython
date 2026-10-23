@@ -316,7 +316,7 @@ The special characters are:
       :exc:`FutureWarning` is raised if a character set contains constructs
       that will change semantically in the future.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added support for nested sets and the set operators ``--``, ``&&``
       and ``||``.
 
@@ -718,13 +718,13 @@ character ``'$'``.
    This is only recognized in Unicode (str) patterns.
    In bytes patterns it is an error.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 ``\P{...}``
    Matches any character which does *not* have the given Unicode property.
    This is the opposite of ``\p``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. index:: single: \z; in regular expressions
            single: \Z; in regular expressions

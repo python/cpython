@@ -272,6 +272,27 @@ New runtime versions may be added using ``py install``. One or more tags may be
 specified, and the special tag ``default`` may be used to select the default.
 Ranges are not supported for installation.
 
+CPython publishes multiple runtime variants. For most users,
+``PythonCore`` is recommended and provides the standard CPython runtime.
+Tags without any prefix are treated as ``PythonCore\<TAG>``.
+
+``PythonTest`` includes the standard runtime together with the test suite
+and debugging symbols. It is intended for contributors or users who need
+these additional files for testing or debugging Python.
+
+``PythonEmbed`` provides a minimal embeddable distribution for
+applications that bundle Python rather than for interactive use. It
+would normally be used with the ``--target`` option described below.
+
+To see the available runtime variants, run::
+
+   py list --online
+
+To install a specific variant, include it in the tag passed to
+``py install``::
+
+   py install PythonTest\3.14
+
 The ``--source=<URL>`` option allows overriding the online index that is used to
 obtain runtimes. This may be used with an offline index, as shown in
 :ref:`pymanager-offline`.
@@ -283,8 +304,8 @@ Passing ``--update`` will replace existing installs if the new version is newer.
 Otherwise, they will be left. If no tags are provided with ``--update``, all
 installs managed by the Python install manager will be updated if newer versions
 are available. Updates will remove any modifications made to the install,
-including globally installed packages, but virtual environments will continue to
-work.
+including globally installed packages, but will leave ``site-packages`` and
+``Scripts`` directories as is.  Virtual environments are also unaffected.
 
 Passing ``--dry-run`` will generate output and logs, but will not modify any
 installs.
@@ -382,7 +403,6 @@ again. To completely clean up all Python runtimes, run with ``--purge`` before
 uninstalling the Python install manager.
 
 .. _pymanager-config:
-.. _customization:
 .. _customizing-default-python-versions:
 .. _customization-via-ini-files:
 .. _launcher-ini:
@@ -400,8 +420,9 @@ override all other settings, but not every option is available.
 This section will describe the defaults, but be aware that modified or
 overridden installs may resolve settings differently.
 
-A global configuration file may be configured by an administrator, and would be
-read first. The user configuration file is stored at
+A global configuration file may be configured by an
+:ref:`administrator <pymanager-admin-config>`
+and would be read first. The user configuration file is stored at
 :file:`%AppData%\\Python\\pymanager.json`
 (note that this location is under ``Roaming``, not ``Local``) and is read next,
 overwriting any settings from earlier files. An additional configuration file

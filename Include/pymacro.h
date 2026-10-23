@@ -118,20 +118,20 @@
    /* Minimum value between x and y */
 #  define Py_MIN(x, y) \
        __extension__ \
-       ({ _Py_TYPEOF (x) _x = (x); \
-          _Py_TYPEOF (y) _y = (y); \
-          _x < _y ? _x : _y; })
+       ({ _Py_TYPEOF (x) _PyMIN_x = (x); \
+          _Py_TYPEOF (y) _PyMIN_y = (y); \
+          _PyMIN_x < _PyMIN_y ? _PyMIN_x : _PyMIN_y; })
    /* Maximum value between x and y */
 #  define Py_MAX(x, y) \
        __extension__ \
-       ({ _Py_TYPEOF (x) _x = (x); \
-          _Py_TYPEOF (y) _y = (y); \
-          _x > _y ? _x : _y; })
+       ({ _Py_TYPEOF (x) _PyMAX_x = (x); \
+          _Py_TYPEOF (y) _PyMAX_y = (y); \
+          _PyMAX_x > _PyMAX_y ? _PyMAX_x : _PyMAX_y; })
    /* Absolute value of the number x */
 #  define Py_ABS(x) \
        __extension__ \
-       ({ _Py_TYPEOF (x) _x = (x); \
-          _x < 0 ? -_x : _x; })
+       ({ _Py_TYPEOF (x) _PyABS_x = (x); \
+          _PyABS_x < 0 ? -_PyABS_x : _PyABS_x; })
 #else
    /* Minimum value between x and y */
 #  define Py_MIN(x, y) (((x) > (y)) ? (y) : (x))

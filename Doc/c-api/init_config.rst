@@ -123,7 +123,7 @@ Error Handling
    Python 3.16. Instead, the option is now processed in :c:func:`Py_RunMain`.
    This function became useless.
 
-   .. deprecated:: next
+   .. deprecated:: 3.16
 
 
 Get Options
@@ -247,7 +247,7 @@ Initialize Python
    * Return ``0`` on success.
    * Set an error in *config* and return ``-1`` on error.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       The function no longer sets an exit code if a command line option wants
       to exit Python. Instead, the option is now processed in
       :c:func:`Py_RunMain`.
@@ -623,7 +623,7 @@ Some options are read from the :mod:`sys` attributes. For example, the option
 
    .. versionadded:: 3.14
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       The function now replaces :data:`sys.flags` (create a new object),
       instead of modifying :data:`sys.flags` in-place.
 
@@ -755,7 +755,7 @@ PyStatus
 
       Exit code. Argument passed to ``exit()``.
 
-      .. deprecated:: next
+      .. deprecated:: 3.16
 
    .. c:member:: const char *err_msg
 
@@ -787,7 +787,7 @@ PyStatus
 
       Exit Python with the specified exit code.
 
-      .. deprecated:: next
+      .. deprecated:: 3.16
          :c:func:`Py_InitializeFromConfig` no longer sets an exit code if a
          command line option wants to exit Python. Instead, the option is
          now processed in :c:func:`Py_RunMain`.
@@ -807,7 +807,7 @@ PyStatus
 
       Is the result an exit?
 
-      .. deprecated:: next
+      .. deprecated:: 3.16
          :c:func:`Py_InitializeFromConfig` no longer sets an exit code if a
          command line option wants to exit Python. Instead, the option is
          now processed in :c:func:`Py_RunMain`.
@@ -1438,6 +1438,10 @@ PyConfig
       name. For example, ``"ANSI_X3.4-1968"`` is replaced with ``"ascii"``.
 
       See also the :c:member:`~PyConfig.filesystem_errors` member.
+
+      See also :c:func:`PyUnicode_EncodeFSDefault` and
+      :ref:`related functions <capi-filesystem-encoding>`
+      for encoding paths at runtime.
 
    .. c:member:: wchar_t* filesystem_errors
 

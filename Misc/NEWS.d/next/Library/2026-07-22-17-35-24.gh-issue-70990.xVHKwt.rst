@@ -1,4 +1,0 @@
-:class:`logging.handlers.SysLogHandler` now accepts a :class:`bytes` address
-of a Unix domain socket, including an address in the abstract namespace.
-Previously only :class:`str` was recognized,
-and a :class:`bytes` address raised :exc:`ValueError`.

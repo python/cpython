@@ -1,2 +1,0 @@
-In IDLE, Tab in a string that is not the start of a file name inserts a tab
-instead of opening the completion list.

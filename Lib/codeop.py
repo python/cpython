@@ -62,15 +62,10 @@ def _maybe_compile(compiler, source, filename, symbol, flags):
         warnings.simplefilter("ignore", (SyntaxWarning, DeprecationWarning))
         try:
             compiler(source, filename, symbol, flags=flags)
+        except _IncompleteInputError:
+            return None
         except SyntaxError:  # Let other compile() errors propagate.
-            try:
-                compiler(source + "\n", filename, symbol, flags=flags)
-                return None
-            except _IncompleteInputError:
-                return None
-            except SyntaxError:
-                pass
-                # fallthrough
+            pass
 
     return compiler(source, filename, symbol, incomplete_input=False)
 
