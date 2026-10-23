@@ -86,6 +86,13 @@ rst_epilog = f"""
 .. |python_x_dot_y_literal| replace:: ``python{version}``
 .. |python_x_dot_y_t_literal| replace:: ``python{version}t``
 .. |python_x_dot_y_t_literal_config| replace:: ``python{version}t-config``
+.. |python_x_dot_y_exe_literal| replace:: ``python{version}.exe``
+.. |python_x_dot_y_t_exe_literal| replace:: ``python{version}t.exe``
+.. |python_xy_dll_literal| replace:: ``python{v.major}{v.minor}.dll``
+.. |py_v_x_dot_y_literal| replace:: ``py -V:{version}``
+.. |py_v_x_dot_y_t_literal| replace:: ``py -V:{version}t``
+.. |x_dot_y_literal| replace:: ``{version}``
+.. |x_dot_y_64_literal| replace:: ``{version}-64``
 .. |x_dot_y_b2_literal| replace:: ``{version}.0b2``
 .. |applications_python_version_literal| replace:: ``/Applications/Python {version}/``
 .. |usr_local_bin_python_x_dot_y_literal| replace:: ``/usr/local/bin/python{version}``
