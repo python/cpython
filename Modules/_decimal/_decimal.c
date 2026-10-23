@@ -3229,7 +3229,7 @@ dec_apply(PyObject *v, PyObject *context)
 /* 'v' can have any type accepted by the Decimal constructor. Attempt
    an exact conversion. If the result does not meet the restrictions
    for an mpd_t, fail with InvalidOperation. */
-static PyObject *
+static inline PyObject *
 PyDecType_FromObjectExact(PyTypeObject *type, PyObject *v, PyObject *context)
 {
     decimal_state *state = get_module_state_from_ctx(context);
