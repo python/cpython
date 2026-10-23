@@ -309,7 +309,8 @@ class PolicyAPITests(unittest.TestCase):
     # specials, characters needing 2, 3 and 4 byte UTF-8 encodings, and the
     # delimiters of RFC 2047 encoded words.  The pieces cannot combine into a
     # well-formed encoded word (there is no lone '?'), since such text is
-    # not encoded and so does not round trip; that is gh-160148.
+    # written out verbatim and decoded on reparse rather than encoded; that
+    # is gh-160148, pinned by the expected-failure examples below.
     _fold_pieces = hypothesis.strategies.sampled_from([
         'a', 'word', 'longwordlongwordlongword', ' ', '  ', '\t', ',', ';',
         ':', '(', ')', '<', '>', '"', '@', '\\', '.', '-', '_', '\xa0',
@@ -337,6 +338,13 @@ class PolicyAPITests(unittest.TestCase):
     @hypothesis.example(subject='word \U0001f600 word', maxlen=0)
     @hypothesis.example(subject='  ', maxlen=78)
     @hypothesis.example(subject='', maxlen=78)
+    # gh-160148: text that is itself a well-formed encoded word.
+    @hypothesis.example(subject='=?utf-8?q?x?=', maxlen=78).xfail(
+        reason="gh-160148", raises=AssertionError)
+    @hypothesis.example(subject='=?utf-8?q?x?=)', maxlen=78).xfail(
+        reason="gh-160148", raises=AssertionError)
+    @hypothesis.example(subject='=?utf-8?q?x?=\xe9', maxlen=78).xfail(
+        reason="gh-160148", raises=AssertionError)
     def test_fold_unstructured_round_trip(self, subject, maxlen):
         policy = email.policy.default.clone(max_line_length=maxlen)
         try:
