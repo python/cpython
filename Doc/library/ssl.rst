@@ -326,15 +326,20 @@ Exceptions
    A subclass of :exc:`SSLError` raised when the handshake fails because the
    server rejected :ref:`Encrypted Client Hello <ssl-encrypted-client-hello>`.
    The connection cannot be used. If :attr:`retry_config` is not empty, the
-   client may retry once with a new connection using that configuration.
+   client should retry once with a new connection using that configuration.
+   If it is empty, the authenticated server has securely disabled ECH, and the
+   client should retry with a new connection without ECH (see :rfc:`9849`,
+   section 6.1.6).
+
+   If certificate verification for the outer server name fails, the handshake
+   raises :exc:`SSLCertVerificationError` instead.
 
    This exception is only raised when :data:`HAS_ECH` is ``True``.
 
    .. attribute:: retry_config
 
       The server's ECH retry configuration as an ECHConfigList,
-      or ``b""`` if the server did not provide one or the server
-      could not be authenticated under the outer server name.
+      or ``b""`` if the server did not provide one.
 
    .. versionadded:: next
 
@@ -3185,8 +3190,11 @@ connection from a context with :meth:`SSLContext.set_ech_config`.
 A server that has rotated its ECH keys rejects the connection and provides a
 retry configuration, which the handshake raises as
 :exc:`SSLECHRejectedError`. The following example requires a binary-encoded
-ECHConfigList discovered through DNS and retries once with
-:attr:`SSLECHRejectedError.retry_config` if it is not empty::
+ECHConfigList discovered through DNS and retries once with the server's
+:attr:`SSLECHRejectedError.retry_config` if it is not empty, or without ECH
+if the authenticated server has securely disabled it.
+
+The following example shows how to connect to a website with HTTP using ECH::
 
    import http.client
    import socket
@@ -3202,9 +3210,12 @@ ECHConfigList discovered through DNS and retries once with
                return context.wrap_socket(sock, server_hostname=hostname)
            except ssl.SSLECHRejectedError as exc:
                sock.close()
-               if attempt or not exc.retry_config:
+               if attempt:
                    raise
-               context.set_ech_config(exc.retry_config)
+               if exc.retry_config:
+                   context.set_ech_config(exc.retry_config)
+               else:
+                   context = ssl.create_default_context()
            except BaseException:
                sock.close()
                raise
