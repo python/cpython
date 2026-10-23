@@ -169,6 +169,14 @@ class TestMessageAPI(TestEmailBase):
         subpart = msg.get_payload(1)
         eq(subpart.get_filename(), 'dingusfish.gif')
 
+    def test_get_filename_with_unquoted_apostrophe(self):
+        msg = email.message_from_string(
+            "Content-Disposition: attachment; filename=O'Brien.pdf\n",
+            policy=email.policy.default,
+        )
+        self.assertEqual(msg.get_filename(), "O'Brien.pdf")
+        self.assertDefectsEqual(msg['content-disposition'].defects, [])
+
     def test_get_filename_with_name_parameter(self):
         eq = self.assertEqual
 
@@ -1923,6 +1931,23 @@ This is the dingus fish.
         eq(m.get_payload(), [m0, m1])
         self.assertFalse(m0.is_multipart())
         self.assertFalse(m1.is_multipart())
+
+    def test_unquoted_apostrophe_in_boundary(self):
+        msg = email.message_from_string("""\
+Content-Type: multipart/mixed; boundary=abc'def
+
+--abc'def
+Content-Type: text/plain
+
+body
+--abc'def--
+""", policy=email.policy.default)
+        self.assertEqual(msg.get_boundary(), "abc'def")
+        self.assertTrue(msg.is_multipart())
+        self.assertEqual(len(msg.get_payload()), 1)
+        self.assertEqual(msg.get_payload(0).get_payload(), 'body')
+        self.assertDefectsEqual(msg['content-type'].defects, [])
+        self.assertDefectsEqual(msg.defects, [])
 
     def test_empty_multipart_idempotent(self):
         text = """\
