@@ -244,6 +244,16 @@ Interpreter objects
    Generally, :class:`Interpreter` shouldn't be called directly.
    Instead, use :func:`create` or one of the other module functions.
 
+   :class:`!Interpreter` objects support the :term:`context manager`
+   protocol. Exiting the :keyword:`with` block calls :meth:`close`::
+
+      with interpreters.create() as interp:
+          interp.exec('print("hello")')
+
+   .. versionchanged:: next
+      Added support for using :class:`!Interpreter` objects in
+      a :term:`context manager`.
+
    .. attribute:: id
 
       (read-only)

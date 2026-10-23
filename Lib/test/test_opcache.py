@@ -2,6 +2,7 @@ import collections
 import copy
 import pickle
 import dis
+import sys
 import threading
 import types
 import unittest
@@ -2173,6 +2174,39 @@ class TestSpecializer(TestBase):
 
     @cpython_only
     @requires_specialization
+    def test_call_list_append_memory_error(self):
+        # gh-151818: if CALL_LIST_APPEND fails to resize the list,
+        # the argument must be released exactly once.
+        _testcapi = import_module("_testcapi")
+
+        class Holder:
+            pass
+
+        def list_append(l, holder):
+            # holder.item is pushed as a new reference, which
+            # CALL_LIST_APPEND steals.
+            l.append(holder.item)
+
+        holder = Holder()
+        holder.item = item = object()
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            list_append([], holder)
+        self.assert_specialized(list_append, "CALL_LIST_APPEND")
+
+        refcount = sys.getrefcount(item)
+        # An empty list has no spare capacity, so append() must resize it.
+        lst = []
+        with self.assertRaises(MemoryError):
+            _testcapi.set_nomemory(0)
+            try:
+                list_append(lst, holder)
+            finally:
+                _testcapi.remove_mem_hooks()
+        self.assertEqual(lst, [])
+        self.assertEqual(sys.getrefcount(item), refcount)
+
+    @cpython_only
+    @requires_specialization
     def test_call_c_function_extra_flags(self):
         # METH_CLASS, METH_STATIC and METH_COEXIST do not change the C
         # calling convention, so the specialized instructions must not
@@ -2291,6 +2325,35 @@ class TestSpecializer(TestBase):
             self.assert_no_opcode(load_module_attr_missing, "LOAD_ATTR_MODULE")
         finally:
             sys.modules.pop("test_module_with_getattr", None)
+
+    @cpython_only
+    @requires_specialization
+    def test_load_attr_module_subclass_with_data_descriptor(self):
+        # gh-156399: a types.ModuleType subclass inherits
+        # PyModule_Type.tp_getattro, so guarding specialization on tp_getattro
+        # alone let subclasses take LOAD_ATTR_MODULE. That reads the module
+        # dict directly, silently bypassing a data descriptor defined on the
+        # subclass once the instruction had specialized.
+        class Descriptor:
+            def __get__(self, instance, owner=None):
+                return "from descriptor"
+
+            def __set__(self, instance, value):
+                instance.__dict__["attr"] = value
+
+        class Module(types.ModuleType):
+            attr = Descriptor()
+
+        module = Module("test_module_subclass")
+        module.__dict__["attr"] = "from dict"
+
+        def load_module_attr():
+            return module.attr
+
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            self.assertEqual(load_module_attr(), "from descriptor")
+
+        self.assert_no_opcode(load_module_attr, "LOAD_ATTR_MODULE")
 
     @cpython_only
     @requires_specialization

@@ -2,7 +2,23 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
+static Py_hash_t
+weakref_hash_impl(PyWeakReference *self);
+
+static Py_hash_t
+weakref_hash(PyObject *self)
+{
+    Py_hash_t return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = weakref_hash_impl((PyWeakReference *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
 
 PyDoc_STRVAR(weakref_ref_new__doc__,
 "ReferenceType(object, callback=None, /)\n"
@@ -54,7 +70,7 @@ weakref_ref_vectorcall(PyObject *type, PyObject *const *args,
     PyObject *object;
     PyObject *callback = NULL;
 
-    assert(Py_Is(_PyType_CAST(type), &_PyWeakref_RefType));
+    assert(_PyType_CAST(type)->tp_new == weakref_ref_new);
     /* Make sure the type object is immutable: the generated
      * vectorcall doesn't deal e.g. with users reassigning __init__. */
     assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
@@ -107,4 +123,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=aae708ed2a9e3be1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=774282aa1017bab5 input=a9049054013a1b77]*/
