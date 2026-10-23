@@ -799,6 +799,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'base_prefix': GET_DEFAULT_CONFIG,
         'exec_prefix': GET_DEFAULT_CONFIG,
         'base_exec_prefix': GET_DEFAULT_CONFIG,
+        'build_prefix': IGNORE_CONFIG,
         'module_search_paths': GET_DEFAULT_CONFIG,
         'module_search_paths_set': True,
         'platlibdir': sys.platlibdir,
