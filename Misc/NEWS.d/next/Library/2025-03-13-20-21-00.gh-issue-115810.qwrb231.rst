@@ -1,0 +1,2 @@
+Add :attr:`datetime.timezone.name`, the *name* passed to the constructor,
+or ``None`` if no name was passed.
