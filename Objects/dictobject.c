@@ -4867,6 +4867,12 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
 
     if (_PyDict_HasSplitTable(mp) && PyUnicode_CheckExact(key)) {
         ix = insert_split_key(mp->ma_keys, key, hash);
+#ifdef Py_GIL_DISABLED
+        if (!_PyDict_HasSplitTable(mp)) {
+            // insert_split_dict re-entered and created a dict
+            goto relookup;
+        }
+#endif
         if (ix != DKIX_EMPTY) {
             PyObject *value = mp->ma_values->values[ix];
             int already_present = value != NULL;
@@ -4882,6 +4888,9 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
         // No space in shared keys. Go to insert_combined_dict() below.
     }
     else {
+#ifdef Py_GIL_DISABLED
+relookup:
+#endif
         ix = _Py_dict_lookup(mp, key, hash, &value);
         if (ix == DKIX_ERROR) {
             if (result) {
@@ -7496,27 +7505,15 @@ store_instance_attr_lock_held(PyObject *obj, PyDictValues *values,
 
     if (ix == DKIX_EMPTY) {
 #ifdef Py_STATS
-        if (shared_keys_usable_size(keys) == SHARED_KEYS_MAX_SIZE) {
-            OBJECT_STAT_INC(dict_materialized_too_big);
-        }
-        else {
-            OBJECT_STAT_INC(dict_materialized_new_key);
-        }
+        OBJECT_STAT_INC(dict_materialized_too_big);
 #endif
 
-        // Make the dict but don't publish it in the object
-        // so that no one else will see it.
-        PyDictObject *dict = make_dict_from_instance_attributes(keys, values);
-        if (dict == NULL ||
+        PyDictObject *dict;
+        if ((dict = _PyObject_MaterializeManagedDict_LockHeld(obj)) == NULL ||
             _PyDict_SetItem_LockHeld(dict, name, value) < 0) {
-            Py_XDECREF(dict);
             return -1;
         }
-
-        FT_ATOMIC_STORE_PTR_RELEASE(_PyObject_ManagedDictPointer(obj)->dict,
-                                    (PyDictObject *)dict);
         return 0;
-
     }
 
     PyObject *old_value = values->values[ix];
