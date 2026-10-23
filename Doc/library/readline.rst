@@ -71,7 +71,7 @@ Readline library in general.
    With the ``editline`` backend, this is the version of the Readline
    interface emulated by libedit, not the version of libedit.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: readline_version_info
 
@@ -79,7 +79,7 @@ Readline library in general.
    actually loaded by the interpreter,
    with the same fields as :const:`READLINE_VERSION_INFO`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: readline_version
 
@@ -87,7 +87,7 @@ Readline library in general.
    interpreter, like ``'8.3'``.
    With the ``editline`` backend, this is ``'EditLine wrapper'``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 Init file
 ---------

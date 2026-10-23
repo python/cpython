@@ -237,6 +237,13 @@ def _wrap_strftime(object, format, timetuple):
                         freplace = '%06d' % getattr(object,
                                                     'microsecond', 0)
                     newformat.append(freplace)
+                elif ch in '123456' and format[i:i+1] == 'f':
+                    i += 1
+                    if freplace is None:
+                        freplace = '%06d' % getattr(object,
+                                                    'microsecond', 0)
+                    precision = int(ch)
+                    newformat.append(freplace[:precision])
                 elif ch == 'z':
                     if zreplace is None:
                         if hasattr(object, "utcoffset"):
@@ -2531,6 +2538,11 @@ class timezone(tzinfo):
             return self._name
         raise TypeError("tzname() argument must be a datetime instance"
                         " or None")
+
+    @property
+    def name(self):
+        """Name given when the timezone was created."""
+        return self._name
 
     def dst(self, dt):
         if isinstance(dt, datetime) or dt is None:

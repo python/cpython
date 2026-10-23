@@ -6,6 +6,7 @@ import pickle
 import sys
 import threading
 import time
+import tracemalloc
 import unittest
 import warnings
 import weakref
@@ -1448,6 +1449,41 @@ def _to_memoryview(buf):
 class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
     shutdown_error = "LookupError: unknown encoding: ascii"
 
+    def test_write_newline_replace_returns_non_string(self):
+        class Text(str):
+            def replace(self, *args):
+                return None
+
+        with self.TextIOWrapper(self.BytesIO(), newline='\r\n') as stream:
+            with self.assertRaisesRegex(TypeError, 'replace.*str'):
+                stream.write(Text('a\n'))
+
+    def test_write_newline_replace_changes_stream(self):
+        def fail_init(stream, buffer):
+            with self.assertRaises(LookupError):
+                stream.__init__(buffer, encoding='nonexistent-encoding')
+
+        actions = (
+            (lambda stream, buffer: stream.close(), ValueError, 'closed'),
+            (lambda stream, buffer: stream.detach(), ValueError, 'detached'),
+            (lambda stream, buffer: stream.__init__(buffer),
+             self.UnsupportedOperation, 'not writable'),
+            (fail_init, ValueError, 'uninitialized'),
+        )
+        for action, error, message in actions:
+            with self.subTest(message=message):
+                with (self.BytesIO() as raw,
+                      self.BufferedReader(self.BytesIO()) as readonly):
+                    stream = self.TextIOWrapper(raw, newline='\r\n')
+
+                    class Text(str):
+                        def replace(self, *args):
+                            action(stream, readonly)
+                            return 'a\r\n'
+
+                    with self.assertRaisesRegex(error, message):
+                        stream.write(Text('a\n'))
+
     def test_chunk_size(self):
         t = self.TextIOWrapper(self.BytesIO(), encoding="utf-8")
         self.assertGreater(t._CHUNK_SIZE, 0)
@@ -1545,6 +1581,21 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
         t.write("x"*chunk_size)
         self.assertEqual([b"abcdef", b"ghi", b"x"*chunk_size], buf._write_stack)
 
+    def test_write_empty_no_memory_growth(self):
+        # gh-151814: Writing empty string should have stable memory usage.
+        t = self.TextIOWrapper(self.BytesIO())
+        nwrites = 200_000
+        tracemalloc.start()
+        try:
+            for _ in range(nwrites):
+                t.write("")
+            _, peak = tracemalloc.get_traced_memory()
+        finally:
+            tracemalloc.stop()
+
+        # No longer leaks several bytes per write.
+        self.assertLess(peak, nwrites)
+
     def test_issue119506(self):
         chunk_size = 8192
 
@@ -1632,6 +1683,36 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
             make_text(DetachOnWrite(self.MockRawIO()))
             wrapper.write('x')
             self.assertRaisesRegex(ValueError, "detached", wrapper.read)
+
+    def test_reentrant_detach_during_read(self):
+        # gh-157363, gh-157364: The buffer must stay alive until its active
+        # read operation returns.
+        wrapper = None
+
+        class DetachOnRead(self.RawIOBase):
+            detached = False
+
+            def readable(self):
+                return True
+
+            def readinto(self, b):
+                if self.detached:
+                    return 0
+                self.detached = True
+                wrapper.detach()
+                b[:3] = b"ab\n"
+                return 3
+
+        for method_name in ("read", "readline"):
+            with self.subTest(method_name):
+                raw = DetachOnRead()
+                wrapper = self.TextIOWrapper(
+                    self.BufferedReader(raw), encoding="utf-8")
+                method = getattr(wrapper, method_name)
+                self.assertEqual(method(), "ab\n")
+                with self.assertRaisesRegex(ValueError,
+                                            "underlying buffer has been detached"):
+                    getattr(wrapper, 'buffer')
 
     def test_reentrant_seek_during_tell(self):
         # gh-153539: reading short of _CHUNK_SIZE leaves residual bytes in the

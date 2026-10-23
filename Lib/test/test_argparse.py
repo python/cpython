@@ -3246,6 +3246,20 @@ class TestGroupConstructor(TestCase):
                                  'argument groups cannot be nested',
                                  g.add_argument_group)
 
+    def test_group_types(self):
+        parser = argparse.ArgumentParser()
+        group = parser.add_argument_group()
+        self.assertIs(type(group), argparse.ArgumentGroup)
+        self.assertIs(type(parser.add_mutually_exclusive_group()),
+                      argparse.MutuallyExclusiveGroup)
+        self.assertIs(type(group.add_mutually_exclusive_group()),
+                      argparse.MutuallyExclusiveGroup)
+
+    def test_private_aliases(self):
+        self.assertIs(argparse._ArgumentGroup, argparse.ArgumentGroup)
+        self.assertIs(argparse._MutuallyExclusiveGroup,
+                      argparse.MutuallyExclusiveGroup)
+
 # ===================
 # Parent parser tests
 # ===================

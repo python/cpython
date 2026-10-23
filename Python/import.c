@@ -287,6 +287,9 @@ _PyImport_ClearLazyModules(PyInterpreterState *interp)
 int
 _PyImport_DiscardLazyModule(PyInterpreterState *interp, PyObject *name)
 {
+    if (LAZY_MODULES(interp) == NULL) {
+        return 0;
+    }
     return PySet_Discard(LAZY_MODULES(interp), name);
 }
 
@@ -2504,12 +2507,14 @@ lookup_inittab_entry(const struct _Py_ext_module_loader_info* info)
 
 static PyObject*
 create_builtin(
-    PyThreadState *tstate, PyObject *name,
+    PyThreadState *tstate,
+    PyObject *name, /* if NULL, get from spec */
     PyObject *spec,
     PyModInitFunction initfunc)
 {
     struct _Py_ext_module_loader_info info;
-    if (_Py_ext_module_loader_info_init_for_builtin(&info, name) < 0) {
+    _Py_ext_module_origin origin = _Py_ext_module_origin_BUILTIN;
+    if (_Py_ext_module_loader_info_init(&info, name, spec, origin) < 0) {
         return NULL;
     }
 
@@ -2542,7 +2547,7 @@ create_builtin(
         struct _inittab *entry = lookup_inittab_entry(&info);
         if (entry == NULL) {
             mod = NULL;
-            _PyErr_SetModuleNotFoundError(name);
+            _PyErr_SetModuleNotFoundError(info.name);
             goto finally;
         }
 
@@ -2594,20 +2599,7 @@ PyImport_CreateModuleFromInitfunc(
 
     PyThreadState *tstate = _PyThreadState_GET();
 
-    PyObject *name = PyObject_GetAttr(spec, &_Py_ID(name));
-    if (name == NULL) {
-        return NULL;
-    }
-
-    if (!PyUnicode_Check(name)) {
-        PyErr_Format(PyExc_TypeError,
-                     "spec name must be string, not %T", name);
-        Py_DECREF(name);
-        return NULL;
-    }
-
-    PyObject *mod = create_builtin(tstate, name, spec, initfunc);
-    Py_DECREF(name);
+    PyObject *mod = create_builtin(tstate, NULL, spec, initfunc);
     return mod;
 }
 
@@ -2819,8 +2811,8 @@ PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co,
             Py_FatalError("no current interpreter");
         }
 
-        external= PyObject_GetAttrString(IMPORTLIB(interp),
-                                         "_bootstrap_external");
+        external= PyObject_GetAttr(IMPORTLIB(interp),
+                                   &_Py_ID(_bootstrap_external));
         if (external != NULL) {
             pathobj = PyObject_CallMethodOneArg(
                 external, &_Py_ID(_get_sourcefile), cpathobj);
@@ -2904,8 +2896,8 @@ PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname,
     if (pathname == NULL) {
         pathname = ((PyCodeObject *)co)->co_filename;
     }
-    external = PyObject_GetAttrString(IMPORTLIB(tstate->interp),
-                                      "_bootstrap_external");
+    external = PyObject_GetAttr(IMPORTLIB(tstate->interp),
+                                &_Py_ID(_bootstrap_external));
     if (external == NULL) {
         Py_DECREF(d);
         return NULL;
@@ -3483,8 +3475,8 @@ PyObject *
 _PyImport_GetImportlibExternalLoader(PyInterpreterState *interp,
                                      const char *loader_name)
 {
-    PyObject *bootstrap = PyObject_GetAttrString(IMPORTLIB(interp),
-                                                 "_bootstrap_external");
+    PyObject *bootstrap = PyObject_GetAttr(IMPORTLIB(interp),
+                                           &_Py_ID(_bootstrap_external));
     if (bootstrap == NULL) {
         return NULL;
     }
@@ -3497,8 +3489,8 @@ _PyImport_GetImportlibExternalLoader(PyInterpreterState *interp,
 PyObject *
 _PyImport_BlessMyLoader(PyInterpreterState *interp, PyObject *module_globals)
 {
-    PyObject *external = PyObject_GetAttrString(IMPORTLIB(interp),
-                                                "_bootstrap_external");
+    PyObject *external = PyObject_GetAttr(IMPORTLIB(interp),
+                                          &_Py_ID(_bootstrap_external));
     if (external == NULL) {
         return NULL;
     }
@@ -4179,7 +4171,10 @@ lazy_modules_add(PyThreadState *tstate, PyObject *name,
     else {
         Py_XDECREF(mod);
     }
-    return loaded ? 0 : PySet_Add(LAZY_MODULES(tstate->interp), name);
+    if (loaded || LAZY_MODULES(tstate->interp) == NULL) {
+        return 0;
+    }
+    return PySet_Add(LAZY_MODULES(tstate->interp), name);
 }
 
 // Ensure a dict of pending submodule names exists for the parent.
@@ -4213,7 +4208,10 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name, PyObject *source)
 {
     PyDictObject *pending =
         (PyDictObject *)LAZY_PENDING_SUBMODULES(tstate->interp);
-    assert(pending != NULL);
+    // Finalizers can still run after finalize_modules() cleared the dict.
+    if (pending == NULL) {
+        return 0;
+    }
     Py_ssize_t end = PyUnicode_GET_LENGTH(name);
     while (true) {
         Py_ssize_t dot = PyUnicode_FindChar(name, '.', 0, end, -1);
@@ -5063,27 +5061,7 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
 {
     PyThreadState *tstate = _PyThreadState_GET();
 
-    PyObject *name = PyObject_GetAttrString(spec, "name");
-    if (name == NULL) {
-        return NULL;
-    }
-
-    if (!PyUnicode_Check(name)) {
-        PyErr_Format(PyExc_TypeError,
-                     "name must be string, not %.200s",
-                     Py_TYPE(name)->tp_name);
-        Py_DECREF(name);
-        return NULL;
-    }
-
-    if (PyUnicode_GetLength(name) == 0) {
-        PyErr_Format(PyExc_ValueError, "name must not be empty");
-        Py_DECREF(name);
-        return NULL;
-    }
-
-    PyObject *mod = create_builtin(tstate, name, spec, NULL);
-    Py_DECREF(name);
+    PyObject *mod = create_builtin(tstate, NULL, spec, NULL);
     return mod;
 }
 
@@ -5415,7 +5393,8 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     PyThreadState *tstate = _PyThreadState_GET();
 
     struct _Py_ext_module_loader_info info;
-    if (_Py_ext_module_loader_info_init_from_spec(&info, spec) < 0) {
+    _Py_ext_module_origin origin = _Py_ext_module_origin_DYNAMIC;
+    if (_Py_ext_module_loader_info_init(&info, NULL, spec, origin) < 0) {
         return NULL;
     }
 
@@ -5575,7 +5554,7 @@ _imp__set_lazy_attributes_impl(PyObject *module, PyObject *modobj,
 /*[clinic end generated code: output=3369bb3242b1f043 input=900339e013ab2b82]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (PySet_Discard(LAZY_MODULES(interp), name) < 0) {
+    if (_PyImport_DiscardLazyModule(interp, name) < 0) {
         return NULL;
     }
     if (_PyImport_ClearLazySubmodule(_PyThreadState_GET(), name, 0) < 0) {

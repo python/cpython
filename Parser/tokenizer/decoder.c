@@ -14,7 +14,6 @@
 #define UTF16_BOM_LENGTH ((Py_ssize_t)(sizeof(UTF16_LE_BOM) - 1))
 #define UTF8_BOM "\xef\xbb\xbf"
 #define UTF8_BOM_LENGTH ((Py_ssize_t)(sizeof(UTF8_BOM) - 1))
-#define NORMALIZED_LINE_INITIAL_CAPACITY 256
 
 char *
 _PyTok_CopyBytes(const char *data, Py_ssize_t len)
@@ -117,8 +116,8 @@ _PyTok_SetEncoding(struct tok_state *tok, const char *encoding)
         tok->done = E_NOMEM;
         return -1;
     }
-    PyMem_Free(tok->encoding);
-    tok->encoding = copy;
+    PyMem_Free(tok->reader->encoding);
+    tok->reader->encoding = copy;
     return 0;
 }
 
@@ -246,8 +245,8 @@ _PyTok_DetectEncoding(struct tok_state *tok, const _PyTok_Chunk *first,
         PyMem_Free(cookie);
         return _PYTOK_ENCODING_ERROR;
     }
-    PyMem_Free(tok->encoding);
-    tok->encoding = cookie;
+    PyMem_Free(tok->reader->encoding);
+    tok->reader->encoding = cookie;
     return _PYTOK_ENCODING_DONE;
 }
 
@@ -284,9 +283,6 @@ store_prepared_source(struct tok_state *tok, const char *data, Py_ssize_t len,
                       int preserve_crlf, int add_final_newline)
 {
     Py_ssize_t pos = 0;
-    // SourceAppendLine copies the bytes, so reuse this buffer for each line.
-    char *normalized = NULL;
-    Py_ssize_t capacity = 0;
     while (pos < len) {
         Py_ssize_t raw_line_len;
         if (preserve_crlf) {
@@ -304,52 +300,45 @@ store_prepared_source(struct tok_state *tok, const char *data, Py_ssize_t len,
         int add_newline = add_final_newline &&
             pos + raw_line_len == len && !terminated;
         const char *line = data + pos;
-        Py_ssize_t line_len = raw_line_len;
         // raw_line_length stops at the first CR or LF, so any CR is in
         // the line terminator.
         Py_ssize_t terminator_len = 0;
         if (!preserve_crlf) {
-            if (line[line_len - 1] == '\r') {
+            if (line[raw_line_len - 1] == '\r') {
                 terminator_len = 1;
             }
-            else if (line_len > 1 && line[line_len - 2] == '\r') {
+            else if (raw_line_len > 1 && line[raw_line_len - 2] == '\r') {
                 terminator_len = 2;
             }
         }
+        _PyTok_Off appended;
         if (terminator_len || add_newline) {
-            Py_ssize_t payload_len = line_len - terminator_len;
-            if (payload_len > PY_SSIZE_T_MAX - 2) {
-                PyErr_NoMemory();
-                tok->done = E_NOMEM;
-                goto error;
-            }
-            Py_ssize_t needed = payload_len + 2;
-            if (_PyTok_ReserveBuffer(&normalized, &capacity, needed,
-                                    NORMALIZED_LINE_INITIAL_CAPACITY) < 0) {
-                tok->done = E_NOMEM;
-                goto error;
-            }
-            memcpy(normalized, line, payload_len);
-            normalized[payload_len] = '\n';
-            line_len = payload_len + 1;
-            normalized[line_len] = '\0';
-            line = normalized;
+            appended = _PyTok_SourceAppendLineWithNewline(
+                &tok->source, line, raw_line_len - terminator_len);
         }
-        _PyTok_Off appended = _PyTok_SourceAppendLine(
-            &tok->source, line, line_len);
+        else {
+            appended = _PyTok_SourceAppendLine(&tok->source, line, raw_line_len);
+        }
         if (appended < 0) {
             tok->done = PyErr_ExceptionMatches(PyExc_MemoryError)
                 ? E_NOMEM : E_ERROR;
-            goto error;
+            return -1;
         }
-        tok->reader->prepared_final_newline_is_implicit = add_newline;
+        tok->reader->prepared_final_newline = add_newline;
         pos += raw_line_len;
     }
-    PyMem_Free(normalized);
+    // Partial input includes the newline submitted by the next Enter key.
+    // A final CR pairs with that newline instead of starting a blank line.
+    if (add_final_newline == _PyTokenizer_APPEND_NEWLINE &&
+        !tok->reader->prepared_final_newline &&
+        (len == 0 || data[len - 1] != '\r'))
+    {
+        if (_PyTok_SourceAppendLine(&tok->source, "\n", 1) < 0) {
+            return -1;
+        }
+        tok->reader->prepared_final_newline = _PyTokenizer_APPEND_NEWLINE;
+    }
     return 0;
-error:
-    PyMem_Free(normalized);
-    return -1;
 }
 
 int
@@ -393,9 +382,10 @@ _PyTok_PrepareString(struct tok_state *tok, const char *input, int utf8_only,
         .len = raw_len,
         .ownership = _PYTOK_CHUNK_BORROWED,
     };
-    if (tok->encoding != NULL && strcmp(tok->encoding, "utf-8") != 0) {
+    const char *encoding = tok->reader->encoding;
+    if (encoding != NULL && strcmp(encoding, "utf-8") != 0) {
         if (_PyTok_DecodeOnce(
-                tok, &decoded, tok->encoding, NULL) < 0) {
+                tok, &decoded, encoding, NULL) < 0) {
             return -1;
         }
     }
@@ -407,7 +397,7 @@ _PyTok_PrepareString(struct tok_state *tok, const char *input, int utf8_only,
         return -1;
     }
     if (!utf8_only &&
-            (tok->encoding == NULL || strcmp(tok->encoding, "utf-8") == 0) &&
+            (encoding == NULL || strcmp(encoding, "utf-8") == 0) &&
             !_PyTokenizer_ensure_utf8(_PyTok_SourceData(&tok->source), tok, 1)) {
         return -1;
     }
@@ -418,22 +408,18 @@ int
 _PyTok_StartDecoder(struct tok_state *tok, const char *errors)
 {
     _PyTok_Reader *reader = tok->reader;
-    if (tok->encoding == NULL || reader->decoder != NULL) {
+    if (reader->encoding == NULL || reader->decoder != NULL) {
         return 0;
     }
     if (reader->kind == _PYTOK_READER_FILE &&
-            strcmp(tok->encoding, "utf-8") == 0) {
+            strcmp(reader->encoding, "utf-8") == 0) {
         return 0;
     }
 
-    PyObject *codec = _PyCodec_LookupTextEncoding(tok->encoding, NULL);
+    PyObject *codec = _PyCodec_LookupTextEncoding(reader->encoding, NULL);
     if (codec != NULL) {
-        PyObject *factory = PyObject_GetAttrString(codec, "incrementaldecoder");
+        reader->decoder = _PyCodecInfo_GetIncrementalDecoder(codec, errors);
         Py_DECREF(codec);
-        if (factory != NULL) {
-            reader->decoder = PyObject_CallFunction(factory, "s", errors);
-            Py_DECREF(factory);
-        }
     }
     if (reader->decoder == NULL) {
         tok->done = PyErr_ExceptionMatches(PyExc_MemoryError)
