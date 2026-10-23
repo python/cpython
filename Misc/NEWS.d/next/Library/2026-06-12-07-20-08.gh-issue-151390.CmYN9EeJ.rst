@@ -1,1 +1,0 @@
-Colorize ``match`` in the :term:`REPL` when followed by a unary ``+`` or ``-`` operator. Patch by Bartosz Sławecki.

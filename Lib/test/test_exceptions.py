@@ -250,6 +250,16 @@ class ExceptionTests(unittest.TestCase):
                 self.assertEqual(cm.exception.offset, offset)
                 self.assertEqual(cm.exception.end_offset, end_offset)
 
+    def testSyntaxErrorNonUTF8Offset(self):
+        # gh-157378: the position was reported one column short for each
+        # multi-byte character preceding the invalid byte on the same line
+        check = self.check
+        check(b'X\x80', 1, 2, 1, 2)
+        check(b'\xc3\xa9X\x80', 1, 3, 1, 3)
+        check(b'\t\xc3\xa9X\x80', 1, 4, 1, 4)
+        check(b'a\xc3\xa9b\x80c', 1, 4, 1, 4)
+        check(b'a\n\xc3\xa9X\x80', 2, 3, 2, 3)
+
     def testSyntaxErrorOffset(self):
         check = self.check
         check('def fact(x):\n\treturn x!\n', 2, 10)
@@ -738,17 +748,17 @@ class ExceptionTests(unittest.TestCase):
                 self.assertIsNone(getattr(exc, name))
 
     def test_invalid_delattr(self):
-        TE = TypeError
+        AE = AttributeError
         try:
             raise IndexError(4)
         except Exception as e:
             exc = e
 
-        msg = "may not be deleted"
-        self.assertRaisesRegex(TE, msg, delattr, exc, 'args')
-        self.assertRaisesRegex(TE, msg, delattr, exc, '__traceback__')
-        self.assertRaisesRegex(TE, msg, delattr, exc, '__cause__')
-        self.assertRaisesRegex(TE, msg, delattr, exc, '__context__')
+        msg = "cannot be deleted"
+        self.assertRaisesRegex(AE, msg, delattr, exc, 'args')
+        self.assertRaisesRegex(AE, msg, delattr, exc, '__traceback__')
+        self.assertRaisesRegex(AE, msg, delattr, exc, '__cause__')
+        self.assertRaisesRegex(AE, msg, delattr, exc, '__context__')
 
     def testNoneClearsTracebackAttr(self):
         try:
@@ -1660,14 +1670,14 @@ class ExceptionTests(unittest.TestCase):
         # the size of the list of preallocated MemoryError instances, the
         # Fatal Python error message mentions MemoryError.
         code = """if 1:
-            import _testcapi
+            from test import support
             class C(): pass
             def recurse(cnt):
                 cnt -= 1
                 if cnt:
                     recurse(cnt)
                 else:
-                    _testcapi.set_nomemory(0)
+                    support.inject_memory_error()
                     C()
             recurse(16)
         """
@@ -1843,9 +1853,10 @@ class ExceptionTests(unittest.TestCase):
     @support.nomemtest
     def test_memory_error_in_PyErr_PrintEx(self):
         code = """if 1:
-            import _testcapi
+            from test import support
+            stop = %d
             class C(): pass
-            _testcapi.set_nomemory(0, %d)
+            support.inject_memory_error(0, stop)
             C()
         """
 
@@ -2010,8 +2021,8 @@ class ExceptionTests(unittest.TestCase):
         warmup_code = "a = list(range(0, 1))\n" * 60
         user_input = warmup_code + dedent("""
             try:
-                import _testcapi
-                _testcapi.set_nomemory(0)
+                from test import support
+                support.inject_memory_error()
                 b = list(range(1000, 2000))
             except Exception as e:
                 import traceback
@@ -2794,6 +2805,32 @@ class TestInvalidExceptionMatcher(unittest.TestCase):
                 raise ValueError
             except (ValueError, 42):
                 pass
+
+    @cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_given_exception_matches_nested_tuple(self):
+        # Nested tuples are searched recursively.
+        self.assertTrue(
+            _testcapi.err_givenexceptionmatches(ValueError(), ((ValueError,),)))
+        self.assertFalse(
+            _testcapi.err_givenexceptionmatches(TypeError(), ((ValueError,),)))
+
+    @cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
+    @support.run_with_limited_c_stack(depth=500_000)
+    def test_given_exception_matches_deeply_nested_tuple(self):
+        # gh-156204: PyErr_GivenExceptionMatches() used to exhaust the C stack
+        # and crash the interpreter on deeply nested tuples of exception types.
+        tup = (ValueError,)
+        for _ in range(500_000):
+            tup = (tup,)
+
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(
+                _testcapi.err_givenexceptionmatches(ValueError(), tup))
+            self.assertIsInstance(cm.unraisable.exc_value, RecursionError)
 
 
 class PEP626Tests(unittest.TestCase):

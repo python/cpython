@@ -136,6 +136,9 @@ def _parse(tokens, priority=-1):
         except ValueError:
             raise _error(nexttok) from None
         result = '%s%d' % (result, value)
+    # Unary '!' binds tighter than binary operators in C, unlike 'not'.
+    if result.startswith('not '):
+        result = '(%s)' % result
     nexttok = next(tokens)
 
     j = 100

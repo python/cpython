@@ -93,20 +93,6 @@ PyDoc_STRVAR(_zstd_ZstdDecompressor_unused_data__doc__,
 "When ZstdDecompressor object stops after a frame is\n"
 "decompressed, unused input data after the frame.  Otherwise this\n"
 "will be b\'\'.");
-#if defined(_zstd_ZstdDecompressor_unused_data_DOCSTR)
-#   undef _zstd_ZstdDecompressor_unused_data_DOCSTR
-#endif
-#define _zstd_ZstdDecompressor_unused_data_DOCSTR _zstd_ZstdDecompressor_unused_data__doc__
-
-#if !defined(_zstd_ZstdDecompressor_unused_data_DOCSTR)
-#  define _zstd_ZstdDecompressor_unused_data_DOCSTR NULL
-#endif
-#if defined(_ZSTD_ZSTDDECOMPRESSOR_UNUSED_DATA_GETSETDEF)
-#  undef _ZSTD_ZSTDDECOMPRESSOR_UNUSED_DATA_GETSETDEF
-#  define _ZSTD_ZSTDDECOMPRESSOR_UNUSED_DATA_GETSETDEF {"unused_data", (getter)_zstd_ZstdDecompressor_unused_data_get, (setter)_zstd_ZstdDecompressor_unused_data_set, _zstd_ZstdDecompressor_unused_data_DOCSTR},
-#else
-#  define _ZSTD_ZSTDDECOMPRESSOR_UNUSED_DATA_GETSETDEF {"unused_data", (getter)_zstd_ZstdDecompressor_unused_data_get, NULL, _zstd_ZstdDecompressor_unused_data_DOCSTR},
-#endif
 
 static PyObject *
 _zstd_ZstdDecompressor_unused_data_get_impl(ZstdDecompressor *self);
@@ -222,4 +208,6 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=70bc308e86463751 input=a9049054013a1b77]*/
+#define _ZSTD_ZSTDDECOMPRESSOR_UNUSED_DATA_GETSETDEF {"unused_data", (getter)_zstd_ZstdDecompressor_unused_data_get, (setter)NULL, _zstd_ZstdDecompressor_unused_data__doc__},
+
+/*[clinic end generated code: output=91b84afb07b1188c input=a9049054013a1b77]*/

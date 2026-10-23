@@ -1,2 +1,0 @@
-Restores the ``mmap`` module when CPython is built from source for specific
-Windows API sets.
