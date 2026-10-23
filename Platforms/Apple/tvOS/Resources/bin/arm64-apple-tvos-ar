@@ -1,2 +1,2 @@
-#!/bin/bash
+#!/bin/sh
 xcrun --sdk appletvos${TVOS_SDK_VERSION} ar "$@"

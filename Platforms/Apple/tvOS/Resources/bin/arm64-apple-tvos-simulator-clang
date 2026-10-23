@@ -1,2 +1,2 @@
-#!/bin/bash
+#!/bin/sh
 xcrun --sdk appletvsimulator${TVOS_SDK_VERSION} clang -target arm64-apple-tvos${TVOS_DEPLOYMENT_TARGET}-simulator "$@"
