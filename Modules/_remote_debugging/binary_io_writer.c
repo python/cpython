@@ -810,6 +810,26 @@ cached_stack_matches(const StackCacheEntry *cached,
     return 1;
 }
 
+static StackCacheEntry *
+stack_cache_lookup(StackCacheEntry *bucket, const ByteBuffer *frames,
+                   Py_uhash_t hash, const uint32_t *stack, size_t depth)
+{
+    for (size_t i = 0; i < STACK_CACHE_BUCKET_SIZE; i++) {
+        if (cached_stack_matches(&bucket[i], frames, hash, stack, depth)) {
+            return &bucket[i];
+        }
+    }
+    return NULL;
+}
+
+static void
+stack_cache_insert(StackCacheEntry *bucket, StackCacheEntry entry)
+{
+    memmove(&bucket[1], &bucket[0],
+            (STACK_CACHE_BUCKET_SIZE - 1) * sizeof(*bucket));
+    bucket[0] = entry;
+}
+
 static int
 write_stack_repeat(BinaryWriter *writer, ThreadEntry *entry, size_t depth)
 {
@@ -853,7 +873,7 @@ write_stack_reuse(BinaryWriter *writer,
 }
 
 static int
-write_stack_replace_suffix(BinaryWriter *writer, StackCacheEntry *cached,
+write_stack_replace_suffix(BinaryWriter *writer, StackCacheEntry *bucket,
                            Py_uhash_t hash, const uint32_t *stack,
                            size_t depth, size_t shared)
 {
@@ -888,9 +908,9 @@ write_stack_replace_suffix(BinaryWriter *writer, StackCacheEntry *cached,
     }
     /* Complete stacks are cached so later samples can REUSE them */
     if (shared == 0) {
-        if (cached != NULL) {
-            *cached = (StackCacheEntry){
-                hash, (uint32_t)stack_offset, (uint32_t)depth};
+        if (bucket != NULL) {
+            stack_cache_insert(bucket, (StackCacheEntry){
+                hash, (uint32_t)stack_offset, (uint32_t)depth});
         }
         writer->stats.full_records++;
     }
@@ -906,10 +926,11 @@ static int
 choose_stack_encoding(SampleBlock *block, const ThreadEntry *entry,
                       int new_stream, const uint32_t *stack, size_t depth,
                       size_t *shared, Py_uhash_t *hash,
-                      StackCacheEntry **cached)
+                      StackCacheEntry **bucket, StackCacheEntry **cached)
 {
     *shared = common_outer_frames(entry, stack, depth);
     *hash = 0;
+    *bucket = NULL;
     *cached = NULL;
     if (!new_stream && *shared == depth &&
         *shared == entry->prev_stack_depth) {
@@ -919,9 +940,10 @@ choose_stack_encoding(SampleBlock *block, const ThreadEntry *entry,
         return STACK_REPLACE_SUFFIX;
     }
     *hash = stack_hash(stack, depth);
-    *cached = &block->cache[*hash % STACK_CACHE_SIZE];
-    if (cached_stack_matches(*cached, &block->columns[COLUMN_FRAME_IDS],
-                             *hash, stack, depth)) {
+    *bucket = block->cache[*hash % STACK_CACHE_BUCKET_COUNT];
+    *cached = stack_cache_lookup(*bucket, &block->columns[COLUMN_FRAME_IDS],
+                                 *hash, stack, depth);
+    if (*cached != NULL) {
         return STACK_REUSE;
     }
     return STACK_REPLACE_SUFFIX;
@@ -933,10 +955,11 @@ write_stack(BinaryWriter *writer, ThreadEntry *entry, int new_stream,
 {
     size_t shared;
     Py_uhash_t hash;
+    StackCacheEntry *bucket;
     StackCacheEntry *cached;
     int encoding = choose_stack_encoding(writer->block, entry, new_stream,
                                          stack, depth, &shared, &hash,
-                                         &cached);
+                                         &bucket, &cached);
 
     int result;
     switch (encoding) {
@@ -946,7 +969,7 @@ write_stack(BinaryWriter *writer, ThreadEntry *entry, int new_stream,
         result = write_stack_reuse(writer, cached, depth);
         break;
     case STACK_REPLACE_SUFFIX:
-        result = write_stack_replace_suffix(writer, cached, hash, stack,
+        result = write_stack_replace_suffix(writer, bucket, hash, stack,
                                             depth, shared);
         break;
     default:

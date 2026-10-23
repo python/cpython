@@ -1019,6 +1019,38 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
         self.assertEqual(stats["total_samples"], 2)
         writer.close()
 
+    def test_writer_reuses_colliding_stacks(self):
+        """Stacks sharing a cache bucket are both stored as STACK_REUSE."""
+        buckets = {}
+        for frame_id in range(2, 4099):
+            bucket = hash(struct.pack("=3I", 0, 1, frame_id)) % 4096
+            if bucket in buckets:
+                first_id = buckets[bucket]
+                second_id = frame_id
+                break
+            buckets[bucket] = frame_id
+
+        frames = [make_frame("a.py", line, "f")
+                  for line in range(second_id + 1)]
+        first = [frames[0], frames[1], frames[first_id]]
+        second = [frames[0], frames[1], frames[second_id]]
+
+        filename = self.temp_filename()
+        writer = _remote_debugging.BinaryWriter(filename, 1000, 0)
+        timestamp = 1000
+        # Assign frame IDs without exceeding MAX_STACK_DEPTH.
+        for start in range(0, len(frames), 256):
+            stack = frames[start:start + 256]
+            writer.write_sample([make_interpreter(0, [make_thread(2, stack)])],
+                                timestamp)
+            timestamp += 1000
+        for stack in (first, second, first, second):
+            writer.write_sample([make_interpreter(0, [make_thread(1, stack)])],
+                                timestamp)
+            timestamp += 1000
+        self.assertEqual(writer.get_stats()["reuse_records"], 2)
+        writer.close()
+
     def test_writer_buffered_bytes_match_flushed_bytes(self):
         """bytes_written before finalize() matches the flushed size."""
         filename = self.temp_filename()

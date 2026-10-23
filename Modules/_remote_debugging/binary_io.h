@@ -171,6 +171,9 @@ static_assert(PROFILE_STATS_SIZE == 56,
 
 /* Writer's stack cache size per block */
 #define STACK_CACHE_SIZE        4096
+#define STACK_CACHE_BUCKET_SIZE 2
+#define STACK_CACHE_BUCKET_COUNT \
+    (STACK_CACHE_SIZE / STACK_CACHE_BUCKET_SIZE)
 
 /* Initial capacities for dynamic arrays - sized to reduce reallocations */
 #define INITIAL_STRING_CAPACITY 4096
@@ -352,7 +355,7 @@ typedef struct {
     ByteBuffer transformed;
     ByteBuffer compressed;
     ByteBuffer output;
-    StackCacheEntry cache[STACK_CACHE_SIZE];
+    StackCacheEntry cache[STACK_CACHE_BUCKET_COUNT][STACK_CACHE_BUCKET_SIZE];
     uint64_t base_timestamp;
     uint32_t sample_count;
     uint32_t stream_count;
