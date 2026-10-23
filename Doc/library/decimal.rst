@@ -1187,7 +1187,7 @@ In addition to the three supplied contexts, new contexts can be created with the
       Fields which are not specified keep the values
       they have in the original context.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          Added support for :func:`copy.replace`.
 
    .. method:: copy_decimal(num, /)
@@ -1641,14 +1641,14 @@ The following constants are only available in the C module.
    This may be different from the libmpdec library actually used at runtime,
    which is available as :const:`libmpdec_version`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: libmpdec_version
 
    The version string of the libmpdec library actually loaded by the
    interpreter.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: LIBMPDEC_VERSION_INFO
 
@@ -1662,7 +1662,7 @@ The following constants are only available in the C module.
    This may be different from the libmpdec library actually used at runtime,
    which is available as :const:`libmpdec_version_info`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: libmpdec_version_info
 
@@ -1670,7 +1670,7 @@ The following constants are only available in the C module.
    actually loaded by the interpreter,
    with the same fields as :const:`LIBMPDEC_VERSION_INFO`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 Rounding modes

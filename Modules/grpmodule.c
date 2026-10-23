@@ -111,6 +111,7 @@ mkgrent(PyObject *module, struct group *p)
         return NULL;
     }
 
+    PyObject_GC_Track(v);
     return v;
 }
 

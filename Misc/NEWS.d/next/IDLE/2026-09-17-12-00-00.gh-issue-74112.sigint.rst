@@ -1,2 +1,0 @@
-Ctrl-C in the IDLE Shell now interrupts blocking calls such as
-:func:`time.sleep` and :meth:`socket.recv <socket.socket.recv>`.

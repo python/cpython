@@ -464,3 +464,112 @@ Low-level API
            return NULL;
        }
        return (char*)PyBytesWriter_GetData(writer) + pos;
+
+
+Example creating the string ``b'abc'``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Example creating the bytes string ``b"abc"``, with a fixed size of 3 bytes::
+
+    PyObject* create_abc(void)
+    {
+        PyBytesWriter *writer = PyBytesWriter_Create(3);
+        if (writer == NULL) {
+            return NULL;
+        }
+
+        char *str = PyBytesWriter_GetData(writer);
+        memcpy(str, "abc", 3);
+        return PyBytesWriter_Finish(writer);
+    }
+
+Variant using a pointer to compute the final size::
+
+    PyObject* create_abc_ptr(void)
+    {
+        PyBytesWriter *writer = PyBytesWriter_Create(3);
+        if (writer == NULL) {
+            return NULL;
+        }
+
+        char *str = PyBytesWriter_GetData(writer);
+        memcpy(str, "abc", 3);
+        str += 1;
+        return PyBytesWriter_FinishWithPointer(writer, str);
+    }
+
+
+Update ``PyBytes_FromStringAndSize()`` code
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Example of code using the soft deprecated
+``PyBytes_FromStringAndSize(NULL, size)`` API::
+
+    int copy_bytes(char *dest, const char *src, Py_ssize_t num_bytes)
+    {
+        ...
+    }
+
+    PyObject* create_string(const char *start, Py_ssize_t num_bytes)
+    {
+        PyObject *result = PyBytes_FromStringAndSize(NULL, num_bytes);
+        if (result == NULL) {
+            return NULL;
+        }
+        if (copy_bytes(PyBytes_AS_STRING(result), start, num_bytes) < 0) {
+            Py_CLEAR(result);
+        }
+        return result;
+    }
+
+It can now be updated to::
+
+    PyObject* create_string(const char *start, Py_ssize_t num_bytes)
+    {
+        PyBytesWriter *writer = PyBytesWriter_Create(num_bytes);
+        if (writer == NULL) {
+            return NULL;
+        }
+        if (copy_bytes(PyBytesWriter_GetData(writer), start, num_bytes) < 0) {
+            PyBytesWriter_Discard(writer);
+            return NULL;
+        }
+        return PyBytesWriter_Finish(writer);
+    }
+
+
+Update ``_PyBytes_Resize()`` code
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Example of code using the soft deprecated ``_PyBytes_Resize()`` API::
+
+    void create_string(Py_ssize_t size)
+    {
+        PyObject *bytes = PyBytes_FromStringAndSize(NULL, size);
+        if (bytes == NULL) {
+            return NULL;
+        }
+        char *str = PyBytes_AS_STRING(bytes);
+
+        // ... write data into str ...
+
+        if (_PyBytes_Resize(&bytes, (str - PyBytes_AS_STRING(bytes)))) {
+            return NULL;
+        }
+        return bytes;
+    }
+
+It can now be updated to::
+
+    void create_string(Py_ssize_t size)
+    {
+        PyBytesWriter *writer = PyBytesWriter_Create(size);
+        if (writer == NULL) {
+            return NULL;
+        }
+        char *str = PyBytesWriter_GetData(writer);
+
+        // ... write data into str ...
+
+        return PyBytesWriter_FinishWithPointer(writer, str);
+    }
