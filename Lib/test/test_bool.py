@@ -4,7 +4,6 @@ import unittest
 from test.support import os_helper
 
 import os
-import sys
 
 class BoolTest(unittest.TestCase):
 
@@ -26,11 +25,6 @@ class BoolTest(unittest.TestCase):
         self.assertIs(eval(repr(True)), True)
 
     def test_str(self):
-        if sys.platform == "linux":
-            # XXX: Intentional failure to test GitHub Actions annotations
-            self.assertEqual(
-                str(True),
-                'Yes')
         self.assertEqual(str(False), 'False')
         self.assertEqual(str(True), 'True')
 
