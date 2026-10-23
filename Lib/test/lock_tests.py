@@ -777,10 +777,17 @@ class ConditionTests(BaseTestCase):
         # it picks has just timed out.
         cond = self.condtype()
         waiting = threading.Event()
+        notified = threading.Event()
         results = []
+        acquire_restore = cond._acquire_restore
+        def hold_t1(state):
+            if threading.current_thread() is t1:
+                waiting.set()
+                notified.wait(support.SHORT_TIMEOUT)
+            acquire_restore(state)
+        cond._acquire_restore = hold_t1
         def short():
             with cond:
-                waiting.set()
                 results.append(("short", cond.wait(0.01)))
         def long():
             waiting.wait()
@@ -792,15 +799,13 @@ class ConditionTests(BaseTestCase):
         t2.start()
         try:
             waiting.wait()
-            # Hold the lock until the short timeout has expired.
             for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
                 with cond:
                     if len(cond._waiters) == 2:
+                        cond.notify()
                         break
-            with cond:
-                time.sleep(0.1)
-                cond.notify()
         finally:
+            notified.set()
             t1.join()
             t2.join()
         self.assertEqual(sorted(results), [("long", True), ("short", False)])
