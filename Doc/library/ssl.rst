@@ -889,7 +889,9 @@ Constants
 .. data:: OP_ECH_GREASE
 
    Include a GREASE ECH extension in ClientHello messages when ECH is not
-   being attempted. This can elicit an ECH retry configuration from a server.
+   being attempted, so these connections resemble connections that use ECH.
+   Clients must ignore any ECH retry configurations received in response to
+   GREASE (see :rfc:`9849`, section 6.2.1).
 
    Only available when :data:`HAS_ECH` is ``True``.
 
@@ -1953,7 +1955,8 @@ to speed up repeated connections from the same clients.
 .. method:: SSLContext.set_ech_config(ech_config)
 
    Sets an Encrypted Client Hello (ECH) configuration, which may be discovered from
-   an HTTPS resource record in DNS or from :meth:`SSLSocket.get_ech_retry_config`.
+   an HTTPS resource record in DNS or from
+   :attr:`SSLECHRejectedError.retry_config` after ECH rejection.
 
    The configuration applies to every connection made from the context, and a
    server that cannot decrypt it rejects the connection with
@@ -3181,56 +3184,49 @@ connection from a context with :meth:`SSLContext.set_ech_config`.
 
 A server that has rotated its ECH keys rejects the connection and provides a
 retry configuration, which the handshake raises as
-:exc:`SSLECHRejectedError`. The following example accepts a binary-encoded
-ECHConfigList discovered through DNS and retries once with the server's retry
-configuration. If no configuration is supplied, it enables ECH GREASE, which a
-server may answer with a retry configuration for a later connection::
+:exc:`SSLECHRejectedError`. The following example requires a binary-encoded
+ECHConfigList discovered through DNS and retries once with
+:attr:`SSLECHRejectedError.retry_config` if it is not empty::
 
    import http.client
    import socket
    import ssl
 
 
-   def connect_with_tls_ech(hostname, ech_config=None, use_retry_config=True):
-      context = ssl.create_default_context()
-      if ech_config is not None:
-         context.set_ech_config(ech_config)
-      else:
-         context.options |= ssl.OP_ECH_GREASE
-      sock = socket.create_connection((hostname, 443), timeout=10)
-      try:
-         ssock = context.wrap_socket(sock, server_hostname=hostname)
-      except BaseException:
-         sock.close()
-         raise
-      if (use_retry_config
-               and ssock.get_ech_status()
-               == ssl.ECHStatus.ECH_STATUS_GREASE_ECH):
-         try:
-               retry_config = ssock.get_ech_retry_config()
-         finally:
-               ssock.close()
-         return connect_with_tls_ech(hostname, retry_config, False)
-      return ssock
+   def connect_with_tls_ech(hostname, ech_config):
+       context = ssl.create_default_context()
+       context.set_ech_config(ech_config)
+       for attempt in range(2):
+           sock = socket.create_connection((hostname, 443), timeout=10)
+           try:
+               return context.wrap_socket(sock, server_hostname=hostname)
+           except ssl.SSLECHRejectedError as exc:
+               sock.close()
+               if attempt or not exc.retry_config:
+                   raise
+               context.set_ech_config(exc.retry_config)
+           except BaseException:
+               sock.close()
+               raise
 
    hostname = "python.org"
-   ech_config = None  # Replace with an ECHConfigList discovered through DNS.
+   ech_config = ...  # Replace with an ECHConfigList discovered through DNS.
 
    with connect_with_tls_ech(hostname, ech_config) as ssock:
-      print("ECH status:", ssock.get_ech_status().name)
-      request = (
-         "GET / HTTP/1.1\r\n"
-         f"Host: {hostname}\r\n"
-         "Connection: close\r\n\r\n"
-      )
-      ssock.sendall(request.encode("ascii"))
-      with http.client.HTTPResponse(ssock) as response:
-         response.begin()
-         print(f"HTTP {response.status} {response.reason}")
-         for name, value in response.getheaders():
+       print("ECH status:", ssock.get_ech_status().name)
+       request = (
+           "GET / HTTP/1.1\r\n"
+           f"Host: {hostname}\r\n"
+           "Connection: close\r\n\r\n"
+       )
+       ssock.sendall(request.encode("ascii"))
+       with http.client.HTTPResponse(ssock) as response:
+           response.begin()
+           print(f"HTTP {response.status} {response.reason}")
+           for name, value in response.getheaders():
                print(f"{name}: {value}")
-         print()
-         print(response.read().decode("utf-8", errors="replace"))
+           print()
+           print(response.read().decode("utf-8", errors="replace"))
 
 
 The following classes, methods, and attributes will be useful for using ECH:
