@@ -62,7 +62,6 @@ class TestPerfTrampoline(unittest.TestCase):
         for file in files_to_delete:
             file.unlink()
 
-    @unittest.skipIf(support.check_bolt_optimized(), "fails on BOLT instrumented binaries")
     def test_trampoline_works(self):
         code = """if 1:
                 def foo():
@@ -113,7 +112,6 @@ class TestPerfTrampoline(unittest.TestCase):
                 "Address should contain only hex characters",
             )
 
-    @unittest.skipIf(support.check_bolt_optimized(), "fails on BOLT instrumented binaries")
     def test_trampoline_with_unencodable_name(self):
         code = """if 1:
                 import sys
@@ -123,7 +121,6 @@ class TestPerfTrampoline(unittest.TestCase):
                 """
         assert_python_ok("-c", code, PYTHON_JIT="0")
 
-    @unittest.skipIf(support.check_bolt_optimized(), "fails on BOLT instrumented binaries")
     def test_trampoline_works_with_forks(self):
         code = """if 1:
                 import os, sys
@@ -193,7 +190,6 @@ class TestPerfTrampoline(unittest.TestCase):
         self.assertNotIn(f"py::bar:{script}", child_perf_file_contents)
         self.assertNotIn(f"py::baz:{script}", child_perf_file_contents)
 
-    @unittest.skipIf(support.check_bolt_optimized(), "fails on BOLT instrumented binaries")
     def test_trampoline_works_after_fork_with_many_code_objects(self):
         code = """if 1:
                 import gc, os, sys, signal
@@ -233,7 +229,6 @@ class TestPerfTrampoline(unittest.TestCase):
         self.assertEqual(process.returncode, 0, stderr)
         self.assertEqual(stderr, "")
 
-    @unittest.skipIf(support.check_bolt_optimized(), "fails on BOLT instrumented binaries")
     def test_sys_api(self):
         for define_eval_hook in (False, True):
             code = """if 1:
