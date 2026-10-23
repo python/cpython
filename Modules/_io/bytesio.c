@@ -39,8 +39,8 @@ typedef struct {
 #define bytesiobuf_CAST(op) ((bytesiobuf *)(op))
 
 /* The bytesio object can be in three states:
-  * Py_REFCNT(buf) == 1, exports == 0.
-  * Py_REFCNT(buf) > 1.  exports == 0,
+  * Py_REFCNT(buf) == 1, the hash of buf is not cached, exports == 0.
+  * Py_REFCNT(buf) > 1 or the hash of buf is cached.  exports == 0,
     first modification or export causes the internal buffer copying.
   * exports > 0.  Any modifications are forbidden.  Every exported buffer
     keeps a reference to buf, so it outlives closing of the bytesio object.
@@ -77,10 +77,19 @@ check_exports(bytesio *self)
         return NULL; \
     }
 
+/* If the hash value is cached, the internal bytes object was already used in
+   Python somehow (ex: as a dictionary key).  Modifying it in place would leave
+   the hash of the old contents, even if nothing else references it anymore. */
+#define HASHED_BUF(self) \
+    (_PyBytes_GET_CACHED_HASH((PyBytesObject *)(self)->buf) != -1)
+
 #ifdef Py_GIL_DISABLED
-#define SHARED_BUF(self) ((self)->buf_shared || !_PyObject_IsUniquelyReferenced((self)->buf))
+#define SHARED_BUF(self) \
+    ((self)->buf_shared || !_PyObject_IsUniquelyReferenced((self)->buf) \
+     || HASHED_BUF(self))
 #else
-#define SHARED_BUF(self) (!_PyObject_IsUniquelyReferenced((self)->buf))
+#define SHARED_BUF(self) \
+    (!_PyObject_IsUniquelyReferenced((self)->buf) || HASHED_BUF(self))
 #endif
 
 static inline void
@@ -269,6 +278,7 @@ write_bytes_lock_held(bytesio *self, PyObject *b)
             goto done;
         }
     }
+    assert(_PyBytes_IsMutable(self->buf));
 
     if (self->pos > self->string_size) {
         /* In case of overseek, pad with null bytes the buffer region between
