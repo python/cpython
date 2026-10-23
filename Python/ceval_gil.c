@@ -622,8 +622,6 @@ PyEval_ReleaseThread(PyThreadState *tstate)
 PyStatus
 _PyEval_ReInitThreads(PyThreadState *tstate)
 {
-    assert(tstate->interp == _PyInterpreterState_Main());
-
     for (PyInterpreterState *interp = PyInterpreterState_Head(); interp != NULL;
          interp = interp->next) {
         struct _gil_runtime_state *gil = interp->ceval.gil;
