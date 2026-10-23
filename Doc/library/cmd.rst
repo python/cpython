@@ -13,12 +13,12 @@ command interpreters.  These are often useful for test harnesses, administrative
 tools, and prototypes that will later be wrapped in a more sophisticated
 interface.
 
-A command interpreter built with :class:`Cmd` presents the user with an
-interactive prompt, reads input one line at a time, and runs each command by
-calling the method whose name matches it.  For example, the ``help`` command is
-handled by a ``do_help()`` method.  Apart from the built-in ``help`` command,
-the interpreter's behavior is defined by the ``do_*`` methods you add in your
-own subclass.
+A command interpreter built with :class:`Cmd` typically presents the user
+with an interactive prompt, reads input one line at a time, and dispatches each
+command to a method named ``do_`` followed by the command name.  For example,
+the ``help`` command is handled by the :meth:`~Cmd.do_help` method.  Apart from
+the built-in ``help`` command, most of the interpreter's behavior is defined by
+the ``do_*`` methods you add in your own subclass.
 
 .. class:: Cmd(completekey='tab', stdin=None, stdout=None)
 
