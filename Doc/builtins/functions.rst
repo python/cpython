@@ -354,7 +354,7 @@ are always available.  They are listed here in alphabetical order.
    consists of a single expression, or ``'single'`` if it consists of a single
    interactive statement (in the latter case, expression statements that
    evaluate to something other than ``None`` will be printed).
-   It can also be ``'func_type'`` if *source* consists of a :pep:`484`
+   It can also be ``'func_type'`` if *source* consists of a
    function type signature, for example ``(int) -> str``; see
    :func:`ast.parse` for more information. This mode requires passing
    :data:`ast.PyCF_ONLY_AST` in *flags*.
