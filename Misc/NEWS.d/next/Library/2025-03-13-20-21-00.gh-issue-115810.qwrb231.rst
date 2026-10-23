@@ -1,2 +1,2 @@
-Add ``name`` attribute to :class:`datetime.timezone` that returns the ``name``
-provided during creation else an empty string.
+Add :attr:`datetime.timezone.name`, the *name* passed to the constructor,
+or ``None`` if no name was passed.

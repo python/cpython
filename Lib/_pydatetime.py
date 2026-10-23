@@ -2541,9 +2541,7 @@ class timezone(tzinfo):
 
     @property
     def name(self):
-        """Return provided name otherwise empty string."""
-        if not self._name:
-            return ''
+        """Name given when the timezone was created."""
         return self._name
 
     def dst(self, dt):

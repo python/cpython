@@ -2476,6 +2476,11 @@ where historical changes have been made to civil time.
   Return ``dt + offset``. The *dt* argument must be an aware
   :class:`.datetime` instance, with ``tzinfo`` set to ``self``.
 
+.. attribute:: timezone.name
+
+   The *name* passed to the constructor, or ``None`` if no name was passed.
+
+   .. versionadded:: next
 
 Class attributes:
 
@@ -2483,10 +2488,6 @@ Class attributes:
 
    The UTC time zone, ``timezone(timedelta(0))``.
 
-.. attribute:: timezone.name
-
-   The name of the timezone if specified during creation. If no name is provided,
-   an empty string is returned.
 
 .. index::
    single: % (percent); datetime format

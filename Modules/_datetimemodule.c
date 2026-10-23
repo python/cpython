@@ -4492,16 +4492,6 @@ timezone_tzname(PyObject *op, PyObject *dt)
 }
 
 static PyObject *
-timezone_name(PyDateTime_TimeZone *self, void *closure)
-{
-    if (self->name == NULL) {
-        return PyUnicode_FromString("");
-    }
-    Py_INCREF(self->name);
-    return self->name;
-}
-
-static PyObject *
 timezone_utcoffset(PyObject *op, PyObject *dt)
 {
     if (_timezone_check_argument(dt, "utcoffset") == -1)
@@ -4568,9 +4558,19 @@ static PyMethodDef timezone_methods[] = {
     {NULL, NULL}
 };
 
+static PyObject *
+timezone_name(PyObject *op, void *Py_UNUSED(closure))
+{
+    PyDateTime_TimeZone *self = PyTimeZone_CAST(op);
+    if (self->name == NULL) {
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef(self->name);
+}
+
 static PyGetSetDef timezone_getset[] = {
-    {"name", (getter)timezone_name, NULL,
-     PyDoc_STR("If name is specified when timezone is created, returns the name."), NULL},
+    {"name", timezone_name, NULL,
+     PyDoc_STR("Name given when the timezone was created.")},
     {NULL}
 };
 
