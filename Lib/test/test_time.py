@@ -371,6 +371,64 @@ class TimeTestCase(unittest.TestCase):
                 self.fail("conversion specifier %r failed with '%s' input." %
                           (format, strf_output))
 
+    def test_strptime_whitespace(self):
+        whitespace = (' ', '\t\n\r\v\f', '\x1c', '\xa0', '\u2003', '\u202f')
+        for input_space in whitespace:
+            for format_space in whitespace:
+                with self.subTest(input_space=input_space,
+                                  format_space=format_space):
+                    text = input_space.join(('2024-02-29', '12:34:56'))
+                    fmt = format_space.join(('%Y-%m-%d', '%H:%M:%S'))
+                    self.assertEqual(time.strptime(text, fmt),
+                                     (2024, 2, 29, 12, 34, 56, 3, 60, -1))
+
+    def test_strptime_whitespace_before_adjacent_fields(self):
+        for separator in ('\x1c', '\x1d', '\x1e', '\x1f'):
+            with self.subTest(separator=separator):
+                text = f'2024{separator} 112 34{separator} 123'
+                fmt = f'%Y{separator}%d%m %M{separator}%H%S'
+                self.assertEqual(time.strptime(text, fmt),
+                                 (2024, 2, 11, 12, 34, 3, 6, 42, -1))
+
+    def test_strptime_numeric_calendar(self):
+        cases = (
+            ('0001-01-01', 1, 1, 1, 0, 1),
+            ('1900-03-01', 1900, 3, 1, 3, 60),
+            ('2000-02-29', 2000, 2, 29, 1, 60),
+            ('2000-03-01', 2000, 3, 1, 2, 61),
+            ('2024-12-31', 2024, 12, 31, 1, 366),
+            ('2100-03-01', 2100, 3, 1, 0, 60),
+            ('9999-12-31', 9999, 12, 31, 4, 365),
+        )
+        for text, year, month, day, weekday, yday in cases:
+            with self.subTest(text=text):
+                result = time.strptime(text, '%Y-%m-%d')
+                self.assertIs(type(result), time.struct_time)
+                self.assertEqual(result,
+                                 (year, month, day, 0, 0, 0, weekday, yday, -1))
+                self.assertIsNone(result.tm_zone)
+                self.assertIsNone(result.tm_gmtoff)
+
+    def test_strptime_numeric_offset(self):
+        for text, offset in (('', None), ('Z', 0), ('+0000', 0),
+                             ('-00:00', 0), ('+0530', 19800),
+                             ('-03:30', -12600), ('+2359', 86340),
+                             ('+01:02:03.456', 3723)):
+            with self.subTest(text=text):
+                result = time.strptime('12:34:56.123' + text, '%H:%M:%S.%f%z')
+                self.assertEqual(result, (1900, 1, 1, 12, 34, 56, 0, 1, -1))
+                self.assertIsNone(result.tm_zone)
+                self.assertEqual(result.tm_gmtoff, offset)
+
+    @support.run_with_locale('LC_TIME', 'C')
+    def test_strptime_default_format(self):
+        self.assertEqual(time.strptime('Thu Feb 29 12:34:56 2024'),
+                         (2024, 2, 29, 12, 34, 56, 3, 60, -1))
+        for args in ((), ('2024', '%Y', 'extra'), (None, '%Y')):
+            with self.subTest(args=args):
+                with self.assertRaises(TypeError):
+                    time.strptime(*args)
+
     def test_strptime_bytes(self):
         # Make sure only strings are accepted as arguments to strptime.
         self.assertRaises(TypeError, time.strptime, b'2009', "%Y")

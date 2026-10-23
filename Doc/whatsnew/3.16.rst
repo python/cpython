@@ -983,6 +983,16 @@ zlib
 Optimizations
 =============
 
+datetime and time
+-----------------
+
+* :meth:`datetime.datetime.strptime`, :meth:`datetime.date.strptime`,
+  :meth:`datetime.time.strptime`, and :func:`time.strptime` are faster
+  for common numeric formats such as ``%Y-%m-%d`` and
+  ``%Y-%m-%d %H:%M:%S``.
+  (Contributed by Paul Ganssle in :gh:`158252`, based on work by
+  Stan Ulbrych.)
+
 re
 --
 
