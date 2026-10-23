@@ -1,0 +1,5 @@
+The :mod:`!_asyncio` debug offsets table now starts with a cookie, version
+and size, and its address is published in ``_PyRuntime`` so debuggers and
+profilers can find it through ``_Py_DebugOffsets`` instead of searching
+loaded binaries for the ``AsyncioDebug`` section. :mod:`!_remote_debugging`
+now uses this pointer and validates the table header.

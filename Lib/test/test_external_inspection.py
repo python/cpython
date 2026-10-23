@@ -19,7 +19,7 @@ from test.support import (
     requires_remote_subprocess_debugging,
 )
 from test.support.import_helper import import_module
-from test.support.script_helper import make_script
+from test.support.script_helper import assert_python_ok, make_script
 from test.support.socket_helper import find_unused_port
 
 import subprocess
@@ -4745,6 +4745,43 @@ class TestFrameChainLimits(RemoteInspectionTestBase):
                 lambda: RemoteUnwinder(p.pid).get_all_awaited_by(),
                 "Too many coroutine frames",
             )
+
+
+class TestAsyncioDebugOffsets(unittest.TestCase):
+    def test_asyncio_debug_offsets_reachable_from_runtime(self):
+        import_module("ctypes")
+        code = textwrap.dedent("""
+            import ctypes
+            import struct
+            import sys
+
+            runtime = ctypes.addressof(
+                ctypes.c_char.in_dll(ctypes.pythonapi, "_PyRuntime"))
+            # _Py_DebugOffsets starts with cookie, version and free_threaded,
+            # followed by runtime_state: size, finalizing, interpreters_head
+            # and asyncio_debug_offsets.
+            cookie, version, _ = struct.unpack(
+                "=8sQQ", ctypes.string_at(runtime, 24))
+            assert cookie == b"xdebugpy", cookie
+            assert version == sys.hexversion, version
+            pointer_offset = struct.unpack(
+                "=Q", ctypes.string_at(runtime + 48, 8))[0]
+
+            def asyncio_table():
+                return ctypes.c_void_p.from_address(
+                    runtime + pointer_offset).value
+
+            assert asyncio_table() is None
+            import _asyncio
+            address = asyncio_table()
+            assert address is not None
+            cookie, table_version, size = struct.unpack(
+                "=8sQQ", ctypes.string_at(address, 24))
+            assert cookie == b"xasyncpy", cookie
+            assert table_version == version, table_version
+            assert size == 16 * 8, size
+        """)
+        assert_python_ok("-S", "-c", code)
 
 
 if __name__ == "__main__":

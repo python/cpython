@@ -10,6 +10,7 @@ extern "C" {
 
 
 #define _Py_Debug_Cookie "xdebugpy"
+#define _Py_AsyncioDebug_Cookie "xasyncpy"
 
 #if defined(__APPLE__)
 #  include <mach-o/loader.h>
@@ -73,6 +74,7 @@ typedef struct _Py_DebugOffsets {
         uint64_t size;
         uint64_t finalizing;
         uint64_t interpreters_head;
+        uint64_t asyncio_debug_offsets;
     } runtime_state;
 
     // Interpreter state offset;
@@ -268,6 +270,7 @@ typedef struct _Py_DebugOffsets {
         .size = sizeof(_PyRuntimeState), \
         .finalizing = offsetof(_PyRuntimeState, _finalizing), \
         .interpreters_head = offsetof(_PyRuntimeState, interpreters.head), \
+        .asyncio_debug_offsets = offsetof(_PyRuntimeState, asyncio_debug_offsets), \
     }, \
     .interpreter_state = { \
         .size = sizeof(PyInterpreterState), \

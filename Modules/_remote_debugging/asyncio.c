@@ -12,60 +12,33 @@
  * ASYNCIO DEBUG ADDRESS FUNCTIONS
  * ============================================================================ */
 
-uintptr_t
-_Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle)
+static uintptr_t
+get_async_debug_address(RemoteUnwinderObject *unwinder)
 {
-    uintptr_t address;
-
-#ifdef MS_WINDOWS
-    // On Windows, search for asyncio debug in executable or DLL
-    address = search_windows_map_for_section(handle, "AsyncioD", L"_asyncio",
-                                             NULL);
-    if (address == 0) {
-        if (!_Py_RemoteDebug_HasPermissionError()) {
-            PyObject *exc = PyErr_GetRaisedException();
-            PyErr_SetString(PyExc_RuntimeError, "Failed to find the AsyncioDebug section in the process.");
-            _PyErr_ChainExceptions1(exc);
-        }
-    }
-#elif defined(__linux__) && HAVE_PROCESS_VM_READV
-    // On Linux, search for asyncio debug in executable or DLL
-    address = search_linux_map_for_section(handle, "AsyncioDebug", "python",
-                                           NULL);
-    if (address == 0) {
-        if (!_Py_RemoteDebug_HasPermissionError()) {
-            PyObject *exc = PyErr_GetRaisedException();
-            PyErr_SetString(PyExc_RuntimeError, "Failed to find the AsyncioDebug section in the process.");
-            _PyErr_ChainExceptions1(exc);
-        }
-    }
-#elif defined(__APPLE__) && TARGET_OS_OSX
-    // On macOS, try libpython first, then fall back to python
-    address = search_map_for_section(handle, "AsyncioDebug", "libpython",
-                                     NULL);
-    if (address == 0 && !_Py_RemoteDebug_HasPermissionError()) {
-        PyErr_Clear();
-        address = search_map_for_section(handle, "AsyncioDebug", "python",
-                                         NULL);
+    // _asyncio publishes the address of its table in _PyRuntime when it is
+    // initialized. Read it without the page cache because it changes when the
+    // target process imports _asyncio.
+    uintptr_t pointer_addr = unwinder->runtime_start_address
+        + (uintptr_t)unwinder->debug_offsets.runtime_state.asyncio_debug_offsets;
+    uintptr_t address = 0;
+    if (_Py_RemoteDebug_ReadRemoteMemory(&unwinder->handle, pointer_addr,
+                                         sizeof(address), &address) < 0)
+    {
+        set_exception_cause(unwinder, PyExc_RuntimeError,
+            "Failed to read AsyncioDebug address from PyRuntime");
+        return 0;
     }
     if (address == 0) {
-        if (!_Py_RemoteDebug_HasPermissionError()) {
-            PyObject *exc = PyErr_GetRaisedException();
-            PyErr_SetString(PyExc_RuntimeError, "Failed to find the AsyncioDebug section in the process.");
-            _PyErr_ChainExceptions1(exc);
-        }
+        PyErr_SetString(PyExc_RuntimeError,
+            "The _asyncio module is not initialized in the remote process");
     }
-#else
-    Py_UNREACHABLE();
-#endif
-
     return address;
 }
 
 int
 read_async_debug(RemoteUnwinderObject *unwinder)
 {
-    uintptr_t async_debug_addr = _Py_RemoteDebug_GetAsyncioDebugAddress(&unwinder->handle);
+    uintptr_t async_debug_addr = get_async_debug_address(unwinder);
     if (!async_debug_addr) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to get AsyncioDebug address");
         return -1;
@@ -77,7 +50,10 @@ read_async_debug(RemoteUnwinderObject *unwinder)
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read AsyncioDebug offsets");
         return result;
     }
-    if (_PyRemoteDebug_ValidateAsyncDebugOffsets(&unwinder->async_debug_offsets) < 0) {
+    if (_PyRemoteDebug_ValidateAsyncDebugOffsets(
+            &unwinder->async_debug_offsets,
+            unwinder->debug_offsets.version) < 0)
+    {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Invalid AsyncioDebug offsets");
         return PY_REMOTE_DEBUG_INVALID_ASYNC_DEBUG_OFFSETS;
     }
