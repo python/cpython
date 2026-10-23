@@ -47,7 +47,10 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         sslobj = mock.Mock()
         # emulate reading decompressed data
         sslobj.read.side_effect = ssl.SSLWantReadError
-        sslobj.write.side_effect = ssl.SSLWantReadError
+        # NOTE: sslobj.write is left as a plain Mock (writes succeed).
+        # There is no outgoing write buffer anymore, so an SSLWantReadError
+        # from write() would propagate to the caller instead of being
+        # buffered and retried.
         if do_handshake is not None:
             sslobj.do_handshake = do_handshake
         ssl_proto._sslobj = sslobj
@@ -169,7 +172,9 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         # emulate reading decompressed data
         sslobj = mock.Mock()
         sslobj.read.side_effect = ssl.SSLWantReadError
-        sslobj.write.side_effect = ssl.SSLWantReadError
+        # NOTE: writes succeed (plain Mock). There is no outgoing write
+        # buffer anymore, so an SSLWantReadError from write() would
+        # propagate to the caller instead of being buffered and retried.
         ssl_proto._sslobj = sslobj
 
         # emulate outgoing data
