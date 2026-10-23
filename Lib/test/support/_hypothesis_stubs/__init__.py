@@ -82,6 +82,14 @@ def given(*_args, **_kwargs):
 
 
 class example:
+    """Stub for ``hypothesis.example``.
+
+    Upstream, ``@example(...)`` adds an explicit input that Hypothesis
+    always runs before generating any, with the same positional-or-keyword
+    rules as ``@given``.  Here the explicit examples are all that runs:
+    ``given`` replays each one in a ``subTest``.
+    """
+
     def __init__(self, *args, **kwargs):
         if bool(args) == bool(kwargs):
             raise ValueError("Must specify exactly one of *args or **kwargs")
@@ -103,15 +111,28 @@ class example:
         return f
 
     def xfail(self, condition=True, *, reason="", raises=BaseException):
-        # Like real Hypothesis, an expected failure is strict: the example
-        # must raise one of the given exceptions, or the test fails.
+        """Mark this example as an expected failure, as upstream does.
+
+        Upstream, ``@example(...).xfail()`` means the example must raise
+        one of the ``raises`` exceptions (any exception by default), like
+        ``pytest.mark.xfail(strict=True)``: a different exception
+        propagates, and an unexpected pass fails the test, with ``reason``
+        in the message.  ``condition=False`` makes it an ordinary example.
+        The stub replays it the same way.
+        """
         if condition:
             self._example = replace(self._example, raises=raises,
                                     reason=reason)
         return self
 
     def via(self, whence, /):
-        # A label for tooling; it does not change what runs.
+        """Accept and ignore an example's provenance label.
+
+        Upstream, ``@example(...).via("...")`` only records where the
+        example came from, for tools that add or remove ``@example``
+        decorators (HypoFuzz, for instance); it changes nothing at run
+        time there either.
+        """
         return self
 
 
