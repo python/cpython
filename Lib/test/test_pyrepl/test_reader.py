@@ -35,6 +35,218 @@ def prepare_reader_multiline_prompt(*args, **kwargs):
 
 @force_not_colorized_test_class
 class TestReader(ScreenEqualMixin, TestCase):
+    def test_buffer_replacement_and_cursor_moves(self):
+        reader = prepare_reader(prepare_console((), width=80))
+        reader.can_colorize = True
+        reader.buffer = list("()[]")
+        reader.refresh()
+        self.assertEqual(reader._matching_delimiter, (1, 2))
+        reader.invalidate_full()
+        reader.refresh()
+        reader.do_cmd(("right", []))
+        reader.do_cmd(("right", []))
+        self.assertEqual(reader._matching_delimiter, (3, 4))
+
+        # Replacing the list with different text of the same length must
+        # update delimiter matching without relying on edit commands.
+        reader.buffer = list("[{}]")
+        reader.invalidate_full()
+        reader.refresh()
+        self.assertEqual(reader._matching_delimiter, (1, 2))
+
+    def test_custom_colorizer_receives_original_source(self):
+        reader = prepare_reader(prepare_console((), width=80))
+        reader.buffer = list("(value)")
+        reader.gen_colors = MagicMock(return_value=iter(()))
+        reader.can_colorize = False
+        reader.refresh()
+        reader.gen_colors.assert_not_called()
+        reader.can_colorize = True
+        reader.invalidate_full()
+        reader.refresh()
+        reader.gen_colors.assert_called_once_with("(value)")
+        self.assertEqual(reader._matching_delimiter, (6, 7))
+
+    def test_matching_delimiter_overlay_and_finished_state(self):
+        console = prepare_console((), width=80)
+        reader = prepare_reader(console)
+        reader.can_colorize = True
+        reader.buffer = list("(value)")
+        reader.pos = 0
+
+        composed = reader.compose_rendered_screen(reader.calc_screen())
+        matching_cells = [
+            cell
+            for overlay in composed.overlays
+            for line in overlay.lines
+            for cell in line.cells
+            if cell.style.tag == "matching_delimiter"
+        ]
+        self.assertEqual([cell.text for cell in matching_cells], [")"])
+
+        reader.finished = True
+        composed = reader.compose_rendered_screen(reader.calc_screen())
+        self.assertFalse(composed.overlays)
+
+    def test_matching_delimiter_overlay_tracks_cursor_and_accept(self):
+        console = prepare_console((), width=80)
+        reader = prepare_reader(console)
+        reader.can_colorize = True
+        reader.buffer = list("()[]")
+        reader.refresh()
+        self.assertEqual(reader._matching_delimiter, (1, 2))
+
+        reader.do_cmd(("right", []))
+        self.assertEqual(reader._matching_delimiter, (0, 1))
+        reader.do_cmd(("right", []))
+        self.assertEqual(reader._matching_delimiter, (3, 4))
+        reader.do_cmd(("accept", []))
+        self.assertIsNone(reader._matching_delimiter)
+        self.assertFalse(reader.rendered_screen.overlays)
+
+    def test_matching_delimiter_overlay_disappears_after_moving_inside(self):
+        console = prepare_console((), width=80)
+        reader = prepare_reader(console)
+        reader.can_colorize = True
+        reader.buffer = list("(value)")
+        reader.refresh()
+        self.assertEqual(reader._matching_delimiter, (6, 7))
+
+        reader.do_cmd(("right", []))
+        self.assertEqual(reader._matching_delimiter, (6, 7))
+        reader.do_cmd(("right", []))
+        self.assertIsNone(reader._matching_delimiter)
+        self.assertFalse(reader.rendered_screen.overlays)
+
+    def test_matching_delimiter_overlay_respects_color_and_wrapping(self):
+        console = prepare_console((), width=4)
+        reader = prepare_reader(console)
+        reader.can_colorize = True
+        reader.buffer = list("(樂)")
+        reader.pos = 0
+        reader.refresh()
+        matching_cells = [
+            cell
+            for overlay in reader.rendered_screen.overlays
+            for line in overlay.lines
+            for cell in line.cells
+            if cell.style.tag == "matching_delimiter"
+        ]
+        self.assertEqual([cell.text for cell in matching_cells], [")"])
+
+        reader.can_colorize = False
+        reader.refresh()
+        self.assertFalse(reader.rendered_screen.overlays)
+
+    def test_matching_delimiter_overlay_highlights_entire_triple_quote(self):
+        console = prepare_console((), width=2)
+        reader = prepare_reader(console)
+        reader.can_colorize = True
+        reader.buffer = list('"""x"""')
+        original_buffer = reader.buffer.copy()
+        reader.pos = 0
+        reader.refresh()
+
+        matching_cells = [
+            cell
+            for overlay in reader.rendered_screen.overlays
+            for line in overlay.lines
+            for cell in line.cells
+            if cell.style.tag == "matching_delimiter"
+        ]
+        self.assertEqual([cell.text for cell in matching_cells], ['"', '"', '"'])
+        self.assertEqual(
+            len({overlay.y for overlay in reader.rendered_screen.overlays}), 3
+        )
+        self.assertEqual(reader.buffer, original_buffer)
+
+    def test_matching_delimiter_overlay_cursor_moves_on_short_screen(self):
+        console = prepare_console((), width=80)
+        console.height = 3
+        reader = prepare_reader(console)
+        reader.can_colorize = True
+        buffer = list("(x)\n" + "x\n" * 8)
+        reader.buffer = buffer.copy()
+        reader.pos = 0
+
+        reader.refresh()
+        def matching_texts():
+            return [
+                cell.text
+                for overlay in reader.rendered_screen.overlays
+                for line in overlay.lines
+                for cell in line.cells
+                if cell.style.tag == "matching_delimiter"
+            ]
+
+        self.assertEqual(matching_texts(), [")"])
+        reader.do_cmd(("right", []))
+        self.assertEqual(matching_texts(), [")"])
+        reader.do_cmd(("right", []))
+        self.assertEqual(matching_texts(), ["("])
+        reader.do_cmd(("right", []))
+        self.assertEqual(matching_texts(), ["("])
+        reader.do_cmd(("right", []))
+        self.assertFalse(matching_texts())
+
+        self.assertEqual(reader.buffer, buffer)
+
+    def test_matching_delimiter_overlay_ignores_unrendered_partner(self):
+        console = prepare_console((), width=80)
+        console.height = 3
+        reader = prepare_reader(console)
+        reader.can_colorize = True
+        buffer = list("(\n" + "x\n" * 8 + ")")
+        reader.buffer = buffer.copy()
+        reader.pos = 0
+
+        reader.refresh()
+        matching_cells = [
+            cell
+            for overlay in reader.rendered_screen.overlays
+            for line in overlay.lines
+            for cell in line.cells
+            if cell.style.tag == "matching_delimiter"
+        ]
+        self.assertFalse(matching_cells)
+
+        console.height = 20
+        reader.refresh()
+        matching_cells = [
+            cell
+            for overlay in reader.rendered_screen.overlays
+            for line in overlay.lines
+            for cell in line.cells
+            if cell.style.tag == "matching_delimiter"
+        ]
+        self.assertEqual([cell.text for cell in matching_cells], [")"])
+        self.assertEqual(reader.buffer, buffer)
+
+    def test_matching_delimiter_triple_quote_beyond_cached_layout(self):
+        console = prepare_console((), width=80)
+        console.height = 3
+        reader = prepare_reader(console)
+        reader.can_colorize = True
+        source = '"""\n' + 'text\n' * 8 + '"""'
+        reader.buffer = list(source)
+        reader.pos = 0
+        reader.refresh()
+        self.assertFalse(reader.rendered_screen.overlays)
+        self.assertLess(reader.last_refresh_cache.line_end_offsets[-1],
+                        len(source))
+
+        console.height = 20
+        reader.refresh()
+        matching = [
+            cell.text
+            for overlay in reader.rendered_screen.overlays
+            for line in overlay.lines
+            for cell in line.cells
+            if cell.style.tag == "matching_delimiter"
+        ]
+        self.assertEqual(matching, ['"'] * 3)
+        self.assertEqual("".join(reader.buffer), source)
+
     def assert_multiline_prompt_screen(self, code, expected_screen, expected_cxy):
         reader, _ = handle_all_events(
             code_to_events(code),
@@ -562,6 +774,62 @@ class TestErrorMessages(TestCase):
 
 @force_colorized_test_class
 class TestReaderInColor(ScreenEqualMixin, TestCase):
+    def test_matching_delimiter_emits_theme_style(self):
+        cases = [
+            # The opener is the last body cell before the wrap marker.
+            ("ab(cd)", 5, 4, "(", (2, 0)),
+            # The closer is the first cell on the following row.
+            ("(ab)tail", 0, 4, ")", (0, 1)),
+            ("(e\N{COMBINING ACUTE ACCENT})", 0, 80, ")", (2, 0)),
+        ]
+        for code, pos, width, target, expected_xy in cases:
+            with self.subTest(code=code, width=width):
+                console = prepare_console((), width=width)
+                reader = prepare_reader(console)
+                reader.buffer = list(code)
+                reader.pos = pos
+                reader.refresh()
+                rendered = "\n".join(reader.rendered_screen.screen_lines)
+                self.assertIn(
+                    default_theme.syntax["matching_delimiter"] + target, rendered
+                )
+                matching_overlay = next(
+                    overlay
+                    for overlay in reader.rendered_screen.overlays
+                    if any(
+                        cell.style.tag == "matching_delimiter"
+                        for line in overlay.lines
+                        for cell in line.cells
+                    )
+                )
+                matching_line = matching_overlay.lines[0]
+                matching_index = next(
+                    i
+                    for i, cell in enumerate(matching_line.cells)
+                    if cell.style.tag == "matching_delimiter"
+                )
+                matching_column = sum(
+                    cell.width for cell in matching_line.cells[:matching_index]
+                )
+                self.assertEqual(
+                    (matching_column, matching_overlay.y), expected_xy
+                )
+
+    def test_matching_delimiter_with_multiline_prompt(self):
+        console = prepare_console((), width=80)
+        reader = prepare_reader(console)
+        del reader.get_prompt
+        reader.ps1 = reader.ps2 = "Python 3.16\n>>> "
+        reader.ps3 = reader.ps4 = "... "
+        reader.buffer = list("(value)")
+        reader.pos = 0
+        reader.refresh()
+
+        self.assertIn(
+            default_theme.syntax["matching_delimiter"] + ")",
+            "\n".join(reader.rendered_screen.screen_lines),
+        )
+
     def test_syntax_highlighting_basic(self):
         code = dedent(
             """\
@@ -759,4 +1027,8 @@ class TestReaderInColor(ScreenEqualMixin, TestCase):
         events = code_to_events(code)
         reader, _ = handle_all_events(events)
         self.assert_screen_equal(reader, 'flag = "🏳️\\u200d🌈"', clean=True)
-        self.assert_screen_equal(reader, 'flag {o}={z} {s}"🏳️\\u200d🌈"{z}'.format(**colors))
+        expected = 'flag {o}={z} {matching_delimiter}"{z}{s}🏳️\\u200d🌈"{z}'.format(
+            **colors,
+            matching_delimiter=default_theme.syntax["matching_delimiter"],
+        )
+        self.assert_screen_equal(reader, expected)

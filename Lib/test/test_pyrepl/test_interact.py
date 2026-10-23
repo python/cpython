@@ -8,9 +8,52 @@ from textwrap import dedent
 from test.support import force_not_colorized
 
 from _pyrepl.console import InteractiveColoredConsole
-from _pyrepl.simple_interact import _more_lines
+from _pyrepl.simple_interact import _more_lines, run_multiline_interactive_console
+from .support import FakeConsole, prepare_reader
 
 class TestSimpleInteract(unittest.TestCase):
+    def test_keyboard_interrupt_clears_matching_delimiter_overlay(self):
+        backend = FakeConsole(())
+        reader = prepare_reader(backend)
+        reader.can_colorize = True
+        reader.buffer = list("(x)")
+        reader.pos = 0
+        reader.refresh()
+
+        matching_cells = [
+            cell
+            for overlay in reader.rendered_screen.overlays
+            for line in overlay.lines
+            for cell in line.cells
+            if cell.style.tag == "matching_delimiter"
+        ]
+        self.assertEqual([cell.text for cell in matching_cells], [")"])
+
+        console = InteractiveColoredConsole()
+        reader.push_input_trans(reader.isearch_trans)
+        with (
+            patch("_pyrepl.readline._setup"),
+            patch("_pyrepl.simple_interact._get_reader", return_value=reader),
+            patch(
+                "_pyrepl.simple_interact.multiline_input",
+                side_effect=[KeyboardInterrupt, EOFError],
+            ),
+            patch.object(console, "runsource", wraps=console.runsource) as runsource,
+            contextlib.redirect_stderr(io.StringIO()) as stderr,
+        ):
+            run_multiline_interactive_console(console)
+
+        self.assertEqual("".join(reader.buffer), "(x)")
+        self.assertFalse(
+            any(
+                cell.style.tag == "matching_delimiter"
+                for line in reader.rendered_screen.composed_lines
+                for cell in line.cells
+            )
+        )
+        self.assertIn("KeyboardInterrupt", stderr.getvalue())
+        runsource.assert_not_called()
+
     def test_multiple_statements(self):
         namespace = {}
         code = dedent("""\
