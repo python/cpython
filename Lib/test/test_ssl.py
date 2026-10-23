@@ -2086,7 +2086,7 @@ class ECHTests(unittest.TestCase):
         for owner, names in (
             (_ssl._SSLContext, context_methods),
             (ssl.SSLContext, (*context_methods, 'set_outer_alpn_protocols')),
-            (_ssl._SSLSocket, (*socket_methods, 'set_outer_server_name')),
+            (_ssl._SSLSocket, socket_methods),
             (ssl.SSLObject, (*socket_methods, 'outer_server_hostname')),
             (ssl.SSLSocket, (*socket_methods, 'outer_server_hostname')),
         ):
@@ -2436,17 +2436,6 @@ class ECHTests(unittest.TestCase):
                                      (expected, None, None))
                     self.assertIsNone(obj.outer_server_hostname)
                     self.assertEqual(obj.get_ech_retry_config(), b'')
-
-    @requires_ech_x25519
-    def test_set_outer_server_name(self):
-        ctx = make_test_context()
-        ctx.set_ech_config(self.ECH_CONFIG)
-        for obj in self.make_ssl_objects(ctx):
-            setter = obj._sslobj.set_outer_server_name
-            self.assertIsNone(setter('localhost'))
-            self.assertIsNone(setter(None))
-            self.assertRaises(TypeError, setter, 42)
-            self.assertRaises(ValueError, setter, 'host\x00name')
 
     @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
     def test_set_outer_alpn_protocols(self):

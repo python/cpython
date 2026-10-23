@@ -251,49 +251,6 @@ exit:
 
 #endif /* defined(HAVE_OPENSSL_ECH) */
 
-#if defined(HAVE_OPENSSL_ECH)
-
-PyDoc_STRVAR(_ssl__SSLSocket_set_outer_server_name__doc__,
-"set_outer_server_name($self, outer_server_name, /)\n"
-"--\n"
-"\n");
-
-#define _SSL__SSLSOCKET_SET_OUTER_SERVER_NAME_METHODDEF    \
-    {"set_outer_server_name", (PyCFunction)_ssl__SSLSocket_set_outer_server_name, METH_O, _ssl__SSLSocket_set_outer_server_name__doc__},
-
-static PyObject *
-_ssl__SSLSocket_set_outer_server_name_impl(PySSLSocket *self,
-                                           const char *outer_server_name);
-
-static PyObject *
-_ssl__SSLSocket_set_outer_server_name(PyObject *self, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    const char *outer_server_name;
-
-    if (arg == Py_None) {
-        outer_server_name = NULL;
-    }
-    else if (PyUnicode_Check(arg)) {
-        outer_server_name = _PyUnicode_AsUTF8NoNUL(arg);
-        if (outer_server_name == NULL) {
-            goto exit;
-        }
-    }
-    else {
-        _PyArg_BadArgument("set_outer_server_name", "argument", "str or None", arg);
-        goto exit;
-    }
-    Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _ssl__SSLSocket_set_outer_server_name_impl((PySSLSocket *)self, outer_server_name);
-    Py_END_CRITICAL_SECTION();
-
-exit:
-    return return_value;
-}
-
-#endif /* defined(HAVE_OPENSSL_ECH) */
-
 PyDoc_STRVAR(_ssl__SSLSocket_shared_ciphers__doc__,
 "shared_ciphers($self, /)\n"
 "--\n"
@@ -3345,10 +3302,6 @@ exit:
     #define _SSL__SSLSOCKET_SET_ECH_CONFIG_METHODDEF
 #endif /* !defined(_SSL__SSLSOCKET_SET_ECH_CONFIG_METHODDEF) */
 
-#ifndef _SSL__SSLSOCKET_SET_OUTER_SERVER_NAME_METHODDEF
-    #define _SSL__SSLSOCKET_SET_OUTER_SERVER_NAME_METHODDEF
-#endif /* !defined(_SSL__SSLSOCKET_SET_OUTER_SERVER_NAME_METHODDEF) */
-
 #ifndef _SSL__SSLSOCKET_SENDFILE_METHODDEF
     #define _SSL__SSLSOCKET_SENDFILE_METHODDEF
 #endif /* !defined(_SSL__SSLSOCKET_SENDFILE_METHODDEF) */
@@ -3420,4 +3373,4 @@ exit:
 
 #define _SSL_SSLSESSION_HAS_TICKET_GETSETDEF {"has_ticket", (getter)_ssl_SSLSession_has_ticket_get, (setter)NULL, _ssl_SSLSession_has_ticket__doc__},
 
-/*[clinic end generated code: output=7d79dfbef44c8ceb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fb3476aa2f825376 input=a9049054013a1b77]*/

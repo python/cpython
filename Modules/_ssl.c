@@ -2272,36 +2272,6 @@ _ssl__SSLSocket_set_ech_config_impl(PySSLSocket *self, Py_buffer *ech_config)
     Py_RETURN_NONE;
 }
 
-/*[clinic input]
-@critical_section
-_ssl._SSLSocket.set_outer_server_name
-
-    outer_server_name: str(accept={str, NoneType})
-    /
-[clinic start generated code]*/
-
-static PyObject *
-_ssl__SSLSocket_set_outer_server_name_impl(PySSLSocket *self,
-                                           const char *outer_server_name)
-/*[clinic end generated code: output=24e7c6b7b3c2ce84 input=8d1d96628e11b2fd]*/
-{
-    if (self->ssl == NULL) {
-        Py_RETURN_NONE;
-    }
-    int result;
-    if (outer_server_name != NULL) {
-        result = SSL_ech_set1_outer_server_name(self->ssl, outer_server_name, 0);
-    }
-    else {
-        /* Do not send an outer SNI */
-        result = SSL_ech_set1_outer_server_name(self->ssl, NULL, 1);
-    }
-    if (result != 1) {
-        _setSSLError(get_state_sock(self), NULL, 0, __FILE__, __LINE__);
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
 #endif /* HAVE_OPENSSL_ECH */
 
 /*[clinic input]
@@ -3533,7 +3503,6 @@ static PyMethodDef PySSLMethods[] = {
     _SSL__SSLSOCKET_VERIFY_CLIENT_POST_HANDSHAKE_METHODDEF
     _SSL__SSLSOCKET_GET_ECH_STATUS_METHODDEF
     _SSL__SSLSOCKET_SET_ECH_CONFIG_METHODDEF
-    _SSL__SSLSOCKET_SET_OUTER_SERVER_NAME_METHODDEF
     _SSL__SSLSOCKET_GET_ECH_RETRY_CONFIG_METHODDEF
     _SSL__SSLSOCKET_GET_UNVERIFIED_CHAIN_METHODDEF
     _SSL__SSLSOCKET_GET_VERIFIED_CHAIN_METHODDEF
