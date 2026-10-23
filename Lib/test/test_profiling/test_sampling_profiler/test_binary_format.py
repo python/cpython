@@ -1192,6 +1192,19 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
 
     def test_reader_replays_twice(self):
         """Replaying twice gives the same samples and statistics."""
+        class RetainingCollector(RawCollector):
+            def __init__(self):
+                super().__init__()
+                self.frame_lists = []
+
+            def collect(self, stack_frames, timestamps_us):
+                self.frame_lists.extend(
+                    thread.frame_info
+                    for interp in stack_frames
+                    for thread in interp.threads
+                )
+                super().collect(stack_frames, timestamps_us)
+
         samples = [
             [make_interpreter(0, [
                 make_thread(1, [make_frame("a.py", i % 3, "f")]),
@@ -1201,12 +1214,21 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
         ]
         filename = self.create_binary_file(samples)
         with BinaryReader(filename) as reader:
-            first = RawCollector()
-            second = RawCollector()
+            first = RetainingCollector()
+            second = RetainingCollector()
             self.assertEqual(reader.replay_samples(first), 20)
             self.assertEqual(reader.replay_samples(second), 20)
             self.assertEqual(reader.get_stats()["total_samples"], 20)
         self.assertEqual(first.by_thread, second.by_thread)
+        for first_frames, second_frames in zip(
+            first.frame_lists, second.frame_lists, strict=True
+        ):
+            self.assertIsNot(first_frames, second_frames)
+            self.assertEqual(len(first_frames), len(second_frames))
+            for first_frame, second_frame in zip(
+                first_frames, second_frames, strict=True
+            ):
+                self.assertIs(first_frame, second_frame)
 
     def test_writer_repeat_run_spans_interleaved_streams(self):
         """A thread's repeat run continues across other threads' samples."""

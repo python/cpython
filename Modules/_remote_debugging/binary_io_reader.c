@@ -33,6 +33,8 @@
 /* Cap per-batch RLE samples to bound the timestamp list (gh-151378) */
 #define MAX_RLE_BATCH_SAMPLES 8192
 
+#define FRAME_INFO_CACHE_SIZE 1024
+
 /* ============================================================================
  * BINARY READER IMPLEMENTATION
  * ============================================================================ */
@@ -699,6 +701,83 @@ reader_get_or_create_thread_state(BinaryReader *reader, uint64_t thread_id,
     return ts;
 }
 
+static PyObject *
+reader_get_frame_info(RemoteDebuggingState *state, BinaryReader *reader,
+                      uint32_t frame_index)
+{
+    if (frame_index >= reader->frames_count) {
+        PyErr_Format(PyExc_ValueError, "Invalid frame index: %u", frame_index);
+        return NULL;
+    }
+    if (reader->frame_info_cache == NULL) {
+        size_t cache_size = Py_MIN(reader->frames_count,
+                                   FRAME_INFO_CACHE_SIZE);
+        reader->frame_info_cache = PyMem_Calloc(
+            cache_size, sizeof(*reader->frame_info_cache));
+        if (reader->frame_info_cache == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        reader->frame_info_cache_size = cache_size;
+    }
+    ReaderFrameCacheEntry *entry = &reader->frame_info_cache[
+        frame_index % reader->frame_info_cache_size];
+    if (entry->frame_info != NULL && entry->frame_index == frame_index) {
+        return Py_NewRef(entry->frame_info);
+    }
+
+    FrameEntry *frame = &reader->frames[frame_index];
+    if (frame->filename_idx >= reader->strings_count ||
+        frame->funcname_idx >= reader->strings_count) {
+        PyErr_SetString(PyExc_ValueError, "Invalid string index in frame");
+        return NULL;
+    }
+
+    PyObject *frame_info = PyStructSequence_New(state->FrameInfo_Type);
+    if (!frame_info) {
+        return NULL;
+    }
+
+    /* Build location tuple with full position info */
+    PyObject *location;
+    if (frame->lineno != LOCATION_NOT_AVAILABLE) {
+        location = Py_BuildValue("(iiii)",
+            frame->lineno,
+            frame->end_lineno,
+            frame->column,
+            frame->end_column);
+        if (!location) {
+            Py_DECREF(frame_info);
+            return NULL;
+        }
+    }
+    else {
+        location = Py_NewRef(Py_None);
+    }
+
+    /* Build opcode object */
+    PyObject *opcode_obj;
+    if (frame->opcode != OPCODE_NONE) {
+        opcode_obj = PyLong_FromLong(frame->opcode);
+        if (!opcode_obj) {
+            Py_DECREF(location);
+            Py_DECREF(frame_info);
+            return NULL;
+        }
+    }
+    else {
+        opcode_obj = Py_NewRef(Py_None);
+    }
+
+    PyStructSequence_SetItem(frame_info, 0, Py_NewRef(reader->strings[frame->filename_idx]));
+    PyStructSequence_SetItem(frame_info, 1, location);
+    PyStructSequence_SetItem(frame_info, 2, Py_NewRef(reader->strings[frame->funcname_idx]));
+    PyStructSequence_SetItem(frame_info, 3, opcode_obj);
+    Py_XSETREF(entry->frame_info, Py_NewRef(frame_info));
+    entry->frame_index = frame_index;
+    return frame_info;
+}
+
 /* Build a Python list of FrameInfo objects from frame indices */
 static PyObject *
 build_frame_list(RemoteDebuggingState *state, BinaryReader *reader,
@@ -710,60 +789,11 @@ build_frame_list(RemoteDebuggingState *state, BinaryReader *reader,
     }
 
     for (size_t k = 0; k < stack_depth; k++) {
-        uint32_t frame_idx = frame_indices[k];
-        if (frame_idx >= reader->frames_count) {
-            PyErr_Format(PyExc_ValueError, "Invalid frame index: %u", frame_idx);
+        PyObject *frame_info = reader_get_frame_info(
+            state, reader, frame_indices[k]);
+        if (frame_info == NULL) {
             goto error;
         }
-
-        FrameEntry *frame = &reader->frames[frame_idx];
-
-        if (frame->filename_idx >= reader->strings_count ||
-            frame->funcname_idx >= reader->strings_count) {
-            PyErr_SetString(PyExc_ValueError, "Invalid string index in frame");
-            goto error;
-        }
-
-        PyObject *frame_info = PyStructSequence_New(state->FrameInfo_Type);
-        if (!frame_info) {
-            goto error;
-        }
-
-        /* Build location tuple with full position info */
-        PyObject *location;
-        if (frame->lineno != LOCATION_NOT_AVAILABLE) {
-            location = Py_BuildValue("(iiii)",
-                frame->lineno,
-                frame->end_lineno,
-                frame->column,
-                frame->end_column);
-            if (!location) {
-                Py_DECREF(frame_info);
-                goto error;
-            }
-        }
-        else {
-            location = Py_NewRef(Py_None);
-        }
-
-        /* Build opcode object */
-        PyObject *opcode_obj;
-        if (frame->opcode != OPCODE_NONE) {
-            opcode_obj = PyLong_FromLong(frame->opcode);
-            if (!opcode_obj) {
-                Py_DECREF(location);
-                Py_DECREF(frame_info);
-                goto error;
-            }
-        }
-        else {
-            opcode_obj = Py_NewRef(Py_None);
-        }
-
-        PyStructSequence_SetItem(frame_info, 0, Py_NewRef(reader->strings[frame->filename_idx]));
-        PyStructSequence_SetItem(frame_info, 1, location);
-        PyStructSequence_SetItem(frame_info, 2, Py_NewRef(reader->strings[frame->funcname_idx]));
-        PyStructSequence_SetItem(frame_info, 3, opcode_obj);
         PyList_SET_ITEM(frame_list, k, frame_info);
     }
 
@@ -1788,6 +1818,13 @@ binary_reader_close(BinaryReader *reader)
     buffer_clear(&reader->block_frames);
     PyMem_Free(reader->block_streams);
     PyMem_Free(reader->block_stacks);
+
+    if (reader->frame_info_cache != NULL) {
+        for (size_t i = 0; i < reader->frame_info_cache_size; i++) {
+            Py_XDECREF(reader->frame_info_cache[i].frame_info);
+        }
+        PyMem_Free(reader->frame_info_cache);
+    }
 
     if (reader->strings) {
         for (uint32_t i = 0; i < reader->strings_count; i++) {

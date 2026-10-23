@@ -418,6 +418,11 @@ typedef struct {
     uint32_t block_stream_index;
 } ReaderThreadState;
 
+typedef struct {
+    uint32_t frame_index;
+    PyObject *frame_info;
+} ReaderFrameCacheEntry;
+
 /* Decoded sample block */
 typedef struct {
     BlockHeader header;
@@ -489,6 +494,8 @@ typedef struct {
     /* Parsed frame table: array of FrameEntry structures */
     FrameEntry *frames;
     uint32_t frames_count;
+    ReaderFrameCacheEntry *frame_info_cache;
+    size_t frame_info_cache_size;
 
     /* Sample data region */
     uint8_t *sample_data;
