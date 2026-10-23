@@ -1675,16 +1675,16 @@ _Unpickler_NewMemo(Py_ssize_t new_size)
     return memo;
 }
 
-/* Free the unpickler's memo, taking care to decref any items left in it. */
+/* Replace the unpickler's memo and release the old entries. */
 static void
-_Unpickler_MemoCleanup(UnpicklerObject *self)
+_Unpickler_MemoCleanup(UnpicklerObject *self, PyObject **replacement)
 {
     Py_ssize_t i;
     PyObject **memo = self->memo;
 
-    if (self->memo == NULL)
+    self->memo = replacement;
+    if (memo == NULL)
         return;
-    self->memo = NULL;
     i = self->memo_size;
     while (--i >= 0) {
         Py_XDECREF(memo[i]);
@@ -7465,7 +7465,7 @@ Unpickler_clear(PyObject *op)
         self->buffer.buf = NULL;
     }
 
-    _Unpickler_MemoCleanup(self);
+    _Unpickler_MemoCleanup(self, NULL);
     PyMem_Free(self->marks);
     self->marks = NULL;
     PyMem_Free(self->input_line);
@@ -7611,10 +7611,13 @@ static PyObject *
 _pickle_UnpicklerMemoProxy_clear_impl(UnpicklerMemoProxyObject *self)
 /*[clinic end generated code: output=d20cd43f4ba1fb1f input=b1df7c52e7afd9bd]*/
 {
-    _Unpickler_MemoCleanup(self->unpickler);
-    self->unpickler->memo = _Unpickler_NewMemo(self->unpickler->memo_size);
-    if (self->unpickler->memo == NULL)
+    UnpicklerObject *unpickler = self->unpickler;
+    PyObject **memo = _Unpickler_NewMemo(unpickler->memo_size);
+    if (memo == NULL) {
         return NULL;
+    }
+    unpickler->memo_len = 0;
+    _Unpickler_MemoCleanup(unpickler, memo);
     Py_RETURN_NONE;
 }
 
@@ -7827,7 +7830,7 @@ Unpickler_set_memo(PyObject *op, PyObject *obj, void *Py_UNUSED(closure))
         return -1;
     }
 
-    _Unpickler_MemoCleanup(self);
+    _Unpickler_MemoCleanup(self, NULL);
     self->memo_size = new_memo_size;
     self->memo = new_memo;
 
