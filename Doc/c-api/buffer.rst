@@ -327,19 +327,43 @@ C or Fortran :term:`contiguity <contiguous>` can be explicitly requested,
 with and without stride information. Without stride information, the buffer
 must be C-contiguous.
 
-.. tabularcolumns:: |p{0.35\linewidth}|l|l|l|l|
+.. stable-abi-note::
 
-+-----------------------------------+-------+---------+------------+--------+
-|  Request                          | shape | strides | suboffsets | contig |
-+===================================+=======+=========+============+========+
-| .. c:macro:: PyBUF_C_CONTIGUOUS   |  yes  |   yes   |    NULL    |   C    |
-+-----------------------------------+-------+---------+------------+--------+
-| .. c:macro:: PyBUF_F_CONTIGUOUS   |  yes  |   yes   |    NULL    |   F    |
-+-----------------------------------+-------+---------+------------+--------+
-| .. c:macro:: PyBUF_ANY_CONTIGUOUS |  yes  |   yes   |    NULL    | C or F |
-+-----------------------------------+-------+---------+------------+--------+
-| :c:macro:`PyBUF_ND`               |  yes  |   NULL  |    NULL    |   C    |
-+-----------------------------------+-------+---------+------------+--------+
+   These values are available when compiling for the
+   :ref:`Stable ABI <stable>` since version 3.11.
+
+.. omit-stable-abi-notes::
+
+   .. list-table::
+      :align: left
+      :widths: auto
+      :header-rows: 1
+
+      * - Request
+        - shape
+        - strides
+        - suboffsets
+        - contig
+      * - .. c:macro:: PyBUF_C_CONTIGUOUS
+        - yes
+        - yes
+        - NULL
+        - C
+      * - .. c:macro:: PyBUF_F_CONTIGUOUS
+        - yes
+        - yes
+        - NULL
+        - F
+      * - .. c:macro:: PyBUF_ANY_CONTIGUOUS
+        - yes
+        - yes
+        - NULL
+        - C or F
+      * - :c:macro:`PyBUF_ND`
+        - yes
+        - NULL
+        - NULL
+        - C
 
 
 compound requests
@@ -352,27 +376,81 @@ used combinations as single flags.
 In the following table *U* stands for undefined contiguity. The consumer would
 have to call :c:func:`PyBuffer_IsContiguous` to determine contiguity.
 
-.. tabularcolumns:: |p{0.35\linewidth}|l|l|l|l|l|l|
+.. stable-abi-note::
 
-+-------------------------------+-------+---------+------------+--------+----------+--------+
-|  Request                      | shape | strides | suboffsets | contig | readonly | format |
-+===============================+=======+=========+============+========+==========+========+
-| .. c:macro:: PyBUF_FULL       |  yes  |   yes   | if needed  |   U    |     0    |  yes   |
-+-------------------------------+-------+---------+------------+--------+----------+--------+
-| .. c:macro:: PyBUF_FULL_RO    |  yes  |   yes   | if needed  |   U    |  1 or 0  |  yes   |
-+-------------------------------+-------+---------+------------+--------+----------+--------+
-| .. c:macro:: PyBUF_RECORDS    |  yes  |   yes   |    NULL    |   U    |     0    |  yes   |
-+-------------------------------+-------+---------+------------+--------+----------+--------+
-| .. c:macro:: PyBUF_RECORDS_RO |  yes  |   yes   |    NULL    |   U    |  1 or 0  |  yes   |
-+-------------------------------+-------+---------+------------+--------+----------+--------+
-| .. c:macro:: PyBUF_STRIDED    |  yes  |   yes   |    NULL    |   U    |     0    |  NULL  |
-+-------------------------------+-------+---------+------------+--------+----------+--------+
-| .. c:macro:: PyBUF_STRIDED_RO |  yes  |   yes   |    NULL    |   U    |  1 or 0  |  NULL  |
-+-------------------------------+-------+---------+------------+--------+----------+--------+
-| .. c:macro:: PyBUF_CONTIG     |  yes  |   NULL  |    NULL    |   C    |     0    |  NULL  |
-+-------------------------------+-------+---------+------------+--------+----------+--------+
-| .. c:macro:: PyBUF_CONTIG_RO  |  yes  |   NULL  |    NULL    |   C    |  1 or 0  |  NULL  |
-+-------------------------------+-------+---------+------------+--------+----------+--------+
+   These values are available when compiling for the
+   :ref:`Stable ABI <stable>` since version 3.11.
+
+.. omit-stable-abi-notes::
+
+   .. list-table::
+      :align: left
+      :widths: auto
+      :header-rows: 1
+
+      * - Request
+        - shape
+        - strides
+        - suboffsets
+        - contig
+        - readonly
+        - format
+      * - .. c:macro:: PyBUF_FULL
+        - yes
+        - yes
+        - if needed
+        - U
+        - 0
+        - yes
+      * - .. c:macro:: PyBUF_FULL_RO
+        - yes
+        - yes
+        - if needed
+        - U
+        - 1 or 0
+        - yes
+      * - .. c:macro:: PyBUF_RECORDS
+        - yes
+        - yes
+        - NULL
+        - U
+        - 0
+        - yes
+      * - .. c:macro:: PyBUF_RECORDS_RO
+        - yes
+        - yes
+        - NULL
+        - U
+        - 1 or 0
+        - yes
+      * - .. c:macro:: PyBUF_STRIDED
+        - yes
+        - yes
+        - NULL
+        - U
+        - 0
+        - NULL
+      * - .. c:macro:: PyBUF_STRIDED_RO
+        - yes
+        - yes
+        - NULL
+        - U
+        - 1 or 0
+        - NULL
+      * - .. c:macro:: PyBUF_CONTIG
+        - yes
+        - NULL
+        - NULL
+        - C
+        - 0
+        - NULL
+      * - .. c:macro:: PyBUF_CONTIG_RO
+        - yes
+        - NULL
+        - NULL
+        - C
+        - 1 or 0
+        - NULL
 
 
 Complex arrays
