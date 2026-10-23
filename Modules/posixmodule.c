@@ -2921,46 +2921,56 @@ posix_do_stat(PyObject *module, const char *function_name, path_t *path,
         fd_and_follow_symlinks_invalid("stat", path->is_fd, follow_symlinks))
         return NULL;
 
-    Py_BEGIN_ALLOW_THREADS
-    if (path->is_fd) {
-        result = FSTAT(path->fd, &st);
-    }
+    for (;;) {
+        Py_BEGIN_ALLOW_THREADS
+        if (path->is_fd) {
+            result = FSTAT(path->fd, &st);
+        }
 #ifdef MS_WINDOWS
-    else if (follow_symlinks)
-        result = win32_stat(path->wide, &st);
-    else
-        result = win32_lstat(path->wide, &st);
+        else if (follow_symlinks)
+            result = win32_stat(path->wide, &st);
+        else
+            result = win32_lstat(path->wide, &st);
 #else
-    else
+        else
 #if defined(HAVE_LSTAT)
-    if ((!follow_symlinks) && (dir_fd == DEFAULT_DIR_FD))
-        result = LSTAT(path->narrow, &st);
-    else
+        if ((!follow_symlinks) && (dir_fd == DEFAULT_DIR_FD))
+            result = LSTAT(path->narrow, &st);
+        else
 #endif /* HAVE_LSTAT */
 #ifdef HAVE_FSTATAT
-    if ((dir_fd != DEFAULT_DIR_FD) || !follow_symlinks) {
-        if (HAVE_FSTATAT_RUNTIME) {
-            result = fstatat(dir_fd, path->narrow, &st,
-                         follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW);
+        if ((dir_fd != DEFAULT_DIR_FD) || !follow_symlinks) {
+            if (HAVE_FSTATAT_RUNTIME) {
+                result = fstatat(dir_fd, path->narrow, &st,
+                             follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW);
 
-        } else {
-            fstatat_unavailable = 1;
-        }
-    } else
+            } else {
+                fstatat_unavailable = 1;
+            }
+        } else
 #endif /* HAVE_FSTATAT */
-        result = STAT(path->narrow, &st);
+            result = STAT(path->narrow, &st);
 #endif /* MS_WINDOWS */
-    Py_END_ALLOW_THREADS
+        Py_END_ALLOW_THREADS
 
 #ifdef HAVE_FSTATAT
-    if (fstatat_unavailable) {
-        argument_unavailable_error("stat", "dir_fd");
-        return NULL;
-    }
+        if (fstatat_unavailable) {
+            argument_unavailable_error("stat", "dir_fd");
+            return NULL;
+        }
 #endif
 
-    if (result != 0) {
-        return path_error(path);
+        // interrupted by a signal (EINTR)?  retry!
+        if (result != 0) {
+            if (errno == EINTR) {
+                if (PyErr_CheckSignals()) {
+                    return NULL;
+                }
+                continue;
+            }
+            return path_error(path);
+        }
+        break;
     }
 
     return _pystat_fromstructstat(module, &st);
@@ -3693,14 +3703,26 @@ os_statx_impl(PyObject *module, path_t *path, unsigned int mask, int flags,
     }
 
     int result;
-    Py_BEGIN_ALLOW_THREADS
-    if (path->is_fd) {
-        result = statx(path->fd, "", flags | AT_EMPTY_PATH, mask, &v->stx);
+    for (;;) {
+        Py_BEGIN_ALLOW_THREADS
+        if (path->is_fd) {
+            result = statx(path->fd, "", flags | AT_EMPTY_PATH, mask, &v->stx);
+        }
+        else {
+            result = statx(dir_fd, path->narrow, flags, mask, &v->stx);
+        }
+        Py_END_ALLOW_THREADS
+
+        // interrupted by a signal (EINTR)?  retry!
+        if ((result != 0) && (errno == EINTR)) {
+            if (PyErr_CheckSignals()) {
+                Py_DECREF(v);
+                return NULL;
+            }
+            continue;
+        }
+        break;
     }
-    else {
-        result = statx(dir_fd, path->narrow, flags, mask, &v->stx);
-    }
-    Py_END_ALLOW_THREADS
 
     if (result != 0) {
         Py_DECREF(v);
@@ -3762,12 +3784,6 @@ os_access_impl(PyObject *module, path_t *path, int mode, int dir_fd,
 {
     int return_value;
 
-#ifdef MS_WINDOWS
-    DWORD attr;
-#else
-    int result;
-#endif
-
 #ifdef HAVE_FACCESSAT
     int faccessat_unavailable = 0;
 #endif
@@ -3783,6 +3799,7 @@ os_access_impl(PyObject *module, path_t *path, int mode, int dir_fd,
 #endif
 
 #ifdef MS_WINDOWS
+    DWORD attr;
     Py_BEGIN_ALLOW_THREADS
     attr = GetFileAttributesW(path->wide);
     Py_END_ALLOW_THREADS
@@ -3800,28 +3817,42 @@ os_access_impl(PyObject *module, path_t *path, int mode, int dir_fd,
             !(attr & FILE_ATTRIBUTE_READONLY) ||
             (attr & FILE_ATTRIBUTE_DIRECTORY));
 #else
+    int result = 0;
 
-    Py_BEGIN_ALLOW_THREADS
+    for (;;) {
+        Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_FACCESSAT
-    if ((dir_fd != DEFAULT_DIR_FD) ||
-        effective_ids ||
-        !follow_symlinks) {
+        if ((dir_fd != DEFAULT_DIR_FD) ||
+            effective_ids ||
+            !follow_symlinks) {
 
-        if (HAVE_FACCESSAT_RUNTIME) {
-            int flags = 0;
-            if (!follow_symlinks)
-                flags |= AT_SYMLINK_NOFOLLOW;
-            if (effective_ids)
-                flags |= AT_EACCESS;
-            result = faccessat(dir_fd, path->narrow, mode, flags);
-        } else {
-            faccessat_unavailable = 1;
+            if (HAVE_FACCESSAT_RUNTIME) {
+                int flags = 0;
+                if (!follow_symlinks)
+                    flags |= AT_SYMLINK_NOFOLLOW;
+                if (effective_ids)
+                    flags |= AT_EACCESS;
+                result = faccessat(dir_fd, path->narrow, mode, flags);
+            } else {
+                faccessat_unavailable = 1;
+                result = 0; // exit the loop
+            }
         }
-    }
-    else
+        else
 #endif
-        result = access(path->narrow, mode);
-    Py_END_ALLOW_THREADS
+            result = access(path->narrow, mode);
+        Py_END_ALLOW_THREADS
+
+        // interrupted by a signal (EINTR)?  retry!
+        if ((result != 0) && (errno == EINTR)) {
+            if (PyErr_CheckSignals()) {
+                return -1;
+            }
+            continue;
+        }
+
+        break;
+    }
 
 #ifdef HAVE_FACCESSAT
     if (faccessat_unavailable) {
@@ -3945,19 +3976,32 @@ os_chdir_impl(PyObject *module, path_t *path)
         return NULL;
     }
 
-    Py_BEGIN_ALLOW_THREADS
 #ifdef MS_WINDOWS
+    Py_BEGIN_ALLOW_THREADS
     /* on unix, success = 0, on windows, success = !0 */
     result = !win32_wchdir(path->wide);
-#else
-#ifdef HAVE_FCHDIR
-    if (path->is_fd)
-        result = fchdir(path->fd);
-    else
-#endif
-        result = chdir(path->narrow);
-#endif
     Py_END_ALLOW_THREADS
+#else
+    for (;;) {
+        Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_FCHDIR
+        if (path->is_fd)
+            result = fchdir(path->fd);
+        else
+#endif
+            result = chdir(path->narrow);
+        Py_END_ALLOW_THREADS
+
+        // interrupted by a signal (EINTR)?  retry!
+        if ((result != 0) && (errno == EINTR)) {
+            if (PyErr_CheckSignals()) {
+                return NULL;
+            }
+            continue;
+        }
+        break;
+    }
+#endif
 
     if (result) {
         return path_error(path);
@@ -4129,63 +4173,76 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
         return path_error(path);
     }
 #else /* MS_WINDOWS */
-    Py_BEGIN_ALLOW_THREADS
+    for (;;) {
+        Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_FCHMOD
-    if (path->is_fd) {
-        result = fchmod(path->fd, mode);
-    }
-    else
+        if (path->is_fd) {
+            result = fchmod(path->fd, mode);
+        }
+        else
 #endif /* HAVE_CHMOD */
 #ifdef HAVE_LCHMOD
-    if ((!follow_symlinks) && (dir_fd == DEFAULT_DIR_FD))
-        result = lchmod(path->narrow, mode);
-    else
+        if ((!follow_symlinks) && (dir_fd == DEFAULT_DIR_FD))
+            result = lchmod(path->narrow, mode);
+        else
 #endif /* HAVE_LCHMOD */
 #ifdef HAVE_FCHMODAT
-    if ((dir_fd != DEFAULT_DIR_FD) || !follow_symlinks) {
-        if (HAVE_FCHMODAT_RUNTIME) {
-            /*
-             * fchmodat() doesn't currently support AT_SYMLINK_NOFOLLOW!
-             * The documentation specifically shows how to use it,
-             * and then says it isn't implemented yet.
-             * (true on linux with glibc 2.15, and openindiana 3.x)
-             *
-             * Once it is supported, os.chmod will automatically
-             * support dir_fd and follow_symlinks=False.  (Hopefully.)
-             * Until then, we need to be careful what exception we raise.
-             */
-            result = fchmodat(dir_fd, path->narrow, mode,
-                              follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW);
-            /*
-             * But wait!  We can't throw the exception without allowing threads,
-             * and we can't do that in this nested scope.  (Macro trickery, sigh.)
-             */
-            fchmodat_nofollow_unsupported =
-                             result &&
-                             ((errno == ENOTSUP) || (errno == EOPNOTSUPP)) &&
-                             !follow_symlinks;
-        } else {
-            fchmodat_unsupported = 1;
-            fchmodat_nofollow_unsupported = 1;
+        if ((dir_fd != DEFAULT_DIR_FD) || !follow_symlinks) {
+            if (HAVE_FCHMODAT_RUNTIME) {
+                /*
+                 * fchmodat() doesn't currently support AT_SYMLINK_NOFOLLOW!
+                 * The documentation specifically shows how to use it,
+                 * and then says it isn't implemented yet.
+                 * (true on linux with glibc 2.15, and openindiana 3.x)
+                 *
+                 * Once it is supported, os.chmod will automatically
+                 * support dir_fd and follow_symlinks=False.  (Hopefully.)
+                 * Until then, we need to be careful what exception we raise.
+                 */
+                result = fchmodat(dir_fd, path->narrow, mode,
+                                  follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW);
+                /*
+                 * But wait!  We can't throw the exception
+                 * without allowing threads, and we can't do that
+                 * in this nested scope.  (Macro trickery, sigh.)
+                 */
+                fchmodat_nofollow_unsupported =
+                                 result &&
+                                 ((errno == ENOTSUP) || (errno == EOPNOTSUPP)) &&
+                                 !follow_symlinks;
+            } else {
+                fchmodat_unsupported = 1;
+                fchmodat_nofollow_unsupported = 1;
 
-            result = -1;
+                result = -1;
+                errno = ENOSYS; // so the loop will terminate
+            }
         }
-    }
-    else
+        else
 #endif /* HAVE_FHCMODAT */
-    {
+        {
 #ifdef HAVE_CHMOD
-        result = chmod(path->narrow, mode);
+            result = chmod(path->narrow, mode);
 #elif defined(__wasi__)
-        // WASI SDK 15.0 does not support chmod.
-        // Ignore missing syscall for now.
-        result = 0;
+            // WASI SDK 15.0 does not support chmod.
+            // Ignore missing syscall for now.
+            result = 0;
 #else
-        result = -1;
-        errno = ENOSYS;
+            result = -1;
+            errno = ENOSYS;
 #endif
+        }
+        Py_END_ALLOW_THREADS
+
+        // interrupted by a signal (EINTR)?  retry!
+        if ((result != 0) && (errno == EINTR)) {
+            if (PyErr_CheckSignals()) {
+                return NULL;
+            }
+            continue;
+        }
+        break;
     }
-    Py_END_ALLOW_THREADS
 
     if (result) {
 #ifdef HAVE_FCHMODAT
@@ -4283,23 +4340,34 @@ static PyObject *
 os_lchmod_impl(PyObject *module, path_t *path, int mode)
 /*[clinic end generated code: output=082344022b51a1d5 input=13110fb62911b015]*/
 {
-    int res;
+    int result;
     if (PySys_Audit("os.chmod", "Oii", path->object, mode, -1) < 0) {
         return NULL;
     }
 #ifdef MS_WINDOWS
     Py_BEGIN_ALLOW_THREADS
-    res = win32_lchmod(path->wide, mode);
+    result = win32_lchmod(path->wide, mode);
     Py_END_ALLOW_THREADS
-    if (!res) {
+    if (!result) {
         path_error(path);
         return NULL;
     }
 #else /* MS_WINDOWS */
-    Py_BEGIN_ALLOW_THREADS
-    res = lchmod(path->narrow, mode);
-    Py_END_ALLOW_THREADS
-    if (res < 0) {
+    for (;;) {
+        Py_BEGIN_ALLOW_THREADS
+        result = lchmod(path->narrow, mode);
+        Py_END_ALLOW_THREADS
+
+        // interrupted by a signal (EINTR)?  retry!
+        if ((result < 0) && (errno == EINTR)) {
+            if (PyErr_CheckSignals()) {
+                return NULL;
+            }
+            continue;
+        }
+        break;
+    }
+    if (result < 0) {
         path_error(path);
         return NULL;
     }
@@ -4343,14 +4411,25 @@ os_chflags_impl(PyObject *module, path_t *path, unsigned long flags,
         return NULL;
     }
 
-    Py_BEGIN_ALLOW_THREADS
+    for (;;) {
+        Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_LCHFLAGS
-    if (!follow_symlinks)
-        result = lchflags(path->narrow, flags);
-    else
+        if (!follow_symlinks)
+            result = lchflags(path->narrow, flags);
+        else
 #endif
-        result = chflags(path->narrow, flags);
-    Py_END_ALLOW_THREADS
+            result = chflags(path->narrow, flags);
+        Py_END_ALLOW_THREADS
+
+        // interrupted by a signal (EINTR)?  retry!
+        if ((result != 0) && (errno == EINTR)) {
+            if (PyErr_CheckSignals()) {
+                return NULL;
+            }
+            continue;
+        }
+        break;
+    }
 
     if (result)
         return path_error(path);
@@ -4377,14 +4456,25 @@ static PyObject *
 os_lchflags_impl(PyObject *module, path_t *path, unsigned long flags)
 /*[clinic end generated code: output=30ae958695c07316 input=f9f82ea8b585ca9d]*/
 {
-    int res;
+    int result;
     if (PySys_Audit("os.chflags", "Ok", path->object, flags) < 0) {
         return NULL;
     }
-    Py_BEGIN_ALLOW_THREADS
-    res = lchflags(path->narrow, flags);
-    Py_END_ALLOW_THREADS
-    if (res < 0) {
+    for (;;) {
+        Py_BEGIN_ALLOW_THREADS
+        result = lchflags(path->narrow, flags);
+        Py_END_ALLOW_THREADS
+
+        // interrupted by a signal (EINTR)?  retry!
+        if ((result != 0) && (errno == EINTR)) {
+            if (PyErr_CheckSignals()) {
+                return NULL;
+            }
+            continue;
+        }
+        break;
+    }
+    if (result < 0) {
         return path_error(path);
     }
     Py_RETURN_NONE;
@@ -4413,11 +4503,22 @@ os_chroot_impl(PyObject *module, path_t *path)
         return path_error(path);
     }
 #endif
-    int res;
-    Py_BEGIN_ALLOW_THREADS
-    res = chroot(path->narrow);
-    Py_END_ALLOW_THREADS
-    if (res < 0)
+    int result;
+    for (;;) {
+        Py_BEGIN_ALLOW_THREADS
+        result = chroot(path->narrow);
+        Py_END_ALLOW_THREADS
+
+        // interrupted by a signal (EINTR)?  retry!
+        if ((result < 0) && (errno == EINTR)) {
+            if (PyErr_CheckSignals()) {
+                return NULL;
+            }
+            continue;
+        }
+        break;
+    }
+    if (result < 0)
         return path_error(path);
     Py_RETURN_NONE;
 }
@@ -4530,7 +4631,7 @@ os_chown_impl(PyObject *module, path_t *path, uid_t uid, gid_t gid,
               int dir_fd, int follow_symlinks)
 /*[clinic end generated code: output=4beadab0db5f70cd input=509c91b7a0e72f52]*/
 {
-    int result;
+    int result = 0;
 
 #if defined(HAVE_FCHOWNAT)
     int fchownat_unsupported = 0;
@@ -4549,29 +4650,40 @@ os_chown_impl(PyObject *module, path_t *path, uid_t uid, gid_t gid,
         return NULL;
     }
 
-    Py_BEGIN_ALLOW_THREADS
+    for (;;) {
+        Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_FCHOWN
-    if (path->is_fd)
-        result = fchown(path->fd, uid, gid);
-    else
+        if (path->is_fd)
+            result = fchown(path->fd, uid, gid);
+        else
 #endif
 #ifdef HAVE_LCHOWN
-    if ((!follow_symlinks) && (dir_fd == DEFAULT_DIR_FD))
-        result = lchown(path->narrow, uid, gid);
-    else
+        if ((!follow_symlinks) && (dir_fd == DEFAULT_DIR_FD))
+            result = lchown(path->narrow, uid, gid);
+        else
 #endif
 #ifdef HAVE_FCHOWNAT
-    if ((dir_fd != DEFAULT_DIR_FD) || (!follow_symlinks)) {
-      if (HAVE_FCHOWNAT_RUNTIME) {
-        result = fchownat(dir_fd, path->narrow, uid, gid,
-                          follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW);
-      } else {
-         fchownat_unsupported = 1;
-      }
-    } else
+        if ((dir_fd != DEFAULT_DIR_FD) || (!follow_symlinks)) {
+            if (HAVE_FCHOWNAT_RUNTIME) {
+                result = fchownat(dir_fd, path->narrow, uid, gid,
+                                  follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW);
+            } else {
+                fchownat_unsupported = 1;
+            }
+        } else
 #endif
-        result = chown(path->narrow, uid, gid);
-    Py_END_ALLOW_THREADS
+            result = chown(path->narrow, uid, gid);
+        Py_END_ALLOW_THREADS
+
+        // interrupted by a signal (EINTR)?  retry!
+        if ((result != 0) && (errno == EINTR)) {
+            if (PyErr_CheckSignals()) {
+                return NULL;
+            }
+            continue;
+        }
+        break;
+    }
 
 #ifdef HAVE_FCHOWNAT
     if (fchownat_unsupported) {
@@ -4647,14 +4759,25 @@ static PyObject *
 os_lchown_impl(PyObject *module, path_t *path, uid_t uid, gid_t gid)
 /*[clinic end generated code: output=25eaf6af412fdf2f input=b1c6014d563a7161]*/
 {
-    int res;
+    int result;
     if (PySys_Audit("os.chown", "OIIi", path->object, uid, gid, -1) < 0) {
         return NULL;
     }
-    Py_BEGIN_ALLOW_THREADS
-    res = lchown(path->narrow, uid, gid);
-    Py_END_ALLOW_THREADS
-    if (res < 0) {
+    for (;;) {
+        Py_BEGIN_ALLOW_THREADS
+        result = lchown(path->narrow, uid, gid);
+        Py_END_ALLOW_THREADS
+
+        // interrupted by a signal (EINTR)?  retry!
+        if ((result != 0) && (errno == EINTR)) {
+            if (PyErr_CheckSignals()) {
+                return NULL;
+            }
+            continue;
+        }
+        break;
+    }
+    if (result < 0) {
         return path_error(path);
     }
     Py_RETURN_NONE;
@@ -4840,12 +4963,6 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
              int dst_dir_fd, int follow_symlinks)
 /*[clinic end generated code: output=7f00f6007fd5269a input=a28e6866fbd20a01]*/
 {
-#ifdef MS_WINDOWS
-    BOOL result = FALSE;
-#else
-    int result;
-#endif
-
 #ifdef HAVE_LINKAT
     if (HAVE_LINKAT_RUNTIME) {
         if (follow_symlinks < 0) {
@@ -4886,6 +5003,7 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
     }
 
 #ifdef MS_WINDOWS
+    BOOL result;
     Py_BEGIN_ALLOW_THREADS
     result = CreateHardLinkW(dst->wide, src->wide, NULL);
     Py_END_ALLOW_THREADS
@@ -4893,23 +5011,36 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
     if (!result)
         return path_error2(src, dst);
 #else
-    Py_BEGIN_ALLOW_THREADS
+    int result;
+    for (;;) {
+        Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_LINKAT
-    if (HAVE_LINKAT_RUNTIME) {
-        result = linkat(src_dir_fd, src->narrow,
-            dst_dir_fd, dst->narrow,
-            follow_symlinks ? AT_SYMLINK_FOLLOW : 0);
-    }
-    else
+        if (HAVE_LINKAT_RUNTIME) {
+            result = linkat(src_dir_fd, src->narrow,
+                dst_dir_fd, dst->narrow,
+                follow_symlinks ? AT_SYMLINK_FOLLOW : 0);
+        }
+        else
 #endif
-    {
-        /* linkat not available */
-        result = link(src->narrow, dst->narrow);
-    }
-    Py_END_ALLOW_THREADS
+        {
+            /* linkat not available */
+            result = link(src->narrow, dst->narrow);
+        }
+        Py_END_ALLOW_THREADS
 
-    if (result)
-        return path_error2(src, dst);
+        // interrupted by a signal (EINTR)?  retry!
+        if (result != 0) {
+            if (errno == EINTR) {
+                if (PyErr_CheckSignals()) {
+                    return NULL;
+                }
+                continue;
+            }
+            return path_error2(src, dst);
+        }
+        break;
+    }
+
 #endif /* MS_WINDOWS */
 
     Py_RETURN_NONE;
@@ -5022,22 +5153,32 @@ _posix_listdir(path_t *path, PyObject *list)
     errno = 0;
 #ifdef HAVE_FDOPENDIR
     if (path->is_fd) {
-      if (HAVE_FDOPENDIR_RUNTIME) {
+        if (!HAVE_FDOPENDIR_RUNTIME) {
+            PyErr_SetString(PyExc_TypeError,
+                "listdir: path should be string, bytes, os.PathLike or None, not int");
+            return NULL;
+        }
         /* closedir() closes the FD, so we duplicate it */
         fd = _Py_dup(path->fd);
         if (fd == -1)
             return NULL;
-
         return_str = 1;
 
-        Py_BEGIN_ALLOW_THREADS
-        dirp = fdopendir(fd);
-        Py_END_ALLOW_THREADS
-      } else {
-        PyErr_SetString(PyExc_TypeError,
-            "listdir: path should be string, bytes, os.PathLike or None, not int");
-        return NULL;
-      }
+        for (;;) {
+            Py_BEGIN_ALLOW_THREADS
+            dirp = fdopendir(fd);
+            Py_END_ALLOW_THREADS
+
+            // interrupted by a signal (EINTR)?  retry!
+            if ((dirp == NULL) && (errno == EINTR)) {
+                if (PyErr_CheckSignals()) {
+                    close(fd);
+                    return NULL;
+                }
+                continue;
+            }
+            break;
+        }
     }
     else
 #endif
@@ -5053,9 +5194,20 @@ _posix_listdir(path_t *path, PyObject *list)
             return_str = 1;
         }
 
-        Py_BEGIN_ALLOW_THREADS
-        dirp = opendir(name);
-        Py_END_ALLOW_THREADS
+        for (;;) {
+            Py_BEGIN_ALLOW_THREADS
+            dirp = opendir(name);
+            Py_END_ALLOW_THREADS
+
+            // interrupted by a signal (EINTR)?  retry!
+            if ((dirp == NULL) && (errno == EINTR)) {
+                if (PyErr_CheckSignals()) {
+                    return NULL;
+                }
+                continue;
+            }
+            break;
+        }
     }
 
     if (dirp == NULL) {
@@ -5075,11 +5227,20 @@ _posix_listdir(path_t *path, PyObject *list)
     }
     for (;;) {
         errno = 0;
+
         Py_BEGIN_ALLOW_THREADS
         ep = readdir(dirp);
         Py_END_ALLOW_THREADS
+
         if (ep == NULL) {
-            if (errno == 0) {
+            // interrupted by a signal (EINTR)?  retry!
+            if (errno == EINTR) {
+                if (PyErr_CheckSignals()) {
+                    Py_CLEAR(list);
+                    goto exit;
+                }
+                continue;
+            } else if (errno == 0) {
                 break;
             } else {
                 path_error(path);
@@ -6240,23 +6401,36 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
         return path_error(path);
     }
 #else
-    Py_BEGIN_ALLOW_THREADS
+    for (;;) {
+        Py_BEGIN_ALLOW_THREADS
 #if HAVE_MKDIRAT
-    if (dir_fd != DEFAULT_DIR_FD) {
-      if (HAVE_MKDIRAT_RUNTIME) {
-        result = mkdirat(dir_fd, path->narrow, mode);
+        if (dir_fd != DEFAULT_DIR_FD) {
+          if (HAVE_MKDIRAT_RUNTIME) {
+            result = mkdirat(dir_fd, path->narrow, mode);
 
-      } else {
-        mkdirat_unavailable = 1;
-      }
-    } else
+          } else {
+            mkdirat_unavailable = 1;
+            result = 0;
+          }
+        } else
 #endif
+        {
 #if defined(__WATCOMC__) && !defined(__QNX__)
-        result = mkdir(path->narrow);
+            result = mkdir(path->narrow);
 #else
-        result = mkdir(path->narrow, mode);
+            result = mkdir(path->narrow, mode);
 #endif
-    Py_END_ALLOW_THREADS
+        }
+        Py_END_ALLOW_THREADS
+        // interrupted by a signal (EINTR)?  retry!
+        if ((result < 0) && (errno == EINTR)) {
+            if (PyErr_CheckSignals()) {
+                return NULL;
+            }
+            continue;
+        }
+        break;
+    }
 
 #if HAVE_MKDIRAT
     if (mkdirat_unavailable) {
@@ -6409,18 +6583,30 @@ internal_rename(path_t *src, path_t *dst, int src_dir_fd, int dst_dir_fd, int is
         return path_error2(src, dst);
 
 #else
-    Py_BEGIN_ALLOW_THREADS
+    for (;;) {
+        Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_RENAMEAT
-    if (dir_fd_specified) {
-        if (HAVE_RENAMEAT_RUNTIME) {
-            result = renameat(src_dir_fd, src->narrow, dst_dir_fd, dst->narrow);
-        } else {
-            renameat_unavailable = 1;
-        }
-    } else
+        if (dir_fd_specified) {
+            if (HAVE_RENAMEAT_RUNTIME) {
+                result = renameat(src_dir_fd, src->narrow, dst_dir_fd, dst->narrow);
+            } else {
+                renameat_unavailable = 1;
+                result = 0;
+            }
+        } else
 #endif
-    result = rename(src->narrow, dst->narrow);
-    Py_END_ALLOW_THREADS
+        result = rename(src->narrow, dst->narrow);
+        Py_END_ALLOW_THREADS
+
+        // interrupted by a signal (EINTR)?  retry!
+        if ((result != 0) && (errno == EINTR)) {
+            if (PyErr_CheckSignals()) {
+                return NULL;
+            }
+            continue;
+        }
+        break;
+    }
 
 
 #ifdef HAVE_RENAMEAT
@@ -6517,24 +6703,37 @@ os_rmdir_impl(PyObject *module, path_t *path, int dir_fd)
         return NULL;
     }
 
-    Py_BEGIN_ALLOW_THREADS
 #ifdef MS_WINDOWS
+    Py_BEGIN_ALLOW_THREADS
     /* Windows, success=1, UNIX, success=0 */
     result = !RemoveDirectoryW(path->wide);
-#else
-#ifdef HAVE_UNLINKAT
-    if (dir_fd != DEFAULT_DIR_FD) {
-      if (HAVE_UNLINKAT_RUNTIME) {
-        result = unlinkat(dir_fd, path->narrow, AT_REMOVEDIR);
-      } else {
-        unlinkat_unavailable = 1;
-        result = -1;
-      }
-    } else
-#endif
-        result = rmdir(path->narrow);
-#endif
     Py_END_ALLOW_THREADS
+#else
+    for (;;) {
+        Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_UNLINKAT
+        if (dir_fd != DEFAULT_DIR_FD) {
+          if (HAVE_UNLINKAT_RUNTIME) {
+            result = unlinkat(dir_fd, path->narrow, AT_REMOVEDIR);
+          } else {
+            unlinkat_unavailable = 1;
+            result = 0;
+          }
+        } else
+#endif
+            result = rmdir(path->narrow);
+        Py_END_ALLOW_THREADS
+
+        // interrupted by a signal (EINTR)?  retry!
+        if ((result != 0) && (errno == EINTR)) {
+            if (PyErr_CheckSignals()) {
+                return NULL;
+            }
+            continue;
+        }
+        break;
+    }
+#endif
 
 #ifdef HAVE_UNLINKAT
     if (unlinkat_unavailable) {
@@ -6698,26 +6897,39 @@ os_unlink_impl(PyObject *module, path_t *path, int dir_fd)
         return NULL;
     }
 
+#ifdef MS_WINDOWS
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
-#ifdef MS_WINDOWS
     /* Windows, success=1, UNIX, success=0 */
     result = !Py_DeleteFileW(path->wide);
-#else
-#ifdef HAVE_UNLINKAT
-    if (dir_fd != DEFAULT_DIR_FD) {
-      if (HAVE_UNLINKAT_RUNTIME) {
-
-        result = unlinkat(dir_fd, path->narrow, 0);
-      } else {
-        unlinkat_unavailable = 1;
-      }
-    } else
-#endif /* HAVE_UNLINKAT */
-        result = unlink(path->narrow);
-#endif
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
+#else
+    for (;;) {
+        Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_UNLINKAT
+        if (dir_fd != DEFAULT_DIR_FD) {
+          if (HAVE_UNLINKAT_RUNTIME) {
+            result = unlinkat(dir_fd, path->narrow, 0);
+          } else {
+            unlinkat_unavailable = 1;
+            result = 0;
+          }
+        } else
+#endif /* HAVE_UNLINKAT */
+            result = unlink(path->narrow);
+        Py_END_ALLOW_THREADS
+
+        // interrupted by a signal (EINTR)?  retry!
+        if ((result != 0) && (errno == EINTR)) {
+            if (PyErr_CheckSignals()) {
+                return NULL;
+            }
+            continue;
+        }
+        break;
+    }
+#endif
 
 #ifdef HAVE_UNLINKAT
     if (unlinkat_unavailable) {
@@ -7209,30 +7421,41 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
     }
     CloseHandle(hFile);
 #else /* MS_WINDOWS */
-    Py_BEGIN_ALLOW_THREADS
+    for (;;) {
+        Py_BEGIN_ALLOW_THREADS
 
 #ifdef UTIME_HAVE_NOFOLLOW_SYMLINKS
-    if ((!follow_symlinks) && (dir_fd == DEFAULT_DIR_FD))
-        result = utime_nofollow_symlinks(&utime, path->narrow);
-    else
+        if ((!follow_symlinks) && (dir_fd == DEFAULT_DIR_FD))
+            result = utime_nofollow_symlinks(&utime, path->narrow);
+        else
 #endif
 
 #if defined(HAVE_FUTIMESAT) || defined(HAVE_UTIMENSAT)
-    if ((dir_fd != DEFAULT_DIR_FD) || (!follow_symlinks)) {
-        result = utime_dir_fd(&utime, dir_fd, path->narrow, follow_symlinks);
+        if ((dir_fd != DEFAULT_DIR_FD) || (!follow_symlinks)) {
+            result = utime_dir_fd(&utime, dir_fd, path->narrow, follow_symlinks);
 
-    } else
+        } else
 #endif
 
 #if defined(HAVE_FUTIMES) || defined(HAVE_FUTIMENS)
-    if (path->is_fd)
-        result = utime_fd(&utime, path->fd);
-    else
+        if (path->is_fd)
+            result = utime_fd(&utime, path->fd);
+        else
 #endif
 
-    result = utime_default(&utime, path->narrow);
+        result = utime_default(&utime, path->narrow);
 
-    Py_END_ALLOW_THREADS
+        Py_END_ALLOW_THREADS
+
+        // interrupted by a signal (EINTR)?  retry!
+        if ((result < 0) && (errno == EINTR)) {
+            if (PyErr_CheckSignals()) {
+                return NULL;
+            }
+            continue;
+        }
+        break;
+    }
 
 #if defined(__APPLE__) && defined(HAVE_UTIMENSAT)
     /* See utime_dir_fd implementation */
@@ -11031,44 +11254,55 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
         return NULL;
     }
 
-    if (path->is_fd) {
+    for (;;) {
+        if (path->is_fd) {
 #if defined(_Py_HAVE_FREADLINK)
-        if (HAVE_FREADLINK_RUNTIME) {
-            Py_BEGIN_ALLOW_THREADS
-            length = freadlink(path->fd, buffer, MAXPATHLEN);
-            Py_END_ALLOW_THREADS
-        } else
+            if (HAVE_FREADLINK_RUNTIME) {
+                Py_BEGIN_ALLOW_THREADS
+                length = freadlink(path->fd, buffer, MAXPATHLEN);
+                Py_END_ALLOW_THREADS
+            } else
 #elif defined(HAVE_READLINKAT) && defined(_Py_READLINKAT_SUPPORTS_EMPTY_PATH)
-        // linux/android:
-        // readlinkat(fd, "", ...) reads the link that fd refers to.
-        if (HAVE_READLINKAT_RUNTIME) {
-            Py_BEGIN_ALLOW_THREADS
-            length = readlinkat(path->fd, "", buffer, MAXPATHLEN);
-            Py_END_ALLOW_THREADS
+            // linux/android:
+            // readlinkat(fd, "", ...) reads the link that fd refers to.
+            if (HAVE_READLINKAT_RUNTIME) {
+                Py_BEGIN_ALLOW_THREADS
+                length = readlinkat(path->fd, "", buffer, MAXPATHLEN);
+                Py_END_ALLOW_THREADS
+            } else
+#endif
+            {
+                PyErr_SetString(PyExc_NotImplementedError,
+                    "readlink cannot read file descriptors on this platform");
+                return NULL;
+            }
+        } else
+#ifdef HAVE_READLINKAT
+        if (dir_fd != DEFAULT_DIR_FD) {
+            if (HAVE_READLINKAT_RUNTIME) {
+                Py_BEGIN_ALLOW_THREADS
+                length = readlinkat(dir_fd, path->narrow, buffer, MAXPATHLEN);
+                Py_END_ALLOW_THREADS
+            } else {
+                argument_unavailable_error(NULL, "dir_fd");
+                return NULL;
+            }
         } else
 #endif
         {
-            PyErr_SetString(PyExc_NotImplementedError,
-                "readlink cannot read file descriptors on this platform");
-            return NULL;
-        }
-    } else
-#ifdef HAVE_READLINKAT
-    if (dir_fd != DEFAULT_DIR_FD) {
-        if (HAVE_READLINKAT_RUNTIME) {
             Py_BEGIN_ALLOW_THREADS
-            length = readlinkat(dir_fd, path->narrow, buffer, MAXPATHLEN);
+            length = readlink(path->narrow, buffer, MAXPATHLEN);
             Py_END_ALLOW_THREADS
-        } else {
-            argument_unavailable_error(NULL, "dir_fd");
-            return NULL;
         }
-    } else
-#endif
-    {
-        Py_BEGIN_ALLOW_THREADS
-        length = readlink(path->narrow, buffer, MAXPATHLEN);
-        Py_END_ALLOW_THREADS
+
+        // interrupted by a signal (EINTR)?  retry!
+        if ((length < 0) && (errno == EINTR)) {
+            if (PyErr_CheckSignals()) {
+                return NULL;
+            }
+            continue;
+        }
+        break;
     }
 
     if (length < 0) {
@@ -11331,18 +11565,30 @@ os_symlink_impl(PyObject *module, path_t *src, path_t *dst,
 
 #else
 
-    Py_BEGIN_ALLOW_THREADS
+    for (;;) {
+        Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_SYMLINKAT
-    if (dir_fd != DEFAULT_DIR_FD) {
-        if (HAVE_SYMLINKAT_RUNTIME) {
-            result = symlinkat(src->narrow, dir_fd, dst->narrow);
-        } else {
-            symlinkat_unavailable = 1;
-        }
-    } else
+        if (dir_fd != DEFAULT_DIR_FD) {
+            if (HAVE_SYMLINKAT_RUNTIME) {
+                result = symlinkat(src->narrow, dir_fd, dst->narrow);
+            } else {
+                symlinkat_unavailable = 1;
+                result = 0;
+            }
+        } else
 #endif
-        result = symlink(src->narrow, dst->narrow);
-    Py_END_ALLOW_THREADS
+            result = symlink(src->narrow, dst->narrow);
+        Py_END_ALLOW_THREADS
+
+        // interrupted by a signal (EINTR)?  retry!
+        if ((result != 0) && (errno == EINTR)) {
+            if (PyErr_CheckSignals()) {
+                return NULL;
+            }
+            continue;
+        }
+        break;
+    }
 
 #ifdef HAVE_SYMLINKAT
     if (symlinkat_unavailable) {
@@ -12808,12 +13054,24 @@ static PyObject *
 os__fcopyfile_impl(PyObject *module, int in_fd, int out_fd, int flags)
 /*[clinic end generated code: output=c9d1a35a992e401b input=80b53ad8863c9101]*/
 {
-    int ret;
+    int result;
 
-    Py_BEGIN_ALLOW_THREADS
-    ret = fcopyfile(in_fd, out_fd, NULL, flags);
-    Py_END_ALLOW_THREADS
-    if (ret < 0)
+    for (;;) {
+        Py_BEGIN_ALLOW_THREADS
+        result = fcopyfile(in_fd, out_fd, NULL, flags);
+        Py_END_ALLOW_THREADS
+
+        // interrupted by a signal (EINTR)?  retry!
+        if ((result != 0) && (errno == EINTR)) {
+            if (PyErr_CheckSignals()) {
+                return NULL;
+            }
+            continue;
+        }
+        break;
+    }
+
+    if (result < 0)
         return posix_error();
     Py_RETURN_NONE;
 }
@@ -13646,9 +13904,9 @@ os_truncate_impl(PyObject *module, path_t *path, Py_off_t length)
         return NULL;
     }
 
+#ifdef MS_WINDOWS
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
-#ifdef MS_WINDOWS
     fd = _wopen(path->wide, _O_WRONLY | _O_BINARY | _O_NOINHERIT);
     if (fd < 0)
         result = -1;
@@ -13658,11 +13916,24 @@ os_truncate_impl(PyObject *module, path_t *path, Py_off_t length)
         if (result < 0)
             errno = result;
     }
-#else
-    result = truncate(path->narrow, length);
-#endif
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
+#else
+    for (;;) {
+        Py_BEGIN_ALLOW_THREADS
+        result = truncate(path->narrow, length);
+        Py_END_ALLOW_THREADS
+
+        // interrupted by a signal (EINTR)?  retry!
+        if ((result < 0) && (errno == EINTR)) {
+            if (PyErr_CheckSignals()) {
+                return NULL;
+            }
+            continue;
+        }
+        break;
+    }
+#endif
     if (result < 0)
         return posix_path_error(path);
 
@@ -14346,13 +14617,24 @@ os_statvfs_impl(PyObject *module, path_t *path)
      */
     struct statfs st;
 
-    Py_BEGIN_ALLOW_THREADS
-    if (path->is_fd) {
-        result = fstatfs(path->fd, &st);
+    for (;;) {
+        Py_BEGIN_ALLOW_THREADS
+        if (path->is_fd) {
+            result = fstatfs(path->fd, &st);
+        }
+        else
+            result = statfs(path->narrow, &st);
+        Py_END_ALLOW_THREADS
+
+        // interrupted by a signal (EINTR)?  retry!
+        if ((result != 0) && (errno == EINTR)) {
+            if (PyErr_CheckSignals()) {
+                return NULL;
+            }
+            continue;
+        }
+        break;
     }
-    else
-        result = statfs(path->narrow, &st);
-    Py_END_ALLOW_THREADS
 
     if (result) {
         return path_error(path);
@@ -14363,15 +14645,26 @@ os_statvfs_impl(PyObject *module, path_t *path)
 #else
     struct statvfs st;
 
-    Py_BEGIN_ALLOW_THREADS
+    for (;;) {
+        Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_FSTATVFS
-    if (path->is_fd) {
-        result = fstatvfs(path->fd, &st);
-    }
-    else
+        if (path->is_fd) {
+            result = fstatvfs(path->fd, &st);
+        }
+        else
 #endif
-        result = statvfs(path->narrow, &st);
-    Py_END_ALLOW_THREADS
+            result = statvfs(path->narrow, &st);
+        Py_END_ALLOW_THREADS
+
+        // interrupted by a signal (EINTR)?  retry!
+        if ((result != 0) && (errno == EINTR)) {
+            if (PyErr_CheckSignals()) {
+                return NULL;
+            }
+            continue;
+        }
+        break;
+    }
 
     if (result) {
         return path_error(path);
@@ -15746,14 +16039,26 @@ os_getxattr_impl(PyObject *module, path_t *path, path_t *attribute,
         }
         void *ptr = PyBytesWriter_GetData(writer);
 
-        Py_BEGIN_ALLOW_THREADS;
-        if (path->is_fd)
-            result = fgetxattr(path->fd, attribute->narrow, ptr, buffer_size);
-        else if (follow_symlinks)
-            result = getxattr(path->narrow, attribute->narrow, ptr, buffer_size);
-        else
-            result = lgetxattr(path->narrow, attribute->narrow, ptr, buffer_size);
-        Py_END_ALLOW_THREADS;
+        for (;;) {
+            Py_BEGIN_ALLOW_THREADS;
+            if (path->is_fd)
+                result = fgetxattr(path->fd, attribute->narrow, ptr, buffer_size);
+            else if (follow_symlinks)
+                result = getxattr(path->narrow, attribute->narrow, ptr, buffer_size);
+            else
+                result = lgetxattr(path->narrow, attribute->narrow, ptr, buffer_size);
+            Py_END_ALLOW_THREADS;
+
+            // interrupted by a signal (EINTR)?  retry!
+            if ((result < 0) && (errno == EINTR)) {
+                if (PyErr_CheckSignals()) {
+                    PyBytesWriter_Discard(writer);
+                    return NULL;
+                }
+                continue;
+            }
+            break;
+        }
 
         if (result < 0) {
             PyBytesWriter_Discard(writer);
@@ -15804,17 +16109,28 @@ os_setxattr_impl(PyObject *module, path_t *path, path_t *attribute,
         return NULL;
     }
 
-    Py_BEGIN_ALLOW_THREADS;
-    if (path->is_fd)
-        result = fsetxattr(path->fd, attribute->narrow,
-                           value->buf, value->len, flags);
-    else if (follow_symlinks)
-        result = setxattr(path->narrow, attribute->narrow,
-                           value->buf, value->len, flags);
-    else
-        result = lsetxattr(path->narrow, attribute->narrow,
-                           value->buf, value->len, flags);
-    Py_END_ALLOW_THREADS;
+    for (;;) {
+        Py_BEGIN_ALLOW_THREADS;
+        if (path->is_fd)
+            result = fsetxattr(path->fd, attribute->narrow,
+                               value->buf, value->len, flags);
+        else if (follow_symlinks)
+            result = setxattr(path->narrow, attribute->narrow,
+                               value->buf, value->len, flags);
+        else
+            result = lsetxattr(path->narrow, attribute->narrow,
+                               value->buf, value->len, flags);
+        Py_END_ALLOW_THREADS;
+
+        // interrupted by a signal (EINTR)?  retry!
+        if ((result != 0) && (errno == EINTR)) {
+            if (PyErr_CheckSignals()) {
+                return NULL;
+            }
+            continue;
+        }
+        break;
+    }
 
     if (result) {
         path_error(path);
@@ -15857,14 +16173,25 @@ os_removexattr_impl(PyObject *module, path_t *path, path_t *attribute,
         return NULL;
     }
 
-    Py_BEGIN_ALLOW_THREADS;
-    if (path->is_fd)
-        result = fremovexattr(path->fd, attribute->narrow);
-    else if (follow_symlinks)
-        result = removexattr(path->narrow, attribute->narrow);
-    else
-        result = lremovexattr(path->narrow, attribute->narrow);
-    Py_END_ALLOW_THREADS;
+    for (;;) {
+        Py_BEGIN_ALLOW_THREADS;
+        if (path->is_fd)
+            result = fremovexattr(path->fd, attribute->narrow);
+        else if (follow_symlinks)
+            result = removexattr(path->narrow, attribute->narrow);
+        else
+            result = lremovexattr(path->narrow, attribute->narrow);
+        Py_END_ALLOW_THREADS;
+
+        // interrupted by a signal (EINTR)?  retry!
+        if ((result != 0) && (errno == EINTR)) {
+            if (PyErr_CheckSignals()) {
+                return NULL;
+            }
+            continue;
+        }
+        break;
+    }
 
     if (result) {
         return path_error(path);
@@ -15926,14 +16253,25 @@ os_listxattr_impl(PyObject *module, path_t *path, int follow_symlinks)
             break;
         }
 
-        Py_BEGIN_ALLOW_THREADS;
-        if (path->is_fd)
-            length = flistxattr(path->fd, buffer, buffer_size);
-        else if (follow_symlinks)
-            length = listxattr(name, buffer, buffer_size);
-        else
-            length = llistxattr(name, buffer, buffer_size);
-        Py_END_ALLOW_THREADS;
+        for (;;) {
+            Py_BEGIN_ALLOW_THREADS;
+            if (path->is_fd)
+                length = flistxattr(path->fd, buffer, buffer_size);
+            else if (follow_symlinks)
+                length = listxattr(name, buffer, buffer_size);
+            else
+                length = llistxattr(name, buffer, buffer_size);
+            Py_END_ALLOW_THREADS;
+
+            // interrupted by a signal (EINTR)?  retry!
+            if ((length < 0) && (errno == EINTR)) {
+                if (PyErr_CheckSignals()) {
+                    goto exit;
+                }
+                continue;
+            }
+            break;
+        }
 
         if (length < 0) {
             if (errno == ERANGE) {
@@ -16528,6 +16866,7 @@ DirEntry_fetch_stat(PyObject *module, DirEntry *self, int follow_symlinks)
     int result;
     STRUCT_STAT st;
     PyObject *ub;
+    PyObject *return_value = NULL;
 
 #ifdef MS_WINDOWS
     if (!PyUnicode_FSDecoder(self->path, &ub))
@@ -16538,49 +16877,58 @@ DirEntry_fetch_stat(PyObject *module, DirEntry *self, int follow_symlinks)
     if (!PyUnicode_FSConverter(self->path, &ub))
         return NULL;
     const char *path = PyBytes_AS_STRING(ub);
-    if (self->dir_fd != DEFAULT_DIR_FD) {
+#endif
+
+    for (;;) {
+#if !defined(MS_WINDOWS)
+        if (self->dir_fd != DEFAULT_DIR_FD) {
 #ifdef HAVE_FSTATAT
-      if (HAVE_FSTATAT_RUNTIME) {
-        Py_BEGIN_ALLOW_THREADS
-        result = fstatat(self->dir_fd, path, &st,
-                         follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW);
-        Py_END_ALLOW_THREADS
-      } else
+            if (HAVE_FSTATAT_RUNTIME) {
+                Py_BEGIN_ALLOW_THREADS
+                result = fstatat(self->dir_fd, path, &st,
+                                 follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW);
+                Py_END_ALLOW_THREADS
+            } else
 
 #endif /* HAVE_FSTATAT */
-      {
-        Py_DECREF(ub);
-        PyErr_SetString(PyExc_NotImplementedError, "can't fetch stat");
-        return NULL;
-      }
-    }
-    else
+            {
+                Py_DECREF(ub);
+                PyErr_SetString(PyExc_NotImplementedError, "can't fetch stat");
+                return NULL;
+            }
+        } else
 #endif
-    {
-        Py_BEGIN_ALLOW_THREADS
-        if (follow_symlinks) {
-            result = STAT(path, &st);
+        {
+            Py_BEGIN_ALLOW_THREADS
+            if (follow_symlinks) {
+                result = STAT(path, &st);
+            }
+            else {
+                result = LSTAT(path, &st);
+            }
+            Py_END_ALLOW_THREADS
         }
-        else {
-            result = LSTAT(path, &st);
+
+        if (result == 0) {
+            return_value = _pystat_fromstructstat(module, &st);
+        } else if (errno == EINTR) {
+            // interrupted by a signal (EINTR)?  handle signals and retry!
+            if (!PyErr_CheckSignals()) {
+                continue;
+            }
+        } else {
+            path_object_error(self->path);
         }
-        Py_END_ALLOW_THREADS
+        break;
     }
 
-    int saved_errno = errno;
 #if defined(MS_WINDOWS)
     PyMem_Free(path);
 #else
     Py_DECREF(ub);
 #endif
 
-    if (result != 0) {
-        errno = saved_errno;
-        path_object_error(self->path);
-        return NULL;
-    }
-
-    return _pystat_fromstructstat(module, &st);
+    return return_value;
 }
 
 static PyObject *
@@ -17238,13 +17586,26 @@ ScandirIterator_iternext(PyObject *op)
     while (iterator->dirp != NULL &&
            !_Py_atomic_load_uint8_relaxed(&iterator->closed))
     {
-        Py_BEGIN_ALLOW_THREADS
-        errno = 0;
-        direntp = readdir(iterator->dirp);
-        if (direntp == NULL) {
-            error = errno;
+        for (;;) {
+            Py_BEGIN_ALLOW_THREADS
+            errno = 0;
+            direntp = readdir(iterator->dirp);
+            if (direntp == NULL) {
+                error = errno;
+            }
+            Py_END_ALLOW_THREADS
+
+            // interrupted by a signal (EINTR)?  retry!
+            if ((direntp == NULL) && (error == EINTR)) {
+                if (!PyErr_CheckSignals()) {
+                    continue;
+                }
+                // suppress error--this means we don't run path_error
+                // below, so we'll raise the existing already-set exception
+                error = 0;
+            }
+            break;
         }
-        Py_END_ALLOW_THREADS
 
         if (!direntp) {
             break;
@@ -17432,14 +17793,6 @@ os_scandir_impl(PyObject *module, path_t *path)
 /*[clinic end generated code: output=6eb2668b675ca89e input=6ab9600993f51577]*/
 {
     ScandirIterator *iterator;
-#ifdef MS_WINDOWS
-    wchar_t *path_strW;
-#else
-    const char *path_str;
-#ifdef HAVE_FDOPENDIR
-    int fd = -1;
-#endif
-#endif
 
     if (PySys_Audit("os.scandir", "O",
                     path->object ? path->object : Py_None) < 0) {
@@ -17453,11 +17806,6 @@ os_scandir_impl(PyObject *module, path_t *path)
 
     iterator->read_mutex = (PyMutex){0};
     iterator->closed = 1;
-#ifdef MS_WINDOWS
-    iterator->handle = INVALID_HANDLE_VALUE;
-#else
-    iterator->dirp = NULL;
-#endif
 
     /* Move the ownership to iterator->path */
     memcpy(&iterator->path, path, sizeof(path_t));
@@ -17465,8 +17813,9 @@ os_scandir_impl(PyObject *module, path_t *path)
 
 #ifdef MS_WINDOWS
     iterator->first_time = 1;
+    iterator->handle = INVALID_HANDLE_VALUE;
 
-    path_strW = join_path_filenameW(iterator->path.wide, L"*.*", 1);
+    wchar_t *path_strW = join_path_filenameW(iterator->path.wide, L"*.*", 1);
     if (!path_strW)
         goto error;
 
@@ -17481,47 +17830,56 @@ os_scandir_impl(PyObject *module, path_t *path)
     }
     PyMem_Free(path_strW);
 #else /* POSIX */
-    errno = 0;
+    const char *path_str = NULL;
+    iterator->dirp = NULL;
+
 #ifdef HAVE_FDOPENDIR
+    int fd = -1;
     if (iterator->path.is_fd) {
-      if (HAVE_FDOPENDIR_RUNTIME) {
+        if (!HAVE_FDOPENDIR_RUNTIME) {
+            PyErr_SetString(PyExc_TypeError,
+                "scandir: path should be string, bytes, os.PathLike or None, not int");
+            goto error;
+        }
         /* closedir() closes the FD, so we duplicate it */
         fd = _Py_dup(iterator->path.fd);
         if (fd == -1)
             goto error;
-
-        Py_BEGIN_ALLOW_THREADS
-        iterator->dirp = fdopendir(fd);
-        Py_END_ALLOW_THREADS
-      } else {
-        PyErr_SetString(PyExc_TypeError,
-            "scandir: path should be string, bytes, os.PathLike or None, not int");
-        return NULL;
-      }
-    }
-    else
+    } else
 #endif
     {
         if (iterator->path.narrow)
             path_str = iterator->path.narrow;
         else
             path_str = ".";
-
-        Py_BEGIN_ALLOW_THREADS
-        iterator->dirp = opendir(path_str);
-        Py_END_ALLOW_THREADS
     }
 
-    if (!iterator->dirp) {
-        path_error(&iterator->path);
+    for (;;) {
+        Py_BEGIN_ALLOW_THREADS
+        errno = 0;
 #ifdef HAVE_FDOPENDIR
-        if (fd != -1) {
-            Py_BEGIN_ALLOW_THREADS
-            close(fd);
-            Py_END_ALLOW_THREADS
+        if (iterator->path.is_fd) {
+            iterator->dirp = fdopendir(fd);
         }
+        else
 #endif
-        goto error;
+        {
+            iterator->dirp = opendir(path_str);
+        }
+        Py_END_ALLOW_THREADS
+
+        // interrupted by a signal (EINTR)?  retry!
+        if (iterator->dirp == NULL) {
+            if (errno == EINTR) {
+                if (PyErr_CheckSignals()) {
+                    goto error;
+                }
+                continue;
+            }
+            path_error(&iterator->path);
+            goto error;
+        }
+        break;
     }
 #endif
 
@@ -17530,6 +17888,13 @@ os_scandir_impl(PyObject *module, path_t *path)
 
 error:
     Py_DECREF(iterator);
+#ifdef HAVE_FDOPENDIR
+    if (fd != -1) {
+        Py_BEGIN_ALLOW_THREADS
+        close(fd);
+        Py_END_ALLOW_THREADS
+    }
+#endif
     return NULL;
 }
 
