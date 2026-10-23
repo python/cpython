@@ -8,7 +8,7 @@ Consumers must include the header file :file:`pyexpat.h` (which is not
 included by default by :file:`Python.h`) and ``expat.h`` for Expat.
 
 To use the C API, consider adding the following code in your extension
-module initilisation function and store the pointer to the C API in
+module initialization function and store the pointer to the C API in
 the module state:
 
 .. code-block::
