@@ -93,13 +93,9 @@ class _WeakValueDictionary:
         self.data = {}
 
     def _commit_removals(self):
-        pop = self._pending_removals.pop
         d = self.data
-        while True:
-            try:
-                key = pop()
-            except IndexError:
-                return
+        for key in iter(self._pending_removals.pop,
+                        stop_exception=IndexError):
             _weakref._remove_dead_weakref(d, key)
 
     def get(self, key, default=None):
