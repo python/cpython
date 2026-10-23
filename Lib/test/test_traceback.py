@@ -1962,6 +1962,7 @@ print(
         self.assertIn("Did you mean 'import'", output.getvalue())
 
     @requires_subprocess()
+    @force_not_colorized
     def test_keyword_hint_does_not_reopen_source(self):
         with tempfile.TemporaryDirectory() as script_dir:
             make_script(script_dir, "sitecustomize", textwrap.dedent('''
@@ -1981,7 +1982,8 @@ print(
                 if keyword is not None:
                     self.assertIn(f"Did you mean '{keyword}'".encode(), error)
                 if keyword == "and":
-                    self.assertIn(b"line 1\n    result = (one\n", error)
+                    self.assertIn(b"line 1\n    result = (one\n",
+                                  error.replace(b"\r\n", b"\n"))
             self.assertGreater(counts[0], 0)
             self.assertEqual(counts, [counts[0]] * len(cases))
 

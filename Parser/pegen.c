@@ -1086,6 +1086,11 @@ typedef struct {
     int is_alias;
 } KeywordTypo;
 
+typedef struct {
+    const char * const name;
+    const char * const keyword;
+} KeywordAlias;
+
 #define MAX_KEYWORD_TYPO_CANDIDATES 32
 #define MAX_KEYWORD_TYPO_STEPS 5000000
 
@@ -1303,10 +1308,7 @@ collect_keyword_typos(Parser *p, PySyntaxErrorObject *error, KeywordTypo *candid
             start = i + 1;
         }
     }
-    static const struct {
-        const char *name;
-        const char *keyword;
-    } aliases[] = {
+    static const KeywordAlias aliases[] = {
         {"switch", "match"},
         {"delete", "del"},
         {"function", "def"},
