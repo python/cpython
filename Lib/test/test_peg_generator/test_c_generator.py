@@ -1,4 +1,5 @@
 import io
+import token
 import unittest
 from pathlib import PurePath
 from unittest import mock
@@ -26,6 +27,10 @@ class TestCGenerator(unittest.TestCase):
         output = io.StringIO()
         CParserEmitter(parser, output).emit()
         return output.getvalue()
+
+    def prepare_rules(self, source):
+        parser = self.make_generator(source).prepare(PurePath("example.gram"))
+        return {rule.signature.name: rule for rule in parser.rules}
 
     def test_rule_types_distinguish_implicit_and_explicit_void_pointer(self):
         generator = self.make_generator("""
@@ -285,6 +290,106 @@ class TestCGenerator(unittest.TestCase):
         generator.prepare(PurePath("example.gram"))
         self.assertEqual(generator.keywords, {"if": 500, "else": 501, "pass": 502})
         self.assertEqual(generator.soft_keywords, {"soft"})
+
+    def test_first_set_dispatch(self):
+        rules = self.prepare_rules("""
+            start: NAME | '(' NAME | 'if' NAME | "match" NUMBER
+        """)
+        self.assertEqual(
+            rules["start"].first_set_dispatch,
+            (
+                frozenset({token.NAME}),
+                frozenset({token.LPAR}),
+                # Keyword types are numbered from 500.
+                frozenset({500}),
+                # Soft keywords are NAME tokens.
+                frozenset({token.NAME}),
+            ),
+        )
+
+    def test_first_set_dispatch_ignores_second_pass_alternatives(self):
+        rules = self.prepare_rules("""
+            start: NAME | invalid_start | NUMBER
+            single: NAME | invalid_start
+            invalid_start: STRING
+        """)
+        self.assertEqual(
+            rules["start"].first_set_dispatch,
+            (frozenset({token.NAME}), frozenset(), frozenset({token.NUMBER})),
+        )
+        self.assertIsNone(rules["single"].first_set_dispatch)
+
+    def test_no_first_set_dispatch(self):
+        cases = {
+            "single": "NAME",
+            "same_sets": "NAME '+' NAME | NAME",
+            "unknown": "~ NAME | [NUMBER]",
+        }
+        rules = self.prepare_rules(
+            "start: " + " | ".join(cases) + "\n"
+            + "".join(f"{name}: {rhs}\n" for name, rhs in cases.items())
+        )
+        for name in cases:
+            with self.subTest(name):
+                self.assertIsNone(rules[name].first_set_dispatch)
+
+    def test_first_set_dispatch_in_second_pass_rules(self):
+        rules = self.prepare_rules("""
+            start: NAME | invalid_start
+            invalid_start: (NAME | NUMBER) helper
+            helper: NAME | NUMBER
+        """)
+        self.assertEqual(
+            rules["helper"].first_set_dispatch,
+            (frozenset({token.NAME}), frozenset({token.NUMBER})),
+        )
+
+    def test_first_set_dispatch_emission(self):
+        generator = self.make_generator("""
+            start: disjoint | overlapping
+            disjoint: NAME | NUMBER
+            overlapping: NAME '+' NAME | NUMBER | ~ STRING
+        """)
+        source = self.emit_parser(generator.prepare(PurePath("example.gram")))
+        disjoint = source[source.index("\ndisjoint_rule(") : source.index("\noverlapping_rule(")]
+        self.assertIn(f"case {token.NAME}:\n                goto _first_set_alt_0;", disjoint)
+        self.assertNotIn("_first_set_mask", disjoint)
+        overlapping = source[source.index("\noverlapping_rule(") :]
+        # The alternative with an unknown first set is tried for every token.
+        self.assertIn(
+            f"case {token.NAME}:\n                _first_set_mask = 0x5ULL;", overlapping
+        )
+        self.assertIn("default:\n                _first_set_mask = 0x4ULL;", overlapping)
+
+    def test_loop_first_set_check(self):
+        rules = self.prepare_rules("""
+            start: element+ keyword* NAME* large*
+            element: NAME | NUMBER
+            keyword: 'if' NAME
+            large: tstring_end NAME
+            tstring_end: TSTRING_END
+        """)
+        checks = {}
+        for name, rule in rules.items():
+            if rule.signature.kind in {RuleKind.LOOP0, RuleKind.LOOP1}:
+                alt, = rule.alternatives
+                first = alt.calls[0]
+                if first.function == "_PyPegen_next_token_in":
+                    checks[str(alt.text)] = first.arguments
+                else:
+                    checks[str(alt.text)] = None
+        self.assertEqual(
+            checks,
+            {
+                "element": ("p", f"0x{1 << token.NAME | 1 << token.NUMBER:x}ULL", "0x0ULL"),
+                # Keyword types are numbered from 500.
+                "keyword": ("p", "0x0ULL", "0x1ULL"),
+                # Matching the token costs no more than checking it.
+                "NAME": None,
+                # The mask has no bit for a token type above 63.
+                "large": None,
+            },
+        )
 
 
 if __name__ == "__main__":

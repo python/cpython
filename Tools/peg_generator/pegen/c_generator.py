@@ -70,7 +70,7 @@ class CParserGenerator(ParserGenerator):
     ):
         super().__init__(grammar, set(tokens.values()), file)
         self.callmakervisitor: CCallMakerVisitor = CCallMakerVisitor(
-            self, exact_tokens, non_exact_tokens
+            self, exact_tokens, non_exact_tokens, tokens
         )
         self._collected = False
         self.debug = debug

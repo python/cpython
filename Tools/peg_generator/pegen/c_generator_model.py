@@ -123,6 +123,7 @@ class CRule:
     memoize: bool
     disable_invalid_rules: bool
     prefixes: tuple[CPrefix, ...] = ()
+    first_set_dispatch: tuple[frozenset[int] | None, ...] | None = None
 
     @property
     def uses_locations(self) -> bool:

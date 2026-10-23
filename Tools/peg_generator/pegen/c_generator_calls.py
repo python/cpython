@@ -2,7 +2,7 @@
 
 import ast
 import re
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import replace
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any
@@ -44,6 +44,8 @@ from pegen.grammar import (
     RuleKind,
     StringLeaf,
 )
+from pegen.grammar_analysis import FirstSetVisitor
+from pegen.parser_generator import KEYWORD_TYPE_BASE
 
 if TYPE_CHECKING:
     from pegen.parser_generator import ParserGenerator
@@ -110,11 +112,13 @@ class CCallMakerVisitor(GrammarVisitor):
         parser_generator: "ParserGenerator",
         exact_tokens: dict[str, int],
         non_exact_tokens: set[str],
+        tokens: dict[int, str],
     ):
         self._registry = parser_generator
         self._keywords = parser_generator.keywords
         self._exact_tokens = exact_tokens
         self._non_exact_tokens = non_exact_tokens
+        self._token_types = {name: token_type for token_type, name in tokens.items()}
         self._helper_cache: dict[tuple[type, str], str] = {}
         self._calls: dict[NamedItem, tuple[Item, FunctionCall]] = {}
 
@@ -340,8 +344,47 @@ class CCallMakerVisitor(GrammarVisitor):
             self._helper_cache[key] = name
         return rule_signature(self._registry.all_rules[name])
 
+    def _token_type(self, terminal: str) -> int | None:
+        if not terminal.startswith("'"):
+            return self._token_types.get(terminal)
+        value = ast.literal_eval(terminal)
+        if value in self._keywords:
+            return self._keywords[value]
+        return self._exact_tokens.get(value)
+
+    def _first_set(
+        self, first_sets: FirstSetVisitor, alt: Alt
+    ) -> frozenset[int] | None:
+        if (first := first_sets.visit(alt)) is None:
+            return None
+        token_types = set()
+        for terminal in first:
+            if (token_type := self._token_type(terminal)) is None:
+                return None
+            token_types.add(token_type)
+        return frozenset(token_types)
+
+    def _next_token_check(self, token_types: frozenset[int]) -> FunctionCall | None:
+        token_mask = keyword_mask = 0
+        for token_type in token_types:
+            if token_type < 64:
+                token_mask |= 1 << token_type
+            elif 0 <= token_type - KEYWORD_TYPE_BASE < 64:
+                keyword_mask |= 1 << (token_type - KEYWORD_TYPE_BASE)
+            else:
+                return None
+        return FunctionCall(
+            function="_PyPegen_next_token_in",
+            arguments=("p", f"0x{token_mask:x}ULL", f"0x{keyword_mask:x}ULL"),
+            return_type="int",
+            comment="first set",
+        )
+
     def make_lowerer(self) -> "CCallLowerer":
+        first_sets = FirstSetVisitor(self._registry.all_rules)
         return CCallLowerer(
+            first_set=lambda alt: self._first_set(first_sets, alt),
+            next_token_check=self._next_token_check,
             calls=self._calls,
             rules=self._registry.all_rules,
             original_rules=self._registry.rules,
@@ -360,11 +403,17 @@ class CCallLowerer:
     def __init__(
         self,
         *,
+        first_set: Callable[[Alt], frozenset[int] | None] = lambda alt: None,
+        next_token_check: Callable[[frozenset[int]], FunctionCall | None] = (
+            lambda token_types: None
+        ),
         calls: Mapping[NamedItem, tuple[Item, FunctionCall]],
         rules: Mapping[str, Rule],
         original_rules: dict[str, Rule],
         signatures: Mapping[str, CRuleSignature],
     ):
+        self._first_set = first_set
+        self._next_token_check = next_token_check
         self._calls = MappingProxyType(dict(calls))
         self._signatures = MappingProxyType(dict(signatures))
         self._prefixes: dict[str, tuple[CPrefix, ...]] = {}
@@ -410,13 +459,19 @@ class CCallLowerer:
         if (signature := self._signatures.get(rule.name)) is None:
             raise RuntimeError(f"Rule {rule.name!r} was not discovered")
         rhs = rule.flatten()
-        if signature.kind in {RuleKind.LOOP0, RuleKind.LOOP1}:
+        is_loop = signature.kind in {RuleKind.LOOP0, RuleKind.LOOP1}
+        if is_loop:
             assert len(rhs.alts) == 1
         return CRule(
             signature=signature,
             text=str(rule),
             alternatives=tuple(
-                self.prepare_alt(alt, kind=signature.kind, skip_actions=skip_actions)
+                self.prepare_alt(
+                    alt,
+                    kind=signature.kind,
+                    skip_actions=skip_actions,
+                    first_set_check=self._loop_check(alt) if is_loop else None,
+                )
                 for alt in rhs.alts
             ),
             left_recursive=rule.left_recursive,
@@ -424,7 +479,39 @@ class CCallLowerer:
             memoize="memo" in rule.flags and not rule.left_recursive,
             disable_invalid_rules=rule.name.endswith("without_invalid"),
             prefixes=self._prefixes.get(rule.name, ()),
+            first_set_dispatch=None if is_loop else self._first_set_dispatch(rhs),
         )
+
+    def _loop_check(self, alt: Alt) -> FunctionCall | None:
+        # Matching a token costs no more than checking it.
+        match alt.items:
+            case [NamedItem(item=StringLeaf()), *_]:
+                return None
+            case [NamedItem(item=NameLeaf(value=name)), *_] if name not in self._signatures:
+                return None
+        if (token_types := self._first_set(alt)) is None:
+            return None
+        return self._next_token_check(token_types)
+
+    def _first_set_dispatch(self, rhs: Rhs) -> tuple[frozenset[int] | None, ...] | None:
+        # The dispatch mask has a bit per alternative.
+        if not 2 <= len(rhs.alts) <= 64:
+            return None
+        dispatch: list[frozenset[int] | None] = []
+        tried: list[frozenset[int] | None] = []
+        for alt in rhs.alts:
+            if self._requires_invalid_rules(alt):
+                # Only the second pass tries it, and doesn't dispatch.
+                dispatch.append(frozenset())
+            else:
+                dispatch.append(token_types := self._first_set(alt))
+                tried.append(token_types)
+        # Worthless if all first sets are unknown, or are the same: the rule
+        # is then rarely tried on a token that rules out an alternative.
+        known = [token_types for token_types in tried if token_types is not None]
+        if not known or (len(known) == len(tried) and len(set(known)) == 1):
+            return None
+        return tuple(dispatch)
 
     def prepare_alt(
         self,
@@ -432,8 +519,9 @@ class CCallLowerer:
         *,
         kind: RuleKind = RuleKind.NORMAL,
         skip_actions: bool = False,
+        first_set_check: FunctionCall | None = None,
     ) -> CAlternative:
-        calls: list[FunctionCall] = []
+        calls = [first_set_check] if first_set_check is not None else []
         variables: dict[str, CVariable] = {}
         cut_variable = None
         for item in node.items:
