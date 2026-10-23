@@ -8,7 +8,6 @@ Doc/library/email.charset.rst
 Doc/library/email.parser.rst
 Doc/library/logging.config.rst
 Doc/library/logging.handlers.rst
-Doc/library/mmap.rst
 Doc/library/multiprocessing.rst
 Doc/library/optparse.rst
 Doc/library/pickletools.rst
@@ -17,7 +16,6 @@ Doc/library/select.rst
 Doc/library/socket.rst
 Doc/library/ssl.rst
 Doc/library/termios.rst
-Doc/library/test.rst
 Doc/library/urllib.parse.rst
 Doc/library/urllib.request.rst
 Doc/library/wsgiref.rst

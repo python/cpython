@@ -5675,8 +5675,9 @@ os__getvolumepathname_impl(PyObject *module, path_t *path)
         goto exit;
     }
     result = PyUnicode_FromWideChar(mountpath, -1);
-    if (PyBytes_Check(path->object))
+    if (result != NULL && PyBytes_Check(path->object)) {
         Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
+    }
 
 exit:
     PyMem_Free(mountpath);
