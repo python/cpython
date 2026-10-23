@@ -1267,6 +1267,38 @@ class StreamTests(test_utils.TestCase):
         messages = self._basetest_unhandled_exceptions(handle_echo)
         self.assertEqual(messages, [])
 
+    def test_unhandled_exception_sync_callback(self):
+        # An exception raised by a plain-function client_connected_cb is
+        # reported like the coroutine case and the transport is closed.
+        port = socket_helper.find_unused_port()
+
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+
+        async def client():
+            rd, wr = await asyncio.open_connection('localhost', port)
+            async with asyncio.timeout(60):
+                data = await rd.read()
+            self.assertEqual(data, b'')  # the server closed the connection
+            wr.close()
+            await wr.wait_closed()
+
+        async def main():
+            def handle_echo(reader, writer):
+                raise Exception('test')
+
+            server = await asyncio.start_server(
+                handle_echo, 'localhost', port)
+            await server.start_serving()
+            await client()
+            server.close()
+            await server.wait_closed()
+
+        self.loop.run_until_complete(main())
+
+        self.assertEqual(messages[0]['message'],
+                    'Unhandled exception in client_connected_cb')
+
     def test_open_connection_happy_eyeball_refcycles(self):
         port = socket_helper.find_unused_port()
         async def main():

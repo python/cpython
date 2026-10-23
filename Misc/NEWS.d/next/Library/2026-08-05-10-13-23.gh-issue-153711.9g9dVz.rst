@@ -1,0 +1,3 @@
+On iOS, add :func:`os.pipe2`, and use the syscalls :manpage:`pipe2 (2)` and
+:manpage:`dup3 (2)` internally, when available at both build-time and
+run-time.

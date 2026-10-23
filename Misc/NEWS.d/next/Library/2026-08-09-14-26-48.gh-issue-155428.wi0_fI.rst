@@ -1,0 +1,3 @@
+Ensure that :func:`hmac.digest` and :meth:`hmac.HMAC.digest` output
+identical values when using a digest's block size smaller than 16. Patch by
+Bénédikt Tran.

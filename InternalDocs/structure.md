@@ -23,13 +23,13 @@ For builtin types, the typical layout is:
 
 * `Objects/<builtin>object.c`
 * `Lib/test/test_<builtin>.py`
-* [`Doc/library/stdtypes.rst`](../Doc/library/stdtypes.rst)
+* [`Doc/builtins/stdtypes.rst`](../Doc/builtins/stdtypes.rst)
 
 For builtin functions, the typical layout is:
 
 * [`Python/bltinmodule.c`](../Python/bltinmodule.c)
 * [`Lib/test/test_builtin.py`](../Lib/test/test_builtin.py)
-* [`Doc/library/functions.rst`](../Doc/library/functions.rst)
+* [`Doc/builtins/functions.rst`](../Doc/builtins/functions.rst)
 
 Some exceptions to these layouts are:
 

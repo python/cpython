@@ -434,6 +434,13 @@ class TestOptionValues(BaseTest):
         self.assertNotEqual(values, "")
         self.assertNotEqual(values, [])
 
+    def test_replace(self):
+        values = Values(defaults={"foo": "bar", "baz": 42})
+        new = copy.replace(values, baz=43, spam="eggs")
+        self.assertIsInstance(new, Values)
+        self.assertEqual(vars(new), {"foo": "bar", "baz": 43, "spam": "eggs"})
+        self.assertEqual(vars(values), {"foo": "bar", "baz": 42})
+
 
 class TestTypeAliases(BaseTest):
     def setUp(self):
