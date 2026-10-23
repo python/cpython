@@ -69,10 +69,25 @@ struct _qsbr_thread_state {
     struct _qsbr_thread_state *freelist_next;
 };
 
+// Size used to pad and align the per-thread QSBR states (and the end of
+// _PyThreadStateImpl) to avoid false sharing. Apple Silicon has 128-byte cache
+// lines:
+//   $ sysctl -a hw | grep cachelinesize
+//   hw.cachelinesize: 128
+// With 64-byte padding the `seq` fields of two threads share a line and the
+// stores in _Py_qsbr_quiescent_state() contend on every eval loop back-edge.
+// Use 128 bytes for all AArch64 targets: on cores with 64-byte lines this only
+// costs 64 bytes per thread.
+#if defined(__aarch64__) || defined(_M_ARM64)
+#  define _Py_QSBR_CACHE_LINE_SIZE 128
+#else
+#  define _Py_QSBR_CACHE_LINE_SIZE 64
+#endif
+
 // Padding to avoid false sharing
 struct _qsbr_pad {
     struct _qsbr_thread_state qsbr;
-    char __padding[64 - sizeof(struct _qsbr_thread_state)];
+    char __padding[_Py_QSBR_CACHE_LINE_SIZE - sizeof(struct _qsbr_thread_state)];
 };
 
 // Per-interpreter state
@@ -83,7 +98,7 @@ struct _qsbr_shared {
     // Minimum observed read sequence of all QSBR thread states
     uint64_t rd_seq;
 
-    // Array of QSBR thread states (aligned to 64 bytes).
+    // Array of QSBR thread states (aligned to _Py_QSBR_CACHE_LINE_SIZE).
     struct _qsbr_pad *array;
     void *array_raw;   // raw allocation pointer (for free)
     Py_ssize_t size;

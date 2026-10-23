@@ -1,2 +1,0 @@
-Speed up :func:`logging.config.fileConfig` and
-:func:`logging.config.dictConfig` when handling many existing loggers.

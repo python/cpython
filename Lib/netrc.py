@@ -48,11 +48,12 @@ class _netrclex:
     def get_token(self):
         if self.pushback:
             return self.pushback.pop(0)
-        token = ""
+        token = None
         fiter = iter(self._read_char, "")
         for ch in fiter:
             if ch in self.whitespace:
                 continue
+            token = ""
             if ch == '"':
                 for ch in fiter:
                     if ch == '"':
@@ -96,9 +97,9 @@ class netrc:
             # Look for a machine, default, or macdef top-level keyword
             saved_lineno = lexer.lineno
             tt = lexer.get_token()
-            if not tt:
+            if tt is None:
                 break
-            elif tt[0] == '#':
+            elif tt.startswith('#'):
                 if lexer.lineno == saved_lineno and len(tt) == 1:
                     lexer.instream.readline()
                 continue
@@ -135,20 +136,20 @@ class netrc:
             while 1:
                 prev_lineno = lexer.lineno
                 tt = lexer.get_token()
-                if tt.startswith('#'):
+                if tt is not None and tt.startswith('#'):
                     if lexer.lineno == prev_lineno:
                         lexer.instream.readline()
                     continue
-                if tt in {'', 'machine', 'default', 'macdef'}:
+                if tt in {None, 'machine', 'default', 'macdef'}:
                     self.hosts[entryname] = (login, account, password)
                     lexer.push_token(tt)
                     break
                 elif tt == 'login' or tt == 'user':
-                    login = lexer.get_token()
+                    login = lexer.get_token() or ''
                 elif tt == 'account':
-                    account = lexer.get_token()
+                    account = lexer.get_token() or ''
                 elif tt == 'password':
-                    password = lexer.get_token()
+                    password = lexer.get_token() or ''
                 else:
                     raise NetrcParseError("bad follower token %r" % tt,
                                           file, lexer.lineno)

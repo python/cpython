@@ -6503,6 +6503,46 @@ class FileHandlerTest(BaseFileTest):
         with open(self.fn) as fp:
             self.assertEqual(fp.read().strip(), '1')
 
+    def _check_open_error(self, h):
+        # gh-135683: an error while opening the file in emit() respects
+        # raiseExceptions, like an error during the actual write.
+        r = logging.makeLogRecord({})
+        old_raise = logging.raiseExceptions
+        self.addCleanup(setattr, logging, 'raiseExceptions', old_raise)
+
+        logging.raiseExceptions = True
+        with support.captured_stderr() as stderr:
+            h.handle(r)
+        self.assertIn('\nFileNotFoundError:', stderr.getvalue())
+
+        logging.raiseExceptions = False
+        with support.captured_stderr() as stderr:
+            h.handle(r)
+        self.assertEqual('', stderr.getvalue())
+
+    def test_emit_open_error(self):
+        # FileHandler with delay: the failing open happens in emit().
+        d = tempfile.mkdtemp()
+        self.addCleanup(os_helper.rmtree, d)
+        h = logging.FileHandler(os.path.join(d, 'missing', 'a.log'),
+                                encoding='utf-8', delay=True)
+        self.addCleanup(h.close)
+        self._check_open_error(h)
+
+    @unittest.skipIf(os.name == 'nt',
+                     'WatchedFileHandler not appropriate for Windows.')
+    def test_emit_reopen_error(self):
+        # WatchedFileHandler: reopenIfNeeded() fails after the dir is removed.
+        d = tempfile.mkdtemp()
+        self.addCleanup(os_helper.rmtree, d)
+        subdir = os.path.join(d, 'sub')
+        os.mkdir(subdir)
+        h = logging.handlers.WatchedFileHandler(
+            os.path.join(subdir, 'b.log'), encoding='utf-8')
+        self.addCleanup(h.close)
+        os_helper.rmtree(subdir)
+        self._check_open_error(h)
+
 class RotatingFileHandlerTest(BaseFileTest):
     def test_should_not_rollover(self):
         # If file is empty rollover never occurs
@@ -6861,6 +6901,75 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
 
     def test_rollover_at_weekday(self):
         self.test_rollover_at_midnight(weekly=True)
+
+    def _make_fake_time_handler(self, now, when='S', **kwargs):
+        dirname = tempfile.mkdtemp()
+        self.addCleanup(os_helper.rmtree, dirname)
+        fn = os.path.join(dirname, 'test.log')
+        with patch('time.time', lambda: now[0]):
+            fh = logging.handlers.TimedRotatingFileHandler(
+                fn, when=when, encoding='utf-8', delay=True, **kwargs)
+        self.addCleanup(fh.close)
+        return fh
+
+    def test_rollover_after_failed_rollover(self):
+        for target in 'os.remove', '_open':
+            with self.subTest(target=target):
+                now = [1_000_000_000]
+                fh = self._make_fake_time_handler(now, backupCount=1)
+                fn = fh.baseFilename
+                emit = lambda msg: fh.emit(logging.makeLogRecord({'msg': msg}))
+                with patch('time.time', lambda: now[0]):
+                    for msg in 'a', 'b':
+                        now[0] += 2
+                        emit(msg)
+                    now[0] += 2
+                    if target == '_open':
+                        failure = patch.object(fh, '_open', side_effect=OSError)
+                        fh.delay = False
+                    else:
+                        failure = patch('os.remove', side_effect=OSError)
+                    with failure as failed, support.captured_stderr():
+                        emit('c')
+                    failed.assert_called_once()
+                    self.assertGreater(fh.rolloverAt, now[0])
+                    fh.delay = True
+                    for msg in 'd', 'e':
+                        now[0] += 2
+                        emit(msg)
+                fh.close()
+                with open(fn, encoding='utf-8') as f:
+                    self.assertEqual(f.read(), 'e\n')
+                backups = [f for f in os.listdir(os.path.dirname(fn))
+                           if f != 'test.log']
+                self.assertEqual(len(backups), 1)
+
+    def test_rollover_existing_backup(self):
+        now = [1_000_000_000]
+        fh = self._make_fake_time_handler(now)
+        fn = fh.baseFilename
+        with patch('time.time', lambda: now[0]):
+            fh.emit(logging.makeLogRecord({'msg': 'a'}))
+            t = fh.rolloverAt - fh.interval
+            dfn = fh.rotation_filename(
+                fn + '.' + time.strftime(fh.suffix, time.localtime(t)))
+            with open(dfn, 'w', encoding='utf-8') as f:
+                f.write('existing\n')
+            now[0] += 2
+            fh.emit(logging.makeLogRecord({'msg': 'b'}))
+            self.assertGreater(fh.rolloverAt, now[0])
+            t = fh.rolloverAt - fh.interval
+            next_dfn = fh.rotation_filename(
+                fn + '.' + time.strftime(fh.suffix, time.localtime(t)))
+            now[0] += 2
+            fh.emit(logging.makeLogRecord({'msg': 'c'}))
+        fh.close()
+        with open(dfn, encoding='utf-8') as f:
+            self.assertEqual(f.read(), 'existing\n')
+        with open(next_dfn, encoding='utf-8') as f:
+            self.assertEqual(f.read(), 'a\nb\n')
+        with open(fn, encoding='utf-8') as f:
+            self.assertEqual(f.read(), 'c\n')
 
     def test_invalid(self):
         assertRaises = self.assertRaises

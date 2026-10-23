@@ -60,6 +60,8 @@ class CodeContextTest(unittest.TestCase):
         frame = cls.frame = Frame(root)
         text = cls.text = Text(frame)
         text.insert('1.0', code_sample)
+        # Make the text longer than the visible height, so that it can scroll.
+        text.insert('end', '\n' * (int(text['height']) + 2))
         # Need to pack for creation of code context text widget.
         frame.pack(side='left', fill='both', expand=1)
         text.grid(row=1, column=1, sticky=NSEW)

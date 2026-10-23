@@ -469,6 +469,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                 timeTuple = time.localtime(t + addend)
         dfn = self.rotation_filename(self.baseFilename + "." +
                                      time.strftime(self.suffix, timeTuple))
+        self.rolloverAt = self.computeRollover(currentTime)
         if os.path.exists(dfn):
             # Already rolled over.
             return
@@ -482,7 +483,6 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                 os.remove(s)
         if not self.delay:
             self.stream = self._open()
-        self.rolloverAt = self.computeRollover(currentTime)
 
 class WatchedFileHandler(logging.FileHandler):
     """
@@ -563,8 +563,13 @@ class WatchedFileHandler(logging.FileHandler):
         If underlying file has changed, reopen the file before emitting the
         record to it.
         """
-        self.reopenIfNeeded()
-        logging.FileHandler.emit(self, record)
+        # Report an error while reopening the file, like emit errors.
+        try:
+            self.reopenIfNeeded()
+        except Exception:
+            self.handleError(record)
+        else:
+            logging.FileHandler.emit(self, record)
 
 
 class SocketHandler(logging.Handler):

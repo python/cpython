@@ -393,7 +393,8 @@ class WorkerThread(threading.Thread):
                    f'Warning -- {test_name} leaked temporary files '
                    f'({len(tmp_files)}): {", ".join(sorted(tmp_files))}')
             stdout += msg
-            result.set_env_changed()
+            result.set_env_changed(
+                f"leaked temporary files: {', '.join(sorted(tmp_files))}")
 
         return MultiprocessResult(result, stdout)
 

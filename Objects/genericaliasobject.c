@@ -303,7 +303,7 @@ subs_tvars(PyObject *obj, PyObject *params,
                                     PyTuple_GET_SIZE(arg));
                     if (j < 0) {
                         Py_DECREF(subparams);
-                        Py_DECREF(subargs);
+                        assert(subargs == NULL);
                         return NULL;
                     }
                     continue;
@@ -525,8 +525,18 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
         }
         if (subst) {
             Py_ssize_t iparam = tuple_index(parameters, nparams, arg);
-            assert(iparam >= 0);
-            arg = PyObject_CallOneArg(subst, argitems[iparam]);
+            if (iparam < 0) {
+                // __parameters__ may be stale if an argument gained
+                // __typing_subst__ after the tuple was computed.
+                PyErr_Format(PyExc_TypeError,
+                             "argument %R with __typing_subst__ was not found "
+                             "in __parameters__",
+                             arg);
+                arg = NULL;
+            }
+            else {
+                arg = PyObject_CallOneArg(subst, argitems[iparam]);
+            }
             Py_DECREF(subst);
         }
         else {
@@ -540,13 +550,13 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
         }
         if (unpack) {
             if (!PyTuple_Check(arg)) {
-                Py_DECREF(newargs);
-                Py_DECREF(item);
-                Py_XDECREF(tuple_args);
                 PyObject *original = PyTuple_GET_ITEM(args, iarg);
                 PyErr_Format(PyExc_TypeError,
                              "expected __typing_subst__ of %T objects to return a tuple, not %T",
                              original, arg);
+                Py_DECREF(newargs);
+                Py_DECREF(item);
+                Py_XDECREF(tuple_args);
                 Py_DECREF(arg);
                 return NULL;
             }
