@@ -2045,12 +2045,20 @@ to speed up repeated connections from the same clients.
    pass it as the *ech_config* argument of :meth:`wrap_socket` or
    :meth:`wrap_bio` instead.
 
-   If the input value provided contains no suitable value (such as if it only contains
-   ECH configuration versions that are not supported), an :class:`SSLError` will be
-   raised.
+   Raises :exc:`SSLError` if the input is invalid or contains no usable
+   configuration.
 
    The *ech_config* parameter should be a :term:`bytes-like object` containing
    an ECHConfigList in binary or Base64 encoding.
+
+   .. note::
+
+      OpenSSL 4.0 can reject the entire list with :exc:`SSLError` if one entry
+      is unusable. It also rejects binary lists whose first entry
+      uses an unsupported ECH version, although unknown versions after a
+      supported entry are skipped.
+      These limitations prevent falling back to usable configurations as
+      described in :rfc:`9849`.
 
    Raises :exc:`SSLError` if the context uses :data:`PROTOCOL_TLS_SERVER`.
 
@@ -3278,7 +3286,8 @@ ECHConfigList discovered through DNS and retries once with the server's
 :attr:`SSLECHRejectedError.retry_config` if it is not empty, or without ECH
 if the authenticated server has securely disabled it.
 
-The following example shows how to connect to a website with HTTP using ECH::
+The following example shows how to connect to a website with HTTP with an ECH
+configuration::
 
    import http.client
    import socket
@@ -3288,9 +3297,15 @@ The following example shows how to connect to a website with HTTP using ECH::
    def connect_with_tls_ech(hostname, ech_config):
        context = ssl.create_default_context()
        context.set_ech_config(ech_config)
+       sock = socket.create_connection((hostname, 443), timeout=10)
+       family = sock.family
+       address = sock.getpeername()
        for attempt in range(2):
-           sock = socket.create_connection((hostname, 443), timeout=10)
            try:
+               if attempt:
+                   sock = socket.socket(family, socket.SOCK_STREAM)
+                   sock.settimeout(10)
+                   sock.connect(address)
                return context.wrap_socket(sock, server_hostname=hostname)
            except ssl.SSLECHRejectedError as exc:
                sock.close()
