@@ -117,6 +117,16 @@ def make_hash_objects(*digestmods, buf=b"", **kwargs):
     return objects
 
 
+class BytesIOProxy:
+    """A file-like object with the io.BytesIO interface, not an io.BytesIO."""
+
+    def __init__(self, data):
+        self._buffer = io.BytesIO(data)
+
+    def __getattr__(self, name):
+        return getattr(self._buffer, name)
+
+
 class HashLibTestCase(unittest.TestCase):
     supported_hash_names = ( 'md5', 'MD5', 'sha1', 'SHA1',
                              'sha224', 'SHA224', 'sha256', 'SHA256',
@@ -584,9 +594,10 @@ class HashLibTestCase(unittest.TestCase):
         with tempfile.TemporaryFile() as f:
             f.write(data)
             buf = io.BytesIO(data)
+            buf_like = BytesIOProxy(data)
 
             for digest, _ in digests:
-                for fobj in [buf, f]:
+                for fobj in [buf, buf_like, f]:
                     fobj.seek(pos)
                     digestobj = hashlib.file_digest(fobj, digest)
                     self.assertEqual(digestobj.hexdigest(), hexdigest)
