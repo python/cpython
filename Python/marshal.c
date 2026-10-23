@@ -14,7 +14,6 @@
 #include "pycore_object.h"           // _PyObject_IsUniquelyReferenced
 #include "pycore_pystate.h"          // _PyInterpreterState_GET()
 #include "pycore_setobject.h"        // _PySet_NextEntryRef()
-#include "pycore_tuple.h"            // _PyTuple_FromPairSteal
 #include "pycore_unicodeobject.h"    // _PyUnicode_InternImmortal()
 
 #include "marshal.h"                 // Py_MARSHAL_VERSION
@@ -107,14 +106,18 @@ module marshal
    by W_ENTRY_SHIFT bits, plus the flags:
    - W_ENTRY_ACTIVE: the object is being written (used to detect recursion,
      see w_complete());
-   - W_ENTRY_SHARED: the object has been written more than once.
+   - W_ENTRY_SHARED: the object has been written more than once;
+   - W_ENTRY_TIED: the object is a set element which cannot be told from
+     other elements of the set yet.  The value is then an index in
+     WFILE.ties instead, see w_tie_set_items().
 
    The item of WFILE.refs is the offset of the type byte of the object in
    the output, shifted left by one bit, plus W_REF_SHARED if the object has
    been written more than once. */
 #define W_ENTRY_ACTIVE ((uintptr_t)1)
 #define W_ENTRY_SHARED ((uintptr_t)2)
-#define W_ENTRY_SHIFT 2
+#define W_ENTRY_TIED ((uintptr_t)4)
+#define W_ENTRY_SHIFT 3
 #define W_REF_SHARED ((size_t)1)
 
 /* Maximum number of items in WFILE.refs.  TYPE_REF has a signed 32-bit
@@ -139,6 +142,9 @@ typedef struct {
                                        the current run, or 0. */
     size_t refpos_end;              /* Offset of the end of the last
                                        TYPE_REF in the output. */
+    size_t *ties;                   /* See w_tie_set_items(). */
+    size_t nties;
+    size_t ties_allocated;
     int version;
     int allow_code;
 } WFILE;
@@ -521,6 +527,12 @@ w_ref(PyObject *v, WFILE *p)
             PyErr_Format(PyExc_ValueError, "cannot marshal recursion %T objects", v);
             goto err;
         }
+        if (w & W_ENTRY_TIED) {
+            /* Take the first object which is still available in the group
+               of interchangeable set elements, see w_tie_set_items(). */
+            size_t i = p->ties[w >> W_ENTRY_SHIFT]++;
+            w = (uintptr_t)i << W_ENTRY_SHIFT;
+        }
         if (!(w & W_ENTRY_SHARED)) {
             entry->value = (void *)(w | W_ENTRY_SHARED);
             p->refs[w >> W_ENTRY_SHIFT] |= W_REF_SHARED;
@@ -652,6 +664,254 @@ w_complete(PyObject *v, WFILE *p)
 
 static void
 w_complex_object(PyObject *v, WFILE *p);
+
+static void
+w_object(PyObject *v, WFILE *p);
+
+/* An element of a set which is being written. */
+typedef struct {
+    PyObject *value;
+    PyObject *dump;     /* The element marshalled on its own. */
+    size_t order;       /* Order among the elements with the same dump. */
+} w_set_item;
+
+/* Minimal order of an element which has not been written yet. */
+#define W_SET_ITEM_NEW ((size_t)1 << (8 * SIZEOF_SIZE_T - 1))
+
+static int
+w_set_item_compare(const void *left, const void *right)
+{
+    const w_set_item *a = (const w_set_item *)left;
+    const w_set_item *b = (const w_set_item *)right;
+    Py_ssize_t asize = PyBytes_GET_SIZE(a->dump);
+    Py_ssize_t bsize = PyBytes_GET_SIZE(b->dump);
+    int c = memcmp(PyBytes_AS_STRING(a->dump), PyBytes_AS_STRING(b->dump),
+                   Py_MIN(asize, bsize));
+    if (c != 0) {
+        return c;
+    }
+    if (asize != bsize) {
+        return asize < bsize ? -1 : 1;
+    }
+    if (a->order != b->order) {
+        return a->order < b->order ? -1 : 1;
+    }
+    return 0;
+}
+
+/* The count elements of a set starting at items are floats or complex
+   numbers which have the same dump and have just been written, as the
+   objects number first to first + count - 1 in p->refs or as references to
+   them.  Since the same bytes would have been written for these elements
+   in any order, it is not decided yet which element is which of these
+   objects.  The elements which are written again later take these objects
+   one by one, in the order in which that happens (see w_ref()), so that the
+   output does not depend on the order of the elements in the set.
+
+   The entries of these elements in p->hashtable get W_ENTRY_TIED and the
+   index of a new item of p->ties, which is the number of the first of
+   these objects that has not been taken yet. */
+static void
+w_tie_set_items(w_set_item *items, Py_ssize_t count, size_t first, WFILE *p)
+{
+    size_t *ties = w_array_grow(p->ties, p->nties, &p->ties_allocated,
+                                sizeof(*ties));
+    if (ties == NULL) {
+        PyErr_NoMemory();
+        p->error = true;
+        return;
+    }
+    p->ties = ties;
+    ties[p->nties] = first;
+    uintptr_t value = ((uintptr_t)p->nties << W_ENTRY_SHIFT) | W_ENTRY_TIED;
+    p->nties++;
+    for (Py_ssize_t i = 0; i < count; i++) {
+        _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(
+                p->hashtable, items[i].value);
+        assert(entry != NULL);
+        assert(((uintptr_t)entry->value >> W_ENTRY_SHIFT) - first
+               < (size_t)count);
+        assert(!((uintptr_t)entry->value & (W_ENTRY_ACTIVE | W_ENTRY_TIED)));
+        entry->value = (void *)value;
+    }
+}
+
+/* Return true if two elements of a set have the same dump. */
+static bool
+w_set_item_same_dump(const w_set_item *a, const w_set_item *b)
+{
+    Py_ssize_t size = PyBytes_GET_SIZE(a->dump);
+    return (PyBytes_GET_SIZE(b->dump) == size
+            && memcmp(PyBytes_AS_STRING(a->dump),
+                      PyBytes_AS_STRING(b->dump), size) == 0);
+}
+
+/* Write the elements of a set which have the same dump: the count
+   elements starting at items.
+
+   Distinct elements have the same dump if they contain NaNs which are
+   distinct objects.  The order of these elements matters if they are also
+   written elsewhere in the output, since references to them or to the
+   objects they contain are then written.  That order is made independent
+   of the order of the elements in the set (which depends on the addresses
+   of the objects) as follows:
+
+   - the elements which have already been written before come first, in
+     the order in which they were written;
+   - floats and complex numbers which cannot be told from each other by
+     what has been written so far are kept interchangeable: which of them
+     are written again later does not change the output, see
+     w_tie_set_items();
+   - the other ones (containers, for example tuples or frozensets of NaNs)
+     are written in the order of the set.  This is the only case in which
+     the output still depends on that order, and only if these elements or
+     the objects they contain are also written elsewhere in the output:
+     the element which is written first gets the lowest reference indexes
+     for the objects it contains, or the first objects of the group if
+     these objects are interchangeable.
+ */
+static void
+w_same_set_items(w_set_item *items, Py_ssize_t count, WFILE *p)
+{
+    if (p->version < 3 || p->hashtable == NULL) {
+        /* Not writing object references. */
+        for (Py_ssize_t i = 0; i < count; i++) {
+            w_object(items[i].value, p);
+        }
+        return;
+    }
+
+    for (Py_ssize_t i = 0; i < count; i++) {
+        _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(
+                p->hashtable, items[i].value);
+        if (entry == NULL) {
+            items[i].order = W_SET_ITEM_NEW + (size_t)i;
+            continue;
+        }
+        uintptr_t w = (uintptr_t)entry->value;
+        items[i].order = w >> W_ENTRY_SHIFT;
+        if (w & W_ENTRY_TIED) {
+            /* The first object that the element can take.  It is the
+               same for all the elements it is interchangeable with. */
+            items[i].order = p->ties[items[i].order];
+        }
+    }
+    qsort(items, count, sizeof(w_set_item), w_set_item_compare);
+
+    Py_ssize_t start = 0;
+    while (start < count && !p->error) {
+        /* Write together the interchangeable elements: floats and complex
+           numbers which either have not been written yet, or are already
+           interchangeable (they are the only elements already written
+           which have the same order). */
+        w_set_item *item = &items[start];
+        Py_ssize_t stop = start + 1;
+        /* The first object written or referenced below. */
+        size_t first = item->order;
+        if (first >= W_SET_ITEM_NEW) {
+            first = p->hashtable->nentries;
+            if (PyFloat_CheckExact(item->value)
+                || PyComplex_CheckExact(item->value))
+            {
+                stop = count;
+            }
+        }
+        else {
+            while (stop < count && items[stop].order == item->order) {
+                stop++;
+            }
+        }
+        for (Py_ssize_t i = start; i < stop; i++) {
+            w_object(items[i].value, p);
+        }
+        if (stop - start > 1 && !p->error) {
+            w_tie_set_items(item, stop - start, first, p);
+        }
+        start = stop;
+    }
+}
+
+/* Write the n elements of a set or a frozenset.
+
+   bpo-37596: To support reproducible builds, the elements need to be
+   written in a consistent order, even when they have been scrambled by hash
+   randomization.  They are written in the order of sorted(v,
+   key=marshal.dumps).  The elements themselves are never compared: they
+   may not support it.  See w_same_set_items() for the elements which have
+   the same dump.
+
+   Marshalling an element can run arbitrary code (an audit hook, or the
+   __buffer__() method of the element), which can add elements to the set
+   or remove some: n is not trusted to still be the size of the set.
+
+   This function is not inlined, to keep its code and its local variables
+   out of w_complex_object(), which is recursive and mostly used for other
+   types.
+ */
+static Py_NO_INLINE void
+w_set_items(PyObject *v, Py_ssize_t n, WFILE *p)
+{
+    w_set_item *items = PyMem_New(w_set_item, n ? n : 1);
+    if (items == NULL) {
+        PyErr_NoMemory();
+        p->error = true;
+        return;
+    }
+    PyObject *value;
+    Py_ssize_t pos = 0;
+    Py_hash_t hash;
+    Py_ssize_t i = 0;
+    bool changed = false;
+    Py_BEGIN_CRITICAL_SECTION(v);
+    while (_PySet_NextEntryRef(v, &pos, &value, &hash)) {
+        if (i == n) {
+            changed = true;
+            Py_DECREF(value);
+            break;
+        }
+        PyObject *dump = _PyMarshal_WriteObjectToString(value,
+                                p->version, p->allow_code);
+        if (dump == NULL) {
+            p->error = true;
+            Py_DECREF(value);
+            break;
+        }
+        items[i].value = value;
+        items[i].dump = dump;
+        items[i].order = (size_t)i;
+        i++;
+    }
+    Py_END_CRITICAL_SECTION();
+    if (!p->error && (changed || i != n)) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "set changed size during iteration");
+        p->error = true;
+    }
+    if (!p->error) {
+        qsort(items, n, sizeof(w_set_item), w_set_item_compare);
+        Py_ssize_t start = 0;
+        while (start < n && !p->error) {
+            Py_ssize_t stop = start + 1;
+            while (stop < n && w_set_item_same_dump(&items[start],
+                                                    &items[stop]))
+            {
+                stop++;
+            }
+            if (stop - start == 1) {
+                w_object(items[start].value, p);
+            }
+            else {
+                w_same_set_items(items + start, stop - start, p);
+            }
+            start = stop;
+        }
+    }
+    while (--i >= 0) {
+        Py_DECREF(items[i].value);
+        Py_DECREF(items[i].dump);
+    }
+    PyMem_Free(items);
+}
 
 static void
 w_object(PyObject *v, WFILE *p)
@@ -832,84 +1092,13 @@ w_complex_object(PyObject *v, WFILE *p)
         }
     }
     else if (PyAnySet_CheckExact(v)) {
-        PyObject *value;
-        Py_ssize_t pos = 0;
-        Py_hash_t hash;
-
         if (PyFrozenSet_CheckExact(v))
             W_TYPE(TYPE_FROZENSET, p);
         else
             W_TYPE(TYPE_SET, p);
         n = PySet_GET_SIZE(v);
         W_SIZE(n, p);
-        // bpo-37596: To support reproducible builds, sets and frozensets need
-        // to have their elements serialized in a consistent order (even when
-        // they have been scrambled by hash randomization). To ensure this, we
-        // use an order equivalent to sorted(v, key=marshal.dumps).
-        // The list has a (dump, index, element) tuple for each element.
-        // The indexes are all different, so that sorting never compares
-        // two elements: elements with the same dump (NaNs which are
-        // distinct objects) may not be orderable.
-        PyObject *items = PyList_New(n);
-        if (items == NULL) {
-            p->error = true;
-            return;
-        }
-        // Marshalling an element can run arbitrary code (an audit hook, or
-        // the __buffer__() method of the element), which can add elements
-        // to the set or remove some: n is not trusted to still be the size
-        // of the set.
-        Py_ssize_t i = 0;
-        bool changed = false;
-        Py_BEGIN_CRITICAL_SECTION(v);
-        while (_PySet_NextEntryRef(v, &pos, &value, &hash)) {
-            if (i == n) {
-                changed = true;
-                Py_DECREF(value);
-                break;
-            }
-            PyObject *dump = _PyMarshal_WriteObjectToString(value,
-                                    p->version, p->allow_code);
-            if (dump == NULL) {
-                p->error = true;
-                Py_DECREF(value);
-                break;
-            }
-            PyObject *index = PyLong_FromSsize_t(i);
-            PyObject *item = NULL;
-            if (index != NULL) {
-                item = PyTuple_Pack(3, dump, index, value);
-                Py_DECREF(index);
-            }
-            Py_DECREF(dump);
-            Py_DECREF(value);
-            if (item == NULL) {
-                p->error = true;
-                break;
-            }
-            PyList_SET_ITEM(items, i++, item);
-        }
-        Py_END_CRITICAL_SECTION();
-        if (!p->error && (changed || i != n)) {
-            PyErr_SetString(PyExc_RuntimeError,
-                            "set changed size during iteration");
-            p->error = true;
-        }
-        if (p->error) {
-            Py_DECREF(items);
-            return;
-        }
-        if (PyList_Sort(items)) {
-            p->error = true;
-            Py_DECREF(items);
-            return;
-        }
-        for (Py_ssize_t i = 0; i < n; i++) {
-            PyObject *item = PyList_GET_ITEM(items, i);
-            value = PyTuple_GET_ITEM(item, 2);
-            w_object(value, p);
-        }
-        Py_DECREF(items);
+        w_set_items(v, n, p);
     }
     else if (PyCode_Check(v)) {
         if (!p->allow_code) {
@@ -1010,6 +1199,7 @@ w_clear_refs(WFILE *wf)
     }
     PyMem_Free(wf->refs);
     PyMem_Free(wf->refpos);
+    PyMem_Free(wf->ties);
 }
 
 /* Write a buffer to a file.  Set an exception on failure. */
