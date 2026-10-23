@@ -961,6 +961,72 @@ raise RuntimeError("Intentional import failure")
                 ])
                 self.assertEqual(sys.modules[f"{pkg}.mod"].X, 1)
 
+    def test_waiter_not_given_module_being_retried(self):
+        # Thread B waits for thread A's import of a module, which fails.
+        # A retries, so sys.modules may hold A's new, still executing
+        # module by the time B looks there again.  B must wait for that
+        # attempt too rather than return a half initialized module.
+        self._setup_package_tree({
+            "again_mod.py": "import again_sync; again_sync.body()\nX = 1\n",
+        })
+        sync = types.ModuleType("again_sync")
+        sys.modules["again_sync"] = sync
+        self.addCleanup(sys.modules.pop, "again_sync", None)
+        released = threading.Event()  # B stopped waiting for the 1st attempt
+        retrying = threading.Event()  # the 2nd attempt is in sys.modules
+        errors = []
+        results = []
+
+        def a():
+            try:
+                try:
+                    import again_mod
+                except RuntimeError:
+                    pass
+                released.wait(support.SHORT_TIMEOUT)
+                import again_mod
+            except Exception as e:
+                errors.append(f"A: {type(e).__name__}: {e}")
+
+        def b():
+            try:
+                module = importlib.import_module("again_mod")
+                results.append(hasattr(module, "X"))
+            except Exception as e:
+                errors.append(f"B: {type(e).__name__}: {e}")
+
+        ta = threading.Thread(target=a, daemon=True)
+        tb = threading.Thread(target=b, daemon=True)
+
+        def body():
+            if tb.ident is None:
+                tb.start()
+                self._wait_until_blocked_on(tb, "again_mod")
+                raise RuntimeError("first attempt fails")
+            retrying.set()
+            if threading.current_thread() is not tb:
+                # Finish only once B is waiting for this attempt.
+                self._wait_until_blocked_on(tb, "again_mod")
+        sync.body = body
+
+        # Hold B back, once it has stopped waiting for the first attempt,
+        # until the second attempt is under way.
+        release = importlib._bootstrap._ModuleLock.release
+
+        def stalling_release(lock):
+            release(lock)
+            if (lock.name == "again_mod" and not released.is_set()
+                    and threading.current_thread() is tb):
+                released.set()
+                retrying.wait(support.SHORT_TIMEOUT)
+
+        with support.swap_attr(importlib._bootstrap._ModuleLock, "release",
+                               stalling_release):
+            ta.start()
+            self._join_import_threads([ta, tb])
+        self.assertEqual(results, [True])
+        self.assertEqual(errors, [])
+
 
 def setUpModule():
     thread_info = threading_helper.threading_setup()

@@ -1301,11 +1301,24 @@ def _find_and_load(name, import_, *, lazy_submodule=False):
     module = sys.modules.get(name, _NEEDS_LOADING)
     if module is _NEEDS_LOADING or _is_initializing(module):
         if module is not _NEEDS_LOADING:
+            # Wait for the thread executing the module.
             # NOTE: this relies on __spec__._initializing being set *before*
             # the module is put in sys.modules.
-            _lock_unlock_module(name)
-            # The module is gone if the thread loading it failed.
-            module = sys.modules.get(name, _NEEDS_LOADING)
+            lock = _get_module_lock(name)
+            try:
+                lock.acquire()
+            except _DeadlockError:
+                # A circular import split across threads: accept the
+                # partially initialized module.
+                pass
+            else:
+                # The module is gone if the thread loading it failed.  Look
+                # while still holding the lock, so that another thread cannot
+                # have begun loading it again.
+                try:
+                    module = sys.modules.get(name, _NEEDS_LOADING)
+                finally:
+                    lock.release()
 
         if module is _NEEDS_LOADING:
             sys.audit(
