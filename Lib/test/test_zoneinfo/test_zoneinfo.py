@@ -443,19 +443,16 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
             self.assertFalse(key.eq_called)
             self.assertIs(tz2, tz1)
 
-
-class CZoneInfoTest(ZoneInfoTest):
-    module = c_zoneinfo
-
     def test_duck_typed_invalid_values(self):
         long_max = (1 << (struct.calcsize("l") * 8 - 1)) - 1
+        int_max = (1 << (struct.calcsize("i") * 8 - 1)) - 1
         cases = [
-            ("fold", value, ValueError, f"fold must be 0 or 1, got {value}")
+            ("fold", value, ValueError, f"fold must be 0 or 1, not {value}")
             for value in (-1, 2, 3, 256, long_max, -long_max - 1)
         ]
         cases.extend(
             ("year", value, ValueError, f"year must be in 1..9999, not {value}")
-            for value in (0, -1, 10000)
+            for value in (0, -1, 10000, int_max, -int_max - 1)
         )
         cases.extend(
             (attr, value, exc, message)
@@ -464,21 +461,29 @@ class CZoneInfoTest(ZoneInfoTest):
                 (1 << 100, OverflowError, ""),
                 (-(1 << 100), OverflowError, ""),
                 (None, TypeError, ""),
+                (1.0, TypeError, ""),
             )
+        )
+        cases.extend(
+            (attr, value, OverflowError, "")
+            for attr, maximum in (("fold", long_max), ("year", int_max))
+            for value in (maximum + 1, -maximum - 2)
         )
         # Use a date beyond the last transition to exercise year validation.
         dt = datetime(2040, 1, 1)
-        zi = self.zone_from_key("Europe/London")
         for attr, value, exc, message in cases:
             false_friend = types.SimpleNamespace(
                 year=dt.year, hour=0, minute=0, second=0, fold=0,
                 toordinal=dt.toordinal,
             )
             setattr(false_friend, attr, value)
-            for method in (zi.utcoffset, zi.dst, zi.tzname):
-                with self.subTest(attr=attr, value=value, method=method):
-                    with self.assertRaisesRegex(exc, re.escape(message)):
-                        method(false_friend)
+            for key in ("Europe/London", "UTC"):
+                zi = self.zone_from_key(key)
+                for method in (zi.utcoffset, zi.dst, zi.tzname):
+                    with self.subTest(attr=attr, value=value, key=key,
+                                      method=method):
+                        with self.assertRaisesRegex(exc, re.escape(message)):
+                            method(false_friend)
 
     def test_duck_typed_valid_boundaries(self):
         zi = self.zone_from_key("Europe/London")
@@ -492,6 +497,30 @@ class CZoneInfoTest(ZoneInfoTest):
                 for method in (zi.utcoffset, zi.dst, zi.tzname):
                     with self.subTest(year=year, fold=fold, method=method):
                         self.assertEqual(method(false_friend), method(dt))
+
+    def test_duck_typed_index(self):
+        class Index:
+            def __init__(self, value):
+                self.value = value
+
+            def __index__(self):
+                return self.value
+
+        zi = self.zone_from_key("Europe/London")
+        for fold in (0, 1):
+            # An ambiguous time beyond the last explicit transition.
+            dt = datetime(2040, 10, 28, 1, 30, fold=fold)
+            false_friend = types.SimpleNamespace(
+                year=Index(dt.year), hour=dt.hour, minute=dt.minute,
+                second=dt.second, fold=Index(fold), toordinal=dt.toordinal,
+            )
+            for method in (zi.utcoffset, zi.dst, zi.tzname):
+                with self.subTest(fold=fold, method=method):
+                    self.assertEqual(method(false_friend), method(dt))
+
+
+class CZoneInfoTest(ZoneInfoTest):
+    module = c_zoneinfo
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")

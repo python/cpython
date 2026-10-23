@@ -2250,12 +2250,12 @@ find_ttinfo(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *dt)
 
         long fold_int = PyLong_AsLong(fold_obj);
         Py_DECREF(fold_obj);
-        if (PyErr_Occurred()) {
+        if (fold_int == -1 && PyErr_Occurred()) {
             return NULL;
         }
         if (fold_int < 0 || fold_int > 1) {
             PyErr_Format(PyExc_ValueError,
-                         "fold must be 0 or 1, got %ld", fold_int);
+                         "fold must be 0 or 1, not %ld", fold_int);
             return NULL;
         }
         fold = (unsigned char)fold_int;
@@ -2281,7 +2281,7 @@ find_ttinfo(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *dt)
 
             year = PyLong_AsInt(year_obj);
             Py_DECREF(year_obj);
-            if (PyErr_Occurred()) {
+            if (year == -1 && PyErr_Occurred()) {
                 return NULL;
             }
 
