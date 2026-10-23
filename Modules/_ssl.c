@@ -5470,7 +5470,7 @@ load_ech_keys(SSL_CTX *ctx, BIO *bio, int for_retry,
         || OSSL_ECHSTORE_num_keys(store, &new_keys) != 1) {
         goto end;
     }
-    // OpenSSL may match a key already in the store. We want to to require a new match.
+    // OpenSSL may match a key already in the store. We want to require a new match.
     if (new_keys <= old_keys) {
         ERR_raise(ERR_LIB_SSL, SSL_R_PRIVATE_KEY_MISMATCH);
         goto end;
