@@ -134,14 +134,14 @@ PyTuple_SetItem(PyObject *op, Py_ssize_t i, PyObject *newitem)
     return 0;
 }
 
-void
-_PyTuple_MaybeUntrack(PyObject *op)
+bool
+_PyTuple_CanUntrack(PyObject *op)
 {
     PyTupleObject *t;
     Py_ssize_t i, n;
 
-    if (!PyTuple_CheckExact(op) || !_PyObject_GC_IS_TRACKED(op))
-        return;
+    assert(PyTuple_CheckExact(op));
+    assert(_PyObject_GC_IS_TRACKED(op));
     t = (PyTupleObject *) op;
     n = Py_SIZE(t);
     for (i = 0; i < n; i++) {
@@ -151,9 +151,20 @@ _PyTuple_MaybeUntrack(PyObject *op)
            them yet. */
         if (!elt ||
             _PyObject_GC_MAY_BE_TRACKED(elt))
-            return;
+            return false;
     }
-    _PyObject_GC_UNTRACK(op);
+    return true;
+}
+
+void
+_PyTuple_MaybeUntrack(PyObject *op)
+{
+    if (!PyTuple_CheckExact(op) || !_PyObject_GC_IS_TRACKED(op)) {
+        return;
+    }
+    if (_PyTuple_CanUntrack(op)) {
+        _PyObject_GC_UNTRACK(op);
+    }
 }
 
 /* Fast, but conservative check if an object maybe tracked
