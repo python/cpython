@@ -5513,15 +5513,16 @@ static PyMethodDef Simple_methods[] = {
     { NULL, NULL },
 };
 
+/*[clinic input]
+@critical_section
+_ctypes.Simple.__bool__ as Simple_bool
+[clinic start generated code]*/
+
 static int
-Simple_bool(PyObject *op)
+Simple_bool_impl(CDataObject *self)
+/*[clinic end generated code: output=c4466ece6a99fe8b input=326a1c8b24d8918e]*/
 {
-    int cmp;
-    CDataObject *self = _CDataObject_CAST(op);
-    Py_BEGIN_CRITICAL_SECTION(self);
-    cmp = memcmp(self->b_ptr, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", self->b_size);
-    Py_END_CRITICAL_SECTION();
-    return cmp;
+    return memcmp(self->b_ptr, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", self->b_size);
 }
 
 /* "%s(%s)" % (self.__class__.__name__, self.value) */
@@ -5988,14 +5989,16 @@ Pointer_subscript(PyObject *myself, PyObject *item)
     }
 }
 
+/*[clinic input]
+@critical_section
+_ctypes._Pointer.__bool__ as Pointer_bool
+[clinic start generated code]*/
+
 static int
-Pointer_bool(PyObject *self)
+Pointer_bool_impl(PyObject *self)
+/*[clinic end generated code: output=0139acaf4d395a69 input=672b8d35e7e0752d]*/
 {
-    int res;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    res = *(void **)_CDataObject_CAST(self)->b_ptr != NULL;
-    Py_END_CRITICAL_SECTION();
-    return res;
+    return *(void **)_CDataObject_CAST(self)->b_ptr != NULL;
 }
 
 static PyType_Slot pycpointer_slots[] = {
