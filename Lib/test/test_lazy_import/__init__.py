@@ -317,6 +317,9 @@ class LazyImportTypeTests(LazyImportTestCase):
         m.m = m
         ns = {"__builtins__": {"__lazy_import__": __lazy_import__,
                                "__import__": lambda *args: m}}
+        # Free the chain on the main thread: a thread with a small C stack
+        # postpones deep deallocations and never gets back to them.
+        self.addCleanup(ns.clear)
         exec("lazy import " + ".".join(["m"] * 10_000) + " as x", ns)
         with contextlib.suppress(RecursionError):
             ns["x"].resolve()

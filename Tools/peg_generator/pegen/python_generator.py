@@ -1,4 +1,4 @@
-import os.path
+import pathlib
 import token
 from collections.abc import Callable, Sequence
 from typing import IO, Any
@@ -232,12 +232,11 @@ class PythonParserGenerator(ParserGenerator, GrammarVisitor):
             "end_lineno=end_lineno, end_col_offset=end_col_offset"
         )
 
-    def generate(self, filename: str) -> None:
+    def generate(self, filename: pathlib.PurePath) -> None:
         self.collect_rules()
         header = self.grammar.metas.get("header", MODULE_PREFIX)
         if header is not None:
-            basename = os.path.basename(filename)
-            self.print(header.rstrip("\n").format(filename=basename))
+            self.print(header.rstrip("\n").format(filename=filename.name))
         subheader = self.grammar.metas.get("subheader", "")
         if subheader:
             self.print(subheader)

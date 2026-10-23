@@ -7,13 +7,19 @@ import os
 import pickle
 import random
 import sys
+import textwrap
 import unittest
 import weakref
+from collections import UserDict
 from itertools import product
+from types import MappingProxyType
 from unittest import mock
 
 from test import support
-from test.support import force_not_colorized_test_class, import_helper, warnings_helper
+from test.support import (
+    force_not_colorized_test_class, import_helper, threading_helper,
+    warnings_helper,
+)
 from test.support.script_helper import assert_python_ok
 
 py_uuid = import_helper.import_fresh_module('uuid', blocked=['_uuid'])
@@ -35,6 +41,7 @@ def mock_get_command_stdout(data):
 
 class BaseTestUUID:
     uuid = None
+    is_c_uuid = False
 
     def test_nil_uuid(self):
         nil_uuid = self.uuid.NIL
@@ -270,6 +277,40 @@ class BaseTestUUID:
         resorted.sort()
         equal(ascending, resorted)
 
+    def test_UUID_prefixes(self):
+        # Python removes both URN components regardless of their order. Check
+        # that both implementations accept them with each UUID string format.
+        value = '12345678-1234-5678-1234-567812345678'
+        expected = self.uuid.UUID(value)
+        for prefix in ('', 'urn:', 'uuid:', 'urn:uuid:', 'uuid:urn:'):
+            for text in (value, value.replace('-', ''), '{' + value + '}'):
+                with self.subTest(prefix=prefix, text=text):
+                    self.assertEqual(self.uuid.UUID(prefix + text), expected)
+
+    def test_UUID_strip_braces(self):
+        # str.strip('{}') removes runs of either brace at both ends, without
+        # requiring matching pairs. Keep the C parser's behavior identical.
+        value = '12345678-1234-5678-1234-567812345678'
+        expected = self.uuid.UUID(value)
+        for leading in ('', '{', '}', '{{{', '}}}', '{}}{'):
+            for trailing in ('', '{', '}', '{{{', '}}}', '{}}{'):
+                with self.subTest(leading=leading, trailing=trailing):
+                    self.assertEqual(
+                        self.uuid.UUID(leading + value + trailing), expected)
+        # Braces within the UUID and inputs containing only braces are invalid.
+        for text in ('{{}}', '{}{}', value[:8] + '{}' + value[8:]):
+            with self.subTest(text=text):
+                with self.assertRaises(ValueError):
+                    self.uuid.UUID(text)
+
+    def test_repr_subclass_str(self):
+        # repr() must call the subclass's __str__, as the Python version does.
+        class CustomUUID(self.uuid.UUID):
+            def __str__(self):
+                return 'custom uuid'
+
+        self.assertEqual(repr(CustomUUID(int=1)), "CustomUUID('custom uuid')")
+
     def test_exceptions(self):
         badvalue = lambda f: self.assertRaises(ValueError, f)
         badtype = lambda f: self.assertRaises(TypeError, f)
@@ -282,14 +323,16 @@ class BaseTestUUID:
         badvalue(lambda: self.uuid.UUID('123456781234567812345678z2345678'))
 
         # Badly formed bytes.
-        badvalue(lambda: self.uuid.UUID(bytes='abc'))
-        badvalue(lambda: self.uuid.UUID(bytes='\0'*15))
-        badvalue(lambda: self.uuid.UUID(bytes='\0'*17))
+        badtype(lambda: self.uuid.UUID(bytes='abc'))
+        badvalue(lambda: self.uuid.UUID(bytes=b'abc'))
+        badvalue(lambda: self.uuid.UUID(bytes=b'\0'*15))
+        badvalue(lambda: self.uuid.UUID(bytes=b'\0'*17))
 
         # Badly formed bytes_le.
-        badvalue(lambda: self.uuid.UUID(bytes_le='abc'))
-        badvalue(lambda: self.uuid.UUID(bytes_le='\0'*15))
-        badvalue(lambda: self.uuid.UUID(bytes_le='\0'*17))
+        badtype(lambda: self.uuid.UUID(bytes_le='abc'))
+        badvalue(lambda: self.uuid.UUID(bytes_le=b'abc'))
+        badvalue(lambda: self.uuid.UUID(bytes_le=b'\0'*15))
+        badvalue(lambda: self.uuid.UUID(bytes_le=b'\0'*17))
 
         # Badly formed fields.
         badvalue(lambda: self.uuid.UUID(fields=(1,)))
@@ -365,6 +408,70 @@ class BaseTestUUID:
         badtype(lambda: u < object())
         badtype(lambda: u > object())
 
+    def test_constructor_none(self):
+        # Explicit None has the same meaning as omitting an input argument.
+        expected = self.uuid.UUID('12345678-1234-5678-1234-567812345678')
+        inputs = {
+            'hex': expected.hex,
+            'bytes': expected.bytes,
+            'bytes_le': expected.bytes_le,
+            'fields': expected.fields,
+            'int': expected.int,
+        }
+        for name, value in inputs.items():
+            with self.subTest(input=name):
+                kwargs = dict.fromkeys(inputs)
+                kwargs[name] = value
+                self.assertEqual(self.uuid.UUID(**kwargs, version=None), expected)
+                self.assertEqual(
+                    self.uuid.UUID(*kwargs.values(), version=None), expected)
+
+        with self.assertRaisesRegex(TypeError, 'one of the hex, bytes, bytes_le'):
+            self.uuid.UUID(**dict.fromkeys(inputs))
+
+    def test_constructor_bytes_type(self):
+        # A buffer interface alone does not satisfy the bytes arguments.
+        for name in ('bytes', 'bytes_le'):
+            for value in (bytearray(16), memoryview(bytes(16)), 'x' * 16,
+                          [0] * 16, 16, object()):
+                with self.subTest(argument=name, type=type(value)):
+                    with self.assertRaisesRegex(
+                        TypeError, f'^{name} must be a bytes object$'
+                    ):
+                        self.uuid.UUID(**{name: value})
+
+    def test_constructor_bytes_subclass(self):
+        class BytesSubclass(bytes):
+            pass
+
+        expected = self.uuid.UUID('12345678-1234-5678-1234-567812345678')
+        for name in ('bytes', 'bytes_le'):
+            with self.subTest(argument=name):
+                value = BytesSubclass(getattr(expected, name))
+                self.assertEqual(self.uuid.UUID(**{name: value}), expected)
+
+    def test_constructor_is_safe_none(self):
+        # is_safe is stored as supplied; None is distinct from SafeUUID.unknown.
+        self.assertIsNone(self.uuid.UUID(int=1, is_safe=None).is_safe)
+
+    def test_constructor_fields_length_error(self):
+        error = RuntimeError('fields length failed')
+
+        class Fields(tuple):
+            def __len__(self):
+                raise error
+
+        class NonSequence:
+            def __len__(self):
+                raise error
+
+        # Preserve __len__ errors, including for objects without __getitem__.
+        for fields in (Fields((0,) * 6), NonSequence()):
+            with self.subTest(type=type(fields)):
+                with self.assertRaises(RuntimeError) as cm:
+                    self.uuid.UUID(fields=fields)
+                self.assertIs(cm.exception, error)
+
     def test_getnode(self):
         node1 = self.uuid.getnode()
         self.assertTrue(0 < node1 < (1 << 48), '%012x' % node1)
@@ -387,6 +494,65 @@ class BaseTestUUID:
                 for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                     with self.subTest(protocol=proto):
                         check(pickle.loads(pickle.dumps(u, proto)), u)
+
+    def test_setstate_mapping(self):
+        # State restoration accepts mappings and decodes serialized safety values.
+        safety_states = [({}, self.uuid.SafeUUID.unknown)]
+        safety_states.extend(
+            ({'is_safe': safety.value}, safety)
+            for safety in self.uuid.SafeUUID
+        )
+        with support.swap_item(sys.modules, 'uuid', self.uuid):
+            for mapping in (dict, frozendict, UserDict, MappingProxyType):
+                for safety_state, expected_safety in safety_states:
+                    with self.subTest(mapping=mapping, state=safety_state):
+                        u = self.uuid.UUID(int=0, is_safe=self.uuid.SafeUUID.safe)
+                        state = mapping({'int': 1, **safety_state})
+                        self.assertIsNone(u.__setstate__(state))
+                        self.assertEqual(u.int, 1)
+                        self.assertIs(u.is_safe, expected_safety)
+
+    def test_setstate_missing_int(self):
+        # A missing required key must retain the mapping's KeyError and key.
+        for mapping in (dict, frozendict, UserDict, MappingProxyType):
+            with self.subTest(mapping=mapping):
+                u = self.uuid.UUID(int=1)
+                with self.assertRaises(KeyError) as cm:
+                    u.__setstate__(mapping({}))
+                self.assertEqual(cm.exception.args, ('int',))
+                self.assertEqual(u.int, 1)
+
+    def test_setstate_lookup_error(self):
+        class State(dict):
+            def __getitem__(self, key):
+                if key == bad_key:
+                    raise RuntimeError('lookup failed')
+                return super().__getitem__(key)
+
+        # Honor overridden lookups, including on dict subclasses.
+        for bad_key in ('int', 'is_safe'):
+            with self.subTest(key=bad_key):
+                u = self.uuid.UUID(int=1)
+                state = State(int=2, is_safe=0)
+                with self.assertRaisesRegex(RuntimeError, 'lookup failed'):
+                    u.__setstate__(state)
+
+    def test_setstate_contains_error(self):
+        class State(dict):
+            def __contains__(self, key):
+                raise RuntimeError('membership test failed')
+
+        # Errors checking for the optional key must propagate as well.
+        u = self.uuid.UUID(int=1)
+        state = State(int=2)
+        with self.assertRaisesRegex(RuntimeError, 'membership test failed'):
+            u.__setstate__(state)
+
+    def test_setstate_invalid_is_safe(self):
+        u = self.uuid.UUID(int=0)
+        with support.swap_item(sys.modules, 'uuid', self.uuid):
+            with self.assertRaisesRegex(ValueError, '42 is not a valid SafeUUID'):
+                u.__setstate__({'int': 1, 'is_safe': 42})
 
     def test_unpickle_previous_python_versions(self):
         def check(actual, expected):
@@ -877,11 +1043,17 @@ class BaseTestUUID:
             equal((u.int >> 80) & 0xffff, 0x232a)
             equal((u.int >> 96) & 0xffff_ffff, 0x1ec9_414c)
 
-    def test_uuid7(self):
+    def test_uuid7_functional(self):
         equal = self.assertEqual
         u = self.uuid.uuid7()
         equal(u.variant, self.uuid.RFC_4122)
         equal(u.version, 7)
+
+    def test_uuid7_mock(self):
+        if self.is_c_uuid:
+            self.skipTest("C implementation of uuid7 cannot be tested with mocks")
+
+        equal = self.assertEqual
 
         # 1 Jan 2023 12:34:56.123_456_789
         timestamp_ns = 1672533296_123_456_789  # ns precision
@@ -940,7 +1112,15 @@ class BaseTestUUID:
         versions = {u.version for u in uuids}
         self.assertSetEqual(versions, {7})
 
-    def test_uuid7_monotonicity(self):
+    def test_uuid7_monotonicity_functional(self):
+        equal = self.assertEqual
+        us = [self.uuid.uuid7() for _ in range(10_000)]
+        equal(us, sorted(us))
+
+    def test_uuid7_monotonicity_mock(self):
+        if self.is_c_uuid:
+            self.skipTest("C implementation of uuid7 cannot be tested with mocks")
+
         equal = self.assertEqual
 
         us = [self.uuid.uuid7() for _ in range(10_000)]
@@ -1003,7 +1183,10 @@ class BaseTestUUID:
 
             self.assertLess(u1, u2)
 
-    def test_uuid7_timestamp_backwards(self):
+    def test_uuid7_timestamp_backwards_mock(self):
+        if self.is_c_uuid:
+            self.skipTest("C implementation of uuid7 cannot be tested with mocks")
+
         equal = self.assertEqual
         # 1 Jan 2023 12:34:56.123_456_789
         timestamp_ns = 1672533296_123_456_789  # ns precision
@@ -1043,7 +1226,10 @@ class BaseTestUUID:
             equal((u.int >> 32) & 0x3fff_ffff, counter_lo + 1)
             equal(u.int & 0xffff_ffff, tail)
 
-    def test_uuid7_overflow_counter(self):
+    def test_uuid7_overflow_counter_mock(self):
+        if self.is_c_uuid:
+            self.skipTest("C implementation of uuid7 cannot be tested with mocks")
+
         equal = self.assertEqual
         # 1 Jan 2023 12:34:56.123_456_789
         timestamp_ns = 1672533296_123_456_789  # ns precision
@@ -1149,6 +1335,7 @@ class BaseTestUUID:
 
 class CommandLineTestCases:
     uuid = None  # to be defined in subclasses
+    is_c_uuid = False
 
     def do_test_standalone_uuid(self, version):
         stdout = io.StringIO()
@@ -1313,6 +1500,7 @@ class TestUUIDWithoutExtModule(CommandLineTestCases, BaseTestUUID, unittest.Test
 @unittest.skipUnless(c_uuid, 'requires the C _uuid module')
 class TestUUIDWithExtModule(CommandLineTestCases, BaseTestUUID, unittest.TestCase):
     uuid = c_uuid
+    is_c_uuid = True
 
     def check_has_stable_libuuid_extractable_node(self):
         if not self.uuid._has_stable_extractable_node:
@@ -1343,6 +1531,7 @@ class TestUUIDWithExtModule(CommandLineTestCases, BaseTestUUID, unittest.TestCas
 
 class BaseTestInternals:
     _uuid = py_uuid
+    is_c_uuid = False
 
     def check_parse_mac(self, aix):
         if not aix:
@@ -1536,6 +1725,7 @@ class TestInternalsWithoutExtModule(BaseTestInternals, unittest.TestCase):
 @unittest.skipUnless(c_uuid, 'requires the C _uuid module')
 class TestInternalsWithExtModule(BaseTestInternals, unittest.TestCase):
     uuid = c_uuid
+    is_c_uuid = True
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_unix_getnode(self):
@@ -1551,6 +1741,426 @@ class TestInternalsWithExtModule(BaseTestInternals, unittest.TestCase):
     def test_windll_getnode(self):
         node = self.uuid._windll_getnode()
         self.check_node(node)
+
+
+class UuidHooks:
+
+    def __init__(self, *, start_at=0, inc_by=0, seed=0):
+        self._time = start_at
+        self._inc_by = inc_by
+        self._rnd = random.Random(seed)
+
+    def random_func(self, size):
+        ret = b''
+        for _ in range(size):
+            ret += self._rnd.getrandbits(8).to_bytes(1, 'big')
+        return ret
+
+    def time_func(self):
+        self._time += self._inc_by
+        return self._time
+
+
+@unittest.skipUnless(c_uuid, "requires the C _uuid module")
+class TestCImplementationCompat(unittest.TestCase):
+    def test_is_safe_lookup_error(self):
+        # Force the lazy SafeUUID lookup to fail before it is cached. The getter
+        # must propagate AttributeError and recover when the attribute returns.
+        # Run in a subprocess because using the failed lookup can crash Python.
+        assert_python_ok('-c', textwrap.dedent('''
+            import uuid
+
+            obj = uuid.UUID(int=1)
+            SafeUUID = uuid.SafeUUID
+            del uuid.SafeUUID
+            try:
+                try:
+                    obj.is_safe
+                except AttributeError as exc:
+                    assert 'SafeUUID' in str(exc)
+                else:
+                    raise AssertionError('SafeUUID lookup unexpectedly succeeded')
+            finally:
+                uuid.SafeUUID = SafeUUID
+            assert obj.is_safe is SafeUUID.unknown
+        '''))
+
+    def test_compatibility(self):
+        import uuid
+
+        PU = uuid._py_UUID
+        CU = uuid._c_UUID
+        N = 1000
+
+        uuids = [
+            "00000000-0000-0000-0000-000000000000",
+            "ffffffff-ffff-ffff-ffff-ffffffffffff",
+            "c0bec4fd-e4e3-050c-a362-da3f734ffd56",  # regression
+            *(str(uuid.uuid4()) for _ in range(N)),
+            *(str(uuid.uuid7()) for _ in range(N)),
+            *(str(uuid.uuid1()) for _ in range(N)),
+            *(str(uuid.UUID(bytes=os.urandom(16))) for _ in range(N)),
+        ]
+
+        def full_test(p, u):
+            self.assertEqual(p, u)
+            self.assertEqual(p.hex, u.hex)
+            self.assertEqual(p.int, u.int)
+            self.assertEqual(p.variant, u.variant)
+            self.assertEqual(p.version, u.version)
+            self.assertEqual(p.is_safe, u.is_safe)
+            self.assertEqual(p.bytes, u.bytes)
+            self.assertEqual(p.bytes_le, u.bytes_le)
+            self.assertEqual(p.fields, u.fields)
+            self.assertEqual(p.time_low, u.time_low)
+            self.assertEqual(p.time_mid, u.time_mid)
+            self.assertEqual(p.time_hi_version, u.time_hi_version)
+            self.assertEqual(p.clock_seq_hi_variant, u.clock_seq_hi_variant)
+            self.assertEqual(p.clock_seq_low, u.clock_seq_low)
+            self.assertEqual(p.node, u.node)
+
+        all_ps = set()
+        all_us = set()
+        for uuid_str in uuids:
+            with self.subTest(uuid=uuid_str):
+                p = PU(uuid_str)
+                u = CU(uuid_str)
+                full_test(p, u)
+
+                u2 = CU(bytes_le=p.bytes_le)
+                full_test(p, u2)
+
+                u3 = CU(fields=p.fields)
+                full_test(p, u3)
+
+                u4 = CU(int=p.int)
+                full_test(p, u4)
+
+                u5 = CU(
+                    hex=p.hex,
+                    is_safe=uuid.SafeUUID.safe,
+                )
+                full_test(
+                    PU(
+                        uuid_str,
+                        is_safe=uuid.SafeUUID.safe,
+                    ),
+                    u5,
+                )
+
+                all_ps.add(p)
+                all_us.add(u)
+
+        self.assertEqual(len(all_ps), len(all_us))
+        self.assertEqual(len(all_ps), len(uuids))
+
+    def _install_hooks(self, uuid_mod, *, start_at=0, inc_by=0, seed=0):
+        py_hooks = UuidHooks(start_at=start_at, inc_by=inc_by, seed=seed)
+        uuid_mod._install_py_hooks(
+            random_func=py_hooks.random_func,
+            time_func=py_hooks.time_func
+        )
+
+        c_hooks = UuidHooks(start_at=start_at, inc_by=inc_by, seed=seed)
+        uuid_mod._install_c_hooks(
+            random_func=c_hooks.random_func,
+            time_func=c_hooks.time_func
+        )
+
+    def _reset_hooks(self, uuid_mod):
+        uuid_mod._install_c_hooks(random_func=None, time_func=None)
+        uuid_mod._install_py_hooks(random_func=None, time_func=None)
+
+    def test_invalid_time_hook_result(self):
+        import uuid
+
+        class IntSubclass(int):
+            pass
+
+        class Indexable:
+            def __index__(self):
+                raise AssertionError('invalid results must not be converted')
+
+        # Invalid results must be rejected before integer conversion.
+        for value in (None, False, 1.0, '1', object(),
+                      IntSubclass(1), Indexable()):
+            with self.subTest(value=value):
+                uuid._install_c_hooks(random_func=None,
+                                      time_func=lambda: value)
+                try:
+                    with self.assertRaisesRegex(ValueError,
+                                                '^time_func must return int$'):
+                        uuid.uuid7()
+                finally:
+                    uuid._install_c_hooks(random_func=None, time_func=None)
+
+    def test_time_hook_exception(self):
+        import uuid
+
+        def time_func():
+            raise RuntimeError('time hook failed')
+
+        uuid._install_c_hooks(random_func=None, time_func=time_func)
+        try:
+            with self.assertRaisesRegex(RuntimeError, 'time hook failed'):
+                uuid.uuid7()
+        finally:
+            uuid._install_c_hooks(random_func=None, time_func=None)
+
+    def test_exact_same_algo_uuid4(self):
+        import uuid
+
+        self._install_hooks(uuid)
+        try:
+            for seq_number in range(100):
+                with self.subTest(seq_number=seq_number):
+                    self.assertEqual(
+                        uuid._py_uuid4().hex,
+                        uuid._c_uuid4().hex,
+                    )
+        finally:
+            self._reset_hooks(uuid)
+
+    @threading_helper.requires_working_threading()
+    @threading_helper.reap_threads
+    def test_concurrent_entropy_refill(self):
+        # Concurrent calls must not consume the same cached entropy. Pause one
+        # UUIDv4 call during a refill after it consumes a partial cached block,
+        # then run another call. Each thread supplies its ID as entropy, making
+        # it possible to detect reuse of the first thread's cached prefix.
+        from concurrent.futures import ThreadPoolExecutor
+        import threading
+        import uuid
+
+        entered = threading.Event()
+        resume = threading.Event()
+        local = threading.local()
+        local.id = 1
+        local.pause_refill = False
+
+        def random_func(size):
+            local.refill_size = size
+            if local.pause_refill:
+                entered.set()
+                if not resume.wait(support.SHORT_TIMEOUT):
+                    raise TimeoutError('entropy refill was not resumed')
+            return bytes([local.id]) * size
+
+        def generate(thread_id):
+            local.id = thread_id
+            local.pause_refill = thread_id == 1
+            return uuid.uuid4()
+
+        uuid._install_c_hooks(random_func=random_func, time_func=lambda: 0)
+        self.addCleanup(uuid._install_c_hooks, random_func=None, time_func=None)
+
+        # UUIDv7 consumes 10 bytes initially. Leave less than one UUIDv4's
+        # entropy cached, so the next call must combine cached and fresh bytes.
+        uuid.uuid7()
+        size = len(uuid.UUID(int=0).bytes)
+        cached = local.refill_size - 10
+        for _ in range(cached // size):
+            uuid.uuid4()
+        remaining = cached % size
+        self.assertGreater(remaining, 0)
+
+        with ThreadPoolExecutor(2) as pool:
+            pending = pool.submit(generate, 1)
+            try:
+                self.assertTrue(entered.wait(support.SHORT_TIMEOUT))
+                other = pool.submit(generate, 2).result(
+                    timeout=support.SHORT_TIMEOUT)
+            finally:
+                resume.set()
+            first = pending.result(timeout=support.SHORT_TIMEOUT)
+
+        # The waiting call reserved the cached prefix; the other call must
+        # obtain its prefix from a new entropy block instead of reusing it.
+        self.assertNotEqual(first.bytes[:remaining], other.bytes[:remaining])
+
+    @threading_helper.requires_working_threading()
+    @threading_helper.reap_threads
+    def test_concurrent_uuid7_state(self):
+        # UUIDv7 must recheck its counter if a refill lets another call advance
+        # it. Pause one call in the entropy hook and complete another first;
+        # with fixed time and entropy, the resumed call needs a higher counter.
+        # Exercise both the first UUIDv7 call and an already initialized counter.
+        from concurrent.futures import ThreadPoolExecutor
+        import threading
+        import uuid
+
+        for initialized in (False, True):
+            with self.subTest(initialized=initialized):
+                entered = threading.Event()
+                resume = threading.Event()
+                calls = []
+                lock = threading.Lock()
+                blocked_call = 2 if initialized else 1
+
+                def random_func(size):
+                    with lock:
+                        calls.append(size)
+                        call = len(calls)
+                    if call == blocked_call:
+                        entered.set()
+                        if not resume.wait(support.SHORT_TIMEOUT):
+                            raise TimeoutError('entropy refill was not resumed')
+                    # Keep time and entropy identical, so only the shared
+                    # counter can distinguish the concurrent UUIDs.
+                    return bytes(size)
+
+                uuid._install_c_hooks(random_func=random_func,
+                                      time_func=lambda: 0)
+                try:
+                    if initialized:
+                        uuid.uuid7()
+                        # Consume the remaining cache in four-byte tails,
+                        # leaving the next UUIDv7 call to trigger a refill.
+                        for _ in range((calls[0] - 10) // 4):
+                            uuid.uuid7()
+
+                    with ThreadPoolExecutor(1) as pool:
+                        pending = pool.submit(uuid.uuid7)
+                        try:
+                            self.assertTrue(entered.wait(support.SHORT_TIMEOUT))
+                            other = uuid.uuid7()
+                        finally:
+                            resume.set()
+                        first = pending.result(timeout=support.SHORT_TIMEOUT)
+
+                    # A call resumed after another UUID was generated must
+                    # advance from that UUID's state, not its stale snapshot.
+                    self.assertGreater(first, other)
+                finally:
+                    uuid._install_c_hooks(random_func=None, time_func=None)
+
+    def test_exact_same_algo_uuid7(self):
+        import uuid
+
+        try:
+            for start_at, inc_by in [
+                (0, 0), (0, 10_000_000), (10_000_000 + 142, 1131827398127397)
+            ]:
+                self._install_hooks(uuid, start_at=start_at, inc_by=inc_by)
+                for seq_number in range(100):
+                    with self.subTest(
+                        seq_number=seq_number, start_at=start_at, inc_by=inc_by,
+                    ):
+                        self.assertEqual(
+                            uuid._py_uuid7().hex,
+                            uuid._c_uuid7().hex,
+                        )
+        finally:
+            self._reset_hooks(uuid)
+
+    def test_subclassing(self):
+        import uuid
+
+        class U(uuid._c_UUID):
+            pass
+
+        u = U(int=1)
+        u_str = str(u)
+        del u
+        self.assertEqual(u_str, '00000000-0000-0000-0000-000000000001')
+
+    def test_subclass_allocation(self):
+        # Subclasses must bypass the base UUID freelist and get enough storage
+        # for their slots and dictionary, with GC tracking for reference cycles.
+        # Run in a subprocess because an incorrectly sized or reused object
+        # can corrupt memory before the assertions detect it.
+        assert_python_ok('-c', textwrap.dedent('''
+            import gc
+            import uuid
+            import weakref
+
+            class U(uuid.UUID):
+                __slots__ = ('extra', '__dict__')
+
+            # Exercise both the constructor and the internal factory.
+            for factory in (lambda cls: cls(int=1), lambda cls: cls._from_int(1)):
+                # Leave a base UUID available in the freelist.
+                base = uuid.UUID(int=0)
+                del base
+                u = factory(U)
+                # A subclass must not receive a cached base UUID.
+                assert type(u) is U
+                assert u.int == 1
+                # Allocation must include storage for subclass slots and a dict.
+                object.__setattr__(u, 'extra', u)
+                object.__setattr__(u, 'other', 42)
+                assert u.extra is u
+                assert u.other == 42
+                # The self-reference requires GC tracking to collect the object.
+                ref = weakref.ref(u)
+                del u
+                gc.collect()
+                assert ref() is None
+
+                # Subclass allocation must leave the base freelist usable.
+                base = uuid.UUID(int=2)
+                assert type(base) is uuid.UUID
+                assert base.int == 2
+        '''))
+
+    def test_subclass_module_finalization(self):
+        # GC may clear the base type's module reference before a subclass-owned
+        # instance is destroyed. Drop both modules and collect the subclass's
+        # class/instance cycle; deallocation must work without module state.
+        # Isolate the module removals and a possible crash in a subprocess.
+        assert_python_ok('-c', textwrap.dedent('''
+            import gc
+            import sys
+            import weakref
+
+            for from_int in (False, True):
+                import uuid
+
+                module = sys.modules['_uuid']
+                UUID = module.UUID
+                assert uuid.UUID is UUID
+
+                # Remove the module's UUID constants before creating the cycle.
+                del sys.modules['uuid']
+                del uuid
+                gc.collect()
+
+                class Sub(UUID):
+                    pass
+
+                if from_int:
+                    Sub.keep = Sub._from_int(1)
+                else:
+                    Sub.keep = Sub(int=1)
+                refs = [weakref.ref(obj) for obj in
+                        (module, UUID, Sub, Sub.keep)]
+
+                del sys.modules['_uuid']
+                del module, UUID, Sub
+                gc.collect()
+                assert all(ref() is None for ref in refs)
+        '''))
+
+    def test_freelist_type_lifetime(self):
+        # Reused live instances must keep their type and module alive, while
+        # cached instances must allow both to be collected.
+        module = import_helper.import_fresh_module('_uuid')
+        module_ref = weakref.ref(module)
+        type_ref = weakref.ref(module.UUID)
+        # Leave a base UUID available in the freelist.
+        obj = module.UUID(int=0)
+        del obj
+        # A reused live instance must still keep its type and module alive.
+        obj = module.UUID(int=1)
+        del module
+        support.gc_collect()
+        self.assertIsNotNone(type_ref())
+        self.assertIsNotNone(module_ref())
+        self.assertEqual(obj.int, 1)
+        del obj
+        support.gc_collect()
+        self.assertIsNone(type_ref())
+        self.assertIsNone(module_ref())
 
 
 if __name__ == '__main__':

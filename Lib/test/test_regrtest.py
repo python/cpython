@@ -48,7 +48,7 @@ ROOT_DIR = os.path.abspath(os.path.normpath(ROOT_DIR))
 LOG_PREFIX = (
     r'[0-9]+:[0-9]+:[0-9]+ '
     r'(?:load avg: [0-9]+\.[0-9]{2} )?'
-    r'(?:mem: [0-9]+\.[0-9] (?:MiB|GiB) )?'
+    r'(?:mem: +[0-9]+\.[0-9] (?:MiB|GiB) )?'
 )
 RESULT_REGEX = (
     'passed',

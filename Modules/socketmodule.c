@@ -1786,6 +1786,9 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
         PyObject *vmId = PyUnicode_FromWideChar(guidStr, -1);
         res = RpcStringFreeW(&guidStr);
         assert(res == RPC_S_OK);
+        if (vmId == NULL) {
+            return 0;
+        }
 
         res = UuidToStringW(&a->ServiceId, &guidStr);
         if (res != RPC_S_OK) {
@@ -3420,11 +3423,6 @@ sock_setsockopt(PyObject *self, PyObject *args)
 
 #ifdef AF_VSOCK
     if (s->sock_family == AF_VSOCK) {
-        if (!PyIndex_Check(optval)) {
-            PyErr_Format(PyExc_TypeError,
-                         "setsockopt() argument 3 for AF_VSOCK must be an int (got %T)",
-                         optval);
-        }
         uint64_t vflag; // Must be set width of 64 bits
         /* setsockopt(level, opt, flag) */
         if (!PyArg_Parse(optval, "K", &vflag)) {
