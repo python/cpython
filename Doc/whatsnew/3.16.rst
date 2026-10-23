@@ -392,6 +392,10 @@ datetime
   :meth:`datetime.time.strptime`.
   (Contributed by Stan Ulbrych and Karoline Pauls in :gh:`157290`.)
 
+* Add :attr:`datetime.timezone.name`, the *name* passed to the constructor,
+  or ``None`` if no name was passed.
+  (Contributed by Stan Ulbrych in :gh:`131210`.)
+
 
 dbm.gnu
 -------

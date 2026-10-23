@@ -4558,6 +4558,22 @@ static PyMethodDef timezone_methods[] = {
     {NULL, NULL}
 };
 
+static PyObject *
+timezone_name(PyObject *op, void *Py_UNUSED(closure))
+{
+    PyDateTime_TimeZone *self = PyTimeZone_CAST(op);
+    if (self->name == NULL) {
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef(self->name);
+}
+
+static PyGetSetDef timezone_getset[] = {
+    {"name", timezone_name, NULL,
+     PyDoc_STR("Name given when the timezone was created.")},
+    {NULL}
+};
+
 static PyTypeObject PyDateTime_TimeZoneType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "datetime.timezone",              /* tp_name */
@@ -4588,7 +4604,7 @@ static PyTypeObject PyDateTime_TimeZoneType = {
     0,                                /* tp_iternext */
     timezone_methods,                 /* tp_methods */
     0,                                /* tp_members */
-    0,                                /* tp_getset */
+    timezone_getset,                  /* tp_getset */
     &PyDateTime_TZInfoType,           /* tp_base */
     0,                                /* tp_dict */
     0,                                /* tp_descr_get */
