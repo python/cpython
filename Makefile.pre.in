@@ -217,6 +217,12 @@ IPHONEOS_DEPLOYMENT_TARGET=@IPHONEOS_DEPLOYMENT_TARGET@
 
 BUILD_DETAILS=@BUILD_DETAILS@
 
+# visionOS Deployment target is *actually* used during the build, by the
+# compiler shims; export.
+XROS_DEPLOYMENT_TARGET=@XROS_DEPLOYMENT_TARGET@
+@EXPORT_XROS_DEPLOYMENT_TARGET@export XROS_DEPLOYMENT_TARGET
+
+
 # Option to install to strip binaries
 STRIPFLAG=-s
 
@@ -2310,30 +2316,31 @@ testuniversal: all
 	$(RUNSHARED) /usr/libexec/oah/translate \
 		./$(BUILDPYTHON) -E -m test -j 0 -u all $(TESTOPTS)
 
-# Run the test suite on the iOS simulator. Must be run on a macOS machine with
-# a full Xcode install that has an iPhone SE (3rd edition) simulator available.
+# Run the test suite on an Apple Mobile (i.e., iOS/tvOS/watchOS/visionOS)
+# device simulator. Must be run on a macOS machine with a full Xcode install
+# that has an SE-class simulator available for the chosen platform.
 # This must be run *after* a `make install` has completed the build. The
 # testbed is configured for the framework name used to configure the build;
 # that name is expected to be `Python`, optionally followed by uppercased ABI
 # flags (e.g., `PythonT`).
-XCFOLDER:=iOSTestbed.$(MULTIARCH).$(shell date +%s).$$PPID
+XCFOLDER:=AppleTestbed.$(MULTIARCH).$(shell date +%s).$$PPID
 .PHONY: testios
 testios:
-	@if test "$(MACHDEP)" != "ios"; then \
-		echo "Cannot run the iOS testbed for a non-iOS build."; \
+	@if test "$(MACHDEP)" != "ios" -a "$(MACHDEP)" != "tvos" -a "$(MACHDEP)" != "visionos" -a "$(MACHDEP)" != "watchos" ; then \
+		echo "Cannot run the Apple mobile testbed for a $(MACHDEP) build."; \
 		exit 1;\
 	fi
-	@if test "$(findstring -iphonesimulator,$(MULTIARCH))" != "-iphonesimulator"; then \
-		echo "Cannot run the iOS testbed for non-simulator builds."; \
+	@if test "$(findstring simulator,$(MULTIARCH))" != "simulator"; then \
+		echo "Cannot run the Apple mobile testbed for non-simulator builds."; \
 		exit 1;\
 	fi
 	@if ! test -d $(PYTHONFRAMEWORKPREFIX); then \
-		echo "Cannot find a finalized iOS Python.framework. Have you run 'make install' to finalize the framework build?"; \
+		echo "Cannot find a finalized Python.framework. Have you run 'make install' to finalize the framework build?"; \
 		exit 1;\
 	fi
 
 	# Clone the testbed project into the XCFOLDER
-	$(PYTHON_FOR_BUILD) $(srcdir)/Platforms/Apple/testbed clone --framework $(PYTHONFRAMEWORKPREFIX) "$(XCFOLDER)"
+	$(PYTHON_FOR_BUILD) $(srcdir)/Platforms/Apple/testbed clone --platform $(MACHDEP) --framework $(PYTHONFRAMEWORKPREFIX) "$(XCFOLDER)"
 
 	# Run the testbed project
 	$(PYTHON_FOR_BUILD) "$(XCFOLDER)" run --verbose -- test -uall --single-process --rerun -W --pythoninfo
