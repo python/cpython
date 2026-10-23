@@ -176,6 +176,11 @@ class CRuleEmitter:
             self._emit_recursion_check()
             self._emit_error_check()
             self._print(f"{result_type} _res = NULL;")
+            if fastpath := self._rule.fastpath:
+                self._print(f"if ({fastpath}(p, &_res)) {{")
+                with self._indent():
+                    self._returns.emit("_res")
+                self._print("}")
             if memoize:
                 self._print(f"if (_PyPegen_is_memoized(p, {signature.name}_type, &_res)) {{")
                 with self._indent():

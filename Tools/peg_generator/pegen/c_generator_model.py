@@ -123,6 +123,7 @@ class CRule:
     left_recursive: bool
     leader: bool
     memoize: bool
+    fastpath: str | None
     disable_invalid_rules: bool
     prefixes: tuple[CPrefix, ...] = ()
     source: pathlib.Path | None = None

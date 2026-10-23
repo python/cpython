@@ -196,6 +196,7 @@ Token *_PyPegen_get_last_nonnwhitespace_token(Parser *);
 int _PyPegen_fill_token(Parser *p);
 // Return -1 on failure, leaving the buffer and capacity unchanged.
 int _PyPegen_grow_loop_buffer(void ***buffer, Py_ssize_t *capacity);
+int _PyPegen_atom_fast_path(Parser *p, void *result);
 expr_ty _PyPegen_name_token(Parser *p);
 expr_ty _PyPegen_number_token(Parser *p);
 void *_PyPegen_string_token(Parser *p);
