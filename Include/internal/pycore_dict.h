@@ -94,6 +94,8 @@ typedef struct {
     PyObject *me_value; /* This field is only meaningful for combined tables */
 } PyDictUnicodeEntry;
 
+extern int _PyDict_Traverse(PyObject *, visitproc, void *);
+
 extern PyDictKeysObject *_PyDict_NewKeysForClass(PyHeapTypeObject *);
 extern void _PyDict_RemoveKeysForClass(PyHeapTypeObject *);
 extern PyObject *_PyDict_FromKeys(PyObject *, PyObject *, PyObject *);

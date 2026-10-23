@@ -5089,8 +5089,8 @@ dict_popitem_impl(PyDictObject *self)
     return res;
 }
 
-static int
-dict_traverse(PyObject *op, visitproc visit, void *arg)
+int
+_PyDict_Traverse(PyObject *op, visitproc visit, void *arg)
 {
     PyDictObject *mp = (PyDictObject *)op;
     PyDictKeysObject *keys = mp->ma_keys;
@@ -5522,7 +5522,7 @@ PyTypeObject PyDict_Type = {
         Py_TPFLAGS_BASETYPE | Py_TPFLAGS_DICT_SUBCLASS |
         _Py_TPFLAGS_MATCH_SELF | Py_TPFLAGS_MAPPING,  /* tp_flags */
     dictionary_doc,                             /* tp_doc */
-    dict_traverse,                              /* tp_traverse */
+    _PyDict_Traverse,                            /* tp_traverse */
     dict_tp_clear,                              /* tp_clear */
     dict_richcompare,                           /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
@@ -8632,7 +8632,7 @@ PyTypeObject PyFrozenDict_Type = {
                 | Py_TPFLAGS_BASETYPE
                 | _Py_TPFLAGS_MATCH_SELF | Py_TPFLAGS_MAPPING,
     .tp_doc = frozendict_doc,
-    .tp_traverse = dict_traverse,
+    .tp_traverse = _PyDict_Traverse,
     .tp_clear = dict_tp_clear,
     .tp_richcompare = dict_richcompare,
     .tp_iter = dict_iter,

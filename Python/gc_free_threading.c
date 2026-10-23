@@ -578,10 +578,11 @@ static_assert(BUFFER_HI < BUFFER_SIZE &&
     #define prefetch(ptr)
 #endif
 
-// a contigous sequence of PyObject pointers, can contain NULLs
+// A strided sequence of PyObject pointers, which can contain NULLs.
 typedef struct {
     PyObject **start;
-    PyObject **end;
+    Py_ssize_t size;
+    Py_ssize_t stride;
 } gc_span_t;
 
 typedef struct {
@@ -660,9 +661,10 @@ gc_mark_stack_push(_PyObjectStack *ms, PyObject *op)
 }
 
 static int
-gc_mark_span_push(gc_span_stack_t *ss, PyObject **start, PyObject **end)
+gc_mark_span_push(gc_span_stack_t *ss, PyObject **start, Py_ssize_t size,
+                  Py_ssize_t stride)
 {
-    if (start == end) {
+    if (size == 0) {
         return 0;
     }
     if (ss->size >= ss->capacity) {
@@ -678,9 +680,10 @@ gc_mark_span_push(gc_span_stack_t *ss, PyObject **start, PyObject **end)
         }
         ss->stack = new_stack;
     }
-    assert(end > start);
+    assert(size > 0);
     ss->stack[ss->size].start = start;
-    ss->stack[ss->size].end = end;
+    ss->stack[ss->size].size = size;
+    ss->stack[ss->size].stride = stride;
     ss->size++;
     return 0;
 }
@@ -748,20 +751,21 @@ gc_mark_enqueue(PyObject *op, gc_mark_args_t *args)
     }
 }
 
-// Called when we have a contigous sequence of PyObject pointers, either
-// a tuple or list object.  This will add the items to the buffer if there
+// Called for a strided sequence of PyObject pointers, including list and
+// tuple items and dictionary values.  This will add the items to the buffer if there
 // is space for them all otherwise push a new "span" on the span stack.  Using
 // spans has the advantage of not creating a deep _PyObjectStack stack when
 // dealing with long sequences.  Those sequences will be processed in smaller
 // chunks by the gc_prime_from_spans() function.
 static int
-gc_mark_enqueue_span(PyObject **item, Py_ssize_t size, gc_mark_args_t *args)
+gc_mark_enqueue_span_stride(PyObject **item, Py_ssize_t size,
+                           Py_ssize_t stride, gc_mark_args_t *args)
 {
     Py_ssize_t used = gc_mark_buffer_len(args);
     Py_ssize_t free = BUFFER_SIZE - used;
     if (free >= size) {
         for (Py_ssize_t i = 0; i < size; i++) {
-            PyObject *op = item[i];
+            PyObject *op = *(PyObject **)((char *)item + i * stride);
             if (op == NULL) {
                 continue;
             }
@@ -770,12 +774,37 @@ gc_mark_enqueue_span(PyObject **item, Py_ssize_t size, gc_mark_args_t *args)
     }
     else {
         assert(size > 0);
-        PyObject **end = &item[size];
-        if (gc_mark_span_push(&args->spans, item, end) < 0) {
+        if (gc_mark_span_push(&args->spans, item, size, stride) < 0) {
             return -1;
         }
     }
     return 0;
+}
+
+static int
+gc_mark_enqueue_span(PyObject **item, Py_ssize_t size, gc_mark_args_t *args)
+{
+    return gc_mark_enqueue_span_stride(item, size, sizeof(PyObject *), args);
+}
+
+static int
+gc_mark_traverse_dict(PyObject *self, gc_mark_args_t *args)
+{
+    PyDictObject *dict = (PyDictObject *)self;
+    PyDictKeysObject *keys = dict->ma_keys;
+    if (keys->dk_nentries == 0) {
+        return 0;
+    }
+    if (!DK_IS_UNICODE(keys)) {
+        return _PyDict_Traverse(self, gc_mark_enqueue_buffer_visitproc, args);
+    }
+    if (_PyDict_HasSplitTable(dict)) {
+        return gc_mark_enqueue_span(dict->ma_values->values,
+                                    keys->dk_nentries, args);
+    }
+    PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(keys);
+    return gc_mark_enqueue_span_stride(&entries[0].me_value, keys->dk_nentries,
+                                       sizeof(PyDictUnicodeEntry), args);
 }
 
 static bool
@@ -1250,44 +1279,49 @@ gc_prime_from_spans(gc_mark_args_t *args)
     assert(space <= BUFFER_HI);
     gc_span_t entry = args->spans.stack[--args->spans.size];
     // spans on the stack should always have one or more elements
-    assert(entry.start < entry.end);
+    assert(entry.size > 0);
     do {
         PyObject *op = *entry.start;
-        entry.start++;
+        entry.size--;
+        if (entry.size > 0) {
+            entry.start = (PyObject **)((char *)entry.start + entry.stride);
+        }
         if (op != NULL) {
             gc_mark_buffer_push(op, args);
             space--;
             if (space == 0) {
                 // buffer is as full as we want and not done with span
-                gc_mark_span_push(&args->spans, entry.start, entry.end);
+                gc_mark_span_push(&args->spans, entry.start, entry.size, entry.stride);
                 return;
             }
         }
-    } while (entry.start < entry.end);
+    } while (entry.size > 0);
 }
 
 static void
 gc_prime_buffer(gc_mark_args_t *args)
 {
-    if (args->spans.size > 0) {
+    // Dictionary spans can contain only deleted entries.
+    while (args->spans.size > 0) {
         gc_prime_from_spans(args);
+        if (!gc_mark_buffer_is_empty(args)) {
+            return;
+        }
     }
-    else {
-        // When priming, don't fill the buffer too full since that would
-        // likely cause the stack to be used shortly after when it
-        // fills. We want to use the buffer as much as possible and so
-        // we only fill to BUFFER_HI, not BUFFER_SIZE.
-        Py_ssize_t space = BUFFER_HI - gc_mark_buffer_len(args);
-        assert(space > 0);
-        do {
-            PyObject *op = _PyObjectStack_Pop(&args->stack);
-            if (op == NULL) {
-                return;
-            }
-            gc_mark_buffer_push(op, args);
-            space--;
-        } while (space > 0);
-    }
+    // When priming, don't fill the buffer too full since that would
+    // likely cause the stack to be used shortly after when it
+    // fills. We want to use the buffer as much as possible and so
+    // we only fill to BUFFER_HI, not BUFFER_SIZE.
+    Py_ssize_t space = BUFFER_HI - gc_mark_buffer_len(args);
+    assert(space > 0);
+    do {
+        PyObject *op = _PyObjectStack_Pop(&args->stack);
+        if (op == NULL) {
+            return;
+        }
+        gc_mark_buffer_push(op, args);
+        space--;
+    } while (space > 0);
 }
 
 static int
@@ -1328,6 +1362,11 @@ gc_propagate_alive_prefetch(gc_mark_args_t *args)
         }
         else if (traverse == PyTuple_Type.tp_traverse) {
             if (gc_mark_traverse_tuple(op, args) < 0) {
+                return -1;
+            }
+        }
+        else if (traverse == _PyDict_Traverse) {
+            if (gc_mark_traverse_dict(op, args) < 0) {
                 return -1;
             }
         }

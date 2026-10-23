@@ -1,0 +1,2 @@
+Reduce dictionary traversal overhead in the free-threaded garbage collector
+with spans of dictionary values.
