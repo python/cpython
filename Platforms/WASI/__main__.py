@@ -1,14 +1,19 @@
-#!/usr/bin/env python3
-
-__lazy_modules__ = ["_build"]
+__lazy_modules__ = [
+    "argparse",
+    "os",
+    "pathlib",
+    "_build",
+    "_package",
+    "_shared",
+]
 
 import argparse
 import os
 import pathlib
 
 import _build
-
-HERE = pathlib.Path(__file__).parent
+import _package
+import _shared
 
 
 def main():
@@ -27,6 +32,7 @@ def main():
         # may want to use them.
         "--config {WASMTIME_CONFIG_PATH}"
     )
+    context = _shared.Context()
 
     parser = argparse.ArgumentParser()
     subcommands = parser.add_subparsers(dest="subcommand")
@@ -59,6 +65,22 @@ def main():
     pythoninfo_host = subcommands.add_parser(
         "pythoninfo-host", help="Display build info of the host/WASI Python"
     )
+    package = subcommands.add_parser(
+        "package", help="Package the host/WASI Python into an archive"
+    )
+    gather = subcommands.add_parser(
+        "gather", help="Gather all the files for distribution"
+    )
+    path = subcommands.add_parser(
+        "path", help="Print the path to a build or distribution directory"
+    )
+    path.add_argument(
+        "location",
+        nargs="?",
+        choices=("build-python", "wasi", "dist"),
+        default="wasi",
+        help="Directory whose path to print",
+    )
     subcommands.add_parser(
         "clean", help="Delete files and directories created by this script"
     )
@@ -84,6 +106,8 @@ def main():
             "--logdir",
             type=pathlib.Path,
             default=None,
+            dest="_log_path",
+            metavar="LOG-DIR",
             help="Directory to store log files",
         )
     for subcommand in (
@@ -113,8 +137,9 @@ def main():
         subcommand.add_argument(
             "--wasi-sdk",
             type=pathlib.Path,
-            dest="wasi_sdk_path",
+            dest="_wasi_sdk_path",
             default=None,
+            metavar="WASI-SDK-PATH",
             help="Path to the WASI SDK; defaults to WASI_SDK_PATH environment variable "
             "or the appropriate version found in /opt",
         )
@@ -132,16 +157,21 @@ def main():
         make_host,
         build_host,
         pythoninfo_host,
+        gather,
+        package,
+        path,
     ):
         subcommand.add_argument(
             "--host-triple",
             action="store",
             default=None,
+            dest="_host_triple",
+            metavar="WASI-TRIPLE",
             help="The target triple for the WASI host build; "
-            f"defaults to the value found in {os.fsdecode(HERE / 'config.toml')}",
+            f"defaults to the value found in {os.fsdecode(context.here / 'config.toml')}",
         )
 
-    context = parser.parse_args()
+    parser.parse_args(namespace=context)
 
     match context.subcommand:
         case "configure-build-python":
@@ -166,14 +196,28 @@ def main():
             # Configure and build the build Python
             _build.configure_build_python(context)
             _build.make_build_python(context)
-            _build.pythoninfo_build_python(context)
+            if not context.quiet:
+                _build.pythoninfo_build_python(context)
 
             # Configure and build the host/WASI Python
             _build.configure_wasi_python(context)
             _build.make_wasi_python(context)
-            _build.pythoninfo_wasi_python(context)
+            if not context.quiet:
+                _build.pythoninfo_wasi_python(context)
         case "clean":
             _build.clean_contents(context)
+        case "gather":
+            _package.gather(context)
+        case "package":
+            _package.gather(context)
+            _package.archive(context)
+        case "path":
+            paths = {
+                "build-python": "build_python_path",
+                "wasi": "wasi_build_path",
+                "dist": "archive_dir",
+            }
+            print(getattr(context, paths[context.location]))
         case None:
             parser.print_help()
         case _:

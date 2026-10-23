@@ -50,6 +50,14 @@ def setup_process() -> None:
         for signum in signals:
             faulthandler.register(signum, chain=True, file=stderr_fd)
 
+    # Restore the default SIGINT handler if there is no Python-level
+    # handler.  Python inherits the SIG_IGN disposition when the test
+    # suite runs as a shell background job; then asyncio.Runner does not
+    # install its own handler and _thread.interrupt_main() is a no-op,
+    # which makes some tests in test_asyncio and test_threading hang.
+    if signal.getsignal(signal.SIGINT) in (signal.SIG_IGN, signal.SIG_DFL):
+        signal.signal(signal.SIGINT, signal.default_int_handler)
+
     adjust_rlimit_nofile()
 
     support.record_original_stdout(sys.stdout)

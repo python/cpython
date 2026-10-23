@@ -273,12 +273,27 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_create_module_from_initfunc")
         self.assertEqual(self._nogil_filtered_err(err, "embedded_ext"), "")
         self.assertEqual(out,
-                         "<module 'my_test_extension' (static-extension)>\n"
-                         "my_test_extension.executed='yes'\n"
-                         "my_test_extension.exec_slot_ran='yes'\n"
-                         "<module 'embedded_ext' (static-extension)>\n"
-                         "embedded_ext.executed='yes'\n"
-                         )
+            # multi-phase init: not in sys.modules until importlib adds it
+            "created my_test_extension: in sys.modules=False\n"
+            "<module 'my_test_extension' (static-extension)>\n"
+            "my_test_extension.executed='yes'\n"
+            "my_test_extension.exec_slot_ran='yes'\n"
+            # single-phase init: added to sys.modules by the init function
+            "created embedded_ext: in sys.modules=True\n"
+            "<module 'embedded_ext' (static-extension)>\n"
+            "embedded_ext.executed='yes'\n"
+            # same name, different initfuncs: the cached module is
+            # returned and the second initfunc is never called
+            "a.which='A' b.which='A' a is b=True\n"
+            "create_static_module.initfunc_calls()=(1, 0)\n"
+            # Static extension
+            "created sp_pkg: in sys.modules=False\n"
+            "created sp_pkg.sp_submod: in sys.modules=True\n"
+            "<module 'sp_pkg.sp_submod' (static-extension)>\n"
+            "sp_pkg.sp_submod.__name__='sp_pkg.sp_submod'\n"
+            "sys.modules[\"sp_pkg.sp_submod\"] is sp_pkg.sp_submod=True\n"
+            "\"sp_submod\" in sys.modules=False\n"
+        )
 
     def test_inittab_submodule_multiphase(self):
         out, err = self.run_embedded_interpreter("test_inittab_submodule_multiphase")
@@ -435,6 +450,43 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             code = fp.read()
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, 'Tests passed\n' * INIT_LOOPS)
+
+    def test_asyncio_task_during_interpreter_clear(self):
+        import_helper.import_module('_asyncio')
+        code = textwrap.dedent("""
+            import asyncio
+            import contextvars
+            import gc
+            import os
+
+            gc.disable()
+
+            async def noop():
+                pass
+
+            class Loop:
+                def get_debug(self):
+                    return False
+
+                def call_soon(self, callback, *args, context=None):
+                    self.callback = callback
+
+            class CreatesTaskOnClear:
+                def __del__(self):
+                    asyncio.Task(noop(), loop=Loop(), context=contextvars.Context())
+                    os.write(1, b'task created\\n')
+
+            # Keep the finalizer alive until interpreter_clear()'s last GC.
+            finalizer = CreatesTaskOnClear()
+            finalizer.cycle = finalizer
+            del finalizer
+        """)
+        # gh-159041: Delete the cleared interpreter with no thread state attached.
+        out, err = self.run_embedded_interpreter(
+            "test_interpreter_clear_and_delete", code,
+            timeout=support.SHORT_TIMEOUT)
+        self.assertEqual(out, "task created\n")
+        self.assertEqual(err, "")
 
     def test_simple_initialization_api(self):
         # _testembed now uses Py_InitializeFromConfig by default
@@ -783,6 +835,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'use_frozen_modules': not support.Py_DEBUG,
         'safe_path': False,
         '_is_python_build': IGNORE_CONFIG,
+        '_deferred_cmdline_option': 0,
     }
     if Py_STATS:
         CONFIG_COMPAT['_pystats'] = False
@@ -823,7 +876,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     # global config
     DEFAULT_GLOBAL_CONFIG = {
         'Py_HasFileSystemDefaultEncoding': 0,
-        'Py_HashRandomizationFlag': 1,
         '_Py_HasFileSystemDefaultEncodeErrors': 0,
     }
     COPY_GLOBAL_PRE_CONFIG = [
@@ -831,31 +883,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     ]
     COPY_GLOBAL_CONFIG = [
         # Copy core config to global config for expected values
-        # True means that the core config value is inverted (0 => 1 and 1 => 0)
-        ('Py_BytesWarningFlag', 'bytes_warning'),
-        ('Py_DebugFlag', 'parser_debug'),
-        ('Py_DontWriteBytecodeFlag', 'write_bytecode', True),
         ('Py_FileSystemDefaultEncodeErrors', 'filesystem_errors'),
         ('Py_FileSystemDefaultEncoding', 'filesystem_encoding'),
-        ('Py_FrozenFlag', 'pathconfig_warnings', True),
-        ('Py_IgnoreEnvironmentFlag', 'use_environment', True),
-        ('Py_InspectFlag', 'inspect'),
-        ('Py_InteractiveFlag', 'interactive'),
-        ('Py_IsolatedFlag', 'isolated'),
-        ('Py_NoSiteFlag', 'site_import', True),
-        ('Py_NoUserSiteDirectory', 'user_site_directory', True),
-        ('Py_OptimizeFlag', 'optimization_level'),
-        ('Py_QuietFlag', 'quiet'),
-        ('Py_UnbufferedStdioFlag', 'buffered_stdio', True),
-        ('Py_VerboseFlag', 'verbose'),
     ]
-    if MS_WINDOWS:
-        COPY_GLOBAL_PRE_CONFIG.extend((
-            ('Py_LegacyWindowsFSEncodingFlag', 'legacy_windows_fs_encoding'),
-        ))
-        COPY_GLOBAL_CONFIG.extend((
-            ('Py_LegacyWindowsStdioFlag', 'legacy_windows_stdio'),
-        ))
 
     EXPECTED_CONFIG = None
 
@@ -1013,20 +1043,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         config = configs['config']
 
         expected = dict(self.DEFAULT_GLOBAL_CONFIG)
-        for item in self.COPY_GLOBAL_CONFIG:
-            if len(item) == 3:
-                global_key, core_key, opposite = item
-                expected[global_key] = 0 if config[core_key] else 1
-            else:
-                global_key, core_key = item
-                expected[global_key] = config[core_key]
-        for item in self.COPY_GLOBAL_PRE_CONFIG:
-            if len(item) == 3:
-                global_key, core_key, opposite = item
-                expected[global_key] = 0 if pre_config[core_key] else 1
-            else:
-                global_key, core_key = item
-                expected[global_key] = pre_config[core_key]
+        for global_key, core_key in self.COPY_GLOBAL_CONFIG:
+            expected[global_key] = config[core_key]
+        for global_key, core_key in self.COPY_GLOBAL_PRE_CONFIG:
+            expected[global_key] = pre_config[core_key]
 
         self.assertEqual(configs['global_config'], expected)
 
@@ -1095,24 +1115,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_all_configs("test_init_compat_config", api=API_COMPAT)
 
     def test_init_global_config(self):
+        # Test Py_UTF8Mode global configuration variable
         preconfig = {
             'utf8_mode': True,
         }
-        config = {
-            'site_import': False,
-            'bytes_warning': True,
-            'warnoptions': ['default::BytesWarning'],
-            'inspect': True,
-            'interactive': True,
-            'optimization_level': 2,
-            'write_bytecode': False,
-            'verbose': True,
-            'quiet': True,
-            'buffered_stdio': False,
-            'remote_debug': True,
-            'user_site_directory': False,
-            'pathconfig_warnings': False,
-        }
+        config = {}
         self.check_all_configs("test_init_global_config", config, preconfig,
                                api=API_COMPAT)
 
@@ -1884,19 +1891,31 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         # The global path configuration (_Py_path_config) must be a copy
         # of the path configuration of PyInterpreter.config (PyConfig).
         ctypes = import_helper.import_module('ctypes')
+        import ctypes.util  # noqa: F811
 
-        def get_func(name):
-            func = getattr(ctypes.pythonapi, name)
-            func.argtypes = ()
-            func.restype = ctypes.c_wchar_p
-            return func
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_GetPath() -> ctypes.c_wchar_p:
+            pass
 
-        Py_GetPath = get_func('Py_GetPath')
-        Py_GetPrefix = get_func('Py_GetPrefix')
-        Py_GetExecPrefix = get_func('Py_GetExecPrefix')
-        Py_GetProgramName = get_func('Py_GetProgramName')
-        Py_GetProgramFullPath = get_func('Py_GetProgramFullPath')
-        Py_GetPythonHome = get_func('Py_GetPythonHome')
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_GetPrefix() -> ctypes.c_wchar_p:
+            pass
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_GetExecPrefix() -> ctypes.c_wchar_p:
+            pass
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_GetProgramName() -> ctypes.c_wchar_p:
+            pass
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_GetProgramFullPath() -> ctypes.c_wchar_p:
+            pass
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_GetPythonHome() -> ctypes.c_wchar_p:
+            pass
 
         config = _testinternalcapi.get_configs()['config']
 
@@ -2101,6 +2120,10 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_concurrent_finalization_stress(self):
         self.run_embedded_interpreter("test_concurrent_finalization_stress")
+
+    def test_py_getenv(self):
+        # Test Py_GETENV() before init, when initialized, and after finalize
+        self.run_embedded_interpreter("test_py_getenv")
 
 
 class MiscTests(EmbeddingTestsMixin, unittest.TestCase):

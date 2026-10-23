@@ -427,11 +427,16 @@ def _win32_ver(version, csd, ptype):
 
     winver = getwindowsversion()
     is_client = (getattr(winver, 'product_type', 1) == 1)
-    try:
-        version = _syscmd_ver()[2]
-        major, minor, build = map(int, version.split('.'))
-    except ValueError:
-        major, minor, build = winver.platform_version or winver[:3]
+
+    if winver.device_family == "Desktop":
+        try:
+            version = _syscmd_ver()[2]
+            major, minor, build = map(int, version.split('.'))
+        except ValueError:
+            major, minor, build = winver.platform_version or winver[:3]
+            version = '{0}.{1}.{2}'.format(major, minor, build)
+    else:
+        major, minor, build = winver[:3]
         version = '{0}.{1}.{2}'.format(major, minor, build)
 
     # getwindowsversion() reflect the compatibility mode Python is
@@ -543,21 +548,25 @@ def android_ver(release="", api_level=0, manufacturer="", model="", device="",
                 is_emulator=False):
     if sys.platform == "android":
         try:
-            from ctypes import CDLL, c_char_p, create_string_buffer
+            from ctypes import CDLL, c_int, c_char_p, create_string_buffer
+            from ctypes.util import wrap_dll_function
         except ImportError:
             pass
         else:
             # An NDK developer confirmed that this is an officially-supported
             # API (https://stackoverflow.com/a/28416743). Use `getattr` to avoid
             # private name mangling.
-            system_property_get = getattr(CDLL("libc.so"), "__system_property_get")
-            system_property_get.argtypes = (c_char_p, c_char_p)
+            libc = CDLL("libc.so")
+
+            @wrap_dll_function(libc)
+            def __system_property_get(name: c_char_p, value: c_char_p) -> c_int:
+                pass
 
             def getprop(name, default):
                 # https://android.googlesource.com/platform/bionic/+/refs/tags/android-5.0.0_r1/libc/include/sys/system_properties.h#39
                 PROP_VALUE_MAX = 92
                 buffer = create_string_buffer(PROP_VALUE_MAX)
-                length = system_property_get(name.encode("UTF-8"), buffer)
+                length = __system_property_get(name.encode("UTF-8"), buffer)
                 if length == 0:
                     # This API doesn’t distinguish between an empty property and
                     # a missing one.

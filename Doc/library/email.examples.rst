@@ -7,7 +7,7 @@ Here are a few examples of how to use the :mod:`email` package to read, write,
 and send simple email messages, as well as more complex MIME messages.
 
 First, let's see how to create and send a simple text message (both the
-text content and the addresses may contain unicode characters):
+text content and the addresses may contain Unicode characters):
 
 .. literalinclude:: ../includes/email-simple.py
 
