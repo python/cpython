@@ -2262,10 +2262,16 @@ _ssl__SSLSocket_set_ech_config_impl(PySSLSocket *self, Py_buffer *ech_config)
     }
     /* Restore the outer ALPN cleared when this socket was created without
      * an ECH configuration. */
-    PySSLContext *ctx = self->ctx;
-    if (ctx->outer_alpn_protocols != NULL
-        && SSL_ech_set1_outer_alpn_protos(self->ssl, ctx->outer_alpn_protocols,
-                                          ctx->outer_alpn_protocols_len) != 1) {
+    PySSLContext *ctx = (PySSLContext *)Py_NewRef(self->ctx);
+    Py_BEGIN_CRITICAL_SECTION2(self, ctx);
+    if (ctx->outer_alpn_protocols != NULL) {
+        result = SSL_ech_set1_outer_alpn_protos(self->ssl,
+                                                ctx->outer_alpn_protocols,
+                                                ctx->outer_alpn_protocols_len);
+    }
+    Py_END_CRITICAL_SECTION2();
+    Py_DECREF(ctx);
+    if (result != 1) {
         _setSSLError(state, NULL, 0, __FILE__, __LINE__);
         return NULL;
     }
