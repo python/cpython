@@ -277,9 +277,9 @@ PyObject *codec_getitem(const char *encoding, int index)
     codecs = _PyCodec_Lookup(encoding);
     if (codecs == NULL)
         return NULL;
-    v = PyTuple_GET_ITEM(codecs, index);
+    v = Py_NewRef(PyTuple_GET_ITEM(codecs, index));
     Py_DECREF(codecs);
-    return Py_NewRef(v);
+    return v;
 }
 
 /* Helper functions to create an incremental codec. */
