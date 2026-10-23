@@ -40,7 +40,6 @@ if TYPE_CHECKING:
 unsupported_special_methods: set[str] = set("""
 
 __abs__
-__add__
 __and__
 __call__
 __delitem__
@@ -51,16 +50,12 @@ __floordiv__
 __ge__
 __getattr__
 __getattribute__
-__getitem__
 __gt__
-__hash__
-__iadd__
 __iand__
 __ifloordiv__
 __ilshift__
 __imatmul__
 __imod__
-__imul__
 __index__
 __int__
 __invert__
@@ -76,7 +71,6 @@ __lshift__
 __lt__
 __matmul__
 __mod__
-__mul__
 __neg__
 __or__
 __pos__
@@ -97,7 +91,6 @@ __rsub__
 __rtruediv__
 __rxor__
 __setattr__
-__str__
 __sub__
 __truediv__
 __xor__
@@ -604,7 +597,7 @@ class DSLParser:
             fields = full_name.split(".")
             if fields[-1] == '__new__':
                 fields.pop()
-            elif fields[-1] in SLOTS:
+            elif fields[-1] in SLOTS and not self.coexist:
                 # list.__repr__ -> list_repr
                 fields[-1] = fields[-1].strip('_')
             c_basename = "_".join(fields)
@@ -631,14 +624,14 @@ class DSLParser:
             fail("'__new__' must be a class method!")
         if self.kind in ACCESSORS and not cls:
             fail("@getter and @setter must be methods")
-        slot = SLOTS.get(name)
+        # A @coexist method named like a slot is a method which coexists
+        # with the slot (e.g. dict.__contains__), not the slot itself.
+        slot = None if self.coexist else SLOTS.get(name)
         if slot is not None:
             if self.kind is not CALLABLE:
                 fail(f"{name!r} must be a normal method; got '{self.kind}'!")
             if not cls:
                 fail(f"{name!r} must be a method!")
-            if self.coexist:
-                fail(f"@coexist cannot be applied to {name!r}")
 
         # Normalise self.kind.
         if name == '__new__':
@@ -654,11 +647,6 @@ class DSLParser:
             if not self.kind.new_or_init:
                 fail("@vectorcall can only be used with __init__ and __new__ "
                      "methods currently")
-            # Guaranteed by the __new__ / __init__ checks above.
-            assert cls is not None
-            if not cls.type_object:
-                fail(f"@vectorcall requires the type object of {cls.name!r}, "
-                     f"which was declared without one")
 
     def resolve_return_converter(
         self, full_name: str, forced_converter: str

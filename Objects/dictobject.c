@@ -2276,7 +2276,6 @@ dictresize(PyDictObject *mp,
         UNLOCK_KEYS(oldkeys);
         set_keys(mp, newkeys);
         dictkeys_decref(oldkeys, IS_DICT_SHARED(mp));
-        set_values(mp, NULL);
         if (oldvalues->embedded) {
             assert(oldvalues->embedded == 1);
             assert(oldvalues->valid == 1);
@@ -2285,6 +2284,7 @@ dictresize(PyDictObject *mp,
         else {
             free_values(oldvalues, IS_DICT_SHARED(mp));
         }
+        set_values(mp, NULL);
     }
     else {  // oldkeys is combined.
         if (oldkeys->dk_kind == DICT_KEYS_GENERAL) {
@@ -7572,17 +7572,25 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyObject *name, PyObject *value)
 {
     PyDictValues *values = _PyObject_InlineValues(obj);
     if (!FT_ATOMIC_LOAD_UINT8(values->valid)) {
-        PyDictObject *dict = _PyObject_GetManagedDict(obj);
+        PyDictObject *dict;
+        int res;
+#ifdef Py_GIL_DISABLED
+        Py_BEGIN_CRITICAL_SECTION(obj);
+#endif
+        dict = _PyObject_GetManagedDict(obj);
+        Py_XINCREF(dict);
+#ifdef Py_GIL_DISABLED
+        Py_END_CRITICAL_SECTION();
+#endif
         if (dict == NULL) {
             dict = (PyDictObject *)PyObject_GenericGetDict(obj, NULL);
             if (dict == NULL) {
                 return -1;
             }
-            int res = store_instance_attr_dict(obj, dict, name, value);
-            Py_DECREF(dict);
-            return res;
         }
-        return store_instance_attr_dict(obj, dict, name, value);
+        res = store_instance_attr_dict(obj, dict, name, value);
+        Py_DECREF(dict);
+        return res;
     }
 
 #ifdef Py_GIL_DISABLED
@@ -8016,7 +8024,7 @@ PyObject_ClearManagedDict(PyObject *obj)
             clear_inline_values(_PyObject_InlineValues(obj));
             return;
         }
-        else if (FT_ATOMIC_LOAD_PTR_RELAXED(dict->ma_values) ==
+        if (FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_values) ==
                     _PyObject_InlineValues(obj)) {
             // We have a materialized object which points at the inline
             // values. We need to materialize the keys. Nothing can modify
@@ -8474,16 +8482,26 @@ frozendict_hash(PyObject *op)
     PyDictObject *mp = _PyAnyDict_CAST(op);
     Py_uhash_t hash = 0;
 
+    /* Hashing a value recurses back into frozendict_hash() when that value
+       is itself a frozendict, so guard the descent to raise RecursionError
+       rather than overflow the C stack on a deeply nested frozendict.  Keys
+       are safe: their hashes are already computed at construction time. */
+    if (_Py_EnterRecursiveCall(" while hashing a frozendict")) {
+        return -1;
+    }
+
     PyObject *value;  // borrowed ref
     Py_ssize_t pos = 0;
     Py_hash_t key_hash;
     while (_PyDict_Next(op, &pos, NULL, &value, &key_hash)) {
         Py_hash_t pair_hash = frozendict_pair_hash(key_hash, value);
         if (pair_hash == -1) {
+            _Py_LeaveRecursiveCall();
             return -1;
         }
         hash ^= _shuffle_bits(pair_hash);
     }
+    _Py_LeaveRecursiveCall();
 
     /* Factor in the number of active entries */
     hash ^= ((Py_uhash_t)mp->ma_used + 1) * 1927868237UL;

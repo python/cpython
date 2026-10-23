@@ -1225,8 +1225,16 @@ dtrace_function_entry(_PyInterpreterFrame *frame)
     int lineno;
 
     PyCodeObject *code = _PyFrame_GetCode(frame);
+    PyObject *exc = PyErr_GetRaisedException();
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
+    PyErr_SetRaisedException(exc);
+    if (filename == NULL) {
+        filename = "<unknown>";
+    }
+    if (funcname == NULL) {
+        funcname = "<unknown>";
+    }
     lineno = PyUnstable_InterpreterFrame_GetLine(frame);
 
     PyDTrace_FUNCTION_ENTRY(filename, funcname, lineno);
@@ -1240,8 +1248,16 @@ dtrace_function_return(_PyInterpreterFrame *frame)
     int lineno;
 
     PyCodeObject *code = _PyFrame_GetCode(frame);
+    PyObject *exc = PyErr_GetRaisedException();
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
+    PyErr_SetRaisedException(exc);
+    if (filename == NULL) {
+        filename = "<unknown>";
+    }
+    if (funcname == NULL) {
+        funcname = "<unknown>";
+    }
     lineno = PyUnstable_InterpreterFrame_GetLine(frame);
 
     PyDTrace_FUNCTION_RETURN(filename, funcname, lineno);
