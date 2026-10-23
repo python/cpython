@@ -1,0 +1,4 @@
+On the server side, :meth:`ssl.SSLSocket.get_unverified_chain` now returns
+the client's certificate when the session was resumed from a session ticket,
+instead of an empty list, and returns an empty list instead of raising
+:exc:`AttributeError` when the client sent no certificate.
