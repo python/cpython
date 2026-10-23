@@ -617,6 +617,58 @@ class SymtableTest(unittest.TestCase):
 
 
 class ComprehensionTests(unittest.TestCase):
+    def test_referenced_in_comprehension(self):
+        comps = [
+            "[x + k + local for x in xs]",
+            "{x + k + local for x in xs}",
+            "{x: k + local for x in xs}",
+            "[[x + k + local for x in xs] for _ in xs]",
+        ]
+        for comp in comps:
+            with self.subTest(comp=comp):
+                st = symtable.symtable(
+                    "def f(xs, k):\n"
+                    "    local = 1\n"
+                    f"    return {comp}\n", "?", "exec")
+                f = find_block(st, "f")
+                self.assertTrue(f.lookup("k").is_referenced())
+                self.assertTrue(f.lookup("local").is_referenced())
+                self.assertEqual(f.get_children(), [])
+
+    def test_nonlocal_referenced_in_comprehension(self):
+        st = symtable.symtable(
+            "def outer(k):\n"
+            "    def f(xs):\n"
+            "        nonlocal k\n"
+            "        return [x + k for x in xs]\n", "?", "exec")
+        f = find_block(find_block(st, "outer"), "f")
+        self.assertTrue(f.lookup("k").is_referenced())
+        self.assertTrue(f.lookup("k").is_nonlocal())
+
+    def test_not_referenced_in_comprehension(self):
+        comps = [
+            "[k for k in xs]",  # The iteration variable shadows the parameter.
+            "[[k for _ in ()] for k in xs]",  # Shadowing in a nested comprehension.
+            "[(lambda: k) for x in xs]",  # The load is in a nested function.
+            "(x + k for x in xs)",  # Generator expressions are not inlined.
+        ]
+        for comp in comps:
+            with self.subTest(comp=comp):
+                st = symtable.symtable(
+                    "def f(xs, k):\n"
+                    f"    return {comp}\n", "?", "exec")
+                self.assertFalse(find_block(st, "f").lookup("k").is_referenced())
+
+    def test_class_local_not_referenced_in_comprehension(self):
+        st = symtable.symtable(
+            "def outer(k):\n"
+            "    class C:\n"
+            "        k = 1\n"
+            "        values = [k for _ in ()]\n", "?", "exec")
+        cls = find_block(find_block(st, "outer"), "C")
+        # The comprehension refers to outer's k, not the class attribute.
+        self.assertFalse(cls.lookup("k").is_referenced())
+
     def get_identifiers_recursive(self, st, res):
         res.extend(st.get_identifiers())
         for ch in st.get_children():

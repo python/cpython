@@ -879,6 +879,20 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
             if (flags == -1 && PyErr_Occurred()) {
                 return 0;
             }
+            // Propagate uses of enclosing bindings, but not class locals,
+            // which are not visible to comprehensions.
+            if (scope == FREE && ste->ste_type != ClassBlock &&
+                    (comp_flags & USE) && !(flags & USE)) {
+                PyObject *v_flags = PyLong_FromLong(flags | USE);
+                if (v_flags == NULL) {
+                    return 0;
+                }
+                int ok = PyDict_SetItem(ste->ste_symbols, k, v_flags);
+                Py_DECREF(v_flags);
+                if (ok < 0) {
+                    return 0;
+                }
+            }
             if ((flags & DEF_BOUND) && ste->ste_type != ClassBlock) {
                 // free vars in comprehension that are locals in outer scope can
                 // now simply be locals, unless they are free in comp children,
