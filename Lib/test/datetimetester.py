@@ -1281,6 +1281,13 @@ class TestDateOnly(unittest.TestCase):
                     fmt = format_space.join(('%Y', '%m', '%d'))
                     self.assertEqual(date.strptime(text, fmt), date(2024, 2, 29))
 
+    def test_strptime_whitespace_before_adjacent_fields(self):
+        for separator in ('\x1c', '\x1d', '\x1e', '\x1f'):
+            with self.subTest(separator=separator):
+                text = f'2024{separator} 112'
+                fmt = f'%Y{separator}%d%m'
+                self.assertEqual(date.strptime(text, fmt), date(2024, 2, 11))
+
     def test_strptime_single_digit(self):
         # bpo-34903: Check that single digit dates are allowed.
         strptime = date.strptime
@@ -3202,6 +3209,14 @@ class TestDateTime(TestDate):
                     self.assertEqual(self.theclass.strptime(text, fmt),
                                      self.theclass(2024, 2, 29, 12, 34, 56))
 
+    def test_strptime_whitespace_before_adjacent_fields(self):
+        for separator in ('\x1c', '\x1d', '\x1e', '\x1f'):
+            with self.subTest(separator=separator):
+                text = f'2024{separator} 112 34{separator} 123'
+                fmt = f'%Y{separator}%d%m %M{separator}%H%S'
+                self.assertEqual(self.theclass.strptime(text, fmt),
+                                 self.theclass(2024, 2, 11, 12, 34, 3))
+
     def test_strptime_numeric_fallback(self):
         cases = (
             ('2024\0-02-29', '%Y\0-%m-%d', (2024, 2, 29)),
@@ -4434,6 +4449,14 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
                     fmt = format_space.join(('%H', '%M', '%S'))
                     self.assertEqual(self.theclass.strptime(text, fmt),
                                      self.theclass(12, 34, 56))
+
+    def test_strptime_whitespace_before_adjacent_fields(self):
+        for separator in ('\x1c', '\x1d', '\x1e', '\x1f'):
+            with self.subTest(separator=separator):
+                text = f'34{separator} 123'
+                fmt = f'%M{separator}%H%S'
+                self.assertEqual(self.theclass.strptime(text, fmt),
+                                 self.theclass(12, 34, 3))
 
     def test_strptime_tz(self):
         strptime = self.theclass.strptime

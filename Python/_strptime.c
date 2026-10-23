@@ -111,16 +111,17 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
 
     for (Py_ssize_t i = 0; i < fmt_length; i++) {
         unsigned char c = fmt[i];
-        if (Py_ISSPACE(c)) {
-            if (pos == length || !Py_ISSPACE(data[pos])) {
+        /* Match regex \s, including ASCII separators U+001C through U+001F. */
+        if (Py_UNICODE_ISSPACE(c)) {
+            if (pos == length || !Py_UNICODE_ISSPACE(data[pos])) {
                 return 0;
             }
-            while (i + 1 < fmt_length && Py_ISSPACE(fmt[i + 1])) {
+            while (i + 1 < fmt_length && Py_UNICODE_ISSPACE(fmt[i + 1])) {
                 i++;
             }
             do {
                 pos++;
-            } while (pos < length && Py_ISSPACE(data[pos]));
+            } while (pos < length && Py_UNICODE_ISSPACE(data[pos]));
             continue;
         }
         if (c != '%') {

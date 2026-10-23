@@ -382,6 +382,14 @@ class TimeTestCase(unittest.TestCase):
                     self.assertEqual(time.strptime(text, fmt),
                                      (2024, 2, 29, 12, 34, 56, 3, 60, -1))
 
+    def test_strptime_whitespace_before_adjacent_fields(self):
+        for separator in ('\x1c', '\x1d', '\x1e', '\x1f'):
+            with self.subTest(separator=separator):
+                text = f'2024{separator} 112 34{separator} 123'
+                fmt = f'%Y{separator}%d%m %M{separator}%H%S'
+                self.assertEqual(time.strptime(text, fmt),
+                                 (2024, 2, 11, 12, 34, 3, 6, 42, -1))
+
     def test_strptime_numeric_calendar(self):
         cases = (
             ('0001-01-01', 1, 1, 1, 0, 1),
