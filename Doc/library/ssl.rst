@@ -332,8 +332,8 @@ Exceptions
 
    .. attribute:: retry_config
 
-      The server's ECH retry configuration as a binary-encoded ECHConfigList,
-      or empty :class:`bytes` if the server did not provide one or the server
+      The server's ECH retry configuration as an ECHConfigList,
+      or ``b""`` if the server did not provide one or the server
       could not be authenticated under the outer server name.
 
    .. versionadded:: next
@@ -1443,14 +1443,8 @@ SSL sockets also have the following additional methods and attributes:
 
 .. method:: SSLSocket.get_ech_retry_config()
 
-   Return the server's ECH retry configuration as :class:`bytes`, or empty
-   bytes if no retry configuration is available. When the status returned by
-   :meth:`SSLSocket.get_ech_status` after the handshake is
-   :attr:`ECHStatus.ECH_STATUS_GREASE_ECH`, the configuration can be used
-   for a new connection using ECH. When the server rejects a real ECH
-   attempt, the handshake raises :exc:`SSLECHRejectedError`, which carries
-   the same configuration in its :attr:`~SSLECHRejectedError.retry_config`
-   attribute.
+   Return the server's ECH retry configuration as :class:`bytes`, or ``b""``
+   if no retry configuration is available.
 
    Only available when :data:`HAS_ECH` is ``True``.
 
@@ -1470,16 +1464,11 @@ SSL sockets also have the following additional methods and attributes:
    Set the Encrypted Client Hello (ECH) configuration for this connection
    only, replacing any configuration set on the context with
    :meth:`SSLContext.set_ech_config`. The *ech_config* parameter accepts the
-   same values. Unlike the context's configuration, which applies to every
-   connection made from it, a connection's configuration is only used by that
-   connection and can therefore be chosen per destination host, which is how
-   ECH configurations are published in DNS.
+   same values.
 
    The configuration must be set before the handshake starts, so this is
    mostly useful with ``do_handshake_on_connect=False`` or on a socket that
-   is not connected yet. :meth:`SSLContext.wrap_socket` and
-   :meth:`SSLContext.wrap_bio` accept the configuration as their *ech_config*
-   argument instead.
+   is not connected yet.
 
    Only available when :data:`HAS_ECH` is ``True``.
 
@@ -1560,8 +1549,8 @@ SSL sockets also have the following additional methods and attributes:
 .. attribute:: SSLSocket.outer_server_hostname
 
    Hostname of the server name used in the outer ClientHello when Encrypted Client
-   Hello (ECH) is used: :class:`str` type, or ``None`` for server-side socket or
-   if no outer server name is available.
+   Hello (ECH) is used, or ``None`` for server-side socket or if no outer
+   server name is available.
 
    Only available when :data:`HAS_ECH` is ``True``.
 
@@ -1753,24 +1742,15 @@ to speed up repeated connections from the same clients.
 
    Load a server's Encrypted Client Hello (ECH) private key and configuration.
    The *keyfile* must be the path to a PEM file containing a private key
-   followed by its matching ECHConfigList. Load the server's TLS
-   certificate and private key separately with :meth:`load_cert_chain`.
+   followed by its matching ECHConfigList.
 
    The *password* argument is used to decrypt encrypted private keys. It accepts
    a string, bytes, bytearray, or a callable returning one of those types, as in
-   :meth:`load_cert_chain`. Passwords are never requested interactively.
+   :meth:`load_cert_chain`.
 
    Each call adds keys and configurations to those already loaded into the
    context. If *for_retry* is true, the new configurations are included in
    ECH retry configurations sent to clients.
-
-   Configure ECH keys on the initial server context before accepting
-   connections. After successful ECH decryption, :attr:`sni_callback`
-   receives the inner server name.
-
-   Invalid or missing keys or configurations, or a key that does not match
-   its configuration, raise :exc:`SSLError`. File access errors raise
-   :exc:`OSError`.
 
    Only available when :data:`HAS_ECH` is ``True``.
 
@@ -1974,7 +1954,6 @@ to speed up repeated connections from the same clients.
 
    Sets an Encrypted Client Hello (ECH) configuration, which may be discovered from
    an HTTPS resource record in DNS or from :meth:`SSLSocket.get_ech_retry_config`.
-   Each call replaces the context's previous configuration.
 
    The configuration applies to every connection made from the context, and a
    server that cannot decrypt it rejects the connection with
@@ -1984,7 +1963,7 @@ to speed up repeated connections from the same clients.
    pass it as the *ech_config* argument of :meth:`wrap_socket` or
    :meth:`wrap_bio` instead.
 
-   If the input value provided contains no suitable value (e.g. if it only contains
+   If the input value provided contains no suitable value (such as if it only contains
    ECH configuration versions that are not supported), an :class:`SSLError` will be
    raised.
 
@@ -3207,31 +3186,52 @@ ECHConfigList discovered through DNS and retries once with the server's retry
 configuration. If no configuration is supplied, it enables ECH GREASE, which a
 server may answer with a retry configuration for a later connection::
 
-    import socket
-    import ssl
+   import http.client
+   import socket
+   import ssl
 
 
-    def connect_with_tls_ech(hostname, ech_config=None, retry=True):
-        context = ssl.create_default_context()
-        if ech_config is None:
-            context.options |= ssl.OP_ECH_GREASE
-        sock = socket.create_connection((hostname, 443))
-        try:
-            return context.wrap_socket(sock, server_hostname=hostname,
-                                       ech_config=ech_config)
-        except ssl.SSLECHRejectedError as exc:
-            if retry and exc.retry_config:
-                return connect_with_tls_ech(hostname, exc.retry_config,
-                                            retry=False)
-            raise
+   def connect_with_tls_ech(hostname, ech_config=None, use_retry_config=True):
+      context = ssl.create_default_context()
+      if ech_config is not None:
+         context.set_ech_config(ech_config)
+      else:
+         context.options |= ssl.OP_ECH_GREASE
+      sock = socket.create_connection((hostname, 443), timeout=10)
+      try:
+         ssock = context.wrap_socket(sock, server_hostname=hostname)
+      except BaseException:
+         sock.close()
+         raise
+      if (use_retry_config
+               and ssock.get_ech_status()
+               == ssl.ECHStatus.ECH_STATUS_GREASE_ECH):
+         try:
+               retry_config = ssock.get_ech_retry_config()
+         finally:
+               ssock.close()
+         return connect_with_tls_ech(hostname, retry_config, False)
+      return ssock
 
-    hostname = "www.python.org"
-    ech_config = None  # Replace with an ECHConfigList discovered through DNS.
+   hostname = "python.org"
+   ech_config = None  # Replace with an ECHConfigList discovered through DNS.
 
-    with connect_with_tls_ech(hostname, ech_config) as ssock:
-        print(ssock.get_ech_status())
-        if ssock.get_ech_status() == ssl.ECHStatus.ECH_STATUS_GREASE_ECH:
-            print("retry configuration:", ssock.get_ech_retry_config())
+   with connect_with_tls_ech(hostname, ech_config) as ssock:
+      print("ECH status:", ssock.get_ech_status().name)
+      request = (
+         "GET / HTTP/1.1\r\n"
+         f"Host: {hostname}\r\n"
+         "Connection: close\r\n\r\n"
+      )
+      ssock.sendall(request.encode("ascii"))
+      with http.client.HTTPResponse(ssock) as response:
+         response.begin()
+         print(f"HTTP {response.status} {response.reason}")
+         for name, value in response.getheaders():
+               print(f"{name}: {value}")
+         print()
+         print(response.read().decode("utf-8", errors="replace"))
+
 
 The following classes, methods, and attributes will be useful for using ECH:
 

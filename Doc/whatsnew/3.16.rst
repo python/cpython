@@ -693,17 +693,10 @@ ssl
   discovered through DNS, for example using a third-party library such as
   ``dnspython`` to query HTTPS or SVCB records, as the *ech_config* argument
   of :meth:`~ssl.SSLContext.wrap_socket` and :meth:`~ssl.SSLContext.wrap_bio`
-  or with :meth:`~ssl.SSLContext.set_ech_config`. A rejected ECH attempt
-  raises :exc:`~ssl.SSLECHRejectedError`, which carries the server's retry
-  configuration. Clients can also enable :data:`~ssl.OP_ECH_GREASE` and
-  retrieve a server's retry configuration with
-  :meth:`~ssl.SSLSocket.get_ech_retry_config` for a subsequent connection.
+  or with :meth:`~ssl.SSLContext.set_ech_config`.
   Servers can use :meth:`~ssl.SSLContext.load_ech_keys` to load ECH private
   keys and their configurations from PEM files.
-  :data:`~ssl.HAS_ECH` indicates whether ECH is available, and
-  :meth:`~ssl.SSLSocket.get_ech_status` reports the status as an
-  :class:`~ssl.ECHStatus` member.
-  (Contributed by Iain R. Learmonth and Peter Bierma in :gh:`89730`.)
+  (Contributed by Peter Bierma and Iain R. Learmonth in :gh:`89730`.)
 
 * :const:`ssl.OPENSSL_VERSION_INFO` is now a named tuple.
   Added :const:`~ssl.OPENSSL_API_VERSION_INFO` which provides information
