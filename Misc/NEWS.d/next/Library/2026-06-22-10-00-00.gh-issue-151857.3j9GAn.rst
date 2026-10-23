@@ -1,4 +1,5 @@
-Fixed two cases where the :mod:`email` header parser (under
+Fixed three cases where the :mod:`email` header parser (under
 :class:`~email.policy.EmailPolicy`) raised an uncaught :exc:`IndexError` on
-malformed input: a MIME parameter name ending with ``*``, and an address
-header whose display name is only a comment. Both now degrade gracefully.
+malformed input: a MIME parameter name ending with ``*``, an empty quoted
+RFC 2231 extended value, and an address header whose display name is only a
+comment.

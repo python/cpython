@@ -3176,6 +3176,22 @@ class Test_parse_mime_parameters(TestParserMixin, TestEmailBase):
             'x=1; name*',
             [('x', '1')],
             [errors.InvalidHeaderDefect]),
+
+        # gh-151857: a quoted extended value holding only the RFC 2231
+        # delimiters used to raise an uncaught IndexError.
+        'extended_quoted_delimiters_only': (
+            'name*="\'"',
+            ' name',
+            "name*=''",
+            [('name', '')],
+            [errors.InvalidHeaderDefect]),
+
+        'extended_quoted_charset_delimiters_only': (
+            'name*="us-ascii\'\'"',
+            ' name',
+            "name*=us-ascii''",
+            [('name', '')],
+            [errors.InvalidHeaderDefect]),
     }
 
 @parameterize

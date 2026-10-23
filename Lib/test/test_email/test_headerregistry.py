@@ -598,6 +598,17 @@ class TestContentTypeHeader(TestHeaderBase):
             'text/plain; name="This is even more ***fun*** is it not.pdf"',
             ),
 
+        # gh-151857: used to raise IndexError.
+        'rfc2231_double_quoted_delimiter_only': (
+            'text/plain; name*="\'"',
+            'text/plain',
+            'text',
+            'plain',
+            {'name': ''},
+            [errors.InvalidHeaderDefect],
+            'text/plain; name',
+            ),
+
         'rfc2231_single_quote_inside_double_quotes': (
             ('text/plain; charset=us-ascii;'
                '\ttitle*0*="us-ascii\'en\'This%20is%20really%20";'

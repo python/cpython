@@ -732,6 +732,8 @@ class Value(TokenList):
 
     @property
     def stripped_value(self):
+        if not self:
+            return self.value
         token = self[0]
         if token.token_type == 'cfws':
             token = self[1]
