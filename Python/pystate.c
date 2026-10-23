@@ -26,6 +26,7 @@
 #include "pycore_stats.h"         // FT_STAT_WORLD_STOP_INC()
 #include "pycore_time.h"          // _PyTime_Init()
 #include "pycore_uniqueid.h"      // _PyObject_FinalizePerThreadRefcounts()
+#include "pycore_warnings.h"      // _PyWarnings_AfterFork()
 
 
 /* --------------------------------------------------------------------------
@@ -319,9 +320,6 @@ _Py_COMP_DIAG_POP
         &(runtime)->atexit.mutex, \
         &(runtime)->audit_hooks.mutex, \
         &(runtime)->allocators.mutex, \
-        &(runtime)->_main_interpreter.types.mutex, \
-        &(runtime)->_main_interpreter.code_state.mutex, \
-        &(runtime)->_main_interpreter.dict_state.watcher_mutex, \
     }
 
 static void
@@ -410,15 +408,53 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     for (size_t i = 0; i < Py_ARRAY_LENGTH(locks); i++) {
         _PyMutex_at_fork_reinit(locks[i]);
     }
-#ifdef Py_GIL_DISABLED
+    PyThreadState *tstate = current_fast_get();
+    PyThread_ident_t ident = tstate->interp->imports.lock.thread;
     for (PyInterpreterState *interp = runtime->interpreters.head;
          interp != NULL; interp = interp->next)
     {
+        PyMutex *interp_locks[] = {
+            &interp->types.mutex,
+            &interp->code_state.mutex,
+            &interp->dict_state.watcher_mutex,
+            &interp->ceval.pending.mutex,
+            &interp->xi.data_lookup.registry.mutex,
+            &interp->mem_free_queue.mutex,
+            &interp->asyncio_tasks_lock,
+            &interp->stoptheworld.mutex,
+#ifdef Py_GIL_DISABLED
+            &interp->atexit.ll_callbacks_lock,
+            &interp->gc.stats_mutex,
+            &interp->imports.lazy_mutex,
+            &interp->codecs.search_path_mutex,
+            &interp->func_state.mutex,
+            &interp->cached_objects.interned_mutex,
+            &interp->cached_objects.descriptor_mutex,
+            &interp->unique_ids.mutex,
+            &interp->tlbc_indices.mutex,
+#ifdef Py_STATS
+            &interp->pystats_mutex,
+#endif
+#endif
+        };
+        for (size_t i = 0; i < Py_ARRAY_LENGTH(interp_locks); i++) {
+            _PyMutex_at_fork_reinit(interp_locks[i]);
+        }
+        _PyRecursiveMutex_at_fork_reinit(&interp->imports.lock,
+                                         interp->imports.lock.thread == ident);
+        _PyWarnings_AfterFork(interp);
+        if (interp->ceval.pending.handling_thread != NULL
+            && interp->ceval.pending.handling_thread->thread_id != tstate->thread_id) {
+            interp->ceval.pending.handling_thread = NULL;
+        }
+#ifdef Py_GIL_DISABLED
+        _Py_brc_after_fork(interp);
+        _Py_qsbr_after_fork(interp);
         for (int i = 0; i < NUM_WEAKREF_LIST_LOCKS; i++) {
             _PyMutex_at_fork_reinit(&interp->weakref_locks[i]);
         }
-    }
 #endif
+    }
 
     _PyThread_AfterFork(&runtime->threads);
 
@@ -1081,50 +1117,6 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     free_interpreter(interp);
 }
 
-
-#ifdef HAVE_FORK
-/*
- * Delete all interpreter states except the main interpreter.  If there
- * is a current interpreter state, it *must* be the main interpreter.
- */
-PyStatus
-_PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
-{
-    struct pyinterpreters *interpreters = &runtime->interpreters;
-
-    PyThreadState *tstate = _PyThreadState_Swap(runtime, NULL);
-    if (tstate != NULL && tstate->interp != interpreters->main) {
-        return _PyStatus_ERR("not main interpreter");
-    }
-
-    HEAD_LOCK(runtime);
-    PyInterpreterState *interp = interpreters->head;
-    interpreters->head = NULL;
-    while (interp != NULL) {
-        if (interp == interpreters->main) {
-            interpreters->main->next = NULL;
-            interpreters->head = interp;
-            interp = interp->next;
-            continue;
-        }
-
-        // XXX Won't this fail since PyInterpreterState_Clear() requires
-        // the "current" tstate to be set?
-        PyInterpreterState_Clear(interp);  // XXX must activate?
-        zapthreads(interp);
-        PyInterpreterState *prev_interp = interp;
-        interp = interp->next;
-        free_interpreter(prev_interp);
-    }
-    HEAD_UNLOCK(runtime);
-
-    if (interpreters->head == NULL) {
-        return _PyStatus_ERR("missing main interpreter");
-    }
-    _PyThreadState_Swap(runtime, tstate);
-    return _PyStatus_OK();
-}
-#endif
 
 static inline void
 set_main_thread(PyInterpreterState *interp, PyThreadState *tstate)
@@ -2076,22 +2068,39 @@ PyThreadState_DeleteCurrent(void)
 // these thread states. Instead, it returns the removed thread states as a
 // linked list.
 //
-// Note that if there is a current thread state, it *must* be the one
-// passed as argument.  Also, this won't touch any interpreters other
-// than the current one, since we don't know which thread state should
-// be kept in those other interpreters.
+// After fork(), keep all states bound to the surviving OS thread, including
+// detached states that may still be referenced by its C stack.
 PyThreadState *
-_PyThreadState_RemoveExcept(PyThreadState *tstate)
+_PyThreadState_RemoveExcept(PyThreadState *tstate, int is_after_fork)
 {
     assert(tstate != NULL);
     PyInterpreterState *interp = tstate->interp;
     _PyRuntimeState *runtime = interp->runtime;
 
-#ifdef Py_GIL_DISABLED
     assert(runtime->stoptheworld.world_stopped);
-#endif
 
     HEAD_LOCK(runtime);
+    if (is_after_fork) {
+        PyThreadState *list = NULL;
+        PyThreadState **link = &interp->threads.head;
+        PyThreadState *prev = NULL;
+        while (*link != NULL) {
+            PyThreadState *p = *link;
+            if (p->thread_id == tstate->thread_id) {
+                p->prev = prev;
+                prev = p;
+                link = &p->next;
+            }
+            else {
+                *link = p->next;
+                p->next = list;
+                list = p;
+            }
+        }
+        HEAD_UNLOCK(runtime);
+        return list;
+    }
+
     /* Remove all thread states, except tstate, from the linked list of
        thread states. */
     PyThreadState *list = interp->threads.head;
@@ -2245,43 +2254,27 @@ tstate_deactivate(PyThreadState *tstate)
 static int
 tstate_try_attach(PyThreadState *tstate)
 {
-#ifdef Py_GIL_DISABLED
     int expected = _Py_THREAD_DETACHED;
     return _Py_atomic_compare_exchange_int(&tstate->state,
                                            &expected,
                                            _Py_THREAD_ATTACHED);
-#else
-    assert(tstate->state == _Py_THREAD_DETACHED);
-    tstate->state = _Py_THREAD_ATTACHED;
-    return 1;
-#endif
 }
 
 static int
 tstate_try_attach_detached(PyThreadState *tstate, int *state)
 {
-#ifdef Py_GIL_DISABLED
     assert(*state == _Py_THREAD_DETACHED ||
            *state == _Py_THREAD_DETACHED_WAITING);
     return _Py_atomic_compare_exchange_int(&tstate->state,
                                            state,
                                            _Py_THREAD_ATTACHED);
-#else
-    assert(tstate->state == _Py_THREAD_DETACHED);
-    tstate->state = _Py_THREAD_ATTACHED;
-    return 1;
-#endif
 }
 
 static void
 tstate_set_detached(PyThreadState *tstate, int detached_state)
 {
     assert(_Py_atomic_load_int_relaxed(&tstate->state) == _Py_THREAD_ATTACHED);
-#ifdef Py_GIL_DISABLED
     _Py_atomic_store_int(&tstate->state, detached_state);
-#else
-    tstate->state = detached_state;
-#endif
 }
 
 static void
@@ -2438,9 +2431,7 @@ void
 _PyThreadState_SetShuttingDown(PyThreadState *tstate)
 {
     _Py_atomic_store_int(&tstate->state, _Py_THREAD_SHUTTING_DOWN);
-#ifdef Py_GIL_DISABLED
     _PyParkingLot_UnparkAll(&tstate->state);
-#endif
 }
 
 #ifdef Py_GIL_DISABLED
@@ -2452,6 +2443,7 @@ _PyThreadState_TrySuspendDetached(PyThreadState *tstate)
     return _Py_atomic_compare_exchange_int(&tstate->state, &expected,
                                            _Py_THREAD_SUSPENDED);
 }
+#endif
 
 void
 _PyThreadState_ResumeDetached(PyThreadState *tstate)
@@ -2476,7 +2468,6 @@ _PyThreadState_ResumeDetached(PyThreadState *tstate)
         _PyParkingLot_UnparkAll(&tstate->state);
     }
 }
-#endif
 
 // Decrease stop-the-world counter of remaining number of threads that need to
 // pause. If we are the final thread to pause, notify the requesting thread.
@@ -2489,7 +2480,6 @@ decrement_stoptheworld_countdown(struct _stoptheworld_state *stw)
     }
 }
 
-#ifdef Py_GIL_DISABLED
 // Interpreter for _Py_FOR_EACH_STW_INTERP(). For global stop-the-world events,
 // we start with the first interpreter and then iterate over all interpreters.
 // For per-interpreter stop-the-world events, we only operate on the one
@@ -2623,22 +2613,17 @@ start_the_world(struct _stoptheworld_state *stw)
         _PyRWMutex_RUnlock(&runtime->stoptheworld_mutex);
     }
 }
-#endif  // Py_GIL_DISABLED
 
 void
 _PyEval_StopTheWorldAll(_PyRuntimeState *runtime)
 {
-#ifdef Py_GIL_DISABLED
     stop_the_world(&runtime->stoptheworld);
-#endif
 }
 
 void
 _PyEval_StartTheWorldAll(_PyRuntimeState *runtime)
 {
-#ifdef Py_GIL_DISABLED
     start_the_world(&runtime->stoptheworld);
-#endif
 }
 
 void
