@@ -1,0 +1,5 @@
+Raise :exc:`ValueError` for a NaN *timeout* in
+:meth:`threading.Condition.wait` and the blocking calls built on it, such as
+:meth:`threading.Event.wait`, :meth:`threading.Semaphore.acquire` and
+:meth:`queue.Queue.get`, instead of returning at once or looping without ever
+timing out.
