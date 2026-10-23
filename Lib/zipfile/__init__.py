@@ -3,6 +3,7 @@ Read and write ZIP files.
 
 XXX references to utf-8 need further investigation.
 """
+import _archive
 import binascii
 import io
 import os
@@ -2518,7 +2519,7 @@ class ZipFile:
             return targetpath
 
         with self.open(member, pwd=pwd) as source, \
-             open(targetpath, "wb") as target:
+             _archive.create_or_replace(targetpath) as target:
             shutil.copyfileobj(source, target)
 
         return targetpath

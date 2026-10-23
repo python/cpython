@@ -1,0 +1,4 @@
+:mod:`tarfile` and :mod:`zipfile` now replace an existing file when
+extracting a regular file of the same name, instead of writing to it.
+Previously, an existing symlink or hardlink at that path was written through,
+which could modify a file outside the extraction directory.

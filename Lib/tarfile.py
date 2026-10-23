@@ -44,6 +44,7 @@ import time
 import struct
 import copy
 import re
+import _archive
 
 try:
     import pwd
@@ -2766,7 +2767,7 @@ class TarFile(object):
         source = self.fileobj
         source.seek(tarinfo.offset_data)
         bufsize = self.copybufsize
-        with bltn_open(targetpath, "wb") as target:
+        with _archive.create_or_replace(targetpath) as target:
             if tarinfo.sparse is not None:
                 for offset, size in tarinfo.sparse:
                     target.seek(offset)
