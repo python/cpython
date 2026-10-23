@@ -1976,7 +1976,7 @@ to speed up repeated connections from the same clients.
    raised.
 
    The *ech_config* parameter should be a :term:`bytes-like object` containing
-   a binary-encoded ECHConfigList.
+   an ECHConfigList in binary or Base64 encoding.
 
    Only available when :data:`HAS_ECH` is ``True``.
 
@@ -3189,7 +3189,7 @@ connection from a context with :meth:`SSLContext.set_ech_config`.
 
 A server that has rotated its ECH keys rejects the connection and provides a
 retry configuration, which the handshake raises as
-:exc:`SSLECHRejectedError`. The following example requires a binary-encoded
+:exc:`SSLECHRejectedError`. The following example uses a binary-encoded
 ECHConfigList discovered through DNS and retries once with the server's
 :attr:`SSLECHRejectedError.retry_config` if it is not empty, or without ECH
 if the authenticated server has securely disabled it.

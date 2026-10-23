@@ -2213,8 +2213,8 @@ PyDoc_STRVAR(_ssl__SSLContext_set_ech_config__doc__,
 "\n"
 "Set the ECH configuration on the SSL context.\n"
 "\n"
-"ech_config must be a bytes-like object containing the raw ECH\n"
-"configuration.");
+"ech_config must be a bytes-like object containing an ECHConfigList\n"
+"in binary or Base64 encoding.");
 
 #define _SSL__SSLCONTEXT_SET_ECH_CONFIG_METHODDEF    \
     {"set_ech_config", (PyCFunction)_ssl__SSLContext_set_ech_config, METH_O, _ssl__SSLContext_set_ech_config__doc__},
@@ -3420,4 +3420,4 @@ exit:
 
 #define _SSL_SSLSESSION_HAS_TICKET_GETSETDEF {"has_ticket", (getter)_ssl_SSLSession_has_ticket_get, (setter)NULL, _ssl_SSLSession_has_ticket__doc__},
 
-/*[clinic end generated code: output=25bebcfb2c509fd3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7d79dfbef44c8ceb input=a9049054013a1b77]*/

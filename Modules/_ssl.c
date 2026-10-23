@@ -5340,50 +5340,8 @@ ech_store_from_config(_sslmodulestate *state, Py_buffer *ech_config)
     }
     const unsigned char *config = ech_config->buf;
     int config_len = (int)ech_config->len;
-    // RFC 9849 says that clients have to skip unknown entries, so we have to do
-    // this extra parsing step ourselves.
-    if (config_len >= 2 && ((config[0] << 8) | config[1]) == config_len - 2) {
-        config += 2;
-        config_len -= 2;
-        while (config_len >= 4) {
-            int entry_len = 4 + ((config[2] << 8) | config[3]);
-            if (entry_len > config_len) {
-                break;
-            }
-            if (((config[0] << 8) | config[1]) == OSSL_ECH_RFC9849_VERSION) {
-                unsigned char length[2] = {
-                    (unsigned char)(entry_len >> 8), (unsigned char)entry_len
-                };
-                if (BIO_reset(config_bio) != 1
-                    || BIO_write(config_bio, length, sizeof(length)) != sizeof(length)
-                    || BIO_write(config_bio, config, entry_len) != entry_len) {
-                    goto fail;
-                }
-                ERR_clear_error();
-                if (OSSL_ECHSTORE_read_echconfiglist(store, config_bio) != 1) {
-                    unsigned long err = ERR_peek_error();
-                    while (ERR_GET_LIB(err) == ERR_LIB_PROV && !ERR_FATAL_ERROR(err)) {
-                        ERR_get_error();
-                        err = ERR_peek_error();
-                    }
-                    // This is a workaround until OpenSSL can skip unusable entries itself.
-                    if (ERR_GET_LIB(err) != ERR_LIB_SSL
-                        || ERR_GET_REASON(err) != ERR_R_PASSED_INVALID_ARGUMENT) {
-                        goto fail;
-                    }
-                }
-                ERR_clear_error();
-            }
-            config += entry_len;
-            config_len -= entry_len;
-        }
-        if (config_len != 0) {
-            ERR_raise(ERR_LIB_SSL, SSL_R_ECH_DECODE_ERROR);
-            goto fail;
-        }
-    }
-    else if (BIO_write(config_bio, config, config_len) != config_len
-             || OSSL_ECHSTORE_read_echconfiglist(store, config_bio) != 1) {
+    if (BIO_write(config_bio, config, config_len) != config_len
+        || OSSL_ECHSTORE_read_echconfiglist(store, config_bio) != 1) {
         goto fail;
     }
     int num_entries;
@@ -5413,14 +5371,14 @@ _ssl._SSLContext.set_ech_config
 
 Set the ECH configuration on the SSL context.
 
-ech_config must be a bytes-like object containing the raw ECH
-configuration.
+ech_config must be a bytes-like object containing an ECHConfigList
+in binary or Base64 encoding.
 [clinic start generated code]*/
 
 static PyObject *
 _ssl__SSLContext_set_ech_config_impl(PySSLContext *self,
                                      Py_buffer *ech_config)
-/*[clinic end generated code: output=cea53188b338cf80 input=3943e5aff04a583e]*/
+/*[clinic end generated code: output=cea53188b338cf80 input=69016efcb2cd1ed2]*/
 {
     OSSL_ECHSTORE *store = ech_store_from_config(get_state_ctx(self),
                                                  ech_config);

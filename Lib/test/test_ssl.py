@@ -2119,19 +2119,28 @@ class ECHTests(unittest.TestCase):
             with self.subTest(config=config):
                 self.assertRaises(TypeError, ctx.set_ech_config, config)
         for config in (b'', b'\x00', b'\x00\x00', b'invalid',
-                       self.ECH_CONFIG[:-1]):
+                       self.ECH_CONFIG[:-1], self.ECH_CONFIG + b'\x00'):
             with self.subTest(config=config):
                 self.assertRaises(ssl.SSLError, ctx.set_ech_config, config)
         self.assertIsNone(ctx.set_ech_config(self.ECH_CONFIG))
+
+    @requires_ech_x25519
+    def test_set_ech_config_base64(self):
+        ctx = make_test_context()
+        self.assertIsNone(ctx.set_ech_config(base64.b64encode(self.ECH_CONFIG)))
 
     @requires_ech_x25519
     def test_mixed_ech_config_versions(self):
         ctx = make_test_context()
         supported = self.ECH_CONFIG[2:]
         unsupported = b'\xff\xff\x00\x01\x00'
-        for entries in (unsupported + supported, supported + unsupported):
-            config = len(entries).to_bytes(2, 'big') + entries
-            self.assertIsNone(ctx.set_ech_config(config))
+        # OpenSSL's binary format detection requires a known version first.
+        entries = unsupported + supported
+        config = len(entries).to_bytes(2, 'big') + entries
+        self.assertRaises(ssl.SSLError, ctx.set_ech_config, config)
+        entries = supported + unsupported
+        config = len(entries).to_bytes(2, 'big') + entries
+        self.assertIsNone(ctx.set_ech_config(config))
 
     @requires_ech_x25519
     def test_mixed_ech_config_unsupported_suites(self):
@@ -2143,11 +2152,15 @@ class ECHTests(unittest.TestCase):
             with self.subTest(algorithm=algorithm):
                 config = len(unsupported).to_bytes(2, 'big') + unsupported
                 self.assertRaises(ssl.SSLError, ctx.set_ech_config, config)
+                # OpenSSL currently rejects the whole list even if another
+                # entry has a supported suite. That should probably be fixed
+                # upstream, since it disagrees with the RFC.
                 for entries in (unsupported + supported,
                                 supported + unsupported):
                     with self.subTest(entries=entries):
                         config = len(entries).to_bytes(2, 'big') + entries
-                        self.assertIsNone(ctx.set_ech_config(config))
+                        self.assertRaises(ssl.SSLError, ctx.set_ech_config,
+                                          config)
 
     def read_ech_key_and_config(self, filename='ech.pem'):
         # Generated with:
