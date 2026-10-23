@@ -773,14 +773,12 @@ class TestSpecifics(unittest.TestCase):
 
     @support.cpython_only
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
-    @support.run_with_limited_c_stack(
-        100_000 if sys.platform == "android" else 500_000)
+    @support.run_with_limited_c_stack(500_000)
     @support.skip_emscripten_stack_overflow()
     def test_compiler_recursion_limit(self):
         # Compiler frames are small
         limit = 100
-        # Android test devices have less memory.
-        crash_depth = limit * (1000 if sys.platform == "android" else 5000)
+        crash_depth = limit * 5000
         success_depth = limit
 
         def check_limit(prefix, repeated, mode="single"):
@@ -1092,8 +1090,7 @@ class TestSpecifics(unittest.TestCase):
     # complex statements.
     @support.requires_resource('cpu')
     def test_stack_overflow(self):
-        # Android test devices have less memory.
-        size = 100_000 if sys.platform == "android" else 200_000
+        size = 200_000
         compile("if a: b\n" * size, "<dummy>", "exec")
 
     # Multiple users rely on the fact that CPython does not generate
@@ -1585,6 +1582,28 @@ class TestSpecifics(unittest.TestCase):
                     pass
 
         self.check_line_numbers(f.__code__, 'JUMP_BACKWARD')
+
+    def test_backward_jump_conditional_in_loop_in_try(self):
+        # gh-130279: The jumps in a loop body, including the backward jump
+        # for the untaken branch of a conditional at the end of the body,
+        # must be covered by the exception handler of the enclosing try.
+        def f(items):
+            try:
+                for x in items:
+                    if x < 0:
+                        raise ValueError(x)
+            except KeyboardInterrupt:
+                return 'handled'
+
+        bytecode = dis.Bytecode(f)
+        jumps = [instr for instr in bytecode
+                 if instr.opcode in dis.hasjump]
+        self.assertTrue(jumps)
+        for instr in jumps:
+            with self.subTest(instr=instr):
+                self.assertTrue(
+                    any(entry.start <= instr.offset < entry.end
+                        for entry in bytecode.exception_entries))
 
     def test_big_dict_literal(self):
         # The compiler has a flushing point in "compiler_dict" that calls compiles
