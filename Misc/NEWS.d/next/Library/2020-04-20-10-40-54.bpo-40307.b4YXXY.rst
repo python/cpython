@@ -1,0 +1,1 @@
+:class:`multiprocessing.Manager` and its proxies now uses the client picked at the time the manager was created to guarantee consistent behaviour across the whole manager life span.
