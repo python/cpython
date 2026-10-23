@@ -5,6 +5,7 @@ import unittest
 from test import support
 from test.support import import_helper
 from test.support import threading_helper
+from test.support import warnings_helper
 # Raise SkipTest if subinterpreters not supported.
 _interpreters = import_helper.import_module('_interpreters')
 from concurrent import interpreters
@@ -83,6 +84,7 @@ class StressTests(TestBase):
             with support.inject_memory_error_cm(0, 1):
                 _interpreters.create()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.requires_fork()
     def test_unclosed_interpreter_on_fork(self):
         interp = interpreters.create()
