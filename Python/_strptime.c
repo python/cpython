@@ -66,10 +66,10 @@ strptime_name(const unsigned char *data, Py_ssize_t length, Py_ssize_t pos,
         }
         char *start = name;
         if (directive == 'p') {
-            while (size && Py_ISSPACE(start[size - 1])) {
+            while (size && Py_UNICODE_ISSPACE(start[size - 1])) {
                 size--;
             }
-            while (size && Py_ISSPACE(*start)) {
+            while (size && Py_UNICODE_ISSPACE(*start)) {
                 start++;
                 size--;
             }
@@ -331,7 +331,7 @@ _PyTime_Strptime(PyObject *string, PyObject *format, _PyTime_StrptimeFields *fie
             continue;
         }
         if (c == 'n' || c == 't') {
-            while (pos < length && Py_ISSPACE(data[pos])) {
+            while (pos < length && Py_UNICODE_ISSPACE(data[pos])) {
                 pos++;
             }
             continue;

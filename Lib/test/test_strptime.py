@@ -54,6 +54,16 @@ class PublicStrptimeTests(unittest.TestCase):
         ):
             self.assert_matches_python(text, fmt)
 
+    def test_whitespace_aliases_before_adjacent_fields(self):
+        for separator in ('\x1c', '\x1d', '\x1e', '\x1f'):
+            for whitespace in ('%n', '%t'):
+                for field in ('%d', '%e'):
+                    self.assert_matches_python(f'2024{separator} 112',
+                                               f'%Y{whitespace}{field}%m')
+                for field in ('%H', '%k', '%I', '%l'):
+                    self.assert_matches_python(f'34{separator} 123',
+                                               f'%M{whitespace}{field}%S')
+
     def test_offsets_and_zone_names(self):
         offsets = ('', 'Z', '+0530', '-03:30', '+01:02:03', '-000001.000001',
                    '+01:02:03.456789', '+000000.5', '-00:00:00.5',
