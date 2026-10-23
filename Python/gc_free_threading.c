@@ -66,6 +66,9 @@ struct visitor_args {
     size_t offset;  // offset of PyObject from start of block
 };
 
+#define GC_MIN_CANDIDATES 4096
+#define GC_MAX_CANDIDATES (1U << 20)
+
 // Per-collection state
 struct collection_state {
     struct visitor_args base;
@@ -80,6 +83,9 @@ struct collection_state {
     Py_ssize_t uncollectable;
     Py_ssize_t candidates;
     Py_ssize_t long_lived_total;
+    PyObject **heap_candidates;
+    size_t heap_candidates_count;
+    size_t heap_candidates_capacity;
     struct worklist unreachable;
     struct worklist legacy_finalizers;
     struct worklist wrcb_to_call;
@@ -1008,6 +1014,15 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
         }
     }
 
+    if (state->heap_candidates != NULL) {
+        if (state->heap_candidates_count < state->heap_candidates_capacity) {
+            state->heap_candidates[state->heap_candidates_count++] = op;
+        }
+        else {
+            state->heap_candidates = NULL;
+        }
+    }
+
     // We repurpose ob_tid to compute "gc_refs", the number of external
     // references to the object (i.e., from outside the GC heaps). This means
     // that ob_tid is no longer a valid thread id until it is restored by
@@ -1122,11 +1137,9 @@ validate_gc_objects(const mi_heap_t *heap, const mi_heap_area_t *area,
 #endif
 
 static bool
-mark_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
-                  void *block, size_t block_size, void *args)
+mark_heap_object(PyObject *op, struct collection_state *state)
 {
-    PyObject *op = op_from_block(block, args, false);
-    if (op == NULL) {
+    if (!_PyObject_GC_IS_TRACKED(op) || gc_is_frozen(op)) {
         return true;
     }
 
@@ -1142,7 +1155,6 @@ mark_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
     // then we can't collect objects with deferred references because we may
     // have missed some reference to the object on the stack. In that case,
     // treat the object as reachable even if gc_refs is zero.
-    struct collection_state *state = (struct collection_state *)args;
     int keep_alive = (state->skip_deferred_objects &&
                       _PyObject_HasDeferredRefcount(op));
 
@@ -1159,6 +1171,14 @@ mark_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
     }
 
     return true;
+}
+
+static bool
+mark_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
+                  void *block, size_t block_size, void *args)
+{
+    PyObject *op = op_from_block_all_gc(block, args);
+    return op == NULL || mark_heap_object(op, args);
 }
 
 static bool
@@ -1444,6 +1464,11 @@ static int
 deduce_unreachable_heap(PyInterpreterState *interp,
                         struct collection_state *state)
 {
+    // Raw allocator hooks can change freeze_active after buffer allocation.
+    if (state->gcstate->freeze_active) {
+        state->heap_candidates = NULL;
+    }
+
     // Identify objects that are directly reachable from outside the GC heap
     // by computing the difference between the refcount and the number of
     // incoming references.
@@ -1460,7 +1485,19 @@ deduce_unreachable_heap(PyInterpreterState *interp,
 
     // Transitively mark reachable objects by clearing the
     // _PyGC_BITS_UNREACHABLE flag.
-    if (gc_visit_heaps(interp, &mark_heap_visitor, &state->base) < 0) {
+    int err = 0;
+    if (state->heap_candidates != NULL) {
+        for (size_t i = 0; i < state->heap_candidates_count; i++) {
+            if (!mark_heap_object(state->heap_candidates[i], state)) {
+                err = -1;
+                break;
+            }
+        }
+    }
+    else {
+        err = gc_visit_heaps(interp, &mark_heap_visitor, &state->base);
+    }
+    if (err < 0) {
         // On out-of-memory, restore the refcounts and bail out.
         gc_visit_heaps(interp, &restore_refs, &state->base);
         return -1;
@@ -2282,13 +2319,28 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 
     PyInterpreterState *interp = tstate->interp;
 
+    // Allocate before root traversal can set any alive bits.
+    PyObject **heap_candidates = NULL;
+    size_t capacity = GC_MIN_CANDIDATES;
+    if (gcstate->long_lived_total > (Py_ssize_t)capacity) {
+        capacity = (size_t)gcstate->long_lived_total;
+        if (capacity > GC_MAX_CANDIDATES) {
+            capacity = GC_MAX_CANDIDATES;
+        }
+    }
+    if (!gcstate->freeze_active && reason != _Py_GC_REASON_SHUTDOWN) {
+        heap_candidates = PyMem_RawMalloc(capacity * sizeof(*heap_candidates));
+    }
     struct collection_state state = {
+        .heap_candidates = heap_candidates,
+        .heap_candidates_capacity = capacity,
         .interp = interp,
         .gcstate = gcstate,
         .reason = reason,
     };
 
     gc_collect_internal(interp, &state, generation);
+    PyMem_RawFree(heap_candidates);
 
     m = state.collected;
     n = state.uncollectable;

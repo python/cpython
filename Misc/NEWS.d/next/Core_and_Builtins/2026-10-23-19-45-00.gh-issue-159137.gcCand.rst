@@ -1,0 +1,2 @@
+Reduce heap scans in the free-threaded garbage collector with a bounded buffer
+of candidate objects.
