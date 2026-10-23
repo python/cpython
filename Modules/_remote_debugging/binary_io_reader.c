@@ -435,6 +435,26 @@ reader_parse_frame_table(BinaryReader *reader, const uint8_t *data, size_t file_
     return 0;
 }
 
+#if defined(__linux__) && defined(MADV_DONTNEED)
+static size_t
+reader_discard_mapped_pages(BinaryReader *reader, size_t start, size_t end)
+{
+    start = _Py_SIZE_ROUND_UP(start, reader->page_size);
+    end = _Py_SIZE_ROUND_DOWN(end, reader->page_size);
+    if (start >= end) {
+        return start;
+    }
+    (void)madvise(reader->mapped_data + start, end - start, MADV_DONTNEED);
+    return end;
+}
+#else
+static inline size_t
+reader_discard_mapped_pages(BinaryReader *reader, size_t start, size_t end)
+{
+    return end;
+}
+#endif
+
 BinaryReader *
 binary_reader_open(PyObject *path)
 {
@@ -475,31 +495,18 @@ binary_reader_open(PyObject *path)
         goto error;
     }
 
-    /* Map the file into memory.
-     * MAP_POPULATE (Linux-only) pre-faults all pages at mmap time, which:
-     * - Catches issues (e.g., file truncation) immediately rather than as SIGBUS during reads
-     * - Eliminates page faults during subsequent reads for better performance
-     */
-#ifdef __linux__
-    reader->mapped_data = mmap(NULL, reader->mapped_size, PROT_READ,
-                               MAP_PRIVATE | MAP_POPULATE, fd, 0);
-#else
     reader->mapped_data = mmap(NULL, reader->mapped_size, PROT_READ,
                                MAP_PRIVATE, fd, 0);
-#endif
     if (reader->mapped_data == MAP_FAILED) {
         reader->mapped_data = NULL;
         PyErr_SetFromErrno(PyExc_IOError);
         Py_fclose(fp);
         goto error;
     }
+    reader->page_size = (size_t)sysconf(_SC_PAGESIZE);
 
     /* Hint sequential access pattern - failures are non-fatal */
     (void)madvise(reader->mapped_data, reader->mapped_size, MADV_SEQUENTIAL);
-
-    /* Pre-fetch pages into memory - failures are non-fatal.
-     * Complements MAP_POPULATE on Linux, provides benefit on macOS. */
-    (void)madvise(reader->mapped_data, reader->mapped_size, MADV_WILLNEED);
 
     /* Use transparent huge pages for large files to reduce TLB misses.
      * Only beneficial for files >= 32MB where TLB pressure matters. */
@@ -512,9 +519,6 @@ binary_reader_open(PyObject *path)
     /* Add file descriptor-level hints for better kernel I/O scheduling */
 #if defined(__linux__) && defined(POSIX_FADV_SEQUENTIAL)
     (void)posix_fadvise(fd, 0, 0, POSIX_FADV_SEQUENTIAL);
-    if (reader->mapped_size > (64 * 1024 * 1024)) {
-        (void)posix_fadvise(fd, 0, 0, POSIX_FADV_WILLNEED);
-    }
 #endif
 
     if (Py_fclose(fp) != 0) {
@@ -647,6 +651,8 @@ binary_reader_open(PyObject *path)
     if (reader_parse_frame_table(reader, data, file_size) < 0) {
         goto error;
     }
+    (void)reader_discard_mapped_pages(
+        reader, (size_t)reader->string_table_offset, file_size);
 
     return reader;
 
@@ -1600,6 +1606,7 @@ replay_blocks(BinaryReader *reader, RemoteDebuggingState *state,
 {
     ByteBuffer section = {reader->sample_data, reader->sample_data_size, 0};
     size_t offset = 0;
+    size_t discarded = 0;
     while (offset < section.size) {
         DecodedBlock block;
         if (decode_block(reader, &section, &offset, &block) < 0 ||
@@ -1607,6 +1614,8 @@ replay_blocks(BinaryReader *reader, RemoteDebuggingState *state,
                          &block, replayed) < 0) {
             return -1;
         }
+        discarded = reader_discard_mapped_pages(
+            reader, discarded, FILE_HEADER_PLACEHOLDER_SIZE + offset);
     }
     return 0;
 }
