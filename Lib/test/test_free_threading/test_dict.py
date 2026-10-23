@@ -532,5 +532,55 @@ class TestDict(TestCase):
         CHURN_SIZE = 512
         race(ITER_TIMES, CHURN_SIZE, APPENDER_THREADS, REPLACER_THREADS)
 
+    def test_racing_setattr_and_dict_replace_with_valid_inline_values(self):
+        # gh-149816: setattr on an object whose materialized __dict__ still
+        # points at valid inline values, racing with __dict__ replacement
+        # which detaches and frees the old dict.
+        class Target:
+            pass
+
+        ROUNDS = 50
+        BATCH = 200
+        SETTER_THREADS = 4
+        REPLACER_THREADS = 4
+
+        objs = []
+        barrier = Barrier(SETTER_THREADS + REPLACER_THREADS + 1)
+
+        def setter(i):
+            for _ in range(ROUNDS):
+                barrier.wait()
+                for obj in objs:
+                    obj.x = i
+                    obj.y = i
+                barrier.wait()
+
+        def replacer():
+            for _ in range(ROUNDS):
+                barrier.wait()
+                for obj in objs:
+                    # Materialize the dict while the inline values are valid
+                    obj.__dict__
+                    obj.__dict__ = {}
+                barrier.wait()
+
+        threads = [Thread(target=setter, args=(i,))
+                   for i in range(SETTER_THREADS)]
+        threads += [Thread(target=replacer) for _ in range(REPLACER_THREADS)]
+
+        with threading_helper.catch_threading_exception() as cm:
+            with threading_helper.start_threads(threads):
+                for _ in range(ROUNDS):
+                    new_objs = []
+                    for _ in range(BATCH):
+                        obj = Target()
+                        obj.a = 1
+                        new_objs.append(obj)
+                    objs[:] = new_objs
+                    barrier.wait()
+                    barrier.wait()
+            if cm.exc_type is not None:
+                raise cm.exc_value
+
 if __name__ == "__main__":
     unittest.main()
