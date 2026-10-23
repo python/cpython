@@ -370,7 +370,7 @@ implementation must name its arguments exactly *visit* and *arg*:
    This corresponds roughly to::
 
       #define Py_VISIT(o)                             \
-         if (op) {                                    \
+         if (o) {                                    \
             int visit_result = visit(o, arg);         \
             if (visit_result != 0) {                  \
                return visit_result;                   \
