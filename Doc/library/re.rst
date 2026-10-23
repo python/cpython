@@ -925,7 +925,7 @@ The same as ``\z``.  For compatibility with old Python versions.
    :name: re-syntax-standard-escapes
 
 Standard escapes
-""""""""""""""""
+^^^^^^^^^^^^^^^^
 
 Most of the :ref:`escape sequences <escape-sequences>` supported by Python
 string literals are also accepted by the regular expression parser::
