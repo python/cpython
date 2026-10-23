@@ -2084,6 +2084,14 @@ to speed up repeated connections from the same clients.
    argument accepts the same values as for
    :meth:`~SSLContext.set_alpn_protocols`.
 
+   .. note::
+
+      OpenSSL 4.0 validates the server's ALPN selection against the inner
+      protocol list even when ECH is rejected. If the server selects an outer
+      protocol absent from the inner list, the handshake fails with a :exc:`SSLError`.
+      To support ECH rejection and retry on affected versions, choose outer
+      protocols that also appear in the inner list.
+
    Only available when :data:`HAS_ECH` is ``True``.
 
    .. versionadded:: next

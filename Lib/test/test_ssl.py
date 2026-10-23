@@ -2312,9 +2312,10 @@ class ECHTests(unittest.TestCase):
                                              ech_config=current)
                 server = server_ctx.wrap_bio(s_in, s_out, server_side=True)
                 # When the server rejects ECH it only ever saw the outer
-                # ClientHello, so it selects from the outer ALPN. OpenSSL's
-                # client then aborts because that choice is not in its
-                # inner list, so only the server's view is checked here.
+                # ClientHello, so it selects from the outer ALPN. OpenSSL 4.0
+                # incorrectly checks that choice against the inner list,
+                # raising BAD_EXTENSION instead of SSLECHRejectedError.
+                # https://github.com/python/cpython/pull/160318#discussion_r4362699854
                 with contextlib.suppress(ssl.SSLError):
                     self.handshake_bio_pair(client, server,
                                             c_in, c_out, s_in, s_out)
