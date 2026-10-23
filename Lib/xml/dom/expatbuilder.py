@@ -217,6 +217,7 @@ class ExpatBuilder:
             parser.Parse(b"", True)
         except ParseEscape:
             pass
+        self._flush_text()
         doc = self.document
         self.reset()
         self._parser = None
@@ -230,6 +231,7 @@ class ExpatBuilder:
             self._setup_subset(string)
         except ParseEscape:
             pass
+        self._flush_text()
         doc = self.document
         self.reset()
         self._parser = None
@@ -275,7 +277,8 @@ class ExpatBuilder:
         # Join the pieces of the current run of character data into
         # its Text node.  This must be called before anything else is
         # added to the tree after the Text node, and before the tree is
-        # handed to a filter.
+        # handed to a filter.  It is also called when parsing ends, as
+        # the handlers of a subclass might not have called it.
         node = self._text_node
         if node is not None:
             node.data = ''.join(self._text_parts)
@@ -307,10 +310,15 @@ class ExpatBuilder:
         _append_child(self.curNode, node)
 
     def character_data_handler(self, data):
-        if self._text_node is not None:
-            self._text_parts.append(data)
-            return
         childNodes = self.curNode.childNodes
+        if self._text_node is not None:
+            if childNodes and childNodes[-1] is self._text_node:
+                self._text_parts.append(data)
+                return
+            # The Text node is no longer the last child of the current
+            # node, which happens when a handler overridden in a
+            # subclass changes the tree without calling _flush_text().
+            self._flush_text()
         if childNodes and childNodes[-1].nodeType == TEXT_NODE:
             node = childNodes[-1]
             self._text_parts = [node.data, data]
@@ -667,6 +675,7 @@ class FragmentBuilder(ExpatBuilder):
         except:
             self.reset()
             raise
+        self._flush_text()
         fragment = self.fragment
         self.reset()
 ##         self._parser = None

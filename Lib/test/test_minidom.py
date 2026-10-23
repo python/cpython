@@ -1045,6 +1045,71 @@ class MinidomTest(unittest.TestCase):
             msg=f"Possible quadratic behavior: work={w1,w2,w3} ratios={r1,r2}"
         )
 
+    def testParseTextWithOverriddenHandlers(self):
+        # Character data must end up in the right place in the tree and
+        # be complete when a subclass of the builder replaces handlers
+        # without calling the base implementations.
+        class StartElement:
+            def start_element_handler(self, name, attributes):
+                node = self.document.createElement(name)
+                self.curNode.appendChild(node)
+                self.curNode = node
+
+        class EndElement:
+            def end_element_handler(self, name):
+                self.curNode = self.curNode.parentNode
+
+        class Comment:
+            def comment_handler(self, data):
+                self.curNode.appendChild(self.document.createComment(data))
+
+        class PI:
+            def pi_handler(self, target, data):
+                self.curNode.appendChild(
+                    self.document.createProcessingInstruction(target, data))
+
+        class RemovingEndElement:
+            def end_element_handler(self, name):
+                node = self.curNode
+                self.curNode = node.parentNode
+                if name == "d":
+                    self.curNode.removeChild(node)
+
+        source = ("<a>b<![CDATA[]]>c<d>e<![CDATA[]]>f</d>g<![CDATA[]]>h"
+                  "<!--i-->j<![CDATA[]]>k<?l m?>n<d/>o<![CDATA[]]>p</a>")
+        expected = source.replace("<![CDATA[]]>", "")
+        names = ["#text", "d", "#text", "#comment", "#text", "l", "#text",
+                 "d", "#text"]
+        ExpatBuilder = xml.dom.expatbuilder.ExpatBuilder
+        FragmentBuilder = xml.dom.expatbuilder.FragmentBuilder
+        for mixins in [(StartElement,), (EndElement,), (Comment,), (PI,),
+                       (StartElement, EndElement, Comment, PI)]:
+            with self.subTest(mixins=mixins):
+                class Builder(*mixins, ExpatBuilder):
+                    pass
+                dom = Builder().parseString(source)
+                root = dom.documentElement
+                self.assertEqual([c.nodeName for c in root.childNodes], names)
+                self.assertEqual(root.toxml(), expected)
+
+                class Builder(*mixins, FragmentBuilder):
+                    pass
+                fragment = Builder(dom).parseString("<d/>b<![CDATA[]]>c")
+                self.assertEqual(
+                    [(c.nodeName, getattr(c, 'data', None))
+                     for c in fragment.childNodes],
+                    [('d', None), ('#text', 'bc')])
+                dom.unlink()
+
+        class Builder(RemovingEndElement, ExpatBuilder):
+            pass
+        dom = Builder().parseString(source)
+        root = dom.documentElement
+        self.assertEqual([c.nodeName for c in root.childNodes],
+                         ["#text", "#comment", "#text", "l", "#text"])
+        self.assertEqual(root.toxml(), "<a>bcgh<!--i-->jk<?l m?>nop</a>")
+        dom.unlink()
+
     def testComment(self):
         dom = Document()
         comment = dom.createComment("comment")
