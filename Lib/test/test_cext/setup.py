@@ -176,6 +176,8 @@ def main():
     if extra_cflags:
         flags.extend(shlex.split(extra_cflags))
 
+    py_limited_api = limited or abi3t
+
     # Add additional include and library directories, typically for in-tree
     # testing where not all directories are inferred
     include_dirs = []
@@ -202,7 +204,9 @@ def main():
         sources=[source],
         extra_compile_args=flags,
         include_dirs=include_dirs,
-        library_dirs=library_dirs)
+        library_dirs=library_dirs,
+        py_limited_api=py_limited_api,
+    )
     setup(name=f'internal_{module_name}',
           version='0.0',
           ext_modules=[ext])
