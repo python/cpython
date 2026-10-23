@@ -101,6 +101,9 @@ Functions
 
    .. versionadded:: 3.8
 
+   .. versionchanged:: 3.15
+      Added the *expand* parameter.
+
 
 .. function:: pprint(object, stream=None, indent=1, width=80, depth=None, *, \
                      compact=False, expand=False, sort_dicts=True, \
