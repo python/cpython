@@ -381,7 +381,7 @@ class CCallLowerer:
             rule = original_rules.get(alt.items[0].item.value)
             if rule is None or rule.name not in consuming:
                 return None
-            if ("memo" in rule.flags and not rule.left_recursive) or (
+            if (rule.memo and not rule.left_recursive) or (
                 rule.left_recursive and rule.leader
             ):
                 return rule
@@ -409,17 +409,6 @@ class CCallLowerer:
                 i = j
             self._prefixes[rule.name] = tuple(prefixes)
 
-    def _rule_fast_path(self, rule: Rule) -> str | None:
-        for flag in rule.flags:
-            name, _, func = flag.partition("=")
-            if name == "fastpath":
-                if not func:
-                    raise ValueError(
-                        f"rule {rule.name!r}: fastpath flag needs a function"
-                    )
-                return func
-        return None
-
     def prepare_rule(
         self, rule: Rule, *, skip_actions: bool = False, shared: bool = False
     ) -> CRule:
@@ -437,8 +426,8 @@ class CCallLowerer:
             ),
             left_recursive=rule.left_recursive,
             leader=rule.leader,
-            memoize="memo" in rule.flags and not rule.left_recursive,
-            fastpath=self._rule_fast_path(rule),
+            memoize=rule.memo and not rule.left_recursive,
+            fastpath=rule.fastpath,
             disable_invalid_rules=rule.name.endswith("without_invalid"),
             prefixes=self._prefixes.get(rule.name, ()),
             source=rule.source,

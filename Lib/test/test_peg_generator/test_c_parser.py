@@ -464,6 +464,47 @@ class TestCParser(unittest.TestCase):
         """
         self.run_test(grammar_source, test_source)
 
+    def test_rule_fastpath(self) -> None:
+        grammar_source = """
+        @subheader '''
+        #define CHECK_INVALID(expected) \\
+            (assert(p->call_invalid_rules == (expected)), _PyPegen_dummy_name(p))
+
+        static int
+        number_fastpath(Parser *p, void *result)
+        {
+            assert(p->call_invalid_rules == 0);
+            expr_ty number = _PyPegen_number_token(p);
+            if (number != NULL) {
+                *(void **)result = number;
+                return 1;
+            }
+            if (_PyPegen_expect_token(p, LPAR)) {
+                p->error_indicator = 1;
+                PyErr_SetString(PyExc_ValueError, "fastpath error");
+            }
+            if (p->error_indicator) {
+                *(void **)result = NULL;
+                return 1;
+            }
+            return 0;
+        }
+        '''
+        start: enable value_without_invalid after NEWLINE ENDMARKER
+        enable: 'enable' { (p->call_invalid_rules = 1, _PyPegen_dummy_name(p)) }
+        value_without_invalid (memo, fastpath=number_fastpath): NAME { CHECK_INVALID(0) }
+        after: NAME { CHECK_INVALID(1) }
+        """
+        test_source = """
+        self.check_input_strings_for_grammar(
+            valid_cases=['enable 42 tail', 'enable name tail'],
+            invalid_cases=['enable + tail', 'enable 42'],
+        )
+        with self.assertRaisesRegex(ValueError, 'fastpath error'):
+            parse.parse_string('enable ( tail', mode=0)
+        """
+        self.run_test(grammar_source, test_source)
+
     def test_left_recursive_rule_cleanup(self) -> None:
         grammar_source = """
         @subheader '''

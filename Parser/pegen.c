@@ -327,8 +327,8 @@ _resize_tokens_array(Parser *p) {
     return 0;
 }
 
-// Fast path attached to the expression precedence chain's entry rules via
-// the (fastpath=function) rule flag in the grammar. A bare NAME/NUMBER
+// Fast path attached to the expression precedence chain's entry rules.
+// A bare NAME/NUMBER
 // atom followed by a token that cannot start or continue a binary/postfix
 // expression is a complete expression, so it is built directly instead of
 // descending the whole chain. Returns 1 if it produced a result (stored
