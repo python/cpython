@@ -14,7 +14,7 @@ extern "C" {
 #include "pycore_interp.h"        // PyInterpreterState.eval_frame
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_stats.h"         // EVAL_CALL_STAT_INC()
-#include "pycore_typedefs.h"      // _PyInterpreterFrame
+#include "pycore_typedefs.h"      // _PyControlRecord
 
 
 /* Forward declarations */
@@ -115,7 +115,7 @@ extern void _PyPerfJit_WriteNamedCode(const void *code_addr,
 #endif
 
 static inline PyObject*
-_PyEval_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
+_PyEval_EvalFrame(PyThreadState *tstate, _PyControlRecord *frame, int throwflag)
 {
     EVAL_CALL_STAT_INC(EVAL_CALL_TOTAL);
     if (tstate->interp->eval_frame == NULL) {
@@ -126,7 +126,7 @@ _PyEval_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwfl
 
 #ifdef _Py_TIER2
 _Py_CODEUNIT *_PyTier2Interpreter(
-    struct _PyExecutorObject *current_executor, _PyInterpreterFrame *frame,
+    struct _PyExecutorObject *current_executor, _PyControlRecord *frame,
     _PyStackRef *stack_pointer, PyThreadState *tstate
 );
 #endif
@@ -254,7 +254,7 @@ PyAPI_FUNC(int) _Py_ReachedRecursionLimitWithMargin(
 static inline void _Py_LeaveRecursiveCall(void)  {
 }
 
-extern _PyInterpreterFrame* _PyEval_GetFrame(void);
+extern _PyControlRecord* _PyEval_GetFrame(void);
 
 extern PyObject * _PyEval_GetGlobalsFromRunningMain(PyThreadState *);
 extern int _PyEval_EnsureBuiltins(
@@ -293,7 +293,7 @@ PyAPI_DATA(const size_t) _Py_FunctionAttributeOffsets[];
 
 PyAPI_FUNC(int) _PyEval_CheckExceptStarTypeValid(PyThreadState *tstate, PyObject* right);
 PyAPI_FUNC(int) _PyEval_CheckExceptTypeValid(PyThreadState *tstate, PyObject* right);
-PyAPI_FUNC(int) _PyEval_ExceptionGroupMatch(_PyInterpreterFrame *, PyObject* exc_value, PyObject *match_type, PyObject **match, PyObject **rest);
+PyAPI_FUNC(int) _PyEval_ExceptionGroupMatch(_PyControlRecord *, _PyInterpreterDataFrame *, PyObject* exc_value, PyObject *match_type, PyObject **match, PyObject **rest);
 PyAPI_FUNC(void) _PyEval_FormatAwaitableError(PyThreadState *tstate, PyTypeObject *type, int oparg);
 PyAPI_FUNC(void) _PyEval_FormatExcCheckArg(PyThreadState *tstate, PyObject *exc, const char *format_str, PyObject *obj);
 PyAPI_FUNC(void) _PyEval_FormatExcUnbound(PyThreadState *tstate, PyCodeObject *co, int oparg);
@@ -305,7 +305,7 @@ PyAPI_FUNC(PyObject *) _PyEval_LazyImportName(
     PyObject *locals, PyObject *name, PyObject *fromlist, PyObject *level,
     int lazy);
 PyAPI_FUNC(PyObject *) _PyEval_LazyImportFrom(
-    PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *v, PyObject *name);
+    PyThreadState *tstate, _PyControlRecord *frame, PyObject *v, PyObject *name);
 PyAPI_FUNC(PyObject *) _PyEval_ImportName(
     PyThreadState *tstate, PyObject *builtins, PyObject *globals,
     PyObject *locals, PyObject *name, PyObject *fromlist, PyObject *level);
@@ -314,10 +314,11 @@ PyObject * _PyEval_ImportNameWithImport(
     PyObject *locals, PyObject *name, PyObject *fromlist, PyObject *level);
 PyAPI_FUNC(PyObject *)_PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t nargs, PyObject *kwargs);
 PyAPI_FUNC(PyObject *)_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys);
-PyAPI_FUNC(void) _PyEval_MonitorRaise(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *instr);
-PyAPI_FUNC(bool) _PyEval_NoToolsForUnwind(PyThreadState *tstate, _PyInterpreterFrame *frame);
+PyAPI_FUNC(void) _PyEval_MonitorRaise(PyThreadState *tstate, _PyControlRecord *frame, _Py_CODEUNIT *instr);
+PyAPI_FUNC(bool) _PyEval_NoToolsForUnwind(PyThreadState *tstate, _PyControlRecord *frame);
 PyAPI_FUNC(int) _PyEval_UnpackIterableStackRef(PyThreadState *tstate, PyObject *v, int argcnt, int argcntafter, _PyStackRef *sp);
-PyAPI_FUNC(void) _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
+PyAPI_FUNC(void) _PyEval_FrameClearAndPop(
+    PyThreadState *tstate, _PyControlRecord *frame, _PyInterpreterDataFrame *fp);
 PyAPI_FUNC(PyObject **) _PyObjectArray_FromStackRefArray(_PyStackRef *input, Py_ssize_t nargs, PyObject **scratch);
 
 PyAPI_FUNC(void) _PyObjectArray_Free(PyObject **array, PyObject **scratch);
@@ -325,7 +326,7 @@ PyAPI_FUNC(void) _PyObjectArray_Free(PyObject **array, PyObject **scratch);
 PyAPI_FUNC(PyObject *) _PyEval_GetANext(PyObject *aiter);
 PyAPI_FUNC(void) _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name, _PyStackRef *writeto);
 PyAPI_FUNC(PyObject *) _PyEval_GetAwaitable(PyObject *iterable, int oparg);
-PyAPI_FUNC(PyObject *) _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *name);
+PyAPI_FUNC(PyObject *) _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterDataFrame *fp, PyObject *name);
 PyAPI_FUNC(int)
 _Py_Check_ArgsIterable(PyThreadState *tstate, PyObject *func, PyObject *args);
 PyAPI_FUNC(_PyStackRef) _PyEval_GetIter(_PyStackRef iterable, _PyStackRef *null_or_index, int yield_from);
@@ -397,7 +398,7 @@ extern int _PyRunRemoteDebugger(PyThreadState *tstate);
 #endif
 
 PyAPI_FUNC(_PyStackRef)
-_PyForIter_VirtualIteratorNext(PyThreadState* tstate, struct _PyInterpreterFrame* frame, _PyStackRef iter, _PyStackRef *index_ptr);
+_PyForIter_VirtualIteratorNext(PyThreadState* tstate, struct _PyControlRecord* frame, _PyStackRef iter, _PyStackRef *index_ptr);
 
 /* Special methods used by LOAD_SPECIAL */
 #define SPECIAL___ENTER__   0
@@ -424,7 +425,7 @@ _Py_VectorCallInstrumentation_StackRefSteal(
     int total_args,
     _PyStackRef kwnames,
     bool call_instrumentation,
-    _PyInterpreterFrame* frame,
+    _PyControlRecord* frame,
     _Py_CODEUNIT* this_instr,
     PyThreadState* tstate);
 
@@ -474,7 +475,8 @@ _Py_BuildMap_StackRefSteal(
 
 PyAPI_FUNC(void)
 _Py_assert_within_stack_bounds(
-    _PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
+    _PyControlRecord *frame, _PyInterpreterDataFrame *fp,
+    _PyStackRef *stack_pointer,
     const char *filename, int lineno);
 
 PyAPI_FUNC(_PyStackRef)

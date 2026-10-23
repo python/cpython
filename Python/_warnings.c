@@ -1059,7 +1059,7 @@ setup_context(Py_ssize_t stack_level,
         *lineno = 0;
     }
     else {
-        globals = f->f_frame->f_globals;
+        globals = f->f_frame->data->f_globals;
         *filename = Py_NewRef(_PyFrame_GetCode(f->f_frame)->co_filename);
         *lineno = PyFrame_GetLineNumber(f);
         Py_DECREF(f);

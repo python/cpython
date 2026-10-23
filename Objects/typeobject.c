@@ -7,7 +7,7 @@
 #include "pycore_descrobject.h"   // _PyMember_GetOffset()
 #include "pycore_dict.h"          // _PyDict_KeysSize()
 #include "pycore_function.h"      // _PyFunction_GetVersionForCurrentState()
-#include "pycore_interpframe.h"   // _PyInterpreterFrame
+#include "pycore_interpframe.h"   // _PyControlRecord
 #include "pycore_long.h"          // _PyLong_IsNegative(), _PyLong_GetOne()
 #include "pycore_memoryobject.h"  // _PyMemoryView_FromBufferProc()
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
@@ -12947,7 +12947,7 @@ super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 }
 
 static int
-super_init_without_args(_PyInterpreterFrame *cframe, PyTypeObject **type_p,
+super_init_without_args(_PyControlRecord *cframe, PyTypeObject **type_p,
                         PyObject **obj_p)
 {
     PyCodeObject *co = _PyFrame_GetCode(cframe);
@@ -12958,7 +12958,7 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyTypeObject **type_p,
     }
 
     assert(_PyFrame_GetCode(cframe)->co_nlocalsplus > 0);
-    PyObject *firstarg = PyStackRef_AsPyObjectBorrow(_PyFrame_GetLocalsArray(cframe)[0]);
+    PyObject *firstarg = PyStackRef_AsPyObjectBorrow(_PyFrame_GetLocalsArray(cframe->data)[0]);
     if (firstarg == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "super(): arg[0] deleted");
         return -1;
@@ -12967,7 +12967,7 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyTypeObject **type_p,
     // "firstarg" is a cell here unless (very unlikely) super()
     // was called from the C-API before the first MAKE_CELL op.
     if ((_PyLocals_GetKind(co->co_localspluskinds, 0) & CO_FAST_CELL) &&
-            (_PyInterpreterFrame_LASTI(cframe) >= 0)) {
+            (_PyControlRecord_LASTI(cframe) >= 0)) {
         // MAKE_CELL and COPY_FREE_VARS have no quickened forms, so no need
         // to use _PyOpcode_Deopt here:
         assert(_PyCode_CODE(co)[0].op.code == MAKE_CELL ||
@@ -12991,7 +12991,7 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyTypeObject **type_p,
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         assert(PyUnicode_Check(name));
         if (_PyUnicode_Equal(name, &_Py_ID(__class__))) {
-            PyObject *cell = PyStackRef_AsPyObjectBorrow(_PyFrame_GetLocalsArray(cframe)[i]);
+            PyObject *cell = PyStackRef_AsPyObjectBorrow(_PyFrame_GetLocalsArray(cframe->data)[i]);
             if (cell == NULL || !PyCell_Check(cell)) {
                 PyErr_SetString(PyExc_RuntimeError,
                   "super(): bad __class__ cell");
@@ -13054,7 +13054,7 @@ super_init_impl(PyObject *self, PyTypeObject *type, PyObject *obj) {
         /* Call super(), without args -- fill in from __class__
            and first local variable on the stack. */
         PyThreadState *tstate = _PyThreadState_GET();
-        _PyInterpreterFrame *frame = _PyThreadState_GetFrame(tstate);
+        _PyControlRecord *frame = _PyThreadState_GetFrame(tstate);
         if (frame == NULL) {
             PyErr_SetString(PyExc_RuntimeError,
                             "super(): no current frame");

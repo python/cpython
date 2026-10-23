@@ -6,84 +6,106 @@
 #ifdef TIER_ONE
     #error "This file is for Tier 2 only"
 #endif
-void _PyOpcode_RecordFunction_TOS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
+void _PyOpcode_RecordFunction_TOS(_PyControlRecord *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
     _PyStackRef tos;
     tos = stack_pointer[-1];
     *recorded_value = (PyObject *)PyStackRef_AsPyObjectBorrow(tos);
     Py_INCREF(*recorded_value);
 }
 
-void _PyOpcode_RecordFunction_TOS_TYPE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
+void _PyOpcode_RecordFunction_TOS_TYPE(_PyControlRecord *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
     _PyStackRef tos;
     tos = stack_pointer[-1];
     *recorded_value = (PyObject *)Py_TYPE(PyStackRef_AsPyObjectBorrow(tos));
     Py_INCREF(*recorded_value);
 }
 
-void _PyOpcode_RecordFunction_NOS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
+void _PyOpcode_RecordFunction_NOS(_PyControlRecord *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
     _PyStackRef nos;
     nos = stack_pointer[-2];
     *recorded_value = (PyObject *)PyStackRef_AsPyObjectBorrow(nos);
     Py_INCREF(*recorded_value);
 }
 
-void _PyOpcode_RecordFunction_NOS_TYPE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
+void _PyOpcode_RecordFunction_NOS_TYPE(_PyControlRecord *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
     _PyStackRef nos;
     nos = stack_pointer[-2];
     *recorded_value = (PyObject *)Py_TYPE(PyStackRef_AsPyObjectBorrow(nos));
     Py_INCREF(*recorded_value);
 }
 
-void _PyOpcode_RecordFunction_NOS_GEN_FUNC(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
+void _PyOpcode_RecordFunction_NOS_GEN_FUNC(_PyControlRecord *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
     _PyStackRef nos;
     nos = stack_pointer[-2];
     PyObject *obj = PyStackRef_AsPyObjectBorrow(nos);
     if (PyGen_Check(obj)) {
         PyGenObject *gen = (PyGenObject *)obj;
-        _PyStackRef func = gen->gi_iframe.f_funcobj;
-        if (!PyStackRef_IsNull(func)) {
-            *recorded_value = (PyObject *)PyStackRef_AsPyObjectBorrow(func);
-            Py_INCREF(*recorded_value);
+        int locked = 1;
+        #ifdef Py_GIL_DISABLED
+        locked = PyMutex_LockFast(&obj->ob_mutex);
+        #endif
+        if (locked) {
+            if (!FRAME_STATE_FINISHED(FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state))) {
+                _PyStackRef func = gen->gi_data.f_funcobj;
+                if (!PyStackRef_IsNull(func)) {
+                    *recorded_value = (PyObject *)PyStackRef_AsPyObjectBorrow(func);
+                    Py_INCREF(*recorded_value);
+                }
+            }
+            #ifdef Py_GIL_DISABLED
+            PyMutex_Unlock(&obj->ob_mutex);
+            #endif
         }
     }
 }
 
-void _PyOpcode_RecordFunction_3OS_GEN_FUNC(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
+void _PyOpcode_RecordFunction_3OS_GEN_FUNC(_PyControlRecord *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
     _PyStackRef gen;
     gen = stack_pointer[-3];
     PyObject *obj = PyStackRef_AsPyObjectBorrow(gen);
     if (PyGen_Check(obj)) {
         PyGenObject *gen_obj = (PyGenObject *)obj;
-        _PyStackRef func = gen_obj->gi_iframe.f_funcobj;
-        if (!PyStackRef_IsNull(func)) {
-            *recorded_value = (PyObject *)PyStackRef_AsPyObjectBorrow(func);
-            Py_INCREF(*recorded_value);
+        int locked = 1;
+        #ifdef Py_GIL_DISABLED
+        locked = PyMutex_LockFast(&obj->ob_mutex);
+        #endif
+        if (locked) {
+            if (!FRAME_STATE_FINISHED(FT_ATOMIC_LOAD_INT8_RELAXED(gen_obj->gi_frame_state))) {
+                _PyStackRef func = gen_obj->gi_data.f_funcobj;
+                if (!PyStackRef_IsNull(func)) {
+                    *recorded_value = (PyObject *)PyStackRef_AsPyObjectBorrow(func);
+                    Py_INCREF(*recorded_value);
+                }
+            }
+            #ifdef Py_GIL_DISABLED
+            PyMutex_Unlock(&obj->ob_mutex);
+            #endif
         }
     }
 }
 
-void _PyOpcode_RecordFunction_4OS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
+void _PyOpcode_RecordFunction_4OS(_PyControlRecord *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
     _PyStackRef value;
     value = stack_pointer[-4];
     *recorded_value = (PyObject *)PyStackRef_AsPyObjectBorrow(value);
     Py_INCREF(*recorded_value);
 }
 
-void _PyOpcode_RecordFunction_CALLABLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
+void _PyOpcode_RecordFunction_CALLABLE(_PyControlRecord *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
     _PyStackRef func;
     func = stack_pointer[-2 - oparg];
     *recorded_value = (PyObject *)PyStackRef_AsPyObjectBorrow(func);
     Py_INCREF(*recorded_value);
 }
 
-void _PyOpcode_RecordFunction_CALLABLE_KW(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
+void _PyOpcode_RecordFunction_CALLABLE_KW(_PyControlRecord *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
     _PyStackRef func;
     func = stack_pointer[-3 - oparg];
     *recorded_value = (PyObject *)PyStackRef_AsPyObjectBorrow(func);
     Py_INCREF(*recorded_value);
 }
 
-void _PyOpcode_RecordFunction_BOUND_METHOD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
+void _PyOpcode_RecordFunction_BOUND_METHOD(_PyControlRecord *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
     _PyStackRef callable;
     callable = stack_pointer[-2 - oparg];
     PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -93,7 +115,7 @@ void _PyOpcode_RecordFunction_BOUND_METHOD(_PyInterpreterFrame *frame, _PyStackR
     }
 }
 
-void _PyOpcode_RecordFunction_CODE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
+void _PyOpcode_RecordFunction_CODE(_PyControlRecord *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
     *recorded_value = (PyObject *)NULL;
     Py_INCREF(*recorded_value);
 }
@@ -292,10 +314,21 @@ _PyOpcode_RecordTransform_NOS_GEN_FUNC(PyObject *recorded_value)
     PyObject *obj = PyStackRef_AsPyObjectBorrow(nos);
     if (PyGen_Check(obj)) {
         PyGenObject *gen = (PyGenObject *)obj;
-        _PyStackRef func = gen->gi_iframe.f_funcobj;
-        if (!PyStackRef_IsNull(func)) {
-            transformed_value = (PyObject *)PyStackRef_AsPyObjectBorrow(func);
-            Py_XINCREF(transformed_value);
+        int locked = 1;
+        #ifdef Py_GIL_DISABLED
+        locked = PyMutex_LockFast(&obj->ob_mutex);
+        #endif
+        if (locked) {
+            if (!FRAME_STATE_FINISHED(FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state))) {
+                _PyStackRef func = gen->gi_data.f_funcobj;
+                if (!PyStackRef_IsNull(func)) {
+                    transformed_value = (PyObject *)PyStackRef_AsPyObjectBorrow(func);
+                    Py_XINCREF(transformed_value);
+                }
+            }
+            #ifdef Py_GIL_DISABLED
+            PyMutex_Unlock(&obj->ob_mutex);
+            #endif
         }
     }
     Py_DECREF(recorded_value);

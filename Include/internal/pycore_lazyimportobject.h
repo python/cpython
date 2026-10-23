@@ -15,7 +15,7 @@ PyAPI_DATA(PyTypeObject) PyLazyImport_Type;
 #define PyLazyImport_CheckExact(op) Py_IS_TYPE((op), &PyLazyImport_Type)
 
 PyAPI_FUNC(PyObject *) _PyLazyImport_New(
-    struct _PyInterpreterFrame *frame, PyObject *builtins,
+    struct _PyControlRecord *frame, PyObject *builtins,
     PyObject *name, PyObject *fromlist);
 
 extern PyObject *_PyLazyImport_LoadChild(

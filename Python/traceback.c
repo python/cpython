@@ -154,7 +154,7 @@ static int
 tb_get_lineno(PyObject *op)
 {
     PyTracebackObject *tb = _PyTracebackObject_CAST(op);
-    _PyInterpreterFrame* frame = tb->tb_frame->f_frame;
+    _PyControlRecord* frame = tb->tb_frame->f_frame;
     assert(frame != NULL);
     return PyCode_Addr2Line(_PyFrame_GetCode(frame), tb->tb_lasti);
 }
@@ -307,7 +307,7 @@ _PyTraceBack_FromFrame(PyObject *tb_next, PyFrameObject *frame)
 {
     assert(tb_next == NULL || PyTraceBack_Check(tb_next));
     assert(frame != NULL);
-    int addr = _PyInterpreterFrame_LASTI(frame->f_frame) * sizeof(_Py_CODEUNIT);
+    int addr = _PyControlRecord_LASTI(frame->f_frame) * sizeof(_Py_CODEUNIT);
     return tb_create_raw((PyTracebackObject *)tb_next, frame, addr, -1);
 }
 
@@ -1030,7 +1030,7 @@ _Py_DumpWideString(int fd, wchar_t *str)
    Return 0 on success. Return -1 if the frame is invalid. */
 
 static int _Py_NO_SANITIZE_THREAD
-dump_frame(int fd, _PyInterpreterFrame *frame)
+dump_frame(int fd, _PyControlRecord *frame)
 {
     if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
         /* Ignore trampoline frames and base frame sentinel */
@@ -1117,7 +1117,7 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
         return;
     }
 
-    _PyInterpreterFrame *frame = tstate->current_frame;
+    _PyControlRecord *frame = tstate->current_frame;
     if (frame == NULL) {
         PUTS(fd, "  <no Python frame>\n");
         return;
@@ -1138,9 +1138,9 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
             PUTS(fd, "  <freed frame>\n");
             break;
         }
-        // Read frame->previous early since memory can be freed during
+        // Read _PyFrame_GetPrevious(frame) early since memory can be freed during
         // dump_frame()
-        _PyInterpreterFrame *previous = frame->previous;
+        _PyControlRecord *previous = _PyFrame_GetPrevious(frame);
 
         if (dump_frame(fd, frame) < 0) {
             PUTS(fd, "  <invalid frame>\n");

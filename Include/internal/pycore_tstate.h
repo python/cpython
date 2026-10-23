@@ -10,7 +10,7 @@ extern "C" {
 
 #include "pycore_brc.h"             // struct _brc_thread_state
 #include "pycore_freelist_state.h"  // struct _Py_freelists
-#include "pycore_interpframe_structs.h"  // _PyInterpreterFrame
+#include "pycore_interpframe_structs.h"  // _PyControlRecord
 #include "pycore_mimalloc.h"        // struct _mimalloc_thread_state
 #include "pycore_qsbr.h"            // struct qsbr
 #include "pycore_uop.h"             // struct _PyUOpInstruction
@@ -31,9 +31,7 @@ typedef struct _PyThreadStateImpl {
     // semi-public fields are in PyThreadState.
     PyThreadState base;
 
-    // Embedded base frame - sentinel at the bottom of the frame stack.
-    // Used by profiling/sampling to detect incomplete stack traces.
-    _PyInterpreterFrame base_frame;
+    _PyInterpreterDataFrame base_data;
 
     // The reference count field is used to synchronize deallocation of the
     // thread state during runtime finalization.

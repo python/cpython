@@ -7,6 +7,7 @@
 #include "pycore_ceval.h"         // _Py_ReachedRecursionLimitWithMargin()
 #include "pycore_fileutils.h"     // _PyFile_Flush
 #include "pycore_initconfig.h"    // _PyStatus_ERR()
+#include "pycore_interpframe.h"
 #include "pycore_pyerrors.h"      // _PyErr_Format()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime.h"       // _Py_ID()
@@ -401,6 +402,7 @@ _PyErr_NormalizeException(PyThreadState *tstate, PyObject **exc,
 {
     int recursion_depth = 0;
     tstate->recursion_headroom++;
+    _PyThreadState_UpdateControlLimit(tstate);
     PyObject *type, *value, *initial_tb;
 
   restart:
@@ -408,6 +410,7 @@ _PyErr_NormalizeException(PyThreadState *tstate, PyObject **exc,
     if (type == NULL) {
         /* There was no exception, so nothing to do. */
         tstate->recursion_headroom--;
+        _PyThreadState_UpdateControlLimit(tstate);
         return;
     }
 
@@ -456,6 +459,7 @@ _PyErr_NormalizeException(PyThreadState *tstate, PyObject **exc,
     *exc = type;
     *val = value;
     tstate->recursion_headroom--;
+    _PyThreadState_UpdateControlLimit(tstate);
     return;
 
   error:

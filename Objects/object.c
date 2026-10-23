@@ -2867,12 +2867,12 @@ PyUnstable_Object_IsUniqueReferencedTemporary(PyObject *op)
         return 0;
     }
 
-    _PyInterpreterFrame *frame = _PyEval_GetFrame();
+    _PyControlRecord *frame = _PyEval_GetFrame();
     if (frame == NULL) {
         return 0;
     }
 
-    _PyStackRef *base = _PyFrame_Stackbase(frame);
+    _PyStackRef *base = _PyFrame_Stackbase(frame, frame->data);
     _PyStackRef *stackpointer = frame->stackpointer;
     while (stackpointer > base) {
         stackpointer--;

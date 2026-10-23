@@ -31,7 +31,7 @@
 #define FIELD_SIZE(type, member) sizeof(((type *)0)->member)
 
 enum {
-    PY_REMOTE_DEBUG_OFFSETS_TOTAL_SIZE = 888,
+    PY_REMOTE_DEBUG_OFFSETS_TOTAL_SIZE = 912,
     PY_REMOTE_ASYNC_DEBUG_OFFSETS_TOTAL_SIZE = 104,
 };
 
@@ -290,7 +290,9 @@ validate_fixed_field(
     APPLY(interpreter_frame, instr_ptr, sizeof(uintptr_t), _Alignof(uintptr_t), buffer_size); \
     APPLY(interpreter_frame, owner, sizeof(char), _Alignof(char), buffer_size); \
     APPLY(interpreter_frame, stackpointer, sizeof(uintptr_t), _Alignof(uintptr_t), buffer_size); \
-    APPLY(interpreter_frame, tlbc_index, sizeof(int32_t), _Alignof(int32_t), buffer_size)
+    APPLY(interpreter_frame, tlbc_index, sizeof(int32_t), _Alignof(int32_t), buffer_size); \
+    APPLY(interpreter_frame, state, sizeof(uint8_t), _Alignof(uint8_t), buffer_size); \
+    APPLY(interpreter_frame, c_frame, sizeof(uintptr_t), _Alignof(uintptr_t), buffer_size)
 
 #define PY_REMOTE_DEBUG_CODE_OBJECT_FIELDS(APPLY, buffer_size) \
     APPLY(code_object, qualname, sizeof(uintptr_t), _Alignof(uintptr_t), buffer_size); \
@@ -321,7 +323,8 @@ validate_fixed_field(
 
 #define PY_REMOTE_DEBUG_GEN_OBJECT_FIELDS(APPLY, buffer_size) \
     APPLY(gen_object, gi_frame_state, sizeof(int8_t), _Alignof(int8_t), buffer_size); \
-    APPLY(gen_object, gi_iframe, FIELD_SIZE(PyGenObject, gi_iframe), _Alignof(_PyInterpreterFrame), buffer_size)
+    APPLY(gen_object, gi_iframe, FIELD_SIZE(PyGenObject, gi_iframe), _Alignof(_PyControlRecord), buffer_size); \
+    APPLY(gen_object, gi_live_frame, sizeof(uintptr_t), _Alignof(uintptr_t), buffer_size)
 
 #define PY_REMOTE_DEBUG_TASK_OBJECT_FIELDS(APPLY, buffer_size) \
     APPLY(asyncio_task_object, task_name, sizeof(uintptr_t), _Alignof(uintptr_t), buffer_size); \

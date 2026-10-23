@@ -121,7 +121,6 @@ struct _ts {
     /* Thread state. See Include/internal/pycore_pystate.h for details. */
     int state;
 
-    int py_recursion_remaining;
     int py_recursion_limit;
     int recursion_headroom; /* Allow 50 more calls to handle any errors. */
 
@@ -132,16 +131,11 @@ struct _ts {
     int what_event; /* The event currently being monitored, if any. */
 
     /* Pointer to currently executing frame. */
-    struct _PyInterpreterFrame *current_frame;
+    struct _PyControlRecord *current_frame;
 
-    /* Pointer to the base frame (bottommost sentinel frame).
-       Used by profilers to validate complete stack unwinding.
-       Points to the embedded base_frame in _PyThreadStateImpl.
-       The frame is embedded there rather than here because _PyInterpreterFrame
-       is defined in internal headers that cannot be exposed in the public API. */
-    struct _PyInterpreterFrame *base_frame;
+    struct _PyControlRecord *base_frame;
 
-    struct _PyInterpreterFrame *last_profiled_frame;
+    struct _PyControlRecord *last_profiled_frame;
     uintptr_t last_profiled_frame_seq;
 
     Py_tracefunc c_profilefunc;
@@ -195,6 +189,11 @@ struct _ts {
     /* Unique thread state id. */
     uint64_t id;
 
+    struct _PyControlRecord *controlstack_top;
+    struct _PyControlRecord *controlstack_limit;
+    struct _PyControlRecord *controlstack_end;
+    Py_ssize_t controlstack_extra;
+    size_t controlstack_size;
     _PyStackChunk *datastack_chunk;
     PyObject **datastack_top;
     PyObject **datastack_limit;
@@ -326,7 +325,7 @@ PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
 
 /* Frame evaluation API */
 
-typedef PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, struct _PyInterpreterFrame *, int);
+typedef PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, struct _PyControlRecord *, int);
 
 PyAPI_FUNC(_PyFrameEvalFunction) _PyInterpreterState_GetEvalFrameFunc(
     PyInterpreterState *interp);

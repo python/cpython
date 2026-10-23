@@ -81,7 +81,7 @@ static _PyExecutorObject *current_executor;
 static PyObject *
 dummy_func(
     PyThreadState *tstate,
-    _PyInterpreterFrame *frame,
+    _PyControlRecord *frame,
     unsigned char opcode,
     unsigned int oparg,
     _Py_CODEUNIT *next_instr,

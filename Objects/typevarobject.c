@@ -1,6 +1,6 @@
 // TypeVar, TypeVarTuple, ParamSpec, and TypeAlias
 #include "Python.h"
-#include "pycore_interpframe.h"   // _PyInterpreterFrame
+#include "pycore_interpframe.h"   // _PyControlRecord
 #include "pycore_object.h"        // _PyObject_GC_TRACK/UNTRACK, PyAnnotateFormat
 #include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_typevarobject.h"
@@ -390,14 +390,14 @@ make_union(PyObject *self, PyObject *other)
 static PyObject *
 caller(void)
 {
-    _PyInterpreterFrame *f = _PyThreadState_GET()->current_frame;
+    _PyControlRecord *f = _PyThreadState_GET()->current_frame;
     if (f == NULL) {
         Py_RETURN_NONE;
     }
-    if (f == NULL || PyStackRef_IsNull(f->f_funcobj)) {
+    if (f == NULL || PyStackRef_IsNull(f->data->f_funcobj)) {
         Py_RETURN_NONE;
     }
-    PyObject *r = PyFunction_GetModule(PyStackRef_AsPyObjectBorrow(f->f_funcobj));
+    PyObject *r = PyFunction_GetModule(PyStackRef_AsPyObjectBorrow(f->data->f_funcobj));
     if (!r) {
         PyErr_Clear();
         Py_RETURN_NONE;

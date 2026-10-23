@@ -175,7 +175,7 @@ def generate_recorder_functions(filenames: list[str], analysis: Analysis, out: C
 #endif
 """
     )
-    args = "_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value"
+    args = "_PyControlRecord *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value"
     emitter = RecorderEmitter(out, "*recorded_value", "Py_INCREF")
     nop = analysis.instructions["NOP"]
     for uop in analysis.uops.values():

@@ -2,16 +2,17 @@
 
 #include "pycore_ceval.h"
 #include "pycore_frame.h"
+#include "pycore_interpframe.h"
 #include "pycore_jit.h"
 
 #include "jit.h"
 
 _Py_CODEUNIT *
 _PyJIT_Entry(
-    _PyExecutorObject *exec, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate
+    _PyExecutorObject *exec, _PyControlRecord *frame, _PyStackRef *stack_pointer, PyThreadState *tstate
 ) {
     // Note that this is *not* a tail call
     jit_func_preserve_none jitted = (jit_func_preserve_none)exec->jit_code;
-    return jitted(exec, frame, stack_pointer, tstate,
+    return jitted(exec, frame, frame->data, stack_pointer, tstate,
                   PyStackRef_ZERO_BITS, PyStackRef_ZERO_BITS, PyStackRef_ZERO_BITS);
 }

@@ -766,7 +766,13 @@ get_task_frame(RemoteUnwinderObject *unwinder, uintptr_t task_addr, uintptr_t *f
         return -1;
     }
 
-    *frame_addr = running_coro_addr + (uintptr_t)unwinder->debug_offsets.gen_object.gi_iframe;
+    // A running coroutine executes in a record on the thread's control stack.
+    if (read_ptr(unwinder,
+                 running_coro_addr + (uintptr_t)unwinder->debug_offsets.gen_object.gi_live_frame,
+                 frame_addr) < 0) {
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Running task frame read failed");
+        return -1;
+    }
     return 0;
 }
 

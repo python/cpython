@@ -31,12 +31,12 @@ class sentinel "sentinelobject *" "&PySentinel_Type"
 static PyObject *
 caller(void)
 {
-    _PyInterpreterFrame *f = _PyThreadState_GET()->current_frame;
-    if (f == NULL || PyStackRef_IsNull(f->f_funcobj)) {
+    _PyControlRecord *f = _PyThreadState_GET()->current_frame;
+    if (f == NULL || PyStackRef_IsNull(f->data->f_funcobj)) {
         assert(!PyErr_Occurred());
         Py_RETURN_NONE;
     }
-    PyFunctionObject *func = _PyFrame_GetFunction(f);
+    PyFunctionObject *func = _PyFrame_GetFunction(f->data);
     assert(PyFunction_Check(func));
     PyObject *r = PyFunction_GetModule((PyObject *)func);
     if (!r) {

@@ -6,7 +6,7 @@
 #endif
 
 #include "pycore_structs.h"       // _Py_CODEUNIT
-#include "pycore_typedefs.h"      // _PyInterpreterFrame
+#include "pycore_typedefs.h"      // _PyControlRecord
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,32 +37,32 @@ int _PyMonitoring_GetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringE
 // these are exported only for other re-generated interpreters to call
 PyAPI_FUNC(int)
 _Py_call_instrumentation(PyThreadState *tstate, int event,
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr);
+    _PyControlRecord *frame, _Py_CODEUNIT *instr);
 
 PyAPI_FUNC(int)
-_Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
+_Py_call_instrumentation_line(PyThreadState *tstate, _PyControlRecord* frame,
                               _Py_CODEUNIT *instr, _Py_CODEUNIT *prev);
 
 PyAPI_FUNC(int)
 _Py_call_instrumentation_instruction(
-    PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr);
+    PyThreadState *tstate, _PyControlRecord* frame, _Py_CODEUNIT *instr);
 
 PyAPI_FUNC(_Py_CODEUNIT *)
 _Py_call_instrumentation_jump(
     _Py_CODEUNIT *instr, PyThreadState *tstate, int event,
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest);
+    _PyControlRecord *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest);
 
 PyAPI_FUNC(int)
 _Py_call_instrumentation_arg(PyThreadState *tstate, int event,
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg);
+    _PyControlRecord *frame, _Py_CODEUNIT *instr, PyObject *arg);
 
 PyAPI_FUNC(int)
 _Py_call_instrumentation_2args(PyThreadState *tstate, int event,
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1);
+    _PyControlRecord *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1);
 
 PyAPI_FUNC(void)
 _Py_call_instrumentation_exc2(PyThreadState *tstate, int event,
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1);
+    _PyControlRecord *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1);
 
 PyAPI_DATA(PyObject) _PyInstrumentation_MISSING;
 PyAPI_DATA(PyObject) _PyInstrumentation_DISABLE;

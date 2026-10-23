@@ -10,7 +10,7 @@ extern "C" {
 
 #include "pycore_interp_structs.h" // PyGC_Head
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_typedefs.h"      // _PyInterpreterFrame
+#include "pycore_typedefs.h"      // _PyControlRecord
 
 
 /* Get an object's GC head */
@@ -352,7 +352,8 @@ union _PyStackRef;
 
 // GC visit callback for tracked interpreter frames
 // GH-150766: exported for greenlet
-PyAPI_FUNC(int) _PyGC_VisitFrameStack(_PyInterpreterFrame *frame, visitproc visit, void *arg);
+PyAPI_FUNC(int) _PyGC_VisitFrameStack(_PyControlRecord *frame, _PyInterpreterDataFrame *fp,
+                      visitproc visit, void *arg);
 PyAPI_FUNC(int) _PyGC_VisitStackRef(union _PyStackRef *ref, visitproc visit, void *arg);
 
 #ifdef Py_GIL_DISABLED

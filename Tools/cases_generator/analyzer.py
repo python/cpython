@@ -522,6 +522,7 @@ def has_error_without_pop(op: parser.CodeDef) -> bool:
 
 
 NON_ESCAPING_FUNCTIONS = (
+    "exit_interpreter",
     "PyCFunction_GET_FLAGS",
     "PyCFunction_GET_FUNCTION",
     "PyCFunction_GET_SELF",
@@ -603,6 +604,13 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyFunction_SetVersion",
     "_PyGen_GetGeneratorFromFrame",
     "gen_try_set_executing",
+    "_PyThreadState_HasControlSpace",
+    "_PyThreadState_UpdateControlLimit",
+    "_PyThreadState_AdjustControlLimit",
+    "_PyFrame_GetCaller",
+    "_PyFrame_GetPrevious",
+    "PyMutex_LockFast",
+    "PyMutex_Unlock",
     "_PyInterpreterState_GET",
     "_PyList_AppendTakeRef",
     "_PyList_ITEMS",
@@ -669,6 +677,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_Py_unset_eval_breaker_bit",
     "_Py_set_eval_breaker_bit",
     "trigger_backoff_counter",
+    "_PyThreadState_PushCStackRef",
     "_PyThreadState_PopCStackRefSteal",
     "doesnt_escape",
     "_Py_GatherStats_GetIter",

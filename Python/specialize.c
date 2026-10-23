@@ -2949,7 +2949,7 @@ _Py_Specialize_GetIter(_PyStackRef iterable, _Py_CODEUNIT *instr)
 }
 
 void
-_Py_Specialize_Resume(_Py_CODEUNIT *instr, PyThreadState *tstate, _PyInterpreterFrame *frame)
+_Py_Specialize_Resume(_Py_CODEUNIT *instr, PyThreadState *tstate, _PyControlRecord *frame)
 {
     if (tstate->tracing == 0 &&
         FT_ATOMIC_LOAD_UINT8_RELAXED(instr->op.code) == RESUME) {

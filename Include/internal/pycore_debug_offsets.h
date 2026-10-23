@@ -53,7 +53,7 @@ extern "C" {
 # define _Py_Debug_gilruntimestate_enabled offsetof(struct _gil_runtime_state, enabled)
 # define _Py_Debug_Free_Threaded 1
 # define _Py_Debug_code_object_co_tlbc offsetof(PyCodeObject, co_tlbc)
-# define _Py_Debug_interpreter_frame_tlbc_index offsetof(_PyInterpreterFrame, tlbc_index)
+# define _Py_Debug_interpreter_frame_tlbc_index offsetof(_PyControlRecord, tlbc_index)
 # define _Py_Debug_interpreter_state_tlbc_generation offsetof(PyInterpreterState, tlbc_indices.tlbc_generation)
 #else
 # define _Py_Debug_gilruntimestate_enabled 0
@@ -130,6 +130,8 @@ typedef struct _Py_DebugOffsets {
         uint64_t owner;
         uint64_t stackpointer;
         uint64_t tlbc_index;
+        uint64_t state;
+        uint64_t c_frame;
     } interpreter_frame;
 
     // Code object offset;
@@ -242,6 +244,7 @@ typedef struct _Py_DebugOffsets {
         uint64_t gi_name;
         uint64_t gi_iframe;
         uint64_t gi_frame_state;
+        uint64_t gi_live_frame;
     } gen_object;
 
     struct _llist_node {
@@ -309,14 +312,16 @@ typedef struct _Py_DebugOffsets {
         .exc_value = offsetof(_PyErr_StackItem, exc_value), \
     }, \
     .interpreter_frame = { \
-        .size = sizeof(_PyInterpreterFrame), \
-        .previous = offsetof(_PyInterpreterFrame, previous), \
-        .executable = offsetof(_PyInterpreterFrame, f_executable), \
-        .instr_ptr = offsetof(_PyInterpreterFrame, instr_ptr), \
-        .localsplus = offsetof(_PyInterpreterFrame, localsplus), \
-        .owner = offsetof(_PyInterpreterFrame, owner), \
-        .stackpointer = offsetof(_PyInterpreterFrame, stackpointer), \
+        .size = sizeof(_PyControlRecord), \
+        .previous = 0, \
+        .executable = offsetof(_PyControlRecord, f_executable), \
+        .instr_ptr = offsetof(_PyControlRecord, instr_ptr), \
+        .localsplus = offsetof(_PyControlRecord, data), \
+        .owner = offsetof(_PyControlRecord, owner), \
+        .stackpointer = offsetof(_PyControlRecord, stackpointer), \
         .tlbc_index = _Py_Debug_interpreter_frame_tlbc_index, \
+        .state = offsetof(_PyControlRecord, state), \
+        .c_frame = offsetof(_PyControlRecord, c_frame), \
     }, \
     .code_object = { \
         .size = sizeof(PyCodeObject), \
@@ -401,6 +406,7 @@ typedef struct _Py_DebugOffsets {
         .gi_name = offsetof(PyGenObject, gi_name), \
         .gi_iframe = offsetof(PyGenObject, gi_iframe), \
         .gi_frame_state = offsetof(PyGenObject, gi_frame_state), \
+        .gi_live_frame = offsetof(PyGenObject, gi_live_frame), \
     }, \
     .llist_node = { \
         .next = offsetof(struct llist_node, next), \
