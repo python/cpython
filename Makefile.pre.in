@@ -25,6 +25,13 @@ MODSHARED_NAMES=   _MODSHARED_NAMES_
 MODDISABLED_NAMES= _MODDISABLED_NAMES_
 MODOBJS=           _MODOBJS_
 MODLIBS=           _MODLIBS_
+# Objects and libraries of the bootstrap modules (Modules/Setup.bootstrap)
+# only. These are the only static modules linked into the build helper
+# programs (Programs/_freeze_module, _bootstrap_python), so that other
+# builtin modules (Modules/Setup.local, MODULE_BUILDTYPE=static) may depend
+# on products of those helpers (frozen modules, getpath).
+BOOTSTRAP_MODOBJS= _BOOTSTRAP_MODOBJS_
+BOOTSTRAP_MODLIBS= _BOOTSTRAP_MODLIBS_
 
 # === Variables set by configure
 VERSION=	@VERSION@
@@ -359,10 +366,13 @@ COVERAGE_REPORT_OPTIONS=--rc lcov_branch_coverage=1 --branch-coverage --title "C
 
 ##########################################################################
 # Modules
-MODULE_OBJS=	\
-		Modules/config.o \
+MODULE_OBJS_COMMON=	\
 		Modules/main.o \
 		Modules/gcmodule.o
+
+MODULE_OBJS=	\
+		Modules/config.o \
+		$(MODULE_OBJS_COMMON)
 
 IO_H=		Modules/_io/_iomodule.h
 
@@ -613,6 +623,19 @@ LIBRARY_OBJS=	\
 		$(LIBRARY_OBJS_OMIT_FROZEN) \
 		Modules/getpath.o \
 		Python/frozen.o
+
+# objects that get linked into the build helper programs
+# (Programs/_freeze_module, _bootstrap_python): the core, plus the bootstrap
+# modules only (see BOOTSTRAP_MODOBJS). Does not include frozen modules nor
+# getpath, which the helpers are used to build.
+BOOTSTRAP_LIBRARY_OBJS=	\
+		Modules/getbuildinfo_bootstrap.o \
+		$(PARSER_OBJS) \
+		$(OBJECT_OBJS) \
+		$(PYTHON_OBJS) \
+		Modules/config_bootstrap.o \
+		$(MODULE_OBJS_COMMON) \
+		$(BOOTSTRAP_MODOBJS)
 
 LINK_PYTHON_OBJS=@LINK_PYTHON_OBJS@
 
@@ -1613,7 +1636,7 @@ Modules/Setup.bootstrap: $(srcdir)/Modules/Setup.bootstrap.in config.status
 Modules/Setup.stdlib: $(srcdir)/Modules/Setup.stdlib.in config.status
 	./config.status $@
 
-Makefile Modules/config.c: Makefile.pre \
+Makefile Modules/config.c Modules/config_bootstrap.c: Makefile.pre \
 				$(srcdir)/Modules/config.c.in \
 				$(MAKESETUP) \
 				$(srcdir)/Modules/Setup \
@@ -1624,9 +1647,9 @@ Makefile Modules/config.c: Makefile.pre \
 				-s Modules \
 				Modules/Setup.local \
 				Modules/Setup.stdlib \
-				Modules/Setup.bootstrap \
+				-b Modules/Setup.bootstrap \
 				$(srcdir)/Modules/Setup
-	@mv config.c Modules
+	@mv config.c config_bootstrap.c Modules
 	@echo "The Makefile was updated, you may need to re-run make."
 
 .PHONY: regen-test-frozenmain
@@ -1661,9 +1684,9 @@ BOOTSTRAP_HEADERS = \
 
 Programs/_bootstrap_python.o: Programs/_bootstrap_python.c $(BOOTSTRAP_HEADERS) $(PYTHON_HEADERS)
 
-_bootstrap_python: $(LIBRARY_OBJS_OMIT_FROZEN) Programs/_bootstrap_python.o Modules/getpath.o Modules/Setup.local
-	$(LINKCC) $(PY_LDFLAGS_NOLTO) -o $@ $(LIBRARY_OBJS_OMIT_FROZEN) \
-		Programs/_bootstrap_python.o Modules/getpath.o $(LIBS) $(MODLIBS) $(SYSLIBS)
+_bootstrap_python: $(BOOTSTRAP_LIBRARY_OBJS) Programs/_bootstrap_python.o Modules/getpath.o Modules/Setup.local
+	$(LINKCC) $(PY_LDFLAGS_NOLTO) -o $@ $(BOOTSTRAP_LIBRARY_OBJS) \
+		Programs/_bootstrap_python.o Modules/getpath.o $(LIBS) $(BOOTSTRAP_MODLIBS) $(SYSLIBS)
 	# Dummy pybuilddir.txt  is needed for _bootstrap_python to be runnable
 	@echo "none" > ./pybuilddir.txt
 
@@ -1681,6 +1704,9 @@ _bootstrap_python: $(LIBRARY_OBJS_OMIT_FROZEN) Programs/_bootstrap_python.o Modu
 #
 # Standard build process:
 # 1) compile minimal core objects for Py_Compile*() and PyMarshal_Write*().
+#    Only the bootstrap modules (Modules/Setup.bootstrap) are part of these
+#    objects (see BOOTSTRAP_LIBRARY_OBJS), so other builtin modules may
+#    depend on the output of the following steps.
 # 2) build Programs/_freeze_module binary.
 # 3) create frozen module headers for importlib and getpath.
 # 4) build _bootstrap_python binary.
@@ -1753,8 +1779,8 @@ Programs/_freeze_module.o: Programs/_freeze_module.c Makefile
 
 Modules/getpath_noop.o: $(srcdir)/Modules/getpath_noop.c Makefile
 
-Programs/_freeze_module: Programs/_freeze_module.o Modules/getpath_noop.o $(LIBRARY_OBJS_OMIT_FROZEN)
-	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_module.o Modules/getpath_noop.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
+Programs/_freeze_module: Programs/_freeze_module.o Modules/getpath_noop.o $(BOOTSTRAP_LIBRARY_OBJS)
+	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_module.o Modules/getpath_noop.o $(BOOTSTRAP_LIBRARY_OBJS) $(LIBS) $(BOOTSTRAP_MODLIBS) $(SYSLIBS)
 
 # We manually freeze getpath.py rather than through freeze_modules
 Python/frozen_modules/getpath.h: Modules/getpath.py $(FREEZE_MODULE_BOOTSTRAP_DEPS)
@@ -1907,11 +1933,24 @@ Modules/getbuildinfo.o: $(PARSER_OBJS) \
 		$(MODOBJS) \
 		$(DTRACE_OBJS) \
 		$(srcdir)/Modules/getbuildinfo.c
-	$(CC) -c $(PY_CORE_CFLAGS) \
+	$(CC) -c $(PY_CORE_CFLAGS) $(GETBUILDINFO_CFLAGS) \
+	      -o $@ $(srcdir)/Modules/getbuildinfo.c
+
+# Separate object for the build helper programs: it must not depend on
+# $(MODOBJS), which may in turn depend on the helpers' output.
+Modules/getbuildinfo_bootstrap.o: $(PARSER_OBJS) \
+		$(OBJECT_OBJS) \
+		$(PYTHON_OBJS) \
+		$(MODULE_OBJS_COMMON) \
+		$(BOOTSTRAP_MODOBJS) \
+		$(srcdir)/Modules/getbuildinfo.c
+	$(CC) -c $(PY_CORE_CFLAGS) $(GETBUILDINFO_CFLAGS) \
+	      -o $@ $(srcdir)/Modules/getbuildinfo.c
+
+GETBUILDINFO_CFLAGS= \
 	      -DGITVERSION="\"`LC_ALL=C $(GITVERSION)`\"" \
 	      -DGITTAG="\"`LC_ALL=C $(GITTAG)`\"" \
-	      -DGITBRANCH="\"`LC_ALL=C $(GITBRANCH)`\"" \
-	      -o $@ $(srcdir)/Modules/getbuildinfo.c
+	      -DGITBRANCH="\"`LC_ALL=C $(GITBRANCH)`\""
 
 Modules/getpath.o: $(srcdir)/Modules/getpath.c Python/frozen_modules/getpath.h Makefile $(PYTHON_HEADERS)
 	$(CC) -c $(PY_CORE_CFLAGS) -DPYTHONPATH='"$(PYTHONPATH)"' \
@@ -2279,7 +2318,7 @@ regen-slots: Python/slots.toml
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_slots.py \
 		--generate-all
 
-$(LIBRARY_OBJS) $(MODOBJS) Programs/python.o $(PLATFORM_MAIN_OBJS): $(PYTHON_HEADERS)
+$(LIBRARY_OBJS) $(MODOBJS) Modules/config_bootstrap.o Programs/python.o $(PLATFORM_MAIN_OBJS): $(PYTHON_HEADERS)
 
 
 ######################################################################
@@ -3365,7 +3404,7 @@ clean: clean-profile clean-jit-stencils
 clobber: clean
 	-rm -f $(BUILDPYTHON) $(LIBRARY) $(LDLIBRARY) $(DLLLIBRARY) \
 		tags TAGS \
-		config.cache config.log pyconfig.h Modules/config.c
+		config.cache config.log pyconfig.h Modules/config.c Modules/config_bootstrap.c
 	-rm -rf build platform
 	-rm -rf $(PYTHONFRAMEWORKDIR)
 	-rm -rf Platforms/Apple/iOS/Frameworks
