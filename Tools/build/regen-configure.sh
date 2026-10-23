@@ -26,4 +26,11 @@ if command -v selinuxenabled >/dev/null && selinuxenabled; then
     PATH_OPT=":Z"
 fi
 
-"$RUNTIME" run --rm -v "$abs_srcdir:$WORK_DIR$PATH_OPT" "$IMAGE"
+purge_autom4te_cache() {
+    "$RUNTIME" run --rm -v "$abs_srcdir:$WORK_DIR$PATH_OPT" \
+        --entrypoint sh "$IMAGE" -c "rm -rf $WORK_DIR/autom4te.cache"
+}
+
+purge_autom4te_cache
+trap purge_autom4te_cache EXIT
+"$RUNTIME" run --rm -u "$(id -u):$(id -g)" -v "$abs_srcdir:$WORK_DIR$PATH_OPT" "$IMAGE"
