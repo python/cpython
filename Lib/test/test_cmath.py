@@ -590,6 +590,16 @@ class IsCloseTests(test_math.IsCloseTests):
         self.assertIsNotClose(-INF, INF)
         self.assertIsNotClose(0, INF)
         self.assertIsNotClose(0, INF*1j)
+        for z in complex_nans:
+            for w in complex_infinities + complex_nans:
+                self.assertIsNotClose(z, w)
+
+        for z in complex_infinities:
+            for w in complex_infinities:
+                if z != w:
+                    self.assertIsNotClose(z, w)
+                else:
+                    self.assertIsClose(z, z)
 
 
 if __name__ == "__main__":
