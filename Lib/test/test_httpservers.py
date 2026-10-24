@@ -364,6 +364,110 @@ class BaseHTTPServerTestCase(BaseTestCase):
             self.assertEqual(b'', data)
 
 
+class RFC7230FramingTestCase(BaseTestCase):
+    """Exercise the framing checks added for RFC 7230 section 3.3.3."""
+
+    class request_handler(NoLogRequestHandler, BaseHTTPRequestHandler):
+        protocol_version = 'HTTP/1.1'
+        default_request_version = 'HTTP/1.1'
+
+        def do_POST(self):
+            cl = self.headers.get('Content-Length')
+            n = int(cl) if cl and cl.isdigit() else 0
+            body = self.rfile.read(n) if n else b''
+            out = b'POST body=' + body + b'\n'
+            self.send_response(HTTPStatus.OK)
+            self.send_header('Content-Type', 'text/plain')
+            self.send_header('Content-Length', str(len(out)))
+            self.end_headers()
+            self.wfile.write(out)
+
+    def _send_raw(self, payload, timeout=2):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        sock.connect((self.HOST, self.PORT))
+        try:
+            sock.sendall(payload)
+            data = b''
+            try:
+                while True:
+                    chunk = sock.recv(4096)
+                    if not chunk:
+                        break
+                    data += chunk
+            except TimeoutError:
+                pass
+        finally:
+            sock.close()
+        return data
+
+    def test_transfer_encoding_rejected(self):
+        # RFC 7230 section 3.3.3 rule 3 plus no chunked decoder.
+        data = self._send_raw(
+            b'POST / HTTP/1.1\r\n'
+            b'Host: 127.0.0.1\r\n'
+            b'Transfer-Encoding: chunked\r\n'
+            b'Content-Length: 5\r\n'
+            b'\r\n'
+            b'0\r\n\r\nGET /pwn HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n'
+        )
+        self.assertTrue(
+            data.startswith(b'HTTP/1.0 400') or data.startswith(b'HTTP/1.1 400'),
+            data[:80])
+        self.assertIn(b'Connection: close', data)
+        self.assertNotIn(b'/pwn', data)
+
+    def test_duplicate_content_length_rejected(self):
+        # RFC 7230 section 3.3.3 rule 4.
+        data = self._send_raw(
+            b'POST / HTTP/1.1\r\n'
+            b'Host: 127.0.0.1\r\n'
+            b'Content-Length: 4\r\n'
+            b'Content-Length: 0\r\n'
+            b'\r\n'
+            b'ABCD'
+        )
+        self.assertTrue(
+            data.startswith(b'HTTP/1.0 400') or data.startswith(b'HTTP/1.1 400'),
+            data[:80])
+        self.assertIn(b'Connection: close', data)
+
+    def test_duplicate_content_length_same_value_accepted(self):
+        # Two Content-Length headers with the same value are not a conflict
+        # per RFC 7230 section 3.3.3 rule 4.
+        data = self._send_raw(
+            b'POST / HTTP/1.1\r\n'
+            b'Host: 127.0.0.1\r\n'
+            b'Content-Length: 4\r\n'
+            b'Content-Length: 4\r\n'
+            b'\r\n'
+            b'ABCD'
+        )
+        self.assertTrue(
+            data.startswith(b'HTTP/1.0 200') or data.startswith(b'HTTP/1.1 200'),
+            data[:80])
+        self.assertIn(b"POST body=ABCD", data)
+
+    def test_keep_alive_post_pipeline(self):
+        # Regression: two pipelined POSTs with correct Content-Length
+        # both succeed on a single keep-alive connection.
+        data = self._send_raw(
+            b'POST / HTTP/1.1\r\n'
+            b'Host: 127.0.0.1\r\n'
+            b'Content-Length: 4\r\n'
+            b'\r\n'
+            b'ABCD'
+            b'POST / HTTP/1.1\r\n'
+            b'Host: 127.0.0.1\r\n'
+            b'Content-Length: 3\r\n'
+            b'\r\n'
+            b'XYZ'
+        )
+        self.assertEqual(data.count(b'HTTP/1.1 200'), 2)
+        self.assertIn(b'POST body=ABCD', data)
+        self.assertIn(b'POST body=XYZ', data)
+
+
 class HTTP09ServerTestCase(BaseTestCase):
 
     class request_handler(NoLogRequestHandler, BaseHTTPRequestHandler):
