@@ -3530,6 +3530,23 @@ class TestSpecial(unittest.TestCase):
             UNRESTRICTED = frozenset({"sc", "cs"})
         self.assertIs(Directions({"sc"}), Directions.DOWN_ONLY)
 
+    def test_contains_equal_value_of_other_hashability(self):
+        class Sets(Enum):
+            A = {1, 2}
+        class Magic(Enum):
+            PNG = b'\x89PNG'
+        class BytesMagic(bytes, Enum):
+            PNG = b'\x89PNG'
+        self.assertIn(Sets.A.value, Sets)
+        self.assertIn({1, 2}, Sets)
+        self.assertIn(frozenset({1, 2}), Sets)
+        self.assertNotIn({1, 3}, Sets)
+        self.assertNotIn(frozenset({1, 3}), Sets)
+        for enum_class in Magic, BytesMagic:
+            self.assertIn(bytearray(b'\x89PNG'), enum_class)
+            self.assertNotIn(bytearray(b'GIF8'), enum_class)
+            self.assertIs(enum_class(bytearray(b'\x89PNG')), enum_class.PNG)
+
 
 class TestOrder(unittest.TestCase):
     "test usage of the `_order_` attribute"

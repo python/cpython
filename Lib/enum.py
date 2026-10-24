@@ -777,9 +777,14 @@ class EnumType(type):
             except ValueError:
                 pass
         try:
-            return value in cls._hashable_values_                   # a set
+            if value in cls._hashable_values_:                      # a set
+                return True
         except TypeError:
-            return value in cls._unhashable_values_                 # a list
+            # an unhashable value can equal a hashable one, e.g. bytearray
+            for v in cls._hashable_values_:
+                if v == value:
+                    return True
+        return value in cls._unhashable_values_                     # a list
 
     def __delattr__(cls, attr):
         # nicer error message when someone tries to delete an attribute
