@@ -751,9 +751,9 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
                               uint32_t shared_keys_version);
 static int specialize_class_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name);
 
-/* Returns true if instances of obj's class are
- * likely to have `name` in their __dict__.
- * For objects with inline values, we check in the shared keys.
+/* Returns true if obj may have its own value for `name`.
+ * For objects with inline values, we check obj's slot for `name` in the
+ * shared keys: it may be empty even though the name has a slot.
  * For other objects, we check their actual dictionary.
  */
 static bool
@@ -767,7 +767,17 @@ instance_has_key(PyObject *obj, PyObject *name, uint32_t *shared_keys_version)
         PyDictKeysObject *keys = ((PyHeapTypeObject *)cls)->ht_cached_keys;
         Py_ssize_t index =
             _PyDictKeys_StringLookupAndVersion(keys, name, shared_keys_version);
-        return index >= 0;
+        if (index < 0) {
+            return false;
+        }
+        bool result;
+        Py_BEGIN_CRITICAL_SECTION(obj);
+        PyDictValues *values = _PyObject_InlineValues(obj);
+        result = !FT_ATOMIC_LOAD_UINT8(values->valid) ||
+                 index >= values->capacity ||
+                 FT_ATOMIC_LOAD_PTR_RELAXED(values->values[index]) != NULL;
+        Py_END_CRITICAL_SECTION();
+        return result;
     }
     PyDictObject *dict = _PyObject_GetManagedDict(obj);
     if (dict == NULL || !PyDict_CheckExact(dict)) {
@@ -1282,14 +1292,28 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
 
     unsigned long tp_flags = PyType_GetFlags(owner_cls);
     if (tp_flags & Py_TPFLAGS_INLINE_VALUES) {
-        #ifndef Py_GIL_DISABLED
-        assert(_PyDictKeys_StringLookup(
-                   ((PyHeapTypeObject *)owner_cls)->ht_cached_keys, name) < 0);
-        #endif
         if (shared_keys_version == 0) {
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
             return 0;
         }
+        /* The name can have a slot in the shared keys (e.g. from
+         * __static_attributes__) that is empty in this instance.  Store the
+         * slot's offset so the instruction can check it stays empty; 0 means
+         * there is no slot to check. */
+        uint16_t slot_offset = 0;
+        Py_ssize_t index = _PyDictKeys_StringLookupSplit(
+            ((PyHeapTypeObject *)owner_cls)->ht_cached_keys, name);
+        assert(index != DKIX_ERROR);
+        if (index >= 0) {
+            char *value_addr = (char *)&_PyObject_InlineValues(owner)->values[index];
+            Py_ssize_t offset = value_addr - (char *)owner;
+            if (offset != (uint16_t)offset) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_RANGE);
+                return 0;
+            }
+            slot_offset = (uint16_t)offset;
+        }
+        cache->keys_version[0] = slot_offset;
         specialize(instr, is_method ? LOAD_ATTR_METHOD_WITH_VALUES : LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES);
     }
     else {
