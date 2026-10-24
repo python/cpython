@@ -162,8 +162,9 @@ or on combining URL components into a URL string.
 
    .. [1] Depending on the value of the *missing_as_none* argument.
 
-   Reading the :attr:`port` attribute will raise a :exc:`ValueError` if
-   an invalid port is specified in the URL.  See section
+   An invalid port specified in the URL will raise a :exc:`ValueError`.
+   Reading the :attr:`port` attribute of a result object created directly
+   will raise a :exc:`ValueError` too.  See section
    :ref:`urlparse-result-object` for more information on the result object.
 
    Unmatched square brackets in the :attr:`netloc` attribute will raise a
@@ -224,6 +225,11 @@ or on combining URL components into a URL string.
 
    .. versionchanged:: 3.15
       Added the *missing_as_none* parameter.
+
+   .. versionchanged:: next
+      An invalid port now raises :exc:`ValueError` when the URL is parsed,
+      not only when the :attr:`~urllib.parse.SplitResult.port` attribute is
+      read.
 
 .. _WHATWG spec: https://url.spec.whatwg.org/#concept-basic-url-parser
 
