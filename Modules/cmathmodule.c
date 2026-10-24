@@ -139,20 +139,39 @@ special_type(double d)
         return ST_NINF;
 }
 
+#define P Py_MATH_PI
+/* Precomputed for static initialization with MSVC /fp:strict. */
+#define P14 0.78539816339744830962  /* P/4: 0x3fe921fb54442d18 */
+#define P12 1.57079632679489661923  /* P/2: 0x3ff921fb54442d18 */
+#define P34 2.35619449019234492885  /* P*3/4: 0x4002d97c7f3321d2 */
+#define INF INFINITY
+/* MSVC /fp:strict does not accept NAN in static initializers.  This finite
+   value does not otherwise occur in the tables and is decoded when read. */
+#define N 9.5426319407711027e33
+#define U -9.5426319407711027e33 /* unlikely value, used as placeholder */
+
+static Py_complex
+special_value(const Py_complex table[7][7],
+              enum special_types real_type,
+              enum special_types imag_type)
+{
+    Py_complex value = table[real_type][imag_type];
+    if (value.real == N) {
+        value.real = fabs(nan(""));
+    }
+    if (value.imag == N) {
+        value.imag = fabs(nan(""));
+    }
+    return value;
+}
+
 #define SPECIAL_VALUE(z, table)                       \
     if (!isfinite((z).real) || !isfinite((z).imag)) { \
         errno = 0;                                    \
-        return table[special_type((z).real)]          \
-                    [special_type((z).imag)];         \
+        return special_value(                         \
+            table, special_type((z).real),            \
+            special_type((z).imag));                  \
     }
-
-#define P Py_MATH_PI
-#define P14 0.25*Py_MATH_PI
-#define P12 0.5*Py_MATH_PI
-#define P34 0.75*Py_MATH_PI
-#define INF INFINITY
-#define N Py_NAN
-#define U -9.5426319407711027e33 /* unlikely value, used as placeholder */
 
 /* First, the C functions that do the real work.  Each of the c_*
    functions computes and returns the C99 Annex G recommended result
@@ -163,7 +182,7 @@ special_type(double d)
    raised.
 */
 
-static Py_complex acos_special_values[7][7] = {
+static const Py_complex acos_special_values[7][7] = {
   { {P34,INF}, {P,INF},  {P,INF},  {P,-INF},  {P,-INF},  {P34,-INF}, {N,INF} },
   { {P12,INF}, {U,U},    {U,U},    {U,U},     {U,U},     {P12,-INF}, {N,N} },
   { {P12,INF}, {U,U},    {P12,0.}, {P12,-0.}, {U,U},     {P12,-INF}, {P12,N} },
@@ -209,7 +228,7 @@ cmath_acos_impl(PyObject *module, Py_complex z)
 }
 
 
-static Py_complex acosh_special_values[7][7] = {
+static const Py_complex acosh_special_values[7][7] = {
   { {INF,-P34}, {INF,-P},  {INF,-P},  {INF,P},  {INF,P},  {INF,P34}, {INF,N} },
   { {INF,-P12}, {U,U},     {U,U},     {U,U},    {U,U},    {INF,P12}, {N,N} },
   { {INF,-P12}, {U,U},     {0.,-P12}, {0.,P12}, {U,U},    {INF,P12}, {N,P12} },
@@ -272,7 +291,7 @@ cmath_asin_impl(PyObject *module, Py_complex z)
 }
 
 
-static Py_complex asinh_special_values[7][7] = {
+static const Py_complex asinh_special_values[7][7] = {
   { {-INF,-P14}, {-INF,-0.}, {-INF,-0.}, {-INF,0.}, {-INF,0.}, {-INF,P14}, {-INF,N} },
   { {-INF,-P12}, {U,U},      {U,U},      {U,U},     {U,U},     {-INF,P12}, {N,N} },
   { {-INF,-P12}, {U,U},      {-0.,-0.},  {-0.,0.},  {U,U},     {-INF,P12}, {N,N} },
@@ -341,7 +360,7 @@ cmath_atan_impl(PyObject *module, Py_complex z)
 }
 
 
-static Py_complex atanh_special_values[7][7] = {
+static const Py_complex atanh_special_values[7][7] = {
   { {-0.,-P12}, {-0.,-P12}, {-0.,-P12}, {-0.,P12}, {-0.,P12}, {-0.,P12}, {-0.,N} },
   { {-0.,-P12}, {U,U},      {U,U},      {U,U},     {U,U},     {-0.,P12}, {N,N} },
   { {-0.,-P12}, {U,U},      {-0.,-0.},  {-0.,0.},  {U,U},     {-0.,P12}, {-0.,N} },
@@ -422,7 +441,7 @@ cmath_cos_impl(PyObject *module, Py_complex z)
 
 
 /* cosh(infinity + i*y) needs to be dealt with specially */
-static Py_complex cosh_special_values[7][7] = {
+static const Py_complex cosh_special_values[7][7] = {
   { {INF,N}, {U,U}, {INF,0.},  {INF,-0.}, {U,U}, {INF,N}, {INF,N} },
   { {N,N},   {U,U}, {U,U},     {U,U},     {U,U}, {N,N},   {N,N} },
   { {N,0.},  {U,U}, {1.,0.},   {1.,-0.},  {U,U}, {N,0.},  {N,0.} },
@@ -459,8 +478,9 @@ cmath_cosh_impl(PyObject *module, Py_complex z)
             }
         }
         else {
-            r = cosh_special_values[special_type(z.real)]
-                                   [special_type(z.imag)];
+            r = special_value(cosh_special_values,
+                              special_type(z.real),
+                              special_type(z.imag));
         }
         /* need to set errno = EDOM if y is +/- infinity and x is not
            a NaN */
@@ -492,7 +512,7 @@ cmath_cosh_impl(PyObject *module, Py_complex z)
 
 /* exp(infinity + i*y) and exp(-infinity + i*y) need special treatment for
    finite y */
-static Py_complex exp_special_values[7][7] = {
+static const Py_complex exp_special_values[7][7] = {
   { {0.,0.}, {U,U}, {0.,-0.},  {0.,0.},  {U,U}, {0.,0.}, {0.,0.} },
   { {N,N},   {U,U}, {U,U},     {U,U},    {U,U}, {N,N},   {N,N} },
   { {N,N},   {U,U}, {1.,-0.},  {1.,0.},  {U,U}, {N,N},   {N,N} },
@@ -528,8 +548,9 @@ cmath_exp_impl(PyObject *module, Py_complex z)
             }
         }
         else {
-            r = exp_special_values[special_type(z.real)]
-                                  [special_type(z.imag)];
+            r = special_value(exp_special_values,
+                              special_type(z.real),
+                              special_type(z.imag));
         }
         /* need to set errno = EDOM if y is +/- infinity and x is not
            a NaN and not -infinity */
@@ -559,7 +580,7 @@ cmath_exp_impl(PyObject *module, Py_complex z)
     return r;
 }
 
-static Py_complex log_special_values[7][7] = {
+static const Py_complex log_special_values[7][7] = {
   { {INF,-P34}, {INF,-P},  {INF,-P},   {INF,P},   {INF,P},  {INF,P34},  {INF,N} },
   { {INF,-P12}, {U,U},     {U,U},      {U,U},     {U,U},    {INF,P12},  {N,N} },
   { {INF,-P12}, {U,U},     {-INF,-P},  {-INF,P},  {U,U},    {INF,P12},  {N,N} },
@@ -683,7 +704,7 @@ cmath_sin_impl(PyObject *module, Py_complex z)
 
 
 /* sinh(infinity + i*y) needs to be dealt with specially */
-static Py_complex sinh_special_values[7][7] = {
+static const Py_complex sinh_special_values[7][7] = {
   { {INF,N}, {U,U}, {-INF,-0.}, {-INF,0.}, {U,U}, {INF,N}, {INF,N} },
   { {N,N},   {U,U}, {U,U},      {U,U},     {U,U}, {N,N},   {N,N} },
   { {0.,N},  {U,U}, {-0.,-0.},  {-0.,0.},  {U,U}, {0.,N},  {0.,N} },
@@ -721,8 +742,9 @@ cmath_sinh_impl(PyObject *module, Py_complex z)
             }
         }
         else {
-            r = sinh_special_values[special_type(z.real)]
-                                   [special_type(z.imag)];
+            r = special_value(sinh_special_values,
+                              special_type(z.real),
+                              special_type(z.imag));
         }
         /* need to set errno = EDOM if y is +/- infinity and x is not
            a NaN */
@@ -750,7 +772,7 @@ cmath_sinh_impl(PyObject *module, Py_complex z)
 }
 
 
-static Py_complex sqrt_special_values[7][7] = {
+static const Py_complex sqrt_special_values[7][7] = {
   { {INF,-INF}, {0.,-INF}, {0.,-INF}, {0.,INF}, {0.,INF}, {INF,INF}, {N,INF} },
   { {INF,-INF}, {U,U},     {U,U},     {U,U},    {U,U},    {INF,INF}, {N,N} },
   { {INF,-INF}, {U,U},     {0.,-0.},  {0.,0.},  {U,U},    {INF,INF}, {N,N} },
@@ -857,7 +879,7 @@ cmath_tan_impl(PyObject *module, Py_complex z)
 
 
 /* tanh(infinity + i*y) needs to be dealt with specially */
-static Py_complex tanh_special_values[7][7] = {
+static const Py_complex tanh_special_values[7][7] = {
   { {-1.,0.}, {U,U}, {-1.,-0.}, {-1.,0.}, {U,U}, {-1.,0.}, {-1.,0.} },
   { {N,N},    {U,U}, {U,U},     {U,U},    {U,U}, {N,N},    {N,N} },
   { {-0.0,N}, {U,U}, {-0.,-0.}, {-0.,0.}, {U,U}, {-0.0,N}, {-0.,N} },
@@ -909,8 +931,9 @@ cmath_tanh_impl(PyObject *module, Py_complex z)
             }
         }
         else {
-            r = tanh_special_values[special_type(z.real)]
-                                   [special_type(z.imag)];
+            r = special_value(tanh_special_values,
+                              special_type(z.real),
+                              special_type(z.imag));
         }
         /* need to set errno = EDOM if z.imag is +/-infinity and
            z.real is finite */
@@ -1049,7 +1072,7 @@ cmath_polar_impl(PyObject *module, Py_complex z)
 
 */
 
-static Py_complex rect_special_values[7][7] = {
+static const Py_complex rect_special_values[7][7] = {
   { {INF,N}, {U,U}, {-INF,0.}, {-INF,-0.}, {U,U}, {INF,N}, {INF,N} },
   { {N,N},   {U,U}, {U,U},     {U,U},      {U,U}, {N,N},   {N,N} },
   { {0.,0.}, {U,U}, {-0.,0.},  {-0.,-0.},  {U,U}, {0.,0.}, {0.,0.} },
@@ -1093,8 +1116,9 @@ cmath_rect_impl(PyObject *module, double r, double phi)
             }
         }
         else {
-            z = rect_special_values[special_type(r)]
-                                   [special_type(phi)];
+            z = special_value(rect_special_values,
+                              special_type(r),
+                              special_type(phi));
         }
         /* need to set errno = EDOM if r is a nonzero number and phi
            is infinite */
@@ -1278,10 +1302,11 @@ cmath_exec(PyObject *mod)
     if (PyModule_Add(mod, "infj", PyComplex_FromCComplex(infj)) < 0) {
         return -1;
     }
-    if (PyModule_Add(mod, "nan", PyFloat_FromDouble(fabs(Py_NAN))) < 0) {
+    double nan_value = fabs(nan(""));
+    if (PyModule_Add(mod, "nan", PyFloat_FromDouble(nan_value)) < 0) {
         return -1;
     }
-    Py_complex nanj = {0.0, fabs(Py_NAN)};
+    Py_complex nanj = {0.0, nan_value};
     if (PyModule_Add(mod, "nanj", PyComplex_FromCComplex(nanj)) < 0) {
         return -1;
     }
