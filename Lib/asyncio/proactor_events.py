@@ -489,8 +489,8 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
 
     def sendto(self, data, addr=None):
         if not isinstance(data, (bytes, bytearray, memoryview)):
-            raise TypeError('data argument must be bytes-like object (%r)',
-                            type(data))
+            raise TypeError(f'data argument must be a bytes-like object, '
+                            f'not {type(data).__name__!r}')
 
         if self._address is not None and addr not in (None, self._address):
             raise ValueError(
