@@ -1304,7 +1304,11 @@ class _BaseGenericAlias(_Final, _root=True):
         # ourselves. The goal is to ensure that Generic (or a subclass) will
         # appear exactly once in the final bases tuple. If we let it appear
         # multiple times, we risk "can't form a consistent MRO" errors.
-        i = bases.index(self)
+        try:
+            i = bases.index(self)
+        except ValueError:
+            # It might not be there, if `Annotated[]` is used:
+            i = 0
         for b in bases[i+1:]:
             if isinstance(b, _BaseGenericAlias):
                 break
@@ -2262,6 +2266,8 @@ class _AnnotatedAlias(_NotIterable, _GenericAlias, _root=True):
         return super().__getattr__(attr)
 
     def __mro_entries__(self, bases):
+        if isinstance(self.__origin__, (_GenericAlias, GenericAlias)):
+            return self.__origin__.__mro_entries__(bases)
         return (self.__origin__,)
 
 
