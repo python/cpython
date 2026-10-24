@@ -1,0 +1,2 @@
+Fix :meth:`threading.Condition.notify` waking no thread when the waiter it
+picks has just timed out; the notification now goes to the next waiter.
