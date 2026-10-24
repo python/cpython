@@ -337,18 +337,42 @@ def decompress(data):
     For incremental decompression, use a BZ2Decompressor object instead.
     """
     results = []
-    while data:
-        decomp = BZ2Decompressor()
-        try:
-            res = decomp.decompress(data)
-        except OSError:
-            if results:
-                break  # Leftover data is not a valid bzip2 stream; ignore it.
-            else:
-                raise  # Error on the first iteration; bail out.
-        results.append(res)
-        if not decomp.eof:
-            raise ValueError("Compressed data ended before the "
-                             "end-of-stream marker was reached")
-        data = decomp.unused_data
+    if not data:
+        return b""
+    # The views are released on exit, so that the caller can resize a
+    # bytearray argument again, also while handling an exception.
+    with memoryview(data) as view, view.cast("B") as data:
+        pos = 0
+        # There is usually a single stream: the first chunk is all of the
+        # data, to decompress it in one go.
+        chunk_size = len(data)
+        while True:
+            decomp = BZ2Decompressor()
+            res = []
+            try:
+                # Feed the stream in chunks of increasing size, so that what
+                # is read past its end (and copied into unused_data) is
+                # bounded by the size of the stream, not by the size of all
+                # the streams that follow it.
+                while not decomp.eof and pos < len(data):
+                    with data[pos:pos + chunk_size] as chunk:
+                        res.append(decomp.decompress(chunk))
+                        pos += len(chunk)
+                    chunk_size *= 2
+            except OSError:
+                if results:
+                    # Leftover data is not a valid bzip2 stream; ignore it.
+                    break
+                else:
+                    raise  # Error on the first iteration; bail out.
+            results.extend(res)
+            if not decomp.eof:
+                raise ValueError("Compressed data ended before the "
+                                 "end-of-stream marker was reached")
+            pos -= len(decomp.unused_data)
+            if pos == len(data):
+                break
+            # Later streams start small: a larger first chunk reads further
+            # past the end of a short stream, a smaller one needs more calls.
+            chunk_size = 1024
     return b"".join(results)
