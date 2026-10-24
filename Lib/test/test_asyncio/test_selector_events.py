@@ -958,19 +958,22 @@ class SelectorSocketTransportTests(test_utils.TestCase):
 
     @unittest.skipUnless(selector_events._HAS_SENDMSG, 'no sendmsg')
     def test_write_sendmsg_partial(self):
+        data = b'data'
+        for buf in data, memoryview(data):
+            with self.subTest(type=type(buf).__name__):
+                self.sock.sendmsg = mock.Mock()
+                # Sent partial data
+                self.sock.sendmsg.return_value = 2
 
-        data = memoryview(b'data')
-        self.sock.sendmsg = mock.Mock()
-        # Sent partial data
-        self.sock.sendmsg.return_value = 2
-
-        transport = self.socket_transport(sendmsg=True)
-        transport._buffer.append(data)
-        self.loop._add_writer(7, transport._write_ready)
-        transport._write_ready()
-        self.assertTrue(self.sock.sendmsg.called)
-        self.assertTrue(self.loop.writers)
-        self.assertEqual(list_to_buffer([b'ta']), transport._buffer)
+                transport = self.socket_transport(sendmsg=True)
+                transport._buffer.append(buf)
+                self.loop._add_writer(7, transport._write_ready)
+                transport._write_ready()
+                self.assertTrue(self.sock.sendmsg.called)
+                self.assertTrue(self.loop.writers)
+                self.assertEqual(list_to_buffer([b'ta']), transport._buffer)
+                # gh-159503: the remainder is a view, not a copy
+                self.assertIs(transport._buffer[0].obj, data)
 
     @unittest.skipUnless(selector_events._HAS_SENDMSG, 'no sendmsg')
     def test_write_sendmsg_half_buffer(self):
@@ -1071,15 +1074,19 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.assertRaises(AssertionError, transport._write_ready)
 
     def test_write_ready_partial(self):
-        data = memoryview(b'data')
-        self.sock.send.return_value = 2
+        data = b'data'
+        for buf in data, memoryview(data):
+            with self.subTest(type=type(buf).__name__):
+                self.sock.send.return_value = 2
 
-        transport = self.socket_transport()
-        transport._buffer.append(data)
-        self.loop._add_writer(7, transport._write_ready)
-        transport._write_ready()
-        self.loop.assert_writer(7, transport._write_ready)
-        self.assertEqual(list_to_buffer([b'ta']), transport._buffer)
+                transport = self.socket_transport()
+                transport._buffer.append(buf)
+                self.loop._add_writer(7, transport._write_ready)
+                transport._write_ready()
+                self.loop.assert_writer(7, transport._write_ready)
+                self.assertEqual(list_to_buffer([b'ta']), transport._buffer)
+                # gh-159503: the remainder is a view, not a copy
+                self.assertIs(transport._buffer[0].obj, data)
 
     def test_write_ready_partial_none(self):
         data = b'data'
