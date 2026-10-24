@@ -543,6 +543,9 @@ class _Stream:
         """
         return self.pos
 
+    def seekable(self):
+        return True
+
     def seek(self, pos=0):
         """Set the stream's file pointer to pos. Negative seeking
            is forbidden.
