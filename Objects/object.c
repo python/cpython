@@ -10,6 +10,7 @@
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
 #include "pycore_dict.h"          // _PyObject_MaterializeManagedDict()
 #include "pycore_floatobject.h"   // _PyFloat_DebugMallocStats()
+#include "pycore_frame.h"         // PyFrameObject.f_frame
 #include "pycore_function.h"      // _PyClassMethod_GetFunc()
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_genobject.h"     // _PyAsyncGenAThrow_Type
@@ -24,6 +25,7 @@
 #include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
 #include "pycore_namespace.h"     // _PyNamespace_Type
 #include "pycore_object.h"        // export _Py_SwappedOp
+#include "pycore_object_stack.h"  // _PyObjectStack_Push()
 #include "pycore_optimizer.h"     // _PyUOpExecutor_Type
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
@@ -35,6 +37,7 @@
 #include "pycore_typevarobject.h" // _PyTypeAlias_Type
 #include "pycore_stackref.h"      // PyStackRef_FromPyObjectSteal
 #include "pycore_unionobject.h"   // _PyUnion_Type
+#include "pycore_uniqueid.h"      // _PyObject_MergePerThreadRefcounts()
 
 
 #ifdef Py_LIMITED_API
@@ -2908,6 +2911,179 @@ PyUnstable_SetImmortal(PyObject *op)
         return 0;
     }
     _Py_SetImmortal(op);
+    return 1;
+}
+
+#ifndef Py_GIL_DISABLED
+static _PyInterpreterFrame *
+get_immortalized_frame(PyObject *op)
+{
+    if (PyGen_CheckExact(op) || PyCoro_CheckExact(op) || PyAsyncGen_CheckExact(op)) {
+        PyGenObject *gen = (PyGenObject *)op;
+        if (gen->gi_frame_state != FRAME_CLEARED) {
+            return &gen->gi_iframe;
+        }
+    }
+    else if (PyFrame_Check(op)) {
+        PyFrameObject *frame = (PyFrameObject *)op;
+        if (frame->f_frame->owner == FRAME_OWNED_BY_FRAME_OBJECT) {
+            return frame->f_frame;
+        }
+    }
+    return NULL;
+}
+
+static void
+update_frame_ref(_PyStackRef *ref, PyObject *immortal)
+{
+#ifndef Py_STACKREF_DEBUG
+    if (!PyStackRef_IsNullOrInt(*ref) &&
+        PyStackRef_AsPyObjectBorrow(*ref) == immortal)
+    {
+        *ref = PyStackRef_Borrow(*ref);
+    }
+#endif
+    // Py_STACKREF_DEBUG uses Py_INCREF/Py_DECREF and already supports
+    // immortalized objects, without rewriting its table-backed references.
+}
+
+static void
+update_frame_locals(_PyInterpreterFrame *frame, PyObject *immortal)
+{
+    if (frame->owner == FRAME_OWNED_BY_INTERPRETER ||
+        frame->stackpointer == NULL)
+    {
+        return;
+    }
+    update_frame_ref(&frame->f_executable, immortal);
+    update_frame_ref(&frame->f_funcobj, immortal);
+    _PyStackRef *locals = _PyFrame_GetLocalsArray(frame);
+    for (_PyStackRef *ref = locals; ref < frame->stackpointer; ref++) {
+        update_frame_ref(ref, immortal);
+    }
+}
+
+static void
+update_thread_frames(PyThreadState *tstate, PyObject *immortal)
+{
+    _PyInterpreterFrame *frame = _PyThreadState_GetFrame(tstate);
+    while (frame != NULL) {
+        update_frame_locals(frame, immortal);
+        frame = frame->previous;
+    }
+}
+
+static int
+update_heap_frames(PyObject *op, void *arg)
+{
+    _PyInterpreterFrame *frame = get_immortalized_frame(op);
+    if (frame != NULL) {
+        update_frame_locals(frame, (PyObject *)arg);
+    }
+    return 1;
+}
+
+static void
+update_frames(PyInterpreterState *interp, PyObject *immortal)
+{
+    _Py_FOR_EACH_TSTATE_BEGIN(interp, tstate) {
+        update_thread_frames(tstate, immortal);
+    }
+    _Py_FOR_EACH_TSTATE_END(interp);
+    PyUnstable_GC_VisitObjects(update_heap_frames, immortal);
+    for (_PyObjectStackChunk *chunk = interp->gc.immortal_frames.head;
+         chunk != NULL; chunk = chunk->prev)
+    {
+        for (Py_ssize_t i = 0; i < chunk->n; i++) {
+            update_heap_frames(chunk->objs[i], immortal);
+        }
+    }
+}
+#endif
+
+#ifdef Py_GIL_DISABLED
+static int
+has_per_thread_refcounts(PyObject *op)
+{
+    if (PyType_Check(op) && PyType_HasFeature((PyTypeObject *)op, Py_TPFLAGS_HEAPTYPE)) {
+        return ((PyHeapTypeObject *)op)->unique_id != _Py_INVALID_UNIQUE_ID;
+    }
+    if (PyCode_Check(op)) {
+        return ((PyCodeObject *)op)->_co_unique_id != _Py_INVALID_UNIQUE_ID;
+    }
+    if (PyDict_Check(op)) {
+        return _PyDict_UniqueId((PyDictObject *)op) != _Py_INVALID_UNIQUE_ID;
+    }
+    return 0;
+}
+#endif
+
+int
+PyUnstable_Immortalize(PyObject *op)
+{
+    assert(op != NULL);
+    PyThreadState *tstate = _PyThreadState_GET();
+    _Py_EnsureTstateNotNULL(tstate);
+
+    if (_Py_IsImmortal(op) || PyUnicode_Check(op)) {
+        return 0;
+    }
+
+    PyInterpreterState *interp = tstate->interp;
+    // Stop the world so reference counts aren't prone to races.
+    _PyEval_StopTheWorld(interp);
+    // Another thread may have immortalized it while we were waiting.
+    if (_Py_IsImmortal(op)) {
+        _PyEval_StartTheWorld(interp);
+        return 0;
+    }
+
+    if (PyGen_CheckExact(op) || PyCoro_CheckExact(op) || PyAsyncGen_CheckExact(op) ||
+        PyFrame_Check(op))
+    {
+        // Keep deferred locals visible to GC, including those acquired after
+        // a generator resumes or a frame returns. Register before changing
+        // the object so allocation failure leaves it untouched.
+        if (_PyObjectStack_Push(&interp->gc.immortal_frames, op) < 0) {
+            _PyEval_StartTheWorld(interp);
+            PyErr_NoMemory();
+            return -1;
+        }
+    }
+
+#ifndef Py_GIL_DISABLED
+    // GIL stack references can bypass the immortality check when duplicated.
+    update_frames(interp, op);
+#endif
+
+    if (PyObject_GC_IsTracked(op)) {
+        _PyObject_GC_UNTRACK(op);
+    }
+
+#ifdef Py_GIL_DISABLED
+    if (has_per_thread_refcounts(op)) {
+        // Merge every thread before releasing an id that could be reused.
+        _Py_FOR_EACH_TSTATE_BEGIN(interp, thread) {
+            _PyObject_MergePerThreadRefcounts((_PyThreadStateImpl *)thread);
+        }
+        _Py_FOR_EACH_TSTATE_END(interp);
+        _PyObject_DisablePerThreadRefcounting(op);
+    }
+#endif
+
+#ifdef Py_REF_DEBUG
+    Py_ssize_t refcnt = Py_REFCNT(op);
+    if (_PyObject_HasDeferredRefcount(op)) {
+        refcnt -= _Py_REF_DEFERRED;
+    }
+    // Future decrefs of the immortal object will not affect RefTotal.
+    _Py_AddRefTotal(tstate, -refcnt);
+#endif
+    _Py_SetImmortalUntracked(op);
+    _PyEval_StartTheWorld(interp);
+    _PyObject_ASSERT(op, !PyObject_GC_IsTracked(op));
+    _PyObject_ASSERT(op, _Py_IsImmortal(op));
+
     return 1;
 }
 

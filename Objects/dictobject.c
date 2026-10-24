@@ -4417,7 +4417,8 @@ dict_merge_api(PyObject *a, PyObject *b, int override, PyObject **dupkey)
     }
 
     int res = dict_merge(a, b, override, dupkey);
-    assert(_PyObject_GC_IS_TRACKED(a));
+    // XXX: This can be untracked by PyUnstable_Immortalize()
+    // assert(_PyObject_GC_IS_TRACKED(a));
     return res;
 }
 
