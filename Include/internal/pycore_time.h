@@ -340,7 +340,7 @@ _PyTime_Weekday(int year, int yday)
 }
 
 
-// Locale-independent numeric strptime parsing.
+// Shared strptime parsing, with fallback for unsupported inputs.
 // A complete match returns 1; otherwise use Lib/_strptime.py. This function
 // neither allocates nor sets exceptions. The calendar date is validated, but
 // seconds may be 60 or 61: callers must apply their own time validation.
@@ -348,7 +348,14 @@ typedef struct {
     int year, month, day;
     int hour, minute, second, fraction;
     int gmtoff;  // INT_MIN means no offset was supplied.
-    int yday;    // January 1 is day 1.
+    int gmtoff_fraction;  // Microseconds, with the same sign as gmtoff.
+    Py_ssize_t zone_start, zone_length;  // Original spelling of a %Z name.
+    // January 1 is day 1. A %j spill retains the original day of year,
+    // which need not agree with the resulting calendar date.
+    int yday;
+    // Monday is 0; a supplied weekday need not agree with the date.
+    // If negative, the caller must compute it from year and yday if needed.
+    int weekday;
 } _PyTime_StrptimeFields;
 
 // Export for the '_datetime' shared extension.

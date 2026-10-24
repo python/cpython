@@ -1016,10 +1016,17 @@ time_strptime(PyObject *self, PyObject *args)
         if (result == NULL) {
             return NULL;
         }
+        int weekday = fields.weekday;
+        if (weekday < 0) {
+            weekday = _PyTime_Weekday(fields.year, fields.yday);
+        }
+        /* Only UTC and GMT names are parsed here; neither observes DST.
+         * Numeric offsets don't supply DST information.
+         */
         const int values[] = {
             fields.year, fields.month, fields.day,
             fields.hour, fields.minute, fields.second,
-            _PyTime_Weekday(fields.year, fields.yday), fields.yday, -1
+            weekday, fields.yday, fields.zone_length ? 0 : -1
         };
         for (size_t i = 0; i < Py_ARRAY_LENGTH(values); i++) {
             PyObject *value = PyLong_FromLong(values[i]);
@@ -1029,8 +1036,15 @@ time_strptime(PyObject *self, PyObject *args)
             }
             PyStructSequence_SET_ITEM(result, i, value);
         }
-        /* Numeric offsets don't supply a timezone name or DST information. */
-        PyStructSequence_SET_ITEM(result, 9, Py_NewRef(Py_None));
+        PyObject *zone = fields.zone_length
+            ? PyUnicode_Substring(PyTuple_GET_ITEM(args, 0), fields.zone_start,
+                                  fields.zone_start + fields.zone_length)
+            : Py_NewRef(Py_None);
+        if (zone == NULL) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        PyStructSequence_SET_ITEM(result, 9, zone);
         PyObject *offset = fields.gmtoff == INT_MIN
                           ? Py_NewRef(Py_None)
                           : PyLong_FromLong(fields.gmtoff);
