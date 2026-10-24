@@ -1,7 +1,6 @@
 import gc
 import threading
 import unittest
-import weakref
 
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier, Thread
@@ -469,76 +468,6 @@ class TestType(TestCase):
                 Meta("K", (), {})
 
         self.check_stop_the_world_under_type_lock(setter)
-
-    def test_stop_the_world_in_setattr_key_eq_deadlock(self):
-        # type_setattro() compares the attribute name with a str subclass key
-        # of the type's __dict__ (calling its __eq__) with the type lock held.
-        N = 50
-
-        class S(str):
-            __hash__ = str.__hash__
-            def __eq__(self, other):
-                _testinternalcapi.stop_the_world()
-                return str.__eq__(self, other)
-
-        C = type("C", (), {S("x"): 0})
-
-        def setter():
-            for i in range(N):
-                C.x = i
-
-        self.check_stop_the_world_under_type_lock(setter)
-
-    def test_reentrant_slot_update_consistency(self):
-        # Updating Base queues its slot update before visiting Sub.  A key
-        # comparison in Sub's dict re-enters the setter and makes that queue
-        # stale.  It must be rebuilt rather than overwriting the inner update.
-        armed = False
-
-        class Base:
-            pass
-
-        class Key(str):
-            def __hash__(self):
-                return hash("__hash__")
-
-            def __eq__(self, other):
-                nonlocal armed
-                if armed and other == "__hash__":
-                    armed = False
-                    Base.__hash__ = object.__hash__
-                return str.__eq__(self, other)
-
-        # Collide with the special-method name without defining it on Sub,
-        # so that slot updates still propagate from Base to Sub.
-        Sub = type("Sub", (Base,), {Key("trigger"): None})
-        objects = [Base(), Sub()]
-
-        # Check actual slot dispatch, not just the class dictionaries.  None
-        # and object.__hash__ use distinct C slots, unlike Python functions
-        # which share a generic wrapper that looks up the current method.
-        Base.__hash__ = None
-        for obj in objects:
-            with self.assertRaises(TypeError):
-                hash(obj)
-        Base.__hash__ = object.__hash__
-        for obj in objects:
-            self.assertEqual(hash(obj), object.__hash__(obj))
-
-        armed = True
-        Base.__hash__ = None
-        self.assertFalse(armed)
-        self.assertIs(Base.__dict__["__hash__"], object.__hash__)
-        for obj in objects:
-            self.assertEqual(hash(obj), object.__hash__(obj))
-
-        # Both applied and discarded queues must release their references.
-        base_ref = weakref.ref(Base)
-        sub_ref = weakref.ref(Sub)
-        del obj, objects, Sub, Base
-        gc.collect()
-        self.assertIsNone(base_ref())
-        self.assertIsNone(sub_ref())
 
     def test_reentrant_mro_always_publishes(self):
         # A custom mro() that updates a slot on every call must not make

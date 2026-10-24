@@ -4978,10 +4978,72 @@ type_new_get_slots(type_new_ctx *ctx, PyObject *dict)
 }
 
 
+/* Copy the class namespace.  Keys that are str subclasses are replaced by
+   exact str copies so that the type dict only holds exact str keys (see
+   type_setattro() which does the same for assigned names).  Lookups in a
+   dict with exact str keys cannot run user __eq__ methods, which the slot
+   update code relies on.  Non-str keys are left alone; type_new_impl()
+   warns about them. */
+static PyObject *
+type_new_copy_dict(PyObject *orig_dict)
+{
+    PyObject *dict = _PyDict_CopyAsDict(orig_dict);
+    if (dict == NULL) {
+        return NULL;
+    }
+    if (((PyDictObject *)dict)->ma_keys->dk_kind != DICT_KEYS_GENERAL) {
+        // Only exact str keys are possible, nothing to do.
+        return dict;
+    }
+    Py_ssize_t pos = 0;
+    PyObject *key, *value;
+    int rebuild = 0;
+    while (PyDict_Next(dict, &pos, &key, &value)) {
+        if (PyUnicode_Check(key) && !PyUnicode_CheckExact(key)) {
+            rebuild = 1;
+            break;
+        }
+    }
+    if (!rebuild) {
+        return dict;
+    }
+    // Rebuild rather than delete/insert so that the key order is kept.
+    PyObject *newdict = PyDict_New();
+    if (newdict == NULL) {
+        Py_DECREF(dict);
+        return NULL;
+    }
+    pos = 0;
+    while (PyDict_Next(dict, &pos, &key, &value)) {
+        PyObject *newkey;
+        if (PyUnicode_Check(key) && !PyUnicode_CheckExact(key)) {
+            newkey = _PyUnicode_Copy(key);
+            if (newkey == NULL) {
+                goto error;
+            }
+        }
+        else {
+            newkey = Py_NewRef(key);
+        }
+        int err = PyDict_SetItem(newdict, newkey, value);
+        Py_DECREF(newkey);
+        if (err < 0) {
+            goto error;
+        }
+    }
+    Py_DECREF(dict);
+    return newdict;
+
+error:
+    Py_DECREF(dict);
+    Py_DECREF(newdict);
+    return NULL;
+}
+
 static PyTypeObject*
 type_new_init(type_new_ctx *ctx)
 {
-    PyObject *dict = _PyDict_CopyAsDict(ctx->orig_dict);
+    PyObject *dict = type_new_copy_dict(ctx->orig_dict);
     if (dict == NULL) {
         goto error;
     }
@@ -6673,9 +6735,11 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
     // We don't want any re-entrancy between when we update the dict
     // and call _PyType_Modified_Unlocked, including running the destructor
     // of the current value as it can observe the cache in an inconsistent
-    // state.  Because we have an exact unicode and our dict has exact
-    // unicodes we know that this will all complete without releasing
-    // the locks.
+    // state.  The name is an exact unicode (see type_setattro()) and
+    // str subclass keys are copied to exact str by type_new_copy_dict()
+    // and type_setattro().  The type dict can still hold non-str keys
+    // (type_new_impl() only warns about them) and comparing with one of
+    // those can run user code that releases the locks.
     if (_PyDict_GetItemRef_Unicode_LockHeld(dict, name, old_value) < 0) {
         return -1;
     }
