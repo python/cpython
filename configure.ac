@@ -3746,8 +3746,9 @@ AC_MSG_CHECKING([for --with-address-sanitizer])
 AC_ARG_WITH([address_sanitizer],
             AS_HELP_STRING([--with-address-sanitizer],
                            [enable AddressSanitizer memory error detector, 'asan' (default is no)]),
-[
-AC_MSG_RESULT([$withval])
+[], [with_address_sanitizer=no])
+AC_MSG_RESULT([$with_address_sanitizer])
+AS_VAR_IF([with_address_sanitizer], [no], [], [
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=address $LDFLAGS"
 AC_MSG_CHECKING([whether a program links with -fsanitize=address])
@@ -3755,8 +3756,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
   [AC_MSG_RESULT([yes])],
   [AC_MSG_RESULT([no])
    AC_MSG_ERROR([cannot link with -fsanitize=address: the compiler does not support AddressSanitizer or its runtime library is not installed; see config.log])])
-],
-[AC_MSG_RESULT([no])])
+])
 
 AC_MSG_CHECKING([for --with-hwaddress-sanitizer])
 AC_ARG_WITH(
@@ -3765,8 +3765,9 @@ AC_ARG_WITH(
     [--with-hwaddress-sanitizer],
     [enable HWAddressSanitizer memory error detector, 'hwasan' (default is no)]
   )],
-[
-AC_MSG_RESULT([$withval])
+[], [with_hwaddress_sanitizer=no])
+AC_MSG_RESULT([$with_hwaddress_sanitizer])
+AS_VAR_IF([with_hwaddress_sanitizer], [no], [], [
 hwasan_flags="-fsanitize=hwaddress"
 # x86-64 lacks address tagging, so HWASan needs the page aliasing mode there.
 # See gh-156049 and
@@ -3781,8 +3782,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
   [AC_MSG_RESULT([yes])],
   [AC_MSG_RESULT([no])
    AC_MSG_ERROR([cannot link with $hwasan_flags: the compiler does not support HWAddressSanitizer or its runtime library is not installed; see config.log])])
-],
-[AC_MSG_RESULT([no])])
+])
 
 AC_MSG_CHECKING([for --with-memory-sanitizer])
 AC_ARG_WITH(
@@ -3791,8 +3791,9 @@ AC_ARG_WITH(
     [--with-memory-sanitizer],
     [enable MemorySanitizer allocation error detector, 'msan' (default is no)]
   )],
-[
-AC_MSG_RESULT([$withval])
+[], [with_memory_sanitizer=no])
+AC_MSG_RESULT([$with_memory_sanitizer])
+AS_VAR_IF([with_memory_sanitizer], [no], [], [
 BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
 AC_MSG_CHECKING([whether a program links with -fsanitize=memory])
@@ -3800,8 +3801,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
   [AC_MSG_RESULT([yes])],
   [AC_MSG_RESULT([no])
    AC_MSG_ERROR([cannot link with -fsanitize=memory: the compiler does not support MemorySanitizer or its runtime library is not installed; see config.log])])
-],
-[AC_MSG_RESULT([no])])
+])
 
 AC_MSG_CHECKING([for --with-undefined-behavior-sanitizer])
 AC_ARG_WITH(
@@ -3810,8 +3810,11 @@ AC_ARG_WITH(
     [--with-undefined-behavior-sanitizer],
     [enable UndefinedBehaviorSanitizer undefined behaviour detector, 'ubsan' (default is no)]
   )],
-[
-AC_MSG_RESULT([$withval])
+[], [with_undefined_behavior_sanitizer=no])
+AC_MSG_RESULT([$with_undefined_behavior_sanitizer])
+AS_VAR_IF([with_undefined_behavior_sanitizer], [no], [
+with_ubsan="no"
+], [
 BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
 LDFLAGS="-fsanitize=undefined $LDFLAGS"
 with_ubsan="yes"
@@ -3820,10 +3823,6 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
   [AC_MSG_RESULT([yes])],
   [AC_MSG_RESULT([no])
    AC_MSG_ERROR([cannot link with -fsanitize=undefined: the compiler does not support UndefinedBehaviorSanitizer or its runtime library is not installed; see config.log])])
-],
-[
-AC_MSG_RESULT([no])
-with_ubsan="no"
 ])
 
 AC_MSG_CHECKING([for --with-thread-sanitizer])
@@ -3833,8 +3832,11 @@ AC_ARG_WITH(
     [--with-thread-sanitizer],
     [enable ThreadSanitizer data race detector, 'tsan' (default is no)]
   )],
-[
-AC_MSG_RESULT([$withval])
+[], [with_thread_sanitizer=no])
+AC_MSG_RESULT([$with_thread_sanitizer])
+AS_VAR_IF([with_thread_sanitizer], [no], [
+with_tsan="no"
+], [
 BASECFLAGS="-fsanitize=thread $BASECFLAGS"
 LDFLAGS="-fsanitize=thread $LDFLAGS"
 with_tsan="yes"
@@ -3843,10 +3845,6 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
   [AC_MSG_RESULT([yes])],
   [AC_MSG_RESULT([no])
    AC_MSG_ERROR([cannot link with -fsanitize=thread: the compiler does not support ThreadSanitizer or its runtime library is not installed; see config.log])])
-],
-[
-AC_MSG_RESULT([no])
-with_tsan="no"
 ])
 
 # Set info about shared libraries.
