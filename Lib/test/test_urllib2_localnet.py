@@ -1,12 +1,15 @@
 import base64
+import io
 import os
 import email
 import urllib.parse
 import urllib.request
+import http.client
 import http.server
 import threading
 import unittest
 import hashlib
+from urllib.request import HTTPRedirectHandler, ProxyHandler, Request
 
 from test import support
 from test.support import hashlib_helper
@@ -397,6 +400,60 @@ class ProxyAuthTests(unittest.TestCase):
             with result:
                 while result.read():
                     pass
+
+
+class ProxyAuthorizationRedirectTests(unittest.TestCase):
+
+    PROXY = "http://user:pass@proxy.invalid:1234"
+    EXPECTED_PROXY_AUTHORIZATION = "Basic " + base64.b64encode(b"user:pass").decode()
+
+    def do_redirect(self, req, newurl="http://target.invalid/other", code=302):
+        """Drive HTTPRedirectHandler.redirect_request() directly."""
+        handler = HTTPRedirectHandler()
+        return handler.redirect_request(req, io.BytesIO(), code, "Found",
+                                        http.client.HTTPMessage(), newurl)
+
+    def test_proxy_handler_uses_unredirected_header(self):
+        # Redirectable headers are the ones copied onto the next request;
+        # the proxy credentials must not be among them.
+        req = Request("http://target.invalid/")
+        handler = ProxyHandler({"http": self.PROXY})
+
+        self.assertIsNone(handler.http_open(req))
+
+        self.assertEqual(req.unredirected_hdrs.get("Proxy-authorization"),
+                         self.EXPECTED_PROXY_AUTHORIZATION)
+
+        self.assertNotIn("Proxy-authorization", req.headers)
+        self.assertTrue(req.has_header("Proxy-authorization"))
+        self.assertEqual(req.host, "proxy.invalid:1234")
+
+    def test_redirect_request_drops_proxy_authorization(self):
+        req = Request("http://target.invalid/")
+        req.add_header("Proxy-Authorization", self.EXPECTED_PROXY_AUTHORIZATION)
+        req.add_header("Accept", "text/html")
+
+        new = self.do_redirect(req)
+
+        self.assertFalse(new.has_header("Proxy-authorization"))
+        self.assertNotIn("proxy-authorization",
+                         [k.lower() for k, v in new.header_items()])
+        # Unrelated headers are still carried over.
+        self.assertEqual(new.headers.get("Accept"), "text/html")
+
+    def test_redirect_request_drop_is_case_insensitive(self):
+        # Request.add_header() normalises the key, but req.headers is a plain
+        # dict that callers do mutate directly, so do not rely on the casing.
+        for header in ("Proxy-Authorization",
+                       "proxy-authorization",
+                       "PROXY-AUTHORIZATION"):
+            with self.subTest(header=header):
+                req = Request("http://target.invalid/")
+                req.headers[header] = self.EXPECTED_PROXY_AUTHORIZATION
+                new = self.do_redirect(req)
+                self.assertEqual(
+                    [k for k, v in new.header_items()
+                     if k.lower() == header.lower()], [])
 
 
 def GetRequestHandler(responses):

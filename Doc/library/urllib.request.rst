@@ -368,6 +368,11 @@ The following classes are provided:
       ``HTTP_PROXY`` will be ignored if a variable ``REQUEST_METHOD`` is set;
       see the documentation on :func:`~urllib.request.getproxies`.
 
+   .. versionchanged:: next
+      The ``Proxy-Authorization`` header will be stripped if a redirect occurs
+      and must be re-added for the redirected request, if applicable. This is
+      to avoid submitting proxy credentials to redirected destinations.
+
 
 .. class:: HTTPPasswordMgr()
 
