@@ -94,21 +94,44 @@ framelocalsproxy_hasval(_PyInterpreterFrame *frame, PyCodeObject *co, int i)
     return true;
 }
 
-/* *seen is NULL when dedup is known to be unnecessary.
-   Otherwise it maps each localsplus name to Py_True if a value was already
-   kept, or Py_False if the name was only seen on an empty slot. An empty
-   slot must not count as the kept value, but it still proves the name is
-   repeated, so it is recorded while _co_localsplus_dedup is unknown.
-   Returns -1 if the map cannot be created. */
+/* Scan co_localsplusnames once. A repeated name is on the code object
+   whether or not its slot is bound. Returns -1 on error. */
+static int
+framelocalsproxy_learn_dedup(PyCodeObject *co)
+{
+    char dedup = _PYCODE_LOCALSPLUS_DEDUP_UNIQUE;
+    if (co->co_nlocalsplus > 1) {
+        assert(PyTuple_GET_SIZE(co->co_localsplusnames) == co->co_nlocalsplus);
+        PyObject *names = PySet_New(co->co_localsplusnames);
+        if (names == NULL) {
+            return -1;
+        }
+        if (PySet_GET_SIZE(names) != co->co_nlocalsplus) {
+            dedup = _PYCODE_LOCALSPLUS_DEDUP_NEEDED;
+        }
+        Py_DECREF(names);
+    }
+    FT_ATOMIC_STORE_CHAR_RELAXED(co->_co_localsplus_dedup, dedup);
+    return 0;
+}
+
+/* *seen is NULL when dedup is unnecessary. Otherwise it is the set of bound
+   names already kept. Returns -1 if the set cannot be created. */
 static int
 framelocalsproxy_prepare_dedup(PyCodeObject *co, PyObject **seen)
 {
     *seen = NULL;
-    if (FT_ATOMIC_LOAD_CHAR_RELAXED(co->_co_localsplus_dedup) ==
-            _PYCODE_LOCALSPLUS_DEDUP_UNIQUE) {
+    char state = FT_ATOMIC_LOAD_CHAR_RELAXED(co->_co_localsplus_dedup);
+    if (state == _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN) {
+        if (framelocalsproxy_learn_dedup(co) < 0) {
+            return -1;
+        }
+        state = FT_ATOMIC_LOAD_CHAR_RELAXED(co->_co_localsplus_dedup);
+    }
+    if (state == _PYCODE_LOCALSPLUS_DEDUP_UNIQUE) {
         return 0;
     }
-    *seen = PyDict_New();
+    *seen = PySet_New(NULL);
     if (*seen == NULL) {
         return -1;
     }
@@ -116,43 +139,30 @@ framelocalsproxy_prepare_dedup(PyCodeObject *co, PyObject **seen)
 }
 
 /* Returns 1 if this slot's value should be kept, 0 if not, -1 on error.
-   An empty slot is skipped once _co_localsplus_dedup is known. A repeated
-   name stores _PYCODE_LOCALSPLUS_DEDUP_NEEDED. UNIQUE is stored by the
-   caller only after the walk finishes without one. */
+   Empty slots are not kept. When dedup is required, the first bound value
+   for a name wins. */
 static int
 framelocalsproxy_visit_name(PyCodeObject *co, int i, PyObject *seen,
                             int has_value)
 {
-    if (seen == NULL) {
-        return has_value;
-    }
-    if (!has_value &&
-        FT_ATOMIC_LOAD_CHAR_RELAXED(co->_co_localsplus_dedup) !=
-            _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN) {
+    if (!has_value) {
         return 0;
     }
-    PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-    PyObject *prev = PyDict_GetItemWithError(seen, name);
-    if (prev == NULL) {
-        if (PyErr_Occurred()) {
-            return -1;
-        }
-        if (PyDict_SetItem(seen, name, has_value ? Py_True : Py_False) < 0) {
-            return -1;
-        }
-        return has_value;
-    }
-    else {
-        FT_ATOMIC_STORE_CHAR_RELAXED(co->_co_localsplus_dedup,
-                                     _PYCODE_LOCALSPLUS_DEDUP_NEEDED);
-        if (!has_value || prev == Py_True) {
-            return 0;
-        }
-        if (PyDict_SetItem(seen, name, Py_True) < 0) {
-            return -1;
-        }
+    if (seen == NULL) {
         return 1;
     }
+    PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+    int found = PySet_Contains(seen, name);
+    if (found < 0) {
+        return -1;
+    }
+    if (found) {
+        return 0;
+    }
+    if (PySet_Add(seen, name) < 0) {
+        return -1;
+    }
+    return 1;
 }
 
 static int
@@ -441,8 +451,7 @@ framelocalsproxy_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (names == NULL) {
         return NULL;
     }
-    // An inlined comprehension cell can share a name with a free var.
-    // Assume dedup may be needed until a walk of seen shows otherwise.
+    // An inlined comprehension local can share a name with a free var.
     PyObject *seen = NULL;
     if (framelocalsproxy_prepare_dedup(co, &seen) < 0) {
         Py_DECREF(names);
@@ -461,11 +470,6 @@ framelocalsproxy_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
                 goto error;
             }
         }
-    }
-    if (FT_ATOMIC_LOAD_CHAR_RELAXED(co->_co_localsplus_dedup) ==
-            _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN) {
-        FT_ATOMIC_STORE_CHAR_RELAXED(co->_co_localsplus_dedup,
-                                     _PYCODE_LOCALSPLUS_DEDUP_UNIQUE);
     }
     Py_XDECREF(seen);
 
@@ -692,11 +696,6 @@ framelocalsproxy_values(PyObject *self, PyObject *Py_UNUSED(ignored))
         }
         Py_XDECREF(value);
     }
-    if (FT_ATOMIC_LOAD_CHAR_RELAXED(co->_co_localsplus_dedup) ==
-            _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN) {
-        FT_ATOMIC_STORE_CHAR_RELAXED(co->_co_localsplus_dedup,
-                                     _PYCODE_LOCALSPLUS_DEDUP_UNIQUE);
-    }
     Py_XDECREF(seen);
 
     // Iterate through the extra locals
@@ -756,11 +755,6 @@ framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
             goto error;
         }
     }
-    if (FT_ATOMIC_LOAD_CHAR_RELAXED(co->_co_localsplus_dedup) ==
-            _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN) {
-        FT_ATOMIC_STORE_CHAR_RELAXED(co->_co_localsplus_dedup,
-                                     _PYCODE_LOCALSPLUS_DEDUP_UNIQUE);
-    }
     Py_XDECREF(seen);
     seen = NULL;
 
@@ -815,11 +809,6 @@ framelocalsproxy_length(PyObject *self)
         if (emit) {
             size++;
         }
-    }
-    if (FT_ATOMIC_LOAD_CHAR_RELAXED(co->_co_localsplus_dedup) ==
-            _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN) {
-        FT_ATOMIC_STORE_CHAR_RELAXED(co->_co_localsplus_dedup,
-                                     _PYCODE_LOCALSPLUS_DEDUP_UNIQUE);
     }
     Py_XDECREF(seen);
     return size;

@@ -108,8 +108,8 @@ typedef struct {
     _PyCode_DEF_UNIQUE_ID()                                                    \
     int _co_firsttraceable;       /* index of first traceable instruction */   \
     /* 0 = not yet known, 1 = co_localsplusnames are unique, 2 = a name is     \
-       repeated. FrameLocalsProxy learns this from the seen map it builds      \
-       while collecting locals, and skips deduplication when this is 1. */     \
+       repeated. FrameLocalsProxy scans the names once and skips               \
+       deduplication when this is 1. */                                        \
     char _co_localsplus_dedup;                                                 \
     /* Scratch space for extra data relating to the code object.               \
        Type is a void* to keep the format private in codeobject.c to force     \

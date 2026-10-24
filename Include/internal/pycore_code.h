@@ -273,7 +273,7 @@ extern PyObject* _PyCode_GetCellvars(PyCodeObject *);
 extern PyObject* _PyCode_GetFreevars(PyCodeObject *);
 extern PyObject* _PyCode_GetCode(PyCodeObject *);
 
-/* co->_co_localsplus_dedup. Learned by FrameLocalsProxy from its seen map. */
+/* co->_co_localsplus_dedup. Computed once from co_localsplusnames. */
 #define _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN 0
 #define _PYCODE_LOCALSPLUS_DEDUP_UNIQUE  1
 #define _PYCODE_LOCALSPLUS_DEDUP_NEEDED  2
