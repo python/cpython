@@ -70,6 +70,22 @@ class TestThreadingMock(unittest.TestCase):
             self.assertIsInstance(something.method_1, ThreadingMock)
             self.assertIsInstance(something.method_1().method_2(), ThreadingMock)
 
+    def test_wait_after_raising_side_effect(self):
+        mock = self._make_mock(side_effect=ValueError, timeout=0)
+        with self.assertRaises(ValueError):
+            mock(1, key=2)
+        mock.wait_until_called()
+        mock.wait_until_any_call_with(1, key=2)
+
+    def test_wait_during_side_effect(self):
+        def side_effect(*args, **kwargs):
+            mock.wait_until_called()
+            mock.wait_until_any_call_with(*args, **kwargs)
+            return 42
+
+        mock = self._make_mock(side_effect=side_effect, timeout=0)
+        self.assertEqual(mock(1, key=2), 42)
+
     def test_dynamic_child_mocks_are_threading_mocks(self):
         waitable_mock = self._make_mock()
         self.assertIsInstance(waitable_mock.child, ThreadingMock)
