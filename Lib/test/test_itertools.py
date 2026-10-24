@@ -968,76 +968,49 @@ class TestBasicOps(unittest.TestCase):
             pairwise(None)                                  # non-iterable argument
 
     def test_pairwise_reenter(self):
-        def check(reenter_at, expected):
+        # gh-149557: re-entering pairwise.__next__ from within the input
+        # iterator's __next__ now raises RuntimeError, matching the behavior
+        # of itertools.tee and of generators.
+        def check(reenter_at):
             class I:
                 count = 0
                 def __iter__(self):
                     return self
                 def __next__(self):
-                    self.count +=1
+                    self.count += 1
                     if self.count in reenter_at:
                         return next(it)
                     return [self.count]  # new object
 
             it = pairwise(I())
-            for item in expected:
-                self.assertEqual(next(it), item)
+            with self.assertRaisesRegex(RuntimeError, "pairwise"):
+                list(it)
 
-        check({1}, [
-            (([2], [3]), [4]),
-            ([4], [5]),
-        ])
-        check({2}, [
-            ([1], ([1], [3])),
-            (([1], [3]), [4]),
-            ([4], [5]),
-        ])
-        check({3}, [
-            ([1], [2]),
-            ([2], ([2], [4])),
-            (([2], [4]), [5]),
-            ([5], [6]),
-        ])
-        check({1, 2}, [
-            ((([3], [4]), [5]), [6]),
-            ([6], [7]),
-        ])
-        check({1, 3}, [
-            (([2], ([2], [4])), [5]),
-            ([5], [6]),
-        ])
-        check({1, 4}, [
-            (([2], [3]), (([2], [3]), [5])),
-            ((([2], [3]), [5]), [6]),
-            ([6], [7]),
-        ])
-        check({2, 3}, [
-            ([1], ([1], ([1], [4]))),
-            (([1], ([1], [4])), [5]),
-            ([5], [6]),
-        ])
+        # Re-entry on any of the first few __next__ calls must raise.
+        for reenter_at in [{1}, {2}, {3}, {1, 2}, {1, 3}, {1, 4}, {2, 3}]:
+            with self.subTest(reenter_at=reenter_at):
+                check(reenter_at)
 
     def test_pairwise_reenter2(self):
-        def check(maxcount, expected):
-            class I:
-                count = 0
-                def __iter__(self):
-                    return self
-                def __next__(self):
-                    if self.count >= maxcount:
-                        raise StopIteration
-                    self.count +=1
-                    if self.count == 1:
-                        return next(it, None)
-                    return [self.count]  # new object
+        # gh-149557: variant of test_pairwise_reenter where the re-entrant
+        # call uses next(it, None) (i.e. supplies a default).  Even with a
+        # default that suppresses StopIteration, the re-entry itself must
+        # raise RuntimeError, propagating out of the outer pairwise call.
+        class I:
+            count = 0
+            def __iter__(self):
+                return self
+            def __next__(self):
+                if self.count >= 4:
+                    raise StopIteration
+                self.count += 1
+                if self.count == 1:
+                    return next(it, None)
+                return [self.count]  # new object
 
-            it = pairwise(I())
-            self.assertEqual(list(it), expected)
-
-        check(1, [])
-        check(2, [])
-        check(3, [])
-        check(4, [(([2], [3]), [4])])
+        it = pairwise(I())
+        with self.assertRaisesRegex(RuntimeError, "pairwise"):
+            list(it)
 
     def test_product(self):
         for args, result in [
