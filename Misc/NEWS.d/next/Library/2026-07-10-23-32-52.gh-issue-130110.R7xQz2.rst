@@ -1,0 +1,3 @@
+:meth:`email.utils.decode_params` (and the parameter parsing it backs) now
+correctly decodes :rfc:`2231` continuation parameter names that contain
+hyphens, such as ``file-name*0*``.
