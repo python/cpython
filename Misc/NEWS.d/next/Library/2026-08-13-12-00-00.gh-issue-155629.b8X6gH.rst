@@ -1,0 +1,4 @@
+When reading a GNU-format archive, the member's atime, which is stored
+in the byte range that the ustar format uses for the path prefix, is no
+longer mistaken for a ustar path prefix and prepended to the member
+name.
