@@ -169,6 +169,7 @@ def reset_gettext():
     gettext._localedirs.clear()
     gettext._current_domain = 'messages'
     gettext._translations.clear()
+    gettext._domain_translations.clear()
 
 
 class GettextBaseTest(unittest.TestCase):
@@ -288,6 +289,14 @@ class GettextTestCase2(GettextBaseTest):
             self.assertEqual(exception.errno, 0)
             self.assertEqual(exception.strerror, "Bad magic number")
             self.assertEqual(exception.filename, MOFILE_BAD_MAGIC_NUMBER)
+
+    def test_dgettext_bad_magic_number(self):
+        # gh-158298: a .mo file that cannot be parsed leaves the message
+        # untranslated.
+        gettext.bindtextdomain('gettext_bad_magic_number', self.localedir)
+        self.assertEqual(
+            gettext.dgettext('gettext_bad_magic_number', 'mullusk'),
+            'mullusk')
 
     def test_bad_major_version(self):
         with open(MOFILE_BAD_MAJOR_VERSION, 'rb') as fp:
@@ -790,6 +799,60 @@ class GettextCacheTestCase(GettextBaseTest):
 
         self.assertEqual(len(gettext._translations), 2)
         self.assertEqual(t.__class__, DummyGNUTranslations)
+
+    def test_dgettext_cache(self):
+        # gh-158298: dgettext() searches for the .mo file of a domain once,
+        # whether or not it is found.
+        gettext.bindtextdomain('gettext', os.curdir)
+        gettext.bindtextdomain('unknown', os.curdir)
+        for domain, expected in [('gettext', 'bacon'), ('unknown', 'mullusk')]:
+            with self.subTest(domain=domain):
+                self.assertEqual(gettext.dgettext(domain, 'mullusk'), expected)
+                with unittest.mock.patch('os.path.exists',
+                                         wraps=os.path.exists) as exists:
+                    self.assertEqual(gettext.dgettext(domain, 'mullusk'),
+                                     expected)
+                exists.assert_not_called()
+
+    def test_dgettext_cache_per_language(self):
+        # gh-158298: a change of LANGUAGE takes effect, and each language is
+        # searched for once.
+        gettext.bindtextdomain('gettext', os.curdir)
+        self.env['LANGUAGE'] = 'yy'
+        self.assertEqual(gettext.dgettext('gettext', 'mullusk'), 'mullusk')
+        self.env['LANGUAGE'] = 'xx'
+        self.assertEqual(gettext.dgettext('gettext', 'mullusk'), 'bacon')
+        self.env['LANGUAGE'] = 'yy'
+        with unittest.mock.patch('os.path.exists',
+                                 wraps=os.path.exists) as exists:
+            self.assertEqual(gettext.dgettext('gettext', 'mullusk'), 'mullusk')
+        exists.assert_not_called()
+
+    def test_dgettext_cache_per_localedir(self):
+        # gh-158298: binding the domain to another directory takes effect,
+        # and each directory is searched once.
+        tempdir = self.enterContext(os_helper.temp_dir())
+        gettext.bindtextdomain('gettext', tempdir)
+        self.assertEqual(gettext.dgettext('gettext', 'mullusk'), 'mullusk')
+        gettext.bindtextdomain('gettext', os.curdir)
+        self.assertEqual(gettext.dgettext('gettext', 'mullusk'), 'bacon')
+        gettext.bindtextdomain('gettext', tempdir)
+        with unittest.mock.patch('os.path.exists',
+                                 wraps=os.path.exists) as exists:
+            self.assertEqual(gettext.dgettext('gettext', 'mullusk'), 'mullusk')
+        exists.assert_not_called()
+
+    def test_dgettext_cache_per_current_directory(self):
+        # gh-158298: a relative locale directory is resolved against the
+        # current directory of each call, and each directory is searched once.
+        gettext.bindtextdomain('gettext', os.curdir)
+        self.assertEqual(gettext.dgettext('gettext', 'mullusk'), 'bacon')
+        with os_helper.temp_cwd():
+            self.assertEqual(gettext.dgettext('gettext', 'mullusk'), 'mullusk')
+        with unittest.mock.patch('os.path.exists',
+                                 wraps=os.path.exists) as exists:
+            self.assertEqual(gettext.dgettext('gettext', 'mullusk'), 'bacon')
+        exists.assert_not_called()
 
 
 class FallbackTranslations(gettext.NullTranslations):
