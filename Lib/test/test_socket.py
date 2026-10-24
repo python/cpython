@@ -3195,6 +3195,27 @@ class BasicTCPTest(SocketConnectedTest):
     def _testFromFd(self):
         self.serv_conn.send(MSG)
 
+    def testFromFdInvalidArgsDoesNotLeak(self):
+        # fromfd() dup()s the descriptor before socket() validates its
+        # arguments; a rejected call must not leave the duplicate open.
+        fddir = '/proc/self/fd'
+        if not os.path.isdir(fddir):
+            self.skipTest('test needs /proc/self/fd')
+        fd = self.cli_conn.fileno()
+        base = dict(family=socket.AF_INET, type=socket.SOCK_STREAM, proto=0)
+        # family, type and proto are all converted to a C int, so each of them
+        # can fail after the dup() has already happened.
+        for name in base:
+            kwargs = dict(base, **{name: 1 << 100})
+            with self.subTest(name=name):
+                before = len(os.listdir(fddir))
+                with self.assertRaises(OverflowError):
+                    socket.fromfd(fd, **kwargs)
+                self.assertEqual(len(os.listdir(fddir)), before)
+
+    def _testFromFdInvalidArgsDoesNotLeak(self):
+        pass
+
     def testDup(self):
         # Testing dup()
         sock = self.cli_conn.dup()
