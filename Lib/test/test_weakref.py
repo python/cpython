@@ -18,7 +18,7 @@ from test.support import script_helper, ALWAYS_EQ
 from test.support import gc_collect
 from test.support import import_helper
 from test.support import threading_helper
-from test.support import is_wasi, is_emscripten, Py_DEBUG
+from test.support import is_wasi, Py_DEBUG
 
 # Used in ReferencesTestCase.test_ref_created_during_del() .
 ref_from_del = None
@@ -1026,7 +1026,9 @@ class ReferencesTestCase(TestBase):
         del root
         gc.collect()
 
-    @unittest.skipIf((is_wasi or is_emscripten) and Py_DEBUG, "requires deep stack")
+    @support.skip_if_sanitizer("requires deep stack", thread=True)
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_trashcan_deferred_dealloc(self):
         # When the C stack is nearly exhausted, the trashcan defers
         # deallocation of an object whose refcount has dropped to 0, leaving
