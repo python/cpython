@@ -5,7 +5,7 @@ import weakref
 
 from ast import Or
 from functools import partial
-from threading import Barrier, Thread
+from threading import Barrier, Event, Thread
 from unittest import TestCase
 
 try:
@@ -436,6 +436,29 @@ class TestDict(TestCase):
                 leave.wait()
 
         threading_helper.run_concurrently([reader, writer])
+
+    def test_racing_update_from_mutating_pair(self):
+        # gh-159244: dict() must not read the items of a key/value pair
+        # that another thread empties concurrently.
+        pair = [object(), object()]
+        done = Event()
+
+        def writer():
+            try:
+                for _ in range(10000):
+                    pair.clear()
+                    pair.extend((object(), object()))
+            finally:
+                done.set()
+
+        def reader():
+            while not done.is_set():
+                try:
+                    dict([pair])
+                except ValueError:
+                    pass
+
+        threading_helper.run_concurrently([writer] + [reader] * 4)
 
 if __name__ == "__main__":
     unittest.main()
