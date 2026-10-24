@@ -2354,3 +2354,18 @@ tarfile
   :func:`~tarfile.TarFile.errorlevel` is zero.
   (Contributed by Matt Prodani and Petr Viktorin in :gh:`112887`
   and :cve:`2025-4435`.)
+
+
+Notable changes in 3.12.16
+==========================
+
+ssl
+---
+
+* The :mod:`ssl` module now rejects TLS certificate chains that contain one
+  of a set of compromised eMudhra intermediate CA certificates.  The affected
+  certificates are identified by their public key, so cross-signed copies that
+  reuse the same key are blocked as well.  It is a defense-in-depth backstop
+  that applies even when an application supplies its own root CA bundle, and
+  regardless of whether the platform trust store has removed trust.
+  (Contributed by Christian Heimes in :gh:`160040` for :cve:`2026-115557`.)
