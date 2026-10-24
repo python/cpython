@@ -1,0 +1,1 @@
+Fix a crash when multiple threads execute the same code with the JIT enabled. A stale ``oparg`` value could be used as an executor index, causing an out-of-bounds read.
