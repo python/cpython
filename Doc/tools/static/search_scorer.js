@@ -1,6 +1,6 @@
 var Scorer = {
   score: function (result) {
-    let [docname, title, anchor, descr, score, filename] = result;
+    let [docname, title, anchor, descr, score, filename, kind] = result;
 
     // boost the score of built-in functions and types
     const builtinPages = [
@@ -9,7 +9,7 @@ var Scorer = {
       "builtins/functions",
       "builtins/stdtypes",
     ];
-    if (builtinPages.includes(docname)) {
+    if (kind === "object" && builtinPages.includes(docname)) {
       score += 7;
     }
 
