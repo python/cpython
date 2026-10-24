@@ -1,0 +1,2 @@
+Fix :class:`gzip.GzipFile` not being closed at interpreter shutdown when
+emitting its :exc:`ResourceWarning` failed with an :exc:`ImportError`.
