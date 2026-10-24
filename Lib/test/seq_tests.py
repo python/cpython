@@ -8,6 +8,7 @@ import sys
 import pickle
 from test import support
 from test.support import ALWAYS_EQ, NEVER_EQ
+from test.support import warnings_helper
 
 # Various iterables
 # This is used for checking the constructor (here and in test_deque.py)
@@ -465,6 +466,8 @@ class NativeItemsSearchTest:
         """
         raise NotImplementedError
 
+    # Comparing bytes needles with int items emits BytesWarning with -b.
+    @warnings_helper.ignore_warnings(category=BytesWarning)
     def run_search_cases(self, check):
         """Call check(haystack, haystack_objects, needle) for every needle
         of every haystack, with a subtest for each haystack.

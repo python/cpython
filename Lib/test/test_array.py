@@ -6,7 +6,7 @@ import collections.abc
 import unittest
 from test import support
 from test.seq_tests import NativeItemsSearchTest
-from test.support import import_helper, script_helper
+from test.support import import_helper, script_helper, warnings_helper
 from test.support import os_helper
 from test.support import _2G
 from test.support import subTests
@@ -209,6 +209,8 @@ class SearchTest(NativeItemsSearchTest, unittest.TestCase):
             with self.assertRaises(ValueError, msg=repr(needle)):
                 b.remove(needle)
 
+    # Comparing bytes needles with str items emits BytesWarning with -b.
+    @warnings_helper.ignore_warnings(category=BytesWarning)
     def test_search_unicode(self):
         a = array.array('w', 'abc\U0010ffff\0ab' * 2)
         haystack_objects = a.tolist()
