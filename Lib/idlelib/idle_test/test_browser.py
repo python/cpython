@@ -12,7 +12,7 @@ import os.path
 import pyclbr
 from tkinter import Tk
 
-from idlelib.tree import TreeNode
+from idlelib.tree import TreeWidget
 
 
 class ModuleBrowserTest(unittest.TestCase):
@@ -36,7 +36,7 @@ class ModuleBrowserTest(unittest.TestCase):
         eq = self.assertEqual
         eq(mb.path, __file__)
         eq(pyclbr._modules, {})
-        self.assertIsInstance(mb.node, TreeNode)
+        self.assertIsInstance(mb.tree, TreeWidget)
         self.assertIsNotNone(browser.file_open)
 
     def test_settitle(self):
@@ -49,14 +49,18 @@ class ModuleBrowserTest(unittest.TestCase):
         rn = mb.rootnode()
         self.assertIsInstance(rn, browser.ModuleBrowserTreeItem)
 
+    def test_root_row(self):
+        mb = self.mb
+        tree = mb.tree.tree
+        self.assertEqual(tree.item(mb.tree.root, 'text'),
+                         os.path.basename(__file__))
+
     def test_close(self):
         mb = self.mb
         mb.top.destroy = Func()
-        mb.node.destroy = Func()
         mb.close()
         self.assertTrue(mb.top.destroy.called)
-        self.assertTrue(mb.node.destroy.called)
-        del mb.top.destroy, mb.node.destroy
+        del mb.top.destroy
 
     def test_is_browseable_extension(self):
         path = "/path/to/file"
@@ -133,9 +137,6 @@ class ModuleBrowserTreeItemTest(unittest.TestCase):
     def test_gettext(self):
         self.assertEqual(self.mbt.GetText(), fname)
 
-    def test_geticonname(self):
-        self.assertEqual(self.mbt.GetIconName(), 'python')
-
     def test_isexpandable(self):
         self.assertTrue(self.mbt.IsExpandable())
 
@@ -197,10 +198,6 @@ class ChildBrowserTreeItemTest(unittest.TestCase):
         self.assertEqual(self.cbt_C1.GetText(), 'class C1()')
         self.assertEqual(self.cbt_f1.GetText(), 'def f1(...)')
 
-    def test_geticonname(self):
-        self.assertEqual(self.cbt_C1.GetIconName(), 'folder')
-        self.assertEqual(self.cbt_f1.GetIconName(), 'python')
-
     def test_isexpandable(self):
         self.assertTrue(self.cbt_C1.IsExpandable())
         self.assertTrue(self.cbt_f1.IsExpandable())
@@ -247,7 +244,6 @@ class NestedChildrenTest(unittest.TestCase):
             sublist = cb.GetSubList()
             queue.extend(sublist)
             self.assertIn(cb.name, cb.GetText())
-            self.assertIn(cb.GetIconName(), ('python', 'folder'))
             self.assertIs(cb.IsExpandable(), sublist != [])
             actual_names.append(cb.name)
         self.assertEqual(actual_names, expected_names)

@@ -248,6 +248,7 @@ class StackViewerTest(unittest.TestCase):
         ]
         # Create a stackviewer and load the test stack.
         self.sv = debugger.StackViewer(self.root, None, None)
+        self.addCleanup(self.sv.close)
         self.sv.load_stack(self.stack)
 
     def test_init(self):
@@ -260,10 +261,47 @@ class StackViewerTest(unittest.TestCase):
 
     def test_load_stack(self):
         # Test the .load_stack() method against a fixed test stack.
-        # Check the test stack is assigned and the list contains the repr of them.
+        # A row holds the module, the function, the line and its source.
         self.assertEqual(self.sv.stack, self.stack)
-        self.assertTrue('?.<module>(), line 1:' in self.sv.get(0))
-        self.assertEqual(self.sv.get(1), '?.<module>(), line 2: ')
+        self.assertEqual(self.sv.get(0), ('?', '<module>', '1', ''))
+        self.assertEqual(self.sv.get(1), ('?', '<module>', '2', ''))
+
+    def test_load_stack_marks_the_current_frame(self):
+        self.sv.load_stack(self.stack, 1)
+        tree = self.sv.tree
+        rows = tree.get_children()
+        self.assertEqual(tree.item(rows[0], 'tags'), (self.sv.PLAIN,))
+        self.assertEqual(tree.item(rows[1], 'tags'), (self.sv.CURRENT,))
+        # The marker is a tag now, not a prefix on the module name.
+        self.assertFalse(self.sv.get(1)[0].startswith('> '))
+        # Both tags carry an image, so that the texts line up.
+        self.assertTrue(tree.tag_configure(self.sv.PLAIN, 'image'))
+        self.assertTrue(tree.tag_configure(self.sv.CURRENT, 'image'))
+        self.assertEqual(self.sv.index(), 1)
+
+    def test_load_empty_stack(self):
+        self.sv.load_stack([])
+        self.assertEqual(self.sv.get(0), (self.sv.default, '', '', ''))
+        self.assertIsNone(self.sv.index())
+
+    def test_load_stack_does_not_show_the_frame(self):
+        # Only the user selecting a row tells the debugger to show a frame.
+        self.sv.gui = Mock()
+        self.sv.load_stack(self.stack, 1)
+        self.sv.gui.show_frame.assert_not_called()
+
+    def test_select_shows_the_frame(self):
+        self.sv.gui = Mock()
+        self.sv.tree.selection_set(self.sv.tree.get_children()[1])
+        # Tk queues the event that selecting a row sends; deliver it now.
+        self.sv.tree.event_generate('<<TreeviewSelect>>', when='now')
+        self.sv.gui.show_frame.assert_called_once_with(self.stack[1])
+
+    def test_show_stack_frame(self):
+        self.sv.gui = Mock()
+        self.sv.select(1)
+        self.sv.show_stack_frame()
+        self.sv.gui.show_frame.assert_called_once_with(self.stack[1])
 
     def test_show_source(self):
         # Test the .show_source() method against a fixed test stack.
@@ -289,8 +327,48 @@ class NameSpaceTest(unittest.TestCase):
         cls.root.destroy()
         del cls.root
 
+    def setUp(self):
+        self.nv = debugger.NamespaceViewer(self.root, 'Test')
+        self.addCleanup(self.nv.close)
+
+    def rows(self):
+        "Return the (name, value) pairs shown."
+        tree = self.nv.treeview.tree
+        return [tree.item(iid, 'values') for iid in tree.get_children()]
+
     def test_init(self):
-        debugger.NamespaceViewer(self.root, 'Test')
+        self.assertEqual(self.rows(), [('None', '')])
+
+    def test_load_dict(self):
+        self.nv.load_dict({'b': 2, 'a': 'spam'})  # Names are sorted.
+        self.assertEqual(self.rows(), [('a', "'spam'"), ('b', '2')])
+
+    def test_load_no_dict(self):
+        self.nv.load_dict({'a': 1})
+        self.nv.load_dict(None)
+        self.assertEqual(self.rows(), [('None', '')])
+
+    def test_load_same_dict(self):
+        odict = {'a': 1}
+        self.nv.load_dict(odict)
+        odict['a'] = 2
+        self.nv.load_dict(odict)  # The same dict is not read again.
+        self.assertEqual(self.rows(), [('a', '1')])
+        self.nv.load_dict(odict, force=1)
+        self.assertEqual(self.rows(), [('a', '2')])
+
+    def test_load_dict_from_the_subprocess(self):
+        # The values arrive as reprs; the quotes added by repr'ing them
+        # again are stripped.
+        self.nv.load_dict({'a': "'spam'"}, rpc_client=Mock())
+        self.assertEqual(self.rows(), [('a', "'spam'")])
+
+    def test_height_is_limited(self):
+        self.nv.load_dict({'a': 1, 'b': 2})
+        self.assertEqual(int(self.nv.treeview.tree['height']), 2)
+        self.nv.load_dict({'v%d' % i: i for i in range(40)})
+        self.assertEqual(int(self.nv.treeview.tree['height']),
+                         self.nv.maxrows)
 
 
 if __name__ == '__main__':
