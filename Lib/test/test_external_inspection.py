@@ -3650,6 +3650,30 @@ class TestExceptionDetectionInProcess(RemoteInspectionTestBase):
             skip_non_matching_threads=True,
         )
 
+    @requires_gil_enabled("Free threaded builds don't have an 'active thread'")
+    def test_filtered_active_thread_is_not_replaced(self):
+        samples = []
+
+        def sample():
+            for kwargs in ({"all_threads": True}, {"only_active_thread": True}):
+                unwinder = RemoteUnwinder(
+                    os.getpid(), mode=PROFILING_MODE_EXCEPTION, **kwargs
+                )
+                samples.append(
+                    self._get_thread_statuses(unwinder.get_stack_trace())
+                )
+
+        thread = threading.Thread(target=sample)
+        try:
+            raise ValueError
+        except ValueError:
+            thread.start()
+            thread.join()
+
+        all_threads, active_thread = samples
+        self.assertEqual(list(all_threads), [threading.get_native_id()])
+        self.assertEqual(active_thread, {})
+
 
 @requires_remote_subprocess_debugging()
 class TestFrameCaching(RemoteInspectionTestBase):
