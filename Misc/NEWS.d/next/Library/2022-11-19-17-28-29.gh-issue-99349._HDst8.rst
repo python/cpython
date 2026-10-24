@@ -1,0 +1,1 @@
+Support :term:`path-like object` as an address in :meth:`socket.socket.bind` for :const:`AF_UNIX` sockets. Patch by Noam Cohen.
