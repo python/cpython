@@ -1,0 +1,4 @@
+Fix the :mod:`sqlite3` command-line interface so that an input line
+containing an embedded null character or a lone surrogate no longer crashes
+the interactive shell; an error is now printed and the shell continues.
+Patch by tonghuaroot.
