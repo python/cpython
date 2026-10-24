@@ -10,6 +10,7 @@
 #include "pycore_interpframe.h"   // FRAME_SPECIALS_SIZE
 #include "pycore_opcode_metadata.h" // _PyOpcode_Caches
 #include "pycore_opcode_utils.h"  // RESUME_AT_FUNC_START
+#include "pycore_object.h"        // _PyObject_IsFreed()
 #include "pycore_optimizer.h"     // _Py_ExecutorDetach
 #include "pycore_pymem.h"         // _PyMem_FreeDelayed()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -1035,17 +1036,53 @@ PyCode_Addr2Line(PyCodeObject *co, int addrq)
 int
 _PyCode_SafeAddr2Line(PyCodeObject *co, int addrq)
 {
+    if (_PyObject_IsFreed((PyObject *)co) || !PyCode_Check(co)) {
+        return -1;
+    }
     if (addrq < 0) {
         return co->co_firstlineno;
     }
-    if (co->_co_monitoring && co->_co_monitoring->lines) {
-        return _Py_Instrumentation_GetLine(co, co->_co_monitoring->lines, addrq/sizeof(_Py_CODEUNIT));
-    }
-    if (!(addrq >= 0 && addrq < _PyCode_NBYTES(co))) {
+
+    Py_ssize_t code_size = Py_SIZE(co);
+    if (code_size < 0 || addrq / (int)sizeof(_Py_CODEUNIT) >= code_size) {
         return -1;
     }
+
+    _PyCoMonitoringData *monitoring =
+        _Py_atomic_load_ptr_acquire(&co->_co_monitoring);
+    if (monitoring != NULL) {
+        if (_PyMem_IsPtrFreed(monitoring)) {
+            return -1;
+        }
+        _PyCoLineInstrumentationData *lines =
+            _Py_atomic_load_ptr_acquire(&monitoring->lines);
+        if (lines != NULL) {
+            if (_PyMem_IsPtrFreed(lines)
+                || _PyObject_IsFreed((PyObject *)co)
+                || !PyCode_Check(co))
+            {
+                return -1;
+            }
+            return _Py_Instrumentation_GetLine(
+                co, lines, addrq / sizeof(_Py_CODEUNIT));
+        }
+    }
+
+    if (_PyObject_IsFreed((PyObject *)co) || !PyCode_Check(co)) {
+        return -1;
+    }
+    PyObject *linetable = co->co_linetable;
+    if (_PyObject_IsFreed(linetable) || !PyBytes_Check(linetable)) {
+        return -1;
+    }
+    int firstlineno = co->co_firstlineno;
+
     PyCodeAddressRange bounds;
-    _PyCode_InitAddressRange(co, &bounds);
+    _PyLineTable_InitAddressRange(
+        PyBytes_AS_STRING(linetable),
+        PyBytes_GET_SIZE(linetable),
+        firstlineno,
+        &bounds);
     return _PyCode_CheckLineNumber(addrq, &bounds);
 }
 
