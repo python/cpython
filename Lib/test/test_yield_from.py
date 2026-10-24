@@ -9,6 +9,8 @@ see <http://www.cosc.canterbury.ac.nz/greg.ewing/python/yield-from/YieldFrom-Pyt
 
 import unittest
 import inspect
+import sys
+import types
 
 from test.support import captured_stderr, disable_gc, gc_collect
 from test import support
@@ -17,6 +19,83 @@ class TestPEP380Operation(unittest.TestCase):
     """
     Test semantics.
     """
+
+    def test_delegated_throw_preserves_exception_state(self):
+        """Delegated throw inherits the delegating generator's exception."""
+        class Iterator:
+            def __init__(self, gen):
+                self.gen = gen
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                return next(self.gen)
+
+            def throw(self, *args):
+                return self.gen.throw(*args)
+
+        for wrap in (lambda gen: gen, Iterator):
+            with self.subTest(wrap=wrap):
+                original = RuntimeError("original")
+                seen = []
+
+                def inner():
+                    seen.append(sys.exception())
+                    try:
+                        yield
+                    except ValueError:
+                        pass
+                    seen.append(sys.exception())
+                    yield
+
+                def outer():
+                    try:
+                        raise original
+                    except RuntimeError:
+                        yield from wrap(inner())
+                        seen.append(sys.exception())
+
+                gen = outer()
+                next(gen)
+                try:
+                    raise LookupError("caller")
+                except LookupError as caller:
+                    gen.throw(ValueError())
+                    self.assertIs(sys.exception(), caller)
+                    with self.assertRaises(StopIteration):
+                        next(gen)
+                    self.assertIs(sys.exception(), caller)
+                self.assertEqual(seen, [original] * 3)
+
+    def test_await_throw_preserves_exception_state(self):
+        """Throwing through await preserves the surrounding handled exception."""
+        original = RuntimeError("original")
+        seen = []
+
+        @types.coroutine
+        def suspend():
+            yield
+
+        async def inner():
+            try:
+                await suspend()
+            except ValueError:
+                pass
+            seen.append(sys.exception())
+
+        async def outer():
+            try:
+                raise original
+            except RuntimeError:
+                await inner()
+                seen.append(sys.exception())
+
+        coro = outer()
+        coro.send(None)
+        with self.assertRaises(StopIteration):
+            coro.throw(ValueError())
+        self.assertEqual(seen, [original] * 2)
 
     def test_delegation_of_initial_next_to_subgenerator(self):
         """
