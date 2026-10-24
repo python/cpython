@@ -1,0 +1,3 @@
+Add symbolic constants for Tk option values which were missing in
+:mod:`!tkinter.constants`, such as ``READONLY``, ``TABULAR``,
+``DETERMINATE``, ``MENUBAR`` and the names of the themed widget states.

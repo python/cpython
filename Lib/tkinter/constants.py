@@ -18,6 +18,16 @@ EW='ew'
 NSEW='nsew'
 CENTER='center'
 
+# -labelanchor, in addition to the values above
+EN='en'
+ES='es'
+WN='wn'
+WS='ws'
+
+# -compound
+TEXT='text'
+IMAGE='image'
+
 # -fill
 NONE='none'
 X='x'
@@ -54,7 +64,37 @@ BASELINE='baseline'
 
 # -bordermode
 INSIDE='inside'
+IGNORE='ignore'
 OUTSIDE='outside'
+
+# -direction
+ABOVE='above'
+BELOW='below'
+FLUSH='flush'
+
+# -stretch
+ALWAYS='always'
+MIDDLE='middle'
+NEVER='never'
+
+# -tabstyle
+TABULAR='tabular'
+WORDPROCESSOR='wordprocessor'
+
+# -insertunfocussed (Tk 8.6+)
+HOLLOW='hollow'
+
+# -mode
+DETERMINATE='determinate'
+INDETERMINATE='indeterminate'
+
+# -selecttype (Tk 9.0+)
+ITEM='item'
+CELL='cell'
+
+# -show
+TREE='tree'
+HEADINGS='headings'
 
 # Special tags, marks and insert positions
 SEL='sel'
@@ -72,6 +112,29 @@ DISABLED='disabled'
 ACTIVE='active'
 # Canvas state
 HIDDEN='hidden'
+# Entry and ttk widget states
+READONLY='readonly'
+# Other ttk widget states
+ALTERNATE='alternate'
+BACKGROUND='background'
+FOCUS='focus'
+HOVER='hover'
+INVALID='invalid'
+PRESSED='pressed'
+SELECTED='selected'
+# ttk widget states for Treeview items and Notebook tabs (Tk 9.1+)
+# FIRST='first' and LAST='last' are also used
+LEAF='leaf'
+OPEN='open'
+
+# -validate
+# ALL='all', FOCUS='focus' and NONE='none' are also valid
+KEY='key'
+FOCUSIN='focusin'
+FOCUSOUT='focusout'
+
+# Validation reasons, in addition to the values above
+FORCED='forced'
 
 # Menu item types
 CASCADE='cascade'
@@ -79,6 +142,10 @@ CHECKBUTTON='checkbutton'
 COMMAND='command'
 RADIOBUTTON='radiobutton'
 SEPARATOR='separator'
+
+# -type for menus
+MENUBAR='menubar'
+TEAROFF='tearoff'
 
 # Selection modes for list boxes
 SINGLE='single'
@@ -108,3 +175,4 @@ MOVETO='moveto'
 SCROLL='scroll'
 UNITS='units'
 PAGES='pages'
+PIXELS='pixels'
