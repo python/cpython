@@ -116,6 +116,8 @@ Panel objects
 .. method:: panel.replace(win)
 
    Change the window associated with the panel to the window *win*.
+   Raise :exc:`curses.panel.error` if *win* has been detached from its
+   screen by :meth:`screen.close() <curses.screen.close>`.
 
 
 .. method:: panel.set_userptr(obj)

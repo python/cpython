@@ -1,12 +1,5 @@
 """A powerful, extensible, and easy-to-use option parser.
 
-By Greg Ward <gward@python.net>
-
-Originally distributed as Optik.
-
-For support, use the optik-users@lists.sourceforge.net mailing list
-(http://lists.sourceforge.net/lists/listinfo/optik-users).
-
 Simple usage example:
 
    from optparse import OptionParser
@@ -829,6 +822,12 @@ class Values:
             return self.__dict__ == other
         else:
             return NotImplemented
+
+    def __replace__(self, /, **changes):
+        new = self.__class__()
+        new.__dict__.update(self.__dict__)
+        new.__dict__.update(changes)
+        return new
 
     def _update_careful(self, dict):
         """

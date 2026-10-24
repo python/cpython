@@ -65,4 +65,43 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=112d59f5e98d652b input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(structseq___replace____doc__,
+"__replace__($self, /, **changes)\n"
+"--\n"
+"\n"
+"Return a copy with new values for the specified fields.");
+
+#define STRUCTSEQ___REPLACE___METHODDEF    \
+    {"__replace__", _PyCFunction_CAST(structseq___replace__), METH_VARARGS|METH_KEYWORDS, structseq___replace____doc__},
+
+static PyObject *
+structseq___replace___impl(PyStructSequence *self, PyObject *changes);
+
+static PyObject *
+structseq___replace__(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *changes = NULL;
+
+    if (!_PyArg_NoPositional("__replace__", args)) {
+        goto exit;
+    }
+    if (kwargs == NULL) {
+        changes = PyDict_New();
+        if (changes == NULL) {
+            goto exit;
+        }
+    }
+    else {
+        changes = Py_NewRef(kwargs);
+    }
+    return_value = structseq___replace___impl((PyStructSequence *)self, changes);
+
+exit:
+    /* Cleanup for changes */
+    Py_XDECREF(changes);
+
+    return return_value;
+}
+/*[clinic end generated code: output=18fcf88e5df26774 input=a9049054013a1b77]*/

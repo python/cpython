@@ -1,7 +1,7 @@
 .. _tut-io:
 
 ****************
-Input and Output
+Input and output
 ****************
 
 There are several ways to present the output of a program; data can be printed
@@ -11,7 +11,7 @@ discuss some of the possibilities.
 
 .. _tut-formatting:
 
-Fancier Output Formatting
+Fancier output formatting
 =========================
 
 So far we've encountered two ways of writing values: *expression statements* and
@@ -111,7 +111,7 @@ This syntax is easy to use, although it offers much less control for formatting.
 
 .. _tut-f-strings:
 
-Formatted String Literals
+Formatted string literals
 -------------------------
 
 :ref:`Formatted string literals <f-strings>` (also called f-strings for
@@ -163,7 +163,7 @@ the reference guide for the :ref:`formatspec`.
 
 .. _tut-string-format:
 
-The String format() Method
+The string format() method
 --------------------------
 
 Basic usage of the :meth:`str.format` method looks like this::
@@ -240,7 +240,7 @@ For a complete overview of string formatting with :meth:`str.format`, see
 :ref:`formatstrings`.
 
 
-Manual String Formatting
+Manual string formatting
 ------------------------
 
 Here's the same table of squares and cubes, formatted manually::
@@ -303,7 +303,7 @@ More information can be found in the :ref:`old-string-formatting` section.
 
 .. _tut-files:
 
-Reading and Writing Files
+Reading and writing files
 =========================
 
 .. index::
@@ -311,12 +311,11 @@ Reading and Writing Files
    pair: object; file
 
 :func:`open` returns a :term:`file object`, and is most commonly used with
-two positional arguments and one keyword argument:
-``open(filename, mode, encoding=None)``
+two positional arguments: ``open(filename, mode)``
 
 ::
 
-   >>> f = open('workfile', 'w', encoding="utf-8")
+   >>> f = open('workfile', 'w')
 
 .. XXX str(f) is <io.TextIOWrapper object at 0x82e8dc4>
 
@@ -334,10 +333,7 @@ omitted.
 
 Normally, files are opened in :dfn:`text mode`, that means, you read and write
 strings from and to the file, which are encoded in a specific *encoding*.
-If *encoding* is not specified, the default is platform dependent
-(see :func:`open`).
-Because UTF-8 is the modern de-facto standard, ``encoding="utf-8"`` is
-recommended unless you know that you need to use a different encoding.
+If *encoding* is not specified, the default is UTF-8 (see :func:`open`).
 Appending a ``'b'`` to the mode opens the file in :dfn:`binary mode`.
 Binary mode data is read and written as :class:`bytes` objects.
 You can not specify *encoding* when opening file in binary mode.
@@ -356,7 +352,7 @@ after its suite finishes, even if an exception is raised at some
 point.  Using :keyword:`!with` is also much shorter than writing
 equivalent :keyword:`try`\ -\ :keyword:`finally` blocks::
 
-    >>> with open('workfile', encoding="utf-8") as f:
+    >>> with open('workfile') as f:
     ...     read_data = f.read()
 
     >>> # We can check that the file has been automatically closed.
@@ -389,7 +385,7 @@ automatically fail. ::
 
 .. _tut-filemethods:
 
-Methods of File Objects
+Methods of file objects
 -----------------------
 
 The rest of the examples in this section will assume that a file object called
@@ -532,8 +528,8 @@ To decode the object again, if ``f`` is a :term:`binary file` or
    x = json.load(f)
 
 .. note::
-   JSON files must be encoded in UTF-8. Use ``encoding="utf-8"`` when opening
-   JSON file as a :term:`text file` for both of reading and writing.
+   JSON files must be encoded in UTF-8, the default encoding for
+   :term:`text files <text file>`.
 
 This simple serialization technique can handle lists and dictionaries, but
 serializing arbitrary class instances in JSON requires a bit of extra effort.

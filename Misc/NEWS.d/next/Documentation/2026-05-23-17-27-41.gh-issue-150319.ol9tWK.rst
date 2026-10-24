@@ -1,2 +1,0 @@
-Generic builtin and standard library types now document the meaning of their
-type parameters.

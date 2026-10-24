@@ -1,0 +1,4 @@
+Restore the previous behaviour of :meth:`http.client.HTTPConnection.set_tunnel`
+where header values that are not strings (such as :const:`None`, :class:`int`
+or other objects) are converted with :class:`str` instead of raising
+:exc:`AttributeError` when the request is sent.
