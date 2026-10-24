@@ -4380,7 +4380,7 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
     PyUnstable_Module_SetGIL(sysmod, Py_MOD_GIL_NOT_USED);
 #endif
 
-    if (Pyodule_AddIntMacro(sysmod, EXIT_SUCCESS) < 0) {
+    if (PyModule_AddIntMacro(sysmod, EXIT_SUCCESS) < 0) {
         goto error;
     }
     if (PyModule_AddIntMacro(sysmod, EXIT_FAILURE) < 0) {
