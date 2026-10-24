@@ -50,6 +50,7 @@ GITBRANCH=	@GITBRANCH@
 PGO_PROF_GEN_FLAG=@PGO_PROF_GEN_FLAG@
 PGO_PROF_USE_FLAG=@PGO_PROF_USE_FLAG@
 LLVM_PROF_MERGER=@LLVM_PROF_MERGER@
+LLVM_PROF_SHOW=@LLVM_PROF_SHOW@
 LLVM_PROF_FILE=@LLVM_PROF_FILE@
 LLVM_PROF_ERR=@LLVM_PROF_ERR@
 DTRACE=         @DTRACE@
@@ -216,6 +217,12 @@ MACOSX_DEPLOYMENT_TARGET=@CONFIGURE_MACOSX_DEPLOYMENT_TARGET@
 IPHONEOS_DEPLOYMENT_TARGET=@IPHONEOS_DEPLOYMENT_TARGET@
 
 BUILD_DETAILS=@BUILD_DETAILS@
+
+# visionOS Deployment target is *actually* used during the build, by the
+# compiler shims; export.
+XROS_DEPLOYMENT_TARGET=@XROS_DEPLOYMENT_TARGET@
+@EXPORT_XROS_DEPLOYMENT_TARGET@export XROS_DEPLOYMENT_TARGET
+
 
 # Option to install to strip binaries
 STRIPFLAG=-s
@@ -391,6 +398,7 @@ PEGEN_OBJS=		\
 		Parser/pegen_errors.o \
 		Parser/action_helpers.o \
 		Parser/parser.o \
+		Parser/parser_invalid.o \
 		Parser/string_parser.o \
 		Parser/peg_api.o
 
@@ -435,6 +443,7 @@ PARSER_HEADERS= \
 
 PYTHON_OBJS=	\
 		Python/_contextvars.o \
+		Python/_strptime.o \
 		Python/_warnings.o \
 		Python/Python-ast.o \
 		Python/Python-tokenize.o \
@@ -850,6 +859,7 @@ profile-run-stamp:
 	@ # FIXME: can't run for a cross build
 	$(LLVM_PROF_FILE) $(RUNSHARED) ./$(BUILDPYTHON) $(PROFILE_TASK)
 	$(LLVM_PROF_MERGER)
+	$(LLVM_PROF_SHOW)
 	# Remove profile generation binary since we are done with it.
 	$(MAKE) clean-retain-profile
 	# This is an expensive target to build and it does not have proper
@@ -971,9 +981,12 @@ clinic: check-clean-src
 clinic-tests: check-clean-src $(srcdir)/Lib/test/clinic.test.c
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py -f $(srcdir)/Lib/test/clinic.test.c
 
+# Objects linked into the interpreter only, not into libpython.
+PLATFORM_MAIN_OBJS=	@PLATFORM_MAIN_OBJS@
+
 # Build the interpreter
-$(BUILDPYTHON):	Programs/python.o $(LINK_PYTHON_DEPS)
-	$(LINKCC) $(PY_CORE_EXE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
+$(BUILDPYTHON):	Programs/python.o $(PLATFORM_MAIN_OBJS) $(LINK_PYTHON_DEPS)
+	$(LINKCC) $(PY_CORE_EXE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o $(PLATFORM_MAIN_OBJS) $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 platform: $(PYTHON_FOR_BUILD_DEPS) pybuilddir.txt
 	$(RUNSHARED) $(PYTHON_FOR_BUILD) -c 'import sys ; from sysconfig import get_platform ; print("%s-%d.%d" % (get_platform(), *sys.version_info[:2]))' >platform
@@ -1119,6 +1132,20 @@ web_example/python.mjs web_example/python.wasm: $(BUILDPYTHON)
 	fi
 	cp python.mjs web_example/python.mjs
 	cp python.wasm web_example/python.wasm
+
+WEB_EMBED_TEST_DIR=$(EMSCRIPTEN_DIR)/web_embed_test
+
+# Linked like an embedder would: against libpython.a, without $(LINKFORSHARED)
+# and so without -sMAIN_MODULE or the interpreter's -sEXPORTED_FUNCTIONS.
+web_embed_test/main.js: $(WEB_EMBED_TEST_DIR)/main.c $(LIBRARY) $(ZIP_STDLIB)
+	@mkdir -p web_embed_test
+	$(LINKCC) $(PY_STDMODULE_CFLAGS) $(PY_CORE_EXE_LDFLAGS) -O2 -g0 -o $@ \
+		$(WEB_EMBED_TEST_DIR)/main.c $(LIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) \
+		-sALLOW_MEMORY_GROWTH -sSTACK_SIZE=5MB \
+		--preload-file $(ZIP_STDLIB)@/lib/stdlib.zip
+
+.PHONY: web_embed_test
+web_embed_test: web_embed_test/main.js
 
 .PHONY: web_example
 web_example: web_example/python.mjs web_example/python.worker.mjs web_example/index.html web_example/server.py web_example/$(ZIP_STDLIB)
@@ -1620,8 +1647,8 @@ regen-re: $(BUILDPYTHON)
 	# using Tools/build/generate_re_casefix.py
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/generate_re_casefix.py $(srcdir)/Lib/re/_casefix.py
 
-Programs/_testembed: Programs/_testembed.o $(LINK_PYTHON_DEPS)
-	$(LINKCC) $(PY_CORE_EXE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
+Programs/_testembed: Programs/_testembed.o $(PLATFORM_MAIN_OBJS) $(LINK_PYTHON_DEPS)
+	$(LINKCC) $(PY_CORE_EXE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(PLATFORM_MAIN_OBJS) $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 ############################################################################
 # "Bootstrap Python" used to run Programs/_freeze_module.py
@@ -1961,6 +1988,7 @@ regen-pegen:
 		$(srcdir)/Grammar/Tokens \
 		-o $(srcdir)/Parser/parser.c.new
 	$(UPDATE_FILE) --create $(srcdir)/Parser/parser.c $(srcdir)/Parser/parser.c.new
+	$(UPDATE_FILE) --create $(srcdir)/Parser/parser_invalid.c $(srcdir)/Parser/parser_invalid.c.new
 
 .PHONY: regen-ast
 regen-ast:
@@ -2251,7 +2279,7 @@ regen-slots: Python/slots.toml
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_slots.py \
 		--generate-all
 
-$(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)
+$(LIBRARY_OBJS) $(MODOBJS) Programs/python.o $(PLATFORM_MAIN_OBJS): $(PYTHON_HEADERS)
 
 
 ######################################################################
@@ -2292,30 +2320,31 @@ testuniversal: all
 	$(RUNSHARED) /usr/libexec/oah/translate \
 		./$(BUILDPYTHON) -E -m test -j 0 -u all $(TESTOPTS)
 
-# Run the test suite on the iOS simulator. Must be run on a macOS machine with
-# a full Xcode install that has an iPhone SE (3rd edition) simulator available.
+# Run the test suite on an Apple Mobile (i.e., iOS/tvOS/watchOS/visionOS)
+# device simulator. Must be run on a macOS machine with a full Xcode install
+# that has an SE-class simulator available for the chosen platform.
 # This must be run *after* a `make install` has completed the build. The
 # testbed is configured for the framework name used to configure the build;
 # that name is expected to be `Python`, optionally followed by uppercased ABI
 # flags (e.g., `PythonT`).
-XCFOLDER:=iOSTestbed.$(MULTIARCH).$(shell date +%s).$$PPID
+XCFOLDER:=AppleTestbed.$(MULTIARCH).$(shell date +%s).$$PPID
 .PHONY: testios
 testios:
-	@if test "$(MACHDEP)" != "ios"; then \
-		echo "Cannot run the iOS testbed for a non-iOS build."; \
+	@if test "$(MACHDEP)" != "ios" -a "$(MACHDEP)" != "tvos" -a "$(MACHDEP)" != "visionos" -a "$(MACHDEP)" != "watchos" ; then \
+		echo "Cannot run the Apple mobile testbed for a $(MACHDEP) build."; \
 		exit 1;\
 	fi
-	@if test "$(findstring -iphonesimulator,$(MULTIARCH))" != "-iphonesimulator"; then \
-		echo "Cannot run the iOS testbed for non-simulator builds."; \
+	@if test "$(findstring simulator,$(MULTIARCH))" != "simulator"; then \
+		echo "Cannot run the Apple mobile testbed for non-simulator builds."; \
 		exit 1;\
 	fi
 	@if ! test -d $(PYTHONFRAMEWORKPREFIX); then \
-		echo "Cannot find a finalized iOS Python.framework. Have you run 'make install' to finalize the framework build?"; \
+		echo "Cannot find a finalized Python.framework. Have you run 'make install' to finalize the framework build?"; \
 		exit 1;\
 	fi
 
 	# Clone the testbed project into the XCFOLDER
-	$(PYTHON_FOR_BUILD) $(srcdir)/Platforms/Apple/testbed clone --framework $(PYTHONFRAMEWORKPREFIX) "$(XCFOLDER)"
+	$(PYTHON_FOR_BUILD) $(srcdir)/Platforms/Apple/testbed clone --platform $(MACHDEP) --framework $(PYTHONFRAMEWORKPREFIX) "$(XCFOLDER)"
 
 	# Run the testbed project
 	$(PYTHON_FOR_BUILD) "$(XCFOLDER)" run --verbose -- test -uall --single-process --rerun -W --pythoninfo
@@ -2977,6 +3006,9 @@ libainstall: all scripts
 			fi; \
 		fi; \
 		$(INSTALL_DATA) Programs/python.o $(DESTDIR)$(LIBPL)/python.o; \
+		for i in $(PLATFORM_MAIN_OBJS); do \
+			$(INSTALL_DATA) $$i $(DESTDIR)$(LIBPL); \
+		done; \
 	fi
 	$(INSTALL_DATA) Modules/config.c $(DESTDIR)$(LIBPL)/config.c
 	$(INSTALL_DATA) $(srcdir)/Modules/config.c.in $(DESTDIR)$(LIBPL)/config.c.in
@@ -3291,7 +3323,7 @@ clean-retain-profile: pycremoval
 	find build -name '*.py[co]' -exec rm -f {} ';' || true
 	-rm -f pybuilddir.txt
 	-rm -f _bootstrap_python
-	-rm -rf web_example python.mjs python.wasm python*.symbols python*.map
+	-rm -rf web_example web_embed_test python.mjs python.wasm python*.symbols python*.map
 	-rm -f Programs/_testembed Programs/_freeze_module
 	-rm -rf Python/deepfreeze
 	-rm -f Python/frozen_modules/*.h
@@ -3469,7 +3501,7 @@ MODULE__HMAC_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HMAC_HEADERS) $(LIBHACL_
 MODULE__HMAC_LDEPS=$(LIBHACL_HMAC_LIB_@LIBHACL_LDEPS_LIBTYPE@)
 
 MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h $(srcdir)/Modules/addrinfo.h $(srcdir)/Modules/getaddrinfo.c $(srcdir)/Modules/getnameinfo.c
-MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_openssl_mem.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h
+MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_openssl_mem.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl/distrusted_spki.h $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h
 MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/_testcapi/parts.h $(srcdir)/Modules/_testcapi/util.h
 MODULE__TESTLIMITEDCAPI_DEPS=$(srcdir)/Modules/_testlimitedcapi/testcapi_long.h $(srcdir)/Modules/_testlimitedcapi/parts.h $(srcdir)/Modules/_testlimitedcapi/util.h
 MODULE__TESTINTERNALCAPI_DEPS=$(srcdir)/Modules/_testinternalcapi/parts.h $(srcdir)/Parser/tokenizer/source.h $(srcdir)/Parser/tokenizer/types.h $(srcdir)/Python/ceval.h $(srcdir)/Modules/_testinternalcapi/test_targets.h $(srcdir)/Modules/_testinternalcapi/test_cases.c.h
