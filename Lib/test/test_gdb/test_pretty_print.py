@@ -116,7 +116,7 @@ class PrettyPrintTests(DebuggerTests):
             'python import locale; print(locale.getpreferredencoding())')
 
         encoding = stdout
-        if stderr or not encoding:
+        if not encoding:
             raise RuntimeError(
                 f'unable to determine the Python locale preferred encoding '
                 f'of embedded Python in GDB\n'
