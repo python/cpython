@@ -28,6 +28,7 @@ class FunctionalTestCaseMixin:
 
         self.loop.set_exception_handler(self.loop_exception_handler)
         self.__unhandled_exceptions = []
+        self.__abort_exception = None
 
     def tearDown(self):
         try:
@@ -38,9 +39,13 @@ class FunctionalTestCaseMixin:
                 pprint.pprint(self.__unhandled_exceptions)
                 self.fail('unexpected calls to loop.call_exception_handler()')
 
+            if self.__abort_exception is not None:
+                raise self.__abort_exception
+
         finally:
             asyncio.set_event_loop(None)
             self.loop = None
+            self.__abort_exception = None
 
     def tcp_server(self, server_prog, *,
                    family=socket.AF_INET,
@@ -104,10 +109,18 @@ class FunctionalTestCaseMixin:
                     pass
 
     def _abort_socket_test(self, ex):
+        # This runs in the client/server thread, not the main thread, so
+        # it must not call self.fail(): the AssertionError would escape
+        # Thread.run() without failing the test. Stash the exception and
+        # let tearDown() re-raise it on the main thread.
         try:
-            self.loop.stop()
+            self.loop.call_soon_threadsafe(self.loop.stop)
+        except RuntimeError:
+            # The loop is already closed; nothing left to stop.
+            pass
         finally:
-            self.fail(ex)
+            if self.__abort_exception is None:
+                self.__abort_exception = ex
 
 
 ##############################################################################
