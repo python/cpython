@@ -511,6 +511,19 @@ Disallow: /yet/one/path?name=value&more
            '/yet/one/path?name=value&more']
 
 
+class CanFetchMalformedURLTest(unittest.TestCase):
+    def test_malformed_url_is_allowed(self):
+        # A URL that cannot be parsed matches no rule, so can_fetch() returns
+        # True (RFC 9309 default) rather than raising.
+        parser = urllib.robotparser.RobotFileParser()
+        parser.parse(['User-agent: *', 'Disallow: /'])
+        # The rule above disallows a well-formed path.
+        self.assertFalse(parser.can_fetch('*', '/x'))
+        # An unparsable URL is allowed, not raised.
+        self.assertTrue(parser.can_fetch('*', 'http://[::1'))
+        self.assertTrue(parser.can_fetch('*', 'http://['))
+
+
 class PercentEncodingTest(BaseRobotTest, unittest.TestCase):
     robots_txt = """\
 User-agent: *
