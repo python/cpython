@@ -383,6 +383,10 @@ Functions
      doesn't have its own annotations dict, returns an empty dict.
    * All accesses to object members and dict values are done
      using ``getattr()`` and ``dict.get()`` for safety.
+   * Supports objects that provide their own :attr:`~object.__annotate__` descriptor,
+     such as :class:`functools.partial` and :class:`functools.partialmethod`.
+     See the :mod:`functools` module documentation for details on how these
+     objects support annotations.
 
    *eval_str* controls whether or not values of type :class:`!str` are
    replaced with the result of calling :func:`eval` on those values:
@@ -404,10 +408,12 @@ Functions
      ``sys.modules[obj.__module__].__dict__`` and *locals* defaults
      to the *obj* class namespace.
    * If *obj* is a callable, *globals* defaults to
-     :attr:`obj.__globals__ <function.__globals__>`,
-     although if *obj* is a wrapped function (using
-     :func:`functools.update_wrapper`) or a :class:`functools.partial` object,
-     it is unwrapped until a non-wrapped function is found.
+     :attr:`obj.__globals__ <function.__globals__>`.
+     If *obj* has a ``__wrapped__`` attribute (such as functions
+     decorated with :func:`functools.update_wrapper`), or if it is a
+     :class:`functools.partial` object, it is unwrapped by following the
+     ``__wrapped__`` attribute or :attr:`~functools.partial.func` attribute
+     repeatedly to find the underlying wrapped function's globals.
 
    Calling :func:`!get_annotations` is best practice for accessing the
    annotations dict of any object. See :ref:`annotations-howto` for
@@ -435,6 +441,36 @@ Functions
    objects that contain values that are commonly encountered in annotations.
 
    .. versionadded:: 3.14
+
+.. _support-annotations-custom-objects:
+
+Supporting annotations in custom objects
+-------------------------------------------
+
+Objects can support annotation introspection by implementing the :attr:`~object.__annotate__`
+protocol. When an object's class provides an :attr:`!__annotate__` descriptor, :func:`get_annotations`
+will call it to retrieve the annotations for that object. The :attr:`!__annotate__` function
+should accept a single argument, a member of the :class:`Format` enum, and return a dictionary
+mapping annotation names to their values in the requested format.
+
+This mechanism allows objects to dynamically compute their annotations based on their state.
+For example, :class:`functools.partial` and :class:`functools.partialmethod` objects use
+:attr:`!__annotate__` to provide annotations that reflect only the unbound parameters,
+excluding parameters that have been filled by the partial application. See the
+:mod:`functools` module documentation for details on how these specific objects handle
+annotations.
+
+Other examples of objects that implement :attr:`!__annotate__` include:
+
+* :class:`typing.TypedDict` classes created through the functional syntax
+* Generic classes and functions with type parameters
+
+When implementing :attr:`!__annotate__` for custom objects, the function should handle
+all three primary formats (:attr:`~Format.VALUE`, :attr:`~Format.FORWARDREF`, and
+:attr:`~Format.STRING`) by either returning appropriate values or raising
+:exc:`NotImplementedError` to fall back to default behavior. Helper functions like
+:func:`annotations_to_string` and :func:`call_annotate_function` can assist with
+implementing format support.
 
 
 Recipes
