@@ -112,7 +112,7 @@ The module defines the following items:
    The *compresslevel* argument is an integer from ``0`` to ``9`` controlling
    the level of compression; ``1`` is fastest and produces the least
    compression, and ``9`` is slowest and produces the most compression. ``0``
-   is no compression. The default is ``9``.
+   is no compression. The default is ``6``.
 
    The optional *mtime* argument is the timestamp requested by gzip. The time
    is in Unix format, i.e., seconds since 00:00:00 UTC, January 1, 1970. Set

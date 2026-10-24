@@ -380,16 +380,26 @@ tuple_hash(PyObject *op)
 
     Py_ssize_t len = Py_SIZE(v);
     PyObject **item = v->ob_item;
+
+    /* Hashing an item recurses back into tuple_hash() when that item is
+       itself a tuple, so guard the descent to raise RecursionError rather
+       than overflow the C stack on a deeply nested tuple. */
+    if (_Py_EnterRecursiveCall(" while hashing a tuple")) {
+        return -1;
+    }
+
     acc = _PyTuple_HASH_XXPRIME_5;
     for (Py_ssize_t i = 0; i < len; i++) {
         Py_uhash_t lane = PyObject_Hash(item[i]);
         if (lane == (Py_uhash_t)-1) {
+            _Py_LeaveRecursiveCall();
             return -1;
         }
         acc += lane * _PyTuple_HASH_XXPRIME_2;
         acc = _PyTuple_HASH_XXROTATE(acc);
         acc *= _PyTuple_HASH_XXPRIME_1;
     }
+    _Py_LeaveRecursiveCall();
 
     /* Add input length, mangled to keep the historical value of hash(()). */
     acc += len ^ (_PyTuple_HASH_XXPRIME_5 ^ 3527539UL);
@@ -1021,7 +1031,7 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     Py_ssize_t oldsize;
 
     v = (PyTupleObject *) *pv;
-    if (v == NULL || !Py_IS_TYPE(v, &PyTuple_Type) ||
+    if (v == NULL || !Py_IS_TYPE(v, &PyTuple_Type) || newsize < 0 ||
         (Py_SIZE(v) != 0 && !_PyObject_IsUniquelyReferenced(*pv))) {
         *pv = 0;
         Py_XDECREF(v);
@@ -1048,6 +1058,14 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
         *pv = PyTuple_New(newsize);
         return *pv == NULL ? -1 : 0;
     }
+    /* Check for overflow */
+    if ((size_t)newsize > ((size_t)PY_SSIZE_T_MAX - (sizeof(PyTupleObject) -
+                sizeof(PyObject *))) / sizeof(PyObject *)) {
+        *pv = NULL;
+        Py_DECREF(v);
+        PyErr_NoMemory();
+        return -1;
+    }
 
     if (_PyObject_GC_IS_TRACKED(v)) {
         _PyObject_GC_UNTRACK(v);
@@ -1066,6 +1084,11 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
 #ifdef Py_REF_DEBUG
         _Py_DecRefTotal(_PyThreadState_GET());
 #endif
+        /* The failed reallocation leaves the original items owned by v. */
+        i = oldsize;
+        while (--i >= 0) {
+            Py_XDECREF(v->ob_item[i]);
+        }
         PyObject_GC_Del(v);
         return -1;
     }
