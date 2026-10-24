@@ -215,7 +215,7 @@ def urlretrieve(url, filename=None, reporthook=None, data=None):
         # Just return the local path and the "headers" for file://
         # URLs. No sense in performing a copy unless requested.
         if url_type == "file" and not filename:
-            return os.path.normpath(path), headers
+            return url2pathname(url, require_scheme=True, resolve_host=True), headers
 
         # Handle temporary file setup.
         if filename:
