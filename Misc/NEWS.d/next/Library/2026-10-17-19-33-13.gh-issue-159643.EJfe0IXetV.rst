@@ -1,0 +1,3 @@
+Fix :exc:`EOFError` raised by :mod:`tarfile` in stream mode with bz2, xz or
+zstd compression when reading past the end of the compressed data, for
+example with *ignore_zeros* or an archive without end-of-archive blocks.
