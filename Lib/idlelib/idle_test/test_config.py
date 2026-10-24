@@ -323,7 +323,6 @@ class IdleConfTest(unittest.TestCase):
         conf.defaultCfg['foo'] = config.IdleConfParser('')  # Empty, valid.
         conf.userCfg['foo'] = config.IdleUserConfParser(confpath)
 
-        self.assertIsNone(conf.file_load_error_message())
         conf.LoadCfgFiles()  # Must not raise.
 
         self.assertEqual(len(conf.file_load_errors), 1)
@@ -333,7 +332,9 @@ class IdleConfTest(unittest.TestCase):
         self.assertFalse(os.path.exists(confpath))
         with open(confpath + '.bad') as f:
             self.assertEqual(f.read(), 'enable=1\n')
-        message = conf.file_load_error_message()
+        conf.userCfg['highlight'] = config.IdleUserConfParser('')
+        root = mock.Mock()  # Not used by the check with no user themes.
+        message = conf.config_error_message(root)
         self.assertIn(confpath, message)
         self.assertIn('MissingSectionHeaderError', message)
 
@@ -598,6 +599,35 @@ class IdleConfTest(unittest.TestCase):
         self.assertCountEqual(
             conf.GetAllExtraHelpSourcesList(),
             conf.GetExtraHelpSourceList('default') + conf.GetExtraHelpSourceList('user'))
+
+    def test_check_highlight(self):
+        # gh-85604: invalid colors are reported and removed.
+        from test.support import requires
+        from tkinter import Tk
+        conf = self.new_config(_utest=True)
+        cfg = conf.userCfg['highlight'] = config.IdleUserConfParser('')
+        cfg.SetOption('Good', 'keyword-foreground', '#ff7700')
+        cfg.SetOption('Bad', 'keyword-foreground', 'bpo-00224')
+        cfg.SetOption('Bad', 'keyword-background', 'white')
+        cfg.SetOption('Bad', 'comment-background', '#12345')
+
+        requires('gui')
+        root = Tk()
+        root.withdraw()
+        self.addCleanup(root.destroy)
+
+        message = conf.config_error_message(root)
+        self.assertIn('  Bad: keyword-foreground = bpo-00224 (', message)
+        self.assertIn('  Bad: comment-background = #12345 (', message)
+        self.assertNotIn('Good', message)
+        self.assertNotIn('white', message)
+        self.assertFalse(cfg.has_option('Bad', 'keyword-foreground'))
+        self.assertFalse(cfg.has_option('Bad', 'comment-background'))
+        self.assertTrue(cfg.has_option('Bad', 'keyword-background'))
+        self.assertTrue(cfg.has_option('Good', 'keyword-foreground'))
+        # Nothing left to report.
+        conf.highlight_errors.clear()
+        self.assertIsNone(conf.config_error_message(root))
 
     def test_get_font(self):
         from test.support import requires
