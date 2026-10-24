@@ -583,13 +583,13 @@ PyObject_CallFinalizer(PyObject *self)
     if (tp->tp_finalize == NULL)
         return;
     /* tp_finalize should only be called once. */
-    if (_PyType_IS_GC(tp) && _PyGC_FINALIZED(self))
-        return;
-
-    tp->tp_finalize(self);
     if (_PyType_IS_GC(tp)) {
+        if (_PyGC_FINALIZED(self))
+            return;
+
         _PyGC_SET_FINALIZED(self);
     }
+    tp->tp_finalize(self);
 }
 
 int
