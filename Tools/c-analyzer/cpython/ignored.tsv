@@ -671,6 +671,7 @@ Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	ELEMENTTREE_PARSEWHOLE_INITI
 # XXX Fix the analyzer.
 
 ## forward/extern references
+Include/internal/pycore_curses.h	-	PyCurses_C_API	-
 Include/internal/pycore_importdl.h	-	_PyImport_DynLoadFiletab	-
 Include/py_curses.h	-	PyCurses_API	-
 Include/pydecimal.h	-	_decimal_api	-
