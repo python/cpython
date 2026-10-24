@@ -852,7 +852,13 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
             name = new_attrs['name'] = normalized
     target_path = os.path.realpath(os.path.join(dest_path, name),
                                    strict=os.path.ALLOW_MISSING)
-    if os.path.commonpath([target_path, dest_path]) != dest_path:
+    try:
+        outside_destination = (os.path.commonpath([target_path, dest_path])
+                               != dest_path)
+    except ValueError:
+        # commonpath() raises for paths on different drives on Windows.
+        outside_destination = True
+    if outside_destination:
         raise OutsideDestinationError(member, target_path)
     # A link member named after the destination directory itself
     # would replace it with a (sym)link, redirecting the destination
@@ -908,7 +914,13 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
                 target_path = os.path.join(dest_path, normalized)
             target_path = os.path.realpath(target_path,
                                            strict=os.path.ALLOW_MISSING)
-            if os.path.commonpath([target_path, dest_path]) != dest_path:
+            try:
+                outside_destination = (
+                    os.path.commonpath([target_path, dest_path]) != dest_path)
+            except ValueError:
+                # commonpath() raises for paths on different drives on Windows.
+                outside_destination = True
+            if outside_destination:
                 raise LinkOutsideDestinationError(member, target_path)
     return new_attrs
 
