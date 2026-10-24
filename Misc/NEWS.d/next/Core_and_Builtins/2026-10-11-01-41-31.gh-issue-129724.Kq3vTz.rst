@@ -1,0 +1,11 @@
+Fix the output of :mod:`marshal` for compiled code, and so the content of
+``.pyc`` files, depending on what was imported or compiled before in the
+process.  A :class:`frozenset` constant (or, in the :term:`free-threaded
+build`, a :class:`slice` constant) used by several functions of a module was
+copied for each of them when one of its strings was equal to a string which
+was already interned.  The compiler now replaces the strings of the
+constants by the interned ones before the code objects are created, while
+equal constants are still one object.  Which strings are interned does not
+change, except for the strings of :class:`slice` constants made only of ASCII
+letters, digits and underscores, which are now interned in the default build
+like those of other constants.
