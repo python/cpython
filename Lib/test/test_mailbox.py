@@ -1521,6 +1521,59 @@ class TestBabyl(_TestSingleFile, unittest.TestCase):
         self._box.remove(key1)
         self.assertEqual(set(self._box.get_labels()), set(['blah']))
 
+    def test_labels_reopened(self):
+        labels = ['unseen', 'work', 'caf\u00e9']
+        msg = mailbox.BabylMessage(self._template % 0)
+        msg.set_labels(labels)
+        self._box.add(msg)
+        self._box.add(self._template % 1)
+        self._box.close()
+        self._box = self._factory(self._path)
+
+        msg = self._box[0]
+        self.assertCountEqual(msg.get_labels(), labels)
+        self.assertCountEqual(self._box.get_labels(), ['work', 'caf\u00e9'])
+        self.assertNotIn('S', mailbox.MaildirMessage(msg).get_flags())
+        self.assertNotIn('R', mailbox.mboxMessage(msg).get_flags())
+
+        # Copying a message and rewriting the mailbox must preserve labels.
+        self._box.add(msg)
+        self._box.remove(1)
+        self._box.flush()
+        self._box.close()
+        self._box = self._factory(self._path)
+        self.assertEqual(len(self._box), 2)
+        for msg in self._box:
+            self.assertCountEqual(msg.get_labels(), labels)
+        self.assertCountEqual(self._box.get_labels(), ['work', 'caf\u00e9'])
+
+    def test_labels_non_utf8(self):
+        msg = mailbox.BabylMessage(self._template % 0)
+        msg.set_labels(['unseen', 'work'])
+        self._box.add(msg)
+        self._box.add(self._template % 1)
+        self._box.close()
+        with open(self._path, 'rb') as f:
+            data = f.read().replace(b'work', b'w\xffrk')
+        with open(self._path, 'wb') as f:
+            f.write(data)
+        self._box = self._factory(self._path)
+
+        labels = ['unseen', 'w\udcffrk']
+        msg = self._box[0]
+        self.assertCountEqual(msg.get_labels(), labels)
+        self.assertEqual(self._box.get_labels(), ['w\udcffrk'])
+        self._box.add(msg)
+        self._box.remove(1)
+        self._box.flush()
+        self._box.close()
+        self._box = self._factory(self._path)
+        self.assertEqual(len(self._box), 2)
+        for msg in self._box:
+            self.assertCountEqual(msg.get_labels(), labels)
+        with open(self._path, 'rb') as f:
+            self.assertIn(b'Labels:w\xffrk' + mailbox.linesep, f.read())
+
     def test_visible_headers(self):
         # gh-157880: visible headers are written to the file and read back
         msg = mailbox.BabylMessage(self._template % 0)
