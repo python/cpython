@@ -941,6 +941,12 @@ def getmodule(object, _filename=None):
         return sys.modules.get(modulesbyfile[_filename])
     # Try the cache again with the absolute file name
     try:
+        if _filename is None:
+            _filename = getfile(object)
+            if any(_filename.endswith(s)
+                   for s in importlib.machinery.BYTECODE_SUFFIXES):
+                # Keep the .pyc -> .py canonicalization of getsourcefile()
+                _filename = getsourcefile(object) or _filename
         file = getabsfile(object, _filename)
     except (TypeError, FileNotFoundError):
         return None
