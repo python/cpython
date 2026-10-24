@@ -1635,10 +1635,14 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
             res = -1;
             goto cleanup;
         }
-        if (field_types == NULL) {
-            // Probably a user-defined subclass of AST that lacks _field_types.
+        if (field_types == NULL ||
+            (PyDict_Check(field_types) && PyDict_GET_SIZE(field_types) == 0))
+        {
+            // Probably a user-defined subclass of AST that lacks _field_types,
+            // or that inherits the empty dictionary of an abstract AST class.
             // This will continue to work as it did before 3.13; i.e., attributes
             // that are not passed in simply do not exist on the instance.
+            Py_XDECREF(field_types);
             goto cleanup;
         }
         remaining_list = PySequence_List(remaining_fields);
@@ -2191,7 +2195,7 @@ static PyObject *
 make_type(struct ast_state *state, const char *type, PyObject* base,
           const char* const* fields, int num_fields, const char *doc)
 {
-    PyObject *fnames, *result;
+    PyObject *fnames, *field_types, *result;
     int i;
     fnames = PyTuple_New(num_fields);
     if (!fnames) return NULL;
@@ -2211,6 +2215,23 @@ make_type(struct ast_state *state, const char *type, PyObject* base,
                     state->ast,
                     state->__doc__, doc);
     Py_DECREF(fnames);
+    if (result == NULL) {
+        return NULL;
+    }
+    // Every AST class owns a _field_types dictionary.  Classes without fields,
+    // such as the abstract sum types, simply have an empty one.  The
+    // dictionaries of concrete classes are filled in by add_ast_annotations().
+    field_types = PyDict_New();
+    if (field_types == NULL) {
+        Py_DECREF(result);
+        return NULL;
+    }
+    if (PyObject_SetAttrString(result, "_field_types", field_types) < 0) {
+        Py_DECREF(field_types);
+        Py_DECREF(result);
+        return NULL;
+    }
+    Py_DECREF(field_types);
     return result;
 }
 
@@ -2340,16 +2361,26 @@ static int obj2ast_int(struct ast_state* Py_UNUSED(state), PyObject* obj, int* o
 
 static int add_ast_fields(struct ast_state *state)
 {
-    PyObject *empty_tuple;
+    PyObject *empty_tuple, *empty_dict;
     empty_tuple = PyTuple_New(0);
-    if (!empty_tuple ||
-        PyObject_SetAttrString(state->AST_type, "_fields", empty_tuple) < 0 ||
+    if (!empty_tuple) {
+        return -1;
+    }
+    empty_dict = PyDict_New();
+    if (empty_dict == NULL) {
+        Py_DECREF(empty_tuple);
+        return -1;
+    }
+    if (PyObject_SetAttrString(state->AST_type, "_fields", empty_tuple) < 0 ||
+        PyObject_SetAttrString(state->AST_type, "_field_types", empty_dict) < 0 ||
         PyObject_SetAttrString(state->AST_type, "__match_args__", empty_tuple) < 0 ||
         PyObject_SetAttrString(state->AST_type, "_attributes", empty_tuple) < 0) {
-        Py_XDECREF(empty_tuple);
+        Py_DECREF(empty_tuple);
+        Py_DECREF(empty_dict);
         return -1;
     }
     Py_DECREF(empty_tuple);
+    Py_DECREF(empty_dict);
     return 0;
 }
 
