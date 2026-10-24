@@ -1838,6 +1838,75 @@ class TestNargsRemainder(ParserTestCase):
     ]
 
 
+class TestNargsRemainderBoundaries(TestCase):
+
+    def test_first_positional(self):
+        parser = argparse.ArgumentParser(exit_on_error=False)
+        parser.add_argument('--foo')
+        parser.add_argument('args', nargs=argparse.REMAINDER)
+
+        for args in (['--unknown'], ['--foo', 'B', '--unknown']):
+            with self.subTest(args=args):
+                with self.assertRaisesRegex(
+                        argparse.ArgumentError,
+                        'unrecognized arguments: --unknown'):
+                    parser.parse_args(args)
+        self.assertEqual(parser.parse_args(['--foo', 'B']),
+                         NS(foo='B', args=[]))
+        self.assertEqual(parser.parse_args(['cmd', '--foo', 'C']),
+                         NS(foo=None, args=['cmd', '--foo', 'C']))
+        self.assertEqual(parser.parse_args(['--', '--foo', 'C']),
+                         NS(foo=None, args=['--', '--foo', 'C']))
+
+    def test_first_positional_in_subparser(self):
+        parser = argparse.ArgumentParser(exit_on_error=False)
+        subparser = parser.add_subparsers().add_parser('run')
+        subparser.add_argument('--foo', action='store_true')
+        subparser.add_argument('args', nargs=argparse.REMAINDER)
+
+        with self.assertRaisesRegex(argparse.ArgumentError,
+                                    'unrecognized arguments: --unknown'):
+            parser.parse_args(['run', '--unknown'])
+        self.assertEqual(parser.parse_args(['run', '--foo']),
+                         NS(foo=True, args=[]))
+        self.assertEqual(parser.parse_args(['run', 'cmd', '--foo']),
+                         NS(foo=False, args=['cmd', '--foo']))
+        self.assertEqual(parser.parse_args(['run', '--', '--foo']),
+                         NS(foo=False, args=['--', '--foo']))
+
+    def test_optional_captures_options(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--foo', action='store_true')
+        parser.add_argument('--forward', nargs=argparse.REMAINDER,
+                            default=['fallback'])
+
+        self.assertEqual(parser.parse_args(['--forward']),
+                         NS(foo=False, forward=[]))
+        self.assertEqual(parser.parse_args(['--forward', '--foo']),
+                         NS(foo=False, forward=['--foo']))
+
+    def test_optional_attached_value(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-f', '--forward', nargs=argparse.REMAINDER)
+
+        for option in ('--forward=a', '-fa'):
+            with self.subTest(option=option):
+                self.assertEqual(parser.parse_known_args([option, 'b']),
+                                 (NS(forward=['a']), ['b']))
+
+    def test_empty_positional_ignores_default(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('args', nargs=argparse.REMAINDER,
+                            default=['fallback'])
+        self.assertEqual(parser.parse_args([]), NS(args=[]))
+
+    def test_type_conversion_without_choices_validation(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('args', nargs=argparse.REMAINDER,
+                            type=int, choices=[1])
+        self.assertEqual(parser.parse_args(['2']), NS(args=[2]))
+
+
 class TestOptionLike(ParserTestCase):
     """Tests options that may or may not be arguments"""
 
@@ -6856,7 +6925,7 @@ class TestIntermixedArgs(TestCase):
         self.assertEqual(bar.required, True)
 
     def test_remainder(self):
-        # Intermixed and remainder are incompatible
+        # Intermixed and positional remainder are incompatible
         parser = ErrorRaisingArgumentParser(prog='PROG')
         parser.add_argument('-z')
         parser.add_argument('x')
@@ -6867,6 +6936,14 @@ class TestIntermixedArgs(TestCase):
         with self.assertRaises(TypeError) as cm:
             parser.parse_intermixed_args(argv)
         self.assertRegex(str(cm.exception), r'\.\.\.')
+
+    def test_optional_remainder(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('command')
+        parser.add_argument('--forward', nargs=argparse.REMAINDER)
+        self.assertEqual(
+            parser.parse_intermixed_args(['cmd', '--forward', '--foo']),
+            NS(command='cmd', forward=['--foo']))
 
     def test_required_exclusive(self):
         # required mutually exclusive group; intermixed works fine
