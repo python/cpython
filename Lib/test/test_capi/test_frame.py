@@ -52,5 +52,64 @@ class FrameTest(unittest.TestCase):
         self.assertIsNone(frame.f_back)
 
 
+class ExternalFrameTest(unittest.TestCase):
+    def test_introspector_new(self):
+        intro = _testcapi.external_frame_introspector_new()
+        self.assertEqual(type(intro).__name__, "external_frame_introspector")
+        self.assertTrue(_testcapi.external_frame_introspector_check(intro))
+        self.assertFalse(_testcapi.external_frame_introspector_check(None))
+        self.assertFalse(_testcapi.external_frame_introspector_check(42))
+        self.assertFalse(_testcapi.external_frame_introspector_check([]))
+
+    def test_introspector_new_null(self):
+        with self.assertRaises(ValueError):
+            _testcapi.external_frame_introspector_new_null()
+
+    def test_introspector_roundtrip(self):
+        self.assertTrue(_testcapi.external_frame_introspector_roundtrip())
+
+    def test_introspector_get_visitor(self):
+        intro = _testcapi.external_frame_introspector_new()
+        addr = _testcapi.external_frame_introspector_get_visitor(intro)
+        self.assertIsInstance(addr, int)
+        self.assertNotEqual(addr, 0)
+        with self.assertRaises(TypeError):
+            _testcapi.external_frame_introspector_get_visitor(None)
+        with self.assertRaises(TypeError):
+            _testcapi.external_frame_introspector_get_visitor(42)
+
+    def test_gc_visit_external_frame(self):
+        _testinternalcapi = import_helper.import_module('_testinternalcapi')
+        if sys._is_gil_enabled():
+            self.skipTest("requires free-threaded build")
+        obj = [1, 2, 3]
+        calls, cb_calls = _testinternalcapi.external_frame_gc_test(obj, 0)
+        self.assertGreaterEqual(calls, 1)
+        self.assertGreaterEqual(cb_calls, 1)
+
+    def test_gc_visit_external_frame_incomplete(self):
+        _testinternalcapi = import_helper.import_module('_testinternalcapi')
+        if sys._is_gil_enabled():
+            self.skipTest("requires free-threaded build")
+        obj = [1, 2, 3]
+        calls, cb_calls = _testinternalcapi.external_frame_gc_test(obj, 1)
+        self.assertGreaterEqual(calls, 1)
+        self.assertGreaterEqual(cb_calls, 1)
+
+    def test_frame_init_clears_external_bits(self):
+        # VM-created frames must never carry the external bit, otherwise
+        # the GC would read a non-existent external header (segfault).
+        _testinternalcapi = import_helper.import_module('_testinternalcapi')
+        def func():
+            pass
+        self.assertIsNone(
+            _testinternalcapi.frame_init_clears_external_bits(func))
+
+    def test_no_external_frames_on_stack(self):
+        _testinternalcapi = import_helper.import_module('_testinternalcapi')
+        self.assertIsNone(
+            _testinternalcapi.frame_no_external_frames_on_stack())
+
+
 if __name__ == "__main__":
     unittest.main()
