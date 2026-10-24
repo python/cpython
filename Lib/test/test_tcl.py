@@ -565,6 +565,36 @@ class TclTest(unittest.TestCase):
         self.assertEqual(self.passValue(values := [Value(), "pad"]), expect)
         self.assertEqual(self.passValue(values := List([Value(), "pad"])), expect)
 
+    def test_passing_deeply_nested(self):
+        call = self.interp.tk.call
+        setvar = self.interp.tk.setvar
+        for wrap in (lambda x: [x]), (lambda x: (x,)):
+            value = 'a'
+            for i in range(1001):
+                value = wrap(value)
+            self.assertEqual(int(call('string', 'length', value)), 1)
+            value = wrap(value)
+            self.assertRaises(ValueError, call, 'set', '_', value)
+            self.assertRaises(ValueError, setvar, '_', value)
+            for i in range(support.exceeds_recursion_limit()):
+                value = wrap(value)
+            self.assertRaises(ValueError, call, 'set', '_', value)
+            self.assertRaises(ValueError, setvar, '_', value)
+        value = ['a', 1]
+        value.append(value)
+        self.assertRaises(ValueError, call, 'set', '_', value)
+        self.assertRaises(ValueError, setvar, '_', value)
+
+    @support.run_with_limited_c_stack()
+    def test_returning_deeply_nested(self):
+        if not self.wantobjects:
+            self.skipTest('requires wantobjects')
+        # The interpreter can only be used in the thread that created it.
+        interp = Tcl()
+        interp.eval('set x a; for {set i 0} {$i < %d} {incr i} {set x [list $x]}'
+                    % support.exceeds_recursion_limit())
+        self.assertRaises(RecursionError, interp.getvar, 'x')
+
     def test_user_command(self):
         result = None
         def testfunc(arg):
