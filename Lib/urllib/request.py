@@ -101,7 +101,8 @@ from urllib.error import URLError, HTTPError, ContentTooShortError
 from urllib.parse import (
     urlparse, urlsplit, urljoin, unwrap, quote, unquote,
     _splittype, _splithost, _splitport, _splituser, _splitpasswd,
-    _splitattr, _splitvalue, _splittag,
+    _splitattr, _splitvalue, _splittag, _splitnetloc,
+    _WHATWG_C0_CONTROL_OR_SPACE, _UNSAFE_URL_BYTES_TO_REMOVE,
     unquote_to_bytes, urlunparse)
 from urllib.response import addinfourl, addclosehook
 
@@ -1681,7 +1682,22 @@ def url2pathname(url, *, require_scheme=False, resolve_host=False):
     """
     if not require_scheme:
         url = 'file:' + url
-    scheme, authority, url = urlsplit(url)[:3]  # Discard query and fragment.
+    # Match urlsplit()'s own control-character handling up front, so the
+    # except branch below can reuse this same cleaned-up string.
+    url = url.lstrip(_WHATWG_C0_CONTROL_OR_SPACE)
+    for b in _UNSAFE_URL_BYTES_TO_REMOVE:
+        url = url.replace(b, '')
+    try:
+        scheme, authority, url = urlsplit(url)[:3]  # Discard query and fragment.
+    except ValueError:
+        # The authority here is not a real host[:port] pair -- it may
+        # hold a Windows drive letter (e.g. 'C:\\') -- so urlsplit()'s
+        # eager port check doesn't apply; split without it instead.
+        scheme, _, url = url.partition(':')
+        scheme = scheme.lower()
+        authority = ''
+        if url[:2] == '//':
+            authority, url = _splitnetloc(url, 2)
     if scheme != 'file':
         raise URLError("URL is missing a 'file:' scheme")
     if os.name == 'nt':
