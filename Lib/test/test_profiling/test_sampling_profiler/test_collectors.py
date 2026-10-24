@@ -467,6 +467,24 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn(stack1_expected, lines)
         self.assertIn(stack2_expected, lines)
 
+    def test_collapsed_stack_collector_export_synthetic_frames(self):
+        collapsed_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, collapsed_out)
+
+        for name in ("<GC>", "<native>", "<unreadable frame>"):
+            with self.subTest(name=name):
+                collector = CollapsedStackCollector(1000)
+                collector.collect([
+                    MockInterpreterInfo(0, [MockThreadInfo(1, [
+                        _remote_debugging.FrameInfo(("~", None, name, None)),
+                        MockFrameInfo("app.py", 10, "main"),
+                    ])])
+                ])
+                with captured_stdout():
+                    collector.export(collapsed_out.name)
+                with open(collapsed_out.name, encoding="utf-8") as f:
+                    self.assertEqual(f.read(), f"tid:1;app.py:main:10;{name} 1\n")
+
     def test_collapsed_stack_collector_export_non_ascii_names(self):
         # gh-156810: frame names are written verbatim, so the output must be
         # opened with an encoding that can represent non-ASCII and

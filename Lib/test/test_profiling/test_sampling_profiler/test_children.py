@@ -3,6 +3,7 @@
 import argparse
 import io
 import os
+import shutil
 import signal
 import subprocess
 import sys
@@ -85,12 +86,11 @@ def _readline_with_timeout(file_obj, timeout):
     return result[0]
 
 
-def _wait_for_process_exec(proc, name, timeout):
+def _wait_for_process_exec(proc, executable, timeout):
     # Wait until a child process calls exec() to replace the forked process
     # executable. Raise AssertionError on timeout.
     for _ in sleeping_retry(timeout, max_delay=0.1):
-        exe = os.readlink(f"/proc/{proc.pid}/exe")
-        if os.path.basename(exe) == name:
+        if os.path.samefile(f"/proc/{proc.pid}/exe", executable):
             break
 
 
@@ -617,15 +617,18 @@ class TestIsPythonProcess(unittest.TestCase):
     @unittest.skipUnless(sys.platform == "linux", "Linux only test")
     def test_is_python_process_non_python_subprocess(self):
         """Test that a non-Python subprocess is not detected as Python."""
+        executable = shutil.which("sleep")
+        if executable is None:
+            self.skipTest("sleep command not found")
         # Start a non-Python subprocess (sleep command)
         proc = subprocess.Popen(
-            ["sleep", "60"],
+            [executable, "60"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
 
         try:
-            _wait_for_process_exec(proc, "sleep", SHORT_TIMEOUT)
+            _wait_for_process_exec(proc, executable, SHORT_TIMEOUT)
 
             self.assertFalse(
                 is_python_process(proc.pid),
