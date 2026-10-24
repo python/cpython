@@ -1,3 +1,4 @@
+import sys
 import unittest
 from threading import Thread, Barrier, Event
 from test.support import threading_helper
@@ -157,6 +158,54 @@ class SmallSetTest(RaceTestBase, unittest.TestCase):
 @threading_helper.requires_working_threading()
 class LargeSetTest(RaceTestBase, unittest.TestCase):
     SET_SIZE = 20  # larger than PySet_MINSIZE
+
+
+class TestSetIteratorExhaustion(unittest.TestCase):
+    """Exhausting one set iterator from several threads at once."""
+
+    # One live element followed by a long run of dummy entries widens the
+    # window between reading si_set and clearing it, so threads that arrive
+    # together all reach the exhausted branch.
+    SET_SIZE = 300_000
+    NUM_THREADS = 8
+    ROUNDS = 3
+
+    @threading_helper.requires_working_threading()
+    def test_racing_exhaustion_releases_set_once(self):
+        s = set(range(self.SET_SIZE))
+        for i in range(1, self.SET_SIZE):
+            s.discard(i)
+        # Extra references keep a wrongly released set alive, so every lost
+        # reference shows up as a refcount difference instead of a crash.
+        keep = [s] * 1000
+        base = sys.getrefcount(s)
+        try:
+            for _ in range(self.ROUNDS):
+                it = iter(s)
+                next(it)  # leave the iterator on the exhausted branch
+                barrier = Barrier(self.NUM_THREADS, timeout=10)
+                errors = []
+
+                def exhaust():
+                    barrier.wait()
+                    try:
+                        next(it)
+                    except StopIteration:
+                        pass
+                    except BaseException as exc:
+                        errors.append(exc)
+
+                threads = [Thread(target=exhaust)
+                           for _ in range(self.NUM_THREADS)]
+                for thread in threads:
+                    thread.start()
+                for thread in threads:
+                    thread.join()
+
+                self.assertEqual(errors, [])
+                self.assertEqual(sys.getrefcount(s), base)
+        finally:
+            del keep
 
 
 if __name__ == "__main__":

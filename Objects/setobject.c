@@ -1093,42 +1093,65 @@ static PyObject *setiter_iternext(PyObject *self)
 {
     setiterobject *si = (setiterobject*)self;
     PyObject *key = NULL;
-    Py_ssize_t i, mask;
+    Py_ssize_t i = 0, mask;
     setentry *entry;
-    PySetObject *so = si->si_set;
+    PySetObject *so;
+    int released = 0;
+    int size_changed = 0;
 
-    if (so == NULL)
+    /* The fast path still reads si_set without the lock, so it must be the
+       atomic load; a plain read races with the clearing thread's store. */
+    if (FT_ATOMIC_LOAD_PTR_RELAXED(si->si_set) == NULL)
         return NULL;
-    assert (PyAnySet_Check(so));
 
-    Py_ssize_t so_used = FT_ATOMIC_LOAD_SSIZE_RELAXED(so->used);
-    Py_ssize_t si_used = FT_ATOMIC_LOAD_SSIZE_RELAXED(si->si_used);
-    if (si_used != so_used) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "Set changed size during iteration");
-        si->si_used = -1; /* Make this state sticky */
-        return NULL;
-    }
+    /* si_set is cleared by whichever thread walks off the end of the table
+       first, so both the read and the clear need the iterator's own lock: an
+       unlocked read can pick up a pointer to a set that the release has
+       already deallocated. */
+    Py_BEGIN_CRITICAL_SECTION(self);
+    so = si->si_set;
+    if (so != NULL) {
+        assert (PyAnySet_Check(so));
 
-    Py_BEGIN_CRITICAL_SECTION(so);
-    i = si->si_pos;
-    assert(i>=0);
-    entry = so->table;
-    mask = so->mask;
-    while (i <= mask && (entry[i].key == NULL || entry[i].key == dummy)) {
-        i++;
-    }
-    if (i <= mask) {
-        key = Py_NewRef(entry[i].key);
+        Py_ssize_t so_used = FT_ATOMIC_LOAD_SSIZE_RELAXED(so->used);
+        Py_ssize_t si_used = FT_ATOMIC_LOAD_SSIZE_RELAXED(si->si_used);
+        if (si_used != so_used) {
+            si->si_used = -1; /* Make this state sticky */
+            size_changed = 1;
+        }
+        else {
+            Py_BEGIN_CRITICAL_SECTION(so);
+            i = si->si_pos;
+            assert(i>=0);
+            entry = so->table;
+            mask = so->mask;
+            while (i <= mask && (entry[i].key == NULL || entry[i].key == dummy)) {
+                i++;
+            }
+            if (i <= mask) {
+                key = Py_NewRef(entry[i].key);
+            }
+            Py_END_CRITICAL_SECTION();
+            si->si_pos = i+1;
+            if (key == NULL) {
+                FT_ATOMIC_STORE_PTR_RELAXED(si->si_set, NULL);
+                released = 1;
+            }
+            else {
+                si->len--;
+            }
+        }
     }
     Py_END_CRITICAL_SECTION();
-    si->si_pos = i+1;
-    if (key == NULL) {
-        si->si_set = NULL;
-        Py_DECREF(so);
+
+    if (size_changed) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "Set changed size during iteration");
         return NULL;
     }
-    si->len--;
+    if (released) {
+        Py_DECREF(so);
+    }
     return key;
 }
 
