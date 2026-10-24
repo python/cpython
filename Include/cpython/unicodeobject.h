@@ -777,11 +777,10 @@ static inline int Py_UNICODE_ISSPACE(Py_UCS4 ch) {
 
 #define Py_UNICODE_ISALPHA(ch) _PyUnicode_IsAlpha(ch)
 
+PyAPI_FUNC(int) _PyUnicode_IsAlnum(Py_UCS4 ch);
+
 static inline int Py_UNICODE_ISALNUM(Py_UCS4 ch) {
-   return (Py_UNICODE_ISALPHA(ch)
-           || Py_UNICODE_ISDECIMAL(ch)
-           || Py_UNICODE_ISDIGIT(ch)
-           || Py_UNICODE_ISNUMERIC(ch));
+   return _PyUnicode_IsAlnum(ch);
 }
 
 
