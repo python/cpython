@@ -1236,14 +1236,15 @@ class MH(Mailbox):
                     keys = set()
                     for spec in contents.split():
                         if spec.isdigit():
-                            keys.add(int(spec))
+                            key = int(spec)
+                            if key in all_keys:
+                                keys.add(key)
                         else:
                             start, stop = (int(x) for x in spec.split('-'))
-                            keys.update(range(start, stop + 1))
-                    results[name] = [key for key in sorted(keys) \
-                                         if key in all_keys]
-                    if len(results[name]) == 0:
-                        del results[name]
+                            if start <= stop:
+                                keys.update(k for k in all_keys if start <= k <= stop)
+                    if keys:
+                        results[name] = sorted(keys)
                 except ValueError:
                     raise FormatError('Invalid sequence specification: %s' %
                                       line.rstrip())
