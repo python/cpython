@@ -1,0 +1,2 @@
+Fix :class:`gzip.GzipFile` returning a stale position from ``seek()`` when
+forward seeking in write mode leaves zero padding in the write buffer.

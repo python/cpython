@@ -317,8 +317,23 @@ class TestGzip(BaseTest):
         # Try seek, write test
         with gzip.GzipFile(self.filename, 'w') as f:
             for pos in range(0, 256, 16):
-                f.seek(pos)
+                self.assertEqual(f.seek(pos), pos)
                 f.write(b'GZ\n')
+
+    def test_seek_write_return_value(self):
+        for whence in (io.SEEK_SET, io.SEEK_CUR):
+            for padding in (16, gzip._WRITE_BUFFER_SIZE + 16):
+                with self.subTest(whence=whence, padding=padding):
+                    data = io.BytesIO()
+                    with gzip.GzipFile(fileobj=data, mode='wb') as f:
+                        f.write(b'header')
+                        position = len(b'header') + padding
+                        offset = position if whence == io.SEEK_SET else padding
+                        self.assertEqual(f.seek(offset, whence), position)
+                        f.write(b'record')
+                        self.assertEqual(f.tell(), position + len(b'record'))
+                    self.assertEqual(gzip.decompress(data.getvalue()),
+                                     b'header' + b'\0' * padding + b'record')
 
     def test_mode(self):
         self.test_write()
