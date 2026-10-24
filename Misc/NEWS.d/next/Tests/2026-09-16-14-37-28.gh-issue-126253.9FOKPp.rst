@@ -1,0 +1,4 @@
+Fix ``test_os.test_attributes`` on Windows when NTFS reports
+``st_file_attributes`` bits that Python's :mod:`stat` module does not
+expose. The ``os.scandir()`` vs ``os.stat()`` comparison now ignores
+unknown bits while still checking every public ``FILE_ATTRIBUTE_*`` bit.
