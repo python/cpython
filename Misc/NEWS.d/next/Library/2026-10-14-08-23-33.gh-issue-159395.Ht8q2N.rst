@@ -1,0 +1,3 @@
+Fix :meth:`pathlib.Path.copy` and cross-filesystem
+:meth:`pathlib.Path.move` potentially producing empty destination files when
+a fast-copy syscall returns zero before transferring any data.
