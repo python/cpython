@@ -873,6 +873,18 @@ class CalculationTests(unittest.TestCase):
         check('2009 0 6', '%Y %W %w', 2009, 1, 3, 0, 0, 0, 5, 3)
         check('2009 1 7', '%G %V %u', 2009, 1, 4, 0, 0, 0, 6, 4)
 
+    def test_julian_day_next_year(self):
+        for value, format, expected in (
+            ('2016 52 0', '%Y %W %w', (2017, 1, 1, 6, 1)),
+            ('2015 52 5', '%Y %U %w', (2016, 1, 1, 4, 1)),
+            ('2019 366', '%Y %j', (2020, 1, 1, 2, 1)),
+        ):
+            with self.subTest(value=value, format=format):
+                result = time.strptime(value, format)
+                self.assertEqual(
+                    (result.tm_year, result.tm_mon, result.tm_mday,
+                     result.tm_wday, result.tm_yday), expected)
+
 
 class CacheTests(unittest.TestCase):
     """Test that caching works properly."""
