@@ -1,0 +1,3 @@
+Fix a segmentation fault when a generator or ``yield from`` expression
+receives a :exc:`StopIteration` instance whose ``value`` attribute has been
+deleted.
