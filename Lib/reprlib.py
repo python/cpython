@@ -44,6 +44,7 @@ class Repr:
         'frozenset': 'builtins',
         'deque': 'collections',
         'dict': 'builtins',
+        'frozendict': 'builtins',
         'str': 'builtins',
         'int': 'builtins'
     }
@@ -153,12 +154,10 @@ class Repr:
     def repr_deque(self, x, level):
         return self._repr_iterable(x, level, 'deque([', '])', self.maxdeque)
 
-    def repr_dict(self, x, level):
+    def _repr_mapping(self, x, level, left, right):
         n = len(x)
-        if n == 0:
-            return '{}'
         if level <= 0:
-            return '{' + self.fillvalue + '}'
+            return left + self.fillvalue + right
         newlevel = level - 1
         repr1 = self.repr1
         pieces = []
@@ -169,7 +168,17 @@ class Repr:
         if n > self.maxdict:
             pieces.append(self.fillvalue)
         s = self._join(pieces, level)
-        return '{%s}' % (s,)
+        return '%s%s%s' % (left, s, right)
+
+    def repr_dict(self, x, level):
+        if not x:
+            return '{}'
+        return self._repr_mapping(x, level, '{', '}')
+
+    def repr_frozendict(self, x, level):
+        if not x:
+            return 'frozendict()'
+        return self._repr_mapping(x, level, 'frozendict({', '})')
 
     def repr_str(self, x, level):
         s = builtins.repr(x[:self.maxstring])
