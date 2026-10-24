@@ -1539,10 +1539,6 @@ class FTPHandler(BaseHandler):
         user = user or ''
         passwd = passwd or ''
 
-        try:
-            host = socket.gethostbyname(host)
-        except OSError as msg:
-            raise URLError(msg)
         path, attrs = _splitattr(req.selector)
         dirs = path.split('/')
         dirs = list(map(unquote, dirs))
