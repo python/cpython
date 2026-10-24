@@ -1,0 +1,3 @@
+Fix :meth:`email.message.EmailMessage.set_content` raising
+:exc:`AttributeError` for :class:`memoryview` payloads with the ``7bit``,
+``8bit``, or ``binary`` content transfer encoding.
