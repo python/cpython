@@ -1,4 +1,5 @@
 import os
+import stat
 import sys
 import time
 import socket
@@ -1337,6 +1338,68 @@ class TestMH(TestMailbox, unittest.TestCase):
 
     def assertMailboxEmpty(self):
         self.assertEqual(os.listdir(self._path), ['.mh_sequences'])
+
+    def test_set_item_nonascii_string_raises_without_modifying_message(self):
+        key = self._box.add(self._template % 'original')
+        original = self._box.get_bytes(key)
+        with self.assertRaisesRegex(ValueError, "ASCII-only"):
+            self._box[key] = self._nonascii_msg
+        self.assertEqual(self._box.get_bytes(key), original)
+        self._box.close()
+        self._box = self._factory(self._path)
+        self.assertEqual(self._box.get_bytes(key), original)
+
+    def test_set_item_read_error_does_not_modify_message(self):
+        class CustomError(Exception):
+            pass
+
+        class FaultyMessage:
+            def __init__(self):
+                self.first_read = True
+
+            def read(self):
+                raise AssertionError
+
+            def readline(self):
+                if self.first_read:
+                    self.first_read = False
+                    return b'Subject: replacement\n'
+                raise CustomError
+
+        key = self._box.add(self._template % 'original')
+        original = self._box.get_bytes(key)
+        original_files = set(os.listdir(self._path))
+        with self.assertRaises(CustomError):
+            self._box[key] = FaultyMessage()
+        self.assertEqual(self._box.get_bytes(key), original)
+        self.assertEqual(set(os.listdir(self._path)), original_files)
+        self._box.close()
+        self._box = self._factory(self._path)
+        self.assertEqual(self._box.get_bytes(key), original)
+
+    @unittest.skipUnless(os.name == 'posix', 'requires POSIX permissions')
+    def test_set_item_preserves_mode(self):
+        key = self._box.add(self._template % 'original')
+        path = os.path.join(self._path, str(key))
+        mode = 0o640
+        os.chmod(path, mode)
+        if stat.S_IMODE(os.stat(path).st_mode) != mode:
+            self.skipTest('filesystem does not support POSIX permissions')
+
+        self._box[key] = self._template % 'replacement'
+
+        self.assertEqual(stat.S_IMODE(os.stat(path).st_mode), mode)
+
+    def test_set_item_with_open_file(self):
+        key = self._box.add(self._template % 'original')
+        replacement = self._template % 'replacement'
+        self._box.lock()
+        try:
+            with self._box.get_file(key):
+                self._box[key] = replacement
+            self.assertEqual(self._box.get_bytes(key), replacement.encode('ascii'))
+        finally:
+            self._box.unlock()
 
     def test_list_folders(self):
         # List folders
