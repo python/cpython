@@ -35,7 +35,7 @@ import re
 import socket
 import struct
 import threading
-import traceback
+lazy import traceback
 
 from bisect import bisect_left
 from socketserver import ThreadingTCPServer, StreamRequestHandler
