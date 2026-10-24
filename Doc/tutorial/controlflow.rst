@@ -512,9 +512,24 @@ referenced.
 
 The actual parameters (arguments) to a function call are introduced in the local
 symbol table of the called function when it is called; thus, arguments are
-passed using *call by value* (where the *value* is always an object *reference*,
-not the value of the object). [#]_ When a function calls another function,
-or calls itself recursively, a new
+always passed using *call by value*.  For objects, that value is an object
+*reference*, not the value of the object itself.  This means that mutations to
+a mutable object made inside the function are visible outside, but reassigning
+the parameter to a different object does not affect the caller::
+
+   >>> def try_to_modify(n, l):
+   ...     n = 42
+   ...     l.append(42)
+   ...
+   >>> num = 0
+   >>> lst = []
+   >>> try_to_modify(num, lst)
+   >>> num
+   0
+   >>> lst
+   [42]
+
+When a function calls another function, or calls itself recursively, a new
 local symbol table is created for that call.
 
 A function definition associates the function name with the function object in
@@ -1151,6 +1166,4 @@ extracted for you:
 
 .. rubric:: Footnotes
 
-.. [#] Actually, *call by object reference* would be a better description,
-   since if a mutable object is passed, the caller will see any changes the
-   callee makes to it (items inserted into a list).
+
