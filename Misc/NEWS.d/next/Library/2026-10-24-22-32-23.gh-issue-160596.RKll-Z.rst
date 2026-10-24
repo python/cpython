@@ -1,0 +1,2 @@
+Fix the error message for invalid data passed to
+:meth:`!asyncio.proactor_events.sendto`.
