@@ -6996,7 +6996,6 @@ parseKeyUsage(PCCERT_CONTEXT pCertCtx, DWORD flags)
 {
     CERT_ENHKEY_USAGE *usage;
     DWORD size, error, i;
-    PyObject *retval;
 
     if (!CertGetEnhancedKeyUsage(pCertCtx, flags, NULL, &size)) {
         error = GetLastError();
@@ -7020,7 +7019,7 @@ parseKeyUsage(PCCERT_CONTEXT pCertCtx, DWORD flags)
         }
         return PyErr_SetFromWindowsErr(error);
     }
-    retval = PyFrozenSet_New(NULL);
+    PyFrozenSetWriter *retval = PyFrozenSetWriter_Create();
     if (retval == NULL) {
         goto error;
     }
@@ -7030,20 +7029,22 @@ parseKeyUsage(PCCERT_CONTEXT pCertCtx, DWORD flags)
             int err;
             oid = PyUnicode_FromString(usage->rgpszUsageIdentifier[i]);
             if (oid == NULL) {
-                Py_CLEAR(retval);
                 goto error;
             }
-            err = PySet_Add(retval, oid);
+            err = PyFrozenSetWriter_Add(retval, oid);
             Py_DECREF(oid);
             if (err == -1) {
-                Py_CLEAR(retval);
                 goto error;
             }
         }
     }
+    PyMem_Free(usage);
+    return PyFrozenSetWriter_Finish(retval);
+
   error:
     PyMem_Free(usage);
-    return retval;
+    PyFrozenSetWriter_Discard(retval);
+    return NULL;
 }
 
 static HCERTSTORE

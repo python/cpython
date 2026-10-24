@@ -69,3 +69,18 @@ static inline Py_ssize_t PySet_GET_SIZE(PyObject *so) {
 #endif
 }
 #define PySet_GET_SIZE(so) PySet_GET_SIZE(_PyObject_CAST(so))
+
+
+// --- PyFrozenSetWriter API ------------------------------------------------
+
+typedef struct PyFrozenSetWriter PyFrozenSetWriter;
+
+PyAPI_FUNC(PyFrozenSetWriter*) PyFrozenSetWriter_Create(void);
+PyAPI_FUNC(PyObject*) PyFrozenSetWriter_Finish(PyFrozenSetWriter *writer);
+PyAPI_FUNC(void) PyFrozenSetWriter_Discard(PyFrozenSetWriter *writer);
+PyAPI_FUNC(int) PyFrozenSetWriter_Add(
+    PyFrozenSetWriter *writer,
+    PyObject *item);
+PyAPI_FUNC(int) PyFrozenSetWriter_Update(
+    PyFrozenSetWriter *writer,
+    PyObject *iterable);

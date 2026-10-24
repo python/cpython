@@ -362,7 +362,7 @@ static int
 compute_abstract_methods(PyObject *self)
 {
     int ret = -1;
-    PyObject *abstracts = PyFrozenSet_New(NULL);
+    PyFrozenSetWriter *abstracts = PyFrozenSetWriter_Create();
     if (abstracts == NULL) {
         return -1;
     }
@@ -404,7 +404,7 @@ compute_abstract_methods(PyObject *self)
         Py_INCREF(key);
         int is_abstract = _PyObject_IsAbstract(value);
         if (is_abstract < 0 ||
-                (is_abstract && PySet_Add(abstracts, key) < 0)) {
+                (is_abstract && PyFrozenSetWriter_Add(abstracts, key) < 0)) {
             Py_DECREF(it);
             Py_DECREF(key);
             goto error;
@@ -454,7 +454,7 @@ compute_abstract_methods(PyObject *self)
             int is_abstract = _PyObject_IsAbstract(value);
             Py_DECREF(value);
             if (is_abstract < 0 ||
-                    (is_abstract && PySet_Add(abstracts, key) < 0))
+                    (is_abstract && PyFrozenSetWriter_Add(abstracts, key) < 0))
             {
                 Py_DECREF(key);
                 Py_DECREF(iter);
@@ -468,13 +468,20 @@ compute_abstract_methods(PyObject *self)
         }
     }
 
-    if (PyObject_SetAttr(self, &_Py_ID(__abstractmethods__), abstracts) < 0) {
+    PyObject *abstracts_set = PyFrozenSetWriter_Finish(abstracts);
+    abstracts = NULL;
+    if (abstracts_set == NULL) {
         goto error;
     }
+    if (PyObject_SetAttr(self, &_Py_ID(__abstractmethods__), abstracts_set) < 0) {
+        Py_DECREF(abstracts_set);
+        goto error;
+    }
+    Py_DECREF(abstracts_set);
 
     ret = 0;
 error:
-    Py_DECREF(abstracts);
+    PyFrozenSetWriter_Discard(abstracts);
     Py_XDECREF(ns);
     Py_XDECREF(items);
     Py_XDECREF(bases);

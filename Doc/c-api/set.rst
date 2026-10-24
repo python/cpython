@@ -102,6 +102,8 @@ the constructor functions work with any iterable Python object.
    set on success or ``NULL`` on failure.  Raise :exc:`TypeError` if *iterable* is
    not actually iterable.
 
+   See also the :ref:`PyFrozenSetWriter API <pyfrozensetwriter>`.
+
    .. note::
 
       The operation is atomic on :term:`free threading <free-threaded build>`
@@ -213,3 +215,70 @@ Deprecated API
    If looking for the size of a set, use :c:func:`PySet_Size` instead.
 
    .. soft-deprecated:: 3.14
+
+
+.. _pyfrozensetwriter:
+
+PyFrozenSetWriter
+-----------------
+
+The :c:type:`PyFrozenSetWriter` API can be used to create a Python :class:`frozenset`
+object.
+
+See also the :c:func:`PyFrozenSet_New` function.
+
+.. versionadded:: next
+
+
+.. c:type:: PyFrozenSetWriter
+
+   A frozenset writer object.
+
+   The API is **not thread safe**. To share a writer with multiple threads, a
+   critical section or a lock is needed.
+
+   The instance must be destroyed by :c:func:`PyFrozenSetWriter_Finish` on
+   success, or :c:func:`PyFrozenSetWriter_Discard` on error.
+
+
+.. c:function:: PyFrozenSetWriter* PyFrozenSetWriter_Create(void)
+
+   Create a :c:type:`PyFrozenSetWriter`.
+
+   On error, set an exception and return ``NULL``.
+
+   *size* must be positive or zero.
+
+.. c:function:: PyObject* PyFrozenSetWriter_Finish(PyFrozenSetWriter *writer)
+
+   Finish a :c:type:`PyFrozenSetWriter` created by
+   :c:func:`PyFrozenSetWriter_Create`.
+
+   On success, return a Python :class:`frozenset` object.
+   On error, set an exception and return ``NULL``.
+
+   The writer instance is invalid after the call in any case.
+   No API can be called on the writer after :c:func:`PyFrozenSetWriter_Finish`.
+
+.. c:function:: void PyFrozenSetWriter_Discard(PyFrozenSetWriter *writer)
+
+   Discard a :c:type:`PyFrozenSetWriter` created by :c:func:`PyFrozenSetWriter_Create`.
+
+   Do nothing if *writer* is ``NULL``.
+
+   The writer instance is invalid after the call.
+   No API can be called on the writer after :c:func:`PyFrozenSetWriter_Discard`.
+
+.. c:function:: int PyFrozenSetWriter_Add(PyFrozenSetWriter *writer, PyObject *item)
+
+   Add *item* to a frozenset writer.
+
+   On success, return ``0``.
+   On error, set an exception and return ``-1``.
+
+.. c:function:: int PyFrozenSetWriter_Update(PyFrozenSetWriter *writer, PyObject *iterable)
+
+   Update the frozenset writer, adding elements from *iterable*.
+
+   On success, return ``0``.
+   On error, set an exception and return ``-1``.

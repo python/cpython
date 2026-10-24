@@ -2477,7 +2477,7 @@ PyType_Spec HMACtype_spec = {
 
 /* State for our callback function so that it can accumulate a result. */
 typedef struct _internal_name_mapper_state {
-    PyObject *set;
+    PyFrozenSetWriter *set;
     int error;
 } _InternalNameMapperState;
 
@@ -2506,7 +2506,7 @@ _openssl_hash_name_mapper(const EVP_MD *md, const char *from,
     if (py_name == NULL) {
         state->error = 1;
     } else {
-        if (PySet_Add(state->set, py_name) != 0) {
+        if (PyFrozenSetWriter_Add(state->set, py_name) != 0) {
             state->error = 1;
         }
         Py_DECREF(py_name);
@@ -2519,7 +2519,7 @@ static int
 hashlib_md_meth_names(PyObject *module)
 {
     _InternalNameMapperState state = {
-        .set = PyFrozenSet_New(NULL),
+        .set = PyFrozenSetWriter_Create(),
         .error = 0
     };
     if (state.set == NULL) {
@@ -2534,11 +2534,12 @@ hashlib_md_meth_names(PyObject *module)
 #endif
 
     if (state.error) {
-        Py_DECREF(state.set);
+        PyFrozenSetWriter_Discard(state.set);
         return -1;
     }
 
-    return PyModule_Add(module, "openssl_md_meth_names", state.set);
+    PyObject *names = PyFrozenSetWriter_Finish(state.set);
+    return PyModule_Add(module, "openssl_md_meth_names", names);
 }
 
 /*[clinic input]

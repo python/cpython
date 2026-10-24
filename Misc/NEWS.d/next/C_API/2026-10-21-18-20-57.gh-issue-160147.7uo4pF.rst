@@ -1,0 +1,10 @@
+Add a new :ref:`PyFrozenSetWriter <pyfrozensetwriter>` C API to create a
+:class:`frozenset` object. Add functions:
+
+* :c:func:`PyFrozenSetWriter_Create`
+* :c:func:`PyFrozenSetWriter_Finish`
+* :c:func:`PyFrozenSetWriter_Discard`
+* :c:func:`PyFrozenSetWriter_Add`
+* :c:func:`PyFrozenSetWriter_Update`
+
+Patch by Victor Stinner.
