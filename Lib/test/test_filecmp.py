@@ -401,9 +401,7 @@ class DirCmpImplementationTests(unittest.TestCase):
         self.dir_same = os.path.join(self.base_test_dir, 'dir-same')
         self.dir_diff = os.path.join(self.base_test_dir, 'dir-diff')
         self.dir_diff_file = os.path.join(self.base_test_dir, 'dir-diff-file')
-        self.dir_same_shallow = os.path.join(
-            self.base_test_dir, 'dir-same-shallow'
-        )
+        self.dir_same_shallow = os.path.join(self.base_test_dir, 'dir-same-shallow')
 
         self.dir_ignored = os.path.join(self.dir_same, '.hg')
         self.caseinsensitive = os.path.normcase('A') == os.path.normcase('a')
