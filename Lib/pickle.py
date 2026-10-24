@@ -23,7 +23,7 @@ Misc variables:
 """
 
 from types import FunctionType
-from copyreg import dispatch_table
+from copyreg import dispatch_table, Proxy
 from copyreg import _extension_registry, _inverted_registry, _extension_cache
 from itertools import batched
 from functools import partial
@@ -32,7 +32,6 @@ from sys import maxsize
 from struct import pack, unpack
 import io
 import codecs
-import weakref
 import _compat_pickle
 
 __all__ = ["PickleError", "PicklingError", "UnpicklingError", "Pickler",
@@ -487,7 +486,7 @@ class _Pickler:
         self._write_large_bytes = self.framer.write_large_bytes
         self.memo = {}
         # Ids of objects reached so far only through weak references; any
-        # left at the end of dump() is an error.  See save_weakref.
+        # left at the end of dump() is an error.  See save_proxy.
         self._weak_only = set()
         self.proto = int(protocol)
         self.bin = protocol >= 1
@@ -1286,39 +1285,20 @@ class _Pickler:
     dispatch[FunctionType] = save_global
     dispatch[type] = save_type
 
-    def save_weakref(self, obj):
-        # Reconstruct as weakref.ref(referent).  The referent is saved
-        # *weakly* (no anchoring, see save()) and tagged weak-only only after
+    def save_proxy(self, obj):
+        # A Proxy is pickled as its wrapped object, saved *weakly* (no
+        # anchoring, see save()).  The object is tagged weak-only only after
         # its whole subtree, so a strong cycle inside it cannot anchor it.
-        referent = obj()
-        if referent is None:
-            # All dead references are interchangeable: pickle by name as the
-            # weakref._dead_ref singleton.
-            self.write(GLOBAL + b'weakref\n_dead_ref\n')
-            return
+        # An object already in the memo is anchored or already tracked;
+        # otherwise it stays tagged until a strong save of it.
+        obj = obj.obj
+        i = id(obj)
+        anchored = i in self.memo
+        self.save(obj, weak=True)
+        if not anchored and i in self.memo:
+            self._weak_only.add(i)
 
-        save = self.save
-        write = self.write
-        save(weakref.ref)
-        # A referent already in the memo is anchored or already tracked;
-        # otherwise it is tagged below, until a strong save of it.
-        anchored = id(referent) in self.memo
-        # Build the 1-tuple (referent,); TUPLE1 needs protocol 2.
-        if self.proto < 2:
-            write(MARK)
-        save(referent, weak=True)
-        if not anchored and id(referent) in self.memo:
-            self._weak_only.add(id(referent))
-        write(TUPLE1 if self.proto >= 2 else TUPLE)
-        write(REDUCE)
-        # The referent's subtree may have pickled this very (cached) weakref
-        # already; reuse the memoized one.
-        if id(obj) in self.memo:
-            write(POP + self.get(self.memo[id(obj)][0]))
-        else:
-            self.memoize(obj)
-
-    dispatch[weakref.ReferenceType] = save_weakref
+    dispatch[Proxy] = save_proxy
 
 
 # Unpickling machinery

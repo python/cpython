@@ -22,7 +22,7 @@ from _weakref import (
 from _weakrefset import WeakSet
 
 import _collections_abc  # Import after _weakref to avoid circular import.
-import copyreg
+from copyreg import Proxy, _Reducer
 import sys
 import itertools
 
@@ -35,11 +35,6 @@ __all__ = ["ref", "proxy", "getweakrefcount", "getweakrefs",
 
 
 _collections_abc.MutableSet.register(WeakSet)
-
-
-# Pickle reconstructs a reference to a dead object as this singleton -- all
-# dead references are interchangeable.  Born dead: nothing else holds the set.
-_dead_ref = ref(set())
 
 
 class WeakMethod(ref):
@@ -72,6 +67,24 @@ class WeakMethod(ref):
         self_wr = ref(self)
         return self
 
+    def __copy__(self):
+        meth = self()
+        if meth is None:
+            # A dead weak method cannot be recreated.
+            return self
+        return type(self)(meth)
+
+    def __reduce__(self):
+        # The instance is pickled weakly; the bound method is rebuilt on
+        # unpickling by looking the function up on the instance.
+        # The callback is not preserved.
+        meth = self()
+        if meth is None:
+            raise TypeError(
+                "cannot pickle a weak reference to a dead object")
+        return self.__class__, (_Reducer((getattr, (Proxy(meth.__self__),
+                                                    meth.__func__.__name__))),)
+
     def __call__(self):
         obj = super().__call__()
         func = self._func_ref()
@@ -94,24 +107,6 @@ class WeakMethod(ref):
         return NotImplemented
 
     __hash__ = ref.__hash__
-
-
-# Pickling support for weak methods.  A WeakMethod is reduced to a weak
-# reference to its instance; the bound method is rebuilt on unpickling by
-# looking the function up on the instance.  The callback is not preserved.
-
-def _restore_weakmethod(obj_ref, name):
-    return WeakMethod(getattr(obj_ref(), name))
-
-
-def _reduce_weakmethod(self):
-    meth = self()
-    if meth is None:
-        raise TypeError(
-            "cannot pickle a weak reference to a dead object")
-    return (_restore_weakmethod, (ref(meth.__self__), meth.__func__.__name__))
-
-copyreg.pickle(WeakMethod, _reduce_weakmethod)
 
 
 class WeakValueDictionary(_collections_abc.MutableMapping):
@@ -187,14 +182,14 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         return new
 
     def __reduce__(self):
-        # Pickle the values as weak references; data and _remove are rebuilt
-        # by the reconstructor.  Copying uses __copy__/__deepcopy__ instead.
+        # The values must be strongly referenced elsewhere in the pickle.
+        # data and _remove are rebuilt by the reconstructor.
         dict, slots = self.__getstate__()
         for name in ('data', '_remove'):
             slots.pop(name, None)
         state = (dict, slots) if dict or slots else None
-        items = [(key, ref(o)) for key, o in self.items()]
-        return (_restore_weakvaluedict, (self.__class__, items), state)
+        items = ((key, Proxy(o)) for key, o in self.items())
+        return (self.__class__, (), state, None, items)
 
     def get(self, key, default=None):
         try:
@@ -313,16 +308,6 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         return NotImplemented
 
 
-def _restore_weakvaluedict(cls, items):
-    self = cls.__new__(cls)
-    WeakValueDictionary.__init__(self)
-    for key, r in items:
-        o = r()
-        if o is not None:
-            self[key] = o
-    return self
-
-
 class KeyedRef(ref):
     """Specialized reference that includes a key corresponding to the value.
 
@@ -405,14 +390,14 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
         return new
 
     def __reduce__(self):
-        # Pickle the keys as weak references; data and _remove are rebuilt
-        # by the reconstructor.  Copying uses __copy__/__deepcopy__ instead.
+        # The keys must be strongly referenced elsewhere in the pickle.
+        # data and _remove are rebuilt by the reconstructor.
         dict, slots = self.__getstate__()
         for name in ('data', '_remove'):
             slots.pop(name, None)
         state = (dict, slots) if dict or slots else None
-        items = [(ref(key), value) for key, value in self.items()]
-        return (_restore_weakkeydict, (self.__class__, items), state)
+        items = ((Proxy(key), value) for key, value in self.items())
+        return (self.__class__, (), state, None, items)
 
     def get(self, key, default=None):
         return self.data.get(ref(key),default)
@@ -498,16 +483,6 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
             c.update(self)
             return c
         return NotImplemented
-
-
-def _restore_weakkeydict(cls, items):
-    self = cls.__new__(cls)
-    WeakKeyDictionary.__init__(self)
-    for r, value in items:
-        key = r()
-        if key is not None:
-            self[key] = value
-    return self
 
 
 class finalize:

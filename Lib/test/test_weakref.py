@@ -1386,18 +1386,34 @@ class WeakMethodTestCase(unittest.TestCase):
                 self.assertRaises(pickle.PicklingError, pickle.dumps, r, proto)
 
     def test_copy(self):
-        # Copying rebuilds an equal weak method bound to the same instance
-        # (weak references are atomic under copy).
+        # A copy is an equal weak method bound to the same object.
         o = Object(1)
         r = weakref.WeakMethod(o.some_method)
-        for copyfunc in copy.copy, copy.deepcopy:
-            with self.subTest(copyfunc=copyfunc):
-                r2 = copyfunc(r)
-                self.assertIsInstance(r2, weakref.WeakMethod)
-                self.assertIsNot(r2, r)
-                self.assertEqual(r2, r)
-                self.assertIs(r2().__self__, o)
-                self.assertEqual(r2()(), 4)
+        r2 = copy.copy(r)
+        self.assertIsInstance(r2, weakref.WeakMethod)
+        self.assertIsNot(r2, r)
+        self.assertEqual(r2, r)
+        self.assertIs(r2().__self__, o)
+        self.assertEqual(r2()(), 4)
+        # A dead weak method cannot be recreated.
+        del o
+        gc_collect()
+        self.assertIs(copy.copy(r), r)
+
+    def test_deepcopy(self):
+        # A deep copy is bound to the deep copy of the object, so it must be
+        # deep-copied together with it.
+        o = Object(1)
+        r = weakref.WeakMethod(o.some_method)
+        o2, r2 = copy.deepcopy((o, r))
+        self.assertIsInstance(r2, weakref.WeakMethod)
+        self.assertIsNot(o2, o)
+        self.assertIs(r2().__self__, o2)
+        self.assertEqual(r2()(), 4)
+        # Otherwise the copy of the object is discarded.
+        r2 = copy.deepcopy(r)
+        gc_collect()
+        self.assertIsNone(r2())
 
 
 class MappingTestCase(TestBase):
@@ -1821,6 +1837,28 @@ class MappingTestCase(TestBase):
             d, objects = self.make_weak_keyed_dict()
             with self.assertRaises(pickle.PicklingError):
                 pickle.dumps(d, proto)
+
+    def test_pickling_recursive(self):
+        # WeakValueDictionary containing itself.
+        d = weakref.WeakValueDictionary()
+        d[1] = d
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                dup = pickle.loads(pickle.dumps(d, proto))
+                self.assertIsNot(dup, d)
+                self.assertEqual(list(dup.keys()), [1])
+                self.assertIs(dup[1], dup)
+
+        # WeakKeyDictionary containing itself.
+        o = Object(1)
+        d = weakref.WeakKeyDictionary()
+        d[o] = d
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                dup, o2 = pickle.loads(pickle.dumps((d, o), proto))
+                self.assertIsNot(dup, d)
+                self.assertEqual(list(dup.keys()), [o2])
+                self.assertIs(dup[o2], dup)
 
     def check_popitem(self, klass, key1, value1, key2, value2):
         weakdict = klass()
