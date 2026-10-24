@@ -361,7 +361,8 @@ The following classes are provided:
    The :envvar:`no_proxy` environment variable can be used to specify hosts
    which shouldn't be reached via proxy; if set, it should be a comma-separated
    list of hostname suffixes, optionally with ``:port`` appended, for example
-   ``cern.ch,ncsa.uiuc.edu,some.host:8080``.
+   ``cern.ch,ncsa.uiuc.edu,some.host:8080``.  IP CIDR notation is also
+   supported.
 
    .. note::
 

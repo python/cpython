@@ -1,0 +1,2 @@
+urllib now allows IP CIDRs to be excluded from proxying by including the
+CIDR in the ``no_proxy`` env var.  Contributed by Neal Turett.
