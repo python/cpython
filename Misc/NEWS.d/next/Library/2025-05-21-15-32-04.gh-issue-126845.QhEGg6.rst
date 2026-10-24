@@ -1,0 +1,7 @@
+Fixed the :mod:`email` module parsing of three digit dates to
+conform to :rfc:`5322`: three digit dates were previously
+turned in to non-conformant four digit dates with a
+leading ``0``.  Now, per the RFC section 4.3, ``1990`` is added
+to such dates to form compliant four digit years.
+
+Contributed by Gustaf Gyllensporre.
