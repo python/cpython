@@ -7165,7 +7165,7 @@
                 JUMP_TO_JUMP_TARGET();
             }
             Py_UCS4 c = PyUnicode_READ_CHAR(str, index);
-            if (Py_ARRAY_LENGTH(_Py_SINGLETON(strings).ascii) <= c) {
+            if (c >= 256) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache1 = sub_st;
                 _tos_cache0 = str_st;
@@ -7173,7 +7173,9 @@
                 JUMP_TO_JUMP_TARGET();
             }
             STAT_INC(BINARY_OP, hit);
-            PyObject *res_o = (PyObject*)&_Py_SINGLETON(strings).ascii[c];
+            PyObject *res_o = (c < 128)
+            ? (PyObject*)&_Py_SINGLETON(strings).ascii[c]
+        : (PyObject*)&_Py_SINGLETON(strings).latin1[c - 128];
             s = str_st;
             i = sub_st;
             res = PyStackRef_FromPyObjectBorrow(res_o);
