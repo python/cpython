@@ -549,6 +549,16 @@ class PurePathTest(unittest.TestCase):
         self.assertFalse(P('c:/a/B.Py').full_match('C:/A/*.pY', case_sensitive=True))
         self.assertTrue(P('/a/b/c.py').full_match('/A/*/*.Py', case_sensitive=False))
 
+    def test_full_match_slow(self):
+        P = self.cls
+        pat = '*a' * 8 + '*b'
+        self.assertTrue(P('a' * 100 + 'b').full_match(pat))
+        self.assertTrue(P('a' * 100 + 'b').match(pat))
+        # The next "takes forever" if the regexp translation is
+        # straightforward.  See bpo-40480.
+        self.assertFalse(P('a' * 100).full_match(pat))
+        self.assertFalse(P('a' * 100).match(pat))
+
     def test_match_empty(self):
         P = self.cls
         self.assertRaises(ValueError, P('a').match, '')
@@ -2972,6 +2982,14 @@ class PathTest(PurePathTest):
         self.assertEqual(set(p.glob("FILEa")), { P(self.base, "fileA") })
         self.assertEqual(set(p.glob("*a\\")), { P(self.base, "dirA/") })
         self.assertEqual(set(p.glob("F*a")), { P(self.base, "fileA") })
+
+    def test_glob_slow(self):
+        P = self.cls
+        p = P(self.base)
+        q = p / ('a' * 100)
+        q.touch()
+        self.assertEqual(list(p.glob('*a' * 8 + '*b')), [])
+        self.assertEqual(list(p.glob('*a' * 8)), [q])
 
     def test_glob_empty_pattern(self):
         p = self.cls('')
