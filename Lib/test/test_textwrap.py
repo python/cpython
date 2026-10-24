@@ -760,6 +760,14 @@ some (including a hanging indent).'''
                       initial_indent="  * ", subsequent_indent="    ")
         self.check(result, expect)
 
+    def test_indent_longer_than_width(self):
+        # gh-160558: wrap() looped forever when an indent was longer than
+        # width.
+        self.check_wrap(" ", 3, [], initial_indent="----")
+        self.check_wrap(" a", 3, ["----a"], initial_indent="----")
+        self.check_wrap("aaaa", 3, ["aaa", "----a", "----"],
+                        subsequent_indent="----", drop_whitespace=False)
+
 
 # Despite the similar names, DedentTestCase is *not* the inverse
 # of IndentTestCase!

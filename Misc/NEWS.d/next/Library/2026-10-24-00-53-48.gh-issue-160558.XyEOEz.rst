@@ -1,0 +1,2 @@
+Fix :func:`textwrap.wrap` and :func:`textwrap.fill` hanging in some cases
+when *initial_indent* or *subsequent_indent* is longer than *width*.

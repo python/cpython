@@ -288,7 +288,7 @@ class TextWrapper:
                 l = len(chunks[-1])
 
                 # Can at least squeeze this chunk onto the current line.
-                if cur_len + l <= width:
+                if cur_len + l <= width or not l:
                     cur_line.append(chunks.pop())
                     cur_len += l
 
