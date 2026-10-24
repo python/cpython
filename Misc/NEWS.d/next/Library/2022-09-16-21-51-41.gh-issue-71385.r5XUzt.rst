@@ -1,0 +1,1 @@
+A new parameter ``rel_delta`` was added to the :meth:`unittest.TestCase.assertAlmostEqual` and :meth:`unittest.TestCase.assertNotAlmostEqual`. It allows comparing two objects with a maximum relative difference to each other.
