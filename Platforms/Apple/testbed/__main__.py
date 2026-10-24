@@ -10,6 +10,9 @@ from pathlib import Path
 
 TEST_SLICES = {
     "iOS": "ios-arm64_x86_64-simulator",
+    "tvOS": "tvos-arm64_x86_64-simulator",
+    "visionOS": "xros-arm64-simulator",
+    "watchOS": "watchos-arm64_x86_64-simulator",
 }
 
 # The checked-in testbed is a template. Any file containing this placeholder
@@ -30,7 +33,7 @@ DECODE_ARGS = ("UTF-8", "backslashreplace")
 LOG_PREFIX_REGEX = re.compile(
     r"^\d{4}-\d{2}-\d{2}"  # YYYY-MM-DD
     r"\s+\d+:\d{2}:\d{2}\.\d+\+\d{4}"  # HH:MM:SS.ssssss+ZZZZ
-    r"\s+iOSTestbed\[\d+:\w+\] "  # Process/thread ID
+    r"\s+.*Testbed\[\d+:\w+\] "  # Process/thread ID
 )
 
 
@@ -61,6 +64,34 @@ def select_simulator_device(platform):
                 )
                 or "iPhone SE " in devicetype["name"]
             )
+        )
+        simulator = se_simulators[-1][1]
+    elif platform == "tvOS":
+        # Find the most recent tvOS release.
+        simulators = sorted(
+            (devicetype["minRuntimeVersion"], devicetype["name"])
+            for devicetype in json_data["devicetypes"]
+            if devicetype["productFamily"] == "Apple TV"
+        )
+        simulator = simulators[-1][1]
+    elif platform == "visionOS":
+        # Find the most recent visionOS release.
+        simulators = sorted(
+            (devicetype["minRuntimeVersion"], devicetype["name"])
+            for devicetype in json_data["devicetypes"]
+            if devicetype["productFamily"] == "Apple Vision"
+        )
+        simulator = simulators[-1][1]
+    elif platform == "watchOS":
+        # Any watchOS device will do; we'll look for "SE" devices. Select the
+        # one with the highest minimum runtime version - this is an indicator
+        # of the "newest" released device, which should always be supported
+        # on the "most recent" watchOS version.
+        se_simulators = sorted(
+            (devicetype["minRuntimeVersion"], devicetype["name"])
+            for devicetype in json_data["devicetypes"]
+            if devicetype["productFamily"] == "Apple Watch"
+            and "Apple Watch SE" in devicetype["name"]
         )
         simulator = se_simulators[-1][1]
     else:
@@ -454,9 +485,15 @@ def main():
     # many platforms, but when cloned, only one platform is preserved.
     available_platforms = [
         platform
-        for platform in ["iOS"]
+        for platform in ["iOS", "tvOS", "visionOS", "watchOS"]
         if (Path(__file__).parent / f"{platform}Testbed").is_dir()
     ]
+
+    def platform_name(value):
+        """Return the canonical spelling for a platform name."""
+        return {p.lower(): p for p in available_platforms}.get(
+            value.lower(), value
+        )
 
     parser = argparse.ArgumentParser(
         description=(
@@ -488,6 +525,7 @@ def main():
         dest="platform",
         choices=available_platforms,
         default=available_platforms[0],
+        type=platform_name,
         help=f"The platform to target (default: {available_platforms[0]})",
     )
     clone.add_argument(
@@ -510,7 +548,7 @@ def main():
         ),
         description=(
             "Run a testbed project. The arguments provided after `--` will be "
-            "passed to the running iOS process as if they were arguments to "
+            "passed to the running test process as if they were arguments to "
             "`python -m`."
         ),
         help="Run a testbed project",
@@ -520,6 +558,7 @@ def main():
         dest="platform",
         choices=available_platforms,
         default=available_platforms[0],
+        type=platform_name,
         help=f"The platform to target (default: {available_platforms[0]})",
     )
     run.add_argument(

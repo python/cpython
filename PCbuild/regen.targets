@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <_PegenSources Include="$(PySourcePath)Grammar\python.gram;$(PySourcePath)Grammar\Tokens" />
-    <_PegenOutputs Include="$(PySourcePath)Parser\parser.c" />
+    <_PegenSources Include="$(PySourcePath)Grammar\python.gram;$(PySourcePath)Grammar\invalid.gram;$(PySourcePath)Grammar\Tokens" />
+    <_PegenOutputs Include="$(PySourcePath)Parser\parser.c;$(PySourcePath)Parser\parser_invalid.c" />
     <_ASTSources Include="$(PySourcePath)Parser\Python.asdl" />
     <_ASTOutputs Include="$(PySourcePath)Include\internal\pycore_ast.h">
       <Argument>-H</Argument>
@@ -26,7 +26,7 @@
     <_TokenOutputs Include="$(PySourcePath)Lib\token.py">
       <Format>py</Format>
     </_TokenOutputs>
-    <_KeywordSources Include="$(PySourcePath)Grammar\python.gram;$(PySourcePath)Grammar\Tokens" />
+    <_KeywordSources Include="$(PySourcePath)Grammar\python.gram;$(PySourcePath)Grammar\invalid.gram;$(PySourcePath)Grammar\Tokens" />
     <_KeywordOutputs Include="$(PySourcePath)Lib\keyword.py" />
     <!-- Taken from _Target._compute_digest in Tools\jit\_targets.py: -->
     <_JITSources Include="$(PySourcePath)Python\executor_cases.c.h;$(PySourcePath)PC\pyconfig.h;$(PySourcePath)Tools\jit\**"/>

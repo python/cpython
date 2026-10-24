@@ -1,0 +1,2 @@
+Fix multibyte encoders silently consuming a non-BMP character when looking up
+a two-character mapping.
