@@ -2653,6 +2653,21 @@ then
     esac
 fi
 
+# Keep performance-oriented release builds aligned on validated platforms
+# without changing size-optimized, mobile, or third-party extension builds.
+FUNCTION_ALIGNMENT_CFLAGS=
+AS_CASE([$host],
+  [*-*-linux-android*], [],
+  [*-*-linux*|*-apple-darwin*], [
+    AS_VAR_IF([Py_DEBUG], [true], [], [
+      AS_CASE([" $OPT $CFLAGS "],
+        [*" -Os "*|*" -Oz "*], [],
+        [AX_CHECK_COMPILE_FLAG([-falign-functions=64], [
+          FUNCTION_ALIGNMENT_CFLAGS="-falign-functions=64"
+        ], [], [-Werror])])
+    ])
+  ])
+
 # WASM flags
 AS_CASE([$ac_sys_system],
   [Emscripten], [
@@ -2781,6 +2796,7 @@ AS_CASE([$enable_wasm_dynamic_linking],
 
 AC_SUBST([BASECFLAGS])
 AC_SUBST([CFLAGS_NODIST])
+AC_SUBST([FUNCTION_ALIGNMENT_CFLAGS])
 AC_SUBST([LDFLAGS_NODIST])
 AC_SUBST([EXE_LDFLAGS])
 AC_SUBST([LDFLAGS_NOLTO])

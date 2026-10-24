@@ -191,6 +191,10 @@ static int test_repeated_init_and_subinterpreters(void)
     for (int i=1; i <= INIT_LOOPS; i++) {
         printf("--- Pass %d ---\n", i);
         _testembed_initialize();
+        if (i > 1 && !_PyInterpreterState_MayHaveForeignGcObjects()) {
+            error("foreign GC object risk was reset");
+            return 1;
+        }
         mainstate = PyThreadState_Get();
 
         PyEval_ReleaseThread(mainstate);
@@ -203,6 +207,10 @@ static int test_repeated_init_and_subinterpreters(void)
             substate = Py_NewInterpreter();
             print_subinterp();
             Py_EndInterpreter(substate);
+        }
+        if (!_PyInterpreterState_MayHaveForeignGcObjects()) {
+            error("subinterpreter lifetime did not record foreign GC object risk");
+            return 1;
         }
 
         PyThreadState_Swap(mainstate);
@@ -296,6 +304,14 @@ static int test_repeated_simple_init(void)
         fflush(stderr);
 
         _testembed_initialize();
+        if (i == 1 && _PyInterpreterState_MayHaveForeignGcObjects()) {
+            error("initial main interpreter may have foreign GC objects");
+            return 1;
+        }
+        if (i > 1 && !_PyInterpreterState_MayHaveForeignGcObjects()) {
+            error("runtime reinitialization lost foreign GC object risk");
+            return 1;
+        }
         Py_Finalize();
         printf("Finalized\n"); // Give test_embed some output to check
     }
