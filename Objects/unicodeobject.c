@@ -55,6 +55,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_pyhash.h"        // _Py_HashSecret_t
 #include "pycore_pylifecycle.h"   // _Py_SetFileSystemEncoding()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_*()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include "pycore_unicodectype.h"  // _PyUnicode_IsXidStart
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
@@ -15044,24 +15045,32 @@ static PyObject *
 unicodeiter_next(PyObject *op)
 {
     unicodeiterobject *it = (unicodeiterobject *)op;
-    PyObject *seq;
 
     assert(it != NULL);
-    seq = it->it_seq;
+    /* it_seq is set once at construction and, in free-threaded builds,
+     * released only in unicodeiter_dealloc() -- never here -- so reading
+     * it needs no atomic/critical-section protection: a thread calling
+     * next() always holds its own reference to `it`, which is exactly
+     * what keeps dealloc() from running concurrently. This mirrors
+     * listiter_next()/tupleiter_next(). */
+    PyObject *seq = it->it_seq;
     if (seq == NULL)
         return NULL;
     assert(_PyUnicode_CHECK(seq));
 
-    if (it->it_index < PyUnicode_GET_LENGTH(seq)) {
+    Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
+    if (index < PyUnicode_GET_LENGTH(seq)) {
         int kind = PyUnicode_KIND(seq);
         const void *data = PyUnicode_DATA(seq);
-        Py_UCS4 chr = PyUnicode_READ(kind, data, it->it_index);
-        it->it_index++;
+        Py_UCS4 chr = PyUnicode_READ(kind, data, index);
+        FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index + 1);
         return unicode_char(chr);
     }
 
+#ifndef Py_GIL_DISABLED
     it->it_seq = NULL;
     Py_DECREF(seq);
+#endif
     return NULL;
 }
 
@@ -15070,21 +15079,26 @@ unicode_ascii_iter_next(PyObject *op)
 {
     unicodeiterobject *it = (unicodeiterobject *)op;
     assert(it != NULL);
-    PyObject *seq = it->it_seq;
+    PyObject *seq = it->it_seq;  /* see unicodeiter_next() for why this is safe unsynchronized */
     if (seq == NULL) {
         return NULL;
     }
     assert(_PyUnicode_CHECK(seq));
     assert(PyUnicode_IS_COMPACT_ASCII(seq));
-    if (it->it_index < PyUnicode_GET_LENGTH(seq)) {
+
+    Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
+    if (index < PyUnicode_GET_LENGTH(seq)) {
         const void *data = ((void*)(_PyASCIIObject_CAST(seq) + 1));
-        Py_UCS1 chr = (Py_UCS1)PyUnicode_READ(PyUnicode_1BYTE_KIND,
-                                              data, it->it_index);
-        it->it_index++;
+        Py_UCS1 chr = (Py_UCS1)PyUnicode_READ(
+            PyUnicode_1BYTE_KIND, data, index);
+        FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index + 1);
         return (PyObject*)&_Py_SINGLETON(strings).ascii[chr];
     }
+
+#ifndef Py_GIL_DISABLED
     it->it_seq = NULL;
     Py_DECREF(seq);
+#endif
     return NULL;
 }
 
@@ -15093,8 +15107,14 @@ unicodeiter_len(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     unicodeiterobject *it = (unicodeiterobject *)op;
     Py_ssize_t len = 0;
-    if (it->it_seq)
-        len = PyUnicode_GET_LENGTH(it->it_seq) - it->it_index;
+    PyObject *seq = it->it_seq;
+    if (seq != NULL) {
+        Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
+        Py_ssize_t seq_len = PyUnicode_GET_LENGTH(seq);
+        if (index < seq_len) {
+            len = seq_len - index;
+        }
+    }
     return PyLong_FromSsize_t(len);
 }
 
@@ -15110,16 +15130,20 @@ unicodeiter_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
      * call must be before access of iterator pointers.
      * see issue #101765 */
 
-    if (it->it_seq != NULL) {
-        return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
-    } else {
-        PyObject *u = _PyUnicode_GetEmpty();
-        if (u == NULL) {
-            Py_XDECREF(iter);
-            return NULL;
+    PyObject *seq = it->it_seq;
+    if (seq != NULL) {
+        Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
+        if (index < PyUnicode_GET_LENGTH(seq)) {
+            return Py_BuildValue("N(O)n", iter, seq, index);
         }
-        return Py_BuildValue("N(N)", iter, u);
     }
+
+    PyObject *u = _PyUnicode_GetEmpty();
+    if (u == NULL) {
+        Py_XDECREF(iter);
+        return NULL;
+    }
+    return Py_BuildValue("N(N)", iter, u);
 }
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
@@ -15131,12 +15155,25 @@ unicodeiter_setstate(PyObject *op, PyObject *state)
     Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
-    if (it->it_seq != NULL) {
-        if (index < 0)
-            index = 0;
-        else if (index > PyUnicode_GET_LENGTH(it->it_seq))
-            index = PyUnicode_GET_LENGTH(it->it_seq); /* iterator truncated */
-        it->it_index = index;
+    PyObject *seq = it->it_seq;
+    if (seq != NULL) {
+        /* A permanently exhausted iterator must stay exhausted: in
+         * free-threaded builds it_seq is never cleared on exhaustion
+         * (see unicodeiter_next()), so unlike the GIL build we can't
+         * use "it_seq == NULL" to detect that. Use the index instead:
+         * once it has reached the sequence length, refuse to move it
+         * backwards. Without this check, __setstate__() could "revive"
+         * an exhausted iterator -- the same bug reported against list
+         * and tuple iterators in gh-129139. */
+        Py_ssize_t cur_index = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
+        Py_ssize_t len = PyUnicode_GET_LENGTH(seq);
+        if (cur_index < len) {
+            if (index < 0)
+                index = 0;
+            else if (index > len)
+                index = len; /* iterator truncated */
+            FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index);
+        }
     }
     Py_RETURN_NONE;
 }
