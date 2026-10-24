@@ -838,7 +838,7 @@ class SpooledTemporaryFile(_io.IOBase):
 
     # file protocol
     def __iter__(self):
-        return self._file.__iter__()
+        return super().__iter__()
 
     def __del__(self):
         if not self.closed:
