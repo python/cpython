@@ -160,6 +160,67 @@ class TestUtils(TestCase):
                     actual_highlights.append((span_text, color.tag))
                 self.assertEqual(actual_highlights, expected_highlights)
 
+    def test_gen_colors_soft_keywords_after_blank_lines(self):
+        cases = [
+            (
+                "def f(): pass\n",
+                "match -1:\n    case _: pass",
+                ["match", "case", "_"],
+            ),
+            (
+                "def f(): pass\n",
+                "match value:\n    case _: pass",
+                ["match", "case", "_"],
+            ),
+            (
+                "match value:\n    case 0: pass\n",
+                "    case -1: pass",
+                ["match", "case", "case"],
+            ),
+            (
+                "match value:\n    case 0: pass\n",
+                "    case other: pass",
+                ["match", "case", "case"],
+            ),
+            ("def f(): pass\n", "type Alias = int", ["type"]),
+            ("def f(): pass\n", "lazy import mod", ["lazy"]),
+            ("def f(): pass\n", "lazy from mod import name", ["lazy"]),
+        ]
+        for prefix, statement, expected in cases:
+            for blank_line in ("\n", "    \n", "# comment\n"):
+                code = prefix + blank_line + statement
+                with self.subTest(code=code):
+                    actual = [
+                        code[color.span.start:color.span.end + 1]
+                        for color in gen_colors(code)
+                        if color.tag == "soft_keyword"
+                    ]
+                    self.assertEqual(actual, expected)
+
+    def test_gen_colors_match_after_dedent(self):
+        for subject in ("-1", "value"):
+            for separator in ("", "\n", "# comment\n"):
+                code = (
+                    "if x:\n    pass\n"
+                    f"{separator}match {subject}:\n    case _: pass"
+                )
+                with self.subTest(code=code):
+                    actual = [
+                        code[color.span.start:color.span.end + 1]
+                        for color in gen_colors(code)
+                        if color.tag == "soft_keyword"
+                    ]
+                    self.assertEqual(actual, ["match", "case", "_"])
+
+    def test_gen_colors_soft_keyword_names_in_brackets(self):
+        for opening, closing in ("()", "[]", "{}"):
+            for name in ("match", "case"):
+                code = f"{opening}\n{name} - 1\n{closing}"
+                with self.subTest(code=code):
+                    self.assertNotIn(
+                        "soft_keyword", [color.tag for color in gen_colors(code)]
+                    )
+
     def test_gen_colors_command_highlighting(self):
         cases = [
             # highlights bare command names (after stripping whitespaces)
