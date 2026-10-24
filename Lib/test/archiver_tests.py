@@ -53,8 +53,9 @@ class OverwriteTests:
         target = os.path.join(self.testdir, 'test')
         os.mkdir(target)
         with self.open(self.ar_with_file) as ar:
-            with self.assertRaises(PermissionError if sys.platform == 'win32'
-                                   else IsADirectoryError):
+            # Removing the directory fails with EISDIR on Linux and EPERM on
+            # other platforms.
+            with self.assertRaises((IsADirectoryError, PermissionError)):
                 self.extractall(ar)
         self.assertTrue(os.path.isdir(target))
 
@@ -81,30 +82,42 @@ class OverwriteTests:
 
     @os_helper.skip_unless_symlink
     def test_overwrite_file_symlink_as_file(self):
-        # XXX: It is potential security vulnerability.
         target = os.path.join(self.testdir, 'test')
         target2 = os.path.join(self.testdir, 'test2')
         self.create_file(target2, b'content')
         os.symlink('test2', target)
         with self.open(self.ar_with_file) as ar:
             self.extractall(ar)
-        self.assertTrue(os.path.islink(target))
-        self.assertTrue(os.path.isfile(target2))
-        with open(target2, 'rb') as f:
+        self.assertFalse(os.path.islink(target))
+        with open(target, 'rb') as f:
             self.assertEqual(f.read(), b'newcontent')
+        with open(target2, 'rb') as f:
+            self.assertEqual(f.read(), b'content')
 
     @os_helper.skip_unless_symlink
     def test_overwrite_broken_file_symlink_as_file(self):
-        # XXX: It is potential security vulnerability.
         target = os.path.join(self.testdir, 'test')
         target2 = os.path.join(self.testdir, 'test2')
         os.symlink('test2', target)
         with self.open(self.ar_with_file) as ar:
             self.extractall(ar)
-        self.assertTrue(os.path.islink(target))
-        self.assertTrue(os.path.isfile(target2))
-        with open(target2, 'rb') as f:
+        self.assertFalse(os.path.islink(target))
+        with open(target, 'rb') as f:
             self.assertEqual(f.read(), b'newcontent')
+        self.assertFalse(os.path.lexists(target2))
+
+    @os_helper.skip_unless_hardlink
+    def test_overwrite_file_hardlink_as_file(self):
+        target = os.path.join(self.testdir, 'test')
+        target2 = os.path.join(self.testdir, 'test2')
+        self.create_file(target2, b'content')
+        os.link(target2, target)
+        with self.open(self.ar_with_file) as ar:
+            self.extractall(ar)
+        with open(target, 'rb') as f:
+            self.assertEqual(f.read(), b'newcontent')
+        with open(target2, 'rb') as f:
+            self.assertEqual(f.read(), b'content')
 
     @os_helper.skip_unless_symlink
     def test_overwrite_dir_symlink_as_dir(self):
