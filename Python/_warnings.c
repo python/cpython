@@ -9,6 +9,7 @@
 #include "pycore_traceback.h"     // _Py_DisplaySourceLine()
 #include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
+#include "pycore_warnings.h"      // _PyWarnings_AfterFork()
 
 #include <stdbool.h>
 #include "clinic/_warnings.c.h"
@@ -275,6 +276,23 @@ warnings_lock_held(WarningsState *st)
 {
     return PyMutex_IsLocked(&st->lock.mutex);
 }
+
+#ifdef HAVE_FORK
+void
+_PyWarnings_BeforeFork(PyInterpreterState *interp)
+{
+    WarningsState *st = warnings_get_state(interp);
+    st->lock_held_at_fork = _PyRecursiveMutex_IsLockedByCurrentThread(&st->lock);
+}
+
+void
+_PyWarnings_AfterFork(PyInterpreterState *interp)
+{
+    WarningsState *st = warnings_get_state(interp);
+    _PyRecursiveMutex_at_fork_reinit(&st->lock, st->lock_held_at_fork);
+    st->lock_held_at_fork = false;
+}
+#endif
 
 static PyObject *
 get_warnings_context(PyInterpreterState *interp)
@@ -1035,6 +1053,9 @@ setup_context(Py_ssize_t stack_level,
     if (f == NULL) {
         globals = interp->sysdict;
         *filename = PyUnicode_FromString("<sys>");
+        if (*filename == NULL) {
+            return 0;
+        }
         *lineno = 0;
     }
     else {
@@ -1178,7 +1199,6 @@ warnings_warn_impl(PyObject *module, PyObject *message, PyObject *category,
                 stacklevel = 2;
             }
         } else {
-            Py_DECREF((PyObject *)skip_file_prefixes);
             skip_file_prefixes = NULL;
         }
     }

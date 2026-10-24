@@ -1,6 +1,13 @@
 #ifndef Py_PYMACRO_H
 #define Py_PYMACRO_H
 
+// _Py_STDC_VERSION: the version of the C standard.
+// gh-160208: The C++ standard allows __STDC_VERSION__ to be defined to an
+// arbitrary value, which means we can't use __STDC_VERSION__ on C++.
+#if !defined(__cplusplus) && defined(__STDC_VERSION__)
+#  define _Py_STDC_VERSION __STDC_VERSION__
+#endif
+
 // gh-91782: On FreeBSD 12, if the _POSIX_C_SOURCE and _XOPEN_SOURCE macros are
 // defined, <sys/cdefs.h> disables C11 support and <assert.h> does not define
 // the static_assert() macro.
@@ -18,8 +25,8 @@
 // behaviour. So only define if building as C, not C++ (if __cplusplus is
 // not defined), and only for C11-17.
 #if !defined(static_assert) && (defined(__GNUC__) || defined(__clang__)) \
-     && !defined(__cplusplus) && defined(__STDC_VERSION__) \
-     && __STDC_VERSION__ >= 201112L && __STDC_VERSION__ <= 201710L
+     && !defined(_Py_STDC_VERSION) \
+     && _Py_STDC_VERSION >= 201112L && _Py_STDC_VERSION <= 201710L
 #  define static_assert _Static_assert
 #endif
 
@@ -75,9 +82,9 @@
 #        endif
 #    elif defined(_MSC_VER)
 #        define _Py_ALIGNED_DEF(N, T) __declspec(align(N)) T
-#    elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+#    elif defined(_Py_STDC_VERSION) && _Py_STDC_VERSION >= 202311L
 #        define _Py_ALIGNED_DEF(N, T) alignas(N) alignas(T) T
-#    elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#    elif defined(_Py_STDC_VERSION) && _Py_STDC_VERSION >= 201112L
 #        define _Py_ALIGNED_DEF(N, T)  _Alignas(N) _Alignas(T) T
 #    elif (defined(__GNUC__) || defined(__clang__))
 #        define _Py_ALIGNED_DEF(N, T) __attribute__((aligned(N))) T
@@ -100,7 +107,7 @@
 // predefined value of _Py_ANONYMOUS if it exists.
 #ifndef _Py_ANONYMOUS
 #   if (defined(__GNUC__) || defined(__clang__)) \
-          && !(defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
+          && !(defined(_Py_STDC_VERSION) && _Py_STDC_VERSION >= 201112L)
 #       define _Py_ANONYMOUS __extension__
 #   else
 #       define _Py_ANONYMOUS
@@ -162,7 +169,7 @@
 /* Argument must be a char or an int in [-128, 127] or [0, 255]. */
 #define Py_CHARMASK(c) ((unsigned char)((c) & 0xff))
 
-#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L \
+#if (defined(_Py_STDC_VERSION) && _Py_STDC_VERSION >= 201112L \
      && !defined(__cplusplus) && !defined(_MSC_VER))
 #  define Py_BUILD_ASSERT_EXPR(cond) \
     ((void)sizeof(struct { int dummy; _Static_assert(cond, #cond); }), \
@@ -185,7 +192,7 @@
     (sizeof(char [1 - 2*!(cond)]) - 1)
 #endif
 
-#if ((defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L) \
+#if ((defined(_Py_STDC_VERSION) && _Py_STDC_VERSION >= 201112L) \
      || (defined(__cplusplus) && __cplusplus >= 201103L))
    // Use static_assert() on C11 and newer
 #  define Py_BUILD_ASSERT(cond) \

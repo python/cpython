@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_NoPositional()
 
 PyDoc_STRVAR(_csv_Dialect___reduce____doc__,
@@ -83,6 +84,21 @@ _csv_Dialect___replace__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     /* Cleanup for changes */
     Py_XDECREF(changes);
+
+    return return_value;
+}
+
+static PyObject *
+Reader_iternext_impl(ReaderObj *self);
+
+static PyObject *
+Reader_iternext(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = Reader_iternext_impl((ReaderObj *)self);
+    Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
@@ -449,4 +465,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1a90b8a8ed82497d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7e3a92d524d88023 input=a9049054013a1b77]*/

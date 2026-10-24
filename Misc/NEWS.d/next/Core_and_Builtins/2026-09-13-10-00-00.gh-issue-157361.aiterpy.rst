@@ -1,0 +1,5 @@
+Implement :func:`aiter` in Python instead of C, in the frozen ``_pybuiltins``
+module. The async iterator returned by ``aiter(callable, ...)`` now has a
+plain coroutine ``__anext__()``, so introspection tools such as
+:func:`asyncio.print_call_graph` can see through it into the awaited
+callable result.
