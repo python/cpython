@@ -1,0 +1,4 @@
+Fix error handling for interpreter queues. Listing queues now raises
+:exc:`MemoryError` on allocation failure. Sharing a queue between interpreters
+now raises :exc:`MemoryError` on allocation failure or ``QueueNotFoundError``
+if the queue no longer exists.
