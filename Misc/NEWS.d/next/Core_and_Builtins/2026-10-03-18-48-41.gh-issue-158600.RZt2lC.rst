@@ -1,0 +1,1 @@
+Fix a race condition in :meth:`set.intersection_update` on free-threaded builds that could cause concurrent updates to the same set to be lost.
