@@ -1,0 +1,2 @@
+Add the experimental :option:`--enable-relocatable` configure option.
+The option currently has no effect on the build.
