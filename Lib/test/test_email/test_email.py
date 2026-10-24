@@ -3199,6 +3199,11 @@ class TestMiscellaneous(TestEmailBase):
         self.assertEqual(utils.parseaddr('<>'), ('', ''))
         self.assertEqual(utils.formataddr(utils.parseaddr('<>')), '')
 
+    def test_parseaddr_empty_list(self):
+        for strict in (True, False):
+            with self.subTest(strict=strict):
+                self.assertEqual(utils.parseaddr([], strict=strict), ('', ''))
+
     def test_parseaddr_multiple_domains(self):
         self.assertEqual(
             utils.parseaddr('a@b@c'),
