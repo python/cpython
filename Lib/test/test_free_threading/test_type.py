@@ -23,8 +23,8 @@ class A:
 def world_stoppers():
     """Finite workloads that contend for the stop-the-world mutex.
 
-    Waiting for the mutex releases the type lock, allowing queued type
-    updates to go stale.  Use a short pause rather than full collections
+    Waiting for the mutex releases the type lock, so that other threads
+    can change types in the meantime.  Use a short pause rather than full collections
     to prolong the contention without depending on the size of the heap.
     """
     def stopper():
@@ -344,9 +344,8 @@ class TestType(TestCase):
             reader.join()
 
     def test_setattr_many_subclasses(self):
-        # gh-155978: Updating a special method queues a slot update for every
-        # affected subclass.  Keep enough subclasses alive to require
-        # heap-allocated queue chunks in addition to the stack chunk.
+        # gh-155978: Updating a special method updates the slot of every
+        # affected subclass.
         class Base:
             pass
 
@@ -363,8 +362,7 @@ class TestType(TestCase):
         self.assertTrue(all(repr(cls()) != "custom repr"
                             for cls in subclasses))
 
-        # The slot update queue must release its references to the types,
-        # including those stored in heap-allocated chunks.
+        # The slot update must not keep references to the types.
         del subclasses
         gc.collect()
         self.assertEqual(Base.__subclasses__(), [])
@@ -492,11 +490,45 @@ class TestType(TestCase):
         C.__bases__ = (B,)
         self.assertEqual(C.__mro__, (C, B, object))
 
+    def test_slot_update_skips_non_str_keys(self):
+        # Slots are computed (with the world stopped, for an update) without
+        # comparing the slot name with non-str keys of the type dicts, which
+        # could run user code.  Here, that code would also update a slot
+        # every time.
+        calls = 0
+
+        class Other:
+            pass
+
+        class Key:
+            def __hash__(self):
+                return hash("__hash__")
+
+            def __eq__(self, other):
+                nonlocal calls
+                calls += 1
+                Other.__repr__ = lambda self: "x"
+                return False
+
+        class Base:
+            pass
+
+        with self.assertWarns(RuntimeWarning):
+            Sub = type("Sub", (Base,), {Key(): None})
+        self.assertEqual(calls, 0)
+
+        Base.__hash__ = None
+        self.assertEqual(calls, 0)
+        with self.assertRaises(TypeError):
+            hash(Sub())
+        del Base.__hash__
+        hash(Sub())
+
     def test_concurrent_bases_assignment(self):
         # Several threads reassign __bases__ of the same class, and of its
-        # base, while others stop the world.  The validated bases and the
-        # computed MRO can go stale while the type lock is released and
-        # must be recomputed.  At the end, the MRO must agree with __bases__.
+        # base, while others stop the world.  The type lock is released while
+        # waiting for the stop-the-world.  At the end, the MRO must agree
+        # with __bases__.
         N = 50
 
         class A:
