@@ -1795,6 +1795,49 @@ class HandlerTests(unittest.TestCase):
         opener.add_handler(http_handler)
         self.assertRaises(ValueError, opener.open, "http://www.example.com")
 
+    def test_digest_auth_retry_count_reset(self):
+        self._test_digest_auth_retry_count_reset(
+            urllib.request.HTTPDigestAuthHandler(), 401, "WWW-Authenticate")
+
+    def test_proxy_digest_auth_retry_count_reset(self):
+        self._test_digest_auth_retry_count_reset(
+            urllib.request.ProxyDigestAuthHandler(), 407, "Proxy-Authenticate")
+
+    def _test_digest_auth_retry_count_reset(self, auth_handler, code, header):
+        # A failed authentication must not leave the retry count set, or the
+        # handler rejects valid credentials on every later request.
+        challenge = ('%s: Digest realm="ACME Networks", nonce="%%s", '
+                     'qop="auth"\r\n\r\n' % header)
+
+        class MockDigestHTTPHandler(urllib.request.BaseHandler):
+            # Answers with a fresh nonce every time, so the handler keeps
+            # retrying until it gives up.
+            def __init__(self):
+                self.count = 0
+
+            def http_open(self, req):
+                import email
+                self.count += 1
+                msg = email.message_from_string(challenge % self.count)
+                return self.parent.error(
+                    "http", req, MockFile(), code, "Unauthorized", msg)
+
+        auth_handler.add_password("ACME Networks", "http://acme.example.com/",
+                                  "joe", "password")
+        opener = OpenerDirector()
+        opener.add_handler(auth_handler)
+        opener.add_handler(MockDigestHTTPHandler())
+        with self.assertRaises(urllib.error.HTTPError) as cm:
+            opener.open("http://acme.example.com/protected")
+        cm.exception.close()
+
+        # The same handler must still authenticate a later request.
+        opener = OpenerDirector()
+        opener.add_handler(auth_handler)
+        opener.add_handler(MockHTTPHandlerRedirect(code, challenge % "nonce"))
+        response = opener.open("http://acme.example.com/protected")
+        self.assertEqual(response.code, 200)
+
     def test_unsupported_auth_basic_handler(self):
         # While using BasicAuthHandler
         opener = OpenerDirector()
