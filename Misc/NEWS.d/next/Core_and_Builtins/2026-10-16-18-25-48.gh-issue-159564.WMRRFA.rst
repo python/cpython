@@ -1,0 +1,3 @@
+Improve the performance and thread scaling of dereferencing weak references
+in the :term:`free-threaded build`.  Dereferencing a weak reference no longer
+takes a lock.
