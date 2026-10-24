@@ -416,31 +416,23 @@ class DirCmpImplementationTests(unittest.TestCase):
         for d in (self.dir_same, self.dir_same_shallow,
                 self.dir_diff, self.dir_diff_file):
             Path(d, 'subdir').mkdir(parents=True, exist_ok=True)
-            fn = ('FiLe' if (self.caseinsensitive and d is self.dir_same)
-                else 'file')
+            fn = 'FiLe' if (self.caseinsensitive and d == self.dir_same) else 'file'
             file_path = os.path.join(d, fn)
 
-            if d is self.dir_same_shallow:
+            if d == self.dir_same_shallow:
                 _create_file_shallow_equal(dir_file_path, file_path)
             else:
                 shutil.copy2(dir_file_path, file_path)
 
-        with open(os.path.join(self.dir_diff, 'file2'), 'w',
-                    encoding="utf-8") as output:
-            output.write('An extra file.\n')
-
-        with open(os.path.join(self.dir_diff_file, 'file2'), 'w',
-                    encoding="utf-8") as output:
-            output.write('Different contents.\n')
+        Path(self.dir_diff, 'file2').write_text('An extra file.\n')
+        Path(self.dir_diff_file, 'file2').write_text('Different contents.\n')
 
     # Test dircmp behavior when os.stat raises OSError on specific files.
     # Structure contains 'error_trigger_file.txt' in both directories.
     def test_dircmp_os_errors_in_processing(self):
         trigger_file = "error_trigger_file.txt"
         for d in (self.dir, self.dir_same):
-            with open(os.path.join(d, trigger_file), "w",
-                        encoding="utf-8") as f:
-                f.write("trigger")
+            Path(d, trigger_file).write_text('trigger', encoding='utf-8')
 
         original_stat = os.stat
 
@@ -460,11 +452,9 @@ class DirCmpImplementationTests(unittest.TestCase):
         file_diff_type = "diff_type.txt"
         file_funny_type = "funny_type.txt"
 
-        for f_name in (file_diff_type, file_funny_type):
-            for d in (self.dir, self.dir_same):
-                with open(os.path.join(d, f_name), "w",
-                            encoding="utf-8") as f:
-                    f.write("data")
+        for d in (self.dir, self.dir_same):
+            for f in (file_diff_type, file_funny_type):
+                Path(d, f).write_text("data")
 
         original_stat = os.stat
 
@@ -501,11 +491,9 @@ class DirCmpImplementationTests(unittest.TestCase):
         funny_trigger = "funny_report_file.txt"
         funny_file_trigger = "funny_file_trigger.txt"
 
-        for f_name in (funny_trigger, funny_file_trigger):
-            for d in (self.dir, self.dir_same):
-                with open(os.path.join(d, f_name), "w",
-                            encoding="utf-8") as f:
-                    f.write("data")
+        for d in (self.dir, self.dir_same):
+            for f in (funny_trigger, funny_file_trigger):
+                Path(d, f).write_text('data', encoding='utf-8')
 
         original_stat = os.stat
         original_cmp = filecmp._cmp
