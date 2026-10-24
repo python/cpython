@@ -677,7 +677,7 @@ Constants
    Selects SSL version 3 as the channel encryption protocol.
 
    This protocol is not available if OpenSSL is compiled with the
-   ``no-ssl3`` option.
+   ``no-ssl3`` option, or with OpenSSL 4.0 or later.
 
    .. warning::
 
@@ -694,6 +694,7 @@ Constants
 .. data:: PROTOCOL_TLSv1
 
    Selects TLS version 1.0 as the channel encryption protocol.
+   This protocol is not available with OpenSSL 4.0 or later.
 
    .. deprecated:: 3.6
 
@@ -702,7 +703,7 @@ Constants
 .. data:: PROTOCOL_TLSv1_1
 
    Selects TLS version 1.1 as the channel encryption protocol.
-   Available only with openssl version 1.0.1+.
+   Available only with OpenSSL version 1.0.1 through 3.x.
 
    .. versionadded:: 3.4
 
@@ -713,7 +714,7 @@ Constants
 .. data:: PROTOCOL_TLSv1_2
 
    Selects TLS version 1.2 as the channel encryption protocol.
-   Available only with openssl version 1.0.1+.
+   Available only with OpenSSL version 1.0.1 through 3.x.
 
    .. versionadded:: 3.4
 
@@ -2359,7 +2360,7 @@ to speed up repeated connections from the same clients.
 
       import socket, ssl
 
-      context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+      context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
       context.verify_mode = ssl.CERT_REQUIRED
       context.check_hostname = True
       context.load_default_certs()
