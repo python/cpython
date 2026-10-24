@@ -201,6 +201,12 @@ class FileTests(unittest.TestCase):
         os.close(f)
         self.assertTrue(os.access(os_helper.TESTFN, os.W_OK))
 
+    @unittest.skipUnless(hasattr(os, 'truncate'), 'test needs os.truncate()')
+    def test_truncate_negative_length(self):
+        create_file(os_helper.TESTFN, b'abc')
+        with self.assertRaises(OSError):
+            os.truncate(os_helper.TESTFN, -1)
+
     @unittest.skipIf(
         support.is_wasi, "WASI does not support dup."
     )
