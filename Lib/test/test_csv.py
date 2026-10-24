@@ -598,6 +598,30 @@ class Test_Csv(unittest.TestCase):
         with self.assertRaises(csv.Error):
             next(reader)
 
+    def test_reader_reentrant_iterator_eof_in_quoted_field(self):
+        # gh-157379: the re-entrant call leaves an open quoted field, then
+        # the outer call reaches the end of input.
+        class ReentrantIter:
+            def __init__(self):
+                self.reader = None
+                self.n = 0
+            def __iter__(self):
+                return self
+            def __next__(self):
+                self.n += 1
+                if self.n == 1:
+                    next(self.reader)
+                    raise StopIteration
+                if self.n == 2:
+                    return '"x'
+                raise StopIteration
+
+        it = ReentrantIter()
+        reader = csv.reader(it)
+        it.reader = reader
+        with self.assertRaises(csv.Error):
+            next(reader)
+
 
 class TestDialectRegistry(unittest.TestCase):
     def test_registry_badargs(self):
