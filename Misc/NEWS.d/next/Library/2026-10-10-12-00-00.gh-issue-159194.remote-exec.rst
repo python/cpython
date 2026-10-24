@@ -1,0 +1,3 @@
+Fix :func:`sys.remote_exec` failing or running code in the wrong interpreter
+when the target process has subinterpreters.  Patch by Maurycy
+Pawłowski-Wieroński.

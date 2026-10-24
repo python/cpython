@@ -2287,6 +2287,38 @@ sock.close()
                 self.assertEqual(mock_stderr.getvalue(), "Remote script executed successfully!\n")
                 self.assertEqual(mock_stdout.getvalue(), "Done\n")
 
+    @requires_subinterpreters
+    def test_remote_exec_with_subinterpreters(self):
+        script_path = os.path.abspath(os_helper.TESTFN + '_remote_interp.py')
+        self.addCleanup(os_helper.unlink, script_path)
+        with open(script_path, 'w') as script:
+            script.write(textwrap.dedent('''
+                import threading
+                from concurrent import interpreters
+                print(interpreters.get_current().id,
+                      threading.current_thread() is threading.main_thread())
+            '''))
+
+        for running in (False, True):
+            with self.subTest(running=running):
+                # The new subinterpreter is at the head of the interpreter list.
+                interp = interpreters.create()
+                try:
+                    with (support.captured_stdout() as stdout,
+                          support.captured_stderr() as stderr):
+                        if running:
+                            interp.exec(textwrap.dedent(f'''
+                                import os
+                                import sys
+                                sys.remote_exec(os.getpid(), {script_path!r})
+                            '''))
+                        else:
+                            sys.remote_exec(os.getpid(), script_path)
+                finally:
+                    interp.close()
+                self.assertEqual(stdout.getvalue(), '0 True\n')
+                self.assertEqual(stderr.getvalue(), '')
+
     def test_remote_exec_raises_audit_event(self):
         """Test remote exec raises an audit event"""
         prologue = '''\
