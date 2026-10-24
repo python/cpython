@@ -110,9 +110,19 @@ static const uintptr_t min_frame_pointer_addr = 0x1000;
 // address is stored at fp[-1].
 #  define FRAME_POINTER_NEXT_OFFSET -2
 #  define FRAME_POINTER_RETURN_OFFSET -1
+#elif defined(__sparc__) && defined(__arch64__)
+// SPARC V9 has no frame record: fp points to the register window save area,
+// where the caller's %fp is saved at fp[14] and its return address (%i7) at
+// fp[15].  The saved %fp is biased by 2047.
+#  define FRAME_POINTER_NEXT_OFFSET 14
+#  define FRAME_POINTER_RETURN_OFFSET 15
+#  define FRAME_POINTER_BIAS 2047
 #else
 #  define FRAME_POINTER_NEXT_OFFSET 0
 #  define FRAME_POINTER_RETURN_OFFSET 1
+#endif
+#ifndef FRAME_POINTER_BIAS
+#  define FRAME_POINTER_BIAS 0
 #endif
 
 
@@ -527,7 +537,8 @@ manual_unwind_from_fp(uintptr_t *frame_pointer)
                                          stack_min, stack_max)) {
             break;
         }
-        uintptr_t *next_fp = (uintptr_t *)frame_pointer[FRAME_POINTER_NEXT_OFFSET];
+        uintptr_t *next_fp = (uintptr_t *)(frame_pointer[FRAME_POINTER_NEXT_OFFSET]
+                                           + FRAME_POINTER_BIAS);
         uintptr_t return_addr = frame_pointer[FRAME_POINTER_RETURN_OFFSET];
 
         PyObject *addr_obj = PyLong_FromUnsignedLongLong(return_addr);
@@ -599,6 +610,10 @@ gnu_backtrace_unwind(PyObject *self, PyObject *Py_UNUSED(args))
 static PyObject *
 manual_frame_pointer_unwind(PyObject *self, PyObject *args)
 {
+#if defined(__sparc__) && defined(__arch64__)
+    // The callers' register windows are only in their save areas once spilled.
+    __asm__ volatile ("flushw" ::: "memory");
+#endif
     uintptr_t *frame_pointer = (uintptr_t *)__builtin_frame_address(0);
     return manual_unwind_from_fp(frame_pointer);
 }
