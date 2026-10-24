@@ -1,6 +1,8 @@
 
 #include "Python.h"
 
+#include "pycore_abstract.h"
+
 #ifndef NDEBUG
 #undef assert
 #define assert(TEST) ((TEST) ? 0 : _Py_jit_assertion_failure(__LINE__))
