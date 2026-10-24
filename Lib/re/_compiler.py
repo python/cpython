@@ -221,7 +221,7 @@ def _code(p, flags):
     flags = p.state.flags | flags
 
     # run the optimizer passes over the parsed pattern
-    optimize(p)
+    optimize(p, flags)
 
     code = []
 
@@ -267,7 +267,7 @@ def dis(code):
             i += 1
             op = OPCODES[op]
             if op in (SUCCESS, FAILURE, ANY, ANY_ALL,
-                      MAX_UNTIL, MIN_UNTIL, NEGATE):
+                      MAX_UNTIL, MIN_UNTIL, NEGATE, INVERT):
                 print_(op)
             elif op in (LITERAL, NOT_LITERAL,
                         LITERAL_IGNORE, NOT_LITERAL_IGNORE,
