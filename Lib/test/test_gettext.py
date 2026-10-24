@@ -1,6 +1,7 @@
 import os
 import base64
 import gettext
+import io
 import unittest
 import unittest.mock
 from functools import partial
@@ -313,6 +314,39 @@ class GettextTestCase2(GettextBaseTest):
             self.assertEqual(exception.errno, 0)
             self.assertEqual(exception.strerror, "File is corrupt")
             self.assertEqual(exception.filename, MOFILE_CORRUPT)
+
+    def test_truncated_header(self):
+        magic = b'\xde\x12\x04\x95'
+        for buf in (b'', magic, magic + bytes(15)):
+            with self.subTest(buflen=len(buf)):
+                with self.assertRaises(OSError) as cm:
+                    gettext.GNUTranslations(io.BytesIO(buf))
+                self.assertEqual(cm.exception.errno, 0)
+                self.assertEqual(cm.exception.strerror, "File is corrupt")
+
+    def test_offsets_out_of_bounds(self):
+        buf = bytes([
+            0xde, 0x12, 0x04, 0x95,  # Magic
+            0x00, 0x00, 0x00, 0x00,  # Version
+            0x01, 0x00, 0x00, 0x00,  # Message count
+            0xe8, 0x03, 0x00, 0x00,  # Message offset (past EOF)
+            0xd0, 0x07, 0x00, 0x00,  # Translation offset (past EOF)
+        ])
+        with self.assertRaises(OSError) as cm:
+            gettext.GNUTranslations(io.BytesIO(buf))
+        self.assertEqual(cm.exception.errno, 0)
+        self.assertEqual(cm.exception.strerror, "File is corrupt")
+
+    def test_empty_catalog(self):
+        buf = bytes([
+            0xde, 0x12, 0x04, 0x95,  # Magic
+            0x00, 0x00, 0x00, 0x00,  # Version
+            0x00, 0x00, 0x00, 0x00,  # Message count
+            0x14, 0x00, 0x00, 0x00,  # Message offset
+            0x14, 0x00, 0x00, 0x00,  # Translation offset
+        ])
+        t = gettext.GNUTranslations(io.BytesIO(buf))
+        self.assertEqual(t.gettext('foo'), 'foo')
 
     def test_big_endian_file(self):
         with open(MOFILE_BIG_ENDIAN, 'rb') as fp:
