@@ -1,0 +1,12 @@
+:class:`html.parser.HTMLParser` now handles CDATA sections and RAWTEXT and
+RCDATA elements depending on the foreign content context by default, in
+accordance with the HTML5 standard.
+The parser follows start and end tags to detect foreign content
+(the content of ``svg`` and ``math`` elements).
+In HTML content, ``<![CDATA[...]]>`` is now parsed as a bogus comment which
+ends at the first ``>``.
+In foreign content, RAWTEXT and RCDATA elements (such as ``script``,
+``style``, ``title`` or ``textarea``) are now parsed as normal elements.
+Use the new *support_cdata* parameter of the constructor to force
+recognizing CDATA sections in any context (the previous behavior) or in no
+context.
