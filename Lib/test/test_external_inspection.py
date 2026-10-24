@@ -36,6 +36,7 @@ THREAD_STATUS_HAS_GIL = 1 << 0
 THREAD_STATUS_ON_CPU = 1 << 1
 THREAD_STATUS_UNKNOWN = 1 << 2
 THREAD_STATUS_HAS_EXCEPTION = 1 << 4
+THREAD_STATUS_MAIN_THREAD = 1 << 5
 
 # Maximum number of retry attempts for operations that may fail transiently
 MAX_TRIES = 10
@@ -2702,6 +2703,40 @@ class TestUnsupportedPlatformHandling(unittest.TestCase):
 
 @requires_remote_subprocess_debugging()
 class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
+    @skip_if_not_supported
+    def test_cpu_status_with_multiple_thread_states(self):
+        import_module("_testinternalcapi")
+        import_module("_hashlib")
+        code = textwrap.dedent("""
+            import _hashlib
+            def active():
+                while True:
+                    _hashlib.pbkdf2_hmac('sha256', b'password', b'salt', 10_000_000)
+            active()
+        """)
+        script = f"""
+            import _testinternalcapi
+            def suspended():
+                sock.sendall(b"ready")
+                _testinternalcapi.exec_interpreter(0, {code!r})
+            suspended()
+        """
+        with self._target_process(script) as (p, sock, _):
+            _wait_for_signal(sock, b"ready")
+            unwinder = RemoteUnwinder(p.pid, all_threads=True, mode=PROFILING_MODE_ALL)
+            for _ in busy_retry(SHORT_TIMEOUT):
+                trace = _get_stack_trace_with_retry(unwinder)
+                active = self._find_thread_with_frame(trace, lambda f: f.funcname == "active")
+                if active is None or not active.status & THREAD_STATUS_ON_CPU:
+                    continue
+                if active.status & THREAD_STATUS_HAS_GIL:
+                    continue
+                suspended = self._find_thread_with_frame(trace, lambda f: f.funcname == "suspended")
+                self.assertIsNotNone(suspended)
+                self.assertEqual(suspended.thread_id, active.thread_id)
+                self.assertEqual(suspended.status, THREAD_STATUS_MAIN_THREAD)
+                break
+
     def _run_thread_status_test(self, mode, check_condition):
         """
         Common pattern for thread status detection tests.
