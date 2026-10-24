@@ -68,8 +68,9 @@ typedef struct TaskObj {
     PyObject *task_context;
     struct llist_node task_node;
 #ifdef Py_GIL_DISABLED
-    // thread id of the thread where this task was created
-    uintptr_t task_tid;
+    // unique id (PyThreadState.id) of the thread state that created this
+    // task, see unregister_task()
+    uint64_t task_tstate_id;
 #endif
 } TaskObj;
 
@@ -2168,6 +2169,9 @@ register_task(_PyThreadStateImpl *ts, TaskObj *task)
         assert(task->task_node.prev != NULL);
         return;
     }
+#ifdef Py_GIL_DISABLED
+    task->task_tstate_id = ts->base.id;
+#endif
     struct llist_node *head = &ts->asyncio_tasks_head;
     llist_insert_tail(head, &task->task_node);
 }
@@ -2187,15 +2191,19 @@ static void
 unregister_task(TaskObj *task)
 {
 #ifdef Py_GIL_DISABLED
-    // check if we are in the same thread
-    // if so, we can avoid locking
-    if (task->task_tid == _Py_ThreadId()) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    // The lock-free path is only safe while the task is still linked into the
+    // current thread's own list. That holds if this thread state created the
+    // task and has not started PyThreadState_Clear(), which moves lingering
+    // tasks onto the shared interp->asyncio_tasks_head list. Compare thread
+    // state ids rather than _Py_ThreadId(), which is reused by threads that
+    // start after the creating thread has exited.
+    if (task->task_tstate_id == tstate->id && !tstate->_status.finalizing) {
         unregister_task_safe(task);
     }
     else {
-        // we are in a different thread
-        // stop the world then check and remove the task
-        PyThreadState *tstate = _PyThreadState_GET();
+        // the task may be linked into another thread's list or into the
+        // interpreter's list: stop the world then check and remove the task
         _PyEval_StopTheWorld(tstate->interp);
         unregister_task_safe(task);
         _PyEval_StartTheWorld(tstate->interp);
@@ -2324,7 +2332,9 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
 
     Py_CLEAR(self->task_fut_waiter);
 #ifdef Py_GIL_DISABLED
-    self->task_tid = _Py_ThreadId();
+    if (self->task_node.next == NULL) {
+        self->task_tstate_id = _PyThreadState_GET()->id;
+    }
 #endif
     self->task_must_cancel = 0;
     self->task_log_destroy_pending = 1;
@@ -3965,7 +3975,10 @@ add_tasks_llist(struct llist_node *head, PyListObject *tasks)
     struct llist_node *node;
     llist_for_each_safe(node, head) {
         TaskObj *task = llist_data(node, TaskObj, task_node);
-        assert(task->task_state == STATE_PENDING);
+        // The task may already be done but not yet unlinked: its state is set
+        // before unregister_task() removes it, and that removal may be
+        // waiting for a stop-the-world pause. add_one_task() filters out
+        // tasks that are done.
         // The linked list holds borrowed references to task
         // as such it is possible that the task is concurrently
         // deallocated while added to this list.
