@@ -1,1 +1,2 @@
-Fix a race condition under free-threading when multiple threads update the same :class:`~collections.Counter` concurrently.
+Fix a use-after-free under free-threading when multiple threads
+update the same :class:`~collections.Counter` concurrently.
