@@ -4,6 +4,7 @@ import os as _os
 import sys as _sys
 import _thread
 import _contextvars
+lazy import warnings
 
 from time import monotonic as _time
 from _weakrefset import WeakSet
@@ -445,9 +446,7 @@ class Condition:
         This method is deprecated, use notify_all() instead.
 
         """
-        import warnings
-        warnings.warn('notifyAll() is deprecated, use notify_all() instead',
-                      DeprecationWarning, stacklevel=2)
+        warnings._deprecated("notifyAll", 'notifyAll() is deprecated, use notify_all() instead', remove=(3, 21))
         self.notify_all()
 
 
@@ -617,9 +616,7 @@ class Event:
         This method is deprecated, use is_set() instead.
 
         """
-        import warnings
-        warnings.warn('isSet() is deprecated, use is_set() instead',
-                      DeprecationWarning, stacklevel=2)
+        warnings._deprecated("isSet", 'isSet() is deprecated, use is_set() instead', remove=(3, 21))
         return self.is_set()
 
     def set(self):
@@ -1353,9 +1350,7 @@ class Thread:
         This method is deprecated, use the daemon attribute instead.
 
         """
-        import warnings
-        warnings.warn('isDaemon() is deprecated, get the daemon attribute instead',
-                      DeprecationWarning, stacklevel=2)
+        warnings._deprecated('isDaemon', 'isDaemon() is deprecated, get the daemon attribute instead',remove=(3,21))
         return self.daemon
 
     def setDaemon(self, daemonic):
@@ -1364,9 +1359,7 @@ class Thread:
         This method is deprecated, use the .daemon property instead.
 
         """
-        import warnings
-        warnings.warn('setDaemon() is deprecated, set the daemon attribute instead',
-                      DeprecationWarning, stacklevel=2)
+        warnings._deprecated('setDaemon', 'setDaemon() is deprecated, set the daemon attribute instead', remove=(3,21))
         self.daemon = daemonic
 
     def getName(self):
@@ -1375,9 +1368,7 @@ class Thread:
         This method is deprecated, use the name attribute instead.
 
         """
-        import warnings
-        warnings.warn('getName() is deprecated, get the name attribute instead',
-                      DeprecationWarning, stacklevel=2)
+        warnings._deprecated('getName', 'getName() is deprecated, get the name attribute instead', remove=(3,21))
         return self.name
 
     def setName(self, name):
@@ -1386,9 +1377,7 @@ class Thread:
         This method is deprecated, use the name attribute instead.
 
         """
-        import warnings
-        warnings.warn('setName() is deprecated, set the name attribute instead',
-                      DeprecationWarning, stacklevel=2)
+        warnings._deprecated('setName', 'setName() is deprecated, set the name attribute instead', remove=(3,21))
         self.name = name
 
 
@@ -1622,9 +1611,7 @@ def currentThread():
     This function is deprecated, use current_thread() instead.
 
     """
-    import warnings
-    warnings.warn('currentThread() is deprecated, use current_thread() instead',
-                  DeprecationWarning, stacklevel=2)
+    warnings._deprecated('currentThread', 'currentThread() is deprecated, use current_thread() instead', remove=(3,21))
     return current_thread()
 
 def active_count():
@@ -1645,9 +1632,7 @@ def activeCount():
     This function is deprecated, use active_count() instead.
 
     """
-    import warnings
-    warnings.warn('activeCount() is deprecated, use active_count() instead',
-                  DeprecationWarning, stacklevel=2)
+    warnings._deprecated('activeCount', 'activeCount() is deprecated, use active_count() instead', remove=(3,21))
     return active_count()
 
 def _enumerate():
