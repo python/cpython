@@ -532,10 +532,13 @@ This example introduces several new features.
   and ``!=`` (not equal to).
 
 * The *body* of the loop is *indented*: indentation is Python's way of grouping
-  statements.  At the interactive prompt, you have to type a tab or space(s) for
-  each indented line.  In practice you will prepare more complicated input
-  for Python with a text editor; all decent text editors have an auto-indent
-  facility.  When a compound statement is entered interactively, it must be
+  statements.  At the interactive prompt, the default REPL automatically
+  indents continuation lines after compound statement headers like ``if`` or
+  ``while``.  In the basic REPL (invoked with :envvar:`PYTHON_BASIC_REPL`)
+  or in older Python versions, you have to type a tab or space(s) for each
+  indented line manually.  In practice you will prepare more complicated
+  input for Python with a text editor; all decent text editors have an
+  auto-indent facility.  When a compound statement is entered interactively, it must be
   followed by a blank line to indicate completion (since the parser cannot
   guess when you have typed the last line).  Note that each line within a basic
   block must be indented by the same amount.

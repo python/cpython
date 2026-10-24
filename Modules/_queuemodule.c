@@ -51,13 +51,14 @@ RingBuf_Init(RingBuf *buf)
 {
     buf->put_idx = 0;
     buf->get_idx = 0;
-    buf->items_cap = INITIAL_RING_BUF_CAPACITY;
+    buf->items_cap = 0;
     buf->num_items = 0;
-    buf->items = PyMem_Calloc(buf->items_cap, sizeof(PyObject *));
+    buf->items = PyMem_Calloc(INITIAL_RING_BUF_CAPACITY, sizeof(PyObject *));
     if (buf->items == NULL) {
         PyErr_NoMemory();
         return -1;
     }
+    buf->items_cap = INITIAL_RING_BUF_CAPACITY;
     return 0;
 }
 
@@ -550,7 +551,7 @@ static PyMethodDef simplequeue_methods[] = {
     _QUEUE_SIMPLEQUEUE_QSIZE_METHODDEF
     _QUEUE_SIMPLEQUEUE___SIZEOF___METHODDEF
     {"__class_getitem__",    Py_GenericAlias,
-    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    METH_O|METH_CLASS,       PyDoc_STR("SimpleQueues are generic over the type of their contents")},
     {NULL,           NULL}              /* sentinel */
 };
 
