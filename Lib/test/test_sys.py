@@ -265,6 +265,17 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
+        # test EXIT_SUCCESS and EXIT_FAILURE constants
+        self.assertNotEqual(sys.EXIT_SUCCESS, sys.EXIT_FAILURE)
+        rc, out, err = assert_python_ok('-c', 'import sys; sys.exit(sys.EXIT_SUCCESS)')
+        self.assertEqual(rc, sys.EXIT_SUCCESS)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+        rc, out, err = assert_python_failure('-c', 'import sys; sys.exit(sys.EXIT_FAILURE)')
+        self.assertEqual(rc, sys.EXIT_FAILURE)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
         def check_exit_message(code, expected, **env_vars):
             rc, out, err = assert_python_failure('-c', code, **env_vars)
             self.assertEqual(rc, 1)
@@ -823,6 +834,16 @@ class SysModuleTest(unittest.TestCase):
         self.assertIsInstance(sys._emscripten_info.runtime, (str, type(None)))
         self.assertIsInstance(sys._emscripten_info.pthreads, bool)
         self.assertIsInstance(sys._emscripten_info.shared_memory, bool)
+
+    @unittest.skipUnless(support.is_wasi, "only available on WASI")
+    def test_wasi_info(self):
+        info = sys._wasi_info
+        self.assertIn(info.wasi_version, {'p1', 'p2', 'p3'})
+        self.assertIn('.', info.wasi_sdk_version)
+        sdk_major, _, sdk_minor = info.wasi_sdk_version.partition('.')
+        self.assertGreaterEqual(int(sdk_major), 1)
+        self.assertGreaterEqual(int(sdk_minor), 0)
+        self.assertIsInstance(info.cooperative_threads, bool)
 
     def test_43581(self):
         # Can't use sys.stdout, as this is a StringIO object when
@@ -2365,16 +2386,20 @@ this is invalid python code
         if not os.path.exists(source_libpython):
             self.skipTest(f'{source_libpython!r} does not exist')
 
-        with os_helper.temp_dir() as lib_dir:
-            copied_libpython = os.path.join(lib_dir, instsoname)
+        with os_helper.temp_dir(os_helper.TESTFN) as lib_dir:
+            copied_libpython = os.path.abspath(
+                os.path.join(lib_dir, instsoname))
             shutil.copy2(source_libpython, copied_libpython)
             if ldlibrary != instsoname:
                 os.symlink(instsoname, os.path.join(lib_dir, ldlibrary))
 
             env = os.environ.copy()
-            ld_library_path = env.get('LD_LIBRARY_PATH')
-            env['LD_LIBRARY_PATH'] = lib_dir if not ld_library_path else (
-                lib_dir + os.pathsep + ld_library_path)
+            # Preload the copy even when `RPATH` overrides `LD_LIBRARY_PATH`.
+            # Use a relative path to avoid spaces or colons in parent directories.
+            preload = os.path.join(os.curdir, lib_dir, instsoname)
+            ld_preload = env.get('LD_PRELOAD')
+            env['LD_PRELOAD'] = preload if not ld_preload else (
+                preload + os.pathsep + ld_preload)
 
             self._run_remote_exec_with_deleted_mapping(copied_libpython,
                                                        env=env)

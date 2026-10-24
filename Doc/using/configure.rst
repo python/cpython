@@ -247,7 +247,7 @@ General Options
 
    By default, the digit size is 30.
 
-   Define the ``PYLONG_BITS_IN_DIGIT`` to ``15`` or ``30``.
+   Define :c:macro:`PYLONG_BITS_IN_DIGIT` to ``15`` or ``30``.
 
    See :data:`sys.int_info.bits_per_digit <sys.int_info>`.
 
@@ -763,6 +763,24 @@ also be used to improve performance.
    BOLT versions before LLVM 16 are known to crash BOLT under some scenarios.
    Use of LLVM 16 or newer for BOLT optimization is strongly encouraged.
 
+   BOLT does not preserve protection against Cortex-A53 erratum 843419. Binaries
+   processed by BOLT must not run on processors affected by this erratum,
+   including during the build. On AArch64, :program:`configure` reports an error
+   if build flags explicitly request the workaround. Recent BOLT versions reject
+   workaround veneers by default during the build, including when the workaround
+   is enabled by compiler defaults.
+
+   If none of the generated executables or shared libraries will run on affected
+   processors, disable the workaround explicitly. For GCC toolchains that enable
+   it by default, pass ``-mno-fix-cortex-a53-843419`` through
+   :envvar:`LDFLAGS_NODIST`::
+
+      LDFLAGS_NODIST="-mno-fix-cortex-a53-843419" ./configure --enable-bolt
+
+   Remove any explicit ``-mfix-cortex-a53-843419`` or
+   ``-Wl,--fix-cortex-a53-843419`` flags from the build configuration. The GCC
+   option does not override explicit linker flags.
+
    The :envvar:`!BOLT_INSTRUMENT_FLAGS` and :envvar:`!BOLT_APPLY_FLAGS`
    :program:`configure` variables can be defined to override the default set of
    arguments for :program:`llvm-bolt` to instrument and apply BOLT data to
@@ -877,7 +895,12 @@ also be used to improve performance.
    Disable static documentation strings to reduce the memory footprint (enabled
    by default). Documentation strings defined in Python are not affected.
 
-   Don't define the ``WITH_DOC_STRINGS`` macro.
+   Don't define the :c:macro:`WITH_DOC_STRINGS` macro.
+
+   .. c:macro:: WITH_DOC_STRINGS
+
+      Define this macro to include static documentation strings in the build.
+      It is defined by default, unless :option:`--without-doc-strings` is used.
 
    See the ``PyDoc_STRVAR()`` macro.
 
@@ -1036,7 +1059,7 @@ Debug options
    When built with ``hwasan``, Python uses ``malloc`` instead of :ref:`pymalloc <pymalloc>` by default.
    Set :envvar:`PYTHONMALLOC=pymalloc <PYTHONMALLOC>` to use pymalloc.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. option:: --with-memory-sanitizer
 
@@ -1142,14 +1165,14 @@ Libraries options
    tries ``ncursesw`` and then ``ncurses``; the native ``curses`` is used only
    when requested explicitly.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. option:: --without-curses
 
    Don't build the :mod:`curses` and :mod:`curses.panel` modules, even when a
    curses library is present (built by default when one is found).
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. option:: --with-zlib=zlib|zlib-ng|zlib-rs
 
@@ -1167,14 +1190,14 @@ Libraries options
    zlib is used when found; configure only fails when an implementation was
    requested explicitly but cannot be found.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. option:: --without-zlib
 
    Don't build the :mod:`zlib` module, even when a zlib library is present
    (built by default when one is found).
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. option:: --with-bzip2=bzip2|bzip2-rs
 
@@ -1190,14 +1213,14 @@ Libraries options
    system bzip2 is used when found; configure only fails when an
    implementation was requested explicitly but cannot be found.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. option:: --without-bzip2
 
    Don't build the :mod:`bz2` module, even when a bzip2 library is present
    (built by default when one is found).
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. option:: --with-libm=STRING
 
