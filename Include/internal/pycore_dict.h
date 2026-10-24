@@ -32,6 +32,11 @@ extern int _PyDict_ReplaceItemIf(PyObject *dict, PyObject *key,
 // Export for '_asyncio' shared extension
 PyAPI_FUNC(int) _PyDict_SetItem_KnownHash(PyObject *mp, PyObject *key,
                                           PyObject *item, Py_hash_t hash);
+// Same return codes as PyDict_SetDefaultRef (0 inserted, 1 present, -1 error).
+PyAPI_FUNC(int) _PyDict_SetDefaultRef_KnownHash(PyObject *mp, PyObject *key,
+                                                PyObject *default_value,
+                                                Py_hash_t hash,
+                                                PyObject **result);
 // Export for '_asyncio' shared extension
 PyAPI_FUNC(int) _PyDict_DelItem_KnownHash(PyObject *mp, PyObject *key,
                                           Py_hash_t hash);
