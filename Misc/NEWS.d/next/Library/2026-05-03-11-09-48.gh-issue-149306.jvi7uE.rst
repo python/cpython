@@ -1,0 +1,2 @@
+Error messages in :mod:`wave` for invalid channel count, sample width, and
+frame rate now include the offending value.
