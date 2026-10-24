@@ -1,0 +1,5 @@
+Fix :mod:`asyncio` selector transports unregistering a file descriptor they
+no longer own.  ``_SelectorTransport.__del__`` closed the socket but left the
+descriptor registered with the event loop, so a transport resurrected during
+garbage collection could later remove an unrelated descriptor from the
+selector.  ``repr()`` of a closed transport now reports ``fd=-1``.
