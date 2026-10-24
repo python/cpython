@@ -1632,6 +1632,13 @@ class HalfFloatTest(FPTest, unittest.TestCase):
         self.assertRaises(OverflowError, array.array, self.typecode, [123456])
         # Overflows also float type:
         self.assertRaises(OverflowError, array.array, self.typecode, [1e300])
+        # A failed append, insert or extend leaves the array unchanged:
+        for x in 123456, 1e300:
+            a = array.array(self.typecode, [1])
+            self.assertRaises(OverflowError, a.append, x)
+            self.assertRaises(OverflowError, a.insert, 0, x)
+            self.assertRaises(OverflowError, a.extend, [x])
+            self.assertEqual(a, array.array(self.typecode, [1]))
 
 class FloatTest(FPTest, unittest.TestCase):
     typecode = 'f'
@@ -1639,6 +1646,12 @@ class FloatTest(FPTest, unittest.TestCase):
 
     def test_overflows(self):
         self.assertRaises(OverflowError, array.array, self.typecode, [1e300])
+        # A failed append, insert or extend leaves the array unchanged:
+        a = array.array(self.typecode, [1])
+        self.assertRaises(OverflowError, a.append, 1e300)
+        self.assertRaises(OverflowError, a.insert, 0, 1e300)
+        self.assertRaises(OverflowError, a.extend, [1e300])
+        self.assertEqual(a, array.array(self.typecode, [1]))
 
 class DoubleTest(FPTest, unittest.TestCase):
     typecode = 'd'
@@ -1669,6 +1682,13 @@ class ComplexFloatTest(CFPTest, unittest.TestCase):
     def test_overflows(self):
         self.assertRaises(OverflowError, array.array, self.typecode, [1e300])
         self.assertRaises(OverflowError, array.array, self.typecode, [1e300j])
+        # A failed append, insert or extend leaves the array unchanged:
+        for x in 1e300, 1e300j:
+            a = array.array(self.typecode, [1])
+            self.assertRaises(OverflowError, a.append, x)
+            self.assertRaises(OverflowError, a.insert, 0, x)
+            self.assertRaises(OverflowError, a.extend, [x])
+            self.assertEqual(a, array.array(self.typecode, [1]))
 
 class ComplexDoubleTest(CFPTest, unittest.TestCase):
     typecode = 'Zd'
