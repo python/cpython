@@ -1,0 +1,5 @@
+``test.support.run_with_limited_c_stack()`` no longer creates a thread
+smaller than ``test.support.C_STACK_SIZE`` on platforms where the
+interpreter cannot query a thread's real C stack size and assumes
+``Py_C_STACK_SIZE`` instead.  Such a thread overflowed its stack rather
+than raising :exc:`RecursionError`.
