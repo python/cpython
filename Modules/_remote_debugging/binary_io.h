@@ -2,7 +2,7 @@
  * Python Remote Debugging Module - Binary I/O Header
  *
  * This header provides declarations for high-performance binary file I/O
- * for profiling data with optional zstd streaming compression.
+ * for profiling data with optional zstd compression.
  ******************************************************************************/
 
 #ifndef Py_BINARY_IO_H
@@ -23,7 +23,7 @@ extern "C" {
 
 #define BINARY_FORMAT_MAGIC     0x54414348  /* "TACH" (Tachyon) in native byte order */
 #define BINARY_FORMAT_MAGIC_SWAPPED 0x48434154  /* Byte-swapped magic for endianness detection */
-#define BINARY_FORMAT_VERSION   1
+#define BINARY_FORMAT_VERSION   2
 
 /* Sentinel values for optional frame fields */
 #define OPCODE_NONE             255  /* No opcode captured (u8 sentinel) */
@@ -67,17 +67,32 @@ extern "C" {
 static_assert(FILE_HEADER_SIZE <= FILE_HEADER_PLACEHOLDER_SIZE,
               "FILE_HEADER_SIZE exceeds FILE_HEADER_PLACEHOLDER_SIZE");
 
-/* Sample header field offsets and sizes */
-#define SMP_OFF_THREAD_ID        0
-#define SMP_SIZE_THREAD_ID       sizeof(uint64_t)
-#define SMP_OFF_INTERPRETER_ID   (SMP_OFF_THREAD_ID + SMP_SIZE_THREAD_ID)
-#define SMP_SIZE_INTERPRETER_ID  sizeof(uint32_t)
-#define SMP_OFF_ENCODING         (SMP_OFF_INTERPRETER_ID + SMP_SIZE_INTERPRETER_ID)
-#define SMP_SIZE_ENCODING        sizeof(uint8_t)
-#define SAMPLE_HEADER_FIXED_SIZE (SMP_OFF_ENCODING + SMP_SIZE_ENCODING)
+/* Sample blocks */
+#define BLOCK_MAGIC             "TBLK"
+#define BLOCK_MAGIC_SIZE        (sizeof(BLOCK_MAGIC) - 1)
+#define MAX_BLOCK_SIZE          (1024 * 1024)
+#define MAX_BLOCK_STREAMS       4096
 
-static_assert(SAMPLE_HEADER_FIXED_SIZE == 13,
-             "SAMPLE_HEADER_FIXED_SIZE must remain 13");
+/* Block columns */
+enum {
+    COLUMN_STREAM_TABLE,
+    COLUMN_SAMPLE_STREAM_IDS,
+    COLUMN_TIMESTAMP_RESIDUALS,
+    COLUMN_STATUS_BITMAPS,
+    COLUMN_STACK_INSTRUCTIONS,
+    COLUMN_FRAME_IDS,
+    COLUMN_COUNT
+};
+
+/* Stream table entry offsets and sizes */
+#define STM_OFF_THREAD_ID       0
+#define STM_SIZE_THREAD_ID      sizeof(uint64_t)
+#define STM_OFF_INTERPRETER_ID  (STM_OFF_THREAD_ID + STM_SIZE_THREAD_ID)
+#define STM_SIZE_INTERPRETER_ID sizeof(uint32_t)
+#define STREAM_ENTRY_SIZE       (STM_OFF_INTERPRETER_ID + STM_SIZE_INTERPRETER_ID)
+
+static_assert(STREAM_ENTRY_SIZE == 12,
+              "STREAM_ENTRY_SIZE must remain 12");
 
 /* Footer field offsets and sizes */
 #define FTR_OFF_STRINGS       0
@@ -128,14 +143,10 @@ static_assert(PROFILE_STATS_SIZE == 56,
 #define MIN_STRING_ENTRY_SIZE 1
 #define MIN_FRAME_ENTRY_SIZE  7
 
-/* Buffer sizes: 512KB balances syscall amortization against memory use,
- * and aligns well with filesystem block sizes and zstd dictionary windows */
-#define WRITE_BUFFER_SIZE       (512 * 1024)
-#define COMPRESSED_BUFFER_SIZE  (512 * 1024)
-
 /* Compression types */
 #define COMPRESSION_NONE        0
 #define COMPRESSION_ZSTD        1
+#define COLUMN_CONSTANT         2  /* Column stored as one repeated byte */
 
 /* Profiling configuration. The mode occupies the low three bits and is
  * stored plus one so zero remains compatible with files written before this
@@ -152,17 +163,23 @@ static_assert(PROFILE_STATS_SIZE == 56,
 
 /* Stack encoding types for delta compression */
 #define STACK_REPEAT            0x00  /* RLE: identical to previous, with count */
-#define STACK_FULL              0x01  /* Full stack (first sample or no match) */
-#define STACK_SUFFIX            0x02  /* Shares N frames from bottom */
-#define STACK_POP_PUSH          0x03  /* Remove M frames, add N frames */
+#define STACK_REPLACE_SUFFIX    0x01  /* Keep outer frames, append new ones */
+#define STACK_REUSE             0x02  /* Stack stored earlier in the block */
 
 /* Maximum stack depth we'll buffer for delta encoding */
 #define MAX_STACK_DEPTH         256
+
+/* Writer's stack cache size per block */
+#define STACK_CACHE_SIZE        4096
+#define STACK_CACHE_BUCKET_SIZE 2
+#define STACK_CACHE_BUCKET_COUNT \
+    (STACK_CACHE_SIZE / STACK_CACHE_BUCKET_SIZE)
 
 /* Initial capacities for dynamic arrays - sized to reduce reallocations */
 #define INITIAL_STRING_CAPACITY 4096
 #define INITIAL_FRAME_CAPACITY  4096
 #define INITIAL_THREAD_CAPACITY 256
+#define INITIAL_BLOCK_CAPACITY  256
 
 /* ============================================================================
  * STATISTICS STRUCTURES
@@ -174,7 +191,7 @@ typedef struct {
     uint64_t repeat_samples;      /* Total samples encoded via RLE */
     uint64_t full_records;        /* Number of full stack records */
     uint64_t suffix_records;      /* Number of suffix match records */
-    uint64_t pop_push_records;    /* Number of pop-push records */
+    uint64_t reuse_records;       /* Number of stack reuse records */
     uint64_t total_frames_written;/* Total frame indices written */
     uint64_t frames_saved;        /* Frames avoided due to delta encoding */
     uint64_t bytes_written;       /* Total bytes written (before compression) */
@@ -186,7 +203,7 @@ typedef struct {
     uint64_t repeat_samples;      /* Samples decoded from RLE */
     uint64_t full_records;        /* Full stack records decoded */
     uint64_t suffix_records;      /* Suffix match records decoded */
-    uint64_t pop_push_records;    /* Pop-push records decoded */
+    uint64_t reuse_records;       /* Stack reuse records decoded */
     uint64_t total_samples;       /* Total samples reconstructed */
     uint64_t stack_reconstructions; /* Number of stack array reconstructions */
 } BinaryReaderStats;
@@ -245,8 +262,6 @@ typedef struct {
 #else
     void *cctx;  /* Placeholder */
 #endif
-    uint8_t *compressed_buffer;
-    size_t compressed_buffer_size;
 } ZstdCompressor;
 
 /* Frame entry - combines all frame data for better cache locality.
@@ -279,15 +294,13 @@ typedef struct {
     uint64_t prev_timestamp;
     uint32_t interpreter_id;
 
+    uint32_t block_stream_index;
+    uint32_t current_repeat;
+
     /* Previous stack for delta encoding (frame indices, innermost first) */
     uint32_t *prev_stack;
     size_t prev_stack_depth;
     size_t prev_stack_capacity;
-
-    /* RLE pending buffer - samples waiting to be written as a repeat group */
-    uint8_t *pending_rle;
-    size_t pending_rle_bytes;
-    size_t pending_rle_samples;
 } ThreadEntry;
 
 /* Limit errors occur before emitting an incomplete sample. Other write
@@ -298,15 +311,63 @@ typedef enum {
     BINARY_WRITER_BROKEN,
 } BinaryWriterState;
 
+/* Byte buffer for block data */
+typedef struct {
+    uint8_t *data;
+    size_t size;
+    size_t capacity;
+} ByteBuffer;
+
+/* Column size and encoding */
+typedef struct {
+    uint32_t decoded_size;
+    uint32_t stored_size;
+    uint8_t encoding;
+} ColumnDescriptor;
+
+/* Block header as stored in the file */
+typedef struct {
+    uint32_t sample_count;
+    uint64_t base_timestamp;
+    uint8_t frame_width;
+    uint8_t common_status_flags;
+    uint8_t status_bitmap_flags;
+    ColumnDescriptor columns[COLUMN_COUNT];
+} BlockHeader;
+
+/* Complete stack that later samples can REUSE */
+typedef struct {
+    Py_uhash_t hash;
+    uint32_t offset;
+    uint32_t depth;
+} StackCacheEntry;
+
+/* REPEAT instruction position and count */
+typedef struct {
+    uint32_t offset;
+    uint32_t count;
+} Repeat;
+
+/* Samples buffered until the next flush */
+typedef struct {
+    ByteBuffer columns[COLUMN_COUNT];
+    ByteBuffer repeats;
+    ByteBuffer transformed;
+    ByteBuffer compressed;
+    ByteBuffer output;
+    StackCacheEntry cache[STACK_CACHE_BUCKET_COUNT][STACK_CACHE_BUCKET_SIZE];
+    uint64_t base_timestamp;
+    uint32_t sample_count;
+    uint32_t stream_count;
+    uint32_t max_frame;
+    size_t size;
+} SampleBlock;
+
 /* Main binary writer structure */
 typedef struct {
     FILE *fp;
     BinaryWriterState state;
-
-    /* Write buffer for batched I/O */
-    uint8_t *write_buffer;
-    size_t buffer_pos;
-    size_t buffer_size;
+    SampleBlock *block;
 
     /* Compression */
     int compression_type;
@@ -353,17 +414,44 @@ typedef struct {
  * BINARY READER STRUCTURES
  * ============================================================================ */
 
-/* Per-thread state for stack reconstruction during replay */
+/* Thread seen during replay */
+typedef struct {
+    uint64_t thread_id;
+    uint32_t interpreter_id;
+    uint32_t block_stream_index;
+} ReaderThreadState;
+
+typedef struct {
+    uint32_t frame_index;
+    PyObject *frame_info;
+} ReaderFrameCacheEntry;
+
+/* Decoded sample block */
+typedef struct {
+    BlockHeader header;
+    uint32_t stream_count;
+    uint32_t frame_count;
+    ByteBuffer columns[COLUMN_COUNT];
+    const uint32_t *stream_ids;
+    const uint64_t *timestamps;
+    const uint8_t *statuses;
+    const uint32_t *frames;
+    size_t instruction_offset;
+    uint32_t frame_offset;
+} DecodedBlock;
+
+/* Per-stream replay state */
 typedef struct {
     uint64_t thread_id;
     uint32_t interpreter_id;
     uint64_t prev_timestamp;
-
-    /* Reconstructed stack buffer (frame indices, innermost first) */
     uint32_t *current_stack;
     size_t current_stack_depth;
-    size_t current_stack_capacity;
-} ReaderThreadState;
+    uint32_t pending_repeats;
+    int has_stack;
+    PyObject *batch;
+    uint8_t batch_status;
+} ReaderBlockStream;
 
 /* Main binary reader structure */
 typedef struct {
@@ -378,9 +466,9 @@ typedef struct {
 
     /* Decompression state */
     int compression_type;
-    /* Note: ZSTD_DCtx is not stored - created/freed during decompression */
-    uint8_t *decompressed_data;
-    size_t decompressed_size;
+#ifdef HAVE_ZSTD
+    ZSTD_DCtx *dctx;
+#endif
 
     /* Header metadata */
     uint8_t py_major;
@@ -409,12 +497,24 @@ typedef struct {
     /* Parsed frame table: array of FrameEntry structures */
     FrameEntry *frames;
     uint32_t frames_count;
+    ReaderFrameCacheEntry *frame_info_cache;
+    size_t frame_info_cache_size;
 
     /* Sample data region */
     uint8_t *sample_data;
     size_t sample_data_size;
 
-    /* Per-thread state for stack reconstruction (used during replay) */
+    ByteBuffer block_data;
+    ByteBuffer block_stream_ids;
+    ByteBuffer block_timestamps;
+    ByteBuffer block_statuses;
+    ByteBuffer block_frames;
+    ReaderBlockStream *block_streams;
+    uint32_t *block_stacks;
+    size_t block_stream_capacity;
+    int replaying;
+
+    /* Threads seen during replay */
     ReaderThreadState *thread_states;
     size_t thread_state_count;
     size_t thread_state_capacity;
@@ -460,6 +560,14 @@ encode_varint_i32(uint8_t *buf, int32_t value)
     /* Zigzag encode: map signed to unsigned */
     uint32_t zigzag = ((uint32_t)value << 1) ^ (uint32_t)(value >> 31);
     return encode_varint_u32(buf, zigzag);
+}
+
+/* Encode signed 64-bit varint (zigzag encoding). Returns bytes written. */
+static inline size_t
+encode_varint_i64(uint8_t *buf, int64_t value)
+{
+    uint64_t zigzag = ((uint64_t)value << 1) ^ (uint64_t)(value >> 63);
+    return encode_varint_u64(buf, zigzag);
 }
 
 /* Decode unsigned 64-bit varint (LEB128). Updates offset only on success.
@@ -525,9 +633,63 @@ decode_varint_i32(const uint8_t *data, size_t *offset, size_t max_size)
     return (int32_t)((zigzag >> 1) ^ -(int32_t)(zigzag & 1));
 }
 
+/* Decode signed 64-bit varint (zigzag encoding). */
+static inline int64_t
+decode_varint_i64(const uint8_t *data, size_t *offset, size_t max_size)
+{
+    size_t saved_offset = *offset;
+    uint64_t zigzag = decode_varint_u64(data, offset, max_size);
+    if (*offset == saved_offset) {
+        return 0;  /* decode_varint_u64 already set PyErr */
+    }
+    return (int64_t)((zigzag >> 1) ^ (0 - (zigzag & 1)));
+}
+
 /* ============================================================================
  * SHARED UTILITY FUNCTIONS
  * ============================================================================ */
+
+/* Grow a byte buffer to hold at least size bytes */
+static inline int
+buffer_reserve(ByteBuffer *buffer, size_t size)
+{
+    if (size <= buffer->capacity) {
+        return 0;
+    }
+    size_t capacity = buffer->capacity ? buffer->capacity
+                                       : INITIAL_BLOCK_CAPACITY;
+    while (capacity < size) {
+        if (capacity > SIZE_MAX / 2) {
+            PyErr_NoMemory();
+            return -1;
+        }
+        capacity *= 2;
+    }
+    uint8_t *data = PyMem_Realloc(buffer->data, capacity);
+    if (data == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    buffer->data = data;
+    buffer->capacity = capacity;
+    return 0;
+}
+
+static inline void
+buffer_clear(ByteBuffer *buffer)
+{
+    PyMem_Free(buffer->data);
+    buffer->data = NULL;
+    buffer->size = 0;
+    buffer->capacity = 0;
+}
+
+/* Bytes in one status bitmap */
+static inline size_t
+status_bitmap_size(uint32_t sample_count)
+{
+    return ((size_t)sample_count + CHAR_BIT - 1) / CHAR_BIT;
+}
 
 /* Generic array growth - returns new pointer or NULL (sets PyErr_NoMemory)
  * Includes overflow checking for capacity doubling and allocation size. */
@@ -715,6 +877,12 @@ void binary_reader_close(BinaryReader *reader);
  *   Dict with statistics on success, NULL on failure (PyErr set)
  */
 PyObject *binary_writer_get_stats(BinaryWriter *writer);
+
+/*
+ * Decoded bytes of the samples buffered in the current block, not yet
+ * counted in the writer's bytes_written statistic.
+ */
+size_t binary_writer_buffered_size(BinaryWriter *writer);
 
 /*
  * Get reader statistics as a Python dict.

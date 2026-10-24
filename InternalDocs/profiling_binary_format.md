@@ -41,7 +41,7 @@ The file consists of five required sections and one optional extension:
 |     Header       |  64 bytes (fixed)
 +------------------+  Offset 64
 |                  |
-|   Sample Data    |  Variable size (optionally compressed)
+|   Sample Data    |  Blocks of columns (optionally compressed)
 |                  |
 +------------------+  string_table_offset
 |   String Table   |  Variable size
@@ -60,8 +60,8 @@ so these tables must be built incrementally and written at the end.
 
 The header comes first so readers can quickly validate the file and locate
 the metadata tables. The sample data follows immediately, allowing the writer
-to stream samples directly to disk (or through a compression stream) without
-buffering the entire dataset in memory.
+to write each block of samples as soon as it is full without buffering the
+entire dataset in memory.
 
 The string and frame tables are placed after sample data because they grow
 as new unique entries are discovered during profiling. By deferring their
@@ -120,85 +120,140 @@ network streams.
 ## Sample Data
 
 Sample data begins at offset 64 and extends to `string_table_offset`. Samples
-use delta compression to minimize redundancy when consecutive samples from the
-same thread have identical or similar call stacks.
+are grouped into blocks of at most 1 MiB of decoded data. Within a block,
+samples use delta compression to minimize redundancy when consecutive samples
+from the same thread have identical or similar call stacks. Each block can be
+decoded on its own once the string and frame tables are loaded, so a reader
+only needs to decode one block at a time.
+
+### Block Format
+
+A block stores values of the same kind together, in six columns:
+
+```
++------------------------+
+| Block header           |  21 to 88 bytes
++------------------------+
+| STREAM_TABLE           |  (thread_id, interpreter_id) pairs
++------------------------+
+| SAMPLE_STREAM_IDS      |  One stream index per sample
++------------------------+
+| TIMESTAMP_RESIDUALS    |  One timestamp residual per sample
++------------------------+
+| STATUS_BITMAPS         |  One bitmap per varying status flag
++------------------------+
+| STACK_INSTRUCTIONS     |  Stack encodings
++------------------------+
+| FRAME_IDS              |  Frame table indices
++------------------------+
+```
+
+**Block header:**
+```
++---------------------+-----------+----------------------------------------+
+| magic               | 4 bytes   | "TBLK"                                 |
+| sample_count        | varint    | Number of samples in this block        |
+| base_timestamp      | varint    | Timestamp of the first sample          |
+| frame_id_width      | 1 byte    | Bytes per frame index (1 to 4)         |
+| common_status_flags | 1 byte    | Status bits set in every sample        |
+| status_bitmap_flags | 1 byte    | Status bits stored as bitmaps          |
+| columns             | varies    | One column descriptor per column       |
++---------------------+-----------+----------------------------------------+
+```
+
+**Column descriptor:**
+```
++---------------------+-----------+----------------------------------------+
+| decoded_size        | varint    | Size of the decoded column             |
+| encoding            | 1 byte    | 0=raw, 1=zstd, 2=constant              |
+| stored_size         | varint    | Compressed size (zstd only)            |
++---------------------+-----------+----------------------------------------+
+```
+
+A raw column is stored as is, and a constant column is a single byte repeated
+`decoded_size` times, so neither needs a stored size. The number of streams
+and frame indices in a block follows from the decoded sizes of
+`STREAM_TABLE` and `FRAME_IDS`.
+
+A block holds at most 4,096 streams. There is no separate limit on the number
+of samples: the stream index and timestamp columns need at least one byte per
+sample, so the 1 MiB limit already bounds it.
 
 ### Stack Encoding Types
 
-Each sample record begins with thread identification, then an encoding byte:
+Each thread's stack is reconstructed from the previous stack of the same
+thread in the block. The first sample of a thread in a block starts from an
+empty stack. `STACK_INSTRUCTIONS` holds one of these encodings for every
+sample not covered by a `REPEAT`:
 
 | Code | Name | Description |
 |------|------|-------------|
 | 0x00 | REPEAT | RLE: identical stack repeated N times |
-| 0x01 | FULL | Complete stack (first sample or no match) |
-| 0x02 | SUFFIX | Shares N frames from bottom of previous stack |
-| 0x03 | POP_PUSH | Remove M frames from top, add N new frames |
+| 0x01 | REPLACE_SUFFIX | Keeps N outer frames of the previous stack, adds M new frames |
+| 0x02 | REUSE | Complete stack stored earlier in the block |
 
-### Record Formats
+Stacks hold at most 256 frames. The writer keeps the innermost 256 frames of
+deeper stacks.
+
+### Stack Encoding Formats
+
+All fields are varints. Stacks are written outermost frame first.
 
 **REPEAT (0x00) - Run-Length Encoded Identical Stacks:**
 ```
 +-----------------+-----------+----------------------------------------+
-| thread_id       | 8 bytes   | Thread identifier (uint64, fixed)      |
-| interpreter_id  | 4 bytes   | Interpreter ID (uint32, fixed)         |
-| encoding        | 1 byte    | 0x00 (REPEAT)                          |
+| encoding        | varint    | 0x00 (REPEAT)                          |
 | count           | varint    | Number of samples in this RLE group    |
-| samples         | varies    | Interleaved: [delta: varint, status: 1]|
-|                 |           | repeated count times                   |
 +-----------------+-----------+----------------------------------------+
 ```
-The stack is inherited from this thread's previous sample. Each sample in the
-group gets its own timestamp delta and status byte, stored as interleaved pairs
-(delta1, status1, delta2, status2, ...) rather than separate arrays.
+The stack is inherited from this thread's previous sample, for this sample
+and the thread's next `count - 1` samples. Samples from other threads can
+appear in between: the reader keeps a remaining count for each thread and
+reads no encoding for that thread until the count reaches zero. Each sample
+in the group keeps its own timestamp and status in the other columns.
 
-**FULL (0x01) - Complete Stack:**
+**REPLACE_SUFFIX (0x01) - Shared Outer Frames:**
 ```
 +-----------------+-----------+----------------------------------------+
-| thread_id       | 8 bytes   | Thread identifier (uint64, fixed)      |
-| interpreter_id  | 4 bytes   | Interpreter ID (uint32, fixed)         |
-| encoding        | 1 byte    | 0x01 (FULL)                            |
-| timestamp_delta | varint    | Microseconds since thread's last sample|
-| status          | 1 byte    | Thread state flags                     |
-| stack_depth     | varint    | Number of frames in call stack         |
-| frame_indices   | varint[]  | Array of frame table indices           |
+| encoding        | varint    | 0x01 (REPLACE_SUFFIX)                  |
+| keep_count      | varint    | Outer frames kept from previous stack  |
+| new_count       | varint    | Inner frames read from FRAME_IDS       |
 +-----------------+-----------+----------------------------------------+
 ```
-Used for the first sample from a thread, or when delta encoding would not
-provide savings.
+Used when a call or return changed the inner part of the stack: the outer
+frames are kept, and `new_count` new frames are read from `FRAME_IDS`. A
+complete stack, such as the first sample of a thread, uses `keep_count` 0.
 
-**SUFFIX (0x02) - Shared Suffix Match:**
+**REUSE (0x02) - Repeated Complete Stack:**
 ```
 +-----------------+-----------+----------------------------------------+
-| thread_id       | 8 bytes   | Thread identifier (uint64, fixed)      |
-| interpreter_id  | 4 bytes   | Interpreter ID (uint32, fixed)         |
-| encoding        | 1 byte    | 0x02 (SUFFIX)                          |
-| timestamp_delta | varint    | Microseconds since thread's last sample|
-| status          | 1 byte    | Thread state flags                     |
-| shared_count    | varint    | Frames shared from bottom of prev stack|
-| new_count       | varint    | New frames at top of stack             |
-| new_frames      | varint[]  | Array of new_count frame indices       |
+| encoding        | varint    | 0x02 (REUSE)                           |
+| offset          | varint    | Index of the first frame in FRAME_IDS  |
+| count           | varint    | Number of frames in the stack          |
 +-----------------+-----------+----------------------------------------+
 ```
-Used when a function call added frames to the top of the stack. The shared
-frames from the previous stack are kept, and new frames are prepended.
+Used when a complete stack was already written earlier in the same block,
+for example by another thread running the same code. The frames are copied
+from `FRAME_IDS` instead of being stored again.
 
-**POP_PUSH (0x03) - Pop and Push:**
-```
-+-----------------+-----------+----------------------------------------+
-| thread_id       | 8 bytes   | Thread identifier (uint64, fixed)      |
-| interpreter_id  | 4 bytes   | Interpreter ID (uint32, fixed)         |
-| encoding        | 1 byte    | 0x03 (POP_PUSH)                        |
-| timestamp_delta | varint    | Microseconds since thread's last sample|
-| status          | 1 byte    | Thread state flags                     |
-| pop_count       | varint    | Frames to remove from top of prev stack|
-| push_count      | varint    | New frames to add at top               |
-| new_frames      | varint[]  | Array of push_count frame indices      |
-+-----------------+-----------+----------------------------------------+
-```
-Used when the code path changed: some frames were popped (function returns)
-and new frames were pushed (different function calls).
+For example, two threads produce four samples:
+
+| Sample | Thread | Stack          | Encoding             |
+|--------|--------|----------------|----------------------|
+| 0      | A      | `[4, 21, 37]`  | `REPLACE_SUFFIX 0 3` |
+| 1      | B      | `[4, 21, 37]`  | `REUSE 0 3`          |
+| 2      | A      | `[4, 21, 52]`  | `REPLACE_SUFFIX 2 1` |
+| 3      | A      | `[4, 21, 52]`  | `REPEAT 1`           |
+
+`FRAME_IDS` holds only `[4, 21, 37, 52]`.
 
 ### Thread and Interpreter Identification
+
+Each `(thread_id, interpreter_id)` pair used in a block is stored once in
+`STREAM_TABLE`, as an 8-byte thread ID followed by a 4-byte interpreter ID.
+`SAMPLE_STREAM_IDS` then holds one varint per sample: the index of its pair
+in the table. Samples are kept in arrival order, so samples from different
+threads are interleaved.
 
 Thread IDs are 64-bit values that can be large (memory addresses on some
 platforms) and vary unpredictably. Using a fixed 8-byte encoding avoids
@@ -226,23 +281,30 @@ Multiple flags can be set simultaneously (e.g., a thread can hold the GIL
 while also running on CPU). Analysis tools use these to filter samples or
 visualize thread states over time.
 
+Most flags rarely change within a block, so the status bytes are stored as
+bit planes. Bits set in every sample are recorded once in
+`common_status_flags`. Each bit in `status_bitmap_flags` has a bitmap of
+`ceil(sample_count / 8)` bytes in `STATUS_BITMAPS`, in increasing bit order,
+with sample `i` in bit `i % 8` of byte `i / 8`. Bits that never occur take no
+space. The reader rebuilds each status byte from `common_status_flags` and
+the sample's bit in each bitmap.
+
 ### Timestamp Delta Encoding
 
 Timestamps use delta encoding rather than absolute values. Absolute
 timestamps in microseconds require 8 bytes each, but consecutive samples
 from the same thread are typically separated by the sampling interval
-(e.g., 1000 microseconds), so the delta between them is small and fits
-in 1-2 varint bytes. The writer tracks the previous timestamp for each
-thread separately. The first sample from a thread encodes its delta from
-the profiling start time; subsequent samples encode the delta from that
-thread's previous sample. This per-thread tracking is necessary because
-samples are interleaved across threads in arrival order, not grouped by
-thread.
+(e.g., 1000 microseconds), so each timestamp is expected to be the thread's
+previous timestamp plus the interval, and only the difference from that
+expected timestamp is stored. The writer tracks the previous timestamp for
+each thread separately. The expected timestamp for a thread's first sample
+in a block is the block's `base_timestamp`. This per-thread tracking is
+necessary because samples are interleaved across threads in arrival order,
+not grouped by thread.
 
-For REPEAT (RLE) records, timestamp deltas and status bytes are stored as
-interleaved pairs (delta, status, delta, status, ...) - one pair per
-repeated sample - allowing efficient batching while preserving the exact
-timing and state of each sample.
+Each residual is a signed 64-bit zigzag varint. A sample taken exactly on
+schedule has a residual of 0 and takes one byte, while timestamps are still
+preserved exactly.
 
 ### Frame Indexing
 
@@ -251,15 +313,25 @@ rather than inline data. This provides massive space savings because call
 stacks are highly repetitive: the same function appears in many samples
 (hot functions), call stacks often share common prefixes (main -> app ->
 handler -> ...), and recursive functions create repeated frame sequences.
-A frame index is typically 1-2 varint bytes. Inline frame data would be
-20-200+ bytes (two strings plus a line number). For a profile with 100,000
-samples averaging 30 frames each, this reduces frame data from potentially
+A frame index is typically 1-2 bytes. Inline frame data would be 20-200+
+bytes (two strings plus a line number). For a profile with 100,000 samples
+averaging 30 frames each, this reduces frame data from potentially
 gigabytes to tens of megabytes.
 
-Frame indices are written innermost-first (the currently executing frame
-has index 0 in the array). This ordering works well with delta compression:
-function calls typically add frames at the top (index 0), while shared
-frames remain at the bottom.
+`FRAME_IDS` stores the indices read by `REPLACE_SUFFIX`, using the smallest
+byte width that fits the largest index in the block. The bytes are split into
+planes, low bytes first, so similar bytes sit together for compression:
+
+```
+indices:            0x1234  0x5678  0x9abc
+low-byte plane:       0x34    0x78    0xbc
+high-byte plane:      0x12    0x56    0x9a
+```
+
+Frame indices are written outermost-first (the outermost frame has index 0
+in the array). This ordering works well with delta compression: function
+calls typically change frames at the end of the array, while shared frames
+remain at the start.
 
 ## String Table
 
@@ -453,29 +525,34 @@ bytes. Zigzag encoding interleaves positive and negative values:
 ```
 
 This ensures small-magnitude values (whether positive or negative) encode
-in few bytes.
+in few bytes. Frame table deltas use 32-bit zigzag values and timestamp
+residuals use 64-bit zigzag values.
 
 ## Compression
 
-When compression is enabled, the sample data region contains a zstd stream.
+The header's compression type controls whether zstd may be used. Each column
+of each block is encoded separately, using whichever representation is
+smallest:
+
+- **constant**, when every byte of the column is the same, such as the stream
+  IDs of a single-threaded block or residuals of on-time samples;
+- **zstd**, when compression is enabled and the compressed column plus its
+  stored-size varint is smaller than the raw column;
+- **raw** otherwise.
+
 The string table, frame table, and footer remain uncompressed so readers can
 access metadata without decompressing the entire file. A tool that only needs
 to report "this file contains 50,000 samples of 3 threads" can read the header
-and footer without touching the compressed sample data. This also simplifies
-the format: the header's offset fields point directly to the tables rather
-than to positions within a decompressed stream.
+and footer without touching the compressed sample data.
 
 Zstd provides an excellent balance of compression ratio and speed. Profiling
 data compresses very well (often 5-10x) due to repetitive patterns: the same
-small set of frame indices appears repeatedly, and delta-encoded timestamps
-cluster around the sampling interval. Zstd's streaming API allows compression
-without buffering the entire dataset. The writer feeds sample data through
-the compressor incrementally, flushing compressed chunks to disk as they
-become available.
+small set of frame indices appears repeatedly, and timestamp residuals
+cluster around zero.
 
-Level 5 compression is used as a default. Lower levels (1-3) are faster but
-compress less; higher levels (6+) compress more but slow down writing. Level
-5 provides good compression with minimal impact on profiling overhead.
+Level 3 compression is used as a default. It gives good compression without
+slowing down each block flush. Compressing columns separately keeps blocks
+independent, at the cost of restarting compression history at every block.
 
 ## Reading and Writing
 
@@ -486,9 +563,9 @@ compress less; higher levels (6+) compress more but slow down writing. Level
 3. For each sample:
    - Intern any new strings, assigning sequential indices
    - Intern any new frames, assigning sequential indices
-   - Encode the sample record and write to the buffer
-   - Flush the buffer through compression (if enabled) when full
-4. Flush remaining buffered data and finalize compression
+   - Append the sample to the current block's columns
+   - Flush the block when it reaches its size or stream limit
+4. Flush the last block
 5. Write the string table (length-prefixed strings in index order)
 6. Write the frame table (varint-encoded entries in index order)
 7. Write measured profile statistics, when available
@@ -497,7 +574,13 @@ compress less; higher levels (6+) compress more but slow down writing. Level
 
 The writer maintains two dictionaries: one mapping strings to indices, one
 mapping (filename_idx, funcname_idx, lineno) tuples to frame indices. These
-enable O(1) lookup during interning.
+enable O(1) lookup during interning. To find `REUSE` candidates, it also keeps
+a small per-block cache of complete stacks, confirmed by a full comparison.
+
+When a block is flushed, the status and frame ID columns are transposed into
+bit and byte planes, the `REPEAT` counts are inserted into the instruction
+column, and each column is encoded as described in
+[Compression](#compression).
 
 ### Reading
 
@@ -510,12 +593,31 @@ enable O(1) lookup during interning.
 6. Parse the string table, populating the array
 7. Allocate the frame array
 8. Parse the frame table, populating the array
-9. If compressed, decompress the sample data region
-10. Iterate through samples, resolving indices to strings/frames
-   (byte-swapping thread_id and interpreter_id if needed)
+9. For each block, decode its columns into a reusable buffer and replay its
+   samples in order, resolving indices to strings/frames (byte-swapping the
+   stream table if needed)
 
 The reader builds lookup arrays rather than dictionaries since it only needs
 index-to-value mapping, not value-to-index.
+
+Consecutive samples of one stream with the same stack and status are passed
+to the collector in a single call, with up to 8,192 timestamps.
+
+The block header and columns are validated before any sample of the block is
+replayed. Stack instructions are checked as they are replayed, so a block
+with a bad instruction may already have passed earlier samples to the
+collector before the error is raised. The reader rejects a block when:
+
+- a size, encoding, or stream or frame reference is out of range, or a
+  column has trailing data;
+- the stream table lists a thread twice or has a stream with no samples;
+- a stream's first instruction in the block is `REPEAT`, or a `REPEAT`
+  count is zero or runs past the block;
+- a stack would be deeper than 256 frames, or `REUSE` refers to frame IDs
+  that have not been read yet;
+- not every frame ID is used;
+- status bitmap padding bits are not zero;
+- it uses zstd in an uncompressed file.
 
 ## Platform Considerations
 
@@ -540,7 +642,7 @@ zeros instead of the actual value.
 
 The reader tracks whether byte-swapping is needed via a `needs_swap` flag set
 during header parsing. All fixed-width fields in the header, footer, and
-sample data are conditionally byte-swapped using Python's internal byte-swap
+stream tables are conditionally byte-swapped using Python's internal byte-swap
 functions (`_Py_bswap32`, `_Py_bswap64` from `pycore_bitutils.h`).
 
 Variable-length integers (varints) are byte-order independent since they
@@ -568,10 +670,8 @@ On Windows, the implementation falls back to standard file I/O with full
 file buffering. Profiling data files are typically small enough (tens to
 hundreds of megabytes) that this is acceptable.
 
-The writer uses a 512 KB buffer to batch small writes. Each sample record
-is typically tens of bytes; writing these individually would incur excessive
-syscall overhead. The buffer accumulates data until full, then flushes in
-one write() call (or feeds through the compression stream).
+The writer buffers samples in the current block and writes each completed
+block with a single call, so individual samples never cause a write.
 
 ## Future Considerations
 

@@ -954,7 +954,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 mock.patch("sys.argv", ["profiling.sampling.cli", "replay", profile]),
                 mock.patch(
                     "profiling.sampling.cli.BinaryReader",
-                    side_effect=ValueError("Unsupported format version 2"),
+                    side_effect=ValueError("Unsupported format version 3"),
                 ),
             ):
                 with self.assertRaises(SystemExit) as cm:
@@ -962,7 +962,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
         self.assertEqual(
             str(cm.exception),
-            "Error: Unsupported format version 2",
+            "Error: Unsupported format version 3",
         )
 
     def test_cli_replay_propagates_recorded_mode(self):

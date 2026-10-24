@@ -1853,8 +1853,8 @@ _remote_debugging_BinaryWriter_set_stats_impl(BinaryWriterObject *self,
 /* Finalize the writer, cache total_samples, and destroy it.
  *
  * The cache assignment must happen AFTER binary_writer_finalize(): finalize
- * flushes pending RLE records and updates the file header before the writer is
- * destroyed. Caching before finalize would preserve a count for a file that
+ * flushes the open sample block and updates the file header before the writer
+ * is destroyed. Caching before finalize would preserve a count for a file that
  * might still fail to finish. */
 static int
 binary_writer_finalize_and_cache(BinaryWriterObject *self)
@@ -1968,13 +1968,13 @@ _remote_debugging.BinaryWriter.get_stats
 Get encoding statistics for the writer.
 
 Returns a dict with encoding statistics including
-repeat/full/suffix/pop-push record counts, frames written/saved, and
+repeat/full/suffix/reuse record counts, frames written/saved, and
 compression ratio.
 [clinic start generated code]*/
 
 static PyObject *
 _remote_debugging_BinaryWriter_get_stats_impl(BinaryWriterObject *self)
-/*[clinic end generated code: output=06522cd52544df89 input=a8bb8c8682ccd34b]*/
+/*[clinic end generated code: output=06522cd52544df89 input=09c317b6289ae311]*/
 {
     if (!self->writer) {
         PyErr_SetString(PyExc_ValueError, "Writer is closed");
