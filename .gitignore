@@ -149,6 +149,7 @@ Tools/unicode/data/
 /dist/
 /jit_stencils*.h
 /jit_unwind_info*.h
+/trampoline_ehframe.h*
 .jit-stamp
 /platform
 /profile-clean-stamp
