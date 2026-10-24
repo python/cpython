@@ -9,10 +9,9 @@ extern "C" {
 #endif
 
 
-/* _Py_ADJUST_ERANGE1(x)
- * _Py_ADJUST_ERANGE2(x, y)
- * Set errno to 0 before calling a libm function, and invoke one of these
- * macros after, passing the function result(s) (_Py_ADJUST_ERANGE2 is useful
+/* _Py_ADJUST_ERANGE2(x, y)
+ * Set errno to 0 before calling a libm function, and invoke this
+ * macro after, passing the function result(s) (_Py_ADJUST_ERANGE2 is useful
  * for functions returning complex results).  This makes two kinds of
  * adjustments to errno:  (A) If it looks like the platform libm set
  * errno=ERANGE due to underflow, clear errno. (B) If it looks like the
@@ -30,18 +29,6 @@ extern "C" {
  *        if the returned result is a NaN, or if a C89 box returns HUGE_VAL
  *        in non-overflow cases.
  */
-static inline void _Py_ADJUST_ERANGE1(double x)
-{
-    if (errno == 0) {
-        if (x == INFINITY || x == -INFINITY) {
-            errno = ERANGE;
-        }
-    }
-    else if (errno == ERANGE && x == 0.0) {
-        errno = 0;
-    }
-}
-
 static inline void _Py_ADJUST_ERANGE2(double x, double y)
 {
     if (x == INFINITY || x == -INFINITY ||
