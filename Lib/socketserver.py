@@ -463,7 +463,13 @@ class TCPServer(BaseServer):
         May be overridden.
 
         """
-        if self.allow_reuse_address and hasattr(socket, "SO_REUSEADDR"):
+        # On Windows, SO_REUSEADDR is not supported with AF_UNIX: setting
+        # it succeeds but the following bind() fails with WSAEOPNOTSUPP.
+        if (
+            self.allow_reuse_address and hasattr(socket, "SO_REUSEADDR")
+            and not (sys.platform == "win32" and hasattr(socket, "AF_UNIX")
+                     and self.address_family == socket.AF_UNIX)
+        ):
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         # Since Linux 6.12.9, SO_REUSEPORT is not allowed
         # on other address families than AF_INET/AF_INET6.
