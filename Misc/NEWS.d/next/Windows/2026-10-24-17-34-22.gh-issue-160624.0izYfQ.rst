@@ -1,0 +1,4 @@
+Stop embedding a manifest in the Python DLL, extension modules and
+``sqlite3.dll``. The manifest had no effect in a DLL, and it prevented
+Python from starting or importing those modules from paths close to
+``MAX_PATH`` characters, even with long paths enabled.
