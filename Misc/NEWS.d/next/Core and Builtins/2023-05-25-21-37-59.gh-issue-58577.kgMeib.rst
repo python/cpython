@@ -1,0 +1,1 @@
+Make function :attr:`__closure__` writable. Patched by Richard Oudkerk and Furkan Onder.
