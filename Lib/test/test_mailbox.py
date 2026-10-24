@@ -1,3 +1,4 @@
+import errno
 import os
 import sys
 import time
@@ -14,6 +15,7 @@ from test.support import refleak_helper
 from test.support import requires_root_user
 from test.support import socket_helper
 import unittest
+from unittest import mock
 import textwrap
 import mailbox
 import glob
@@ -1283,6 +1285,26 @@ class _TestMboxMMDF(_TestSingleFile):
 class TestMbox(_TestMboxMMDF, unittest.TestCase):
 
     _factory = lambda self, path, factory=None: mailbox.mbox(path, factory)
+
+    def test_flush_replacement_failure(self):
+        box = self._box
+        box.add(self._template % 0)
+        key = box.add(self._template % 1)
+        box.flush()
+        box.remove(key)
+
+        error = OSError(errno.EIO, 'injected replacement failure')
+        with mock.patch.object(mailbox.os, 'replace', side_effect=error):
+            with self.assertRaises(OSError) as cm:
+                box.flush()
+        self.assertEqual(cm.exception.errno, errno.EIO)
+        self.assertTrue(os.path.exists(self._path))
+
+        self._box = mailbox.mbox(self._path)
+        self.assertEqual(
+            [message.get_payload() for message in self._box.values()],
+            ['0\n', '1\n'],
+        )
 
     @unittest.skipUnless(hasattr(os, 'umask'), 'test needs os.umask()')
     def test_file_perms(self):
