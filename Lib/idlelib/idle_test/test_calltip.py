@@ -105,7 +105,7 @@ non-overlapping occurrences o...''')
 (width=70, initial_indent='', subsequent_indent='', expand_tabs=True,
     replace_whitespace=True, fix_sentence_endings=False, break_long_words=True,
     drop_whitespace=True, break_on_hyphens=True, tabsize=8, *, max_lines=None,
-    placeholder=' [...]')
+    placeholder=' [...]', text_len=<built-in function len>)
 Object for wrapping/filling text.  The public interface consists of
 the wrap() and fill() methods; the other methods are just there for
 subclasses to override in order to tweak the default behaviour.
