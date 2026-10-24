@@ -575,39 +575,47 @@ _PyObject_GetXIData(PyThreadState *tstate,
  * cleared during interpreter finalization in _Py_xi_state_fini().
  *
  * Note: the cached references are captured at first use and not invalidated
- * on module reload.  This matches the caching pattern used elsewhere in
- * CPython (e.g. arraymodule.c, _decimal.c). */
+ * on module reload.
+ *
+ * Population uses an atomic compare-exchange so two threads racing to
+ * populate the cache (possible in the free-threaded build, and also under
+ * the GIL when PyImport_ImportModuleAttrString releases it during module
+ * initialization) cannot leak references or tear the stored pointer. */
+
+static PyObject *
+_cache_pickle_attr(PyObject **slot, const char *attr)
+{
+    PyObject *cached = _Py_atomic_load_ptr(slot);
+    if (cached != NULL) {
+        return cached;
+    }
+    PyObject *imported = PyImport_ImportModuleAttrString("pickle", attr);
+    if (imported == NULL) {
+        return NULL;
+    }
+    PyObject *expected = NULL;
+    if (_Py_atomic_compare_exchange_ptr(slot, &expected, imported)) {
+        // We won the race; the slot now owns our reference.
+        return imported;
+    }
+    // Another thread populated the slot first.  Drop our reference and
+    // return the winner's (still owned by the slot).
+    Py_DECREF(imported);
+    return expected;
+}
 
 static PyObject *
 _get_pickle_dumps(PyThreadState *tstate)
 {
     _PyXI_state_t *state = _PyXI_GET_STATE(tstate->interp);
-    PyObject *dumps = state->pickle.dumps;
-    if (dumps != NULL) {
-        return dumps;
-    }
-    dumps = PyImport_ImportModuleAttrString("pickle", "dumps");
-    if (dumps == NULL) {
-        return NULL;
-    }
-    state->pickle.dumps = dumps;  // owns the reference
-    return dumps;
+    return _cache_pickle_attr(&state->pickle.dumps, "dumps");
 }
 
 static PyObject *
 _get_pickle_loads(PyThreadState *tstate)
 {
     _PyXI_state_t *state = _PyXI_GET_STATE(tstate->interp);
-    PyObject *loads = state->pickle.loads;
-    if (loads != NULL) {
-        return loads;
-    }
-    loads = PyImport_ImportModuleAttrString("pickle", "loads");
-    if (loads == NULL) {
-        return NULL;
-    }
-    state->pickle.loads = loads;  // owns the reference
-    return loads;
+    return _cache_pickle_attr(&state->pickle.loads, "loads");
 }
 
 struct _pickle_context {
