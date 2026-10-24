@@ -148,6 +148,25 @@ class TestCase(unittest.TestCase):
         p2 = d[encodedkey]
         self.assertNotEqual(p1, p2)  # Write creates new object in store
 
+    def test_writeback_restored_after_failed_sync(self):
+        class Unpicklable:
+            def __reduce__(self):
+                raise RuntimeError('cannot pickle')
+
+        d = {}
+        with shelve.Shelf(d, writeback=True) as s:
+            s['key'] = []
+            s['key'].append(Unpicklable())
+            with self.assertRaises(RuntimeError):
+                s.sync()
+            self.assertTrue(s.writeback)
+            self.assertIn('key', s.cache)
+            s['key'].clear()
+            s['other'] = [1]
+            s['other'].append(2)
+        self.assertEqual(pickle.loads(d[b'key']), [])
+        self.assertEqual(pickle.loads(d[b'other']), [1, 2])
+
     def test_with(self):
         d1 = {}
         with shelve.Shelf(d1, protocol=2, writeback=False) as s:
