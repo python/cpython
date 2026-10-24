@@ -1654,6 +1654,7 @@ extern "C" {
     INIT_ID(check_same_thread), \
     INIT_ID(clamp), \
     INIT_ID(clear), \
+    INIT_ID(clock_seq), \
     INIT_ID(close), \
     INIT_ID(closed), \
     INIT_ID(closefd), \
@@ -1964,7 +1965,9 @@ extern "C" {
     INIT_ID(newlines), \
     INIT_ID(next), \
     INIT_ID(nlocals), \
+    INIT_ID(node), \
     INIT_ID(node_depth), \
+    INIT_ID(node_func), \
     INIT_ID(node_offset), \
     INIT_ID(nothing), \
     INIT_ID(ns), \

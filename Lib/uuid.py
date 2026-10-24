@@ -113,6 +113,7 @@ _RFC_4122_VERSION_8_FLAGS = ((8 << 76) | (0x8000 << 48))
 
 _random_hook = None
 _time_hook = None
+_node_hook = None
 
 
 def _gen_random(size):
@@ -129,14 +130,24 @@ def _gen_time():
         return _time_hook()
 
 
-def _install_py_hooks(*, random_func, time_func):
+def _gen_node():
+    if _node_hook is None:
+        return getnode()
+    return _node_hook()
+
+
+def _install_py_hooks(*, random_func, time_func, node_func=None):
     global _random_hook
     global _time_hook
+    global _node_hook
     global _last_timestamp_v7
+    global _last_timestamp_v6
     _random_hook = random_func
     _time_hook = time_func
-    # Reset _last_timestamp_v7 for repeatability of tests
+    _node_hook = node_func
+    # Reset timestamps for repeatability of tests.
     _last_timestamp_v7 = None
+    _last_timestamp_v6 = None
 
 
 # Import optional C extension at toplevel, to help disabling it when testing
@@ -833,8 +844,7 @@ def uuid6(node=None, clock_seq=None):
     of the original 60-bit timestamp.
     """
     global _last_timestamp_v6
-    import time
-    nanoseconds = time.time_ns()
+    nanoseconds = _gen_time()
     # 0x01b21dd213814000 is the number of 100-ns intervals between the
     # UUID epoch 1582-10-15 00:00:00 and the Unix epoch 1970-01-01 00:00:00.
     timestamp = nanoseconds // 100 + 0x01b21dd213814000
@@ -842,13 +852,12 @@ def uuid6(node=None, clock_seq=None):
         timestamp = _last_timestamp_v6 + 1
     _last_timestamp_v6 = timestamp
     if clock_seq is None:
-        import random
-        clock_seq = random.getrandbits(14)  # instead of stable storage
+        clock_seq = int.from_bytes(_gen_random(2))
     time_hi_and_mid = (timestamp >> 12) & 0xffff_ffff_ffff
     time_lo = timestamp & 0x0fff  # keep 12 bits and clear version bits
     clock_s = clock_seq & 0x3fff  # keep 14 bits and clear variant bits
     if node is None:
-        node = getnode()
+        node = _gen_node()
     # --- 32 + 16 ---   -- 4 --   -- 12 --  -- 2 --   -- 14 ---    48
     # time_hi_and_mid | version | time_lo | variant | clock_seq | node
     int_uuid_6 = time_hi_and_mid << 80
@@ -964,18 +973,21 @@ def uuid8(a=None, b=None, c=None):
 
 
 _py_uuid4 = uuid4
+_py_uuid6 = uuid6
 _py_uuid7 = uuid7
 _py_UUID = UUID
 try:
-    from _uuid import UUID, uuid4, uuid7
+    from _uuid import UUID, uuid4, uuid6, uuid7
     from _uuid import _install_c_hooks as _install_c_hooks
 except ImportError:
     _c_UUID = None
     _c_uuid4 = None
+    _c_uuid6 = None
     _c_uuid7 = None
 else:
     _c_UUID = UUID
     _c_uuid4 = uuid4
+    _c_uuid6 = uuid6
     _c_uuid7 = uuid7
 
 def main():
