@@ -121,9 +121,17 @@ def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None,
             break
 
         job, i, func, args, kwds = task
+        exiting = None
         try:
             result = (True, func(*args, **kwds))
-        except Exception as e:
+        except BaseException as e:
+            # e.g. SystemExit: a worker process (where this runs in the main
+            # thread) sends the result back, then exits as before and is
+            # replaced.  A ThreadPool thread keeps running instead, since an
+            # exited thread is only replaced when the worker handler wakes up.
+            if (not isinstance(e, Exception) and
+                    threading.current_thread() is threading.main_thread()):
+                exiting = e
             if wrap_exception and func is not _helper_reraises_exception:
                 e = ExceptionWithTraceback(e, e.__traceback__)
             result = (False, e)
@@ -136,6 +144,9 @@ def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None,
             put((job, i, (False, wrapped)))
 
         task = job = result = func = args = kwds = None
+        if exiting is not None:
+            util.debug('worker got %s -- exiting' % type(exiting).__name__)
+            raise exiting
         completed += 1
     util.debug('worker exiting after %d tasks' % completed)
 
