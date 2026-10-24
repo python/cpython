@@ -2409,6 +2409,9 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertTrue(ipaddress.ip_address('192.0.0.9').is_global)
         self.assertTrue(ipaddress.ip_address('192.0.0.10').is_global)
         self.assertFalse(ipaddress.ip_address('192.0.0.255').is_global)
+        # gh-160227: 6a44-relay anycast address (RFC 6751)
+        self.assertFalse(ipaddress.ip_address('192.88.99.2').is_global)
+        self.assertTrue(ipaddress.ip_address('192.88.99.2').is_private)
 
         self.assertEqual(True,
                          ipaddress.ip_address('169.254.100.200').is_link_local)
