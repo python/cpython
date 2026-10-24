@@ -559,14 +559,18 @@ class _ExecutorManagerThread(threading.Thread):
         # lead the executor into becoming broken.  bpe_message overrides the
         # default message on the BrokenProcessPool set on pending futures.
 
-        # Mark the process pool broken so that submits fail right now.
-        executor = self.executor_reference()
-        if executor is not None:
-            executor._broken = ('A child process terminated '
-                                'abruptly, the process pool is not '
-                                'usable anymore')
-            executor._shutdown_thread = True
-            executor = None
+        # Mark the pool broken while holding the lock so that concurrent
+        # calls to submit() fail instead of adding more work. Do not hold the
+        # lock while waiting for workers to exit below: a worker may ignore
+        # terminate(), and submit() and shutdown(wait=False) must remain
+        # responsive in that case.
+        with self.shutdown_lock:
+            executor = self.executor_reference()
+            if executor is not None:
+                executor._broken = ('A child process terminated '
+                                    'abruptly, the process pool is not '
+                                    'usable anymore')
+                executor._shutdown_thread = True
 
         # All pending tasks are to be marked failed with a
         # BrokenProcessPool error, as separate instances to avoid sharing
@@ -619,8 +623,7 @@ class _ExecutorManagerThread(threading.Thread):
         self._join_executor_internals(broken=True)
 
     def terminate_broken(self, cause, bpe_message=None):
-        with self.shutdown_lock:
-            self._terminate_broken(cause, bpe_message)
+        self._terminate_broken(cause, bpe_message)
 
     def flag_executor_shutting_down(self):
         # Flag the executor as shutting down and cancel remaining tasks if

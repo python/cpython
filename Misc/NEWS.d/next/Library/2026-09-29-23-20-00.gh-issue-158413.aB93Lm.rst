@@ -1,0 +1,2 @@
+:class:`concurrent.futures.ProcessPoolExecutor` no longer holds its shutdown
+lock while waiting for workers to exit after a worker fails.
