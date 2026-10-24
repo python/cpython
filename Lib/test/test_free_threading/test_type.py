@@ -1,5 +1,7 @@
+import gc
 import threading
 import unittest
+import weakref
 
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier, Thread
@@ -18,6 +20,24 @@ ITERS = 100
 
 class A:
     attr = 1
+
+def world_stoppers():
+    """Finite workloads that contend for the stop-the-world mutex.
+
+    Waiting for the mutex releases the type lock, allowing queued type
+    updates to go stale.  Use a short pause rather than full collections
+    to prolong the contention without depending on the size of the heap.
+    """
+    def stopper():
+        for _ in range(100):
+            _testinternalcapi.stop_the_world()
+
+    def pauser():
+        for _ in range(100):
+            _testinternalcapi.stop_the_world(0.0001)
+
+    return [stopper, pauser]
+
 
 @threading_helper.requires_working_threading()
 class TestType(TestCase):
@@ -344,6 +364,12 @@ class TestType(TestCase):
         self.assertTrue(all(repr(cls()) != "custom repr"
                             for cls in subclasses))
 
+        # The slot update queue must release its references to the types,
+        # including those stored in heap-allocated chunks.
+        del subclasses
+        gc.collect()
+        self.assertEqual(Base.__subclasses__(), [])
+
     def test_concurrent_setattr_deadlock(self):
         # gh-155400: two threads assigning to a special method of the same
         # class could deadlock.  One thread held the type lock and waited for
@@ -400,6 +426,164 @@ class TestType(TestCase):
         threads = [Thread(target=target) for target in targets]
         with threading_helper.start_threads(threads):
             pass
+
+    def check_stop_the_world_under_type_lock(self, setter):
+        # gh-158195: Python code that runs with the type lock held and stops
+        # the world could deadlock with a thread that held the type lock
+        # pinned while it waited for the stop-the-world mutex (__bases__
+        # assignment).  The first thread released the type lock while it was
+        # blocked on the stop-the-world mutex, was handed the mutex, and then
+        # waited for the type lock while owning the mutex.
+        def basesetter():
+            class A:
+                pass
+            class B:
+                pass
+            class C(A):
+                pass
+            for _ in range(100):
+                C.__bases__ = (B,)
+                C.__bases__ = (A,)
+
+        def stopper():
+            for _ in range(100):
+                _testinternalcapi.stop_the_world()
+
+        # The stopper keeps the stop-the-world mutex contended, which makes
+        # the setters block on it.  All workers have finite workloads so
+        # that repeated invalidation cannot indefinitely delay a setter.
+        threading_helper.run_concurrently(
+            [setter, setter, basesetter, stopper])
+
+    def test_stop_the_world_in_mro_deadlock(self):
+        # type_ready() calls a metaclass mro() with the type lock held.
+        N = 50
+
+        class Meta(type):
+            def mro(cls):
+                _testinternalcapi.stop_the_world()
+                return type.mro(cls)
+
+        def setter():
+            for _ in range(N):
+                Meta("K", (), {})
+
+        self.check_stop_the_world_under_type_lock(setter)
+
+    def test_stop_the_world_in_setattr_key_eq_deadlock(self):
+        # type_setattro() compares the attribute name with a str subclass key
+        # of the type's __dict__ (calling its __eq__) with the type lock held.
+        N = 50
+
+        class S(str):
+            __hash__ = str.__hash__
+            def __eq__(self, other):
+                _testinternalcapi.stop_the_world()
+                return str.__eq__(self, other)
+
+        C = type("C", (), {S("x"): 0})
+
+        def setter():
+            for i in range(N):
+                C.x = i
+
+        self.check_stop_the_world_under_type_lock(setter)
+
+    def test_reentrant_slot_update_consistency(self):
+        # Updating Base queues its slot update before visiting Sub.  A key
+        # comparison in Sub's dict re-enters the setter and makes that queue
+        # stale.  It must be rebuilt rather than overwriting the inner update.
+        armed = False
+
+        class Base:
+            pass
+
+        class Key(str):
+            def __hash__(self):
+                return hash("__hash__")
+
+            def __eq__(self, other):
+                nonlocal armed
+                if armed and other == "__hash__":
+                    armed = False
+                    Base.__hash__ = object.__hash__
+                return str.__eq__(self, other)
+
+        # Collide with the special-method name without defining it on Sub,
+        # so that slot updates still propagate from Base to Sub.
+        Sub = type("Sub", (Base,), {Key("trigger"): None})
+        objects = [Base(), Sub()]
+
+        # Check actual slot dispatch, not just the class dictionaries.  None
+        # and object.__hash__ use distinct C slots, unlike Python functions
+        # which share a generic wrapper that looks up the current method.
+        Base.__hash__ = None
+        for obj in objects:
+            with self.assertRaises(TypeError):
+                hash(obj)
+        Base.__hash__ = object.__hash__
+        for obj in objects:
+            self.assertEqual(hash(obj), object.__hash__(obj))
+
+        armed = True
+        Base.__hash__ = None
+        self.assertFalse(armed)
+        self.assertIs(Base.__dict__["__hash__"], object.__hash__)
+        for obj in objects:
+            self.assertEqual(hash(obj), object.__hash__(obj))
+
+        # Both applied and discarded queues must release their references.
+        base_ref = weakref.ref(Base)
+        sub_ref = weakref.ref(Sub)
+        del obj, objects, Sub, Base
+        gc.collect()
+        self.assertIsNone(base_ref())
+        self.assertIsNone(sub_ref())
+
+    def test_concurrent_bases_assignment(self):
+        # Several threads reassign __bases__ of the same class, and of its
+        # base, while others stop the world.  The validated bases and the
+        # computed MRO can go stale while the type lock is released and
+        # must be recomputed.  At the end, the MRO must agree with __bases__.
+        N = 50
+
+        class A:
+            def meth(self):
+                return "A"
+            def __repr__(self):
+                return "A"
+        class B:
+            def meth(self):
+                return "B"
+            def __repr__(self):
+                return "B"
+        class C(A):
+            pass
+        class D(C):
+            pass
+
+        def setter():
+            for _ in range(N):
+                C.__bases__ = (B,)
+                C.__bases__ = (A,)
+
+        def subsetter():
+            for _ in range(N):
+                D.__bases__ = (C, B)
+                D.__bases__ = (C,)
+
+        threading_helper.run_concurrently(
+            [setter, setter, subsetter] + world_stoppers())
+
+        self.assertEqual(C.__bases__, (A,))
+        self.assertEqual(C.__mro__, (C, A, object))
+        self.assertEqual(D.__bases__, (C,))
+        self.assertEqual(D.__mro__, (D, C, A, object))
+        self.assertEqual(D().meth(), "A")
+        self.assertEqual(repr(C()), "A")
+        self.assertEqual(repr(D()), "A")
+        self.assertIn(C, A.__subclasses__())
+        self.assertNotIn(C, B.__subclasses__())
 
 
 if __name__ == "__main__":

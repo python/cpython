@@ -1,0 +1,7 @@
+Fix a deadlock in the free-threaded build between a thread that stops the
+world while running Python code under the type lock (for example a custom
+metaclass ``mro()`` or the ``__eq__`` of a :class:`str` subclass used as a
+class ``__dict__`` key) and a thread that assigns to a special method or to
+``__bases__`` of a class.  The type lock is no longer held while waiting
+for a stop-the-world; the prepared slot, MRO and bases updates are
+validated with the world stopped and recomputed if they went stale.
