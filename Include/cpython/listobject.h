@@ -19,6 +19,10 @@ typedef struct {
      * the list is not yet visible outside the function that builds it.
      */
     Py_ssize_t allocated;
+#ifdef Py_GIL_DISABLED
+    /* Known NULL slot index + 1; zero: unchecked; -1: tracking disabled. */
+    Py_ssize_t uninitialized;
+#endif
 } PyListObject;
 
 /* Cast argument to PyListObject* type. */
@@ -39,11 +43,25 @@ static inline Py_ssize_t PyList_GET_SIZE(PyObject *op) {
 
 #define PyList_GET_ITEM(op, index) (_PyList_CAST(op)->ob_item[(index)])
 
+#ifdef Py_GIL_DISABLED
+static inline void
+_PyList_ClearInitState(PyListObject *list)
+{
+    if (_Py_atomic_load_ssize_relaxed(&list->uninitialized) >= 0) {
+        _Py_atomic_store_ssize_relaxed(&list->uninitialized, -1);
+        _Py_atomic_fence_release();
+    }
+}
+#endif
+
 static inline void
 PyList_SET_ITEM(PyObject *op, Py_ssize_t index, PyObject *value) {
     PyListObject *list = _PyList_CAST(op);
     assert(0 <= index);
     assert(index < list->allocated);
+#ifdef Py_GIL_DISABLED
+    _PyList_ClearInitState(list);
+#endif
     list->ob_item[index] = value;
 }
 #define PyList_SET_ITEM(op, index, value) \

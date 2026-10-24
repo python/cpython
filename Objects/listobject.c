@@ -110,6 +110,9 @@ static int py_list_resize(PyListObject *self, Py_ssize_t newsize);
 static inline Py_ALWAYS_INLINE int
 list_resize(PyListObject *self, Py_ssize_t newsize)
 {
+#ifdef Py_GIL_DISABLED
+    _PyList_ClearInitState(self);
+#endif
     Py_ssize_t allocated = self->allocated;
 
     /* Bypass realloc() when a previous overallocation is large enough
@@ -295,6 +298,9 @@ PyList_New(Py_ssize_t size)
     }
     Py_SET_SIZE(op, size);
     op->allocated = size;
+#ifdef Py_GIL_DISABLED
+    op->uninitialized = size > 0 ? 0 : -1;
+#endif
     _PyObject_GC_TRACK(op);
     return (PyObject *) op;
 }
@@ -471,6 +477,58 @@ _PyList_GetItemRefNoLock(PyListObject *list, Py_ssize_t i, _PyStackRef *result)
 }
 #endif
 
+#ifdef Py_GIL_DISABLED
+static inline Py_ALWAYS_INLINE void
+list_update_init_state(PyListObject *self, Py_ssize_t i, PyObject *olditem,
+                       PyObject *newitem, Py_ssize_t size,
+                       Py_ssize_t uninitialized)
+{
+    if ((uninitialized == 0 && olditem != NULL) || uninitialized > size) {
+        _Py_atomic_store_ssize_release(&self->uninitialized, -1);
+        return;
+    }
+    if (newitem == NULL) {
+        if (uninitialized == 0) {
+            _Py_atomic_store_ssize_release(&self->uninitialized, i + 1);
+        }
+        return;
+    }
+    if (uninitialized > 0 && i != uninitialized - 1) {
+        return;
+    }
+    // Find another NULL slot after the one just filled. During sequential
+    // initialization this only needs to inspect the next slot.
+    for (Py_ssize_t j = uninitialized; j < size; j++) {
+        if (self->ob_item[j] == NULL) {
+            _Py_atomic_store_ssize_release(&self->uninitialized, j + 1);
+            return;
+        }
+    }
+    _Py_atomic_store_ssize_release(&self->uninitialized, -1);
+}
+#endif
+
+static inline Py_ALWAYS_INLINE int
+set_list_item(PyListObject *self, Py_ssize_t i, PyObject *newitem,
+              Py_ssize_t size, Py_ssize_t uninitialized)
+{
+    if (!valid_index(i, size)) {
+        Py_XDECREF(newitem);
+        PyErr_SetString(PyExc_IndexError,
+                        "list assignment index out of range");
+        return -1;
+    }
+    PyObject *tmp = self->ob_item[i];
+    FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item[i], newitem);
+#ifdef Py_GIL_DISABLED
+    if (uninitialized >= 0) {
+        list_update_init_state(self, i, tmp, newitem, size, uninitialized);
+    }
+#endif
+    Py_XDECREF(tmp);
+    return 0;
+}
+
 int
 PyList_SetItem(PyObject *op, Py_ssize_t i,
                PyObject *newitem)
@@ -480,21 +538,31 @@ PyList_SetItem(PyObject *op, Py_ssize_t i,
         PyErr_BadInternalCall();
         return -1;
     }
-    int ret;
     PyListObject *self = ((PyListObject *)op);
-    Py_BEGIN_CRITICAL_SECTION(self);
-    if (!valid_index(i, Py_SIZE(self))) {
-        Py_XDECREF(newitem);
-        PyErr_SetString(PyExc_IndexError,
-                        "list assignment index out of range");
-        ret = -1;
-        goto end;
+    Py_ssize_t uninitialized = -1;
+#ifdef Py_GIL_DISABLED
+    uninitialized = _Py_atomic_load_ssize_relaxed(&self->uninitialized);
+    if (uninitialized > 0) {
+        // Resizes disable tracking before publishing a new size.
+        Py_ssize_t size = _Py_atomic_load_ssize_acquire(&self->ob_base.ob_size);
+        uninitialized = _Py_atomic_load_ssize_acquire(&self->uninitialized);
+        if (uninitialized > 0 && uninitialized <= size) {
+            if (i == uninitialized - 1) {
+                _Py_atomic_store_ptr_release(&self->ob_item[i], newitem);
+                list_update_init_state(self, i, NULL, newitem, size,
+                                       uninitialized);
+                return 0;
+            }
+            return set_list_item(self, i, newitem, size, uninitialized);
+        }
     }
-    PyObject *tmp = self->ob_item[i];
-    FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item[i], newitem);
-    Py_XDECREF(tmp);
-    ret = 0;
-end:;
+#endif
+    int ret;
+    Py_BEGIN_CRITICAL_SECTION(self);
+#ifdef Py_GIL_DISABLED
+    uninitialized = _Py_atomic_load_ssize_relaxed(&self->uninitialized);
+#endif
+    ret = set_list_item(self, i, newitem, Py_SIZE(self), uninitialized);
     Py_END_CRITICAL_SECTION();
     return ret;
 }
@@ -935,6 +1003,9 @@ list_clear_impl(PyListObject *a, bool is_resize)
     Py_SET_SIZE(a, 0);
     FT_ATOMIC_STORE_PTR_RELEASE(a->ob_item, NULL);
     a->allocated = 0;
+#ifdef Py_GIL_DISABLED
+    _PyList_ClearInitState(a);
+#endif
     while (--i >= 0) {
         Py_XDECREF(items[i]);
     }
@@ -1001,6 +1072,9 @@ ptr_wise_atomic_memmove(PyListObject *a, PyObject **dest, PyObject **src, Py_ssi
 static int
 list_ass_slice_lock_held(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
 {
+#ifdef Py_GIL_DISABLED
+    _PyList_ClearInitState(a);
+#endif
     /* Because [X]DECREF can recursively invoke list operations on
        this list, we must postpone all [X]DECREF activity until
        after the list is back in its canonical shape.  Therefore
@@ -3308,6 +3382,9 @@ static PyObject *
 list_reverse_impl(PyListObject *self)
 /*[clinic end generated code: output=482544fc451abea9 input=04ac8e0c6a66e4d9]*/
 {
+#ifdef Py_GIL_DISABLED
+    _PyList_ClearInitState(self);
+#endif
     if (Py_SIZE(self) > 1)
         reverse_slice(self->ob_item, self->ob_item + Py_SIZE(self));
     Py_RETURN_NONE;
@@ -3323,6 +3400,9 @@ PyList_Reverse(PyObject *v)
         return -1;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
+#ifdef Py_GIL_DISABLED
+    _PyList_ClearInitState(self);
+#endif
     if (Py_SIZE(self) > 1) {
         reverse_slice(self->ob_item, self->ob_item + Py_SIZE(self));
     }
