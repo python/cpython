@@ -3557,8 +3557,9 @@ push_cold_blocks_to_end(cfg_builder *g) {
             if (!IS_LABEL(b->b_next->b_label)) {
                 b->b_next->b_label.id = next_lbl++;
             }
-            basicblock_addop(explicit_jump, JUMP_NO_INTERRUPT, b->b_next->b_label.id,
-                             NO_LOCATION, NULL);
+            RETURN_IF_ERROR(
+                basicblock_addop(explicit_jump, JUMP_NO_INTERRUPT,
+                                 b->b_next->b_label.id, NO_LOCATION, NULL));
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
             explicit_jump->b_predecessors = 1;
