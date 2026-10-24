@@ -247,7 +247,7 @@ def _check_zipfile(fp):
                         centdir = struct.unpack(structCentralDir, data) # CD is the right size
                         if centdir[_CD_SIGNATURE] == stringCentralDir:
                             return True         # First central directory entry  has correct magic number
-    except OSError:
+    except (OSError, BadZipFile):
         pass
     return False
 
@@ -281,6 +281,15 @@ def _handle_prepended_data(endrec, debug=0):
         print("given, inferred, offset", offset_cd, inferred, concat)
 
     return offset_cd, concat
+
+
+def _validate_end_record(endrec, *, allow_zip64_sentinels=False):
+    valid_disk_numbers = (0, 0xffff) if allow_zip64_sentinels else (0,)
+    if (endrec[_ECD_DISK_NUMBER] not in valid_disk_numbers or
+        endrec[_ECD_DISK_START] not in valid_disk_numbers):
+        raise BadZipFile("zipfiles that span multiple disks are not supported")
+    return endrec
+
 
 def _EndRecData64(fpin, offset, endrec):
     """
@@ -372,7 +381,10 @@ def _EndRecData(fpin):
         endrec.append(filesize - sizeEndCentDir)
 
         # Try to read the "Zip64 end of central directory" structure
-        return _EndRecData64(fpin, filesize - sizeEndCentDir, endrec)
+        _validate_end_record(endrec, allow_zip64_sentinels=True)
+        return _validate_end_record(
+            _EndRecData64(fpin, filesize - sizeEndCentDir, endrec)
+        )
 
     # Either this is not a ZIP file, or it is a ZIP file with an archive
     # comment.  Search the end of the file for the "end of central directory"
@@ -396,7 +408,10 @@ def _EndRecData(fpin):
         endrec.append(maxCommentStart + start)
 
         # Try to read the "Zip64 end of central directory" structure
-        return _EndRecData64(fpin, maxCommentStart + start, endrec)
+        _validate_end_record(endrec, allow_zip64_sentinels=True)
+        return _validate_end_record(
+            _EndRecData64(fpin, maxCommentStart + start, endrec)
+        )
 
     # Unable to find a valid end of central directory structure
     return None
