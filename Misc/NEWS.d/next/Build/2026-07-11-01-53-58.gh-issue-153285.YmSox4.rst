@@ -1,0 +1,2 @@
+Fix a build failure with ``--with-lto`` on macOS where executable linker
+flags expanded Make's ``$@`` before the target was known.
