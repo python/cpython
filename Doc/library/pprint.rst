@@ -102,9 +102,6 @@ Functions
    .. versionchanged:: 3.11
       No longer attempts to write to :data:`!sys.stdout` if it is ``None``.
 
-   .. versionchanged:: 3.15
-      Added the *expand* parameter.
-
 
 .. function:: pprint(object, stream=None, indent=1, width=80, depth=None, *, \
                      compact=False, sort_dicts=True, underscore_numbers=False)
