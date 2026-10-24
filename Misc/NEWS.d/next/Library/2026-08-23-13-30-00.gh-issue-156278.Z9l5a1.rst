@@ -1,0 +1,7 @@
+Fix :func:`asyncio.StreamWriter.wait_closed` traceback rewriting.
+
+``StreamReaderProtocol.connection_lost`` no longer shares the same
+exception object between the reader and the close waiter, which
+previously caused ``await writer.wait_closed()`` in an ``except``
+block to rewrite the ``__traceback__`` of the in-flight exception
+being handled.

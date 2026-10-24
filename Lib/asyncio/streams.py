@@ -3,6 +3,7 @@ __all__ = (
     'open_connection', 'start_server')
 
 import collections
+import copy
 import socket
 import sys
 import warnings
@@ -280,7 +281,29 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             if exc is None:
                 self._closed.set_result(None)
             else:
-                self._closed.set_exception(exc)
+                # Avoid sharing the same exception object between the
+                # reader future and the close waiter.  Future.result()
+                # restores the traceback with `with_traceback()`, which
+                # mutates the exception in place; sharing one object
+                # between two futures rewrites the traceback of the
+                # in-flight exception being handled (gh-156278).
+                try:
+                    exc_copy = copy.copy(exc)
+                except Exception:
+                    try:
+                        exc_copy = type(exc)(*exc.args)
+                        # Preserve context attributes where possible.
+                        if hasattr(exc, "__cause__"):
+                            exc_copy.__cause__ = exc.__cause__
+                        if hasattr(exc, "__context__"):
+                            exc_copy.__context__ = exc.__context__
+                        if hasattr(exc, "__suppress_context__"):
+                            exc_copy.__suppress_context__ = exc.__suppress_context__
+                        if exc.__traceback__ is not None:
+                            exc_copy = exc_copy.with_traceback(exc.__traceback__)
+                    except Exception:
+                        exc_copy = exc
+                self._closed.set_exception(exc_copy)
         super().connection_lost(exc)
         self._stream_reader_wr = None
         self._task = None
