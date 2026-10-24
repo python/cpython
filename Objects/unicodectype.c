@@ -64,8 +64,12 @@ Py_UCS4 _PyUnicode_ToTitlecase(Py_UCS4 ch)
 {
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
 
-    if (ctype->flags & EXTENDED_CASE_MASK)
+    if (ctype->flags & EXTENDED_CASE_MASK) {
+        /* No character with a longer full titlecase has a simple one. */
+        if ((ctype->title >> 24) != 1)
+            return ch;
         return _PyUnicode_ExtendedCase[ctype->title & 0xFFFF];
+    }
     return ch + ctype->title;
 }
 
@@ -182,8 +186,25 @@ Py_UCS4 _PyUnicode_ToUppercase(Py_UCS4 ch)
 {
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
 
-    if (ctype->flags & EXTENDED_CASE_MASK)
+    if (ctype->flags & EXTENDED_CASE_MASK) {
+        if ((ctype->upper >> 24) != 1) {
+            /* Only the full mapping is stored when it is longer than one
+               character (see Tools/unicode/makeunicodedata.py).  Most such
+               characters have no simple uppercase, but the Greek letters
+               with ypogegrammeni have the one with prosgegrammeni.  All of
+               them are Unicode 1.1. */
+            if (ch >= 0x1F80 && ch <= 0x1FA7 && !(ch & 8)) {
+                return ch + 8;
+            }
+            switch (ch) {
+            case 0x1FB3: return 0x1FBC;  /* ALPHA WITH YPOGEGRAMMENI */
+            case 0x1FC3: return 0x1FCC;  /* ETA WITH YPOGEGRAMMENI */
+            case 0x1FF3: return 0x1FFC;  /* OMEGA WITH YPOGEGRAMMENI */
+            }
+            return ch;
+        }
         return _PyUnicode_ExtendedCase[ctype->upper & 0xFFFF];
+    }
     return ch + ctype->upper;
 }
 
@@ -194,8 +215,14 @@ Py_UCS4 _PyUnicode_ToLowercase(Py_UCS4 ch)
 {
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
 
-    if (ctype->flags & EXTENDED_CASE_MASK)
+    if (ctype->flags & EXTENDED_CASE_MASK) {
+        if ((ctype->lower >> 24) != 1) {
+            /* LATIN CAPITAL LETTER I WITH DOT ABOVE is the only character
+               with a longer full lowercase and a simple one. */
+            return ch == 0x0130 ? 0x0069 : ch;
+        }
         return _PyUnicode_ExtendedCase[ctype->lower & 0xFFFF];
+    }
     return ch + ctype->lower;
 }
 
