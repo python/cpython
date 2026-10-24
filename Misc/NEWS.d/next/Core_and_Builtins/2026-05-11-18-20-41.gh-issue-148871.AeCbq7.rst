@@ -1,3 +1,0 @@
-The empty tuple ``()`` is now loaded via :opcode:`LOAD_COMMON_CONSTANT`
-instead of :opcode:`LOAD_CONST`, removing it from per-code-object
-:attr:`~codeobject.co_consts` tuples.

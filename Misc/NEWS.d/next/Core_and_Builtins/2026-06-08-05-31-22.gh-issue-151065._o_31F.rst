@@ -1,1 +1,0 @@
-Fix memory leak when using the :ref:`mimalloc memory allocator <mimalloc>`.

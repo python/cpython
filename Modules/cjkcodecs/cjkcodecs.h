@@ -155,15 +155,15 @@ get_module_state(PyObject *mod)
 
 #define OUTCHAR(c)                                                         \
     do {                                                                   \
-        if (_PyUnicodeWriter_WriteChar(writer, (c)) < 0)                   \
-            return MBERR_EXCEPTION;                                         \
+        if (_PyUnicodeWriter_WriteCharInline(writer, (c)) < 0)             \
+            return MBERR_EXCEPTION;                                        \
     } while (0)
 
 #define OUTCHAR2(c1, c2)                                                   \
     do {                                                                   \
         Py_UCS4 _c1 = (c1);                                                \
         Py_UCS4 _c2 = (c2);                                                \
-        if (_PyUnicodeWriter_Prepare(writer, 2, Py_MAX(_c1, c2)) < 0)      \
+        if (_PyUnicodeWriter_Prepare(writer, 2, Py_MAX(_c1, _c2)) < 0)     \
             return MBERR_EXCEPTION;                                        \
         PyUnicode_WRITE(writer->kind, writer->data, writer->pos, _c1);     \
         PyUnicode_WRITE(writer->kind, writer->data, writer->pos + 1, _c2); \
@@ -406,10 +406,13 @@ register_maps(PyObject *module)
 
 #ifdef USING_BINARY_PAIR_SEARCH
 static DBCHAR
-find_pairencmap(ucs2_t body, ucs2_t modifier,
+find_pairencmap(ucs2_t body, Py_UCS4 modifier,
                 const struct pair_encodemap *haystack, int haystacksize)
 {
     int pos, min, max;
+    if (modifier > 0xffff) {
+        return DBCINV;
+    }
     Py_UCS4 value = body << 16 | modifier;
 
     min = 0;

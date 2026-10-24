@@ -159,11 +159,12 @@ class zipimporter(_bootstrap_external._LoaderBasics):
         """get_filename(fullname) -> filename string.
 
         Return the filename for the specified module or raise ZipImportError
-        if it couldn't be imported.
+        if it couldn't be found.
         """
         # Deciding the filename requires working out where the code
         # would come from if the module was actually loaded
-        code, ispackage, modpath = _get_module_code(self, fullname)
+        _, _, modpath = _get_module_code(
+            self, fullname, compile_source=False)
         return modpath
 
 
@@ -584,12 +585,13 @@ def _get_zlib_decompress_func():
 
 _importing_zstd = False
 _zstd_decompressor_class = None
+_zstd_get_frame_size = None
 
 # Return the _zstd.ZstdDecompressor function object, or NULL if _zstd couldn't
 # be imported. The result is cached when found.
 def _get_zstd_decompressor_class():
-    global _zstd_decompressor_class
-    if _zstd_decompressor_class:
+    global _zstd_decompressor_class, _zstd_get_frame_size
+    if _zstd_decompressor_class and _zstd_get_frame_size:
         return _zstd_decompressor_class
 
     global _importing_zstd
@@ -601,7 +603,10 @@ def _get_zstd_decompressor_class():
 
     _importing_zstd = True
     try:
-        from _zstd import ZstdDecompressor as _zstd_decompressor_class
+        from _zstd import (
+            ZstdDecompressor as _zstd_decompressor_class,
+            get_frame_size as _zstd_get_frame_size,
+        )
     except Exception:
         _bootstrap._verbose_message("zipimport: zstd UNAVAILABLE")
         raise ZipImportError("can't decompress data; zstd not available")
@@ -615,16 +620,24 @@ def _get_zstd_decompressor_class():
 def _zstd_decompress(data):
     # A simple version of compression.zstd.decompress() as we cannot import
     # that here as the stdlib itself could be being zipimported.
+    decomp_class = _get_zstd_decompressor_class()
+    data = memoryview(data)
+    if not data:
+        raise ZipImportError("zipimport: zstd compressed data ended before "
+                             "the end-of-stream marker")
     results = []
-    while True:
-        decomp = _get_zstd_decompressor_class()()
-        results.append(decomp.decompress(data))
+    while data:
+        try:
+            frame_size = _zstd_get_frame_size(data)
+        except Exception:
+            raise ZipImportError("zipimport: zstd compressed data ended before "
+                                 "the end-of-stream marker") from None
+        decomp = decomp_class()
+        results.append(decomp.decompress(data[:frame_size]))
         if not decomp.eof:
             raise ZipImportError("zipimport: zstd compressed data ended before "
                                  "the end-of-stream marker")
-        data = decomp.unused_data
-        if not data:
-            break
+        data = data[frame_size:]
     return b"".join(results)
 
 
@@ -793,9 +806,9 @@ def _get_pyc_source(self, path):
         return _get_data(self.archive, toc_entry)
 
 
-# Get the code object associated with the module specified by
-# 'fullname'.
-def _get_module_code(self, fullname):
+# Get the code object associated with the module specified by 'fullname'.
+# If compile_source is false, return None for source code without reading or compiling it.
+def _get_module_code(self, fullname, *, compile_source=True):
     path = _get_module_path(self, fullname)
     import_error = None
     for suffix, isbytecode, ispackage in _zip_searchorder:
@@ -807,6 +820,8 @@ def _get_module_code(self, fullname):
             pass
         else:
             modpath = toc_entry[0]
+            if not isbytecode and not compile_source:
+                return None, ispackage, modpath
             data = _get_data(self.archive, toc_entry)
             code = None
             if isbytecode:
@@ -820,7 +835,6 @@ def _get_module_code(self, fullname):
                 # bad magic number or non-matching mtime
                 # in byte code, try next
                 continue
-            modpath = toc_entry[0]
             return code, ispackage, modpath
     else:
         if import_error:

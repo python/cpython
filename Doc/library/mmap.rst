@@ -14,7 +14,8 @@ where :class:`bytearray` are expected; for example, you can use the :mod:`re`
 module to search through a memory-mapped file.  You can also change a single
 byte by doing ``obj[index] = 97``, or change a subsequence by assigning to a
 slice: ``obj[i1:i2] = b'...'``.  You can also read and write data starting at
-the current file position, and :meth:`seek` through the file to different positions.
+the current file position, and :meth:`~mmap.mmap.seek` through the file to
+different positions.
 
 A memory-mapped file is created by the :class:`~mmap.mmap` constructor, which is
 different on Unix and on Windows.  In either case you must provide a file
@@ -103,7 +104,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    *prot*, if specified, gives the desired memory protection; the two most
    useful values are :const:`PROT_READ` and :const:`PROT_WRITE`, to specify
    that the pages may be read or written.  *prot* defaults to
-   :const:`PROT_READ \| PROT_WRITE`.
+   :const:`PROT_READ` \| :const:`PROT_WRITE`.
 
    *access* may be specified in lieu of *flags* and *prot* as an optional
    keyword parameter.  It is an error to specify both *flags*, *prot* and
@@ -386,9 +387,55 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       the mmap was created with :const:`ACCESS_READ`, then writing to it will
       raise a :exc:`TypeError` exception.
 
+.. _access-constants:
+
+ACCESS_* constants
+++++++++++++++++++
+
+.. data:: ACCESS_DEFAULT
+          ACCESS_READ
+          ACCESS_WRITE
+          ACCESS_COPY
+
+   These constants specify the access mode for a memory mapping.
+   :const:`ACCESS_READ` provides read-only access, :const:`ACCESS_WRITE`
+   provides write-through access, and :const:`ACCESS_COPY` provides
+   copy-on-write access. :const:`ACCESS_DEFAULT` defers to the *prot*
+   argument of :class:`mmap`.
+
+.. _page-size-constants:
+
+Page size constants
++++++++++++++++++++
+
+.. data:: PAGESIZE
+          ALLOCATIONGRANULARITY
+
+   :const:`PAGESIZE` is the system memory page size in bytes.
+   :const:`ALLOCATIONGRANULARITY` is the minimum alignment in bytes required
+   for the *offset* argument of :class:`mmap`. On Unix,
+   :const:`ALLOCATIONGRANULARITY` is equal to :const:`PAGESIZE`.
+
+.. _prot-constants:
+
+PROT_* constants
+++++++++++++++++
+
+.. data:: PROT_READ
+          PROT_WRITE
+          PROT_EXEC
+
+   Memory protection flags accepted by the *prot* argument of :class:`mmap`.
+   :const:`PROT_READ` allows pages to be read, :const:`PROT_WRITE` allows pages
+   to be written, and :const:`PROT_EXEC` allows pages to be executed. Values
+   can be combined using the bitwise OR operator. Not every option is present
+   on every system.
+
+   .. availability:: Unix.
+
 .. _madvise-constants:
 
-MADV_* Constants
+MADV_* constants
 ++++++++++++++++
 
 .. data:: MADV_NORMAL
@@ -425,7 +472,7 @@ MADV_* Constants
 
 .. _map-constants:
 
-MAP_* Constants
+MAP_* constants
 +++++++++++++++
 
 .. data:: MAP_SHARED
@@ -472,7 +519,7 @@ MAP_* Constants
 
 .. _ms-constants:
 
-MS_* Constants
+MS_* constants
 ++++++++++++++
 
 .. data:: MS_SYNC
