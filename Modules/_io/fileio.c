@@ -1013,7 +1013,13 @@ portable_lseek(fileio *self, PyObject *posobj, int whence, bool suppress_pipe_er
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
 
-    if (self->seekable < 0) {
+    if (self->seekable < 0
+        && !(res < 0 && (errno == EINVAL
+#ifdef EOVERFLOW
+                         || errno == EOVERFLOW
+#endif
+                         || errno == ENXIO)))
+    {
         self->seekable = (res >= 0);
     }
 

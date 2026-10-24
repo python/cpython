@@ -62,6 +62,10 @@ class AutoFileTests:
         self.f.seek(-5, 2)
         self.assertEqual(self.f.tell(), 15)
 
+    def testSeekableAfterFailedSeek(self) -> None:
+        self.assertRaises(OSError, self.f.seek, -1)
+        self.assertTrue(self.f.seekable())
+
     def testAttributes(self):
         # verify expected attributes exist
         f = self.f
