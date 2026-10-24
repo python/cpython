@@ -142,7 +142,7 @@ LEAF_MISSING_AKI_CA = data_file("leaf-missing-aki.ca.pem")
 # The password is fixed, public, and not a secret; it only keeps the archive
 # from storing the PEMs in the clear.
 DISTRUSTED_SPKI_ZIP = data_file("distrusted.zip")
-CHOSEN_KNIGHT = b"Brave Sir Robin"  # not a secret, see comment above
+DISTRUSTED_SPKI_CHOSEN_KNIGHT = b"Brave Sir Robin"  # not a secret, see comment
 DISTRUSTED_SPKI_HOSTNAME = "localhost"
 
 # Same certificate as pycacert.pem, but without extra text in file
@@ -2304,7 +2304,7 @@ class SSLObjectTests(unittest.TestCase):
         # the contexts load the PEMs now, so the files are only needed here
         with tempfile.TemporaryDirectory() as tmpdir:
             with zipfile.ZipFile(DISTRUSTED_SPKI_ZIP) as z:
-                z.extractall(tmpdir, pwd=CHOSEN_KNIGHT)
+                z.extractall(tmpdir, pwd=DISTRUSTED_SPKI_CHOSEN_KNIGHT)
             certdir = os.path.join(tmpdir, "distrusted")
             client_context.load_verify_locations(
                 os.path.join(certdir, "distrusted_root.pem"))

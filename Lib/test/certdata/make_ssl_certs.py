@@ -238,7 +238,7 @@ def write_cert_reference(path):
 # fixed, public, and not a secret.
 DISTRUSTED_ZIP = 'distrusted.zip'
 DISTRUSTED_ZIP_DIR = 'distrusted'
-DISTRUSTED_ZIP_PW = 'Brave Sir Robin'
+DISTRUSTED_ZIP_CHOSEN_KNIGHT = 'Brave Sir Robin'
 
 # ASN.1 template for the intermediate's compromised key: secp384r1 scalar 4.
 # openssl derives the public key when the SEC1 structure omits it.
@@ -265,7 +265,7 @@ def make_distrusted_spki_cert(cmdlineargs):
 
     # the root and intermediate are real certs we cannot re-mint; carry them
     # over from the existing archive
-    pw = DISTRUSTED_ZIP_PW.encode()
+    pw = DISTRUSTED_ZIP_CHOSEN_KNIGHT.encode()
     with zipfile.ZipFile(DISTRUSTED_ZIP) as z:
         root = z.read(DISTRUSTED_ZIP_DIR + '/distrusted_root.pem', pw)
         intermediate = z.read(DISTRUSTED_ZIP_DIR + '/distrusted_intermediate.pem', pw)
@@ -328,7 +328,7 @@ def make_distrusted_spki_cert(cmdlineargs):
         zippath = os.path.join(here, DISTRUSTED_ZIP)
         if os.path.exists(zippath):
             os.remove(zippath)
-        check_call(['zip', '-q', '-X', '-P', DISTRUSTED_ZIP_PW, '-r',
+        check_call(['zip', '-q', '-X', '-P', DISTRUSTED_ZIP_CHOSEN_KNIGHT, '-r',
                     zippath, DISTRUSTED_ZIP_DIR], cwd=workdir)
 
 
