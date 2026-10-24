@@ -242,6 +242,7 @@ class AddrlistClass:
         self.phraseends = self.atomends.replace('.', '')
         self.field = field
         self.commentlist = []
+        self._inline_comment = False
 
     def gotonext(self):
         """Skip white space and extract comments."""
@@ -383,9 +384,18 @@ class AddrlistClass:
                 break
             else:
                 aslist.append(self.getatom())
+            ncomments = len(self.commentlist)
             ws = self.gotonext()
             if preserve_ws and ws:
                 aslist.append(ws)
+            if (len(self.commentlist) > ncomments
+                    and self.pos < len(self.field)
+                    and self.field[self.pos] not in self.atomends):
+                # A comment was consumed inside the addr-spec and is
+                # followed directly by an atom, so it sits between two
+                # atoms and will be silently dropped, splicing them
+                # together.  Record this so a strict caller can reject.
+                self._inline_comment = True
 
         if self.pos >= len(self.field) or self.field[self.pos] != '@':
             return EMPTYSTRING.join(aslist)
@@ -408,6 +418,9 @@ class AddrlistClass:
                 self.pos += 1
             elif self.field[self.pos] == '(':
                 self.commentlist.append(self.getcomment())
+                if (sdlist and self.pos < len(self.field)
+                        and self.field[self.pos] not in self.atomends):
+                    self._inline_comment = True
             elif self.field[self.pos] == '[':
                 sdlist.append(self.getdomainliteral())
             elif self.field[self.pos] == '.':
