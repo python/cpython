@@ -1467,6 +1467,24 @@ class Utf7ImapTest(unittest.TestCase):
         with self.assertRaises(UnicodeError):
             b'x'.decode('utf-7-imap', 'ignore')
 
+    @support.subTests('uni,encoded', utf_7_imap_testcases)
+    def test_incremental_decode(self, uni, encoded):
+        # A shift sequence split across chunks is not an error: the joined
+        # output has to match the stateless decoder.
+        decoder = codecs.getincrementaldecoder('utf-7-imap')()
+        out = ''.join(decoder.decode(encoded[i:i + 1])
+                      for i in range(len(encoded)))
+        self.assertEqual(out + decoder.decode(b'', True), uni)
+
+    def test_stream_read(self):
+        # Reading a fixed number of characters stops inside a shift sequence.
+        uni = '\u53f0' * 2000
+        encoded = uni.encode('utf-7-imap')
+        with io.TextIOWrapper(io.BytesIO(encoded), encoding='utf-7-imap') as f:
+            self.assertEqual(f.read(100), uni[:100])
+        chunks = [encoded[i:i + 16] for i in range(0, len(encoded), 16)]
+        self.assertEqual(''.join(codecs.iterdecode(chunks, 'utf-7-imap')), uni)
+
     def test_stateless(self):
         # The codec is registered and exposes the standard interface.
         info = codecs.lookup('utf-7-imap')
