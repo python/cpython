@@ -915,6 +915,22 @@ _operator__compare_digest_impl(PyObject *module, PyObject *a, PyObject *b)
     return PyBool_FromLong(rc);
 }
 
+/*[clinic input]
+_operator.identity -> object
+
+    obj: object
+    /
+
+Return the argument unchanged.
+[clinic start generated code]*/
+
+static PyObject *
+_operator_identity(PyObject *module, PyObject *obj)
+/*[clinic end generated code: output=deede47105fe0dd8 input=72f5a615c2a823c2]*/
+{
+    return Py_NewRef(obj);
+}
+
 PyDoc_STRVAR(_operator_call__doc__,
 "call($module, obj, /, *args, **kwargs)\n"
 "--\n"
@@ -994,6 +1010,7 @@ static struct PyMethodDef operator_methods[] = {
     _OPERATOR_GE_METHODDEF
     _OPERATOR__COMPARE_DIGEST_METHODDEF
     _OPERATOR_LENGTH_HINT_METHODDEF
+    _OPERATOR_IDENTITY_METHODDEF
     _OPERATOR_CALL_METHODDEF
     {NULL,              NULL}           /* sentinel */
 

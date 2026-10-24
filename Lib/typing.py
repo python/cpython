@@ -33,7 +33,6 @@ from types import GenericAlias
 lazy import annotationlib
 
 from _typing import (
-    _idfunc,
     TypeVar,
     ParamSpec,
     TypeVarTuple,
@@ -3501,7 +3500,7 @@ class NewType:
         num = UserId(5) + 1     # type: int
     """
 
-    __call__ = _idfunc
+    __call__ = operator.identity
 
     def __init__(self, name, tp):
         self.__qualname__ = name
