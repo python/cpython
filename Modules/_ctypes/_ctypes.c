@@ -2284,6 +2284,8 @@ static PyObject *CreateSwappedType(ctypes_state *st, PyTypeObject *type,
     stginfo->size = fmt->pffi_type->size;
     stginfo->setfunc = fmt->setfunc_swapped;
     stginfo->getfunc = fmt->getfunc_swapped;
+    stginfo->flags |= (fmt->flags & (TYPEFLAG_IS_INTEGER | TYPEFLAG_IS_SIGNED));
+    stginfo->flags |= TYPEFLAG_IS_SWAPPED;
 
     stginfo->proto = Py_NewRef(proto);
 
@@ -2327,7 +2329,7 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *proto;
     const char *proto_str;
-    PyMethodDef *ml;
+    PyMethodDef *ml = NULL;
     struct fielddesc *fmt;
 
     if (PyType_Type.tp_init(self, args, kwds) < 0) {
@@ -2377,9 +2379,11 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (!stginfo) {
         goto error;
     }
+
     if (set_stginfo_ffi_type_pointer(stginfo, fmt)) {
         goto error;
     }
+    stginfo->flags = fmt->flags;
     stginfo->align = fmt->pffi_type->alignment;
     stginfo->length = 0;
     stginfo->size = fmt->pffi_type->size;
@@ -2413,13 +2417,11 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         switch (*proto_str) {
         case 'z': /* c_char_p */
             ml = c_char_p_methods;
-            stginfo->flags |= TYPEFLAG_ISPOINTER;
             break;
         case 'Z':
             if (proto_str[1] == '\0') {
                 /* "Z": c_wchar_p */
                 ml = c_wchar_p_methods;
-                stginfo->flags |= TYPEFLAG_ISPOINTER;
             }
             else {
                 ml = NULL;
@@ -2427,16 +2429,6 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
             break;
         case 'P': /* c_void_p */
             ml = c_void_p_methods;
-            stginfo->flags |= TYPEFLAG_ISPOINTER;
-            break;
-        case 's':
-        case 'X':
-        case 'O':
-            ml = NULL;
-            stginfo->flags |= TYPEFLAG_ISPOINTER;
-            break;
-        default:
-            ml = NULL;
             break;
         }
 
@@ -2749,7 +2741,7 @@ make_funcptrtype_dict(ctypes_state *st, PyObject *attrdict, StgInfo *stginfo)
         Py_XDECREF(ob);
         return -1;
     }
-    stginfo->flags = PyLong_AsUnsignedLongMask(ob) | TYPEFLAG_ISPOINTER;
+    stginfo->flags = (uint16_t)PyLong_AsUnsignedLongMask(ob) | TYPEFLAG_ISPOINTER;
     Py_DECREF(ob);
 
     /* _argtypes_ is optional... */
