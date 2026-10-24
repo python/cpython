@@ -1,0 +1,3 @@
+:class:`uuid.UUID` now consistently raises :exc:`TypeError` when the *bytes*
+or *bytes_le* argument is not a :class:`bytes` object. Previously, some invalid
+inputs raised :exc:`AssertionError` or :exc:`ValueError`.
