@@ -1,0 +1,3 @@
+``getpass.getpass()`` no longer hangs macOS Terminal when a long secret is
+pasted. Input is read in non-canonical mode so the tty queue drains as data
+arrives.
