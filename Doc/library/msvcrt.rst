@@ -114,7 +114,9 @@ Console I/O
    is not already available, but will not wait for :kbd:`Enter` to be
    pressed. If the pressed key was a special function key, this will
    return ``'\000'`` or ``'\xe0'``; the next call will return the keycode.
-   The :kbd:`Control-C` keypress cannot be read with this function.
+   When pressed while this function is waiting for input, :kbd:`Control-C`
+   can be read as ``b'\x03'`` without invoking the :const:`signal.SIGINT`
+   handler.
 
 
 .. function:: getwch()
