@@ -7,6 +7,7 @@ Licensed to the PSF under a contributor agreement.
 
 import contextlib
 import ensurepip
+import json
 import os
 import os.path
 import pathlib
@@ -845,6 +846,42 @@ class BasicTest(BaseTest):
         text = out.decode()
         self.assertNotIn('LEAK', text)
         self.assertIn('OLDSTATUS=7', text)
+
+    @requires_subprocess()
+    def test_powershell_activate_literal_paths(self):
+        shells = [path for name in ('pwsh', 'powershell.exe')
+                  if (path := shutil.which(name)) is not None]
+        if not shells:
+            self.skipTest('PowerShell required for this test')
+
+        env_dir = self.get_env_file('venv[1]')
+        venv.EnvBuilder(prompt='from-config').create(env_dir)
+        activate = os.path.join(env_dir, self.bindir, 'Activate.ps1')
+        activate = activate.replace("'", "''")
+        test_script = self.get_env_file('test_literal_paths.ps1')
+        code = ('import json, os, sys; '
+                'print(json.dumps([sys.executable, '
+                "os.environ['VIRTUAL_ENV'], "
+                "os.environ['VIRTUAL_ENV_PROMPT']]))")
+        with open(test_script, 'w', encoding='utf-8-sig') as f:
+            f.write(
+                "$ErrorActionPreference = 'Stop'\n"
+                f". '{activate}'\n"
+                f'{self.exe} -c "{code}"\n'
+                'deactivate\n'
+            )
+        for shell in shells:
+            with self.subTest(shell=shell):
+                out, err = check_output(
+                    [shell, '-NoProfile', '-NonInteractive',
+                     '-ExecutionPolicy', 'Bypass', '-File', test_script],
+                )
+                self.assertFalse(err)
+                executable, active_dir, prompt = json.loads(out)
+                self.assertEqual(pathlib.Path(active_dir), pathlib.Path(env_dir))
+                self.assertEqual(prompt, 'from-config')
+                self.assertEqual(pathlib.Path(executable),
+                                 pathlib.Path(env_dir, self.bindir, self.exe))
 
     # gh-124651: test quoted strings on Windows
     @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')

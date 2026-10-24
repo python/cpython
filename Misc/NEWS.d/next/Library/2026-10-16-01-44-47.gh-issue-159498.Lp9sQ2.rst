@@ -1,0 +1,2 @@
+Fix PowerShell activation of :mod:`venv` environments with square brackets
+in their paths, including reading the intended ``pyvenv.cfg`` file.

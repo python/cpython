@@ -135,7 +135,7 @@ function Get-PyVenvConfig(
     Write-Verbose "Given ConfigDir=$ConfigDir, obtain values in pyvenv.cfg"
 
     # Ensure the file exists, and issue a warning if it doesn't (but still allow the function to continue).
-    $pyvenvConfigPath = Join-Path -Resolve -Path $ConfigDir -ChildPath 'pyvenv.cfg' -ErrorAction Continue
+    $pyvenvConfigPath = Resolve-Path -LiteralPath (Join-Path -Path $ConfigDir -ChildPath 'pyvenv.cfg') -ErrorAction Continue
 
     # An empty map will be returned if no config file is found.
     $pyvenvConfig = @{ }
@@ -143,7 +143,7 @@ function Get-PyVenvConfig(
     if ($pyvenvConfigPath) {
 
         Write-Verbose "File exists, parse `key = value` lines"
-        $pyvenvConfigContent = Get-Content -Path $pyvenvConfigPath
+        $pyvenvConfigContent = Get-Content -LiteralPath $pyvenvConfigPath.ProviderPath
 
         $pyvenvConfigContent | ForEach-Object {
             $keyval = $PSItem -split "\s*=\s*", 2
@@ -168,7 +168,7 @@ function Get-PyVenvConfig(
 
 # Determine the containing directory of this script
 $VenvExecPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$VenvExecDir = Get-Item -Path $VenvExecPath
+$VenvExecDir = Get-Item -LiteralPath $VenvExecPath
 
 Write-Verbose "Activation script is located in path: '$VenvExecPath'"
 Write-Verbose "VenvExecDir Fullname: '$($VenvExecDir.FullName)"
