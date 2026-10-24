@@ -1,0 +1,2 @@
+Allow overriding the TLS client or server role in
+:meth:`asyncio.StreamWriter.start_tls` with the *server_side* keyword argument.

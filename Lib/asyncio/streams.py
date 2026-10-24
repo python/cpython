@@ -395,11 +395,13 @@ class StreamWriter:
         await self._protocol._drain_helper()
 
     async def start_tls(self, sslcontext, *,
+                        server_side=None,
                         server_hostname=None,
                         ssl_handshake_timeout=None,
                         ssl_shutdown_timeout=None):
         """Upgrade an existing stream-based connection to TLS."""
-        server_side = self._protocol._client_connected_cb is not None
+        if server_side is None:
+            server_side = self._protocol._client_connected_cb is not None
         protocol = self._protocol
         await self.drain()
         new_transport = await self._loop.start_tls(  # type: ignore
