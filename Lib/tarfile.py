@@ -2734,6 +2734,13 @@ class TarFile(object):
         else:
             self.makefile(tarinfo, targetpath)
 
+        if tarinfo.islnk() and os.path.islink(targetpath):
+            # makelink_with_filter() fell back to extracting a copy of a
+            # symlink member, which already has its own attributes set.
+            # Setting the hard link's attributes here would follow the
+            # symlink, possibly to a file outside the destination directory.
+            set_attrs = False
+
         if set_attrs:
             self.chown(tarinfo, targetpath, numeric_owner)
             if not tarinfo.issym():
