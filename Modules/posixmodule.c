@@ -760,6 +760,10 @@ PyOS_AfterFork_Child(void)
     PyStatus status;
     _PyRuntimeState *runtime = &_PyRuntime;
 
+#ifdef WITH_MIMALLOC
+    _mi_fork_child();
+#endif
+
     // re-creates runtime->interpreters.mutex (HEAD_UNLOCK)
     status = _PyRuntimeState_ReInitThreads(runtime);
     if (_PyStatus_EXCEPTION(status)) {
