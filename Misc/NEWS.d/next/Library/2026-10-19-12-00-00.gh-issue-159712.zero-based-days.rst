@@ -1,0 +1,2 @@
+Fix :class:`zoneinfo.ZoneInfo` evaluating numeric day-of-year rules in TZ
+strings one day early.
