@@ -261,6 +261,32 @@ class JSONEncoder(object):
                 self.skipkeys, _one_shot)
         return _iterencode(o, 0)
 
+def _sort_items(items, skipkeys):
+    """Sort (key, value) pairs in separate groups, because keys of
+    different types are not comparable: strings, numbers and ``None``.
+
+    Unsupported keys are skipped if *skipkeys* is true and reported
+    otherwise.
+    """
+    strings = []
+    nones = []
+    numbers = []
+    for item in items:
+        key, value = item
+        if isinstance(key, str):
+            strings.append(item)
+        elif key is None:
+            nones.append(item)
+        elif isinstance(key, (int, float)):  # includes bool
+            numbers.append(item)
+        elif not skipkeys:
+            raise TypeError(f'keys must be str, int, float, bool or None, '
+                            f'not {key.__class__.__name__}')
+    strings.sort()
+    numbers.sort()
+    return strings + numbers + nones
+
+
 def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         _key_separator, _item_separator, _sort_keys, _skipkeys, _one_shot,
     ):
@@ -343,7 +369,12 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             item_separator = _item_separator
         first = True
         if _sort_keys:
-            items = sorted(dct.items())
+            items = list(dct.items())
+            try:
+                items.sort()
+            except TypeError:
+                # Keys of different types are not comparable.
+                items = _sort_items(items, _skipkeys)
         else:
             items = dct.items()
         for key, value in items:
