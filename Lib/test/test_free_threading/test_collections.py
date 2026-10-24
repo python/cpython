@@ -59,6 +59,7 @@ class TestCounter(unittest.TestCase):
         threading_helper.run_concurrently(
             c.update, nthreads=NTHREADS, args=(data,)
         )
+        self.assertEqual(c['x'], NTHREADS * PER_THREAD)
 
 
 class TestOrderedDict(unittest.TestCase):
