@@ -938,6 +938,52 @@ class NewIMAPTestsMixin:
             with client.idle() as idler:
                 pass
 
+    def test_idle_tagged_response(self):
+        # An earlier command's tagged response may arrive during IDLE.
+        class IdleTaggedHandler(SimpleIMAPHandler):
+            capabilities = 'IDLE'
+
+            def cmd_NOOP(self, tag, args):
+                self.noop_tag = tag
+
+            def cmd_IDLE(self, tag, args):
+                self._send_textline('+ idling')
+                self._send_tagged(self.noop_tag, 'OK', 'NOOP completed')
+                self._send_line(b'* 1 EXISTS')
+                r = yield
+                if r == b'DONE\r\n':
+                    self._send_tagged(tag, 'OK', 'Idle completed')
+                else:
+                    self._send_tagged(tag, 'BAD', 'Expected DONE')
+        client, _ = self._setup(IdleTaggedHandler)
+        client.login('user', 'pass')
+        noop_tag = client._command('NOOP')
+        with client.idle() as idler:
+            self.assertEqual(next(idler), ('EXISTS', [b'1']))
+        self.assertEqual(client._get_tagged_response(noop_tag),
+                         ('OK', [b'NOOP completed']))
+
+    def test_idle_pop_timeout_after_tagged_response(self):
+        class FakeIMAP:
+            def __init__(self):
+                self.state = 'IDLING'
+                self.debug = 0
+                self._idle_responses = []
+                self.timeouts = []
+
+            def _get_response(self, timeout):
+                self.timeouts.append(timeout)
+
+        imap = FakeIMAP()
+        idler = imaplib.Idler.__new__(imaplib.Idler)
+        idler._imap = imap
+        with mock.patch.object(imaplib.time, 'monotonic',
+                               side_effect=(0, 0.06, 0.1)):
+            response = idler._pop(0.1)
+        self.assertEqual(response, ('', None))
+        self.assertEqual(len(imap.timeouts), 1)
+        self.assertAlmostEqual(imap.timeouts[0], 0.04)
+
     def test_idle_iter(self):
         client, _ = self._setup(IdleCmdHandler)
         client.login('user', 'pass')
