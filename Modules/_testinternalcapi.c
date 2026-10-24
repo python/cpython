@@ -670,7 +670,8 @@ record_eval(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
         assert(module != NULL);
         module_state *state = get_module_state(module);
         Py_DECREF(module);
-        int res = PyList_Append(state->record_list, func->func_name);
+        int res = PyList_Append(state->record_list,
+                                FT_ATOMIC_LOAD_PTR_ACQUIRE(func->func_name));
         if (res < 0) {
             return NULL;
         }
@@ -692,6 +693,163 @@ set_eval_frame_record(PyObject *self, PyObject *list)
     Py_RETURN_NONE;
 }
 
+<<<<<<< HEAD
+||||||| parent of 010bebbf9fd (gh-159136: Avoid stop-the-world when setting function name attributes (gh-159269))
+// Defined in interpreter.c
+extern PyObject*
+Test_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag);
+extern int Test_EvalFrame_Resumes, Test_EvalFrame_Loads;
+
+static PyObject *
+get_eval_frame_stats(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyObject *res = PyDict_New();
+    if (res == NULL) {
+        return NULL;
+    }
+    PyObject *resumes = PyLong_FromLong(Test_EvalFrame_Resumes);
+    if (resumes == NULL || PyDict_SetItemString(res, "resumes", resumes) < 0) {
+        Py_XDECREF(resumes);
+        Py_DECREF(res);
+        return NULL;
+    }
+    Py_DECREF(resumes);
+    PyObject *loads = PyLong_FromLong(Test_EvalFrame_Loads);
+    if (loads == NULL || PyDict_SetItemString(res, "loads", loads) < 0) {
+        Py_XDECREF(loads);
+        Py_DECREF(res);
+        return NULL;
+    }
+    Py_DECREF(loads);
+    Test_EvalFrame_Resumes = Test_EvalFrame_Loads = 0;
+    return res;
+}
+
+static PyObject *
+record_eval_interp(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
+{
+    if (PyStackRef_FunctionCheck(f->f_funcobj)) {
+        PyFunctionObject *func = _PyFrame_GetFunction(f);
+        PyObject *module = _get_current_module();
+        assert(module != NULL);
+        module_state *state = get_module_state(module);
+        Py_DECREF(module);
+        int res = PyList_Append(state->record_list, func->func_name);
+        if (res < 0) {
+            return NULL;
+        }
+    }
+
+    return Test_EvalFrame(tstate, f, exc);
+}
+
+static PyObject *
+set_eval_frame_interp(PyObject *self, PyObject *args)
+{
+    if (PyTuple_GET_SIZE(args) == 1) {
+        module_state *state = get_module_state(self);
+        PyObject *list = PyTuple_GET_ITEM(args, 0);
+        if (!PyList_Check(list)) {
+            PyErr_SetString(PyExc_TypeError, "argument must be a list");
+            return NULL;
+        }
+        Py_XSETREF(state->record_list, Py_NewRef(list));
+        _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), record_eval_interp);
+        _PyInterpreterState_SetEvalFrameAllowSpecialization(_PyInterpreterState_GET(), 1);
+    } else {
+        _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), Test_EvalFrame);
+        _PyInterpreterState_SetEvalFrameAllowSpecialization(_PyInterpreterState_GET(), 1);
+    }
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+is_specialization_enabled(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    return PyBool_FromLong(
+        _PyInterpreterState_IsSpecializationEnabled(_PyInterpreterState_GET()));
+}
+
+=======
+// Defined in interpreter.c
+extern PyObject*
+Test_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag);
+extern int Test_EvalFrame_Resumes, Test_EvalFrame_Loads;
+
+static PyObject *
+get_eval_frame_stats(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyObject *res = PyDict_New();
+    if (res == NULL) {
+        return NULL;
+    }
+    PyObject *resumes = PyLong_FromLong(Test_EvalFrame_Resumes);
+    if (resumes == NULL || PyDict_SetItemString(res, "resumes", resumes) < 0) {
+        Py_XDECREF(resumes);
+        Py_DECREF(res);
+        return NULL;
+    }
+    Py_DECREF(resumes);
+    PyObject *loads = PyLong_FromLong(Test_EvalFrame_Loads);
+    if (loads == NULL || PyDict_SetItemString(res, "loads", loads) < 0) {
+        Py_XDECREF(loads);
+        Py_DECREF(res);
+        return NULL;
+    }
+    Py_DECREF(loads);
+    Test_EvalFrame_Resumes = Test_EvalFrame_Loads = 0;
+    return res;
+}
+
+static PyObject *
+record_eval_interp(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
+{
+    if (PyStackRef_FunctionCheck(f->f_funcobj)) {
+        PyFunctionObject *func = _PyFrame_GetFunction(f);
+        PyObject *module = _get_current_module();
+        assert(module != NULL);
+        module_state *state = get_module_state(module);
+        Py_DECREF(module);
+        int res = PyList_Append(state->record_list,
+                                FT_ATOMIC_LOAD_PTR_ACQUIRE(func->func_name));
+        if (res < 0) {
+            return NULL;
+        }
+    }
+
+    return Test_EvalFrame(tstate, f, exc);
+}
+
+static PyObject *
+set_eval_frame_interp(PyObject *self, PyObject *args)
+{
+    if (PyTuple_GET_SIZE(args) == 1) {
+        module_state *state = get_module_state(self);
+        PyObject *list = PyTuple_GET_ITEM(args, 0);
+        if (!PyList_Check(list)) {
+            PyErr_SetString(PyExc_TypeError, "argument must be a list");
+            return NULL;
+        }
+        Py_XSETREF(state->record_list, Py_NewRef(list));
+        _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), record_eval_interp);
+        _PyInterpreterState_SetEvalFrameAllowSpecialization(_PyInterpreterState_GET(), 1);
+    } else {
+        _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), Test_EvalFrame);
+        _PyInterpreterState_SetEvalFrameAllowSpecialization(_PyInterpreterState_GET(), 1);
+    }
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+is_specialization_enabled(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    return PyBool_FromLong(
+        _PyInterpreterState_IsSpecializationEnabled(_PyInterpreterState_GET()));
+}
+
+>>>>>>> 010bebbf9fd (gh-159136: Avoid stop-the-world when setting function name attributes (gh-159269))
 /*[clinic input]
 
 _testinternalcapi.compiler_cleandoc -> object
