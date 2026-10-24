@@ -238,28 +238,32 @@ bytearray_resize_storage(PyByteArrayObject *self,
 
     Py_ssize_t size = Py_SIZE(self);
 
-    /* Re-align data to the start of the allocation. */
-    char *old_start = self->ob_start;
-    if (self->ob_start != self->ob_bytes) {
-        /* optimization tradeoff: This is faster than a new allocation when
-           the number of bytes being removed in a resize is small; for
-           large size changes it may be better to just make a new bytes
-           object as _PyBytes_Resize will do a malloc + memcpy internally.
+    if (self->ob_start != self->ob_bytes && new_size < size) {
+        /* Shrink with a logical offset: copy the bytes to keep into a new
+           allocation. Allocate first, so that the bytearray (including
+           ob_start) is left unchanged on error: bytearray_setslice_linear()
+           relies on it to restore the bytearray after a failed "del b[:n]".
            */
-        Py_ssize_t move = Py_MIN(new_size, size);
-        memmove(self->ob_bytes, self->ob_start, move);
-        self->ob_start = self->ob_bytes;
-    }
-
-    if (_PyBytes_ResizeKeepOnError(&self->ob_bytes_object, alloc) < 0) {
-        if (old_start != self->ob_bytes && new_size < size) {
-            // Move remaining bytes
-            Py_ssize_t moved = new_size;
-            Py_ssize_t remaining = size - moved;
-            memmove(self->ob_bytes + moved, old_start + moved, remaining);
+        PyObject *bytes = PyBytes_FromStringAndSize(NULL, alloc);
+        if (bytes == NULL) {
+            return -1;
         }
-        bytearray_write_trailing_null_byte(self);
-        return -1;
+        memcpy(PyBytes_AS_STRING(bytes), self->ob_start, new_size);
+        Py_SETREF(self->ob_bytes_object, bytes);
+    }
+    else {
+        /* Re-align data to the start of the allocation. */
+        if (self->ob_start != self->ob_bytes) {
+            /* optimization tradeoff: This is faster than a new allocation
+               when the number of bytes being added in a resize is small. */
+            memmove(self->ob_bytes, self->ob_start, size);
+            self->ob_start = self->ob_bytes;
+        }
+
+        if (_PyBytes_ResizeKeepOnError(&self->ob_bytes_object, alloc) < 0) {
+            bytearray_write_trailing_null_byte(self);
+            return -1;
+        }
     }
     assert(_PyBytes_IsMutable(self->ob_bytes_object));
     return 0;
@@ -649,6 +653,7 @@ bytearray_setslice_linear(PyByteArrayObject *self,
             /* memmove() removed bytes, the bytearray object cannot be
                restored in its previous state. */
             Py_SET_SIZE(self, Py_SIZE(self) + growth);
+            bytearray_write_trailing_null_byte(self);
             res = -1;
         }
         buf = PyByteArray_AS_STRING(self);
