@@ -1510,6 +1510,34 @@ class GNUReadTest(LongnameTest, ReadTest, unittest.TestCase):
             self.assertEqual(tar.getnames(), ["sparse", "last"])
             self.assertEqual(tar.extractfile("last").read(), data)
 
+    def test_pax_size_with_gnu_longname(self):
+        # gh-159435: a GNU long-name header between a pax header and its
+        # member must not make the member header get read a second time.
+        long_name = "long-name-" * 12 + "file.txt"
+
+        def header(name, type, size):
+            info = tarfile.TarInfo(name)
+            info.type = type
+            info.size = size
+            return info.tobuf(tarfile.USTAR_FORMAT)
+
+        def padded(data):
+            return data + b"\0" * (-len(data) % tarfile.BLOCKSIZE)
+
+        pax_record = b"9 size=5\n"
+        buf = header("././@PaxHeader", tarfile.XHDTYPE, len(pax_record))
+        buf += padded(pax_record)
+        longname = long_name.encode() + b"\0"
+        buf += header("././@LongLink", tarfile.GNUTYPE_LONGNAME, len(longname))
+        buf += padded(longname)
+        buf += header("member-short", tarfile.REGTYPE, 5) + padded(b"hello")
+        buf += header("next.txt", tarfile.REGTYPE, 3) + padded(b"bye")
+        buf += b"\0" * (tarfile.BLOCKSIZE * 2)
+
+        with tarfile.open(fileobj=io.BytesIO(buf)) as tar:
+            self.assertEqual(tar.getnames(), [long_name, "next.txt"])
+            self.assertEqual(tar.extractfile("next.txt").read(), b"bye")
+
     @staticmethod
     def _fs_supports_holes():
         # Return True if the platform knows the st_blocks stat attribute and
