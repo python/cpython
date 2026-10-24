@@ -1789,6 +1789,7 @@ extern "C" {
     INIT_ID(fold), \
     INIT_ID(foldspaces), \
     INIT_ID(follow_symlinks), \
+    INIT_ID(for_retry), \
     INIT_ID(format), \
     INIT_ID(format_spec), \
     INIT_ID(frame_buffer), \
