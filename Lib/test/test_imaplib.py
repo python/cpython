@@ -159,6 +159,20 @@ class TestImaplib(unittest.TestCase):
         for t in self.timevalues():
             imaplib.Time2Internaldate(t)
 
+    def test_Time2Internaldate_quoted_string_passthrough(self):
+        # An already double-quoted string is assumed to be in the
+        # correct format and returned unchanged.
+        quoted = '"18-May-2033 05:33:20 +0200"'
+        self.assertEqual(imaplib.Time2Internaldate(quoted), quoted)
+
+    def test_Time2Internaldate_bad_string(self):
+        # A string that is not double-quoted is not of a known type and
+        # must raise ValueError, including the empty string (gh-153854).
+        for value in ('', 'x', '"x', 'x"'):
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError):
+                    imaplib.Time2Internaldate(value)
+
     @socket_helper.skip_if_tcp_blackhole
     def test_imap4_host_default_value(self):
         # Check whether the IMAP4_PORT is truly unavailable.
