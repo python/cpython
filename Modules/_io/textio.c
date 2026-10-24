@@ -1722,6 +1722,19 @@ _textiowrapper_writeflush(textio *self)
     return 0;
 }
 
+/* Return borrowed Py_None on success, or NULL on error. */
+static PyObject *
+textiowrapper_check_write(textio *self)
+{
+    CHECK_ATTACHED(self);
+    CHECK_CLOSED(self);
+
+    if (self->encoder == NULL) {
+        return _unsupported(self->state, "not writable");
+    }
+    return Py_None;
+}
+
 /*[clinic input]
 @critical_section
 _io.TextIOWrapper.write
@@ -1739,11 +1752,8 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
     int haslf = 0;
     int needflush = 0, text_needflush = 0;
 
-    CHECK_ATTACHED(self);
-    CHECK_CLOSED(self);
-
-    if (self->encoder == NULL) {
-        return _unsupported(self->state, "not writable");
+    if (textiowrapper_check_write(self) == NULL) {
+        return NULL;
     }
 
     Py_INCREF(text);
@@ -1760,6 +1770,17 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         Py_DECREF(text);
         if (newtext == NULL)
             return NULL;
+        if (!PyUnicode_Check(newtext)) {
+            PyErr_Format(PyExc_TypeError,
+                         "replace() should return a str, not %T", newtext);
+            Py_DECREF(newtext);
+            return NULL;
+        }
+        /* replace() may have closed, detached or reinitialized the stream. */
+        if (textiowrapper_check_write(self) == NULL) {
+            Py_DECREF(newtext);
+            return NULL;
+        }
         text = newtext;
     }
 
