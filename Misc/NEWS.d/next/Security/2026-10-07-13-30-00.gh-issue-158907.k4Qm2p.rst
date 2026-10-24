@@ -1,0 +1,4 @@
+:class:`~urllib.request.ProxyBasicAuthHandler` no longer sends credentials
+in response to ``407`` from a direct origin. A scheme-less lookup against
+the origin host could match passwords stored for an HTTPS URL and retry
+the cleartext request with ``Proxy-Authorization``.
