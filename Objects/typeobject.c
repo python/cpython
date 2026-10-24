@@ -6244,6 +6244,9 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
     int res;
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
+    // gh-159098: Hashing or comparing the name can run Python code that
+    // frees the type.
+    _Py_INCREF_TYPE(type);
     unsigned int version_tag = FT_ATOMIC_LOAD_UINT(type->tp_version_tag);
     if (cacheable &&
         (version_tag != 0 || should_assign_version_tag(type, name, version_tag)))
@@ -6266,6 +6269,7 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
         version_tag = 0;
         res = find_name_in_mro(type, name, out);
     }
+    _Py_DECREF_TYPE(type);
 
     /* Only put NULL results into cache if there was no error. */
     if (res < 0) {
