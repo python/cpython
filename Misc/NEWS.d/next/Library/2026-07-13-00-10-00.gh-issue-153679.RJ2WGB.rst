@@ -1,0 +1,3 @@
+:class:`zipimport.zipimporter` now raises :exc:`zipimport.ZipImportError`
+instead of :exc:`UnicodeDecodeError` for a UTF-8-flagged file name that is not
+valid UTF-8. Patch by tonghuaroot.
