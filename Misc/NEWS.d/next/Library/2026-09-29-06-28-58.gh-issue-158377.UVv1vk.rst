@@ -1,0 +1,3 @@
+Fix :meth:`unittest.TestLoader.discover` so that a failed call no longer
+changes the top-level directory used by later calls on the same loader.
+Patch by Christian Aurich Zanettini Martins.
