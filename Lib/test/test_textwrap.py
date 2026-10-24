@@ -559,6 +559,20 @@ class MaxLinesTestCase(BaseTestCase):
                         placeholder=' [truncated]...')
         self.check_wrap(self.text, 80, [self.text], placeholder='.' * 1000)
 
+    def test_placeholder_not_needed_when_text_fits(self):
+        # With max_lines set, text that fits must be returned as is even when
+        # the placeholder would not fit in the width; the placeholder is only
+        # required when the text is actually truncated.
+        self.assertEqual(shorten('ab', width=4), 'ab')
+        self.assertEqual(shorten('a', width=1), 'a')
+        self.assertEqual(
+            wrap('hello world', width=20, max_lines=3,
+                 subsequent_indent=' ' * 17),
+            ['hello world'])
+        # Truncation that cannot place the placeholder still raises.
+        with self.assertRaises(ValueError):
+            shorten('a very long text goes here', width=4)
+
     def test_placeholder_backtrack(self):
         # Test special case when max_lines insufficient, but what
         # would be last wrapped line so long the placeholder cannot
