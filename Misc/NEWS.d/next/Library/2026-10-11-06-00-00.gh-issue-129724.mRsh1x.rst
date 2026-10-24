@@ -1,0 +1,10 @@
+The output of :func:`marshal.dumps` and :func:`marshal.dump`, and so the
+content of :file:`.pyc` files, no longer depends on the reference counts of
+the serialized objects: it is no longer changed by unrelated references to
+them held elsewhere in the process nor, in the :term:`free-threaded build`,
+by whether they have been used by other threads.  An object is now written
+in a form that can be referenced later in the data if and only if it occurs
+more than once in the serialized value; this also applies to interned
+strings, which were always written in that form.  The format is unchanged
+and the data can be read by previous Python versions that support the format
+version, but it is not byte-for-byte identical to the data written by them.
