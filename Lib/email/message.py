@@ -1144,13 +1144,22 @@ class MIMEPart(Message):
             content_manager = self.policy.content_manager
         content_manager.set_content(self, *args, **kw)
 
-    def _make_multipart(self, subtype, disallowed_subtypes, boundary):
+    _multipart_disallowed_subtypes = {
+        'related': ('alternative', 'mixed'),
+        'alternative': ('mixed',),
+        'mixed': (),
+    }
+
+    def _check_multipart_conversion(self, subtype, disallowed_subtypes):
         if self.get_content_maintype() == 'multipart':
             existing_subtype = self.get_content_subtype()
             disallowed_subtypes = disallowed_subtypes + (subtype,)
             if existing_subtype in disallowed_subtypes:
                 raise ValueError("Cannot convert {} to {}".format(
                     existing_subtype, subtype))
+
+    def _make_multipart(self, subtype, disallowed_subtypes, boundary):
+        self._check_multipart_conversion(subtype, disallowed_subtypes)
         keep_headers = []
         part_headers = []
         for name, value in self._headers:
@@ -1172,22 +1181,30 @@ class MIMEPart(Message):
             self.set_param('boundary', boundary)
 
     def make_related(self, boundary=None):
-        self._make_multipart('related', ('alternative', 'mixed'), boundary)
+        self._make_multipart(
+            'related', self._multipart_disallowed_subtypes['related'], boundary)
 
     def make_alternative(self, boundary=None):
-        self._make_multipart('alternative', ('mixed',), boundary)
+        self._make_multipart(
+            'alternative', self._multipart_disallowed_subtypes['alternative'],
+            boundary)
 
     def make_mixed(self, boundary=None):
-        self._make_multipart('mixed', (), boundary)
+        self._make_multipart(
+            'mixed', self._multipart_disallowed_subtypes['mixed'], boundary)
 
     def _add_multipart(self, _subtype, *args, _disp=None, **kw):
-        if (self.get_content_maintype() != 'multipart' or
-                self.get_content_subtype() != _subtype):
-            getattr(self, 'make_' + _subtype)()
+        needs_conversion = (self.get_content_maintype() != 'multipart' or
+                            self.get_content_subtype() != _subtype)
+        if needs_conversion:
+            self._check_multipart_conversion(
+                _subtype, self._multipart_disallowed_subtypes[_subtype])
         part = type(self)(policy=self.policy)
         part.set_content(*args, **kw)
         if _disp and 'content-disposition' not in part:
             part['Content-Disposition'] = _disp
+        if needs_conversion:
+            getattr(self, 'make_' + _subtype)()
         self.attach(part)
 
     def add_related(self, *args, **kw):
