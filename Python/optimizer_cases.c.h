@@ -3624,7 +3624,15 @@
                 index_or_null = sym_new_null(ctx);
             }
             else if (is_trad) {
-                iter = sym_new_not_null(ctx);
+                if (tp == &PyDict_Type || tp == &PyFrozenDict_Type) {
+                    iter = sym_new_type(ctx, &PyDictIterKey_Type);
+                }
+                else if (tp == &PySet_Type || tp == &PyFrozenSet_Type) {
+                    iter = sym_new_type(ctx, &PySetIter_Type);
+                }
+                else {
+                    iter = sym_new_not_null(ctx);
+                }
                 index_or_null = sym_new_null(ctx);
             }
             else {
