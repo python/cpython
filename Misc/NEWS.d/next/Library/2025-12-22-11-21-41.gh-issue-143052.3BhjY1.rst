@@ -1,0 +1,1 @@
+Add ``exist_ok`` parameter to :meth:`!pathlib.Path.copy_into`.
