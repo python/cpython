@@ -159,19 +159,27 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         try:
             self._protocol.connection_lost(exc)
         finally:
-            # XXX If there is a pending overlapped read on the other
-            # end then it may fail with ERROR_NETNAME_DELETED if we
-            # just close our end.  First calling shutdown() seems to
-            # cure it, but maybe using DisconnectEx() would be better.
-            if hasattr(self._sock, 'shutdown') and self._sock.fileno() != -1:
-                self._sock.shutdown(socket.SHUT_RDWR)
-            self._sock.close()
-            self._sock = None
-            server = self._server
-            if server is not None:
-                server._detach(self)
-                self._server = None
-            self._called_connection_lost = True
+            try:
+                # XXX If there is a pending overlapped read on the other
+                # end then it may fail with ERROR_NETNAME_DELETED if we
+                # just close our end.  First calling shutdown() seems to
+                # cure it, but maybe using DisconnectEx() would be better.
+                if (hasattr(self._sock, 'shutdown')
+                        and self._sock.fileno() != -1):
+                    try:
+                        self._sock.shutdown(socket.SHUT_RDWR)
+                    except ConnectionError:
+                        # The peer has already reset the connection.
+                        pass
+            finally:
+                # Always release the socket, even if shutdown() failed.
+                self._sock.close()
+                self._sock = None
+                server = self._server
+                if server is not None:
+                    server._detach(self)
+                    self._server = None
+                self._called_connection_lost = True
 
     def get_write_buffer_size(self):
         size = self._pending_write

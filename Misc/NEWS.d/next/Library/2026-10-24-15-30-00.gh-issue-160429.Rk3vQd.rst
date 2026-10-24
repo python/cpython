@@ -1,0 +1,3 @@
+Fix :mod:`asyncio` proactor transports skipping the closing of the socket
+and the detaching from the server when the socket shutdown fails because
+the peer has already reset the connection.

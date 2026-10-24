@@ -336,6 +336,36 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         self.assertTrue(self.protocol.connection_lost.called)
         self.assertTrue(self.sock.close.called)
 
+    def test_call_connection_lost_shutdown_reset(self):
+        # gh-160429: a connection reset by the peer must not prevent
+        # the socket from being closed and the transport from being
+        # detached from its server.
+        server = mock.Mock()
+        tr = _ProactorSocketTransport(self.loop, self.sock, self.protocol,
+                                      server=server)
+        self.sock.shutdown.side_effect = ConnectionResetError
+        tr._call_connection_lost(None)
+        self.protocol.connection_lost.assert_called_once_with(None)
+        self.sock.shutdown.assert_called_once_with(socket.SHUT_RDWR)
+        self.sock.close.assert_called_once_with()
+        server._detach.assert_called_once_with(tr)
+        self.assertIsNone(tr._sock)
+        self.assertIsNone(tr._server)
+        self.assertTrue(tr._called_connection_lost)
+
+    def test_call_connection_lost_shutdown_error(self):
+        # Unexpected shutdown() errors still propagate, but the socket is
+        # closed anyway.
+        server = mock.Mock()
+        tr = _ProactorSocketTransport(self.loop, self.sock, self.protocol,
+                                      server=server)
+        self.sock.shutdown.side_effect = OSError
+        with self.assertRaises(OSError):
+            tr._call_connection_lost(None)
+        self.sock.close.assert_called_once_with()
+        server._detach.assert_called_once_with(tr)
+        self.assertTrue(tr._called_connection_lost)
+
     def test_write_eof(self):
         tr = self.socket_transport()
         self.assertTrue(tr.can_write_eof())
