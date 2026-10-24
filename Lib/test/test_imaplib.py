@@ -851,6 +851,10 @@ class NewIMAPTestsMixin:
             client.login_plain('user\0', 'pass')
         with self.assertRaises(ValueError):
             client.login_plain('user', b'pa\0ss')
+        with self.assertRaises(ValueError):
+            client.login_plain(memoryview(b'user\0'), 'pass')
+        with self.assertRaises(ValueError):
+            client.login_plain('user', memoryview(b'pa\0ss'))
 
     def test_aborted_authentication(self):
         class MyServer(SimpleIMAPHandler):

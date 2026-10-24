@@ -1,0 +1,2 @@
+:meth:`imaplib.IMAP4.login_plain` now rejects NUL in a user name or password
+given as a :class:`memoryview` or another :term:`bytes-like object`.
