@@ -52,6 +52,7 @@ import multiprocessing as mp
 # This import is required to load the multiprocessing.connection submodule
 # so that it can be accessed later as `mp.connection`
 import multiprocessing.connection
+from multiprocessing.connection import _SentinelReady
 from multiprocessing.queues import Queue
 import threading
 import weakref
@@ -518,8 +519,16 @@ class _ExecutorManagerThread(threading.Thread):
         result_item = None
         if result_reader in ready:
             try:
-                result_item = result_reader.recv()
+                # Keep watching worker sentinels for the rest of the
+                # message. recv() otherwise blocks in plain reads, and the
+                # parent's write end of this pipe prevents a killed worker
+                # from delivering EOF. gh-159689.
+                result_item = result_reader.recv(sentinels=worker_sentinels)
                 is_broken = False
+            except _SentinelReady:
+                # A worker exited while its result was only partly written.
+                # Leave is_broken set so the exit code is reported.
+                pass
             except BaseException as exc:
                 cause = format_exception(exc)
 
