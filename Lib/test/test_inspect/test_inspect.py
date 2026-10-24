@@ -1045,6 +1045,234 @@ class TestRetrievingSourceCode(GetSourceBase):
             nonlocal __firstlineno__
         self.assertRaises(OSError, inspect.getsource, C)
 
+class TestGetmoduleFrameOwner(unittest.TestCase):
+    def setUp(self):
+        self.enterContext(unittest.mock.patch.object(inspect, 'modulesbyfile', {}))
+        self.enterContext(unittest.mock.patch.object(inspect, '_filesbymodname', {}))
+        self.directory = self.enterContext(tempfile.TemporaryDirectory())
+        self.filename = os.path.join(self.directory, 'owner.py')
+        self.module = types.ModuleType('_inspect_frame_owner')
+        self.module.__file__ = self.filename
+        self.enterContext(unittest.mock.patch.dict(
+            sys.modules, {self.module.__name__: self.module}))
+
+    def capture(self, namespace=None, filename=None):
+        if namespace is None:
+            namespace = self.module.__dict__
+        exec(compile("import sys\nframe = sys._getframe()\n"
+                     "try: 1 / 0\n"
+                     "except ZeroDivisionError as error:\n"
+                     "    traceback = error.__traceback__\n",
+                     filename or self.filename, 'exec'), namespace)
+        self.addCleanup(namespace.pop, 'frame', None)
+        self.addCleanup(namespace.pop, 'traceback', None)
+        return namespace['frame'], namespace['traceback']
+
+    def test_registered_owner_without_registry_scan(self):
+        frame, traceback = self.capture()
+        class NoScanDict(dict):
+            def copy(self):
+                raise AssertionError('registered frame scanned sys.modules')
+        with unittest.mock.patch.object(sys, 'modules', NoScanDict(sys.modules)):
+            for object in (frame, traceback):
+                with self.subTest(object=type(object)):
+                    inspect.modulesbyfile.clear()
+                    inspect._filesbymodname.clear()
+                    self.assertIs(inspect.getmodule(object), self.module)
+                    self.assertIs(inspect.getmodule(object, self.filename),
+                                  self.module)
+
+    def test_filename_collision_uses_globals_owner(self):
+        frame, traceback = self.capture()
+        other = types.ModuleType('_inspect_frame_collision')
+        other.__file__ = self.filename
+        with unittest.mock.patch.dict(sys.modules, {other.__name__: other}):
+            for object in (frame, traceback):
+                self.assertIs(inspect.getmodule(object), self.module)
+
+            # An unrelated miss scans the registry and can replace that entry.
+            self.assertIsNone(inspect.getmodule(
+                compile('pass', '<inspect-unrelated-miss>', 'exec')))
+            for object in (frame, traceback):
+                self.assertIs(inspect.getmodule(object), other)
+
+            # Bare code uses the filename map, including entries populated
+            # by an earlier frame lookup.
+            inspect.modulesbyfile.clear()
+            inspect._filesbymodname.clear()
+            self.assertIs(inspect.getmodule(frame.f_code), other)
+            inspect.modulesbyfile.clear()
+            inspect._filesbymodname.clear()
+            self.assertIs(inspect.getmodule(frame), self.module)
+            self.assertIs(inspect.getmodule(frame.f_code), self.module)
+
+    def test_static_filename_with_module_getattr_avoids_scan(self):
+        def module_getattr(name):
+            self.fail(f'unexpected module attribute lookup: {name}')
+
+        self.module.__getattr__ = module_getattr
+        frame, traceback = self.capture()
+
+        class NoScanDict(dict):
+            def copy(self):
+                raise AssertionError('registered frame scanned sys.modules')
+
+        with unittest.mock.patch.object(sys, 'modules', NoScanDict(sys.modules)):
+            for object in (frame, traceback):
+                inspect.modulesbyfile.clear()
+                inspect._filesbymodname.clear()
+                self.assertIs(inspect.getmodule(object), self.module)
+
+    def test_filename_supplied_by_module_getattr_falls_back(self):
+        del self.module.__file__
+
+        def module_getattr(name):
+            if name == '__file__':
+                return self.module.source
+            raise AttributeError(name)
+
+        self.module.__getattr__ = module_getattr
+        for suffix in ('.dynamic', '.changed'):
+            self.module.source = self.filename + suffix
+            frame, traceback = self.capture(filename=self.module.source)
+            for object in (frame, traceback):
+                inspect.modulesbyfile.clear()
+                inspect._filesbymodname.clear()
+                self.assertIs(inspect.getmodule(object), self.module)
+
+    def test_loader_supplied_by_module_getattr(self):
+        self.module.__file__ = self.filename + 'c'
+        del self.module.__loader__
+        loader = object()
+        requested = []
+
+        def module_getattr(name):
+            requested.append(name)
+            if name == '__loader__':
+                return loader
+            raise AttributeError(name)
+
+        self.module.__getattr__ = module_getattr
+        frame, traceback = self.capture()
+        for obj in (frame, traceback):
+            inspect.modulesbyfile.clear()
+            inspect._filesbymodname.clear()
+            self.assertIs(inspect.getmodule(obj), self.module)
+        self.assertIn('__loader__', requested)
+
+    def test_unregistered_namespace_uses_filename_fallback(self):
+        namespace = {'__name__': self.module.__name__}
+        frame, traceback = self.capture(namespace)
+        for object in (frame, traceback):
+            self.assertIs(inspect.getmodule(object), self.module)
+
+    def test_existing_filename_cache_retains_precedence(self):
+        frame, traceback = self.capture()
+        other = types.ModuleType('_inspect_frame_cached')
+        other.__file__ = self.filename
+        with unittest.mock.patch.dict(sys.modules, {other.__name__: other}):
+            self.assertIs(inspect.getmodule(None, self.filename), other)
+            for object in (frame, traceback):
+                self.assertIs(inspect.getmodule(object), other)
+
+    def test_changed_module_filename_is_rechecked(self):
+        frame, traceback = self.capture()
+        self.assertIs(inspect.getmodule(frame), self.module)
+        self.module.__file__ = self.filename + '.changed'
+        inspect.modulesbyfile.clear()
+        for object in (frame, traceback):
+            self.assertIsNone(inspect.getmodule(object))
+
+    def test_different_origin_uses_filename_fallback(self):
+        other = types.ModuleType('_inspect_frame_source')
+        other.__file__ = self.filename + '.other'
+        with unittest.mock.patch.dict(sys.modules, {other.__name__: other}):
+            frame, traceback = self.capture(filename=other.__file__)
+            for object in (frame, traceback):
+                self.assertIs(inspect.getmodule(object), other)
+
+    def test_explicit_filename_override(self):
+        frame, traceback = self.capture()
+        other = types.ModuleType('_inspect_frame_override')
+        other.__file__ = self.filename + '.other'
+        with unittest.mock.patch.dict(sys.modules, {other.__name__: other}):
+            for object in (frame, traceback):
+                self.assertIs(inspect.getmodule(object, other.__file__), other)
+
+    def test_fileless_module_falls_back(self):
+        del self.module.__file__
+        frame, traceback = self.capture()
+        for object in (frame, traceback):
+            self.assertIsNone(inspect.getmodule(object))
+
+    def test_invalid_globals_name_falls_back(self):
+        frame, traceback = self.capture()
+        self.module.__name__ = []
+        del self.module.__file__
+        for object in (frame, traceback):
+            self.assertIsNone(inspect.getmodule(object))
+
+    def test_same_name_replacement_does_not_claim_old_frame(self):
+        frame, traceback = self.capture()
+        replacement = types.ModuleType(self.module.__name__)
+        replacement.__file__ = self.filename + '.replacement'
+        sys.modules[replacement.__name__] = replacement
+        for object in (frame, traceback):
+            self.assertIsNone(inspect.getmodule(object))
+
+    def test_dynamic_module_metadata_falls_back(self):
+        class DynamicModule(types.ModuleType):
+            @property
+            def __file__(self):
+                return self.source
+        # Do not leave a shadow value that LOAD_ATTR_MODULE can read instead
+        # of the property when attribute access specializes.
+        del self.module.__dict__['__file__']
+        self.module.__class__ = DynamicModule
+        for suffix in ('.dynamic', '.changed'):
+            with self.subTest(suffix=suffix):
+                self.module.source = self.filename + suffix
+                frame, traceback = self.capture(filename=self.module.source)
+                # Exercise warmed attribute access as well as cold caches.
+                for _ in range(100):
+                    self.assertEqual(inspect.getfile(self.module),
+                                     self.module.source)
+                for object in (frame, traceback):
+                    inspect.modulesbyfile.clear()
+                    inspect._filesbymodname.clear()
+                    self.assertIs(inspect.getmodule(object), self.module)
+
+    def test_sourceless_import(self):
+        import py_compile
+        source = os.path.join(self.directory, 'sourceless.py')
+        bytecode = source + 'c'
+        with open(source, 'w') as file:
+            file.write('import sys\ndef capture(): return sys._getframe()\n')
+        py_compile.compile(source, cfile=bytecode, doraise=True)
+        os.remove(source)
+        spec = importlib.util.spec_from_file_location('_inspect_sourceless', bytecode)
+        module = importlib.util.module_from_spec(spec)
+        with unittest.mock.patch.dict(sys.modules, {spec.name: module}):
+            spec.loader.exec_module(module)
+            frame = module.capture()
+            try:
+                self.assertIs(inspect.getmodule(frame), module)
+                self.assertIs(inspect.getmodule(module.capture.__code__), module)
+            finally:
+                del frame
+
+    def test_bytecode_filename_with_available_source(self):
+        with open(self.filename, 'w'):
+            pass
+        self.module.__file__ = self.filename + 'c'
+        frame, traceback = self.capture(filename=self.module.__file__)
+        for object in (frame, traceback, frame.f_code):
+            self.assertIs(inspect.getmodule(object), self.module)
+            # An explicit bytecode filename bypasses source normalization
+            # on the query side in the existing implementation.
+            self.assertIsNone(inspect.getmodule(object, self.module.__file__))
+
+
 class TestGetsourceStdlib(unittest.TestCase):
     # Test Python implementations of the stdlib modules
 

@@ -1,0 +1,4 @@
+Avoid scanning :data:`sys.modules` in :func:`inspect.getmodule` for an uncached
+frame or traceback whose globals identify a registered module with a matching
+canonical filename. Existing filename-cache entries retain precedence. When
+modules share a filename, results can depend on earlier lookups.

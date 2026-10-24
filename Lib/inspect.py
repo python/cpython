@@ -929,6 +929,26 @@ def getabsfile(object, _filename=None):
 modulesbyfile = {}
 _filesbymodname = {}
 
+def _getframemodule(frame, filename):
+    """Resolve a frame's registered globals owner with a matching origin."""
+    namespace = frame.f_globals
+    name = namespace.get('__name__')
+    if type(name) is not str:
+        return None
+    module = sys.modules.get(name)
+    # Leave module subclasses and dynamically supplied filenames to the fallback.
+    if (type(module) is not types.ModuleType
+        or module.__dict__ is not namespace
+        or type(namespace.get('__file__')) is not str):
+        return None
+    try:
+        if filename == getabsfile(module):
+            return module
+    except FileNotFoundError, TypeError:
+        pass
+    return None
+
+
 def getmodule(object, _filename=None):
     """Return the module an object was defined in, or None if not found."""
     if ismodule(object):
@@ -946,6 +966,19 @@ def getmodule(object, _filename=None):
         return None
     if file in modulesbyfile:
         return sys.modules.get(modulesbyfile[file])
+    if isframe(object):
+        frame = object
+    elif istraceback(object):
+        frame = object.tb_frame
+    else:
+        frame = None
+    if frame is not None and (
+            _filename is None or _filename == frame.f_code.co_filename):
+        module = _getframemodule(frame, file)
+        if module is not None:
+            modulesbyfile[file] = module.__name__
+            return module
+
     # Update the filename to module name cache and check yet again
     # Copy sys.modules in order to cope with changes while iterating
     for modname, module in sys.modules.copy().items():
