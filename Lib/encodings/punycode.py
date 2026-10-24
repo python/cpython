@@ -223,15 +223,28 @@ class Codec(codecs.Codec):
         res = punycode_decode(input, errors)
         return res, len(input)
 
-class IncrementalEncoder(codecs.IncrementalEncoder):
-    def encode(self, input, final=False):
-        return punycode_encode(input)
+# Punycode encodes the positions of non-ASCII characters relative to the
+# whole string, so a chunk cannot be transformed on its own: buffer the
+# input until final is true.
 
-class IncrementalDecoder(codecs.IncrementalDecoder):
+class IncrementalEncoder(codecs.BufferedIncrementalEncoder):
+    def _buffer_encode(self, input, errors, final):
+        if not final:
+            return b'', 0
+        return punycode_encode(input), len(input)
+
+class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
     def decode(self, input, final=False):
         if self.errors not in ('strict', 'replace', 'ignore'):
             raise UnicodeError(f"Unsupported error handling: {self.errors}")
-        return punycode_decode(input, self.errors)
+        if isinstance(input, str):
+            input = input.encode('ascii')
+        return super().decode(bytes(input), final)
+
+    def _buffer_decode(self, input, errors, final):
+        if not final:
+            return '', 0
+        return punycode_decode(input, errors), len(input)
 
 class StreamWriter(Codec,codecs.StreamWriter):
     pass

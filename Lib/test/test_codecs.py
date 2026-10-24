@@ -1405,6 +1405,43 @@ class PunycodeTest(unittest.TestCase):
                 else:
                     self.assertEqual(puny.decode("punycode", errors), expected)
 
+    def test_incremental_encode(self):
+        for uni, puny in punycode_testcases:
+            with self.subTest(uni=uni):
+                encoder = codecs.getincrementalencoder("punycode")()
+                result = b"".join(encoder.encode(c) for c in uni)
+                result += encoder.encode("", final=True)
+                self.assertEqual(result, uni.encode("punycode"))
+                result = b"".join(codecs.iterencode(uni, "punycode"))
+                self.assertEqual(result, uni.encode("punycode"))
+
+    def test_incremental_decode(self):
+        for uni, puny in punycode_testcases:
+            with self.subTest(uni=uni):
+                decoder = codecs.getincrementaldecoder("punycode")()
+                result = "".join(decoder.decode(bytes([b])) for b in puny)
+                result += decoder.decode(b"", final=True)
+                self.assertEqual(result, uni)
+                chunks = (bytes([b]) for b in puny)
+                result = "".join(codecs.iterdecode(chunks, "punycode"))
+                self.assertEqual(result, uni)
+
+    def test_incremental_state(self):
+        encoder = codecs.getincrementalencoder("punycode")()
+        self.assertEqual(encoder.encode("b\xfc"), b"")
+        state = encoder.getstate()
+        encoder.reset()
+        self.assertEqual(encoder.encode("cher", final=True), b"cher-")
+        encoder.setstate(state)
+        self.assertEqual(encoder.encode("cher", final=True), b"bcher-kva")
+
+        decoder = codecs.getincrementaldecoder("punycode")()
+        self.assertEqual(decoder.decode(b"bcher-"), "")
+        self.assertEqual(decoder.decode("kva", final=True), "b\xfccher")
+        decoder = codecs.getincrementaldecoder("punycode")("ignore")
+        self.assertEqual(decoder.decode(b"xn--", final=False), "")
+        self.assertEqual(decoder.decode(b"w&", final=True), "xn-")
+
 
 utf_7_imap_testcases = [
     # (unicode, modified UTF-7)

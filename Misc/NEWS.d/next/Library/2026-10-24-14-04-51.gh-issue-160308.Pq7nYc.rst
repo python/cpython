@@ -1,0 +1,3 @@
+The incremental encoder and decoder of the ``punycode`` codec now buffer
+their input until *final* is true, instead of transforming each chunk
+separately and producing wrong results for chunked input.
