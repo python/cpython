@@ -532,5 +532,50 @@ class TestDict(TestCase):
         CHURN_SIZE = 512
         race(ITER_TIMES, CHURN_SIZE, APPENDER_THREADS, REPLACER_THREADS)
 
+    def test_racing_shared_iterator_exhaustion(self):
+        # gh-154130: exhausting a dict iterator shared between threads must
+        # not release the iterator's reference to the dict more than once.
+        makers = [
+            lambda d: iter(d),
+            lambda d: iter(d.values()),
+            lambda d: iter(d.items()),
+            lambda d: reversed(d),
+            lambda d: reversed(d.items()),
+        ]
+        for make in makers:
+            cell = [make({i: i for i in range(8)})]
+
+            def worker():
+                for _ in range(5000):
+                    it = cell[0]
+                    try:
+                        next(it)
+                    except StopIteration:
+                        cell[0] = make({i: i for i in range(8)})
+                    except RuntimeError:
+                        # Concurrent next() calls may observe each other's
+                        # updates as a modification; only crashes are bugs.
+                        pass
+
+            with self.subTest(make=make):
+                threading_helper.run_concurrently(worker, nthreads=4)
+
+    def test_exhausted_iterator_stays_exhausted(self):
+        d = {1: 1}
+        for it in (iter(d), iter(d.items()), reversed(d)):
+            self.assertEqual(len(list(it)), 1)
+            d[2] = 2
+            self.assertRaises(StopIteration, next, it)
+            self.assertEqual(it.__length_hint__(), 0)
+            del d[2]
+
+    def test_reversed_empty_dict_iterator_not_exhausted(self):
+        # A reverse iterator over an empty dict starts at position -1 but is
+        # not exhausted, so a later size change must still be detected.
+        d = {}
+        it = reversed(d)
+        d[1] = 1
+        self.assertRaises(RuntimeError, next, it)
+
 if __name__ == "__main__":
     unittest.main()
