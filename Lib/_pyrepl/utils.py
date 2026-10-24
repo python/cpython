@@ -1,67 +1,23 @@
-import builtins
 import functools
-import keyword
 import re
-import token as T
-import tokenize
 import unicodedata
 import _colorize
 
-from collections import deque
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterator
 from dataclasses import dataclass
-from io import StringIO
-from re import Match
-from tokenize import TokenInfo as TI
 from typing import NamedTuple, Self
 
 from .types import CharBuffer, CharWidths
-from .trace import trace
 
 
 ANSI_ESCAPE_SEQUENCE = re.compile(r"\x1b\[[ -@]*[A-~]")
 ZERO_WIDTH_BRACKET = re.compile(r"\x01.*?\x02")
 ZERO_WIDTH_TRANS = str.maketrans({"\x01": "", "\x02": ""})
-IDENTIFIERS_AFTER = frozenset({"def", "class"})
-KEYWORD_CONSTANTS = frozenset({"True", "False", "None"})
-BUILTINS = frozenset({str(name) for name in dir(builtins) if not name.startswith('_')})
-# Keep this in sync with _pyrepl.simple_interact.REPL_COMMANDS
-COMMANDS = frozenset({"exit", "quit", "copyright", "help", "clear"})
 
 
 def THEME(**kwargs):
     # Not cached: the user can modify the theme inside the interactive session.
     return _colorize.get_theme(**kwargs).syntax
-
-
-class Span(NamedTuple):
-    """Span indexing that's inclusive on both ends."""
-
-    start: int
-    end: int
-
-    @classmethod
-    def from_re(cls, m: Match[str], group: int | str) -> Self:
-        re_span = m.span(group)
-        return cls(re_span[0], re_span[1] - 1)
-
-    @classmethod
-    def from_token(cls, token: TI, line_len: list[int]) -> Self:
-        end_offset = -1
-        if (token.type in {T.FSTRING_MIDDLE, T.TSTRING_MIDDLE}
-            and token.string.endswith(("{", "}"))):
-            # gh-134158: a visible trailing brace comes from a double brace in input
-            end_offset += 1
-
-        return cls(
-            line_len[token.start[0] - 1] + token.start[1],
-            line_len[token.end[0] - 1] + token.end[1] + end_offset,
-        )
-
-
-class ColorSpan(NamedTuple):
-    span: Span
-    tag: str
 
 
 class StyledChar(NamedTuple):
@@ -116,206 +72,9 @@ def unbracket(s: str, including_content: bool = False) -> str:
     return s.translate(ZERO_WIDTH_TRANS)
 
 
-def gen_colors(buffer: str) -> Iterator[ColorSpan]:
-    """Returns a list of index spans to color using the given color tag.
-
-    The input `buffer` should be a valid start of a Python code block, i.e.
-    it cannot be a block starting in the middle of a multiline string.
-    """
-    sio = StringIO(buffer)
-    line_lengths = [0] + [len(line) for line in sio.readlines()]
-    # make line_lengths cumulative
-    for i in range(1, len(line_lengths)):
-        line_lengths[i] += line_lengths[i-1]
-
-    sio.seek(0)
-    gen = tokenize.generate_tokens(sio.readline)
-    last_emitted: ColorSpan | None = None
-    try:
-        for color in gen_colors_from_token_stream(gen, line_lengths):
-            yield color
-            last_emitted = color
-    except SyntaxError:
-        return
-    except tokenize.TokenError as te:
-        yield from recover_unterminated_string(
-            te, line_lengths, last_emitted, buffer
-        )
-
-
-def recover_unterminated_string(
-    exc: tokenize.TokenError,
-    line_lengths: list[int],
-    last_emitted: ColorSpan | None,
-    buffer: str,
-) -> Iterator[ColorSpan]:
-    msg, loc = exc.args
-    if loc is None:
-        return
-
-    line_no, column = loc
-
-    if msg.startswith(
-        (
-            "unterminated string literal",
-            "unterminated f-string literal",
-            "unterminated t-string literal",
-            "EOF in multi-line string",
-            "unterminated triple-quoted f-string literal",
-            "unterminated triple-quoted t-string literal",
-        )
-    ):
-        start = line_lengths[line_no - 1] + column - 1
-        end = line_lengths[-1] - 1
-
-        # in case FSTRING_START was already emitted
-        if last_emitted and start <= last_emitted.span.start:
-            trace("before last emitted = {s}", s=start)
-            start = last_emitted.span.end + 1
-
-        span = Span(start, end)
-        trace("yielding span {a} -> {b}", a=span.start, b=span.end)
-        yield ColorSpan(span, "string")
-    else:
-        trace(
-            "unhandled token error({buffer}) = {te}",
-            buffer=repr(buffer),
-            te=str(exc),
-        )
-
-
-def gen_colors_from_token_stream(
-    token_generator: Iterator[TI],
-    line_lengths: list[int],
-) -> Iterator[ColorSpan]:
-    token_window = prev_next_window(token_generator)
-
-    is_def_name = False
-    bracket_level = 0
-    for prev_token, token, next_token in token_window:
-        assert token is not None
-        if token.start == token.end:
-            continue
-
-        match token.type:
-            case (
-                T.STRING
-                | T.FSTRING_START | T.FSTRING_MIDDLE | T.FSTRING_END
-                | T.TSTRING_START | T.TSTRING_MIDDLE | T.TSTRING_END
-            ):
-                span = Span.from_token(token, line_lengths)
-                yield ColorSpan(span, "string")
-            case T.COMMENT:
-                span = Span.from_token(token, line_lengths)
-                yield ColorSpan(span, "comment")
-            case T.NUMBER:
-                span = Span.from_token(token, line_lengths)
-                yield ColorSpan(span, "number")
-            case T.OP:
-                if token.string in "([{":
-                    bracket_level += 1
-                elif token.string in ")]}":
-                    bracket_level -= 1
-                span = Span.from_token(token, line_lengths)
-                yield ColorSpan(span, "op")
-            case T.NAME:
-                if is_def_name:
-                    is_def_name = False
-                    span = Span.from_token(token, line_lengths)
-                    yield ColorSpan(span, "definition")
-                elif keyword.iskeyword(token.string):
-                    span_cls = "keyword"
-                    if token.string in KEYWORD_CONSTANTS:
-                        span_cls = "keyword_constant"
-                    span = Span.from_token(token, line_lengths)
-                    yield ColorSpan(span, span_cls)
-                    if token.string in IDENTIFIERS_AFTER:
-                        is_def_name = True
-                elif (
-                    keyword.issoftkeyword(token.string)
-                    and bracket_level == 0
-                    and is_soft_keyword_used(prev_token, token, next_token)
-                ):
-                    span = Span.from_token(token, line_lengths)
-                    yield ColorSpan(span, "soft_keyword")
-                elif (
-                    token.string in COMMANDS
-                    and (not prev_token or prev_token.type == T.INDENT)
-                    and (not next_token or next_token.type == T.NEWLINE)
-                ):
-                    span = Span.from_token(token, line_lengths)
-                    yield ColorSpan(span, "command")
-                elif (
-                    token.string in BUILTINS
-                    and not (prev_token and prev_token.exact_type == T.DOT)
-                ):
-                    span = Span.from_token(token, line_lengths)
-                    yield ColorSpan(span, "builtin")
-
-
-keyword_first_sets_match = frozenset({"False", "None", "True", "await", "lambda", "not"})
-keyword_first_sets_case = frozenset({"False", "None", "True"})
-
-
-def is_soft_keyword_used(*tokens: TI | None) -> bool:
-    """Returns True if the current token is a keyword in this context.
-
-    For the `*tokens` to match anything, they have to be a three-tuple of
-    (previous, current, next).
-    """
-    trace("is_soft_keyword_used{t}", t=tokens)
-    match tokens:
-        case (
-            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(string=":"),
-            TI(string="match"),
-            TI(T.NUMBER | T.STRING | T.FSTRING_START | T.TSTRING_START)
-            | TI(T.OP, string="(" | "*" | "-" | "+" | "[" | "{" | "~" | "...")
-        ):
-            return True
-        case (
-            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(string=":"),
-            TI(string="match"),
-            TI(T.NAME, string=s)
-        ):
-            if keyword.iskeyword(s):
-                return s in keyword_first_sets_match
-            return True
-        case (
-            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(T.DEDENT) | TI(string=":"),
-            TI(string="case"),
-            TI(T.NUMBER | T.STRING | T.FSTRING_START | T.TSTRING_START)
-            | TI(T.OP, string="(" | "*" | "-" | "+" | "[" | "{")
-        ):
-            return True
-        case (
-            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(T.DEDENT) | TI(string=":"),
-            TI(string="case"),
-            TI(T.NAME, string=s)
-        ):
-            if keyword.iskeyword(s):
-                return s in keyword_first_sets_case
-            return True
-        case (TI(string="case"), TI(string="_"), TI(string=":")):
-            return True
-        case (
-            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(T.DEDENT) | TI(string=":"),
-            TI(string="type"),
-            TI(T.NAME, string=s)
-        ):
-            return not keyword.iskeyword(s)
-        case (
-            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(T.DEDENT) | TI(string=":" | ";"),
-            TI(string="lazy"),
-            TI(string="import") | TI(string="from")
-        ):
-            return True
-        case _:
-            return False
-
-
 def iter_display_chars(
     buffer: str,
-    colors: list[ColorSpan] | None = None,
+    colors: list[_colorize.ColorSpan] | None = None,
     start_index: int = 0,
 ) -> Iterator[StyledChar]:
     """Yield visible display characters with widths and semantic color tags.
@@ -370,7 +129,7 @@ def iter_display_chars(
 
 def disp_str(
     buffer: str,
-    colors: list[ColorSpan] | None = None,
+    colors: list[_colorize.ColorSpan] | None = None,
     start_index: int = 0,
     force_color: bool = False,
 ) -> tuple[CharBuffer, CharWidths]:
@@ -398,7 +157,7 @@ def disp_str(
     (['a', ' ', '=', ' ', '9'], [1, 1, 1, 1, 1])
 
     >>> line = "while 1:"
-    >>> colors = list(utils.gen_colors(line))
+    >>> colors = list(_colorize.gen_colors(line))
     >>> utils.disp_str(line, colors=colors)
     (['\x1b[1;34mw', 'h', 'i', 'l', 'e\x1b[0m', ' ', '1', ':'], [1, 1, 1, 1, 1, 1, 1, 1])
 
@@ -417,33 +176,6 @@ def disp_str(
         char_widths.append(styled_char.width)
 
     return chars, char_widths
-
-
-def prev_next_window[T](
-    iterable: Iterable[T]
-) -> Iterator[tuple[T | None, ...]]:
-    """Generates three-tuples of (previous, current, next) items.
-
-    On the first iteration previous is None. On the last iteration next
-    is None. In case of exception next is None and the exception is re-raised
-    on a subsequent next() call.
-
-    Inspired by `sliding_window` from `itertools` recipes.
-    """
-
-    iterator = iter(iterable)
-    try:
-        first = next(iterator)
-    except StopIteration:
-        return
-    window = deque((None, first), maxlen=3)
-    try:
-        for x in iterator:
-            window.append(x)
-            yield tuple(window)
-    finally:
-        window.append(None)
-        yield tuple(window)
 
 
 @dataclass(frozen=True, slots=True)

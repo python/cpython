@@ -1,0 +1,4 @@
+Add a *color* parameter to :func:`pprint.pp`, :func:`pprint.pprint`,
+:func:`pprint.pformat`, and :class:`pprint.PrettyPrinter`. Output written to
+supported streams is syntax highlighted by default; returned strings can be
+highlighted with ``color=True``. Based on a patch by Hugo van Kemenade.

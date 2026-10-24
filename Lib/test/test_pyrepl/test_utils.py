@@ -1,6 +1,7 @@
 from unittest import TestCase
 
-from _pyrepl.utils import str_width, wlen, prev_next_window, gen_colors
+from _colorize import gen_colors, prev_next_window
+from _pyrepl.utils import str_width, wlen
 
 
 class TestUtils(TestCase):

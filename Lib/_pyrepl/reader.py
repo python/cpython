@@ -22,6 +22,7 @@
 import sys
 import _colorize
 
+from _colorize import ColorSpan, gen_colors
 from contextlib import contextmanager
 from dataclasses import dataclass, field, fields, replace
 from typing import Self
@@ -37,7 +38,7 @@ from .content import (
 from .layout import LayoutMap, LayoutResult, LayoutRow, WrappedRow, layout_content_lines
 from .layout import wrapped_row_end
 from .render import RenderCell, RenderLine, RenderedScreen, ScreenOverlay
-from .utils import ANSI_ESCAPE_SEQUENCE, ColorSpan, THEME, StyleRef, gen_colors
+from .utils import ANSI_ESCAPE_SEQUENCE, THEME, StyleRef
 from .trace import trace
 
 

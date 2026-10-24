@@ -622,6 +622,20 @@ pickle
   :class:`!WeakMethod` and :class:`!WeakSet` can now also be copied.
   (Contributed by Serhiy Storchaka in :gh:`74876`.)
 
+
+pprint
+------
+
+* Add the *color* parameter to :func:`pprint.pp`, :func:`pprint.pprint`,
+  :func:`pprint.pformat`, and :class:`pprint.PrettyPrinter`.
+  Output written to a stream is syntax highlighted by default when the stream
+  and :ref:`environment variables <using-on-controlling-color>` permit.
+  Set *color* to ``True`` to force color, or ``False`` to disable it.
+  Strings returned by :func:`~pprint.pformat` or
+  :meth:`.PrettyPrinter.pformat` are highlighted only when *color* is ``True``.
+  (Contributed by Hugo van Kemenade and Peter Bierma in :gh:`145217`.)
+
+
 quopri
 ------
 
