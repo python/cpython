@@ -1,0 +1,2 @@
+Prevent a shutdown deadlock when a daemon thread emits a warning. The
+interpreter now waits for the thread to release the warnings lock.

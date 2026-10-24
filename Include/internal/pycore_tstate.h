@@ -54,6 +54,9 @@ typedef struct _PyThreadStateImpl {
     // Reused for the thread's lifetime; owns placeholders while they resolve.
     PyObject *lazy_imports;
 
+    // Held while this thread owns the warnings lock.
+    PyInterpreterGuard *warnings_lock_guard;
+
     // Distinguishes between yield and return from PyEval_EvalFrame().
     // See gen_send_ex2() in Objects/genobject.c
     enum {
