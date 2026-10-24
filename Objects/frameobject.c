@@ -94,27 +94,6 @@ framelocalsproxy_hasval(_PyInterpreterFrame *frame, PyCodeObject *co, int i)
     return true;
 }
 
-/* Scan co_localsplusnames once. A repeated name is on the code object
-   whether or not its slot is bound. Returns -1 on error. */
-static int
-framelocalsproxy_learn_dedup(PyCodeObject *co)
-{
-    char dedup = _PYCODE_LOCALSPLUS_DEDUP_UNIQUE;
-    if (co->co_nlocalsplus > 1) {
-        assert(PyTuple_GET_SIZE(co->co_localsplusnames) == co->co_nlocalsplus);
-        PyObject *names = PySet_New(co->co_localsplusnames);
-        if (names == NULL) {
-            return -1;
-        }
-        if (PySet_GET_SIZE(names) != co->co_nlocalsplus) {
-            dedup = _PYCODE_LOCALSPLUS_DEDUP_NEEDED;
-        }
-        Py_DECREF(names);
-    }
-    FT_ATOMIC_STORE_CHAR_RELAXED(co->_co_localsplus_dedup, dedup);
-    return 0;
-}
-
 /* *seen is NULL when dedup is unnecessary. Otherwise it is the set of bound
    names already kept. Returns -1 if the set cannot be created. */
 static int
@@ -122,13 +101,14 @@ framelocalsproxy_prepare_dedup(PyCodeObject *co, PyObject **seen)
 {
     *seen = NULL;
     char state = FT_ATOMIC_LOAD_CHAR_RELAXED(co->_co_localsplus_dedup);
-    if (state == _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN) {
-        if (framelocalsproxy_learn_dedup(co) < 0) {
-            return -1;
-        }
-        state = FT_ATOMIC_LOAD_CHAR_RELAXED(co->_co_localsplus_dedup);
-    }
     if (state == _PYCODE_LOCALSPLUS_DEDUP_UNIQUE) {
+        return 0;
+    }
+    /* A single name cannot be repeated. More names stay UNKNOWN until a
+       walk sees every slot bound without a repeat. */
+    if (state == _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN && co->co_nlocalsplus <= 1) {
+        FT_ATOMIC_STORE_CHAR_RELAXED(co->_co_localsplus_dedup,
+                                     _PYCODE_LOCALSPLUS_DEDUP_UNIQUE);
         return 0;
     }
     *seen = PySet_New(NULL);
@@ -138,14 +118,31 @@ framelocalsproxy_prepare_dedup(PyCodeObject *co, PyObject **seen)
     return 0;
 }
 
+/* A walk that saw every slot bound, and no repeated bound name, has shown
+   that co_localsplusnames are unique. A sparse walk leaves the cache
+   UNKNOWN: an unbound slot may still repeat a name. */
+static void
+framelocalsproxy_finish_dedup(PyCodeObject *co, int all_bound)
+{
+    if (all_bound &&
+        FT_ATOMIC_LOAD_CHAR_RELAXED(co->_co_localsplus_dedup) ==
+            _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN)
+    {
+        FT_ATOMIC_STORE_CHAR_RELAXED(co->_co_localsplus_dedup,
+                                     _PYCODE_LOCALSPLUS_DEDUP_UNIQUE);
+    }
+}
+
 /* Returns 1 if this slot's value should be kept, 0 if not, -1 on error.
-   Empty slots are not kept. When dedup is required, the first bound value
-   for a name wins. */
+   Empty slots are not kept. The first bound value for a name wins.
+   *all_bound is cleared when a slot is empty. A repeated bound name
+   stores NEEDED. */
 static int
 framelocalsproxy_visit_name(PyCodeObject *co, int i, PyObject *seen,
-                            int has_value)
+                            int has_value, int *all_bound)
 {
     if (!has_value) {
+        *all_bound = 0;
         return 0;
     }
     if (seen == NULL) {
@@ -157,6 +154,11 @@ framelocalsproxy_visit_name(PyCodeObject *co, int i, PyObject *seen,
         return -1;
     }
     if (found) {
+        if (FT_ATOMIC_LOAD_CHAR_RELAXED(co->_co_localsplus_dedup) ==
+                _PYCODE_LOCALSPLUS_DEDUP_UNKNOWN) {
+            FT_ATOMIC_STORE_CHAR_RELAXED(co->_co_localsplus_dedup,
+                                         _PYCODE_LOCALSPLUS_DEDUP_NEEDED);
+        }
         return 0;
     }
     if (PySet_Add(seen, name) < 0) {
@@ -458,9 +460,10 @@ framelocalsproxy_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
         return NULL;
     }
 
+    int all_bound = 1;
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         int has = framelocalsproxy_hasval(frame->f_frame, co, i);
-        int emit = framelocalsproxy_visit_name(co, i, seen, has);
+        int emit = framelocalsproxy_visit_name(co, i, seen, has, &all_bound);
         if (emit < 0) {
             goto error;
         }
@@ -471,7 +474,10 @@ framelocalsproxy_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
             }
         }
     }
-    Py_XDECREF(seen);
+    if (seen != NULL) {
+        framelocalsproxy_finish_dedup(co, all_bound);
+        Py_DECREF(seen);
+    }
 
     // Iterate through the extra locals
     if (frame->f_extra_locals) {
@@ -682,10 +688,11 @@ framelocalsproxy_values(PyObject *self, PyObject *Py_UNUSED(ignored))
         return NULL;
     }
 
+    int all_bound = 1;
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
         int has = value != NULL;
-        int emit = framelocalsproxy_visit_name(co, i, seen, has);
+        int emit = framelocalsproxy_visit_name(co, i, seen, has, &all_bound);
         if (emit < 0) {
             Py_XDECREF(value);
             goto error;
@@ -696,7 +703,10 @@ framelocalsproxy_values(PyObject *self, PyObject *Py_UNUSED(ignored))
         }
         Py_XDECREF(value);
     }
-    Py_XDECREF(seen);
+    if (seen != NULL) {
+        framelocalsproxy_finish_dedup(co, all_bound);
+        Py_DECREF(seen);
+    }
 
     // Iterate through the extra locals
     if (frame->f_extra_locals) {
@@ -734,10 +744,11 @@ framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
         return NULL;
     }
 
+    int all_bound = 1;
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
         int has = value != NULL;
-        int emit = framelocalsproxy_visit_name(co, i, seen, has);
+        int emit = framelocalsproxy_visit_name(co, i, seen, has, &all_bound);
         if (emit < 0) {
             Py_XDECREF(value);
             goto error;
@@ -755,8 +766,11 @@ framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
             goto error;
         }
     }
-    Py_XDECREF(seen);
-    seen = NULL;
+    if (seen != NULL) {
+        framelocalsproxy_finish_dedup(co, all_bound);
+        Py_DECREF(seen);
+        seen = NULL;
+    }
 
     // Iterate through the extra locals
     if (frame->f_extra_locals) {
@@ -799,9 +813,10 @@ framelocalsproxy_length(PyObject *self)
     if (framelocalsproxy_prepare_dedup(co, &seen) < 0) {
         return -1;
     }
+    int all_bound = 1;
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         int has = framelocalsproxy_hasval(frame->f_frame, co, i);
-        int emit = framelocalsproxy_visit_name(co, i, seen, has);
+        int emit = framelocalsproxy_visit_name(co, i, seen, has, &all_bound);
         if (emit < 0) {
             Py_XDECREF(seen);
             return -1;
@@ -810,7 +825,10 @@ framelocalsproxy_length(PyObject *self)
             size++;
         }
     }
-    Py_XDECREF(seen);
+    if (seen != NULL) {
+        framelocalsproxy_finish_dedup(co, all_bound);
+        Py_DECREF(seen);
+    }
     return size;
 }
 
