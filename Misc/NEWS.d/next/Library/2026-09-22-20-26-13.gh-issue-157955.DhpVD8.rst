@@ -1,0 +1,3 @@
+Support type alias objects in :func:`inspect.getcomments`,
+:func:`inspect.getfile`, :func:`inspect.getsourcefile`,
+:func:`inspect.getsourcelines`, and :func:`inspect.getsource`.
