@@ -196,6 +196,9 @@ class Node(xml.dom.Node):
 
     def normalize(self):
         L = []
+        # (text node, [data, ...]) for each text node that absorbs others.
+        # Join each run once at the end; concatenating as we go is quadratic.
+        runs = None
         for child in self.childNodes:
             if child.nodeType == Node.TEXT_NODE:
                 if not child.data:
@@ -208,7 +211,12 @@ class Node(xml.dom.Node):
                 elif L and L[-1].nodeType == child.nodeType:
                     # collapse text node
                     node = L[-1]
-                    node.data = node.data + child.data
+                    if runs is None:
+                        runs = []
+                    if runs and runs[-1][0] is node:
+                        runs[-1][1].append(child.data)
+                    else:
+                        runs.append((node, [node.data, child.data]))
                     node.nextSibling = child.nextSibling
                     if child.nextSibling:
                         child.nextSibling.previousSibling = node
@@ -219,6 +227,9 @@ class Node(xml.dom.Node):
                 L.append(child)
                 if child.nodeType == Node.ELEMENT_NODE:
                     child.normalize()
+        if runs is not None:
+            for node, data in runs:
+                node.data = ''.join(data)
         self.childNodes[:] = L
 
     def cloneNode(self, deep):
