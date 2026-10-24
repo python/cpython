@@ -17,6 +17,7 @@ import tempfile
 import textwrap
 import unittest
 import warnings
+from unittest import mock
 
 from test import support
 from test.support import isolation
@@ -60,6 +61,29 @@ def _caplog():
 
 
 class TestSupport(unittest.TestCase):
+    def test_check_sanitizer_config_args(self):
+        sanitizers = (
+            ('address', 'address'),
+            ('hwaddress', 'hwaddress'),
+            ('memory', 'memory'),
+            ('undefined-behavior', 'ub'),
+            ('thread', 'thread'),
+        )
+        for option, keyword in sanitizers:
+            for config_arg, expected in (
+                (f'--with-{option}-sanitizer=no', False),
+                (f'--without-{option}-sanitizer', False),
+                (f'--with-{option}-sanitizer', True),
+                (f'--with-{option}-sanitizer=yes', True),
+            ):
+                with self.subTest(config_arg=config_arg):
+                    config = {'CFLAGS': '', 'CONFIG_ARGS': f"'{config_arg}'"}
+                    with mock.patch.object(sysconfig, 'get_config_var',
+                                           side_effect=config.get):
+                        self.assertEqual(
+                            support.check_sanitizer(**{keyword: True}), expected
+                        )
+
     @classmethod
     def setUpClass(cls):
         orig_filter_len = len(warnings._get_filters())

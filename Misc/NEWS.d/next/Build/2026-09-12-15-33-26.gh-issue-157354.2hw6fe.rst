@@ -1,4 +1,3 @@
 Honor ``=no`` and ``--without-...`` for the AddressSanitizer,
 HWAddressSanitizer, MemorySanitizer, UndefinedBehaviorSanitizer, and
-ThreadSanitizer configure options without adding sanitizer flags or changing
-the pymalloc setting.
+ThreadSanitizer configure options without adding sanitizer flags.
