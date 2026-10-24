@@ -4027,7 +4027,7 @@ Aliases to container ABCs in :mod:`collections.abc`
 
    .. deprecated-removed:: 3.9 3.17
 
-.. class:: Collection(Sized, Iterable[T_co], Container[T_co])
+.. class:: Collection(Sized, Iterable[T_co], Container[Any])
 
    Deprecated alias to :class:`collections.abc.Collection`.
 
@@ -4037,7 +4037,7 @@ Aliases to container ABCs in :mod:`collections.abc`
       :class:`collections.abc.Collection` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: Container(Generic[T_co])
+.. class:: Container(Generic[T_contra])
 
    Deprecated alias to :class:`collections.abc.Container`.
 
