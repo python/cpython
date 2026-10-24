@@ -498,7 +498,12 @@ def _get_module_lock(name):
                 lock = _ModuleLock(name)
 
             def cb(ref, name=name):
-                _imp.acquire_lock()
+                try:
+                    _imp.acquire_lock()
+                except RecursionError:
+                    # Not enough stack left to take the import lock safely.
+                    # Leave the dead weakref; _get_module_lock() replaces it.
+                    return
                 try:
                     # bpo-31070: Check if another thread created a new lock
                     # after the previous lock was destroyed
