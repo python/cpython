@@ -1204,6 +1204,39 @@ class CStringIOTest(PyStringIOTest):
         memio2.write(MyStr("world"))
         self.assertEqual(memio2.getvalue(), "hello world")
 
+    @support.nomemtest
+    def test_memory_error_consistent_state(self):
+        # A MemoryError while copying the accumulated writes into the
+        # internal buffer must leave the size of the stream consistent with
+        # the buffer, so that using the object again does not read or write
+        # outside it.
+        piece = "0123456789" * 10
+        text = piece * 50
+        calls = [("readline",), ("read", 5), ("read",), ("getvalue",),
+                 ("truncate", 3), ("write", "ab"), ("__next__",)]
+        for name, *args in calls:
+            for n in range(3):
+                with self.subTest(method=name, n=n):
+                    memio = self.ioclass()
+                    for _ in range(50):
+                        memio.write(piece)
+                    memio.seek(0)
+                    method = getattr(memio, name)
+                    try:
+                        with support.inject_memory_error_cm(n, n + 1):
+                            method(*args)
+                    except MemoryError:
+                        pass
+                    else:
+                        continue
+                    # The contents are unchanged.
+                    self.assertEqual(memio.getvalue(), text)
+                    self.assertEqual(memio.seek(0, 2), len(text))
+                    memio.seek(0)
+                    self.assertEqual(memio.readline(), text)
+                    memio.write("!")
+                    self.assertEqual(memio.getvalue(), text + "!")
+
 
 class CStringIOPickleTest(PyStringIOPickleTest):
     UnsupportedOperation = io.UnsupportedOperation
