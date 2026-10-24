@@ -4564,6 +4564,13 @@ l_mod(PyLongObject *v, PyLongObject *w, PyLongObject **pmod)
         *pmod = (PyLongObject *)fast_mod(v, w);
         return -(*pmod == NULL);
     }
+#if WITH_PYLONG_MODULE
+    Py_ssize_t size_v = _PyLong_DigitCount(v); /* digits in numerator */
+    Py_ssize_t size_w = _PyLong_DigitCount(w); /* digits in denominator */
+    if (size_w > 300 && (size_v - size_w) > 150) {
+        return pylong_int_divmod(v, w, NULL, pmod);
+    }
+#endif
     if (long_rem(v, w, &mod) < 0)
         return -1;
     if ((_PyLong_IsNegative(mod) && _PyLong_IsPositive(w)) ||

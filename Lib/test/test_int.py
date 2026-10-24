@@ -778,6 +778,13 @@ class PyLongModuleTests(unittest.TestCase):
         a, b = divmod(n*3 + 1, n)
         assert a == 3 and b == 1
 
+    def test_pylong_int_mod(self):
+        n = (1 << 100_000)
+        self.assertEqual((n * 3 + 1) % n, 1)
+        self.assertEqual((-n * 3 - 1) % n, n - 1)
+        self.assertEqual((n * 3 + 1) % -n, 1 - n)
+        self.assertEqual((-n * 3 - 1) % -n, -1)
+
     @support.cpython_only  # tests implementation details of CPython.
     @unittest.skipUnless(_pylong, "_pylong module required")
     def test_pylong_int_divmod_crash(self):
@@ -789,6 +796,7 @@ class PyLongModuleTests(unittest.TestCase):
         with mock.patch.object(_pylong, "int_divmod", wraps=bad_int_divmod):
             msg = r"tuple of length 2 is required from int_divmod\(\)"
             self.assertRaisesRegex(ValueError, msg, divmod, a, b)
+            self.assertRaisesRegex(ValueError, msg, lambda: a % b)
 
     def test_pylong_str_to_int(self):
         v1 = 1 << 100_000
