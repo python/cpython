@@ -1,0 +1,3 @@
+Fix :class:`mailbox.Babyl` returning message labels as :class:`bytes`
+after reading a mailbox file, which made unseen messages appear as read
+when converted to other formats and made rewriting the mailbox fail.
