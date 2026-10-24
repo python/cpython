@@ -1,0 +1,2 @@
+:mod:`json`: Optimize the JSON encoder for floats to make it up to 1.3x
+faster. Patch by Victor Stinner.
