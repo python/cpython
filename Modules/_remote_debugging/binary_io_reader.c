@@ -711,7 +711,7 @@ reader_get_frame_info(RemoteDebuggingState *state, BinaryReader *reader,
     }
     if (reader->frame_info_cache == NULL) {
         size_t cache_size = Py_MIN(reader->frames_count,
-                                   FRAME_INFO_CACHE_SIZE);
+                                   (uint32_t)FRAME_INFO_CACHE_SIZE);
         reader->frame_info_cache = PyMem_Calloc(
             cache_size, sizeof(*reader->frame_info_cache));
         if (reader->frame_info_cache == NULL) {
