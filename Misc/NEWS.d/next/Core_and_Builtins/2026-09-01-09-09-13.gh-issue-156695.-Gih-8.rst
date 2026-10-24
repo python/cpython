@@ -1,0 +1,4 @@
+Improve accuracy of :class:`complex` powers with small negative integer
+exponents.  Previously ``z**-n`` was computed as ``1/(z**n)``; the
+intermediate ``z**n`` can overflow even when the result is representable,
+in which case all precision was lost.
