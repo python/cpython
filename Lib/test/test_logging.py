@@ -6726,6 +6726,77 @@ class RotatingFileHandlerTest(BaseFileTest):
         rh.close()
 
 class TimedRotatingFileHandlerTest(BaseFileTest):
+    def assert_rollover_contents(self, when, timestamps, expected, **kwargs):
+        with tempfile.TemporaryDirectory() as dirname:
+            filename = os.path.join(dirname, 'app.log')
+            now = [timestamps[0]]
+            with patch('time.time', lambda: now[0]):
+                handler = logging.handlers.TimedRotatingFileHandler(
+                    filename, when=when, delay=True, encoding='utf-8', **kwargs)
+                try:
+                    for i, timestamp in enumerate(timestamps):
+                        now[0] = timestamp
+                        handler.emit(logging.makeLogRecord({'msg': str(i)}))
+                finally:
+                    handler.close()
+            actual = {}
+            for name in os.listdir(dirname):
+                with open(os.path.join(dirname, name), encoding='utf-8') as f:
+                    actual[name.removeprefix('app.log')] = f.read().splitlines()
+            self.assertEqual(actual, expected)
+
+    @support.run_with_tz('EST+05EDT,M3.2.0,M11.1.0')
+    def test_rollover_fixed_interval_dst(self):
+        DT = datetime.datetime
+        cases = (
+            ('H', DT(2026, 3, 8, 1, 30), 3),
+            ('H', DT(2026, 11, 1, 1, 30), 2),
+            ('D', DT(2026, 3, 7, 23, 30), 3),
+            ('D', DT(2026, 11, 1, 0, 30), 2),
+        )
+        for when, start, count in cases:
+            interval = 3600 if when == 'H' else 86400
+            timestamps = [start.timestamp() + i * interval for i in range(count)]
+            suffix = '.%Y-%m-%d_%H' if when == 'H' else '.%Y-%m-%d'
+            for utc in (False, True):
+                with self.subTest(when=when, start=start, utc=utc):
+                    convert = time.gmtime if utc else time.localtime
+                    expected = {
+                        time.strftime(suffix, convert(timestamp)): [str(i)]
+                        for i, timestamp in enumerate(timestamps[:-1])
+                    }
+                    expected[''] = [str(count - 1)]
+                    self.assert_rollover_contents(
+                        when, timestamps, expected, utc=utc)
+
+    @support.run_with_tz('EST+05EDT,M3.2.0,M11.1.0')
+    def test_rollover_delayed_dst(self):
+        DT = datetime.datetime
+        cases = (
+            ('MIDNIGHT', None,
+             [DT(2026, 10, day, hour).timestamp()
+              for day in (30, 31) for hour in (9, 18)] +
+             [DT(2026, 11, day, hour).timestamp()
+              for day in (1, 2, 3) for hour in (9, 18)],
+             {'.2026-10-30': ['0', '1'], '.2026-10-31': ['2', '3'],
+              '.2026-11-01': ['4', '5'], '.2026-11-02': ['6', '7'],
+              '': ['8', '9']}),
+            ('W6', None,
+             [DT(2026, 10, 23, 9).timestamp(),
+              DT(2026, 11, 1, 9).timestamp(),
+              DT(2026, 11, 2, 9).timestamp()],
+             {'.2026-10-19': ['0'], '.2026-10-26': ['1'], '': ['2']}),
+            ('MIDNIGHT', datetime.time(23, 30),
+             [DT(2026, month, 1, 12).timestamp() for month in (3, 4, 10, 12)],
+             {'.2026-02-28': ['0'], '.2026-03-31': ['1'],
+              '.2026-09-30': ['2'], '': ['3']}),
+        )
+        for when, at_time, timestamps, expected in cases:
+            for utc in (False, True):
+                with self.subTest(when=when, atTime=at_time, utc=utc):
+                    self.assert_rollover_contents(
+                        when, timestamps, expected, atTime=at_time, utc=utc)
+
     @unittest.skipIf(support.is_wasi, "WASI does not have /dev/null.")
     def test_should_not_rollover(self):
         # See bpo-45401. Should only ever rollover regular files
