@@ -114,8 +114,6 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         if not self._closed:
             self._closed = True
             self._ssl_protocol._start_shutdown()
-        else:
-            self._ssl_protocol = None
 
     def __del__(self, _warnings=warnings):
         if not self._closed:
@@ -406,6 +404,7 @@ class SSLProtocol(protocols.BufferedProtocol):
         if self._app_transport is not None:
             self._app_transport._closed = True
 
+        app_notified = False
         if self._state != SSLProtocolState.DO_HANDSHAKE:
             if (
                 self._app_state == AppProtocolState.STATE_CON_MADE or
@@ -413,6 +412,7 @@ class SSLProtocol(protocols.BufferedProtocol):
             ):
                 self._app_state = AppProtocolState.STATE_CON_LOST
                 self._loop.call_soon(self._app_protocol.connection_lost, exc)
+                app_notified = True
         self._set_state(SSLProtocolState.UNWRAPPED)
         self._transport = None
         self._app_transport = None
@@ -425,6 +425,21 @@ class SSLProtocol(protocols.BufferedProtocol):
         if self._handshake_timeout_handle:
             self._handshake_timeout_handle.cancel()
             self._handshake_timeout_handle = None
+        if app_notified:
+            # After the app protocol's connection_lost() (scheduled above),
+            # so that it can still read the TLS extra info.
+            self._loop.call_soon(self._release_tls_state)
+        else:
+            self._release_tls_state()
+
+    def _release_tls_state(self):
+        # The connection is gone: drop everything that refers to the
+        # SSLContext, so that an application holding the transport does
+        # not keep the context alive.
+        self._sslobj = None
+        self._sslcontext = None
+        self._extra.pop('sslcontext', None)
+        self._extra.pop('ssl_object', None)
 
     def get_buffer(self, n):
         want = n
