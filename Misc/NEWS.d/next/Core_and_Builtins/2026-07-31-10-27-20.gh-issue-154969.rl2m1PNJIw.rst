@@ -1,0 +1,1 @@
+Statistics builds (``--enable-pystats``) of free-threaded CPython now record the total and maximum duration of stop-the-world pauses, and no longer overwrite the per-thread free-threading counters (mutex sleeps, QSBR polls, world stops) when merging thread statistics.
