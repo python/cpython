@@ -910,6 +910,34 @@ class ChardataBufferTest(unittest.TestCase):
         parser.Parse(xml3, True)
         self.assertEqual(self.n, 12)
 
+    def test_disable_buffer_in_character_handler(self):
+        parser = expat.ParserCreate()
+        parser.buffer_size = 2
+        parser.buffer_text = True
+        seen = []
+
+        def consume(text):
+            seen.append(text)
+            if len(seen) == 1:
+                parser.buffer_text = False
+
+        parser.CharacterDataHandler = consume
+        parser.Parse(b'<r>a&#65;bc</r>', True)
+        self.assertEqual(''.join(seen), 'aAbc')
+
+    def test_clear_element_handler_during_flush(self):
+        parser = expat.ParserCreate()
+        parser.buffer_text = True
+        elements = []
+
+        def consume(text):
+            parser.StartElementHandler = None
+
+        parser.CharacterDataHandler = consume
+        parser.StartElementHandler = lambda name, attrs: elements.append(name)
+        parser.Parse(b'<r>abc<s/></r>', True)
+        self.assertEqual(elements, ['r'])
+
     def counting_handler(self, text):
         self.n += 1
 
