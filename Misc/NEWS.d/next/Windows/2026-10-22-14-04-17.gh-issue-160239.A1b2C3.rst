@@ -1,0 +1,1 @@
+Remove dead and broken ``_repr_info()`` methods from ``asyncio.windows_events``; they called ``Future._repr_info()``, which no longer exists.
