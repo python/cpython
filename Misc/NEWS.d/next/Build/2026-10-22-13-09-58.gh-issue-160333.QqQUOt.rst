@@ -1,0 +1,4 @@
+Remove SIMD support for the HACL\* implementation of BLAKE-2 used by
+:mod:`hashlib` and :mod:`hmac`. The vectorized implementations were only
+enabled on some x86-64 platforms and caused build failures on many others.
+Patch by Bénédikt Tran.
