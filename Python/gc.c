@@ -2168,8 +2168,10 @@ visit_generation(gcvisitobjects_t callback, void *arg, struct gc_generation *gen
     PyGC_Head seen;
     int res = 1;
 
-    /* The callback may free or untrack the object it is given, so always
-     * take the first object and move it to `seen` before calling it. */
+    /* Iterate directly on the gc head to ensure the iteration is safe
+     * from a callback freeing its object (which can also cause
+     * a cascading free).  Visited objects are moved to `seen` and
+     * merged back at the end. */
     gc_list_init(&seen);
     while (res && !gc_list_is_empty(gc_list)) {
         PyGC_Head *gc = GC_NEXT(gc_list);
