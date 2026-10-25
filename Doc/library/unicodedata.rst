@@ -13,8 +13,8 @@
 
 This module provides access to the Unicode Character Database (UCD) which
 defines character properties for all Unicode characters. The data contained in
-this database is compiled from the `UCD version 17.0.0
-<https://www.unicode.org/Public/17.0.0/ucd>`_.
+this database is compiled from the `UCD version 18.0.0
+<https://www.unicode.org/Public/18.0.0/ucd>`_.
 
 The module uses the same names and symbols as defined by Unicode
 Standard Annex #44, `"Unicode Character Database"
@@ -170,7 +170,7 @@ Standard Annex #44, `"Unicode Character Database"
 .. function:: block(chr, /)
 
    Returns the `block
-   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G64189>`_
+   <https://www.unicode.org/versions/Unicode18.0.0/core-spec/chapter-3/#G64189>`_
    assigned to the character *chr*. For example::
 
       >>> unicodedata.block('S')
@@ -326,6 +326,6 @@ In addition, the module exposes the following constants:
 
 .. rubric:: Footnotes
 
-.. [#] https://www.unicode.org/Public/17.0.0/ucd/NameAliases.txt
+.. [#] https://www.unicode.org/Public/18.0.0/ucd/NameAliases.txt
 
-.. [#] https://www.unicode.org/Public/17.0.0/ucd/NamedSequences.txt
+.. [#] https://www.unicode.org/Public/18.0.0/ucd/NamedSequences.txt

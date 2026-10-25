@@ -161,46 +161,40 @@ BaseException_traverse(PyObject *op, visitproc visit, void *arg)
     return 0;
 }
 
-static PyObject *
-BaseException_str(PyObject *op)
-{
-    PyBaseExceptionObject *self = PyBaseExceptionObject_CAST(op);
+/*[clinic input]
+@critical_section
+BaseException.__str__
+[clinic start generated code]*/
 
-    PyObject *res;
-    Py_BEGIN_CRITICAL_SECTION(self);
+static PyObject *
+BaseException_str_impl(PyBaseExceptionObject *self)
+/*[clinic end generated code: output=f9cf63c6d14a73fe input=cd946062d6786776]*/
+{
     switch (PyTuple_GET_SIZE(self->args)) {
     case 0:
-        res = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
-        break;
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     case 1:
-        res = PyObject_Str(PyTuple_GET_ITEM(self->args, 0));
-        break;
+        return PyObject_Str(PyTuple_GET_ITEM(self->args, 0));
     default:
-        res = PyObject_Str(self->args);
-        break;
+        return PyObject_Str(self->args);
     }
-    Py_END_CRITICAL_SECTION();
-    return res;
 }
 
+/*[clinic input]
+@critical_section
+BaseException.__repr__
+[clinic start generated code]*/
+
 static PyObject *
-BaseException_repr(PyObject *op)
+BaseException_repr_impl(PyBaseExceptionObject *self)
+/*[clinic end generated code: output=c885549a153a6007 input=20941168ad0ab577]*/
 {
-
-    PyBaseExceptionObject *self = PyBaseExceptionObject_CAST(op);
-
-    PyObject *res;
-    Py_BEGIN_CRITICAL_SECTION(self);
     const char *name = _PyType_Name(Py_TYPE(self));
     if (PyTuple_GET_SIZE(self->args) == 1) {
-        res = PyUnicode_FromFormat("%s(%R)", name,
+        return PyUnicode_FromFormat("%s(%R)", name,
                                     PyTuple_GET_ITEM(self->args, 0));
     }
-    else {
-        res = PyUnicode_FromFormat("%s%R", name, self->args);
-    }
-    Py_END_CRITICAL_SECTION();
-    return res;
+    return PyUnicode_FromFormat("%s%R", name, self->args);
 }
 
 /* Pickling support */
@@ -346,19 +340,14 @@ BaseException_args_get_impl(PyBaseExceptionObject *self)
 /*[clinic input]
 @critical_section
 @setter
-@deleter
 BaseException.args
 [clinic start generated code]*/
 
 static int
 BaseException_args_set_impl(PyBaseExceptionObject *self, PyObject *value)
-/*[clinic end generated code: output=331137e11d8f9e80 input=177ad350c8b45219]*/
+/*[clinic end generated code: output=331137e11d8f9e80 input=2400047ea5970a84]*/
 {
     PyObject *seq;
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError, "args may not be deleted");
-        return -1;
-    }
     seq = PySequence_Tuple(value);
     if (!seq)
         return -1;
@@ -386,19 +375,14 @@ BaseException___traceback___get_impl(PyBaseExceptionObject *self)
 /*[clinic input]
 @critical_section
 @setter
-@deleter
 BaseException.__traceback__
 [clinic start generated code]*/
 
 static int
 BaseException___traceback___set_impl(PyBaseExceptionObject *self,
                                      PyObject *value)
-/*[clinic end generated code: output=a82c86d9f29f48f0 input=53a1df586023d786]*/
+/*[clinic end generated code: output=a82c86d9f29f48f0 input=12676035676badad]*/
 {
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError, "__traceback__ may not be deleted");
-        return -1;
-    }
     if (PyTraceBack_Check(value)) {
         Py_XSETREF(self->traceback, Py_NewRef(value));
     }
@@ -432,19 +416,15 @@ BaseException___context___get_impl(PyBaseExceptionObject *self)
 /*[clinic input]
 @critical_section
 @setter
-@deleter
 BaseException.__context__
 [clinic start generated code]*/
 
 static int
 BaseException___context___set_impl(PyBaseExceptionObject *self,
                                    PyObject *value)
-/*[clinic end generated code: output=b4cb52dcca1da3bd input=fe79e7c0a0854004]*/
+/*[clinic end generated code: output=b4cb52dcca1da3bd input=c0971adf47fa1858]*/
 {
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError, "__context__ may not be deleted");
-        return -1;
-    } else if (value == Py_None) {
+    if (value == Py_None) {
         value = NULL;
     } else if (!PyExceptionInstance_Check(value)) {
         PyErr_SetString(PyExc_TypeError, "exception context must be None "
@@ -476,19 +456,15 @@ BaseException___cause___get_impl(PyBaseExceptionObject *self)
 /*[clinic input]
 @critical_section
 @setter
-@deleter
 BaseException.__cause__
 [clinic start generated code]*/
 
 static int
 BaseException___cause___set_impl(PyBaseExceptionObject *self,
                                  PyObject *value)
-/*[clinic end generated code: output=6161315398aaf541 input=3fdd9a0d1674abc9]*/
+/*[clinic end generated code: output=6161315398aaf541 input=e1b403c0bde3f62a]*/
 {
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError, "__cause__ may not be deleted");
-        return -1;
-    } else if (value == Py_None) {
+    if (value == Py_None) {
         value = NULL;
     } else if (!PyExceptionInstance_Check(value)) {
         PyErr_SetString(PyExc_TypeError, "exception cause must be None "
@@ -992,11 +968,11 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
          */
         cls = (PyTypeObject*)PyExc_BaseExceptionGroup;
     }
-    PyBaseExceptionGroupObject *self =
-        PyBaseExceptionGroupObject_CAST(BaseException_new(cls, args, kwds));
-    if (!self) {
+    PyObject *op = BaseException_new(cls, args, kwds);
+    if (!op) {
         goto error;
     }
+    PyBaseExceptionGroupObject *self = PyBaseExceptionGroupObject_CAST(op);
 
     self->msg = Py_NewRef(message);
     self->excs = exceptions;

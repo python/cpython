@@ -55,9 +55,9 @@ def download_test_data_file(filename):
 class UnicodeMethodsTest(unittest.TestCase):
 
     # update this, if the database changes
-    expectedchecksum = ('47a99fa654ef1f50e89d2e9697b7b041fccb5a05'
+    expectedchecksum = ('2bb59305a65254fee9cd6ef981cc3cab7551c60e'
                         if quicktest else
-                        '8b2615a9fc627676cbc0b6fac0191177df97ef5f')
+                        'bb69894a259aee5971445eca8e617a1686a432e2')
 
     def test_method_checksum(self):
         h = hashlib.sha1()
@@ -700,7 +700,7 @@ class BaseUnicodeFunctionsTest:
     def test_east_asian_width_unassigned(self):
         eaw = self.db.east_asian_width
         # unassigned
-        for char in '\u0530\u0ecf\u10c6\u20fc\uaaca\U000107bd\U000115f2':
+        for char in '\u0530\u0ecf\u10c6\u20fc\uaaca\U000107c0\U000115f2':
             self.assertEqual(eaw(char), 'N')
             self.assertIs(self.db.name(char, None), None)
 
@@ -721,9 +721,9 @@ class UnicodeFunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
 
     # Update this if the database changes. Make sure to do a full rebuild
     # (e.g. 'make distclean && make') to get the correct checksum.
-    expectedchecksum = ('00b13fa975a60b1d3f490f1fc8c126ab24990c75'
+    expectedchecksum = ('04a01eac45fd6ca3cfa5aafe90f278c1f7d62aa2'
                         if quicktest else
-                        'ebfc9dd281c2226998fd435744dd2e9321899beb')
+                        '33777a351769adcffb3c53f4c25cf8a8e102b622')
 
     @requires_resource('network')
     def test_all_names(self):
@@ -992,6 +992,15 @@ class UnicodeFunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
                          ['\u0915\u094D\u094D\u0924'])
         self.assertEqual(graphemes('\u0915\u094D\u0924\u094D\u092F'),
                          ['\u0915\u094D\u0924\u094D\u092F'])
+        self.assertEqual(graphemes('\u094D\u0924'), ['\u094D\u0924'])
+        self.assertEqual(graphemes('\u094D\u0300\u0924'),
+                         ['\u094D\u0300\u0924'])
+        self.assertEqual(graphemes('\u1CF5\u0915'), ['\u1CF5\u0915'])
+        self.assertEqual(graphemes('\u0915\u0924'), ['\u0915', '\u0924'])
+        self.assertEqual(graphemes('\u094D\u0924\u0924'),
+                         ['\u094D\u0924', '\u0924'])
+        self.assertEqual(graphemes('\u094D\u200C\u0924'),
+                         ['\u094D\u200C', '\u0924'])
         # GB11
         self.assertEqual(graphemes(
                 '\U0001F9D1\U0001F3FE\u200D\u2764\uFE0F'
@@ -1104,7 +1113,7 @@ class Unicode_3_2_0_FunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
     old = True
     expectedchecksum = ('883824cb6c0ccf994e4451ebf281e2d6d479af47'
                         if quicktest else
-                        '68cd01e2c680b851c1fcab012efb5635b2229c2b')
+                        '677542db0fed40ddbd491b95622cb649a4b7fca0')
 
 
 class UnicodeMiscTest(unittest.TestCase):
