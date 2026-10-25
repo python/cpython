@@ -1,22 +1,72 @@
 import collections.abc
 import functools
+import os
+import gc
 import platform
+import signal
 import sys
 import textwrap
+import time
 import unittest
 import weakref
+import _tkinter
 import tkinter
-from tkinter import TclError
+from tkinter import TclError, ttk
 import enum
 from test import support
 from test.support import os_helper
+from test.support.isolation import runInSubprocess
 from test.support.script_helper import assert_python_ok
 from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import (AbstractTkTest, AbstractDefaultRootTest,
                                        requires_tk, get_tk_patchlevel,
-                                       tcl_version)
+                                       tcl_version, tk_version,
+                                       wait_until_mapped)
 
 support.requires('gui')
+
+def check_version_info(test, vi):
+    # The following is almost a copy of tests for sys.version_info.
+    test.assertIsInstance(vi[:], tuple)
+    test.assertEqual(len(vi), 5)
+    test.assertIsInstance(vi[0], int)
+    test.assertIsInstance(vi[1], int)
+    test.assertIsInstance(vi[2], int)
+    test.assertIn(vi[3], ("alpha", "beta", "candidate", "final"))
+    test.assertIsInstance(vi[4], int)
+    test.assertIsInstance(vi.major, int)
+    test.assertIsInstance(vi.minor, int)
+    test.assertIsInstance(vi.micro, int)
+    test.assertIn(vi.releaselevel, ("alpha", "beta", "final"))
+    test.assertIsInstance(vi.serial, int)
+    test.assertEqual(vi[0], vi.major)
+    test.assertEqual(vi[1], vi.minor)
+    test.assertEqual(vi[2], vi.micro)
+    test.assertEqual(vi[3], vi.releaselevel)
+    test.assertEqual(vi[4], vi.serial)
+    test.assertTrue(vi > (1,0,0))
+    if vi.releaselevel == 'final':
+        test.assertEqual(vi.serial, 0)
+    else:
+        test.assertEqual(vi.micro, 0)
+    test.assertStartsWith(str(vi), f'{vi.major}.{vi.minor}')
+
+
+class VersionTest(unittest.TestCase):
+
+    def test_version_info(self):
+        for vi, version, patchlevel in (
+            (tkinter.TCL_VERSION_INFO, _tkinter.TCL_VERSION, _tkinter.TCL_PATCH_LEVEL),
+            (tkinter.TK_VERSION_INFO, _tkinter.TK_VERSION, _tkinter.TK_PATCH_LEVEL),
+        ):
+            with self.subTest(patchlevel=patchlevel):
+                check_version_info(self, vi)
+                self.assertEqual(str(vi), patchlevel)
+                self.assertEqual(f'{vi.major}.{vi.minor}', version)
+        self.assertEqual(tkinter.TclVersion,
+                         float(f'{tkinter.TCL_VERSION_INFO.major}.'
+                               f'{tkinter.TCL_VERSION_INFO.minor}'))
+
 
 class MiscTest(AbstractTkTest, unittest.TestCase):
 
@@ -49,8 +99,27 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertNotEqual(str(f), str(f2))
         b = tkinter.Button(f2)
         b2 = Button2(f2)
-        for name in str(b).split('.') + str(b2).split('.'):
+        for w in (t, f, f2, b, b2):
+            # The full path name starts with a dot, the name of the root.
+            self.assertTrue(str(w).startswith('.'), msg=repr(str(w)))
+            name = w.winfo_name()
+            # A generated name is not empty and contains no dot, which would
+            # be interpreted as a path name component separator.
+            self.assertTrue(name, msg=repr(name))
+            self.assertNotIn('.', name, msg=repr(name))
+            # A generated name can be used not only as a window name, but also
+            # as a canvas or text tag, an option database pattern or a Tcl list
+            # element, so it must avoid characters that are special there.
+            # It is marked so as not to look like a user-chosen name.
             self.assertFalse(name.isidentifier(), msg=repr(name))
+            # A capital letter starts a class name in an option pattern.
+            self.assertFalse(name[0].isupper(), msg=repr(name))
+            # "!&|^()" are operators in canvas tag expressions (gh-143070),
+            # "*" separates words in an option pattern, and whitespace and
+            # "{}[]\\"$;" are special in Tcl lists and scripts.
+            self.assertNotRegex(name, r'[][!&|^()*\s{}"\\$;]', msg=repr(name))
+            # "-", "@" and "~" are special only as the first character.
+            self.assertNotIn(name[0], '-@~', msg=repr(name))
         b3 = tkinter.Button(f2)
         b4 = Button2(f2)
         self.assertEqual(len({str(b), str(b2), str(b3), str(b4)}), 4)
@@ -395,6 +464,36 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         support.gc_collect()
         self.assertIsNone(ref())
 
+    def test_gc_protocol(self):
+        # gh-116946: _tkinter objects implement the GC protocol.
+        self.assertTrue(gc.is_tracked(self.root))
+        tok = self.root.tk.createtimerhandler(10_000_000, lambda: None)
+        try:
+            self.assertTrue(gc.is_tracked(tok))
+        finally:
+            tok.deletetimerhandler()
+
+    def test_timer_fires_after_gc(self):
+        # gh-116946: a pending timer is kept alive by the Tcl event loop, not by
+        # the garbage collector, so collecting it must not cancel it -- it must
+        # still fire even when the Python token has been dropped.
+        fired = []
+        self.root.tk.createtimerhandler(1, lambda: fired.append(1))
+        support.gc_collect()
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
+        while not fired and time.monotonic() < deadline:
+            self.root.update()
+        self.assertEqual(fired, [1])
+
+    def test_pending_timer_at_shutdown(self):
+        # gh-116946: the final garbage collection at interpreter shutdown must
+        # not crash when it visits a timer that is still pending (its type has
+        # already been cleared by the module's tp_clear).
+        assert_python_ok('-c',
+            'import tkinter\n'
+            'interp = tkinter.Tcl()\n'
+            'interp.tk.createtimerhandler(10_000_000, lambda: None)\n')
+
     def test_option(self):
         self.addCleanup(self.root.option_clear)
         self.root.option_add('*Button.background', 'red')
@@ -456,15 +555,20 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.root.update_idletasks()
         f.focus_force()
         self.root.update()
-        self.assertIs(self.root.focus_get(), f)
-        self.assertIs(self.root.focus_displayof(), f)
+        # The window manager can take the focus away, and then focus_get()
+        # and focus_displayof() return None.
+        if self.root.focus_displayof() is not None:
+            self.assertIs(self.root.focus_get(), f)
+            self.assertIs(self.root.focus_displayof(), f)
         self.assertIs(f.focus_lastfor(), f)
         b = tkinter.Button(f)
         b.pack()
         self.root.update()
         b.focus_set()
         self.root.update()
-        self.assertIs(self.root.focus_get(), b)
+        if self.root.focus_displayof() is not None:
+            self.assertIs(self.root.focus_get(), b)
+        self.assertIs(f.focus_lastfor(), b)
 
     def test_focus_methods_unresolvable(self):
         # The focus may be on a widget that tkinter did not create and so
@@ -598,6 +702,15 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
             self.assertGreaterEqual(ms, -1)
         # Resetting the timer returns None and does not raise.
         self.assertIsNone(self.root.tk_inactive(reset=True))
+
+    def test_tk_print(self):
+        # tk print supports only canvas and text widgets, so tk_print is a
+        # method of Canvas and Text only.  Calling it opens the print
+        # dialog, so the behavior itself cannot be tested here.
+        self.assertHasAttr(tkinter.Canvas, 'tk_print')
+        self.assertHasAttr(tkinter.Text, 'tk_print')
+        self.assertNotHasAttr(tkinter.Frame, 'tk_print')
+        self.assertNotHasAttr(tkinter.Misc, 'tk_print')
 
     def test_wait_variable(self):
         var = tkinter.StringVar(self.root)
@@ -761,30 +874,10 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         vi = self.root.info_patchlevel()
         f = tkinter.Frame(self.root)
         self.assertEqual(f.info_patchlevel(), vi)
-        # The following is almost a copy of tests for sys.version_info.
-        self.assertIsInstance(vi[:], tuple)
-        self.assertEqual(len(vi), 5)
-        self.assertIsInstance(vi[0], int)
-        self.assertIsInstance(vi[1], int)
-        self.assertIsInstance(vi[2], int)
-        self.assertIn(vi[3], ("alpha", "beta", "candidate", "final"))
-        self.assertIsInstance(vi[4], int)
-        self.assertIsInstance(vi.major, int)
-        self.assertIsInstance(vi.minor, int)
-        self.assertIsInstance(vi.micro, int)
-        self.assertIn(vi.releaselevel, ("alpha", "beta", "final"))
-        self.assertIsInstance(vi.serial, int)
-        self.assertEqual(vi[0], vi.major)
-        self.assertEqual(vi[1], vi.minor)
-        self.assertEqual(vi[2], vi.micro)
-        self.assertEqual(vi[3], vi.releaselevel)
-        self.assertEqual(vi[4], vi.serial)
-        self.assertTrue(vi > (1,0,0))
-        if vi.releaselevel == 'final':
-            self.assertEqual(vi.serial, 0)
-        else:
-            self.assertEqual(vi.micro, 0)
-        self.assertStartsWith(str(vi), f'{vi.major}.{vi.minor}')
+        check_version_info(self, vi)
+        # The Tcl library loaded at runtime should be compatible with
+        # the one used for building the module.
+        self.assertEqual(vi[:2], tkinter.TCL_VERSION_INFO[:2])
 
     def test_embedded_null(self):
         widget = tkinter.Entry(self.root)
@@ -808,6 +901,26 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
 
 
 class TkTest(AbstractTkTest, unittest.TestCase):
+
+    def test_readprofile(self):
+        # gh-153333: profile scripts are decoded with their own coding cookie,
+        # not the locale encoding.  Two cookies so no locale can mask the bug.
+        profiles = {
+            '.RpClass.py': ('latin-1', "self._rp_latin1 = 'caf\xe9'"),
+            '.rpbase.py': ('utf-8', "self._rp_utf8 = 'caf\xe9'"),
+        }
+        self.addCleanup(self.root.__dict__.pop, '_rp_latin1', None)
+        self.addCleanup(self.root.__dict__.pop, '_rp_utf8', None)
+        with (os_helper.temp_dir() as home,
+              os_helper.EnvironmentVarGuard() as env):
+            env['HOME'] = home
+            for filename, (encoding, body) in profiles.items():
+                script = '# -*- coding: %s -*-\n%s\n' % (encoding, body)
+                with open(os.path.join(home, filename), 'wb') as f:
+                    f.write(script.encode(encoding))
+            self.root.readprofile('rpbase', 'RpClass')
+        self.assertEqual(self.root._rp_latin1, 'caf\xe9')
+        self.assertEqual(self.root._rp_utf8, 'caf\xe9')
 
     def test_className(self):
         # The className argument sets the class of the root window.  Tk
@@ -905,13 +1018,26 @@ class WinfoTest(AbstractTkTest, unittest.TestCase):
             self.assertIsInstance(name, str)
             self.assertIsInstance(depth, int)
 
+    def test_winfo_exists(self):
+        f = tkinter.Frame(self.root)
+        self.assertIs(f.winfo_exists(), True)
+        f.destroy()
+        self.assertIs(f.winfo_exists(), False)
+
+    def test_winfo_ismapped(self):
+        f = tkinter.Frame(self.root)
+        self.assertIs(f.winfo_ismapped(), False)
+        f.pack()
+        self.root.update()
+        self.assertIs(f.winfo_ismapped(), True)
+
     def test_winfo_viewable(self):
         f = tkinter.Frame(self.root)
-        self.assertFalse(f.winfo_viewable())
+        self.assertIs(f.winfo_viewable(), False)
         f.pack()
         f.wait_visibility()
         self.root.update()
-        self.assertTrue(f.winfo_viewable())
+        self.assertIs(f.winfo_viewable(), True)
 
     @requires_tk(9, 1)
     def test_winfo_isdark(self):
@@ -1044,13 +1170,10 @@ class WmTest(AbstractTkTest, unittest.TestCase):
             and sys.platform == 'darwin'
             and platform.machine() == 'x86_64'
             and platform.mac_ver()[0].startswith('26.')
-            and (
-                patchlevel[:3] <= (8, 6, 17)
-                or (9, 0) <= patchlevel[:3] <= (9, 0, 3)
-            )
         ):
             # https://github.com/python/cpython/issues/146531
             # Tk bug 4a2070f0d3a99aa412bc582d386d575ca2f37323
+            # Not fixed as of Tk 8.6.18 and 9.0.4.
             self.skipTest('wm iconbitmap hangs on macOS 26 Intel')
 
         self.assertEqual(t.wm_iconbitmap(), '')
@@ -1228,9 +1351,15 @@ class WmTest(AbstractTkTest, unittest.TestCase):
     def test_wm_stackorder(self):
         t1 = tkinter.Toplevel(self.root)
         t2 = tkinter.Toplevel(self.root)
+        if self.root._windowingsystem == 'x11':
+            # Bypass the window manager, which may ignore lift() or reorder
+            # the windows while they are being mapped.
+            t1.overrideredirect(True)
+            t2.overrideredirect(True)
         t1.deiconify()
         t2.deiconify()
-        self.root.update()
+        wait_until_mapped(t1)
+        wait_until_mapped(t2)
         t1.lift(t2)  # Raise t1 above t2.
         self.root.update()
         order = self.root.wm_stackorder()
@@ -1270,7 +1399,9 @@ class EventTest(AbstractTkTest, unittest.TestCase):
 
         f.focus_force()
         self.root.update()
-        self.assertEqual(len(events), 1, events)
+        # The window manager can take the focus away and give it back,
+        # which makes Tk generate additional focus events.
+        self.assertGreaterEqual(len(events), 1, events)
         e = events[0]
         self.assertIs(e.type, tkinter.EventType.FocusIn)
         self.assertIs(e.widget, f)
@@ -2042,6 +2173,78 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
 
 def _info_commands(widget, pattern=None):
     return widget.tk.splitlist(widget.tk.call('info', 'commands', pattern))
+
+
+class SignalTest(unittest.TestCase):
+
+    @runInSubprocess()
+    def test_sigint_handler(self):
+        # gh-157672: Tk on macOS replaced the SIGINT handler with its own,
+        # which exits the process.
+        root = tkinter.Tk()
+        self.addCleanup(root.destroy)
+        with self.assertRaises(KeyboardInterrupt):
+            signal.raise_signal(signal.SIGINT)
+
+
+class TclObjTypeTest(AbstractTkTest, unittest.TestCase):
+    # See FromObj() in Modules/_tkinter.c: Tcl object types are converted to
+    # appropriate Python types.  These conversions only happen in the object
+    # mode, so skip when it is disabled.
+
+    def setUp(self):
+        super().setUp()
+        if not self.wantobjects:
+            self.skipTest('requires wantobjects')
+
+    def test_enum_option_returns_str(self):
+        # An "index" object (an enumeration keyword) is returned as a str.
+        w = ttk.Scale(self.root, orient='horizontal')
+        value = w.cget('orient')
+        self.assertIsInstance(value, str)
+        self.assertEqual(value, 'horizontal')
+
+    def test_enum_option_is_interned(self):
+        # Equal "index" keywords share a single interned str object.
+        a = ttk.Scale(self.root, orient='horizontal').cget('orient')
+        b = ttk.Scale(self.root, orient='horizontal').cget('orient')
+        self.assertIs(a, b)
+
+    def test_window_option_returns_str(self):
+        # A "window" object is returned as a str.
+        label = tkinter.Label(self.root)
+        w = ttk.LabelFrame(self.root, labelwidget=label)
+        value = w.cget('labelwidget')
+        self.assertIsInstance(value, str)
+        self.assertEqual(value, str(label))
+
+    def test_variable_option_returns_str(self):
+        # A "parsedVarName" object is returned as a str.
+        w = tkinter.Checkbutton(self.root)
+        self.assertIsInstance(w.cget('variable'), str)
+
+    def test_pixel_option_without_unit_returns_number(self):
+        # A screen distance with no unit suffix is already in pixels and thus
+        # screen independent, so it is returned as an int or a float.
+        w = tkinter.Frame(self.root)
+        w['borderwidth'] = 3
+        self.assertIsInstance(w.cget('borderwidth'), int)
+        self.assertEqual(w.cget('borderwidth'), 3)
+        if tk_version >= (9, 0):
+            # Tk < 9 rounds a fractional screen distance to an integer.
+            w['borderwidth'] = 2.5
+            self.assertIsInstance(w.cget('borderwidth'), float)
+            self.assertEqual(w.cget('borderwidth'), 2.5)
+
+    @requires_tk(9, 0)
+    def test_pixel_option_with_unit_is_not_a_number(self):
+        # A screen distance with an m/c/i/p suffix depends on the screen
+        # resolution, so it is not converted to a number here.  (Tk < 9 resolves
+        # it eagerly to an integer pixel count when the option is read.)
+        w = tkinter.Frame(self.root)
+        w['borderwidth'] = '3m'
+        self.assertNotIsInstance(w.cget('borderwidth'), (int, float))
+        self.assertEqual(str(w.cget('borderwidth')), '3m')
 
 
 if __name__ == "__main__":

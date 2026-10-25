@@ -1,0 +1,3 @@
+Fix a key handle leak in :func:`winreg.CreateKey`,
+:func:`winreg.CreateKeyEx` and :func:`winreg.OpenKey` when the
+``winreg.OpenKey/result`` audit hook fails.

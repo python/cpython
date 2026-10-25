@@ -1,0 +1,3 @@
+Reset the warnings lock in the child after :func:`os.fork`, before clearing
+other threads' states, to avoid deadlocks when their finalizers issue warnings.
+Preserve the lock's recursion depth if the forking thread owns it.

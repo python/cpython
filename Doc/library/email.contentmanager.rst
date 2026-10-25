@@ -96,9 +96,9 @@ Currently the email package provides only one concrete content manager,
 
    This content manager provides only a minimum interface beyond that provided
    by :class:`~email.message.Message` itself:  it deals only with text, raw
-   byte strings, and :class:`~email.message.Message` objects.  Nevertheless, it
+   bytes, and :class:`~email.message.Message` objects.  Nevertheless, it
    provides significant advantages compared to the base API: ``get_content`` on
-   a text part will return a unicode string without the application needing to
+   a text part will return a string without the application needing to
    manually decode it, ``set_content`` provides a rich set of options for
    controlling the headers added to a part and controlling the content transfer
    encoding, and it enables the use of the various ``add_`` methods, thereby
@@ -111,7 +111,7 @@ Currently the email package provides only one concrete content manager,
       parts), or a ``bytes`` object (for all other non-multipart types).  Raise
       a :exc:`KeyError` if called on a ``multipart``.  If the part is a
       ``text`` part and *errors* is specified, use it as the error handler when
-      decoding the payload to unicode.  The default error handler is
+      decoding the payload to a string.  The default error handler is
       ``replace``.
 
    .. method:: set_content(msg, <'str'>, subtype="plain", charset='utf-8', \
