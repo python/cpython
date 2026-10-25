@@ -271,6 +271,42 @@ test_gc_visit_objects_exit_early(PyObject *Py_UNUSED(self),
     Py_RETURN_NONE;
 }
 
+#ifndef Py_GIL_DISABLED
+static int
+gc_visit_callback_drop_current(PyObject *obj, void *arg)
+{
+    struct gc_visit_state_basic *state = (struct gc_visit_state_basic *)arg;
+    if (obj == state->target) {
+        state->found = 1;
+        Py_CLEAR(state->target);
+    }
+    return 1;
+}
+
+static PyObject *
+test_gc_visit_objects_drop_current(PyObject *Py_UNUSED(self),
+                                   PyObject *Py_UNUSED(ignored))
+{
+    struct gc_visit_state_basic state;
+
+    state.target = PySet_New(NULL);
+    if (state.target == NULL) {
+        return NULL;
+    }
+    state.found = 0;
+
+    PyUnstable_GC_VisitObjects(gc_visit_callback_drop_current, &state);
+    if (!state.found) {
+        Py_DECREF(state.target);
+        PyErr_SetString(
+            PyExc_AssertionError,
+            "test_gc_visit_objects_drop_current: Didn't find live set");
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+#endif
+
 typedef struct {
     PyObject_HEAD
 } ObjExtraData;
@@ -369,6 +405,9 @@ static PyMethodDef test_methods[] = {
     {"test_gc_visit_objects_basic", test_gc_visit_objects_basic, METH_NOARGS, NULL},
     {"test_gc_visit_objects_frozen", test_gc_visit_objects_frozen, METH_NOARGS, NULL},
     {"test_gc_visit_objects_exit_early", test_gc_visit_objects_exit_early, METH_NOARGS, NULL},
+#ifndef Py_GIL_DISABLED
+    {"test_gc_visit_objects_drop_current", test_gc_visit_objects_drop_current, METH_NOARGS, NULL},
+#endif
     {"without_gc", without_gc, METH_O, NULL},
     {"with_tp_del", with_tp_del, METH_VARARGS, NULL},
     {NULL}
