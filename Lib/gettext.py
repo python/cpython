@@ -359,21 +359,18 @@ class GNUTranslations(NullTranslations):
         self.plural = lambda n: int(n != 1) # germanic plural by default
         buf = fp.read()
         buflen = len(buf)
-        # Are we big endian or little endian?
-        if buflen < 4:
-            raise OSError(0, 'File is corrupt', filename)
-        magic = unpack('<I', buf[:4])[0]
-        if magic == self.LE_MAGIC:
-            ii = '<II'
-            hdr = '<4I'
-        elif magic == self.BE_MAGIC:
-            ii = '>II'
-            hdr = '>4I'
-        else:
-            raise OSError(0, 'Bad magic number', filename)
         if buflen < 20:
             raise OSError(0, 'File is corrupt', filename)
-        version, msgcount, masteridx, transidx = unpack(hdr, buf[4:20])
+        # Are we big endian or litle endian?
+        magic = unpack('<I', buf[:4])[0]
+        if magic == self.LE_MAGIC:
+            version, msgcount, masteridx, transidx = unpack('<4I', buf[4:20])
+            ii = '<II'
+        elif magic == self.BE_MAGIC:
+            version, msgcount, masteridx, transidx = unpack('>4I', buf[4:20])
+            ii = '>II'
+        else:
+            raise OSError(0, 'Bad magic number', filename)
 
         major_version, minor_version = self._get_versions(version)
 
