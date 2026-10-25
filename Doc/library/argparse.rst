@@ -139,8 +139,8 @@ The following sections describe how each of these are used.
 
 .. _prog:
 
-prog
-^^^^
+``prog``
+^^^^^^^^
 
 
 By default, :class:`ArgumentParser` calculates the name of the program
@@ -185,8 +185,8 @@ specifier.
    The default ``prog`` value now reflects how ``__main__`` was actually executed,
    rather than always being ``os.path.basename(sys.argv[0])``.
 
-usage
-^^^^^
+``usage``
+^^^^^^^^^
 
 By default, :class:`ArgumentParser` calculates the usage message from the
 arguments it contains. The default message can be overridden with the
@@ -217,8 +217,8 @@ usage information across subparsers.
 
 .. _description:
 
-description
-^^^^^^^^^^^
+``description``
+^^^^^^^^^^^^^^^
 
 Most calls to the :class:`ArgumentParser` constructor will use the
 ``description=`` keyword argument.  This argument gives a brief description of
@@ -230,8 +230,8 @@ By default, the description will be line-wrapped so that it fits within the
 given space.  To change this behavior, see the formatter_class_ argument.
 
 
-epilog
-^^^^^^
+``epilog``
+^^^^^^^^^^
 
 Some programs like to display additional description of the program after the
 description of the arguments.  Such text can be specified using the ``epilog=``
@@ -255,8 +255,8 @@ line-wrapped, but this behavior can be adjusted with the formatter_class_
 argument to :class:`ArgumentParser`.
 
 
-parents
-^^^^^^^
+``parents``
+^^^^^^^^^^^
 
 Sometimes, several parsers share a common set of arguments. Rather than
 repeating the definitions of these arguments, a single parser with all the
@@ -290,8 +290,8 @@ and one in the child) and raise an error.
 
 .. _formatter_class:
 
-formatter_class
-^^^^^^^^^^^^^^^
+``formatter_class``
+^^^^^^^^^^^^^^^^^^^
 
 :class:`ArgumentParser` objects allow the help formatting to be customized by
 specifying an alternate formatting class.  Currently, there are four such
@@ -396,8 +396,8 @@ as the regular formatter does)::
      --foo int
 
 
-prefix_chars
-^^^^^^^^^^^^
+``prefix_chars``
+^^^^^^^^^^^^^^^^
 
 Most command-line options will use ``-`` as the prefix, e.g. ``-f/--foo``.
 Parsers that need to support different or additional prefix
@@ -416,8 +416,8 @@ characters that does not include ``-`` will cause ``-f/--foo`` options to be
 disallowed.
 
 
-fromfile_prefix_chars
-^^^^^^^^^^^^^^^^^^^^^
+``fromfile_prefix_chars``
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Sometimes, when dealing with a particularly long argument list, it
 may make sense to keep the list of arguments in a file rather than typing it out
@@ -458,8 +458,8 @@ arguments will never be treated as file references.
    Arguments file should be encoded in UTF-8 instead of ANSI Codepage on Windows.
 
 
-argument_default
-^^^^^^^^^^^^^^^^
+``argument_default``
+^^^^^^^^^^^^^^^^^^^^
 
 Generally, argument defaults are specified either by passing a default to
 :meth:`~ArgumentParser.add_argument` or by calling the
@@ -480,8 +480,8 @@ calls, we supply ``argument_default=SUPPRESS``::
 
 .. _allow_abbrev:
 
-allow_abbrev
-^^^^^^^^^^^^
+``allow_abbrev``
+^^^^^^^^^^^^^^^^
 
 Normally, when you pass an argument list to the
 :meth:`~ArgumentParser.parse_args` method of an :class:`ArgumentParser`,
@@ -499,8 +499,8 @@ This feature can be disabled by setting ``allow_abbrev`` to ``False``::
 .. versionadded:: 3.5
 
 
-conflict_handler
-^^^^^^^^^^^^^^^^
+``conflict_handler``
+^^^^^^^^^^^^^^^^^^^^
 
 :class:`ArgumentParser` objects do not allow two actions with the same option
 string.  By default, :class:`ArgumentParser` objects raise an exception if an
@@ -536,8 +536,8 @@ action is retained as the ``-f`` action, because only the ``--foo`` option
 string was overridden.
 
 
-add_help
-^^^^^^^^
+``add_help``
+^^^^^^^^^^^^
 
 By default, :class:`ArgumentParser` objects add an option which simply displays
 the parser's help message. If ``-h`` or ``--help`` is supplied at the command
@@ -569,8 +569,8 @@ the help options::
      +h, ++help  show this help message and exit
 
 
-exit_on_error
-^^^^^^^^^^^^^
+``exit_on_error``
+^^^^^^^^^^^^^^^^^
 
 Normally, when you pass an invalid argument list to the :meth:`~ArgumentParser.parse_args`
 method of an :class:`ArgumentParser`, it will print a *message* to :data:`sys.stderr` and exit with a status
@@ -591,8 +591,8 @@ If the user would like to catch errors manually, the feature can be enabled by s
 
 .. versionadded:: 3.9
 
-suggest_on_error
-^^^^^^^^^^^^^^^^
+``suggest_on_error``
+^^^^^^^^^^^^^^^^^^^^
 
 By default, when a user passes an invalid argument choice or subparser name,
 :class:`ArgumentParser` will exit with error info and provide suggestions for
@@ -613,8 +613,8 @@ You can disable suggestions by setting ``suggest_on_error`` to ``False``.
 .. versionchanged:: 3.15
    Changed default value of ``suggest_on_error`` from ``False`` to ``True``.
 
-color
-^^^^^
+``color``
+^^^^^^^^^
 
 By default, the help message is printed in color using `ANSI escape sequences
 <https://en.wikipedia.org/wiki/ANSI_escape_code>`__.
