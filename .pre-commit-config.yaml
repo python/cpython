@@ -111,7 +111,7 @@ repos:
       - id: check-readthedocs
 
   - repo: https://github.com/rhysd/actionlint
-    rev: 393031adb9afb225ee52ae2ccd7a5af5525e03e8  # frozen: v1.7.11
+    rev: 914e7df21a07ef503a81201c76d2b11c789d3fca  # frozen: v1.7.12
     hooks:
       - id: actionlint
 
@@ -142,6 +142,15 @@ repos:
         language: fail
         entry: Space found in path, move to Misc/NEWS.d/next/Core_and_Builtins/
         files: Misc/NEWS.d/next/Core and Builtins/20.*.rst
+
+  - repo: local
+    hooks:
+      - id: check-capi-macros
+        name: Check C API macros start with Py
+        language: python
+        entry: python Tools/build/check_capi_macros.py
+        pass_filenames: false
+        files: ^(Include/(cpython/)?[^/]+\.h|pyconfig\.h\.in|Tools/build/check_capi_macros)
 
   - repo: meta
     hooks:

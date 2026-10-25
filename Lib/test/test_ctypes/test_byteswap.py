@@ -178,14 +178,14 @@ class Test(unittest.TestCase, StructCheckMixin):
             self.assertIs(c_float_complex.__ctype_le__.__ctype_be__,
                           c_float_complex)
         s = c_float_complex(math.pi+1j)
-        self.assertEqual(bin(struct.pack("F", math.pi+1j)), bin(s))
+        self.assertEqual(bin(struct.pack("Zf", math.pi+1j)), bin(s))
         self.assertAlmostEqual(s.value, math.pi+1j, places=6)
         s = c_float_complex.__ctype_le__(math.pi+1j)
         self.assertAlmostEqual(s.value, math.pi+1j, places=6)
-        self.assertEqual(bin(struct.pack("<F", math.pi+1j)), bin(s))
+        self.assertEqual(bin(struct.pack("<Zf", math.pi+1j)), bin(s))
         s = c_float_complex.__ctype_be__(math.pi+1j)
         self.assertAlmostEqual(s.value, math.pi+1j, places=6)
-        self.assertEqual(bin(struct.pack(">F", math.pi+1j)), bin(s))
+        self.assertEqual(bin(struct.pack(">Zf", math.pi+1j)), bin(s))
 
     @unittest.skipUnless(hasattr(ctypes, 'c_double_complex'), "No complex types")
     def test_endian_double_complex(self):
@@ -199,14 +199,14 @@ class Test(unittest.TestCase, StructCheckMixin):
             self.assertIs(c_double_complex.__ctype_le__.__ctype_be__,
                           c_double_complex)
         s = c_double_complex(math.pi+1j)
-        self.assertEqual(bin(struct.pack("D", math.pi+1j)), bin(s))
+        self.assertEqual(bin(struct.pack("Zd", math.pi+1j)), bin(s))
         self.assertAlmostEqual(s.value, math.pi+1j, places=6)
         s = c_double_complex.__ctype_le__(math.pi+1j)
         self.assertAlmostEqual(s.value, math.pi+1j, places=6)
-        self.assertEqual(bin(struct.pack("<D", math.pi+1j)), bin(s))
+        self.assertEqual(bin(struct.pack("<Zd", math.pi+1j)), bin(s))
         s = c_double_complex.__ctype_be__(math.pi+1j)
         self.assertAlmostEqual(s.value, math.pi+1j, places=6)
-        self.assertEqual(bin(struct.pack(">D", math.pi+1j)), bin(s))
+        self.assertEqual(bin(struct.pack(">Zd", math.pi+1j)), bin(s))
 
     def test_endian_other(self):
         self.assertIs(c_byte.__ctype_le__, c_byte)

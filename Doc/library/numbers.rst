@@ -90,20 +90,7 @@ Notes for type implementers
 
 Implementers should be careful to make equal numbers equal and hash
 them to the same values. This may be subtle if there are two different
-extensions of the real numbers. For example, :class:`fractions.Fraction`
-implements :func:`hash` as follows::
-
-    def __hash__(self):
-        if self.denominator == 1:
-            # Get integers right.
-            return hash(self.numerator)
-        # Expensive check, but definitely correct.
-        if self == float(self):
-            return hash(float(self))
-        else:
-            # Use tuple's hash to avoid a high collision rate on
-            # simple fractions.
-            return hash((self.numerator, self.denominator))
+extensions of the real numbers. See also :ref:`numeric-hash`.
 
 
 Adding More Numeric ABCs

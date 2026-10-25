@@ -7,6 +7,7 @@
 
 #include "pycore_code.h"          // _PyCode_CODE()
 #include "pycore_interpframe_structs.h" // _PyInterpreterFrame
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR_ACQUIRE()
 #include "pycore_stackref.h"      // PyStackRef_AsPyObjectBorrow()
 #include "pycore_stats.h"         // CALL_STAT_INC()
 
@@ -319,12 +320,15 @@ _PyThreadState_GetFrame(PyThreadState *tstate)
 // This avoids corrupting the cache when transient frames (called and returned
 // between profiler samples) update last_profiled_frame to addresses the
 // profiler never saw.
+// The sequence distinguishes this anchor from a later frame that reuses the
+// same _PyInterpreterFrame address.
 #define _PyThreadState_UpdateLastProfiledFrame(tstate, frame, previous) \
     do { \
         PyThreadState *tstate_ = (tstate); \
         _PyInterpreterFrame *frame_ = (frame); \
         if (tstate_->last_profiled_frame == frame_) { \
             tstate_->last_profiled_frame = (previous); \
+            tstate_->last_profiled_frame_seq++; \
         } \
     } while (0)
 
@@ -341,7 +345,7 @@ _PyFrame_GetFrameObject(_PyInterpreterFrame *frame)
 {
 
     assert(!_PyFrame_IsIncomplete(frame));
-    PyFrameObject *res =  frame->frame_obj;
+    PyFrameObject *res = (PyFrameObject*)FT_ATOMIC_LOAD_PTR_ACQUIRE(frame->frame_obj);
     if (res != NULL) {
         return res;
     }

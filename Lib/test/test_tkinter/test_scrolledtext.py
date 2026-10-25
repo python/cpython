@@ -1,5 +1,6 @@
 import unittest
 import tkinter
+from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
 from test.support import requires
 from test.test_tkinter.support import setUpModule  # noqa: F401
@@ -19,14 +20,23 @@ class ScrolledTextTest(AbstractTkTest, unittest.TestCase):
         st = self.create(background='red', height=5)
         # It is a Text widget held in a Frame together with a Scrollbar.
         self.assertIsInstance(st, tkinter.Text)
+        # By default the frame and scroll bar are the classic tkinter widgets.
         self.assertIsInstance(st.frame, tkinter.Frame)
+        self.assertNotIsInstance(st.frame, ttk.Frame)
         self.assertIsInstance(st.vbar, tkinter.Scrollbar)
+        self.assertNotIsInstance(st.vbar, ttk.Scrollbar)
         self.assertEqual(st.winfo_parent(), str(st.frame))
         # str() returns the frame, so that geometry managers manage it.
         self.assertEqual(str(st), str(st.frame))
         # Keyword options configure the Text.
         self.assertEqual(str(st['background']), 'red')
         self.assertEqual(st['height'], 5 if self.wantobjects else '5')
+
+    def test_use_ttk(self):
+        # use_ttk=True uses the themed tkinter.ttk widgets.
+        st = self.create(use_ttk=True)
+        self.assertIsInstance(st.frame, ttk.Frame)
+        self.assertIsInstance(st.vbar, ttk.Scrollbar)
 
     def test_text_methods(self):
         st = self.create()

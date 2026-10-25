@@ -109,7 +109,7 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
     def test_horizontal_range(self):
         lscale = ttk.LabeledScale(self.root, from_=0, to=10)
         lscale.pack()
-        lscale.update()
+        self.require_mapped(lscale)
 
         linfo_1 = lscale.label.place_info()
         prev_xcoord = lscale.scale.coords()[0]
@@ -138,7 +138,7 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
     def test_variable_change(self):
         x = ttk.LabeledScale(self.root)
         x.pack()
-        x.update()
+        self.require_mapped(x)
 
         curr_xcoord = x.scale.coords()[0]
         newval = x.value + 1
@@ -181,7 +181,7 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
         x = ttk.LabeledScale(self.root)
         x.pack(expand=True, fill='both')
         gc_collect()  # For PyPy or other GCs.
-        x.update()
+        self.require_mapped(x)
 
         width, height = x.master.winfo_width(), x.master.winfo_height()
         width_new, height_new = width * 2, height * 2
@@ -198,6 +198,10 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
 
 
 class OptionMenuTest(test_widgets.MenubuttonTest, unittest.TestCase):
+
+    # OptionMenu documents only its own options, not the inherited
+    # Menubutton options (like the classic tkinter.OptionMenu).
+    test_options_in_docstring = None
 
     def setUp(self):
         super().setUp()

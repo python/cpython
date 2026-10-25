@@ -490,6 +490,7 @@ class ImportTests(unittest.TestCase):
                 forget(TESTFN)
                 unlink(source)
                 unlink(pyc)
+                rmtree('__pycache__')
 
         sys.path.insert(0, os.curdir)
         try:
@@ -668,6 +669,7 @@ class ImportTests(unittest.TestCase):
                   import importlib
             sys.argv.insert(0, C())
             """))
+        self.addCleanup(unlink, testfn)
         script_helper.assert_python_ok(testfn)
 
     @skip_if_dont_write_bytecode
@@ -787,7 +789,7 @@ class ImportTests(unittest.TestCase):
         pydname = importlib.util.find_spec("_sqlite3").origin
         depname = os.path.join(
             os.path.dirname(pydname),
-            "sqlite3{}.dll".format("_d" if "_d" in pydname else ""))
+            "sqlite3{}.dll".format("_d" if "_d" in os.path.basename(pydname) else ""))
 
         with os_helper.temp_dir() as tmp:
             tmp2 = os.path.join(tmp, "DLLs")
@@ -1262,6 +1264,13 @@ os.does_not_exist
                 origin = "a\x00b"
             _imp.create_dynamic(Spec2())
 
+
+    def test_create_dynamic_no_origin(self):
+        with self.assertRaisesRegex(AttributeError, "no attribute 'origin'"):
+            class Spec:
+                name = "abc"
+            _imp.create_dynamic(Spec())
+
     def test_create_builtin(self):
         class Spec:
             pass
@@ -1271,7 +1280,7 @@ os.does_not_exist
         self.assertIs(_imp.create_builtin(spec), sys)
 
         spec.name = None
-        with self.assertRaisesRegex(TypeError, 'name must be string, not NoneType'):
+        with self.assertRaisesRegex(TypeError, 'module name must be a string, not NoneType'):
             _imp.create_builtin(spec)
 
         # gh-142029
@@ -1281,7 +1290,7 @@ os.does_not_exist
 
         # gh-142029
         spec.name = ""
-        with self.assertRaisesRegex(ValueError, 'name must not be empty'):
+        with self.assertRaisesRegex(ValueError, 'module name must not be empty'):
             _imp.create_builtin(spec)
 
     def test_filter_syntax_warnings_by_module(self):
@@ -1669,6 +1678,11 @@ class PycacheTests(unittest.TestCase):
         unlink(self.source)
 
     def setUp(self):
+        # These tests assume bytecode is written next to the source in a
+        # local __pycache__ directory, so neutralize any pycache prefix (e.g.
+        # when the test suite is run with PYTHONPYCACHEPREFIX set).
+        self._orig_pycache_prefix = sys.pycache_prefix
+        sys.pycache_prefix = None
         self.source = TESTFN + '.py'
         self._clean()
         with open(self.source, 'w', encoding='utf-8') as fp:
@@ -1680,6 +1694,7 @@ class PycacheTests(unittest.TestCase):
         assert sys.path[0] == os.curdir, 'Unexpected sys.path[0]'
         del sys.path[0]
         self._clean()
+        sys.pycache_prefix = self._orig_pycache_prefix
 
     @skip_if_dont_write_bytecode
     def test_import_pyc_path(self):
@@ -2027,6 +2042,7 @@ class ImportTracebackTests(unittest.TestCase):
         # encode filenames, especially on Windows
         pyname = script_helper.make_script('', TESTFN_UNENCODABLE, 'pass')
         self.addCleanup(unlink, pyname)
+        self.addCleanup(rmtree, '__pycache__')
         name = pyname[:-3]
         script_helper.assert_python_ok("-c", "mod = __import__(%a)" % name,
                                        __isolated=False)
@@ -2535,6 +2551,7 @@ class SubinterpImportTests(unittest.TestCase):
         excsnap = _interpreters.run_string(interpid, script)
         self.assertIsNot(excsnap, None)
 
+    @cpython_only
     @requires_subinterpreters
     def test_pyinit_function_raises_exception(self):
         # gh-144601: PyInit functions that raised exceptions would cause a
