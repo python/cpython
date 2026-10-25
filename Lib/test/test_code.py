@@ -1251,10 +1251,15 @@ class CodeConstsTest(unittest.TestCase):
         class MyInt(int):
             pass
 
+        class MyComplex(complex):
+            pass
+
         code = compile("a = 1", "<string>", "exec")
-        code = code.replace(co_consts=(1, Unhashable(), MyInt(1), MyInt(1)))
+        code = code.replace(co_consts=(1, Unhashable(), MyInt(1), MyInt(1),
+                                       MyComplex(1j)))
         self.assertIsInstance(code.co_consts[1], Unhashable)
         self.assertEqual(code.co_consts[2], code.co_consts[3])
+        self.assertFalse(sys._is_immortal(code.co_consts[4]))
 
 
 class CodeWeakRefTest(unittest.TestCase):

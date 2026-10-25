@@ -4,6 +4,7 @@ __lazy_modules__ = [
     "pathlib",
     "shutil",
     "subprocess",
+    "sys",
     "_shared",
 ]
 
@@ -12,6 +13,7 @@ import os
 import pathlib
 import shutil
 import subprocess
+import sys
 
 import _shared
 
@@ -262,18 +264,6 @@ def config_symlink(config_path, context):
     return [(symlink, config_path) for symlink in symlinks]
 
 
-def filename_stem(context):
-    """Calculate the stem of the archive file name."""
-    version_info = context.wasi_build_details["language"]["version_info"]
-    version = f"python-{version_info['major']}.{version_info['minor']}.{version_info['micro']}"
-    if version_info["releaselevel"] != "final":
-        version += version_info["releaselevel"][0] + str(
-            version_info["serial"]
-        )
-
-    return f"{version}-{context.host_triple}"
-
-
 def copy_files(files, base):
     for dest, src in files:
         target = base / dest
@@ -294,13 +284,13 @@ def gather(context):
     py_version = python_version(context)
     py_d_version = python_version(context, debug_ok=True)
 
-    dist = context.checkout / "dist"
+    dist = context.dist_path
     if dist.exists():
         _shared.log("🧹", f"Deleting {dist} ...")
         shutil.rmtree(dist)
 
     indent = "  "
-    base = dist / filename_stem(context)
+    base = context.archive_dir
     _shared.log("📝", f"Copying files to {base} ...")
 
     _shared.log("📁", "bin/", spacing=indent * 2)
@@ -363,12 +353,12 @@ def gather(context):
 
 
 def archive(context):
-    file_name = f"{filename_stem(context)}.tar.xz"
-    file_path = context.checkout / "dist" / file_name
+    file_name = f"{context.archive_stem}.tar.xz"
+    file_path = context.dist_path / file_name
     if file_path.exists():
         _shared.log("🧹", f"Deleting {file_path} ...")
         file_path.unlink()
-    to_compress = context.checkout / "dist" / filename_stem(context)
+    to_compress = context.archive_dir
     _shared.log("🗜️", f"Archiving to {file_path} ...")
     mtime_format = "%Y-%m-%dT%H:%M:%SZ"
     if source_date_epoch := os.environ.get("SOURCE_DATE_EPOCH"):
@@ -376,45 +366,53 @@ def archive(context):
             int(source_date_epoch), datetime.UTC
         ).strftime(mtime_format)
     else:
-        mtime = subprocess.run(
+        try:
+            mtime = subprocess.run(
+                [
+                    "git",
+                    "log",
+                    "-1",
+                    "--format=tformat:%cd",
+                    f"--date=format:{mtime_format}",
+                    os.fsdecode(context.checkout),
+                ],
+                env={"TZ": "UTC0"},
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout.strip()
+        except subprocess.CalledProcessError as error:
+            print(error.output)
+            sys.exit(error.returncode)
+
+    try:
+        subprocess.run(
             [
-                "git",
-                "log",
-                "-1",
-                "--format=tformat:%cd",
-                f"--date=format:{mtime_format}",
-                os.fsdecode(context.checkout),
+                "tar",
+                "-c",
+                "-f",
+                os.fsdecode(file_path),
+                "--sort=name",
+                "--mtime",
+                mtime,
+                "--clamp-mtime",
+                "--owner=0",
+                "--group=0",
+                "--numeric-owner",
+                "--pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime",
+                "--mode=go+u,go-w",
+                # Explicitly using `-T` because if you don't compress with threads you can't
+                # uncompress with them and the size difference is negligible when using
+                # single-threaded compression.
+                "--use-compress-program",
+                "xz -T 0",
+                to_compress.name,
             ],
-            env={"TZ": "UTC0"},
+            cwd=to_compress.parent,
             capture_output=True,
             text=True,
             check=True,
-        ).stdout.strip()
-
-    subprocess.run(
-        [
-            "tar",
-            "-c",
-            "-f",
-            os.fsdecode(file_path),
-            "--sort=name",
-            "--mtime",
-            mtime,
-            "--clamp-mtime",
-            "--owner=0",
-            "--group=0",
-            "--numeric-owner",
-            "--pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime",
-            "--mode=go+u,go-w",
-            # Explicitly using `-T` because if you don't compress with threads you can't
-            # uncompress with them and the size difference is negligible when using
-            # single-threaded compression.
-            "--use-compress-program",
-            "xz -T 0",
-            to_compress.name,
-        ],
-        cwd=to_compress.parent,
-        capture_output=True,
-        text=True,
-        check=True,
-    )
+        )
+    except subprocess.CalledProcessError as error:
+        print(error.output)
+        sys.exit(error.returncode)

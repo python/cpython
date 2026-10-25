@@ -24,6 +24,7 @@ you're working through IDLE, you can import this test module and call test()
 with the corresponding argument.
 """
 
+import contextlib
 import logging
 import math
 import os, sys
@@ -2612,6 +2613,37 @@ class PyUsabilityTest(UsabilityTest, unittest.TestCase):
         sys.set_int_max_str_digits(self._previous_int_limit)
         super().tearDown()
 
+    def test_helper__is_less_than_pow10a_use_str_slow_path(self):
+        # Test the "slow" path of _is_less_than_pow10a_use_str().
+        a, b = 2, 7
+
+        # Choose q1, q2 such that len(str(q1)) <= a < len(str(q2))
+        # and q1.bit_length() == q2.bit_length() == b to check that
+        # we cover the "slow" path correctly even for small values.
+        q1, q2 = 95, 105
+        b1, b2 = q1.bit_length(), q2.bit_length()
+
+        self.assertEqual(b1, b)
+        self.assertEqual(b2, b)
+
+        # ensure that the first "fast" check doesn't hold
+        self.assertGreaterEqual(b, a * self.decimal._LOG_10_BASE_2_LO)
+        # ensure that the second "fast" check doesn't hold
+        self.assertLess(b, 1 + a * self.decimal._LOG_10_BASE_2_HI)
+
+        cond_q1, str_q1 = self.decimal._is_less_than_pow10a_use_str(q1, a)
+        self.assertTrue(cond_q1)
+        self.assertIsNotNone(str_q1)
+
+        cond_q2, str_q2 = self.decimal._is_less_than_pow10a_use_str(q2, a)
+        self.assertFalse(cond_q2)
+        self.assertIsNotNone(str_q2)
+
+    def test_helper__is_less_than_pow10a(self):
+        # TODO(picnixz): find a simple test case with custom ulp_order.
+        pass
+
+
 class PythonAPItests:
 
     def test_abc(self):
@@ -4331,7 +4363,7 @@ class ContextInputValidation:
 
         # Attributes cannot be deleted
         for attr in ['prec', 'Emax', 'Emin', 'rounding', 'capitals', 'clamp',
-                     'flags', 'traps']:
+                     'flags', 'traps', '_allcr', '_flags', '_traps']:
             self.assertRaises(AttributeError, c.__delattr__, attr)
 
         # Invalid attributes
@@ -4534,8 +4566,13 @@ class CheckAttributes(unittest.TestCase):
 
         self.assertEqual(C.SPEC_VERSION, P.SPEC_VERSION)
 
-        self.assertLessEqual(set(dir(C)), set(dir(P)))
-        self.assertEqual([n for n in dir(C) if n[:2] != '__'], sorted(P.__all__))
+        # Information about the libmpdec library, specific to the C module.
+        libmpdec_names = {'LIBMPDEC_VERSION', 'LIBMPDEC_VERSION_INFO',
+                          'libmpdec_version', 'libmpdec_version_info'}
+        self.assertLessEqual(set(dir(C)) - libmpdec_names, set(dir(P)))
+        self.assertEqual([n for n in dir(C)
+                          if n[:2] != '__' and n not in libmpdec_names],
+                         sorted(P.__all__))
 
     def test_context_attributes(self):
 
@@ -4550,6 +4587,15 @@ class CheckAttributes(unittest.TestCase):
         self.assertEqual(set(x) - set(y), set())
 
 class Coverage:
+
+    @contextlib.contextmanager
+    def unbound_context(self, prec=None, Emax=None, Emin=None):
+        with self.decimal.localcontext() as c:
+            c.prec = self.decimal.MAX_PREC if prec is None else prec
+            c.Emax = self.decimal.MAX_EMAX if Emax is None else Emax
+            c.Emin = self.decimal.MIN_EMIN if Emin is None else Emin
+            c.traps[self.decimal.Inexact] = 1
+            yield c
 
     def test_adjusted(self):
         Decimal = self.decimal.Decimal
@@ -4717,6 +4763,22 @@ class Coverage:
             self.assertTrue(q.is_infinite() and r.is_nan())
             self.assertTrue(c.flags[InvalidOperation] and
                             c.flags[DivisionByZero])
+
+    def test_divide_unbound_context(self):
+        with self.unbound_context() as c:
+            x = self.decimal.Decimal('1')
+            y = x // 1  # should be fast
+
+    def test_remainder_near(self):
+        L = 1000
+        limit = sys.get_int_max_str_digits()
+        sys.set_int_max_str_digits(L)
+        self.addCleanup(sys.set_int_max_str_digits, limit)
+
+        with self.unbound_context(prec=2 * L) as c:
+            self.assertEqual(c.prec, 2 * L)
+            x = self.decimal.Decimal(f'1e{L}')
+            y = x.remainder_near(1)  # must not raise a ValueError
 
     def test_power(self):
         Decimal = self.decimal.Decimal
@@ -5058,6 +5120,38 @@ class CFunctionality(unittest.TestCase):
 
         self.assertEqual(C.DecTraps,
                          C.DecErrors|C.DecOverflow|C.DecUnderflow)
+
+@requires_cdecimal
+class CVersion(unittest.TestCase):
+    """Information about the libmpdec library in _decimal"""
+
+    def _test_libmpdec_version(self, v, string):
+        self.assertIsInstance(v[:], tuple)
+        self.assertEqual(len(v), 3)
+        self.assertIsInstance(v[0], int)
+        self.assertIsInstance(v[1], int)
+        self.assertIsInstance(v[2], int)
+        self.assertIsInstance(v.major, int)
+        self.assertIsInstance(v.minor, int)
+        self.assertIsInstance(v.micro, int)
+        self.assertEqual(v[0], v.major)
+        self.assertEqual(v[1], v.minor)
+        self.assertEqual(v[2], v.micro)
+        self.assertGreaterEqual(v.major, 2)
+        self.assertGreaterEqual(v.minor, 0)
+        self.assertGreaterEqual(v.micro, 0)
+        self.assertEqual(string, '%d.%d.%d' % v)
+
+    def test_libmpdec_version(self):
+        if support.verbose:
+            print(f'LIBMPDEC_VERSION = {C.LIBMPDEC_VERSION}', flush=True)
+            print(f'libmpdec_version = {C.libmpdec_version}', flush=True)
+            print(f'LIBMPDEC_VERSION_INFO = {C.LIBMPDEC_VERSION_INFO}', flush=True)
+            print(f'libmpdec_version_info = {C.libmpdec_version_info}', flush=True)
+        self._test_libmpdec_version(C.LIBMPDEC_VERSION_INFO, C.LIBMPDEC_VERSION)
+        self._test_libmpdec_version(C.libmpdec_version_info, C.libmpdec_version)
+        self.assertEqual(C.LIBMPDEC_VERSION_INFO[0], C.libmpdec_version_info[0])
+        self.assertIs(C.libmpdec_version, C.__libmpdec_version__)
 
 @requires_cdecimal
 class CWhitebox(unittest.TestCase):
