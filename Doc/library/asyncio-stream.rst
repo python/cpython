@@ -399,7 +399,7 @@ StreamWriter
          to the event loop explicitly with ``await asyncio.sleep(0)``
          (see :func:`asyncio.sleep`).
 
-   .. method:: start_tls(sslcontext, *, server_hostname=None, \
+   .. method:: start_tls(sslcontext, *, server_side=None, server_hostname=None, \
                          ssl_handshake_timeout=None, ssl_shutdown_timeout=None)
       :async:
 
@@ -408,6 +408,10 @@ StreamWriter
       Parameters:
 
       * *sslcontext*: a configured instance of :class:`~ssl.SSLContext`.
+
+      * *server_side*: set to ``True`` to perform the server side of the TLS
+        handshake, or ``False`` to perform the client side. By default
+        (``None``), the role is inferred from how the stream was created.
 
       * *server_hostname*: sets or overrides the host name that the target
         server's certificate will be matched against.
@@ -426,6 +430,8 @@ StreamWriter
          Added the *ssl_shutdown_timeout* parameter.
 
       .. versionchanged:: 3.16
+         Added the *server_side* parameter.
+
          Raises a ``ValueError`` if ``sslcontext.check_hostname`` is ``True``
          and ``server_hostname`` is not supplied.
 
