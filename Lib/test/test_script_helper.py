@@ -12,7 +12,7 @@ class TestScriptHelper(unittest.TestCase):
 
     def test_assert_python_ok(self):
         t = script_helper.assert_python_ok('-c', 'import sys; sys.exit(0)')
-        self.assertEqual(0, t[0], 'return code was not 0')
+        self.assertEqual(0, t.rc, 'return code was not 0')
 
     def test_assert_python_failure(self):
         # I didn't import the sys module so this child will fail.

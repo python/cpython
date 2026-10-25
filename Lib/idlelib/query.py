@@ -21,7 +21,6 @@ Subclass HelpSource gets menu item and path for additions to Help menu.
 
 import importlib.util, importlib.abc
 import os
-import shlex
 from sys import executable, platform  # Platform is set for one test.
 
 from tkinter import Toplevel, StringVar, BooleanVar, W, E, S
@@ -29,6 +28,8 @@ from tkinter.ttk import Frame, Button, Entry, Label, Checkbutton
 from tkinter import filedialog
 from tkinter.font import Font
 from tkinter.simpledialog import _setup_dialog
+
+from idlelib.util import split_cli_args, join_cli_args
 
 class Query(Toplevel):
     """Base class for getting verified answer from a user.
@@ -332,6 +333,7 @@ class HelpSource(Query):
         path = self.path_ok()
         return None if name is None or path is None else (name, path)
 
+
 class CustomRun(Query):
     """Get settings for custom run of module.
 
@@ -344,12 +346,11 @@ class CustomRun(Query):
                  _htest=False, _utest=False):
         """cli_args is a list of strings.
 
-        The list is assigned to the default Entry StringVar.
-        The strings are displayed joined by ' ' for display.
+        The strings are quoted and joined for display in the Entry.
         """
         message = 'Command Line Arguments for sys.argv:'
         super().__init__(
-                parent, title, message, text0=cli_args,
+                parent, title, message, text0=join_cli_args(cli_args),
                 _htest=_htest, _utest=_utest)
 
     def create_extra(self):
@@ -369,7 +370,7 @@ class CustomRun(Query):
         "Return command line arg list or None if error."
         cli_string = self.entry.get().strip()
         try:
-            cli_args = shlex.split(cli_string, posix=True)
+            cli_args = split_cli_args(cli_string)
         except ValueError as err:
             self.showerror(str(err))
             return None
