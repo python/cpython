@@ -2095,7 +2095,6 @@ extern "C" {
     INIT_ID(stdout), \
     INIT_ID(step), \
     INIT_ID(steps), \
-    INIT_ID(stop), \
     INIT_ID(store_name), \
     INIT_ID(strategy), \
     INIT_ID(strftime), \

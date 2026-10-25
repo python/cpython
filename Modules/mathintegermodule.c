@@ -5,24 +5,11 @@
 #endif
 
 #include "Python.h"
-#include "pycore_abstract.h"          // _PyNumber_Index()
-#include "pycore_bitutils.h"          // _Py_bit_length()
-#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
-#include "pycore_long.h"              // _PyLong_GetZero()
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_bitutils.h"      // _Py_bit_length()
+#include "pycore_long.h"          // _PyLong_GetZero()
 
 #include "clinic/mathintegermodule.c.h"
-
-typedef struct {
-    PyTypeObject *primes_iter_type;
-} math_integer_state;
-
-static inline math_integer_state *
-get_math_integer_state(PyObject *module)
-{
-    void *state = PyModule_GetState(module);
-    assert(state != NULL);
-    return (math_integer_state *)state;
-}
 
 /*[clinic input]
 module math
@@ -654,161 +641,6 @@ math_integer_isprime_impl(PyObject *module, PyObject *n)
     }
     Py_DECREF(n);
     return result;
-}
-
-
-/* The iterator returned by primes(). */
-
-typedef struct {
-    PyObject_HEAD
-    uint64_t candidate;     /* next candidate to test; 2 or odd */
-    uint64_t stop;          /* exclusive upper bound; ignored if unbounded */
-    char unbounded;
-    char done;
-    char overflowed;        /* unbounded iteration ran out of the domain */
-} primesiterobject;
-
-static void
-primes_iter_dealloc(PyObject *op)
-{
-    PyTypeObject *tp = Py_TYPE(op);
-    freefunc free_func = PyType_GetSlot(tp, Py_tp_free);
-    free_func(op);
-    Py_DECREF(tp);
-}
-
-static PyObject *
-primes_iter_next(PyObject *op)
-{
-    primesiterobject *it = (primesiterobject *)op;
-    PyObject *result = NULL;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    for (;;) {
-        if (it->done) {
-            if (it->overflowed) {
-                /* The whole supported range has been iterated without
-                   reaching a bound.  Only reachable with stop=None. */
-                it->overflowed = 0;
-                PyErr_SetString(PyExc_OverflowError,
-                                "primes() argument must be less than 2**64");
-            }
-            break;
-        }
-        if (PyErr_CheckSignals() < 0) {
-            break;
-        }
-        uint64_t cand = it->candidate;
-        if (!it->unbounded && cand >= it->stop) {
-            it->done = 1;
-            break;
-        }
-        /* Advance to the next candidate: 2 -> 3, odd -> odd + 2. */
-        if (cand == 2) {
-            it->candidate = 3;
-        }
-        else if (cand == UINT64_MAX) {
-            it->done = 1;
-            it->overflowed = it->unbounded;
-        }
-        else {
-            it->candidate = cand + 2;
-        }
-        if (isprime_u64(cand)) {
-            result = PyLong_FromUnsignedLongLong(cand);
-            break;
-        }
-    }
-    Py_END_CRITICAL_SECTION();
-    return result;
-}
-
-static PyType_Slot primes_iter_slots[] = {
-    {Py_tp_dealloc, primes_iter_dealloc},
-    {Py_tp_iter, PyObject_SelfIter},
-    {Py_tp_iternext, primes_iter_next},
-    {0, NULL},
-};
-
-static PyType_Spec primes_iter_spec = {
-    .name = "math.integer.primes_iterator",
-    .basicsize = sizeof(primesiterobject),
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE
-              | Py_TPFLAGS_DISALLOW_INSTANTIATION),
-    .slots = primes_iter_slots,
-};
-
-/*[clinic input]
-math.integer.primes
-
-    start: object(c_default="NULL") = 2
-    stop: object = None
-
-Return an iterator of the prime numbers in the range [start, stop).
-
-If stop is None, the iteration does not stop.
-The bounds must be less than 2**64.
-[clinic start generated code]*/
-
-static PyObject *
-math_integer_primes_impl(PyObject *module, PyObject *start, PyObject *stop)
-/*[clinic end generated code: output=b92270dab45a6b84 input=b5abd91fb58a8d90]*/
-{
-    uint64_t candidate = 2;
-    uint64_t stopval = 0;
-    char unbounded = 0;
-    char done = 0;
-
-    if (stop == Py_None) {
-        unbounded = 1;
-    }
-    else {
-        PyObject *s = _PyNumber_Index(stop);
-        if (s == NULL) {
-            return NULL;
-        }
-        if (_PyLong_IsNegative((PyLongObject *)s)) {
-            done = 1;
-        }
-        else if (PyLong_AsUInt64(s, &stopval) < 0) {
-            Py_DECREF(s);
-            return NULL;
-        }
-        Py_DECREF(s);
-    }
-    if (start != NULL) {
-        PyObject *s = _PyNumber_Index(start);
-        if (s == NULL) {
-            return NULL;
-        }
-        if (_PyLong_IsNegative((PyLongObject *)s)) {
-            /* The first prime is 2. */
-        }
-        else if (PyLong_AsUInt64(s, &candidate) < 0) {
-            Py_DECREF(s);
-            return NULL;
-        }
-        Py_DECREF(s);
-        if (candidate < 2) {
-            candidate = 2;
-        }
-        else if (candidate > 2) {
-            /* Round an even start up to the next odd number. */
-            candidate |= 1;
-        }
-    }
-
-    math_integer_state *state = get_math_integer_state(module);
-    primesiterobject *it = PyObject_New(primesiterobject,
-                                        state->primes_iter_type);
-    if (it == NULL) {
-        return NULL;
-    }
-    it->candidate = candidate;
-    it->stop = stopval;
-    it->unbounded = unbounded;
-    it->done = done;
-    it->overflowed = 0;
-    return (PyObject *)it;
 }
 
 
@@ -1568,20 +1400,12 @@ static PyMethodDef math_integer_methods[] = {
     MATH_INTEGER_ISQRT_METHODDEF
     MATH_INTEGER_LCM_METHODDEF
     MATH_INTEGER_PERM_METHODDEF
-    MATH_INTEGER_PRIMES_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
 static int
 math_integer_exec(PyObject *module)
 {
-    math_integer_state *state = get_math_integer_state(module);
-    state->primes_iter_type = (PyTypeObject *)PyType_FromModuleAndSpec(
-        module, &primes_iter_spec, NULL);
-    if (state->primes_iter_type == NULL) {
-        return -1;
-    }
-
     /* Fix the __name__ attribute of the module and the __module__ attribute
      * of its functions.
      */
@@ -1610,28 +1434,6 @@ math_integer_exec(PyObject *module)
     return 0;
 }
 
-static int
-math_integer_traverse(PyObject *module, visitproc visit, void *arg)
-{
-    math_integer_state *state = get_math_integer_state(module);
-    Py_VISIT(state->primes_iter_type);
-    return 0;
-}
-
-static int
-math_integer_clear(PyObject *module)
-{
-    math_integer_state *state = get_math_integer_state(module);
-    Py_CLEAR(state->primes_iter_type);
-    return 0;
-}
-
-static void
-math_integer_free(void *module)
-{
-    (void)math_integer_clear((PyObject *)module);
-}
-
 static PyModuleDef_Slot math_integer_slots[] = {
     _Py_ABI_SLOT,
     {Py_mod_exec, math_integer_exec},
@@ -1647,12 +1449,9 @@ static struct PyModuleDef math_integer_module = {
     PyModuleDef_HEAD_INIT,
     .m_name = "math.integer",
     .m_doc = module_doc,
-    .m_size = sizeof(math_integer_state),
+    .m_size = 0,
     .m_methods = math_integer_methods,
     .m_slots = math_integer_slots,
-    .m_traverse = math_integer_traverse,
-    .m_clear = math_integer_clear,
-    .m_free = math_integer_free,
 };
 
 PyMODINIT_FUNC

@@ -98,21 +98,3 @@ all return values are computed exactly and are integers.
    and the function returns ``n!``.
 
    Raises :exc:`ValueError` if either of the arguments are negative.
-
-
-.. function:: primes(start=2, stop=None)
-
-   Return an iterator of the prime numbers *p* with ``start <= p < stop``,
-   in increasing order.
-   If *stop* is ``None`` (the default), the iteration does not stop.
-
-   Roughly equivalent to
-   ``(p for p in itertools.count(start) if isprime(p))``
-   for the unbounded form.
-
-   The bounds must be less than 2\ :sup:`64`;
-   raises :exc:`OverflowError` otherwise.
-   Unbounded iteration raises :exc:`OverflowError`
-   if the candidates reach that limit.
-
-   .. versionadded:: next

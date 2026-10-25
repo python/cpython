@@ -1,6 +1,5 @@
 from decimal import Decimal
 from fractions import Fraction
-import itertools
 import random
 import unittest
 from test import support
@@ -449,8 +448,8 @@ class MathTests(IntMathTests):
     import math as module
 
 
-# isprime() and primes() exist only in math.integer, not in math, so their
-# tests are not in IntMathTests (which is re-run against math above).
+# isprime() exists only in math.integer, not in math, so its tests
+# are not in IntMathTests (which is re-run against math above).
 
 class IsPrimeTests(unittest.TestCase):
     import math.integer as module
@@ -580,115 +579,6 @@ class IsPrimeTests(unittest.TestCase):
         self.assertRaises(TypeError, isprime, 7, 11)
 
 
-class PrimesIterTests(unittest.TestCase):
-    import math.integer as module
-
-    def test_primes(self):
-        primes = self.module.primes
-        expected = primes_below(10**4)
-        self.assertEqual(list(primes(stop=10**4)), expected)
-        self.assertEqual(len(expected), 1229)
-        self.assertEqual(list(itertools.islice(primes(), 25)), expected[:25])
-
-    def test_primes_start(self):
-        primes = self.module.primes
-        for start in [-10**100, -100, -1, 0, 1, 2]:
-            with self.subTest(start=start):
-                self.assertEqual(list(primes(start, 10)), [2, 3, 5, 7])
-        self.assertEqual(list(primes(3, 10)), [3, 5, 7])
-        self.assertEqual(list(primes(4, 10)), [5, 7])
-        self.assertEqual(list(primes(8, 12)), [11])
-        self.assertEqual(list(primes(9, 12)), [11])
-        self.assertEqual(list(primes(7, 8)), [7])
-
-    def test_primes_stop(self):
-        primes = self.module.primes
-        # The range is half-open.
-        self.assertEqual(list(primes(2, 2)), [])
-        self.assertEqual(list(primes(2, 3)), [2])
-        self.assertEqual(list(primes(3, 3)), [])
-        self.assertEqual(list(primes(7, 7)), [])
-        self.assertEqual(list(primes(2, -10)), [])
-        self.assertEqual(list(primes(10, 5)), [])
-        self.assertEqual(list(primes(stop=0)), [])
-
-    def test_primes_unbounded(self):
-        primes = self.module.primes
-        it = primes()
-        self.assertEqual([next(it) for _ in range(5)], [2, 3, 5, 7, 11])
-        it = primes(10**6)
-        self.assertEqual(next(it), 1000003)
-
-    def test_primes_huge(self):
-        primes = self.module.primes
-        boundary = 10**18
-        expected = [n for n in range(boundary - 200, boundary + 200)
-                    if py_isprime(n)]
-        self.assertEqual(list(primes(boundary - 200, boundary + 200)),
-                         expected)
-        # The top of the supported range.
-        expected = [n for n in range(2**64 - 200, 2**64) if py_isprime(n)]
-        self.assertEqual(list(primes(2**64 - 200, 2**64 - 1)), expected)
-
-    def test_primes_overflow(self):
-        primes = self.module.primes
-        # The bounds must be less than 2**64.
-        self.assertRaises(OverflowError, primes, 2**64)
-        self.assertRaises(OverflowError, primes, 2**64 + 100, 2**64 + 200)
-        self.assertRaises(OverflowError, primes, 0, 2**64)
-        self.assertRaises(OverflowError, primes, 10**100)
-        # An unbounded iterator raises when it runs out of the
-        # supported range.
-        it = primes(2**64 - 60)
-        self.assertEqual(next(it), 2**64 - 59)
-        self.assertRaises(OverflowError, next, it)
-        self.assertRaises(StopIteration, next, it)
-
-    def test_primes_iterator_protocol(self):
-        primes = self.module.primes
-        it = primes(2, 10)
-        self.assertIs(iter(it), it)
-        self.assertEqual(list(it), [2, 3, 5, 7])
-        # An exhausted iterator stays exhausted.
-        self.assertEqual(list(it), [])
-        self.assertRaises(StopIteration, next, it)
-        # The iterator type cannot be instantiated directly.
-        self.assertRaises(TypeError, type(primes()))
-
-    def test_primes_keywords(self):
-        primes = self.module.primes
-        self.assertEqual(list(primes(start=10, stop=30)), [11, 13, 17, 19, 23, 29])
-        self.assertEqual(list(primes(10, stop=30)), [11, 13, 17, 19, 23, 29])
-
-    def test_primes_integer_like(self):
-        primes = self.module.primes
-        self.assertEqual(list(primes(True, 10)), [2, 3, 5, 7])
-        self.assertEqual(list(primes(IntSubclass(3), IntSubclass(10))), [3, 5, 7])
-        self.assertEqual(list(primes(MyIndexable(3), MyIndexable(10))), [3, 5, 7])
-        # The yielded values are exact ints.
-        for p in primes(IntSubclass(3), IntSubclass(10)):
-            self.assertIs(type(p), int)
-
-    def test_primes_int_subclass_operators(self):
-        # Overridden operators of an int subclass must not affect the
-        # iteration.
-        primes = self.module.primes
-        self.assertEqual(list(primes(BadIntSubclass(3), BadIntSubclass(10))),
-                         [3, 5, 7])
-        big = 10**18
-        self.assertEqual(list(primes(BadIntSubclass(big), big + 100)),
-                         [n for n in range(big, big + 100) if py_isprime(n)])
-
-    def test_primes_non_integers(self):
-        primes = self.module.primes
-        self.assertRaises(TypeError, primes, 2.5)
-        self.assertRaises(TypeError, primes, 2.5, 10)
-        self.assertRaises(TypeError, primes, 2, 10.5)
-        self.assertRaises(TypeError, primes, '2')
-        self.assertRaises(TypeError, primes, 2, '10')
-        self.assertRaises(TypeError, primes, 2, 10, 3)
-
-
 class MiscTests(unittest.TestCase):
 
     def test_module_name(self):
@@ -700,11 +590,10 @@ class MiscTests(unittest.TestCase):
                 self.assertEqual(obj.__module__, 'math.integer')
 
     def test_math_namespace(self):
-        # New functions are added only to math.integer, not to math
+        # The new function is added only to math.integer, not to math
         # (PEP 791).
         import math
         self.assertFalse(hasattr(math, 'isprime'))
-        self.assertFalse(hasattr(math, 'primes'))
 
 
 if __name__ == '__main__':
