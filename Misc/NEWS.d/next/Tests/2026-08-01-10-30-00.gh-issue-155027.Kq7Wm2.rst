@@ -1,0 +1,7 @@
+Fix ``test_asyncio``'s socket test harness so that a failure in the client
+or server thread actually fails the test.  ``_abort_socket_test()`` called
+``self.fail()`` from a worker thread, where the resulting
+:exc:`AssertionError` cannot fail the test; it now records the exception and
+re-raises it on the main thread.  It also stops the event loop with
+:meth:`~asyncio.loop.call_soon_threadsafe` rather than calling
+:meth:`~asyncio.loop.stop` directly from a non-main thread.
