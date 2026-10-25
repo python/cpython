@@ -361,7 +361,7 @@ class GNUTranslations(NullTranslations):
         buflen = len(buf)
         if buflen < 20:
             raise OSError(0, 'File is corrupt', filename)
-        # Are we big endian or litle endian?
+        # Are we big endian or little endian?
         magic = unpack('<I', buf[:4])[0]
         if magic == self.LE_MAGIC:
             version, msgcount, masteridx, transidx = unpack('<4I', buf[4:20])
