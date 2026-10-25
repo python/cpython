@@ -701,8 +701,8 @@ The following sections describe how each of these are used.
 
 .. _`name or flags`:
 
-name or flags
-^^^^^^^^^^^^^
+``name`` or ``flags``
+^^^^^^^^^^^^^^^^^^^^^
 
 The :meth:`~ArgumentParser.add_argument` method must know whether an optional
 argument, like ``-f`` or ``--foo``, or a positional argument, like a list of
@@ -755,8 +755,8 @@ the upper-cased name. For example::
 
 .. _action:
 
-action
-^^^^^^
+``action``
+^^^^^^^^^^
 
 :class:`ArgumentParser` objects associate command-line arguments with actions.  These
 actions can do just about anything with the command-line arguments associated with
@@ -897,8 +897,8 @@ For more details, see :class:`Action`.
 
 .. _nargs:
 
-nargs
-^^^^^
+``nargs``
+^^^^^^^^^
 
 :class:`ArgumentParser` objects usually associate a single command-line argument with a
 single action to be taken.  The ``nargs`` keyword argument associates a
@@ -986,8 +986,8 @@ Actions that do not consume command-line arguments (e.g.
 
 .. _const:
 
-const
-^^^^^
+``const``
+^^^^^^^^^
 
 The ``const`` argument of :meth:`~ArgumentParser.add_argument` is used to hold
 constant values that are not read from the command line but are required for
@@ -1014,8 +1014,8 @@ the various :class:`ArgumentParser` actions.  The two most common uses of it are
 
 .. _default:
 
-default
-^^^^^^^
+``default``
+^^^^^^^^^^^
 
 All optional arguments and some positional arguments may be omitted at the
 command line.  The ``default`` keyword argument of
@@ -1084,8 +1084,8 @@ command-line argument was not present::
 
 .. _argparse-type:
 
-type
-^^^^
+``type``
+^^^^^^^^
 
 By default, the parser reads command-line arguments in as simple
 strings. However, quite often the command-line string should instead be
@@ -1163,8 +1163,8 @@ using the choices_ keyword instead.
 
 .. _choices:
 
-choices
-^^^^^^^
+``choices``
+^^^^^^^^^^^
 
 Some command-line arguments should be selected from a restricted set of values.
 These can be handled by passing a sequence object as the *choices* keyword
@@ -1204,8 +1204,8 @@ many choices), just specify an explicit metavar_.
 
 .. _required:
 
-required
-^^^^^^^^
+``required``
+^^^^^^^^^^^^
 
 In general, the :mod:`!argparse` module assumes that flags like ``-f`` and ``--bar``
 indicate *optional* arguments, which can always be omitted at the command line.
@@ -1232,8 +1232,8 @@ present at the command line.
 
 .. _help:
 
-help
-^^^^
+``help``
+^^^^^^^^
 
 The ``help`` value is a string containing a brief description of the argument.
 When a user requests help (usually by using ``-h`` or ``--help`` at the
@@ -1274,8 +1274,8 @@ setting the ``help`` value to ``argparse.SUPPRESS``::
 
 .. _metavar:
 
-metavar
-^^^^^^^
+``metavar``
+^^^^^^^^^^^
 
 When :class:`ArgumentParser` generates help messages, it needs some way to refer
 to each expected argument.  By default, :class:`!ArgumentParser` objects use the dest_
@@ -1340,8 +1340,8 @@ arguments::
 
 .. _dest:
 
-dest
-^^^^
+``dest``
+^^^^^^^^
 
 Most :class:`ArgumentParser` actions add some value as an attribute of the
 object returned by :meth:`~ArgumentParser.parse_args`.  The name of this
@@ -1395,8 +1395,8 @@ strings* rather than ``dest`` names, see conflict_handler_.
 
 .. _deprecated:
 
-deprecated
-^^^^^^^^^^
+``deprecated``
+^^^^^^^^^^^^^^
 
 During a project's lifetime, some arguments may need to be removed from the
 command line. Before removing them, you should inform
