@@ -633,7 +633,8 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                     self.loop.start_tls(tr, proto, client_context),
                     0.5)
 
-            self.assertIsNone(await on_con_lost)
+            self.assertIsNone(
+                await asyncio.wait_for(on_con_lost, support.LOOPBACK_TIMEOUT))
 
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(

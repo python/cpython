@@ -14,6 +14,7 @@ except ImportError:
 
 import asyncio
 from test.test_asyncio import utils as test_utils
+from test import support
 from test.support import socket_helper
 
 
@@ -878,7 +879,8 @@ class StreamTests(test_utils.TestCase):
                     ssl_handshake_timeout=0.1)
             client_writer.close()
             with self.assertRaises(ConnectionAbortedError):
-                await asyncio.wait_for(client_writer.wait_closed(), 10)
+                await asyncio.wait_for(client_writer.wait_closed(),
+                                       support.SHORT_TIMEOUT)
             handler_done.set()
 
         async def client(addr):
@@ -899,7 +901,8 @@ class StreamTests(test_utils.TestCase):
             server_addr = server.sockets[0].getsockname()
 
             await client(server_addr)
-            await asyncio.wait_for(handler_done.wait(), 10)
+            await asyncio.wait_for(handler_done.wait(),
+                                   support.SHORT_TIMEOUT)
             server.close()
             await server.wait_closed()
 
