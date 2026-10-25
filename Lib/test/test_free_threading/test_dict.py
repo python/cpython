@@ -532,5 +532,28 @@ class TestDict(TestCase):
         CHURN_SIZE = 512
         race(ITER_TIMES, CHURN_SIZE, APPENDER_THREADS, REPLACER_THREADS)
 
+    def test_racing_update_from_mutating_pair(self):
+        # gh-159244: dict() must not read the items of a key/value pair
+        # that another thread empties concurrently.
+        pair = [object(), object()]
+        done = Event()
+
+        def writer():
+            try:
+                for _ in range(10000):
+                    pair.clear()
+                    pair.extend((object(), object()))
+            finally:
+                done.set()
+
+        def reader():
+            while not done.is_set():
+                try:
+                    dict([pair])
+                except ValueError:
+                    pass
+
+        threading_helper.run_concurrently([writer] + [reader] * 4)
+
 if __name__ == "__main__":
     unittest.main()

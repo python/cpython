@@ -938,6 +938,7 @@ LLVM_PROF_FOUND
 LLVM_PROFDATA
 LLVM_PROF_ERR
 LLVM_PROF_FILE
+LLVM_PROF_SHOW
 LLVM_PROF_MERGER
 PGO_PROF_USE_FLAG
 PGO_PROF_GEN_FLAG
@@ -995,6 +996,10 @@ LDFLAGS
 CFLAGS
 CC
 HAS_XCRUN
+EXPORT_XROS_DEPLOYMENT_TARGET
+WATCHOS_DEPLOYMENT_TARGET
+XROS_DEPLOYMENT_TARGET
+TVOS_DEPLOYMENT_TARGET
 IPHONEOS_DEPLOYMENT_TARGET
 EXPORT_MACOSX_DEPLOYMENT_TARGET
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET
@@ -4189,6 +4194,15 @@ then
 	*-apple-ios*)
 		ac_sys_system=iOS
 		;;
+	*-apple-tvos*)
+		ac_sys_system=tvOS
+		;;
+	*-apple-xros*)
+		ac_sys_system=visionOS
+		;;
+	*-apple-watchos*)
+		ac_sys_system=watchOS
+		;;
 	*-*-darwin*)
 		ac_sys_system=Darwin
 		;;
@@ -4273,7 +4287,7 @@ fi
 # On cross-compile builds, configure will look for a host-specific compiler by
 # prepending the user-provided host triple to the required binary name.
 #
-# On iOS, this results in binaries like "arm64-apple-ios13.0-simulator-gcc",
+# On iOS/tvOS/visionOS/watchOS, this results in binaries like "arm64-apple-ios13.0-simulator-gcc",
 # which isn't a binary that exists, and isn't very convenient, as it contains the
 # iOS version. As the default cross-compiler name won't exist, configure falls
 # back to gcc, which *definitely* won't work. We're providing wrapper scripts for
@@ -4288,6 +4302,17 @@ if test -z "$AR"; then
 		aarch64-apple-ios*-simulator) AR=arm64-apple-ios-simulator-ar ;;
 		aarch64-apple-ios*)           AR=arm64-apple-ios-ar ;;
 		x86_64-apple-ios*-simulator)  AR=x86_64-apple-ios-simulator-ar ;;
+
+		aarch64-apple-tvos*-simulator) AR=arm64-apple-tvos-simulator-ar ;;
+		aarch64-apple-tvos*)           AR=arm64-apple-tvos-ar ;;
+		x86_64-apple-tvos*-simulator)  AR=x86_64-apple-tvos-simulator-ar ;;
+
+		aarch64-apple-xros*-simulator) AR=arm64-apple-xros-simulator-ar ;;
+		aarch64-apple-xros*)           AR=arm64-apple-xros-ar ;;
+
+		aarch64-apple-watchos*-simulator) AR=arm64-apple-watchos-simulator-ar ;;
+		aarch64-apple-watchos*)           AR=arm64_32-apple-watchos-ar ;;
+		x86_64-apple-watchos*-simulator)  AR=x86_64-apple-watchos-simulator-ar ;;
 		*)
     esac
 fi
@@ -4296,6 +4321,17 @@ if test -z "$CC"; then
 		aarch64-apple-ios*-simulator) CC=arm64-apple-ios-simulator-clang ;;
 		aarch64-apple-ios*)           CC=arm64-apple-ios-clang ;;
 		x86_64-apple-ios*-simulator)  CC=x86_64-apple-ios-simulator-clang ;;
+
+		aarch64-apple-tvos*-simulator) CC=arm64-apple-tvos-simulator-clang ;;
+		aarch64-apple-tvos*)           CC=arm64-apple-tvos-clang ;;
+		x86_64-apple-tvos*-simulator)  CC=x86_64-apple-tvos-simulator-clang ;;
+
+		aarch64-apple-xros*-simulator) CC=arm64-apple-xros-simulator-clang ;;
+		aarch64-apple-xros*)           CC=arm64-apple-xros-clang ;;
+
+		aarch64-apple-watchos*-simulator) CC=arm64-apple-watchos-simulator-clang ;;
+		aarch64-apple-watchos*)           CC=arm64_32-apple-watchos-clang ;;
+		x86_64-apple-watchos*-simulator)  CC=x86_64-apple-watchos-simulator-clang ;;
 		*)
 	esac
 fi
@@ -4304,6 +4340,17 @@ if test -z "$CPP"; then
 		aarch64-apple-ios*-simulator) CPP=arm64-apple-ios-simulator-cpp ;;
 		aarch64-apple-ios*)           CPP=arm64-apple-ios-cpp ;;
 		x86_64-apple-ios*-simulator)  CPP=x86_64-apple-ios-simulator-cpp ;;
+
+		aarch64-apple-tvos*-simulator) CPP=arm64-apple-tvos-simulator-cpp ;;
+		aarch64-apple-tvos*)           CPP=arm64-apple-tvos-cpp ;;
+		x86_64-apple-tvos*-simulator)  CPP=x86_64-apple-tvos-simulator-cpp ;;
+
+		aarch64-apple-xros*-simulator) CPP=arm64-apple-xros-simulator-cpp ;;
+		aarch64-apple-xros*)           CPP=arm64-apple-xros-cpp ;;
+
+		aarch64-apple-watchos*-simulator) CPP=arm64-apple-watchos-simulator-cpp ;;
+		aarch64-apple-watchos*)           CPP=arm64_32-apple-watchos-cpp ;;
+		x86_64-apple-watchos*-simulator)  CPP=x86_64-apple-watchos-simulator-cpp ;;
 		*)
 	esac
 fi
@@ -4312,6 +4359,17 @@ if test -z "$CXX"; then
 		aarch64-apple-ios*-simulator) CXX=arm64-apple-ios-simulator-clang++ ;;
 		aarch64-apple-ios*)           CXX=arm64-apple-ios-clang++ ;;
 		x86_64-apple-ios*-simulator)  CXX=x86_64-apple-ios-simulator-clang++ ;;
+
+		aarch64-apple-tvos*-simulator) CXX=arm64-apple-tvos-simulator-clang++ ;;
+		aarch64-apple-tvos*)           CXX=arm64-apple-tvos-clang++ ;;
+		x86_64-apple-tvos*-simulator)  CXX=x86_64-apple-tvos-simulator-clang++ ;;
+
+		aarch64-apple-xros*-simulator) CXX=arm64-apple-xros-simulator-clang++ ;;
+		aarch64-apple-xros*)           CXX=arm64-apple-xros-clang++ ;;
+
+		aarch64-apple-watchos*-simulator) CXX=arm64-apple-watchos-simulator-clang++ ;;
+		aarch64-apple-watchos*)           CXX=arm64_32-apple-watchos-clang++ ;;
+		x86_64-apple-watchos*-simulator)  CXX=x86_64-apple-watchos-simulator-clang++ ;;
 		*)
 	esac
 fi
@@ -4434,8 +4492,11 @@ then :
 	case $enableval in
 	yes)
 		case $ac_sys_system in
-			Darwin) enableval=/Library/Frameworks ;;
-			iOS)    enableval=Platforms/Apple/iOS/Frameworks/\$\(MULTIARCH\) ;;
+			Darwin)  enableval=/Library/Frameworks ;;
+			iOS)     enableval=Platforms/Apple/iOS/Frameworks/\$\(MULTIARCH\) ;;
+			tvOS)    enableval=Platforms/Apple/tvOS/Frameworks/\$\(MULTIARCH\) ;;
+			visionOS) enableval=Platforms/Apple/visionOS/Frameworks/\$\(MULTIARCH\) ;;
+			watchOS) enableval=Platforms/Apple/watchOS/Frameworks/\$\(MULTIARCH\) ;;
 			*) as_fn_error $? "Unknown platform for framework build" "$LINENO" 5
 		esac
 	esac
@@ -4547,6 +4608,51 @@ then :
 				ac_config_files="$ac_config_files Platforms/Apple/iOS/Resources/Info.plist"
 
 				;;
+			tvOS) :
+				FRAMEWORKINSTALLFIRST="frameworkinstallunversionedstructure"
+				FRAMEWORKALTINSTALLFIRST="frameworkinstallunversionedstructure "
+				FRAMEWORKINSTALLLAST="frameworkinstallmobileheaders"
+				FRAMEWORKALTINSTALLLAST="frameworkinstallmobileheaders"
+				FRAMEWORKPYTHONW=
+				INSTALLTARGETS="libinstall inclinstall sharedinstall"
+
+				prefix=$PYTHONFRAMEWORKPREFIX
+				PYTHONFRAMEWORKINSTALLNAMEPREFIX="@rpath/$PYTHONFRAMEWORKDIR"
+				RESSRCDIR=Platforms/Apple/tvOS/Resources
+
+				ac_config_files="$ac_config_files Platforms/Apple/tvOS/Resources/Info.plist"
+
+				;;
+			visionOS) :
+				FRAMEWORKINSTALLFIRST="frameworkinstallunversionedstructure"
+				FRAMEWORKALTINSTALLFIRST="frameworkinstallunversionedstructure "
+				FRAMEWORKINSTALLLAST="frameworkinstallmobileheaders"
+				FRAMEWORKALTINSTALLLAST="frameworkinstallmobileheaders"
+				FRAMEWORKPYTHONW=
+				INSTALLTARGETS="libinstall inclinstall sharedinstall"
+
+				prefix=$PYTHONFRAMEWORKPREFIX
+				PYTHONFRAMEWORKINSTALLNAMEPREFIX="@rpath/$PYTHONFRAMEWORKDIR"
+				RESSRCDIR=Platforms/Apple/visionOS/Resources
+
+				ac_config_files="$ac_config_files Platforms/Apple/visionOS/Resources/Info.plist"
+
+				;;
+			watchOS) :
+				FRAMEWORKINSTALLFIRST="frameworkinstallunversionedstructure"
+				FRAMEWORKALTINSTALLFIRST="frameworkinstallunversionedstructure "
+				FRAMEWORKINSTALLLAST="frameworkinstallmobileheaders"
+				FRAMEWORKALTINSTALLLAST="frameworkinstallmobileheaders"
+				FRAMEWORKPYTHONW=
+				INSTALLTARGETS="libinstall inclinstall sharedinstall"
+
+				prefix=$PYTHONFRAMEWORKPREFIX
+				PYTHONFRAMEWORKINSTALLNAMEPREFIX="@rpath/$PYTHONFRAMEWORKDIR"
+				RESSRCDIR=Platforms/Apple/watchOS/Resources
+
+				ac_config_files="$ac_config_files Platforms/Apple/watchOS/Resources/Info.plist"
+
+				;;
 			*)
 				as_fn_error $? "Unknown platform for framework build" "$LINENO" 5
 				;;
@@ -4607,8 +4713,8 @@ then :
     case "$withval" in
     yes)
       case $ac_sys_system in
-        Darwin|iOS)
-          # iOS is able to share the macOS patch
+        Darwin|iOS|tvOS|visionOS|watchOS)
+          # iOS/tvOS/visionOS/watchOS is able to share the macOS patch
           APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
           ;;
         *) as_fn_error $? "no default app store compliance patch available for $ac_sys_system" "$LINENO" 5 ;;
@@ -4626,8 +4732,8 @@ printf "%s\n" "applying custom app store compliance patch" >&6; }
 else case e in #(
   e)
     case $ac_sys_system in
-      iOS)
-        # Always apply the compliance patch on iOS; we can use the macOS patch
+      iOS|tvOS|visionOS|watchOS)
+        # Always apply the compliance patch on iOS/tvOS/visionOS/watchOS; we can use the macOS patch
         APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: applying default app store compliance patch" >&5
 printf "%s\n" "applying default app store compliance patch" >&6; }
@@ -4644,6 +4750,8 @@ esac
 fi
 
 
+
+EXPORT_XROS_DEPLOYMENT_TARGET='#'
 
 
 if test "$cross_compiling" = yes; then
@@ -4682,6 +4790,78 @@ printf "%s\n" "$IPHONEOS_DEPLOYMENT_TARGET" >&6; }
 				;;
 			*)
 				_host_ident=${IPHONEOS_DEPLOYMENT_TARGET}-$host_cpu-iphone${_host_device}
+				;;
+		esac
+		;;
+	*-apple-tvos*)
+		_host_os=`echo $host | cut -d '-' -f3`
+		_host_device=`echo $host | cut -d '-' -f4`
+		_host_device=${_host_device:=os}
+
+		# TVOS_DEPLOYMENT_TARGET is the minimum supported tvOS version
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking tvOS deployment target" >&5
+printf %s "checking tvOS deployment target... " >&6; }
+		TVOS_DEPLOYMENT_TARGET=${_host_os:4}
+		TVOS_DEPLOYMENT_TARGET=${TVOS_DEPLOYMENT_TARGET:=12.0}
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $TVOS_DEPLOYMENT_TARGET" >&5
+printf "%s\n" "$TVOS_DEPLOYMENT_TARGET" >&6; }
+
+		case "$host_cpu" in
+			aarch64)
+				_host_ident=${TVOS_DEPLOYMENT_TARGET}-arm64-appletv${_host_device}
+				;;
+			*)
+				_host_ident=${TVOS_DEPLOYMENT_TARGET}-$host_cpu-appletv${_host_device}
+				;;
+		esac
+		;;
+	*-apple-xros*)
+		_host_os=`echo $host | cut -d '-' -f3`
+		_host_device=`echo $host | cut -d '-' -f4`
+		_host_device=${_host_device:=os}
+
+		# XROS_DEPLOYMENT_TARGET is the minimum supported visionOS version
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking visionOS deployment target" >&5
+printf %s "checking visionOS deployment target... " >&6; }
+		XROS_DEPLOYMENT_TARGET=${_host_os:8}
+		XROS_DEPLOYMENT_TARGET=${XROS_DEPLOYMENT_TARGET:=2.0}
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $XROS_DEPLOYMENT_TARGET" >&5
+printf "%s\n" "$XROS_DEPLOYMENT_TARGET" >&6; }
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking exporting flag of visionOS deployment target" >&5
+printf %s "checking exporting flag of visionOS deployment target... " >&6; }
+        	export XROS_DEPLOYMENT_TARGET
+		EXPORT_XROS_DEPLOYMENT_TARGET=''
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $EXPORT_XROS_DEPLOYMENT_TARGET" >&5
+printf "%s\n" "$EXPORT_XROS_DEPLOYMENT_TARGET" >&6; }
+
+		case "$host_cpu" in
+			aarch64)
+				_host_ident=${XROS_DEPLOYMENT_TARGET}-arm64-xr${_host_device}
+				;;
+			*)
+				_host_ident=${XROS_DEPLOYMENT_TARGET}-$host_cpu-xr${_host_device}
+				;;
+		esac
+		;;
+	*-apple-watchos*)
+		_host_os=`echo $host | cut -d '-' -f3`
+		_host_device=`echo $host | cut -d '-' -f4`
+		_host_device=${_host_device:=os}
+
+		# WATCHOS_DEPLOYMENT_TARGET is the minimum supported watchOS version
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking watchOS deployment target" >&5
+printf %s "checking watchOS deployment target... " >&6; }
+		WATCHOS_DEPLOYMENT_TARGET=${_host_os:7}
+		WATCHOS_DEPLOYMENT_TARGET=${WATCHOS_DEPLOYMENT_TARGET:=9.0}
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $WATCHOS_DEPLOYMENT_TARGET" >&5
+printf "%s\n" "$WATCHOS_DEPLOYMENT_TARGET" >&6; }
+
+		case "$host_cpu" in
+			aarch64)
+				_host_ident=${WATCHOS_DEPLOYMENT_TARGET}-arm64-watch${_host_device}
+				;;
+			*)
+				_host_ident=${WATCHOS_DEPLOYMENT_TARGET}-$host_cpu-watch${_host_device}
 				;;
 		esac
 		;;
@@ -4772,8 +4952,14 @@ printf "%s\n" "#define _BSD_SOURCE 1" >>confdefs.h
     define_xopen_source=no;;
   Darwin/[12][0-9].*)
     define_xopen_source=no;;
-  # On iOS, defining _POSIX_C_SOURCE also disables platform specific features.
+  # On iOS/tvOS/visionOS/watchOS, defining _POSIX_C_SOURCE also disables platform specific features.
   iOS/*)
+    define_xopen_source=no;;
+  tvOS/*)
+    define_xopen_source=no;;
+  visionOS/*)
+    define_xopen_source=no;;
+  watchOS/*)
     define_xopen_source=no;;
   # On QNX 6.3.2, defining _XOPEN_SOURCE prevents netdb.h from
   # defining NI_NUMERICHOST.
@@ -4853,7 +5039,14 @@ fi
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET=
 EXPORT_MACOSX_DEPLOYMENT_TARGET='#'
 
-# Record the value of IPHONEOS_DEPLOYMENT_TARGET enforced by the selected host triple.
+# Record the value of IPHONEOS_DEPLOYMENT_TARGET / TVOS_DEPLOYMENT_TARGET /
+# XROS_DEPLOYMENT_TARGET / WATCHOS_DEPLOYMENT_TARGET enforced by the selected host triple.
+
+
+
+
+
+# XROS_DEPLOYMENT_TARGET should get exported
 
 
 # checks for alternative programs
@@ -4898,6 +5091,26 @@ case $host in #(
 
     as_fn_append CFLAGS " -mios-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"
     as_fn_append LDFLAGS " -mios-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"
+   ;; #(
+  *-apple-tvos*-simulator) :
+
+    as_fn_append CFLAGS " -mtvos-simulator-version-min=${TVOS_DEPLOYMENT_TARGET}"
+    as_fn_append LDFLAGS " -mtvos-simulator-version-min=${TVOS_DEPLOYMENT_TARGET}"
+   ;; #(
+  *-apple-tvos*) :
+
+    as_fn_append CFLAGS " -mtvos-version-min=${TVOS_DEPLOYMENT_TARGET}"
+    as_fn_append LDFLAGS " -mtvos-version-min=${TVOS_DEPLOYMENT_TARGET}"
+   ;; #(
+  *-apple-watchos*-simulator) :
+
+    as_fn_append CFLAGS " -mwatchos-simulator-version-min=${WATCHOS_DEPLOYMENT_TARGET}"
+    as_fn_append LDFLAGS " -mwatchos-simulator-version-min=${WATCHOS_DEPLOYMENT_TARGET}"
+   ;; #(
+  *-apple-watchos*) :
+
+    as_fn_append CFLAGS " -mwatchos-version-min=${WATCHOS_DEPLOYMENT_TARGET}"
+    as_fn_append LDFLAGS " -mwatchos-version-min=${WATCHOS_DEPLOYMENT_TARGET}"
    ;; #(
   *) :
      ;;
@@ -7380,6 +7593,12 @@ case $ac_sys_system in #(
     MULTIARCH="" ;; #(
   iOS) :
     MULTIARCH="" ;; #(
+  tvOS) :
+    MULTIARCH="" ;; #(
+  visionOS) :
+    MULTIARCH="" ;; #(
+  watchOS) :
+    MULTIARCH="" ;; #(
   FreeBSD*) :
     MULTIARCH="" ;; #(
   OpenBSD*) :
@@ -7402,7 +7621,7 @@ fi
 printf "%s\n" "$MULTIARCH" >&6; }
 
 case $ac_sys_system in #(
-  iOS) :
+  iOS|tvOS|visionOS|watchOS) :
     SOABI_PLATFORM=`echo "$PLATFORM_TRIPLET" | cut -d '-' -f2` ;; #(
   *) :
     SOABI_PLATFORM=$PLATFORM_TRIPLET
@@ -7953,7 +8172,7 @@ then
   case $ac_sys_system in
     Darwin)
       LDLIBRARY='$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)';;
-    iOS)
+    iOS|tvOS|visionOS|watchOS)
       LDLIBRARY='$(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)';;
     *)
       as_fn_error $? "Unknown platform for framework build" "$LINENO" 5;;
@@ -8019,7 +8238,7 @@ printf "%s\n" "#define Py_ENABLE_SHARED 1" >>confdefs.h
       BLDLIBRARY='-L. -lpython$(LDVERSION)'
       RUNSHARED=DYLD_LIBRARY_PATH=`pwd`${DYLD_LIBRARY_PATH:+:${DYLD_LIBRARY_PATH}}
       ;;
-    iOS)
+    iOS|tvOS|visionOS|watchOS)
       if test -z "$PYTHONFRAMEWORK"; then
         as_fn_error $? "iOS shared builds must use --enable-framework; an iOS app can only load a signed framework, never a bare dylib" "$LINENO" 5
       fi
@@ -9164,6 +9383,7 @@ fi
 
 
 
+
 if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}llvm-profdata", so it can be a program name with args.
 set dummy ${ac_tool_prefix}llvm-profdata; ac_word=$2
@@ -9295,6 +9515,7 @@ printf "%s\n" "$as_me: llvm-profdata found via xcrun: ${LLVM_PROFDATA}" >&6;}
   fi
 fi
 LLVM_PROF_ERR=no
+LLVM_PROF_SHOW=true
 
 case "$ac_cv_cc_name" in
   clang|icx)
@@ -9303,6 +9524,7 @@ case "$ac_cv_cc_name" in
     PGO_PROF_USE_FLAG="-fprofile-instr-use=\"\$(shell pwd)/code.profclangd\""
     LLVM_PROF_MERGER=" ${LLVM_PROFDATA} merge -output=\"\$(shell pwd)/code.profclangd\" \"\$(shell pwd)\"/*.profclangr "
     LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"\$(shell pwd)/code-%p.profclangr\""
+    LLVM_PROF_SHOW=" ${LLVM_PROFDATA} show --detailed-summary --topn=500 \"\$(shell pwd)/code.profclangd\" "
     if test $LLVM_PROF_FOUND = not-found
     then
       LLVM_PROF_ERR=yes
@@ -14525,7 +14747,7 @@ then
 			BLDSHARED="$LDSHARED"
 		fi
 		;;
-	iOS/*)
+	iOS/*|tvOS/*|visionOS/*|watchOS/*)
 		LDSHARED='$(CC) -dynamiclib -F . -framework $(PYTHONFRAMEWORK)'
 		LDCXXSHARED='$(CXX) -dynamiclib -F . -framework $(PYTHONFRAMEWORK)'
 		BLDSHARED="$LDSHARED"
@@ -14658,7 +14880,7 @@ then
 	Linux-android*) LINKFORSHARED="-pie -Xlinker -export-dynamic";;
 	Linux*|GNU*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	# -u libsys_s pulls in all symbols in libsys
-	Darwin/*|iOS/*)
+	Darwin/*|iOS/*|tvOS/*|visionOS/*|watchOS/*)
 		LINKFORSHARED="$extra_undefs -framework CoreFoundation"
 
 		# Issue #18075: the default maximum stack size (8MBytes) is too
@@ -14682,7 +14904,7 @@ printf "%s\n" "#define THREAD_STACK_SIZE 0x$stack_size" >>confdefs.h
 				LINKFORSHARED="$LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 			fi
 			LINKFORSHARED="$LINKFORSHARED"
-		elif test $ac_sys_system = "iOS"; then
+		elif test "$ac_sys_system" = "iOS" -o "$ac_sys_system" = "tvOS" -o "$ac_sys_system" = "visionOS" -o "$ac_sys_system" = "watchOS"; then
 			LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED"
 
 			if test "$enable_framework"; then
@@ -16626,7 +16848,7 @@ then :
 
             ctypes_malloc_closure=yes
      ;; #(
-  iOS) :
+  iOS|tvOS|visionOS|watchOS) :
 
       ctypes_malloc_closure=yes
      ;; #(
@@ -20666,12 +20888,6 @@ then :
   printf "%s\n" "#define HAVE_DUP 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "execv" "ac_cv_func_execv"
-if test "x$ac_cv_func_execv" = xyes
-then :
-  printf "%s\n" "#define HAVE_EXECV 1" >>confdefs.h
-
-fi
 ac_fn_c_check_func "$LINENO" "explicit_bzero" "ac_cv_func_explicit_bzero"
 if test "x$ac_cv_func_explicit_bzero" = xyes
 then :
@@ -20730,18 +20946,6 @@ ac_fn_c_check_func "$LINENO" "fexecve" "ac_cv_func_fexecve"
 if test "x$ac_cv_func_fexecve" = xyes
 then :
   printf "%s\n" "#define HAVE_FEXECVE 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "fork" "ac_cv_func_fork"
-if test "x$ac_cv_func_fork" = xyes
-then :
-  printf "%s\n" "#define HAVE_FORK 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "fork1" "ac_cv_func_fork1"
-if test "x$ac_cv_func_fork1" = xyes
-then :
-  printf "%s\n" "#define HAVE_FORK1 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "fpathconf" "ac_cv_func_fpathconf"
@@ -21218,24 +21422,6 @@ then :
   printf "%s\n" "#define HAVE_POSIX_OPENPT 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "posix_spawn" "ac_cv_func_posix_spawn"
-if test "x$ac_cv_func_posix_spawn" = xyes
-then :
-  printf "%s\n" "#define HAVE_POSIX_SPAWN 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "posix_spawnp" "ac_cv_func_posix_spawnp"
-if test "x$ac_cv_func_posix_spawnp" = xyes
-then :
-  printf "%s\n" "#define HAVE_POSIX_SPAWNP 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "posix_spawn_file_actions_addclosefrom_np" "ac_cv_func_posix_spawn_file_actions_addclosefrom_np"
-if test "x$ac_cv_func_posix_spawn_file_actions_addclosefrom_np" = xyes
-then :
-  printf "%s\n" "#define HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP 1" >>confdefs.h
-
-fi
 ac_fn_c_check_func "$LINENO" "pread" "ac_cv_func_pread"
 if test "x$ac_cv_func_pread" = xyes
 then :
@@ -21552,12 +21738,6 @@ ac_fn_c_check_func "$LINENO" "sigaction" "ac_cv_func_sigaction"
 if test "x$ac_cv_func_sigaction" = xyes
 then :
   printf "%s\n" "#define HAVE_SIGACTION 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "sigaltstack" "ac_cv_func_sigaltstack"
-if test "x$ac_cv_func_sigaltstack" = xyes
-then :
-  printf "%s\n" "#define HAVE_SIGALTSTACK 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "sigfillset" "ac_cv_func_sigfillset"
@@ -21978,14 +22158,14 @@ fi
 
 fi
 
-# iOS defines some system methods that can be linked (so they are
+# iOS/tvOS/visionOS/watchOS define some system methods that can be linked (so they are
 # found by configure), but either raise a compilation error (because the
 # header definition prevents usage - autoconf doesn't use the headers), or
 # raise an error if used at runtime. Force these symbols off.
-# In particular, dup3 and pipe2 are available as of iOS 27 but were
+# In particular, dup3 and pipe2 are available as of iOS/tvOS/watchOS/visionOS 27 but were
 # incorrectly detected in older simulator versions.
 case "$ac_sys_system" in
-    iOS)
+    iOS|tvOS|watchOS|visionOS)
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if iOS SDK is older than 27" >&5
 printf %s "checking if iOS SDK is older than 27... " >&6; }
         ios_sdk_version=$(xcrun --sdk iphoneos --show-sdk-version 2>/dev/null | cut -d. -f1)
@@ -22011,7 +22191,7 @@ printf "%s\n" "yes" >&6; }
         fi
         ;;
     *)
-        # not iOS
+        # not iOS/tvOS/watchOS/visionOS
         ac_fn_c_check_func "$LINENO" "dup3" "ac_cv_func_dup3"
 if test "x$ac_cv_func_dup3" = xyes
 then :
@@ -22045,6 +22225,53 @@ fi
 
         ;;
 esac
+
+# tvOS/watchOS have some additional methods that can be found, but not used.
+if test "$ac_sys_system" != "tvOS" -a "$ac_sys_system" != "watchOS" ; then
+  ac_fn_c_check_func "$LINENO" "execv" "ac_cv_func_execv"
+if test "x$ac_cv_func_execv" = xyes
+then :
+  printf "%s\n" "#define HAVE_EXECV 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "fork" "ac_cv_func_fork"
+if test "x$ac_cv_func_fork" = xyes
+then :
+  printf "%s\n" "#define HAVE_FORK 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "fork1" "ac_cv_func_fork1"
+if test "x$ac_cv_func_fork1" = xyes
+then :
+  printf "%s\n" "#define HAVE_FORK1 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "posix_spawn" "ac_cv_func_posix_spawn"
+if test "x$ac_cv_func_posix_spawn" = xyes
+then :
+  printf "%s\n" "#define HAVE_POSIX_SPAWN 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "posix_spawnp" "ac_cv_func_posix_spawnp"
+if test "x$ac_cv_func_posix_spawnp" = xyes
+then :
+  printf "%s\n" "#define HAVE_POSIX_SPAWNP 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "posix_spawn_file_actions_addclosefrom_np" "ac_cv_func_posix_spawn_file_actions_addclosefrom_np"
+if test "x$ac_cv_func_posix_spawn_file_actions_addclosefrom_np" = xyes
+then :
+  printf "%s\n" "#define HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "sigaltstack" "ac_cv_func_sigaltstack"
+if test "x$ac_cv_func_sigaltstack" = xyes
+then :
+  printf "%s\n" "#define HAVE_SIGALTSTACK 1" >>confdefs.h
+
+fi
+
+fi
 
 ac_fn_check_decl "$LINENO" "dirfd" "ac_cv_have_decl_dirfd" "#include <sys/types.h>
                #include <dirent.h>
@@ -25664,7 +25891,8 @@ fi
  ;;
 esac
 # check for openpty, login_tty, and forkpty
-
+# tvOS/watchOS have functions for tty, but can't use them
+if test "$ac_sys_system" != "tvOS" -a "$ac_sys_system" != "watchOS" ; then
 
   for ac_func in openpty
 do :
@@ -25778,7 +26006,7 @@ esac
 fi
 
 done
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing login_tty" >&5
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing login_tty" >&5
 printf %s "checking for library containing login_tty... " >&6; }
 if test ${ac_cv_search_login_tty+y}
 then :
@@ -25961,6 +26189,7 @@ esac
 fi
 
 done
+fi
 
 # check for long file support functions
 ac_fn_c_check_func "$LINENO" "fseek64" "ac_cv_func_fseek64"
@@ -26226,10 +26455,10 @@ fi
 
 done
 
-# On Android and iOS, clock_settime can be linked (so it is found by
+# On Android, iOS, tvOS, visionOS, and watchOS, clock_settime can be linked (so it is found by
 # configure), but when used in an unprivileged process, it crashes rather than
 # returning an error. Force the symbol off.
-if test "$ac_sys_system" != "Linux-android" && test "$ac_sys_system" != "iOS"
+if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "iOS" -a "$ac_sys_system" != "tvOS" -a "$ac_sys_system" != "visionOS" -a "$ac_sys_system" != "watchOS"
 then
 
   for ac_func in clock_settime
@@ -26546,7 +26775,7 @@ else case e in #(
   e) if test "$cross_compiling" = yes
 then :
 
-if test "$ac_sys_system" = "Linux-android" || test "$ac_sys_system" = "iOS"; then
+if test "$ac_sys_system" = "Linux-android" || test "$ac_sys_system" = "iOS" || test "$ac_sys_system" = "tvOS" || test "$ac_sys_system" = "visionOS" || test "$ac_sys_system" = "watchOS"; then
   ac_cv_buggy_getaddrinfo="no"
 elif test "${enable_ipv6+set}" = set; then
   ac_cv_buggy_getaddrinfo="no -- configured with --(en|dis)able-ipv6"
@@ -28919,8 +29148,8 @@ if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MA
   LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
 fi
 
-# On iOS the shared libraries must be linked with the framework, when built
-if test "$ac_sys_system" = "iOS" && test "$enable_framework"; then
+# On iOS/tvOS/watchOS the shared libraries must be linked with the framework, when built
+if test "$ac_sys_system" = "iOS" -o "$ac_sys_system" = "tvOS" -o "$ac_sys_system" = "visionOS" -o "$ac_sys_system" = "watchOS" && test "$enable_framework"; then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(PYTHONFRAMEWORKDIR)/\$(PYTHONFRAMEWORK)"
 fi
 
@@ -34368,7 +34597,7 @@ LIBS=$save_LIBS
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for device files" >&5
 printf "%s\n" "$as_me: checking for device files" >&6;}
 
-if test "$ac_sys_system" = "Linux-android" || test "$ac_sys_system" = "iOS"; then
+if test "$ac_sys_system" = "Linux-android" -o "$ac_sys_system" = "iOS" -o "$ac_sys_system" = "tvOS" -o "$ac_sys_system" = "visionOS"  -o "$ac_sys_system" = "watchOS" ; then
   ac_cv_file__dev_ptmx=no
   ac_cv_file__dev_ptc=no
 else
@@ -34921,7 +35150,7 @@ else case e in #(
     with_ensurepip=no ;; #(
   WASI) :
     with_ensurepip=no ;; #(
-  iOS) :
+  iOS|tvOS|visionOS|watchOS) :
     with_ensurepip=no ;; #(
   *) :
     with_ensurepip=upgrade
@@ -35926,6 +36155,9 @@ case "$ac_sys_system" in
   NetBSD*) _PYTHREAD_NAME_MAXLEN=15;; # gh-131268
   Darwin) _PYTHREAD_NAME_MAXLEN=63;;
   iOS) _PYTHREAD_NAME_MAXLEN=63;;
+  tvOS) _PYTHREAD_NAME_MAXLEN=63;;
+  visionOS) _PYTHREAD_NAME_MAXLEN=63;;
+  watchOS) _PYTHREAD_NAME_MAXLEN=63;;
   FreeBSD*) _PYTHREAD_NAME_MAXLEN=19;; # gh-131268
   OpenBSD*) _PYTHREAD_NAME_MAXLEN=23;; # gh-131268
   CYGWIN*) _PYTHREAD_NAME_MAXLEN=16;;
@@ -35958,7 +36190,7 @@ case $ac_sys_system in #(
  ;; #(
     Darwin) :
      ;; #(
-  iOS) :
+  iOS|tvOS|visionOS|watchOS) :
 
 
 
@@ -40273,6 +40505,9 @@ do
     "Mac/Resources/framework/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/framework/Info.plist" ;;
     "Mac/Resources/app/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/app/Info.plist" ;;
     "Platforms/Apple/iOS/Resources/Info.plist") CONFIG_FILES="$CONFIG_FILES Platforms/Apple/iOS/Resources/Info.plist" ;;
+    "Platforms/Apple/tvOS/Resources/Info.plist") CONFIG_FILES="$CONFIG_FILES Platforms/Apple/tvOS/Resources/Info.plist" ;;
+    "Platforms/Apple/visionOS/Resources/Info.plist") CONFIG_FILES="$CONFIG_FILES Platforms/Apple/visionOS/Resources/Info.plist" ;;
+    "Platforms/Apple/watchOS/Resources/Info.plist") CONFIG_FILES="$CONFIG_FILES Platforms/Apple/watchOS/Resources/Info.plist" ;;
     "Makefile.pre") CONFIG_FILES="$CONFIG_FILES Makefile.pre" ;;
     "Misc/python.pc") CONFIG_FILES="$CONFIG_FILES Misc/python.pc" ;;
     "Misc/python-embed.pc") CONFIG_FILES="$CONFIG_FILES Misc/python-embed.pc" ;;

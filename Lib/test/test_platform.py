@@ -287,12 +287,18 @@ class PlatformTest(unittest.TestCase):
             if sys.platform == "android":
                 self.assertEqual(res.system, "Android")
                 self.assertEqual(res.release, platform.android_ver().release)
-            elif sys.platform == "ios":
+            elif support.is_apple_mobile:
                 # Platform module needs ctypes for full operation. If ctypes
                 # isn't available, there's no ObjC module, and dummy values are
                 # returned.
                 if _ctypes:
-                    self.assertIn(res.system, {"iOS", "iPadOS"})
+                    if sys.platform == "ios":
+                        # iPads also identify as iOS
+                        self.assertIn(res.system, {"iOS", "iPadOS"})
+                    else:
+                        # All other platforms - sys.platform is the lower case
+                        # form of system (e.g., visionOS->visionos)
+                        self.assertEqual(res.system.lower(), sys.platform)
                     self.assertEqual(res.release, platform.ios_ver().release)
                 else:
                     self.assertEqual(res.system, "")
@@ -485,8 +491,8 @@ class PlatformTest(unittest.TestCase):
     def test_ios_ver(self):
         result = platform.ios_ver()
 
-        # ios_ver is only fully available on iOS where ctypes is available.
-        if sys.platform == "ios" and _ctypes:
+        # ios_ver is only fully available on Apple mobile platorms where ctypes is available.
+        if sys.platform in {"ios", "tvos", "visionos", "watchos"} and _ctypes:
             system, release, model, is_simulator = result
             # Result is a namedtuple
             self.assertEqual(result.system, system)
@@ -498,7 +504,10 @@ class PlatformTest(unittest.TestCase):
             # ios_ver(), so we check that the values are broadly what we expect.
 
             # System is either iOS or iPadOS, depending on the test device
-            self.assertIn(system, {"iOS", "iPadOS"})
+            if sys.platform == "ios":
+                self.assertIn(system, {"iOS", "iPadOS"})
+            else:
+                self.assertEqual(system.lower(), sys.platform)
 
             # Release is a numeric version specifier with at least 2 parts
             parts = release.split(".")
@@ -508,11 +517,17 @@ class PlatformTest(unittest.TestCase):
             # If this is a simulator, we get a high level device descriptor
             # with no identifying model number. If this is a physical device,
             # we get a model descriptor like "iPhone13,1"
+            devices = {
+                "ios": {"iPhone", "iPad"},
+                "tvos": {"Apple TV"},
+                "visionos": {"Apple Vision Pro"},
+                "watchos": {"Apple Watch"},
+            }[sys.platform]
             if is_simulator:
-                self.assertIn(model, {"iPhone", "iPad"})
+                self.assertIn(model, devices)
             else:
                 self.assertTrue(
-                    (model.startswith("iPhone") or model.startswith("iPad"))
+                    any(model.startswith(d) for d in devices)
                     and "," in model
                 )
 

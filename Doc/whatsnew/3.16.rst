@@ -392,6 +392,10 @@ datetime
   :meth:`datetime.time.strptime`.
   (Contributed by Stan Ulbrych and Karoline Pauls in :gh:`157290`.)
 
+* Add :attr:`datetime.timezone.name`, the *name* passed to the constructor,
+  or ``None`` if no name was passed.
+  (Contributed by Stan Ulbrych in :gh:`131210`.)
+
 
 dbm.gnu
 -------
@@ -701,11 +705,29 @@ sqlite3
 ssl
 ---
 
+* Added support for :ref:`Encrypted Client Hello <ssl-encrypted-client-hello>`
+  (ECH) with OpenSSL 4.0 or later. Clients can supply an ECHConfigList
+  discovered through DNS, for example using a third-party library such as
+  ``dnspython`` to query HTTPS or SVCB records, as the *ech_config* argument
+  of :meth:`~ssl.SSLContext.wrap_socket` and :meth:`~ssl.SSLContext.wrap_bio`
+  or with :meth:`~ssl.SSLContext.set_ech_config`.
+  Servers can use :meth:`~ssl.SSLContext.load_ech_keys` to load ECH private
+  keys and their configurations from PEM files.
+  (Contributed by Peter Bierma and Iain R. Learmonth in :gh:`89730`.)
+
 * :const:`ssl.OPENSSL_VERSION_INFO` is now a named tuple.
   Added :const:`~ssl.OPENSSL_API_VERSION_INFO` which provides information
   about the version of the OpenSSL library that was used for building
   the module.
   (Contributed by Serhiy Storchaka in :gh:`157513`.)
+
+* The :mod:`ssl` module now rejects TLS certificate chains that contain one
+  of a set of compromised eMudhra intermediate CA certificates.  The affected
+  certificates are identified by their public key, so cross-signed copies that
+  reuse the same key are blocked as well.  It is a defense-in-depth backstop
+  that applies even when an application supplies its own root CA bundle, and
+  regardless of whether the platform trust store has removed trust.
+  (Contributed by Christian Heimes in :gh:`160040` for :cve:`2026-115557`.)
 
 
 symtable
@@ -982,6 +1004,16 @@ zlib
 
 Optimizations
 =============
+
+datetime and time
+-----------------
+
+* :meth:`datetime.datetime.strptime`, :meth:`datetime.date.strptime`,
+  :meth:`datetime.time.strptime`, and :func:`time.strptime` are faster
+  for common numeric formats such as ``%Y-%m-%d`` and
+  ``%Y-%m-%d %H:%M:%S``.
+  (Contributed by Paul Ganssle in :gh:`158252`, based on work by
+  Stan Ulbrych.)
 
 re
 --
