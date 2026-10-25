@@ -2,7 +2,7 @@
 
 import unittest
 from test import support
-from test.support import cpython_only, import_helper, script_helper
+from test.support import cpython_only, import_helper
 
 testmeths = [
 
@@ -555,6 +555,7 @@ class ClassTests(unittest.TestCase):
         self.assertFalse(hasattr(o, "__call__"))
         self.assertFalse(hasattr(c, "__call__"))
 
+    @support.skip_if_huge_c_stack()
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def testSFBug532646(self):
@@ -1014,31 +1015,97 @@ class TestInlineValues(unittest.TestCase):
 
     @support.nomemtest
     def test_detach_materialized_dict_no_memory(self):
-        code = """if 1:
-            import test.support
-            import _testcapi
+        import _testcapi
 
-            class A:
-                def __init__(self):
-                    self.a = 1
-                    self.b = 2
-            a = A()
-            d = a.__dict__
-            with test.support.catch_unraisable_exception() as ex:
-                _testcapi.set_nomemory(0, 1)
-                del a
-                assert ex.unraisable.exc_type is MemoryError
-            try:
-                d["a"]
-            except KeyError:
-                pass
-            else:
-                assert False, "KeyError not raised"
-        """
-        rc, out, err = script_helper.assert_python_ok("-c", code)
-        self.assertEqual(rc, 0)
-        self.assertFalse(out, msg=out.decode('utf-8'))
-        self.assertFalse(err, msg=err.decode('utf-8'))
+        class A:
+            def __init__(self):
+                self.a = 1
+                self.b = 2
+
+        # The failing allocation should be the one which detaches the
+        # dictionary from the object, but other allocations can happen
+        # first, so try to fail every one of the first allocations.
+        # Drop the last reference from C, so that nothing else (such as
+        # GC) runs between arming the failure and the deallocation.
+        seen = []
+        for n in range(20):
+            lst = [A()]
+            d = lst[0].__dict__
+            with support.catch_unraisable_exception() as ex:
+                _testcapi.call_with_nomemory(n, n + 1, lst.clear)
+                if ex.unraisable is None:
+                    continue
+                exc_type = ex.unraisable.exc_type
+                err_msg = ex.unraisable.err_msg
+            seen.append((n, exc_type, err_msg))
+            if (exc_type is MemoryError and err_msg ==
+                    'Exception ignored while clearing an object managed dict'):
+                # The dictionary should have been cleared.
+                self.assertNotIn("a", d)
+                break
+        else:
+            self.fail("MemoryError was not raised while detaching "
+                      f"the dictionary: {seen}")
+
+class DefinitionOrderTests(unittest.TestCase):
+    # PEP 520: Preserving Class Attribute Definition Order
+
+    @staticmethod
+    def defined_names(namespace):
+        # Skip the names added by the compiler, like __firstlineno__.
+        return [name for name in namespace if not name.startswith('__')]
+
+    def test_definition_order(self):
+        class C:
+            b = 1
+            a = 2
+            def m(self): pass
+            @staticmethod
+            def s(): pass
+            z = 3
+
+        self.assertEqual(self.defined_names(C.__dict__),
+                         ['b', 'a', 'm', 's', 'z'])
+
+    def test_definition_order_redefinition(self):
+        class C:
+            b = 1
+            a = 2
+            b = 3
+
+        self.assertEqual(self.defined_names(C.__dict__), ['b', 'a'])
+        self.assertEqual(C.b, 3)
+
+    def test_definition_order_after_deletion(self):
+        class C:
+            a = 1
+            b = 2
+            del a
+            a = 3
+
+        self.assertEqual(self.defined_names(C.__dict__), ['b', 'a'])
+
+    def test_definition_order_in_namespace(self):
+        namespaces = []
+        class Meta(type):
+            def __new__(mcls, name, bases, namespace, **kwds):
+                namespaces.append(list(namespace))
+                return super().__new__(mcls, name, bases, namespace, **kwds)
+
+        class C(metaclass=Meta):
+            b = 1
+            a = 2
+            def m(self): pass
+
+        self.assertEqual(self.defined_names(namespaces[0]), ['b', 'a', 'm'])
+
+    def test_prepare_preserves_order(self):
+        namespace = type.__prepare__('C', ())
+        namespace['b'] = 1
+        namespace['a'] = 2
+        namespace['b'] = 3
+        self.assertEqual(list(namespace), ['b', 'a'])
+
 
 if __name__ == '__main__':
     unittest.main()

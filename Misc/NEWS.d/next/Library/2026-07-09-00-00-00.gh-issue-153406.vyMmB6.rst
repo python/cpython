@@ -1,3 +1,0 @@
-:func:`email.utils.parsedate_to_datetime` now raises :exc:`ValueError`
-instead of :exc:`OverflowError` when the parsed year or timezone offset is
-out of range, matching its documented behavior.

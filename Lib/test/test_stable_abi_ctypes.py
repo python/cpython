@@ -929,6 +929,7 @@ SYMBOL_NAMES = (
     "Py_GetRecursionLimit",
     "Py_GetVersion",
     "Py_HasFileSystemDefaultEncoding",
+    "Py_HashBuffer",
     "Py_IS_TYPE",
     "Py_IncRef",
     "Py_Initialize",
