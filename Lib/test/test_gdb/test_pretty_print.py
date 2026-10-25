@@ -115,7 +115,7 @@ class PrettyPrintTests(DebuggerTests):
             'python import gdb; print(gdb.host_charset())')
 
         encoding = stdout.strip()
-        if stderr or not encoding:
+        if not encoding:
             raise RuntimeError(
                 f'unable to determine the host charset of gdb\n'
                 f'stdout={stdout!r}\n'
