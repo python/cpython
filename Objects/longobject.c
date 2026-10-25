@@ -4568,6 +4568,7 @@ l_mod(PyLongObject *v, PyLongObject *w, PyLongObject **pmod)
     Py_ssize_t size_v = _PyLong_DigitCount(v); /* digits in numerator */
     Py_ssize_t size_w = _PyLong_DigitCount(w); /* digits in denominator */
     if (size_w > 300 && (size_v - size_w) > 150) {
+        /* Switch to _pylong.int_divmod(). See comments in l_divmod(). */
         return pylong_int_divmod(v, w, NULL, pmod);
     }
 #endif
