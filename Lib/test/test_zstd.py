@@ -7,9 +7,12 @@ import re
 import os
 import unittest
 import tempfile
+import textwrap
 import threading
 
+from test import support
 from test.support.import_helper import import_module
+from test.support.script_helper import assert_python_ok
 from test.support import threading_helper
 from test.support import _1M
 
@@ -1599,6 +1602,42 @@ class ZstdDictTestCase(unittest.TestCase):
     def test_len(self):
         self.assertEqual(len(TRAINED_DICT), len(TRAINED_DICT.dict_content))
         self.assertIn(str(len(TRAINED_DICT)), str(TRAINED_DICT))
+
+    @unittest.skipUnless(SUPPORT_MULTITHREADING,
+                         "zstd build doesn't support multi-threaded compression")
+    @support.requires_subprocess()
+    def test_collect_cycle_with_busy_compressor(self):
+        # The dictionary must outlive the compression context when both are
+        # collected by the garbage collector while a worker thread is still
+        # using the dictionary.  Whether the failure is detected depends on
+        # the memory allocator, so use a fresh process for each case.
+        code = textwrap.dedent("""
+            import gc, random, sys
+            from compression.zstd import (CompressionParameter,
+                                          ZstdCompressor, ZstdDict)
+
+            class Cycle:
+                pass
+
+            job_size = 1 << 20
+            content = random.randbytes(1 << 10) * (1 << 8)
+            zd = ZstdDict(content, is_raw=True)
+            options = {CompressionParameter.compression_level: 10,
+                       CompressionParameter.nb_workers: 1,
+                       CompressionParameter.job_size: job_size}
+            c = ZstdCompressor(options=options,
+                               zstd_dict=getattr(zd, sys.argv[1]))
+            cycle = Cycle()
+            cycle.cycle = cycle
+            cycle.compressor = c
+            # Returns while the worker thread is compressing the first job.
+            c.compress(random.randbytes(1 << 10) * ((job_size >> 10) + 64))
+            del zd, c, cycle
+            gc.collect()
+        """)
+        for attr in 'as_digested_dict', 'as_prefix':
+            with self.subTest(attr=attr):
+                assert_python_ok('-c', code, attr)
 
 class FileTestCase(unittest.TestCase):
     def setUp(self):

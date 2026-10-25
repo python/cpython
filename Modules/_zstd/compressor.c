@@ -787,17 +787,13 @@ static int
 ZstdCompressor_traverse(PyObject *ob, visitproc visit, void *arg)
 {
     ZstdCompressor *self = ZstdCompressor_CAST(ob);
+    Py_VISIT(Py_TYPE(ob));
     Py_VISIT(self->dict);
     return 0;
 }
 
-static int
-ZstdCompressor_clear(PyObject *ob)
-{
-    ZstdCompressor *self = ZstdCompressor_CAST(ob);
-    Py_CLEAR(self->dict);
-    return 0;
-}
+/* No tp_clear: the compression context (and its worker threads) uses the
+   dictionary until ZstdCompressor_dealloc() has freed the context. */
 
 static PyType_Slot zstdcompressor_slots[] = {
     {Py_tp_new, _zstd_ZstdCompressor_new},
@@ -806,7 +802,6 @@ static PyType_Slot zstdcompressor_slots[] = {
     {Py_tp_members, ZstdCompressor_members},
     {Py_tp_doc, (void *)_zstd_ZstdCompressor_new__doc__},
     {Py_tp_traverse,  ZstdCompressor_traverse},
-    {Py_tp_clear, ZstdCompressor_clear},
     {0, 0}
 };
 
