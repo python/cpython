@@ -659,13 +659,21 @@ class SSLProtocol(protocols.BufferedProtocol):
             self._on_shutdown_complete(None)
 
     def _on_shutdown_complete(self, shutdown_exc):
-        if self._shutdown_timeout_handle is not None:
-            self._shutdown_timeout_handle.cancel()
-            self._shutdown_timeout_handle = None
-
         if shutdown_exc:
+            if self._shutdown_timeout_handle is not None:
+                self._shutdown_timeout_handle.cancel()
+                self._shutdown_timeout_handle = None
             self._fatal_error(shutdown_exc)
         else:
+            # transport.close() flushes its write buffer first, which a peer
+            # that does not read can delay forever.  Keep the timeout (or
+            # start it, if the peer initiated the shutdown) until
+            # connection_lost().
+            if self._shutdown_timeout_handle is None:
+                self._shutdown_timeout_handle = self._loop.call_later(
+                    self._ssl_shutdown_timeout,
+                    self._check_shutdown_timeout
+                )
             self._loop.call_soon(self._transport.close)
 
     def _abort(self, exc):
