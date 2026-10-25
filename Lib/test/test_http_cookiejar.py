@@ -943,8 +943,8 @@ class CookieTests(unittest.TestCase):
 
         # XXX far from complete
         c = CookieJar()
-        interact_2965(c, "http://www.nasty.com/",
-                      'foo=bar; domain=friendly.org; Version="1"')
+        interact_2965(c, "http://www.example.com/",
+                      'foo=bar; domain=python.org; Version="1"')
         self.assertEqual(len(c), 0)
 
     def test_negative_version(self):
