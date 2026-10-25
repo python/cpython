@@ -496,6 +496,7 @@ class DeprecatedRemoved(Directive):
 
 issue_re = re.compile('(?:[Ii]ssue #|bpo-)([0-9]+)', re.I)
 gh_issue_re = re.compile('(?:gh-issue-|gh-)([0-9]+)', re.I)
+cve_re = re.compile('CVE-([0-9]{4}-[0-9]{4,})', re.I)
 whatsnew_re = re.compile(r"(?im)^what's new in (.*?)\??$")
 
 
@@ -525,6 +526,7 @@ class MiscNews(Directive):
         content = issue_re.sub(r':issue:`\1`', content)
         # Fallback handling for the GitHub issue
         content = gh_issue_re.sub(r':gh:`\1`', content)
+        content = cve_re.sub(r':cve:`\1`', content)
         content = whatsnew_re.sub(r'\1', content)
         # remove first 3 lines as they are the main heading
         lines = ['.. default-role:: obj', ''] + content.splitlines()[3:]
