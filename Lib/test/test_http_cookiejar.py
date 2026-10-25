@@ -936,9 +936,36 @@ class CookieTests(unittest.TestCase):
 
         # XXX far from complete
         c = CookieJar()
-        interact_2965(c, "http://www.nasty.com/",
-                      'foo=bar; domain=friendly.org; Version="1"')
+        interact_2965(c, "http://www.example.com/",
+                      'foo=bar; domain=python.org; Version="1"')
         self.assertEqual(len(c), 0)
+
+    def test_negative_version(self):
+        # A negative version is neither Netscape (0) nor RFC 2965 (> 0), so
+        # such cookies must be neither set nor returned.
+        for rfc2965 in False, True:
+            for interact in interact_netscape, interact_2965:
+                with self.subTest(rfc2965=rfc2965, interact=interact.__name__):
+                    c = CookieJar(DefaultCookiePolicy(rfc2965=rfc2965))
+                    interact(c, "http://www.example.com/",
+                             'foo=bar; domain=python.org; Version=-1')
+                    self.assertEqual(len(c), 0)
+                    interact(c, "http://www.example.com/", 'foo=bar; Version=-1')
+                    self.assertEqual(len(c), 0)
+
+        # Such a header is discarded before the policy is consulted.
+        c = CookieJar()
+        req = urllib.request.Request("http://www.example.com/")
+        res = FakeResponse(["Set-Cookie: foo=bar; Version=-1"],
+                           "http://www.example.com/")
+        self.assertEqual(c.make_cookies(res, req), [])
+
+        # Not set from a response, for example loaded from an LWP cookie file.
+        c = CookieJar()
+        c.set_cookie(Cookie(-1, "foo", "bar", None, False,
+                            ".python.org", True, True, "/", True,
+                            False, None, True, None, None, {}))
+        self.assertEqual(interact_netscape(c, "http://www.python.org/"), "")
 
     def test_strict_domain(self):
         # Cookies whose domain is a country-code tld like .co.uk should
@@ -1439,6 +1466,7 @@ class CookieTests(unittest.TestCase):
             ["Set-Cookie: b=foo; max-age=oops"],
             # bad version
             ["Set-Cookie: b=foo; version=spam"],
+            ["Set-Cookie: b=foo; version=-1"],
             ["Set-Cookie:; Expires=%s" % future],
             ]:
             c = cookiejar_from_cookie_headers(headers)
