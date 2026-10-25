@@ -103,6 +103,13 @@ class AST_Tests(unittest.TestCase):
             # "ast.AST constructor takes 0 positional arguments"
             ast.AST(2)
 
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+    def test_nodes_have_inline_values(self):
+        tree = ast.parse("x = f(y, z=1)")
+        for node in ast.walk(tree):
+            with self.subTest(node=type(node).__name__):
+                self.assertTrue(_testinternalcapi.has_inline_values(node))
+
     def test_AST_fields_NULL_check(self):
         # See: https://github.com/python/cpython/issues/126105
         old_value = ast.AST._fields

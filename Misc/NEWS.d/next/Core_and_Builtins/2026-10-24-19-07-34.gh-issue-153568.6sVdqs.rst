@@ -1,0 +1,3 @@
+Speed up :func:`ast.parse` by ~15.8% and reduce the memory used by ~51.6% by
+storing node attributes as inline values instead of in a per-node
+dictionary.
