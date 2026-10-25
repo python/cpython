@@ -379,7 +379,7 @@ class CompressorTestCase(unittest.TestCase):
         # Whether a failure is detected depends on the memory allocator,
         # so use a fresh process for each case.
         code = textwrap.dedent("""
-            import random, sys
+            import gc, random, sys
             from compression.zstd import (CompressionParameter,
                                           ZstdCompressor, ZstdDict)
 
@@ -401,11 +401,18 @@ class CompressorTestCase(unittest.TestCase):
                     pass
                 finally:
                     _testcapi.remove_mem_hooks()
-            if sys.argv[1] != 'exit':
+            if sys.argv[1] == 'gc':
+                # The garbage collector clears the compressor before
+                # deallocating it.
+                cycle = [c]
+                cycle.append(cycle)
+                del c, cycle
+                gc.collect()
+            elif sys.argv[1] != 'exit':
                 del c
             # Otherwise the compressor is freed at interpreter exit.
         """)
-        cases = ['del', 'exit']
+        cases = ['del', 'gc', 'exit']
         try:
             import _testcapi  # noqa: F401
         except ImportError:

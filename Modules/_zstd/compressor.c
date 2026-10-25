@@ -432,7 +432,7 @@ ZstdCompressor_dealloc(PyObject *ob)
 
     /* Free compression context */
     if (self->cctx) {
-        if (self->mt_maybe_busy && self->dict != NULL) {
+        if (self->mt_maybe_busy) {
             /* ZSTD_freeCCtx() (as of libzstd 1.5.7) frees the context's own
                copy of a dictionary loaded with ZSTD_CCtx_loadDictionary()
                before it stops the worker threads, which may still be
