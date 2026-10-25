@@ -51,6 +51,10 @@ class MimeTypesTestCase(unittest.TestCase):
         eq(self.db.guess_type("foo.tar.bz2"), ("application/x-tar", "bzip2"))
         eq(self.db.guess_type("foo.tar.xz"), ("application/x-tar", "xz"))
 
+    @unittest.skipIf(sys.platform == "win32", "non-Windows only")
+    def test_default_knownfiles(self):
+        self.assertIn("/etc/mime.types", knownfiles)
+
     def test_data_urls(self):
         eq = self.assertEqual
         guess_type = self.db.guess_type
@@ -287,6 +291,9 @@ class Win32MimeTypesTestCase(unittest.TestCase):
         eq(self.db.guess_type("foo.txt"), ("text/plain", None))
         eq(self.db.guess_type("image.jpg"), ("image/jpeg", None))
         eq(self.db.guess_type("image.png"), ("image/png", None))
+
+    def test_default_knownfiles(self):
+        self.assertEqual(knownfiles, [])
 
     @unittest.skipIf(not hasattr(_winapi, "_mimetypes_read_windows_registry"),
                      "read_windows_registry accelerator unavailable")
