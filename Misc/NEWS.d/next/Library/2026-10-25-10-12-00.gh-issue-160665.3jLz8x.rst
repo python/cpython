@@ -1,0 +1,3 @@
+Fix :func:`dataclasses.dataclass` handling of :class:`~dataclasses.InitVar` and
+:data:`~typing.ClassVar` annotations when a lazy import cannot yet be resolved
+during a circular import.
