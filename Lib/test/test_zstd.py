@@ -10,6 +10,7 @@ import tempfile
 import textwrap
 import threading
 
+from test import support
 from test.support.import_helper import import_module
 from test.support.script_helper import assert_python_ok
 from test.support import threading_helper
