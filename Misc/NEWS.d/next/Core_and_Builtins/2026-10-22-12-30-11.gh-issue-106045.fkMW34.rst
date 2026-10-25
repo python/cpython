@@ -1,5 +1,0 @@
-Fix :mod:`venv` path discovery when the base executable resolves to a
-location outside the installation pointed to by the ``home`` key in
-``pyvenv.cfg``. The standard library is now found from ``home``, and
-extension modules from the resolved executable's installation, instead of
-falling back to the compiled-in prefix.

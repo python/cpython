@@ -1,4 +1,4 @@
-This is Python version 3.14.9+
+This is Python version 3.14.10
 ==============================
 
 .. image:: https://github.com/python/cpython/actions/workflows/build.yml/badge.svg?branch=main&event=push

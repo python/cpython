@@ -277,4 +277,4 @@ macros above:
    Values used internally by the ``Py_IS*`` classification macros above.
    Exposed for backwards compatibility only.
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.14.10

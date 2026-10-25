@@ -1,3 +1,0 @@
-Fix clearing a :class:`pickle.Unpickler` memo so that the unpickler can be
-reused for independent records. Preserve a valid memo if allocation fails or
-releasing an old entry runs a destructor that accesses the memo.
