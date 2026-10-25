@@ -66,6 +66,7 @@ __all__ = [
     "force_not_colorized_test_class",
     "make_clean_env",
     "BrokenIter",
+    "requires_root_user", "requires_non_root_user",
     ]
 
 
@@ -2896,3 +2897,7 @@ def skip_on_low_desktop_heap_memory_subprocess(returncode):
     if returncode == STATUS_DLL_INIT_FAILED:
         raise unittest.SkipTest('gh-150436: DLL init failed, likely because '
                                 'of low desktop heap memory')
+
+_ROOT_IN_POSIX = hasattr(os, 'geteuid') and os.geteuid() == 0
+requires_root_user = unittest.skipUnless(_ROOT_IN_POSIX, "test needs root privilege")
+requires_non_root_user = unittest.skipIf(_ROOT_IN_POSIX, "test needs non-root account")

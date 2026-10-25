@@ -1,7 +1,7 @@
 Building a Python Mac OS X distribution
 =======================================
 
-The ``build-install.py`` script creates Python distributions, including
+The ``build-installer.py`` script creates Python distributions, including
 certain third-party libraries as necessary.  It builds a complete
 framework-based Python out-of-tree, installs it in a funny place with
 $DESTROOT, massages that installation to remove .pyc files and such, creates
@@ -12,7 +12,7 @@ package. This format is deprecated and is no longer supported by modern
 macOS systems; it is usable on macOS 10.6 and earlier systems.
 To be usable on newer versions of macOS, the bits in the bundle package
 must be assembled in a macOS flat installer package, using current
-versions of the pkgbuild and productbuild utilities. To pass macoS
+versions of the pkgbuild and productbuild utilities. To pass macOS
 Gatekeeper download quarantine, the final package must be signed
 with a valid Apple Developer ID certificate using productsign.
 Starting with macOS 10.15 Catalina, Gatekeeper now also requires
@@ -28,7 +28,7 @@ A goal of PSF-provided (python.org) Python binaries for macOS is to
 support a wide-range of operating system releases with one set of
 binaries.  Currently, the oldest release supported by python.org
 binaries is macOS 10.9; it should still be possible to build Python and
-Python installers on older versions of macOS but we not regularly
+Python installers on older versions of macOS but we do not regularly
 test on those systems nor provide binaries for them.
 
 Prior to Python 3.9.1, no Python releases supported building on a
