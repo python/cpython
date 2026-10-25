@@ -942,8 +942,17 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                 _PyArena_Free(arena);
                 goto error;
             }
+#ifdef Py_GIL_DISABLED
+            // Disable immortalization of code constants, as for a source
+            // string below.
+            _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+            tstate->suppress_co_const_immortalization++;
+#endif
             result = (PyObject*)_PyAST_Compile(mod, filename,
                                                &cf, optimize, arena, modname);
+#ifdef Py_GIL_DISABLED
+            tstate->suppress_co_const_immortalization--;
+#endif
         }
         _PyArena_Free(arena);
         goto finally;
@@ -956,7 +965,10 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
 #ifdef Py_GIL_DISABLED
     // Disable immortalization of code constants for explicit
     // compile() calls to get consistent frozen outputs between the default
-    // and free-threaded builds.
+    // and free-threaded builds.  It also keeps the output independent of
+    // what the process compiled before: a constant is otherwise replaced
+    // by an equal one of an earlier code object, and is then no longer the
+    // same object as, for example, the equal co_names of its code object.
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
     tstate->suppress_co_const_immortalization++;
 #endif
