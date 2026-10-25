@@ -23,13 +23,13 @@ other tools you are using is generally a worthwhile benefit. Before committing
 to the process described here, we recommend investigating your existing tools to
 see if they can provide Python directly.
 
-To obtain Python from the CPython team, use the Python Install Manager. This
+To obtain Python from the CPython team, use the Python install manager. This
 is a standalone tool that makes Python available as global commands on your
 Windows machine, integrates with the system, and supports updates over time. You
-can download the Python Install Manager from `python.org/downloads`_ or through
+can download the Python install manager from `python.org/downloads`_ or through
 the `Microsoft Store app`_.
 
-Once you have installed the Python Install Manager, the global ``python``
+Once you have installed the Python install manager, the global ``python``
 command can be used from any terminal to launch your current latest version of
 Python. This version may change over time as you add or remove different
 versions, and the ``py list`` command will show which is current.
@@ -40,7 +40,7 @@ This provides isolation between projects, consistency over time, and ensures
 that additional commands added by packages are also available in your session.
 Create a virtual environment using ``python -m venv <env path>``.
 
-If the ``python`` or ``py`` commands do not seem to be working, please see the
+If the ``python`` or ``py`` commands do not seem to be working, see the
 :ref:`Troubleshooting <pymanager-troubleshoot>` section below. There are
 sometimes additional manual steps required to configure your PC.
 
@@ -76,7 +76,7 @@ To install through the Store, simply click "Install". After it has completed,
 open a terminal and type ``python`` to get started.
 
 To install the file downloaded from python.org, either double-click and select
-"Install", or run ``Add-AppxPackage <path to MSIX>`` in Windows Powershell.
+"Install", or run ``Add-AppxPackage <path to MSIX>`` in Windows PowerShell.
 
 After installation, the ``python``, ``py``, and ``pymanager`` commands should be
 available. If you have existing installations of Python, or you have modified
@@ -87,7 +87,7 @@ non-working commands.
 When you first install a runtime, you will likely be prompted to add a directory
 to your :envvar:`PATH`. This is optional, if you prefer to use the ``py``
 command, but is offered for those who prefer the full range of aliases (such
-as ``python3.14.exe``) to be available. The directory will be
+as |python_x_dot_y_exe_literal|) to be available. The directory will be
 :file:`%LocalAppData%\\Python\\bin` by default, but may be customized by an
 administrator. Click Start and search for "Edit environment variables for your
 account" for the system settings page to add the path.
@@ -101,7 +101,7 @@ manager does not uninstall any Python runtimes.
 
 If you are not able to install an MSIX in your context, for example, you are
 using automated deployment software that does not support it, or are targeting
-Windows Server 2019, please see :ref:`pymanager-advancedinstall` below for more
+Windows Server 2019, see :ref:`pymanager-advancedinstall` below for more
 information.
 
 
@@ -158,9 +158,9 @@ version, potentially with the platform. For compatibility, the ``V:`` may be
 omitted in cases where the tag refers to an official release and starts with
 ``3``.
 
-.. code::
+.. parsed-literal::
 
-   $> py -V:3.14 ...
+   $> py -V:|version| ...
    $> py -V:3-arm64 ...
 
 Runtimes from other distributors may require the *company* to be included as
@@ -232,7 +232,7 @@ added in the form of one or more tags (with or without company specifier), and
 each may include a ``<``, ``<=``, ``>=`` or ``>`` prefix to restrict to a range.
 
 A range of formats are supported, and can be passed as the ``--format=<FMT>`` or
-``-f <FMT>`` option. Formats include ``table`` (a user friendly table view),
+``-f <FMT>`` option. Formats include ``table`` (a user-friendly table view),
 ``csv`` (comma-separated table), ``json`` (a single JSON blob), ``jsonl`` (one
 JSON blob per result), ``exe`` (just the executable path), ``prefix`` (just the
 prefix path).
@@ -252,13 +252,13 @@ source. Passing either of these options will search the online index for
 runtimes that can be installed. The result shown by ``py list --online --one
 <TAG>`` will match the runtime that would be installed by ``py install <TAG>``.
 
-.. code::
+.. parsed-literal::
 
-   $> py list --online 3.14
+   $> py list --online |version|
 
 For compatibility with the old launcher, the ``--list``, ``--list-paths``,
-``-0`` and ``-0p`` commands (e.g. ``py -0p``) are retained. They do not allow
-additional options, and will produce legacy formatted output.
+``-0`` and ``-0p`` commands (for example, ``py -0p``) are retained. They do not allow
+additional options, and will produce legacy-formatted output.
 
 
 Installing runtimes
@@ -271,6 +271,29 @@ Installing runtimes
 New runtime versions may be added using ``py install``. One or more tags may be
 specified, and the special tag ``default`` may be used to select the default.
 Ranges are not supported for installation.
+
+CPython publishes multiple runtime variants. For most users,
+``PythonCore`` is recommended and provides the standard CPython runtime.
+Tags without any prefix are treated as ``PythonCore\<TAG>``.
+
+``PythonTest`` includes the standard runtime together with the test suite
+and debugging symbols. It is intended for contributors or users who need
+these additional files for testing or debugging Python.
+
+``PythonEmbed`` provides a minimal embeddable distribution for
+applications that bundle Python rather than for interactive use. It
+would normally be used with the ``--target`` option described below.
+
+To see the available runtime variants, run::
+
+   py list --online
+
+To install a specific variant, include it in the tag passed to
+``py install``:
+
+.. parsed-literal::
+
+   py install PythonTest\\\ |version|
 
 The ``--source=<URL>`` option allows overriding the online index that is used to
 obtain runtimes. This may be used with an offline index, as shown in
@@ -291,7 +314,7 @@ installs.
 
 Passing ``--refresh`` will update all registrations for installed runtimes. This
 will recreate Start menu shortcuts, registry keys, and global aliases (such as
-``python3.14.exe`` or for any installed scripts). These are automatically
+|python_x_dot_y_exe_literal| or for any installed scripts). These are automatically
 refreshed on installation of any runtime, but may need to be manually refreshed
 after installing packages.
 
@@ -435,10 +458,10 @@ customization.
    * - ``default_platform``
      - ``PYTHON_MANAGER_DEFAULT_PLATFORM``
      - The preferred default platform to launch or install.
-       This is treated as a suffix to the specified tag, such that ``py -V:3.14``
-       would prefer an install for ``3.14-64`` if it exists
+       This is treated as a suffix to the specified tag, such that |py_v_x_dot_y_literal|
+       would prefer an install for |x_dot_y_64_literal| if it exists
        (and ``default_platform`` is ``-64``),
-       but will use ``3.14`` if no tagged install exists.
+       but will use |x_dot_y_literal| if no tagged install exists.
 
    * - ``logs_dir``
      - ``PYTHON_MANAGER_LOGS``
@@ -510,7 +533,7 @@ customization.
 
    * - ``global_dir``
      - (none)
-     - Specify the directory where global commands (such as ``python3.14.exe``
+     - Specify the directory where global commands (such as |python_x_dot_y_exe_literal|
        and ``pip.exe``) are stored.
        This directory should be added to your :envvar:`PATH` to make the
        commands available from your terminal.
@@ -532,7 +555,7 @@ Shebang lines
 -------------
 
 If the first line of a script file starts with ``#!``, it is known as a
-"shebang" line.  Linux and other Unix like operating systems have native
+"shebang" line.  Linux and other Unix-like operating systems have native
 support for such lines and they are commonly used on such systems to indicate
 how a script should be executed. The ``python`` and ``py`` commands allow the
 same facilities to be used with Python scripts on Windows.
@@ -576,7 +599,7 @@ prefers launching known Python commands. A warning may be displayed when
 searching for arbitrary executables, and this search may be disabled by the
 ``shebang_can_run_anything`` configuration option.
 
-Shebang lines that do not match any of patterns are treated as *Windows*
+Shebang lines that do not match any of the patterns are treated as *Windows*
 executable paths that are absolute or relative to the directory containing the
 script file. This is a convenience for Windows-only scripts, such as those
 generated by an installer, since the behavior is not compatible with Unix-style
@@ -709,7 +732,7 @@ deployment tool.
 
 Regardless of the install method, users will still need to install their own
 copies of Python itself, as there is no way to trigger those installs without
-being a logged in user. When using the MSIX, the latest version of Python will
+being a logged-in user. When using the MSIX, the latest version of Python will
 be available for all users to install without network access.
 
 Note that the MSIX downloadable from the Store and from the Python website are
@@ -785,12 +808,13 @@ directory containing the configuration file that specified them.
      - Path or URL to an index to consult when the main index cannot be accessed.
 
    * - ``install.enable_shortcut_kinds``
-     - Comma-separated list of shortcut kinds to allow (e.g. ``"pep514,start"``).
+     - Comma-separated list of shortcut kinds to allow
+       (for example, ``"pep514,start"``).
        Enabled shortcuts may still be disabled by ``disable_shortcut_kinds``.
 
    * - ``install.disable_shortcut_kinds``
      - Comma-separated list of shortcut kinds to exclude
-       (e.g. ``"pep514,start"``).
+       (for example, ``"pep514,start"``).
        Disabled shortcuts are not reactivated by ``enable_shortcut_kinds``.
 
    * - ``install.hard_link_entrypoints``
@@ -837,16 +861,16 @@ Installing free-threaded binaries
 Pre-built distributions of the free-threaded build are available
 by installing tags with the ``t`` suffix.
 
-.. code::
+.. parsed-literal::
 
-   $> py install 3.14t
-   $> py install 3.14t-arm64
-   $> py install 3.14t-32
+   $> py install |version|\ t
+   $> py install |version|\ t-arm64
+   $> py install |version|\ t-32
 
 This will install and register as normal. If you have no other runtimes
 installed, then ``python`` will launch this one. Otherwise, you will need to use
-``py -V:3.14t ...`` or, if you have added the global aliases directory to your
-:envvar:`PATH` environment variable, the ``python3.14t.exe`` commands.
+|py_v_x_dot_y_t_literal| or, if you have added the global aliases directory to your
+:envvar:`PATH` environment variable, the |python_x_dot_y_t_exe_literal| commands.
 
 
 .. _pymanager-index-signatures:
@@ -874,7 +898,7 @@ As well as requiring a valid signature, the ``required_root_subject`` and
 signatures based on the certificate Subject fields. Any attribute specified in
 the configuration must match the attribute in the certificate (additional
 attributes in the certificate are ignored). Typical attributes are ``CN=`` for
-the common name, ``O=`` for the organizational unit, and ``C=`` for the
+the common name, ``O=`` for the organization, and ``C=`` for the
 publisher's country.
 
 Finally, the ``required_publisher_eku`` setting allows requiring that a specific
@@ -979,8 +1003,8 @@ one set of credentials will be used for both types of proxy.
 Troubleshooting
 ---------------
 
-If your Python install manager does not seem to be working correctly, please
-work through these tests and fixes to see if it helps. If not, please report an
+If your Python install manager does not seem to be working correctly,
+work through these tests and fixes to see if it helps. If not, report an
 issue at `our bug tracker <https://github.com/python/pymanager/issues>`_,
 including any relevant log files (written to your :file:`%TEMP%` directory by
 default).
@@ -1131,16 +1155,16 @@ directly accessed by end-users.
 To install an embedded distribution, we recommend using ``py install`` with the
 ``--target`` option:
 
-.. code::
+.. parsed-literal::
 
-   $> py install 3.14-embed --target=<directory>
+   $> py install |version|-embed --target=<directory>
 
 When extracted, the embedded distribution is (almost) fully isolated from the
 user's system, including environment variables, system registry settings, and
 installed packages. The standard library is included as pre-compiled and
-optimized ``.pyc`` files in a ZIP, and ``python3.dll``, ``python313.dll``,
-``python.exe`` and ``pythonw.exe`` are all provided. Tcl/tk (including all
-dependents, such as Idle), pip and the Python documentation are not included.
+optimized ``.pyc`` files in a ZIP, and ``python3.dll``, |python_xy_dll_literal|,
+``python.exe`` and ``pythonw.exe`` are all provided. Tcl/Tk (including all
+dependents, such as IDLE), pip and the Python documentation are not included.
 
 A default ``._pth`` file is included, which further restricts the default search
 paths (as described below in :ref:`windows_finding_modules`). This file is
@@ -1195,7 +1219,7 @@ installation is sufficient to provide a loadable Python interpreter.
 
 As with the application use, packages can be installed to any location as there
 is an opportunity to specify search paths before initializing the interpreter.
-Otherwise, there is no fundamental differences between using the embedded
+Otherwise, there are no fundamental differences between using the embedded
 distribution and a regular installation.
 
 
@@ -1246,7 +1270,7 @@ delete the package directory manually and install it again. Many CI systems
 will do this automatically if they do not preserve files between builds.
 
 Alongside the ``tools`` directory is a ``build\native`` directory. This
-contains a MSBuild properties file ``python.props`` that can be used in a
+contains an MSBuild properties file ``python.props`` that can be used in a
 C++ project to reference the Python install. Including the settings will
 automatically use the headers and import libraries in your build.
 
@@ -1255,7 +1279,7 @@ The package information pages on nuget.org are
 for the 64-bit version, `www.nuget.org/packages/pythonx86
 <https://www.nuget.org/packages/pythonx86>`_ for the 32-bit version, and
 `www.nuget.org/packages/pythonarm64
-<https://www.nuget.org/packages/pythonarm64>`_ for the ARM64 version
+<https://www.nuget.org/packages/pythonarm64>`_ for the ARM64 version.
 
 Resolve error ``Unable to find package 'python'`` from a misconfigured ``nuget.config`` using::
 
@@ -1272,8 +1296,8 @@ for the 64-bit version, `pythonx86-freethreaded
 <https://www.nuget.org/packages/pythonx86-freethreaded>`_ for the 32-bit
 version, and `pythonarm64-freethreaded
 <https://www.nuget.org/packages/pythonarm64-freethreaded>`_ for the ARM64
-version. These packages contain both the ``python3.13t.exe`` and
-``python.exe`` entry points, both of which run free threaded.
+version. These packages contain both the |python_x_dot_y_t_exe_literal| and
+``python.exe`` entry points, both of which run free-threaded.
 
 
 Alternative bundles
@@ -1310,8 +1334,8 @@ Supported Windows versions
 As specified in :pep:`11`, a Python release only supports a Windows platform
 while Microsoft considers the platform under extended support. This means that
 Python |version| supports Windows 10 and newer. If you require Windows 7
-support, please install Python 3.8. If you require Windows 8.1 support,
-please install Python 3.12.
+support, install Python 3.8. If you require Windows 8.1 support,
+install Python 3.12.
 
 
 .. _max-path:
@@ -1395,7 +1419,7 @@ Windows:
 * If the environment variable :envvar:`PYTHONPATH` exists, as described in
   :ref:`using-on-envvars`, its entries are added next.  Note that on Windows,
   paths in this variable must be separated by semicolons, to distinguish them
-  from the colon used in drive identifiers (``C:\`` etc.).
+  from the colon used in drive identifiers (such as ``C:\``).
 
 * Additional "application paths" can be added in the registry as subkeys of
   :samp:`\\SOFTWARE\\Python\\PythonCore\\{version}\\PythonPath` under both the
@@ -1408,13 +1432,13 @@ Windows:
   "Python Home".  Otherwise, the path of the main Python executable is used to
   locate a "landmark file" (either ``Lib\os.py`` or ``pythonXY.zip``) to deduce
   the "Python Home".  If a Python home is found, the relevant sub-directories
-  added to :data:`sys.path` (``Lib``, ``plat-win``, etc) are based on that
+  added to :data:`sys.path` (such as ``Lib`` and ``plat-win``) are based on that
   folder.  Otherwise, the core Python path is constructed from the PythonPath
   stored in the registry.
 
 * If the Python Home cannot be located, no :envvar:`PYTHONPATH` is specified in
   the environment, and no registry entries can be found, a default path with
-  relative entries is used (e.g. ``.\Lib;.\plat-win``, etc).
+  relative entries is used (for example, ``.\Lib;.\plat-win``).
 
 If a ``pyvenv.cfg`` file is found alongside the main executable or in the
 directory one level above the executable, the following variations apply:
@@ -1430,11 +1454,11 @@ The end result of all this is:
   directory), the core path is deduced, and the core paths in the registry are
   ignored.  Other "application paths" in the registry are always read.
 
-* When Python is hosted in another .exe (different directory, embedded via COM,
-  etc), the "Python Home" will not be deduced, so the core path from the
+* When Python is hosted in another .exe (for example, in a different directory or
+  embedded via COM), the "Python Home" will not be deduced, so the core path from the
   registry is used.  Other "application paths" in the registry are always read.
 
-* If Python can't find its home and there are no registry value (frozen .exe,
+* If Python can't find its home and there are no registry values (frozen .exe,
   some very strange installation setup) you get a path with some default, but
   relative, paths.
 
@@ -1446,7 +1470,7 @@ following advice will prevent conflicts with other installations:
   environment variables, and also ignore :mod:`site` unless ``import site`` is
   listed.
 
-* If you are loading :file:`python3.dll` or :file:`python37.dll` in your own
+* If you are loading :file:`python3.dll` or |python_xy_dll_literal| in your own
   executable, explicitly set :c:member:`PyConfig.module_search_paths` before
   :c:func:`Py_InitializeFromConfig`.
 
@@ -1467,7 +1491,7 @@ non-standard paths in the registry and user site-packages.
 
 .. versionchanged:: 3.6
 
-   Add ``._pth`` file support and removes ``applocal`` option from
+   Add ``._pth`` file support and remove ``applocal`` option from
    ``pyvenv.cfg``.
 
 .. versionchanged:: 3.6
