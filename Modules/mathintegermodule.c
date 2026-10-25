@@ -491,6 +491,11 @@ math_integer_isqrt(PyObject *module, PyObject *n)
    verified against the Feitsma-Galway exhaustive list of base-2 strong
    pseudoprimes below 2**64 (see http://miller-rabin.appspot.com/ and
    http://ntheory.org/pseudoprimes.html).
+
+   Modular exponentiation and squaring use Montgomery arithmetic with
+   R = 2**64 to avoid division in their inner loops (P. L. Montgomery,
+   "Modular multiplication without trial division", Mathematics of
+   Computation 44 (1985), 519-521).
 */
 
 static const uint8_t small_primes[] = {
@@ -540,44 +545,96 @@ mulmod_u64(uint64_t a, uint64_t b, uint64_t n)
 }
 #endif
 
-static uint64_t
-powmod_u64(uint64_t b, uint64_t e, uint64_t n)
+/* High 64 bits of the full product a * b. */
+static inline uint64_t
+mulhi_u64(uint64_t a, uint64_t b)
 {
-    uint64_t result = 1;
-    b %= n;
-    while (e) {
-        if (e & 1) {
-            result = mulmod_u64(result, b, n);
-        }
-        b = mulmod_u64(b, b, n);
-        e >>= 1;
-    }
-    return result;
+#if defined(HAVE_GCC_UINT128_T)
+    return (uint64_t)(((__uint128_t)a * b) >> 64);
+#elif defined(_MSC_VER) && defined(_M_X64)
+    uint64_t hi;
+    (void)_umul128(a, b, &hi);
+    return hi;
+#else
+    /* Split the operands into 32-bit limbs. Each sum fits in uint64_t. */
+    uint64_t a0 = (uint32_t)a, a1 = a >> 32;
+    uint64_t b0 = (uint32_t)b, b1 = b >> 32;
+    uint64_t t = a1 * b0 + ((a0 * b0) >> 32);
+    uint64_t carry = t >> 32;
+    t = a0 * b1 + (uint32_t)t;
+    return a1 * b1 + carry + (t >> 32);
+#endif
 }
 
-/* Strong probable prime test to the given base.  n must be odd and
-   coprime to the base (a base divisible by n gives no information and
-   is treated as passing). */
-static int
-sprp_u64(uint64_t n, uint64_t base)
+typedef struct {
+    uint64_t n;
+    uint64_t inverse;  // n**-1 modulo 2**64
+    uint64_t one;      // 2**64 modulo n
+    uint64_t d;        // Odd part of n - 1
+    int s;             // n - 1 = d * 2**s
+} montgomery_context;
+
+/* Precompute once for all bases. n must be odd and greater than 1. */
+static montgomery_context
+montgomery_init(uint64_t n)
 {
-    base %= n;
+    montgomery_context ctx = {
+        .n = n,
+        .inverse = 1,
+        .one = (0 - n) % n,
+        .d = n - 1,
+        .s = 0,
+    };
+    /* Newton iteration doubles the number of correct inverse bits,
+       starting with one correct bit because n is odd. */
+    for (int i = 0; i < 6; i++) {
+        ctx.inverse *= 2 - n * ctx.inverse;
+    }
+    while ((ctx.d & 1) == 0) {
+        ctx.d >>= 1;
+        ctx.s++;
+    }
+    return ctx;
+}
+
+/* Return a * b * R**-1 modulo n, where R = 2**64 and a, b < n.
+   With t = a*b and m = (t mod R) * n**-1 mod R, t - m*n is divisible
+   by R, and (t - m*n) / R lies strictly between -n and n. Subtracting
+   avoids the possible 129-bit carry of the additive Montgomery form.
+   All uint64_t arithmetic intentionally wraps modulo R. */
+static inline uint64_t
+montgomery_mul(uint64_t a, uint64_t b, const montgomery_context *ctx)
+{
+    uint64_t lo = a * b, hi = mulhi_u64(a, b);
+    uint64_t mhi = mulhi_u64(lo * ctx->inverse, ctx->n);
+    uint64_t result = hi - mhi;
+    return hi < mhi ? result + ctx->n : result;
+}
+
+/* Strong probable prime test to the given base, in Montgomery form.
+   A base divisible by n gives no information and is treated as passing. */
+static int
+sprp_u64(const montgomery_context *ctx, uint64_t base)
+{
+    base %= ctx->n;
     if (base == 0) {
         return 1;
     }
-    uint64_t d = n - 1;
-    int s = 0;
-    while ((d & 1) == 0) {
-        d >>= 1;
-        s++;
+    // Represent x by x*R modulo n throughout exponentiation.
+    uint64_t b = mulmod_u64(base, ctx->one, ctx->n);
+    uint64_t a = ctx->one;
+    for (uint64_t e = ctx->d; e; e >>= 1) {
+        if (e & 1) {
+            a = montgomery_mul(a, b, ctx);
+        }
+        b = montgomery_mul(b, b, ctx);
     }
-    uint64_t a = powmod_u64(base, d, n);
-    if (a == 1 || a == n - 1) {
+    if (a == ctx->one || a == ctx->n - ctx->one) {
         return 1;
     }
-    for (int r = 1; r < s; r++) {
-        a = mulmod_u64(a, a, n);
-        if (a == n - 1) {
+    for (int r = 1; r < ctx->s; r++) {
+        a = montgomery_mul(a, a, ctx);
+        if (a == ctx->n - ctx->one) {
             return 1;
         }
     }
@@ -595,6 +652,7 @@ isprime_u64(uint64_t n)
     if (n < 67 * 67) {
         return n > 1;
     }
+    montgomery_context ctx = montgomery_init(n);
     const uint32_t *bases = mr_bases;
     size_t num_bases = Py_ARRAY_LENGTH(mr_bases);
     if (n < 4759123141) {
@@ -602,7 +660,7 @@ isprime_u64(uint64_t n)
         num_bases = Py_ARRAY_LENGTH(mr_bases_small);
     }
     for (size_t i = 0; i < num_bases; i++) {
-        if (!sprp_u64(n, bases[i])) {
+        if (!sprp_u64(&ctx, bases[i])) {
             return 0;
         }
     }

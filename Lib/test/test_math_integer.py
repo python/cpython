@@ -478,7 +478,7 @@ class IsPrimeTests(unittest.TestCase):
 
     def test_isprime_strong_pseudoprimes_base_2(self):
         # Composites that pass the strong probable prime test to base 2
-        # (A001262); they must be caught by the strong Lucas test.
+        # (A001262); they must be caught by the other bases.
         isprime = self.module.isprime
         for n in [2047, 3277, 4033, 4681, 8321, 15841, 29341, 42799, 49141,
                   52633, 65281, 74665, 80581, 85489, 88357, 90751,
@@ -487,8 +487,8 @@ class IsPrimeTests(unittest.TestCase):
                 self.assertIs(isprime(n), False)
 
     def test_isprime_strong_lucas_pseudoprimes(self):
-        # Composites that pass the strong Lucas test with Selfridge's
-        # parameters (A217255).
+        # Composites that are strong Lucas pseudoprimes (A217255); they
+        # are unrelated to the Miller-Rabin bases and must still fail.
         isprime = self.module.isprime
         for n in [5459, 5777, 10877, 16109, 18971, 22499, 24569, 25199,
                   40309, 58519, 75077, 97439]:
@@ -519,9 +519,9 @@ class IsPrimeTests(unittest.TestCase):
                 self.assertIs(isprime(k*k), False)
 
     def test_isprime_word_boundaries(self):
-        # Exercise the boundaries between the base sets.
+        # Exercise word boundaries and the boundary between the base sets.
         isprime = self.module.isprime
-        for boundary in [2**32, 4759123141]:
+        for boundary in [2**32, 4759123141, 2**63]:
             for n in range(boundary - 200, boundary + 200):
                 with self.subTest(n=n):
                     self.assertIs(isprime(n), py_isprime(n))
@@ -529,6 +529,17 @@ class IsPrimeTests(unittest.TestCase):
             with self.subTest(n=n):
                 self.assertIs(isprime(n), py_isprime(n))
         self.assertIs(isprime(2**64 - 59), True)   # largest prime < 2**64
+
+    def test_isprime_many_squarings(self):
+        # Exercise repeated squaring when n - 1 has many factors of two,
+        # including large moduli such as the prime 2**64 - 2**32 + 1.
+        isprime = self.module.isprime
+        for s in range(1, 64):
+            for d in [1, 3, 5, 2**(64 - s) - 1]:
+                n = (d << s) + 1
+                if n < 2**64:
+                    with self.subTest(n=n):
+                        self.assertIs(isprime(n), py_isprime(n))
 
     def test_isprime_large_values(self):
         isprime = self.module.isprime

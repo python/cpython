@@ -284,7 +284,7 @@ math.integer
 
 * Added :func:`math.integer.isprime` for primality testing of integers
   less than 2**64.
-  (Contributed by Serhiy Storchaka in :gh:`153222`.)
+  (Contributed by Serhiy Storchaka and Stan Ulbrych in :gh:`153222`.)
 
 
 os
