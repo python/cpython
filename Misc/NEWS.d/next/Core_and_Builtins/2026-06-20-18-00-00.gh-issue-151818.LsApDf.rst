@@ -1,3 +1,0 @@
-Fix a double-free crash in ``list.append()`` (the specialized
-``CALL_LIST_APPEND`` instruction) when growing the list fails with
-:exc:`MemoryError`.

@@ -792,7 +792,7 @@ The following flags can be used with :c:member:`PyMemberDef.flags`:
    A member flag that has no effect, retained solely for backwards compatibility.
    This is only available with ``#include "structmember.h"``.
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.15.2
       Omit this flag instead.
 
 

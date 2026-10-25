@@ -1,2 +1,0 @@
-Avoid a crash when a :class:`threading.local` subclass finalizer accesses
-attributes after construction fails.

@@ -188,4 +188,4 @@ by mistake. They are documented solely for completeness; use other
    The string literal ``"b"``, used to open files in binary mode.
    Exposed for backwards compatibility only.
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.15.2

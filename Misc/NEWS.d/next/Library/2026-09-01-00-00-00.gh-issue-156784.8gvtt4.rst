@@ -1,3 +1,0 @@
-:class:`asyncio.ProactorEventLoop` no longer silently ignores
-:exc:`ConnectionResetError` on UDP sockets, matching
-:class:`asyncio.SelectorEventLoop`.
