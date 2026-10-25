@@ -636,8 +636,27 @@ How *do* you spell that odd word, anyways?
                         ['Did you say',
                          '"supercalifr',
                          'agilisticexp',
-                         '[...]'],
+                         'ialido [...]'],
                         max_lines=4)
+
+    def test_max_lines_long_word_broken(self):
+        # A long word broken across lines is broken further on the last
+        # line to make room for the placeholder, instead of dropping the
+        # whole remaining piece.
+        self.check_wrap('x' * 30, 10,
+                        ['xxxxxxxxxx', 'xxxx [...]'],
+                        max_lines=2)
+        self.check_wrap('x' * 30, 10,
+                        ['xxxx [...]'],
+                        max_lines=1)
+        # Not enough room for the placeholder plus any text: the
+        # placeholder-only line is kept.
+        self.check_wrap('x' * 30, 5,
+                        ['xxxxx', '[...]'],
+                        max_lines=2)
+        self.check_wrap('x' * 30, 10,
+                        ['xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'],
+                        max_lines=2, break_long_words=False)
 
 
 class LongWordWithHyphensTestCase(BaseTestCase):
@@ -1131,6 +1150,16 @@ class ShortenTestCase(BaseTestCase):
 
     def test_first_word_too_long_but_placeholder_fits(self):
         self.check_shorten("Helloo", 5, "[...]")
+
+    def test_long_word_broken_to_fit_placeholder(self):
+        # A single word longer than the width is broken further to make
+        # room for the placeholder, instead of being replaced by it alone.
+        self.check_shorten("x" * 30, 10, "xxxx [...]")
+        self.check_shorten("x" * 30, 20, "xxxxxxxxxxxxxx [...]")
+        # Not enough room for the placeholder plus any text.
+        self.check_shorten("x" * 30, 5, "[...]")
+        # Words are only broken when break_long_words is true.
+        self.check_shorten("x" * 30, 10, "[...]", break_long_words=False)
 
 
 if __name__ == '__main__':

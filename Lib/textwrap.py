@@ -324,6 +324,23 @@ class TextWrapper:
                             cur_line.append(self.placeholder)
                             lines.append(indent + ''.join(cur_line))
                             break
+                        if (self.break_long_words and
+                            len(cur_line) == 1 and
+                            cur_line[-1].strip() and
+                            len(cur_line[-1]) == width and
+                            width - len(self.placeholder) > 0):
+                            # The placeholder does not fit after this line,
+                            # and the line consists of a single full-width
+                            # chunk: a piece of a long word broken by
+                            # _handle_long_word(), or a word exactly as wide
+                            # as the line.  Break it further instead of
+                            # dropping it whole, or the last line (and, for
+                            # shorten(), the whole text) would be replaced
+                            # by the placeholder alone.
+                            space_left = width - len(self.placeholder)
+                            cur_line[-1] = cur_line[-1][:space_left]
+                            cur_len = space_left
+                            continue
                         cur_len -= len(cur_line[-1])
                         del cur_line[-1]
                     else:
