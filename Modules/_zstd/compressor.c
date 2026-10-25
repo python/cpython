@@ -766,6 +766,7 @@ static int
 ZstdCompressor_traverse(PyObject *ob, visitproc visit, void *arg)
 {
     ZstdCompressor *self = ZstdCompressor_CAST(ob);
+    Py_VISIT(Py_TYPE(ob));
     Py_VISIT(self->dict);
     return 0;
 }
