@@ -1,0 +1,70 @@
+.. date: 2026-10-22-08-04-33
+.. gh-issue: 160300
+.. nonce: q7Zk2B
+.. release date: 2026-10-25
+.. section: Security
+
+Fix :class:`http.cookiejar.DefaultCookiePolicy` accepting and returning
+cookies with a negative ``Version`` attribute without checking their domain
+against the request host. Such cookies are now ignored.
+
+..
+
+.. cve: CVE-2026-114583
+.. date: 2026-10-21-19-58-53
+.. gh-issue: 160097
+.. nonce: -opfAL
+.. section: Security
+
+:func:`tarfile.tar_filter` now rejects link members whose path resolves to
+the destination directory itself, as :func:`tarfile.data_filter` already
+did.
+
+..
+
+.. cve: CVE-2026-115557
+.. date: 2026-10-21-16-55-07
+.. gh-issue: 160040
+.. nonce: 9PjFjC
+.. section: Security
+
+:mod:`ssl` now rejects TLS certificate chains that contain any of a set of
+compromised eMudhra intermediate CA keys.  This is an extraordinary measure
+and a last line of defense: removing trust is primarily the job of the
+platform root store, and the built-in denylist only blocks connections while
+that update has not yet reached the OS, a container image, or a bundled
+trust store in various Python packages.  Entries are added to the denylist
+only under a very high threshold. The denylist matches on the public key
+(the SHA-256 digest of the :rfc:`5280` ``SubjectPublicKeyInfo``), so it also
+covers the cross-signed certificates that reuse one of the distrusted keys.
+
+..
+
+.. date: 2026-10-15-03-47-08
+.. gh-issue: 159428
+.. nonce: XHRKwY
+.. section: Security
+
+:mod:`mimetypes` no longer reads the files listed in
+:data:`mimetypes.knownfiles` by default on Windows, and uses only the
+registry.
+
+..
+
+.. date: 2026-08-31-16-47-33
+.. gh-issue: 157953
+.. nonce: KxCFSN
+.. section: Security
+
+Update bundled `libexpat <https://libexpat.github.io/>`_ to version 2.9.0.
+
+..
+
+.. date: 2026-10-08-16-18-43
+.. gh-issue: 87720
+.. nonce: Elqdl9
+.. section: Library
+
+Fixed error in :mod:`email` new policies where header folding failed to
+detect the need to re-quote text obtained from encoded words in certain
+cases.
