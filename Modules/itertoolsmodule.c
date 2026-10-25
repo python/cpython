@@ -4009,7 +4009,6 @@ zip_longest_next_impl(ziplongestobject *self)
     } else {
         result = PyTuple_New(tuplesize);
         if (result == NULL) {
-            result = NULL;
             goto done;
         }
         for (i=0 ; i < tuplesize ; i++) {
