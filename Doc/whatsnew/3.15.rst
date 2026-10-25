@@ -2912,6 +2912,18 @@ that may require changes to your code.
 Notable changes in 3.15.2
 =========================
 
+importlib
+---------
+
+* Threads that simultaneously perform first-time ``import package.submodule``
+  imports no longer risk a deadlock or spurious import errors, a regression
+  introduced in 3.15.0 by the fix for :gh:`83065`.  A package's import lock is
+  now released as soon as its ``__init__`` returns.
+  :func:`importlib.import_module` now returns the partially initialized
+  module in a circular import split across threads, as the :keyword:`import`
+  statement already did, instead of raising ``_DeadlockError``.
+  (Contributed by Gregory P. Smith in :gh:`159963`.)
+
 ssl
 ---
 
