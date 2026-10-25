@@ -1,3 +1,2 @@
-Honor ``=no`` and ``--without-...`` for the AddressSanitizer,
-HWAddressSanitizer, MemorySanitizer, UndefinedBehaviorSanitizer, and
-ThreadSanitizer configure options without adding sanitizer flags.
+Fix the :samp:`--with-{name}-sanitizer=no` and :samp:`--without-{name}-sanitizer`
+:program:`configure` options enabling the sanitizer instead of disabling it.
