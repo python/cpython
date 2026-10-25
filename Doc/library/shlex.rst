@@ -108,7 +108,7 @@ The :mod:`!shlex` module defines the following functions:
 
    .. versionadded:: 3.3
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       The *force* keyword was added.
 
 The :mod:`!shlex` module defines the following class:

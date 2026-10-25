@@ -47,7 +47,7 @@
 @rem If py.exe finds a recent enough version, use that one
 @rem It is fine to add new versions to this list when they have released,
 @rem but we do not use prerelease builds here.
-@for %%p in (3.14 3.13 3.12 3.11 3.10) do @py -%%p -EV >nul 2>&1 && (set PYTHON=py -%%p) && (set _Py_Python_Source=found %%p with py.exe) && goto :found
+@for %%p in (3.15 3.14 3.13 3.12 3.11 3.10) do @py -%%p -EV >nul 2>&1 && (set PYTHON=py -%%p) && (set _Py_Python_Source=found %%p with py.exe) && goto :found
 
 @if NOT exist "%_Py_EXTERNALS_DIR%" mkdir "%_Py_EXTERNALS_DIR%"
 @set _Py_NUGET=%NUGET%
@@ -55,7 +55,7 @@
 @set _Py_HOST_PYTHON=%HOST_PYTHON%
 @if "%_Py_HOST_PYTHON%"=="" set _Py_HOST_PYTHON=py
 @if "%_Py_NUGET%"=="" (set _Py_NUGET=%_Py_EXTERNALS_DIR%\nuget.exe)
-@if "%_Py_NUGET_URL%"=="" (set _Py_NUGET_URL=https://aka.ms/nugetclidl)
+@if "%_Py_NUGET_URL%"=="" (set _Py_NUGET_URL=https://dist.nuget.org/win-x86-commandline/latest/nuget.exe)
 @if NOT exist "%_Py_NUGET%" (
     @if not "%_Py_Quiet%"=="1" @echo Downloading nuget...
     @rem NB: Must use single quotes around NUGET here, NOT double!

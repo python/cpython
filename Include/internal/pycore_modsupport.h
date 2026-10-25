@@ -10,7 +10,8 @@ extern "C" {
 #endif
 
 
-extern int _PyArg_NoKwnames(const char *funcname, PyObject *kwnames);
+// Export for 'array' shared extension
+PyAPI_FUNC(int) _PyArg_NoKwnames(const char *funcname, PyObject *kwnames);
 #define _PyArg_NoKwnames(funcname, kwnames) \
     ((kwnames) == NULL || _PyArg_NoKwnames((funcname), (kwnames)))
 
@@ -18,6 +19,12 @@ extern int _PyArg_NoKwnames(const char *funcname, PyObject *kwnames);
 PyAPI_FUNC(int) _PyArg_NoPositional(const char *funcname, PyObject *args);
 #define _PyArg_NoPositional(funcname, args) \
     ((args) == NULL || _PyArg_NoPositional((funcname), (args)))
+
+// Export for Argument Clinic generated code in shared extensions
+PyAPI_FUNC(int) _PyArg_NoPositionalStack(const char *funcname,
+                                         Py_ssize_t nargs);
+#define _PyArg_NoPositionalStack(funcname, nargs) \
+    ((nargs) == 0 || _PyArg_NoPositionalStack((funcname), (nargs)))
 
 // Export for '_asyncio' shared extension
 PyAPI_FUNC(int) _PyArg_NoKeywords(const char *funcname, PyObject *kwargs);
@@ -40,13 +47,6 @@ extern PyObject ** _Py_VaBuildStack(
 
 extern PyObject* _PyModule_CreateInitialized(PyModuleDef*, int apiver);
 
-// Export for '_curses' shared extension
-PyAPI_FUNC(int) _PyArg_ParseStack(
-    PyObject *const *args,
-    Py_ssize_t nargs,
-    const char *format,
-    ...);
-
 extern int _PyArg_UnpackStack(
     PyObject *const *args,
     Py_ssize_t nargs,
@@ -64,7 +64,9 @@ PyAPI_FUNC(void) _PyArg_BadArgument(
 
 // --- _PyArg_Parser API ---------------------------------------------------
 
-// Export for '_dbm' shared extension
+// Similar to public PyArg_ParseArrayAndKeywords(), but faster thanks
+// to "struct _PyArg_Parser *parser" cache.
+// Export for '_dbm' shared extension.
 PyAPI_FUNC(int) _PyArg_ParseStackAndKeywords(
     PyObject *const *args,
     Py_ssize_t nargs,
