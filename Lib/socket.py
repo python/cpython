@@ -574,9 +574,7 @@ def fromfd(fd, family, type, proto=0):
     nfd = dup(fd)
     try:
         return socket(family, type, proto, nfd)
-    except BaseException:
-        # socket() rejected the arguments; the dup()'d descriptor would
-        # otherwise leak, since nothing holds a reference to it.
+    except:
         close(nfd)
         raise
 

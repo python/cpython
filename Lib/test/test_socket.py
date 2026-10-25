@@ -3195,25 +3195,22 @@ class BasicTCPTest(SocketConnectedTest):
     def _testFromFd(self):
         self.serv_conn.send(MSG)
 
-    def testFromFdInvalidArgsDoesNotLeak(self):
-        # fromfd() dup()s the descriptor before socket() validates its
-        # arguments; a rejected call must not leave the duplicate open.
-        fddir = '/proc/self/fd'
-        if not os.path.isdir(fddir):
-            self.skipTest('test needs /proc/self/fd')
+    def testFromFdError(self):
+        # Make sure that the fromfd() duplicated socket is closed on error.
+        # In debug mode, Python test suite checks for file descriptor leaks.
         fd = self.cli_conn.fileno()
-        base = dict(family=socket.AF_INET, type=socket.SOCK_STREAM, proto=0)
-        # family, type and proto are all converted to a C int, so each of them
-        # can fail after the dup() has already happened.
-        for name in base:
-            kwargs = dict(base, **{name: 1 << 100})
-            with self.subTest(name=name):
-                before = len(os.listdir(fddir))
-                with self.assertRaises(OverflowError):
-                    socket.fromfd(fd, **kwargs)
-                self.assertEqual(len(os.listdir(fddir)), before)
+        fd_count_before = os_helper.fd_count()
 
-    def _testFromFdInvalidArgsDoesNotLeak(self):
+        with self.assertRaises(TypeError):
+            socket.fromfd(fd, "not-a-valid-family", socket.SOCK_STREAM)
+        with self.assertRaises(TypeError):
+            socket.fromfd(fd, socket.AF_UNIX, "not-a-valid-type")
+        with self.assertRaises(OverflowError):
+            socket.fromfd(fd, socket.AF_UNIX, 1 << 100)
+
+        self.assertEqual(os_helper.fd_count(), fd_count_before)
+
+    def _testFromFdError(self):
         pass
 
     def testDup(self):
