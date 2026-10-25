@@ -1003,6 +1003,27 @@ debug_cycle(const char *msg, PyObject *op)
                        msg, Py_TYPE(op)->tp_name, op);
 }
 
+/* Call debug_cycle() on each object in `list`.  sys.stderr.write() can run
+ * Python code that frees any object in the list, including the one just
+ * printed, so always take the first object and move it to a temporary
+ * `seen` list, as finalize_garbage() does.
+ */
+static void
+debug_cycles(const char *msg, PyGC_Head *list)
+{
+    PyGC_Head seen;
+    gc_list_init(&seen);
+    while (!gc_list_is_empty(list)) {
+        PyGC_Head *gc = GC_NEXT(list);
+        PyObject *op = FROM_GC(gc);
+        gc_list_move(gc, &seen);
+        Py_INCREF(op);
+        debug_cycle(msg, op);
+        Py_DECREF(op);
+    }
+    gc_list_merge(&seen, list);
+}
+
 /* Handle uncollectable garbage (cycles with tp_del slots, and stuff reachable
  * only from such cycles).
  * If _PyGC_DEBUG_SAVEALL, all objects in finalizers are appended to the module
@@ -1435,7 +1456,6 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     PyGC_Head *old; /* next older generation */
     PyGC_Head unreachable; /* non-problematic unreachable trash */
     PyGC_Head finalizers;  /* objects with, & reachable from, __del__ */
-    PyGC_Head *gc;
     GCState *gcstate = &tstate->interp->gc;
 
     // gc_collect_main() must not be called before _PyGC_Init
@@ -1558,9 +1578,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     if (gcstate->debug & _PyGC_DEBUG_COLLECTABLE) {
         /* sys.stderr.write() can resurrect objects. */
         needs_resurrection_check = true;
-        for (gc = GC_NEXT(&unreachable); gc != &unreachable; gc = GC_NEXT(gc)) {
-            debug_cycle("collectable", FROM_GC(gc));
-        }
+        debug_cycles("collectable", &unreachable);
     }
 
     /* Clear weakrefs and invoke callbacks as necessary. */
@@ -1603,13 +1621,10 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 
     /* Collect statistics on uncollectable objects found and print
      * debugging information. */
-    Py_ssize_t n = 0;
-    for (gc = GC_NEXT(&finalizers); gc != &finalizers; gc = GC_NEXT(gc)) {
-        n++;
-        if (gcstate->debug & _PyGC_DEBUG_UNCOLLECTABLE)
-            debug_cycle("uncollectable", FROM_GC(gc));
+    if (gcstate->debug & _PyGC_DEBUG_UNCOLLECTABLE) {
+        debug_cycles("uncollectable", &finalizers);
     }
-    stats.uncollectable = n;
+    stats.uncollectable = gc_list_size(&finalizers);
     (void)PyTime_PerfCounterRaw(&stats.ts_stop);
     stats.duration = PyTime_AsSecondsDouble(stats.ts_stop - stats.ts_start);
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
