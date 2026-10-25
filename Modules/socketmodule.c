@@ -395,15 +395,9 @@ remove_unusable_flags(PyObject *m)
 #endif
 
 /* include Python's addrinfo.h unless it causes trouble */
-#if defined(_MSC_VER)
-  /* Do not include addrinfo.h for MSVC. 'addrinfo' and
-   * EAI_* constants are defined in (the already included) ws2tcpip.h.
-   */
-#else
-#  include "addrinfo.h"
 /* Do not include addrinfo.h for MSVC. 'addrinfo' and
-* EAI_* constants are defined in (the already included) ws2tcpip.h.
-*/
+ * EAI_* constants are defined in (the already included) ws2tcpip.h.
+ */
 #if !defined(_MSC_VER)
 #  include "addrinfo.h"
 #endif
