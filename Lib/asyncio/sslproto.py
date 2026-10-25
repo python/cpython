@@ -406,13 +406,15 @@ class SSLProtocol(protocols.BufferedProtocol):
         if self._app_transport is not None:
             self._app_transport._closed = True
 
-        if self._state != SSLProtocolState.DO_HANDSHAKE:
-            if (
-                self._app_state == AppProtocolState.STATE_CON_MADE or
-                self._app_state == AppProtocolState.STATE_EOF
-            ):
-                self._app_state = AppProtocolState.STATE_CON_LOST
-                self._loop.call_soon(self._app_protocol.connection_lost, exc)
+        # The app protocol gets connection_lost() only if it got
+        # connection_made().  After start_tls() that is already the case
+        # while the handshake is in progress.
+        if (
+            self._app_state == AppProtocolState.STATE_CON_MADE or
+            self._app_state == AppProtocolState.STATE_EOF
+        ):
+            self._app_state = AppProtocolState.STATE_CON_LOST
+            self._loop.call_soon(self._app_protocol.connection_lost, exc)
         self._set_state(SSLProtocolState.UNWRAPPED)
         self._transport = None
         self._app_transport = None

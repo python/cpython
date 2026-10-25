@@ -2,6 +2,7 @@
 
 import logging
 import socket
+import struct
 import unittest
 import weakref
 from test import support
@@ -152,6 +153,29 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         ssl_proto.connection_lost(ConnectionAbortedError)
         test_utils.run_briefly(self.loop)
         self.assertIsInstance(waiter.exception(), ConnectionAbortedError)
+
+    def test_connection_lost_during_handshake(self):
+        # The app protocol gets connection_lost() if and only if it got
+        # connection_made().  With start_tls() (call_connection_made=False)
+        # it is already connected when the handshake starts.
+        for call_connection_made in (True, False):
+            with self.subTest(call_connection_made=call_connection_made):
+                app_proto = mock.Mock(spec=asyncio.Protocol)
+                ssl_proto = sslproto.SSLProtocol(
+                    self.loop, app_proto, test_utils.dummy_ssl_context(),
+                    waiter=None, call_connection_made=call_connection_made)
+                self.connection_made(
+                    ssl_proto,
+                    do_handshake=mock.Mock(side_effect=ssl.SSLWantReadError)
+                )
+                exc = ConnectionResetError()
+                ssl_proto.connection_lost(exc)
+                test_utils.run_briefly(self.loop)
+                app_proto.connection_made.assert_not_called()
+                if call_connection_made:
+                    app_proto.connection_lost.assert_not_called()
+                else:
+                    app_proto.connection_lost.assert_called_once_with(exc)
 
     def test_connection_lost_when_busy(self):
         # gh-118950: SSLProtocol.connection_lost not being called when OSError
@@ -570,9 +594,10 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 sock.close()
 
         class ClientProto(asyncio.Protocol):
-            def __init__(self, on_data, on_eof):
+            def __init__(self, on_data, on_eof, on_con_lost):
                 self.on_data = on_data
                 self.on_eof = on_eof
+                self.on_con_lost = on_con_lost
                 self.con_made_cnt = 0
 
             def connection_made(proto, tr):
@@ -586,14 +611,18 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
             def eof_received(self):
                 self.on_eof.set_result(True)
 
+            def connection_lost(self, exc):
+                self.on_con_lost.set_result(exc)
+
         async def client(addr):
             await asyncio.sleep(0.5)
 
             on_data = self.loop.create_future()
             on_eof = self.loop.create_future()
+            on_con_lost = self.loop.create_future()
 
             tr, proto = await self.loop.create_connection(
-                lambda: ClientProto(on_data, on_eof), *addr)
+                lambda: ClientProto(on_data, on_eof, on_con_lost), *addr)
 
             tr.write(HELLO_MSG)
 
@@ -604,10 +633,58 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                     self.loop.start_tls(tr, proto, client_context),
                     0.5)
 
+            self.assertIsNone(
+                await asyncio.wait_for(on_con_lost, support.LOOPBACK_TIMEOUT))
+
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
                 asyncio.wait_for(client(srv.addr),
                                  timeout=support.SHORT_TIMEOUT))
+
+    def _test_start_tls_streams_failed_handshake(self, serve, expected_exc,
+                                                 **kwargs):
+        # wait_closed() must not hang if the connection is lost while
+        # the handshake started by start_tls() is still in progress.
+        client_context = test_utils.simple_client_sslcontext()
+
+        async def client(addr):
+            reader, writer = await asyncio.open_connection(*addr)
+            with self.assertRaises(expected_exc):
+                await writer.start_tls(client_context, **kwargs)
+            writer.close()
+            with self.assertRaises(expected_exc):
+                await writer.wait_closed()
+
+        with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
+            self.loop.run_until_complete(
+                asyncio.wait_for(client(srv.addr),
+                                 timeout=support.SHORT_TIMEOUT))
+
+    def test_start_tls_streams_handshake_reset(self):
+        def serve(sock):
+            sock.settimeout(self.TIMEOUT)
+            sock.recv(1024 * 1024)  # ClientHello
+            # Send RST instead of FIN.
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
+                            struct.pack('ii', 1, 0))
+            sock.close()
+
+        self._test_start_tls_streams_failed_handshake(
+            serve, ConnectionError)
+
+    def test_start_tls_streams_handshake_timeout(self):
+        def serve(sock):
+            sock.settimeout(self.TIMEOUT)
+            try:
+                while sock.recv(1024 * 1024):
+                    pass
+            except ConnectionError:
+                pass
+            finally:
+                sock.close()
+
+        self._test_start_tls_streams_failed_handshake(
+            serve, ConnectionAbortedError, ssl_handshake_timeout=0.1)
 
     @socket_helper.skip_if_tcp_blackhole
     def test_start_tls_server_1(self):
