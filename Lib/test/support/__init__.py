@@ -11,6 +11,7 @@ import logging
 import _opcode
 import os
 import re
+import shlex
 import stat
 import sys
 import sysconfig
@@ -469,27 +470,39 @@ def check_sanitizer(*, address=False, hwaddress=False, memory=False, ub=False,
 
 
     cflags = sysconfig.get_config_var('CFLAGS') or ''
-    config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
+    config_args = shlex.split(sysconfig.get_config_var('CONFIG_ARGS') or '')
+
+    def configured_with_sanitizer(name):
+        with_option = f'--with-{name}-sanitizer'
+        without_option = f'--without-{name}-sanitizer'
+        enabled = False
+        for arg in config_args:
+            if arg == without_option or arg == f'{with_option}=no':
+                enabled = False
+            elif arg == with_option or arg.startswith(f'{with_option}='):
+                enabled = True
+        return enabled
+
     memory_sanitizer = (
         '-fsanitize=memory' in cflags or
-        '--with-memory-sanitizer' in config_args
+        configured_with_sanitizer('memory')
     )
     hwaddress_sanitizer = (
         '-fsanitize=hwaddress' in cflags or
-        '--with-hwaddress-sanitizer' in config_args
+        configured_with_sanitizer('hwaddress')
     )
     address_sanitizer = (
         '-fsanitize=address' in cflags or
-        '--with-address-sanitizer' in config_args or
+        configured_with_sanitizer('address') or
         hwaddress_sanitizer
     )
     ub_sanitizer = (
         '-fsanitize=undefined' in cflags or
-        '--with-undefined-behavior-sanitizer' in config_args
+        configured_with_sanitizer('undefined-behavior')
     )
     thread_sanitizer = (
         '-fsanitize=thread' in cflags or
-        '--with-thread-sanitizer' in config_args
+        configured_with_sanitizer('thread')
     )
     function_sanitizer = (
         '-fsanitize=function' in cflags
