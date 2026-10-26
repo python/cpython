@@ -651,6 +651,24 @@ class GeneralFloatCases(unittest.TestCase):
         value = F('nan')
         self.assertEqual(hash(value), object.__hash__(value))
 
+    def test_issue_gh143006(self):
+        # When comparing negative non-integer float and int with the
+        # same number of bits in the integer part, __neg__() in the
+        # int subclass returning not an int caused an assertion error.
+        class EvilInt(int):
+            def __neg__(self):
+                return ""
+
+        i = -1 << 50
+        f = float(i) - 0.5
+        i = EvilInt(i)
+        self.assertFalse(f == i)
+        self.assertTrue(f != i)
+        self.assertTrue(f < i)
+        self.assertTrue(f <= i)
+        self.assertFalse(f > i)
+        self.assertFalse(f >= i)
+
 
 @unittest.skipUnless(hasattr(float, "__getformat__"), "requires __getformat__")
 class FormatFunctionsTestCase(unittest.TestCase):

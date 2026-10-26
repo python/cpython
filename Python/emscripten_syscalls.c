@@ -23,24 +23,27 @@ int __syscall_getuid32(void) {
     return __syscall_getuid32_js();
 }
 
-EM_JS(int, __syscall_umask_js, (int mask), {
-    // If we're in node and we can, call native process.umask()
+// Emscripten's syscall layer tracks the umask in SYSCALLS.currentUmask and
+// applies it itself when creating files and directories. We mount the real
+// filesystem via NODEFS, which applies proces.umask() to everything as well. To
+// avoid masking the mode twice, read and zero out process umask at startup,
+// and store it as emscripten's umask.
+EM_JS(void, __syscall_init_umask_js, (void), {
     if (ENVIRONMENT_IS_NODE) {
         try {
-            return process.umask(mask);
-        } catch(e) {
-            // oops...
-            // NodeJS docs: "In Worker threads, process.umask(mask) will throw an exception."
-            // umask docs: "This system call always succeeds"
-            return 0;
+            // process.umask(0) returns the previous umask and sets it to 0.
+            SYSCALLS.currentUmask = process.umask(0);
+        } catch (e) {
+            // NodeJS docs: "In Worker threads, process.umask(mask) will throw an
+            // exception." In that case just keep emscripten's default umask.
         }
     }
-    // Fall back to the stub case of returning 0.
-    return 0;
 })
 
-int __syscall_umask(int mask) {
-    return __syscall_umask_js(mask);
+EM_JS_DEPS(__syscall_init_umask, "$SYSCALLS");
+
+__attribute__((constructor)) void __syscall_init_umask(void) {
+    __syscall_init_umask_js();
 }
 
 #include <wasi/api.h>
@@ -51,13 +54,40 @@ int __syscall_umask(int mask) {
 #define EM_JS_MACROS(ret, func_name, args, body...)                            \
   EM_JS(ret, func_name, args, body)
 
-EM_JS_MACROS(void, _emscripten_promising_main_js, (void), {
-    // Define FS.createAsyncInputDevice(), This is quite similar to
-    // FS.createDevice() defined here:
-    // https://github.com/emscripten-core/emscripten/blob/4.0.11/src/lib/libfs.js?plain=1#L1642
-    // but instead of returning one byte at a time, the input() function should
-    // return a Uint8Array. This makes the handler code simpler, the
-    // `createAsyncInputDevice` simpler, and everything faster.
+EM_JS(void, _PyEmscripten_BeforeMain_js, (void), {
+    if (!WebAssembly.promising) {
+        // No stack switching support =(
+        return;
+    }
+    if (ENVIRONMENT_IS_NODE && !Module.onExit) {
+        Module.onExit = (code) => process.exit(code);
+    }
+    // promising() needs the raw export; _main may be a JS wrapper around it.
+    const main = WebAssembly.promising(wasmExports.__main_argc_argv);
+    _main = (...args) => {
+        Module._Py_EmscriptenStackSwitching = true;
+        (async () => {
+            const ret = await main(...args);
+            Module.onExit?.(ret);
+        })();
+        _emscripten_exit_with_live_runtime();
+    };
+    // callMain() takes the entry point from _main, or from wasmImports.main
+    // when linked with -sMAIN_MODULE.
+    if ("main" in wasmImports) {
+        wasmImports.main = _main;
+    }
+})
+
+EM_JS_DEPS(_PyEmscripten_BeforeMain, "emscripten_exit_with_live_runtime");
+
+// Define FS.createAsyncInputDevice(), This is quite similar to
+// FS.createDevice() defined here:
+// https://github.com/emscripten-core/emscripten/blob/4.0.11/src/lib/libfs.js?plain=1#L1642
+// but instead of returning one byte at a time, the input() function should
+// return a Uint8Array. This makes the handler code simpler, the
+// `createAsyncInputDevice` simpler, and everything faster.
+EM_JS_MACROS(void, __fs_init_async_input_device_js, (void), {
     FS.createAsyncInputDevice = function(parent, name, input) {
         parent = typeof parent == 'string' ? parent : FS.getPath(parent);
         var path = PATH.join2(parent, name);
@@ -100,39 +130,13 @@ EM_JS_MACROS(void, _emscripten_promising_main_js, (void), {
         FS.registerDevice(dev, ops);
         return FS.mkdev(path, mode, dev);
     };
-    if (!WebAssembly.promising) {
-        // No stack switching support =(
-        return;
-    }
-    const origResolveGlobalSymbol = resolveGlobalSymbol;
-    if (ENVIRONMENT_IS_NODE && !Module.onExit) {
-        Module.onExit = (code) => process.exit(code);
-    }
-    // * wrap the main symbol with WebAssembly.promising,
-    // * call exit_with_live_runtime() to prevent emscripten from shutting down
-    //   the runtime before the promise resolves,
-    // * call onExit / process.exit ourselves, since exit_with_live_runtime()
-    //   prevented Emscripten from calling it normally.
-    resolveGlobalSymbol = function (name, direct = false) {
-        const orig = origResolveGlobalSymbol(name, direct);
-        if (name === "main") {
-            const main = WebAssembly.promising(orig.sym);
-            orig.sym = (...args) => {
-                (async () => {
-                    const ret = await main(...args);
-                    Module.onExit?.(ret);
-                })();
-                _emscripten_exit_with_live_runtime();
-            };
-        }
-        return orig;
-    };
 })
 
-__attribute__((constructor)) void _emscripten_promising_main(void) {
-    _emscripten_promising_main_js();
-}
+EM_JS_DEPS(__fs_init_async_input_device, "$FS,$PATH,$FS_getMode");
 
+__attribute__((constructor)) void __fs_init_async_input_device(void) {
+    __fs_init_async_input_device_js();
+}
 
 #define IOVEC_T_BUF_OFFSET 0
 #define IOVEC_T_BUF_LEN_OFFSET 4
@@ -147,13 +151,20 @@ _Static_assert(sizeof(__wasi_iovec_t) == IOVEC_T_SIZE,
 // If the stream has a readAsync handler, read to buffer defined in iovs, write
 // number of bytes read to *nread, and return a promise that resolves to the
 // errno. Otherwise, return null.
+//
+// Reading from an async input device and poll() suspend the wasm stack
+// instead of blocking when main() runs under WebAssembly.promising, which
+// Programs/emscripten_beforemain.c arranges for the interpreter. An embedder
+// running its own promising entry point opts in with
+//     Module._Py_EmscriptenStackSwitching = true;
+// Otherwise these calls keep their synchronous behavior.
 EM_JS_MACROS(__externref_t, __maybe_fd_read_async, (
     __wasi_fd_t fd,
     const __wasi_iovec_t *iovs,
     size_t iovcnt,
     __wasi_size_t *nread
 ), {
-    if (!WebAssembly.promising) {
+    if (!Module._Py_EmscriptenStackSwitching) {
         return null;
     }
     var stream;
@@ -196,6 +207,8 @@ EM_JS_MACROS(__externref_t, __maybe_fd_read_async, (
 };
 );
 
+EM_JS_DEPS(__maybe_fd_read_async, "$SYSCALLS");
+
 // Bind original fd_read syscall to __wasi_fd_read_orig().
 __wasi_errno_t __wasi_fd_read_orig(__wasi_fd_t fd, const __wasi_iovec_t *iovs,
                                    size_t iovs_len, __wasi_size_t *nread)
@@ -235,7 +248,7 @@ _Static_assert(offsetof(struct pollfd, revents) == 6, "Unepxected pollfd struct 
 _Static_assert(sizeof(struct pollfd) == 8, "Unepxected pollfd struct layout");
 
 EM_JS_MACROS(__externref_t, __maybe_poll_async, (intptr_t fds, int nfds, int timeout), {
-    if (!WebAssembly.promising) {
+    if (!Module._Py_EmscriptenStackSwitching) {
         return null;
     }
     return (async function() {
@@ -276,6 +289,8 @@ EM_JS_MACROS(__externref_t, __maybe_poll_async, (intptr_t fds, int nfds, int tim
         }
     })();
 });
+
+EM_JS_DEPS(__maybe_poll_async, "$FS");
 
 // Bind original poll syscall to syscall_poll_orig().
 int syscall_poll_orig(intptr_t fds, int nfds, int timeout)

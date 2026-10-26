@@ -11,9 +11,12 @@
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST()
+#include "pycore_dict.h"          // _PyDict_SetItem_Take2()
+#include "pycore_list.h"          // _PyList_AppendTakeRef()
 #include "pycore_global_strings.h" // _Py_ID()
 #include "pycore_pyerrors.h"      // _PyErr_FormatNote
 #include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_CheckConsistency()
 
 #include <stdbool.h>              // bool
@@ -30,6 +33,7 @@ typedef struct _PyScannerObject {
     signed char strict;
     PyObject *object_hook;
     PyObject *object_pairs_hook;
+    PyObject *array_hook;
     PyObject *parse_float;
     PyObject *parse_int;
     PyObject *parse_constant;
@@ -41,6 +45,7 @@ static PyMemberDef scanner_members[] = {
     {"strict", Py_T_BOOL, offsetof(PyScannerObject, strict), Py_READONLY, "strict"},
     {"object_hook", _Py_T_OBJECT, offsetof(PyScannerObject, object_hook), Py_READONLY, "object_hook"},
     {"object_pairs_hook", _Py_T_OBJECT, offsetof(PyScannerObject, object_pairs_hook), Py_READONLY},
+    {"array_hook", _Py_T_OBJECT, offsetof(PyScannerObject, array_hook), Py_READONLY},
     {"parse_float", _Py_T_OBJECT, offsetof(PyScannerObject, parse_float), Py_READONLY, "parse_float"},
     {"parse_int", _Py_T_OBJECT, offsetof(PyScannerObject, parse_int), Py_READONLY, "parse_int"},
     {"parse_constant", _Py_T_OBJECT, offsetof(PyScannerObject, parse_constant), Py_READONLY, "parse_constant"},
@@ -255,7 +260,10 @@ write_escaped_ascii(PyUnicodeWriter *writer, PyObject *pystr)
         if (PyUnicodeWriter_WriteChar(writer, '"') < 0) {
             return -1;
         }
-        if (PyUnicodeWriter_WriteStr(writer, pystr) < 0) {
+        // gh-148241: Avoid PyUnicodeWriter_WriteStr() which calls str(obj)
+        // on str subclasses
+        assert(PyUnicode_IS_ASCII(pystr));
+        if (PyUnicodeWriter_WriteASCII(writer, input, input_chars) < 0) {
             return -1;
         }
         return PyUnicodeWriter_WriteChar(writer, '"');
@@ -396,7 +404,9 @@ write_escaped_unicode(PyUnicodeWriter *writer, PyObject *pystr)
         if (PyUnicodeWriter_WriteChar(writer, '"') < 0) {
             return -1;
         }
-        if (PyUnicodeWriter_WriteStr(writer, pystr) < 0) {
+        // gh-148241: Avoid PyUnicodeWriter_WriteStr() which calls str(obj)
+        // on str subclasses
+        if (_PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)writer, pystr) < 0) {
             return -1;
         }
         return PyUnicodeWriter_WriteChar(writer, '"');
@@ -423,11 +433,12 @@ raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end)
 
     PyObject *exc;
     exc = PyObject_CallFunction(JSONDecodeError, "zOn", msg, s, end);
-    Py_DECREF(JSONDecodeError);
     if (exc) {
         PyErr_SetObject(JSONDecodeError, exc);
         Py_DECREF(exc);
     }
+
+    Py_DECREF(JSONDecodeError);
 }
 
 static void
@@ -443,7 +454,6 @@ raise_stop_iteration(Py_ssize_t idx)
 static PyObject *
 _build_rval_index_tuple(PyObject *rval, Py_ssize_t idx) {
     /* return (rval, idx) tuple, stealing reference to rval */
-    PyObject *tpl;
     PyObject *pyidx;
     /*
     steal a reference to rval, returns (rval, idx)
@@ -456,15 +466,7 @@ _build_rval_index_tuple(PyObject *rval, Py_ssize_t idx) {
         Py_DECREF(rval);
         return NULL;
     }
-    tpl = PyTuple_New(2);
-    if (tpl == NULL) {
-        Py_DECREF(pyidx);
-        Py_DECREF(rval);
-        return NULL;
-    }
-    PyTuple_SET_ITEM(tpl, 0, rval);
-    PyTuple_SET_ITEM(tpl, 1, pyidx);
-    return tpl;
+    return _PyTuple_FromPairSteal(rval, pyidx);
 }
 
 static PyObject *
@@ -574,7 +576,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
             c = 0;
             next++;
             end = next + 4;
-            if (end >= len) {
+            if (end > len) {
                 raise_errmsg("Invalid \\uXXXX escape", pystr, next - 1);
                 goto bail;
             }
@@ -657,14 +659,14 @@ JSON string. Unescapes all valid JSON string escape sequences and raises
 ValueError on attempt to decode an invalid string. If strict is False
 then literal control characters are allowed in the string.
 
-Returns a tuple of the decoded string and the index of the character in s
-after the end quote.
+Returns a tuple of the decoded string and the index of the character in
+s after the end quote.
 [clinic start generated code]*/
 
 static PyObject *
 py_scanstring_impl(PyObject *module, PyObject *pystr, Py_ssize_t end,
                    int strict)
-/*[clinic end generated code: output=961740cfae07cdb3 input=cff59e47498f4d8e]*/
+/*[clinic end generated code: output=961740cfae07cdb3 input=6d5abb5947ccc297]*/
 {
     Py_ssize_t next_end = -1;
     PyObject *rval = scanstring_unicode(pystr, end, strict, &next_end);
@@ -719,6 +721,7 @@ scanner_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->object_hook);
     Py_VISIT(self->object_pairs_hook);
+    Py_VISIT(self->array_hook);
     Py_VISIT(self->parse_float);
     Py_VISIT(self->parse_int);
     Py_VISIT(self->parse_constant);
@@ -731,6 +734,7 @@ scanner_clear(PyObject *op)
     PyScannerObject *self = PyScannerObject_CAST(op);
     Py_CLEAR(self->object_hook);
     Py_CLEAR(self->object_pairs_hook);
+    Py_CLEAR(self->array_hook);
     Py_CLEAR(self->parse_float);
     Py_CLEAR(self->parse_int);
     Py_CLEAR(self->parse_constant);
@@ -750,7 +754,6 @@ _parse_object_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ss
     const void *str;
     int kind;
     Py_ssize_t end_idx;
-    PyObject *val = NULL;
     PyObject *rval = NULL;
     PyObject *key = NULL;
     int has_pairs_hook = (s->object_pairs_hook != Py_None);
@@ -800,16 +803,18 @@ _parse_object_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ss
             while (idx <= end_idx && IS_WHITESPACE(PyUnicode_READ(kind, str, idx))) idx++;
 
             /* read any JSON term */
-            val = scan_once_unicode(s, memo, pystr, idx, &next_idx);
+            PyObject *val = scan_once_unicode(s, memo, pystr, idx, &next_idx);
             if (val == NULL)
                 goto bail;
 
+            /* The steal below takes our references to both key and val
+               (releasing them on failure).  Only key is reset for the bail
+               path; val is never live there, so it needs no cleanup. */
             if (has_pairs_hook) {
-                PyObject *item = PyTuple_Pack(2, key, val);
+                PyObject *item = _PyTuple_FromPairSteal(key, val);
+                key = NULL;
                 if (item == NULL)
                     goto bail;
-                Py_CLEAR(key);
-                Py_CLEAR(val);
                 if (PyList_Append(rval, item) == -1) {
                     Py_DECREF(item);
                     goto bail;
@@ -817,10 +822,10 @@ _parse_object_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ss
                 Py_DECREF(item);
             }
             else {
-                if (PyDict_SetItem(rval, key, val) < 0)
+                int err = _PyDict_SetItem_Take2((PyDictObject *)rval, key, val);
+                key = NULL;
+                if (err < 0)
                     goto bail;
-                Py_CLEAR(key);
-                Py_CLEAR(val);
             }
             idx = next_idx;
 
@@ -850,21 +855,20 @@ _parse_object_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ss
     *next_idx_ptr = idx + 1;
 
     if (has_pairs_hook) {
-        val = PyObject_CallOneArg(s->object_pairs_hook, rval);
+        PyObject *res = PyObject_CallOneArg(s->object_pairs_hook, rval);
         Py_DECREF(rval);
-        return val;
+        return res;
     }
 
     /* if object_hook is not None: rval = object_hook(rval) */
     if (s->object_hook != Py_None) {
-        val = PyObject_CallOneArg(s->object_hook, rval);
+        PyObject *res = PyObject_CallOneArg(s->object_hook, rval);
         Py_DECREF(rval);
-        return val;
+        return res;
     }
     return rval;
 bail:
     Py_XDECREF(key);
-    Py_XDECREF(val);
     Py_XDECREF(rval);
     return NULL;
 }
@@ -881,7 +885,6 @@ _parse_array_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ssi
     const void *str;
     int kind;
     Py_ssize_t end_idx;
-    PyObject *val = NULL;
     PyObject *rval;
     Py_ssize_t next_idx;
     Py_ssize_t comma_idx;
@@ -902,14 +905,12 @@ _parse_array_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ssi
         while (1) {
 
             /* read any JSON term  */
-            val = scan_once_unicode(s, memo, pystr, idx, &next_idx);
+            PyObject *val = scan_once_unicode(s, memo, pystr, idx, &next_idx);
             if (val == NULL)
                 goto bail;
 
-            if (PyList_Append(rval, val) == -1)
+            if (_PyList_AppendTakeRef((PyListObject *)rval, val) < 0)
                 goto bail;
-
-            Py_CLEAR(val);
             idx = next_idx;
 
             /* skip whitespace between term and , */
@@ -941,9 +942,14 @@ _parse_array_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ssi
         goto bail;
     }
     *next_idx_ptr = idx + 1;
+    /* if array_hook is not None: return array_hook(rval) */
+    if (!Py_IsNone(s->array_hook)) {
+        PyObject *res = PyObject_CallOneArg(s->array_hook, rval);
+        Py_DECREF(rval);
+        return res;
+    }
     return rval;
 bail:
-    Py_XDECREF(val);
     Py_DECREF(rval);
     return NULL;
 }
@@ -1258,6 +1264,10 @@ scanner_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     s->object_pairs_hook = PyObject_GetAttrString(ctx, "object_pairs_hook");
     if (s->object_pairs_hook == NULL)
         goto bail;
+    s->array_hook = PyObject_GetAttrString(ctx, "array_hook");
+    if (s->array_hook == NULL) {
+        goto bail;
+    }
     s->parse_float = PyObject_GetAttrString(ctx, "parse_float");
     if (s->parse_float == NULL)
         goto bail;
@@ -1459,6 +1469,7 @@ encoder_call(PyObject *op, PyObject *args, PyObject *kwds)
             return NULL;
         }
     }
+    indent_level = 0;
     if (encoder_listencode_obj(self, writer, obj, indent_level, indent_cache)) {
         PyUnicodeWriter_Discard(writer);
         Py_XDECREF(indent_cache);
@@ -1597,7 +1608,7 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
         _Py_LeaveRecursiveCall();
         return rv;
     }
-    else if (PyDict_Check(obj)) {
+    else if (PyAnyDict_Check(obj)) {
         if (_Py_EnterRecursiveCall(" while encoding a JSON object"))
             return -1;
         rv = encoder_listencode_dict(s, writer, obj, indent_level, indent_cache);
@@ -1733,15 +1744,12 @@ _encoder_iterate_mapping_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
     PyObject *key, *value;
     for (Py_ssize_t  i = 0; i < PyList_GET_SIZE(items); i++) {
         PyObject *item = PyList_GET_ITEM(items, i);
-#ifdef Py_GIL_DISABLED
-        // gh-119438: in the free-threading build the critical section on items can get suspended
+        // gh-142831: encoder_encode_key_value() can invoke user code
+        // that mutates the items list, invalidating this borrowed ref.
         Py_INCREF(item);
-#endif
         if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
             PyErr_SetString(PyExc_ValueError, "items must return 2-tuples");
-#ifdef Py_GIL_DISABLED
             Py_DECREF(item);
-#endif
             return -1;
         }
 
@@ -1750,14 +1758,10 @@ _encoder_iterate_mapping_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
         if (encoder_encode_key_value(s, writer, first, dct, key, value,
                                      indent_level, indent_cache,
                                      separator) < 0) {
-#ifdef Py_GIL_DISABLED
             Py_DECREF(item);
-#endif
             return -1;
         }
-#ifdef Py_GIL_DISABLED
         Py_DECREF(item);
-#endif
     }
 
     return 0;
@@ -1772,24 +1776,19 @@ _encoder_iterate_dict_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
     PyObject *key, *value;
     Py_ssize_t pos = 0;
     while (PyDict_Next(dct, &pos, &key, &value)) {
-#ifdef Py_GIL_DISABLED
-        // gh-119438: in the free-threading build the critical section on dct can get suspended
+        // gh-145244: encoder_encode_key_value() can invoke user code
+        // that mutates the dict, invalidating these borrowed refs.
         Py_INCREF(key);
         Py_INCREF(value);
-#endif
         if (encoder_encode_key_value(s, writer, first, dct, key, value,
                                     indent_level, indent_cache,
                                     separator) < 0) {
-#ifdef Py_GIL_DISABLED
             Py_DECREF(key);
             Py_DECREF(value);
-#endif
             return -1;
         }
-#ifdef Py_GIL_DISABLED
         Py_DECREF(key);
         Py_DECREF(value);
-#endif
     }
     return 0;
 }
@@ -1836,7 +1835,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
             goto bail;
     }
 
-    if (s->sort_keys || !PyDict_CheckExact(dct)) {
+    if (s->sort_keys || !PyAnyDict_CheckExact(dct)) {
         PyObject *items = PyMapping_Items(dct);
         if (items == NULL || (s->sort_keys && PyList_Sort(items) < 0)) {
             Py_XDECREF(items);
@@ -1893,28 +1892,21 @@ _encoder_iterate_fast_seq_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
 {
     for (Py_ssize_t i = 0; i < PySequence_Fast_GET_SIZE(s_fast); i++) {
         PyObject *obj = PySequence_Fast_GET_ITEM(s_fast, i);
-#ifdef Py_GIL_DISABLED
-        // gh-119438: in the free-threading build the critical section on s_fast can get suspended
+        // gh-142831: encoder_listencode_obj() can invoke user code
+        // that mutates the sequence, invalidating this borrowed ref.
         Py_INCREF(obj);
-#endif
         if (i) {
             if (PyUnicodeWriter_WriteStr(writer, separator) < 0) {
-#ifdef Py_GIL_DISABLED
                 Py_DECREF(obj);
-#endif
                 return -1;
             }
         }
         if (encoder_listencode_obj(s, writer, obj, indent_level, indent_cache)) {
             _PyErr_FormatNote("when serializing %T item %zd", seq, i);
-#ifdef Py_GIL_DISABLED
             Py_DECREF(obj);
-#endif
             return -1;
         }
-#ifdef Py_GIL_DISABLED
         Py_DECREF(obj);
-#endif
     }
     return 0;
 }
@@ -2085,6 +2077,7 @@ _json_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot _json_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _json_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

@@ -24,6 +24,7 @@ import sys
 import sysconfig
 import tempfile
 import textwrap
+import threading
 import time
 import types
 import unittest
@@ -33,6 +34,9 @@ from test import support
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import infinite_recursion
+from test.support import requires_root_user
+from test.support import requires_non_root_user
+from test.support import threading_helper
 from test.support import warnings_helper
 from platform import win32_is_iot
 from .utils import create_file
@@ -67,10 +71,6 @@ from test.support import unix_shell
 from test.support.os_helper import FakePath
 
 
-root_in_posix = False
-if hasattr(os, 'geteuid'):
-    root_in_posix = (os.geteuid() == 0)
-
 # Detect whether we're on a Linux system that uses the (now outdated
 # and unmaintained) linuxthreads threading library.  There's an issue
 # when combining linuxthreads with a failed execv call: see
@@ -88,13 +88,22 @@ def requires_os_func(name):
     return unittest.skipUnless(hasattr(os, name), 'requires os.%s' % name)
 
 
+# On platforms without a native spawnv(), os.py provides a Python fallback
+# built on fork()+exec*() that reports argument conversion failures from the
+# child as exit status 127 instead of raising, so tests of the C
+# implementation's error paths cannot run against it.
+requires_native_spawnv = unittest.skipUnless(
+    isinstance(getattr(os, 'spawnv', None), types.BuiltinFunctionType),
+    'requires the native C os.spawnv')
+
+
 # bpo-41625: On AIX, splice() only works with a socket, not with a pipe.
 requires_splice_pipe = unittest.skipIf(sys.platform.startswith("aix"),
                                        'on AIX, splice() only accepts sockets')
 
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class MiscTests(unittest.TestCase):
@@ -149,7 +158,8 @@ class MiscTests(unittest.TestCase):
                         # ("The filename or extension is too long")
                         break
                     except OSError as exc:
-                        if exc.errno == errno.ENAMETOOLONG:
+                        # DragonFly BSD raises EFAULT for a too long path.
+                        if exc.errno in (errno.ENAMETOOLONG, errno.EFAULT):
                             break
                         else:
                             raise
@@ -1051,11 +1061,18 @@ class UtimeTests(unittest.TestCase):
                 or (st.st_mtime != st[8])
                 or (st.st_ctime != st[9]))
 
+    def support_atime(self, filename):
+        # Heuristic to check if the filesystem stores the access time.
+        # Use whole seconds, to not depend on the timestamp resolution.
+        os.utime(filename, (1, 2))
+        return os.stat(filename).st_atime == 1
+
     def _test_utime(self, set_time, filename=None):
         if not filename:
             filename = self.fname
 
         support_subsecond = self.support_subsecond(filename)
+        support_atime = self.support_atime(filename)
         if support_subsecond:
             # Timestamp with a resolution of 1 microsecond (10^-6).
             #
@@ -1082,18 +1099,22 @@ class UtimeTests(unittest.TestCase):
             # digits worth of sub-second precision.
             # Some day it would be good to fix this upstream.
             delta=1e-5
-            self.assertAlmostEqual(st.st_atime, atime_ns * 1e-9, delta=1e-5)
+            if support_atime:
+                self.assertAlmostEqual(st.st_atime, atime_ns * 1e-9, delta=1e-5)
+                self.assertAlmostEqual(st.st_atime_ns, atime_ns, delta=1e9 * 1e-5)
             self.assertAlmostEqual(st.st_mtime, mtime_ns * 1e-9, delta=1e-5)
-            self.assertAlmostEqual(st.st_atime_ns, atime_ns, delta=1e9 * 1e-5)
             self.assertAlmostEqual(st.st_mtime_ns, mtime_ns, delta=1e9 * 1e-5)
         else:
             if support_subsecond:
-                self.assertAlmostEqual(st.st_atime, atime_ns * 1e-9, delta=1e-6)
+                if support_atime:
+                    self.assertAlmostEqual(st.st_atime, atime_ns * 1e-9, delta=1e-6)
                 self.assertAlmostEqual(st.st_mtime, mtime_ns * 1e-9, delta=1e-6)
             else:
-                self.assertEqual(st.st_atime, atime_ns * 1e-9)
+                if support_atime:
+                    self.assertEqual(st.st_atime, atime_ns * 1e-9)
                 self.assertEqual(st.st_mtime, mtime_ns * 1e-9)
-            self.assertEqual(st.st_atime_ns, atime_ns)
+            if support_atime:
+                self.assertEqual(st.st_atime_ns, atime_ns)
             self.assertEqual(st.st_mtime_ns, mtime_ns)
 
     def test_utime(self):
@@ -1869,7 +1890,9 @@ class WalkTests(unittest.TestCase):
 
         walk_it = self.walk(self.tmp1_path, follow_symlinks=True)
         if self.is_fwalk:
-            self.assertRaises(NotADirectoryError, next, walk_it)
+            with self.assertRaises(OSError) as cm:
+                next(walk_it)
+            self.assertIn(cm.exception.errno, (errno.ENOTDIR, errno.EINVAL))
         self.assertRaises(StopIteration, next, walk_it)
 
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
@@ -2140,6 +2163,94 @@ class MakedirTests(unittest.TestCase):
                 self.assertEqual(os.stat(parent).st_mode & 0o777, 0o775)
 
     @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
+    def test_mode_with_parent_mode(self):
+        # Test the parent_mode parameter
+        parent = os.path.join(os_helper.TESTFN, 'dir1')
+        path = os.path.join(parent, 'dir2')
+        with os_helper.temp_umask(0o002):
+            # Specify mode for both leaf and parent directories
+            os.makedirs(path, 0o770, parent_mode=0o750)
+            self.assertTrue(os.path.exists(path))
+            self.assertTrue(os.path.isdir(path))
+            if os.name != 'nt':
+                # Leaf directory gets the mode parameter
+                self.assertEqual(os.stat(path).st_mode & 0o777, 0o770)
+                # Parent directory gets the parent_mode parameter
+                self.assertEqual(os.stat(parent).st_mode & 0o777, 0o750)
+
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
+    def test_parent_mode_deep_hierarchy(self):
+        # Test parent_mode with deep directory hierarchy
+        base = os.path.join(os_helper.TESTFN, 'dir1', 'dir2', 'dir3')
+        with os_helper.temp_umask(0o002):
+            os.makedirs(base, 0o755, parent_mode=0o700)
+            self.assertTrue(os.path.exists(base))
+            if os.name != 'nt':
+                # Check that all parent directories have parent_mode
+                level1 = os.path.join(os_helper.TESTFN, 'dir1')
+                level2 = os.path.join(level1, 'dir2')
+                self.assertEqual(os.stat(level1).st_mode & 0o777, 0o700)
+                self.assertEqual(os.stat(level2).st_mode & 0o777, 0o700)
+                # Leaf directory has the regular mode
+                self.assertEqual(os.stat(base).st_mode & 0o777, 0o755)
+
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
+    def test_parent_mode_same_as_mode(self):
+        # Test emulating Python 3.6 behavior by setting parent_mode=mode
+        parent = os.path.join(os_helper.TESTFN, 'dir1')
+        path = os.path.join(parent, 'dir2')
+        with os_helper.temp_umask(0o002):
+            os.makedirs(path, 0o705, parent_mode=0o705)
+            self.assertTrue(os.path.exists(path))
+            if os.name != 'nt':
+                # Both directories should have the same mode
+                self.assertEqual(os.stat(path).st_mode & 0o777, 0o705)
+                self.assertEqual(os.stat(parent).st_mode & 0o777, 0o705)
+
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
+    def test_parent_mode_combined_with_umask(self):
+        # parent_mode, like mode, is combined with the process umask; it does
+        # not bypass it.
+        parent = os.path.join(os_helper.TESTFN, 'dir1')
+        path = os.path.join(parent, 'dir2')
+        with os_helper.temp_umask(0o022):
+            os.makedirs(path, 0o777, parent_mode=0o777)
+            self.assertTrue(os.path.isdir(path))
+            if os.name != 'nt':
+                # 0o777 is masked down to 0o755 by the 0o022 umask, for both
+                # the leaf (mode) and the parent (parent_mode).
+                self.assertEqual(os.stat(path).st_mode & 0o777, 0o755)
+                self.assertEqual(os.stat(parent).st_mode & 0o777, 0o755)
+
+    @unittest.skipIf(
         support.is_wasi,
         "WASI's umask is a stub."
     )
@@ -2212,15 +2323,9 @@ class MakedirTests(unittest.TestCase):
         )
 
     def tearDown(self):
-        path = os.path.join(os_helper.TESTFN, 'dir1', 'dir2', 'dir3',
-                            'dir4', 'dir5', 'dir6')
-        # If the tests failed, the bottom-most directory ('../dir6')
-        # may not have been created, so we look for the outermost directory
-        # that exists.
-        while not os.path.exists(path) and path != os_helper.TESTFN:
-            path = os.path.dirname(path)
-
-        os.removedirs(path)
+        # Remove the whole tree regardless of which sub-directories a test
+        # created and regardless of their permission bits.
+        os_helper.rmtree(os_helper.TESTFN)
 
 
 @unittest.skipUnless(hasattr(os, "chown"), "requires os.chown()")
@@ -2257,8 +2362,8 @@ class ChownFileTests(unittest.TestCase):
         gid = os.stat(os_helper.TESTFN).st_gid
         self.assertEqual(gid, gid_2)
 
-    @unittest.skipUnless(root_in_posix and len(all_users) > 1,
-                         "test needs root privilege and more than one user")
+    @requires_root_user
+    @unittest.skipUnless(len(all_users) > 1, "test needs more than one user")
     def test_chown_with_root(self):
         uid_1, uid_2 = all_users[:2]
         gid = os.stat(os_helper.TESTFN).st_gid
@@ -2269,8 +2374,10 @@ class ChownFileTests(unittest.TestCase):
         uid = os.stat(os_helper.TESTFN).st_uid
         self.assertEqual(uid, uid_2)
 
-    @unittest.skipUnless(not root_in_posix and len(all_users) > 1,
-                         "test needs non-root account and more than one user")
+    @requires_non_root_user
+    @unittest.skipUnless(len(all_users) > 1, "test needs and more than one user")
+    @unittest.skipIf(sys.platform == 'cygwin',
+                         'chown() can set any uid on Cygwin')
     def test_chown_without_permission(self):
         uid_1, uid_2 = all_users[:2]
         gid = os.stat(os_helper.TESTFN).st_gid
@@ -2354,8 +2461,8 @@ class URandomTests(unittest.TestCase):
             'data = os.urandom(%s)' % count,
             'sys.stdout.buffer.write(data)',
             'sys.stdout.buffer.flush()'))
-        out = assert_python_ok('-c', code)
-        stdout = out[1]
+        proc = assert_python_ok('-c', code)
+        stdout = proc.out
         self.assertEqual(len(stdout), count)
         return stdout
 
@@ -2531,12 +2638,50 @@ def _execvpe_mockup(defpath=None):
 
 @unittest.skipUnless(hasattr(os, 'execv'),
                      "need os.execv()")
+@unittest.skipIf(support.is_emscripten,
+                 "Emscripten always fails with ENOEXEC")
+@unittest.skipIf(support.is_android,
+                 "PATH contains an inaccessible directory on Android")
 class ExecTests(unittest.TestCase):
-    @unittest.skipIf(USING_LINUXTHREADS,
-                     "avoid triggering a linuxthreads bug: see issue #4970")
+    def _test_bad_program(self, do_exec, exc_type=OSError):
+        bad_filenames = ['nosuchapp', FakePath('nosuchapp')]
+        if os.name != 'nt':
+            # Bytes program names are not supported on Windows.
+            bad_filenames += [b'nosuchapp', FakePath(b'nosuchapp')]
+        for bad_filename in bad_filenames:
+            with self.subTest(bad_filename):
+                with self.assertRaises(exc_type) as ctx:
+                    do_exec(bad_filename)
+                self.assertEqual(ctx.exception.filename,
+                                 os.fspath(bad_filename))
+                self.assertIn('nosuchapp', str(ctx.exception))
+
+    @unittest.skipIf(USING_LINUXTHREADS, "linuxthreads bug: see issue #4970")
+    def test_execv_with_bad_program(self):
+        self._test_bad_program(lambda name: os.execv(name, ['nosuchapp']))
+
+    @unittest.skipIf(USING_LINUXTHREADS, "linuxthreads bug: see issue #4970")
+    def test_execvp_with_bad_program(self):
+        self._test_bad_program(lambda name: os.execvp(name, ['nosuchapp']))
+
+    @unittest.skipIf(USING_LINUXTHREADS, "linuxthreads bug: see issue #4970")
+    def test_execve_with_bad_program(self):
+        self._test_bad_program(lambda name: os.execve(name, ['nosuchapp'], {}))
+
+    @unittest.skipIf(USING_LINUXTHREADS, "linuxthreads bug: see issue #4970")
     def test_execvpe_with_bad_program(self):
-        self.assertRaises(OSError, os.execvpe, 'no such app-',
-                          ['no such app-'], None)
+        self._test_bad_program(lambda name: os.execvpe(name, ['nosuchapp'], {}))
+
+    @unittest.skipUnless(os.name == 'posix', 'POSIX specific test')
+    @unittest.skipIf(USING_LINUXTHREADS, "linuxthreads bug: see issue #4970")
+    def test_execvp_with_bad_path_entry(self):
+        # A regular file in PATH makes the exec fail with ENOTDIR.
+        create_file(os_helper.TESTFN)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with os_helper.EnvironmentVarGuard() as env:
+            env['PATH'] = os.path.abspath(os_helper.TESTFN)
+            self._test_bad_program(lambda name: os.execvp(name, ['nosuchapp']),
+                                   NotADirectoryError)
 
     def test_execv_with_bad_arglist(self):
         self.assertRaises(ValueError, os.execv, 'notepad', ())
@@ -2623,6 +2768,45 @@ class ExecTests(unittest.TestCase):
         newenv["FRUIT=ORANGE"] = "lemon"
         with self.assertRaises(ValueError):
             os.execve(args[0], args, newenv)
+
+    # See https://github.com/python/cpython/issues/137934 and the other
+    # related issues for the reason why we cannot test this on Windows.
+    @unittest.skipIf(os.name == "nt", "POSIX-specific test")
+    @unittest.skipUnless(unix_shell and os.path.exists(unix_shell),
+                        "requires a shell")
+    def test_execve_env_concurrent_mutation_with_fspath_posix(self):
+        # Prevent crash when mutating environment during parsing.
+        # Regression test for https://github.com/python/cpython/issues/143309.
+
+        message = "hello from execve"
+        code = """
+        import os, sys
+
+        class MyPath:
+            def __fspath__(self):
+                mutated.clear()
+                return b"pwn"
+
+        mutated = KEYS = VALUES = [MyPath()]
+
+        class MyEnv:
+            def __getitem__(self): raise RuntimeError("must not be called")
+            def __len__(self): return 1
+            def keys(self): return KEYS
+            def values(self): return VALUES
+
+        args = [{unix_shell!r}, '-c', 'echo \"{message!s}\"']
+        os.execve(args[0], args, MyEnv())
+        """.format(unix_shell=unix_shell, message=message)
+
+        # Make sure to forward "LD_*" variables so that assert_python_ok()
+        # can run correctly.
+        minimal = {k: v for k, v in os.environ.items() if k.startswith("LD_")}
+        with os_helper.EnvironmentVarGuard() as env:
+            env.clear()
+            env.update(minimal)
+            _, out, _ = assert_python_ok('-c', code, **env)
+        self.assertIn(bytes(message, "ascii"), out)
 
     @unittest.skipUnless(sys.platform == "win32", "Win32-specific test")
     def test_execve_with_empty_path(self):
@@ -2739,6 +2923,68 @@ class TestInvalidFD(unittest.TestCase):
         self.check(os.pathconf, "PC_NAME_MAX")
         self.check(os.fpathconf, "PC_NAME_MAX")
 
+    @unittest.skipUnless(hasattr(os, 'pathconf'), 'test needs os.pathconf()')
+    @unittest.skipIf(
+        support.linked_to_musl(),
+        'musl fpathconf ignores the file descriptor and returns a constant',
+        )
+    def test_pathconf_negative_fd_uses_fd_semantics(self):
+        if os.pathconf not in os.supports_fd:
+            self.skipTest('needs fpathconf()')
+
+        with self.assertRaises(OSError) as ctx:
+            os.pathconf(-1, 1)
+        self.assertEqual(ctx.exception.errno, errno.EBADF)
+
+    @support.subTests("fd", [-1, -5])
+    def test_negative_fd_ebadf(self, fd):
+        tests = [(os.stat, fd)]
+        if hasattr(os, "statx"):
+            tests.append((os.statx, fd, 0))
+        if os.chdir in os.supports_fd:
+            tests.append((os.chdir, fd))
+        if os.chmod in os.supports_fd:
+            tests.append((os.chmod, fd, 0o777))
+        if hasattr(os, "chown") and os.chown in os.supports_fd:
+            tests.append((os.chown, fd, 0, 0))
+        if os.listdir in os.supports_fd:
+            tests.append((os.listdir, fd))
+        if os.utime in os.supports_fd:
+            tests.append((os.utime, fd, (0, 0)))
+        if hasattr(os, "truncate") and os.truncate in os.supports_fd:
+            tests.append((os.truncate, fd, 0))
+        if hasattr(os, 'statvfs') and os.statvfs in os.supports_fd:
+            tests.append((os.statvfs, fd))
+        if hasattr(os, "setxattr"):
+            tests.append((os.getxattr, fd, b"user.test"))
+            tests.append((os.setxattr, fd, b"user.test", b"1"))
+            tests.append((os.removexattr, fd, b"user.test"))
+            tests.append((os.listxattr, fd))
+        if os.scandir in os.supports_fd:
+            tests.append((os.scandir, fd))
+
+        for func, *args in tests:
+            with self.subTest(func=func, args=args):
+                with self.assertRaises(OSError) as ctx:
+                    func(*args)
+                self.assertEqual(ctx.exception.errno, errno.EBADF)
+
+        if (hasattr(os, "execve") and os.execve in os.supports_fd
+            and support.has_subprocess_support):
+            # glibc fails with EINVAL, musl fails with EBADF
+            with self.assertRaises(OSError) as ctx:
+                os.execve(fd, [sys.executable, "-c", "pass"], os.environ)
+            self.assertIn(ctx.exception.errno, (errno.EBADF, errno.EINVAL))
+
+        if support.MS_WINDOWS:
+            import nt
+            self.assertFalse(nt._path_exists(fd))
+            self.assertFalse(nt._path_lexists(fd))
+            self.assertFalse(nt._path_isdir(fd))
+            self.assertFalse(nt._path_isfile(fd))
+            self.assertFalse(nt._path_islink(fd))
+            self.assertFalse(nt._path_isjunction(fd))
+
     @unittest.skipUnless(hasattr(os, 'ftruncate'), 'test needs os.ftruncate()')
     def test_ftruncate(self):
         self.check(os.truncate, 0)
@@ -2748,6 +2994,14 @@ class TestInvalidFD(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'lseek'), 'test needs os.lseek()')
     def test_lseek(self):
         self.check(os.lseek, 0, 0)
+
+    @unittest.skipUnless(hasattr(os, 'lseek'), 'test needs os.lseek()')
+    @unittest.skipUnless(hasattr(os, 'pipe'), "need os.pipe()")
+    def test_lseek_on_pipe(self):
+        rfd, wfd = os.pipe()
+        self.addCleanup(os.close, rfd)
+        self.addCleanup(os.close, wfd)
+        self.assertRaises(OSError, os.lseek, rfd, 123, os.SEEK_END)
 
     @unittest.skipUnless(hasattr(os, 'read'), 'test needs os.read()')
     def test_read(self):
@@ -3317,6 +3571,25 @@ class SpawnTests(unittest.TestCase):
         self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, program, ('',), {})
         self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, program, [''], {})
 
+    @requires_native_spawnv
+    def test_spawnv_arg_conversion_errors(self):
+        # A non-path argv item gets a TypeError naming the argument...
+        with self.assertRaisesRegex(TypeError, 'must contain only strings'):
+            os.spawnv(os.P_NOWAIT, sys.executable, [sys.executable, 123])
+        # ...but other conversion errors must not be masked as TypeError
+        # (gh-151416).
+        with self.assertRaises(ValueError):
+            os.spawnv(os.P_NOWAIT, sys.executable,
+                      [sys.executable, 'embedded\0null'])
+
+        class RaisingPath:
+            def __fspath__(self):
+                raise RuntimeError('gotcha')
+
+        with self.assertRaisesRegex(RuntimeError, 'gotcha'):
+            os.spawnv(os.P_NOWAIT, sys.executable,
+                      [sys.executable, RaisingPath()])
+
     def _test_invalid_env(self, spawn):
         program = sys.executable
         args = self.quote_args([program, '-c', 'pass'])
@@ -3608,7 +3881,6 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
     @requires_headers_trailers
     @requires_32b
     async def test_headers_overflow_32bits(self):
-        self.server.handler_instance.accumulate = False
         with self.assertRaises(OSError) as cm:
             await self.async_sendfile(self.sockno, self.fileno, 0, 0,
                                       headers=[b"x" * 2**16] * 2**15)
@@ -3617,7 +3889,6 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
     @requires_headers_trailers
     @requires_32b
     async def test_trailers_overflow_32bits(self):
-        self.server.handler_instance.accumulate = False
         with self.assertRaises(OSError) as cm:
             await self.async_sendfile(self.sockno, self.fileno, 0, 0,
                                       trailers=[b"x" * 2**16] * 2**15)
@@ -3747,12 +4018,7 @@ class TermsizeTests(unittest.TestCase):
         try:
             size = os.get_terminal_size()
         except OSError as e:
-            known_errnos = [errno.EINVAL, errno.ENOTTY]
-            if sys.platform == "android":
-                # The Android testbed redirects the native stdout to a pipe,
-                # which returns a different error code.
-                known_errnos.append(errno.EACCES)
-            if sys.platform == "win32" or e.errno in known_errnos:
+            if sys.platform == "win32" or e.errno in (errno.EINVAL, errno.ENOTTY):
                 # Under win32 a generic OSError can be thrown if the
                 # handle cannot be retrieved
                 self.skipTest("failed to query terminal size")
@@ -3952,10 +4218,11 @@ class TimerfdTests(unittest.TestCase):
         initial_expiration = 0.1
         os.timerfd_settime(fd, initial=initial_expiration, interval=0)
 
-        # read() raises OSError with errno is EAGAIN for non-blocking timer.
-        with self.assertRaises(OSError) as ctx:
-            self.read_count_signaled(fd)
-        self.assertEqual(ctx.exception.errno, errno.EAGAIN)
+        if sys.platform != 'cygwin':
+            # read() raises OSError with errno is EAGAIN for non-blocking timer.
+            with self.assertRaises(OSError) as ctx:
+                self.read_count_signaled(fd)
+            self.assertEqual(ctx.exception.errno, errno.EAGAIN)
 
         # Wait more than 0.1 seconds
         time.sleep(initial_expiration + 0.1)
@@ -4136,12 +4403,19 @@ class TimerfdTests(unittest.TestCase):
 
         # 2nd call
         next_expiration_ns, interval_ns2 = os.timerfd_settime_ns(fd, initial=initial_expiration_ns, interval=interval_ns)
-        self.assertEqual(interval_ns2, interval_ns)
+        CYGWIN = (sys.platform == 'cygwin')
+        if not CYGWIN:
+            self.assertEqual(interval_ns2, interval_ns)
+        else:
+            self.assertEqual(interval_ns2, 0)
         self.assertEqual(next_expiration_ns, initial_expiration_ns)
 
         # timerfd_gettime
         next_expiration_ns, interval_ns2 = os.timerfd_gettime_ns(fd)
-        self.assertEqual(interval_ns2, interval_ns)
+        if not CYGWIN:
+            self.assertEqual(interval_ns2, interval_ns)
+        else:
+            self.assertEqual(interval_ns2, 0)
         self.assertLessEqual(next_expiration_ns, initial_expiration_ns)
 
         self.assertAlmostEqual(next_expiration_ns, initial_expiration_ns, delta=limit_error)
@@ -4508,6 +4782,28 @@ class PseudoterminalTests(unittest.TestCase):
         son_path = os.ptsname(mother_fd)
         son_fd = os.open(son_path, os.O_RDWR|os.O_NOCTTY)
         self.addCleanup(os.close, son_fd)
+        if sys.platform.startswith('sunos'):
+            import fcntl
+            I_PUSH = 0x5302
+            TIOCNOTTY = 0x7471
+            # Pushing "ptem" makes the slave a terminal, which a session
+            # leader without a controlling terminal then acquires as one
+            # despite O_NOCTTY.  Note whether we already had one.
+            try:
+                os.close(os.open('/dev/tty', os.O_RDONLY|os.O_NOCTTY))
+                had_ctty = True
+            except OSError:
+                had_ctty = False
+            fcntl.ioctl(son_fd, I_PUSH, b'ptem\0')
+            fcntl.ioctl(son_fd, I_PUSH, b'ldterm\0')
+            if not had_ctty and os.getsid(0) == os.getpid():
+                # Disown it, otherwise closing the file descriptors sends
+                # SIGHUP to the session.  TIOCNOTTY sends it too.
+                old_handler = signal.signal(signal.SIGHUP, signal.SIG_IGN)
+                try:
+                    fcntl.ioctl(son_fd, TIOCNOTTY)
+                finally:
+                    signal.signal(signal.SIGHUP, old_handler)
         self.assertEqual(os.ptsname(mother_fd), os.ttyname(son_fd))
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
@@ -4839,6 +5135,30 @@ class TestScandir(unittest.TestCase):
         finally:
             os.chdir(old_dir)
 
+    @unittest.skipIf(sys.platform != 'win32', "Win32 specific test")
+    def test_windows_trailing_space_path(self):
+        import pathlib
+
+        filename = self.create_file("file.txt")
+        path = self.path + " "
+
+        self.assertTrue(os.path.exists(path))
+        os.stat(path)
+        with open(filename + " ", "rb") as file:
+            self.assertEqual(file.read(), b"python")
+
+        self.assertEqual(os.listdir(path), ["file.txt"])
+        with os.scandir(path) as entries:
+            self.assertEqual([entry.name for entry in entries], ["file.txt"])
+        pathlib_entries = list(pathlib.Path(path).iterdir())
+        self.assertEqual([entry.name for entry in pathlib_entries], ["file.txt"])
+        del pathlib_entries
+
+        extended_path = "\\\\?\\" + path
+        self.assertFalse(os.path.exists(extended_path))
+        self.assertRaises(FileNotFoundError, os.listdir, extended_path)
+        self.assertRaises(FileNotFoundError, os.scandir, extended_path)
+
     def test_repr(self):
         entry = self.create_file_entry()
         self.assertEqual(repr(entry), "<DirEntry 'file.txt'>")
@@ -5031,6 +5351,84 @@ class TestScandir(unittest.TestCase):
         list(iterator)
         with self.check_no_resource_warning():
             del iterator
+
+    def test_no_resource_warning_when_open_fails(self):
+        # gh-152754: a scandir() call that never opened a directory owns
+        # nothing, and must not report an unclosed iterator.
+        self.create_file("file.txt")
+        missing = os.path.join(self.path, "missing")
+        not_a_dir = os.path.join(self.path, "file.txt")
+        for path in (missing, not_a_dir):
+            with self.subTest(path=path):
+                with self.check_no_resource_warning():
+                    with self.assertRaises(OSError):
+                        os.scandir(path)
+
+
+@threading_helper.requires_working_threading()
+class ScandirThreadingTest(unittest.TestCase):
+    # gh-152754: an os.scandir() iterator shared between threads must not crash.
+
+    if support.check_sanitizer(thread=True):
+        SCANDIR_NUMITEMS = 200
+        SCANDIR_N_NEXT = 2
+        SCANDIR_N_CLOSE = 2
+        SCANDIR_REPEAT = 10
+    else:
+        SCANDIR_NUMITEMS = 1000
+        SCANDIR_N_NEXT = 6
+        SCANDIR_N_CLOSE = 3
+        SCANDIR_REPEAT = 20
+
+    def setUp(self):
+        self.dir = os.path.realpath(os_helper.TESTFN)
+        self.addCleanup(os_helper.rmtree, self.dir)
+        os.mkdir(self.dir)
+        self.names = set()
+        for i in range(self.SCANDIR_NUMITEMS):
+            name = f"f{i}"
+            create_file(os.path.join(self.dir, name))
+            self.names.add(name)
+
+    def test_close_racing_next(self):
+        # One thread's next() racing another's close() must not crash.
+        def nexter():
+            for _ in self.it:
+                pass
+
+        def closer():
+            self.it.close()
+
+        funcs = [nexter] * self.SCANDIR_N_NEXT + [closer] * self.SCANDIR_N_CLOSE
+        for _ in range(self.SCANDIR_REPEAT):
+            self.it = os.scandir(self.dir)
+            try:
+                threading_helper.run_concurrently(funcs)
+            finally:
+                self.it.close()
+
+    def test_shared_next(self):
+        # Threads sharing one iterator must not crash or lose entries: every
+        # entry must be handed to exactly one thread.
+        expected = sorted(self.names)
+        nthreads = self.SCANDIR_N_NEXT + self.SCANDIR_N_CLOSE
+
+        for _ in range(self.SCANDIR_REPEAT):
+            self.it = os.scandir(self.dir)
+            results = []
+            results_lock = threading.Lock()
+
+            def worker():
+                local = [entry.name for entry in self.it]
+                with results_lock:
+                    results.extend(local)
+
+            try:
+                threading_helper.run_concurrently([worker] * nthreads)
+            finally:
+                self.it.close()
+
+            self.assertEqual(sorted(results), expected)
 
 
 class TestPEP519(unittest.TestCase):

@@ -504,10 +504,9 @@ class FeedParser:
                     self._input.unreadline(line)
                     return
                 else:
-                    # Weirdly placed unix-from line.  Note this as a defect
-                    # and ignore it.
+                    # Weirdly placed unix-from line.
                     defect = errors.MisplacedEnvelopeHeaderDefect(line)
-                    self._cur.defects.append(defect)
+                    self.policy.handle_defect(self._cur, defect)
                     continue
             # Split the line on the colon separating field name from value.
             # There will always be a colon, because if there wasn't the part of
@@ -519,7 +518,7 @@ class FeedParser:
             # message. Track the error but keep going.
             if i == 0:
                 defect = errors.InvalidHeaderDefect("Missing header name.")
-                self._cur.defects.append(defect)
+                self.policy.handle_defect(self._cur, defect)
                 continue
 
             assert i>0, "_parse_headers fed line with no : and no leading WS"

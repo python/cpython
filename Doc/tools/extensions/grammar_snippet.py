@@ -191,7 +191,7 @@ class GrammarSnippetDirective(GrammarSnippetBase):
     into something similar to Sphinx productionlist, but better suited
     for our needs:
     - Instead of `::=`, use a colon, as in `Grammar/python.gram`
-    - Show the listing almost as is, with no auto-aligment.
+    - Show the listing almost as is, with no auto-alignment.
       The only special character is the backtick, which marks tokens.
 
     Unlike Sphinx's productionlist, this directive supports options.

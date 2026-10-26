@@ -80,8 +80,8 @@ class CommandLineInterface(unittest.TestCase):
 @force_not_colorized_test_class
 class InteractiveSession(unittest.TestCase):
     MEMORY_DB_MSG = "Connected to a transient in-memory database"
-    PS1 = "sqlite> "
-    PS2 = "... "
+    PS1 = "\001\002sqlite> \001\002"
+    PS2 = "\001\002    ... \001\002"
 
     def run_cli(self, *args, commands=()):
         with (
@@ -202,8 +202,8 @@ class InteractiveSession(unittest.TestCase):
     def test_color(self):
         with unittest.mock.patch("_colorize.can_colorize", return_value=True):
             out, err = self.run_cli(commands="TEXT\n")
-            self.assertIn("\x1b[1;35msqlite> \x1b[0m", out)
-            self.assertIn("\x1b[1;35m    ... \x1b[0m\x1b", out)
+            self.assertIn("\x01\x1b[1;35m\x02sqlite> \x01\x1b[0m\x02", out)
+            self.assertIn("\x01\x1b[1;35m\x02    ... \x01\x1b[0m\x02\x01\x1b", out)
             out, err = self.run_cli(commands=("sel;",))
             self.assertIn('\x1b[1;35mOperationalError (SQLITE_ERROR)\x1b[0m: '
                           '\x1b[35mnear "sel": syntax error\x1b[0m', err)
@@ -212,6 +212,10 @@ class InteractiveSession(unittest.TestCase):
 @requires_subprocess()
 @force_not_colorized_test_class
 class Completion(unittest.TestCase):
+    # run_pty() creates a real terminal environment, where sqlite3 CLI
+    # SqliteInteractiveConsole invokes GNU Readline for input. Readline's
+    # _rl_strip_prompt() strips \001 and \002 from the output, so test
+    # assertions use the plain prompt.
     PS1 = "sqlite> "
 
     @classmethod
@@ -219,6 +223,9 @@ class Completion(unittest.TestCase):
         readline = import_module("readline")
         if readline.backend == "editline":
             raise unittest.SkipTest("libedit readline is not supported")
+        if sys.platform.startswith("openbsd"):
+            # OpenBSD's readline does not honor "completion-query-items 0".
+            raise unittest.SkipTest("OpenBSD readline hangs on completion")
 
     def write_input(self, input_, env=None):
         script = textwrap.dedent("""
@@ -319,6 +326,8 @@ class Completion(unittest.TestCase):
         input_ = textwrap.dedent("""\
             CREATE TABLE _table (_col_table);
             CREATE TEMP TABLE _temp_table (_col_temp);
+            CREATE VIEW _view AS SELECT _col_table AS _col_table_alias
+                                 FROM _table;
             ATTACH ':memory:' AS attached;
             CREATE TABLE attached._attached_table (_col_attached);
 
@@ -333,9 +342,9 @@ class Completion(unittest.TestCase):
         candidates = [l.strip() for l in lines[start+1:end]]
 
         self.assertEqual(
-            candidates, ["_col_attached", "_col_table", "_col_temp"]
+            candidates,
+            ["_col_attached", "_col_table", "_col_table_alias", "_col_temp"],
         )
-
     @unittest.skipIf(sqlite3.sqlite_version_info < (3, 30, 0),
                      "PRAGMA function_list is not available until "
                      "SQLite 3.30.0")
@@ -374,10 +383,10 @@ class Completion(unittest.TestCase):
         self.assertIn("main", candidates)
         self.assertIn("temp", candidates)
 
-    @unittest.skipIf(sys.platform.startswith("freebsd"),
+    @unittest.skipIf(sys.platform.startswith(("freebsd", "dragonfly", "sunos")),
                     "Two actual tabs are inserted when there are no matching"
                     " completions in the pseudo-terminal opened by run_pty()"
-                    " on FreeBSD")
+                    " on this platform")
     def test_complete_no_match(self):
         input_ = b"xyzzy\t\t\b\b\b\b\b\b\b.quit\n"
         # Set NO_COLOR to disable coloring for self.PS1.

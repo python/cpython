@@ -15,7 +15,7 @@ _IntEnum._convert_(
         'Handlers', __name__,
         lambda name: name in ('SIG_DFL', 'SIG_IGN'))
 
-if 'pthread_sigmask' in _globals:
+if 'SIG_BLOCK' in _globals:
     _IntEnum._convert_(
             'Sigmasks', __name__,
             lambda name: name in ('SIG_BLOCK', 'SIG_UNBLOCK', 'SIG_SETMASK'))

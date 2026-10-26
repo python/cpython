@@ -7,8 +7,6 @@
 Code Objects
 ------------
 
-.. sectionauthor:: Jeffrey Yasskin <jyasskin@gmail.com>
-
 Code objects are a low-level detail of the CPython implementation.
 Each one represents a chunk of executable code that hasn't yet been
 bound into a function.
@@ -69,12 +67,13 @@ bound into a function.
       The old name is deprecated, but will remain available until the
       signature changes again.
 
+.. c:function:: PyCodeObject* PyCode_NewWithPosOnlyArgs(...)
+   :no-typesetting:
+
 .. c:function:: PyCodeObject* PyUnstable_Code_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, PyObject *qualname, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
 
    Similar to :c:func:`PyUnstable_Code_New`, but with an extra "posonlyargcount" for positional-only arguments.
    The same caveats that apply to ``PyUnstable_Code_New`` also apply to this function.
-
-   .. index:: single: PyCode_NewWithPosOnlyArgs (C function)
 
    .. versionadded:: 3.8 as ``PyCode_NewWithPosOnlyArgs``
 
@@ -95,11 +94,12 @@ bound into a function.
 
 .. c:function:: int PyCode_Addr2Line(PyCodeObject *co, int byte_offset)
 
-    Return the line number of the instruction that occurs on or before ``byte_offset`` and ends after it.
-    If you just need the line number of a frame, use :c:func:`PyFrame_GetLineNumber` instead.
+    Return the line number of the instruction that occurs on or before
+    ``byte_offset`` and ends after it.  This may be ``O(N)`` in the number of
+    instructions in the code object, so it is not performant for iterating over
+    all the line numbers in a code object.
 
-    For efficiently iterating over the line numbers in a code object, use :pep:`the API described in PEP 626
-    <0626#out-of-process-debuggers-and-profilers>`.
+    If you just need the line number of a frame, use :c:func:`PyFrame_GetLineNumber` instead.
 
 .. c:function:: int PyCode_Addr2Location(PyObject *co, int byte_offset, int *start_line, int *start_column, int *end_line, int *end_column)
 
@@ -177,6 +177,14 @@ bound into a function.
 
    .. versionadded:: 3.12
 
+.. c:macro:: PY_FOREACH_CODE_EVENT(V)
+
+   Apply the macro *V* to each suffix of :c:type:`PyCodeEvent`
+   constants.
+   Currently expands to ``V(CREATE) V(DESTROY)``.
+   The macro *V* must accept one event name and supply any punctuation
+   needed between expansions.
+
 .. c:type:: int (*PyCode_WatchCallback)(PyCodeEvent event, PyCodeObject* co)
 
    Type of a code object watcher callback function.
@@ -213,13 +221,15 @@ bound into a function.
 
 .. c:function:: PyObject *PyCode_Optimize(PyObject *code, PyObject *consts, PyObject *names, PyObject *lnotab_obj)
 
-   This is a :term:`soft deprecated` function that does nothing.
+   This is a function that does nothing.
 
    Prior to Python 3.10, this function would perform basic optimizations to a
    code object.
 
    .. versionchanged:: 3.10
       This function now does nothing.
+
+   .. soft-deprecated:: 3.13
 
 
 .. _c_codeobject_flags:
@@ -298,6 +308,9 @@ These functions are part of the unstable C API tier:
 this functionality is a CPython implementation detail, and the API
 may change without deprecation warnings.
 
+.. c:function:: Py_ssize_t _PyEval_RequestCodeExtraIndex(freefunc free)
+   :no-typesetting:
+
 .. c:function:: Py_ssize_t PyUnstable_Eval_RequestCodeExtraIndex(freefunc free)
 
    Return a new opaque index value used to adding data to code objects.
@@ -310,8 +323,6 @@ may change without deprecation warnings.
    *free* will be called on non-``NULL`` data stored under the new index.
    Use :c:func:`Py_DecRef` when storing :c:type:`PyObject`.
 
-   .. index:: single: _PyEval_RequestCodeExtraIndex (C function)
-
    .. versionadded:: 3.6 as ``_PyEval_RequestCodeExtraIndex``
 
    .. versionchanged:: 3.12
@@ -319,6 +330,9 @@ may change without deprecation warnings.
      Renamed to ``PyUnstable_Eval_RequestCodeExtraIndex``.
      The old private name is deprecated, but will be available until the API
      changes.
+
+.. c:function:: int _PyCode_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
+   :no-typesetting:
 
 .. c:function:: int PyUnstable_Code_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
 
@@ -328,8 +342,6 @@ may change without deprecation warnings.
    If no data was set under the index, set *extra* to ``NULL`` and return
    0 without setting an exception.
 
-   .. index:: single: _PyCode_GetExtra (C function)
-
    .. versionadded:: 3.6 as ``_PyCode_GetExtra``
 
    .. versionchanged:: 3.12
@@ -338,12 +350,13 @@ may change without deprecation warnings.
      The old private name is deprecated, but will be available until the API
      changes.
 
+.. c:function:: int _PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
+   :no-typesetting:
+
 .. c:function:: int PyUnstable_Code_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
 
    Set the extra data stored under the given index to *extra*.
    Return 0 on success. Set an exception and return -1 on failure.
-
-   .. index:: single: _PyCode_SetExtra (C function)
 
    .. versionadded:: 3.6 as ``_PyCode_SetExtra``
 
