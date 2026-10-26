@@ -459,7 +459,9 @@ PyDoc_STRVAR(list_discard__doc__,
 "discard($self, value, /)\n"
 "--\n"
 "\n"
-"Remove first occurrence of value if it is present.");
+"Remove first occurrence of value if it is present.\n"
+"\n"
+"Return True if an item was removed, False otherwise.");
 
 #define LIST_DISCARD_METHODDEF    \
     {"discard", (PyCFunction)list_discard, METH_O, list_discard__doc__},
@@ -552,4 +554,4 @@ list___reversed__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl((PyListObject *)self);
 }
-/*[clinic end generated code: output=4c2a7e07d1b3ac4b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fe8e392cf1c521aa input=a9049054013a1b77]*/

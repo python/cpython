@@ -1688,7 +1688,8 @@ application).
    .. method:: list.discard(value, /)
 
       Remove the first item from the list where ``list[i] == value``
-      if such an item is present.
+      if such an item is present.  Return ``True`` if an item was removed,
+      ``False`` otherwise.
 
       .. versionadded:: next
 

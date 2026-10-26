@@ -375,13 +375,13 @@ class CommonTest(seq_tests.CommonTest):
 
     def test_discard(self):
         a = self.type2test([0, 0, 1])
-        a.discard(1)
+        self.assertIs(a.discard(1), True)
         self.assertEqual(a, self.type2test([0, 0]))
-        a.discard(0)
+        self.assertIs(a.discard(0), True)
         self.assertEqual(a, self.type2test([0]))
-        a.discard(0)
+        self.assertIs(a.discard(0), True)
         self.assertEqual(a, self.type2test([]))
-        a.discard(0)
+        self.assertIs(a.discard(0), False)
         self.assertEqual(a, self.type2test([]))
 
         self.assertRaises(TypeError, a.discard)

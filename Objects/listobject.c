@@ -3520,16 +3520,19 @@ list.discard
      /
 
 Remove first occurrence of value if it is present.
+
+Return True if an item was removed, False otherwise.
 [clinic start generated code]*/
 
 static PyObject *
 list_discard_impl(PyListObject *self, PyObject *value)
-/*[clinic end generated code: output=4d8c1aee9a101f8c input=e1abe80fdc97f48e]*/
+/*[clinic end generated code: output=4d8c1aee9a101f8c input=6330bc648285d994]*/
 {
-    if (list_remove_lock_held(self, value) < 0) {
+    int res = list_remove_lock_held(self, value);
+    if (res < 0) {
         return NULL;
     }
-    Py_RETURN_NONE;
+    return PyBool_FromLong(res);
 }
 
 static int
