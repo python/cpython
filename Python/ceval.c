@@ -2542,14 +2542,14 @@ Error:
 
 
 
-void
+int
 _PyEval_MonitorRaise(PyThreadState *tstate, _PyInterpreterFrame *frame,
               _Py_CODEUNIT *instr)
 {
     if (no_tools_for_local_event(tstate, frame, PY_MONITORING_EVENT_RAISE)) {
-        return;
+        return 0;
     }
-    do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_RAISE);
+    return do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_RAISE);
 }
 
 bool
@@ -3834,7 +3834,9 @@ _PyStackRef _PyForIter_VirtualIteratorNext(PyThreadState* tstate, _PyInterpreter
     if (next == NULL) {
         if (_PyErr_Occurred(tstate)) {
             if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
-                _PyEval_MonitorRaise(tstate, frame, frame->instr_ptr);
+                if (_PyEval_MonitorRaise(tstate, frame, frame->instr_ptr) < 0) {
+                    return PyStackRef_ERROR;
+                }
                 _PyErr_Clear(tstate);
             }
             else {

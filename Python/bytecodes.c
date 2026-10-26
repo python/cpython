@@ -3818,7 +3818,9 @@ dummy_func(
             if (item == NULL) {
                 if (_PyErr_Occurred(tstate)) {
                     if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
-                        _PyEval_MonitorRaise(tstate, frame, frame->instr_ptr);
+                        if (_PyEval_MonitorRaise(tstate, frame, frame->instr_ptr) < 0) {
+                            ERROR_NO_POP();
+                        }
                         _PyErr_Clear(tstate);
                     }
                     else {

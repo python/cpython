@@ -895,6 +895,31 @@ class ExceptionMonitoringTest(CheckEvents):
         # This will record a STOP_ITERATION event for the StopIteration.
         self.check_events(implicit_stop_iteration, expected, recorders=recorders)
 
+    def test_raise_callback_stop_iteration_in_for(self):
+        class Empty:
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                raise StopIteration
+
+        def run():
+            for _ in Empty():
+                pass
+
+        def on_raise(code, offset, exc):
+            if code is run.__code__ and isinstance(exc, StopIteration):
+                raise RuntimeError("monitor callback failed")
+
+        try:
+            sys.monitoring.register_callback(TEST_TOOL, E.RAISE, on_raise)
+            sys.monitoring.set_events(TEST_TOOL, E.RAISE)
+            with self.assertRaisesRegex(RuntimeError, "monitor callback failed"):
+                run()
+        finally:
+            sys.monitoring.set_events(TEST_TOOL, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.RAISE, None)
+
     initial = [
         ("raise", ZeroDivisionError),
         ("handled", ZeroDivisionError)
