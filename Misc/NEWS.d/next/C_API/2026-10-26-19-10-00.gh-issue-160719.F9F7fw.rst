@@ -1,0 +1,5 @@
+Fix the C11 and C23 code paths in :file:`pyport.h` never being used: the
+private ``_Py_STDC_VERSION`` macro was defined in :file:`pymacro.h`, which is
+included after :file:`pyport.h`, so ``_Py_thread_local``, ``_Py_NULL`` and
+``_Py_TYPEOF`` fell back to compiler extensions instead of ``_Thread_local``,
+``nullptr`` and ``typeof``.
