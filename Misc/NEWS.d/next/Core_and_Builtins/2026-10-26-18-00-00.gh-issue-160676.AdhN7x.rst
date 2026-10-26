@@ -1,0 +1,2 @@
+Fix an issue where exceptions raised by a ``sys.monitoring`` callback for
+``StopIteration`` could be swallowed by a ``for`` loop.
