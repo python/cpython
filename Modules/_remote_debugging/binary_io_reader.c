@@ -1028,17 +1028,41 @@ reader_parse_block_header(BinaryReader *reader, const ByteBuffer *section,
     return 0;
 }
 
+/* A constant stream index or residual column that holds the same one-byte
+ * varint for every sample is read from its stored byte, not expanded. */
+static int
+constant_varint_column(const DecodedBlock *block, unsigned column,
+                       uint8_t value)
+{
+    const ColumnDescriptor *descriptor = &block->header.columns[column];
+    return (column == COLUMN_SAMPLE_STREAM_IDS ||
+            column == COLUMN_TIMESTAMP_RESIDUALS) &&
+           descriptor->encoding == COLUMN_CONSTANT &&
+           descriptor->decoded_size == block->header.sample_count &&
+           value < 0x80;
+}
+
 static int
 decode_block_columns(BinaryReader *reader, const ByteBuffer *section,
                      size_t *offset, DecodedBlock *block)
 {
     const ColumnDescriptor *descriptors = block->header.columns;
-    /* Constant and zstd columns share one buffer, reused across blocks.
-     * It is reserved up front so decoded columns never move. */
+    /* Find where each column is stored and how much of the shared buffer
+     * the expanded and decompressed columns need. The buffer is reused
+     * across blocks and reserved up front so decoded columns never move. */
+    uint8_t *stored[COLUMN_COUNT];
     size_t buffered_total = 0;
     for (unsigned column = 0; column < COLUMN_COUNT; column++) {
-        if (descriptors[column].encoding != COMPRESSION_NONE) {
-            buffered_total += descriptors[column].decoded_size;
+        const ColumnDescriptor *descriptor = &descriptors[column];
+        if (descriptor->stored_size > section->size - *offset) {
+            return block_error("column extends past the sample section");
+        }
+        stored[column] = section->data + *offset;
+        *offset += descriptor->stored_size;
+        if (descriptor->encoding == COMPRESSION_ZSTD ||
+            (descriptor->encoding == COLUMN_CONSTANT &&
+             !constant_varint_column(block, column, stored[column][0]))) {
+            buffered_total += descriptor->decoded_size;
         }
     }
     ByteBuffer *buffer = &reader->block_data;
@@ -1049,10 +1073,7 @@ decode_block_columns(BinaryReader *reader, const ByteBuffer *section,
     buffer->size = 0;
     for (unsigned column = 0; column < COLUMN_COUNT; column++) {
         const ColumnDescriptor *descriptor = &descriptors[column];
-        if (descriptor->stored_size > section->size - *offset) {
-            return block_error("column extends past the sample section");
-        }
-        uint8_t *stored_data = section->data + *offset;
+        uint8_t *stored_data = stored[column];
         ByteBuffer *decoded = &block->columns[column];
         decoded->size = descriptor->decoded_size;
         switch (descriptor->encoding) {
@@ -1061,6 +1082,11 @@ decode_block_columns(BinaryReader *reader, const ByteBuffer *section,
             decoded->data = stored_data;
             break;
         case COLUMN_CONSTANT:
+            if (constant_varint_column(block, column, stored_data[0])) {
+                decoded->data = stored_data;
+                decoded->size = 1;
+                break;
+            }
             decoded->data = buffer->data + buffer->size;
             memset(decoded->data, stored_data[0], decoded->size);
             buffer->size += decoded->size;
@@ -1076,7 +1102,6 @@ decode_block_columns(BinaryReader *reader, const ByteBuffer *section,
         default:
             return block_error("unknown column encoding");
         }
-        *offset += descriptor->stored_size;
     }
     return 0;
 }
@@ -1203,23 +1228,38 @@ decode_samples(BinaryReader *reader, DecodedBlock *block)
         &block->columns[COLUMN_SAMPLE_STREAM_IDS];
     const ByteBuffer *residual_column =
         &block->columns[COLUMN_TIMESTAMP_RESIDUALS];
+    int constant_stream_ids = constant_varint_column(
+        block, COLUMN_SAMPLE_STREAM_IDS, stream_id_column->data[0]);
+    int constant_residuals = constant_varint_column(
+        block, COLUMN_TIMESTAMP_RESIDUALS, residual_column->data[0]);
     size_t stream_id_offset = 0;
     size_t residual_offset = 0;
+    int64_t constant_residual = 0;
+    if (constant_residuals) {
+        constant_residual = decode_varint_i64(residual_column->data,
+                                              &residual_offset, 1);
+    }
     for (uint32_t sample = 0; sample < block->header.sample_count; sample++) {
         uint64_t stream_id;
-        if (block_read_varint(stream_id_column, &stream_id_offset,
-                              &stream_id) < 0) {
+        if (constant_stream_ids) {
+            stream_id = stream_id_column->data[0];
+        }
+        else if (block_read_varint(stream_id_column, &stream_id_offset,
+                                   &stream_id) < 0) {
             return -1;
         }
         if (stream_id >= block->stream_count) {
             return block_error("sample refers to an unknown stream");
         }
-        size_t prev_offset = residual_offset;
-        int64_t residual = decode_varint_i64(residual_column->data,
-                                             &residual_offset,
-                                             residual_column->size);
-        if (residual_offset == prev_offset) {
-            return -1;
+        int64_t residual = constant_residual;
+        if (!constant_residuals) {
+            size_t prev_offset = residual_offset;
+            residual = decode_varint_i64(residual_column->data,
+                                         &residual_offset,
+                                         residual_column->size);
+            if (residual_offset == prev_offset) {
+                return -1;
+            }
         }
 
         /* Timestamp is the expected time plus the stored residual */
@@ -1230,7 +1270,7 @@ decode_samples(BinaryReader *reader, DecodedBlock *block)
         stream_ids[sample] = (uint32_t)stream_id;
         timestamps[sample] = stream->prev_timestamp;
     }
-    if (stream_id_offset != stream_id_column->size) {
+    if (!constant_stream_ids && stream_id_offset != stream_id_column->size) {
         return block_error("stream index column has trailing data");
     }
     if (residual_offset != residual_column->size) {

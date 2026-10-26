@@ -1896,6 +1896,23 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
                 self.assertEqual([frame["filename"] for frame in frames],
                                  [f"{frame_id}.py"])
 
+    def test_replay_reads_constant_stream_and_residual_columns(self):
+        """Constant stream index and residual columns decode every sample."""
+        # Every sample is in stream 0 and one microsecond late (zigzag 2).
+        filename = self._write_single_block(
+            3, b"\x01\x00\x00\x00\x02", residuals=b"\x02" * 3,
+            descriptors={self.COLUMN_STREAM_IDS: (self.COLUMN_CONSTANT, 3),
+                         self.COLUMN_TIMESTAMP_RESIDUALS:
+                             (self.COLUMN_CONSTANT, 3)})
+        collector = mock.Mock()
+        with BinaryReader(filename) as reader:
+            interval = reader.get_info()["sample_interval_us"]
+            self.assertEqual(reader.replay_samples(collector), 3)
+        timestamps = [ts for call in collector.collect.call_args_list
+                      for ts in call.args[1]]
+        self.assertEqual(timestamps,
+                         [2 + i * (interval + 1) for i in range(3)])
+
     def test_replay_rejects_reentrant_replay(self):
         """Replaying from inside the same reader's collector raises."""
         filename = self._write_single_block(
@@ -1949,6 +1966,10 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
             ("stream table repeats a thread",
              dict(stream_table=struct.pack("=QI", 1, 0) * 2)),
             ("sample refers to an unknown stream", dict(stream_ids=b"\x01")),
+            ("sample refers to an unknown stream",
+             dict(num_samples=2, stream_ids=b"\x01",
+                  descriptors={self.COLUMN_STREAM_IDS:
+                               (self.COLUMN_CONSTANT, 2)})),
             ("stream index column has trailing data",
              dict(num_samples=2, header_samples=1)),
             ("timestamp column has trailing data",
