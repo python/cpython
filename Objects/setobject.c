@@ -3287,13 +3287,13 @@ PyObject*
 PyFrozenSetWriter_Finish(PyFrozenSetWriter *writer)
 {
     assert(frozensetwriter_check_consistency(writer));
-    PySetObject *frozenset = _PySet_CAST(writer);
+    PyObject *frozenset = _PyObject_CAST(writer);
 
     // Now that the frozenset is fully initialized, it's safe to track it
     // in the garbage collector.
     _PyObject_GC_TRACK(frozenset);
 
-    return _PyObject_CAST(frozenset);
+    return frozenset;
 }
 
 

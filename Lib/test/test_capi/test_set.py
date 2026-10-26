@@ -323,7 +323,7 @@ class FrozenSetWriterTests(unittest.TestCase):
         items = self.create_items(self.PySet_MINSIZE * 2 - 1)
         table_size = self.compute_table_size(len(items))
         for prealloc in (0, len(items) // 2, len(items), len(items) * 10):
-            with self.subTest(size=prealloc):
+            with self.subTest(prealloc=prealloc):
                 writer = self.create_writer()
                 add = getattr(writer, add_method)
                 for item in items:
@@ -356,7 +356,7 @@ class FrozenSetWriterTests(unittest.TestCase):
         empty = ()
 
         for prealloc in (0, total // 2, total, total * 10):
-            with self.subTest(size=prealloc):
+            with self.subTest(prealloc=prealloc):
                 writer = self.create_writer(prealloc)
                 update = getattr(writer, update_method)
                 update(items + common)
@@ -412,9 +412,20 @@ class FrozenSetWriterTests(unittest.TestCase):
 
     def test_discard(self):
         # Test PyFrozenSetWriter_Discard(): must not leak memory
-        writer = self.create_writer()
-        writer.update([2, 5, 7])
+
+        writer = self.create_writer(0)
         writer.discard()
+
+        for prealloc in (0, 3, 100):
+            for items in (
+                (),          # empty
+                [2, 5, 7],   # use the small table
+                range(100),  # allocate a new table
+            ):
+                with self.subTest(prealloc=prealloc, items=items):
+                    writer = self.create_writer(prealloc)
+                    writer.update(items)
+                    writer.discard()
 
     @threading_helper.requires_working_threading()
     def test_thread(self):

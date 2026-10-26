@@ -245,7 +245,8 @@ See also the :c:func:`PyFrozenSet_New` function.
 
    Create a :c:type:`PyFrozenSetWriter`.
 
-   If *size* is greater than zero, preallocate *size* items.
+   If *size* is greater than zero, allocate an internal table big enough to
+   store *size* items.
 
    On error, set an exception and return ``NULL``.
 
