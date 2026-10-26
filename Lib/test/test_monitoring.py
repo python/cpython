@@ -2684,12 +2684,23 @@ class TestTier2Optimizer(CheckEvents):
         threshold = _testinternalcapi.SPECIALIZATION_THRESHOLD
         callback_executor = None
 
+        class Iterator:
+            def __init__(self):
+                self.count = 0
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                if self.count < threshold:
+                    self.count += 1
+                    return self.count
+                sys.monitoring.set_events(TEST_TOOL, E.RAISE)
+                raise StopIteration
+
         def run():
-            for i in range(threshold + 1):
-                sys.monitoring.set_events(
-                    TEST_TOOL,
-                    E.RAISE if i == threshold else 0,
-                )
+            for _ in Iterator():
+                pass
 
         def on_raise(code, offset, exc):
             nonlocal callback_executor
