@@ -1006,12 +1006,14 @@ debug_cycle(const char *msg, PyObject *op)
 /* Call debug_cycle() on each object in `list`.  sys.stderr.write() can run
  * Python code that frees any object in the list, including the one just
  * printed, so always take the first object and move it to a temporary
- * `seen` list, as finalize_garbage() does.
+ * `seen` list, as finalize_garbage() does. Return the number of seen
+ * items.
  */
-static void
+static int
 debug_cycles(const char *msg, PyGC_Head *list)
 {
     PyGC_Head seen;
+    Py_ssize_t n = 0;
     /* Always take the next object from the head of `list` rather than from
      * the current one, which may be freed (along with others) by debug_cycle().
      */
@@ -1020,11 +1022,13 @@ debug_cycles(const char *msg, PyGC_Head *list)
         PyGC_Head *gc = GC_NEXT(list);
         PyObject *op = FROM_GC(gc);
         gc_list_move(gc, &seen);
+        n++;
         Py_INCREF(op);
         debug_cycle(msg, op);
         Py_DECREF(op);
     }
     gc_list_merge(&seen, list);
+    return n;
 }
 
 /* Handle uncollectable garbage (cycles with tp_del slots, and stuff reachable
@@ -1625,9 +1629,11 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     /* Collect statistics on uncollectable objects found and print
      * debugging information. */
     if (gcstate->debug & _PyGC_DEBUG_UNCOLLECTABLE) {
-        debug_cycles("uncollectable", &finalizers);
+        stats.uncollectable = debug_cycles("uncollectable", &finalizers);
+    } else {
+        stats.uncollectable = gc_list_size(&finalizers);
     }
-    stats.uncollectable = gc_list_size(&finalizers);
+
     (void)PyTime_PerfCounterRaw(&stats.ts_stop);
     stats.duration = PyTime_AsSecondsDouble(stats.ts_stop - stats.ts_start);
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
