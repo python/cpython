@@ -1,0 +1,4 @@
+Prevent concurrent or reentrant calls to the same asynchronous generator
+awaitable from corrupting its state. This fixes races in :meth:`~agen.aclose`,
+:meth:`~agen.athrow`, and :meth:`~agen.asend` that could delay cleanup or make an
+active awaitable unusable.

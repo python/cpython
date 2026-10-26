@@ -1,6 +1,8 @@
 import sys
+import threading
 import unittest
 
+from test import support
 from test.support import threading_helper
 
 threading_helper.requires_working_threading(module=True)
@@ -172,6 +174,80 @@ class TestFTAsyncGenerators(unittest.TestCase):
         self.assertRaises(StopAsyncIteration, ag.asend(None).send, None)
         # The awaitable is closed after the operation completed.
         self.assertRaises(RuntimeError, aw.send, None)
+
+    def test_concurrent_shared_awaitable_resume(self):
+        class MyError(Exception):
+            pass
+
+        class YieldOnce:
+            def __await__(self):
+                yield 'suspended'
+
+        cases = (
+            ('asend', (None,), StopAsyncIteration),
+            ('athrow', (MyError,), MyError),
+            ('aclose', (), StopIteration),
+        )
+        for kind, args, completion in cases:
+            for method in ('send', 'throw', 'close'):
+                with self.subTest(kind=kind, method=method):
+                    entered = threading.Event()
+                    release = threading.Event()
+                    cleanups = []
+
+                    async def agen():
+                        try:
+                            yield 1
+                        finally:
+                            entered.set()
+                            self.assertTrue(
+                                release.wait(support.SHORT_TIMEOUT))
+                            await YieldOnce()
+                            cleanups.append(1)
+
+                    ag = agen()
+                    self.addCleanup(ag.aclose().close)
+                    with self.assertRaises(StopIteration):
+                        ag.__anext__().send(None)
+                    aw = getattr(ag, kind)(*args)
+
+                    def owner():
+                        self.assertEqual(aw.send(None), 'suspended')
+
+                    def contender():
+                        try:
+                            self.assertTrue(
+                                entered.wait(support.SHORT_TIMEOUT))
+                            with self.assertRaisesRegex(
+                                ValueError, 'async generator already executing'
+                            ):
+                                if method == 'send':
+                                    aw.send(None)
+                                elif method == 'throw':
+                                    aw.throw(MyError)
+                                else:
+                                    aw.close()
+                            self.assertTrue(ag.ag_running)
+                        finally:
+                            release.set()
+
+                    threading_helper.run_concurrently([owner, contender])
+                    # Rejecting the contender must leave the owner's pending
+                    # await intact, including its claim on the generator.
+                    self.assertTrue(ag.ag_running)
+                    with self.assertRaisesRegex(
+                        RuntimeError,
+                        'asynchronous generator is already running',
+                    ):
+                        ag.__anext__().send(None)
+                    with self.assertRaises(completion):
+                        aw.send(None)
+                    self.assertEqual(cleanups, [1])
+                    self.assertIsNone(ag.ag_frame)
+                    with self.assertRaisesRegex(
+                        RuntimeError, 'cannot reuse already awaited'
+                    ):
+                        aw.send(None)
 
     def test_concurrent_anext_athrow(self):
         async def agen():

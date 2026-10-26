@@ -648,6 +648,115 @@ class AsyncGenTest(unittest.TestCase):
             gen.send(None)
         self.assertEqual(cm.exception.value, 2)
 
+    def test_async_gen_awaitable_reentrant(self):
+        # Rejecting reentry must not close the awaitable or release its
+        # claim on the generator while the original call is still running.
+        class MyError(Exception):
+            pass
+
+        cases = (
+            ('asend', (None,), StopAsyncIteration),
+            ('athrow', (MyError,), MyError),
+            ('aclose', (), StopIteration),
+        )
+        for kind, args, completion in cases:
+            for method in ('send', 'throw', 'close'):
+                with self.subTest(kind=kind, method=method):
+                    errors = []
+                    running = []
+                    cleanups = []
+
+                    def drive():
+                        if method == 'send':
+                            return aw.send(None)
+                        if method == 'throw':
+                            return aw.throw(MyError)
+                        return aw.close()
+
+                    async def agen():
+                        try:
+                            yield 1
+                        finally:
+                            try:
+                                drive()
+                            except ValueError as exc:
+                                errors.append(str(exc))
+                            running.append(ag.ag_running)
+                            if method != 'close':
+                                await awaitable()
+                            cleanups.append(1)
+
+                    ag = agen()
+                    self.addCleanup(ag.aclose().close)
+                    with self.assertRaises(StopIteration):
+                        ag.__anext__().send(None)
+                    aw = getattr(ag, kind)(*args)
+                    result = drive()
+
+                    self.assertEqual(
+                        errors, ['async generator already executing'])
+                    self.assertEqual(running, [True])
+                    if method == 'close':
+                        self.assertIsNone(result)
+                    else:
+                        self.assertEqual(result, ('result',))
+                        self.assertTrue(ag.ag_running)
+                        error = MyError if method == 'throw' else completion
+                        with self.assertRaises(error):
+                            aw.send(None)
+                    self.assertEqual(cleanups, [1])
+                    self.assertIsNone(ag.ag_frame)
+                    with self.assertRaisesRegex(
+                        RuntimeError, 'cannot reuse already awaited'
+                    ):
+                        aw.send(None)
+
+    def test_async_gen_awaitable_reentrant_await(self):
+        # Awaiting asend() uses its am_send slot rather than its send method.
+        class MyError(Exception):
+            pass
+
+        cases = (
+            ('asend', (None,), StopAsyncIteration),
+            ('athrow', (MyError,), MyError),
+            ('aclose', (), StopIteration),
+        )
+        for kind, args, completion in cases:
+            with self.subTest(kind=kind):
+                cleanups = []
+
+                async def drive():
+                    await aw
+
+                async def agen():
+                    try:
+                        yield 1
+                    finally:
+                        reentrant = drive()
+                        with self.assertRaisesRegex(
+                            ValueError, 'async generator already executing'
+                        ):
+                            reentrant.send(None)
+                        await awaitable()
+                        cleanups.append(1)
+
+                ag = agen()
+                self.addCleanup(ag.aclose().close)
+                with self.assertRaises(StopIteration):
+                    ag.__anext__().send(None)
+                aw = getattr(ag, kind)(*args)
+                owner = drive()
+                try:
+                    self.assertEqual(owner.send(None), ('result',))
+                    self.assertTrue(ag.ag_running)
+                    with self.assertRaises(completion):
+                        owner.send(None)
+                    self.assertEqual(cleanups, [1])
+                    self.assertIsNone(ag.ag_frame)
+                finally:
+                    with contextlib.suppress(RuntimeError):
+                        owner.close()
+
 
 class AsyncGenAsyncioTest(unittest.TestCase):
 
