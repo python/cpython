@@ -1257,6 +1257,20 @@ class UnquotingTests(unittest.TestCase):
         self.assertEqual(expect, result,
                          "using unquote(): %r != %r" % (expect, result))
 
+    def test_unquote_ascii_and_non_ascii_agree(self):
+        # ASCII input takes a fast path; a non-ASCII prefix forces the
+        # general path.  Both must decode the escapes the same way.
+        for given in ['%41%zz%', 'a%20b%2Fc%E2%82%AC', '%F3%B1', '%C3%BC+%2B']:
+            for encoding, errors in [('utf-8', 'replace'),
+                                     ('latin-1', 'strict'),
+                                     ('ascii', 'ignore')]:
+                with self.subTest(given=given, encoding=encoding,
+                                  errors=errors):
+                    expect = urllib.parse.unquote(given, encoding, errors)
+                    result = urllib.parse.unquote('\u00e9' + given,
+                                                  encoding, errors)
+                    self.assertEqual(result, '\u00e9' + expect)
+
     def test_unquoting_with_bytes_input(self):
         # ASCII characters decoded to a string
         given = b'blueberryjam'
