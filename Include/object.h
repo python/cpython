@@ -109,7 +109,8 @@ whose size is determined when the object is allocated.
 #ifndef Py_GIL_DISABLED
 struct _object {
 #if (defined(__GNUC__) || defined(__clang__)) \
-        && !(defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L)
+        && (!defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L \
+            || defined(__cplusplus))
     // On C99 and older, anonymous union is a GCC and clang extension
     __extension__
 #endif
