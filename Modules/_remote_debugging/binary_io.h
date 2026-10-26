@@ -180,6 +180,7 @@ static_assert(PROFILE_STATS_SIZE == 56,
 #define INITIAL_FRAME_CAPACITY  4096
 #define INITIAL_THREAD_CAPACITY 256
 #define INITIAL_BLOCK_CAPACITY  256
+#define INITIAL_BLOCK_STREAM_CAPACITY 16
 
 /* ============================================================================
  * STATISTICS STRUCTURES
@@ -288,20 +289,24 @@ typedef struct {
     uint8_t opcode;
 } FrameKey;
 
-/* Thread entry - tracks per-thread state for delta encoding */
+/* Thread entry - one per thread seen while writing */
 typedef struct {
     uint64_t thread_id;
-    uint64_t prev_timestamp;
     uint32_t interpreter_id;
 
+    /* Stream index in the current block */
     uint32_t block_stream_index;
+} ThreadEntry;
+
+typedef struct {
+    uint64_t prev_timestamp;
+    size_t thread_index;
     uint32_t current_repeat;
 
     /* Previous stack for delta encoding (frame indices, innermost first) */
-    uint32_t *prev_stack;
     size_t prev_stack_depth;
-    size_t prev_stack_capacity;
-} ThreadEntry;
+    uint32_t prev_stack[MAX_STACK_DEPTH];
+} BlockStream;
 
 /* Limit errors occur before emitting an incomplete sample. Other write
  * failures may leave partial records and must prevent finalization. */
@@ -356,6 +361,8 @@ typedef struct {
     ByteBuffer compressed;
     ByteBuffer output;
     StackCacheEntry cache[STACK_CACHE_BUCKET_COUNT][STACK_CACHE_BUCKET_SIZE];
+    BlockStream *streams;
+    size_t stream_capacity;
     uint64_t base_timestamp;
     uint32_t sample_count;
     uint32_t stream_count;

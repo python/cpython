@@ -1111,6 +1111,20 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
             self.assertEqual(reader.replay_samples(collector), len(samples))
         self.assert_samples_equal(samples, collector)
 
+    def test_thread_returns_in_later_block(self):
+        """A thread from a full block gets a new stream in the next block."""
+        samples, _ = self._write_block_spanning_file()
+        # Thread 4097 starts the second block in stream 0, which thread 1
+        # used in the first block.
+        samples.append(samples[0])
+        filename = self.create_binary_file(samples)
+        self.assertEqual(len(self.read_block_columns(filename)), 2)
+
+        collector = RawCollector()
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.replay_samples(collector), len(samples))
+        self.assert_samples_equal(samples, collector)
+
     def test_block_size_limit_starts_new_block(self):
         """A thread whose samples exceed 1 MiB is split across blocks."""
         # Each sample writes a new 256-frame stack, about 1 KiB while

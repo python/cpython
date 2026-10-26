@@ -482,14 +482,6 @@ writer_get_or_create_thread_entry(BinaryWriter *writer, uint64_t thread_id,
     entry->thread_id = thread_id;
     entry->interpreter_id = interpreter_id;
     entry->block_stream_index = UINT32_MAX;
-    entry->current_repeat = UINT32_MAX;
-    entry->prev_stack_capacity = MAX_STACK_DEPTH;
-
-    entry->prev_stack = PyMem_Calloc(entry->prev_stack_capacity, sizeof(uint32_t));
-    if (!entry->prev_stack) {
-        PyErr_NoMemory();
-        return NULL;
-    }
 
     writer->thread_count++;
     if (is_new) {
@@ -637,6 +629,11 @@ static void
 block_reset(BinaryWriter *writer)
 {
     SampleBlock *block = writer->block;
+    /* Only threads with a stream in this block need resetting */
+    for (uint32_t i = 0; i < block->stream_count; i++) {
+        size_t thread = block->streams[i].thread_index;
+        writer->thread_entries[thread].block_stream_index = UINT32_MAX;
+    }
     for (unsigned column = 0; column < COLUMN_COUNT; column++) {
         block->columns[column].size = 0;
     }
@@ -646,10 +643,6 @@ block_reset(BinaryWriter *writer)
     block->max_frame = 0;
     block->size = 0;
     memset(block->cache, 0, sizeof(block->cache));
-    for (size_t thread = 0; thread < writer->thread_count; thread++) {
-        writer->thread_entries[thread].block_stream_index = UINT32_MAX;
-        writer->thread_entries[thread].current_repeat = UINT32_MAX;
-    }
 }
 
 static unsigned
@@ -780,13 +773,13 @@ stack_hash(const uint32_t *stack, size_t depth)
 }
 
 static size_t
-common_outer_frames(const ThreadEntry *entry, const uint32_t *stack,
+common_outer_frames(const BlockStream *stream, const uint32_t *stack,
                     size_t depth)
 {
     size_t shared = 0;
-    while (shared < depth && shared < entry->prev_stack_depth &&
+    while (shared < depth && shared < stream->prev_stack_depth &&
            stack[depth - 1 - shared] ==
-               entry->prev_stack[entry->prev_stack_depth - 1 - shared]) {
+               stream->prev_stack[stream->prev_stack_depth - 1 - shared]) {
         shared++;
     }
     return shared;
@@ -831,10 +824,10 @@ stack_cache_insert(StackCacheEntry *bucket, StackCacheEntry entry)
 }
 
 static int
-write_stack_repeat(BinaryWriter *writer, ThreadEntry *entry, size_t depth)
+write_stack_repeat(BinaryWriter *writer, BlockStream *stream, size_t depth)
 {
     SampleBlock *block = writer->block;
-    if (entry->current_repeat == UINT32_MAX) {
+    if (stream->current_repeat == UINT32_MAX) {
         Repeat repeat = {
             (uint32_t)block->columns[COLUMN_STACK_INSTRUCTIONS].size, 1};
         if (buffer_append(&block->repeats,
@@ -842,13 +835,13 @@ write_stack_repeat(BinaryWriter *writer, ThreadEntry *entry, size_t depth)
             return -1;
         }
         block->size += sizeof(repeat);
-        entry->current_repeat =
+        stream->current_repeat =
             (uint32_t)(block->repeats.size / sizeof(repeat) - 1);
         writer->stats.repeat_records++;
     }
     else {
         Repeat *repeats = (Repeat *)block->repeats.data;
-        repeats[entry->current_repeat].count++;
+        repeats[stream->current_repeat].count++;
     }
     writer->stats.repeat_samples++;
     writer->stats.frames_saved += depth;
@@ -923,15 +916,15 @@ write_stack_replace_suffix(BinaryWriter *writer, StackCacheEntry *bucket,
 }
 
 static int
-write_stack(BinaryWriter *writer, ThreadEntry *entry, int new_stream,
+write_stack(BinaryWriter *writer, BlockStream *stream, int new_stream,
             const uint32_t *stack, size_t depth)
 {
     SampleBlock *block = writer->block;
-    size_t shared = common_outer_frames(entry, stack, depth);
+    size_t shared = common_outer_frames(stream, stack, depth);
     /* Same stack as this stream's previous sample: extend its REPEAT */
     if (!new_stream && shared == depth &&
-        shared == entry->prev_stack_depth) {
-        return write_stack_repeat(writer, entry, depth);
+        shared == stream->prev_stack_depth) {
+        return write_stack_repeat(writer, stream, depth);
     }
 
     /* Enough new frames to be worth looking up an earlier complete stack */
@@ -958,9 +951,9 @@ write_stack(BinaryWriter *writer, ThreadEntry *entry, int new_stream,
     if (result < 0) {
         return -1;
     }
-    entry->current_repeat = UINT32_MAX;
-    memcpy(entry->prev_stack, stack, depth * sizeof(uint32_t));
-    entry->prev_stack_depth = depth;
+    stream->current_repeat = UINT32_MAX;
+    memcpy(stream->prev_stack, stack, depth * sizeof(uint32_t));
+    stream->prev_stack_depth = depth;
     return 0;
 }
 
@@ -995,6 +988,10 @@ static int
 block_add_stream(BinaryWriter *writer, ThreadEntry *entry)
 {
     SampleBlock *block = writer->block;
+    if (GROW_ARRAY(block->streams, block->stream_count,
+                   block->stream_capacity, BlockStream) < 0) {
+        return -1;
+    }
     /* Stream table entry: thread_id (8 bytes) + interpreter_id (4 bytes) */
     uint8_t stream_entry[STREAM_ENTRY_SIZE];
     memcpy(stream_entry + STM_OFF_THREAD_ID,
@@ -1005,9 +1002,12 @@ block_add_stream(BinaryWriter *writer, ThreadEntry *entry)
                      stream_entry, sizeof(stream_entry)) < 0) {
         return -1;
     }
+    BlockStream *stream = &block->streams[block->stream_count];
+    stream->thread_index = (size_t)(entry - writer->thread_entries);
+    stream->prev_timestamp = block->base_timestamp - writer->sample_interval_us;
+    stream->current_repeat = UINT32_MAX;
+    stream->prev_stack_depth = 0;
     entry->block_stream_index = block->stream_count++;
-    entry->prev_timestamp = block->base_timestamp - writer->sample_interval_us;
-    entry->prev_stack_depth = 0;
     return 0;
 }
 
@@ -1036,9 +1036,10 @@ block_add_sample(BinaryWriter *writer, ThreadEntry *entry,
     if (new_stream && block_add_stream(writer, entry) < 0) {
         return -1;
     }
+    BlockStream *stream = &block->streams[entry->block_stream_index];
     /* Store the difference from the expected timestamp */
     uint64_t residual =
-        timestamp - entry->prev_timestamp - writer->sample_interval_us;
+        timestamp - stream->prev_timestamp - writer->sample_interval_us;
     uint8_t residual_bytes[MAX_VARINT_SIZE];
     size_t residual_size =
         encode_varint_i64(residual_bytes, (int64_t)residual);
@@ -1050,10 +1051,10 @@ block_add_sample(BinaryWriter *writer, ThreadEntry *entry,
                      &status, sizeof(status)) < 0) {
         return -1;
     }
-    if (write_stack(writer, entry, new_stream, stack, depth) < 0) {
+    if (write_stack(writer, stream, new_stream, stack, depth) < 0) {
         return -1;
     }
-    entry->prev_timestamp = timestamp;
+    stream->prev_timestamp = timestamp;
     block->sample_count++;
     writer->total_samples++;
     return 0;
@@ -1072,6 +1073,7 @@ block_destroy(SampleBlock *block)
     buffer_clear(&block->transformed);
     buffer_clear(&block->compressed);
     buffer_clear(&block->output);
+    PyMem_Free(block->streams);
     PyMem_Free(block);
 }
 
@@ -1102,6 +1104,13 @@ binary_writer_create(PyObject *path, uint64_t sample_interval_us, int compressio
         PyErr_NoMemory();
         goto error;
     }
+    writer->block->streams = PyMem_Malloc(
+        INITIAL_BLOCK_STREAM_CAPACITY * sizeof(BlockStream));
+    if (writer->block->streams == NULL) {
+        PyErr_NoMemory();
+        goto error;
+    }
+    writer->block->stream_capacity = INITIAL_BLOCK_STREAM_CAPACITY;
 
     writer->string_hash = _Py_hashtable_new_full(
         string_hash_func,
@@ -1591,12 +1600,7 @@ binary_writer_destroy(BinaryWriter *writer)
     }
     PyMem_Free(writer->frame_entries);
 
-    if (writer->thread_entries) {
-        for (size_t i = 0; i < writer->thread_count; i++) {
-            PyMem_Free(writer->thread_entries[i].prev_stack);
-        }
-        PyMem_Free(writer->thread_entries);
-    }
+    PyMem_Free(writer->thread_entries);
 
     PyMem_Free(writer);
 }
