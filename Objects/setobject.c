@@ -3304,11 +3304,26 @@ PyFrozenSetWriter_Finish(PyFrozenSetWriter *writer)
 
 
 int
-PyFrozenSetWriter_Add(PyFrozenSetWriter *writer, PyObject *item)
+PyFrozenSetWriter_AddSteal(PyFrozenSetWriter *writer, PyObject *item)
 {
     assert(frozsetwriter_check_consistency(writer));
+
+    Py_hash_t hash = PyObject_Hash(item);
+    if (hash == -1) {
+        set_unhashable_type(item);
+        Py_DECREF(item);
+        return -1;
+    }
+
     PySetObject *frozenset = _PySet_CAST(writer);
-    return set_add_key(frozenset, item);
+    return set_add_entry_takeref(frozenset, item, hash);
+}
+
+
+int
+PyFrozenSetWriter_Add(PyFrozenSetWriter *writer, PyObject *item)
+{
+    return PyFrozenSetWriter_AddSteal(writer, Py_NewRef(item));
 }
 
 

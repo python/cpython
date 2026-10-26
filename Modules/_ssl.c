@@ -6541,8 +6541,7 @@ parseKeyUsage(PCCERT_CONTEXT pCertCtx, DWORD flags)
             if (oid == NULL) {
                 goto error;
             }
-            err = PyFrozenSetWriter_Add(retval, oid);
-            Py_DECREF(oid);
+            err = PyFrozenSetWriter_AddSteal(retval, oid);
             if (err == -1) {
                 goto error;
             }

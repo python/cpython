@@ -2505,11 +2505,11 @@ _openssl_hash_name_mapper(const EVP_MD *md, const char *from,
     py_name = name == NULL ? NULL : PyUnicode_FromString(name);
     if (py_name == NULL) {
         state->error = 1;
-    } else {
-        if (PyFrozenSetWriter_Add(state->set, py_name) != 0) {
-            state->error = 1;
-        }
-        Py_DECREF(py_name);
+        return;
+    }
+
+    if (PyFrozenSetWriter_AddSteal(state->set, py_name) != 0) {
+        state->error = 1;
     }
 }
 

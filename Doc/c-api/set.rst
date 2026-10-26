@@ -278,6 +278,11 @@ See also the :c:func:`PyFrozenSet_New` function.
    On success, return ``0``.
    On error, set an exception and return ``-1``.
 
+.. c:function:: int PyFrozenSetWriter_AddSteal(PyFrozenSetWriter *writer, PyObject *item)
+
+   Similar to :c:func:`PyFrozenSetWriter_Add`, but :term:`steal` the *item*
+   reference.
+
 .. c:function:: int PyFrozenSetWriter_Update(PyFrozenSetWriter *writer, PyObject *iterable)
 
    Update the frozenset writer, adding elements from *iterable*.

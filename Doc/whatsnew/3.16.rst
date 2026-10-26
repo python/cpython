@@ -1302,6 +1302,7 @@ New features
   * :c:func:`PyFrozenSetWriter_Finish`
   * :c:func:`PyFrozenSetWriter_Discard`
   * :c:func:`PyFrozenSetWriter_Add`
+  * :c:func:`PyFrozenSetWriter_AddSteal`
   * :c:func:`PyFrozenSetWriter_Update`
 
   (Contributed by Victor Stinner in :gh:`160147`.)

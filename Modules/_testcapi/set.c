@@ -118,6 +118,22 @@ writer_add(PyObject *self_raw, PyObject *item)
 }
 
 
+// Test PyFrozenSetWriter_AddSteal()
+static PyObject*
+writer_add_steal(PyObject *self_raw, PyObject *item)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    if (PyFrozenSetWriter_AddSteal(self->writer, Py_NewRef(item)) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
 // Test PyFrozenSetWriter_Update()
 static PyObject*
 writer_update(PyObject *self_raw, PyObject *iterable)
@@ -180,6 +196,7 @@ writer_discard(PyObject *self_raw, PyObject *Py_UNUSED(args))
 
 static PyMethodDef writer_methods[] = {
     {"add", _PyCFunction_CAST(writer_add), METH_O},
+    {"add_steal", _PyCFunction_CAST(writer_add_steal), METH_O},
     {"update", _PyCFunction_CAST(writer_update), METH_O},
     {"get_table_size", _PyCFunction_CAST(writer_get_table_size), METH_NOARGS},
     {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},

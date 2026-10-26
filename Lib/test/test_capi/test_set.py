@@ -313,7 +313,7 @@ class FrozenSetWriterTests(unittest.TestCase):
         # Use mortal (and unique) objects to be able to detect reference leaks
         return tuple(object() for _ in range(nitem))
 
-    def test_append(self):
+    def test_add(self):
         # Test PyFrozenSetWriter_Append()
         items = self.create_items(self.PySet_MINSIZE * 2 - 1)
         table_size = self.compute_table_size(len(items))
@@ -323,6 +323,13 @@ class FrozenSetWriterTests(unittest.TestCase):
                 for item in items:
                     writer.add(item)
                 self.frozenset_equal(writer.finish(), items)
+
+        # Test error (unhashable type)
+        writer = self.create_writer(0)
+        writer.update('abc')
+        with self.assertRaisesRegex(TypeError, "unhashable type: 'list'"):
+            writer.add([])
+        self.frozenset_equal(writer.finish(), frozenset('abc'))
 
     def test_update(self):
         # Test PyFrozenSetWriter_Update()
