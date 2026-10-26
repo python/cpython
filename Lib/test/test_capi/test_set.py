@@ -392,10 +392,11 @@ class FrozenSetWriterTests(unittest.TestCase):
         self.check_update_method('update_array_steal')
 
     def test_finish(self):
-        # Test PyFrozenSetWriter_Finish(): track the frozenset in the GC
+        # Test PyFrozenSetWriter_Finish(): track the frozenset in the GC if at
+        # least one item is tracked by the GC
         writer = self.create_writer()
         writer.update([2, 5, 7])
-        self.assertTrue(gc.is_tracked(writer.finish()))
+        self.assertFalse(gc.is_tracked(writer.finish()))
 
         class MyObject:
             pass
@@ -429,8 +430,8 @@ class FrozenSetWriterTests(unittest.TestCase):
 
     @threading_helper.requires_working_threading()
     def test_thread(self):
-        # PyFrozenSetWriter can be used by multiple threads: it's up to the
-        # caller to implement a lock to prevent concurrent accesses.
+        # PyFrozenSetWriter can be used by multiple threads: it's up to the caller
+        # to implement a lock to prevent concurrent accesses.
         writer = self.create_writer()
 
         def thread_func(writer):

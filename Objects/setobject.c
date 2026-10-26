@@ -3287,13 +3287,21 @@ PyObject*
 PyFrozenSetWriter_Finish(PyFrozenSetWriter *writer)
 {
     assert(frozensetwriter_check_consistency(writer));
-    PyObject *frozenset = _PyObject_CAST(writer);
+    PySetObject *frozenset = _PySet_CAST(writer);
 
-    // Now that the frozenset is fully initialized, it's safe to track it
-    // in the garbage collector.
-    _PyObject_GC_TRACK(frozenset);
+    // Now that the frozenset is fully initialized, it's safe to track it in
+    // the GC. Track the frozenset if at least one item is tracked by the GC.
+    Py_ssize_t pos = 0;
+    setentry *entry;
+    while (set_next(frozenset, &pos, &entry)) {
+        PyObject *item = entry->key;
+        if (_PyObject_IS_GC(item) && _PyObject_GC_IS_TRACKED(item)) {
+            _PyObject_GC_TRACK(frozenset);
+            break;
+        }
+    }
 
-    return frozenset;
+    return _PyObject_CAST(frozenset);
 }
 
 
