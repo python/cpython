@@ -1,0 +1,5 @@
+The build helper programs ``Programs/_freeze_module`` and
+``_bootstrap_python`` are now linked only with the modules of
+:file:`Modules/Setup.bootstrap`, instead of with every static module. Builtin
+modules added via :file:`Modules/Setup.local` or ``MODULE_BUILDTYPE=static``
+can now depend on frozen modules or on ``getpath``.
