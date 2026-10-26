@@ -770,6 +770,30 @@ class BasicTest(BaseTest):
         self.assertTrue(env_name.encode() in lines[0])
         self.assertEndsWith(lines[1], env_name.encode())
 
+    # gh-160732: prompt values must not be evaluated when bash displays PS1.
+    @unittest.skipIf(os.name == 'nt', 'contains invalid characters on Windows')
+    @unittest.skipIf(sys.platform == 'cygwin', 'fail to locate cygpython DLL')
+    def test_prompt_command_substitution_bash(self):
+        """Test that command substitutions in the prompt are not evaluated."""
+        rmtree(self.env_dir)
+        bash = shutil.which('bash')
+        if bash is None:
+            self.skipTest('bash required for this test')
+        marker = os.path.join(self.env_dir, 'prompt-command-ran')
+        prompt = f'$(touch {shlex.quote(marker)})'
+        builder = venv.EnvBuilder(clear=True, prompt=prompt)
+        builder.create(self.env_dir)
+        activate = os.path.join(self.env_dir, self.bindir, 'activate')
+        result = subprocess.run(
+            [bash, '--noprofile', '--norc', '-i'],
+            input=f'source {shlex.quote(activate)}\nexit\n',
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertFalse(os.path.exists(marker))
+
     # gh-124651: test quoted strings
     @unittest.skipIf(os.name == 'nt', 'contains invalid characters on Windows')
     @unittest.skipIf(sys.platform.startswith('netbsd'),

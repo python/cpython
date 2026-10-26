@@ -1,0 +1,2 @@
+Fix command substitution in virtual environment prompts being evaluated by the
+generated Bash activation script.
