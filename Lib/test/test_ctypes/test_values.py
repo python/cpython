@@ -8,7 +8,7 @@ import importlib.util
 import sys
 import unittest
 from ctypes import (Structure, CDLL, POINTER, pythonapi,
-                    c_ubyte, c_char_p, c_int)
+                    c_ubyte, c_char_p, c_int, c_ulong)
 from test import support
 from test.support import import_helper, thread_unsafe
 
@@ -77,7 +77,7 @@ class PythonValuesTestCase(unittest.TestCase):
         # This test accesses the Py_Version integer, which is
         # exported by the Python dll and should match the sys.hexversion value
 
-        version = c_int.in_dll(pythonapi, "Py_Version").value
+        version = c_ulong.in_dll(pythonapi, "Py_Version").value
         self.assertEqual(version, sys.hexversion)
 
     @thread_unsafe('overrides frozen modules')

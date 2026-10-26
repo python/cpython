@@ -1502,6 +1502,50 @@ Ensure that early = are not matched by the parser as invalid comparisons
    Traceback (most recent call last):
    SyntaxError: invalid syntax
 
+Ensure that alternative patterns bind the same names (when there is
+a single capture in the first pattern that is not uniformly captured,
+the error message is sightly different).
+
+   >>> match 1:
+   ...     case x | 1: pass
+   Traceback (most recent call last):
+   SyntaxError: name capture 'x' makes remaining patterns unreachable
+
+   >>> match 1:
+   ...     case x | y: pass
+   Traceback (most recent call last):
+   SyntaxError: name capture 'x' makes remaining patterns unreachable
+
+   >>> match 1:
+   ...     case 1 | x: pass
+   Traceback (most recent call last):
+   SyntaxError: alternative patterns bind different names (pattern 1 binds nothing, pattern 2 binds ['x'])
+
+   >>> match 1:
+   ...     case (x, y) | 1: pass
+   Traceback (most recent call last):
+   SyntaxError: alternative patterns bind different names (pattern 1 binds ['x', 'y'], pattern 2 binds nothing)
+
+   >>> match 1:
+   ...     case 1 | ("point", {"x": x, "y": y}): pass
+   Traceback (most recent call last):
+   SyntaxError: alternative patterns bind different names (pattern 1 binds nothing, pattern 2 binds ['x', 'y'])
+
+   >>> match 1:
+   ...     case ("point", {"x": x, "y": y}) | 1: pass
+   Traceback (most recent call last):
+   SyntaxError: alternative patterns bind different names (pattern 1 binds ['x', 'y'], pattern 2 binds nothing)
+
+   >>> match 1:
+   ...     case ("user", {"id": id}) | ("admin", {"name": name}): pass
+   Traceback (most recent call last):
+   SyntaxError: alternative patterns bind different names (pattern 1 binds ['id'], pattern 2 binds ['name'])
+
+   >>> match 1:
+   ...     case ("user", {"id": id}) | ("admin", {"id": id}) | ("other", {"ip": ip}): pass
+   Traceback (most recent call last):
+   SyntaxError: alternative patterns bind different names (pattern 1 binds ['id'], pattern 3 binds ['ip'])
+
 Incomplete dictionary literals
 
    >>> {1:2, 3:4, 5}
@@ -3643,6 +3687,31 @@ while 1:
             ("continue", "import ast")
         ]:
             self._check_error(f"x = {lhs_stmt} if 1 else {rhs_stmt}", msg)
+
+    def test_diamond_operator(self):
+        self._check_error(
+            "1<>2",
+            r"Maybe you meant '!=' instead of '<>'\?",
+            lineno=1,
+            end_lineno=1,
+            offset=2,
+            end_offset=4,
+        )
+
+    def test_diamond_operator_barry_as_flufl(self):
+        # Under barry_as_FLUFL, '<>' is the valid "not equal" operator
+        compile(
+            "from __future__ import barry_as_FLUFL\n1<>2",
+            "<test>", "exec",
+        )
+        self._check_error(
+            "from __future__ import barry_as_FLUFL\na != b",
+            "with Barry as BDFL, use '<>' instead of '!='",
+            lineno=2,
+            end_lineno=2,
+            offset=3,
+            end_offset=5,
+        )
 
     def test_double_ampersand(self):
         self._check_error(

@@ -1187,7 +1187,7 @@ In addition to the three supplied contexts, new contexts can be created with the
       Fields which are not specified keep the values
       they have in the original context.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          Added support for :func:`copy.replace`.
 
    .. method:: copy_decimal(num, /)
@@ -1631,6 +1631,46 @@ are also included in the pure Python version for compatibility.
    is ``False``.  This is slightly faster in some nested context scenarios.
 
    .. versionadded:: 3.8.3
+
+The following constants are only available in the C module.
+
+.. data:: LIBMPDEC_VERSION
+
+   The version string of the libmpdec library that was used for building
+   the module.
+   This may be different from the libmpdec library actually used at runtime,
+   which is available as :const:`libmpdec_version`.
+
+   .. versionadded:: 3.16
+
+.. data:: libmpdec_version
+
+   The version string of the libmpdec library actually loaded by the
+   interpreter.
+
+   .. versionadded:: 3.16
+
+.. data:: LIBMPDEC_VERSION_INFO
+
+   A named tuple containing the three components of the libmpdec library
+   version that was used for building the module:
+   *major*, *minor*, and *micro*.
+   All values are integers.
+   The components can also be accessed by name,
+   so ``decimal.LIBMPDEC_VERSION_INFO[0]`` is equivalent to
+   ``decimal.LIBMPDEC_VERSION_INFO.major`` and so on.
+   This may be different from the libmpdec library actually used at runtime,
+   which is available as :const:`libmpdec_version_info`.
+
+   .. versionadded:: 3.16
+
+.. data:: libmpdec_version_info
+
+   A named tuple containing the version of the libmpdec library
+   actually loaded by the interpreter,
+   with the same fields as :const:`LIBMPDEC_VERSION_INFO`.
+
+   .. versionadded:: 3.16
 
 
 Rounding modes

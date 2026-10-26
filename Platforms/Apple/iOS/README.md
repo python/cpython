@@ -7,9 +7,8 @@ Python distribution.
 
 These instructions are only needed if you're planning to compile Python for iOS
 yourself. Most users should *not* need to do this. If you're looking to
-experiment with writing an iOS app in Python, tools such as [BeeWare's
-Briefcase](https://briefcase.readthedocs.io) and [Kivy's
-Buildozer](https://buildozer.readthedocs.io) will provide a much more
+experiment with writing an iOS app in Python, use one of the tools listed in
+[Using Python on iOS](https://docs.python.org/3/using/ios.html) for a much more
 approachable user experience.
 
 ## Compilers for building on iOS
@@ -76,6 +75,39 @@ complete "build and test" CI run. The `--clean` flag can also be used on
 individual commands to ensure that a stale build product are removed before
 building.
 
+### Building with ABI flags
+
+By default, the `Platforms/Apple` build script produces a GIL-enabled,
+non-debug build of Python. The `--abiflags` option can be passed to any
+command of the build script to build a variant of Python with different
+ABI flags:
+
+* `t` - a free-threaded build (`--disable-gil`)
+* `d` - a debug build (`--with-pydebug`)
+* `td` - a free-threaded debug build
+
+For example, to build and test a free-threaded XCframework, run:
+
+    python Platforms/Apple ci iOS --abiflags t
+
+When ABI flags are specified:
+
+* The ABI flags are appended to the name of the cross-build directory. The
+  free-threaded example above uses `cross-build-t`. If you specify a custom
+  location with `--cross-build-dir` (or the `CROSS_BUILD_DIR` environment
+  variable), that location is used as the base name, so `--cross-build-dir foo
+  --abiflags t` uses `foo-t`. This lets builds with different ABI flags
+  co-exist.
+* The framework is named `Python` followed by the uppercased ABI flags. For
+  example, a free-threaded build produces `PythonT.framework` and
+  `PythonT.xcframework`, and its headers are included as
+  `#include <PythonT/Python.h>`.
+* The release archive includes the ABI flags in the version, e.g.
+  `python-3.X.Yt-iOS-XCframework.tar.gz`.
+
+The same `--abiflags` value must be passed to every command that operates on a
+given build.
+
 ### Building a single-architecture framework
 
 If you're using the `Platforms/Apple` build script, you won't need to build
@@ -103,11 +135,13 @@ Python build for a single framework, the following options are available.
   Specify the name for the Python framework; defaults to `Python`.
 
   > [!NOTE]
-  > Unless you know what you're doing, changing the name of the Python
-  > framework on iOS is not advised. If you use this option, you won't be able
-  > to run the `Platforms/Apple` build script without making significant manual
-  > alterations, and you won't be able to use any binary packages unless you
-  > compile them yourself using your own framework name.
+  > Builds that use ABI flags (such as free-threaded or debug builds) should
+  > use a framework name of `Python`, followed by the uppercased ABI flags
+  > (e.g., `PythonT` for a free-threaded build). The `Platforms/Apple` build
+  > script and the testbed rely on this naming convention. Other than this
+  > convention, changing the name of the Python framework on iOS is not
+  > advised; you won't be able to use any binary packages unless you compile
+  > them yourself using your own framework name.
 
 #### Building Python for iOS
 
@@ -340,10 +374,11 @@ project, and then boot and prepare the iOS simulator.
 
 Running `python Platforms/Apple test iOS` generates a standalone version of the
 `Platforms/Apple/testbed` project, and runs the full test suite. It does this using
-`Platforms/Apple/testbed` itself - the folder is an executable module that can be used
-to create and run a clone of the testbed project. The standalone version of the
-testbed will be created in a directory named
-`cross-build/iOS-testbed.<timestamp>`.
+`Platforms/Apple/testbed` itself - the folder is a template for an executable module
+that can be used to create and run a clone of the testbed project. The standalone
+version of the testbed will be created in a directory named
+`cross-build/iOS-testbed.<timestamp>`. Builds that use ABI flags use the
+`cross-build-<abiflags>` directory instead (e.g., `cross-build-t`).
 
 You can generate your own standalone testbed instance by running:
 ```
@@ -359,8 +394,21 @@ you can construct a standalone testbed instance by running:
 python Platforms/Apple/testbed clone --platform iOS --framework <path/to/framework> my-testbed
 ```
 
-The framework path can be the path path to a `Python.xcframework`, or the
+The framework path can be the path to a `Python.xcframework`, or the
 path to a folder that contains a single-platform `Python.framework`.
+
+The `Platforms/Apple/testbed` folder is a template. Any reference to the
+Python framework uses the placeholder `Python{{abiflags}}`. When the template
+project is cloned, the placeholder is replaced with the name of the framework
+being installed; the ABI flags are inferred automatically from the
+`--framework` argument. For example, to clone a testbed for a free-threaded
+framework:
+```
+python Platforms/Apple/testbed clone --platform iOS --framework <path/to/PythonT.xcframework> my-testbed
+```
+
+A cloned testbed is configured for one specific framework. It can be cloned
+again, but it can't be re-targeted to a framework with different ABI flags.
 
 You can then use the `my-testbed` folder to run the Python test suite,
 passing in any command line arguments you may require. For example, if you're

@@ -56,13 +56,11 @@
 #if ! defined(INTERNAL_H)
 #  define INTERNAL_H 1
 
-#  ifndef XML_MIN_SIZE
-#    if ! defined(inline)
-#      ifdef __GNUC__
-#        define inline __inline
-#      endif /* __GNUC__ */
-#    endif
-#  endif /* XML_MIN_SIZE */
+#  if ! defined(inline)
+#    ifdef __GNUC__
+#      define inline __inline
+#    endif /* __GNUC__ */
+#  endif
 
 #  ifndef inline
 #    define inline
