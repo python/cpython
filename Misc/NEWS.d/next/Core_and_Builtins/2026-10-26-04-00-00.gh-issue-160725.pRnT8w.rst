@@ -1,0 +1,2 @@
+Speed up :func:`print` by looking up the file's ``write()`` method once per
+call.
