@@ -3006,7 +3006,6 @@ class _PdbServer(Pdb):
                 # Check if the interpreter is finalizing every quarter of a second.
                 # Clean up and exit if so.
                 sock.settimeout(0.25)
-                sock.shutdown(socket.SHUT_WR)
                 while not shut_down.is_set():
                     try:
                         data = sock.recv(1024)
