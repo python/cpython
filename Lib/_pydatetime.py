@@ -396,6 +396,10 @@ def _parse_isoformat_date(dtstr):
             pos += has_sep
 
             dayno = _read_isoformat_component(dtstr[pos:pos + 1], 1)
+            pos += 1
+
+        if pos != len(dtstr):
+            raise ValueError("Invalid isoformat string")
 
         return list(_isoweek_to_gregorian(year, weekno, dayno))
     else:
@@ -406,6 +410,10 @@ def _parse_isoformat_date(dtstr):
 
         pos += has_sep
         day = _read_isoformat_component(dtstr[pos:pos + 2], 2)
+        pos += 2
+
+        if pos != len(dtstr):
+            raise ValueError("Invalid isoformat string")
 
         return [year, month, day]
 
@@ -1984,7 +1992,7 @@ class datetime(date):
             raise ValueError(
                 f'Invalid isoformat string: {date_string!r}') from None
 
-        if tstr:
+        if separator_location < len(date_string):
             try:
                 (time_components,
                  became_next_day,

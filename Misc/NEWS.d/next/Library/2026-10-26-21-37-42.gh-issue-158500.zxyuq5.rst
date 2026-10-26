@@ -1,0 +1,5 @@
+:meth:`datetime.date.fromisoformat` now raises :exc:`ValueError` for a
+basic-format date followed by extra characters, such as ``'2020010112'``,
+instead of silently ignoring them. The pure-Python implementation of
+:meth:`datetime.datetime.fromisoformat` now also rejects a date followed by a
+single character, such as ``'2020-01-01T'``, matching the C implementation.
