@@ -568,8 +568,8 @@ math
 math.integer
 ------------
 
-* Added :func:`math.integer.isprime` for primality testing of integers
-  less than 2**64.
+* Added :func:`math.integer.isprime` for primality testing of integers.
+  Results are exact below ``2**64``, and larger inputs use a probable-prime test.
   (Contributed by Serhiy Storchaka and Stan Ulbrych in :gh:`153222`.)
 
 

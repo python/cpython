@@ -49,14 +49,17 @@ all return values are computed exactly and are integers.
 
 .. function:: isprime(n, /)
 
-   Return ``True`` if *n* is a prime number, ``False`` otherwise.
+   Return ``True`` if *n* is prime or probably prime, ``False`` otherwise.
 
-   A prime number is a natural number greater than 1
-   that is not a product of two smaller natural numbers.
-   Negative numbers, ``0`` and ``1`` are not prime.
+   For ``n < 2**64``, the result is exact. For larger integers, ``True``
+   indicates that *n* is probably prime. However, a composite number may be
+   accepted. A ``False`` result always means that *n* is not prime.
 
-   The argument must be less than 2\ :sup:`64`;
-   raises :exc:`OverflowError` otherwise.
+   For large inputs, the implementation uses 64 Miller--Rabin rounds with
+   independently and uniformly chosen random bases. For any fixed composite
+   input, the probability of returning ``True`` is at most ``2**-128``.
+   This bound is over the random choices made by the test, not the probability
+   that an input is composite given a ``True`` result.
 
    .. versionadded:: next
 

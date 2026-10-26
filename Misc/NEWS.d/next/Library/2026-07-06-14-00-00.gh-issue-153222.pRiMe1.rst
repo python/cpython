@@ -1,2 +1,2 @@
-Add :func:`math.integer.isprime` for primality testing of integers
-less than 2**64.
+Add :func:`math.integer.isprime` for primality testing of integers.
+Results are exact below ``2**64``; larger inputs use a probable-prime test.

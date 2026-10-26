@@ -71,9 +71,10 @@ PyDoc_STRVAR(math_integer_isprime__doc__,
 "isprime($module, n, /)\n"
 "--\n"
 "\n"
-"Return True if n is a prime number, False otherwise.\n"
+"Return True if n is prime or probably prime, False otherwise.\n"
 "\n"
-"The argument must be less than 2**64.");
+"The result is exact for n < 2**64. For larger integers, True means\n"
+"probably prime. False always means that n is not prime.");
 
 #define MATH_INTEGER_ISPRIME_METHODDEF    \
     {"isprime", (PyCFunction)math_integer_isprime, METH_O, math_integer_isprime__doc__},
@@ -186,4 +187,4 @@ math_integer_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bb518a64a75a30f1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4e47e334e7fe1156 input=a9049054013a1b77]*/

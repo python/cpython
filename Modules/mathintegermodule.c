@@ -8,6 +8,7 @@
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_bitutils.h"      // _Py_bit_length()
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_pylifecycle.h"   // _PyOS_URandom()
 
 #include "clinic/mathintegermodule.c.h"
 
@@ -481,7 +482,7 @@ math_integer_isqrt(PyObject *module, PyObject *n)
 }
 
 
-/* Primality testing with the deterministic Miller-Rabin test.
+/* Primality testing below 2**64 with the deterministic Miller-Rabin test.
 
    A strong probable prime test is exact for n < 4759123141 with the
    bases {2, 7, 61} (G. Jaeschke, "On strong pseudoprimes to several
@@ -666,22 +667,187 @@ isprime_u64(uint64_t n)
     return 1;
 }
 
+/* Strong probable prime test using arbitrary-precision arithmetic.
+   n - 1 = d * 2**s, where d is odd. Return -1 on error. */
+static int
+sprp_long(PyObject *n, PyObject *base, PyObject *d, int64_t s,
+          PyObject *n_minus_one)
+{
+    PyObject *x = PyNumber_Power(base, d, n);
+    if (x == NULL) {
+        return -1;
+    }
+    int result = PyObject_RichCompareBool(x, _PyLong_GetOne(), Py_EQ);
+    if (result != 0) {
+        goto done;
+    }
+    for (int64_t r = 0; r < s; r++) {
+        result = PyObject_RichCompareBool(x, n_minus_one, Py_EQ);
+        if (result != 0 || r == s - 1) {
+            goto done;
+        }
+        if (PyErr_CheckSignals() < 0) {
+            result = -1;
+            goto done;
+        }
+        Py_SETREF(x, PyNumber_Multiply(x, x));
+        if (x == NULL) {
+            return -1;
+        }
+        Py_SETREF(x, PyNumber_Remainder(x, n));
+        if (x == NULL) {
+            return -1;
+        }
+        result = PyObject_RichCompareBool(x, _PyLong_GetOne(), Py_EQ);
+        if (result != 0) {
+            /* Reaching 1 before -1 proves that n is composite. */
+            if (result > 0) {
+                result = 0;
+            }
+            goto done;
+        }
+    }
+
+  done:
+    Py_DECREF(x);
+    return result;
+}
+
+/* Probable primality for n >= 2**64. A base-2 test rejects most composites
+   before requesting randomness. Then 64 independent, uniformly sampled
+   bases give a false-positive probability at most 4**-64 = 2**-128 for
+   any fixed composite n. */
+static int
+isprime_long(PyObject *n)
+{
+    assert(PyLong_CheckExact(n));
+    assert(_PyLong_NumBits(n) > 64);
+
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(small_primes); i++) {
+        PyObject *p = PyLong_FromLong(small_primes[i]);
+        if (p == NULL) {
+            return -1;
+        }
+        PyObject *rem = PyNumber_Remainder(n, p);
+        Py_DECREF(p);
+        if (rem == NULL) {
+            return -1;
+        }
+        int divisible = _PyLong_IsZero((PyLongObject *)rem);
+        Py_DECREF(rem);
+        if (divisible) {
+            return 0;
+        }
+    }
+
+    int result = -1;
+    PyObject *n_minus_one = NULL, *d = NULL, *base = NULL, *lowbit = NULL;
+    unsigned char *buffer = NULL;
+    n_minus_one = PyNumber_Subtract(n, _PyLong_GetOne());
+    if (n_minus_one == NULL) {
+        goto done;
+    }
+    /* Extract the largest power of two dividing n - 1. */
+    lowbit = PyNumber_Negative(n_minus_one);
+    if (lowbit == NULL) {
+        goto done;
+    }
+    Py_SETREF(lowbit, PyNumber_And(n_minus_one, lowbit));
+    if (lowbit == NULL) {
+        goto done;
+    }
+    int64_t s = _PyLong_NumBits(lowbit) - 1;
+    Py_CLEAR(lowbit);
+    d = _PyLong_Rshift(n_minus_one, s);
+    if (d == NULL) {
+        goto done;
+    }
+    base = PyLong_FromLong(2);
+    if (base == NULL) {
+        goto done;
+    }
+    int passed = sprp_long(n, base, d, s, n_minus_one);
+    if (passed <= 0) {
+        result = passed;
+        goto done;
+    }
+
+    int64_t bits = _PyLong_NumBits(n);
+    int64_t bytes = (bits - 1) / 8 + 1;
+    if (bytes > PY_SSIZE_T_MAX) {
+        PyErr_NoMemory();
+        goto done;
+    }
+    Py_ssize_t size = (Py_ssize_t)bytes;
+    buffer = PyMem_Malloc(size);
+    if (buffer == NULL) {
+        PyErr_NoMemory();
+        goto done;
+    }
+    unsigned char mask = (unsigned char)(0xff >> (7 - (bits - 1) % 8));
+    for (int i = 0; i < 64; i++) {
+        /* Rejection sampling avoids the bias of reduction modulo n. */
+        for (;;) {
+            if (PyErr_CheckSignals() < 0 || _PyOS_URandom(buffer, size) < 0) {
+                goto done;
+            }
+            buffer[size - 1] &= mask;
+            Py_SETREF(base, _PyLong_FromByteArray(buffer, size, 1, 0));
+            if (base == NULL) {
+                goto done;
+            }
+            int above_one = PyObject_RichCompareBool(
+                base, _PyLong_GetOne(), Py_GT);
+            if (above_one < 0) {
+                goto done;
+            }
+            if (!above_one) {
+                continue;
+            }
+            int below_limit = PyObject_RichCompareBool(
+                base, n_minus_one, Py_LT);
+            if (below_limit < 0) {
+                goto done;
+            }
+            if (below_limit) {
+                break;
+            }
+        }
+        passed = sprp_long(n, base, d, s, n_minus_one);
+        if (passed <= 0) {
+            result = passed;
+            goto done;
+        }
+    }
+    result = 1;
+
+  done:
+    Py_XDECREF(n_minus_one);
+    Py_XDECREF(d);
+    Py_XDECREF(base);
+    Py_XDECREF(lowbit);
+    PyMem_Free(buffer);
+    return result;
+}
+
 /*[clinic input]
 math.integer.isprime -> bool
 
     n: object
     /
 
-Return True if n is a prime number, False otherwise.
+Return True if n is prime or probably prime, False otherwise.
 
-The argument must be less than 2**64.
+The result is exact for n < 2**64. For larger integers, True means
+probably prime. False always means that n is not prime.
 [clinic start generated code]*/
 
 static int
 math_integer_isprime_impl(PyObject *module, PyObject *n)
-/*[clinic end generated code: output=c808dc14d8d86875 input=bab96f73b765d9cf]*/
+/*[clinic end generated code: output=c808dc14d8d86875 input=e771fc2bdb5e29fb]*/
 {
-    n = _PyNumber_Index(n);
+    /* The arbitrary-precision path must not call int subclass operators. */
+    n = PyNumber_Index(n);
     if (n == NULL) {
         return -1;
     }
@@ -692,6 +858,10 @@ math_integer_isprime_impl(PyObject *module, PyObject *n)
     }
     else if (PyLong_AsUInt64(n, &m) < 0) {
         result = -1;
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_Clear();
+            result = isprime_long(n);
+        }
     }
     else {
         result = isprime_u64(m);
