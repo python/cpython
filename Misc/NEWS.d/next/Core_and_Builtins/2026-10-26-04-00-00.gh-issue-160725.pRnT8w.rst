@@ -1,2 +1,2 @@
-Speed up :func:`print` by looking up the file's ``write()`` method once per
-call.
+Speed up :func:`print` by looking up the file's :meth:`~file.write` method
+once per call.
