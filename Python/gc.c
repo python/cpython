@@ -1009,7 +1009,7 @@ debug_cycle(const char *msg, PyObject *op)
  * `seen` list, as finalize_garbage() does. Return the number of seen
  * items.
  */
-static int
+static Py_ssize_t
 debug_cycles(const char *msg, PyGC_Head *list)
 {
     PyGC_Head seen;
@@ -1630,10 +1630,10 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
      * debugging information. */
     if (gcstate->debug & _PyGC_DEBUG_UNCOLLECTABLE) {
         stats.uncollectable = debug_cycles("uncollectable", &finalizers);
-    } else {
+    }
+    else {
         stats.uncollectable = gc_list_size(&finalizers);
     }
-
     (void)PyTime_PerfCounterRaw(&stats.ts_stop);
     stats.duration = PyTime_AsSecondsDouble(stats.ts_stop - stats.ts_start);
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
