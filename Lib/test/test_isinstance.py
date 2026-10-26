@@ -263,6 +263,21 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         self.assertEqual(True, issubclass(int, (int, (float, int))))
         self.assertEqual(True, issubclass(str, (str, (Child, str))))
 
+    def test_tuple_subclass_methods_not_called(self):
+        # gh-83731: make sure isinstance() reads the items of a tuple
+        # subclass directly, without calling its __iter__(),
+        # __getitem__() or __len__().
+        class T(tuple):
+            def __iter__(self):
+                raise AssertionError('__iter__ called')
+            def __getitem__(self, index):
+                raise AssertionError('__getitem__ called')
+            def __len__(self):
+                raise AssertionError('__len__ called')
+
+        self.assertTrue(isinstance(1, T((int,))))
+
+    @support.skip_if_huge_c_stack()
     @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
     def test_subclass_recursion_limit(self):
@@ -270,6 +285,7 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         # blown
         self.assertRaises(RecursionError, blowstack, issubclass, str, str)
 
+    @support.skip_if_huge_c_stack()
     @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
     def test_isinstance_recursion_limit(self):
@@ -317,7 +333,7 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
             self.assertRaises(RecursionError, issubclass, int, X())
             self.assertRaises(RecursionError, isinstance, 1, X())
 
-    @support.skip_if_unlimited_stack_size
+    @support.skip_if_huge_c_stack()
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_infinite_recursion_via_bases_tuple(self):
@@ -329,7 +345,7 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
             with self.assertRaises(RecursionError):
                 issubclass(Failure(), int)
 
-    @support.skip_if_unlimited_stack_size
+    @support.skip_if_huge_c_stack()
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_infinite_cycle_in_bases(self):

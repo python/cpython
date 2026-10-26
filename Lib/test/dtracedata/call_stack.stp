@@ -10,32 +10,21 @@ function basename:string(path:string)
     return last_token;
 }
 
-probe process.mark("function__entry")
-{
-    funcname = user_string($arg2);
-
-    if (funcname == "start") {
-        tracing = 1;
-    }
-}
-
-probe process.mark("function__entry"), process.mark("function__return")
+probe @PYTHON_SYSTEMTAP_PROBE@("function__entry"),
+      @PYTHON_SYSTEMTAP_PROBE@("function__return")
 {
     filename = user_string($arg1);
     funcname = user_string($arg2);
     lineno = $arg3;
 
-    if (tracing) {
+    if (funcname == "start") {
+        if ($$name == "function__entry") {
+            tracing = 1;
+        } else {
+            tracing = 0;
+        }
+    } else if (tracing) {
         printf("%d\t%s:%s:%s:%d\n", gettimeofday_us(), $$name,
                basename(filename), funcname, lineno);
-    }
-}
-
-probe process.mark("function__return")
-{
-    funcname = user_string($arg2);
-
-    if (funcname == "start") {
-        tracing = 0;
     }
 }

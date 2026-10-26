@@ -254,7 +254,8 @@ class ELinksCommandTest(CommandTestMixin, unittest.TestCase):
                    arguments=[f'openURL({URL},new-tab)'])
 
 
-@unittest.skipUnless(sys.platform == "ios", "Test only applicable to iOS")
+@unittest.skipUnless(sys.platform in {"ios", "visionOS"},
+                     "Test only applicable to iOS and visionOS")
 class IOSBrowserTest(unittest.TestCase):
     def _obj_ref(self, *args):
         # Construct a string representation of the arguments that can be used

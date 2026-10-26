@@ -440,7 +440,8 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
 
         b = ttk.Label(self.root, style='TestWidget')
         b.pack(expand=True, fill='both')
-        self.assertEqual(b.winfo_reqwidth(), 134)
+        # The exact width varies with the Tk version and display scaling.
+        self.assertGreater(b.winfo_reqwidth(), 130)
         self.assertEqual(b.winfo_reqheight(), 100)
 
         style.theme_use(curr_theme)

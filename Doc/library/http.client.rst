@@ -277,7 +277,7 @@ HTTPConnection Objects
    instance of :class:`io.TextIOBase`, the data returned by the ``read()``
    method will be encoded as ISO-8859-1, otherwise the data returned by
    ``read()`` is sent as is.  If *body* is an iterable, the elements of the
-   iterable are sent as is until the iterable is exhausted.
+   iterable are sent as is until the iterable is :term:`exhausted`.
 
    The *headers* argument should be a mapping of extra HTTP headers to send
    with the request. A :rfc:`Host header <2616#section-14.23>`
@@ -370,7 +370,8 @@ HTTPConnection Objects
    proxy server).
 
    The *headers* argument should be a mapping of extra HTTP headers to send with
-   the CONNECT request.
+   the CONNECT request. Non-string header values are converted to strings via
+   :func:`str`.
 
    As HTTP/1.1 is used for HTTP CONNECT tunnelling request, `as per the RFC
    <https://datatracker.ietf.org/doc/html/rfc7231#section-4.3.6>`_, a HTTP ``Host:``
@@ -433,6 +434,7 @@ HTTPConnection Objects
 
    The maximum number of allowed response headers to help prevent denial-of-service
    attacks. By default, the maximum number of allowed headers is set to 100.
+   The same limit applies to the trailer section of a chunked response.
 
    .. versionadded:: 3.15
 
