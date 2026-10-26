@@ -778,7 +778,8 @@ reader_get_frame_info(RemoteDebuggingState *state, BinaryReader *reader,
     return frame_info;
 }
 
-/* Build a Python list of FrameInfo objects from frame indices */
+/* Build a Python list of FrameInfo objects from frame indices. Stacks are
+ * kept outermost first, but collectors expect innermost first. */
 static PyObject *
 build_frame_list(RemoteDebuggingState *state, BinaryReader *reader,
                  const uint32_t *frame_indices, size_t stack_depth)
@@ -790,7 +791,7 @@ build_frame_list(RemoteDebuggingState *state, BinaryReader *reader,
 
     for (size_t k = 0; k < stack_depth; k++) {
         PyObject *frame_info = reader_get_frame_info(
-            state, reader, frame_indices[k]);
+            state, reader, frame_indices[stack_depth - 1 - k]);
         if (frame_info == NULL) {
             goto error;
         }
@@ -1366,14 +1367,10 @@ flush_stream_batch(BinaryReader *reader, RemoteDebuggingState *state,
     if (stream->batch == NULL) {
         return 0;
     }
-    /* Stacks are kept outermost first; collectors expect innermost first */
-    uint32_t stack[MAX_STACK_DEPTH];
-    for (size_t i = 0; i < stream->current_stack_depth; i++) {
-        stack[i] = stream->current_stack[stream->current_stack_depth - 1 - i];
-    }
     int result = emit_sample(state, collector, stream->thread_id,
                              stream->interpreter_id, stream->batch_status,
-                             stack, stream->current_stack_depth, reader,
+                             stream->current_stack,
+                             stream->current_stack_depth, reader,
                              stream->batch);
     Py_CLEAR(stream->batch);
     return result;
