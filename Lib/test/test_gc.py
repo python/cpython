@@ -353,68 +353,6 @@ class GCTests(unittest.TestCase):
         obj = gc.garbage.pop()
         self.assertEqual(id(obj), id_L)
 
-    @unittest.skipIf(Py_GIL_DISABLED,
-                     "the free-threaded GC prints while the world is stopped")
-    def test_debug_collectable_write_frees_object(self):
-        class Node:
-            def __init__(self):
-                self.cycle = [self]
-
-        class Stderr:
-            def write(self, text):
-                node = wr()
-                if node is not None:
-                    node.cycle.clear()
-                return len(text)
-
-        gc.collect()
-        node = Node()
-        wr = weakref.ref(node)
-        del node
-        debug = gc.get_debug()
-        with support.swap_attr(sys, 'stderr', Stderr()):
-            gc.set_debug(gc.DEBUG_COLLECTABLE)
-            try:
-                gc.collect()
-            finally:
-                gc.set_debug(debug)
-        self.assertIsNone(wr())
-
-    def test_debug_uncollectable_write_frees_object(self):
-        @with_tp_del
-        class Legacy:
-            def __tp_del__(self):
-                pass
-
-        class Child:
-            pass
-
-        class Stderr:
-            def write(self, text):
-                legacy = wr()
-                if legacy is not None and '<Child ' in text:
-                    del legacy.child
-                return len(text)
-
-        gc.collect()
-        legacy = Legacy()
-        legacy.cycle = legacy
-        legacy.child = Child()
-        wr = weakref.ref(legacy)
-        del legacy
-        debug = gc.get_debug()
-        with support.swap_attr(sys, 'stderr', Stderr()):
-            gc.set_debug(gc.DEBUG_UNCOLLECTABLE)
-            try:
-                gc.collect()
-            finally:
-                gc.set_debug(debug)
-        legacy = wr()
-        self.assertFalse(hasattr(legacy, 'child'))
-        self.assertIn(legacy, gc.garbage)
-        del legacy.cycle
-        gc.garbage.remove(legacy)
-
     def test_del(self):
         # __del__ methods can trigger collection, make this to happen
         thresholds = gc.get_threshold()

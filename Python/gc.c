@@ -1012,6 +1012,9 @@ static void
 debug_cycles(const char *msg, PyGC_Head *list)
 {
     PyGC_Head seen;
+    /* Always take the next object from the head of `list` rather than from
+     * the current one, which may be freed (along with others) by debug_cycle().
+     */
     gc_list_init(&seen);
     while (!gc_list_is_empty(list)) {
         PyGC_Head *gc = GC_NEXT(list);
