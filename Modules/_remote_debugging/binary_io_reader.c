@@ -1422,6 +1422,7 @@ decode_stack_reuse(BinaryReader *reader, DecodedBlock *block,
     return 0;
 }
 
+/* Return 1 if a new stack was decoded, 0 if the stack repeats, -1 on error. */
 static int
 decode_stack(BinaryReader *reader, RemoteDebuggingState *state,
              PyObject *collector, DecodedBlock *block,
@@ -1462,7 +1463,7 @@ decode_stack(BinaryReader *reader, RemoteDebuggingState *state,
     }
     stream->has_stack = 1;
     reader->stats.stack_reconstructions++;
-    return 0;
+    return 1;
 }
 
 static int
@@ -1472,7 +1473,8 @@ replay_sample(BinaryReader *reader, RemoteDebuggingState *state,
     ReaderBlockStream *stream =
         &reader->block_streams[block->stream_ids[sample]];
     uint8_t status = block->statuses[sample];
-    if (decode_stack(reader, state, collector, block, stream) < 0) {
+    int new_stack = decode_stack(reader, state, collector, block, stream);
+    if (new_stack < 0) {
         return -1;
     }
 
@@ -1495,7 +1497,15 @@ replay_sample(BinaryReader *reader, RemoteDebuggingState *state,
     }
     int result = PyList_Append(stream->batch, timestamp);
     Py_DECREF(timestamp);
-    return result;
+    if (result < 0) {
+        return -1;
+    }
+    /* Send a new stack's sample immediately so a stream's first sample is
+     * not held back behind samples from other streams. */
+    if (new_stack) {
+        return flush_stream_batch(reader, state, collector, stream);
+    }
+    return 0;
 }
 
 static int

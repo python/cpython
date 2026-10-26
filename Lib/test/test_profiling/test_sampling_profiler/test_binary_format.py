@@ -475,6 +475,29 @@ class TestBinaryRoundTrip(BinaryFormatTestBase):
         self.assertTrue(threads[1]["isMainThread"])
         self.assertFalse(threads[2]["isMainThread"])
 
+    def test_binary_replay_starts_gecko_at_earliest_sample(self):
+        """Binary replay uses the earliest sample as Gecko's time origin."""
+        filename = self.temp_filename()
+        collector = BinaryCollector(filename, 1000, compression="none")
+        for thread_id, name, timestamp in [(1, "first", 1000),
+                                           (2, "second", 2000),
+                                           (2, "changed", 3000)]:
+            frame = make_frame(f"{name}.py", 10, name)
+            collector.collect(
+                [make_interpreter(0, [make_thread(thread_id, [frame])])],
+                timestamp_us=timestamp,
+            )
+        collector.export(None)
+
+        gecko = GeckoCollector(1000)
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.replay_samples(gecko), 3)
+
+        profile = gecko._build_profile()
+        threads = {thread["tid"]: thread for thread in profile["threads"]}
+        self.assertEqual(threads[1]["samples"]["time"], [0.0])
+        self.assertEqual(threads[2]["samples"]["time"], [1.0, 2.0])
+
     def test_multiple_threads_per_sample(self):
         """Multiple threads in one sample roundtrip exactly."""
         threads = [
@@ -2197,18 +2220,18 @@ class TestBinaryEncodings(BinaryFormatTestBase):
 
     def test_rle_long_run_splits_batches(self):
         # Construct one block whose repeat run is longer than a replay batch.
-        num_samples = 8193
+        num_samples = 8194
         filename = self.create_binary_file([], compression="none")
         data = bytearray(pathlib.Path(filename).read_bytes())
         instructions = (b"\x01\x00\x00"  # STACK_REPLACE_SUFFIX 0 0
-                        + b"\x00\x80\x40")  # STACK_REPEAT 8192
+                        + b"\x00\x81\x40")  # STACK_REPEAT 8193
         record = (b"TBLK"
-                  + b"\x81\x40"  # 8193 samples as a varint
+                  + b"\x82\x40"  # 8194 samples as a varint
                   + b"\x01"  # base timestamp
                   + b"\x01\x00\x00"  # frame width, status flags
                   + b"\x0c\x00"  # stream table: 12 raw bytes
-                  + b"\x81\x40\x02"  # stream indices: constant
-                  + b"\x81\x40\x02"  # timestamp residuals: constant
+                  + b"\x82\x40\x02"  # stream indices: constant
+                  + b"\x82\x40\x02"  # timestamp residuals: constant
                   + b"\x00\x00"  # status bitmaps: empty
                   + bytes([len(instructions), 0])  # raw instructions
                   + b"\x00\x00"  # frame IDs: empty
@@ -2232,7 +2255,7 @@ class TestBinaryEncodings(BinaryFormatTestBase):
             count = reader.replay_samples(collector)
         batches = [call.args[1] for call in collector.collect.call_args_list]
         self.assertEqual(count, num_samples)
-        self.assertEqual([len(batch) for batch in batches], [8192, 1])
+        self.assertEqual([len(batch) for batch in batches], [1, 8192, 1])
         self.assertEqual([ts for batch in batches for ts in batch],
                          list(range(1, num_samples + 1)))
 
