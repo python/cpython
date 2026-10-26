@@ -310,9 +310,10 @@ class FrozenSetWriterTests(unittest.TestCase):
             self.assertEqual(writer.get_table_size(), table_size)
 
         check_table_size(0, PySet_MINSIZE)
-        check_table_size(PySet_MINSIZE - 1, PySet_MINSIZE)
-        check_table_size(PySet_MINSIZE, PySet_MINSIZE * 2)
-        check_table_size(2 ** 15 - 1, 2 ** 15)
+        check_table_size(PySet_MINSIZE // 2, PySet_MINSIZE)
+        check_table_size(PySet_MINSIZE - 1, PySet_MINSIZE * 2)
+        check_table_size(PySet_MINSIZE, PySet_MINSIZE * 4)
+        check_table_size(2 ** 15 - 1, 2 ** 16)
 
     def create_items(self, nitem):
         # Use mortal (and unique) objects to be able to detect reference leaks

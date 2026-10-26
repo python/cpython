@@ -3251,13 +3251,14 @@ PyFrozenSetWriter_Create(Py_ssize_t size)
         return NULL;
     }
 
-    PyObject *frozenset = make_new_set_untracked(&PyFrozenSet_Type, NULL);
-    if (frozenset == NULL) {
+    PyObject *frozenset_obj = make_new_set_untracked(&PyFrozenSet_Type, NULL);
+    if (frozenset_obj == NULL) {
         return NULL;
     }
+    PySetObject *frozenset = _PySet_CAST(frozenset_obj);
 
-    if (size > 0) {
-        if (set_table_resize(_PySet_CAST(frozenset), size) != 0) {
+    if (size > 0 && size * 5 >= frozenset->mask * 3) {
+        if (set_table_resize(frozenset, size * 2) != 0) {
             Py_DECREF(frozenset);
             return NULL;
         }
