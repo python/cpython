@@ -1386,6 +1386,9 @@ class UserList(_collections_abc.MutableSequence):
     def remove(self, item):
         self.data.remove(item)
 
+    def discard(self, item):
+        self.data.discard(item)
+
     def clear(self):
         self.data.clear()
 
