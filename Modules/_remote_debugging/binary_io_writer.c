@@ -765,11 +765,19 @@ block_flush(BinaryWriter *writer)
     return 0;
 }
 
+/* FNV-1a over the frame indices, the same in every process */
 static Py_uhash_t
 stack_hash(const uint32_t *stack, size_t depth)
 {
-    return (Py_uhash_t)Py_HashBuffer(
-        stack, (Py_ssize_t)(depth * sizeof(*stack)));
+    uint64_t hash = 0xcbf29ce484222325;
+    for (size_t i = 0; i < depth; i++) {
+        hash = (hash ^ stack[i]) * 0x100000001b3;
+    }
+    /* Mix the high bits into the low bits that select the cache bucket */
+    hash ^= hash >> 33;
+    hash *= 0xff51afd7ed558ccd;
+    hash ^= hash >> 33;
+    return (Py_uhash_t)hash;
 }
 
 static size_t

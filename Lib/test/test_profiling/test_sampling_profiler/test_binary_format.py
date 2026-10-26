@@ -127,6 +127,17 @@ class RawCollector:
         pass
 
 
+def stack_cache_hash(frame_ids):
+    """Hash a stack the way the writer's stack cache does."""
+    mask = (1 << 64) - 1
+    value = 0xcbf29ce484222325
+    for frame_id in frame_ids:
+        value = ((value ^ frame_id) * 0x100000001b3) & mask
+    value ^= value >> 33
+    value = (value * 0xff51afd7ed558ccd) & mask
+    return value ^ (value >> 33)
+
+
 def encode_varint(value):
     """Encode an unsigned varint."""
     out = bytearray()
@@ -1046,7 +1057,7 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
         """Stacks sharing a cache bucket are both stored as STACK_REUSE."""
         buckets = {}
         for frame_id in range(2, 4099):
-            bucket = hash(struct.pack("=3I", 0, 1, frame_id)) % 4096
+            bucket = stack_cache_hash((0, 1, frame_id)) % 4096
             if bucket in buckets:
                 first_id = buckets[bucket]
                 second_id = frame_id
@@ -1927,6 +1938,19 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
         self.assertEqual(timestamps,
                          [2 + i * (interval + 1) for i in range(3)])
 
+    def test_replay_rejects_unterminated_constant_varint(self):
+        """A constant byte that never ends a varint is rejected."""
+        for column, part in ((self.COLUMN_STREAM_IDS, "stream_ids"),
+                             (self.COLUMN_TIMESTAMP_RESIDUALS, "residuals")):
+            with self.subTest(part):
+                filename = self._write_single_block(
+                    **{part: b"\x80"},
+                    descriptors={column: (self.COLUMN_CONSTANT, 1)})
+                with BinaryReader(filename) as reader:
+                    with self.assertRaisesRegex(ValueError,
+                                                "incomplete varint"):
+                        reader.replay_samples(RawCollector())
+
     def test_replay_rejects_reentrant_replay(self):
         """Replaying from inside the same reader's collector raises."""
         filename = self._write_single_block(
@@ -1986,8 +2010,16 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
                                (self.COLUMN_CONSTANT, 2)})),
             ("stream index column has trailing data",
              dict(num_samples=2, header_samples=1)),
+            # A constant column longer than the sample count is expanded
+            # and then rejected like any other trailing data
+            ("stream index column has trailing data",
+             dict(descriptors={self.COLUMN_STREAM_IDS:
+                               (self.COLUMN_CONSTANT, 2)})),
             ("timestamp column has trailing data",
              dict(residuals=b"\x00\x00")),
+            ("timestamp column has trailing data",
+             dict(descriptors={self.COLUMN_TIMESTAMP_RESIDUALS:
+                               (self.COLUMN_CONSTANT, 2)})),
             ("frame index out of range",
              dict(instructions=b"\x01\x00\x01", frame_ids=b"\x05")),
             # Frame IDs 65536 and 2**24 only have a byte in the third or

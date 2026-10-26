@@ -294,10 +294,11 @@ typedef struct {
     uint64_t thread_id;
     uint32_t interpreter_id;
 
-    /* Stream index in the current block */
+    /* Stream index in the current block, or UINT32_MAX */
     uint32_t block_stream_index;
 } ThreadEntry;
 
+/* Delta encoding state of a stream, reset with each block */
 typedef struct {
     uint64_t prev_timestamp;
     size_t thread_index;
