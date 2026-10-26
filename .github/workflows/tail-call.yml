@@ -58,17 +58,9 @@ jobs:
           ./PCbuild/rt.bat -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
   macos:
-    name: ${{ matrix.target }}
-    runs-on: ${{ matrix.runner }}
+    name: aarch64-apple-darwin/clang
+    runs-on: macos-26
     timeout-minutes: 60
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: x86_64-apple-darwin/clang
-            runner: macos-26-intel
-          - target: aarch64-apple-darwin/clang
-            runner: macos-26
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -83,7 +75,6 @@ jobs:
       - name: Build
         run: |
           export SDKROOT="$(xcrun --show-sdk-path)"
-          export PATH="/usr/local/opt/llvm@${{ env.LLVM_VERSION }}/bin:$PATH"
           export PATH="/opt/homebrew/opt/llvm@${{ env.LLVM_VERSION }}/bin:$PATH"
           CC=clang-${{ env.LLVM_VERSION }} ./configure --with-tail-call-interp
           make all --jobs 4
