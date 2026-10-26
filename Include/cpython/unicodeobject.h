@@ -2,11 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-/* PY_UNICODE_TYPE was the native Unicode storage format (code unit) used by
-   Python and represents a single Unicode element in the Unicode type.
-   With PEP 393, it is deprecated and replaced with a typedef to wchar_t. */
-Py_DEPRECATED(3.13) typedef wchar_t PY_UNICODE_TYPE;
-
 
 /* --- Internal Unicode Operations ---------------------------------------- */
 
