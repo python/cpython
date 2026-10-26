@@ -278,9 +278,17 @@ class TestInternalCAPI(BaseSetTests, unittest.TestCase):
 
 
 class FrozenSetWriterTests(unittest.TestCase):
-    def create_writer(self):
+    PySet_MINSIZE = _testcapi.PySet_MINSIZE
+
+    def create_writer(self, size=0):
         # Test PyFrozenSetWriter_Create()
-        return _testcapi.PyFrozenSetWriter()
+        return _testcapi.PyFrozenSetWriter(size)
+
+    def compute_table_size(self, size):
+        table_size = self.PySet_MINSIZE
+        while table_size <= size:
+            table_size <<= 1
+        return table_size
 
     def frozenset_equal(self, result, expected):
         if not isinstance(expected, frozenset):
@@ -288,20 +296,49 @@ class FrozenSetWriterTests(unittest.TestCase):
         self.assertEqual(result, expected)
         self.assertEqual(type(result), frozenset)
 
+    def test_get_table_set(self):
+        # Test size parameter of PyFrozenSetWriter_Create()
+        PySet_MINSIZE = self.PySet_MINSIZE
+
+        def check_table_size(size, table_size):
+            writer = self.create_writer(size)
+            self.assertEqual(writer.get_table_size(), table_size)
+
+        check_table_size(0, PySet_MINSIZE)
+        check_table_size(PySet_MINSIZE - 1, PySet_MINSIZE)
+        check_table_size(PySet_MINSIZE, PySet_MINSIZE * 2)
+        check_table_size(2 ** 15 - 1, 2 ** 15)
+
+    def create_items(self, nitem):
+        # Use mortal (and unique) objects to be able to detect reference leaks
+        return tuple(object() for _ in range(nitem))
+
     def test_append(self):
         # Test PyFrozenSetWriter_Append()
-        items = (1, 2, 3)
-        writer = self.create_writer()
-        for item in items:
-            writer.add(item)
-        self.frozenset_equal(writer.finish(), items)
+        items = self.create_items(self.PySet_MINSIZE * 2 - 1)
+        table_size = self.compute_table_size(len(items))
+        for prealloc in (0, len(items) // 2, len(items), len(items) * 10):
+            with self.subTest(size=prealloc):
+                writer = self.create_writer()
+                for item in items:
+                    writer.add(item)
+                self.frozenset_equal(writer.finish(), items)
 
     def test_update(self):
         # Test PyFrozenSetWriter_Update()
-        writer = self.create_writer()
-        writer.update((2, 5))
-        writer.update((5, 7))
-        self.frozenset_equal(writer.finish(), {2, 5, 7})
+        items1 = self.create_items(self.PySet_MINSIZE - 1)
+        items2 = self.create_items(self.PySet_MINSIZE - 1)
+        common = self.create_items(self.PySet_MINSIZE - 1)
+        expected = set(items1) | set(items2) | set(common)
+        total = len(expected)
+        self.assertEqual(total, len(items1) + len(items2) + len(common))
+
+        for prealloc in (0, total // 2, total, total * 10):
+            with self.subTest(size=prealloc):
+                writer = self.create_writer(prealloc)
+                writer.update(items1 + common)
+                writer.update(common + items2)
+                self.frozenset_equal(writer.finish(), expected)
 
     def test_finish(self):
         # Test PyFrozenSetWriter_Finish(): track the frozenset in the GC if at

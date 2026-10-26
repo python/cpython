@@ -362,7 +362,7 @@ static int
 compute_abstract_methods(PyObject *self)
 {
     int ret = -1;
-    PyFrozenSetWriter *abstracts = PyFrozenSetWriter_Create();
+    PyFrozenSetWriter *abstracts = PyFrozenSetWriter_Create(0);
     if (abstracts == NULL) {
         return -1;
     }

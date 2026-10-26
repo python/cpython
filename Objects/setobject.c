@@ -3243,11 +3243,23 @@ frozsetwriter_check_consistency(PyFrozenSetWriter *writer)
 
 
 PyFrozenSetWriter*
-PyFrozenSetWriter_Create(void)
+PyFrozenSetWriter_Create(Py_ssize_t size)
 {
+    if (size < 0) {
+        PyErr_SetString(PyExc_ValueError, "size must be >= 0");
+        return NULL;
+    }
+
     PyObject *frozenset = make_new_set_untracked(&PyFrozenSet_Type, NULL);
     if (frozenset == NULL) {
         return NULL;
+    }
+
+    if (size > 0) {
+        if (set_table_resize(_PySet_CAST(frozenset), size) != 0) {
+            Py_DECREF(frozenset);
+            return NULL;
+        }
     }
 
     PyFrozenSetWriter *writer = (PyFrozenSetWriter*)frozenset;

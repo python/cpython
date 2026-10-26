@@ -65,21 +65,21 @@ writer_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 static int
 writer_init(PyObject *self_raw, PyObject *args, PyObject *kwargs)
 {
-    if (PyTuple_GET_SIZE(args)) {
-        PyErr_Format(PyExc_TypeError,
-                     "PyFrozenSetWriter() takes no positional arguments");
-        return -1;
-    }
     if (kwargs && PyDict_GET_SIZE(kwargs)) {
         PyErr_Format(PyExc_TypeError,
                      "PyFrozenSetWriter() takes no keyword arguments");
         return -1;
     }
 
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "n", &size)) {
+        return -1;
+    }
+
     WriterObject *self = (WriterObject *)self_raw;
     PyFrozenSetWriter_Discard(self->writer);
 
-    self->writer = PyFrozenSetWriter_Create();
+    self->writer = PyFrozenSetWriter_Create(size);
     if (self->writer == NULL) {
         return -1;
     }
@@ -134,6 +134,20 @@ writer_update(PyObject *self_raw, PyObject *iterable)
 }
 
 
+static PyObject*
+writer_get_table_size(PyObject *self_raw, PyObject *Py_UNUSED(args))
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    PySetObject *frozenset = _PySet_CAST(self->writer);
+    Py_ssize_t table_size = frozenset->mask + 1;
+    return PyLong_FromSsize_t(table_size);
+}
+
+
 // Test PyFrozenSetWriter_Finish()
 static PyObject*
 writer_finish(PyObject *self_raw, PyObject *Py_UNUSED(args))
@@ -167,6 +181,7 @@ writer_discard(PyObject *self_raw, PyObject *Py_UNUSED(args))
 static PyMethodDef writer_methods[] = {
     {"add", _PyCFunction_CAST(writer_add), METH_O},
     {"update", _PyCFunction_CAST(writer_update), METH_O},
+    {"get_table_size", _PyCFunction_CAST(writer_get_table_size), METH_NOARGS},
     {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},
     {"discard", _PyCFunction_CAST(writer_discard), METH_NOARGS},
     {NULL,              NULL}           /* sentinel */
@@ -211,6 +226,10 @@ _PyTestCapi_Init_Set(PyObject *m)
         return -1;
     }
     Py_DECREF(writer_type);
+
+    if (PyModule_AddIntMacro(m, PySet_MINSIZE) < 0) {
+        return -1;
+    }
 
     return 0;
 }

@@ -241,9 +241,11 @@ See also the :c:func:`PyFrozenSet_New` function.
    success, or :c:func:`PyFrozenSetWriter_Discard` on error.
 
 
-.. c:function:: PyFrozenSetWriter* PyFrozenSetWriter_Create(void)
+.. c:function:: PyFrozenSetWriter* PyFrozenSetWriter_Create(Py_ssize_t size)
 
    Create a :c:type:`PyFrozenSetWriter`.
+
+   If *size* is greater than zero, preallocate *size* items.
 
    On error, set an exception and return ``NULL``.
 

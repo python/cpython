@@ -2519,7 +2519,7 @@ static int
 hashlib_md_meth_names(PyObject *module)
 {
     _InternalNameMapperState state = {
-        .set = PyFrozenSetWriter_Create(),
+        .set = PyFrozenSetWriter_Create(0),
         .error = 0
     };
     if (state.set == NULL) {

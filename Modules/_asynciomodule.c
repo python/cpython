@@ -1339,7 +1339,7 @@ _asyncio_Future__asyncio_awaited_by_get_impl(FutureObj *self)
         return PyFrozenSet_New(self->fut_awaited_by);
     }
 
-    PyFrozenSetWriter *set = PyFrozenSetWriter_Create();
+    PyFrozenSetWriter *set = PyFrozenSetWriter_Create(1);
     if (set == NULL) {
         return NULL;
     }
