@@ -2677,6 +2677,37 @@ class TestOptimizer(MonitoringTestBase, unittest.TestCase):
 
 class TestTier2Optimizer(CheckEvents):
 
+    @requires_specialization
+    def test_raise_callback_stop_iteration_in_for_tier2(self):
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
+        _opcode = import_helper.import_module("_opcode")
+        threshold = _testinternalcapi.SPECIALIZATION_THRESHOLD
+        callback_executor = None
+
+        def run():
+            for i in range(threshold + 1):
+                sys.monitoring.set_events(
+                    TEST_TOOL,
+                    E.RAISE if i == threshold else 0,
+                )
+
+        def on_raise(code, offset, exc):
+            nonlocal callback_executor
+            if code is run.__code__ and isinstance(exc, StopIteration):
+                callback_executor = _opcode.get_executor(code, offset)
+                raise RuntimeError("monitor callback failed")
+
+        try:
+            sys.monitoring.register_callback(TEST_TOOL, E.RAISE, on_raise)
+            with self.assertRaisesRegex(RuntimeError, "monitor callback failed"):
+                run()
+            self.assertIsNotNone(callback_executor)
+            uops = [op[0] for op in callback_executor]
+            self.assertIn("_ITER_NEXT_INLINE", uops)
+        finally:
+            sys.monitoring.set_events(TEST_TOOL, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.RAISE, None)
+
     def test_monitoring_already_opimized_loop(self):
         _testinternalcapi = import_helper.import_module("_testinternalcapi")
 

@@ -15030,7 +15030,11 @@
             if (item == NULL) {
                 if (_PyErr_Occurred(tstate)) {
                     if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
-                        if (_PyEval_MonitorRaise(tstate, frame, frame->instr_ptr) < 0) {
+                        assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                        _PyFrame_StackPointerValidate(frame);
+                        int err = _PyEval_MonitorRaise(tstate, frame, frame->instr_ptr);
+                        _PyFrame_StackPointerInvalidate(frame);
+                        if (err < 0) {
                             SET_CURRENT_CACHED_VALUES(0);
                             JUMP_TO_ERROR();
                         }

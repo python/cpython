@@ -3834,7 +3834,8 @@ _PyStackRef _PyForIter_VirtualIteratorNext(PyThreadState* tstate, _PyInterpreter
     if (next == NULL) {
         if (_PyErr_Occurred(tstate)) {
             if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
-                if (_PyEval_MonitorRaise(tstate, frame, frame->instr_ptr) < 0) {
+                int err = _PyEval_MonitorRaise(tstate, frame, frame->instr_ptr);
+                if (err < 0) {
                     return PyStackRef_ERROR;
                 }
                 _PyErr_Clear(tstate);
