@@ -3295,7 +3295,7 @@ PyFrozenSetWriter_Finish(PyFrozenSetWriter *writer)
     setentry *entry;
     while (set_next(frozenset, &pos, &entry)) {
         PyObject *item = entry->key;
-        if (_PyObject_IS_GC(item) && _PyObject_GC_IS_TRACKED(item)) {
+        if (_PyObject_GC_MAY_BE_TRACKED(item)) {
             _PyObject_GC_TRACK(frozenset);
             break;
         }
