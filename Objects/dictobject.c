@@ -7804,7 +7804,11 @@ clear_inline_values(PyDictValues *values)
     if (values->valid) {
         FT_ATOMIC_STORE_UINT8(values->valid, 0);
         for (Py_ssize_t i = 0; i < values->capacity; i++) {
-            Py_CLEAR(values->values[i]);
+            PyObject *value = values->values[i];
+            // The attribute read fast-path may read these without holding the
+            // per-object lock.
+            FT_ATOMIC_STORE_PTR_RELEASE(values->values[i], NULL);
+            Py_XDECREF(value);
         }
     }
 }
