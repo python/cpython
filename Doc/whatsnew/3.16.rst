@@ -107,6 +107,10 @@ Other language changes
   :func:`asyncio.print_call_graph` can see through them into the awaited code.
   (Contributed by Kumar Aditya in :gh:`157361`.)
 
+* Added :meth:`list.discard`, which removes the first occurrence of a value
+  from a list if it is present, like :meth:`set.discard`.
+  (Contributed by Stan Ulbrych in :gh:`160724`.)
+
 
 Default interactive shell
 =========================

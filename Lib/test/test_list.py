@@ -2,7 +2,7 @@ import signal
 import sys
 import textwrap
 from test import list_tests, support
-from test.support import cpython_only
+from test.support import ALWAYS_EQ, NEVER_EQ, cpython_only
 from test.support.script_helper import assert_python_failure, assert_python_ok
 import pickle
 import unittest
@@ -331,6 +331,66 @@ class ListTest(list_tests.CommonTest):
         self.assertEqual(iter_size, sys.getsizeof(list([0] * 10)))
         self.assertEqual(iter_size, sys.getsizeof(list(range(10))))
 
+    def test_discard(self):
+        a = [0, 0, 1]
+        a.discard(1)
+        self.assertEqual(a, [0, 0])
+        a.discard(0)
+        self.assertEqual(a, [0])
+        a.discard(0)
+        self.assertEqual(a, [])
+        a.discard(0)
+        self.assertEqual(a, [])
+
+        self.assertRaises(TypeError, a.discard)
+
+        a = [1, 2]
+        a.discard(NEVER_EQ)
+        self.assertEqual(a, [1, 2])
+        a.discard(ALWAYS_EQ)
+        self.assertEqual(a, [2])
+        a = [ALWAYS_EQ]
+        a.discard(1)
+        self.assertEqual(a, [])
+        a = [ALWAYS_EQ]
+        a.discard(NEVER_EQ)
+        self.assertEqual(a, [])
+        a = [NEVER_EQ]
+        a.discard(ALWAYS_EQ)
+        self.assertEqual(a, [NEVER_EQ])
+
+        class BadExc(Exception):
+            pass
+
+        class BadCmp:
+            def __eq__(self, other):
+                if other == 2:
+                    raise BadExc()
+                return False
+
+        a = [0, 1, 2, 3]
+        self.assertRaises(BadExc, a.discard, BadCmp())
+
+        class BadCmp2:
+            def __eq__(self, other):
+                raise BadExc()
+
+        d = list('abcdefghcij')
+        d.discard('c')
+        self.assertEqual(d, list('abdefghcij'))
+        d.discard('c')
+        self.assertEqual(d, list('abdefghij'))
+        d.discard('c')
+        self.assertEqual(d, list('abdefghij'))
+
+        # Handle comparison errors
+        d = ['a', 'b', BadCmp2(), 'c']
+        e = list(d)
+        self.assertRaises(BadExc, d.discard, 'c')
+        for x, y in zip(d, e):
+            # verify that original order and values are retained.
+            self.assertIs(x, y)
+
     def test_count_index_remove_crashes(self):
         # bpo-38610: The count(), index(), and remove() methods were not
         # holding strong references to list elements while calling
@@ -355,6 +415,9 @@ class ListTest(list_tests.CommonTest):
         lst = L([X()])
         with self.assertRaises(ValueError):
             lst.remove(lst)
+
+        lst = L([X()])
+        lst.discard(lst)
 
         # bpo-39453: list.__contains__ was not holding strong references
         # to list elements while calling PyObject_RichCompareBool().
