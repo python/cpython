@@ -3202,9 +3202,9 @@ class BasicTCPTest(SocketConnectedTest):
         with self.assertRaises(TypeError):
             socket.fromfd(fd, "not-a-valid-family", socket.SOCK_STREAM)
         with self.assertRaises(TypeError):
-            socket.fromfd(fd, socket.AF_UNIX, "not-a-valid-type")
+            socket.fromfd(fd, socket.AF_INET, "not-a-valid-type")
         with self.assertRaises(OverflowError):
-            socket.fromfd(fd, socket.AF_UNIX, 1 << 100)
+            socket.fromfd(fd, socket.AF_INET, 1 << 100)
 
         self.assertEqual(os_helper.fd_count(), fd_count_before)
 
