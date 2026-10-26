@@ -2682,7 +2682,7 @@ class TestTier2Optimizer(CheckEvents):
         _testinternalcapi = import_helper.import_module("_testinternalcapi")
         _opcode = import_helper.import_module("_opcode")
         threshold = _testinternalcapi.SPECIALIZATION_THRESHOLD
-        callback_executor = None
+        monitoring_enabled = False
 
         class Iterator:
             def __init__(self):
@@ -2695,26 +2695,52 @@ class TestTier2Optimizer(CheckEvents):
                 if self.count < threshold:
                     self.count += 1
                     return self.count
-                sys.monitoring.set_events(TEST_TOOL, E.RAISE)
+                if monitoring_enabled:
+                    sys.monitoring.set_events(TEST_TOOL, E.RAISE)
                 raise StopIteration
 
         def run():
             for _ in Iterator():
                 pass
 
+        # Warm up the loop before enabling monitoring, so the callback run
+        # executes the tier-2 executor rather than creating it.
+        run()
+        code = run.__code__
+        executor_offset = None
+        executor = None
+        for offset in range(0, len(code.co_code), 2):
+            try:
+                candidate = _opcode.get_executor(code, offset)
+            except ValueError:
+                continue
+            except RuntimeError as exc:
+                if "Executors are not available in this build" not in str(exc):
+                    raise
+                self.skipTest("requires tier-2 executor support")
+            if candidate is not None:
+                uops = [op[0] for op in candidate]
+                if "_ITER_NEXT_INLINE" in uops:
+                    executor_offset = offset
+                    executor = candidate
+                    break
+        if executor is None:
+            self.skipTest("requires _ITER_NEXT_INLINE executor")
+
+        callback_offset = None
+
         def on_raise(code, offset, exc):
-            nonlocal callback_executor
+            nonlocal callback_offset
             if code is run.__code__ and isinstance(exc, StopIteration):
-                callback_executor = _opcode.get_executor(code, offset)
+                callback_offset = offset
                 raise RuntimeError("monitor callback failed")
 
+        monitoring_enabled = True
         try:
             sys.monitoring.register_callback(TEST_TOOL, E.RAISE, on_raise)
             with self.assertRaisesRegex(RuntimeError, "monitor callback failed"):
                 run()
-            self.assertIsNotNone(callback_executor)
-            uops = [op[0] for op in callback_executor]
-            self.assertIn("_ITER_NEXT_INLINE", uops)
+            self.assertEqual(callback_offset, executor_offset)
         finally:
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.RAISE, None)
