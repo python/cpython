@@ -3211,8 +3211,14 @@ init_sys_streams(PyThreadState *tstate)
                        config->stdio_errors);
     if (std == NULL)
         goto error;
-    PySys_SetObject("__stdin__", std);
-    _PySys_SetAttr(&_Py_ID(stdin), std);
+    if (PySys_SetObject("__stdin__", std) < 0) {
+        Py_DECREF(std);
+        goto error;
+    }
+    if (_PySys_SetAttr(&_Py_ID(stdin), std) < 0) {
+        Py_DECREF(std);
+        goto error;
+    }
     Py_DECREF(std);
 
     /* Set sys.stdout */
@@ -3222,8 +3228,14 @@ init_sys_streams(PyThreadState *tstate)
                        config->stdio_errors);
     if (std == NULL)
         goto error;
-    PySys_SetObject("__stdout__", std);
-    _PySys_SetAttr(&_Py_ID(stdout), std);
+    if (PySys_SetObject("__stdout__", std) < 0) {
+        Py_DECREF(std);
+        goto error;
+    }
+    if (_PySys_SetAttr(&_Py_ID(stdout), std) < 0) {
+        Py_DECREF(std);
+        goto error;
+    }
     Py_DECREF(std);
 
 #if 1 /* Disable this if you have trouble debugging bootstrap stuff */
