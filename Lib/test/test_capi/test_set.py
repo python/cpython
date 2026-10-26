@@ -424,9 +424,9 @@ class FrozenSetWriterTests(unittest.TestCase):
         def thread_func(writer):
             writer.add('a')
             writer.add_steal('b')
-            writer.update(['c'])
-            writer.update_array(['d'])
-            writer.update_array_steal(['e'])
+            writer.update(('c',))
+            writer.update_array(('d',))
+            writer.update_array_steal(('e',))
 
         thread = threading.Thread(target=thread_func, args=(writer,))
         thread.start()
