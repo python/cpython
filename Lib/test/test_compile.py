@@ -960,27 +960,36 @@ class TestSpecifics(unittest.TestCase):
             'RETURN_VALUE',
             list(dis.get_instructions(unused_code_at_end))[-1].opname)
 
-    # gh-150001: Test that this code does not raise SystemError
-    def test_parser_stack_overflow_no_crash(self):
-        string = (
-            b'(*h(((h(h(h(' +
-            b'[' * 35 +
-            b'*h(' +
-            b'[' * 38 +
-            b'**h(' +
-            b'[' * 31 +
-            b'(' * 4 +
-            b'~' * 20 +
-            b'F{' +
-            b'[' * 27 +
-            b'**h(' +
-            b'[' * 31 +
-            b'(' * 4 +
-            b'~' * 23 +
-            b'F{F"{F"{F"{F"{F"{F"{F"{FF""{{F"{""{F"{F{{F"{F"{F"\\}'
-        )
-        with self.assertRaises((MemoryError, SyntaxError)):
-            compile(string, '<input>', "single")
+    def test_parser_stack_overflow_in_loop_rule(self):
+        # gh-150001: A parser stack overflow inside an f-string must not be
+        # followed by a SyntaxWarning emitted with the MemoryError still set
+        def overflows(source):
+            try:
+                compile(source, '<input>', 'exec')
+            except MemoryError:
+                return True
+            except SyntaxError:
+                pass
+            return False
+
+        # Find the shallowest nesting that overflows the parser stack
+        lo, hi = 1, 100_000
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if overflows(b'~' * mid + b'x'):
+                hi = mid
+            else:
+                lo = mid + 1
+
+        # Overflow at every point around that depth, including inside the
+        # f-string with invalid escape sequences
+        tail = b'f"\\}{x}\\}"'
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', SyntaxWarning)
+            for depth in range(max(lo - 20, 1), lo + 20):
+                with self.subTest(depth=depth):
+                    with self.assertRaises((MemoryError, SyntaxError)):
+                        compile(b'~' * depth + tail, '<input>', 'exec')
 
     @support.cpython_only
     def test_docstring(self):
