@@ -923,58 +923,37 @@ write_stack_replace_suffix(BinaryWriter *writer, StackCacheEntry *bucket,
 }
 
 static int
-choose_stack_encoding(SampleBlock *block, const ThreadEntry *entry,
-                      int new_stream, const uint32_t *stack, size_t depth,
-                      size_t *shared, Py_uhash_t *hash,
-                      StackCacheEntry **bucket, StackCacheEntry **cached)
-{
-    *shared = common_outer_frames(entry, stack, depth);
-    *hash = 0;
-    *bucket = NULL;
-    *cached = NULL;
-    if (!new_stream && *shared == depth &&
-        *shared == entry->prev_stack_depth) {
-        return STACK_REPEAT;
-    }
-    if (depth - *shared < STACK_REUSE_MIN_FRAMES) {
-        return STACK_REPLACE_SUFFIX;
-    }
-    *hash = stack_hash(stack, depth);
-    *bucket = block->cache[*hash % STACK_CACHE_BUCKET_COUNT];
-    *cached = stack_cache_lookup(*bucket, &block->columns[COLUMN_FRAME_IDS],
-                                 *hash, stack, depth);
-    if (*cached != NULL) {
-        return STACK_REUSE;
-    }
-    return STACK_REPLACE_SUFFIX;
-}
-
-static int
 write_stack(BinaryWriter *writer, ThreadEntry *entry, int new_stream,
             const uint32_t *stack, size_t depth)
 {
-    size_t shared;
-    Py_uhash_t hash;
-    StackCacheEntry *bucket;
-    StackCacheEntry *cached;
-    int encoding = choose_stack_encoding(writer->block, entry, new_stream,
-                                         stack, depth, &shared, &hash,
-                                         &bucket, &cached);
+    SampleBlock *block = writer->block;
+    size_t shared = common_outer_frames(entry, stack, depth);
+    /* Same stack as this stream's previous sample: extend its REPEAT */
+    if (!new_stream && shared == depth &&
+        shared == entry->prev_stack_depth) {
+        return write_stack_repeat(writer, entry, depth);
+    }
+
+    /* Enough new frames to be worth looking up an earlier complete stack */
+    Py_uhash_t hash = 0;
+    StackCacheEntry *bucket = NULL;
+    StackCacheEntry *cached = NULL;
+    if (depth - shared >= STACK_REUSE_MIN_FRAMES) {
+        hash = stack_hash(stack, depth);
+        bucket = block->cache[hash % STACK_CACHE_BUCKET_COUNT];
+        cached = stack_cache_lookup(bucket, &block->columns[COLUMN_FRAME_IDS],
+                                    hash, stack, depth);
+    }
 
     int result;
-    switch (encoding) {
-    case STACK_REPEAT:
-        return write_stack_repeat(writer, entry, depth);
-    case STACK_REUSE:
+    if (cached != NULL) {
+        /* Stack already stored in this block: point to its frames */
         result = write_stack_reuse(writer, cached, depth);
-        break;
-    case STACK_REPLACE_SUFFIX:
+    }
+    else {
+        /* Keep the shared outer frames and write only the new inner ones */
         result = write_stack_replace_suffix(writer, bucket, hash, stack,
                                             depth, shared);
-        break;
-    default:
-        PyErr_SetString(PyExc_RuntimeError, "Invalid stack encoding type");
-        return -1;
     }
     if (result < 0) {
         return -1;
