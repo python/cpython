@@ -354,6 +354,10 @@ AST node type).  Next, the AST tree is walked with the various code blocks that
 delineate the reach of a local variable as blocks are entered and exited using
 `symtable_enter_block()` and `symtable_exit_block()`, respectively.
 
+See [Inlined comprehensions](inlined_comprehensions.md) for how list, set,
+and dict comprehensions are represented as lexical subscopes of the
+enclosing unit.
+
 Once the symbol table is created, the `AST` is transformed by `compiler_codegen()`
 in [Python/compile.c](../Python/compile.c) into a sequence of pseudo instructions.
 These are similar to bytecode, but in some cases they are more abstract, and are

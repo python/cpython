@@ -1,8 +1,8 @@
 
 /* Write Python objects to files and read them back.
    This is primarily intended for writing and reading compiled Python code,
-   even though dicts, lists, sets and frozensets, not commonly seen in
-   code objects, are supported.
+   even though dicts and frozendicts, lists, sets and frozensets,
+   not commonly seen in code objects, are supported.
    Version 3 of this protocol properly supports circular links
    and sharing. */
 
@@ -44,7 +44,7 @@ module marshal
  */
 #if defined(MS_WINDOWS)
 #  define MAX_MARSHAL_STACK_DEPTH 1000
-#elif defined(__wasi__)
+#elif defined(__wasm__)
 #  define MAX_MARSHAL_STACK_DEPTH 1500
 // TARGET_OS_IPHONE covers any non-macOS Apple platform.
 // It won't be defined on older macOS SDKs
@@ -100,22 +100,45 @@ module marshal
 #define FLAG_REF                '\x80' /* with a type, add obj to index */
 
 
-// Error codes:
-#define WFERR_OK 0
-#define WFERR_UNMARSHALLABLE 1
-#define WFERR_NESTEDTOODEEP 2
-#define WFERR_NOMEMORY 3
-#define WFERR_CODE_NOT_ALLOWED 4
+/* State of an object which can be the target of a TYPE_REF (version 3+),
+   see w_ref() and w_resolve_refs().
+
+   WFILE.hashtable maps the object to its index in WFILE.refs, shifted left
+   by W_ENTRY_SHIFT bits, plus the flags:
+   - W_ENTRY_ACTIVE: the object is being written (used to detect recursion,
+     see w_complete());
+   - W_ENTRY_SHARED: the object has been written more than once.
+
+   The item of WFILE.refs is the offset of the type byte of the object in
+   the output, shifted left by one bit, plus W_REF_SHARED if the object has
+   been written more than once. */
+#define W_ENTRY_ACTIVE ((uintptr_t)1)
+#define W_ENTRY_SHARED ((uintptr_t)2)
+#define W_ENTRY_SHIFT 2
+#define W_REF_SHARED ((size_t)1)
+
+/* Maximum number of items in WFILE.refs.  TYPE_REF has a signed 32-bit
+   argument. */
+#define W_MAX_REFS Py_MIN((uintptr_t)0x7fffffff, UINTPTR_MAX >> W_ENTRY_SHIFT)
 
 typedef struct {
-    FILE *fp;
-    int error;  /* see WFERR_* values */
+    bool error;  /* An exception has been raised. */
     int depth;
     PyObject *str;
     char *ptr;
     const char *end;
     char *buf;
-    _Py_hashtable_t *hashtable;
+    _Py_hashtable_t *hashtable;     /* object -> index in refs, flags */
+    size_t *refs;                   /* In order of the first occurrence. */
+    size_t refs_allocated;
+    unsigned char *refpos;          /* Where the TYPE_REFs are in the
+                                       output, see w_add_refpos(). */
+    size_t refpos_size;
+    size_t refpos_allocated;
+    size_t refpos_run;              /* Index in refpos of the length of
+                                       the current run, or 0. */
+    size_t refpos_end;              /* Offset of the end of the last
+                                       TYPE_REF in the output. */
     int version;
     int allow_code;
 } WFILE;
@@ -125,24 +148,12 @@ typedef struct {
             *(p)->ptr++ = (c);                          \
     } while(0)
 
-static void
-w_flush(WFILE *p)
-{
-    assert(p->fp != NULL);
-    fwrite(p->buf, 1, p->ptr - p->buf, p->fp);
-    p->ptr = p->buf;
-}
-
 static int
 w_reserve(WFILE *p, Py_ssize_t needed)
 {
     Py_ssize_t pos, size, delta;
     if (p->ptr == NULL)
         return 0; /* An error already occurred */
-    if (p->fp != NULL) {
-        w_flush(p);
-        return needed <= p->end - p->ptr;
-    }
     assert(p->str != NULL);
     pos = p->ptr - p->buf;
     size = PyBytes_GET_SIZE(p->str);
@@ -152,12 +163,14 @@ w_reserve(WFILE *p, Py_ssize_t needed)
         delta = size + 1024;
     delta = Py_MAX(delta, needed);
     if (delta > PY_SSIZE_T_MAX - size) {
-        p->error = WFERR_NOMEMORY;
+        PyErr_NoMemory();
+        p->error = true;
         return 0;
     }
     size += delta;
     if (_PyBytes_Resize(&p->str, size) != 0) {
         p->end = p->ptr = p->buf = NULL;
+        p->error = true;
         return 0;
     }
     else {
@@ -175,21 +188,9 @@ w_string(const void *s, Py_ssize_t n, WFILE *p)
     if (!n || p->ptr == NULL)
         return;
     m = p->end - p->ptr;
-    if (p->fp != NULL) {
-        if (n <= m) {
-            memcpy(p->ptr, s, n);
-            p->ptr += n;
-        }
-        else {
-            w_flush(p);
-            fwrite(s, 1, n, p->fp);
-        }
-    }
-    else {
-        if (n <= m || w_reserve(p, n - m)) {
-            memcpy(p->ptr, s, n);
-            p->ptr += n;
-        }
+    if (n <= m || w_reserve(p, n - m)) {
+        memcpy(p->ptr, s, n);
+        p->ptr += n;
     }
 }
 
@@ -209,16 +210,35 @@ w_long(long x, WFILE *p)
     w_byte((char)((x>>24) & 0xff), p);
 }
 
+/* Read and write a 32-bit value in place. */
+static inline uint32_t
+w_get_uint32(const char *ptr)
+{
+    const unsigned char *b = (const unsigned char *)ptr;
+    return b[0] | (b[1] << 8) | (b[2] << 16) | ((uint32_t)b[3] << 24);
+}
+
+static inline void
+w_put_uint32(char *ptr, uint32_t x)
+{
+    ptr[0] = (char)( x      & 0xff);
+    ptr[1] = (char)((x>> 8) & 0xff);
+    ptr[2] = (char)((x>>16) & 0xff);
+    ptr[3] = (char)((x>>24) & 0xff);
+}
+
 #define SIZE32_MAX  0x7FFFFFFF
 
 #if SIZEOF_SIZE_T > 4
-# define W_SIZE(n, p)  do {                     \
-        if ((n) > SIZE32_MAX) {                 \
-            (p)->depth--;                       \
-            (p)->error = WFERR_UNMARSHALLABLE;  \
-            return;                             \
-        }                                       \
-        w_long((long)(n), p);                   \
+# define W_SIZE(n, p)  do {                                 \
+        if ((n) > SIZE32_MAX) {                             \
+            (p)->depth--;                                   \
+            PyErr_SetString(PyExc_ValueError,               \
+                            "object too large to marshal"); \
+            (p)->error = true;                              \
+            return;                                         \
+        }                                                   \
+        w_long((long)(n), p);                               \
     } while(0)
 #else
 # define W_SIZE  w_long
@@ -246,9 +266,10 @@ w_short_pstring(const void *s, Py_ssize_t n, WFILE *p)
 #define PyLong_MARSHAL_BASE ((short)1 << PyLong_MARSHAL_SHIFT)
 #define PyLong_MARSHAL_MASK (PyLong_MARSHAL_BASE - 1)
 
-#define W_TYPE(t, p) do { \
-    w_byte((t) | flag, (p)); \
-} while(0)
+/* Write the type code of an object.  It must be the first byte written for
+   an object passed to w_ref(): w_resolve_refs() adds FLAG_REF to that byte
+   if the object turns out to be referenced more than once. */
+#define W_TYPE(t, p) w_byte((t), (p))
 
 static PyObject *
 _PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code);
@@ -271,7 +292,8 @@ _r_digits##bitsize(const uint ## bitsize ## _t *digits, Py_ssize_t n,     \
     } while (d != 0);                                                     \
     if (l > SIZE32_MAX) {                                                 \
         p->depth--;                                                       \
-        p->error = WFERR_UNMARSHALLABLE;                                  \
+        PyErr_SetString(PyExc_ValueError, "int too large to marshal");    \
+        p->error = true;                                                  \
         return;                                                           \
     }                                                                     \
     w_long((long)(negative ? -l : l), p);                                 \
@@ -295,7 +317,7 @@ _r_digits(32)
 #undef _r_digits
 
 static void
-w_PyLong(const PyLongObject *ob, char flag, WFILE *p)
+w_PyLong(const PyLongObject *ob, WFILE *p)
 {
     W_TYPE(TYPE_LONG, p);
     if (_PyLong_IsZero(ob)) {
@@ -307,7 +329,7 @@ w_PyLong(const PyLongObject *ob, char flag, WFILE *p)
 
     if (PyLong_Export((PyObject *)ob, &long_export) < 0) {
         p->depth--;
-        p->error = WFERR_UNMARSHALLABLE;
+        p->error = true;
         return;
     }
     if (!long_export.digits) {
@@ -360,7 +382,7 @@ w_float_bin(double v, WFILE *p)
 {
     char buf[8];
     if (PyFloat_Pack8(v, buf, 1) < 0) {
-        p->error = WFERR_UNMARSHALLABLE;
+        p->error = true;
         return;
     }
     w_string(buf, 8, p);
@@ -371,27 +393,123 @@ w_float_str(double v, WFILE *p)
 {
     char *buf = PyOS_double_to_string(v, 'g', 17, 0, NULL);
     if (!buf) {
-        p->error = WFERR_NOMEMORY;
+        p->error = true;
         return;
     }
     w_short_pstring(buf, strlen(buf), p);
     PyMem_Free(buf);
 }
 
+/* Make room for one more item in a dynamic array of n items.
+   Return the array, which may have moved, or NULL on memory error. */
+static void *
+w_array_grow(void *items, size_t n, size_t *allocated, size_t itemsize)
+{
+    if (n < *allocated) {
+        return items;
+    }
+    size_t new_allocated = *allocated ? *allocated * 2 : 16;
+    if (new_allocated > (size_t)PY_SSIZE_T_MAX / itemsize) {
+        return NULL;
+    }
+    items = PyMem_Realloc(items, new_allocated * itemsize);
+    if (items != NULL) {
+        *allocated = new_allocated;
+    }
+    return items;
+}
+
+/* Remember that a TYPE_REF is being written at the current end of the
+   output.  Return 0 on memory error.
+
+   p->refpos lists the TYPE_REFs in the order of the output, as a sequence
+   of items which start with the byte:
+   - 1 to 254: a TYPE_REF follows that number of other bytes of output;
+   - 255, followed by a size_t: the same for a larger number of bytes;
+   - 0, followed by a byte n: n more TYPE_REFs directly follow the previous
+     one.
+   This takes one byte for most TYPE_REFs, and much less when the output
+   mostly consists of TYPE_REFs. */
 static int
-w_ref(PyObject *v, char *flag, WFILE *p)
+w_add_refpos(WFILE *p)
+{
+    size_t pos = (size_t)(p->ptr - p->buf);
+    size_t gap = pos - p->refpos_end;
+    p->refpos_end = pos + 5;
+    if (gap == 0 && p->refpos_run != 0 && p->refpos[p->refpos_run] < 255) {
+        p->refpos[p->refpos_run]++;
+        return 1;
+    }
+    unsigned char *refpos = w_array_grow(p->refpos,
+                                         p->refpos_size + sizeof(size_t),
+                                         &p->refpos_allocated, 1);
+    if (refpos == NULL) {
+        PyErr_NoMemory();
+        return 0;
+    }
+    p->refpos = refpos;
+    size_t size = p->refpos_size;
+    if (gap == 0) {
+        refpos[size++] = 0;
+        p->refpos_run = size;
+        refpos[size++] = 1;
+    }
+    else {
+        p->refpos_run = 0;
+        if (gap < 255) {
+            refpos[size++] = (unsigned char)gap;
+        }
+        else {
+            refpos[size++] = 255;
+            memcpy(refpos + size, &gap, sizeof(gap));
+            size += sizeof(gap);
+        }
+    }
+    p->refpos_size = size;
+    return 1;
+}
+
+/* Object references (version 3+).
+
+   The reader keeps a list of the objects whose type byte has FLAG_REF, in
+   the order in which they start in the stream, and TYPE_REF refers to an
+   object by its index in that list.
+
+   Whether an object is flagged must only depend on the object graph being
+   written, not on how many other references to the object happen to exist
+   in the process, otherwise the output is not reproducible.  So an object
+   is flagged if and only if it is written more than once.  That is not
+   known when the object is seen for the first time, so:
+
+   - on the first occurrence, w_ref() records the offset of the type byte
+     (the next byte to be written, see W_TYPE) in p->refs and the object is
+     written without FLAG_REF;
+   - on a later occurrence, w_ref() marks the object as shared and writes
+     a TYPE_REF whose argument is provisional: the index of the object in
+     p->refs.  The position of the TYPE_REF is recorded in p->refpos;
+   - once everything is written, w_resolve_refs() adds FLAG_REF to the
+     type byte of each shared object, numbers these objects in the order
+     of their first occurrence and fixes up the arguments of all
+     TYPE_REFs.
+
+   Return 1 if the object has been dealt with (TYPE_REF written or error),
+   0 if the caller has to write it.
+ */
+static int
+w_ref(PyObject *v, WFILE *p)
 {
     _Py_hashtable_entry_t *entry;
 
     if (p->version < 3 || p->hashtable == NULL)
         return 0; /* not writing object references */
 
-    /* If it has only one reference, it definitely isn't shared.
-     * But we use TYPE_REF always for interned string, to PYC file stable
-     * as possible.
+    /* An object with only one reference cannot occur twice in the object
+     * graph, so there is no need to remember it.  This is only a shortcut:
+     * an object occurring twice has at least two references each time it is
+     * seen, so it is never skipped and the output does not depend on this
+     * test.
      */
-    if (_PyObject_IsUniquelyReferenced(v) &&
-            !(PyUnicode_CheckExact(v) && PyUnicode_CHECK_INTERNED(v))) {
+    if (_PyObject_IsUniquelyReferenced(v)) {
         return 0;
     }
 
@@ -399,38 +517,116 @@ w_ref(PyObject *v, char *flag, WFILE *p)
     if (entry != NULL) {
         /* write the reference index to the stream */
         uintptr_t w = (uintptr_t)entry->value;
-        if (w & 0x80000000LU) {
+        if (w & W_ENTRY_ACTIVE) {
             PyErr_Format(PyExc_ValueError, "cannot marshal recursion %T objects", v);
             goto err;
         }
-        /* we don't store "long" indices in the dict */
-        assert(w <= 0x7fffffff);
-        w_byte(TYPE_REF, p);
-        w_long((int)w, p);
+        if (!(w & W_ENTRY_SHARED)) {
+            entry->value = (void *)(w | W_ENTRY_SHARED);
+            p->refs[w >> W_ENTRY_SHIFT] |= W_REF_SHARED;
+        }
+        w >>= W_ENTRY_SHIFT;
+        assert(w < p->hashtable->nentries);
+        if (p->end - p->ptr < 5 && !w_reserve(p, 5)) {
+            return 1;
+        }
+        if (!w_add_refpos(p)) {
+            goto err;
+        }
+        *p->ptr++ = TYPE_REF;
+        /* The index in the reader's reference list is not known yet.
+           Write the index in p->refs, w_resolve_refs() will replace it. */
+        w_put_uint32(p->ptr, (uint32_t)w);
+        p->ptr += 4;
         return 1;
     } else {
         size_t w = p->hashtable->nentries;
         /* we don't support long indices */
-        if (w >= 0x7fffffff) {
+        if (w >= W_MAX_REFS) {
             PyErr_SetString(PyExc_ValueError, "too many objects");
             goto err;
         }
-        // Corresponding code should call w_complete() after
-        // writing the object.
-        if (PyCode_Check(v) || PySlice_Check(v) || PyFrozenDict_CheckExact(v)) {
-            w |= 0x80000000LU;
-        }
-        if (_Py_hashtable_set(p->hashtable, Py_NewRef(v),
-                              (void *)(uintptr_t)w) < 0) {
-            Py_DECREF(v);
+        size_t *refs = w_array_grow(p->refs, w, &p->refs_allocated,
+                                    sizeof(*refs));
+        if (refs == NULL) {
+            PyErr_NoMemory();
             goto err;
         }
-        *flag |= FLAG_REF;
+        p->refs = refs;
+        refs[w] = (size_t)(p->ptr - p->buf) << 1;
+        uintptr_t value = (uintptr_t)w << W_ENTRY_SHIFT;
+        // Corresponding code should call w_complete() after
+        // writing the object.
+        if (PyTuple_CheckExact(v) || PyCode_Check(v) || PySlice_Check(v) ||
+            PyFrozenDict_CheckExact(v))
+        {
+            value |= W_ENTRY_ACTIVE;
+        }
+        if (_Py_hashtable_set(p->hashtable, Py_NewRef(v),
+                              (void *)value) < 0) {
+            Py_DECREF(v);
+            PyErr_NoMemory();
+            goto err;
+        }
         return 0;
     }
 err:
-    p->error = WFERR_UNMARSHALLABLE;
+    p->error = true;
     return 1;
+}
+
+/* Finish the output: flag the objects which are the target of a TYPE_REF
+   and replace the provisional argument of each TYPE_REF.  See w_ref(). */
+static void
+w_resolve_refs(WFILE *p)
+{
+    if (p->error || p->refpos == NULL) {
+        return;
+    }
+    assert(p->hashtable != NULL);
+    /* Replace the state of each object in p->refs with its index in the
+       reader's reference list (only used for the shared objects). */
+    size_t nrefs = p->hashtable->nentries;
+    size_t *refs = p->refs;
+    uint32_t index = 0;
+    for (size_t i = 0; i < nrefs; i++) {
+        size_t shared = refs[i] & W_REF_SHARED;
+        char *type = p->buf + (refs[i] >> 1);
+        assert(!(*type & FLAG_REF));
+        /* No branch on shared: it would not be predictable. */
+        *type |= (char)(-(int)shared & FLAG_REF);
+        refs[i] = index;
+        index += (uint32_t)shared;
+#ifdef Py_DEBUG
+        if (!shared) {
+            refs[i] = (size_t)-1;
+        }
+#endif
+    }
+    const unsigned char *pos = p->refpos;
+    const unsigned char *end = pos + p->refpos_size;
+    char *ptr = p->buf;
+    while (pos < end) {
+        size_t gap = *pos++;
+        size_t count = 1;
+        if (gap == 0) {
+            count = *pos++;
+        }
+        else if (gap == 255) {
+            memcpy(&gap, pos, sizeof(gap));
+            pos += sizeof(gap);
+        }
+        ptr += gap;
+        do {
+            assert(ptr + 5 <= p->ptr);
+            assert(*ptr == TYPE_REF);
+            uint32_t w = w_get_uint32(ptr + 1);
+            assert(w < nrefs);
+            assert(refs[w] < index);
+            w_put_uint32(ptr + 1, (uint32_t)refs[w]);
+            ptr += 5;
+        } while (--count);
+    }
 }
 
 static void
@@ -449,27 +645,27 @@ w_complete(PyObject *v, WFILE *p)
     }
     assert(entry != NULL);
     uintptr_t w = (uintptr_t)entry->value;
-    assert(w & 0x80000000LU);
-    w &= ~0x80000000LU;
-    entry->value = (void *)(uintptr_t)w;
+    assert(w & W_ENTRY_ACTIVE);
+    w &= ~W_ENTRY_ACTIVE;
+    entry->value = (void *)w;
 }
 
 static void
-w_complex_object(PyObject *v, char flag, WFILE *p);
+w_complex_object(PyObject *v, WFILE *p);
 
 static void
 w_object(PyObject *v, WFILE *p)
 {
-    char flag = '\0';
-
-    if (p->error != WFERR_OK) {
+    if (p->error) {
         return;
     }
 
     p->depth++;
 
     if (p->depth > MAX_MARSHAL_STACK_DEPTH) {
-        p->error = WFERR_NESTEDTOODEEP;
+        PyErr_SetString(PyExc_ValueError,
+                        "object too deeply nested to marshal");
+        p->error = true;
     }
     else if (v == NULL) {
         w_byte(TYPE_NULL, p);
@@ -489,14 +685,14 @@ w_object(PyObject *v, WFILE *p)
     else if (v == Py_True) {
         w_byte(TYPE_TRUE, p);
     }
-    else if (!w_ref(v, &flag, p))
-        w_complex_object(v, flag, p);
+    else if (!w_ref(v, p))
+        w_complex_object(v, p);
 
     p->depth--;
 }
 
 static void
-w_complex_object(PyObject *v, char flag, WFILE *p)
+w_complex_object(PyObject *v, WFILE *p)
 {
     Py_ssize_t i, n;
 
@@ -504,14 +700,14 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         int overflow;
         long x = PyLong_AsLongAndOverflow(v, &overflow);
         if (overflow) {
-            w_PyLong((PyLongObject *)v, flag, p);
+            w_PyLong((PyLongObject *)v, p);
         }
         else {
 #if SIZEOF_LONG > 4
             long y = Py_ARITHMETIC_RIGHT_SHIFT(long, x, 31);
             if (y && y != -1) {
                 /* Too large for TYPE_INT */
-                w_PyLong((PyLongObject*)v, flag, p);
+                w_PyLong((PyLongObject*)v, p);
             }
             else
 #endif
@@ -572,7 +768,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             utf8 = PyUnicode_AsEncodedString(v, "utf8", "surrogatepass");
             if (utf8 == NULL) {
                 p->depth--;
-                p->error = WFERR_UNMARSHALLABLE;
+                p->error = true;
                 return;
             }
             if (p->version >= 3 &&  PyUnicode_CHECK_INTERNED(v))
@@ -596,6 +792,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         for (i = 0; i < n; i++) {
             w_object(PyTuple_GET_ITEM(v, i), p);
         }
+        w_complete(v, p);
     }
     else if (PyList_CheckExact(v)) {
         W_TYPE(TYPE_LIST, p);
@@ -611,7 +808,10 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         if (PyFrozenDict_CheckExact(v)) {
             if (p->version < 6) {
                 w_byte(TYPE_UNKNOWN, p);
-                p->error = WFERR_UNMARSHALLABLE;
+                PyErr_Format(PyExc_ValueError,
+                             "marshalling %T objects requires version 6 "
+                             "or higher", v);
+                p->error = true;
                 return;
             }
 
@@ -645,56 +845,83 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         // bpo-37596: To support reproducible builds, sets and frozensets need
         // to have their elements serialized in a consistent order (even when
         // they have been scrambled by hash randomization). To ensure this, we
-        // use an order equivalent to sorted(v, key=marshal.dumps):
-        PyObject *pairs = PyList_New(n);
-        if (pairs == NULL) {
-            p->error = WFERR_NOMEMORY;
+        // use an order equivalent to sorted(v, key=marshal.dumps).
+        // The list has a (dump, index, element) tuple for each element.
+        // The indexes are all different, so that sorting never compares
+        // two elements: elements with the same dump (NaNs which are
+        // distinct objects) may not be orderable.
+        PyObject *items = PyList_New(n);
+        if (items == NULL) {
+            p->error = true;
             return;
         }
+        // Marshalling an element can run arbitrary code (an audit hook, or
+        // the __buffer__() method of the element), which can add elements
+        // to the set or remove some: n is not trusted to still be the size
+        // of the set.
         Py_ssize_t i = 0;
+        bool changed = false;
         Py_BEGIN_CRITICAL_SECTION(v);
         while (_PySet_NextEntryRef(v, &pos, &value, &hash)) {
-            PyObject *dump = _PyMarshal_WriteObjectToString(value,
-                                    p->version, p->allow_code);
-            if (dump == NULL) {
-                p->error = WFERR_UNMARSHALLABLE;
+            if (i == n) {
+                changed = true;
                 Py_DECREF(value);
                 break;
             }
-            PyObject *pair = _PyTuple_FromPairSteal(dump, value);
-            if (pair == NULL) {
-                p->error = WFERR_NOMEMORY;
+            PyObject *dump = _PyMarshal_WriteObjectToString(value,
+                                    p->version, p->allow_code);
+            if (dump == NULL) {
+                p->error = true;
+                Py_DECREF(value);
                 break;
             }
-            PyList_SET_ITEM(pairs, i++, pair);
+            PyObject *index = PyLong_FromSsize_t(i);
+            PyObject *item = NULL;
+            if (index != NULL) {
+                item = PyTuple_Pack(3, dump, index, value);
+                Py_DECREF(index);
+            }
+            Py_DECREF(dump);
+            Py_DECREF(value);
+            if (item == NULL) {
+                p->error = true;
+                break;
+            }
+            PyList_SET_ITEM(items, i++, item);
         }
         Py_END_CRITICAL_SECTION();
-        if (p->error == WFERR_UNMARSHALLABLE || p->error == WFERR_NOMEMORY) {
-            Py_DECREF(pairs);
+        if (!p->error && (changed || i != n)) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "set changed size during iteration");
+            p->error = true;
+        }
+        if (p->error) {
+            Py_DECREF(items);
             return;
         }
-        assert(i == n);
-        if (PyList_Sort(pairs)) {
-            p->error = WFERR_NOMEMORY;
-            Py_DECREF(pairs);
+        if (PyList_Sort(items)) {
+            p->error = true;
+            Py_DECREF(items);
             return;
         }
         for (Py_ssize_t i = 0; i < n; i++) {
-            PyObject *pair = PyList_GET_ITEM(pairs, i);
-            value = PyTuple_GET_ITEM(pair, 1);
+            PyObject *item = PyList_GET_ITEM(items, i);
+            value = PyTuple_GET_ITEM(item, 2);
             w_object(value, p);
         }
-        Py_DECREF(pairs);
+        Py_DECREF(items);
     }
     else if (PyCode_Check(v)) {
         if (!p->allow_code) {
-            p->error = WFERR_CODE_NOT_ALLOWED;
+            PyErr_SetString(PyExc_ValueError,
+                            "marshalling code objects is disallowed");
+            p->error = true;
             return;
         }
         PyCodeObject *co = (PyCodeObject *)v;
         PyObject *co_code = _PyCode_GetCode(co);
         if (co_code == NULL) {
-            p->error = WFERR_NOMEMORY;
+            p->error = true;
             return;
         }
         W_TYPE(TYPE_CODE, p);
@@ -723,7 +950,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         if (PyObject_GetBuffer(v, &view, PyBUF_SIMPLE) != 0) {
             w_byte(TYPE_UNKNOWN, p);
             p->depth--;
-            p->error = WFERR_UNMARSHALLABLE;
+            p->error = true;
             return;
         }
         W_TYPE(TYPE_STRING, p);
@@ -733,7 +960,10 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
     else if (PySlice_Check(v)) {
         if (p->version < 5) {
             w_byte(TYPE_UNKNOWN, p);
-            p->error = WFERR_UNMARSHALLABLE;
+            PyErr_Format(PyExc_ValueError,
+                         "marshalling %T objects requires version 5 "
+                         "or higher", v);
+            p->error = true;
             return;
         }
         PySliceObject *slice = (PySliceObject *)v;
@@ -745,7 +975,8 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
     }
     else {
         W_TYPE(TYPE_UNKNOWN, p);
-        p->error = WFERR_UNMARSHALLABLE;
+        PyErr_Format(PyExc_ValueError, "cannot marshal %T objects", v);
+        p->error = true;
     }
 }
 
@@ -777,49 +1008,46 @@ w_clear_refs(WFILE *wf)
     if (wf->hashtable != NULL) {
         _Py_hashtable_destroy(wf->hashtable);
     }
+    PyMem_Free(wf->refs);
+    PyMem_Free(wf->refpos);
+}
+
+/* Write a buffer to a file.  Set an exception on failure. */
+static void
+w_fwrite(const char *buf, size_t n, FILE *fp)
+{
+    if (fwrite(buf, 1, n, fp) != n) {
+        int saved_errno = errno;
+        if (PyErr_CheckSignals()) {
+            /* The signal handler has raised an exception. */
+            return;
+        }
+        errno = saved_errno;
+        PyErr_SetFromErrno(PyExc_OSError);
+    }
 }
 
 /* version currently has no effect for writing ints. */
-/* Note that while the documentation states that this function
- * can error, currently it never does. Setting an exception in
- * this function should be regarded as an API-breaking change.
- */
 void
-PyMarshal_WriteLongToFile(long x, FILE *fp, int version)
+PyMarshal_WriteLongToFile(long x, FILE *fp, int Py_UNUSED(version))
 {
     char buf[4];
-    WFILE wf;
-    memset(&wf, 0, sizeof(wf));
-    wf.fp = fp;
-    wf.ptr = wf.buf = buf;
-    wf.end = wf.ptr + sizeof(buf);
-    wf.error = WFERR_OK;
-    wf.version = version;
-    w_long(x, &wf);
-    w_flush(&wf);
+    w_put_uint32(buf, (uint32_t)x);
+    w_fwrite(buf, sizeof(buf), fp);
 }
 
 void
 PyMarshal_WriteObjectToFile(PyObject *x, FILE *fp, int version)
 {
-    char buf[BUFSIZ];
-    WFILE wf;
-    if (PySys_Audit("marshal.dumps", "Oi", x, version) < 0) {
+    /* Object references are resolved once the whole object is written
+       (see w_ref()), so the output cannot be written to the file piece by
+       piece. */
+    PyObject *str = _PyMarshal_WriteObjectToString(x, version, 1);
+    if (str == NULL) {
         return; /* caller must check PyErr_Occurred() */
     }
-    memset(&wf, 0, sizeof(wf));
-    wf.fp = fp;
-    wf.ptr = wf.buf = buf;
-    wf.end = wf.ptr + sizeof(buf);
-    wf.error = WFERR_OK;
-    wf.version = version;
-    wf.allow_code = 1;
-    if (w_init_refs(&wf, version)) {
-        return; /* caller must check PyErr_Occurred() */
-    }
-    w_object(x, &wf);
-    w_clear_refs(&wf);
-    w_flush(&wf);
+    w_fwrite(PyBytes_AS_STRING(str), (size_t)PyBytes_GET_SIZE(str), fp);
+    Py_DECREF(str);
 }
 
 typedef struct {
@@ -872,6 +1100,14 @@ r_string(Py_ssize_t n, RFILE *p)
     if (!p->readable) {
         assert(p->fp != NULL);
         read = fread(p->buf, 1, n, p->fp);
+        if (read != n) {
+            assert(read < n);
+            int saved_errno = errno;
+            if (!PyErr_CheckSignals() && ferror(p->fp)) {
+                errno = saved_errno;
+                PyErr_SetFromErrno(PyExc_OSError);
+            }
+        }
     }
     else {
         PyObject *res, *mview;
@@ -884,21 +1120,26 @@ r_string(Py_ssize_t n, RFILE *p)
             return NULL;
 
         res = _PyObject_CallMethod(p->readable, &_Py_ID(readinto), "N", mview);
-        if (res != NULL) {
-            read = PyNumber_AsSsize_t(res, PyExc_ValueError);
-            Py_DECREF(res);
+        if (res == NULL) {
+            return NULL;
+        }
+        read = PyNumber_AsSsize_t(res, PyExc_ValueError);
+        Py_DECREF(res);
+        if (read == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
+        if (read > n) {
+            PyErr_Format(PyExc_ValueError,
+                         "read() returned too much data: "
+                         "%zd bytes requested, %zd returned",
+                         n, read);
+            return NULL;
         }
     }
     if (read != n) {
         if (!PyErr_Occurred()) {
-            if (read > n)
-                PyErr_Format(PyExc_ValueError,
-                             "read() returned too much data: "
-                             "%zd bytes requested, %zd returned",
-                             n, read);
-            else
-                PyErr_SetString(PyExc_EOFError,
-                                "EOF read where not expected");
+            PyErr_SetString(PyExc_EOFError,
+                            "EOF read where not expected");
         }
         return NULL;
     }
@@ -918,6 +1159,15 @@ r_byte(RFILE *p)
         int c = getc(p->fp);
         if (c != EOF) {
             return c;
+        }
+        int saved_errno = errno;
+        if (PyErr_CheckSignals()) {
+            return EOF;
+        }
+        if (ferror(p->fp)) {
+            errno = saved_errno;
+            PyErr_SetFromErrno(PyExc_OSError);
+            return EOF;
         }
     }
     else {
@@ -1308,16 +1558,12 @@ r_object(RFILE *p)
                 }
                 break;
             }
-            v = PyBytes_FromStringAndSize((char *)NULL, n);
-            if (v == NULL)
-                break;
             ptr = r_string(n, p);
             if (ptr == NULL) {
-                Py_DECREF(v);
                 break;
             }
-            memcpy(PyBytes_AS_STRING(v), ptr, n);
-            retval = v;
+            // Get a singleton for 1-byte string
+            retval = PyBytes_FromStringAndSize(ptr, n);  // can be NULL
             R_REF(retval);
             break;
         }
@@ -1417,8 +1663,10 @@ r_object(RFILE *p)
             break;
         }
     _read_tuple:
+        idx = r_ref_reserve(flag, p);
+        if (idx < 0)
+            break;
         v = PyTuple_New(n);
-        R_REF(v);
         if (v == NULL)
             break;
 
@@ -1433,7 +1681,7 @@ r_object(RFILE *p)
             }
             PyTuple_SET_ITEM(v, i, v2);
         }
-        retval = v;
+        retval = r_ref_insert(v, idx, flag, p);
         break;
 
     case TYPE_LIST:
@@ -1471,6 +1719,9 @@ r_object(RFILE *p)
         }
         if (type == TYPE_DICT) {
             R_REF(v);
+            if (v == NULL) {
+                break;
+            }
         }
         else {
             idx = r_ref_reserve(flag, p);
@@ -1502,6 +1753,7 @@ r_object(RFILE *p)
         }
         if (type == TYPE_FROZENDICT && v != NULL) {
             Py_SETREF(v, PyFrozenDict_New(v));
+            v = r_ref_insert(v, idx, flag, p);
         }
         retval = v;
         break;
@@ -1841,8 +2093,18 @@ PyMarshal_ReadLastObjectFromFile(FILE *fp)
     if (filesize > 0 && filesize <= REASONABLE_FILE_LIMIT) {
         char* pBuf = (char *)PyMem_Malloc(filesize);
         if (pBuf != NULL) {
+            PyObject *v = NULL;
             size_t n = fread(pBuf, 1, (size_t)filesize, fp);
-            PyObject* v = PyMarshal_ReadObjectFromString(pBuf, n);
+            int saved_errno = errno;
+            if (!PyErr_CheckSignals()) {
+                if (ferror(fp)) {
+                    errno = saved_errno;
+                    PyErr_SetFromErrno(PyExc_OSError);
+                }
+                else {
+                    v = PyMarshal_ReadObjectFromString(pBuf, n);
+                }
+            }
             PyMem_Free(pBuf);
             return v;
         }
@@ -1913,7 +2175,7 @@ _PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code)
         return NULL;
     wf.ptr = wf.buf = PyBytes_AS_STRING(wf.str);
     wf.end = wf.ptr + PyBytes_GET_SIZE(wf.str);
-    wf.error = WFERR_OK;
+    wf.error = false;
     wf.version = version;
     wf.allow_code = allow_code;
     if (w_init_refs(&wf, version)) {
@@ -1921,32 +2183,16 @@ _PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code)
         return NULL;
     }
     w_object(x, &wf);
+    w_resolve_refs(&wf);
     w_clear_refs(&wf);
     if (wf.str != NULL) {
         const char *base = PyBytes_AS_STRING(wf.str);
         if (_PyBytes_Resize(&wf.str, (Py_ssize_t)(wf.ptr - base)) < 0)
             return NULL;
     }
-    if (wf.error != WFERR_OK) {
+    if (wf.error) {
+        assert(PyErr_Occurred());
         Py_XDECREF(wf.str);
-        switch (wf.error) {
-        case WFERR_NOMEMORY:
-            PyErr_NoMemory();
-            break;
-        case WFERR_NESTEDTOODEEP:
-            PyErr_SetString(PyExc_ValueError,
-                            "object too deeply nested to marshal");
-            break;
-        case WFERR_CODE_NOT_ALLOWED:
-            PyErr_SetString(PyExc_ValueError,
-                            "marshalling code objects is disallowed");
-            break;
-        default:
-        case WFERR_UNMARSHALLABLE:
-            PyErr_SetString(PyExc_ValueError,
-                            "unmarshallable object");
-            break;
-        }
         return NULL;
     }
     return wf.str;

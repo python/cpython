@@ -1,3 +1,5 @@
+"""Base class for the Tk common dialogs."""
+
 # base class for tk common dialogues
 #
 # this module provides a base class for accessing the common

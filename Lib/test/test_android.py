@@ -1,4 +1,5 @@
 import io
+import platform
 import queue
 import re
 import subprocess
@@ -15,6 +16,11 @@ from unittest.mock import patch
 
 if sys.platform != "android":
     raise unittest.SkipTest("Android-specific")
+
+# Some API levels filter out consecutive identical lines and replace them with a
+# "chatty" marker.
+api_level = platform.android_ver().api_level
+chatty_issue = (26 <= api_level <= 30)
 
 # (name, level, fileno)
 STREAM_INFO = [("stdout", "I", 1), ("stderr", "W", 2)]
@@ -41,13 +47,18 @@ class TestAndroidOutput(unittest.TestCase):
 
         try:
             from ctypes import CDLL, c_char_p, c_int
-            android_log_write = getattr(CDLL("liblog.so"), "__android_log_write")
-            android_log_write.argtypes = (c_int, c_char_p, c_char_p)
-            ANDROID_LOG_INFO = 4
+            from ctypes.util import wrap_dll_function
+            liblog = CDLL("liblog.so")
+
+            @wrap_dll_function(liblog)
+            def __android_log_write(prio: c_int, tag: c_char_p,
+                                    text: c_char_p) -> c_int:
+                pass
 
             # Separate tests using a marker line with a different tag.
+            ANDROID_LOG_INFO = 4
             tag, message = "python.test", f"{self.id()} {time()}"
-            android_log_write(
+            __android_log_write(
                 ANDROID_LOG_INFO, tag.encode("UTF-8"), message.encode("UTF-8"))
             self.assert_log("I", tag, message, skip=True)
         except:
@@ -174,15 +185,13 @@ class TestAndroidOutput(unittest.TestCase):
                     write("\u0000b", [r"\xc0\x80b"])
                     write("a\u0000b", [r"a\xc0\x80b"])
 
-                # Multi-line messages. Avoid identical consecutive lines, as
-                # they may activate "chatty" filtering and break the tests.
-                #
-                # Additional spaces will appear in the output where necessary to
-                # protect leading newlines.
+                # Multi-line messages. Additional spaces will appear in the output where
+                # necessary to protect leading newlines.
                 write("\nx", [" "])
                 write("\na\n", ["x", "a"])
                 write("\n", [" "])
-                write("\n\n", [" ", " "])
+                if not chatty_issue:
+                    write("\n\n", [" ", " "])
                 write("b\n", ["b"])
                 write("c\n\n", ["c", " "])
                 write("d\ne", ["d"])
@@ -201,7 +210,8 @@ class TestAndroidOutput(unittest.TestCase):
                     write("\nx", [" ", "x"])
                     write("\na\n", [" ", "a"])
                     write("\n", [" "])
-                    write("\n\n", [" ", " "])
+                    if not chatty_issue:
+                        write("\n\n", [" ", " "])
                     write("b\n", ["b"])
                     write("c\n\n", ["c", " "])
                     write("d\ne", ["d", "e"])
