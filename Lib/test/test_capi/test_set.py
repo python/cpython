@@ -392,16 +392,22 @@ class FrozenSetWriterTests(unittest.TestCase):
         self.check_update_method('update_array_steal')
 
     def test_finish(self):
-        # Test PyFrozenSetWriter_Finish(): track the frozenset in the GC if at
-        # least one item is tracked by the GC
+        # Test PyFrozenSetWriter_Finish(): only track the frozenset in the GC
+        # if at least one item is tracked by the GC
+
+        # Integers are not tracked by the GC
+        items = [2, 5, 7]
+        self.assertTrue(all(not gc.is_tracked(item) for item in items))
         writer = self.create_writer()
-        writer.update([2, 5, 7])
+        writer.update(items)
         self.assertFalse(gc.is_tracked(writer.finish()))
 
+        # Create an object tracked by the GC
         class MyObject:
             pass
-
         obj = MyObject()
+        self.assertTrue(gc.is_tracked(obj))
+
         writer = self.create_writer()
         writer.add(obj)
         self.assertTrue(gc.is_tracked(writer.finish()))
