@@ -2479,22 +2479,30 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         }
         assert(sw_info);
 #ifdef WORDS_BIGENDIAN
-        PyObject_SetAttrString(self, "__ctype_le__", swapped);
-        PyObject_SetAttrString(self, "__ctype_be__", self);
-        PyObject_SetAttrString(swapped, "__ctype_be__", self);
-        PyObject_SetAttrString(swapped, "__ctype_le__", swapped);
+        if (PyObject_SetAttrString(self, "__ctype_le__", swapped) < 0 ||
+            PyObject_SetAttrString(self, "__ctype_be__", self) < 0 ||
+            PyObject_SetAttrString(swapped, "__ctype_be__", self) < 0 ||
+            PyObject_SetAttrString(swapped, "__ctype_le__", swapped) < 0)
+       {
+            Py_DECREF(swapped);
+            return -1;
+        }
         /* We are creating the type for the OTHER endian */
         sw_info->format = _ctypes_alloc_format_string("<", stginfo->format+1);
 #else
-        PyObject_SetAttrString(self, "__ctype_be__", swapped);
-        PyObject_SetAttrString(self, "__ctype_le__", self);
-        PyObject_SetAttrString(swapped, "__ctype_le__", self);
-        PyObject_SetAttrString(swapped, "__ctype_be__", swapped);
+        if (PyObject_SetAttrString(self, "__ctype_be__", swapped) < 0 ||
+            PyObject_SetAttrString(self, "__ctype_le__", self) < 0 ||
+            PyObject_SetAttrString(swapped, "__ctype_le__", self) < 0 ||
+            PyObject_SetAttrString(swapped, "__ctype_be__", swapped) < 0)
+        {
+            Py_DECREF(swapped);
+            return -1;
+        }
         /* We are creating the type for the OTHER endian */
         sw_info->format = _ctypes_alloc_format_string(">", stginfo->format+1);
 #endif
         Py_DECREF(swapped);
-        if (PyErr_Occurred()) {
+        if (sw_info->format == NULL) {
             return -1;
         }
     };
