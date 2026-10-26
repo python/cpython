@@ -87,3 +87,11 @@ PyAPI_FUNC(int) PyFrozenSetWriter_AddSteal(
 PyAPI_FUNC(int) PyFrozenSetWriter_Update(
     PyFrozenSetWriter *writer,
     PyObject *iterable);
+PyAPI_FUNC(int) PyFrozenSetWriter_UpdateArray(
+    PyFrozenSetWriter *writer,
+    PyObject *const *items,
+    Py_ssize_t nitem);
+PyAPI_FUNC(int) PyFrozenSetWriter_UpdateArraySteal(
+    PyFrozenSetWriter *writer,
+    PyObject *const *items,
+    Py_ssize_t nitem);

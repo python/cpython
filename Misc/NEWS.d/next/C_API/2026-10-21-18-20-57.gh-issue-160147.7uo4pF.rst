@@ -7,5 +7,7 @@ Add a new :ref:`PyFrozenSetWriter <pyfrozensetwriter>` C API to create a
 * :c:func:`PyFrozenSetWriter_Add`
 * :c:func:`PyFrozenSetWriter_AddSteal`
 * :c:func:`PyFrozenSetWriter_Update`
+* :c:func:`PyFrozenSetWriter_UpdateArray`
+* :c:func:`PyFrozenSetWriter_UpdateArraySteal`
 
 Patch by Victor Stinner.

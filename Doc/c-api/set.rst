@@ -289,3 +289,22 @@ See also the :c:func:`PyFrozenSet_New` function.
 
    On success, return ``0``.
    On error, set an exception and return ``-1``.
+
+   On error, elements already added are kept.
+
+.. c:function:: int PyFrozenSetWriter_UpdateArray(PyFrozenSetWriter *writer, PyObject *const *items, Py_ssize_t nitem)
+
+   Update the frozenset writer, adding *nitem* elements from *items* array:
+   copy references from *items* to the writer.
+
+   On success, return ``0``.
+   On error, set an exception and return ``-1``.
+
+   On error, elements already added are kept.
+
+   *nitem* must be positive or zero.
+
+.. c:function:: int PyFrozenSetWriter_UpdateArraySteal(PyFrozenSetWriter *writer, PyObject *const *items, Py_ssize_t nitem)
+
+   Similar to :c:func:`PyFrozenSetWriter_UpdateArray`, but :term:`steal`
+   references instead of copying references.

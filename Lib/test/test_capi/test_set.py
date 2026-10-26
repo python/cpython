@@ -279,6 +279,7 @@ class TestInternalCAPI(BaseSetTests, unittest.TestCase):
 
 class FrozenSetWriterTests(unittest.TestCase):
     PySet_MINSIZE = _testcapi.PySet_MINSIZE
+    UNHASHABLE = [1, 2, 3]
 
     def create_writer(self, size=0):
         # Test PyFrozenSetWriter_Create()
@@ -295,6 +296,10 @@ class FrozenSetWriterTests(unittest.TestCase):
             expected = frozenset(expected)
         self.assertEqual(result, expected)
         self.assertEqual(type(result), frozenset)
+
+    def assert_unhashable(self):
+        err_msg = f"unhashable type: '{type(self.UNHASHABLE).__name__}'"
+        return self.assertRaisesRegex(TypeError, err_msg)
 
     def test_get_table_set(self):
         # Test size parameter of PyFrozenSetWriter_Create()
@@ -313,39 +318,77 @@ class FrozenSetWriterTests(unittest.TestCase):
         # Use mortal (and unique) objects to be able to detect reference leaks
         return tuple(object() for _ in range(nitem))
 
-    def test_add(self):
-        # Test PyFrozenSetWriter_Append()
+    def check_add_method(self, add_method):
         items = self.create_items(self.PySet_MINSIZE * 2 - 1)
         table_size = self.compute_table_size(len(items))
         for prealloc in (0, len(items) // 2, len(items), len(items) * 10):
             with self.subTest(size=prealloc):
                 writer = self.create_writer()
+                add = getattr(writer, add_method)
                 for item in items:
-                    writer.add(item)
+                    add(item)
                 self.frozenset_equal(writer.finish(), items)
 
         # Test error (unhashable type)
         writer = self.create_writer(0)
         writer.update('abc')
-        with self.assertRaisesRegex(TypeError, "unhashable type: 'list'"):
-            writer.add([])
+        add = getattr(writer, add_method)
+        with self.assert_unhashable():
+            add(self.UNHASHABLE)
         self.frozenset_equal(writer.finish(), frozenset('abc'))
 
-    def test_update(self):
-        # Test PyFrozenSetWriter_Update()
-        items1 = self.create_items(self.PySet_MINSIZE - 1)
+    def test_add(self):
+        # Test PyFrozenSetWriter_Add()
+        self.check_add_method('add')
+
+    def test_add_steal(self):
+        # Test PyFrozenSetWriter_AddSteal()
+        self.check_add_method('add_steal')
+
+    def check_update_method(self, update_method):
+        items = self.create_items(self.PySet_MINSIZE - 1)
         items2 = self.create_items(self.PySet_MINSIZE - 1)
         common = self.create_items(self.PySet_MINSIZE - 1)
-        expected = set(items1) | set(items2) | set(common)
+        expected = set(items) | set(items2) | set(common)
         total = len(expected)
-        self.assertEqual(total, len(items1) + len(items2) + len(common))
+        self.assertEqual(total, len(items) + len(items2) + len(common))
+        empty = ()
 
         for prealloc in (0, total // 2, total, total * 10):
             with self.subTest(size=prealloc):
                 writer = self.create_writer(prealloc)
-                writer.update(items1 + common)
-                writer.update(common + items2)
+                update = getattr(writer, update_method)
+                update(items + common)
+                update(common + items2)
+                update(empty)  # test nitem=0
                 self.frozenset_equal(writer.finish(), expected)
+
+        # Test error path: first or last item is not hashable
+        for first in (True, False):
+            with self.subTest(first=first):
+                if first:
+                    items_error = (self.UNHASHABLE, *items)
+                    expected = frozenset()
+                else:
+                    items_error = (*items, self.UNHASHABLE)
+                    expected = frozenset(items)
+                writer = self.create_writer(0)
+                update = getattr(writer, update_method)
+                with self.assert_unhashable():
+                    update(items_error)
+                self.frozenset_equal(writer.finish(), expected)
+
+    def test_update(self):
+        # Test PyFrozenSetWriter_Update()
+        self.check_update_method('update')
+
+    def test_update_array(self):
+        # Test PyFrozenSetWriter_UpdateArray()
+        self.check_update_method('update_array')
+
+    def test_update_array_steal(self):
+        # Test PyFrozenSetWriter_UpdateArraySteal()
+        self.check_update_method('update_array_steal')
 
     def test_finish(self):
         # Test PyFrozenSetWriter_Finish(): track the frozenset in the GC if at

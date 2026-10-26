@@ -151,6 +151,58 @@ writer_update(PyObject *self_raw, PyObject *iterable)
 
 
 static PyObject*
+_writer_update_array(PyObject *self_raw, PyObject *tuple, int steal)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    if (!PyTuple_Check(tuple)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expect tuple, got %T", tuple);
+        return NULL;
+    }
+    PyObject **items = &PyTuple_GET_ITEM(tuple, 0);
+    Py_ssize_t len = PyTuple_GET_SIZE(tuple);
+
+    if (steal) {
+        for (Py_ssize_t i = 0; i < len; i++) {
+            Py_INCREF(items[i]);
+        }
+    }
+
+    int res;
+    if (steal) {
+        res = PyFrozenSetWriter_UpdateArraySteal(self->writer, items, len);
+    }
+    else {
+        res = PyFrozenSetWriter_UpdateArray(self->writer, items, len);
+    }
+    if (res < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+// Test PyFrozenSetWriter_UpdateArray()
+static PyObject*
+writer_update_array(PyObject *self, PyObject *tuple)
+{
+    return _writer_update_array(self, tuple, 0);
+}
+
+
+// Test PyFrozenSetWriter_UpdateArraySteal()
+static PyObject*
+writer_update_array_steal(PyObject *self, PyObject *tuple)
+{
+    return _writer_update_array(self, tuple, 1);
+}
+
+
+static PyObject*
 writer_get_table_size(PyObject *self_raw, PyObject *Py_UNUSED(args))
 {
     WriterObject *self = (WriterObject *)self_raw;
@@ -198,6 +250,8 @@ static PyMethodDef writer_methods[] = {
     {"add", _PyCFunction_CAST(writer_add), METH_O},
     {"add_steal", _PyCFunction_CAST(writer_add_steal), METH_O},
     {"update", _PyCFunction_CAST(writer_update), METH_O},
+    {"update_array", _PyCFunction_CAST(writer_update_array), METH_O},
+    {"update_array_steal", _PyCFunction_CAST(writer_update_array_steal), METH_O},
     {"get_table_size", _PyCFunction_CAST(writer_get_table_size), METH_NOARGS},
     {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},
     {"discard", _PyCFunction_CAST(writer_discard), METH_NOARGS},

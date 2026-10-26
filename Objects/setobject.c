@@ -3229,10 +3229,11 @@ static PyObject _dummy_struct = _PyObject_HEAD_INIT(&_PySetDummy_Type);
 
 #ifndef NDEBUG
 static int
-frozsetwriter_check_consistency(PyFrozenSetWriter *writer)
+frozensetwriter_check_consistency(PyFrozenSetWriter *writer)
 {
     assert(writer != NULL);
     PyObject *frozenset = _PyObject_CAST(writer);
+    assert(PyFrozenSet_CheckExact(frozenset));
     // Don't test _PyObject_IsUniquelyReferenced() since a frozenset writer
     // can be shared between multiple threads with external locking.
     assert(Py_REFCNT(frozenset) == 1);
@@ -3263,7 +3264,7 @@ PyFrozenSetWriter_Create(Py_ssize_t size)
     }
 
     PyFrozenSetWriter *writer = (PyFrozenSetWriter*)frozenset;
-    assert(frozsetwriter_check_consistency(writer));
+    assert(frozensetwriter_check_consistency(writer));
     return writer;
 }
 
@@ -3275,7 +3276,7 @@ PyFrozenSetWriter_Discard(PyFrozenSetWriter *writer)
         return;
     }
 
-    assert(frozsetwriter_check_consistency(writer));
+    assert(frozensetwriter_check_consistency(writer));
     PyObject *frozenset = _PyObject_CAST(writer);
     Py_DECREF(frozenset);
 }
@@ -3284,7 +3285,7 @@ PyFrozenSetWriter_Discard(PyFrozenSetWriter *writer)
 PyObject*
 PyFrozenSetWriter_Finish(PyFrozenSetWriter *writer)
 {
-    assert(frozsetwriter_check_consistency(writer));
+    assert(frozensetwriter_check_consistency(writer));
     PySetObject *frozenset = _PySet_CAST(writer);
 
     // Now that the frozenset is fully initialized, it's safe to track it in
@@ -3306,7 +3307,7 @@ PyFrozenSetWriter_Finish(PyFrozenSetWriter *writer)
 int
 PyFrozenSetWriter_AddSteal(PyFrozenSetWriter *writer, PyObject *item)
 {
-    assert(frozsetwriter_check_consistency(writer));
+    assert(frozensetwriter_check_consistency(writer));
 
     Py_hash_t hash = PyObject_Hash(item);
     if (hash == -1) {
@@ -3330,7 +3331,78 @@ PyFrozenSetWriter_Add(PyFrozenSetWriter *writer, PyObject *item)
 int
 PyFrozenSetWriter_Update(PyFrozenSetWriter *writer, PyObject *iterable)
 {
-    assert(frozsetwriter_check_consistency(writer));
+    assert(frozensetwriter_check_consistency(writer));
     PySetObject *frozenset = _PySet_CAST(writer);
     return set_update_local(frozenset, iterable);
+}
+
+
+static inline int
+frozensetwriter_update_array(PyFrozenSetWriter *writer,
+                             PyObject *const *items, Py_ssize_t nitem,
+                             int steal)
+{
+    if (nitem < 0) {
+        PyErr_SetString(PyExc_ValueError, "nitem must be >= 0");
+        return -1;
+    }
+
+#define CLEANUP(START) \
+        if (steal) { \
+            for (Py_ssize_t j = (START); j < nitem; j++) { \
+                Py_DECREF(items[j]); \
+            } \
+        }
+
+    assert(frozensetwriter_check_consistency(writer));
+    PySetObject *frozenset = _PySet_CAST(writer);
+
+    /* Do one big resize at the start, rather than
+     * incrementally resizing as we insert new keys.
+     */
+    if ((frozenset->fill + nitem) * 5 >= frozenset->mask * 3) {
+        if (set_table_resize(frozenset, (frozenset->used + nitem) * 2) != 0) {
+            CLEANUP(0);
+            return -1;
+        }
+    }
+
+    for (Py_ssize_t i = 0; i < nitem; i++) {
+        PyObject *item = items[i];
+
+        Py_hash_t hash = PyObject_Hash(item);
+        if (hash == -1) {
+            set_unhashable_type(item);
+            // CLEANUP() calls Py_DECREF(item)
+            CLEANUP(i);
+            return -1;
+        }
+
+        if (!steal) {
+            item = Py_NewRef(item);
+        }
+        if (set_add_entry_takeref(frozenset, item, hash) < 0) {
+            CLEANUP(i);
+            return -1;
+        }
+    }
+    return 0;
+
+#undef CLEANUP
+}
+
+
+int
+PyFrozenSetWriter_UpdateArray(PyFrozenSetWriter *writer,
+                              PyObject *const *items, Py_ssize_t nitem)
+{
+    return frozensetwriter_update_array(writer, items, nitem, 0);
+}
+
+
+int
+PyFrozenSetWriter_UpdateArraySteal(PyFrozenSetWriter *writer,
+                                   PyObject *const *items, Py_ssize_t nitem)
+{
+    return frozensetwriter_update_array(writer, items, nitem, 1);
 }
