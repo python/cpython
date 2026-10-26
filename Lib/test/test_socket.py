@@ -3197,7 +3197,6 @@ class BasicTCPTest(SocketConnectedTest):
 
     def testFromFdError(self):
         # Make sure that the fromfd() duplicated socket is closed on error.
-        # In debug mode, Python test suite checks for file descriptor leaks.
         fd = self.cli_conn.fileno()
         fd_count_before = os_helper.fd_count()
 
