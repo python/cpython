@@ -1,0 +1,3 @@
+Speed up :func:`urllib.parse.unquote` and :func:`urllib.parse.unquote_plus`
+by up to ~2x for ASCII input, which also makes :func:`urllib.parse.parse_qs`
+and :func:`urllib.parse.parse_qsl` faster. Patch by Brendan Fahy.
