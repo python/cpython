@@ -1998,7 +1998,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    local and remote interpreters must be the same exact version.
 
    Note that the remote process must be able to read the temporary script file in terms
-   of permissions. If the caller is running under different user than the process,
+   of permissions. If the caller is running under a different user than the process,
    the caller should grant permissions (typically ``os.fchmod(filename, 0o644)``).
 
    Callers should adjust permissions before calling, for example::
