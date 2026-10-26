@@ -6529,22 +6529,21 @@ parseKeyUsage(PCCERT_CONTEXT pCertCtx, DWORD flags)
         }
         return PyErr_SetFromWindowsErr(error);
     }
-    PyFrozenSetWriter *retval = PyFrozenSetWriter_Create();
+    PyFrozenSetWriter *retval = PyFrozenSetWriter_Create(usage->cUsageIdentifier);
     if (retval == NULL) {
         goto error;
     }
     for (i = 0; i < usage->cUsageIdentifier; ++i) {
-        if (usage->rgpszUsageIdentifier[i]) {
-            PyObject *oid;
-            int err;
-            oid = PyUnicode_FromString(usage->rgpszUsageIdentifier[i]);
-            if (oid == NULL) {
-                goto error;
-            }
-            err = PyFrozenSetWriter_AddSteal(retval, oid);
-            if (err == -1) {
-                goto error;
-            }
+        if (usage->rgpszUsageIdentifier[i] == NULL) {
+            continue;
+        }
+
+        PyObject *oid = PyUnicode_FromString(usage->rgpszUsageIdentifier[i]);
+        if (oid == NULL) {
+            goto error;
+        }
+        if (PyFrozenSetWriter_AddSteal(retval, oid) < 0) {
+            goto error;
         }
     }
     PyMem_Free(usage);
