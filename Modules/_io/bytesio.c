@@ -164,8 +164,7 @@ scan_eol_lock_held(bytesio *self, Py_ssize_t len)
 }
 
 /* Internal routine for detaching the shared buffer of BytesIO objects.
-   The caller should ensure that the 'size' argument is non-negative and
-   not lesser than self->string_size.  Returns 0 on success, -1 otherwise. */
+   Data past 'size' is dropped.  Returns 0 on success, -1 otherwise. */
 static int
 unshare_buffer_lock_held(bytesio *self, size_t size)
 {
@@ -174,12 +173,12 @@ unshare_buffer_lock_held(bytesio *self, size_t size)
     PyObject *new_buf;
     assert(SHARED_BUF(self));
     assert(FT_ATOMIC_LOAD_SSIZE_RELAXED(self->exports) == 0);
-    assert(size >= (size_t)self->string_size);
+    assert(size <= PY_SSIZE_T_MAX);
     new_buf = PyBytes_FromStringAndSize(NULL, size);
     if (new_buf == NULL)
         return -1;
     memcpy(PyBytes_AS_STRING(new_buf), PyBytes_AS_STRING(self->buf),
-           self->string_size);
+           Py_MIN(size, (size_t)self->string_size));
     Py_SETREF(self->buf, new_buf);
     clear_shared_buf(self);
     return 0;
@@ -757,16 +756,22 @@ _io_BytesIO_truncate_impl(bytesio *self, PyObject *size)
     }
 
     if (new_size < self->string_size) {
-        Py_ssize_t old_string_size = self->string_size;
-        self->string_size = new_size;
         if (new_size < PyBytes_GET_SIZE(self->buf) / 2) {
             /* Major downsize; resize down to exact size. */
             if (realloc_buffer_lock_held(self, new_size + 1) < 0) {
-                self->string_size = old_string_size;
                 return NULL;
             }
         }
     }
+    else if (new_size > self->string_size) {
+        if (prepare_write_lock_held(self, new_size) < 0) {
+            return NULL;
+        }
+        /* Fill new space with zeros */
+        memset(PyBytes_AS_STRING(self->buf) + self->string_size, '\0',
+               new_size - self->string_size);
+    }
+    self->string_size = new_size;
 
     return PyLong_FromSsize_t(new_size);
 }
