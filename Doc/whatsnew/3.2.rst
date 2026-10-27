@@ -1354,7 +1354,6 @@ connection when done::
  ...     ftp.login()
  ...     ftp.dir()
  ...
-
  '230 Anonymous login ok, restrictions apply.'
  dr-xr-xr-x   9 ftp      ftp           154 May  6 10:43 .
  dr-xr-xr-x   9 ftp      ftp           154 May  6 10:43 ..
