@@ -3195,6 +3195,23 @@ class BasicTCPTest(SocketConnectedTest):
     def _testFromFd(self):
         self.serv_conn.send(MSG)
 
+    def testFromFdError(self):
+        # Make sure that the fromfd() duplicated socket is closed on error.
+        fd = self.cli_conn.fileno()
+        fd_count_before = os_helper.fd_count()
+
+        with self.assertRaises(TypeError):
+            socket.fromfd(fd, "not-a-valid-family", socket.SOCK_STREAM)
+        with self.assertRaises(TypeError):
+            socket.fromfd(fd, socket.AF_INET, "not-a-valid-type")
+        with self.assertRaises(OverflowError):
+            socket.fromfd(fd, socket.AF_INET, 1 << 100)
+
+        self.assertEqual(os_helper.fd_count(), fd_count_before)
+
+    def _testFromFdError(self):
+        pass
+
     def testDup(self):
         # Testing dup()
         sock = self.cli_conn.dup()
