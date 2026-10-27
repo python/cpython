@@ -942,8 +942,17 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                 _PyArena_Free(arena);
                 goto error;
             }
+#ifdef Py_GIL_DISABLED
+            // Disable immortalization of code constants, as for a source
+            // string below.
+            _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+            tstate->suppress_co_const_immortalization++;
+#endif
             result = (PyObject*)_PyAST_Compile(mod, filename,
                                                &cf, optimize, arena, modname);
+#ifdef Py_GIL_DISABLED
+            tstate->suppress_co_const_immortalization--;
+#endif
         }
         _PyArena_Free(arena);
         goto finally;
@@ -956,7 +965,10 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
 #ifdef Py_GIL_DISABLED
     // Disable immortalization of code constants for explicit
     // compile() calls to get consistent frozen outputs between the default
-    // and free-threaded builds.
+    // and free-threaded builds.  It also keeps the output independent of
+    // what the process compiled before: a constant is otherwise replaced
+    // by an equal one of an earlier code object, and is then no longer the
+    // same object as, for example, the equal co_names of its code object.
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
     tstate->suppress_co_const_immortalization++;
 #endif
@@ -1930,38 +1942,6 @@ builtin_iter_impl(PyObject *module, PyObject *object, PyObject *stop_value,
     return _PyCallIter_NewEx(object, stop_value, stop_exception);
 }
 
-
-/*[clinic input]
-@text_signature "($module, object, /, [stop_value], *, stop_exception=StopAsyncIteration)"
-aiter as builtin_aiter
-
-    object: object
-    /
-    stop_value: object = NULL
-    *
-    stop_exception: object = NULL
-
-Return an AsyncIterator for an AsyncIterable object.
-
-In the second form, the callable is called and its result is awaited
-until it returns the stop value or raises the specified exception.
-[clinic start generated code]*/
-
-static PyObject *
-builtin_aiter_impl(PyObject *module, PyObject *object, PyObject *stop_value,
-                   PyObject *stop_exception)
-/*[clinic end generated code: output=2865edb3fbc45693 input=2adb37d12adafd0c]*/
-{
-    if (stop_value == NULL && stop_exception == NULL) {
-        return PyObject_GetAIter(object);
-    }
-    if (!PyCallable_Check(object)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "aiter(): the first argument must be callable");
-        return NULL;
-    }
-    return _PyACallIter_New(object, stop_value, stop_exception);
-}
 
 /*[clinic input]
 len as builtin_len
@@ -3455,7 +3435,6 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_ISINSTANCE_METHODDEF
     BUILTIN_ISSUBCLASS_METHODDEF
     BUILTIN_ITER_METHODDEF
-    BUILTIN_AITER_METHODDEF
     BUILTIN_LEN_METHODDEF
     BUILTIN_LOCALS_METHODDEF
     {"max", _PyCFunction_CAST(builtin_max), METH_FASTCALL | METH_KEYWORDS, max_doc},

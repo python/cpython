@@ -1,2 +1,0 @@
-Preserve the position and contents of :class:`io.BytesIO` when
-:meth:`!BytesIO.__init__` fails because a buffer is exported.

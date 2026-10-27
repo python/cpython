@@ -161,46 +161,40 @@ BaseException_traverse(PyObject *op, visitproc visit, void *arg)
     return 0;
 }
 
-static PyObject *
-BaseException_str(PyObject *op)
-{
-    PyBaseExceptionObject *self = PyBaseExceptionObject_CAST(op);
+/*[clinic input]
+@critical_section
+BaseException.__str__
+[clinic start generated code]*/
 
-    PyObject *res;
-    Py_BEGIN_CRITICAL_SECTION(self);
+static PyObject *
+BaseException_str_impl(PyBaseExceptionObject *self)
+/*[clinic end generated code: output=f9cf63c6d14a73fe input=cd946062d6786776]*/
+{
     switch (PyTuple_GET_SIZE(self->args)) {
     case 0:
-        res = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
-        break;
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     case 1:
-        res = PyObject_Str(PyTuple_GET_ITEM(self->args, 0));
-        break;
+        return PyObject_Str(PyTuple_GET_ITEM(self->args, 0));
     default:
-        res = PyObject_Str(self->args);
-        break;
+        return PyObject_Str(self->args);
     }
-    Py_END_CRITICAL_SECTION();
-    return res;
 }
 
+/*[clinic input]
+@critical_section
+BaseException.__repr__
+[clinic start generated code]*/
+
 static PyObject *
-BaseException_repr(PyObject *op)
+BaseException_repr_impl(PyBaseExceptionObject *self)
+/*[clinic end generated code: output=c885549a153a6007 input=20941168ad0ab577]*/
 {
-
-    PyBaseExceptionObject *self = PyBaseExceptionObject_CAST(op);
-
-    PyObject *res;
-    Py_BEGIN_CRITICAL_SECTION(self);
     const char *name = _PyType_Name(Py_TYPE(self));
     if (PyTuple_GET_SIZE(self->args) == 1) {
-        res = PyUnicode_FromFormat("%s(%R)", name,
+        return PyUnicode_FromFormat("%s(%R)", name,
                                     PyTuple_GET_ITEM(self->args, 0));
     }
-    else {
-        res = PyUnicode_FromFormat("%s%R", name, self->args);
-    }
-    Py_END_CRITICAL_SECTION();
-    return res;
+    return PyUnicode_FromFormat("%s%R", name, self->args);
 }
 
 /* Pickling support */
@@ -974,11 +968,11 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
          */
         cls = (PyTypeObject*)PyExc_BaseExceptionGroup;
     }
-    PyBaseExceptionGroupObject *self =
-        PyBaseExceptionGroupObject_CAST(BaseException_new(cls, args, kwds));
-    if (!self) {
+    PyObject *op = BaseException_new(cls, args, kwds);
+    if (!op) {
         goto error;
     }
+    PyBaseExceptionGroupObject *self = PyBaseExceptionGroupObject_CAST(op);
 
     self->msg = Py_NewRef(message);
     self->excs = exceptions;

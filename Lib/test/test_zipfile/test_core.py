@@ -26,7 +26,7 @@ from test.support import script_helper
 from test.support import (
     findfile, requires_zlib, requires_bz2, requires_lzma,
     requires_zstd, captured_stdout, captured_stderr, requires_subprocess,
-    cpython_only, gc_collect
+    cpython_only, gc_collect, catch_unraisable_exception
 )
 from test.support.os_helper import (
     TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count, FakePath,
@@ -4095,6 +4095,21 @@ class OtherTests(unittest.TestCase):
             zf.close()
             del zf
 
+        # ResourceWarning escalated to an error is reported as unraisable,
+        # and the archive is still closed.
+        buf = io.BytesIO()
+        zf = zipfile.ZipFile(buf, "w")
+        zf.writestr("f.txt", b"data")
+        with (warnings.catch_warnings(action="error", category=ResourceWarning),
+              catch_unraisable_exception() as cm):
+            del zf
+            gc_collect()
+            self.assertIs(cm.unraisable.exc_type, ResourceWarning)
+
+        with zipfile.ZipFile(buf, "r") as zf:
+            self.assertEqual(zf.namelist(), ["f.txt"])
+            self.assertEqual(zf.read("f.txt"), b"data")
+
     def test_unsupported_version(self):
         # File has an extract_version of 120
         data = (b'PK\x03\x04x\x00\x00\x00\x00\x00!p\xa1@\x00\x00\x00\x00\x00\x00'
@@ -4600,6 +4615,8 @@ class OtherTests(unittest.TestCase):
                     zipf.writestr('str', 'abcde')
                 with self.assertRaises(ValueError):
                     zipf.write(__file__, 'file')
+                with self.assertRaises(ValueError):
+                    zipf.mkdir('directory')
                 with self.assertRaises(ValueError):
                     zipf.close()
                 w1.write(msg2)
@@ -5630,6 +5647,9 @@ class TestWithDirectory(unittest.TestCase):
             os.mkdir(target)
             zf.extractall(target)
             self.assertEqual(set(os.listdir(target)), {"directory", "directory2", "directory3", "directory4"})
+
+        with self.assertRaises(ValueError):
+            zf.mkdir("closed")
 
     def test_create_directory_with_write(self):
         with zipfile.ZipFile(TESTFN, "w") as zf:

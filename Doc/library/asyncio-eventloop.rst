@@ -581,7 +581,7 @@ Opening network connections
    .. versionchanged:: 3.12
       *all_errors* was added.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Raises a ``ValueError`` if ``ssl.check_hostname`` is ``True``
       and ``server_hostname`` is not supplied.
 
@@ -1537,7 +1537,7 @@ Allows customizing how exceptions are handled in the event loop.
    * 'source_traceback' (optional): Traceback of the source;
    * 'handle_traceback' (optional): Traceback of the handle;
    * 'asyncgen' (optional): Asynchronous generator that caused
-                            the exception.
+     the exception.
 
    .. note::
 

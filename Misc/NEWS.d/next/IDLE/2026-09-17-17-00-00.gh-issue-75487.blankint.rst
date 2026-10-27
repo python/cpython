@@ -1,2 +1,0 @@
-Fix saving a truncated number when an integer entry in the IDLE Settings
-dialog is blanked with the Backspace key.
