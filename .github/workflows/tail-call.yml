@@ -23,13 +23,6 @@ env:
   LLVM_VERSION: 21
 
 jobs:
-  macos:
-    name: aarch64-apple-darwin/clang
-    uses: ./.github/workflows/reusable-macos.yml
-    with:
-      os: macos-26
-      tail-call-interp: true
-
   linux:
     name: ${{ matrix.target }}
     runs-on: ${{ matrix.runner }}

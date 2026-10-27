@@ -11,10 +11,6 @@ on:
         description: OS to run the job
         required: true
         type: string
-      tail-call-interp:
-        required: false
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -55,7 +51,7 @@ jobs:
           --enable-slower-safety \
           --enable-safety \
           ${{ inputs.free-threading && '--disable-gil' || '' }} \
-          ${{ inputs.tail-call-interp && '--with-tail-call-interp' || '' }} \
+          --with-tail-call-interp \
           --prefix=/opt/python-dev \
           --with-openssl="$(brew --prefix openssl@3.5)"
     - name: Build CPython
