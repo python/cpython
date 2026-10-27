@@ -1151,9 +1151,10 @@ class CStringIOTest(PyStringIOTest):
             stream.truncate(Size())
 
         # Sizes above 2**31 - 1 must work where C long is 32-bit.
-        stream = self.ioclass("abc")
-        self.assertEqual(stream.truncate(2**31), 2**31)
-        self.assertEqual(stream.getvalue(), "abc")
+        if sys.maxsize > 2**31:
+            stream = self.ioclass("abc")
+            self.assertEqual(stream.truncate(2**31), 2**31)
+            self.assertEqual(stream.getvalue(), "abc")
 
     # XXX: For the Python version of io.StringIO, this is highly
     # dependent on the encoding used for the underlying buffer.
