@@ -2476,6 +2476,11 @@ where historical changes have been made to civil time.
   Return ``dt + offset``. The *dt* argument must be an aware
   :class:`.datetime` instance, with ``tzinfo`` set to ``self``.
 
+.. attribute:: timezone.name
+
+   The *name* passed to the constructor, or ``None`` if no name was passed.
+
+   .. versionadded:: next
 
 Class attributes:
 
