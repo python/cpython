@@ -1,0 +1,6 @@
+Fix a hang when an import fails with :exc:`RecursionError` because the C
+stack is nearly exhausted: releasing the import locks could itself fail and
+leave the global import lock or a module lock held forever, so that later
+imports in other threads blocked indefinitely. The import system now raises
+:exc:`RecursionError` before taking an import lock when there is not enough
+stack left to release it.
