@@ -1330,7 +1330,13 @@ class EnsurePipTest(BaseTest):
 
     def do_test_with_pip(self, system_site_packages):
         rmtree(self.env_dir)
+        os.mkdir(self.env_dir)
+        # Both ensurepip and its pip subprocess run with the venv as cwd.
+        for name in ('ensurepip.py', 'subprocess.py'):
+            pathlib.Path(self.env_dir, name).write_text(
+                'raise AssertionError(__file__)\n', encoding='utf-8')
         with EnvironmentVarGuard() as envvars:
+            envvars["PYTHONSAFEPATH"] = ""
             # pip's cross-version compatibility may trigger deprecation
             # warnings in current versions of Python. Ensure related
             # environment settings don't cause venv to fail.

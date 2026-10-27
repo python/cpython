@@ -446,14 +446,15 @@ class EnvBuilder:
     def _call_new_python(self, context, *py_args, **kwargs):
         """Executes the newly created Python using safe-ish options"""
         # gh-98251: We do not want to just use '-I' because that masks
-        # legitimate user preferences (such as not writing bytecode). All we
-        # really need is to ensure that the path variables do not overrule
-        # normal venv handling.
+        # legitimate user preferences (such as not writing bytecode).
         args = [context.env_exec_cmd, *py_args]
         kwargs['env'] = env = os.environ.copy()
         env['VIRTUAL_ENV'] = context.env_dir
         env.pop('PYTHONHOME', None)
         env.pop('PYTHONPATH', None)
+        # Keep the working directory off sys.path, including in the
+        # subprocess that ensurepip starts to run pip.
+        env['PYTHONSAFEPATH'] = '1'
         kwargs['cwd'] = context.env_dir
         kwargs['executable'] = context.env_exec_cmd
         subprocess.check_output(args, **kwargs)
