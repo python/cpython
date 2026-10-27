@@ -46,10 +46,9 @@ bound into a function.
 
 .. c:function:: PyObject* PyUnstable_Code_GetLocalPlusNames(PyCodeObject *co)
 
-   Return a new :term:`strong reference` to the tuple of names of the local,
-   cell and free variables of a code object.  The tuple is indexed like the
-   *localsplus* array of a frame, so it can be used together with
-   :c:func:`PyUnstable_InterpreterFrame_GetLocal`.
+   Return a :term:`strong reference` to a tuple of names of the local, cell and
+   free variables of a code object. The names are in the same order as the
+   values returned by :c:func:`PyUnstable_InterpreterFrame_GetLocal`.
 
    .. versionadded:: next
 

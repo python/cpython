@@ -247,8 +247,12 @@ Unless using :pep:`523`, you will not need this.
 
 .. c:function:: int PyUnstable_InterpreterFrame_GetLocal(struct _PyInterpreterFrame *frame, Py_ssize_t index, PyObject **result)
 
-   Retrieve the local variable at *index* in the frame's localsplus array, with
-   cell and free variables unboxed to their contents.  Free variables are
+   Retrieve the local variable at *index*.
+   To determine the index of a particular variable, use
+   :c:func:`PyUnstable_InterpreterFrame_GetCode` and
+   :c:func:`PyUnstable_Code_GetLocalPlusNames`.
+
+   Cell and free variables are unboxed to their contents.  Free variables are
    resolved from the function closure, so this also works on a frame that has
    not started executing.
 

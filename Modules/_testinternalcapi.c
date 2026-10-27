@@ -1543,10 +1543,7 @@ get_frame_locals(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyThreadState *tstate = _PyThreadState_GET();
     _PyInterpreterFrame *frame = _PyThreadState_GetFrame(tstate);
-    if (frame == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "no caller frame");
-        return NULL;
-    }
+    assert(frame != NULL); // there must be a caller frame
     PyCodeObject *co = _PyFrame_GetCode(frame);
     Py_ssize_t n = co->co_nlocalsplus;
     PyObject *dict = PyDict_New();
@@ -1560,9 +1557,11 @@ get_frame_locals(PyObject *self, PyObject *Py_UNUSED(ignored))
         if (rc < 0) {
             Py_DECREF(names);
             Py_DECREF(dict);
+            assert(value == NULL);
             return NULL;
         }
         if (rc == 0) {
+            assert(value == NULL);
             continue;  // unset or hidden slot
         }
         PyObject *name = PyTuple_GET_ITEM(names, i);
@@ -1589,10 +1588,7 @@ get_frame_local(PyObject *self, PyObject *arg)
     }
     PyThreadState *tstate = _PyThreadState_GET();
     _PyInterpreterFrame *frame = _PyThreadState_GetFrame(tstate);
-    if (frame == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "no caller frame");
-        return NULL;
-    }
+    assert(frame != NULL); // there must be a caller frame
     PyObject *value;
     int rc = PyUnstable_InterpreterFrame_GetLocal(frame, index, &value);
     if (rc < 0) {
@@ -1609,10 +1605,7 @@ get_frame_local(PyObject *self, PyObject *arg)
 static PyObject *
 code_get_localsplus_names(PyObject *self, PyObject *arg)
 {
-    if (!PyCode_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a code object");
-        return NULL;
-    }
+    assert(PyCode_Check(arg));
     return PyUnstable_Code_GetLocalPlusNames((PyCodeObject *)arg);
 }
 
