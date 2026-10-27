@@ -1,3 +1,0 @@
-Fix :meth:`curses.window.instr` returning one character too few when the
-:mod:`curses` module is built against a curses library that counts the
-terminator in the requested length, such as the NetBSD one.

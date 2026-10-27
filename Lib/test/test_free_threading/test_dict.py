@@ -5,7 +5,7 @@ import weakref
 
 from ast import Or
 from functools import partial
-from threading import Barrier, Thread
+from threading import Barrier, Event, Thread
 from unittest import TestCase
 
 try:
@@ -228,6 +228,39 @@ class TestDict(TestCase):
 
             self.assertEqual(count, 0)
 
+    def test_racing_replace_inline_values_and_lookup(self):
+        # gh-160496: replacing an unmaterialized __dict__ clears inline
+        # values while attribute lookup can still read them without a lock.
+        class C:
+            pass
+
+        objects = [C() for _ in range(1000)]
+        for obj in objects:
+            obj.x = [0]
+
+        # Inline values are invalidated only once per object, so synchronize
+        # the threads for each fresh instance without accessing its __dict__.
+        barrier = Barrier(2)
+        observed = []
+
+        def writer():
+            for obj in objects:
+                barrier.wait()
+                obj.__dict__ = {"x": [1]}
+                barrier.wait()
+
+        def reader():
+            for obj in objects:
+                barrier.wait()
+                observed.append(getattr(obj, "x", None))
+                barrier.wait()
+
+        threading_helper.run_concurrently([writer, reader])
+        for value in observed:
+            self.assertIn(value, ([0], [1]))
+        for obj in objects:
+            self.assertEqual(obj.x, [1])
+
     def test_racing_object_get_set_dict(self):
         e = Exception()
 
@@ -314,6 +347,87 @@ class TestDict(TestCase):
 
         threading_helper.run_concurrently([writer, reader, reader])
 
+    def test_racing_split_dict_iteration_and_delete(self):
+        # Each reader owns its iterator. Mortal values exercise reference
+        # acquisition as well as the concurrent clearing of value slots.
+        class C:
+            pass
+
+        names = [f"a{i}" for i in range(8)]
+        obj = C()
+        for i, name in enumerate(names):
+            setattr(obj, name, [i])
+        d = obj.__dict__
+
+        def delattr_writer():
+            for _ in range(50):
+                for i, name in enumerate(names):
+                    delattr(obj, name)
+                    setattr(obj, name, [i])
+
+        def delitem_writer():
+            for _ in range(50):
+                for i, name in enumerate(names):
+                    del d[name]
+                    d[name] = [i]
+
+        def clear_writer():
+            for _ in range(50):
+                d.clear()
+                for i, name in enumerate(names):
+                    setattr(obj, name, [i])
+
+        def reader(view):
+            for _ in range(200):
+                try:
+                    for _ in view():
+                        pass
+                except RuntimeError:
+                    pass
+
+        for writer in (delattr_writer, delitem_writer, clear_writer):
+            for view in (d.values, d.items, d.keys):
+                with self.subTest(writer=writer.__name__, view=view.__name__):
+                    threading_helper.run_concurrently(
+                        [writer, partial(reader, view), partial(reader, view)])
+                    self.assertEqual(d, {name: [i] for i, name in enumerate(names)})
+
+    def test_racing_nonembedded_split_dict_iteration_and_delete(self):
+        class C:
+            pass
+
+        names = [f"a{i}" for i in range(8)]
+        # Populate shared keys without populating the copied dict's order
+        # array, so the writer also initializes previously unused order bytes.
+        template = C()
+        for i, name in enumerate(names):
+            setattr(template, name, [i])
+
+        def writer():
+            for _ in range(50):
+                for i, name in enumerate(names):
+                    d.pop(name, None)
+                    d[name] = [i]
+
+        def reader(view):
+            for _ in range(200):
+                try:
+                    for _ in view():
+                        pass
+                except RuntimeError:
+                    pass
+
+        for view_name in ("values", "items", "keys"):
+            with self.subTest(view=view_name):
+                obj = C()
+                obj.a0 = [0]
+                # Copying a split dict gives it heap-backed values.
+                d = obj.__dict__.copy()
+                view = getattr(d, view_name)
+                threading_helper.run_concurrently(
+                    [writer, partial(reader, view), partial(reader, view)])
+                self.assertEqual(d, {name: [i] for i, name in enumerate(names)})
+
     def test_racing_dict_update_and_method_lookup(self):
         # gh-144295: test race between dict modifications and method lookups.
         # Uses BytesIO because the race requires a type without Py_TPFLAGS_INLINE_VALUES
@@ -355,6 +469,29 @@ class TestDict(TestCase):
                 leave.wait()
 
         threading_helper.run_concurrently([reader, writer])
+
+    def test_racing_update_from_mutating_pair(self):
+        # gh-159244: dict() must not read the items of a key/value pair
+        # that another thread empties concurrently.
+        pair = [object(), object()]
+        done = Event()
+
+        def writer():
+            try:
+                for _ in range(10000):
+                    pair.clear()
+                    pair.extend((object(), object()))
+            finally:
+                done.set()
+
+        def reader():
+            while not done.is_set():
+                try:
+                    dict([pair])
+                except ValueError:
+                    pass
+
+        threading_helper.run_concurrently([writer] + [reader] * 4)
 
 if __name__ == "__main__":
     unittest.main()

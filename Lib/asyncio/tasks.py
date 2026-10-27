@@ -628,7 +628,11 @@ class _AsCompletedIterator:
         # Wait for the next future to be done and return it unless resolve is
         # set, in which case return either the result of the future or raise
         # an exception.
-        f = await self._done.get()
+        try:
+            f = await self._done.get()
+        except:
+            self._todo_left += 1
+            raise
         if f is None:
             # Dummy value from _handle_timeout().
             raise exceptions.TimeoutError

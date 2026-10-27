@@ -670,7 +670,7 @@ _io_BytesIO_readinto_impl(bytesio *self, Py_buffer *buffer)
 
     assert(self->pos + len <= PY_SSIZE_T_MAX);
     assert(len >= 0);
-    memcpy(buffer->buf, PyBytes_AS_STRING(self->buf) + self->pos, len);
+    memmove(buffer->buf, PyBytes_AS_STRING(self->buf) + self->pos, len);
     self->pos += len;
 
     return PyLong_FromSsize_t(len);
@@ -710,6 +710,8 @@ _io_BytesIO_truncate_impl(bytesio *self, PyObject *size)
                          "negative size value %zd", new_size);
             return NULL;
         }
+        CHECK_CLOSED(self);
+        CHECK_EXPORTS(self);
     }
 
     if (new_size < self->string_size) {

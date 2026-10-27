@@ -2497,22 +2497,30 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         }
         assert(sw_info);
 #ifdef WORDS_BIGENDIAN
-        PyObject_SetAttrString(self, "__ctype_le__", swapped);
-        PyObject_SetAttrString(self, "__ctype_be__", self);
-        PyObject_SetAttrString(swapped, "__ctype_be__", self);
-        PyObject_SetAttrString(swapped, "__ctype_le__", swapped);
+        if (PyObject_SetAttrString(self, "__ctype_le__", swapped) < 0 ||
+            PyObject_SetAttrString(self, "__ctype_be__", self) < 0 ||
+            PyObject_SetAttrString(swapped, "__ctype_be__", self) < 0 ||
+            PyObject_SetAttrString(swapped, "__ctype_le__", swapped) < 0)
+       {
+            Py_DECREF(swapped);
+            return -1;
+        }
         /* We are creating the type for the OTHER endian */
         sw_info->format = _ctypes_alloc_format_string("<", stginfo->format+1);
 #else
-        PyObject_SetAttrString(self, "__ctype_be__", swapped);
-        PyObject_SetAttrString(self, "__ctype_le__", self);
-        PyObject_SetAttrString(swapped, "__ctype_le__", self);
-        PyObject_SetAttrString(swapped, "__ctype_be__", swapped);
+        if (PyObject_SetAttrString(self, "__ctype_be__", swapped) < 0 ||
+            PyObject_SetAttrString(self, "__ctype_le__", self) < 0 ||
+            PyObject_SetAttrString(swapped, "__ctype_le__", self) < 0 ||
+            PyObject_SetAttrString(swapped, "__ctype_be__", swapped) < 0)
+        {
+            Py_DECREF(swapped);
+            return -1;
+        }
         /* We are creating the type for the OTHER endian */
         sw_info->format = _ctypes_alloc_format_string(">", stginfo->format+1);
 #endif
         Py_DECREF(swapped);
-        if (PyErr_Occurred()) {
+        if (sw_info->format == NULL) {
             return -1;
         }
     };
@@ -5477,7 +5485,7 @@ _ctypes_Simple_value_get_impl(CDataObject *self)
     assert(info); /* Cannot be NULL for CDataObject instances */
     assert(info->getfunc);
     PyObject *res;
-    res = info->getfunc(self->b_ptr, self->b_size);
+    res = info->getfunc(self->b_ptr, info->size);
     return res;
 }
 
@@ -5546,7 +5554,12 @@ Simple_repr(PyObject *self)
 
 static PyType_Slot pycsimple_slots[] = {
     {Py_tp_repr, &Simple_repr},
-    {Py_tp_doc, PyDoc_STR("XXX to be provided")},
+    {Py_tp_doc, PyDoc_STR("This non-public class is the base class of all "
+                          "fundamental ctypes data types.\n"
+                          "It contains the common attributes of the fundamental "
+                          "ctypes data types.\n"
+                          "_SimpleCData is a subclass of _CData, so it inherits "
+                          "their methods and attributes.")},
     {Py_tp_methods, Simple_methods},
     {Py_tp_getset, Simple_getsets},
     {Py_tp_init, Simple_init},
@@ -5987,7 +6000,19 @@ Pointer_bool(PyObject *self)
 }
 
 static PyType_Slot pycpointer_slots[] = {
-    {Py_tp_doc, (void *)PyDoc_STR("XXX to be provided")},
+    {Py_tp_doc, (void *)PyDoc_STR(
+                    "Private, abstract base class for pointers.\n"
+                    "\n"
+                    "Concrete pointer types are created by calling POINTER() "
+                    "with the type that will be pointed to; this is done "
+                    "automatically by pointer().\n"
+                    "\n"
+                    "If a pointer points to an array, its elements can be read "
+                    "and written using standard subscript and slice accesses. "
+                    "Pointer objects have no size, so len() will raise "
+                    "TypeError. Negative subscripts will read from the memory "
+                    "before the pointer (as in C), and out-of-range subscripts "
+                    "will probably crash with an access violation (if you’re lucky).")},
     {Py_tp_getset, Pointer_getsets},
     {Py_tp_init, Pointer_init},
     {Py_tp_new, Pointer_new},
