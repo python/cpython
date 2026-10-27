@@ -6,6 +6,7 @@ import dataclasses
 import importlib.metadata
 import io
 import json
+import ntpath
 import os
 import pathlib
 import pickle
@@ -14,9 +15,11 @@ import shutil
 import struct
 import sys
 import tempfile
+import types
 import unittest
 from datetime import date, datetime, time, timedelta, timezone
 from functools import cached_property
+from unittest import mock
 
 from test.support import MISSING_C_DOCSTRINGS
 from test.support.os_helper import EnvironmentVarGuard, FakePath
@@ -2016,6 +2019,38 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
             with self.subTest(value=bad_value):
                 with self.assertRaises(TypeError):
                     self.module.reset_tzpath(bad_value)
+
+    def test_validate_key_windows_paths(self):
+        # Check the key validation with Windows path rules on every platform.
+        tzpath = self.module._tzpath
+        base = ntpath.normpath(ntpath.join("_", "_"))[:-1]
+        fake_os = types.SimpleNamespace(path=ntpath)
+
+        good_keys = [
+            "UTC",
+            "America/New_York",
+            "America/Argentina/Buenos_Aires",
+            "Etc/GMT+1",
+        ]
+        bad_keys = [
+            "C:\\Windows\\win.ini",
+            "America/C:\\Windows\\win.ini",  # Drive in a component
+            "America/C:/Windows/win.ini",
+            "America/D:secret",  # Drive-relative component
+            "America/Argentina/D:secret",
+            "America/\\Windows\\win.ini",  # Rooted component
+            "America/\\\\server\\share\\file",  # UNC component
+        ]
+
+        with mock.patch.object(tzpath, "os", fake_os):
+            for key in good_keys:
+                with self.subTest(key=key):
+                    tzpath._validate_tzfile_path(key, _base=base)
+
+            for key in bad_keys:
+                with self.subTest(key=key):
+                    with self.assertRaises(ValueError):
+                        tzpath._validate_tzfile_path(key, _base=base)
 
     def test_tzpath_attribute(self):
         tzpath_0 = [f"{DRIVE}/one", f"{DRIVE}/two"]
