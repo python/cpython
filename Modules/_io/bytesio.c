@@ -185,11 +185,19 @@ unshare_buffer_lock_held(bytesio *self, size_t size)
     return 0;
 }
 
-/* Internal routine for changing the size of the buffer of BytesIO objects.
-   The caller should ensure that the 'size' argument is non-negative.  Returns
-   0 on success, -1 otherwise. */
+/* Reallocate the buffer of a BytesIO object to exactly 'alloc' bytes, keeping
+   the data and unsharing it if needed.  Returns 0 on success, -1 otherwise. */
 static int
-resize_buffer_lock_held(bytesio *self, size_t size)
+realloc_buffer_lock_held(bytesio *self, size_t alloc)
+{
+    return SHARED_BUF(self) ? unshare_buffer_lock_held(self, alloc)
+                            : resize_unshared_buffer_lock_held(self, alloc);
+}
+
+/* Make the buffer of a BytesIO object private and at least 'size' bytes long,
+   keeping the first string_size bytes.  Returns 0 on success, -1 otherwise. */
+static int
+prepare_write_lock_held(bytesio *self, size_t size)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
 
@@ -205,13 +213,12 @@ resize_buffer_lock_held(bytesio *self, size_t size)
     if (size > PY_SSIZE_T_MAX)
         goto overflow;
 
-    if (size < alloc / 2) {
-        /* Major downsize; resize down to exact size. */
-        alloc = size + 1;
-    }
-    else if (size < alloc) {
-        /* Within allocated size; quick exit */
-        return 0;
+    if (size <= alloc) {
+        /* Within allocated size; quick exit unless shared */
+        if (!SHARED_BUF(self)) {
+            return 0;
+        }
+        alloc = Py_MAX(size, (size_t)self->string_size);
     }
     else if (size <= alloc * 1.125) {
         /* Moderate upsize; overallocate similar to list_resize() */
@@ -225,16 +232,7 @@ resize_buffer_lock_held(bytesio *self, size_t size)
         goto overflow;
     }
 
-    if (SHARED_BUF(self)) {
-        if (unshare_buffer_lock_held(self, alloc) < 0)
-            return -1;
-    }
-    else {
-        if (resize_unshared_buffer_lock_held(self, alloc) < 0)
-            return -1;
-    }
-
-    return 0;
+    return realloc_buffer_lock_held(self, alloc);
 
   overflow:
     PyErr_SetString(PyExc_OverflowError,
@@ -269,17 +267,9 @@ write_bytes_lock_held(bytesio *self, PyObject *b)
 
     assert(self->pos >= 0);
     size_t endpos = (size_t)self->pos + len;
-    if (endpos > (size_t)PyBytes_GET_SIZE(self->buf)) {
-        if (resize_buffer_lock_held(self, endpos) < 0) {
-            len = -1;
-            goto done;
-        }
-    }
-    else if (SHARED_BUF(self)) {
-        if (unshare_buffer_lock_held(self, Py_MAX(endpos, (size_t)self->string_size)) < 0) {
-            len = -1;
-            goto done;
-        }
+    if (prepare_write_lock_held(self, endpos) < 0) {
+        len = -1;
+        goto done;
     }
     assert(_PyBytes_IsMutable(self->buf));
 
@@ -433,13 +423,8 @@ _io_BytesIO_getvalue_impl(bytesio *self)
                                          self->string_size);
 
     if (self->string_size != PyBytes_GET_SIZE(self->buf)) {
-        if (SHARED_BUF(self)) {
-            if (unshare_buffer_lock_held(self, self->string_size) < 0)
-                return NULL;
-        }
-        else {
-            if (resize_unshared_buffer_lock_held(self, self->string_size) < 0)
-                return NULL;
+        if (realloc_buffer_lock_held(self, self->string_size) < 0) {
+            return NULL;
         }
     }
     set_shared_buf(self);
@@ -774,9 +759,12 @@ _io_BytesIO_truncate_impl(bytesio *self, PyObject *size)
     if (new_size < self->string_size) {
         Py_ssize_t old_string_size = self->string_size;
         self->string_size = new_size;
-        if (resize_buffer_lock_held(self, new_size) < 0) {
-            self->string_size = old_string_size;
-            return NULL;
+        if (new_size < PyBytes_GET_SIZE(self->buf) / 2) {
+            /* Major downsize; resize down to exact size. */
+            if (realloc_buffer_lock_held(self, new_size + 1) < 0) {
+                self->string_size = old_string_size;
+                return NULL;
+            }
         }
     }
 
@@ -1284,9 +1272,10 @@ bytesiobuf_getbuffer_lock_held(PyObject *op, Py_buffer *view, int flags)
     if (check_closed(b)) {
         return -1;
     }
-    if (FT_ATOMIC_LOAD_SSIZE_RELAXED(b->exports) == 0 && SHARED_BUF(b)) {
-        if (unshare_buffer_lock_held(b, b->string_size) < 0)
+    if (FT_ATOMIC_LOAD_SSIZE_RELAXED(b->exports) == 0) {
+        if (prepare_write_lock_held(b, b->string_size) < 0) {
             return -1;
+        }
     }
 
     /* cannot fail if view != NULL and readonly == 0 */
