@@ -3196,6 +3196,7 @@ class BasicTCPTest(SocketConnectedTest):
         self.serv_conn.send(MSG)
 
     def testFromFdError(self):
+        # Make sure that the fromfd() duplicated socket is closed on error.
         fd = self.cli_conn.fileno()
         fd_count_before = os_helper.fd_count()
 
