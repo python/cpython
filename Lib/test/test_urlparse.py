@@ -1344,6 +1344,12 @@ class UrlParseTestCase(unittest.TestCase):
             check(func(burl))
             check(func(burl, missing_as_none=True))
 
+        for cls in (urllib.parse.DefragResult, urllib.parse.SplitResult, urllib.parse.ParseResult):
+            check(cls(*[''] * len(cls._fields)))
+        for cls in (urllib.parse.DefragResultBytes, urllib.parse.SplitResultBytes, urllib.parse.ParseResultBytes):
+            check(cls(*[b''] * len(cls._fields)))
+
+
     def test_result_compat_unpickling(self):
         def check(result, pickles):
             for pickled in pickles:
