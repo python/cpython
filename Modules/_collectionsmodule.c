@@ -2551,7 +2551,6 @@ _count_elements_dict_lock_held(PyDictObject *mapping, PyObject *it)
     while (1) {
         Py_hash_t hash;
         PyObject *oldval;
-        PyObject *newval;
         int status;
 
         PyObject *key = PyIter_Next(it);
@@ -2576,7 +2575,7 @@ _count_elements_dict_lock_held(PyDictObject *mapping, PyObject *it)
                                                         hash);
         }
         else {
-            newval = PyNumber_Add(oldval, one);
+            PyObject *newval = PyNumber_Add(oldval, one);
             Py_DECREF(oldval);
             if (newval == NULL) {
                 Py_DECREF(key);
