@@ -2703,8 +2703,7 @@ class TestTier2Optimizer(CheckEvents):
             for _ in Iterator():
                 pass
 
-        # Warm up the loop before enabling monitoring, so the callback run
-        # executes the tier-2 executor rather than creating it.
+        # Warm up the loop before enabling monitoring to create the executor.
         run()
         code = run.__code__
         executor_offset = None
