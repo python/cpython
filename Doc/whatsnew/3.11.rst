@@ -361,7 +361,7 @@ providing protection against injection attacks.
 
 For example, a SQL query function could be annotated as follows::
 
-   def run_query(sql: LiteralString) -> ...
+   def run_query(sql: LiteralString) -> ...:
        ...
 
    def caller(
@@ -2335,7 +2335,7 @@ Porting to Python 3.11
         PyObject_GC_UnTrack(p);
         Py_TRASHCAN_SAFE_BEGIN(p);
         ...
-        Py_TRASHCAN_SAFE_END
+        Py_TRASHCAN_SAFE_END(p)
     }
 
   should migrate to the new macros as follows::
