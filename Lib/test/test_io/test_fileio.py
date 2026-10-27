@@ -50,6 +50,9 @@ class AutoFileTests:
 
     def testSeekTell(self):
         self.f.write(bytes(range(20)))
+        # An invalid argument must not mark the file as non-seekable.
+        self.assertRaises(OSError, self.f.seek, -1)
+        self.assertTrue(self.f.seekable())
         self.assertEqual(self.f.tell(), 20)
         self.f.seek(0)
         self.assertEqual(self.f.tell(), 0)
@@ -61,9 +64,6 @@ class AutoFileTests:
         self.assertEqual(self.f.tell(), 10)
         self.f.seek(-5, 2)
         self.assertEqual(self.f.tell(), 15)
-
-    def testSeekableAfterFailedSeek(self) -> None:
-        self.assertRaises(OSError, self.f.seek, -1)
         self.assertTrue(self.f.seekable())
 
     def testAttributes(self):
@@ -557,6 +557,13 @@ class OtherFileTests:
             f.close()
 
             if sys.platform != "win32":
+                # On Windows, lseek somehow succeeds on pipes.
+                r, w = os.pipe()
+                os.close(w)
+                with self.FileIO(r, "r") as f:
+                    self.assertRaises(OSError, f.seek, 0)
+                    self.assertEqual(f.seekable(), False)
+
                 try:
                     f = self.FileIO("/dev/tty", "a")
                 except OSError:
