@@ -989,9 +989,10 @@ class CBytesIOTest(PyBytesIOTest):
                 size.result.release()
 
         # Sizes above 2**31 - 1 must work where C long is 32-bit.
-        stream = self.ioclass(b'abc')
-        self.assertEqual(stream.truncate(2**31), 2**31)
-        self.assertEqual(stream.getvalue(), b'abc')
+        if sys.maxsize > 2**31:
+            stream = self.ioclass(b'abc')
+            self.assertEqual(stream.truncate(2**31), 2**31)
+            self.assertEqual(stream.getvalue(), b'abc')
 
     def test_readinto_overlapping_buffer(self):
         with self.ioclass(b'abcd') as stream:
