@@ -244,11 +244,28 @@ class TestForwardRefFormat(unittest.TestCase):
         class NestedForwardRefs:
             genericalias: Unknown1[str, list[Unknown2]]
             annotated: Unknown1[str, typing.Annotated[Unknown2, '']]
+            extra_nested: Unknown3[tuple[Unknown4[list[Unknown5]]]]
 
         annos = get_annotations(NestedForwardRefs, format=Format.FORWARDREF)
 
         gen = annos['genericalias']
         annotated = annos['annotated']
+        nested = annos['extra_nested']
+
+        self.assertEqual(
+            gen.evaluate(format=Format.STRING),
+            "Unknown1[str, list[Unknown2]]"
+        )
+
+        self.assertEqual(
+            annotated.evaluate(format=Format.STRING),
+            "Unknown1[str, typing.Annotated[Unknown2, '']]",
+        )
+
+        self.assertEqual(
+            nested.evaluate(format=Format.STRING),
+            "Unknown3[tuple[Unknown4[list[Unknown5]]]]",
+        )
 
         Unknown1 = tuple
         # Unknown2 is still undefined, these should raise
@@ -267,6 +284,14 @@ class TestForwardRefFormat(unittest.TestCase):
         self.assertEqual(
             annotated.evaluate(),
             tuple[str, typing.Annotated[str, '']],
+        )
+
+        Unknown3 = list
+        Unknown4 = set
+        Unknown5 = int
+        self.assertEqual(
+            nested.evaluate(),
+            list[tuple[set[list[int]]]],
         )
 
     def test_nested_special_generic(self):
