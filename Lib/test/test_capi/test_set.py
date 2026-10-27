@@ -285,12 +285,6 @@ class FrozenSetWriterTests(unittest.TestCase):
         # Test PyFrozenSetWriter_Create()
         return _testcapi.PyFrozenSetWriter(size)
 
-    def compute_table_size(self, size):
-        table_size = self.PySet_MINSIZE
-        while table_size <= size:
-            table_size <<= 1
-        return table_size
-
     def frozenset_equal(self, result, expected):
         if not isinstance(expected, frozenset):
             expected = frozenset(expected)
@@ -321,7 +315,6 @@ class FrozenSetWriterTests(unittest.TestCase):
 
     def check_add_method(self, add_method):
         items = self.create_items(self.PySet_MINSIZE * 2 - 1)
-        table_size = self.compute_table_size(len(items))
         for prealloc in (0, len(items) // 2, len(items), len(items) * 10):
             with self.subTest(prealloc=prealloc):
                 writer = self.create_writer()
