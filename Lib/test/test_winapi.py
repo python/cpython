@@ -5,7 +5,7 @@ import os
 import pathlib
 import re
 import unittest
-from test.support import import_helper, os_helper
+from test.support import import_helper, os_helper, requires_resource
 
 _winapi = import_helper.import_module('_winapi', required_on=['win'])
 
@@ -178,12 +178,13 @@ class WinAPITests(unittest.TestCase):
         with self.assertRaises(OSError):
             _winapi.FlushConsoleInputBuffer(rfd)
 
+    @requires_resource('console')
     def test_console_mode(self):
         try:
             handle = _winapi.CreateFile(
                 "CONIN$",
                 _winapi.GENERIC_READ | _winapi.GENERIC_WRITE,
-                3, # 3=FILE_SHARE_READ|FILE_SHARE_WRITE
+                3,  # 3=FILE_SHARE_READ|FILE_SHARE_WRITE
                 _winapi.NULL,
                 _winapi.OPEN_EXISTING,
                 0,
