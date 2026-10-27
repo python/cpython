@@ -173,3 +173,6 @@ Python/frozen_modules/MANIFEST
 # People's custom https://docs.anthropic.com/en/docs/claude-code/memory configs.
 /.claude/
 CLAUDE.local.md
+
+# Local scratch space for things we or our agents do in our worktrees.
+/do-not-commit/

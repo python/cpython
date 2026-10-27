@@ -287,6 +287,8 @@ class FormatTest(unittest.TestCase):
                         "%i format: a real number is required, not str")
         test_exc_common('%i', b'1', TypeError,
                         "%i format: a real number is required, not bytes")
+        test_exc_common('%*r', (-maxsize - 1, 1), OverflowError,
+                        "width too big")
 
     def test_str_format(self):
         testformat("%r", "\u0378", "'\\u0378'")  # non printable

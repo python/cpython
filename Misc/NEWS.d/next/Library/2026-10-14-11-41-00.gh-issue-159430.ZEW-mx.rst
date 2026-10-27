@@ -1,2 +1,0 @@
-Report the correct exception if looking up ``__name__`` raises an exception
-when calling :func:`repr` on a :class:`weakref.ref`.

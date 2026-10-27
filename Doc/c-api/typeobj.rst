@@ -480,6 +480,7 @@ definition found there:
 .. XXX Drop this?
 
 .. literalinclude:: ../includes/typestruct.h
+   :end-at: } PyTypeObject;
 
 
 PyObject Slots

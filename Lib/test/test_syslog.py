@@ -53,6 +53,29 @@ class Test(unittest.TestCase):
         syslog.syslog('test message from python test_syslog')
 
     @threading_helper.requires_working_threading()
+    def test_racing_openlog_argv(self):
+        # gh-159864: openlog() without an ident reads sys.argv[0] while
+        # another thread replaces it.
+        argv = ["prog"]
+        nthreads = 32
+
+        def opener():
+            for _ in range(1000):
+                syslog.openlog()
+
+        def writer():
+            for i in range(1000):
+                argv[0] = f"prog-{i}"
+
+        with support.swap_attr(sys, "argv", argv):
+            try:
+                threading_helper.run_concurrently(
+                    worker_func=[opener] * (nthreads - 1) + [writer],
+                )
+            finally:
+                syslog.closelog()
+
+    @threading_helper.requires_working_threading()
     def test_syslog_threaded(self):
         start = threading.Event()
         stop = False

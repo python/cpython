@@ -624,6 +624,22 @@ class IOTest(unittest.TestCase):
         with self.open(os_helper.TESTFN, "r", encoding="utf-8") as f:
             self.assertRaises(TypeError, f.readline, 5.3)
 
+    def test_readline_limit_with_short_read(self):
+        class Reader(self.IOBase):
+            data = b"abcdef"
+
+            def peek(self, size):
+                return self.data
+
+            def read(self, size):
+                data = self.data[:min(size, 2)]
+                self.data = self.data[len(data):]
+                return data
+
+        reader = Reader()
+        self.assertEqual(reader.readline(3), b"abc")
+        self.assertEqual(reader.data, b"def")
+
     def test_readline_nonsizeable(self):
         # Issue #30061
         # Crash when readline() returns an object without __len__
@@ -4098,6 +4114,41 @@ def _to_memoryview(buf):
 class CTextIOWrapperTest(TextIOWrapperTest):
     io = io
     shutdown_error = "LookupError: unknown encoding: ascii"
+
+    def test_write_newline_replace_returns_non_string(self):
+        class Text(str):
+            def replace(self, *args):
+                return None
+
+        with self.TextIOWrapper(self.BytesIO(), newline='\r\n') as stream:
+            with self.assertRaisesRegex(TypeError, 'replace.*str'):
+                stream.write(Text('a\n'))
+
+    def test_write_newline_replace_changes_stream(self):
+        def fail_init(stream, buffer):
+            with self.assertRaises(LookupError):
+                stream.__init__(buffer, encoding='nonexistent-encoding')
+
+        actions = (
+            (lambda stream, buffer: stream.close(), ValueError, 'closed'),
+            (lambda stream, buffer: stream.detach(), ValueError, 'detached'),
+            (lambda stream, buffer: stream.__init__(buffer),
+             self.UnsupportedOperation, 'not writable'),
+            (fail_init, ValueError, 'uninitialized'),
+        )
+        for action, error, message in actions:
+            with self.subTest(message=message):
+                with (self.BytesIO() as raw,
+                      self.BufferedReader(self.BytesIO()) as readonly):
+                    stream = self.TextIOWrapper(raw, newline='\r\n')
+
+                    class Text(str):
+                        def replace(self, *args):
+                            action(stream, readonly)
+                            return 'a\r\n'
+
+                    with self.assertRaisesRegex(error, message):
+                        stream.write(Text('a\n'))
 
     def test_reentrant_seek_during_tell(self):
         # gh-153539: reading short of _CHUNK_SIZE leaves residual bytes in the

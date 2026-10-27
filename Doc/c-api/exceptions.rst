@@ -407,6 +407,11 @@ an error value).
    documentation.  There is no C API for warning control.
 
 
+.. c:function:: int PyErr_Warn(PyObject *category, const char *message)
+
+   Equivalent to :c:expr:`PyErr_WarnEx(category, message, 1)`.
+
+
 .. c:function:: int PyErr_WarnExplicitObject(PyObject *category, PyObject *message, PyObject *filename, int lineno, PyObject *module, PyObject *registry)
 
    Issue a warning message with explicit control over all warning attributes.  This

@@ -2151,6 +2151,16 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
 
         self.assertRaises(BufferError, ba.hex, S(b':'))
 
+    def test_reinit_error(self):
+        # A failed __init__() must not leave uninitialized bytes in the
+        # object: it must be empty afterwards.
+        for source in ([256] * 100, (-1,) * 100, [0] * 50 + [1000],
+                       (1, 2, 1 << 100)):
+            with self.subTest(source=source):
+                a = bytearray(b"abc")
+                self.assertRaises(ValueError, a.__init__, source)
+                self.assertEqual(a, b"")
+
 
 class AssortedBytesTest(unittest.TestCase):
     #

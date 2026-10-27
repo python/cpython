@@ -581,7 +581,8 @@ class Bdb:
         # the name "until" is borrowed from gdb
         if lineno is None:
             lineno = frame.f_lineno + 1
-        self._set_stopinfo(frame, frame, lineno)
+        self._set_stopinfo(frame, frame, lineno,
+                           cmdframe=frame, cmdlineno=frame.f_lineno)
 
     def set_step(self):
         """Stop after one line of code."""
@@ -609,6 +610,13 @@ class Bdb:
 
         If frame is not specified, debugging starts from caller's frame.
         """
+
+        if self.enterframe is not None:
+            # If self.enterframe is not None, it means we are already in
+            # dispatched functions. Tracing is disabled when calling a
+            # trace function, so we just skip this set_trace() call.
+            return
+
         self.stop_trace()
         if frame is None:
             frame = sys._getframe().f_back
@@ -756,7 +764,7 @@ class Bdb:
             return 'There are no breakpoints in %s' % filename
         for line in self.breaks[filename]:
             blist = Breakpoint.bplist[filename, line]
-            for bp in blist:
+            for bp in blist[:]:
                 bp.deleteMe()
         del self.breaks[filename]
         return None

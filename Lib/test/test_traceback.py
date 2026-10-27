@@ -564,6 +564,13 @@ class TracebackCases(unittest.TestCase):
         output = traceback.format_exception_only(Exception("projector"))
         self.assertEqual(output, ["Exception: projector\n"])
 
+    @support.subTests("arg", [NotImplemented, "invalid syntax"])
+    def test_format_syntax_error_message(self, arg):
+        exc = SyntaxError(arg)
+        lines = traceback.format_exception_only(type(exc), exc)
+        result = "".join(lines)
+        self.assertIn(str(arg), result)
+
     def test_exception_is_None(self):
         NONE_EXC_STRING = 'NoneType: None\n'
         excfile = StringIO()
@@ -4721,6 +4728,32 @@ class SuggestionFormattingTestBase:
 
         actual = self.get_suggestion(func)
         self.assertIn("forget to import '_io'", actual)
+
+    def test_name_error_with_bad_getattr(self):
+        class A:
+            def __getattr__(self, x):
+                spam
+
+        actual = self.get_suggestion(A(), "eggs")
+        self.assertIn("name 'spam' is not defined", actual)
+
+    def test_name_error_with_bad_getattribute(self):
+
+        class A:
+            def __getattribute__(self, x):
+                spam
+
+        actual = self.get_suggestion(A(), "eggs")
+        self.assertIn("name 'spam' is not defined", actual)
+
+    def test_name_error_with_bad_property(self):
+        class A:
+            @property
+            def eggs(self):
+                eggs
+
+        actual = self.get_suggestion(A(), "eggs")
+        self.assertIn("name 'eggs' is not defined", actual)
 
 
 

@@ -184,18 +184,12 @@ Objects of the :class:`date` type are always naive.
 
 An object of type :class:`.time` or :class:`.datetime` may be aware or naive.
 
-A :class:`.datetime` object ``d`` is aware if both of the following hold:
-
-1. ``d.tzinfo`` is not ``None``
-2. ``d.tzinfo.utcoffset(d)`` does not return ``None``
-
+A :class:`.datetime` object ``d`` is aware if
+:meth:`d.utcoffset() <datetime.utcoffset>` does not return ``None``.
 Otherwise, ``d`` is naive.
 
-A :class:`.time` object ``t`` is aware if both of the following hold:
-
-1. ``t.tzinfo`` is not ``None``
-2. ``t.tzinfo.utcoffset(None)`` does not return ``None``.
-
+A :class:`.time` object ``t`` is aware if
+:meth:`t.utcoffset() <time.utcoffset>` does not return ``None``.
 Otherwise, ``t`` is naive.
 
 The distinction between aware and naive doesn't apply to :class:`timedelta`
@@ -2702,6 +2696,13 @@ in the format string will be pulled from the default value.
    and :meth:`.date.strptime` will raise when encountering February 29 because
    the default year of 1900 is *not* a leap year.  Always add a default leap
    year to partial date strings before parsing.
+
+.. note::
+   If a :meth:`~.datetime.strptime` format string contains more than
+   one directive for the same field, for example both ``%Y`` and ``%y``,
+   every directive must still match the input, but only the value of the
+   last one is used. For example, parsing ``200099`` with ``%Y%y`` gives
+   the year 1999. Repeating the same directive, like ``%Y%Y``, raises an error.
 
 .. testsetup::
 
