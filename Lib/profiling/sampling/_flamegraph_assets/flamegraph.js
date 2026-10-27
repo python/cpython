@@ -955,8 +955,8 @@ function populateProfileSummary(data) {
     : (stats.total_samples ?? data.value ?? 0);
   const duration = stats.duration_sec || 0;
   const sampleRate = stats.sample_rate || (duration > 0 ? totalSamples / duration : 0);
-  const errorRate = stats.error_rate || 0;
-  const missedSamples= stats.missed_samples || 0;
+  const errorRate = stats.error_rate;
+  const missedSamples = stats.missed_samples;
 
   const samplesEl = document.getElementById('stat-total-samples');
   if (samplesEl) samplesEl.textContent = formatNumber(totalSamples);

@@ -2,7 +2,11 @@
 
 from idlelib import run
 import io
+import signal
 import sys
+import threading
+import time
+from test import support
 from test.support import captured_output, captured_stderr
 import unittest
 from unittest import mock
@@ -45,6 +49,7 @@ class ExceptionTest(unittest.TestCase):
             ('int.reel', AttributeError,
                  "type object 'int' has no attribute 'reel'. "
                  "Did you mean '.real' instead of '.reel'?\n"),  # More in 3.15.
+            (r'raise NameError("123\n456")', NameError, "123\n456\n"),
             )
 
     @force_not_colorized
@@ -52,7 +57,7 @@ class ExceptionTest(unittest.TestCase):
         for code, exc, msg in self.data:
             with self.subTest(code=code):
                 try:
-                    eval(compile(code, '', 'eval'))
+                    exec(compile(code, '', 'exec'))
                 except exc:
                     typ, val, tb = sys.exc_info()
                     actual = run.get_message_lines(typ, val, tb)[0]
@@ -64,15 +69,20 @@ class ExceptionTest(unittest.TestCase):
                        new_callable=lambda: (lambda t, e: None))
     def test_get_multiple_message(self, mock):
         d = self.data
-        data2 = ((d[0], d[1]), (d[1], d[2]), (d[2], d[0]))
+        data2 = ((d[0], d[1]),
+                 (d[1], d[2]),
+                 (d[2], d[3]),
+                 (d[3], d[0]),
+                 (d[1], d[3]),
+                 (d[0], d[2]))
         subtests = 0
         for (code1, exc1, msg1), (code2, exc2, msg2) in data2:
             with self.subTest(codes=(code1,code2)):
                 try:
-                    eval(compile(code1, '', 'eval'))
+                    exec(compile(code1, '', 'exec'))
                 except exc1:
                     try:
-                        eval(compile(code2, '', 'eval'))
+                        exec(compile(code2, '', 'exec'))
                     except exc2:
                         with captured_stderr() as output:
                             run.print_exception()
@@ -520,6 +530,36 @@ class ExecRuncodeTest(unittest.TestCase):
         t, e, tb = ex.user_exc_info
         self.assertIs(t, TypeError)
         self.assertTrue(isinstance(e.__context__, ZeroDivisionError))
+
+
+class InterruptTest(unittest.TestCase):
+
+    def setUp(self):
+        self.ex = run.Executive(mock.Mock(sendlock=threading.Lock()))
+        self.addCleanup(setattr, run, 'interruptible', run.interruptible)
+        run.interruptible = True
+
+    @unittest.skipIf(signal.getsignal(signal.SIGINT)
+                     in (signal.SIG_DFL, signal.SIG_IGN, None),
+                     'SIGINT is not handled by Python')
+    def test_interrupt_blocking_call(self):
+        # gh-74112: interrupt the main thread blocked in time.sleep().
+        timer = threading.Timer(0.1, self.ex.interrupt_the_server)
+        self.addCleanup(timer.join)
+        start = time.monotonic()
+        with self.assertRaises(KeyboardInterrupt):
+            # On a loaded machine the signal can arrive before the main
+            # thread reaches time.sleep(), so start the timer in the block.
+            timer.start()
+            time.sleep(support.SHORT_TIMEOUT)
+        self.assertLess(time.monotonic() - start, support.SHORT_TIMEOUT / 2)
+
+    def test_interrupt_ignored(self):
+        old_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
+        self.addCleanup(signal.signal, signal.SIGINT, old_handler)
+        with mock.patch.object(run.thread, 'interrupt_main') as interrupt_main:
+            self.ex.interrupt_the_server()
+        interrupt_main.assert_called_once_with()
 
 
 if __name__ == '__main__':

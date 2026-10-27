@@ -33,7 +33,10 @@ import marshal
 _MS_WINDOWS = (sys.platform == 'win32')
 if _MS_WINDOWS:
     import nt as _os
-    import winreg
+    try:
+        import winreg
+    except ImportError:
+        winreg = None
 else:
     import posix as _os
 
@@ -52,7 +55,7 @@ _pathseps_with_colon = {f':{s}' for s in path_separators}
 
 # Bootstrap-related code ######################################################
 _CASE_INSENSITIVE_PLATFORMS_STR_KEY = 'win',
-_CASE_INSENSITIVE_PLATFORMS_BYTES_KEY = 'cygwin', 'darwin', 'ios', 'tvos', 'watchos'
+_CASE_INSENSITIVE_PLATFORMS_BYTES_KEY = 'cygwin', 'darwin', 'ios', 'tvos', 'visionos', 'watchos'
 _CASE_INSENSITIVE_PLATFORMS =  (_CASE_INSENSITIVE_PLATFORMS_BYTES_KEY
                                 + _CASE_INSENSITIVE_PLATFORMS_STR_KEY)
 
@@ -1567,7 +1570,7 @@ def _get_supported_file_loaders():
     """
     extension_loaders = []
     if hasattr(_imp, 'create_dynamic'):
-        if sys.platform in {"ios", "tvos", "watchos"}:
+        if sys.platform in {"ios", "tvos", "visionos", "watchos"}:
             extension_loaders = [(AppleFrameworkLoader, [
                 suffix.replace(".so", ".fwork")
                 for suffix in _imp.extension_suffixes()
