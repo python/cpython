@@ -817,6 +817,13 @@ def main():
     else:
         options.toexclude = []
 
+    # xgettext requires at least one input file
+    if not args:
+        print("pygettext: no input file given\n"
+              "Try 'pygettext --help' for more information.",
+              file=sys.stderr)
+        sys.exit(1)
+
     # resolve args to module lists
     expanded = []
     for arg in args:
