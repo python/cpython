@@ -571,7 +571,7 @@ https://man.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
    | :const:`KQ_FILTER_AIO`    | AIO requests.                               |
    +---------------------------+---------------------------------------------+
    | :const:`KQ_FILTER_VNODE`  | Returns when one or more of the requested   |
-   |                           | events watched in *fflag* occurs.           |
+   |                           | events watched in *fflags* occurs.          |
    +---------------------------+---------------------------------------------+
    | :const:`KQ_FILTER_PROC`   | Watch for events on a process ID.           |
    +---------------------------+---------------------------------------------+
