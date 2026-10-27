@@ -1968,6 +1968,7 @@ class FakeGzipResponse:
         self._file.close()
 
 
+@support.requires_zlib()
 class HTTPGzipHandlerTests(unittest.TestCase):
 
     body = b"The quick brown fox jumps over the lazy dog.\n" * 200
