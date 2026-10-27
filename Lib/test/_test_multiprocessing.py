@@ -625,10 +625,10 @@ class _TestProcess(BaseTestCase):
             # On the Gentoo buildbot waitpid() often seems to block forever.
             # We use alarm() to interrupt it if it blocks for too long.
             def handler(*args):
-                raise RuntimeError('join took too long: %s' % p)
+                raise RuntimeError(f'join took longer than {timeout} seconds: {p}')
             old_handler = signal.signal(signal.SIGALRM, handler)
             try:
-                signal.alarm(10)
+                signal.alarm(int(timeout))
                 self.assertEqual(join(), None)
             finally:
                 signal.alarm(0)
@@ -994,7 +994,9 @@ class _TestProcess(BaseTestCase):
         self.assertEqual(proc2.exitcode, 0)
 
         proc.join()
-        self.assertTrue(evt.is_set())
+        # After SIGKILL, join() can return (exitcode 255) as soon as the
+        # status pipe is closed, before the orphaned child has run.
+        self.assertTrue(evt.wait(support.SHORT_TIMEOUT))
         self.assertIn(proc.exitcode, (0, 255))
 
     def test_forkserver_sigint(self):
@@ -3159,6 +3161,7 @@ class _TestPool(BaseTestCase):
         with self.assertRaisesRegex(expected_exception, expected_regex):
             method(str, range(4), buffersize=buffersize)
 
+    @unittest.skipUnless(HAS_SHAREDCTYPES, 'needs sharedctypes')
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.subTests('method_name', ("imap", "imap_unordered"))
     def test_imap_and_imap_unordered_when_buffer_is_full(self, method_name):
@@ -3194,6 +3197,7 @@ class _TestPool(BaseTestCase):
         p.terminate()
         p.join()
 
+    @unittest.skipUnless(HAS_SHAREDCTYPES, 'needs sharedctypes')
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.subTests('method_name', ("imap", "imap_unordered"))
     def test_imap_and_imap_unordered_with_buffersize_when_buffer_is_full(
@@ -6513,6 +6517,62 @@ class TestStartMethod(unittest.TestCase):
             self.assertRaises(OSError, file.touch)
             _, out, err = script_helper.assert_python_ok('-c', cmd, TMPDIR=TMPDIR)
         self.assertEqual(out.decode().strip(), "spawn")
+
+    @unittest.skipIf(os.name == "nt", "requires POSIX")
+    @support.requires_non_root_user
+    def test_default_start_method_without_usable_tempdir(self):
+        # Neither importing multiprocessing nor determining the default
+        # start method may fail when tempfile finds no usable temporary
+        # directory at all, and the default start method must be 'spawn'.
+        #
+        # See https://github.com/python/cpython/issues/155717.
+
+        cmd = '''if 1:
+            import os, tempfile
+            # Make TMPDIR the only candidate, so that tempfile.gettempdir()
+            # raises FileNotFoundError instead of falling back to /tmp.
+            tempfile._candidate_tempdir_list = lambda: [os.environ["TMPDIR"]]
+            try:
+                tempfile.gettempdir()
+            except FileNotFoundError:
+                pass
+            else:
+                raise AssertionError("TMPDIR is usable")
+
+            import multiprocessing
+            if __name__ == "__main__":
+                print(multiprocessing.get_start_method(),
+                      multiprocessing.get_all_start_methods()[0])
+        '''
+
+        with support.os_helper.temp_dir() as root:
+            TMPDIR = pathlib.Path(root, "TMPDIR")
+            TMPDIR.mkdir(mode=os.R_OK | os.X_OK)
+            _, out, err = script_helper.assert_python_ok('-c', cmd, TMPDIR=TMPDIR)
+        self.assertEqual(out.decode().split(), ["spawn", "spawn"])
+
+    def test_import_does_not_determine_default_start_method(self):
+        # Determining the default start method requires checking that the
+        # temporary directory is writeable. That must not happen, nor may
+        # the modules it needs be loaded, when importing multiprocessing.
+        import_helper.ensure_lazy_imports(
+            "multiprocessing", {"tempfile", "shutil", "subprocess"})
+
+        cmd = '''if 1:
+            import sys
+            import multiprocessing
+            print(multiprocessing.get_start_method(allow_none=True),
+                  "tempfile" in sys.modules,
+                  multiprocessing.get_start_method(),
+                  multiprocessing.get_all_start_methods()[0])
+        '''
+        # -S: site customizations could import tempfile themselves.
+        _, out, err = script_helper.assert_python_ok('-S', '-c', cmd)
+        unset, probed, method, first = out.decode().split()
+        self.assertEqual(unset, "None")
+        self.assertEqual(probed, "False")
+        self.assertEqual(method, first)
+        self.assertIn(method, multiprocessing.get_all_start_methods())
 
 
 @unittest.skipIf(sys.platform == "win32",

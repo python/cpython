@@ -1,2 +1,0 @@
-IDLE no longer hangs when opening a file with very long lines.
-Only the first 2,000 characters of a line are colorized.

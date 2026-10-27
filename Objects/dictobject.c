@@ -2276,7 +2276,6 @@ dictresize(PyDictObject *mp,
         UNLOCK_KEYS(oldkeys);
         set_keys(mp, newkeys);
         dictkeys_decref(oldkeys, IS_DICT_SHARED(mp));
-        set_values(mp, NULL);
         if (oldvalues->embedded) {
             assert(oldvalues->embedded == 1);
             assert(oldvalues->valid == 1);
@@ -2285,6 +2284,7 @@ dictresize(PyDictObject *mp,
         else {
             free_values(oldvalues, IS_DICT_SHARED(mp));
         }
+        set_values(mp, NULL);
     }
     else {  // oldkeys is combined.
         if (oldkeys->dk_kind == DICT_KEYS_GENERAL) {
@@ -2925,9 +2925,9 @@ delete_index_from_values(PyDictValues *values, Py_ssize_t ix)
     assert(i < size);
     size--;
     for (; i < size; i++) {
-        array[i] = array[i+1];
+        FT_ATOMIC_STORE_UINT8_RELAXED(array[i], array[i+1]);
     }
-    values->size = size;
+    FT_ATOMIC_STORE_UINT8_RELEASE(values->size, size);
 }
 
 static void
@@ -2937,9 +2937,6 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
     assert(can_modify_dict(mp));
 
     PyObject *old_key;
-
-    Py_ssize_t hashpos = lookdict_index(mp->ma_keys, hash, ix);
-    assert(hashpos >= 0);
 
     STORE_USED(mp, mp->ma_used - 1);
     if (_PyDict_HasSplitTable(mp)) {
@@ -2951,6 +2948,9 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
         ASSERT_CONSISTENT(mp);
     }
     else {
+        Py_ssize_t hashpos = lookdict_index(mp->ma_keys, hash, ix);
+        assert(hashpos >= 0);
+
         FT_ATOMIC_STORE_UINT32_RELAXED(mp->ma_keys->dk_version, 0);
         dictkeys_set_index(mp->ma_keys, hashpos, DKIX_DUMMY);
         if (DK_IS_UNICODE(mp->ma_keys)) {
@@ -3122,7 +3122,7 @@ clear_embedded_values(PyDictValues *values, Py_ssize_t nentries)
         refs[i] = values->values[i];
         FT_ATOMIC_STORE_PTR_RELEASE(values->values[i], NULL);
     }
-    values->size = 0;
+    FT_ATOMIC_STORE_UINT8_RELEASE(values->size, 0);
     for (Py_ssize_t i = 0; i < nentries; i++) {
         Py_XDECREF(refs[i]);
     }
@@ -3772,21 +3772,19 @@ error:
     return NULL;
 }
 
+/*[clinic input]
+@critical_section
+dict.__repr__
+
+    self: self(type="PyObject *")
+[clinic start generated code]*/
+
 static PyObject *
-dict_repr_lock_held(PyObject *self)
+dict_repr_impl(PyObject *self)
+/*[clinic end generated code: output=059263af818a321d input=f9c423cbdf534674]*/
 {
     ASSERT_DICT_LOCKED((PyDictObject *)self);
     return anydict_repr_impl(self);
-}
-
-static PyObject *
-dict_repr(PyObject *self)
-{
-    PyObject *res;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    res = dict_repr_lock_held(self);
-    Py_END_CRITICAL_SECTION();
-    return res;
 }
 
 static Py_ssize_t
@@ -4115,7 +4113,7 @@ merge_from_seq2_lock_held(PyObject *d, PyObject *seq2, int override)
         return -1;
 
     for (i = 0; ; ++i) {
-        PyObject *key, *value;
+        PyObject *key = NULL, *value = NULL;
         Py_ssize_t n;
 
         fast = NULL;
@@ -4137,7 +4135,13 @@ merge_from_seq2_lock_held(PyObject *d, PyObject *seq2, int override)
             }
             goto Fail;
         }
+        Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(item);
         n = PySequence_Fast_GET_SIZE(fast);
+        if (n == 2) {
+            key = Py_NewRef(PySequence_Fast_GET_ITEM(fast, 0));
+            value = Py_NewRef(PySequence_Fast_GET_ITEM(fast, 1));
+        }
+        Py_END_CRITICAL_SECTION_SEQUENCE_FAST();
         if (n != 2) {
             PyErr_Format(PyExc_ValueError,
                          "dictionary update sequence element #%zd "
@@ -4147,10 +4151,6 @@ merge_from_seq2_lock_held(PyObject *d, PyObject *seq2, int override)
         }
 
         /* Update/merge with this (key, value) pair. */
-        key = PySequence_Fast_GET_ITEM(fast, 0);
-        value = PySequence_Fast_GET_ITEM(fast, 1);
-        Py_INCREF(key);
-        Py_INCREF(value);
         if (override) {
             if (setitem_lock_held((PyDictObject *)d, key, value) < 0) {
                 Py_DECREF(key);
@@ -4269,12 +4269,12 @@ dict_dict_merge(PyDictObject *mp, PyDictObject *other, int override, PyObject **
 
     while (_PyDict_Next((PyObject*)other, &pos, &key, &value, &hash)) {
         int err = 0;
-        Py_INCREF(key);
-        Py_INCREF(value);
         if (override == 1) {
             err = insertdict(mp, Py_NewRef(key), hash, Py_NewRef(value));
         }
         else {
+            Py_INCREF(key);
+            Py_INCREF(value);
             err = _PyDict_Contains_KnownHash((PyObject *)mp, key, hash);
             if (err == 0) {
                 err = insertdict(mp, Py_NewRef(key), hash, Py_NewRef(value));
@@ -4287,9 +4287,9 @@ dict_dict_merge(PyDictObject *mp, PyDictObject *other, int override, PyObject **
                 }
                 err = 0;
             }
+            Py_DECREF(value);
+            Py_DECREF(key);
         }
-        Py_DECREF(value);
-        Py_DECREF(key);
         if (err != 0)
             return -1;
 
@@ -4497,7 +4497,7 @@ copy_lock_held_untracked(PyObject *o, int as_frozendict)
         else {
             d = dict_new_untracked(&PyDict_Type);
         }
-        assert(!_PyObject_GC_IS_TRACKED(d));
+        assert(d == NULL || !_PyObject_GC_IS_TRACKED(d));
         return d;
     }
 
@@ -5632,6 +5632,7 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
     used = GET_USED(dict);
     di->di_used = used;
     di->len = used;
+    di->di_result = NULL;
     if (itertype == &PyDictRevIterKey_Type ||
          itertype == &PyDictRevIterItem_Type ||
          itertype == &PyDictRevIterValue_Type) {
@@ -5645,6 +5646,10 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
     else {
         di->di_pos = 0;
     }
+    /* gh-152107: track before allocating di_result. A dictiter with a NULL
+       di_result is a valid state for dictiter_traverse()/dictiter_dealloc(),
+       so a failure of the allocation below can safely DECREF a tracked di. */
+    _PyObject_GC_TRACK(di);
     if (itertype == &PyDictIterItem_Type ||
         itertype == &PyDictRevIterItem_Type) {
         di->di_result = _PyTuple_FromPairSteal(Py_None, Py_None);
@@ -5653,10 +5658,6 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
             return NULL;
         }
     }
-    else {
-        di->di_result = NULL;
-    }
-    _PyObject_GC_TRACK(di);
     return (PyObject *)di;
 }
 
@@ -6102,9 +6103,14 @@ dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
         // We're racing against writes to the order from delete_index_from_values, but
         // single threaded can suffer from concurrent modification to those as well and
         // can have either duplicated or skipped attributes, so we strive to do no better
-        // here.
-        int index = get_index_from_order(d, i);
+        // here. Use the same values snapshot as the size load above.
+        uint8_t *order = get_insertion_order_array(values);
+        int index = _Py_atomic_load_uint8_relaxed(&order[i]);
         PyObject *value = _Py_atomic_load_ptr(&values->values[index]);
+        if (value == NULL) {
+            // Deletion clears the slot before decrementing values->size.
+            goto try_locked;
+        }
         if (acquire_key_value(&DK_UNICODE_ENTRIES(k)[index].me_key, value,
                                &values->values[index], out_key, out_value) < 0) {
             goto try_locked;
@@ -7568,17 +7574,25 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyObject *name, PyObject *value)
 {
     PyDictValues *values = _PyObject_InlineValues(obj);
     if (!FT_ATOMIC_LOAD_UINT8(values->valid)) {
-        PyDictObject *dict = _PyObject_GetManagedDict(obj);
+        PyDictObject *dict;
+        int res;
+#ifdef Py_GIL_DISABLED
+        Py_BEGIN_CRITICAL_SECTION(obj);
+#endif
+        dict = _PyObject_GetManagedDict(obj);
+        Py_XINCREF(dict);
+#ifdef Py_GIL_DISABLED
+        Py_END_CRITICAL_SECTION();
+#endif
         if (dict == NULL) {
             dict = (PyDictObject *)PyObject_GenericGetDict(obj, NULL);
             if (dict == NULL) {
                 return -1;
             }
-            int res = store_instance_attr_dict(obj, dict, name, value);
-            Py_DECREF(dict);
-            return res;
         }
-        return store_instance_attr_dict(obj, dict, name, value);
+        res = store_instance_attr_dict(obj, dict, name, value);
+        Py_DECREF(dict);
+        return res;
     }
 
 #ifdef Py_GIL_DISABLED
@@ -8012,7 +8026,7 @@ PyObject_ClearManagedDict(PyObject *obj)
             clear_inline_values(_PyObject_InlineValues(obj));
             return;
         }
-        else if (FT_ATOMIC_LOAD_PTR_RELAXED(dict->ma_values) ==
+        if (FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_values) ==
                     _PyObject_InlineValues(obj)) {
             // We have a materialized object which points at the inline
             // values. We need to materialize the keys. Nothing can modify
@@ -8470,16 +8484,26 @@ frozendict_hash(PyObject *op)
     PyDictObject *mp = _PyAnyDict_CAST(op);
     Py_uhash_t hash = 0;
 
+    /* Hashing a value recurses back into frozendict_hash() when that value
+       is itself a frozendict, so guard the descent to raise RecursionError
+       rather than overflow the C stack on a deeply nested frozendict.  Keys
+       are safe: their hashes are already computed at construction time. */
+    if (_Py_EnterRecursiveCall(" while hashing a frozendict")) {
+        return -1;
+    }
+
     PyObject *value;  // borrowed ref
     Py_ssize_t pos = 0;
     Py_hash_t key_hash;
     while (_PyDict_Next(op, &pos, NULL, &value, &key_hash)) {
         Py_hash_t pair_hash = frozendict_pair_hash(key_hash, value);
         if (pair_hash == -1) {
+            _Py_LeaveRecursiveCall();
             return -1;
         }
         hash ^= _shuffle_bits(pair_hash);
     }
+    _Py_LeaveRecursiveCall();
 
     /* Factor in the number of active entries */
     hash ^= ((Py_uhash_t)mp->ma_used + 1) * 1927868237UL;

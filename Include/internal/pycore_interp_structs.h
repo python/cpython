@@ -219,6 +219,7 @@ struct gc_old_stats_buffer {
 struct gc_stats {
     struct gc_young_stats_buffer young;
     struct gc_old_stats_buffer old[2];
+    uint32_t update_seq;
 };
 
 struct _gc_runtime_state {
@@ -537,7 +538,7 @@ struct _py_func_state {
    If you add a new static type to the standard library, you may have to
    update one of these numbers.
    */
-#define _Py_NUM_MANAGED_PREINITIALIZED_TYPES 122
+#define _Py_NUM_MANAGED_PREINITIALIZED_TYPES 120
 #define _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES \
     (_Py_NUM_MANAGED_PREINITIALIZED_TYPES + 83)
 #define _Py_MAX_MANAGED_STATIC_EXT_TYPES 10
@@ -649,6 +650,10 @@ struct _warnings_runtime_state {
     PyObject *once_registry;  /* Dict */
     PyObject *default_action; /* String */
     _PyRecursiveMutex lock;
+#ifdef HAVE_FORK
+    // Whether the thread calling fork() owns the warnings lock.
+    bool lock_held_at_fork;
+#endif
     long filters_version;
     PyObject *context;
 };

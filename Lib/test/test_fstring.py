@@ -645,6 +645,20 @@ except Exception:
                             f"{prefix[-1]}-string: expecting '}}' to close '{{' "
                             f"on line {lineno}")
 
+    def test_unclosed_replacement_field_quote_line(self):
+        for prefix in ('f', 't', 'rf', 'rt'):
+            for quote in ('"', "'"):
+                triple = quote * 3
+                for suffix in ('', '\nx'):
+                    source = prefix + triple + '{1' + triple + suffix
+                    with self.subTest(source=source):
+                        with self.assertRaises(SyntaxError) as cm:
+                            compile(source, '<test>', 'exec')
+                        self.assertEqual(
+                            cm.exception.msg,
+                            f"{prefix[-1]}-string: expecting '}}'")
+                        self.assertEqual(cm.exception.lineno, 1)
+
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_mismatched_parens(self):
         self.assertAllRaise(SyntaxError, r"closing parenthesis '\}' "
@@ -1081,6 +1095,24 @@ except Exception:
                              r"'\N{'",
                              r"'\N{GREEK CAPITAL LETTER DELTA'",
                              ])
+
+    def test_invalid_escape_location(self):
+        cases = [
+            (r'f"\xZZ"', (1, 3, 1, 7)),
+            (r'f"{x}\xZZ"', (1, 6, 1, 10)),
+            (r'f"a{x}b\N{NOPE}{y}"', (1, 7, 1, 16)),
+            (r'f"ok" f"\xZZ"', (1, 9, 1, 13)),
+            ('f"""\\xZZ\nabc"""', (1, 5, 2, 4)),
+            ('f"""abc\ndef\\xZZ"""', (1, 5, 2, 8)),
+            ('x = (1,\n  f"\\xZZ")', (2, 5, 2, 9)),
+        ]
+        for source, location in cases:
+            with self.subTest(source=source):
+                with self.assertRaisesRegex(SyntaxError, r'\(unicode error\)') as cm:
+                    compile(source, '<string>', 'exec')
+                error = cm.exception
+                self.assertEqual((error.lineno, error.offset,
+                                  error.end_lineno, error.end_offset), location)
 
     def test_backslashes_in_expression_part(self):
         self.assertEqual(f"{(

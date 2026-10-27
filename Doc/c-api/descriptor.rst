@@ -72,38 +72,34 @@ found in the dictionary of type objects.
    methods on a type, and correspond to :class:`types.MethodDescriptorType`
    objects in Python.
 
-
-.. c:struct:: wrapperbase
-
-   Describes a slot wrapper used by :c:func:`PyDescr_NewWrapper`.
-
-   Each ``wrapperbase`` record stores the Python-visible name and metadata for a
-   special method implemented by a type slot, together with the wrapper
-   function used to adapt that slot to Python's calling convention.
-
-.. c:function:: PyObject* PyDescr_NewWrapper(PyTypeObject *type, struct wrapperbase *base, void *wrapped)
-
-   Create a new wrapper descriptor for extension type *type* from the
-   :c:struct:`wrapperbase` structure *base* and the wrapped slot function
-   pointer
-   *wrapped*.
-
-   Wrapper descriptors expose special methods implemented by type slots. This
-   is the same kind of descriptor that CPython creates for slot-based special
-   methods such as ``__repr__`` or ``__add__``, and it appears in Python as a
-   :class:`types.WrapperDescriptorType` object.
-
-   On success, return a :term:`strong reference` to the descriptor. Return
-   ``NULL`` with an exception set on failure.
-
 .. c:var:: PyTypeObject PyWrapperDescr_Type
 
    The type object for wrapper descriptor objects created by
-   :c:func:`PyDescr_NewWrapper` and :c:func:`PyWrapper_New`. Wrapper
-   descriptors are used internally to expose special methods implemented
-   via wrapper structures, and appear in Python as
-   :class:`types.WrapperDescriptorType` objects.
+   :c:func:`PyDescr_NewWrapper` and :c:func:`PyWrapper_New`.
 
+   Wrapper descriptors are used internally to expose special methods
+   such as ``__repr__`` or ``__add__``, which are implemented by type slots.
+   The type is exposed in Python as  :class:`types.WrapperDescriptorType`.
+
+
+.. `wrapperbase` & `PyWrapperFlag_KEYWORDS` show up in search and index,
+   and link here, but are only referenced in prose:
+
+.. c:struct:: wrapperbase
+   :no-typesetting:
+
+.. c:macro:: PyWrapperFlag_KEYWORDS
+   :no-typesetting:
+
+.. c:function:: PyObject* PyDescr_NewWrapper(PyTypeObject *type, struct wrapperbase *base, void *wrapped)
+
+   Create a new wrapper descriptor of type :c:var:`PyWrapperDescr_Type`.
+
+   This function is meant for internal use only; it and
+   related API (``struct wrapperbase`` and the ``PyWrapperFlag_KEYWORDS``
+   flag) are exposed publicly for backwards compatibility reasons.
+
+   See :c:func:`PyCMethod_New` for wrapping a C function.
 
 .. c:function:: PyObject* PyDescr_NewClassMethod(PyTypeObject *type, PyMethodDef *method)
 
@@ -137,6 +133,30 @@ found in the dictionary of type objects.
 
    On success, return a :term:`strong reference` to the wrapper object. Return
    ``NULL`` with an exception set on failure.
+
+.. c:macro:: PyDescr_TYPE(descr)
+
+   Return a :term:`borrowed reference` to the type that the descriptor
+   *descr* belongs to. This is accessible as :attr:`~object.__objclass__`
+   in Python.
+
+   *descr* must be a descriptor object created by one of the
+   ``PyDescr_New*`` functions (an instance of
+   :c:var:`PyMethodDescr_Type`, :c:var:`PyClassMethodDescr_Type`,
+   :c:var:`PyMemberDescr_Type`, :c:var:`PyGetSetDescr_Type`, or
+   :c:var:`PyWrapperDescr_Type`). If the passed descriptor is not
+   an instance of one of these types, the behavior is undefined.
+
+
+.. c:macro:: PyDescr_NAME(descr)
+
+   Return the name of the descriptor *descr* as a :term:`borrowed reference`
+   to a :class:`str` object. This is available as :attr:`~definition.__name__`
+   in Python.
+
+   *descr* must be a descriptor object created by one of the ``PyDescr_New*``
+   functions. If not, the behavior is undefined.
+
 
 .. c:macro:: PyDescr_COMMON
 

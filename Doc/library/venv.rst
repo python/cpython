@@ -455,7 +455,7 @@ creation according to their needs, the :class:`EnvBuilder` class.
         On POSIX systems, a broken symlink at a destination path is removed
         before the copy or symlink is created.
 
-        .. versionchanged:: next
+        .. versionchanged:: 3.16
            A broken symlink at a destination path is now removed and replaced.
            Previously it was left in place, or it made the copy fail.
 
