@@ -1964,7 +1964,7 @@ Changes in the C API
     :c:func:`PyBytes_AsString` and :c:func:`Py_CompileString`,
     as sketched below. (Declarations and error handling are omitted.) ::
 
-       io_module = Import_ImportModule("io");
+       io_module = PyImport_ImportModule("io");
        fileobject = PyObject_CallMethod(io_module, "open", "ss", filename, "rb");
        source_bytes_object = PyObject_CallMethod(fileobject, "read", "");
        result = PyObject_CallMethod(fileobject, "close", "");
