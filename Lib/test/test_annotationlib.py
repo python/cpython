@@ -237,6 +237,74 @@ class TestForwardRefFormat(unittest.TestCase):
             arg2, support.EqualToForwardRef("undefined", is_class=True, owner=UnionForwardrefs)
         )
 
+    def test_nested_deferred(self):
+        # Test that ForwardReferences inside generic aliases and
+        # typing.Annotated are correctly caught and resolved.
+
+        class NestedForwardRefs:
+            genericalias: Unknown1[str, list[Unknown2]]
+            annotated: Unknown1[str, typing.Annotated[Unknown2, '']]
+
+        annos = get_annotations(NestedForwardRefs, format=Format.FORWARDREF)
+
+        gen = annos['genericalias']
+        annotated = annos['annotated']
+
+        Unknown1 = tuple
+        # Unknown2 is still undefined, these should raise
+        with self.assertRaises(NameError):
+            gen.evaluate()
+        with self.assertRaises(NameError):
+            annotated.evaluate()
+
+        # Test that the annotations fully evaluate now both unknowns are defined
+        Unknown2 = str
+        self.assertEqual(
+            gen.evaluate(),
+            tuple[str, list[str]],
+        )
+
+        self.assertEqual(
+            annotated.evaluate(),
+            tuple[str, typing.Annotated[str, '']],
+        )
+
+    def test_nested_special_generic(self):
+        # Test that ForwardRef works correctly for generic aliases that aren't
+        # created through subscripting
+        class NonSubscriptableGeneric:
+            @classmethod
+            def get_generic(cls, *args):
+                return types.GenericAlias(cls, args)
+
+        nsrepr = type_repr(NonSubscriptableGeneric)
+
+        with self.assertRaises(TypeError):
+            _ = NonSubscriptableGeneric[str]
+
+        class C:
+            x: Unknown1[NonSubscriptableGeneric.get_generic(str, Unknown2)]
+
+        ann = get_annotations(C, format=Format.FORWARDREF)['x']
+
+        Unknown1 = list
+
+        with self.assertRaises(NameError):
+            ann.evaluate()
+
+        Unknown2 = int
+
+        self.assertEqual(
+            ann.evaluate(),
+            list[NonSubscriptableGeneric.get_generic(str, int)],
+        )
+
+        # The string representation should look like the __repr__ for GenericAlias
+        self.assertEqual(
+            ann.evaluate(format=Format.STRING),
+            f"Unknown1[{nsrepr}[str, Unknown2]]",
+        )
+
 
 class TestStringFormat(unittest.TestCase):
     def test_closure(self):
