@@ -3954,7 +3954,7 @@ def __getattr__(attr):
                 "in Python {remove}. Use PEP-695 type parameters "
                 "with constraints instead"
             ),
-            remove=(3, 18),
+            remove=(3, 21),
         )
         AnyStr = globals()["AnyStr"] = TypeVar('AnyStr', bytes, str)
         return AnyStr
