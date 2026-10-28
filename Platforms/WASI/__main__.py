@@ -23,6 +23,8 @@ def main():
         "--argv0 {ARGV0} "
         # Map the checkout to / to load the stdlib from /Lib.
         "--dir {CHECKOUT}::/ "
+        # For various I/O-related tests.
+        "--dir /dev "
         # Flags involving --optimize, --codegen, --debug, --wasm, and --wasi can be kept
         # in a config file.
         # We are using such a file to act as defaults in case a user wants to override
