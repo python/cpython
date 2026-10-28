@@ -6636,6 +6636,16 @@ dummy_func(
             LEAVE_TRACING();
             int err = stop_tracing_and_jit(tstate, frame);
             ERROR_IF(err < 0);
+            /* stop_tracing_and_jit() can drop the last reference to a
+               temporary and run a finalizer. A ResourceWarning then writes
+               __warningregistry__ into a watched globals dict, and
+               executor_invalidate() restores this instruction and clears its
+               executor slot. Dispatching the ENTER_EXECUTOR opcode sampled
+               above calls _PyJIT_Entry(NULL). Keep any EXTENDED_ARG bits
+               already accumulated in oparg; only the low byte lives in the
+               code unit. */
+            opcode = next_instr->op.code;
+            oparg = (oparg & ~255) | next_instr->op.arg;
             DISPATCH_GOTO_NON_TRACING();
 #else
             Py_FatalError("JIT label executed in non-jit build.");
