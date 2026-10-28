@@ -50,11 +50,6 @@ import typing
 import weakref
 import types
 
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore", DeprecationWarning)
-
-    from typing import AnyStr
-
 from test.support import (
     captured_stderr, cpython_only, requires_docstrings, import_helper, run_code,
     subTests, EqualToForwardRef,
@@ -494,7 +489,6 @@ class TypeVarTests(BaseTestCase):
         self.assertEqual(repr(T), '~T')
         self.assertEqual(repr(KT), '~KT')
         self.assertEqual(repr(VT), '~VT')
-        self.assertEqual(repr(AnyStr), '~AnyStr')
         T_co = TypeVar('T_co', covariant=True)
         self.assertEqual(repr(T_co), '+T_co')
         T_contra = TypeVar('T_contra', contravariant=True)
@@ -6393,13 +6387,15 @@ class OverrideDecoratorTests(BaseTestCase):
 class CastTests(BaseTestCase):
 
     def test_basics(self):
+        T = TypeVar("T")
+
         self.assertEqual(cast(int, 42), 42)
         self.assertEqual(cast(float, 42), 42)
         self.assertIs(type(cast(float, 42)), int)
         self.assertEqual(cast(Any, 42), 42)
         self.assertEqual(cast(list, 42), 42)
         self.assertEqual(cast(Union[str, float], 42), 42)
-        self.assertEqual(cast(AnyStr, 42), 42)
+        self.assertEqual(cast(T, 42), 42)
         self.assertEqual(cast(None, 42), 42)
 
     def test_errors(self):
@@ -6412,9 +6408,10 @@ class AssertTypeTests(BaseTestCase):
 
     def test_basics(self):
         arg = 42
+        T = TypeVar("T")
         self.assertIs(assert_type(arg, int), arg)
         self.assertIs(assert_type(arg, str | float), arg)
-        self.assertIs(assert_type(arg, AnyStr), arg)
+        self.assertIs(assert_type(arg, T), arg)
         self.assertIs(assert_type(arg, None), arg)
 
     def test_errors(self):
@@ -9642,7 +9639,7 @@ class NotRequiredTests(BaseTestCase):
 class IOTests(BaseTestCase):
 
     def test_io(self):
-        def stuff(a: IO) -> AnyStr:
+        def stuff(a: IO):
             return a.readline()
 
         a = stuff.__annotations__['a']
@@ -9651,7 +9648,6 @@ class IOTests(BaseTestCase):
         self.assertEqual(repr(any_str), 'AnyStr')
         self.assertEqual(any_str.__bound__, None)
         self.assertEqual(any_str.__constraints__, (bytes, str))
-        self.assertEqual(any_str.__constraints__, AnyStr.__constraints__)
 
     def test_textio(self):
 
@@ -11307,6 +11303,8 @@ class AllTests(BaseTestCase):
 
         with self.assertWarnsRegex(DeprecationWarning, r'typing\.AnyStr'):
             fresh.AnyStr
+
+        self.assertEqual(repr(fresh.AnyStr), '~AnyStr')
 
 
 class TypeIterationTests(BaseTestCase):

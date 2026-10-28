@@ -11,13 +11,6 @@ Pending removal in Python 3.18
     C implementation, has been deprecated since Python 3.13.
     (Contributed by Serhiy Storchaka in :gh:`89902`.)
 
-* :mod:`typing`:
-
-   * :data:`typing.AnyStr` has been discouraged
-     and deprecated since Python 3.16
-     and is scheduled to be removed in Python 3.21.
-     Use :pep:`695` syntax instead.
-
 * Deprecations defined by :pep:`829`:
 
   * ``import`` lines in :file:`{name}.pth` files are silently ignored.
