@@ -400,7 +400,7 @@ class AsyncGenTest(unittest.TestCase):
             an.send(None)
 
     def test_async_gen_asend_athrow_aga_gen(self):
-        # gh-156980: asend()/athrow() awaitables expose the generator they drive
+        # gh-160837: asend()/athrow() awaitables expose the generator they drive
         async def gen():
             yield 1
 

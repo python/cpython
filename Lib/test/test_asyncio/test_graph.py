@@ -431,7 +431,7 @@ class CallStackTestBase:
         ])
 
     async def test_stack_async_gen_asend(self):
-        # gh-156980: an async_generator_asend must not truncate the stack
+        # gh-160837: an async_generator_asend must not truncate the stack
         fut = asyncio.Future()
         stack_for_consumer = None
 
@@ -465,7 +465,7 @@ class CallStackTestBase:
         ])
 
     async def test_stack_async_gen_aclose(self):
-        # gh-156980: an async_generator_athrow must not truncate the stack
+        # gh-160837: an async_generator_athrow must not truncate the stack
         fut = asyncio.Future()
         stack_for_consumer = None
 

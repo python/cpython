@@ -71,7 +71,7 @@ def _build_graph_for_future(
                 st.append(FrameCallGraphEntry(coro.gi_frame))
             coro = coro.gi_yieldfrom
         elif hasattr(coro, 'aga_gen'):
-            # gh-156980: An asend()/athrow() awaitable: step over it to its generator
+            # An asend()/athrow() awaitable: step over it to its generator
             coro = coro.aga_gen
         else:
             break
