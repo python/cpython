@@ -309,10 +309,13 @@ def wait(fs, timeout=None, return_when=ALL_COMPLETED):
 def _result_or_cancel(fut, timeout=None):
     try:
         try:
-            return (fut.result(timeout), None)
-        except TimeoutError:
-            raise
-        except BaseException as exc:
+            # fut.exception() returns the call's own error but raises
+            # TimeoutError only for a map() timeout.
+            exc = fut.exception(timeout)
+            if exc is not None:
+                return (None, exc)
+            return (fut.result(), None)
+        except CancelledError as exc:
             return (None, exc)
         finally:
             fut.cancel()
@@ -720,7 +723,11 @@ class _MapResultIterator:
     def __next__(self):
         value, exc = next(self.gen)
         if exc is not None:
-            raise exc
+            try:
+                raise exc
+            finally:
+                # avoid a ref cycle where exc is captured in its traceback
+                exc = None
         return value
 
     def close(self):

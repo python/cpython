@@ -1,2 +1,0 @@
-Defer GC tracking of an :class:`array.array` to the end of its construction.
-Patch by Donghee Na.

@@ -26,6 +26,7 @@ import subprocess
 import struct
 import tempfile
 import operator
+import pathlib
 import pickle
 import weakref
 import warnings
@@ -624,10 +625,10 @@ class _TestProcess(BaseTestCase):
             # On the Gentoo buildbot waitpid() often seems to block forever.
             # We use alarm() to interrupt it if it blocks for too long.
             def handler(*args):
-                raise RuntimeError('join took too long: %s' % p)
+                raise RuntimeError(f'join took longer than {timeout} seconds: {p}')
             old_handler = signal.signal(signal.SIGALRM, handler)
             try:
-                signal.alarm(10)
+                signal.alarm(int(timeout))
                 self.assertEqual(join(), None)
             finally:
                 signal.alarm(0)
@@ -993,7 +994,9 @@ class _TestProcess(BaseTestCase):
         self.assertEqual(proc2.exitcode, 0)
 
         proc.join()
-        self.assertTrue(evt.is_set())
+        # After SIGKILL, join() can return (exitcode 255) as soon as the
+        # status pipe is closed, before the orphaned child has run.
+        self.assertTrue(evt.wait(support.SHORT_TIMEOUT))
         self.assertIn(proc.exitcode, (0, 255))
 
     def test_forkserver_sigint(self):
@@ -1219,8 +1222,10 @@ class _TestQueue(BaseTestCase):
         queue.put(5, False, None)
         queue.put_nowait(6)
 
-        # the values may be in buffer but not yet in pipe so sleep a bit
-        time.sleep(DELTA)
+        # The values may be in the buffer but not yet in the pipe.
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+            if not queue_empty(queue):
+                break
 
         self.assertEqual(queue_empty(queue), False)
         self.assertEqual(queue_full(queue, MAXSIZE), True)
@@ -1341,8 +1346,10 @@ class _TestQueue(BaseTestCase):
         for i in range(10):
             queue.put(i)
 
-        # wait to make sure thread starts before we fork a new process
-        time.sleep(DELTA)
+        # Wait for the feeder thread to write to the pipe before forking.
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+            if not queue_empty(queue):
+                break
 
         # fork process
         p = self.Process(target=self._test_fork, args=(queue,))
@@ -1565,7 +1572,7 @@ class _TestLock(BaseTestCase):
                              args=(lock, l),
                              name=tname)
         t.start()
-        time.sleep(0.1)
+        threading_helper.join_thread(t)
         self.assertEqual(f'<Lock(owner=MainProcess|{tname})>', l[0])
         lock.release()
 
@@ -1573,7 +1580,7 @@ class _TestLock(BaseTestCase):
                              args=(lock,),
                              name=tname)
         t.start()
-        time.sleep(0.1)
+        threading_helper.join_thread(t)
         self.assertEqual('<Lock(owner=SomeOtherThread)>', repr(lock))
         lock.release()
 
@@ -3158,6 +3165,7 @@ class _TestPool(BaseTestCase):
         with self.assertRaisesRegex(expected_exception, expected_regex):
             method(str, range(4), buffersize=buffersize)
 
+    @unittest.skipUnless(HAS_SHAREDCTYPES, 'needs sharedctypes')
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.subTests('method_name', ("imap", "imap_unordered"))
     def test_imap_and_imap_unordered_when_buffer_is_full(self, method_name):
@@ -3173,26 +3181,30 @@ class _TestPool(BaseTestCase):
                 last_produced_task_arg.value = arg
                 yield arg
 
-        method = getattr(p, method_name)
-        it = method(functools.partial(sqr, wait=0.2), produce_args())
+        def wait_for_produced_args(threshold):
+            for _ in support.sleeping_retry(support.SHORT_TIMEOUT, error=False):
+                if last_produced_task_arg.value > threshold:
+                    break
+            self.assertGreater(last_produced_task_arg.value, threshold)
 
-        time.sleep(0.2)
-        # `iterable` could've been advanced only `processes` times,
-        # but in fact it advances further (`> processes`) because of
-        # not waiting for workers or user code to catch up.
-        self.assertGreater(last_produced_task_arg.value, processes)
+        try:
+            method = getattr(p, method_name)
+            it = method(functools.partial(sqr, wait=0.2), produce_args())
 
-        next(it)
-        time.sleep(0.2)
-        self.assertGreater(last_produced_task_arg.value, processes + 1)
+            # Without a buffer limit, the iterable advances without waiting
+            # for workers or user code to catch up.
+            wait_for_produced_args(processes)
 
-        next(it)
-        time.sleep(0.2)
-        self.assertGreater(last_produced_task_arg.value, processes + 2)
+            next(it)
+            wait_for_produced_args(processes + 1)
 
-        p.terminate()
-        p.join()
+            next(it)
+            wait_for_produced_args(processes + 2)
+        finally:
+            p.terminate()
+            p.join()
 
+    @unittest.skipUnless(HAS_SHAREDCTYPES, 'needs sharedctypes')
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.subTests('method_name', ("imap", "imap_unordered"))
     def test_imap_and_imap_unordered_with_buffersize_when_buffer_is_full(
@@ -3210,23 +3222,50 @@ class _TestPool(BaseTestCase):
                 last_produced_task_arg.value = arg
                 yield arg
 
+        def wait_for_produced_args(expected):
+            # Consuming a result allows the task handler to advance the
+            # iterable, but does not wait for it to do so.
+            for _ in support.sleeping_retry(support.SHORT_TIMEOUT, error=False):
+                if last_produced_task_arg.value >= expected:
+                    break
+            self.assertEqual(last_produced_task_arg.value, expected)
+
+        try:
+            method = getattr(p, method_name)
+            it = method(functools.partial(sqr, wait=0.2), produce_args(),
+                        buffersize=processes)
+
+            wait_for_produced_args(processes)
+
+            next(it)
+            wait_for_produced_args(processes + 1)
+
+            next(it)
+            wait_for_produced_args(processes + 2)
+        finally:
+            p.terminate()
+            p.join()
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    @support.subTests('method_name', ("imap", "imap_unordered"))
+    def test_imap_with_buffersize_close_after_partial_consumption(
+        self, method_name
+    ):
+        # close()/join() must not deadlock when a buffersize iterator is
+        # only partially consumed (the throttled task generator must stop).
+        p = self.Pool(2)
         method = getattr(p, method_name)
-        it = method(functools.partial(sqr, wait=0.2), produce_args(),
-                    buffersize=processes)
-
-        time.sleep(0.2)
-        self.assertEqual(last_produced_task_arg.value, processes)
-
+        it = method(sqr, range(1000), buffersize=2)
         next(it)
-        time.sleep(0.2)
-        self.assertEqual(last_produced_task_arg.value, processes + 1)
-
-        next(it)
-        time.sleep(0.2)
-        self.assertEqual(last_produced_task_arg.value, processes + 2)
-
-        p.terminate()
-        p.join()
+        finished = threading.Event()
+        def finalize():
+            p.close()
+            p.join()
+            finished.set()
+        t = threading.Thread(target=finalize)
+        t.start()
+        t.join(support.SHORT_TIMEOUT)
+        self.assertTrue(finished.is_set(), "close()/join() deadlocked")
 
     @support.subTests('method_name', ("imap", "imap_unordered"))
     def test_imap_and_imap_unordered_with_buffersize_on_empty_iterable(
@@ -3411,8 +3450,11 @@ class _TestPool(BaseTestCase):
         self.pool.map(identity, objs)
 
         del objs
-        time.sleep(DELTA)  # let threaded cleanup code run
-        support.gc_collect()  # For PyPy or other GCs.
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT, error=False):
+            support.gc_collect()  # For PyPy or other GCs.
+            if (all(wr() is None for wr in refs)
+                    and CountedObject.n_instances == 0):
+                break
         self.assertEqual(set(wr() for wr in refs), {None})
         # With a process pool, copies of the objects are returned, check
         # they were released too.
@@ -3452,11 +3494,113 @@ class _TestPool(BaseTestCase):
             pool = None
             support.gc_collect()
 
+class CallbackError(Exception): pass
+
+class CallbackBaseException(BaseException): pass
+
 def raising():
     raise KeyError("key")
 
+def raising_map(x):
+    raise KeyError("key")
+
+def reraise(exc):
+    raise exc
+
+def raise_with_context(exc):
+    try:
+        raise ZeroDivisionError
+    except ZeroDivisionError:
+        raise CallbackError('callback failed')
+
 def unpickleable_result():
     return lambda: 42
+
+class _TestPoolCallbackErrors(BaseTestCase):
+    ALLOWED_TYPES = ('processes', )
+
+    @staticmethod
+    def _raise(value):
+        raise CallbackError('callback failed')
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_apply_async_callback_raises(self):
+        with multiprocessing.Pool(1) as p:
+            res = p.apply_async(sqr, (7,), callback=self._raise)
+            with self.assertRaises(CallbackError):
+                res.get(support.SHORT_TIMEOUT)
+            # the pool is still usable
+            self.assertEqual(p.apply(sqr, (3,)), 9)
+            self.assertTrue(p._result_handler.is_alive())
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_apply_async_callback_raises_base_exception(self):
+        def raise_base(value):
+            raise CallbackBaseException
+        with multiprocessing.Pool(1) as p:
+            res = p.apply_async(sqr, (7,), callback=raise_base)
+            with self.assertRaises(CallbackBaseException):
+                res.get(support.SHORT_TIMEOUT)
+            # the pool did not hang
+            self.assertEqual(p.apply(sqr, (3,)), 9)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_apply_async_error_callback_raises(self):
+        with multiprocessing.Pool(1) as p:
+            res = p.apply_async(raising, error_callback=self._raise)
+            with self.assertRaises(CallbackError) as cm:
+                res.get(support.SHORT_TIMEOUT)
+            # the original error is not lost
+            self.assertIsInstance(cm.exception.__context__, KeyError)
+            self.assertEqual(p.apply(sqr, (3,)), 9)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_apply_async_error_callback_reraises(self):
+        with multiprocessing.Pool(1) as p:
+            res = p.apply_async(raising, error_callback=reraise)
+            with self.assertRaises(KeyError) as cm:
+                res.get(support.SHORT_TIMEOUT)
+            # the error is not its own context
+            self.assertIsNone(cm.exception.__context__)
+            self.assertEqual(p.apply(sqr, (3,)), 9)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_map_async_error_callback_reraises(self):
+        with multiprocessing.Pool(1) as p:
+            res = p.map_async(raising_map, [0], error_callback=reraise)
+            with self.assertRaises(KeyError) as cm:
+                res.get(support.SHORT_TIMEOUT)
+            self.assertIsNone(cm.exception.__context__)
+            self.assertEqual(p.apply(sqr, (3,)), 9)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_apply_async_error_callback_raises_with_context(self):
+        # the original error is kept at the end of the context chain
+        with multiprocessing.Pool(1) as p:
+            res = p.apply_async(raising, error_callback=raise_with_context)
+            with self.assertRaises(CallbackError) as cm:
+                res.get(support.SHORT_TIMEOUT)
+            context = cm.exception.__context__
+            self.assertIsInstance(context, ZeroDivisionError)
+            self.assertIsInstance(context.__context__, KeyError)
+            self.assertEqual(p.apply(sqr, (3,)), 9)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_map_async_callback_raises(self):
+        with multiprocessing.Pool(1) as p:
+            res = p.map_async(sqr, list(range(3)), callback=self._raise)
+            with self.assertRaises(CallbackError):
+                res.get(support.SHORT_TIMEOUT)
+            self.assertEqual(p.apply(sqr, (3,)), 9)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_map_async_error_callback_raises(self):
+        with multiprocessing.Pool(1) as p:
+            res = p.map_async(raising_map, [0], error_callback=self._raise)
+            with self.assertRaises(CallbackError) as cm:
+                res.get(support.SHORT_TIMEOUT)
+            self.assertIsInstance(cm.exception.__context__, KeyError)
+            self.assertEqual(p.apply(sqr, (3,)), 9)
 
 class _TestPoolWorkerErrors(BaseTestCase):
     ALLOWED_TYPES = ('processes', )
@@ -3904,7 +4048,7 @@ class _TestConnection(BaseTestCase):
         self.assertTimingAlmostEqual(poll.elapsed, TIMEOUT1)
 
         conn.send(None)
-        time.sleep(.1)
+        self.assertTrue(conn.poll(support.SHORT_TIMEOUT))
 
         self.assertEqual(poll(TIMEOUT1), True)
         self.assertTimingAlmostEqual(poll.elapsed, 0)
@@ -4205,11 +4349,10 @@ class _TestListenerClient(BaseTestCase):
         p = self.Process(target=self._test, args=(l.address,))
         p.daemon = True
         p.start()
-        time.sleep(1)
-        # On Windows the client process should by now have connected,
-        # written data and closed the pipe handle by now.  This causes
-        # ConnectNamdedPipe() to fail with ERROR_NO_DATA.  See Issue
-        # 14725.
+        join_process(p)
+        # On Windows the client process has now connected, written data
+        # and closed the pipe handle.  This causes ConnectNamedPipe()
+        # to fail with ERROR_NO_DATA.  See Issue 14725.
         conn = l.accept()
         self.assertEqual(conn.recv(), 'hello')
         conn.close()
@@ -6354,6 +6497,97 @@ class TestStartMethod(unittest.TestCase):
         # gh-109706: queue.put(1) can write into the queue before queue.put(2),
         # there is no synchronization in the test.
         self.assertSetEqual(set(results), set([2, 1]))
+
+    @unittest.skipIf(os.name == "nt", "requires POSIX")
+    @support.requires_non_root_user
+    @support.subTests("mode", [
+        os.R_OK,  # read-only directory
+        os.R_OK | os.X_OK, # read-only directory
+        os.W_OK # write-only directory _without_ permissions for creating files
+    ])
+    def test_forkserver_requires_writeable_tempdir(self, mode):
+        # Regression test to ensure that the defualt start method is
+        # not 'forkserver' when the temporary directory is not writeable.
+        #
+        # See https://github.com/python/cpython/issues/155717.
+
+        cmd = '''if 1:
+            import os, tempfile
+            # We fake the read-onlyiness of /tmp (which is a fallback when
+            # the user-defined TMPDIR is not acceptable) by hardcoding the
+            # temporary directory for this specific test.
+            tempfile.tempdir = os.environ["TMPDIR"]
+
+            # Imported after patching 'tempfile' so that the default start
+            # method is deduced according to the permissions of TMPDIR.
+            import multiprocessing
+            if __name__ == "__main__":
+                print(multiprocessing.get_start_method())
+        '''
+
+        with support.os_helper.temp_dir() as root:
+            TMPDIR = pathlib.Path(root, "TMPDIR")
+            TMPDIR.mkdir(mode=mode)
+            file = pathlib.Path(TMPDIR, "file")
+            self.assertRaises(OSError, file.touch)
+            _, out, err = script_helper.assert_python_ok('-c', cmd, TMPDIR=TMPDIR)
+        self.assertEqual(out.decode().strip(), "spawn")
+
+    @unittest.skipIf(os.name == "nt", "requires POSIX")
+    @support.requires_non_root_user
+    def test_default_start_method_without_usable_tempdir(self):
+        # Neither importing multiprocessing nor determining the default
+        # start method may fail when tempfile finds no usable temporary
+        # directory at all, and the default start method must be 'spawn'.
+        #
+        # See https://github.com/python/cpython/issues/155717.
+
+        cmd = '''if 1:
+            import os, tempfile
+            # Make TMPDIR the only candidate, so that tempfile.gettempdir()
+            # raises FileNotFoundError instead of falling back to /tmp.
+            tempfile._candidate_tempdir_list = lambda: [os.environ["TMPDIR"]]
+            try:
+                tempfile.gettempdir()
+            except FileNotFoundError:
+                pass
+            else:
+                raise AssertionError("TMPDIR is usable")
+
+            import multiprocessing
+            if __name__ == "__main__":
+                print(multiprocessing.get_start_method(),
+                      multiprocessing.get_all_start_methods()[0])
+        '''
+
+        with support.os_helper.temp_dir() as root:
+            TMPDIR = pathlib.Path(root, "TMPDIR")
+            TMPDIR.mkdir(mode=os.R_OK | os.X_OK)
+            _, out, err = script_helper.assert_python_ok('-c', cmd, TMPDIR=TMPDIR)
+        self.assertEqual(out.decode().split(), ["spawn", "spawn"])
+
+    def test_import_does_not_determine_default_start_method(self):
+        # Determining the default start method requires checking that the
+        # temporary directory is writeable. That must not happen, nor may
+        # the modules it needs be loaded, when importing multiprocessing.
+        import_helper.ensure_lazy_imports(
+            "multiprocessing", {"tempfile", "shutil", "subprocess"})
+
+        cmd = '''if 1:
+            import sys
+            import multiprocessing
+            print(multiprocessing.get_start_method(allow_none=True),
+                  "tempfile" in sys.modules,
+                  multiprocessing.get_start_method(),
+                  multiprocessing.get_all_start_methods()[0])
+        '''
+        # -S: site customizations could import tempfile themselves.
+        _, out, err = script_helper.assert_python_ok('-S', '-c', cmd)
+        unset, probed, method, first = out.decode().split()
+        self.assertEqual(unset, "None")
+        self.assertEqual(probed, "False")
+        self.assertEqual(method, first)
+        self.assertIn(method, multiprocessing.get_all_start_methods())
 
 
 @unittest.skipIf(sys.platform == "win32",
