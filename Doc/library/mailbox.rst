@@ -500,7 +500,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    .. method:: set_info(key, info)
 
       Set the info of the message corresponding to *key* to *info*.
-      Calling ``some_mailbox.set_info(key, flags)`` is similar to ::
+      Calling ``some_mailbox.set_info(key, info)`` is similar to ::
 
          one_message = some_mailbox.get_message(key)
          one_message.set_info(info)
