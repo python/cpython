@@ -1,0 +1,2 @@
+Fix C11-C17 builds with old C library headers that do not define
+``static_assert``, including glibc versions older than 2.16.
