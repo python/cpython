@@ -196,6 +196,57 @@ test_gc_visit_objects_basic(PyObject *Py_UNUSED(self),
 }
 
 static int
+gc_call_no_args(const char *method)
+{
+    PyObject *gc = PyImport_ImportModule("gc");
+    if (gc == NULL) {
+        return -1;
+    }
+    PyObject *res = PyObject_CallMethod(gc, method, NULL);
+    Py_DECREF(gc);
+    if (res == NULL) {
+        return -1;
+    }
+    Py_DECREF(res);
+    return 0;
+}
+
+// gh-131740: frozen objects must be visited too.
+static PyObject *
+test_gc_visit_objects_frozen(PyObject *Py_UNUSED(self),
+                             PyObject *Py_UNUSED(ignored))
+{
+    PyObject *obj;
+    struct gc_visit_state_basic state;
+
+    obj = PyList_New(0);
+    if (obj == NULL) {
+        return NULL;
+    }
+    if (gc_call_no_args("freeze") < 0) {
+        Py_DECREF(obj);
+        return NULL;
+    }
+    state.target = obj;
+    state.found = 0;
+
+    PyUnstable_GC_VisitObjects(gc_visit_callback_basic, &state);
+
+    int err = gc_call_no_args("unfreeze");
+    Py_DECREF(obj);
+    if (err < 0) {
+        return NULL;
+    }
+    if (!state.found) {
+        PyErr_SetString(
+             PyExc_AssertionError,
+             "test_gc_visit_objects_frozen: Didn't find frozen list");
+         return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static int
 gc_visit_callback_exit_early(PyObject *obj, void *arg)
  {
     int *visited_i = (int *)arg;
@@ -316,6 +367,7 @@ static PyType_Spec ObjExtraData_TypeSpec = {
 static PyMethodDef test_methods[] = {
     {"test_gc_control", test_gc_control, METH_NOARGS},
     {"test_gc_visit_objects_basic", test_gc_visit_objects_basic, METH_NOARGS, NULL},
+    {"test_gc_visit_objects_frozen", test_gc_visit_objects_frozen, METH_NOARGS, NULL},
     {"test_gc_visit_objects_exit_early", test_gc_visit_objects_exit_early, METH_NOARGS, NULL},
     {"without_gc", without_gc, METH_O, NULL},
     {"with_tp_del", with_tp_del, METH_VARARGS, NULL},

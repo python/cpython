@@ -399,13 +399,18 @@ inside nested parentheses.  They are:
    their default value --- when an optional argument is not specified,
    :c:func:`PyArg_ParseTuple` does not touch the contents of the corresponding C
    variable(s).
+   For example, the format string ``"OO|OO"`` corresponds to the Python
+   signature ``f(a, b, c=None, d=None)``.
 
 ``$``
    :c:func:`PyArg_ParseTupleAndKeywords` only:
    Indicates that the remaining arguments in the Python argument list are
-   keyword-only.  Currently, all keyword-only arguments must also be optional
-   arguments, so ``|`` must always be specified before ``$`` in the format
-   string.
+   keyword-only.
+   They are optional if ``|`` was specified before ``$``, and required otherwise.
+   ``|`` cannot be specified after ``$``.
+   For example, the format string ``"O|O$O"`` corresponds to the Python
+   signature ``f(a, b=None, *, c=None)``,
+   and the format string ``"OO$OO"`` corresponds to ``f(a, b, *, c, d)``.
 
    .. versionadded:: 3.3
 
