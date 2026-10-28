@@ -2539,6 +2539,11 @@ class timezone(tzinfo):
         raise TypeError("tzname() argument must be a datetime instance"
                         " or None")
 
+    @property
+    def name(self):
+        """Name given when the timezone was created."""
+        return self._name
+
     def dst(self, dt):
         if isinstance(dt, datetime) or dt is None:
             return None

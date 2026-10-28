@@ -97,6 +97,19 @@ class TestGC(TestCase):
         thread.start()
         thread.join()
 
+    def test_running_method_not_collected(self):
+        class C:
+            def m(self):
+                wr = weakref.ref(C.__dict__["m"])
+                del C.m
+                gc.collect()
+                return wr() is not None
+
+            def run(self):
+                return self.m()
+
+        self.assertTrue(C().run())
+
     def test_merge_brc_queue_of_detached_thread(self):
         # GH-157838: objects queued for merging by a thread that is detached
         # (blocked in a lock acquire, sleep, etc.) are merged and freed on its
