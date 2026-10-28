@@ -1,6 +1,7 @@
 import asyncio
 import io
 import sys
+import types
 import unittest
 from unittest import mock
 
@@ -11,6 +12,7 @@ def tearDownModule():
 
 
 def capture_test_stack(*, fut=None, depth=1):
+    future_await_code = asyncio.futures._PyFuture.__await__.__code__
 
     def walk(s):
         ret = [
@@ -27,8 +29,12 @@ def capture_test_stack(*, fut=None, depth=1):
                             f"a {entry.frame.f_generator.cr_code.co_name}"
                             if hasattr(entry.frame.f_generator, 'cr_code') else
                             f"ag {entry.frame.f_generator.ag_code.co_name}"
+                            if hasattr(entry.frame.f_generator, 'ag_code') else
+                            f"g {entry.frame.f_generator.gi_code.co_name}"
                         )
                 ) for entry in s.call_stack
+                # Skip the pure Python Future.__await__ generator frame
+                if entry.frame.f_code is not future_await_code
             ]
         )
 
@@ -300,6 +306,73 @@ class CallStackTestBase:
                 'a inner',
                 'a spam',
                 'a __anext__',
+                'a main',
+            ],
+            []
+        ])
+
+    async def test_stack_await_generator(self):
+        # The call graph of a suspended task sees through generators
+        # returned by __await__() and the generators they yield from.
+
+        loop = asyncio.get_running_loop()
+        blocker = loop.create_future()
+
+        def wait():
+            yield from blocker
+
+        class Awaitable:
+            def __await__(self):
+                return (yield from wait())
+
+        async def main():
+            await Awaitable()
+
+        task = asyncio.create_task(main(), name='await task')
+        await asyncio.sleep(0)
+        try:
+            stack = capture_test_stack(fut=task)
+        finally:
+            blocker.set_result(None)
+            await task
+
+        self.assertEqual(stack[0], [
+            'T<await task>',
+            [
+                'g wait',
+                'g __await__',
+                'a main',
+            ],
+            []
+        ])
+
+    async def test_stack_types_coroutine(self):
+        loop = asyncio.get_running_loop()
+        blocker = loop.create_future()
+
+        async def inner():
+            await blocker
+
+        @types.coroutine
+        def legacy():
+            yield from inner()
+
+        async def main():
+            await legacy()
+
+        task = asyncio.create_task(main(), name='legacy task')
+        await asyncio.sleep(0)
+        try:
+            stack = capture_test_stack(fut=task)
+        finally:
+            blocker.set_result(None)
+            await task
+
+        self.assertEqual(stack[0], [
+            'T<legacy task>',
+            [
+                'a inner',
+                'g legacy',
                 'a main',
             ],
             []
