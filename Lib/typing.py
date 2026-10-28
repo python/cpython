@@ -3543,7 +3543,7 @@ Text = str
 TYPE_CHECKING = False
 
 # Since `AnyStr` public API is deprecated since 3.16 and will be removed
-# in 3.18, we need to keep `IO` protocol the same as it used to be:
+# in 3.21, we need to keep `IO` protocol the same as it used to be:
 class IO[AnyStr: (bytes, str)]:
     """Generic base class for TextIO and BinaryIO.
 
@@ -3951,7 +3951,7 @@ def __getattr__(attr):
             "typing.AnyStr",
             message=(
                 "{name!r} is deprecated and slated for removal "
-                "in Python {remove}. Use PEP-695 type parameters "
+                "in Python {remove}. Use PEP 695 type parameters "
                 "with constraints instead"
             ),
             remove=(3, 21),

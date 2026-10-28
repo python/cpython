@@ -41,6 +41,6 @@ Pending removal in Python 3.21
 * :mod:`typing`:
 
    * :data:`typing.AnyStr` has been discouraged
-     and deprecated since Python 3.16
+     and deprecated since Python 3.13
      and is scheduled to be removed in Python 3.21.
      Use :pep:`695` syntax instead.
