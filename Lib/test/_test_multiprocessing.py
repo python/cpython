@@ -1567,8 +1567,7 @@ class _TestLock(BaseTestCase):
 
         lock.acquire()
         self.assertRegex(repr(lock),
-                         r"<*.Lock object at .* "
-                         r"\(owner=MainProcess\)>")
+                         r"<*.Lock object at .* \(owner=MainProcess\)>")
         lock.release()
 
         tname = 'T1'
@@ -1578,7 +1577,8 @@ class _TestLock(BaseTestCase):
                              name=tname)
         t.start()
         threading_helper.join_thread(t)
-        self.assertEqual(f'<Lock(owner=MainProcess|{tname})>', l[0])
+        self.assertRegex(l[0], f"<*.Lock object at .* "
+                               f"\\(owner=MainProcess|{tname}\\)>")
         lock.release()
         t.join()
 
@@ -1587,7 +1587,8 @@ class _TestLock(BaseTestCase):
                              name=tname)
         t.start()
         threading_helper.join_thread(t)
-        self.assertEqual('<Lock(owner=SomeOtherThread)>', repr(lock))
+        self.assertRegex(repr(lock),
+                         r"<*.Lock object at .* \(owner=SomeOtherThread\)>")
         lock.release()
         t.join()
 
