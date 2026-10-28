@@ -784,27 +784,9 @@ func_set_qualname(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
                         "__qualname__ must be set to a string object");
         return -1;
     }
-<<<<<<< HEAD
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyEval_StopTheWorld(interp);
-    PyObject *old_qualname = op->func_qualname;
-    op->func_qualname = Py_NewRef(value);
-    _PyEval_StartTheWorld(interp);
-    Py_XDECREF(old_qualname);
-||||||| parent of 010bebbf9fd (gh-159136: Avoid stop-the-world when setting function name attributes (gh-159269))
-    handle_func_event(PyFunction_EVENT_MODIFY_QUALNAME, (PyFunctionObject *) op, value);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyEval_StopTheWorld(interp);
-    PyObject *old_qualname = op->func_qualname;
-    op->func_qualname = Py_NewRef(value);
-    _PyEval_StartTheWorld(interp);
-    Py_XDECREF(old_qualname);
-=======
-    handle_func_event(PyFunction_EVENT_MODIFY_QUALNAME, (PyFunctionObject *) op, value);
     Py_BEGIN_CRITICAL_SECTION(op);
     _PyObject_XSetRefDelayed(&op->func_qualname, Py_NewRef(value));
     Py_END_CRITICAL_SECTION();
->>>>>>> 010bebbf9fd (gh-159136: Avoid stop-the-world when setting function name attributes (gh-159269))
     return 0;
 }
 
