@@ -1815,7 +1815,8 @@ class ExceptionTests(unittest.TestCase):
 
         exc = OSError(2, Evil(), Evil())
         self.assertEqual(str(exc), "[Errno 2] evil: evil")
-        exc = OSError(2, Evil(), Evil(), None, Evil())
+        exc = OSError(2, Evil(), Evil())
+        exc.filename2 = Evil()
         self.assertEqual(str(exc), "[Errno 2] evil: evil -> evil")
 
     def test_errno_ENOTDIR(self):
