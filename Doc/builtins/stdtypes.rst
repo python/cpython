@@ -996,7 +996,7 @@ The iterator then allows control over the execution of the underlying function.
 Initially, the function is *suspended*.
 Execution starts when a :dfn:`consumer` asks the iterator to produce the next
 value, for example using the :func:`next` function (which calls
-the generator's :meth:`~generator.__next__()` method).
+the generator's :meth:`~generator.__next__` method).
 The execution starts at the beginning of the function body
 and proceeds to the first :keyword:`!yield` expression.
 The expression after the :keyword:`!yield` keyword is evaluated and returned

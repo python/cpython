@@ -1301,7 +1301,7 @@ by returning a value from the subgenerator's underlying function:
 .. seealso::
 
    :pep:`380` - Syntax for Delegating to a Subgenerator
-      The proposal to introduce the :token:`~python-grammar:yield_from` syntax,
+      The proposal to introduce the :keyword:`!yield from` syntax,
       making delegation to subgenerators easy.
 
 .. _yield-expression-placement:
