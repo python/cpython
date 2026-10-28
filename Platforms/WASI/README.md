@@ -161,7 +161,7 @@ There is no command just to archive the gathered files.
 To do a release build from `build` to `package`, you can use the `release`
 command:
 
-``shell
+```shell
 python3 Platforms/WASI release
 ```
 
