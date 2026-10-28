@@ -199,8 +199,8 @@ def isdata(object):
 
 def _is_namespace_package(module):
     spec = getattr(module, '__spec__', None)
-    return (spec is not None and spec.origin is None and
-            spec.submodule_search_locations is not None)
+    return isinstance(getattr(spec, 'loader', None),
+                      importlib.machinery.NamespaceLoader)
 
 def replace(text, *pairs):
     """Do a series of global replacements on a string."""

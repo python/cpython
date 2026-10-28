@@ -2,6 +2,7 @@ import datetime
 import os
 import sys
 import contextlib
+import importlib.machinery
 import importlib.util
 import inspect
 import io
@@ -472,6 +473,72 @@ class PydocDocTest(unittest.TestCase):
                                     with self.subTest(format=kind):
                                         self.assertIn(marker, output)
                                         self.assertNotIn('(built-in)', output)
+
+    def test_virtual_package_file(self):
+        name = 'pydoc_virtual_package'
+
+        class Loader:
+            def create_module(self, spec):
+                return None
+
+            def exec_module(self, module):
+                pass
+
+        class Finder:
+            def find_spec(self, fullname, path=None, target=None):
+                if fullname == name:
+                    return importlib.util.spec_from_loader(
+                        fullname, Loader(), is_package=True)
+
+        with (support.swap_attr(sys, 'meta_path', [Finder(), *sys.meta_path]),
+              import_helper.isolated_modules()):
+            module = importlib.import_module(name)
+            self.assertIsNone(module.__spec__.origin)
+            self.assertIsInstance(module.__spec__.loader, Loader)
+            self.assertNotIn('(namespace)', repr(module))
+            text, _ = get_pydoc_text(module)
+            html, _ = get_pydoc_html(module)
+            for kind, output, marker in (
+                ('text', text, '\nFILE\n    (built-in)'),
+                ('html', html, 'index</a><br>(built-in)'),
+            ):
+                with self.subTest(format=kind):
+                    self.assertIn(marker, output)
+                    self.assertNotIn('(namespace)', output)
+
+    def test_namespace_package_custom_path_hook(self):
+        name = 'pydoc_hook_namespace'
+        path = os.path.abspath('pydoc_namespace_hook_path')
+
+        class Finder:
+            def find_spec(self, fullname, target=None):
+                if fullname == name:
+                    spec = importlib.machinery.ModuleSpec(
+                        fullname, None, is_package=True)
+                    spec.submodule_search_locations = [path]
+                    return spec
+
+        def path_hook(entry):
+            if entry != path:
+                raise ImportError
+            return Finder()
+
+        with (support.swap_attr(sys, 'path_hooks', [path_hook, *sys.path_hooks]),
+              support.swap_attr(sys, 'path_importer_cache', {}),
+              import_helper.DirsOnSysPath(path),
+              import_helper.isolated_modules()):
+            module = importlib.import_module(name)
+            self.assertIsInstance(module.__spec__.loader,
+                                  importlib.machinery.NamespaceLoader)
+            text, _ = get_pydoc_text(module)
+            html, _ = get_pydoc_html(module)
+            for kind, output, marker in (
+                ('text', text, '\nFILE\n    (namespace)'),
+                ('html', html, 'index</a><br>(namespace)'),
+            ):
+                with self.subTest(format=kind):
+                    self.assertIn(marker, output)
+                    self.assertNotIn('(built-in)', output)
 
     def test_module_file_classification_controls(self):
         modules = [sys, pydoc_mod, test.test_pydoc]
