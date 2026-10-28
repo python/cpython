@@ -156,11 +156,6 @@ between conformable Python objects and XML on the wire.
       See https://ws.apache.org/xmlrpc/types.html for a description.
 
 
-.. exception:: Error
-
-   Base class of the :exc:`Fault` and :exc:`ProtocolError` exceptions.
-
-
 .. seealso::
 
    `XML-RPC HOWTO <https://tldp.org/HOWTO/XML-RPC-HOWTO/index.html>`_
@@ -363,6 +358,23 @@ The client gets the image and saves it to a file::
    proxy = xmlrpc.client.ServerProxy("http://localhost:8000/")
    with open("fetched_python_logo.jpg", "wb") as handle:
        handle.write(proxy.python_logo().data)
+
+.. _error-objects:
+
+Error Objects
+-------------
+
+.. exception:: Error
+
+   Base class of the :exc:`Fault`, :exc:`ProtocolError` and
+   :exc:`ResponseError` exceptions.
+
+
+.. exception:: ResponseError
+
+   Raised when an XML-RPC response is malformed and cannot be unmarshalled,
+   for example when it contains an unsupported type tag.
+
 
 .. _fault-objects:
 
