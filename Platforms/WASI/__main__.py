@@ -71,8 +71,9 @@ def main():
     gather = subcommands.add_parser(
         "gather", help="Gather all the files for distribution"
     )
-    release = subcommands.add_parser("release",
-                                     help="Build and package for a release")
+    release = subcommands.add_parser(
+        "release", help="Build and package for a release"
+    )
     path = subcommands.add_parser(
         "path", help="Print the path to a build or distribution directory"
     )
