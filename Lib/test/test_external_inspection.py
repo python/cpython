@@ -8,6 +8,7 @@ import sys
 import socket
 import threading
 import time
+import types
 from contextlib import contextmanager
 from asyncio import staggered, taskgroups, base_events, tasks
 from unittest.mock import ANY
@@ -585,6 +586,54 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
 
         stacks = self._extract_coroutine_funcnames(asyncio.run(main()))
         self.assertEqual(stacks["anext"], ["agen"])
+
+    @skip_if_not_supported
+    def test_generator_awaitable_stack_is_not_truncated(self):
+        def wait():
+            yield from asyncio.get_running_loop().create_future()
+
+        class Awaitable:
+            def __await__(self):
+                return (yield from wait())
+
+        async def inner():
+            await asyncio.sleep(10_000)
+
+        @types.coroutine
+        def legacy():
+            yield from inner()
+
+        async def consumer(aw):
+            await aw
+
+        async def main():
+            await_task = asyncio.create_task(
+                consumer(Awaitable()), name="__await__")
+            legacy_task = asyncio.create_task(
+                consumer(legacy()), name="types.coroutine")
+            await asyncio.sleep(0)
+            return RemoteUnwinder(os.getpid()).get_all_awaited_by()
+
+        stacks = self._extract_coroutine_funcnames(asyncio.run(main()))
+        self.assertEqual(stacks["__await__"], ["wait", "__await__", "consumer"])
+        self.assertEqual(stacks["types.coroutine"],
+                         ["sleep", "inner", "legacy", "consumer"])
+
+    @skip_if_not_supported
+    def test_generator_awaitable_running_task_stack(self):
+        class Awaitable:
+            def __await__(self):
+                return RemoteUnwinder(os.getpid()).get_async_stack_trace()
+                yield
+
+        async def consumer():
+            return await Awaitable()
+
+        async def main():
+            return await asyncio.create_task(consumer(), name="consumer")
+
+        stacks = self._extract_coroutine_funcnames(asyncio.run(main()))
+        self.assertEqual(stacks["consumer"], ["__await__", "consumer"])
 
     @skip_if_not_supported
     def test_class_named_like_async_generator_wrapper_is_not_walked(self):
