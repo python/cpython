@@ -73,6 +73,9 @@ def main():
     gather = subcommands.add_parser(
         "gather", help="Gather all the files for distribution"
     )
+    release = subcommands.add_parser(
+        "release", help="Build and package for a release"
+    )
     path = subcommands.add_parser(
         "path", help="Print the path to a build or distribution directory"
     )
@@ -96,6 +99,7 @@ def main():
         make_host,
         pythoninfo_host,
         build_host,
+        release,
     ):
         subcommand.add_argument(
             "--quiet",
@@ -135,7 +139,7 @@ def main():
         subcommand.add_argument(
             "args", nargs="*", help="Extra arguments to pass to `configure`"
         )
-    for subcommand in build, configure_host, build_host:
+    for subcommand in build, configure_host, build_host, release:
         subcommand.add_argument(
             "--wasi-sdk",
             type=pathlib.Path,
@@ -162,6 +166,7 @@ def main():
         gather,
         package,
         path,
+        release,
     ):
         subcommand.add_argument(
             "--host-triple",
@@ -211,6 +216,15 @@ def main():
         case "gather":
             _package.gather(context)
         case "package":
+            _package.gather(context)
+            _package.archive(context)
+        case "release":
+            context.args = ["--without-static-libpython"]
+            _build.clean_contents(context)
+            _build.configure_build_python(context)
+            _build.make_build_python(context)
+            _build.configure_wasi_python(context)
+            _build.make_wasi_python(context)
             _package.gather(context)
             _package.archive(context)
         case "path":
