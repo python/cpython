@@ -190,7 +190,7 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #ifdef HAVE_GETHOSTBYNAME_R
 # if defined(_AIX) && !defined(_LINUX_SOURCE_COMPAT)
 #  define HAVE_GETHOSTBYNAME_R_3_ARG
-# elif defined(__sun) || defined(__sgi)
+# elif defined(__sun)
 #  define HAVE_GETHOSTBYNAME_R_5_ARG
 # elif defined(__linux__)
 /* Rely on the configure script */
@@ -215,29 +215,6 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #  include <netbt/hci.h>
 #  include <netbt/sco.h>
 #endif
-
-#if defined(__sgi) && _COMPILER_VERSION>700 && !_SGIAPI
-/* make sure that the reentrant (gethostbyaddr_r etc)
-   functions are declared correctly if compiling with
-   MIPSPro 7.x in ANSI C mode (default) */
-
-/* XXX Using _SGIAPI is the wrong thing,
-   but I don't know what the right thing is. */
-#undef _SGIAPI /* to avoid warning */
-#define _SGIAPI 1
-
-#undef _XOPEN_SOURCE
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#ifdef _SS_ALIGNSIZE
-#define HAVE_GETADDRINFO 1
-#define HAVE_GETNAMEINFO 1
-#endif
-
-#define HAVE_INET_PTON
-#include <netdb.h>
-#endif // __sgi
 
 /* Solaris fails to define this variable at all. */
 #if (defined(__sun) && defined(__SVR4)) && !defined(INET_ADDRSTRLEN)
@@ -418,16 +395,10 @@ remove_unusable_flags(PyObject *m)
 #endif
 
 /* include Python's addrinfo.h unless it causes trouble */
-#if defined(__sgi) && _COMPILER_VERSION>700 && defined(_SS_ALIGNSIZE)
-  /* Do not include addinfo.h on some newer IRIX versions.
-   * _SS_ALIGNSIZE is defined in sys/socket.h by 6.5.21,
-   * for example, but not by 6.5.10.
-   */
-#elif defined(_MSC_VER) && _MSC_VER>1201
-  /* Do not include addrinfo.h for MSVC7 or greater. 'addrinfo' and
-   * EAI_* constants are defined in (the already included) ws2tcpip.h.
-   */
-#else
+/* Do not include addrinfo.h for MSVC. 'addrinfo' and
+ * EAI_* constants are defined in (the already included) ws2tcpip.h.
+ */
+#if !defined(_MSC_VER)
 #  include "addrinfo.h"
 #endif
 
@@ -832,7 +803,6 @@ internal_setblocking(PySocketSockObject *s, int block)
     int delay_flag, new_delay_flag;
 #endif
 
-    Py_BEGIN_ALLOW_THREADS
 #ifndef MS_WINDOWS
 #if (defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO))
     block = !block;
@@ -859,8 +829,6 @@ internal_setblocking(PySocketSockObject *s, int block)
     result = 0;
 
   done:
-    Py_END_ALLOW_THREADS
-
     if (result) {
 #ifndef MS_WINDOWS
         PyErr_SetFromErrno(PyExc_OSError);
@@ -3917,9 +3885,7 @@ _socket_socket_getsockname_impl(PySocketSockObject *s)
     if (!getsockaddrlen(s, &addrlen))
         return NULL;
     memset(&addrbuf, 0, addrlen);
-    Py_BEGIN_ALLOW_THREADS
     res = getsockname(get_sock_fd(s), SAS2SA(&addrbuf), &addrlen);
-    Py_END_ALLOW_THREADS
     if (res < 0)
         return s->errorhandler();
     return makesockaddr(get_sock_fd(s), SAS2SA(&addrbuf), addrlen,
@@ -3952,9 +3918,7 @@ _socket_socket_getpeername_impl(PySocketSockObject *s)
     if (!getsockaddrlen(s, &addrlen))
         return NULL;
     memset(&addrbuf, 0, addrlen);
-    Py_BEGIN_ALLOW_THREADS
     res = getpeername(get_sock_fd(s), SAS2SA(&addrbuf), &addrlen);
-    Py_END_ALLOW_THREADS
     if (res < 0)
         return s->errorhandler();
     return makesockaddr(get_sock_fd(s), SAS2SA(&addrbuf), addrlen,
@@ -5970,9 +5934,7 @@ _socket_gethostname_impl(PyObject *module)
 #else
     char buf[1024];
     int res;
-    Py_BEGIN_ALLOW_THREADS
     res = gethostname(buf, (int) sizeof buf - 1);
-    Py_END_ALLOW_THREADS
     if (res < 0)
         return set_error();
     buf[sizeof buf - 1] = '\0';

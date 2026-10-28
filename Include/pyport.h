@@ -637,10 +637,6 @@ extern "C" {
 #  endif
 #endif
 
-#if defined(__sgi) && !defined(_SGI_MP_SOURCE)
-#  define _SGI_MP_SOURCE
-#endif
-
 // Explicit fallthrough in switch case to avoid warnings
 // with compiler flag -Wimplicit-fallthrough.
 //
