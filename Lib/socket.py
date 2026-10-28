@@ -572,7 +572,11 @@ def fromfd(fd, family, type, proto=0):
     descriptor.  The remaining arguments are the same as for socket().
     """
     nfd = dup(fd)
-    return socket(family, type, proto, nfd)
+    try:
+        return socket(family, type, proto, nfd)
+    except:
+        close(nfd)
+        raise
 
 if hasattr(_socket.socket, "sendmsg"):
     def send_fds(sock, buffers, fds, flags=0, address=None):

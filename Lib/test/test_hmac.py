@@ -1501,17 +1501,36 @@ class PyMiscellaneousTests(unittest.TestCase):
                 self._x.update(v)
             def digest(self):
                 return self._x.digest()
+            def copy(self):
+                h = MockCrazyHash()
+                h._x = self._x.copy()
+                return h
 
         with warnings.catch_warnings():
             warnings.simplefilter('error', RuntimeWarning)
             with self.assertRaises(RuntimeWarning):
                 hmac.HMAC(b'a', b'b', digestmod=MockCrazyHash)
                 self.fail('Expected warning about missing block_size')
+            with self.assertRaises(RuntimeWarning):
+                hmac.digest(b'a', b'b', MockCrazyHash)
+                self.fail('Expected warning about missing block_size')
 
             MockCrazyHash.block_size = 1
             with self.assertRaises(RuntimeWarning):
                 hmac.HMAC(b'a', b'b', digestmod=MockCrazyHash)
                 self.fail('Expected warning about small block_size')
+            with self.assertRaises(RuntimeWarning):
+                hmac.digest(b'a', b'b', MockCrazyHash)
+                self.fail('Expected warning about small block_size')
+
+        # gh-155428: hmac.HMAC() and hmac.digest() must both
+        # fall back to the default block size (64 for SHA-256).
+        expect = hmac.digest(b'a', b'b', 'sha256')
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', RuntimeWarning)
+            h = hmac.HMAC(b'a', b'b', digestmod=MockCrazyHash)
+            self.assertEqual(h.digest(), expect)
+            self.assertEqual(hmac.digest(b'a', b'b', MockCrazyHash), expect)
 
     @hashlib_helper.requires_hashdigest('sha256')
     def test_with_fallback(self):

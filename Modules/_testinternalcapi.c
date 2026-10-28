@@ -2625,6 +2625,9 @@ get_crossinterp_data(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     else {
         mode = PyUnicode_AsUTF8(modeobj);
+        if (mode == NULL) {
+            return NULL;
+        }
         if (strlen(mode) == 0) {
             mode = "xidata";
         }
@@ -3011,7 +3014,7 @@ EM_JS(int, emscripten_set_up_async_input_device_js, (void), {
         await sleep(5);
         return bufs[(idx ++) % 3];
     });
-    return !!WebAssembly.promising;
+    return !!Module._Py_EmscriptenStackSwitching;
 });
 
 static PyObject *

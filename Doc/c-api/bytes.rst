@@ -494,7 +494,7 @@ Variant using a pointer to compute the final size::
 
         char *str = PyBytesWriter_GetData(writer);
         memcpy(str, "abc", 3);
-        str += 1;
+        str += 3;
         return PyBytesWriter_FinishWithPointer(writer, str);
     }
 
@@ -543,7 +543,7 @@ Update ``_PyBytes_Resize()`` code
 
 Example of code using the soft deprecated ``_PyBytes_Resize()`` API::
 
-    void create_string(Py_ssize_t size)
+    PyObject* create_string(Py_ssize_t size)
     {
         PyObject *bytes = PyBytes_FromStringAndSize(NULL, size);
         if (bytes == NULL) {
@@ -561,7 +561,7 @@ Example of code using the soft deprecated ``_PyBytes_Resize()`` API::
 
 It can now be updated to::
 
-    void create_string(Py_ssize_t size)
+    PyObject* create_string(Py_ssize_t size)
     {
         PyBytesWriter *writer = PyBytesWriter_Create(size);
         if (writer == NULL) {

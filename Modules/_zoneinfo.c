@@ -1436,7 +1436,7 @@ dayrule_year_to_timestamp(TransitionRuleType *base_self, int year)
     // you would use a Julian day, e.g. J91 always refers to April 1st and J365
     // always refers to December 31st.
     uint16_t day = self->day;
-    if (self->julian && day >= 59 && is_leap_year(year)) {
+    if (self->julian && day >= 60 && is_leap_year(year)) {
         day += 1;
     }
 
