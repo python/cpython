@@ -1,0 +1,3 @@
+:mod:`zipfile` now reads Zstandard-compressed members that consist of
+several frames, instead of returning only the first frame and raising
+:exc:`~zipfile.BadZipFile` on the CRC check.

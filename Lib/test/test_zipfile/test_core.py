@@ -4935,6 +4935,70 @@ class ZstdBoundedDecompressTests(AbstractBoundedDecompressTests,
     compression = zipfile.ZIP_ZSTANDARD
 
 
+@requires_zstd()
+class ZstdMultipleFramesTests(unittest.TestCase):
+    # A zstd stream may consist of several concatenated frames (RFC 8878,
+    # section 3.1), as written by multi-threaded or streaming compressors.
+    part1 = b'first frame ' * 1000
+    part2 = b'second frame ' * 1000
+
+    def make_zip(self, member_data, content):
+        # Store member_data, then relabel the member as Zstandard-compressed
+        # with the CRC and size of the decompressed content.
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, 'w') as zf:
+            zf.writestr(zipfile.ZipInfo('a'), member_data)
+        data = bytearray(buf.getvalue())
+        crc = zipfile.crc32(content)
+        cd = data.rindex(zipfile.stringCentralDir)
+        # Offsets of the method, CRC-32 and uncompressed size fields in the
+        # local file header and in the central directory record.
+        for method, crc_pos, size_pos in ((8, 14, 22),
+                                          (cd + 10, cd + 16, cd + 24)):
+            struct.pack_into('<H', data, method, zipfile.ZIP_ZSTANDARD)
+            struct.pack_into('<L', data, crc_pos, crc)
+            struct.pack_into('<L', data, size_pos, len(content))
+        return io.BytesIO(data)
+
+    def test_read_multiple_frames(self):
+        from compression import zstd
+        content = self.part1 + self.part2
+        member_data = zstd.compress(self.part1) + zstd.compress(self.part2)
+        with zipfile.ZipFile(self.make_zip(member_data, content)) as zf:
+            self.assertIsNone(zf.testzip())
+            self.assertEqual(zf.read('a'), content)
+            for size in (1, 7, 1000, len(content) + 1):
+                with self.subTest(size=size), zf.open('a') as f:
+                    chunks = iter(lambda: f.read(size), b'')
+                    self.assertEqual(b''.join(chunks), content)
+
+    def test_read_many_small_frames(self):
+        from compression import zstd
+        parts = [bytes([i]) * i for i in range(1, 50)]
+        content = b''.join(parts)
+        member_data = b''.join(zstd.compress(p) for p in parts)
+        with zipfile.ZipFile(self.make_zip(member_data, content)) as zf:
+            self.assertEqual(zf.read('a'), content)
+
+    def test_garbage_between_frames(self):
+        from compression import zstd
+        content = self.part1 + self.part2
+        member_data = (zstd.compress(self.part1) + b'garbage!' +
+                       zstd.compress(self.part2))
+        with zipfile.ZipFile(self.make_zip(member_data, content)) as zf:
+            with self.assertRaises(zstd.ZstdError):
+                zf.read('a')
+
+    def test_truncated_last_frame(self):
+        from compression import zstd
+        content = self.part1 + self.part2
+        member_data = (zstd.compress(self.part1) +
+                       zstd.compress(self.part2)[:-4])
+        with zipfile.ZipFile(self.make_zip(member_data, content)) as zf:
+            with self.assertRaises(zipfile.BadZipFile):
+                zf.read('a')
+
+
 class MonkeypatchedDecompressorTests(unittest.TestCase):
     # Some third-party projects monkey-patch _get_decompressor() to add
     # additional compression schemes. This can break at any time as the

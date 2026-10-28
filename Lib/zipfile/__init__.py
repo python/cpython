@@ -1197,6 +1197,15 @@ class ZipExtFile(io.BufferedIOBase):
                 data += self._read2(n - len(data))
         elif self._compress_type == ZIP_STORED:
             data = self._read2(n)
+        elif (self._compress_type == ZIP_ZSTANDARD and
+              self._decompressor.eof):
+            # A zstd stream may consist of several frames (RFC 8878,
+            # section 3.1).  Decode the next one with a new decompressor;
+            # bytes that are not a valid frame raise ZstdError.
+            data = self._decompressor.unused_data
+            self._decompressor = _get_decompressor(ZIP_ZSTANDARD)
+            if not data:
+                data = self._read2(n)
         else:
             # bzip2/lzma/zstd: a bounded decompress() call may leave input
             # buffered inside the decompressor; drain that before reading more.
@@ -1233,9 +1242,16 @@ class ZipExtFile(io.BufferedIOBase):
                     remove=(3, 21),
                     stacklevel=4)
                 data = self._decompressor.decompress(data)
-            self._eof = (self._decompressor.eof or
-                         self._compress_left <= 0 and
-                         getattr(self._decompressor, "needs_input", True))
+            if self._compress_type == ZIP_ZSTANDARD:
+                # The end of a zstd frame is not the end of the member.
+                self._eof = (self._compress_left <= 0 and
+                             (self._decompressor.needs_input or
+                              self._decompressor.eof and
+                              not self._decompressor.unused_data))
+            else:
+                self._eof = (self._decompressor.eof or
+                             self._compress_left <= 0 and
+                             getattr(self._decompressor, "needs_input", True))
 
         data = data[:self._left]
         self._left -= len(data)
