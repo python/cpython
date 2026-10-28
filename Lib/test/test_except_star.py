@@ -705,6 +705,88 @@ class TestExceptStarRaise(ExceptStarTest):
         self.assertMetadataEqual(orig, exc.exceptions[0].__context__)
         self.assertMetadataEqual(orig, exc.exceptions[1].__context__)
 
+    def test_raise_base_exception(self):
+        class MyBaseException(BaseException):
+            pass
+
+        orig = ExceptionGroup("eg", [ValueError(1), OSError(2)])
+        try:
+            try:
+                raise orig
+            except* OSError:
+                raise MyBaseException(3)
+        except BaseException as e:
+            exc = e
+
+        self.assertIs(type(exc), BaseExceptionGroup)
+        self.assertEqual(exc.message, "")
+        self.assertEqual(len(exc.exceptions), 2)
+        self.assertExceptionIsLike(exc.exceptions[0], MyBaseException(3))
+        self.assertExceptionIsLike(
+            exc.exceptions[1], ExceptionGroup("eg", [ValueError(1)]))
+
+        self.assertExceptionIsLike(
+            exc.exceptions[0].__context__,
+            ExceptionGroup("eg", [OSError(2)]))
+
+        self.assertMetadataNotEqual(orig, exc)
+        self.assertMetadataEqual(orig, exc.exceptions[0].__context__)
+
+    def test_raise_handle_all_raise_one_base_exception(self):
+        class MyBaseException(BaseException):
+            pass
+
+        orig = ExceptionGroup("eg", [TypeError(1), ValueError(2)])
+        try:
+            try:
+                raise orig
+            except* (TypeError, ValueError):
+                raise MyBaseException(3)
+        except BaseException as e:
+            exc = e
+
+        self.assertExceptionIsLike(exc, MyBaseException(3))
+
+        self.assertExceptionIsLike(
+            exc.__context__,
+            ExceptionGroup("eg", [TypeError(1), ValueError(2)]))
+
+        self.assertMetadataNotEqual(orig, exc)
+        self.assertMetadataEqual(orig, exc.__context__)
+
+    def test_raise_handle_all_raise_base_exception_and_exception(self):
+        class MyBaseException(BaseException):
+            pass
+
+        orig = ExceptionGroup("eg", [TypeError(1), ValueError(2)])
+        try:
+            try:
+                raise orig
+            except* TypeError:
+                raise MyBaseException(3)
+            except* ValueError:
+                raise SyntaxError(4)
+        except BaseException as e:
+            exc = e
+
+        self.assertIs(type(exc), BaseExceptionGroup)
+        self.assertEqual(exc.message, "")
+        self.assertEqual(len(exc.exceptions), 2)
+        self.assertExceptionIsLike(exc.exceptions[0], MyBaseException(3))
+        self.assertExceptionIsLike(exc.exceptions[1], SyntaxError(4))
+
+        self.assertExceptionIsLike(
+            exc.exceptions[0].__context__,
+            ExceptionGroup("eg", [TypeError(1)]))
+
+        self.assertExceptionIsLike(
+            exc.exceptions[1].__context__,
+            ExceptionGroup("eg", [ValueError(2)]))
+
+        self.assertMetadataNotEqual(orig, exc)
+        self.assertMetadataEqual(orig, exc.exceptions[0].__context__)
+        self.assertMetadataEqual(orig, exc.exceptions[1].__context__)
+
 
 class TestExceptStarRaiseFrom(ExceptStarTest):
     def test_raise_named(self):

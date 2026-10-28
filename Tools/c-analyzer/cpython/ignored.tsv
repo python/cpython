@@ -48,8 +48,7 @@ Objects/unicodeobject.c	_init_global_state	initialized	-
 Modules/getbuildinfo.c	-	buildinfo	-
 Modules/getbuildinfo.c	-	initialized	-
 Python/getversion.c	-	initialized	-
-Python/getversion.c	-	static_version	-
-Python/getversion.c	-	heap_version	-
+Python/getversion.c	-	version	-
 
 ## public C-API - set during first init
 Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
@@ -315,6 +314,7 @@ Modules/cmathmodule.c	-	sinh_special_values	-
 Modules/cmathmodule.c	-	sqrt_special_values	-
 Modules/cmathmodule.c	-	tanh_special_values	-
 Modules/config.c	-	_PyImport_Inittab	-
+Modules/config_bootstrap.c	-	_PyImport_Inittab	-
 Modules/faulthandler.c	-	faulthandler_handlers	-
 Modules/getnameinfo.c	-	gni_afdl	-
 Modules/hmacmodule.c	-	py_hmac_static_hinfo	-

@@ -1,0 +1,1 @@
+Fix a descriptor leak in :func:`socket.fromfd` when the socket constructor rejects its arguments. The duplicated descriptor was never closed.
