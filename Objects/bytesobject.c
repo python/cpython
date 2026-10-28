@@ -2970,10 +2970,16 @@ bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
                         "errors without a string argument");
         return NULL;
     }
+    /* bytes is immutable and bytes.__bytes__() returns an exact bytes
+       unchanged, so skip the lookup and the call. */
+    else if (PyBytes_CheckExact(x)) {
+        bytes = Py_NewRef(x);
+    }
     /* We'd like to call PyObject_Bytes here, but we need to check for an
        integer argument before deferring to PyBytes_FromObject, something
-       PyObject_Bytes doesn't do. */
-    else if ((func = _PyObject_LookupSpecial(x, &_Py_ID(__bytes__))) != NULL) {
+       PyObject_Bytes doesn't do.  int is immutable and has no __bytes__. */
+    else if (!PyLong_CheckExact(x) &&
+             (func = _PyObject_LookupSpecial(x, &_Py_ID(__bytes__))) != NULL) {
         bytes = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
         if (bytes == NULL)
