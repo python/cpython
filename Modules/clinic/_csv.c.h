@@ -7,7 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
-#include "pycore_modsupport.h"    // _PyArg_NoPositional()
+#include "pycore_modsupport.h"    // _PyArg_NoPositionalStack()
 
 PyDoc_STRVAR(_csv_Dialect___reduce____doc__,
 "__reduce__($self, /)\n"
@@ -67,7 +67,7 @@ _csv_Dialect___replace__(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     PyObject *changes = NULL;
 
-    if (!_PyArg_NoPositional("__replace__", args)) {
+    if (!_PyArg_NoPositionalStack("__replace__", PyTuple_GET_SIZE(args))) {
         goto exit;
     }
     if (kwargs == NULL) {
@@ -465,4 +465,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7e3a92d524d88023 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b8df53e492d886fc input=a9049054013a1b77]*/

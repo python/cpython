@@ -136,10 +136,10 @@ reversed_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *seq;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("reversed", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("reversed", PyTuple_GET_SIZE(args), 1, 1)) {
+    if (!_PyArg_CheckPositional(_PyType_Name(_PyType_CAST(type)), PyTuple_GET_SIZE(args), 1, 1)) {
         goto exit;
     }
     seq = PyTuple_GET_ITEM(args, 0);
@@ -164,7 +164,7 @@ reversed_vectorcall(PyObject *type, PyObject *const *args,
     if (!_PyArg_NoKwnames("reversed", kwnames)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("reversed", nargs, 1, 1)) {
+    if (!_PyArg_CheckPositional(_PyType_Name(_PyType_CAST(type)), nargs, 1, 1)) {
         goto exit;
     }
     seq = args[0];
@@ -173,4 +173,4 @@ reversed_vectorcall(PyObject *type, PyObject *const *args,
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b97e8b89ca97ba64 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b9227ab338450a2d input=a9049054013a1b77]*/

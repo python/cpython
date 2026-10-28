@@ -396,11 +396,11 @@ lock_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyTypeObject *base_tp = clinic_state()->lock_type;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoPositional("lock", args)) {
+        !_PyArg_NoPositionalStack(_PyType_Name(_PyType_CAST(type)), PyTuple_GET_SIZE(args))) {
         goto exit;
     }
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("lock", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
     return_value = lock_new_impl(type);
@@ -678,11 +678,11 @@ rlock_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyTypeObject *base_tp = clinic_state()->rlock_type;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoPositional("RLock", args)) {
+        !_PyArg_NoPositionalStack(_PyType_Name(_PyType_CAST(type)), PyTuple_GET_SIZE(args))) {
         goto exit;
     }
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("RLock", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
     return_value = rlock_new_impl(type);
@@ -1272,4 +1272,4 @@ exit:
 #endif /* !defined(_THREAD_SET_NAME_METHODDEF) */
 #define _THREAD__THREADHANDLE_IDENT_GETSETDEF {"ident", (getter)_thread__ThreadHandle_ident_get, (setter)NULL, NULL},
 
-/*[clinic end generated code: output=3bfc76a318c6579d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ba04c5cc1126016c input=a9049054013a1b77]*/

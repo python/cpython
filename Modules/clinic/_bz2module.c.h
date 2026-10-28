@@ -90,10 +90,10 @@ _bz2_BZ2Compressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     int compresslevel = 9;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("BZ2Compressor", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("BZ2Compressor", PyTuple_GET_SIZE(args), 0, 1)) {
+    if (!_PyArg_CheckPositional(_PyType_Name(_PyType_CAST(type)), PyTuple_GET_SIZE(args), 0, 1)) {
         goto exit;
     }
     if (PyTuple_GET_SIZE(args) < 1) {
@@ -226,11 +226,11 @@ _bz2_BZ2Decompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyTypeObject *base_tp = clinic_state()->bz2_decompressor_type;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoPositional("BZ2Decompressor", args)) {
+        !_PyArg_NoPositionalStack(_PyType_Name(_PyType_CAST(type)), PyTuple_GET_SIZE(args))) {
         goto exit;
     }
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("BZ2Decompressor", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
     return_value = _bz2_BZ2Decompressor_impl(type);
@@ -238,4 +238,4 @@ _bz2_BZ2Decompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1dce5396d592bad7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d1023f5202abb559 input=a9049054013a1b77]*/

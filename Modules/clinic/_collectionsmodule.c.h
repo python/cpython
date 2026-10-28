@@ -683,10 +683,10 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *doc;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("_tuplegetter", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("_tuplegetter", PyTuple_GET_SIZE(args), 2, 2)) {
+    if (!_PyArg_CheckPositional(_PyType_Name(_PyType_CAST(type)), PyTuple_GET_SIZE(args), 2, 2)) {
         goto exit;
     }
     {
@@ -707,4 +707,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=de400069cf6f11a4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d4adff4f2e5225fa input=a9049054013a1b77]*/

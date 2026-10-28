@@ -1149,11 +1149,11 @@ select_kqueue(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyTypeObject *base_tp = _selectstate_by_type(type)->kqueue_queue_Type;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoPositional("kqueue", args)) {
+        !_PyArg_NoPositionalStack(_PyType_Name(_PyType_CAST(type)), PyTuple_GET_SIZE(args))) {
         goto exit;
     }
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("kqueue", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
     return_value = select_kqueue_impl(type);
@@ -1400,4 +1400,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=a1ac666294fd14bd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e1883916be3e7127 input=a9049054013a1b77]*/

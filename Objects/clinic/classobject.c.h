@@ -39,10 +39,10 @@ method_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *instance;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("method", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("method", PyTuple_GET_SIZE(args), 2, 2)) {
+    if (!_PyArg_CheckPositional(_PyType_Name(_PyType_CAST(type)), PyTuple_GET_SIZE(args), 2, 2)) {
         goto exit;
     }
     function = PyTuple_GET_ITEM(args, 0);
@@ -70,10 +70,10 @@ instancemethod_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *function;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("instancemethod", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("instancemethod", PyTuple_GET_SIZE(args), 1, 1)) {
+    if (!_PyArg_CheckPositional(_PyType_Name(_PyType_CAST(type)), PyTuple_GET_SIZE(args), 1, 1)) {
         goto exit;
     }
     function = PyTuple_GET_ITEM(args, 0);
@@ -82,4 +82,4 @@ instancemethod_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ab546abf90aac94e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3a9a7cb0e1c14f7f input=a9049054013a1b77]*/

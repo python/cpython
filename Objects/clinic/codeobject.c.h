@@ -51,10 +51,10 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *cellvars = NULL;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("code", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("code", PyTuple_GET_SIZE(args), 16, 18)) {
+    if (!_PyArg_CheckPositional(_PyType_Name(_PyType_CAST(type)), PyTuple_GET_SIZE(args), 16, 18)) {
         goto exit;
     }
     argcount = PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
@@ -471,4 +471,4 @@ code__varname_from_oparg(PyObject *self, PyObject *const *args, Py_ssize_t nargs
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5c22e29e430401b4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=44dbdb061a019754 input=a9049054013a1b77]*/

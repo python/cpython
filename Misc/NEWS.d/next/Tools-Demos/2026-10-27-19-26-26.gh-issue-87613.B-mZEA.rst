@@ -1,0 +1,2 @@
+Generate subclass names in Argument Clinic ``__new__`` error messages rather
+than hardcoding the base type.

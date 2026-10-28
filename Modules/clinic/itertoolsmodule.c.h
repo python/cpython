@@ -125,10 +125,10 @@ pairwise_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *iterable;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("pairwise", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("pairwise", PyTuple_GET_SIZE(args), 1, 1)) {
+    if (!_PyArg_CheckPositional(_PyType_Name(_PyType_CAST(type)), PyTuple_GET_SIZE(args), 1, 1)) {
         goto exit;
     }
     iterable = PyTuple_GET_ITEM(args, 0);
@@ -222,10 +222,10 @@ itertools__grouper(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *tgtkey;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("_grouper", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("_grouper", PyTuple_GET_SIZE(args), 2, 2)) {
+    if (!_PyArg_CheckPositional(_PyType_Name(_PyType_CAST(type)), PyTuple_GET_SIZE(args), 2, 2)) {
         goto exit;
     }
     if (!PyObject_TypeCheck(PyTuple_GET_ITEM(args, 0), clinic_state_by_cls()->groupby_type)) {
@@ -260,10 +260,10 @@ itertools_teedataobject(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *next;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("teedataobject", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("teedataobject", PyTuple_GET_SIZE(args), 3, 3)) {
+    if (!_PyArg_CheckPositional(_PyType_Name(_PyType_CAST(type)), PyTuple_GET_SIZE(args), 3, 3)) {
         goto exit;
     }
     it = PyTuple_GET_ITEM(args, 0);
@@ -296,10 +296,10 @@ itertools__tee(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *iterable;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("_tee", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("_tee", PyTuple_GET_SIZE(args), 1, 1)) {
+    if (!_PyArg_CheckPositional(_PyType_Name(_PyType_CAST(type)), PyTuple_GET_SIZE(args), 1, 1)) {
         goto exit;
     }
     iterable = PyTuple_GET_ITEM(args, 0);
@@ -376,10 +376,10 @@ itertools_cycle(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *iterable;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("cycle", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("cycle", PyTuple_GET_SIZE(args), 1, 1)) {
+    if (!_PyArg_CheckPositional(_PyType_Name(_PyType_CAST(type)), PyTuple_GET_SIZE(args), 1, 1)) {
         goto exit;
     }
     iterable = PyTuple_GET_ITEM(args, 0);
@@ -409,10 +409,10 @@ itertools_dropwhile(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *seq;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("dropwhile", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("dropwhile", PyTuple_GET_SIZE(args), 2, 2)) {
+    if (!_PyArg_CheckPositional(_PyType_Name(_PyType_CAST(type)), PyTuple_GET_SIZE(args), 2, 2)) {
         goto exit;
     }
     func = PyTuple_GET_ITEM(args, 0);
@@ -441,10 +441,10 @@ itertools_takewhile(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *seq;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("takewhile", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("takewhile", PyTuple_GET_SIZE(args), 2, 2)) {
+    if (!_PyArg_CheckPositional(_PyType_Name(_PyType_CAST(type)), PyTuple_GET_SIZE(args), 2, 2)) {
         goto exit;
     }
     func = PyTuple_GET_ITEM(args, 0);
@@ -473,10 +473,10 @@ itertools_starmap(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *seq;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("starmap", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("starmap", PyTuple_GET_SIZE(args), 2, 2)) {
+    if (!_PyArg_CheckPositional(_PyType_Name(_PyType_CAST(type)), PyTuple_GET_SIZE(args), 2, 2)) {
         goto exit;
     }
     func = PyTuple_GET_ITEM(args, 0);
@@ -981,10 +981,10 @@ itertools_filterfalse(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *seq;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("filterfalse", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("filterfalse", PyTuple_GET_SIZE(args), 2, 2)) {
+    if (!_PyArg_CheckPositional(_PyType_Name(_PyType_CAST(type)), PyTuple_GET_SIZE(args), 2, 2)) {
         goto exit;
     }
     func = PyTuple_GET_ITEM(args, 0);
@@ -1086,4 +1086,4 @@ zip_longest_next(PyObject *self)
 
     return return_value;
 }
-/*[clinic end generated code: output=4b55088ac24582b7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c60b17786144ab31 input=a9049054013a1b77]*/

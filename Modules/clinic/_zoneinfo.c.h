@@ -422,7 +422,7 @@ zoneinfo_ZoneInfo___init_subclass__(PyObject *type, PyObject *args, PyObject *kw
     PyObject *return_value = NULL;
     PyObject *__clinic_kwargs = NULL;
 
-    if (!_PyArg_NoPositional("__init_subclass__", args)) {
+    if (!_PyArg_NoPositionalStack("__init_subclass__", PyTuple_GET_SIZE(args))) {
         goto exit;
     }
     if (kwargs == NULL) {
@@ -442,4 +442,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=d7aeeec4b950fc35 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4b98cad1ebcd1b85 input=a9049054013a1b77]*/

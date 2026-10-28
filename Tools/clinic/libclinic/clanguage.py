@@ -391,6 +391,7 @@ class CLanguage(Language):
         full_name = f.full_name
         template_dict = {'full_name': full_name}
         template_dict['name'] = f.displayname
+        template_dict['error_name'] = f'"{f.displayname}"'
         if f.kind in ACCESSORS:
             # The accessors of the same attribute are rendered into a single
             # PyGetSetDef entry, which is identified by the Python name.

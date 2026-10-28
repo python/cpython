@@ -974,10 +974,10 @@ _ssl__SSLContext(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     int proto_version;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("_SSLContext", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("_SSLContext", PyTuple_GET_SIZE(args), 1, 1)) {
+    if (!_PyArg_CheckPositional(_PyType_Name(_PyType_CAST(type)), PyTuple_GET_SIZE(args), 1, 1)) {
         goto exit;
     }
     proto_version = PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
@@ -2619,11 +2619,11 @@ _ssl_MemoryBIO(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyTypeObject *base_tp = get_state_type(type)->PySSLMemoryBIO_Type;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoPositional("MemoryBIO", args)) {
+        !_PyArg_NoPositionalStack(_PyType_Name(_PyType_CAST(type)), PyTuple_GET_SIZE(args))) {
         goto exit;
     }
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("MemoryBIO", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
     Py_BEGIN_CRITICAL_SECTION(type);
@@ -3373,4 +3373,4 @@ exit:
 
 #define _SSL_SSLSESSION_HAS_TICKET_GETSETDEF {"has_ticket", (getter)_ssl_SSLSession_has_ticket_get, (setter)NULL, _ssl_SSLSession_has_ticket__doc__},
 
-/*[clinic end generated code: output=fb3476aa2f825376 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c6dc4754db666467 input=a9049054013a1b77]*/

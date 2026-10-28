@@ -224,10 +224,10 @@ float_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *x = NULL;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("float", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("float", PyTuple_GET_SIZE(args), 0, 1)) {
+    if (!_PyArg_CheckPositional(_PyType_Name(_PyType_CAST(type)), PyTuple_GET_SIZE(args), 0, 1)) {
         goto exit;
     }
     if (PyTuple_GET_SIZE(args) < 1) {
@@ -256,7 +256,7 @@ float_vectorcall(PyObject *type, PyObject *const *args,
     if (!_PyArg_NoKwnames("float", kwnames)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("float", nargs, 0, 1)) {
+    if (!_PyArg_CheckPositional(_PyType_Name(_PyType_CAST(type)), nargs, 0, 1)) {
         goto exit;
     }
     if (nargs < 1) {
@@ -378,4 +378,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d1198594a76a4638 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c5511b44a220dbd0 input=a9049054013a1b77]*/

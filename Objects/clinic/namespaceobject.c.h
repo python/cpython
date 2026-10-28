@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_modsupport.h"    // _PyArg_NoPositional()
+#include "pycore_modsupport.h"    // _PyArg_NoPositionalStack()
 
 PyDoc_STRVAR(namespace___replace____doc__,
 "__replace__($self, /, **changes)\n"
@@ -22,7 +22,7 @@ namespace___replace__(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     PyObject *changes = NULL;
 
-    if (!_PyArg_NoPositional("__replace__", args)) {
+    if (!_PyArg_NoPositionalStack("__replace__", PyTuple_GET_SIZE(args))) {
         goto exit;
     }
     if (kwargs == NULL) {
@@ -42,4 +42,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=67b5fcb6a6aee559 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=400d63b6be3c43d7 input=a9049054013a1b77]*/

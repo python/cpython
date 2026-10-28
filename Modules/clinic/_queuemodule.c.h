@@ -25,11 +25,11 @@ simplequeue_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyTypeObject *base_tp = simplequeue_get_state_by_type(type)->SimpleQueueType;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoPositional("SimpleQueue", args)) {
+        !_PyArg_NoPositionalStack(_PyType_Name(_PyType_CAST(type)), PyTuple_GET_SIZE(args))) {
         goto exit;
     }
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("SimpleQueue", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
     return_value = simplequeue_new_impl(type);
@@ -390,4 +390,4 @@ _queue_SimpleQueue___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8219fe2f2ed5f068 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=08c05ea087ebf9fc input=a9049054013a1b77]*/

@@ -952,7 +952,7 @@ class ParseArgsCodeGen:
         self.codegen.add_include('pycore_modsupport.h',
                                  '_PyArg_CheckPositional()')
         return [libclinic.normalize_snippet(f"""
-            if (!_PyArg_CheckPositional("{{name}}", {nargs}, {self.min_pos}, {max_args})) {{{{
+            if (!_PyArg_CheckPositional({{error_name}}, {nargs}, {self.min_pos}, {max_args})) {{{{
                 goto exit;
             }}}}
             """, indent=indent)]
@@ -1119,9 +1119,9 @@ class ParseArgsCodeGen:
         parser_code = []
         if self.varpos is None and self.min_pos == self.max_pos == 0:
             self.codegen.add_include('pycore_modsupport.h',
-                                     '_PyArg_NoPositional()')
+                                     '_PyArg_NoPositionalStack()')
             parser_code.append(libclinic.normalize_snippet("""
-                if (!_PyArg_NoPositional("{name}", args)) {{
+                if (!_PyArg_NoPositionalStack({error_name}, PyTuple_GET_SIZE(args))) {{
                     goto exit;
                 }}
                 """, indent=4))
@@ -1492,15 +1492,15 @@ class ParseArgsCodeGen:
             self.codegen.add_include('pycore_modsupport.h',
                                      '_PyArg_NoKeywords()')
             fields.insert(0, libclinic.normalize_snippet("""
-                if ({self_type_check}!_PyArg_NoKeywords("{name}", kwargs)) {{
+                if ({self_type_check}!_PyArg_NoKeywords({error_name}, kwargs)) {{
                     goto exit;
                 }}
                 """, indent=4))
             if not parses_positional:
                 self.codegen.add_include('pycore_modsupport.h',
-                                         '_PyArg_NoPositional()')
+                                         '_PyArg_NoPositionalStack()')
                 fields.insert(0, libclinic.normalize_snippet("""
-                    if ({self_type_check}!_PyArg_NoPositional("{name}", args)) {{
+                    if ({self_type_check}!_PyArg_NoPositionalStack({error_name}, PyTuple_GET_SIZE(args))) {{
                         goto exit;
                     }}
                     """, indent=4))

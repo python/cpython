@@ -4968,7 +4968,7 @@ Test___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 
     if ((Py_IS_TYPE(self, base_tp) ||
          Py_TYPE(self)->tp_new == base_tp->tp_new) &&
-        !_PyArg_NoPositional("Test", args)) {
+        !_PyArg_NoPositionalStack("Test", PyTuple_GET_SIZE(args))) {
         goto exit;
     }
     if ((Py_IS_TYPE(self, base_tp) ||
@@ -5017,7 +5017,7 @@ exit:
 
 static int
 Test___init___impl(TestObj *self)
-/*[clinic end generated code: output=ce04b9d7beacd894 input=645fe693f6c6b9b6]*/
+/*[clinic end generated code: output=62017ea6333c9634 input=645fe693f6c6b9b6]*/
 
 
 /*[clinic input]
@@ -5042,11 +5042,11 @@ Test(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyTypeObject *base_tp = TestType;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoPositional("Test", args)) {
+        !_PyArg_NoPositionalStack(_PyType_Name(_PyType_CAST(type)), PyTuple_GET_SIZE(args))) {
         goto exit;
     }
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("Test", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
     return_value = Test_impl(type);
@@ -5057,7 +5057,7 @@ exit:
 
 static PyObject *
 Test_impl(PyTypeObject *type)
-/*[clinic end generated code: output=68a117adc057940f input=6fe98a19f097907f]*/
+/*[clinic end generated code: output=deab914e0af675ba input=6fe98a19f097907f]*/
 
 
 /*[clinic input]
@@ -5248,7 +5248,7 @@ Test(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *__clinic_args = NULL;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("Test", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
     __clinic_args = Py_NewRef(args);
@@ -5263,7 +5263,7 @@ exit:
 
 static PyObject *
 Test_impl(PyTypeObject *type, PyObject *args)
-/*[clinic end generated code: output=e6fba0c8951882fd input=8ce30adb836aeacb]*/
+/*[clinic end generated code: output=9e97b89fb3f12f76 input=8ce30adb836aeacb]*/
 
 
 /*[clinic input]

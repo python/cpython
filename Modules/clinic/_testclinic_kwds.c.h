@@ -30,7 +30,7 @@ lone_kwds(PyObject *module, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     PyObject *__clinic_kwds = NULL;
 
-    if (!_PyArg_NoPositional("lone_kwds", args)) {
+    if (!_PyArg_NoPositionalStack("lone_kwds", PyTuple_GET_SIZE(args))) {
         goto exit;
     }
     if (kwargs == NULL) {
@@ -230,4 +230,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=27a7ba9440b9a884 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d44b2cff182e5203 input=a9049054013a1b77]*/

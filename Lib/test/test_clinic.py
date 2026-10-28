@@ -5806,6 +5806,17 @@ class VectorcallFunctionalTest(unittest.TestCase):
         self.assertIsInstance(obj, Sub)
         self.assertIsInstance(obj, ac_tester.VcNewBase)
 
+    def test_new_errors_name_subclass(self):
+        # tp_new is inherited, so its errors name the subclass; the
+        # vectorcall only sees the base type.
+        Sub = type('Sub', (float,), {})
+        with self.assertRaisesRegex(TypeError, r'^float expected at most 1'):
+            float(1, 2)
+        with self.assertRaisesRegex(TypeError, r'^Sub expected at most 1'):
+            Sub(1, 2)
+        with self.assertRaisesRegex(TypeError, r'^Sub\(\) takes no keyword'):
+            Sub(x=1)
+
     def test_vc_kwonly(self):
         # keyword-only 'b': vectorcall has no kwnames==NULL fast path,
         # so every call goes through the helper.

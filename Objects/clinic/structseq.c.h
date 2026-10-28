@@ -84,7 +84,7 @@ structseq___replace__(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     PyObject *changes = NULL;
 
-    if (!_PyArg_NoPositional("__replace__", args)) {
+    if (!_PyArg_NoPositionalStack("__replace__", PyTuple_GET_SIZE(args))) {
         goto exit;
     }
     if (kwargs == NULL) {
@@ -104,4 +104,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=18fcf88e5df26774 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e9b5cfc2dde26993 input=a9049054013a1b77]*/

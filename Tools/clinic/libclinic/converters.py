@@ -1314,6 +1314,9 @@ class self_converter(CConverter):
                 type_check = (
                     '({0} == base_tp || {0}->tp_init == base_tp->tp_init)'
                  ).format(self.name)
+                # tp_new is inherited: name the type actually called.
+                template_dict['error_name'] = (
+                    f'_PyType_Name(_PyType_CAST({self.name}))')
             else:
                 type_check = ('(Py_IS_TYPE({0}, base_tp) ||\n        '
                               ' Py_TYPE({0})->tp_new == base_tp->tp_new)'

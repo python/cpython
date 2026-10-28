@@ -17,10 +17,10 @@ pysqlite_row_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *data;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("Row", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("Row", PyTuple_GET_SIZE(args), 2, 2)) {
+    if (!_PyArg_CheckPositional(_PyType_Name(_PyType_CAST(type)), PyTuple_GET_SIZE(args), 2, 2)) {
         goto exit;
     }
     if (!PyObject_TypeCheck(PyTuple_GET_ITEM(args, 0), clinic_state()->CursorType)) {
@@ -56,4 +56,4 @@ pysqlite_row_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_row_keys_impl((pysqlite_Row *)self);
 }
-/*[clinic end generated code: output=6c1acbb48f386468 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=28333de748eac5f0 input=a9049054013a1b77]*/

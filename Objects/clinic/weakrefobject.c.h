@@ -43,10 +43,10 @@ weakref_ref_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *callback = NULL;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("ReferenceType", kwargs)) {
+        !_PyArg_NoKeywords(_PyType_Name(_PyType_CAST(type)), kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("ReferenceType", PyTuple_GET_SIZE(args), 1, 2)) {
+    if (!_PyArg_CheckPositional(_PyType_Name(_PyType_CAST(type)), PyTuple_GET_SIZE(args), 1, 2)) {
         goto exit;
     }
     object = PyTuple_GET_ITEM(args, 0);
@@ -77,7 +77,7 @@ weakref_ref_vectorcall(PyObject *type, PyObject *const *args,
     if (!_PyArg_NoKwnames("ReferenceType", kwnames)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("ReferenceType", nargs, 1, 2)) {
+    if (!_PyArg_CheckPositional(_PyType_Name(_PyType_CAST(type)), nargs, 1, 2)) {
         goto exit;
     }
     object = args[0];
@@ -123,4 +123,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=774282aa1017bab5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f783886de559e8b3 input=a9049054013a1b77]*/
