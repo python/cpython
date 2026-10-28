@@ -1,2 +1,0 @@
-Fix missing ``PyRefTracer_DESTROY`` events for trashcan deferred objects.
-Patch by Donghee Na.

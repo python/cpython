@@ -86,6 +86,13 @@ rst_epilog = f"""
 .. |python_x_dot_y_literal| replace:: ``python{version}``
 .. |python_x_dot_y_t_literal| replace:: ``python{version}t``
 .. |python_x_dot_y_t_literal_config| replace:: ``python{version}t-config``
+.. |python_x_dot_y_exe_literal| replace:: ``python{version}.exe``
+.. |python_x_dot_y_t_exe_literal| replace:: ``python{version}t.exe``
+.. |python_xy_dll_literal| replace:: ``python{v.major}{v.minor}.dll``
+.. |py_v_x_dot_y_literal| replace:: ``py -V:{version}``
+.. |py_v_x_dot_y_t_literal| replace:: ``py -V:{version}t``
+.. |x_dot_y_literal| replace:: ``{version}``
+.. |x_dot_y_64_literal| replace:: ``{version}-64``
 .. |x_dot_y_b2_literal| replace:: ``{version}.0b2``
 .. |applications_python_version_literal| replace:: ``/Applications/Python {version}/``
 .. |usr_local_bin_python_x_dot_y_literal| replace:: ``/usr/local/bin/python{version}``
@@ -180,6 +187,26 @@ nitpick_ignore = [
     ('c:type', 'unsigned __int64'),
     ('c:type', 'double'),
     ('c:type', '_Float16'),
+    # Expat types
+    ('c:type', 'XML_Bool'),
+    ('c:type', 'XML_Char'),
+    ('c:type', 'XML_CharacterDataHandler'),
+    ('c:type', 'XML_CommentHandler'),
+    ('c:type', 'XML_DefaultHandler'),
+    ('c:type', 'XML_Encoding'),
+    ('c:type', 'XML_EndElementHandler'),
+    ('c:type', 'XML_EndNamespaceDeclHandler'),
+    ('c:type', 'XML_Error'),
+    ('c:type', 'XML_LChar'),
+    ('c:type', 'XML_Memory_Handling_Suite'),
+    ('c:type', 'XML_Parser'),
+    ('c:type', 'XML_ProcessingInstructionHandler'),
+    ('c:type', 'XML_Size'),
+    ('c:type', 'XML_StartDoctypeDeclHandler'),
+    ('c:type', 'XML_StartElementHandler'),
+    ('c:type', 'XML_StartNamespaceDeclHandler'),
+    ('c:type', 'XML_Status'),
+    ('c:type', 'XML_UnknownEncodingHandler'),
     # Standard C structures
     ('c:struct', 'in6_addr'),
     ('c:struct', 'in_addr'),
@@ -194,6 +221,10 @@ nitpick_ignore = [
     ('c:macro', 'LONG_MIN'),
     # Standard C variables
     ('c:data', 'errno'),
+    # Platform-specific socket constants documented collectively as SO_*.
+    ('py:const', 'socket.SO_EXCLUSIVEADDRUSE'),
+    ('py:const', 'socket.SO_REUSEADDR'),
+    ('py:const', 'socket.SO_REUSEPORT'),
     # Standard environment variables
     ('envvar', 'BROWSER'),
     ('envvar', 'COLUMNS'),
@@ -288,7 +319,7 @@ if any('htmlhelp' in arg for arg in sys.argv):
     print("It may be removed in the future\n")
 
 # Short title used e.g. for <title> HTML tags.
-html_short_title = f'{release} Documentation'
+html_short_title = f'{release} documentation'
 
 # Deployment preview information
 # (See .readthedocs.yml and https://docs.readthedocs.io/en/stable/reference/environment-variables.html)
@@ -469,6 +500,10 @@ epub_exclude_files = (
 # https://github.com/sphinx-doc/sphinx/issues/12359
 epub_use_index = False
 
+# The default depth of 3 lists over a thousand entries, which makes the
+# table of contents hard to navigate in e-book readers
+epub_tocdepth = 2
+
 # translation tag
 # ---------------
 
@@ -635,4 +670,43 @@ rediraffe_redirects = {
     "library/exceptions.rst": "builtins/exceptions.rst",
     "library/threadsafety.rst": "builtins/threadsafety.rst",
     "library/time-complexity.rst": "builtins/time-complexity.rst",
+    # Renamed to tkinter.dialogs.rst in GH-151656
+    "library/dialog.rst": "library/tkinter.dialogs.rst",
 }
+
+# Refuse to run the doctest builder under a mismatched Python
+# -----------------------------------------------------------
+
+
+def _check_doctest_interpreter(app):
+    # The doctests are executed by the interpreter running Sphinx,
+    # so refuse to run them if its version doesn't match the source tree.
+    if app.builder.name != "doctest":
+        return
+
+    running_version = f"{sys.version_info.major}.{sys.version_info.minor}"
+    if running_version != version:
+        from sphinx.util import logging as sphinx_logging
+
+        logger = sphinx_logging.getLogger(__name__)
+        logger.error(
+            "The doctests are executed by the Python running Sphinx, "
+            "which is Python %s, however this source tree is Python %s, "
+            "so they would test Python %s rather than the code "
+            "documented here.\n"
+            "Recreate the venv with a matching interpreter, for example: "
+            "'make clean-venv && make venv PYTHON=../python'.",
+            running_version,
+            version,
+            running_version,
+        )
+        raise SystemExit(1)
+
+
+def setup(app):
+    app.connect("builder-inited", _check_doctest_interpreter)
+    return {
+        "version": "1.0",
+        "parallel_read_safe": True,
+        "parallel_write_safe": True,
+    }

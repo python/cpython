@@ -5,7 +5,6 @@ BytesIO -- for bytes
 
 import unittest
 from test import support
-from test.support import import_helper
 
 import gc
 import io
@@ -757,18 +756,14 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
     @support.nomemtest
     def test_memory_error(self):
         # gh-157242: io.BytesIO() must not close the file on MemoryError
-        _testcapi = import_helper.import_module('_testcapi')
 
         # write()
         stream = self.ioclass()
         stream.write(self.buftype('abc'))
+        data = self.buftype('def')
         with self.assertRaises(MemoryError):
-            try:
-                data = self.buftype('def')
-                _testcapi.set_nomemory(0)
+            with support.inject_memory_error_cm():
                 stream.write(data)
-            finally:
-                _testcapi.remove_mem_hooks()
         stream.write(self.buftype('123'))
         self.assertEqual(stream.getvalue(), self.buftype('abc123'))
 
@@ -777,11 +772,8 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         stream = self.ioclass()
         stream.write(data)
         with self.assertRaises(MemoryError):
-            try:
-                _testcapi.set_nomemory(0)
+            with support.inject_memory_error_cm():
                 stream.truncate(5)
-            finally:
-                _testcapi.remove_mem_hooks()
         self.assertEqual(stream.getvalue(), data)
 
 
@@ -970,6 +962,34 @@ class CBytesIOTest(PyBytesIOTest):
     ioclass = io.BytesIO
     UnsupportedOperation = io.UnsupportedOperation
 
+    def test_truncate_size_changes_stream(self):
+        class Size:
+            def __init__(self, action):
+                self.action = action
+
+            def __index__(self):
+                self.result = self.action()
+                return 0
+
+        stream = self.ioclass(b'abc')
+        with self.assertRaises(ValueError):
+            stream.truncate(Size(stream.close))
+
+        with self.ioclass(b'abc') as stream:
+            size = Size(stream.getbuffer)
+            try:
+                with self.assertRaises(BufferError):
+                    stream.truncate(size)
+                self.assertEqual(stream.getvalue(), b'abc')
+            finally:
+                size.result.release()
+
+    def test_readinto_overlapping_buffer(self):
+        with self.ioclass(b'abcd') as stream:
+            with stream.getbuffer()[1:] as target:
+                self.assertEqual(stream.readinto(target), 3)
+            self.assertEqual(stream.getvalue(), b'aabc')
+
     def test_getstate(self):
         memio = self.ioclass()
         state = memio.__getstate__()
@@ -1056,6 +1076,52 @@ class CBytesIOTest(PyBytesIOTest):
         memio = self.ioclass(ba)
         self.assertEqual(sys.getrefcount(ba), old_rc)
 
+    def test_cow_hashed(self):
+        # A buffer which was exposed to Python code and hashed must not be
+        # modified in place, even if BytesIO holds the only reference to it:
+        # it would keep the cached hash of its old contents.
+        def write(memio):
+            memio.seek(0)
+            memio.write(b"efgh")
+        def getbuffer(memio):
+            with memio.getbuffer() as view:
+                view[:] = b"efgh"
+        def truncate(memio):
+            memio.truncate(2)
+            memio.seek(0)
+            memio.write(b"efgh")
+        def getvalue(memio):
+            return memio.getvalue()
+        def read(memio):
+            memio.seek(0)
+            return memio.read()
+        def peek(memio):
+            memio.seek(0)
+            return memio.peek(4)
+        for mutation in write, getbuffer, truncate:
+            for expose in getvalue, read, peek:
+                with self.subTest(mutation=mutation.__name__,
+                                  expose=expose.__name__):
+                    memio = self.ioclass()
+                    memio.write(b"abcd")
+                    # Shrink the overallocated buffer to the exact size,
+                    # so read() and peek() can return it without copying.
+                    memio.getvalue()
+                    hash(expose(memio))
+                    mutation(memio)
+                    self.assertEqual(memio.getvalue(), b"efgh")
+                    self.assertEqual(hash(memio.getvalue()), hash(b"efgh"))
+                    self.assertIn(memio.getvalue(), {b"efgh"})
+
+            with self.subTest(mutation=mutation.__name__, expose="__init__"):
+                initial = bytes(bytearray(b"abcd"))
+                hash(initial)
+                memio = self.ioclass(initial)
+                del initial
+                mutation(memio)
+                self.assertEqual(memio.getvalue(), b"efgh")
+                self.assertEqual(hash(memio.getvalue()), hash(b"efgh"))
+
     def test_write_with_export(self):
         memio = self.ioclass(b"abcd")
         memio.seek(2)
@@ -1071,6 +1137,18 @@ class CBytesIOTest(PyBytesIOTest):
 class CStringIOTest(PyStringIOTest):
     ioclass = io.StringIO
     UnsupportedOperation = io.UnsupportedOperation
+
+    def test_truncate_size_closes_stream(self):
+        stream = self.ioclass()
+        stream.write("abc")
+
+        class Size:
+            def __index__(self):
+                stream.close()
+                return 0
+
+        with self.assertRaises(ValueError):
+            stream.truncate(Size())
 
     # XXX: For the Python version of io.StringIO, this is highly
     # dependent on the encoding used for the underlying buffer.
@@ -1126,7 +1204,11 @@ class CStringIOTest(PyStringIOTest):
         s = MyStr("correct")
         memio = self.ioclass()
         memio.write(s)
-        self.assertEqual(memio.getvalue(), "correct")
+        value = memio.getvalue()
+        self.assertEqual(value, "correct")
+        self.assertIs(type(value), str)
+        memio.write("!")
+        self.assertEqual(memio.getvalue(), "correct!")
 
         # Also test the fast path where pos == string_size (STATE_ACCUMULATING)
         memio2 = self.ioclass()

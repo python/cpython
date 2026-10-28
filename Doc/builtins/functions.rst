@@ -110,7 +110,7 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionadded:: 3.10
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *stop_value* and *stop_exception* parameters.
 
 .. function:: all(iterable, /)
@@ -354,6 +354,10 @@ are always available.  They are listed here in alphabetical order.
    consists of a single expression, or ``'single'`` if it consists of a single
    interactive statement (in the latter case, expression statements that
    evaluate to something other than ``None`` will be printed).
+   It can also be ``'func_type'`` if *source* consists of a
+   function type signature, for example ``(int) -> str``; see
+   :func:`ast.parse` for more information. This mode requires passing
+   :data:`ast.PyCF_ONLY_AST` in *flags*.
 
    The optional arguments *flags* and *dont_inherit* control which
    :ref:`compiler options <ast-compiler-flags>` should be activated
@@ -384,8 +388,14 @@ are always available.  They are listed here in alphabetical order.
    It is needed to unambiguous :ref:`filter <warning-filter>` syntax warnings
    by module name.
 
-   This function raises :exc:`SyntaxError` or :exc:`ValueError` if the compiled
-   source is invalid.
+   This function raises :exc:`SyntaxError` if the compiled source is invalid,
+   including a *source* containing a null character or that cannot be decoded;
+   :exc:`ValueError` if *mode* or *flags* is invalid,
+   or if a string *source* contains surrogate characters;
+   :exc:`MemoryError` or :exc:`RecursionError` if *source* is too complex
+   to parse or compile,
+   for example an expression with many thousands of nested operators;
+   and :exc:`OverflowError` if *source* is too large.
 
    If you want to parse Python code into its AST representation, see
    :func:`ast.parse`.
@@ -417,11 +427,18 @@ are always available.  They are listed here in alphabetical order.
       Previously, :exc:`TypeError` was raised when null bytes were encountered
       in *source*.
 
-   .. versionadded:: 3.8
+   .. versionchanged:: 3.8
       ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` can now be passed in flags to enable
       support for top-level ``await``, ``async for``, and ``async with``.
 
-   .. versionadded:: 3.15
+   .. versionchanged:: 3.8
+      Added support for ``mode='func_type'``.
+
+   .. versionchanged:: 3.12
+      :exc:`SyntaxError` is raised instead of :exc:`ValueError` when null bytes
+      are encountered in *source*.
+
+   .. versionchanged:: 3.15
       Added the *module* parameter.
 
 
@@ -1231,7 +1248,7 @@ are always available.  They are listed here in alphabetical order.
       for item in iter(input_queue.get_nowait, stop_exception=queue.Empty):
           process_item(item)
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *stop_exception* parameter
       and allowed passing *stop_value* by keyword.
 

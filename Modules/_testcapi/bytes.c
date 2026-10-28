@@ -11,14 +11,19 @@
 
 /* Test _PyBytes_Resize() */
 static PyObject *
-bytes_resize(PyObject *Py_UNUSED(module), PyObject *args)
+bytes_resize(PyObject *Py_UNUSED(module), PyObject *args, PyObject *kwargs)
 {
+    static char *kwlist[] = {"obj", "newsize", "new", "compute_hash", NULL};
     PyObject *obj;
     Py_ssize_t newsize;
     int new;
+    int compute_hash = 0;
 
-    if (!PyArg_ParseTuple(args, "Onp", &obj, &newsize, &new))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                                     "Onp|p", kwlist,
+                                     &obj, &newsize, &new, &compute_hash)) {
         return NULL;
+    }
 
     NULLABLE(obj);
     if (new) {
@@ -34,13 +39,25 @@ bytes_resize(PyObject *Py_UNUSED(module), PyObject *args)
     else {
         Py_XINCREF(obj);
     }
+
+    if (compute_hash) {
+        if (PyObject_Hash(obj) == -1) {
+            Py_DECREF(obj);
+            return NULL;
+        }
+    }
+
+    PyObject *old_obj = obj;
     if (_PyBytes_Resize(&obj, newsize) < 0) {
         assert(obj == NULL);
+        return NULL;
     }
     else {
         assert(obj != NULL);
     }
-    return obj;
+
+    Py_ssize_t refcnt = Py_REFCNT(obj);
+    return Py_BuildValue("Nnp", obj, refcnt, obj != old_obj);
 }
 
 
@@ -209,6 +226,26 @@ writer_format_i(PyObject *self_raw, PyObject *args)
 }
 
 
+static PyObject*
+writer_format_s(PyObject *self_raw, PyObject *args)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    char *format, *str;
+    if (!PyArg_ParseTuple(args, "yy", &format, &str)) {
+        return NULL;
+    }
+
+    if (PyBytesWriter_Format(self->writer, format, str) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
 // PyBytesWriter_Resize
 static PyObject*
 writer_resize(PyObject *self_raw, PyObject *args)
@@ -333,13 +370,14 @@ static PyMethodDef writer_methods[] = {
     {"write", _PyCFunction_CAST(writer_write), METH_VARARGS | METH_KEYWORDS},
     {"write_bytes", _PyCFunction_CAST(writer_write_bytes), METH_VARARGS},
     {"format_i", _PyCFunction_CAST(writer_format_i), METH_VARARGS},
+    {"format_s", _PyCFunction_CAST(writer_format_s), METH_VARARGS},
     {"resize", _PyCFunction_CAST(writer_resize), METH_VARARGS},
     {"grow", _PyCFunction_CAST(writer_grow), METH_VARARGS},
     {"get_data", _PyCFunction_CAST(writer_get_data), METH_VARARGS},
     {"get_size", _PyCFunction_CAST(writer_get_size), METH_NOARGS},
     {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},
     {"finish_with_size", _PyCFunction_CAST(writer_finish_with_size), METH_VARARGS},
-    {"discard", _PyCFunction_CAST(writer_discard), METH_VARARGS},
+    {"discard", _PyCFunction_CAST(writer_discard), METH_NOARGS},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -470,7 +508,7 @@ test_byteswriter_ptr(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     memset(str, 'x', 100);
     str += 100;
 
-    // make sure that the test switchs to a bytes object
+    // make sure that the test switches to a bytes object
     assert((100 + 200) > pybyteswriter_small_buffer_size());
     char *old_str = str;
     str = PyBytesWriter_GrowAndUpdatePointer(writer, 200, str);
@@ -489,10 +527,10 @@ test_byteswriter_ptr(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     }
     assert(PyBytes_GET_SIZE(result) == 300);
     str = PyBytes_AS_STRING(result);
-    for (Py_ssize_t i=0; i < 100; i++) {
+    for (Py_ssize_t i = 0; i < 100; i++) {
         assert(str[i] == 'x');
     }
-    for (Py_ssize_t i=0; i < 200; i++) {
+    for (Py_ssize_t i = 0; i < 200; i++) {
         assert(str[100 + i] == 'y');
     }
     Py_DECREF(result);
@@ -583,7 +621,7 @@ corrupt_bytes(PyObject *Py_UNUSED(module), PyObject *args)
 
 
 static PyMethodDef test_methods[] = {
-    {"bytes_resize", bytes_resize, METH_VARARGS},
+    {"bytes_resize", _PyCFunction_CAST(bytes_resize), METH_VARARGS | METH_KEYWORDS},
     {"bytes_join", bytes_join, METH_VARARGS},
     {"byteswriter_abc", byteswriter_abc, METH_NOARGS},
     {"byteswriter_resize", byteswriter_resize, METH_NOARGS},
@@ -615,7 +653,6 @@ _PyTestCapi_Init_Bytes(PyObject *m)
     // PyBytesWriter.obj is the second member, small_buffer is the first member
     long size = (long)pybyteswriter_small_buffer_size();
     if (PyModule_AddIntConstant(m, "PyBytesWriter_small_buffer", size) < 0) {
-        Py_DECREF(writer_type);
         return -1;
     }
 

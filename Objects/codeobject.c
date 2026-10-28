@@ -113,8 +113,8 @@ PyCode_ClearWatcher(int watcher_id)
 
 #define _PyCodeObject_CAST(op)  (assert(PyCode_Check(op)), (PyCodeObject *)(op))
 
-static int
-should_intern_string(PyObject *o)
+int
+_PyCode_ShouldInternString(PyObject *o)
 {
 #ifdef Py_GIL_DISABLED
     // The free-threaded build interns (and immortalizes) all string constants
@@ -174,7 +174,7 @@ should_immortalize_constant(PyObject *v)
                 _Py_IsImmortal(slice->step));
     }
     return (PyLong_CheckExact(v) || PyFloat_CheckExact(v) ||
-            PyComplex_Check(v) || PyBytes_CheckExact(v));
+            PyComplex_CheckExact(v) || PyBytes_CheckExact(v));
 }
 #endif
 
@@ -206,7 +206,7 @@ intern_constants(PyObject *tuple, int *modified)
     for (Py_ssize_t i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
         PyObject *v = PyTuple_GET_ITEM(tuple, i);
         if (PyUnicode_CheckExact(v)) {
-            if (should_intern_string(v)) {
+            if (_PyCode_ShouldInternString(v)) {
                 PyObject *w = v;
                 _PyUnicode_InternMortal(interp, &v);
                 if (w != v) {

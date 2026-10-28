@@ -1,2 +1,0 @@
-Fix the pure-Python :meth:`datetime.time.strftime` implementation raising :exc:`AttributeError` for the
-year directives. Patch by tonghuaroot.
