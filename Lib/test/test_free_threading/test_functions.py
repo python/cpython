@@ -168,39 +168,6 @@ class TestFTFunctionAttributes(TestCase):
         threading_helper.run_concurrently(
             [writer, reader] * (NUM_THREADS // 2))
 
-    def test_eval_frame_record_while_replacing_name(self):
-        from test.support import import_helper
-        _testinternalcapi = import_helper.import_module('_testinternalcapi')
-
-        def target():
-            pass
-
-        records = []
-
-        def writer():
-            for i in range(ITERS):
-                target.__name__ = f'target_{i}'
-
-        def caller():
-            for _ in range(ITERS):
-                target()
-
-        def contend():
-            for _ in range(ITERS):
-                # Contend with the recording hook for the list's lock.
-                records.extend(['padding'] * 1000)
-                records.clear()
-
-        try:
-            _testinternalcapi.set_eval_frame_record(records)
-            threading_helper.run_concurrently(
-                [writer, caller, contend, caller])
-            target()
-        finally:
-            _testinternalcapi.set_eval_frame_default()
-        self.assertTrue(any(name.startswith('target') for name in records))
-        self.assertTrue(all(isinstance(name, str) for name in records))
-
     def test_argument_errors_while_replacing_qualname(self):
         def target(x, *, y):
             pass

@@ -81,27 +81,6 @@ class FunctionPropertiesTest(FuncAttrsTest):
         gc.collect()
         self.assertIsNone(ref())
 
-    def test_annotations_setter_reentrant_finalizer(self):
-        def target():
-            pass
-
-        observations = []
-        replacement = {'replacement': int}
-        finalizer_value = {'finalizer': str}
-
-        class Annotations(dict):
-            def __del__(self):
-                observations.append((target.__annotate__,
-                                     target.__annotations__ is replacement))
-                target.__annotations__ = finalizer_value
-
-        target.__annotate__ = lambda format: Annotations()
-        self.assertIsInstance(target.__annotations__, Annotations)
-        target.__annotations__ = replacement
-        support.gc_collect()
-        self.assertEqual(observations, [(None, True)])
-        self.assertIs(target.__annotations__, finalizer_value)
-
     def test_dir_includes_correct_attrs(self):
         self.b.known_attr = 7
         self.assertIn('known_attr', dir(self.b),

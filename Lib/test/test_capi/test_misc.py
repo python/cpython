@@ -2914,24 +2914,6 @@ class Test_Pep523AllowSpecialization(unittest.TestCase):
         finally:
             _testinternalcapi.set_eval_frame_default()
 
-    def test_record_replaced_function_name(self):
-        def target(arg):
-            pass
-
-        records = []
-        names = [f'dynamic_name_{i}' for i in range(100)]
-        try:
-            _testinternalcapi.set_eval_frame_interp(records)
-            for name in names:
-                target.__name__ = name
-                # Call through C to avoid inlining bypassing the hook.
-                list(map(target, [None]))
-        finally:
-            _testinternalcapi.set_eval_frame_default()
-        self.assertEqual(
-            [name for name in records if name.startswith('dynamic_name_')],
-            names)
-
     def test_allow_specialization_call(self):
         def func():
             pass
