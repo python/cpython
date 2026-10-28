@@ -18,7 +18,7 @@ from test.test_asyncio import utils as test_utils
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 def close_transport(transport):
@@ -566,6 +566,8 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
         self.assertTrue(self.proactor.sendto.called)
         self.proactor.sendto.assert_called_with(
             self.sock, data, addr=('0.0.0.0', 1234))
+        self.assertFalse(transport._buffer)
+        self.assertEqual(0, transport._buffer_size)
 
     def test_sendto_bytearray(self):
         data = bytearray(b'data')
@@ -689,7 +691,9 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
 
     def test_sendto_str(self):
         transport = self.datagram_transport()
-        self.assertRaises(TypeError, transport.sendto, 'str', ())
+        self.assertRaisesRegex(
+            TypeError, "^data argument must be a bytes-like object, not 'str'$",
+            transport.sendto, 'str', ())
 
     def test_sendto_connected_addr(self):
         transport = self.datagram_transport(address=('0.0.0.0', 1))

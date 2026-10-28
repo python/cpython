@@ -4,8 +4,6 @@
 .. module:: reprlib
    :synopsis: Alternate repr() implementation with size limits.
 
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 **Source code:** :source:`Lib/reprlib.py`
 
 --------------

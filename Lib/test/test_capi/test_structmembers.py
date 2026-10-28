@@ -37,6 +37,9 @@ def _make_test_object(cls):
                9.99999,# T_FLOAT
                10.1010101010, # T_DOUBLE
                "hi",   # T_STRING_INPLACE
+               12,     # T_LONGLONG
+               13,     # T_ULONGLONG
+               b"c",   # T_CHAR
                )
 
 
@@ -160,6 +163,16 @@ class ReadWriteTests:
         ts = self.ts
         self.assertEqual(ts.T_STRING_INPLACE, "hi")
         self.assertRaises(TypeError, setattr, ts, "T_STRING_INPLACE", "s")
+        self.assertRaises(TypeError, delattr, ts, "T_STRING_INPLACE")
+
+    def test_char(self):
+        ts = self.ts
+        self.assertEqual(ts.T_CHAR, "c")
+        ts.T_CHAR = "z"
+        self.assertEqual(ts.T_CHAR, "z")
+        self.assertRaises(TypeError, setattr, ts, "T_CHAR", "")
+        self.assertRaises(TypeError, setattr, ts, "T_CHAR", b"a")
+        self.assertRaises(TypeError, setattr, ts, "T_CHAR", bytearray(b"b"))
         self.assertRaises(TypeError, delattr, ts, "T_STRING_INPLACE")
 
 class ReadWriteTests_OldAPI(ReadWriteTests, unittest.TestCase):

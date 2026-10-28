@@ -39,9 +39,25 @@ class Test_MultibyteCodec(unittest.TestCase):
             self.assertEqual(str(b'', enc), '')
             self.assertEqual(''.encode(enc), b'')
 
+    def test_hz_tilde_at_buffer_boundary(self):
+        text = 'a' + '中a' * 6 + '~'
+        self.assertEqual(text.encode('hz').decode('hz'), text)
+
     def test_str_decode(self):
         for enc in ALL_CJKENCODINGS:
             self.assertEqual('abcd'.encode(enc), b'abcd')
+
+    def test_nonbmp_pair_modifier(self):
+        cases = [('big5hkscs', '\u00ca', '\u0304')]
+        cases.extend((encoding, '\u304b', '\u309a') for encoding in (
+            'euc_jis_2004', 'euc_jisx0213', 'shift_jis_2004', 'shift_jisx0213',
+            'iso2022_jp_2004', 'iso2022_jp_3'))
+        for encoding, base, modifier in cases:
+            with self.subTest(encoding=encoding):
+                pair = base + modifier
+                self.assertEqual(pair.encode(encoding).decode(encoding), pair)
+                nonbmp = base + chr(0x10000 + ord(modifier))
+                self.assertRaises(UnicodeEncodeError, nonbmp.encode, encoding)
 
     def test_errorcallback_longindex(self):
         dec = codecs.getdecoder('euc-kr')
@@ -78,6 +94,12 @@ class Test_MultibyteCodec(unittest.TestCase):
             self.assertRaises(TypeError, codecs.getdecoder(enc), "")
 
 class Test_IncrementalEncoder(unittest.TestCase):
+
+    def test_iso2022_kr_reset(self):
+        encoder = codecs.getincrementalencoder('iso2022_kr')()
+        encoder.encode('가')
+        encoder.reset()
+        self.assertEqual(encoder.encode('가', final=True), '가'.encode('iso2022_kr'))
 
     def test_stateless(self):
         # cp949 encoder isn't stateful at all.
@@ -230,6 +252,19 @@ class Test_IncrementalEncoder(unittest.TestCase):
 
 class Test_IncrementalDecoder(unittest.TestCase):
 
+    def test_iso2022_split_escape(self):
+        raw = b'\x1b$0000000B'
+        decoder = codecs.getincrementaldecoder('iso2022_jp')('replace')
+        decoded = decoder.decode(raw[:-1]) + decoder.decode(raw[-1:], final=True)
+        self.assertEqual(decoded, raw.decode('iso2022_jp', 'replace'))
+
+    def test_iso2022_reset(self):
+        decoder = codecs.getincrementaldecoder('iso2022_jp')()
+        decoder.decode(b'\x1b%')
+        decoder.reset()
+        with self.assertRaises(UnicodeDecodeError):
+            decoder.decode(b'\xff', final=True)
+
     def test_dbcs(self):
         # cp949 decoder is simple with only 1 or 2 bytes sequences.
         decoder = codecs.getincrementaldecoder('cp949')()
@@ -264,6 +299,15 @@ class Test_IncrementalDecoder(unittest.TestCase):
         self.assertEqual(decoder.decode(ESC + b'$'), '')
         self.assertRaises(UnicodeDecodeError, decoder.decode, b'', True)
         self.assertEqual(decoder.decode(b'B@$'), '\u4e16')
+
+    def test_hz_keep_buffer(self):
+        # A trailing '~' shouldn't read past the end of the input.
+        decoder = codecs.getincrementaldecoder('hz')()
+        self.assertEqual(decoder.decode(b'~'), '')
+        self.assertRaises(UnicodeDecodeError, decoder.decode, b'', True)
+        self.assertEqual(decoder.decode(b'~'), '~')
+        self.assertEqual(decoder.decode(b'~'), '')
+        self.assertEqual(decoder.decode(b'\n', True), '')
 
     def test_decode_unicode(self):
         # Trying to decode a unicode string should raise a TypeError
@@ -304,7 +348,25 @@ class Test_IncrementalDecoder(unittest.TestCase):
         self.assertRaises(TypeError, decoder.setstate, 123)
         self.assertRaises(TypeError, decoder.setstate, ("invalid", 0))
         self.assertRaises(TypeError, decoder.setstate, (b"1234", "invalid"))
-        self.assertRaises(UnicodeDecodeError, decoder.setstate, (b"123456789", 0))
+        self.assertRaises(UnicodeDecodeError, decoder.setstate, (b"0" * 17, 0))
+
+    def test_setstate_invalid_designation(self):
+        # gh-153603: an unknown charset designation in the state must not crash
+        # the decoder.  0xff is not a registered charset mark and 0x21 ('!') is
+        # a GL byte that triggers the designation lookup.
+        for name in ('iso-2022-jp', 'iso-2022-kr'):
+            with self.subTest(codec=name):
+                decoder = codecs.getincrementaldecoder(name)()
+                decoder.setstate((b'', 0xff))
+                with self.assertRaises(UnicodeDecodeError) as cm:
+                    decoder.decode(b'!', final=True)
+                self.assertEqual(cm.exception.reason,
+                                 'illegal multibyte sequence')
+                self.assertEqual((cm.exception.start, cm.exception.end), (0, 1))
+                # One illegal byte is reported, so error handlers still work.
+                decoder = codecs.getincrementaldecoder(name)(errors='replace')
+                decoder.setstate((b'', 0xff))
+                self.assertEqual(decoder.decode(b'!', final=True), '\ufffd')
 
 class Test_StreamReader(unittest.TestCase):
     def test_bug1728403(self):
@@ -314,7 +376,8 @@ class Test_StreamReader(unittest.TestCase):
                 f.write(b'\xa1')
             finally:
                 f.close()
-            f = codecs.open(TESTFN, encoding='cp949')
+            with self.assertWarns(DeprecationWarning):
+                f = codecs.open(TESTFN, encoding='cp949')
             try:
                 self.assertRaises(UnicodeDecodeError, f.read, 2)
             finally:
