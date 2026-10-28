@@ -47,6 +47,16 @@ typedef struct _PyCfgBasicblock {
     struct _PyCfgBasicblock *b_list;
     /* The label of this block if it is a jump target, -1 otherwise */
     _PyJumpTargetLabel b_label;
+    /* Basic block is an exception handler that preserves lasti */
+    unsigned b_preserve_lasti : 1;
+    /* Used by compiler passes to mark whether they have visited a basic block. */
+    unsigned b_visited : 1;
+    /* b_except_handler is used by the cold-detection algorithm to mark exception targets */
+    unsigned b_except_handler : 1;
+    /* b_cold is true if this block is not perf critical (like an exception handler) */
+    unsigned b_cold : 1;
+    /* b_warm is used by the cold-detection algorithm to mark blocks which are definitely not cold */
+    unsigned b_warm : 1;
     /* Exception stack at start of block, used by assembler to create the exception handling table */
     struct _PyCfgExceptStack *b_exceptstack;
     /* pointer to an array of instructions, initially NULL */
@@ -64,16 +74,6 @@ typedef struct _PyCfgBasicblock {
     int b_predecessors;
     /* depth of stack upon entry of block, computed by stackdepth() */
     int b_startdepth;
-    /* Basic block is an exception handler that preserves lasti */
-    unsigned b_preserve_lasti : 1;
-    /* Used by compiler passes to mark whether they have visited a basic block. */
-    unsigned b_visited : 1;
-    /* b_except_handler is used by the cold-detection algorithm to mark exception targets */
-    unsigned b_except_handler : 1;
-    /* b_cold is true if this block is not perf critical (like an exception handler) */
-    unsigned b_cold : 1;
-    /* b_warm is used by the cold-detection algorithm to mark blocks which are definitely not cold */
-    unsigned b_warm : 1;
 } basicblock;
 
 
