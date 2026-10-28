@@ -1,0 +1,2 @@
+Fix proxy bypass on Windows when the ``ProxyOverride`` registry value
+has a trailing semicolon, which previously could cause incorrect results.
