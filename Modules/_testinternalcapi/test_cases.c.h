@@ -13836,6 +13836,8 @@ JUMP_TO_LABEL(error);
             if (err < 0) {
                 JUMP_TO_LABEL(error);
             }
+            opcode = next_instr->op.code;
+            oparg = (oparg & ~255) | next_instr->op.arg;
             DISPATCH_GOTO_NON_TRACING();
             #else
             Py_FatalError("JIT label executed in non-jit build.");
