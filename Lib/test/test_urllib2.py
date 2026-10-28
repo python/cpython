@@ -1453,14 +1453,15 @@ class HandlerTests(unittest.TestCase):
         fp = o.open('http://www.example.com')
         self.assertEqual(fp.geturl(), redirected_url.strip())
 
+    def unset_proxy_env(self):
+        # Keep the test independent from proxy-related environment settings.
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        env.unset("http_proxy", "https_proxy", "all_proxy", "no_proxy",
+                  "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY")
+
     def test_redirect_no_path(self):
         # Issue 14132: Relative redirect strips original path
-
-        # Keep this test independent from proxy-related environment settings.
-        env = self.enterContext(os_helper.EnvironmentVarGuard())
-        for var in ("http_proxy", "https_proxy", "all_proxy", "no_proxy",
-                    "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY"):
-            env.pop(var, None)
+        self.unset_proxy_env()
 
         # clear _opener global variable
         self.addCleanup(urllib.request.urlcleanup)
@@ -1494,6 +1495,7 @@ class HandlerTests(unittest.TestCase):
                     b'123'
                 )
                 return result
+        self.unset_proxy_env()
         handler = Handler()
         opener = urllib.request.build_opener(handler)
         tests = (
