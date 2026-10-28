@@ -443,7 +443,7 @@ class DirCmpImplementationTests(unittest.TestCase):
 
         with patch("os.stat", side_effect=fake_stat):
             dc = filecmp.dircmp(self.dir, self.dir_same)
-            self.assertIn(trigger_file, dc.common_funny)
+        self.assertIn(trigger_file, dc.common_funny)
 
     # Test common_funny layout with regular files, directories, and sockets.
     # 'diff_type.txt' is a directory in one path and a regular file in another.
