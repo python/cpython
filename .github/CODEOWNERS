@@ -432,6 +432,7 @@ Lib/test/test_*time.py           @pganssle @StanFromIreland
 Modules/*zoneinfo*               @pganssle @StanFromIreland
 Modules/*time*                   @pganssle @StanFromIreland
 Python/pytime.c                  @pganssle @StanFromIreland
+Python/_strptime.c               @pganssle @StanFromIreland
 
 # Dbm
 Doc/library/dbm.rst           @corona10 @erlend-aasland @serhiy-storchaka
