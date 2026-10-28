@@ -13,7 +13,6 @@ Doc/library/pyexpat.rst
 Doc/library/select.rst
 Doc/library/socket.rst
 Doc/library/ssl.rst
-Doc/library/termios.rst
 Doc/library/urllib.parse.rst
 Doc/library/urllib.request.rst
 Doc/library/wsgiref.rst
