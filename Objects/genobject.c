@@ -2195,7 +2195,7 @@ async_gen_asend_finalize(PyObject *self)
 }
 
 static PyMemberDef async_gen_asend_memberlist[] = {
-    {"ag_gen", Py_T_OBJECT_EX, offsetof(PyAsyncGenASend, ags_gen), Py_READONLY},
+    {"aga_gen", Py_T_OBJECT_EX, offsetof(PyAsyncGenASend, ags_gen), Py_READONLY},
     {NULL}      /* Sentinel */
 };
 
@@ -2663,7 +2663,7 @@ async_gen_athrow_finalize(PyObject *op)
 }
 
 static PyMemberDef async_gen_athrow_memberlist[] = {
-    {"ag_gen", Py_T_OBJECT_EX, offsetof(PyAsyncGenAThrow, agt_gen), Py_READONLY},
+    {"aga_gen", Py_T_OBJECT_EX, offsetof(PyAsyncGenAThrow, agt_gen), Py_READONLY},
     {NULL}      /* Sentinel */
 };
 

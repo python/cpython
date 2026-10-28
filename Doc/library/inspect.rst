@@ -284,7 +284,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 |                   | ``AGEN_SUSPENDED``, or    |
 |                 |                   | ``AGEN_CLOSED``           |
 +-----------------+-------------------+---------------------------+
-| async generator | ag_gen            | async generator driven by |
+| async generator | aga_gen           | async generator driven by |
 | awaitable       |                   | the awaitable returned    |
 |                 |                   | from ``asend()``,         |
 |                 |                   | ``athrow()``, or          |
@@ -368,7 +368,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
 .. versionchanged:: 3.16
 
-   Add ``ag_gen`` attribute to the awaitables returned by the ``asend()``,
+   Add ``aga_gen`` attribute to the awaitables returned by the ``asend()``,
    ``athrow()`` and ``aclose()`` methods of async generators.
 
 .. function:: getmembers(object[, predicate])
