@@ -1,0 +1,3 @@
+Replace fixed sleeps used for synchronization in multiprocessing tests with
+bounded waits to avoid failures on slow or overloaded systems. Ensure pool
+cleanup runs even when assertions fail in the imap buffer tests.

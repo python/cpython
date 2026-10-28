@@ -4769,6 +4769,16 @@ class Coverage:
             x = self.decimal.Decimal('1')
             y = x // 1  # should be fast
 
+    def test_modulo_unbound_context(self):
+        with self.unbound_context() as c:
+            x = self.decimal.Decimal('1')
+            y = x % 1  # should be fast
+
+    def test_divmod_unbound_context(self):
+        with self.unbound_context() as c:
+            x = self.decimal.Decimal('1')
+            y = divmod(x, 1)  # should be fast
+
     def test_remainder_near(self):
         L = 1000
         limit = sys.get_int_max_str_digits()
