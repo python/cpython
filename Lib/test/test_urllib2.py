@@ -1625,6 +1625,14 @@ class HandlerTests(unittest.TestCase):
                             "expect <local> to bypass intranet address '%s'"
                             % host)
 
+        # empty entries (e.g. a trailing ';') must not match every host
+        for proxy_override in ("www.example.com;", ";", " ; ",
+                               "www.example.com;;*.example.net"):
+            self.assertFalse(proxy_bypass("www.python.org", proxy_override),
+                             "expected empty entry in %r not to bypass"
+                             % proxy_override)
+        self.assertTrue(proxy_bypass("www.example.com", "www.example.com;"))
+
     @unittest.skipUnless(sys.platform == 'darwin', "only relevant for OSX")
     def test_osx_proxy_bypass(self):
         bypass = {
