@@ -144,6 +144,15 @@ asyncio
   socket file created for *path*.
   (Contributed by Sam Bull in :gh:`94984`.)
 
+* The event loop now runs callbacks scheduled by other callbacks eagerly,
+  within a small time and count budget, before polling for I/O again.
+  This speeds up code that resolves futures or wakes tasks in chains.
+  The limits can be changed with the new :meth:`loop.set_settings()
+  <asyncio.loop.set_settings>` method and :class:`asyncio.EventLoopSettings`
+  class.  ``asyncio.sleep(0)`` ends eager processing in the current
+  iteration.  See :ref:`asyncio-eager-callbacks`.
+  (Contributed by Andrew Svetlov in :gh:`160760`.)
+
 
 bdb
 ---

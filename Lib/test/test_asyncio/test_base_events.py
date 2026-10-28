@@ -425,7 +425,43 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop.set_debug(False)
         self.assertFalse(self.loop.get_debug())
 
-    def test__run_once_schedule_handle(self):
+    def test_set_settings_closed_loop(self):
+        settings = asyncio.EventLoopSettings(eager_max_time=0,
+                                             eager_max_callbacks=0)
+        self.loop.close()
+        self.loop.set_settings(settings)
+        self.assertIs(self.loop.get_settings(), settings)
+
+    def test_set_settings_invalid_type(self):
+        settings = self.loop.get_settings()
+        for value in (None, {}, 'x'):
+            with self.subTest(value=value):
+                with self.assertRaises(TypeError):
+                    self.loop.set_settings(value)
+                self.assertIs(self.loop.get_settings(), settings)
+
+    def test__run_once_schedule_handle_non_eager(self):
+        handle = None
+        processed = False
+        self.loop._settings = asyncio.EventLoopSettings(
+            eager_max_time=0, eager_max_callbacks=0)
+
+        def cb(loop):
+            nonlocal processed, handle
+            processed = True
+            handle = loop.call_soon(lambda: True)
+
+        h = asyncio.TimerHandle(time.monotonic() - 1, cb, (self.loop,),
+                                self.loop, None)
+
+        self.loop._process_events = mock.Mock()
+        self.loop._scheduled.append(h)
+        self.loop._run_once()
+
+        self.assertTrue(processed)
+        self.assertEqual([handle], list(self.loop._ready))
+
+    def test__run_once_schedule_handle_eager(self):
         handle = None
         processed = False
 
@@ -442,7 +478,304 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop._run_once()
 
         self.assertTrue(processed)
+        self.assertEqual([], list(self.loop._ready))
+
+    def test__run_once_eager_max_callbacks(self):
+        calls = 0
+
+        def cb(loop):
+            nonlocal calls
+            calls += 1
+            loop.call_soon(cb, loop)
+
+        self.loop._settings = asyncio.EventLoopSettings(
+            eager_max_time=60, eager_max_callbacks=5)
+        self.loop._process_events = mock.Mock()
+        self.loop.call_soon(cb, self.loop)
+        self.loop._run_once()
+
+        # One callback from the regular pass plus five eager ones.
+        self.assertEqual(calls, 6)
+        self.assertEqual(len(self.loop._ready), 1)
+
+    def test__run_once_eager_disabled(self):
+        def chain(loop, n):
+            calls.append(n)
+            if n:
+                loop.call_soon(chain, loop, n - 1)
+
+        for args in [(0, 100), (60, 0)]:
+            with self.subTest(args=args):
+                calls = []
+                self.loop._ready.clear()
+                self.loop.set_settings(asyncio.EventLoopSettings(
+                    eager_max_time=args[0], eager_max_callbacks=args[1]))
+                self.loop._process_events = mock.Mock()
+                self.loop.call_soon(chain, self.loop, 3)
+                self.loop._run_once()
+
+                self.assertEqual(calls, [3])
+                self.assertEqual(len(self.loop._ready), 1)
+
+    def test__run_once_eager_max_callbacks_fan_out(self):
+        calls = 0
+
+        def worker():
+            nonlocal calls
+            calls += 1
+
+        def fan_out(loop):
+            for _ in range(10):
+                loop.call_soon(worker)
+
+        self.loop._settings = asyncio.EventLoopSettings(
+            eager_max_time=60, eager_max_callbacks=4)
+        self.loop._process_events = mock.Mock()
+        self.loop.call_soon(fan_out, self.loop)
+        self.loop._run_once()
+
+        self.assertEqual(calls, 4)
+        self.assertEqual(len(self.loop._ready), 6)
+
+    def test__run_once_eager_max_time_fan_out(self):
+        calls = 0
+        now = 0.0
+
+        def fake_time():
+            return now
+
+        def worker():
+            nonlocal calls, now
+            calls += 1
+            now += 1.0
+
+        def fan_out(loop):
+            for _ in range(10):
+                loop.call_soon(worker)
+
+        self.loop.time = fake_time
+        self.loop._clock_resolution = 0.0
+        self.loop._settings = asyncio.EventLoopSettings(
+            eager_max_time=2.5, eager_max_callbacks=100)
+        self.loop._process_events = mock.Mock()
+        self.loop.call_soon(fan_out, self.loop)
+        with mock.patch.object(constants, 'EAGER_BATCH_SIZE', 2):
+            self.loop._run_once()
+
+        # The deadline is checked between batches of two callbacks.
+        self.assertEqual(calls, 4)
+        self.assertEqual(len(self.loop._ready), 6)
+
+    def test__run_once_eager_break_skips_eager_phase(self):
+        handle = None
+
+        def cb(loop):
+            nonlocal handle
+            handle = loop.call_soon(lambda: True)
+            loop._eager_state = constants.EAGER_BREAK
+
+        self.loop._process_events = mock.Mock()
+        self.loop.call_soon(cb, self.loop)
+        self.loop._run_once()
+
         self.assertEqual([handle], list(self.loop._ready))
+
+    def test__run_once_stop_ends_eager_phase(self):
+        calls = []
+        handle = None
+
+        def first(loop):
+            loop.call_soon(stopper, loop)
+
+        def stopper(loop):
+            nonlocal handle
+            calls.append('stopper')
+            handle = loop.call_soon(lambda: calls.append('late'))
+            loop.stop()
+
+        self.loop._process_events = mock.Mock()
+        self.loop.call_soon(first, self.loop)
+        self.loop._run_once()
+
+        self.assertEqual(['stopper'], calls)
+        self.assertEqual([handle], list(self.loop._ready))
+
+    def test_run_forever_stop_during_eager_processing(self):
+        calls = []
+
+        def first(loop):
+            loop.call_soon(stopper, loop)
+            loop.call_soon(breaker, loop)
+            for i in range(150):
+                loop.call_soon(calls.append, i)
+
+        def stopper(loop):
+            calls.append('stopper')
+            loop.stop()
+
+        def breaker(loop):
+            calls.append('breaker')
+            loop._eager_state = constants.EAGER_BREAK
+
+        self.loop._process_events = mock.Mock()
+        self.loop.call_soon(first, self.loop)
+        self.loop.run_forever()
+
+        # Callbacks scheduled before stop() still run, also past the
+        # current eager batch.
+        self.assertEqual(['stopper', 'breaker', *range(150)], calls)
+        self.assertEqual([], list(self.loop._ready))
+        self.assertEqual(self.loop._selector.select.call_count, 2)
+
+    def test_run_forever_stop_keeps_later_callbacks(self):
+        calls = []
+
+        def first(loop):
+            loop.call_soon(stopper, loop)
+            loop.call_soon(calls.append, 'next')
+
+        def stopper(loop):
+            calls.append('stopper')
+            loop.stop()
+            loop.call_soon(calls.append, 'later')
+
+        self.loop._process_events = mock.Mock()
+        self.loop.call_soon(first, self.loop)
+        self.loop.run_forever()
+
+        # As without eager processing, a callback scheduled in the iteration
+        # in which stop() was called runs the next time the loop runs.
+        self.assertEqual(['stopper', 'next'], calls)
+        self.assertEqual(1, len(self.loop._ready))
+        self.loop.call_soon(self.loop.stop)
+        self.loop.run_forever()
+        self.assertEqual(['stopper', 'next', 'later'], calls)
+
+    def test_run_forever_stopped_before_start(self):
+        calls = 0
+
+        def cb(loop):
+            nonlocal calls
+            calls += 1
+            loop.call_soon(cb, loop)
+
+        self.loop._process_events = mock.Mock()
+        self.loop.call_soon(cb, self.loop)
+        self.loop.stop()
+        self.loop.run_forever()
+
+        # Only one iteration runs, without eager processing.
+        self.assertEqual(calls, 1)
+        self.assertEqual(self.loop._selector.select.call_count, 1)
+
+    def test__run_once_eager_break_stops_eager_phase(self):
+        calls = []
+        handle = None
+
+        def first(loop):
+            loop.call_soon(breaker, loop)
+
+        def breaker(loop):
+            nonlocal handle
+            calls.append('breaker')
+            handle = loop.call_soon(lambda: calls.append('late'))
+            loop._eager_state = constants.EAGER_BREAK
+
+        self.loop._process_events = mock.Mock()
+        self.loop.call_soon(first, self.loop)
+        self.loop._run_once()
+
+        self.assertEqual(['breaker'], calls)
+        self.assertEqual([handle], list(self.loop._ready))
+
+        self.loop._run_once()
+        self.assertEqual(['breaker', 'late'], calls)
+        self.assertEqual([], list(self.loop._ready))
+
+    def test__run_once_eager_break_cuts_batch(self):
+        calls = []
+
+        def first(loop):
+            loop.call_soon(breaker, loop)
+            loop.call_soon(calls.append, 'next')
+
+        def breaker(loop):
+            calls.append('breaker')
+            loop._eager_state = constants.EAGER_BREAK
+
+        self.loop._process_events = mock.Mock()
+        self.loop.call_soon(first, self.loop)
+        self.loop._run_once()
+
+        # The rest of the batch runs in the next iteration.
+        self.assertEqual(['breaker'], calls)
+        self.assertEqual(1, len(self.loop._ready))
+
+    def test__run_once_resets_eager_break(self):
+        calls = []
+
+        def chain(loop, n):
+            calls.append(n)
+            if n:
+                loop.call_soon(chain, loop, n - 1)
+
+        self.loop.set_settings(asyncio.EventLoopSettings(
+            eager_max_time=60, eager_max_callbacks=100))
+        self.loop._process_events = mock.Mock()
+        # Left over from a previous iteration.
+        self.loop._eager_state = constants.EAGER_BREAK
+        self.loop.call_soon(chain, self.loop, 3)
+        self.loop._run_once()
+
+        self.assertEqual(calls, [3, 2, 1, 0])
+
+    def test_sleep0_ends_eager_processing(self):
+        calls = []
+
+        async def main():
+            calls.append('before')
+            await asyncio.sleep(0)
+            calls.append('after')
+
+        self.loop._process_events = mock.Mock()
+        task = self.loop.create_task(main())
+        asyncio.events._set_running_loop(self.loop)
+        try:
+            self.loop._run_once()
+            # The task resumes only after the next I/O poll.
+            self.assertEqual(calls, ['before'])
+            self.loop._run_once()
+            self.assertEqual(calls, ['before', 'after'])
+        finally:
+            asyncio.events._set_running_loop(None)
+        self.assertTrue(task.done())
+
+    def test_sleep0_breaks_eager(self):
+        loop = mock.Mock(_eager_state=constants.EAGER_IDLE)
+        with mock.patch('asyncio.events._get_running_loop',
+                        return_value=loop):
+            coro = asyncio.sleep(0)
+            self.assertIsNone(coro.send(None))
+            self.assertEqual(loop._eager_state, constants.EAGER_BREAK)
+            with self.assertRaises(StopIteration):
+                coro.send(None)
+
+    def test_sleep0_loop_without_eager_state(self):
+        # A third-party loop may not accept the _eager_state attribute.
+        with mock.patch('asyncio.events._get_running_loop',
+                        return_value=object()):
+            coro = asyncio.sleep(0, result=42)
+            self.assertIsNone(coro.send(None))
+            with self.assertRaises(StopIteration) as cm:
+                coro.send(None)
+        self.assertEqual(cm.exception.value, 42)
+
+    def test_sleep0_without_running_loop(self):
+        coro = asyncio.sleep(0, result=42)
+        self.assertIsNone(coro.send(None))
+        with self.assertRaises(StopIteration) as cm:
+            coro.send(None)
+        self.assertEqual(cm.exception.value, 42)
 
     def test__run_once_cancelled_event_cleanup(self):
         self.loop._process_events = mock.Mock()
@@ -1273,6 +1606,52 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         super().setUp()
         self.loop = asyncio.SelectorEventLoop()
         self.set_event_loop(self.loop)
+
+    def test_run_until_complete_after_eager_limit(self):
+        # The eager limit ends eager processing before the done-callback
+        # that stops the loop runs; the callbacks queued before it still
+        # run before run_until_complete() returns.
+        self.loop.set_settings(asyncio.EventLoopSettings(
+            eager_max_time=60, eager_max_callbacks=5))
+        results = []
+
+        async def worker(ev, i):
+            await ev.wait()
+            return i
+
+        async def main():
+            ev = asyncio.Event()
+            for i in range(20):
+                task = asyncio.ensure_future(worker(ev, i))
+                task.add_done_callback(lambda t: results.append(t.result()))
+            self.loop.call_soon(ev.set)
+            await ev.wait()
+
+        self.loop.run_until_complete(main())
+        self.assertEqual(sorted(results), list(range(20)))
+
+    def test_run_until_complete_processes_ready_io(self):
+        rsock, wsock = socket.socketpair()
+        self.addCleanup(rsock.close)
+        self.addCleanup(wsock.close)
+        received = []
+        self.loop.add_reader(rsock, lambda: received.append(rsock.recv(1)))
+        self.addCleanup(self.loop.remove_reader, rsock)
+
+        async def main():
+            wsock.send(b'x')
+
+        for settings in (asyncio.EventLoopSettings(eager_max_time=0,
+                                                   eager_max_callbacks=0),
+                         self.loop.get_settings()):
+            with self.subTest(settings=settings):
+                received.clear()
+                self.loop.set_settings(settings)
+                # I/O made ready by the last step is processed before
+                # run_until_complete() returns.
+                self.loop.run_until_complete(main())
+                self.assertEqual(received, [b'x'])
+                test_utils.run_briefly(self.loop)
 
     @mock.patch('socket.getnameinfo')
     def test_getnameinfo(self, m_gai):

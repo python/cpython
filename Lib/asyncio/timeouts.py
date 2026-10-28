@@ -33,8 +33,8 @@ class Timeout:
         """Schedule a timeout that will trigger at a given loop time.
 
         - If `when` is `None`, the timeout will never trigger.
-        - If `when < loop.time()`, the timeout will trigger on the next
-          iteration of the event loop.
+        - If `when < loop.time()`, the timeout will trigger as soon as
+          possible, like a callback scheduled with `loop.call_soon()`.
         """
         self._state = _State.CREATED
 
