@@ -2504,7 +2504,7 @@ class RegressionTests(unittest.TestCase):
         driver = Reenter()
         driver.zip_longest = itertools.zip_longest(itertools.chain(driver), itertools.repeat(None))
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(RuntimeError):
             next(driver.zip_longest)
 
 

@@ -3963,7 +3963,7 @@ zip_longest_next_impl(ziplongestobject *self)
     PyObject *olditem;
 
     if (lz->running == 1) {
-        PyErr_SetString(PyExc_ValueError,
+        PyErr_SetString(PyExc_RuntimeError,
                         "zip_longest() iterator already executing");
         return NULL;
     }
