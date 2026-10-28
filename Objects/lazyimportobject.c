@@ -204,7 +204,11 @@ static PyObject *
 lazy_import_path(PyLazyImportObject *m)
 {
     if (PyLazyImport_CheckExact(m->lz_from)) {
+        if (_Py_EnterRecursiveCall(" while getting the name of a lazy import")) {
+            return NULL;
+        }
         PyObject *base = lazy_import_path((PyLazyImportObject *)m->lz_from);
+        _Py_LeaveRecursiveCall();
         if (base == NULL) {
             return NULL;
         }
@@ -277,8 +281,12 @@ lazy_import_replay_from(PyThreadState *tstate, PyObject *mod,
     if (!PyLazyImport_CheckExact(lz->lz_from)) {
         return Py_NewRef(mod);
     }
+    if (_Py_EnterRecursiveCallTstate(tstate, " while resolving a lazy import")) {
+        return NULL;
+    }
     PyObject *from = lazy_import_replay_from(
         tstate, mod, (PyLazyImportObject *)lz->lz_from);
+    _Py_LeaveRecursiveCallTstate(tstate);
     if (from == NULL) {
         return NULL;
     }

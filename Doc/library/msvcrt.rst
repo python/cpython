@@ -139,7 +139,7 @@ Console I/O
    :exc:`OSError` on failure, for example when the process has no console
    attached.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Failures are now reported by raising :exc:`OSError` instead of being
       silently ignored.
 
@@ -148,7 +148,7 @@ Console I/O
 
    Wide char variant of :func:`putch`, accepting a Unicode value.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Failures are now reported by raising :exc:`OSError` instead of being
       silently ignored.
 

@@ -167,7 +167,7 @@ to start a process.  These *start methods* are
     .. versionchanged:: 3.14
        This became the default start method on POSIX platforms.
 
-    .. versionchanged:: next
+    .. versionchanged:: 3.16
        *spawn* is now the default start method when there is no writable
        temporary directory, for example on a read-only file system.
        Previously *forkserver* remained the default there and starting a
@@ -2569,7 +2569,7 @@ with the :class:`Pool` class.
       (to consume *iterable* as you go), or even higher
       (to prefetch the next ``N=buffersize-processes`` arguments).
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          Added the *buffersize* parameter.
 
    .. method:: imap_unordered(func, iterable, chunksize=1, *, buffersize=None)
@@ -2578,7 +2578,7 @@ with the :class:`Pool` class.
       returned iterator should be considered arbitrary.  (Only when there is
       only one worker process is the order guaranteed to be "correct".)
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          Added the *buffersize* parameter.
 
    .. method:: starmap(func, iterable[, chunksize])

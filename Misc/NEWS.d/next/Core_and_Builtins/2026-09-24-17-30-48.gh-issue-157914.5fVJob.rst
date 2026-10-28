@@ -1,2 +1,0 @@
-Revert :gh:`146064`. The linked PyMutex change was
-causing a significant performance regression in some cases.

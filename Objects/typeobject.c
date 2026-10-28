@@ -6738,9 +6738,7 @@ done:
     Py_DECREF(name);
     Py_XDECREF(descr);
     // delay decref of the old value as lock-free type cache readers may access it
-    if (old_value != NULL && !_Py_IsImmortal(old_value)) {
-        _PyObject_XDecRefDelayed(old_value);
-    }
+    _PyObject_XDecRefDelayed(old_value);
     return res;
 }
 
@@ -7474,7 +7472,9 @@ _Py_BaseObject_RichCompare(PyObject* self, PyObject* other, int op)
 static PyObject *
 object_get_class(PyObject *self, void *closure)
 {
-    return Py_NewRef(Py_TYPE(self));
+    PyTypeObject *type = Py_TYPE(self);
+    _Py_INCREF_TYPE(type);
+    return (PyObject *)type;
 }
 
 static int

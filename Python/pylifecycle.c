@@ -559,11 +559,7 @@ pycore_init_runtime(_PyRuntimeState *runtime,
      */
     _PyRuntimeState_SetFinalizing(runtime, NULL);
 
-    status = _Py_GetVersion_Init();
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
+    _Py_InitVersion();
     _Py_DumpTraceback_Init();
 
     status = _Py_HashRandomization_Init(config);
@@ -3215,8 +3211,14 @@ init_sys_streams(PyThreadState *tstate)
                        config->stdio_errors);
     if (std == NULL)
         goto error;
-    PySys_SetObject("__stdin__", std);
-    _PySys_SetAttr(&_Py_ID(stdin), std);
+    if (PySys_SetObject("__stdin__", std) < 0) {
+        Py_DECREF(std);
+        goto error;
+    }
+    if (_PySys_SetAttr(&_Py_ID(stdin), std) < 0) {
+        Py_DECREF(std);
+        goto error;
+    }
     Py_DECREF(std);
 
     /* Set sys.stdout */
@@ -3226,8 +3228,14 @@ init_sys_streams(PyThreadState *tstate)
                        config->stdio_errors);
     if (std == NULL)
         goto error;
-    PySys_SetObject("__stdout__", std);
-    _PySys_SetAttr(&_Py_ID(stdout), std);
+    if (PySys_SetObject("__stdout__", std) < 0) {
+        Py_DECREF(std);
+        goto error;
+    }
+    if (_PySys_SetAttr(&_Py_ID(stdout), std) < 0) {
+        Py_DECREF(std);
+        goto error;
+    }
     Py_DECREF(std);
 
 #if 1 /* Disable this if you have trouble debugging bootstrap stuff */
@@ -3991,8 +3999,8 @@ PyOS_getsig(int sig)
     return context.sa_handler;
 #else
     PyOS_sighandler_t handler;
-/* Special signal handling for the secure CRT in Visual Studio 2005 */
-#if defined(_MSC_VER) && _MSC_VER >= 1400
+/* Special signal handling for the secure CRT */
+#if defined(_MSC_VER)
     switch (sig) {
     /* Only these signals are valid */
     case SIGINT:
@@ -4007,7 +4015,7 @@ PyOS_getsig(int sig)
     default:
         return SIG_ERR;
     }
-#endif /* _MSC_VER && _MSC_VER >= 1400 */
+#endif /* _MSC_VER */
     handler = signal(sig, SIG_IGN);
     if (handler != SIG_ERR)
         signal(sig, handler);

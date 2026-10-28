@@ -690,6 +690,64 @@ class TestPyReplOutput(ScreenEqualMixin, TestCase):
         wrapper = _ReadlineWrapper(f_in=None, f_out=None, reader=reader)
         self.assertIs(type(wrapper.get_line_buffer()), str)
 
+    def test_input_does_not_add_history(self):
+        for history in ([], ["previous input"]):
+            with self.subTest(history=history):
+                reader = self.prepare_reader(
+                    code_to_events("first input\nsecond input\n1+1\n")
+                )
+                reader.history[:] = history
+                wrapper = _ReadlineWrapper(f_in=None, f_out=None, reader=reader)
+
+                self.assertEqual(wrapper.input(), "first input")
+                self.assertEqual(reader.history, history)
+                self.assertEqual(wrapper.input(), "second input")
+                self.assertEqual(reader.history, history)
+                self.assertEqual(multiline_input(reader), "1+1")
+                self.assertEqual(reader.history, [*history, "1+1"])
+
+    def test_input_can_read_history(self):
+        events = [
+            Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+            Event(evt="key", data="\n", raw=bytearray(b"\n")),
+        ]
+        reader = self.prepare_reader(events)
+        reader.history.append("previous input")
+        wrapper = _ReadlineWrapper(f_in=None, f_out=None, reader=reader)
+
+        self.assertEqual(wrapper.input(), "previous input")
+        self.assertEqual(reader.history, ["previous input"])
+
+    def test_input_does_not_modify_history(self):
+        events = itertools.chain(
+            [Event(evt="key", data="up", raw=bytearray(b"\x1bOA"))],
+            code_to_events(" edited"),
+            [Event(evt="key", data="down", raw=bytearray(b"\x1bOB"))],
+            code_to_events("new input\n"),
+        )
+        reader = self.prepare_reader(events)
+        reader.history.append("previous input")
+        wrapper = _ReadlineWrapper(f_in=None, f_out=None, reader=reader)
+
+        self.assertEqual(wrapper.input(), "new input")
+        self.assertEqual(reader.history, ["previous input"])
+
+    def test_input_error_does_not_modify_history(self):
+        for text, exception in (
+            ("partial input\x03", KeyboardInterrupt),
+            ("\x04", EOFError),
+        ):
+            with self.subTest(exception=exception):
+                reader = self.prepare_reader(code_to_events(text + "1+1\n"))
+                reader.history.append("previous input")
+                wrapper = _ReadlineWrapper(f_in=None, f_out=None, reader=reader)
+
+                with self.assertRaises(exception):
+                    wrapper.input()
+                self.assertEqual(reader.history, ["previous input"])
+                self.assertEqual(multiline_input(reader), "1+1")
+                self.assertEqual(reader.history, ["previous input", "1+1"])
+
     def test_multiline_edit(self):
         events = itertools.chain(
             code_to_events("def f():\n...\n\n"),
@@ -1173,13 +1231,27 @@ class TestPyReplModuleCompleter(TestCase):
             ("import foo, impo\t\n", "import foo, importlib"),
             ("import foo as bar, impo\t\n", "import foo as bar, importlib"),
             ("from impo\t\n", "from importlib"),
+            ("from impo\t\t\n", "from importlib import "),
+            ("from impo\t\t\t\n", "from importlib import "),
+            ("from impo \t\n", "from impo import "),
+            ("from importlib\t\n", "from importlib import "),
             ("from importlib.res\t\n", "from importlib.resources"),
             ("from importlib.\t\tres\t\n", "from importlib.resources"),
+            ("from importlib.res\t\t\n", "from importlib.resources import "),
+            ("from importlib.res \t\n", "from importlib.res import "),
+            ("from importlib.resources\t\n", "from importlib.resources import "),
             ("from importlib.resources.ab\t\n", "from importlib.resources.abc"),
             ("from importlib import mac\t\n", "from importlib import machinery"),
             ("from importlib import res\t\n", "from importlib import resources"),
             ("from importlib.res\t import a\t\n", "from importlib.resources import abc"),
+            ("from importlib.res\t\ta\t\n", "from importlib.resources import abc"),
             ("from __phello__ import s\t\n", "from __phello__ import spam"),  # frozen module
+            ("import importlib .res\t\n", "import importlib .resources"),
+            ("import importlib. res\t\n", "import importlib. resources"),
+            ("import importlib . res\t\n", "import importlib . resources"),
+            ("import importlib  .metadata.\t\n", "import importlib  .metadata.diagnose"),
+            ("import importlib .metadata   .\t\n", "import importlib .metadata   .diagnose"),
+            ("from importlib .resources .a\t\n", "from importlib .resources .abc"),
         )
         for code, expected in cases:
             with self.subTest(code=code):
@@ -1552,41 +1624,48 @@ class TestPyReplModuleCompleter(TestCase):
 
     def test_parse(self):
         cases = (
-            ('import ', (None, '')),
-            ('import foo', (None, 'foo')),
-            ('import foo,', (None, '')),
-            ('import foo, ', (None, '')),
-            ('import foo, bar', (None, 'bar')),
-            ('import foo, bar, baz', (None, 'baz')),
-            ('import foo as bar,', (None, '')),
-            ('import foo as bar, ', (None, '')),
-            ('import foo as bar, baz', (None, 'baz')),
-            ('import a.', (None, 'a.')),
-            ('import a.b', (None, 'a.b')),
-            ('import a.b.', (None, 'a.b.')),
-            ('import a.b.c', (None, 'a.b.c')),
-            ('import a.b.c, foo', (None, 'foo')),
-            ('import a.b.c, foo.bar', (None, 'foo.bar')),
-            ('import a.b.c, foo.bar,', (None, '')),
-            ('import a.b.c, foo.bar, ', (None, '')),
-            ('from foo', ('foo', None)),
-            ('from a.', ('a.', None)),
-            ('from a.b', ('a.b', None)),
-            ('from a.b.', ('a.b.', None)),
-            ('from a.b.c', ('a.b.c', None)),
-            ('from foo import ', ('foo', '')),
-            ('from foo import a', ('foo', 'a')),
-            ('from ', ('', None)),
-            ('from . import a', ('.', 'a')),
-            ('from .foo import a', ('.foo', 'a')),
-            ('from ..foo import a', ('..foo', 'a')),
-            ('from foo import (', ('foo', '')),
-            ('from foo import ( ', ('foo', '')),
-            ('from foo import (a', ('foo', 'a')),
-            ('from foo import (a,', ('foo', '')),
-            ('from foo import (a, ', ('foo', '')),
-            ('from foo import (a, c', ('foo', 'c')),
-            ('from foo import (a as b, c', ('foo', 'c')),
+            ('import ', (None, '', True)),
+            ('import foo', (None, 'foo', False)),
+            ('import foo,', (None, '', False)),
+            ('import foo, ', (None, '', True)),
+            ('import foo, bar', (None, 'bar', False)),
+            ('import foo, bar, baz', (None, 'baz', False)),
+            ('import foo as bar,', (None, '', False)),
+            ('import foo as bar, ', (None, '', True)),
+            ('import foo as bar, baz', (None, 'baz', False)),
+            ('import a.', (None, 'a.', False)),
+            ('import a.b', (None, 'a.b', False)),
+            ('import a.b.', (None, 'a.b.', False)),
+            ('import a.b.c', (None, 'a.b.c', False)),
+            ('import a.b.c, foo', (None, 'foo', False)),
+            ('import a.b.c, foo.bar', (None, 'foo.bar', False)),
+            ('import a.b.c, foo.bar,', (None, '', False)),
+            ('import a.b.c, foo.bar, ', (None, '', True)),
+            ('from foo', ('foo', None, False)),
+            ('from foo ', ('foo', None, True)),
+            ('from a.', ('a.', None, False)),
+            ('from a .', ('a.', None, False)),
+            ('from a   .', ('a.', None, False)),
+            ('from a .', ('a.', None, False)),
+            ('from a.b', ('a.b', None, False)),
+            ('from a.b.', ('a.b.', None, False)),
+            ('from a.b ', ('a.b', None, True)),
+            ('from a. b.', ('a.b.', None, False)),
+            ('from a  .  b  .', ('a.b.', None, False)),
+            ('from a.b.c', ('a.b.c', None, False)),
+            ('from foo import ', ('foo', '', True)),
+            ('from foo import a', ('foo', 'a', False)),
+            ('from ', ('', None, True)),
+            ('from . import a', ('.', 'a', False)),
+            ('from .foo import a', ('.foo', 'a', False)),
+            ('from ..foo import a', ('..foo', 'a', False)),
+            ('from foo import (', ('foo', '', False)),
+            ('from foo import ( ', ('foo', '', True)),
+            ('from foo import (a', ('foo', 'a', False)),
+            ('from foo import (a,', ('foo', '', False)),
+            ('from foo import (a, ', ('foo', '', True)),
+            ('from foo import (a, c', ('foo', 'c', False)),
+            ('from foo import (a as b, c', ('foo', 'c', False)),
         )
         for code, parsed in cases:
             parser = ImportParser(code)
@@ -1610,12 +1689,9 @@ class TestPyReplModuleCompleter(TestCase):
         cases = (
             '',
             'import foo ',
-            'from foo ',
             'import foo. ',
             'import foo.bar ',
-            'from foo ',
             'from foo. ',
-            'from foo.bar ',
             'from foo import bar ',
             'from foo import (bar ',
             'from foo import bar, baz ',
@@ -1654,9 +1730,9 @@ class TestPyReplModuleCompleter(TestCase):
             'if 1:\n pass\n\tpass',  # _tokenize TabError -> tokenize TabError
         )
         for code in cases:
-            parser = ImportParser(code)
-            actual = parser.parse()
             with self.subTest(code=code):
+                parser = ImportParser(code)
+                actual = parser.parse()
                 self.assertEqual(actual, None)
 
     @patch.dict(sys.modules)
