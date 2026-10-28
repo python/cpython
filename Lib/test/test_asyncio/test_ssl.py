@@ -27,10 +27,11 @@ from test.test_asyncio import utils as test_utils
 
 MACOS = (sys.platform == 'darwin')
 BUF_MULTIPLIER = 1024 if not MACOS else 64
+HANDSHAKE_TIMEOUT = support.LONG_TIMEOUT
 
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class MyBaseProto(asyncio.Protocol):
@@ -184,9 +185,6 @@ class TestSSL(test_utils.TestCase):
     def new_loop(self):
         return asyncio.new_event_loop()
 
-    def new_policy(self):
-        return asyncio.DefaultEventLoopPolicy()
-
     async def wait_closed(self, obj):
         if not isinstance(obj, asyncio.StreamWriter):
             return
@@ -257,15 +255,12 @@ class TestSSL(test_utils.TestCase):
             await fut
 
         async def start_server():
-            extras = {}
-            extras = dict(ssl_handshake_timeout=support.SHORT_TIMEOUT)
-
             srv = await asyncio.start_server(
                 handle_client,
                 '127.0.0.1', 0,
                 family=socket.AF_INET,
                 ssl=sslctx,
-                **extras)
+                ssl_handshake_timeout=HANDSHAKE_TIMEOUT)
 
             try:
                 srv_socks = srv.sockets
@@ -322,14 +317,11 @@ class TestSSL(test_utils.TestCase):
             sock.close()
 
         async def client(addr):
-            extras = {}
-            extras = dict(ssl_handshake_timeout=support.SHORT_TIMEOUT)
-
             reader, writer = await asyncio.open_connection(
                 *addr,
                 ssl=client_sslctx,
                 server_hostname='',
-                **extras)
+                ssl_handshake_timeout=HANDSHAKE_TIMEOUT)
 
             writer.write(A_DATA)
             self.assertEqual(await reader.readexactly(2), b'OK')
@@ -349,7 +341,8 @@ class TestSSL(test_utils.TestCase):
             reader, writer = await asyncio.open_connection(
                 sock=sock,
                 ssl=client_sslctx,
-                server_hostname='')
+                server_hostname='',
+                ssl_handshake_timeout=HANDSHAKE_TIMEOUT)
 
             writer.write(A_DATA)
             self.assertEqual(await reader.readexactly(2), b'OK')
@@ -448,7 +441,7 @@ class TestSSL(test_utils.TestCase):
                 *addr,
                 ssl=client_sslctx,
                 server_hostname='',
-                ssl_handshake_timeout=support.SHORT_TIMEOUT)
+                ssl_handshake_timeout=HANDSHAKE_TIMEOUT)
             writer.close()
             await self.wait_closed(writer)
 
@@ -610,7 +603,7 @@ class TestSSL(test_utils.TestCase):
 
         extras = {}
         if server_ssl:
-            extras = dict(ssl_handshake_timeout=support.SHORT_TIMEOUT)
+            extras = dict(ssl_handshake_timeout=HANDSHAKE_TIMEOUT)
 
         f = loop.create_task(
             loop.connect_accepted_socket(
@@ -659,7 +652,8 @@ class TestSSL(test_utils.TestCase):
             reader, writer = await asyncio.open_connection(
                 *addr,
                 ssl=client_sslctx,
-                server_hostname='')
+                server_hostname='',
+                ssl_handshake_timeout=HANDSHAKE_TIMEOUT)
 
             self.assertEqual(await reader.readline(), b'A\n')
             writer.write(b'B')
@@ -1152,14 +1146,11 @@ class TestSSL(test_utils.TestCase):
             await fut
 
         async def start_server():
-            extras = {}
-
             srv = await self.loop.create_server(
                 server_protocol_factory,
                 '127.0.0.1', 0,
                 family=socket.AF_INET,
-                ssl=sslctx_1,
-                **extras)
+                ssl=sslctx_1)
 
             try:
                 srv_socks = srv.sockets
@@ -1209,14 +1200,11 @@ class TestSSL(test_utils.TestCase):
             sock.close()
 
         async def client(addr):
-            extras = {}
-            extras = dict(ssl_handshake_timeout=support.SHORT_TIMEOUT)
-
             reader, writer = await asyncio.open_connection(
                 *addr,
                 ssl=client_sslctx,
                 server_hostname='',
-                **extras)
+                ssl_handshake_timeout=HANDSHAKE_TIMEOUT)
 
             writer.write(A_DATA)
             self.assertEqual(await reader.readexactly(2), b'OK')
@@ -1286,7 +1274,8 @@ class TestSSL(test_utils.TestCase):
             reader, writer = await asyncio.open_connection(
                 *addr,
                 ssl=client_sslctx,
-                server_hostname='')
+                server_hostname='',
+                ssl_handshake_timeout=HANDSHAKE_TIMEOUT)
             sslprotocol = writer.transport._ssl_protocol
             writer.write(b'ping')
             data = await reader.readexactly(4)
@@ -1398,7 +1387,8 @@ class TestSSL(test_utils.TestCase):
             reader, writer = await asyncio.open_connection(
                 *addr,
                 ssl=client_sslctx,
-                server_hostname='')
+                server_hostname='',
+                ssl_handshake_timeout=HANDSHAKE_TIMEOUT)
             writer.write(b'ping')
             data = await reader.readexactly(4)
             self.assertEqual(data, b'pong')
@@ -1529,7 +1519,8 @@ class TestSSL(test_utils.TestCase):
             reader, writer = await asyncio.open_connection(
                 *addr,
                 ssl=client_sslctx,
-                server_hostname='')
+                server_hostname='',
+                ssl_handshake_timeout=HANDSHAKE_TIMEOUT)
             writer.write(b'ping')
             data = await reader.readexactly(4)
             self.assertEqual(data, b'pong')
@@ -1550,6 +1541,9 @@ class TestSSL(test_utils.TestCase):
             # This triggers bug gh-115514, also tested using mocks in
             # test.test_asyncio.test_selector_events.SelectorSocketTransportTests.test_write_buffer_after_close
             socket_transport = writer.transport._ssl_protocol._transport
+            # connection_lost may have already cleared _transport.
+            if socket_transport is None:
+                return
 
             class SocketWrapper:
                 def __init__(self, sock) -> None:
@@ -1741,6 +1735,74 @@ class TestSSL(test_utils.TestCase):
 
         with self.tcp_server(server) as srv:
             loop.run_until_complete(client(srv.addr))
+
+    def test_shutdown_timeout_after_eof_from_not_reading_peer(self):
+        # ssl_shutdown_timeout also applies when the peer has sent EOF,
+        # before or after close(), but does not read what is still queued.
+        loop = self.loop
+        filled = threading.Event()
+        done = threading.Event()
+
+        def server(sock):
+            sslctx = self._create_server_ssl_context(
+                test_utils.ONLYCERT,
+                test_utils.ONLYKEY
+            )
+            sock = sslctx.wrap_socket(sock, server_side=True)
+            filled.wait(support.SHORT_TIMEOUT)
+            # sending EOF here, and never reading
+            sock.shutdown(socket.SHUT_WR)
+            done.wait(support.SHORT_TIMEOUT)
+            sock.close()
+
+        class Protocol(asyncio.Protocol):
+            def __init__(self):
+                self.fut = asyncio.Future(loop=loop)
+                self.paused = False
+
+            def pause_writing(self):
+                self.paused = True
+
+            def resume_writing(self):
+                self.paused = False
+
+            def connection_lost(self, exc):
+                if not self.fut.done():
+                    self.fut.set_result(exc)
+
+        async def client(addr, close):
+            ctx = self._create_client_ssl_context()
+            tr, pr = await loop.create_connection(
+                Protocol, *addr, ssl=ctx,
+                ssl_shutdown_timeout=0.1)
+            try:
+                # Write until the transport cannot pass any more on to the
+                # peer; how much the kernel accepts varies by platform.
+                chunk = bytes(support.SOCK_MAX_SIZE)
+                for _ in range(16):
+                    if pr.paused:
+                        break
+                    tr.write(chunk)
+                    await asyncio.sleep(0)
+                else:
+                    self.fail('the transport never paused writing')
+                if close:
+                    tr.close()
+                filled.set()
+                async with asyncio.timeout(support.SHORT_TIMEOUT):
+                    exc = await pr.fut
+            finally:
+                filled.set()
+                done.set()
+                tr.abort()
+            self.assertIsInstance(exc, TimeoutError)
+
+        for close in (True, False):
+            with self.subTest(close_before_eof=close):
+                filled.clear()
+                done.clear()
+                with self.tcp_server(server) as srv:
+                    loop.run_until_complete(client(srv.addr, close))
 
 
 ###############################################################################

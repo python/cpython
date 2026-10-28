@@ -17,15 +17,16 @@ extern "C" {
 static inline struct _Py_freelists *
 _Py_freelists_GET(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
 #ifdef Py_DEBUG
-    _Py_EnsureTstateNotNULL(tstate);
+    _Py_AssertHoldsTstate();
 #endif
 
 #ifdef Py_GIL_DISABLED
+    PyThreadState *tstate = _PyThreadState_GET();
     return &((_PyThreadStateImpl*)tstate)->freelists;
 #else
-    return &tstate->interp->object_state.freelists;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return &interp->object_state.freelists;
 #endif
 }
 

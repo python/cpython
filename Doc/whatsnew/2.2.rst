@@ -1082,7 +1082,7 @@ code, none of the changes described here will affect you very much.
 * Rename :c:macro:`!Py_TPFLAGS_GC` to :c:macro:`Py_TPFLAGS_HAVE_GC`.
 
 * Use :c:func:`PyObject_GC_New` or :c:func:`PyObject_GC_NewVar` to allocate
-    objects, and :c:func:`PyObject_GC_Del` to deallocate them.
+  objects, and :c:func:`PyObject_GC_Del` to deallocate them.
 
 * Rename :c:func:`!PyObject_GC_Init` to :c:func:`PyObject_GC_Track` and
   :c:func:`!PyObject_GC_Fini` to :c:func:`PyObject_GC_UnTrack`.

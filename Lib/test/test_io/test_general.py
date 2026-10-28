@@ -125,6 +125,7 @@ class IOTest:
             self.assertRaises(exc, fp.readline)
         with self.open(os_helper.TESTFN, "wb", buffering=0) as fp:
             self.assertRaises(exc, fp.read)
+            self.assertRaises(exc, fp.readall)
             self.assertRaises(exc, fp.readline)
         with self.open(os_helper.TESTFN, "rb", buffering=0) as fp:
             self.assertRaises(exc, fp.write, b"blah")
@@ -317,6 +318,22 @@ class IOTest:
             self.assertRaises(TypeError, f.readline, 5.3)
         with self.open(os_helper.TESTFN, "r", encoding="utf-8") as f:
             self.assertRaises(TypeError, f.readline, 5.3)
+
+    def test_readline_limit_with_short_read(self):
+        class Reader(self.IOBase):
+            data = b"abcdef"
+
+            def peek(self, size):
+                return self.data
+
+            def read(self, size):
+                data = self.data[:min(size, 2)]
+                self.data = self.data[len(data):]
+                return data
+
+        reader = Reader()
+        self.assertEqual(reader.readline(3), b"abc")
+        self.assertEqual(reader.data, b"def")
 
     def test_readline_nonsizeable(self):
         # Issue #30061
@@ -591,6 +608,41 @@ class IOTest:
         self.assertEqual(rawio.read(2), b"g")
         self.assertEqual(rawio.read(2), None)
         self.assertEqual(rawio.read(2), b"")
+
+    def test_RawIOBase_read_bounds_checking(self):
+        # Make sure a `.readinto` call which returns a value outside
+        # (0, len(buffer)) raises.
+        class Misbehaved(self.io.RawIOBase):
+            def __init__(self, readinto_return) -> None:
+                self._readinto_return = readinto_return
+            def readinto(self, b):
+                return self._readinto_return
+
+        with self.assertRaises(ValueError) as cm:
+            Misbehaved(2).read(1)
+        self.assertEqual(str(cm.exception), "readinto returned 2 outside buffer size 1")
+        for bad_size in (2147483647, sys.maxsize, -1, -1000):
+            with self.assertRaises(ValueError):
+                Misbehaved(bad_size).read()
+
+    def test_RawIOBase_read_gh60107(self):
+        # gh-60107: Ensure a "Raw I/O" which keeps a reference to the
+        # mutable memory doesn't allow making a mutable bytes.
+        class RawIOKeepsReference(self.MockRawIOWithoutRead):
+            def __init__(self, *args, **kwargs):
+                self.buf = None
+                super().__init__(*args, **kwargs)
+
+            def readinto(self, buf):
+                # buf is the bytearray so keeping a reference to it doesn't keep
+                # the memory alive; a memoryview does.
+                self.buf = memoryview(buf)
+                buf[0:4] = self._read_stack.pop()
+                return 3
+
+        with self.assertRaises(BufferError):
+            rawio = RawIOKeepsReference([b"1234"])
+            rawio.read(4)
 
     def test_types_have_dict(self):
         test = (
@@ -960,8 +1012,8 @@ class MiscIOTest:
 
         f = self.open(os_helper.TESTFN, "w+", encoding="utf-8")
         self.assertEqual(f.mode,            "w+")
-        self.assertEqual(f.buffer.mode,     "rb+") # Does it really matter?
-        self.assertEqual(f.buffer.raw.mode, "rb+")
+        self.assertEqual(f.buffer.mode,     "wb+")
+        self.assertEqual(f.buffer.raw.mode, "wb+")
 
         g = self.open(f.fileno(), "wb", closefd=False)
         self.assertEqual(g.mode,     "wb")
@@ -1318,43 +1370,75 @@ class CMiscIOTest(MiscIOTest, CTestCase):
     def check_daemon_threads_shutdown_deadlock(self, stream_name):
         # Issue #23309: deadlocks at shutdown should be avoided when a
         # daemon thread and the main thread both write to a file.
+        #
+        # Focus on I/O and interaction in locks, test_threading checks daemon
+        # threads exit generally. Get into the specific I/O states we care
+        # about by using mock I/O which block in the right locks.
         code = """if 1:
+            import atexit
+            import io
             import sys
-            import time
-            import threading
+            from threading import current_thread, Event, main_thread, Thread
+
+            go = Event()
+            entered = Event()
+
+            # Register with atexit before importing test.support which imports
+            # logging so that it runs last.
+            @atexit.register
+            def release_daemon_thread():
+                # Get daemon thread to hold BufferedWriter lock.
+                go.set()
+                entered.wait()
+
             from test.support import SuppressCrashReport
 
-            file = sys.{stream_name}
+            # Mock I/O that blocks daemon thread in Raw I/O write.
+            #
+            # BufferedIO holds a lock while doing I/O operations. Use a
+            # threading Event to simulate a thread doing a slow I/O which holds
+            # the lock on sys.stdout, sys.stderr blocking normal cleanup of
+            # those streams during interpreter finalization.
+            class GatedRaw(io.RawIOBase):
+                name = '<{stream_name}>'
+
+                def writable(self):
+                    return True
+
+                def write(self, b):
+                    if current_thread() is not main_thread():
+                        # In daemon, have buffered lock. Hold it.
+                        entered.set()
+                        Event().wait()
+                    return len(b)
+
+            file = io.TextIOWrapper(io.BufferedWriter(GatedRaw()),
+                                    encoding='utf-8')
+            sys.{stream_name} = file
 
             def run():
-                while True:
-                    file.write('.')
-                    file.flush()
+                go.wait()
+                file.write('.')
+                file.flush()
 
             crash = SuppressCrashReport()
             crash.__enter__()
             # don't call __exit__(): the crash occurs at Python shutdown
 
-            thread = threading.Thread(target=run)
+            thread = Thread(target=run)
             thread.daemon = True
             thread.start()
 
-            time.sleep(0.5)
             file.write('!')
             file.flush()
-            """.format_map(locals())
+            """.format(stream_name=stream_name)
         res, _ = run_python_until_end("-c", code)
         err = res.err.decode()
-        if res.rc != 0:
-            # Failure: should be a fatal error
-            pattern = (r"Fatal Python error: _enter_buffered_busy: "
-                       r"could not acquire lock "
-                       r"for <(_io\.)?BufferedWriter name='<{stream_name}>'> "
-                       r"at interpreter shutdown, possibly due to "
-                       r"daemon threads".format_map(locals()))
-            self.assertRegex(err, pattern)
-        else:
-            self.assertFalse(err.strip('.!'))
+        # Should exit non-zero with fatal error.
+        self.assertNotEqual(res.rc, 0)
+        self.assertIn("Fatal Python error: _enter_buffered_busy", err)
+        self.assertIn(f"<_io.BufferedWriter name='<{stream_name}>'>", err)
+        self.assertIn("possibly due to daemon threads", err)
 
     @threading_helper.requires_working_threading()
     @support.requires_resource('walltime')

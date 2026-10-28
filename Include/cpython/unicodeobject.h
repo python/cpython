@@ -301,7 +301,6 @@ static inline Py_ssize_t PyUnicode_GET_LENGTH(PyObject *op) {
 /* Returns the cached hash, or -1 if not cached yet. */
 static inline Py_hash_t
 PyUnstable_Unicode_GET_CACHED_HASH(PyObject *op) {
-    assert(PyUnicode_Check(op));
 #ifdef Py_GIL_DISABLED
     return _Py_atomic_load_ssize_relaxed(&_PyASCIIObject_CAST(op)->hash);
 #else
@@ -497,7 +496,7 @@ PyAPI_FUNC(int) PyUnicodeWriter_WriteWideChar(
     Py_ssize_t size);
 PyAPI_FUNC(int) PyUnicodeWriter_WriteUCS4(
     PyUnicodeWriter *writer,
-    Py_UCS4 *str,
+    const Py_UCS4 *str,
     Py_ssize_t size);
 
 PyAPI_FUNC(int) PyUnicodeWriter_WriteStr(
@@ -517,8 +516,8 @@ PyAPI_FUNC(int) PyUnicodeWriter_Format(
     ...);
 PyAPI_FUNC(int) PyUnicodeWriter_DecodeUTF8Stateful(
     PyUnicodeWriter *writer,
-    const char *string,         /* UTF-8 encoded string */
-    Py_ssize_t length,          /* size of string */
+    const char *str,            /* UTF-8 encoded string */
+    Py_ssize_t size,            /* size of string */
     const char *errors,         /* error handling */
     Py_ssize_t *consumed);      /* bytes consumed */
 
@@ -539,6 +538,9 @@ typedef struct {
     /* minimum character (default: 127, ASCII) */
     Py_UCS4 min_char;
 
+    // If non-zero, _PyUnicodeWriter_Finish() needs to check maxchar.
+    int recheck_maxchar;
+
     /* If non-zero, overallocate the buffer (default: 0). */
     unsigned char overallocate;
 
@@ -555,24 +557,32 @@ typedef struct {
 _Py_DEPRECATED_EXTERNALLY(3.14) PyAPI_FUNC(void) _PyUnicodeWriter_Init(
     _PyUnicodeWriter *writer);
 
-/* Prepare the buffer to write 'length' characters
-   with the specified maximum character.
-
-   Return 0 on success, raise an exception and return -1 on error. */
-#define _PyUnicodeWriter_Prepare(WRITER, LENGTH, MAXCHAR)             \
-    (((MAXCHAR) <= (WRITER)->maxchar                                  \
-      && (LENGTH) <= (WRITER)->size - (WRITER)->pos)                  \
-     ? 0                                                              \
-     : (((LENGTH) == 0)                                               \
-        ? 0                                                           \
-        : _PyUnicodeWriter_PrepareInternal((WRITER), (LENGTH), (MAXCHAR))))
-
-/* Don't call this function directly, use the _PyUnicodeWriter_Prepare() macro
-   instead. */
+// Don't call this function directly, use _PyUnicodeWriter_Prepare() instead.
 _Py_DEPRECATED_EXTERNALLY(3.14) PyAPI_FUNC(int) _PyUnicodeWriter_PrepareInternal(
     _PyUnicodeWriter *writer,
     Py_ssize_t length,
     Py_UCS4 maxchar);
+
+// Prepare the buffer to write 'length' characters
+// with the specified maximum character.
+//
+// Return 0 on success. Set an exception and return -1 on error.
+_Py_DEPRECATED_EXTERNALLY(3.14) static inline int
+_PyUnicodeWriter_Prepare(_PyUnicodeWriter *writer,
+                         Py_ssize_t length, Py_UCS4 maxchar)
+{
+    assert(0 <= length);
+    if (maxchar <= writer->maxchar && length <= (writer->size - writer->pos)) {
+        return 0;
+    }
+    if (length == 0) {
+        return 0;
+    }
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+    return _PyUnicodeWriter_PrepareInternal(writer, length, maxchar);
+_Py_COMP_DIAG_POP
+}
 
 /* Prepare the buffer to have at least the kind KIND.
    For example, kind=PyUnicode_2BYTE_KIND ensures that the writer will
@@ -779,4 +789,4 @@ static inline int Py_UNICODE_ISALNUM(Py_UCS4 ch) {
 
 // Return an interned Unicode object for an Identifier; may fail if there is no
 // memory.
-PyAPI_FUNC(PyObject*) _PyUnicode_FromId(_Py_Identifier*);
+Py_DEPRECATED(3.15) PyAPI_FUNC(PyObject*) _PyUnicode_FromId(_Py_Identifier*);

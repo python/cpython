@@ -25,7 +25,7 @@ class Test_OSXSupport(unittest.TestCase):
             'CFLAGS', 'LDFLAGS', 'CPPFLAGS',
             'BASECFLAGS', 'BLDSHARED', 'LDSHARED', 'CC',
             'CXX', 'PY_CFLAGS', 'PY_LDFLAGS', 'PY_CPPFLAGS',
-            'PY_CORE_CFLAGS', 'PY_CORE_LDFLAGS'
+            'PY_CORE_CFLAGS', 'PY_CORE_LDFLAGS', 'PY_CORE_EXE_LDFLAGS'
         )
 
     def add_expected_saved_initial_values(self, config_vars, expected_vars):

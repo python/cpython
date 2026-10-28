@@ -133,13 +133,13 @@ PyDoc_STRVAR(msvcrt_open_osfhandle__doc__,
     {"open_osfhandle", _PyCFunction_CAST(msvcrt_open_osfhandle), METH_FASTCALL, msvcrt_open_osfhandle__doc__},
 
 static long
-msvcrt_open_osfhandle_impl(PyObject *module, void *handle, int flags);
+msvcrt_open_osfhandle_impl(PyObject *module, HANDLE handle, int flags);
 
 static PyObject *
 msvcrt_open_osfhandle(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    void *handle;
+    HANDLE handle;
     int flags;
     long _return_value;
 
@@ -531,14 +531,14 @@ PyDoc_STRVAR(msvcrt_CrtSetReportFile__doc__,
     {"CrtSetReportFile", _PyCFunction_CAST(msvcrt_CrtSetReportFile), METH_FASTCALL, msvcrt_CrtSetReportFile__doc__},
 
 static void *
-msvcrt_CrtSetReportFile_impl(PyObject *module, int type, void *file);
+msvcrt_CrtSetReportFile_impl(PyObject *module, int type, HANDLE file);
 
 static PyObject *
 msvcrt_CrtSetReportFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int type;
-    void *file;
+    HANDLE file;
     void *_return_value;
 
     if (!_PyArg_CheckPositional("CrtSetReportFile", nargs, 2, 2)) {
@@ -743,4 +743,4 @@ exit:
 #ifndef MSVCRT_GETERRORMODE_METHODDEF
     #define MSVCRT_GETERRORMODE_METHODDEF
 #endif /* !defined(MSVCRT_GETERRORMODE_METHODDEF) */
-/*[clinic end generated code: output=f67eaf745685429d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=58c1771c8b9a209b input=a9049054013a1b77]*/

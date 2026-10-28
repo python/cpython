@@ -5,10 +5,11 @@ may change at any time.
 """
 
 import sys
-import warnings
 
 from _ctypes import CField, buffer_info
 import ctypes
+
+lazy import warnings
 
 def round_down(n, multiple):
     assert n >= 0

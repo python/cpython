@@ -64,6 +64,16 @@ def find_opt(args, name):
     return -1
 
 
+def remove_opt(args: list[str], name: str) -> None:
+    opt = f'--{name}'
+    optstart = f'{opt}='
+    args[:] = [
+        arg
+        for arg in args
+        if arg != opt and not arg.startswith(optstart)
+    ]
+
+
 def ensure_opt(args, name, value):
     opt = f'--{name}'
     pos = find_opt(args, name)
@@ -128,6 +138,10 @@ def prepare(script=None, outdir=None):
     # Run configure.
     print(f'configuring python in {builddir}...')
     config_args = shlex.split(sysconfig.get_config_var('CONFIG_ARGS') or '')
+    # Optimisations such as LTO and PGO only slow down the build of this
+    # throwaway interpreter without affecting what the test checks.
+    remove_opt(config_args, 'enable-optimizations')
+    remove_opt(config_args, 'with-lto')
     cmd = [os.path.join(srcdir, 'configure'), *config_args]
     ensure_opt(cmd, 'cache-file', os.path.join(outdir, 'python-config.cache'))
     prefix = os.path.join(outdir, 'python-installation')

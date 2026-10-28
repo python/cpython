@@ -28,13 +28,12 @@ Please be aware that our workflow does deviate slightly from the typical GitHub
 project. Details on how to properly submit a pull request are covered in
 `Lifecycle of a Pull Request <https://devguide.python.org/getting-started/pull-request-lifecycle.html>`_.
 We utilize various bots and status checks to help with this, so do follow the
-comments they leave and their "Details" links, respectively. The key points of
-our workflow that are not covered by a bot or status check are:
+comments they leave and their "Details" links, respectively.
 
-- All discussions that are not directly related to the code in the pull request
-  should happen on `GitHub Issues <https://github.com/python/cpython/issues>`_.
-- Upon your first non-trivial pull request (which includes documentation changes),
-  feel free to add yourself to ``Misc/ACKS``.
+The final key part of our workflow is that all discussions that are not
+directly related to the code in the pull request should happen on
+`GitHub Issues <https://github.com/python/cpython/issues>`__, generally in the
+pull request's parent issue.
 
 
 Setting Expectations

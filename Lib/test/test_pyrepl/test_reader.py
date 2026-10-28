@@ -4,12 +4,15 @@ import rlcompleter
 from textwrap import dedent
 from unittest import TestCase
 from unittest.mock import MagicMock
-from test.support import force_colorized_test_class, force_not_colorized_test_class
+from test.support import force_colorized, force_colorized_test_class
+from test.support import force_not_colorized_test_class
 
 from .support import handle_all_events, handle_events_narrow_console
 from .support import ScreenEqualMixin, code_to_events
 from .support import prepare_reader, prepare_console
 from _pyrepl.console import Event
+from _pyrepl.layout import LayoutMap
+from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
 from _pyrepl.reader import Reader
 from _colorize import default_theme
 
@@ -18,8 +21,48 @@ overrides = {"reset": "z", "soft_keyword": "K"}
 colors = {overrides.get(k, k[0].lower()): v for k, v in default_theme.syntax.items()}
 
 
+def prepare_reader_multiline_prompt(*args, **kwargs):
+    reader = prepare_reader(*args, **kwargs)
+    del reader.get_prompt
+    reader.ps1 = "Python 3.15\n>>> "
+    reader.ps2 = "Python 3.15\n>>> "
+    reader.ps3 = "Python 3.15\n... "
+    reader.ps4 = "Python 3.15\n... "
+    reader.can_colorize = False
+    reader.paste_mode = False
+    return reader
+
+
 @force_not_colorized_test_class
 class TestReader(ScreenEqualMixin, TestCase):
+    def assert_multiline_prompt_screen(self, code, expected_screen, expected_cxy):
+        reader, _ = handle_all_events(
+            code_to_events(code),
+            prepare_reader=prepare_reader_multiline_prompt,
+        )
+
+        self.assertEqual(reader.screen, expected_screen)
+        self.assertEqual(reader.cxy, expected_cxy)
+
+    def test_multiline_prompt_does_not_duplicate_leading_lines(self):
+        self.assert_multiline_prompt_screen(
+            "abc",
+            ["Python 3.15", ">>> abc"],
+            (7, 1),
+        )
+
+    def test_multiline_prompt_does_not_duplicate_leading_lines_across_buffer_lines(self):
+        self.assert_multiline_prompt_screen(
+            "if x:\n    y",
+            [
+                "Python 3.15",
+                ">>> if x:",
+                "Python 3.15",
+                "...         y",
+            ],
+            (13, 3),
+        )
+
     def test_calc_screen_wrap_simple(self):
         events = code_to_events(10 * "a")
         reader, _ = handle_events_narrow_console(events)
@@ -29,6 +72,31 @@ class TestReader(ScreenEqualMixin, TestCase):
         events = code_to_events(8 * "a" + "樂")
         reader, _ = handle_events_narrow_console(events)
         self.assert_screen_equal(reader, f"{8*"a"}\\\n樂")
+
+    def test_messages_wrap_on_tight_screens(self):
+        console = prepare_console((), width=3)
+        reader = prepare_reader(console)
+
+        reader.msg = "\x1b[31mabcdef\x1b[0m"
+        lines = reader._render_message_lines()
+        self.assertEqual(
+            [line.text for line in lines],
+            ["\x1b[31mabc\x1b[0m", "\x1b[31mdef\x1b[0m"],
+        )
+
+        reader.msg = "ab樂c"
+        console.width = 4
+        lines = reader._render_message_lines()
+        self.assertEqual([line.text for line in lines], ["ab樂", "c"])
+        self.assertEqual([line.width for line in lines], [4, 1])
+
+        reader.msg = "ab\N{COMBINING ACUTE ACCENT}cd"
+        console.width = 3
+        lines = reader._render_message_lines()
+        self.assertEqual(
+            [line.text for line in lines],
+            ["ab\N{COMBINING ACUTE ACCENT}c", "d"],
+        )
 
     def test_calc_screen_wrap_three_lines(self):
         events = code_to_events(20 * "a")
@@ -101,6 +169,22 @@ class TestReader(ScreenEqualMixin, TestCase):
         )
         reader, _ = handle_all_events(events)
         self.assert_screen_equal(reader, "aa")
+
+    def test_refresh_escapes_control_bytes_in_buffer(self):
+        console = prepare_console(())
+        config = ReadlineConfig(readline_completer=None)
+        reader = ReadlineAlikeReader(console=console, config=config)
+        reader.can_colorize = False
+        reader.ps1 = reader.ps2 = ">>> "
+        reader.ps3 = reader.ps4 = "... "
+        reader.buffer = ["\x00", "\x1b"]
+        reader.pos = len(reader.buffer)
+        reader.invalidate_full()
+
+        reader.refresh()
+
+        self.assert_screen_equal(reader, ">>> ^@^[")
+        self.assertEqual(reader.cxy, (8, 0))
 
     def test_calc_screen_wrap_removes_after_backspace(self):
         events = itertools.chain(
@@ -176,7 +260,7 @@ class TestReader(ScreenEqualMixin, TestCase):
         )
 
         reader, _ = handle_all_events(events)
-        self.assert_screen_equal(reader, "")
+        self.assertIn(reader.screen, ([], [""]))
 
     def test_newline_within_block_trailing_whitespace(self):
         # fmt: off
@@ -228,6 +312,7 @@ class TestReader(ScreenEqualMixin, TestCase):
             console.get_event.side_effect = events
             console.height = 100
             console.width = 80
+            console.getheightwidth = MagicMock(side_effect=lambda: (console.height, console.width))
             console.input_hook = input_hook
             return console
 
@@ -300,6 +385,21 @@ class TestReader(ScreenEqualMixin, TestCase):
         self.assertEqual(prompt, "\033[0;32m樂>\033[0m> ")
         self.assertEqual(l, 5)
 
+    def test_prepare_with_zero_width_does_not_crash(self):
+        console = prepare_console([], width=0)
+        reader = ReadlineAlikeReader(console=console, config=ReadlineConfig())
+        reader.ps1 = ">>> "
+        reader.ps2 = ">>> "
+        reader.ps3 = "... "
+        reader.ps4 = ""
+        reader.can_colorize = False
+        reader.paste_mode = False
+
+        reader.prepare()
+
+        self.assertEqual(reader.cxy, (0, 0))
+        self.assertEqual(reader.screen, [])
+
     def test_completions_updated_on_key_press(self):
         namespace = {"itertools": itertools}
         code = "itertools."
@@ -346,8 +446,7 @@ class TestReader(ScreenEqualMixin, TestCase):
     def test_pos2xy_with_no_columns(self):
         console = prepare_console([])
         reader = prepare_reader(console)
-        # Simulate a resize to 0 columns
-        reader.screeninfo = []
+        reader.layout = LayoutMap(())
         self.assertEqual(reader.pos2xy(), (0, 0))
 
     def test_setpos_from_xy_for_non_printing_char(self):
@@ -357,6 +456,109 @@ class TestReader(ScreenEqualMixin, TestCase):
         reader, _ = handle_all_events(events)
         reader.setpos_from_xy(8, 0)
         self.assertEqual(reader.pos, 7)
+
+
+@force_not_colorized_test_class
+class TestErrorMessages(TestCase):
+    @force_colorized
+    def test_colorized_error_message(self):
+        console = prepare_console(code_to_events("\x19"))
+        reader = prepare_reader(console)
+
+        reader.handle1()
+
+        theme = default_theme.syntax
+        self.assertEqual(
+            reader.msg,
+            f"{theme.error}! {theme.reset}nothing to yank",
+        )
+
+    def _test_error_message(
+        self,
+        keys: str,
+        expected: str,
+        *,
+        command: str | None = None,
+        binding: str | None = None,
+        **reader_kwargs,
+    ):
+        console = prepare_console(code_to_events(keys))
+        reader = prepare_reader(console, **reader_kwargs)
+        if command is not None:
+            reader.bind(binding or keys, command)
+
+        while not reader.msg:
+            reader.handle1()
+
+        self.assertEqual(reader.msg, f"! {expected}")
+        self.assertEqual(reader.screen[-1], f"! {expected}")
+        console.beep.assert_called_once()
+
+    def test_invalid_key_message(self):
+        self._test_error_message("\x1bo", "no command is bound to this key")
+
+    def test_unimplemented_command_message(self):
+        self._test_error_message(
+            "x",
+            "command 'missing-command' is not implemented",
+            command="missing-command",
+        )
+
+    def test_nothing_to_yank_message(self):
+        self._test_error_message("\x19", "nothing to yank")
+
+    def test_yank_pop_with_empty_kill_ring_message(self):
+        self._test_error_message("\x1by", "nothing to yank")
+
+    def test_yank_pop_after_other_command_message(self):
+        self._test_error_message(
+            "x\x01\x0b\x1by",
+            "previous command was not a yank",
+        )
+
+    def test_start_of_history_message(self):
+        self._test_error_message("\x10", "start of history list")
+
+    def test_end_of_history_message(self):
+        self._test_error_message("\x0e", "end of history list")
+
+    def test_yank_arg_at_beginning_of_history_message(self):
+        self._test_error_message(
+            "\x1b.\x1b.\x1b.",
+            "beginning of history list",
+            history=["one"],
+            historyi=1,
+        )
+
+    def test_yank_arg_with_no_argument_message(self):
+        self._test_error_message(
+            "\x1b.",
+            "no such arg",
+            history=[""],
+            historyi=1,
+        )
+
+    def test_empty_incremental_search_backspace_message(self):
+        self._test_error_message(
+            "x",
+            "nothing to rubout",
+            command="isearch-backspace",
+        )
+
+    def test_history_search_not_found_message(self):
+        self._test_error_message(
+            "missingx",
+            "not found",
+            command="history-search-backward",
+            binding="x",
+        )
+
+    def test_incremental_search_not_found_message(self):
+        self._test_error_message("\x12x", "not found")
+
+    def test_no_completion_matches_message(self):
+        self._test_error_message("does_not_exist\t", "no matches")
+
 
 @force_colorized_test_class
 class TestReaderInColor(ScreenEqualMixin, TestCase):

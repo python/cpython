@@ -255,10 +255,44 @@ error:
 
 
 static PyObject *
+pylongwriter_finish_bug(PyObject *module, PyObject *Py_UNUSED(args))
+{
+    void *writer_digits;
+    PyLongWriter *writer = PyLongWriter_Create(0, 3, &writer_digits);
+    if (writer == NULL) {
+        return NULL;
+    }
+
+    assert(PyLong_GetNativeLayout()->digit_size == sizeof(digit));
+    digit *digits = writer_digits;
+    digits[0] = 1;
+    digits[1] = 1;
+    // Oops, digits[2] is left uninitialized on purpose
+    // to test PyLongWriter_Finish()
+    return PyLongWriter_Finish(writer);
+}
+
+
+static PyObject *
 get_pylong_layout(PyObject *module, PyObject *Py_UNUSED(args))
 {
     const PyLongLayout *layout = PyLong_GetNativeLayout();
     return layout_to_dict(layout);
+}
+
+
+// Write into an immutable int object to test _PyStaticObjects_CheckAll()
+static PyObject *
+corrupt_long(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *obj;
+    int value;
+    if (!PyArg_ParseTuple(args, "Oi", &obj, &value)) {
+        return NULL;
+    }
+
+    ((PyLongObject*)obj)->long_value.ob_digit[0] = value;
+    Py_RETURN_NONE;
 }
 
 
@@ -271,10 +305,12 @@ static PyMethodDef test_methods[] = {
     {"pylong_aspid",                pylong_aspid,               METH_O},
     {"pylong_export",               pylong_export,              METH_O},
     {"pylongwriter_create",         pylongwriter_create,        METH_VARARGS},
+    {"pylongwriter_finish_bug",     pylongwriter_finish_bug,    METH_NOARGS},
     {"get_pylong_layout",           get_pylong_layout,          METH_NOARGS},
     {"pylong_ispositive",           pylong_ispositive,          METH_O},
     {"pylong_isnegative",           pylong_isnegative,          METH_O},
     {"pylong_iszero",               pylong_iszero,              METH_O},
+    {"corrupt_long",                corrupt_long,               METH_VARARGS},
     {NULL},
 };
 
