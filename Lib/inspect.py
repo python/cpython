@@ -298,6 +298,8 @@ def _has_code_flag(f, flag):
     f = functools._unwrap_partial(f)
     if not (isfunction(f) or _signature_is_functionlike(f)):
         return False
+    # If it's a pure Python function, or an object that is duck type
+    # of a Python function (Cython and Mock functions, for instance), then:
     return bool(f.__code__.co_flags & flag)
 
 def isgeneratorfunction(obj):
@@ -439,7 +441,8 @@ def isbuiltin(object):
     Built-in functions and methods provide these attributes:
         __doc__         documentation string
         __name__        original name of this function or method
-        __self__        instance to which a method is bound, or None"""
+        __self__        instance to which a method is bound, or module object
+                        a function was defined in, or None"""
     return isinstance(object, types.BuiltinFunctionType)
 
 def ismethodwrapper(object):
@@ -793,12 +796,14 @@ def _getowndoc(obj):
     except AttributeError:
         return None
 
-def getdoc(object, *, fallback_to_class_doc=True, inherit_class_doc=True):
+def getdoc(object, *, fallback_to_class_doc=True, inherit_class_doc=True,
+           dedent=True):
     """Get the documentation string for an object.
 
     All tabs are expanded to spaces.  To clean up docstrings that are
     indented to line up with blocks of code, any whitespace than can be
-    uniformly removed from the second line onwards is removed."""
+    uniformly removed from the second line onwards is removed, unless
+    dedent is false."""
     if fallback_to_class_doc:
         try:
             doc = object.__doc__
@@ -813,22 +818,23 @@ def getdoc(object, *, fallback_to_class_doc=True, inherit_class_doc=True):
             return None
     if not isinstance(doc, str):
         return None
-    return cleandoc(doc)
+    return cleandoc(doc, dedent=dedent)
 
-def cleandoc(doc):
+def cleandoc(doc, *, dedent=True):
     """Clean up indentation from docstrings.
 
     Any whitespace that can be uniformly removed from the second line
-    onwards is removed."""
+    onwards is removed, unless dedent is false."""
     lines = doc.expandtabs().split('\n')
 
     # Find minimum indentation of any non-blank lines after first line.
     margin = sys.maxsize
-    for line in lines[1:]:
-        content = len(line.lstrip(' '))
-        if content:
-            indent = len(line) - content
-            margin = min(margin, indent)
+    if dedent:
+        for line in lines[1:]:
+            content = len(line.lstrip(' '))
+            if content:
+                indent = len(line) - content
+                margin = min(margin, indent)
     # Remove indentation.
     if lines:
         lines[0] = lines[0].lstrip(' ')
@@ -1391,6 +1397,14 @@ def formatannotationrelativeto(object):
         return formatannotation(annotation, module)
     return _formatannotation
 
+# A placeholder with <deleted> as repr (using a string would have '<deleted>'
+# with quotes). This is used in formatargvalues function.
+class _Deleted:
+    def __repr__(self):
+        return '<deleted>'
+
+_deleted = _Deleted()
+del _Deleted
 
 def formatargvalues(args, varargs, varkw, locals,
                     formatarg=str,
@@ -1405,14 +1419,19 @@ def formatargvalues(args, varargs, varkw, locals,
     argument is an optional function to format the sequence of arguments."""
     def convert(name, locals=locals,
                 formatarg=formatarg, formatvalue=formatvalue):
-        return formatarg(name) + formatvalue(locals[name])
+        formatted_name = formatarg(name)
+        try:
+            value = locals[name]
+        except KeyError:
+            value = _deleted
+        return formatted_name + formatvalue(value)
     specs = []
     for i in range(len(args)):
         specs.append(convert(args[i]))
     if varargs:
-        specs.append(formatvarargs(varargs) + formatvalue(locals[varargs]))
+        specs.append(convert(varargs, formatarg=formatvarargs))
     if varkw:
-        specs.append(formatvarkw(varkw) + formatvalue(locals[varkw]))
+        specs.append(convert(varkw, formatarg=formatvarkw))
     return '(' + ', '.join(specs) + ')'
 
 def _missing_arguments(f_name, argnames, pos, values):
@@ -2335,7 +2354,7 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
             is_duck_function = True
         else:
             # If it's not a pure Python function, and not a duck type
-            # of pure function:
+            # of pure function (Cython and Mock functions, for instance), then:
             raise TypeError('{!r} is not a Python function'.format(func))
 
     s = getattr(func, "__text_signature__", None)
@@ -2343,6 +2362,8 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
         return _signature_fromstr(cls, func, s, skip_bound_arg)
 
     Parameter = cls._parameter_cls
+    if Parameter is Signature._parameter_cls and not is_duck_function:
+        Parameter = Parameter._from_code
 
     # Parameter information.
     func_code = func.__code__
@@ -2528,7 +2549,7 @@ def _signature_from_callable(obj, *,
 
     if isfunction(obj) or _signature_is_functionlike(obj):
         # If it's a pure Python function, or an object that is duck type
-        # of a Python function (Cython functions, for instance), then:
+        # of a Python function (Cython and Mock functions, for instance), then:
         return _signature_from_function(sigcls, obj,
                                         skip_bound_arg=skip_bound_arg,
                                         globals=globals, locals=locals, eval_str=eval_str,
@@ -2740,6 +2761,18 @@ class Parameter:
             raise ValueError('{!r} is not a valid parameter name'.format(name))
 
         self._name = name
+
+    @classmethod
+    def _from_code(cls, name, kind, *, default=_empty, annotation=_empty):
+        # Fast path for Python functions: only the name needs validation.
+        if iskeyword(name) or not name.isidentifier():
+            return cls(name, kind, default=default, annotation=annotation)
+        self = object.__new__(cls)
+        self._name = name
+        self._kind = kind
+        self._default = default
+        self._annotation = annotation
+        return self
 
     def __reduce__(self):
         return (type(self),
@@ -3460,6 +3493,10 @@ def _main():
     """ Logic for inspecting an object given at command line """
     import argparse
     import importlib
+
+    # The printed text can contain characters unencodable in the encoding
+    # of stdout, e.g. undecodable bytes of a file name.
+    sys.stdout.reconfigure(errors='backslashreplace')
 
     parser = argparse.ArgumentParser()
     parser.add_argument(

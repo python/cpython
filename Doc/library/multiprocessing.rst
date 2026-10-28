@@ -160,10 +160,20 @@ to start a process.  These *start methods* are
     No unnecessary resources are inherited.
 
     Available on POSIX platforms which support passing file descriptors over
-    Unix pipes such as Linux.  The default on those.
+    Unix pipes such as Linux.  The default on those, unless there is no
+    writable temporary directory (see :func:`tempfile.gettempdir`), which
+    the fork server requires; *spawn* is the default in that case.
 
     .. versionchanged:: 3.14
        This became the default start method on POSIX platforms.
+
+    .. versionchanged:: 3.16
+       *spawn* is now the default start method when there is no writable
+       temporary directory, for example on a read-only file system.
+       Previously *forkserver* remained the default there and starting a
+       process failed with an :exc:`OSError`.  The default is determined
+       when it is first needed rather than when :mod:`!multiprocessing`
+       is imported.  See :gh:`155717`.
 
 .. versionchanged:: 3.4
    *spawn* added on all POSIX platforms, and *forkserver* added for
@@ -2536,9 +2546,9 @@ with the :class:`Pool` class.
       Callbacks should complete immediately since otherwise the thread which
       handles the results will get blocked.
 
-   .. method:: imap(func, iterable[, chunksize])
+   .. method:: imap(func, iterable, chunksize=1, *, buffersize=None)
 
-      A lazier version of :meth:`.map`.
+      An iterator-based version of :meth:`.map`.
 
       The *chunksize* argument is the same as the one used by the :meth:`.map`
       method.  For very long iterables using a large value for *chunksize* can
@@ -2550,11 +2560,26 @@ with the :class:`Pool` class.
       ``next(timeout)`` will raise :exc:`multiprocessing.TimeoutError` if the
       result cannot be returned within *timeout* seconds.
 
-   .. method:: imap_unordered(func, iterable[, chunksize])
+      The *iterable* is collected immediately rather than lazily, unless a
+      *buffersize* is specified to limit the number of submitted tasks whose
+      results have not yet been yielded. If the buffer is full, iteration over
+      the *iterables* pauses until a result is yielded from the buffer.
+      To fully utilize pool's capacity when using this feature,
+      set *buffersize* at least to the number of processes in pool
+      (to consume *iterable* as you go), or even higher
+      (to prefetch the next ``N=buffersize-processes`` arguments).
+
+      .. versionchanged:: 3.16
+         Added the *buffersize* parameter.
+
+   .. method:: imap_unordered(func, iterable, chunksize=1, *, buffersize=None)
 
       The same as :meth:`imap` except that the ordering of the results from the
       returned iterator should be considered arbitrary.  (Only when there is
       only one worker process is the order guaranteed to be "correct".)
+
+      .. versionchanged:: 3.16
+         Added the *buffersize* parameter.
 
    .. method:: starmap(func, iterable[, chunksize])
 
