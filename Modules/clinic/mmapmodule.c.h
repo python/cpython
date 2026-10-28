@@ -701,6 +701,21 @@ exit:
     return return_value;
 }
 
+static PyObject *
+mmap__repr__method_impl(PyObject *op);
+
+static PyObject *
+mmap__repr__method(PyObject *op)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(op);
+    return_value = mmap__repr__method_impl(op);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(mmap_mmap___sizeof____doc__,
@@ -877,6 +892,36 @@ mmap_length(PyObject *self)
     return return_value;
 }
 
+static PyObject *
+mmap_item_impl(mmap_object *self, Py_ssize_t i);
+
+static PyObject *
+mmap_item(PyObject *self, Py_ssize_t i)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = mmap_item_impl((mmap_object *)self, i);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static PyObject *
+mmap_subscript_impl(mmap_object *self, PyObject *item);
+
+static PyObject *
+mmap_subscript(PyObject *self, PyObject *item)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = mmap_subscript_impl((mmap_object *)self, item);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 static int
 mmap_ass_item_impl(mmap_object *self, Py_ssize_t i, PyObject *v);
 
@@ -922,4 +967,4 @@ mmap_ass_subscript(PyObject *self, PyObject *item, PyObject *value)
 #ifndef MMAP_MMAP_MADVISE_METHODDEF
     #define MMAP_MMAP_MADVISE_METHODDEF
 #endif /* !defined(MMAP_MMAP_MADVISE_METHODDEF) */
-/*[clinic end generated code: output=eb09e5d722968cef input=a9049054013a1b77]*/
+/*[clinic end generated code: output=90a906cde591ab92 input=a9049054013a1b77]*/
