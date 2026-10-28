@@ -867,7 +867,8 @@ static PyObject *
 dec_new_impl(PyTypeObject *type, PyObject *value, PyObject *context);
 
 static PyObject *
-dec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+dec_new_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -899,12 +900,11 @@ dec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #undef KWTUPLE
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
+    Py_ssize_t noptargs = nargs + nkw - 0;
     PyObject *value = NULL;
     PyObject *context = Py_None;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -923,6 +923,47 @@ skip_optional_pos:
     return_value = dec_new_impl(type, value, context);
 
 exit:
+    return return_value;
+}
+
+static PyObject *
+dec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return dec_new_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+dec_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *value = NULL;
+    PyObject *context = Py_None;
+
+    assert(_PyType_CAST(type)->tp_new == dec_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (kwnames != NULL || nargs > 2) {
+        return dec_new_helper(_PyType_CAST(type), args, nargs,
+            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+            NULL, kwnames);
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    value = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    context = args[1];
+skip_optional:
+    return_value = dec_new_impl(_PyType_CAST(type), value, context);
+
     return return_value;
 }
 
@@ -5043,7 +5084,7 @@ PyDoc_STRVAR(_decimal_Context_power__doc__,
 "Compute a**b.\n"
 "\n"
 "If \'a\' is negative, then \'b\' must be integral. The result will be\n"
-"inexact unless \'a\' is integral and the result is finite and can be\n"
+"inexact unless \'b\' is integral and the result is finite and can be\n"
 "expressed exactly in \'precision\' digits.  In the Python version the\n"
 "result is always correctly rounded, in the C version the result is\n"
 "almost always correctly rounded.\n"
@@ -5569,7 +5610,13 @@ PyDoc_STRVAR(_decimal_Context_canonical__doc__,
 "canonical($self, x, /)\n"
 "--\n"
 "\n"
-"Return a new instance of x.");
+"Returns the same Decimal object.\n"
+"\n"
+"As we do not have different encodings for the same number, the\n"
+"received object already is in its canonical form.\n"
+"\n"
+">>> ExtendedContext.canonical(Decimal(\'2.50\'))\n"
+"Decimal(\'2.50\')");
 
 #define _DECIMAL_CONTEXT_CANONICAL_METHODDEF    \
     {"canonical", _PyCFunction_CAST(_decimal_Context_canonical), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_canonical__doc__},
@@ -6283,4 +6330,4 @@ exit:
 #ifndef _DECIMAL_CONTEXT_APPLY_METHODDEF
     #define _DECIMAL_CONTEXT_APPLY_METHODDEF
 #endif /* !defined(_DECIMAL_CONTEXT_APPLY_METHODDEF) */
-/*[clinic end generated code: output=783d0db339199a30 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f9ddc00f5a7335c4 input=a9049054013a1b77]*/
