@@ -27,6 +27,7 @@ def setup(app):
     app.add_lexer("asdl", ASDLLexer)
     # Used for highlighting Grammar/python.gram in reference/grammar.rst
     app.add_lexer("peg", PEGLexer)
+    # Strips hidden grammar parts before translation catalogs are built
     app.add_transform(StripPEGBlocks)
 
     return {
