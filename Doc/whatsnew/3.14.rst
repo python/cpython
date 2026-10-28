@@ -403,7 +403,7 @@ function. For example:
 
 .. code-block:: python
 
-   import sys
+   import os, sys
    from tempfile import NamedTemporaryFile
 
    with NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
