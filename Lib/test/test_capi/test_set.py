@@ -296,14 +296,19 @@ class FrozenSetWriterTests(unittest.TestCase):
         return self.assertRaisesRegex(TypeError, err_msg)
 
     def test_empty(self):
-        for size in (0, 128):
+        _set_get_table_size = _testcapi._set_get_table_size
+
+        for size in (0, 1024):
             with self.subTest(size=size):
                 writer = self.create_writer(size)
                 empty_tuple = ()
                 writer.update(empty_tuple)
                 writer.update_array(empty_tuple)
                 writer.update_array_steal(empty_tuple)
-                self.assertEqual(writer.finish(), frozenset())
+                result = writer.finish()
+                self.assertEqual(result, frozenset())
+                self.assertEqual(_set_get_table_size(result),
+                                 self.PySet_MINSIZE)
 
     def test_get_table_set(self):
         # Test size parameter of PyFrozenSetWriter_Create()
@@ -419,6 +424,24 @@ class FrozenSetWriterTests(unittest.TestCase):
         writer = self.create_writer()
         writer.update([obj])
         self.assertTrue(gc.is_tracked(writer.finish()))
+
+    def test_finish_shrink(self):
+        # Check that PyFrozenSetWriter_Finish() shrinks the table
+        # if the frozenset table is way too big
+        _set_get_table_size = _testcapi._set_get_table_size
+
+        writer = self.create_writer(1024)
+        writer.update([1])
+        result = writer.finish()
+        self.assertEqual(result, frozenset([1]))
+        self.assertEqual(_set_get_table_size(result), self.PySet_MINSIZE)
+
+        items = self.create_items(127)
+        writer = self.create_writer(len(items) * 100)
+        writer.update(items)
+        result = writer.finish()
+        self.assertEqual(result, frozenset(items))
+        self.assertEqual(_set_get_table_size(result), 256)
 
     def test_discard(self):
         # Test PyFrozenSetWriter_Discard(): must not leak memory

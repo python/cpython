@@ -31,6 +31,15 @@ test_set_type_size(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 
+static PyObject*
+_set_get_table_size(PyObject *self_raw, PyObject *arg)
+{
+    PySetObject *frozenset = _PySet_CAST(arg);
+    Py_ssize_t table_size = frozenset->mask + 1;
+    return PyLong_FromSsize_t(table_size);
+}
+
+
 typedef struct {
     PyObject_HEAD
     PyFrozenSetWriter *writer;
@@ -210,9 +219,8 @@ writer_get_table_size(PyObject *self_raw, PyObject *Py_UNUSED(args))
         return NULL;
     }
 
-    PySetObject *frozenset = _PySet_CAST(self->writer);
-    Py_ssize_t table_size = frozenset->mask + 1;
-    return PyLong_FromSsize_t(table_size);
+    PyObject *frozenset = _PyObject_CAST(self->writer);
+    return _set_get_table_size(self_raw, frozenset);
 }
 
 
@@ -277,6 +285,7 @@ static PyType_Spec Writer_spec = {
 static PyMethodDef test_methods[] = {
     {"set_get_size", set_get_size, METH_O},
     {"test_set_type_size", test_set_type_size, METH_NOARGS},
+    {"_set_get_table_size", _set_get_table_size, METH_O},
     {NULL},
 };
 

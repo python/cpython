@@ -3289,6 +3289,22 @@ PyFrozenSetWriter_Finish(PyFrozenSetWriter *writer)
     assert(frozensetwriter_check_consistency(writer));
     PySetObject *frozenset = _PySet_CAST(writer);
 
+    // If the frozenset table is too big (waste memory), make the table
+    // smaller. For example, PyFrozenSetWriter_Create() argument was way too
+    // big.
+    Py_ssize_t table_size = frozenset->mask + 1;
+    // set_add_entry_takeref() allocates a table of used*4 for table smaller
+    // than 50,000 items. So check for table_size / 8.
+    if (frozenset->used < table_size / 8
+        && frozenset->table != frozenset->smalltable)
+    {
+        if (set_table_resize(frozenset, frozenset->used * 2) != 0) {
+            PyFrozenSetWriter_Discard(writer);
+            return NULL;
+        }
+        assert((frozenset->mask + 1) != table_size);
+    }
+
     // Now that the frozenset is fully initialized, it's safe to track it in
     // the GC. Track the frozenset if at least one item is tracked by the GC.
     Py_ssize_t pos = 0;
