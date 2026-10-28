@@ -43,7 +43,11 @@ as much as it can.
    should accept a single parameter, which will be the weak reference object
    itself. *callback* may also be ``None`` or ``NULL``.  If *ob* is not a
    weakly referenceable object, or if *callback* is not callable, ``None``, or
-   ``NULL``, this will return ``NULL`` and raise :exc:`TypeError`.
+   ``NULL``, this will raise :exc:`TypeError` and return ``NULL``.
+
+   .. versionchanged:: 3.16
+      Raise :exc:`!TypeError` if *callback* is not callable, ``None``, or
+      ``NULL``.
 
    .. seealso::
       :c:func:`PyType_SUPPORTS_WEAKREFS` for checking if *ob* is weakly
@@ -59,7 +63,11 @@ as much as it can.
    collected; it should accept a single parameter, which will be the weak
    reference object itself. *callback* may also be ``None`` or ``NULL``.  If *ob*
    is not a weakly referenceable object, or if *callback* is not callable,
-   ``None``, or ``NULL``, this will return ``NULL`` and raise :exc:`TypeError`.
+   ``NULL``, this will raise :exc:`TypeError` and return ``NULL``.
+
+   .. versionchanged:: 3.16
+      Raise :exc:`!TypeError` if *callback* is not callable, ``None``, or
+      ``NULL``.
 
    .. seealso::
       :c:func:`PyType_SUPPORTS_WEAKREFS` for checking if *ob* is weakly
@@ -96,6 +104,17 @@ as much as it can.
    This iterates through the weak references for *object* and calls callbacks
    for those references which have one. It returns when all callbacks have
    been attempted.
+
+
+.. c:function:: PyObject **PyObject_GET_WEAKREFS_LISTPTR(PyObject *object)
+
+   Return a pointer to an internal linked list of weak references to *object*.
+   *object* must support weak references and must not be ``NULL``.
+
+   This function is intended for internal use only. Do not access or modify
+   the weak reference list through the returned pointer.
+
+   .. soft-deprecated:: next
 
 
 .. c:function:: void PyUnstable_Object_ClearWeakRefsNoCallbacks(PyObject *object)

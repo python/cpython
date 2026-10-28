@@ -563,16 +563,16 @@ def lru_cache(maxsize=128, typed=False):
     If *maxsize* is set to None, the LRU features are disabled and the cache
     can grow without bound.
 
-    If *typed* is True, arguments of different types will be cached separately.
-    For example, f(decimal.Decimal("3.0")) and f(3.0) will be treated as
-    distinct calls with distinct results. Some types such as str and int may
-    be cached separately even when typed is false.
+    If *typed* is True, arguments of different types will be cached
+    separately.  For example, f(decimal.Decimal("3.0")) and f(3.0) will be
+    treated as distinct calls with distinct results.  Some types such as
+    str and int may be cached separately even when typed is false.
 
     Arguments to the cached function must be hashable.
 
     View the cache statistics named tuple (hits, misses, maxsize, currsize)
-    with f.cache_info().  Clear the cache and statistics with f.cache_clear().
-    Access the underlying function with f.__wrapped__.
+    with f.cache_info().  Clear the cache and statistics with
+    f.cache_clear().  Access the underlying function with f.__wrapped__.
 
     See:  https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)
 
@@ -990,6 +990,16 @@ def singledispatch(func):
                         f"Invalid annotation for {argname!r}. "
                         f"{cls!r} is not a class."
                     )
+            if argname == 'return':
+                import warnings
+                warnings.warn(
+                    "Using the return annotation to infer the dispatch type "
+                    "is deprecated and will raise TypeError in Python 3.21. "
+                    "Annotate the dispatch parameter or pass the dispatch "
+                    "type explicitly to register() decorator.",
+                    DeprecationWarning,
+                    skip_file_prefixes=(__file__,),
+                )
 
         if isinstance(cls, UnionType):
             for arg in cls.__args__:

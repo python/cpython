@@ -1,2 +1,0 @@
-Fix race condition when pickling dictionaries in free threaded builds. Also
-reduce critical section cover.

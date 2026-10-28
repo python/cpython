@@ -454,8 +454,8 @@ method.
 
    The method will be passed the type object as the first parameter rather
    than an instance of the type.  This is used to create *class methods*,
-   similar to what is created when using the :func:`classmethod` built-in
-   function.
+   similar to what is created when using the :deco:`classmethod` built-in
+   decorator.
 
 
 .. c:macro:: METH_STATIC
@@ -464,7 +464,7 @@ method.
 
    The method will be passed ``NULL`` as the first parameter rather than an
    instance of the type.  This is used to create *static methods*, similar to
-   what is created when using the :func:`staticmethod` built-in function.
+   what is created when using the :deco:`staticmethod` built-in decorator.
 
 One other constant controls whether a method is loaded in place of another
 definition with the same method name.
@@ -608,6 +608,18 @@ definition with the same method name.
 
    This is the same as :c:func:`PyCFunction_GetSelf`, but without error or
    type checking.
+
+
+.. c:function:: PyTypeObject *PyCFunction_GET_CLASS(PyObject *func)
+
+   Return a :term:`borrowed reference` to the defining class of *func* if
+   its :c:member:`~PyMethodDef.ml_flags` includes :c:macro:`METH_METHOD`.
+   Otherwise, return ``NULL`` without setting an exception.
+
+   *func* must be a C function object and must not be ``NULL``.
+   This function does not perform error or type checking.
+
+   .. versionadded:: 3.9
 
 
 Accessing attributes of extension types
@@ -760,10 +772,29 @@ The following flags can be used with :c:member:`PyMemberDef.flags`:
 .. versionchanged:: 3.12
 
    The :c:macro:`!READONLY` macro was renamed to :c:macro:`Py_READONLY`.
-   The :c:macro:`!PY_AUDIT_READ` macro was renamed with the ``Py_`` prefix.
+   The :c:macro:`PY_AUDIT_READ` macro was renamed with the ``Py_`` prefix.
    The new names are now always available.
    Previously, these required ``#include "structmember.h"``.
    The header is still available and it provides the old names.
+
+.. c:macro:: PY_AUDIT_READ
+
+   Soft-deprecated alias of :c:macro:`Py_AUDIT_READ` (note capitalization of
+   the ``y``).
+   Only available with  ``#include "structmember.h"``.
+
+   .. soft-deprecated:: 3.12
+      Use :c:macro:`Py_AUDIT_READ` instead.
+
+
+.. c:macro:: PY_WRITE_RESTRICTED
+
+   A member flag that has no effect, retained solely for backwards compatibility.
+   This is only available with ``#include "structmember.h"``.
+
+   .. soft-deprecated:: next
+      Omit this flag instead.
+
 
 .. _PyMemberDef-types:
 

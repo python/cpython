@@ -226,6 +226,8 @@ template_iter(PyObject *op)
     if (iter == NULL) {
         return NULL;
     }
+    iter->stringsiter = NULL;
+    iter->interpolationsiter = NULL;
 
     PyObject *stringsiter = PyObject_GetIter(self->strings);
     if (stringsiter == NULL) {
@@ -372,7 +374,11 @@ template_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
 static PyMethodDef template_methods[] = {
     {"__reduce__", template_reduce, METH_NOARGS, NULL},
     {"__class_getitem__", Py_GenericAlias,
-        METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+     METH_O|METH_CLASS,
+     // note that this is not supported in typeshed, and it is not clear if the
+     // type for this is a simple TypeVar or a TypeVarTuple
+     // for details, see: https://github.com/python/typeshed/issues/14878
+     PyDoc_STR("Template supports [] for generic usage")},
     {NULL, NULL},
 };
 

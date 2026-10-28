@@ -101,7 +101,7 @@ extern "C" {
 // Export these 4 symbols for 'test_peg_generator'
 PyAPI_DATA(const char * const) _PyParser_TokenNames[]; /* Token names */
 PyAPI_FUNC(int) _PyToken_OneChar(int);
-PyAPI_FUNC(int) _PyToken_TwoChars(int, int);
+PyAPI_FUNC(int) _PyToken_TwoChars(int, int, int);
 PyAPI_FUNC(int) _PyToken_ThreeChars(int, int, int);
 
 #ifdef __cplusplus

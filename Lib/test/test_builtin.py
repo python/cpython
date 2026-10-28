@@ -39,18 +39,13 @@ from test.support.os_helper import (EnvironmentVarGuard, TESTFN, unlink)
 from test.support.script_helper import assert_python_ok
 from test.support.testcase import ComplexesAreIdenticalMixin
 from test.support.warnings_helper import check_warnings
-from test.support import requires_IEEE_754
+from test.support import requires_IEEE_754, skip_if_double_rounding
 from unittest.mock import MagicMock, patch
 try:
     import pty, signal
 except ImportError:
     pty = signal = None
 
-
-# Detect evidence of double-rounding: sum() does not always
-# get improved accuracy on machines that suffer from double rounding.
-x, y = 1e16, 2.9999 # use temporary values to defeat peephole optimizer
-HAVE_DOUBLE_ROUNDING = (x + y == 1e16 + 4)
 
 # used as proof of globals being used
 A_GLOBAL_VALUE = 123
@@ -547,6 +542,10 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             '''a = [x async for x in (x async for x in arange(5))][1]''',
             '''a, = [1 for x in {x async for x in arange(1)}]''',
             '''a = [await sleep(0, x) async for x in arange(2)][1]''',
+            '''a = [await sleep(0, 1) for _ in [0]][0]''',
+            '''a = {await sleep(0, 1) for _ in [0]}.pop()''',
+            '''a = {0: await sleep(0, 1) for _ in [0]}[0]''',
+            '''a = (lambda x=[await sleep(0, 1) for _ in [0]]: x)()[0]''',
             # gh-121637: Make sure we correctly handle the case where the
             # async code is optimized away
             '''assert not await sleep(0); a = 1''',
@@ -615,7 +614,26 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             '''def f():
                    async with Lock() as l:
                        a = 1
-            '''
+            ''',
+            '''class C:
+                   [await x for x in y]
+            ''',
+            '''class C:
+                   [x async for x in arange(10)]
+            ''',
+            '''async def f():
+                   class C:
+                       [await x for x in y]
+            ''',
+            '''lambda: [await x for x in y]''',
+            '''class C:
+                   def f(self, x=[await y for y in z]):
+                       pass
+            ''',
+            '''type T = [await x for x in y]''',
+            '''async def f[T=[await x for x in y]]():
+                   pass
+            ''',
         ]
         for mode, code_sample in product(modes, code_samples):
             source = dedent(code_sample)
@@ -2235,8 +2253,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                                          complex(2, -0.0))
 
     @requires_IEEE_754
-    @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
-                         "sum accuracy not guaranteed on machines with double rounding")
+    @skip_if_double_rounding
     @support.cpython_only    # Other implementations may choose a different algorithm
     def test_sum_accuracy(self):
         self.assertEqual(sum([0.1] * 10), 1.0)

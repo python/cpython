@@ -1,4 +1,5 @@
 import argparse
+import pathlib
 import sys
 from collections.abc import Callable, Iterator
 from typing import Any
@@ -9,7 +10,7 @@ from pegen.grammar import Grammar, Rule
 argparser = argparse.ArgumentParser(
     prog="pegen", description="Pretty print the AST for a given PEG grammar"
 )
-argparser.add_argument("filename", help="Grammar description")
+argparser.add_argument("filename", type=pathlib.Path, help="Grammar description")
 
 
 class ASTGrammarPrinter:
