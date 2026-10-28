@@ -91,6 +91,36 @@ class TestLLTrace(unittest.TestCase):
             self.assertEqual(instr_map[offset].opname, opname)
             self.assertEqual(instr_map[offset].arg, oparg)
 
+    def test_lltrace_replacing_function_attributes(self):
+        stdout = self.run_code("""
+            import gc
+
+            def target():
+                pass
+
+            class Name(str):
+                def __repr__(self):
+                    target.__qualname__ = 'replacement'
+                    gc.collect()
+                    return "'original_name'"
+
+            class Module:
+                def __repr__(self):
+                    target.__module__ = None
+                    gc.collect()
+                    return "'original_module'"
+
+            target.__qualname__ = Name('original_name')
+            target.__module__ = Module()
+            __lltrace__ = 1
+            target()
+            del __lltrace__
+            assert target.__qualname__ == 'replacement'
+            assert target.__module__ is None
+        """)
+        self.assertIn("'original_name'", stdout)
+        self.assertIn("'original_module'", stdout)
+
     def test_lltrace_does_not_crash_on_subscript_operator(self):
         # If this test fails, it will reproduce a crash reported as
         # bpo-34113. The crash happened at the command line console of
