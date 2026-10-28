@@ -295,6 +295,16 @@ class FrozenSetWriterTests(unittest.TestCase):
         err_msg = f"unhashable type: '{type(self.UNHASHABLE).__name__}'"
         return self.assertRaisesRegex(TypeError, err_msg)
 
+    def test_empty(self):
+        for size in (0, 128):
+            with self.subTest(size=size):
+                writer = self.create_writer(size)
+                empty_tuple = ()
+                writer.update(empty_tuple)
+                writer.update_array(empty_tuple)
+                writer.update_array_steal(empty_tuple)
+                self.assertEqual(writer.finish(), frozenset())
+
     def test_get_table_set(self):
         # Test size parameter of PyFrozenSetWriter_Create()
         PySet_MINSIZE = self.PySet_MINSIZE
