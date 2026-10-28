@@ -812,29 +812,77 @@ If that is not possible, an exception such as :exc:`TypeError` or
 Unless marked (D), attributes defined this way cannot be deleted
 using e.g. :keyword:`del` or :py:func:`delattr`.
 
-================================ ============================= ======================
-Macro name                       C type                        Python type
-================================ ============================= ======================
-.. c:macro:: Py_T_BYTE           :c:expr:`char`                :py:class:`int`
-.. c:macro:: Py_T_SHORT          :c:expr:`short`               :py:class:`int`
-.. c:macro:: Py_T_INT            :c:expr:`int`                 :py:class:`int`
-.. c:macro:: Py_T_LONG           :c:expr:`long`                :py:class:`int`
-.. c:macro:: Py_T_LONGLONG       :c:expr:`long long`           :py:class:`int`
-.. c:macro:: Py_T_UBYTE          :c:expr:`unsigned char`       :py:class:`int`
-.. c:macro:: Py_T_UINT           :c:expr:`unsigned int`        :py:class:`int`
-.. c:macro:: Py_T_USHORT         :c:expr:`unsigned short`      :py:class:`int`
-.. c:macro:: Py_T_ULONG          :c:expr:`unsigned long`       :py:class:`int`
-.. c:macro:: Py_T_ULONGLONG      :c:expr:`unsigned long long`  :py:class:`int`
-.. c:macro:: Py_T_PYSSIZET       :c:expr:`Py_ssize_t`          :py:class:`int`
-.. c:macro:: Py_T_FLOAT          :c:expr:`float`               :py:class:`float`
-.. c:macro:: Py_T_DOUBLE         :c:expr:`double`              :py:class:`float`
-.. c:macro:: Py_T_BOOL           :c:expr:`char`                :py:class:`bool`
-                                 (written as 0 or 1)
-.. c:macro:: Py_T_STRING         :c:expr:`const char *` (*)    :py:class:`str` (RO)
-.. c:macro:: Py_T_STRING_INPLACE :c:expr:`const char[]` (*)    :py:class:`str` (RO)
-.. c:macro:: Py_T_CHAR           :c:expr:`char` (0-127)        :py:class:`str` (**)
-.. c:macro:: Py_T_OBJECT_EX      :c:expr:`PyObject *`          :py:class:`object` (D)
-================================ ============================= ======================
+.. stable-abi-note::
+
+   These values are available when compiling for the
+   :ref:`Stable ABI <stable>` since version 3.12.
+
+.. omit-stable-abi-notes::
+
+   .. list-table::
+      :align: left
+      :widths: auto
+      :header-rows: 1
+
+      * - Macro name
+        - C type
+        - Python type
+      * - .. c:macro:: Py_T_BYTE
+        - :c:expr:`char`
+        - :py:class:`int`
+      * - .. c:macro:: Py_T_SHORT
+        - :c:expr:`short`
+        - :py:class:`int`
+      * - .. c:macro:: Py_T_INT
+        - :c:expr:`int`
+        - :py:class:`int`
+      * - .. c:macro:: Py_T_LONG
+        - :c:expr:`long`
+        - :py:class:`int`
+      * - .. c:macro:: Py_T_LONGLONG
+        - :c:expr:`long long`
+        - :py:class:`int`
+      * - .. c:macro:: Py_T_UBYTE
+        - :c:expr:`unsigned char`
+        - :py:class:`int`
+      * - .. c:macro:: Py_T_UINT
+        - :c:expr:`unsigned int`
+        - :py:class:`int`
+      * - .. c:macro:: Py_T_USHORT
+        - :c:expr:`unsigned short`
+        - :py:class:`int`
+      * - .. c:macro:: Py_T_ULONG
+        - :c:expr:`unsigned long`
+        - :py:class:`int`
+      * - .. c:macro:: Py_T_ULONGLONG
+        - :c:expr:`unsigned long long`
+        - :py:class:`int`
+      * - .. c:macro:: Py_T_PYSSIZET
+        - :c:expr:`Py_ssize_t`
+        - :py:class:`int`
+      * - .. c:macro:: Py_T_FLOAT
+        - :c:expr:`float`
+        - :py:class:`float`
+      * - .. c:macro:: Py_T_DOUBLE
+        - :c:expr:`double`
+        - :py:class:`float`
+      * - .. c:macro:: Py_T_BOOL
+        - :c:expr:`char` (written as 0 or 1)
+        - :py:class:`bool`
+      * - .. c:macro:: Py_T_STRING
+        - :c:expr:`const char *` (*)
+        - :py:class:`str` (RO)
+      * - .. c:macro:: Py_T_STRING_INPLACE
+        - :c:expr:`const char[]` (*)
+        - :py:class:`str` (RO)
+      * - .. c:macro:: Py_T_CHAR
+        - :c:expr:`char` (0-127)
+        - :py:class:`str` (**)
+      * - .. c:macro:: Py_T_OBJECT_EX
+        - :c:expr:`PyObject *`
+        - :py:class:`object` (D)
+
+..
 
    (*): Zero-terminated, UTF8-encoded C string.
    With :c:macro:`!Py_T_STRING` the C representation is a pointer;

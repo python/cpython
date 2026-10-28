@@ -68,6 +68,16 @@ The :mod:`!urllib.request` module defines the following functions:
 
    Raises :exc:`~urllib.error.URLError` on protocol errors.
 
+   Exceptions raised while reading or parsing an HTTP response are not
+   wrapped in :exc:`~urllib.error.URLError` and propagate unchanged.
+   These include subclasses of :exc:`http.client.HTTPException`, such as
+   :exc:`~http.client.BadStatusLine` for a malformed status line, and
+   subclasses of :exc:`OSError`, such as :exc:`TimeoutError` if the server
+   does not respond within *timeout* seconds, or
+   :exc:`~http.client.RemoteDisconnected` if the server closes the
+   connection without sending a response.  :exc:`ValueError` is raised if
+   *url* is not a valid URL.
+
    Note that ``None`` may be returned if no handler handles the request (though
    the default installed global :class:`OpenerDirector` uses
    :class:`UnknownHandler` to ensure this never happens).
