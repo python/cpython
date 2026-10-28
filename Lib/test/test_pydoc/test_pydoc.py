@@ -446,6 +446,61 @@ class PydocDocTest(unittest.TestCase):
                         (inspect.getabsfile(pydoc_mod),))
         self.assertEqual(expected_text, result)
 
+    def test_namespace_package_file(self):
+        name = 'pydoc_namespace_package'
+        with tempfile.TemporaryDirectory() as tmpdir:
+            paths = [os.path.join(tmpdir, str(i)) for i in range(2)]
+            for path in paths:
+                os.makedirs(os.path.join(path, name, 'child'))
+            for count in (1, 2):
+                with self.subTest(portions=count):
+                    with (import_helper.DirsOnSysPath(*paths[:count]),
+                          import_helper.isolated_modules()):
+                        sys.modules.pop(name, None)
+                        sys.modules.pop(name + '.child', None)
+                        for modname in (name, name + '.child'):
+                            with self.subTest(module=modname):
+                                module = importlib.import_module(modname)
+                                self.assertIsNone(module.__file__)
+                                self.assertEqual(len(module.__path__), count)
+                                text, _ = get_pydoc_text(module)
+                                html, _ = get_pydoc_html(module)
+                                for kind, output, marker in (
+                                    ('text', text, '\nFILE\n    (namespace)'),
+                                    ('html', html, 'index</a><br>(namespace)'),
+                                ):
+                                    with self.subTest(format=kind):
+                                        self.assertIn(marker, output)
+                                        self.assertNotIn('(built-in)', output)
+
+    def test_module_file_classification_controls(self):
+        modules = [sys, pydoc_mod, test.test_pydoc]
+        module = types.ModuleType('pydoc_originless_module')
+        module.__spec__ = importlib.util.spec_from_loader(
+            module.__name__, loader=None)
+        modules.append(module)
+        for origin in (None, 'built-in', 'frozen'):
+            module = types.ModuleType('pydoc_fileless_module')
+            if origin is not None:
+                module.__spec__ = importlib.util.spec_from_loader(
+                    module.__name__, loader=None, origin=origin,
+                    is_package=True)
+                module.__path__ = []
+            modules.append(module)
+        for module in modules:
+            with self.subTest(module=module.__name__, spec=module.__spec__):
+                text, _ = get_pydoc_text(module)
+                html, _ = get_pydoc_html(module)
+                self.assertNotIn('(namespace)', text)
+                self.assertNotIn('(namespace)', html)
+                if getattr(module, '__file__', None) is None:
+                    self.assertIn('\nFILE\n    (built-in)', text)
+                    self.assertIn('index</a><br>(built-in)', html)
+                else:
+                    filename = inspect.getabsfile(module)
+                    self.assertIn('\nFILE\n    ' + filename, text)
+                    self.assertIn(urllib.request.pathname2url(filename), html)
+
     def test_text_enum_member_with_value_zero(self):
         # Test issue #20654 to ensure enum member with value 0 can be
         # displayed. It used to throw KeyError: 'zero'.
