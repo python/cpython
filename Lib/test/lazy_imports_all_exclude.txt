@@ -29,6 +29,5 @@ test_profile
 test_profiling
 test_pyrepl
 test_subprocess
-test_symtable
 test_type_annotations
 test_unittest
