@@ -2462,7 +2462,8 @@ with the :class:`Pool` class.
    the process which created the pool.
 
    .. warning::
-      :class:`multiprocessing.pool` objects have internal resources that need to be
+      :class:`~multiprocessing.pool.Pool` objects have internal resources that
+      need to be
       properly managed (like any other resource) by using the pool as a context manager
       or by calling :meth:`close` and :meth:`terminate` manually. Failure to do this
       can lead to the process hanging on finalization.

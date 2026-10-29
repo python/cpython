@@ -2708,7 +2708,8 @@ require changes to your code:
 
   (Discovered by David Beazley and fixed by Victor Stinner; :issue:`10783`.)
 
-* The :class:`xml.etree.ElementTree` class now raises an
+* The :class:`xml.etree.ElementTree <xml.etree.ElementTree.ElementTree>` class
+  now raises an
   :exc:`xml.etree.ElementTree.ParseError` when a parse fails. Previously it
   raised an :exc:`xml.parsers.expat.ExpatError`.
 

@@ -58,7 +58,8 @@ this module.  The following types are supported:
   therein are themselves supported.
   Recursive containers are supported since :data:`version` 3.
 * The singletons :const:`None`, :const:`Ellipsis` and :exc:`StopIteration`.
-* :class:`code` objects, if *allow_code* is true. See note above about
+* :class:`code <types.CodeType>` objects, if *allow_code* is true. See note
+  above about
   version dependence.
 
 .. versionchanged:: 3.4

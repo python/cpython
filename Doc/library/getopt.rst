@@ -80,9 +80,11 @@ exception:
 
 .. function:: gnu_getopt(args, shortopts, longopts=[])
 
-   This function works like :func:`getopt`, except that GNU style scanning mode is
+   This function works like :func:`~getopt.getopt`, except that GNU style
+   scanning mode is
    used by default. This means that option and non-option arguments may be
-   intermixed. The :func:`getopt` function stops processing options as soon as a
+   intermixed. The :func:`~getopt.getopt` function stops processing options as
+   soon as a
    non-option argument is encountered.
 
    If the first character of the option string is ``'+'``, or if the environment

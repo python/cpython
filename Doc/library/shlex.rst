@@ -411,7 +411,8 @@ Improved Compatibility with Shells
 
 .. versionadded:: 3.6
 
-The :class:`shlex` class provides compatibility with the parsing performed by
+The :class:`~shlex.shlex` class provides compatibility with the parsing
+performed by
 common Unix shells like ``bash``, ``dash``, and ``sh``.  To take advantage of
 this compatibility, specify the ``punctuation_chars`` argument in the
 constructor.  This defaults to ``False``, which preserves pre-3.6 behaviour.

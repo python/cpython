@@ -2040,7 +2040,8 @@ Finally, the Option subclass::
        TYPE_CHECKER = copy(Option.TYPE_CHECKER)
        TYPE_CHECKER["complex"] = check_complex
 
-(If we didn't make a :func:`copy` of :attr:`Option.TYPE_CHECKER`, we would end
+(If we didn't make a :func:`~copy.copy` of :attr:`Option.TYPE_CHECKER`, we would
+end
 up modifying the :attr:`~Option.TYPE_CHECKER` attribute of :mod:`!optparse`'s
 Option class.  This being Python, nothing stops you from doing that except good
 manners and common sense.)

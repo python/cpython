@@ -2622,7 +2622,8 @@ changes, or look through the Subversion logs for all the details.
   intended for testing purposes that lets you temporarily modify the
   warning filters and then restore their original values (:issue:`3781`).
 
-* The XML-RPC :class:`SimpleXMLRPCServer <xmlrpc.server>` and :class:`DocXMLRPCServer <xmlrpc.server>`
+* The XML-RPC :class:`~xmlrpc.server.SimpleXMLRPCServer` and
+  :class:`~xmlrpc.server.DocXMLRPCServer`
   classes can now be prevented from immediately opening and binding to
   their socket by passing ``False`` as the *bind_and_activate*
   constructor parameter.  This can be used to modify the instance's
