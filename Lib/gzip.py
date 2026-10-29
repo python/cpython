@@ -39,7 +39,7 @@ def open(filename, mode="rb", compresslevel=_COMPRESS_LEVEL_TRADEOFF,
 
     The mode argument can be "r", "rb", "w", "wb", "x", "xb", "a" or "ab"
     for binary mode, or "rt", "wt", "xt" or "at" for text mode.  The default
-    mode is "rb", and the default compresslevel is 9.
+    mode is "rb", and the default compresslevel is 6.
 
     For binary mode, this function is equivalent to the GzipFile
     constructor: GzipFile(filename, mode, compresslevel).  In this case,
@@ -186,7 +186,7 @@ class GzipFile(_streams.BaseStream):
         The compresslevel argument is an integer from 0 to 9 controlling
         the level of compression; 1 is fastest and produces the least
         compression, and 9 is slowest and produces the most compression.
-        0 is no compression at all. The default is 9.
+        0 is no compression at all. The default is 6.
 
         The optional mtime argument is the timestamp requested by gzip.
         The time is in Unix format, i.e., seconds since 00:00:00 UTC,

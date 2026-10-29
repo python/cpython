@@ -151,6 +151,7 @@ class TestFcntl(unittest.TestCase):
             except OSError as exc:
                 if exc.errno == errno.EINVAL:
                     self.skipTest("F_NOTIFY not available by this environment")
+                raise
             fcntl.fcntl(fd, cmd, flags)
         finally:
             os.close(fd)

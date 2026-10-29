@@ -18,3 +18,14 @@ def save_method_args(method):
         return method(self, *args, **kwargs)
 
     return wrapper
+
+
+# from jaraco.functools 4.3
+def none_as(value, replacement=None):
+    """
+    >>> none_as(None, 'foo')
+    'foo'
+    >>> none_as('bar', 'foo')
+    'bar'
+    """
+    return replacement if value is None else value

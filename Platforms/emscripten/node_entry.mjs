@@ -22,7 +22,7 @@ function rootDirsToMount(Module) {
 function mountDirectories(Module) {
   for (const dir of rootDirsToMount(Module)) {
     Module.FS.mkdirTree(dir);
-    Module.FS.mount(Module.FS.filesystems.NODEFS, { root: dir }, dir);
+    Module.FS.mount(Module.NODEFS, { root: dir }, dir);
   }
 }
 
@@ -57,6 +57,11 @@ try {
   // Show JavaScript exception and traceback
   console.warn(e);
   // Show Python exception and traceback
-  Module.PyUnstable_DumpTraceback(2, Module._PyGILState_GetThisThreadState());
+  try {
+    Module.PyUnstable_DumpTraceback?.(2, Module._PyGILState_GetThisThreadState());
+  } catch(e) {
+    console.warn("Error occurred while attempting to format a Python traceback:");
+    console.warn(e);
+  }
   process.exit(1);
 }

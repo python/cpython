@@ -925,7 +925,11 @@ class Unparser(NodeVisitor):
         # Special case: 3.__abs__() is a syntax error, so if node.value
         # is an integer literal then we need to either parenthesize
         # it or add an extra space to get 3 .__abs__().
-        if isinstance(node.value, Constant) and isinstance(node.value.value, int):
+        # bool is a subclass of int, but True.real and False.real are
+        # valid without a space.
+        if (isinstance(node.value, Constant)
+                and isinstance(node.value.value, int)
+                and not isinstance(node.value.value, bool)):
             self.write(" ")
         self.write(".")
         self.write(node.attr)

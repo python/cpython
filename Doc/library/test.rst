@@ -165,11 +165,13 @@ test suite, thanks to the :option:`-m` option: :program:`python -m test`. Under
 the hood, it uses :mod:`!test.regrtest`; the call :program:`python -m
 test.regrtest` used in previous Python versions still works.  Running the
 script by itself automatically starts running all regression tests in the
-:mod:`!test` package. It does this by finding all modules in the package whose
-name starts with ``test_``, importing them, and executing the function
-:func:`test_main` if present or loading the tests via
-unittest.TestLoader.loadTestsFromModule if ``test_main`` does not exist.  The
-names of tests to execute may also be passed to the script. Specifying a single
+:mod:`!test` package. It does this by finding modules and packages whose names
+start with ``test_``, importing each one, and loading its tests with
+:meth:`unittest.TestLoader.loadTestsFromModule`. See the
+:ref:`load_tests protocol <load_tests-protocol>` for how a module or package
+can customize what is loaded. Defining a module-level ``test_main()`` function
+is not supported and causes the test to fail. The names of tests to
+execute may also be passed to the script. Specifying a single
 regression test (:program:`python -m test test_spam`) will minimize output and
 only print whether the test passed or failed.
 
@@ -232,9 +234,10 @@ The :mod:`!test.support` module defines the following constants:
 
 .. data:: verbose
 
-   ``True`` when verbose output is enabled. Should be checked when more
-   detailed information is desired about a running test. *verbose* is set by
-   :mod:`test.regrtest`.
+   How verbose the output is: the number of :option:`!-v` options which
+   :mod:`test.regrtest` was run with, and therefore ``0`` when verbose output
+   is not enabled.  Should be checked when more detailed information is
+   desired about a running test.
 
 
 .. data:: is_jython
@@ -285,7 +288,7 @@ The :mod:`!test.support` module defines the following constants:
    :meth:`~socket.socket.recv` and :meth:`~socket.socket.send` methods of
    :class:`socket.socket`.
 
-   Its default value is 5 seconds.
+   Its default value is 10 seconds.
 
    See also :data:`INTERNET_TIMEOUT`.
 
@@ -503,7 +506,8 @@ The :mod:`!test.support` module defines the following functions:
 
 .. function:: with_pymalloc()
 
-   Return :const:`_testcapi.WITH_PYMALLOC`.
+   Return ``True`` if Python was built with :ref:`pymalloc <pymalloc>` enabled
+   and is not a :term:`free-threaded build`.
 
 
 .. function:: requires(resource, msg=None)
@@ -881,9 +885,11 @@ The :mod:`!test.support` module defines the following functions:
 
 .. function:: reap_children()
 
-   Use this at the end of ``test_main`` whenever sub-processes are started.
-   This will help ensure that no extra children (zombies) stick around to
-   hog resources and create problems when looking for refleaks.
+   Call this from :meth:`~unittest.TestCase.setUp`,
+   :meth:`~unittest.TestCase.tearDown`, or ``tearDownModule()`` in tests
+   that start subprocesses. This will help ensure that no extra children
+   (zombies) stick around to hog resources and create problems when looking
+   for refleaks.
 
 
 .. function:: get_attribute(obj, name)
@@ -961,6 +967,72 @@ The :mod:`!test.support` module defines the following functions:
    :mod:`tracemalloc` is enabled.
 
 
+.. currentmodule:: test.support.isolation
+
+.. decorator:: runInSubprocess(*, options=(), env=None, timeout=None)
+
+   Decorator that runs the decorated test in a fresh interpreter subprocess, in
+   isolation, so that it does not share global or interpreter state with the
+   rest of the test run.  It can decorate a test method or a whole
+   :class:`~unittest.TestCase` subclass.  Decorated methods must take no extra
+   arguments.  A failure, error or skip in the subprocess is reported for the
+   corresponding test, and individual :meth:`subtests
+   <unittest.TestCase.subTest>` that fail or are skipped are reported
+   individually.  A reported failure or error shows the original subprocess
+   traceback as the cause of the exception.
+
+   When a **method** is decorated, only that method runs in a subprocess; all
+   fixtures (:meth:`~unittest.TestCase.setUp` / :meth:`~unittest.TestCase.tearDown`,
+   :meth:`~unittest.TestCase.setUpClass` / :meth:`~unittest.TestCase.tearDownClass`
+   and ``setUpModule()`` / ``tearDownModule()``) run both in the parent process
+   (as usual) and in the subprocess around the method.
+
+   When a **class** is decorated, the whole class runs in a single subprocess,
+   and :meth:`~unittest.TestCase.setUpClass`,
+   :meth:`~unittest.TestCase.tearDownClass`, :meth:`~unittest.TestCase.setUp`
+   and :meth:`~unittest.TestCase.tearDown` run once each in the subprocess and
+   are skipped in the parent process.  A failure or skip of
+   :meth:`~unittest.TestCase.setUpClass` in the subprocess is reported for the
+   whole class.  ``setUpModule()`` cannot be controlled by a class decorator,
+   so it still runs in the parent process too; test it with
+   :data:`runningInSubprocess` if needed.
+
+   The subprocess inherits the enabled resources (``-u``), memory limit
+   (``-M``) and verbosity (``-v``) of the parent test run, so that
+   :func:`~test.support.requires_resource`, :func:`~test.support.requires`,
+   :func:`~test.support.bigmemtest` and the like behave consistently in both
+   processes.
+
+   *options* is a sequence of interpreter command line options
+   to run the subprocess with,
+   and *env* is a mapping of environment variables to set in it,
+   on top of the inherited environment.
+   A value of ``None`` in *env* unsets the variable.
+   Note that :option:`-E` and :option:`-I` make the subprocess ignore
+   the ``PYTHON*`` environment variables, including :envvar:`PYTHONPATH`.
+
+   *timeout* is the number of seconds to wait for the subprocess;
+   the test is reported as an error if it does not complete in time.
+   By default there is no timeout,
+   and a hung test is left to the timeout of the test runner.
+
+   The test is skipped on platforms without subprocess support.
+
+
+.. data:: runningInSubprocess
+
+   ``True`` while the code runs in the isolated subprocess spawned by
+   :func:`runInSubprocess`, and ``False`` otherwise (including in the parent
+   process and in a normal, non-isolated test run).  Fixtures such as
+   :meth:`~unittest.TestCase.setUp`, :meth:`~unittest.TestCase.tearDown`,
+   :meth:`~unittest.TestCase.setUpClass`, :meth:`~unittest.TestCase.tearDownClass`,
+   ``setUpModule()`` and ``tearDownModule()`` can test it to choose which code
+   to run in the subprocess.
+
+
+.. currentmodule:: test.support
+
+
 .. function:: check_free_after_iterating(test, iter, cls, args=())
 
    Assert instances of *cls* are deallocated after iterating.
@@ -1017,7 +1089,7 @@ The :mod:`!test.support` module defines the following functions:
 
 .. function:: skip_if_broken_multiprocessing_synchronize()
 
-   Skip tests if the :mod:`multiprocessing.synchronize` module is missing, if
+   Skip tests if the :mod:`!multiprocessing.synchronize` module is missing, if
    there is no available semaphore implementation, or if creating a lock raises
    an :exc:`OSError`.
 
@@ -1189,7 +1261,7 @@ script execution tests.
    doesn't have an obvious home with Python's current home finding logic.
 
    Setting :envvar:`PYTHONHOME` is one way to get most of the testsuite to run
-   in that situation.  :envvar:`PYTHONPATH` or :envvar:`PYTHONUSERSITE` are
+   in that situation.  :envvar:`PYTHONPATH` or :envvar:`PYTHONNOUSERSITE` are
    other common environment variables that might impact whether or not the
    interpreter can start.
 
@@ -1590,6 +1662,32 @@ The :mod:`!test.support.os_helper` module provides support for os tests.
    wrapped with a wait loop that checks for the existence of the file.
 
 
+.. decorator:: with_source_date_epoch(*, epoch=123456789)
+
+   A decorator for running tests with the :envvar:`SOURCE_DATE_EPOCH`
+   environment variable set to *epoch*.
+
+
+.. decorator:: without_source_date_epoch
+
+   A decorator for running tests with the :envvar:`SOURCE_DATE_EPOCH`
+   environment variable unset.
+
+
+.. class:: SourceDateEpochTestMeta
+
+   Metaclass wrapping all test methods of the class with
+   :func:`with_source_date_epoch` if the *source_date_epoch* keyword class
+   argument is true, or with :func:`without_source_date_epoch` otherwise.
+   For example::
+
+      class TestsWithSourceEpoch(Tests,
+                                 metaclass=SourceDateEpochTestMeta,
+                                 source_date_epoch=True):
+          pass
+
+
+
 :mod:`!test.support.import_helper` --- Utilities for import tests
 =================================================================
 
@@ -1611,8 +1709,8 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
 
    This function imports and returns a fresh copy of the named Python module
    by removing the named module from ``sys.modules`` before doing the import.
-   Note that unlike :func:`reload`, the original module is not affected by
-   this operation.
+   Note that unlike :func:`importlib.reload`, the original module is not
+   affected by this operation.
 
    *fresh* is an iterable of additional module names that are also removed
    from the ``sys.modules`` cache before doing the import.
@@ -1774,17 +1872,10 @@ The :mod:`!test.support.warnings_helper` module provides support for warnings te
 
    In this case all warnings are caught and no errors are raised.
 
-   On entry to the context manager, a :class:`WarningRecorder` instance is
-   returned. The underlying warnings list from
-   :func:`~warnings.catch_warnings` is available via the recorder object's
-   :attr:`warnings` attribute.  As a convenience, the attributes of the object
-   representing the most recent warning can also be accessed directly through
-   the recorder object (see example below).  If no warning has been raised,
-   then any of the attributes that would otherwise be expected on an object
-   representing a warning will return ``None``.
-
-   The recorder object also has a :meth:`reset` method, which clears the
-   warnings list.
+   On entry to the context manager, a :class:`WarningsRecorder` instance is
+   returned. The recorded warnings are available via its
+   :attr:`~WarningsRecorder.warnings` attribute, and its
+   :meth:`~WarningsRecorder.reset` method discards previously recorded warnings.
 
    The context manager is designed to be used like this::
 
@@ -1801,11 +1892,11 @@ The :mod:`!test.support.warnings_helper` module provides support for warnings te
 
       with check_warnings(quiet=True) as w:
           warnings.warn("foo")
-          assert str(w.args[0]) == "foo"
+          assert str(w.message) == "foo"
           warnings.warn("bar")
-          assert str(w.args[0]) == "bar"
-          assert str(w.warnings[0].args[0]) == "foo"
-          assert str(w.warnings[1].args[0]) == "bar"
+          assert str(w.message) == "bar"
+          assert str(w.warnings[0].message) == "foo"
+          assert str(w.warnings[1].message) == "bar"
           w.reset()
           assert len(w.warnings) == 0
 
@@ -1817,7 +1908,22 @@ The :mod:`!test.support.warnings_helper` module provides support for warnings te
       New optional arguments *filters* and *quiet*.
 
 
-.. class:: WarningsRecorder()
+.. class:: WarningsRecorder(warnings_list)
 
-   Class used to record warnings for unit tests. See documentation of
-   :func:`check_warnings` above for more details.
+   Class used to record warnings for unit tests. Wraps the warnings list
+   returned by :func:`warnings.catch_warnings` when recording is enabled.
+   :func:`check_warnings` returns an instance of this class.
+
+   As a convenience, the attributes of the object representing the most recent
+   warning can also be accessed directly through the recorder object.
+   If no warning has been raised since the recorder was created or last reset,
+   these attributes return ``None``.
+
+   .. attribute:: warnings
+
+      A list of warnings recorded since the recorder was created or last reset.
+
+   .. method:: reset()
+
+      Discard previously recorded warnings from the recorder's view.
+      The underlying warnings list is not modified.

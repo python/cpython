@@ -9,18 +9,25 @@ A Frame widget is inserted between the master and the text, to hold
 the Scrollbar widget.
 Most methods calls are inherited from the Text widget; Pack, Grid and
 Place methods are redirected to the Frame widget however.
+
+Pass use_ttk=True for the themed tkinter.ttk frame and scroll bar
+instead of the classic tkinter widgets.
 """
 
-from tkinter import Frame, Text, Scrollbar, Pack, Grid, Place
+from tkinter import Frame, Text, Scrollbar, Pack, Grid, Place, ttk
 from tkinter.constants import RIGHT, LEFT, Y, BOTH
 
 __all__ = ['ScrolledText']
 
 
 class ScrolledText(Text):
-    def __init__(self, master=None, **kw):
-        self.frame = Frame(master)
-        self.vbar = Scrollbar(self.frame)
+    def __init__(self, master=None, *, use_ttk=False, **kw):
+        if use_ttk:
+            self.frame = ttk.Frame(master)
+            self.vbar = ttk.Scrollbar(self.frame)
+        else:
+            self.frame = Frame(master)
+            self.vbar = Scrollbar(self.frame)
         self.vbar.pack(side=RIGHT, fill=Y)
 
         kw['yscrollcommand'] = self.vbar.set
