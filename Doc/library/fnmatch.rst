@@ -53,7 +53,8 @@ a :class:`!str` filename, and vice-versa.
 
 Finally, note that :deco:`functools.lru_cache` with a *maxsize* of 32768
 is used to cache the (typed) compiled regex patterns in the following
-functions: :func:`fnmatch`, :func:`fnmatchcase`, :func:`.filter`, :func:`.filterfalse`.
+functions: :func:`~fnmatch.fnmatch`, :func:`fnmatchcase`, :func:`.filter`,
+:func:`.filterfalse`.
 
 
 .. function:: fnmatch(name, pat)
