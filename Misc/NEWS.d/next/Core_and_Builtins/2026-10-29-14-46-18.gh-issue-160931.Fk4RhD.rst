@@ -1,2 +1,0 @@
-Speed up :class:`bytes` construction from an exact :class:`bytes` or
-:class:`int` argument by skipping the :meth:`~object.__bytes__` lookup.
