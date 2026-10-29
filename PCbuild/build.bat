@@ -224,7 +224,17 @@ echo on
  %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 @echo off
-exit /b %ERRORLEVEL%
+set "build_error=%ERRORLEVEL%"
+if not "%build_error%"=="0" exit /b %build_error%
+
+if "%clean%"=="true" (
+    call :RemoveBuildLinks
+) else (
+    call :UpdateBuildLinks
+)
+if errorlevel 1 exit /b %ERRORLEVEL%
+
+exit /b 0
 
 :Version
 rem Display the current build version information
@@ -232,3 +242,83 @@ call "%dir%find_msbuild.bat" %MSBUILD%
 if ERRORLEVEL 1 (echo Cannot locate MSBuild.exe on PATH or as MSBUILD variable & exit /b 2)
 %MSBUILD% "%dir%pythoncore.vcxproj" /t:ShowVersionInfo /v:m /nologo %1 %2 %3 %4 %5 %6 %7 %8 %9
 if ERRORLEVEL 1 exit /b 3
+
+:RemoveBuildLinks
+setlocal
+set "root=%dir%.."
+
+rem Remove the libs directory junction.
+if exist "%root%\libs" (
+    rmdir "%root%\libs"
+    if errorlevel 1 (
+        echo.ERROR: Failed to remove libs junction.
+        endlocal
+        exit /b 1
+    )
+)
+
+rem Remove Include\pyconfig.h.
+if exist "%root%\Include\pyconfig.h" (
+    del "%root%\Include\pyconfig.h"
+    if errorlevel 1 (
+        echo.ERROR: Failed to remove pyconfig.h link.
+        endlocal
+        exit /b 1
+    )
+)
+
+endlocal
+exit /b 0
+
+
+:UpdateBuildLinks
+setlocal
+set "root=%dir%.."
+
+rem Remove the previous libs junction.
+if exist "%root%\libs" (
+    rmdir "%root%\libs"
+    if errorlevel 1 (
+        echo.ERROR: Failed to remove the existing libs junction.
+        endlocal
+        exit /b 1
+    )
+)
+
+set "arch=%platf%"
+
+if /I "%platf%"=="Win32" set "arch=win32"
+if /I "%platf%"=="x64" set "arch=amd64"
+if /I "%platf%"=="ARM" set "arch=arm32"
+if /I "%platf%"=="ARM64" set "arch=arm64"
+
+if /I "%UseDisableGil%"=="true" set "arch=%arch%t"
+
+rem Create a junction for the current architecture.
+mklink /J "%root%\libs" "%dir%%arch%"
+if errorlevel 1 (
+    echo.ERROR: Failed to create the libs junction.
+    endlocal
+    exit /b 1
+)
+
+rem Remove the previous pyconfig.h link.
+if exist "%root%\Include\pyconfig.h" (
+    del "%root%\Include\pyconfig.h"
+    if errorlevel 1 (
+        echo.ERROR: Failed to remove the existing pyconfig.h link.
+        endlocal
+        exit /b 1
+    )
+)
+
+rem Create the pyconfig.h symbolic link.
+mklink /H "%root%\Include\pyconfig.h" "%root%\PC\pyconfig.h"
+if errorlevel 1 (
+    echo.ERROR: Failed to create the pyconfig.h symbolic link.
+    endlocal
+    exit /b 1
+)
+
+endlocal
+exit /b 0
