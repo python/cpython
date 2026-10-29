@@ -1,0 +1,4 @@
+Fix :class:`urllib.request.ProxyDigestAuthHandler` failing to authenticate. It
+looked up credentials using the target request URL instead of the proxy's
+authority, so passwords registered via ``add_password()`` against the proxy
+never matched. Patch by Senthil Kumaran.
