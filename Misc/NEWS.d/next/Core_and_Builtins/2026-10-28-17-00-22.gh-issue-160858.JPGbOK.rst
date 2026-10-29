@@ -1,2 +1,0 @@
-Speed up :class:`list` construction by reusing list objects from the free
-list, as ``[]`` already does.
