@@ -208,7 +208,7 @@ code.
    .. versionchanged:: 3.14
       Added the *show_positions* parameter.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *show_jit* parameter.
 
 Example:
@@ -314,7 +314,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.14
       Added the *show_positions* parameter.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *show_jit* parameter.
 
 .. function:: distb(tb=None, *, file=None, show_caches=False, adaptive=False,\
@@ -339,7 +339,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.14
       Added the *show_positions* parameter.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *show_jit* parameter.
 
 .. function:: disassemble(code, lasti=-1, *, file=None, show_caches=False,\
@@ -379,7 +379,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.14
       Added the *show_positions* parameter.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *show_jit* parameter.
 
 .. function:: get_instructions(x, *, first_line=None, show_caches=False, adaptive=False, show_jit=False)
@@ -410,7 +410,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
       field populated (regardless of the value of *show_caches*) and it no longer
       generates separate items for the cache entries.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *show_jit* parameter.
 
 .. function:: findlinestarts(code)
@@ -1436,10 +1436,14 @@ iterations of the loop.
 .. opcode:: LOAD_GLOBAL (namei)
 
    Loads the global named ``co_names[namei>>1]`` onto the stack.
+   If the low bit of ``namei`` is set, a ``NULL`` is pushed onto the stack
+   after the global variable.
 
    .. versionchanged:: 3.11
-      If the low bit of ``namei`` is set, then a ``NULL`` is pushed to the
-      stack before the global variable.
+      The low bit of ``namei`` indicates whether a ``NULL`` is pushed.
+
+   .. versionchanged:: 3.13
+      The ``NULL`` is pushed after the global variable, rather than before it.
 
 .. opcode:: LOAD_FAST (var_num)
 

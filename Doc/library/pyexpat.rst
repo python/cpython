@@ -60,10 +60,29 @@ This module provides the following exception, type object and data items:
    like ``'expat_2.8.4'``.
 
 
+.. data:: VERSION_INFO
+
+   A named tuple containing the three components of the Expat library
+   version that was used for building the module:
+   *major*, *minor*, and *micro*.
+   All values are integers.
+   The components can also be accessed by name,
+   so ``xml.parsers.expat.VERSION_INFO[0]`` is equivalent to
+   ``xml.parsers.expat.VERSION_INFO.major`` and so on.
+   This may be different from the Expat library actually used at runtime,
+   which is available as :const:`version_info`.
+
+   .. versionadded:: 3.16
+
+
 .. data:: version_info
 
-   The version of the Expat library loaded by the interpreter,
-   as a tuple of three integers: major, minor and micro version.
+   A named tuple containing the version of the Expat library
+   loaded by the interpreter,
+   with the same fields as :const:`VERSION_INFO`.
+
+   .. versionchanged:: 3.16
+      It is now a named tuple.
 
 
 .. data:: features
@@ -104,7 +123,7 @@ The :mod:`!xml.parsers.expat` module contains two functions:
       applied to aliases like UTF8).
       These restrictions only apply if *encoding* is not given.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          Added support for multi-byte encodings.
 
    .. _xmlparser-non-root:
@@ -217,7 +236,7 @@ XMLParser Objects
    Only meaningful inside a :attr:`StartElementHandler` call,
    and only if :attr:`ordered_attributes` is true.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. method:: xmlparser.GetInputContext()

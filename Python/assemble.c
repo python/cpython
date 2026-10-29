@@ -81,8 +81,11 @@ assemble_init(struct assembler *a, int firstlineno)
     return SUCCESS;
 error:
     PyBytesWriter_Discard(a->a_bytecode_writer);
+    a->a_bytecode_writer = NULL;
     PyBytesWriter_Discard(a->a_linetable_writer);
+    a->a_linetable_writer = NULL;
     PyBytesWriter_Discard(a->a_except_table_writer);
+    a->a_except_table_writer = NULL;
     return ERROR;
 }
 
@@ -99,7 +102,7 @@ assemble_free(struct assembler *a)
 
 static inline void
 write_except_byte(struct assembler *a, int byte) {
-    unsigned char *p = (unsigned char *) PyBytesWriter_GetData(a->a_except_table_writer);
+    unsigned char *p = PyBytesWriter_GetData(a->a_except_table_writer);
     p[a->a_except_table_off++] = byte;
 }
 

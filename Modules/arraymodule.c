@@ -3109,6 +3109,7 @@ The following type codes are defined:\n\
     Type code   C Type             Minimum size in bytes\n\
     'b'         signed integer     1\n\
     'B'         unsigned integer   1\n\
+    'w'         Py_UCS4            4\n\
     'h'         signed integer     2\n\
     'H'         unsigned integer   2\n\
     'i'         signed integer     2\n\
