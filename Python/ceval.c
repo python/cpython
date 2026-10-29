@@ -2242,14 +2242,8 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
     /* _PyEvalFramePushAndInit consumes the references
      * to func, locals and all its arguments */
     Py_XINCREF(locals);
-    for (size_t i = 0; i < argcount; i++) {
+    for (size_t i = 0; i < total_args; i++) {
         arguments[i] = PyStackRef_FromPyObjectNew(args[i]);
-    }
-    if (kwnames) {
-        Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
-        for (Py_ssize_t i = 0; i < kwcount; i++) {
-            arguments[i+argcount] = PyStackRef_FromPyObjectNew(args[i+argcount]);
-        }
     }
     _PyInterpreterFrame *frame = _PyEvalFramePushAndInit(
         tstate, PyStackRef_FromPyObjectNew(func), locals,
