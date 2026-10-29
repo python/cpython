@@ -251,6 +251,7 @@ The :c:member:`~PyTypeObject.tp_traverse` handler must have the following type:
    to the handler.  The *visit* function must not be called with a ``NULL``
    object argument.  If *visit* returns a non-zero value, that value should be
    returned immediately.
+   Otherwise, return zero.
 
    A typical :c:member:`!tp_traverse` function calls the :c:func:`Py_VISIT`
    convenience macro on each of the instance's members that are Python
@@ -317,6 +318,14 @@ The :c:member:`~PyTypeObject.tp_traverse` handler must have the following type:
    For a list of safe functions, see a
    :ref:`separate section <duringgc-functions>` below.
 
+   If an error occurs during traversal, ignore it and return 0.
+   If ``tp_traverse`` fails to visit some strong references, garbage reference
+   cycles involving the skipped references will not be reliably broken,
+   but correctness won't be affected.
+   For example, if traversal requires a lock that cannot be acquired promptly,
+   skip the traversal.
+   The garbage collector will visit your object again in a future pass.
+
    .. note::
 
       The :c:func:`Py_VISIT` call may be skipped for those members that provably
@@ -362,7 +371,7 @@ implementation must name its arguments exactly *visit* and *arg*:
    This corresponds roughly to::
 
       #define Py_VISIT(o)                             \
-         if (op) {                                    \
+         if (o) {                                    \
             int visit_result = visit(o, arg);         \
             if (visit_result != 0) {                  \
                return visit_result;                   \

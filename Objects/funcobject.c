@@ -41,7 +41,8 @@ notify_func_watchers(PyInterpreterState *interp, PyFunction_WatchEvent event,
             if (cb(event, func, new_value) < 0) {
                 PyErr_FormatUnraisable(
                     "Exception ignored in %s watcher callback for function %U at %p",
-                    func_event_name(event), func->func_qualname, func);
+                    func_event_name(event),
+                    FT_ATOMIC_LOAD_PTR_ACQUIRE(func->func_qualname), func);
             }
         }
         i++;
@@ -405,7 +406,7 @@ PyFunction_GetModule(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_module;
+    return PyFunction_GET_MODULE(op);
 }
 
 PyObject *
@@ -535,9 +536,29 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
     return 0;
 }
 
+static void
+func_set_annotations_and_annotate(PyFunctionObject *op, PyObject *annotations,
+                                  PyObject *annotate)
+{
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+    // Care is needed, finalizers can run when references are dropped.  Store
+    // both new values before dropping references to the old.
+    PyObject *old_annotations = op->func_annotations;
+    PyObject *old_annotate = op->func_annotate;
+    FT_ATOMIC_STORE_PTR_RELEASE(op->func_annotations, annotations);
+    FT_ATOMIC_STORE_PTR_RELEASE(op->func_annotate, annotate);
+    if (old_annotations != NULL && !_Py_IsImmortal(old_annotations)) {
+        _PyObject_XDecRefDelayed(old_annotations);
+    }
+    if (old_annotate != NULL && !_Py_IsImmortal(old_annotate)) {
+        _PyObject_XDecRefDelayed(old_annotate);
+    }
+}
+
 static PyObject *
 func_get_annotation_dict(PyFunctionObject *op)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     if (op->func_annotations == NULL) {
         PyObject *annotate = op->func_annotate;
         if (annotate == NULL || !PyCallable_Check(annotate)) {
@@ -567,7 +588,7 @@ func_get_annotation_dict(PyFunctionObject *op)
             assert(PyDict_Check(op->func_annotations));
             return op->func_annotations;
         }
-        op->func_annotations = ann_dict;
+        _PyObject_XSetRefDelayed(&op->func_annotations, ann_dict);
         return ann_dict;
     }
     if (PyTuple_CheckExact(op->func_annotations)) {
@@ -593,8 +614,8 @@ func_get_annotation_dict(PyFunctionObject *op)
                 return NULL;
             }
         }
-        Py_XSETREF(op->func_annotations, ann_dict);
-        Py_DECREF(ann_tuple);
+        _PyObject_XSetRefDelayed(&op->func_annotations, ann_dict);
+        _PyObject_XDecRefDelayed(ann_tuple);
     }
     assert(PyDict_Check(op->func_annotations));
     return op->func_annotations;
@@ -607,7 +628,11 @@ PyFunction_GetAnnotations(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return func_get_annotation_dict((PyFunctionObject *)op);
+    PyObject *d;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    d = func_get_annotation_dict((PyFunctionObject *)op);
+    Py_END_CRITICAL_SECTION();
+    return d;
 }
 
 int
@@ -628,15 +653,9 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
         return -1;
     }
     PyFunctionObject *func = (PyFunctionObject *)op;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyEval_StopTheWorld(interp);
-    PyObject *old_annotations = func->func_annotations;
-    func->func_annotations = annotations;
-    PyObject *old_annotate = func->func_annotate;
-    func->func_annotate = NULL;
-    _PyEval_StartTheWorld(interp);
-    Py_XDECREF(old_annotations);
-    Py_XDECREF(old_annotate);
+    Py_BEGIN_CRITICAL_SECTION(func);
+    func_set_annotations_and_annotate(func, annotations, NULL);
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -691,11 +710,11 @@ func_set_code(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
     Py_ssize_t nclosure = (op->func_closure == NULL ? 0 :
                                         PyTuple_GET_SIZE(op->func_closure));
     if (nclosure != nfree) {
+        PyObject *name = FT_ATOMIC_LOAD_PTR_ACQUIRE(op->func_name);
         PyErr_Format(PyExc_ValueError,
                      "%U() requires a code object with %zd free vars,"
                      " not %d",
-                     op->func_name,
-                     nclosure, nfree);
+                     name, nclosure, nfree);
         return -1;
     }
 
@@ -727,7 +746,8 @@ static PyObject *
 func_get_name(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
-    return Py_NewRef(op->func_name);
+    PyObject *name = FT_ATOMIC_LOAD_PTR_ACQUIRE(op->func_name);
+    return Py_NewRef(name);
 }
 
 static int
@@ -741,12 +761,9 @@ func_set_name(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
                         "__name__ must be set to a string object");
         return -1;
     }
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyEval_StopTheWorld(interp);
-    PyObject *old_name = op->func_name;
-    op->func_name = Py_NewRef(value);
-    _PyEval_StartTheWorld(interp);
-    Py_XDECREF(old_name);
+    Py_BEGIN_CRITICAL_SECTION(op);
+    _PyObject_XSetRefDelayed(&op->func_name, Py_NewRef(value));
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -754,7 +771,8 @@ static PyObject *
 func_get_qualname(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
-    return Py_NewRef(op->func_qualname);
+    PyObject *qualname = FT_ATOMIC_LOAD_PTR_ACQUIRE(op->func_qualname);
+    return Py_NewRef(qualname);
 }
 
 static int
@@ -769,12 +787,9 @@ func_set_qualname(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
         return -1;
     }
     handle_func_event(PyFunction_EVENT_MODIFY_QUALNAME, (PyFunctionObject *) op, value);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyEval_StopTheWorld(interp);
-    PyObject *old_qualname = op->func_qualname;
-    op->func_qualname = Py_NewRef(value);
-    _PyEval_StartTheWorld(interp);
-    Py_XDECREF(old_qualname);
+    Py_BEGIN_CRITICAL_SECTION(op);
+    _PyObject_XSetRefDelayed(&op->func_qualname, Py_NewRef(value));
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -782,7 +797,7 @@ static PyObject *
 func_get_doc(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
-    PyObject *doc = op->func_doc;
+    PyObject *doc = FT_ATOMIC_LOAD_PTR_ACQUIRE(op->func_doc);
     if (doc == NULL) {
         doc = Py_None;
     }
@@ -794,12 +809,9 @@ func_set_doc(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
     /* Legal to del f.__doc__ or to set it to any object. */
     PyFunctionObject *op = _PyFunction_CAST(self);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyEval_StopTheWorld(interp);
-    PyObject *old_doc = op->func_doc;
-    op->func_doc = Py_XNewRef(value);
-    _PyEval_StartTheWorld(interp);
-    Py_XDECREF(old_doc);
+    Py_BEGIN_CRITICAL_SECTION(op);
+    _PyObject_XSetRefDelayed(&op->func_doc, Py_XNewRef(value));
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -807,7 +819,7 @@ static PyObject *
 func_get_module(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
-    PyObject *module = op->func_module;
+    PyObject *module = FT_ATOMIC_LOAD_PTR_ACQUIRE(op->func_module);
     if (module == NULL) {
         module = Py_None;
     }
@@ -819,12 +831,9 @@ func_set_module(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
     /* Legal to del f.__module__ or to set it to any object. */
     PyFunctionObject *op = _PyFunction_CAST(self);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyEval_StopTheWorld(interp);
-    PyObject *old_module = op->func_module;
-    op->func_module = Py_XNewRef(value);
-    _PyEval_StartTheWorld(interp);
-    Py_XDECREF(old_module);
+    Py_BEGIN_CRITICAL_SECTION(op);
+    _PyObject_XSetRefDelayed(&op->func_module, Py_XNewRef(value));
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -952,12 +961,11 @@ function___annotate___set_impl(PyFunctionObject *self, PyObject *value)
 /*[clinic end generated code: output=05b7dfc07ada66cd input=eb6225e358d97448]*/
 {
     if (Py_IsNone(value)) {
-        Py_XSETREF(self->func_annotate, Py_NewRef(value));
+        _PyObject_XSetRefDelayed(&self->func_annotate, Py_NewRef(value));
         return 0;
     }
     else if (PyCallable_Check(value)) {
-        Py_XSETREF(self->func_annotate, Py_NewRef(value));
-        Py_CLEAR(self->func_annotations);
+        func_set_annotations_and_annotate(self, NULL, Py_NewRef(value));
         return 0;
     }
     else {
@@ -982,9 +990,10 @@ function___annotations___get_impl(PyFunctionObject *self)
     PyObject *d = NULL;
     if (self->func_annotations == NULL &&
         (self->func_annotate == NULL || !PyCallable_Check(self->func_annotate))) {
-        self->func_annotations = PyDict_New();
-        if (self->func_annotations == NULL)
+        PyObject *ann_dict = PyDict_New();
+        if (ann_dict == NULL)
             return NULL;
+        FT_ATOMIC_STORE_PTR_RELEASE(self->func_annotations, ann_dict);
     }
     d = func_get_annotation_dict(self);
     return Py_XNewRef(d);
@@ -1011,8 +1020,7 @@ function___annotations___set_impl(PyFunctionObject *self, PyObject *value)
             "__annotations__ must be set to a dict object");
         return -1;
     }
-    Py_XSETREF(self->func_annotations, Py_XNewRef(value));
-    Py_CLEAR(self->func_annotate);
+    func_set_annotations_and_annotate(self, Py_XNewRef(value), NULL);
     return 0;
 }
 
@@ -1242,8 +1250,8 @@ static PyObject*
 func_repr(PyObject *self)
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
-    return PyUnicode_FromFormat("<function %U at %p>",
-                                op->func_qualname, op);
+    PyObject *qualname = FT_ATOMIC_LOAD_PTR_ACQUIRE(op->func_qualname);
+    return PyUnicode_FromFormat("<function %U at %p>", qualname, op);
 }
 
 static int
@@ -1470,8 +1478,9 @@ descriptor_set_wrapped_attribute(PyObject *oobj, PyObject *name, PyObject *value
         return 0;
     }
     else {
+        int result = PyDict_SetItem(dict, name, value);
         Py_DECREF(dict);
-        return PyDict_SetItem(dict, name, value);
+        return result;
     }
 }
 

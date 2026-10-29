@@ -29,29 +29,30 @@ The module defines the following functions:
    not encoded in *priority* using logical-or (``LOG_INFO | LOG_USER``), the
    value given in the :func:`openlog` call is used.
 
-   If :func:`openlog` has not been called prior to the call to :func:`syslog`,
-   :func:`openlog` will be called with no arguments.
+   If :func:`openlog` has not been called prior to the call to
+   :func:`~syslog.syslog`, :func:`openlog` will be called with no arguments.
 
    .. audit-event:: syslog.syslog priority,message syslog.syslog
 
    .. versionchanged:: 3.2
       In previous versions, :func:`openlog` would not be called automatically if
-      it wasn't called prior to the call to :func:`syslog`, deferring to the syslog
-      implementation to call ``openlog()``.
+      it wasn't called prior to the call to :func:`~syslog.syslog`, deferring to
+      the syslog implementation to call ``openlog()``.
 
    .. versionchanged:: 3.12
       This function is restricted in subinterpreters.
       (Only code that runs in multiple interpreters is affected and
       the restriction is not relevant for most users.)
-      :func:`openlog` must be called in the main interpreter before :func:`syslog` may be used
-      in a subinterpreter.  Otherwise it will raise :exc:`RuntimeError`.
+      :func:`openlog` must be called in the main interpreter before
+      :func:`~syslog.syslog` may be used in a subinterpreter.  Otherwise it will
+      raise :exc:`RuntimeError`.
 
 
 .. function:: openlog([ident[, logoption[, facility]]])
 
-   Logging options of subsequent :func:`syslog` calls can be set by calling
-   :func:`openlog`.  :func:`syslog` will call :func:`openlog` with no arguments
-   if the log is not currently open.
+   Logging options of subsequent :func:`~syslog.syslog` calls can be set by
+   calling :func:`openlog`.  :func:`~syslog.syslog` will call :func:`openlog`
+   with no arguments if the log is not currently open.
 
    The optional *ident* keyword argument is a string which is prepended to every
    message, and defaults to ``sys.argv[0]`` with leading path components
@@ -79,8 +80,8 @@ The module defines the following functions:
    Reset the syslog module values and call the system library ``closelog()``.
 
    This causes the module to behave as it does when initially imported.  For
-   example, :func:`openlog` will be called on the first :func:`syslog` call (if
-   :func:`openlog` hasn't already been called), and *ident* and other
+   example, :func:`openlog` will be called on the first :func:`~syslog.syslog`
+   call (if :func:`openlog` hasn't already been called), and *ident* and other
    :func:`openlog` parameters are reset to defaults.
 
    .. audit-event:: syslog.closelog "" syslog.closelog
@@ -96,11 +97,11 @@ The module defines the following functions:
 .. function:: setlogmask(maskpri)
 
    Set the priority mask to *maskpri* and return the previous mask value.  Calls
-   to :func:`syslog` with a priority level not set in *maskpri* are ignored.
-   The default is to log all priorities.  The function ``LOG_MASK(pri)``
-   calculates the mask for the individual priority *pri*.  The function
-   ``LOG_UPTO(pri)`` calculates the mask for all priorities up to and including
-   *pri*.
+   to :func:`~syslog.syslog` with a priority level not set in *maskpri* are
+   ignored. The default is to log all priorities.  The function
+   ``LOG_MASK(pri)`` calculates the mask for the individual priority *pri*.  The
+   function ``LOG_UPTO(pri)`` calculates the mask for all priorities up to and
+   including *pri*.
 
    .. audit-event:: syslog.setlogmask maskpri syslog.setlogmask
 

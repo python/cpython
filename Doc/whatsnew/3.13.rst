@@ -2733,7 +2733,7 @@ Changes in the C API
         PyObject_GC_UnTrack(p);
         Py_TRASHCAN_SAFE_BEGIN(p);
         ...
-        Py_TRASHCAN_SAFE_END
+        Py_TRASHCAN_SAFE_END(p)
     }
 
   should migrate to the new macros as follows::

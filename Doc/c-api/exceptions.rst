@@ -407,6 +407,11 @@ an error value).
    documentation.  There is no C API for warning control.
 
 
+.. c:function:: int PyErr_Warn(PyObject *category, const char *message)
+
+   Equivalent to :c:expr:`PyErr_WarnEx(category, message, 1)`.
+
+
 .. c:function:: int PyErr_WarnExplicitObject(PyObject *category, PyObject *message, PyObject *filename, int lineno, PyObject *module, PyObject *registry)
 
    Issue a warning message with explicit control over all warning attributes.  This
@@ -1125,125 +1130,192 @@ For completeness, here are all the variables:
 Exception types
 ---------------
 
-.. list-table::
-   :align: left
-   :widths: auto
-   :header-rows: 1
+.. stable-abi-note::
 
-   * * C name
-     * Python name
-   * * .. c:var:: PyObject *PyExc_BaseException
-     * :exc:`BaseException`
-   * * .. c:var:: PyObject *PyExc_BaseExceptionGroup
-     * :exc:`BaseExceptionGroup`
-   * * .. c:var:: PyObject *PyExc_Exception
-     * :exc:`Exception`
-   * * .. c:var:: PyObject *PyExc_ArithmeticError
-     * :exc:`ArithmeticError`
-   * * .. c:var:: PyObject *PyExc_AssertionError
-     * :exc:`AssertionError`
-   * * .. c:var:: PyObject *PyExc_AttributeError
-     * :exc:`AttributeError`
-   * * .. c:var:: PyObject *PyExc_BlockingIOError
-     * :exc:`BlockingIOError`
-   * * .. c:var:: PyObject *PyExc_BrokenPipeError
-     * :exc:`BrokenPipeError`
-   * * .. c:var:: PyObject *PyExc_BufferError
-     * :exc:`BufferError`
-   * * .. c:var:: PyObject *PyExc_ChildProcessError
-     * :exc:`ChildProcessError`
-   * * .. c:var:: PyObject *PyExc_ConnectionAbortedError
-     * :exc:`ConnectionAbortedError`
-   * * .. c:var:: PyObject *PyExc_ConnectionError
-     * :exc:`ConnectionError`
-   * * .. c:var:: PyObject *PyExc_ConnectionRefusedError
-     * :exc:`ConnectionRefusedError`
-   * * .. c:var:: PyObject *PyExc_ConnectionResetError
-     * :exc:`ConnectionResetError`
-   * * .. c:var:: PyObject *PyExc_EOFError
-     * :exc:`EOFError`
-   * * .. c:var:: PyObject *PyExc_FileExistsError
-     * :exc:`FileExistsError`
-   * * .. c:var:: PyObject *PyExc_FileNotFoundError
-     * :exc:`FileNotFoundError`
-   * * .. c:var:: PyObject *PyExc_FloatingPointError
-     * :exc:`FloatingPointError`
-   * * .. c:var:: PyObject *PyExc_GeneratorExit
-     * :exc:`GeneratorExit`
-   * * .. c:var:: PyObject *PyExc_ImportCycleError
-     * :exc:`ImportCycleError`
-   * * .. c:var:: PyObject *PyExc_ImportError
-     * :exc:`ImportError`
-   * * .. c:var:: PyObject *PyExc_IndentationError
-     * :exc:`IndentationError`
-   * * .. c:var:: PyObject *PyExc_IndexError
-     * :exc:`IndexError`
-   * * .. c:var:: PyObject *PyExc_InterruptedError
-     * :exc:`InterruptedError`
-   * * .. c:var:: PyObject *PyExc_IsADirectoryError
-     * :exc:`IsADirectoryError`
-   * * .. c:var:: PyObject *PyExc_KeyError
-     * :exc:`KeyError`
-   * * .. c:var:: PyObject *PyExc_KeyboardInterrupt
-     * :exc:`KeyboardInterrupt`
-   * * .. c:var:: PyObject *PyExc_LookupError
-     * :exc:`LookupError`
-   * * .. c:var:: PyObject *PyExc_MemoryError
-     * :exc:`MemoryError`
-   * * .. c:var:: PyObject *PyExc_ModuleNotFoundError
-     * :exc:`ModuleNotFoundError`
-   * * .. c:var:: PyObject *PyExc_NameError
-     * :exc:`NameError`
-   * * .. c:var:: PyObject *PyExc_NotADirectoryError
-     * :exc:`NotADirectoryError`
-   * * .. c:var:: PyObject *PyExc_NotImplementedError
-     * :exc:`NotImplementedError`
-   * * .. c:var:: PyObject *PyExc_OSError
-     * :exc:`OSError`
-   * * .. c:var:: PyObject *PyExc_OverflowError
-     * :exc:`OverflowError`
-   * * .. c:var:: PyObject *PyExc_PermissionError
-     * :exc:`PermissionError`
-   * * .. c:var:: PyObject *PyExc_ProcessLookupError
-     * :exc:`ProcessLookupError`
-   * * .. c:var:: PyObject *PyExc_PythonFinalizationError
-     * :exc:`PythonFinalizationError`
-   * * .. c:var:: PyObject *PyExc_RecursionError
-     * :exc:`RecursionError`
-   * * .. c:var:: PyObject *PyExc_ReferenceError
-     * :exc:`ReferenceError`
-   * * .. c:var:: PyObject *PyExc_RuntimeError
-     * :exc:`RuntimeError`
-   * * .. c:var:: PyObject *PyExc_StopAsyncIteration
-     * :exc:`StopAsyncIteration`
-   * * .. c:var:: PyObject *PyExc_StopIteration
-     * :exc:`StopIteration`
-   * * .. c:var:: PyObject *PyExc_SyntaxError
-     * :exc:`SyntaxError`
-   * * .. c:var:: PyObject *PyExc_SystemError
-     * :exc:`SystemError`
-   * * .. c:var:: PyObject *PyExc_SystemExit
-     * :exc:`SystemExit`
-   * * .. c:var:: PyObject *PyExc_TabError
-     * :exc:`TabError`
-   * * .. c:var:: PyObject *PyExc_TimeoutError
-     * :exc:`TimeoutError`
-   * * .. c:var:: PyObject *PyExc_TypeError
-     * :exc:`TypeError`
-   * * .. c:var:: PyObject *PyExc_UnboundLocalError
-     * :exc:`UnboundLocalError`
-   * * .. c:var:: PyObject *PyExc_UnicodeDecodeError
-     * :exc:`UnicodeDecodeError`
-   * * .. c:var:: PyObject *PyExc_UnicodeEncodeError
-     * :exc:`UnicodeEncodeError`
-   * * .. c:var:: PyObject *PyExc_UnicodeError
-     * :exc:`UnicodeError`
-   * * .. c:var:: PyObject *PyExc_UnicodeTranslateError
-     * :exc:`UnicodeTranslateError`
-   * * .. c:var:: PyObject *PyExc_ValueError
-     * :exc:`ValueError`
-   * * .. c:var:: PyObject *PyExc_ZeroDivisionError
-     * :exc:`ZeroDivisionError`
+   These pointers are part of the :ref:`Stable ABI <stable>` since the
+   version in the *S.ABI* column (or since 3.2 when *S.ABI* is empty).
+   Exceptions marked N/A are *not* part of the Stable ABI.
+
+.. omit-stable-abi-notes::
+
+   .. list-table::
+      :align: left
+      :widths: auto
+      :header-rows: 1
+
+      * * C name
+        * .. stable-abi-note::
+
+             S.ABI
+        * Python name
+      * * .. c:var:: PyObject *PyExc_BaseException
+        *
+        * :exc:`BaseException`
+      * * .. c:var:: PyObject *PyExc_BaseExceptionGroup
+        * 3.11
+        * :exc:`BaseExceptionGroup`
+      * * .. c:var:: PyObject *PyExc_Exception
+        *
+        * :exc:`Exception`
+      * * .. c:var:: PyObject *PyExc_ArithmeticError
+        *
+        * :exc:`ArithmeticError`
+      * * .. c:var:: PyObject *PyExc_AssertionError
+        *
+        * :exc:`AssertionError`
+      * * .. c:var:: PyObject *PyExc_AttributeError
+        *
+        * :exc:`AttributeError`
+      * * .. c:var:: PyObject *PyExc_BlockingIOError
+        * 3.7
+        * :exc:`BlockingIOError`
+      * * .. c:var:: PyObject *PyExc_BrokenPipeError
+        * 3.7
+        * :exc:`BrokenPipeError`
+      * * .. c:var:: PyObject *PyExc_BufferError
+        *
+        * :exc:`BufferError`
+      * * .. c:var:: PyObject *PyExc_ChildProcessError
+        * 3.7
+        * :exc:`ChildProcessError`
+      * * .. c:var:: PyObject *PyExc_ConnectionAbortedError
+        * 3.7
+        * :exc:`ConnectionAbortedError`
+      * * .. c:var:: PyObject *PyExc_ConnectionError
+        * 3.7
+        * :exc:`ConnectionError`
+      * * .. c:var:: PyObject *PyExc_ConnectionRefusedError
+        * 3.7
+        * :exc:`ConnectionRefusedError`
+      * * .. c:var:: PyObject *PyExc_ConnectionResetError
+        * 3.7
+        * :exc:`ConnectionResetError`
+      * * .. c:var:: PyObject *PyExc_EOFError
+        *
+        * :exc:`EOFError`
+      * * .. c:var:: PyObject *PyExc_FileExistsError
+        * 3.7
+        * :exc:`FileExistsError`
+      * * .. c:var:: PyObject *PyExc_FileNotFoundError
+        * 3.7
+        * :exc:`FileNotFoundError`
+      * * .. c:var:: PyObject *PyExc_FloatingPointError
+        *
+        * :exc:`FloatingPointError`
+      * * .. c:var:: PyObject *PyExc_GeneratorExit
+        *
+        * :exc:`GeneratorExit`
+      * * .. c:var:: PyObject *PyExc_ImportCycleError
+        * N/A
+        * :exc:`ImportCycleError`
+      * * .. c:var:: PyObject *PyExc_ImportError
+        *
+        * :exc:`ImportError`
+      * * .. c:var:: PyObject *PyExc_IndentationError
+        *
+        * :exc:`IndentationError`
+      * * .. c:var:: PyObject *PyExc_IndexError
+        *
+        * :exc:`IndexError`
+      * * .. c:var:: PyObject *PyExc_InterruptedError
+        * 3.7
+        * :exc:`InterruptedError`
+      * * .. c:var:: PyObject *PyExc_IsADirectoryError
+        * 3.7
+        * :exc:`IsADirectoryError`
+      * * .. c:var:: PyObject *PyExc_KeyError
+        *
+        * :exc:`KeyError`
+      * * .. c:var:: PyObject *PyExc_KeyboardInterrupt
+        *
+        * :exc:`KeyboardInterrupt`
+      * * .. c:var:: PyObject *PyExc_LookupError
+        *
+        * :exc:`LookupError`
+      * * .. c:var:: PyObject *PyExc_MemoryError
+        *
+        * :exc:`MemoryError`
+      * * .. c:var:: PyObject *PyExc_ModuleNotFoundError
+        * 3.6
+        * :exc:`ModuleNotFoundError`
+      * * .. c:var:: PyObject *PyExc_NameError
+        *
+        * :exc:`NameError`
+      * * .. c:var:: PyObject *PyExc_NotADirectoryError
+        * 3.7
+        * :exc:`NotADirectoryError`
+      * * .. c:var:: PyObject *PyExc_NotImplementedError
+        *
+        * :exc:`NotImplementedError`
+      * * .. c:var:: PyObject *PyExc_OSError
+        *
+        * :exc:`OSError`
+      * * .. c:var:: PyObject *PyExc_OverflowError
+        *
+        * :exc:`OverflowError`
+      * * .. c:var:: PyObject *PyExc_PermissionError
+        * 3.7
+        * :exc:`PermissionError`
+      * * .. c:var:: PyObject *PyExc_ProcessLookupError
+        * 3.7
+        * :exc:`ProcessLookupError`
+      * * .. c:var:: PyObject *PyExc_PythonFinalizationError
+        *
+        * :exc:`PythonFinalizationError`
+      * * .. c:var:: PyObject *PyExc_RecursionError
+        * 3.7
+        * :exc:`RecursionError`
+      * * .. c:var:: PyObject *PyExc_ReferenceError
+        *
+        * :exc:`ReferenceError`
+      * * .. c:var:: PyObject *PyExc_RuntimeError
+        *
+        * :exc:`RuntimeError`
+      * * .. c:var:: PyObject *PyExc_StopAsyncIteration
+        * 3.7
+        * :exc:`StopAsyncIteration`
+      * * .. c:var:: PyObject *PyExc_StopIteration
+        *
+        * :exc:`StopIteration`
+      * * .. c:var:: PyObject *PyExc_SyntaxError
+        *
+        * :exc:`SyntaxError`
+      * * .. c:var:: PyObject *PyExc_SystemError
+        *
+        * :exc:`SystemError`
+      * * .. c:var:: PyObject *PyExc_SystemExit
+        *
+        * :exc:`SystemExit`
+      * * .. c:var:: PyObject *PyExc_TabError
+        *
+        * :exc:`TabError`
+      * * .. c:var:: PyObject *PyExc_TimeoutError
+        * 3.7
+        * :exc:`TimeoutError`
+      * * .. c:var:: PyObject *PyExc_TypeError
+        *
+        * :exc:`TypeError`
+      * * .. c:var:: PyObject *PyExc_UnboundLocalError
+        *
+        * :exc:`UnboundLocalError`
+      * * .. c:var:: PyObject *PyExc_UnicodeDecodeError
+        *
+        * :exc:`UnicodeDecodeError`
+      * * .. c:var:: PyObject *PyExc_UnicodeEncodeError
+        *
+        * :exc:`UnicodeEncodeError`
+      * * .. c:var:: PyObject *PyExc_UnicodeError
+        *
+        * :exc:`UnicodeError`
+      * * .. c:var:: PyObject *PyExc_UnicodeTranslateError
+        *
+        * :exc:`UnicodeTranslateError`
+      * * .. c:var:: PyObject *PyExc_ValueError
+        *
+        * :exc:`ValueError`
+      * * .. c:var:: PyObject *PyExc_ZeroDivisionError
+        *
+        * :exc:`ZeroDivisionError`
 
 .. versionadded:: 3.3
    :c:data:`PyExc_BlockingIOError`, :c:data:`PyExc_BrokenPipeError`,
@@ -1268,34 +1340,30 @@ Exception types
 OSError aliases
 ---------------
 
-The following are a compatibility aliases to :c:data:`PyExc_OSError`.
+The following are :term:`soft deprecated` compatibility aliases
+to :c:data:`PyExc_OSError`.
 
-.. versionchanged:: 3.3
-   These aliases used to be separate exception types.
+.. stable-abi-note::
 
-.. list-table::
-   :align: left
-   :widths: auto
-   :header-rows: 1
+   These pointers are part of the :ref:`Stable ABI <stable>` since the
+   version in the *S.ABI* column (or since 3.2 when *S.ABI* is empty).
 
-   * * C name
-     * Python name
-     * Notes
-   * * .. c:var:: PyObject *PyExc_EnvironmentError
-     * :exc:`OSError`
-     *
-   * * .. c:var:: PyObject *PyExc_IOError
-     * :exc:`OSError`
-     *
-   * * .. c:var:: PyObject *PyExc_WindowsError
-     * :exc:`OSError`
-     * [win]_
+.. c:var:: PyObject *PyExc_EnvironmentError
 
-Notes:
+   .. soft-deprecated:: next
+      Use :c:data:`PyExc_OSError` instead.
 
-.. [win]
-   :c:var:`!PyExc_WindowsError` is only defined on Windows; protect code that
-   uses this by testing that the preprocessor macro ``MS_WINDOWS`` is defined.
+.. c:var:: PyObject *PyExc_IOError
+
+   .. soft-deprecated:: next
+      Use :c:data:`PyExc_OSError` instead.
+
+.. c:var:: PyObject *PyExc_WindowsError
+
+   .. availability:: Windows
+
+   .. soft-deprecated:: next
+      Use :c:data:`PyExc_OSError` instead.
 
 
 .. _standardwarningcategories:
@@ -1303,37 +1371,59 @@ Notes:
 Warning types
 -------------
 
-.. list-table::
-   :align: left
-   :widths: auto
-   :header-rows: 1
+.. stable-abi-note::
 
-   * * C name
-     * Python name
-   * * .. c:var:: PyObject *PyExc_Warning
-     * :exc:`Warning`
-   * * .. c:var:: PyObject *PyExc_BytesWarning
-     * :exc:`BytesWarning`
-   * * .. c:var:: PyObject *PyExc_DeprecationWarning
-     * :exc:`DeprecationWarning`
-   * * .. c:var:: PyObject *PyExc_EncodingWarning
-     * :exc:`EncodingWarning`
-   * * .. c:var:: PyObject *PyExc_FutureWarning
-     * :exc:`FutureWarning`
-   * * .. c:var:: PyObject *PyExc_ImportWarning
-     * :exc:`ImportWarning`
-   * * .. c:var:: PyObject *PyExc_PendingDeprecationWarning
-     * :exc:`PendingDeprecationWarning`
-   * * .. c:var:: PyObject *PyExc_ResourceWarning
-     * :exc:`ResourceWarning`
-   * * .. c:var:: PyObject *PyExc_RuntimeWarning
-     * :exc:`RuntimeWarning`
-   * * .. c:var:: PyObject *PyExc_SyntaxWarning
-     * :exc:`SyntaxWarning`
-   * * .. c:var:: PyObject *PyExc_UnicodeWarning
-     * :exc:`UnicodeWarning`
-   * * .. c:var:: PyObject *PyExc_UserWarning
-     * :exc:`UserWarning`
+   These pointers are part of the :ref:`Stable ABI <stable>` since the
+   version in the *S.ABI* column (or since 3.2 when *S.ABI* is empty).
+
+.. omit-stable-abi-notes::
+
+   .. list-table::
+      :align: left
+      :widths: auto
+      :header-rows: 1
+
+      * * C name
+        * .. stable-abi-note::
+
+           S.ABI
+        * Python name
+      * * .. c:var:: PyObject *PyExc_Warning
+        *
+        * :exc:`Warning`
+      * * .. c:var:: PyObject *PyExc_BytesWarning
+        *
+        * :exc:`BytesWarning`
+      * * .. c:var:: PyObject *PyExc_DeprecationWarning
+        *
+        * :exc:`DeprecationWarning`
+      * * .. c:var:: PyObject *PyExc_EncodingWarning
+        * 3.10
+        * :exc:`EncodingWarning`
+      * * .. c:var:: PyObject *PyExc_FutureWarning
+        *
+        * :exc:`FutureWarning`
+      * * .. c:var:: PyObject *PyExc_ImportWarning
+        *
+        * :exc:`ImportWarning`
+      * * .. c:var:: PyObject *PyExc_PendingDeprecationWarning
+        *
+        * :exc:`PendingDeprecationWarning`
+      * * .. c:var:: PyObject *PyExc_ResourceWarning
+        * 3.7
+        * :exc:`ResourceWarning`
+      * * .. c:var:: PyObject *PyExc_RuntimeWarning
+        *
+        * :exc:`RuntimeWarning`
+      * * .. c:var:: PyObject *PyExc_SyntaxWarning
+        *
+        * :exc:`SyntaxWarning`
+      * * .. c:var:: PyObject *PyExc_UnicodeWarning
+        *
+        * :exc:`UnicodeWarning`
+      * * .. c:var:: PyObject *PyExc_UserWarning
+        *
+        * :exc:`UserWarning`
 
 .. versionadded:: 3.2
    :c:data:`PyExc_ResourceWarning`.
