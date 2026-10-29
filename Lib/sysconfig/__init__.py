@@ -409,7 +409,10 @@ def _init_non_posix(vars):
         ),
     )
 
-    vars['LIBDIR'] = _safe_realpath(os.path.join(get_config_var('installed_base'), 'libs'))
+    if not _PYTHON_BUILD:
+        vars['LIBDIR'] = _safe_realpath(os.path.join(get_config_var('installed_base'), 'libs'))
+    else:
+        vars['LIBDIR'] = os.path.dirname(_safe_realpath(sys.executable))
     if hasattr(sys, 'dllhandle'):
         dllhandle = _winapi.GetModuleFileName(sys.dllhandle)
         vars['LIBRARY'] = os.path.basename(_safe_realpath(dllhandle))
