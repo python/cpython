@@ -2355,8 +2355,7 @@ OSError_str(PyObject *op)
     }
     if (winerror && strerror) {
         res = PyUnicode_FromFormat("[WinError %S] %S",
-                                   winerror ? winerror: Py_None,
-                                   strerror ? strerror: Py_None);
+                                   winerror, strerror);
         goto done;
     }
 #endif
