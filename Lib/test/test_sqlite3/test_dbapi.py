@@ -788,7 +788,7 @@ class OpenTests(unittest.TestCase):
                 rc = cx.file_control(sqlite.SQLITE_FCNTL_PERSIST_WAL, -1)
 
                 # The default value should be 0, but on MacOS when compiling with the SDK (not a
-                # custom build of SQLite) it defaults to 0, perhaps customised by Apple?
+                # custom build of SQLite) it defaults to 1, perhaps customised by Apple?
                 default_value = (1 if sys.platform == "darwin" else 0)
                 assert rc == default_value, f"SQLITE_FCNTL_PERSIST_WAL should be {default_value} " \
                     "by default, not {rc}"
