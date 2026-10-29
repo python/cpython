@@ -1871,6 +1871,25 @@ class HandlerTests(unittest.TestCase):
         opener.add_handler(http_handler)
         self.assertRaises(ValueError, opener.open, "http://www.example.com")
 
+    def test_digest_auth_failure_code(self):
+        # gh-53852: a failed proxy digest auth must report 407, not 401.
+        headers = http.client.HTTPMessage()
+        for handler_class, auth_header, code in [
+                (urllib.request.HTTPDigestAuthHandler,
+                 'www-authenticate', 401),
+                (urllib.request.ProxyDigestAuthHandler,
+                 'proxy-authenticate', 407)]:
+            with self.subTest(handler=handler_class.__name__):
+                handler = handler_class()
+                handler.retried = 6
+                req = Request("http://www.example.com/")
+                with self.assertRaises(urllib.error.HTTPError) as cm:
+                    handler.http_error_auth_reqed(auth_header,
+                                                  "www.example.com",
+                                                  req, headers)
+                self.assertEqual(cm.exception.code, code)
+                cm.exception.close()
+
     def test_unsupported_auth_basic_handler(self):
         # While using BasicAuthHandler
         opener = OpenerDirector()

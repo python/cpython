@@ -1,0 +1,3 @@
+:class:`urllib.request.ProxyDigestAuthHandler` now raises
+:exc:`~urllib.error.HTTPError` with status code 407 (Proxy Authentication
+Required) instead of 401 when proxy authentication fails.
