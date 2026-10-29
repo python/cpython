@@ -1248,6 +1248,13 @@ Porting to Python 3.16
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
+* :mod:`asyncio` event loops now run callbacks scheduled by other callbacks
+  eagerly, before polling for I/O again.  Code or tests that rely on the
+  exact order of callbacks relative to I/O events may need updating; eager
+  processing can be disabled with ``loop.set_settings(asyncio.EventLoopSettings(
+  eager_max_time=0, eager_max_callbacks=0))``.
+  (Contributed by Andrew Svetlov in :gh:`160760`.)
+
 * In :mod:`tkinter`, the *name* parameter of the
   :meth:`~tkinter.Misc.wait_variable`, :meth:`~tkinter.Misc.setvar` and
   :meth:`~tkinter.Misc.getvar` methods and the *value* parameter of
