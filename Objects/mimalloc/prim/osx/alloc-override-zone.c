@@ -6,8 +6,7 @@ terms of the MIT license. A copy of the license can be found in the file
 -----------------------------------------------------------------------------*/
 
 #include "mimalloc.h"
-#include "mimalloc/internal.h"
-
+#include "mimalloc/prim/os.h"
 #if defined(MI_MALLOC_OVERRIDE)
 
 #if !defined(__APPLE__)
@@ -25,7 +24,6 @@ terms of the MIT license. A copy of the license can be found in the file
 
 #include <AvailabilityMacros.h>
 #include <malloc/malloc.h>
-#include <string.h>  // memset
 #include <stdlib.h>
 
 #ifdef __cplusplus
@@ -44,8 +42,7 @@ extern malloc_zone_t* malloc_default_purgeable_zone(void) __attribute__((weak_im
 static bool is_mimalloc_zone( malloc_zone_t* zone );
 
 static size_t zone_size(malloc_zone_t* zone, const void* p) {
-  MI_UNUSED(zone);
-  if (mi_is_in_heap_region(p)) {
+  if (mi_any_heap_contains(p)) {
     return mi_usable_size(p);
   }
   else if (!is_mimalloc_zone(zone)) {  // can happen due to interpose
@@ -72,16 +69,17 @@ static void* zone_valloc(malloc_zone_t* zone, size_t size) {
 }
 
 static void zone_free(malloc_zone_t* zone, void* p) {
-  if (mi_is_in_heap_region(p)) {
-    mi_free(p);
-  }
-  else if (!is_mimalloc_zone(zone)) {  // can happen due to interpose
-    zone->free(zone,p);
+  // during C++ thread shutdown `_pthread_tsd_cleanup` may call `zone_free`
+  // after mimalloc mi_thread_done, and also on a pointer that was allocated in another subproc.
+  if mi_unlikely(!mi_cfree(p)) {
+    if (!is_mimalloc_zone(zone)) {  // can happen due to interpose
+      zone->free(zone,p);
+    }
   }
 }
 
 static void* zone_realloc(malloc_zone_t* zone, void* p, size_t newsize) {
-  if (p == NULL || mi_is_in_heap_region(p)) {
+  if (p == NULL || mi_any_heap_contains(p)) {
     return mi_realloc(p, newsize);
   }
   else if (!is_mimalloc_zone(zone)) {  // can happen due to interpose
@@ -267,15 +265,13 @@ static malloc_zone_t mi_malloc_zone = {
 #endif
 };
 
-static bool is_mimalloc_zone( malloc_zone_t* zone ) {
-  return (zone==NULL || zone==&mi_malloc_zone);
-}
-
-
 #ifdef __cplusplus
 }
 #endif
 
+static bool is_mimalloc_zone( malloc_zone_t* zone ) {
+  return (zone==NULL || zone==&mi_malloc_zone);
+}
 
 #if defined(MI_OSX_INTERPOSE) && defined(MI_SHARED_LIB_EXPORT)
 
@@ -284,7 +280,7 @@ static bool is_mimalloc_zone( malloc_zone_t* zone ) {
 // our mimalloc zone. Since even the loader uses malloc
 // on macOS, this ensures that all allocations go through
 // mimalloc (as all calls are interposed).
-// The main `malloc`, `free`, etc calls are interposed in `alloc-override.c`,
+// The main `malloc`, `free`, etc calls are interposed in `alloc/alloc-override.c`,
 // Here, we also override macOS specific API's like
 // `malloc_zone_calloc` etc. see <https://github.com/aosm/libmalloc/blob/master/man/malloc_zone_malloc.3>
 // ------------------------------------------------------
@@ -361,7 +357,7 @@ static bool zone_check(malloc_zone_t* zone) {
 
 static malloc_zone_t* zone_from_ptr(const void* p) {
   MI_UNUSED(p);
-  return (mi_is_in_heap_region(p) ? mi_get_default_zone() : NULL);
+  return (mi_any_heap_contains(p) ? mi_get_default_zone() : NULL);
 }
 
 static void zone_log(malloc_zone_t* zone, void* p) {
@@ -386,16 +382,9 @@ static void zone_unregister(malloc_zone_t* zone) {
 
 // use interposing so `DYLD_INSERT_LIBRARIES` works without `DYLD_FORCE_FLAT_NAMESPACE=1`
 // See: <https://books.google.com/books?id=K8vUkpOXhN4C&pg=PA73>
-struct mi_interpose_s {
-  const void* replacement;
-  const void* target;
-};
-#define MI_INTERPOSE_FUN(oldfun,newfun) { (const void*)&newfun, (const void*)&oldfun }
-#define MI_INTERPOSE_MI(fun)            MI_INTERPOSE_FUN(fun,mi_##fun)
 #define MI_INTERPOSE_ZONE(fun)          MI_INTERPOSE_FUN(malloc_##fun,fun)
-__attribute__((used)) static const struct mi_interpose_s _mi_zone_interposes[]  __attribute__((section("__DATA, __interpose"))) =
+MI_INTERPOSE_DECLS(_mi_zone_interposes) =
 {
-
   MI_INTERPOSE_MI(malloc_create_zone),
   MI_INTERPOSE_MI(malloc_default_purgeable_zone),
   MI_INTERPOSE_MI(malloc_default_zone),
