@@ -618,16 +618,6 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.addCleanup(close_transport, transport)
         return transport
 
-    def assert_remainder_is_view(self, transport, buf):
-        # gh-159503: the unsent remainder is a view, not a copy
-        rest = transport._buffer[0]
-        self.assertIsInstance(rest, memoryview)
-        self.assertIs(rest.obj, memoryview(buf).obj)
-        if isinstance(buf, bytearray):
-            # The unsent view pins the bytearray against resizing.
-            with self.assertRaises(BufferError):
-                buf.append(0)
-
     def test_ctor(self):
         waiter = self.loop.create_future()
         tr = self.socket_transport(waiter=waiter)
@@ -865,14 +855,23 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.assertEqual(list_to_buffer([b'data']), transport._buffer)
 
     def test_write_tryagain(self):
-        self.sock.send.side_effect = BlockingIOError
-
         data = b'data'
-        transport = self.socket_transport()
-        transport.write(data)
+        for buf in data, bytearray(data), memoryview(data):
+            with self.subTest(type=type(buf).__name__):
+                self.sock.send.side_effect = BlockingIOError
 
-        self.loop.assert_writer(7, transport._write_ready)
-        self.assertEqual(list_to_buffer([b'data']), transport._buffer)
+                transport = self.socket_transport()
+                transport.write(buf)
+
+                self.loop.assert_writer(7, transport._write_ready)
+                self.assertEqual(list_to_buffer([b'data']), transport._buffer)
+                # gh-159503: the data is buffered as a view, not a copy
+                self.assertIsInstance(transport._buffer[0], memoryview)
+                self.assertIs(transport._buffer[0].obj, memoryview(buf).obj)
+                if isinstance(buf, bytearray):
+                    # The buffered view pins the bytearray against resizing.
+                    with self.assertRaises(BufferError):
+                        buf.append(0)
 
     def test_write_sendmsg_no_data(self):
         self.sock.sendmsg = mock.Mock()
@@ -968,21 +967,19 @@ class SelectorSocketTransportTests(test_utils.TestCase):
 
     @unittest.skipUnless(selector_events._HAS_SENDMSG, 'no sendmsg')
     def test_write_sendmsg_partial(self):
-        data = b'data'
-        for buf in data, bytearray(data), memoryview(data):
-            with self.subTest(type=type(buf).__name__):
-                self.sock.sendmsg = mock.Mock()
-                # Sent partial data
-                self.sock.sendmsg.return_value = 2
 
-                transport = self.socket_transport(sendmsg=True)
-                transport._buffer.append(buf)
-                self.loop._add_writer(7, transport._write_ready)
-                transport._write_ready()
-                self.assertTrue(self.sock.sendmsg.called)
-                self.assertTrue(self.loop.writers)
-                self.assertEqual(list_to_buffer([b'ta']), transport._buffer)
-                self.assert_remainder_is_view(transport, buf)
+        data = memoryview(b'data')
+        self.sock.sendmsg = mock.Mock()
+        # Sent partial data
+        self.sock.sendmsg.return_value = 2
+
+        transport = self.socket_transport(sendmsg=True)
+        transport._buffer.append(data)
+        self.loop._add_writer(7, transport._write_ready)
+        transport._write_ready()
+        self.assertTrue(self.sock.sendmsg.called)
+        self.assertTrue(self.loop.writers)
+        self.assertEqual(list_to_buffer([b'ta']), transport._buffer)
 
     @unittest.skipUnless(selector_events._HAS_SENDMSG, 'no sendmsg')
     def test_write_sendmsg_half_buffer(self):
@@ -1083,18 +1080,15 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.assertRaises(AssertionError, transport._write_ready)
 
     def test_write_ready_partial(self):
-        data = b'data'
-        for buf in data, bytearray(data), memoryview(data):
-            with self.subTest(type=type(buf).__name__):
-                self.sock.send.return_value = 2
+        data = memoryview(b'data')
+        self.sock.send.return_value = 2
 
-                transport = self.socket_transport()
-                transport._buffer.append(buf)
-                self.loop._add_writer(7, transport._write_ready)
-                transport._write_ready()
-                self.loop.assert_writer(7, transport._write_ready)
-                self.assertEqual(list_to_buffer([b'ta']), transport._buffer)
-                self.assert_remainder_is_view(transport, buf)
+        transport = self.socket_transport()
+        transport._buffer.append(data)
+        self.loop._add_writer(7, transport._write_ready)
+        transport._write_ready()
+        self.loop.assert_writer(7, transport._write_ready)
+        self.assertEqual(list_to_buffer([b'ta']), transport._buffer)
 
     def test_write_ready_partial_none(self):
         data = b'data'

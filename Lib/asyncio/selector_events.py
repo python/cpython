@@ -1095,7 +1095,9 @@ class _SelectorSocketTransport(_SelectorTransport):
             # Not all was written; register write handler.
             self._add_writer(self._sock_fd, self._write_ready)
 
-        # Add it to the buffer.
+        # Add it to the buffer as a view, so partial sends don't copy it.
+        if not isinstance(data, memoryview):
+            data = memoryview(data)
         self._buffer.append(data)
         self._buffer_size += len(data)
         self._maybe_pause_protocol()
@@ -1143,9 +1145,6 @@ class _SelectorSocketTransport(_SelectorTransport):
             if b_len <= nbytes:
                 nbytes -= b_len
             else:
-                # Keep a view of the remainder, not a copy.
-                if not isinstance(b, memoryview):
-                    b = memoryview(b)
                 buffer.appendleft(b[nbytes:])
                 break
 
@@ -1157,9 +1156,7 @@ class _SelectorSocketTransport(_SelectorTransport):
             buffer = self._buffer.popleft()
             n = self._sock.send(buffer)
             if n != len(buffer):
-                # Not all data was written; keep a view, not a copy.
-                if not isinstance(buffer, memoryview):
-                    buffer = memoryview(buffer)
+                # Not all data was written
                 self._buffer.appendleft(buffer[n:])
             self._buffer_size -= n
         except (BlockingIOError, InterruptedError):
