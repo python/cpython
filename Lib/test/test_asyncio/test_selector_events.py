@@ -618,6 +618,16 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.addCleanup(close_transport, transport)
         return transport
 
+    def assert_remainder_is_view(self, transport, buf):
+        # gh-159503: the unsent remainder is a view, not a copy
+        rest = transport._buffer[0]
+        self.assertIsInstance(rest, memoryview)
+        self.assertIs(rest.obj, memoryview(buf).obj)
+        if isinstance(buf, bytearray):
+            # The unsent view pins the bytearray against resizing.
+            with self.assertRaises(BufferError):
+                buf.append(0)
+
     def test_ctor(self):
         waiter = self.loop.create_future()
         tr = self.socket_transport(waiter=waiter)
@@ -972,16 +982,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
                 self.assertTrue(self.sock.sendmsg.called)
                 self.assertTrue(self.loop.writers)
                 self.assertEqual(list_to_buffer([b'ta']), transport._buffer)
-                # gh-159503: the remainder is a view, not a copy
-                rest = transport._buffer[0]
-                self.assertIsInstance(rest, memoryview)
-                self.assertIs(
-                    rest.obj,
-                    buf.obj if isinstance(buf, memoryview) else buf)
-                if isinstance(buf, bytearray):
-                    # The unsent view pins the bytearray against resizing.
-                    with self.assertRaises(BufferError):
-                        buf.append(0)
+                self.assert_remainder_is_view(transport, buf)
 
     @unittest.skipUnless(selector_events._HAS_SENDMSG, 'no sendmsg')
     def test_write_sendmsg_half_buffer(self):
@@ -1093,16 +1094,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
                 transport._write_ready()
                 self.loop.assert_writer(7, transport._write_ready)
                 self.assertEqual(list_to_buffer([b'ta']), transport._buffer)
-                # gh-159503: the remainder is a view, not a copy
-                rest = transport._buffer[0]
-                self.assertIsInstance(rest, memoryview)
-                self.assertIs(
-                    rest.obj,
-                    buf.obj if isinstance(buf, memoryview) else buf)
-                if isinstance(buf, bytearray):
-                    # The unsent view pins the bytearray against resizing.
-                    with self.assertRaises(BufferError):
-                        buf.append(0)
+                self.assert_remainder_is_view(transport, buf)
 
     def test_write_ready_partial_none(self):
         data = b'data'
