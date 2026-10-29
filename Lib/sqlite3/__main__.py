@@ -12,6 +12,13 @@ from code import InteractiveConsole
 from textwrap import dedent
 
 
+# IDLE uses CTRL-D for EOF on all platforms (gh-102628).
+if sys.platform == "win32" and "idlelib.run" not in sys.modules:
+    EOF_KEY = "CTRL-Z"
+else:
+    EOF_KEY = "CTRL-D"
+
+
 def execute(c, sql, suppress_errors=True):
     """Helper that wraps execution of SQL code.
 
@@ -102,16 +109,12 @@ def main(*args):
         db_name = repr(args.filename)
 
     # Prepare REPL banner and prompts.
-    if sys.platform == "win32" and "idlelib.run" not in sys.modules:
-        eofkey = "CTRL-Z"
-    else:
-        eofkey = "CTRL-D"
     banner = dedent(f"""
         sqlite3 shell, running on SQLite version {sqlite3.sqlite_version}
         Connected to {db_name}
 
         Each command will be run using execute() on the cursor.
-        Type ".help" for more information; type ".quit" or {eofkey} to quit.
+        Type ".help" for more information; type ".quit" or {EOF_KEY} to quit.
     """).strip()
     sys.ps1 = "sqlite> "
     sys.ps2 = "    ... "
