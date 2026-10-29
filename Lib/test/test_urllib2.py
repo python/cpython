@@ -1888,6 +1888,7 @@ class HandlerTests(unittest.TestCase):
                                                   "www.example.com",
                                                   req, headers)
                 self.assertEqual(cm.exception.code, code)
+                cm.exception.close()
 
     def test_unsupported_auth_basic_handler(self):
         # While using BasicAuthHandler
