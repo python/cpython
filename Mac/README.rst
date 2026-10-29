@@ -97,8 +97,8 @@ machines.  In macOS 10.5 support was extended to 64-bit Intel and 64-bit PPC
 architectures.  It is possible to build Python with various combinations
 of architectures depending on the build tools and macOS version in use.
 Note that PPC support was removed in macOS 10.7 and 32-bit Intel support
-was removed in macOS 10.15.  So currently as of macOS 10.15, macOS only
-supports one execution architecture, 64-bit Intel (``x86_64``).
+was removed in macOS 10.15.  macOS 11 added support for Apple Silicon
+(``arm64``).
 
 2. How do I build a universal binary
 ------------------------------------
@@ -173,8 +173,8 @@ following combinations of SDKs and universal-archs flavors are available:
   * 11.0 and later SDKs support ``universal2``
 
 The makefile for a framework build will also install ``python3.x-32``
-binaries when the universal architecture includes at least one 32-bit
-architecture (that is, for all flavors but ``64-bit`` and ``intel-64``).
+binaries when the universal architecture includes both 32-bit and 64-bit
+architectures (that is, for the ``all``, ``intel`` and ``3-way`` flavors).
 It will also install ``python3.x-intel64`` binaries in the ``universal2``
 case to allow easy execution with the Rosetta 2 Intel emulator on Apple
 Silicon Macs.
@@ -225,7 +225,7 @@ While it is technically possible to create a .app without using frameworks you
 will have to do the work yourself if you really want this.
 
 A second reason for using frameworks is that they put Python-related items in
-only two places: "/Library/Framework/Python.framework" and
+only two places: "/Library/Frameworks/Python.framework" and
 "/Applications/Python <VERSION>" where ``<VERSION>`` can be e.g. "3.8",
 "2.7", etc.  This simplifies matters for users installing
 Python from a binary distribution if they want to get rid of it again. Moreover,
@@ -275,7 +275,7 @@ in the sequence
 
  3. make install
 
-This sequence will put the framework in ``/Library/Framework/Python.framework``,
+This sequence will put the framework in ``/Library/Frameworks/Python.framework``,
 the applications in ``/Applications/Python <VERSION>`` and the unix tools in
 ``/usr/local/bin``.
 
@@ -283,7 +283,7 @@ Installing in another place, for instance ``$HOME/Library/Frameworks`` if you
 have no admin privileges on your machine, is possible. This can be accomplished
 by configuring with ``--enable-framework=$HOME/Library/Frameworks``.
 The other two directories will then also be installed in your home directory,
-at ``$HOME/Applications/Python-<VERSION>`` and ``$HOME/bin``.
+at ``$HOME/Applications/Python <VERSION>`` and ``$HOME/bin``.
 
 If you want to install some part, but not all, read the main Makefile. The
 frameworkinstall is composed of a couple of sub-targets that install the
@@ -326,11 +326,8 @@ documentation set for this release for inclusion in the framework.  The
 installer package will create links to the documentation for use by IDLE,
 pydoc, shell users, and Finder user.
 
-The script will build a universal binary so you'll therefore have to run this
-script on macOS 10.4 or later and with Xcode 2.1 or later installed.
-However, the Python build process itself has several build dependencies not
-available out of the box with macOS 10.4 so you may have to install
-additional software beyond what is provided with Xcode 2.
+The script will build a universal binary.  See ``Mac/BuildScript/README.rst``
+for the recommended build environment.
 It should be possible to use SDKs and/or older
 versions of Xcode to build installers that are compatible with older systems
 on a newer system but this may not be completely foolproof so the resulting

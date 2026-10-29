@@ -1,0 +1,3 @@
+Fix the pure-Python :class:`zoneinfo.ZoneInfo` setting ``fold=0`` in
+:meth:`~datetime.tzinfo.fromutc` for times in the fold created by the only
+transition of a zone with a single transition.

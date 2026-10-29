@@ -754,7 +754,7 @@ than raw I/O does.
 
       .. versionadded:: 3.2
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          The :class:`BytesIO` object can now be closed while the view exists.
 
    .. method:: getvalue()
@@ -771,7 +771,7 @@ than raw I/O does.
       Otherwise, at most *size* bytes are returned.
       Return an empty :class:`bytes` object at EOF.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
    .. method:: read1(size=-1, /)
 

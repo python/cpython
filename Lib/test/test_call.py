@@ -947,7 +947,17 @@ class TestPEP590(unittest.TestCase):
         self.assertEqual(kwargs_captured, [{"baz": "bar"}])
 
 class A:
-    def method_two_args(self, x, y):
+    def method_two_args(arg1=None, arg2=None):
+        pass
+
+    def method_one_arg(arg1):
+        pass
+
+    def method_zero_arg():
+        pass
+
+    @classmethod
+    def classmethod_one_arg(arg1):
         pass
 
     @staticmethod
@@ -955,42 +965,152 @@ class A:
         pass
 
     @staticmethod
-    def positional_only(arg, /):
+    def static_positional_only_one_arg(arg1, /):
         pass
 
+    @staticmethod
+    def static_one_arg(arg1):
+        pass
+
+    def method_one_arg_named_self(self):
+        pass
+
+    def method_one_arg_named_cls(cls):
+        pass
+
+    def method_two_arg_second_param_self(arg1, self):
+        pass
+
+
+class AMeta(type):
+
+    def method_one_arg(arg1):
+        pass
+
+    def method_two_arg(arg1, arg2):
+        pass
+
+    @classmethod
+    def classmethod_one_arg(arg1):
+        pass
+
+    @staticmethod
+    def static_one_arg(arg1):
+        pass
+
+class AClassWithMetaclass(metaclass=AMeta):
+    pass
+
 @cpython_only
-class TestErrorMessagesUseQualifiedName(unittest.TestCase):
+class TestIncorrectNumberOfPositionalArgs(unittest.TestCase):
+    def test_too_many_positional_with_defaults_suggests_missing_self(self):
+        msg = r"\.method_two_args\(\) takes from 0 to 2 positional arguments but 3 were given\. Did you forget the 'self' parameter in the function definition\?"
+        with self.assertRaisesRegex(TypeError, msg):
+            A().method_two_args("woof", "loud")
 
-    @contextlib.contextmanager
-    def check_raises_type_error(self, message):
-        with self.assertRaises(TypeError) as cm:
-            yield
-        self.assertEqual(str(cm.exception), message)
+    def test_too_many_positional_but_missing_self_no_args(self):
+        msg = r"takes 0 positional arguments but 1 was given\. Did you forget the 'self' parameter in the function definition\?"
+        with self.assertRaisesRegex(TypeError, msg):
+            A().method_zero_arg()
 
-    def test_missing_arguments(self):
-        msg = "A.method_two_args() missing 1 required positional argument: 'y'"
-        with self.check_raises_type_error(msg):
-            A().method_two_args("x")
+    def test_too_many_positional_but_missing_self(self):
+        msg = r"\.method_one_arg\(\) takes 1 positional argument but 2 were given\. Did you forget the 'self' parameter in the function definition\?"
+        with self.assertRaisesRegex(TypeError, msg):
+            A().method_one_arg("quiet")
 
     def test_too_many_positional(self):
-        msg = "A.static_no_args() takes 0 positional arguments but 1 was given"
-        with self.check_raises_type_error(msg):
+        msg = r"takes 0 positional arguments but 1 was given"
+        with self.assertRaisesRegex(TypeError, msg):
             A.static_no_args("oops it's an arg")
 
     def test_positional_only_passed_as_keyword(self):
-        msg = "A.positional_only() got some positional-only arguments passed as keyword arguments: 'arg'"
-        with self.check_raises_type_error(msg):
-            A.positional_only(arg="x")
+        msg = r"\.static_positional_only_one_arg\(\) got some positional-only arguments passed as keyword arguments: 'arg1'"
+        with self.assertRaisesRegex(TypeError, msg):
+            A.static_positional_only_one_arg(arg1="ball")
 
     def test_unexpected_keyword(self):
-        msg = "A.method_two_args() got an unexpected keyword argument 'bad'"
-        with self.check_raises_type_error(msg):
+        msg = r"method_two_args\(\) got an unexpected keyword argument 'bad'"
+        with self.assertRaisesRegex(TypeError, msg):
             A().method_two_args(bad="x")
 
     def test_multiple_values(self):
-        msg = "A.method_two_args() got multiple values for argument 'x'"
-        with self.check_raises_type_error(msg):
-            A().method_two_args("x", "y", x="oops")
+        msg = r"\.method_two_args\(\) got multiple values for argument 'arg1'"
+        with self.assertRaisesRegex(TypeError, msg):
+            A().method_two_args("quiet", "low", arg1="oops")
+
+    def test_unbound_method_with_self_keeps_missing_argument_error(self):
+        msg = r"\.method_one_arg\(\) missing 1 required positional argument: 'arg1'"
+        with self.assertRaisesRegex(TypeError, msg):
+            A.method_one_arg()
+
+    def test_classmethod_missing_cls_does_not_suggest_missing_self(self):
+        msg = r"\.classmethod_one_arg\(\) takes 1 positional argument but 2 were given"
+        with self.assertRaisesRegex(TypeError, msg) as cm:
+            A.classmethod_one_arg("arg1")
+        self.assertNotIn("Did you forget", str(cm.exception))
+
+    def test_classmethod_missing_cls_via_instance_does_not_suggest_missing_self(self):
+        msg = r"\.classmethod_one_arg\(\) takes 1 positional argument but 2 were given"
+        with self.assertRaisesRegex(TypeError, msg) as cm:
+            A().classmethod_one_arg("poodle")
+        self.assertNotIn("Did you forget", str(cm.exception))
+
+    def test_staticmethod_too_many_args_does_not_suggest_missing_self(self):
+        msg = r"\.static_one_arg\(\) takes 1 positional argument but 2 were given"
+        with self.assertRaisesRegex(TypeError, msg) as cm:
+            A.static_one_arg(1, 2)
+        self.assertNotIn("Did you forget", str(cm.exception))
+
+    def test_staticmethod_too_many_args_via_instance_does_not_suggest_missing_self(self):
+        msg = r"\.static_one_arg\(\) takes 1 positional argument but 2 were given"
+        with self.assertRaisesRegex(TypeError, msg) as cm:
+            A().static_one_arg(1, 2)
+        self.assertNotIn("Did you forget", str(cm.exception))
+
+    def test_metaclass_missing_receiver_does_not_suggest_missing_self(self):
+        msg = r"AMeta\.method_one_arg\(\) takes 1 positional argument but 2 were given"
+        with self.assertRaisesRegex(TypeError, msg) as cm:
+            AClassWithMetaclass.method_one_arg("standard")
+        self.assertNotIn("Did you forget", str(cm.exception))
+
+    def test_metaclass_method_too_many_args_does_not_suggest_missing_self(self):
+        msg = r"AMeta\.method_two_arg\(\) takes 2 positional arguments but 3 were given"
+        with self.assertRaisesRegex(TypeError, msg) as cm:
+            AClassWithMetaclass.method_two_arg("trail", "river")
+        self.assertNotIn("Did you forget", str(cm.exception))
+
+    def test_metaclass_classmethod_does_not_suggest_missing_self(self):
+        msg = r"AMeta\.classmethod_one_arg\(\) takes 1 positional argument but 2 were given"
+        with self.assertRaisesRegex(TypeError, msg) as cm:
+            AClassWithMetaclass.classmethod_one_arg("standard")
+        self.assertNotIn("Did you forget", str(cm.exception))
+
+    def test_metaclass_staticmethod_does_not_suggest_missing_self(self):
+        msg = r"AMeta\.static_one_arg\(\) takes 1 positional argument but 2 were given"
+        with self.assertRaisesRegex(TypeError, msg) as cm:
+            AClassWithMetaclass.static_one_arg("show", "working")
+        self.assertNotIn("Did you forget", str(cm.exception))
+
+    def test_more_than_two_surplus_args_does_not_suggest(self):
+        with self.assertRaises(TypeError) as cm:
+            A().method_one_arg("arg1", "arg2", "arg3")
+        self.assertNotIn("Did you forget", str(cm.exception))
+
+    def test_when_arg_named_self_does_not_suggest(self):
+        with self.assertRaises(TypeError) as cm:
+            A().method_one_arg_named_self("arg1")
+        self.assertNotIn("Did you forget", str(cm.exception))
+
+    def test_when_arg_named_cls_does_not_suggest(self):
+        with self.assertRaises(TypeError) as cm:
+            A().method_one_arg_named_cls("arg1")
+        self.assertNotIn("Did you forget", str(cm.exception))
+
+    def test_when_second_param_is_self(self):
+        with self.assertRaises(TypeError) as cm:
+            A().method_two_arg_second_param_self()
+        self.assertNotIn("Did you forget", str(cm.exception))
+
 
 @cpython_only
 class TestErrorMessagesSuggestions(unittest.TestCase):

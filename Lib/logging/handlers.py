@@ -459,16 +459,20 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
             timeTuple = time.gmtime(t)
         else:
             timeTuple = time.localtime(t)
-            dstNow = time.localtime(currentTime)[-1]
-            dstThen = timeTuple[-1]
-            if dstNow != dstThen:
-                if dstNow:
-                    addend = 3600
-                else:
-                    addend = -3600
-                timeTuple = time.localtime(t + addend)
+            # DST affects calendar-based intervals, not fixed-duration ones.
+            if self.when == 'MIDNIGHT' or self.when.startswith('W'):
+                # A record can arrive well after the scheduled rollover.
+                dstAtRollover = time.localtime(self.rolloverAt)[-1]
+                dstThen = timeTuple[-1]
+                if dstAtRollover != dstThen:
+                    if dstAtRollover:
+                        addend = 3600
+                    else:
+                        addend = -3600
+                    timeTuple = time.localtime(t + addend)
         dfn = self.rotation_filename(self.baseFilename + "." +
                                      time.strftime(self.suffix, timeTuple))
+        self.rolloverAt = self.computeRollover(currentTime)
         if os.path.exists(dfn):
             # Already rolled over.
             return
@@ -482,7 +486,6 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                 os.remove(s)
         if not self.delay:
             self.stream = self._open()
-        self.rolloverAt = self.computeRollover(currentTime)
 
 class WatchedFileHandler(logging.FileHandler):
     """

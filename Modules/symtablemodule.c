@@ -128,7 +128,6 @@ symtable_init_constants(PyObject *m)
     if (PyModule_AddIntMacro(m, DEF_BOUND) < 0) return -1;
     if (PyModule_AddIntMacro(m, DEF_ANNOT) < 0) return -1;
     if (PyModule_AddIntMacro(m, DEF_COMP_ITER) < 0) return -1;
-    if (PyModule_AddIntMacro(m, DEF_COMP_CELL) < 0) return -1;
 
     if (PyModule_AddIntConstant(m, "TYPE_FUNCTION", FunctionBlock) < 0)
         return -1;
@@ -143,6 +142,8 @@ symtable_init_constants(PyObject *m)
     if (PyModule_AddIntConstant(m, "TYPE_TYPE_PARAMETERS", TypeParametersBlock) < 0)
         return -1;
     if (PyModule_AddIntConstant(m, "TYPE_TYPE_VARIABLE", TypeVariableBlock) < 0)
+        return -1;
+    if (PyModule_AddIntConstant(m, "TYPE_INLINED_COMPREHENSION", InlinedComprehensionBlock) < 0)
         return -1;
 
     if (PyModule_AddIntMacro(m, LOCAL) < 0) return -1;
