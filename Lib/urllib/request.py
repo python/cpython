@@ -1142,7 +1142,13 @@ class AbstractDigestAuthHandler:
         if H is None:
             return None
 
-        user, pw = self.passwd.find_user_password(realm, req.full_url)
+        # proxy auth is looked up by the proxy's authority
+        # req.host, set by Request.set_proxy()
+        if self.auth_header == 'Proxy-Authorization':
+            authority = req.host
+        else:
+            authority = req.full_url
+        user, pw = self.passwd.find_user_password(realm, authority)
         if user is None:
             return None
 
