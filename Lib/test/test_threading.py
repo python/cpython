@@ -502,7 +502,8 @@ class ThreadTests(BaseTestCase):
             from test.support import SHORT_TIMEOUT, threading_helper
 
             def interrupt(frame, event, arg):
-                if event == 'c_return' and arg is threading._start_joinable_thread:
+                if (event == 'c_return'
+                        and arg is threading._start_joinable_thread):
                     raise KeyboardInterrupt
 
             completed = threading.Event()
