@@ -259,7 +259,7 @@ compute_range_length(PyObject *start, PyObject *stop, PyObject *step)
     assert(PyLong_Check(stop));
     assert(PyLong_Check(step));
 
-    /* fast path for one argument case of range */
+    /* fast path for start == 0 and step == 1: length is max(stop, 0) */
     if (start == zero && step == one) {
         if (_PyLong_IsPositive((const PyLongObject *)stop)) {
             return Py_NewRef(stop);
