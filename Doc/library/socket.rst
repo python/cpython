@@ -1066,7 +1066,7 @@ The :mod:`!socket` module also offers various network-related services:
       contain ``%scope_id`` part.
 
    .. versionchanged:: next
-      null characters are now rejected in ``host`` and ``port`` parameters.
+      Null characters are now rejected in the *host* and *port* parameters.
 
 .. _Happy Eyeballs: https://en.wikipedia.org/wiki/Happy_Eyeballs
 
