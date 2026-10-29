@@ -91,7 +91,7 @@ ensure_shared_on_resize(PyListObject *self)
 #endif
 }
 
-#define LIST_SMALL_ALLOCATED 32
+#define LIST_SMALL_ALLOCATED _Py_LIST_SMALL_ALLOCATED
 
 static int py_list_resize(PyListObject *self, Py_ssize_t newsize);
 
@@ -4419,7 +4419,10 @@ static int
 listwriter_check_consistency(PyListWriter *writer)
 {
     assert(writer != NULL);
-    PyObject *list = _PyObject_CAST(writer);
+    assert(PyList_CheckExact(_PyObject_CAST(writer)));
+    PyListObject *list = (PyListObject*)writer;
+    assert(Py_SIZE(list) >= 0);
+    assert(Py_SIZE(list) <= list->allocated);
     // Don't test _PyObject_IsUniquelyReferenced() since a list writer can
     // be shared between multiple threads with external locking.
     assert(Py_REFCNT(list) == 1);
@@ -4479,6 +4482,22 @@ PyListWriter_Finish(PyListWriter *writer)
     assert(listwriter_check_consistency(writer));
     PyListObject *list = _PyList_CAST(writer);
 
+    // Shrink the list if the allocated size is greater than the double size.
+    // For example, if PyListWriter_Create() argument overestimated the final
+    // size.
+    if (Py_SIZE(list) < (list->allocated >> 1)
+        && list->allocated > LIST_SMALL_ALLOCATED)
+    {
+        if (list_resize(list, Py_SIZE(list)) < 0) {
+            // This case cannot happen: list_resize() never fails when
+            // shrinking
+            PyListWriter_Discard(writer);
+            return NULL;
+        }
+        // Note: cannot test that list->allocated changed in debug mode, since
+        // it's left unchanged on memory allocation failure.
+    }
+
 #ifdef Py_DEBUG
     // Make sure that all items have been initialized
     Py_ssize_t size = Py_SIZE(list);
@@ -4534,14 +4553,15 @@ PyListWriter_Append(PyListWriter *writer, PyObject *item)
 }
 
 
+// Similar to _list_extend() but don't lock the writer list.
 // If you update this function, update also _list_extend().
 int
 PyListWriter_Extend(PyListWriter *writer, PyObject *iterable)
 {
     assert(listwriter_check_consistency(writer));
-    assert(_PyObject_CAST(writer) != iterable);
-
     PyListObject *self = _PyList_CAST(writer);
+    assert(_PyObject_CAST(self) != iterable);
+
     int res;
     if (PyList_CheckExact(iterable)) {
         Py_BEGIN_CRITICAL_SECTION(iterable);

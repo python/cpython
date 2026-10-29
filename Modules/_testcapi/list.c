@@ -1,5 +1,10 @@
+// Use pycore_list.h
+#define PYTESTCAPI_NEED_INTERNAL_API
+
 #include "parts.h"
 #include "util.h"
+
+#include "pycore_list.h"          // _Py_LIST_SMALL_ALLOCATED
 
 
 static PyObject *
@@ -100,6 +105,15 @@ test_list_api(PyObject *self, PyObject *Py_UNUSED(ignored))
 #undef NLIST
 
     Py_RETURN_NONE;
+}
+
+
+static PyObject *
+_list_get_allocated(PyObject *Py_UNUSED(module), PyObject *obj)
+{
+    NULLABLE(obj);
+    PyListObject *list = (PyListObject*)obj;
+    return PyLong_FromSsize_t(list->allocated);
 }
 
 
@@ -338,6 +352,7 @@ static PyMethodDef test_methods[] = {
     {"list_clear", list_clear, METH_O},
     {"list_extend", list_extend, METH_VARARGS},
     {"test_list_api", test_list_api, METH_NOARGS},
+    {"_list_get_allocated", _list_get_allocated, METH_O},
     {NULL},
 };
 
@@ -357,6 +372,10 @@ _PyTestCapi_Init_List(PyObject *m)
         return -1;
     }
     Py_DECREF(writer_type);
+
+    if (PyModule_AddIntConstant(m, "LIST_SMALL_ALLOCATED", _Py_LIST_SMALL_ALLOCATED) < 0) {
+        return -1;
+    }
 
     return 0;
 }

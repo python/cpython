@@ -12,6 +12,8 @@ extern "C" {
 #include "pycore_stackref.h"
 #endif
 
+#define _Py_LIST_SMALL_ALLOCATED 32
+
 PyAPI_FUNC(PyObject*) _PyList_Extend(PyListObject *, PyObject *);
 PyAPI_FUNC(PyObject) *_PyList_SliceSubscript(PyObject*, PyObject*);
 PyAPI_FUNC(PyObject *) _PyList_BinarySlice(PyObject *, PyObject *, PyObject *);
