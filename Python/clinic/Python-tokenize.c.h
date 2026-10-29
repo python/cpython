@@ -6,7 +6,9 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 static PyObject *
 tokenizeriter_new_impl(PyTypeObject *type, PyObject *readline,
@@ -22,9 +24,11 @@ tokenizeriter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(extra_tokens), &_Py_ID(encoding), },
     };
     #undef NUM_KEYWORDS
@@ -66,13 +70,8 @@ tokenizeriter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         _PyArg_BadArgument("tokenizeriter", "argument 'encoding'", "str", fastargs[2]);
         goto exit;
     }
-    Py_ssize_t encoding_length;
-    encoding = PyUnicode_AsUTF8AndSize(fastargs[2], &encoding_length);
+    encoding = _PyUnicode_AsUTF8NoNUL(fastargs[2]);
     if (encoding == NULL) {
-        goto exit;
-    }
-    if (strlen(encoding) != (size_t)encoding_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_kwonly:
@@ -81,4 +80,19 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=831a75133d4a5034 input=a9049054013a1b77]*/
+
+static PyObject *
+tokenizeriter_next_impl(tokenizeriterobject *self);
+
+static PyObject *
+tokenizeriter_next(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = tokenizeriter_next_impl((tokenizeriterobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+/*[clinic end generated code: output=67cc510ef85272ba input=a9049054013a1b77]*/

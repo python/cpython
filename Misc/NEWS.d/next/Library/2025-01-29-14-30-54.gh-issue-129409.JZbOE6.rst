@@ -1,2 +1,0 @@
-Fix an integer overflow in the :mod:`csv` module when writing a data field
-larger than 2GB.

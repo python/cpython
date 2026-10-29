@@ -1,0 +1,2 @@
+Add *eager_tasks* parameter to :func:`asyncio.run` function and
+:class:`asyncio.Runner` class constructor.

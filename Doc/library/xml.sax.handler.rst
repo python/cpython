@@ -4,9 +4,6 @@
 .. module:: xml.sax.handler
    :synopsis: Base classes for SAX event handlers.
 
-.. moduleauthor:: Lars Marius Garshol <larsga@garshol.priv.no>
-.. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
-
 **Source code:** :source:`Lib/xml/sax/handler.py`
 
 --------------
@@ -16,7 +13,7 @@ error handlers, entity resolvers and lexical handlers. Applications normally
 only need to implement those interfaces whose events they are interested in;
 they can implement the interfaces in a single object or in multiple objects.
 Handler implementations should inherit from the base classes provided in the
-module :mod:`xml.sax.handler`, so that all methods get default implementations.
+module :mod:`!xml.sax.handler`, so that all methods get default implementations.
 
 
 .. class:: ContentHandler
@@ -53,7 +50,7 @@ module :mod:`xml.sax.handler`, so that all methods get default implementations.
    Interface used by the parser to represent low frequency events which may not
    be of interest to many applications.
 
-In addition to these classes, :mod:`xml.sax.handler` provides symbolic constants
+In addition to these classes, :mod:`!xml.sax.handler` provides symbolic constants
 for the feature and property names.
 
 
@@ -75,12 +72,15 @@ for the feature and property names.
      optionally do not report original prefixed names (default).
    | access: (parsing) read-only; (not parsing) read/write
 
+   The parser based on :mod:`xml.parsers.expat` does not support this feature.
+
 
 .. data:: feature_string_interning
 
    | value: ``"http://xml.org/sax/features/string-interning"``
    | true: All element names, prefixes, attribute names, Namespace URIs, and
-     local names are interned using the built-in intern function.
+     local names are interned in a dictionary
+     (see :data:`property_interning_dict`).
    | false: Names are not necessarily interned, although they may be (default).
    | access: (parsing) read-only; (not parsing) read/write
 
@@ -93,8 +93,19 @@ for the feature and property names.
    | false: Do not report validation errors.
    | access: (parsing) read-only; (not parsing) read/write
 
+   The parser based on :mod:`xml.parsers.expat` does not support this feature,
+   because Expat is a non-validating parser.
+
 
 .. data:: feature_external_ges
+
+   .. warning::
+
+      Enabling opens a vulnerability to
+      `external entity attacks <https://en.wikipedia.org/wiki/XML_external_entity_attack>`_
+      if the parser is used with user-provided XML content.
+      Please reflect on your `threat model <https://en.wikipedia.org/wiki/Threat_model>`_
+      before enabling this feature.
 
    | value: ``"http://xml.org/sax/features/external-general-entities"``
    | true: Include all external general (text) entities.
@@ -111,6 +122,8 @@ for the feature and property names.
      DTD subset.
    | access: (parsing) read-only; (not parsing) read/write
 
+   The parser based on :mod:`xml.parsers.expat` does not support this feature.
+
 
 .. data:: all_features
 
@@ -120,7 +133,7 @@ for the feature and property names.
 .. data:: property_lexical_handler
 
    | value: ``"http://xml.org/sax/properties/lexical-handler"``
-   | data type: xml.sax.handler.LexicalHandler (not supported in Python 2)
+   | data type: :class:`~xml.sax.handler.LexicalHandler`
    | description: An optional extension handler for lexical events like
      comments.
    | access: read/write
@@ -129,19 +142,24 @@ for the feature and property names.
 .. data:: property_declaration_handler
 
    | value: ``"http://xml.org/sax/properties/declaration-handler"``
-   | data type: xml.sax.sax2lib.DeclHandler (not supported in Python 2)
+   | data type: an object implementing the SAX2 ``DeclHandler`` interface
    | description: An optional extension handler for DTD-related events other
      than notations and unparsed entities.
    | access: read/write
+
+   No parser in the standard library supports this property,
+   and the standard library provides no such handler.
 
 
 .. data:: property_dom_node
 
    | value: ``"http://xml.org/sax/properties/dom-node"``
-   | data type: org.w3c.dom.Node (not supported in Python 2)
+   | data type: :class:`xml.dom.Node`
    | description: When parsing, the current DOM node being visited if this is
      a DOM iterator; when not parsing, the root DOM node for iteration.
    | access: (parsing) read-only; (not parsing) read/write
+
+   No parser in the standard library supports this property.
 
 
 .. data:: property_xml_string
@@ -150,7 +168,28 @@ for the feature and property names.
    | data type: Bytes
    | description: The literal string of characters that was the source for the
      current event.
-   | access: read-only
+   | access: read-only, and only during a handler callback
+
+
+.. data:: property_encoding
+
+   | value: ``"http://www.python.org/sax/properties/encoding"``
+   | data type: String
+   | description: The name of the encoding to assume for input data.
+   | access: read/write
+
+   No parser in the standard library supports this property.
+
+
+.. data:: property_interning_dict
+
+   | value: ``"http://www.python.org/sax/properties/interning-dict"``
+   | data type: Dictionary
+   | description: The dictionary used to intern names,
+     or ``None`` if names are not interned.
+     Setting it enables interning, as does the
+     :data:`feature_string_interning` feature.
+   | access: read/write
 
 
 .. data:: all_properties
@@ -248,8 +287,7 @@ events in the input document:
 
    The *name* parameter contains the raw XML 1.0 name of the element type as a
    string and the *attrs* parameter holds an object of the
-   :class:`~xml.sax.xmlreader.Attributes`
-   interface (see :ref:`attributes-objects`) containing the attributes of
+   :ref:`Attributes <attributes-objects>` interface containing the attributes of
    the element.  The object passed as *attrs* may be re-used by the parser; holding
    on to a reference to it is not a reliable way to keep a copy of the attributes.
    To keep a copy of the attributes, use the :meth:`copy` method of the *attrs*
@@ -271,8 +309,7 @@ events in the input document:
    The *name* parameter contains the name of the element type as a ``(uri,
    localname)`` tuple, the *qname* parameter contains the raw XML 1.0 name used in
    the source document, and the *attrs* parameter holds an instance of the
-   :class:`~xml.sax.xmlreader.AttributesNS` interface (see
-   :ref:`attributes-ns-objects`)
+   :ref:`AttributesNS <attributes-ns-objects>` interface
    containing the attributes of the element.  If no namespace is associated with
    the element, the *uri* component of *name* will be ``None``.  The object passed
    as *attrs* may be re-used by the parser; holding on to a reference to it is not

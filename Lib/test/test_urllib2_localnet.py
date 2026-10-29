@@ -351,6 +351,8 @@ class ProxyAuthTests(unittest.TestCase):
         self.server.start()
         self.server.ready.wait()
         proxy_url = "http://127.0.0.1:%d" % self.server.port
+        # Credentials must be registered against proxy authority
+        self.proxy_authority = "127.0.0.1:%d" % self.server.port
         handler = urllib.request.ProxyHandler({"http" : proxy_url})
         self.proxy_digest_handler = urllib.request.ProxyDigestAuthHandler()
         self.opener = urllib.request.build_opener(
@@ -361,21 +363,23 @@ class ProxyAuthTests(unittest.TestCase):
         self.server = None
 
     def test_proxy_with_bad_password_raises_httperror(self):
-        self.proxy_digest_handler.add_password(self.REALM, self.URL,
+        self.proxy_digest_handler.add_password(self.REALM, self.proxy_authority,
                                                self.USER, self.PASSWD+"bad")
         self.digest_auth_handler.set_qop("auth")
         with self.assertRaises(urllib.error.HTTPError) as cm:
             self.opener.open(self.URL)
+        self.assertEqual(cm.exception.code, 407)
         cm.exception.close()
 
     def test_proxy_with_no_password_raises_httperror(self):
         self.digest_auth_handler.set_qop("auth")
         with self.assertRaises(urllib.error.HTTPError) as cm:
             self.opener.open(self.URL)
+        self.assertEqual(cm.exception.code, 407)
         cm.exception.close()
 
     def test_proxy_qop_auth_works(self):
-        self.proxy_digest_handler.add_password(self.REALM, self.URL,
+        self.proxy_digest_handler.add_password(self.REALM, self.proxy_authority,
                                                self.USER, self.PASSWD)
         self.digest_auth_handler.set_qop("auth")
         with self.opener.open(self.URL) as result:
@@ -383,7 +387,7 @@ class ProxyAuthTests(unittest.TestCase):
                 pass
 
     def test_proxy_qop_auth_int_works_or_throws_urlerror(self):
-        self.proxy_digest_handler.add_password(self.REALM, self.URL,
+        self.proxy_digest_handler.add_password(self.REALM, self.proxy_authority,
                                                self.USER, self.PASSWD)
         self.digest_auth_handler.set_qop("auth-int")
         try:
@@ -606,8 +610,7 @@ class TestUrlopen(unittest.TestCase):
         handler = self.start_server()
         with urllib.request.urlopen("http://localhost:%s" % handler.port) as open_url:
             for attr in ("read", "close", "info", "geturl"):
-                self.assertTrue(hasattr(open_url, attr), "object returned from "
-                             "urlopen lacks the %s attribute" % attr)
+                self.assertHasAttr(open_url, attr)
             self.assertTrue(open_url.read(), "calling 'read' failed")
 
     def test_info(self):

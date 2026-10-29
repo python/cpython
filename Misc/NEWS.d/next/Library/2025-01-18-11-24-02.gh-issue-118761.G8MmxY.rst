@@ -1,2 +1,0 @@
-Reduce import time of :mod:`pstats` and :mod:`zipfile` by up to 20%, by
-removing unnecessary imports to :mod:`typing`. Patch by Bénédikt Tran.

@@ -2,21 +2,14 @@
 /* Support for dynamic loading of extension modules */
 
 #include "Python.h"
-#include "pycore_interp.h"    // _PyInterpreterState.dlopenflags
-#include "pycore_pystate.h"   // _PyInterpreterState_GET()
+#include "pycore_fileutils.h"     // struct _Py_stat_struct
+#include "pycore_import.h"        // _PyImport_GetDLOpenFlags()
 #include "pycore_importdl.h"
+#include "pycore_interp.h"        // _PyInterpreterState.dlopenflags
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 #include <sys/types.h>
 #include <sys/stat.h>
-
-#if defined(__NetBSD__)
-#include <sys/param.h>
-#if (NetBSD < 199712)
-#include <nlist.h>
-#include <link.h>
-#define dlerror() "error in dynamic linking"
-#endif
-#endif /* NetBSD */
 
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
@@ -36,13 +29,23 @@
 
 const char *_PyImport_DynLoadFiletab[] = {
 #ifdef __CYGWIN__
+    "." SOABI ".dll",
     ".dll",
 #else  /* !__CYGWIN__ */
     "." SOABI ".so",
 #ifdef ALT_SOABI
     "." ALT_SOABI ".so",
 #endif
+#ifndef Py_GIL_DISABLED
+#ifdef SOABI_PLATFORM
+    ".abi" PYTHON_ABI_STRING "-" SOABI_PLATFORM ".so",
+#endif  /* SOABI_PLATFORM */
     ".abi" PYTHON_ABI_STRING ".so",
+#endif  /* Py_GIL_DISABLED */
+#ifdef SOABI_PLATFORM
+    ".abi" PYTHON_ABI_STRING "t-" SOABI_PLATFORM ".so",
+#endif  /* SOABI_PLATFORM */
+    ".abi" PYTHON_ABI_STRING "t.so",
     ".so",
 #endif  /* __CYGWIN__ */
     NULL,

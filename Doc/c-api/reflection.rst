@@ -55,7 +55,7 @@ Reflection
 
 .. c:function:: PyFrameObject* PyEval_GetFrame(void)
 
-   Return the current thread state's frame, which is ``NULL`` if no frame is
+   Return the :term:`attached thread state`'s frame, which is ``NULL`` if no frame is
    currently executing.
 
    See also :c:func:`PyThreadState_GetFrame`.
@@ -95,6 +95,12 @@ Reflection
 
    Return the name of *func* if it is a function, class or instance object, else the
    name of *func*\s type.
+
+   For a Python function or method, the returned pointer refers to the
+   function's name and must not be retained across operations that may change
+   that name. In the free-threaded build, copy the string before detaching
+   the thread state or executing Python code if the name may be modified
+   concurrently.
 
 
 .. c:function:: const char* PyEval_GetFuncDesc(PyObject *func)

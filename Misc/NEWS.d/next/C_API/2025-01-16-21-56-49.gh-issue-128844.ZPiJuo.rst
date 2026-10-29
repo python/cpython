@@ -1,3 +1,0 @@
-Add :c:func:`PyUnstable_TryIncRef` and :c:func:`PyUnstable_EnableTryIncRef`
-unstable APIs.  These are helpers for dealing with unowned references in
-a thread-safe way, particularly in the free threading build.

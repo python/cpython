@@ -4,6 +4,21 @@ preserve
 
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 
+static PyObject *
+set_repr_impl(PySetObject *so);
+
+static PyObject *
+set_repr(PyObject *so)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(so);
+    return_value = set_repr_impl((PySetObject *)so);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(set_pop__doc__,
 "pop($self, /)\n"
 "--\n"
@@ -223,7 +238,7 @@ static PyObject *
 set_isdisjoint_impl(PySetObject *so, PyObject *other);
 
 static PyObject *
-set_isdisjoint(PySetObject *so, PyObject *other)
+set_isdisjoint(PyObject *so, PyObject *other)
 {
     PyObject *return_value = NULL;
 
@@ -297,6 +312,19 @@ PyDoc_STRVAR(set_symmetric_difference_update__doc__,
 #define SET_SYMMETRIC_DIFFERENCE_UPDATE_METHODDEF    \
     {"symmetric_difference_update", (PyCFunction)set_symmetric_difference_update, METH_O, set_symmetric_difference_update__doc__},
 
+static PyObject *
+set_symmetric_difference_update_impl(PySetObject *so, PyObject *other);
+
+static PyObject *
+set_symmetric_difference_update(PyObject *so, PyObject *other)
+{
+    PyObject *return_value = NULL;
+
+    return_value = set_symmetric_difference_update_impl((PySetObject *)so, other);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(set_symmetric_difference__doc__,
 "symmetric_difference($self, other, /)\n"
 "--\n"
@@ -310,7 +338,7 @@ static PyObject *
 set_symmetric_difference_impl(PySetObject *so, PyObject *other);
 
 static PyObject *
-set_symmetric_difference(PySetObject *so, PyObject *other)
+set_symmetric_difference(PyObject *so, PyObject *other)
 {
     PyObject *return_value = NULL;
 
@@ -334,7 +362,7 @@ static PyObject *
 set_issubset_impl(PySetObject *so, PyObject *other);
 
 static PyObject *
-set_issubset(PySetObject *so, PyObject *other)
+set_issubset(PyObject *so, PyObject *other)
 {
     PyObject *return_value = NULL;
 
@@ -358,7 +386,7 @@ static PyObject *
 set_issuperset_impl(PySetObject *so, PyObject *other);
 
 static PyObject *
-set_issuperset(PySetObject *so, PyObject *other)
+set_issuperset(PyObject *so, PyObject *other)
 {
     PyObject *return_value = NULL;
 
@@ -384,7 +412,7 @@ static PyObject *
 set_add_impl(PySetObject *so, PyObject *key);
 
 static PyObject *
-set_add(PySetObject *so, PyObject *key)
+set_add(PyObject *so, PyObject *key)
 {
     PyObject *return_value = NULL;
 
@@ -408,13 +436,33 @@ static PyObject *
 set___contains___impl(PySetObject *so, PyObject *key);
 
 static PyObject *
-set___contains__(PySetObject *so, PyObject *key)
+set___contains__(PyObject *so, PyObject *key)
 {
     PyObject *return_value = NULL;
 
-    Py_BEGIN_CRITICAL_SECTION(so);
     return_value = set___contains___impl((PySetObject *)so, key);
-    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(frozenset___contains____doc__,
+"__contains__($self, object, /)\n"
+"--\n"
+"\n"
+"x.__contains__(y) <==> y in x.");
+
+#define FROZENSET___CONTAINS___METHODDEF    \
+    {"__contains__", (PyCFunction)frozenset___contains__, METH_O|METH_COEXIST, frozenset___contains____doc__},
+
+static PyObject *
+frozenset___contains___impl(PySetObject *so, PyObject *key);
+
+static PyObject *
+frozenset___contains__(PyObject *so, PyObject *key)
+{
+    PyObject *return_value = NULL;
+
+    return_value = frozenset___contains___impl((PySetObject *)so, key);
 
     return return_value;
 }
@@ -434,7 +482,7 @@ static PyObject *
 set_remove_impl(PySetObject *so, PyObject *key);
 
 static PyObject *
-set_remove(PySetObject *so, PyObject *key)
+set_remove(PyObject *so, PyObject *key)
 {
     PyObject *return_value = NULL;
 
@@ -461,7 +509,7 @@ static PyObject *
 set_discard_impl(PySetObject *so, PyObject *key);
 
 static PyObject *
-set_discard(PySetObject *so, PyObject *key)
+set_discard(PyObject *so, PyObject *key)
 {
     PyObject *return_value = NULL;
 
@@ -519,4 +567,4 @@ set___sizeof__(PyObject *so, PyObject *Py_UNUSED(ignored))
 
     return return_value;
 }
-/*[clinic end generated code: output=83b7742a762ce465 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5d794137d2614aaf input=a9049054013a1b77]*/

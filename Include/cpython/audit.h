@@ -1,4 +1,4 @@
-#ifndef Py_CPYTHON_AUDIT_H
+#ifndef _Py_CPYTHON_AUDIT_H
 #  error "this header file must not be included directly"
 #endif
 

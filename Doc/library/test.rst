@@ -4,10 +4,8 @@
 .. module:: test
    :synopsis: Regression tests package containing the testing suite for Python.
 
-.. sectionauthor:: Brett Cannon <brett@python.org>
-
 .. note::
-   The :mod:`test` package is meant for internal use by Python only. It is
+   The :mod:`!test` package is meant for internal use by Python only. It is
    documented for the benefit of the core developers of Python. Any use of
    this package outside of Python's standard library is discouraged as code
    mentioned here can change or be removed without notice between releases of
@@ -15,12 +13,12 @@
 
 --------------
 
-The :mod:`test` package contains all regression tests for Python as well as the
+The :mod:`!test` package contains all regression tests for Python as well as the
 modules :mod:`test.support` and :mod:`test.regrtest`.
 :mod:`test.support` is used to enhance your tests while
 :mod:`test.regrtest` drives the testing suite.
 
-Each module in the :mod:`test` package whose name starts with ``test_`` is a
+Each module in the :mod:`!test` package whose name starts with ``test_`` is a
 testing suite for a specific module or feature. All new tests should be written
 using the :mod:`unittest` or :mod:`doctest` module.  Some older tests are
 written using a "traditional" testing style that compares output printed to
@@ -38,8 +36,8 @@ written using a "traditional" testing style that compares output printed to
 
 .. _writing-tests:
 
-Writing Unit Tests for the :mod:`test` package
-----------------------------------------------
+Writing Unit Tests for the :mod:`!test` package
+-----------------------------------------------
 
 It is preferred that tests that use the :mod:`unittest` module follow a few
 guidelines. One is to name the test module by starting it with ``test_`` and end
@@ -162,27 +160,29 @@ Running tests using the command-line interface
 .. module:: test.regrtest
    :synopsis: Drives the regression test suite.
 
-The :mod:`test` package can be run as a script to drive Python's regression
+The :mod:`!test` package can be run as a script to drive Python's regression
 test suite, thanks to the :option:`-m` option: :program:`python -m test`. Under
-the hood, it uses :mod:`test.regrtest`; the call :program:`python -m
+the hood, it uses :mod:`!test.regrtest`; the call :program:`python -m
 test.regrtest` used in previous Python versions still works.  Running the
 script by itself automatically starts running all regression tests in the
-:mod:`test` package. It does this by finding all modules in the package whose
-name starts with ``test_``, importing them, and executing the function
-:func:`test_main` if present or loading the tests via
-unittest.TestLoader.loadTestsFromModule if ``test_main`` does not exist.  The
-names of tests to execute may also be passed to the script. Specifying a single
+:mod:`!test` package. It does this by finding modules and packages whose names
+start with ``test_``, importing each one, and loading its tests with
+:meth:`unittest.TestLoader.loadTestsFromModule`. See the
+:ref:`load_tests protocol <load_tests-protocol>` for how a module or package
+can customize what is loaded. Defining a module-level ``test_main()`` function
+is not supported and causes the test to fail. The names of tests to
+execute may also be passed to the script. Specifying a single
 regression test (:program:`python -m test test_spam`) will minimize output and
 only print whether the test passed or failed.
 
-Running :mod:`test` directly allows what resources are available for
+Running :mod:`!test` directly allows what resources are available for
 tests to use to be set. You do this by using the ``-u`` command-line
 option. Specifying ``all`` as the value for the ``-u`` option enables all
 possible resources: :program:`python -m test -uall`.
 If all but one resource is desired (a more common case), a
 comma-separated list of resources that are not desired may be listed after
 ``all``. The command :program:`python -m test -uall,-audio,-largefile`
-will run :mod:`test` with all resources except the ``audio`` and
+will run :mod:`!test` with all resources except the ``audio`` and
 ``largefile`` resources. For a list of all resources and more command-line
 options, run :program:`python -m test -h`.
 
@@ -197,19 +197,19 @@ regression tests.
    :ref:`controlled using environment variables <using-on-controlling-color>`.
 
 
-:mod:`test.support` --- Utilities for the Python test suite
-===========================================================
+:mod:`!test.support` --- Utilities for the Python test suite
+============================================================
 
 .. module:: test.support
    :synopsis: Support for Python's regression test suite.
 
 
-The :mod:`test.support` module provides support for Python's regression
+The :mod:`!test.support` module provides support for Python's regression
 test suite.
 
 .. note::
 
-   :mod:`test.support` is not a public module.  It is documented here to help
+   :mod:`!test.support` is not a public module.  It is documented here to help
    Python developers write tests.  The API of this module is subject to change
    without backwards compatibility concerns between releases.
 
@@ -230,13 +230,14 @@ This module defines the following exceptions:
    function.
 
 
-The :mod:`test.support` module defines the following constants:
+The :mod:`!test.support` module defines the following constants:
 
 .. data:: verbose
 
-   ``True`` when verbose output is enabled. Should be checked when more
-   detailed information is desired about a running test. *verbose* is set by
-   :mod:`test.regrtest`.
+   How verbose the output is: the number of :option:`!-v` options which
+   :mod:`test.regrtest` was run with, and therefore ``0`` when verbose output
+   is not enabled.  Should be checked when more detailed information is
+   desired about a running test.
 
 
 .. data:: is_jython
@@ -246,7 +247,27 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: is_android
 
-   ``True`` if the system is Android.
+   ``True`` if ``sys.platform`` is ``android``.
+
+
+.. data:: is_emscripten
+
+   ``True`` if ``sys.platform`` is ``emscripten``.
+
+
+.. data:: is_wasi
+
+   ``True`` if ``sys.platform`` is ``wasi``.
+
+
+.. data:: is_apple_mobile
+
+   ``True`` if ``sys.platform`` is ``ios``, ``tvos``, or ``watchos``.
+
+
+.. data:: is_apple
+
+   ``True`` if ``sys.platform`` is ``darwin`` or ``is_apple_mobile`` is ``True``.
 
 
 .. data:: unix_shell
@@ -267,7 +288,7 @@ The :mod:`test.support` module defines the following constants:
    :meth:`~socket.socket.recv` and :meth:`~socket.socket.send` methods of
    :class:`socket.socket`.
 
-   Its default value is 5 seconds.
+   Its default value is 10 seconds.
 
    See also :data:`INTERNET_TIMEOUT`.
 
@@ -343,7 +364,7 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: TEST_SUPPORT_DIR
 
-   Set to the top level directory that contains :mod:`test.support`.
+   Set to the top level directory that contains :mod:`!test.support`.
 
 
 .. data:: TEST_HOME_DIR
@@ -418,7 +439,7 @@ The :mod:`test.support` module defines the following constants:
    Used to test mixed type comparison.
 
 
-The :mod:`test.support` module defines the following functions:
+The :mod:`!test.support` module defines the following functions:
 
 .. function:: busy_retry(timeout, err_msg=None, /, *, error=True)
 
@@ -472,6 +493,12 @@ The :mod:`test.support` module defines the following functions:
    tests.
 
 
+.. function:: get_resource_value(resource)
+
+   Return the value specified for *resource* (as :samp:`-u {resource}={value}`).
+   Return ``None`` if *resource* is disabled or no value is specified.
+
+
 .. function:: python_is_optimized()
 
    Return ``True`` if Python was not built with ``-O0`` or ``-Og``.
@@ -479,7 +506,8 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: with_pymalloc()
 
-   Return :const:`_testcapi.WITH_PYMALLOC`.
+   Return ``True`` if Python was built with :ref:`pymalloc <pymalloc>` enabled
+   and is not a :term:`free-threaded build`.
 
 
 .. function:: requires(resource, msg=None)
@@ -694,7 +722,7 @@ The :mod:`test.support` module defines the following functions:
 .. decorator:: anticipate_failure(condition)
 
    A decorator to conditionally mark tests with
-   :func:`unittest.expectedFailure`. Any use of this decorator should
+   :deco:`unittest.expectedFailure`. Any use of this decorator should
    have an associated comment identifying the relevant tracker issue.
 
 
@@ -831,6 +859,15 @@ The :mod:`test.support` module defines the following functions:
    Decorator for tests that fill the address space.
 
 
+.. function:: linked_to_musl()
+
+   Return ``False`` if there is no evidence the interpreter was compiled with
+   ``musl``, otherwise return a version triple, either ``(0, 0, 0)`` if the
+   version is unknown, or the actual version if it is known.  Intended for use
+   in ``skip`` decorators.  ``emscripten`` and ``wasi`` are assumed to be
+   compiled with ``musl``; otherwise ``platform.libc_ver`` is checked.
+
+
 .. function:: check_syntax_error(testcase, statement, errtext='', *, lineno=None, offset=None)
 
    Test for syntax errors in *statement* by attempting to compile *statement*.
@@ -848,9 +885,11 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: reap_children()
 
-   Use this at the end of ``test_main`` whenever sub-processes are started.
-   This will help ensure that no extra children (zombies) stick around to
-   hog resources and create problems when looking for refleaks.
+   Call this from :meth:`~unittest.TestCase.setUp`,
+   :meth:`~unittest.TestCase.tearDown`, or ``tearDownModule()`` in tests
+   that start subprocesses. This will help ensure that no extra children
+   (zombies) stick around to hog resources and create problems when looking
+   for refleaks.
 
 
 .. function:: get_attribute(obj, name)
@@ -928,6 +967,72 @@ The :mod:`test.support` module defines the following functions:
    :mod:`tracemalloc` is enabled.
 
 
+.. currentmodule:: test.support.isolation
+
+.. decorator:: runInSubprocess(*, options=(), env=None, timeout=None)
+
+   Decorator that runs the decorated test in a fresh interpreter subprocess, in
+   isolation, so that it does not share global or interpreter state with the
+   rest of the test run.  It can decorate a test method or a whole
+   :class:`~unittest.TestCase` subclass.  Decorated methods must take no extra
+   arguments.  A failure, error or skip in the subprocess is reported for the
+   corresponding test, and individual :meth:`subtests
+   <unittest.TestCase.subTest>` that fail or are skipped are reported
+   individually.  A reported failure or error shows the original subprocess
+   traceback as the cause of the exception.
+
+   When a **method** is decorated, only that method runs in a subprocess; all
+   fixtures (:meth:`~unittest.TestCase.setUp` / :meth:`~unittest.TestCase.tearDown`,
+   :meth:`~unittest.TestCase.setUpClass` / :meth:`~unittest.TestCase.tearDownClass`
+   and ``setUpModule()`` / ``tearDownModule()``) run both in the parent process
+   (as usual) and in the subprocess around the method.
+
+   When a **class** is decorated, the whole class runs in a single subprocess,
+   and :meth:`~unittest.TestCase.setUpClass`,
+   :meth:`~unittest.TestCase.tearDownClass`, :meth:`~unittest.TestCase.setUp`
+   and :meth:`~unittest.TestCase.tearDown` run once each in the subprocess and
+   are skipped in the parent process.  A failure or skip of
+   :meth:`~unittest.TestCase.setUpClass` in the subprocess is reported for the
+   whole class.  ``setUpModule()`` cannot be controlled by a class decorator,
+   so it still runs in the parent process too; test it with
+   :data:`runningInSubprocess` if needed.
+
+   The subprocess inherits the enabled resources (``-u``), memory limit
+   (``-M``) and verbosity (``-v``) of the parent test run, so that
+   :func:`~test.support.requires_resource`, :func:`~test.support.requires`,
+   :func:`~test.support.bigmemtest` and the like behave consistently in both
+   processes.
+
+   *options* is a sequence of interpreter command line options
+   to run the subprocess with,
+   and *env* is a mapping of environment variables to set in it,
+   on top of the inherited environment.
+   A value of ``None`` in *env* unsets the variable.
+   Note that :option:`-E` and :option:`-I` make the subprocess ignore
+   the ``PYTHON*`` environment variables, including :envvar:`PYTHONPATH`.
+
+   *timeout* is the number of seconds to wait for the subprocess;
+   the test is reported as an error if it does not complete in time.
+   By default there is no timeout,
+   and a hung test is left to the timeout of the test runner.
+
+   The test is skipped on platforms without subprocess support.
+
+
+.. data:: runningInSubprocess
+
+   ``True`` while the code runs in the isolated subprocess spawned by
+   :func:`runInSubprocess`, and ``False`` otherwise (including in the parent
+   process and in a normal, non-isolated test run).  Fixtures such as
+   :meth:`~unittest.TestCase.setUp`, :meth:`~unittest.TestCase.tearDown`,
+   :meth:`~unittest.TestCase.setUpClass`, :meth:`~unittest.TestCase.tearDownClass`,
+   ``setUpModule()`` and ``tearDownModule()`` can test it to choose which code
+   to run in the subprocess.
+
+
+.. currentmodule:: test.support
+
+
 .. function:: check_free_after_iterating(test, iter, cls, args=())
 
    Assert instances of *cls* are deallocated after iterating.
@@ -984,7 +1089,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: skip_if_broken_multiprocessing_synchronize()
 
-   Skip tests if the :mod:`multiprocessing.synchronize` module is missing, if
+   Skip tests if the :mod:`!multiprocessing.synchronize` module is missing, if
    there is no available semaphore implementation, or if creating a lock raises
    an :exc:`OSError`.
 
@@ -1008,7 +1113,7 @@ The :mod:`test.support` module defines the following functions:
    .. versionadded:: 3.11
 
 
-The :mod:`test.support` module defines the following classes:
+The :mod:`!test.support` module defines the following classes:
 
 
 .. class:: SuppressCrashReport()
@@ -1054,14 +1159,14 @@ The :mod:`test.support` module defines the following classes:
       Try to match a single stored value (*dv*) with a supplied value (*v*).
 
 
-:mod:`test.support.socket_helper` --- Utilities for socket tests
-================================================================
+:mod:`!test.support.socket_helper` --- Utilities for socket tests
+=================================================================
 
 .. module:: test.support.socket_helper
    :synopsis: Support for socket tests.
 
 
-The :mod:`test.support.socket_helper` module provides support for socket tests.
+The :mod:`!test.support.socket_helper` module provides support for socket tests.
 
 .. versionadded:: 3.9
 
@@ -1132,14 +1237,14 @@ The :mod:`test.support.socket_helper` module provides support for socket tests.
    exceptions.
 
 
-:mod:`test.support.script_helper` --- Utilities for the Python execution tests
-==============================================================================
+:mod:`!test.support.script_helper` --- Utilities for the Python execution tests
+===============================================================================
 
 .. module:: test.support.script_helper
    :synopsis: Support for Python's script execution tests.
 
 
-The :mod:`test.support.script_helper` module provides support for Python's
+The :mod:`!test.support.script_helper` module provides support for Python's
 script execution tests.
 
 .. function:: interpreter_requires_environment()
@@ -1156,7 +1261,7 @@ script execution tests.
    doesn't have an obvious home with Python's current home finding logic.
 
    Setting :envvar:`PYTHONHOME` is one way to get most of the testsuite to run
-   in that situation.  :envvar:`PYTHONPATH` or :envvar:`PYTHONUSERSITE` are
+   in that situation.  :envvar:`PYTHONPATH` or :envvar:`PYTHONNOUSERSITE` are
    other common environment variables that might impact whether or not the
    interpreter can start.
 
@@ -1243,13 +1348,13 @@ script execution tests.
    path and the archive name for the zip file.
 
 
-:mod:`test.support.bytecode_helper` --- Support tools for testing correct bytecode generation
-=============================================================================================
+:mod:`!test.support.bytecode_helper` --- Support tools for testing correct bytecode generation
+==============================================================================================
 
 .. module:: test.support.bytecode_helper
    :synopsis: Support tools for testing correct bytecode generation.
 
-The :mod:`test.support.bytecode_helper` module provides support for testing
+The :mod:`!test.support.bytecode_helper` module provides support for testing
 and inspecting bytecode generation.
 
 .. versionadded:: 3.9
@@ -1275,13 +1380,13 @@ The module defines the following class:
    Throws :exc:`AssertionError` if *opname* is found.
 
 
-:mod:`test.support.threading_helper` --- Utilities for threading tests
-======================================================================
+:mod:`!test.support.threading_helper` --- Utilities for threading tests
+=======================================================================
 
 .. module:: test.support.threading_helper
    :synopsis: Support for threading tests.
 
-The :mod:`test.support.threading_helper` module provides support for threading tests.
+The :mod:`!test.support.threading_helper` module provides support for threading tests.
 
 .. versionadded:: 3.10
 
@@ -1355,13 +1460,20 @@ The :mod:`test.support.threading_helper` module provides support for threading t
    .. versionadded:: 3.8
 
 
-:mod:`test.support.os_helper` --- Utilities for os tests
-========================================================================
+.. function:: run_concurrently(worker_func, nthreads, args=(), kwargs={})
+
+    Run the worker function concurrently in multiple threads.
+    Re-raises an exception if any thread raises one, after all threads have
+    finished.
+
+
+:mod:`!test.support.os_helper` --- Utilities for os tests
+=========================================================
 
 .. module:: test.support.os_helper
    :synopsis: Support for os tests.
 
-The :mod:`test.support.os_helper` module provides support for os tests.
+The :mod:`!test.support.os_helper` module provides support for os tests.
 
 .. versionadded:: 3.10
 
@@ -1435,9 +1547,12 @@ The :mod:`test.support.os_helper` module provides support for os tests.
    ``value``.
 
 
-.. method:: EnvironmentVarGuard.unset(envvar)
+.. method:: EnvironmentVarGuard.unset(envvar, *others)
 
-   Temporarily unset the environment variable ``envvar``.
+   Temporarily unset one or more environment variables.
+
+   .. versionchanged:: 3.14
+      More than one environment variable can be unset.
 
 
 .. function:: can_symlink()
@@ -1547,13 +1662,39 @@ The :mod:`test.support.os_helper` module provides support for os tests.
    wrapped with a wait loop that checks for the existence of the file.
 
 
-:mod:`test.support.import_helper` --- Utilities for import tests
-================================================================
+.. decorator:: with_source_date_epoch(*, epoch=123456789)
+
+   A decorator for running tests with the :envvar:`SOURCE_DATE_EPOCH`
+   environment variable set to *epoch*.
+
+
+.. decorator:: without_source_date_epoch
+
+   A decorator for running tests with the :envvar:`SOURCE_DATE_EPOCH`
+   environment variable unset.
+
+
+.. class:: SourceDateEpochTestMeta
+
+   Metaclass wrapping all test methods of the class with
+   :func:`with_source_date_epoch` if the *source_date_epoch* keyword class
+   argument is true, or with :func:`without_source_date_epoch` otherwise.
+   For example::
+
+      class TestsWithSourceEpoch(Tests,
+                                 metaclass=SourceDateEpochTestMeta,
+                                 source_date_epoch=True):
+          pass
+
+
+
+:mod:`!test.support.import_helper` --- Utilities for import tests
+=================================================================
 
 .. module:: test.support.import_helper
    :synopsis: Support for import tests.
 
-The :mod:`test.support.import_helper` module provides support for import tests.
+The :mod:`!test.support.import_helper` module provides support for import tests.
 
 .. versionadded:: 3.10
 
@@ -1568,8 +1709,8 @@ The :mod:`test.support.import_helper` module provides support for import tests.
 
    This function imports and returns a fresh copy of the named Python module
    by removing the named module from ``sys.modules`` before doing the import.
-   Note that unlike :func:`reload`, the original module is not affected by
-   this operation.
+   Note that unlike :func:`importlib.reload`, the original module is not
+   affected by this operation.
 
    *fresh* is an iterable of additional module names that are also removed
    from the ``sys.modules`` cache before doing the import.
@@ -1661,13 +1802,13 @@ The :mod:`test.support.import_helper` module provides support for import tests.
    will be reverted at the end of the block.
 
 
-:mod:`test.support.warnings_helper` --- Utilities for warnings tests
-====================================================================
+:mod:`!test.support.warnings_helper` --- Utilities for warnings tests
+=====================================================================
 
 .. module:: test.support.warnings_helper
    :synopsis: Support for warnings tests.
 
-The :mod:`test.support.warnings_helper` module provides support for warnings tests.
+The :mod:`!test.support.warnings_helper` module provides support for warnings tests.
 
 .. versionadded:: 3.10
 
@@ -1731,17 +1872,10 @@ The :mod:`test.support.warnings_helper` module provides support for warnings tes
 
    In this case all warnings are caught and no errors are raised.
 
-   On entry to the context manager, a :class:`WarningRecorder` instance is
-   returned. The underlying warnings list from
-   :func:`~warnings.catch_warnings` is available via the recorder object's
-   :attr:`warnings` attribute.  As a convenience, the attributes of the object
-   representing the most recent warning can also be accessed directly through
-   the recorder object (see example below).  If no warning has been raised,
-   then any of the attributes that would otherwise be expected on an object
-   representing a warning will return ``None``.
-
-   The recorder object also has a :meth:`reset` method, which clears the
-   warnings list.
+   On entry to the context manager, a :class:`WarningsRecorder` instance is
+   returned. The recorded warnings are available via its
+   :attr:`~WarningsRecorder.warnings` attribute, and its
+   :meth:`~WarningsRecorder.reset` method discards previously recorded warnings.
 
    The context manager is designed to be used like this::
 
@@ -1758,11 +1892,11 @@ The :mod:`test.support.warnings_helper` module provides support for warnings tes
 
       with check_warnings(quiet=True) as w:
           warnings.warn("foo")
-          assert str(w.args[0]) == "foo"
+          assert str(w.message) == "foo"
           warnings.warn("bar")
-          assert str(w.args[0]) == "bar"
-          assert str(w.warnings[0].args[0]) == "foo"
-          assert str(w.warnings[1].args[0]) == "bar"
+          assert str(w.message) == "bar"
+          assert str(w.warnings[0].message) == "foo"
+          assert str(w.warnings[1].message) == "bar"
           w.reset()
           assert len(w.warnings) == 0
 
@@ -1774,7 +1908,22 @@ The :mod:`test.support.warnings_helper` module provides support for warnings tes
       New optional arguments *filters* and *quiet*.
 
 
-.. class:: WarningsRecorder()
+.. class:: WarningsRecorder(warnings_list)
 
-   Class used to record warnings for unit tests. See documentation of
-   :func:`check_warnings` above for more details.
+   Class used to record warnings for unit tests. Wraps the warnings list
+   returned by :func:`warnings.catch_warnings` when recording is enabled.
+   :func:`check_warnings` returns an instance of this class.
+
+   As a convenience, the attributes of the object representing the most recent
+   warning can also be accessed directly through the recorder object.
+   If no warning has been raised since the recorder was created or last reset,
+   these attributes return ``None``.
+
+   .. attribute:: warnings
+
+      A list of warnings recorded since the recorder was created or last reset.
+
+   .. method:: reset()
+
+      Discard previously recorded warnings from the recorder's view.
+      The underlying warnings list is not modified.

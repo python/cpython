@@ -44,6 +44,12 @@ class FunctionTest(unittest.TestCase):
         with self.assertRaises(SystemError):
             _testcapi.function_get_module(None)  # not a function
 
+        self.assertEqual(_testcapi.function_get_module_macro(some), module)
+        value = object()
+        some.__module__ = value
+        self.assertIs(_testcapi.function_get_module(some), value)
+        self.assertIs(_testcapi.function_get_module_macro(some), value)
+
     def test_function_get_defaults(self):
         # Test PyFunction_GetDefaults()
         def some(
@@ -307,10 +313,27 @@ class FunctionTest(unittest.TestCase):
             _testcapi.function_get_closure(function_without_closure), (1, 2))
         self.assertEqual(function_without_closure.__closure__, (1, 2))
 
+    def test_function_get_annotations(self):
+        # Test PyFunction_GetAnnotations()
+        def normal():
+            pass
+
+        def annofn(arg: int) -> str:
+            return f'arg = {arg}'
+
+        annotations = _testcapi.function_get_annotations(normal)
+        self.assertIsNone(annotations)
+
+        annotations = _testcapi.function_get_annotations(annofn)
+        self.assertIsInstance(annotations, dict)
+        self.assertEqual(annotations, annofn.__annotations__)
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_get_annotations(None)
+
     # TODO: test PyFunction_New()
     # TODO: test PyFunction_NewWithQualName()
     # TODO: test PyFunction_SetVectorcall()
-    # TODO: test PyFunction_GetAnnotations()
     # TODO: test PyFunction_SetAnnotations()
     # TODO: test PyClassMethod_New()
     # TODO: test PyStaticMethod_New()
