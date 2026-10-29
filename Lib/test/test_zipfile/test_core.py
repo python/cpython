@@ -781,16 +781,30 @@ class ZstdTestsWithSourceFile(AbstractTestsWithSourceFile,
         self.assertIsInstance(cm.exception.__cause__, zipfile.zstd.ZstdError)
 
     def test_read_monkeypatched_zstd_decompressor(self):
-        class Decompressor:
+        class FrameDecompressor:
+            eof = False
+
+            def decompress(self, data, max_length=-1):
+                if data:
+                    self.eof = True
+                return data
+
+        class StreamDecompressor:
             def decompress(self, data, max_length=-1):
                 return data
 
         data = b'content'
         archive = self._make_archive(data, data)
-        with mock.patch.object(zipfile, '_get_decompressor',
-                               return_value=Decompressor()):
-            with zipfile.ZipFile(archive) as zipfp:
-                self.assertEqual(zipfp.read('multiframe'), data)
+        for decompressor in FrameDecompressor, StreamDecompressor:
+            with self.subTest(decompressor=decompressor.__name__):
+                with mock.patch.object(zipfile, '_get_decompressor',
+                                       side_effect=lambda _: decompressor()):
+                    with zipfile.ZipFile(archive) as zipfp:
+                        self.assertEqual(zipfp.read('multiframe'), data)
+                        with zipfp.open('multiframe') as fp:
+                            fp.MIN_READ_SIZE = 1
+                            self.assertEqual(
+                                b''.join(iter(lambda: fp.read(1), b'')), data)
 
 
 class AbstractTestZip64InSmallFiles:
