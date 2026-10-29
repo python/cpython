@@ -7,6 +7,23 @@ from test.test_email import TestEmailBase, parameterize
 
 class TestTokens(TestEmailBase):
 
+    # TokenList
+
+    def test_all_defects_empty(self):
+        token = parser.TokenList()
+        self.assertIs(token.all_defects, token.defects)
+        token.defects.append(errors.InvalidHeaderDefect())
+        self.assertIs(token.all_defects, token.defects)
+
+    def test_all_defects(self):
+        leaf = parser.ValueTerminal('text\x00', 'utext')
+        leaf.defects.append(errors.NonPrintableDefect('\x00'))
+        token = parser.TokenList([parser.TokenList([leaf]), leaf])
+        token.defects.append(errors.InvalidHeaderDefect())
+        self.assertEqual(token.all_defects, token.defects + leaf.defects * 2)
+        self.assertEqual(len(token.defects), 1)
+        self.assertEqual(len(leaf.defects), 1)
+
     # EWWhiteSpaceTerminal
 
     def test_EWWhiteSpaceTerminal(self):
