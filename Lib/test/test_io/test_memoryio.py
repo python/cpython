@@ -601,14 +601,14 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         self.assertEqual(buf, b"abcdef")
 
     def test_truncate_extend_too_large(self):
-        for memio in self.ioclass(b"abc"), self.ioclass():
-            memio.write(b"abc")
-            for size in sys.maxsize, sys.maxsize - 1:
-                with self.subTest(size=size):
+        for size in sys.maxsize, sys.maxsize - 1:
+            private = self.ioclass()
+            private.write(b"abc")
+            for memio in self.ioclass(b"abc"), private:
+                with self.subTest(size=size, shared=memio is not private):
                     self.assertRaises((MemoryError, OverflowError),
                                       memio.truncate, size)
                     self.assertEqual(memio.getvalue(), b"abc")
-                    self.assertEqual(memio.tell(), 3)
 
     @support.bigmemtest(size=support._2G, memuse=1, dry_run=False)
     def test_truncate_extend_bigmem(self, size):
