@@ -1,5 +1,0 @@
-Fixed the bug in :meth:`pathlib.Path.glob` -- previously a dangling symlink
-would not be found by this method when the pattern is an exact match, but
-would be found when the pattern contains a wildcard or the recursive
-wildcard (``**``). With this change, a dangling symlink will be found in
-both cases.

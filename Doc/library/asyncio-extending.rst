@@ -12,14 +12,17 @@ classes. Asyncio has helpers that could be used to simplify this task.
 
    Third-parties should reuse existing asyncio code with caution,
    a new Python version is free to break backward compatibility
-   in *internal* part of API.
+   in the *internal* part of the API.
 
 
-Writing a Custom Event Loop
+.. _writing_custom_event_loop:
+
+Writing a custom event loop
 ===========================
 
-:class:`asyncio.AbstractEventLoop` declares very many methods.  Implementing all them
-from scratch is a tedious job.
+:class:`asyncio.AbstractEventLoop` declares very many methods.
+See :ref:`asyncio-event-loop-methods` for the full list.
+Implementing them all from scratch is a tedious job.
 
 A loop can get many common methods implementation for free by inheriting from
 :class:`asyncio.BaseEventLoop`.
@@ -69,7 +72,7 @@ Task lifetime support
 =====================
 
 A third party task implementation should call the following functions to keep a task
-visible by :func:`asyncio.get_tasks` and :func:`asyncio.current_task`:
+visible by :func:`asyncio.all_tasks` and :func:`asyncio.current_task`:
 
 .. function:: _register_task(task)
 

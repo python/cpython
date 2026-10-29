@@ -1,1 +1,0 @@
-Clarify the error message raised when the called part of a class pattern isn't actually a class.

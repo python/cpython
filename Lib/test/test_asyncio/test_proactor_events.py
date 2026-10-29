@@ -18,7 +18,7 @@ from test.test_asyncio import utils as test_utils
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 def close_transport(transport):
@@ -566,6 +566,8 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
         self.assertTrue(self.proactor.sendto.called)
         self.proactor.sendto.assert_called_with(
             self.sock, data, addr=('0.0.0.0', 1234))
+        self.assertFalse(transport._buffer)
+        self.assertEqual(0, transport._buffer_size)
 
     def test_sendto_bytearray(self):
         data = bytearray(b'data')
@@ -585,11 +587,10 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
 
     def test_sendto_no_data(self):
         transport = self.datagram_transport()
-        transport._buffer.append((b'data', ('0.0.0.0', 12345)))
-        transport.sendto(b'', ())
-        self.assertFalse(self.sock.sendto.called)
-        self.assertEqual(
-            [(b'data', ('0.0.0.0', 12345))], list(transport._buffer))
+        transport.sendto(b'', ('0.0.0.0', 1234))
+        self.assertTrue(self.proactor.sendto.called)
+        self.proactor.sendto.assert_called_with(
+            self.sock, b'', addr=('0.0.0.0', 1234))
 
     def test_sendto_buffer(self):
         transport = self.datagram_transport()
@@ -625,6 +626,19 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
         self.assertEqual(
             [(b'data1', ('0.0.0.0', 12345)),
              (b'data2', ('0.0.0.0', 12345))],
+            list(transport._buffer))
+        self.assertIsInstance(transport._buffer[1][0], bytes)
+
+    def test_sendto_buffer_nodata(self):
+        data2 = b''
+        transport = self.datagram_transport()
+        transport._buffer.append((b'data1', ('0.0.0.0', 12345)))
+        transport._write_fut = object()
+        transport.sendto(data2, ('0.0.0.0', 12345))
+        self.assertFalse(self.proactor.sendto.called)
+        self.assertEqual(
+            [(b'data1', ('0.0.0.0', 12345)),
+             (b'', ('0.0.0.0', 12345))],
             list(transport._buffer))
         self.assertIsInstance(transport._buffer[1][0], bytes)
 
@@ -677,7 +691,9 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
 
     def test_sendto_str(self):
         transport = self.datagram_transport()
-        self.assertRaises(TypeError, transport.sendto, 'str', ())
+        self.assertRaisesRegex(
+            TypeError, "^data argument must be a bytes-like object, not 'str'$",
+            transport.sendto, 'str', ())
 
     def test_sendto_connected_addr(self):
         transport = self.datagram_transport(address=('0.0.0.0', 1))
@@ -1006,9 +1022,9 @@ class ProactorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         self.addCleanup(self.file.close)
         super().setUp()
 
-    def make_socket(self, cleanup=True):
+    def make_socket(self, cleanup=True, blocking=False):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.setblocking(False)
+        sock.setblocking(blocking)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1024)
         if cleanup:
@@ -1070,6 +1086,11 @@ class ProactorEventLoopUnixSockSendfileTests(test_utils.TestCase):
                                                           0, None))
         self.assertEqual(self.file.tell(), 0)
 
+    def test_blocking_socket(self):
+        self.loop.set_debug(True)
+        sock = self.make_socket(blocking=True)
+        with self.assertRaisesRegex(ValueError, "must be non-blocking"):
+            self.run_loop(self.loop.sock_sendfile(sock, self.file))
 
 if __name__ == '__main__':
     unittest.main()

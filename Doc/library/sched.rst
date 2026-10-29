@@ -1,10 +1,8 @@
-:mod:`sched` --- Event scheduler
-================================
+:mod:`!sched` --- Event scheduler
+=================================
 
 .. module:: sched
    :synopsis: General purpose event scheduler.
-
-.. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
 **Source code:** :source:`Lib/sched.py`
 
@@ -12,7 +10,7 @@
 
 --------------
 
-The :mod:`sched` module defines a class which implements a general purpose event
+The :mod:`!sched` module defines a class which implements a general purpose event
 scheduler:
 
 .. class:: scheduler(timefunc=time.monotonic, delayfunc=time.sleep)
@@ -36,7 +34,7 @@ scheduler:
 Example::
 
    >>> import sched, time
-   >>> s = sched.scheduler(time.monotonic, time.sleep)
+   >>> s = sched.scheduler(time.time, time.sleep)
    >>> def print_time(a='default'):
    ...     print("From print_time", time.time(), a)
    ...
@@ -115,13 +113,15 @@ Scheduler Objects
 
 .. method:: scheduler.run(blocking=True)
 
-   Run all scheduled events. This method will wait  (using the :func:`delayfunc`
+   Run all scheduled events. This method will wait  (using the *delayfunc*
    function passed to the constructor) for the next event, then execute it and so
    on until there are no more scheduled events.
 
-   If *blocking* is false executes the scheduled events due to expire soonest
-   (if any) and then return the deadline of the next scheduled call in the
-   scheduler (if any).
+   If *blocking* is false, immediately executes all events in the queue which have
+   a time value less than or equal to the current *timefunc* value (if any) and
+   returns the difference between the current *timefunc* value and the time value
+   of the next scheduled event in the scheduler's event queue.  If the queue is
+   empty, returns ``None``.
 
    Either *action* or *delayfunc* can raise an exception.  In either case, the
    scheduler will maintain a consistent state and propagate the exception.  If an

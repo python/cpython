@@ -1,3 +1,0 @@
-The implementation of PEP-683 which adds Immortal Objects by using a fixed
-reference count that skips reference counting to make objects truly
-immutable.

@@ -1,1 +1,0 @@
-Improve the performance of :c:func:`PyObject_HasAttrString`

@@ -1,0 +1,4 @@
+Fix crashes in :class:`io.TextIOWrapper` and
+:class:`io.IncrementalNewlineDecoder` when a callback changes the active
+codec or decoded buffer. :class:`io.StringIO` now raises :exc:`ValueError`
+if converting the size passed to ``truncate()`` closes the stream.

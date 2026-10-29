@@ -23,10 +23,9 @@ except ImportError:
 
 from io import BytesIO, StringIO
 from fileinput import FileInput, hook_encoded
-from pathlib import Path
 
 from test.support import verbose
-from test.support.os_helper import TESTFN
+from test.support.os_helper import TESTFN, FakePath
 from test.support.os_helper import unlink as safe_unlink
 from test.support import os_helper
 from test import support
@@ -151,7 +150,7 @@ class BufferSizesTests(BaseTests, unittest.TestCase):
             print('6. Inplace')
         savestdout = sys.stdout
         try:
-            fi = FileInput(files=(t1, t2, t3, t4), inplace=1, encoding="utf-8")
+            fi = FileInput(files=(t1, t2, t3, t4), inplace=True, encoding="utf-8")
             for line in fi:
                 line = line[:-1].upper()
                 print(line)
@@ -246,7 +245,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
         orig_stdin = sys.stdin
         try:
             sys.stdin = BytesIO(b'spam, bacon, sausage, and spam')
-            self.assertFalse(hasattr(sys.stdin, 'buffer'))
+            self.assertNotHasAttr(sys.stdin, 'buffer')
             fi = FileInput(files=['-'], mode='rb')
             lines = list(fi)
             self.assertEqual(lines, [b'spam, bacon, sausage, and spam'])
@@ -256,7 +255,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
     def test_file_opening_hook(self):
         try:
             # cannot use openhook and inplace mode
-            fi = FileInput(inplace=1, openhook=lambda f, m: None)
+            fi = FileInput(inplace=True, openhook=lambda f, m: None)
             self.fail("FileInput should raise if both inplace "
                              "and openhook arguments are given")
         except ValueError:
@@ -335,6 +334,101 @@ class FileInputTests(BaseTests, unittest.TestCase):
             print("New line \x88")
         with open(temp_file, 'rb') as f:
             self.assertEqual(f.read().rstrip(b'\r\n'), b'New line ?')
+
+    def check_inplace_name_taken(self, take_name):
+        # Something else gets the name of the file after it has been moved
+        # to the backup file and before the output file is created.
+        temp_file = self.writeTmp('Initial text.')
+        self.addCleanup(os_helper.unlink, temp_file + '.bak')
+        orig_replace = os.replace
+        def replace(src, dst):
+            orig_replace(src, dst)
+            take_name(temp_file)
+        with mock.patch('os.replace', replace):
+            with self.assertRaises(FileExistsError):
+                with FileInput(temp_file, inplace=True, encoding="utf-8") as fi:
+                    fi.readline()
+        # The backup file is the only copy of the data, it must be kept.
+        with open(temp_file + '.bak', encoding="utf-8") as f:
+            self.assertEqual(f.read(), 'Initial text.')
+
+    @os_helper.skip_unless_symlink
+    def test_inplace_does_not_follow_symlink(self):
+        target = self.writeTmp('Other text.')
+        os.chmod(target, 0o600)
+        mode = os.stat(target).st_mode
+        def take_name(name):
+            os.chmod(name + '.bak', 0o644)
+            os.symlink(target, name)
+        self.check_inplace_name_taken(take_name)
+        with support.swap_attr(os, 'fstat', UnconditionallyRaise(OSError)):
+            self.check_inplace_name_taken(take_name)
+        with open(target, encoding="utf-8") as f:
+            self.assertEqual(f.read(), 'Other text.')
+        self.assertEqual(os.stat(target).st_mode, mode)
+
+    def test_inplace_does_not_reuse_existing_file(self):
+        names = []
+        def take_name(name):
+            with open(name, 'w', encoding="utf-8") as f:
+                f.write('Other text.')
+            names.append(name)
+        self.check_inplace_name_taken(take_name)
+        with support.swap_attr(os, 'fstat', UnconditionallyRaise(OSError)):
+            self.check_inplace_name_taken(take_name)
+        for name in names:
+            with open(name, encoding="utf-8") as f:
+                self.assertEqual(f.read(), 'Other text.')
+
+    def check_inplace_backup_kept(self, temp_file, exc_type):
+        with self.assertRaises(exc_type):
+            with FileInput(temp_file, inplace=True, encoding="utf-8") as fi:
+                fi.readline()
+        self.assertFalse(os.path.exists(temp_file))
+        with open(temp_file + '.bak', encoding="utf-8") as f:
+            self.assertEqual(f.read(), 'Initial text.')
+
+    def test_inplace_backup_kept_if_open_fails(self):
+        # The file can be moved to the backup file, but not opened.
+        temp_file = self.writeTmp('Initial text.')
+        self.addCleanup(os_helper.unlink, temp_file + '.bak')
+        with mock.patch('fileinput.open', create=True,
+                        side_effect=PermissionError):
+            self.check_inplace_backup_kept(temp_file, PermissionError)
+            # Trying again must not delete the backup file either.
+            self.check_inplace_backup_kept(temp_file, FileNotFoundError)
+        self.check_inplace_backup_kept(temp_file, FileNotFoundError)
+
+    def test_inplace_backup_kept_if_output_not_created(self):
+        temp_file = self.writeTmp('Initial text.')
+        self.addCleanup(os_helper.unlink, temp_file + '.bak')
+        with mock.patch('os.open', side_effect=PermissionError):
+            self.check_inplace_backup_kept(temp_file, PermissionError)
+            self.check_inplace_backup_kept(temp_file, FileNotFoundError)
+        self.check_inplace_backup_kept(temp_file, FileNotFoundError)
+
+    @os_helper.skip_unless_symlink
+    @unittest.skipUnless(os.chmod in os.supports_fd,
+                         "os.chmod() does not support file descriptors")
+    @unittest.skipIf(sys.platform == 'win32',
+                     "cannot unlink an open file on Windows")
+    def test_inplace_chmod_does_not_follow_symlink(self):
+        # The output file is replaced by a symlink after it has been created
+        # and before its permissions are set.
+        target = self.writeTmp('Other text.')
+        os.chmod(target, 0o600)
+        mode = os.stat(target).st_mode
+        temp_file = self.writeTmp('Initial text.')
+        os.chmod(temp_file, 0o644)
+        orig_fdopen = os.fdopen
+        def fdopen(fd, *args, **kwargs):
+            os.unlink(temp_file)
+            os.symlink(target, temp_file)
+            return orig_fdopen(fd, *args, **kwargs)
+        with mock.patch('os.fdopen', fdopen):
+            with FileInput(temp_file, inplace=True, encoding="utf-8") as fi:
+                fi.readline()
+        self.assertEqual(os.stat(target).st_mode, mode)
 
     def test_file_hook_backward_compatibility(self):
         def old_hook(filename, mode):
@@ -478,23 +572,23 @@ class FileInputTests(BaseTests, unittest.TestCase):
             self.assertRaises(StopIteration, next, fi)
             self.assertEqual(src.linesread, [])
 
-    def test_pathlib_file(self):
-        t1 = Path(self.writeTmp("Pathlib file."))
+    def test_pathlike_file(self):
+        t1 = FakePath(self.writeTmp("Path-like file."))
         with FileInput(t1, encoding="utf-8") as fi:
             line = fi.readline()
-            self.assertEqual(line, 'Pathlib file.')
+            self.assertEqual(line, 'Path-like file.')
             self.assertEqual(fi.lineno(), 1)
             self.assertEqual(fi.filelineno(), 1)
             self.assertEqual(fi.filename(), os.fspath(t1))
 
-    def test_pathlib_file_inplace(self):
-        t1 = Path(self.writeTmp('Pathlib file.'))
+    def test_pathlike_file_inplace(self):
+        t1 = FakePath(self.writeTmp('Path-like file.'))
         with FileInput(t1, inplace=True, encoding="utf-8") as fi:
             line = fi.readline()
-            self.assertEqual(line, 'Pathlib file.')
+            self.assertEqual(line, 'Path-like file.')
             print('Modified %s' % line)
         with open(t1, encoding="utf-8") as f:
-            self.assertEqual(f.read(), 'Modified Pathlib file.\n')
+            self.assertEqual(f.read(), 'Modified Path-like file.\n')
 
 
 class MockFileInput:

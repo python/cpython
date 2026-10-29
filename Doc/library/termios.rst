@@ -1,8 +1,7 @@
-:mod:`termios` --- POSIX style tty control
-==========================================
+:mod:`!termios` --- POSIX style tty control
+===========================================
 
 .. module:: termios
-   :platform: Unix
    :synopsis: POSIX style tty control.
 
 .. index::
@@ -15,6 +14,8 @@ This module provides an interface to the POSIX calls for tty I/O control. For a
 complete description of these calls, see :manpage:`termios(3)` Unix manual
 page.  It is only available for those Unix versions that support POSIX
 *termios* style tty I/O control configured during installation.
+
+.. availability:: Unix.
 
 All functions in this module take a file descriptor *fd* as their first
 argument.  This can be an integer file descriptor, such as returned by
@@ -36,17 +37,34 @@ The module defines the following functions:
    items with indices :const:`VMIN` and :const:`VTIME`, which are integers when
    these fields are defined).  The interpretation of the flags and the speeds as
    well as the indexing in the *cc* array must be done using the symbolic
-   constants defined in the :mod:`termios` module.
+   constants defined in the :mod:`!termios` module.
+
+   .. data:: VMIN
+             VTIME
+
+      Indices into the *cc* array controlling a non-canonical read: the minimum
+      number of characters to read and the timeout in tenths of a second,
+      respectively.
 
 
 .. function:: tcsetattr(fd, when, attributes)
 
    Set the tty attributes for file descriptor *fd* from the *attributes*, which is
    a list like the one returned by :func:`tcgetattr`.  The *when* argument
-   determines when the attributes are changed: :const:`TCSANOW` to change
-   immediately, :const:`TCSADRAIN` to change after transmitting all queued output,
-   or :const:`TCSAFLUSH` to change after transmitting all queued output and
-   discarding all queued input.
+   determines when the attributes are changed:
+
+   .. data:: TCSANOW
+
+      Change attributes immediately.
+
+   .. data:: TCSADRAIN
+
+      Change attributes after transmitting all queued output.
+
+   .. data:: TCSAFLUSH
+
+      Change attributes after transmitting all queued output and
+      discarding all queued input.
 
 
 .. function:: tcsendbreak(fd, duration)
@@ -66,12 +84,27 @@ The module defines the following functions:
    which queue: :const:`TCIFLUSH` for the input queue, :const:`TCOFLUSH` for the
    output queue, or :const:`TCIOFLUSH` for both queues.
 
+   .. data:: TCIFLUSH
+             TCOFLUSH
+             TCIOFLUSH
+
+      Values for the *queue* selector: the input queue, the output queue, or
+      both queues, respectively.
+
 
 .. function:: tcflow(fd, action)
 
    Suspend or resume input or output on file descriptor *fd*.  The *action*
    argument can be :const:`TCOOFF` to suspend output, :const:`TCOON` to restart
    output, :const:`TCIOFF` to suspend input, or :const:`TCION` to restart input.
+
+   .. data:: TCOOFF
+             TCOON
+             TCIOFF
+             TCION
+
+      Values for the *action* argument: suspend output, restart output,
+      suspend input, or restart input, respectively.
 
 
 .. function:: tcgetwinsize(fd)
@@ -81,6 +114,12 @@ The module defines the following functions:
    :const:`termios.TIOCGSIZE`.
 
    .. versionadded:: 3.11
+
+   .. data:: TIOCGWINSZ
+             TIOCGSIZE
+
+      ``ioctl()`` requests for querying the tty window size.  Not defined on
+      all platforms; :func:`tcgetwinsize` requires at least one of them.
 
 
 .. function:: tcsetwinsize(fd, winsize)
@@ -92,6 +131,12 @@ The module defines the following functions:
    (:const:`termios.TIOCGSIZE`, :const:`termios.TIOCSSIZE`) to be defined.
 
    .. versionadded:: 3.11
+
+   .. data:: TIOCSWINSZ
+             TIOCSSIZE
+
+      ``ioctl()`` requests for setting the tty window size.  Not defined on all
+      platforms; see :func:`tcsetwinsize` for the required pairs.
 
 
 .. seealso::

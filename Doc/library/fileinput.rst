@@ -1,11 +1,8 @@
-:mod:`fileinput` --- Iterate over lines from multiple input streams
-===================================================================
+:mod:`!fileinput` --- Iterate over lines from multiple input streams
+====================================================================
 
 .. module:: fileinput
    :synopsis: Loop over standard input or a list of files.
-
-.. moduleauthor:: Guido van Rossum <guido@python.org>
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
 **Source code:** :source:`Lib/fileinput.py`
 
@@ -47,7 +44,7 @@ Lines are returned with any newlines intact, which means that the last line in
 a file may not have one.
 
 You can control how files are opened by providing an opening hook via the
-*openhook* parameter to :func:`fileinput.input` or :class:`FileInput()`. The
+*openhook* parameter to :func:`fileinput.input` or :func:`FileInput`. The
 hook must be a function that takes two arguments, *filename* and *mode*, and
 returns an accordingly opened file-like object. If *encoding* and/or *errors*
 are specified, they will be passed to the hook as additional keyword arguments.
@@ -177,7 +174,7 @@ available for subclassing as well:
       The keyword-only parameter *encoding* and *errors* are added.
 
    .. versionchanged:: 3.11
-      The ``'rU'`` and ``'U'`` modes and the :meth:`__getitem__` method have
+      The ``'rU'`` and ``'U'`` modes and the :meth:`!__getitem__` method have
       been removed.
 
 
@@ -191,6 +188,16 @@ input file in place.  If the *backup* parameter is given (typically as
 and the backup file remains around; by default, the extension is ``'.bak'`` and
 it is deleted when the output file is closed.  In-place filtering is disabled
 when standard input is read.
+
+The output file is created exclusively: if something else creates a file or
+symbolic link with the name of the input file after it has been moved to the
+backup file, :exc:`FileExistsError` is raised.  If the output file cannot be
+created, the backup file is kept.  In-place filtering of files in a directory
+that other, untrusted users can modify is not supported.
+
+.. versionchanged:: next
+   The output file is now created exclusively, and the backup file is no
+   longer deleted if the output file cannot be created.
 
 
 The two following opening hooks are provided by this module:

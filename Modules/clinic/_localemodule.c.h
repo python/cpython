@@ -2,14 +2,11 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(_locale_setlocale__doc__,
-"setlocale($module, category, locale=<unrepresentable>, /)\n"
+"setlocale($module, category, locale=None, /)\n"
 "--\n"
 "\n"
 "Activates/queries locale processing.");
@@ -30,7 +27,7 @@ _locale_setlocale(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("setlocale", nargs, 1, 2)) {
         goto exit;
     }
-    category = _PyLong_AsInt(args[0]);
+    category = PyLong_AsInt(args[0]);
     if (category == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -41,13 +38,8 @@ _locale_setlocale(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         locale = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        Py_ssize_t locale_length;
-        locale = PyUnicode_AsUTF8AndSize(args[1], &locale_length);
+        locale = _PyUnicode_AsUTF8NoNUL(args[1]);
         if (locale == NULL) {
-            goto exit;
-        }
-        if (strlen(locale) != (size_t)locale_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -108,15 +100,9 @@ _locale_strcoll(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("strcoll", "argument 1", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     os1 = args[0];
     if (!PyUnicode_Check(args[1])) {
         _PyArg_BadArgument("strcoll", "argument 2", "str", args[1]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[1]) == -1) {
         goto exit;
     }
     os2 = args[1];
@@ -150,9 +136,6 @@ _locale_strxfrm(PyObject *module, PyObject *arg)
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("strxfrm", "argument", "str", arg);
-        goto exit;
-    }
-    if (PyUnicode_READY(arg) == -1) {
         goto exit;
     }
     str = arg;
@@ -205,7 +188,7 @@ _locale_nl_langinfo(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int item;
 
-    item = _PyLong_AsInt(arg);
+    item = PyLong_AsInt(arg);
     if (item == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -243,13 +226,8 @@ _locale_gettext(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("gettext", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t in_length;
-    in = PyUnicode_AsUTF8AndSize(arg, &in_length);
+    in = _PyUnicode_AsUTF8NoNUL(arg);
     if (in == NULL) {
-        goto exit;
-    }
-    if (strlen(in) != (size_t)in_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _locale_gettext_impl(module, in);
@@ -290,13 +268,8 @@ _locale_dgettext(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         domain = NULL;
     }
     else if (PyUnicode_Check(args[0])) {
-        Py_ssize_t domain_length;
-        domain = PyUnicode_AsUTF8AndSize(args[0], &domain_length);
+        domain = _PyUnicode_AsUTF8NoNUL(args[0]);
         if (domain == NULL) {
-            goto exit;
-        }
-        if (strlen(domain) != (size_t)domain_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -308,13 +281,8 @@ _locale_dgettext(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("dgettext", "argument 2", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t in_length;
-    in = PyUnicode_AsUTF8AndSize(args[1], &in_length);
+    in = _PyUnicode_AsUTF8NoNUL(args[1]);
     if (in == NULL) {
-        goto exit;
-    }
-    if (strlen(in) != (size_t)in_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _locale_dgettext_impl(module, domain, in);
@@ -355,13 +323,8 @@ _locale_dcgettext(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         domain = NULL;
     }
     else if (PyUnicode_Check(args[0])) {
-        Py_ssize_t domain_length;
-        domain = PyUnicode_AsUTF8AndSize(args[0], &domain_length);
+        domain = _PyUnicode_AsUTF8NoNUL(args[0]);
         if (domain == NULL) {
-            goto exit;
-        }
-        if (strlen(domain) != (size_t)domain_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -373,16 +336,11 @@ _locale_dcgettext(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("dcgettext", "argument 2", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t msgid_length;
-    msgid = PyUnicode_AsUTF8AndSize(args[1], &msgid_length);
+    msgid = _PyUnicode_AsUTF8NoNUL(args[1]);
     if (msgid == NULL) {
         goto exit;
     }
-    if (strlen(msgid) != (size_t)msgid_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
-    category = _PyLong_AsInt(args[2]);
+    category = PyLong_AsInt(args[2]);
     if (category == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -418,13 +376,8 @@ _locale_textdomain(PyObject *module, PyObject *arg)
         domain = NULL;
     }
     else if (PyUnicode_Check(arg)) {
-        Py_ssize_t domain_length;
-        domain = PyUnicode_AsUTF8AndSize(arg, &domain_length);
+        domain = _PyUnicode_AsUTF8NoNUL(arg);
         if (domain == NULL) {
-            goto exit;
-        }
-        if (strlen(domain) != (size_t)domain_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -469,13 +422,8 @@ _locale_bindtextdomain(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         _PyArg_BadArgument("bindtextdomain", "argument 1", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t domain_length;
-    domain = PyUnicode_AsUTF8AndSize(args[0], &domain_length);
+    domain = _PyUnicode_AsUTF8NoNUL(args[0]);
     if (domain == NULL) {
-        goto exit;
-    }
-    if (strlen(domain) != (size_t)domain_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     dirname_obj = args[1];
@@ -516,26 +464,16 @@ _locale_bind_textdomain_codeset(PyObject *module, PyObject *const *args, Py_ssiz
         _PyArg_BadArgument("bind_textdomain_codeset", "argument 1", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t domain_length;
-    domain = PyUnicode_AsUTF8AndSize(args[0], &domain_length);
+    domain = _PyUnicode_AsUTF8NoNUL(args[0]);
     if (domain == NULL) {
-        goto exit;
-    }
-    if (strlen(domain) != (size_t)domain_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (args[1] == Py_None) {
         codeset = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        Py_ssize_t codeset_length;
-        codeset = PyUnicode_AsUTF8AndSize(args[1], &codeset_length);
+        codeset = _PyUnicode_AsUTF8NoNUL(args[1]);
         if (codeset == NULL) {
-            goto exit;
-        }
-        if (strlen(codeset) != (size_t)codeset_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -608,4 +546,4 @@ _locale_getencoding(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
     #define _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
 #endif /* !defined(_LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF) */
-/*[clinic end generated code: output=406842c3441559cb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b995b35bd3085d5b input=a9049054013a1b77]*/

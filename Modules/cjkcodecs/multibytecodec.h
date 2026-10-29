@@ -10,6 +10,8 @@
 extern "C" {
 #endif
 
+#include "pycore_unicodeobject.h" // _PyUnicodeWriter
+
 #ifdef uint16_t
 typedef uint16_t ucs2_t, DBCHAR;
 #else
@@ -75,6 +77,7 @@ typedef struct {
 #define _MultibyteStatefulCodec_HEAD            \
     PyObject_HEAD                               \
     const MultibyteCodec *codec;                \
+    PyObject *codec_owner;                      \
     MultibyteCodec_State state;                 \
     PyObject *errors;
 typedef struct {
@@ -89,7 +92,8 @@ typedef struct {
     _MultibyteStatefulEncoder_HEAD
 } MultibyteStatefulEncoderContext;
 
-#define MAXDECPENDING   8
+/* ISO-2022 may retain an incomplete escape sequence up to 15 bytes. */
+#define MAXDECPENDING   16
 #define _MultibyteStatefulDecoder_HEAD          \
     _MultibyteStatefulCodec_HEAD                \
     unsigned char pending[MAXDECPENDING];       \
