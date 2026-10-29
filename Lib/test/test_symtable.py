@@ -449,6 +449,7 @@ class SymtableTest(unittest.TestCase):
 
     @support.requires_subprocess()
     def test_symbol_repr_lazy_imports(self):
+        # See https://github.com/python/cpython/issues/160810.
         code = ("import symtable\n"
                 "top = symtable.symtable('x = 1', '?', 'exec')\n"
                 "print(repr(top.lookup('x')))\n")
