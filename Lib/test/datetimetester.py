@@ -554,6 +554,13 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         eq(td(seconds=0.001), td(milliseconds=1))
         eq(td(milliseconds=0.001), td(microseconds=1))
 
+        # Large float args keep their sub-second part
+        eq(td(weeks=12345678.9), td(86419752, 25920, 225))
+        eq(td(hours=123456789.1), td(5144032, 75959, 999979))
+        eq(td(minutes=1234567890.1), td(857338, 70205, 999994))
+        eq(td(days=1.1, weeks=1000000.1), td(7000001, 69119, 999986))
+        eq(td(seconds=0.5, microseconds=2.0**60), td(13343998, 77407, 346976))
+
         # Check type of args to constructor
         ra(TypeError, lambda: td(weeks='1'))
         ra(TypeError, lambda: td(days='1'))

@@ -1,0 +1,3 @@
+Fix the pure-Python implementation of :class:`datetime.timedelta` losing
+sub-second precision with large float arguments. It now gives the same
+results as the C implementation.
