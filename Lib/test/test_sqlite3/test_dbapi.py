@@ -791,7 +791,7 @@ class OpenTests(unittest.TestCase):
                 # custom build of SQLite) it defaults to 1, perhaps customised by Apple?
                 default_value = (1 if sys.platform == "darwin" else 0)
                 assert rc == default_value, f"SQLITE_FCNTL_PERSIST_WAL should be {default_value} " \
-                    "by default, not {rc}"
+                    f"by default, not {rc}, on {sys.platform}"
 
                 # Set it to 0 explicitly so that this test passes on Darwin too:
                 rc = cx.file_control(sqlite.SQLITE_FCNTL_PERSIST_WAL, 0)
