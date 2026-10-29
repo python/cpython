@@ -1099,7 +1099,15 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 orig_sock.send(b'please corrupt the SSL connection')
                 # the client now closes the connection; although its
                 # TLS shutdown fails on the corrupted record, it must
-                # still send close_notify, completing our unwrap()
+                # still send close_notify, on which recv() returns b''.
+                # Wait for it before sending ours: unwrap() right away
+                # would send close_notify to a peer that is about to
+                # close its socket, which turns that close into a TCP
+                # reset, and on Windows a reset discards the client's
+                # close_notify that is still unread (gh-158646).
+                sock.recv(1)
+                # recv() also returns b'' on a ragged EOF, i.e. without
+                # close_notify, but then unwrap() fails with an SSLError.
                 sock.unwrap()
             except ssl.SSLError as exc:
                 server_err = exc
