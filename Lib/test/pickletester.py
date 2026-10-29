@@ -3638,6 +3638,8 @@ class AbstractPickleTests:
                     self.assertEqual(x.__dict__, y.__dict__, detail)
 
     def test_weakref(self):
+        if self.py_version < (3, 16):
+            self.skipTest('not supported in Python < 3.16')
         obj = WeakrefTarget()
         wr = weakref.ref(obj)
         for proto in protocols:
@@ -3650,6 +3652,8 @@ class AbstractPickleTests:
                 self.assertIs(wr2(), obj2)
 
     def test_weakref_callback(self):
+        if self.py_version < (3, 16):
+            self.skipTest('not supported in Python < 3.16')
         # The callback is not preserved: pickling it strongly would defeat
         # the weak-only detection.
         obj = WeakrefTarget()
@@ -3661,6 +3665,8 @@ class AbstractPickleTests:
                 self.assertIsNone(wr2.__callback__)
 
     def test_dead_weakref(self):
+        if self.py_version < (3, 16):
+            self.skipTest('not supported in Python < 3.16')
         # A dead reference stays dead, and all dead references unpickle as
         # the same object.
         obj = WeakrefTarget()
@@ -5292,6 +5298,22 @@ class AbstractPicklerUnpicklerObjectTests:
 
             self.assertNotEqual(first_pickled, second_pickled)
             self.assertEqual(first_pickled, third_pickled)
+
+    def test_clear_unpickler_memo(self):
+        value = [b'repeated'] * 2
+        data = pickle.dumps(value, protocol=4)
+        unpickler = self.unpickler_class(io.BytesIO(data * 2))
+        self.assertEqual(unpickler.load(), value)
+        unpickler.memo.clear()
+        self.assertEqual(unpickler.load(), value)
+
+    def test_clear_unpickler_memo_sparse(self):
+        # Store None at index 1000, then retrieve it in a second record.
+        unpickler = self.unpickler_class(io.BytesIO(b'Np1000\n.g1000\n.'))
+        self.assertIsNone(unpickler.load())
+        unpickler.memo.clear()
+        with self.assertRaises(pickle.UnpicklingError):
+            unpickler.load()
 
     def test_priming_pickler_memo(self):
         # Verify that we can set the Pickler's memo attribute.

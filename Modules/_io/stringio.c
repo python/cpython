@@ -490,7 +490,7 @@ _io_StringIO_truncate_impl(stringio *self, PyObject *pos)
         size = self->pos;
     }
     else {
-        size = PyLong_AsLong(pos);
+        size = PyNumber_AsSsize_t(pos, PyExc_OverflowError);
         if (size == -1 && PyErr_Occurred()) {
             return NULL;
         }
@@ -499,6 +499,9 @@ _io_StringIO_truncate_impl(stringio *self, PyObject *pos)
                          "negative pos value %zd", size);
             return NULL;
         }
+        /* __index__ may have closed or reinitialized the stream. */
+        CHECK_INITIALIZED(self);
+        CHECK_CLOSED(self);
     }
 
     if (size < self->string_size) {

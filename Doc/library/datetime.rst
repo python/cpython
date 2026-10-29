@@ -180,18 +180,12 @@ Objects of the :class:`date` type are always naive.
 
 An object of type :class:`.time` or :class:`.datetime` may be aware or naive.
 
-A :class:`.datetime` object ``d`` is aware if both of the following hold:
-
-1. ``d.tzinfo`` is not ``None``
-2. ``d.tzinfo.utcoffset(d)`` does not return ``None``
-
+A :class:`.datetime` object ``d`` is aware if
+:meth:`d.utcoffset() <datetime.utcoffset>` does not return ``None``.
 Otherwise, ``d`` is naive.
 
-A :class:`.time` object ``t`` is aware if both of the following hold:
-
-1. ``t.tzinfo`` is not ``None``
-2. ``t.tzinfo.utcoffset(None)`` does not return ``None``.
-
+A :class:`.time` object ``t`` is aware if
+:meth:`t.utcoffset() <time.utcoffset>` does not return ``None``.
 Otherwise, ``t`` is naive.
 
 The distinction between aware and naive doesn't apply to :class:`timedelta`
@@ -1392,9 +1386,9 @@ Instance methods:
    hour=self.hour, minute=self.minute, second=self.second, microsecond=self.microsecond, \
    tzinfo=self.tzinfo, *, fold=0)
 
-   Return a new :class:`datetime` object with the same attributes, but with
-   specified parameters updated. Note that ``tzinfo=None`` can be specified to
-   create a naive datetime from an aware datetime with no conversion of date
+   Return a new :class:`~datetime.datetime` object with the same attributes, but
+   with specified parameters updated. Note that ``tzinfo=None`` can be specified
+   to create a naive datetime from an aware datetime with no conversion of date
    and time data.
 
    :class:`.datetime` objects are also supported by generic function
@@ -2482,6 +2476,11 @@ where historical changes have been made to civil time.
   Return ``dt + offset``. The *dt* argument must be an aware
   :class:`.datetime` instance, with ``tzinfo`` set to ``self``.
 
+.. attribute:: timezone.name
+
+   The *name* passed to the constructor, or ``None`` if no name was passed.
+
+   .. versionadded:: next
 
 Class attributes:
 

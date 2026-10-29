@@ -11,6 +11,66 @@ preserve
 #include "pycore_runtime.h"       // _Py_SINGLETON()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
+static PyObject *
+bytearray_iconcat_impl(PyByteArrayObject *self, PyObject *other);
+
+static PyObject *
+bytearray_iconcat(PyObject *self, PyObject *other)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = bytearray_iconcat_impl((PyByteArrayObject *)self, other);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static PyObject *
+bytearray_repeat_impl(PyByteArrayObject *self, Py_ssize_t count);
+
+static PyObject *
+bytearray_repeat(PyObject *self, Py_ssize_t count)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = bytearray_repeat_impl((PyByteArrayObject *)self, count);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static PyObject *
+bytearray_irepeat_impl(PyByteArrayObject *self, Py_ssize_t count);
+
+static PyObject *
+bytearray_irepeat(PyObject *self, Py_ssize_t count)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = bytearray_irepeat_impl((PyByteArrayObject *)self, count);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static PyObject *
+bytearray_getitem_impl(PyByteArrayObject *self, Py_ssize_t i);
+
+static PyObject *
+bytearray_getitem(PyObject *self, Py_ssize_t i)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = bytearray_getitem_impl((PyByteArrayObject *)self, i);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 static int
 bytearray_setitem_impl(PyByteArrayObject *self, Py_ssize_t i,
                        PyObject *value);
@@ -133,7 +193,7 @@ bytearray_vectorcall(PyObject *type, PyObject *const *args,
     const char *encoding = NULL;
     const char *errors = NULL;
 
-    assert(Py_Is(_PyType_CAST(type), &PyByteArray_Type));
+    assert(_PyType_CAST(type)->tp_init == bytearray___init__);
     /* Make sure the type object is immutable: the generated
      * vectorcall doesn't deal e.g. with users reassigning __init__. */
     assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
@@ -192,6 +252,21 @@ skip_optional:
     return_value = self;
 
 exit:
+    return return_value;
+}
+
+static PyObject *
+bytearray_repr_impl(PyObject *op);
+
+static PyObject *
+bytearray_repr(PyObject *op)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(op);
+    return_value = bytearray_repr_impl(op);
+    Py_END_CRITICAL_SECTION();
+
     return return_value;
 }
 
@@ -1962,4 +2037,4 @@ bytearray_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl((PyByteArrayObject *)self);
 }
-/*[clinic end generated code: output=a16aaa01f1fcf5a6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b8e659fe4b2f770e input=a9049054013a1b77]*/

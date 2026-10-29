@@ -1,0 +1,2 @@
+Use Argument Clinic vectorcall support for the :class:`decimal.Decimal` type.  This offers
+1.10x speedup on creation of small instances.

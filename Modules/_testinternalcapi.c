@@ -1182,8 +1182,9 @@ record_eval(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
         assert(module != NULL);
         module_state *state = get_module_state(module);
         Py_DECREF(module);
-        int res = PyList_Append(state->record_list,
-                                FT_ATOMIC_LOAD_PTR_ACQUIRE(func->func_name));
+        PyObject *name = Py_NewRef(FT_ATOMIC_LOAD_PTR_ACQUIRE(func->func_name));
+        int res = PyList_Append(state->record_list, name);
+        Py_DECREF(name);
         if (res < 0) {
             return NULL;
         }
@@ -1244,8 +1245,9 @@ record_eval_interp(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc
         assert(module != NULL);
         module_state *state = get_module_state(module);
         Py_DECREF(module);
-        int res = PyList_Append(state->record_list,
-                                FT_ATOMIC_LOAD_PTR_ACQUIRE(func->func_name));
+        PyObject *name = Py_NewRef(FT_ATOMIC_LOAD_PTR_ACQUIRE(func->func_name));
+        int res = PyList_Append(state->record_list, name);
+        Py_DECREF(name);
         if (res < 0) {
             return NULL;
         }
@@ -2625,6 +2627,9 @@ get_crossinterp_data(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     else {
         mode = PyUnicode_AsUTF8(modeobj);
+        if (mode == NULL) {
+            return NULL;
+        }
         if (strlen(mode) == 0) {
             mode = "xidata";
         }
@@ -3011,7 +3016,7 @@ EM_JS(int, emscripten_set_up_async_input_device_js, (void), {
         await sleep(5);
         return bufs[(idx ++) % 3];
     });
-    return !!WebAssembly.promising;
+    return !!Module._Py_EmscriptenStackSwitching;
 });
 
 static PyObject *
