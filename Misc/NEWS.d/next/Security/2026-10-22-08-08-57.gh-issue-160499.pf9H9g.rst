@@ -1,0 +1,5 @@
+Fix unbounded memory growth in :mod:`asyncio` TLS connections when a peer
+stops reading but keeps sending records that make OpenSSL generate its own
+replies (such as TLS 1.2 renegotiation alerts).  Reading from the peer is now
+paused when this output accumulates, instead of only when application data
+does.
