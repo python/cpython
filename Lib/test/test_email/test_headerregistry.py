@@ -162,6 +162,16 @@ class TestUnstructuredHeader(TestHeaderBase):
             'word',
             [errors.CharsetError]),
 
+        'non_printable_text': (
+            'text\x00value',
+            'text\x00value',
+            [errors.NonPrintableDefect]),
+
+        'combined_defects': (
+            'prefix=?utf-8?b?YQ?=',
+            'prefixa',
+            [errors.InvalidHeaderDefect, errors.InvalidBase64PaddingDefect]),
+
         'missing_whitespace': (
             'prefix=?utf-8?q?word?=',
             'prefixword',
