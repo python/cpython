@@ -210,6 +210,9 @@ resize_buffer_lock_held(bytesio *self, size_t size)
         /* Major upsize; resize up to exact size */
         alloc = size + 1;
     }
+    if (alloc > PY_SSIZE_T_MAX) {
+        goto overflow;
+    }
 
     if (SHARED_BUF(self)) {
         if (unshare_buffer_lock_held(self, alloc) < 0)
@@ -701,7 +704,7 @@ _io_BytesIO_truncate_impl(bytesio *self, PyObject *size)
         new_size = self->pos;
     }
     else {
-        new_size = PyLong_AsLong(size);
+        new_size = PyNumber_AsSsize_t(size, PyExc_OverflowError);
         if (new_size == -1 && PyErr_Occurred()) {
             return NULL;
         }
