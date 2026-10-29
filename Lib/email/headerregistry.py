@@ -264,6 +264,7 @@ class UnstructuredHeader:
     def parse(cls, value, kwds):
         kwds['parse_tree'] = cls.value_parser(value)
         kwds['decoded'] = str(kwds['parse_tree'])
+        kwds['defects'].extend(kwds['parse_tree'].all_defects)
 
 
 class UniqueUnstructuredHeader(UnstructuredHeader):

@@ -129,6 +129,45 @@ class TestBaseHeaderFeatures(TestHeaderBase):
 @parameterize
 class TestUnstructuredHeader(TestHeaderBase):
 
+    def defects_as_value(self, source, decoded, defects):
+        for name in ('Subject', 'X-Test'):
+            with self.subTest(name=name):
+                h = self.make_header(name, source)
+                self.assertEqual(h, decoded)
+                self.assertDefectsEqual(h.defects, defects)
+
+    defects_params = {
+        'valid_encoded_word': (
+            '=?utf-8?q?caf=C3=A9?=',
+            'café',
+            []),
+
+        'invalid_base64_padding': (
+            '=?utf-8?b?YQ?=',
+            'a',
+            [errors.InvalidBase64PaddingDefect]),
+
+        'invalid_base64_characters': (
+            '=?utf-8?b?Y!Q==?=',
+            'a',
+            [errors.InvalidBase64CharactersDefect]),
+
+        'undecodable_bytes': (
+            '=?utf-8?q?=FF?=',
+            '\ufffd',
+            [errors.UndecodableBytesDefect] * 2),
+
+        'unknown_charset': (
+            '=?invalid-charset?q?word?=',
+            'word',
+            [errors.CharsetError]),
+
+        'missing_whitespace': (
+            'prefix=?utf-8?q?word?=',
+            'prefixword',
+            [errors.InvalidHeaderDefect]),
+    }
+
     def string_as_value(self,
                         source,
                         decoded,

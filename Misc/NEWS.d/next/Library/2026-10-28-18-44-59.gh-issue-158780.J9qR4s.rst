@@ -1,0 +1,2 @@
+Fix :class:`email.headerregistry.UnstructuredHeader` to include detected
+encoded-word and text defects in its public ``defects`` attribute.
