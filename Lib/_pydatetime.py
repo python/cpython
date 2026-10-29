@@ -699,7 +699,7 @@ class timedelta:
                 us += int(whole)
                 leftover += frac
             else:
-                us += int(value) * factor
+                us += int(value * factor)
         if leftover:
             n, m = leftover.as_integer_ratio()
             us = _divide_and_round(us * m + n, m)
