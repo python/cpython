@@ -3924,15 +3924,17 @@ long_sub_method(PyObject *a, PyObject *b)
 }
 
 PyObject *
-_PyLong_Add(PyLongObject *a, PyLongObject *b)
+_PyLong_Add(PyObject *a, PyObject *b)
 {
-    return (PyObject *)long_add(a, b);
+    assert(PyLong_Check(a) && PyLong_Check(b));
+    return (PyObject *)long_add((PyLongObject *)a, (PyLongObject *)b);
 }
 
 PyObject *
-_PyLong_Subtract(PyLongObject *a, PyLongObject *b)
+_PyLong_Subtract(PyObject *a, PyObject *b)
 {
-    return (PyObject *)long_sub(a, b);
+    assert(PyLong_Check(a) && PyLong_Check(b));
+    return (PyObject *)long_sub((PyLongObject *)a, (PyLongObject *)b);
 }
 
 
