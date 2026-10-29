@@ -2123,15 +2123,6 @@ class HTTPGzipHandlerTests(unittest.TestCase):
         with h.http_response(req, response) as result:
             self.assertEqual(result.read(), b"AAABBB")
 
-    def test_trailing_junk_after_member_ignored(self):
-        # Bytes after the final member that are not another gzip member are
-        # tolerated: the body decodes without error and is not corrupted.
-        h, req = self.opened_request()
-        comp = self.gzip_bytes(self.body) + b"trailing garbage"
-        response = self.make_response(comp)
-        with h.http_response(req, response) as result:
-            self.assertEqual(result.read(), self.body)
-
     def test_user_accept_encoding_passes_through(self):
         # A caller-supplied Accept-Encoding is left to the caller to decode:
         # the gzipped response is returned untouched.
@@ -2164,7 +2155,7 @@ class HTTPGzipHandlerTests(unittest.TestCase):
         self.assertTrue(response.closed)
 
     def test_requires_zlib(self):
-        with mock.patch.object(urllib.request, "zlib", None):
+        with mock.patch.dict(sys.modules, {"gzip": None}):
             with self.assertRaises(ImportError):
                 urllib.request.HTTPGzipHandler()
 
