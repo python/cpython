@@ -52,7 +52,8 @@ def _get_sep(path):
 # (another function should be defined to do that).
 
 def normcase(s, /):
-    """Normalize case of pathname.  Has no effect under Posix"""
+    """Normalize case of pathname.  Does not change the case, but
+    normalizes path-like objects to str or bytes, like os.fspath"""
     return os.fspath(s)
 
 
