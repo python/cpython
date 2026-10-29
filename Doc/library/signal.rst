@@ -599,8 +599,8 @@ The :mod:`!signal` module defines the following functions:
 
       See the man page :manpage:`siginterrupt(3)` for further information.
 
-   Note that installing a signal handler with :func:`signal` will reset the
-   restart behaviour to interruptible by implicitly calling
+   Note that installing a signal handler with :func:`~signal.signal` will reset
+   the restart behaviour to interruptible by implicitly calling
    :c:func:`!siginterrupt` with a true *flag* value for the given signal.
 
 
@@ -622,7 +622,7 @@ The :mod:`!signal` module defines the following functions:
    see the :ref:`description in the type hierarchy <frame-objects>` or see the
    attribute descriptions in the :mod:`inspect` module).
 
-   On Windows, :func:`signal` can only be called with :const:`SIGABRT`,
+   On Windows, :func:`~signal.signal` can only be called with :const:`SIGABRT`,
    :const:`SIGFPE`, :const:`SIGILL`, :const:`SIGINT`, :const:`SIGSEGV`,
    :const:`SIGTERM`, or :const:`SIGBREAK`.
    A :exc:`ValueError` will be raised in any other case.
