@@ -262,6 +262,8 @@ class GzipFile(_streams.BaseStream):
     @property
     def mtime(self):
         """Last modification time read from stream, or None"""
+        if self.mode == WRITE:
+            return self._write_mtime
         return self._buffer.raw._last_mtime
 
     def __repr__(self):

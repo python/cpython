@@ -343,6 +343,7 @@ class TestGzip(BaseTest):
     def test_mtime(self):
         mtime = 123456789
         with gzip.GzipFile(self.filename, 'w', mtime = mtime) as fWrite:
+            self.assertEqual(fWrite.mtime, mtime)
             fWrite.write(data1)
         with gzip.GzipFile(self.filename) as fRead:
             self.assertHasAttr(fRead, 'mtime')
