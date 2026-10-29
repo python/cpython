@@ -4,7 +4,6 @@
 
 Doc/c-api/module.rst
 Doc/library/ast.rst
-Doc/library/asyncio-extending.rst
 Doc/library/logging.config.rst
 Doc/library/logging.handlers.rst
 Doc/library/multiprocessing.rst
